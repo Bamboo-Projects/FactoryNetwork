@@ -186,6 +186,17 @@ move item:iron_ingot from chest to furnace     // alles, was da ist
 move 64 item:iron_ingot from chest to furnace  // höchstens 64
 ```
 
+Bei einer Auswahl über mehrere Arten zählt die Menge **insgesamt**:
+
+```
+move 64 tag:c/ores from chest to storage       // 64 Stück, egal welches Erz
+```
+
+Beim Worker bedeutet dieselbe Zahl in `maintain` dagegen *je Art*. Das ist
+kein Versehen: `move` schiebt einen Stapel, `maintain` hält einen Vorrat. Wer
+64 Erz bewegt, meint einen Stapel; wer 64 Kohle vorhält, meint von jeder Sorte
+genug. Eine einheitliche Regel wäre in einem der beiden Fälle die falsche.
+
 ### Mengen von Gegenständen
 
 Drei Wege, die sich kombinieren lassen:

@@ -593,3 +593,32 @@ Fangregel zu viel. Alles andere hält den Ablauf an und landet im Terminal.
   Schlüsselwörter wie `storage` und `crafting`.
 - Redstone fehlte in der Sprachspezifikation ganz, obwohl das Konzept ein
   eigenes Kapitel dafür hat.
+
+---
+
+## Der Parser wird von Hand geschrieben (2026-08-20)
+
+Kein ANTLR, kein Generator. Die Grammatik steht als EBNF in `grammatik.md` und
+ist die Vorlage — aber der Code entsteht daraus von Hand als
+Recursive-Descent-Parser.
+
+Begründung: Fehlermeldungen sind in Manifold kein Nebenprodukt, sondern ein
+Versprechen. „`for` ist ein Schlüsselwort. Meinst du den Connector gleichen
+Namens?" lässt sich mit einem Generator nur mühsam erreichen, weil er an der
+Fehlerstelle nur weiß, welche Token dort erlaubt gewesen wären. Dazu kommt die
+IDE: Sie muss in unfertigem Code vervollständigen, also nach einem Fehler
+weiterlesen können. Fehlerbehebung ist die Disziplin, in der handgeschriebene
+Parser am deutlichsten vorne liegen.
+
+Zweiter Grund, kleiner: Ein Generator bringt eine Laufzeitbibliothek mit, die
+ins Mod-Jar muss.
+
+Verworfen: ANTLR. Das Vorprojekt nutzt es, das Muster wäre bekannt gewesen und
+der Weg zur ersten lauffähigen Fassung kürzer. Der Preis wäre genau die
+Eigenschaft, wegen der diese Mod gebaut wird.
+
+Die Grammatik bleibt trotzdem geschrieben und gepflegt. Sie ist die
+Beschreibung, gegen die der Parser geprüft wird — sie hat beim Aufschreiben
+zwei Lücken aufgedeckt, die in der Prosa nicht auffielen: dass `timeout` ohne
+`else` keinen sinnvollen Wert hinterlässt, und dass eine vorangestellte Menge
+bei `move` etwas anderes bedeutet als bei `maintain`.
