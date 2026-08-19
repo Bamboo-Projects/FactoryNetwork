@@ -1,24 +1,24 @@
-# Build
-build/
-out/
+# Gradle
 .gradle/
-*.class
-*.jar
+build/
 !gradle/wrapper/gradle-wrapper.jar
 
 # IDE
 .idea/
 *.iml
+*.ipr
+*.iws
 .vscode/
 .settings/
 .classpath
 .project
 
-# Minecraft-Laufzeit
+# NeoForge / ModDevGradle
 run/
 runs/
-logs/
-saves/
+run-data/
+repo/
 
-# Arbeitsverzeichnisse von Werkzeugen
-.superpowers/
+# Betriebssystem
+.DS_Store
+Thumbs.db
