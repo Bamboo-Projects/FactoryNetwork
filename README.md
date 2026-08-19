@@ -33,6 +33,7 @@ Entwurfsphase. Es existiert noch kein Code.
 | Datei | Inhalt |
 |---|---|
 | [docs/konzept.md](docs/konzept.md) | **Das maßgebliche Dokument.** Vision, Architektur, Sprache, Laufzeitmodell, Entwicklungsreihenfolge. |
+| [docs/sprache.md](docs/sprache.md) | **Die Sprachspezifikation.** Grundform, Schreibweise von Gegenständen, Typen, Warten und Grenzen. Maßgeblich für Compiler, Laufzeit und Editor. |
 | [docs/entscheidungen.md](docs/entscheidungen.md) | Getroffene Entscheidungen mit Begründung und Alternativen, die verworfen wurden. Bei Widersprüchen zum Konzept gilt diese Datei, weil sie jünger ist. |
 | [docs/konzept-entwurf-erste-fassung.md](docs/konzept-entwurf-erste-fassung.md) | Die ursprüngliche Fassung vor der externen Prüfung. Historie, nicht mehr maßgeblich. |
 | [docs/pruefungsanfrage.md](docs/pruefungsanfrage.md) | Womit die externe Prüfung beauftragt wurde. Erklärt, welche Fragen offen waren. |
