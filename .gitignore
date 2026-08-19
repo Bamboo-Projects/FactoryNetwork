@@ -1,0 +1,24 @@
+# Build
+build/
+out/
+.gradle/
+*.class
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+
+# Minecraft-Laufzeit
+run/
+runs/
+logs/
+saves/
+
+# Arbeitsverzeichnisse von Werkzeugen
+.superpowers/
