@@ -111,10 +111,15 @@ if  else  for  in  while  fn  let  return  true  false
 worker  group  multiblock  event  on  import
 from  to  filter  maintain  rate  per  when  priority
 strategy  overflow  move  except
-storage  crafting
+storage  crafting  world
 await  where  timeout  sleep
 it
 ```
+
+**Nach einem Punkt gilt die Liste nicht.** `crushers.where(...)` braucht keine
+Rückstriche, obwohl `where` ein Schlüsselwort ist: Was hinter dem Punkt steht,
+benennt ein Feld oder eine Methode, und die vergibt das System, nicht der
+Spieler. Ein Zusammenstoß ist dort ausgeschlossen.
 
 Namen, die der Spieler selbst vergibt, dürfen dagegen alles enthalten, was ein
 Buchstabe ist:
@@ -464,13 +469,13 @@ wollen in aller Regel den Stapel, nicht das Rinnsal.
 worker night_smelting {
     from storage
     to furnaces
-    when world.isNight
+    when world.is_night
 }
 
 worker overflow_dump {
     from storage
-    to trash
-    when storage.fillLevel > 0.9
+    to trash_chest
+    when storage.fill_level > 0.9
 }
 ```
 
@@ -484,10 +489,10 @@ Ist die Bedingung falsch, geht der Worker in `WAITING_CONDITION`. Das ist die
 Schwester von `WAITING_TARGET`, das bei vollem Ziel greift. Im Terminal steht
 damit nicht nur, *dass* ein Worker schläft, sondern *warum*.
 
-### `storage` und `crafting` sind Schlüsselwörter
+### `storage`, `crafting` und `world` sind Schlüsselwörter
 
 Das folgt aus der Entscheidung, keine Namen zu verbieten: Ein Spieler darf
-einen Connector `storage` nennen. Wären die beiden bloß vorbelegte Namen,
+einen Connector `storage` nennen. Wären die drei bloß vorbelegte Namen,
 bräuchte es eine neue Regel für den Konflikt. Als Schlüsselwörter greift die
 vorhandene:
 

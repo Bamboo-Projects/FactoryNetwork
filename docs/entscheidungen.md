@@ -499,3 +499,20 @@ Begründung: Echte Module lohnen erst, wenn ein Projekt einen Namensraum
 sprengt, und das ist bei einer Fabrik nicht abzusehen. Das Wort jetzt zu
 reservieren kostet nichts — es später einzuführen, ohne es reserviert zu
 haben, bräche jedes Projekt, in dem jemand eine Funktion `import` genannt hat.
+
+### Nachträge aus dem Gegenlesen
+
+Beim Durchsehen der fertigen Spezifikation gegen ihre eigenen Regeln fielen
+zwei Widersprüche auf:
+
+- **`world` gehört zu den Schlüsselwörtern.** `when world.is_night` setzt es
+  in dieselbe Stellung wie `storage` und `crafting`, und derselbe Konflikt
+  droht: Ein Spieler darf einen Connector `world` nennen.
+- **Nach einem Punkt gilt die Schlüsselwortliste nicht.** Sonst müsste
+  `crushers.where(...)` in Rückstriche, weil `where` zum Warten gehört. Was
+  hinter dem Punkt steht, vergibt das System, nicht der Spieler — dort ist ein
+  Zusammenstoß ausgeschlossen.
+
+Dazu eine Konvention, die vorher unausgesprochen schwankte: **Eingebaute
+Namen sind snake_case**, wie die Registry-Namen, neben denen sie stehen. Aus
+`fillLevel` wurde `fill_level`, aus `isNight` wurde `is_night`.
