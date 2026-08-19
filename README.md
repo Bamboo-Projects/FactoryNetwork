@@ -26,7 +26,29 @@ Der Name der Mod ist ein Arbeitstitel, der Name der Sprache nicht.
 
 ## Stand
 
-Entwurfsphase. Es existiert noch kein Code.
+**Die Sprache ist spezifiziert und übersetzt; ein erster vertikaler Schnitt
+läuft im Spiel.**
+
+Was steht:
+
+| | |
+|---|---|
+| Sprache | Spezifikation und formale Grammatik vollständig |
+| Übersetzer | Lexer und Parser von Hand, mit Fehlerbehebung — 54 Tests |
+| Netzwerk | Controller, Kabel, Connector, Terminal; Graph über Flood-Fill |
+| Speicher | schlüsselbasiert, nicht slotbasiert |
+| Laufzeit | Worker bewegen Gegenstände zwischen Connector und Speicher |
+| Editor | im Spiel, mit Syntaxfarben, Fehleranzeige und Vervollständigung |
+| Prüfung | 6 GameTests in einer echten Welt, alle grün |
+
+Was noch nicht läuft: der imperative Teil der Sprache — Funktionen,
+Ereignisblöcke und `move` sind spezifiziert und werden geparst, aber noch
+nicht ausgeführt. Ebenso Tags und Muster in Filtern, `maintain`, `when`,
+Gruppen, Multiblocks und Displays.
+
+Und die größte offene Zusage: **Wartender Code überlebt noch keinen
+Serverneustart.** Die Continuations, die das leisten sollen, sind entworfen,
+aber nicht gebaut.
 
 ## Dokumente
 

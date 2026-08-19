@@ -1,0 +1,66 @@
+package dev.devpanda.factorynetwork.runtime;
+
+import net.minecraft.world.item.Item;
+
+import java.util.List;
+
+/**
+ * Ein Wert zur Laufzeit.
+ *
+ * <p>Versiegelt, damit jede Stelle, die Werte behandelt, vollständig sein
+ * muss. Die Typen entsprechen denen aus {@code sprache.md}, Abschnitt 5.
+ */
+public sealed interface Value {
+
+    record Int(long value) implements Value {}
+
+    record Decimal(double value) implements Value {}
+
+    record Bool(boolean value) implements Value {}
+
+    record Text(String value) implements Value {}
+
+    /** Eine Zeitangabe, in Ticks. */
+    record Duration(long ticks) implements Value {}
+
+    /** Eine Gegenstandsart. */
+    record ItemValue(Item item) implements Value {}
+
+    /** Eine Auswahl von Gegenstandsarten, schon aufgelöst. */
+    record Selection(List<Item> items, long amount) implements Value {}
+
+    /** Ein Gerät im Netzwerk, über seinen Namen. */
+    record Device(String name) implements Value {}
+
+    /** Der Netzwerkspeicher oder ein anderes eingebautes Ziel. */
+    record Builtin(String name) implements Value {}
+
+    record ValueList(List<Value> entries) implements Value {}
+
+    /** Steht für „kein Wert" — etwa der Rückgabewert einer Funktion ohne return. */
+    record Nothing() implements Value {
+
+        private static final Nothing INSTANCE = new Nothing();
+
+        public static Nothing get() {
+            return INSTANCE;
+        }
+    }
+
+    /** Für Meldungen: wie der Wert im Terminal erscheint. */
+    default String describe() {
+        return switch (this) {
+            case Int value -> String.valueOf(value.value());
+            case Decimal value -> String.valueOf(value.value());
+            case Bool value -> value.value() ? "wahr" : "falsch";
+            case Text value -> value.value();
+            case Duration value -> value.ticks() + "t";
+            case ItemValue value -> value.item().toString();
+            case Selection value -> value.items().size() + " Arten";
+            case Device value -> value.name();
+            case Builtin value -> value.name();
+            case ValueList value -> value.entries().size() + " Einträge";
+            case Nothing ignored -> "nichts";
+        };
+    }
+}

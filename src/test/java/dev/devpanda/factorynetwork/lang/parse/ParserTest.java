@@ -145,6 +145,18 @@ class ParserTest {
         }
 
         @Test
+        @DisplayName("Eine Zuweisung ist kein Vergleich")
+        void assignmentIsNotAComparison() {
+            // Dieser Fall fiel erst beim Interpreter auf: Die Meldung zum
+            // einzelnen = schlug bei jeder normalen Zuweisung zu.
+            parseClean("""
+                    fn test() {
+                        let summe = 0
+                        summe = summe + 1
+                    }""");
+        }
+
+        @Test
         @DisplayName("Ein einzelnes = beim Vergleich wird erkannt")
         void singleEqualsInComparison() {
             List<Diagnostic> errors = errorsOf("""

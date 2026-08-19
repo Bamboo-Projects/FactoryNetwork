@@ -31,6 +31,12 @@ public final class Parser {
     private final List<Token> tokens;
     private final List<Diagnostic> diagnostics = new ArrayList<>();
     private int index;
+    /**
+     * Steht der Parser gerade in einer Bedingung? Nur dort ist ein einzelnes
+     * Gleichheitszeichen ein Tippfehler — auf Anweisungsebene ist es eine
+     * Zuweisung, und die ist der häufigere Fall.
+     */
+    private int conditionDepth;
 
     private Parser(List<Token> tokens) {
         this.tokens = tokens;
@@ -512,7 +518,7 @@ public final class Parser {
             }
             case WHILE -> {
                 advance();
-                Expr condition = parseExpression();
+                Expr condition = parseCondition();
                 Block body = parseBlock();
                 return new Stmt.While(condition, body, start.span().to(body.span()));
             }
@@ -560,7 +566,7 @@ public final class Parser {
 
     private Stmt parseIf() {
         Token keyword = advance();
-        Expr condition = parseExpression();
+        Expr condition = parseCondition();
         Block thenBody = parseBlock();
         Object elseBody = null;
         if (at(TokenType.ELSE)) {
@@ -603,6 +609,16 @@ public final class Parser {
     }
 
     // ---- Ausdrücke --------------------------------------------------------
+
+    /** Ein Ausdruck in Bedingungsstellung — dort ist ein einzelnes = ein Fehler. */
+    private Expr parseCondition() {
+        conditionDepth++;
+        try {
+            return parseExpression();
+        } finally {
+            conditionDepth--;
+        }
+    }
 
     private Expr parseExpression() {
         if (at(TokenType.AWAIT)) {
@@ -671,7 +687,12 @@ public final class Parser {
             case GT -> Expr.Binary.Op.GT;
             case GT_EQ -> Expr.Binary.Op.GTE;
             case EQ -> {
-                // Häufiger Griff daneben: ein Gleichheitszeichen statt zwei.
+                if (conditionDepth == 0) {
+                    // Auf Anweisungsebene ist das eine Zuweisung; der Aufrufer
+                    // liest sie. Hier darf nichts gemeldet werden.
+                    yield null;
+                }
+                // In einer Bedingung dagegen ist es der häufige Griff daneben.
                 error(peek().span(), "Zum Vergleichen braucht es zwei Gleichheitszeichen.",
                         "Ein einzelnes weist zu. Gemeint ist vermutlich ==.");
                 yield Expr.Binary.Op.EQ;
