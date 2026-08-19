@@ -493,14 +493,16 @@ Geeignet für:
 - Maschinenversorgung,
 - kontinuierliche Transfers.
 
-Weitere Optionen:
+Weitere Angaben — maßgeblich ist `sprache.md`, Abschnitt 7:
 
 ```text
-filter
-priority
-strategy
-overflow behavior
-maintain amount
+filter      was bewegt wird
+maintain    Zielbestand je Zielgerät und Gegenstandsart
+rate        Durchsatzgrenze
+when        Bedingung, unter der er überhaupt läuft
+priority    Vorrang bei konkurrierenden Workern
+strategy    Verteilung auf mehrere Ziele
+overflow    Ausweichziel statt Pause
 ```
 
 Beispiel:
@@ -510,9 +512,21 @@ worker fuel_supply {
     from storage
     to generators
 
-    filter "#minecraft:coals"
+    filter tag:c/coals
     maintain 64
     strategy round_robin
+}
+```
+
+Vorratshaltung braucht keine eigene Form, weil `crafting` eine Quelle wie jede
+andere ist:
+
+```text
+worker keep_ingots {
+    from crafting
+    to storage
+    filter item:iron_ingot
+    maintain 256
 }
 ```
 
@@ -1338,6 +1352,15 @@ Er wird erst wieder relevant aktiviert, wenn:
 - Kapazität frei wird,
 - Zielstatus sich ändert,
 - ein Retry-Timer ausgelöst wird.
+
+Dasselbe Prinzip gilt für Bedingungen: Ein Worker mit `when` geht in
+`WAITING_CONDITION`, solange sie nicht zutrifft. Deshalb dürfen Bedingungen
+nur beobachtbare Zustände lesen — sonst müsste die Runtime sie in jedem Tick
+neu auswerten und hätte genau die Polling-Schleife zurück, die ein Worker
+vermeiden soll.
+
+Im Terminal ist damit nicht nur sichtbar, dass ein Worker schläft, sondern
+auch, worauf er wartet.
 
 ---
 

@@ -425,3 +425,77 @@ Connector" sagt so viel wie „Fehler: Zeile 4".
 Bekannter Vorbehalt: Im Java-Ökosystem gibt es ein Compiler-Plugin namens
 Manifold. Für Spieler ist das unsichtbar, es macht nur die Websuche etwas
 unschärfer.
+
+---
+
+## Die letzten drei Sprachpunkte (2026-08-19)
+
+Damit ist die Spezifikation für die erste Fassung vollständig. Offen sind nur
+noch die übrigen Deklarationsformen — `group`, `multiblock`, `event` — und die
+sind nicht unentschieden, sondern noch nicht aufgeschrieben.
+
+### Worker: `from` nennt eine Quelle, keine Betriebsart
+
+`from` nimmt ein Gerät, eine Gruppe, `storage` oder `crafting`. Damit braucht
+Vorratshaltung keine zweite Deklarationsform — sie ist derselbe Worker mit
+`from crafting`.
+
+Verworfen: getrennte Formen wie `worker transfer` und `worker maintain`. Sie
+hätten dieselbe Sache zweimal beschrieben und jede spätere Angabe doppelt
+gebraucht.
+
+Pflicht sind `from` und `to`, alles andere hat eine Vorgabe.
+
+Drei Festlegungen zu `maintain`, ohne die es mehrdeutig bleibt: Es gilt **pro
+Zielgerät** (`to generators` mit `maintain 64` hält 64 in jedem Generator),
+**pro Gegenstandsart** (`filter tag:c/coals` hält 64 von jeder Kohleart) und
+**nur auffüllend** — ein Überschuss wird nicht zurückgeholt. Die zweite Regel
+ist der Grund, warum die Musteranzeige im Editor keine Bequemlichkeit ist:
+Ohne sie sagt niemand zu, was er zusagt.
+
+`rate 32 per 8t` meint einen Stapel je Intervall, nicht vier Stück pro Tick.
+Maschinen wollen den Stapel.
+
+### `when` darf nur beobachtbare Zustände lesen
+
+Redstone, Bestände, Gerätestatus, Tageszeit. Eine beliebige Rechnung wäre
+auswertbar, aber nicht beobachtbar — die Runtime müsste sie in jedem Tick
+wiederholen und hätte damit die Polling-Schleife zurück, gegen die Worker
+überhaupt erfunden wurden. Das ist dieselbe Einsicht wie bei den Watchern im
+Vorprojekt.
+
+Ist die Bedingung falsch, geht der Worker in `WAITING_CONDITION`, die
+Schwester des bereits festgelegten `WAITING_TARGET`. So steht im Terminal
+nicht nur, dass ein Worker schläft, sondern warum.
+
+### `storage` und `crafting` werden Schlüsselwörter
+
+Folgt zwingend aus der Entscheidung, keine Namen zu verbieten: Ein Spieler
+darf einen Connector `storage` nennen. Wären die eingebauten Geräte nur
+vorbelegte Namen, bräuchte dieser Konflikt eine eigene Regel. Als
+Schlüsselwörter greift die vorhandene Rückstrich-Regel ohne neuen Mechanismus.
+
+### Listen: implizites `it` statt Pfeilschreibweise
+
+```
+crushers.members().where(it.busy).count()
+```
+
+Die Pfeilform (`m => m.busy`) ist für Spieler ohne Programmiererfahrung die
+größte Hürde an Collections. Sie bleibt für den verschachtelten Fall, weil
+sich zwei ineinanderliegende `where` kein `it` teilen können — dort wird doch
+benannt.
+
+Vorgesehen sind `where`, `sort`, `first`, `count`, `sum`. Verworfen: `map` und
+`groupBy` — in einer Fabrik gibt es dafür bisher keinen Fall, und hinzufügen
+lässt sich später leicht, wegnehmen nicht.
+
+### Dateien: ein Namensraum, `import` reserviert
+
+Alle `.mf`-Dateien eines Projekts teilen einen Namensraum; Dateien sind reine
+Ordnung für den Menschen. `import` ist reserviert und tut noch nichts.
+
+Begründung: Echte Module lohnen erst, wenn ein Projekt einen Namensraum
+sprengt, und das ist bei einer Fabrik nicht abzusehen. Das Wort jetzt zu
+reservieren kostet nichts — es später einzuführen, ohne es reserviert zu
+haben, bräche jedes Projekt, in dem jemand eine Funktion `import` genannt hat.

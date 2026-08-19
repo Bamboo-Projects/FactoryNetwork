@@ -7,6 +7,7 @@ Programme stehen in Dateien mit der Endung `.mf`.
 
 Stand: 2026-08-19
 
+---
 
 ## 1. Wofür Manifold gemacht ist
 
@@ -99,10 +100,21 @@ Kommentare mit `//` bis zum Zeilenende.
 
 ### Namen und Schlüsselwörter
 
-Schlüsselwörter sind englisch: `if`, `else`, `for`, `fn`, `let`, `return`,
-`worker`, `on`, `await`. Sie stehen unmittelbar neben Registry-Namen, und die
-sind es ebenfalls — `wenn crusher_1.online` mischt zwei Sprachen in einer
-Zeile, und der Rest der Zeile lässt sich nicht mit übersetzen.
+Schlüsselwörter sind englisch. Sie stehen unmittelbar neben Registry-Namen,
+und die sind es ebenfalls — `wenn crusher_1.online` mischt zwei Sprachen in
+einer Zeile, und der Rest der Zeile lässt sich nicht mit übersetzen.
+
+Die vollständige Liste, weil sie festlegt, was in Rückstriche muss:
+
+```
+if  else  for  in  while  fn  let  return  true  false
+worker  group  multiblock  event  on  import
+from  to  filter  maintain  rate  per  when  priority
+strategy  overflow  move  except
+storage  crafting
+await  where  timeout  sleep
+it
+```
 
 Namen, die der Spieler selbst vergibt, dürfen dagegen alles enthalten, was ein
 Buchstabe ist:
@@ -278,7 +290,7 @@ List<T>  Set<T>
 ```
 
 Die Namen sind englisch, aus demselben Grund wie die Schlüsselwörter.
-`Duration` ist der Typ der Zeitangaben aus Abschnitt 7 und bewusst von `Int`
+`Duration` ist der Typ der Zeitangaben aus Abschnitt 9 und bewusst von `Int`
 getrennt.
 
 ---
@@ -327,7 +339,159 @@ Die Vervollständigung im Editor setzt sie von selbst, sobald sie nötig sind.
 
 ---
 
-## 7. Warten und Nebenläufigkeit
+## 7. Worker
+
+Ein Worker ist eine Zusage, keine Schleife: Solange die Deklaration im
+übernommenen Code steht, hält das System sie ein. Es darf dabei selbst
+entscheiden, wann es tätig wird — schlafen, bis sich etwas ändert, oder
+mehrere Transfers zusammenfassen.
+
+```
+worker fuel_supply {
+    from storage
+    to generators
+    filter tag:c/coals
+    maintain 64
+}
+```
+
+### Die Angaben
+
+```
+from <gerät | gruppe | storage | crafting>    Pflicht
+to <gerät | gruppe | storage>                 Pflicht
+filter <auswahl>                              sonst: alles
+maintain <menge>                              sonst: schieben, was geht
+rate <menge> per <zeit>                        sonst: so schnell es geht
+when <bedingung>                              sonst: immer
+priority <zahl>                               sonst: 0
+strategy <verteilung>                         sonst: round_robin
+overflow to <gerät>                           sonst: pausieren
+```
+
+`from` und `to` sind Pflicht, alles andere hat eine Vorgabe. Ein Worker ohne
+Namen gibt es nicht — der Name ist sein Bezug im Terminal und im Code
+(`fuel_supply.pause()`).
+
+### Nachschub ist derselbe Worker
+
+`crafting` ist eine Quelle wie jede andere. Damit braucht Vorratshaltung keine
+eigene Form:
+
+```
+worker keep_ingots {
+    from crafting
+    to storage
+    filter item:iron_ingot
+    maintain 256
+}
+```
+
+Das ist der Grund, warum `from` eine Quelle nennt und nicht eine Betriebsart.
+Zwei Deklarationsformen für „hol es aus dem Lager" und „lass es herstellen"
+hätten dieselbe Bedeutung zweimal beschrieben.
+
+### Was `maintain` genau heißt
+
+Drei Festlegungen, ohne die es mehrdeutig ist:
+
+- **Pro Zielgerät, nicht pro Gruppe.** `to generators` mit `maintain 64` hält
+  64 in *jedem* Generator. Bei `to storage` fallen beide Lesarten zusammen,
+  weil es ein Ziel ist.
+- **Pro Gegenstandsart, nicht insgesamt.** `filter tag:c/coals` mit
+  `maintain 64` hält 64 von jeder Kohleart. Der Editor zeigt an, worauf sich
+  das Muster auflöst — ohne diese Anzeige wäre nicht abzusehen, was man
+  gerade zugesagt hat.
+- **Nur auffüllen, nie abziehen.** Liegen 300 statt 256 im Lager, holt der
+  Worker die 44 nicht zurück. Wer das will, schreibt einen zweiten Worker in
+  die Gegenrichtung.
+
+### Durchsatz
+
+```
+rate 32 per 8t
+```
+
+Das sind 32 Gegenstände alle 8 Ticks **am Stück**, nicht 4 pro Tick. Maschinen
+wollen in aller Regel den Stapel, nicht das Rinnsal.
+
+### Bedingungen müssen beobachtbar sein
+
+```
+worker night_smelting {
+    from storage
+    to furnaces
+    when world.isNight
+}
+
+worker overflow_dump {
+    from storage
+    to trash
+    when storage.fillLevel > 0.9
+}
+```
+
+`when` darf nur auf Zustände zugreifen, deren Änderung das System bemerken
+kann: Redstone, Bestände, Gerätestatus, Tageszeit. Eine beliebige Rechnung
+wäre zwar auswertbar, aber nicht beobachtbar — das System müsste sie in jedem
+Tick wiederholen und hätte damit genau die Polling-Schleife, die ein Worker
+vermeiden soll.
+
+Ist die Bedingung falsch, geht der Worker in `WAITING_CONDITION`. Das ist die
+Schwester von `WAITING_TARGET`, das bei vollem Ziel greift. Im Terminal steht
+damit nicht nur, *dass* ein Worker schläft, sondern *warum*.
+
+### `storage` und `crafting` sind Schlüsselwörter
+
+Das folgt aus der Entscheidung, keine Namen zu verbieten: Ein Spieler darf
+einen Connector `storage` nennen. Wären die beiden bloß vorbelegte Namen,
+bräuchte es eine neue Regel für den Konflikt. Als Schlüsselwörter greift die
+vorhandene:
+
+```
+`storage`.insert(64 item:iron_ingot)   // der Connector des Spielers
+storage.insert(64 item:iron_ingot)     // das Netzwerklager
+```
+
+---
+
+## 8. Listen und Mengen
+
+```
+crushers.members().where(it.busy).count()
+storage.items().sort(it.amount).first()
+```
+
+`it` ist das jeweilige Element. Das spart die Pfeilschreibweise
+(`m => m.busy`), die für Spieler ohne Programmiererfahrung die größte Hürde
+wäre.
+
+Vorgesehen sind:
+
+```
+where    aussortieren
+sort     ordnen
+first    das erste Element
+count    zählen
+sum      aufaddieren
+```
+
+Mehr nicht — kein `map`, kein `groupBy`. In einer Fabrik gibt es dafür bisher
+keinen Fall, und hinzufügen lässt sich später leicht, wegnehmen nicht.
+
+**Verschachtelt braucht `it` einen Namen.** Zwei ineinandergeschachtelte
+`where` können sich nicht dasselbe `it` teilen:
+
+```
+crushers.members().where(m => storage.count(m.input) > 0)
+```
+
+Innen wird also doch benannt. Das ist der Grund, warum die Pfeilschreibweise
+nicht ganz verschwindet — sie ist nur nicht mehr der Normalfall.
+
+---
+
+## 9. Warten und Nebenläufigkeit
 
 Code kann auf Ereignisse warten:
 
@@ -389,7 +553,7 @@ erraten, und ein Faktor 20 fällt im Betrieb erst spät auf.
 
 ---
 
-## 8. Wenn etwas schiefgeht
+## 10. Wenn etwas schiefgeht
 
 **Erwartbare Zustände sind keine Fehler. Unerwartete halten den Ablauf an.**
 
@@ -455,7 +619,7 @@ Ablauf angehalten, bis jemand mit Zugriff auf das Terminal entscheidet.
 
 ---
 
-## 9. Grenzen
+## 11. Grenzen
 
 Jeder Ablauf hat ein Budget an Rechenschritten je Tick. Ist es aufgebraucht,
 wird an einem unterbrechbaren Haltepunkt angehalten und im nächsten Tick
@@ -477,10 +641,35 @@ Terminal als Fehler — nicht stillschweigend.
 
 ---
 
-## 10. Offen
+## 12. Dateien
 
-1. **Genaue Form der Worker-Deklaration** — welche Angaben es gibt, welche
-   Pflicht sind.
-2. **Collections** — welche Operationen (`filter`, `map`, `sort`, `first`,
-   `count`, `sum`, `groupBy`) und wie sie geschrieben werden.
-3. **Module und Importe** — wie ein Projekt auf mehrere Dateien verteilt wird.
+Ein Projekt besteht aus `.mf`-Dateien im Projektbaum. **In der ersten Fassung
+bilden alle zusammen einen Namensraum**: Was in einer Datei steht, ist in
+allen sichtbar, und Dateien sind reine Ordnung für den Menschen.
+
+`import` ist als Schlüsselwort reserviert, tut aber noch nichts.
+
+Begründung: Echte Module lohnen sich erst, wenn ein Projekt einen Namensraum
+sprengt, und das ist bei einer Fabrik nicht abzusehen. Das Wort jetzt zu
+reservieren kostet nichts; es später einzuführen, ohne es reserviert zu haben,
+bräche jedes Projekt, in dem jemand eine Funktion `import` genannt hat.
+
+---
+
+## 13. Was noch fehlt
+
+Die acht Punkte, mit denen diese Datei begann, sind geklärt. Was hier fehlt,
+ist nicht offen im Sinne von unentschieden, sondern schlicht noch nicht
+beschrieben:
+
+1. **`group`** — in Abschnitt 2 gezeigt (`members`, `strategy`), aber nie
+   festgelegt. Verhält sich nach außen wie ein Gerät.
+2. **`multiblock`** — im Konzept vorhanden, in der Sprache noch nicht.
+3. **`event` und `on`** — beide werden benutzt, aber welche Ereignisse es
+   gibt und wie eigene deklariert werden, steht nirgends.
+4. **Displays** — im Konzept ein eigenes Kapitel, sprachlich unberührt.
+
+Diese vier gehören zusammen: Es sind die restlichen Deklarationsformen. Sie
+folgen demselben Muster wie `worker` — benannt, mit Angaben in geschweiften
+Klammern — und sollten in einem Zug beschrieben werden, damit sie sich nicht
+auseinanderentwickeln.
