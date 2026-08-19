@@ -315,3 +315,91 @@ sieht Chemikalien erst in Phase 8 vor, aber die Schreibweise gehört zu den
 Arten, die der Doppelpunkt trennt — sie nachträglich zwischen `item:` und
 `fluid:` zu schieben, hieße alle Beispiele und die Grammatik anzufassen.
 Festgelegt wird deshalb jetzt nur die Notation, nicht die Anbindung.
+
+---
+
+## Vier Festlegungen zur Sprache (2026-08-19)
+
+Von den acht offenen Punkten der Sprachspezifikation sind vier geklärt. Es
+sind die, an denen Grammatik und Laufzeit hängen; die übrigen vier betreffen
+Komfort und können später kommen.
+
+### Schlüsselwörter sind englisch, Spielernamen dürfen es nicht sein
+
+`if`, `else`, `for`, `fn`, `worker`, `on`, `await`. Was der Spieler selbst
+benennt — Connectoren, Variablen, Funktionen — darf jeden Buchstaben
+enthalten, auch `ofen_süd`.
+
+Begründung: Schlüsselwörter stehen unmittelbar neben Registry-Namen, und die
+sind englisch. `wenn crusher_1.online` mischt zwei Sprachen in einer Zeile,
+und die andere Hälfte der Zeile lässt sich nicht mitübersetzen. Dazu kommt,
+dass AllTheMods-Packs international gespielt werden. Übersetzt werden
+stattdessen die Fehlermeldungen und die Oberfläche des Editors — dort hilft
+es, in der Sprache selbst schadet es.
+
+Dazu gehört eine Regel, die leicht zu übersehen ist: **Namen werden nach
+Unicode-Normalform NFC verglichen.** Die Texteingabe im Spiel liefert `ü` je
+nach Herkunft als ein Zeichen oder als `u` mit angehängten Punkten. Ohne
+Normalisierung gäbe es zwei Connectoren, die auf dem Bildschirm gleich
+aussehen und es nicht sind.
+
+Verworfen: deutsche Schlüsselwörter. Verworfen auch, Bezeichner auf ASCII zu
+beschränken — der Name gehört dem Spieler.
+
+### Namenskonflikte werden nicht verboten, sondern in Rückstriche gesetzt
+
+Eine Maschine darf `for` heißen. Im Code steht dann `` `for`.insert(...) ``.
+
+Begründung: Eine Liste verbotener Namen wächst mit der Sprache. Führt eine
+spätere Fassung `match` ein, ginge jedes Netz kaputt, in dem eine Maschine so
+heißt — auf einem Server, der seit Monaten läuft. Namen sind Spielstand,
+Schlüsselwörter sind es nicht.
+
+Der Kern der Lösung sind aber nicht die Rückstriche, sondern die Meldung: Wer
+`for.insert(...)` schreibt, bekommt keinen Syntaxfehler, sondern den Hinweis,
+was gemeint sein könnte und wie man es schreibt.
+
+Verworfen: die Label-Gun Schlüsselwörter ablehnen zu lassen. Verworfen auch,
+den Parser aus dem Kontext raten zu lassen (`for` gefolgt von einem Punkt ist
+ein Gerät) — das funktioniert, bis die nächste Syntax dazukommt.
+
+### Fehler halten den Ablauf an, statt ihn zu beenden
+
+**Die Linie liegt zwischen erwartbar und unerwartet, nicht zwischen
+schlimm und harmlos.** Volles Ziel, leere Quelle, beschäftigte Maschine: kein
+Fehler, sondern Rückgabewert. Abgebauter Connector, gekapptes Kabel, falscher
+Typ, überschrittene Grenze: Der Ablauf hält an und erscheint im Terminal mit
+der Wahl abbrechen oder weiterlaufen.
+
+Das ist bewusst dieselbe Mechanik wie nach einem Serverneustart, die weiter
+oben festgelegt wurde. Ein zweites Fehlermodell danebenzustellen hieße, zwei
+Dinge zu lernen, die dasselbe tun.
+
+Drei Punkte, die dazugehören und sonst später schmerzen:
+
+- **Ein entladener Chunk ist kein Bruch.** Der Worker pausiert und läuft
+  weiter, ohne Meldung. Nur endgültiger Verlust ist ein Fehler.
+- **Kein Fehlersturm.** Steht ein Ereignis-Handler wegen eines Fehlers, wird
+  keine weitere Instanz gestartet. `redstone_changed` könnte sonst jeden Tick
+  einen neuen angehaltenen Ablauf erzeugen und das Terminal unbenutzbar
+  machen.
+- **Innerhalb eines Ticks ist der Gerätezustand stabil.** Sonst wäre
+  `if crusher_1.online { crusher_1.insert(...) }` eine Falle, weil zwischen
+  Abfrage und Zugriff ein unterbrechbarer Haltepunkt liegt. Über eine
+  Tickgrenze hinweg gilt die Zusage nicht — dann greift der Fehlerfall, und
+  genau deshalb muss er anhalten statt abzustürzen.
+
+Verworfen: stille Fehlschläge. In einer Fabrik ist eine Kette, die ohne
+Meldung steht, kaum zu finden. Verworfen auch `try`/`catch` — für Spieler zu
+viel Apparat für einen Fall, den das Terminal besser löst.
+
+### Zeit ist ein eigener Typ
+
+`5s`, `30s`, `100t`, `90min`. Einheiten sind `t`, `s`, `min`, `h`; gerechnet
+wird intern in Ticks. Bruchteile nur, wenn sie aufgehen — `0.1s` ist ein
+Fehler statt einer stillen Rundung. Zusammensetzungen wie `1h30min` gibt es
+nicht.
+
+Begründung: `sleep(30)` ohne Einheit ist mehrdeutig, und der Unterschied
+zwischen 30 Ticks und 30 Sekunden ist Faktor 20 — das fällt im Betrieb erst
+auf, wenn die Fabrik längst falsch läuft.

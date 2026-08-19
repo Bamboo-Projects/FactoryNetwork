@@ -96,6 +96,30 @@ fn verdopple(n) {
 
 Kommentare mit `//` bis zum Zeilenende.
 
+### Namen und Schlüsselwörter
+
+Schlüsselwörter sind englisch: `if`, `else`, `for`, `fn`, `let`, `return`,
+`worker`, `on`, `await`. Sie stehen unmittelbar neben Registry-Namen, und die
+sind es ebenfalls — `wenn crusher_1.online` mischt zwei Sprachen in einer
+Zeile, und der Rest der Zeile lässt sich nicht mit übersetzen.
+
+Namen, die der Spieler selbst vergibt, dürfen dagegen alles enthalten, was ein
+Buchstabe ist:
+
+```
+let ofen_süd = furnaces.first()
+worker erzförderung { ... }
+```
+
+Zwei Namen gelten als gleich, wenn sie nach Unicode-Normalform NFC gleich
+sind. Das ist keine Spitzfindigkeit: Die Texteingabe im Spiel liefert `ü` je
+nach Herkunft als ein Zeichen oder als `u` mit angehängten Punkten. Ohne
+Normalisierung wären das zwei verschiedene Connectoren, die gleich aussehen —
+ein Fehler, den niemand am Bildschirm finden kann.
+
+Meldungen des Übersetzers und die Oberfläche des Editors folgen der
+Spracheinstellung des Spielers. Die Sprache selbst folgt ihr nicht.
+
 ---
 
 ## 4. Gegenstände, Flüssigkeiten, Tags
@@ -246,12 +270,15 @@ Vervollständigung ohne Typwissen wertlos.
 ```
 Int      Float    Bool     Text
 Item     Fluid    Chemical Tag
+Duration
 Device   Group    Multiblock
 Job      Worker   Event
-Liste<T> Menge<T>
+List<T>  Set<T>
 ```
 
-*(Offen: Namen der Typen — deutsch oder englisch. Siehe Abschnitt 9.)*
+Die Namen sind englisch, aus demselben Grund wie die Schlüsselwörter.
+`Duration` ist der Typ der Zeitangaben aus Abschnitt 7 und bewusst von `Int`
+getrennt.
 
 ---
 
@@ -273,8 +300,29 @@ crushers.send(64 item:iron_ore)
 crushers.send(64 item:iron_ore, strategy: least_filled)
 ```
 
-*(Offen: Was geschieht, wenn ein Connector so heißt wie ein Schlüsselwort oder
-eine Variable. Siehe Abschnitt 9.)*
+### Wenn ein Gerät heißt wie ein Schlüsselwort
+
+Ein Spieler darf seine Maschine `for` nennen. Die Label-Gun nimmt jeden Namen
+an; es gibt keine Liste verbotener Wörter.
+
+Im Code wird ein solcher Name in Rückstriche gesetzt:
+
+```
+`for`.insert(64 item:iron_ore)
+```
+
+**Warum nicht einfach verbieten:** Eine Liste verbotener Namen wächst mit der
+Sprache. Führt eine spätere Fassung `match` ein, ginge jedes Netz kaputt, in
+dem eine Maschine so heißt — auf einem Server, der seit Monaten läuft. Namen
+sind Spielstand, Schlüsselwörter sind es nicht.
+
+Der eigentliche Teil dieser Lösung ist die Fehlermeldung. Wer `for.insert(...)`
+schreibt, bekommt nicht „Syntaxfehler an Position 4", sondern:
+
+> `for` ist ein Schlüsselwort. Meinst du den Connector gleichen Namens? Dann
+> schreibe ihn in Rückstriche.
+
+Die Vervollständigung im Editor setzt sie von selbst, sobald sie nötig sind.
 
 ---
 
@@ -317,9 +365,96 @@ while true {
 Mit ihr läuft sie nur ewig langsam vor sich hin und lässt sich jederzeit
 beenden.
 
+### Zeitangaben
+
+Zeit wird mit Einheit geschrieben:
+
+```
+sleep 5s
+await BatchFinished where id == jobId timeout 30s
+```
+
+Einheiten sind `t` für Ticks, `s`, `min` und `h`. Gerechnet wird intern immer
+in Ticks; `1s` sind 20 davon. Bruchteile sind erlaubt, solange sie aufgehen —
+`0.5s` sind 10 Ticks, `0.1s` meldet der Übersetzer als nicht darstellbar,
+statt still zu runden.
+
+Zusammensetzungen wie `1h30min` gibt es nicht. Wer sie braucht, schreibt
+`90min`.
+
+**Zeit ist ein eigener Typ, keine Zahl.** `sleep(30)` ist deshalb ein Fehler
+und kein Rätsel: Ob 30 Ticks oder 30 Sekunden gemeint sind, ist nicht zu
+erraten, und ein Faktor 20 fällt im Betrieb erst spät auf.
+
 ---
 
-## 8. Grenzen
+## 8. Wenn etwas schiefgeht
+
+**Erwartbare Zustände sind keine Fehler. Unerwartete halten den Ablauf an.**
+
+Erwartbar ist, was im Betrieb dauernd vorkommt: Das Ziel ist voll, die Quelle
+leer, die Maschine gerade beschäftigt. Darauf antwortet die Sprache mit
+Rückgabewerten und Abfragen, nicht mit Fehlern — ein Worker, der bei vollem
+Ziel eine Meldung schriebe, hätte das Terminal in Minuten zugeschüttet.
+
+```
+let bewegt = move item:iron_ore from chest to crusher_1   // 0 ist normal
+if crusher_1.busy { ... }
+```
+
+Unerwartet ist, was auf einen Bruch hindeutet: Der Connector ist abgebaut, das
+Kabel gekappt, der Typ passt nicht, eine Grenze ist überschritten. Dann hält
+der Ablauf an — er stirbt nicht — und erscheint im Terminal mit derselben
+Wahl, die es nach einem Serverneustart gibt: **abbrechen oder weiterlaufen
+lassen.** Wer den Connector wieder setzt und „weiter" wählt, macht an
+derselben Stelle weiter.
+
+Dass es dieselbe Mechanik ist, ist Absicht. Ein zweites Fehlermodell daneben
+zu stellen hieße, zwei Dinge zu lernen, die dasselbe tun.
+
+### Ein entladener Chunk ist kein Bruch
+
+Ein Connector in einem nicht geladenen Chunk ist nicht weg, sondern
+vorübergehend nicht erreichbar. Ein Worker pausiert dann und läuft weiter,
+sobald der Chunk zurück ist; das ist Normalbetrieb und keine Meldung wert.
+Nur der endgültige Verlust — abgebaut, nicht mehr im Netz — ist ein Fehler.
+
+### Kein Fehlersturm
+
+Ein Ereignis wie `redstone_changed` kann in jedem Tick auslösen. Steht ein
+Ablauf dieses Handlers wegen eines Fehlers, wird **keine weitere Instanz
+gestartet.** Neue Auslöser reihen sich in die Warteschlange ein, solange deren
+Grenze es zulässt, und fallen danach weg. Im Terminal steht ein Eintrag, nicht
+vierzig gleiche.
+
+### Was zwischen zwei Anweisungen geschehen kann
+
+Das folgt aus den unterbrechbaren Haltepunkten und gehört hierher, weil es in
+jedem Programm steckt:
+
+```
+if crusher_1.online {
+    crusher_1.insert(64 item:iron_ore)
+}
+```
+
+**Innerhalb eines Ticks sieht ein Ablauf keine Änderung am Zustand der
+Geräte.** Was er abfragt, gilt bis zum Ende des Ticks. Wird er dagegen an
+einem unterbrechbaren Haltepunkt angehalten und erst im nächsten Tick
+fortgesetzt, kann inzwischen alles anders sein — dann schlägt `insert` fehl
+und der Ablauf hält an, wie oben beschrieben.
+
+Die Abfrage ist damit nützlich, aber keine Zusage. Sperren braucht trotzdem
+niemand: Der Fall, gegen den man sich sperren würde, ist ohnehin abgedeckt.
+
+### Mehrspieler
+
+Gefragt wird, wem das Programm gehört. Ist derjenige nicht da, bleibt der
+Ablauf angehalten, bis jemand mit Zugriff auf das Terminal entscheidet.
+
+---
+
+## 9. Grenzen
 
 Jeder Ablauf hat ein Budget an Rechenschritten je Tick. Ist es aufgebraucht,
 wird an einem unterbrechbaren Haltepunkt angehalten und im nächsten Tick
@@ -341,19 +476,11 @@ Terminal als Fehler — nicht stillschweigend.
 
 ---
 
-## 9. Offen
+## 10. Offen
 
 1. **Name der Sprache.**
-2. **Sprache der Schlüsselwörter und Typnamen** — englisch wie bisher in allen
-   Beispielen, oder deutsch. Betrifft auch, ob Umlaute in Bezeichnern erlaubt
-   sind.
-3. **Namenskonflikte zwischen Connectoren und Schlüsselwörtern.** Ein Spieler
-   darf seine Maschine `for` nennen. Was dann?
-4. **Genaue Form der Worker-Deklaration** — welche Angaben es gibt, welche
+2. **Genaue Form der Worker-Deklaration** — welche Angaben es gibt, welche
    Pflicht sind.
-5. **Collections** — welche Operationen (`filter`, `map`, `sort`, `first`,
+3. **Collections** — welche Operationen (`filter`, `map`, `sort`, `first`,
    `count`, `sum`, `groupBy`) und wie sie geschrieben werden.
-6. **Fehlerverhalten zur Laufzeit** — was geschieht, wenn ein Connector
-   offline geht, während Code ihn benutzt.
-7. **Module und Importe** — wie ein Projekt auf mehrere Dateien verteilt wird.
-8. **Genaue Schreibweise von Zeitangaben** (`30s`, `5min`, Ticks).
+4. **Module und Importe** — wie ein Projekt auf mehrere Dateien verteilt wird.
