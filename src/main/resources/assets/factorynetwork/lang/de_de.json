@@ -1,0 +1,25 @@
+{
+  "itemGroup.factorynetwork": "Factory Network",
+
+  "block.factorynetwork.controller": "Controller",
+  "block.factorynetwork.cable": "Kabel",
+  "block.factorynetwork.connector": "Connector",
+  "block.factorynetwork.terminal": "Terminal",
+  "item.factorynetwork.label_gun": "Label-Gun",
+
+  "message.factorynetwork.connector.unnamed": "Dieser Connector hat noch keinen Namen.",
+  "message.factorynetwork.connector.named": "Connector: %s",
+  "message.factorynetwork.label_gun.unnamed": "Benenne die Label-Gun im Amboss — der Name landet auf dem Connector.",
+  "message.factorynetwork.label_gun.applied": "Connector heißt jetzt %s",
+  "message.factorynetwork.controller.status": "%s Connectoren, %s Kabel im Netz",
+  "message.factorynetwork.deploy.accepted": "Übernommen: %s Worker laufen",
+  "message.factorynetwork.deploy.rejected": "Nicht übernommen — %s Meldungen. Das alte Programm läuft weiter.",
+  "message.factorynetwork.deploy.no_controller": "An diesem Terminal hängt kein Controller.",
+
+  "screen.factorynetwork.terminal.network": "Im Netz",
+  "screen.factorynetwork.terminal.workers": "Worker",
+  "screen.factorynetwork.terminal.code": "main.mf",
+  "screen.factorynetwork.terminal.no_connectors": "keine benannten",
+  "screen.factorynetwork.terminal.ok": "bereit",
+  "screen.factorynetwork.terminal.deploy_hint": "Strg+Eingabe übernimmt"
+}

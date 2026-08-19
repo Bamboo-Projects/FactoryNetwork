@@ -1,0 +1,8 @@
+{
+  "values": [
+    "factorynetwork:controller",
+    "factorynetwork:cable",
+    "factorynetwork:connector",
+    "factorynetwork:terminal"
+  ]
+}

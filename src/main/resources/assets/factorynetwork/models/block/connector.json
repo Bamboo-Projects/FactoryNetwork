@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/orientable",
+  "textures": {
+    "top": "factorynetwork:block/machine_top",
+    "front": "factorynetwork:block/connector_front",
+    "side": "factorynetwork:block/connector_side"
+  }
+}

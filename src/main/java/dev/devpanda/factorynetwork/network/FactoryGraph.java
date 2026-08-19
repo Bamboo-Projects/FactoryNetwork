@@ -147,7 +147,7 @@ public final class FactoryGraph {
             for (int j = 1; j <= b.length(); j++) {
                 int cost = a.charAt(i - 1) == b.charAt(j - 1) ? 0 : 1;
                 current[j] = Math.min(Math.min(current[j - 1] + 1, previous[j] + 1),
-                        previous[j] + cost);
+                        previous[j - 1] + cost);
             }
             int[] swap = previous;
             previous = current;

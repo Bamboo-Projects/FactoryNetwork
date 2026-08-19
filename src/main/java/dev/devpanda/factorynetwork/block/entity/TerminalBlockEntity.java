@@ -13,6 +13,12 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
+import dev.devpanda.factorynetwork.network.packet.NetworkStatePacket;
+import net.minecraft.server.level.ServerPlayer;
+import net.neoforged.neoforge.network.PacketDistributor;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -41,6 +47,24 @@ public class TerminalBlockEntity extends BlockEntity implements MenuProvider {
             }
         }
         return Optional.empty();
+    }
+
+    /** Schickt Quelltext, Connectoren und Workerstand an den Editor. */
+    public void sendStateTo(ServerPlayer player) {
+        Optional<ControllerBlockEntity> controller = controller();
+        if (controller.isEmpty()) {
+            PacketDistributor.sendToPlayer(player,
+                    new NetworkStatePacket("", List.of(), List.of()));
+            return;
+        }
+        ControllerBlockEntity entity = controller.get();
+        entity.rebuildNetwork();
+        List<String> connectors = new ArrayList<>(entity.graph().connectorNames());
+        List<String> workers = entity.runtime().states().entrySet().stream()
+                .map(state -> state.getKey() + ": " + state.getValue().status)
+                .toList();
+        PacketDistributor.sendToPlayer(player,
+                new NetworkStatePacket(entity.source(), connectors, workers));
     }
 
     @Override

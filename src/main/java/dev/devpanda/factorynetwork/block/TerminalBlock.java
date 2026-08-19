@@ -5,7 +5,6 @@ import dev.devpanda.factorynetwork.block.entity.TerminalBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
@@ -55,9 +54,12 @@ public class TerminalBlock extends HorizontalDirectionalBlock implements EntityB
         if (level.isClientSide) {
             return InteractionResult.SUCCESS;
         }
-        if (level.getBlockEntity(pos) instanceof MenuProvider provider
+        if (level.getBlockEntity(pos) instanceof TerminalBlockEntity terminal
                 && player instanceof ServerPlayer serverPlayer) {
-            serverPlayer.openMenu(provider, pos);
+            // Erst den Zustand schicken, dann öffnen: Der Editor soll die
+            // Connectorliste schon haben, wenn er das erste Mal zeichnet.
+            terminal.sendStateTo(serverPlayer);
+            serverPlayer.openMenu(terminal, pos);
         }
         return InteractionResult.CONSUME;
     }

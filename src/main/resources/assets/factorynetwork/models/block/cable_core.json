@@ -1,0 +1,46 @@
+{
+  "textures": {
+    "cable": "factorynetwork:block/cable",
+    "particle": "factorynetwork:block/cable"
+  },
+  "elements": [
+    {
+      "from": [
+        5,
+        5,
+        5
+      ],
+      "to": [
+        11,
+        11,
+        11
+      ],
+      "faces": {
+        "north": {
+          "texture": "#cable",
+          "cullface": null
+        },
+        "south": {
+          "texture": "#cable",
+          "cullface": null
+        },
+        "east": {
+          "texture": "#cable",
+          "cullface": null
+        },
+        "west": {
+          "texture": "#cable",
+          "cullface": null
+        },
+        "up": {
+          "texture": "#cable",
+          "cullface": null
+        },
+        "down": {
+          "texture": "#cable",
+          "cullface": null
+        }
+      }
+    }
+  ]
+}

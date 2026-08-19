@@ -1,0 +1,25 @@
+{
+  "itemGroup.factorynetwork": "Factory Network",
+
+  "block.factorynetwork.controller": "Controller",
+  "block.factorynetwork.cable": "Cable",
+  "block.factorynetwork.connector": "Connector",
+  "block.factorynetwork.terminal": "Terminal",
+  "item.factorynetwork.label_gun": "Label Gun",
+
+  "message.factorynetwork.connector.unnamed": "This connector has no name yet.",
+  "message.factorynetwork.connector.named": "Connector: %s",
+  "message.factorynetwork.label_gun.unnamed": "Rename the label gun in an anvil — the name goes onto the connector.",
+  "message.factorynetwork.label_gun.applied": "Connector is now called %s",
+  "message.factorynetwork.controller.status": "%s connectors, %s cables in the network",
+  "message.factorynetwork.deploy.accepted": "Deployed: %s workers running",
+  "message.factorynetwork.deploy.rejected": "Not deployed — %s messages. The previous program keeps running.",
+  "message.factorynetwork.deploy.no_controller": "No controller attached to this terminal.",
+
+  "screen.factorynetwork.terminal.network": "Network",
+  "screen.factorynetwork.terminal.workers": "Workers",
+  "screen.factorynetwork.terminal.code": "main.mf",
+  "screen.factorynetwork.terminal.no_connectors": "none named",
+  "screen.factorynetwork.terminal.ok": "ready",
+  "screen.factorynetwork.terminal.deploy_hint": "Ctrl+Enter deploys"
+}

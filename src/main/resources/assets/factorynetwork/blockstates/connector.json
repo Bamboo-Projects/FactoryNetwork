@@ -1,0 +1,27 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "factorynetwork:block/connector"
+    },
+    "facing=south": {
+      "model": "factorynetwork:block/connector",
+      "y": 180
+    },
+    "facing=east": {
+      "model": "factorynetwork:block/connector",
+      "y": 90
+    },
+    "facing=west": {
+      "model": "factorynetwork:block/connector",
+      "y": 270
+    },
+    "facing=up": {
+      "model": "factorynetwork:block/connector",
+      "x": 270
+    },
+    "facing=down": {
+      "model": "factorynetwork:block/connector",
+      "x": 90
+    }
+  }
+}
