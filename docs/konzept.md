@@ -1216,7 +1216,15 @@ Wichtige Funktionen:
 - Find References,
 - Problems-Ansicht,
 - Logs,
-- Deploy/Running-Version.
+- Deploy/Running-Version,
+- Musterauflösung.
+
+Der letzte Punkt ist nicht selbstverständlich und folgt aus der Zielumgebung:
+Ein Auswahlmuster wie `item:*_dust` trifft in einem großen Pack hunderte
+Einträge, und welche das sind, kann niemand im Kopf haben. Der Editor muss zu
+jedem Muster anzeigen, was es gerade auflöst — sonst ist nicht erkennbar, dass
+`item:*_dust` auch die Zwischenprodukte einer Verarbeitungskette einsammelt.
+Siehe `entscheidungen.md`, Abschnitt „Belegfall AllTheOres".
 
 Beispiel:
 

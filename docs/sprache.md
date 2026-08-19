@@ -107,6 +107,7 @@ item:iron_ingot                        // minecraft:iron_ingot
 item:allthemodium/allthemodium_ingot   // allthemodium:allthemodium_ingot
 fluid:water
 fluid:mekanism/heavy_water
+chemical:mekanism/clean_osmium
 tag:c/ores
 tag:forge/ingots/copper
 ```
@@ -117,6 +118,11 @@ kurz.
 Der Doppelpunkt trägt bewusst nur **eine** Bedeutung. Trüge er zusätzlich den
 Namensraum, kollidierte er mit Typangaben (`fn craft(item: Item)`) und wäre in
 einer Kennung wie `item:allthemodium:allthemodium_ingot` doppelt belegt.
+
+`chemical:` bezeichnet Mekanisms Gase, Schlämme und Infusionen. Die
+Schreibweise steht hier fest, weil sie sonst später nachträglich zwischen die
+bestehenden Arten gezwängt werden müsste; die Anbindung selbst kommt erst in
+Phase 8.
 
 ### Mengen
 
@@ -150,6 +156,60 @@ fehlen, überschneiden sich oder schneiden zu grob — es gibt eigene Mods, dere
 einziger Zweck das Aufräumen dieser Überschneidungen ist. Namensmuster fangen
 auf, was Tags nicht abdecken. Ausnahmen fangen die einzelne Maschine auf, die
 mit genau einem Eintrag nicht klarkommt.
+
+### Wo der Platzhalter stehen darf
+
+`*` steht für beliebig viele Zeichen und darf an jeder Stelle des Namens
+auftreten, auch mehrfach:
+
+```
+item:*_ore                 // aluminum_ore, deepslate_aluminum_ore, ...
+item:raw_*                 // raw_aluminum, raw_lead, ...
+item:*aluminum*            // jede Form von Aluminium, egal wie benannt
+item:alltheores/*_ore      // nur die Erze einer bestimmten Mod
+```
+
+Das ist keine Bequemlichkeit, sondern von den Namen erzwungen. Modpack-Mods
+benennen Varianten nicht einheitlich hinten: Die Form steht als Nachsilbe
+(`aluminum_ingot`, `aluminum_dust`), die Steinart und die Dimension als
+Vorsilbe (`deepslate_aluminum_ore`, `nether_aluminum_ore`,
+`end_aluminum_ore`), der Rohzustand ebenfalls als Vorsilbe (`raw_aluminum`),
+und Zwischenprodukte tragen beides (`dirty_aluminum_dust`). Ein Platzhalter,
+der nur vorne oder nur hinten stehen darf, kann eine dieser Achsen nie
+ansprechen.
+
+### Namensraum bei Mustern
+
+**Ein Muster ohne Namensraum durchsucht alle Namensräume, ein literaler Name
+ohne Namensraum meint `minecraft`.**
+
+```
+item:iron_ingot            // genau minecraft:iron_ingot
+item:*_dust                // jeder Staub aus jeder Mod
+item:minecraft/*_dust      // nur die aus Vanilla
+```
+
+**Warum diese Ungleichheit gewollt ist:** Ein literaler Name ist eine Nennung
+— wer `item:iron_ingot` schreibt, meint das eine Eisen und nichts sonst. Ein
+Muster ist eine Suche, und eine Suche, die sich stillschweigend auf Vanilla
+beschränkt, findet in einem Pack mit dreihundert Mods so gut wie nichts. Die
+Regel folgt damit der Absicht statt der Schreibweise. Wer die Beschränkung
+doch will, schreibt sie hin.
+
+### Wenn ein Muster zu viel fängt
+
+Muster greifen nach Namen, nicht nach Bedeutung, und Namen lügen. `item:*_dust`
+fängt neben `aluminum_dust` auch `dirty_aluminum_dust` — das ist bei Mekanism
+kein fertiger Staub, sondern ein Zwischenschritt der Verarbeitungskette. Wer
+„alle Stäube ins Lager" schreibt, saugt damit die eigene Produktion leer.
+
+```
+item:*_dust except item:dirty_*
+```
+
+Deshalb gehört `except` zur Auswahl und nicht in die Nachbesserung. Der Editor
+zeigt zu jedem Muster an, was es gerade trifft; ohne diese Anzeige ist ein
+Muster über zwanzigtausend Einträge nicht zu überblicken.
 
 **Auflösungszeitpunkt:** Muster werden beim Übersetzen gegen die Registry
 aufgelöst, nicht bei jeder Ausführung. Ein Muster über zwanzigtausend Einträge

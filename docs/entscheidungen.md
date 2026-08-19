@@ -187,7 +187,7 @@ braucht) und ungeschützten Endlosschleifen.
 
 ---
 
-## Zielumgebung: grosse Modpacks
+## Zielumgebung: große Modpacks
 
 **Die Mod wird in AllTheMods-artigen Packs gespielt.** Der Projektinhaber
 spielt sie selbst; das ist der Kontext, für den entworfen wird.
@@ -199,13 +199,13 @@ Was daraus folgt, und zwar für mehr als nur die Schreibweise:
   `referenz-messung-speicherzugriff.md` beschreibt keine theoretische Grenze
   mehr, sondern den Normalfall.
 - **Namenskollisionen sind die Regel.** `steel_ingot` existiert in einem
-  grossen Pack mehrfach. Eine Schreibweise ohne Namensraum ist nur dort
+  großen Pack mehrfach. Eine Schreibweise ohne Namensraum ist nur dort
   tragfähig, wo der Compiler die Mehrdeutigkeit meldet.
 - **Namen sind lang und redundant.** `allthemodium:allthemodium_ingot`
-  wiederholt den Modnamen; Legierungen heissen
+  wiederholt den Modnamen; Legierungen heißen
   `vibranium_allthemodium_alloy_ingot`. Code, der solche Namen ausschreibt,
   wird unlesbar.
-- **Tags sind wichtiger als Einzelnennungen.** Wer in einem grossen Pack alle
+- **Tags sind wichtiger als Einzelnennungen.** Wer in einem großen Pack alle
   Erze verarbeiten will, kann sie nicht aufzählen.
 - **Autovervollständigung muss auswählen, nicht auflisten.** Aus
   zehntausenden Kandidaten ist eine alphabetische Liste wertlos.
@@ -230,3 +230,88 @@ zusätzlich den Namensraum trennen, trüge er zwei Bedeutungen und kollidierte
 mit Typangaben (`fn craft(item: Item)`). Der Schrägstrich hält beides
 auseinander und entspricht der Schreibweise, die das Konzept bei Tags
 ohnehin verwendet.
+
+---
+
+## Belegfall AllTheOres (2026-08-19)
+
+Die Annahmen über Modpack-Namen waren bis hierhin plausibel, aber nicht
+belegt. Deshalb wurde [AllTheOres](https://github.com/AllTheMods/AllTheOres)
+angesehen — die Mod, die in AllTheMods-Packs die Erze der übrigen Mods
+vereinheitlicht. Sie ist der günstigste Testfall, weil sie nichts Exotisches
+tut: Sie erzeugt genau das, was jedes Pack ohnehin hat.
+
+**Wie sie aufgebaut ist.** Gegenstände entstehen nicht einzeln, sondern als
+Matrix. Ein Material wird einmal angemeldet:
+
+```java
+public static final ATOIngotSet ALUMINUM = new ATOIngotSet("aluminum", ...);
+```
+
+Daraus werden erzeugt: fünf Erzblöcke für Stein, Deepslate, Nether, End und
+Sonstiges; Rohform und Rohblock; Barren, Nugget, Stab, Zahnrad, Platte, Staub
+und Block; für Mekanism zusätzlich Kristall, Scherbe, Klumpen und
+Schmutzstaub; dazu eine geschmolzene Flüssigkeit samt Eimer und zwei
+Chemikalien. Aus 31 solcher Materialsätze entstehen mehrere hundert
+Registry-Einträge — aus einer einzigen Mod, deren erklärter Zweck das
+Aufräumen fremder Erze ist.
+
+**Was daraus für die Sprache folgt, ist mehr als eine Bestätigung.** Die
+Namen sind nicht einheitlich gebaut:
+
+```
+aluminum_ingot            Form als Nachsilbe
+deepslate_aluminum_ore    Steinart als Vorsilbe
+raw_aluminum              Zustand als Vorsilbe
+dirty_aluminum_dust       beides zugleich
+molten_aluminum           andere Art (Flüssigkeit), gleicher Materialname
+```
+
+Drei Entscheidungen ergeben sich daraus unmittelbar.
+
+### Platzhalter an jeder Stelle, auch mehrfach
+
+`item:*_dust` und `item:mekanism/*` reichen nicht. Wer alle Formen eines
+Materials ansprechen will, braucht `item:*aluminum*`; wer alle Erze über alle
+Steinarten will, braucht `item:*_ore` und trifft damit sowohl `aluminum_ore`
+als auch `deepslate_aluminum_ore`. Ein Platzhalter, der auf Anfang oder Ende
+festgelegt ist, kann eine der drei Namensachsen — Form, Steinart, Zustand —
+grundsätzlich nicht ansprechen.
+
+Verworfen: nur Präfix- und Suffixmuster. Das wäre einfacher zu übersetzen,
+scheitert aber am ersten realen Modpack.
+
+### Muster durchsuchen alle Namensräume, literale Namen nicht
+
+`item:iron_ingot` meint `minecraft:iron_ingot`, wie bisher festgelegt.
+`item:*_dust` dagegen meint jeden Staub aus jeder Mod, nicht nur die aus
+Vanilla.
+
+Begründung: Ein literaler Name ist eine Nennung, ein Muster eine Suche. Eine
+Suche, die stillschweigend bei Vanilla haltmacht, findet in einem Pack mit
+dreihundert Mods fast nichts und wirkt wie ein Fehler der Mod. Wer die
+Beschränkung will, schreibt `item:minecraft/*_dust`.
+
+Verworfen: Einheitlichkeit um ihrer selbst willen, also `item:*/*_dust` für
+den modübergreifenden Fall. Das ist die häufigere Schreibweise mit dem
+größeren Rauschen zu belasten.
+
+### `except` ist Teil der Auswahl, nicht eine Nachbesserung
+
+`item:*_dust` fängt `dirty_aluminum_dust` mit — bei Mekanism kein fertiger
+Staub, sondern ein Zwischenschritt der Verarbeitungskette. Ein Programm, das
+„alle Stäube ins Lager" sagt, saugt damit die eigene Produktion leer, und der
+Fehler zeigt sich erst im Betrieb.
+
+Daraus folgt eine Anforderung an den Editor, die über Vervollständigung
+hinausgeht: **Zu jedem Muster muss sichtbar sein, was es gerade trifft.** Ein
+Muster über zwanzigtausend Einträge ist sonst nicht zu überblicken, und
+`except` bleibt Raten.
+
+### `chemical:` wird jetzt festgelegt, nicht später
+
+AllTheOres erzeugt zu jedem Material zwei Mekanism-Chemikalien. Das Konzept
+sieht Chemikalien erst in Phase 8 vor, aber die Schreibweise gehört zu den
+Arten, die der Doppelpunkt trennt — sie nachträglich zwischen `item:` und
+`fluid:` zu schieben, hieße alle Beispiele und die Grammatik anzufassen.
+Festgelegt wird deshalb jetzt nur die Notation, nicht die Anbindung.
