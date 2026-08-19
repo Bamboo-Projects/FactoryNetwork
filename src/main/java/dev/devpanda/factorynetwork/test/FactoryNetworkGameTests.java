@@ -265,6 +265,133 @@ public final class FactoryNetworkGameTests {
         }
     }
 
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void maintainStopsAtTheWantedAmount(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+
+        BlockPos source = controller.east().north().north();
+        BlockPos target = controller.east().south().south();
+        if (helper.getBlockEntity(source) instanceof ChestBlockEntity container) {
+            container.setItem(0, new ItemStack(Items.COAL, 64));
+        }
+
+        helper.assertTrue(entity.deploy("""
+                worker fuel {
+                    from quarry_output
+                    to depot
+                    filter item:coal
+                    maintain 8
+                    rate 64 per 1t
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+
+        helper.runAfterDelay(30, () -> {
+            if (helper.getBlockEntity(target) instanceof ChestBlockEntity container) {
+                int present = container.getItem(0).getCount();
+                helper.assertValueEqual(present, 8,
+                        "maintain muss bei der zugesagten Menge aufhören");
+                helper.succeed();
+            } else {
+                helper.fail("Keine Kiste am Ziel", target);
+            }
+        });
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void conditionKeepsWorkerAsleep(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+
+        BlockPos source = controller.east().north().north();
+        if (helper.getBlockEntity(source) instanceof ChestBlockEntity container) {
+            container.setItem(0, new ItemStack(Items.IRON_ORE, 64));
+        }
+
+        // Der Speicher ist leer, die Bedingung verlangt mehr als 100.
+        helper.assertTrue(entity.deploy("""
+                worker only_when_full {
+                    from quarry_output
+                    to storage
+                    when storage.count(item:iron_ore) > 100
+                    rate 64 per 1t
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+
+        helper.runAfterDelay(25, () -> {
+            helper.assertValueEqual(entity.storage().count(Items.IRON_ORE), 0L,
+                    "Der Worker darf bei falscher Bedingung nichts bewegen");
+            helper.succeed();
+        });
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void tagFilterCollectsEveryMatchingItem(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+
+        // Zwei verschiedene Baumstämme — derselbe Tag.
+        BlockPos source = controller.east().north().north();
+        if (helper.getBlockEntity(source) instanceof ChestBlockEntity container) {
+            container.setItem(0, new ItemStack(Items.OAK_LOG, 8));
+            container.setItem(1, new ItemStack(Items.BIRCH_LOG, 8));
+            container.setItem(2, new ItemStack(Items.IRON_ORE, 8));
+        }
+
+        helper.assertTrue(entity.deploy("""
+                worker logs {
+                    from quarry_output
+                    to storage
+                    filter tag:minecraft/logs
+                    rate 64 per 1t
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+
+        helper.runAfterDelay(25, () -> {
+            long oak = entity.storage().count(Items.OAK_LOG);
+            long birch = entity.storage().count(Items.BIRCH_LOG);
+            long ore = entity.storage().count(Items.IRON_ORE);
+            helper.assertTrue(oak == 8 && birch == 8,
+                    "Der Tag muss beide Holzarten holen (Eiche " + oak + ", Birke " + birch + ")");
+            helper.assertValueEqual(ore, 0L, "Das Erz gehört nicht zum Tag");
+            helper.succeed();
+        });
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void patternMatchesInTheMiddleOfTheName(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+
+        BlockPos source = controller.east().north().north();
+        if (helper.getBlockEntity(source) instanceof ChestBlockEntity container) {
+            container.setItem(0, new ItemStack(Items.IRON_ORE, 8));
+            container.setItem(1, new ItemStack(Items.DEEPSLATE_IRON_ORE, 8));
+            container.setItem(2, new ItemStack(Items.IRON_INGOT, 8));
+        }
+
+        // Genau der Fall aus AllTheOres: Die Steinart steht als Vorsilbe,
+        // die Form als Nachsilbe. Ein Muster nur am Rand fände nicht beides.
+        helper.assertTrue(entity.deploy("""
+                worker ores {
+                    from quarry_output
+                    to storage
+                    filter item:*iron_ore
+                    rate 64 per 1t
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+
+        helper.runAfterDelay(25, () -> {
+            long plain = entity.storage().count(Items.IRON_ORE);
+            long deep = entity.storage().count(Items.DEEPSLATE_IRON_ORE);
+            long ingot = entity.storage().count(Items.IRON_INGOT);
+            helper.assertTrue(plain == 8 && deep == 8,
+                    "Das Muster muss beide Erzvarianten treffen (" + plain + ", " + deep + ")");
+            helper.assertValueEqual(ingot, 0L, "Der Barren ist kein Erz");
+            helper.succeed();
+        });
+    }
+
     private FactoryNetworkGameTests() {
     }
 }

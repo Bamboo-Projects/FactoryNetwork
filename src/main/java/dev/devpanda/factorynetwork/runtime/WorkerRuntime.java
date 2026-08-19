@@ -81,6 +81,7 @@ public final class WorkerRuntime {
     /** Ein Tick: läuft über alle Worker und bewegt, was ansteht. */
     public void tick(Level level, Program program, FactoryGraph graph, NetworkStorage storage) {
         long now = level.getGameTime();
+        currentStorage = storage;
         for (Decl.Worker worker : program.workers()) {
             WorkerState state = states.computeIfAbsent(worker.name(), name -> new WorkerState());
             int interval = intervalOf(worker);
@@ -102,8 +103,15 @@ public final class WorkerRuntime {
             return;
         }
 
+        // Trifft die Bedingung nicht zu, schläft der Worker — und im Terminal
+        // steht, warum. Das ist die Schwester von WAITING_TARGET.
+        if (!conditionHolds(worker, state)) {
+            state.status = Status.WAITING_CONDITION;
+            return;
+        }
+
         int batch = batchOf(worker);
-        Item filter = filterItem(worker);
+        List<Item> filter = filterItems(worker);
 
         boolean fromStorage = isStorage(from.value());
         boolean toStorage = isStorage(to.value());
@@ -112,6 +120,18 @@ public final class WorkerRuntime {
             state.status = Status.IDLE;
             state.detail = "Quelle und Ziel sind beide der Speicher";
             return;
+        }
+
+        // maintain begrenzt, wie viel überhaupt noch fehlt.
+        int maintain = maintainOf(worker);
+        if (maintain > 0) {
+            long present = presentAtTarget(to.value(), graph, storage, filter, state);
+            if (present >= maintain) {
+                state.status = Status.IDLE;
+                state.detail = "Vorrat steht (" + present + " von " + maintain + ")";
+                return;
+            }
+            batch = (int) Math.min(batch, maintain - present);
         }
 
         long moved;
@@ -133,7 +153,7 @@ public final class WorkerRuntime {
     // ---- Die drei Wege ----------------------------------------------------
 
     private long deviceToStorage(Expr source, FactoryGraph graph, NetworkStorage storage,
-                                 Item filter, int batch, WorkerState state) {
+                                 List<Item> filter, int batch, WorkerState state) {
         IItemHandler handler = handlerOf(source, graph, state);
         if (handler == null) {
             return 0;
@@ -141,7 +161,7 @@ public final class WorkerRuntime {
         long moved = 0;
         for (int slot = 0; slot < handler.getSlots() && moved < batch; slot++) {
             ItemStack stack = handler.getStackInSlot(slot);
-            if (stack.isEmpty() || (filter != null && stack.getItem() != filter)) {
+            if (stack.isEmpty() || (!filter.isEmpty() && !filter.contains(stack.getItem()))) {
                 continue;
             }
             int wanted = (int) Math.min(batch - moved, stack.getCount());
@@ -155,14 +175,18 @@ public final class WorkerRuntime {
     }
 
     private long storageToDevice(Expr target, FactoryGraph graph, NetworkStorage storage,
-                                 Item filter, int batch, WorkerState state) {
+                                 List<Item> filter, int batch, WorkerState state) {
         IItemHandler handler = handlerOf(target, graph, state);
         if (handler == null) {
             return 0;
         }
         // Ohne Filter wird die erste Art genommen, die im Speicher liegt.
-        Item item = filter != null ? filter : storage.contents().keySet().stream()
-                .findFirst().orElse(null);
+        Item item = filter.stream()
+                .filter(candidate -> storage.count(candidate) > 0)
+                .findFirst()
+                .orElseGet(() -> filter.isEmpty()
+                        ? storage.contents().keySet().stream().findFirst().orElse(null)
+                        : null);
         if (item == null) {
             return 0;
         }
@@ -184,7 +208,7 @@ public final class WorkerRuntime {
     }
 
     private long deviceToDevice(Expr source, Expr target, FactoryGraph graph,
-                                Item filter, int batch, WorkerState state) {
+                                List<Item> filter, int batch, WorkerState state) {
         IItemHandler in = handlerOf(source, graph, state);
         IItemHandler out = handlerOf(target, graph, state);
         if (in == null || out == null) {
@@ -193,7 +217,7 @@ public final class WorkerRuntime {
         long moved = 0;
         for (int slot = 0; slot < in.getSlots() && moved < batch; slot++) {
             ItemStack stack = in.getStackInSlot(slot);
-            if (stack.isEmpty() || (filter != null && stack.getItem() != filter)) {
+            if (stack.isEmpty() || (!filter.isEmpty() && !filter.contains(stack.getItem()))) {
                 continue;
             }
             int wanted = (int) Math.min(batch - moved, stack.getCount());
@@ -288,35 +312,121 @@ public final class WorkerRuntime {
     }
 
     /**
-     * Der Gegenstand, auf den gefiltert wird — oder {@code null} für alles.
+     * Die Arten, auf die gefiltert wird — leer heißt alles.
      *
-     * <p>Diese Fassung versteht nur einen einzelnen Gegenstand. Tags, Muster
-     * und {@code except} sind spezifiziert und geparst, aber noch nicht
-     * aufgelöst; dafür braucht es den Zugriff auf die Registry mit
-     * Zwischenspeicher, und der gehört in denselben Schritt wie die Anzeige im
-     * Editor, die zeigt, was ein Muster gerade trifft.
+     * <p>Tags, Muster und {@code except} werden hier aufgelöst, einmal und
+     * dann gemerkt. Das ist der Fall, für den die Auswahlregeln entworfen
+     * wurden: In einem AllTheMods-Pack ist {@code tag:c/ores} der Normalfall
+     * und die Aufzählung die Ausnahme.
      */
-    private Item filterItem(Decl.Worker worker) {
+    private List<Item> filterItems(Decl.Worker worker) {
         Decl.Worker.Entry filter = worker.entry(Decl.Worker.Entry.Kind.FILTER);
         if (filter == null) {
-            return null;
+            return List.of();
         }
-        if (!(filter.value() instanceof Expr.Selector selector)) {
-            note(worker.name() + ": nur einzelne Gegenstände werden zurzeit gefiltert");
-            return null;
+        List<Item> resolved = ItemSelection.resolve(filter.value());
+        if (resolved.isEmpty()) {
+            note(worker.name() + ": die Auswahl trifft zurzeit nichts");
         }
-        if (selector.kind() != Expr.Selector.Kind.ITEM || selector.hasPattern()) {
-            note(worker.name() + ": Tags und Muster kann diese Fassung noch nicht auflösen");
-            return null;
-        }
-        String namespace = selector.hasNamespace() ? selector.namespace() : "minecraft";
-        ResourceLocation id = ResourceLocation.tryBuild(namespace, selector.path());
-        if (id == null || !BuiltInRegistries.ITEM.containsKey(id)) {
-            note(worker.name() + ": unbekannter Gegenstand " + namespace + ":" + selector.path());
-            return null;
-        }
-        return BuiltInRegistries.ITEM.get(id);
+        return resolved;
     }
+
+    // ---- maintain und when ------------------------------------------------
+
+    private static int maintainOf(Decl.Worker worker) {
+        Decl.Worker.Entry maintain = worker.entry(Decl.Worker.Entry.Kind.MAINTAIN);
+        if (maintain != null && maintain.value() instanceof Expr.IntLit count) {
+            return (int) count.value();
+        }
+        return 0;
+    }
+
+    /**
+     * Wie viel am Ziel schon liegt.
+     *
+     * <p>{@code maintain} gilt <b>pro Zielgerät</b>, nicht für die Gruppe, und
+     * <b>pro Gegenstandsart</b>. Beim Speicher fallen beide Lesarten zusammen,
+     * weil es ein Ziel ist. Nachzulesen in {@code sprache.md}, Abschnitt 7.
+     */
+    private long presentAtTarget(Expr target, FactoryGraph graph, NetworkStorage storage,
+                                 List<Item> filter, WorkerState state) {
+        if (isStorage(target)) {
+            return filter.stream().mapToLong(storage::count).sum();
+        }
+        IItemHandler handler = handlerOf(target, graph, state);
+        if (handler == null) {
+            return 0;
+        }
+        long present = 0;
+        for (int slot = 0; slot < handler.getSlots(); slot++) {
+            ItemStack stack = handler.getStackInSlot(slot);
+            if (stack.isEmpty() || (!filter.isEmpty() && !filter.contains(stack.getItem()))) {
+                continue;
+            }
+            present += stack.getCount();
+        }
+        return present;
+    }
+
+    /**
+     * Wertet {@code when} aus.
+     *
+     * <p>Erlaubt sind nur beobachtbare Zustände. Diese Fassung versteht
+     * Vergleiche über den Bestand im Speicher — mehr braucht der erste Schnitt
+     * nicht, und alles Weitere ohne Beobachtbarkeit einzubauen hieße, genau
+     * die Polling-Schleife zurückzuholen, gegen die Worker erfunden wurden.
+     */
+    private boolean conditionHolds(Decl.Worker worker, WorkerState state) {
+        Decl.Worker.Entry when = worker.entry(Decl.Worker.Entry.Kind.WHEN);
+        if (when == null) {
+            return true;
+        }
+        Expr condition = when.value();
+        if (condition instanceof Expr.BoolLit literal) {
+            return literal.value();
+        }
+        if (condition instanceof Expr.Binary binary) {
+            Double left = observableNumber(binary.left());
+            Double right = observableNumber(binary.right());
+            if (left != null && right != null) {
+                return switch (binary.op()) {
+                    case LT -> left < right;
+                    case LTE -> left <= right;
+                    case GT -> left > right;
+                    case GTE -> left >= right;
+                    case EQ -> left.doubleValue() == right.doubleValue();
+                    case NEQ -> left.doubleValue() != right.doubleValue();
+                    default -> true;
+                };
+            }
+        }
+        note(worker.name() + ": diese Bedingung kann die Laufzeit noch nicht auswerten");
+        state.detail = "Bedingung noch nicht auswertbar";
+        return true;
+    }
+
+    /** Liefert eine Zahl, wenn sie sich beobachten lässt — sonst nichts. */
+    private Double observableNumber(Expr expr) {
+        if (expr instanceof Expr.IntLit literal) {
+            return (double) literal.value();
+        }
+        if (expr instanceof Expr.FloatLit literal) {
+            return literal.value();
+        }
+        if (expr instanceof Expr.Call call
+                && call.callee() instanceof Expr.Member member
+                && "count".equals(member.name())
+                && member.target() instanceof Expr.Builtin builtin
+                && builtin.kind() == Expr.Builtin.Kind.STORAGE
+                && call.arguments().size() == 1) {
+            List<Item> items = ItemSelection.resolve(call.arguments().get(0).value());
+            return (double) items.stream().mapToLong(currentStorage::count).sum();
+        }
+        return null;
+    }
+
+    /** Der Speicher des laufenden Ticks, damit Bedingungen ihn lesen können. */
+    private NetworkStorage currentStorage = new NetworkStorage();
 
     private void note(String message) {
         if (!notes.contains(message)) {
