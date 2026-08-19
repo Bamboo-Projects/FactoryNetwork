@@ -396,7 +396,7 @@ viel Apparat für einen Fall, den das Terminal besser löst.
 ### Zeit ist ein eigener Typ
 
 `5s`, `30s`, `100t`, `90min`. Einheiten sind `t`, `s`, `min`, `h`; gerechnet
-wird intern in Ticks. Bruchteile nur, wenn sie aufgehen — `0.1s` ist ein
+wird intern in Ticks. Bruchteile nur, wenn sie aufgehen — `0.01s` ist ein
 Fehler statt einer stillen Rundung. Zusammensetzungen wie `1h30min` gibt es
 nicht.
 

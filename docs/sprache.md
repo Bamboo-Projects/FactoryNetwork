@@ -842,8 +842,8 @@ await BatchFinished where id == jobId timeout 30s
 
 Einheiten sind `t` für Ticks, `s`, `min` und `h`. Gerechnet wird intern immer
 in Ticks; `1s` sind 20 davon. Bruchteile sind erlaubt, solange sie aufgehen —
-`0.5s` sind 10 Ticks, `0.1s` meldet der Übersetzer als nicht darstellbar,
-statt still zu runden.
+`0.5s` sind 10 Ticks und `0.1s` sind 2. Was nicht aufgeht — `0.01s` wären ein
+Fünftel Tick —, meldet der Übersetzer, statt still zu runden.
 
 Zusammensetzungen wie `1h30min` gibt es nicht. Wer sie braucht, schreibt
 `90min`.
