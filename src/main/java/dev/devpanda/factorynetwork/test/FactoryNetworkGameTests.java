@@ -4,6 +4,8 @@ import dev.devpanda.factorynetwork.FactoryNetwork;
 import dev.devpanda.factorynetwork.block.entity.ConnectorBlockEntity;
 import dev.devpanda.factorynetwork.block.entity.ControllerBlockEntity;
 import dev.devpanda.factorynetwork.registry.FnBlocks;
+import dev.devpanda.factorynetwork.runtime.ScriptError;
+import dev.devpanda.factorynetwork.runtime.Value;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
@@ -13,6 +15,8 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.neoforged.neoforge.gametest.GameTestHolder;
+
+import java.util.List;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
 /**
@@ -188,6 +192,77 @@ public final class FactoryNetworkGameTests {
         String suggestion = entity.graph().closestName("quary_output").orElse("");
         helper.assertValueEqual(suggestion, "quarry_output", "Vorschlag bei Tippfehler");
         helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void functionMovesItemsBetweenConnectors(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+
+        BlockPos source = controller.east().north().north();
+        BlockPos target = controller.east().south().south();
+        if (helper.getBlockEntity(source) instanceof ChestBlockEntity container) {
+            container.setItem(0, new ItemStack(Items.IRON_ORE, 64));
+        }
+
+        helper.assertTrue(entity.deploy("""
+                fn schiebe() {
+                    move 16 item:iron_ore from quarry_output to depot
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+        entity.callFunction("schiebe", List.of());
+
+        if (helper.getBlockEntity(target) instanceof ChestBlockEntity container) {
+            int moved = container.getItem(0).getCount();
+            helper.assertValueEqual(moved, 16,
+                    "Die vorangestellte Menge muss beachtet werden");
+        } else {
+            helper.fail("Keine Kiste am Ziel", target);
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void functionReadsRedstone(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+
+        // Ein Redstoneblock neben dem Connector gibt Signal.
+        helper.setBlock(controller.east().north().above(), Blocks.REDSTONE_BLOCK);
+
+        helper.assertTrue(entity.deploy("""
+                fn staerke() {
+                    return quarry_output.redstone()
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+
+        helper.runAfterDelay(5, () -> {
+            Value result = entity.callFunction("staerke", List.of());
+            long strength = ((Value.Int) result).value();
+            helper.assertTrue(strength > 0,
+                    "Redstone wurde nicht gelesen (Stand: " + strength + ")");
+            helper.succeed();
+        });
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void unknownConnectorInCodeSuggests(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        helper.assertTrue(entity.deploy("""
+                fn test() {
+                    return quary_output.online
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+
+        try {
+            entity.callFunction("test", List.of());
+            helper.fail("Der unbekannte Connector hätte auffallen müssen");
+        } catch (ScriptError error) {
+            helper.assertTrue(error.hint() != null && error.hint().contains("quarry_output"),
+                    "Der Vorschlag fehlt: " + error);
+            helper.succeed();
+        }
     }
 
     private FactoryNetworkGameTests() {

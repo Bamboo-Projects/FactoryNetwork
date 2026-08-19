@@ -6,7 +6,11 @@ import dev.devpanda.factorynetwork.lang.parse.Parser;
 import dev.devpanda.factorynetwork.network.FactoryGraph;
 import dev.devpanda.factorynetwork.network.NetworkStorage;
 import dev.devpanda.factorynetwork.registry.FnBlockEntities;
+import dev.devpanda.factorynetwork.runtime.Interpreter;
+import dev.devpanda.factorynetwork.runtime.ScriptError;
+import dev.devpanda.factorynetwork.runtime.Value;
 import dev.devpanda.factorynetwork.runtime.WorkerRuntime;
+import dev.devpanda.factorynetwork.runtime.WorldHost;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -14,7 +18,9 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Wurzel eines Netzwerks: hält Programm, Speicher, Graph und Laufzeit.
@@ -37,6 +43,10 @@ public class ControllerBlockEntity extends BlockEntity {
     private final NetworkStorage storage = new NetworkStorage();
     private final WorkerRuntime runtime = new WorkerRuntime();
     private long lastRebuild = Long.MIN_VALUE;
+
+    /** Letzte gesehene Redstone-Stärke je Connector, für das Ereignis. */
+    private final Map<String, Integer> lastRedstone = new HashMap<>();
+    private final List<String> log = new ArrayList<>();
 
     public ControllerBlockEntity(BlockPos pos, BlockState state) {
         super(FnBlockEntities.CONTROLLER.get(), pos, state);
@@ -112,7 +122,68 @@ public class ControllerBlockEntity extends BlockEntity {
                         && level.getBlockEntity(position) instanceof ConnectorBlockEntity connector
                         ? connector : null);
         runtime.tick(level, program, graph, storage);
+        fireRedstoneEvents();
         setChanged();
+    }
+
+    /**
+     * Sucht nach Änderungen der Redstone-Stärke und löst dafür Ereignisse aus.
+     *
+     * <p>Abgefragt statt gemeldet, und nur alle zehn Ticks: Das Konzept lässt
+     * der Laufzeit ausdrücklich internes Abfragen, solange der Spieler dafür
+     * keine Schleife schreiben muss. Bei einigen Dutzend Connectoren ist das
+     * billiger als an jedem Block zu horchen.
+     */
+    private void fireRedstoneEvents() {
+        if (level == null || level.getGameTime() % 10 != 0) {
+            return;
+        }
+        if (program.handlers().stream().noneMatch(h -> h.name().equals("redstone_changed"))) {
+            return;
+        }
+        WorldHost host = new WorldHost(level, graph, storage);
+        Interpreter interpreter = new Interpreter(program, host);
+        for (Map.Entry<String, BlockPos> entry : graph.connectors().entrySet()) {
+            if (!level.isLoaded(entry.getValue())) {
+                continue;
+            }
+            int strength = level.getBestNeighborSignal(entry.getValue());
+            Integer previous = lastRedstone.put(entry.getKey(), strength);
+            if (previous != null && previous == strength) {
+                continue;
+            }
+            try {
+                interpreter.fire("redstone_changed",
+                        List.of(new Value.Device(entry.getKey()), new Value.Int(strength)));
+            } catch (ScriptError error) {
+                note("redstone_changed: " + error);
+            }
+        }
+        host.logs().forEach(this::note);
+    }
+
+    /** Ruft eine Funktion des Programms auf — für Tests und das Terminal. */
+    public Value callFunction(String name, List<Value> arguments) {
+        if (level == null) {
+            throw new ScriptError("Keine Welt.");
+        }
+        WorldHost host = new WorldHost(level, graph, storage);
+        try {
+            return new Interpreter(program, host).call(name, arguments);
+        } finally {
+            host.logs().forEach(this::note);
+        }
+    }
+
+    public List<String> log() {
+        return List.copyOf(log);
+    }
+
+    private void note(String message) {
+        log.add(message);
+        if (log.size() > 100) {
+            log.remove(0);
+        }
     }
 
     // ---- Speichern --------------------------------------------------------

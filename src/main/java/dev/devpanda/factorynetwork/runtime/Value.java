@@ -26,6 +26,22 @@ public sealed interface Value {
     /** Eine Gegenstandsart. */
     record ItemValue(Item item) implements Value {}
 
+    /**
+     * Eine Auswahl mit wahlweise vorangestellter Menge, wie in
+     * {@code 64 item:iron_ore}.
+     *
+     * <p>{@code amount} ist {@code -1}, wenn keine Menge dastand — dann ist
+     * alles gemeint, was verfügbar ist. Die Auswahl bleibt hier als
+     * geschriebener Text stehen und wird erst dort aufgelöst, wo die Registry
+     * erreichbar ist.
+     */
+    record Request(String selector, long amount) implements Value {
+
+        public boolean hasAmount() {
+            return amount >= 0;
+        }
+    }
+
     /** Eine Auswahl von Gegenstandsarten, schon aufgelöst. */
     record Selection(List<Item> items, long amount) implements Value {}
 
@@ -56,6 +72,8 @@ public sealed interface Value {
             case Text value -> value.value();
             case Duration value -> value.ticks() + "t";
             case ItemValue value -> value.item().toString();
+            case Request value -> (value.hasAmount() ? value.amount() + " " : "")
+                    + value.selector();
             case Selection value -> value.items().size() + " Arten";
             case Device value -> value.name();
             case Builtin value -> value.name();

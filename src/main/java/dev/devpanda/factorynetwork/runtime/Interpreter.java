@@ -223,9 +223,8 @@ public final class Interpreter {
             case Expr.NamePattern pattern -> new Value.Text(pattern.pattern());
             case Expr.Builtin builtin -> new Value.Builtin(
                     builtin.kind().name().toLowerCase(java.util.Locale.ROOT));
-            case Expr.Selector selector -> host.count(new Value.Text(written(selector))) >= 0
-                    ? new Value.Text(written(selector)) : new Value.Text(written(selector));
-            case Expr.Amount amount -> evaluate(amount.selection());
+            case Expr.Selector selector -> new Value.Request(written(selector), -1);
+            case Expr.Amount amount -> withAmount(evaluate(amount.selection()), amount.count());
             case Expr.Except except -> evaluate(except.base());
             case Expr.Unary unary -> unary(unary);
             case Expr.Binary binary -> binary(binary);
@@ -239,6 +238,14 @@ public final class Interpreter {
             case Expr.Invalid ignored -> throw new ScriptError(
                     "Hier steht etwas, das nicht gelesen werden konnte.");
         };
+    }
+
+    /** Setzt die vorangestellte Menge auf eine Auswahl. */
+    private static Value withAmount(Value selection, Long count) {
+        if (selection instanceof Value.Request request && count != null) {
+            return new Value.Request(request.selector(), count);
+        }
+        return selection;
     }
 
     private static String written(Expr.Selector selector) {
