@@ -1,17 +1,18 @@
-# Die Sprache — erste Fassung
+# Manifold — die Sprache
 
 Entwurf. Was hier steht, ist entschieden; was fehlt, ist als offen markiert.
 Diese Datei ist maßgeblich für Compiler, Laufzeitumgebung und Editor.
 
+Programme stehen in Dateien mit der Endung `.mf`.
+
 Stand: 2026-08-19
 
----
 
-## 1. Wofür sie gemacht ist
+## 1. Wofür Manifold gemacht ist
 
-Die Sprache beschreibt eine Fabrik, keine Allgemeinheit. Sie wird von Spielern
-geschrieben, nicht von Programmierern — aber sie ist eine echte Sprache mit
-Funktionen, Bedingungen und Typen, keine Konfigurationsdatei.
+Manifold beschreibt eine Fabrik, keine Allgemeinheit. Die Sprache wird von
+Spielern geschrieben, nicht von Programmierern — aber sie ist eine echte
+Sprache mit Funktionen, Bedingungen und Typen, keine Konfigurationsdatei.
 
 Zielumgebung sind große Modpacks: dreihundert Mods, zwanzigtausend
 Gegenstandsarten. Jede Entscheidung hier ist daran gemessen.
@@ -478,9 +479,8 @@ Terminal als Fehler — nicht stillschweigend.
 
 ## 10. Offen
 
-1. **Name der Sprache.**
-2. **Genaue Form der Worker-Deklaration** — welche Angaben es gibt, welche
+1. **Genaue Form der Worker-Deklaration** — welche Angaben es gibt, welche
    Pflicht sind.
-3. **Collections** — welche Operationen (`filter`, `map`, `sort`, `first`,
+2. **Collections** — welche Operationen (`filter`, `map`, `sort`, `first`,
    `count`, `sum`, `groupBy`) und wie sie geschrieben werden.
-4. **Module und Importe** — wie ein Projekt auf mehrere Dateien verteilt wird.
+3. **Module und Importe** — wie ein Projekt auf mehrere Dateien verteilt wird.

@@ -403,3 +403,25 @@ nicht.
 Begründung: `sleep(30)` ohne Einheit ist mehrdeutig, und der Unterschied
 zwischen 30 Ticks und 30 Sekunden ist Faktor 20 — das fällt im Betrieb erst
 auf, wenn die Fabrik längst falsch läuft.
+
+### Die Sprache heißt Manifold
+
+Dateiendung `.mf`.
+
+Ein Manifold ist ein Sammelrohr: Es verteilt einen Strom auf viele Wege und
+führt Rückläufe wieder zusammen. Das ist genau das, was die Sprache mit
+Material und Maschinen tut. Der Begriff ist technisch statt niedlich und
+trägt als mathematische Mannigfaltigkeit einen zweiten Boden, der zum Anspruch
+der Mod passt.
+
+Verworfen: **Cog**. Kurz und fabrikhaft, aber Create besetzt „Cogwheel"
+prominent und ist in AllTheMods-Packs praktisch immer dabei — eine Sprache
+dieses Namens läse sich dort wie Create-Zubehör.
+
+Verworfen: **Factory**. Risikofrei und selbsterklärend, trägt aber nichts.
+Der Name steht in jeder Fehlermeldung, und „Factory: Zeile 4 — Unbekannter
+Connector" sagt so viel wie „Fehler: Zeile 4".
+
+Bekannter Vorbehalt: Im Java-Ökosystem gibt es ein Compiler-Plugin namens
+Manifold. Für Spieler ist das unsichtbar, es macht nur die Websuche etwas
+unschärfer.

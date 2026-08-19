@@ -1232,7 +1232,7 @@ Beispiel:
 ┌──────────────────────────────────────────────┐
 │ Storage | Crafting | Code | Network         │
 ├───────────────┬──────────────────────────────┤
-│ PROJECT       │ main.factory                │
+│ PROJECT       │ main.mf                     │
 │ main          │                              │
 │ groups        │ fn main() {                 │
 │ lib/          │     crushers.send(...)      │
