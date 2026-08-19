@@ -107,13 +107,17 @@ einer Zeile, und der Rest der Zeile lässt sich nicht mit übersetzen.
 Die vollständige Liste, weil sie festlegt, was in Rückstriche muss:
 
 ```
-if  else  for  in  while  fn  let  return  true  false
-worker  group  multiblock  event  on  import
-from  to  filter  maintain  rate  per  when  priority
-strategy  overflow  move  except
-storage  crafting  world
-await  where  timeout  sleep
-it
+Ablauf      if  else  for  in  while  break  continue  return  fn  let
+Werte       true  false  it
+Deklaration worker  group  multiblock  event  display  on  import
+Worker      from  to  filter  maintain  rate  per  when  priority
+            strategy  overflow
+Gruppen     members
+Multiblock  devices
+Display     title  row  text  progress  indicator  list  button
+Ereignisse  emit  await  where  timeout  sleep
+Auswahl     move  except
+Eingebaut   storage  crafting  world  network  workers  multiblocks
 ```
 
 **Nach einem Punkt gilt die Liste nicht.** `crushers.where(...)` braucht keine
@@ -295,7 +299,7 @@ List<T>  Set<T>
 ```
 
 Die Namen sind englisch, aus demselben Grund wie die Schlüsselwörter.
-`Duration` ist der Typ der Zeitangaben aus Abschnitt 9 und bewusst von `Int`
+`Duration` ist der Typ der Zeitangaben aus Abschnitt 13 und bewusst von `Int`
 getrennt.
 
 ---
@@ -318,6 +322,23 @@ crushers.send(64 item:iron_ore)
 crushers.send(64 item:iron_ore, strategy: least_filled)
 ```
 
+### Redstone
+
+Redstone ist ein Wert von 0 bis 15, kein Ja/Nein:
+
+```
+let stärke = sensor.redstone()
+alarm.redstone(15)
+```
+
+```
+on redstone_changed(sensor, strength) {
+    if strength >= 12 {
+        pumps.stop()
+    }
+}
+```
+
 ### Material bewegen
 
 `move` ist die einzige Anweisung mit eigener Wortstellung. Sie liest sich wie
@@ -331,7 +352,7 @@ move tag:c/ores from chest to crushers
 
 Sie gibt zurück, wie viel tatsächlich bewegt wurde. Weniger als gewünscht ist
 normal, `0` auch — die Quelle kann leer und das Ziel voll sein. Ein Fehler ist
-es erst, wenn ein Gerät nicht mehr da ist (Abschnitt 10).
+es erst, wenn ein Gerät nicht mehr da ist (Abschnitt 14).
 
 ```
 let bewegt = move item:iron_ore from chest to crusher_1
@@ -503,7 +524,208 @@ storage.insert(64 item:iron_ingot)     // das Netzwerklager
 
 ---
 
-## 8. Listen und Mengen
+## 8. Gruppen
+
+Eine Gruppe fasst Geräte zusammen und verhält sich nach außen wie ein Gerät.
+
+```
+group crushers {
+    members crusher_1, crusher_2, crusher_3
+    strategy round_robin
+}
+```
+
+Mitglieder lassen sich auch über ein Namensmuster aufnehmen:
+
+```
+group furnaces {
+    members furnace_*
+}
+```
+
+Anders als bei Gegenständen wird ein Gerätemuster **nicht** beim Übersetzen
+festgeschrieben. Wer einen weiteren Ofen aufstellt und ihn `furnace_9` nennt,
+soll ihn nicht auch noch im Code eintragen müssen — die Gruppe nimmt ihn auf,
+sobald er im Netz ist. Das geht hier, weil Connectoren dutzendweise vorkommen
+und nicht zu Tausenden.
+
+### Strategien
+
+```
+round_robin       reihum, gleichmäßig
+first_available   das erste, das kann
+least_filled      dorthin, wo am wenigsten liegt
+random            zufällig
+priority          in der Reihenfolge der Mitglieder
+```
+
+Ohne Angabe gilt `round_robin`. Beim Aufruf lässt sie sich überschreiben:
+
+```
+crushers.send(64 item:iron_ore, strategy: least_filled)
+```
+
+Das Konzept nannte zusätzlich `balanced`. Es ist gestrichen, weil sich seine
+Bedeutung nicht von `least_filled` unterscheiden ließ, und eine Strategie, die
+niemand erklären kann, wählt auch niemand bewusst aus.
+
+---
+
+## 9. Multiblocks
+
+Ein Multiblock ist eine **Vorlage**, keine Maschine. Im Code steht, welche
+Rollen eine Anlage hat und was sie kann; gebaut wird sie in der Welt, und zwar
+so oft man will.
+
+```
+multiblock OrePlant {
+    devices {
+        crusher
+        furnace
+        output
+    }
+
+    fn process(ore: Item) {
+        move ore to crusher
+        await device_done(crusher)
+        move crusher.output() to furnace
+        await device_done(furnace)
+        move furnace.output() to output
+    }
+}
+```
+
+Verwendet wird eine gebaute Anlage über ihren Namen:
+
+```
+ore_plant_1.process(item:iron_ore)
+```
+
+### Warum Vorlage und Instanz getrennt sind
+
+Wer drei Erzanlagen baut, will sie nicht dreimal programmieren. Trennt man
+beides nicht, steht am Ende dieselbe Logik dreimal im Code und geht dreimal
+auseinander.
+
+Deshalb dürfen die Connectoren aller Instanzen **dieselben Namen tragen**.
+`crusher` in `ore_plant_1` und `crusher` in `ore_plant_2` sind verschiedene
+Geräte; innerhalb der Vorlage bezeichnet `crusher` immer das eigene.
+
+### Innen und außen
+
+Was in `devices` steht, gehört der Anlage und ist von außen nicht sichtbar.
+Was als `fn` deklariert ist, ist die Schnittstelle nach außen. Eine dritte
+Angabe braucht es nicht — die Trennung fällt mit der zwischen Gerät und
+Funktion zusammen.
+
+Fehlt einer Instanz ein Gerät aus `devices`, ist sie unvollständig: Sie
+erscheint im Terminal als Fehler und nimmt keine Aufrufe an. Das ist besser
+als ein Aufruf, der halb durchläuft und in der Mitte auf ein fehlendes Gerät
+trifft.
+
+Wie eine Anlage in der Welt zusammengesetzt wird — Controller-Block, Bereich,
+Zuordnung der Connectoren — ist Sache der Mod, nicht der Sprache. Die Sprache
+sieht nur das Ergebnis.
+
+---
+
+## 10. Ereignisse
+
+Reaktive Logik läuft über Ereignisse, nicht über Abfragen in Schleifen.
+
+```
+on redstone_changed(sensor, strength) {
+    if strength >= 12 {
+        pumps.stop()
+    }
+}
+```
+
+### Eingebaute Ereignisse
+
+```
+redstone_changed(device, strength)   Redstone-Stärke 0..15 hat sich geändert
+device_online(device)                Gerät ist erreichbar geworden
+device_offline(device)               Gerät ist verschwunden
+device_done(device)                  Gerät hat seine Arbeit beendet
+crafting_finished(job)               Fertigungsauftrag ist fertig
+crafting_failed(job, reason)         Fertigungsauftrag ist gescheitert
+```
+
+Bewusst nicht dabei ist ein Ereignis für jede Bestandsänderung. In einem Lager
+mit zwanzigtausend Arten feuert das im Sekundentakt, und niemand kann darauf
+sinnvoll reagieren. Wer auf Bestände reagieren will, nimmt einen Worker mit
+`when` — der wird vom System genau dann geweckt, wenn es nötig ist.
+
+### Eigene Ereignisse
+
+```
+event OreBatchReady(item: Item, amount: Int)
+
+emit OreBatchReady(item:iron_ore, 256)
+
+on OreBatchReady(item, amount) {
+    crushers.send(amount item)
+}
+```
+
+Bei der Deklaration stehen die Typen, beim Empfangen nicht — dort sind sie
+bekannt. Das ist dieselbe Regel wie bei Funktionen.
+
+### Mehrere Empfänger
+
+Mehrere `on`-Blöcke für dasselbe Ereignis laufen alle, in keiner zugesicherten
+Reihenfolge. Wer eine Reihenfolge braucht, hat in Wahrheit eine Abfolge und
+schreibt eine Funktion.
+
+---
+
+## 11. Displays
+
+Ein Display ist eine Beschreibung, kein Zeichenprogramm. Es steht in der
+deklarativen Hälfte der Sprache, weil es dauerhaft gilt: Was es zeigt, hält
+das System aktuell.
+
+```
+display factory_status {
+    title "Fabrik"
+
+    row "Eisen" storage.count(item:iron_ingot)
+    row "Stahl" storage.count(item:steel_ingot)
+
+    progress "Erzverarbeitung" ore_import.progress
+    indicator "Reaktor" reactor.online
+}
+```
+
+### Bausteine
+
+```
+title <text>              Überschrift
+row <text> <wert>         Beschriftung und Wert nebeneinander
+text <wert>               freier Text
+progress <text> <0..1>    Fortschrittsbalken
+indicator <text> <bool>   Lämpchen
+list <text> <liste>       Aufzählung, etwa Bestände oder Aufträge
+button <text> <funktion>  löst eine Funktion aus
+```
+
+### Was ein Display nicht darf
+
+**Ein Display rechnet nicht.** Es nennt Werte, und das System entscheidet,
+wann es sie neu holt. Eine Schleife oder ein `await` im Display gibt es nicht.
+
+Der Grund ist derselbe wie beim Worker: Nur wenn das System weiß, *welche*
+Werte ein Display zeigt, kann es sie beobachten und nur bei Änderung neu
+zeichnen. Ein Display, das selbst rechnet, müsste in jedem Tick laufen — und
+davon hängen in einem großen Netz schnell dreißig an der Wand.
+
+`button` ist die einzige Ausnahme, und auch nur einseitig: Er zeigt nichts an,
+sondern ruft eine Funktion auf, wenn jemand ihn drückt.
+
+---
+
+## 12. Listen und Mengen
 
 ```
 crushers.members().where(it.busy).count()
@@ -539,7 +761,7 @@ nicht ganz verschwindet — sie ist nur nicht mehr der Normalfall.
 
 ---
 
-## 9. Warten und Nebenläufigkeit
+## 13. Warten und Nebenläufigkeit
 
 Code kann auf Ereignisse warten:
 
@@ -551,6 +773,26 @@ let ergebnis = await BatchFinished where id == jobId timeout 30s
 **Wartender Code überlebt einen Serverneustart.** Der Übersetzer wandelt
 Funktionen, die warten können, in Zustandsmaschinen um; an den Wartepunkten
 wird der Zustand gespeichert.
+
+### Wenn die Antwort ausbleibt
+
+`timeout` braucht einen zweiten Weg, sonst stünde nach Ablauf ein Wert da, den
+es nie gab:
+
+```
+let ergebnis = await BatchFinished where id == jobId timeout 30s else {
+    notify("Maschine antwortet nicht")
+    return
+}
+```
+
+Der `else`-Zweig muss den Ablauf verlassen — `return`, `break` oder
+`continue`. Danach gilt `ergebnis` als vorhanden, und niemand muss ihn prüfen.
+
+**Damit gibt es kein `try`/`catch`.** Das Konzept hatte es für genau diesen
+Fall vorgesehen; es ist der einzige, in dem es gebraucht würde, und dafür ist
+ein zweiter Block mit eigener Fangregel zu viel Apparat. Alles andere, was
+schiefgehen kann, hält den Ablauf an und landet im Terminal (Abschnitt 14).
 
 ### Zwei Arten von Haltepunkten
 
@@ -601,7 +843,7 @@ erraten, und ein Faktor 20 fällt im Betrieb erst spät auf.
 
 ---
 
-## 10. Wenn etwas schiefgeht
+## 14. Wenn etwas schiefgeht
 
 **Erwartbare Zustände sind keine Fehler. Unerwartete halten den Ablauf an.**
 
@@ -667,7 +909,7 @@ Ablauf angehalten, bis jemand mit Zugriff auf das Terminal entscheidet.
 
 ---
 
-## 11. Grenzen
+## 15. Grenzen
 
 Jeder Ablauf hat ein Budget an Rechenschritten je Tick. Ist es aufgebraucht,
 wird an einem unterbrechbaren Haltepunkt angehalten und im nächsten Tick
@@ -689,7 +931,7 @@ Terminal als Fehler — nicht stillschweigend.
 
 ---
 
-## 12. Dateien
+## 16. Dateien
 
 Ein Projekt besteht aus `.mf`-Dateien im Projektbaum. **In der ersten Fassung
 bilden alle zusammen einen Namensraum**: Was in einer Datei steht, ist in
@@ -704,20 +946,18 @@ bräche jedes Projekt, in dem jemand eine Funktion `import` genannt hat.
 
 ---
 
-## 13. Was noch fehlt
 
-Die acht Punkte, mit denen diese Datei begann, sind geklärt. Was hier fehlt,
-ist nicht offen im Sinne von unentschieden, sondern schlicht noch nicht
-beschrieben:
+## 17. Was noch fehlt
 
-1. **`group`** — in Abschnitt 2 gezeigt (`members`, `strategy`), aber nie
-   festgelegt. Verhält sich nach außen wie ein Gerät.
-2. **`multiblock`** — im Konzept vorhanden, in der Sprache noch nicht.
-3. **`event` und `on`** — beide werden benutzt, aber welche Ereignisse es
-   gibt und wie eigene deklariert werden, steht nirgends.
-4. **Displays** — im Konzept ein eigenes Kapitel, sprachlich unberührt.
+Die Sprache ist damit für die erste Fassung beschrieben. Was fehlt, ist nicht
+unentschieden, sondern noch nicht gebraucht:
 
-Diese vier gehören zusammen: Es sind die restlichen Deklarationsformen. Sie
-folgen demselben Muster wie `worker` — benannt, mit Angaben in geschweiften
-Klammern — und sollten in einem Zug beschrieben werden, damit sie sich nicht
-auseinanderentwickeln.
+1. **Request/Response** — im Konzept vorgesehen (Kapitel 17), also gerichtete
+   Anfragen an ein anderes Programm mit Antwort. Mit `emit`, `on` und `await`
+   lässt sich das nachbauen; eine eigene Form lohnt erst, wenn sich zeigt,
+   dass es oft gebraucht wird.
+2. **Wie eine Multiblock-Instanz in der Welt entsteht** — Controller, Bereich,
+   Zuordnung. Das ist keine Sprachfrage, muss aber festliegen, bevor
+   Multiblocks gebaut werden.
+3. **Rechte im Mehrspielerbetrieb** — wer welchen Code übernehmen und welches
+   Terminal bedienen darf.

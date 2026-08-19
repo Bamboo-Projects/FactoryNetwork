@@ -516,3 +516,80 @@ zwei Widersprüche auf:
 Dazu eine Konvention, die vorher unausgesprochen schwankte: **Eingebaute
 Namen sind snake_case**, wie die Registry-Namen, neben denen sie stehen. Aus
 `fillLevel` wurde `fill_level`, aus `isNight` wurde `is_night`.
+
+---
+
+## Die restlichen Deklarationsformen (2026-08-20)
+
+Damit ist die Sprache vollständig beschrieben. Vier Formen kamen dazu, und
+drei Widersprüche zum Konzept mussten dabei aufgelöst werden.
+
+### Gerätemuster in Gruppen lösen sich zur Laufzeit auf
+
+Bei Gegenständen werden Muster beim Übersetzen festgeschrieben — bei
+Connectoren nicht. `members furnace_*` nimmt einen neuen Ofen auf, sobald er
+im Netz ist, ohne dass jemand den Code anfasst.
+
+Begründung: Der Grund für das Festschreiben bei Gegenständen war die Menge —
+zwanzigtausend Einträge darf man nicht pro Tick durchsuchen. Connectoren gibt
+es dutzendweise. Und wer einen Ofen aufstellt, will ihn nicht zweimal
+anmelden.
+
+Gestrichen: die Strategie `balanced` aus dem Konzept. Ihre Bedeutung ließ sich
+nicht von `least_filled` unterscheiden, und was niemand erklären kann, wählt
+auch niemand bewusst.
+
+### Multiblocks sind Vorlagen, Instanzen entstehen in der Welt
+
+Im Code steht, welche Rollen eine Anlage hat und was sie kann. Gebaut wird sie
+in der Welt, beliebig oft, und die Connectoren aller Instanzen dürfen dieselben
+Namen tragen.
+
+Begründung: Wer drei Erzanlagen baut, will sie nicht dreimal programmieren.
+Ohne die Trennung steht dieselbe Logik dreimal im Code und geht dreimal
+auseinander.
+
+Was in `devices` steht, ist intern; was `fn` ist, ist die Schnittstelle. Eine
+dritte Angabe für „öffentlich" braucht es nicht, weil die Trennung mit der
+zwischen Gerät und Funktion zusammenfällt.
+
+Fehlt einer Instanz ein Gerät, nimmt sie keine Aufrufe an, statt mitten im
+Ablauf aufzulaufen.
+
+### Kein Ereignis für Bestandsänderungen
+
+Die eingebauten Ereignisse decken Redstone, Geräte und Fertigung ab. Ein
+`storage_changed` gibt es bewusst nicht: In einem Lager mit zwanzigtausend
+Arten feuert es im Sekundentakt. Wer auf Bestände reagieren will, nimmt einen
+Worker mit `when` — den weckt das System genau dann, wenn es nötig ist.
+
+### Displays rechnen nicht
+
+Ein Display nennt Werte; wann sie geholt werden, entscheidet das System. Keine
+Schleife, kein `await`. Nur so kann es beobachten statt in jedem Tick zu
+zeichnen — und in einem großen Netz hängen schnell dreißig an der Wand.
+`button` ist die Ausnahme und auch nur einseitig: Er zeigt nichts, er löst aus.
+
+### `try`/`catch` entfällt, `timeout` bekommt ein `else`
+
+```
+let ergebnis = await BatchFinished where id == jobId timeout 30s else {
+    notify("Maschine antwortet nicht")
+    return
+}
+```
+
+Der `else`-Zweig muss den Ablauf verlassen; danach gilt `ergebnis` als
+vorhanden. Das Konzept sah `try`/`catch Timeout` vor — dies ist der einzige
+Fall, in dem es gebraucht würde, und dafür ist ein zweiter Block mit eigener
+Fangregel zu viel. Alles andere hält den Ablauf an und landet im Terminal.
+
+### Nachgezogen im Konzept
+
+- Das Collections-Kapitel nannte `filter`, `map` und `groupBy`. `filter` heißt
+  jetzt `where`, weil `filter` beim Worker schon die Auswahl der Gegenstände
+  bezeichnet; `map` und `groupBy` sind gestrichen.
+- `network`, `workers` und `multiblocks` sind aus demselben Grund
+  Schlüsselwörter wie `storage` und `crafting`.
+- Redstone fehlte in der Sprachspezifikation ganz, obwohl das Konzept ein
+  eigenes Kapitel dafür hat.

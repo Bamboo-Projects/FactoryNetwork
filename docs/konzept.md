@@ -1096,14 +1096,16 @@ multiblocks.instances()
 Darauf sollen Collection-Operationen möglich sein:
 
 ```text
-filter
-map
+where
 sort
 first
 count
 sum
-groupBy
 ```
+
+Maßgeblich ist `sprache.md`, Abschnitt 12. `map` und `groupBy` sind gestrichen,
+solange kein Fabrikfall sie braucht; `filter` heißt `where`, weil `filter` beim
+Worker schon die Auswahl der Gegenstände bezeichnet.
 
 ---
 
