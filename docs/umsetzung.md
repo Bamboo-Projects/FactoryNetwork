@@ -58,7 +58,7 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | Ereignisse | `redstone_changed`, eigene über `emit` und `on` |
 | Netzwerk | Graph über Kabel, Speicher schlüsselbasiert |
 | Editor | Syntaxfarben, Fehler beim Tippen, Vervollständigung nach Stelle |
-| Prüfung | 71 Einheitstests, 13 GameTests |
+| Prüfung | 71 Einheitstests, 15 GameTests |
 
 ## 3. Was noch nicht läuft
 
@@ -119,6 +119,27 @@ item:iron_ore` hätte alles bewegt. Kein Übersetzungsfehler, kein Absturz —
 nur ein falsches Ergebnis. Gefunden, weil ein GameTest die Zahl im Ziel
 nachgezählt hat.
 
+### Die Laufzeit tat zweimal das Gegenteil der Spezifikation
+
+Beides fiel erst beim Gegenlesen von Code und Spezifikation auf, nicht beim
+Übersetzen und nicht in den Tests — weil die Tests jeweils nur einen Fall
+prüften, in dem sich die beiden Lesarten nicht unterscheiden.
+
+**`maintain` zählte insgesamt statt je Gegenstandsart.** Die Spezifikation
+sagt: `filter tag:c/coals` mit `maintain 64` hält 64 von jeder Kohleart. Die
+Laufzeit summierte über alle Arten. Der Test hatte nur eine Art benutzt und
+konnte den Unterschied deshalb nicht sehen. Der neue Test nimmt Kohle und
+Holzkohle und verlangt acht von jeder.
+
+**`move` mit Tag oder Muster bewegte alles.** `WorldHost` verstand nur
+einzelne Gegenstände; alles andere ergab „kein Filter", und kein Filter heißt
+alles. `move 4 tag:minecraft/logs` hätte das Erz mitgenommen. Beides geht
+jetzt durch dieselbe Auflösung wie beim Worker.
+
+Die Lehre: Ein Test, der nur einen Fall abdeckt, in dem sich zwei Lesarten
+gleich verhalten, prüft die Lesart nicht. Bei jeder Regel, die „je" oder
+„insgesamt" sagt, gehören zwei Arten in den Test.
+
 ### Fallen in der Umgebung
 
 **`getDeclaredMethods()` löst alle Typen der Signaturen auf.** Ein Test, der
@@ -133,8 +154,8 @@ Richtig ist `template = "empty"`.
 
 **Strukturvorlagen lassen sich von Hand erzeugen.** Eine leere `.nbt` ist
 gzip-komprimiertes NBT mit `size`, `palette`, `blocks`, `entities` und
-`DataVersion` — für 1.21.1 ist das 3955. Das Skript dafür liegt im
-Scratchpad-Verzeichnis; Minecraft dafür zu starten ist unnötig.
+`DataVersion` — für 1.21.1 ist das 3955. Das Skript dafür liegt unter
+`tools/structure.py`; Minecraft dafür zu starten ist unnötig.
 
 **Sehr lange Heredocs werden abgeschnitten.** Beim Schreiben großer Dateien
 in Stücken arbeiten und danach die Zeilenzahl prüfen.

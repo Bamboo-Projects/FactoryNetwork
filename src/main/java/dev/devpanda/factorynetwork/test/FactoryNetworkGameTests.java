@@ -231,13 +231,13 @@ public final class FactoryNetworkGameTests {
         helper.setBlock(controller.east().north().above(), Blocks.REDSTONE_BLOCK);
 
         helper.assertTrue(entity.deploy("""
-                fn staerke() {
+                fn stärke() {
                     return quarry_output.redstone()
                 }"""), "Das Programm wurde nicht übernommen");
         entity.rebuildNetwork();
 
         helper.runAfterDelay(5, () -> {
-            Value result = entity.callFunction("staerke", List.of());
+            Value result = entity.callFunction("stärke", List.of());
             long strength = ((Value.Int) result).value();
             helper.assertTrue(strength > 0,
                     "Redstone wurde nicht gelesen (Stand: " + strength + ")");
@@ -390,6 +390,78 @@ public final class FactoryNetworkGameTests {
             helper.assertValueEqual(ingot, 0L, "Der Barren ist kein Erz");
             helper.succeed();
         });
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 600)
+    public static void maintainCountsPerItemType(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+
+        // Zwei Arten im selben Tag. Bei "insgesamt" kämen zusammen 8 an,
+        // bei "je Art" acht von jeder — das unterscheidet die beiden Lesarten.
+        BlockPos source = controller.east().north().north();
+        BlockPos target = controller.east().south().south();
+        if (helper.getBlockEntity(source) instanceof ChestBlockEntity container) {
+            container.setItem(0, new ItemStack(Items.COAL, 64));
+            container.setItem(1, new ItemStack(Items.CHARCOAL, 64));
+        }
+
+        helper.assertTrue(entity.deploy("""
+                worker fuel {
+                    from quarry_output
+                    to depot
+                    filter tag:minecraft/coals
+                    maintain 8
+                    rate 64 per 1t
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+
+        helper.runAfterDelay(40, () -> {
+            if (!(helper.getBlockEntity(target) instanceof ChestBlockEntity container)) {
+                helper.fail("Keine Kiste am Ziel", target);
+                return;
+            }
+            long coal = 0;
+            long charcoal = 0;
+            for (int slot = 0; slot < container.getContainerSize(); slot++) {
+                ItemStack stack = container.getItem(slot);
+                if (stack.is(Items.COAL)) {
+                    coal += stack.getCount();
+                } else if (stack.is(Items.CHARCOAL)) {
+                    charcoal += stack.getCount();
+                }
+            }
+            helper.assertValueEqual(coal, 8L, "Kohle je Art");
+            helper.assertValueEqual(charcoal, 8L, "Holzkohle je Art");
+            helper.succeed();
+        });
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void moveRespectsATagFilter(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+
+        BlockPos source = controller.east().north().north();
+        if (helper.getBlockEntity(source) instanceof ChestBlockEntity container) {
+            container.setItem(0, new ItemStack(Items.OAK_LOG, 16));
+            container.setItem(1, new ItemStack(Items.IRON_ORE, 16));
+        }
+
+        // Vorher fiel eine Auswahl, die kein einzelner Gegenstand ist, still
+        // auf "alles" zurück — das Erz wäre mitgewandert.
+        helper.assertTrue(entity.deploy("""
+                fn hole() {
+                    move 4 tag:minecraft/logs from quarry_output to storage
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+        entity.callFunction("hole", List.of());
+
+        helper.assertValueEqual(entity.storage().count(Items.OAK_LOG), 4L,
+                "Holz, und zwar genau vier");
+        helper.assertValueEqual(entity.storage().count(Items.IRON_ORE), 0L,
+                "Das Erz gehört nicht zum Tag und darf nicht mitkommen");
+        helper.succeed();
     }
 
     private FactoryNetworkGameTests() {

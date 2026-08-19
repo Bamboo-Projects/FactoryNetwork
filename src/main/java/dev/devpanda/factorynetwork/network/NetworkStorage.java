@@ -92,7 +92,11 @@ public final class NetworkStorage {
         for (int i = 0; i < entries.size(); i++) {
             CompoundTag entry = entries.getCompound(i);
             ResourceLocation id = ResourceLocation.tryParse(entry.getString(KEY_ITEM));
-            if (id == null) {
+            // Wurde eine Mod aus dem Pack genommen, gibt es ihre Gegenstände
+            // nicht mehr. Die Registry liefert dafür Luft — solche Einträge
+            // würden sich still ansammeln. In AllTheMods-Packs kommen und
+            // gehen Mods ständig, das ist der Normalfall und kein Sonderfall.
+            if (id == null || !BuiltInRegistries.ITEM.containsKey(id)) {
                 continue;
             }
             Item item = BuiltInRegistries.ITEM.get(id);

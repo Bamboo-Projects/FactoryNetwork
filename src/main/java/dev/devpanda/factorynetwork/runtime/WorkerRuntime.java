@@ -122,16 +122,31 @@ public final class WorkerRuntime {
             return;
         }
 
-        // maintain begrenzt, wie viel überhaupt noch fehlt.
+        // maintain gilt je Gegenstandsart, nicht insgesamt: filter tag:c/coals
+        // mit maintain 64 hält 64 von jeder Kohleart. Deshalb wird der Filter
+        // auf die Arten verengt, die noch fehlen.
         int maintain = maintainOf(worker);
         if (maintain > 0) {
-            long present = presentAtTarget(to.value(), graph, storage, filter, state);
-            if (present >= maintain) {
-                state.status = Status.IDLE;
-                state.detail = "Vorrat steht (" + present + " von " + maintain + ")";
+            if (filter.isEmpty()) {
+                state.status = Status.HALTED;
+                state.detail = "maintain braucht ein filter";
+                note(worker.name() + ": maintain ohne filter — welche Art soll vorgehalten werden?");
                 return;
             }
-            batch = (int) Math.min(batch, maintain - present);
+            Map<Item, Long> present = presentPerType(to.value(), graph, storage, filter, state);
+            List<Item> missing = filter.stream()
+                    .filter(item -> present.getOrDefault(item, 0L) < maintain)
+                    .toList();
+            if (missing.isEmpty()) {
+                state.status = Status.IDLE;
+                state.detail = "Vorrat steht (" + maintain + " je Art)";
+                return;
+            }
+            long largestGap = missing.stream()
+                    .mapToLong(item -> maintain - present.getOrDefault(item, 0L))
+                    .max().orElse(0);
+            filter = missing;
+            batch = (int) Math.min(batch, largestGap);
         }
 
         long moved;
@@ -342,28 +357,32 @@ public final class WorkerRuntime {
     }
 
     /**
-     * Wie viel am Ziel schon liegt.
+     * Wie viel am Ziel schon liegt, aufgeschlüsselt nach Art.
      *
      * <p>{@code maintain} gilt <b>pro Zielgerät</b>, nicht für die Gruppe, und
      * <b>pro Gegenstandsart</b>. Beim Speicher fallen beide Lesarten zusammen,
      * weil es ein Ziel ist. Nachzulesen in {@code sprache.md}, Abschnitt 7.
      */
-    private long presentAtTarget(Expr target, FactoryGraph graph, NetworkStorage storage,
-                                 List<Item> filter, WorkerState state) {
+    private Map<Item, Long> presentPerType(Expr target, FactoryGraph graph,
+                                           NetworkStorage storage, List<Item> filter,
+                                           WorkerState state) {
+        Map<Item, Long> present = new LinkedHashMap<>();
         if (isStorage(target)) {
-            return filter.stream().mapToLong(storage::count).sum();
+            for (Item item : filter) {
+                present.put(item, storage.count(item));
+            }
+            return present;
         }
         IItemHandler handler = handlerOf(target, graph, state);
         if (handler == null) {
-            return 0;
+            return present;
         }
-        long present = 0;
         for (int slot = 0; slot < handler.getSlots(); slot++) {
             ItemStack stack = handler.getStackInSlot(slot);
-            if (stack.isEmpty() || (!filter.isEmpty() && !filter.contains(stack.getItem()))) {
+            if (stack.isEmpty() || !filter.contains(stack.getItem())) {
                 continue;
             }
-            present += stack.getCount();
+            present.merge(stack.getItem(), (long) stack.getCount(), Long::sum);
         }
         return present;
     }

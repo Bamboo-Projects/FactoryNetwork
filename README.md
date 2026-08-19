@@ -40,7 +40,7 @@ Was steht:
 | Funktionen | Bedingungen, Schleifen, `move`, Redstone lesen, Ereignisse |
 | Netzwerk | Controller, Kabel, Connector, Terminal; Speicher schlüsselbasiert |
 | Editor | im Spiel, mit Syntaxfarben, Fehleranzeige und Vervollständigung |
-| Prüfung | 71 Einheitstests, 13 GameTests in einer echten Welt — alle grün |
+| Prüfung | 71 Einheitstests, 15 GameTests in einer echten Welt — alle grün |
 
 Was noch nicht läuft: Gruppen, Multiblocks und Displays sind spezifiziert und
 werden geparst, aber nicht ausgeführt; ebenso `strategy` und `overflow` beim

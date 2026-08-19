@@ -111,7 +111,7 @@ class InterpreterTest {
         void whileLoopCounts() {
             TestHost host = new TestHost();
             Interpreter interpreter = interpreterFor("""
-                    fn zaehle() {
+                    fn zähle() {
                         let summe = 0
                         let i = 0
                         while i < 5 {
@@ -120,7 +120,7 @@ class InterpreterTest {
                         }
                         return summe
                     }""", host);
-            assertEquals(10L, ((Value.Int) interpreter.call("zaehle", List.of())).value());
+            assertEquals(10L, ((Value.Int) interpreter.call("zähle", List.of())).value());
         }
 
         @Test
