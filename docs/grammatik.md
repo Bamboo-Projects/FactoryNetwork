@@ -262,12 +262,12 @@ einem der beiden Fälle die falsche.
 
 ```
 NAME         = ( BUCHSTABE | '_' ) { BUCHSTABE | ZIFFER | '_' }
-ESCAPEDNAME  = '`' { beliebig ausser '`' } '`'
+ESCAPEDNAME  = '`' { beliebig außer '`' } '`'
 NAMEPATTERN  = NAME mit mindestens einem '*'
 INT          = ZIFFER { ZIFFER }
 FLOAT        = INT '.' INT
 DURATION     = ( INT | FLOAT ) ( 't' | 's' | 'min' | 'h' )
-STRING       = '"' { beliebig ausser '"' } '"'
+STRING       = '"' { beliebig außer '"' } '"'
 KOMMENTAR    = '//' bis Zeilenende
 ```
 
