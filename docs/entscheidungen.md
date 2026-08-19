@@ -184,3 +184,49 @@ Platte. Tritt selten ein, darf teurer sein. Das trägt die Neustartfestigkeit.
 Ohne diese Trennung bleibt nur die Wahl zwischen überall persistierbaren
 Zuständen (teuer, viel Serialisierungscode für Zwischenstände, die niemand
 braucht) und ungeschützten Endlosschleifen.
+
+---
+
+## Zielumgebung: grosse Modpacks
+
+**Die Mod wird in AllTheMods-artigen Packs gespielt.** Der Projektinhaber
+spielt sie selbst; das ist der Kontext, für den entworfen wird.
+
+Was daraus folgt, und zwar für mehr als nur die Schreibweise:
+
+- **Zwanzigtausend und mehr Gegenstandsarten** in der Registry. Jede Abfrage,
+  die über alle Einträge läuft, ist damit eine Fehlerquelle. Die Messung in
+  `referenz-messung-speicherzugriff.md` beschreibt keine theoretische Grenze
+  mehr, sondern den Normalfall.
+- **Namenskollisionen sind die Regel.** `steel_ingot` existiert in einem
+  grossen Pack mehrfach. Eine Schreibweise ohne Namensraum ist nur dort
+  tragfähig, wo der Compiler die Mehrdeutigkeit meldet.
+- **Namen sind lang und redundant.** `allthemodium:allthemodium_ingot`
+  wiederholt den Modnamen; Legierungen heissen
+  `vibranium_allthemodium_alloy_ingot`. Code, der solche Namen ausschreibt,
+  wird unlesbar.
+- **Tags sind wichtiger als Einzelnennungen.** Wer in einem grossen Pack alle
+  Erze verarbeiten will, kann sie nicht aufzählen.
+- **Autovervollständigung muss auswählen, nicht auflisten.** Aus
+  zehntausenden Kandidaten ist eine alphabetische Liste wertlos.
+
+## Schreibweise von Gegenständen
+
+**Der Doppelpunkt trennt die Art, der Schrägstrich den Namensraum.**
+
+```
+item:iron_ingot                        -> minecraft:iron_ingot
+item:allthemodium/allthemodium_ingot   -> allthemodium:allthemodium_ingot
+fluid:mekanism/heavy_water
+tag:c/ores
+tag:forge/ingots/copper
+```
+
+Fehlt der Schrägstrich, ist `minecraft` gemeint.
+
+Begründung: Die Art voranzustellen macht eindeutig, worum es geht, und ist gut
+zu vervollständigen — das war die gewählte Variante. Würde der Doppelpunkt
+zusätzlich den Namensraum trennen, trüge er zwei Bedeutungen und kollidierte
+mit Typangaben (`fn craft(item: Item)`). Der Schrägstrich hält beides
+auseinander und entspricht der Schreibweise, die das Konzept bei Tags
+ohnehin verwendet.
