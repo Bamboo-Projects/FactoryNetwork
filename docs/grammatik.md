@@ -225,6 +225,21 @@ pathPattern = ( NAMECHAR | '*' ) { NAMECHAR | '*' | '/' }
 
 `*` darf an jeder Stelle stehen, auch mehrfach.
 
+**Der Selektor ist ein einziges Token, und der Leerraum entscheidet darüber.**
+`item:iron_ingot` und `fn craft(item: Item)` beginnen gleich — dieselben vier
+Buchstaben, derselbe Doppelpunkt. Der Lexer liest einen Selektor nur dann,
+wenn direkt hinter dem Doppelpunkt ein Pfadzeichen folgt; steht dort ein
+Leerzeichen, sind es drei Token: Name, Doppelpunkt, Name.
+
+```
+item:iron_ingot     ein Token   SELECTOR
+item: Item          drei Token  NAME COLON NAME
+```
+
+Das fiel erst beim Schreiben des Lexers auf. Die Alternative wäre gewesen,
+Parameter nicht `item` nennen zu dürfen — eine Regel, die kein Spieler
+erwartet und die der Editor bei jeder Vervollständigung erklären müsste.
+
 **Fehlt der Namensraum, hängt die Bedeutung davon ab, ob ein `*` vorkommt:**
 ohne Platzhalter gilt `minecraft`, mit Platzhalter alle Namensräume. Das ist
 eine Regel des Übersetzers, nicht der Grammatik — die Form ist dieselbe.
