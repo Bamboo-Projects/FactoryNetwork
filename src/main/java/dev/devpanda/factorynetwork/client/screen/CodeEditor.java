@@ -41,6 +41,9 @@ public class CodeEditor {
     private long lastBlink;
     private boolean cursorVisible = true;
 
+    private List<Completions.Entry> suggestions = List.of();
+    private int selectedSuggestion;
+
     public CodeEditor(Font font, int x, int y, int width, int height, String initial) {
         this.font = font;
         this.x = x;
@@ -107,6 +110,7 @@ public class CodeEditor {
 
         drawCursor(graphics, textX);
         drawScrollHint(graphics, visible);
+        drawSuggestions(graphics, textX);
     }
 
     /** Färbt eine Zeile nach Token-Arten. */
@@ -218,6 +222,29 @@ public class CodeEditor {
     // ---- Eingabe ----------------------------------------------------------
 
     public boolean keyPressed(int key, int scanCode, int modifiers) {
+        // Solange Vorschläge offen sind, gehören ihnen Tab, Pfeile und Escape.
+        if (!suggestions.isEmpty()) {
+            switch (key) {
+                case 258 -> { // Tabulator übernimmt
+                    applySuggestion();
+                    return true;
+                }
+                case 264 -> { // runter
+                    selectedSuggestion = (selectedSuggestion + 1) % suggestions.size();
+                    return true;
+                }
+                case 265 -> { // hoch
+                    selectedSuggestion =
+                            (selectedSuggestion - 1 + suggestions.size()) % suggestions.size();
+                    return true;
+                }
+                case 256 -> { // Escape schließt nur die Liste, nicht den Editor
+                    clearSuggestions();
+                    return true;
+                }
+                default -> { }
+            }
+        }
         switch (key) {
             case 259 -> { // Rücktaste
                 backspace();
@@ -291,6 +318,7 @@ public class CodeEditor {
         if (mouseX < x || mouseX > x + width || mouseY < y || mouseY > y + height) {
             return false;
         }
+        clearSuggestions();
         int row = (int) ((mouseY - y - 10) / LINE_HEIGHT);
         int lineIndex = Mth.clamp(scrollLine + row, 0, lines.size() - 1);
         cursorLine = lineIndex;
@@ -427,6 +455,87 @@ public class CodeEditor {
     private void changed() {
         cursorVisible = true;
         lastBlink = System.currentTimeMillis();
+        updateSuggestions();
         changeListener.accept(text());
+    }
+
+    // ---- Vorschläge -------------------------------------------------------
+
+    private void updateSuggestions() {
+        suggestions = Completions.at(lines, cursorLine, cursorColumn);
+        selectedSuggestion = 0;
+    }
+
+    private void clearSuggestions() {
+        suggestions = List.of();
+        selectedSuggestion = 0;
+    }
+
+    /** Übernimmt den ausgewählten Vorschlag und ersetzt das angefangene Wort. */
+    private void applySuggestion() {
+        if (suggestions.isEmpty()) {
+            return;
+        }
+        Completions.Entry entry = suggestions.get(selectedSuggestion);
+        String line = lines.get(cursorLine);
+        int column = Math.min(cursorColumn, line.length());
+        String word = Completions.currentWord(line.substring(0, column));
+        int start = column - word.length();
+        lines.set(cursorLine, line.substring(0, start) + entry.insert() + line.substring(column));
+        cursorColumn = start + entry.insert().length();
+        clearSuggestions();
+        changeListener.accept(text());
+    }
+
+    private void drawSuggestions(GuiGraphics graphics, int textX) {
+        if (suggestions.isEmpty()) {
+            return;
+        }
+        int row = cursorLine - scrollLine;
+        if (row < 0 || row >= visibleLines()) {
+            return;
+        }
+        String line = lines.get(cursorLine);
+        int column = Math.min(cursorColumn, line.length());
+        String word = Completions.currentWord(line.substring(0, column));
+        int listX = textX + font.width(line.substring(0, column - word.length()));
+        int listY = y + 10 + (row + 1) * LINE_HEIGHT;
+
+        int listWidth = 0;
+        for (Completions.Entry entry : suggestions) {
+            listWidth = Math.max(listWidth, font.width(entry.text()) + 8);
+        }
+        listWidth = Math.min(listWidth, width - 8);
+        int listHeight = suggestions.size() * LINE_HEIGHT + 2;
+
+        // Nach oben klappen, wenn unten kein Platz mehr ist.
+        if (listY + listHeight > y + height) {
+            listY = y + 10 + row * LINE_HEIGHT - listHeight;
+        }
+        listX = Math.min(listX, x + width - listWidth - 2);
+
+        graphics.fill(listX, listY, listX + listWidth, listY + listHeight, 0xF0202429);
+        graphics.fill(listX, listY, listX + listWidth, listY + 1, 0xFF3C4147);
+        graphics.fill(listX, listY + listHeight - 1, listX + listWidth, listY + listHeight,
+                0xFF3C4147);
+
+        for (int i = 0; i < suggestions.size(); i++) {
+            Completions.Entry entry = suggestions.get(i);
+            int entryY = listY + 1 + i * LINE_HEIGHT;
+            if (i == selectedSuggestion) {
+                graphics.fill(listX + 1, entryY - 1, listX + listWidth - 1,
+                        entryY + LINE_HEIGHT - 1, 0xFF31363C);
+            }
+            graphics.drawString(font, font.plainSubstrByWidth(entry.text(), listWidth - 8),
+                    listX + 4, entryY, colorForKind(entry.kind()), false);
+        }
+    }
+
+    private static int colorForKind(Completions.Entry.Kind kind) {
+        return switch (kind) {
+            case CONNECTOR -> TerminalScreen.colorText();
+            case ITEM, TAG -> TerminalScreen.colorSelector();
+            case BUILTIN, KEYWORD -> TerminalScreen.colorKeyword();
+        };
     }
 }
