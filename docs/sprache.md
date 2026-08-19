@@ -313,6 +313,49 @@ crushers.send(64 item:iron_ore)
 crushers.send(64 item:iron_ore, strategy: least_filled)
 ```
 
+### Material bewegen
+
+`move` ist die einzige Anweisung mit eigener Wortstellung. Sie liest sich wie
+ein Satz, weil sie in fast jedem Programm vorkommt:
+
+```
+move item:iron_ore from chest to crusher_1
+move 64 item:iron_ore from chest to crusher_1
+move tag:c/ores from chest to crushers
+```
+
+Sie gibt zurück, wie viel tatsächlich bewegt wurde. Weniger als gewünscht ist
+normal, `0` auch — die Quelle kann leer und das Ziel voll sein. Ein Fehler ist
+es erst, wenn ein Gerät nicht mehr da ist (Abschnitt 10).
+
+```
+let bewegt = move item:iron_ore from chest to crusher_1
+```
+
+`move` ist der einmalige Bruder des Workers: dieselbe Bewegung, aber jetzt und
+einmal statt dauerhaft und beobachtet. Wer sie in eine Schleife setzt, hat
+einen Worker nachgebaut — schlechter, weil das System dann nicht mehr weiß,
+was gemeint ist.
+
+### Verteilung auf mehrere Ziele
+
+```
+round_robin    reihum, gleichmäßig
+least_filled   dorthin, wo am wenigsten liegt
+fill_first     das erste Ziel voll, dann das nächste
+```
+
+Bei `send` als benanntes Argument, beim Worker als Angabe:
+
+```
+crushers.send(64 item:iron_ore, strategy: least_filled)
+
+worker feed { ... strategy least_filled }
+```
+
+Der Unterschied in der Schreibweise ist gewollt: Das eine ist ein Aufruf mit
+Argumenten, das andere eine Deklarationsangabe.
+
 ### Wenn ein Gerät heißt wie ein Schlüsselwort
 
 Ein Spieler darf seine Maschine `for` nennen. Die Label-Gun nimmt jeden Namen
