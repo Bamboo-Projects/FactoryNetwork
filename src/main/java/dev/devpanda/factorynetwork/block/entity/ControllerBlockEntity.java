@@ -14,6 +14,8 @@ import dev.devpanda.factorynetwork.runtime.ScriptError;
 import dev.devpanda.factorynetwork.runtime.Value;
 import dev.devpanda.factorynetwork.runtime.WorkerRuntime;
 import dev.devpanda.factorynetwork.runtime.WorldHost;
+import dev.devpanda.factorynetwork.runtime.flow.Flow;
+import dev.devpanda.factorynetwork.runtime.flow.FlowEngine;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -50,6 +52,8 @@ public class ControllerBlockEntity extends BlockEntity {
     private FactoryGraph graph = FactoryGraph.empty();
     private final NetworkStorage storage = new NetworkStorage();
     private final WorkerRuntime runtime = new WorkerRuntime();
+    /** Abläufe, die warten können — sie überleben einen Serverneustart. */
+    private FlowEngine flows;
     /** Negativ statt Long.MIN_VALUE: Die Differenz liefe sonst über. */
     private long lastRebuild = -REBUILD_INTERVAL;
 
@@ -150,14 +154,16 @@ public class ControllerBlockEntity extends BlockEntity {
         if (level.getGameTime() - lastRebuild >= REBUILD_INTERVAL) {
             rebuildNetwork();
         }
-        if (program.workers().isEmpty()) {
-            return;
+        // Abläufe laufen auch ohne Worker weiter — ein Programm darf allein
+        // aus Funktionen bestehen, die auf Ereignisse warten.
+        if (!program.workers().isEmpty()) {
+            runtime.setConnectorLookup(position ->
+                    level.isLoaded(position)
+                            && level.getBlockEntity(position) instanceof ConnectorBlockEntity connector
+                            ? connector : null);
+            runtime.tick(level, program, graph, storage);
         }
-        runtime.setConnectorLookup(position ->
-                level.isLoaded(position)
-                        && level.getBlockEntity(position) instanceof ConnectorBlockEntity connector
-                        ? connector : null);
-        runtime.tick(level, program, graph, storage);
+        tickFlows();
         fireRedstoneEvents();
         pushStorageIfDue();
         setChanged();
@@ -249,6 +255,51 @@ public class ControllerBlockEntity extends BlockEntity {
             }
         }
         host.logs().forEach(this::note);
+    }
+
+    /**
+     * Lässt die wartenden Abläufe arbeiten.
+     *
+     * <p>Die Maschine wird beim ersten Bedarf gebaut und beim Übernehmen
+     * neuen Codes verworfen — mit der Einschränkung, die noch fehlt: Abläufe,
+     * die gerade warten, müssten den Wechsel überstehen und den Spieler
+     * fragen. Das kommt im nächsten Schritt.
+     */
+    private void tickFlows() {
+        if (flows == null) {
+            return;
+        }
+        flows.tick(level.getGameTime());
+    }
+
+    public FlowEngine flowEngine() {
+        if (flows == null && level != null) {
+            flows = new FlowEngine(program, new Interpreter(program,
+                    new WorldHost(level, graph, storage)));
+        }
+        return flows;
+    }
+
+    /** Beginnt einen wartefähigen Ablauf. */
+    public Flow startFlow(String functionName, List<Value> arguments) {
+        FlowEngine engine = flowEngine();
+        if (engine == null) {
+            throw new ScriptError("Keine Welt.");
+        }
+        Flow flow = engine.start(functionName, arguments);
+        engine.tick(level.getGameTime());
+        return flow;
+    }
+
+    /** Weckt wartende Abläufe und löst Ereignisblöcke aus. */
+    public void fireEvent(String event, List<Value> arguments) {
+        FlowEngine engine = flowEngine();
+        if (engine == null) {
+            return;
+        }
+        engine.wake(event, arguments);
+        engine.fire(event, arguments);
+        engine.tick(level.getGameTime());
     }
 
     /** Ruft eine Funktion des Programms auf — für Tests und das Terminal. */

@@ -1087,6 +1087,183 @@ public final class FactoryNetworkGameTests {
         }
     }
 
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void aFlowWaitsForAnEventAndResumes(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                event ChargeDone(amount: Int)
+
+                fn warte() {
+                    let vorher = 7
+                    let ergebnis = await ChargeDone
+                    return vorher
+                }"""), "Das Programm wurde nicht übernommen");
+
+        var flow = entity.startFlow("warte", java.util.List.of());
+        helper.assertValueEqual(flow.status().name(), "AWAITING",
+                "Der Ablauf muss warten");
+        // Die Zahl von vor dem Warten muss den Halt überstehen.
+        helper.assertTrue(flow.find("vorher") != null, "Die Variable ist verloren");
+
+        entity.fireEvent("ChargeDone", java.util.List.of(
+                new dev.devpanda.factorynetwork.runtime.Value.Int(42)));
+
+        helper.assertValueEqual(flow.status().name(), "DONE",
+                "Nach dem Ereignis muss er fertig sein");
+        helper.assertValueEqual(
+                ((dev.devpanda.factorynetwork.runtime.Value.Int) flow.result()).value(), 7L,
+                "Der Rückgabewert stammt von vor dem Warten");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void anAwaitBindsItsResult(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                event ChargeDone(amount: Int)
+
+                fn hole() {
+                    let ergebnis = await ChargeDone
+                    return ergebnis
+                }"""), "Das Programm wurde nicht übernommen");
+
+        var flow = entity.startFlow("hole", java.util.List.of());
+        entity.fireEvent("ChargeDone", java.util.List.of(
+                new dev.devpanda.factorynetwork.runtime.Value.Int(99)));
+
+        helper.assertValueEqual(flow.status().name(), "DONE", "Zustand");
+        helper.assertValueEqual(
+                ((dev.devpanda.factorynetwork.runtime.Value.Int) flow.result()).value(), 99L,
+                "Das Ergebnis des Wartens muss ankommen");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void sleepPausesAndContinues(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                fn kurz() {
+                    let a = 1
+                    sleep 10t
+                    return 5
+                }"""), "Das Programm wurde nicht übernommen");
+
+        var flow = entity.startFlow("kurz", java.util.List.of());
+        helper.assertValueEqual(flow.status().name(), "SLEEPING", "Er muss schlafen");
+
+        helper.runAfterDelay(20, () -> {
+            helper.assertValueEqual(flow.status().name(), "DONE",
+                    "Nach der Wartezeit muss er fertig sein");
+            helper.succeed();
+        });
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void whereDecidesWhoWakesUp(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                event Fertig(id: Int)
+
+                fn wartetAuf(ziel: Int) {
+                    let ergebnis = await Fertig where id == ziel
+                    return ergebnis
+                }"""), "Das Programm wurde nicht übernommen");
+
+        var ersterAblauf = entity.startFlow("wartetAuf",
+                java.util.List.of(new dev.devpanda.factorynetwork.runtime.Value.Int(1)));
+        var zweiterAblauf = entity.startFlow("wartetAuf",
+                java.util.List.of(new dev.devpanda.factorynetwork.runtime.Value.Int(2)));
+
+        entity.fireEvent("Fertig", java.util.List.of(
+                new dev.devpanda.factorynetwork.runtime.Value.Int(2)));
+
+        helper.assertValueEqual(ersterAblauf.status().name(), "AWAITING",
+                "Der Ablauf mit ziel=1 darf nicht aufwachen");
+        helper.assertValueEqual(zweiterAblauf.status().name(), "DONE",
+                "Der Ablauf mit ziel=2 muss aufwachen");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void aTimeoutRunsItsElseBranch(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                event Nie()
+
+                fn gibtAuf() {
+                    let ergebnis = await Nie timeout 5t else {
+                        return 3
+                    }
+                    return 9
+                }"""), "Das Programm wurde nicht übernommen");
+
+        var flow = entity.startFlow("gibtAuf", java.util.List.of());
+        helper.assertValueEqual(flow.status().name(), "AWAITING", "Zuerst wartet er");
+
+        helper.runAfterDelay(20, () -> {
+            helper.assertValueEqual(flow.status().name(), "DONE",
+                    "Der else-Zweig verlässt den Ablauf ordentlich");
+            helper.assertValueEqual(
+                    ((dev.devpanda.factorynetwork.runtime.Value.Int) flow.result()).value(), 3L,
+                    "Gelaufen ist der else-Zweig, nicht die Zeile dahinter");
+            helper.succeed();
+        });
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void awaitInsideNestedBlocksResumesEachRound(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        // await steckt hier in einem if in einer while — genau die
+        // Verschachtelung, an der sich das Wiederfinden der Rahmen bewährt.
+        helper.assertTrue(entity.deploy("""
+                event Takt(nummer: Int)
+
+                fn zaehlt() {
+                    let summe = 0
+                    let runde = 0
+                    while runde < 3 {
+                        if runde >= 0 {
+                            let wert = await Takt
+                            summe = summe + wert
+                        }
+                        runde = runde + 1
+                    }
+                    return summe
+                }"""), "Das Programm wurde nicht übernommen");
+
+        var flow = entity.startFlow("zaehlt", java.util.List.of());
+        for (int runde = 1; runde <= 3; runde++) {
+            helper.assertValueEqual(flow.status().name(), "AWAITING",
+                    "Vor Runde " + runde + " muss er warten");
+            entity.fireEvent("Takt", java.util.List.of(
+                    new dev.devpanda.factorynetwork.runtime.Value.Int(runde)));
+        }
+
+        helper.assertValueEqual(flow.status().name(), "DONE", "Nach drei Runden ist Schluss");
+        helper.assertValueEqual(
+                ((dev.devpanda.factorynetwork.runtime.Value.Int) flow.result()).value(), 6L,
+                "1 + 2 + 3 muss zusammenkommen");
+        helper.succeed();
+    }
+
     private FactoryNetworkGameTests() {
     }
 }

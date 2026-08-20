@@ -5,6 +5,7 @@ import dev.devpanda.factorynetwork.lang.ast.Decl;
 import dev.devpanda.factorynetwork.lang.ast.Expr;
 import dev.devpanda.factorynetwork.lang.ast.Program;
 import dev.devpanda.factorynetwork.lang.ast.Stmt;
+import dev.devpanda.factorynetwork.runtime.flow.Step;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -41,6 +42,22 @@ public final class Interpreter {
     private final Host host;
     private final Deque<Map<String, Value>> scopes = new ArrayDeque<>();
     private int steps;
+
+    /**
+     * Der Blick auf die Namen eines Ablaufs.
+     *
+     * <p>Der gewöhnliche Interpreter führt seinen eigenen Stapel; ein Ablauf
+     * hält seine Rahmen als Daten. Beide bieten dieselben drei Zugriffe an,
+     * und die Anweisungslogik muss den Unterschied nicht kennen.
+     */
+    public interface Scope {
+
+        Value find(String name);
+
+        void declare(String name, Value value);
+
+        boolean assign(String name, Value value);
+    }
 
     /**
      * Was der Interpreter von der Welt braucht.
@@ -209,7 +226,147 @@ public final class Interpreter {
         }
     }
 
+    /**
+     * Führt eine einzelne Anweisung aus und meldet, wie es weitergeht.
+     *
+     * <p>Hier steht, was eine Anweisung <b>tut</b>. Wie es danach weitergeht,
+     * entscheidet der Aufrufer: Der gewöhnliche Weg ruft sich selbst auf, ein
+     * Ablauf legt einen Rahmen auf seinen Stapel. Ohne diese Trennung gäbe es
+     * jede Anweisung zweimal — und eine der beiden Fassungen liefe
+     * irgendwann auseinander.
+     */
+    public Step perform(Stmt statement, Scope scope, long gameTime) {
+        Scope previous = externalScope;
+        externalScope = scope;
+        try {
+            return switch (statement) {
+                case Stmt.Let let -> {
+                    // Der Fall, um den es geht: let ergebnis = await …
+                    // Hier wird nicht ausgewertet, sondern gewartet — und der
+                    // Name gemerkt, unter dem das Ergebnis später landet.
+                    if (let.value() instanceof Expr.Await await) {
+                        yield awaitStep(await, let.name(), gameTime);
+                    }
+                    scope.declare(let.name(), evaluate(let.value()));
+                    yield Step.Next.get();
+                }
+                case Stmt.Assign assign -> {
+                    if (!(assign.target() instanceof Expr.Name name)) {
+                        throw new ScriptError("Dorthin lässt sich nichts zuweisen.");
+                    }
+                    if (!scope.assign(name.value(), evaluate(assign.value()))) {
+                        throw new ScriptError("Unbekannter Name " + name.value() + ".",
+                                "Neue Namen bekommen ein let davor.");
+                    }
+                    yield Step.Next.get();
+                }
+                case Stmt.ExprStmt expr -> {
+                    if (expr.expr() instanceof Expr.Await await) {
+                        yield awaitStep(await, gameTime);
+                    }
+                    evaluate(expr.expr());
+                    yield Step.Next.get();
+                }
+                case Stmt.If branch -> {
+                    if (truth(evaluate(branch.condition()))) {
+                        yield new Step.Enter(branch.thenBody(), false);
+                    }
+                    if (branch.elseBlock() != null) {
+                        yield new Step.Enter(branch.elseBlock(), false);
+                    }
+                    if (branch.elseIf() != null) {
+                        yield perform(branch.elseIf(), scope, gameTime);
+                    }
+                    yield Step.Next.get();
+                }
+                case Stmt.While loop -> truth(evaluate(loop.condition()))
+                        ? new Step.Enter(loop.body(), true)
+                        : Step.Next.get();
+                case Stmt.Return ret -> new Step.Return(
+                        ret.value() == null ? Value.Nothing.get() : evaluate(ret.value()));
+                case Stmt.Break ignored -> new Step.Break();
+                case Stmt.Continue ignored -> new Step.Continue();
+                case Stmt.Move move -> {
+                    host.move(evaluate(move.amount()),
+                            move.from() == null ? null : evaluate(move.from()),
+                            evaluate(move.to()));
+                    yield Step.Next.get();
+                }
+                case Stmt.Emit emit -> {
+                    fire(emit.eventName(), emit.arguments().stream()
+                            .map(argument -> evaluate(argument.value())).toList());
+                    yield Step.Next.get();
+                }
+                case Stmt.Sleep sleep -> {
+                    Value duration = evaluate(sleep.duration());
+                    if (!(duration instanceof Value.Duration ticks)) {
+                        throw new ScriptError("sleep braucht eine Zeitangabe, etwa 5s.");
+                    }
+                    yield new Step.Sleep(gameTime + ticks.ticks());
+                }
+                case Stmt.For ignored -> throw new ScriptError(
+                        "for kann ein wartender Ablauf noch nicht.",
+                        "Schreibe die Schleife als while, oder ohne await darin.");
+                case Stmt.Invalid ignored -> throw new ScriptError(
+                        "Hier steht etwas, das nicht gelesen werden konnte.");
+            };
+        } finally {
+            externalScope = previous;
+        }
+    }
+
+    /**
+     * Baut den Warteschritt aus einem {@code await}.
+     *
+     * <p>Die Frist ist absolute Spielzeit. Solange der Server steht, vergeht
+     * keine — eine Frist von dreißig Sekunden läuft also nicht ab, während
+     * niemand spielt. Für Minecraft ist das die richtige Bedeutung, auch wenn
+     * es für den, der an eine Uhr denkt, nach einem Fehler aussieht.
+     */
+    private Step awaitStep(Expr.Await await, String resultName, long gameTime) {
+        long deadline = -1;
+        if (await.timeout() != null) {
+            Value timeout = evaluate(await.timeout());
+            if (!(timeout instanceof Value.Duration ticks)) {
+                throw new ScriptError("timeout braucht eine Zeitangabe, etwa 30s.");
+            }
+            deadline = gameTime + ticks.ticks();
+        }
+        return new Step.Await(await.eventName(), await.where(), deadline,
+                await.elseBody(), resultName);
+    }
+
+    /** Ein bloßes await ohne Zuweisung — dasselbe, nur ohne Namen. */
+    private Step awaitStep(Expr.Await await, long gameTime) {
+        return awaitStep(await, null, gameTime);
+    }
+
+    /** Gesetzt, solange eine Anweisung für einen Ablauf ausgeführt wird. */
+    private Scope externalScope;
+
     // ---- Ausdrücke --------------------------------------------------------
+
+    /**
+     * Wertet einen Ausdruck mit fremden Namen aus.
+     *
+     * <p>Gebraucht für die {@code where}-Klausel eines {@code await}: Dort
+     * sind die Parameter des Ereignisses sichtbar, die es im Ablauf selbst
+     * nicht gibt.
+     */
+    public Value evaluateWith(Expr expr, Scope scope) {
+        Scope previous = externalScope;
+        externalScope = scope;
+        try {
+            return evaluate(expr);
+        } finally {
+            externalScope = previous;
+        }
+    }
+
+    /** Wahrheitswert eines Ausdrucks, für Aufrufer außerhalb. */
+    public boolean truthOf(Value value) {
+        return truth(value);
+    }
 
     private Value evaluate(Expr expr) {
         return switch (expr) {
@@ -255,7 +412,7 @@ public final class Interpreter {
     }
 
     private Value resolveName(String name) {
-        Value local = find(name);
+        Value local = externalScope != null ? externalScope.find(name) : find(name);
         if (local != null) {
             return local;
         }

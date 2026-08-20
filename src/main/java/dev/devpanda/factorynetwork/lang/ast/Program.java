@@ -25,4 +25,15 @@ public record Program(List<Decl> declarations) {
         return declarations.stream().filter(Decl.On.class::isInstance)
                 .map(Decl.On.class::cast).toList();
     }
+
+    public List<Decl.Event> events() {
+        return declarations.stream().filter(Decl.Event.class::isInstance)
+                .map(Decl.Event.class::cast).toList();
+    }
+
+    /** Die Deklaration eines Ereignisses, oder {@code null}. */
+    public Decl.Event event(String name) {
+        return events().stream().filter(candidate -> candidate.name().equals(name))
+                .findFirst().orElse(null);
+    }
 }
