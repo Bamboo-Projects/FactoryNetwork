@@ -1,10 +1,15 @@
 # -*- coding: utf-8 -*-
-"""Erzeugt die Texturübersicht als eigenständige HTML-Seite."""
+"""Erzeugt die Texturübersicht als eigenständige HTML-Seite.
+
+Alle Bilder stecken als data-URI darin — die Datei lässt sich also
+weitergeben, ohne dass etwas fehlt. Sie landet in build/.
+"""
 import base64
 import os
 
 TEX = r"D:\Projekte\FactoryNetwork\src\main\resources\assets\factorynetwork\textures"
-OUT = r"C:\Users\admin\AppData\Local\Temp\claude\D--Projekte-AE2SFM\aa2e8e97-2324-4b86-aec2-b62821162d2b\scratchpad\texturen.html"
+OUT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                   "build", "texturen.html")
 
 
 def data_uri(folder, name):
@@ -273,7 +278,7 @@ def build():
   </header>""")
 
     parts.append("""  <div class="tools">
-    <span>Vergrösserung</span>
+    <span>Vergrößerung</span>
     <button type="button" data-zoom="1">1&times;</button>
     <button type="button" data-zoom="4">4&times;</button>
     <button type="button" data-zoom="7" aria-pressed="true">7&times;</button>
