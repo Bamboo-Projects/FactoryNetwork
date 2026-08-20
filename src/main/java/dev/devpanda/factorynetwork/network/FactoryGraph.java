@@ -54,19 +54,27 @@ public final class FactoryGraph {
      * drei danebenhingen.
      */
     private final List<BlockPos> unnamed;
+    /** Geräte, die im Netz hängen, aber keinen freien Kanal bekommen haben. */
+    private final List<BlockPos> starved;
     private final Set<BlockPos> cables;
+    /** Wie viele Kanäle jeder Kabelstrang trägt. */
+    private final Map<Node, Integer> channelLoad;
     private final boolean truncated;
 
     private FactoryGraph(Map<String, List<BlockPos>> connectorsByName, List<BlockPos> unnamed,
-                         Set<BlockPos> cables, boolean truncated) {
+                         List<BlockPos> starved, Set<BlockPos> cables,
+                         Map<Node, Integer> channelLoad, boolean truncated) {
         this.connectorsByName = connectorsByName;
         this.unnamed = unnamed;
+        this.starved = starved;
+        this.channelLoad = channelLoad;
         this.cables = cables;
         this.truncated = truncated;
     }
 
     public static FactoryGraph empty() {
-        return new FactoryGraph(Map.of(), List.of(), Set.of(), false);
+        return new FactoryGraph(Map.of(), List.of(), List.of(), Set.of(),
+                Map.of(), false);
     }
 
     /**
@@ -76,26 +84,52 @@ public final class FactoryGraph {
      * liefe ein grüner Strang über einen Block, in dem auch ein roter liegt,
      * und beide wären plötzlich verbunden.
      */
-    private record Node(BlockPos pos, CableColour colour) {
+    public record Node(BlockPos pos, CableColour colour) {
     }
 
-    /** Baut den Graphen ausgehend vom Controller auf. */
+    /**
+     * Wie viele Kanäle ein Kabelstrang trägt.
+     *
+     * <p>Ein Strang ist ein Bündel von acht Drähten. Jedes Gerät zieht auf
+     * seinem ganzen Weg zum Controller einen davon ab — weiter hinten fehlt
+     * er dann. Das Vorbild ist Applied Energistics, mit einem Unterschied:
+     * Bei uns zählt der <b>Strang</b>, nicht der Block. Vier Stränge in einem
+     * Block tragen vier mal acht, weil sie vier getrennte Netze sind.
+     */
+    public static final int CHANNELS_PER_STRAND = 8;
+
+    /**
+     * Baut den Graphen ausgehend vom Controller auf.
+     *
+     * <p>Die Breitensuche geht in fester Richtungsfolge — {@code Direction}
+     * in seiner eigenen Reihenfolge — und sammelt Geräte nach Entfernung.
+     * <b>Damit gewinnt bei knappen Kanälen immer das nähere Gerät</b>, und bei
+     * gleicher Entfernung das in der früheren Richtung. Diese Regel muss
+     * feststehen und erklärbar sein: Sonst ist „warum ist dieses Gerät
+     * offline" nicht zu beantworten.
+     */
     public static FactoryGraph build(Level level, BlockPos controller) {
         Map<String, List<BlockPos>> connectors = new LinkedHashMap<>();
         List<BlockPos> unnamed = new ArrayList<>();
+        List<BlockPos> starved = new ArrayList<>();
         Set<BlockPos> cables = new HashSet<>();
-        Set<Node> seen = new HashSet<>();
+        Map<Node, Integer> load = new HashMap<>();
+        Map<Node, Node> parents = new HashMap<>();
         Set<BlockPos> visitedDevices = new HashSet<>();
+        // Gerät auf die Kabelstränge, über die es erreichbar ist — in der
+        // Reihenfolge, in der die Suche sie gefunden hat.
+        Map<BlockPos, List<Node>> reachable = new LinkedHashMap<>();
         Deque<Node> queue = new ArrayDeque<>();
 
         // Der Controller selbst ist farbneutral: Von ihm gehen alle Stränge
         // aus, die an ihm hängen.
-        queue.add(new Node(controller, CableColour.NONE));
-        seen.add(new Node(controller, CableColour.NONE));
+        Node root = new Node(controller, CableColour.NONE);
+        queue.add(root);
+        parents.put(root, null);
         boolean truncated = false;
 
         while (!queue.isEmpty()) {
-            if (seen.size() > MAX_NODES) {
+            if (parents.size() > MAX_NODES) {
                 truncated = true;
                 break;
             }
@@ -108,37 +142,40 @@ public final class FactoryGraph {
                 }
                 BlockState state = level.getBlockState(next);
                 if (state.getBlock() instanceof CableBlock) {
-                    visitCable(level, next, current, seen, queue, cables);
+                    visitCable(level, next, current, parents, queue, cables);
                 } else if (state.getBlock() instanceof ConnectorBlock) {
-                    if (visitedDevices.add(next.immutable())) {
-                        collectConnector(level, next, connectors, unnamed);
-                    }
+                    // Noch nicht zuteilen: Ein Gerät kann an mehreren
+                    // Strängen hängen, und welcher es trägt, entscheidet
+                    // sich erst, wenn alle Wege bekannt sind.
+                    reachable.computeIfAbsent(next.immutable(), key -> new ArrayList<>())
+                            .add(current);
+                    visitedDevices.add(next.immutable());
                 }
             }
         }
 
+        assignChannels(level, reachable, parents, load, connectors, unnamed, starved);
+
         Map<String, List<BlockPos>> frozen = new LinkedHashMap<>();
         connectors.forEach((label, positions) -> frozen.put(label, List.copyOf(positions)));
         return new FactoryGraph(Map.copyOf(frozen), List.copyOf(unnamed),
-                Set.copyOf(cables), truncated);
+                List.copyOf(starved), Set.copyOf(cables), Map.copyOf(load), truncated);
     }
 
     /**
      * Geht in einen Kabelblock hinein — aber nur in die Stränge, die zur
      * Farbe passen, aus der man kommt.
      */
-    private static void visitCable(Level level, BlockPos pos, Node from, Set<Node> seen,
+    private static void visitCable(Level level, BlockPos pos, Node from, Map<Node, Node> parents,
                                    Deque<Node> queue, Set<BlockPos> cables) {
         boolean entered = false;
         for (CableColour strand : CableBlock.strandsAt(level, pos)) {
             if (!from.colour().connectsTo(strand)) {
                 continue;
             }
-            // Von der Standardfarbe aus behält der Strang seine eigene Farbe;
-            // sonst liefe man über ein neutrales Kabel in jede Farbe hinein
-            // und wieder heraus.
             Node node = new Node(pos.immutable(), strand);
-            if (seen.add(node)) {
+            if (!parents.containsKey(node)) {
+                parents.put(node, from);
                 queue.add(node);
                 entered = true;
             }
@@ -148,24 +185,99 @@ public final class FactoryGraph {
         }
     }
 
-    /** Nimmt einen Connector auf — benannt oder nicht. */
-    private static void collectConnector(Level level, BlockPos pos,
-                                         Map<String, List<BlockPos>> connectors,
-                                         List<BlockPos> unnamed) {
-        if (!(level.getBlockEntity(pos) instanceof ConnectorBlockEntity connector)) {
-            return;
+    /**
+     * Teilt den Geräten ihre Kanäle zu.
+     *
+     * <p>Läuft erst, wenn die Suche durch ist — vorher weiß man nicht, über
+     * welche Stränge ein Gerät überhaupt erreichbar ist. <b>Ein Gerät nimmt
+     * den ersten Strang, auf dessen Weg noch Platz ist</b>, nicht einfach den
+     * erstgefundenen: Sonst bliebe ein Gerät hungrig, während im selben Block
+     * ein freier Strang liegt. Genau das heißt „Kanäle je Kabel, nicht je
+     * Bündel".
+     *
+     * <p>Die Reihenfolge ist die der Suche, also nach Entfernung: Bei knappen
+     * Kanälen gewinnt das nähere Gerät.
+     */
+    private static void assignChannels(Level level, Map<BlockPos, List<Node>> reachable,
+                                       Map<Node, Node> parents, Map<Node, Integer> load,
+                                       Map<String, List<BlockPos>> connectors,
+                                       List<BlockPos> unnamed, List<BlockPos> starved) {
+        for (Map.Entry<BlockPos, List<Node>> entry : reachable.entrySet()) {
+            BlockPos pos = entry.getKey();
+            if (!(level.getBlockEntity(pos) instanceof ConnectorBlockEntity connector)) {
+                continue;
+            }
+            int cost = connector.channelCost();
+
+            List<Node> chosen = null;
+            for (Node entryPoint : entry.getValue()) {
+                List<Node> path = pathOf(level, entryPoint, parents);
+                boolean room = path.stream().allMatch(node ->
+                        load.getOrDefault(node, 0) + cost <= CHANNELS_PER_STRAND);
+                if (room) {
+                    chosen = path;
+                    break;
+                }
+            }
+            if (chosen == null) {
+                starved.add(pos);
+                continue;
+            }
+            for (Node node : chosen) {
+                load.merge(node, cost, Integer::sum);
+            }
+
+            String label = connector.label();
+            if (label == null || label.isBlank()) {
+                unnamed.add(pos);
+            } else {
+                // Nicht überschreiben: Zwei Connectoren mit demselben Namen
+                // sind ein Fehler, kein Vorrang.
+                connectors.computeIfAbsent(label, key -> new ArrayList<>()).add(pos);
+            }
         }
-        String label = connector.label();
-        if (label == null || label.isBlank()) {
-            unnamed.add(pos.immutable());
-            return;
-        }
-        // Nicht überschreiben: Zwei Connectoren mit demselben Namen sind ein
-        // Fehler, kein Vorrang. Wer hier den letzten gewinnen ließe, machte
-        // die Reihenfolge der Suche zur Bedeutung.
-        connectors.computeIfAbsent(label, key -> new ArrayList<>()).add(pos.immutable());
     }
 
+    /** Der Weg eines Geräts zum Controller, als Liste seiner Kabelstränge. */
+    private static List<Node> pathOf(Level level, Node from, Map<Node, Node> parents) {
+        List<Node> path = new ArrayList<>();
+        for (Node node = from; node != null; node = parents.get(node)) {
+            if (level.getBlockState(node.pos()).getBlock() instanceof CableBlock) {
+                path.add(node);
+            }
+        }
+        return path;
+    }
+
+    /**
+     * Wie viele Kanäle ein Strang an dieser Stelle trägt.
+     *
+     * <p>Die Zahlen gehören dem Graphen, nicht den Blöcken. Ein Kabel kann zu
+     * zwei Netzen gehören — schriebe jeder Controller seine Zahlen in die
+     * BlockEntity, überschriebe einer den anderen.
+     */
+    public int channelLoad(BlockPos pos, CableColour colour) {
+        return channelLoad.getOrDefault(new Node(pos, colour), 0);
+    }
+
+    public int channelsFree(BlockPos pos, CableColour colour) {
+        return CHANNELS_PER_STRAND - channelLoad(pos, colour);
+    }
+
+    /** Geräte ohne freien Kanal — im Netz sichtbar, aber nicht ansprechbar. */
+    public List<BlockPos> starvedConnectors() {
+        return starved;
+    }
+
+    public boolean isStarved(BlockPos pos) {
+        return starved.contains(pos);
+    }
+
+    /**
+     * Die Position eines Connectors — leer, wenn es ihn nicht gibt <b>oder</b>
+     * wenn der Name doppelt vergeben ist. Ein mehrdeutiger Name darf nicht
+     * stillschweigend auf einen der beiden zeigen.
+     */
     public Optional<BlockPos> connector(String name) {
         List<BlockPos> positions = connectorsByName.get(name);
         return positions != null && positions.size() == 1

@@ -183,6 +183,12 @@ public final class WorldHost implements Interpreter.Host {
                         "Solange zwei Connectoren gleich heißen, lässt sich keiner "
                                 + "von beiden ansprechen. Benenne einen um.");
             }
+            if (!graph.starvedConnectors().isEmpty()) {
+                throw new ScriptError("Unbekannter Connector " + name + ".",
+                        graph.starvedConnectors().size() + " Geräte im Netz haben keinen "
+                                + "freien Kanal bekommen — vielleicht ist eines davon gemeint. "
+                                + "Ein Kabelstrang trägt acht.");
+            }
             String suggestion = suggestDevice(name);
             throw new ScriptError("Unbekannter Connector " + name + ".",
                     suggestion == null ? null : "Meintest du " + suggestion + "?");

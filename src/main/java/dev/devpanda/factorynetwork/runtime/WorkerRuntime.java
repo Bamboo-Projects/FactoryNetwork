@@ -275,6 +275,13 @@ public final class WorkerRuntime {
                 state.detail = "Der Name " + name.value() + " ist "
                         + graph.positionsOf(name.value()).size()
                         + "-mal vergeben und damit unbrauchbar";
+            } else if (!graph.starvedConnectors().isEmpty()) {
+                // Ein Gerät ohne Kanal hat einen Namen, ist aber nicht
+                // erreichbar. Wer das als Tippfehler meldet, schickt den
+                // Spieler auf die falsche Suche.
+                state.detail = "Unbekannter Connector " + name.value()
+                        + " — es hängen " + graph.starvedConnectors().size()
+                        + " Geräte ohne freien Kanal im Netz";
             } else {
                 state.detail = graph.closestName(name.value())
                         .map(suggestion -> "Unbekannter Connector " + name.value()

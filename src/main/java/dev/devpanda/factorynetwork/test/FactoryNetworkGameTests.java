@@ -778,6 +778,112 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    /** Legt eine Reihe Kabel und hängt an jedes Ende einen Connector. */
+    private static void line(GameTestHelper helper, BlockPos from, int length) {
+        for (int i = 0; i < length; i++) {
+            helper.setBlock(from.east(i), FnBlocks.CABLE.get());
+        }
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void aStrandCarriesEightChannels(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 2, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+
+        // Eine Kabelreihe nach Osten, darüber und darunter je vier Connectoren
+        line(helper, controller.east(), 5);
+        int placed = 0;
+        for (int i = 0; i < 5 && placed < 9; i++) {
+            for (BlockPos side : new BlockPos[]{
+                    controller.east(i + 1).above(), controller.east(i + 1).below()}) {
+                if (placed >= 9) {
+                    break;
+                }
+                helper.setBlock(side, FnBlocks.CONNECTOR.get());
+                name(helper, side, "gerät_" + placed);
+                placed++;
+            }
+        }
+        helper.assertValueEqual(placed, 9, "aufgestellte Geräte");
+
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        // Acht Kanäle je Strang: Das neunte Gerät geht leer aus.
+        helper.assertValueEqual(entity.graph().starvedConnectors().size(), 1,
+                "Geräte ohne Kanal");
+        helper.assertValueEqual(entity.graph().connectorNames().size(), 8,
+                "Geräte mit Kanal");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void twoStrandsCarryEightEach(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 2, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+
+        // Dieselbe Reihe, aber jeder Block trägt zwei Stränge: grün und rot.
+        for (int i = 0; i < 5; i++) {
+            BlockPos pos = controller.east(i + 1);
+            helper.setBlock(pos, FnBlocks.CABLE.get().defaultBlockState()
+                    .setValue(CableBlock.COLOUR, CableColour.GREEN));
+            if (helper.getBlockEntity(pos) instanceof CableBlockEntity cable) {
+                cable.addStrand(CableColour.RED);
+            }
+        }
+        // Zehn Geräte — mehr als ein Strang trägt, aber zwei tragen sie.
+        int placed = 0;
+        for (int i = 0; i < 5 && placed < 10; i++) {
+            for (BlockPos side : new BlockPos[]{
+                    controller.east(i + 1).above(), controller.east(i + 1).below()}) {
+                if (placed >= 10) {
+                    break;
+                }
+                helper.setBlock(side, FnBlocks.CONNECTOR.get());
+                name(helper, side, "gerät_" + placed);
+                placed++;
+            }
+        }
+
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        // Kanäle zählen je Strang, nicht je Block: Zehn Geräte passen durch
+        // zwei Stränge, obwohl einer nur acht trüge.
+        helper.assertValueEqual(entity.graph().starvedConnectors().size(), 0,
+                "Kein Gerät darf leer ausgehen");
+        helper.assertValueEqual(entity.graph().connectorNames().size(), 10,
+                "Geräte mit Kanal");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void loadIsCountedPerStrand(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 2, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        line(helper, controller.east(), 3);
+
+        // Zwei Geräte am Ende der Reihe — über und unter dem letzten Kabel,
+        // nicht auf ihm: Ein Connector an dessen Stelle nähme ihm den Platz.
+        BlockPos last = controller.east(3);
+        helper.setBlock(last.above(), FnBlocks.CONNECTOR.get());
+        name(helper, last.above(), "ende_0");
+        helper.setBlock(last.below(), FnBlocks.CONNECTOR.get());
+        name(helper, last.below(), "ende_1");
+
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        // Beide Wege laufen über das erste Kabel: dort zwei Kanäle belegt.
+        int atStart = entity.graph().channelLoad(
+                helper.absolutePos(controller.east(1)), CableColour.NONE);
+        helper.assertValueEqual(atStart, 2, "Kanäle auf dem ersten Kabel");
+        helper.assertValueEqual(entity.graph().channelsFree(
+                helper.absolutePos(controller.east(1)), CableColour.NONE), 6,
+                "freie Kanäle dort");
+        helper.succeed();
+    }
+
     private FactoryNetworkGameTests() {
     }
 }

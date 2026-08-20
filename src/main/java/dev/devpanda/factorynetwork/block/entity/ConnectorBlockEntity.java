@@ -19,8 +19,18 @@ import org.jetbrains.annotations.Nullable;
 public class ConnectorBlockEntity extends BlockEntity {
 
     private static final String KEY_LABEL = "Label";
+    private static final String KEY_COST = "ChannelCost";
 
     private String label = "";
+
+    /**
+     * Wie viele Kanäle dieses Gerät braucht.
+     *
+     * <p>Heute immer einer. Als Feld statt als feste Eins, damit ein Gerät
+     * mit höherem Bedarf später keine Wanderung durch den Pfadcode nach sich
+     * zieht — das kostet jetzt nichts und spart sie dann.
+     */
+    private int channelCost = 1;
 
     public ConnectorBlockEntity(BlockPos pos, BlockState state) {
         super(FnBlockEntities.CONNECTOR.get(), pos, state);
@@ -28,6 +38,15 @@ public class ConnectorBlockEntity extends BlockEntity {
 
     public String label() {
         return label;
+    }
+
+    public int channelCost() {
+        return channelCost;
+    }
+
+    public void setChannelCost(int cost) {
+        this.channelCost = Math.max(1, cost);
+        setChanged();
     }
 
     public void setLabel(String label) {
@@ -55,12 +74,14 @@ public class ConnectorBlockEntity extends BlockEntity {
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         label = tag.getString(KEY_LABEL);
+        channelCost = Math.max(1, tag.getInt(KEY_COST));
     }
 
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
         tag.putString(KEY_LABEL, label);
+        tag.putInt(KEY_COST, channelCost);
     }
 
     @Override

@@ -70,5 +70,6 @@
   "item.factorynetwork.black_cable": "Black Cable",
   "item.factorynetwork.cable": "Cable",
   "message.factorynetwork.cable.already_there": "That colour is already in this cable.",
-  "message.factorynetwork.cable.full": "No more than %s strands fit in one block."
+  "message.factorynetwork.cable.full": "No more than %s strands fit in one block.",
+  "message.factorynetwork.controller.starved": "%s devices without a free channel"
 }
