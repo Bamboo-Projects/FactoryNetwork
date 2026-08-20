@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Erzeugt die Texturen von Factory Network.
 
-64x64, also vierfache Vanilla-Auflösung. Bei dieser Grösse gelten andere
+64x64, also vierfache Vanilla-Auflösung. Bei dieser Größe gelten andere
 Regeln als bei 16x16: Verläufe tragen, Kanten dürfen mehrstufig sein, und ein
 Leuchten braucht einen Hof, sonst wirkt es aufgeklebt.
 
