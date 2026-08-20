@@ -36,6 +36,7 @@ public final class FlowEngine {
     private final BlockIndex blocks;
     private final Map<Long, Flow> flows = new LinkedHashMap<>();
     private final List<Flow> failed = new ArrayList<>();
+    private final java.util.Deque<PendingEvent> pending = new java.util.ArrayDeque<>();
     private long nextId = 1;
 
     /** So viele gescheiterte Abläufe bleiben zum Nachsehen liegen. */
@@ -45,7 +46,24 @@ public final class FlowEngine {
         this.program = program;
         this.interpreter = interpreter;
         this.blocks = BlockIndex.of(program);
+        // Ab jetzt gehen alle emit dieses Interpreters durch diese Maschine.
+        interpreter.setEventSink(this::post);
     }
+
+    /**
+     * Nimmt ein Ereignis entgegen, ohne es sofort auszuliefern.
+     *
+     * <p>Ein {@code emit} kann mitten in einem Ablauf stehen, und das
+     * Ausliefern würde denselben Stapel anfassen, auf dem gerade gearbeitet
+     * wird. Also wartet das Ereignis bis zwischen zwei Schritten. Für den
+     * Spieler bleibt es derselbe Tick.
+     */
+    public void post(String event, List<Value> arguments) {
+        pending.add(new PendingEvent(event, List.copyOf(arguments)));
+    }
+
+    /** Ein Ereignis, das auf seine Auslieferung wartet. */
+    private record PendingEvent(String event, List<Value> arguments) {}
 
     public Map<Long, Flow> flows() {
         return flows;
@@ -120,6 +138,35 @@ public final class FlowEngine {
      * arbeiten.
      */
     public void tick(long gameTime) {
+        // Ein Ereignis kann Abläufe wecken, die ihrerseits Ereignisse
+        // auslösen. Das darf im selben Tick weitergehen, aber nicht endlos:
+        // Zwei Abläufe, die sich gegenseitig aufwecken, würden den Server
+        // sonst stehen lassen. Was übrig bleibt, wartet auf den nächsten Tick.
+        for (int runde = 0; runde < EVENT_ROUNDS; runde++) {
+            deliver();
+            advanceAll(gameTime);
+            if (pending.isEmpty()) {
+                return;
+            }
+        }
+    }
+
+    /** So viele Ereignisrunden dürfen in einem Tick aufeinander folgen. */
+    private static final int EVENT_ROUNDS = 8;
+
+    private void deliver() {
+        if (pending.isEmpty()) {
+            return;
+        }
+        List<PendingEvent> runde = List.copyOf(pending);
+        pending.clear();
+        for (PendingEvent event : runde) {
+            wake(event.event(), event.arguments());
+            fire(event.event(), event.arguments());
+        }
+    }
+
+    private void advanceAll(long gameTime) {
         for (Flow flow : List.copyOf(flows.values())) {
             if (flow.isDue(gameTime)) {
                 flow.resume();

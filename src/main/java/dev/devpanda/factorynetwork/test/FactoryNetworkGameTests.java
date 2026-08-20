@@ -1507,6 +1507,127 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void emitFromTheLanguageWakesAWaitingFlow(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                event Fertig(wert: Int)
+
+                fn wartet() {
+                    let ergebnis = await Fertig
+                    return ergebnis
+                }
+
+                fn meldet() {
+                    emit Fertig(7)
+                }"""), "Das Programm wurde nicht übernommen");
+
+        var wartend = entity.startFlow("wartet", java.util.List.of());
+        helper.assertValueEqual(wartend.status().name(), "AWAITING", "Er wartet");
+
+        // Der Weg, den ein Spieler nimmt: emit steht in seinem Programm, nicht
+        // in einem Java-Aufruf.
+        entity.startFlow("meldet", java.util.List.of());
+
+        helper.assertValueEqual(wartend.status().name(), "DONE",
+                "Ein emit aus der Sprache muss wartende Abläufe wecken");
+        helper.assertValueEqual(resultOf(wartend), 7L, "Mit dem Wert aus dem emit");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void anEventBlockMayWaitItself(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        // Ein on-Block, der selbst wartet — das ging nicht, solange Ereignisse
+        // im Interpreter zu Ende liefen.
+        helper.assertTrue(entity.deploy("""
+                event Start()
+                event Weiter(wert: Int)
+
+                on Start() {
+                    let wert = await Weiter
+                    emit Fertig(wert)
+                }
+
+                event Fertig(wert: Int)
+
+                fn beobachtet() {
+                    let ergebnis = await Fertig
+                    return ergebnis
+                }"""), "Das Programm wurde nicht übernommen");
+
+        var beobachter = entity.startFlow("beobachtet", java.util.List.of());
+        entity.fireEvent("Start", java.util.List.of());
+        helper.assertValueEqual(beobachter.status().name(), "AWAITING",
+                "Noch hat der on-Block nichts gemeldet");
+
+        entity.fireEvent("Weiter", java.util.List.of(
+                new dev.devpanda.factorynetwork.runtime.Value.Int(5)));
+        helper.assertValueEqual(beobachter.status().name(), "DONE",
+                "Der on-Block lief nach seinem Warten weiter und meldete");
+        helper.assertValueEqual(resultOf(beobachter), 5L, "Mit dem durchgereichten Wert");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void aSleepingFlowSurvivesAServerRestart(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        // Allerlei Wertarten, damit der Weg über die Platte nicht nur mit
+        // Zahlen belegt ist.
+        helper.assertTrue(entity.deploy("""
+                fn schlaeft() {
+                    let nachricht = "hallo"
+                    let dauer = 5s
+                    let genau = 1.5
+                    let ja = true
+                    let sache = item:iron_ingot
+                    sleep 30t
+                    return 5
+                }"""), "Das Programm wurde nicht übernommen");
+
+        var flow = entity.startFlow("schlaeft", java.util.List.of());
+        helper.assertValueEqual(flow.status().name(), "SLEEPING", "Er schläft");
+
+        var registries = helper.getLevel().registryAccess();
+        var gespeichert = entity.saveWithFullMetadata(registries);
+        var block = net.minecraft.world.level.block.entity.BlockEntity.loadStatic(
+                helper.absolutePos(controller), helper.getBlockState(controller),
+                gespeichert, registries);
+        ControllerBlockEntity geladen = (ControllerBlockEntity) block;
+        geladen.setLevel(helper.getLevel());
+
+        var wieder = flowOf(geladen, flow.id());
+        helper.assertTrue(wieder != null, "Der schlafende Ablauf ist verloren gegangen");
+        helper.assertValueEqual(wieder.status().name(), "SLEEPING", "Er schläft weiter");
+        helper.assertValueEqual(
+                ((dev.devpanda.factorynetwork.runtime.Value.Text) wieder.find("nachricht")).value(),
+                "hallo", "Der Text muss den Weg überstehen");
+        helper.assertValueEqual(
+                ((dev.devpanda.factorynetwork.runtime.Value.Duration) wieder.find("dauer")).ticks(),
+                100L, "Fünf Sekunden sind hundert Ticks");
+        helper.assertValueEqual(
+                ((dev.devpanda.factorynetwork.runtime.Value.Bool) wieder.find("ja")).value(),
+                true, "Auch der Wahrheitswert");
+        helper.assertTrue(wieder.find("sache") != null, "Und die Auswahl");
+
+        helper.runAfterDelay(40, () -> {
+            geladen.flowEngine().tick(helper.getLevel().getGameTime());
+            helper.assertValueEqual(wieder.status().name(), "DONE",
+                    "Nach der Wartezeit wacht er auf, auch nach einem Neustart");
+            helper.assertValueEqual(resultOf(wieder), 5L, "Und läuft zu Ende");
+            helper.succeed();
+        });
+    }
+
     private FactoryNetworkGameTests() {
     }
 }

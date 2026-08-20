@@ -20,7 +20,6 @@ import dev.devpanda.factorynetwork.runtime.flow.FlowEngine;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -124,7 +123,7 @@ public class ControllerBlockEntity extends BlockEntity {
         this.program = result.program();
         runtime.reset();
         this.flows = null;
-        if (carried != null && !carried.getList("flows", Tag.TAG_COMPOUND).isEmpty()) {
+        if (!FlowCodec.isEmpty(carried)) {
             this.pendingFlows = carried;
         }
         return true;
@@ -258,8 +257,6 @@ public class ControllerBlockEntity extends BlockEntity {
         if (program.handlers().stream().noneMatch(h -> h.name().equals("redstone_changed"))) {
             return;
         }
-        WorldHost host = new WorldHost(level, graph, storage);
-        Interpreter interpreter = new Interpreter(program, host);
         for (Map.Entry<String, BlockPos> entry : graph.connectors().entrySet()) {
             if (!level.isLoaded(entry.getValue())) {
                 continue;
@@ -269,14 +266,11 @@ public class ControllerBlockEntity extends BlockEntity {
             if (previous != null && previous == strength) {
                 continue;
             }
-            try {
-                interpreter.fire("redstone_changed",
-                        List.of(new Value.Device(entry.getKey()), new Value.Int(strength)));
-            } catch (ScriptError error) {
-                note("redstone_changed: " + error);
-            }
+            // Über die Ablaufmaschine, damit ein on redstone_changed selbst
+            // warten darf — auf eine Maschine, auf einen Zähler, auf Zeit.
+            fireEvent("redstone_changed",
+                    List.of(new Value.Device(entry.getKey()), new Value.Int(strength)));
         }
-        host.logs().forEach(this::note);
     }
 
     /**
@@ -335,8 +329,7 @@ public class ControllerBlockEntity extends BlockEntity {
         if (engine == null) {
             return;
         }
-        engine.wake(event, arguments);
-        engine.fire(event, arguments);
+        engine.post(event, arguments);
         engine.tick(level.getGameTime());
     }
 
@@ -346,10 +339,20 @@ public class ControllerBlockEntity extends BlockEntity {
             throw new ScriptError("Keine Welt.");
         }
         WorldHost host = new WorldHost(level, graph, storage);
+        Interpreter interpreter = new Interpreter(program, host);
+        FlowEngine engine = flowEngine();
+        if (engine != null) {
+            // Auch ein Aufruf aus dem Terminal kann etwas auslösen, worauf
+            // ein Ablauf wartet.
+            interpreter.setEventSink(engine::post);
+        }
         try {
-            return new Interpreter(program, host).call(name, arguments);
+            return interpreter.call(name, arguments);
         } finally {
             host.logs().forEach(this::note);
+            if (engine != null) {
+                engine.tick(level.getGameTime());
+            }
         }
     }
 

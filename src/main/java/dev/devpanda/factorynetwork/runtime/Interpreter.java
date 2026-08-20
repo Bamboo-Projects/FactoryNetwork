@@ -106,6 +106,35 @@ public final class Interpreter {
                 arguments, function.body());
     }
 
+    /**
+     * Wohin ein {@code emit} geht.
+     *
+     * <p>Ohne Empfänger löst der Interpreter die {@code on}-Blöcke selbst aus
+     * und ist damit fertig. Das reicht nicht, sobald es wartende Abläufe gibt:
+     * Ein Ereignis muss auch die wecken, und ein {@code on}-Block muss selbst
+     * warten dürfen. Beides kann nur die Ablaufmaschine, also nimmt sie das
+     * Ereignis entgegen, wenn es sie gibt.
+     */
+    @FunctionalInterface
+    public interface EventSink {
+        void emit(String event, List<Value> arguments);
+    }
+
+    private EventSink eventSink;
+
+    public void setEventSink(EventSink eventSink) {
+        this.eventSink = eventSink;
+    }
+
+    /** Gibt ein Ereignis weiter — an die Ablaufmaschine oder an sich selbst. */
+    private void emit(String event, List<Value> arguments) {
+        if (eventSink != null) {
+            eventSink.emit(event, arguments);
+            return;
+        }
+        fire(event, arguments);
+    }
+
     /** Löst alle Blöcke aus, die auf dieses Ereignis hören. */
     public void fire(String event, List<Value> arguments) {
         for (Decl.On handler : program.handlers()) {
@@ -166,7 +195,7 @@ public final class Interpreter {
             case Stmt.Move move -> host.move(evaluate(move.amount()),
                     move.from() == null ? null : evaluate(move.from()),
                     evaluate(move.to()));
-            case Stmt.Emit emit -> fire(emit.eventName(),
+            case Stmt.Emit emit -> emit(emit.eventName(),
                     emit.arguments().stream().map(argument -> evaluate(argument.value())).toList());
             case Stmt.Sleep ignored -> throw new ScriptError(
                     "sleep kann diese Fassung noch nicht.",
@@ -293,7 +322,7 @@ public final class Interpreter {
                     yield Step.Next.get();
                 }
                 case Stmt.Emit emit -> {
-                    fire(emit.eventName(), emit.arguments().stream()
+                    emit(emit.eventName(), emit.arguments().stream()
                             .map(argument -> evaluate(argument.value())).toList());
                     yield Step.Next.get();
                 }

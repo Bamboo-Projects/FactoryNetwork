@@ -119,6 +119,11 @@ public final class FlowCodec {
         return list;
     }
 
+    /** Steht in diesem Tag kein einziger Ablauf? */
+    public static boolean isEmpty(CompoundTag tag) {
+        return tag == null || tag.getList(KEY_FLOWS, Tag.TAG_COMPOUND).isEmpty();
+    }
+
     // ---- Lesen ------------------------------------------------------------
 
     /**
