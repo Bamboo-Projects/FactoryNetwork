@@ -62,7 +62,8 @@ public class ControllerBlock extends Block implements EntityBlock {
             controller.rebuildNetwork();
             player.displayClientMessage(Component.translatable(
                     "message.factorynetwork.controller.status",
-                    controller.graph().connectorNames().size(),
+                    controller.graph().connectorCount(),
+                    controller.graph().unnamedConnectors().size(),
                     controller.graph().cableCount()), false);
         }
         return InteractionResult.CONSUME;

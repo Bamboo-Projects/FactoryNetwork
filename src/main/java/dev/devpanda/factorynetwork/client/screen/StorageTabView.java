@@ -30,8 +30,8 @@ public class StorageTabView {
             FactoryNetwork.MOD_ID, "textures/gui/widgets.png");
 
     private static final int SLOT = 18;
-    private static final int COLUMNS = 8;
-    private static final int ROWS = 4;
+    private static final int COLUMNS = 14;
+    private static final int ROWS = 5;
 
     private final TerminalScreen screen;
     private final Font font;
@@ -70,7 +70,7 @@ public class StorageTabView {
         drawSearch(graphics);
 
         // Rasterhintergrund, so gross wie gebraucht
-        graphics.blit(GRID, gridX(), gridY(), 0, 0, COLUMNS * SLOT, ROWS * SLOT, 256, 256);
+        graphics.blit(GRID, gridX(), gridY(), 0, 0, COLUMNS * SLOT, ROWS * SLOT, 512, 512);
 
         List<ClientStorageView.Row> rows = ClientStorageView.rows();
         int first = scrollRow * COLUMNS;
@@ -99,7 +99,7 @@ public class StorageTabView {
     }
 
     private void drawSearch(GuiGraphics graphics) {
-        graphics.blit(WIDGETS, x + 2, y + 2, 0, 32, 96, 12, 256, 256);
+        graphics.blit(WIDGETS, x + 2, y + 2, 0, 32, 96, 12, 512, 512);
         String shown = search.isEmpty()
                 ? Component.translatable("screen.factorynetwork.terminal.search").getString()
                 : search.toString();
@@ -116,12 +116,12 @@ public class StorageTabView {
         int trackX = gridX() + COLUMNS * SLOT + 2;
         int trackY = gridY();
         int trackH = ROWS * SLOT;
-        graphics.blit(WIDGETS, trackX, trackY, 108, 32, 12, 15, 256, 256);
+        graphics.blit(WIDGETS, trackX, trackY, 108, 32, 12, 15, 512, 512);
         if (max == 0) {
             return;
         }
         int thumbY = trackY + (trackH - 15) * scrollRow / max;
-        graphics.blit(WIDGETS, trackX, thumbY, 96, 32, 12, 15, 256, 256);
+        graphics.blit(WIDGETS, trackX, thumbY, 96, 32, 12, 15, 512, 512);
     }
 
     private void drawFooter(GuiGraphics graphics) {

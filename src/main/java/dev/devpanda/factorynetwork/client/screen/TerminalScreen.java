@@ -32,13 +32,13 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
     private static final ResourceLocation WIDGETS = ResourceLocation.fromNamespaceAndPath(
             FactoryNetwork.MOD_ID, "textures/gui/widgets.png");
 
-    static final int WIDTH = 176;
-    static final int HEIGHT = 222;
+    static final int WIDTH = 288;
+    static final int HEIGHT = 236;
     static final int TAB_HEIGHT = 18;
     static final int WORK_X = 7;
     static final int WORK_Y = 22;
-    static final int WORK_W = 162;
-    static final int WORK_H = 104;
+    static final int WORK_W = 274;
+    static final int WORK_H = 118;
 
     static final int TEXT = 0x404040;
     static final int TEXT_DIM = 0x6E6E6E;
@@ -52,7 +52,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         super(menu, inventory, title);
         this.imageWidth = WIDTH;
         this.imageHeight = HEIGHT;
-        this.inventoryLabelY = 130;
+        this.inventoryLabelY = 144;
     }
 
     @Override
@@ -95,7 +95,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
 
     @Override
     protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
-        graphics.blit(BACKGROUND, leftPos, topPos, 0, 0, WIDTH, HEIGHT);
+        graphics.blit(BACKGROUND, leftPos, topPos, 0, 0, WIDTH, HEIGHT, 512, 512);
         drawTabs(graphics, mouseX, mouseY);
         switch (tab) {
             case STORAGE -> storageView.render(graphics, mouseX, mouseY);
@@ -116,7 +116,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
             int y = topPos + 4;
             boolean active = candidate == tab;
             // Reiterhintergrund aus dem Kleinteil-Atlas
-            graphics.blit(WIDGETS, x, y, 0, active ? 16 : 0, width - 1, 14, 256, 256);
+            graphics.blit(WIDGETS, x, y, 0, active ? 16 : 0, width - 1, 14, 512, 512);
             Component title = candidate.title();
             int colour = active ? TEXT : candidate.isReady() ? TEXT_DIM : 0x8B8B8B;
             String shown = font.plainSubstrByWidth(title.getString(), width - 6);
@@ -143,7 +143,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
     protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
         // Der Fenstertitel steht in der Reiterleiste; nur das Inventar wird
         // beschriftet, so wie in jedem Vanilla-Fenster.
-        graphics.drawString(font, playerInventoryTitle, inventoryLabelX, inventoryLabelY,
+        graphics.drawString(font, playerInventoryTitle, 63, inventoryLabelY,
                 TEXT, false);
     }
 

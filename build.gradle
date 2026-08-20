@@ -20,6 +20,10 @@ neoForge {
         client {
             client()
             systemProperty 'neoforge.enabledGameTestNamespaces', mod_id
+            // Debugger-Anschluss für HotSwap: Wer auf Port 5005 verbindet,
+            // kann Methodenkörper im laufenden Spiel austauschen, ohne neu zu
+            // starten. suspend=n heißt, das Spiel wartet nicht darauf.
+            jvmArgument '-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005'
         }
         server {
             server()
@@ -55,6 +59,22 @@ test {
     testLogging {
         events 'failed'
         exceptionFormat 'full'
+    }
+}
+
+/**
+ * Schiebt geänderte Texturen, Modelle und Sprachdateien ins laufende Spiel.
+ *
+ * Danach im Spiel F3+T drücken — Minecraft lädt die Ressourcen neu, ohne dass
+ * jemand das Fenster schließen muss. Für Java-Code reicht das nicht; dafür
+ * gibt es den Debugger-Anschluss auf Port 5005.
+ */
+tasks.register('syncResources') {
+    group = 'factorynetwork'
+    description = 'Ressourcen ins laufende Spiel schieben, dann im Spiel F3+T'
+    dependsOn 'processResources'
+    doLast {
+        println 'Ressourcen aktualisiert — jetzt im Spiel F3+T druecken.'
     }
 }
 

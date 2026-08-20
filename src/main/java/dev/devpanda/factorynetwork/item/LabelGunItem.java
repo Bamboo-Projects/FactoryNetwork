@@ -8,7 +8,10 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import dev.devpanda.factorynetwork.client.LabelGunScreenOpener;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
@@ -115,6 +118,23 @@ public class LabelGunItem extends Item {
 
     // ---- Benutzen ---------------------------------------------------------
 
+    /**
+     * Rechtsklick ins Leere öffnet die Namenseingabe.
+     *
+     * <p>Der Klick auf einen Block vergibt; wer einen eigenen Namen will,
+     * klickt in die Luft. Das ist dieselbe Trennung wie beim Kompass oder der
+     * Karte — auf etwas zeigen tut etwas, ins Leere zeigen öffnet.
+     */
+    @Override
+    public InteractionResultHolder<ItemStack> use(Level level, Player player,
+                                                  InteractionHand hand) {
+        ItemStack gun = player.getItemInHand(hand);
+        if (level.isClientSide) {
+            LabelGunScreenOpener.open(gun);
+        }
+        return InteractionResultHolder.sidedSuccess(gun, level.isClientSide);
+    }
+
     @Override
     public InteractionResult useOn(UseOnContext context) {
         Level level = context.getLevel();
@@ -132,7 +152,8 @@ public class LabelGunItem extends Item {
             link(gun, pos);
             if (player != null) {
                 say(player, "message.factorynetwork.label_gun.linked",
-                        controller.graph().connectorNames().size());
+                        controller.graph().connectorCount(),
+                        controller.graph().unnamedConnectors().size());
             }
             return InteractionResult.CONSUME;
         }

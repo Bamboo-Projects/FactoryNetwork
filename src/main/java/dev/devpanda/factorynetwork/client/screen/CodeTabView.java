@@ -64,7 +64,7 @@ public class CodeTabView {
     }
 
     public void render(GuiGraphics graphics) {
-        graphics.blit(SCREEN, x, y, 0, 0, width, height, 256, 256);
+        graphics.blit(SCREEN, x, y, 0, 0, width, height, 512, 512);
         editor.render(graphics, diagnostics);
         graphics.drawString(font, font.plainSubstrByWidth(status, width - 6),
                 x + 3, y + height - 9, statusColour, false);

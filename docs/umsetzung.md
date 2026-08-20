@@ -12,7 +12,27 @@ Stand: 2026-08-20
 ./gradlew runClient          Spiel mit der Mod starten
 ./gradlew test               Übersetzer und Laufzeit prüfen (schnell)
 ./gradlew runGameTestServer  In einer echten Welt prüfen (etwa eine Minute)
+./gradlew syncResources      Texturen und Texte ins laufende Spiel schieben
 ```
+
+### Ohne Neustart ändern
+
+**Texturen, Modelle, Sprachdateien:** `./gradlew syncResources` in einem
+zweiten Fenster, dann im Spiel **F3+T**. Minecraft lädt die Ressourcen neu,
+das Spiel bleibt offen. Damit lässt sich an einer Textur so lange drehen, bis
+sie sitzt.
+
+**Java-Code, aber nur Methodenkörper:** Der Client lauscht auf Port 5005 für
+einen Debugger. Wer sich mit IntelliJ verbindet (Run → Attach to Process, oder
+eine Remote-JVM-Debug-Konfiguration auf localhost:5005), kann geänderte
+Methoden mit *Build → Recompile* ins laufende Spiel schieben.
+
+Was dabei **nicht** geht: neue Klassen, neue Methoden, neue Felder, geänderte
+Signaturen. Das ist eine Grenze der Java-Laufzeitumgebung, keine von
+Minecraft. Wer eine Zahl ändert oder eine Bedingung dreht, spart sich den
+Neustart; wer eine Oberfläche umbaut, nicht.
+
+**Rezepte, Loot-Tabellen und Tags:** `/reload` im Spiel.
 
 Beim ersten Mal lädt und dekompiliert Gradle Minecraft — das dauert rund sechs
 Minuten und passiert nur einmal.

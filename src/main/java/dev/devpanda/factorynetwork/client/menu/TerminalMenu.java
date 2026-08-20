@@ -32,9 +32,9 @@ import java.util.Optional;
 public class TerminalMenu extends AbstractContainerMenu {
 
     /** Dieselben Werte wie in jedem Vanilla-Fenster. */
-    private static final int INV_X = 8;
-    private static final int INV_Y = 140;
-    private static final int HOTBAR_Y = 198;
+    private static final int INV_X = 63;
+    private static final int INV_Y = 154;
+    private static final int HOTBAR_Y = 212;
     private static final int SLOT_SIZE = 18;
 
     private final ContainerLevelAccess access;

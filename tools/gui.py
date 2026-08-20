@@ -56,15 +56,25 @@ def slot(draw, x, y):
     sunken(draw, (x, y, x + 17, y + 17))
 
 
-# Maße des Fensters. Neun Slots breit wie jedes Vanilla-Inventar, damit das
-# Spielerinventar ohne Verrenkung darunterpasst.
-WIDTH = 176
-HEIGHT = 222
-ATLAS = 256
+# Maße des Fensters.
+#
+# Deutlich breiter als eine Kiste: Ein Code-Editor bei 176 Bildpunkten zeigt
+# gut zwanzig Zeichen je Zeile, und die Reiterbeschriftungen wären auf vier
+# Buchstaben abgeschnitten. Das Spielerinventar bleibt neun Slots breit und
+# sitzt mittig darunter — es soll aussehen wie überall, nur eben in einem
+# größeren Gehäuse.
+WIDTH = 288
+HEIGHT = 236
+ATLAS = 512
+
+# Das Inventar mittig, an Vanillas Raster ausgerichtet.
+INV_COLUMNS = 9
+INV_SLOT = 18
+INV_LEFT = (WIDTH - INV_COLUMNS * INV_SLOT) // 2
 
 # Das Spielerinventar sitzt an den Stellen, an denen es in Minecraft immer
 # sitzt — Spieler greifen blind dorthin.
-INV_X = 8
+INV_X = INV_LEFT
 INV_Y = HEIGHT - 82      # drei Reihen plus Schnellzugriff
 HOTBAR_Y = HEIGHT - 24
 
@@ -99,7 +109,7 @@ def background():
 
 
 def slot_grid():
-    """Das Raster für den Netzbestand — sieben Reihen zu neun Slots.
+    """Das Raster für den Netzbestand — sieben Reihen zu vierzehn Slots.
 
     Eigene Textur, weil der Bestand keine echten Slots sein kann: Zwanzig-
     tausend Arten lassen sich nicht anlegen. Sie sehen aber aus wie Slots,
@@ -108,7 +118,7 @@ def slot_grid():
     img = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
     for row in range(7):
-        for column in range(9):
+        for column in range(14):
             slot(d, column * 18, row * 18)
     return img
 

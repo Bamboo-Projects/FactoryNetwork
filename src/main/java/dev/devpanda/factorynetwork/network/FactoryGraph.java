@@ -44,23 +44,34 @@ public final class FactoryGraph {
      * doppelt vergeben und damit unbrauchbar — siehe {@link #isAmbiguous}.
      */
     private final Map<String, List<BlockPos>> connectorsByName;
+    /**
+     * Connectoren ohne Namen.
+     *
+     * <p>Sie lassen sich nicht ansprechen — dafür braucht es einen Namen —,
+     * aber sie hängen im Netz, und der Spieler muss das sehen. Sie hier
+     * wegzulassen hieß, dass der Controller „0 Connectoren" meldete, während
+     * drei danebenhingen.
+     */
+    private final List<BlockPos> unnamed;
     private final Set<BlockPos> cables;
     private final boolean truncated;
 
-    private FactoryGraph(Map<String, List<BlockPos>> connectorsByName, Set<BlockPos> cables,
-                         boolean truncated) {
+    private FactoryGraph(Map<String, List<BlockPos>> connectorsByName, List<BlockPos> unnamed,
+                         Set<BlockPos> cables, boolean truncated) {
         this.connectorsByName = connectorsByName;
+        this.unnamed = unnamed;
         this.cables = cables;
         this.truncated = truncated;
     }
 
     public static FactoryGraph empty() {
-        return new FactoryGraph(Map.of(), Set.of(), false);
+        return new FactoryGraph(Map.of(), List.of(), Set.of(), false);
     }
 
     /** Baut den Graphen ausgehend vom Controller auf. */
     public static FactoryGraph build(Level level, BlockPos controller) {
         Map<String, List<BlockPos>> connectors = new LinkedHashMap<>();
+        List<BlockPos> unnamed = new ArrayList<>();
         Set<BlockPos> cables = new HashSet<>();
         Set<BlockPos> seen = new HashSet<>();
         Deque<BlockPos> queue = new ArrayDeque<>();
@@ -99,6 +110,8 @@ public final class FactoryGraph {
                             // Reihenfolge der Suche zur Bedeutung.
                             connectors.computeIfAbsent(label, key -> new ArrayList<>())
                                     .add(next.immutable());
+                        } else {
+                            unnamed.add(next.immutable());
                         }
                     }
                     // Ein Connector leitet nicht weiter: Er ist ein Endpunkt.
@@ -107,7 +120,8 @@ public final class FactoryGraph {
         }
         Map<String, List<BlockPos>> frozen = new LinkedHashMap<>();
         connectors.forEach((label, positions) -> frozen.put(label, List.copyOf(positions)));
-        return new FactoryGraph(Map.copyOf(frozen), Set.copyOf(cables), truncated);
+        return new FactoryGraph(Map.copyOf(frozen), List.copyOf(unnamed),
+                Set.copyOf(cables), truncated);
     }
 
     /**
@@ -158,6 +172,16 @@ public final class FactoryGraph {
             }
         });
         return unique;
+    }
+
+    /** Connectoren ohne Namen — im Netz, aber nicht ansprechbar. */
+    public List<BlockPos> unnamedConnectors() {
+        return unnamed;
+    }
+
+    /** Alle Connectoren im Netz, benannt oder nicht. */
+    public int connectorCount() {
+        return connectorsByName.values().stream().mapToInt(List::size).sum() + unnamed.size();
     }
 
     public int cableCount() {

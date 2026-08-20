@@ -24,6 +24,8 @@ public final class FnPackets {
                 StorageActionPacket::handle);
         registrar.playToServer(StorageTabPacket.TYPE, StorageTabPacket.STREAM_CODEC,
                 StorageTabPacket::handle);
+        registrar.playToServer(SetLabelPacket.TYPE, SetLabelPacket.STREAM_CODEC,
+                SetLabelPacket::handle);
     }
 
     private FnPackets() {
