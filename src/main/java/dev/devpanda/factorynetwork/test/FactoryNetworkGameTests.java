@@ -1448,6 +1448,65 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void aStaleFlowCanBeLetThrough(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        helper.assertTrue(entity.deploy(COUNTING_PROGRAM), "Programm nicht übernommen");
+
+        var flow = entity.startFlow("zaehlt", java.util.List.of());
+        long id = flow.id();
+        tick(helper, entity, 1);
+
+        // Eine neue Funktion hinten dran: Das Programm ist ein anderes, die
+        // Stellen des wartenden Ablaufs sind aber unberührt. Genau der Fall,
+        // für den es die Wahl gibt.
+        helper.assertTrue(entity.deploy(COUNTING_PROGRAM + """
+
+
+                fn nebenbei() {
+                    let x = 1
+                }"""), "Das erweiterte Programm wurde nicht übernommen");
+
+        var wieder = flowOf(entity, id);
+        helper.assertValueEqual(wieder.status().name(), "STALE", "Erst einmal fragt er nach");
+        helper.assertValueEqual(entity.flowEngine().stale().size(), 1,
+                "Und steht in der Liste der Wartenden");
+
+        helper.assertTrue(entity.flowEngine().unstale(id), "Weiterlaufen wurde abgelehnt");
+        helper.assertValueEqual(wieder.status().name(), "AWAITING",
+                "Danach wartet er wieder auf sein Ereignis");
+
+        tick(helper, entity, 2);
+        tick(helper, entity, 3);
+        helper.assertValueEqual(resultOf(wieder), 6L, "Und zählt zu Ende");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void aStaleFlowCanBeAborted(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        helper.assertTrue(entity.deploy(COUNTING_PROGRAM), "Programm nicht übernommen");
+
+        long id = entity.startFlow("zaehlt", java.util.List.of()).id();
+        tick(helper, entity, 1);
+        helper.assertTrue(entity.deploy(COUNTING_PROGRAM + """
+
+
+                fn nebenbei() {
+                    let x = 1
+                }"""), "Das erweiterte Programm wurde nicht übernommen");
+
+        helper.assertTrue(entity.flowEngine().abort(id), "Abbrechen wurde abgelehnt");
+        helper.assertTrue(flowOf(entity, id) == null, "Der Ablauf ist noch da");
+        helper.assertValueEqual(entity.flowEngine().failed().size(), 1,
+                "Abgebrochene Abläufe bleiben zum Nachsehen liegen");
+        helper.succeed();
+    }
+
     private FactoryNetworkGameTests() {
     }
 }

@@ -136,6 +136,27 @@ public final class Flow {
         detail = "Programm geändert, während dieser Ablauf wartete";
     }
 
+    /**
+     * Nimmt einen {@code STALE}-Ablauf wieder auf.
+     *
+     * <p>Die Wahl des Spielers: weiterlaufen lassen statt abbrechen. Wohin er
+     * zurückkehrt, steht in seinen eigenen Feldern — worauf er wartete, ist
+     * beim Anhalten nicht verloren gegangen.
+     */
+    public void unstale(int structureHash) {
+        this.structureHash = structureHash;
+        if (awaitedEvent != null) {
+            status = Status.AWAITING;
+            detail = "wartet auf " + awaitedEvent;
+        } else if (wakeAt >= 0) {
+            status = Status.SLEEPING;
+            detail = "schläft";
+        } else {
+            status = Status.RUNNING;
+            detail = "";
+        }
+    }
+
     public void resume() {
         status = Status.RUNNING;
         awaitedEvent = null;

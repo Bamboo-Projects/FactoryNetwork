@@ -253,6 +253,40 @@ public final class FlowEngine {
         };
     }
 
+    /**
+     * Bricht einen Ablauf ab.
+     *
+     * <p>Die eine Hälfte der Wahl bei {@code STALE}, und zugleich der Weg,
+     * einen Ablauf loszuwerden, der auf ein Ereignis wartet, das niemand mehr
+     * auslöst.
+     */
+    public boolean abort(long id) {
+        Flow flow = flows.remove(id);
+        if (flow == null) {
+            return false;
+        }
+        flow.fail("abgebrochen");
+        remember(flow);
+        return true;
+    }
+
+    /** Die andere Hälfte: weiterlaufen lassen, wo der Ablauf stehen blieb. */
+    public boolean unstale(long id) {
+        Flow flow = flows.get(id);
+        if (flow == null || flow.status() != Flow.Status.STALE) {
+            return false;
+        }
+        flow.unstale(blocks.structureHash());
+        return true;
+    }
+
+    /** Abläufe, die auf die Wahl des Spielers warten. */
+    public List<Flow> stale() {
+        return flows.values().stream()
+                .filter(flow -> flow.status() == Flow.Status.STALE)
+                .toList();
+    }
+
     /** Lässt einen Ablauf arbeiten, bis er wartet oder sein Budget aufbraucht. */
     private void advance(Flow flow, long gameTime) {
         int steps = 0;
