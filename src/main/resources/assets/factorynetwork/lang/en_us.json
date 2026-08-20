@@ -68,5 +68,7 @@
   "item.factorynetwork.green_cable": "Green Cable",
   "item.factorynetwork.red_cable": "Red Cable",
   "item.factorynetwork.black_cable": "Black Cable",
-  "item.factorynetwork.cable": "Cable"
+  "item.factorynetwork.cable": "Cable",
+  "message.factorynetwork.cable.already_there": "That colour is already in this cable.",
+  "message.factorynetwork.cable.full": "No more than %s strands fit in one block."
 }

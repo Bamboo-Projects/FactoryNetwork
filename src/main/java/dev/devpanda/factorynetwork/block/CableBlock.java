@@ -6,7 +6,10 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
+import dev.devpanda.factorynetwork.block.entity.CableBlockEntity;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
@@ -26,7 +29,7 @@ import java.util.Map;
  * der Luft ist ein Würfel, eines zwischen zwei Nachbarn eine Röhre. Das ist
  * reine Optik, gelaufen wird über {@code FactoryGraph}.
  */
-public class CableBlock extends Block {
+public class CableBlock extends Block implements EntityBlock {
 
     public static final MapCodec<CableBlock> CODEC = simpleCodec(CableBlock::new);
 
@@ -68,6 +71,28 @@ public class CableBlock extends Block {
         return state.getBlock() instanceof CableBlock ? state.getValue(COLOUR) : CableColour.NONE;
     }
 
+    @Override
+    public @org.jetbrains.annotations.Nullable BlockEntity newBlockEntity(BlockPos pos,
+                                                                          BlockState state) {
+        return new CableBlockEntity(pos, state);
+    }
+
+    /**
+     * Die Stränge eines Kabelblocks.
+     *
+     * <p>Fällt auf die Zustandsfarbe zurück, wenn keine BlockEntity da ist —
+     * das passiert beim Laden einer Welt, die vor den Bündeln gebaut wurde,
+     * und beim Zeichnen, bevor die Daten beim Client angekommen sind.
+     */
+    public static java.util.Set<CableColour> strandsAt(BlockGetter level, BlockPos pos) {
+        if (level.getBlockEntity(pos) instanceof CableBlockEntity cable) {
+            return cable.strands();
+        }
+        BlockState state = level.getBlockState(pos);
+        return state.getBlock() instanceof CableBlock
+                ? java.util.Set.of(state.getValue(COLOUR)) : java.util.Set.of();
+    }
+
     public static BooleanProperty connection(Direction direction) {
         return CONNECTIONS.get(direction);
     }
@@ -92,31 +117,61 @@ public class CableBlock extends Block {
     protected BlockState updateShape(BlockState state, Direction direction, BlockState neighbour,
                                      LevelAccessor level, BlockPos pos, BlockPos neighbourPos) {
         BooleanProperty property = CONNECTIONS.get(direction);
-        return state.setValue(property, connectsTo(state, neighbour));
+        return state.setValue(property, connects(level, pos, neighbourPos, neighbour));
     }
 
     private BlockState withConnections(BlockState state, LevelReader level, BlockPos pos) {
         for (Map.Entry<Direction, BooleanProperty> entry : CONNECTIONS.entrySet()) {
-            BlockState neighbour = level.getBlockState(pos.relative(entry.getKey()));
-            state = state.setValue(entry.getValue(), connectsTo(state, neighbour));
+            BlockPos neighbourPos = pos.relative(entry.getKey());
+            BlockState neighbour = level.getBlockState(neighbourPos);
+            state = state.setValue(entry.getValue(),
+                    connects(level, pos, neighbourPos, neighbour));
         }
         return state;
     }
 
     /**
-     * Verbinden sich diese beiden Blöcke?
+     * Verbindet sich der Block an dieser Stelle sichtbar zum Nachbarn?
      *
-     * <p>Zwei Kabel nur bei passender Farbe — daran hängt der ganze Zweck der
-     * Farben. Geräte und der Controller nehmen jedes Kabel an: Sie gehören zu
-     * dem Netz, an dem sie hängen, und müssten sonst selbst gefärbt werden.
+     * <p>Für die Optik reicht ein Strang, der passt. Welcher genau, entscheidet
+     * erst das Netzwerk — der Arm im Modell steht für alle gemeinsam.
      */
-    private static boolean connectsTo(BlockState self, BlockState neighbour) {
+    private static boolean connects(BlockGetter level, BlockPos pos, BlockPos neighbourPos,
+                                    BlockState neighbour) {
         if (neighbour.getBlock() instanceof CableBlock) {
-            return colourOf(self).connectsTo(colourOf(neighbour));
+            java.util.Set<CableColour> here = strandsAt(level, pos);
+            java.util.Set<CableColour> there = strandsAt(level, neighbourPos);
+            return here.stream().anyMatch(a -> there.stream().anyMatch(a::connectsTo));
         }
         return neighbour.getBlock() instanceof ConnectorBlock
                 || neighbour.getBlock() instanceof ControllerBlock
                 || neighbour.getBlock() instanceof TerminalBlock;
+    }
+
+    /**
+     * Beim Abbauen fallen alle Stränge.
+     *
+     * <p>Die Loot-Tabelle kann das nicht: Sie sieht den Blockzustand, aber
+     * nicht die BlockEntity. Deshalb wird hier von Hand ausgeworfen — und die
+     * Tabelle liefert nichts mehr, sonst käme ein Kabel doppelt.
+     */
+    @Override
+    public java.util.List<net.minecraft.world.item.ItemStack> getDrops(
+            BlockState state, net.minecraft.world.level.storage.loot.LootParams.Builder params) {
+        BlockEntity entity = params.getOptionalParameter(
+                net.minecraft.world.level.storage.loot.parameters.LootContextParams.BLOCK_ENTITY);
+        java.util.List<net.minecraft.world.item.ItemStack> drops = new java.util.ArrayList<>();
+        if (entity instanceof CableBlockEntity cable) {
+            for (CableColour colour : cable.ordered()) {
+                drops.add(new net.minecraft.world.item.ItemStack(
+                        dev.devpanda.factorynetwork.registry.FnItems.CABLES.get(colour).get()));
+            }
+        } else {
+            drops.add(new net.minecraft.world.item.ItemStack(
+                    dev.devpanda.factorynetwork.registry.FnItems.CABLES
+                            .get(state.getValue(COLOUR)).get()));
+        }
+        return drops;
     }
 
     @Override

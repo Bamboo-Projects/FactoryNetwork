@@ -68,5 +68,7 @@
   "item.factorynetwork.green_cable": "Grünes Kabel",
   "item.factorynetwork.red_cable": "Rotes Kabel",
   "item.factorynetwork.black_cable": "Schwarzes Kabel",
-  "item.factorynetwork.cable": "Kabel"
+  "item.factorynetwork.cable": "Kabel",
+  "message.factorynetwork.cable.already_there": "Diese Farbe liegt schon in dem Kabel.",
+  "message.factorynetwork.cable.full": "Mehr als %s Stränge passen nicht in einen Block."
 }

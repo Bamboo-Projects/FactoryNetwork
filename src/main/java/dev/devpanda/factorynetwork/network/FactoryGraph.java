@@ -1,6 +1,7 @@
 package dev.devpanda.factorynetwork.network;
 
 import dev.devpanda.factorynetwork.block.CableBlock;
+import dev.devpanda.factorynetwork.block.CableColour;
 import dev.devpanda.factorynetwork.block.ConnectorBlock;
 import dev.devpanda.factorynetwork.block.entity.ConnectorBlockEntity;
 import dev.devpanda.factorynetwork.util.NameDistance;
@@ -68,16 +69,29 @@ public final class FactoryGraph {
         return new FactoryGraph(Map.of(), List.of(), Set.of(), false);
     }
 
+    /**
+     * Ein Knoten der Suche: eine Stelle und ein Strang.
+     *
+     * <p>Ein Kabelblock ist nicht ein Knoten, sondern bis zu vier — sonst
+     * liefe ein grüner Strang über einen Block, in dem auch ein roter liegt,
+     * und beide wären plötzlich verbunden.
+     */
+    private record Node(BlockPos pos, CableColour colour) {
+    }
+
     /** Baut den Graphen ausgehend vom Controller auf. */
     public static FactoryGraph build(Level level, BlockPos controller) {
         Map<String, List<BlockPos>> connectors = new LinkedHashMap<>();
         List<BlockPos> unnamed = new ArrayList<>();
         Set<BlockPos> cables = new HashSet<>();
-        Set<BlockPos> seen = new HashSet<>();
-        Deque<BlockPos> queue = new ArrayDeque<>();
+        Set<Node> seen = new HashSet<>();
+        Set<BlockPos> visitedDevices = new HashSet<>();
+        Deque<Node> queue = new ArrayDeque<>();
 
-        seen.add(controller);
-        queue.add(controller);
+        // Der Controller selbst ist farbneutral: Von ihm gehen alle Stränge
+        // aus, die an ihm hängen.
+        queue.add(new Node(controller, CableColour.NONE));
+        seen.add(new Node(controller, CableColour.NONE));
         boolean truncated = false;
 
         while (!queue.isEmpty()) {
@@ -85,49 +99,24 @@ public final class FactoryGraph {
                 truncated = true;
                 break;
             }
-            BlockPos current = queue.poll();
+            Node current = queue.poll();
             for (Direction direction : Direction.values()) {
-                BlockPos next = current.relative(direction);
-                if (!seen.add(next)) {
-                    continue;
-                }
-                // Ein nicht geladener Chunk beendet den Zweig, ohne Fehler.
+                BlockPos next = current.pos().relative(direction);
                 if (!level.isLoaded(next)) {
+                    // Ein nicht geladener Chunk beendet den Zweig, ohne Fehler.
                     continue;
                 }
                 BlockState state = level.getBlockState(next);
                 if (state.getBlock() instanceof CableBlock) {
-                    // Die Farbe entscheidet auch hier: Was optisch nicht
-                    // verbunden ist, darf auch im Netz nicht verbunden sein.
-                    // Sonst liefe ein Strang sichtbar getrennt und wäre es
-                    // doch nicht — der schlimmste Fall von beiden.
-                    BlockState from = level.getBlockState(current);
-                    if (from.getBlock() instanceof CableBlock
-                            && !CableBlock.colourOf(from)
-                                    .connectsTo(CableBlock.colourOf(state))) {
-                        continue;
-                    }
-                    cables.add(next.immutable());
-                    queue.add(next.immutable());
+                    visitCable(level, next, current, seen, queue, cables);
                 } else if (state.getBlock() instanceof ConnectorBlock) {
-                    BlockEntity entity = level.getBlockEntity(next);
-                    if (entity instanceof ConnectorBlockEntity connector) {
-                        String label = connector.label();
-                        if (label != null && !label.isBlank()) {
-                            // Nicht überschreiben: Zwei Connectoren mit
-                            // demselben Namen sind ein Fehler, kein Vorrang.
-                            // Wer hier den letzten gewinnen ließe, machte die
-                            // Reihenfolge der Suche zur Bedeutung.
-                            connectors.computeIfAbsent(label, key -> new ArrayList<>())
-                                    .add(next.immutable());
-                        } else {
-                            unnamed.add(next.immutable());
-                        }
+                    if (visitedDevices.add(next.immutable())) {
+                        collectConnector(level, next, connectors, unnamed);
                     }
-                    // Ein Connector leitet nicht weiter: Er ist ein Endpunkt.
                 }
             }
         }
+
         Map<String, List<BlockPos>> frozen = new LinkedHashMap<>();
         connectors.forEach((label, positions) -> frozen.put(label, List.copyOf(positions)));
         return new FactoryGraph(Map.copyOf(frozen), List.copyOf(unnamed),
@@ -135,10 +124,48 @@ public final class FactoryGraph {
     }
 
     /**
-     * Die Position eines Connectors — leer, wenn es ihn nicht gibt <b>oder</b>
-     * wenn der Name doppelt vergeben ist. Ein mehrdeutiger Name darf nicht
-     * stillschweigend auf einen der beiden zeigen.
+     * Geht in einen Kabelblock hinein — aber nur in die Stränge, die zur
+     * Farbe passen, aus der man kommt.
      */
+    private static void visitCable(Level level, BlockPos pos, Node from, Set<Node> seen,
+                                   Deque<Node> queue, Set<BlockPos> cables) {
+        boolean entered = false;
+        for (CableColour strand : CableBlock.strandsAt(level, pos)) {
+            if (!from.colour().connectsTo(strand)) {
+                continue;
+            }
+            // Von der Standardfarbe aus behält der Strang seine eigene Farbe;
+            // sonst liefe man über ein neutrales Kabel in jede Farbe hinein
+            // und wieder heraus.
+            Node node = new Node(pos.immutable(), strand);
+            if (seen.add(node)) {
+                queue.add(node);
+                entered = true;
+            }
+        }
+        if (entered) {
+            cables.add(pos.immutable());
+        }
+    }
+
+    /** Nimmt einen Connector auf — benannt oder nicht. */
+    private static void collectConnector(Level level, BlockPos pos,
+                                         Map<String, List<BlockPos>> connectors,
+                                         List<BlockPos> unnamed) {
+        if (!(level.getBlockEntity(pos) instanceof ConnectorBlockEntity connector)) {
+            return;
+        }
+        String label = connector.label();
+        if (label == null || label.isBlank()) {
+            unnamed.add(pos.immutable());
+            return;
+        }
+        // Nicht überschreiben: Zwei Connectoren mit demselben Namen sind ein
+        // Fehler, kein Vorrang. Wer hier den letzten gewinnen ließe, machte
+        // die Reihenfolge der Suche zur Bedeutung.
+        connectors.computeIfAbsent(label, key -> new ArrayList<>()).add(pos.immutable());
+    }
+
     public Optional<BlockPos> connector(String name) {
         List<BlockPos> positions = connectorsByName.get(name);
         return positions != null && positions.size() == 1

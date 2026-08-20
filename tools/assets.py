@@ -270,6 +270,10 @@ def loot_and_recipes():
         "result": {"id": MOD + ":label_gun", "count": 1},
     })
 
+    # Das Kabel wirft seine Stränge selbst aus — die Tabelle sieht die
+    # BlockEntity nicht und wüsste nicht, welche Farben drinstecken.
+    write(D + "/loot_table/blocks/cable.json", {"type": "minecraft:block", "pools": []})
+
     # Färben: ein Farbstoff auf ein beliebiges Kabel. Über das Tag statt über
     # siebzehn Gegenstände einzeln — sonst wären es zweihundertzweiundsiebzig
     # Rezepte statt sechzehn.

@@ -1,6 +1,7 @@
 package dev.devpanda.factorynetwork.test;
 
 import dev.devpanda.factorynetwork.FactoryNetwork;
+import dev.devpanda.factorynetwork.block.entity.CableBlockEntity;
 import dev.devpanda.factorynetwork.block.entity.ConnectorBlockEntity;
 import dev.devpanda.factorynetwork.block.entity.ControllerBlockEntity;
 import dev.devpanda.factorynetwork.block.CableBlock;
@@ -625,6 +626,95 @@ public final class FactoryNetworkGameTests {
         entity.rebuildNetwork();
         helper.assertTrue(entity.graph().connector("dahinter").isPresent(),
                 "Die Standardfarbe muss sich mit jeder Farbe verbinden");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void twoStrandsInOneBlockStayApart(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 1, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+
+        // Ein Block, zwei Stränge: grün und rot.
+        BlockPos bundle = controller.east();
+        helper.setBlock(bundle, FnBlocks.CABLE.get().defaultBlockState()
+                .setValue(CableBlock.COLOUR, CableColour.GREEN));
+        if (helper.getBlockEntity(bundle) instanceof CableBlockEntity cable) {
+            cable.addStrand(CableColour.RED);
+            helper.assertValueEqual(cable.count(), 2, "Stränge im Block");
+        } else {
+            helper.fail("Am Kabel hängt keine BlockEntity", bundle);
+        }
+
+        // Grüner Zweig weiter nach Osten
+        BlockPos green = bundle.east();
+        helper.setBlock(green, FnBlocks.CABLE.get().defaultBlockState()
+                .setValue(CableBlock.COLOUR, CableColour.GREEN));
+        BlockPos onGreen = green.east();
+        helper.setBlock(onGreen, FnBlocks.CONNECTOR.get());
+        name(helper, onGreen, "am_gruenen");
+
+        // Roter Zweig nach oben
+        BlockPos red = bundle.above();
+        helper.setBlock(red, FnBlocks.CABLE.get().defaultBlockState()
+                .setValue(CableBlock.COLOUR, CableColour.RED));
+        BlockPos onRed = red.above();
+        helper.setBlock(onRed, FnBlocks.CONNECTOR.get());
+        name(helper, onRed, "am_roten");
+
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        // Der Controller hängt am Bündel und erreicht darüber beide Stränge —
+        // er ist farbneutral. Getrennt sind die Stränge erst weiter draußen.
+        helper.assertTrue(entity.graph().connector("am_gruenen").isPresent(),
+                "Der grüne Strang muss durchleiten");
+        helper.assertTrue(entity.graph().connector("am_roten").isPresent(),
+                "Der rote Strang auch — beide hängen am Controller");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void aBundleDoesNotBridgeColours(GameTestHelper helper) {
+        // Der eigentliche Test: Ein Bündel darf zwei gleichfarbige Stränge
+        // nicht über eine fremde Farbe hinweg verbinden.
+        BlockPos controller = new BlockPos(1, 1, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+
+        // Grün vom Controller weg
+        BlockPos green = controller.east();
+        helper.setBlock(green, FnBlocks.CABLE.get().defaultBlockState()
+                .setValue(CableBlock.COLOUR, CableColour.GREEN));
+
+        // Ein Bündel mit nur Rot dahinter — Grün endet hier
+        BlockPos redOnly = green.east();
+        helper.setBlock(redOnly, FnBlocks.CABLE.get().defaultBlockState()
+                .setValue(CableBlock.COLOUR, CableColour.RED));
+
+        BlockPos behind = redOnly.east();
+        helper.setBlock(behind, FnBlocks.CONNECTOR.get());
+        name(helper, behind, "dahinter");
+
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        helper.assertTrue(entity.graph().connector("dahinter").isEmpty(),
+                "Grün darf nicht über einen roten Block hinweg weiterlaufen");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void breakingABundleDropsEveryStrand(GameTestHelper helper) {
+        BlockPos bundle = new BlockPos(1, 1, 1);
+        helper.setBlock(bundle, FnBlocks.CABLE.get().defaultBlockState()
+                .setValue(CableBlock.COLOUR, CableColour.BLUE));
+        if (helper.getBlockEntity(bundle) instanceof CableBlockEntity cable) {
+            cable.addStrand(CableColour.YELLOW);
+            cable.addStrand(CableColour.NONE);
+        }
+        net.minecraft.world.level.block.state.BlockState state = helper.getBlockState(bundle);
+        java.util.List<net.minecraft.world.item.ItemStack> drops =
+                net.minecraft.world.level.block.Block.getDrops(state, helper.getLevel(),
+                        helper.absolutePos(bundle), helper.getBlockEntity(bundle));
+        helper.assertValueEqual(drops.size(), 3, "Anzahl gefallener Kabel");
         helper.succeed();
     }
 
