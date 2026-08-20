@@ -1,10 +1,16 @@
 package dev.devpanda.factorynetwork.client.screen;
 
+import dev.devpanda.factorynetwork.client.ClientFlowState;
 import dev.devpanda.factorynetwork.client.ClientNetworkState;
+import dev.devpanda.factorynetwork.network.packet.FlowActionPacket;
+import dev.devpanda.factorynetwork.network.packet.FlowStatePacket;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 
+import net.neoforged.neoforge.network.PacketDistributor;
+
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -17,6 +23,11 @@ import java.util.List;
 public class NetworkTabView {
 
     private static final int LINE = 10;
+
+    /** Breite der Knöpfe an einer Zeile, die auf eine Wahl wartet. */
+    private static final int BUTTON = 34;
+
+    private final List<Button> buttons = new ArrayList<>();
 
     private final Font font;
     private final int x;
@@ -76,6 +87,84 @@ public class NetworkTabView {
                 line += LINE;
             }
         }
+
+        line += 3;
+        line = section(graphics, line, "screen.factorynetwork.terminal.network.flows");
+        flows(graphics, line);
+    }
+
+    /**
+     * Die Abläufe, die gerade warten.
+     *
+     * <p>Ein Ablauf, der sich gemeldet hat, bekommt zwei Knöpfe: weiterlaufen
+     * lassen oder abbrechen. Das ist die Wahl, die die Sprache verspricht, und
+     * sie muss dort stehen, wo der Spieler den Zustand sieht — nicht in einem
+     * Befehl, den er erst nachschlagen muss.
+     */
+    private int flows(GuiGraphics graphics, int line) {
+        buttons.clear();
+        List<FlowStatePacket.Line> flows = ClientFlowState.flows();
+        if (flows.isEmpty()) {
+            return text(graphics, line, Component.translatable(
+                    "screen.factorynetwork.terminal.network.no_flows").getString(), 0x8B8B8B);
+        }
+        for (FlowStatePacket.Line flow : flows) {
+            if (line > y + height - LINE) {
+                break;
+            }
+            boolean stale = "STALE".equals(flow.status());
+            int colour = stale ? 0x8A6A20
+                    : "FAILED".equals(flow.status()) ? 0xA03030
+                    : "RUNNING".equals(flow.status()) ? 0x2F6B33
+                    : TerminalScreen.TEXT_DIM;
+            String label = flow.entry() + " — " + describe(flow);
+            int room = stale ? width - 6 - 2 * BUTTON - 6 : width - 6;
+            graphics.drawString(font, font.plainSubstrByWidth(label, room), x + 3, line,
+                    colour, false);
+            if (stale) {
+                int right = x + width - 3;
+                button(graphics, right - BUTTON, line, "keep", flow.id(), true);
+                button(graphics, right - 2 * BUTTON - 3, line, "abort", flow.id(), false);
+            }
+            line += LINE;
+        }
+        return line;
+    }
+
+    /** Was in der Zeile steht: der Grund, sonst der Zustand. */
+    private static String describe(FlowStatePacket.Line flow) {
+        return flow.detail().isBlank() ? flow.status().toLowerCase(java.util.Locale.ROOT)
+                : flow.detail();
+    }
+
+    private void button(GuiGraphics graphics, int left, int top, String key, long id,
+            boolean keep) {
+        String label = Component.translatable(
+                "screen.factorynetwork.terminal.network.flow." + key).getString();
+        graphics.fill(left, top - 1, left + BUTTON, top + 9, 0xFF2A2A2A);
+        graphics.drawString(font, font.plainSubstrByWidth(label, BUTTON - 4),
+                left + 2, top, TerminalScreen.TEXT, false);
+        buttons.add(new Button(left, top - 1, id, keep));
+    }
+
+    /** Ein Knopf an einer STALE-Zeile, für den Klick gemerkt. */
+    private record Button(int left, int top, long id, boolean keep) {
+
+        boolean hit(double mouseX, double mouseY) {
+            return mouseX >= left && mouseX < left + BUTTON
+                    && mouseY >= top && mouseY < top + 10;
+        }
+    }
+
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        for (Button candidate : buttons) {
+            if (candidate.hit(mouseX, mouseY)) {
+                PacketDistributor.sendToServer(
+                        new FlowActionPacket(candidate.id(), candidate.keep()));
+                return true;
+            }
+        }
+        return false;
     }
 
     private int section(GuiGraphics graphics, int line, String key) {

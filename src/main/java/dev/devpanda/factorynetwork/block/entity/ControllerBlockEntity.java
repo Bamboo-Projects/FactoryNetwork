@@ -7,6 +7,7 @@ import dev.devpanda.factorynetwork.network.ControllerRegistry;
 import dev.devpanda.factorynetwork.network.FactoryGraph;
 import dev.devpanda.factorynetwork.network.NetworkStorage;
 import dev.devpanda.factorynetwork.client.menu.TerminalMenu;
+import dev.devpanda.factorynetwork.network.packet.FlowStatePacket;
 import dev.devpanda.factorynetwork.network.packet.StorageSnapshotPacket;
 import dev.devpanda.factorynetwork.registry.FnBlockEntities;
 import dev.devpanda.factorynetwork.runtime.Interpreter;
@@ -187,6 +188,7 @@ public class ControllerBlockEntity extends BlockEntity {
         tickFlows();
         fireRedstoneEvents();
         pushStorageIfDue();
+        pushFlowsIfDue();
         setChanged();
     }
 
@@ -204,6 +206,7 @@ public class ControllerBlockEntity extends BlockEntity {
     public void watchStorage(ServerPlayer player) {
         storageWatchers.add(player);
         pushStorageTo(player, true);
+        pushFlowsTo(player);
     }
 
     public void unwatchStorage(ServerPlayer player) {
@@ -240,6 +243,43 @@ public class ControllerBlockEntity extends BlockEntity {
                 .toList();
         PacketDistributor.sendToPlayer(player,
                 new StorageSnapshotPacket(entries, replace, contents.size()));
+    }
+
+    // ---- Abläufe im Terminal ----------------------------------------------
+
+    /** So oft höchstens, in Ticks. */
+    private static final int FLOW_PUSH_INTERVAL = 10;
+
+    private long lastFlowPush = -FLOW_PUSH_INTERVAL;
+
+    /**
+     * Schickt die Liste der Abläufe an die Zuschauer.
+     *
+     * <p>Anders als der Bestand wird sie nicht vorgemerkt, sondern regelmäßig
+     * geschickt: Ein Ablauf, der schläft, ändert nichts und wäre trotzdem eine
+     * Zeile wert, deren Zustand sich jederzeit ändern kann.
+     */
+    private void pushFlowsIfDue() {
+        if (level == null || storageWatchers.isEmpty()
+                || level.getGameTime() - lastFlowPush < FLOW_PUSH_INTERVAL) {
+            return;
+        }
+        lastFlowPush = level.getGameTime();
+        storageWatchers.forEach(this::pushFlowsTo);
+    }
+
+    /** Schickt die Abläufe an einen Spieler. */
+    public void pushFlowsTo(ServerPlayer player) {
+        List<FlowStatePacket.Line> lines = new ArrayList<>();
+        if (flows != null) {
+            flows.flows().values().forEach(flow -> lines.add(new FlowStatePacket.Line(
+                    flow.id(), flow.entryPoint(), flow.status().name(), flow.detail())));
+            // Die zuletzt gescheiterten hinten dran, damit ein Fehler von
+            // heute Nacht morgen früh noch dasteht.
+            flows.failed().forEach(flow -> lines.add(new FlowStatePacket.Line(
+                    flow.id(), flow.entryPoint(), flow.status().name(), flow.detail())));
+        }
+        PacketDistributor.sendToPlayer(player, new FlowStatePacket(lines));
     }
 
     /**

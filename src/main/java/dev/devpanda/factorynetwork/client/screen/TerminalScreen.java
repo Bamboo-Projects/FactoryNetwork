@@ -164,6 +164,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         boolean handled = switch (tab) {
             case STORAGE -> storageView.mouseClicked(mouseX, mouseY, button);
             case CODE -> codeView.mouseClicked(mouseX, mouseY, button);
+            case NETWORK -> networkView.mouseClicked(mouseX, mouseY, button);
             default -> false;
         };
         return handled || super.mouseClicked(mouseX, mouseY, button);
