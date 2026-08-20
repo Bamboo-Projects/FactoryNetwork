@@ -865,12 +865,27 @@ Ein einzelnes Kabel sieht aus wie bisher — kein Rückschritt für vorhandene
 Bauten. Ab zwei Strängen werden alle vier Pixel dick; mehr passt nicht in
 sechzehn, ohne dass sie sich berühren.
 
-### Was noch fehlt
+### Einzelne Stränge abbauen
 
-**Einzelne Stränge lassen sich nicht abbauen.** Ein Schlag nimmt den ganzen
-Block und wirft alle Stränge aus. Dafür bräuchte es Kollisionsboxen je Strang
-und ein Zielen darauf — beides machbar, aber ein eigener Schritt.
+Ein Schlag nimmt nur den Strang, auf den man zielt; erst der letzte nimmt den
+Block. Das ist der Unterschied zwischen einem Bündel und vier Blöcken
+nebeneinander: Man kommt an jeden Strang heran, ohne die anderen anzufassen.
 
-Ebenso offen: Ob ein Bündel für die Kanäle als ein Kabel zählt oder als vier.
-Das ist keine Modellfrage, sondern eine des Spielgleichgewichts, und Kanäle
-gibt es bei uns noch nicht.
+Gezielt wird gegen die Trefferfläche jedes Strangs einzeln — Kern samt seiner
+Arme. Trifft der Blick keine genau, nimmt der Schlag den ersten; das ist
+besser als gar nichts zu tun.
+
+**Die Geometrie steht an zwei Stellen**, im Modellskript und in Java, weil
+Minecraft Modelle und Trefferflächen getrennt hält. Laufen sie auseinander,
+greift der Spieler neben das, was er sieht — ein Fehler, den man im Spiel
+spürt, aber schwer benennt. Deshalb liegen die Zahlen in `CableLayout`, einer
+Klasse ohne jeden Minecraft-Bezug, und ein gewöhnlicher Test liest die
+erzeugten Modelldateien und vergleicht sie. Er prüft auch, dass kein Strang
+aus dem Block ragt und keine zwei sich überlappen.
+
+### Was noch offen ist
+
+Ob ein Bündel für die Kanäle als ein Kabel zählt oder als vier. Das ist keine
+Modellfrage, sondern eine des Spielgleichgewichts — vier Stränge in einem
+Block sind entweder eine Platzersparnis oder eine Verdopplung der Kapazität.
+Kanäle gibt es bei uns ohnehin noch nicht.

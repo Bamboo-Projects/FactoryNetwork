@@ -718,6 +718,66 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void breakingOneStrandLeavesTheOthers(GameTestHelper helper) {
+        BlockPos bundle = new BlockPos(1, 1, 1);
+        helper.setBlock(bundle, FnBlocks.CABLE.get().defaultBlockState()
+                .setValue(CableBlock.COLOUR, CableColour.GREEN));
+        if (!(helper.getBlockEntity(bundle) instanceof CableBlockEntity cable)) {
+            helper.fail("Am Kabel hängt keine BlockEntity", bundle);
+            return;
+        }
+        cable.addStrand(CableColour.RED);
+        cable.addStrand(CableColour.BLUE);
+        helper.assertValueEqual(cable.count(), 3, "Stränge vor dem Abbauen");
+
+        // Einen Strang herausnehmen — der Block bleibt mit den übrigen stehen.
+        helper.assertTrue(cable.removeStrand(CableColour.RED), "Rot muss weichen");
+        helper.assertValueEqual(cable.count(), 2, "Stränge danach");
+        helper.assertTrue(cable.has(CableColour.GREEN), "Grün muss bleiben");
+        helper.assertTrue(cable.has(CableColour.BLUE), "Blau muss bleiben");
+        helper.assertFalse(cable.has(CableColour.RED), "Rot darf weg sein");
+
+        // Und der Blockzustand zieht mit, damit das Modell stimmt.
+        helper.assertValueEqual(helper.getBlockState(bundle).getValue(CableBlock.STRANDS), 2,
+                "Strangzahl im Blockzustand");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void removingAStrandReconnectsTheRest(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 1, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+
+        // Bündel mit Grün und Rot, dahinter ein grüner Strang zum Connector
+        BlockPos bundle = controller.east();
+        helper.setBlock(bundle, FnBlocks.CABLE.get().defaultBlockState()
+                .setValue(CableBlock.COLOUR, CableColour.GREEN));
+        if (helper.getBlockEntity(bundle) instanceof CableBlockEntity cable) {
+            cable.addStrand(CableColour.RED);
+        }
+        BlockPos green = bundle.east();
+        helper.setBlock(green, FnBlocks.CABLE.get().defaultBlockState()
+                .setValue(CableBlock.COLOUR, CableColour.GREEN));
+        BlockPos target = green.east();
+        helper.setBlock(target, FnBlocks.CONNECTOR.get());
+        name(helper, target, "dahinter");
+
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        helper.assertTrue(entity.graph().connector("dahinter").isPresent(),
+                "Vor dem Abbauen muss der Weg stehen");
+
+        // Grün aus dem Bündel nehmen — der Weg muss abreißen.
+        if (helper.getBlockEntity(bundle) instanceof CableBlockEntity cable) {
+            cable.removeStrand(CableColour.GREEN);
+        }
+        entity.rebuildNetwork();
+        helper.assertTrue(entity.graph().connector("dahinter").isEmpty(),
+                "Ohne den grünen Strang darf kein Weg mehr bestehen");
+        helper.succeed();
+    }
+
     private FactoryNetworkGameTests() {
     }
 }

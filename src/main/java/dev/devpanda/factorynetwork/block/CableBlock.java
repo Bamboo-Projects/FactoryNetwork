@@ -14,13 +14,19 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.phys.shapes.CollisionContext;
-import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
+import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -188,15 +194,93 @@ public class CableBlock extends Block implements EntityBlock {
         return drops;
     }
 
+    /** Welche Richtungen dieser Block verbindet. */
+    public static List<Direction> connectionsOf(BlockState state) {
+        List<Direction> directions = new ArrayList<>();
+        for (Map.Entry<Direction, BooleanProperty> entry : CONNECTIONS.entrySet()) {
+            if (state.getValue(entry.getValue())) {
+                directions.add(entry.getKey());
+            }
+        }
+        return directions;
+    }
+
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos,
                                   CollisionContext context) {
-        VoxelShape shape = CORE;
-        for (Map.Entry<Direction, BooleanProperty> entry : CONNECTIONS.entrySet()) {
-            if (state.getValue(entry.getValue())) {
-                shape = Shapes.or(shape, ARMS.get(entry.getKey()));
+        return CableShapes.whole(state.getValue(STRANDS), connectionsOf(state));
+    }
+
+    /**
+     * Welchen Strang der Spieler gerade anvisiert.
+     *
+     * <p>Geprüft wird gegen die Trefferfläche jedes Strangs einzeln. Ohne das
+     * ließe sich ein Bündel nur als Ganzes herausbrechen — und wer einen
+     * grünen Strang aus einer Wand ziehen will, müsste die anderen drei neu
+     * verlegen.
+     */
+    public static CableColour aimedStrand(BlockState state, BlockPos pos, Player player) {
+        List<CableColour> strands = strandsOrdered(player.level(), pos, state);
+        if (strands.size() <= 1) {
+            return strands.isEmpty() ? null : strands.get(0);
+        }
+        Vec3 eye = player.getEyePosition();
+        Vec3 reach = eye.add(player.getLookAngle().scale(
+                player.blockInteractionRange() + 1.0));
+        List<Direction> connections = connectionsOf(state);
+
+        CableColour closest = null;
+        double best = Double.MAX_VALUE;
+        for (int index = 0; index < strands.size(); index++) {
+            VoxelShape shape = CableShapes.strand(strands.size(), index, connections);
+            BlockHitResult hit = shape.clip(eye.subtract(Vec3.atLowerCornerOf(pos)),
+                    reach.subtract(Vec3.atLowerCornerOf(pos)), BlockPos.ZERO);
+            if (hit == null) {
+                continue;
+            }
+            double distance = hit.getLocation().distanceToSqr(
+                    eye.subtract(Vec3.atLowerCornerOf(pos)));
+            if (distance < best) {
+                best = distance;
+                closest = strands.get(index);
             }
         }
-        return shape;
+        // Trifft der Blick keinen Strang genau, nimmt der Schlag den ersten.
+        return closest != null ? closest : strands.get(0);
+    }
+
+    private static List<CableColour> strandsOrdered(BlockGetter level, BlockPos pos,
+                                                    BlockState state) {
+        if (level.getBlockEntity(pos) instanceof CableBlockEntity cable) {
+            return cable.ordered();
+        }
+        return List.of(colourOf(state));
+    }
+
+    /**
+     * Ein Schlag nimmt nur den getroffenen Strang.
+     *
+     * <p>Erst der letzte nimmt den Block. Das ist der Unterschied zwischen
+     * einem Bündel und vier Blöcken nebeneinander: Man kommt an jeden Strang
+     * heran, ohne die anderen anzufassen.
+     */
+    @Override
+    public boolean onDestroyedByPlayer(BlockState state, Level level, BlockPos pos,
+                                       Player player, boolean willHarvest,
+                                       net.minecraft.world.level.material.FluidState fluid) {
+        if (!(level.getBlockEntity(pos) instanceof CableBlockEntity cable) || cable.count() <= 1) {
+            return super.onDestroyedByPlayer(state, level, pos, player, willHarvest, fluid);
+        }
+        CableColour aimed = aimedStrand(state, pos, player);
+        if (aimed == null) {
+            return super.onDestroyedByPlayer(state, level, pos, player, willHarvest, fluid);
+        }
+        cable.removeStrand(aimed);
+        if (!level.isClientSide && !player.getAbilities().instabuild) {
+            popResource(level, pos, new ItemStack(
+                    dev.devpanda.factorynetwork.registry.FnItems.CABLES.get(aimed).get()));
+        }
+        // Der Block bleibt stehen — die übrigen Stränge laufen weiter.
+        return false;
     }
 }
