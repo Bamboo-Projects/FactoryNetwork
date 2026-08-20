@@ -269,10 +269,18 @@ public final class WorkerRuntime {
         Optional<BlockPos> position = graph.connector(name.value());
         if (position.isEmpty()) {
             state.status = Status.HALTED;
-            state.detail = graph.closestName(name.value())
-                    .map(suggestion -> "Unbekannter Connector " + name.value()
-                            + " — meintest du " + suggestion + "?")
-                    .orElse("Unbekannter Connector " + name.value());
+            // Zwischen "gibt es nicht" und "gibt es zweimal" unterscheiden:
+            // Sonst sucht der Spieler an der falschen Stelle.
+            if (graph.isAmbiguous(name.value())) {
+                state.detail = "Der Name " + name.value() + " ist "
+                        + graph.positionsOf(name.value()).size()
+                        + "-mal vergeben und damit unbrauchbar";
+            } else {
+                state.detail = graph.closestName(name.value())
+                        .map(suggestion -> "Unbekannter Connector " + name.value()
+                                + " — meintest du " + suggestion + "?")
+                        .orElse("Unbekannter Connector " + name.value());
+            }
             return null;
         }
         // Der Aufrufer hält die Welt; hier reicht der Connector selbst.

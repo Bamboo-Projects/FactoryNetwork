@@ -177,6 +177,12 @@ public final class WorldHost implements Interpreter.Host {
     private BlockPos connectorPosition(String name) {
         Optional<BlockPos> position = graph.connector(name);
         if (position.isEmpty()) {
+            if (graph.isAmbiguous(name)) {
+                throw new ScriptError("Der Name " + name + " ist "
+                        + graph.positionsOf(name).size() + "-mal vergeben.",
+                        "Solange zwei Connectoren gleich heißen, lässt sich keiner "
+                                + "von beiden ansprechen. Benenne einen um.");
+            }
             String suggestion = suggestDevice(name);
             throw new ScriptError("Unbekannter Connector " + name + ".",
                     suggestion == null ? null : "Meintest du " + suggestion + "?");

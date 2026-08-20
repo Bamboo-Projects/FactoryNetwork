@@ -622,3 +622,73 @@ Beschreibung, gegen die der Parser geprüft wird — sie hat beim Aufschreiben
 zwei Lücken aufgedeckt, die in der Prosa nicht auffielen: dass `timeout` ohne
 `else` keinen sinnvollen Wert hinterlässt, und dass eine vorangestellte Menge
 bei `move` etwas anderes bedeutet als bei `maintain`.
+
+---
+
+## Die Label-Gun (2026-08-20)
+
+**Das Bedienmodell folgt SuperFactoryManager, das Datenmodell ist umgedreht.**
+Dort trägt die Gun die Namen und der Manager holt sie sich; hier trägt sie der
+Connector, und die Gun zeigt nur darauf. Der Code ist eigenständig — das
+Vorbild ist die Bedienung, nicht die Umsetzung.
+
+Aus der Umkehrung folgt zweierlei:
+
+- **Kein Übertragen zwischen Gun und Controller.** In SFM gibt es Push und
+  Pull, weil die Daten in der Gun leben und irgendwann in den Manager müssen.
+  Hier steht der Name im Connector, und der Controller liest ihn beim Aufbau
+  des Graphen. Was in der Gun steckt, ist eine **Zwischenablage, keine
+  Datenbank** — die zuletzt benutzten Namen, zum Durchblättern.
+- **Keine Ansichtsmodi.** SFM hat drei davon und ein Overlay, das erklärt, in
+  welchem man gerade ist. Das ist der Preis dafür, dass man den Namen eines
+  Blocks sonst nicht sieht. Hier schweben die Namen über den Connectoren,
+  solange die Gun in der Hand ist, und zwar alle: benannte grün, unbenannte
+  grau, doppelt vergebene rot.
+
+### Die Gun wird mit dem Netz verknüpft
+
+Rechtsklick auf den Controller verbindet sie. Danach kennt sie alle Namen des
+Netzes und kann durchnummerieren und vor Konflikten warnen.
+
+Verworfen: den Controller bei jedem Klick in der Umgebung suchen. Bei einem
+Umkreis, der für ein gewachsenes Netz reicht, sind das über fünfzigtausend
+Blockpositionen — pro Klick. Das war die erste Fassung und ist genau die Art
+Fehler, die man in einer Testwelt mit fünf Blöcken nie bemerkt.
+
+### Namen werden vorgeschlagen und durchnummeriert
+
+Zeigt die Gun auf einen Connector ohne bereitgelegten Namen, schlägt sie einen
+aus der Maschine dahinter vor: aus `minecraft:blast_furnace` wird
+`blast_furnace_1`, beim nächsten `blast_furnace_2`.
+
+**Die Nummer kommt aus dem Netzwerk, nicht aus der Gun.** Sonst vergäben zwei
+Spieler mit zwei Guns denselben Namen, und wer seine Gun neu herstellt, finge
+wieder bei eins an. Das ist der Punkt, an dem SFM Arbeit macht: Dort tippt man
+jeden Namen selbst.
+
+### Zwei gleiche Namen machen beide unbrauchbar
+
+Vorher gewann im Graphen still der zuletzt gefundene — die Reihenfolge der
+Suche entschied also, welche Maschine gemeint war. Jetzt zeigt ein doppelter
+Name auf keinen von beiden, erscheint im Terminal als Fehler und in der Welt
+rot.
+
+Die Gun vergibt einen belegten Namen gar nicht erst, sondern nennt den
+nächsten freien. Verworfen: das Umbenennen erzwingen, indem die Gun den alten
+Connector stillschweigend entnennt — dann verschwindet ein Name aus einem
+laufenden Programm, ohne dass jemand es merkt.
+
+**Abgrenzung:** Das Konzept erlaubt gleiche Namen *innerhalb* verschiedener
+Multiblock-Instanzen (Kapitel 23.1). Diese Regel gilt für ein Netzwerk; wenn
+Multiblocks kommen, braucht die Prüfung eine Grenze entlang der Instanz.
+
+### Die Gun prüft, was die Sprache verlangt
+
+Sie ist der Ort, an dem Namen entstehen — was hier durchgeht, steht später im
+Code. Deshalb normalisiert sie nach NFC wie der Übersetzer und lehnt ab, was
+kein Bezeichner sein kann.
+
+Ein Name, der ein Schlüsselwort ist, wird **nicht** abgelehnt, sondern nur
+angemerkt: „`for` braucht im Code Rückstriche." Das folgt der Entscheidung,
+keine Namen zu verbieten — Namen sind Spielstand, Schlüsselwörter sind es
+nicht.

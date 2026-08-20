@@ -26,8 +26,14 @@ Alle Blöcke liegen im Kreativ-Reiter „Factory Network".
 2. **Kabel** vom Controller weg legen.
 3. **Connector** an ein Kabel setzen, mit der Vorderseite an eine Kiste oder
    Maschine. Die Vorderseite zeigt dorthin, wo man den Block angeklickt hat.
-4. **Label-Gun** in einem Amboss umbenennen — der Name landet beim nächsten
-   Klick auf dem Connector. Ohne Namen ist ein Connector im Netz unsichtbar.
+4. **Label-Gun** nehmen und einmal auf den **Controller** rechtsklicken —
+   damit ist sie mit dem Netz verbunden. Dann auf einen Connector klicken: Er
+   bekommt einen Namen aus der Maschine dahinter, durchnummeriert
+   (`furnace_1`, `furnace_2`, …). Schleichen + Klick übernimmt einen
+   vorhandenen Namen, nochmal derselbe Name nimmt ihn wieder weg.
+
+   Solange die Gun in der Hand ist, schweben die Namen über allen Connectoren
+   in der Nähe: grün benannt, grau unbenannt, rot doppelt vergeben.
 5. **Terminal** neben den Controller setzen und anklicken.
 
 Im Editor:
@@ -58,7 +64,7 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | Ereignisse | `redstone_changed`, eigene über `emit` und `on` |
 | Netzwerk | Graph über Kabel, Speicher schlüsselbasiert |
 | Editor | Syntaxfarben, Fehler beim Tippen, Vervollständigung nach Stelle |
-| Prüfung | 71 Einheitstests, 15 GameTests |
+| Prüfung | 77 Einheitstests, 18 GameTests |
 
 ## 3. Was noch nicht läuft
 

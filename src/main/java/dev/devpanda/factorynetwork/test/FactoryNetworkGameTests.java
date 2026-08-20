@@ -3,6 +3,7 @@ package dev.devpanda.factorynetwork.test;
 import dev.devpanda.factorynetwork.FactoryNetwork;
 import dev.devpanda.factorynetwork.block.entity.ConnectorBlockEntity;
 import dev.devpanda.factorynetwork.block.entity.ControllerBlockEntity;
+import dev.devpanda.factorynetwork.item.ConnectorNaming;
 import dev.devpanda.factorynetwork.registry.FnBlocks;
 import dev.devpanda.factorynetwork.runtime.ScriptError;
 import dev.devpanda.factorynetwork.runtime.Value;
@@ -461,6 +462,64 @@ public final class FactoryNetworkGameTests {
                 "Holz, und zwar genau vier");
         helper.assertValueEqual(entity.storage().count(Items.IRON_ORE), 0L,
                 "Das Erz gehört nicht zum Tag und darf nicht mitkommen");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void duplicateNamesMakeBothUnusable(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        // Beide Connectoren auf denselben Namen setzen.
+        BlockPos second = controller.east().south();
+        name(helper, second, "quarry_output");
+
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.graph().isAmbiguous("quarry_output"),
+                "Der doppelte Name muss als solcher erkannt werden");
+        helper.assertTrue(entity.graph().connector("quarry_output").isEmpty(),
+                "Ein doppelter Name darf auf keinen der beiden zeigen");
+        helper.assertValueEqual(entity.graph().ambiguousNames().size(), 1,
+                "Anzahl mehrdeutiger Namen");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void gunNumbersFromTheNetwork(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+
+        // quarry_output und depot sind vergeben; ein Ofen soll furnace_1
+        // heissen, und beim zweiten Mal furnace_2.
+        entity.rebuildNetwork();
+        String first = ConnectorNaming.nextFree("furnace", entity.graph());
+        helper.assertValueEqual(first, "furnace_1", "erster freier Name");
+
+        // Jetzt furnace_1 belegen — der Vorschlag muss weiterzählen.
+        name(helper, controller.east().south(), "furnace_1");
+        entity.rebuildNetwork();
+        String second = ConnectorNaming.nextFree("furnace", entity.graph());
+        helper.assertValueEqual(second, "furnace_2", "zweiter freier Name");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void decomposedUmlautResolvesToTheComposedName(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        BlockPos connector = controller.east().south();
+
+        // Zerlegte Form setzen, wie sie manche Texteingabe liefert.
+        String decomposed = "ofen_su\u0308d";
+        if (helper.getBlockEntity(connector) instanceof ConnectorBlockEntity entity) {
+            entity.setLabel(ConnectorNaming.normalize(decomposed));
+        }
+
+        ControllerBlockEntity controllerEntity = controllerAt(helper, controller);
+        controllerEntity.rebuildNetwork();
+
+        // Gesucht wird mit der zusammengesetzten Form.
+        helper.assertTrue(controllerEntity.graph().connector("ofen_süd").isPresent(),
+                "Zerlegtes und zusammengesetztes ü müssen derselbe Name sein");
         helper.succeed();
     }
 

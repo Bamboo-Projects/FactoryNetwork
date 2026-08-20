@@ -1,25 +1,34 @@
 {
   "itemGroup.factorynetwork": "Factory Network",
-
   "block.factorynetwork.controller": "Controller",
   "block.factorynetwork.cable": "Cable",
   "block.factorynetwork.connector": "Connector",
   "block.factorynetwork.terminal": "Terminal",
-  "item.factorynetwork.label_gun": "Label Gun",
-
   "message.factorynetwork.connector.unnamed": "This connector has no name yet.",
   "message.factorynetwork.connector.named": "Connector: %s",
-  "message.factorynetwork.label_gun.unnamed": "Rename the label gun in an anvil — the name goes onto the connector.",
-  "message.factorynetwork.label_gun.applied": "Connector is now called %s",
   "message.factorynetwork.controller.status": "%s connectors, %s cables in the network",
   "message.factorynetwork.deploy.accepted": "Deployed: %s workers running",
   "message.factorynetwork.deploy.rejected": "Not deployed — %s messages. The previous program keeps running.",
   "message.factorynetwork.deploy.no_controller": "No controller attached to this terminal.",
-
   "screen.factorynetwork.terminal.network": "Network",
   "screen.factorynetwork.terminal.workers": "Workers",
   "screen.factorynetwork.terminal.code": "main.mf",
   "screen.factorynetwork.terminal.no_connectors": "none named",
   "screen.factorynetwork.terminal.ok": "ready",
-  "screen.factorynetwork.terminal.deploy_hint": "Ctrl+Enter deploys"
+  "screen.factorynetwork.terminal.deploy_hint": "Ctrl+Enter deploys",
+  "message.factorynetwork.label_gun.linked": "Linked to the network — %s connectors",
+  "message.factorynetwork.label_gun.not_linked": "Link to a network first: right-click the controller.",
+  "message.factorynetwork.label_gun.aim_at_connector": "Aim at the connector, not the machine.",
+  "message.factorynetwork.label_gun.no_connector": "No connector here.",
+  "message.factorynetwork.label_gun.applied": "Connector is now called %s",
+  "message.factorynetwork.label_gun.cleared": "Removed the name %s",
+  "message.factorynetwork.label_gun.picked": "Picked up the name %s",
+  "message.factorynetwork.label_gun.nothing_to_pick": "This connector has no name.",
+  "message.factorynetwork.label_gun.taken": "%s is taken — %s would be free",
+  "message.factorynetwork.label_gun.invalid": "%s is not a valid name: letters, digits and underscore only.",
+  "message.factorynetwork.label_gun.empty": "The name is empty.",
+  "message.factorynetwork.label_gun.keyword": "%s is a keyword — in code the name needs backticks.",
+  "item.factorynetwork.label_gun.tooltip.empty": "No name ready",
+  "item.factorynetwork.label_gun.tooltip.active": "Name: %s",
+  "item.factorynetwork.label_gun.tooltip.hint": "Right-click names, sneak picks up"
 }
