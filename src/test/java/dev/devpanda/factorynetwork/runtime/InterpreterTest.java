@@ -250,8 +250,8 @@ class InterpreterTest {
         }
 
         @Test
-        @DisplayName("await sagt ehrlich, dass es das noch nicht gibt")
-        void awaitIsHonestAboutBeingMissing() {
+        @DisplayName("await sagt, wo es hingehört, wenn es am falschen Ort steht")
+        void awaitPointsToWhereItBelongs() {
             TestHost host = new TestHost();
             Interpreter interpreter = interpreterFor("""
                     fn test() {
@@ -262,7 +262,9 @@ class InterpreterTest {
                     }""", host);
             ScriptError error = assertThrows(ScriptError.class,
                     () -> interpreter.call("test", List.of()));
-            assertTrue(error.hint().contains("Continuations"), error::hint);
+            // Der gewöhnliche Weg kann nicht warten; das ist keine Lücke, sondern
+            // die Arbeitsteilung. Die Meldung muss den Weg weisen.
+            assertTrue(error.hint().contains("Abläufen"), error::hint);
         }
     }
 }

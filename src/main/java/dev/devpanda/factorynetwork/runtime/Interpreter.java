@@ -198,8 +198,10 @@ public final class Interpreter {
             case Stmt.Emit emit -> emit(emit.eventName(),
                     emit.arguments().stream().map(argument -> evaluate(argument.value())).toList());
             case Stmt.Sleep ignored -> throw new ScriptError(
-                    "sleep kann diese Fassung noch nicht.",
-                    "Wartender Code braucht Continuations, und die sind noch nicht gebaut.");
+                    "Hier lässt sich nicht warten.",
+                    "sleep gibt es nur in Abläufen. Ein Worker prüft bei jedem Tick "
+                            + "aufs Neue und braucht deshalb keine Wartezeit — was "
+                            + "warten soll, gehört in eine Funktion.");
             case Stmt.Invalid ignored -> throw new ScriptError(
                     "Hier steht etwas, das nicht gelesen werden konnte.");
         }
@@ -231,9 +233,24 @@ public final class Interpreter {
         }
     }
 
-    private void executeFor(Stmt.For loop) {
-        Value iterable = evaluate(loop.iterable());
-        List<Value> entries = switch (iterable) {
+    /**
+     * Woraus sich eine Runde je Eintrag machen lässt.
+     *
+     * <p>Ein Selektor wie {@code tag:c/ores} wird dabei aufgelöst: Über die
+     * Gegenstände eines Tags zu laufen ist der häufigere Wunsch, als eine
+     * Anfrage als Ganzes in der Hand zu halten.
+     */
+    private List<Value> entriesOf(Expr iterable) {
+        Value value = evaluate(iterable);
+        if (value instanceof Value.Request) {
+            return ItemSelection.resolve(iterable).stream()
+                    .map(item -> (Value) new Value.ItemValue(item)).toList();
+        }
+        return entriesOf(value);
+    }
+
+    private static List<Value> entriesOf(Value iterable) {
+        return switch (iterable) {
             case Value.ValueList list -> list.entries();
             case Value.Selection selection -> selection.items().stream()
                     .map(item -> (Value) new Value.ItemValue(item)).toList();
@@ -241,7 +258,10 @@ public final class Interpreter {
                     "Darüber lässt sich nicht laufen: " + iterable.describe() + ".",
                     "for braucht eine Liste, etwa crushers.members().");
         };
-        for (Value entry : entries) {
+    }
+
+    private void executeFor(Stmt.For loop) {
+        for (Value entry : entriesOf(loop.iterable())) {
             scopes.push(new HashMap<>(Map.of(loop.variable(), entry)));
             try {
                 execute(loop.body());
@@ -333,10 +353,9 @@ public final class Interpreter {
                     }
                     yield new Step.Sleep(gameTime + ticks.ticks());
                 }
-                case Stmt.For ignored -> throw new ScriptError(
-                        "for kann ein wartender Ablauf noch nicht.",
-                        "Schreibe die Schleife als while, oder ohne await darin.");
-                case Stmt.Invalid ignored -> throw new ScriptError(
+                case Stmt.For loop -> new Step.ForEach(loop.body(), loop.variable(),
+                        entriesOf(loop.iterable()));
+                case Stmt.Invalid ignored2 -> throw new ScriptError(
                         "Hier steht etwas, das nicht gelesen werden konnte.");
             };
         } finally {
@@ -417,8 +436,10 @@ public final class Interpreter {
             case Expr.Member member -> member(member);
             case Expr.Call call -> call(call);
             case Expr.Await ignored -> throw new ScriptError(
-                    "await kann diese Fassung noch nicht.",
-                    "Wartender Code braucht Continuations, und die sind noch nicht gebaut.");
+                    "Hier lässt sich nicht warten.",
+                    "await gibt es nur in Abläufen — in Funktionen und on-Blöcken. "
+                            + "In einer Bedingung oder einem Worker wäre nicht zu "
+                            + "sagen, worauf das Warten den Rest anhalten sollte.");
             case Expr.Lambda ignored -> throw new ScriptError(
                     "Eine Funktion als Wert kann diese Fassung noch nicht.");
             case Expr.Invalid ignored -> throw new ScriptError(

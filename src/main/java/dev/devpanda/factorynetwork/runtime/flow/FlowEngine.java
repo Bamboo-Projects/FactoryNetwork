@@ -366,6 +366,12 @@ public final class FlowEngine {
      * darunter liegt.
      */
     private void leaveFrame(Flow flow, Frame frame) {
+        // Ein Lauf über eine Liste behält seinen Rahmen: Der Stand steht dort
+        // und nirgends sonst.
+        if (frame.hasIteration() && frame.nextIteration()) {
+            frame.restart();
+            return;
+        }
         flow.pop();
         if (frame.exitOnLeave() || flow.stack().isEmpty()) {
             flow.finish(Value.Nothing.get());
@@ -382,6 +388,16 @@ public final class FlowEngine {
         switch (step) {
             case Step.Next ignored -> frame.advance();
             case Step.Enter enter -> flow.push(new Frame(enter.block(), enter.loop()));
+            case Step.ForEach each -> {
+                if (each.values().isEmpty()) {
+                    // Nichts zu tun — die Schleife ist damit erledigt.
+                    frame.advance();
+                } else {
+                    Frame body = new Frame(each.body(), true);
+                    body.beginIteration(each.variable(), each.values());
+                    flow.push(body);
+                }
+            }
             case Step.Return ret -> flow.finish(ret.value());
             case Step.Break ignored -> unwindLoop(flow, true);
             case Step.Continue ignored -> unwindLoop(flow, false);
@@ -407,7 +423,22 @@ public final class FlowEngine {
      */
     private void unwindLoop(Flow flow, boolean leaveLoop) {
         while (!flow.stack().isEmpty()) {
-            Frame frame = flow.pop();
+            Frame frame = flow.top();
+            if (frame.isLoop() && !leaveLoop && frame.hasIteration()) {
+                // continue in einem Lauf über eine Liste: nächster Eintrag.
+                // Ein Poppen wie bei while wäre hier falsch — die Liste würde
+                // neu ausgewertet und der Lauf begänne von vorn.
+                if (frame.nextIteration()) {
+                    frame.restart();
+                    return;
+                }
+                flow.pop();
+                if (!flow.stack().isEmpty()) {
+                    flow.top().advance();
+                }
+                return;
+            }
+            flow.pop();
             if (frame.exitOnLeave()) {
                 // Der else-Zweig eines await verlässt den Ablauf, auch wenn
                 // er mit break oder continue endet.
@@ -415,7 +446,7 @@ public final class FlowEngine {
                 return;
             }
             if (frame.isLoop()) {
-                if (leaveLoop && !flow.stack().isEmpty()) {
+                if ((leaveLoop || frame.hasIteration()) && !flow.stack().isEmpty()) {
                     flow.top().advance();
                 }
                 return;

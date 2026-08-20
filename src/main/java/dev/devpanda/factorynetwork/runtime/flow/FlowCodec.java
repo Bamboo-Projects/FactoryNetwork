@@ -43,6 +43,9 @@ public final class FlowCodec {
     private static final String KEY_LOOP = "loop";
     private static final String KEY_EXIT = "exit";
     private static final String KEY_LOCALS = "locals";
+    private static final String KEY_ITER_VAR = "iterVar";
+    private static final String KEY_ITER_VALUES = "iterValues";
+    private static final String KEY_ITER_INDEX = "iterIndex";
     private static final String KEY_NAME = "n";
     private static final String KEY_VALUE = "v";
 
@@ -89,6 +92,16 @@ public final class FlowCodec {
             entry.putBoolean(KEY_LOOP, frame.isLoop());
             entry.putBoolean(KEY_EXIT, frame.exitOnLeave());
             entry.put(KEY_LOCALS, writeLocals(frame.locals()));
+            if (frame.hasIteration()) {
+                // Der Stand eines Laufs über eine Liste steht nur hier. Ohne
+                // ihn begänne die Schleife nach einem Neustart von vorn — und
+                // täte alles ein zweites Mal.
+                entry.putString(KEY_ITER_VAR, frame.iterationVariable());
+                entry.putInt(KEY_ITER_INDEX, frame.iterationIndex());
+                ListTag values = new ListTag();
+                frame.iterationValues().forEach(value -> values.add(ValueCodec.write(value)));
+                entry.put(KEY_ITER_VALUES, values);
+            }
             stack.add(entry);
         }
 
@@ -197,6 +210,15 @@ public final class FlowCodec {
             CompoundTag entry = locals.getCompound(i);
             frame.locals().put(entry.getString(KEY_NAME),
                     ValueCodec.read(entry.getCompound(KEY_VALUE)));
+        }
+        if (tag.contains(KEY_ITER_VAR)) {
+            ListTag values = tag.getList(KEY_ITER_VALUES, Tag.TAG_COMPOUND);
+            List<Value> entries = new ArrayList<>(values.size());
+            for (int i = 0; i < values.size(); i++) {
+                entries.add(ValueCodec.read(values.getCompound(i)));
+            }
+            frame.restoreIteration(tag.getString(KEY_ITER_VAR), entries,
+                    tag.getInt(KEY_ITER_INDEX));
         }
         return frame;
     }

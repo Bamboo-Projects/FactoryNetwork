@@ -1628,6 +1628,91 @@ public final class FactoryNetworkGameTests {
         });
     }
 
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void aForLoopCanWaitInEveryRound(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        // Der eigentliche Zweck der Sache: für jede Maschine etwas anstoßen
+        // und auf ihre Rückmeldung warten, bevor die nächste drankommt.
+        helper.assertTrue(entity.deploy("""
+                event Takt(nummer: Int)
+
+                fn reihum() {
+                    let summe = 0
+                    let runden = 0
+                    for sorte in tag:minecraft/planks {
+                        let wert = await Takt
+                        summe = summe + wert
+                        runden = runden + 1
+                        if runden >= 3 {
+                            break
+                        }
+                    }
+                    return summe
+                }"""), "Das Programm wurde nicht übernommen");
+
+        var flow = entity.startFlow("reihum", java.util.List.of());
+        helper.assertValueEqual(flow.status().name(), "AWAITING",
+                "Schon in der ersten Runde wird gewartet");
+
+        tick(helper, entity, 1);
+        tick(helper, entity, 2);
+        helper.assertValueEqual(flow.status().name(), "AWAITING", "Und in jeder weiteren");
+        tick(helper, entity, 3);
+
+        helper.assertValueEqual(flow.status().name(), "DONE", "Nach dem break ist Schluss");
+        helper.assertValueEqual(resultOf(flow), 6L, "Drei Runden, drei Werte");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void aForLoopKeepsItsPlaceAcrossARestart(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                event Takt(nummer: Int)
+
+                fn reihum() {
+                    let summe = 0
+                    let runden = 0
+                    for sorte in tag:minecraft/planks {
+                        let wert = await Takt
+                        summe = summe + wert
+                        runden = runden + 1
+                        if runden >= 3 {
+                            break
+                        }
+                    }
+                    return summe
+                }"""), "Das Programm wurde nicht übernommen");
+
+        var flow = entity.startFlow("reihum", java.util.List.of());
+        tick(helper, entity, 1);
+
+        var registries = helper.getLevel().registryAccess();
+        var block = net.minecraft.world.level.block.entity.BlockEntity.loadStatic(
+                helper.absolutePos(controller), helper.getBlockState(controller),
+                entity.saveWithFullMetadata(registries), registries);
+        ControllerBlockEntity geladen = (ControllerBlockEntity) block;
+        geladen.setLevel(helper.getLevel());
+
+        var wieder = flowOf(geladen, flow.id());
+        helper.assertTrue(wieder != null, "Der Lauf über die Liste ist verloren gegangen");
+        helper.assertValueEqual(wieder.status().name(), "AWAITING", "Er wartet weiter");
+
+        // Wäre der Stand des Laufs nicht mitgeschrieben, begänne die Liste von
+        // vorn — und täte alles ein zweites Mal.
+        tick(helper, geladen, 2);
+        tick(helper, geladen, 3);
+        helper.assertValueEqual(wieder.status().name(), "DONE", "Drei Runden, dann Schluss");
+        helper.assertValueEqual(resultOf(wieder), 6L, "Über den Neustart hinweg gezählt");
+        helper.succeed();
+    }
+
     private FactoryNetworkGameTests() {
     }
 }

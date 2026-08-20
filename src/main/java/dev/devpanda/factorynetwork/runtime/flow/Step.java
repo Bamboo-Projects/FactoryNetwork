@@ -30,6 +30,18 @@ public sealed interface Step {
     /** In einen Block hineingehen — Schleifenrumpf, Bedingungszweig. */
     record Enter(Block block, boolean loop) implements Step {}
 
+    /**
+     * Über eine Liste laufen.
+     *
+     * <p>Eigener Schritt und nicht bloß ein {@link Enter}, weil die Liste
+     * einmal ausgewertet wird und dann Runde für Runde abgearbeitet werden
+     * muss. Bei {@code while} steht die Bedingung im Programm und wird jedes
+     * Mal neu geprüft; hier gäbe es nichts, woran sich der Stand ablesen ließe
+     * — also wandert er in den Rahmen und damit auf die Platte.
+     */
+    record ForEach(Block body, String variable, java.util.List<Value> values)
+            implements Step {}
+
     /** Aus der Funktion heraus. */
     record Return(Value value) implements Step {}
 

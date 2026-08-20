@@ -70,6 +70,70 @@ public final class Frame {
         this.exitOnLeave = exitOnLeave;
     }
 
+    // ---- Lauf über eine Liste ---------------------------------------------
+
+    private String iterationVariable;
+    private java.util.List<Value> iterationValues = java.util.List.of();
+    private int iterationIndex;
+
+    /**
+     * Macht diesen Rahmen zum Rumpf eines {@code for}.
+     *
+     * <p>Der Stand steht damit im Rahmen und nicht im Programm — anders als
+     * bei {@code while}, wo die Bedingung jede Runde neu geprüft wird. Nur so
+     * lässt sich ein {@code for}, das mitten in der Liste auf ein Ereignis
+     * wartet, aufschreiben und fortsetzen.
+     */
+    public void beginIteration(String variable, java.util.List<Value> values) {
+        this.iterationVariable = variable;
+        this.iterationValues = java.util.List.copyOf(values);
+        this.iterationIndex = 0;
+        bindCurrent();
+    }
+
+    /** Nur zum Zurücklesen: Stand mitten in der Liste. */
+    public void restoreIteration(String variable, java.util.List<Value> values, int index) {
+        this.iterationVariable = variable;
+        this.iterationValues = java.util.List.copyOf(values);
+        this.iterationIndex = index;
+    }
+
+    public boolean hasIteration() {
+        return iterationVariable != null;
+    }
+
+    public String iterationVariable() {
+        return iterationVariable;
+    }
+
+    public java.util.List<Value> iterationValues() {
+        return iterationValues;
+    }
+
+    public int iterationIndex() {
+        return iterationIndex;
+    }
+
+    /**
+     * Rückt auf den nächsten Eintrag vor.
+     *
+     * @return ob es noch einen gab
+     */
+    public boolean nextIteration() {
+        if (!hasIteration() || iterationIndex + 1 >= iterationValues.size()) {
+            return false;
+        }
+        iterationIndex++;
+        bindCurrent();
+        return true;
+    }
+
+    private void bindCurrent() {
+        if (iterationIndex < iterationValues.size()) {
+            locals.put(iterationVariable, iterationValues.get(iterationIndex));
+        }
+    }
+
     public boolean atEnd() {
         return index >= block.statements().size();
     }
