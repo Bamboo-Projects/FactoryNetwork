@@ -813,3 +813,64 @@ im 2×2-Raster. Bewusst zurückgestellt: Dafür reicht kein statisches Modell
 mehr, weil die Zahl der Kombinationen in die Millionen geht. Es bräuchte ein
 zur Laufzeit zusammengebautes Modell und eigene Kollisionsboxen je Leitung,
 damit sich eine einzelne herausbrechen lässt.
+
+---
+
+## Kabelbündel (2026-08-20)
+
+**Bis zu vier Stränge in einem Block**, nach dem Vorbild der EnderIO-Conduits,
+aber mit unseren Farben: Vier getrennte Netze passen durch dieselbe Wand, ohne
+vier Blöcke breit zu werden.
+
+### Ein einzelnes Kabel ist ein Bündel mit einem Strang
+
+Es gibt bewusst keinen zweiten Blocktyp. Sonst müsste jede Stelle, die Kabel
+anfasst, für immer zwei Fälle behandeln: der Netzwerkgraph, das Platzieren,
+das Abbauen, jeder Test.
+
+Dass das eine Migration dessen war, was am selben Tag entstanden ist, spricht
+nicht dagegen, sondern dafür: Später wären Welten betroffen gewesen, die
+jemand damit gebaut hat. Kabel aus der Zeit davor lesen ihre Farbe weiterhin
+aus dem Blockzustand — der Konstruktor der BlockEntity übernimmt sie als
+ersten Strang.
+
+### Der Graph läuft über Position und Farbe, nicht über Position
+
+Ein Bündelblock ist damit bis zu vier Knoten. Ohne diese Trennung liefe ein
+grüner Strang über einen Block, in dem auch ein roter liegt, und beide wären
+plötzlich verbunden — dieselbe Klasse von Fehler wie ein Strang, der sichtbar
+getrennt verläuft und es doch nicht ist.
+
+Der Controller ist farbneutral: Von ihm gehen alle Stränge aus, die an ihm
+hängen. Connectoren ebenso — sie müssten sonst selbst gefärbt werden.
+
+### Die Anzahl steht im Zustand, die Farben nicht
+
+Vier Farbfelder mit je siebzehn Werten wären über hunderttausend
+Blockzustände, für die Minecraft jeweils ein Modell backt. Im Zustand steht
+deshalb nur, wie viele Stränge im Block liegen — vier Werte.
+
+**Eingefärbt wird zur Laufzeit.** Jeder Strang hat im Modell seinen eigenen
+Tintindex, und der Client liest die Farbe aus der BlockEntity. Nebeneffekt:
+Eine einzige graue Kabeltextur reicht, wo vorher siebzehn dasselbe Bild in
+siebzehn Tönen zeigten.
+
+Verworfen: ein zur Laufzeit zusammengebautes Modell mit versetzten Quads. Es
+wäre der allgemeinere Weg, aber die Einfärbung leistet hier dasselbe mit
+Minecrafts eigenen Mitteln.
+
+### Sechs Pixel allein, vier im Bündel
+
+Ein einzelnes Kabel sieht aus wie bisher — kein Rückschritt für vorhandene
+Bauten. Ab zwei Strängen werden alle vier Pixel dick; mehr passt nicht in
+sechzehn, ohne dass sie sich berühren.
+
+### Was noch fehlt
+
+**Einzelne Stränge lassen sich nicht abbauen.** Ein Schlag nimmt den ganzen
+Block und wirft alle Stränge aus. Dafür bräuchte es Kollisionsboxen je Strang
+und ein Zielen darauf — beides machbar, aber ein eigener Schritt.
+
+Ebenso offen: Ob ein Bündel für die Kanäle als ein Kabel zählt oder als vier.
+Das ist keine Modellfrage, sondern eine des Spielgleichgewichts, und Kanäle
+gibt es bei uns noch nicht.
