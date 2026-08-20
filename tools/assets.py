@@ -94,8 +94,11 @@ def models():
         "elements": [{
             "from": [5, 5, 5],
             "to": [11, 11, 11],
+            # Kein cullface: Der Kern liegt frei in der Mitte und grenzt an
+            # keine Blockfläche. Ein "cullface": null ist kein gültiger Wert —
+            # die Angabe muss ganz fehlen.
             "faces": {
-                face: {"texture": "#cable", "cullface": None} for face in
+                face: {"texture": "#cable"} for face in
                 ("north", "south", "east", "west", "up", "down")
             },
         }],
