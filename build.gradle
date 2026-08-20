@@ -20,10 +20,16 @@ neoForge {
         client {
             client()
             systemProperty 'neoforge.enabledGameTestNamespaces', mod_id
-            // Debugger-Anschluss für HotSwap: Wer auf Port 5005 verbindet,
-            // kann Methodenkörper im laufenden Spiel austauschen, ohne neu zu
-            // starten. suspend=n heißt, das Spiel wartet nicht darauf.
-            jvmArgument '-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005'
+            // Debugger-Anschluss für HotSwap, nur auf Anforderung:
+            //   ./gradlew runClient -Pdebug
+            //
+            // Nicht dauerhaft an, weil ein hängengebliebener Prozess den Port
+            // belegt und der nächste Start dann gar nicht erst hochkommt —
+            // das ist ein schlechter Tausch für eine Möglichkeit, die man
+            // selten braucht.
+            if (project.hasProperty('debug')) {
+                jvmArgument '-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005'
+            }
         }
         server {
             server()

@@ -22,8 +22,10 @@ zweiten Fenster, dann im Spiel **F3+T**. Minecraft lädt die Ressourcen neu,
 das Spiel bleibt offen. Damit lässt sich an einer Textur so lange drehen, bis
 sie sitzt.
 
-**Java-Code, aber nur Methodenkörper:** Der Client lauscht auf Port 5005 für
-einen Debugger. Wer sich mit IntelliJ verbindet (Run → Attach to Process, oder
+**Java-Code, aber nur Methodenkörper:** Mit `./gradlew runClient -Pdebug`
+lauscht der Client auf Port 5005 für einen Debugger. Ohne den Schalter nicht —
+ein hängengebliebener Prozess würde sonst den Port belegen und den nächsten
+Start verhindern. Wer sich mit IntelliJ verbindet (Run → Attach to Process, oder
 eine Remote-JVM-Debug-Konfiguration auf localhost:5005), kann geänderte
 Methoden mit *Build → Recompile* ins laufende Spiel schieben.
 
