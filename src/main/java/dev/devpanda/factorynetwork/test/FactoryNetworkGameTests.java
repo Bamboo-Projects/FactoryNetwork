@@ -1871,6 +1871,151 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    /**
+     * Zwei Anlagen an einem Kabel — die zweite mit einem fehlenden Gerät.
+     *
+     * <p>Die Namen tragen den Anlagennamen vorn: So und nicht anders entsteht
+     * eine gebaute Anlage.
+     */
+    private static ControllerBlockEntity twoPlants(GameTestHelper helper, BlockPos controller) {
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        for (int i = 0; i < 5; i++) {
+            helper.setBlock(controller.east(i + 1), FnBlocks.CABLE.get());
+        }
+        String[] labels = {"werk_1/eingang", "werk_1/ausgang", "werk_2/eingang"};
+        for (int i = 0; i < labels.length; i++) {
+            BlockPos connector = controller.east(i + 2).above();
+            helper.setBlock(connector, FnBlocks.CONNECTOR.get().defaultBlockState()
+                    .setValue(dev.devpanda.factorynetwork.block.ConnectorBlock.FACING,
+                            net.minecraft.core.Direction.UP));
+            helper.setBlock(connector.above(), Blocks.CHEST);
+            name(helper, connector, labels[i]);
+        }
+        return controllerAt(helper, controller);
+    }
+
+    /** Die Kiste über dem Connector an dieser Stelle. */
+    private static net.minecraft.world.level.block.entity.ChestBlockEntity plantChest(
+            GameTestHelper helper, BlockPos controller, int index) {
+        BlockPos chest = controller.east(index + 2).above(2);
+        if (helper.getBlockEntity(chest)
+                instanceof net.minecraft.world.level.block.entity.ChestBlockEntity container) {
+            return container;
+        }
+        helper.fail("Keine Kiste", chest);
+        throw new IllegalStateException();
+    }
+
+    private static final String PLANT_PROGRAM = """
+            multiblock Werk {
+                devices {
+                    eingang
+                    ausgang
+                }
+
+                fn schleusen() {
+                    move 3 item:cobblestone from eingang to ausgang
+                }
+            }
+
+            fn los() {
+                werk_1.schleusen()
+            }""";
+
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void aPlantUsesItsOwnDevices(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 1, 1);
+        ControllerBlockEntity entity = twoPlants(helper, controller);
+        entity.rebuildNetwork();
+        plantChest(helper, controller, 0).setItem(0, new ItemStack(Items.COBBLESTONE, 10));
+
+        helper.assertTrue(entity.deploy(PLANT_PROGRAM), "Das Programm wurde nicht übernommen");
+        entity.startFlow("los", java.util.List.of());
+
+        // In der Vorlage steht "eingang" — gemeint ist werk_1/eingang.
+        helper.assertValueEqual(plantChest(helper, controller, 0).getItem(0).getCount(), 7,
+                "Aus dem Eingang der eigenen Anlage");
+        helper.assertValueEqual(plantChest(helper, controller, 1).getItem(0).getCount(), 3,
+                "In den Ausgang der eigenen Anlage");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void anIncompletePlantRefusesCalls(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 1, 1);
+        ControllerBlockEntity entity = twoPlants(helper, controller);
+        entity.rebuildNetwork();
+        plantChest(helper, controller, 2).setItem(0, new ItemStack(Items.COBBLESTONE, 10));
+
+        helper.assertTrue(entity.deploy(PLANT_PROGRAM.replace("werk_1.schleusen()",
+                "werk_2.schleusen()")), "Das Programm wurde nicht übernommen");
+        var flow = entity.startFlow("los", java.util.List.of());
+
+        // werk_2 fehlt der Ausgang. Ein halb durchlaufener Aufruf wäre
+        // schlimmer als einer, der gar nicht erst beginnt.
+        helper.assertValueEqual(flow.status().name(), "FAILED",
+                "Eine unvollständige Anlage nimmt keine Aufrufe an");
+        helper.assertTrue(flow.detail().contains("ausgang"),
+                "Und sagt, was fehlt: " + flow.detail());
+        helper.assertValueEqual(plantChest(helper, controller, 2).getItem(0).getCount(), 10,
+                "Nichts wurde bewegt");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void aPlantFlowRemembersItsPlantAcrossARestart(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 1, 1);
+        ControllerBlockEntity entity = twoPlants(helper, controller);
+        entity.rebuildNetwork();
+        plantChest(helper, controller, 0).setItem(0, new ItemStack(Items.COBBLESTONE, 10));
+
+        helper.assertTrue(entity.deploy("""
+                event Takt(nummer: Int)
+
+                multiblock Werk {
+                    devices {
+                        eingang
+                        ausgang
+                    }
+
+                    fn schleusen() {
+                        let wert = await Takt
+                        move 3 item:cobblestone from eingang to ausgang
+                        return wert
+                    }
+                }
+
+                fn los() {
+                    let ergebnis = werk_1.schleusen()
+                    return ergebnis
+                }"""), "Das Programm wurde nicht übernommen");
+
+        var flow = entity.startFlow("los", java.util.List.of());
+        helper.assertValueEqual(flow.status().name(), "AWAITING", "Die Anlage wartet");
+
+        var registries = helper.getLevel().registryAccess();
+        var block = net.minecraft.world.level.block.entity.BlockEntity.loadStatic(
+                helper.absolutePos(controller), helper.getBlockState(controller),
+                entity.saveWithFullMetadata(registries), registries);
+        ControllerBlockEntity geladen = (ControllerBlockEntity) block;
+        geladen.setLevel(helper.getLevel());
+        // Im Spiel besorgt das der Tick: Ohne Netz kennt der Controller keine
+        // Geräte, und die Anlage wäre nicht wiederzufinden.
+        geladen.rebuildNetwork();
+
+        var wieder = flowOf(geladen, flow.id());
+        helper.assertTrue(wieder != null, "Der Ablauf der Anlage ist verloren gegangen");
+        tick(helper, geladen, 7);
+
+        helper.assertValueEqual(wieder.status().name(), "DONE",
+                "Er läuft zu Ende, sagt aber: " + wieder.detail());
+        helper.assertValueEqual(resultOf(wieder), 7L, "Mit dem Wert aus dem Ereignis");
+        // Ohne den mitgeschriebenen Anlagennamen wüsste er nicht mehr, wohin.
+        helper.assertValueEqual(plantChest(helper, controller, 1).getItem(0).getCount(), 3,
+                "Und weiß noch, welche Anlage er bedient");
+        helper.succeed();
+    }
+
     private FactoryNetworkGameTests() {
     }
 }

@@ -175,6 +175,11 @@ public final class WorldHost implements Interpreter.Host {
         return graph.closestName(name).orElse(null);
     }
 
+    @Override
+    public java.util.Collection<String> deviceNames() {
+        return graph.connectors().keySet();
+    }
+
     // ---- Auflösen ---------------------------------------------------------
 
     private BlockPos connectorPosition(String name) {

@@ -593,5 +593,10 @@ public final class FlowEngine {
         public boolean assign(String name, Value value) {
             return flow.assign(name, value);
         }
+
+        @Override
+        public String devicePrefix() {
+            return flow.devicePrefix();
+        }
     }
 }

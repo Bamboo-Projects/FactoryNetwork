@@ -57,6 +57,16 @@ public final class Interpreter {
         void declare(String name, Value value);
 
         boolean assign(String name, Value value);
+
+        /**
+         * Zu welcher Anlage der Ablauf gehört, oder leer.
+         *
+         * <p>Nur Abläufe wissen das; der gewöhnliche Weg betritt keine
+         * Vorlagenfunktion und kennt deshalb keine Instanzen.
+         */
+        default String devicePrefix() {
+            return "";
+        }
     }
 
     /**
@@ -87,6 +97,17 @@ public final class Interpreter {
 
         /** Vorschlag bei einem unbekannten Namen. */
         String suggestDevice(String name);
+
+        /**
+         * Alle bekannten Gerätenamen.
+         *
+         * <p>Daraus werden die Anlagen erschlossen. Wer das nicht liefert,
+         * bekommt keine Multiblocks — und braucht sie in einem Test meist
+         * auch nicht.
+         */
+        default java.util.Collection<String> deviceNames() {
+            return List.of();
+        }
     }
 
     public Interpreter(Program program, Host host) {
@@ -405,8 +426,17 @@ public final class Interpreter {
      *         Aufruf ist
      */
     private Step invokeStep(Expr expr, String resultName) {
-        if (!(expr instanceof Expr.Call call)
-                || !(call.callee() instanceof Expr.Name name)) {
+        if (!(expr instanceof Expr.Call call)) {
+            return null;
+        }
+        if (call.callee() instanceof Expr.Member member
+                && member.target() instanceof Expr.Name target) {
+            Step onInstance = instanceStep(target.value(), member.name(), call, resultName);
+            if (onInstance != null) {
+                return onInstance;
+            }
+        }
+        if (!(call.callee() instanceof Expr.Name name)) {
             return null;
         }
         Decl.Fn function = program.functions().stream()
@@ -423,6 +453,44 @@ public final class Interpreter {
                 function.body(), resultName, null);
     }
 
+    /**
+     * Der Aufruf einer Funktion an einer gebauten Anlage.
+     *
+     * <p>{@code ore_plant_1.process(…)} läuft im Rumpf der Vorlage, aber mit
+     * den Geräten dieser einen Anlage. Der Rahmen merkt sich, zu welcher — und
+     * schreibt es mit auf, sonst wüsste ein wartender Ablauf nach einem
+     * Neustart nicht mehr, welche der drei Anlagen er bedient.
+     *
+     * @return {@code null}, wenn das gar keine Anlage ist
+     */
+    private Step instanceStep(String instanceName, String functionName, Expr.Call call,
+            String resultName) {
+        MultiblockInstances.Instance instance = instances().get(instanceName);
+        if (instance == null) {
+            return null;
+        }
+        if (instance.ambiguous()) {
+            throw new ScriptError("Zu " + instanceName + " passen mehrere Vorlagen.",
+                    "Die Anlage hat die Geräte von mehr als einer — benenne eines um.");
+        }
+        if (!instance.missing().isEmpty()) {
+            throw new ScriptError("Der Anlage " + instanceName + " fehlt "
+                    + String.join(", ", instance.missing()) + ".",
+                    "Solange etwas fehlt, nimmt sie keine Aufrufe an.");
+        }
+        Decl.Fn function = instance.template().functions().stream()
+                .filter(candidate -> candidate.name().equals(functionName))
+                .findFirst().orElse(null);
+        if (function == null) {
+            throw new ScriptError(instance.template().name() + " kennt kein "
+                    + functionName + ".");
+        }
+        return new Step.Invoke(
+                function.parameters().stream().map(Decl.Param::name).toList(),
+                call.arguments().stream().map(argument -> evaluate(argument.value())).toList(),
+                function.body(), resultName, instanceName);
+    }
+
     /** Ein bloßes await ohne Zuweisung — dasselbe, nur ohne Namen. */
     private Step awaitStep(Expr.Await await, long gameTime) {
         return awaitStep(await, null, gameTime);
@@ -430,6 +498,30 @@ public final class Interpreter {
 
     /** Gesetzt, solange eine Anweisung für einen Ablauf ausgeführt wird. */
     private Scope externalScope;
+
+    /** Zu welcher Anlage der laufende Ablauf gehört, oder leer. */
+    private String devicePrefix() {
+        return externalScope == null ? "" : externalScope.devicePrefix();
+    }
+
+    private Map<String, MultiblockInstances.Instance> instanceCache;
+    private java.util.Collection<String> instanceCacheFor;
+
+    /**
+     * Die Anlagen des Netzes, gemerkt bis sich die Gerätenamen ändern.
+     *
+     * <p>Sie bei jedem Aufruf neu zu suchen wäre bei einigen Dutzend
+     * Connectoren spürbar — und die Namen ändern sich nur, wenn jemand mit der
+     * Beschriftungspistole daran war.
+     */
+    private Map<String, MultiblockInstances.Instance> instances() {
+        java.util.Collection<String> names = host.deviceNames();
+        if (instanceCache == null || !names.equals(instanceCacheFor)) {
+            instanceCacheFor = List.copyOf(names);
+            instanceCache = MultiblockInstances.resolve(program, instanceCacheFor);
+        }
+        return instanceCache;
+    }
 
     // ---- Ausdrücke --------------------------------------------------------
 
@@ -504,6 +596,16 @@ public final class Interpreter {
         Value local = externalScope != null ? externalScope.find(name) : find(name);
         if (local != null) {
             return local;
+        }
+        // In einer Vorlage meint ein Gerätename immer das eigene Gerät. Erst
+        // wenn die Anlage keines dieses Namens hat, zählt der Rest des Netzes
+        // — sonst wäre ein Netzspeicher aus einer Vorlage heraus unerreichbar.
+        String prefix = devicePrefix();
+        if (!prefix.isEmpty()) {
+            String own = prefix + MultiblockInstances.SEPARATOR + name;
+            if (host.hasDevice(own)) {
+                return new Value.Device(own);
+            }
         }
         if (host.hasDevice(name)) {
             return new Value.Device(name);
