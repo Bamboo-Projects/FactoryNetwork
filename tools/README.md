@@ -8,6 +8,7 @@ hier, damit sich das Ergebnis nachvollziehen und wiederherstellen lässt.
 python tools/textures.py     Blocktexturen und Gegenstandstextur
 python tools/assets.py       Blockstates, Modelle, Loot-Tables, Rezepte
 python tools/structure.py    leere Strukturvorlage für die GameTests
+python tools/texturuebersicht.py   Übersichtsseite aller Texturen nach build/
 ```
 
 Gebraucht wird Pillow für `textures.py`; die anderen beiden kommen mit der
