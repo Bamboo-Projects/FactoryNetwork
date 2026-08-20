@@ -15,10 +15,12 @@ import dev.devpanda.factorynetwork.runtime.Value;
 import dev.devpanda.factorynetwork.runtime.WorkerRuntime;
 import dev.devpanda.factorynetwork.runtime.WorldHost;
 import dev.devpanda.factorynetwork.runtime.flow.Flow;
+import dev.devpanda.factorynetwork.runtime.flow.FlowCodec;
 import dev.devpanda.factorynetwork.runtime.flow.FlowEngine;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -44,6 +46,7 @@ public class ControllerBlockEntity extends BlockEntity {
 
     private static final String KEY_SOURCE = "Source";
     private static final String KEY_STORAGE = "Storage";
+    private static final String KEY_FLOWS = "Flows";
     private static final int REBUILD_INTERVAL = 100;
 
     private String source = "";
@@ -54,6 +57,15 @@ public class ControllerBlockEntity extends BlockEntity {
     private final WorkerRuntime runtime = new WorkerRuntime();
     /** Abläufe, die warten können — sie überleben einen Serverneustart. */
     private FlowEngine flows;
+
+    /**
+     * Aufgeschriebene Abläufe, die noch warten, bis es eine Welt gibt.
+     *
+     * <p>Beim Laden steht die Welt noch nicht bereit, die Abläufe brauchen
+     * aber einen Interpreter und der eine Welt. Also bleibt der Tag liegen,
+     * bis der erste Tick kommt.
+     */
+    private CompoundTag pendingFlows;
     /** Negativ statt Long.MIN_VALUE: Die Differenz liefe sonst über. */
     private long lastRebuild = -REBUILD_INTERVAL;
 
@@ -103,8 +115,18 @@ public class ControllerBlockEntity extends BlockEntity {
         if (result.hasErrors()) {
             return false;
         }
+        // Wartende Abläufe gehen denselben Weg wie über einen Serverneustart:
+        // aufschreiben, neue Maschine bauen, zurücklesen. Passt die Gestalt
+        // des Programms noch, laufen sie weiter; passt sie nicht, melden sie
+        // sich als STALE. Ein Weg, ein Verhalten — statt zwei, die
+        // auseinanderlaufen.
+        CompoundTag carried = flows == null ? null : FlowCodec.write(flows);
         this.program = result.program();
         runtime.reset();
+        this.flows = null;
+        if (carried != null && !carried.getList("flows", Tag.TAG_COMPOUND).isEmpty()) {
+            this.pendingFlows = carried;
+        }
         return true;
     }
 
@@ -266,16 +288,32 @@ public class ControllerBlockEntity extends BlockEntity {
      * fragen. Das kommt im nächsten Schritt.
      */
     private void tickFlows() {
-        if (flows == null) {
+        if (flows == null && pendingFlows == null) {
             return;
         }
-        flows.tick(level.getGameTime());
+        FlowEngine engine = flowEngine();
+        if (engine != null) {
+            engine.tick(level.getGameTime());
+        }
     }
 
+    /**
+     * Die Ablaufmaschine, bei Bedarf gebaut und mit dem Gespeicherten gefüllt.
+     *
+     * <p>Das Auspacken steht hier und nicht im Tick, damit es nicht darauf
+     * ankommt, wer zuerst fragt. Ein Ereignis, das im selben Tick eintrifft,
+     * in dem der Chunk geladen wurde, würde sonst auf eine leere Maschine
+     * treffen — und die wartenden Abläufe kämen einen Tick zu spät.
+     */
     public FlowEngine flowEngine() {
         if (flows == null && level != null) {
             flows = new FlowEngine(program, new Interpreter(program,
                     new WorldHost(level, graph, storage)));
+        }
+        if (flows != null && pendingFlows != null) {
+            CompoundTag saved = pendingFlows;
+            pendingFlows = null;
+            FlowCodec.read(saved, flows);
         }
         return flows;
     }
@@ -333,6 +371,10 @@ public class ControllerBlockEntity extends BlockEntity {
         super.loadAdditional(tag, registries);
         source = tag.getString(KEY_SOURCE);
         storage.load(tag.getCompound(KEY_STORAGE), registries);
+        // Die Abläufe warten auf den ersten Tick: Sie brauchen einen
+        // Interpreter, der braucht eine Welt, und die gibt es hier noch nicht
+        // verlässlich.
+        pendingFlows = tag.contains(KEY_FLOWS) ? tag.getCompound(KEY_FLOWS) : null;
         // Nach dem Laden wird neu übersetzt: Der Baum selbst wird nicht
         // gespeichert, weil sich die Sprache ändern kann, der Quelltext aber
         // gültig bleibt.
@@ -352,6 +394,13 @@ public class ControllerBlockEntity extends BlockEntity {
         CompoundTag storageTag = new CompoundTag();
         storage.save(storageTag, registries);
         tag.put(KEY_STORAGE, storageTag);
+        if (flows != null) {
+            tag.put(KEY_FLOWS, FlowCodec.write(flows));
+        } else if (pendingFlows != null) {
+            // Noch nicht ausgepackt — dann unverändert weiterreichen, statt
+            // die Abläufe beim ersten Speichern zu verlieren.
+            tag.put(KEY_FLOWS, pendingFlows);
+        }
     }
 
     @Override

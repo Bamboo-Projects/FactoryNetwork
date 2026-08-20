@@ -35,7 +35,11 @@ public final class FlowEngine {
     private final Interpreter interpreter;
     private final BlockIndex blocks;
     private final Map<Long, Flow> flows = new LinkedHashMap<>();
+    private final List<Flow> failed = new ArrayList<>();
     private long nextId = 1;
+
+    /** So viele gescheiterte Abläufe bleiben zum Nachsehen liegen. */
+    private static final int KEPT_FAILURES = 10;
 
     public FlowEngine(Program program, Interpreter interpreter) {
         this.program = program;
@@ -79,6 +83,7 @@ public final class FlowEngine {
                 .orElseThrow(() -> new ScriptError("Unbekannte Funktion " + functionName + "."));
 
         Flow flow = new Flow(nextId++, functionName);
+        flow.setStructureHash(blocks.structureHash());
         Frame frame = new Frame(function.body(), false);
         for (int i = 0; i < function.parameters().size(); i++) {
             frame.locals().put(function.parameters().get(i).name(),
@@ -97,6 +102,7 @@ public final class FlowEngine {
                 continue;
             }
             Flow flow = new Flow(nextId++, "on " + event);
+            flow.setStructureHash(blocks.structureHash());
             Frame frame = new Frame(handler.body(), false);
             for (int i = 0; i < handler.parameters().size(); i++) {
                 frame.locals().put(handler.parameters().get(i),
@@ -125,7 +131,34 @@ public final class FlowEngine {
                 advance(flow, gameTime);
             }
         }
-        flows.values().removeIf(Flow::isFinished);
+        flows.values().removeIf(flow -> {
+            if (!flow.isFinished()) {
+                return false;
+            }
+            if (flow.status() == Flow.Status.FAILED) {
+                remember(flow);
+            }
+            return true;
+        });
+    }
+
+    /**
+     * Behält die letzten gescheiterten Abläufe.
+     *
+     * <p>Ein Ablauf, der stirbt, verschwand bisher aus der Liste, und mit ihm
+     * der Grund. Wer nachts eine Anlage baut, sieht am nächsten Morgen sonst
+     * nur, dass nichts passiert ist.
+     */
+    private void remember(Flow flow) {
+        failed.add(flow);
+        while (failed.size() > KEPT_FAILURES) {
+            failed.remove(0);
+        }
+    }
+
+    /** Die letzten gescheiterten Abläufe, ältester zuerst. */
+    public List<Flow> failed() {
+        return List.copyOf(failed);
     }
 
     /**

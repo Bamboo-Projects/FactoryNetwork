@@ -66,6 +66,48 @@ public final class BlockIndex {
         return blocks.size();
     }
 
+    /**
+     * Eine Zahl, die sich genau dann ändert, wenn sich die Nummern ändern.
+     *
+     * <p>Ein wartender Ablauf zeigt mit Nummern auf Blöcke und mit einem
+     * Zähler auf eine Anweisung darin. Beides bleibt gültig, solange Anzahl
+     * und Art der Anweisungen gleich bleiben — Kommentare, Einrückung und
+     * geänderte Zahlen im Rumpf verschieben nichts. Eine eingefügte Zeile
+     * verschiebt dagegen alles, was dahinter steht.
+     *
+     * <p>Deshalb bewacht diese Zahl die Fortsetzung und nicht ein Hash des
+     * Quelltextes: Sonst würde ein hinzugefügter Kommentar jeden wartenden
+     * Ablauf zur Nachfrage zwingen, obwohl er weiterlaufen könnte.
+     *
+     * <p>Der Name eines erwarteten Ereignisses zählt mit. Wird aus
+     * {@code await Fertig} ein {@code await Abgebrochen}, ist die Struktur
+     * gleich, der Ablauf wartete aber auf etwas anderes als das Programm
+     * jetzt meint.
+     */
+    public int structureHash() {
+        int hash = 17;
+        for (Block block : blocks) {
+            hash = hash * 31 + block.statements().size();
+            for (Stmt statement : block.statements()) {
+                hash = hash * 31 + statement.getClass().getSimpleName().hashCode();
+                String event = awaitedEventOf(statement);
+                if (event != null) {
+                    hash = hash * 31 + event.hashCode();
+                }
+            }
+        }
+        return hash;
+    }
+
+    private static String awaitedEventOf(Stmt statement) {
+        Expr expr = switch (statement) {
+            case Stmt.Let let -> let.value();
+            case Stmt.ExprStmt wrapper -> wrapper.expr();
+            default -> null;
+        };
+        return expr instanceof Expr.Await await ? await.eventName() : null;
+    }
+
     private void walk(Block block) {
         if (block == null || numbers.containsKey(block)) {
             return;

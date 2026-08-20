@@ -1264,6 +1264,190 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    /** Ein Programm mit await in if in while — die Vorlage der Ablauf-Tests. */
+    private static final String COUNTING_PROGRAM = """
+            event Takt(nummer: Int)
+
+            fn zaehlt() {
+                let summe = 0
+                let runde = 0
+                while runde < 3 {
+                    if runde >= 0 {
+                        let wert = await Takt
+                        summe = summe + wert
+                    }
+                    runde = runde + 1
+                }
+                return summe
+            }""";
+
+    private static void tick(GameTestHelper helper, ControllerBlockEntity entity, int nummer) {
+        entity.fireEvent("Takt", java.util.List.of(
+                new dev.devpanda.factorynetwork.runtime.Value.Int(nummer)));
+    }
+
+    private static dev.devpanda.factorynetwork.runtime.flow.Flow flowOf(
+            ControllerBlockEntity entity, long id) {
+        return entity.flowEngine().flows().get(id);
+    }
+
+    private static long resultOf(dev.devpanda.factorynetwork.runtime.flow.Flow flow) {
+        return ((dev.devpanda.factorynetwork.runtime.Value.Int) flow.result()).value();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void aWaitingFlowSurvivesBeingWrittenDown(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        helper.assertTrue(entity.deploy(COUNTING_PROGRAM), "Programm nicht übernommen");
+
+        var flow = entity.startFlow("zaehlt", java.util.List.of());
+        long id = flow.id();
+        tick(helper, entity, 1);
+        helper.assertValueEqual(flow.status().name(), "AWAITING", "Nach Runde 1 wartet er");
+
+        // Dasselbe Programm noch einmal übernehmen stellt einen Neustart nach:
+        // aufschreiben, Maschine wegwerfen, zurücklesen.
+        helper.assertTrue(entity.deploy(COUNTING_PROGRAM), "Erneut übernehmen ging schief");
+
+        var wieder = flowOf(entity, id);
+        helper.assertTrue(wieder != null, "Der Ablauf ist beim Aufschreiben verloren gegangen");
+        helper.assertTrue(wieder != flow, "Der Ablauf müsste neu aufgebaut worden sein");
+        helper.assertValueEqual(wieder.status().name(), "AWAITING",
+                "Er muss weiter warten, wo er stand");
+        helper.assertValueEqual(
+                ((dev.devpanda.factorynetwork.runtime.Value.Int) wieder.find("summe")).value(), 1L,
+                "Die Summe aus Runde 1 muss den Weg überstehen");
+
+        tick(helper, entity, 2);
+        tick(helper, entity, 3);
+        helper.assertValueEqual(wieder.status().name(), "DONE", "Er läuft zu Ende");
+        helper.assertValueEqual(resultOf(wieder), 6L,
+                "Er zählt dort weiter, wo er aufgehört hat");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void aChangedProgramMakesWaitingFlowsStale(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        helper.assertTrue(entity.deploy(COUNTING_PROGRAM), "Programm nicht übernommen");
+
+        var flow = entity.startFlow("zaehlt", java.util.List.of());
+        long id = flow.id();
+        tick(helper, entity, 1);
+
+        // Eine Zeile mehr verschiebt alles dahinter — der Zähler des Ablaufs
+        // zeigt dann auf die falsche Anweisung.
+        helper.assertTrue(entity.deploy("""
+                event Takt(nummer: Int)
+
+                fn zaehlt() {
+                    let summe = 0
+                    let extra = 0
+                    let runde = 0
+                    while runde < 3 {
+                        if runde >= 0 {
+                            let wert = await Takt
+                            summe = summe + wert
+                        }
+                        runde = runde + 1
+                    }
+                    return summe
+                }"""), "Das geänderte Programm wurde nicht übernommen");
+
+        var wieder = flowOf(entity, id);
+        helper.assertTrue(wieder != null, "Der Ablauf darf nicht verschwinden");
+        helper.assertValueEqual(wieder.status().name(), "STALE",
+                "Er muss sich melden statt heimlich weiterzulaufen");
+
+        // Ein STALE-Ablauf rührt sich nicht mehr von selbst.
+        tick(helper, entity, 2);
+        helper.assertValueEqual(wieder.status().name(), "STALE", "Und bleibt liegen");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void anEditedBodyKeepsWaitingFlowsRunning(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        helper.assertTrue(entity.deploy(COUNTING_PROGRAM), "Programm nicht übernommen");
+
+        var flow = entity.startFlow("zaehlt", java.util.List.of());
+        long id = flow.id();
+        tick(helper, entity, 1);
+
+        // Gleiche Zeilen, andere Rechnung: Die Stellen bleiben, wo sie waren.
+        helper.assertTrue(entity.deploy("""
+                event Takt(nummer: Int)
+
+                fn zaehlt() {
+                    let summe = 0
+                    let runde = 0
+                    while runde < 3 {
+                        if runde >= 0 {
+                            let wert = await Takt
+                            summe = summe + wert + 10
+                        }
+                        runde = runde + 1
+                    }
+                    return summe
+                }"""), "Das geänderte Programm wurde nicht übernommen");
+
+        var wieder = flowOf(entity, id);
+        helper.assertValueEqual(wieder.status().name(), "AWAITING",
+                "Der Ablauf läuft weiter, weil seine Stellen noch stimmen");
+
+        tick(helper, entity, 2);
+        tick(helper, entity, 3);
+        helper.assertValueEqual(resultOf(wieder), 26L,
+                "Runde 1 zählte alt, die Runden 2 und 3 zählen neu");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void aWaitingFlowSurvivesAServerRestart(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        helper.assertTrue(entity.deploy(COUNTING_PROGRAM), "Programm nicht übernommen");
+
+        var flow = entity.startFlow("zaehlt", java.util.List.of());
+        long id = flow.id();
+        tick(helper, entity, 1);
+        tick(helper, entity, 2);
+        helper.assertValueEqual(flow.status().name(), "AWAITING", "Er wartet auf Runde 3");
+
+        // Der Weg, den ein Serverneustart nimmt: Die BlockEntity schreibt sich
+        // auf die Platte, und beim Laden entsteht aus dem Tag eine neue.
+        var registries = helper.getLevel().registryAccess();
+        net.minecraft.nbt.CompoundTag gespeichert = entity.saveWithFullMetadata(registries);
+        var absolut = helper.absolutePos(controller);
+        var block = net.minecraft.world.level.block.entity.BlockEntity.loadStatic(
+                absolut, helper.getBlockState(controller), gespeichert, registries);
+        helper.assertTrue(block instanceof ControllerBlockEntity,
+                "Aus dem Tag kam kein Controller zurück");
+
+        ControllerBlockEntity geladen = (ControllerBlockEntity) block;
+        geladen.setLevel(helper.getLevel());
+
+        var wieder = flowOf(geladen, id);
+        helper.assertTrue(wieder != null, "Der wartende Ablauf hat den Neustart nicht überlebt");
+        helper.assertValueEqual(wieder.status().name(), "AWAITING",
+                "Er wartet weiter, wo er stand");
+        helper.assertValueEqual(
+                ((dev.devpanda.factorynetwork.runtime.Value.Int) wieder.find("summe")).value(), 3L,
+                "1 + 2 aus den Runden davor");
+
+        tick(helper, geladen, 3);
+        helper.assertValueEqual(wieder.status().name(), "DONE", "Und läuft zu Ende");
+        helper.assertValueEqual(resultOf(wieder), 6L, "Über den Neustart hinweg gezählt");
+        helper.succeed();
+    }
+
     private FactoryNetworkGameTests() {
     }
 }

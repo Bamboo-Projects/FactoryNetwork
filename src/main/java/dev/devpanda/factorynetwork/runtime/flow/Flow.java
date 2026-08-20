@@ -144,6 +144,36 @@ public final class Flow {
         detail = "";
     }
 
+    /**
+     * Die Gestalt des Programms, mit dem dieser Ablauf begann.
+     *
+     * <p>Zeigt der Ablauf nach einem Neustart oder einem neuen Programm noch
+     * auf dieselben Stellen? Diese Zahl beantwortet das. Stimmt sie nicht
+     * mehr, wird der Ablauf {@code STALE} — nicht heimlich fortgesetzt und
+     * nicht heimlich verworfen.
+     */
+    private int structureHash;
+
+    public int structureHash() {
+        return structureHash;
+    }
+
+    public void setStructureHash(int structureHash) {
+        this.structureHash = structureHash;
+    }
+
+    /** Setzt den gespeicherten Wartezustand zurück in den Ablauf. */
+    public void restore(Status status, String detail, Value result, long wakeAt,
+            String awaitedEvent, long awaitDeadline, String awaitResultName) {
+        this.status = status;
+        this.detail = detail;
+        this.result = result;
+        this.wakeAt = wakeAt;
+        this.awaitedEvent = awaitedEvent;
+        this.awaitDeadline = awaitDeadline;
+        this.awaitResultName = awaitResultName;
+    }
+
     // ---- Warten -----------------------------------------------------------
 
     /** Ist die Zeit gekommen, auf die gewartet wurde? */
