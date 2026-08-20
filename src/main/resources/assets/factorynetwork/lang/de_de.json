@@ -30,5 +30,18 @@
   "message.factorynetwork.label_gun.keyword": "%s ist ein Schlüsselwort — im Code braucht der Name Rückstriche.",
   "item.factorynetwork.label_gun.tooltip.empty": "Kein Name bereitgelegt",
   "item.factorynetwork.label_gun.tooltip.active": "Name: %s",
-  "item.factorynetwork.label_gun.tooltip.hint": "Rechtsklick benennt, Schleichen übernimmt"
+  "item.factorynetwork.label_gun.tooltip.hint": "Rechtsklick benennt, Schleichen übernimmt",
+  "screen.factorynetwork.terminal.tab.storage": "Speicher",
+  "screen.factorynetwork.terminal.tab.crafting": "Fertigung",
+  "screen.factorynetwork.terminal.tab.crafting.soon": "Autocrafting gibt es noch nicht.",
+  "screen.factorynetwork.terminal.tab.code": "Code",
+  "screen.factorynetwork.terminal.tab.network": "Netz",
+  "screen.factorynetwork.terminal.tab.dashboards": "Anzeigen",
+  "screen.factorynetwork.terminal.tab.dashboards.soon": "Displays gibt es noch nicht.",
+  "screen.factorynetwork.terminal.search": "Suchen…",
+  "screen.factorynetwork.terminal.storage.summary": "%s Arten · %s Gegenstände",
+  "screen.factorynetwork.terminal.storage.truncated": "zeige %s von %s Arten — suchen zeigt mehr",
+  "screen.factorynetwork.terminal.network.connectors": "IM NETZ",
+  "screen.factorynetwork.terminal.network.workers": "WORKER",
+  "screen.factorynetwork.terminal.network.no_workers": "keine"
 }

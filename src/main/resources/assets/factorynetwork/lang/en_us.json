@@ -30,5 +30,18 @@
   "message.factorynetwork.label_gun.keyword": "%s is a keyword — in code the name needs backticks.",
   "item.factorynetwork.label_gun.tooltip.empty": "No name ready",
   "item.factorynetwork.label_gun.tooltip.active": "Name: %s",
-  "item.factorynetwork.label_gun.tooltip.hint": "Right-click names, sneak picks up"
+  "item.factorynetwork.label_gun.tooltip.hint": "Right-click names, sneak picks up",
+  "screen.factorynetwork.terminal.tab.storage": "Storage",
+  "screen.factorynetwork.terminal.tab.crafting": "Crafting",
+  "screen.factorynetwork.terminal.tab.crafting.soon": "Autocrafting does not exist yet.",
+  "screen.factorynetwork.terminal.tab.code": "Code",
+  "screen.factorynetwork.terminal.tab.network": "Network",
+  "screen.factorynetwork.terminal.tab.dashboards": "Displays",
+  "screen.factorynetwork.terminal.tab.dashboards.soon": "Displays do not exist yet.",
+  "screen.factorynetwork.terminal.search": "Search…",
+  "screen.factorynetwork.terminal.storage.summary": "%s types · %s items",
+  "screen.factorynetwork.terminal.storage.truncated": "showing %s of %s types — search for more",
+  "screen.factorynetwork.terminal.network.connectors": "IN THE NETWORK",
+  "screen.factorynetwork.terminal.network.workers": "WORKERS",
+  "screen.factorynetwork.terminal.network.no_workers": "none"
 }

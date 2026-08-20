@@ -692,3 +692,71 @@ Ein Name, der ein Schlüsselwort ist, wird **nicht** abgelehnt, sondern nur
 angemerkt: „`for` braucht im Code Rückstriche." Das folgt der Entscheidung,
 keine Namen zu verbieten — Namen sind Spielstand, Schlüsselwörter sind es
 nicht.
+
+---
+
+## Die Oberflächen (2026-08-20)
+
+**Ein Fenster mit Reitern, nicht eine Oberfläche je Block.** So steht es im
+Konzept, und es hat einen praktischen Grund: Der Speicher gehört zum Netz,
+nicht zu einem Block, und wer ihn über drei verschiedene Fenster erreicht,
+muss sich merken, welches welches ist.
+
+### Inventare bleiben Minecraft, der Editor nicht
+
+Gehäuse, Reiter, Slotraster und die Lage des Spielerinventars sind Vanilla —
+dieselben Grautöne, dieselben Maße, dieselben Stellen. Ein Inventar soll sich
+anfühlen wie jedes andere; was daran eigen ist, verwirrt nur.
+
+Der Code-Reiter ist die Ausnahme: ein dunkler Bildschirm, versenkt ins helle
+Gehäuse. Er ist kein Inventar, sondern ein Gerät. ComputerCraft macht seinen
+Terminalschirm aus demselben Grund schwarz.
+
+Verworfen: alles eigen zu zeichnen. Ein echter `Slot` bringt Umschalt-Klick,
+Ziehen über mehrere Felder, Zahlentasten und Doppelklick-Sammeln mit. Wer das
+Raster selbst malt, baut all das nach, und was fehlt, fühlt sich für den
+Spieler kaputt an.
+
+**Ein Preis:** Eigene Oberflächentexturen ziehen mit Resource Packs nicht mit.
+Wer sein Spiel auf ein anderes Pack umstellt, sieht überall neue Texturen —
+nur unser Terminal bleibt.
+
+### Der Netzbestand kann keine Slots sein
+
+Zwanzigtausend Arten lassen sich nicht als zwanzigtausend Slots anlegen. Die
+Felder sehen deshalb aus wie Slots und verhalten sich wie sie, sind aber
+gezeichnet und werden über eigene Nachrichten bedient. Das ist kein
+Stilentscheid, sondern ein Zwang — Applied Energistics löst es genauso.
+
+### Der Bestand wird gebündelt geschickt, nicht bei jeder Änderung
+
+Beim Öffnen einmal vollständig, danach höchstens alle zehn Ticks die
+Änderungen. Ein Worker, der in jedem Tick etwas bewegt, darf nicht in jedem
+Tick ein Paket auslösen.
+
+Geschickt wird nur an Spieler, die den Speicher-Reiter offen haben. Wer Code
+liest, braucht keine Bestandsänderungen — deshalb ist der Reiterwechsel die
+einzige Sache am Reiterzustand, die der Server überhaupt erfährt.
+
+### **Der Server rechnet bei jeder Entnahme nach**
+
+Was der Client anzeigt, ist ein Schnappschuss von vorhin; in der Zwischenzeit
+kann ein Worker den Bestand geleert haben. Die angeforderte Menge wird deshalb
+nie geglaubt, sondern gegen den echten Bestand geprüft. Ohne diese Regel
+entstehen die Fehler, an denen sich vergleichbare Mods lange abgearbeitet
+haben.
+
+### Höchstens 4096 Arten auf einmal
+
+**Das ist eine im Spiel sichtbare Grenze**, und sie trifft genau die Packs, um
+die es geht. Ein Bestand mit mehr Arten wird abgeschnitten übertragen, und die
+Fußleiste sagt es: „zeige 4096 von 21.000 — suchen zeigt mehr."
+
+Der Grund: Gesucht wird auf dem Client, damit es sich sofort anfühlt. Das
+setzt voraus, dass der Bestand dort liegt — und zwanzigtausend Einträge bei
+jedem Öffnen zu übertragen, würde man merken. Die Zahl steht als Konstante in
+`StorageSnapshotPacket`, nicht verstreut im Code.
+
+Offen: ob die Suche bei abgeschnittenem Bestand zusätzlich auf dem Server
+laufen soll. Das wäre die saubere Lösung, kostet aber eine Anfrage je
+Tastendruck.

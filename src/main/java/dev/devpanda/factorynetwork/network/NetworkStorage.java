@@ -33,6 +33,12 @@ public final class NetworkStorage {
     private static final String KEY_COUNT = "Count";
 
     private final Map<Item, Long> amounts = new LinkedHashMap<>();
+    /** Wird bei jeder Änderung gerufen — der Controller schickt dann gebündelt. */
+    private Runnable onChange = () -> { };
+
+    public void setChangeListener(Runnable listener) {
+        this.onChange = listener == null ? () -> { } : listener;
+    }
 
     /** Legt ab und liefert, was nicht hineinpasste. Zurzeit passt alles. */
     public long insert(Item item, long count) {
@@ -40,6 +46,7 @@ public final class NetworkStorage {
             return 0;
         }
         amounts.merge(item, count, Long::sum);
+        onChange.run();
         return 0;
     }
 
@@ -59,6 +66,7 @@ public final class NetworkStorage {
         } else {
             amounts.put(item, available - taken);
         }
+        onChange.run();
         return taken;
     }
 

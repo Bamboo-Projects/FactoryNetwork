@@ -18,6 +18,12 @@ public final class FnPackets {
                 DeployProgramPacket::handle);
         registrar.playToClient(NetworkStatePacket.TYPE, NetworkStatePacket.STREAM_CODEC,
                 NetworkStatePacket::handle);
+        registrar.playToClient(StorageSnapshotPacket.TYPE, StorageSnapshotPacket.STREAM_CODEC,
+                StorageSnapshotPacket::handle);
+        registrar.playToServer(StorageActionPacket.TYPE, StorageActionPacket.STREAM_CODEC,
+                StorageActionPacket::handle);
+        registrar.playToServer(StorageTabPacket.TYPE, StorageTabPacket.STREAM_CODEC,
+                StorageTabPacket::handle);
     }
 
     private FnPackets() {

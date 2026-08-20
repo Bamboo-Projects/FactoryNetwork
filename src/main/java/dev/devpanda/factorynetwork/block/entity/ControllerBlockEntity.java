@@ -5,6 +5,8 @@ import dev.devpanda.factorynetwork.lang.ast.Program;
 import dev.devpanda.factorynetwork.lang.parse.Parser;
 import dev.devpanda.factorynetwork.network.FactoryGraph;
 import dev.devpanda.factorynetwork.network.NetworkStorage;
+import dev.devpanda.factorynetwork.client.menu.TerminalMenu;
+import dev.devpanda.factorynetwork.network.packet.StorageSnapshotPacket;
 import dev.devpanda.factorynetwork.registry.FnBlockEntities;
 import dev.devpanda.factorynetwork.runtime.Interpreter;
 import dev.devpanda.factorynetwork.runtime.ScriptError;
@@ -14,13 +16,18 @@ import dev.devpanda.factorynetwork.runtime.WorldHost;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.neoforged.neoforge.network.PacketDistributor;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Wurzel eines Netzwerks: hält Programm, Speicher, Graph und Laufzeit.
@@ -48,8 +55,19 @@ public class ControllerBlockEntity extends BlockEntity {
     private final Map<String, Integer> lastRedstone = new HashMap<>();
     private final List<String> log = new ArrayList<>();
 
+    /**
+     * Wer gerade die Speicheransicht offen hat.
+     *
+     * <p>Nur an diese Spieler wird der Bestand geschickt, und nur solange sie
+     * hinsehen. Wer den Code-Reiter liest, braucht keine Bestandsänderungen.
+     */
+    private final Set<ServerPlayer> storageWatchers = new HashSet<>();
+    private long lastStoragePush = Long.MIN_VALUE;
+    private boolean storageDirty;
+
     public ControllerBlockEntity(BlockPos pos, BlockState state) {
         super(FnBlockEntities.CONTROLLER.get(), pos, state);
+        storage.setChangeListener(this::markStorageDirty);
     }
 
     // ---- Programm ---------------------------------------------------------
@@ -123,7 +141,54 @@ public class ControllerBlockEntity extends BlockEntity {
                         ? connector : null);
         runtime.tick(level, program, graph, storage);
         fireRedstoneEvents();
+        pushStorageIfDue();
         setChanged();
+    }
+
+    // ---- Speicheransicht --------------------------------------------------
+
+    /** So oft höchstens, in Ticks. Ein Worker bewegt sonst jeden Tick etwas. */
+    private static final int STORAGE_PUSH_INTERVAL = 10;
+
+    public void watchStorage(ServerPlayer player) {
+        storageWatchers.add(player);
+        pushStorageTo(player, true);
+    }
+
+    public void unwatchStorage(ServerPlayer player) {
+        storageWatchers.remove(player);
+    }
+
+    /** Merkt vor, dass sich etwas geändert hat — geschickt wird gebündelt. */
+    public void markStorageDirty() {
+        storageDirty = true;
+    }
+
+    private void pushStorageIfDue() {
+        if (level == null || storageWatchers.isEmpty()) {
+            return;
+        }
+        if (!storageDirty || level.getGameTime() - lastStoragePush < STORAGE_PUSH_INTERVAL) {
+            return;
+        }
+        lastStoragePush = level.getGameTime();
+        storageDirty = false;
+        // Abgemeldete Spieler mitnehmen, damit die Menge nicht leckt.
+        storageWatchers.removeIf(player -> player.isRemoved()
+                || !(player.containerMenu instanceof TerminalMenu));
+        storageWatchers.forEach(player -> pushStorageTo(player, true));
+    }
+
+    /** Schickt den Bestand an einen Spieler. */
+    public void pushStorageTo(ServerPlayer player, boolean replace) {
+        Map<Item, Long> contents = storage.contents();
+        List<StorageSnapshotPacket.Entry> entries = contents.entrySet().stream()
+                .sorted(Map.Entry.<Item, Long>comparingByValue().reversed())
+                .limit(StorageSnapshotPacket.MAX_ENTRIES)
+                .map(entry -> new StorageSnapshotPacket.Entry(entry.getKey(), entry.getValue()))
+                .toList();
+        PacketDistributor.sendToPlayer(player,
+                new StorageSnapshotPacket(entries, replace, contents.size()));
     }
 
     /**

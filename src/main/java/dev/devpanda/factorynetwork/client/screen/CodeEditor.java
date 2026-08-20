@@ -96,13 +96,13 @@ public class CodeEditor {
             String number = String.valueOf(lineIndex + 1);
             graphics.drawString(font, number,
                     x + GUTTER_WIDTH - font.width(number) - 2, lineY,
-                    TerminalScreen.colorComment(), false);
+                    EditorColours.COMMENT, false);
 
             // Zeilen mit Fehler bekommen einen Streifen statt einer Welle:
             // Wellen sind bei zehn Pixel Zeilenhöhe nicht zu erkennen.
             if (hasErrorInLine(diagnostics, lineIndex + 1)) {
                 graphics.fill(textX - 2, lineY - 1, x + width - 2, lineY + LINE_HEIGHT - 2,
-                        0x30E88388);
+                        EditorColours.ERROR_LINE);
             }
 
             drawHighlighted(graphics, lines.get(lineIndex), textX, lineY);
@@ -132,7 +132,7 @@ public class CodeEditor {
                 int start = token.span().start();
                 if (start > consumed && start <= code.length()) {
                     String gap = code.substring(consumed, start);
-                    graphics.drawString(font, gap, drawX, lineY, TerminalScreen.colorText(), false);
+                    graphics.drawString(font, gap, drawX, lineY, EditorColours.TEXT, false);
                     drawX += font.width(gap);
                     consumed = start;
                 }
@@ -147,37 +147,37 @@ public class CodeEditor {
             }
             if (consumed < code.length()) {
                 String rest = code.substring(consumed);
-                graphics.drawString(font, rest, drawX, lineY, TerminalScreen.colorText(), false);
+                graphics.drawString(font, rest, drawX, lineY, EditorColours.TEXT, false);
                 drawX += font.width(rest);
             }
         } else {
-            graphics.drawString(font, code, drawX, lineY, TerminalScreen.colorText(), false);
+            graphics.drawString(font, code, drawX, lineY, EditorColours.TEXT, false);
             drawX += font.width(code);
         }
 
         if (comment >= 0) {
             graphics.drawString(font, line.substring(comment), drawX, lineY,
-                    TerminalScreen.colorComment(), false);
+                    EditorColours.COMMENT, false);
         }
     }
 
     private static int colorFor(Token token) {
         TokenType type = token.type();
         if (type == TokenType.SELECTOR) {
-            return TerminalScreen.colorSelector();
+            return EditorColours.SELECTOR;
         }
         if (type == TokenType.INVALID) {
-            return TerminalScreen.colorError();
+            return EditorColours.ERROR;
         }
         if (type == TokenType.STRING || type == TokenType.INT || type == TokenType.FLOAT
                 || type == TokenType.DURATION) {
-            return TerminalScreen.colorMuted();
+            return EditorColours.MUTED;
         }
         // Ein Schlüsselwort erkennt man daran, dass seine Art zum Text passt.
         if (TokenType.keyword(token.text()) == type) {
-            return TerminalScreen.colorKeyword();
+            return EditorColours.KEYWORD;
         }
-        return TerminalScreen.colorText();
+        return EditorColours.TEXT;
     }
 
     private static boolean hasErrorInLine(List<Diagnostic> diagnostics, int line) {
@@ -203,7 +203,7 @@ public class CodeEditor {
         int cursorX = textX + font.width(line.substring(0, column));
         int cursorY = y + 10 + row * LINE_HEIGHT;
         graphics.fill(cursorX, cursorY - 1, cursorX + 1, cursorY + LINE_HEIGHT - 2,
-                TerminalScreen.colorCursor());
+                EditorColours.CURSOR);
     }
 
     private void drawScrollHint(GuiGraphics graphics, int visible) {
@@ -216,7 +216,7 @@ public class CodeEditor {
         int maxScroll = lines.size() - visible;
         int offset = maxScroll == 0 ? 0 : (trackHeight - thumbHeight) * scrollLine / maxScroll;
         graphics.fill(x + width - 3, trackTop + offset, x + width - 1,
-                trackTop + offset + thumbHeight, TerminalScreen.colorComment());
+                trackTop + offset + thumbHeight, EditorColours.COMMENT);
     }
 
     // ---- Eingabe ----------------------------------------------------------
@@ -533,9 +533,9 @@ public class CodeEditor {
 
     private static int colorForKind(Completions.Entry.Kind kind) {
         return switch (kind) {
-            case CONNECTOR -> TerminalScreen.colorText();
-            case ITEM, TAG -> TerminalScreen.colorSelector();
-            case BUILTIN, KEYWORD -> TerminalScreen.colorKeyword();
+            case CONNECTOR -> EditorColours.TEXT;
+            case ITEM, TAG -> EditorColours.SELECTOR;
+            case BUILTIN, KEYWORD -> EditorColours.KEYWORD;
         };
     }
 }

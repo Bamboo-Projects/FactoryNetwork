@@ -523,6 +523,56 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void storageExtractionIsCappedByWhatIsThere(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.storage().insert(Items.IRON_INGOT, 3);
+
+        // Die Anzeige kann veraltet sein: Wer 64 anfordert, bekommt die 3,
+        // die wirklich da sind — und nicht mehr.
+        long taken = entity.storage().extract(Items.IRON_INGOT, 64);
+        helper.assertValueEqual(taken, 3L, "entnommene Menge");
+        helper.assertValueEqual(entity.storage().count(Items.IRON_INGOT), 0L,
+                "Rest im Speicher");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void extractingFromAnEmptyStorageYieldsNothing(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        helper.assertValueEqual(entity.storage().extract(Items.DIAMOND, 1), 0L,
+                "Entnahme aus leerem Speicher");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void storageSurvivesAMissingMod(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.storage().insert(Items.IRON_INGOT, 5);
+
+        // Ein Eintrag aus einer Mod, die es nicht mehr gibt, darf beim Laden
+        // nicht als Luft im Bestand landen.
+        net.minecraft.nbt.CompoundTag tag = new net.minecraft.nbt.CompoundTag();
+        entity.storage().save(tag, helper.getLevel().registryAccess());
+        net.minecraft.nbt.ListTag entries =
+                tag.getList("Entries", net.minecraft.nbt.Tag.TAG_COMPOUND);
+        net.minecraft.nbt.CompoundTag ghost = new net.minecraft.nbt.CompoundTag();
+        ghost.putString("Item", "verschwundene_mod:zauberstab");
+        ghost.putLong("Count", 99);
+        entries.add(ghost);
+
+        dev.devpanda.factorynetwork.network.NetworkStorage reloaded =
+                new dev.devpanda.factorynetwork.network.NetworkStorage();
+        reloaded.load(tag, helper.getLevel().registryAccess());
+        helper.assertValueEqual(reloaded.distinctTypes(), 1,
+                "nur der bekannte Gegenstand darf überleben");
+        helper.assertValueEqual(reloaded.count(Items.IRON_INGOT), 5L, "Bestand");
+        helper.succeed();
+    }
+
     private FactoryNetworkGameTests() {
     }
 }
