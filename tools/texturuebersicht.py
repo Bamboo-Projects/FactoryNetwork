@@ -32,7 +32,7 @@ GROUPS = [
         ("connector_front", "Zur Maschine", "Anschlussring mit grünem Kern"),
         ("connector_side", "Vier Seiten", "Rahmen"),
         ("machine_top", "Oben und unten", "geteilt mit dem Terminal"),
-        ("connector_back", "— unbenutzt —", "gemalt, aber in keinem Modell eingebunden"),
+        ("connector_back", "Zum Kabel", "Kabeldurchführung"),
     ]),
     ("Terminal", "Zugang zum Code-Editor.", [
         ("terminal_front", "Vorderseite", "Bildschirm mit angedeuteten Codezeilen"),
@@ -183,8 +183,8 @@ section { display: flex; flex-direction: column; gap: 20px; }
 .frame img {
   display: block;
   image-rendering: pixelated;
-  width: calc(16px * var(--zoom, 7));
-  height: calc(16px * var(--zoom, 7));
+  width: calc(64px * var(--zoom, 2));
+  height: calc(64px * var(--zoom, 2));
 }
 
 .tile-name { font-weight: 500; font-size: 14px; }
@@ -202,7 +202,7 @@ section { display: flex; flex-direction: column; gap: 20px; }
 }
 .strip img {
   image-rendering: pixelated;
-  width: 48px; height: 48px;
+  width: 64px; height: 64px;
   border-right: 1px solid var(--line);
 }
 .strip img:last-child { border-right: 0; }
@@ -251,7 +251,7 @@ def tile(folder, name, face, note, unused=False):
     uri, size = data_uri(folder, name)
     classes = "tile unused" if unused else "tile"
     return f"""      <figure class="{classes}">
-        <div class="frame"><img src="{uri}" alt="{name}" width="16" height="16"></div>
+        <div class="frame"><img src="{uri}" alt="{name}" width="64" height="64"></div>
         <figcaption>
           <div class="tile-name">{face}</div>
           <div class="tile-note">{note}</div>
@@ -265,13 +265,13 @@ def build():
 
     parts.append(f"""  <header>
     <h1>Factory Network Texturen</h1>
-    <p class="lede">Zehn Bilder zu je 16&times;16 Pixeln, sämtlich mit
+    <p class="lede">Zehn Bilder zu je 64&times;64 Pixeln — vierfache Vanilla-Auflösung —, sämtlich mit
       <code>tools/textures.py</code> gezeichnet — keine Vanilla-Textur kopiert. Die
       Palette ist dieselbe, die der Code-Editor der Mod benutzt, damit Block und
       Programm sichtbar zusammengehören.</p>
     <div class="meta">
       <span><b>10</b> Texturen</span>
-      <span><b>16&times;16</b> Pixel</span>
+      <span><b>64&times;64</b> Pixel</span>
       <span><b>4</b> Blöcke, 1 Gegenstand</span>
       <span><b>Stand</b> 20.08.2026</span>
     </div>
@@ -280,9 +280,9 @@ def build():
     parts.append("""  <div class="tools">
     <span>Vergrößerung</span>
     <button type="button" data-zoom="1">1&times;</button>
-    <button type="button" data-zoom="4">4&times;</button>
-    <button type="button" data-zoom="7" aria-pressed="true">7&times;</button>
-    <button type="button" data-zoom="12">12&times;</button>
+    <button type="button" data-zoom="2" aria-pressed="true">2&times;</button>
+    <button type="button" data-zoom="3">3&times;</button>
+    <button type="button" data-zoom="5">5&times;</button>
     <span style="margin-left:auto">Grund</span>
     <button type="button" data-theme="dark">dunkel</button>
     <button type="button" data-theme="light">hell</button>
@@ -330,13 +330,14 @@ def build():
 {strip}
     </div>
     <div class="note">
-      <p><strong>Das ist die Schwachstelle.</strong> Eindeutig sind nur drei:
-        der Controller von oben, die Vorderseite des Connectors und die des
-        Terminals. Die übrigen sind graue Rechtecke mit Rahmen oder Streifen —
-        Kabel und Terminal-Seite unterscheiden sich fast gar nicht.</p>
-      <p>Zwei Wege hinaus: jedem Block eine eigene Grundfarbe geben, oder auf
-        jeder Seitenfläche ein kleines Kennzeichen anbringen. Das Erste ist
-        deutlicher, das Zweite bleibt näher an der gedeckten Palette.</p>
+      <p><strong>Jeder Block hat eine eigene Formensprache</strong>, damit sich
+        auch die Seitenflächen unterscheiden lassen: Der Controller trägt eine
+        querlaufende Fuge mit Leuchtlinie, das Terminal senkrechte Streben, der
+        Connector einen Rahmen mit Eckbeschlägen, das Kabel eine durchgehende
+        Längsstruktur mit Schellen.</p>
+      <p>Das war der Grund für den Neuentwurf: In der ersten Fassung waren alle
+        Seitenflächen graue Rechtecke und nur drei Texturen überhaupt
+        auseinanderzuhalten.</p>
     </div>
   </section>""")
 

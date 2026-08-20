@@ -130,13 +130,29 @@ def models():
         }],
     })
 
+    # Eigenes Modell statt orientable: Der Connector hat eine eigene
+    # Rückseite — dort geht das Kabel hinein, und das soll man sehen.
     write(A + "/models/block/connector.json", {
-        "parent": "minecraft:block/orientable",
+        "parent": "minecraft:block/block",
         "textures": {
+            "particle": texture("connector_side"),
             "top": texture("machine_top"),
             "front": texture("connector_front"),
+            "back": texture("connector_back"),
             "side": texture("connector_side"),
         },
+        "elements": [{
+            "from": [0, 0, 0],
+            "to": [16, 16, 16],
+            "faces": {
+                "down": {"texture": "#top", "cullface": "down"},
+                "up": {"texture": "#top", "cullface": "up"},
+                "north": {"texture": "#front", "cullface": "north"},
+                "south": {"texture": "#back", "cullface": "south"},
+                "west": {"texture": "#side", "cullface": "west"},
+                "east": {"texture": "#side", "cullface": "east"},
+            },
+        }],
     })
 
     write(A + "/models/block/terminal.json", {
