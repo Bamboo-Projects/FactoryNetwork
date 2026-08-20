@@ -2,6 +2,7 @@ package dev.devpanda.factorynetwork.item;
 
 import dev.devpanda.factorynetwork.block.entity.ConnectorBlockEntity;
 import dev.devpanda.factorynetwork.block.entity.ControllerBlockEntity;
+import dev.devpanda.factorynetwork.block.entity.DisplayBlockEntity;
 import dev.devpanda.factorynetwork.network.FactoryGraph;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -155,6 +156,20 @@ public class LabelGunItem extends Item {
                 say(player, "message.factorynetwork.label_gun.linked",
                         controller.graph().connectorCount(),
                         controller.graph().unnamedConnectors().size());
+            }
+            return InteractionResult.CONSUME;
+        }
+
+        // Ein Display bekommt seinen Namen von derselben Gun: Es ist
+        // dieselbe Handlung — einem Block im Netz sagen, wie er heißt.
+        if (entity instanceof DisplayBlockEntity display) {
+            String wanted = activeLabel(gun);
+            if (wanted.isBlank()) {
+                return InteractionResult.PASS;
+            }
+            display.setDisplayName(wanted);
+            if (player != null) {
+                say(player, "message.factorynetwork.display.named", wanted);
             }
             return InteractionResult.CONSUME;
         }

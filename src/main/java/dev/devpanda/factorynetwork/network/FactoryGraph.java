@@ -3,6 +3,7 @@ package dev.devpanda.factorynetwork.network;
 import dev.devpanda.factorynetwork.block.CableBlock;
 import dev.devpanda.factorynetwork.block.CableColour;
 import dev.devpanda.factorynetwork.block.ConnectorBlock;
+import dev.devpanda.factorynetwork.block.DisplayBlock;
 import dev.devpanda.factorynetwork.block.entity.ConnectorBlockEntity;
 import dev.devpanda.factorynetwork.util.NameDistance;
 import net.minecraft.core.BlockPos;
@@ -56,14 +57,17 @@ public final class FactoryGraph {
     private final List<BlockPos> unnamed;
     /** Geräte, die im Netz hängen, aber keinen freien Kanal bekommen haben. */
     private final List<BlockPos> starved;
+    /** Displays am Netz. Sie zeigen nur an und brauchen keinen Kanal. */
+    private final List<BlockPos> displays;
     private final Set<BlockPos> cables;
     /** Wie viele Kanäle jeder Kabelstrang trägt. */
     private final Map<Node, Integer> channelLoad;
     private final boolean truncated;
 
     private FactoryGraph(Map<String, List<BlockPos>> connectorsByName, List<BlockPos> unnamed,
-                         List<BlockPos> starved, Set<BlockPos> cables,
+                         List<BlockPos> starved, List<BlockPos> displays, Set<BlockPos> cables,
                          Map<Node, Integer> channelLoad, boolean truncated) {
+        this.displays = displays;
         this.connectorsByName = connectorsByName;
         this.unnamed = unnamed;
         this.starved = starved;
@@ -73,8 +77,8 @@ public final class FactoryGraph {
     }
 
     public static FactoryGraph empty() {
-        return new FactoryGraph(Map.of(), List.of(), List.of(), Set.of(),
-                Map.of(), false);
+        return new FactoryGraph(Map.of(), List.of(), List.of(), List.of(),
+                Set.of(), Map.of(), false);
     }
 
     /**
@@ -112,6 +116,7 @@ public final class FactoryGraph {
         Map<String, List<BlockPos>> connectors = new LinkedHashMap<>();
         List<BlockPos> unnamed = new ArrayList<>();
         List<BlockPos> starved = new ArrayList<>();
+        List<BlockPos> displays = new ArrayList<>();
         Set<BlockPos> cables = new HashSet<>();
         Map<Node, Integer> load = new HashMap<>();
         Map<Node, Node> parents = new HashMap<>();
@@ -143,6 +148,12 @@ public final class FactoryGraph {
                 BlockState state = level.getBlockState(next);
                 if (state.getBlock() instanceof CableBlock) {
                     visitCable(level, next, current, parents, queue, cables);
+                } else if (state.getBlock() instanceof DisplayBlock) {
+                    // Ein Display zeigt nur an. Es braucht keinen Kanal —
+                    // es nimmt dem Netz nichts weg, es liest mit.
+                    if (visitedDevices.add(next.immutable())) {
+                        displays.add(next.immutable());
+                    }
                 } else if (state.getBlock() instanceof ConnectorBlock) {
                     // Noch nicht zuteilen: Ein Gerät kann an mehreren
                     // Strängen hängen, und welcher es trägt, entscheidet
@@ -159,7 +170,8 @@ public final class FactoryGraph {
         Map<String, List<BlockPos>> frozen = new LinkedHashMap<>();
         connectors.forEach((label, positions) -> frozen.put(label, List.copyOf(positions)));
         return new FactoryGraph(Map.copyOf(frozen), List.copyOf(unnamed),
-                List.copyOf(starved), Set.copyOf(cables), Map.copyOf(load), truncated);
+                List.copyOf(starved), List.copyOf(displays), Set.copyOf(cables),
+                Map.copyOf(load), truncated);
     }
 
     /**
@@ -333,11 +345,17 @@ public final class FactoryGraph {
         return connectorsByName.values().stream().mapToInt(List::size).sum() + unnamed.size();
     }
 
-    /** Gehört diese Stelle zu diesem Netz — als Kabel oder als Gerät? */
+    /** Displays am Netz. */
+    public List<BlockPos> displays() {
+        return displays;
+    }
+
+    /** Gehört diese Stelle zu diesem Netz — als Kabel, Gerät oder Display? */
     public boolean contains(BlockPos pos) {
         return cables.contains(pos)
                 || unnamed.contains(pos)
                 || starved.contains(pos)
+                || displays.contains(pos)
                 || connectorsByName.values().stream().anyMatch(list -> list.contains(pos));
     }
 

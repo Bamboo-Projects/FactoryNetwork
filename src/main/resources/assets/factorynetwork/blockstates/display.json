@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "factorynetwork:block/display"
+    },
+    "facing=south": {
+      "model": "factorynetwork:block/display",
+      "y": 180
+    },
+    "facing=east": {
+      "model": "factorynetwork:block/display",
+      "y": 90
+    },
+    "facing=west": {
+      "model": "factorynetwork:block/display",
+      "y": 270
+    }
+  }
+}

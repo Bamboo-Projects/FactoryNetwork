@@ -98,7 +98,7 @@ sich niemand darauf verlassen kann.
 
 Außerdem offen:
 
-- **Multiblocks und Displays** — spezifiziert, geparst, nicht ausgeführt.
+- **Multiblocks** — spezifiziert, geparst, nicht ausgeführt.
 - **Redstone setzen.** Lesen geht; Setzen braucht einen eigenen Zustand im
   Blockmodell und gehört in denselben Schritt wie die Anzeige am Block.
 - **Flüssigkeiten und Chemikalien.** Die Schreibweise steht, die Anbindung

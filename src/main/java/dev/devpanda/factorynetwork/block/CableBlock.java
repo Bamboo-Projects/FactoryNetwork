@@ -165,7 +165,8 @@ public class CableBlock extends Block implements EntityBlock {
         }
         return neighbour.getBlock() instanceof ConnectorBlock
                 || neighbour.getBlock() instanceof ControllerBlock
-                || neighbour.getBlock() instanceof TerminalBlock;
+                || neighbour.getBlock() instanceof TerminalBlock
+                || neighbour.getBlock() instanceof DisplayBlock;
     }
 
     /**

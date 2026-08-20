@@ -24,6 +24,7 @@ public final class FnCreativeTabs {
                                 .forEach(cable -> output.accept(cable.get()));
                         output.accept(FnItems.CONNECTOR.get());
                         output.accept(FnItems.TERMINAL.get());
+                        output.accept(FnItems.DISPLAY.get());
                         output.accept(FnItems.LABEL_GUN.get());
                     })
                     .build());

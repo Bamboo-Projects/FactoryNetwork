@@ -4,6 +4,7 @@ import dev.devpanda.factorynetwork.FactoryNetwork;
 import dev.devpanda.factorynetwork.block.CableBlock;
 import dev.devpanda.factorynetwork.block.ConnectorBlock;
 import dev.devpanda.factorynetwork.block.ControllerBlock;
+import dev.devpanda.factorynetwork.block.DisplayBlock;
 import dev.devpanda.factorynetwork.block.TerminalBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
@@ -33,6 +34,15 @@ public final class FnBlocks {
     /** Gibt einer angrenzenden Maschine einen Namen im Netzwerk. */
     public static final DeferredBlock<Block> CONNECTOR = BLOCKS.register("connector",
             () -> new ConnectorBlock(machineProperties()));
+
+    /** Zeigt an der Wand, was im Netz vorgeht. */
+    public static final DeferredBlock<Block> DISPLAY = BLOCKS.register("display",
+            () -> new DisplayBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.METAL)
+                    .strength(1.5F)
+                    .sound(SoundType.METAL)
+                    .noOcclusion()
+                    .lightLevel(state -> 5)));
 
     /** Zugang zum Code-Editor. */
     public static final DeferredBlock<Block> TERMINAL = BLOCKS.register("terminal",

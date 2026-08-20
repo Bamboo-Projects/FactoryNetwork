@@ -21,11 +21,21 @@ public final class FnClient {
     }
 
     @SubscribeEvent
+    public static void registerRenderers(
+            net.neoforged.neoforge.client.event.EntityRenderersEvent.RegisterRenderers event) {
+        event.registerBlockEntityRenderer(
+                dev.devpanda.factorynetwork.registry.FnBlockEntities.DISPLAY.get(),
+                dev.devpanda.factorynetwork.client.render.DisplayRenderer::new);
+    }
+
+    @SubscribeEvent
     public static void setup(FMLClientSetupEvent event) {
         // Das Kabel ist schmaler als ein Block und braucht deshalb eine
         // Zeichenart, die durchsichtige Ränder verträgt.
-        event.enqueueWork(() -> ItemBlockRenderTypes.setRenderLayer(
-                FnBlocks.CABLE.get(), RenderType.cutout()));
+        event.enqueueWork(() -> {
+            ItemBlockRenderTypes.setRenderLayer(FnBlocks.CABLE.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(FnBlocks.DISPLAY.get(), RenderType.cutout());
+        });
     }
 
     private FnClient() {

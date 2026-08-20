@@ -253,6 +253,29 @@ def terminal_front():
     return img
 
 
+def display_front():
+    """Ein dunkler Schirm mit schmalem Rahmen — er soll Text tragen, nicht
+    selbst auffallen."""
+    img = surface(BODY_MID, BODY_BOT)
+    d = ImageDraw.Draw(img)
+    bevel(d, width=2)
+    d.rectangle([3, 3, 60, 60], fill=EDGE + (255,))
+    d.rectangle([5, 5, 58, 58], fill=(12, 16, 13) + (255,))
+    # Ein feiner Schimmer am oberen Rand, damit die Fläche nicht tot wirkt
+    d.line([(6, 6), (57, 6)], fill=(28, 40, 32) + (255,))
+    return img
+
+
+def display_side():
+    """Die Kante — nur zwei Pixel breit sichtbar."""
+    img = surface(BODY_TOP, BODY_BOT)
+    d = ImageDraw.Draw(img)
+    bevel(d, width=2)
+    for y in range(12, 53, 10):
+        d.line([(2, y), (61, y)], fill=blend(BODY_TOP, EDGE, 0.5) + (255,))
+    return img
+
+
 def terminal_side():
     img = surface()
     d = ImageDraw.Draw(img)
@@ -307,6 +330,8 @@ def main():
     save(machine_top(), "block", "machine_top")
     save(terminal_front(), "block", "terminal_front")
     save(terminal_side(), "block", "terminal_side")
+    save(display_front(), "block", "display_front")
+    save(display_side(), "block", "display_side")
     print("Gegenstandstexturen:")
     save(label_gun(), "item", "label_gun")
 

@@ -45,6 +45,7 @@ public final class FnItems {
     }
     public static final DeferredItem<BlockItem> CONNECTOR = ITEMS.registerSimpleBlockItem(FnBlocks.CONNECTOR);
     public static final DeferredItem<BlockItem> TERMINAL = ITEMS.registerSimpleBlockItem(FnBlocks.TERMINAL);
+    public static final DeferredItem<BlockItem> DISPLAY = ITEMS.registerSimpleBlockItem(FnBlocks.DISPLAY);
 
     /** Vergibt einem Connector seinen Namen. */
     public static final DeferredItem<Item> LABEL_GUN = ITEMS.register("label_gun",

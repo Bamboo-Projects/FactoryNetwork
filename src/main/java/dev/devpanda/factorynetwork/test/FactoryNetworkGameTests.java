@@ -4,6 +4,7 @@ import dev.devpanda.factorynetwork.FactoryNetwork;
 import dev.devpanda.factorynetwork.block.entity.CableBlockEntity;
 import dev.devpanda.factorynetwork.block.entity.ConnectorBlockEntity;
 import dev.devpanda.factorynetwork.block.entity.ControllerBlockEntity;
+import dev.devpanda.factorynetwork.block.entity.DisplayBlockEntity;
 import dev.devpanda.factorynetwork.block.CableBlock;
 import dev.devpanda.factorynetwork.block.CableColour;
 import dev.devpanda.factorynetwork.item.ConnectorNaming;
@@ -964,6 +965,71 @@ public final class FactoryNetworkGameTests {
             helper.assertTrue(filled >= 2,
                     "Reihum muss auf mehrere Kisten verteilen, gefüllt: " + filled);
             helper.succeed();
+        });
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void aDisplayShowsWhatTheProgramSays(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 1, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        helper.setBlock(controller.east(), FnBlocks.CABLE.get());
+
+        BlockPos display = controller.east().east();
+        helper.setBlock(display, FnBlocks.DISPLAY.get());
+        if (helper.getBlockEntity(display) instanceof DisplayBlockEntity entity) {
+            entity.setDisplayName("lager");
+        } else {
+            helper.fail("Am Display hängt keine BlockEntity", display);
+            return;
+        }
+
+        ControllerBlockEntity controllerEntity = controllerAt(helper, controller);
+        controllerEntity.storage().insert(Items.IRON_INGOT, 1234);
+        helper.assertTrue(controllerEntity.deploy("""
+                display lager {
+                    title "Lager"
+                    row "Eisen" storage.count(item:iron_ingot)
+                    indicator "Kohle" storage.count(item:coal)
+                }"""), "Das Programm wurde nicht übernommen");
+        controllerEntity.rebuildNetwork();
+
+        helper.runAfterDelay(25, () -> {
+            if (!(helper.getBlockEntity(display) instanceof DisplayBlockEntity shown)) {
+                helper.fail("Display verschwunden", display);
+                return;
+            }
+            var lines = shown.lines();
+            helper.assertValueEqual(lines.size(), 3, "Zeilen auf dem Display");
+            helper.assertTrue(lines.get(0).contains("Lager"), "Überschrift fehlt");
+            // 1234 wird zu 1,2k gekürzt — große Zahlen sind sonst nicht zu lesen
+            helper.assertTrue(lines.get(1).contains("1,2k"),
+                    "Der Bestand fehlt: " + lines.get(1));
+            helper.succeed();
+        });
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void aDisplayWithoutItsDeclarationSaysSo(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 1, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        helper.setBlock(controller.east(), FnBlocks.CABLE.get());
+
+        BlockPos display = controller.east().east();
+        helper.setBlock(display, FnBlocks.DISPLAY.get());
+        if (helper.getBlockEntity(display) instanceof DisplayBlockEntity entity) {
+            entity.setDisplayName("gibt_es_nicht");
+        }
+        controllerAt(helper, controller).rebuildNetwork();
+
+        helper.runAfterDelay(25, () -> {
+            if (helper.getBlockEntity(display) instanceof DisplayBlockEntity entity) {
+                // Eine leere Fläche ließe offen, ob das Netz steht oder der
+                // Name falsch ist. Das Display sagt es selbst.
+                helper.assertTrue(entity.lines().stream()
+                                .anyMatch(line -> line.contains("gibt_es_nicht")),
+                        "Das Display muss den fehlenden Namen nennen");
+                helper.succeed();
+            }
         });
     }
 

@@ -3,6 +3,7 @@
     "factorynetwork:controller",
     "factorynetwork:cable",
     "factorynetwork:connector",
-    "factorynetwork:terminal"
+    "factorynetwork:terminal",
+    "factorynetwork:display"
   ]
 }

@@ -179,6 +179,15 @@ def blockstates():
         variants["facing=" + direction] = entry
     write(A + "/blockstates/connector.json", {"variants": variants})
 
+    # Display hängt flach an der Wand, in vier Richtungen.
+    variants = {}
+    for direction, rotation in {"north": {}, "south": {"y": 180},
+                                "east": {"y": 90}, "west": {"y": 270}}.items():
+        entry = {"model": block("display")}
+        entry.update(rotation)
+        variants["facing=" + direction] = entry
+    write(A + "/blockstates/display.json", {"variants": variants})
+
     # Terminal steht immer aufrecht.
     horizontal = {"north": {}, "south": {"y": 180}, "east": {"y": 90}, "west": {"y": 270}}
     variants = {}
@@ -226,6 +235,30 @@ def models():
         }],
     })
 
+    # Zwei Pixel tief an der Wand. Ein eigenes Modell statt orientable,
+    # weil es kein Würfel ist.
+    write(A + "/models/block/display.json", {
+        "parent": "minecraft:block/block",
+        "textures": {
+            "particle": texture("display_side"),
+            "front": texture("display_front"),
+            "side": texture("display_side"),
+        },
+        "elements": [{
+            "from": [0, 0, 14],
+            "to": [16, 16, 16],
+            "faces": {
+                "north": {"texture": "#front"},
+                "south": {"texture": "#side", "cullface": "south"},
+                "east": {"texture": "#side"},
+                "west": {"texture": "#side"},
+                "up": {"texture": "#side"},
+                "down": {"texture": "#side"},
+            },
+        }],
+    })
+    write(A + "/models/item/display.json", {"parent": block("display")})
+
     write(A + "/models/block/terminal.json", {
         "parent": "minecraft:block/orientable",
         "textures": {
@@ -235,7 +268,7 @@ def models():
         },
     })
 
-    for name in ("controller", "connector", "terminal"):
+    for name in ("controller", "connector", "terminal", "display"):
         write(A + "/models/item/" + name + ".json", {"parent": block(name)})
     write(A + "/models/item/label_gun.json", {
         "parent": "minecraft:item/handheld",
@@ -246,7 +279,7 @@ def models():
 # ---- Loot und Rezepte ----------------------------------------------------
 
 def loot_and_recipes():
-    for name in ("controller", "connector", "terminal"):
+    for name in ("controller", "connector", "terminal", "display"):
         write(D + "/loot_table/blocks/" + name + ".json", {
             "type": "minecraft:block",
             "pools": [{
@@ -304,6 +337,18 @@ def loot_and_recipes():
         "result": {"id": MOD + ":terminal", "count": 1},
     })
 
+    write(D + "/recipe/display.json", {
+        "type": "minecraft:crafting_shaped",
+        "category": "misc",
+        "pattern": ["IGI", "GRG", "IGI"],
+        "key": {
+            "I": {"item": "minecraft:iron_ingot"},
+            "G": {"item": "minecraft:glass_pane"},
+            "R": {"item": "minecraft:redstone"},
+        },
+        "result": {"id": MOD + ":display", "count": 1},
+    })
+
     write(D + "/recipe/label_gun.json", {
         "type": "minecraft:crafting_shaped",
         "category": "equipment",
@@ -349,7 +394,8 @@ def loot_and_recipes():
 
     # Spitzhacke reicht zum Abbauen.
     write(D + "/tags/block/mineable/pickaxe.json", {
-        "values": [MOD + ":controller", MOD + ":cable", MOD + ":connector", MOD + ":terminal"],
+        "values": [MOD + ":controller", MOD + ":cable", MOD + ":connector",
+                   MOD + ":terminal", MOD + ":display"],
     })
 
 

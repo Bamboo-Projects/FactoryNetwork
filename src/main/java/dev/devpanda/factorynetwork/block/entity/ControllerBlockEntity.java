@@ -50,7 +50,8 @@ public class ControllerBlockEntity extends BlockEntity {
     private FactoryGraph graph = FactoryGraph.empty();
     private final NetworkStorage storage = new NetworkStorage();
     private final WorkerRuntime runtime = new WorkerRuntime();
-    private long lastRebuild = Long.MIN_VALUE;
+    /** Negativ statt Long.MIN_VALUE: Die Differenz liefe sonst über. */
+    private long lastRebuild = -REBUILD_INTERVAL;
 
     /** Letzte gesehene Redstone-Stärke je Connector, für das Ereignis. */
     private final Map<String, Integer> lastRedstone = new HashMap<>();
@@ -63,7 +64,7 @@ public class ControllerBlockEntity extends BlockEntity {
      * hinsehen. Wer den Code-Reiter liest, braucht keine Bestandsänderungen.
      */
     private final Set<ServerPlayer> storageWatchers = new HashSet<>();
-    private long lastStoragePush = Long.MIN_VALUE;
+    private long lastStoragePush = -10;
     private boolean storageDirty;
 
     public ControllerBlockEntity(BlockPos pos, BlockState state) {
@@ -164,7 +165,13 @@ public class ControllerBlockEntity extends BlockEntity {
 
     // ---- Speicheransicht --------------------------------------------------
 
-    /** So oft höchstens, in Ticks. Ein Worker bewegt sonst jeden Tick etwas. */
+    /**
+     * So oft höchstens, in Ticks. Ein Worker bewegt sonst jeden Tick etwas.
+     *
+     * <p>Der Anfangswert von {@code lastStoragePush} ist derselbe Wert
+     * negativ — als Konstante geschrieben liefe er der Feldreihenfolge
+     * voraus.
+     */
     private static final int STORAGE_PUSH_INTERVAL = 10;
 
     public void watchStorage(ServerPlayer player) {

@@ -993,3 +993,50 @@ können dagegen nur treffen, was da ist.
 Vorher stand ein Worker bei vollem Lager still, und die Maschine davor lief
 über. Jetzt geht der Überschuss ins Ausweichziel — aber nur dann, nicht
 nebenbei.
+
+---
+
+## Displays (2026-08-21)
+
+Ein flacher Block an der Wand, der zeigt, was im Netz vorgeht. Benannt mit
+derselben Label-Gun wie ein Connector — es ist dieselbe Handlung: einem Block
+sagen, wie er heißt. Der Name verweist auf eine `display`-Deklaration im
+Programm.
+
+### Ein Display rechnet nicht, es liest ab
+
+Deshalb steht hinter ihm kein Interpreter, sondern eine kurze Liste dessen,
+was ablesbar ist: ein Bestand, ein Workerzustand, eine Zahl, ein Gerätestatus.
+Was nicht darin vorkommt, meldet das Display auf seiner eigenen Fläche.
+
+Der Grund ist derselbe wie bei `when`: Nur was sich beobachten lässt, muss
+nicht in jedem Tick neu ausgerechnet werden. An einer Wand hängen schnell
+dreissig Displays.
+
+### Gerechnet wird auf dem Server, gezeichnet auf dem Client
+
+Über die Leitung gehen fertige Zeichenketten, keine Ausdrücke. Der Client soll
+nicht wissen müssen, was `storage.count` bedeutet — und die Sprache nicht
+zweimal existieren.
+
+Aktualisiert wird einmal je Sekunde und nur bei Änderung übertragen. Ein
+Display, dessen Zahlen stillstehen, erzeugt keine Pakete.
+
+### Displays brauchen keinen Kanal
+
+Sie nehmen dem Netz nichts weg, sie lesen mit. Bei Applied Energistics
+verbrauchen Monitore einen Kanal; hier nicht, weil ein Display keine Ware
+bewegt und niemand eine Wand voller Anzeigen mit Kanälen bezahlen sollte.
+
+### Ein Display ohne Deklaration sagt es selbst
+
+Eine leere Fläche ließe offen, ob das Netz steht oder der Name falsch ist.
+Also steht dort „kein display <name>".
+
+### Gefunden: ein Überlauf an drei Stellen
+
+`lastRefresh = Long.MIN_VALUE` als Anfangswert sieht aus wie „noch nie
+geschehen", ist aber ein Fehler: Die Differenz zur Spielzeit läuft über und
+wird negativ, also feuert die Abfrage nie. Dieselbe Konstruktion steckte auch
+im Controller — beim Neuaufbau des Netzes und beim Verschicken des Bestands.
+Dort fiel es nicht auf, weil beides zusätzlich von Hand angestoßen wird.

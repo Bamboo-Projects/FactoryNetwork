@@ -103,5 +103,8 @@
   "jade.factorynetwork.strand.black": "Black",
   "screen.factorynetwork.terminal.sort.amount": "By amount",
   "screen.factorynetwork.terminal.sort.name": "By name",
-  "screen.factorynetwork.terminal.sort.mod": "By mod"
+  "screen.factorynetwork.terminal.sort.mod": "By mod",
+  "block.factorynetwork.display": "Display",
+  "message.factorynetwork.display.named": "Display now shows %s",
+  "message.factorynetwork.display.unnamed": "This display has no name yet."
 }
