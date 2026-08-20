@@ -1,15 +1,19 @@
 package dev.devpanda.factorynetwork.block.entity;
 
 import dev.devpanda.factorynetwork.lang.Diagnostic;
+import dev.devpanda.factorynetwork.lang.ast.Decl;
+import dev.devpanda.factorynetwork.lang.ast.Expr;
 import dev.devpanda.factorynetwork.lang.ast.Program;
 import dev.devpanda.factorynetwork.lang.parse.Parser;
 import dev.devpanda.factorynetwork.network.ControllerRegistry;
 import dev.devpanda.factorynetwork.network.FactoryGraph;
 import dev.devpanda.factorynetwork.network.NetworkStorage;
 import dev.devpanda.factorynetwork.client.menu.TerminalMenu;
+import dev.devpanda.factorynetwork.network.packet.DisplayStatePacket;
 import dev.devpanda.factorynetwork.network.packet.FlowStatePacket;
 import dev.devpanda.factorynetwork.network.packet.StorageSnapshotPacket;
 import dev.devpanda.factorynetwork.registry.FnBlockEntities;
+import dev.devpanda.factorynetwork.runtime.DisplayValues;
 import dev.devpanda.factorynetwork.runtime.Interpreter;
 import dev.devpanda.factorynetwork.runtime.ScriptError;
 import dev.devpanda.factorynetwork.runtime.Value;
@@ -207,6 +211,7 @@ public class ControllerBlockEntity extends BlockEntity {
         storageWatchers.add(player);
         pushStorageTo(player, true);
         pushFlowsTo(player);
+        pushDisplaysTo(player);
     }
 
     public void unwatchStorage(ServerPlayer player) {
@@ -265,7 +270,10 @@ public class ControllerBlockEntity extends BlockEntity {
             return;
         }
         lastFlowPush = level.getGameTime();
-        storageWatchers.forEach(this::pushFlowsTo);
+        storageWatchers.forEach(player -> {
+            pushFlowsTo(player);
+            pushDisplaysTo(player);
+        });
     }
 
     /** Schickt die Abläufe an einen Spieler. */
@@ -280,6 +288,75 @@ public class ControllerBlockEntity extends BlockEntity {
                     flow.id(), flow.entryPoint(), flow.status().name(), flow.detail())));
         }
         PacketDistributor.sendToPlayer(player, new FlowStatePacket(lines));
+    }
+
+    // ---- Anzeigen im Terminal ---------------------------------------------
+
+    /**
+     * Schickt die Anzeigen an einen Spieler.
+     *
+     * <p>Ausgewertet wird hier, gezeichnet dort — dieselbe Aufteilung wie beim
+     * Display an der Wand. Was über die Leitung geht, steht am Ende so da.
+     */
+    public void pushDisplaysTo(ServerPlayer player) {
+        List<DisplayStatePacket.Panel> panels = new ArrayList<>();
+        DisplayValues values = new DisplayValues(graph, storage, runtime);
+        for (Decl declaration : program.declarations()) {
+            if (!(declaration instanceof Decl.Display display)) {
+                continue;
+            }
+            List<String> lines = new ArrayList<>();
+            List<Integer> buttons = new ArrayList<>();
+            List<DisplayValues.Line> evaluated = values.evaluate(display);
+            for (int i = 0; i < evaluated.size(); i++) {
+                lines.add(DisplayBlockEntity.format(evaluated.get(i)));
+                if (evaluated.get(i).kind() == Decl.Display.Entry.Kind.BUTTON) {
+                    buttons.add(i);
+                }
+            }
+            panels.add(new DisplayStatePacket.Panel(display.name(), lines, buttons));
+        }
+        PacketDistributor.sendToPlayer(player, new DisplayStatePacket(panels));
+    }
+
+    /**
+     * Löst aus, was hinter einem Knopf steht.
+     *
+     * <p>Als Ablauf, nicht als gewöhnlicher Aufruf: Ein Knopf soll etwas
+     * anstoßen dürfen, das wartet, und einen Rückgabewert braucht niemand.
+     */
+    public void pressDisplayButton(String displayName, int entryIndex) {
+        Decl.Display display = program.declarations().stream()
+                .filter(Decl.Display.class::isInstance).map(Decl.Display.class::cast)
+                .filter(candidate -> candidate.name().equals(displayName))
+                .findFirst().orElse(null);
+        if (display == null || entryIndex < 0 || entryIndex >= display.entries().size()) {
+            return;
+        }
+        Decl.Display.Entry entry = display.entries().get(entryIndex);
+        if (entry.kind() != Decl.Display.Entry.Kind.BUTTON) {
+            // Der Client hat auf eine Zeile gezeigt, die kein Knopf ist.
+            return;
+        }
+        String function = functionNameOf(entry.value());
+        if (function == null) {
+            note("Der Knopf " + entry.label() + " nennt keine Funktion.");
+            return;
+        }
+        try {
+            startFlow(function, List.of());
+        } catch (ScriptError error) {
+            note(entry.label() + ": " + error);
+        }
+    }
+
+    /** Welche Funktion hinter einem Knopf steht — Name oder Aufruf. */
+    private static String functionNameOf(Expr value) {
+        return switch (value) {
+            case Expr.Name name -> name.value();
+            case Expr.Call call when call.callee() instanceof Expr.Name name -> name.value();
+            case null, default -> null;
+        };
     }
 
     /**

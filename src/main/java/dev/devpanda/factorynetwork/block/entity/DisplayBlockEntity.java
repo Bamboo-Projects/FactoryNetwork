@@ -127,7 +127,7 @@ public class DisplayBlockEntity extends BlockEntity {
      * über die Leitung, was am Ende dasteht, und der Client muss die Sprache
      * nicht kennen.
      */
-    private static String format(DisplayValues.Line line) {
+    public static String format(DisplayValues.Line line) {
         return switch (line.kind()) {
             case TITLE -> "§f§n" + line.label();
             case ROW -> "§7" + line.label() + " §f" + line.value();

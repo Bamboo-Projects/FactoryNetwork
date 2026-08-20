@@ -46,6 +46,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
     private TerminalTab tab = TerminalTab.STORAGE;
     private StorageTabView storageView;
     private NetworkTabView networkView;
+    private DashboardsTabView dashboardsView;
     private CodeTabView codeView;
 
     public TerminalScreen(TerminalMenu menu, Inventory inventory, Component title) {
@@ -61,6 +62,8 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         storageView = new StorageTabView(this, font, leftPos + WORK_X, topPos + WORK_Y,
                 WORK_W, WORK_H);
         networkView = new NetworkTabView(font, leftPos + WORK_X, topPos + WORK_Y, WORK_W, WORK_H);
+        dashboardsView = new DashboardsTabView(font, leftPos + WORK_X, topPos + WORK_Y,
+                WORK_W, WORK_H);
         codeView = new CodeTabView(font, leftPos + WORK_X, topPos + WORK_Y, WORK_W, WORK_H,
                 codeView == null ? ClientNetworkState.source() : codeView.text());
         announceTab();
@@ -100,6 +103,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         switch (tab) {
             case STORAGE -> storageView.render(graphics, mouseX, mouseY);
             case NETWORK -> networkView.render(graphics, mouseX, mouseY);
+            case DASHBOARDS -> dashboardsView.render(graphics, mouseX, mouseY);
             case CODE -> codeView.render(graphics);
             default -> { }
         }
@@ -165,6 +169,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
             case STORAGE -> storageView.mouseClicked(mouseX, mouseY, button);
             case CODE -> codeView.mouseClicked(mouseX, mouseY, button);
             case NETWORK -> networkView.mouseClicked(mouseX, mouseY, button);
+            case DASHBOARDS -> dashboardsView.mouseClicked(mouseX, mouseY, button);
             default -> false;
         };
         return handled || super.mouseClicked(mouseX, mouseY, button);

@@ -44,6 +44,7 @@
   "screen.factorynetwork.terminal.network.connectors": "IM NETZ",
   "screen.factorynetwork.terminal.network.workers": "WORKER",
   "screen.factorynetwork.terminal.network.no_workers": "keine",
+  "screen.factorynetwork.terminal.dashboards.none": "keine Anzeigen im Programm",
   "screen.factorynetwork.terminal.network.flows": "ABLÄUFE",
   "screen.factorynetwork.terminal.network.no_flows": "keine",
   "screen.factorynetwork.terminal.network.flow.keep": "weiter",

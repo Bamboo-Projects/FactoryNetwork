@@ -1713,6 +1713,66 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void aDisplayButtonStartsAFlowThatMayWait(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                event Takt(nummer: Int)
+
+                display leitstand {
+                    title "Leitstand"
+                    button "Anstoßen" anstossen
+                }
+
+                fn anstossen() {
+                    let wert = await Takt
+                    return wert
+                }"""), "Das Programm wurde nicht übernommen");
+
+        // Kein Ablauf, bevor jemand drückt.
+        helper.assertValueEqual(entity.flowEngine().flows().size(), 0, "Noch läuft nichts");
+
+        entity.pressDisplayButton("leitstand", 1);
+        helper.assertValueEqual(entity.flowEngine().flows().size(), 1,
+                "Der Knopf muss einen Ablauf starten");
+
+        var flow = entity.flowEngine().flows().values().iterator().next();
+        helper.assertValueEqual(flow.status().name(), "AWAITING",
+                "Ein Knopf darf etwas anstoßen, das wartet");
+
+        tick(helper, entity, 4);
+        helper.assertValueEqual(flow.status().name(), "DONE", "Und danach zu Ende laufen");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void aDisplayButtonIgnoresLinesThatAreNotButtons(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                display leitstand {
+                    title "Leitstand"
+                    button "Anstoßen" anstossen
+                }
+
+                fn anstossen() {
+                    return 1
+                }"""), "Das Programm wurde nicht übernommen");
+
+        // Die Überschrift ist kein Knopf, und eine Nummer daneben gibt es nicht.
+        entity.pressDisplayButton("leitstand", 0);
+        entity.pressDisplayButton("leitstand", 99);
+        entity.pressDisplayButton("gibtsnicht", 1);
+        helper.assertValueEqual(entity.flowEngine().flows().size(), 0,
+                "Nichts davon darf etwas auslösen");
+        helper.succeed();
+    }
+
     private FactoryNetworkGameTests() {
     }
 }
