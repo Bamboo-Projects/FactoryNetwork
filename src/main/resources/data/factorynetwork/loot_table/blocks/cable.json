@@ -7,7 +7,224 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "factorynetwork:cable"
+          "name": "factorynetwork:cable",
+          "conditions": [
+            {
+              "condition": "minecraft:block_state_property",
+              "block": "factorynetwork:cable",
+              "properties": {
+                "colour": "none"
+              }
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "factorynetwork:white_cable",
+          "conditions": [
+            {
+              "condition": "minecraft:block_state_property",
+              "block": "factorynetwork:cable",
+              "properties": {
+                "colour": "white"
+              }
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "factorynetwork:orange_cable",
+          "conditions": [
+            {
+              "condition": "minecraft:block_state_property",
+              "block": "factorynetwork:cable",
+              "properties": {
+                "colour": "orange"
+              }
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "factorynetwork:magenta_cable",
+          "conditions": [
+            {
+              "condition": "minecraft:block_state_property",
+              "block": "factorynetwork:cable",
+              "properties": {
+                "colour": "magenta"
+              }
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "factorynetwork:light_blue_cable",
+          "conditions": [
+            {
+              "condition": "minecraft:block_state_property",
+              "block": "factorynetwork:cable",
+              "properties": {
+                "colour": "light_blue"
+              }
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "factorynetwork:yellow_cable",
+          "conditions": [
+            {
+              "condition": "minecraft:block_state_property",
+              "block": "factorynetwork:cable",
+              "properties": {
+                "colour": "yellow"
+              }
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "factorynetwork:lime_cable",
+          "conditions": [
+            {
+              "condition": "minecraft:block_state_property",
+              "block": "factorynetwork:cable",
+              "properties": {
+                "colour": "lime"
+              }
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "factorynetwork:pink_cable",
+          "conditions": [
+            {
+              "condition": "minecraft:block_state_property",
+              "block": "factorynetwork:cable",
+              "properties": {
+                "colour": "pink"
+              }
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "factorynetwork:gray_cable",
+          "conditions": [
+            {
+              "condition": "minecraft:block_state_property",
+              "block": "factorynetwork:cable",
+              "properties": {
+                "colour": "gray"
+              }
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "factorynetwork:light_gray_cable",
+          "conditions": [
+            {
+              "condition": "minecraft:block_state_property",
+              "block": "factorynetwork:cable",
+              "properties": {
+                "colour": "light_gray"
+              }
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "factorynetwork:cyan_cable",
+          "conditions": [
+            {
+              "condition": "minecraft:block_state_property",
+              "block": "factorynetwork:cable",
+              "properties": {
+                "colour": "cyan"
+              }
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "factorynetwork:purple_cable",
+          "conditions": [
+            {
+              "condition": "minecraft:block_state_property",
+              "block": "factorynetwork:cable",
+              "properties": {
+                "colour": "purple"
+              }
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "factorynetwork:blue_cable",
+          "conditions": [
+            {
+              "condition": "minecraft:block_state_property",
+              "block": "factorynetwork:cable",
+              "properties": {
+                "colour": "blue"
+              }
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "factorynetwork:brown_cable",
+          "conditions": [
+            {
+              "condition": "minecraft:block_state_property",
+              "block": "factorynetwork:cable",
+              "properties": {
+                "colour": "brown"
+              }
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "factorynetwork:green_cable",
+          "conditions": [
+            {
+              "condition": "minecraft:block_state_property",
+              "block": "factorynetwork:cable",
+              "properties": {
+                "colour": "green"
+              }
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "factorynetwork:red_cable",
+          "conditions": [
+            {
+              "condition": "minecraft:block_state_property",
+              "block": "factorynetwork:cable",
+              "properties": {
+                "colour": "red"
+              }
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "factorynetwork:black_cable",
+          "conditions": [
+            {
+              "condition": "minecraft:block_state_property",
+              "block": "factorynetwork:cable",
+              "properties": {
+                "colour": "black"
+              }
+            }
+          ]
         }
       ],
       "conditions": [

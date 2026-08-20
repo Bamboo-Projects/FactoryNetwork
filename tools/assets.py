@@ -16,6 +16,59 @@ def write(relative, data):
     print("  " + relative)
 
 
+CABLE_COLOURS = [
+    "none", "white", "orange", "magenta", "light_blue", "yellow", "lime",
+    "pink", "gray", "light_gray", "cyan", "purple", "blue", "brown", "green",
+    "red", "black",
+]
+
+
+def cable_models(suffix, texture_name):
+    """Kern, Arm und Inventarmodell für eine Kabelfarbe."""
+    textures = {"cable": texture(texture_name), "particle": texture(texture_name)}
+    faces = ("north", "south", "east", "west", "up", "down")
+
+    # Kern: ein Würfel von sechs Pixeln Kantenlänge in der Mitte. Kein
+    # cullface — er grenzt an keine Blockfläche.
+    write(A + "/models/block/cable_core%s.json" % suffix, {
+        "textures": textures,
+        "elements": [{
+            "from": [5, 5, 5],
+            "to": [11, 11, 11],
+            "faces": {face: {"texture": "#cable"} for face in faces},
+        }],
+    })
+
+    # Arm nach Norden; die Blockstate dreht ihn in die anderen Richtungen.
+    write(A + "/models/block/cable_arm%s.json" % suffix, {
+        "textures": textures,
+        "elements": [{
+            "from": [5, 5, 0],
+            "to": [11, 11, 5],
+            "faces": {
+                "north": {"texture": "#cable", "cullface": "north"},
+                "east": {"texture": "#cable"},
+                "west": {"texture": "#cable"},
+                "up": {"texture": "#cable"},
+                "down": {"texture": "#cable"},
+            },
+        }],
+    })
+
+    # In der Hand ein durchgehendes Rohr, sonst sähe man nur einen Würfel.
+    write(A + "/models/block/cable_inventory%s.json" % suffix, {
+        "textures": textures,
+        "elements": [{
+            "from": [5, 5, 0],
+            "to": [11, 11, 16],
+            "faces": {face: {"texture": "#cable"} for face in faces},
+        }],
+    })
+    name = "cable" if suffix == "" else suffix[1:] + "_cable"
+    write(A + "/models/item/%s.json" % name,
+          {"parent": block("cable_inventory%s" % suffix)})
+
+
 def block(name):
     return MOD + ":block/" + name
 
@@ -34,8 +87,12 @@ def blockstates():
     write(A + "/blockstates/controller.json",
           {"variants": {"": {"model": block("controller")}}})
 
-    # Kabel: ein Kern plus je ein Arm pro Verbindung.
-    parts = [{"apply": {"model": block("cable_core")}}]
+    # Kabel: je Farbe ein Kern plus je ein Arm pro Verbindung.
+    #
+    # Siebzehn Farben mal vierundsechzig Verbindungskombinationen wären über
+    # tausend Varianten, wenn man sie einzeln aufzählte. Multipart setzt
+    # stattdessen zusammen: Die Farbe wählt das Modell, die Verbindungen
+    # wählen die Arme.
     rotations = {
         "north": {},
         "south": {"y": 180},
@@ -44,10 +101,17 @@ def blockstates():
         "up": {"x": 270},
         "down": {"x": 90},
     }
-    for direction, rotation in rotations.items():
-        apply = {"model": block("cable_arm")}
-        apply.update(rotation)
-        parts.append({"when": {direction: "true"}, "apply": apply})
+    parts = []
+    for colour in CABLE_COLOURS:
+        suffix = "" if colour == "none" else "_" + colour
+        parts.append({
+            "when": {"colour": colour},
+            "apply": {"model": block("cable_core" + suffix)},
+        })
+        for direction, rotation in rotations.items():
+            apply = {"model": block("cable_arm" + suffix)}
+            apply.update(rotation)
+            parts.append({"when": {"colour": colour, direction: "true"}, "apply": apply})
     write(A + "/blockstates/cable.json", {"multipart": parts})
 
     # Connector zeigt in sechs Richtungen.
@@ -88,53 +152,11 @@ def models():
         },
     })
 
-    # Kern des Kabels: ein Würfel von 6 Pixeln Kantenlänge in der Mitte.
-    write(A + "/models/block/cable_core.json", {
-        "textures": {"cable": texture("cable"), "particle": texture("cable")},
-        "elements": [{
-            "from": [5, 5, 5],
-            "to": [11, 11, 11],
-            # Kein cullface: Der Kern liegt frei in der Mitte und grenzt an
-            # keine Blockfläche. Ein "cullface": null ist kein gültiger Wert —
-            # die Angabe muss ganz fehlen.
-            "faces": {
-                face: {"texture": "#cable"} for face in
-                ("north", "south", "east", "west", "up", "down")
-            },
-        }],
-    })
+    for colour in CABLE_COLOURS:
+        suffix = "" if colour == "none" else "_" + colour
+        texture_name = "cable" if colour == "none" else colour + "_cable"
+        cable_models(suffix, texture_name)
 
-    # Arm nach Norden; die Blockstate dreht ihn in die anderen Richtungen.
-    write(A + "/models/block/cable_arm.json", {
-        "textures": {"cable": texture("cable"), "particle": texture("cable")},
-        "elements": [{
-            "from": [5, 5, 0],
-            "to": [11, 11, 5],
-            "faces": {
-                "north": {"texture": "#cable", "cullface": "north"},
-                "east": {"texture": "#cable"},
-                "west": {"texture": "#cable"},
-                "up": {"texture": "#cable"},
-                "down": {"texture": "#cable"},
-            },
-        }],
-    })
-
-    # Zum Halten in der Hand braucht das Kabel ein vollständiges Modell.
-    write(A + "/models/block/cable_inventory.json", {
-        "textures": {"cable": texture("cable"), "particle": texture("cable")},
-        "elements": [{
-            "from": [5, 5, 0],
-            "to": [11, 11, 16],
-            "faces": {
-                face: {"texture": "#cable"} for face in
-                ("north", "south", "east", "west", "up", "down")
-            },
-        }],
-    })
-
-    # Eigenes Modell statt orientable: Der Connector hat eine eigene
-    # Rückseite — dort geht das Kabel hinein, und das soll man sehen.
     write(A + "/models/block/connector.json", {
         "parent": "minecraft:block/block",
         "textures": {
@@ -169,7 +191,6 @@ def models():
 
     for name in ("controller", "connector", "terminal"):
         write(A + "/models/item/" + name + ".json", {"parent": block(name)})
-    write(A + "/models/item/cable.json", {"parent": block("cable_inventory")})
     write(A + "/models/item/label_gun.json", {
         "parent": "minecraft:item/handheld",
         "textures": {"layer0": MOD + ":item/label_gun"},
@@ -179,7 +200,7 @@ def models():
 # ---- Loot und Rezepte ----------------------------------------------------
 
 def loot_and_recipes():
-    for name in ("controller", "cable", "connector", "terminal"):
+    for name in ("controller", "connector", "terminal"):
         write(D + "/loot_table/blocks/" + name + ".json", {
             "type": "minecraft:block",
             "pools": [{

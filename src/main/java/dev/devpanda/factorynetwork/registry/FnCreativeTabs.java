@@ -19,7 +19,9 @@ public final class FnCreativeTabs {
                     .icon(() -> new ItemStack(FnItems.CONTROLLER.get()))
                     .displayItems((parameters, output) -> {
                         output.accept(FnItems.CONTROLLER.get());
-                        output.accept(FnItems.CABLE.get());
+                        // Alle Kabelfarben, Standardfarbe zuerst
+                        FnItems.CABLES.values()
+                                .forEach(cable -> output.accept(cable.get()));
                         output.accept(FnItems.CONNECTOR.get());
                         output.accept(FnItems.TERMINAL.get());
                         output.accept(FnItems.LABEL_GUN.get());

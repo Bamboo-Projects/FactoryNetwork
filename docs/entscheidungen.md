@@ -760,3 +760,51 @@ jedem Öffnen zu übertragen, würde man merken. Die Zahl steht als Konstante in
 Offen: ob die Suche bei abgeschnittenem Bestand zusätzlich auf dem Server
 laufen soll. Das wäre die saubere Lösung, kostet aber eine Anfrage je
 Tastendruck.
+
+---
+
+## Farbige Kabel (2026-08-20)
+
+**Die Farbe entscheidet, was sich verbindet — sie ist nicht nur Anstrich.**
+Zwei Kabel verschiedener Farbe laufen aneinander vorbei, ohne sich zu sehen.
+Die Standardfarbe verbindet sich mit allem.
+
+Der Zweck ist genau der, den Applied Energistics damit verfolgt: mehrere Netze
+durch dieselbe Wand führen, jedes mit eigenen Kanälen. Würden sich farbige
+Kabel verbinden, wären sie ein Netz — und dann bräuchte es keine Farben.
+
+Dass die Standardfarbe alles annimmt, ist der Unterschied zwischen brauchbar
+und lästig: Sonst müsste man sich schon beim ersten Kabel für eine Farbe
+entscheiden und könnte zwei Stränge nie mehr zusammenführen.
+
+**Auch der Graph beachtet die Farbe.** Das ist die Stelle, an der es sonst
+falsch würde: Ein Strang, der sichtbar getrennt verläuft, aber im Netz doch
+verbunden ist, wäre schlimmer als beides andere — man sähe die Trennung und
+hätte sie nicht.
+
+### Ein Block, siebzehn Gegenstände
+
+Die Farbe steht im Blockzustand, nicht in einer BlockEntity: Sie ändert sich
+nie und muss beim Zeichnen sofort da sein. Siebzehn eigene Blöcke wären
+dieselbe Sache mit siebzehnfachem Aufwand.
+
+Die Blockstate-Datei zählt die Kombinationen nicht auf — siebzehn Farben mal
+vierundsechzig Verbindungen wären über tausend Varianten. Multipart setzt
+stattdessen zusammen: Die Farbe wählt das Modell, die Verbindungen wählen die
+Arme.
+
+Gefärbt wird mit einem Farbstoff auf einem beliebigen Kabel. Dass das Rezept
+über `c:cables` geht statt über die siebzehn Gegenstände einzeln, hält es bei
+einem Rezept je Farbe statt bei zweihundertzweiundsiebzig.
+
+**Gefärbt wird nur die Röhre, nicht die Schelle.** Ein schwarzes Kabel sähe
+sonst aus wie ein Loch in der Wand und ein weißes wie ein Fremdkörper; so
+bleibt erkennbar, dass es dasselbe Bauteil ist.
+
+### Mehrere Leitungen in einem Block: später
+
+Nach dem Vorbild der EnderIO-Conduits — vier Leitungen im selben Blockraum,
+im 2×2-Raster. Bewusst zurückgestellt: Dafür reicht kein statisches Modell
+mehr, weil die Zahl der Kombinationen in die Millionen geht. Es bräuchte ein
+zur Laufzeit zusammengebautes Modell und eigene Kollisionsboxen je Leitung,
+damit sich eine einzelne herausbrechen lässt.

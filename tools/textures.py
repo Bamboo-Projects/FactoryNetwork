@@ -121,16 +121,34 @@ def controller_side():
 # ---- Kabel ---------------------------------------------------------------
 # Formensprache: durchgehende Längsstruktur, keine Rahmen.
 
-def cable():
+# Die sechzehn Farbstoffe von Minecraft, etwas gedämpft — ein Kabel soll
+# neben den Blöcken liegen, nicht vor ihnen leuchten.
+CABLE_COLOURS = {
+    "white": (208, 212, 210), "orange": (206, 122, 48), "magenta": (170, 78, 168),
+    "light_blue": (86, 148, 200), "yellow": (200, 178, 56), "lime": (124, 178, 60),
+    "pink": (206, 130, 154), "gray": (78, 84, 88), "light_gray": (140, 146, 148),
+    "cyan": (52, 138, 148), "purple": (122, 68, 168), "blue": (60, 78, 168),
+    "brown": (110, 78, 50), "green": (96, 130, 52), "red": (162, 58, 52),
+    "black": (36, 38, 40),
+}
+
+
+def cable(tube=None):
+    """Kabel mit drei Röhren.
+
+    Gefärbt werden nur die Röhren, nicht die Schellen — sonst sähe ein
+    schwarzes Kabel aus wie ein Loch und ein weißes wie ein Fremdkörper. So
+    bleibt erkennbar, dass es dasselbe Bauteil ist, nur in anderer Farbe.
+    """
+    body = tube if tube else BODY_TOP
     img = surface(BODY_MID, BODY_BOT)
     d = ImageDraw.Draw(img)
-    # Drei Röhren nebeneinander, jede mit Glanzkante
     for x in (6, 26, 46):
-        d.rectangle([x, 0, x + 11, N - 1], fill=BODY_TOP + (255,))
+        d.rectangle([x, 0, x + 11, N - 1], fill=body + (255,))
         d.line([(x, 0), (x, N - 1)], fill=EDGE + (255,))
-        d.line([(x + 1, 0), (x + 1, N - 1)], fill=SHINE + (255,))
+        d.line([(x + 1, 0), (x + 1, N - 1)],
+               fill=blend(body, (255, 255, 255), 0.28) + (255,))
         d.line([(x + 11, 0), (x + 11, N - 1)], fill=EDGE + (255,))
-    # Schellen quer, damit die Röhren gehalten wirken
     for y in (14, 46):
         d.rectangle([0, y, N - 1, y + 3], fill=EDGE + (255,))
         d.line([(0, y + 1), (N - 1, y + 1)], fill=LIGHT + (255,))
@@ -276,6 +294,8 @@ def main():
     save(controller_top(), "block", "controller_top")
     save(controller_side(), "block", "controller_side")
     save(cable(), "block", "cable")
+    for name, colour in CABLE_COLOURS.items():
+        save(cable(colour), "block", name + "_cable")
     save(connector_front(), "block", "connector_front")
     save(connector_side(), "block", "connector_side")
     save(connector_back(), "block", "connector_back")

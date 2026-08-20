@@ -51,5 +51,22 @@
   "screen.factorynetwork.label_gun.ready": "ready",
   "screen.factorynetwork.label_gun.empty": "empty — a name will be suggested",
   "screen.factorynetwork.label_gun.invalid_hint": "Letters, digits and underscore only",
-  "screen.factorynetwork.label_gun.keyword_hint": "%s is a keyword — needs backticks in code"
+  "screen.factorynetwork.label_gun.keyword_hint": "%s is a keyword — needs backticks in code",
+  "item.factorynetwork.white_cable": "White Cable",
+  "item.factorynetwork.orange_cable": "Orange Cable",
+  "item.factorynetwork.magenta_cable": "Magenta Cable",
+  "item.factorynetwork.light_blue_cable": "Light Blue Cable",
+  "item.factorynetwork.yellow_cable": "Yellow Cable",
+  "item.factorynetwork.lime_cable": "Lime Cable",
+  "item.factorynetwork.pink_cable": "Pink Cable",
+  "item.factorynetwork.gray_cable": "Gray Cable",
+  "item.factorynetwork.light_gray_cable": "Light Gray Cable",
+  "item.factorynetwork.cyan_cable": "Cyan Cable",
+  "item.factorynetwork.purple_cable": "Purple Cable",
+  "item.factorynetwork.blue_cable": "Blue Cable",
+  "item.factorynetwork.brown_cable": "Brown Cable",
+  "item.factorynetwork.green_cable": "Green Cable",
+  "item.factorynetwork.red_cable": "Red Cable",
+  "item.factorynetwork.black_cable": "Black Cable",
+  "item.factorynetwork.cable": "Cable"
 }

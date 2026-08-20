@@ -97,6 +97,16 @@ public final class FactoryGraph {
                 }
                 BlockState state = level.getBlockState(next);
                 if (state.getBlock() instanceof CableBlock) {
+                    // Die Farbe entscheidet auch hier: Was optisch nicht
+                    // verbunden ist, darf auch im Netz nicht verbunden sein.
+                    // Sonst liefe ein Strang sichtbar getrennt und wäre es
+                    // doch nicht — der schlimmste Fall von beiden.
+                    BlockState from = level.getBlockState(current);
+                    if (from.getBlock() instanceof CableBlock
+                            && !CableBlock.colourOf(from)
+                                    .connectsTo(CableBlock.colourOf(state))) {
+                        continue;
+                    }
                     cables.add(next.immutable());
                     queue.add(next.immutable());
                 } else if (state.getBlock() instanceof ConnectorBlock) {

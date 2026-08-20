@@ -3,6 +3,8 @@ package dev.devpanda.factorynetwork.test;
 import dev.devpanda.factorynetwork.FactoryNetwork;
 import dev.devpanda.factorynetwork.block.entity.ConnectorBlockEntity;
 import dev.devpanda.factorynetwork.block.entity.ControllerBlockEntity;
+import dev.devpanda.factorynetwork.block.CableBlock;
+import dev.devpanda.factorynetwork.block.CableColour;
 import dev.devpanda.factorynetwork.item.ConnectorNaming;
 import dev.devpanda.factorynetwork.registry.FnBlocks;
 import dev.devpanda.factorynetwork.runtime.ScriptError;
@@ -570,6 +572,59 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(reloaded.distinctTypes(), 1,
                 "nur der bekannte Gegenstand darf überleben");
         helper.assertValueEqual(reloaded.count(Items.IRON_INGOT), 5L, "Bestand");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void cablesOfDifferentColoursDoNotConnect(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 1, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+
+        // Grüner Strang zum ersten Connector
+        BlockPos green = controller.east();
+        helper.setBlock(green, FnBlocks.CABLE.get().defaultBlockState()
+                .setValue(CableBlock.COLOUR, CableColour.GREEN));
+        BlockPos reachable = green.east();
+        helper.setBlock(reachable, FnBlocks.CONNECTOR.get());
+        name(helper, reachable, "erreichbar");
+
+        // Roter Strang, an den grünen angesetzt — darf nicht durchleiten
+        BlockPos red = green.above();
+        helper.setBlock(red, FnBlocks.CABLE.get().defaultBlockState()
+                .setValue(CableBlock.COLOUR, CableColour.RED));
+        BlockPos hidden = red.east();
+        helper.setBlock(hidden, FnBlocks.CONNECTOR.get());
+        name(helper, hidden, "getrennt");
+
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.graph().connector("erreichbar").isPresent(),
+                "Der grüne Strang muss durchleiten");
+        helper.assertTrue(entity.graph().connector("getrennt").isEmpty(),
+                "Der rote Strang darf nicht am grünen hängen");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void plainCableConnectsToEveryColour(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 1, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+
+        // Standardfarbe zwischen Controller und einem blauen Strang
+        BlockPos plain = controller.east();
+        helper.setBlock(plain, FnBlocks.CABLE.get());
+        BlockPos blue = plain.east();
+        helper.setBlock(blue, FnBlocks.CABLE.get().defaultBlockState()
+                .setValue(CableBlock.COLOUR, CableColour.BLUE));
+        BlockPos target = blue.east();
+        helper.setBlock(target, FnBlocks.CONNECTOR.get());
+        name(helper, target, "dahinter");
+
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        helper.assertTrue(entity.graph().connector("dahinter").isPresent(),
+                "Die Standardfarbe muss sich mit jeder Farbe verbinden");
         helper.succeed();
     }
 

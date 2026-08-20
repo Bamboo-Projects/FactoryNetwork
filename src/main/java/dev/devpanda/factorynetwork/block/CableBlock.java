@@ -10,6 +10,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
@@ -28,6 +29,11 @@ import java.util.Map;
 public class CableBlock extends Block {
 
     public static final MapCodec<CableBlock> CODEC = simpleCodec(CableBlock::new);
+
+    /** Die Farbe steckt im Blockzustand, nicht in einer BlockEntity —
+     *  sie ändert sich nie und muss beim Zeichnen sofort verfügbar sein. */
+    public static final EnumProperty<CableColour> COLOUR =
+            EnumProperty.create("colour", CableColour.class);
 
     private static final Map<Direction, BooleanProperty> CONNECTIONS =
             new EnumMap<>(Map.of(
@@ -51,11 +57,15 @@ public class CableBlock extends Block {
 
     public CableBlock(Properties properties) {
         super(properties);
-        BlockState state = stateDefinition.any();
+        BlockState state = stateDefinition.any().setValue(COLOUR, CableColour.NONE);
         for (BooleanProperty property : CONNECTIONS.values()) {
             state = state.setValue(property, false);
         }
         registerDefaultState(state);
+    }
+
+    public static CableColour colourOf(BlockState state) {
+        return state.getBlock() instanceof CableBlock ? state.getValue(COLOUR) : CableColour.NONE;
     }
 
     public static BooleanProperty connection(Direction direction) {
@@ -69,6 +79,7 @@ public class CableBlock extends Block {
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        builder.add(COLOUR);
         CONNECTIONS.values().forEach(builder::add);
     }
 
@@ -81,22 +92,31 @@ public class CableBlock extends Block {
     protected BlockState updateShape(BlockState state, Direction direction, BlockState neighbour,
                                      LevelAccessor level, BlockPos pos, BlockPos neighbourPos) {
         BooleanProperty property = CONNECTIONS.get(direction);
-        return state.setValue(property, connectsTo(neighbour));
+        return state.setValue(property, connectsTo(state, neighbour));
     }
 
     private BlockState withConnections(BlockState state, LevelReader level, BlockPos pos) {
         for (Map.Entry<Direction, BooleanProperty> entry : CONNECTIONS.entrySet()) {
             BlockState neighbour = level.getBlockState(pos.relative(entry.getKey()));
-            state = state.setValue(entry.getValue(), connectsTo(neighbour));
+            state = state.setValue(entry.getValue(), connectsTo(state, neighbour));
         }
         return state;
     }
 
-    private static boolean connectsTo(BlockState state) {
-        return state.getBlock() instanceof CableBlock
-                || state.getBlock() instanceof ConnectorBlock
-                || state.getBlock() instanceof ControllerBlock
-                || state.getBlock() instanceof TerminalBlock;
+    /**
+     * Verbinden sich diese beiden Blöcke?
+     *
+     * <p>Zwei Kabel nur bei passender Farbe — daran hängt der ganze Zweck der
+     * Farben. Geräte und der Controller nehmen jedes Kabel an: Sie gehören zu
+     * dem Netz, an dem sie hängen, und müssten sonst selbst gefärbt werden.
+     */
+    private static boolean connectsTo(BlockState self, BlockState neighbour) {
+        if (neighbour.getBlock() instanceof CableBlock) {
+            return colourOf(self).connectsTo(colourOf(neighbour));
+        }
+        return neighbour.getBlock() instanceof ConnectorBlock
+                || neighbour.getBlock() instanceof ControllerBlock
+                || neighbour.getBlock() instanceof TerminalBlock;
     }
 
     @Override

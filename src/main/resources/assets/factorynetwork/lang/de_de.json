@@ -51,5 +51,22 @@
   "screen.factorynetwork.label_gun.ready": "bereit",
   "screen.factorynetwork.label_gun.empty": "leer — der Name wird dann vorgeschlagen",
   "screen.factorynetwork.label_gun.invalid_hint": "Erlaubt sind Buchstaben, Ziffern und Unterstrich",
-  "screen.factorynetwork.label_gun.keyword_hint": "%s ist ein Schlüsselwort — im Code mit Rückstrichen"
+  "screen.factorynetwork.label_gun.keyword_hint": "%s ist ein Schlüsselwort — im Code mit Rückstrichen",
+  "item.factorynetwork.white_cable": "Weißes Kabel",
+  "item.factorynetwork.orange_cable": "Oranges Kabel",
+  "item.factorynetwork.magenta_cable": "Magenta Kabel",
+  "item.factorynetwork.light_blue_cable": "Hellblaues Kabel",
+  "item.factorynetwork.yellow_cable": "Gelbes Kabel",
+  "item.factorynetwork.lime_cable": "Hellgrünes Kabel",
+  "item.factorynetwork.pink_cable": "Rosa Kabel",
+  "item.factorynetwork.gray_cable": "Graues Kabel",
+  "item.factorynetwork.light_gray_cable": "Hellgraues Kabel",
+  "item.factorynetwork.cyan_cable": "Türkises Kabel",
+  "item.factorynetwork.purple_cable": "Violettes Kabel",
+  "item.factorynetwork.blue_cable": "Blaues Kabel",
+  "item.factorynetwork.brown_cable": "Braunes Kabel",
+  "item.factorynetwork.green_cable": "Grünes Kabel",
+  "item.factorynetwork.red_cable": "Rotes Kabel",
+  "item.factorynetwork.black_cable": "Schwarzes Kabel",
+  "item.factorynetwork.cable": "Kabel"
 }
