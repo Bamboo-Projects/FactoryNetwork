@@ -1773,6 +1773,104 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void aCalledFunctionMayWait(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                event Takt(nummer: Int)
+
+                fn holt() {
+                    let wert = await Takt
+                    return wert * 2
+                }
+
+                fn ruft() {
+                    let erstes = holt()
+                    let zweites = holt()
+                    return erstes + zweites
+                }"""), "Das Programm wurde nicht übernommen");
+
+        var flow = entity.startFlow("ruft", java.util.List.of());
+        helper.assertValueEqual(flow.status().name(), "AWAITING",
+                "Die gerufene Funktion wartet, also wartet der ganze Ablauf");
+
+        tick(helper, entity, 3);
+        helper.assertValueEqual(flow.status().name(), "AWAITING", "Und beim zweiten Aufruf wieder");
+        tick(helper, entity, 4);
+
+        helper.assertValueEqual(flow.status().name(), "DONE", "Dann ist er fertig");
+        helper.assertValueEqual(resultOf(flow), 14L, "6 + 8 — beide Rückgaben kamen an");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void aCalledFunctionCannotSeeItsCallersNames(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                fn innen() {
+                    return geheim
+                }
+
+                fn aussen() {
+                    let geheim = 1
+                    let ergebnis = innen()
+                    return ergebnis
+                }"""), "Das Programm wurde nicht übernommen");
+
+        var flow = entity.startFlow("aussen", java.util.List.of());
+        // Sonst hinge das Verhalten einer Funktion davon ab, wer sie ruft.
+        helper.assertValueEqual(flow.status().name(), "FAILED",
+                "Der Name des Rufers darf innen nicht sichtbar sein");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void aWaitingCallSurvivesARestart(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                event Takt(nummer: Int)
+
+                fn holt() {
+                    let wert = await Takt
+                    return wert * 2
+                }
+
+                fn ruft() {
+                    let erstes = holt()
+                    let zweites = holt()
+                    return erstes + zweites
+                }"""), "Das Programm wurde nicht übernommen");
+
+        var flow = entity.startFlow("ruft", java.util.List.of());
+        tick(helper, entity, 3);
+
+        var registries = helper.getLevel().registryAccess();
+        var block = net.minecraft.world.level.block.entity.BlockEntity.loadStatic(
+                helper.absolutePos(controller), helper.getBlockState(controller),
+                entity.saveWithFullMetadata(registries), registries);
+        ControllerBlockEntity geladen = (ControllerBlockEntity) block;
+        geladen.setLevel(helper.getLevel());
+
+        var wieder = flowOf(geladen, flow.id());
+        helper.assertTrue(wieder != null, "Zwei Rahmen tief war zu tief");
+        helper.assertValueEqual(wieder.status().name(), "AWAITING", "Er wartet weiter");
+
+        tick(helper, geladen, 4);
+        helper.assertValueEqual(wieder.status().name(), "DONE", "Und läuft zu Ende");
+        helper.assertValueEqual(resultOf(wieder), 14L,
+                "Auch das Ergebnis des ersten Aufrufs hat den Weg überstanden");
+        helper.succeed();
+    }
+
     private FactoryNetworkGameTests() {
     }
 }

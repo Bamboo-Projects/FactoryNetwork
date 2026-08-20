@@ -42,6 +42,11 @@ public final class BlockIndex {
             switch (declaration) {
                 case Decl.Fn function -> index.walk(function.body());
                 case Decl.On handler -> index.walk(handler.body());
+                // Die Funktionen einer Vorlage zählen mit. Fehlten sie, bekäme
+                // ein Ablauf darin keine Nummer — und verschwände beim
+                // Aufschreiben still, statt sich zu melden.
+                case Decl.Multiblock template -> template.functions()
+                        .forEach(function -> index.walk(function.body()));
                 default -> {
                     // Worker, Gruppen, Anzeigen haben keine Anweisungsblöcke,
                     // in denen ein Ablauf stehen könnte.

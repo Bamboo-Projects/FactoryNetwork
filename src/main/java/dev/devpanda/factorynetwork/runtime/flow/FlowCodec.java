@@ -43,6 +43,9 @@ public final class FlowCodec {
     private static final String KEY_LOOP = "loop";
     private static final String KEY_EXIT = "exit";
     private static final String KEY_LOCALS = "locals";
+    private static final String KEY_CALL = "call";
+    private static final String KEY_RESULT_INTO = "into";
+    private static final String KEY_PREFIX = "prefix";
     private static final String KEY_ITER_VAR = "iterVar";
     private static final String KEY_ITER_VALUES = "iterValues";
     private static final String KEY_ITER_INDEX = "iterIndex";
@@ -92,6 +95,17 @@ public final class FlowCodec {
             entry.putBoolean(KEY_LOOP, frame.isLoop());
             entry.putBoolean(KEY_EXIT, frame.exitOnLeave());
             entry.put(KEY_LOCALS, writeLocals(frame.locals()));
+            if (frame.isCall()) {
+                entry.putBoolean(KEY_CALL, true);
+                if (frame.resultName() != null) {
+                    entry.putString(KEY_RESULT_INTO, frame.resultName());
+                }
+            }
+            if (!frame.devicePrefix().isEmpty()) {
+                // Ohne den wüsste ein Ablauf nach dem Neustart nicht mehr,
+                // welche der drei Anlagen er bedient.
+                entry.putString(KEY_PREFIX, frame.devicePrefix());
+            }
             if (frame.hasIteration()) {
                 // Der Stand eines Laufs über eine Liste steht nur hier. Ohne
                 // ihn begänne die Schleife nach einem Neustart von vorn — und
@@ -210,6 +224,12 @@ public final class FlowCodec {
             CompoundTag entry = locals.getCompound(i);
             frame.locals().put(entry.getString(KEY_NAME),
                     ValueCodec.read(entry.getCompound(KEY_VALUE)));
+        }
+        if (tag.getBoolean(KEY_CALL)) {
+            frame.beginCall(tag.contains(KEY_RESULT_INTO) ? tag.getString(KEY_RESULT_INTO) : null,
+                    tag.getString(KEY_PREFIX));
+        } else if (tag.contains(KEY_PREFIX)) {
+            frame.setDevicePrefix(tag.getString(KEY_PREFIX));
         }
         if (tag.contains(KEY_ITER_VAR)) {
             ListTag values = tag.getList(KEY_ITER_VALUES, Tag.TAG_COMPOUND);

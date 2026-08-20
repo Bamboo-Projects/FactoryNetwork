@@ -296,6 +296,10 @@ public final class Interpreter {
                     if (let.value() instanceof Expr.Await await) {
                         yield awaitStep(await, let.name(), gameTime);
                     }
+                    Step invocation = invokeStep(let.value(), let.name());
+                    if (invocation != null) {
+                        yield invocation;
+                    }
                     scope.declare(let.name(), evaluate(let.value()));
                     yield Step.Next.get();
                 }
@@ -312,6 +316,10 @@ public final class Interpreter {
                 case Stmt.ExprStmt expr -> {
                     if (expr.expr() instanceof Expr.Await await) {
                         yield awaitStep(await, gameTime);
+                    }
+                    Step invocation = invokeStep(expr.expr(), null);
+                    if (invocation != null) {
+                        yield invocation;
                     }
                     evaluate(expr.expr());
                     yield Step.Next.get();
@@ -382,6 +390,37 @@ public final class Interpreter {
         }
         return new Step.Await(await.eventName(), await.where(), deadline,
                 await.elseBody(), resultName);
+    }
+
+    /**
+     * Macht aus dem Aufruf einer eigenen Funktion einen eigenen Rahmen.
+     *
+     * <p>Nur wenn der Aufruf allein dasteht — als Anweisung oder rechts von
+     * einem {@code let}. Steckt er in einer Rechnung wie {@code let x = f() +
+     * 2}, läuft er den gewöhnlichen Weg und kann dort nicht warten. Das ist
+     * die ehrliche Grenze: Einen halb ausgewerteten Ausdruck aufzuschreiben
+     * hieße, den Ausdrucksbaum selbst zur Zustandsmaschine zu machen.
+     *
+     * @return der Schritt, oder {@code null} für alles, was nicht so ein
+     *         Aufruf ist
+     */
+    private Step invokeStep(Expr expr, String resultName) {
+        if (!(expr instanceof Expr.Call call)
+                || !(call.callee() instanceof Expr.Name name)) {
+            return null;
+        }
+        Decl.Fn function = program.functions().stream()
+                .filter(candidate -> candidate.name().equals(name.value()))
+                .findFirst().orElse(null);
+        if (function == null) {
+            // Eingebautes wie log(), oder unbekannt — darum kümmert sich der
+            // gewöhnliche Weg, samt seiner Fehlermeldung.
+            return null;
+        }
+        return new Step.Invoke(
+                function.parameters().stream().map(Decl.Param::name).toList(),
+                call.arguments().stream().map(argument -> evaluate(argument.value())).toList(),
+                function.body(), resultName, null);
     }
 
     /** Ein bloßes await ohne Zuweisung — dasselbe, nur ohne Namen. */

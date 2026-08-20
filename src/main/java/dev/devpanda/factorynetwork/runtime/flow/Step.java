@@ -45,6 +45,21 @@ public sealed interface Step {
     /** Aus der Funktion heraus. */
     record Return(Value value) implements Step {}
 
+    /**
+     * Eine eigene Funktion aufrufen.
+     *
+     * <p>Ohne diesen Schritt liefe die gerufene Funktion im gewöhnlichen
+     * Interpreter zu Ende — und könnte dort nicht warten. Ein Ablauf, der eine
+     * Funktion mit {@code await} ruft, bekommt so einen zweiten Rahmen auf
+     * denselben Stapel; beide werden gemeinsam aufgeschrieben.
+     *
+     * <p>{@code resultName} ist der Name, unter dem der Rückgabewert im
+     * rufenden Rahmen landet, oder {@code null} bei einem Aufruf ohne
+     * Zuweisung.
+     */
+    record Invoke(java.util.List<String> parameters, java.util.List<Value> arguments,
+                  Block body, String resultName, String devicePrefix) implements Step {}
+
     /** Aus der Schleife heraus. */
     record Break() implements Step {}
 

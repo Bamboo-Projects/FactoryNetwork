@@ -70,6 +70,48 @@ public final class Frame {
         this.exitOnLeave = exitOnLeave;
     }
 
+    // ---- Aufruf einer eigenen Funktion ------------------------------------
+
+    private boolean call;
+    private String resultName;
+    private String devicePrefix = "";
+
+    /**
+     * Macht diesen Rahmen zum Rumpf eines Aufrufs.
+     *
+     * <p>Ein {@code return} darin beendet nicht den ganzen Ablauf, sondern nur
+     * diesen Rahmen — der Wert landet im rufenden unter {@code resultName}.
+     */
+    public void beginCall(String resultName, String devicePrefix) {
+        this.call = true;
+        this.resultName = resultName;
+        this.devicePrefix = devicePrefix == null ? "" : devicePrefix;
+    }
+
+    public boolean isCall() {
+        return call;
+    }
+
+    public String resultName() {
+        return resultName;
+    }
+
+    /**
+     * Vor welchen Gerätenamen dieser Rahmen etwas setzt.
+     *
+     * <p>In einer Vorlage heißt ein Gerät {@code crusher}; in der Welt trägt
+     * es den Namen der Anlage davor. Der Rahmen weiß, zu welcher Anlage er
+     * gehört — sonst wüsste ein Ablauf nach einem Neustart nicht mehr, welche
+     * der drei Erzanlagen er bedient.
+     */
+    public String devicePrefix() {
+        return devicePrefix;
+    }
+
+    public void setDevicePrefix(String devicePrefix) {
+        this.devicePrefix = devicePrefix == null ? "" : devicePrefix;
+    }
+
     // ---- Lauf über eine Liste ---------------------------------------------
 
     private String iterationVariable;

@@ -229,6 +229,12 @@ public final class Flow {
         return awaitResultName;
     }
 
+    /** Zu welcher Anlage der Ablauf gerade gehört, oder leer. */
+    public String devicePrefix() {
+        Frame frame = top();
+        return frame == null ? "" : frame.devicePrefix();
+    }
+
     /** Legt einen Wert in den obersten Rahmen — das Ergebnis eines await. */
     public void bind(String name, Value value) {
         if (name != null && top() != null) {
@@ -249,6 +255,12 @@ public final class Flow {
             if (value != null) {
                 return value;
             }
+            if (frame.isCall()) {
+                // Weiter unten liegt der Rufende. Seine Namen gehen die
+                // gerufene Funktion nichts an — sonst hinge das Verhalten
+                // davon ab, wer sie gerade aufruft.
+                return null;
+            }
         }
         return null;
     }
@@ -258,6 +270,9 @@ public final class Flow {
             if (frame.locals().containsKey(name)) {
                 frame.locals().put(name, value);
                 return true;
+            }
+            if (frame.isCall()) {
+                return false;
             }
         }
         return false;

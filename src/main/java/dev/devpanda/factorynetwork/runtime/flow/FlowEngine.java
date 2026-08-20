@@ -358,6 +358,40 @@ public final class FlowEngine {
         }
     }
 
+    /** Ein neuer Rahmen gehört zu derselben Anlage wie der, aus dem er kommt. */
+    private static Frame inherit(Frame parent, Frame child) {
+        child.setDevicePrefix(parent.devicePrefix());
+        return child;
+    }
+
+    /**
+     * Kehrt aus einer gerufenen Funktion zurück.
+     *
+     * <p>Ein {@code return} beendet nicht mehr zwangsläufig den Ablauf: Steht
+     * darüber ein Aufruf, landet der Wert dort unter seinem Namen und es geht
+     * hinter dem Aufruf weiter. Erst im äußersten Rahmen ist der Ablauf zu
+     * Ende — und sein Rückgabewert ist der des Einstiegs.
+     */
+    private void returnFrom(Flow flow, Value value) {
+        while (!flow.stack().isEmpty()) {
+            Frame frame = flow.pop();
+            if (frame.exitOnLeave()) {
+                // Der else-Zweig verlässt den Ablauf — mit dem Wert, den er
+                // zurückgibt, nicht mit nichts.
+                flow.finish(value);
+                return;
+            }
+            if (frame.isCall() && !flow.stack().isEmpty()) {
+                if (frame.resultName() != null) {
+                    flow.top().locals().put(frame.resultName(), value);
+                }
+                flow.top().advance();
+                return;
+            }
+        }
+        flow.finish(value);
+    }
+
     /**
      * Verlässt einen Rahmen.
      *
@@ -377,6 +411,14 @@ public final class FlowEngine {
             flow.finish(Value.Nothing.get());
             return;
         }
+        if (frame.isCall()) {
+            // Eine Funktion, die ohne return endet, gibt nichts zurück.
+            if (frame.resultName() != null) {
+                flow.top().locals().put(frame.resultName(), Value.Nothing.get());
+            }
+            flow.top().advance();
+            return;
+        }
         if (!frame.isLoop()) {
             // Die Anweisung, die den Block geöffnet hat, ist erledigt.
             flow.top().advance();
@@ -387,18 +429,31 @@ public final class FlowEngine {
     private void apply(Flow flow, Frame frame, Step step) {
         switch (step) {
             case Step.Next ignored -> frame.advance();
-            case Step.Enter enter -> flow.push(new Frame(enter.block(), enter.loop()));
+            case Step.Enter enter -> flow.push(inherit(frame,
+                    new Frame(enter.block(), enter.loop())));
+            case Step.Invoke invoke -> {
+                Frame body = inherit(frame, new Frame(invoke.body(), false));
+                body.beginCall(invoke.resultName(),
+                        invoke.devicePrefix() != null ? invoke.devicePrefix()
+                                : frame.devicePrefix());
+                for (int i = 0; i < invoke.parameters().size(); i++) {
+                    body.locals().put(invoke.parameters().get(i),
+                            i < invoke.arguments().size() ? invoke.arguments().get(i)
+                                    : Value.Nothing.get());
+                }
+                flow.push(body);
+            }
             case Step.ForEach each -> {
                 if (each.values().isEmpty()) {
                     // Nichts zu tun — die Schleife ist damit erledigt.
                     frame.advance();
                 } else {
-                    Frame body = new Frame(each.body(), true);
+                    Frame body = inherit(frame, new Frame(each.body(), true));
                     body.beginIteration(each.variable(), each.values());
                     flow.push(body);
                 }
             }
-            case Step.Return ret -> flow.finish(ret.value());
+            case Step.Return ret -> returnFrom(flow, ret.value());
             case Step.Break ignored -> unwindLoop(flow, true);
             case Step.Continue ignored -> unwindLoop(flow, false);
             case Step.Sleep sleep -> {
@@ -424,6 +479,13 @@ public final class FlowEngine {
     private void unwindLoop(Flow flow, boolean leaveLoop) {
         while (!flow.stack().isEmpty()) {
             Frame frame = flow.top();
+            if (frame.isCall() && !frame.isLoop()) {
+                // break und continue reichen nicht über einen Aufruf hinaus —
+                // sonst verließe eine gerufene Funktion die Schleife ihres
+                // Rufers, und der Aufruf hinge davon ab, wo er steht.
+                flow.fail("break oder continue steht hier außerhalb einer Schleife.");
+                return;
+            }
             if (frame.isLoop() && !leaveLoop && frame.hasIteration()) {
                 // continue in einem Lauf über eine Liste: nächster Eintrag.
                 // Ein Poppen wie bei while wäre hier falsch — die Liste würde
