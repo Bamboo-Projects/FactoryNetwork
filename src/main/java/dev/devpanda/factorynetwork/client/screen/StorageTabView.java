@@ -112,15 +112,21 @@ public class StorageTabView {
     }
 
     private void drawScrollbar(GuiGraphics graphics) {
-        int max = maxScroll();
         int trackX = gridX() + COLUMNS * SLOT + 2;
         int trackY = gridY();
         int trackH = ROWS * SLOT;
-        graphics.blit(WIDGETS, trackX, trackY, 108, 32, 12, 15, 512, 512);
-        if (max == 0) {
+
+        // Die Rinne über die volle Höhe. Die Kachel ist fünfzehn Pixel hoch;
+        // einmal gezeichnet klebte sie oben in der Ecke und sah aus wie ein
+        // vergessenes Bruchstück.
+        for (int y = 0; y < trackH; y += 15) {
+            int height = Math.min(15, trackH - y);
+            graphics.blit(WIDGETS, trackX, trackY + y, 108, 32, 12, height, 512, 512);
+        }
+        if (maxScroll() == 0) {
             return;
         }
-        int thumbY = trackY + (trackH - 15) * scrollRow / max;
+        int thumbY = trackY + (trackH - 15) * scrollRow / maxScroll();
         graphics.blit(WIDGETS, trackX, thumbY, 96, 32, 12, 15, 512, 512);
     }
 

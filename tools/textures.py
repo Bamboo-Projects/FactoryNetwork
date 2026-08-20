@@ -134,24 +134,29 @@ CABLE_COLOURS = {
 
 
 def cable(tube=None):
-    """Kabel mit drei Röhren.
+    """Die Oberfläche eines Kabelrohrs.
 
-    Gefärbt werden nur die Röhren, nicht die Schellen — sonst sähe ein
-    schwarzes Kabel aus wie ein Loch und ein weißes wie ein Fremdkörper. So
-    bleibt erkennbar, dass es dasselbe Bauteil ist, nur in anderer Farbe.
+    <b>Gleichmäßig und ohne große Merkmale.</b> Das war der Fehler der
+    ersten Fassung: Sie zeigte drei Röhren mit Querschellen, gemalt für eine
+    volle Blockfläche. Das Modell ist aber ein schmales Rohr, und Minecraft
+    schneidet die Textur nach Blockkoordinaten zu — jede Fläche bekam einen
+    anderen Ausschnitt, und die Schellen zerfielen in Bruchstücke.
+
+    Eine feine Längsriffelung sieht dagegen aus jedem Ausschnitt gleich aus.
+    Gefärbt wird nicht hier, sondern zur Laufzeit über den Tintindex; deshalb
+    ist die Textur grau und hell genug, dass eine Farbe darauf noch wirkt.
     """
-    body = tube if tube else BODY_TOP
-    img = surface(BODY_MID, BODY_BOT)
+    base = tube if tube else (150, 158, 152)
+    img = surface(blend(base, (255, 255, 255), 0.06), blend(base, EDGE, 0.35))
     d = ImageDraw.Draw(img)
-    for x in (6, 26, 46):
-        d.rectangle([x, 0, x + 11, N - 1], fill=body + (255,))
-        d.line([(x, 0), (x, N - 1)], fill=EDGE + (255,))
+
+    # Längsriffelung: schmale Rillen, die sich alle vier Pixel wiederholen.
+    # Vier, weil das die schmalste Strangbreite ist — so trifft jeder
+    # Ausschnitt dasselbe Muster.
+    for x in range(0, N, 4):
+        d.line([(x, 0), (x, N - 1)], fill=blend(base, EDGE, 0.55) + (255,))
         d.line([(x + 1, 0), (x + 1, N - 1)],
-               fill=blend(body, (255, 255, 255), 0.28) + (255,))
-        d.line([(x + 11, 0), (x + 11, N - 1)], fill=EDGE + (255,))
-    for y in (14, 46):
-        d.rectangle([0, y, N - 1, y + 3], fill=EDGE + (255,))
-        d.line([(0, y + 1), (N - 1, y + 1)], fill=LIGHT + (255,))
+               fill=blend(base, (255, 255, 255), 0.30) + (255,))
     return img
 
 

@@ -54,7 +54,14 @@ def cable_models():
     for count, positions in STRAND_LAYOUTS.items():
         size = strand_size(count)
         for index, (x, y) in enumerate(positions):
-            face = {"texture": "#cable", "tintindex": index}
+            # Feste UV-Angabe. Ohne sie schneidet Minecraft die Textur nach
+            # Blockkoordinaten zu, und ein Strang bei x=9 bekäme einen anderen
+            # Ausschnitt als einer bei x=3 — dasselbe Rohr sähe je nach Lage
+            # im Block anders aus.
+            face = {"texture": "#cable", "tintindex": index,
+                    "uv": [0, 0, size, size]}
+            long_face = {"texture": "#cable", "tintindex": index,
+                         "uv": [0, 0, size, 16]}
 
             # Der Kern sitzt in der Tiefe immer mittig — verteilt wird nur
             # in der Fläche, die man beim Blick auf das Kabel sieht.
@@ -78,10 +85,14 @@ def cable_models():
                     "to": [x + size, y + size, depth],
                     "faces": {
                         "north": dict(face, cullface="north"),
-                        "east": dict(face),
-                        "west": dict(face),
-                        "up": dict(face),
-                        "down": dict(face),
+                        "east": {"texture": "#cable", "tintindex": index,
+                                 "uv": [0, 0, depth, size]},
+                        "west": {"texture": "#cable", "tintindex": index,
+                                 "uv": [0, 0, depth, size]},
+                        "up": {"texture": "#cable", "tintindex": index,
+                               "uv": [0, 0, size, depth]},
+                        "down": {"texture": "#cable", "tintindex": index,
+                                 "uv": [0, 0, size, depth]},
                     },
                 }],
             })
@@ -92,7 +103,14 @@ def cable_models():
         "elements": [{
             "from": [5, 5, 0],
             "to": [11, 11, 16],
-            "faces": {f: {"texture": "#cable", "tintindex": 0} for f in faces},
+            "faces": {
+                "north": {"texture": "#cable", "tintindex": 0, "uv": [0, 0, 6, 6]},
+                "south": {"texture": "#cable", "tintindex": 0, "uv": [0, 0, 6, 6]},
+                "east": {"texture": "#cable", "tintindex": 0, "uv": [0, 0, 16, 6]},
+                "west": {"texture": "#cable", "tintindex": 0, "uv": [0, 0, 16, 6]},
+                "up": {"texture": "#cable", "tintindex": 0, "uv": [0, 0, 6, 16]},
+                "down": {"texture": "#cable", "tintindex": 0, "uv": [0, 0, 6, 16]},
+            },
         }],
     })
     for colour in CABLE_COLOURS:

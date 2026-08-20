@@ -19,23 +19,53 @@
         "north": {
           "texture": "#cable",
           "tintindex": 3,
+          "uv": [
+            0,
+            0,
+            4,
+            4
+          ],
           "cullface": "north"
         },
         "east": {
           "texture": "#cable",
-          "tintindex": 3
+          "tintindex": 3,
+          "uv": [
+            0,
+            0,
+            6,
+            4
+          ]
         },
         "west": {
           "texture": "#cable",
-          "tintindex": 3
+          "tintindex": 3,
+          "uv": [
+            0,
+            0,
+            6,
+            4
+          ]
         },
         "up": {
           "texture": "#cable",
-          "tintindex": 3
+          "tintindex": 3,
+          "uv": [
+            0,
+            0,
+            4,
+            6
+          ]
         },
         "down": {
           "texture": "#cable",
-          "tintindex": 3
+          "tintindex": 3,
+          "uv": [
+            0,
+            0,
+            4,
+            6
+          ]
         }
       }
     }

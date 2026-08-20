@@ -119,11 +119,12 @@ public class LabelGunItem extends Item {
     // ---- Benutzen ---------------------------------------------------------
 
     /**
-     * Rechtsklick ins Leere öffnet die Namenseingabe.
+     * Öffnet die Namenseingabe.
      *
-     * <p>Der Klick auf einen Block vergibt; wer einen eigenen Namen will,
-     * klickt in die Luft. Das ist dieselbe Trennung wie beim Kompass oder der
-     * Karte — auf etwas zeigen tut etwas, ins Leere zeigen öffnet.
+     * <p>Greift nur, wenn gar kein Block anvisiert ist — in einem Gebäude
+     * also so gut wie nie. Deshalb öffnet auch der Klick auf einen Block, der
+     * weder Connector noch Controller ist, dasselbe Fenster; siehe
+     * {@link #useOn}.
      */
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player,
@@ -159,14 +160,15 @@ public class LabelGunItem extends Item {
         }
 
         if (!(entity instanceof ConnectorBlockEntity connector)) {
-            // Auf eine Maschine ohne Connector geklickt: Das ist der häufigste
-            // Irrtum, und stillschweigend nichts zu tun hilft dabei nicht.
+            // Auf eine Maschine neben einem Connector geklickt: Das ist der
+            // häufigste Irrtum, und stillschweigend nichts zu tun hilft nicht.
             if (player != null && hasAdjacentConnector(level, pos)) {
                 say(player, "message.factorynetwork.label_gun.aim_at_connector");
-            } else if (player != null) {
-                say(player, "message.factorynetwork.label_gun.no_connector");
+                return InteractionResult.CONSUME;
             }
-            return InteractionResult.CONSUME;
+            // Sonst ist der Klick die Aufforderung, einen Namen einzugeben.
+            // Ihn nur ins Leere zuzulassen hieße: in einem Gebäude nie.
+            return InteractionResult.PASS;
         }
 
         FactoryGraph graph = linkedGraph(gun, level);
