@@ -143,9 +143,15 @@ def widgets():
     panel(d, (0, 16, 31, 31))
     d.line([(1, 31), (30, 31)], fill=PANEL + (255,))
 
-    # Knopf normal (32,0) und gedrückt (32,16), je 48x16
-    panel(d, (32, 0, 79, 15))
-    sunken(d, (32, 16, 79, 31), fill=PANEL_DARK)
+    # Kleiner Knopf, normal (32,0) und gedrückt (32,16), je 12x12.
+    # Zwölf Pixel, weil drei davon neben das Suchfeld passen müssen — für
+    # Symbole reicht das nicht, deshalb tragen sie Buchstaben.
+    panel(d, (32, 0, 43, 11))
+    sunken(d, (32, 16, 43, 27), fill=PANEL_DARK)
+
+    # Breiter Knopf (48,0) und gedrückt (48,16), je 48x16
+    panel(d, (48, 0, 95, 15))
+    sunken(d, (48, 16, 95, 31), fill=PANEL_DARK)
 
     # Suchfeld (0,32), 96x12
     sunken(d, (0, 32, 95, 43), fill=(30, 34, 31),

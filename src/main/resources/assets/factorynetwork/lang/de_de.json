@@ -38,7 +38,7 @@
   "screen.factorynetwork.terminal.tab.network": "Netz",
   "screen.factorynetwork.terminal.tab.dashboards": "Anzeigen",
   "screen.factorynetwork.terminal.tab.dashboards.soon": "Displays gibt es noch nicht.",
-  "screen.factorynetwork.terminal.search": "Suchen…",
+  "screen.factorynetwork.terminal.search": "Suchen… (@mod)",
   "screen.factorynetwork.terminal.storage.summary": "%s Arten · %s Gegenstände",
   "screen.factorynetwork.terminal.storage.truncated": "zeige %s von %s Arten — suchen zeigt mehr",
   "screen.factorynetwork.terminal.network.connectors": "IM NETZ",
@@ -100,5 +100,8 @@
   "jade.factorynetwork.strand.brown": "Braun",
   "jade.factorynetwork.strand.green": "Grün",
   "jade.factorynetwork.strand.red": "Rot",
-  "jade.factorynetwork.strand.black": "Schwarz"
+  "jade.factorynetwork.strand.black": "Schwarz",
+  "screen.factorynetwork.terminal.sort.amount": "Nach Menge",
+  "screen.factorynetwork.terminal.sort.name": "Nach Name",
+  "screen.factorynetwork.terminal.sort.mod": "Nach Mod"
 }

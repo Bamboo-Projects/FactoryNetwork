@@ -27,9 +27,36 @@ public final class ClientStorageView {
     private static int totalTypes;
     private static List<Row> filtered = List.of();
     private static String query = "";
+    private static StorageSort sort = StorageSort.AMOUNT;
+    private static boolean descending = true;
 
     /** Ein Eintrag der Anzeige: Gegenstand, Menge und der Text zum Suchen. */
-    public record Row(ItemStack stack, long amount, String searchText) {
+    public record Row(ItemStack stack, long amount, String searchText, String modId) {
+    }
+
+    public static StorageSort sort() {
+        return sort;
+    }
+
+    public static boolean isDescending() {
+        return descending;
+    }
+
+    /**
+     * Wechselt die Sortierung.
+     *
+     * <p>Derselbe Knopf noch einmal dreht die Richtung um, statt weiter zu
+     * schalten — so kommt man mit einem Klick zurück, statt einmal im Kreis
+     * zu gehen.
+     */
+    public static void setSort(StorageSort next) {
+        if (sort == next) {
+            descending = !descending;
+        } else {
+            sort = next;
+            descending = next != StorageSort.NAME;
+        }
+        refilter();
     }
 
     public static void accept(StorageSnapshotPacket packet) {
@@ -89,12 +116,24 @@ public final class ClientStorageView {
         amounts.forEach((item, amount) -> {
             ItemStack stack = new ItemStack(item);
             String name = stack.getHoverName().getString().toLowerCase(Locale.ROOT);
-            if (query.isEmpty() || name.contains(query)) {
-                rows.add(new Row(stack, amount, name));
+            String mod = net.minecraft.core.registries.BuiltInRegistries.ITEM
+                    .getKey(item).getNamespace();
+            // Ein Kürzel wie "@mek" sucht nach der Mod statt nach dem Namen —
+            // in einem großen Pack ist das die häufigere Frage.
+            boolean matches = query.isEmpty()
+                    || (query.startsWith("@") ? mod.contains(query.substring(1))
+                                              : name.contains(query));
+            if (matches) {
+                rows.add(new Row(stack, amount, name, mod));
             }
         });
-        // Viel zuerst — beim Suchen will man den Hauptbestand oben sehen.
-        rows.sort(Comparator.comparingLong(Row::amount).reversed());
+
+        Comparator<Row> order = switch (sort) {
+            case AMOUNT -> Comparator.comparingLong(Row::amount);
+            case NAME -> Comparator.comparing(Row::searchText);
+            case MOD -> Comparator.comparing(Row::modId).thenComparing(Row::searchText);
+        };
+        rows.sort(descending ? order.reversed() : order);
         filtered = List.copyOf(rows);
     }
 

@@ -2,6 +2,7 @@ package dev.devpanda.factorynetwork.client.screen;
 
 import dev.devpanda.factorynetwork.FactoryNetwork;
 import dev.devpanda.factorynetwork.client.ClientStorageView;
+import dev.devpanda.factorynetwork.client.StorageSort;
 import dev.devpanda.factorynetwork.network.packet.StorageActionPacket;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -68,6 +69,7 @@ public class StorageTabView {
 
     public void render(GuiGraphics graphics, int mouseX, int mouseY) {
         drawSearch(graphics);
+        drawSortButtons(graphics, mouseX, mouseY);
 
         // Rasterhintergrund, so gross wie gebraucht
         graphics.blit(GRID, gridX(), gridY(), 0, 0, COLUMNS * SLOT, ROWS * SLOT, 512, 512);
@@ -98,17 +100,51 @@ public class StorageTabView {
         drawFooter(graphics);
     }
 
+    /** Wo die drei Sortierknöpfe sitzen — rechts neben dem Suchfeld. */
+    private int sortButtonX(int index) {
+        return x + width - 4 - (StorageSort.values().length - index) * 14;
+    }
+
+    private void drawSortButtons(GuiGraphics graphics, int mouseX, int mouseY) {
+        for (StorageSort candidate : StorageSort.values()) {
+            int bx = sortButtonX(candidate.ordinal());
+            int by = y + 2;
+            boolean active = ClientStorageView.sort() == candidate;
+            graphics.blit(WIDGETS, bx, by, 32, active ? 16 : 0, 12, 12, 512, 512);
+
+            // Auf dem Knopf ein Buchstabe, darunter die Richtung.
+            graphics.pose().pushPose();
+            graphics.pose().translate(0, 0, 100);
+            graphics.drawString(font, candidate.badge(), bx + 3, by + 2,
+                    active ? 0x303030 : 0x6E6E6E, false);
+            if (active) {
+                graphics.drawString(font, ClientStorageView.isDescending() ? "▾" : "▴",
+                        bx + 8, by + 2, 0x303030, false);
+            }
+            graphics.pose().popPose();
+        }
+    }
+
     private void drawSearch(GuiGraphics graphics) {
-        graphics.blit(WIDGETS, x + 2, y + 2, 0, 32, 96, 12, 512, 512);
+        int fieldWidth = sortButtonX(0) - x - 6;
+        for (int drawn = 0; drawn < fieldWidth; drawn += 96) {
+            int piece = Math.min(96, fieldWidth - drawn);
+            graphics.blit(WIDGETS, x + 2 + drawn, y + 2, 0, 32, piece, 12, 512, 512);
+        }
         String shown = search.isEmpty()
                 ? Component.translatable("screen.factorynetwork.terminal.search").getString()
                 : search.toString();
         int colour = search.isEmpty() ? 0x6E7A70 : 0xA3D9A5;
-        graphics.drawString(font, font.plainSubstrByWidth(shown, 88), x + 5, y + 4, colour, false);
+        graphics.pose().pushPose();
+        graphics.pose().translate(0, 0, 100);
+        graphics.drawString(font, font.plainSubstrByWidth(shown, fieldWidth - 8),
+                x + 5, y + 4, colour, false);
         if (searchFocused && (System.currentTimeMillis() / 500) % 2 == 0) {
-            int cursorX = x + 5 + font.width(font.plainSubstrByWidth(search.toString(), 88));
+            int cursorX = x + 5 + font.width(
+                    font.plainSubstrByWidth(search.toString(), fieldWidth - 8));
             graphics.fill(cursorX, y + 3, cursorX + 1, y + 12, 0xFFA3D9A5);
         }
+        graphics.pose().popPose();
     }
 
     private void drawScrollbar(GuiGraphics graphics) {
@@ -148,8 +184,16 @@ public class StorageTabView {
     // ---- Bedienung --------------------------------------------------------
 
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        // Suchfeld
-        if (mouseX >= x + 2 && mouseX < x + 98 && mouseY >= y + 2 && mouseY < y + 14) {
+        // Sortierknöpfe zuerst — sie liegen im Bereich des Suchfelds
+        for (StorageSort candidate : StorageSort.values()) {
+            int bx = sortButtonX(candidate.ordinal());
+            if (mouseX >= bx && mouseX < bx + 12 && mouseY >= y + 2 && mouseY < y + 14) {
+                ClientStorageView.setSort(candidate);
+                scrollRow = 0;
+                return true;
+            }
+        }
+        if (mouseX >= x + 2 && mouseX < sortButtonX(0) && mouseY >= y + 2 && mouseY < y + 14) {
             searchFocused = true;
             return true;
         }

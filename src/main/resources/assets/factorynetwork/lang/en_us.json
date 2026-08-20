@@ -38,7 +38,7 @@
   "screen.factorynetwork.terminal.tab.network": "Network",
   "screen.factorynetwork.terminal.tab.dashboards": "Displays",
   "screen.factorynetwork.terminal.tab.dashboards.soon": "Displays do not exist yet.",
-  "screen.factorynetwork.terminal.search": "Search…",
+  "screen.factorynetwork.terminal.search": "Search… (@mod)",
   "screen.factorynetwork.terminal.storage.summary": "%s types · %s items",
   "screen.factorynetwork.terminal.storage.truncated": "showing %s of %s types — search for more",
   "screen.factorynetwork.terminal.network.connectors": "IN THE NETWORK",
@@ -100,5 +100,8 @@
   "jade.factorynetwork.strand.brown": "Brown",
   "jade.factorynetwork.strand.green": "Green",
   "jade.factorynetwork.strand.red": "Red",
-  "jade.factorynetwork.strand.black": "Black"
+  "jade.factorynetwork.strand.black": "Black",
+  "screen.factorynetwork.terminal.sort.amount": "By amount",
+  "screen.factorynetwork.terminal.sort.name": "By name",
+  "screen.factorynetwork.terminal.sort.mod": "By mod"
 }
