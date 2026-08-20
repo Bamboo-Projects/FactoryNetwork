@@ -293,9 +293,9 @@ def main():
     print("Blocktexturen (64x64):")
     save(controller_top(), "block", "controller_top")
     save(controller_side(), "block", "controller_side")
+    # Eine einzige Kabeltextur, in Grau. Gefärbt wird zur Laufzeit über den
+    # Tintindex — siebzehn Texturen wären dasselbe Bild in siebzehn Tönen.
     save(cable(), "block", "cable")
-    for name, colour in CABLE_COLOURS.items():
-        save(cable(colour), "block", name + "_cable")
     save(connector_front(), "block", "connector_front")
     save(connector_side(), "block", "connector_side")
     save(connector_back(), "block", "connector_back")

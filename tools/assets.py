@@ -23,50 +23,81 @@ CABLE_COLOURS = [
 ]
 
 
-def cable_models(suffix, texture_name):
-    """Kern, Arm und Inventarmodell für eine Kabelfarbe."""
-    textures = {"cable": texture(texture_name), "particle": texture(texture_name)}
+# Wo die Stränge im Block liegen, je nach Anzahl.
+#
+# Allein ist ein Strang sechs Pixel dick — so kennt man Rohre, und ein
+# einzelnes Kabel soll aussehen wie bisher. Ab zwei wird geteilt und alle
+# werden vier Pixel dick; mehr passt nicht in sechzehn Pixel, ohne dass sie
+# sich berühren.
+STRAND_LAYOUTS = {
+    1: [(5, 5)],
+    2: [(3, 6), (9, 6)],
+    3: [(2, 6), (6, 2), (10, 6)],
+    4: [(3, 3), (9, 3), (3, 9), (9, 9)],
+}
+
+
+def strand_size(count):
+    return 6 if count == 1 else 4
+
+
+def cable_models():
+    """Kern und Arm für jede Anzahl von Strängen und jede Position.
+
+    Die Farbe steckt nicht im Modell: Jeder Strang bekommt einen eigenen
+    Tintindex, und der Client färbt ihn aus der BlockEntity ein. Sonst
+    bräuchte jede Farbkombination ein eigenes Modell.
+    """
+    textures = {"cable": texture("cable"), "particle": texture("cable")}
     faces = ("north", "south", "east", "west", "up", "down")
 
-    # Kern: ein Würfel von sechs Pixeln Kantenlänge in der Mitte. Kein
-    # cullface — er grenzt an keine Blockfläche.
-    write(A + "/models/block/cable_core%s.json" % suffix, {
-        "textures": textures,
-        "elements": [{
-            "from": [5, 5, 5],
-            "to": [11, 11, 11],
-            "faces": {face: {"texture": "#cable"} for face in faces},
-        }],
-    })
+    for count, positions in STRAND_LAYOUTS.items():
+        size = strand_size(count)
+        for index, (x, y) in enumerate(positions):
+            face = {"texture": "#cable", "tintindex": index}
 
-    # Arm nach Norden; die Blockstate dreht ihn in die anderen Richtungen.
-    write(A + "/models/block/cable_arm%s.json" % suffix, {
-        "textures": textures,
-        "elements": [{
-            "from": [5, 5, 0],
-            "to": [11, 11, 5],
-            "faces": {
-                "north": {"texture": "#cable", "cullface": "north"},
-                "east": {"texture": "#cable"},
-                "west": {"texture": "#cable"},
-                "up": {"texture": "#cable"},
-                "down": {"texture": "#cable"},
-            },
-        }],
-    })
+            # Der Kern sitzt in der Tiefe immer mittig — verteilt wird nur
+            # in der Fläche, die man beim Blick auf das Kabel sieht.
+            depth = (16 - size) // 2
+
+            write(A + "/models/block/cable_core_%d_%d.json" % (count, index), {
+                "textures": textures,
+                "elements": [{
+                    "from": [x, y, depth],
+                    "to": [x + size, y + size, depth + size],
+                    "faces": {f: dict(face) for f in faces},
+                }],
+            })
+
+            # Arm nach Norden; die Blockstate dreht ihn in die anderen
+            # Richtungen. Er reicht von der Blockkante bis an den Kern.
+            write(A + "/models/block/cable_arm_%d_%d.json" % (count, index), {
+                "textures": textures,
+                "elements": [{
+                    "from": [x, y, 0],
+                    "to": [x + size, y + size, depth],
+                    "faces": {
+                        "north": dict(face, cullface="north"),
+                        "east": dict(face),
+                        "west": dict(face),
+                        "up": dict(face),
+                        "down": dict(face),
+                    },
+                }],
+            })
 
     # In der Hand ein durchgehendes Rohr, sonst sähe man nur einen Würfel.
-    write(A + "/models/block/cable_inventory%s.json" % suffix, {
+    write(A + "/models/block/cable_inventory.json", {
         "textures": textures,
         "elements": [{
             "from": [5, 5, 0],
             "to": [11, 11, 16],
-            "faces": {face: {"texture": "#cable"} for face in faces},
+            "faces": {f: {"texture": "#cable", "tintindex": 0} for f in faces},
         }],
     })
-    name = "cable" if suffix == "" else suffix[1:] + "_cable"
-    write(A + "/models/item/%s.json" % name,
-          {"parent": block("cable_inventory%s" % suffix)})
+    for colour in CABLE_COLOURS:
+        name = "cable" if colour == "none" else colour + "_cable"
+        write(A + "/models/item/%s.json" % name, {"parent": block("cable_inventory")})
 
 
 def block(name):
@@ -87,12 +118,9 @@ def blockstates():
     write(A + "/blockstates/controller.json",
           {"variants": {"": {"model": block("controller")}}})
 
-    # Kabel: je Farbe ein Kern plus je ein Arm pro Verbindung.
-    #
-    # Siebzehn Farben mal vierundsechzig Verbindungskombinationen wären über
-    # tausend Varianten, wenn man sie einzeln aufzählte. Multipart setzt
-    # stattdessen zusammen: Die Farbe wählt das Modell, die Verbindungen
-    # wählen die Arme.
+    # Kabel: Die Anzahl der Stränge wählt die Kerne, die Verbindungen die
+    # Arme. Die Farben kommen nicht aus der Blockstate — sie werden zur
+    # Laufzeit eingefärbt.
     rotations = {
         "north": {},
         "south": {"y": 180},
@@ -102,16 +130,19 @@ def blockstates():
         "down": {"x": 90},
     }
     parts = []
-    for colour in CABLE_COLOURS:
-        suffix = "" if colour == "none" else "_" + colour
-        parts.append({
-            "when": {"colour": colour},
-            "apply": {"model": block("cable_core" + suffix)},
-        })
-        for direction, rotation in rotations.items():
-            apply = {"model": block("cable_arm" + suffix)}
-            apply.update(rotation)
-            parts.append({"when": {"colour": colour, direction: "true"}, "apply": apply})
+    for count, positions in STRAND_LAYOUTS.items():
+        for index in range(len(positions)):
+            parts.append({
+                "when": {"strands": str(count)},
+                "apply": {"model": block("cable_core_%d_%d" % (count, index))},
+            })
+            for direction, rotation in rotations.items():
+                apply = {"model": block("cable_arm_%d_%d" % (count, index))}
+                apply.update(rotation)
+                parts.append({
+                    "when": {"strands": str(count), direction: "true"},
+                    "apply": apply,
+                })
     write(A + "/blockstates/cable.json", {"multipart": parts})
 
     # Connector zeigt in sechs Richtungen.
@@ -152,10 +183,7 @@ def models():
         },
     })
 
-    for colour in CABLE_COLOURS:
-        suffix = "" if colour == "none" else "_" + colour
-        texture_name = "cable" if colour == "none" else colour + "_cable"
-        cable_models(suffix, texture_name)
+    cable_models()
 
     write(A + "/models/block/connector.json", {
         "parent": "minecraft:block/block",

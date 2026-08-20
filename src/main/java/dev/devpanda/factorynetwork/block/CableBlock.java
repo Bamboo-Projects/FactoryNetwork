@@ -14,6 +14,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
+import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
@@ -38,6 +39,16 @@ public class CableBlock extends Block implements EntityBlock {
     public static final EnumProperty<CableColour> COLOUR =
             EnumProperty.create("colour", CableColour.class);
 
+    /**
+     * Wie viele Stränge im Block liegen — eins bis vier.
+     *
+     * <p>Nur die Anzahl steht im Zustand, nicht die Farben. Vier Farbfelder
+     * mit je siebzehn Werten wären über hunderttausend Blockzustände; so sind
+     * es vier. Welche Farbe ein Strang hat, färbt der Client zur Laufzeit aus
+     * der BlockEntity ein.
+     */
+    public static final IntegerProperty STRANDS = IntegerProperty.create("strands", 1, 4);
+
     private static final Map<Direction, BooleanProperty> CONNECTIONS =
             new EnumMap<>(Map.of(
                     Direction.NORTH, BooleanProperty.create("north"),
@@ -60,7 +71,9 @@ public class CableBlock extends Block implements EntityBlock {
 
     public CableBlock(Properties properties) {
         super(properties);
-        BlockState state = stateDefinition.any().setValue(COLOUR, CableColour.NONE);
+        BlockState state = stateDefinition.any()
+                .setValue(COLOUR, CableColour.NONE)
+                .setValue(STRANDS, 1);
         for (BooleanProperty property : CONNECTIONS.values()) {
             state = state.setValue(property, false);
         }
@@ -105,6 +118,7 @@ public class CableBlock extends Block implements EntityBlock {
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(COLOUR);
+        builder.add(STRANDS);
         CONNECTIONS.values().forEach(builder::add);
     }
 

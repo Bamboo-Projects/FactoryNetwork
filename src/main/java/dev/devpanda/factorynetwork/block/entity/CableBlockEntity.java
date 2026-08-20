@@ -87,8 +87,17 @@ public class CableBlockEntity extends BlockEntity {
 
     private void changed() {
         setChanged();
-        if (level != null && !level.isClientSide) {
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+        if (level == null || level.isClientSide) {
+            return;
+        }
+        // Die Anzahl gehört in den Blockzustand, weil das Modell sie braucht
+        // und ein Modell keine BlockEntity lesen kann.
+        BlockState state = getBlockState();
+        int count = Math.max(1, Math.min(strands.size(), MAX_STRANDS));
+        if (state.getValue(CableBlock.STRANDS) != count) {
+            level.setBlock(worldPosition, state.setValue(CableBlock.STRANDS, count), 3);
+        } else {
+            level.sendBlockUpdated(worldPosition, state, state, 3);
         }
     }
 

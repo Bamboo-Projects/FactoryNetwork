@@ -13,16 +13,13 @@
       "to": [
         11,
         11,
-        16
+        5
       ],
       "faces": {
         "north": {
           "texture": "#cable",
-          "tintindex": 0
-        },
-        "south": {
-          "texture": "#cable",
-          "tintindex": 0
+          "tintindex": 0,
+          "cullface": "north"
         },
         "east": {
           "texture": "#cable",

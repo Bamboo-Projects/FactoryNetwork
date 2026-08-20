@@ -6,39 +6,36 @@
   "elements": [
     {
       "from": [
-        5,
-        5,
+        9,
+        9,
         0
       ],
       "to": [
-        11,
-        11,
-        16
+        13,
+        13,
+        6
       ],
       "faces": {
         "north": {
           "texture": "#cable",
-          "tintindex": 0
-        },
-        "south": {
-          "texture": "#cable",
-          "tintindex": 0
+          "tintindex": 3,
+          "cullface": "north"
         },
         "east": {
           "texture": "#cable",
-          "tintindex": 0
+          "tintindex": 3
         },
         "west": {
           "texture": "#cable",
-          "tintindex": 0
+          "tintindex": 3
         },
         "up": {
           "texture": "#cable",
-          "tintindex": 0
+          "tintindex": 3
         },
         "down": {
           "texture": "#cable",
-          "tintindex": 0
+          "tintindex": 3
         }
       }
     }

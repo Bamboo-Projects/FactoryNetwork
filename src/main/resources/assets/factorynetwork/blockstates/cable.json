@@ -2,1140 +2,671 @@
   "multipart": [
     {
       "when": {
-        "colour": "none"
+        "strands": "1"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_core"
+        "model": "factorynetwork:block/cable_core_1_0"
       }
     },
     {
       "when": {
-        "colour": "none",
+        "strands": "1",
         "north": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm"
+        "model": "factorynetwork:block/cable_arm_1_0"
       }
     },
     {
       "when": {
-        "colour": "none",
+        "strands": "1",
         "south": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm",
+        "model": "factorynetwork:block/cable_arm_1_0",
         "y": 180
       }
     },
     {
       "when": {
-        "colour": "none",
+        "strands": "1",
         "east": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm",
+        "model": "factorynetwork:block/cable_arm_1_0",
         "y": 90
       }
     },
     {
       "when": {
-        "colour": "none",
+        "strands": "1",
         "west": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm",
+        "model": "factorynetwork:block/cable_arm_1_0",
         "y": 270
       }
     },
     {
       "when": {
-        "colour": "none",
+        "strands": "1",
         "up": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm",
+        "model": "factorynetwork:block/cable_arm_1_0",
         "x": 270
       }
     },
     {
       "when": {
-        "colour": "none",
+        "strands": "1",
         "down": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm",
+        "model": "factorynetwork:block/cable_arm_1_0",
         "x": 90
       }
     },
     {
       "when": {
-        "colour": "white"
+        "strands": "2"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_core_white"
+        "model": "factorynetwork:block/cable_core_2_0"
       }
     },
     {
       "when": {
-        "colour": "white",
+        "strands": "2",
         "north": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_white"
+        "model": "factorynetwork:block/cable_arm_2_0"
       }
     },
     {
       "when": {
-        "colour": "white",
+        "strands": "2",
         "south": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_white",
+        "model": "factorynetwork:block/cable_arm_2_0",
         "y": 180
       }
     },
     {
       "when": {
-        "colour": "white",
+        "strands": "2",
         "east": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_white",
+        "model": "factorynetwork:block/cable_arm_2_0",
         "y": 90
       }
     },
     {
       "when": {
-        "colour": "white",
+        "strands": "2",
         "west": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_white",
+        "model": "factorynetwork:block/cable_arm_2_0",
         "y": 270
       }
     },
     {
       "when": {
-        "colour": "white",
+        "strands": "2",
         "up": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_white",
+        "model": "factorynetwork:block/cable_arm_2_0",
         "x": 270
       }
     },
     {
       "when": {
-        "colour": "white",
+        "strands": "2",
         "down": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_white",
+        "model": "factorynetwork:block/cable_arm_2_0",
         "x": 90
       }
     },
     {
       "when": {
-        "colour": "orange"
+        "strands": "2"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_core_orange"
+        "model": "factorynetwork:block/cable_core_2_1"
       }
     },
     {
       "when": {
-        "colour": "orange",
+        "strands": "2",
         "north": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_orange"
+        "model": "factorynetwork:block/cable_arm_2_1"
       }
     },
     {
       "when": {
-        "colour": "orange",
+        "strands": "2",
         "south": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_orange",
+        "model": "factorynetwork:block/cable_arm_2_1",
         "y": 180
       }
     },
     {
       "when": {
-        "colour": "orange",
+        "strands": "2",
         "east": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_orange",
+        "model": "factorynetwork:block/cable_arm_2_1",
         "y": 90
       }
     },
     {
       "when": {
-        "colour": "orange",
+        "strands": "2",
         "west": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_orange",
+        "model": "factorynetwork:block/cable_arm_2_1",
         "y": 270
       }
     },
     {
       "when": {
-        "colour": "orange",
+        "strands": "2",
         "up": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_orange",
+        "model": "factorynetwork:block/cable_arm_2_1",
         "x": 270
       }
     },
     {
       "when": {
-        "colour": "orange",
+        "strands": "2",
         "down": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_orange",
+        "model": "factorynetwork:block/cable_arm_2_1",
         "x": 90
       }
     },
     {
       "when": {
-        "colour": "magenta"
+        "strands": "3"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_core_magenta"
+        "model": "factorynetwork:block/cable_core_3_0"
       }
     },
     {
       "when": {
-        "colour": "magenta",
+        "strands": "3",
         "north": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_magenta"
+        "model": "factorynetwork:block/cable_arm_3_0"
       }
     },
     {
       "when": {
-        "colour": "magenta",
+        "strands": "3",
         "south": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_magenta",
+        "model": "factorynetwork:block/cable_arm_3_0",
         "y": 180
       }
     },
     {
       "when": {
-        "colour": "magenta",
+        "strands": "3",
         "east": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_magenta",
+        "model": "factorynetwork:block/cable_arm_3_0",
         "y": 90
       }
     },
     {
       "when": {
-        "colour": "magenta",
+        "strands": "3",
         "west": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_magenta",
+        "model": "factorynetwork:block/cable_arm_3_0",
         "y": 270
       }
     },
     {
       "when": {
-        "colour": "magenta",
+        "strands": "3",
         "up": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_magenta",
+        "model": "factorynetwork:block/cable_arm_3_0",
         "x": 270
       }
     },
     {
       "when": {
-        "colour": "magenta",
+        "strands": "3",
         "down": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_magenta",
+        "model": "factorynetwork:block/cable_arm_3_0",
         "x": 90
       }
     },
     {
       "when": {
-        "colour": "light_blue"
+        "strands": "3"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_core_light_blue"
+        "model": "factorynetwork:block/cable_core_3_1"
       }
     },
     {
       "when": {
-        "colour": "light_blue",
+        "strands": "3",
         "north": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_light_blue"
+        "model": "factorynetwork:block/cable_arm_3_1"
       }
     },
     {
       "when": {
-        "colour": "light_blue",
+        "strands": "3",
         "south": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_light_blue",
+        "model": "factorynetwork:block/cable_arm_3_1",
         "y": 180
       }
     },
     {
       "when": {
-        "colour": "light_blue",
+        "strands": "3",
         "east": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_light_blue",
+        "model": "factorynetwork:block/cable_arm_3_1",
         "y": 90
       }
     },
     {
       "when": {
-        "colour": "light_blue",
+        "strands": "3",
         "west": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_light_blue",
+        "model": "factorynetwork:block/cable_arm_3_1",
         "y": 270
       }
     },
     {
       "when": {
-        "colour": "light_blue",
+        "strands": "3",
         "up": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_light_blue",
+        "model": "factorynetwork:block/cable_arm_3_1",
         "x": 270
       }
     },
     {
       "when": {
-        "colour": "light_blue",
+        "strands": "3",
         "down": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_light_blue",
+        "model": "factorynetwork:block/cable_arm_3_1",
         "x": 90
       }
     },
     {
       "when": {
-        "colour": "yellow"
+        "strands": "3"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_core_yellow"
+        "model": "factorynetwork:block/cable_core_3_2"
       }
     },
     {
       "when": {
-        "colour": "yellow",
+        "strands": "3",
         "north": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_yellow"
+        "model": "factorynetwork:block/cable_arm_3_2"
       }
     },
     {
       "when": {
-        "colour": "yellow",
+        "strands": "3",
         "south": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_yellow",
+        "model": "factorynetwork:block/cable_arm_3_2",
         "y": 180
       }
     },
     {
       "when": {
-        "colour": "yellow",
+        "strands": "3",
         "east": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_yellow",
+        "model": "factorynetwork:block/cable_arm_3_2",
         "y": 90
       }
     },
     {
       "when": {
-        "colour": "yellow",
+        "strands": "3",
         "west": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_yellow",
+        "model": "factorynetwork:block/cable_arm_3_2",
         "y": 270
       }
     },
     {
       "when": {
-        "colour": "yellow",
+        "strands": "3",
         "up": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_yellow",
+        "model": "factorynetwork:block/cable_arm_3_2",
         "x": 270
       }
     },
     {
       "when": {
-        "colour": "yellow",
+        "strands": "3",
         "down": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_yellow",
+        "model": "factorynetwork:block/cable_arm_3_2",
         "x": 90
       }
     },
     {
       "when": {
-        "colour": "lime"
+        "strands": "4"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_core_lime"
+        "model": "factorynetwork:block/cable_core_4_0"
       }
     },
     {
       "when": {
-        "colour": "lime",
+        "strands": "4",
         "north": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_lime"
+        "model": "factorynetwork:block/cable_arm_4_0"
       }
     },
     {
       "when": {
-        "colour": "lime",
+        "strands": "4",
         "south": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_lime",
+        "model": "factorynetwork:block/cable_arm_4_0",
         "y": 180
       }
     },
     {
       "when": {
-        "colour": "lime",
+        "strands": "4",
         "east": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_lime",
+        "model": "factorynetwork:block/cable_arm_4_0",
         "y": 90
       }
     },
     {
       "when": {
-        "colour": "lime",
+        "strands": "4",
         "west": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_lime",
+        "model": "factorynetwork:block/cable_arm_4_0",
         "y": 270
       }
     },
     {
       "when": {
-        "colour": "lime",
+        "strands": "4",
         "up": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_lime",
+        "model": "factorynetwork:block/cable_arm_4_0",
         "x": 270
       }
     },
     {
       "when": {
-        "colour": "lime",
+        "strands": "4",
         "down": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_lime",
+        "model": "factorynetwork:block/cable_arm_4_0",
         "x": 90
       }
     },
     {
       "when": {
-        "colour": "pink"
+        "strands": "4"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_core_pink"
+        "model": "factorynetwork:block/cable_core_4_1"
       }
     },
     {
       "when": {
-        "colour": "pink",
+        "strands": "4",
         "north": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_pink"
+        "model": "factorynetwork:block/cable_arm_4_1"
       }
     },
     {
       "when": {
-        "colour": "pink",
+        "strands": "4",
         "south": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_pink",
+        "model": "factorynetwork:block/cable_arm_4_1",
         "y": 180
       }
     },
     {
       "when": {
-        "colour": "pink",
+        "strands": "4",
         "east": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_pink",
+        "model": "factorynetwork:block/cable_arm_4_1",
         "y": 90
       }
     },
     {
       "when": {
-        "colour": "pink",
+        "strands": "4",
         "west": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_pink",
+        "model": "factorynetwork:block/cable_arm_4_1",
         "y": 270
       }
     },
     {
       "when": {
-        "colour": "pink",
+        "strands": "4",
         "up": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_pink",
+        "model": "factorynetwork:block/cable_arm_4_1",
         "x": 270
       }
     },
     {
       "when": {
-        "colour": "pink",
+        "strands": "4",
         "down": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_pink",
+        "model": "factorynetwork:block/cable_arm_4_1",
         "x": 90
       }
     },
     {
       "when": {
-        "colour": "gray"
+        "strands": "4"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_core_gray"
+        "model": "factorynetwork:block/cable_core_4_2"
       }
     },
     {
       "when": {
-        "colour": "gray",
+        "strands": "4",
         "north": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_gray"
+        "model": "factorynetwork:block/cable_arm_4_2"
       }
     },
     {
       "when": {
-        "colour": "gray",
+        "strands": "4",
         "south": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_gray",
+        "model": "factorynetwork:block/cable_arm_4_2",
         "y": 180
       }
     },
     {
       "when": {
-        "colour": "gray",
+        "strands": "4",
         "east": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_gray",
+        "model": "factorynetwork:block/cable_arm_4_2",
         "y": 90
       }
     },
     {
       "when": {
-        "colour": "gray",
+        "strands": "4",
         "west": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_gray",
+        "model": "factorynetwork:block/cable_arm_4_2",
         "y": 270
       }
     },
     {
       "when": {
-        "colour": "gray",
+        "strands": "4",
         "up": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_gray",
+        "model": "factorynetwork:block/cable_arm_4_2",
         "x": 270
       }
     },
     {
       "when": {
-        "colour": "gray",
+        "strands": "4",
         "down": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_gray",
+        "model": "factorynetwork:block/cable_arm_4_2",
         "x": 90
       }
     },
     {
       "when": {
-        "colour": "light_gray"
+        "strands": "4"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_core_light_gray"
+        "model": "factorynetwork:block/cable_core_4_3"
       }
     },
     {
       "when": {
-        "colour": "light_gray",
+        "strands": "4",
         "north": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_light_gray"
+        "model": "factorynetwork:block/cable_arm_4_3"
       }
     },
     {
       "when": {
-        "colour": "light_gray",
+        "strands": "4",
         "south": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_light_gray",
+        "model": "factorynetwork:block/cable_arm_4_3",
         "y": 180
       }
     },
     {
       "when": {
-        "colour": "light_gray",
+        "strands": "4",
         "east": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_light_gray",
+        "model": "factorynetwork:block/cable_arm_4_3",
         "y": 90
       }
     },
     {
       "when": {
-        "colour": "light_gray",
+        "strands": "4",
         "west": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_light_gray",
+        "model": "factorynetwork:block/cable_arm_4_3",
         "y": 270
       }
     },
     {
       "when": {
-        "colour": "light_gray",
+        "strands": "4",
         "up": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_light_gray",
+        "model": "factorynetwork:block/cable_arm_4_3",
         "x": 270
       }
     },
     {
       "when": {
-        "colour": "light_gray",
+        "strands": "4",
         "down": "true"
       },
       "apply": {
-        "model": "factorynetwork:block/cable_arm_light_gray",
-        "x": 90
-      }
-    },
-    {
-      "when": {
-        "colour": "cyan"
-      },
-      "apply": {
-        "model": "factorynetwork:block/cable_core_cyan"
-      }
-    },
-    {
-      "when": {
-        "colour": "cyan",
-        "north": "true"
-      },
-      "apply": {
-        "model": "factorynetwork:block/cable_arm_cyan"
-      }
-    },
-    {
-      "when": {
-        "colour": "cyan",
-        "south": "true"
-      },
-      "apply": {
-        "model": "factorynetwork:block/cable_arm_cyan",
-        "y": 180
-      }
-    },
-    {
-      "when": {
-        "colour": "cyan",
-        "east": "true"
-      },
-      "apply": {
-        "model": "factorynetwork:block/cable_arm_cyan",
-        "y": 90
-      }
-    },
-    {
-      "when": {
-        "colour": "cyan",
-        "west": "true"
-      },
-      "apply": {
-        "model": "factorynetwork:block/cable_arm_cyan",
-        "y": 270
-      }
-    },
-    {
-      "when": {
-        "colour": "cyan",
-        "up": "true"
-      },
-      "apply": {
-        "model": "factorynetwork:block/cable_arm_cyan",
-        "x": 270
-      }
-    },
-    {
-      "when": {
-        "colour": "cyan",
-        "down": "true"
-      },
-      "apply": {
-        "model": "factorynetwork:block/cable_arm_cyan",
-        "x": 90
-      }
-    },
-    {
-      "when": {
-        "colour": "purple"
-      },
-      "apply": {
-        "model": "factorynetwork:block/cable_core_purple"
-      }
-    },
-    {
-      "when": {
-        "colour": "purple",
-        "north": "true"
-      },
-      "apply": {
-        "model": "factorynetwork:block/cable_arm_purple"
-      }
-    },
-    {
-      "when": {
-        "colour": "purple",
-        "south": "true"
-      },
-      "apply": {
-        "model": "factorynetwork:block/cable_arm_purple",
-        "y": 180
-      }
-    },
-    {
-      "when": {
-        "colour": "purple",
-        "east": "true"
-      },
-      "apply": {
-        "model": "factorynetwork:block/cable_arm_purple",
-        "y": 90
-      }
-    },
-    {
-      "when": {
-        "colour": "purple",
-        "west": "true"
-      },
-      "apply": {
-        "model": "factorynetwork:block/cable_arm_purple",
-        "y": 270
-      }
-    },
-    {
-      "when": {
-        "colour": "purple",
-        "up": "true"
-      },
-      "apply": {
-        "model": "factorynetwork:block/cable_arm_purple",
-        "x": 270
-      }
-    },
-    {
-      "when": {
-        "colour": "purple",
-        "down": "true"
-      },
-      "apply": {
-        "model": "factorynetwork:block/cable_arm_purple",
-        "x": 90
-      }
-    },
-    {
-      "when": {
-        "colour": "blue"
-      },
-      "apply": {
-        "model": "factorynetwork:block/cable_core_blue"
-      }
-    },
-    {
-      "when": {
-        "colour": "blue",
-        "north": "true"
-      },
-      "apply": {
-        "model": "factorynetwork:block/cable_arm_blue"
-      }
-    },
-    {
-      "when": {
-        "colour": "blue",
-        "south": "true"
-      },
-      "apply": {
-        "model": "factorynetwork:block/cable_arm_blue",
-        "y": 180
-      }
-    },
-    {
-      "when": {
-        "colour": "blue",
-        "east": "true"
-      },
-      "apply": {
-        "model": "factorynetwork:block/cable_arm_blue",
-        "y": 90
-      }
-    },
-    {
-      "when": {
-        "colour": "blue",
-        "west": "true"
-      },
-      "apply": {
-        "model": "factorynetwork:block/cable_arm_blue",
-        "y": 270
-      }
-    },
-    {
-      "when": {
-        "colour": "blue",
-        "up": "true"
-      },
-      "apply": {
-        "model": "factorynetwork:block/cable_arm_blue",
-        "x": 270
-      }
-    },
-    {
-      "when": {
-        "colour": "blue",
-        "down": "true"
-      },
-      "apply": {
-        "model": "factorynetwork:block/cable_arm_blue",
-        "x": 90
-      }
-    },
-    {
-      "when": {
-        "colour": "brown"
-      },
-      "apply": {
-        "model": "factorynetwork:block/cable_core_brown"
-      }
-    },
-    {
-      "when": {
-        "colour": "brown",
-        "north": "true"
-      },
-      "apply": {
-        "model": "factorynetwork:block/cable_arm_brown"
-      }
-    },
-    {
-      "when": {
-        "colour": "brown",
-        "south": "true"
-      },
-      "apply": {
-        "model": "factorynetwork:block/cable_arm_brown",
-        "y": 180
-      }
-    },
-    {
-      "when": {
-        "colour": "brown",
-        "east": "true"
-      },
-      "apply": {
-        "model": "factorynetwork:block/cable_arm_brown",
-        "y": 90
-      }
-    },
-    {
-      "when": {
-        "colour": "brown",
-        "west": "true"
-      },
-      "apply": {
-        "model": "factorynetwork:block/cable_arm_brown",
-        "y": 270
-      }
-    },
-    {
-      "when": {
-        "colour": "brown",
-        "up": "true"
-      },
-      "apply": {
-        "model": "factorynetwork:block/cable_arm_brown",
-        "x": 270
-      }
-    },
-    {
-      "when": {
-        "colour": "brown",
-        "down": "true"
-      },
-      "apply": {
-        "model": "factorynetwork:block/cable_arm_brown",
-        "x": 90
-      }
-    },
-    {
-      "when": {
-        "colour": "green"
-      },
-      "apply": {
-        "model": "factorynetwork:block/cable_core_green"
-      }
-    },
-    {
-      "when": {
-        "colour": "green",
-        "north": "true"
-      },
-      "apply": {
-        "model": "factorynetwork:block/cable_arm_green"
-      }
-    },
-    {
-      "when": {
-        "colour": "green",
-        "south": "true"
-      },
-      "apply": {
-        "model": "factorynetwork:block/cable_arm_green",
-        "y": 180
-      }
-    },
-    {
-      "when": {
-        "colour": "green",
-        "east": "true"
-      },
-      "apply": {
-        "model": "factorynetwork:block/cable_arm_green",
-        "y": 90
-      }
-    },
-    {
-      "when": {
-        "colour": "green",
-        "west": "true"
-      },
-      "apply": {
-        "model": "factorynetwork:block/cable_arm_green",
-        "y": 270
-      }
-    },
-    {
-      "when": {
-        "colour": "green",
-        "up": "true"
-      },
-      "apply": {
-        "model": "factorynetwork:block/cable_arm_green",
-        "x": 270
-      }
-    },
-    {
-      "when": {
-        "colour": "green",
-        "down": "true"
-      },
-      "apply": {
-        "model": "factorynetwork:block/cable_arm_green",
-        "x": 90
-      }
-    },
-    {
-      "when": {
-        "colour": "red"
-      },
-      "apply": {
-        "model": "factorynetwork:block/cable_core_red"
-      }
-    },
-    {
-      "when": {
-        "colour": "red",
-        "north": "true"
-      },
-      "apply": {
-        "model": "factorynetwork:block/cable_arm_red"
-      }
-    },
-    {
-      "when": {
-        "colour": "red",
-        "south": "true"
-      },
-      "apply": {
-        "model": "factorynetwork:block/cable_arm_red",
-        "y": 180
-      }
-    },
-    {
-      "when": {
-        "colour": "red",
-        "east": "true"
-      },
-      "apply": {
-        "model": "factorynetwork:block/cable_arm_red",
-        "y": 90
-      }
-    },
-    {
-      "when": {
-        "colour": "red",
-        "west": "true"
-      },
-      "apply": {
-        "model": "factorynetwork:block/cable_arm_red",
-        "y": 270
-      }
-    },
-    {
-      "when": {
-        "colour": "red",
-        "up": "true"
-      },
-      "apply": {
-        "model": "factorynetwork:block/cable_arm_red",
-        "x": 270
-      }
-    },
-    {
-      "when": {
-        "colour": "red",
-        "down": "true"
-      },
-      "apply": {
-        "model": "factorynetwork:block/cable_arm_red",
-        "x": 90
-      }
-    },
-    {
-      "when": {
-        "colour": "black"
-      },
-      "apply": {
-        "model": "factorynetwork:block/cable_core_black"
-      }
-    },
-    {
-      "when": {
-        "colour": "black",
-        "north": "true"
-      },
-      "apply": {
-        "model": "factorynetwork:block/cable_arm_black"
-      }
-    },
-    {
-      "when": {
-        "colour": "black",
-        "south": "true"
-      },
-      "apply": {
-        "model": "factorynetwork:block/cable_arm_black",
-        "y": 180
-      }
-    },
-    {
-      "when": {
-        "colour": "black",
-        "east": "true"
-      },
-      "apply": {
-        "model": "factorynetwork:block/cable_arm_black",
-        "y": 90
-      }
-    },
-    {
-      "when": {
-        "colour": "black",
-        "west": "true"
-      },
-      "apply": {
-        "model": "factorynetwork:block/cable_arm_black",
-        "y": 270
-      }
-    },
-    {
-      "when": {
-        "colour": "black",
-        "up": "true"
-      },
-      "apply": {
-        "model": "factorynetwork:block/cable_arm_black",
-        "x": 270
-      }
-    },
-    {
-      "when": {
-        "colour": "black",
-        "down": "true"
-      },
-      "apply": {
-        "model": "factorynetwork:block/cable_arm_black",
+        "model": "factorynetwork:block/cable_arm_4_3",
         "x": 90
       }
     }
