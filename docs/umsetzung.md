@@ -84,25 +84,25 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | Auswahl | einzelne Gegenstände, Tags, Muster, `except` |
 | Funktionen | Bedingungen, Schleifen, `move`, Redstone lesen, `log` |
 | Ereignisse | `redstone_changed`, eigene über `emit` und `on` |
-| Netzwerk | Graph über Kabel, Speicher schlüsselbasiert |
+| Abläufe | `sleep`, `await` mit `where`, `timeout` und `else`, `for` mit Warten je Runde |
+| Fortsetzen | Wartende Abläufe überleben Serverneustart und Programmwechsel |
+| Netzwerk | Graph über Kabel, Speicher schlüsselbasiert, Kanäle je Strang |
 | Editor | Syntaxfarben, Fehler beim Tippen, Vervollständigung nach Stelle |
-| Prüfung | 77 Einheitstests, 18 GameTests |
+| Prüfung | 81 Einheitstests, 54 GameTests |
 
 ## 3. Was noch nicht läuft
-
-**Die größte offene Zusage: Wartender Code überlebt keinen Serverneustart.**
-`await` und `sleep` melden ehrlich, dass es sie noch nicht gibt. Die
-Continuations, die das leisten sollen, sind entworfen und nicht gebaut — eine
-Persistenz, die nur in einfachen Fällen trägt, wäre schlimmer als keine, weil
-sich niemand darauf verlassen kann.
-
-Außerdem offen:
 
 - **Multiblocks** — spezifiziert, geparst, nicht ausgeführt.
 - **Flüssigkeiten und Chemikalien.** Die Schreibweise steht, die Anbindung
   fehlt.
-- **Channels.** Im Konzept vorgesehen, hier noch ohne Wirkung.
 - **Ein eigener Speicherblock.** Der Speicher sitzt zurzeit im Controller.
+- **Der Reiter „Anzeigen"** im Terminal ist noch ausgegraut, obwohl es Displays
+  gibt.
+- **`callFunction` aus dem Terminal** läuft am gewöhnlichen Interpreter und
+  kann deshalb nicht warten. Eine Funktion mit `sleep` scheitert dort mit
+  klarer Meldung, statt als Ablauf zu starten — was fehlt, ist eine Antwort
+  darauf, was das Terminal dann anzeigen soll, wenn es keinen Rückgabewert
+  mehr gibt.
 
 ---
 
@@ -185,6 +185,32 @@ gzip-komprimiertes NBT mit `size`, `palette`, `blocks`, `entities` und
 **Sehr lange Heredocs werden abgeschnitten.** Beim Schreiben großer Dateien
 in Stücken arbeiten und danach die Zeilenzahl prüfen.
 
+### Beim Bau der Abläufe fielen vier Dinge auf
+
+**Der Tick kehrte früh zurück, wenn kein Worker da war.** Ein Programm darf
+allein aus Funktionen bestehen, die auf Ereignisse warten — dann lief es nie.
+Solche frühen Rückkehrer sind billig geschrieben und teuer zu finden: Alles
+sieht richtig aus, es passiert nur nichts.
+
+**Alle ersten Belege gingen am Spieler vorbei.** Die Tests weckten Abläufe über
+den Java-Aufruf. Der Weg, den ein Spieler nimmt, ist `emit` in seinem Programm
+— und der weckte niemanden, weil der Interpreter die `on`-Blöcke selbst und zu
+Ende ausführte. Ein Test, der die eigene Schnittstelle prüft statt der des
+Nutzers, kann grün sein, während das Versprechen nicht gilt.
+
+**`for` braucht einen anderen Rahmen als `while`.** Bei `while` steht die
+Bedingung im Programm und wird jede Runde neu geprüft; der Rahmen darf also weg
+und neu entstehen. Bei `for` gäbe es dann nichts mehr, woran sich der Stand
+ablesen ließe — er muss in den Rahmen und damit auf die Platte. Wer das
+übersieht, bekommt eine Schleife, die nach einem Neustart von vorn beginnt und
+alles ein zweites Mal tut.
+
+**Zwei Fehlertexte hatten sich überlebt.** Sie sagten noch, wartender Code
+brauche Continuations und die seien nicht gebaut. Ein Einheitstest prüfte
+genau diesen Wortlaut und hielt die Unwahrheit fest — deshalb prüfen Tests auf
+Fehlermeldungen jetzt auf das, was der Text leisten soll, nicht auf ein
+bestimmtes Wort.
+
 ---
 
 ## 5. Wo was liegt
@@ -212,14 +238,13 @@ deshalb liegt in den Tests dort eine Welt aus Papier.
 
 In dieser Reihenfolge, nach Abhängigkeit:
 
-1. **Gruppen.** Am einfachsten von den drei fehlenden Deklarationsformen und
-   sofort nützlich — `strategy` beim Worker hängt daran.
-2. **Continuations.** Der große Brocken und die eigentliche Zusage der Mod.
-   Sollte kommen, bevor mehr Sprache dazukommt, weil er den Übersetzer
-   verändert: Funktionen, die warten können, werden zu Zustandsmaschinen.
-3. **Displays.** Braucht Beobachtbarkeit, die es für `when` schon gibt.
-4. **Multiblocks.** Braucht zuerst eine Antwort darauf, wie eine Instanz in
+1. **Der Reiter „Anzeigen".** Displays gibt es, im Terminal fehlen sie noch.
+2. **Multiblocks.** Braucht zuerst eine Antwort darauf, wie eine Instanz in
    der Welt entsteht — das ist keine Sprachfrage.
+3. **Flüssigkeiten und Chemikalien.** Die Schreibweise steht seit dem Entwurf;
+   die Anbindung an fremde Mods ist die eigentliche Arbeit.
+4. **Ein eigener Speicherblock.** Solange der Speicher im Controller sitzt,
+   gibt es keinen Grund, mehr als einen zu bauen.
 
 Vorher lohnt ein Blick in `entscheidungen.md`: Dort steht zu jedem Punkt,
 warum er so entschieden wurde, und was verworfen wurde.

@@ -1040,3 +1040,108 @@ geschehen", ist aber ein Fehler: Die Differenz zur Spielzeit läuft über und
 wird negativ, also feuert die Abfrage nie. Dieselbe Konstruktion steckte auch
 im Controller — beim Neuaufbau des Netzes und beim Verschicken des Bestands.
 Dort fiel es nicht auf, weil beides zusätzlich von Hand angestoßen wird.
+
+---
+
+## Abläufe, die warten (2026-08-21)
+
+### Der Zustand steht in Rahmen, nicht in Javas Aufrufstapel
+
+Eine Funktion, die `await` enthält, kann nicht als gewöhnlicher Java-Aufruf
+laufen: Ein Aufrufstapel lässt sich nicht aufschreiben. Also führt eine eigene
+Maschine sie aus, die Rahmen auf einen Stapel legt — Block, Zähler, Variablen.
+Das sind Daten, und Daten überstehen einen Serverneustart.
+
+**Verworfen: den Übersetzer Zustandsmaschinen erzeugen lassen.** Der übliche
+Weg für `async`/`await` in Sprachen, die auf eine fremde Laufzeit müssen. Er
+hätte jede Anweisung ein zweites Mal gebraucht — einmal für den geraden Weg,
+einmal für den zerlegten. Zwei Fassungen derselben Bedeutung laufen
+auseinander, und zwar an der Stelle, an der ein Spieler es am wenigsten
+nachvollziehen kann.
+
+Stattdessen liefert der Interpreter für jede Anweisung einen **Schritt**: was
+sie tut, steht an einer Stelle; wie es weitergeht, entscheidet der Aufrufer.
+Der gewöhnliche Weg ruft sich selbst auf, der Ablauf legt einen Rahmen ab.
+Gegenstände bewegt beides mit demselben Code.
+
+### Nur das Erlebte wird aufgeschrieben
+
+`where`, der `else`-Zweig, der Rumpf einer Schleife — all das steht im Programm
+und kommt von dort zurück. Auf die Platte gehört nur, was der Ablauf selbst
+erlebt hat: wo er steht, was er in Händen hält, worauf er wartet.
+
+Wiederfinden lässt sich die `await`-Anweisung dabei über den Zähler des
+Rahmens: Er zeigt beim Warten schon eine Stelle weiter, damit es nach dem
+Aufwachen dahinter weitergeht — die Anweisung selbst liegt also davor.
+
+### Blöcke bekommen Nummern, keine Pfade
+
+Ein Rahmen muss sagen können, in welchem Block er steht. Ein Pfad aus
+Anweisungsnummern reicht dafür nicht: `if a { … } else { … }` hat zwei Blöcke
+an derselben Nummer, und eine `else if`-Kette macht es schlimmer.
+
+Also durchläuft ein Index das Programm in fester Reihenfolge und nummeriert
+jeden Block. Aus der Nummer wird beim Laden wieder derselbe Block. Das ist
+zugleich einfacher und deckt die Verzweigungen ohne Sonderfall ab.
+
+### Was zählt, ist die Gestalt des Programms, nicht sein Wortlaut
+
+Ob ein Ablauf nach einer Änderung noch auf dieselben Stellen zeigt, entscheidet
+eine Zahl über Anzahl und Art der Anweisungen — dazu die Namen erwarteter
+Ereignisse.
+
+**Verworfen: ein Hash des Quelltextes.** Damit hätte ein hinzugefügter
+Kommentar jeden wartenden Ablauf zur Nachfrage gezwungen, obwohl er weiterlaufen
+könnte. Die Gestalt ist die ehrliche Bedingung: Sie ändert sich genau dann,
+wenn sich die Nummern verschieben.
+
+Eine geänderte Rechnung im Rumpf verschiebt nichts — der Ablauf läuft dann
+weiter und rechnet ab hier neu. Das ist gewollt: Wer eine Zahl anpasst, will,
+dass es sofort gilt.
+
+### Ein geändertes Programm nimmt den Weg des Neustarts
+
+Beim Übernehmen wird die Maschine aufgeschrieben, weggeworfen und
+zurückgelesen. Ein Weg statt zwei, die auseinanderlaufen — und derselbe Test
+deckt beide Fälle ab.
+
+### Ereignisse werden zwischen den Schritten ausgeliefert
+
+Ein `emit` kann mitten in einem Ablauf stehen. Sofort auszuliefern hieße,
+denselben Stapel anzufassen, auf dem gerade gearbeitet wird. Also wartet das
+Ereignis bis zwischen zwei Schritten; für den Spieler bleibt es derselbe Tick.
+
+Acht Runden dürfen in einem Tick aufeinander folgen. Zwei Abläufe, die sich
+gegenseitig wecken, würden den Server sonst stehen lassen. Was übrig bleibt,
+wartet auf den nächsten Tick, statt verworfen zu werden.
+
+### Der else-Zweig verlässt den Ablauf, auch wenn dort nichts steht
+
+Die Sprache verlangt, dass er es tut. Die Maschine verlässt sich nicht darauf,
+sondern merkt es sich am Rahmen: Wird er verlassen, endet der Ablauf. Sonst
+stünde nach einer abgelaufenen Frist ein Wert da, den es nie gab — genau das,
+wogegen der Zweig eingeführt wurde.
+
+### Eine Variable darf sich nicht heimlich verwandeln
+
+Fehlt der Gegenstand einer Variablen, weil eine Mod aus dem Pack genommen
+wurde, scheitert der Ablauf mit klarer Meldung. Der Netzwerkspeicher überspringt
+solche Posten still — dort ist es der Normalfall und niemand rechnet mit ihnen
+weiter. In einer Variablen steckt eine Rechnung, und die still zu verändern
+wäre schlimmer als sie anzuhalten.
+
+### `for` behält seinen Rahmen, `while` nicht
+
+Bei `while` steht die Bedingung im Programm und wird jede Runde neu geprüft.
+Bei `for` gibt es nichts dergleichen — der Stand des Laufs steht nur im Rahmen
+und muss deshalb dort bleiben und mit auf die Platte.
+
+Das ändert auch, was `continue` tut: Bei `while` reicht es, den Rumpf zu
+verlassen, damit die Bedingung erneut greift. Bei `for` würde das die Liste neu
+auswerten und den Lauf von vorn beginnen lassen.
+
+### Gescheiterte Abläufe bleiben liegen
+
+Die letzten zehn, samt Grund. Ein Ablauf, der stirbt, verschwand sonst aus der
+Liste und mit ihm die Erklärung. Wer nachts eine Anlage baut, sieht am nächsten
+Morgen sonst nur, dass nichts passiert ist.
