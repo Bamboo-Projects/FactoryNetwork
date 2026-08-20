@@ -43,10 +43,15 @@ public final class WorkerRuntime {
 
     private final Map<String, WorkerState> states = new LinkedHashMap<>();
     private final List<String> notes = new ArrayList<>();
+    /** Die Gruppen des Programms, gegen das Netz aufgelöst. */
+    private final Map<String, DeviceGroup> groups = new LinkedHashMap<>();
+    private final java.util.random.RandomGenerator random = new java.util.Random();
 
     /** Der Zustand eines Workers, wie er auch im Terminal steht. */
     public static final class WorkerState {
         public Status status = Status.IDLE;
+        /** Vom Worker vorgegebene Verteilung, sonst gilt die der Gruppe. */
+        public String strategyOverride;
         public long lastRun;
         public long moved;
         public String detail = "";
@@ -76,12 +81,19 @@ public final class WorkerRuntime {
     public void reset() {
         states.clear();
         notes.clear();
+        groups.clear();
+    }
+
+    public Map<String, DeviceGroup> groups() {
+        return groups;
     }
 
     /** Ein Tick: läuft über alle Worker und bewegt, was ansteht. */
     public void tick(Level level, Program program, FactoryGraph graph, NetworkStorage storage) {
         long now = level.getGameTime();
         currentStorage = storage;
+        lastGraph = graph;
+        resolveGroups(program, graph);
         for (Decl.Worker worker : program.workers()) {
             WorkerState state = states.computeIfAbsent(worker.name(), name -> new WorkerState());
             int interval = intervalOf(worker);
@@ -90,6 +102,28 @@ public final class WorkerRuntime {
             }
             state.lastRun = now;
             runWorker(worker, state, graph, storage);
+        }
+    }
+
+    /**
+     * Löst die Gruppen gegen das Netz auf.
+     *
+     * <p>Bei jedem Tick, aber billig: Es sind wenige Gruppen mit wenigen
+     * Mustern. Und es muss laufend geschehen — ein Ofen, der dazukommt, soll
+     * ohne erneutes Übernehmen in seiner Gruppe landen.
+     */
+    private void resolveGroups(Program program, FactoryGraph graph) {
+        for (Decl declaration : program.declarations()) {
+            if (declaration instanceof Decl.Group group) {
+                DeviceGroup previous = groups.get(group.name());
+                DeviceGroup resolved = DeviceGroup.resolve(group, graph);
+                // Den Zeiger von round_robin behalten, sonst fängt die Gruppe
+                // bei jedem Tick wieder beim ersten Gerät an.
+                if (previous != null && previous.members().equals(resolved.members())) {
+                    continue;
+                }
+                groups.put(group.name(), resolved);
+            }
         }
     }
 
@@ -112,6 +146,7 @@ public final class WorkerRuntime {
 
         int batch = batchOf(worker);
         List<Item> filter = filterItems(worker);
+        state.strategyOverride = strategyOf(worker);
 
         boolean fromStorage = isStorage(from.value());
         boolean toStorage = isStorage(to.value());
@@ -156,6 +191,25 @@ public final class WorkerRuntime {
             moved = deviceToStorage(from.value(), graph, storage, filter, batch, state);
         } else {
             moved = deviceToDevice(from.value(), to.value(), graph, filter, batch, state);
+        }
+
+        // Ist das Ziel voll und ein Ausweichziel angegeben, geht es dorthin.
+        // Ohne das steht ein Worker bei vollem Lager still, statt den
+        // Überschuss loszuwerden — und die Maschine davor läuft voll.
+        if (state.status == Status.WAITING_TARGET && moved == 0) {
+            Decl.Worker.Entry overflow = worker.entry(Decl.Worker.Entry.Kind.OVERFLOW);
+            if (overflow != null) {
+                state.status = Status.RUNNING;
+                long spilled = fromStorage
+                        ? storageToDevice(overflow.value(), graph, storage, filter, batch, state)
+                        : deviceToDevice(from.value(), overflow.value(), graph,
+                                filter, batch, state);
+                if (spilled > 0) {
+                    state.moved += spilled;
+                    state.detail = spilled + " ins Ausweichziel";
+                    return;
+                }
+            }
         }
 
         state.moved += moved;
@@ -260,12 +314,66 @@ public final class WorkerRuntime {
         return rest;
     }
 
+    /**
+     * Das Inventar hinter einem Ziel.
+     *
+     * <p>Ist das Ziel eine Gruppe, wird das erste Mitglied genommen, das nach
+     * ihrer Verteilung an der Reihe ist und tatsächlich etwas annimmt. Deshalb
+     * liefert {@link DeviceGroup#order} eine ganze Reihenfolge und nicht nur
+     * eine Wahl: Ein volles Gerät darf den Transfer nicht beenden.
+     */
     private IItemHandler handlerOf(Expr target, FactoryGraph graph, WorkerState state) {
         if (!(target instanceof Expr.Name name)) {
             state.status = Status.HALTED;
-            state.detail = "Gruppen und Muster kann diese Fassung noch nicht";
+            state.detail = "Als Ziel taugt nur ein Name";
             return null;
         }
+        DeviceGroup group = groups.get(name.value());
+        if (group != null) {
+            // Eine Angabe am Worker geht der Gruppe vor: Dieselbe Gruppe kann
+            // von zwei Workern verschieden bedient werden.
+            if (state.strategyOverride != null) {
+                group = new DeviceGroup(group.name(), group.members(),
+                        DeviceGroup.Strategy.of(state.strategyOverride));
+            }
+            if (group.isEmpty()) {
+                state.status = Status.WAITING_TARGET;
+                state.detail = "Die Gruppe " + name.value() + " hat kein Mitglied im Netz";
+                return null;
+            }
+            for (String member : group.order(this::fillLevelOf, random)) {
+                IItemHandler handler = handlerFor(member, graph, state);
+                if (handler != null) {
+                    return handler;
+                }
+            }
+            state.status = Status.WAITING_TARGET;
+            state.detail = "Kein Mitglied von " + name.value() + " ist erreichbar";
+            return null;
+        }
+        return handlerFor(name.value(), graph, state);
+    }
+
+    /** Wie voll ein Gerät ist — für die Verteilung nach dem leersten. */
+    private long fillLevelOf(String device) {
+        IItemHandler handler = lastGraph == null ? null
+                : handlerFor(device, lastGraph, new WorkerState());
+        if (handler == null) {
+            return Long.MAX_VALUE;
+        }
+        long used = 0;
+        for (int slot = 0; slot < handler.getSlots(); slot++) {
+            used += handler.getStackInSlot(slot).getCount();
+        }
+        return used;
+    }
+
+    /** Der Graph des laufenden Ticks — nur für die Füllstandsabfrage. */
+    private FactoryGraph lastGraph;
+
+    private IItemHandler handlerFor(String deviceName, FactoryGraph graph, WorkerState state) {
+        Expr.Name name = new Expr.Name(deviceName, new dev.devpanda.factorynetwork.lang.Span(
+                0, 0, 1, 1));
         Optional<BlockPos> position = graph.connector(name.value());
         if (position.isEmpty()) {
             state.status = Status.HALTED;
@@ -362,6 +470,15 @@ public final class WorkerRuntime {
     }
 
     // ---- maintain und when ------------------------------------------------
+
+    /** Die Verteilung, die dieser Worker vorgibt — oder nichts. */
+    private static String strategyOf(Decl.Worker worker) {
+        Decl.Worker.Entry entry = worker.entry(Decl.Worker.Entry.Kind.STRATEGY);
+        if (entry != null && entry.value() instanceof Expr.Name name) {
+            return name.value();
+        }
+        return null;
+    }
 
     private static int maintainOf(Decl.Worker worker) {
         Decl.Worker.Entry maintain = worker.entry(Decl.Worker.Entry.Kind.MAINTAIN);

@@ -80,7 +80,7 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | | |
 |---|---|
 | Sprache | Lexer, Parser, Fehlerbehebung — die Grammatik vollständig |
-| Worker | `from`, `to`, `filter`, `maintain`, `rate`, `when` |
+| Worker | `from`, `to`, `filter`, `maintain`, `rate`, `when`, `strategy`, `overflow` |
 | Auswahl | einzelne Gegenstände, Tags, Muster, `except` |
 | Funktionen | Bedingungen, Schleifen, `move`, Redstone lesen, `log` |
 | Ereignisse | `redstone_changed`, eigene über `emit` und `on` |
@@ -98,8 +98,7 @@ sich niemand darauf verlassen kann.
 
 Außerdem offen:
 
-- **Gruppen, Multiblocks, Displays** — spezifiziert, geparst, nicht ausgeführt.
-- **`strategy` und `overflow`** beim Worker.
+- **Multiblocks und Displays** — spezifiziert, geparst, nicht ausgeführt.
 - **Redstone setzen.** Lesen geht; Setzen braucht einen eigenen Zustand im
   Blockmodell und gehört in denselben Schritt wie die Anzeige am Block.
 - **Flüssigkeiten und Chemikalien.** Die Schreibweise steht, die Anbindung

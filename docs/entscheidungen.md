@@ -950,3 +950,46 @@ welcher der vier Zustände vorliegt; am Controller der Stand des ganzen Netzes.
 
 Die Anbindung ist freiwillig: Ohne Jade fehlt nur die Anzeige. Die Klasse wird
 gar nicht erst geladen, weil Jade selbst nach ihr sucht.
+
+---
+
+## Gruppen ausführen (2026-08-21)
+
+Damit ist der Worker vollständig: `strategy` und `overflow` waren
+spezifiziert, aber wirkungslos.
+
+### Eine Verteilung liefert eine Reihenfolge, keine Wahl
+
+Das ist der Punkt, an dem eine Gruppe mehr wird als eine umständliche
+Schreibweise für ein Gerät: Ist das erste Mitglied voll, muss der Transfer
+beim nächsten weitermachen können. Deshalb geben alle fünf Verfahren eine
+vollständige Reihenfolge zurück, aus der die Laufzeit das erste nimmt, das
+tatsächlich annimmt.
+
+`first_available` und `priority` führen zum selben Ergebnis. Der Unterschied
+liegt in der Absicht: Wer `priority` schreibt, meint eine Rangfolge; wer
+`first_available` schreibt, meint „irgendeines, das kann". Beide Wörter zu
+behalten kostet nichts und sagt beim Lesen mehr.
+
+### Die Angabe am Worker geht der Gruppe vor
+
+Dieselbe Gruppe kann von zwei Workern verschieden bedient werden — einer
+reihum, einer nach dem leersten. Ohne diesen Vorrang bräuchte man zwei
+Gruppen mit denselben Mitgliedern.
+
+### Gruppen werden bei jedem Tick neu aufgelöst
+
+Billig, weil es wenige Gruppen mit wenigen Mustern gibt. Und nötig: Ein Ofen,
+der dazukommt, soll in seiner Gruppe landen, ohne dass jemand das Programm
+erneut übernimmt. Der Zeiger von `round_robin` überlebt das — sonst finge die
+Gruppe bei jedem Tick wieder beim ersten Gerät an.
+
+Namen ohne Muster bleiben in der Gruppe, auch wenn sie gerade nicht im Netz
+hängen: Ein Gerät in einem nicht geladenen Chunk gehört weiter dazu. Muster
+können dagegen nur treffen, was da ist.
+
+### overflow greift erst, wenn das Ziel wirklich voll ist
+
+Vorher stand ein Worker bei vollem Lager still, und die Maschine davor lief
+über. Jetzt geht der Überschuss ins Ausweichziel — aber nur dann, nicht
+nebenbei.

@@ -884,6 +884,89 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    /** Baut Controller, Kabelreihe und drei benannte Kisten. */
+    private static ControllerBlockEntity threeChests(GameTestHelper helper, BlockPos controller) {
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        for (int i = 0; i < 4; i++) {
+            helper.setBlock(controller.east(i + 1), FnBlocks.CABLE.get());
+        }
+        for (int i = 0; i < 3; i++) {
+            BlockPos connector = controller.east(i + 2).above();
+            helper.setBlock(connector, FnBlocks.CONNECTOR.get().defaultBlockState()
+                    .setValue(dev.devpanda.factorynetwork.block.ConnectorBlock.FACING,
+                            net.minecraft.core.Direction.UP));
+            helper.setBlock(connector.above(), Blocks.CHEST);
+            name(helper, connector, "kiste_" + (i + 1));
+        }
+        return controllerAt(helper, controller);
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void aGroupTakesEveryMatchingConnector(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 1, 1);
+        ControllerBlockEntity entity = threeChests(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                group kisten {
+                    members kiste_*
+                }
+
+                worker verteile {
+                    from storage
+                    to kisten
+                    filter item:cobblestone
+                    rate 3 per 1t
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.storage().insert(Items.COBBLESTONE, 30);
+
+        helper.runAfterDelay(30, () -> {
+            var group = entity.runtime().groups().get("kisten");
+            helper.assertTrue(group != null, "Die Gruppe fehlt");
+            helper.assertValueEqual(group.members().size(), 3,
+                    "Das Muster muss alle drei Kisten treffen");
+            helper.assertTrue(entity.storage().count(Items.COBBLESTONE) < 30,
+                    "Es muss etwas verteilt worden sein");
+            helper.succeed();
+        });
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 500)
+    public static void roundRobinSpreadsAcrossMembers(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 1, 1);
+        ControllerBlockEntity entity = threeChests(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                group kisten {
+                    members kiste_*
+                    strategy round_robin
+                }
+
+                worker verteile {
+                    from storage
+                    to kisten
+                    filter item:cobblestone
+                    rate 1 per 1t
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.storage().insert(Items.COBBLESTONE, 12);
+
+        helper.runAfterDelay(60, () -> {
+            // Reihum heißt: Nicht alles landet in derselben Kiste.
+            int filled = 0;
+            for (int i = 0; i < 3; i++) {
+                BlockPos chest = controller.east(i + 2).above(2);
+                if (helper.getBlockEntity(chest) instanceof ChestBlockEntity container
+                        && !container.getItem(0).isEmpty()) {
+                    filled++;
+                }
+            }
+            helper.assertTrue(filled >= 2,
+                    "Reihum muss auf mehrere Kisten verteilen, gefüllt: " + filled);
+            helper.succeed();
+        });
+    }
+
     private FactoryNetworkGameTests() {
     }
 }
