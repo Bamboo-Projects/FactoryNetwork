@@ -797,6 +797,11 @@ Gefärbt wird mit einem Farbstoff auf einem beliebigen Kabel. Dass das Rezept
 über `c:cables` geht statt über die siebzehn Gegenstände einzeln, hält es bei
 einem Rezept je Farbe statt bei zweihundertzweiundsiebzig.
 
+**Entfärbt wird mit einem Wassereimer**, wie bei Applied Energistics. Ohne das
+wäre ein gefärbtes Kabel eine Sackgasse — man käme nie wieder zu der
+Standardfarbe zurück, die sich mit allem verbindet. Der Eimer bleibt als
+leerer Eimer zurück; das macht Minecraft von selbst.
+
 **Gefärbt wird nur die Röhre, nicht die Schelle.** Ein schwarzes Kabel sähe
 sonst aus wie ein Loch in der Wand und ein weißes wie ein Fremdkörper; so
 bleibt erkennbar, dass es dasselbe Bauteil ist.

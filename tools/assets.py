@@ -270,6 +270,33 @@ def loot_and_recipes():
         "result": {"id": MOD + ":label_gun", "count": 1},
     })
 
+    # Färben: ein Farbstoff auf ein beliebiges Kabel. Über das Tag statt über
+    # siebzehn Gegenstände einzeln — sonst wären es zweihundertzweiundsiebzig
+    # Rezepte statt sechzehn.
+    for colour in CABLE_COLOURS[1:]:
+        write(D + "/recipe/%s_cable.json" % colour, {
+            "type": "minecraft:crafting_shapeless",
+            "category": "misc",
+            "group": "factorynetwork_cable",
+            "ingredients": [{"tag": "c:cables"}, {"item": "minecraft:%s_dye" % colour}],
+            "result": {"id": MOD + ":%s_cable" % colour, "count": 1},
+        })
+
+    # Entfärben mit einem Wassereimer, wie bei Applied Energistics. Ohne das
+    # wäre ein gefärbtes Kabel eine Sackgasse.
+    write(D + "/recipe/cable_uncolour.json", {
+        "type": "minecraft:crafting_shapeless",
+        "category": "misc",
+        "group": "factorynetwork_cable",
+        "ingredients": [{"tag": "c:cables"}, {"item": "minecraft:water_bucket"}],
+        "result": {"id": MOD + ":cable", "count": 1},
+    })
+
+    # Alle Kabel unter einem Tag, damit die Rezepte jede Farbe annehmen.
+    write("data/c/tags/item/cables.json", {
+        "values": [MOD + ":cable"] + [MOD + ":%s_cable" % c for c in CABLE_COLOURS[1:]],
+    })
+
     # Spitzhacke reicht zum Abbauen.
     write(D + "/tags/block/mineable/pickaxe.json", {
         "values": [MOD + ":controller", MOD + ":cable", MOD + ":connector", MOD + ":terminal"],

@@ -7,11 +7,11 @@
       "tag": "c:cables"
     },
     {
-      "item": "minecraft:gray_dye"
+      "item": "minecraft:water_bucket"
     }
   ],
   "result": {
-    "id": "factorynetwork:gray_cable",
+    "id": "factorynetwork:cable",
     "count": 1
   }
 }
