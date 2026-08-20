@@ -119,14 +119,38 @@ public class LabelGunScreen extends Screen {
         int left = (width - WIDTH) / 2;
         int top = height / 3;
 
-        graphics.drawCenteredString(font, title, width / 2, top - 34, 0xFFFFFF);
+        // Eine eigene Fläche hinter den Dialog. Ohne sie steht weißer Text
+        // auf verschwommenem Himmel und ist nicht zu lesen — der
+        // Standardhintergrund reicht nur, wenn ein Fenster ohnehin ein Panel
+        // mitbringt.
+        int padding = 12;
+        int panelTop = top - 42;
+        int panelBottom = top + 64 + recentRows() * LINE;
+        graphics.fill(left - padding, panelTop, left + WIDTH + padding, panelBottom, 0xE0101214);
+        drawBorder(graphics, left - padding, panelTop,
+                left + WIDTH + padding, panelBottom, 0xFF3C4147);
+
+        // Mit Schatten, wie jede Überschrift im Spiel.
+        graphics.drawCenteredString(font, title, width / 2, panelTop + 8, 0xFFFFFF);
         graphics.drawString(font,
                 Component.translatable("screen.factorynetwork.label_gun.explain"),
-                left, top - 20, 0xA0A0A0, false);
+                left, panelTop + 22, 0xA0A8B0, true);
 
         super.render(graphics, mouseX, mouseY, partialTick);
 
-        graphics.drawString(font, warning, left, top + 52, warningColour, false);
+        graphics.drawString(font, warning, left, top + 52, warningColour, true);
+    }
+
+    private int recentRows() {
+        return Math.min(LabelGunItem.recentLabels(gun).size(), 5);
+    }
+
+    private static void drawBorder(GuiGraphics graphics, int x0, int y0, int x1, int y1,
+                                   int colour) {
+        graphics.fill(x0, y0, x1, y0 + 1, colour);
+        graphics.fill(x0, y1 - 1, x1, y1, colour);
+        graphics.fill(x0, y0, x0 + 1, y1, colour);
+        graphics.fill(x1 - 1, y0, x1, y1, colour);
     }
 
     @Override
