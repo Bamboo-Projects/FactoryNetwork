@@ -116,29 +116,37 @@ public class LabelGunScreen extends Screen {
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         renderBackground(graphics, mouseX, mouseY, partialTick);
+
         int left = (width - WIDTH) / 2;
         int top = height / 3;
 
-        // Eine eigene Fläche hinter den Dialog. Ohne sie steht weißer Text
-        // auf verschwommenem Himmel und ist nicht zu lesen — der
-        // Standardhintergrund reicht nur, wenn ein Fenster ohnehin ein Panel
-        // mitbringt.
+        // Die Erklärung umbrechen, damit sie nicht über den Rand läuft.
+        List<net.minecraft.util.FormattedCharSequence> explain = font.split(
+                Component.translatable("screen.factorynetwork.label_gun.explain"), WIDTH);
+
         int padding = 12;
-        int panelTop = top - 42;
+        int headerHeight = 14 + explain.size() * 10;
+        int panelTop = top - headerHeight - 10;
         int panelBottom = top + 64 + recentRows() * LINE;
-        graphics.fill(left - padding, panelTop, left + WIDTH + padding, panelBottom, 0xE0101214);
+        graphics.fill(left - padding, panelTop, left + WIDTH + padding, panelBottom, 0xE8101214);
         drawBorder(graphics, left - padding, panelTop,
                 left + WIDTH + padding, panelBottom, 0xFF3C4147);
 
-        // Mit Schatten, wie jede Überschrift im Spiel.
-        graphics.drawCenteredString(font, title, width / 2, panelTop + 8, 0xFFFFFF);
-        graphics.drawString(font,
-                Component.translatable("screen.factorynetwork.label_gun.explain"),
-                left, panelTop + 22, 0xA0A8B0, true);
+        // Text über die Fläche heben: Minecraft sammelt Beschriftungen in
+        // einem eigenen Puffer und zeichnet sie zusammen — ohne diesen
+        // Vorsprung landen sie hinter jeder Füllung, die danach kommt.
+        graphics.pose().pushPose();
+        graphics.pose().translate(0, 0, 100);
+        graphics.drawCenteredString(font, title, width / 2, panelTop + 6, 0xFFFFFF);
+        int line = panelTop + 20;
+        for (net.minecraft.util.FormattedCharSequence row : explain) {
+            graphics.drawString(font, row, left, line, 0xB0B8C0, true);
+            line += 10;
+        }
+        graphics.drawString(font, warning, left, top + 52, warningColour, true);
+        graphics.pose().popPose();
 
         super.render(graphics, mouseX, mouseY, partialTick);
-
-        graphics.drawString(font, warning, left, top + 52, warningColour, true);
     }
 
     private int recentRows() {
