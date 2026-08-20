@@ -147,11 +147,14 @@ public final class WorldHost implements Interpreter.Host {
 
     @Override
     public void setRedstone(String device, int strength) {
-        // Bewusst noch nicht: Dafür braucht der Connector einen eigenen
-        // Zustand im Blockmodell, und der gehört in denselben Schritt wie die
-        // Anzeige am Block.
-        throw new ScriptError("Redstone setzen kann diese Fassung noch nicht.",
-                "Lesen geht bereits: sensor.redstone()");
+        BlockPos position = connectorPosition(device);
+        if (!(level.getBlockEntity(position) instanceof ConnectorBlockEntity connector)) {
+            throw new ScriptError("Der Connector " + device + " ist nicht erreichbar.");
+        }
+        if (strength < 0 || strength > 15) {
+            throw new ScriptError("Redstone geht von 0 bis 15, nicht " + strength + ".");
+        }
+        connector.setEmittedRedstone(strength);
     }
 
     @Override

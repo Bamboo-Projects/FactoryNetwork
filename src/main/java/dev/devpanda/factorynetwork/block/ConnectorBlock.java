@@ -77,6 +77,31 @@ public class ConnectorBlock extends Block implements EntityBlock {
         return InteractionResult.CONSUME;
     }
 
+    /**
+     * Gibt Redstone aus, wenn das Programm es verlangt.
+     *
+     * <p>Nach allen Seiten gleich. Eine Richtung anzugeben wäre genauer, aber
+     * der Connector zeigt schon in eine — er hätte dann zwei Richtungen, und
+     * niemand wüsste, welche gemeint ist.
+     */
+    @Override
+    protected boolean isSignalSource(BlockState state) {
+        return true;
+    }
+
+    @Override
+    protected int getSignal(BlockState state, net.minecraft.world.level.BlockGetter level,
+                            BlockPos pos, Direction direction) {
+        return level.getBlockEntity(pos) instanceof ConnectorBlockEntity connector
+                ? connector.emittedRedstone() : 0;
+    }
+
+    @Override
+    protected int getDirectSignal(BlockState state, net.minecraft.world.level.BlockGetter level,
+                                  BlockPos pos, Direction direction) {
+        return getSignal(state, level, pos, direction);
+    }
+
     /** Die Seite, an der die Maschine sitzt. */
     public static Direction machineSide(BlockState state) {
         return state.getValue(FACING);

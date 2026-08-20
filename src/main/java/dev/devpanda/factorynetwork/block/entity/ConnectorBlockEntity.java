@@ -20,6 +20,7 @@ public class ConnectorBlockEntity extends BlockEntity {
 
     private static final String KEY_LABEL = "Label";
     private static final String KEY_COST = "ChannelCost";
+    private static final String KEY_REDSTONE = "Redstone";
 
     private String label = "";
 
@@ -32,6 +33,15 @@ public class ConnectorBlockEntity extends BlockEntity {
      */
     private int channelCost = 1;
 
+    /**
+     * Was dieser Connector an Redstone ausgibt.
+     *
+     * <p>Null heißt: gibt nichts aus. Das ist etwas anderes als „gibt Null
+     * aus" — ein Connector ohne Programm soll das Redstone daneben nicht
+     * überschreiben.
+     */
+    private int emittedRedstone;
+
     public ConnectorBlockEntity(BlockPos pos, BlockState state) {
         super(FnBlockEntities.CONNECTOR.get(), pos, state);
     }
@@ -42,6 +52,24 @@ public class ConnectorBlockEntity extends BlockEntity {
 
     public int channelCost() {
         return channelCost;
+    }
+
+    public int emittedRedstone() {
+        return emittedRedstone;
+    }
+
+    public void setEmittedRedstone(int strength) {
+        int clamped = Math.max(0, Math.min(15, strength));
+        if (clamped == emittedRedstone) {
+            return;
+        }
+        emittedRedstone = clamped;
+        setChanged();
+        if (level != null) {
+            // Nachbarn anstoßen, sonst merkt niemand die Änderung.
+            level.updateNeighborsAt(worldPosition, getBlockState().getBlock());
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+        }
     }
 
     public void setChannelCost(int cost) {
@@ -75,6 +103,7 @@ public class ConnectorBlockEntity extends BlockEntity {
         super.loadAdditional(tag, registries);
         label = tag.getString(KEY_LABEL);
         channelCost = Math.max(1, tag.getInt(KEY_COST));
+        emittedRedstone = tag.getInt(KEY_REDSTONE);
     }
 
     @Override
@@ -82,6 +111,7 @@ public class ConnectorBlockEntity extends BlockEntity {
         super.saveAdditional(tag, registries);
         tag.putString(KEY_LABEL, label);
         tag.putInt(KEY_COST, channelCost);
+        tag.putInt(KEY_REDSTONE, emittedRedstone);
     }
 
     @Override

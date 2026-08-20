@@ -1033,6 +1033,60 @@ public final class FactoryNetworkGameTests {
         });
     }
 
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void programCanSwitchRedstone(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                fn alarm(stärke: Int) {
+                    depot.redstone(stärke)
+                }"""), "Das Programm wurde nicht übernommen");
+
+        BlockPos connector = controller.east().south();
+        entity.callFunction("alarm", java.util.List.of(
+                new dev.devpanda.factorynetwork.runtime.Value.Int(15)));
+
+        if (helper.getBlockEntity(connector) instanceof ConnectorBlockEntity emitter) {
+            helper.assertValueEqual(emitter.emittedRedstone(), 15, "gesetzte Stärke");
+        } else {
+            helper.fail("Kein Connector", connector);
+            return;
+        }
+        // Und der Block gibt es auch wirklich nach außen weiter.
+        helper.assertTrue(helper.getLevel().getBestNeighborSignal(
+                helper.absolutePos(connector.above())) > 0,
+                "Das Signal muss beim Nachbarn ankommen");
+
+        entity.callFunction("alarm", java.util.List.of(
+                new dev.devpanda.factorynetwork.runtime.Value.Int(0)));
+        if (helper.getBlockEntity(connector) instanceof ConnectorBlockEntity afterwards) {
+            helper.assertValueEqual(afterwards.emittedRedstone(), 0, "wieder aus");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void redstoneBeyondFifteenIsRejected(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        helper.assertTrue(entity.deploy("""
+                fn zuviel() {
+                    depot.redstone(99)
+                }"""), "Das Programm wurde nicht übernommen");
+
+        try {
+            entity.callFunction("zuviel", java.util.List.of());
+            helper.fail("Neunundneunzig hätte auffallen müssen");
+        } catch (dev.devpanda.factorynetwork.runtime.ScriptError error) {
+            helper.assertTrue(error.getMessage().contains("0 bis 15"),
+                    "Die Meldung muss den Bereich nennen: " + error.getMessage());
+            helper.succeed();
+        }
+    }
+
     private FactoryNetworkGameTests() {
     }
 }
