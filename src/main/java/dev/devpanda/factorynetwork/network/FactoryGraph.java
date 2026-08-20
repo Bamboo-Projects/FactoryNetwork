@@ -333,6 +333,14 @@ public final class FactoryGraph {
         return connectorsByName.values().stream().mapToInt(List::size).sum() + unnamed.size();
     }
 
+    /** Gehört diese Stelle zu diesem Netz — als Kabel oder als Gerät? */
+    public boolean contains(BlockPos pos) {
+        return cables.contains(pos)
+                || unnamed.contains(pos)
+                || starved.contains(pos)
+                || connectorsByName.values().stream().anyMatch(list -> list.contains(pos));
+    }
+
     public int cableCount() {
         return cables.size();
     }

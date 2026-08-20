@@ -889,3 +889,64 @@ Ob ein Bündel für die Kanäle als ein Kabel zählt oder als vier. Das ist kein
 Modellfrage, sondern eine des Spielgleichgewichts — vier Stränge in einem
 Block sind entweder eine Platzersparnis oder eine Verdopplung der Kapazität.
 Kanäle gibt es bei uns ohnehin noch nicht.
+
+---
+
+## Kanäle (2026-08-20)
+
+**Acht je Strang, nicht je Bündel.** Ein Strang ist ein Bündel von acht
+Drähten; jedes Gerät zieht auf seinem ganzen Weg zum Controller einen davon
+ab, und weiter hinten fehlt er dann. Das Vorbild ist Applied Energistics.
+
+Der Unterschied zu dort: Bei uns zählt der Strang. Vier Stränge in einem Block
+tragen vier mal acht, weil sie vier getrennte Netze sind — dieselbe Logik wie
+bei den Farben.
+
+### Ein Gerät weicht auf einen freien Strang aus
+
+Daran wäre es fast gescheitert. Die erste Fassung nahm den erstgefundenen
+Strang; war der voll, ging das Gerät leer aus, obwohl im selben Block ein
+freier lag. Das wäre „je Bündel" gewesen, nicht „je Kabel".
+
+Deshalb läuft die Zuteilung erst, wenn die Suche durch ist: Vorher weiß man
+nicht, über welche Stränge ein Gerät überhaupt erreichbar ist. Der Test mit
+zwei Strängen und zehn Geräten hat das aufgedeckt.
+
+### Wer bei knappen Kanälen gewinnt
+
+**Das nähere Gerät**, bei gleicher Entfernung das in der früheren Richtung —
+die Breitensuche läuft in der Reihenfolge von `Direction.values()`.
+
+Diese Regel muss feststehen und erklärbar sein. „Warum ist dieses Gerät
+offline" ist die häufigste Frage an ein solches System, und eine Antwort wie
+„das hängt von der Suchreihenfolge ab" ist keine.
+
+### Kein Kanal ist ein eigener Zustand
+
+Neben benannt, unbenannt und doppelt vergeben gibt es jetzt: hängt im Netz,
+ist sichtbar, aber bekommt keinen Draht. Laufzeit und Controller melden das
+getrennt — sonst sucht der Spieler einen Tippfehler, wo eine Kapazitätsgrenze
+liegt.
+
+### Die Zahlen gehören dem Graphen, nicht den Blöcken
+
+Ein Kabel kann zu zwei Netzen gehören; schriebe jeder Controller seine Zahlen
+in die BlockEntity, überschriebe einer den anderen. Dazu käme bei jedem
+Neuaufbau ein Schreibvorgang je Kabel samt Übertragung zum Client.
+
+Wer die Zahlen braucht, fragt umgekehrt: `ControllerRegistry` kennt die
+Controller einer Welt, und der Graph sagt, ob eine Stelle zu ihm gehört.
+
+### Anzeige über Jade
+
+**Verworfen: die Belegung über die Helligkeit des Strangs zu zeigen.** Farbe
+mal Helligkeit ist nicht mehr zu lesen — ist das ein helles Grün oder ein
+belastetes Dunkelgrün? Und es überlädt die eine Achse, die bisher eindeutig
+„welches Netz" bedeutet.
+
+Jade beantwortet die Frage dort, wo sie entsteht: Man sieht das Kabel an und
+liest je Strang, wie viele der acht Drähte belegt sind. Am Connector steht,
+welcher der vier Zustände vorliegt; am Controller der Stand des ganzen Netzes.
+
+Die Anbindung ist freiwillig: Ohne Jade fehlt nur die Anzeige. Die Klasse wird
+gar nicht erst geladen, weil Jade selbst nach ihr sucht.

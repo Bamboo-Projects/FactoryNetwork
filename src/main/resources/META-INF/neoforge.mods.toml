@@ -26,3 +26,12 @@ type = "required"
 versionRange = "[1.21.1]"
 ordering = "NONE"
 side = "BOTH"
+
+# Jade zeigt an, was man ansieht — bei uns die Kanalbelegung eines Kabels.
+# Freiwillig: Ohne Jade fehlt nur die Anzeige, nichts sonst.
+[[dependencies.${mod_id}]]
+modId = "jade"
+type = "optional"
+versionRange = "[15.0.0,)"
+ordering = "AFTER"
+side = "CLIENT"

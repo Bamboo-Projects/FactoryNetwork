@@ -3,6 +3,7 @@ package dev.devpanda.factorynetwork.block.entity;
 import dev.devpanda.factorynetwork.lang.Diagnostic;
 import dev.devpanda.factorynetwork.lang.ast.Program;
 import dev.devpanda.factorynetwork.lang.parse.Parser;
+import dev.devpanda.factorynetwork.network.ControllerRegistry;
 import dev.devpanda.factorynetwork.network.FactoryGraph;
 import dev.devpanda.factorynetwork.network.NetworkStorage;
 import dev.devpanda.factorynetwork.client.menu.TerminalMenu;
@@ -114,6 +115,22 @@ public class ControllerBlockEntity extends BlockEntity {
 
     public WorkerRuntime runtime() {
         return runtime;
+    }
+
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        if (level != null && !level.isClientSide) {
+            ControllerRegistry.add(level, worldPosition);
+        }
+    }
+
+    @Override
+    public void setRemoved() {
+        if (level != null && !level.isClientSide) {
+            ControllerRegistry.remove(level, worldPosition);
+        }
+        super.setRemoved();
     }
 
     public void rebuildNetwork() {

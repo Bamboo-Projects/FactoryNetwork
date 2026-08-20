@@ -52,9 +52,20 @@ neoForge {
 
 repositories {
     mavenCentral()
+    // Jade wird über Modrinth bezogen; ein eigenes Maven hat es nicht.
+    exclusiveContent {
+        forRepository { maven { url = 'https://api.modrinth.com/maven' } }
+        filter { includeGroup 'maven.modrinth' }
+    }
 }
 
 dependencies {
+    // Jade nur zum Übersetzen und zum Ausprobieren — die Mod läuft ohne.
+    // Die Anbindung ist so geschrieben, dass sie ohne Jade gar nicht erst
+    // geladen wird.
+    compileOnly "maven.modrinth:jade:${jade_version}"
+    runtimeOnly "maven.modrinth:jade:${jade_version}"
+
     testImplementation platform('org.junit:junit-bom:5.11.4')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
