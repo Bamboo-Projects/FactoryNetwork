@@ -2277,6 +2277,67 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    /**
+     * Schreibt ein Paket und liest es zurück.
+     *
+     * <p>Ein Codec mit der falschen Zahl an Feldern übersetzt anstandslos und
+     * bricht erst, wenn jemand das Terminal öffnet. Diese Prüfung fängt das
+     * ab, ohne dass ein Spieler dafür anwesend sein muss.
+     */
+    private static <T> T roundTrip(GameTestHelper helper,
+            net.minecraft.network.codec.StreamCodec<
+                    net.minecraft.network.RegistryFriendlyByteBuf, T> codec, T packet) {
+        var buffer = new net.minecraft.network.RegistryFriendlyByteBuf(
+                io.netty.buffer.Unpooled.buffer(), helper.getLevel().registryAccess());
+        codec.encode(buffer, packet);
+        return codec.decode(buffer);
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void everyPacketSurvivesTheWire(GameTestHelper helper) {
+        var netzzustand = new dev.devpanda.factorynetwork.network.packet.NetworkStatePacket(
+                "fn test() { }", java.util.List.of("kiste_1", "kiste_2"),
+                java.util.List.of("haul: RUNNING"), java.util.List.of("werk_1: Werk"),
+                java.util.List.of("water: 1000 mB"));
+        var zurueck = roundTrip(helper,
+                dev.devpanda.factorynetwork.network.packet.NetworkStatePacket.STREAM_CODEC,
+                netzzustand);
+        helper.assertValueEqual(zurueck.fluids().get(0), "water: 1000 mB", "Netzzustand");
+        helper.assertValueEqual(zurueck.plants().get(0), "werk_1: Werk", "Anlagen");
+        helper.assertValueEqual(zurueck.connectors().size(), 2, "Connectoren");
+
+        var ablaeufe = new dev.devpanda.factorynetwork.network.packet.FlowStatePacket(
+                java.util.List.of(new dev.devpanda.factorynetwork.network.packet
+                        .FlowStatePacket.Line(7, "zaehlt", "AWAITING", "wartet auf Takt")));
+        var ablaeufeZurueck = roundTrip(helper,
+                dev.devpanda.factorynetwork.network.packet.FlowStatePacket.STREAM_CODEC, ablaeufe);
+        helper.assertValueEqual(ablaeufeZurueck.flows().get(0).id(), 7L, "Kennung des Ablaufs");
+        helper.assertValueEqual(ablaeufeZurueck.flows().get(0).detail(), "wartet auf Takt",
+                "Grund");
+
+        var wahl = new dev.devpanda.factorynetwork.network.packet.FlowActionPacket(7, true);
+        helper.assertValueEqual(roundTrip(helper,
+                dev.devpanda.factorynetwork.network.packet.FlowActionPacket.STREAM_CODEC, wahl)
+                .keep(), true, "Die Wahl");
+
+        var anzeigen = new dev.devpanda.factorynetwork.network.packet.DisplayStatePacket(
+                java.util.List.of(new dev.devpanda.factorynetwork.network.packet
+                        .DisplayStatePacket.Panel("leitstand",
+                        java.util.List.of("§fZeile", "§8[Knopf]"), java.util.List.of(1))));
+        var anzeigenZurueck = roundTrip(helper,
+                dev.devpanda.factorynetwork.network.packet.DisplayStatePacket.STREAM_CODEC,
+                anzeigen);
+        helper.assertValueEqual(anzeigenZurueck.panels().get(0).buttons().get(0), 1,
+                "Welche Zeile ein Knopf ist");
+
+        var druck = new dev.devpanda.factorynetwork.network.packet.DisplayActionPacket(
+                "leitstand", 1);
+        helper.assertValueEqual(roundTrip(helper,
+                dev.devpanda.factorynetwork.network.packet.DisplayActionPacket.STREAM_CODEC, druck)
+                .display(), "leitstand", "Der gedrückte Knopf");
+        helper.succeed();
+    }
+
     private FactoryNetworkGameTests() {
     }
 }
