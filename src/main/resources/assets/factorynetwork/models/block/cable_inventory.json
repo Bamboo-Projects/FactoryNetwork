@@ -20,20 +20,20 @@
           "texture": "#cable",
           "tintindex": 0,
           "uv": [
-            0,
-            0,
-            6,
-            6
+            5,
+            5,
+            11,
+            11
           ]
         },
         "south": {
           "texture": "#cable",
           "tintindex": 0,
           "uv": [
-            0,
-            0,
-            6,
-            6
+            5,
+            5,
+            11,
+            11
           ]
         },
         "east": {
@@ -41,9 +41,9 @@
           "tintindex": 0,
           "uv": [
             0,
-            0,
+            5,
             16,
-            6
+            11
           ]
         },
         "west": {
@@ -51,18 +51,18 @@
           "tintindex": 0,
           "uv": [
             0,
-            0,
+            5,
             16,
-            6
+            11
           ]
         },
         "up": {
           "texture": "#cable",
           "tintindex": 0,
           "uv": [
+            5,
             0,
-            0,
-            6,
+            11,
             16
           ]
         },
@@ -70,9 +70,9 @@
           "texture": "#cable",
           "tintindex": 0,
           "uv": [
+            5,
             0,
-            0,
-            6,
+            11,
             16
           ]
         }

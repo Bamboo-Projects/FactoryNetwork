@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -15,120 +16,97 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Wacht darüber, dass Modelle und Trefferflächen dieselben Zahlen tragen.
  *
  * <p>Minecraft hält beides getrennt: Das Modell steht in JSON, die
- * Trefferfläche in Java. Laufen sie auseinander, greift der Spieler neben
- * das, was er sieht — ein Fehler, den man im Spiel spürt, aber schwer
- * benennen kann. Deshalb liest dieser Test die erzeugten Modelldateien.
+ * Trefferfläche in Java. Laufen sie auseinander, greift der Spieler neben das,
+ * was er sieht — ein Fehler, den man im Spiel spürt, aber schwer benennen
+ * kann. Deshalb liest dieser Test die erzeugten Modelldateien.
  */
 class CableLayoutTest {
 
     private static final Path MODELS = Path.of(
             "src/main/resources/assets/factorynetwork/models/block");
 
-    @Test
-    @DisplayName("Ein Strang allein ist sechs Pixel dick, im Bündel vier")
-    void strandSizes() {
-        assertEquals(6, CableLayout.size(1));
-        assertEquals(4, CableLayout.size(2));
-        assertEquals(4, CableLayout.size(4));
+    private static String read(String name) throws IOException {
+        Path file = MODELS.resolve(name);
+        assertTrue(Files.exists(file), name + " fehlt — tools/assets.py laufen lassen");
+        return Files.readString(file, StandardCharsets.UTF_8).replaceAll("[ \t\r\n]+", "");
     }
 
     @Test
-    @DisplayName("In der Tiefe sitzt jeder Strang mittig")
-    void depthIsCentred() {
-        assertEquals(5, CableLayout.depth(1));
-        assertEquals(6, CableLayout.depth(4));
-        for (int count = 1; count <= 4; count++) {
-            assertEquals(16, CableLayout.depth(count) * 2 + CableLayout.size(count),
-                    "Vorn und hinten muss gleich viel Platz bleiben");
+    @DisplayName("Die Stärken sind die von AE2: sechs und zehn Blockpixel")
+    void sizesMatchAppliedEnergistics() {
+        assertEquals(6, CableLayout.THIN);
+        assertEquals(10, CableLayout.DENSE);
+    }
+
+    @Test
+    @DisplayName("Der Mantel sitzt mittig im Block")
+    void mantleIsCentred() {
+        assertEquals(5, CableLayout.offset(CableLayout.THIN));
+        assertEquals(11, CableLayout.far(CableLayout.THIN));
+        assertEquals(3, CableLayout.offset(CableLayout.DENSE));
+        assertEquals(13, CableLayout.far(CableLayout.DENSE));
+    }
+
+    @Test
+    @DisplayName("Der Kern im Modell hat die Maße aus CableLayout")
+    void coreModelMatchesLayout() throws IOException {
+        for (int size : new int[] {CableLayout.THIN, CableLayout.DENSE}) {
+            String name = size == CableLayout.THIN ? "cable_core.json" : "dense_cable_core.json";
+            int lo = CableLayout.offset(size);
+            int hi = CableLayout.far(size);
+            String json = read(name);
+            assertTrue(json.contains("\"from\":[" + lo + "," + lo + "," + lo + "]"),
+                    name + ": Anfang stimmt nicht mit CableLayout überein");
+            assertTrue(json.contains("\"to\":[" + hi + "," + hi + "," + hi + "]"),
+                    name + ": Ende stimmt nicht mit CableLayout überein");
         }
     }
 
     @Test
-    @DisplayName("Für jede Anzahl gibt es genau so viele Plätze")
-    void positionCounts() {
-        for (int count = 1; count <= 4; count++) {
-            assertEquals(count, CableLayout.count(count));
+    @DisplayName("Der Arm reicht von der Blockkante bis an den Kern")
+    void armReachesFromEdgeToCore() throws IOException {
+        for (int size : new int[] {CableLayout.THIN, CableLayout.DENSE}) {
+            String name = size == CableLayout.THIN ? "cable_arm.json" : "dense_cable_arm.json";
+            int lo = CableLayout.offset(size);
+            int hi = CableLayout.far(size);
+            String json = read(name);
+            assertTrue(json.contains("\"from\":[" + lo + "," + lo + ",0]"), name + ": Anfang");
+            assertTrue(json.contains("\"to\":[" + hi + "," + hi + "," + lo + "]"), name + ": Ende");
         }
+    }
+
+    /**
+     * Die Ausrichtung der Textur ist der Fehler, der im Spiel als Wellblech
+     * auffiel: Alle Flächen hatten denselben Ausschnitt.
+     */
+    @Test
+    @DisplayName("Längsflächen nehmen den Randbereich der Textur, Stirnflächen die Mitte")
+    void uvsRunAlongTheCable() throws IOException {
+        int lo = CableLayout.offset(CableLayout.THIN);
+        int hi = CableLayout.far(CableLayout.THIN);
+        String json = read("cable_arm.json");
+
+        // Stirnfläche: in beiden Achsen der Querschnitt.
+        assertTrue(json.contains("\"uv\":[" + lo + "," + lo + "," + hi + "," + hi + "]"),
+                "Die Stirnfläche muss den Querschnitt zeigen");
+        // Seiten: längs über die Tiefe, quer über die Höhe.
+        assertTrue(json.contains("\"uv\":[0," + lo + "," + lo + "," + hi + "]"),
+                "Die Seitenflächen müssen längs laufen");
+        // Oben und unten: quer über die Breite.
+        assertTrue(json.contains("\"uv\":[" + lo + ",0," + hi + "," + lo + "]"),
+                "Ober- und Unterseite müssen längs laufen");
     }
 
     @Test
-    @DisplayName("Kein Strang ragt aus dem Block")
-    void strandsStayInside() {
-        for (int count = 1; count <= 4; count++) {
-            int size = CableLayout.size(count);
-            for (int[] position : CableLayout.positions(count)) {
-                assertTrue(position[0] >= 0 && position[0] + size <= 16,
-                        "x bei " + count + " Strängen");
-                assertTrue(position[1] >= 0 && position[1] + size <= 16,
-                        "y bei " + count + " Strängen");
-            }
+    @DisplayName("Die Blockstate kennt keine Stränge mehr")
+    void blockstateHasNoStrands() throws IOException {
+        Path file = Path.of("src/main/resources/assets/factorynetwork/blockstates/cable.json");
+        String json = Files.readString(file, StandardCharsets.UTF_8);
+        assertTrue(!json.contains("strands"),
+                "Das Bündeln ist ausgebaut — die Blockstate darf es nicht mehr nennen");
+        assertTrue(json.contains("cable_core"), "Der Kern fehlt");
+        for (String direction : List.of("north", "south", "east", "west", "up", "down")) {
+            assertTrue(json.contains("\"" + direction + "\""), "Arm nach " + direction + " fehlt");
         }
-    }
-
-    @Test
-    @DisplayName("Stränge überlappen sich nicht")
-    void strandsDoNotOverlap() {
-        for (int count = 2; count <= 4; count++) {
-            int size = CableLayout.size(count);
-            int[][] positions = CableLayout.positions(count);
-            for (int a = 0; a < positions.length; a++) {
-                for (int b = a + 1; b < positions.length; b++) {
-                    boolean apart =
-                            positions[a][0] + size <= positions[b][0]
-                            || positions[b][0] + size <= positions[a][0]
-                            || positions[a][1] + size <= positions[b][1]
-                            || positions[b][1] + size <= positions[a][1];
-                    assertTrue(apart, "Strang " + a + " und " + b + " bei "
-                            + count + " Strängen liegen ineinander");
-                }
-            }
-        }
-    }
-
-    @Test
-    @DisplayName("Die Modelldateien tragen dieselben Zahlen")
-    void modelsMatchLayout() throws IOException {
-        int checked = 0;
-        for (int count = 1; count <= 4; count++) {
-            int size = CableLayout.size(count);
-            int depth = CableLayout.depth(count);
-            int[][] positions = CableLayout.positions(count);
-
-            for (int index = 0; index < positions.length; index++) {
-                Path path = MODELS.resolve("cable_core_" + count + "_" + index + ".json");
-                assertTrue(Files.exists(path), "Modell fehlt: " + path);
-                String json = Files.readString(path, StandardCharsets.UTF_8);
-
-                double[] from = triple(json, "from");
-                double[] to = triple(json, "to");
-
-                assertEquals(positions[index][0], from[0], 0.001, "x in " + path.getFileName());
-                assertEquals(positions[index][1], from[1], 0.001, "y in " + path.getFileName());
-                assertEquals(depth, from[2], 0.001, "Tiefe in " + path.getFileName());
-                assertEquals(size, to[0] - from[0], 0.001, "Breite in " + path.getFileName());
-                assertEquals(size, to[1] - from[1], 0.001, "Höhe in " + path.getFileName());
-                checked++;
-            }
-        }
-        assertEquals(10, checked, "Anzahl geprüfter Kerne");
-    }
-
-    /** Liest die drei Zahlen hinter einem Schlüssel, ohne JSON zu deuten. */
-    private static double[] triple(String json, String key) {
-        int start = json.indexOf(quoted(key));
-        assertTrue(start >= 0, "Schlüssel fehlt: " + key);
-        int open = json.indexOf('[', start);
-        int close = json.indexOf(']', open);
-        String[] parts = json.substring(open + 1, close).split(",");
-        assertEquals(3, parts.length, "Drei Zahlen erwartet bei " + key);
-        double[] values = new double[3];
-        for (int i = 0; i < 3; i++) {
-            values[i] = Double.parseDouble(parts[i].trim());
-        }
-        return values;
-    }
-
-    private static String quoted(String key) {
-        return '"' + key + '"';
     }
 }

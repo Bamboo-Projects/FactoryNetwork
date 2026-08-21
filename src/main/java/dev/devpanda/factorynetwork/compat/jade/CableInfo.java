@@ -41,16 +41,15 @@ public enum CableInfo implements IBlockComponentProvider, IServerDataProvider<Bl
         ListTag lines = new ListTag();
 
         var controller = ControllerRegistry.owning(level, pos);
-        for (CableColour strand : CableBlock.strandsAt(level, pos)) {
-            String load = controller
-                    .map(entity -> {
-                        FactoryGraph graph = entity.graph();
-                        return graph.channelLoad(pos, strand) + "/"
-                                + FactoryGraph.CHANNELS_PER_STRAND;
-                    })
-                    .orElse("—");
-            lines.add(StringTag.valueOf(strand.getSerializedName() + " " + load));
-        }
+        CableColour colour = CableBlock.colourOf(level.getBlockState(pos));
+        String load = controller
+                .map(entity -> {
+                    FactoryGraph graph = entity.graph();
+                    return graph.channelLoad(pos, colour) + "/"
+                            + FactoryGraph.CHANNELS_PER_STRAND;
+                })
+                .orElse("—");
+        lines.add(StringTag.valueOf(colour.getSerializedName() + " " + load));
         data.put(KEY_STRANDS, lines);
     }
 
@@ -63,14 +62,14 @@ public enum CableInfo implements IBlockComponentProvider, IServerDataProvider<Bl
         for (int i = 0; i < lines.size(); i++) {
             String[] parts = lines.getString(i).split(" ", 2);
             Component name = Component.translatable(
-                    "jade.factorynetwork.strand." + parts[0]);
+                    "jade.factorynetwork.colour." + parts[0]);
             String load = parts.length > 1 ? parts[1] : "";
             // Ohne Controller in Reichweite steht ein Strich statt einer Zahl;
             // ein Kabel ohne Netz hat keine Kanäle, nicht null.
             ChatFormatting colour = load.startsWith("8/") ? ChatFormatting.RED
                     : load.startsWith("—") ? ChatFormatting.DARK_GRAY
                     : ChatFormatting.GRAY;
-            tooltip.add(Component.translatable("jade.factorynetwork.cable.strand", name, load)
+            tooltip.add(Component.translatable("jade.factorynetwork.cable.colour", name, load)
                     .withStyle(colour));
         }
     }

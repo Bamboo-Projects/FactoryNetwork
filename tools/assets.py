@@ -29,90 +29,83 @@ CABLE_COLOURS = [
 # einzelnes Kabel soll aussehen wie bisher. Ab zwei wird geteilt und alle
 # werden vier Pixel dick; mehr passt nicht in sechzehn Pixel, ohne dass sie
 # sich berühren.
-STRAND_LAYOUTS = {
-    1: [(5, 5)],
-    2: [(3, 6), (9, 6)],
-    3: [(2, 6), (6, 2), (10, 6)],
-    4: [(3, 3), (9, 3), (3, 9), (9, 9)],
-}
-
-
-def strand_size(count):
-    return 6 if count == 1 else 4
+# Die beiden Kabelstärken in Blockpixeln — dieselben Werte wie bei AE2 fuer
+# ummantelte und dichte Kabel, und dieselben wie in CableLayout.java.
+THIN = 6
+DENSE = 10
 
 
 def cable_models():
-    """Kern und Arm für jede Anzahl von Strängen und jede Position.
+    """Kern und Arm eines Kabels.
 
-    Die Farbe steckt nicht im Modell: Jeder Strang bekommt einen eigenen
-    Tintindex, und der Client färbt ihn aus der BlockEntity ein. Sonst
-    bräuchte jede Farbkombination ein eigenes Modell.
+    <b>Die UV-Angaben tragen die ganze Arbeit.</b> Minecraft legt sonst auf
+    jede Fläche denselben Ausschnitt, und die Maserung liefe je nach Lage quer
+    statt längs — genau der Fehler, den man im Spiel als Wellblech sah.
+
+    Die Textur ist ein Kreuz: Ihr Randbereich ist quer zur Achse gleichmäßig
+    und liefert die Längsansicht, ihre Mitte trägt den Querschnitt. Deshalb
+    nimmt eine Längsfläche den Rand in Laufrichtung und die Mitte quer dazu —
+    dieselbe Aufteilung, die Applied Energistics in Code macht.
+
+    Ein Arm wird nur nach Norden gebaut; die Blockstate dreht ihn. Die Drehung
+    nimmt die Textur mit, also stimmt die Ausrichtung in allen sechs
+    Richtungen.
     """
-    textures = {"cable": texture("cable"), "particle": texture("cable")}
-    faces = ("north", "south", "east", "west", "up", "down")
+    for size in (THIN, DENSE):
+        lo = (16 - size) // 2
+        hi = lo + size
+        name = "cable" if size == THIN else "dense_cable"
+        textures = {"cable": texture("cable"), "particle": texture("cable")}
 
-    for count, positions in STRAND_LAYOUTS.items():
-        size = strand_size(count)
-        for index, (x, y) in enumerate(positions):
-            # Feste UV-Angabe. Ohne sie schneidet Minecraft die Textur nach
-            # Blockkoordinaten zu, und ein Strang bei x=9 bekäme einen anderen
-            # Ausschnitt als einer bei x=3 — dasselbe Rohr sähe je nach Lage
-            # im Block anders aus.
-            face = {"texture": "#cable", "tintindex": index,
-                    "uv": [0, 0, size, size]}
-            long_face = {"texture": "#cable", "tintindex": index,
-                         "uv": [0, 0, size, 16]}
+        # Querschnitt: die Mitte der Textur, in beiden Achsen das Profil.
+        quer = [lo, lo, hi, hi]
 
-            # Der Kern sitzt in der Tiefe immer mittig — verteilt wird nur
-            # in der Fläche, die man beim Blick auf das Kabel sieht.
-            depth = (16 - size) // 2
+        write(A + "/models/block/%s_core.json" % name, {
+            "textures": textures,
+            "elements": [{
+                "from": [lo, lo, lo],
+                "to": [hi, hi, hi],
+                "faces": {f: {"texture": "#cable", "tintindex": 0, "uv": quer}
+                          for f in ("north", "south", "east", "west", "up", "down")},
+            }],
+        })
 
-            write(A + "/models/block/cable_core_%d_%d.json" % (count, index), {
-                "textures": textures,
-                "elements": [{
-                    "from": [x, y, depth],
-                    "to": [x + size, y + size, depth + size],
-                    "faces": {f: dict(face) for f in faces},
-                }],
-            })
+        write(A + "/models/block/%s_arm.json" % name, {
+            "textures": textures,
+            "elements": [{
+                "from": [lo, lo, 0],
+                "to": [hi, hi, lo],
+                "faces": {
+                    # Stirnfläche an der Blockkante: der Querschnitt.
+                    "north": {"texture": "#cable", "tintindex": 0, "uv": quer,
+                              "cullface": "north"},
+                    # Seiten: quer liegt in der Höhe, längs in der Tiefe.
+                    "east": {"texture": "#cable", "tintindex": 0, "uv": [0, lo, lo, hi]},
+                    "west": {"texture": "#cable", "tintindex": 0, "uv": [0, lo, lo, hi]},
+                    # Oben und unten: quer liegt in der Breite.
+                    "up": {"texture": "#cable", "tintindex": 0, "uv": [lo, 0, hi, lo]},
+                    "down": {"texture": "#cable", "tintindex": 0, "uv": [lo, 0, hi, lo]},
+                },
+            }],
+        })
 
-            # Arm nach Norden; die Blockstate dreht ihn in die anderen
-            # Richtungen. Er reicht von der Blockkante bis an den Kern.
-            write(A + "/models/block/cable_arm_%d_%d.json" % (count, index), {
-                "textures": textures,
-                "elements": [{
-                    "from": [x, y, 0],
-                    "to": [x + size, y + size, depth],
-                    "faces": {
-                        "north": dict(face, cullface="north"),
-                        "east": {"texture": "#cable", "tintindex": index,
-                                 "uv": [0, 0, depth, size]},
-                        "west": {"texture": "#cable", "tintindex": index,
-                                 "uv": [0, 0, depth, size]},
-                        "up": {"texture": "#cable", "tintindex": index,
-                               "uv": [0, 0, size, depth]},
-                        "down": {"texture": "#cable", "tintindex": index,
-                                 "uv": [0, 0, size, depth]},
-                    },
-                }],
-            })
+        # In der Hand ein durchgehendes Rohr, sonst sähe man nur einen Würfel.
+        write(A + "/models/block/%s_inventory.json" % name, {
+            "textures": textures,
+            "elements": [{
+                "from": [lo, lo, 0],
+                "to": [hi, hi, 16],
+                "faces": {
+                    "north": {"texture": "#cable", "tintindex": 0, "uv": quer},
+                    "south": {"texture": "#cable", "tintindex": 0, "uv": quer},
+                    "east": {"texture": "#cable", "tintindex": 0, "uv": [0, lo, 16, hi]},
+                    "west": {"texture": "#cable", "tintindex": 0, "uv": [0, lo, 16, hi]},
+                    "up": {"texture": "#cable", "tintindex": 0, "uv": [lo, 0, hi, 16]},
+                    "down": {"texture": "#cable", "tintindex": 0, "uv": [lo, 0, hi, 16]},
+                },
+            }],
+        })
 
-    # In der Hand ein durchgehendes Rohr, sonst sähe man nur einen Würfel.
-    write(A + "/models/block/cable_inventory.json", {
-        "textures": textures,
-        "elements": [{
-            "from": [5, 5, 0],
-            "to": [11, 11, 16],
-            "faces": {
-                "north": {"texture": "#cable", "tintindex": 0, "uv": [0, 0, 6, 6]},
-                "south": {"texture": "#cable", "tintindex": 0, "uv": [0, 0, 6, 6]},
-                "east": {"texture": "#cable", "tintindex": 0, "uv": [0, 0, 16, 6]},
-                "west": {"texture": "#cable", "tintindex": 0, "uv": [0, 0, 16, 6]},
-                "up": {"texture": "#cable", "tintindex": 0, "uv": [0, 0, 6, 16]},
-                "down": {"texture": "#cable", "tintindex": 0, "uv": [0, 0, 6, 16]},
-            },
-        }],
-    })
     for colour in CABLE_COLOURS:
         name = "cable" if colour == "none" else colour + "_cable"
         write(A + "/models/item/%s.json" % name, {"parent": block("cable_inventory")})
@@ -136,9 +129,9 @@ def blockstates():
     write(A + "/blockstates/controller.json",
           {"variants": {"": {"model": block("controller")}}})
 
-    # Kabel: Die Anzahl der Stränge wählt die Kerne, die Verbindungen die
-    # Arme. Die Farben kommen nicht aus der Blockstate — sie werden zur
-    # Laufzeit eingefärbt.
+    # Kabel: ein Kern, dazu ein Arm je Verbindung. Die Farbe kommt nicht aus
+    # der Blockstate — sie wird zur Laufzeit eingefärbt, sonst brauchte jede
+    # der siebzehn Farben einen eigenen Satz Modelle.
     rotations = {
         "north": {},
         "south": {"y": 180},
@@ -147,21 +140,13 @@ def blockstates():
         "up": {"x": 270},
         "down": {"x": 90},
     }
-    parts = []
-    for count, positions in STRAND_LAYOUTS.items():
-        for index in range(len(positions)):
-            parts.append({
-                "when": {"strands": str(count)},
-                "apply": {"model": block("cable_core_%d_%d" % (count, index))},
-            })
-            for direction, rotation in rotations.items():
-                apply = {"model": block("cable_arm_%d_%d" % (count, index))}
-                apply.update(rotation)
-                parts.append({
-                    "when": {"strands": str(count), direction: "true"},
-                    "apply": apply,
-                })
-    write(A + "/blockstates/cable.json", {"multipart": parts})
+    for size, name in ((THIN, "cable"), (DENSE, "dense_cable")):
+        parts = [{"apply": {"model": block(name + "_core")}}]
+        for direction, rotation in rotations.items():
+            apply = {"model": block(name + "_arm")}
+            apply.update(rotation)
+            parts.append({"when": {direction: "true"}, "apply": apply})
+        write(A + "/blockstates/%s.json" % name, {"multipart": parts})
 
     # Connector zeigt in sechs Richtungen.
     facing = {

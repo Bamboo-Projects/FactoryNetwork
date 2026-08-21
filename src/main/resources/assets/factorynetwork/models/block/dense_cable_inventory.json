@@ -7,33 +7,33 @@
     {
       "from": [
         3,
-        6,
-        6
+        3,
+        0
       ],
       "to": [
-        7,
-        10,
-        10
+        13,
+        13,
+        16
       ],
       "faces": {
         "north": {
           "texture": "#cable",
           "tintindex": 0,
           "uv": [
-            0,
-            0,
-            4,
-            4
+            3,
+            3,
+            13,
+            13
           ]
         },
         "south": {
           "texture": "#cable",
           "tintindex": 0,
           "uv": [
-            0,
-            0,
-            4,
-            4
+            3,
+            3,
+            13,
+            13
           ]
         },
         "east": {
@@ -41,9 +41,9 @@
           "tintindex": 0,
           "uv": [
             0,
-            0,
-            4,
-            4
+            3,
+            16,
+            13
           ]
         },
         "west": {
@@ -51,29 +51,29 @@
           "tintindex": 0,
           "uv": [
             0,
-            0,
-            4,
-            4
+            3,
+            16,
+            13
           ]
         },
         "up": {
           "texture": "#cable",
           "tintindex": 0,
           "uv": [
+            3,
             0,
-            0,
-            4,
-            4
+            13,
+            16
           ]
         },
         "down": {
           "texture": "#cable",
           "tintindex": 0,
           "uv": [
+            3,
             0,
-            0,
-            4,
-            4
+            13,
+            16
           ]
         }
       }

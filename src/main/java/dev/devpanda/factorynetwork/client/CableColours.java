@@ -3,7 +3,6 @@ package dev.devpanda.factorynetwork.client;
 import dev.devpanda.factorynetwork.FactoryNetwork;
 import dev.devpanda.factorynetwork.block.CableBlock;
 import dev.devpanda.factorynetwork.block.CableColour;
-import dev.devpanda.factorynetwork.block.entity.CableBlockEntity;
 import dev.devpanda.factorynetwork.item.ColouredCableItem;
 import dev.devpanda.factorynetwork.registry.FnBlocks;
 import dev.devpanda.factorynetwork.registry.FnItems;
@@ -22,9 +21,8 @@ import java.util.List;
  * Strang hat, steht in der BlockEntity, und genau dorthin greift dieser
  * Handler.
  *
- * <p>Der Weg über die Einfärbung spart die Alternative: vier Farbfelder im
- * Blockzustand mit je siebzehn Werten wären über hunderttausend Zustände,
- * für die Minecraft jeweils ein Modell bakt.
+ * <p>Der Weg über die Einfärbung spart siebzehn Sätze Texturen: Eine graue
+ * Textur wird zur Laufzeit mit der Farbe des Blockzustands multipliziert.
  */
 @EventBusSubscriber(modid = FactoryNetwork.MOD_ID, value = Dist.CLIENT)
 public final class CableColours {
@@ -38,14 +36,7 @@ public final class CableColours {
             if (tintIndex < 0 || level == null || pos == null) {
                 return NEUTRAL;
             }
-            List<CableColour> strands =
-                    level.getBlockEntity(pos) instanceof CableBlockEntity cable
-                            ? cable.ordered()
-                            : List.of(CableBlock.colourOf(state));
-            if (tintIndex >= strands.size()) {
-                return NEUTRAL;
-            }
-            return tint(strands.get(tintIndex));
+            return tint(CableBlock.colourOf(state));
         }, FnBlocks.CABLE.get());
     }
 

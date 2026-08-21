@@ -134,29 +134,77 @@ CABLE_COLOURS = {
 
 
 def cable(tube=None):
-    """Die Oberfläche eines Kabelrohrs.
+    """Die Oberfläche eines Kabels.
 
-    <b>Gleichmäßig und ohne große Merkmale.</b> Das war der Fehler der
-    ersten Fassung: Sie zeigte drei Röhren mit Querschellen, gemalt für eine
-    volle Blockfläche. Das Modell ist aber ein schmales Rohr, und Minecraft
-    schneidet die Textur nach Blockkoordinaten zu — jede Fläche bekam einen
-    anderen Ausschnitt, und die Schellen zerfielen in Bruchstücke.
+    <b>Ein Kreuz, kein gleichmäßiges Muster.</b> Zwei Fehlversuche stehen
+    dahinter. Der erste malte drei Röhren mit Querschellen für eine volle
+    Blockfläche — das Modell ist aber ein schmales Rohr, und die Schellen
+    zerfielen in Bruchstücke. Der zweite nahm eine gleichmäßige Längsriffelung,
+    damit jeder Ausschnitt gleich aussieht; im Spiel lief die Maserung dann auf
+    waagerechten Bahnen quer, weil alle sechs Flächen denselben Ausschnitt
+    bekommen.
 
-    Eine feine Längsriffelung sieht dagegen aus jedem Ausschnitt gleich aus.
-    Gefärbt wird nicht hier, sondern zur Laufzeit über den Tintindex; deshalb
-    ist die Textur grau und hell genug, dass eine Farbe darauf noch wirkt.
+    Applied Energistics löst das anders, und diese Fassung übernimmt es: Der
+    <b>Randbereich</b> der Textur ist quer zur Achse gleichmäßig und liefert
+    die Längsansicht eines Arms. Die <b>Mitte</b> trägt den Querschnitt und ist
+    in beiden Achsen symmetrisch, also von jeder Seite gleich. Damit stimmt die
+    Ausrichtung ohne eine einzige Drehung im Modell.
+
+    Gezeichnet wird in Blockpixeln, jeder als 4x4-Feld: Die Datei ist 64x64 wie
+    alle anderen, das Muster aber effektiv 16x16. Feinere Strukturen ergeben
+    auf sechs Blockpixeln nur Moiré — genau das Flimmern, das die Riffelung
+    hatte.
     """
-    base = tube if tube else (150, 158, 152)
-    img = surface(blend(base, (255, 255, 255), 0.06), blend(base, EDGE, 0.35))
-    d = ImageDraw.Draw(img)
+    base = tube if tube else (168, 174, 170)
+    img = Image.new("RGBA", (N, N), (0, 0, 0, 0))
+    px = img.load()
 
-    # Längsriffelung: schmale Rillen, die sich alle vier Pixel wiederholen.
-    # Vier, weil das die schmalste Strangbreite ist — so trifft jeder
-    # Ausschnitt dasselbe Muster.
-    for x in range(0, N, 4):
-        d.line([(x, 0), (x, N - 1)], fill=blend(base, EDGE, 0.55) + (255,))
-        d.line([(x + 1, 0), (x + 1, N - 1)],
-               fill=blend(base, (255, 255, 255), 0.30) + (255,))
+    # Der Mantel liegt zwischen Blockpixel 5 und 11. Aussen bleibt es hell,
+    # damit der Randbereich als ruhige Längsfläche taugt.
+    # Der Verlauf liegt ganz im Mantel: Blockpixel 5 und 10 sind seine Kanten
+    # und dunkel, 7 und 8 tragen das Glanzlicht. Ein Saum ausserhalb waere
+    # unsichtbar, denn auf das Kabel kommt nur der Bereich 5 bis 11.
+    profil = {5: 0.60, 6: 0.84, 7: 1.00, 8: 1.00, 9: 0.84, 10: 0.60}
+    # Aussen voll hell, damit der Randbereich die Laengsansicht ungedaempft
+    # durchreicht: Das Minimum beider Achsen ist dort genau das Querprofil.
+    aussen = 1.00
+
+    def helligkeit(t):
+        return profil.get(t, aussen)
+
+    for by in range(16):
+        for bx in range(16):
+            # Das Minimum beider Achsen: aussen bleibt die jeweils andere
+            # Achse ruhig, in der Mitte entsteht die Rundung.
+            f = min(helligkeit(bx), helligkeit(by))
+            farbe = tuple(min(255, int(c * f)) for c in base)
+            for y in range(by * 4, by * 4 + 4):
+                for x in range(bx * 4, bx * 4 + 4):
+                    px[x, y] = farbe + (255,)
+    return img
+
+
+def cable_channels(satz):
+    """Die Kanallinien eines smarten Kabels.
+
+    Vier haarfeine Linien längs in der Kabelmitte, je ein Viertel Blockpixel
+    breit — bei 64 Pixeln also genau ein Pixel. Satz eins liegt auf 7,0 / 7,5 /
+    8,0 / 8,5, Satz zwei um ein Achtel versetzt dazwischen. Übereinandergelegt
+    ergeben beide acht Bahnen; wie viele leuchten, sagt die Auslastung.
+
+    Dieselben Positionen wie bei Applied Energistics, dort ausgemessen. Hier
+    ist die vierfache Auflösung nicht Zierde, sondern Bedingung: Ein Viertel
+    Blockpixel gibt es unter 64 nicht.
+    """
+    img = Image.new("RGBA", (N, N), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    bahnen = [7.00, 7.50, 8.00, 8.50] if satz == 0 else [7.25, 7.75, 8.25, 8.75]
+    for nr, mitte in enumerate(bahnen):
+        x = int(round(mitte * 4))
+        # Waagerecht und senkrecht, damit dieselbe Textur für die Längsansicht
+        # und für den Querschnitt taugt — wie beim Mantel.
+        d.line([(x, 0), (x, N - 1)], fill=(255, 255, 255, 255))
+        d.line([(0, x), (N - 1, x)], fill=(255, 255, 255, 255))
     return img
 
 
@@ -324,6 +372,8 @@ def main():
     # Eine einzige Kabeltextur, in Grau. Gefärbt wird zur Laufzeit über den
     # Tintindex — siebzehn Texturen wären dasselbe Bild in siebzehn Tönen.
     save(cable(), "block", "cable")
+    save(cable_channels(0), "block", "cable_channels_a")
+    save(cable_channels(1), "block", "cable_channels_b")
     save(connector_front(), "block", "connector_front")
     save(connector_side(), "block", "connector_side")
     save(connector_back(), "block", "connector_back")

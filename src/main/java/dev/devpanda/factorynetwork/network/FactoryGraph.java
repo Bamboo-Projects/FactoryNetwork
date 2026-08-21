@@ -175,17 +175,15 @@ public final class FactoryGraph {
     }
 
     /**
-     * Geht in einen Kabelblock hinein — aber nur in die Stränge, die zur
-     * Farbe passen, aus der man kommt.
+     * Geht in einen Kabelblock hinein — aber nur, wenn seine Farbe zu der
+     * passt, aus der man kommt.
      */
     private static void visitCable(Level level, BlockPos pos, Node from, Map<Node, Node> parents,
                                    Deque<Node> queue, Set<BlockPos> cables) {
         boolean entered = false;
-        for (CableColour strand : CableBlock.strandsAt(level, pos)) {
-            if (!from.colour().connectsTo(strand)) {
-                continue;
-            }
-            Node node = new Node(pos.immutable(), strand);
+        CableColour colour = CableBlock.colourOf(level.getBlockState(pos));
+        if (from.colour().connectsTo(colour)) {
+            Node node = new Node(pos.immutable(), colour);
             if (!parents.containsKey(node)) {
                 parents.put(node, from);
                 queue.add(node);

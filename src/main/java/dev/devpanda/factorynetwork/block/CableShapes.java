@@ -11,45 +11,30 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Wo die Stränge eines Bündels im Block liegen.
+ * Woran man hängenbleibt.
  *
- * <p>Dieselben Zahlen wie im Modellskript {@code tools/assets.py} — sie
- * müssen übereinstimmen, sonst greift man neben das, was man sieht. Sie hier
- * noch einmal zu führen ist der Preis dafür, dass Minecraft Modelle und
+ * <p>Dieselben Zahlen wie im Modellskript {@code tools/assets.py} — sie müssen
+ * übereinstimmen, sonst greift man neben das, was man sieht. Sie hier noch
+ * einmal zu führen ist der Preis dafür, dass Minecraft Modelle und
  * Trefferflächen getrennt hält; ein Test wacht darüber.
  */
 public final class CableShapes {
 
-    private static final Map<Integer, VoxelShape[]> CORES = new HashMap<>();
-    private static final Map<Integer, Map<Direction, VoxelShape[]>> ARMS = new HashMap<>();
+    private static final Map<Integer, VoxelShape> CORES = new HashMap<>();
+    private static final Map<Integer, Map<Direction, VoxelShape>> ARMS = new HashMap<>();
 
     static {
-        for (int count = 1; count <= 4; count++) {
-            int[][] positions = CableLayout.positions(count);
-            int size = CableLayout.size(count);
-            int depth = CableLayout.depth(count);
+        for (int size : new int[] {CableLayout.THIN, CableLayout.DENSE}) {
+            int lo = CableLayout.offset(size);
+            int hi = CableLayout.far(size);
+            CORES.put(size, box(lo, lo, lo, hi, hi, hi));
 
-            VoxelShape[] cores = new VoxelShape[positions.length];
-            Map<Direction, VoxelShape[]> arms = new EnumMap<>(Direction.class);
+            Map<Direction, VoxelShape> arms = new EnumMap<>(Direction.class);
             for (Direction direction : Direction.values()) {
-                arms.put(direction, new VoxelShape[positions.length]);
+                arms.put(direction, arm(direction, lo, hi));
             }
-
-            for (int index = 0; index < positions.length; index++) {
-                int x = positions[index][0];
-                int y = positions[index][1];
-                cores[index] = box(x, y, depth, x + size, y + size, depth + size);
-                for (Direction direction : Direction.values()) {
-                    arms.get(direction)[index] = arm(direction, x, y, size, depth);
-                }
-            }
-            CORES.put(count, cores);
-            ARMS.put(count, arms);
+            ARMS.put(size, arms);
         }
-    }
-
-    private static int clamp(int count) {
-        return CableLayout.clamp(count);
     }
 
     private static VoxelShape box(double x0, double y0, double z0,
@@ -57,46 +42,24 @@ public final class CableShapes {
         return Shapes.box(x0 / 16.0, y0 / 16.0, z0 / 16.0, x1 / 16.0, y1 / 16.0, z1 / 16.0);
     }
 
-    /** Der Arm eines Strangs von der Blockkante bis an seinen Kern. */
-    private static VoxelShape arm(Direction direction, int x, int y, int size, int depth) {
-        int far = 16 - depth;
+    /** Der Arm von der Blockkante bis an den Kern. */
+    private static VoxelShape arm(Direction direction, int lo, int hi) {
         return switch (direction) {
-            case NORTH -> box(x, y, 0, x + size, y + size, depth);
-            case SOUTH -> box(x, y, far, x + size, y + size, 16);
-            case WEST -> box(0, y, x, depth, y + size, x + size);
-            case EAST -> box(far, y, x, 16, y + size, x + size);
-            case DOWN -> box(x, 0, y, x + size, depth, y + size);
-            case UP -> box(x, far, y, x + size, 16, y + size);
+            case NORTH -> box(lo, lo, 0, hi, hi, lo);
+            case SOUTH -> box(lo, lo, hi, hi, hi, 16);
+            case WEST -> box(0, lo, lo, lo, hi, hi);
+            case EAST -> box(hi, lo, lo, 16, hi, hi);
+            case DOWN -> box(lo, 0, lo, hi, lo, hi);
+            case UP -> box(lo, hi, lo, hi, 16, hi);
         };
     }
 
-    /**
-     * Die Trefferfläche eines einzelnen Strangs — Kern samt seiner Arme.
-     *
-     * <p>Darauf zielt der Spieler beim Abbauen. Ohne eigene Flächen je Strang
-     * bliebe nur der ganze Block, und ein Bündel ließe sich nur als Ganzes
-     * herausbrechen.
-     */
-    public static VoxelShape strand(int strandCount, int index, List<Direction> connections) {
-        int count = clamp(strandCount);
-        VoxelShape[] cores = CORES.get(count);
-        if (index < 0 || index >= cores.length) {
-            return Shapes.empty();
-        }
-        VoxelShape shape = cores[index];
-        Map<Direction, VoxelShape[]> arms = ARMS.get(count);
+    /** Kern samt der Arme, die wirklich verbunden sind. */
+    public static VoxelShape whole(int size, List<Direction> connections) {
+        VoxelShape shape = CORES.getOrDefault(size, CORES.get(CableLayout.THIN));
+        Map<Direction, VoxelShape> arms = ARMS.getOrDefault(size, ARMS.get(CableLayout.THIN));
         for (Direction direction : connections) {
-            shape = Shapes.join(shape, arms.get(direction)[index], BooleanOp.OR);
-        }
-        return shape;
-    }
-
-    /** Alle Stränge zusammen — das, woran man hängenbleibt. */
-    public static VoxelShape whole(int strandCount, List<Direction> connections) {
-        int count = clamp(strandCount);
-        VoxelShape shape = Shapes.empty();
-        for (int index = 0; index < CORES.get(count).length; index++) {
-            shape = Shapes.join(shape, strand(count, index, connections), BooleanOp.OR);
+            shape = Shapes.join(shape, arms.get(direction), BooleanOp.OR);
         }
         return shape;
     }
