@@ -18,6 +18,8 @@ public final class FnClient {
     @SubscribeEvent
     public static void registerScreens(RegisterMenuScreensEvent event) {
         event.register(FnMenus.TERMINAL.get(), TerminalScreen::new);
+        event.register(FnMenus.PRESS.get(),
+                dev.devpanda.factorynetwork.client.screen.PressScreen::new);
     }
 
     @SubscribeEvent

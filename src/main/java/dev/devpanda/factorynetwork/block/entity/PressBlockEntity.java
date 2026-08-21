@@ -28,7 +28,8 @@ import java.util.Optional;
  * die stumm stehenbleibt, schickt den Spieler auf die Suche nach dem falschen
  * Fehler; deshalb steht der Ladestand in der Oberfläche und im Jade-Tooltip.
  */
-public class PressBlockEntity extends BlockEntity {
+public class PressBlockEntity extends BlockEntity
+        implements net.minecraft.world.MenuProvider {
 
     public static final int SLOT_STAMP = 0;
     public static final int SLOT_MATERIAL = 1;
@@ -159,6 +160,103 @@ public class PressBlockEntity extends BlockEntity {
         // Der Stempel bleibt — er ist Werkzeug, nicht Zutat.
         item(SLOT_MATERIAL).shrink(1);
         progress = 0;
+    }
+
+    // ---- Fenster ----------------------------------------------------------
+
+    /**
+     * Die Zahlen, die das Fenster laufend braucht.
+     *
+     * <p>Der schmale Weg, den Minecraft dafür vorsieht: ein paar Werte, die
+     * sich jeden Tick ändern und beim Zuschauen aktuell sein müssen. Ein
+     * eigenes Paket dafür wäre Aufwand für vier Zahlen.
+     */
+    private final net.minecraft.world.inventory.ContainerData data =
+            new net.minecraft.world.inventory.ContainerData() {
+                @Override
+                public int get(int index) {
+                    return switch (index) {
+                        case dev.devpanda.factorynetwork.client.menu.PressMenu.DATA_PROGRESS
+                                -> progress;
+                        case dev.devpanda.factorynetwork.client.menu.PressMenu.DATA_REQUIRED
+                                -> required;
+                        case dev.devpanda.factorynetwork.client.menu.PressMenu.DATA_ENERGY
+                                -> energy.getEnergyStored();
+                        case dev.devpanda.factorynetwork.client.menu.PressMenu.DATA_CAPACITY
+                                -> CAPACITY;
+                        default -> 0;
+                    };
+                }
+
+                @Override
+                public void set(int index, int value) {
+                    // Nichts: Der Server rechnet, der Client schaut zu.
+                }
+
+                @Override
+                public int getCount() {
+                    return 4;
+                }
+            };
+
+    /** Die Plätze als Container, damit das Fenster damit umgehen kann. */
+    private final net.minecraft.world.Container container =
+            new net.minecraft.world.SimpleContainer(SLOTS) {
+                @Override
+                public net.minecraft.world.item.ItemStack getItem(int slot) {
+                    return PressBlockEntity.this.item(slot);
+                }
+
+                @Override
+                public void setItem(int slot, net.minecraft.world.item.ItemStack stack) {
+                    PressBlockEntity.this.setItem(slot, stack);
+                }
+
+                @Override
+                public net.minecraft.world.item.ItemStack removeItem(int slot, int amount) {
+                    net.minecraft.world.item.ItemStack stack = PressBlockEntity.this.item(slot);
+                    if (stack.isEmpty()) {
+                        return net.minecraft.world.item.ItemStack.EMPTY;
+                    }
+                    net.minecraft.world.item.ItemStack taken = stack.split(amount);
+                    setChanged();
+                    return taken;
+                }
+
+                @Override
+                public net.minecraft.world.item.ItemStack removeItemNoUpdate(int slot) {
+                    net.minecraft.world.item.ItemStack stack = PressBlockEntity.this.item(slot);
+                    PressBlockEntity.this.setItem(slot,
+                            net.minecraft.world.item.ItemStack.EMPTY);
+                    return stack;
+                }
+
+                @Override
+                public boolean stillValid(net.minecraft.world.entity.player.Player player) {
+                    return level != null
+                            && level.getBlockEntity(worldPosition) == PressBlockEntity.this
+                            && player.distanceToSqr(worldPosition.getX() + 0.5,
+                                    worldPosition.getY() + 0.5,
+                                    worldPosition.getZ() + 0.5) <= 64.0;
+                }
+
+                @Override
+                public boolean isEmpty() {
+                    return items.stream().allMatch(net.minecraft.world.item.ItemStack::isEmpty);
+                }
+            };
+
+    @Override
+    public net.minecraft.network.chat.Component getDisplayName() {
+        return net.minecraft.network.chat.Component.translatable("block.factorynetwork.press");
+    }
+
+    @Override
+    public net.minecraft.world.inventory.AbstractContainerMenu createMenu(
+            int id, net.minecraft.world.entity.player.Inventory inventory,
+            net.minecraft.world.entity.player.Player player) {
+        return new dev.devpanda.factorynetwork.client.menu.PressMenu(
+                id, inventory, worldPosition, container, data);
     }
 
     @Override

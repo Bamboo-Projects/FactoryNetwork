@@ -65,6 +65,19 @@ public class PressBlock extends HorizontalDirectionalBlock implements EntityBloc
                 : null;
     }
 
+    /** Rechtsklick öffnet das Fenster. */
+    @Override
+    protected net.minecraft.world.InteractionResult useWithoutItem(BlockState state, Level level,
+            BlockPos pos, net.minecraft.world.entity.player.Player player,
+            net.minecraft.world.phys.BlockHitResult hit) {
+        if (!level.isClientSide
+                && level.getBlockEntity(pos) instanceof PressBlockEntity press
+                && player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
+            serverPlayer.openMenu(press, buffer -> buffer.writeBlockPos(pos));
+        }
+        return net.minecraft.world.InteractionResult.sidedSuccess(level.isClientSide);
+    }
+
     /**
      * Beim Abbauen fällt heraus, was drinliegt.
      *

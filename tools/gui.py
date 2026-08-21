@@ -170,12 +170,72 @@ def save(image, name):
     print("  gui/%s.png  %d B" % (name, os.path.getsize(path)))
 
 
+def press_background():
+    """Das Fenster der Presse.
+
+    Ein gewöhnliches Vanilla-Inventar: Stempel oben, Material darunter, Ausgabe
+    rechts. Dazwischen zwei Anzeigen — der Pfeil für den Fortschritt und ein
+    Balken für den Strom.
+
+    <b>Beide Anzeigen brauchen eine leere Fassung im Hintergrund.</b> Sonst
+    kann der Bildschirm nicht zeigen, wie voll sie sind: Er blendet den vollen
+    Zustand nur teilweise darüber, und ohne den leeren dahinter stünde dort ein
+    Loch.
+    """
+    breite, hoehe = 176, 166
+    img = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+
+    panel(d, (0, 0, breite - 1, hoehe - 1))
+
+    # Die drei Plätze der Maschine
+    slot(d, 43, 16)   # Stempel
+    slot(d, 43, 52)   # Material
+    slot(d, 115, 34)  # Ausgabe, gross gerahmt
+    sunken(d, (110, 29, 137, 56), fill=PANEL_DARK)
+    slot(d, 115, 34)
+
+    # Spielerinventar
+    for row in range(3):
+        for column in range(9):
+            slot(d, 7 + column * 18, 83 + row * 18)
+    for column in range(9):
+        slot(d, 7 + column * 18, 141)
+
+    # Fortschrittspfeil, leer: eine Rinne von links nach rechts
+    sunken(d, (69, 35, 100, 50), fill=PANEL_DARK)
+
+    # Energiebalken, leer: schmaler senkrechter Schacht
+    sunken(d, (11, 16, 21, 72), fill=PANEL_DARK)
+
+    # Die gefüllten Fassungen liegen rechts daneben im Atlas, damit der
+    # Bildschirm sie von dort holen kann.
+    arrow = Image.new("RGBA", (30, 14), (0, 0, 0, 0))
+    ad = ImageDraw.Draw(arrow)
+    ad.polygon([(0, 3), (20, 3), (20, 0), (29, 7), (20, 13), (20, 10), (0, 10)],
+               fill=(120, 190, 120, 255))
+    ad.polygon([(0, 4), (19, 4), (19, 2), (27, 7), (19, 12), (19, 9), (0, 9)],
+               fill=(160, 225, 150, 255))
+    img.paste(arrow, (180, 0))
+
+    energie = Image.new("RGBA", (8, 54), (0, 0, 0, 0))
+    ed = ImageDraw.Draw(energie)
+    for y in range(54):
+        anteil = y / 53.0
+        farbe = (int(220 - 60 * anteil), int(150 + 40 * anteil), 60, 255)
+        ed.line([(0, y), (7, y)], fill=farbe)
+    ed.line([(0, 0), (0, 53)], fill=(255, 226, 150, 255))
+    img.paste(energie, (180, 20))
+    return img
+
+
 def main():
     print("Oberflächentexturen:")
     save(background(), "terminal")
     save(slot_grid(), "storage_grid")
     save(screen(), "screen")
     save(widgets(), "widgets")
+    save(press_background(), "press")
     print("Maße: Fenster %dx%d, Arbeitsfläche %dx%d bei %d,%d"
           % (WIDTH, HEIGHT, WORK_W, WORK_H, WORK_X, WORK_Y))
     print("      Inventar bei %d,%d · Schnellzugriff bei %d,%d"
