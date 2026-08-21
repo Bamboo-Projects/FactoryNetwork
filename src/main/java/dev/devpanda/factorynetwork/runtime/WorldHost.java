@@ -4,12 +4,16 @@ import dev.devpanda.factorynetwork.block.entity.ConnectorBlockEntity;
 import dev.devpanda.factorynetwork.lang.Span;
 import dev.devpanda.factorynetwork.lang.ast.Expr;
 import dev.devpanda.factorynetwork.network.FactoryGraph;
+import dev.devpanda.factorynetwork.network.NetworkFluids;
 import dev.devpanda.factorynetwork.network.NetworkStorage;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.material.Fluid;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.items.IItemHandler;
 
 import java.util.ArrayList;
@@ -30,12 +34,20 @@ public final class WorldHost implements Interpreter.Host {
     private final Level level;
     private final FactoryGraph graph;
     private final NetworkStorage storage;
+    private final NetworkFluids fluidStorage;
     private final List<String> logs = new ArrayList<>();
 
-    public WorldHost(Level level, FactoryGraph graph, NetworkStorage storage) {
+    public WorldHost(Level level, FactoryGraph graph, NetworkStorage storage,
+            NetworkFluids fluidStorage) {
         this.level = level;
         this.graph = graph;
         this.storage = storage;
+        this.fluidStorage = fluidStorage == null ? new NetworkFluids() : fluidStorage;
+    }
+
+    /** Ohne Flüssigkeitsspeicher — für Aufrufe, die keine brauchen. */
+    public WorldHost(Level level, FactoryGraph graph, NetworkStorage storage) {
+        this(level, graph, storage, null);
     }
 
     public List<String> logs() {
@@ -44,6 +56,12 @@ public final class WorldHost implements Interpreter.Host {
 
     @Override
     public long move(Value amount, Value from, Value to) {
+        // Zuerst die Art: Wasser und Steine gehen verschiedene Wege, und ein
+        // Fluid-Selektor, der in der Gegenstandsauflösung landet, trifft
+        // nichts — was dort ununterscheidbar von "kein Filter" wäre.
+        if (isFluidRequest(amount)) {
+            return moveFluid(amount, from, to);
+        }
         List<Item> items = itemsOf(amount);
         long limit = amountOf(amount);
 
@@ -80,6 +98,148 @@ public final class WorldHost implements Interpreter.Host {
             return drainInto(source, items, limit);
         }
         return transfer(source, target, items, limit);
+    }
+
+    /** Meint diese Auswahl Flüssigkeiten? */
+    private static boolean isFluidRequest(Value value) {
+        Value inner = value instanceof Value.Request request ? request : value;
+        if (inner instanceof Value.FluidSelection) {
+            return true;
+        }
+        return inner instanceof Value.Request request
+                && request.kind() == Value.Request.Kind.FLUID;
+    }
+
+    // ---- Flüssigkeiten ----------------------------------------------------
+
+    /**
+     * Bewegt Flüssigkeit, in Millibucket.
+     *
+     * <p>Die Gestalt spiegelt den Weg der Gegenstände: erst prüfen, dann
+     * einfüllen, dann wirklich abziehen. Anders ginge es nicht — ein Tank, der
+     * die Hälfte nimmt, darf nicht dazu führen, dass die andere Hälfte
+     * verschwindet.
+     */
+    private long moveFluid(Value amount, Value from, Value to) {
+        List<Fluid> fluids = fluidsOf(amount);
+        long limit = amountOf(amount);
+        boolean fromStorage = isStorage(from);
+        boolean toStorage = isStorage(to);
+        if (fromStorage && toStorage) {
+            return 0;
+        }
+        if (fromStorage) {
+            return fillFromNetwork(fluids, limit, tankOf(to));
+        }
+        if (toStorage) {
+            return drainIntoNetwork(tankOf(from), fluids, limit);
+        }
+        return transferFluid(tankOf(from), tankOf(to), fluids, limit);
+    }
+
+    private long fillFromNetwork(List<Fluid> fluids, long limit, IFluidHandler target) {
+        long moved = 0;
+        for (Fluid fluid : fluids) {
+            if (moved >= limit) {
+                break;
+            }
+            long available = Math.min(limit - moved, fluidStorage.count(fluid));
+            if (available <= 0) {
+                continue;
+            }
+            FluidStack offered = new FluidStack(fluid, (int) Math.min(available, Integer.MAX_VALUE));
+            int accepted = target.fill(offered, IFluidHandler.FluidAction.EXECUTE);
+            if (accepted <= 0) {
+                continue;
+            }
+            fluidStorage.extract(fluid, accepted);
+            moved += accepted;
+        }
+        return moved;
+    }
+
+    private long drainIntoNetwork(IFluidHandler source, List<Fluid> fluids, long limit) {
+        long moved = 0;
+        for (int tank = 0; tank < source.getTanks() && moved < limit; tank++) {
+            FluidStack inside = source.getFluidInTank(tank);
+            if (inside.isEmpty() || !fluids.contains(inside.getFluid())) {
+                continue;
+            }
+            FluidStack wanted = new FluidStack(inside.getFluid(),
+                    (int) Math.min(limit - moved, inside.getAmount()));
+            FluidStack taken = source.drain(wanted, IFluidHandler.FluidAction.EXECUTE);
+            if (taken.isEmpty()) {
+                continue;
+            }
+            fluidStorage.insert(taken.getFluid(), taken.getAmount());
+            moved += taken.getAmount();
+        }
+        return moved;
+    }
+
+    private long transferFluid(IFluidHandler source, IFluidHandler target,
+                               List<Fluid> fluids, long limit) {
+        long moved = 0;
+        for (int tank = 0; tank < source.getTanks() && moved < limit; tank++) {
+            FluidStack inside = source.getFluidInTank(tank);
+            if (inside.isEmpty() || !fluids.contains(inside.getFluid())) {
+                continue;
+            }
+            FluidStack wanted = new FluidStack(inside.getFluid(),
+                    (int) Math.min(limit - moved, inside.getAmount()));
+            FluidStack simulated = source.drain(wanted, IFluidHandler.FluidAction.SIMULATE);
+            if (simulated.isEmpty()) {
+                continue;
+            }
+            int accepted = target.fill(simulated, IFluidHandler.FluidAction.EXECUTE);
+            if (accepted <= 0) {
+                continue;
+            }
+            source.drain(new FluidStack(simulated.getFluid(), accepted),
+                    IFluidHandler.FluidAction.EXECUTE);
+            moved += accepted;
+        }
+        return moved;
+    }
+
+    private IFluidHandler tankOf(Value value) {
+        if (!(value instanceof Value.Device device)) {
+            throw new ScriptError("Bei move fehlt der Tank.",
+                    "Zum Beispiel: move 1000 fluid:water from bottich to kessel");
+        }
+        BlockPos position = connectorPosition(device.name());
+        if (!level.isLoaded(position)
+                || !(level.getBlockEntity(position) instanceof ConnectorBlockEntity connector)) {
+            throw new ScriptError("Der Connector " + device.name() + " ist nicht erreichbar.",
+                    "Vielleicht ist sein Chunk gerade nicht geladen.");
+        }
+        IFluidHandler tank = connector.machineTank();
+        if (tank == null) {
+            throw new ScriptError("An " + device.name() + " hängt nichts, das Flüssigkeit hält.");
+        }
+        return tank;
+    }
+
+    /** Die Sorten einer Flüssigkeits-Auswahl. */
+    private List<Fluid> fluidsOf(Value value) {
+        if (value instanceof Value.FluidSelection selection) {
+            return selection.fluids();
+        }
+        String written = value instanceof Value.Request request ? request.selector() : null;
+        if (written == null) {
+            return List.of();
+        }
+        Expr parsed = selectorCache.get(written);
+        if (parsed == null) {
+            parsed = parseSelector(written);
+            selectorCache.put(written, parsed);
+        }
+        List<Fluid> fluids = FluidSelection.resolve(parsed);
+        if (fluids.isEmpty()) {
+            throw new ScriptError("Die Auswahl " + written + " trifft keine Flüssigkeit.",
+                    "Gibt es sie in diesem Pack? Fließendes Wasser zählt nicht mit.");
+        }
+        return fluids;
     }
 
     private long drainInto(IItemHandler source, List<Item> items, long limit) {
@@ -135,6 +295,9 @@ public final class WorldHost implements Interpreter.Host {
 
     @Override
     public long count(Value what) {
+        if (isFluidRequest(what)) {
+            return fluidsOf(what).stream().mapToLong(fluidStorage::count).sum();
+        }
         return itemsOf(what).stream().mapToLong(storage::count).sum();
     }
 
@@ -278,9 +441,9 @@ public final class WorldHost implements Interpreter.Host {
             case "tag" -> Expr.Selector.Kind.TAG;
             default -> throw new ScriptError("Unbekannte Art in " + written + ".");
         };
-        if (kind == Expr.Selector.Kind.FLUID || kind == Expr.Selector.Kind.CHEMICAL) {
-            throw new ScriptError("Flüssigkeiten und Chemikalien kann diese Fassung noch nicht.",
-                    "Die Schreibweise steht, die Anbindung kommt später.");
+        if (kind == Expr.Selector.Kind.CHEMICAL) {
+            throw new ScriptError("Chemikalien kann diese Fassung noch nicht.",
+                    "Die Schreibweise steht, die Anbindung an Mekanism kommt später.");
         }
         String rest = written.substring(colon + 1);
         int slash = rest.indexOf('/');

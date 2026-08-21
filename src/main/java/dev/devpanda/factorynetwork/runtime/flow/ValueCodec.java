@@ -73,6 +73,15 @@ public final class ValueCodec {
                 tag.put(KEY_ITEMS, items);
                 tag.putLong(KEY_AMOUNT, selection.amount());
             }
+            case Value.FluidSelection selection -> {
+                tag.putString(KEY_TYPE, "fluidsel");
+                ListTag fluids = new ListTag();
+                selection.fluids().forEach(fluid -> fluids.add(
+                        net.minecraft.nbt.StringTag.valueOf(
+                                BuiltInRegistries.FLUID.getKey(fluid).toString())));
+                tag.put(KEY_ITEMS, fluids);
+                tag.putLong(KEY_AMOUNT, selection.amount());
+            }
             case Value.Device device -> {
                 tag.putString(KEY_TYPE, "dev");
                 tag.putString(KEY_VALUE, device.name());
@@ -103,6 +112,7 @@ public final class ValueCodec {
             case "item" -> new Value.ItemValue(item(tag.getString(KEY_VALUE)));
             case "req" -> new Value.Request(tag.getString(KEY_VALUE), tag.getLong(KEY_AMOUNT));
             case "sel" -> readSelection(tag);
+            case "fluidsel" -> readFluidSelection(tag);
             case "dev" -> new Value.Device(tag.getString(KEY_VALUE));
             case "builtin" -> new Value.Builtin(tag.getString(KEY_VALUE));
             case "list" -> readList(tag);
@@ -118,6 +128,25 @@ public final class ValueCodec {
             resolved.add(item(items.getString(i)));
         }
         return new Value.Selection(List.copyOf(resolved), tag.getLong(KEY_AMOUNT));
+    }
+
+    private static Value readFluidSelection(CompoundTag tag) {
+        ListTag entries = tag.getList(KEY_ITEMS, Tag.TAG_STRING);
+        List<net.minecraft.world.level.material.Fluid> resolved = new ArrayList<>(entries.size());
+        for (int i = 0; i < entries.size(); i++) {
+            resolved.add(fluid(entries.getString(i)));
+        }
+        return new Value.FluidSelection(List.copyOf(resolved), tag.getLong(KEY_AMOUNT));
+    }
+
+    private static net.minecraft.world.level.material.Fluid fluid(String key) {
+        ResourceLocation id = ResourceLocation.tryParse(key);
+        if (id == null || !BuiltInRegistries.FLUID.containsKey(id)) {
+            throw new ScriptError("Die Flüssigkeit " + key + " gibt es nicht mehr.",
+                    "Der Ablauf hielt sie in einer Variablen fest. Wurde eine Mod "
+                            + "aus dem Pack genommen?");
+        }
+        return BuiltInRegistries.FLUID.get(id);
     }
 
     private static Value readList(CompoundTag tag) {

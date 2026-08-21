@@ -2066,6 +2066,141 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void aFluidMoveDoesNotTouchItems(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        BlockPos quelle = controller.east().north().north();
+        if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity container) {
+            container.setItem(0, new ItemStack(Items.COBBLESTONE, 64));
+        }
+
+        helper.assertTrue(entity.deploy("""
+                fn versuch() {
+                    move 1000 fluid:water from quarry_output to depot
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.startFlow("versuch", java.util.List.of());
+
+        // Eine Auswahl, die nichts trifft, darf nicht "kein Filter" bedeuten.
+        helper.assertValueEqual(
+                ((ChestBlockEntity) helper.getBlockEntity(quelle)).getItem(0).getCount(), 64,
+                "Steine haben mit Wasser nichts zu tun");
+        helper.succeed();
+    }
+
+    /**
+     * Zwei Kessel am Kabel.
+     *
+     * <p>NeoForge gibt jedem Kessel einen Tank, und damit gibt es ein
+     * Prüfstück für Flüssigkeiten ohne eigenen Block. Ein Kessel fasst
+     * 1000 Millibucket — genau einen Eimer.
+     */
+    private static ControllerBlockEntity twoCauldrons(GameTestHelper helper, BlockPos controller) {
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        for (int i = 0; i < 4; i++) {
+            helper.setBlock(controller.east(i + 1), FnBlocks.CABLE.get());
+        }
+        String[] labels = {"bottich", "kessel"};
+        for (int i = 0; i < labels.length; i++) {
+            BlockPos connector = controller.east(i + 2).above();
+            helper.setBlock(connector, FnBlocks.CONNECTOR.get().defaultBlockState()
+                    .setValue(dev.devpanda.factorynetwork.block.ConnectorBlock.FACING,
+                            net.minecraft.core.Direction.UP));
+            helper.setBlock(connector.above(), Blocks.CAULDRON);
+            name(helper, connector, labels[i]);
+        }
+        return controllerAt(helper, controller);
+    }
+
+    /** Füllt einen Kessel mit Wasser. */
+    private static void fillCauldron(GameTestHelper helper, BlockPos controller, int index) {
+        helper.setBlock(controller.east(index + 2).above(2),
+                Blocks.WATER_CAULDRON.defaultBlockState()
+                        .setValue(net.minecraft.world.level.block.LayeredCauldronBlock.LEVEL, 3));
+    }
+
+    private static boolean hasWater(GameTestHelper helper, BlockPos controller, int index) {
+        return helper.getBlockState(controller.east(index + 2).above(2))
+                .is(Blocks.WATER_CAULDRON);
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void fluidMovesFromOneTankToAnother(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 1, 1);
+        ControllerBlockEntity entity = twoCauldrons(helper, controller);
+        entity.rebuildNetwork();
+        fillCauldron(helper, controller, 0);
+
+        helper.assertTrue(entity.deploy("""
+                fn umfuellen() {
+                    move 1000 fluid:water from bottich to kessel
+                }"""), "Das Programm wurde nicht übernommen");
+        var flow = entity.startFlow("umfuellen", java.util.List.of());
+
+        helper.assertValueEqual(flow.status().name(), "DONE",
+                "Der Ablauf sagt: " + flow.detail());
+        helper.assertTrue(!hasWater(helper, controller, 0), "Der Bottich ist leer");
+        helper.assertTrue(hasWater(helper, controller, 1), "Der Kessel ist voll");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void fluidGoesIntoTheNetworkAndBack(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 1, 1);
+        ControllerBlockEntity entity = twoCauldrons(helper, controller);
+        entity.rebuildNetwork();
+        fillCauldron(helper, controller, 0);
+
+        helper.assertTrue(entity.deploy("""
+                fn einlagern() {
+                    move 1000 fluid:water from bottich to storage
+                }
+
+                fn auslagern() {
+                    move 1000 fluid:water from storage to kessel
+                }"""), "Das Programm wurde nicht übernommen");
+
+        entity.startFlow("einlagern", java.util.List.of());
+        helper.assertValueEqual(entity.fluids().count(
+                net.minecraft.world.level.material.Fluids.WATER), 1000L,
+                "Das Netz hält jetzt einen Eimer");
+        helper.assertTrue(!hasWater(helper, controller, 0), "Der Bottich ist leer");
+
+        entity.startFlow("auslagern", java.util.List.of());
+        helper.assertValueEqual(entity.fluids().count(
+                net.minecraft.world.level.material.Fluids.WATER), 0L, "Und wieder nichts");
+        helper.assertTrue(hasWater(helper, controller, 1), "Dafür steht es im Kessel");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void aFluidStockSurvivesARestart(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 1, 1);
+        ControllerBlockEntity entity = twoCauldrons(helper, controller);
+        entity.rebuildNetwork();
+        fillCauldron(helper, controller, 0);
+
+        helper.assertTrue(entity.deploy("""
+                fn einlagern() {
+                    move 1000 fluid:water from bottich to storage
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.startFlow("einlagern", java.util.List.of());
+
+        var registries = helper.getLevel().registryAccess();
+        var block = net.minecraft.world.level.block.entity.BlockEntity.loadStatic(
+                helper.absolutePos(controller), helper.getBlockState(controller),
+                entity.saveWithFullMetadata(registries), registries);
+        ControllerBlockEntity geladen = (ControllerBlockEntity) block;
+        geladen.setLevel(helper.getLevel());
+
+        helper.assertValueEqual(geladen.fluids().count(
+                net.minecraft.world.level.material.Fluids.WATER), 1000L,
+                "Ein Bestand, der einen Neustart nicht übersteht, ist keiner");
+        helper.succeed();
+    }
+
     private FactoryNetworkGameTests() {
     }
 }

@@ -37,10 +37,41 @@ public sealed interface Value {
      */
     record Request(String selector, long amount) implements Value {
 
+        /** Worauf sich eine Auswahl bezieht. */
+        public enum Kind { ITEM, FLUID, CHEMICAL, TAG, UNKNOWN }
+
         public boolean hasAmount() {
             return amount >= 0;
         }
+
+        /**
+         * Die Art der Auswahl.
+         *
+         * <p>Sie steht im geschriebenen Text vor dem Doppelpunkt. Diese
+         * Methode ist die einzige Stelle, die ihn dafür liest — überall sonst
+         * wird nach {@code kind()} gefragt. Ohne diese Auskunft käme bei
+         * {@code move 1000 fluid:water} die Meldung, es gebe kein Wasser im
+         * Pack, statt der wahren: dass Flüssigkeiten hier nicht gemeint sein
+         * können.
+         */
+        public Kind kind() {
+            int colon = selector.indexOf(':');
+            if (colon < 0) {
+                return Kind.UNKNOWN;
+            }
+            return switch (selector.substring(0, colon)) {
+                case "item" -> Kind.ITEM;
+                case "fluid" -> Kind.FLUID;
+                case "chemical" -> Kind.CHEMICAL;
+                case "tag" -> Kind.TAG;
+                default -> Kind.UNKNOWN;
+            };
+        }
     }
+
+    /** Eine Auswahl von Flüssigkeiten, schon aufgelöst. Mengen in Millibucket. */
+    record FluidSelection(List<net.minecraft.world.level.material.Fluid> fluids, long amount)
+            implements Value {}
 
     /** Eine Auswahl von Gegenstandsarten, schon aufgelöst. */
     record Selection(List<Item> items, long amount) implements Value {}
@@ -75,6 +106,7 @@ public sealed interface Value {
             case Request value -> (value.hasAmount() ? value.amount() + " " : "")
                     + value.selector();
             case Selection value -> value.items().size() + " Arten";
+            case FluidSelection value -> value.fluids().size() + " Flüssigkeiten";
             case Device value -> value.name();
             case Builtin value -> value.name();
             case ValueList value -> value.entries().size() + " Einträge";

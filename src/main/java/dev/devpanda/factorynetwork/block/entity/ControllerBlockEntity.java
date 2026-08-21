@@ -7,6 +7,7 @@ import dev.devpanda.factorynetwork.lang.ast.Program;
 import dev.devpanda.factorynetwork.lang.parse.Parser;
 import dev.devpanda.factorynetwork.network.ControllerRegistry;
 import dev.devpanda.factorynetwork.network.FactoryGraph;
+import dev.devpanda.factorynetwork.network.NetworkFluids;
 import dev.devpanda.factorynetwork.network.NetworkStorage;
 import dev.devpanda.factorynetwork.client.menu.TerminalMenu;
 import dev.devpanda.factorynetwork.network.packet.DisplayStatePacket;
@@ -52,6 +53,7 @@ public class ControllerBlockEntity extends BlockEntity {
     private static final String KEY_SOURCE = "Source";
     private static final String KEY_STORAGE = "Storage";
     private static final String KEY_FLOWS = "Flows";
+    private static final String KEY_FLUIDS = "Fluids";
     private static final int REBUILD_INTERVAL = 100;
 
     private String source = "";
@@ -59,6 +61,7 @@ public class ControllerBlockEntity extends BlockEntity {
     private List<Diagnostic> diagnostics = new ArrayList<>();
     private FactoryGraph graph = FactoryGraph.empty();
     private final NetworkStorage storage = new NetworkStorage();
+    private final NetworkFluids fluidStorage = new NetworkFluids();
     private final WorkerRuntime runtime = new WorkerRuntime();
     /** Abläufe, die warten können — sie überleben einen Serverneustart. */
     private FlowEngine flows;
@@ -151,6 +154,10 @@ public class ControllerBlockEntity extends BlockEntity {
 
     public NetworkStorage storage() {
         return storage;
+    }
+
+    public NetworkFluids fluids() {
+        return fluidStorage;
     }
 
     public WorkerRuntime runtime() {
@@ -481,7 +488,7 @@ public class ControllerBlockEntity extends BlockEntity {
     public FlowEngine flowEngine() {
         if (flows == null && level != null) {
             flows = new FlowEngine(program, new Interpreter(program,
-                    new WorldHost(level, graph, storage)));
+                    new WorldHost(level, graph, storage, fluidStorage)));
         }
         if (flows != null && pendingFlows != null) {
             CompoundTag saved = pendingFlows;
@@ -517,7 +524,7 @@ public class ControllerBlockEntity extends BlockEntity {
         if (level == null) {
             throw new ScriptError("Keine Welt.");
         }
-        WorldHost host = new WorldHost(level, graph, storage);
+        WorldHost host = new WorldHost(level, graph, storage, fluidStorage);
         Interpreter interpreter = new Interpreter(program, host);
         FlowEngine engine = flowEngine();
         if (engine != null) {
@@ -553,6 +560,7 @@ public class ControllerBlockEntity extends BlockEntity {
         super.loadAdditional(tag, registries);
         source = tag.getString(KEY_SOURCE);
         storage.load(tag.getCompound(KEY_STORAGE), registries);
+        fluidStorage.load(tag.getCompound(KEY_FLUIDS), registries);
         // Die Abläufe warten auf den ersten Tick: Sie brauchen einen
         // Interpreter, der braucht eine Welt, und die gibt es hier noch nicht
         // verlässlich.
@@ -576,6 +584,9 @@ public class ControllerBlockEntity extends BlockEntity {
         CompoundTag storageTag = new CompoundTag();
         storage.save(storageTag, registries);
         tag.put(KEY_STORAGE, storageTag);
+        CompoundTag fluidTag = new CompoundTag();
+        fluidStorage.save(fluidTag, registries);
+        tag.put(KEY_FLUIDS, fluidTag);
         if (flows != null) {
             tag.put(KEY_FLOWS, FlowCodec.write(flows));
         } else if (pendingFlows != null) {
