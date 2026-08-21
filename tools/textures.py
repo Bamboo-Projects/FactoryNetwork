@@ -14,6 +14,7 @@ Terminal senkrechte Streben, der Connector einen Rahmen mit Ecken, das Kabel
 eine durchgehende Längsstruktur.
 """
 import os
+import random
 from PIL import Image, ImageDraw, ImageFilter
 
 OUT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
@@ -458,6 +459,53 @@ def drive_front():
     return img
 
 
+CRYSTAL = (108, 196, 214)
+CRYSTAL_HI = (186, 240, 248)
+
+
+def crystal_ore(deepslate=False):
+    """Erz: Einsprengsel im Gestein, keine gemalte Form.
+
+    Vanilla-Erze sind unregelmäßige Flecken, keine Kristalle mit Kanten. Wer
+    hier eine Form malt, bekommt bei vier benachbarten Blöcken ein Muster, das
+    sich sichtbar wiederholt.
+    """
+    grund = (78, 78, 80) if deepslate else (128, 128, 128)
+    img = Image.new("RGBA", (N, N), grund + (255,))
+    d = ImageDraw.Draw(img)
+
+    # Gesteinskörnung, damit die Fläche nicht flach wirkt
+    rnd = random.Random(7 if deepslate else 3)
+    for _ in range(700):
+        x, y = rnd.randrange(N), rnd.randrange(N)
+        ton = rnd.choice([-10, -6, 6, 10])
+        d.point((x, y), fill=tuple(max(0, min(255, c + ton)) for c in grund) + (255,))
+
+    # Vier Einsprengsel, jeweils ein paar zusammenhängende Punkte
+    for cx, cy in ((18, 20), (42, 17), (24, 45), (46, 43)):
+        for _ in range(rnd.randrange(9, 14)):
+            x = cx + rnd.randrange(-7, 8)
+            y = cy + rnd.randrange(-7, 8)
+            hell = rnd.random() < 0.35
+            d.rectangle([x, y, x + 3, y + 3],
+                        fill=(CRYSTAL_HI if hell else CRYSTAL) + (255,))
+    return img
+
+
+def raw_crystal():
+    """Der rohe Kristall: eine Scherbe, kein geschliffener Stein."""
+    img = Image.new("RGBA", (N, N), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    d.polygon([(30, 8), (46, 26), (40, 52), (22, 50), (16, 28)],
+              fill=CRYSTAL + (255,), outline=EDGE + (255,))
+    # Zwei Facetten, damit es nicht wie ein Fleck aussieht
+    d.polygon([(30, 8), (40, 30), (28, 34), (20, 26)], fill=CRYSTAL_HI + (255,))
+    d.polygon([(28, 34), (40, 30), (38, 50), (26, 48)],
+              fill=blend(CRYSTAL, EDGE, 0.3) + (255,))
+    d.line([(30, 10), (22, 26)], fill=(255, 255, 255, 255))
+    return img
+
+
 def main():
     print("Blocktexturen (64x64):")
     save(controller_top(), "block", "controller_top")
@@ -476,9 +524,12 @@ def main():
     save(display_front(), "block", "display_front")
     save(display_side(), "block", "display_side")
     save(drive_front(), "block", "drive_front")
+    save(crystal_ore(False), "block", "crystal_ore")
+    save(crystal_ore(True), "block", "deepslate_crystal_ore")
     print("Gegenstandstexturen:")
     save(label_gun(), "item", "label_gun")
     save(network_analyser(), "item", "network_analyser")
+    save(raw_crystal(), "item", "raw_crystal")
     for label in ("1k", "4k", "16k", "64k"):
         save(storage_cell(label), "item", "cell_k" + label.replace("k", ""))
 

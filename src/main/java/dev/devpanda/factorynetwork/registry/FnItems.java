@@ -72,6 +72,22 @@ public final class FnItems {
     public static final DeferredItem<Item> LABEL_GUN = ITEMS.register("label_gun",
             () -> new LabelGunItem(new Item.Properties().stacksTo(1)));
 
+    /** Das Erz und sein Ertrag. */
+    public static final DeferredItem<net.minecraft.world.item.BlockItem> CRYSTAL_ORE =
+            ITEMS.registerSimpleBlockItem(FnBlocks.CRYSTAL_ORE);
+
+    public static final DeferredItem<net.minecraft.world.item.BlockItem> DEEPSLATE_CRYSTAL_ORE =
+            ITEMS.registerSimpleBlockItem(FnBlocks.DEEPSLATE_CRYSTAL_ORE);
+
+    /**
+     * Der rohe Kristall, wie er aus dem Stein kommt.
+     *
+     * <p>Für sich genommen nutzlos — erst die Presse macht daraus etwas. Das
+     * ist die erste Stufe der Kette und der Grund, überhaupt graben zu gehen.
+     */
+    public static final DeferredItem<Item> RAW_CRYSTAL = ITEMS.register("raw_crystal",
+            () -> new Item(new Item.Properties()));
+
     /** Der Lagerraum: ein Block, der Zellen aufnimmt. */
     public static final DeferredItem<net.minecraft.world.item.BlockItem> DRIVE =
             ITEMS.registerSimpleBlockItem(FnBlocks.DRIVE);

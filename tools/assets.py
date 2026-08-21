@@ -150,6 +150,16 @@ def blockstates():
             parts.append({"when": {direction: "true"}, "apply": apply})
         write(A + "/blockstates/%s.json" % name, {"multipart": parts})
 
+    # Die beiden Erze: schlichte Würfel mit eigener Textur.
+    for ore in ("crystal_ore", "deepslate_crystal_ore"):
+        write(A + "/blockstates/%s.json" % ore,
+              {"variants": {"": {"model": block(ore)}}})
+        write(A + "/models/block/%s.json" % ore, {
+            "parent": "minecraft:block/cube_all",
+            "textures": {"all": MOD + ":block/" + ore},
+        })
+        write(A + "/models/item/%s.json" % ore, {"parent": block(ore)})
+
     # Laufwerk: Front mit Schächten, sonst Maschinengehäuse.
     write(A + "/models/block/drive.json", {
         "parent": "minecraft:block/orientable",
@@ -272,6 +282,46 @@ def models():
         },
     })
 
+    # Das Erz gibt Rohkristalle, mit Glueck mehr — wie jedes Vanilla-Erz.
+    for ore in ("crystal_ore", "deepslate_crystal_ore"):
+        write(D + "/loot_table/blocks/%s.json" % ore, {
+            "type": "minecraft:block",
+            "pools": [{
+                "rolls": 1,
+                "bonus_rolls": 0,
+                "entries": [{
+                    "type": "minecraft:alternatives",
+                    "children": [
+                        {
+                            "type": "minecraft:item",
+                            "name": MOD + ":raw_crystal",
+                            "conditions": [{
+                                "condition": "minecraft:match_tool",
+                                "predicate": {"predicates": {
+                                    "minecraft:enchantments": [{
+                                        "enchantments": "minecraft:silk_touch",
+                                        "levels": {"min": 1},
+                                    }],
+                                }},
+                            }],
+                        },
+                        {
+                            "type": "minecraft:item",
+                            "name": MOD + ":raw_crystal",
+                            "functions": [
+                                {"function": "minecraft:set_count",
+                                 "count": {"type": "minecraft:uniform", "min": 1, "max": 2}},
+                                {"function": "minecraft:apply_bonus",
+                                 "enchantment": "minecraft:fortune",
+                                 "formula": "minecraft:ore_drops"},
+                            ],
+                        },
+                    ],
+                }],
+                "conditions": [{"condition": "minecraft:survives_explosion"}],
+            }],
+        })
+
     for name in ("controller", "connector", "terminal", "display", "drive"):
         write(A + "/models/item/" + name + ".json", {"parent": block(name)})
     write(A + "/models/item/label_gun.json", {
@@ -288,6 +338,60 @@ def models():
             "textures": {"layer0": MOD + ":item/cell_" + tier},
         })
     write(A + "/models/item/drive.json", {"parent": block("drive")})
+    write(A + "/models/item/raw_crystal.json", {
+        "parent": "minecraft:item/generated",
+        "textures": {"layer0": MOD + ":item/raw_crystal"},
+    })
+
+
+def worldgen():
+    """Wo das Erz in der Welt liegt.
+
+    Zwei Vorkommen, wie bei Vanilla-Erzen üblich: eines in mittlerer Höhe,
+    eines tief unten. Die Zahlen sind bewusst zurückhaltend — in einem Pack
+    mit zweihundert Erzen ist ein weiteres schnell zu viel, und die Kette
+    braucht keine grossen Mengen.
+    """
+    write(D + "/worldgen/configured_feature/crystal_ore.json", {
+        "type": "minecraft:ore",
+        "config": {
+            "size": 6,
+            "discard_chance_on_air_exposure": 0.0,
+            "targets": [
+                {
+                    "target": {"predicate_type": "minecraft:tag_match",
+                               "tag": "minecraft:stone_ore_replaceables"},
+                    "state": {"Name": MOD + ":crystal_ore"},
+                },
+                {
+                    "target": {"predicate_type": "minecraft:tag_match",
+                               "tag": "minecraft:deepslate_ore_replaceables"},
+                    "state": {"Name": MOD + ":deepslate_crystal_ore"},
+                },
+            ],
+        },
+    })
+
+    write(D + "/worldgen/placed_feature/crystal_ore.json", {
+        "feature": MOD + ":crystal_ore",
+        "placement": [
+            {"type": "minecraft:count", "count": 4},
+            {"type": "minecraft:in_square"},
+            {"type": "minecraft:height_range",
+             "height": {"type": "minecraft:trapezoid",
+                        "min_inclusive": {"absolute": -48},
+                        "max_inclusive": {"absolute": 48}}},
+            {"type": "minecraft:biome"},
+        ],
+    })
+
+    # Der Biome-Modifier haengt das Vorkommen in jede Oberwelt.
+    write(D + "/neoforge/biome_modifier/crystal_ore.json", {
+        "type": "neoforge:add_features",
+        "biomes": "#minecraft:is_overworld",
+        "features": MOD + ":crystal_ore",
+        "step": "underground_ores",
+    })
 
 
 # ---- Loot und Rezepte ----------------------------------------------------
@@ -480,7 +584,8 @@ def loot_and_recipes():
     write(D + "/tags/block/mineable/pickaxe.json", {
         "values": [MOD + ":controller", MOD + ":cable", MOD + ":dense_cable",
                    MOD + ":connector", MOD + ":terminal", MOD + ":display",
-                   MOD + ":drive"],
+                   MOD + ":drive", MOD + ":crystal_ore",
+                   MOD + ":deepslate_crystal_ore"],
     })
 
 
@@ -489,5 +594,7 @@ if __name__ == "__main__":
     blockstates()
     print("Modelle:")
     models()
+    print("Weltgenerierung:")
+    worldgen()
     print("Loot und Rezepte:")
     loot_and_recipes()

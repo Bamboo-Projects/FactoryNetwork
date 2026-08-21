@@ -41,6 +41,31 @@ public final class FnBlocks {
                     .sound(SoundType.METAL)
                     .noOcclusion()));
 
+    /**
+     * Das Erz, aus dem alles wird.
+     *
+     * <p>Zwei Fassungen, weil Minecraft unter Y=0 Deepslate statt Stein hat —
+     * ein Erz mit der falschen Grundfarbe fällt in einer Höhle sofort auf.
+     */
+    public static final DeferredBlock<Block> CRYSTAL_ORE = BLOCKS.register("crystal_ore",
+            () -> new net.minecraft.world.level.block.DropExperienceBlock(
+                    net.minecraft.util.valueproviders.UniformInt.of(2, 5),
+                    BlockBehaviour.Properties.of()
+                            .mapColor(MapColor.STONE)
+                            .strength(3.0F, 3.0F)
+                            .sound(SoundType.STONE)
+                            .requiresCorrectToolForDrops()));
+
+    public static final DeferredBlock<Block> DEEPSLATE_CRYSTAL_ORE =
+            BLOCKS.register("deepslate_crystal_ore",
+                    () -> new net.minecraft.world.level.block.DropExperienceBlock(
+                            net.minecraft.util.valueproviders.UniformInt.of(2, 5),
+                            BlockBehaviour.Properties.of()
+                                    .mapColor(MapColor.DEEPSLATE)
+                                    .strength(4.5F, 3.0F)
+                                    .sound(SoundType.DEEPSLATE)
+                                    .requiresCorrectToolForDrops()));
+
     /** Nimmt Speicherzellen auf — der Lagerraum des Netzes. */
     public static final DeferredBlock<Block> DRIVE = BLOCKS.register("drive",
             () -> new DriveBlock(machineProperties()));
