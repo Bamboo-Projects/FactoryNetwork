@@ -195,5 +195,6 @@
   "item.factorynetwork.fluid_cell_64": "Fluid Cell, 64 Buckets",
   "item.factorynetwork.fluid_cell_256": "Fluid Cell, 256 Buckets",
   "item.factorynetwork.fluid_cell_1024": "Fluid Cell, 1024 Buckets",
-  "item.factorynetwork.fluid_cell_4096": "Fluid Cell, 4096 Buckets"
+  "item.factorynetwork.fluid_cell_4096": "Fluid Cell, 4096 Buckets",
+  "jade.factorynetwork.drive.fluids": "%s mB in %s kinds"
 }

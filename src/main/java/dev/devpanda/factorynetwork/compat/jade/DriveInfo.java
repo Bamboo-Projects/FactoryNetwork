@@ -19,6 +19,9 @@ import snownee.jade.api.config.IPluginConfig;
  * <p>Der letzte Punkt ist der, den man ohne Hilfe nicht sieht: Eine Zelle mit
  * allen Artenplätzen belegt nimmt nichts Neues mehr an, obwohl sie nach Menge
  * fast leer ist.
+ *
+ * <p>Gegenstände und Flüssigkeiten bekommen je eine Zeile, aber nur, wenn es
+ * sie gibt. Ein Laufwerk mit drei Gegenstandszellen soll nicht „0 mB" melden.
  */
 public enum DriveInfo implements IBlockComponentProvider, IServerDataProvider<BlockAccessor> {
 
@@ -28,26 +31,44 @@ public enum DriveInfo implements IBlockComponentProvider, IServerDataProvider<Bl
     private static final String KEY_TYPES = "FnTypes";
     private static final String KEY_TYPE_ROOM = "FnTypeRoom";
     private static final String KEY_AMOUNT = "FnAmount";
+    private static final String KEY_ITEM_CELLS = "FnItemCells";
+    private static final String KEY_FLUID_CELLS = "FnFluidCells";
+    private static final String KEY_FLUID_TYPES = "FnFluidTypes";
+    private static final String KEY_FLUID_AMOUNT = "FnFluidAmount";
 
     @Override
     public void appendServerData(CompoundTag data, BlockAccessor accessor) {
         if (!(accessor.getBlockEntity() instanceof DriveBlockEntity drive)) {
             return;
         }
-        int zellen = 0;
-        int arten = 0;
-        int freieArten = 0;
-        long menge = 0;
+        int itemCells = 0;
+        int types = 0;
+        int freeTypes = 0;
+        long amount = 0;
         for (CellInventory<net.minecraft.world.item.Item> cell : drive.inventories()) {
-            zellen++;
-            arten += cell.usedTypes();
-            freieArten += cell.freeTypes();
-            menge += cell.usedAmount();
+            itemCells++;
+            types += cell.usedTypes();
+            freeTypes += cell.freeTypes();
+            amount += cell.usedAmount();
         }
-        data.putInt(KEY_CELLS, zellen);
-        data.putInt(KEY_TYPES, arten);
-        data.putInt(KEY_TYPE_ROOM, freieArten);
-        data.putLong(KEY_AMOUNT, menge);
+        int fluidCells = 0;
+        int fluidTypes = 0;
+        long fluidAmount = 0;
+        for (CellInventory<net.minecraft.world.level.material.Fluid> cell
+                : drive.fluidInventories()) {
+            fluidCells++;
+            fluidTypes += cell.usedTypes();
+            freeTypes += cell.freeTypes();
+            fluidAmount += cell.usedAmount();
+        }
+        data.putInt(KEY_CELLS, drive.usedSlots());
+        data.putInt(KEY_ITEM_CELLS, itemCells);
+        data.putInt(KEY_TYPES, types);
+        data.putInt(KEY_TYPE_ROOM, freeTypes);
+        data.putLong(KEY_AMOUNT, amount);
+        data.putInt(KEY_FLUID_CELLS, fluidCells);
+        data.putInt(KEY_FLUID_TYPES, fluidTypes);
+        data.putLong(KEY_FLUID_AMOUNT, fluidAmount);
     }
 
     @Override
@@ -56,23 +77,34 @@ public enum DriveInfo implements IBlockComponentProvider, IServerDataProvider<Bl
         if (!data.contains(KEY_CELLS)) {
             return;
         }
-        int zellen = data.getInt(KEY_CELLS);
-        if (zellen == 0) {
+        int cells = data.getInt(KEY_CELLS);
+        if (cells == 0) {
             tooltip.add(Component.translatable("jade.factorynetwork.drive.empty")
                     .withStyle(ChatFormatting.YELLOW));
             return;
         }
         tooltip.add(Component.translatable("jade.factorynetwork.drive.cells",
-                zellen, DriveBlockEntity.SLOTS).withStyle(ChatFormatting.GRAY));
-        tooltip.add(Component.translatable("jade.factorynetwork.drive.contents",
-                        String.format(java.util.Locale.GERMANY, "%,d", data.getLong(KEY_AMOUNT)),
-                        data.getInt(KEY_TYPES))
-                .withStyle(ChatFormatting.GRAY));
+                cells, DriveBlockEntity.SLOTS).withStyle(ChatFormatting.GRAY));
+        if (data.getInt(KEY_ITEM_CELLS) > 0) {
+            tooltip.add(Component.translatable("jade.factorynetwork.drive.contents",
+                            grouped(data.getLong(KEY_AMOUNT)), data.getInt(KEY_TYPES))
+                    .withStyle(ChatFormatting.GRAY));
+        }
+        if (data.getInt(KEY_FLUID_CELLS) > 0) {
+            tooltip.add(Component.translatable("jade.factorynetwork.drive.fluids",
+                            grouped(data.getLong(KEY_FLUID_AMOUNT)),
+                            data.getInt(KEY_FLUID_TYPES))
+                    .withStyle(ChatFormatting.GRAY));
+        }
 
         if (data.getInt(KEY_TYPE_ROOM) == 0) {
             tooltip.add(Component.translatable("jade.factorynetwork.drive.no_types")
                     .withStyle(ChatFormatting.YELLOW));
         }
+    }
+
+    private static String grouped(long value) {
+        return String.format(java.util.Locale.GERMANY, "%,d", value);
     }
 
     @Override
