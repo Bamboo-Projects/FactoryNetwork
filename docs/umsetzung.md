@@ -70,6 +70,24 @@ worker quarry_import {
 **Strg+Eingabe** übernimmt. Links stehen die Connectoren, die das Netz kennt;
 **Tab** übernimmt einen Vorschlag, die Pfeile wählen aus.
 
+Der Editor kennt außerdem:
+
+| Taste | Was sie tut |
+|---|---|
+| Strg+A / C / X / V | alles auswählen, kopieren, ausschneiden, einfügen |
+| Umschalt+Pfeile, Umschalt+Klick | auswählen |
+| Strg+Z, Strg+Y | rückgängig — mit Umschalt wieder vorwärts |
+| Strg+D | Zeile verdoppeln |
+| Tab, Umschalt+Tab | Auswahl ein- und ausrücken |
+| Strg+Pfeil links/rechts | ein Wort weiter |
+| Strg+Rücktaste | ein Wort löschen |
+| Strg+Pos1 / Strg+Ende | an den Anfang oder das Ende des Programms |
+
+**Strg+Z und Strg+Y machen beide rückgängig.** GLFW meldet eine Taste nach
+ihrer Lage auf einer US-Tastatur; auf einer deutschen liegt dort, wo „Z"
+steht, die Meldung „Y". Beide auf dasselbe zu legen tut auf jeder Belegung
+das Erwartete, statt auf einer der beiden das Gegenteil.
+
 Ein Rechtsklick auf den Controller nennt die Zahl der Connectoren und Kabel —
 nützlich, wenn ein Name im Editor nicht auftaucht.
 

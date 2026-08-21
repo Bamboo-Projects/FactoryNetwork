@@ -9,7 +9,9 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.util.Mth;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -82,6 +84,12 @@ public class CodeEditor {
     private int anchorLine = -1;
     private int anchorColumn;
 
+    /** Was rückgängig gemacht werden kann, und was danach wieder vorwärts. */
+    private final Deque<Snapshot> undoStack = new ArrayDeque<>();
+    private final Deque<Snapshot> redoStack = new ArrayDeque<>();
+    private EditKind lastKind;
+    private int lastKindLine = -1;
+
     public CodeEditor(Font font, int x, int y, int width, int height, String initial) {
         this.font = font;
         this.x = x;
@@ -93,6 +101,38 @@ public class CodeEditor {
 
     public void setChangeListener(Consumer<String> listener) {
         this.changeListener = listener;
+    }
+
+    /** In welcher Zeile der Cursor steht, von null an. */
+    public int cursorLine() {
+        return cursorLine;
+    }
+
+    /** In welcher Spalte der Cursor steht, von null an. */
+    public int cursorColumn() {
+        return cursorColumn;
+    }
+
+    /**
+     * Wählt einen Bereich aus.
+     *
+     * <p>Anker und Cursor in einem Zug — die Auswahl, die man sonst mit
+     * gedrückter Umschalttaste zieht.
+     */
+    public void select(int fromLine, int fromColumn, int toLine, int toColumn) {
+        anchorLine = Mth.clamp(fromLine, 0, lines.size() - 1);
+        anchorColumn = Mth.clamp(fromColumn, 0, lines.get(anchorLine).length());
+        cursorLine = Mth.clamp(toLine, 0, lines.size() - 1);
+        cursorColumn = Mth.clamp(toColumn, 0, lines.get(cursorLine).length());
+        ensureVisible();
+    }
+
+    /** Setzt den Cursor, ohne die Auswahl mitzunehmen. */
+    public void setCursor(int line, int column) {
+        cursorLine = Mth.clamp(line, 0, lines.size() - 1);
+        cursorColumn = Mth.clamp(column, 0, lines.get(cursorLine).length());
+        clearSelection();
+        ensureVisible();
     }
 
     public String text() {
@@ -111,6 +151,11 @@ public class CodeEditor {
         cursorLine = 0;
         cursorColumn = 0;
         scrollLine = 0;
+        // Ein neuer Text ist kein Schritt, den man rückgängig machen kann:
+        // Er kommt vom Server oder vom Öffnen des Fensters, nicht vom Tippen.
+        undoStack.clear();
+        redoStack.clear();
+        lastKind = null;
     }
 
     private int visibleLines() {
@@ -272,7 +317,6 @@ public class CodeEditor {
         if (!net.minecraft.client.gui.screens.Screen.hasControlDown()) {
             return false;
         }
-        var keyboard = Minecraft.getInstance().keyboardHandler;
         switch (key) {
             case 65 -> { // A: alles auswählen
                 anchorLine = 0;
@@ -283,23 +327,78 @@ public class CodeEditor {
             }
             case 67 -> { // C: kopieren
                 if (hasSelection()) {
-                    keyboard.setClipboard(selectedText());
+                    Minecraft.getInstance().keyboardHandler.setClipboard(selectedText());
                 }
                 return true;
             }
             case 88 -> { // X: ausschneiden
                 if (hasSelection()) {
-                    keyboard.setClipboard(selectedText());
+                    Minecraft.getInstance().keyboardHandler.setClipboard(selectedText());
+                    remember(EditKind.STRUCTURAL);
                     deleteSelection();
                 }
                 return true;
             }
             case 86 -> { // V: einfügen
-                String inhalt = keyboard.getClipboard();
+                String inhalt = Minecraft.getInstance().keyboardHandler.getClipboard();
                 if (inhalt != null && !inhalt.isEmpty()) {
+                    remember(EditKind.STRUCTURAL);
                     insertMultiline(inhalt);
                     clearSuggestions();
                 }
+                return true;
+            }
+            case 89, 90 -> {
+                // Beide Tasten machen rückgängig, mit Umschalt wieder vorwärts.
+                //
+                // GLFW meldet die Taste nach ihrer Lage auf einer
+                // US-Tastatur. Auf einer deutschen liegt dort, wo „Z" steht,
+                // die Meldung „Y" — Strg+Z und Strg+Y wären damit je nach
+                // Belegung vertauscht. Beide auf dasselbe zu legen ist die
+                // Auflösung, die auf jeder Belegung das Erwartete tut.
+                if (net.minecraft.client.gui.screens.Screen.hasShiftDown()) {
+                    redo();
+                } else {
+                    undo();
+                }
+                return true;
+            }
+            case 68 -> { // D: Zeile verdoppeln
+                remember(EditKind.STRUCTURAL);
+                duplicateLine();
+                return true;
+            }
+            case 259 -> { // Rücktaste: ein ganzes Wort
+                remember(EditKind.DELETING);
+                if (hasSelection()) {
+                    deleteSelection();
+                } else {
+                    deleteWordLeft();
+                }
+                return true;
+            }
+            case 263 -> { // links: ein Wort
+                move(this::moveWordLeft);
+                return true;
+            }
+            case 262 -> { // rechts: ein Wort
+                move(this::moveWordRight);
+                return true;
+            }
+            case 268 -> { // Pos1: an den Anfang des Programms
+                move(() -> {
+                    cursorLine = 0;
+                    cursorColumn = 0;
+                    ensureVisible();
+                });
+                return true;
+            }
+            case 269 -> { // Ende: ans Ende des Programms
+                move(() -> {
+                    cursorLine = lines.size() - 1;
+                    cursorColumn = lines.get(cursorLine).length();
+                    ensureVisible();
+                });
                 return true;
             }
             default -> {
@@ -347,6 +446,7 @@ public class CodeEditor {
         }
         switch (key) {
             case 259 -> { // Rücktaste
+                remember(EditKind.DELETING);
                 if (hasSelection()) {
                     deleteSelection();
                     return true;
@@ -355,6 +455,7 @@ public class CodeEditor {
                 return true;
             }
             case 261 -> { // Entfernen
+                remember(EditKind.DELETING);
                 if (hasSelection()) {
                     deleteSelection();
                     return true;
@@ -363,11 +464,18 @@ public class CodeEditor {
                 return true;
             }
             case 257, 335 -> { // Eingabe
+                remember(EditKind.STRUCTURAL);
                 newLine();
                 return true;
             }
             case 258 -> { // Tabulator: vier Leerzeichen, nie ein Tabulatorzeichen
-                insert("    ");
+                remember(EditKind.STRUCTURAL);
+                boolean shift = net.minecraft.client.gui.screens.Screen.hasShiftDown();
+                if (shift || hasSelection()) {
+                    indentLines(shift);
+                } else {
+                    insert("    ");
+                }
                 return true;
             }
             case 263 -> { // links
@@ -418,6 +526,7 @@ public class CodeEditor {
         if (Character.isISOControl(character)) {
             return false;
         }
+        remember(EditKind.TYPING);
         insert(String.valueOf(character));
         return true;
     }
@@ -799,5 +908,197 @@ public class CodeEditor {
             case ITEM, TAG -> EditorColours.SELECTOR;
             case BUILTIN, KEYWORD -> EditorColours.KEYWORD;
         };
+    }
+    // ---- Rückgängig -------------------------------------------------------
+    //
+    // Die Bearbeitungsschritte ab hier stehen ohne Sichtbarkeitsangabe da:
+    // Der Test im selben Paket ruft sie unmittelbar auf. Über die Tastatur
+    // wären sie nicht zu prüfen — hasControlDown() fragt das Fenster, und im
+    // Test gibt es keines.
+
+    /**
+     * Ein Stand des Textes samt Cursor.
+     *
+     * <p>Ganze Stände statt einzelner Änderungen: Ein Programm im Terminal
+     * ist ein paar Dutzend Zeilen, und ein Änderungsprotokoll mit Positionen
+     * ist die Sorte Code, in der sich ein Fehler erst zeigt, wenn der Text
+     * schon kaputt ist.
+     */
+    private record Snapshot(List<String> lines, int cursorLine, int cursorColumn) {
+    }
+
+    /**
+     * Wozu eine Änderung gehört.
+     *
+     * <p>Aufeinanderfolgende Anschläge derselben Art werden zu einem Schritt
+     * zusammengefasst. Ohne das nähme ein Rückgängig genau ein Zeichen
+     * zurück, und ein versehentlich überschriebenes Wort wären acht Griffe.
+     */
+    enum EditKind { TYPING, DELETING, STRUCTURAL }
+
+    /** Weiter zurück reicht kein Mensch; darüber wächst nur der Speicher. */
+    private static final int MAX_HISTORY = 200;
+
+    private Snapshot snapshot() {
+        return new Snapshot(List.copyOf(lines), cursorLine, cursorColumn);
+    }
+
+    private void restore(Snapshot state) {
+        lines.clear();
+        lines.addAll(state.lines());
+        cursorLine = Mth.clamp(state.cursorLine(), 0, lines.size() - 1);
+        cursorColumn = Math.min(state.cursorColumn(), lines.get(cursorLine).length());
+        clearSelection();
+        clearSuggestions();
+        ensureVisible();
+    }
+
+    /**
+     * Merkt sich den Stand vor einer Änderung.
+     *
+     * <p>Läuft eine Änderung derselben Art auf derselben Zeile weiter, wird
+     * nichts gemerkt: Der Stand von vor dem Lauf steht schon oben auf dem
+     * Stapel, und genau dorthin soll ein Rückgängig führen.
+     */
+    void remember(EditKind kind) {
+        if (kind != EditKind.STRUCTURAL && kind == lastKind && cursorLine == lastKindLine) {
+            return;
+        }
+        undoStack.push(snapshot());
+        while (undoStack.size() > MAX_HISTORY) {
+            undoStack.removeLast();
+        }
+        redoStack.clear();
+        lastKind = kind;
+        lastKindLine = cursorLine;
+    }
+
+    void undo() {
+        if (undoStack.isEmpty()) {
+            return;
+        }
+        redoStack.push(snapshot());
+        restore(undoStack.pop());
+        // Nach einem Sprung durch die Geschichte fängt jeder Lauf neu an.
+        lastKind = null;
+        changeListener.accept(text());
+    }
+
+    void redo() {
+        if (redoStack.isEmpty()) {
+            return;
+        }
+        undoStack.push(snapshot());
+        restore(redoStack.pop());
+        lastKind = null;
+        changeListener.accept(text());
+    }
+
+    // ---- Wortweise bewegen ------------------------------------------------
+
+    private static boolean isWordChar(char c) {
+        return Character.isLetterOrDigit(c) || c == '_';
+    }
+
+    /**
+     * Ein Wort nach links.
+     *
+     * <p>Erst über Trennzeichen hinweg, dann über das Wort: So landet man vor
+     * dem Wort und nicht in der Lücke davor — sonst bräuchte jedes zweite
+     * Wort zwei Anschläge.
+     */
+    void moveWordLeft() {
+        if (cursorColumn == 0) {
+            moveLeft();
+            return;
+        }
+        String line = lines.get(cursorLine);
+        int column = Math.min(cursorColumn, line.length());
+        while (column > 0 && !isWordChar(line.charAt(column - 1))) {
+            column--;
+        }
+        while (column > 0 && isWordChar(line.charAt(column - 1))) {
+            column--;
+        }
+        cursorColumn = column;
+    }
+
+    void moveWordRight() {
+        String line = lines.get(cursorLine);
+        if (cursorColumn >= line.length()) {
+            moveRight();
+            return;
+        }
+        int column = cursorColumn;
+        while (column < line.length() && isWordChar(line.charAt(column))) {
+            column++;
+        }
+        while (column < line.length() && !isWordChar(line.charAt(column))) {
+            column++;
+        }
+        cursorColumn = column;
+    }
+
+    /** Löscht das Wort links vom Cursor. */
+    void deleteWordLeft() {
+        if (cursorColumn == 0) {
+            backspace();
+            return;
+        }
+        int von = cursorColumn;
+        moveWordLeft();
+        String line = lines.get(cursorLine);
+        lines.set(cursorLine, line.substring(0, cursorColumn)
+                + line.substring(Math.min(von, line.length())));
+        changed();
+    }
+
+    // ---- Zeilen umformen --------------------------------------------------
+
+    /**
+     * Rückt die betroffenen Zeilen ein oder aus.
+     *
+     * <p>Mit einer Auswahl alle darin, ohne nur die aktuelle. Das ist der
+     * Grund, warum der Tabulator bei einer Auswahl etwas anderes tut als
+     * sonst: Vier Leerzeichen einzufügen und dabei die Auswahl zu löschen
+     * wäre bei mehreren Zeilen nie das Gemeinte.
+     */
+    void indentLines(boolean out) {
+        int erste = hasSelection() ? selectionBounds()[0] : cursorLine;
+        int letzte = hasSelection() ? selectionBounds()[2] : cursorLine;
+        for (int i = erste; i <= letzte; i++) {
+            String line = lines.get(i);
+            if (out) {
+                int weg = 0;
+                while (weg < 4 && weg < line.length() && line.charAt(weg) == ' ') {
+                    weg++;
+                }
+                lines.set(i, line.substring(weg));
+                if (i == cursorLine) {
+                    cursorColumn = Math.max(0, cursorColumn - weg);
+                }
+                if (i == anchorLine) {
+                    anchorColumn = Math.max(0, anchorColumn - weg);
+                }
+            } else {
+                lines.set(i, "    " + line);
+                if (i == cursorLine) {
+                    cursorColumn += 4;
+                }
+                if (i == anchorLine) {
+                    anchorColumn += 4;
+                }
+            }
+        }
+        changed();
+    }
+
+    /** Verdoppelt die aktuelle Zeile unter sich. */
+    void duplicateLine() {
+        lines.add(cursorLine + 1, lines.get(cursorLine));
+        cursorLine++;
+        clearSelection();
+        ensureVisible();
+        changed();
     }
 }

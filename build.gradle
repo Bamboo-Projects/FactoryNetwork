@@ -48,6 +48,11 @@ neoForge {
             sourceSet sourceSets.main
         }
     }
+
+    // Die Unit-Tests brauchen dieselben Minecraft-Klassen wie der Hauptcode.
+    // Ohne das fehlt dem Testquellsatz die Client-Seite, und ein Test für
+    // den Editor ließe sich gar nicht erst übersetzen.
+    addModdingDependenciesTo sourceSets.test
 }
 
 repositories {
