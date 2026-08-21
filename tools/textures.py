@@ -41,6 +41,8 @@ WOOD       = (74, 56, 38)
 WOOD_HI    = (104, 80, 54)
 CRYSTAL    = (108, 196, 214)
 CRYSTAL_HI = (186, 240, 248)
+PLATE_TOP  = (190, 194, 202)
+PLATE_BOT  = (126, 132, 140)
 
 
 def blend(a, b, t):
@@ -584,19 +586,21 @@ def label_gun():
     )
     img.alpha_composite(masked_surface(body_mask, blend(BODY_TOP, LIGHT, 0.18),
                                        blend(BODY_MID, EDGE, 0.28), seed=202))
+    d = ImageDraw.Draw(img)
+    d.polygon([(16, 55), (14, 45), (22, 35), (28, 37), (31, 49), (25, 57)],
+              outline=EDGE + (255,))
+    # Die Mündung liegt vor dem Korpus; ihre Füllung muss die innere
+    # Korpuskante überdecken, sonst zerreißt die Silhouette beim Herunterskalieren.
+    d.polygon([(22, 36), (35, 22), (47, 15), (56, 20), (52, 31), (38, 43), (26, 44)],
+              outline=EDGE + (255,))
 
     muzzle_mask = Image.new("L", (N, N), 0)
     ImageDraw.Draw(muzzle_mask).polygon(
-        [(47, 15), (56, 20), (60, 19), (58, 29), (50, 32), (48, 24)], fill=255
+        [(47, 15), (55, 18), (60, 20), (58, 28), (50, 31), (48, 24)], fill=255
     )
     img.alpha_composite(masked_surface(muzzle_mask, BRASS_HI, BRASS, seed=203))
     d = ImageDraw.Draw(img)
-
-    d.polygon([(16, 55), (14, 45), (22, 35), (28, 37), (31, 49), (25, 57)],
-              outline=EDGE + (255,))
-    d.polygon([(22, 36), (35, 22), (47, 15), (56, 20), (52, 31), (38, 43), (26, 44)],
-              outline=EDGE + (255,))
-    d.polygon([(47, 15), (56, 20), (60, 19), (58, 29), (50, 32), (48, 24)],
+    d.polygon([(47, 15), (55, 18), (60, 20), (58, 28), (50, 31), (48, 24)],
               outline=EDGE + (255,))
 
     d.line([(18, 53), (22, 39)], fill=WOOD_HI + (255,))
@@ -633,18 +637,21 @@ def network_analyser():
 
     probe_mask = Image.new("L", (N, N), 0)
     probe_draw = ImageDraw.Draw(probe_mask)
-    probe_draw.rectangle([42, 10, 47, 22], fill=255)
-    probe_draw.polygon([(45, 10), (50, 6), (56, 8), (48, 14)], fill=255)
+    shaft_pts = [(39, 19), (43, 16), (50, 7), (54, 10), (46, 21), (42, 23)]
+    probe_draw.polygon(shaft_pts, fill=255)
+    probe_draw.ellipse([49, 4, 57, 12], fill=255)
     img.alpha_composite(masked_surface(probe_mask, BRASS_HI, BRASS, seed=212))
     d = ImageDraw.Draw(img)
 
     d.polygon([(14, 22), (21, 15), (43, 15), (50, 22), (50, 50), (44, 56), (20, 56), (14, 50)],
               outline=EDGE + (255,))
-    d.rectangle([42, 10, 47, 22], outline=EDGE + (255,))
-    d.polygon([(45, 10), (50, 6), (56, 8), (48, 14)], outline=EDGE + (255,))
+    d.polygon(shaft_pts, outline=EDGE + (255,))
+    d.ellipse([49, 4, 57, 12], outline=EDGE + (255,))
     d.line([(19, 18), (41, 18)], fill=SHINE + (255,))
     d.line([(17, 52), (41, 52)], fill=_dunkler(BODY_TOP + (255,), 0.35))
-    d.line([(44, 11), (53, 8)], fill=BRASS_HI + (255,))
+    d.line([(42, 19), (51, 8)], fill=BRASS_HI + (255,))
+    d.arc([50, 5, 56, 11], 210, 330, fill=BRASS_HI + (255,))
+    d.line([(46, 21), (52, 12)], fill=_dunkler(BRASS + (255,), 0.22))
 
     d.rectangle([18, 22, 46, 44], fill=blend(BODY_MID, EDGE, 0.42) + (255,))
     recess(img, (18, 22, 46, 44), tiefe=2)
@@ -769,22 +776,26 @@ def raw_crystal():
     """Roher Kristall mit unruhigem Bruch statt sauberem Schliff."""
     img = Image.new("RGBA", (N, N), (0, 0, 0, 0))
     mask = Image.new("L", (N, N), 0)
-    pts = [(31, 7), (41, 13), (48, 27), (44, 42), (36, 56), (22, 52), (15, 34), (18, 20)]
+    pts = [(24, 10), (35, 7), (46, 18), (52, 31), (42, 44), (38, 58), (23, 52), (15, 39), (12, 22)]
     ImageDraw.Draw(mask).polygon(pts, fill=255)
     img.alpha_composite(masked_surface(mask, CRYSTAL_HI, CRYSTAL, seed=230))
     grain(img, amount=5, seed=231)
     d = ImageDraw.Draw(img)
     d.polygon(pts, outline=EDGE + (255,))
 
-    d.polygon([(31, 7), (41, 13), (39, 30), (27, 34), (20, 20)],
+    d.polygon([(24, 10), (35, 7), (43, 18), (34, 31), (19, 24)],
               fill=blend(CRYSTAL_HI, (255, 255, 255), 0.25) + (255,))
-    d.polygon([(27, 34), (39, 30), (36, 56), (24, 50)],
+    d.polygon([(19, 24), (34, 31), (30, 48), (18, 43), (12, 22)],
+              fill=blend(CRYSTAL_HI, CRYSTAL, 0.18) + (255,))
+    d.polygon([(34, 31), (43, 18), (52, 31), (42, 44), (30, 48)],
+              fill=blend(CRYSTAL, EDGE, 0.2) + (255,))
+    d.polygon([(30, 48), (42, 44), (38, 58), (23, 52)],
               fill=blend(CRYSTAL, EDGE, 0.22) + (255,))
-    d.polygon([(39, 30), (48, 27), (44, 42), (36, 56)],
+    d.polygon([(34, 31), (30, 48), (23, 52), (15, 39), (18, 43)],
               fill=blend(CRYSTAL, EDGE, 0.35) + (255,))
-    d.line([(31, 10), (21, 22)], fill=(255, 255, 255, 255))
-    d.line([(41, 15), (46, 27)], fill=CRYSTAL_HI + (255,))
-    d.line([(24, 50), (35, 54)], fill=_dunkler(CRYSTAL + (255,), 0.3))
+    d.line([(26, 12), (18, 23)], fill=(255, 255, 255, 255))
+    d.line([(36, 10), (44, 19)], fill=CRYSTAL_HI + (255,))
+    d.line([(24, 50), (36, 55)], fill=_dunkler(CRYSTAL + (255,), 0.3))
     scratches(img, count=2, seed=232)
     return img
 
@@ -849,8 +860,8 @@ def stamp(kind):
 def plate():
     """Metallplatte mit gestanzter Schulter und breiter Silhouette."""
     img = Image.new("RGBA", (N, N), (0, 0, 0, 0))
-    tone_top = blend(BODY_TOP, SHINE, 0.5)
-    tone_bottom = blend(BODY_BOT, LIGHT, 0.35)
+    tone_top = PLATE_TOP
+    tone_bottom = PLATE_BOT
 
     mask = Image.new("L", (N, N), 0)
     pts = [(12, 24), (18, 18), (46, 18), (52, 24), (52, 40), (46, 46), (18, 46), (12, 40)]
@@ -875,26 +886,28 @@ def crystal_cut():
     """Geschliffener Kristall mit geordneten Facetten und hellem Kern."""
     img = Image.new("RGBA", (N, N), (0, 0, 0, 0))
     mask = Image.new("L", (N, N), 0)
-    pts = [(32, 8), (43, 15), (51, 28), (43, 44), (32, 56), (21, 44), (13, 28), (21, 15)]
+    pts = [(32, 8), (42, 14), (48, 24), (44, 38), (32, 56), (20, 38), (16, 24), (22, 14)]
     ImageDraw.Draw(mask).polygon(pts, fill=255)
     img.alpha_composite(masked_surface(mask, CRYSTAL_HI, CRYSTAL, seed=260))
     grain(img, amount=4, seed=261)
     d = ImageDraw.Draw(img)
     d.polygon(pts, outline=EDGE + (255,))
 
-    glow(img, [24, 20, 40, 40], color=CRYSTAL_HI, radius=5, strength=75)
+    glow(img, [24, 18, 40, 42], color=CRYSTAL_HI, radius=5, strength=75)
     d = ImageDraw.Draw(img)
-    d.polygon([(32, 10), (43, 15), (39, 28), (25, 28), (21, 15)],
+    d.polygon([(25, 14), (39, 14), (42, 24), (32, 29), (22, 24)],
               fill=blend(CRYSTAL_HI, (255, 255, 255), 0.3) + (255,))
-    d.polygon([(25, 28), (39, 28), (43, 44), (32, 52), (21, 44)],
-              fill=blend(CRYSTAL, EDGE, 0.15) + (255,))
-    d.polygon([(39, 28), (51, 28), (43, 44)],
+    d.polygon([(22, 24), (32, 29), (42, 24), (38, 39), (32, 50), (26, 39)],
+              fill=blend(CRYSTAL_HI, CRYSTAL, 0.22) + (255,))
+    d.polygon([(42, 24), (48, 24), (44, 38), (38, 39)],
               fill=blend(CRYSTAL, EDGE, 0.32) + (255,))
-    d.polygon([(13, 28), (25, 28), (21, 44)],
+    d.polygon([(16, 24), (22, 24), (26, 39), (20, 38)],
               fill=blend(CRYSTAL_HI, CRYSTAL, 0.35) + (255,))
-    d.line([(32, 12), (22, 18)], fill=(255, 255, 255, 255))
-    d.line([(42, 17), (48, 27)], fill=CRYSTAL_HI + (255,))
-    d.line([(24, 45), (32, 53)], fill=_dunkler(CRYSTAL + (255,), 0.25))
+    d.polygon([(26, 39), (38, 39), (32, 56)],
+              fill=blend(CRYSTAL, EDGE, 0.26) + (255,))
+    d.line([(27, 16), (37, 16)], fill=(255, 255, 255, 255))
+    d.line([(40, 16), (45, 24)], fill=CRYSTAL_HI + (255,))
+    d.line([(24, 39), (31, 52)], fill=_dunkler(CRYSTAL + (255,), 0.25))
     scratches(img, count=2, seed=262)
     return img
 
