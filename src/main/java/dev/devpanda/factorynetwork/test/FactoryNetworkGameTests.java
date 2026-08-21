@@ -665,7 +665,7 @@ public final class FactoryNetworkGameTests {
     }
 
     @GameTest(template = EMPTY, timeoutTicks = 300)
-    public static void aStrandCarriesEightChannels(GameTestHelper helper) {
+    public static void aCableCarriesSixteenChannels(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 2, 1);
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
 
@@ -680,6 +680,11 @@ public final class FactoryNetworkGameTests {
                 }
                 helper.setBlock(side, FnBlocks.CONNECTOR.get());
                 name(helper, side, "gerät_" + placed);
+                // Zwei Kanäle je Gerät: Neun Geräte wollen achtzehn, das
+                // Kabel trägt sechzehn. Das neunte geht leer aus.
+                if (helper.getBlockEntity(side) instanceof ConnectorBlockEntity connector) {
+                    connector.setChannelCost(2);
+                }
                 placed++;
             }
         }
@@ -688,7 +693,6 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
 
-        // Acht Kanäle je Strang: Das neunte Gerät geht leer aus.
         helper.assertValueEqual(entity.graph().starvedConnectors().size(), 1,
                 "Geräte ohne Kanal");
         helper.assertValueEqual(entity.graph().connectorNames().size(), 8,
@@ -717,8 +721,9 @@ public final class FactoryNetworkGameTests {
         int atStart = entity.graph().channelLoad(
                 helper.absolutePos(controller.east(1)), CableColour.NONE);
         helper.assertValueEqual(atStart, 2, "Kanäle auf dem ersten Kabel");
-        helper.assertValueEqual(entity.graph().channelsFree(
-                helper.absolutePos(controller.east(1)), CableColour.NONE), 6,
+        helper.assertValueEqual(entity.graph().channelsFree(helper.getLevel(),
+                helper.absolutePos(controller.east(1)), CableColour.NONE),
+                dev.devpanda.factorynetwork.block.CableBlock.CHANNELS_THIN - 2,
                 "freie Kanäle dort");
         helper.succeed();
     }
@@ -2686,6 +2691,9 @@ public final class FactoryNetworkGameTests {
                 }
                 helper.setBlock(side, FnBlocks.CONNECTOR.get());
                 name(helper, side, "gerät_" + placed);
+                if (helper.getBlockEntity(side) instanceof ConnectorBlockEntity connector) {
+                    connector.setChannelCost(2);
+                }
                 placed++;
             }
         }
@@ -2712,14 +2720,94 @@ public final class FactoryNetworkGameTests {
                     : controller.east(i - 3).below();
             helper.setBlock(side, FnBlocks.CONNECTOR.get());
             name(helper, side, "gerät_" + i);
+            if (helper.getBlockEntity(side) instanceof ConnectorBlockEntity connector) {
+                connector.setChannelCost(2);
+            }
         }
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
 
         var data = dev.devpanda.factorynetwork.analyser.AnalyserScan.of(entity);
-        // Acht Geräte auf einem Strang: Das erste Kabelstück trägt alle.
+        // Acht Geräte zu je zwei Kanälen füllen ein gewöhnliches Kabel aus.
         helper.assertTrue(data.summary().fullLinks() > 0 || data.summary().tightLinks() > 0,
                 "Die Strecke am Controller muss als eng erkannt werden");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void aDenseCableCarriesFourTimesAsMuch(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 2, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        for (int i = 0; i < 5; i++) {
+            helper.setBlock(controller.east(i + 1), FnBlocks.DENSE_CABLE.get());
+        }
+
+        // Dieselben neun Geräte zu je zwei Kanälen wie am dünnen Kabel — dort
+        // ging eines leer aus, hier trägt das dichte alle mit Leichtigkeit.
+        int placed = 0;
+        for (int i = 0; i < 5 && placed < 9; i++) {
+            for (BlockPos side : new BlockPos[]{
+                    controller.east(i + 1).above(), controller.east(i + 1).below()}) {
+                if (placed >= 9) {
+                    break;
+                }
+                helper.setBlock(side, FnBlocks.CONNECTOR.get());
+                name(helper, side, "gerät_" + placed);
+                if (helper.getBlockEntity(side) instanceof ConnectorBlockEntity connector) {
+                    connector.setChannelCost(2);
+                }
+                placed++;
+            }
+        }
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertValueEqual(entity.graph().starvedConnectors().size(), 0,
+                "Am dichten Kabel darf keines leer ausgehen");
+        helper.assertValueEqual(entity.graph().connectorNames().size(), 9, "Geräte mit Kanal");
+        helper.assertValueEqual(entity.graph().channelsFree(helper.getLevel(),
+                        helper.absolutePos(controller.east(1)), CableColour.NONE),
+                dev.devpanda.factorynetwork.block.CableBlock.CHANNELS_DENSE - 18,
+                "Von vierundsechzig sind achtzehn belegt");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void theWeakestCableOnThePathDecides(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 2, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+
+        // Dicht, dann ein gewöhnliches Stück, dann wieder dicht: Der Engpass
+        // in der Mitte begrenzt, auch wenn davor und dahinter Platz wäre.
+        helper.setBlock(controller.east(1), FnBlocks.DENSE_CABLE.get());
+        helper.setBlock(controller.east(2), FnBlocks.CABLE.get());
+        for (int i = 3; i <= 5; i++) {
+            helper.setBlock(controller.east(i), FnBlocks.DENSE_CABLE.get());
+        }
+
+        // Sechs Geräte zu je drei Kanälen wollen achtzehn — alle hinter dem
+        // dünnen Stück, das nur sechzehn trägt.
+        int placed = 0;
+        for (int i = 3; i <= 5 && placed < 6; i++) {
+            for (BlockPos side : new BlockPos[]{
+                    controller.east(i).above(), controller.east(i).below()}) {
+                if (placed >= 6) {
+                    break;
+                }
+                helper.setBlock(side, FnBlocks.CONNECTOR.get());
+                name(helper, side, "gerät_" + placed);
+                if (helper.getBlockEntity(side) instanceof ConnectorBlockEntity connector) {
+                    connector.setChannelCost(3);
+                }
+                placed++;
+            }
+        }
+        helper.assertValueEqual(placed, 6, "aufgestellte Geräte");
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.graph().starvedConnectors().size() >= 1,
+                "Das schwächste Stück muss begrenzen — leer ausgegangen ist aber keines");
         helper.succeed();
     }
 

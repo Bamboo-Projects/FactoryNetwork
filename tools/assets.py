@@ -106,9 +106,11 @@ def cable_models():
             }],
         })
 
-    for colour in CABLE_COLOURS:
-        name = "cable" if colour == "none" else colour + "_cable"
-        write(A + "/models/item/%s.json" % name, {"parent": block("cable_inventory")})
+    for sort in ("cable", "dense_cable"):
+        for colour in CABLE_COLOURS:
+            name = sort if colour == "none" else colour + "_" + sort
+            write(A + "/models/item/%s.json" % name,
+                  {"parent": block(sort + "_inventory")})
 
 
 def block(name):
@@ -364,40 +366,58 @@ def loot_and_recipes():
         "result": {"id": MOD + ":network_analyser", "count": 1},
     })
 
-    # Das Kabel faellt als der Gegenstand seiner Farbe.
-    write(D + "/loot_table/blocks/cable.json", {"type": "minecraft:block", "pools": []})
+    # Das dichte Kabel: vier gewöhnliche, um einen Eisenblock gelegt. Der
+    # Preis soll die vierfache Kapazität spiegeln, ohne unerreichbar zu sein.
+    write(D + "/recipe/dense_cable.json", {
+        "type": "minecraft:crafting_shaped",
+        "category": "misc",
+        "pattern": [" C ", "CIC", " C "],
+        "key": {
+            "C": {"tag": "c:cables"},
+            "I": {"item": "minecraft:iron_block"},
+        },
+        "result": {"id": MOD + ":dense_cable", "count": 1},
+    })
+
+    # Beide Sorten fallen als der Gegenstand ihrer Farbe.
+    for sort in ("cable", "dense_cable"):
+        write(D + "/loot_table/blocks/%s.json" % sort,
+              {"type": "minecraft:block", "pools": []})
 
     # Färben: ein Farbstoff auf ein beliebiges Kabel. Über das Tag statt über
-    # siebzehn Gegenstände einzeln — sonst wären es zweihundertzweiundsiebzig
-    # Rezepte statt sechzehn.
-    for colour in CABLE_COLOURS[1:]:
-        write(D + "/recipe/%s_cable.json" % colour, {
+    # siebzehn Gegenstände einzeln — sonst wären es je Sorte
+    # zweihundertzweiundsiebzig Rezepte statt sechzehn.
+    for sort, tag in (("cable", "c:cables"), ("dense_cable", "c:dense_cables")):
+        for colour in CABLE_COLOURS[1:]:
+            write(D + "/recipe/%s_%s.json" % (colour, sort), {
+                "type": "minecraft:crafting_shapeless",
+                "category": "misc",
+                "group": "factorynetwork_" + sort,
+                "ingredients": [{"tag": tag}, {"item": "minecraft:%s_dye" % colour}],
+                "result": {"id": MOD + ":%s_%s" % (colour, sort), "count": 1},
+            })
+
+        # Entfärben mit einem Wassereimer, wie bei Applied Energistics. Ohne
+        # das wäre ein gefärbtes Kabel eine Sackgasse.
+        write(D + "/recipe/%s_uncolour.json" % sort, {
             "type": "minecraft:crafting_shapeless",
             "category": "misc",
-            "group": "factorynetwork_cable",
-            "ingredients": [{"tag": "c:cables"}, {"item": "minecraft:%s_dye" % colour}],
-            "result": {"id": MOD + ":%s_cable" % colour, "count": 1},
+            "group": "factorynetwork_" + sort,
+            "ingredients": [{"tag": tag}, {"item": "minecraft:water_bucket"}],
+            "result": {"id": MOD + ":" + sort, "count": 1},
         })
 
-    # Entfärben mit einem Wassereimer, wie bei Applied Energistics. Ohne das
-    # wäre ein gefärbtes Kabel eine Sackgasse.
-    write(D + "/recipe/cable_uncolour.json", {
-        "type": "minecraft:crafting_shapeless",
-        "category": "misc",
-        "group": "factorynetwork_cable",
-        "ingredients": [{"tag": "c:cables"}, {"item": "minecraft:water_bucket"}],
-        "result": {"id": MOD + ":cable", "count": 1},
-    })
-
-    # Alle Kabel unter einem Tag, damit die Rezepte jede Farbe annehmen.
-    write("data/c/tags/item/cables.json", {
-        "values": [MOD + ":cable"] + [MOD + ":%s_cable" % c for c in CABLE_COLOURS[1:]],
-    })
+        # Alle Farben einer Sorte unter einem Tag, damit die Rezepte jede
+        # annehmen.
+        write("data/c/tags/item/%ss.json" % sort, {
+            "values": [MOD + ":" + sort]
+                      + [MOD + ":%s_%s" % (c, sort) for c in CABLE_COLOURS[1:]],
+        })
 
     # Spitzhacke reicht zum Abbauen.
     write(D + "/tags/block/mineable/pickaxe.json", {
-        "values": [MOD + ":controller", MOD + ":cable", MOD + ":connector",
-                   MOD + ":terminal", MOD + ":display"],
+        "values": [MOD + ":controller", MOD + ":cable", MOD + ":dense_cable",
+                   MOD + ":connector", MOD + ":terminal", MOD + ":display"],
     })
 
 

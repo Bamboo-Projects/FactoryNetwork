@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "group": "factorynetwork_dense_cable",
+  "ingredients": [
+    {
+      "tag": "c:dense_cables"
+    },
+    {
+      "item": "minecraft:cyan_dye"
+    }
+  ],
+  "result": {
+    "id": "factorynetwork:cyan_dense_cable",
+    "count": 1
+  }
+}

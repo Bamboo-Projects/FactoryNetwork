@@ -112,13 +112,17 @@ public final class FactoryGraph {
     /**
      * Wie viele Kanäle ein Kabelstrang trägt.
      *
-     * <p>Ein Strang ist ein Bündel von acht Drähten. Jedes Gerät zieht auf
-     * seinem ganzen Weg zum Controller einen davon ab — weiter hinten fehlt
-     * er dann. Das Vorbild ist Applied Energistics, mit einem Unterschied:
-     * Bei uns zählt der <b>Strang</b>, nicht der Block. Vier Stränge in einem
-     * Block tragen vier mal acht, weil sie vier getrennte Netze sind.
+     * <p>Jedes Gerät zieht auf seinem ganzen Weg zum Controller einen Kanal
+     * ab — weiter hinten fehlt er dann. Wie viele ein Kabel trägt, steht am
+     * Kabel selbst: sechzehn beim gewöhnlichen, vierundsechzig beim dichten.
+     * Das Vorbild ist Applied Energistics mit acht und zweiunddreißig; bei
+     * uns ist es das Doppelte, weil das System ein moderneres sein soll.
+     *
+     * <p>Diese Zahl hier ist nur der Rückfall für Stellen, an denen kein
+     * Kabel liegt — etwa der Controller selbst. Gerechnet wird stets mit
+     * {@link #capacityAt}.
      */
-    public static final int CHANNELS_PER_STRAND = 8;
+    public static final int CHANNELS_PER_STRAND = CableBlock.CHANNELS_THIN;
 
     /**
      * Baut den Graphen ausgehend vom Controller auf.
@@ -246,8 +250,11 @@ public final class FactoryGraph {
             List<Node> chosen = null;
             for (Node entryPoint : entry.getValue()) {
                 List<Node> path = pathOf(level, entryPoint, parents);
+                // Die Kapazität steht am Kabel: Ein dichtes trägt vierundsechzig,
+                // ein gewöhnliches sechzehn. Auf einem gemischten Weg zählt
+                // jede Stelle für sich — das schwächste Stück begrenzt.
                 boolean room = path.stream().allMatch(node ->
-                        load.getOrDefault(node, 0) + cost <= CHANNELS_PER_STRAND);
+                        load.getOrDefault(node, 0) + cost <= capacityAt(level, node.pos()));
                 if (room) {
                     chosen = path;
                     break;
@@ -294,8 +301,26 @@ public final class FactoryGraph {
         return channelLoad.getOrDefault(new Node(pos, colour), 0);
     }
 
-    public int channelsFree(BlockPos pos, CableColour colour) {
-        return CHANNELS_PER_STRAND - channelLoad(pos, colour);
+    /**
+     * Wie viele Kanäle das Kabel an dieser Stelle trägt.
+     *
+     * <p>Der Controller selbst und alles, was kein Kabel ist, gilt als
+     * unbegrenzt: Dort wird nichts durchgeleitet, was zu begrenzen wäre.
+     */
+    public static int capacityAt(Level level, BlockPos pos) {
+        int channels = CableBlock.channelsAt(level.getBlockState(pos));
+        return channels > 0 ? channels : Integer.MAX_VALUE;
+    }
+
+    /**
+     * Wie viel an dieser Stelle noch frei ist.
+     *
+     * <p>Braucht die Welt, weil die Kapazität am Kabel steht. Ohne sie bleibt
+     * nur die Annahme, es sei ein gewöhnliches — was bei einem dichten um das
+     * Vierfache danebenläge.
+     */
+    public int channelsFree(Level level, BlockPos pos, CableColour colour) {
+        return capacityAt(level, pos) - channelLoad(pos, colour);
     }
 
     /** Geräte ohne freien Kanal — im Netz sichtbar, aber nicht ansprechbar. */

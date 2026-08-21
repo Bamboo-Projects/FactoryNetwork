@@ -1,0 +1,21 @@
+{
+  "values": [
+    "factorynetwork:dense_cable",
+    "factorynetwork:white_dense_cable",
+    "factorynetwork:orange_dense_cable",
+    "factorynetwork:magenta_dense_cable",
+    "factorynetwork:light_blue_dense_cable",
+    "factorynetwork:yellow_dense_cable",
+    "factorynetwork:lime_dense_cable",
+    "factorynetwork:pink_dense_cable",
+    "factorynetwork:gray_dense_cable",
+    "factorynetwork:light_gray_dense_cable",
+    "factorynetwork:cyan_dense_cable",
+    "factorynetwork:purple_dense_cable",
+    "factorynetwork:blue_dense_cable",
+    "factorynetwork:brown_dense_cable",
+    "factorynetwork:green_dense_cable",
+    "factorynetwork:red_dense_cable",
+    "factorynetwork:black_dense_cable"
+  ]
+}

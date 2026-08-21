@@ -2,6 +2,7 @@ package dev.devpanda.factorynetwork.registry;
 
 import dev.devpanda.factorynetwork.FactoryNetwork;
 import dev.devpanda.factorynetwork.block.CableBlock;
+import dev.devpanda.factorynetwork.block.DenseCableBlock;
 import dev.devpanda.factorynetwork.block.ConnectorBlock;
 import dev.devpanda.factorynetwork.block.ControllerBlock;
 import dev.devpanda.factorynetwork.block.DisplayBlock;
@@ -28,6 +29,14 @@ public final class FnBlocks {
             () -> new CableBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_GRAY)
                     .strength(0.6F)
+                    .sound(SoundType.METAL)
+                    .noOcclusion()));
+
+    /** Vierundsechzig Kanäle statt sechzehn, und zehn Blockpixel statt sechs. */
+    public static final DeferredBlock<Block> DENSE_CABLE = BLOCKS.register("dense_cable",
+            () -> new DenseCableBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_GRAY)
+                    .strength(0.8F)
                     .sound(SoundType.METAL)
                     .noOcclusion()));
 

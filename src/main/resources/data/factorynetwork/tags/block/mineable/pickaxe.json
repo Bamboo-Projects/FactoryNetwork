@@ -2,6 +2,7 @@
   "values": [
     "factorynetwork:controller",
     "factorynetwork:cable",
+    "factorynetwork:dense_cable",
     "factorynetwork:connector",
     "factorynetwork:terminal",
     "factorynetwork:display"

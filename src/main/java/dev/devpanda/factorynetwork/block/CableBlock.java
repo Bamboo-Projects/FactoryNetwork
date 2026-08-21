@@ -38,6 +38,17 @@ public class CableBlock extends Block {
 
     public static final MapCodec<CableBlock> CODEC = simpleCodec(CableBlock::new);
 
+    /**
+     * Wie stark dieses Kabel ist und wie viele Kanäle es trägt.
+     *
+     * <p>Zwei Sorten, dieselbe Klasse: Der Unterschied ist eine Zahl, kein
+     * Verhalten. Ein eigener Typ je Stärke brächte zwei Fassungen derselben
+     * Verbindungslogik, und die eine bekäme irgendwann eine Verbesserung, die
+     * der anderen fehlt.
+     */
+    private final int size;
+    private final int channels;
+
     /** Die Farbe steckt im Blockzustand, nicht in einer BlockEntity —
      *  sie ändert sich nie und muss beim Zeichnen sofort verfügbar sein. */
     public static final EnumProperty<CableColour> COLOUR =
@@ -64,13 +75,43 @@ public class CableBlock extends Block {
             Direction.UP, Block.box(MIN, MAX, MIN, MAX, 16.0D, MAX)));
 
     public CableBlock(Properties properties) {
+        this(properties, CableLayout.THIN, CHANNELS_THIN);
+    }
+
+    protected CableBlock(Properties properties, int size, int channels) {
         super(properties);
+        this.size = size;
+        this.channels = channels;
         BlockState state = stateDefinition.any()
                 .setValue(COLOUR, CableColour.NONE);
         for (BooleanProperty property : CONNECTIONS.values()) {
             state = state.setValue(property, false);
         }
         registerDefaultState(state);
+    }
+
+    /** Das gewöhnliche Kabel trägt sechzehn Kanäle. */
+    public static final int CHANNELS_THIN = 16;
+
+    /** Das dichte vierundsechzig — viermal so viel, wie bei AE2 auch. */
+    public static final int CHANNELS_DENSE = 64;
+
+    public int size() {
+        return size;
+    }
+
+    public int channels() {
+        return channels;
+    }
+
+    /**
+     * Wie viele Kanäle das Kabel an dieser Stelle trägt.
+     *
+     * <p>Null, wenn dort gar kein Kabel liegt — der Aufrufer entscheidet, was
+     * das heißt.
+     */
+    public static int channelsAt(BlockState state) {
+        return state.getBlock() instanceof CableBlock cable ? cable.channels() : 0;
     }
 
     public static CableColour colourOf(BlockState state) {
@@ -146,6 +187,6 @@ public class CableBlock extends Block {
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos,
                                   CollisionContext context) {
-        return CableShapes.whole(CableLayout.THIN, connectionsOf(state));
+        return CableShapes.whole(size, connectionsOf(state));
     }
 }

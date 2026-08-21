@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "group": "factorynetwork_dense_cable",
+  "ingredients": [
+    {
+      "tag": "c:dense_cables"
+    },
+    {
+      "item": "minecraft:light_gray_dye"
+    }
+  ],
+  "result": {
+    "id": "factorynetwork:light_gray_dense_cable",
+    "count": 1
+  }
+}

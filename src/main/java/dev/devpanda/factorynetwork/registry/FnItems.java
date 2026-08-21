@@ -30,17 +30,35 @@ public final class FnItems {
      */
     public static final Map<CableColour, DeferredItem<BlockItem>> CABLES = registerCables();
 
+    /** Dasselbe noch einmal für das dichte Kabel. */
+    public static final Map<CableColour, DeferredItem<BlockItem>> DENSE_CABLES =
+            registerCables(FnBlocks.DENSE_CABLE, "dense_cable");
+
     /** Die Standardfarbe — verbindet sich mit allem. */
     public static final DeferredItem<BlockItem> CABLE = CABLES.get(CableColour.NONE);
 
+    public static final DeferredItem<BlockItem> DENSE_CABLE = DENSE_CABLES.get(CableColour.NONE);
+
     private static Map<CableColour, DeferredItem<BlockItem>> registerCables() {
+        return registerCables(FnBlocks.CABLE, "cable");
+    }
+
+    /**
+     * Alle siebzehn Farben einer Kabelsorte.
+     *
+     * <p>Der Name der neutralen Fassung ist der Sortenname selbst, die
+     * anderen tragen ihre Farbe davor — {@code cable} und {@code red_cable},
+     * {@code dense_cable} und {@code red_dense_cable}.
+     */
+    private static Map<CableColour, DeferredItem<BlockItem>> registerCables(
+            net.neoforged.neoforge.registries.DeferredBlock<
+                    net.minecraft.world.level.block.Block> block, String sort) {
         Map<CableColour, DeferredItem<BlockItem>> cables = new LinkedHashMap<>();
         for (CableColour colour : CableColour.values()) {
             String name = colour == CableColour.NONE
-                    ? "cable" : colour.getSerializedName() + "_cable";
+                    ? sort : colour.getSerializedName() + "_" + sort;
             cables.put(colour, ITEMS.register(name,
-                    () -> new ColouredCableItem(FnBlocks.CABLE.get(), colour,
-                            new Item.Properties())));
+                    () -> new ColouredCableItem(block.get(), colour, new Item.Properties())));
         }
         return Map.copyOf(cables);
     }
