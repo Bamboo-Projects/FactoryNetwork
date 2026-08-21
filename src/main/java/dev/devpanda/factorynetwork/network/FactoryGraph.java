@@ -62,23 +62,41 @@ public final class FactoryGraph {
     private final Set<BlockPos> cables;
     /** Wie viele Kanäle jeder Kabelstrang trägt. */
     private final Map<Node, Integer> channelLoad;
+    /**
+     * Wer mit wem verbunden ist.
+     *
+     * <p>Die Suche kennt das ohnehin — sie merkt sich zu jedem Knoten, woher
+     * sie kam. Aufgehoben wird es für den Netzanalysator, der das Netz als
+     * Linien in die Welt zeichnet. Ohne die Kanten bliebe ihm nur eine Wolke
+     * von Punkten.
+     */
+    private final List<Edge> edges;
     private final boolean truncated;
+
+    /** Eine Verbindung zwischen zwei Knoten des Netzes. */
+    public record Edge(Node from, Node to) {}
 
     private FactoryGraph(Map<String, List<BlockPos>> connectorsByName, List<BlockPos> unnamed,
                          List<BlockPos> starved, List<BlockPos> displays, Set<BlockPos> cables,
-                         Map<Node, Integer> channelLoad, boolean truncated) {
+                         Map<Node, Integer> channelLoad, List<Edge> edges, boolean truncated) {
         this.displays = displays;
         this.connectorsByName = connectorsByName;
         this.unnamed = unnamed;
         this.starved = starved;
         this.channelLoad = channelLoad;
         this.cables = cables;
+        this.edges = edges;
         this.truncated = truncated;
     }
 
     public static FactoryGraph empty() {
         return new FactoryGraph(Map.of(), List.of(), List.of(), List.of(),
-                Set.of(), Map.of(), false);
+                Set.of(), Map.of(), List.of(), false);
+    }
+
+    /** Die Verbindungen des Netzes, für die Anzeige im Raum. */
+    public List<Edge> edges() {
+        return edges;
     }
 
     /**
@@ -169,9 +187,15 @@ public final class FactoryGraph {
 
         Map<String, List<BlockPos>> frozen = new LinkedHashMap<>();
         connectors.forEach((label, positions) -> frozen.put(label, List.copyOf(positions)));
+        List<Edge> edges = new ArrayList<>();
+        parents.forEach((node, parent) -> {
+            if (parent != null) {
+                edges.add(new Edge(parent, node));
+            }
+        });
         return new FactoryGraph(Map.copyOf(frozen), List.copyOf(unnamed),
                 List.copyOf(starved), List.copyOf(displays), Set.copyOf(cables),
-                Map.copyOf(load), truncated);
+                Map.copyOf(load), List.copyOf(edges), truncated);
     }
 
     /**

@@ -2181,6 +2181,23 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(anzeigenZurueck.panels().get(0).buttons().get(0), 1,
                 "Welche Zeile ein Knopf ist");
 
+        var netz = new dev.devpanda.factorynetwork.network.packet.AnalyserDataPacket(
+                java.util.List.of(new dev.devpanda.factorynetwork.analyser.AnalyserData.Node(
+                        BlockPos.ZERO,
+                        dev.devpanda.factorynetwork.analyser.AnalyserData.NodeState.STARVED,
+                        "brecher")),
+                java.util.List.of(new dev.devpanda.factorynetwork.analyser.AnalyserData.Link(
+                        BlockPos.ZERO, BlockPos.ZERO.above(),
+                        dev.devpanda.factorynetwork.analyser.AnalyserData.LinkState.FULL, 8, 8)),
+                new dev.devpanda.factorynetwork.analyser.AnalyserData.Summary(
+                        3, 12, 1, 0, 0, 2, 1));
+        var netzZurueck = roundTrip(helper,
+                dev.devpanda.factorynetwork.network.packet.AnalyserDataPacket.STREAM_CODEC, netz);
+        helper.assertValueEqual(netzZurueck.summary().fullLinks(), 1,
+                "Die siebte Zahl der Übersicht — sie passt nicht mehr in composite");
+        helper.assertValueEqual(netzZurueck.nodes().get(0).label(), "brecher", "Gerätename");
+        helper.assertValueEqual(netzZurueck.links().get(0).load(), 8, "Kanallast der Strecke");
+
         var druck = new dev.devpanda.factorynetwork.network.packet.DisplayActionPacket(
                 "leitstand", 1);
         helper.assertValueEqual(roundTrip(helper,
@@ -2626,6 +2643,84 @@ public final class FactoryNetworkGameTests {
                             "Und zwar er, nicht die Zeile dahinter");
                 })
                 .thenSucceed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void theAnalyserSeesTheWholeNetwork(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        var data = dev.devpanda.factorynetwork.analyser.AnalyserScan.of(entity);
+
+        // Der Controller selbst und die beiden benannten Connectoren.
+        helper.assertTrue(data.nodes().size() >= 3,
+                "Zu wenige Knoten: " + data.nodes().size());
+        helper.assertTrue(data.nodes().stream().anyMatch(node -> node.state().name()
+                        .equals("CONTROLLER")),
+                "Der Controller muss ein Knoten sein");
+        helper.assertTrue(data.nodes().stream().anyMatch(node ->
+                        node.label().equals("quarry_output")),
+                "Die Geräte müssen mit Namen erscheinen");
+
+        // Ohne Verbindungen wäre es eine Punktwolke statt eines Netzes.
+        helper.assertTrue(!data.links().isEmpty(), "Es muss Verbindungen geben");
+        helper.assertValueEqual(data.summary().devices(), 2, "Geräte in der Übersicht");
+        helper.assertTrue(data.summary().isHealthy(), "Dieses Netz ist in Ordnung");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void theAnalyserMarksDevicesWithoutAChannel(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 2, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        line(helper, controller.east(), 5);
+
+        // Mehr Geräte als Kanäle: Die überzähligen müssen auffallen.
+        int placed = 0;
+        for (int i = 0; i < 5 && placed < 9; i++) {
+            for (BlockPos side : new BlockPos[]{
+                    controller.east(i + 1).above(), controller.east(i + 1).below()}) {
+                if (placed >= 9) {
+                    break;
+                }
+                helper.setBlock(side, FnBlocks.CONNECTOR.get());
+                name(helper, side, "gerät_" + placed);
+                placed++;
+            }
+        }
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        var data = dev.devpanda.factorynetwork.analyser.AnalyserScan.of(entity);
+        helper.assertValueEqual(data.summary().starved(), 1, "Ein Gerät geht leer aus");
+        helper.assertTrue(!data.summary().isHealthy(),
+                "Ein Netz mit einem hungrigen Gerät ist nicht in Ordnung");
+        helper.assertTrue(data.nodes().stream().anyMatch(node ->
+                        node.state().name().equals("STARVED")),
+                "Das hungrige Gerät muss als solches erscheinen");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void theAnalyserMarksFullCables(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 2, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        line(helper, controller.east(), 5);
+        for (int i = 0; i < 8; i++) {
+            BlockPos side = i < 4 ? controller.east(i + 1).above()
+                    : controller.east(i - 3).below();
+            helper.setBlock(side, FnBlocks.CONNECTOR.get());
+            name(helper, side, "gerät_" + i);
+        }
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        var data = dev.devpanda.factorynetwork.analyser.AnalyserScan.of(entity);
+        // Acht Geräte auf einem Strang: Das erste Kabelstück trägt alle.
+        helper.assertTrue(data.summary().fullLinks() > 0 || data.summary().tightLinks() > 0,
+                "Die Strecke am Controller muss als eng erkannt werden");
+        helper.succeed();
     }
 
     private FactoryNetworkGameTests() {

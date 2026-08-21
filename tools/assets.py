@@ -259,6 +259,10 @@ def models():
         "parent": "minecraft:item/handheld",
         "textures": {"layer0": MOD + ":item/label_gun"},
     })
+    write(A + "/models/item/network_analyser.json", {
+        "parent": "minecraft:item/handheld",
+        "textures": {"layer0": MOD + ":item/network_analyser"},
+    })
 
 
 # ---- Loot und Rezepte ----------------------------------------------------
@@ -346,8 +350,21 @@ def loot_and_recipes():
         "result": {"id": MOD + ":label_gun", "count": 1},
     })
 
-    # Das Kabel wirft seine Stränge selbst aus — die Tabelle sieht die
-    # BlockEntity nicht und wüsste nicht, welche Farben drinstecken.
+    # Der Analysator: Redstone fuer das Messen, Quarz fuer die Anzeige, Eisen
+    # fuer das Gehaeuse. Nicht teuer — wer ihn braucht, hat schon ein Problem.
+    write(D + "/recipe/network_analyser.json", {
+        "type": "minecraft:crafting_shaped",
+        "category": "equipment",
+        "pattern": [" Q ", "IRI", " I "],
+        "key": {
+            "Q": {"item": "minecraft:quartz"},
+            "R": {"item": "minecraft:redstone"},
+            "I": {"item": "minecraft:iron_ingot"},
+        },
+        "result": {"id": MOD + ":network_analyser", "count": 1},
+    })
+
+    # Das Kabel faellt als der Gegenstand seiner Farbe.
     write(D + "/loot_table/blocks/cable.json", {"type": "minecraft:block", "pools": []})
 
     # Färben: ein Farbstoff auf ein beliebiges Kabel. Über das Tag statt über

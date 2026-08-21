@@ -2,6 +2,7 @@ package dev.devpanda.factorynetwork.registry;
 
 import dev.devpanda.factorynetwork.FactoryNetwork;
 import dev.devpanda.factorynetwork.item.LabelGunItem;
+import dev.devpanda.factorynetwork.item.NetworkAnalyserItem;
 import dev.devpanda.factorynetwork.block.CableColour;
 import dev.devpanda.factorynetwork.item.ColouredCableItem;
 import net.minecraft.world.item.BlockItem;
@@ -50,6 +51,10 @@ public final class FnItems {
     /** Vergibt einem Connector seinen Namen. */
     public static final DeferredItem<Item> LABEL_GUN = ITEMS.register("label_gun",
             () -> new LabelGunItem(new Item.Properties().stacksTo(1)));
+
+    /** Zeigt das Netz als Gerüst in der Welt — auch durch Wände. */
+    public static final DeferredItem<Item> ANALYSER = ITEMS.register("network_analyser",
+            () -> new NetworkAnalyserItem(new Item.Properties().stacksTo(1)));
 
     private FnItems() {
     }

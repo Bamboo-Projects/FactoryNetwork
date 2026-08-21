@@ -34,6 +34,8 @@ public final class FnPackets {
                 DisplayStatePacket::handle);
         registrar.playToServer(DisplayActionPacket.TYPE, DisplayActionPacket.STREAM_CODEC,
                 DisplayActionPacket::handle);
+        registrar.playToClient(AnalyserDataPacket.TYPE, AnalyserDataPacket.STREAM_CODEC,
+                AnalyserDataPacket::handle);
     }
 
     private FnPackets() {

@@ -365,6 +365,46 @@ def label_gun():
     return img
 
 
+def network_analyser():
+    """Ein Messgerät: Gehäuse, Anzeige, kurze Sonde.
+
+    Die Silhouette trägt: ein flaches Gehäuse mit grossem Fenster und einer
+    Sonde oben rechts. So ist es im Hotbar von der Beschriftungspistole zu
+    unterscheiden, die eine lange Waffenform hat.
+    """
+    img = Image.new("RGBA", (N, N), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+
+    # Gehäuse
+    d.rounded_rectangle([14, 20, 48, 54], radius=4,
+                        fill=blend(BODY_TOP, EDGE, 0.25) + (255,), outline=EDGE + (255,))
+    d.line([(17, 23), (45, 23)], fill=SHINE + (255,))
+
+    # Sonde nach oben rechts
+    d.line([(44, 22), (54, 10)], fill=EDGE + (255,), width=4)
+    d.line([(44, 22), (54, 10)], fill=BRASS + (255,), width=2)
+    d.ellipse([50, 6, 58, 14], fill=BRASS + (255,), outline=EDGE + (255,))
+    d.ellipse([52, 8, 56, 12], fill=BRASS_HI + (255,))
+
+    # Anzeigefenster mit einem Netzgeflecht darin
+    glow(img, [19, 26, 43, 44], radius=6, strength=120)
+    d = ImageDraw.Draw(img)
+    d.rectangle([19, 26, 43, 44], fill=EDGE + (255,))
+    d.rectangle([21, 28, 41, 42], fill=blend(ACCENT, EDGE, 0.55) + (255,))
+    # Drei Knoten und ihre Verbindungen — das Werkzeug zeigt, was es tut.
+    knoten = [(25, 32), (35, 31), (30, 39)]
+    for a in range(len(knoten)):
+        for b in range(a + 1, len(knoten)):
+            d.line([knoten[a], knoten[b]], fill=ACCENT + (255,))
+    for x, y in knoten:
+        d.rectangle([x - 1, y - 1, x + 1, y + 1], fill=(240, 250, 235, 255))
+
+    # Griffrillen unten
+    for y in range(47, 53, 2):
+        d.line([(20, y), (42, y)], fill=blend(BODY_TOP, EDGE, 0.55) + (255,))
+    return img
+
+
 def main():
     print("Blocktexturen (64x64):")
     save(controller_top(), "block", "controller_top")
@@ -384,6 +424,7 @@ def main():
     save(display_side(), "block", "display_side")
     print("Gegenstandstexturen:")
     save(label_gun(), "item", "label_gun")
+    save(network_analyser(), "item", "network_analyser")
 
 
 if __name__ == "__main__":
