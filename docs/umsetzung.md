@@ -92,7 +92,7 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | Netzwerk | Graph über Kabel, Speicher schlüsselbasiert, Kanäle je Strang |
 | Editor | Syntaxfarben, Fehler beim Tippen, Vervollständigung nach Stelle |
 | Anzeigen | Am Block und im Terminal, Knöpfe starten Abläufe |
-| Prüfung | 87 Einheitstests, 77 GameTests |
+| Prüfung | 87 Einheitstests, 78 GameTests |
 
 ## 3. Was noch nicht läuft
 
@@ -118,8 +118,6 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
   Gebaut ist **(2)**. Offen ist, ob **(1)** dazukommt. Eine
   Automatisierung, die einmal zu früh weiterschaltet, verliert Gegenstände in
   einer Kiste, die niemand mehr findet.
-- **Chemikalien.** Mekanisms Gase und Schlämme; die Schreibweise steht, die
-  Anbindung fehlt.
 - **Flüssigkeits-Tags.** `tag:` löst heute Gegenstands-Tags auf. Wie ein
   Flüssigkeits-Tag geschrieben wird, ist eine Frage an die Sprache und nicht
   nebenbei zu entscheiden — `fluidtag:c/molten` wäre eine vierte Art,
@@ -133,11 +131,7 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
   („Das Ziel nimmt nichts mehr"), obwohl etwas gelaufen ist. Die Zahl stimmt,
   die Beschreibung im Terminal nicht.
 - **Autocrafting.** Der letzte ausgegraute Reiter.
-- **`callFunction` aus dem Terminal** läuft am gewöhnlichen Interpreter und
-  kann deshalb nicht warten. Eine Funktion mit `sleep` scheitert dort mit
-  klarer Meldung, statt als Ablauf zu starten — was fehlt, ist eine Antwort
-  darauf, was das Terminal dann anzeigen soll, wenn es keinen Rückgabewert
-  mehr gibt.
+- **Chemikalien** aus Mekanism. Die Schreibweise steht seit dem Entwurf.
 
 ---
 

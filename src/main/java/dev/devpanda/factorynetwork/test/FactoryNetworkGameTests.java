@@ -2527,6 +2527,87 @@ public final class FactoryNetworkGameTests {
         });
     }
 
+    /**
+     * Zwei Kessel als Anlage benannt.
+     *
+     * <p>Für den Fall, den keine Einzelprüfung abdeckt: eine Vorlage, die
+     * Flüssigkeit bewegt und dabei wartet.
+     */
+    private static ControllerBlockEntity plantWithTanks(GameTestHelper helper,
+            BlockPos controller) {
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        for (int i = 0; i < 4; i++) {
+            helper.setBlock(controller.east(i + 1), FnBlocks.CABLE.get());
+        }
+        String[] labels = {"sude_1/bottich", "sude_1/kessel"};
+        for (int i = 0; i < labels.length; i++) {
+            BlockPos connector = controller.east(i + 2).above();
+            helper.setBlock(connector, FnBlocks.CONNECTOR.get().defaultBlockState()
+                    .setValue(dev.devpanda.factorynetwork.block.ConnectorBlock.FACING,
+                            net.minecraft.core.Direction.UP));
+            helper.setBlock(connector.above(), Blocks.CAULDRON);
+            name(helper, connector, labels[i]);
+        }
+        return controllerAt(helper, controller);
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void aPlantMovesFluidAndWaitsAcrossARestart(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 1, 1);
+        ControllerBlockEntity entity = plantWithTanks(helper, controller);
+        entity.rebuildNetwork();
+        fillCauldron(helper, controller, 0);
+
+        helper.assertTrue(entity.deploy("""
+                event Freigabe(nummer: Int)
+
+                multiblock Sudhaus {
+                    devices {
+                        bottich
+                        kessel
+                    }
+
+                    fn sud() {
+                        let freigabe = await Freigabe
+                        move 1000 fluid:water from bottich to kessel
+                        return freigabe
+                    }
+                }
+
+                fn los() {
+                    let ergebnis = sude_1.sud()
+                    return ergebnis
+                }"""), "Das Programm wurde nicht übernommen");
+
+        var flow = entity.startFlow("los", java.util.List.of());
+        helper.assertValueEqual(flow.status().name(), "AWAITING",
+                "Die Anlage wartet auf ihre Freigabe");
+
+        // Mitten im Warten neu laden — mit allem, was diese Nacht dazukam:
+        // zwei Rahmen tief, in einer Vorlage, vor einer Flüssigkeitsbewegung.
+        var registries = helper.getLevel().registryAccess();
+        var block = net.minecraft.world.level.block.entity.BlockEntity.loadStatic(
+                helper.absolutePos(controller), helper.getBlockState(controller),
+                entity.saveWithFullMetadata(registries), registries);
+        ControllerBlockEntity geladen = (ControllerBlockEntity) block;
+        geladen.setLevel(helper.getLevel());
+        geladen.rebuildNetwork();
+
+        var wieder = flowOf(geladen, flow.id());
+        helper.assertTrue(wieder != null, "Der Ablauf der Anlage hat den Neustart nicht überlebt");
+
+        geladen.fireEvent("Freigabe", java.util.List.of(
+                new dev.devpanda.factorynetwork.runtime.Value.Int(4)));
+
+        helper.assertValueEqual(wieder.status().name(), "DONE",
+                "Er läuft zu Ende, sagt aber: " + wieder.detail());
+        helper.assertValueEqual(resultOf(wieder), 4L, "Der Wert aus der Freigabe");
+        helper.assertTrue(!hasWater(helper, controller, 0), "Der Bottich ist leer");
+        helper.assertTrue(hasWater(helper, controller, 1),
+                "Und der Kessel der richtigen Anlage ist voll");
+        helper.succeed();
+    }
+
     private FactoryNetworkGameTests() {
     }
 }
