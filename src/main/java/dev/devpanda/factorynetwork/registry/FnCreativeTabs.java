@@ -22,6 +22,7 @@ public final class FnCreativeTabs {
                         // Alle Kabelfarben, Standardfarbe zuerst
                         FnItems.CABLES.values()
                                 .forEach(cable -> output.accept(cable.get()));
+                        output.accept(FnItems.ROUTER.get());
                         output.accept(FnItems.CONNECTOR.get());
                         output.accept(FnItems.TERMINAL.get());
                         output.accept(FnItems.DISPLAY.get());

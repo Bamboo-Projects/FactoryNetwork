@@ -5,6 +5,7 @@ import dev.devpanda.factorynetwork.block.CableBlock;
 import dev.devpanda.factorynetwork.block.DenseCableBlock;
 import dev.devpanda.factorynetwork.block.DriveBlock;
 import dev.devpanda.factorynetwork.block.PressBlock;
+import dev.devpanda.factorynetwork.block.RouterBlock;
 import dev.devpanda.factorynetwork.block.ConnectorBlock;
 import dev.devpanda.factorynetwork.block.ControllerBlock;
 import dev.devpanda.factorynetwork.block.DisplayBlock;
@@ -41,6 +42,18 @@ public final class FnBlocks {
                     .strength(0.8F)
                     .sound(SoundType.METAL)
                     .noOcclusion()));
+
+    /**
+     * Kreuzung für dicke Kabel: Jede Seite bekommt eine Bahn.
+     *
+     * <p>Härter als ein Kabel, aber kein Maschinengehäuse — er steht in der
+     * Leitung und soll sich mit ihr abbauen lassen.
+     */
+    public static final DeferredBlock<Block> ROUTER = BLOCKS.register("router",
+            () -> new RouterBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_GRAY)
+                    .strength(1.2F)
+                    .sound(SoundType.METAL)));
 
     /**
      * Das Erz, aus dem alles wird.

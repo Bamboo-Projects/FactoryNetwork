@@ -172,5 +172,17 @@
   "screen.factorynetwork.terminal.sort.mod": "Nach Mod",
   "block.factorynetwork.display": "Display",
   "message.factorynetwork.display.named": "Display zeigt jetzt %s",
-  "message.factorynetwork.display.unnamed": "Dieses Display hat noch keinen Namen."
+  "message.factorynetwork.display.unnamed": "Dieses Display hat noch keinen Namen.",
+  "block.factorynetwork.router": "Router",
+  "side.factorynetwork.down": "Unten",
+  "side.factorynetwork.up": "Oben",
+  "side.factorynetwork.north": "Norden",
+  "side.factorynetwork.south": "Süden",
+  "side.factorynetwork.west": "Westen",
+  "side.factorynetwork.east": "Osten",
+  "message.factorynetwork.router.lane": "%s: Bahn %s",
+  "message.factorynetwork.router.off": "%s: abgeklemmt",
+  "config.jade.plugin_factorynetwork.router": "Router: Bahnen und Seiten",
+  "jade.factorynetwork.router.lane": "Bahn %s · %s/%s Kanäle · %s",
+  "jade.factorynetwork.router.off": "Abgeklemmt: %s"
 }

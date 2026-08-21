@@ -997,6 +997,95 @@ def press_front():
     return img
 
 
+# ---- Router --------------------------------------------------------------
+# Formensprache: ein Rahmen aussen, in dem die Bahnkennung sitzt, und in der
+# Mitte eine versenkte Buchse, in die das dicke Kabel laeuft.
+
+def router_side():
+    """Eine Seite des Routers.
+
+    Alle sechs Seiten sehen gleich aus — welche Bahn eine Seite fuehrt, malt
+    nicht die Textur, sondern der Renderer darueber. Sonst braeuchte es
+    fuenftausend Blockzustaende fuer dieselbe Auskunft.
+    """
+    img = surface(seed=61)
+    d = ImageDraw.Draw(img)
+    raised(img, (1, 1, N - 2, N - 2), hoehe=3)
+
+    # Aussenrahmen, in dem die Bahnkennung liegt: leicht versenkt, damit der
+    # Ring darin sitzt statt aufgeklebt zu wirken.
+    d.rectangle([3, 3, 60, 60], outline=blend(BODY_BOT, EDGE, 0.4) + (255,), width=8)
+    recess(img, (3, 3, 60, 60), tiefe=2)
+
+    # Buchse in der Mitte: erhabener Kragen, versenkter Kern.
+    d.rectangle([15, 15, 48, 48], fill=blend(BODY_TOP, LIGHT, 0.25) + (255,))
+    raised(img, (15, 15, 48, 48), hoehe=2)
+    d.rectangle([20, 20, 43, 43], fill=blend(BODY_MID, EDGE, 0.45) + (255,))
+    recess(img, (20, 20, 43, 43), tiefe=3)
+    ao(img, (20, 20, 43, 43), depth=3, strength=0.5)
+
+    # Vier Kontakte im Kern, einer je Bahn.
+    for x, y in ((25, 25), (37, 25), (25, 37), (37, 37)):
+        d.rectangle([x, y, x + 3, y + 3], fill=blend(BRASS, EDGE, 0.25) + (255,))
+        d.point((x, y), fill=BRASS_HI + (255,))
+
+    for x, y in ((7, 7), (56, 7), (7, 56), (56, 56)):
+        rivet(img, x, y, r=2)
+    scratches(img, seed=62)
+    return img
+
+
+# Die vier Bahnen und „aus". Farbe und Anzahl heller Ecken sagen dasselbe —
+# wer Farben schlecht unterscheidet, zaehlt die Ecken.
+LANE_COLOURS = [
+    ((52, 56, 60), (86, 90, 94)),
+    ((236, 168, 48), (255, 226, 150)),
+    ((64, 196, 224), (176, 244, 255)),
+    ((214, 92, 196), (250, 186, 240)),
+    ((132, 216, 72), (208, 255, 168)),
+]
+
+
+def router_lanes():
+    """Ein Streifen aus fuenf Kacheln: aus, Bahn 1 bis 4.
+
+    <b>Der Ring liegt am Rand, nicht in der Mitte.</b> Ein dickes Kabel deckt
+    die mittleren zehn Blockpixel ab — eine Kennung dort waere genau dann
+    verdeckt, wenn die Seite angeschlossen ist, also immer dann, wenn man sie
+    lesen will.
+    """
+    tiles = len(LANE_COLOURS)
+    strip = Image.new("RGBA", (N * tiles, N), (0, 0, 0, 0))
+    for lane, (base, bright) in enumerate(LANE_COLOURS):
+        tile = Image.new("RGBA", (N, N), (0, 0, 0, 0))
+        d = ImageDraw.Draw(tile)
+        # Ring: aussen bei 4, innen bei 12 — bleibt vor dem Kabel sichtbar.
+        d.rectangle([4, 4, 59, 59], fill=base + (255,))
+        d.rectangle([12, 12, 51, 51], fill=(0, 0, 0, 0))
+        # Dunkle Fase innen und aussen, damit der Ring Tiefe bekommt.
+        d.rectangle([4, 4, 59, 59], outline=_dunkler(base + (255,), 0.45))
+        d.rectangle([12, 12, 51, 51], outline=_dunkler(base + (255,), 0.55))
+        # Tiefe: der Rahmen liegt erhaben auf, das Loch in der Mitte
+        # geht hinunter. Ohne die Umkehr wirkt der Ring aufgemalt.
+        raised(tile, (4, 4, 59, 59), hoehe=2)
+        recess(tile, (11, 11, 52, 52), tiefe=2)
+        # So viele Ecken hell, wie die Bahn zaehlt.
+        ecken = [(4, 4), (48, 4), (48, 48), (4, 48)]
+        for i in range(lane):
+            x, y = ecken[i]
+            d.rectangle([x, y, x + 11, y + 11], fill=bright + (255,))
+            raised(tile, (x, y, x + 11, y + 11), hoehe=1)
+            ao(tile, (x, y, x + 11, y + 11), depth=2, strength=0.30)
+        if lane == 0:
+            # „Aus" bekommt Luecken in der Mitte jeder Kante: gebrochen statt
+            # nur dunkel — das liest man auch aus der Entfernung.
+            for box in ([26, 2, 37, 13], [26, 50, 37, 61],
+                        [2, 26, 13, 37], [50, 26, 61, 37]):
+                d.rectangle(box, fill=(0, 0, 0, 0))
+        strip.paste(tile, (lane * N, 0))
+    return strip
+
+
 def main():
     print("Blocktexturen (64x64):")
     save(controller_top(), "block", "controller_top")
@@ -1016,6 +1105,8 @@ def main():
     save(display_side(), "block", "display_side")
     save(drive_front(), "block", "drive_front")
     save(press_front(), "block", "press_front")
+    save(router_side(), "block", "router_side")
+    save(router_lanes(), "misc", "router_lanes")
     save(crystal_ore(False), "block", "crystal_ore")
     save(crystal_ore(True), "block", "deepslate_crystal_ore")
     print("Gegenstandstexturen:")

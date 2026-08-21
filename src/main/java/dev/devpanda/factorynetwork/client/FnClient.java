@@ -28,6 +28,9 @@ public final class FnClient {
         event.registerBlockEntityRenderer(
                 dev.devpanda.factorynetwork.registry.FnBlockEntities.DISPLAY.get(),
                 dev.devpanda.factorynetwork.client.render.DisplayRenderer::new);
+        event.registerBlockEntityRenderer(
+                dev.devpanda.factorynetwork.registry.FnBlockEntities.ROUTER.get(),
+                dev.devpanda.factorynetwork.client.render.RouterRenderer::new);
     }
 
     @SubscribeEvent

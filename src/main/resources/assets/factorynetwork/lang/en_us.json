@@ -172,5 +172,17 @@
   "screen.factorynetwork.terminal.sort.mod": "By mod",
   "block.factorynetwork.display": "Display",
   "message.factorynetwork.display.named": "Display now shows %s",
-  "message.factorynetwork.display.unnamed": "This display has no name yet."
+  "message.factorynetwork.display.unnamed": "This display has no name yet.",
+  "block.factorynetwork.router": "Router",
+  "side.factorynetwork.down": "Bottom",
+  "side.factorynetwork.up": "Top",
+  "side.factorynetwork.north": "North",
+  "side.factorynetwork.south": "South",
+  "side.factorynetwork.west": "West",
+  "side.factorynetwork.east": "East",
+  "message.factorynetwork.router.lane": "%s: lane %s",
+  "message.factorynetwork.router.off": "%s: disconnected",
+  "config.jade.plugin_factorynetwork.router": "Router: lanes and sides",
+  "jade.factorynetwork.router.lane": "Lane %s · %s/%s channels · %s",
+  "jade.factorynetwork.router.off": "Disconnected: %s"
 }

@@ -5,7 +5,9 @@ import dev.devpanda.factorynetwork.block.CableColour;
 import dev.devpanda.factorynetwork.block.ConnectorBlock;
 import dev.devpanda.factorynetwork.block.DisplayBlock;
 import dev.devpanda.factorynetwork.block.DriveBlock;
+import dev.devpanda.factorynetwork.block.RouterBlock;
 import dev.devpanda.factorynetwork.block.entity.ConnectorBlockEntity;
+import dev.devpanda.factorynetwork.block.entity.RouterBlockEntity;
 import dev.devpanda.factorynetwork.util.NameDistance;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -61,6 +63,8 @@ public final class FactoryGraph {
     /** Displays am Netz. Sie zeigen nur an und brauchen keinen Kanal. */
     private final List<BlockPos> displays;
     private final Set<BlockPos> cables;
+    /** Router am Netz. Sie leiten weiter und kosten selbst keinen Kanal. */
+    private final Set<BlockPos> routers;
     /** Laufwerke am Netz. Sie tragen den Speicher, den das Netz benutzt. */
     private final List<BlockPos> drives;
     /** Wie viele Kanäle jeder Kabelstrang trägt. */
@@ -81,8 +85,9 @@ public final class FactoryGraph {
 
     private FactoryGraph(Map<String, List<BlockPos>> connectorsByName, List<BlockPos> unnamed,
                          List<BlockPos> starved, List<BlockPos> displays, Set<BlockPos> cables,
-                         Map<Node, Integer> channelLoad, List<Edge> edges,
+                         Set<BlockPos> routers, Map<Node, Integer> channelLoad, List<Edge> edges,
                          List<BlockPos> drives, boolean truncated) {
+        this.routers = routers;
         this.drives = drives;
         this.displays = displays;
         this.connectorsByName = connectorsByName;
@@ -96,7 +101,7 @@ public final class FactoryGraph {
 
     public static FactoryGraph empty() {
         return new FactoryGraph(Map.of(), List.of(), List.of(), List.of(),
-                Set.of(), Map.of(), List.of(), List.of(), false);
+                Set.of(), Set.of(), Map.of(), List.of(), List.of(), false);
     }
 
     /** Die Laufwerke am Netz. */
@@ -116,7 +121,18 @@ public final class FactoryGraph {
      * liefe ein grüner Strang über einen Block, in dem auch ein roter liegt,
      * und beide wären plötzlich verbunden.
      */
-    public record Node(BlockPos pos, CableColour colour) {
+    public record Node(BlockPos pos, CableColour colour, int lane) {
+
+        /**
+         * Ein Knoten ohne Bahn — alles außer einem Router.
+         *
+         * <p>Die Bahn trennt nur innerhalb eines Routers. Ein Kabel hat
+         * keine, also steht dort {@link RouterBlockEntity#OFF}, und die
+         * bisherigen Aufrufer bleiben, wie sie sind.
+         */
+        public Node(BlockPos pos, CableColour colour) {
+            this(pos, colour, RouterBlockEntity.OFF);
+        }
     }
 
     /**
@@ -150,6 +166,7 @@ public final class FactoryGraph {
         List<BlockPos> starved = new ArrayList<>();
         List<BlockPos> displays = new ArrayList<>();
         Set<BlockPos> cables = new HashSet<>();
+        Set<BlockPos> routers = new HashSet<>();
         List<BlockPos> drives = new ArrayList<>();
         Map<Node, Integer> load = new HashMap<>();
         Map<Node, Node> parents = new HashMap<>();
@@ -172,7 +189,16 @@ public final class FactoryGraph {
                 break;
             }
             Node current = queue.poll();
+            // Steht die Suche in einem Router, gilt sie nur für eine Bahn.
+            // Der Filter muss vor allem anderen stehen, nicht nur vor dem
+            // Kabelzweig: Auch ein Gerät an einer fremden Bahn gehört nicht
+            // dazu.
+            boolean atRouter = current.lane() != RouterBlockEntity.OFF;
             for (Direction direction : Direction.values()) {
+                if (atRouter && RouterBlockEntity.laneAt(level, current.pos(), direction)
+                        != current.lane()) {
+                    continue;
+                }
                 BlockPos next = current.pos().relative(direction);
                 if (!level.isLoaded(next)) {
                     // Ein nicht geladener Chunk beendet den Zweig, ohne Fehler.
@@ -181,6 +207,8 @@ public final class FactoryGraph {
                 BlockState state = level.getBlockState(next);
                 if (state.getBlock() instanceof CableBlock) {
                     visitCable(level, next, current, parents, queue, cables);
+                } else if (state.getBlock() instanceof RouterBlock) {
+                    visitRouter(level, next, direction, current, parents, queue, routers);
                 } else if (state.getBlock() instanceof DriveBlock) {
                     // Ein Laufwerk stellt Platz bereit, statt welchen zu
                     // brauchen. Wie eine Anzeige kostet es keinen Kanal —
@@ -217,7 +245,8 @@ public final class FactoryGraph {
         });
         return new FactoryGraph(Map.copyOf(frozen), List.copyOf(unnamed),
                 List.copyOf(starved), List.copyOf(displays), Set.copyOf(cables),
-                Map.copyOf(load), List.copyOf(edges), List.copyOf(drives), truncated);
+                Set.copyOf(routers), Map.copyOf(load), List.copyOf(edges),
+                List.copyOf(drives), truncated);
     }
 
     /**
@@ -238,6 +267,34 @@ public final class FactoryGraph {
         }
         if (entered) {
             cables.add(pos.immutable());
+        }
+    }
+
+    /**
+     * Geht in einen Router hinein — auf der Bahn, die die berührte Seite
+     * führt.
+     *
+     * <p>Die berührte Seite ist die dem Weg zugewandte, also die Gegenseite
+     * der Richtung, in die man gegangen ist. Ist sie abgeklemmt, endet der
+     * Zweig; das ist der ganze Zweck einer abgeklemmten Seite.
+     */
+    private static void visitRouter(Level level, BlockPos pos, Direction direction, Node from,
+                                    Map<Node, Node> parents, Deque<Node> queue,
+                                    Set<BlockPos> routers) {
+        int lane = RouterBlockEntity.laneAt(level, pos, direction.getOpposite());
+        if (lane == RouterBlockEntity.OFF) {
+            return;
+        }
+        // Farbneutral: Was auf einer Bahn zusammenkommt, ist verbunden, egal
+        // in welcher Farbe es ankam. Wer das nicht will, legt zwei Bahnen.
+        Node node = new Node(pos.immutable(), CableColour.NONE, lane);
+        // Der Router selbst gehört zum Netz, auch wenn diese Bahn schon
+        // besucht ist — sonst fehlte er im Analysator, sobald zwei Wege auf
+        // dieselbe Bahn führen.
+        routers.add(pos.immutable());
+        if (!parents.containsKey(node)) {
+            parents.put(node, from);
+            queue.add(node);
         }
     }
 
@@ -301,7 +358,11 @@ public final class FactoryGraph {
     private static List<Node> pathOf(Level level, Node from, Map<Node, Node> parents) {
         List<Node> path = new ArrayList<>();
         for (Node node = from; node != null; node = parents.get(node)) {
-            if (level.getBlockState(node.pos()).getBlock() instanceof CableBlock) {
+            // Ein Router trägt Kanäle wie ein Kabel — je Bahn eigene. Ließe
+            // man ihn hier aus, wäre eine Kreuzung unbegrenzt, und ein Netz
+            // hinter einem Router hätte plötzlich keine Grenze mehr.
+            var block = level.getBlockState(node.pos()).getBlock();
+            if (block instanceof CableBlock || block instanceof RouterBlock) {
                 path.add(node);
             }
         }
@@ -319,6 +380,21 @@ public final class FactoryGraph {
         return channelLoad.getOrDefault(new Node(pos, colour), 0);
     }
 
+    /** Wie viele Kanäle ein Knoten trägt — für Kabel wie für Router. */
+    public int channelLoad(Node node) {
+        return channelLoad.getOrDefault(node, 0);
+    }
+
+    /** Wie viele Kanäle eine Bahn eines Routers trägt. */
+    public int laneLoad(BlockPos pos, int lane) {
+        return channelLoad.getOrDefault(new Node(pos, CableColour.NONE, lane), 0);
+    }
+
+    /** Die Router am Netz. */
+    public Set<BlockPos> routers() {
+        return routers;
+    }
+
     /**
      * Wie viele Kanäle das Kabel an dieser Stelle trägt.
      *
@@ -326,7 +402,13 @@ public final class FactoryGraph {
      * unbegrenzt: Dort wird nichts durchgeleitet, was zu begrenzen wäre.
      */
     public static int capacityAt(Level level, BlockPos pos) {
-        int channels = CableBlock.channelsAt(level.getBlockState(pos));
+        BlockState state = level.getBlockState(pos);
+        if (state.getBlock() instanceof RouterBlock) {
+            // Der Router gehört zum dicken Kabel, also trägt jede seiner
+            // Bahnen so viel wie ein dickes Kabel.
+            return CableBlock.CHANNELS_DENSE;
+        }
+        int channels = CableBlock.channelsAt(state);
         return channels > 0 ? channels : Integer.MAX_VALUE;
     }
 
@@ -418,6 +500,7 @@ public final class FactoryGraph {
     /** Gehört diese Stelle zu diesem Netz — als Kabel, Gerät oder Display? */
     public boolean contains(BlockPos pos) {
         return cables.contains(pos)
+                || routers.contains(pos)
                 || unnamed.contains(pos)
                 || starved.contains(pos)
                 || displays.contains(pos)

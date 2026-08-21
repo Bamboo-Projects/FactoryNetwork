@@ -167,6 +167,16 @@ def blockstates():
         press_variants["facing=" + direction] = entry
     write(A + "/blockstates/press.json", {"variants": press_variants})
 
+    # Router: ein voller Würfel, auf allen Seiten gleich. Welche Bahn eine
+    # Seite führt, malt der Renderer darüber — als Blockzustand wären es
+    # 15625 Kombinationen für dieselbe Auskunft.
+    write(A + "/blockstates/router.json",
+          {"variants": {"": {"model": block("router")}}})
+    write(A + "/models/block/router.json", {
+        "parent": "minecraft:block/cube_all",
+        "textures": {"all": MOD + ":block/router_side"},
+    })
+
     # Die beiden Erze: schlichte Würfel mit eigener Textur.
     for ore in ("crystal_ore", "deepslate_crystal_ore"):
         write(A + "/blockstates/%s.json" % ore,
@@ -355,6 +365,7 @@ def models():
             "textures": {"layer0": MOD + ":item/cell_" + tier},
         })
     write(A + "/models/item/drive.json", {"parent": block("drive")})
+    write(A + "/models/item/router.json", {"parent": block("router")})
     for name in ("crystal", "plate", "stamp_plate", "stamp_logic", "stamp_memory",
                  "stamp_network", "core_logic", "core_memory", "core_network"):
         write(A + "/models/item/%s.json" % name, {
@@ -421,7 +432,8 @@ def worldgen():
 # ---- Loot und Rezepte ----------------------------------------------------
 
 def loot_and_recipes():
-    for name in ("controller", "connector", "terminal", "display", "drive"):
+    for name in ("controller", "connector", "terminal", "display", "drive",
+                 "press", "router"):
         write(D + "/loot_table/blocks/" + name + ".json", {
             "type": "minecraft:block",
             "pools": [{
@@ -502,6 +514,20 @@ def loot_and_recipes():
             "S": {"item": "minecraft:stick"},
         },
         "result": {"id": MOD + ":label_gun", "count": 1},
+    })
+
+    # Der Router: die Kreuzung des dicken Kabels. Er kostet ein dickes
+    # Kabel und den Netzwerkkern, der die Bahnen auseinanderhält.
+    write(D + "/recipe/router.json", {
+        "type": "minecraft:crafting_shaped",
+        "category": "misc",
+        "pattern": [" P ", "CNC", " P "],
+        "key": {
+            "P": {"item": MOD + ":plate"},
+            "C": {"item": MOD + ":dense_cable"},
+            "N": {"item": MOD + ":core_network"},
+        },
+        "result": {"id": MOD + ":router", "count": 1},
     })
 
     # Das Laufwerk: ein Gehäuse mit Schächten.
@@ -667,7 +693,8 @@ def loot_and_recipes():
     write(D + "/tags/block/mineable/pickaxe.json", {
         "values": [MOD + ":controller", MOD + ":cable", MOD + ":dense_cable",
                    MOD + ":connector", MOD + ":terminal", MOD + ":display",
-                   MOD + ":drive", MOD + ":press", MOD + ":crystal_ore",
+                   MOD + ":drive", MOD + ":press", MOD + ":router",
+                   MOD + ":crystal_ore",
                    MOD + ":deepslate_crystal_ore"],
     })
 

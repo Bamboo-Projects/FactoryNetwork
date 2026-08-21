@@ -1262,3 +1262,71 @@ Steckt sie dagegen in der Variablen eines wartenden Ablaufs, scheitert der
 Ablauf mit klarer Meldung. Dieselbe Unterscheidung wie bei Gegenständen, aus
 demselben Grund: Mit einem Lagerbestand rechnet niemand weiter, mit einer
 Variablen schon.
+
+---
+
+## Der Router (2026-08-22)
+
+**Beim dicken Kabel gibt es kein Bündeln, sondern einen Block.** Vier dünne
+Stränge zu je vier Blockpixeln passen nebeneinander in einen Block; vier dicke
+zu je zehn nicht. Statt beim dicken Kabel eine schlechtere Fassung desselben
+Gedankens zu bauen, steht dort ein eigener Block: An ihm bekommt jede Seite
+eine Bahn. Gleiche Bahn heißt verbunden, verschiedene Bahnen kreuzen sich
+berührungslos, „aus" heißt abgeklemmt.
+
+Damit ist das Bündeln ganz aus der Mod verschwunden — ein Kabelblock trägt
+genau ein Kabel in genau einer Farbe. Der Abschnitt „Kabelbündel" weiter oben
+beschreibt einen Stand, den es nicht mehr gibt; er bleibt stehen, weil dieses
+Papier festhält, was entschieden wurde, und nicht, was gerade gilt.
+
+### Vier Bahnen
+
+Sechs Seiten und sechs Bahnen wären fast jede Seite für sich, und dafür
+braucht es keinen Block. Vier ist die Zahl, bei der eine Kreuzung noch als
+Kreuzung zu lesen ist.
+
+### Die Zuordnung steht in der BlockEntity
+
+Sechs Seiten mit je fünf Werten sind 15625 Blockzustände. Die legt Minecraft
+beim Start alle an und backt für jeden ein Modell — für eine Auskunft, die
+sich in einem farbigen Ring erschöpft. Also steht sie in der BlockEntity, und
+ein BlockEntityRenderer malt die Ringe.
+
+**Der Ring liegt am Rand der Fläche, nicht in ihrer Mitte.** Ein dickes Kabel
+deckt die mittleren zehn Blockpixel ab. Eine Kennung dort wäre genau dann
+verdeckt, wenn die Seite angeschlossen ist — also immer dann, wenn man sie
+lesen will.
+
+Farbe und Anzahl heller Ecken sagen dasselbe. Wer Farben schlecht
+unterscheidet, zählt die Ecken.
+
+### Der Router ist farbneutral
+
+Wer ein rotes und ein grünes Kabel auf dieselbe Bahn legt, hat sie verbunden.
+Das ist Absicht: Der Unterschied zu zwei Kabeln, die sich bloß einen Block
+teilen, ist, dass es hier jemand eingestellt hat.
+
+Verworfen: die Farbe mit durch den Router zu tragen. Dann wäre die Kennung
+eines Knotens vom Weg abhängig, über den man ankam — dieselbe Bahn hätte je
+Farbe einen eigenen Knoten, die Kanallast liefe je Farbe getrennt, und der
+Netzanalysator zeichnete jede Strecke mehrfach.
+
+### Eine Bahn trägt so viel wie ein dickes Kabel
+
+Der Router steht in der Wegrechnung wie ein Kabelstück. Ließe man ihn heraus,
+wäre eine Kreuzung die Stelle, an der die Kanalgrenze aufhört zu gelten — und
+damit die Stelle, an der man sie umgeht.
+
+### Die Bahn gilt auch für Geräte
+
+Der Filter steht ganz oben in der Richtungsschleife, nicht erst vor dem
+Kabelzweig. Ein Connector, der an einer Seite auf Bahn zwei hängt, gehört
+nicht zum Netz, das über Bahn eins läuft. Sonst wäre die Bahn nur eine Regel
+für Kabel, und die erste Kiste am Router hebelte sie aus.
+
+### Ein Klick baut das Netz sofort neu auf
+
+Der Turnus ist fünf Sekunden. Zwischen Klick und Wirkung sind das zu viele:
+Der Spieler klickt in der Zeit dreimal weiter und weiß am Ende nicht, was
+gerade gilt. Beim Setzen und Abbauen ebenso — sonst zeichnet der
+Netzanalysator Strecken durch einen Block, den es nicht mehr gibt.

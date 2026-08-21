@@ -2,7 +2,6 @@ package dev.devpanda.factorynetwork.compat.jade;
 
 import dev.devpanda.factorynetwork.FactoryNetwork;
 import dev.devpanda.factorynetwork.block.CableBlock;
-import dev.devpanda.factorynetwork.block.entity.ConnectorBlockEntity;
 import dev.devpanda.factorynetwork.block.entity.ControllerBlockEntity;
 import net.minecraft.resources.ResourceLocation;
 import snownee.jade.api.IWailaClientRegistration;
@@ -31,6 +30,8 @@ public class FactoryNetworkJadePlugin implements IWailaPlugin {
             FactoryNetwork.MOD_ID, "drive");
     public static final ResourceLocation CABLE = ResourceLocation.fromNamespaceAndPath(
             FactoryNetwork.MOD_ID, "cable");
+    public static final ResourceLocation ROUTER = ResourceLocation.fromNamespaceAndPath(
+            FactoryNetwork.MOD_ID, "router");
     public static final ResourceLocation CONNECTOR = ResourceLocation.fromNamespaceAndPath(
             FactoryNetwork.MOD_ID, "connector");
     public static final ResourceLocation CONTROLLER = ResourceLocation.fromNamespaceAndPath(
@@ -38,7 +39,11 @@ public class FactoryNetworkJadePlugin implements IWailaPlugin {
 
     @Override
     public void register(IWailaCommonRegistration registration) {
-        registration.registerBlockDataProvider(CableInfo.INSTANCE, ConnectorBlockEntity.class);
+        // Das Kabel hat keine BlockEntity. Stand hier die des Connectors,
+        // lief der Server-Teil nie, und der Tooltip blieb leer.
+        registration.registerBlockDataProvider(CableInfo.INSTANCE, CableBlock.class);
+        registration.registerBlockDataProvider(RouterInfo.INSTANCE,
+                dev.devpanda.factorynetwork.block.entity.RouterBlockEntity.class);
         registration.registerBlockDataProvider(ControllerInfo.INSTANCE,
                 ControllerBlockEntity.class);
         registration.registerBlockDataProvider(PressInfo.INSTANCE,
@@ -50,6 +55,8 @@ public class FactoryNetworkJadePlugin implements IWailaPlugin {
     @Override
     public void registerClient(IWailaClientRegistration registration) {
         registration.registerBlockComponent(CableInfo.INSTANCE, CableBlock.class);
+        registration.registerBlockComponent(RouterInfo.INSTANCE,
+                dev.devpanda.factorynetwork.block.RouterBlock.class);
         registration.registerBlockComponent(PressInfo.INSTANCE,
                 dev.devpanda.factorynetwork.block.PressBlock.class);
         registration.registerBlockComponent(DriveInfo.INSTANCE,

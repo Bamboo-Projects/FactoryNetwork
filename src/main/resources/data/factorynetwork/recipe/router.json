@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " P ",
+    "CNC",
+    " P "
+  ],
+  "key": {
+    "P": {
+      "item": "factorynetwork:plate"
+    },
+    "C": {
+      "item": "factorynetwork:dense_cable"
+    },
+    "N": {
+      "item": "factorynetwork:core_network"
+    }
+  },
+  "result": {
+    "id": "factorynetwork:router",
+    "count": 1
+  }
+}

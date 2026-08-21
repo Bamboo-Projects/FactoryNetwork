@@ -3101,6 +3101,179 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    // ---- Router ----------------------------------------------------------
+
+    /**
+     * Die Richtung von einer Stelle zur anderen, in Weltkoordinaten.
+     *
+     * <p>Ein Testaufbau darf gedreht stehen. Eine Richtung, die im Test
+     * „Norden" heißt, ist es in der Welt dann nicht — deshalb wird sie aus
+     * zwei absoluten Stellen gerechnet statt hingeschrieben.
+     */
+    private static net.minecraft.core.Direction towards(GameTestHelper helper,
+                                                        BlockPos from, BlockPos to) {
+        BlockPos a = helper.absolutePos(from);
+        BlockPos b = helper.absolutePos(to);
+        net.minecraft.core.Direction direction = net.minecraft.core.Direction.fromDelta(
+                b.getX() - a.getX(), b.getY() - a.getY(), b.getZ() - a.getZ());
+        if (direction == null) {
+            helper.fail("Die beiden Stellen liegen nicht nebeneinander", from);
+        }
+        return direction;
+    }
+
+    private static void lane(GameTestHelper helper, BlockPos router, BlockPos neighbour,
+                             int lane) {
+        if (helper.getBlockEntity(router)
+                instanceof dev.devpanda.factorynetwork.block.entity.RouterBlockEntity entity) {
+            entity.setLane(towards(helper, router, neighbour), lane);
+        } else {
+            helper.fail("Am Router hängt keine BlockEntity", router);
+        }
+    }
+
+    /**
+     * Der Router verbindet nur, was auf derselben Bahn liegt.
+     *
+     * <p>Das ist der ganze Block in einem Test: gleiche Bahn verbunden,
+     * andere Bahn nicht, abgeklemmt gar nicht. <b>Und die Bahn gilt auch für
+     * Geräte</b>, nicht nur für weiterführende Kabel — genau das ist die
+     * Stelle, an der eine zu früh gesetzte Abkürzung falsch läge.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void routerJoinsOnlyWhatSharesALane(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 2, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        helper.setBlock(controller.east(), FnBlocks.DENSE_CABLE.get());
+
+        BlockPos router = controller.east(2);
+        helper.setBlock(router, FnBlocks.ROUTER.get());
+
+        BlockPos north = router.north();
+        helper.setBlock(north, FnBlocks.CONNECTOR.get());
+        name(helper, north, "nord");
+        BlockPos above = router.above();
+        helper.setBlock(above, FnBlocks.CONNECTOR.get());
+        name(helper, above, "oben");
+
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        // Frisch gesetzt liegt alles auf Bahn eins: Beide hängen am Netz.
+        helper.assertTrue(entity.graph().connector("nord").isPresent(),
+                "nord muss auf derselben Bahn erreichbar sein");
+        helper.assertTrue(entity.graph().connector("oben").isPresent(),
+                "oben muss auf derselben Bahn erreichbar sein");
+        helper.assertValueEqual(entity.graph().laneLoad(helper.absolutePos(router), 1), 2,
+                "Kanäle auf Bahn eins");
+
+        // Andere Bahn: Der Weg kreuzt sich berührungslos.
+        lane(helper, router, north, 2);
+        entity.rebuildNetwork();
+        helper.assertTrue(entity.graph().connector("nord").isEmpty(),
+                "nord liegt auf einer anderen Bahn und darf nicht dazugehören");
+        helper.assertTrue(entity.graph().connector("oben").isPresent(),
+                "oben liegt weiter auf Bahn eins");
+        helper.assertValueEqual(entity.graph().laneLoad(helper.absolutePos(router), 1), 1,
+                "Kanäle auf Bahn eins, nachdem nord ausgeschert ist");
+        helper.assertValueEqual(entity.graph().laneLoad(helper.absolutePos(router), 2), 0,
+                "Bahn zwei führt zu keinem Controller und trägt nichts");
+
+        // Abgeklemmt: gar nichts mehr.
+        lane(helper, router, above, dev.devpanda.factorynetwork.block.entity
+                .RouterBlockEntity.OFF);
+        entity.rebuildNetwork();
+        helper.assertTrue(entity.graph().connector("oben").isEmpty(),
+                "eine abgeklemmte Seite darf nichts durchlassen");
+        helper.assertValueEqual(entity.graph().connectorCount(), 0,
+                "Geräte am Netz");
+        helper.succeed();
+    }
+
+    /**
+     * Eine abgeklemmte Seite trennt auch den Weg dahinter.
+     *
+     * <p>Nicht nur die Seite selbst: Alles, was über sie erreichbar war,
+     * gehört danach nicht mehr zum Netz. Sonst wäre Abklemmen bloß eine
+     * Anzeige.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void aClosedSideCutsTheLineBehindIt(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 2, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        helper.setBlock(controller.east(), FnBlocks.DENSE_CABLE.get());
+
+        BlockPos router = controller.east(2);
+        helper.setBlock(router, FnBlocks.ROUTER.get());
+        BlockPos behind = controller.east(3);
+        helper.setBlock(behind, FnBlocks.DENSE_CABLE.get());
+        BlockPos device = behind.north();
+        helper.setBlock(device, FnBlocks.CONNECTOR.get());
+        name(helper, device, "dahinter");
+
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        helper.assertTrue(entity.graph().connector("dahinter").isPresent(),
+                "der Weg über den Router muss offen sein");
+        helper.assertTrue(entity.graph().routers().contains(helper.absolutePos(router)),
+                "der Router gehört zum Netz");
+
+        lane(helper, router, behind, dev.devpanda.factorynetwork.block.entity
+                .RouterBlockEntity.OFF);
+        entity.rebuildNetwork();
+        helper.assertTrue(entity.graph().connector("dahinter").isEmpty(),
+                "hinter einer abgeklemmten Seite hängt nichts mehr");
+        helper.succeed();
+    }
+
+    /**
+     * Eine Bahn des Routers trägt so viel wie ein dickes Kabel.
+     *
+     * <p>Nicht unbegrenzt: Ließe man den Router aus der Wegrechnung heraus,
+     * wäre eine Kreuzung die Stelle, an der die Kanalgrenze aufhört zu
+     * gelten — und damit die Stelle, an der man sie umgeht.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void aRouterLaneCarriesSixtyFourChannels(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 2, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        helper.setBlock(controller.east(), FnBlocks.DENSE_CABLE.get());
+        BlockPos router = controller.east(2);
+        helper.setBlock(router, FnBlocks.ROUTER.get());
+
+        // Ein einziges Gerät, das die ganze Bahn füllt, und eins mehr.
+        BlockPos first = router.north();
+        helper.setBlock(first, FnBlocks.CONNECTOR.get());
+        name(helper, first, "gross");
+        if (helper.getBlockEntity(first) instanceof ConnectorBlockEntity connector) {
+            connector.setChannelCost(
+                    dev.devpanda.factorynetwork.block.CableBlock.CHANNELS_DENSE);
+        }
+
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        // Allein passt es genau: Die Bahn trägt so viel, wie das Gerät zieht.
+        // Stünde der Router nicht im Weg, bliebe die Bahn hier auf null —
+        // dann zählte die Kreuzung nichts und wäre unbegrenzt.
+        helper.assertValueEqual(entity.graph().laneLoad(helper.absolutePos(router), 1),
+                dev.devpanda.factorynetwork.block.CableBlock.CHANNELS_DENSE,
+                "Kanäle auf der Bahn");
+        helper.assertTrue(entity.graph().starvedConnectors().isEmpty(),
+                "allein bekommt das Gerät seinen Platz");
+
+        // Eins mehr passt nicht. Welches der beiden leer ausgeht, entscheidet
+        // die Suchreihenfolge — dass eines leer ausgeht, entscheidet die
+        // Grenze.
+        BlockPos second = router.above();
+        helper.setBlock(second, FnBlocks.CONNECTOR.get());
+        name(helper, second, "klein");
+        entity.rebuildNetwork();
+        helper.assertValueEqual(entity.graph().starvedConnectors().size(), 1,
+                "Geräte ohne Kanal");
+        helper.succeed();
+    }
+
     private FactoryNetworkGameTests() {
     }
 }

@@ -168,6 +168,7 @@ public class CableBlock extends Block {
             return colourOf(level.getBlockState(pos)).connectsTo(colourOf(neighbour));
         }
         return neighbour.getBlock() instanceof ConnectorBlock
+                || neighbour.getBlock() instanceof RouterBlock
                 || neighbour.getBlock() instanceof ControllerBlock
                 || neighbour.getBlock() instanceof TerminalBlock
                 || neighbour.getBlock() instanceof DisplayBlock;
