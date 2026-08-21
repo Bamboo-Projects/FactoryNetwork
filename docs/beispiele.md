@@ -1,0 +1,219 @@
+# Beispiele
+
+Programme, die laufen. Jedes ist so kurz wie möglich gehalten und nennt, was
+in der Welt dafür stehen muss.
+
+Zum Ausprobieren: Terminal öffnen, Reiter **Code**, hineinschreiben,
+übernehmen. Was hängt oder wartet, steht danach im Reiter **Netzwerk**.
+
+---
+
+## 1. Etwas von A nach B schaffen
+
+Zwei benannte Connectoren, einer an einer Kiste, einer an einem Ofen.
+
+```
+worker nachschub {
+    from kiste
+    to ofen
+    filter item:coal
+    maintain 16
+    rate 8 per 20t
+}
+```
+
+`maintain 16` heißt: Im Ofen sollen 16 Stück liegen. Nicht mehr, nicht
+weniger — der Worker fährt nach, wenn etwas verbraucht ist, und hört auf, wenn
+es reicht.
+
+---
+
+## 2. Alle Erze einsammeln
+
+```
+worker erze {
+    from quarry_ausgang
+    to storage
+    filter tag:c/ores
+}
+```
+
+`tag:c/ores` trifft in einem großen Pack ein paar hundert Sorten. Ohne `rate`
+läuft der Worker mit der Voreinstellung.
+
+Soll etwas ausgenommen bleiben:
+
+```
+filter tag:c/ores except item:cobblestone
+```
+
+---
+
+## 3. Warten, bis eine Maschine meldet
+
+Das ist der Kern der Sprache: Der Ablauf hält an und macht später weiter — auch
+nach einem Serverneustart.
+
+```
+event Fertig(nummer: Int)
+
+fn eine_runde() {
+    move 8 item:iron_ore from lager to brecher
+    let ergebnis = await Fertig
+    move item:iron_dust from brecher to lager
+    return ergebnis
+}
+```
+
+Ausgelöst wird `Fertig` von irgendwoher im Programm:
+
+```
+on redstone_changed(gerät, stärke) {
+    if stärke >= 12 {
+        emit Fertig(1)
+    }
+}
+```
+
+**Mit Frist**, falls die Maschine nicht antwortet:
+
+```
+let ergebnis = await Fertig timeout 30s else {
+    log("Der Brecher meldet sich nicht")
+    return
+}
+```
+
+Der `else`-Zweig muss den Ablauf verlassen. Danach steht fest, dass `ergebnis`
+einen Wert hat, und niemand muss ihn prüfen.
+
+**Auf das eigene Ereignis warten**, wenn mehrere Abläufe laufen:
+
+```
+let ergebnis = await Fertig where nummer == meine_nummer
+```
+
+Ohne `where` weckt jedes `Fertig` jeden Wartenden.
+
+---
+
+## 4. Der Reihe nach durch eine Liste
+
+```
+event Fertig(nummer: Int)
+
+fn alle_erze() {
+    for sorte in tag:c/ores {
+        move 8 sorte from lager to brecher
+        let ergebnis = await Fertig
+    }
+}
+```
+
+Der Lauf merkt sich, wo er steht. Ein Neustart mitten in der Liste setzt ihn an
+derselben Stelle fort — er fängt nicht von vorn an.
+
+---
+
+## 5. Eine Anlage mehrfach bauen
+
+Eine Vorlage beschreibt Rollen. Gebaut wird sie über die Namen der Connectoren:
+
+```
+werk_1/eingang
+werk_1/ausgang
+werk_2/eingang
+werk_2/ausgang
+```
+
+```
+multiblock Werk {
+    devices {
+        eingang
+        ausgang
+    }
+
+    fn schleusen() {
+        move 3 item:cobblestone from eingang to ausgang
+    }
+}
+
+fn beide() {
+    werk_1.schleusen()
+    werk_2.schleusen()
+}
+```
+
+Innen heißt das Gerät `eingang`; welches gemeint ist, entscheidet die Anlage.
+Fehlt einer Anlage ein Gerät, steht sie im Reiter **Netzwerk** mit der Angabe,
+welches — und nimmt keine Aufrufe an.
+
+---
+
+## 6. Flüssigkeiten
+
+Gezählt wird in Millibucket; ein Eimer sind 1000.
+
+```
+worker kuehlung {
+    from wassertank
+    to reaktor
+    filter fluid:water
+    maintain 8000
+    rate 1000 per 10t
+}
+```
+
+Von Hand:
+
+```
+fn abfuellen() {
+    move 1000 fluid:water from bottich to kessel
+}
+```
+
+Ins Netz und zurück:
+
+```
+move fluid:lava from sammler to storage
+move 4000 fluid:lava from storage to generator
+```
+
+---
+
+## 7. Eine Anzeige, die etwas auslöst
+
+```
+display leitstand {
+    title "Erzlinie"
+    row "Eisenerz" storage.count(item:iron_ore)
+    progress "Ofen" ofen.fill()
+    indicator "Brecher läuft" brecher.redstone() > 0
+    button "Nachschub" nachschub_starten
+}
+
+fn nachschub_starten() {
+    move 64 item:iron_ore from storage to brecher
+}
+```
+
+Die Anzeige erscheint auf jedem Display-Block, der `leitstand` heißt, und im
+Reiter **Anzeigen** des Terminals. Der Knopf wirkt an beiden Stellen; er darf
+etwas anstoßen, das wartet.
+
+---
+
+## 8. Wenn sich etwas am Netz ändert
+
+```
+on device_online(gerät) {
+    log("Neu am Netz")
+}
+
+on device_offline(name) {
+    log("Verschwunden: " + name)
+}
+```
+
+Beim ersten Aufbau nach einem Serverstart bleibt es still — sonst käme bei
+jedem Anmelden eine Meldung je Gerät.

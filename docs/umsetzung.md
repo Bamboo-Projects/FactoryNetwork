@@ -280,5 +280,8 @@ In dieser Reihenfolge, nach Abhängigkeit:
    gibt es keinen Grund, mehr als einen zu bauen.
 4. **Autocrafting.** Der letzte ausgegraute Reiter.
 
+Zum Ausprobieren stehen lauffähige Programme in `beispiele.md` — eines je
+Fähigkeit, mit der Angabe, was dafür in der Welt stehen muss.
+
 Vorher lohnt ein Blick in `entscheidungen.md`: Dort steht zu jedem Punkt,
 warum er so entschieden wurde, und was verworfen wurde.

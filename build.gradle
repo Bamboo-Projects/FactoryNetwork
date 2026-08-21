@@ -77,6 +77,13 @@ test {
         events 'failed'
         exceptionFormat 'full'
     }
+    // Die Doku ist eine Eingabe: BeispieleTest übersetzt die Programme aus
+    // docs/beispiele.md. Ohne diese Zeile hält Gradle den Test für aktuell,
+    // solange sich nur die Doku geändert hat — und ein kaputtes Beispiel
+    // bleibt unbemerkt stehen.
+    inputs.files(fileTree('docs') { include '*.md' })
+            .withPropertyName('doku')
+            .withPathSensitivity(PathSensitivity.RELATIVE)
 }
 
 /**
