@@ -150,6 +150,23 @@ def blockstates():
             parts.append({"when": {direction: "true"}, "apply": apply})
         write(A + "/blockstates/%s.json" % name, {"multipart": parts})
 
+    # Presse: Front mit Stempel und Amboss, sonst Maschinengehäuse.
+    write(A + "/models/block/press.json", {
+        "parent": "minecraft:block/orientable",
+        "textures": {
+            "front": MOD + ":block/press_front",
+            "side": MOD + ":block/machine_top",
+            "top": MOD + ":block/machine_top",
+        },
+    })
+    press_variants = {}
+    for direction, rotation in (("north", {}), ("east", {"y": 90}),
+                                ("south", {"y": 180}), ("west", {"y": 270})):
+        entry = {"model": block("press")}
+        entry.update(rotation)
+        press_variants["facing=" + direction] = entry
+    write(A + "/blockstates/press.json", {"variants": press_variants})
+
     # Die beiden Erze: schlichte Würfel mit eigener Textur.
     for ore in ("crystal_ore", "deepslate_crystal_ore"):
         write(A + "/blockstates/%s.json" % ore,
@@ -322,7 +339,7 @@ def models():
             }],
         })
 
-    for name in ("controller", "connector", "terminal", "display", "drive"):
+    for name in ("controller", "connector", "terminal", "display", "drive", "press"):
         write(A + "/models/item/" + name + ".json", {"parent": block(name)})
     write(A + "/models/item/label_gun.json", {
         "parent": "minecraft:item/handheld",
@@ -338,6 +355,13 @@ def models():
             "textures": {"layer0": MOD + ":item/cell_" + tier},
         })
     write(A + "/models/item/drive.json", {"parent": block("drive")})
+    for name in ("crystal", "plate", "stamp_plate", "stamp_logic", "stamp_memory",
+                 "stamp_network", "core_logic", "core_memory", "core_network"):
+        write(A + "/models/item/%s.json" % name, {
+            "parent": "minecraft:item/generated",
+            "textures": {"layer0": MOD + ":item/" + name},
+        })
+    write(A + "/models/item/press.json", {"parent": block("press")})
     write(A + "/models/item/raw_crystal.json", {
         "parent": "minecraft:item/generated",
         "textures": {"layer0": MOD + ":item/raw_crystal"},
@@ -413,9 +437,10 @@ def loot_and_recipes():
     write(D + "/recipe/controller.json", {
         "type": "minecraft:crafting_shaped",
         "category": "misc",
-        "pattern": ["III", "IRI", "III"],
+        "pattern": ["PLP", "LRL", "PLP"],
         "key": {
-            "I": {"item": "minecraft:iron_ingot"},
+            "P": {"item": MOD + ":plate"},
+            "L": {"item": MOD + ":core_logic"},
             "R": {"item": "minecraft:redstone_block"},
         },
         "result": {"id": MOD + ":controller", "count": 1},
@@ -424,21 +449,21 @@ def loot_and_recipes():
     write(D + "/recipe/cable.json", {
         "type": "minecraft:crafting_shaped",
         "category": "misc",
-        "pattern": ["III", "RRR", "III"],
+        "pattern": ["III", "NNN", "III"],
         "key": {
             "I": {"item": "minecraft:iron_nugget"},
-            "R": {"item": "minecraft:redstone"},
+            "N": {"item": MOD + ":core_network"},
         },
-        "result": {"id": MOD + ":cable", "count": 8},
+        "result": {"id": MOD + ":cable", "count": 12},
     })
 
     write(D + "/recipe/connector.json", {
         "type": "minecraft:crafting_shaped",
         "category": "misc",
-        "pattern": [" I ", "IRI", " I "],
+        "pattern": ["PPP", "PNP", "PPP"],
         "key": {
-            "I": {"item": "minecraft:iron_ingot"},
-            "R": {"item": "minecraft:redstone"},
+            "P": {"item": MOD + ":plate"},
+            "N": {"item": MOD + ":core_network"},
         },
         "result": {"id": MOD + ":connector", "count": 2},
     })
@@ -446,11 +471,11 @@ def loot_and_recipes():
     write(D + "/recipe/terminal.json", {
         "type": "minecraft:crafting_shaped",
         "category": "misc",
-        "pattern": ["IGI", "IRI", "III"],
+        "pattern": ["PGP", "GLG", "PPP"],
         "key": {
-            "I": {"item": "minecraft:iron_ingot"},
+            "P": {"item": MOD + ":plate"},
             "G": {"item": "minecraft:glass_pane"},
-            "R": {"item": "minecraft:redstone"},
+            "L": {"item": MOD + ":core_logic"},
         },
         "result": {"id": MOD + ":terminal", "count": 1},
     })
@@ -483,10 +508,10 @@ def loot_and_recipes():
     write(D + "/recipe/drive.json", {
         "type": "minecraft:crafting_shaped",
         "category": "misc",
-        "pattern": ["III", "RCR", "III"],
+        "pattern": ["PPP", "MCM", "PPP"],
         "key": {
-            "I": {"item": "minecraft:iron_ingot"},
-            "R": {"item": "minecraft:redstone"},
+            "P": {"item": MOD + ":plate"},
+            "M": {"item": MOD + ":core_memory"},
             "C": {"item": "minecraft:chest"},
         },
         "result": {"id": MOD + ":drive", "count": 1},
@@ -498,11 +523,11 @@ def loot_and_recipes():
     write(D + "/recipe/cell_k1.json", {
         "type": "minecraft:crafting_shaped",
         "category": "misc",
-        "pattern": ["IQI", "QRQ", "III"],
+        "pattern": ["PCP", "CMC", "PPP"],
         "key": {
-            "I": {"item": "minecraft:iron_ingot"},
-            "Q": {"item": "minecraft:quartz"},
-            "R": {"item": "minecraft:redstone"},
+            "P": {"item": MOD + ":plate"},
+            "C": {"item": MOD + ":crystal"},
+            "M": {"item": MOD + ":core_memory"},
         },
         "result": {"id": MOD + ":cell_k1", "count": 1},
     })
@@ -518,16 +543,74 @@ def loot_and_recipes():
             "result": {"id": MOD + ":cell_" + groesser, "count": 1},
         })
 
+    # ---- Die Fertigungskette -------------------------------------------
+
+    # Die Presse selbst: noch von Hand, sonst käme man nie hinein.
+    write(D + "/recipe/press.json", {
+        "type": "minecraft:crafting_shaped",
+        "category": "misc",
+        "pattern": ["IPI", "IRI", "III"],
+        "key": {
+            "I": {"item": "minecraft:iron_ingot"},
+            "P": {"item": "minecraft:piston"},
+            "R": {"item": "minecraft:redstone_block"},
+        },
+        "result": {"id": MOD + ":press", "count": 1},
+    })
+
+    # Die Stempel: teuer, aber einmalig. Ein Diamant im Kopf, damit sie halten.
+    stempel = {
+        "plate": "minecraft:iron_ingot",
+        "logic": "minecraft:gold_ingot",
+        "memory": "minecraft:redstone_block",
+        "network": "minecraft:copper_ingot",
+    }
+    for kind, kern in stempel.items():
+        write(D + "/recipe/stamp_%s.json" % kind, {
+            "type": "minecraft:crafting_shaped",
+            "category": "equipment",
+            "pattern": [" D ", "MKM", "III"],
+            "key": {
+                "D": {"item": "minecraft:diamond"},
+                "M": {"item": MOD + ":raw_crystal"},
+                "K": {"item": kern},
+                "I": {"item": "minecraft:iron_ingot"},
+            },
+            "result": {"id": MOD + ":stamp_" + kind, "count": 1},
+        })
+
+    # Und was die Presse daraus macht.
+    def press_recipe(name, stamp, material, result, count=1, energy=2000, ticks=100):
+        write(D + "/recipe/press_%s.json" % name, {
+            "type": MOD + ":press",
+            "stamp": {"item": MOD + ":stamp_" + stamp},
+            "material": material,
+            "result": {"id": result, "count": count},
+            "energy": energy,
+            "ticks": ticks,
+        })
+
+    press_recipe("plate_iron", "plate", {"item": "minecraft:iron_ingot"},
+                 MOD + ":plate", 1, 1200, 60)
+    press_recipe("crystal", "plate", {"item": MOD + ":raw_crystal"},
+                 MOD + ":crystal", 1, 1600, 80)
+    press_recipe("core_logic", "logic", {"item": MOD + ":plate"},
+                 MOD + ":core_logic", 1, 3000, 120)
+    press_recipe("core_memory", "memory", {"item": MOD + ":plate"},
+                 MOD + ":core_memory", 1, 3000, 120)
+    press_recipe("core_network", "network", {"item": MOD + ":plate"},
+                 MOD + ":core_network", 1, 3000, 120)
+
     # Der Analysator: Redstone fuer das Messen, Quarz fuer die Anzeige, Eisen
     # fuer das Gehaeuse. Nicht teuer — wer ihn braucht, hat schon ein Problem.
     write(D + "/recipe/network_analyser.json", {
         "type": "minecraft:crafting_shaped",
         "category": "equipment",
-        "pattern": [" Q ", "IRI", " I "],
+        "pattern": [" C ", "PLP", " P "],
         "key": {
-            "Q": {"item": "minecraft:quartz"},
-            "R": {"item": "minecraft:redstone"},
-            "I": {"item": "minecraft:iron_ingot"},
+            "C": {"item": MOD + ":crystal"},
+            "L": {"item": MOD + ":core_logic"},
+            "P": {"item": MOD + ":plate"},
         },
         "result": {"id": MOD + ":network_analyser", "count": 1},
     })
@@ -584,7 +667,7 @@ def loot_and_recipes():
     write(D + "/tags/block/mineable/pickaxe.json", {
         "values": [MOD + ":controller", MOD + ":cable", MOD + ":dense_cable",
                    MOD + ":connector", MOD + ":terminal", MOD + ":display",
-                   MOD + ":drive", MOD + ":crystal_ore",
+                   MOD + ":drive", MOD + ":press", MOD + ":crystal_ore",
                    MOD + ":deepslate_crystal_ore"],
     })
 

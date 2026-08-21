@@ -506,6 +506,127 @@ def raw_crystal():
     return img
 
 
+STAMP_TONE = {
+    "plate": (150, 152, 158),
+    "logic": (120, 172, 132),
+    "memory": (172, 140, 116),
+    "network": (124, 148, 184),
+}
+
+
+def stamp(kind):
+    """Ein Prägestempel: schwerer Kopf, kurzer Schaft, Muster auf der Fläche.
+
+    Die vier unterscheiden sich im Muster der Prägefläche, nicht in der Form —
+    was sie prägen, sieht man am Abdruck, nicht am Griff.
+    """
+    ton = STAMP_TONE[kind]
+    img = Image.new("RGBA", (N, N), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+
+    # Schaft
+    d.rectangle([26, 8, 38, 26], fill=blend(BODY_TOP, EDGE, 0.3) + (255,),
+                outline=EDGE + (255,))
+    d.line([(29, 11), (29, 24)], fill=SHINE + (255,))
+    # Kopf
+    d.rectangle([14, 26, 50, 46], fill=blend(ton, EDGE, 0.25) + (255,),
+                outline=EDGE + (255,))
+    d.line([(17, 29), (47, 29)], fill=blend(ton, (255, 255, 255), 0.45) + (255,))
+
+    # Prägefläche mit Muster
+    d.rectangle([18, 34, 46, 44], fill=EDGE + (255,))
+    hell = blend(ton, (255, 255, 255), 0.35) + (255,)
+    if kind == "plate":
+        for x in range(21, 45, 4):
+            d.line([(x, 36), (x, 42)], fill=hell)
+    elif kind == "logic":
+        d.rectangle([22, 36, 30, 42], outline=hell)
+        d.line([(30, 39), (42, 39)], fill=hell)
+        d.rectangle([40, 37, 43, 41], fill=hell)
+    elif kind == "memory":
+        for y in (37, 40):
+            for x in range(21, 45, 6):
+                d.rectangle([x, y, x + 3, y + 1], fill=hell)
+    else:
+        d.line([(22, 39), (42, 39)], fill=hell)
+        for x in (26, 32, 38):
+            d.line([(x, 36), (x, 42)], fill=hell)
+    return img
+
+
+def plate():
+    """Gepresstes Metall: eine flache Scheibe mit Prägekante."""
+    img = Image.new("RGBA", (N, N), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    d.rounded_rectangle([12, 20, 52, 44], radius=3,
+                        fill=blend((162, 166, 172), EDGE, 0.15) + (255,),
+                        outline=EDGE + (255,))
+    d.line([(15, 23), (49, 23)], fill=(226, 230, 236, 255))
+    d.rounded_rectangle([18, 26, 46, 39], radius=2,
+                        outline=blend((162, 166, 172), EDGE, 0.5) + (255,))
+    return img
+
+
+def crystal_cut():
+    """Der geschliffene Kristall: klare Facetten statt roher Bruch."""
+    img = Image.new("RGBA", (N, N), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    d.polygon([(32, 10), (48, 26), (32, 54), (16, 26)],
+              fill=CRYSTAL + (255,), outline=EDGE + (255,))
+    d.polygon([(32, 10), (48, 26), (32, 30), (16, 26)], fill=CRYSTAL_HI + (255,))
+    d.polygon([(32, 30), (48, 26), (32, 54)], fill=blend(CRYSTAL, EDGE, 0.35) + (255,))
+    d.line([(32, 12), (20, 26)], fill=(255, 255, 255, 255))
+    return img
+
+
+def core(kind):
+    """Ein Kern: Prozessorgehäuse mit Kontakten und farbigem Fenster."""
+    ton = STAMP_TONE[kind]
+    img = Image.new("RGBA", (N, N), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+
+    # Kontakte links und rechts
+    for y in range(20, 45, 6):
+        d.rectangle([10, y, 16, y + 3], fill=BRASS + (255,), outline=EDGE + (255,))
+        d.rectangle([48, y, 54, y + 3], fill=BRASS + (255,), outline=EDGE + (255,))
+
+    # Gehäuse
+    d.rounded_rectangle([16, 16, 48, 48], radius=2,
+                        fill=blend((58, 60, 64), EDGE, 0.2) + (255,), outline=EDGE + (255,))
+    d.line([(19, 19), (45, 19)], fill=(96, 100, 106, 255))
+
+    # Fenster in der Kernfarbe
+    glow(img, [23, 23, 41, 41], radius=5, strength=110)
+    d = ImageDraw.Draw(img)
+    d.rectangle([23, 23, 41, 41], fill=EDGE + (255,))
+    d.rectangle([25, 25, 39, 39], fill=ton + (255,))
+    d.line([(27, 27), (37, 27)], fill=blend(ton, (255, 255, 255), 0.5) + (255,))
+    return img
+
+
+def press_front():
+    """Die Presse von vorn: Stempel oben, Amboss unten, Führungen seitlich."""
+    img = surface()
+    d = ImageDraw.Draw(img)
+    bevel(d)
+    # Führungssäulen
+    for x in (12, 47):
+        d.rectangle([x, 12, x + 5, 52], fill=blend(BODY_TOP, EDGE, 0.5) + (255,),
+                    outline=EDGE + (255,))
+    # Stempelkopf
+    d.rectangle([20, 14, 44, 26], fill=blend(BODY_TOP, EDGE, 0.25) + (255,),
+                outline=EDGE + (255,))
+    d.line([(23, 17), (41, 17)], fill=SHINE + (255,))
+    # Amboss
+    d.rectangle([18, 40, 46, 50], fill=blend(BODY_TOP, EDGE, 0.4) + (255,),
+                outline=EDGE + (255,))
+    # Werkstück dazwischen, glühend
+    glow(img, [26, 31, 38, 36], radius=6, strength=150)
+    d = ImageDraw.Draw(img)
+    d.rectangle([26, 31, 38, 36], fill=(214, 128, 52, 255))
+    return img
+
+
 def main():
     print("Blocktexturen (64x64):")
     save(controller_top(), "block", "controller_top")
@@ -524,12 +645,19 @@ def main():
     save(display_front(), "block", "display_front")
     save(display_side(), "block", "display_side")
     save(drive_front(), "block", "drive_front")
+    save(press_front(), "block", "press_front")
     save(crystal_ore(False), "block", "crystal_ore")
     save(crystal_ore(True), "block", "deepslate_crystal_ore")
     print("Gegenstandstexturen:")
     save(label_gun(), "item", "label_gun")
     save(network_analyser(), "item", "network_analyser")
     save(raw_crystal(), "item", "raw_crystal")
+    save(crystal_cut(), "item", "crystal")
+    save(plate(), "item", "plate")
+    for kind in ("plate", "logic", "memory", "network"):
+        save(stamp(kind), "item", "stamp_" + kind)
+    for kind in ("logic", "memory", "network"):
+        save(core(kind), "item", "core_" + kind)
     for label in ("1k", "4k", "16k", "64k"):
         save(storage_cell(label), "item", "cell_k" + label.replace("k", ""))
 

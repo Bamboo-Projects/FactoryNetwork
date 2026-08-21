@@ -1,0 +1,15 @@
+{
+  "type": "factorynetwork:press",
+  "stamp": {
+    "item": "factorynetwork:stamp_plate"
+  },
+  "material": {
+    "item": "minecraft:iron_ingot"
+  },
+  "result": {
+    "id": "factorynetwork:plate",
+    "count": 1
+  },
+  "energy": 1200,
+  "ticks": 60
+}

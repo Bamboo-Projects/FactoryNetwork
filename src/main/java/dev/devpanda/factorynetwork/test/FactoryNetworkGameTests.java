@@ -2950,6 +2950,81 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void thePressNeedsPowerAndTime(GameTestHelper helper) {
+        BlockPos at = new BlockPos(1, 1, 1);
+        helper.setBlock(at, FnBlocks.PRESS.get());
+        var press = (dev.devpanda.factorynetwork.block.entity.PressBlockEntity)
+                helper.getBlockEntity(at);
+        helper.assertTrue(press != null, "An der Presse hängt keine BlockEntity");
+
+        press.setItem(dev.devpanda.factorynetwork.block.entity.PressBlockEntity.SLOT_STAMP,
+                new ItemStack(dev.devpanda.factorynetwork.registry.FnItems.STAMP_PLATE.get()));
+        press.setItem(dev.devpanda.factorynetwork.block.entity.PressBlockEntity.SLOT_MATERIAL,
+                new ItemStack(Items.IRON_INGOT, 4));
+
+        // Ohne Strom passiert nichts, egal wie lange man wartet.
+        for (int i = 0; i < 200; i++) {
+            press.serverTick();
+        }
+        helper.assertValueEqual(press.progress(), 0, "Ohne Strom darf nichts geschehen");
+        helper.assertTrue(press.item(
+                        dev.devpanda.factorynetwork.block.entity.PressBlockEntity.SLOT_RESULT)
+                .isEmpty(), "Und nichts herauskommen");
+
+        // Mit Strom läuft sie — aber nicht sofort fertig.
+        press.energy().receiveEnergy(
+                dev.devpanda.factorynetwork.block.entity.PressBlockEntity.CAPACITY, false);
+        press.serverTick();
+        helper.assertValueEqual(press.progress(), 1, "Ein Tick, ein Schritt");
+
+        for (int i = 0; i < 100; i++) {
+            press.serverTick();
+        }
+        ItemStack ergebnis = press.item(
+                dev.devpanda.factorynetwork.block.entity.PressBlockEntity.SLOT_RESULT);
+        helper.assertTrue(!ergebnis.isEmpty(), "Nach der Zeit muss etwas dastehen");
+        helper.assertValueEqual(ergebnis.getItem(),
+                dev.devpanda.factorynetwork.registry.FnItems.PLATE.get(), "Eine Platte");
+
+        // Der Stempel bleibt, das Material wird verbraucht.
+        helper.assertTrue(!press.item(
+                        dev.devpanda.factorynetwork.block.entity.PressBlockEntity.SLOT_STAMP)
+                .isEmpty(), "Der Stempel ist Werkzeug, keine Zutat");
+        helper.assertValueEqual(press.item(
+                        dev.devpanda.factorynetwork.block.entity.PressBlockEntity.SLOT_MATERIAL)
+                .getCount(), 3, "Ein Barren ist verbraucht");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void thePressStopsWhenTheOutputIsFull(GameTestHelper helper) {
+        BlockPos at = new BlockPos(1, 1, 1);
+        helper.setBlock(at, FnBlocks.PRESS.get());
+        var press = (dev.devpanda.factorynetwork.block.entity.PressBlockEntity)
+                helper.getBlockEntity(at);
+
+        press.setItem(dev.devpanda.factorynetwork.block.entity.PressBlockEntity.SLOT_STAMP,
+                new ItemStack(dev.devpanda.factorynetwork.registry.FnItems.STAMP_PLATE.get()));
+        press.setItem(dev.devpanda.factorynetwork.block.entity.PressBlockEntity.SLOT_MATERIAL,
+                new ItemStack(Items.IRON_INGOT, 64));
+        // Ausgabe mit etwas Fremdem belegt: Dann darf sie nicht laufen und
+        // schon gar nicht Strom dafür verbrauchen.
+        press.setItem(dev.devpanda.factorynetwork.block.entity.PressBlockEntity.SLOT_RESULT,
+                new ItemStack(Items.DIAMOND, 1));
+        press.energy().receiveEnergy(
+                dev.devpanda.factorynetwork.block.entity.PressBlockEntity.CAPACITY, false);
+        int vorher = press.energy().getEnergyStored();
+
+        for (int i = 0; i < 100; i++) {
+            press.serverTick();
+        }
+        helper.assertValueEqual(press.progress(), 0, "Bei voller Ausgabe steht sie");
+        helper.assertValueEqual(press.energy().getEnergyStored(), vorher,
+                "Und verbraucht dabei keinen Strom");
+        helper.succeed();
+    }
+
     private FactoryNetworkGameTests() {
     }
 }

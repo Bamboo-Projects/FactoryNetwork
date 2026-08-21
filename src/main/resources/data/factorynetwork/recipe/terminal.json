@@ -2,19 +2,19 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "pattern": [
-    "IGI",
-    "IRI",
-    "III"
+    "PGP",
+    "GLG",
+    "PPP"
   ],
   "key": {
-    "I": {
-      "item": "minecraft:iron_ingot"
+    "P": {
+      "item": "factorynetwork:plate"
     },
     "G": {
       "item": "minecraft:glass_pane"
     },
-    "R": {
-      "item": "minecraft:redstone"
+    "L": {
+      "item": "factorynetwork:core_logic"
     }
   },
   "result": {

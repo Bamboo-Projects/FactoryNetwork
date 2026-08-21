@@ -2,16 +2,16 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "pattern": [
-    "III",
-    "RCR",
-    "III"
+    "PPP",
+    "MCM",
+    "PPP"
   ],
   "key": {
-    "I": {
-      "item": "minecraft:iron_ingot"
+    "P": {
+      "item": "factorynetwork:plate"
     },
-    "R": {
-      "item": "minecraft:redstone"
+    "M": {
+      "item": "factorynetwork:core_memory"
     },
     "C": {
       "item": "minecraft:chest"

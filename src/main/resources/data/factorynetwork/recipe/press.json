@@ -2,23 +2,23 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "pattern": [
-    "PLP",
-    "LRL",
-    "PLP"
+    "IPI",
+    "IRI",
+    "III"
   ],
   "key": {
-    "P": {
-      "item": "factorynetwork:plate"
+    "I": {
+      "item": "minecraft:iron_ingot"
     },
-    "L": {
-      "item": "factorynetwork:core_logic"
+    "P": {
+      "item": "minecraft:piston"
     },
     "R": {
       "item": "minecraft:redstone_block"
     }
   },
   "result": {
-    "id": "factorynetwork:controller",
+    "id": "factorynetwork:press",
     "count": 1
   }
 }

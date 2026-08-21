@@ -2,16 +2,16 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "pattern": [
-    " I ",
-    "IRI",
-    " I "
+    "PPP",
+    "PNP",
+    "PPP"
   ],
   "key": {
-    "I": {
-      "item": "minecraft:iron_ingot"
+    "P": {
+      "item": "factorynetwork:plate"
     },
-    "R": {
-      "item": "minecraft:redstone"
+    "N": {
+      "item": "factorynetwork:core_network"
     }
   },
   "result": {

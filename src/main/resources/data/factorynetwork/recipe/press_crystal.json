@@ -1,0 +1,15 @@
+{
+  "type": "factorynetwork:press",
+  "stamp": {
+    "item": "factorynetwork:stamp_plate"
+  },
+  "material": {
+    "item": "factorynetwork:raw_crystal"
+  },
+  "result": {
+    "id": "factorynetwork:crystal",
+    "count": 1
+  },
+  "energy": 1600,
+  "ticks": 80
+}

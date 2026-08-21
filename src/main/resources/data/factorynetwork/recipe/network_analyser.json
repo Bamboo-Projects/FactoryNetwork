@@ -2,19 +2,19 @@
   "type": "minecraft:crafting_shaped",
   "category": "equipment",
   "pattern": [
-    " Q ",
-    "IRI",
-    " I "
+    " C ",
+    "PLP",
+    " P "
   ],
   "key": {
-    "Q": {
-      "item": "minecraft:quartz"
+    "C": {
+      "item": "factorynetwork:crystal"
     },
-    "R": {
-      "item": "minecraft:redstone"
+    "L": {
+      "item": "factorynetwork:core_logic"
     },
-    "I": {
-      "item": "minecraft:iron_ingot"
+    "P": {
+      "item": "factorynetwork:plate"
     }
   },
   "result": {

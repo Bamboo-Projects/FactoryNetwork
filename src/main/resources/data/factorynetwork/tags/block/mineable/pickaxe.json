@@ -7,6 +7,7 @@
     "factorynetwork:terminal",
     "factorynetwork:display",
     "factorynetwork:drive",
+    "factorynetwork:press",
     "factorynetwork:crystal_ore",
     "factorynetwork:deepslate_crystal_ore"
   ]

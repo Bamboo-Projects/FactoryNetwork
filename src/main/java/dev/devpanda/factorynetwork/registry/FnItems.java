@@ -72,6 +72,53 @@ public final class FnItems {
     public static final DeferredItem<Item> LABEL_GUN = ITEMS.register("label_gun",
             () -> new LabelGunItem(new Item.Properties().stacksTo(1)));
 
+    /**
+     * Die Stempel der Presse.
+     *
+     * <p>Werkzeug, keine Zutat: Wer einen hat, presst damit beliebig oft. Das
+     * trennt den einmaligen Aufwand vom laufenden — und genau diese Trennung
+     * macht eine Kette interessant statt nur lang.
+     */
+    public static final DeferredItem<Item> STAMP_PLATE = ITEMS.register("stamp_plate",
+            () -> new Item(new Item.Properties().stacksTo(1)));
+
+    public static final DeferredItem<Item> STAMP_LOGIC = ITEMS.register("stamp_logic",
+            () -> new Item(new Item.Properties().stacksTo(1)));
+
+    public static final DeferredItem<Item> STAMP_MEMORY = ITEMS.register("stamp_memory",
+            () -> new Item(new Item.Properties().stacksTo(1)));
+
+    public static final DeferredItem<Item> STAMP_NETWORK = ITEMS.register("stamp_network",
+            () -> new Item(new Item.Properties().stacksTo(1)));
+
+    /** Das Halbzeug: gepresstes Metall. */
+    public static final DeferredItem<Item> PLATE = ITEMS.register("plate",
+            () -> new Item(new Item.Properties()));
+
+    /** Der geschliffene Kristall — aus dem rohen gepresst. */
+    public static final DeferredItem<Item> CRYSTAL = ITEMS.register("crystal",
+            () -> new Item(new Item.Properties()));
+
+    /**
+     * Die drei Kerne.
+     *
+     * <p>Sie trennen den Ausbau in Richtungen: Wer Speicher ausbaut, braucht
+     * andere Kerne als wer das Netz ausbaut. Ohne diese Trennung wäre die
+     * Kette nur ein längerer Weg zum selben Ziel.
+     */
+    public static final DeferredItem<Item> CORE_LOGIC = ITEMS.register("core_logic",
+            () -> new Item(new Item.Properties()));
+
+    public static final DeferredItem<Item> CORE_MEMORY = ITEMS.register("core_memory",
+            () -> new Item(new Item.Properties()));
+
+    public static final DeferredItem<Item> CORE_NETWORK = ITEMS.register("core_network",
+            () -> new Item(new Item.Properties()));
+
+    /** Die Presse selbst. */
+    public static final DeferredItem<net.minecraft.world.item.BlockItem> PRESS =
+            ITEMS.registerSimpleBlockItem(FnBlocks.PRESS);
+
     /** Das Erz und sein Ertrag. */
     public static final DeferredItem<net.minecraft.world.item.BlockItem> CRYSTAL_ORE =
             ITEMS.registerSimpleBlockItem(FnBlocks.CRYSTAL_ORE);

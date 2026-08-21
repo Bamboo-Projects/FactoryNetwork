@@ -31,6 +31,16 @@ public final class FnCreativeTabs {
                         output.accept(FnItems.CRYSTAL_ORE.get());
                         output.accept(FnItems.DEEPSLATE_CRYSTAL_ORE.get());
                         output.accept(FnItems.RAW_CRYSTAL.get());
+                        output.accept(FnItems.CRYSTAL.get());
+                        output.accept(FnItems.PRESS.get());
+                        output.accept(FnItems.STAMP_PLATE.get());
+                        output.accept(FnItems.STAMP_LOGIC.get());
+                        output.accept(FnItems.STAMP_MEMORY.get());
+                        output.accept(FnItems.STAMP_NETWORK.get());
+                        output.accept(FnItems.PLATE.get());
+                        output.accept(FnItems.CORE_LOGIC.get());
+                        output.accept(FnItems.CORE_MEMORY.get());
+                        output.accept(FnItems.CORE_NETWORK.get());
                         FnItems.CELLS.values().forEach(cell -> output.accept(cell.get()));
                     })
                     .build());

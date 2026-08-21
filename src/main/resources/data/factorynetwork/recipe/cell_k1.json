@@ -2,19 +2,19 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "pattern": [
-    "IQI",
-    "QRQ",
-    "III"
+    "PCP",
+    "CMC",
+    "PPP"
   ],
   "key": {
-    "I": {
-      "item": "minecraft:iron_ingot"
+    "P": {
+      "item": "factorynetwork:plate"
     },
-    "Q": {
-      "item": "minecraft:quartz"
+    "C": {
+      "item": "factorynetwork:crystal"
     },
-    "R": {
-      "item": "minecraft:redstone"
+    "M": {
+      "item": "factorynetwork:core_memory"
     }
   },
   "result": {

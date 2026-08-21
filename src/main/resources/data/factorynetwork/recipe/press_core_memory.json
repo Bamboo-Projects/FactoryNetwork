@@ -1,0 +1,15 @@
+{
+  "type": "factorynetwork:press",
+  "stamp": {
+    "item": "factorynetwork:stamp_memory"
+  },
+  "material": {
+    "item": "factorynetwork:plate"
+  },
+  "result": {
+    "id": "factorynetwork:core_memory",
+    "count": 1
+  },
+  "energy": 3000,
+  "ticks": 120
+}
