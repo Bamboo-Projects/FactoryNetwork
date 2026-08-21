@@ -3274,6 +3274,43 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    /**
+     * Der Analysator liest die Kapazität an der Stelle, nicht aus einer
+     * festen Zahl.
+     *
+     * <p>Vorher stand dort die des gewöhnlichen Kabels. Eine dichte Strecke
+     * meldete damit ab dem sechzehnten Kanal „voll" und wies auf eine Enge
+     * hin, die es nicht gab — die schlimmste Sorte Anzeige, weil man ihr
+     * hinterherbaut.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void theAnalyserReadsTheCapacityFromTheCable(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 2, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        for (int i = 1; i <= 3; i++) {
+            helper.setBlock(controller.east(i), FnBlocks.DENSE_CABLE.get());
+        }
+        BlockPos device = controller.east(3).above();
+        helper.setBlock(device, FnBlocks.CONNECTOR.get());
+        name(helper, device, "ziel");
+
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        var data = dev.devpanda.factorynetwork.analyser.AnalyserScan.of(entity);
+        helper.assertTrue(!data.links().isEmpty(), "der Analysator muss Strecken finden");
+        for (var link : data.links()) {
+            helper.assertValueEqual(link.capacity(),
+                    dev.devpanda.factorynetwork.block.CableBlock.CHANNELS_DENSE,
+                    "Kapazität einer dichten Strecke");
+            helper.assertTrue(
+                    link.state() != dev.devpanda.factorynetwork.analyser
+                            .AnalyserData.LinkState.FULL,
+                    "ein Gerät an einem dichten Kabel füllt es nicht");
+        }
+        helper.succeed();
+    }
+
     private FactoryNetworkGameTests() {
     }
 }

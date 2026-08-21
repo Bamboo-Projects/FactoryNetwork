@@ -66,8 +66,13 @@ public final class AnalyserScan {
         int full = 0;
         List<AnalyserData.Link> links = new ArrayList<>();
         for (FactoryGraph.Edge edge : graph.edges()) {
-            int load = graph.channelLoad(edge.to().pos(), edge.to().colour());
-            int capacity = FactoryGraph.CHANNELS_PER_STRAND;
+            int load = graph.channelLoad(edge.to());
+            // Die Kapazität steht an der Stelle, nicht an der Mod: ein dickes
+            // Kabel und eine Bahn im Router tragen vierundsechzig, ein
+            // gewöhnliches sechzehn. Mit der festen Zahl meldete der
+            // Analysator jede dichte Strecke ab dem sechzehnten Kanal als
+            // voll — und wies damit auf eine Enge hin, die es nicht gab.
+            int capacity = FactoryGraph.capacityAt(controller.getLevel(), edge.to().pos());
             AnalyserData.LinkState state = load >= capacity ? AnalyserData.LinkState.FULL
                     : load * 4 >= capacity * 3 ? AnalyserData.LinkState.TIGHT
                     : AnalyserData.LinkState.FREE;

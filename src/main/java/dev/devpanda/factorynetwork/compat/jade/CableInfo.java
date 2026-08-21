@@ -42,12 +42,12 @@ public enum CableInfo implements IBlockComponentProvider, IServerDataProvider<Bl
 
         var controller = ControllerRegistry.owning(level, pos);
         CableColour colour = CableBlock.colourOf(level.getBlockState(pos));
+        // Die Kapazität steht am Kabel, nicht an der Mod: ein dickes trägt
+        // vierundsechzig, ein gewöhnliches sechzehn. Mit der festen Zahl
+        // meldete ein dichtes Kabel ab dem sechzehnten Kanal „voll".
         String load = controller
-                .map(entity -> {
-                    FactoryGraph graph = entity.graph();
-                    return graph.channelLoad(pos, colour) + "/"
-                            + FactoryGraph.CHANNELS_PER_STRAND;
-                })
+                .map(entity -> entity.graph().channelLoad(pos, colour) + "/"
+                        + FactoryGraph.capacityAt(level, pos))
                 .orElse("—");
         lines.add(StringTag.valueOf(colour.getSerializedName() + " " + load));
         data.put(KEY_STRANDS, lines);
@@ -66,12 +66,18 @@ public enum CableInfo implements IBlockComponentProvider, IServerDataProvider<Bl
             String load = parts.length > 1 ? parts[1] : "";
             // Ohne Controller in Reichweite steht ein Strich statt einer Zahl;
             // ein Kabel ohne Netz hat keine Kanäle, nicht null.
-            ChatFormatting colour = load.startsWith("8/") ? ChatFormatting.RED
-                    : load.startsWith("—") ? ChatFormatting.DARK_GRAY
+            ChatFormatting colour = load.startsWith("—") ? ChatFormatting.DARK_GRAY
+                    : isFull(load) ? ChatFormatting.RED
                     : ChatFormatting.GRAY;
             tooltip.add(Component.translatable("jade.factorynetwork.cable.colour", name, load)
                     .withStyle(colour));
         }
+    }
+
+    /** Steht in „12/16" links dieselbe Zahl wie rechts? */
+    private static boolean isFull(String load) {
+        int slash = load.indexOf('/');
+        return slash > 0 && load.substring(0, slash).equals(load.substring(slash + 1));
     }
 
     @Override
