@@ -125,6 +125,11 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 - **Flüssigkeiten im Speicher-Reiter.** Sie stehen zurzeit in der
   Netzübersicht; ein Symbolraster bräuchte das Bild der Flüssigkeit.
 - **Ein eigener Speicherblock.** Der Speicher sitzt zurzeit im Controller.
+- **`strategy` bei Tankgruppen.** Die Verteilung nach dem leersten Gerät misst
+  Gegenstands-Slots; eine Gruppe von Tanks sortiert sie damit zufällig.
+- **Ein Teilerfolg beim Füllen** hinterlässt den Worker auf `WAITING_TARGET`
+  („Das Ziel nimmt nichts mehr"), obwohl etwas gelaufen ist. Die Zahl stimmt,
+  die Beschreibung im Terminal nicht.
 - **Autocrafting.** Der letzte ausgegraute Reiter.
 - **`callFunction` aus dem Terminal** läuft am gewöhnlichen Interpreter und
   kann deshalb nicht warten. Eine Funktion mit `sleep` scheitert dort mit

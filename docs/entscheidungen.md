@@ -1208,3 +1208,57 @@ Ausdrucksbaum selbst zur Zustandsmaschine zu machen.
 Namenssuche lief über alle Rahmen. Eine gerufene Funktion hätte die Variablen
 ihres Rufers gesehen, und ihr Verhalten hinge davon ab, wer sie gerade aufruft.
 Sie endet jetzt am Aufruf, ebenso wie `break` und `continue`.
+
+---
+
+## Flüssigkeiten (2026-08-21)
+
+### Die Art steht im Selektor, und eine Stelle liest sie
+
+`fluid:water` und `item:iron_ingot` unterscheiden sich für den Spieler nur in
+einem Wort — für die Laufzeit sind es zwei Welten: ein Tank hat keine Slots,
+gerechnet wird in Millibucket statt in Stück, und die Fähigkeit am Nachbarblock
+ist eine andere.
+
+`Value.Request.kind()` liest das Wort vor dem Doppelpunkt, und zwar als einzige
+Stelle. Überall sonst wird nach der Art gefragt. Ohne diese Auskunft kam bei
+`move 1000 fluid:water` die Meldung, es gebe kein Wasser im Pack — statt der
+wahren, dass Flüssigkeiten diesen Weg gar nicht nehmen.
+
+**Verworfen: die Art als eigenes Feld durch alles durchreichen.** Der Selektor
+ist ohnehin das, was aufgeschrieben wird; ein zweites Feld daneben könnte von
+ihm abweichen und wäre eine Quelle für Fehler, die es sonst nicht gibt.
+
+### Millibucket, wie überall
+
+Ein Eimer sind 1000. Damit steht im Programm dieselbe Zahl wie in jeder anderen
+Mod, und niemand rechnet um. `rate 1000 per 1t` heißt einen Eimer pro Tick.
+
+### Nur stehende Flüssigkeiten
+
+In der Registry stehen Wasser und fließendes Wasser als zwei Einträge. Ein
+Muster wie `fluid:*water*` fände sonst beide, und der Spieler bekäme eine Sorte
+angeboten, die sich nirgends lagern lässt.
+
+### Ein Flüssigkeits-Worker braucht ein filter
+
+Bei Gegenständen heißt „kein Filter" sinnvoll „alles". Bei Flüssigkeiten nicht:
+Ein Tank hält meist genau eine Sorte, und die falsche zu ziehen ist teurer —
+wer versehentlich Lava in den Wasserkreislauf schiebt, merkt es an anderer
+Stelle. Also hält der Worker an und sagt, was fehlt.
+
+### Die Suche nach dem Ziel steht ein einziges Mal da
+
+Gruppen, Verteilungsstrategien und alle Fehlermeldungen sind für Tanks
+dieselben wie für Inventare. Was am Ende geholt wird, entscheidet der Aufrufer
+über eine Funktion. Sonst hätte diese ganze Suche zweimal existiert, und die
+eine Fassung bekäme Verbesserungen, die der anderen fehlen — dasselbe Argument
+wie bei den Abläufen und dem Interpreter.
+
+### Ein Lager darf einen Posten verlieren, eine Variable nicht
+
+Ist eine Mod aus dem Pack, verschwindet ihre Flüssigkeit still aus dem Bestand.
+Steckt sie dagegen in der Variablen eines wartenden Ablaufs, scheitert der
+Ablauf mit klarer Meldung. Dieselbe Unterscheidung wie bei Gegenständen, aus
+demselben Grund: Mit einem Lagerbestand rechnet niemand weiter, mit einer
+Variablen schon.
