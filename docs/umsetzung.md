@@ -95,9 +95,26 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 
 ## 3. Was noch nicht läuft
 
-- **`device_done` und die anderen eingebauten Gerätereignisse.** Die
-  Spezifikation nennt sie; „diese Maschine ist fertig" zu erkennen ist ein
-  eigenes Stück Arbeit und hängt an jeder Fremdmod anders.
+- **`device_done`.** `device_online` und `device_offline` laufen; „diese
+  Maschine ist fertig" ist die offene Frage. **Sie gehört entschieden, bevor
+  sie gebaut wird** — ein falsches Fertig-Signal lässt eine Anlage Gegenstände
+  verlieren, und das ist schlimmer als gar kein Signal.
+
+  Drei Wege stehen zur Wahl:
+
+  1. **Nach dem, was das Netz eingelegt hat.** Der Controller weiß, was er in
+     ein Gerät gelegt hat. Taucht dort etwas anderes auf, ist verarbeitet
+     worden. Braucht keine Fremdmod zu kennen, meldet aber zu früh, wenn im
+     Ausgang schon etwas von vorher lag.
+  2. **Gar kein `device_done`, dafür `device_changed`.** Das Inventar eines
+     Geräts hat sich geändert — was „fertig" heißt, schreibt der Spieler
+     selbst. Ehrlich und nie falsch, aber jede Vorlage muss es ausformulieren.
+  3. **Je Mod angebunden.** Am genauesten und am teuersten; in einem großen
+     Pack sind es Dutzende.
+
+  Empfehlung: **(2), und (1) später als Bequemlichkeit obendrauf.** Eine
+  Automatisierung, die einmal zu früh weiterschaltet, verliert Gegenstände in
+  einer Kiste, die niemand mehr findet.
 - **Flüssigkeiten und Chemikalien.** Die Schreibweise steht, die Anbindung
   fehlt.
 - **Ein eigener Speicherblock.** Der Speicher sitzt zurzeit im Controller.
@@ -243,8 +260,9 @@ deshalb liegt in den Tests dort eine Welt aus Papier.
 
 In dieser Reihenfolge, nach Abhängigkeit:
 
-1. **Gerätereignisse.** `device_done` ist der Baustein, der Multiblocks erst
-   rund macht — ohne ihn muss jede Vorlage ihre eigenen Ereignisse auslösen.
+1. **`device_done` entscheiden** (siehe oben) und bauen. Der Baustein, der
+   Multiblocks rund macht — ohne ihn muss jede Vorlage ihre eigenen Ereignisse
+   auslösen.
 2. **Flüssigkeiten und Chemikalien.** Die Schreibweise steht seit dem Entwurf;
    die Anbindung an fremde Mods ist die eigentliche Arbeit.
 3. **Ein eigener Speicherblock.** Solange der Speicher im Controller sitzt,

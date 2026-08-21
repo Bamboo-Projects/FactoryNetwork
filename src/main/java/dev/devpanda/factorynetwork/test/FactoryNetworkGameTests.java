@@ -2016,6 +2016,56 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void deviceEventsFireWhenTheNetworkChanges(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                on device_online(gerät) {
+                    setRedstone(depot, 7)
+                }
+
+                on device_offline(name) {
+                    setRedstone(depot, 3)
+                }"""), "Das Programm wurde nicht übernommen");
+
+        // Ein neuer Connector am Kabel: Das Netz kennt ihn beim nächsten Aufbau.
+        BlockPos weiterer = controller.east().above();
+        helper.setBlock(weiterer, FnBlocks.CONNECTOR.get().defaultBlockState()
+                .setValue(dev.devpanda.factorynetwork.block.ConnectorBlock.FACING,
+                        net.minecraft.core.Direction.UP));
+        helper.setBlock(weiterer.above(), Blocks.CHEST);
+        name(helper, weiterer, "nachzuegler");
+        entity.rebuildNetwork();
+
+        helper.assertValueEqual(entity.flowEngine().flows().size()
+                + entity.flowEngine().failed().size(), 1,
+                "Das Auftauchen muss einen Ereignisblock gestartet haben");
+
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void theFirstNetworkBuildStaysQuiet(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+
+        helper.assertTrue(entity.deploy("""
+                on device_online(gerät) {
+                    setRedstone(depot, 7)
+                }"""), "Das Programm wurde nicht übernommen");
+
+        // Beim allerersten Aufbau ist nichts dazugekommen — es war nur vorher
+        // nichts bekannt.
+        entity.rebuildNetwork();
+        helper.assertValueEqual(entity.flowEngine().flows().size()
+                + entity.flowEngine().failed().size(), 0,
+                "Ein Sturm bei jedem Serverstart wäre nur Rauschen");
+        helper.succeed();
+    }
+
     private FactoryNetworkGameTests() {
     }
 }

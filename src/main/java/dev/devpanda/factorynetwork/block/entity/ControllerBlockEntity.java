@@ -71,6 +71,14 @@ public class ControllerBlockEntity extends BlockEntity {
      * bis der erste Tick kommt.
      */
     private CompoundTag pendingFlows;
+
+    /**
+     * Ob das Netz schon einmal aufgebaut wurde.
+     *
+     * <p>Ein leerer Graph und ein noch nie aufgebauter sehen gleich aus, sind
+     * es aber nicht: Beim ersten Mal ist nichts dazugekommen.
+     */
+    private boolean networkKnown;
     /** Negativ statt Long.MIN_VALUE: Die Differenz liefe sonst über. */
     private long lastRebuild = -REBUILD_INTERVAL;
 
@@ -166,9 +174,40 @@ public class ControllerBlockEntity extends BlockEntity {
     }
 
     public void rebuildNetwork() {
-        if (level != null) {
-            graph = FactoryGraph.build(level, worldPosition);
-            lastRebuild = level.getGameTime();
+        if (level == null) {
+            return;
+        }
+        Set<String> before = networkKnown ? Set.copyOf(graph.connectorNames()) : null;
+        graph = FactoryGraph.build(level, worldPosition);
+        lastRebuild = level.getGameTime();
+        networkKnown = true;
+        announceDeviceChanges(before);
+    }
+
+    /**
+     * Meldet, welche Geräte gekommen und gegangen sind.
+     *
+     * <p>Beim allerersten Aufbau bleibt es still: Da ist nichts
+     * dazugekommen, es war nur vorher nichts bekannt. Ein Sturm von
+     * {@code device_online} bei jedem Serverstart wäre für den Spieler
+     * dasselbe wie Rauschen.
+     */
+    private void announceDeviceChanges(Set<String> before) {
+        if (before == null || program.handlers().isEmpty()) {
+            return;
+        }
+        Set<String> now = graph.connectorNames();
+        for (String name : now) {
+            if (!before.contains(name)) {
+                fireEvent("device_online", List.of(new Value.Device(name)));
+            }
+        }
+        for (String name : before) {
+            if (!now.contains(name)) {
+                // Kein Value.Device: Das Gerät gibt es nicht mehr, und ein
+                // Verweis darauf ließe sich nicht mehr auflösen.
+                fireEvent("device_offline", List.of(new Value.Text(name)));
+            }
         }
     }
 
