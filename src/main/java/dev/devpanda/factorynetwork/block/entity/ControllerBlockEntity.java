@@ -238,6 +238,7 @@ public class ControllerBlockEntity extends BlockEntity {
         }
         tickFlows();
         fireRedstoneEvents();
+        fireInventoryEvents();
         pushStorageIfDue();
         pushFlowsIfDue();
         setChanged();
@@ -462,6 +463,74 @@ public class ControllerBlockEntity extends BlockEntity {
      * keine Schleife schreiben muss. Bei einigen Dutzend Connectoren ist das
      * billiger als an jedem Block zu horchen.
      */
+    /** Der zuletzt gesehene Inhalt je Gerät, als Fingerabdruck. */
+    private final Map<String, Integer> lastContents = new HashMap<>();
+
+    /**
+     * Meldet, wenn sich der Inhalt eines Geräts geändert hat.
+     *
+     * <p><b>Nicht {@code device_done}.</b> Ob eine Maschine <em>fertig</em>
+     * ist, weiß niemand von außen: Der Ausgang kann von vorher gefüllt sein,
+     * und jede Mod zählt anders. Was sich sagen lässt, ist, dass sich etwas
+     * geändert hat — was das bedeutet, schreibt der Spieler selbst. Eine
+     * Automatisierung, die einmal zu früh weiterschaltet, verliert Gegenstände
+     * in einer Kiste, die niemand mehr findet.
+     *
+     * <p>Abgefragt statt gemeldet und nur alle zehn Ticks, wie beim Redstone —
+     * und nur, wenn das Programm überhaupt darauf hört.
+     */
+    private void fireInventoryEvents() {
+        if (level == null || level.getGameTime() % 10 != 0) {
+            return;
+        }
+        if (program.handlers().stream().noneMatch(h -> h.name().equals("device_changed"))) {
+            lastContents.clear();
+            return;
+        }
+        for (Map.Entry<String, BlockPos> entry : graph.connectors().entrySet()) {
+            if (!level.isLoaded(entry.getValue())
+                    || !(level.getBlockEntity(entry.getValue())
+                            instanceof ConnectorBlockEntity connector)) {
+                continue;
+            }
+            int fingerprint = contentsFingerprint(connector);
+            Integer previous = lastContents.put(entry.getKey(), fingerprint);
+            if (previous == null || previous == fingerprint) {
+                // Beim ersten Sehen wird nicht gemeldet: Da hat sich nichts
+                // geändert, es war nur nichts bekannt.
+                continue;
+            }
+            fireEvent("device_changed", List.of(new Value.Device(entry.getKey())));
+        }
+    }
+
+    /**
+     * Eine Zahl, die sich ändert, wenn sich der Inhalt ändert.
+     *
+     * <p>Inventar und Tank zusammen — eine Maschine kann beides haben, und wer
+     * auf sie wartet, will von beidem wissen.
+     */
+    private static int contentsFingerprint(ConnectorBlockEntity connector) {
+        int hash = 17;
+        var handler = connector.machineInventory();
+        if (handler != null) {
+            for (int slot = 0; slot < handler.getSlots(); slot++) {
+                var stack = handler.getStackInSlot(slot);
+                hash = hash * 31 + (stack.isEmpty() ? 0
+                        : stack.getItem().hashCode() * 31 + stack.getCount());
+            }
+        }
+        var tank = connector.machineTank();
+        if (tank != null) {
+            for (int slot = 0; slot < tank.getTanks(); slot++) {
+                var stack = tank.getFluidInTank(slot);
+                hash = hash * 31 + (stack.isEmpty() ? 0
+                        : stack.getFluid().hashCode() * 31 + stack.getAmount());
+            }
+        }
+        return hash;
+    }
+
     private void fireRedstoneEvents() {
         if (level == null || level.getGameTime() % 10 != 0) {
             return;

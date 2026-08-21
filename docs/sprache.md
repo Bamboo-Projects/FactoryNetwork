@@ -683,6 +683,7 @@ on redstone_changed(sensor, strength) {
 redstone_changed(device, strength)   Redstone-Stärke 0..15 hat sich geändert
 device_online(device)                Gerät ist erreichbar geworden
 device_offline(name)                 Gerät ist verschwunden — nur noch der Name
+device_changed(device)               Inhalt eines Geräts hat sich geändert
 device_done(device)                  Gerät hat seine Arbeit beendet
 crafting_finished(job)               Fertigungsauftrag ist fertig
 crafting_failed(job, reason)         Fertigungsauftrag ist gescheitert

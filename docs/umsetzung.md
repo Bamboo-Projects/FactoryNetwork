@@ -84,7 +84,7 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | Auswahl | einzelne Gegenstände, Tags, Muster, `except` |
 | Flüssigkeiten | `move` und Worker, Bestand im Netz, in Millibucket |
 | Funktionen | Bedingungen, Schleifen, `move`, Redstone lesen, `log` |
-| Ereignisse | `redstone_changed`, eigene über `emit` und `on` |
+| Ereignisse | `redstone_changed`, `device_online/offline/changed`, eigene über `emit` und `on` |
 | Abläufe | `sleep`, `await` mit `where`, `timeout` und `else`, `for` mit Warten je Runde |
 | Aufrufe | Eine gerufene Funktion darf selbst warten — beide Rahmen überstehen den Neustart |
 | Multiblocks | Vorlagen, gebaute Anlagen über `anlage/rolle`, Aufruf an der Instanz |
@@ -92,12 +92,14 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | Netzwerk | Graph über Kabel, Speicher schlüsselbasiert, Kanäle je Strang |
 | Editor | Syntaxfarben, Fehler beim Tippen, Vervollständigung nach Stelle |
 | Anzeigen | Am Block und im Terminal, Knöpfe starten Abläufe |
-| Prüfung | 86 Einheitstests, 71 GameTests |
+| Prüfung | 87 Einheitstests, 77 GameTests |
 
 ## 3. Was noch nicht läuft
 
-- **`device_done`.** `device_online` und `device_offline` laufen; „diese
-  Maschine ist fertig" ist die offene Frage. **Sie gehört entschieden, bevor
+- **`device_done`.** `device_online`, `device_offline` und `device_changed`
+  laufen; „diese Maschine ist **fertig**" ist die offene Frage. Der
+  konservative Weg — melden, dass sich etwas geändert hat, und die Deutung dem
+  Spieler überlassen — ist gebaut. Was noch fehlt, ist die Bequemlichkeit. **Sie gehört entschieden, bevor
   sie gebaut wird** — ein falsches Fertig-Signal lässt eine Anlage Gegenstände
   verlieren, und das ist schlimmer als gar kein Signal.
 
@@ -113,7 +115,7 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
   3. **Je Mod angebunden.** Am genauesten und am teuersten; in einem großen
      Pack sind es Dutzende.
 
-  Empfehlung: **(2), und (1) später als Bequemlichkeit obendrauf.** Eine
+  Gebaut ist **(2)**. Offen ist, ob **(1)** dazukommt. Eine
   Automatisierung, die einmal zu früh weiterschaltet, verliert Gegenstände in
   einer Kiste, die niemand mehr findet.
 - **Chemikalien.** Mekanisms Gase und Schlämme; die Schreibweise steht, die

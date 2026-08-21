@@ -223,3 +223,21 @@ on device_offline(name) {
 
 Beim ersten Aufbau nach einem Serverstart bleibt es still — sonst käme bei
 jedem Anmelden eine Meldung je Gerät.
+
+**Wenn sich der Inhalt eines Geräts ändert:**
+
+```
+fn eine_runde() {
+    move 8 item:iron_ore from lager to brecher
+    let gerät = await device_changed
+    move item:iron_dust from brecher to lager
+}
+```
+
+`device_changed` sagt, dass sich etwas getan hat — nicht, dass die Maschine
+fertig ist. Das weiß von außen niemand: Der Ausgang kann von vorher gefüllt
+sein, und jede Mod zählt anders. Was „fertig" bedeutet, schreibt man selbst
+dazu, etwa mit `brecher.count(item:iron_dust) >= 8`.
+
+Hingeschaut wird nur, wenn das Programm überhaupt darauf hört, und dann alle
+zehn Ticks.

@@ -2465,6 +2465,68 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void aChangedInventoryWakesAWaitingFlow(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        // Eingebaute Ereignisse werden nicht deklariert — wie redstone_changed.
+        helper.assertTrue(entity.deploy("""
+                fn wartet() {
+                    let gerät = await device_changed
+                    return 1
+                }
+
+                on device_changed(gerät) {
+                    log("etwas hat sich getan")
+                }"""), "Das Programm wurde nicht übernommen");
+
+        var flow = entity.startFlow("wartet", java.util.List.of());
+        helper.assertValueEqual(flow.status().name(), "AWAITING", "Er wartet");
+
+        BlockPos quelle = controller.east().north().north();
+        // Erst muss einmal hingeschaut worden sein: Beim ersten Blick wird
+        // nichts gemeldet, denn da hat sich nichts geändert — es war nur
+        // nichts bekannt.
+        helper.startSequence()
+                .thenIdle(15)
+                .thenExecute(() -> {
+                    if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity container) {
+                        container.setItem(0, new ItemStack(Items.COBBLESTONE, 5));
+                    }
+                })
+                .thenIdle(15)
+                .thenExecute(() -> helper.assertValueEqual(flow.status().name(), "DONE",
+                        "Eine Änderung am Inventar muss den Wartenden wecken"))
+                .thenSucceed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void withoutAHandlerNothingIsWatched(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                fn nichts() {
+                    return 1
+                }"""), "Das Programm wurde nicht übernommen");
+
+        BlockPos quelle = controller.east().north().north();
+        if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity container) {
+            container.setItem(0, new ItemStack(Items.COBBLESTONE, 5));
+        }
+
+        // Ohne on device_changed wird gar nicht erst hingeschaut. Bei fünfzig
+        // Connectoren wäre das sonst Arbeit für nichts.
+        helper.runAfterDelay(25, () -> {
+            helper.assertValueEqual(entity.flowEngine().flows().size(), 0, "Kein Ablauf");
+            helper.assertValueEqual(entity.flowEngine().failed().size(), 0, "Und kein Fehler");
+            helper.succeed();
+        });
+    }
+
     private FactoryNetworkGameTests() {
     }
 }
