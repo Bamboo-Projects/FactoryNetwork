@@ -15,6 +15,7 @@ import dev.devpanda.factorynetwork.network.packet.StorageSnapshotPacket;
 import dev.devpanda.factorynetwork.registry.FnBlockEntities;
 import dev.devpanda.factorynetwork.runtime.DisplayValues;
 import dev.devpanda.factorynetwork.runtime.Interpreter;
+import dev.devpanda.factorynetwork.runtime.MultiblockInstances;
 import dev.devpanda.factorynetwork.runtime.ScriptError;
 import dev.devpanda.factorynetwork.runtime.Value;
 import dev.devpanda.factorynetwork.runtime.WorkerRuntime;
@@ -317,6 +318,28 @@ public class ControllerBlockEntity extends BlockEntity {
             panels.add(new DisplayStatePacket.Panel(display.name(), lines, buttons));
         }
         PacketDistributor.sendToPlayer(player, new DisplayStatePacket(panels));
+    }
+
+    /**
+     * Die gebauten Anlagen, als Zeilen für das Terminal.
+     *
+     * <p>Eine unvollständige Anlage bliebe sonst unsichtbar: Sie tut nichts
+     * und sagt nichts, und der Spieler sucht den Fehler im Programm statt an
+     * der Beschriftung.
+     */
+    public List<String> plants() {
+        return MultiblockInstances.resolve(program, graph.connectorNames()).values().stream()
+                .map(instance -> {
+                    if (instance.ambiguous()) {
+                        return instance.name() + ": mehrere Vorlagen passen";
+                    }
+                    if (!instance.missing().isEmpty()) {
+                        return instance.name() + ": es fehlt "
+                                + String.join(", ", instance.missing());
+                    }
+                    return instance.name() + ": " + instance.template().name();
+                })
+                .toList();
     }
 
     /**

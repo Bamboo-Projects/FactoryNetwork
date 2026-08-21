@@ -88,6 +88,24 @@ public class NetworkTabView {
             }
         }
 
+        List<String> plants = ClientNetworkState.plants();
+        if (!plants.isEmpty()) {
+            line += 3;
+            line = section(graphics, line, "screen.factorynetwork.terminal.network.plants");
+            for (String plant : plants) {
+                if (line > y + height - LINE) {
+                    break;
+                }
+                // Was fehlt oder mehrdeutig ist, sticht heraus — danach sucht
+                // man, wenn eine Anlage nichts tut.
+                int colour = plant.contains("fehlt") || plant.contains("mehrere")
+                        ? 0x8A6A20 : TerminalScreen.TEXT_DIM;
+                graphics.drawString(font, font.plainSubstrByWidth(plant, width - 6),
+                        x + 3, line, colour, false);
+                line += LINE;
+            }
+        }
+
         line += 3;
         line = section(graphics, line, "screen.factorynetwork.terminal.network.flows");
         flows(graphics, line);

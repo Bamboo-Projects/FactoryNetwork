@@ -18,9 +18,13 @@ import java.util.List;
  * <p>Die Connectorliste ist das, was die Vervollständigung braucht. Sie wird
  * beim Öffnen geschickt, nicht laufend — ein Netz ändert sich seltener als
  * jemand tippt.
+ *
+ * <p>Die Anlagen stehen mit dabei, weil eine unvollständige sonst unsichtbar
+ * bliebe: Sie tut nichts und sagt nichts, und der Spieler sucht den Fehler im
+ * Programm statt an der Beschriftung.
  */
-public record NetworkStatePacket(String source, List<String> connectors, List<String> workers)
-        implements CustomPacketPayload {
+public record NetworkStatePacket(String source, List<String> connectors, List<String> workers,
+                                 List<String> plants) implements CustomPacketPayload {
 
     public static final Type<NetworkStatePacket> TYPE = new Type<>(
             ResourceLocation.fromNamespaceAndPath(FactoryNetwork.MOD_ID, "network_state"));
@@ -32,6 +36,8 @@ public record NetworkStatePacket(String source, List<String> connectors, List<St
                     NetworkStatePacket::connectors,
                     ByteBufCodecs.stringUtf8(256).apply(ByteBufCodecs.list(512)),
                     NetworkStatePacket::workers,
+                    ByteBufCodecs.stringUtf8(256).apply(ByteBufCodecs.list(256)),
+                    NetworkStatePacket::plants,
                     NetworkStatePacket::new);
 
     @Override
