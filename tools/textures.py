@@ -22,12 +22,16 @@ OUT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
 N = 64
 
 # ---- Palette -------------------------------------------------------------
-EDGE       = (10, 13, 11)
-BODY_TOP   = (41, 48, 44)
-BODY_BOT   = (24, 29, 26)
-BODY_MID   = (33, 39, 35)
-LIGHT      = (70, 82, 74)
-SHINE      = (96, 110, 100)
+# Der Umfang war zu eng: von 10 bis 110 von 255 bleibt kein Platz fuer Tiefe.
+# Eine Flaeche wirkt erst plastisch, wenn Schatten und Glanzlicht weit genug
+# auseinanderliegen — deshalb reicht die Palette jetzt von fast schwarz bis
+# deutlich hell.
+EDGE       = (8, 10, 9)
+BODY_TOP   = (58, 68, 62)
+BODY_BOT   = (28, 34, 30)
+BODY_MID   = (44, 52, 47)
+LIGHT      = (96, 112, 102)
+SHINE      = (146, 168, 152)
 ACCENT     = (120, 220, 140)
 ACCENT_HI  = (205, 255, 215)
 ACCENT_DIM = (24, 78, 44)
@@ -41,13 +45,175 @@ def blend(a, b, t):
     return tuple(int(round(a[i] + (b[i] - a[i]) * t)) for i in range(3))
 
 
-def surface(top=BODY_TOP, bottom=BODY_BOT):
-    """Grundfläche mit senkrechtem Verlauf — Licht kommt von oben."""
+def surface(top=BODY_TOP, bottom=BODY_BOT, seed=1):
+    """Grundfläche: Verlauf, Körnung, Bürstung.
+
+    <b>Ein reiner Verlauf sieht aus wie Plastik.</b> Metall hat eine Struktur,
+    und die entsteht aus drei Dingen: einem Verlauf für die Lichtrichtung,
+    feiner Körnung gegen die Gleichmässigkeit, und waagerechten Zügen, die das
+    Auge als gebürstete Oberfläche liest.
+
+    Die Körnung ist gesät, nicht zufällig — sonst erzeugt jeder Lauf des
+    Skripts andere Dateien, und das Repository füllt sich mit Änderungen, die
+    keine sind.
+    """
     img = Image.new("RGBA", (N, N), top + (255,))
     draw = ImageDraw.Draw(img)
     for y in range(N):
         draw.line([(0, y), (N - 1, y)], fill=blend(top, bottom, y / (N - 1)) + (255,))
+    grain(img, seed=seed)
+    brushed(img, seed=seed + 100)
     return img
+
+
+def grain(image, amount=9, seed=1):
+    """Feine Körnung über die ganze Fläche.
+
+    Ohne sie bleibt jede Fläche glatt, und mehrere Blöcke nebeneinander sehen
+    aus wie eine einzige gestrichene Wand.
+    """
+    rnd = random.Random(seed)
+    px = image.load()
+    for y in range(N):
+        for x in range(N):
+            r, g, b, a = px[x, y]
+            if a == 0:
+                continue
+            ton = rnd.randint(-amount, amount)
+            px[x, y] = (max(0, min(255, r + ton)), max(0, min(255, g + ton)),
+                        max(0, min(255, b + ton)), a)
+
+
+def brushed(image, count=26, seed=1, strength=7):
+    """Waagerechte Züge, wie bei gebürstetem Metall."""
+    rnd = random.Random(seed)
+    px = image.load()
+    for _ in range(count):
+        y = rnd.randrange(N)
+        x0 = rnd.randrange(0, N - 8)
+        laenge = rnd.randrange(8, N - x0 + 1)
+        ton = rnd.choice([-strength, strength])
+        for x in range(x0, x0 + laenge):
+            r, g, b, a = px[x, y]
+            if a == 0:
+                continue
+            px[x, y] = (max(0, min(255, r + ton)), max(0, min(255, g + ton)),
+                        max(0, min(255, b + ton)), a)
+
+
+def ao(image, box, depth=3, strength=0.55):
+    """Verschattung nach innen, wo Flächen zusammenstoßen.
+
+    <b>Das ist der stärkste einzelne Hebel für Tiefe.</b> Eine versenkte
+    Fläche wirkt erst dann versenkt, wenn ihre Ränder abdunkeln — eine harte
+    Kante allein liest das Auge als aufgemalt.
+    """
+    x0, y0, x1, y1 = box
+    px = image.load()
+    for schritt in range(depth):
+        anteil = strength * (1.0 - schritt / float(depth))
+        for x in range(x0 + schritt, x1 - schritt + 1):
+            for y in (y0 + schritt, y1 - schritt):
+                if 0 <= x < N and 0 <= y < N:
+                    px[x, y] = _dunkler(px[x, y], anteil)
+        for y in range(y0 + schritt, y1 - schritt + 1):
+            for x in (x0 + schritt, x1 - schritt):
+                if 0 <= x < N and 0 <= y < N:
+                    px[x, y] = _dunkler(px[x, y], anteil)
+
+
+def _dunkler(farbe, anteil):
+    r, g, b, a = farbe
+    return (int(r * (1 - anteil)), int(g * (1 - anteil)), int(b * (1 - anteil)), a)
+
+
+def _heller(farbe, anteil):
+    r, g, b, a = farbe
+    return (int(r + (255 - r) * anteil), int(g + (255 - g) * anteil),
+            int(b + (255 - b) * anteil), a)
+
+
+def recess(image, box, tiefe=2):
+    """Macht aus einem Rechteck eine versenkte Fläche.
+
+    Licht kommt von oben links: Die obere und linke Kante liegen im Schatten,
+    die untere und rechte fangen Licht. Genau umgekehrt wie bei einer
+    erhabenen Fläche — und diese Umkehr ist das ganze Geheimnis.
+    """
+    x0, y0, x1, y1 = box
+    px = image.load()
+    for i in range(tiefe):
+        for x in range(x0 + i, x1 - i + 1):
+            if 0 <= x < N:
+                if 0 <= y0 + i < N:
+                    px[x, y0 + i] = _dunkler(px[x, y0 + i], 0.45)
+                if 0 <= y1 - i < N:
+                    px[x, y1 - i] = _heller(px[x, y1 - i], 0.18)
+        for y in range(y0 + i, y1 - i + 1):
+            if 0 <= y < N:
+                if 0 <= x0 + i < N:
+                    px[x0 + i, y] = _dunkler(px[x0 + i, y], 0.45)
+                if 0 <= x1 - i < N:
+                    px[x1 - i, y] = _heller(px[x1 - i, y], 0.18)
+
+
+def raised(image, box, hoehe=2):
+    """Dasselbe erhaben: oben und links hell, unten und rechts im Schatten."""
+    x0, y0, x1, y1 = box
+    px = image.load()
+    for i in range(hoehe):
+        for x in range(x0 + i, x1 - i + 1):
+            if 0 <= x < N:
+                if 0 <= y0 + i < N:
+                    px[x, y0 + i] = _heller(px[x, y0 + i], 0.30)
+                if 0 <= y1 - i < N:
+                    px[x, y1 - i] = _dunkler(px[x, y1 - i], 0.40)
+        for y in range(y0 + i, y1 - i + 1):
+            if 0 <= y < N:
+                if 0 <= x0 + i < N:
+                    px[x0 + i, y] = _heller(px[x0 + i, y], 0.30)
+                if 0 <= x1 - i < N:
+                    px[x1 - i, y] = _dunkler(px[x1 - i, y], 0.40)
+
+
+def rivet(image, x, y, r=3):
+    """Eine Niete: Schatten unten rechts, Glanz oben links.
+
+    Vier davon in den Ecken machen aus einer Platte ein verschraubtes Bauteil.
+    Sie sind das billigste Mittel, einer Fläche Massstab zu geben.
+    """
+    d = ImageDraw.Draw(image)
+    d.ellipse([x - r, y - r, x + r, y + r], fill=EDGE + (255,))
+    d.ellipse([x - r + 1, y - r + 1, x + r - 1, y + r - 1],
+              fill=blend(BODY_TOP, LIGHT, 0.5) + (255,))
+    px = image.load()
+    if 0 <= x - 1 < N and 0 <= y - 1 < N:
+        px[x - 1, y - 1] = _heller(px[x - 1, y - 1], 0.45)
+
+
+def scratches(image, count=5, seed=1):
+    """Ein paar feine Kratzer — Gebrauchsspuren gegen die Werksfrische.
+
+    <b>Sehr zurückhaltend.</b> Ein sichtbarer Kratzer liest sich nicht als
+    Gebrauch, sondern als Fehler in der Textur; erst wenn man sie einzeln kaum
+    bemerkt, tun sie ihre Arbeit.
+    """
+    rnd = random.Random(seed)
+    px = image.load()
+    for _ in range(count):
+        x0 = rnd.randrange(6, N - 14)
+        y0 = rnd.randrange(6, N - 6)
+        laenge = rnd.randrange(4, 10)
+        hell = rnd.random() < 0.5
+        for i in range(laenge):
+            x = x0 + i
+            y = y0 + (1 if i > laenge // 2 and rnd.random() < 0.3 else 0)
+            if not (0 <= x < N and 0 <= y < N):
+                continue
+            r, g, b, a = px[x, y]
+            if a == 0:
+                continue
+            px[x, y] = _heller((r, g, b, a), 0.12) if hell                 else _dunkler((r, g, b, a), 0.18)
 
 
 def bevel(draw, box=(0, 0, N - 1, N - 1), width=3, light=LIGHT, shadow=EDGE):
@@ -79,22 +245,38 @@ def save(image, folder, name):
 # Formensprache: querlaufende Fuge, Kern mit vier Leitungen.
 
 def controller_top():
-    img = surface()
+    """Das Herz des Netzes: ein Kern in einer verschraubten Fassung.
+
+    Der einzige Block, der von sich aus leuchtet — er soll in einer Wand aus
+    Maschinen der sein, den man zuerst sieht.
+    """
+    img = surface(seed=51)
     d = ImageDraw.Draw(img)
-    bevel(d)
-    # Vier Leitungen von den Kanten zum Kern
-    for box in [(30, 3, 33, 18), (30, 45, 33, 60), (3, 30, 18, 33), (45, 30, 60, 33)]:
-        d.rectangle(box, fill=EDGE + (255,))
-        d.rectangle((box[0] + 1, box[1] + 1, box[2] - 1, box[3] - 1), fill=ACCENT_DIM + (255,))
-    # Versenktes Feld
-    d.rectangle([16, 16, 47, 47], fill=EDGE + (255,))
-    d.rectangle([18, 18, 45, 45], fill=ACCENT_DIM + (255,))
-    # Kern
-    glow(img, [20, 20, 43, 43], radius=7)
+    raised(img, (1, 1, N - 2, N - 2), hoehe=3)
+
+    # Fassung: versenkt, mit Verschattung
+    d.rectangle([9, 9, 54, 54], fill=blend(BODY_MID, EDGE, 0.3) + (255,))
+    grain(img, amount=7, seed=52)
+    recess(img, (9, 9, 54, 54), tiefe=2)
+    ao(img, (9, 9, 54, 54), depth=4, strength=0.4)
+
+    # Vier Stege zum Kern hin
+    for box in ((30, 12, 33, 22), (30, 41, 33, 51), (12, 30, 22, 33), (41, 30, 51, 33)):
+        d.rectangle(box, fill=blend(BODY_TOP, LIGHT, 0.3) + (255,))
+        raised(img, box, hoehe=1)
+
+    # Der Kern
+    d.rectangle([22, 22, 41, 41], fill=EDGE + (255,))
+    ao(img, (22, 22, 41, 41), depth=3, strength=0.5)
+    glow(img, [25, 25, 38, 38], radius=8, strength=190)
     d = ImageDraw.Draw(img)
-    d.rectangle([21, 21, 42, 42], fill=ACCENT + (255,))
-    d.rectangle([25, 25, 38, 38], fill=ACCENT_HI + (255,))
-    d.rectangle([21, 21, 42, 42], outline=ACCENT_HI + (120,))
+    d.rectangle([25, 25, 38, 38], fill=ACCENT + (255,))
+    d.rectangle([27, 27, 36, 36], fill=ACCENT_HI + (255,))
+    d.rectangle([29, 29, 34, 34], fill=(255, 255, 255, 255))
+
+    for x, y in ((5, 5), (58, 5), (5, 58), (58, 58)):
+        rivet(img, x, y)
+    scratches(img, seed=53)
     return img
 
 
@@ -213,25 +395,28 @@ def cable_channels(satz):
 # Formensprache: Rahmen mit betonten Ecken, runder Anschluss.
 
 def connector_front():
-    img = surface()
+    """Die Seite, die an der Maschine sitzt: Anschlussring in einer Mulde."""
+    img = surface(seed=21)
     d = ImageDraw.Draw(img)
-    bevel(d)
+    raised(img, (1, 1, N - 2, N - 2), hoehe=3)
+
     # Versenkte Platte
-    d.rectangle([10, 10, 53, 53], fill=EDGE + (255,))
-    d.rectangle([12, 12, 51, 51], fill=blend(BODY_TOP, EDGE, 0.35) + (255,))
-    # Anschlussring
-    d.ellipse([16, 16, 47, 47], fill=EDGE + (255,))
-    d.ellipse([18, 18, 45, 45], fill=blend(LIGHT, EDGE, 0.3) + (255,))
-    d.ellipse([21, 21, 42, 42], fill=EDGE + (255,))
-    # Leuchtender Kern im Ring
-    glow(img, [25, 25, 38, 38], radius=6)
-    d = ImageDraw.Draw(img)
-    d.ellipse([24, 24, 39, 39], fill=ACCENT + (255,))
-    d.ellipse([28, 28, 35, 35], fill=ACCENT_HI + (255,))
-    # Vier Schrauben in den Ecken der Platte
-    for cx, cy in ((15, 15), (48, 15), (15, 48), (48, 48)):
-        d.ellipse([cx - 2, cy - 2, cx + 2, cy + 2], fill=EDGE + (255,))
-        d.ellipse([cx - 1, cy - 1, cx + 1, cy + 1], fill=SHINE + (255,))
+    d.rectangle([10, 10, 53, 53], fill=blend(BODY_MID, EDGE, 0.3) + (255,))
+    grain(img, amount=7, seed=22)
+    recess(img, (10, 10, 53, 53), tiefe=2)
+    ao(img, (10, 10, 53, 53), depth=4, strength=0.4)
+
+    # Anschlussring, erhaben, mit dunklem Loch
+    d.ellipse([16, 16, 47, 47], fill=blend(BODY_TOP, LIGHT, 0.35) + (255,))
+    d.ellipse([16, 16, 47, 47], outline=EDGE + (255,))
+    d.arc([16, 16, 47, 47], 180, 340, fill=SHINE + (255,))
+    d.ellipse([22, 22, 41, 41], fill=blend(EDGE, BODY_BOT, 0.4) + (255,))
+    ao(img, (22, 22, 41, 41), depth=3, strength=0.5)
+    d.ellipse([26, 26, 37, 37], fill=blend(ACCENT_DIM, EDGE, 0.35) + (255,))
+
+    for x, y in ((6, 6), (57, 6), (6, 57), (57, 57)):
+        rivet(img, x, y, r=2)
+    scratches(img, seed=23)
     return img
 
 
@@ -265,40 +450,65 @@ def connector_back():
 
 
 def machine_top():
-    """Deckel, den Connector und Terminal teilen. Bewusst ruhig."""
-    img = surface()
+    """Die Aussenhaut aller Maschinen: verschraubte Platte mit Feld.
+
+    Drei Ebenen statt einer: die Grundplatte, ein versenktes Feld darin, und
+    Nieten in den Ecken. Jede davon bekommt ihre eigene Kantenbehandlung, und
+    erst zusammen ergibt das eine Fläche, die nach Blech aussieht statt nach
+    Farbe.
+    """
+    img = surface(seed=11)
     d = ImageDraw.Draw(img)
-    bevel(d)
-    d.rectangle([12, 12, 51, 51], outline=EDGE + (255,))
-    d.rectangle([13, 13, 50, 50], outline=blend(BODY_TOP, LIGHT, 0.4) + (255,))
-    d.rectangle([26, 26, 37, 37], fill=blend(BODY_BOT, EDGE, 0.4) + (255,))
-    d.rectangle([26, 26, 37, 37], outline=EDGE + (255,))
+
+    # Aeussere Fase: oben hell, unten im Schatten
+    raised(img, (1, 1, N - 2, N - 2), hoehe=3)
+
+    # Versenktes Feld in der Mitte
+    d.rectangle([12, 12, 51, 51], fill=blend(BODY_MID, EDGE, 0.25) + (255,))
+    grain(img, amount=7, seed=12)
+    recess(img, (12, 12, 51, 51), tiefe=2)
+    ao(img, (12, 12, 51, 51), depth=4, strength=0.35)
+
+    # Zwei Querstege, die dem Feld Struktur geben
+    for y in (26, 38):
+        d.rectangle([16, y, 47, y + 3], fill=blend(BODY_TOP, LIGHT, 0.25) + (255,))
+        raised(img, (16, y, 47, y + 3), hoehe=1)
+
+    for x, y in ((7, 7), (56, 7), (7, 56), (56, 56)):
+        rivet(img, x, y)
+    scratches(img, seed=13)
     return img
 
 
-# ---- Terminal ------------------------------------------------------------
-# Formensprache: senkrechte Streben, Bildschirm mit Codezeilen.
-
 def terminal_front():
-    img = surface()
+    """Bildschirm in einem Rahmen, darunter eine Tastenleiste.
+
+    Der Bildschirm ist die dunkelste Fläche der ganzen Mod — davor wirkt die
+    Schrift hell, und das Gerät liest sich sofort als Anzeige.
+    """
+    img = surface(seed=61)
     d = ImageDraw.Draw(img)
-    bevel(d)
-    # Bildschirmrahmen
-    d.rectangle([5, 5, 58, 46], fill=EDGE + (255,))
-    d.rectangle([7, 7, 56, 44], fill=(14, 20, 16) + (255,))
-    # Codezeilen, in denselben Farben wie im Editor
-    rows = [(12, 12, 30, ACCENT), (12, 18, 42, blend(LIGHT, SHINE, 0.6)),
-            (18, 24, 34, ACCENT_HI), (18, 30, 26, blend(LIGHT, SHINE, 0.6)),
-            (12, 36, 20, ACCENT)]
-    for x, y, length, color in rows:
-        d.rectangle([x, y, x + length, y + 2], fill=color + (255,))
-    glow(img, [12, 12, 42, 38], radius=8, strength=60)
+    raised(img, (1, 1, N - 2, N - 2), hoehe=3)
+
+    # Rahmen
+    d.rectangle([6, 6, 57, 44], fill=blend(BODY_MID, EDGE, 0.35) + (255,))
+    recess(img, (6, 6, 57, 44), tiefe=2)
+
+    # Bildschirm: fast schwarz, mit Zeilen
+    d.rectangle([9, 9, 54, 41], fill=(12, 18, 14, 255))
+    ao(img, (9, 9, 54, 41), depth=3, strength=0.55)
+    for i, y in enumerate(range(14, 38, 6)):
+        laenge = (34, 26, 30, 20)[i % 4]
+        d.rectangle([13, y, 13 + laenge, y + 2],
+                    fill=blend(ACCENT, (12, 18, 14), 0.45 if i else 0.15) + (255,))
+    glow(img, [9, 9, 54, 41], radius=5, strength=60)
+
+    # Tastenleiste
     d = ImageDraw.Draw(img)
-    # Bedienleiste unter dem Bildschirm
-    d.rectangle([5, 50, 58, 58], fill=EDGE + (255,))
-    for x in range(10, 52, 8):
-        d.rectangle([x, 52, x + 4, 56], fill=blend(LIGHT, EDGE, 0.3) + (255,))
-    d.rectangle([50, 52, 54, 56], fill=ACCENT + (255,))
+    for x in range(9, 52, 11):
+        d.rectangle([x, 48, x + 8, 55], fill=blend(BODY_TOP, LIGHT, 0.25) + (255,))
+        raised(img, (x, 48, x + 8, 55), hoehe=1)
+    scratches(img, seed=62)
     return img
 
 
@@ -443,24 +653,33 @@ def storage_cell(label):
 
 
 def drive_front():
-    """Die Vorderseite des Laufwerks: zehn Schächte in zwei Reihen."""
-    img = surface()
+    """Zehn Schächte in zwei Reihen, jeder mit Lämpchen.
+
+    Die Schächte sind versenkt, die Stege dazwischen erhaben — so liest man
+    auf einen Blick, wo eine Zelle hineingehört.
+    """
+    img = surface(seed=31)
     d = ImageDraw.Draw(img)
-    bevel(d)
-    d.rectangle([8, 10, 55, 53], fill=EDGE + (255,))
+    raised(img, (1, 1, N - 2, N - 2), hoehe=3)
+
+    d.rectangle([7, 9, 56, 54], fill=blend(BODY_MID, EDGE, 0.35) + (255,))
+    grain(img, amount=6, seed=32)
+    recess(img, (7, 9, 56, 54), tiefe=2)
+
     for reihe in range(5):
         for spalte in range(2):
-            x = 11 + spalte * 23
-            y = 13 + reihe * 8
+            x = 10 + spalte * 24
+            y = 12 + reihe * 8
             d.rectangle([x, y, x + 19, y + 5],
-                        fill=blend(BODY_TOP, EDGE, 0.45) + (255,))
-            # Betriebslämpchen je Schacht
-            d.rectangle([x + 16, y + 1, x + 18, y + 3], fill=ACCENT + (255,))
+                        fill=blend(EDGE, BODY_BOT, 0.5) + (255,))
+            ao(img, (x, y, x + 19, y + 5), depth=2, strength=0.45)
+            # Betriebslämpchen, glimmt
+            d.rectangle([x + 16, y + 1, x + 18, y + 3],
+                        fill=blend(ACCENT, EDGE, 0.2) + (255,))
+    for x, y in ((4, 5), (59, 5), (4, 58), (59, 58)):
+        rivet(img, x, y, r=2)
+    scratches(img, seed=33)
     return img
-
-
-CRYSTAL = (108, 196, 214)
-CRYSTAL_HI = (186, 240, 248)
 
 
 def crystal_ore(deepslate=False):
@@ -605,25 +824,42 @@ def core(kind):
 
 
 def press_front():
-    """Die Presse von vorn: Stempel oben, Amboss unten, Führungen seitlich."""
-    img = surface()
+    """Stempel oben, Amboss unten, Führungssäulen seitlich.
+
+    Der Zwischenraum ist der Arbeitsbereich — dort glüht das Werkstück, und
+    das ist der einzige helle Fleck auf der Fläche.
+    """
+    img = surface(seed=41)
     d = ImageDraw.Draw(img)
-    bevel(d)
-    # Führungssäulen
+    raised(img, (1, 1, N - 2, N - 2), hoehe=3)
+
+    # Arbeitsraum: versenkt
+    d.rectangle([10, 10, 53, 54], fill=blend(BODY_MID, EDGE, 0.4) + (255,))
+    grain(img, amount=6, seed=42)
+    recess(img, (10, 10, 53, 54), tiefe=2)
+    ao(img, (10, 10, 53, 54), depth=4, strength=0.45)
+
+    # Führungssäulen, erhaben
     for x in (12, 47):
-        d.rectangle([x, 12, x + 5, 52], fill=blend(BODY_TOP, EDGE, 0.5) + (255,),
-                    outline=EDGE + (255,))
+        d.rectangle([x, 12, x + 5, 52], fill=blend(BODY_TOP, LIGHT, 0.3) + (255,))
+        raised(img, (x, 12, x + 5, 52), hoehe=1)
+
     # Stempelkopf
-    d.rectangle([20, 14, 44, 26], fill=blend(BODY_TOP, EDGE, 0.25) + (255,),
-                outline=EDGE + (255,))
-    d.line([(23, 17), (41, 17)], fill=SHINE + (255,))
+    d.rectangle([20, 14, 43, 27], fill=blend(BODY_TOP, LIGHT, 0.2) + (255,))
+    raised(img, (20, 14, 43, 27), hoehe=2)
+    for x in range(23, 42, 5):
+        d.line([(x, 17), (x, 24)], fill=blend(BODY_MID, EDGE, 0.3) + (255,))
+
     # Amboss
-    d.rectangle([18, 40, 46, 50], fill=blend(BODY_TOP, EDGE, 0.4) + (255,),
-                outline=EDGE + (255,))
-    # Werkstück dazwischen, glühend
-    glow(img, [26, 31, 38, 36], radius=6, strength=150)
+    d.rectangle([18, 42, 45, 52], fill=blend(BODY_TOP, LIGHT, 0.15) + (255,))
+    raised(img, (18, 42, 45, 52), hoehe=2)
+
+    # Werkstueck dazwischen, gluehend
+    glow(img, [26, 32, 38, 38], color=(232, 150, 60), radius=7, strength=170)
     d = ImageDraw.Draw(img)
-    d.rectangle([26, 31, 38, 36], fill=(214, 128, 52, 255))
+    d.rectangle([26, 32, 38, 38], fill=(226, 142, 56, 255))
+    d.line([(27, 33), (37, 33)], fill=(252, 208, 140, 255))
+    scratches(img, seed=43)
     return img
 
 
