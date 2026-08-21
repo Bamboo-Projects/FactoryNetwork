@@ -1145,3 +1145,66 @@ auswerten und den Lauf von vorn beginnen lassen.
 Die letzten zehn, samt Grund. Ein Ablauf, der stirbt, verschwand sonst aus der
 Liste und mit ihm die Erklärung. Wer nachts eine Anlage baut, sieht am nächsten
 Morgen sonst nur, dass nichts passiert ist.
+
+---
+
+## Multiblocks in der Welt (2026-08-21)
+
+### Eine Anlage entsteht aus den Namen ihrer Connectoren
+
+`werk_1/eingang` gehört zur Anlage `werk_1` und spielt dort die Rolle
+`eingang`. Wer drei Connectoren mit der Beschriftungspistole benennt, hat eine
+Anlage — kein neuer Block, keine Zuordnungsmaske, kein abgesteckter Bereich.
+
+Das erlaubt, was in großen Packs der Normalfall ist: Die Geräte einer Anlage
+liegen quer durchs Gebäude verteilt, verbunden durch Rohre, die niemand in
+einen Quader bekommt.
+
+**Verworfen: ein Multiblock-Controller, der einen Bereich abtastet.** Er hätte
+einen Block, eine Bereichsgrenze und eine Zuordnung gebraucht — und wäre an
+jeder Anlage gescheitert, die nicht in einen Quader passt.
+
+**Verworfen: der Vorlagenname im Label**, etwa `OrePlant:ore_plant_1/crusher`.
+Das macht jeden Namen länger und bricht, sobald jemand die Vorlage umbenennt.
+
+### Der Schrägstrich lebt nur im Label
+
+Außen steht `werk_1`, innen `eingang`. Die Sprache sieht den Trenner nie und
+muss ihn nicht parsen.
+
+Damit fällt die Forderung der Spezifikation, dass die Geräte einer Anlage von
+außen unsichtbar sind, ohne eigenes Zutun ab: `eingang` trifft nie
+`werk_1/eingang`, solange nicht ausdrücklich eine Anlage im Spiel ist.
+
+Umgekehrt bleibt der Rest des Netzes von innen erreichbar: Erst wenn die Anlage
+kein Gerät dieses Namens hat, zählt der globale Name. Sonst wäre ein
+Netzspeicher aus einer Vorlage heraus nicht anzusprechen.
+
+### Zu welcher Vorlage eine Anlage gehört, wird erschlossen
+
+Passt genau eine Vorlage ganz, gehört die Anlage ihr. Passen mehrere, ist sie
+mehrdeutig und meldet sich. Passt keine ganz, gilt die mit der größten
+Überschneidung als gemeint und die Anlage als unvollständig.
+
+Der letzte Fall ist der wichtige: Wer ein Gerät vergessen hat, soll es im
+Terminal lesen. Eine unvollständige Anlage nimmt keine Aufrufe an — ein halb
+durchlaufener Aufruf, der in der Mitte auf ein fehlendes Gerät trifft, wäre
+schlimmer als einer, der gar nicht erst beginnt.
+
+### Ein Aufruf bekommt einen eigenen Rahmen
+
+Damit `ore_plant_1.process(…)` überhaupt möglich ist, musste zuerst der
+gewöhnliche Funktionsaufruf im Ablauf wartefähig werden. Vorher lief er im
+gewöhnlichen Interpreter zu Ende, und eine Funktion mit `await` ließ sich nicht
+aufrufen, sondern nur als Ablauf starten.
+
+Die Grenze ist ehrlich gezogen: Nur ein Aufruf, der allein dasteht — als
+Anweisung oder rechts von einem `let` —, wird zum Rahmen. Steckt er in einer
+Rechnung wie `let x = f() + 2`, läuft er den gewöhnlichen Weg und kann dort
+nicht warten. Einen halb ausgewerteten Ausdruck aufzuschreiben hieße, den
+Ausdrucksbaum selbst zur Zustandsmaschine zu machen.
+
+**Dabei fiel ein Loch auf, das es ohne Aufrufe nicht geben konnte:** Die
+Namenssuche lief über alle Rahmen. Eine gerufene Funktion hätte die Variablen
+ihres Rufers gesehen, und ihr Verhalten hinge davon ab, wer sie gerade aufruft.
+Sie endet jetzt am Aufruf, ebenso wie `break` und `continue`.

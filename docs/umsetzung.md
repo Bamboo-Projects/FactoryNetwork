@@ -85,14 +85,19 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | Funktionen | Bedingungen, Schleifen, `move`, Redstone lesen, `log` |
 | Ereignisse | `redstone_changed`, eigene über `emit` und `on` |
 | Abläufe | `sleep`, `await` mit `where`, `timeout` und `else`, `for` mit Warten je Runde |
+| Aufrufe | Eine gerufene Funktion darf selbst warten — beide Rahmen überstehen den Neustart |
+| Multiblocks | Vorlagen, gebaute Anlagen über `anlage/rolle`, Aufruf an der Instanz |
 | Fortsetzen | Wartende Abläufe überleben Serverneustart und Programmwechsel |
 | Netzwerk | Graph über Kabel, Speicher schlüsselbasiert, Kanäle je Strang |
 | Editor | Syntaxfarben, Fehler beim Tippen, Vervollständigung nach Stelle |
-| Prüfung | 81 Einheitstests, 54 GameTests |
+| Anzeigen | Am Block und im Terminal, Knöpfe starten Abläufe |
+| Prüfung | 86 Einheitstests, 62 GameTests |
 
 ## 3. Was noch nicht läuft
 
-- **Multiblocks** — spezifiziert, geparst, nicht ausgeführt.
+- **`device_done` und die anderen eingebauten Gerätereignisse.** Die
+  Spezifikation nennt sie; „diese Maschine ist fertig" zu erkennen ist ein
+  eigenes Stück Arbeit und hängt an jeder Fremdmod anders.
 - **Flüssigkeiten und Chemikalien.** Die Schreibweise steht, die Anbindung
   fehlt.
 - **Ein eigener Speicherblock.** Der Speicher sitzt zurzeit im Controller.
@@ -238,13 +243,13 @@ deshalb liegt in den Tests dort eine Welt aus Papier.
 
 In dieser Reihenfolge, nach Abhängigkeit:
 
-1. **Der Reiter „Anzeigen".** Displays gibt es, im Terminal fehlen sie noch.
-2. **Multiblocks.** Braucht zuerst eine Antwort darauf, wie eine Instanz in
-   der Welt entsteht — das ist keine Sprachfrage.
-3. **Flüssigkeiten und Chemikalien.** Die Schreibweise steht seit dem Entwurf;
+1. **Gerätereignisse.** `device_done` ist der Baustein, der Multiblocks erst
+   rund macht — ohne ihn muss jede Vorlage ihre eigenen Ereignisse auslösen.
+2. **Flüssigkeiten und Chemikalien.** Die Schreibweise steht seit dem Entwurf;
    die Anbindung an fremde Mods ist die eigentliche Arbeit.
-4. **Ein eigener Speicherblock.** Solange der Speicher im Controller sitzt,
+3. **Ein eigener Speicherblock.** Solange der Speicher im Controller sitzt,
    gibt es keinen Grund, mehr als einen zu bauen.
+4. **Autocrafting.** Der letzte ausgegraute Reiter.
 
 Vorher lohnt ein Blick in `entscheidungen.md`: Dort steht zu jedem Punkt,
 warum er so entschieden wurde, und was verworfen wurde.

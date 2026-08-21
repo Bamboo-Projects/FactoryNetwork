@@ -634,9 +634,27 @@ erscheint im Terminal als Fehler und nimmt keine Aufrufe an. Das ist besser
 als ein Aufruf, der halb durchläuft und in der Mitte auf ein fehlendes Gerät
 trifft.
 
-Wie eine Anlage in der Welt zusammengesetzt wird — Controller-Block, Bereich,
-Zuordnung der Connectoren — ist Sache der Mod, nicht der Sprache. Die Sprache
-sieht nur das Ergebnis.
+### Wie eine Anlage in der Welt entsteht
+
+Über die Namen ihrer Connectoren. Wer eine Anlage bauen will, benennt ihre
+Geräte mit dem Namen der Anlage davor:
+
+```
+ore_plant_1/crusher
+ore_plant_1/furnace
+ore_plant_1/output
+```
+
+Damit gehört jedes dieser Geräte zu `ore_plant_1`, und die Anlage gilt als
+`OrePlant`, weil sie deren Rollen abdeckt. Eine zweite Anlage entsteht, indem
+man dieselben Rollen mit `ore_plant_2/` davor vergibt.
+
+Der Schrägstrich steht nur in der Beschriftung. Im Code ist außen
+`ore_plant_1` und innen `crusher` — geschrieben wird er nie.
+
+Passen mehrere Vorlagen auf eine Anlage, meldet sie sich als mehrdeutig. Fehlt
+ihr ein Gerät, erscheint sie im Terminal mit der Angabe, welches — und nimmt
+keine Aufrufe an.
 
 ---
 
