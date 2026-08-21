@@ -325,6 +325,11 @@ public class ControllerBlockEntity extends BlockEntity {
 
     /** Schickt die Abläufe an einen Spieler. */
     public void pushFlowsTo(ServerPlayer player) {
+        PacketDistributor.sendToPlayer(player, new FlowStatePacket(flowLines()));
+    }
+
+    /** Die Abläufe als Zeilen — getrennt vom Senden, damit prüfbar. */
+    public List<FlowStatePacket.Line> flowLines() {
         List<FlowStatePacket.Line> lines = new ArrayList<>();
         if (flows != null) {
             flows.flows().values().forEach(flow -> lines.add(new FlowStatePacket.Line(
@@ -334,7 +339,7 @@ public class ControllerBlockEntity extends BlockEntity {
             flows.failed().forEach(flow -> lines.add(new FlowStatePacket.Line(
                     flow.id(), flow.entryPoint(), flow.status().name(), flow.detail())));
         }
-        PacketDistributor.sendToPlayer(player, new FlowStatePacket(lines));
+        return lines;
     }
 
     // ---- Anzeigen im Terminal ---------------------------------------------
@@ -346,6 +351,11 @@ public class ControllerBlockEntity extends BlockEntity {
      * Display an der Wand. Was über die Leitung geht, steht am Ende so da.
      */
     public void pushDisplaysTo(ServerPlayer player) {
+        PacketDistributor.sendToPlayer(player, new DisplayStatePacket(displayPanels()));
+    }
+
+    /** Die Anzeigen als fertige Zeilen — getrennt vom Senden, damit prüfbar. */
+    public List<DisplayStatePacket.Panel> displayPanels() {
         List<DisplayStatePacket.Panel> panels = new ArrayList<>();
         DisplayValues values = new DisplayValues(graph, storage, runtime);
         for (Decl declaration : program.declarations()) {
@@ -363,7 +373,7 @@ public class ControllerBlockEntity extends BlockEntity {
             }
             panels.add(new DisplayStatePacket.Panel(display.name(), lines, buttons));
         }
-        PacketDistributor.sendToPlayer(player, new DisplayStatePacket(panels));
+        return panels;
     }
 
     /**

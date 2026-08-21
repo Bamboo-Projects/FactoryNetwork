@@ -2338,6 +2338,62 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void theControllerCanTellAPlayerEverything(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 1, 1);
+        ControllerBlockEntity entity = twoPlants(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                event Takt(nummer: Int)
+
+                display leitstand {
+                    title "Leitstand"
+                    row "Steine" storage.count(item:cobblestone)
+                    progress "Fortschritt" 0.5
+                    button "Anstoßen" wartet
+                }
+
+                multiblock Werk {
+                    devices {
+                        eingang
+                        ausgang
+                    }
+
+                    fn schleusen() {
+                        move 3 item:cobblestone from eingang to ausgang
+                    }
+                }
+
+                fn wartet() {
+                    let ergebnis = await Takt
+                    return ergebnis
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.startFlow("wartet", java.util.List.of());
+        entity.fluids().insert(net.minecraft.world.level.material.Fluids.WATER, 1500);
+
+        // Was das Terminal zu sehen bekommt, entsteht hier. Ohne diese Prüfung
+        // fiele ein Fehler darin erst auf, wenn jemand das Terminal öffnet.
+        var anzeigen = entity.displayPanels();
+        helper.assertValueEqual(anzeigen.size(), 1, "Eine Anzeige");
+        helper.assertValueEqual(anzeigen.get(0).lines().size(), 4, "Vier Zeilen");
+        helper.assertValueEqual(anzeigen.get(0).buttons().get(0), 3,
+                "Der Knopf steht in der vierten Zeile");
+        helper.assertTrue(anzeigen.get(0).lines().get(1).contains("Steine"),
+                "Die Zeile mit dem Bestand: " + anzeigen.get(0).lines().get(1));
+
+        var ablaeufe = entity.flowLines();
+        helper.assertValueEqual(ablaeufe.size(), 1, "Ein wartender Ablauf");
+        helper.assertValueEqual(ablaeufe.get(0).status(), "AWAITING", "Und er wartet");
+
+        helper.assertValueEqual(entity.plants().size(), 2, "Beide Anlagen erscheinen");
+        helper.assertTrue(entity.plants().get(1).contains("fehlt"),
+                "Und die unvollständige sagt es: " + entity.plants().get(1));
+        helper.assertValueEqual(entity.fluidLines().get(0), "water: 1500 mB",
+                "Der Flüssigkeitsbestand");
+        helper.succeed();
+    }
+
     private FactoryNetworkGameTests() {
     }
 }
