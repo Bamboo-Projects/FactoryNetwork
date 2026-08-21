@@ -1378,8 +1378,14 @@ nicht: Ein Tank nimmt nicht unbedingt wieder an, was man ihm gerade entnommen
 hat. Deshalb wird erst gefragt, wie viel hineinpasst, und dann genau so viel
 gezogen. Der Worker meldet „Der Speicher ist voll", statt still nichts zu tun.
 
-### Was noch offen ist
+### Die Fülle steht im Terminal
 
-Flüssigkeiten stehen weiterhin in der Netzübersicht und nicht im
-Speicher-Reiter. Ein Symbolraster bräuchte das Bild der Flüssigkeit — dieselbe
-Frage wie vorher, nur dass jetzt auch eine Sortengrenze anzuzeigen wäre.
+Solange nichts begrenzt war, brauchte niemand zu wissen, wie voll das Netz
+ist. Jetzt schon — und die Zahl, die man ohne Hilfe nicht sieht, sind die
+freien Sortenplätze: Eine Zelle mit allen belegt nimmt nichts Neues mehr an,
+obwohl sie nach Menge fast leer ist. Ohne die Anzeige merkt man es erst am
+stehenden Worker und sucht den Fehler dort.
+
+Deshalb steht rechts unten im Speicher-Reiter, wie viele Plätze frei sind,
+getrennt nach Gegenständen und Flüssigkeiten, und in Warnfarbe, sobald keiner
+mehr da ist.

@@ -184,6 +184,19 @@ public class StorageTabView {
         }
         graphics.drawString(font, font.plainSubstrByWidth(text.getString(), width - 4),
                 x + 2, footerY, TerminalScreen.TEXT_DIM, false);
+
+        // Rechts der Platz, der noch da ist. Ohne ihn merkt man erst am
+        // stehenden Worker, dass keine neue Art mehr hineingeht — und sucht
+        // den Fehler dann beim Worker.
+        int free = ClientStorageView.freeTypes();
+        int freeFluid = ClientStorageView.freeFluidTypes();
+        Component room = free == 0 && freeFluid == 0
+                ? Component.translatable("screen.factorynetwork.terminal.storage.no_room")
+                : Component.translatable("screen.factorynetwork.terminal.storage.room",
+                        free, freeFluid);
+        int roomWidth = font.width(room);
+        graphics.drawString(font, room, x + width - roomWidth - 2, footerY,
+                free == 0 && freeFluid == 0 ? 0xFFD08A3C : TerminalScreen.TEXT_DIM, false);
     }
 
     // ---- Bedienung --------------------------------------------------------

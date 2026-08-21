@@ -25,6 +25,8 @@ public final class ClientStorageView {
 
     private static final Map<Item, Long> amounts = new LinkedHashMap<>();
     private static int totalTypes;
+    private static int freeTypes;
+    private static int freeFluidTypes;
     private static List<Row> filtered = List.of();
     private static String query = "";
     private static StorageSort sort = StorageSort.AMOUNT;
@@ -96,6 +98,8 @@ public final class ClientStorageView {
             }
         }
         totalTypes = packet.totalTypes();
+        freeTypes = packet.freeTypes();
+        freeFluidTypes = packet.freeFluidTypes();
         refilter();
     }
 
@@ -103,6 +107,8 @@ public final class ClientStorageView {
         amounts.clear();
         fluidAmounts.clear();
         totalTypes = 0;
+        freeTypes = 0;
+        freeFluidTypes = 0;
         query = "";
         filtered = List.of();
     }
@@ -126,6 +132,16 @@ public final class ClientStorageView {
 
     public static int totalTypes() {
         return totalTypes;
+    }
+
+    /** Wie viele Artenplätze in den Zellen noch frei sind. */
+    public static int freeTypes() {
+        return freeTypes;
+    }
+
+    /** Dasselbe für die Flüssigkeitszellen. */
+    public static int freeFluidTypes() {
+        return freeFluidTypes;
     }
 
     /** Wurde etwas weggelassen, weil der Bestand zu groß ist? */

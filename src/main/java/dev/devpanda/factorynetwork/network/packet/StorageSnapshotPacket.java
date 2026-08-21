@@ -25,8 +25,14 @@ import java.util.List;
  * Übertragung machen, die man merkt.
  */
 public record StorageSnapshotPacket(List<Entry> entries, List<FluidEntry> fluids,
-                                    boolean replace, int totalTypes)
+                                    boolean replace, int totalTypes,
+                                    int freeTypes, int freeFluidTypes)
         implements CustomPacketPayload {
+
+    // freeTypes und freeFluidTypes sind die Zahl, die man ohne Hilfe nicht
+    // sieht: Eine Zelle mit allen Artenplätzen belegt nimmt nichts Neues mehr
+    // an, obwohl sie nach Menge fast leer ist. Ohne die Anzeige sucht man den
+    // Fehler beim Worker.
 
     /** So viele Arten gehen höchstens über die Leitung. */
     public static final int MAX_ENTRIES = 4096;
@@ -63,6 +69,8 @@ public record StorageSnapshotPacket(List<Entry> entries, List<FluidEntry> fluids
                     StorageSnapshotPacket::fluids,
                     ByteBufCodecs.BOOL, StorageSnapshotPacket::replace,
                     ByteBufCodecs.VAR_INT, StorageSnapshotPacket::totalTypes,
+                    ByteBufCodecs.VAR_INT, StorageSnapshotPacket::freeTypes,
+                    ByteBufCodecs.VAR_INT, StorageSnapshotPacket::freeFluidTypes,
                     StorageSnapshotPacket::new);
 
     @Override

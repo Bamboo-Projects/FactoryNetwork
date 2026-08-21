@@ -144,8 +144,6 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
   Flüssigkeits-Tag geschrieben wird, ist eine Frage an die Sprache und nicht
   nebenbei zu entscheiden — `fluidtag:c/molten` wäre eine vierte Art,
   `tag:` beide zu durchsuchen die andere Möglichkeit.
-- **Flüssigkeiten im Speicher-Reiter.** Sie stehen zurzeit in der
-  Netzübersicht; ein Symbolraster bräuchte das Bild der Flüssigkeit.
 - **Kosten Laufwerke einen Kanal?** Bei AE2 ja. Hier nicht — ein Laufwerk gilt
   wie eine Anzeige als etwas, das dem Netz nichts wegnimmt. Das ist bewusst
   milder; wer den AE2-Druck will, macht daraus einen Kanalverbraucher.

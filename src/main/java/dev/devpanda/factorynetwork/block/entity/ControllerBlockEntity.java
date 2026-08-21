@@ -320,7 +320,8 @@ public class ControllerBlockEntity extends BlockEntity {
                         entry.getValue()))
                 .toList();
         PacketDistributor.sendToPlayer(player,
-                new StorageSnapshotPacket(entries, fluidEntries, replace, contents.size()));
+                new StorageSnapshotPacket(entries, fluidEntries, replace, contents.size(),
+                        storage.freeTypes(), fluidStorage.freeTypes()));
     }
 
     // ---- Abläufe im Terminal ----------------------------------------------

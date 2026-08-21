@@ -2231,12 +2231,15 @@ public final class FactoryNetworkGameTests {
                 java.util.List.of(new dev.devpanda.factorynetwork.network.packet
                         .StorageSnapshotPacket.FluidEntry(
                         net.minecraft.world.level.material.Fluids.WATER, 3000)),
-                true, 1);
+                true, 1, 12, 3);
         var bestandZurueck = roundTrip(helper,
                 dev.devpanda.factorynetwork.network.packet.StorageSnapshotPacket.STREAM_CODEC,
                 bestand);
         helper.assertValueEqual(bestandZurueck.fluids().get(0).amount(), 3000L,
                 "Die Flüssigkeit im Bestand");
+        helper.assertValueEqual(bestandZurueck.freeTypes(), 12, "Freie Artenplätze");
+        helper.assertValueEqual(bestandZurueck.freeFluidTypes(), 3,
+                "Freie Sortenplätze für Flüssigkeiten");
 
         var anzeigen = new dev.devpanda.factorynetwork.network.packet.DisplayStatePacket(
                 java.util.List.of(new dev.devpanda.factorynetwork.network.packet

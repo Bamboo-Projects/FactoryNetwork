@@ -196,5 +196,7 @@
   "item.factorynetwork.fluid_cell_256": "Flüssigkeitszelle 256 Eimer",
   "item.factorynetwork.fluid_cell_1024": "Flüssigkeitszelle 1024 Eimer",
   "item.factorynetwork.fluid_cell_4096": "Flüssigkeitszelle 4096 Eimer",
-  "jade.factorynetwork.drive.fluids": "%s mB in %s Sorten"
+  "jade.factorynetwork.drive.fluids": "%s mB in %s Sorten",
+  "screen.factorynetwork.terminal.storage.room": "%s Plätze frei · %s für Flüssigkeiten",
+  "screen.factorynetwork.terminal.storage.no_room": "Kein Platz für neue Arten"
 }
