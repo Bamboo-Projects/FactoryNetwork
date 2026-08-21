@@ -4,6 +4,7 @@ import dev.devpanda.factorynetwork.FactoryNetwork;
 import dev.devpanda.factorynetwork.block.entity.ConnectorBlockEntity;
 import dev.devpanda.factorynetwork.block.entity.ControllerBlockEntity;
 import dev.devpanda.factorynetwork.block.entity.DisplayBlockEntity;
+import dev.devpanda.factorynetwork.block.entity.DriveBlockEntity;
 import dev.devpanda.factorynetwork.block.entity.TerminalBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.neoforge.registries.DeferredHolder;
@@ -23,6 +24,11 @@ public final class FnBlockEntities {
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<ConnectorBlockEntity>> CONNECTOR =
             BLOCK_ENTITIES.register("connector", () -> BlockEntityType.Builder
                     .of(ConnectorBlockEntity::new, FnBlocks.CONNECTOR.get())
+                    .build(null));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<DriveBlockEntity>> DRIVE =
+            BLOCK_ENTITIES.register("drive", () -> BlockEntityType.Builder
+                    .of(DriveBlockEntity::new, FnBlocks.DRIVE.get())
                     .build(null));
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<DisplayBlockEntity>> DISPLAY =

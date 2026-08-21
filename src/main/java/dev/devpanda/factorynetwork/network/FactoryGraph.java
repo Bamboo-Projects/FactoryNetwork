@@ -4,6 +4,7 @@ import dev.devpanda.factorynetwork.block.CableBlock;
 import dev.devpanda.factorynetwork.block.CableColour;
 import dev.devpanda.factorynetwork.block.ConnectorBlock;
 import dev.devpanda.factorynetwork.block.DisplayBlock;
+import dev.devpanda.factorynetwork.block.DriveBlock;
 import dev.devpanda.factorynetwork.block.entity.ConnectorBlockEntity;
 import dev.devpanda.factorynetwork.util.NameDistance;
 import net.minecraft.core.BlockPos;
@@ -60,6 +61,8 @@ public final class FactoryGraph {
     /** Displays am Netz. Sie zeigen nur an und brauchen keinen Kanal. */
     private final List<BlockPos> displays;
     private final Set<BlockPos> cables;
+    /** Laufwerke am Netz. Sie tragen den Speicher, den das Netz benutzt. */
+    private final List<BlockPos> drives;
     /** Wie viele Kanäle jeder Kabelstrang trägt. */
     private final Map<Node, Integer> channelLoad;
     /**
@@ -78,7 +81,9 @@ public final class FactoryGraph {
 
     private FactoryGraph(Map<String, List<BlockPos>> connectorsByName, List<BlockPos> unnamed,
                          List<BlockPos> starved, List<BlockPos> displays, Set<BlockPos> cables,
-                         Map<Node, Integer> channelLoad, List<Edge> edges, boolean truncated) {
+                         Map<Node, Integer> channelLoad, List<Edge> edges,
+                         List<BlockPos> drives, boolean truncated) {
+        this.drives = drives;
         this.displays = displays;
         this.connectorsByName = connectorsByName;
         this.unnamed = unnamed;
@@ -91,7 +96,12 @@ public final class FactoryGraph {
 
     public static FactoryGraph empty() {
         return new FactoryGraph(Map.of(), List.of(), List.of(), List.of(),
-                Set.of(), Map.of(), List.of(), false);
+                Set.of(), Map.of(), List.of(), List.of(), false);
+    }
+
+    /** Die Laufwerke am Netz. */
+    public List<BlockPos> drives() {
+        return drives;
     }
 
     /** Die Verbindungen des Netzes, für die Anzeige im Raum. */
@@ -140,6 +150,7 @@ public final class FactoryGraph {
         List<BlockPos> starved = new ArrayList<>();
         List<BlockPos> displays = new ArrayList<>();
         Set<BlockPos> cables = new HashSet<>();
+        List<BlockPos> drives = new ArrayList<>();
         Map<Node, Integer> load = new HashMap<>();
         Map<Node, Node> parents = new HashMap<>();
         Set<BlockPos> visitedDevices = new HashSet<>();
@@ -170,6 +181,13 @@ public final class FactoryGraph {
                 BlockState state = level.getBlockState(next);
                 if (state.getBlock() instanceof CableBlock) {
                     visitCable(level, next, current, parents, queue, cables);
+                } else if (state.getBlock() instanceof DriveBlock) {
+                    // Ein Laufwerk stellt Platz bereit, statt welchen zu
+                    // brauchen. Wie eine Anzeige kostet es keinen Kanal —
+                    // anders als bei AE2, wo auch der Lagerraum einen zieht.
+                    if (visitedDevices.add(next.immutable())) {
+                        drives.add(next.immutable());
+                    }
                 } else if (state.getBlock() instanceof DisplayBlock) {
                     // Ein Display zeigt nur an. Es braucht keinen Kanal —
                     // es nimmt dem Netz nichts weg, es liest mit.
@@ -199,7 +217,7 @@ public final class FactoryGraph {
         });
         return new FactoryGraph(Map.copyOf(frozen), List.copyOf(unnamed),
                 List.copyOf(starved), List.copyOf(displays), Set.copyOf(cables),
-                Map.copyOf(load), List.copyOf(edges), truncated);
+                Map.copyOf(load), List.copyOf(edges), List.copyOf(drives), truncated);
     }
 
     /**

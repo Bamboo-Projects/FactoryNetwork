@@ -150,6 +150,23 @@ def blockstates():
             parts.append({"when": {direction: "true"}, "apply": apply})
         write(A + "/blockstates/%s.json" % name, {"multipart": parts})
 
+    # Laufwerk: Front mit Schächten, sonst Maschinengehäuse.
+    write(A + "/models/block/drive.json", {
+        "parent": "minecraft:block/orientable",
+        "textures": {
+            "front": MOD + ":block/drive_front",
+            "side": MOD + ":block/machine_top",
+            "top": MOD + ":block/machine_top",
+        },
+    })
+    drive_variants = {}
+    for direction, rotation in (("north", {}), ("east", {"y": 90}),
+                                ("south", {"y": 180}), ("west", {"y": 270})):
+        entry = {"model": block("drive")}
+        entry.update(rotation)
+        drive_variants["facing=" + direction] = entry
+    write(A + "/blockstates/drive.json", {"variants": drive_variants})
+
     # Connector zeigt in sechs Richtungen.
     facing = {
         "north": {},
@@ -255,7 +272,7 @@ def models():
         },
     })
 
-    for name in ("controller", "connector", "terminal", "display"):
+    for name in ("controller", "connector", "terminal", "display", "drive"):
         write(A + "/models/item/" + name + ".json", {"parent": block(name)})
     write(A + "/models/item/label_gun.json", {
         "parent": "minecraft:item/handheld",
@@ -265,12 +282,18 @@ def models():
         "parent": "minecraft:item/handheld",
         "textures": {"layer0": MOD + ":item/network_analyser"},
     })
+    for tier in ("k1", "k4", "k16", "k64"):
+        write(A + "/models/item/cell_%s.json" % tier, {
+            "parent": "minecraft:item/generated",
+            "textures": {"layer0": MOD + ":item/cell_" + tier},
+        })
+    write(A + "/models/item/drive.json", {"parent": block("drive")})
 
 
 # ---- Loot und Rezepte ----------------------------------------------------
 
 def loot_and_recipes():
-    for name in ("controller", "connector", "terminal", "display"):
+    for name in ("controller", "connector", "terminal", "display", "drive"):
         write(D + "/loot_table/blocks/" + name + ".json", {
             "type": "minecraft:block",
             "pools": [{
@@ -352,6 +375,45 @@ def loot_and_recipes():
         "result": {"id": MOD + ":label_gun", "count": 1},
     })
 
+    # Das Laufwerk: ein Gehäuse mit Schächten.
+    write(D + "/recipe/drive.json", {
+        "type": "minecraft:crafting_shaped",
+        "category": "misc",
+        "pattern": ["III", "RCR", "III"],
+        "key": {
+            "I": {"item": "minecraft:iron_ingot"},
+            "R": {"item": "minecraft:redstone"},
+            "C": {"item": "minecraft:chest"},
+        },
+        "result": {"id": MOD + ":drive", "count": 1},
+    })
+
+    # Die Zellen. Die kleinste aus Quarz, jede weitere aus vier der
+    # vorherigen — so kostet eine 64k genau vierundsechzig kleine, und die
+    # Zahl im Namen stimmt mit dem Preis überein.
+    write(D + "/recipe/cell_k1.json", {
+        "type": "minecraft:crafting_shaped",
+        "category": "misc",
+        "pattern": ["IQI", "QRQ", "III"],
+        "key": {
+            "I": {"item": "minecraft:iron_ingot"},
+            "Q": {"item": "minecraft:quartz"},
+            "R": {"item": "minecraft:redstone"},
+        },
+        "result": {"id": MOD + ":cell_k1", "count": 1},
+    })
+    for kleiner, groesser in (("k1", "k4"), ("k4", "k16"), ("k16", "k64")):
+        write(D + "/recipe/cell_%s.json" % groesser, {
+            "type": "minecraft:crafting_shaped",
+            "category": "misc",
+            "pattern": [" C ", "CIC", " C "],
+            "key": {
+                "C": {"item": MOD + ":cell_" + kleiner},
+                "I": {"item": "minecraft:iron_ingot"},
+            },
+            "result": {"id": MOD + ":cell_" + groesser, "count": 1},
+        })
+
     # Der Analysator: Redstone fuer das Messen, Quarz fuer die Anzeige, Eisen
     # fuer das Gehaeuse. Nicht teuer — wer ihn braucht, hat schon ein Problem.
     write(D + "/recipe/network_analyser.json", {
@@ -417,7 +479,8 @@ def loot_and_recipes():
     # Spitzhacke reicht zum Abbauen.
     write(D + "/tags/block/mineable/pickaxe.json", {
         "values": [MOD + ":controller", MOD + ":cable", MOD + ":dense_cable",
-                   MOD + ":connector", MOD + ":terminal", MOD + ":display"],
+                   MOD + ":connector", MOD + ":terminal", MOD + ":display",
+                   MOD + ":drive"],
     })
 
 

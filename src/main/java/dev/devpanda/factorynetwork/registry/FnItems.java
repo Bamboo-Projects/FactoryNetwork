@@ -1,6 +1,8 @@
 package dev.devpanda.factorynetwork.registry;
 
 import dev.devpanda.factorynetwork.FactoryNetwork;
+import dev.devpanda.factorynetwork.storage.CellTier;
+import dev.devpanda.factorynetwork.storage.StorageCellItem;
 import dev.devpanda.factorynetwork.item.LabelGunItem;
 import dev.devpanda.factorynetwork.item.NetworkAnalyserItem;
 import dev.devpanda.factorynetwork.block.CableColour;
@@ -69,6 +71,28 @@ public final class FnItems {
     /** Vergibt einem Connector seinen Namen. */
     public static final DeferredItem<Item> LABEL_GUN = ITEMS.register("label_gun",
             () -> new LabelGunItem(new Item.Properties().stacksTo(1)));
+
+    /** Der Lagerraum: ein Block, der Zellen aufnimmt. */
+    public static final DeferredItem<net.minecraft.world.item.BlockItem> DRIVE =
+            ITEMS.registerSimpleBlockItem(FnBlocks.DRIVE);
+
+    /**
+     * Die vier Zellengrößen.
+     *
+     * <p>Jede hat zwei Grenzen: wie viele Arten und wie viele Gegenstände.
+     * Die Arten sind das Knappe — wer alles in eine Zelle wirft, hat sie voll,
+     * lange bevor die Menge erreicht ist.
+     */
+    public static final Map<CellTier, DeferredItem<Item>> CELLS = registerCells();
+
+    private static Map<CellTier, DeferredItem<Item>> registerCells() {
+        Map<CellTier, DeferredItem<Item>> cells = new LinkedHashMap<>();
+        for (CellTier tier : CellTier.values()) {
+            cells.put(tier, ITEMS.register("cell_" + tier.getSerializedName(),
+                    () -> new StorageCellItem(tier, new Item.Properties())));
+        }
+        return Map.copyOf(cells);
+    }
 
     /** Zeigt das Netz als Gerüst in der Welt — auch durch Wände. */
     public static final DeferredItem<Item> ANALYSER = ITEMS.register("network_analyser",

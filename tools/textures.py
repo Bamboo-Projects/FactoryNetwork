@@ -405,6 +405,59 @@ def network_analyser():
     return img
 
 
+CELL_TONE = {
+    "1k": (150, 160, 172),
+    "4k": (150, 172, 152),
+    "16k": (172, 160, 140),
+    "64k": (176, 148, 168),
+}
+
+
+def storage_cell(label):
+    """Eine Speicherzelle: Gehäuse, Fenster, Beschriftung durch Farbe.
+
+    Die vier Größen unterscheiden sich im Ton, nicht in der Form — im Hotbar
+    zählt, dass man sie auseinanderhält, nicht dass man die Größe abliest.
+    """
+    ton = CELL_TONE[label]
+    img = Image.new("RGBA", (N, N), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+
+    # Gehäuse mit Fase
+    d.rounded_rectangle([16, 12, 48, 52], radius=3,
+                        fill=blend(ton, EDGE, 0.2) + (255,), outline=EDGE + (255,))
+    d.line([(19, 15), (45, 15)], fill=blend(ton, (255, 255, 255), 0.5) + (255,))
+
+    # Sichtfenster mit Füllstandsstreifen
+    d.rectangle([21, 19, 43, 38], fill=EDGE + (255,))
+    d.rectangle([23, 21, 41, 36], fill=blend(ton, EDGE, 0.55) + (255,))
+    for i, y in enumerate(range(23, 36, 4)):
+        hell = blend(ACCENT, ton, 0.25) if i < 2 else blend(ton, EDGE, 0.4)
+        d.rectangle([25, y, 39, y + 2], fill=hell + (255,))
+
+    # Kontakte unten — hier steckt sie im Laufwerk
+    for x in range(22, 43, 6):
+        d.rectangle([x, 43, x + 3, 49], fill=BRASS + (255,), outline=EDGE + (255,))
+    return img
+
+
+def drive_front():
+    """Die Vorderseite des Laufwerks: zehn Schächte in zwei Reihen."""
+    img = surface()
+    d = ImageDraw.Draw(img)
+    bevel(d)
+    d.rectangle([8, 10, 55, 53], fill=EDGE + (255,))
+    for reihe in range(5):
+        for spalte in range(2):
+            x = 11 + spalte * 23
+            y = 13 + reihe * 8
+            d.rectangle([x, y, x + 19, y + 5],
+                        fill=blend(BODY_TOP, EDGE, 0.45) + (255,))
+            # Betriebslämpchen je Schacht
+            d.rectangle([x + 16, y + 1, x + 18, y + 3], fill=ACCENT + (255,))
+    return img
+
+
 def main():
     print("Blocktexturen (64x64):")
     save(controller_top(), "block", "controller_top")
@@ -422,9 +475,12 @@ def main():
     save(terminal_side(), "block", "terminal_side")
     save(display_front(), "block", "display_front")
     save(display_side(), "block", "display_side")
+    save(drive_front(), "block", "drive_front")
     print("Gegenstandstexturen:")
     save(label_gun(), "item", "label_gun")
     save(network_analyser(), "item", "network_analyser")
+    for label in ("1k", "4k", "16k", "64k"):
+        save(storage_cell(label), "item", "cell_k" + label.replace("k", ""))
 
 
 if __name__ == "__main__":

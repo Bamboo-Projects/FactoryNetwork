@@ -3,6 +3,7 @@ package dev.devpanda.factorynetwork.registry;
 import dev.devpanda.factorynetwork.FactoryNetwork;
 import dev.devpanda.factorynetwork.block.CableBlock;
 import dev.devpanda.factorynetwork.block.DenseCableBlock;
+import dev.devpanda.factorynetwork.block.DriveBlock;
 import dev.devpanda.factorynetwork.block.ConnectorBlock;
 import dev.devpanda.factorynetwork.block.ControllerBlock;
 import dev.devpanda.factorynetwork.block.DisplayBlock;
@@ -39,6 +40,10 @@ public final class FnBlocks {
                     .strength(0.8F)
                     .sound(SoundType.METAL)
                     .noOcclusion()));
+
+    /** Nimmt Speicherzellen auf — der Lagerraum des Netzes. */
+    public static final DeferredBlock<Block> DRIVE = BLOCKS.register("drive",
+            () -> new DriveBlock(machineProperties()));
 
     /** Gibt einer angrenzenden Maschine einen Namen im Netzwerk. */
     public static final DeferredBlock<Block> CONNECTOR = BLOCKS.register("connector",

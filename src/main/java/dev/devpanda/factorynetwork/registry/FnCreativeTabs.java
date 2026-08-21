@@ -27,6 +27,8 @@ public final class FnCreativeTabs {
                         output.accept(FnItems.DISPLAY.get());
                         output.accept(FnItems.LABEL_GUN.get());
                         output.accept(FnItems.ANALYSER.get());
+                        output.accept(FnItems.DRIVE.get());
+                        FnItems.CELLS.values().forEach(cell -> output.accept(cell.get()));
                     })
                     .build());
 

@@ -14,6 +14,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
@@ -56,6 +57,32 @@ public final class FactoryNetworkGameTests {
         helper.setBlock(sourceConnector.north(), Blocks.CHEST);
         helper.setBlock(targetConnector.south(), Blocks.CHEST);
 
+        name(helper, sourceConnector, "quarry_output");
+        name(helper, targetConnector, "depot");
+
+        // Ein Laufwerk mit grosser Zelle: Seit es Zellen gibt, lagert ein Netz
+        // ohne Laufwerk nichts. Wer den Speicher selbst prueft, nimmt
+        // bareSetup und stellt sich sein Laufwerk hin.
+        driveWithCell(helper, controller.above(),
+                dev.devpanda.factorynetwork.storage.CellTier.K64);
+        return controller;
+    }
+
+    /** Derselbe Aufbau ohne Laufwerk — fuer die Pruefungen am Speicher selbst. */
+    private static BlockPos bareSetup(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 1, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        BlockPos cable = controller.east();
+        helper.setBlock(cable, FnBlocks.CABLE.get());
+
+        BlockPos sourceConnector = cable.north();
+        BlockPos targetConnector = cable.south();
+        helper.setBlock(sourceConnector, FnBlocks.CONNECTOR.get().defaultBlockState()
+                .setValue(dev.devpanda.factorynetwork.block.ConnectorBlock.FACING, Direction.NORTH));
+        helper.setBlock(targetConnector, FnBlocks.CONNECTOR.get().defaultBlockState()
+                .setValue(dev.devpanda.factorynetwork.block.ConnectorBlock.FACING, Direction.SOUTH));
+        helper.setBlock(sourceConnector.north(), Blocks.CHEST);
+        helper.setBlock(targetConnector.south(), Blocks.CHEST);
         name(helper, sourceConnector, "quarry_output");
         name(helper, targetConnector, "depot");
         return controller;
@@ -530,6 +557,7 @@ public final class FactoryNetworkGameTests {
     public static void storageExtractionIsCappedByWhatIsThere(GameTestHelper helper) {
         BlockPos controller = buildSetup(helper);
         ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
         entity.storage().insert(Items.IRON_INGOT, 3);
 
         // Die Anzeige kann veraltet sein: Wer 64 anfordert, bekommt die 3,
@@ -552,27 +580,34 @@ public final class FactoryNetworkGameTests {
 
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void storageSurvivesAMissingMod(GameTestHelper helper) {
-        BlockPos controller = buildSetup(helper);
+        BlockPos controller = bareSetup(helper);
+        driveWithCell(helper, controller.above(),
+                dev.devpanda.factorynetwork.storage.CellTier.K1);
         ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
         entity.storage().insert(Items.IRON_INGOT, 5);
 
-        // Ein Eintrag aus einer Mod, die es nicht mehr gibt, darf beim Laden
-        // nicht als Luft im Bestand landen.
-        net.minecraft.nbt.CompoundTag tag = new net.minecraft.nbt.CompoundTag();
-        entity.storage().save(tag, helper.getLevel().registryAccess());
-        net.minecraft.nbt.ListTag entries =
-                tag.getList("Entries", net.minecraft.nbt.Tag.TAG_COMPOUND);
-        net.minecraft.nbt.CompoundTag ghost = new net.minecraft.nbt.CompoundTag();
-        ghost.putString("Item", "verschwundene_mod:zauberstab");
-        ghost.putLong("Count", 99);
-        entries.add(ghost);
+        // Ein Eintrag aus einer Mod, die es nicht mehr gibt, darf beim Lesen
+        // nicht als Luft im Bestand landen. Der Bestand liegt jetzt in der
+        // Zelle, also wird dort geprüft.
+        var drive = (dev.devpanda.factorynetwork.block.entity.DriveBlockEntity)
+                helper.getBlockEntity(controller.above());
+        ItemStack cell = drive.cell(0);
+        net.minecraft.world.item.component.CustomData.update(
+                net.minecraft.core.component.DataComponents.CUSTOM_DATA, cell, tag -> {
+                    net.minecraft.nbt.ListTag entries =
+                            tag.getList("Cell", net.minecraft.nbt.Tag.TAG_COMPOUND);
+                    net.minecraft.nbt.CompoundTag ghost = new net.minecraft.nbt.CompoundTag();
+                    ghost.putString("Item", "verschwundene_mod:zauberstab");
+                    ghost.putLong("Count", 99);
+                    entries.add(ghost);
+                    tag.put("Cell", entries);
+                });
 
-        dev.devpanda.factorynetwork.network.NetworkStorage reloaded =
-                new dev.devpanda.factorynetwork.network.NetworkStorage();
-        reloaded.load(tag, helper.getLevel().registryAccess());
-        helper.assertValueEqual(reloaded.distinctTypes(), 1,
+        var inhalt = dev.devpanda.factorynetwork.storage.CellContents.read(cell);
+        helper.assertValueEqual(inhalt.size(), 1,
                 "nur der bekannte Gegenstand darf überleben");
-        helper.assertValueEqual(reloaded.count(Items.IRON_INGOT), 5L, "Bestand");
+        helper.assertValueEqual(inhalt.getOrDefault(Items.IRON_INGOT, 0L), 5L, "Bestand");
         helper.succeed();
     }
 
@@ -742,6 +777,8 @@ public final class FactoryNetworkGameTests {
             helper.setBlock(connector.above(), Blocks.CHEST);
             name(helper, connector, "kiste_" + (i + 1));
         }
+        driveWithCell(helper, controller.above(),
+                dev.devpanda.factorynetwork.storage.CellTier.K64);
         return controllerAt(helper, controller);
     }
 
@@ -816,6 +853,8 @@ public final class FactoryNetworkGameTests {
         BlockPos controller = new BlockPos(1, 1, 1);
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
         helper.setBlock(controller.east(), FnBlocks.CABLE.get());
+        driveWithCell(helper, controller.above(),
+                dev.devpanda.factorynetwork.storage.CellTier.K64);
 
         BlockPos display = controller.east().east();
         helper.setBlock(display, FnBlocks.DISPLAY.get());
@@ -827,6 +866,9 @@ public final class FactoryNetworkGameTests {
         }
 
         ControllerBlockEntity controllerEntity = controllerAt(helper, controller);
+        // Erst das Netz aufbauen: Ohne das kennt der Speicher sein Laufwerk
+        // nicht, und dann lagert er nichts.
+        controllerEntity.rebuildNetwork();
         controllerEntity.storage().insert(Items.IRON_INGOT, 1234);
         helper.assertTrue(controllerEntity.deploy("""
                 display lager {
@@ -2808,6 +2850,103 @@ public final class FactoryNetworkGameTests {
 
         helper.assertTrue(entity.graph().starvedConnectors().size() >= 1,
                 "Das schwächste Stück muss begrenzen — leer ausgegangen ist aber keines");
+        helper.succeed();
+    }
+
+    /** Setzt ein Laufwerk ans Kabel und steckt eine Zelle hinein. */
+    private static void driveWithCell(GameTestHelper helper, BlockPos at,
+            dev.devpanda.factorynetwork.storage.CellTier tier) {
+        helper.setBlock(at, FnBlocks.DRIVE.get());
+        if (helper.getBlockEntity(at)
+                instanceof dev.devpanda.factorynetwork.block.entity.DriveBlockEntity drive) {
+            drive.setCell(0, new ItemStack(
+                    dev.devpanda.factorynetwork.registry.FnItems.CELLS.get(tier).get()));
+        } else {
+            helper.fail("Am Laufwerk hängt keine BlockEntity", at);
+        }
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void withoutADriveNothingIsStored(GameTestHelper helper) {
+        BlockPos controller = bareSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        // Lagerraum ist jetzt etwas, das man baut. Ohne Laufwerk gibt es
+        // keinen — und das Einlagern muss das sagen, nicht schlucken.
+        long rest = entity.storage().insert(Items.IRON_INGOT, 64);
+        helper.assertValueEqual(rest, 64L, "Ohne Laufwerk passt nichts hinein");
+        helper.assertValueEqual(entity.storage().count(Items.IRON_INGOT), 0L, "Bestand");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void aCellHoldsWhatFitsIntoIt(GameTestHelper helper) {
+        BlockPos controller = bareSetup(helper);
+        driveWithCell(helper, controller.above(),
+                dev.devpanda.factorynetwork.storage.CellTier.K1);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertValueEqual(entity.storage().insert(Items.IRON_INGOT, 64), 0L,
+                "Das passt hinein");
+        helper.assertValueEqual(entity.storage().count(Items.IRON_INGOT), 64L, "Bestand");
+
+        // Die Menge einer 1k-Zelle ist achttausend.
+        helper.assertValueEqual(entity.storage().insert(Items.COBBLESTONE, 8_000), 64L,
+                "Was über die Menge geht, bleibt draußen");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void aCellRunsOutOfTypesBeforeAmount(GameTestHelper helper) {
+        BlockPos controller = bareSetup(helper);
+        driveWithCell(helper, controller.above(),
+                dev.devpanda.factorynetwork.storage.CellTier.K1);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        // Acht Arten passen in eine 1k-Zelle, die neunte nicht — obwohl die
+        // Menge bei weitem nicht erreicht ist. Genau das treibt zum Sortieren.
+        Item[] arten = {Items.IRON_INGOT, Items.GOLD_INGOT, Items.COPPER_INGOT,
+                Items.COBBLESTONE, Items.DIRT, Items.SAND, Items.GRAVEL, Items.OAK_LOG};
+        for (Item art : arten) {
+            helper.assertValueEqual(entity.storage().insert(art, 1), 0L,
+                    "Art " + art + " muss hineinpassen");
+        }
+        helper.assertValueEqual(entity.storage().insert(Items.STONE, 1), 1L,
+                "Die neunte Art findet keinen Platz mehr");
+
+        // Von einer schon vorhandenen Art geht dagegen weiter etwas hinein —
+        // sonst müsste man beim Aufräumen jede Zelle einzeln im Blick haben.
+        helper.assertValueEqual(entity.storage().insert(Items.IRON_INGOT, 100), 0L,
+                "Was schon drin ist, nimmt sie weiter an");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void theStoredGoodsRideAlongInTheCell(GameTestHelper helper) {
+        BlockPos controller = bareSetup(helper);
+        BlockPos drivePos = controller.above();
+        driveWithCell(helper, drivePos, dev.devpanda.factorynetwork.storage.CellTier.K4);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        entity.storage().insert(Items.DIAMOND, 12);
+
+        // Der Bestand steckt im Gegenstand, nicht im Laufwerk. Das ist der
+        // Grund, warum eine Zelle etwas wert ist.
+        var drive = (dev.devpanda.factorynetwork.block.entity.DriveBlockEntity)
+                helper.getBlockEntity(drivePos);
+        ItemStack cell = drive.cell(0);
+        var inhalt = dev.devpanda.factorynetwork.storage.CellContents.read(cell);
+        helper.assertValueEqual(inhalt.getOrDefault(Items.DIAMOND, 0L), 12L,
+                "Die Zelle trägt ihren Inhalt selbst");
+
+        // Zelle heraus: Das Netz hat nichts mehr.
+        drive.setCell(0, ItemStack.EMPTY);
+        entity.rebuildNetwork();
+        helper.assertValueEqual(entity.storage().count(Items.DIAMOND), 0L,
+                "Ohne die Zelle ist der Bestand weg");
         helper.succeed();
     }
 

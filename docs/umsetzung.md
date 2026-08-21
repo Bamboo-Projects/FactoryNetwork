@@ -83,6 +83,8 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | Worker | `from`, `to`, `filter`, `maintain`, `rate`, `when`, `strategy`, `overflow` |
 | Auswahl | einzelne Gegenstände, Tags, Muster, `except` |
 | Flüssigkeiten | `move` und Worker, Bestand im Netz, in Millibucket |
+| Speicher | Laufwerke mit zehn Plätzen, Zellen in vier Größen, Bestand in der Zelle |
+| Werkzeuge | Beschriftungspistole, Netzanalysator mit Sicht durch Wände |
 | Funktionen | Bedingungen, Schleifen, `move`, Redstone lesen, `log` |
 | Ereignisse | `redstone_changed`, `device_online/offline/changed`, eigene über `emit` und `on` |
 | Abläufe | `sleep`, `await` mit `where`, `timeout` und `else`, `for` mit Warten je Runde |
@@ -92,7 +94,7 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | Netzwerk | Graph über Kabel, Speicher schlüsselbasiert, Kanäle je Strang |
 | Editor | Syntaxfarben, Fehler beim Tippen, Vervollständigung nach Stelle |
 | Anzeigen | Am Block und im Terminal, Knöpfe starten Abläufe |
-| Prüfung | 87 Einheitstests, 82 GameTests |
+| Prüfung | 87 Einheitstests, 86 GameTests |
 
 ## 3. Was noch nicht läuft
 
@@ -124,23 +126,12 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
   `tag:` beide zu durchsuchen die andere Möglichkeit.
 - **Flüssigkeiten im Speicher-Reiter.** Sie stehen zurzeit in der
   Netzübersicht; ein Symbolraster bräuchte das Bild der Flüssigkeit.
-- **Ein eigener Speicherblock.** Der Speicher sitzt zurzeit im Controller und
-  ist unbegrenzt. **Auch das gehört entschieden, bevor es gebaut wird** — es
-  ist eine Gameplay-Frage, keine technische.
-
-  1. **Feste Kapazität je Block.** Ein Lagerblock steuert Platz bei, mehrere
-     ergeben mehr. Einfach zu erklären, einfach zu bauen, aber ohne Reiz: Man
-     stellt eine Reihe hin und denkt nie wieder daran.
-  2. **Zellen wie bei AE2.** Der Block nimmt Speicherzellen auf, jede mit
-     Grenzen für Arten und Menge. Das ist der Grund, warum in AE2 überhaupt
-     sortiert wird — und der Teil, den Spieler an dem System mögen.
-  3. **So lassen.** Unbegrenzt, im Controller. Ehrlich für eine Mod, deren
-     Reiz die Sprache ist und nicht die Lagerhaltung.
-
-  Empfehlung: **(2)**, aber erst nach den Conduits. Es ist die Antwort, die zu
-  einer Mod passt, die sich an AE2 anlehnt — und die einzige, die dem Netz
-  etwas abverlangt. Bis dahin ist **(3)** kein Provisorium, sondern eine
-  verteidigbare Zwischenstufe.
+- **Flüssigkeitszellen.** Gegenstände liegen in Zellen, Flüssigkeiten noch
+  unbegrenzt im Controller. Dieselbe Bauart lässt sich übertragen; offen ist
+  nur, welche Mengen eine Fluidzelle fasst.
+- **Kosten Laufwerke einen Kanal?** Bei AE2 ja. Hier nicht — ein Laufwerk gilt
+  wie eine Anzeige als etwas, das dem Netz nichts wegnimmt. Das ist bewusst
+  milder; wer den AE2-Druck will, macht daraus einen Kanalverbraucher.
 - **Autocrafting.** Der letzte ausgegraute Reiter.
 - **Chemikalien** aus Mekanism. Die Schreibweise steht seit dem Entwurf.
 

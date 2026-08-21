@@ -188,6 +188,17 @@ public class ControllerBlockEntity extends BlockEntity {
         graph = FactoryGraph.build(level, worldPosition);
         lastRebuild = level.getGameTime();
         networkKnown = true;
+        // Der Speicher ist die Summe der Laufwerke im Netz. Ohne diesen
+        // Schritt lagert der Controller nichts — was auch stimmt: Ohne
+        // Laufwerk gibt es keinen Platz.
+        List<DriveBlockEntity> found = new ArrayList<>();
+        for (BlockPos pos : graph.drives()) {
+            if (level.isLoaded(pos)
+                    && level.getBlockEntity(pos) instanceof DriveBlockEntity drive) {
+                found.add(drive);
+            }
+        }
+        storage.setDrives(found);
         announceDeviceChanges(before);
     }
 
