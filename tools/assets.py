@@ -29,7 +29,7 @@ CABLE_COLOURS = [
 # einzelnes Kabel soll aussehen wie bisher. Ab zwei wird geteilt und alle
 # werden vier Pixel dick; mehr passt nicht in sechzehn Pixel, ohne dass sie
 # sich berühren.
-# Die beiden Kabelstärken in Blockpixeln — dieselben Werte wie bei AE2 fuer
+# Die beiden Kabelstärken in Blockpixeln — dieselben Werte wie bei AE2 für
 # ummantelte und dichte Kabel, und dieselben wie in CableLayout.java.
 THIN = 6
 DENSE = 10
@@ -627,8 +627,8 @@ def loot_and_recipes():
     press_recipe("core_network", "network", {"item": MOD + ":plate"},
                  MOD + ":core_network", 1, 3000, 120)
 
-    # Der Analysator: Redstone fuer das Messen, Quarz fuer die Anzeige, Eisen
-    # fuer das Gehaeuse. Nicht teuer — wer ihn braucht, hat schon ein Problem.
+    # Der Analysator: Redstone für das Messen, Quarz für die Anzeige, Eisen
+    # für das Gehäuse. Nicht teuer — wer ihn braucht, hat schon ein Problem.
     write(D + "/recipe/network_analyser.json", {
         "type": "minecraft:crafting_shaped",
         "category": "equipment",

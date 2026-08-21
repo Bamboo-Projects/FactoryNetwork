@@ -340,10 +340,10 @@ public class CodeEditor {
                 return true;
             }
             case 86 -> { // V: einfügen
-                String inhalt = Minecraft.getInstance().keyboardHandler.getClipboard();
-                if (inhalt != null && !inhalt.isEmpty()) {
+                String clipboard = Minecraft.getInstance().keyboardHandler.getClipboard();
+                if (clipboard != null && !clipboard.isEmpty()) {
                     remember(EditKind.STRUCTURAL);
-                    insertMultiline(inhalt);
+                    insertMultiline(clipboard);
                     clearSuggestions();
                 }
                 return true;
@@ -408,13 +408,13 @@ public class CodeEditor {
     }
 
     /** Bewegt den Cursor und führt dabei die Auswahl nach. */
-    private void move(Runnable bewegung) {
+    private void move(Runnable movement) {
         if (net.minecraft.client.gui.screens.Screen.hasShiftDown()) {
             anchorIfNeeded();
         } else {
             clearSelection();
         }
-        bewegung.run();
+        movement.run();
     }
 
     public boolean keyPressed(int key, int scanCode, int modifiers) {
@@ -588,15 +588,15 @@ public class CodeEditor {
             return;
         }
         String line = lines.get(lineIndex);
-        int von = lineIndex == b[0] ? Math.min(b[1], line.length()) : 0;
-        int bis = lineIndex == b[2] ? Math.min(b[3], line.length()) : line.length();
-        int links = textX + font.width(line.substring(0, von));
+        int from = lineIndex == b[0] ? Math.min(b[1], line.length()) : 0;
+        int to = lineIndex == b[2] ? Math.min(b[3], line.length()) : line.length();
+        int left = textX + font.width(line.substring(0, from));
         // Eine leere Zeile mitten in der Auswahl bekommt einen schmalen
         // Streifen — sonst sieht es aus, als wäre sie nicht mit dabei.
-        int rechts = von == bis && lineIndex != b[2]
-                ? links + 4
-                : textX + font.width(line.substring(0, bis));
-        graphics.fill(links, lineY - 1, Math.min(rechts, x + width - 2),
+        int right = from == to && lineIndex != b[2]
+                ? left + 4
+                : textX + font.width(line.substring(0, to));
+        graphics.fill(left, lineY - 1, Math.min(right, x + width - 2),
                 lineY + LINE_HEIGHT - 2, EditorColours.SELECTION);
     }
 
@@ -626,12 +626,12 @@ public class CodeEditor {
         int endLine = cursorLine;
         int endColumn = cursorColumn;
         if (startLine > endLine || (startLine == endLine && startColumn > endColumn)) {
-            int hilfsZeile = startLine;
-            int hilfsSpalte = startColumn;
+            int swapLine = startLine;
+            int swapColumn = startColumn;
             startLine = endLine;
             startColumn = endColumn;
-            endLine = hilfsZeile;
-            endColumn = hilfsSpalte;
+            endLine = swapLine;
+            endColumn = swapColumn;
         }
         return new int[] {startLine, startColumn, endLine, endColumn};
     }
@@ -665,14 +665,14 @@ public class CodeEditor {
         int[] b = selectionBounds();
         String first = lines.get(b[0]);
         String last = lines.get(b[2]);
-        String kopf = first.substring(0, Math.min(b[1], first.length()));
-        String schwanz = last.substring(Math.min(b[3], last.length()));
+        String head = first.substring(0, Math.min(b[1], first.length()));
+        String tail = last.substring(Math.min(b[3], last.length()));
         for (int i = b[2]; i > b[0]; i--) {
             lines.remove(i);
         }
-        lines.set(b[0], kopf + schwanz);
+        lines.set(b[0], head + tail);
         cursorLine = b[0];
-        cursorColumn = kopf.length();
+        cursorColumn = head.length();
         clearSelection();
         changed();
     }
@@ -691,25 +691,25 @@ public class CodeEditor {
         // Fremde Zeilenenden und Tabulatoren vereinheitlichen: Wer aus einem
         // Editor kopiert, bringt sonst Steuerzeichen mit, die hier nichts
         // verloren haben.
-        String bereinigt = normalise(text);
-        String[] teile = bereinigt.split("\n", -1);
-        if (teile.length == 1) {
-            insert(teile[0]);
+        String cleaned = normalise(text);
+        String[] parts = cleaned.split("\n", -1);
+        if (parts.length == 1) {
+            insert(parts[0]);
             return;
         }
         String line = lines.get(cursorLine);
         int column = Math.min(cursorColumn, line.length());
-        String vor = line.substring(0, column);
-        String nach = line.substring(column);
+        String before = line.substring(0, column);
+        String after = line.substring(column);
 
-        lines.set(cursorLine, vor + teile[0]);
-        for (int i = 1; i < teile.length; i++) {
-            lines.add(cursorLine + i, teile[i]);
+        lines.set(cursorLine, before + parts[0]);
+        for (int i = 1; i < parts.length; i++) {
+            lines.add(cursorLine + i, parts[i]);
         }
-        int letzte = cursorLine + teile.length - 1;
-        cursorColumn = lines.get(letzte).length();
-        lines.set(letzte, lines.get(letzte) + nach);
-        cursorLine = letzte;
+        int last = cursorLine + parts.length - 1;
+        cursorColumn = lines.get(last).length();
+        lines.set(last, lines.get(last) + after);
+        cursorLine = last;
         changed();
     }
 
@@ -1045,11 +1045,11 @@ public class CodeEditor {
             backspace();
             return;
         }
-        int von = cursorColumn;
+        int from = cursorColumn;
         moveWordLeft();
         String line = lines.get(cursorLine);
         lines.set(cursorLine, line.substring(0, cursorColumn)
-                + line.substring(Math.min(von, line.length())));
+                + line.substring(Math.min(from, line.length())));
         changed();
     }
 
@@ -1064,21 +1064,22 @@ public class CodeEditor {
      * wäre bei mehreren Zeilen nie das Gemeinte.
      */
     void indentLines(boolean out) {
-        int erste = hasSelection() ? selectionBounds()[0] : cursorLine;
-        int letzte = hasSelection() ? selectionBounds()[2] : cursorLine;
-        for (int i = erste; i <= letzte; i++) {
+        int first = hasSelection() ? selectionBounds()[0] : cursorLine;
+        int last = hasSelection() ? selectionBounds()[2] : cursorLine;
+        for (int i = first; i <= last; i++) {
             String line = lines.get(i);
             if (out) {
-                int weg = 0;
-                while (weg < 4 && weg < line.length() && line.charAt(weg) == ' ') {
-                    weg++;
+                int removed = 0;
+                while (removed < 4 && removed < line.length()
+                        && line.charAt(removed) == ' ') {
+                    removed++;
                 }
-                lines.set(i, line.substring(weg));
+                lines.set(i, line.substring(removed));
                 if (i == cursorLine) {
-                    cursorColumn = Math.max(0, cursorColumn - weg);
+                    cursorColumn = Math.max(0, cursorColumn - removed);
                 }
                 if (i == anchorLine) {
-                    anchorColumn = Math.max(0, anchorColumn - weg);
+                    anchorColumn = Math.max(0, anchorColumn - removed);
                 }
             } else {
                 lines.set(i, "    " + line);

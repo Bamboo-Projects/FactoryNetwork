@@ -68,7 +68,7 @@ public final class FactoryNetworkGameTests {
         return controller;
     }
 
-    /** Derselbe Aufbau ohne Laufwerk — fuer die Pruefungen am Speicher selbst. */
+    /** Derselbe Aufbau ohne Laufwerk — für die Prüfungen am Speicher selbst. */
     private static BlockPos bareSetup(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 1, 1);
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
