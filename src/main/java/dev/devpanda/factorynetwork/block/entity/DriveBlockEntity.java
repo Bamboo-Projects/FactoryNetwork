@@ -31,6 +31,9 @@ public class DriveBlockEntity extends BlockEntity {
     private final NonNullList<ItemStack> cells =
             NonNullList.withSize(SLOTS, ItemStack.EMPTY);
 
+    /** Die offenen Zellen, nach Platznummer. */
+    private final java.util.Map<Integer, CellInventory> open = new java.util.HashMap<>();
+
     public DriveBlockEntity(BlockPos pos, BlockState state) {
         super(FnBlockEntities.DRIVE.get(), pos, state);
     }
@@ -42,6 +45,12 @@ public class DriveBlockEntity extends BlockEntity {
     public void setCell(int slot, ItemStack stack) {
         if (slot < 0 || slot >= SLOTS) {
             return;
+        }
+        // Erst zurückschreiben, dann tauschen: Eine Zelle, die herausgeht,
+        // nimmt ihren Bestand mit — aber nur, wenn er im Gegenstand steht.
+        CellInventory alt = open.remove(slot);
+        if (alt != null) {
+            alt.flush();
         }
         cells.set(slot, stack);
         setChanged();
@@ -55,23 +64,53 @@ public class DriveBlockEntity extends BlockEntity {
     }
 
     /**
-     * Die eingesetzten Zellen als Speicher.
+     * Die eingesetzten Zellen als lebende Speicher.
      *
-     * <p>Frisch gelesen bei jedem Aufruf: Der Inhalt steht im Gegenstand, und
-     * ein zwischengespeicherter Blick darauf liefe der Wahrheit hinterher,
-     * sobald jemand eine Zelle tauscht.
+     * <p><b>Sie werden gehalten, nicht bei jedem Zugriff neu gelesen.</b> Das
+     * ist der Unterschied zwischen einer Anlage, die läuft, und einer, die
+     * ruckelt: Der Inhalt steckt als NBT im Gegenstand, und ihn je Zugriff zu
+     * entpacken heisst, bei zehn Zellen mit je vierundsechzig Arten mehrere
+     * tausend Einträge je Tick durch Registry-Suchen zu schicken. Applied
+     * Energistics hält seine Zellen aus demselben Grund im Speicher und
+     * schreibt erst, wenn die BlockEntity gesichert wird.
+     *
+     * <p>Gebunden wird an den Gegenstand selbst, nicht an die Platznummer:
+     * Wer eine Zelle herauszieht und eine andere hineinsteckt, bekommt eine
+     * neue Sicht, auch wenn der Platz derselbe ist.
      */
     public List<CellInventory> inventories() {
-        List<CellInventory> found = new ArrayList<>();
-        for (ItemStack stack : cells) {
-            if (stack.getItem() instanceof StorageCellItem) {
-                CellInventory inventory = new CellInventory(stack);
-                if (inventory.isValid()) {
-                    found.add(inventory);
+        List<CellInventory> found = new ArrayList<>(SLOTS);
+        for (int slot = 0; slot < SLOTS; slot++) {
+            ItemStack stack = cells.get(slot);
+            CellInventory live = open.get(slot);
+            if (!(stack.getItem() instanceof StorageCellItem)) {
+                if (live != null) {
+                    open.remove(slot);
                 }
+                continue;
             }
+            if (live == null || live.stack() != stack) {
+                // Andere Zelle im Platz — die alte hat ihren Inhalt schon
+                // zurückgeschrieben, als sie herausgenommen wurde.
+                live = new CellInventory(stack);
+                if (!live.isValid()) {
+                    continue;
+                }
+                open.put(slot, live);
+            }
+            found.add(live);
         }
         return found;
+    }
+
+    /**
+     * Schreibt alle offenen Zellen zurück in ihre Gegenstände.
+     *
+     * <p>Muss vor jedem Sichern geschehen und immer dann, wenn eine Zelle das
+     * Laufwerk verlässt. Sonst steht im Gegenstand ein Bestand von vorhin.
+     */
+    public void flushCells() {
+        open.values().forEach(CellInventory::flush);
     }
 
     public boolean isEmpty() {
@@ -82,13 +121,24 @@ public class DriveBlockEntity extends BlockEntity {
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         cells.clear();
+        open.clear();
         ContainerHelper.loadAllItems(tag, cells, registries);
     }
 
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        // Der springende Punkt: Was im Speicher liegt, muss vor dem Sichern in
+        // die Gegenstände. Ohne diese Zeile wäre der Bestand nach einem
+        // Neustart der von vorhin.
+        flushCells();
         super.saveAdditional(tag, registries);
         ContainerHelper.saveAllItems(tag, cells, registries);
+    }
+
+    @Override
+    public void setRemoved() {
+        flushCells();
+        super.setRemoved();
     }
 
     @Override

@@ -246,6 +246,12 @@ public class ControllerBlockEntity extends BlockEntity {
                             && level.getBlockEntity(position) instanceof ConnectorBlockEntity connector
                             ? connector : null);
             runtime.tick(level, program, graph, storage, fluidStorage);
+            // Was weder Speicher noch Gerät annahm, fällt auf den Boden.
+            // Hässlich, aber die einzige Antwort, die nichts verschwinden
+            // lässt.
+            for (net.minecraft.world.item.ItemStack stack : runtime.takeDropped()) {
+                net.minecraft.world.level.block.Block.popResource(level, worldPosition, stack);
+            }
         }
         tickFlows();
         fireRedstoneEvents();

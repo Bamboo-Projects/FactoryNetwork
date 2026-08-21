@@ -246,10 +246,26 @@ public final class WorkerRuntime {
             }
             int wanted = (int) Math.min(batch - moved, stack.getCount());
             ItemStack taken = handler.extractItem(slot, wanted, false);
-            if (!taken.isEmpty()) {
-                storage.insert(taken);
-                moved += taken.getCount();
+            if (taken.isEmpty()) {
+                continue;
             }
+            // Was der Speicher nicht nimmt, geht zurück ins Gerät. Seit es
+            // Zellen gibt, kann er voll sein — und dann wären die Gegenstände
+            // sonst weg, ohne dass es jemand merkt.
+            long rest = storage.insert(taken.getItem(), taken.getCount());
+            if (rest > 0) {
+                ItemStack zurueck = insertInto(handler,
+                        new ItemStack(taken.getItem(), (int) rest));
+                if (!zurueck.isEmpty()) {
+                    // Das Gerät nimmt nicht einmal zurück, was gerade drin
+                    // lag. Dann fällt es lieber auf den Boden als zu
+                    // verschwinden.
+                    dropped.add(zurueck);
+                }
+                state.status = Status.WAITING_TARGET;
+                state.detail = "Der Speicher ist voll";
+            }
+            moved += taken.getCount() - rest;
         }
         return moved;
     }
@@ -422,6 +438,24 @@ public final class WorkerRuntime {
 
     /** Der Graph des laufenden Ticks — nur für die Füllstandsabfrage. */
     private FactoryGraph lastGraph;
+
+    /**
+     * Was nirgends mehr hinpasste.
+     *
+     * <p>Der Controller wirft es in die Welt. Das ist hässlich, aber die
+     * einzige Antwort, die keine Gegenstände verschwinden lässt: Wenn weder
+     * Speicher noch Gerät etwas annehmen, muss es irgendwohin.
+     */
+    private final List<ItemStack> dropped = new ArrayList<>();
+
+    public List<ItemStack> takeDropped() {
+        if (dropped.isEmpty()) {
+            return List.of();
+        }
+        List<ItemStack> out = List.copyOf(dropped);
+        dropped.clear();
+        return out;
+    }
 
     /** Der Flüssigkeitsbestand des Netzes, für die Dauer eines Ticks. */
     private NetworkFluids fluids = new NetworkFluids();

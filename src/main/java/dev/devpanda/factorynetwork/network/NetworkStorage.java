@@ -80,18 +80,13 @@ public final class NetworkStorage {
             }
             if (cell.count(item) > 0) {
                 left -= cell.insert(item, left);
-                cell.flush();
             }
         }
         for (CellInventory cell : cells) {
             if (left <= 0) {
                 break;
             }
-            long moved = cell.insert(item, left);
-            if (moved > 0) {
-                left -= moved;
-                cell.flush();
-            }
+            left -= cell.insert(item, left);
         }
         if (left < count) {
             markChanged();
@@ -113,11 +108,7 @@ public final class NetworkStorage {
             if (taken >= count) {
                 break;
             }
-            long got = cell.extract(item, count - taken);
-            if (got > 0) {
-                taken += got;
-                cell.flush();
-            }
+            taken += cell.extract(item, count - taken);
         }
         if (taken > 0) {
             markChanged();
@@ -158,12 +149,20 @@ public final class NetworkStorage {
     public void clear() {
         for (CellInventory cell : cells()) {
             cell.clear();
-            cell.flush();
         }
         markChanged();
     }
 
+    /**
+     * Meldet, dass sich etwas geändert hat.
+     *
+     * <p><b>Die Laufwerke müssen mit.</b> Der Bestand liegt in ihren Zellen,
+     * und ohne diese Meldung weiss Minecraft nicht, dass der Chunk gesichert
+     * werden muss — bei einem Laufwerk in einem anderen Chunk als der
+     * Controller wäre der Bestand nach einem Neustart der von vorhin.
+     */
     private void markChanged() {
+        drives.forEach(DriveBlockEntity::setChanged);
         onChange.run();
     }
 

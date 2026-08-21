@@ -592,6 +592,7 @@ public final class FactoryNetworkGameTests {
         // Zelle, also wird dort geprüft.
         var drive = (dev.devpanda.factorynetwork.block.entity.DriveBlockEntity)
                 helper.getBlockEntity(controller.above());
+        drive.flushCells();
         ItemStack cell = drive.cell(0);
         net.minecraft.world.item.component.CustomData.update(
                 net.minecraft.core.component.DataComponents.CUSTOM_DATA, cell, tag -> {
@@ -2937,6 +2938,9 @@ public final class FactoryNetworkGameTests {
         // Grund, warum eine Zelle etwas wert ist.
         var drive = (dev.devpanda.factorynetwork.block.entity.DriveBlockEntity)
                 helper.getBlockEntity(drivePos);
+        // Der Bestand lebt im Laufwerk und geht erst beim Sichern in den
+        // Gegenstand. Wer ihn vorher liest, sieht den Stand von vorhin.
+        drive.flushCells();
         ItemStack cell = drive.cell(0);
         var inhalt = dev.devpanda.factorynetwork.storage.CellContents.read(cell);
         helper.assertValueEqual(inhalt.getOrDefault(Items.DIAMOND, 0L), 12L,
@@ -3022,6 +3026,78 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(press.progress(), 0, "Bei voller Ausgabe steht sie");
         helper.assertValueEqual(press.energy().getEnergyStored(), vorher,
                 "Und verbraucht dabei keinen Strom");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void afullStorageDoesNotSwallowItems(GameTestHelper helper) {
+        BlockPos controller = bareSetup(helper);
+        driveWithCell(helper, controller.above(),
+                dev.devpanda.factorynetwork.storage.CellTier.K1);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        // Die Zelle bis an die Mengengrenze füllen.
+        entity.storage().insert(Items.COBBLESTONE, 8_000);
+        helper.assertValueEqual(entity.storage().count(Items.COBBLESTONE), 8_000L, "voll");
+
+        // Eine Kiste am Netz, aus der ein Worker einlagern soll.
+        BlockPos quelle = controller.east().north().north();
+        if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity container) {
+            container.setItem(0, new ItemStack(Items.IRON_INGOT, 64));
+        }
+        helper.assertTrue(entity.deploy("""
+                worker einlagern {
+                    from quarry_output
+                    to storage
+                    rate 64 per 1t
+                }"""), "Programm nicht übernommen");
+
+        for (int i = 0; i < 5; i++) {
+            entity.serverTick();
+        }
+
+        // Der Speicher ist voll — die Barren müssen noch da sein, in der
+        // Kiste oder auf dem Boden, aber nicht verschwunden.
+        long inKiste = 0;
+        if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity container) {
+            for (int slot = 0; slot < container.getContainerSize(); slot++) {
+                ItemStack stack = container.getItem(slot);
+                if (stack.getItem() == Items.IRON_INGOT) {
+                    inKiste += stack.getCount();
+                }
+            }
+        }
+        long imNetz = entity.storage().count(Items.IRON_INGOT);
+        helper.assertValueEqual(inKiste + imNetz, 64L,
+                "Kein einziger Barren darf verschwinden");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void aCellKeepsItsContentsAcrossSaving(GameTestHelper helper) {
+        BlockPos controller = bareSetup(helper);
+        BlockPos drivePos = controller.above();
+        driveWithCell(helper, drivePos, dev.devpanda.factorynetwork.storage.CellTier.K4);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        entity.storage().insert(Items.DIAMOND, 42);
+
+        // Der Bestand lebt im Speicher des Laufwerks. Erst beim Sichern geht
+        // er in den Gegenstand — ohne das wäre er nach einem Neustart weg.
+        var drive = (dev.devpanda.factorynetwork.block.entity.DriveBlockEntity)
+                helper.getBlockEntity(drivePos);
+        var registries = helper.getLevel().registryAccess();
+        var tag = drive.saveWithFullMetadata(registries);
+
+        var geladen = (dev.devpanda.factorynetwork.block.entity.DriveBlockEntity)
+                net.minecraft.world.level.block.entity.BlockEntity.loadStatic(
+                        helper.absolutePos(drivePos), helper.getBlockState(drivePos),
+                        tag, registries);
+        helper.assertTrue(geladen != null, "Das Laufwerk kam nicht zurück");
+        var inhalt = dev.devpanda.factorynetwork.storage.CellContents.read(geladen.cell(0));
+        helper.assertValueEqual(inhalt.getOrDefault(Items.DIAMOND, 0L), 42L,
+                "Der Bestand muss das Sichern überstehen");
         helper.succeed();
     }
 

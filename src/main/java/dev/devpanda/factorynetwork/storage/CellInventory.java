@@ -27,6 +27,11 @@ public final class CellInventory {
         this.contents = new LinkedHashMap<>(CellContents.read(cell));
     }
 
+    /** Der Gegenstand, zu dem diese Sicht gehört. */
+    public ItemStack stack() {
+        return cell;
+    }
+
     public boolean isValid() {
         return tier != null;
     }

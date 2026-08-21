@@ -255,8 +255,18 @@ public final class WorldHost implements Interpreter.Host {
             }
             int wanted = (int) Math.min(limit - moved, stack.getCount());
             ItemStack taken = source.extractItem(slot, wanted, false);
-            storage.insert(taken);
-            moved += taken.getCount();
+            // Derselbe Fall wie beim Worker: Der Speicher kann voll sein, seit
+            // er an Zellen hängt. Was er nicht nimmt, geht zurück.
+            long rest = storage.insert(taken.getItem(), taken.getCount());
+            if (rest > 0) {
+                ItemStack zurueck = insert(source,
+                        new ItemStack(taken.getItem(), (int) rest));
+                if (!zurueck.isEmpty()) {
+                    throw new ScriptError("Der Speicher ist voll.",
+                            "Ein Laufwerk mit freier Zelle schafft Platz.");
+                }
+            }
+            moved += taken.getCount() - rest;
         }
         return moved;
     }
