@@ -2455,6 +2455,12 @@ public final class FactoryNetworkGameTests {
                     log("angestoßen")
                 }
 
+                fn mit_variabler_auswahl() {
+                    for sorte in tag:minecraft/planks {
+                        move 1 sorte from quarry_output to depot
+                    }
+                }
+
                 on device_offline(name) {
                     log("Verschwunden: " + name)
                 }"""), "Das Programm wurde nicht übernommen");
@@ -2470,6 +2476,8 @@ public final class FactoryNetworkGameTests {
                 "Das Lämpchen: " + zeilen.get(3));
 
         // Der Knopf und der Ereignisblock laufen wirklich.
+        // Eine Variable als Auswahl in move — steht so in beispiele.md.
+        entity.startFlow("mit_variabler_auswahl", java.util.List.of());
         entity.pressDisplayButton("leitstand", 4);
         entity.fireEvent("device_offline", java.util.List.of(
                 new dev.devpanda.factorynetwork.runtime.Value.Text("kiste_9")));
@@ -2697,6 +2705,89 @@ public final class FactoryNetworkGameTests {
                 "Was ausgenommen ist, wird nicht bewegt");
         helper.assertTrue(!hasWater(helper, controller, 1), "Und kommt nirgends an");
         helper.succeed();
+    }
+
+    /** Lädt den Controller neu, wie es ein Serverneustart täte. */
+    private static ControllerBlockEntity reload(GameTestHelper helper, BlockPos controller,
+            ControllerBlockEntity entity) {
+        var registries = helper.getLevel().registryAccess();
+        var block = net.minecraft.world.level.block.entity.BlockEntity.loadStatic(
+                helper.absolutePos(controller), helper.getBlockState(controller),
+                entity.saveWithFullMetadata(registries), registries);
+        ControllerBlockEntity geladen = (ControllerBlockEntity) block;
+        geladen.setLevel(helper.getLevel());
+        geladen.rebuildNetwork();
+        return geladen;
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void whereStillDecidesAfterARestart(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                event Fertig(id: Int)
+
+                fn wartetAuf(ziel: Int) {
+                    let ergebnis = await Fertig where id == ziel
+                    return ergebnis
+                }"""), "Das Programm wurde nicht übernommen");
+
+        long id = entity.startFlow("wartetAuf",
+                java.util.List.of(new dev.devpanda.factorynetwork.runtime.Value.Int(2))).id();
+
+        // where steht im Programm und nicht im Ablauf: Nach dem Laden muss es
+        // sich über den Zähler des Rahmens wiederfinden lassen.
+        ControllerBlockEntity geladen = reload(helper, controller, entity);
+        var wieder = flowOf(geladen, id);
+        helper.assertTrue(wieder != null, "Der Ablauf hat den Neustart nicht überlebt");
+
+        geladen.fireEvent("Fertig", java.util.List.of(
+                new dev.devpanda.factorynetwork.runtime.Value.Int(1)));
+        helper.assertValueEqual(wieder.status().name(), "AWAITING",
+                "Das falsche Ereignis darf ihn auch nach dem Neustart nicht wecken");
+
+        geladen.fireEvent("Fertig", java.util.List.of(
+                new dev.devpanda.factorynetwork.runtime.Value.Int(2)));
+        helper.assertValueEqual(wieder.status().name(), "DONE", "Das richtige schon");
+        helper.assertValueEqual(resultOf(wieder), 2L, "Mit dem Wert des Ereignisses");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void anElseBranchStillRunsAfterARestart(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                event Nie()
+
+                fn gibtAuf() {
+                    let ergebnis = await Nie timeout 20t else {
+                        return 3
+                    }
+                    return 9
+                }"""), "Das Programm wurde nicht übernommen");
+
+        long id = entity.startFlow("gibtAuf", java.util.List.of()).id();
+        ControllerBlockEntity geladen = reload(helper, controller, entity);
+        var wieder = flowOf(geladen, id);
+        helper.assertTrue(wieder != null, "Der wartende Ablauf ist verloren gegangen");
+
+        // Die Frist ist absolute Spielzeit — sie läuft über den Neustart hinweg
+        // ab, und der else-Zweig steht im Programm, nicht im Ablauf.
+        helper.startSequence()
+                .thenIdle(30)
+                .thenExecute(() -> geladen.flowEngine().tick(helper.getLevel().getGameTime()))
+                .thenExecute(() -> {
+                    helper.assertValueEqual(wieder.status().name(), "DONE",
+                            "Der else-Zweig muss auch nach dem Laden laufen: " + wieder.detail());
+                    helper.assertValueEqual(resultOf(wieder), 3L,
+                            "Und zwar er, nicht die Zeile dahinter");
+                })
+                .thenSucceed();
     }
 
     private FactoryNetworkGameTests() {

@@ -92,7 +92,7 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | Netzwerk | Graph über Kabel, Speicher schlüsselbasiert, Kanäle je Strang |
 | Editor | Syntaxfarben, Fehler beim Tippen, Vervollständigung nach Stelle |
 | Anzeigen | Am Block und im Terminal, Knöpfe starten Abläufe |
-| Prüfung | 87 Einheitstests, 80 GameTests |
+| Prüfung | 87 Einheitstests, 82 GameTests |
 
 ## 3. Was noch nicht läuft
 
@@ -124,7 +124,23 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
   `tag:` beide zu durchsuchen die andere Möglichkeit.
 - **Flüssigkeiten im Speicher-Reiter.** Sie stehen zurzeit in der
   Netzübersicht; ein Symbolraster bräuchte das Bild der Flüssigkeit.
-- **Ein eigener Speicherblock.** Der Speicher sitzt zurzeit im Controller.
+- **Ein eigener Speicherblock.** Der Speicher sitzt zurzeit im Controller und
+  ist unbegrenzt. **Auch das gehört entschieden, bevor es gebaut wird** — es
+  ist eine Gameplay-Frage, keine technische.
+
+  1. **Feste Kapazität je Block.** Ein Lagerblock steuert Platz bei, mehrere
+     ergeben mehr. Einfach zu erklären, einfach zu bauen, aber ohne Reiz: Man
+     stellt eine Reihe hin und denkt nie wieder daran.
+  2. **Zellen wie bei AE2.** Der Block nimmt Speicherzellen auf, jede mit
+     Grenzen für Arten und Menge. Das ist der Grund, warum in AE2 überhaupt
+     sortiert wird — und der Teil, den Spieler an dem System mögen.
+  3. **So lassen.** Unbegrenzt, im Controller. Ehrlich für eine Mod, deren
+     Reiz die Sprache ist und nicht die Lagerhaltung.
+
+  Empfehlung: **(2)**, aber erst nach den Conduits. Es ist die Antwort, die zu
+  einer Mod passt, die sich an AE2 anlehnt — und die einzige, die dem Netz
+  etwas abverlangt. Bis dahin ist **(3)** kein Provisorium, sondern eine
+  verteidigbare Zwischenstufe.
 - **Autocrafting.** Der letzte ausgegraute Reiter.
 - **Chemikalien** aus Mekanism. Die Schreibweise steht seit dem Entwurf.
 
@@ -208,6 +224,13 @@ gzip-komprimiertes NBT mit `size`, `palette`, `blocks`, `entities` und
 
 **Sehr lange Heredocs werden abgeschnitten.** Beim Schreiben großer Dateien
 in Stücken arbeiten und danach die Zeilenzahl prüfen.
+
+**`/tmp` überlebt den einzelnen Aufruf nicht.** Zwischendateien gehören in ein
+Verzeichnis, das bleibt — sonst ist die Datei beim nächsten Schritt weg, und
+das sieht aus wie ein Fehler im Skript.
+
+**Übersetzerfehler kommen hier auf Deutsch.** Wer nur nach `error:` sucht, hält
+eine fehlgeschlagene Übersetzung für gelungen. Immer auch `Fehler:` prüfen.
 
 ### Beim Bau der Abläufe fielen vier Dinge auf
 

@@ -6,6 +6,12 @@ in der Welt dafür stehen muss.
 Zum Ausprobieren: Terminal öffnen, Reiter **Code**, hineinschreiben,
 übernehmen. Was hängt oder wartet, steht danach im Reiter **Netzwerk**.
 
+Ein Test übersetzt jedes Programm auf dieser Seite bei jedem Bau. Was er nicht
+prüfen kann, sind die Namen: `item:iron_dust` und `tag:c/ores` gibt es in einem
+großen Pack, in einer leeren Vanilla-Welt nicht. Dort meldet die Laufzeit dann,
+dass die Auswahl nichts trifft — das ist keine Fehlfunktion, sondern die
+Wahrheit über die Welt.
+
 ---
 
 ## 1. Etwas von A nach B schaffen
