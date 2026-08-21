@@ -335,13 +335,12 @@ public final class WorkerRuntime {
      */
     private IItemHandler handlerOf(Expr target, FactoryGraph graph, WorkerState state) {
         return resolve(target, graph, state, ConnectorBlockEntity::machineInventory,
-                "An diesem Connector hängt keine Maschine mit Inventar");
+                "An diesem Connector hängt keine Maschine mit Inventar", this::fillLevelOf);
     }
 
-    private net.neoforged.neoforge.fluids.capability.IFluidHandler tankOf(Expr target,
-            FactoryGraph graph, WorkerState state) {
+    private IFluidHandler tankOf(Expr target, FactoryGraph graph, WorkerState state) {
         return resolve(target, graph, state, ConnectorBlockEntity::machineTank,
-                "An diesem Connector hängt nichts, das Flüssigkeit hält");
+                "An diesem Connector hängt nichts, das Flüssigkeit hält", this::tankLevelOf);
     }
 
     /**
@@ -354,7 +353,7 @@ public final class WorkerRuntime {
      */
     private <T> T resolve(Expr target, FactoryGraph graph, WorkerState state,
             java.util.function.Function<ConnectorBlockEntity, T> extract,
-            String missingDetail) {
+            String missingDetail, java.util.function.ToLongFunction<String> fillLevel) {
         if (!(target instanceof Expr.Name name)) {
             state.status = Status.HALTED;
             state.detail = "Als Ziel taugt nur ein Name";
@@ -373,7 +372,7 @@ public final class WorkerRuntime {
                 state.detail = "Die Gruppe " + name.value() + " hat kein Mitglied im Netz";
                 return null;
             }
-            for (String member : group.order(this::fillLevelOf, random)) {
+            for (String member : group.order(fillLevel::applyAsLong, random)) {
                 T found = resolveDevice(member, graph, state, extract, missingDetail);
                 if (found != null) {
                     return found;
@@ -384,6 +383,27 @@ public final class WorkerRuntime {
             return null;
         }
         return resolveDevice(name.value(), graph, state, extract, missingDetail);
+    }
+
+    /**
+     * Wie voll ein Tank ist — für die Verteilung nach dem leersten.
+     *
+     * <p>Ohne diese Fassung würde eine Gruppe von Tanks nach Gegenstands-Slots
+     * sortiert, die es dort nicht gibt: Jeder Tank sähe gleich voll aus, und
+     * {@code strategy emptiest} verteilte in Wahrheit zufällig.
+     */
+    private long tankLevelOf(String device) {
+        IFluidHandler tank = lastGraph == null ? null
+                : resolveDevice(device, lastGraph, new WorkerState(),
+                        ConnectorBlockEntity::machineTank, "");
+        if (tank == null) {
+            return Long.MAX_VALUE;
+        }
+        long used = 0;
+        for (int slot = 0; slot < tank.getTanks(); slot++) {
+            used += tank.getFluidInTank(slot).getAmount();
+        }
+        return used;
     }
 
     /** Wie voll ein Gerät ist — für die Verteilung nach dem leersten. */
@@ -633,8 +653,13 @@ public final class WorkerRuntime {
             int accepted = tank.fill(new FluidStack(fluid, (int) available),
                     IFluidHandler.FluidAction.EXECUTE);
             if (accepted <= 0) {
-                state.status = Status.WAITING_TARGET;
-                state.detail = "Das Ziel nimmt nichts mehr";
+                // Nur melden, wenn wirklich nichts durchkam: Sonst stünde im
+                // Terminal "nimmt nichts mehr" neben einer Zahl, die etwas
+                // anderes sagt.
+                if (moved == 0) {
+                    state.status = Status.WAITING_TARGET;
+                    state.detail = "Das Ziel nimmt nichts mehr";
+                }
                 continue;
             }
             fluids.extract(fluid, accepted);
@@ -664,8 +689,10 @@ public final class WorkerRuntime {
             }
             int accepted = out.fill(simulated, IFluidHandler.FluidAction.EXECUTE);
             if (accepted <= 0) {
-                state.status = Status.WAITING_TARGET;
-                state.detail = "Das Ziel nimmt nichts mehr";
+                if (moved == 0) {
+                    state.status = Status.WAITING_TARGET;
+                    state.detail = "Das Ziel nimmt nichts mehr";
+                }
                 break;
             }
             in.drain(new FluidStack(simulated.getFluid(), accepted),
