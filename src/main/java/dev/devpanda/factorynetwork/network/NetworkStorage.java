@@ -31,6 +31,23 @@ import java.util.Map;
 public final class NetworkStorage {
 
     private final List<DriveBlockEntity> drives = new ArrayList<>();
+
+    /**
+     * Der Bestand aller Zellen an einer Stelle.
+     *
+     * <p><b>Ohne ihn zählt jede Frage alles neu.</b> Zehn Laufwerke mit je
+     * zehn Zellen und vierundsechzig Arten sind sechstausend Einträge — und
+     * gefragt wird oft: von jedem Worker, von jeder Bedingung, von jeder
+     * Anzeige, mehrmals im selben Tick.
+     *
+     * <p>Eigene Ablagen und Entnahmen werden eingerechnet, nicht neu gezählt.
+     * Neu gezählt wird nur, wenn jemand anders etwas getan hat — eine Zelle
+     * herausgezogen etwa. Das meldet der Zählstand des Laufwerks.
+     */
+    private final Map<Item, Long> index = new LinkedHashMap<>();
+    private boolean indexValid;
+    /** Stand der Laufwerke, als der Index gebaut wurde. */
+    private long[] seenRevisions = new long[0];
     /** Wird bei jeder Änderung gerufen — der Controller schickt dann gebündelt. */
     private Runnable onChange = () -> { };
 
@@ -47,6 +64,45 @@ public final class NetworkStorage {
     public void setDrives(List<DriveBlockEntity> found) {
         drives.clear();
         drives.addAll(found);
+        indexValid = false;
+    }
+
+    /** Der Bestand, frisch genug. */
+    private Map<Item, Long> index() {
+        if (!indexValid || drivesChanged()) {
+            rebuildIndex();
+        }
+        return index;
+    }
+
+    /**
+     * Hat jemand anders an den Laufwerken gearbeitet?
+     *
+     * <p>Ein Vergleich von ein paar Zahlen. Die Alternative wäre, den Index
+     * bei jeder Frage neu zu bauen — also genau das, was er einspart.
+     */
+    private boolean drivesChanged() {
+        if (seenRevisions.length != drives.size()) {
+            return true;
+        }
+        for (int i = 0; i < seenRevisions.length; i++) {
+            if (seenRevisions[i] != drives.get(i).revision()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void rebuildIndex() {
+        index.clear();
+        for (CellInventory cell : cells()) {
+            cell.contentsView().forEach((item, count) -> index.merge(item, count, Long::sum));
+        }
+        seenRevisions = new long[drives.size()];
+        for (int i = 0; i < seenRevisions.length; i++) {
+            seenRevisions[i] = drives.get(i).revision();
+        }
+        indexValid = true;
     }
 
     public boolean hasDrives() {
@@ -72,6 +128,9 @@ public final class NetworkStorage {
         if (count <= 0) {
             return 0;
         }
+        // Erst den Index auf Stand bringen, dann rechnen: Danach ist die
+        // eigene Ablage die einzige Änderung, und die ist bekannt.
+        Map<Item, Long> stock = index();
         long left = count;
         List<CellInventory> cells = cells();
         for (CellInventory cell : cells) {
@@ -89,6 +148,7 @@ public final class NetworkStorage {
             left -= cell.insert(item, left);
         }
         if (left < count) {
+            stock.merge(item, count - left, Long::sum);
             markChanged();
         }
         return left;
@@ -103,6 +163,7 @@ public final class NetworkStorage {
         if (count <= 0) {
             return 0;
         }
+        Map<Item, Long> stock = index();
         long taken = 0;
         for (CellInventory cell : cells()) {
             if (taken >= count) {
@@ -111,30 +172,35 @@ public final class NetworkStorage {
             taken += cell.extract(item, count - taken);
         }
         if (taken > 0) {
+            long rest = stock.getOrDefault(item, 0L) - taken;
+            if (rest > 0) {
+                stock.put(item, rest);
+            } else {
+                stock.remove(item);
+            }
             markChanged();
         }
         return taken;
     }
 
     public long count(Item item) {
-        long total = 0;
-        for (CellInventory cell : cells()) {
-            total += cell.count(item);
-        }
-        return total;
+        return index().getOrDefault(item, 0L);
     }
 
-    /** Der gesamte Bestand über alle Zellen. */
+    /**
+     * Der gesamte Bestand über alle Zellen.
+     *
+     * <p>Eine Kopie, keine Sicht: Der Bestand wird oft durchlaufen, während
+     * nebenher etwas verschoben wird, und eine Sicht führte dort zu einer
+     * ConcurrentModificationException an einer Stelle, die mit dem Verschieben
+     * nichts zu tun hat.
+     */
     public Map<Item, Long> contents() {
-        Map<Item, Long> all = new LinkedHashMap<>();
-        for (CellInventory cell : cells()) {
-            cell.contents().forEach((item, count) -> all.merge(item, count, Long::sum));
-        }
-        return all;
+        return new LinkedHashMap<>(index());
     }
 
     public int distinctTypes() {
-        return contents().size();
+        return index().size();
     }
 
     /** Wie viele Artenplätze insgesamt frei sind — für die Anzeige. */
@@ -147,9 +213,11 @@ public final class NetworkStorage {
     }
 
     public void clear() {
+        Map<Item, Long> stock = index();
         for (CellInventory cell : cells()) {
             cell.clear();
         }
+        stock.clear();
         markChanged();
     }
 
@@ -157,7 +225,7 @@ public final class NetworkStorage {
      * Meldet, dass sich etwas geändert hat.
      *
      * <p><b>Die Laufwerke müssen mit.</b> Der Bestand liegt in ihren Zellen,
-     * und ohne diese Meldung weiss Minecraft nicht, dass der Chunk gesichert
+     * und ohne diese Meldung weiß Minecraft nicht, dass der Chunk gesichert
      * werden muss — bei einem Laufwerk in einem anderen Chunk als der
      * Controller wäre der Bestand nach einem Neustart der von vorhin.
      */

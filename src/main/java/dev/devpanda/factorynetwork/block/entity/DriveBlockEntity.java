@@ -34,6 +34,23 @@ public class DriveBlockEntity extends BlockEntity {
     /** Die offenen Zellen, nach Platznummer. */
     private final java.util.Map<Integer, CellInventory> open = new java.util.HashMap<>();
 
+    /**
+     * Zählt hoch, sobald sich die Bestückung ändert.
+     *
+     * <p>Der Netzindex hält den Bestand aller Zellen zusammen. Ändert er ihn
+     * selbst, rechnet er die Änderung ein; wird dagegen eine Zelle
+     * herausgezogen, muss er es merken. Genau dafür ist diese Zahl da — sie
+     * ist der billigste Weg, „hier hat jemand anders etwas getan" zu sagen.
+     *
+     * <p><b>Nicht in {@code setChanged}</b>: Das ruft der Speicher nach jeder
+     * eigenen Ablage selbst, und dann wäre jeder Index sofort wieder hin.
+     */
+    private long revision;
+
+    public long revision() {
+        return revision;
+    }
+
     public DriveBlockEntity(BlockPos pos, BlockState state) {
         super(FnBlockEntities.DRIVE.get(), pos, state);
     }
@@ -53,6 +70,7 @@ public class DriveBlockEntity extends BlockEntity {
             alt.flush();
         }
         cells.set(slot, stack);
+        revision++;
         setChanged();
         if (level != null && !level.isClientSide) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
@@ -69,7 +87,7 @@ public class DriveBlockEntity extends BlockEntity {
      * <p><b>Sie werden gehalten, nicht bei jedem Zugriff neu gelesen.</b> Das
      * ist der Unterschied zwischen einer Anlage, die läuft, und einer, die
      * ruckelt: Der Inhalt steckt als NBT im Gegenstand, und ihn je Zugriff zu
-     * entpacken heisst, bei zehn Zellen mit je vierundsechzig Arten mehrere
+     * entpacken heißt, bei zehn Zellen mit je vierundsechzig Arten mehrere
      * tausend Einträge je Tick durch Registry-Suchen zu schicken. Applied
      * Energistics hält seine Zellen aus demselben Grund im Speicher und
      * schreibt erst, wenn die BlockEntity gesichert wird.
@@ -123,6 +141,7 @@ public class DriveBlockEntity extends BlockEntity {
         cells.clear();
         open.clear();
         ContainerHelper.loadAllItems(tag, cells, registries);
+        revision++;
     }
 
     @Override

@@ -40,6 +40,18 @@ public final class CellInventory {
         return Map.copyOf(contents);
     }
 
+    /**
+     * Derselbe Bestand ohne Kopie.
+     *
+     * <p>Für den Netzindex, der über alle Zellen läuft: Bei zehn Laufwerken
+     * mit je zehn Zellen ist eine Kopie je Zelle hundert Kopien für eine
+     * Frage. Wer die Sicht behält, während sich die Zelle ändert, sieht die
+     * Änderung — das ist hier gewollt und der Grund, warum es beide gibt.
+     */
+    public Map<Item, Long> contentsView() {
+        return java.util.Collections.unmodifiableMap(contents);
+    }
+
     public long count(Item item) {
         return contents.getOrDefault(item, 0L);
     }

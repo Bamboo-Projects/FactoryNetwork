@@ -60,8 +60,8 @@ public final class FactoryNetworkGameTests {
         name(helper, sourceConnector, "quarry_output");
         name(helper, targetConnector, "depot");
 
-        // Ein Laufwerk mit grosser Zelle: Seit es Zellen gibt, lagert ein Netz
-        // ohne Laufwerk nichts. Wer den Speicher selbst prueft, nimmt
+        // Ein Laufwerk mit großer Zelle: Seit es Zellen gibt, lagert ein Netz
+        // ohne Laufwerk nichts. Wer den Speicher selbst prüft, nimmt
         // bareSetup und stellt sich sein Laufwerk hin.
         driveWithCell(helper, controller.above(),
                 dev.devpanda.factorynetwork.storage.CellTier.K64);
@@ -3308,6 +3308,92 @@ public final class FactoryNetworkGameTests {
                             .AnalyserData.LinkState.FULL,
                     "ein Gerät an einem dichten Kabel füllt es nicht");
         }
+        helper.succeed();
+    }
+
+    /**
+     * Der Bestand folgt, wenn jemand eine Zelle herauszieht.
+     *
+     * <p>Der Netzindex hält den Bestand aller Zellen zusammen, damit ihn nicht
+     * jede Frage neu zusammenzählt. Der Preis dafür ist genau diese Gefahr:
+     * dass er stehen bleibt, während sich die Wahrheit ändert. Wer diesen Test
+     * kaputt macht, hat ein Netz gebaut, das Gegenstände meldet, die es nicht
+     * mehr hat.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void theStockFollowsWhenACellIsPulled(GameTestHelper helper) {
+        BlockPos controller = bareSetup(helper);
+        BlockPos drivePos = controller.above();
+        driveWithCell(helper, drivePos,
+                dev.devpanda.factorynetwork.storage.CellTier.K64);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        entity.storage().insert(Items.IRON_INGOT, 100);
+        helper.assertValueEqual(entity.storage().count(Items.IRON_INGOT), 100L,
+                "Bestand nach dem Ablegen");
+        helper.assertValueEqual(entity.storage().distinctTypes(), 1, "Arten im Netz");
+
+        var drive = (dev.devpanda.factorynetwork.block.entity.DriveBlockEntity)
+                helper.getBlockEntity(drivePos);
+        // Dieselbe Instanz, keine Kopie: Beim Herausnehmen schreibt das
+        // Laufwerk den Bestand in genau diesen Gegenstand zurück, und
+        // derselbe wandert im Spiel in die Hand des Spielers.
+        ItemStack cell = drive.cell(0);
+        drive.setCell(0, ItemStack.EMPTY);
+
+        // Ohne Zelle ist nichts da — auch dann nicht, wenn eben noch etwas da
+        // war. Das Netz wurde dazwischen nicht neu aufgebaut.
+        helper.assertValueEqual(entity.storage().count(Items.IRON_INGOT), 0L,
+                "Bestand ohne Zelle");
+        helper.assertValueEqual(entity.storage().distinctTypes(), 0, "Arten ohne Zelle");
+
+        drive.setCell(0, cell);
+        helper.assertValueEqual(entity.storage().count(Items.IRON_INGOT), 100L,
+                "Bestand, nachdem die Zelle zurück ist");
+        helper.succeed();
+    }
+
+    /**
+     * Ablegen und Entnehmen rechnen den Index fort, statt ihn zu verwerfen.
+     *
+     * <p>Ein Index, der sich nach jeder Ablage selbst wegwirft, ist keiner —
+     * in einem Tick mit zwanzig Workern wäre er zwanzigmal neu gebaut. Geprüft
+     * wird das Ergebnis: eine lange Folge von Ablagen und Entnahmen, und am
+     * Ende muss der Index dasselbe sagen wie die Zellen.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void theIndexKeepsUpWithManyMoves(GameTestHelper helper) {
+        BlockPos controller = bareSetup(helper);
+        BlockPos drivePos = controller.above();
+        driveWithCell(helper, drivePos,
+                dev.devpanda.factorynetwork.storage.CellTier.K64);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        var storage = entity.storage();
+        for (int i = 0; i < 50; i++) {
+            storage.insert(Items.IRON_INGOT, 10);
+            storage.insert(Items.GOLD_INGOT, 4);
+            storage.extract(Items.IRON_INGOT, 3);
+        }
+        storage.extract(Items.GOLD_INGOT, 200);
+
+        long eisen = 0;
+        long gold = 0;
+        var drive = (dev.devpanda.factorynetwork.block.entity.DriveBlockEntity)
+                helper.getBlockEntity(drivePos);
+        for (var cell : drive.inventories()) {
+            eisen += cell.count(Items.IRON_INGOT);
+            gold += cell.count(Items.GOLD_INGOT);
+        }
+        helper.assertValueEqual(storage.count(Items.IRON_INGOT), eisen,
+                "Eisen im Index gegen Eisen in der Zelle");
+        helper.assertValueEqual(storage.count(Items.GOLD_INGOT), gold,
+                "Gold im Index gegen Gold in der Zelle");
+        helper.assertValueEqual(storage.count(Items.IRON_INGOT), 350L, "Eisen insgesamt");
+        helper.assertValueEqual(storage.distinctTypes(), 1,
+                "Gold ist ganz weg und darf nicht als Art stehen bleiben");
         helper.succeed();
     }
 
