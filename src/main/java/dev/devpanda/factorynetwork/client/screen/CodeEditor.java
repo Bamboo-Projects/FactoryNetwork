@@ -27,6 +27,34 @@ public class CodeEditor {
     private static final int GUTTER_WIDTH = 18;
     private static final int TEXT_LEFT = 4;
 
+    /** Ein Zeilenende, damit die Bausteine unten ohne Escapes auskommen. */
+    private static final String NEWLINE = "\n";
+
+    /**
+     * Vereinheitlicht Zeilenenden und ersetzt Tabulatoren durch Leerzeichen.
+     *
+     * <p>Wer aus einem fremden Editor kopiert, bringt sonst Steuerzeichen mit,
+     * die hier nichts verloren haben — und ein Tabulator zerreißt die
+     * Einrückung, weil der Editor in Leerzeichen rechnet.
+     */
+    private static String normalise(String text) {
+        StringBuilder out = new StringBuilder(text.length());
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (c == '\r') {
+                if (i + 1 < text.length() && text.charAt(i + 1) == '\n') {
+                    continue;
+                }
+                out.append('\n');
+            } else if (c == '\t') {
+                out.append("    ");
+            } else {
+                out.append(c);
+            }
+        }
+        return out.toString();
+    }
+
     private final Font font;
     private final int x;
     private final int y;
@@ -43,6 +71,16 @@ public class CodeEditor {
 
     private List<Completions.Entry> suggestions = List.of();
     private int selectedSuggestion;
+
+    /**
+     * Wo eine Auswahl begann, oder -1.
+     *
+     * <p>Der Anker bleibt stehen, während der Cursor wandert — so wächst und
+     * schrumpft die Auswahl in beide Richtungen, ohne dass man sich merken
+     * muss, welche Seite die frühere war.
+     */
+    private int anchorLine = -1;
+    private int anchorColumn;
 
     public CodeEditor(Font font, int x, int y, int width, int height, String initial) {
         this.font = font;
@@ -97,6 +135,9 @@ public class CodeEditor {
             graphics.drawString(font, number,
                     x + GUTTER_WIDTH - font.width(number) - 2, lineY,
                     EditorColours.COMMENT, false);
+
+            // Die Auswahl liegt unter dem Text, sonst verschluckt sie ihn.
+            drawSelection(graphics, lineIndex, textX, lineY);
 
             // Zeilen mit Fehler bekommen einen Streifen statt einer Welle:
             // Wellen sind bei zehn Pixel Zeilenhöhe nicht zu erkennen.
@@ -221,7 +262,66 @@ public class CodeEditor {
 
     // ---- Eingabe ----------------------------------------------------------
 
+    /**
+     * Die Tastenbefehle, die jeder Editor hat.
+     *
+     * <p>Sie stehen vor allem anderen: Wer Strg und C drückt, will kopieren —
+     * und nicht ein C tippen, weil die Abfrage weiter unten stand.
+     */
+    private boolean handleShortcut(int key) {
+        if (!net.minecraft.client.gui.screens.Screen.hasControlDown()) {
+            return false;
+        }
+        var keyboard = Minecraft.getInstance().keyboardHandler;
+        switch (key) {
+            case 65 -> { // A: alles auswählen
+                anchorLine = 0;
+                anchorColumn = 0;
+                cursorLine = lines.size() - 1;
+                cursorColumn = lines.get(cursorLine).length();
+                return true;
+            }
+            case 67 -> { // C: kopieren
+                if (hasSelection()) {
+                    keyboard.setClipboard(selectedText());
+                }
+                return true;
+            }
+            case 88 -> { // X: ausschneiden
+                if (hasSelection()) {
+                    keyboard.setClipboard(selectedText());
+                    deleteSelection();
+                }
+                return true;
+            }
+            case 86 -> { // V: einfügen
+                String inhalt = keyboard.getClipboard();
+                if (inhalt != null && !inhalt.isEmpty()) {
+                    insertMultiline(inhalt);
+                    clearSuggestions();
+                }
+                return true;
+            }
+            default -> {
+                return false;
+            }
+        }
+    }
+
+    /** Bewegt den Cursor und führt dabei die Auswahl nach. */
+    private void move(Runnable bewegung) {
+        if (net.minecraft.client.gui.screens.Screen.hasShiftDown()) {
+            anchorIfNeeded();
+        } else {
+            clearSelection();
+        }
+        bewegung.run();
+    }
+
     public boolean keyPressed(int key, int scanCode, int modifiers) {
+        if (handleShortcut(key)) {
+            return true;
+        }
         // Solange Vorschläge offen sind, gehören ihnen Tab, Pfeile und Escape.
         if (!suggestions.isEmpty()) {
             switch (key) {
@@ -247,10 +347,18 @@ public class CodeEditor {
         }
         switch (key) {
             case 259 -> { // Rücktaste
+                if (hasSelection()) {
+                    deleteSelection();
+                    return true;
+                }
                 backspace();
                 return true;
             }
             case 261 -> { // Entfernen
+                if (hasSelection()) {
+                    deleteSelection();
+                    return true;
+                }
                 delete();
                 return true;
             }
@@ -263,27 +371,27 @@ public class CodeEditor {
                 return true;
             }
             case 263 -> { // links
-                moveLeft();
+                move(this::moveLeft);
                 return true;
             }
             case 262 -> { // rechts
-                moveRight();
+                move(this::moveRight);
                 return true;
             }
             case 265 -> { // hoch
-                moveVertically(-1);
+                move(() -> moveVertically(-1));
                 return true;
             }
             case 264 -> { // runter
-                moveVertically(1);
+                move(() -> moveVertically(1));
                 return true;
             }
             case 268 -> { // Pos1
-                cursorColumn = 0;
+                move(() -> cursorColumn = 0);
                 return true;
             }
             case 269 -> { // Ende
-                cursorColumn = lines.get(cursorLine).length();
+                move(() -> cursorColumn = lines.get(cursorLine).length());
                 return true;
             }
             case 266 -> { // Bild hoch
@@ -314,7 +422,18 @@ public class CodeEditor {
         return true;
     }
 
+    /**
+     * Ein Klick setzt den Cursor — mit Umschalt zieht er die Auswahl dorthin.
+     *
+     * <p>Dasselbe Verhalten wie in jedem Editor. Ohne die Umschalt-Variante
+     * müsste man längere Stellen mit den Pfeiltasten einsammeln.
+     */
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (net.minecraft.client.gui.screens.Screen.hasShiftDown()) {
+            anchorIfNeeded();
+        } else {
+            clearSelection();
+        }
         if (mouseX < x || mouseX > x + width || mouseY < y || mouseY > y + height) {
             return false;
         }
@@ -345,7 +464,150 @@ public class CodeEditor {
 
     // ---- Bearbeiten -------------------------------------------------------
 
+    /**
+     * Zeichnet den ausgewählten Bereich einer Zeile.
+     *
+     * <p>Eine Auswahl ohne Anzeige ist schlimmer als keine: Man weiss nicht,
+     * was das nächste Zeichen ersetzt.
+     */
+    private void drawSelection(GuiGraphics graphics, int lineIndex, int textX, int lineY) {
+        if (!hasSelection()) {
+            return;
+        }
+        int[] b = selectionBounds();
+        if (lineIndex < b[0] || lineIndex > b[2]) {
+            return;
+        }
+        String line = lines.get(lineIndex);
+        int von = lineIndex == b[0] ? Math.min(b[1], line.length()) : 0;
+        int bis = lineIndex == b[2] ? Math.min(b[3], line.length()) : line.length();
+        int links = textX + font.width(line.substring(0, von));
+        // Eine leere Zeile mitten in der Auswahl bekommt einen schmalen
+        // Streifen — sonst sieht es aus, als wäre sie nicht mit dabei.
+        int rechts = von == bis && lineIndex != b[2]
+                ? links + 4
+                : textX + font.width(line.substring(0, bis));
+        graphics.fill(links, lineY - 1, Math.min(rechts, x + width - 2),
+                lineY + LINE_HEIGHT - 2, EditorColours.SELECTION);
+    }
+
+    // ---- Auswahl ----------------------------------------------------------
+
+    public boolean hasSelection() {
+        return anchorLine >= 0
+                && (anchorLine != cursorLine || anchorColumn != cursorColumn);
+    }
+
+    /** Setzt den Anker, falls noch keiner steht — für Umschalt-Bewegungen. */
+    private void anchorIfNeeded() {
+        if (anchorLine < 0) {
+            anchorLine = cursorLine;
+            anchorColumn = cursorColumn;
+        }
+    }
+
+    private void clearSelection() {
+        anchorLine = -1;
+    }
+
+    /** Anfang und Ende der Auswahl, in Leserichtung sortiert. */
+    private int[] selectionBounds() {
+        int startLine = anchorLine;
+        int startColumn = anchorColumn;
+        int endLine = cursorLine;
+        int endColumn = cursorColumn;
+        if (startLine > endLine || (startLine == endLine && startColumn > endColumn)) {
+            int hilfsZeile = startLine;
+            int hilfsSpalte = startColumn;
+            startLine = endLine;
+            startColumn = endColumn;
+            endLine = hilfsZeile;
+            endColumn = hilfsSpalte;
+        }
+        return new int[] {startLine, startColumn, endLine, endColumn};
+    }
+
+    public String selectedText() {
+        if (!hasSelection()) {
+            return "";
+        }
+        int[] b = selectionBounds();
+        if (b[0] == b[2]) {
+            String line = lines.get(b[0]);
+            return line.substring(Math.min(b[1], line.length()),
+                    Math.min(b[3], line.length()));
+        }
+        StringBuilder out = new StringBuilder();
+        String first = lines.get(b[0]);
+        out.append(first.substring(Math.min(b[1], first.length())));
+        for (int i = b[0] + 1; i < b[2]; i++) {
+            out.append(NEWLINE).append(lines.get(i));
+        }
+        String last = lines.get(b[2]);
+        out.append(NEWLINE).append(last, 0, Math.min(b[3], last.length()));
+        return out.toString();
+    }
+
+    /** Löscht die Auswahl und setzt den Cursor an ihren Anfang. */
+    private void deleteSelection() {
+        if (!hasSelection()) {
+            return;
+        }
+        int[] b = selectionBounds();
+        String first = lines.get(b[0]);
+        String last = lines.get(b[2]);
+        String kopf = first.substring(0, Math.min(b[1], first.length()));
+        String schwanz = last.substring(Math.min(b[3], last.length()));
+        for (int i = b[2]; i > b[0]; i--) {
+            lines.remove(i);
+        }
+        lines.set(b[0], kopf + schwanz);
+        cursorLine = b[0];
+        cursorColumn = kopf.length();
+        clearSelection();
+        changed();
+    }
+
+    /**
+     * Fügt Text ein, der Zeilenumbrüche enthalten darf.
+     *
+     * <p>Das ist der Grund, warum es die Zwischenablage überhaupt braucht:
+     * Ein Programm aus der Dokumentation abzutippen ist die Sorte Arbeit, die
+     * niemand zweimal macht.
+     */
+    private void insertMultiline(String text) {
+        if (hasSelection()) {
+            deleteSelection();
+        }
+        // Fremde Zeilenenden und Tabulatoren vereinheitlichen: Wer aus einem
+        // Editor kopiert, bringt sonst Steuerzeichen mit, die hier nichts
+        // verloren haben.
+        String bereinigt = normalise(text);
+        String[] teile = bereinigt.split("\n", -1);
+        if (teile.length == 1) {
+            insert(teile[0]);
+            return;
+        }
+        String line = lines.get(cursorLine);
+        int column = Math.min(cursorColumn, line.length());
+        String vor = line.substring(0, column);
+        String nach = line.substring(column);
+
+        lines.set(cursorLine, vor + teile[0]);
+        for (int i = 1; i < teile.length; i++) {
+            lines.add(cursorLine + i, teile[i]);
+        }
+        int letzte = cursorLine + teile.length - 1;
+        cursorColumn = lines.get(letzte).length();
+        lines.set(letzte, lines.get(letzte) + nach);
+        cursorLine = letzte;
+        changed();
+    }
+
     private void insert(String text) {
+        if (hasSelection()) {
+            deleteSelection();
+        }
         String line = lines.get(cursorLine);
         int column = Math.min(cursorColumn, line.length());
         lines.set(cursorLine, line.substring(0, column) + text + line.substring(column));

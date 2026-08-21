@@ -19,6 +19,12 @@ public final class EditorColours {
     /** Hinterlegung einer Zeile mit Fehler — bei zehn Pixeln Höhe trägt keine Welle. */
     public static final int ERROR_LINE = 0x30E88388;
 
+    /**
+     * Die Auswahl: kräftig genug, um sie zu sehen, blass genug, um den Text
+     * darüber noch zu lesen.
+     */
+    public static final int SELECTION = 0x664A7BC4;
+
     private EditorColours() {
     }
 }
