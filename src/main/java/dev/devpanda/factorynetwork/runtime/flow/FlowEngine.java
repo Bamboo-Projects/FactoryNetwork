@@ -419,8 +419,13 @@ public final class FlowEngine {
             flow.top().advance();
             return;
         }
-        if (!frame.isLoop()) {
+        if (!frame.isLoop() || frame.hasIteration()) {
             // Die Anweisung, die den Block geöffnet hat, ist erledigt.
+            //
+            // Bei while ist sie das nicht: Ihre Bedingung muss erneut geprüft
+            // werden. Bei for schon — die Liste ist durch. Ohne diese
+            // Unterscheidung wertet der Lauf seine Liste erneut aus und
+            // beginnt von vorn, endlos.
             flow.top().advance();
         }
     }

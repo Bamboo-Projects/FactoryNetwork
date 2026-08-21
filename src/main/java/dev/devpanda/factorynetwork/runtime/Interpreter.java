@@ -263,7 +263,14 @@ public final class Interpreter {
      */
     private List<Value> entriesOf(Expr iterable) {
         Value value = evaluate(iterable);
-        if (value instanceof Value.Request) {
+        if (value instanceof Value.Request request) {
+            // Nach der Art fragen und nicht raten: Ein Flüssigkeits-Selektor
+            // träfe in der Gegenstandsauflösung nichts, und eine Schleife über
+            // nichts sieht aus wie eine, die nichts zu tun hatte.
+            if (request.kind() == Value.Request.Kind.FLUID) {
+                return FluidSelection.resolve(iterable).stream()
+                        .map(fluid -> (Value) new Value.FluidValue(fluid)).toList();
+            }
             return ItemSelection.resolve(iterable).stream()
                     .map(item -> (Value) new Value.ItemValue(item)).toList();
         }
@@ -273,6 +280,8 @@ public final class Interpreter {
     private static List<Value> entriesOf(Value iterable) {
         return switch (iterable) {
             case Value.ValueList list -> list.entries();
+            case Value.FluidSelection selection -> selection.fluids().stream()
+                    .map(fluid -> (Value) new Value.FluidValue(fluid)).toList();
             case Value.Selection selection -> selection.items().stream()
                     .map(item -> (Value) new Value.ItemValue(item)).toList();
             default -> throw new ScriptError(

@@ -69,6 +69,9 @@ public sealed interface Value {
         }
     }
 
+    /** Eine einzelne Flüssigkeitssorte. */
+    record FluidValue(net.minecraft.world.level.material.Fluid fluid) implements Value {}
+
     /** Eine Auswahl von Flüssigkeiten, schon aufgelöst. Mengen in Millibucket. */
     record FluidSelection(List<net.minecraft.world.level.material.Fluid> fluids, long amount)
             implements Value {}
@@ -107,6 +110,8 @@ public sealed interface Value {
                     + value.selector();
             case Selection value -> value.items().size() + " Arten";
             case FluidSelection value -> value.fluids().size() + " Flüssigkeiten";
+            case FluidValue value -> net.minecraft.core.registries.BuiltInRegistries.FLUID
+                    .getKey(value.fluid()).toString();
             case Device value -> value.name();
             case Builtin value -> value.name();
             case ValueList value -> value.entries().size() + " Einträge";

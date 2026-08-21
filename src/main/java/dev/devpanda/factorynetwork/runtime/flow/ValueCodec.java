@@ -73,6 +73,10 @@ public final class ValueCodec {
                 tag.put(KEY_ITEMS, items);
                 tag.putLong(KEY_AMOUNT, selection.amount());
             }
+            case Value.FluidValue sort -> {
+                tag.putString(KEY_TYPE, "fluid");
+                tag.putString(KEY_VALUE, BuiltInRegistries.FLUID.getKey(sort.fluid()).toString());
+            }
             case Value.FluidSelection selection -> {
                 tag.putString(KEY_TYPE, "fluidsel");
                 ListTag fluids = new ListTag();
@@ -112,6 +116,7 @@ public final class ValueCodec {
             case "item" -> new Value.ItemValue(item(tag.getString(KEY_VALUE)));
             case "req" -> new Value.Request(tag.getString(KEY_VALUE), tag.getLong(KEY_AMOUNT));
             case "sel" -> readSelection(tag);
+            case "fluid" -> new Value.FluidValue(fluid(tag.getString(KEY_VALUE)));
             case "fluidsel" -> readFluidSelection(tag);
             case "dev" -> new Value.Device(tag.getString(KEY_VALUE));
             case "builtin" -> new Value.Builtin(tag.getString(KEY_VALUE));

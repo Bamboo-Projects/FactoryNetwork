@@ -2387,10 +2387,35 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(ablaeufe.get(0).status(), "AWAITING", "Und er wartet");
 
         helper.assertValueEqual(entity.plants().size(), 2, "Beide Anlagen erscheinen");
-        helper.assertTrue(entity.plants().get(1).contains("fehlt"),
-                "Und die unvollständige sagt es: " + entity.plants().get(1));
+        // Die Reihenfolge kommt aus einer Menge und ist nicht zugesagt.
+        helper.assertTrue(entity.plants().stream().anyMatch(plant -> plant.contains("fehlt")),
+                "Die unvollständige Anlage sagt es: " + entity.plants());
         helper.assertValueEqual(entity.fluidLines().get(0), "water: 1500 mB",
                 "Der Flüssigkeitsbestand");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void aLoopOverFluidsRunsItsRounds(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                fn zaehlt() {
+                    let anzahl = 0
+                    for sorte in fluid:water {
+                        anzahl = anzahl + 1
+                    }
+                    return anzahl
+                }"""), "Das Programm wurde nicht übernommen");
+
+        var flow = entity.startFlow("zaehlt", java.util.List.of());
+        // Eine Schleife über nichts sieht aus wie eine, die nichts zu tun
+        // hatte — und ist damit der schlimmste Fall.
+        helper.assertValueEqual(flow.status().name(), "DONE",
+                "Der Ablauf sagt: " + flow.detail());
+        helper.assertValueEqual(resultOf(flow), 1L, "Wasser ist eine Sorte");
         helper.succeed();
     }
 
