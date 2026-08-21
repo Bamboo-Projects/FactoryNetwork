@@ -5,6 +5,7 @@ import dev.devpanda.factorynetwork.lang.ast.Decl;
 import dev.devpanda.factorynetwork.lang.ast.Expr;
 import dev.devpanda.factorynetwork.lang.ast.Program;
 import dev.devpanda.factorynetwork.network.FactoryGraph;
+import dev.devpanda.factorynetwork.network.NetworkFluids;
 import dev.devpanda.factorynetwork.network.NetworkStorage;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -12,6 +13,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.material.Fluid;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.items.IItemHandler;
 
 import java.util.ArrayList;
@@ -89,7 +93,9 @@ public final class WorkerRuntime {
     }
 
     /** Ein Tick: läuft über alle Worker und bewegt, was ansteht. */
-    public void tick(Level level, Program program, FactoryGraph graph, NetworkStorage storage) {
+    public void tick(Level level, Program program, FactoryGraph graph, NetworkStorage storage,
+            NetworkFluids fluids) {
+        this.fluids = fluids == null ? new NetworkFluids() : fluids;
         long now = level.getGameTime();
         currentStorage = storage;
         lastGraph = graph;
@@ -141,6 +147,11 @@ public final class WorkerRuntime {
         // steht, warum. Das ist die Schwester von WAITING_TARGET.
         if (!conditionHolds(worker, state)) {
             state.status = Status.WAITING_CONDITION;
+            return;
+        }
+
+        if (isFluidWorker(worker)) {
+            tickFluidWorker(worker, graph, fluids, state, from, to);
             return;
         }
 
@@ -323,6 +334,27 @@ public final class WorkerRuntime {
      * eine Wahl: Ein volles Gerät darf den Transfer nicht beenden.
      */
     private IItemHandler handlerOf(Expr target, FactoryGraph graph, WorkerState state) {
+        return resolve(target, graph, state, ConnectorBlockEntity::machineInventory,
+                "An diesem Connector hängt keine Maschine mit Inventar");
+    }
+
+    private net.neoforged.neoforge.fluids.capability.IFluidHandler tankOf(Expr target,
+            FactoryGraph graph, WorkerState state) {
+        return resolve(target, graph, state, ConnectorBlockEntity::machineTank,
+                "An diesem Connector hängt nichts, das Flüssigkeit hält");
+    }
+
+    /**
+     * Findet, womit ein Worker arbeiten soll.
+     *
+     * <p>Gruppen, Verteilung und alle Fehlermeldungen stehen hier ein einziges
+     * Mal. Was am Ende geholt wird — ein Inventar oder ein Tank — entscheidet
+     * der Aufrufer; sonst gäbe es diese ganze Suche zweimal, und die eine
+     * Fassung bekäme Verbesserungen, die der anderen fehlen.
+     */
+    private <T> T resolve(Expr target, FactoryGraph graph, WorkerState state,
+            java.util.function.Function<ConnectorBlockEntity, T> extract,
+            String missingDetail) {
         if (!(target instanceof Expr.Name name)) {
             state.status = Status.HALTED;
             state.detail = "Als Ziel taugt nur ein Name";
@@ -342,16 +374,16 @@ public final class WorkerRuntime {
                 return null;
             }
             for (String member : group.order(this::fillLevelOf, random)) {
-                IItemHandler handler = handlerFor(member, graph, state);
-                if (handler != null) {
-                    return handler;
+                T found = resolveDevice(member, graph, state, extract, missingDetail);
+                if (found != null) {
+                    return found;
                 }
             }
             state.status = Status.WAITING_TARGET;
             state.detail = "Kein Mitglied von " + name.value() + " ist erreichbar";
             return null;
         }
-        return handlerFor(name.value(), graph, state);
+        return resolveDevice(name.value(), graph, state, extract, missingDetail);
     }
 
     /** Wie voll ein Gerät ist — für die Verteilung nach dem leersten. */
@@ -371,7 +403,17 @@ public final class WorkerRuntime {
     /** Der Graph des laufenden Ticks — nur für die Füllstandsabfrage. */
     private FactoryGraph lastGraph;
 
+    /** Der Flüssigkeitsbestand des Netzes, für die Dauer eines Ticks. */
+    private NetworkFluids fluids = new NetworkFluids();
+
     private IItemHandler handlerFor(String deviceName, FactoryGraph graph, WorkerState state) {
+        return resolveDevice(deviceName, graph, state, ConnectorBlockEntity::machineInventory,
+                "An diesem Connector hängt keine Maschine mit Inventar");
+    }
+
+    private <T> T resolveDevice(String deviceName, FactoryGraph graph, WorkerState state,
+            java.util.function.Function<ConnectorBlockEntity, T> extract,
+            String missingDetail) {
         Expr.Name name = new Expr.Name(deviceName, new dev.devpanda.factorynetwork.lang.Span(
                 0, 0, 1, 1));
         Optional<BlockPos> position = graph.connector(name.value());
@@ -399,22 +441,18 @@ public final class WorkerRuntime {
             return null;
         }
         // Der Aufrufer hält die Welt; hier reicht der Connector selbst.
-        return connectorHandler(position.get(), state);
-    }
-
-    private IItemHandler connectorHandler(BlockPos position, WorkerState state) {
-        ConnectorBlockEntity connector = connectorAt(position);
+        ConnectorBlockEntity connector = connectorAt(position.get());
         if (connector == null) {
             state.status = Status.WAITING_TARGET;
             state.detail = "Connector gerade nicht erreichbar";
             return null;
         }
-        IItemHandler handler = connector.machineInventory();
-        if (handler == null) {
+        T found = extract.apply(connector);
+        if (found == null) {
             state.status = Status.HALTED;
-            state.detail = "An diesem Connector hängt keine Maschine mit Inventar";
+            state.detail = missingDetail;
         }
-        return handler;
+        return found;
     }
 
     /** Wird vom Controller vor jedem Tick gesetzt, damit hier keine Welt liegt. */
@@ -467,6 +505,225 @@ public final class WorkerRuntime {
             note(worker.name() + ": die Auswahl trifft zurzeit nichts");
         }
         return resolved;
+    }
+
+
+    // ---- Flüssigkeiten ----------------------------------------------------
+
+    /**
+     * Ein Worker, der Flüssigkeit fördert.
+     *
+     * <p>Dieselbe Gestalt wie beim Gegenstands-Worker, dieselben Angaben:
+     * {@code rate} zählt in Millibucket, {@code maintain} hält je Sorte einen
+     * Vorrat, {@code overflow} nimmt, was das Ziel nicht mehr fasst. Was
+     * anders ist, ist die Sache selbst — ein Tank hat keine Slots, und
+     * gerechnet wird in Millibucket statt in Stück.
+     */
+    private void tickFluidWorker(Decl.Worker worker, FactoryGraph graph,
+            NetworkFluids fluids, WorkerState state, Decl.Worker.Entry from,
+            Decl.Worker.Entry to) {
+        int batch = batchOf(worker);
+        List<Fluid> filter = filterFluids(worker);
+        state.strategyOverride = strategyOf(worker);
+
+        boolean fromStorage = isStorage(from.value());
+        boolean toStorage = isStorage(to.value());
+        if (fromStorage && toStorage) {
+            state.status = Status.IDLE;
+            state.detail = "Quelle und Ziel sind beide der Speicher";
+            return;
+        }
+        if (filter.isEmpty()) {
+            // Ohne Angabe wäre nicht zu sagen, welche Sorte gemeint ist: Ein
+            // Tank hält meist genau eine, und die falsche zu ziehen ist bei
+            // Flüssigkeiten teurer als bei Gegenständen.
+            state.status = Status.HALTED;
+            state.detail = "Ein Flüssigkeits-Worker braucht ein filter";
+            return;
+        }
+
+        int maintain = maintainOf(worker);
+        if (maintain > 0) {
+            Map<Fluid, Long> present = presentFluids(to.value(), graph, fluids, filter, state);
+            List<Fluid> missing = filter.stream()
+                    .filter(fluid -> present.getOrDefault(fluid, 0L) < maintain)
+                    .toList();
+            if (missing.isEmpty()) {
+                state.status = Status.IDLE;
+                state.detail = "Vorrat steht (" + maintain + " mB je Sorte)";
+                return;
+            }
+            long largestGap = missing.stream()
+                    .mapToLong(fluid -> maintain - present.getOrDefault(fluid, 0L))
+                    .max().orElse(0);
+            filter = missing;
+            batch = (int) Math.min(batch, largestGap);
+        }
+
+        long moved;
+        if (fromStorage) {
+            moved = storageToTank(to.value(), graph, fluids, filter, batch, state);
+        } else if (toStorage) {
+            moved = tankToStorage(from.value(), graph, fluids, filter, batch, state);
+        } else {
+            moved = tankToTank(from.value(), to.value(), graph, filter, batch, state);
+        }
+
+        if (state.status == Status.WAITING_TARGET && moved == 0) {
+            Decl.Worker.Entry overflow = worker.entry(Decl.Worker.Entry.Kind.OVERFLOW);
+            if (overflow != null) {
+                state.status = Status.RUNNING;
+                long spilled = fromStorage
+                        ? storageToTank(overflow.value(), graph, fluids, filter, batch, state)
+                        : tankToTank(from.value(), overflow.value(), graph, filter, batch, state);
+                if (spilled > 0) {
+                    state.moved += spilled;
+                    state.detail = spilled + " mB ins Ausweichziel";
+                    return;
+                }
+            }
+        }
+
+        state.moved += moved;
+        if (state.status != Status.HALTED && state.status != Status.WAITING_TARGET) {
+            state.status = moved > 0 ? Status.RUNNING : Status.IDLE;
+            state.detail = moved > 0 ? moved + " mB bewegt" : "nichts zu tun";
+        }
+    }
+
+    private long tankToStorage(Expr source, FactoryGraph graph, NetworkFluids fluids,
+            List<Fluid> filter, int batch, WorkerState state) {
+        IFluidHandler tank = tankOf(source, graph, state);
+        if (tank == null) {
+            return 0;
+        }
+        long moved = 0;
+        for (int slot = 0; slot < tank.getTanks() && moved < batch; slot++) {
+            FluidStack inside = tank.getFluidInTank(slot);
+            if (inside.isEmpty() || !filter.contains(inside.getFluid())) {
+                continue;
+            }
+            FluidStack wanted = new FluidStack(inside.getFluid(),
+                    (int) Math.min(batch - moved, inside.getAmount()));
+            FluidStack taken = tank.drain(wanted, IFluidHandler.FluidAction.EXECUTE);
+            if (taken.isEmpty()) {
+                continue;
+            }
+            fluids.insert(taken.getFluid(), taken.getAmount());
+            moved += taken.getAmount();
+        }
+        return moved;
+    }
+
+    private long storageToTank(Expr target, FactoryGraph graph, NetworkFluids fluids,
+            List<Fluid> filter, int batch, WorkerState state) {
+        IFluidHandler tank = tankOf(target, graph, state);
+        if (tank == null) {
+            return 0;
+        }
+        long moved = 0;
+        for (Fluid fluid : filter) {
+            if (moved >= batch) {
+                break;
+            }
+            long available = Math.min(batch - moved, fluids.count(fluid));
+            if (available <= 0) {
+                continue;
+            }
+            int accepted = tank.fill(new FluidStack(fluid, (int) available),
+                    IFluidHandler.FluidAction.EXECUTE);
+            if (accepted <= 0) {
+                state.status = Status.WAITING_TARGET;
+                state.detail = "Das Ziel nimmt nichts mehr";
+                continue;
+            }
+            fluids.extract(fluid, accepted);
+            moved += accepted;
+        }
+        return moved;
+    }
+
+    private long tankToTank(Expr source, Expr target, FactoryGraph graph,
+            List<Fluid> filter, int batch, WorkerState state) {
+        IFluidHandler in = tankOf(source, graph, state);
+        IFluidHandler out = tankOf(target, graph, state);
+        if (in == null || out == null) {
+            return 0;
+        }
+        long moved = 0;
+        for (int slot = 0; slot < in.getTanks() && moved < batch; slot++) {
+            FluidStack inside = in.getFluidInTank(slot);
+            if (inside.isEmpty() || !filter.contains(inside.getFluid())) {
+                continue;
+            }
+            FluidStack wanted = new FluidStack(inside.getFluid(),
+                    (int) Math.min(batch - moved, inside.getAmount()));
+            FluidStack simulated = in.drain(wanted, IFluidHandler.FluidAction.SIMULATE);
+            if (simulated.isEmpty()) {
+                continue;
+            }
+            int accepted = out.fill(simulated, IFluidHandler.FluidAction.EXECUTE);
+            if (accepted <= 0) {
+                state.status = Status.WAITING_TARGET;
+                state.detail = "Das Ziel nimmt nichts mehr";
+                break;
+            }
+            in.drain(new FluidStack(simulated.getFluid(), accepted),
+                    IFluidHandler.FluidAction.EXECUTE);
+            moved += accepted;
+        }
+        return moved;
+    }
+
+    /** Wie viel am Ziel schon steht, je Sorte — in Millibucket. */
+    private Map<Fluid, Long> presentFluids(Expr target, FactoryGraph graph,
+            NetworkFluids fluids, List<Fluid> filter, WorkerState state) {
+        Map<Fluid, Long> present = new LinkedHashMap<>();
+        if (isStorage(target)) {
+            for (Fluid fluid : filter) {
+                present.put(fluid, fluids.count(fluid));
+            }
+            return present;
+        }
+        IFluidHandler tank = tankOf(target, graph, state);
+        if (tank == null) {
+            return present;
+        }
+        for (int slot = 0; slot < tank.getTanks(); slot++) {
+            FluidStack inside = tank.getFluidInTank(slot);
+            if (!inside.isEmpty()) {
+                present.merge(inside.getFluid(), (long) inside.getAmount(), Long::sum);
+            }
+        }
+        return present;
+    }
+
+    /** Die Sorten, auf die gefiltert wird. */
+    private List<Fluid> filterFluids(Decl.Worker worker) {
+        Decl.Worker.Entry filter = worker.entry(Decl.Worker.Entry.Kind.FILTER);
+        if (filter == null) {
+            return List.of();
+        }
+        List<Fluid> resolved = FluidSelection.resolve(filter.value());
+        if (resolved.isEmpty()) {
+            note(worker.name() + ": die Auswahl trifft zurzeit keine Flüssigkeit");
+        }
+        return resolved;
+    }
+
+    /** Meint der Filter dieses Workers Flüssigkeiten? */
+    private static boolean isFluidWorker(Decl.Worker worker) {
+        Decl.Worker.Entry filter = worker.entry(Decl.Worker.Entry.Kind.FILTER);
+        return filter != null && selectorKind(filter.value()) == Expr.Selector.Kind.FLUID;
+    }
+
+    private static Expr.Selector.Kind selectorKind(Expr expr) {
+        return switch (expr) {
+            case Expr.Selector selector -> selector.kind();
+            case Expr.Amount amount -> selectorKind(amount.selection());
+            case Expr.Except except -> selectorKind(except.base());
+            case null, default -> null;
+        };
     }
 
     // ---- maintain und when ------------------------------------------------

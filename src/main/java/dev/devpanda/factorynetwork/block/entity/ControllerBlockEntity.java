@@ -234,7 +234,7 @@ public class ControllerBlockEntity extends BlockEntity {
                     level.isLoaded(position)
                             && level.getBlockEntity(position) instanceof ConnectorBlockEntity connector
                             ? connector : null);
-            runtime.tick(level, program, graph, storage);
+            runtime.tick(level, program, graph, storage, fluidStorage);
         }
         tickFlows();
         fireRedstoneEvents();

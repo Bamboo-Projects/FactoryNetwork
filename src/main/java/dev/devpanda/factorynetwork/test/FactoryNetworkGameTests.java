@@ -2201,6 +2201,82 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void aFluidWorkerHaulsBetweenTanks(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 1, 1);
+        ControllerBlockEntity entity = twoCauldrons(helper, controller);
+        entity.rebuildNetwork();
+        fillCauldron(helper, controller, 0);
+
+        helper.assertTrue(entity.deploy("""
+                worker umfuellen {
+                    from bottich
+                    to kessel
+                    filter fluid:water
+                    rate 1000 per 1t
+                }"""), "Das Programm wurde nicht übernommen");
+
+        for (int i = 0; i < 5; i++) {
+            entity.serverTick();
+        }
+
+        helper.assertTrue(!hasWater(helper, controller, 0), "Der Bottich ist leer");
+        helper.assertTrue(hasWater(helper, controller, 1), "Der Kessel ist voll");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void aFluidWorkerFillsTheNetwork(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 1, 1);
+        ControllerBlockEntity entity = twoCauldrons(helper, controller);
+        entity.rebuildNetwork();
+        fillCauldron(helper, controller, 0);
+
+        helper.assertTrue(entity.deploy("""
+                worker einlagern {
+                    from bottich
+                    to storage
+                    filter fluid:water
+                    rate 1000 per 1t
+                }"""), "Das Programm wurde nicht übernommen");
+
+        for (int i = 0; i < 5; i++) {
+            entity.serverTick();
+        }
+
+        helper.assertValueEqual(entity.fluids().count(
+                net.minecraft.world.level.material.Fluids.WATER), 1000L,
+                "Der Bestand des Netzes");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void aFluidWorkerWithoutFilterSaysSo(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 1, 1);
+        ControllerBlockEntity entity = twoCauldrons(helper, controller);
+        entity.rebuildNetwork();
+        fillCauldron(helper, controller, 0);
+
+        // Ohne filter ist das ein Gegenstands-Worker — und der findet an einem
+        // Kessel kein Inventar. Die Meldung muss davon sprechen, nicht schweigen.
+        helper.assertTrue(entity.deploy("""
+                worker unklar {
+                    from bottich
+                    to kessel
+                    rate 1000 per 1t
+                }"""), "Das Programm wurde nicht übernommen");
+
+        for (int i = 0; i < 3; i++) {
+            entity.serverTick();
+        }
+
+        var state = entity.runtime().states().get("unklar");
+        helper.assertTrue(state != null, "Der Worker hat keinen Zustand");
+        helper.assertValueEqual(state.status.name(), "HALTED", "Er muss anhalten");
+        helper.assertTrue(hasWater(helper, controller, 0), "Und nichts angefasst haben");
+        helper.succeed();
+    }
+
     private FactoryNetworkGameTests() {
     }
 }
