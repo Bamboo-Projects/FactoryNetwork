@@ -25,6 +25,10 @@ import snownee.jade.api.WailaPlugin;
 @WailaPlugin
 public class FactoryNetworkJadePlugin implements IWailaPlugin {
 
+    public static final ResourceLocation PRESS = ResourceLocation.fromNamespaceAndPath(
+            FactoryNetwork.MOD_ID, "press");
+    public static final ResourceLocation DRIVE = ResourceLocation.fromNamespaceAndPath(
+            FactoryNetwork.MOD_ID, "drive");
     public static final ResourceLocation CABLE = ResourceLocation.fromNamespaceAndPath(
             FactoryNetwork.MOD_ID, "cable");
     public static final ResourceLocation CONNECTOR = ResourceLocation.fromNamespaceAndPath(
@@ -37,11 +41,19 @@ public class FactoryNetworkJadePlugin implements IWailaPlugin {
         registration.registerBlockDataProvider(CableInfo.INSTANCE, ConnectorBlockEntity.class);
         registration.registerBlockDataProvider(ControllerInfo.INSTANCE,
                 ControllerBlockEntity.class);
+        registration.registerBlockDataProvider(PressInfo.INSTANCE,
+                dev.devpanda.factorynetwork.block.entity.PressBlockEntity.class);
+        registration.registerBlockDataProvider(DriveInfo.INSTANCE,
+                dev.devpanda.factorynetwork.block.entity.DriveBlockEntity.class);
     }
 
     @Override
     public void registerClient(IWailaClientRegistration registration) {
         registration.registerBlockComponent(CableInfo.INSTANCE, CableBlock.class);
+        registration.registerBlockComponent(PressInfo.INSTANCE,
+                dev.devpanda.factorynetwork.block.PressBlock.class);
+        registration.registerBlockComponent(DriveInfo.INSTANCE,
+                dev.devpanda.factorynetwork.block.DriveBlock.class);
         registration.registerBlockComponent(ConnectorInfo.INSTANCE,
                 dev.devpanda.factorynetwork.block.ConnectorBlock.class);
         registration.registerBlockComponent(ControllerInfo.INSTANCE,

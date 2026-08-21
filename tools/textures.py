@@ -39,10 +39,25 @@ BRASS      = (196, 154, 74)
 BRASS_HI   = (236, 200, 130)
 WOOD       = (74, 56, 38)
 WOOD_HI    = (104, 80, 54)
+CRYSTAL    = (108, 196, 214)
+CRYSTAL_HI = (186, 240, 248)
 
 
 def blend(a, b, t):
     return tuple(int(round(a[i] + (b[i] - a[i]) * t)) for i in range(3))
+
+
+def masked_surface(mask, top=BODY_TOP, bottom=BODY_BOT, seed=1):
+    """Struktur gehört ins Material, nicht in den Hintergrund.
+
+    Gegenstände haben transparente Ränder. Wenn die Oberfläche erst auf einer
+    vollen Platte entsteht und dann durch die Maske fällt, bleiben Körnung und
+    Bürstung innerhalb der Silhouette und erzeugen keine Farbsäume.
+    """
+    layer = surface(top, bottom, seed)
+    result = Image.new("RGBA", (N, N), (0, 0, 0, 0))
+    result.paste(layer, (0, 0), mask)
+    return result
 
 
 def surface(top=BODY_TOP, bottom=BODY_BOT, seed=1):
@@ -553,66 +568,98 @@ def terminal_side():
 # ---- Label-Gun -----------------------------------------------------------
 
 def label_gun():
-    """Ein Gegenstand lebt von der Silhouette, nicht von der Fläche."""
+    """Beschriftungspistole mit langem Lauf und schwerem Griff."""
     img = Image.new("RGBA", (N, N), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
-    # Griff
-    d.polygon([(14, 56), (14, 42), (26, 34), (30, 46), (22, 56)],
-              fill=WOOD + (255,), outline=EDGE + (255,))
-    d.line([(17, 52), (17, 44)], fill=WOOD_HI + (255,))
-    # Korpus
-    d.polygon([(22, 38), (44, 18), (54, 26), (34, 46)],
-              fill=blend(BODY_TOP, LIGHT, 0.4) + (255,), outline=EDGE + (255,))
-    d.line([(26, 36), (45, 22)], fill=SHINE + (255,))
-    # Mündung in Messing
-    d.polygon([(43, 14), (55, 24), (51, 31), (39, 21)],
-              fill=BRASS + (255,), outline=EDGE + (255,))
-    d.line([(45, 18), (52, 25)], fill=BRASS_HI + (255,))
-    # Anzeige am Korpus
-    glow(img, [29, 33, 36, 39], radius=4, strength=140)
+
+    grip_mask = Image.new("L", (N, N), 0)
+    ImageDraw.Draw(grip_mask).polygon(
+        [(16, 55), (14, 45), (22, 35), (28, 37), (31, 49), (25, 57)], fill=255
+    )
+    img.alpha_composite(masked_surface(grip_mask, WOOD_HI, WOOD, seed=201))
+
+    body_mask = Image.new("L", (N, N), 0)
+    ImageDraw.Draw(body_mask).polygon(
+        [(22, 36), (35, 22), (47, 15), (56, 20), (52, 31), (38, 43), (26, 44)], fill=255
+    )
+    img.alpha_composite(masked_surface(body_mask, blend(BODY_TOP, LIGHT, 0.18),
+                                       blend(BODY_MID, EDGE, 0.28), seed=202))
+
+    muzzle_mask = Image.new("L", (N, N), 0)
+    ImageDraw.Draw(muzzle_mask).polygon(
+        [(47, 15), (56, 20), (60, 19), (58, 29), (50, 32), (48, 24)], fill=255
+    )
+    img.alpha_composite(masked_surface(muzzle_mask, BRASS_HI, BRASS, seed=203))
     d = ImageDraw.Draw(img)
-    d.rectangle([29, 33, 36, 39], fill=EDGE + (255,))
-    d.rectangle([30, 34, 35, 38], fill=ACCENT + (255,))
+
+    d.polygon([(16, 55), (14, 45), (22, 35), (28, 37), (31, 49), (25, 57)],
+              outline=EDGE + (255,))
+    d.polygon([(22, 36), (35, 22), (47, 15), (56, 20), (52, 31), (38, 43), (26, 44)],
+              outline=EDGE + (255,))
+    d.polygon([(47, 15), (56, 20), (60, 19), (58, 29), (50, 32), (48, 24)],
+              outline=EDGE + (255,))
+
+    d.line([(18, 53), (22, 39)], fill=WOOD_HI + (255,))
+    d.line([(24, 37), (45, 18)], fill=SHINE + (255,))
+    d.line([(25, 43), (38, 43)], fill=_dunkler(BODY_TOP + (255,), 0.35))
+    d.line([(50, 17), (58, 20)], fill=BRASS_HI + (255,))
+    d.line([(50, 31), (57, 28)], fill=_dunkler(BRASS + (255,), 0.35))
+
+    d.rectangle([31, 28, 44, 38], fill=blend(BODY_MID, EDGE, 0.45) + (255,))
+    recess(img, (31, 28, 44, 38), tiefe=2)
+    ao(img, (31, 28, 44, 38), depth=3, strength=0.4)
+    glow(img, [33, 30, 38, 35], radius=4, strength=120)
+    d = ImageDraw.Draw(img)
+    d.rectangle([33, 30, 38, 35], fill=EDGE + (255,))
+    d.rectangle([34, 31, 37, 34], fill=ACCENT + (255,))
+    d.rectangle([24, 40, 29, 43], fill=EDGE + (255,))
+    d.line([(24, 40), (28, 40)], fill=LIGHT + (255,))
+    d.line([(29, 41), (29, 43)], fill=_dunkler(EDGE + (255,), 0.1))
+
+    scratches(img, count=3, seed=204)
     return img
 
 
 def network_analyser():
-    """Ein Messgerät: Gehäuse, Anzeige, kurze Sonde.
-
-    Die Silhouette trägt: ein flaches Gehäuse mit grossem Fenster und einer
-    Sonde oben rechts. So ist es im Hotbar von der Beschriftungspistole zu
-    unterscheiden, die eine lange Waffenform hat.
-    """
+    """Messgerät mit breitem Fenster und kurzer Sonde."""
     img = Image.new("RGBA", (N, N), (0, 0, 0, 0))
+
+    body_mask = Image.new("L", (N, N), 0)
+    ImageDraw.Draw(body_mask).polygon(
+        [(14, 22), (21, 15), (43, 15), (50, 22), (50, 50), (44, 56), (20, 56), (14, 50)], fill=255
+    )
+    img.alpha_composite(masked_surface(body_mask, blend(BODY_TOP, LIGHT, 0.12),
+                                       blend(BODY_BOT, EDGE, 0.18), seed=211))
+
+    probe_mask = Image.new("L", (N, N), 0)
+    probe_draw = ImageDraw.Draw(probe_mask)
+    probe_draw.rectangle([42, 10, 47, 22], fill=255)
+    probe_draw.polygon([(45, 10), (50, 6), (56, 8), (48, 14)], fill=255)
+    img.alpha_composite(masked_surface(probe_mask, BRASS_HI, BRASS, seed=212))
     d = ImageDraw.Draw(img)
 
-    # Gehäuse
-    d.rounded_rectangle([14, 20, 48, 54], radius=4,
-                        fill=blend(BODY_TOP, EDGE, 0.25) + (255,), outline=EDGE + (255,))
-    d.line([(17, 23), (45, 23)], fill=SHINE + (255,))
+    d.polygon([(14, 22), (21, 15), (43, 15), (50, 22), (50, 50), (44, 56), (20, 56), (14, 50)],
+              outline=EDGE + (255,))
+    d.rectangle([42, 10, 47, 22], outline=EDGE + (255,))
+    d.polygon([(45, 10), (50, 6), (56, 8), (48, 14)], outline=EDGE + (255,))
+    d.line([(19, 18), (41, 18)], fill=SHINE + (255,))
+    d.line([(17, 52), (41, 52)], fill=_dunkler(BODY_TOP + (255,), 0.35))
+    d.line([(44, 11), (53, 8)], fill=BRASS_HI + (255,))
 
-    # Sonde nach oben rechts
-    d.line([(44, 22), (54, 10)], fill=EDGE + (255,), width=4)
-    d.line([(44, 22), (54, 10)], fill=BRASS + (255,), width=2)
-    d.ellipse([50, 6, 58, 14], fill=BRASS + (255,), outline=EDGE + (255,))
-    d.ellipse([52, 8, 56, 12], fill=BRASS_HI + (255,))
-
-    # Anzeigefenster mit einem Netzgeflecht darin
-    glow(img, [19, 26, 43, 44], radius=6, strength=120)
+    d.rectangle([18, 22, 46, 44], fill=blend(BODY_MID, EDGE, 0.42) + (255,))
+    recess(img, (18, 22, 46, 44), tiefe=2)
+    ao(img, (18, 22, 46, 44), depth=3, strength=0.4)
+    glow(img, [21, 25, 43, 41], radius=5, strength=110)
     d = ImageDraw.Draw(img)
-    d.rectangle([19, 26, 43, 44], fill=EDGE + (255,))
-    d.rectangle([21, 28, 41, 42], fill=blend(ACCENT, EDGE, 0.55) + (255,))
-    # Drei Knoten und ihre Verbindungen — das Werkzeug zeigt, was es tut.
-    knoten = [(25, 32), (35, 31), (30, 39)]
-    for a in range(len(knoten)):
-        for b in range(a + 1, len(knoten)):
-            d.line([knoten[a], knoten[b]], fill=ACCENT + (255,))
-    for x, y in knoten:
-        d.rectangle([x - 1, y - 1, x + 1, y + 1], fill=(240, 250, 235, 255))
+    d.rectangle([21, 25, 43, 41], fill=blend(ACCENT_DIM, EDGE, 0.25) + (255,))
+    for a, b in (((25, 36), (31, 29)), ((31, 29), (38, 32)), ((25, 36), (38, 32)), ((38, 32), (35, 38))):
+        d.line([a, b], fill=ACCENT + (255,))
+    for x, y in ((25, 36), (31, 29), (38, 32), (35, 38)):
+        d.rectangle([x - 1, y - 1, x + 1, y + 1], fill=ACCENT_HI + (255,))
 
-    # Griffrillen unten
-    for y in range(47, 53, 2):
-        d.line([(20, y), (42, y)], fill=blend(BODY_TOP, EDGE, 0.55) + (255,))
+    for y in (47, 50, 53):
+        d.line([(22, y), (42, y)], fill=blend(BODY_MID, EDGE, 0.5) + (255,))
+    scratches(img, count=3, seed=213)
     return img
 
 
@@ -625,30 +672,37 @@ CELL_TONE = {
 
 
 def storage_cell(label):
-    """Eine Speicherzelle: Gehäuse, Fenster, Beschriftung durch Farbe.
-
-    Die vier Größen unterscheiden sich im Ton, nicht in der Form — im Hotbar
-    zählt, dass man sie auseinanderhält, nicht dass man die Größe abliest.
-    """
+    """Speicherzelle als schwere Kassette mit Sichtfenster."""
     ton = CELL_TONE[label]
     img = Image.new("RGBA", (N, N), (0, 0, 0, 0))
+
+    shell_mask = Image.new("L", (N, N), 0)
+    ImageDraw.Draw(shell_mask).polygon(
+        [(18, 11), (44, 11), (50, 17), (50, 48), (45, 53), (19, 53), (14, 48), (14, 16)], fill=255
+    )
+    img.alpha_composite(masked_surface(shell_mask, blend(ton, LIGHT, 0.18),
+                                       blend(ton, EDGE, 0.35), seed=220))
     d = ImageDraw.Draw(img)
+    d.polygon([(18, 11), (44, 11), (50, 17), (50, 48), (45, 53), (19, 53), (14, 48), (14, 16)],
+              outline=EDGE + (255,))
+    d.line([(19, 14), (42, 14)], fill=blend(ton, SHINE, 0.55) + (255,))
+    d.line([(18, 50), (43, 50)], fill=_dunkler(ton + (255,), 0.35))
 
-    # Gehäuse mit Fase
-    d.rounded_rectangle([16, 12, 48, 52], radius=3,
-                        fill=blend(ton, EDGE, 0.2) + (255,), outline=EDGE + (255,))
-    d.line([(19, 15), (45, 15)], fill=blend(ton, (255, 255, 255), 0.5) + (255,))
+    d.rectangle([19, 19, 45, 37], fill=blend(BODY_MID, EDGE, 0.48) + (255,))
+    recess(img, (19, 19, 45, 37), tiefe=2)
+    ao(img, (19, 19, 45, 37), depth=3, strength=0.45)
+    glow(img, [23, 22, 41, 34], color=blend(ACCENT, ton, 0.35), radius=4, strength=80)
+    d = ImageDraw.Draw(img)
+    d.rectangle([23, 22, 41, 34], fill=blend(ton, EDGE, 0.58) + (255,))
+    for i, y in enumerate((24, 28, 32)):
+        farbe = blend(ACCENT_HI, ton, 0.45 if i == 0 else 0.65) if i < 2 else blend(ton, EDGE, 0.25)
+        d.rectangle([25, y, 39, y + 2], fill=farbe + (255,))
 
-    # Sichtfenster mit Füllstandsstreifen
-    d.rectangle([21, 19, 43, 38], fill=EDGE + (255,))
-    d.rectangle([23, 21, 41, 36], fill=blend(ton, EDGE, 0.55) + (255,))
-    for i, y in enumerate(range(23, 36, 4)):
-        hell = blend(ACCENT, ton, 0.25) if i < 2 else blend(ton, EDGE, 0.4)
-        d.rectangle([25, y, 39, y + 2], fill=hell + (255,))
-
-    # Kontakte unten — hier steckt sie im Laufwerk
-    for x in range(22, 43, 6):
-        d.rectangle([x, 43, x + 3, 49], fill=BRASS + (255,), outline=EDGE + (255,))
+    for x in (21, 27, 33, 39):
+        d.rectangle([x, 40, x + 3, 50], fill=BRASS + (255,))
+        raised(img, (x, 40, x + 3, 50), hoehe=1)
+        d.line([(x, 40), (x + 2, 40)], fill=BRASS_HI + (255,))
+    scratches(img, count=2, seed=221)
     return img
 
 
@@ -712,16 +766,26 @@ def crystal_ore(deepslate=False):
 
 
 def raw_crystal():
-    """Der rohe Kristall: eine Scherbe, kein geschliffener Stein."""
+    """Roher Kristall mit unruhigem Bruch statt sauberem Schliff."""
     img = Image.new("RGBA", (N, N), (0, 0, 0, 0))
+    mask = Image.new("L", (N, N), 0)
+    pts = [(31, 7), (41, 13), (48, 27), (44, 42), (36, 56), (22, 52), (15, 34), (18, 20)]
+    ImageDraw.Draw(mask).polygon(pts, fill=255)
+    img.alpha_composite(masked_surface(mask, CRYSTAL_HI, CRYSTAL, seed=230))
+    grain(img, amount=5, seed=231)
     d = ImageDraw.Draw(img)
-    d.polygon([(30, 8), (46, 26), (40, 52), (22, 50), (16, 28)],
-              fill=CRYSTAL + (255,), outline=EDGE + (255,))
-    # Zwei Facetten, damit es nicht wie ein Fleck aussieht
-    d.polygon([(30, 8), (40, 30), (28, 34), (20, 26)], fill=CRYSTAL_HI + (255,))
-    d.polygon([(28, 34), (40, 30), (38, 50), (26, 48)],
-              fill=blend(CRYSTAL, EDGE, 0.3) + (255,))
-    d.line([(30, 10), (22, 26)], fill=(255, 255, 255, 255))
+    d.polygon(pts, outline=EDGE + (255,))
+
+    d.polygon([(31, 7), (41, 13), (39, 30), (27, 34), (20, 20)],
+              fill=blend(CRYSTAL_HI, (255, 255, 255), 0.25) + (255,))
+    d.polygon([(27, 34), (39, 30), (36, 56), (24, 50)],
+              fill=blend(CRYSTAL, EDGE, 0.22) + (255,))
+    d.polygon([(39, 30), (48, 27), (44, 42), (36, 56)],
+              fill=blend(CRYSTAL, EDGE, 0.35) + (255,))
+    d.line([(31, 10), (21, 22)], fill=(255, 255, 255, 255))
+    d.line([(41, 15), (46, 27)], fill=CRYSTAL_HI + (255,))
+    d.line([(24, 50), (35, 54)], fill=_dunkler(CRYSTAL + (255,), 0.3))
+    scratches(img, count=2, seed=232)
     return img
 
 
@@ -734,92 +798,149 @@ STAMP_TONE = {
 
 
 def stamp(kind):
-    """Ein Prägestempel: schwerer Kopf, kurzer Schaft, Muster auf der Fläche.
-
-    Die vier unterscheiden sich im Muster der Prägefläche, nicht in der Form —
-    was sie prägen, sieht man am Abdruck, nicht am Griff.
-    """
+    """Prägestempel mit massivem Kopf und klarer Abdruckfläche."""
     ton = STAMP_TONE[kind]
     img = Image.new("RGBA", (N, N), (0, 0, 0, 0))
+
+    shaft_mask = Image.new("L", (N, N), 0)
+    ImageDraw.Draw(shaft_mask).polygon(
+        [(26, 8), (36, 8), (39, 15), (37, 28), (25, 28), (23, 15)], fill=255
+    )
+    img.alpha_composite(masked_surface(shaft_mask, blend(BODY_TOP, LIGHT, 0.15),
+                                       blend(BODY_BOT, EDGE, 0.1), seed=240))
+
+    head_mask = Image.new("L", (N, N), 0)
+    ImageDraw.Draw(head_mask).polygon(
+        [(14, 28), (18, 23), (46, 23), (50, 28), (50, 45), (14, 45)], fill=255
+    )
+    img.alpha_composite(masked_surface(head_mask, blend(ton, LIGHT, 0.2),
+                                       blend(ton, EDGE, 0.32), seed=241))
     d = ImageDraw.Draw(img)
 
-    # Schaft
-    d.rectangle([26, 8, 38, 26], fill=blend(BODY_TOP, EDGE, 0.3) + (255,),
-                outline=EDGE + (255,))
-    d.line([(29, 11), (29, 24)], fill=SHINE + (255,))
-    # Kopf
-    d.rectangle([14, 26, 50, 46], fill=blend(ton, EDGE, 0.25) + (255,),
-                outline=EDGE + (255,))
-    d.line([(17, 29), (47, 29)], fill=blend(ton, (255, 255, 255), 0.45) + (255,))
+    d.polygon([(26, 8), (36, 8), (39, 15), (37, 28), (25, 28), (23, 15)], outline=EDGE + (255,))
+    d.polygon([(14, 28), (18, 23), (46, 23), (50, 28), (50, 45), (14, 45)], outline=EDGE + (255,))
+    d.line([(27, 11), (35, 11)], fill=SHINE + (255,))
+    d.line([(18, 26), (44, 26)], fill=blend(ton, SHINE, 0.55) + (255,))
 
-    # Prägefläche mit Muster
-    d.rectangle([18, 34, 46, 44], fill=EDGE + (255,))
+    d.rectangle([19, 31, 45, 41], fill=blend(BODY_MID, EDGE, 0.52) + (255,))
+    recess(img, (19, 31, 45, 41), tiefe=2)
+    ao(img, (19, 31, 45, 41), depth=3, strength=0.45)
+    d = ImageDraw.Draw(img)
     hell = blend(ton, (255, 255, 255), 0.35) + (255,)
     if kind == "plate":
-        for x in range(21, 45, 4):
-            d.line([(x, 36), (x, 42)], fill=hell)
+        for x in range(22, 45, 5):
+            d.line([(x, 33), (x, 39)], fill=hell)
     elif kind == "logic":
-        d.rectangle([22, 36, 30, 42], outline=hell)
-        d.line([(30, 39), (42, 39)], fill=hell)
-        d.rectangle([40, 37, 43, 41], fill=hell)
+        d.rectangle([22, 33, 29, 39], outline=hell)
+        d.line([(29, 36), (39, 36)], fill=hell)
+        d.rectangle([38, 34, 41, 38], fill=hell)
     elif kind == "memory":
-        for y in (37, 40):
-            for x in range(21, 45, 6):
+        for y in (34, 37):
+            for x in range(22, 43, 6):
                 d.rectangle([x, y, x + 3, y + 1], fill=hell)
     else:
-        d.line([(22, 39), (42, 39)], fill=hell)
+        d.line([(22, 36), (42, 36)], fill=hell)
         for x in (26, 32, 38):
-            d.line([(x, 36), (x, 42)], fill=hell)
+            d.line([(x, 33), (x, 39)], fill=hell)
+    scratches(img, count=2, seed=242)
     return img
 
 
 def plate():
-    """Gepresstes Metall: eine flache Scheibe mit Prägekante."""
+    """Metallplatte mit gestanzter Schulter und breiter Silhouette."""
     img = Image.new("RGBA", (N, N), (0, 0, 0, 0))
+    tone_top = blend(BODY_TOP, SHINE, 0.5)
+    tone_bottom = blend(BODY_BOT, LIGHT, 0.35)
+
+    mask = Image.new("L", (N, N), 0)
+    pts = [(12, 24), (18, 18), (46, 18), (52, 24), (52, 40), (46, 46), (18, 46), (12, 40)]
+    ImageDraw.Draw(mask).polygon(pts, fill=255)
+    img.alpha_composite(masked_surface(mask, tone_top, tone_bottom, seed=250))
     d = ImageDraw.Draw(img)
-    d.rounded_rectangle([12, 20, 52, 44], radius=3,
-                        fill=blend((162, 166, 172), EDGE, 0.15) + (255,),
-                        outline=EDGE + (255,))
-    d.line([(15, 23), (49, 23)], fill=(226, 230, 236, 255))
-    d.rounded_rectangle([18, 26, 46, 39], radius=2,
-                        outline=blend((162, 166, 172), EDGE, 0.5) + (255,))
+    d.polygon(pts, outline=EDGE + (255,))
+    d.line([(18, 21), (45, 21)], fill=(226, 230, 236, 255))
+    d.line([(19, 43), (44, 43)], fill=_dunkler(tone_bottom + (255,), 0.32))
+
+    d.rectangle([19, 25, 45, 39], fill=blend(BODY_MID, EDGE, 0.4) + (255,))
+    recess(img, (19, 25, 45, 39), tiefe=2)
+    ao(img, (19, 25, 45, 39), depth=3, strength=0.4)
+    d = ImageDraw.Draw(img)
+    d.rectangle([22, 28, 42, 36], outline=blend((162, 166, 172), EDGE, 0.4) + (255,))
+    d.line([(24, 30), (40, 30)], fill=SHINE + (255,))
+    scratches(img, count=3, seed=251)
     return img
 
 
 def crystal_cut():
-    """Der geschliffene Kristall: klare Facetten statt roher Bruch."""
+    """Geschliffener Kristall mit geordneten Facetten und hellem Kern."""
     img = Image.new("RGBA", (N, N), (0, 0, 0, 0))
+    mask = Image.new("L", (N, N), 0)
+    pts = [(32, 8), (43, 15), (51, 28), (43, 44), (32, 56), (21, 44), (13, 28), (21, 15)]
+    ImageDraw.Draw(mask).polygon(pts, fill=255)
+    img.alpha_composite(masked_surface(mask, CRYSTAL_HI, CRYSTAL, seed=260))
+    grain(img, amount=4, seed=261)
     d = ImageDraw.Draw(img)
-    d.polygon([(32, 10), (48, 26), (32, 54), (16, 26)],
-              fill=CRYSTAL + (255,), outline=EDGE + (255,))
-    d.polygon([(32, 10), (48, 26), (32, 30), (16, 26)], fill=CRYSTAL_HI + (255,))
-    d.polygon([(32, 30), (48, 26), (32, 54)], fill=blend(CRYSTAL, EDGE, 0.35) + (255,))
-    d.line([(32, 12), (20, 26)], fill=(255, 255, 255, 255))
+    d.polygon(pts, outline=EDGE + (255,))
+
+    glow(img, [24, 20, 40, 40], color=CRYSTAL_HI, radius=5, strength=75)
+    d = ImageDraw.Draw(img)
+    d.polygon([(32, 10), (43, 15), (39, 28), (25, 28), (21, 15)],
+              fill=blend(CRYSTAL_HI, (255, 255, 255), 0.3) + (255,))
+    d.polygon([(25, 28), (39, 28), (43, 44), (32, 52), (21, 44)],
+              fill=blend(CRYSTAL, EDGE, 0.15) + (255,))
+    d.polygon([(39, 28), (51, 28), (43, 44)],
+              fill=blend(CRYSTAL, EDGE, 0.32) + (255,))
+    d.polygon([(13, 28), (25, 28), (21, 44)],
+              fill=blend(CRYSTAL_HI, CRYSTAL, 0.35) + (255,))
+    d.line([(32, 12), (22, 18)], fill=(255, 255, 255, 255))
+    d.line([(42, 17), (48, 27)], fill=CRYSTAL_HI + (255,))
+    d.line([(24, 45), (32, 53)], fill=_dunkler(CRYSTAL + (255,), 0.25))
+    scratches(img, count=2, seed=262)
     return img
 
 
 def core(kind):
-    """Ein Kern: Prozessorgehäuse mit Kontakten und farbigem Fenster."""
+    """Kern als Chipgehäuse mit Pins und leuchtendem Zentrum."""
     ton = STAMP_TONE[kind]
     img = Image.new("RGBA", (N, N), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
 
-    # Kontakte links und rechts
     for y in range(20, 45, 6):
-        d.rectangle([10, y, 16, y + 3], fill=BRASS + (255,), outline=EDGE + (255,))
-        d.rectangle([48, y, 54, y + 3], fill=BRASS + (255,), outline=EDGE + (255,))
+        d.rectangle([8, y, 14, y + 3], fill=BRASS + (255,))
+        d.line([(8, y), (13, y)], fill=BRASS_HI + (255,))
+        d.rectangle([50, y, 56, y + 3], fill=BRASS + (255,))
+        d.line([(50, y), (55, y)], fill=BRASS_HI + (255,))
 
-    # Gehäuse
-    d.rounded_rectangle([16, 16, 48, 48], radius=2,
-                        fill=blend((58, 60, 64), EDGE, 0.2) + (255,), outline=EDGE + (255,))
-    d.line([(19, 19), (45, 19)], fill=(96, 100, 106, 255))
-
-    # Fenster in der Kernfarbe
-    glow(img, [23, 23, 41, 41], radius=5, strength=110)
+    shell_mask = Image.new("L", (N, N), 0)
+    pts = [(17, 16), (47, 16), (50, 19), (50, 45), (47, 48), (17, 48), (14, 45), (14, 19)]
+    ImageDraw.Draw(shell_mask).polygon(pts, fill=255)
+    img.alpha_composite(masked_surface(shell_mask, blend(BODY_TOP, LIGHT, 0.08),
+                                       blend(BODY_BOT, EDGE, 0.05), seed=270))
     d = ImageDraw.Draw(img)
-    d.rectangle([23, 23, 41, 41], fill=EDGE + (255,))
-    d.rectangle([25, 25, 39, 39], fill=ton + (255,))
-    d.line([(27, 27), (37, 27)], fill=blend(ton, (255, 255, 255), 0.5) + (255,))
+    d.polygon(pts, outline=EDGE + (255,))
+    d.line([(18, 19), (45, 19)], fill=LIGHT + (255,))
+    d.line([(18, 45), (45, 45)], fill=_dunkler(BODY_MID + (255,), 0.3))
+
+    d.rectangle([20, 22, 44, 42], fill=blend(BODY_MID, EDGE, 0.5) + (255,))
+    recess(img, (20, 22, 44, 42), tiefe=2)
+    ao(img, (20, 22, 44, 42), depth=3, strength=0.45)
+    glow(img, [25, 26, 39, 38], color=ton, radius=5, strength=105)
+    d = ImageDraw.Draw(img)
+    d.rectangle([25, 26, 39, 38], fill=EDGE + (255,))
+    d.rectangle([27, 28, 37, 36], fill=ton + (255,))
+    d.line([(27, 28), (36, 28)], fill=blend(ton, (255, 255, 255), 0.55) + (255,))
+    if kind == "logic":
+        d.line([(29, 32), (35, 32)], fill=ACCENT_HI + (255,))
+        d.line([(32, 29), (32, 35)], fill=ACCENT_HI + (255,))
+    elif kind == "memory":
+        for x in (29, 32, 35):
+            d.line([(x, 30), (x, 34)], fill=blend(ton, ACCENT_HI, 0.45) + (255,))
+    else:
+        for x, y in ((29, 30), (35, 30), (32, 34)):
+            d.rectangle([x, y, x + 1, y + 1], fill=ACCENT_HI + (255,))
+            if x != 32:
+                d.line([(32, 34), (x, y + 1)], fill=blend(ton, ACCENT_HI, 0.5) + (255,))
+    scratches(img, count=2, seed=271)
     return img
 
 
