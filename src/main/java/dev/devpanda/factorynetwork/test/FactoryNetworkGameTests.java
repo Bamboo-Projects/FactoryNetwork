@@ -2621,6 +2621,84 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    /** Drei Kessel: einer voll, zwei leere als Gruppe. */
+    private static ControllerBlockEntity threeCauldrons(GameTestHelper helper,
+            BlockPos controller) {
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        for (int i = 0; i < 5; i++) {
+            helper.setBlock(controller.east(i + 1), FnBlocks.CABLE.get());
+        }
+        String[] labels = {"bottich", "ziel_a", "ziel_b"};
+        for (int i = 0; i < labels.length; i++) {
+            BlockPos connector = controller.east(i + 2).above();
+            helper.setBlock(connector, FnBlocks.CONNECTOR.get().defaultBlockState()
+                    .setValue(dev.devpanda.factorynetwork.block.ConnectorBlock.FACING,
+                            net.minecraft.core.Direction.UP));
+            helper.setBlock(connector.above(), Blocks.CAULDRON);
+            name(helper, connector, labels[i]);
+        }
+        return controllerAt(helper, controller);
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void aFluidWorkerServesAGroup(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 1, 1);
+        ControllerBlockEntity entity = threeCauldrons(helper, controller);
+        entity.rebuildNetwork();
+        fillCauldron(helper, controller, 0);
+
+        helper.assertTrue(entity.deploy("""
+                group ziele {
+                    members ziel_*
+                    strategy emptiest
+                }
+
+                worker verteilen {
+                    from bottich
+                    to ziele
+                    filter fluid:water
+                    rate 1000 per 1t
+                }"""), "Das Programm wurde nicht übernommen");
+
+        for (int i = 0; i < 5; i++) {
+            entity.serverTick();
+        }
+
+        // Ein Kessel fasst genau einen Eimer, also landet alles in einem der
+        // beiden — welcher es ist, entscheidet die Verteilung.
+        boolean a = hasWater(helper, controller, 1);
+        boolean b = hasWater(helper, controller, 2);
+        helper.assertTrue(a || b, "Ein Mitglied der Gruppe muss etwas bekommen haben");
+        helper.assertTrue(!hasWater(helper, controller, 0), "Und der Bottich ist leer");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void exceptWorksForFluidsToo(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 1, 1);
+        ControllerBlockEntity entity = twoCauldrons(helper, controller);
+        entity.rebuildNetwork();
+        fillCauldron(helper, controller, 0);
+
+        helper.assertTrue(entity.deploy("""
+                worker alles_ausser_wasser {
+                    from bottich
+                    to kessel
+                    filter fluid:* except fluid:water
+                    rate 1000 per 1t
+                }"""), "Das Programm wurde nicht übernommen");
+
+        for (int i = 0; i < 5; i++) {
+            entity.serverTick();
+        }
+
+        // Wasser ist ausgenommen — es bleibt liegen.
+        helper.assertTrue(hasWater(helper, controller, 0),
+                "Was ausgenommen ist, wird nicht bewegt");
+        helper.assertTrue(!hasWater(helper, controller, 1), "Und kommt nirgends an");
+        helper.succeed();
+    }
+
     private FactoryNetworkGameTests() {
     }
 }

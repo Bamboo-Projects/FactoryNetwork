@@ -92,7 +92,7 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | Netzwerk | Graph über Kabel, Speicher schlüsselbasiert, Kanäle je Strang |
 | Editor | Syntaxfarben, Fehler beim Tippen, Vervollständigung nach Stelle |
 | Anzeigen | Am Block und im Terminal, Knöpfe starten Abläufe |
-| Prüfung | 87 Einheitstests, 78 GameTests |
+| Prüfung | 87 Einheitstests, 80 GameTests |
 
 ## 3. Was noch nicht läuft
 
@@ -125,11 +125,6 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 - **Flüssigkeiten im Speicher-Reiter.** Sie stehen zurzeit in der
   Netzübersicht; ein Symbolraster bräuchte das Bild der Flüssigkeit.
 - **Ein eigener Speicherblock.** Der Speicher sitzt zurzeit im Controller.
-- **`strategy` bei Tankgruppen.** Die Verteilung nach dem leersten Gerät misst
-  Gegenstands-Slots; eine Gruppe von Tanks sortiert sie damit zufällig.
-- **Ein Teilerfolg beim Füllen** hinterlässt den Worker auf `WAITING_TARGET`
-  („Das Ziel nimmt nichts mehr"), obwohl etwas gelaufen ist. Die Zahl stimmt,
-  die Beschreibung im Terminal nicht.
 - **Autocrafting.** Der letzte ausgegraute Reiter.
 - **Chemikalien** aus Mekanism. Die Schreibweise steht seit dem Entwurf.
 
