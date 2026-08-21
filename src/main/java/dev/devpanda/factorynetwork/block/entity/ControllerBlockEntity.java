@@ -367,6 +367,22 @@ public class ControllerBlockEntity extends BlockEntity {
     }
 
     /**
+     * Der Flüssigkeitsbestand, als Zeilen für das Terminal.
+     *
+     * <p>Als Text und nicht als Symbolraster: Eine Flüssigkeit hat kein
+     * Gegenstandsbild, und ein Netz hält selten mehr als eine Handvoll Sorten
+     * — dafür lohnt kein zweites Raster.
+     */
+    public List<String> fluidLines() {
+        return fluidStorage.contents().entrySet().stream()
+                .sorted(Map.Entry.<net.minecraft.world.level.material.Fluid, Long>
+                        comparingByValue().reversed())
+                .map(entry -> net.minecraft.core.registries.BuiltInRegistries.FLUID
+                        .getKey(entry.getKey()).getPath() + ": " + entry.getValue() + " mB")
+                .toList();
+    }
+
+    /**
      * Die gebauten Anlagen, als Zeilen für das Terminal.
      *
      * <p>Eine unvollständige Anlage bliebe sonst unsichtbar: Sie tut nichts

@@ -19,12 +19,14 @@ public final class ClientNetworkState {
     private static List<String> connectors = new ArrayList<>();
     private static List<String> workers = new ArrayList<>();
     private static List<String> plants = new ArrayList<>();
+    private static List<String> fluids = new ArrayList<>();
 
     public static void accept(NetworkStatePacket packet) {
         source = packet.source();
         connectors = new ArrayList<>(packet.connectors());
         workers = new ArrayList<>(packet.workers());
         plants = new ArrayList<>(packet.plants());
+        fluids = new ArrayList<>(packet.fluids());
     }
 
     public static String source() {
@@ -41,6 +43,10 @@ public final class ClientNetworkState {
 
     public static List<String> plants() {
         return List.copyOf(plants);
+    }
+
+    public static List<String> fluids() {
+        return List.copyOf(fluids);
     }
 
     private ClientNetworkState() {

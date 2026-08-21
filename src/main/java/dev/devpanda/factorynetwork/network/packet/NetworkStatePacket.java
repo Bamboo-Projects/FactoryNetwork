@@ -24,7 +24,8 @@ import java.util.List;
  * Programm statt an der Beschriftung.
  */
 public record NetworkStatePacket(String source, List<String> connectors, List<String> workers,
-                                 List<String> plants) implements CustomPacketPayload {
+                                 List<String> plants, List<String> fluids)
+        implements CustomPacketPayload {
 
     public static final Type<NetworkStatePacket> TYPE = new Type<>(
             ResourceLocation.fromNamespaceAndPath(FactoryNetwork.MOD_ID, "network_state"));
@@ -38,6 +39,8 @@ public record NetworkStatePacket(String source, List<String> connectors, List<St
                     NetworkStatePacket::workers,
                     ByteBufCodecs.stringUtf8(256).apply(ByteBufCodecs.list(256)),
                     NetworkStatePacket::plants,
+                    ByteBufCodecs.stringUtf8(128).apply(ByteBufCodecs.list(256)),
+                    NetworkStatePacket::fluids,
                     NetworkStatePacket::new);
 
     @Override

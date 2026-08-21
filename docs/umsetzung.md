@@ -82,6 +82,7 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | Sprache | Lexer, Parser, Fehlerbehebung — die Grammatik vollständig |
 | Worker | `from`, `to`, `filter`, `maintain`, `rate`, `when`, `strategy`, `overflow` |
 | Auswahl | einzelne Gegenstände, Tags, Muster, `except` |
+| Flüssigkeiten | `move` und Worker, Bestand im Netz, in Millibucket |
 | Funktionen | Bedingungen, Schleifen, `move`, Redstone lesen, `log` |
 | Ereignisse | `redstone_changed`, eigene über `emit` und `on` |
 | Abläufe | `sleep`, `await` mit `where`, `timeout` und `else`, `for` mit Warten je Runde |
@@ -91,7 +92,7 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | Netzwerk | Graph über Kabel, Speicher schlüsselbasiert, Kanäle je Strang |
 | Editor | Syntaxfarben, Fehler beim Tippen, Vervollständigung nach Stelle |
 | Anzeigen | Am Block und im Terminal, Knöpfe starten Abläufe |
-| Prüfung | 86 Einheitstests, 62 GameTests |
+| Prüfung | 86 Einheitstests, 71 GameTests |
 
 ## 3. Was noch nicht läuft
 
@@ -115,11 +116,16 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
   Empfehlung: **(2), und (1) später als Bequemlichkeit obendrauf.** Eine
   Automatisierung, die einmal zu früh weiterschaltet, verliert Gegenstände in
   einer Kiste, die niemand mehr findet.
-- **Flüssigkeiten und Chemikalien.** Die Schreibweise steht, die Anbindung
-  fehlt.
+- **Chemikalien.** Mekanisms Gase und Schlämme; die Schreibweise steht, die
+  Anbindung fehlt.
+- **Flüssigkeits-Tags.** `tag:` löst heute Gegenstands-Tags auf. Wie ein
+  Flüssigkeits-Tag geschrieben wird, ist eine Frage an die Sprache und nicht
+  nebenbei zu entscheiden — `fluidtag:c/molten` wäre eine vierte Art,
+  `tag:` beide zu durchsuchen die andere Möglichkeit.
+- **Flüssigkeiten im Speicher-Reiter.** Sie stehen zurzeit in der
+  Netzübersicht; ein Symbolraster bräuchte das Bild der Flüssigkeit.
 - **Ein eigener Speicherblock.** Der Speicher sitzt zurzeit im Controller.
-- **Der Reiter „Anzeigen"** im Terminal ist noch ausgegraut, obwohl es Displays
-  gibt.
+- **Autocrafting.** Der letzte ausgegraute Reiter.
 - **`callFunction` aus dem Terminal** läuft am gewöhnlichen Interpreter und
   kann deshalb nicht warten. Eine Funktion mit `sleep` scheitert dort mit
   klarer Meldung, statt als Ablauf zu starten — was fehlt, ist eine Antwort

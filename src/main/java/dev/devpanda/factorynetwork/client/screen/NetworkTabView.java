@@ -88,6 +88,20 @@ public class NetworkTabView {
             }
         }
 
+        List<String> fluids = ClientNetworkState.fluids();
+        if (!fluids.isEmpty()) {
+            line += 3;
+            line = section(graphics, line, "screen.factorynetwork.terminal.network.fluids");
+            for (String fluid : fluids) {
+                if (line > y + height - LINE) {
+                    break;
+                }
+                graphics.drawString(font, font.plainSubstrByWidth(fluid, width - 6),
+                        x + 3, line, TerminalScreen.TEXT_DIM, false);
+                line += LINE;
+            }
+        }
+
         List<String> plants = ClientNetworkState.plants();
         if (!plants.isEmpty()) {
             line += 3;

@@ -165,10 +165,17 @@ Der Doppelpunkt trägt bewusst nur **eine** Bedeutung. Trüge er zusätzlich den
 Namensraum, kollidierte er mit Typangaben (`fn craft(item: Item)`) und wäre in
 einer Kennung wie `item:allthemodium:allthemodium_ingot` doppelt belegt.
 
+Flüssigkeiten werden in **Millibucket** gezählt, wie überall in NeoForge — ein
+Eimer sind 1000. Damit steht im Programm dieselbe Zahl wie in jeder anderen
+Mod.
+
+Nur stehende Flüssigkeiten zählen. In der Registry stehen Wasser und fließendes
+Wasser als zwei Einträge; ein Muster wie `fluid:*water*` fände sonst beide, und
+die eine Sorte ließe sich nirgends lagern.
+
 `chemical:` bezeichnet Mekanisms Gase, Schlämme und Infusionen. Die
 Schreibweise steht hier fest, weil sie sonst später nachträglich zwischen die
-bestehenden Arten gezwängt werden müsste; die Anbindung selbst kommt erst in
-Phase 8.
+bestehenden Arten gezwängt werden müsste; die Anbindung selbst kommt später.
 
 ### Mengen
 
