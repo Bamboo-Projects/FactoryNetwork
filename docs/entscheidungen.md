@@ -1389,3 +1389,76 @@ stehenden Worker und sucht den Fehler dort.
 Deshalb steht rechts unten im Speicher-Reiter, wie viele Plätze frei sind,
 getrennt nach Gegenständen und Flüssigkeiten, und in Warnfarbe, sobald keiner
 mehr da ist.
+
+---
+
+## Serverschränke und Prozessoren (2026-08-22)
+
+**Entschieden war schon: Sie werden von Anfang an verlangt.** Offen waren drei
+Fragen, und die mussten beantwortet sein, bevor gebaut wird. Hier stehen meine
+Antworten samt Begründung. **Einspruch kostet nur die Zahlen** — Block, Gegenstand
+und Buchführung bleiben, egal wie die Zahlen ausfallen.
+
+### 1. Was belegt einen Platz? Ein laufender Ablauf, kein Worker
+
+Worker laufen dauernd. Kostete jeder einen Platz, stünde man nach zehn Workern
+vor der Wahl, Hardware nachzubauen oder ein Programm zu löschen — und das
+bestraft die falsche Sache: Wer einen großen Worker in zwei saubere zerlegt,
+zahlt dafür. Eine Sprache soll Gliederung belohnen, nicht besteuern.
+
+Abläufe sind das Gegenteil: Sie kommen und gehen, mehrere laufen nebeneinander,
+und genau das ist das Bild einer CPU. **Ein Ablauf im Zustand RUNNING,
+SLEEPING oder AWAITING belegt einen Platz.** Ein wartender zählt mit — er hält
+seinen Rahmenstapel, und das ist der Speicher, um den es geht.
+
+Ohne Server läuft trotzdem nichts, auch kein Worker. Der Schrank ist nicht die
+Währung für Nebenläufigkeit allein, sondern die Voraussetzung dafür, dass das
+Netz überhaupt rechnet — so wie ein Laufwerk die Voraussetzung dafür ist, dass
+es lagert.
+
+### 2. Überlast: Warteschlange, aber sichtbar
+
+Der Einwand gegen eine Warteschlange war, dass sie die Anlage träge macht,
+ohne dass jemand merkt warum. Das ist ein Anzeigeproblem und kein Grund für
+Ablehnung.
+
+Der Grund für die Warteschlange ist ein anderer: **Verzögerung ist
+wiederherstellbar, Verlust nicht.** Ein abgelehntes `device_done` ist für
+immer weg, und die Gegenstände stehen bis zum nächsten Neustart in einer
+Maschine, die niemand mehr anfasst. Ein verzögertes läuft eine Sekunde später.
+
+Also Warteschlange — begrenzt auf zweiunddreißig, und was darüber hinausgeht,
+scheitert sichtbar und steht unter den letzten Fehlern. Eine unbegrenzte
+Warteschlange wäre eine Anlage, die Arbeit ansammelt, die sie nie abarbeitet.
+
+### 3. Ein Co-Prozessor bringt mehr gleichzeitige Abläufe
+
+Nicht schnellere Abarbeitung derselben. „Schneller" hieße mehr Schritte je
+Tick, und das merkt niemand — ein Ablauf, der in einem Tick fertig wird, wird
+nicht sichtbar fertiger. „Mehr gleichzeitig" liest man: vier Dinge auf
+einmal statt zwei.
+
+### Die fünfhundert Schritte bleiben, wo sie sind
+
+In `docs/umsetzung.md` stand die Notiz, die neue Grenze solle die technische
+Grenze der Ablaufmaschine ersetzen. **Das war ein Irrtum meinerseits**: Die
+fünfhundert Schritte gelten je Ablauf, nicht für alle zusammen. Sie sind kein
+Kapazitätsmodell, sondern eine Bremse gegen die Endlosschleife — eine falsch
+geschriebene `while`-Schleife soll den Server nicht anhalten.
+
+Beides zu einem Topf zusammenzuziehen hieße, Schritte zwischen Abläufen zu
+verteilen, und damit stünde sofort die Frage nach Fairness und Reihenfolge im
+Raum. Zwei Grenzen für zwei Aufgaben ist die ehrlichere Antwort.
+
+### Der Schrank ist ein Regal, wie das Laufwerk
+
+Acht Plätze, Prozessor in der Hand hineinklicken, leere Hand nimmt den letzten
+heraus. Dasselbe Bild, derselbe Griff, derselbe Code — wer ein Laufwerk
+bedienen kann, kann auch einen Serverschrank bedienen.
+
+### Wird der Schrank abgebaut, laufen die laufenden Abläufe zu Ende
+
+Sie mittendrin zu töten hieße, Gegenstände zu verlieren, die gerade in der
+Hand eines Ablaufs sind. Neue Abläufe starten nicht mehr, und die Worker
+stehen still. Dieselbe bewusste Milde wie beim Laufwerk, das keinen Kanal
+kostet.
