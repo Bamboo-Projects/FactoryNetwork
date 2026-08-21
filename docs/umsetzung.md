@@ -103,6 +103,7 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | Auswahl | einzelne Gegenstände, Tags, Muster, `except` |
 | Flüssigkeiten | `move` und Worker, Bestand im Netz, in Millibucket |
 | Speicher | Laufwerke mit zehn Plätzen, Zellen in vier Größen, Bestand in der Zelle |
+| | Zelle in der Hand ans Laufwerk klicken setzt sie ein, leere Hand nimmt die letzte heraus |
 | Werkzeuge | Beschriftungspistole, Netzanalysator mit Sicht durch Wände |
 | Funktionen | Bedingungen, Schleifen, `move`, Redstone lesen, `log` |
 | Ereignisse | `redstone_changed`, `device_online/offline/changed`, eigene über `emit` und `on` |

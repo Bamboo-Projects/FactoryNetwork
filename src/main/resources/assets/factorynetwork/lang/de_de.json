@@ -184,5 +184,9 @@
   "message.factorynetwork.router.off": "%s: abgeklemmt",
   "config.jade.plugin_factorynetwork.router": "Router: Bahnen und Seiten",
   "jade.factorynetwork.router.lane": "Bahn %s · %s/%s Kanäle · %s",
-  "jade.factorynetwork.router.off": "Abgeklemmt: %s"
+  "jade.factorynetwork.router.off": "Abgeklemmt: %s",
+  "message.factorynetwork.drive.full": "Alle Plätze sind belegt.",
+  "message.factorynetwork.drive.inserted": "Zelle eingesetzt — %s von %s Plätzen",
+  "message.factorynetwork.drive.removed": "Zelle entnommen — %s von %s Plätzen",
+  "message.factorynetwork.drive.empty": "Hier steckt keine Zelle."
 }

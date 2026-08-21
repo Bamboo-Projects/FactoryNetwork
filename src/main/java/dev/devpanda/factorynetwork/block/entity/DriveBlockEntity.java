@@ -131,6 +131,36 @@ public class DriveBlockEntity extends BlockEntity {
         open.values().forEach(CellInventory::flush);
     }
 
+    /** Der erste freie Platz, oder -1. */
+    public int firstFreeSlot() {
+        for (int slot = 0; slot < SLOTS; slot++) {
+            if (cells.get(slot).isEmpty()) {
+                return slot;
+            }
+        }
+        return -1;
+    }
+
+    /** Der letzte belegte Platz, oder -1. */
+    public int lastUsedSlot() {
+        for (int slot = SLOTS - 1; slot >= 0; slot--) {
+            if (!cells.get(slot).isEmpty()) {
+                return slot;
+            }
+        }
+        return -1;
+    }
+
+    public int usedSlots() {
+        int used = 0;
+        for (ItemStack stack : cells) {
+            if (!stack.isEmpty()) {
+                used++;
+            }
+        }
+        return used;
+    }
+
     public boolean isEmpty() {
         return cells.stream().allMatch(ItemStack::isEmpty);
     }

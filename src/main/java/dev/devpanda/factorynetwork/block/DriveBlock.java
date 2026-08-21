@@ -50,6 +50,90 @@ public class DriveBlock extends HorizontalDirectionalBlock implements EntityBloc
         return new DriveBlockEntity(pos, state);
     }
 
+
+    /**
+     * Eine Zelle in der Hand geht hinein.
+     *
+     * <p><b>Ohne das war der ganze Speicher nicht erreichbar.</b> Die Zellen
+     * kamen bisher nur über Prüfungen ins Laufwerk — im Spiel stand ein Block
+     * herum, in den nichts hineinging.
+     *
+     * <p>Kein Fenster mit zehn Feldern, sondern ein Griff: Zelle in der Hand
+     * hinein, leere Hand heraus. Ein Fenster wäre der gewohntere Weg, aber es
+     * ist ein eigener Bildschirm samt Hintergrundbild für eine Handlung, die
+     * aus einem Klick besteht. Was drinsteckt, sagt Jade.
+     */
+    @Override
+    protected net.minecraft.world.ItemInteractionResult useItemOn(
+            net.minecraft.world.item.ItemStack stack, BlockState state,
+            net.minecraft.world.level.Level level, BlockPos pos,
+            net.minecraft.world.entity.player.Player player,
+            net.minecraft.world.InteractionHand hand,
+            net.minecraft.world.phys.BlockHitResult hit) {
+        if (!(stack.getItem() instanceof dev.devpanda.factorynetwork.storage.StorageCellItem)) {
+            return net.minecraft.world.ItemInteractionResult
+                    .PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        }
+        if (level.isClientSide) {
+            return net.minecraft.world.ItemInteractionResult.SUCCESS;
+        }
+        if (!(level.getBlockEntity(pos) instanceof DriveBlockEntity drive)) {
+            return net.minecraft.world.ItemInteractionResult.FAIL;
+        }
+        int slot = drive.firstFreeSlot();
+        if (slot < 0) {
+            player.displayClientMessage(net.minecraft.network.chat.Component.translatable(
+                    "message.factorynetwork.drive.full"), true);
+            return net.minecraft.world.ItemInteractionResult.CONSUME;
+        }
+        drive.setCell(slot, stack.split(1));
+        level.playSound(null, pos, net.minecraft.sounds.SoundEvents.ITEM_FRAME_ADD_ITEM,
+                net.minecraft.sounds.SoundSource.BLOCKS, 0.7F, 1.3F);
+        player.displayClientMessage(net.minecraft.network.chat.Component.translatable(
+                "message.factorynetwork.drive.inserted",
+                drive.usedSlots(), DriveBlockEntity.SLOTS), true);
+        return net.minecraft.world.ItemInteractionResult.CONSUME;
+    }
+
+    /**
+     * Leere Hand nimmt die zuletzt eingesetzte Zelle wieder heraus.
+     *
+     * <p>Die zuletzt eingesetzte, nicht die erste: Wer sich vertut, klickt
+     * einmal zurück. Bei der ersten wäre die Rücknahme eine andere Zelle als
+     * die eben eingesetzte.
+     */
+    @Override
+    protected net.minecraft.world.InteractionResult useWithoutItem(
+            BlockState state, net.minecraft.world.level.Level level, BlockPos pos,
+            net.minecraft.world.entity.player.Player player,
+            net.minecraft.world.phys.BlockHitResult hit) {
+        if (level.isClientSide) {
+            return net.minecraft.world.InteractionResult.SUCCESS;
+        }
+        if (!(level.getBlockEntity(pos) instanceof DriveBlockEntity drive)) {
+            return net.minecraft.world.InteractionResult.PASS;
+        }
+        int slot = drive.lastUsedSlot();
+        if (slot < 0) {
+            player.displayClientMessage(net.minecraft.network.chat.Component.translatable(
+                    "message.factorynetwork.drive.empty"), true);
+            return net.minecraft.world.InteractionResult.CONSUME;
+        }
+        // Dieselbe Instanz, keine Kopie: setCell schreibt den Bestand in genau
+        // diesen Gegenstand zurück, und derselbe soll in die Hand.
+        net.minecraft.world.item.ItemStack cell = drive.cell(slot);
+        drive.setCell(slot, net.minecraft.world.item.ItemStack.EMPTY);
+        if (!player.getInventory().add(cell)) {
+            popResource(level, pos, cell);
+        }
+        level.playSound(null, pos, net.minecraft.sounds.SoundEvents.ITEM_FRAME_REMOVE_ITEM,
+                net.minecraft.sounds.SoundSource.BLOCKS, 0.7F, 1.1F);
+        player.displayClientMessage(net.minecraft.network.chat.Component.translatable(
+                "message.factorynetwork.drive.removed",
+                drive.usedSlots(), DriveBlockEntity.SLOTS), true);
+        return net.minecraft.world.InteractionResult.CONSUME;
+    }
+
     /**
      * Beim Abbauen fallen die Zellen heraus.
      *

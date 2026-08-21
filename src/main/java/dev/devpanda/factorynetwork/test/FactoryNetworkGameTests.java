@@ -3397,6 +3397,99 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    /**
+     * Eine Zelle geht per Klick hinein und wieder heraus.
+     *
+     * <p>Ohne diesen Weg wäre der ganze Speicher nur über Prüfungen
+     * erreichbar — im Spiel stünde ein Block herum, in den nichts hineingeht.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void aCellGoesInAndOutByHand(GameTestHelper helper) {
+        BlockPos drivePos = new BlockPos(1, 2, 1);
+        helper.setBlock(drivePos, FnBlocks.DRIVE.get());
+        var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+        ItemStack cell = new ItemStack(dev.devpanda.factorynetwork.registry.FnItems.CELLS
+                .get(dev.devpanda.factorynetwork.storage.CellTier.K1).get());
+        player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, cell);
+
+        helper.useBlock(drivePos, player);
+        var drive = (dev.devpanda.factorynetwork.block.entity.DriveBlockEntity)
+                helper.getBlockEntity(drivePos);
+        helper.assertValueEqual(drive.usedSlots(), 1, "Zellen im Laufwerk");
+        helper.assertTrue(player.getMainHandItem().isEmpty(),
+                "die Zelle muss aus der Hand verschwinden");
+
+        // Leere Hand holt sie zurück.
+        helper.useBlock(drivePos, player);
+        helper.assertValueEqual(drive.usedSlots(), 0, "Zellen nach dem Herausnehmen");
+        helper.assertTrue(player.getInventory().contains(
+                        stack -> stack.getItem() instanceof dev.devpanda.factorynetwork
+                                .storage.StorageCellItem),
+                "die Zelle muss im Rucksack landen");
+        helper.succeed();
+    }
+
+    /**
+     * Die herausgenommene Zelle bringt ihren Bestand mit.
+     *
+     * <p>Der Bestand steckt im Gegenstand, nicht im Laufwerk. Ginge er beim
+     * Herausnehmen verloren, wäre eine Zelle ein Schlüssel und kein Speicher —
+     * und jeder Umbau einer Anlage kostete das halbe Lager.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void aPulledCellCarriesItsStock(GameTestHelper helper) {
+        BlockPos controller = bareSetup(helper);
+        BlockPos drivePos = controller.above();
+        driveWithCell(helper, drivePos,
+                dev.devpanda.factorynetwork.storage.CellTier.K64);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        entity.storage().insert(Items.DIAMOND, 7);
+
+        var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+        helper.useBlock(drivePos, player);
+
+        ItemStack pulled = ItemStack.EMPTY;
+        for (ItemStack stack : player.getInventory().items) {
+            if (stack.getItem() instanceof dev.devpanda.factorynetwork.storage.StorageCellItem) {
+                pulled = stack;
+                break;
+            }
+        }
+        helper.assertTrue(!pulled.isEmpty(), "die Zelle muss im Rucksack liegen");
+        var inhalt = dev.devpanda.factorynetwork.storage.CellContents.read(pulled);
+        helper.assertValueEqual(inhalt.getOrDefault(Items.DIAMOND, 0L), 7L,
+                "Bestand in der herausgenommenen Zelle");
+        helper.assertValueEqual(entity.storage().count(Items.DIAMOND), 0L,
+                "im Netz darf nichts zurückbleiben");
+        helper.succeed();
+    }
+
+    /** Ist alles belegt, bleibt die elfte Zelle in der Hand. */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void anEleventhCellStaysInTheHand(GameTestHelper helper) {
+        BlockPos drivePos = new BlockPos(1, 2, 1);
+        helper.setBlock(drivePos, FnBlocks.DRIVE.get());
+        var drive = (dev.devpanda.factorynetwork.block.entity.DriveBlockEntity)
+                helper.getBlockEntity(drivePos);
+        for (int slot = 0; slot < dev.devpanda.factorynetwork.block.entity
+                .DriveBlockEntity.SLOTS; slot++) {
+            drive.setCell(slot, new ItemStack(dev.devpanda.factorynetwork.registry.FnItems.CELLS
+                    .get(dev.devpanda.factorynetwork.storage.CellTier.K1).get()));
+        }
+
+        var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+        player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND,
+                new ItemStack(dev.devpanda.factorynetwork.registry.FnItems.CELLS
+                        .get(dev.devpanda.factorynetwork.storage.CellTier.K4).get()));
+        helper.useBlock(drivePos, player);
+
+        helper.assertValueEqual(drive.usedSlots(), 10, "mehr als zehn passen nicht");
+        helper.assertTrue(!player.getMainHandItem().isEmpty(),
+                "die überzählige Zelle muss in der Hand bleiben");
+        helper.succeed();
+    }
+
     private FactoryNetworkGameTests() {
     }
 }
