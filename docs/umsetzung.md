@@ -132,6 +132,33 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 - **Kosten Laufwerke einen Kanal?** Bei AE2 ja. Hier nicht — ein Laufwerk gilt
   wie eine Anzeige als etwas, das dem Netz nichts wegnimmt. Das ist bewusst
   milder; wer den AE2-Druck will, macht daraus einen Kanalverbraucher.
+- **Serverschränke und Co-Prozessoren.** **Entschieden: Sie werden von Anfang
+  an verlangt** — ohne Server läuft kein Programm, so wie ohne Laufwerk nichts
+  lagert. Das fügt sich ins Bild: Jede Fähigkeit des Netzes hängt an einem
+  Block, den man bauen muss.
+
+  Offen sind die Zahlen und drei Fragen, die beim Bauen entschieden sein
+  müssen:
+
+  1. **Was belegt einen Platz?** Ein laufender Ablauf, ein Worker, oder beides?
+     Worker laufen dauerhaft — wenn jeder einen Platz kostet, steht man nach
+     zehn Workern vor der Wahl, Hardware nachzubauen oder ein Programm zu
+     löschen.
+  2. **Was passiert bei Überlast?** Warteschlange oder Ablehnung. Eine
+     Warteschlange ist milder, macht die Anlage aber träge, ohne dass jemand
+     merkt warum; eine Ablehnung ist hart, aber sichtbar.
+  3. **Wie viel bringt ein Co-Prozessor?** Mehr gleichzeitige Aufgaben, oder
+     schnellere Abarbeitung derselben?
+
+  **Was beim Bauen zu beachten ist:** Rechenkosten lassen sich schlecht
+  abschätzen. Bei Kanälen ist die Grenze offensichtlich — acht Geräte, dann
+  Schluss, und der Analysator zeigt wo. Was eine Schleife kostet, sieht
+  niemand. Die Anzeige im Terminal muss deshalb von Anfang an mitgebaut
+  werden, nicht nachgereicht: Wer ansteht, muss lesen können, warum.
+
+  Zu beachten ist auch, dass die Ablaufmaschine schon eine technische Grenze
+  hat — fünfhundert Schritte je Tick. Die neue Grenze sollte sie ersetzen,
+  nicht danebenstehen.
 - **Autocrafting.** Der letzte ausgegraute Reiter.
 - **Chemikalien** aus Mekanism. Die Schreibweise steht seit dem Entwurf.
 

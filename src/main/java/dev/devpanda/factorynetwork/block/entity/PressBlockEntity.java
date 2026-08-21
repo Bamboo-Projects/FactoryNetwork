@@ -1,0 +1,197 @@
+package dev.devpanda.factorynetwork.block.entity;
+
+import dev.devpanda.factorynetwork.press.FnRecipes;
+import dev.devpanda.factorynetwork.press.PressInput;
+import dev.devpanda.factorynetwork.press.PressRecipe;
+import dev.devpanda.factorynetwork.registry.FnBlockEntities;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.NonNullList;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.ContainerHelper;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.neoforged.neoforge.energy.EnergyStorage;
+
+import java.util.Optional;
+
+/**
+ * Die Presse.
+ *
+ * <p>Drei Plätze: Stempel, Material, Ausgabe. Sie zieht Strom aus dem
+ * gewöhnlichen Forge-Netz — jede Mod im Pack kann sie speisen, und wir bauen
+ * kein eigenes Energiesystem daneben.
+ *
+ * <p><b>Ohne Strom passiert nichts, und das sagt sie auch.</b> Eine Maschine,
+ * die stumm stehenbleibt, schickt den Spieler auf die Suche nach dem falschen
+ * Fehler; deshalb steht der Ladestand in der Oberfläche und im Jade-Tooltip.
+ */
+public class PressBlockEntity extends BlockEntity {
+
+    public static final int SLOT_STAMP = 0;
+    public static final int SLOT_MATERIAL = 1;
+    public static final int SLOT_RESULT = 2;
+    public static final int SLOTS = 3;
+
+    /** Fasst so viel, dass ein Vorgang durchläuft, ohne am Tropf zu hängen. */
+    public static final int CAPACITY = 40_000;
+
+    /** Höchstens so viel je Tick — sonst wäre die Zeit im Rezept sinnlos. */
+    private static final int MAX_INPUT = 2_000;
+
+    private final NonNullList<ItemStack> items = NonNullList.withSize(SLOTS, ItemStack.EMPTY);
+
+    /**
+     * Nimmt an, gibt nichts ab.
+     *
+     * <p>Eine Maschine, die ihren Strom weiterreicht, wird zum Kabel — und
+     * dann baut jemand eine Kette daraus und wundert sich über die Verluste.
+     */
+    private final EnergyStorage energy = new EnergyStorage(CAPACITY, MAX_INPUT, 0) {
+        @Override
+        public int receiveEnergy(int toReceive, boolean simulate) {
+            int taken = super.receiveEnergy(toReceive, simulate);
+            if (taken > 0 && !simulate) {
+                setChanged();
+            }
+            return taken;
+        }
+    };
+
+    private int progress;
+    private int required;
+
+    public PressBlockEntity(BlockPos pos, BlockState state) {
+        super(FnBlockEntities.PRESS.get(), pos, state);
+    }
+
+    public EnergyStorage energy() {
+        return energy;
+    }
+
+    public NonNullList<ItemStack> items() {
+        return items;
+    }
+
+    public ItemStack item(int slot) {
+        return slot >= 0 && slot < SLOTS ? items.get(slot) : ItemStack.EMPTY;
+    }
+
+    public void setItem(int slot, ItemStack stack) {
+        if (slot >= 0 && slot < SLOTS) {
+            items.set(slot, stack);
+            setChanged();
+        }
+    }
+
+    public int progress() {
+        return progress;
+    }
+
+    public int required() {
+        return required;
+    }
+
+    /**
+     * Ein Tick Arbeit.
+     *
+     * <p>Erst prüfen, ob ein Rezept passt und das Ergebnis Platz hat, dann
+     * Strom abziehen. Andersherum verbrauchte eine volle Presse Energie für
+     * nichts.
+     */
+    public void serverTick() {
+        if (level == null || level.isClientSide) {
+            return;
+        }
+        Optional<PressRecipe> recipe = recipeFor();
+        if (recipe.isEmpty() || !fits(recipe.get())) {
+            if (progress != 0) {
+                progress = 0;
+                setChanged();
+            }
+            return;
+        }
+        PressRecipe found = recipe.get();
+        required = Math.max(1, found.ticks());
+        int perTick = Math.max(1, found.energy() / required);
+        if (energy.getEnergyStored() < perTick) {
+            return;
+        }
+        energy.extractEnergy(perTick, false);
+        progress++;
+        if (progress >= required) {
+            finish(found);
+        }
+        setChanged();
+    }
+
+    private Optional<PressRecipe> recipeFor() {
+        if (level == null || item(SLOT_STAMP).isEmpty() || item(SLOT_MATERIAL).isEmpty()) {
+            return Optional.empty();
+        }
+        PressInput input = new PressInput(item(SLOT_STAMP), item(SLOT_MATERIAL));
+        return level.getRecipeManager()
+                .getRecipeFor(FnRecipes.PRESS.get(), input, level)
+                .map(holder -> holder.value());
+    }
+
+    /** Passt das Ergebnis in den Ausgabeplatz? */
+    private boolean fits(PressRecipe recipe) {
+        ItemStack result = recipe.getResultItem(level.registryAccess());
+        ItemStack current = item(SLOT_RESULT);
+        if (current.isEmpty()) {
+            return true;
+        }
+        return ItemStack.isSameItemSameComponents(current, result)
+                && current.getCount() + result.getCount() <= current.getMaxStackSize();
+    }
+
+    private void finish(PressRecipe recipe) {
+        ItemStack result = recipe.getResultItem(level.registryAccess()).copy();
+        ItemStack current = item(SLOT_RESULT);
+        if (current.isEmpty()) {
+            items.set(SLOT_RESULT, result);
+        } else {
+            current.grow(result.getCount());
+        }
+        // Der Stempel bleibt — er ist Werkzeug, nicht Zutat.
+        item(SLOT_MATERIAL).shrink(1);
+        progress = 0;
+    }
+
+    @Override
+    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.loadAdditional(tag, registries);
+        items.clear();
+        ContainerHelper.loadAllItems(tag, items, registries);
+        energy.deserializeNBT(registries, tag.get("Energy"));
+        progress = tag.getInt("Progress");
+        required = tag.getInt("Required");
+    }
+
+    @Override
+    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.saveAdditional(tag, registries);
+        ContainerHelper.saveAllItems(tag, items, registries);
+        tag.put("Energy", energy.serializeNBT(registries));
+        tag.putInt("Progress", progress);
+        tag.putInt("Required", required);
+    }
+
+    @Override
+    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+        CompoundTag tag = super.getUpdateTag(registries);
+        ContainerHelper.saveAllItems(tag, items, registries);
+        tag.putInt("Progress", progress);
+        tag.putInt("Required", required);
+        return tag;
+    }
+
+    @Override
+    public net.minecraft.network.protocol.Packet<
+            net.minecraft.network.protocol.game.ClientGamePacketListener> getUpdatePacket() {
+        return net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket.create(this);
+    }
+}

@@ -27,5 +27,6 @@ public final class FactoryNetwork {
         FnBlockEntities.BLOCK_ENTITIES.register(modBus);
         FnMenus.MENUS.register(modBus);
         FnCreativeTabs.TABS.register(modBus);
+        dev.devpanda.factorynetwork.press.FnRecipes.register(modBus);
     }
 }
