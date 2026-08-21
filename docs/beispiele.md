@@ -187,8 +187,8 @@ move 4000 fluid:lava from storage to generator
 display leitstand {
     title "Erzlinie"
     row "Eisenerz" storage.count(item:iron_ore)
-    progress "Ofen" ofen.fill()
-    indicator "Brecher läuft" brecher.redstone() > 0
+    progress "Kohlevorrat" storage.count(item:coal) / 640.0
+    indicator "Brecher unter Strom" brecher.redstone() > 0
     button "Nachschub" nachschub_starten
 }
 
@@ -196,6 +196,12 @@ fn nachschub_starten() {
     move 64 item:iron_ore from storage to brecher
 }
 ```
+
+`progress` will eine Zahl zwischen 0 und 1 — deshalb die Division. Der Punkt in
+`640.0` ist nötig: Ohne ihn wird ganzzahlig gerechnet, und der Balken bliebe
+leer, bis der Vorrat vollständig ist.
+
+An einem Gerät gibt es `redstone()` und `count(…)`, am Speicher `count(…)`.
 
 Die Anzeige erscheint auf jedem Display-Block, der `leitstand` heißt, und im
 Reiter **Anzeigen** des Terminals. Der Knopf wirkt an beiden Stellen; er darf

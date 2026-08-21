@@ -2419,6 +2419,52 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void theDocumentedExpressionsReallyWork(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        entity.storage().insert(Items.IRON_ORE, 320);
+
+        // Was in beispiele.md steht, muss nicht nur übersetzen, sondern laufen.
+        // Ein Beispiel mit einem Methodennamen, den es nicht gibt, ist
+        // schlimmer als keines.
+        helper.assertTrue(entity.deploy("""
+                display leitstand {
+                    title "Erzlinie"
+                    row "Eisenerz" storage.count(item:iron_ore)
+                    progress "Kohlevorrat" storage.count(item:iron_ore) / 640.0
+                    indicator "Depot unter Strom" depot.redstone() > 0
+                    button "Nachschub" nachschub_starten
+                }
+
+                fn nachschub_starten() {
+                    log("angestoßen")
+                }
+
+                on device_offline(name) {
+                    log("Verschwunden: " + name)
+                }"""), "Das Programm wurde nicht übernommen");
+
+        var zeilen = entity.displayPanels().get(0).lines();
+        helper.assertValueEqual(zeilen.size(), 5, "Fünf Zeilen");
+        helper.assertTrue(zeilen.get(1).contains("320"),
+                "Der Bestand steht da: " + zeilen.get(1));
+        helper.assertTrue(zeilen.get(2).contains("█") || zeilen.get(2).contains("0,5")
+                        || zeilen.get(2).contains("0.5"),
+                "Der halbe Balken: " + zeilen.get(2));
+        helper.assertTrue(zeilen.get(3).contains("Depot"),
+                "Das Lämpchen: " + zeilen.get(3));
+
+        // Der Knopf und der Ereignisblock laufen wirklich.
+        entity.pressDisplayButton("leitstand", 4);
+        entity.fireEvent("device_offline", java.util.List.of(
+                new dev.devpanda.factorynetwork.runtime.Value.Text("kiste_9")));
+        helper.assertTrue(entity.flowEngine().failed().isEmpty(),
+                "Nichts darf dabei scheitern: " + entity.flowEngine().failed());
+        helper.succeed();
+    }
+
     private FactoryNetworkGameTests() {
     }
 }
