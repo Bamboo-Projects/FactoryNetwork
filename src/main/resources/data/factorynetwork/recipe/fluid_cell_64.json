@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "PCP",
+    "CBC",
+    "PPP"
+  ],
+  "key": {
+    "P": {
+      "item": "factorynetwork:plate"
+    },
+    "C": {
+      "item": "factorynetwork:crystal"
+    },
+    "B": {
+      "item": "minecraft:bucket"
+    }
+  },
+  "result": {
+    "id": "factorynetwork:fluid_cell_64",
+    "count": 1
+  }
+}

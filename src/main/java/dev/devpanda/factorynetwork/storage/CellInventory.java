@@ -41,6 +41,12 @@ public final class CellInventory<T> {
         return new CellInventory<>(cell, StorageCellItem.tierOf(cell), CellFormat.ITEMS);
     }
 
+    /** Eine Flüssigkeitszelle. Ungültig, wenn dort keine steckt. */
+    public static CellInventory<net.minecraft.world.level.material.Fluid> ofFluids(
+            ItemStack cell) {
+        return new CellInventory<>(cell, FluidCellItem.tierOf(cell), CellFormat.FLUIDS);
+    }
+
     /** Der Gegenstand, zu dem diese Sicht gehört. */
     public ItemStack stack() {
         return cell;

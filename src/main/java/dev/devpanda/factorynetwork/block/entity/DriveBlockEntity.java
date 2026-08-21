@@ -32,8 +32,18 @@ public class DriveBlockEntity extends BlockEntity {
             NonNullList.withSize(SLOTS, ItemStack.EMPTY);
 
     /** Die offenen Gegenstandszellen, nach Platznummer. */
-    private final java.util.Map<Integer, CellInventory<net.minecraft.world.item.Item>> open =
-            new java.util.HashMap<>();
+    private final java.util.Map<Integer, CellInventory<net.minecraft.world.item.Item>>
+            openItems = new java.util.HashMap<>();
+
+    /**
+     * Die offenen Flüssigkeitszellen, nach Platznummer.
+     *
+     * <p>Zwei Abbildungen statt einer mit Platzhaltertyp: Aus einer
+     * gemeinsamen käme bei jedem Zugriff ein ungeprüfter Typwechsel, und der
+     * Übersetzer könnte nicht mehr helfen.
+     */
+    private final java.util.Map<Integer, CellInventory<net.minecraft.world.level.material.Fluid>>
+            openFluids = new java.util.HashMap<>();
 
     /**
      * Zählt hoch, sobald sich die Bestückung ändert.
@@ -66,7 +76,10 @@ public class DriveBlockEntity extends BlockEntity {
         }
         // Erst zurückschreiben, dann tauschen: Eine Zelle, die herausgeht,
         // nimmt ihren Bestand mit — aber nur, wenn er im Gegenstand steht.
-        CellInventory<?> alt = open.remove(slot);
+        CellInventory<?> alt = openItems.remove(slot);
+        if (alt == null) {
+            alt = openFluids.remove(slot);
+        }
         if (alt != null) {
             alt.flush();
         }
@@ -98,26 +111,38 @@ public class DriveBlockEntity extends BlockEntity {
      * neue Sicht, auch wenn der Platz derselbe ist.
      */
     public List<CellInventory<net.minecraft.world.item.Item>> inventories() {
-        List<CellInventory<net.minecraft.world.item.Item>> found = new ArrayList<>(SLOTS);
+        return live(openItems, StorageCellItem.class, CellInventory::ofItems);
+    }
+
+    /** Dieselbe Sicht auf die Flüssigkeitszellen. */
+    public List<CellInventory<net.minecraft.world.level.material.Fluid>> fluidInventories() {
+        return live(openFluids, dev.devpanda.factorynetwork.storage.FluidCellItem.class,
+                CellInventory::ofFluids);
+    }
+
+    private <T> List<CellInventory<T>> live(
+            java.util.Map<Integer, CellInventory<T>> cache, Class<?> kind,
+            java.util.function.Function<ItemStack, CellInventory<T>> open) {
+        List<CellInventory<T>> found = new ArrayList<>(SLOTS);
         for (int slot = 0; slot < SLOTS; slot++) {
             ItemStack stack = cells.get(slot);
-            CellInventory<net.minecraft.world.item.Item> live = open.get(slot);
-            if (!(stack.getItem() instanceof StorageCellItem)) {
-                if (live != null) {
-                    open.remove(slot);
+            CellInventory<T> alive = cache.get(slot);
+            if (!kind.isInstance(stack.getItem())) {
+                if (alive != null) {
+                    cache.remove(slot);
                 }
                 continue;
             }
-            if (live == null || live.stack() != stack) {
+            if (alive == null || alive.stack() != stack) {
                 // Andere Zelle im Platz — die alte hat ihren Inhalt schon
                 // zurückgeschrieben, als sie herausgenommen wurde.
-                live = CellInventory.ofItems(stack);
-                if (!live.isValid()) {
+                alive = open.apply(stack);
+                if (!alive.isValid()) {
                     continue;
                 }
-                open.put(slot, live);
+                cache.put(slot, alive);
             }
-            found.add(live);
+            found.add(alive);
         }
         return found;
     }
@@ -129,7 +154,8 @@ public class DriveBlockEntity extends BlockEntity {
      * Laufwerk verlässt. Sonst steht im Gegenstand ein Bestand von vorhin.
      */
     public void flushCells() {
-        open.values().forEach(CellInventory::flush);
+        openItems.values().forEach(CellInventory::flush);
+        openFluids.values().forEach(CellInventory::flush);
     }
 
     /** Der erste freie Platz, oder -1. */
@@ -170,7 +196,8 @@ public class DriveBlockEntity extends BlockEntity {
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         cells.clear();
-        open.clear();
+        openItems.clear();
+        openFluids.clear();
         ContainerHelper.loadAllItems(tag, cells, registries);
         revision++;
     }

@@ -101,7 +101,7 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | Sprache | Lexer, Parser, Fehlerbehebung — die Grammatik vollständig |
 | Worker | `from`, `to`, `filter`, `maintain`, `rate`, `when`, `strategy`, `overflow` |
 | Auswahl | einzelne Gegenstände, Tags, Muster, `except` |
-| Flüssigkeiten | `move` und Worker, Bestand im Netz, in Millibucket |
+| Flüssigkeiten | `move` und Worker, Bestand in Zellen, in Millibucket |
 | Speicher | Laufwerke mit zehn Plätzen, Zellen in vier Größen, Bestand in der Zelle |
 | | Zelle in der Hand ans Laufwerk klicken setzt sie ein, leere Hand nimmt die letzte heraus |
 | Werkzeuge | Beschriftungspistole, Netzanalysator mit Sicht durch Wände |
@@ -146,9 +146,6 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
   `tag:` beide zu durchsuchen die andere Möglichkeit.
 - **Flüssigkeiten im Speicher-Reiter.** Sie stehen zurzeit in der
   Netzübersicht; ein Symbolraster bräuchte das Bild der Flüssigkeit.
-- **Flüssigkeitszellen.** Gegenstände liegen in Zellen, Flüssigkeiten noch
-  unbegrenzt im Controller. Dieselbe Bauart lässt sich übertragen; offen ist
-  nur, welche Mengen eine Fluidzelle fasst.
 - **Kosten Laufwerke einen Kanal?** Bei AE2 ja. Hier nicht — ein Laufwerk gilt
   wie eine Anzeige als etwas, das dem Netz nichts wegnimmt. Das ist bewusst
   milder; wer den AE2-Druck will, macht daraus einen Kanalverbraucher.

@@ -43,6 +43,8 @@ public final class FnCreativeTabs {
                         output.accept(FnItems.CORE_MEMORY.get());
                         output.accept(FnItems.CORE_NETWORK.get());
                         FnItems.CELLS.values().forEach(cell -> output.accept(cell.get()));
+                        FnItems.FLUID_CELLS.values()
+                                .forEach(cell -> output.accept(cell.get()));
                     })
                     .build());
 

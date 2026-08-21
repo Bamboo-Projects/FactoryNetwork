@@ -1,14 +1,15 @@
 package dev.devpanda.factorynetwork.network;
 
+import dev.devpanda.factorynetwork.block.entity.DriveBlockEntity;
+import dev.devpanda.factorynetwork.storage.CellInventory;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.Tag;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.Fluids;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -19,31 +20,133 @@ import java.util.Map;
  * großen Pack mit zwei Dutzend Flüssigkeiten arbeitet, sucht sonst bei jedem
  * Zugriff durch alle.
  *
+ * <p><b>Der Bestand liegt in Flüssigkeitszellen</b>, wie die Gegenstände in
+ * ihren. Vorher lagerte das Netz Flüssigkeiten unbegrenzt im Controller —
+ * eine Ungleichheit, die niemand erklären kann: Für Eisen brauchte man ein
+ * Laufwerk, für Lava nicht.
+ *
  * <p>Gerechnet wird in Millibucket, wie überall in NeoForge — ein Eimer sind
  * 1000. Die Sprache schreibt {@code 1000 fluid:water}, und damit steht dieselbe
  * Zahl im Programm wie in jeder anderen Mod.
  */
 public final class NetworkFluids {
 
-    private static final String KEY_ENTRIES = "Entries";
-    private static final String KEY_FLUID = "Fluid";
-    private static final String KEY_AMOUNT = "Amount";
-
-    private final Map<Fluid, Long> amounts = new LinkedHashMap<>();
+    private final List<DriveBlockEntity> drives = new ArrayList<>();
     private Runnable onChange = () -> { };
+
+    /** Der Bestand aller Zellen an einer Stelle — siehe {@link NetworkStorage}. */
+    private final Map<Fluid, Long> index = new LinkedHashMap<>();
+    private boolean indexValid;
+    private long[] seenRevisions = new long[0];
 
     public void setChangeListener(Runnable listener) {
         this.onChange = listener == null ? () -> { } : listener;
     }
 
-    /** Legt ab und liefert, was nicht hineinpasste. Zurzeit passt alles. */
-    public long insert(Fluid fluid, long amount) {
-        if (amount <= 0 || fluid == net.minecraft.world.level.material.Fluids.EMPTY) {
+    /** Welche Laufwerke im Netz hängen. Setzt der Controller beim Neuaufbau. */
+    public void setDrives(List<DriveBlockEntity> found) {
+        drives.clear();
+        drives.addAll(found);
+        indexValid = false;
+    }
+
+    public boolean hasDrives() {
+        return !drives.isEmpty();
+    }
+
+    private List<CellInventory<Fluid>> cells() {
+        List<CellInventory<Fluid>> all = new ArrayList<>();
+        for (DriveBlockEntity drive : drives) {
+            all.addAll(drive.fluidInventories());
+        }
+        return all;
+    }
+
+    private Map<Fluid, Long> index() {
+        if (!indexValid || drivesChanged()) {
+            rebuildIndex();
+        }
+        return index;
+    }
+
+    private boolean drivesChanged() {
+        if (seenRevisions.length != drives.size()) {
+            return true;
+        }
+        for (int i = 0; i < seenRevisions.length; i++) {
+            if (seenRevisions[i] != drives.get(i).revision()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void rebuildIndex() {
+        index.clear();
+        for (CellInventory<Fluid> cell : cells()) {
+            cell.contentsView().forEach((fluid, amount) -> index.merge(fluid, amount, Long::sum));
+        }
+        seenRevisions = new long[drives.size()];
+        for (int i = 0; i < seenRevisions.length; i++) {
+            seenRevisions[i] = drives.get(i).revision();
+        }
+        indexValid = true;
+    }
+
+    /**
+     * Wie viel von dieser Sorte noch hineinginge.
+     *
+     * <p>Gebraucht, bevor ein Tank geleert wird: Was der Speicher nicht nimmt,
+     * darf gar nicht erst aus dem Tank gezogen werden. Bei Gegenständen kann
+     * man den Rest zurücklegen, bei Flüssigkeiten nimmt der Tank ihn
+     * vielleicht nicht wieder an — und dann wäre er weg.
+     */
+    public long room(Fluid fluid, long wanted) {
+        if (wanted <= 0 || fluid == Fluids.EMPTY) {
             return 0;
         }
-        amounts.merge(fluid, amount, Long::sum);
-        onChange.run();
-        return 0;
+        long free = 0;
+        for (CellInventory<Fluid> cell : cells()) {
+            free += cell.room(fluid);
+            if (free >= wanted) {
+                return wanted;
+            }
+        }
+        return free;
+    }
+
+    /**
+     * Legt ab und liefert, was nicht hineinpasste.
+     *
+     * <p>Erst in Zellen, die diese Sorte schon führen — sonst zersplittert ein
+     * Bestand über alle Zellen und belegt überall einen Sortenplatz.
+     */
+    public long insert(Fluid fluid, long amount) {
+        if (amount <= 0 || fluid == Fluids.EMPTY) {
+            return 0;
+        }
+        Map<Fluid, Long> stock = index();
+        long left = amount;
+        List<CellInventory<Fluid>> cells = cells();
+        for (CellInventory<Fluid> cell : cells) {
+            if (left <= 0) {
+                break;
+            }
+            if (cell.count(fluid) > 0) {
+                left -= cell.insert(fluid, left);
+            }
+        }
+        for (CellInventory<Fluid> cell : cells) {
+            if (left <= 0) {
+                break;
+            }
+            left -= cell.insert(fluid, left);
+        }
+        if (left < amount) {
+            stock.merge(fluid, amount - left, Long::sum);
+            markChanged();
+        }
+        return left;
     }
 
     /** Nimmt heraus und liefert, wie viel es wurde. */
@@ -51,60 +154,69 @@ public final class NetworkFluids {
         if (amount <= 0) {
             return 0;
         }
-        Long available = amounts.get(fluid);
-        if (available == null) {
-            return 0;
+        Map<Fluid, Long> stock = index();
+        long taken = 0;
+        for (CellInventory<Fluid> cell : cells()) {
+            if (taken >= amount) {
+                break;
+            }
+            taken += cell.extract(fluid, amount - taken);
         }
-        long taken = Math.min(available, amount);
-        if (taken >= available) {
-            amounts.remove(fluid);
-        } else {
-            amounts.put(fluid, available - taken);
+        if (taken > 0) {
+            long rest = stock.getOrDefault(fluid, 0L) - taken;
+            if (rest > 0) {
+                stock.put(fluid, rest);
+            } else {
+                stock.remove(fluid);
+            }
+            markChanged();
         }
-        onChange.run();
         return taken;
     }
 
     public long count(Fluid fluid) {
-        return amounts.getOrDefault(fluid, 0L);
+        return index().getOrDefault(fluid, 0L);
     }
 
+    /** Der gesamte Bestand. Eine Kopie — siehe {@link NetworkStorage#contents}. */
     public Map<Fluid, Long> contents() {
-        return Map.copyOf(amounts);
+        return new LinkedHashMap<>(index());
+    }
+
+    /** Wie viele Sortenplätze insgesamt frei sind — für die Anzeige. */
+    public int freeTypes() {
+        int free = 0;
+        for (CellInventory<Fluid> cell : cells()) {
+            free += cell.freeTypes();
+        }
+        return free;
     }
 
     public void clear() {
-        amounts.clear();
+        Map<Fluid, Long> stock = index();
+        for (CellInventory<Fluid> cell : cells()) {
+            cell.clear();
+        }
+        stock.clear();
+        markChanged();
+    }
+
+    private void markChanged() {
+        drives.forEach(DriveBlockEntity::setChanged);
         onChange.run();
     }
 
+    /**
+     * Speichern und Laden entfallen.
+     *
+     * <p>Der Bestand liegt in den Zellen, und die liegen in den Laufwerken —
+     * beide speichern sich selbst. Ein zweiter Ort wäre eine zweite Wahrheit.
+     */
     public void save(CompoundTag tag, HolderLookup.Provider registries) {
-        ListTag entries = new ListTag();
-        amounts.forEach((fluid, amount) -> {
-            CompoundTag entry = new CompoundTag();
-            entry.putString(KEY_FLUID, BuiltInRegistries.FLUID.getKey(fluid).toString());
-            entry.putLong(KEY_AMOUNT, amount);
-            entries.add(entry);
-        });
-        tag.put(KEY_ENTRIES, entries);
+        // Nichts zu tun.
     }
 
     public void load(CompoundTag tag, HolderLookup.Provider registries) {
-        amounts.clear();
-        ListTag entries = tag.getList(KEY_ENTRIES, Tag.TAG_COMPOUND);
-        for (int i = 0; i < entries.size(); i++) {
-            CompoundTag entry = entries.getCompound(i);
-            ResourceLocation id = ResourceLocation.tryParse(entry.getString(KEY_FLUID));
-            // Wie beim Gegenstandsspeicher: Ist die Mod aus dem Pack, ist der
-            // Posten weg. Ein Lagerbestand darf das still hinnehmen — anders
-            // als eine Variable, mit der weitergerechnet wird.
-            if (id == null || !BuiltInRegistries.FLUID.containsKey(id)) {
-                continue;
-            }
-            long amount = entry.getLong(KEY_AMOUNT);
-            if (amount > 0) {
-                amounts.put(BuiltInRegistries.FLUID.get(id), amount);
-            }
-        }
+        // Nichts zu tun.
     }
 }

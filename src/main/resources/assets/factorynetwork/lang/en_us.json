@@ -188,5 +188,12 @@
   "message.factorynetwork.drive.full": "Every slot is taken.",
   "message.factorynetwork.drive.inserted": "Cell inserted — %s of %s slots",
   "message.factorynetwork.drive.removed": "Cell removed — %s of %s slots",
-  "message.factorynetwork.drive.empty": "No cell in here."
+  "message.factorynetwork.drive.empty": "No cell in here.",
+  "item.factorynetwork.fluid_cell.types": "%s of %s kinds",
+  "item.factorynetwork.fluid_cell.amount": "%s of %s mB",
+  "item.factorynetwork.fluid_cell.empty": "Empty",
+  "item.factorynetwork.fluid_cell_64": "Fluid Cell, 64 Buckets",
+  "item.factorynetwork.fluid_cell_256": "Fluid Cell, 256 Buckets",
+  "item.factorynetwork.fluid_cell_1024": "Fluid Cell, 1024 Buckets",
+  "item.factorynetwork.fluid_cell_4096": "Fluid Cell, 4096 Buckets"
 }

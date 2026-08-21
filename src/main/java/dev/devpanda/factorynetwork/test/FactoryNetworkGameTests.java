@@ -1777,6 +1777,10 @@ public final class FactoryNetworkGameTests {
             helper.setBlock(connector.above(), Blocks.CHEST);
             name(helper, connector, labels[i]);
         }
+        driveWithCell(helper, controller.above(),
+                dev.devpanda.factorynetwork.storage.CellTier.K64);
+        driveWithFluidCell(helper, controller.below(),
+                dev.devpanda.factorynetwork.storage.FluidCellTier.B64);
         return controllerAt(helper, controller);
     }
 
@@ -1997,6 +2001,10 @@ public final class FactoryNetworkGameTests {
             helper.setBlock(connector.above(), Blocks.CAULDRON);
             name(helper, connector, labels[i]);
         }
+        // Seit Flüssigkeiten in Zellen liegen, lagert ein Netz ohne Laufwerk
+        // auch keine Flüssigkeit mehr — genau wie bei den Gegenständen.
+        driveWithFluidCell(helper, controller.above(),
+                dev.devpanda.factorynetwork.storage.FluidCellTier.B64);
         return controllerAt(helper, controller);
     }
 
@@ -2073,16 +2081,27 @@ public final class FactoryNetworkGameTests {
                     move 1000 fluid:water from bottich to storage
                 }"""), "Das Programm wurde nicht übernommen");
         entity.startFlow("einlagern", java.util.List.of());
-
-        var registries = helper.getLevel().registryAccess();
-        var block = net.minecraft.world.level.block.entity.BlockEntity.loadStatic(
-                helper.absolutePos(controller), helper.getBlockState(controller),
-                entity.saveWithFullMetadata(registries), registries);
-        ControllerBlockEntity geladen = (ControllerBlockEntity) block;
-        geladen.setLevel(helper.getLevel());
-
-        helper.assertValueEqual(geladen.fluids().count(
+        helper.assertValueEqual(entity.fluids().count(
                 net.minecraft.world.level.material.Fluids.WATER), 1000L,
+                "Erst einmal muss es überhaupt im Netz sein");
+
+        // Der Bestand liegt jetzt in der Zelle, nicht mehr im Controller —
+        // also wird das Laufwerk gesichert und zurückgelesen. Beim Sichern
+        // muss der Inhalt aus dem Arbeitsspeicher in den Gegenstand; ohne das
+        // wäre er nach einem Neustart der von vorhin.
+        BlockPos drivePos = controller.above();
+        var drive = (dev.devpanda.factorynetwork.block.entity.DriveBlockEntity)
+                helper.getBlockEntity(drivePos);
+        var registries = helper.getLevel().registryAccess();
+        var geladen = (dev.devpanda.factorynetwork.block.entity.DriveBlockEntity)
+                net.minecraft.world.level.block.entity.BlockEntity.loadStatic(
+                        helper.absolutePos(drivePos), helper.getBlockState(drivePos),
+                        drive.saveWithFullMetadata(registries), registries);
+        helper.assertTrue(geladen != null, "Das Laufwerk kam nicht zurück");
+        var inhalt = dev.devpanda.factorynetwork.storage.CellFormat.FLUIDS
+                .read(geladen.cell(0));
+        helper.assertValueEqual(inhalt.getOrDefault(
+                net.minecraft.world.level.material.Fluids.WATER, 0L), 1000L,
                 "Ein Bestand, der einen Neustart nicht übersteht, ist keiner");
         helper.succeed();
     }
@@ -2854,6 +2873,19 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    /** Setzt ein Laufwerk ans Kabel und steckt eine Flüssigkeitszelle hinein. */
+    private static void driveWithFluidCell(GameTestHelper helper, BlockPos at,
+            dev.devpanda.factorynetwork.storage.FluidCellTier tier) {
+        helper.setBlock(at, FnBlocks.DRIVE.get());
+        if (helper.getBlockEntity(at)
+                instanceof dev.devpanda.factorynetwork.block.entity.DriveBlockEntity drive) {
+            drive.setCell(0, new ItemStack(dev.devpanda.factorynetwork.registry.FnItems
+                    .FLUID_CELLS.get(tier).get()));
+        } else {
+            helper.fail("Am Laufwerk hängt keine BlockEntity", at);
+        }
+    }
+
     /** Setzt ein Laufwerk ans Kabel und steckt eine Zelle hinein. */
     private static void driveWithCell(GameTestHelper helper, BlockPos at,
             dev.devpanda.factorynetwork.storage.CellTier tier) {
@@ -3487,6 +3519,105 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(drive.usedSlots(), 10, "mehr als zehn passen nicht");
         helper.assertTrue(!player.getMainHandItem().isEmpty(),
                 "die überzählige Zelle muss in der Hand bleiben");
+        helper.succeed();
+    }
+
+    /**
+     * Eine Flüssigkeitszelle hat eine Grenze, und die gilt.
+     *
+     * <p>Vorher lagerte das Netz Flüssigkeiten unbegrenzt im Controller. Für
+     * Eisen brauchte man ein Laufwerk, für Lava nicht — eine Ungleichheit, die
+     * niemand erklären kann.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void aFluidCellHasALimit(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 1, 1);
+        ControllerBlockEntity entity = twoCauldrons(helper, controller);
+        entity.rebuildNetwork();
+
+        long voll = dev.devpanda.factorynetwork.storage.FluidCellTier.B64.amount();
+        long rest = entity.fluids().insert(
+                net.minecraft.world.level.material.Fluids.WATER, voll + 6000);
+        helper.assertValueEqual(rest, 6000L, "was nicht mehr hineinpasste");
+        helper.assertValueEqual(entity.fluids().count(
+                net.minecraft.world.level.material.Fluids.WATER), voll,
+                "Bestand nach dem Überfüllen");
+        helper.assertValueEqual(entity.fluids().room(
+                net.minecraft.world.level.material.Fluids.WATER, 1000), 0L,
+                "eine volle Zelle nimmt nichts mehr");
+        helper.succeed();
+    }
+
+    /**
+     * Ist der Speicher voll, bleibt die Flüssigkeit im Tank.
+     *
+     * <p><b>Das ist die Prüfung, an der es hängt.</b> Ein Gegenstand, den der
+     * Speicher nicht nimmt, lässt sich zurücklegen; eine gezogene Flüssigkeit
+     * nicht unbedingt — nimmt der Tank sie nicht wieder an, ist sie weg. Also
+     * wird erst gefragt und dann gezogen.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void afullNetworkLeavesTheTankAlone(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 1, 1);
+        ControllerBlockEntity entity = twoCauldrons(helper, controller);
+        entity.rebuildNetwork();
+        fillCauldron(helper, controller, 0);
+
+        // Die Zelle randvoll mit Lava: Wasser findet keinen Platz mehr.
+        entity.fluids().insert(net.minecraft.world.level.material.Fluids.LAVA,
+                dev.devpanda.factorynetwork.storage.FluidCellTier.B64.amount());
+
+        helper.assertTrue(entity.deploy("""
+                worker einlagern {
+                    from bottich
+                    to storage
+                    filter fluid:water
+                    rate 1000 per 1t
+                }"""), "Das Programm wurde nicht übernommen");
+        for (int i = 0; i < 5; i++) {
+            entity.serverTick();
+        }
+
+        helper.assertTrue(hasWater(helper, controller, 0),
+                "Der Bottich muss sein Wasser behalten");
+        helper.assertValueEqual(entity.fluids().count(
+                net.minecraft.world.level.material.Fluids.WATER), 0L,
+                "und im Netz darf nichts auftauchen");
+        helper.succeed();
+    }
+
+    /**
+     * Eine herausgenommene Flüssigkeitszelle nimmt ihren Bestand mit.
+     *
+     * <p>Wie bei den Gegenständen: Der Bestand steckt im Gegenstand, sonst
+     * wäre die Zelle nur ein Schlüssel.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void aPulledFluidCellCarriesItsStock(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 1, 1);
+        ControllerBlockEntity entity = twoCauldrons(helper, controller);
+        entity.rebuildNetwork();
+        entity.fluids().insert(net.minecraft.world.level.material.Fluids.WATER, 3000);
+
+        BlockPos drivePos = controller.above();
+        var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+        helper.useBlock(drivePos, player);
+
+        ItemStack pulled = ItemStack.EMPTY;
+        for (ItemStack stack : player.getInventory().items) {
+            if (stack.getItem() instanceof dev.devpanda.factorynetwork.storage.FluidCellItem) {
+                pulled = stack;
+                break;
+            }
+        }
+        helper.assertTrue(!pulled.isEmpty(), "die Zelle muss im Rucksack liegen");
+        var inhalt = dev.devpanda.factorynetwork.storage.CellFormat.FLUIDS.read(pulled);
+        helper.assertValueEqual(inhalt.getOrDefault(
+                net.minecraft.world.level.material.Fluids.WATER, 0L), 3000L,
+                "Bestand in der herausgenommenen Zelle");
+        helper.assertValueEqual(entity.fluids().count(
+                net.minecraft.world.level.material.Fluids.WATER), 0L,
+                "im Netz darf nichts zurückbleiben");
         helper.succeed();
     }
 

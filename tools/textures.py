@@ -678,22 +678,38 @@ CELL_TONE = {
 }
 
 
+# Die Umrisslinie der Kassette. Beide Zellarten teilen sie sich: Sie sollen
+# als dasselbe Bauteil zu erkennen sein und sich nur im Fenster unterscheiden.
+CELL_SHELL = [(18, 11), (44, 11), (50, 17), (50, 48), (45, 53), (19, 53), (14, 48), (14, 16)]
+
+
+def cell_shell(ton, seed=220):
+    """Das Gehäuse einer Zelle, ohne Fenster."""
+    img = Image.new("RGBA", (N, N), (0, 0, 0, 0))
+    shell_mask = Image.new("L", (N, N), 0)
+    ImageDraw.Draw(shell_mask).polygon(CELL_SHELL, fill=255)
+    img.alpha_composite(masked_surface(shell_mask, blend(ton, LIGHT, 0.18),
+                                       blend(ton, EDGE, 0.35), seed=seed))
+    d = ImageDraw.Draw(img)
+    d.polygon(CELL_SHELL, outline=EDGE + (255,))
+    d.line([(19, 14), (42, 14)], fill=blend(ton, SHINE, 0.55) + (255,))
+    d.line([(18, 50), (43, 50)], fill=_dunkler(ton + (255,), 0.35))
+    return img
+
+
+def cell_contacts(img, d):
+    """Die vier Kontakte am unteren Rand."""
+    for x in (21, 27, 33, 39):
+        d.rectangle([x, 40, x + 3, 50], fill=BRASS + (255,))
+        raised(img, (x, 40, x + 3, 50), hoehe=1)
+        d.line([(x, 40), (x + 2, 40)], fill=BRASS_HI + (255,))
+
+
 def storage_cell(label):
     """Speicherzelle als schwere Kassette mit Sichtfenster."""
     ton = CELL_TONE[label]
-    img = Image.new("RGBA", (N, N), (0, 0, 0, 0))
-
-    shell_mask = Image.new("L", (N, N), 0)
-    ImageDraw.Draw(shell_mask).polygon(
-        [(18, 11), (44, 11), (50, 17), (50, 48), (45, 53), (19, 53), (14, 48), (14, 16)], fill=255
-    )
-    img.alpha_composite(masked_surface(shell_mask, blend(ton, LIGHT, 0.18),
-                                       blend(ton, EDGE, 0.35), seed=220))
+    img = cell_shell(ton)
     d = ImageDraw.Draw(img)
-    d.polygon([(18, 11), (44, 11), (50, 17), (50, 48), (45, 53), (19, 53), (14, 48), (14, 16)],
-              outline=EDGE + (255,))
-    d.line([(19, 14), (42, 14)], fill=blend(ton, SHINE, 0.55) + (255,))
-    d.line([(18, 50), (43, 50)], fill=_dunkler(ton + (255,), 0.35))
 
     d.rectangle([19, 19, 45, 37], fill=blend(BODY_MID, EDGE, 0.48) + (255,))
     recess(img, (19, 19, 45, 37), tiefe=2)
@@ -705,11 +721,53 @@ def storage_cell(label):
         farbe = blend(ACCENT_HI, ton, 0.45 if i == 0 else 0.65) if i < 2 else blend(ton, EDGE, 0.25)
         d.rectangle([25, y, 39, y + 2], fill=farbe + (255,))
 
-    for x in (21, 27, 33, 39):
-        d.rectangle([x, 40, x + 3, 50], fill=BRASS + (255,))
-        raised(img, (x, 40, x + 3, 50), hoehe=1)
-        d.line([(x, 40), (x + 2, 40)], fill=BRASS_HI + (255,))
+    cell_contacts(img, d)
     scratches(img, count=2, seed=221)
+    return img
+
+
+FLUID_CELL_TONE = {
+    "64": (128, 152, 172),
+    "256": (114, 160, 182),
+    "1024": (104, 146, 190),
+    "4096": (120, 132, 196),
+}
+
+
+def fluid_cell(label):
+    """Flüssigkeitszelle: dieselbe Kassette, aber mit Schauglas.
+
+    Das Fenster ist zu zwei Dritteln gefüllt und trägt oben eine helle Linie.
+    <b>Das ist der ganze Unterschied im Bild</b> — wer eine Zelle in der Hand
+    hat, soll auf einen Blick sehen, was hineingehört, ohne den Namen zu
+    lesen.
+    """
+    ton = FLUID_CELL_TONE[label]
+    img = cell_shell(ton, seed=230)
+    d = ImageDraw.Draw(img)
+
+    # Schauglas: versenkt, mit dunklem Grund.
+    d.rectangle([19, 19, 45, 37], fill=blend(BODY_MID, EDGE, 0.55) + (255,))
+    recess(img, (19, 19, 45, 37), tiefe=2)
+    ao(img, (19, 19, 45, 37), depth=3, strength=0.45)
+
+    # Der Stand: zwei Drittel, mit Spiegel oben und dunklerem Grund unten.
+    fluessig = blend(ton, (60, 150, 220), 0.55)
+    glow(img, [22, 27, 42, 35], color=fluessig, radius=4, strength=90)
+    d = ImageDraw.Draw(img)
+    d.rectangle([22, 27, 42, 35], fill=fluessig + (255,))
+    d.rectangle([22, 32, 42, 35], fill=_dunkler(fluessig + (255,), 0.22))
+    d.line([(22, 27), (42, 27)], fill=_heller(fluessig + (255,), 0.55))
+    # Ein Wellenkamm, damit es nicht wie ein Balken aussieht.
+    for x in range(23, 42, 6):
+        d.point((x, 26), fill=_heller(fluessig + (255,), 0.35))
+
+    # Zwei Striche als Skala.
+    for y in (23, 30):
+        d.line([(20, y), (23, y)], fill=blend(SHINE, ton, 0.4) + (255,))
+
+    cell_contacts(img, d)
+    scratches(img, count=2, seed=231)
     return img
 
 
@@ -1121,6 +1179,8 @@ def main():
         save(core(kind), "item", "core_" + kind)
     for label in ("1k", "4k", "16k", "64k"):
         save(storage_cell(label), "item", "cell_k" + label.replace("k", ""))
+    for label in ("64", "256", "1024", "4096"):
+        save(fluid_cell(label), "item", "fluid_cell_" + label)
 
 
 if __name__ == "__main__":

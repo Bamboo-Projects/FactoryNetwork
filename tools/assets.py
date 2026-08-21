@@ -364,6 +364,11 @@ def models():
             "parent": "minecraft:item/generated",
             "textures": {"layer0": MOD + ":item/cell_" + tier},
         })
+    for tier in ("64", "256", "1024", "4096"):
+        write(A + "/models/item/fluid_cell_%s.json" % tier, {
+            "parent": "minecraft:item/generated",
+            "textures": {"layer0": MOD + ":item/fluid_cell_" + tier},
+        })
     write(A + "/models/item/drive.json", {"parent": block("drive")})
     write(A + "/models/item/router.json", {"parent": block("router")})
     for name in ("crystal", "plate", "stamp_plate", "stamp_logic", "stamp_memory",
@@ -567,6 +572,33 @@ def loot_and_recipes():
                 "I": {"item": "minecraft:iron_ingot"},
             },
             "result": {"id": MOD + ":cell_" + groesser, "count": 1},
+        })
+
+    # Die Flüssigkeitszellen. Dieselbe Leiter wie bei den Gegenstandszellen:
+    # die kleinste aus Bauteilen, jede weitere aus vier der vorherigen. Statt
+    # des Speicherkerns steckt hier ein Eimer — was hineingeht, sagt schon
+    # das Rezept.
+    write(D + "/recipe/fluid_cell_64.json", {
+        "type": "minecraft:crafting_shaped",
+        "category": "misc",
+        "pattern": ["PCP", "CBC", "PPP"],
+        "key": {
+            "P": {"item": MOD + ":plate"},
+            "C": {"item": MOD + ":crystal"},
+            "B": {"item": "minecraft:bucket"},
+        },
+        "result": {"id": MOD + ":fluid_cell_64", "count": 1},
+    })
+    for kleiner, groesser in (("64", "256"), ("256", "1024"), ("1024", "4096")):
+        write(D + "/recipe/fluid_cell_%s.json" % groesser, {
+            "type": "minecraft:crafting_shaped",
+            "category": "misc",
+            "pattern": [" C ", "CIC", " C "],
+            "key": {
+                "C": {"item": MOD + ":fluid_cell_" + kleiner},
+                "I": {"item": "minecraft:iron_ingot"},
+            },
+            "result": {"id": MOD + ":fluid_cell_" + groesser, "count": 1},
         })
 
     # ---- Die Fertigungskette -------------------------------------------

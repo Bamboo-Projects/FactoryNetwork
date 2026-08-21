@@ -165,8 +165,14 @@ public final class WorldHost implements Interpreter.Host {
             if (inside.isEmpty() || !fluids.contains(inside.getFluid())) {
                 continue;
             }
-            FluidStack wanted = new FluidStack(inside.getFluid(),
-                    (int) Math.min(limit - moved, inside.getAmount()));
+            // Erst fragen, wie viel der Speicher nimmt, dann erst ziehen —
+            // eine gezogene Flüssigkeit lässt sich nicht zurücklegen.
+            long asked = Math.min(limit - moved, inside.getAmount());
+            long fits = fluidStorage.room(inside.getFluid(), asked);
+            if (fits <= 0) {
+                continue;
+            }
+            FluidStack wanted = new FluidStack(inside.getFluid(), (int) fits);
             FluidStack taken = source.drain(wanted, IFluidHandler.FluidAction.EXECUTE);
             if (taken.isEmpty()) {
                 continue;

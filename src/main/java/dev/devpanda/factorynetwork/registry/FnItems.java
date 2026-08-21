@@ -160,6 +160,28 @@ public final class FnItems {
         return Map.copyOf(cells);
     }
 
+    /**
+     * Die vier Größen der Flüssigkeitszelle.
+     *
+     * <p>Weniger Sorten und mehr Menge als bei den Gegenstandszellen:
+     * Flüssigkeiten gibt es in weniger Sorten und größeren Mengen. Die Zahl
+     * im Namen sind Eimer.
+     */
+    public static final Map<dev.devpanda.factorynetwork.storage.FluidCellTier,
+            DeferredItem<Item>> FLUID_CELLS = registerFluidCells();
+
+    private static Map<dev.devpanda.factorynetwork.storage.FluidCellTier,
+            DeferredItem<Item>> registerFluidCells() {
+        Map<dev.devpanda.factorynetwork.storage.FluidCellTier, DeferredItem<Item>> cells =
+                new LinkedHashMap<>();
+        for (var tier : dev.devpanda.factorynetwork.storage.FluidCellTier.values()) {
+            cells.put(tier, ITEMS.register("fluid_cell_" + tier.getSerializedName(),
+                    () -> new dev.devpanda.factorynetwork.storage.FluidCellItem(
+                            tier, new Item.Properties())));
+        }
+        return Map.copyOf(cells);
+    }
+
     /** Zeigt das Netz als Gerüst in der Welt — auch durch Wände. */
     public static final DeferredItem<Item> ANALYSER = ITEMS.register("network_analyser",
             () -> new NetworkAnalyserItem(new Item.Properties().stacksTo(1)));

@@ -188,5 +188,12 @@
   "message.factorynetwork.drive.full": "Alle Plätze sind belegt.",
   "message.factorynetwork.drive.inserted": "Zelle eingesetzt — %s von %s Plätzen",
   "message.factorynetwork.drive.removed": "Zelle entnommen — %s von %s Plätzen",
-  "message.factorynetwork.drive.empty": "Hier steckt keine Zelle."
+  "message.factorynetwork.drive.empty": "Hier steckt keine Zelle.",
+  "item.factorynetwork.fluid_cell.types": "%s von %s Sorten",
+  "item.factorynetwork.fluid_cell.amount": "%s von %s mB",
+  "item.factorynetwork.fluid_cell.empty": "Leer",
+  "item.factorynetwork.fluid_cell_64": "Flüssigkeitszelle 64 Eimer",
+  "item.factorynetwork.fluid_cell_256": "Flüssigkeitszelle 256 Eimer",
+  "item.factorynetwork.fluid_cell_1024": "Flüssigkeitszelle 1024 Eimer",
+  "item.factorynetwork.fluid_cell_4096": "Flüssigkeitszelle 4096 Eimer"
 }

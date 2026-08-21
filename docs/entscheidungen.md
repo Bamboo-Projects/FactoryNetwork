@@ -1330,3 +1330,56 @@ Der Turnus ist fünf Sekunden. Zwischen Klick und Wirkung sind das zu viele:
 Der Spieler klickt in der Zeit dreimal weiter und weiß am Ende nicht, was
 gerade gilt. Beim Setzen und Abbauen ebenso — sonst zeichnet der
 Netzanalysator Strecken durch einen Block, den es nicht mehr gibt.
+
+---
+
+## Flüssigkeiten liegen in Zellen (2026-08-22)
+
+**Für Eisen brauchte man ein Laufwerk, für Lava nicht.** Diese Ungleichheit
+lässt sich niemandem erklären, und sie war nur der Stand der Arbeit: Der
+Gegenstandsspeicher bekam Zellen, der Flüssigkeitsspeicher lagerte weiter
+unbegrenzt im Controller.
+
+Jetzt liegen beide in Zellen, und beide Zellarten in demselben Laufwerk. Ein
+zweites Laufwerk nur für Flüssigkeiten wäre ein Block mehr für dieselbe
+Handlung, und die Frage „welches nehme ich" hätte keine gute Antwort.
+
+### Die Rechnung steht ein einziges Mal da
+
+`CellFormat` kennt Registry und Feldnamen und erledigt Lesen und Schreiben,
+`CellInventory` rechnet mit den zwei Grenzen und weiß nicht mehr, womit. Zwei
+Fassungen wären zwei Orte, an denen ein Bestand verlorengehen kann — und die
+eine bekäme irgendwann eine Verbesserung, die der anderen fehlt. Dasselbe
+Argument wie bei den Abläufen und dem Interpreter.
+
+### Andere Zahlen, andere Namen
+
+Vier bis zweiunddreißig Sorten und vierundsechzig bis viertausend Eimer.
+Flüssigkeiten gibt es in weniger Sorten und größeren Mengen; vierundsechzig
+Sortenplätze wären ein Platz, den nie jemand füllt.
+
+**Die Namen sagen Eimer, nicht Kilo.** Bei den Gegenstandszellen stimmt die
+Zahl im Namen mit dem Inhalt überein, und der Preis folgt ihr — eine 64k
+kostet vierundsechzig kleine. Eine Flüssigkeitszelle „1k" mit vierundsechzig
+Eimern hätte diese Ehrlichkeit nicht.
+
+Die Zahlen sind gesetzt, nicht hergeleitet. Sie stehen an einer Stelle und
+lassen sich ändern, wenn sich das Spiel anders anfühlt als gedacht.
+
+### Erst fragen, dann ziehen
+
+Solange der Speicher unbegrenzt war, konnte kein Aufrufer von `insert` etwas
+falsch machen — es passte immer alles. Mit einer Grenze wird jeder Aufrufer,
+der den Rückgabewert wegwirft, zu einer Stelle, an der Flüssigkeit still
+verschwindet.
+
+Bei Gegenständen ist der Ausweg, den Rest zurückzulegen. Bei Flüssigkeiten
+nicht: Ein Tank nimmt nicht unbedingt wieder an, was man ihm gerade entnommen
+hat. Deshalb wird erst gefragt, wie viel hineinpasst, und dann genau so viel
+gezogen. Der Worker meldet „Der Speicher ist voll", statt still nichts zu tun.
+
+### Was noch offen ist
+
+Flüssigkeiten stehen weiterhin in der Netzübersicht und nicht im
+Speicher-Reiter. Ein Symbolraster bräuchte das Bild der Flüssigkeit — dieselbe
+Frage wie vorher, nur dass jetzt auch eine Sortengrenze anzuzeigen wäre.

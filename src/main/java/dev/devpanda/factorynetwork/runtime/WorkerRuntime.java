@@ -657,8 +657,18 @@ public final class WorkerRuntime {
             if (inside.isEmpty() || !filter.contains(inside.getFluid())) {
                 continue;
             }
-            FluidStack wanted = new FluidStack(inside.getFluid(),
-                    (int) Math.min(batch - moved, inside.getAmount()));
+            // Erst fragen, wie viel der Speicher nimmt, dann erst ziehen.
+            // Seit Flüssigkeiten in Zellen liegen, kann er voll sein — und
+            // eine gezogene Flüssigkeit lässt sich nicht wie ein Gegenstand
+            // zurücklegen, wenn der Tank sie nicht wieder annimmt.
+            long asked = Math.min(batch - moved, inside.getAmount());
+            long fits = fluids.room(inside.getFluid(), asked);
+            if (fits <= 0) {
+                state.status = Status.WAITING_TARGET;
+                state.detail = "Der Speicher ist voll";
+                continue;
+            }
+            FluidStack wanted = new FluidStack(inside.getFluid(), (int) fits);
             FluidStack taken = tank.drain(wanted, IFluidHandler.FluidAction.EXECUTE);
             if (taken.isEmpty()) {
                 continue;

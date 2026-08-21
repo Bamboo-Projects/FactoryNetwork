@@ -199,6 +199,9 @@ public class ControllerBlockEntity extends BlockEntity {
             }
         }
         storage.setDrives(found);
+        // Dieselben Laufwerke tragen die Flüssigkeitszellen. Ein zweites
+        // Laufwerk nur dafür wäre ein Block mehr für dieselbe Handlung.
+        fluidStorage.setDrives(found);
         announceDeviceChanges(before);
     }
 
