@@ -89,6 +89,11 @@ public class StorageTabView {
             // Die Menge steht als Text daneben, nicht als Stapelzahl: Ein
             // Netzbestand geht weit über vierundsechzig hinaus.
             String amount = ClientStorageView.shortAmount(row.amount());
+            if (row.isFluid()) {
+                // Damit niemand drei Eimer liest, wo dreitausend Millibucket
+                // stehen.
+                amount = amount + row.unit();
+            }
             graphics.pose().pushPose();
             graphics.pose().translate(0, 0, 200);
             graphics.drawString(font, amount,
@@ -219,6 +224,12 @@ public class StorageTabView {
             return false;
         }
         ClientStorageView.Row entry = rows.get(index);
+        if (entry.isFluid()) {
+            // Eine Flüssigkeit lässt sich nicht auf den Mauszeiger nehmen.
+            // Der Eimer ist hier nur ein Bild; ihn zu entnehmen hieße, einen
+            // Gegenstand aus dem Nichts zu holen.
+            return true;
+        }
         // Vertraute Belegung: links ein Stapel, rechts ein halber.
         int stack = entry.stack().getMaxStackSize();
         int wanted = button == 1 ? Math.max(1, stack / 2) : stack;
@@ -228,6 +239,40 @@ public class StorageTabView {
         PacketDistributor.sendToServer(new StorageActionPacket(
                 StorageActionPacket.Kind.EXTRACT, entry.stack().getItem(), wanted));
         return true;
+    }
+
+    /**
+     * Was unter dem Zeiger liegt, mit genauer Menge.
+     *
+     * <p>Wird nach allem anderen gezeichnet, sonst verschwindet es hinter dem
+     * Raster. Für Flüssigkeiten ist es mehr als eine Annehmlichkeit: Im Raster
+     * steht eine gekürzte Zahl, und der Unterschied zwischen drei Eimern und
+     * dreitausend Millibucket gehört gesagt.
+     */
+    public void renderTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
+        ClientStorageView.Row row = rowAt(mouseX, mouseY);
+        if (row == null) {
+            return;
+        }
+        List<net.minecraft.network.chat.Component> lines = new java.util.ArrayList<>();
+        lines.add(row.stack().getHoverName());
+        String amount = String.format(java.util.Locale.GERMANY, "%,d", row.amount());
+        lines.add(net.minecraft.network.chat.Component.literal(
+                        row.isFluid() ? amount + " mB" : amount + " Stück")
+                .withStyle(net.minecraft.ChatFormatting.GRAY));
+        graphics.renderComponentTooltip(font, lines, mouseX, mouseY);
+    }
+
+    /** Der Eintrag unter dem Zeiger, oder {@code null}. */
+    private ClientStorageView.Row rowAt(double mouseX, double mouseY) {
+        int column = (int) ((mouseX - gridX()) / SLOT);
+        int row = (int) ((mouseY - gridY()) / SLOT);
+        if (column < 0 || column >= COLUMNS || row < 0 || row >= ROWS) {
+            return null;
+        }
+        int index = (scrollRow + row) * COLUMNS + column;
+        List<ClientStorageView.Row> rows = ClientStorageView.rows();
+        return index >= 0 && index < rows.size() ? rows.get(index) : null;
     }
 
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {

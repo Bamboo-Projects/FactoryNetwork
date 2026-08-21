@@ -93,6 +93,9 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         renderBackground(graphics, mouseX, mouseY, partialTick);
         super.render(graphics, mouseX, mouseY, partialTick);
         renderTabTooltips(graphics, mouseX, mouseY);
+        if (tab == TerminalTab.STORAGE) {
+            storageView.renderTooltip(graphics, mouseX, mouseY);
+        }
         renderTooltip(graphics, mouseX, mouseY);
     }
 

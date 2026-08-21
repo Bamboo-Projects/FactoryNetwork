@@ -294,8 +294,13 @@ public class ControllerBlockEntity extends BlockEntity {
                 .limit(StorageSnapshotPacket.MAX_ENTRIES)
                 .map(entry -> new StorageSnapshotPacket.Entry(entry.getKey(), entry.getValue()))
                 .toList();
+        List<StorageSnapshotPacket.FluidEntry> fluidEntries = fluidStorage.contents().entrySet()
+                .stream()
+                .map(entry -> new StorageSnapshotPacket.FluidEntry(entry.getKey(),
+                        entry.getValue()))
+                .toList();
         PacketDistributor.sendToPlayer(player,
-                new StorageSnapshotPacket(entries, replace, contents.size()));
+                new StorageSnapshotPacket(entries, fluidEntries, replace, contents.size()));
     }
 
     // ---- Abläufe im Terminal ----------------------------------------------

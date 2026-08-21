@@ -24,13 +24,18 @@ import java.util.List;
  * Ein Pack mit zwanzigtausend Arten würde sonst jedes Öffnen zu einer
  * Übertragung machen, die man merkt.
  */
-public record StorageSnapshotPacket(List<Entry> entries, boolean replace, int totalTypes)
+public record StorageSnapshotPacket(List<Entry> entries, List<FluidEntry> fluids,
+                                    boolean replace, int totalTypes)
         implements CustomPacketPayload {
 
     /** So viele Arten gehen höchstens über die Leitung. */
     public static final int MAX_ENTRIES = 4096;
 
     public record Entry(Item item, long amount) {
+    }
+
+    /** Eine Flüssigkeit mit ihrer Menge in Millibucket. */
+    public record FluidEntry(net.minecraft.world.level.material.Fluid fluid, long amount) {
     }
 
     public static final Type<StorageSnapshotPacket> TYPE = new Type<>(
@@ -43,10 +48,19 @@ public record StorageSnapshotPacket(List<Entry> entries, boolean replace, int to
                     ByteBufCodecs.VAR_LONG, Entry::amount,
                     Entry::new);
 
+    private static final StreamCodec<RegistryFriendlyByteBuf, FluidEntry> FLUID_CODEC =
+            StreamCodec.composite(
+                    ByteBufCodecs.registry(net.minecraft.core.registries.Registries.FLUID),
+                    FluidEntry::fluid,
+                    ByteBufCodecs.VAR_LONG, FluidEntry::amount,
+                    FluidEntry::new);
+
     public static final StreamCodec<RegistryFriendlyByteBuf, StorageSnapshotPacket> STREAM_CODEC =
             StreamCodec.composite(
                     ENTRY_CODEC.apply(ByteBufCodecs.list(MAX_ENTRIES)),
                     StorageSnapshotPacket::entries,
+                    FLUID_CODEC.apply(ByteBufCodecs.list(256)),
+                    StorageSnapshotPacket::fluids,
                     ByteBufCodecs.BOOL, StorageSnapshotPacket::replace,
                     ByteBufCodecs.VAR_INT, StorageSnapshotPacket::totalTypes,
                     StorageSnapshotPacket::new);

@@ -2320,6 +2320,19 @@ public final class FactoryNetworkGameTests {
                 dev.devpanda.factorynetwork.network.packet.FlowActionPacket.STREAM_CODEC, wahl)
                 .keep(), true, "Die Wahl");
 
+        var bestand = new dev.devpanda.factorynetwork.network.packet.StorageSnapshotPacket(
+                java.util.List.of(new dev.devpanda.factorynetwork.network.packet
+                        .StorageSnapshotPacket.Entry(Items.IRON_ORE, 320)),
+                java.util.List.of(new dev.devpanda.factorynetwork.network.packet
+                        .StorageSnapshotPacket.FluidEntry(
+                        net.minecraft.world.level.material.Fluids.WATER, 3000)),
+                true, 1);
+        var bestandZurueck = roundTrip(helper,
+                dev.devpanda.factorynetwork.network.packet.StorageSnapshotPacket.STREAM_CODEC,
+                bestand);
+        helper.assertValueEqual(bestandZurueck.fluids().get(0).amount(), 3000L,
+                "Die Flüssigkeit im Bestand");
+
         var anzeigen = new dev.devpanda.factorynetwork.network.packet.DisplayStatePacket(
                 java.util.List.of(new dev.devpanda.factorynetwork.network.packet
                         .DisplayStatePacket.Panel("leitstand",
