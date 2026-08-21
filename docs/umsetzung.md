@@ -75,7 +75,8 @@ Der Editor kennt außerdem:
 | Taste | Was sie tut |
 |---|---|
 | Strg+A / C / X / V | alles auswählen, kopieren, ausschneiden, einfügen |
-| Umschalt+Pfeile, Umschalt+Klick | auswählen |
+| Umschalt+Pfeile, Umschalt+Klick, Ziehen | auswählen |
+| Doppelklick | das Wort darunter |
 | Strg+Z, Strg+Y | rückgängig — mit Umschalt wieder vorwärts |
 | Strg+D | Zeile verdoppeln |
 | Tab, Umschalt+Tab | Auswahl ein- und ausrücken |

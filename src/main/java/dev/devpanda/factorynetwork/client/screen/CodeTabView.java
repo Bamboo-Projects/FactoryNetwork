@@ -82,6 +82,10 @@ public class CodeTabView {
         return editor.mouseClicked(mouseX, mouseY, button);
     }
 
+    public boolean mouseDragged(double mouseX, double mouseY, int button) {
+        return editor.mouseDragged(mouseX, mouseY, button);
+    }
+
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
         return editor.mouseScrolled(mouseX, mouseY, delta);
     }

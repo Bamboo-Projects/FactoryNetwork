@@ -178,6 +178,21 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         return handled || super.mouseClicked(mouseX, mouseY, button);
     }
 
+    /**
+     * Ziehen gehört dem Code-Reiter: Dort wählt es Text aus.
+     *
+     * <p>Die anderen Reiter kennen kein Ziehen — dort geht der Griff an
+     * Minecraft zurück, damit Schieberegler und Knöpfe weiter arbeiten.
+     */
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button,
+                                double dragX, double dragY) {
+        if (tab == TerminalTab.CODE && codeView.mouseDragged(mouseX, mouseY, button)) {
+            return true;
+        }
+        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+    }
+
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double deltaX, double deltaY) {
         boolean handled = switch (tab) {

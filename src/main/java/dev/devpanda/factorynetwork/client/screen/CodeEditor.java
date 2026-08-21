@@ -369,7 +369,9 @@ public class CodeEditor {
                 return true;
             }
             case 259 -> { // Rücktaste: ein ganzes Wort
-                remember(EditKind.DELETING);
+                if (hasSelection() || cursorColumn > 0 || cursorLine > 0) {
+                    remember(EditKind.DELETING);
+                }
                 if (hasSelection()) {
                     deleteSelection();
                 } else {
@@ -446,7 +448,12 @@ public class CodeEditor {
         }
         switch (key) {
             case 259 -> { // Rücktaste
-                remember(EditKind.DELETING);
+                // Am Anfang des Textes passiert nichts. Es trotzdem zu merken
+                // kostete einen Schritt Geschichte und löschte den Weg
+                // vorwärts — für einen Anschlag, der nichts getan hat.
+                if (hasSelection() || cursorColumn > 0 || cursorLine > 0) {
+                    remember(EditKind.DELETING);
+                }
                 if (hasSelection()) {
                     deleteSelection();
                     return true;
@@ -455,7 +462,11 @@ public class CodeEditor {
                 return true;
             }
             case 261 -> { // Entfernen
-                remember(EditKind.DELETING);
+                boolean atEnd = cursorLine == lines.size() - 1
+                        && cursorColumn >= lines.get(cursorLine).length();
+                if (hasSelection() || !atEnd) {
+                    remember(EditKind.DELETING);
+                }
                 if (hasSelection()) {
                     deleteSelection();
                     return true;
@@ -531,39 +542,8 @@ public class CodeEditor {
         return true;
     }
 
-    /**
-     * Ein Klick setzt den Cursor — mit Umschalt zieht er die Auswahl dorthin.
-     *
-     * <p>Dasselbe Verhalten wie in jedem Editor. Ohne die Umschalt-Variante
-     * müsste man längere Stellen mit den Pfeiltasten einsammeln.
-     */
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (net.minecraft.client.gui.screens.Screen.hasShiftDown()) {
-            anchorIfNeeded();
-        } else {
-            clearSelection();
-        }
-        if (mouseX < x || mouseX > x + width || mouseY < y || mouseY > y + height) {
-            return false;
-        }
-        clearSuggestions();
-        int row = (int) ((mouseY - y - 10) / LINE_HEIGHT);
-        int lineIndex = Mth.clamp(scrollLine + row, 0, lines.size() - 1);
-        cursorLine = lineIndex;
-
-        String line = lines.get(lineIndex);
-        int textX = x + GUTTER_WIDTH + TEXT_LEFT;
-        int column = 0;
-        while (column < line.length()
-                && textX + font.width(line.substring(0, column + 1)) < mouseX) {
-            column++;
-        }
-        cursorColumn = column;
-        return true;
-    }
-
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-        if (mouseX < x || mouseX > x + width || mouseY < y || mouseY > y + height) {
+        if (!inside(mouseX, mouseY)) {
             return false;
         }
         int max = Math.max(0, lines.size() - visibleLines());
@@ -1101,5 +1081,124 @@ public class CodeEditor {
         clearSelection();
         ensureVisible();
         changed();
+    }
+    // ---- Maus -------------------------------------------------------------
+
+    /** Wie lange zwei Klicks auseinanderliegen dürfen, um einer zu sein. */
+    private static final long DOUBLE_CLICK_MILLIS = 260;
+
+    private long lastClickTime;
+    private int lastClickLine = -1;
+    private int lastClickColumn = -1;
+
+    /** In welcher Zeile ein Mauszeiger steht. */
+    private int lineAt(double mouseY) {
+        int row = (int) Math.floor((mouseY - y - 10) / LINE_HEIGHT);
+        return Mth.clamp(scrollLine + row, 0, lines.size() - 1);
+    }
+
+    /**
+     * In welcher Spalte ein Mauszeiger steht.
+     *
+     * <p>Gesucht wird die Lücke, der er am nächsten ist, nicht das Zeichen
+     * unter ihm: Ein Klick auf die rechte Hälfte eines Buchstabens setzt den
+     * Cursor dahinter. Ohne das kommt man nie ans Zeilenende.
+     */
+    private int columnAt(int lineIndex, double mouseX) {
+        String line = lines.get(lineIndex);
+        int textX = x + GUTTER_WIDTH + TEXT_LEFT;
+        for (int column = 0; column < line.length(); column++) {
+            int left = textX + font.width(line.substring(0, column));
+            int right = textX + font.width(line.substring(0, column + 1));
+            if (mouseX < (left + right) / 2.0) {
+                return column;
+            }
+        }
+        return line.length();
+    }
+
+    private boolean inside(double mouseX, double mouseY) {
+        return mouseX >= x && mouseX <= x + width && mouseY >= y && mouseY <= y + height;
+    }
+
+    /**
+     * Wählt das Wort an einer Stelle aus.
+     *
+     * <p>Steht der Cursor nicht in einem Wort, sondern in einer Lücke, wird
+     * die Lücke ausgewählt. Nichts zu tun wäre die schlechtere Antwort: Ein
+     * Doppelklick, der manchmal nichts bewirkt, fühlt sich kaputt an.
+     */
+    void selectWordAt(int lineIndex, int column) {
+        String line = lines.get(lineIndex);
+        if (line.isEmpty()) {
+            select(lineIndex, 0, lineIndex, 0);
+            return;
+        }
+        int at = Mth.clamp(column, 0, line.length() - 1);
+        boolean word = isWordChar(line.charAt(at));
+        int from = at;
+        while (from > 0 && isWordChar(line.charAt(from - 1)) == word) {
+            from--;
+        }
+        int to = at;
+        while (to < line.length() && isWordChar(line.charAt(to)) == word) {
+            to++;
+        }
+        select(lineIndex, from, lineIndex, to);
+    }
+
+    /**
+     * Ein Klick setzt den Cursor — mit Umschalt zieht er die Auswahl dorthin,
+     * doppelt nimmt er das Wort.
+     */
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (!inside(mouseX, mouseY)) {
+            return false;
+        }
+        clearSuggestions();
+        int lineIndex = lineAt(mouseY);
+        int column = columnAt(lineIndex, mouseX);
+
+        long now = System.currentTimeMillis();
+        boolean doubled = now - lastClickTime < DOUBLE_CLICK_MILLIS
+                && lineIndex == lastClickLine && column == lastClickColumn;
+        lastClickTime = now;
+        lastClickLine = lineIndex;
+        lastClickColumn = column;
+        if (doubled) {
+            selectWordAt(lineIndex, column);
+            return true;
+        }
+
+        if (net.minecraft.client.gui.screens.Screen.hasShiftDown()) {
+            anchorIfNeeded();
+        } else {
+            clearSelection();
+        }
+        cursorLine = lineIndex;
+        cursorColumn = column;
+        return true;
+    }
+
+    /**
+     * Ziehen wählt aus.
+     *
+     * <p>Wandert der Zeiger über den Rand hinaus, rollt der Text mit — sonst
+     * endet jede Auswahl am sichtbaren Ausschnitt, und längere Stellen wären
+     * nur über die Tastatur zu erreichen.
+     */
+    public boolean mouseDragged(double mouseX, double mouseY, int button) {
+        if (button != 0 || lastClickLine < 0) {
+            return false;
+        }
+        if (mouseY < y + 10) {
+            scrollLine = Math.max(0, scrollLine - 1);
+        } else if (mouseY > y + height - LINE_HEIGHT) {
+            scrollLine = Math.min(Math.max(0, lines.size() - visibleLines()), scrollLine + 1);
+        }
+        anchorIfNeeded();
+        cursorLine = lineAt(mouseY);
+        cursorColumn = columnAt(cursorLine, mouseX);
+        return true;
     }
 }

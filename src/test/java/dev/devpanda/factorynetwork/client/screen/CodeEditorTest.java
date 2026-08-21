@@ -137,4 +137,35 @@ class CodeEditorTest {
         editor.redo();
         assertEquals("unberührt", editor.text());
     }
+    @Test
+    void doppelklickNimmtDasWort() {
+        CodeEditor editor = editor("move alpha to beta");
+        editor.selectWordAt(0, 7);
+        assertEquals("alpha", editor.selectedText());
+
+        // In einer Lücke wird die Lücke genommen — ein Doppelklick, der
+        // manchmal nichts tut, fühlt sich kaputt an.
+        editor.selectWordAt(0, 4);
+        assertEquals(" ", editor.selectedText());
+    }
+
+    @Test
+    void doppelklickAufEineLeereZeile() {
+        CodeEditor editor = editor("eins\n\ndrei");
+        editor.selectWordAt(1, 0);
+        assertEquals("", editor.selectedText());
+    }
+
+    @Test
+    void einAnschlagOhneWirkungKostetKeinenSchritt() {
+        CodeEditor editor = editor("");
+        type(editor, "abc");
+        // Ganz nach vorn, dann Rücktaste ins Leere: Das darf den Weg zurück
+        // nicht aufbrauchen und den Weg vorwärts nicht löschen.
+        editor.setCursor(0, 0);
+        editor.remember(CodeEditor.EditKind.DELETING);
+        editor.undo();
+        assertEquals("abc", editor.text(),
+                "ein gemerkter Leerlauf frisst einen Schritt");
+    }
 }
