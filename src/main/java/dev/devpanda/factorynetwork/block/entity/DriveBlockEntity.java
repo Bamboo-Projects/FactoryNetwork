@@ -31,8 +31,9 @@ public class DriveBlockEntity extends BlockEntity {
     private final NonNullList<ItemStack> cells =
             NonNullList.withSize(SLOTS, ItemStack.EMPTY);
 
-    /** Die offenen Zellen, nach Platznummer. */
-    private final java.util.Map<Integer, CellInventory> open = new java.util.HashMap<>();
+    /** Die offenen Gegenstandszellen, nach Platznummer. */
+    private final java.util.Map<Integer, CellInventory<net.minecraft.world.item.Item>> open =
+            new java.util.HashMap<>();
 
     /**
      * Zählt hoch, sobald sich die Bestückung ändert.
@@ -65,7 +66,7 @@ public class DriveBlockEntity extends BlockEntity {
         }
         // Erst zurückschreiben, dann tauschen: Eine Zelle, die herausgeht,
         // nimmt ihren Bestand mit — aber nur, wenn er im Gegenstand steht.
-        CellInventory alt = open.remove(slot);
+        CellInventory<?> alt = open.remove(slot);
         if (alt != null) {
             alt.flush();
         }
@@ -96,11 +97,11 @@ public class DriveBlockEntity extends BlockEntity {
      * Wer eine Zelle herauszieht und eine andere hineinsteckt, bekommt eine
      * neue Sicht, auch wenn der Platz derselbe ist.
      */
-    public List<CellInventory> inventories() {
-        List<CellInventory> found = new ArrayList<>(SLOTS);
+    public List<CellInventory<net.minecraft.world.item.Item>> inventories() {
+        List<CellInventory<net.minecraft.world.item.Item>> found = new ArrayList<>(SLOTS);
         for (int slot = 0; slot < SLOTS; slot++) {
             ItemStack stack = cells.get(slot);
-            CellInventory live = open.get(slot);
+            CellInventory<net.minecraft.world.item.Item> live = open.get(slot);
             if (!(stack.getItem() instanceof StorageCellItem)) {
                 if (live != null) {
                     open.remove(slot);
@@ -110,7 +111,7 @@ public class DriveBlockEntity extends BlockEntity {
             if (live == null || live.stack() != stack) {
                 // Andere Zelle im Platz — die alte hat ihren Inhalt schon
                 // zurückgeschrieben, als sie herausgenommen wurde.
-                live = new CellInventory(stack);
+                live = CellInventory.ofItems(stack);
                 if (!live.isValid()) {
                     continue;
                 }

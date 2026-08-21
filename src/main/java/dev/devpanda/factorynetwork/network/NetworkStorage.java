@@ -95,7 +95,7 @@ public final class NetworkStorage {
 
     private void rebuildIndex() {
         index.clear();
-        for (CellInventory cell : cells()) {
+        for (CellInventory<Item> cell : cells()) {
             cell.contentsView().forEach((item, count) -> index.merge(item, count, Long::sum));
         }
         seenRevisions = new long[drives.size()];
@@ -110,8 +110,8 @@ public final class NetworkStorage {
     }
 
     /** Alle Zellen aller Laufwerke, frisch gelesen. */
-    private List<CellInventory> cells() {
-        List<CellInventory> all = new ArrayList<>();
+    private List<CellInventory<Item>> cells() {
+        List<CellInventory<Item>> all = new ArrayList<>();
         for (DriveBlockEntity drive : drives) {
             all.addAll(drive.inventories());
         }
@@ -132,8 +132,8 @@ public final class NetworkStorage {
         // eigene Ablage die einzige Änderung, und die ist bekannt.
         Map<Item, Long> stock = index();
         long left = count;
-        List<CellInventory> cells = cells();
-        for (CellInventory cell : cells) {
+        List<CellInventory<Item>> cells = cells();
+        for (CellInventory<Item> cell : cells) {
             if (left <= 0) {
                 break;
             }
@@ -141,7 +141,7 @@ public final class NetworkStorage {
                 left -= cell.insert(item, left);
             }
         }
-        for (CellInventory cell : cells) {
+        for (CellInventory<Item> cell : cells) {
             if (left <= 0) {
                 break;
             }
@@ -165,7 +165,7 @@ public final class NetworkStorage {
         }
         Map<Item, Long> stock = index();
         long taken = 0;
-        for (CellInventory cell : cells()) {
+        for (CellInventory<Item> cell : cells()) {
             if (taken >= count) {
                 break;
             }
@@ -206,7 +206,7 @@ public final class NetworkStorage {
     /** Wie viele Artenplätze insgesamt frei sind — für die Anzeige. */
     public int freeTypes() {
         int free = 0;
-        for (CellInventory cell : cells()) {
+        for (CellInventory<Item> cell : cells()) {
             free += cell.freeTypes();
         }
         return free;
@@ -214,7 +214,7 @@ public final class NetworkStorage {
 
     public void clear() {
         Map<Item, Long> stock = index();
-        for (CellInventory cell : cells()) {
+        for (CellInventory<Item> cell : cells()) {
             cell.clear();
         }
         stock.clear();

@@ -38,7 +38,7 @@ public enum DriveInfo implements IBlockComponentProvider, IServerDataProvider<Bl
         int arten = 0;
         int freieArten = 0;
         long menge = 0;
-        for (CellInventory cell : drive.inventories()) {
+        for (CellInventory<net.minecraft.world.item.Item> cell : drive.inventories()) {
             zellen++;
             arten += cell.usedTypes();
             freieArten += cell.freeTypes();

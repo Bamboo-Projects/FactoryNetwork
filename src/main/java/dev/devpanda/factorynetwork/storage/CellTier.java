@@ -15,7 +15,7 @@ import net.minecraft.util.StringRepresentable;
  * Knappe — wer alles in eine Zelle wirft, hat sie voll, lange bevor die Menge
  * erreicht ist. Genau das treibt zum Sortieren.
  */
-public enum CellTier implements StringRepresentable {
+public enum CellTier implements StringRepresentable, CellSize {
 
     K1("1k", 8, 8_000),
     K4("4k", 16, 32_000),
@@ -33,15 +33,18 @@ public enum CellTier implements StringRepresentable {
     }
 
     /** Wie viele verschiedene Arten hineinpassen. */
+    @Override
     public int types() {
         return types;
     }
 
     /** Wie viele Gegenstände insgesamt hineinpassen. */
+    @Override
     public long amount() {
         return amount;
     }
 
+    @Override
     public String label() {
         return label;
     }
