@@ -19,8 +19,12 @@ public final class FnCreativeTabs {
                     .icon(() -> new ItemStack(FnItems.CONTROLLER.get()))
                     .displayItems((parameters, output) -> {
                         output.accept(FnItems.CONTROLLER.get());
-                        // Alle Kabelfarben, Standardfarbe zuerst
+                        // Alle Kabelfarben, Standardfarbe zuerst — erst die
+                        // dünnen, dann die dichten, und der Router dahinter:
+                        // Er gehört zum dichten Kabel.
                         FnItems.CABLES.values()
+                                .forEach(cable -> output.accept(cable.get()));
+                        FnItems.DENSE_CABLES.values()
                                 .forEach(cable -> output.accept(cable.get()));
                         output.accept(FnItems.ROUTER.get());
                         output.accept(FnItems.CONNECTOR.get());

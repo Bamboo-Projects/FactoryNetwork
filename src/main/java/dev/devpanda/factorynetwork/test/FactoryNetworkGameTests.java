@@ -4185,6 +4185,65 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    /**
+     * Jeder Gegenstand der Mod steht im Kreativ-Reiter.
+     *
+     * <p>Die dichten Kabel waren angemeldet, hatten Modelle, Namen und
+     * Rezepte — und standen trotzdem nirgends, weil eine Zeile im Reiter
+     * fehlte. Nur über {@code /give} zu erreichen heißt: nicht da.
+     *
+     * <p>Diese Prüfung ist bewusst allgemein. Sie fängt nicht diesen einen
+     * Fall, sondern jeden künftigen derselben Art.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void everyItemIsInTheCreativeTab(GameTestHelper helper) {
+        var tab = dev.devpanda.factorynetwork.registry.FnCreativeTabs.MAIN.get();
+        tab.buildContents(new net.minecraft.world.item.CreativeModeTab.ItemDisplayParameters(
+                helper.getLevel().enabledFeatures(), true, helper.getLevel().registryAccess()));
+        java.util.Set<net.minecraft.world.item.Item> gezeigt = new java.util.HashSet<>();
+        tab.getDisplayItems().forEach(stack -> gezeigt.add(stack.getItem()));
+
+        java.util.List<String> fehlend = new java.util.ArrayList<>();
+        for (var eintrag : net.minecraft.core.registries.BuiltInRegistries.ITEM.entrySet()) {
+            if (!eintrag.getKey().location().getNamespace()
+                    .equals(dev.devpanda.factorynetwork.FactoryNetwork.MOD_ID)) {
+                continue;
+            }
+            if (!gezeigt.contains(eintrag.getValue())) {
+                fehlend.add(eintrag.getKey().location().getPath());
+            }
+        }
+        helper.assertTrue(fehlend.isEmpty(), "Nicht im Kreativ-Reiter: " + fehlend);
+        helper.succeed();
+    }
+
+    /**
+     * Jeder Gegenstand hat einen eigenen Namen in beiden Sprachen.
+     *
+     * <p>Siebzehn Kabel hießen alle „Kabel". Ein Name, den zwei Gegenstände
+     * teilen, ist kein Name — im Reiter steht dann eine Reihe, die man nicht
+     * lesen kann.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void everyItemHasItsOwnName(GameTestHelper helper) {
+        java.util.Map<String, String> nachSchluessel = new java.util.HashMap<>();
+        java.util.List<String> doppelt = new java.util.ArrayList<>();
+        for (var eintrag : net.minecraft.core.registries.BuiltInRegistries.ITEM.entrySet()) {
+            if (!eintrag.getKey().location().getNamespace()
+                    .equals(dev.devpanda.factorynetwork.FactoryNetwork.MOD_ID)) {
+                continue;
+            }
+            String pfad = eintrag.getKey().location().getPath();
+            String schluessel = new ItemStack(eintrag.getValue()).getDescriptionId();
+            String vorher = nachSchluessel.put(schluessel, pfad);
+            if (vorher != null) {
+                doppelt.add(vorher + " und " + pfad + " teilen " + schluessel);
+            }
+        }
+        helper.assertTrue(doppelt.isEmpty(), "Gleicher Name: " + doppelt);
+        helper.succeed();
+    }
+
     private FactoryNetworkGameTests() {
     }
 }
