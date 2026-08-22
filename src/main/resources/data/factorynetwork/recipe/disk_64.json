@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "PPP",
+    "CMC",
+    "PPP"
+  ],
+  "key": {
+    "P": {
+      "item": "factorynetwork:plate"
+    },
+    "C": {
+      "item": "factorynetwork:crystal"
+    },
+    "M": {
+      "item": "factorynetwork:core_memory"
+    }
+  },
+  "result": {
+    "id": "factorynetwork:disk_64",
+    "count": 1
+  }
+}

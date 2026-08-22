@@ -161,12 +161,26 @@ public class ControllerBlockEntity extends BlockEntity {
             this.diagnostics.add(new Diagnostic(Diagnostic.Severity.ERROR,
                     new dev.devpanda.factorynetwork.lang.Span(0, 0, 1, 1),
                     "Kein Serverschrank im Netz.",
-                    "Setze einen Serverschrank ans Kabel und stecke einen Prozessor hinein."));
+                    "Setze einen Serverschrank ans Kabel und bestücke einen Einschub "
+                            + "mit Rechenwerk, Speicher und Datenträger."));
             setChanged();
             return false;
         }
         setChanged();
         if (result.hasErrors()) {
+            return false;
+        }
+        // Die Grenze steht hier und nicht erst beim Laufen: Wer auf Übernehmen
+        // drückt, soll im selben Moment erfahren, dass es nicht passt — nicht
+        // eine Minute später an einer Fabrik, die stillsteht.
+        int size = dev.devpanda.factorynetwork.lang.ProgramSize.of(result.program());
+        if (size > diskSpace()) {
+            this.diagnostics.add(new Diagnostic(Diagnostic.Severity.ERROR,
+                    new dev.devpanda.factorynetwork.lang.Span(0, 0, 1, 1),
+                    "Das Programm ist zu groß: " + size + " Anweisungen, "
+                            + diskSpace() + " passen auf die Datenträger.",
+                    "Bau größere Datenträger ein oder kürze das Programm. "
+                            + "Kommentare und Leerzeilen zählen nicht mit."));
             return false;
         }
         // Wartende Abläufe gehen denselben Weg wie über einen Serverneustart:
@@ -209,7 +223,7 @@ public class ControllerBlockEntity extends BlockEntity {
         }
         for (var rack : racks) {
             total += dev.devpanda.factorynetwork.network.Power.RACK
-                    + rack.usedSlots() * dev.devpanda.factorynetwork.network.Power.PER_PROCESSOR;
+                    + rack.runningBays() * dev.devpanda.factorynetwork.network.Power.PER_SERVER;
         }
         return total;
     }
@@ -222,17 +236,53 @@ public class ControllerBlockEntity extends BlockEntity {
     // ---- Rechenleistung ---------------------------------------------------
 
     /**
-     * Wie viele Abläufe gleichzeitig laufen dürfen.
+     * Was die Server des Netzes zusammen tragen.
      *
-     * <p>Die Summe der Prozessoren in allen Serverschränken des Netzes. Null
-     * heißt: Es gibt keinen Server, und dann läuft gar nichts.
+     * <p>Die Summe über alle <b>vollständigen</b> Einschübe in allen
+     * Schränken. Ein Einschub ohne Datenträger steht nicht darin — er ist
+     * kein Server, sondern ein Haufen Bauteile.
      */
-    public int threads() {
-        int total = 0;
+    public dev.devpanda.factorynetwork.network.ServerBay capacity() {
+        var total = dev.devpanda.factorynetwork.network.ServerBay.EMPTY;
         for (var rack : racks) {
-            total += rack.threads();
+            total = total.plus(rack.capacity());
         }
         return total;
+    }
+
+    /**
+     * Wie viele Abläufe gleichzeitig laufen dürfen.
+     *
+     * <p>Die Rechenwerke. Null heißt: Es gibt keinen Server, und dann läuft
+     * gar nichts.
+     */
+    public int threads() {
+        return capacity().cpu();
+    }
+
+    /** Wie viele Abläufe überhaupt bestehen dürfen — die Speicher. */
+    public int memory() {
+        return capacity().ram();
+    }
+
+    /** Wie groß das Programm sein darf — die Datenträger. */
+    public int diskSpace() {
+        return capacity().disk();
+    }
+
+    /** Wie groß das Programm gerade ist, in Anweisungen. */
+    public int programSize() {
+        return dev.devpanda.factorynetwork.lang.ProgramSize.of(program);
+    }
+
+    /**
+     * Passt das Programm auf die Datenträger?
+     *
+     * <p>Ohne Server ist die Frage keine: Dann läuft ohnehin nichts, und ein
+     * zweiter Grund dafür verwirrt nur.
+     */
+    public boolean programFits() {
+        return !hasServer() || programSize() <= diskSpace();
     }
 
     /** Steht im Netz überhaupt Rechenleistung? */
@@ -751,7 +801,11 @@ public class ControllerBlockEntity extends BlockEntity {
             // Ereignis treiben die Maschine unmittelbar an, ohne über den
             // Tick zu gehen; die Sperre muss deshalb hier sitzen.
             flows.setThreadLimit(threads());
-            flows.setFrozen(!isOnline());
+            flows.setMemoryLimit(memory());
+            // Zieht jemand einen Datenträger heraus, passt das Programm
+            // plötzlich nicht mehr. Dann friert das Netz ein, wie bei
+            // Stromausfall — nicht abbrechen, nicht kürzen.
+            flows.setFrozen(!isOnline() || !programFits());
         }
         return flows;
     }

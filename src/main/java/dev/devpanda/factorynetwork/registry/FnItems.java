@@ -12,6 +12,7 @@ import net.minecraft.world.item.Item;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
+import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -182,22 +183,35 @@ public final class FnItems {
         return Map.copyOf(cells);
     }
 
-    /** Nimmt Prozessoren auf — ohne ihn rechnet das Netz nicht. */
+    /** Nimmt Server auf — ohne ihn rechnet das Netz nicht. */
     public static final DeferredItem<net.minecraft.world.item.BlockItem> RACK =
             ITEMS.registerSimpleBlockItem(FnBlocks.RACK);
 
     /**
-     * Die beiden Prozessoren.
+     * Die Serverbauteile, nach Art und Stufe.
      *
-     * <p>Zwei gleichzeitige Abläufe der eine, acht der andere. Der
-     * Co-Prozessor ist nicht schneller, sondern breiter — mehr Dinge auf
-     * einmal statt dieselben Dinge früher fertig.
+     * <p>Zwölf Gegenstände aus zwei Schleifen. Von Hand geschrieben wären es
+     * zwölf fast gleiche Zeilen, und die dreizehnte stünde irgendwann mit
+     * einem Zahlendreher darunter.
      */
-    public static final DeferredItem<Item> PROCESSOR = ITEMS.register("processor",
-            () -> new dev.devpanda.factorynetwork.item.ProcessorItem(2, new Item.Properties()));
+    public static final Map<dev.devpanda.factorynetwork.item.ServerPart,
+            List<DeferredItem<Item>>> SERVER_PARTS = registerServerParts();
 
-    public static final DeferredItem<Item> CO_PROCESSOR = ITEMS.register("co_processor",
-            () -> new dev.devpanda.factorynetwork.item.ProcessorItem(8, new Item.Properties()));
+    private static Map<dev.devpanda.factorynetwork.item.ServerPart,
+            List<DeferredItem<Item>>> registerServerParts() {
+        var all = new java.util.EnumMap<dev.devpanda.factorynetwork.item.ServerPart,
+                List<DeferredItem<Item>>>(dev.devpanda.factorynetwork.item.ServerPart.class);
+        for (var part : dev.devpanda.factorynetwork.item.ServerPart.values()) {
+            List<DeferredItem<Item>> tiers = new java.util.ArrayList<>();
+            for (int value : part.tiers()) {
+                tiers.add(ITEMS.register(part.prefix() + "_" + value,
+                        () -> new dev.devpanda.factorynetwork.item.ServerPartItem(
+                                part, value, new Item.Properties())));
+            }
+            all.put(part, List.copyOf(tiers));
+        }
+        return java.util.Collections.unmodifiableMap(all);
+    }
 
     /** Strom aus Ofenbrennstoff — absichtlich mittelmäßig. */
     public static final DeferredItem<net.minecraft.world.item.BlockItem> BURNER =

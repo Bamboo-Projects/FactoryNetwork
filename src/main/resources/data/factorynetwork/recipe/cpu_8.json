@@ -2,23 +2,20 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "pattern": [
-    "PCP",
-    "CLC",
-    "PCP"
+    " T ",
+    "TXT",
+    " T "
   ],
   "key": {
-    "P": {
-      "item": "factorynetwork:plate"
+    "T": {
+      "item": "factorynetwork:cpu_2"
     },
-    "C": {
-      "item": "factorynetwork:crystal"
-    },
-    "L": {
+    "X": {
       "item": "factorynetwork:core_logic"
     }
   },
   "result": {
-    "id": "factorynetwork:processor",
+    "id": "factorynetwork:cpu_8",
     "count": 1
   }
 }

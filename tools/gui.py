@@ -298,21 +298,44 @@ def router_background():
 SHELF_WIDTH = 176
 
 
-def shelf_background(columns, rows):
-    """Ein Regalfenster mit so vielen Plaetzen, wie angegeben."""
+def shelf_background(columns, rows, group=0, gap=0, lamps=False):
+    """Ein Regalfenster mit so vielen Plaetzen, wie angegeben.
+
+    ``group`` und ``gap`` fassen Spalten zu Bloecken zusammen: Der
+    Serverschrank stellt je drei Plaetze als einen Einschub nebeneinander und
+    laesst dann Luft. Ohne diese Luecke waeren sechs Plaetze in einer Reihe
+    sechs Plaetze und nicht zwei Server.
+
+    ``lamps`` setzt hinter jeden Block eine kleine Vertiefung. Was darin
+    leuchtet, malt der Bildschirm zur Laufzeit — es haengt davon ab, was
+    drinsteckt.
+    """
     grid_top = 18
     inventory_y = grid_top + rows * 18 + 13
     hotbar_y = inventory_y + 58
     height = hotbar_y + 18 + 7
 
+    bloecke = (columns // group) if group else 1
+    breite = columns * 18 + (bloecke - 1) * gap
+    links = (SHELF_WIDTH - breite) // 2
+
+    def spalte_x(column):
+        luecken = (column // group) if group else 0
+        return links + column * 18 + luecken * gap
+
     img = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
     panel(d, (0, 0, SHELF_WIDTH - 1, height - 1))
 
-    links = (SHELF_WIDTH - columns * 18) // 2
     for row in range(rows):
         for column in range(columns):
-            slot(d, links + column * 18 - 1, grid_top + row * 18 - 1)
+            slot(d, spalte_x(column) - 1, grid_top + row * 18 - 1)
+        if not lamps:
+            continue
+        for b in range(bloecke):
+            x = spalte_x(b * group + group - 1) + 18 + 2
+            y = grid_top + row * 18 + 6
+            sunken(d, (x, y, x + 4, y + 4), fill=(70, 70, 70))
 
     for row in range(3):
         for column in range(9):
@@ -331,8 +354,11 @@ def main():
     save(press_background(), "press")
     save(burner_background(), "burner")
     save(router_background(), "router")
-    for name, columns, rows in (("drive", 2, 5), ("rack", 8, 1)):
-        bild, links, oben, inventar, schnell, hoehe = shelf_background(columns, rows)
+    for name, columns, rows, group, gap, lamps in (
+            ("drive", 2, 5, 0, 0, False),
+            ("rack", 6, 6, 3, 10, True)):
+        bild, links, oben, inventar, schnell, hoehe = shelf_background(
+            columns, rows, group, gap, lamps)
         save(bild, name)
         print("      %s: Raster bei %d,%d · Inventar bei 8,%d · Schnellzugriff bei 8,%d"
               " · Fenster %dx%d"

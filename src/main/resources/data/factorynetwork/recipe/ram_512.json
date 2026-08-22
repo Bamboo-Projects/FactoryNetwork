@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " T ",
+    "TXT",
+    " T "
+  ],
+  "key": {
+    "T": {
+      "item": "factorynetwork:ram_128"
+    },
+    "X": {
+      "item": "minecraft:netherite_ingot"
+    }
+  },
+  "result": {
+    "id": "factorynetwork:ram_512",
+    "count": 1
+  }
+}

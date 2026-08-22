@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " T ",
+    "TXT",
+    " T "
+  ],
+  "key": {
+    "T": {
+      "item": "factorynetwork:disk_256"
+    },
+    "X": {
+      "item": "minecraft:diamond"
+    }
+  },
+  "result": {
+    "id": "factorynetwork:disk_1024",
+    "count": 1
+  }
+}

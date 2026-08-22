@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " T ",
+    "TXT",
+    " T "
+  ],
+  "key": {
+    "T": {
+      "item": "factorynetwork:ram_8"
+    },
+    "X": {
+      "item": "factorynetwork:core_memory"
+    }
+  },
+  "result": {
+    "id": "factorynetwork:ram_32",
+    "count": 1
+  }
+}

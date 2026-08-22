@@ -233,21 +233,24 @@ def blockstates():
         drive_variants["facing=" + direction] = entry
     write(A + "/blockstates/drive.json", {"variants": drive_variants})
 
-    # Serverschrank: Front mit senkrechten Einschüben, sonst Maschinengehäuse.
-    write(A + "/models/block/server_rack.json", {
-        "parent": "minecraft:block/orientable",
-        "textures": {
-            "front": MOD + ":block/server_rack_front",
-            "side": MOD + ":block/machine_top",
-            "top": MOD + ":block/machine_top",
-        },
-    })
+    # Serverschrank: zwei Blöcke hoch, mit zurückgesetzter Front.
+    #
+    # Kein Würfel mit aufgemalter Vorderseite, sondern ein Rahmen aus vier
+    # Leisten und ein Korpus zwei Pixel dahinter. Der Renderer legt die
+    # Einschübe in genau diese Vertiefung — dieselben zwei Pixel stehen dort
+    # als DEPTH. Die untere Hälfte hat die Bodenleiste, die obere die
+    # Deckleiste; dazwischen läuft die Öffnung durch, achtundzwanzig Pixel
+    # hoch, und darin liegen die zwölf Einschübe.
+    for half in ("lower", "upper"):
+        write(A + "/models/block/server_rack_%s.json" % half,
+              rack_model(_rack_elements(half)))
     rack_variants = {}
-    for direction, rotation in (("north", {}), ("east", {"y": 90}),
-                                ("south", {"y": 180}), ("west", {"y": 270})):
-        entry = {"model": block("server_rack")}
-        entry.update(rotation)
-        rack_variants["facing=" + direction] = entry
+    for half in ("lower", "upper"):
+        for direction, rotation in (("north", {}), ("east", {"y": 90}),
+                                    ("south", {"y": 180}), ("west", {"y": 270})):
+            entry = {"model": block("server_rack_" + half)}
+            entry.update(rotation)
+            rack_variants["facing=%s,half=%s" % (direction, half)] = entry
     write(A + "/blockstates/server_rack.json", {"variants": rack_variants})
 
     # Connector zeigt in sechs Richtungen.
@@ -286,6 +289,105 @@ def blockstates():
 
 
 # ---- Modelle -------------------------------------------------------------
+
+# ---- Serverschrank -------------------------------------------------------
+
+def _face(texture, uv, cull=None):
+    face = {"uv": uv, "texture": texture}
+    if cull:
+        face["cullface"] = cull
+    return face
+
+
+def _rack_elements(half, lift=0):
+    """Rahmen und Korpus einer Schrankhälfte.
+
+    ``lift`` hebt alles an — das Gegenstandsmodell setzt beide Hälften
+    übereinander in ein Modell, damit man in der Hand den ganzen Schrank
+    sieht und nicht seine untere Hälfte.
+    """
+    unten = half == "lower"
+
+    def box(x0, y0, z0, x1, y1, z1):
+        return [x0, y0 + lift, z0], [x1, y1 + lift, z1]
+
+    korpus_von, korpus_bis = box(0, 0, 2, 16, 16, 16)
+    korpus = {
+        "from": korpus_von,
+        "to": korpus_bis,
+        "faces": {
+            "north": _face("#inner", [0, 0, 16, 16]),
+            "south": _face("#side", [0, 0, 16, 16], "south"),
+            "west": _face("#side", [2, 0, 16, 16], "west"),
+            "east": _face("#side", [0, 0, 14, 16], "east"),
+            "up": _face("#side", [0, 2, 16, 16], "up" if not unten else None),
+            "down": _face("#side", [0, 2, 16, 16], "down" if unten else None),
+        },
+    }
+
+    def pfosten(x0, x1, cull):
+        von, bis = box(x0, 0, 0, x1, 16, 2)
+        return {
+            "from": von,
+            "to": bis,
+            "faces": {
+                "north": _face("#frame", [x0, 0, x1, 16]),
+                "west": _face("#frame", [14, 0, 16, 16], cull if x0 == 0 else None),
+                "east": _face("#frame", [0, 0, 2, 16], cull if x0 != 0 else None),
+                "up": _face("#frame", [x0, 0, x1, 2], "up" if not unten else None),
+                "down": _face("#frame", [x0, 14, x1, 16], "down" if unten else None),
+            },
+        }
+
+    elemente = [korpus, pfosten(0, 2, "west"), pfosten(14, 16, "east")]
+
+    # Nur eine Leiste je Hälfte: unten die Sockelleiste, oben die
+    # Deckleiste. Sässe an beiden Hälften beides, teilte eine Doppelleiste
+    # die Öffnung mitten durch.
+    if unten:
+        von, bis = box(2, 0, 0, 14, 2, 2)
+        leiste_faces = {
+            "north": _face("#frame", [2, 14, 14, 16]),
+            "up": _face("#frame", [2, 0, 14, 2]),
+            "down": _face("#frame", [2, 0, 14, 2], "down"),
+        }
+    else:
+        von, bis = box(2, 14, 0, 14, 16, 2)
+        leiste_faces = {
+            "north": _face("#frame", [2, 0, 14, 2]),
+            "up": _face("#frame", [2, 0, 14, 2], "up"),
+            "down": _face("#frame", [2, 0, 14, 2]),
+        }
+    elemente.append({"from": von, "to": bis, "faces": leiste_faces})
+    return elemente
+
+
+def rack_model(elements, display=None):
+    modell = {
+        "textures": {
+            "particle": MOD + ":block/machine_top",
+            "side": MOD + ":block/machine_top",
+            "frame": MOD + ":block/server_rack_frame",
+            "inner": MOD + ":block/server_rack_inner",
+        },
+        "elements": elements,
+    }
+    if display:
+        modell["display"] = display
+    return modell
+
+
+# Die Serverbauteile: Art auf ihre Stufen. Dieselben Zahlen wie in
+# ServerPart.java — sie stehen an zwei Stellen, weil das eine Java ist und
+# das andere Python; wer eine Stufe ergänzt, muss beide anfassen.
+SERVER_PARTS = {
+    "cpu": (2, 8, 32, 128),
+    "ram": (8, 32, 128, 512),
+    "disk": (64, 256, 1024, 4096),
+}
+
+PART_CORE = {"cpu": "core_logic", "ram": "core_memory", "disk": "core_memory"}
+
 
 def models():
     write(A + "/models/block/controller.json", {
@@ -417,12 +519,31 @@ def models():
         })
     write(A + "/models/item/drive.json", {"parent": block("drive")})
     write(A + "/models/item/router.json", {"parent": block("router")})
-    write(A + "/models/item/server_rack.json", {"parent": block("server_rack")})
-    for name in ("processor", "co_processor"):
-        write(A + "/models/item/%s.json" % name, {
-            "parent": "minecraft:item/generated",
-            "textures": {"layer0": MOD + ":item/" + name},
-        })
+    # Der Schrank in der Hand: beide Hälften übereinander in einem Modell,
+    # klein gerechnet. Nur die untere zu zeigen wäre ein Gegenstand, der
+    # anders aussieht als das, was man setzt.
+    write(A + "/models/item/server_rack.json", rack_model(
+        _rack_elements("lower") + _rack_elements("upper", lift=16), {
+            "gui": {"rotation": [30, 225, 0], "translation": [0, -3, 0],
+                    "scale": [0.42, 0.42, 0.42]},
+            "ground": {"rotation": [0, 0, 0], "translation": [0, 2, 0],
+                       "scale": [0.2, 0.2, 0.2]},
+            "fixed": {"rotation": [0, 0, 0], "translation": [0, -3, 0],
+                      "scale": [0.42, 0.42, 0.42]},
+            "thirdperson_righthand": {"rotation": [75, 45, 0],
+                                      "translation": [0, 1.5, 0],
+                                      "scale": [0.22, 0.22, 0.22]},
+            "firstperson_righthand": {"rotation": [0, 45, 0],
+                                      "translation": [0, 0, 0],
+                                      "scale": [0.28, 0.28, 0.28]},
+        }))
+    for kind, tiers in SERVER_PARTS.items():
+        for value in tiers:
+            name = "%s_%d" % (kind, value)
+            write(A + "/models/item/%s.json" % name, {
+                "parent": "minecraft:item/generated",
+                "textures": {"layer0": MOD + ":item/" + name},
+            })
     for name in ("crystal", "plate", "stamp_plate", "stamp_logic", "stamp_memory",
                  "stamp_network", "core_logic", "core_memory", "core_network"):
         write(A + "/models/item/%s.json" % name, {
@@ -489,8 +610,26 @@ def worldgen():
 # ---- Loot und Rezepte ----------------------------------------------------
 
 def loot_and_recipes():
+    # Der Schrank hängt nicht in dieser Schleife: Er ist zwei Blöcke hoch,
+    # und ohne Bedingung machte eine Explosion aus einem Schrank zwei.
+    write(D + "/loot_table/blocks/server_rack.json", {
+        "type": "minecraft:block",
+        "pools": [{
+            "rolls": 1,
+            "bonus_rolls": 0,
+            "entries": [{"type": "minecraft:item", "name": MOD + ":server_rack"}],
+            "conditions": [
+                {"condition": "minecraft:survives_explosion"},
+                {
+                    "condition": "minecraft:block_state_property",
+                    "block": MOD + ":server_rack",
+                    "properties": {"half": "lower"},
+                },
+            ],
+        }],
+    })
     for name in ("controller", "connector", "terminal", "display", "drive",
-                 "press", "router", "server_rack", "burner"):
+                 "press", "router", "burner"):
         write(D + "/loot_table/blocks/" + name + ".json", {
             "type": "minecraft:block",
             "pools": [{
@@ -617,7 +756,7 @@ def loot_and_recipes():
     })
 
     # Der Serverschrank: das Gehäuse allein, die Leistung steckt in den
-    # Prozessoren.
+    # Bauteilen, die man hineinsteckt.
     write(D + "/recipe/server_rack.json", {
         "type": "minecraft:crafting_shaped",
         "category": "misc",
@@ -630,9 +769,15 @@ def loot_and_recipes():
         "result": {"id": MOD + ":server_rack", "count": 1},
     })
 
-    # Der Prozessor. Der Co-Prozessor bringt dieselbe Leistung wie vier
-    # davon, aber auf einem Platz — im Schrank ist Platz das Knappe.
-    write(D + "/recipe/processor.json", {
+    # Die Serverbauteile. Die erste Stufe kommt aus Grundstoffen, jede
+    # weitere aus vier der vorigen und einem Kern — und ab der dritten
+    # kostet sie zusätzlich etwas, das man sich erst holen muss.
+    #
+    # Viermal die vorige Stufe für viermal die Leistung ist auf den ersten
+    # Blick kein Gewinn. Der Gewinn ist der Platz: Ein Schrank hat zwölf
+    # Einschübe, und mehr als zwölf Bauteile je Art passen nicht hinein.
+    # Wer weiterkommen will, muss nach oben und nicht in die Breite.
+    write(D + "/recipe/cpu_2.json", {
         "type": "minecraft:crafting_shaped",
         "category": "misc",
         "pattern": ["PCP", "CLC", "PCP"],
@@ -641,18 +786,49 @@ def loot_and_recipes():
             "C": {"item": MOD + ":crystal"},
             "L": {"item": MOD + ":core_logic"},
         },
-        "result": {"id": MOD + ":processor", "count": 1},
+        "result": {"id": MOD + ":cpu_2", "count": 1},
     })
-    write(D + "/recipe/co_processor.json", {
+    write(D + "/recipe/ram_8.json", {
         "type": "minecraft:crafting_shaped",
         "category": "misc",
-        "pattern": [" P ", "PNP", " P "],
+        "pattern": ["CPC", "PMP", "CPC"],
         "key": {
-            "P": {"item": MOD + ":processor"},
-            "N": {"item": MOD + ":core_network"},
+            "P": {"item": MOD + ":plate"},
+            "C": {"item": MOD + ":crystal"},
+            "M": {"item": MOD + ":core_memory"},
         },
-        "result": {"id": MOD + ":co_processor", "count": 1},
+        "result": {"id": MOD + ":ram_8", "count": 1},
     })
+    write(D + "/recipe/disk_64.json", {
+        "type": "minecraft:crafting_shaped",
+        "category": "misc",
+        "pattern": ["PPP", "CMC", "PPP"],
+        "key": {
+            "P": {"item": MOD + ":plate"},
+            "C": {"item": MOD + ":crystal"},
+            "M": {"item": MOD + ":core_memory"},
+        },
+        "result": {"id": MOD + ":disk_64", "count": 1},
+    })
+    # Die Mitte des Kreuzes sagt, wie weit man ist: erst der eigene Kern,
+    # dann ein Diamant, dann Netherit.
+    mitte = [None,
+             None,
+             {"item": "minecraft:diamond"},
+             {"item": "minecraft:netherite_ingot"}]
+    for kind, tiers in SERVER_PARTS.items():
+        for stufe in range(1, len(tiers)):
+            zutat = mitte[stufe] or {"item": MOD + ":" + PART_CORE[kind]}
+            write(D + "/recipe/%s_%d.json" % (kind, tiers[stufe]), {
+                "type": "minecraft:crafting_shaped",
+                "category": "misc",
+                "pattern": [" T ", "TXT", " T "],
+                "key": {
+                    "T": {"item": "%s:%s_%d" % (MOD, kind, tiers[stufe - 1])},
+                    "X": zutat,
+                },
+                "result": {"id": "%s:%s_%d" % (MOD, kind, tiers[stufe]), "count": 1},
+            })
 
     # Der Router: die Kreuzung des dicken Kabels. Er kostet ein dickes
     # Kabel und den Netzwerkkern, der die Bahnen auseinanderhält.

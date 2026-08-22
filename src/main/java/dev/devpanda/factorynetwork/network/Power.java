@@ -37,11 +37,23 @@ public final class Power {
     /** Und je eingesetzter Zelle noch einmal so viel. */
     public static final int PER_CELL = 1;
 
-    /** Ein Serverschrank, leer. */
+    /** Ein Serverschrank, leer. Zwei Blöcke hoch, aber ein Gerät. */
     public static final int RACK = 1;
 
-    /** Und je Prozessor noch einmal so viel. */
-    public static final int PER_PROCESSOR = 1;
+    /**
+     * Und je <b>laufendem</b> Einschub noch einmal doppelt so viel.
+     *
+     * <p>Nach Einschüben und nicht nach Bauteilen: Ein halb bestückter
+     * Einschub rechnet nicht, also zahlt er auch nicht. Sonst kostete ein
+     * vergessenes Rechenwerk in einem leeren Einschub dauerhaft Strom, ohne
+     * je etwas zu tun.
+     *
+     * <p><b>Die Stufe spielt keine Rolle.</b> Ein großer Datenträger kostet
+     * mehr in der Herstellung, nicht im Betrieb — der Preis für Ausbau steht
+     * in der Rezeptkette, und ein zweiter Preis obendrauf würde nur die
+     * Rechnung verkomplizieren, ohne eine Entscheidung zu ändern.
+     */
+    public static final int PER_SERVER = 2;
 
     /**
      * Kabel kosten nichts.

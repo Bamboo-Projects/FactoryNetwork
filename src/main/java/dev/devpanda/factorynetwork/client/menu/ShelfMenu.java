@@ -24,20 +24,49 @@ import net.minecraft.world.item.ItemStack;
  */
 public class ShelfMenu extends AbstractContainerMenu {
 
-    /** So liegen die Plätze im Fenster — dieselben Zahlen wie in {@code gui.py}. */
+    /**
+     * So liegen die Plätze im Fenster — dieselben Zahlen wie in {@code gui.py}.
+     *
+     * <p>{@code group} und {@code gap} fassen Spalten zu Blöcken zusammen: Der
+     * Schrank stellt je drei Plätze als einen Einschub nebeneinander und lässt
+     * dann Luft. Ohne diese Lücke wären sechs Plätze in einer Reihe sechs
+     * Plätze und nicht zwei Server.
+     */
     public record Layout(int columns, int rows, int left, int top,
-                         int inventoryY, int hotbarY, int height) {
+                         int inventoryY, int hotbarY, int height,
+                         int group, int gap) {
+
+        public Layout(int columns, int rows, int left, int top,
+                      int inventoryY, int hotbarY, int height) {
+            this(columns, rows, left, top, inventoryY, hotbarY, height, 0, 0);
+        }
 
         public int slots() {
             return columns * rows;
+        }
+
+        /** Wo eine Spalte anfängt, die Lücken zwischen den Blöcken schon drin. */
+        public int columnX(int column) {
+            int gaps = group > 0 ? column / group : 0;
+            return left + column * SLOT + gaps * gap;
+        }
+
+        public int rowY(int row) {
+            return top + row * SLOT;
         }
     }
 
     /** Das Laufwerk: zwei Spalten, fünf Reihen — wie die Schächte an der Front. */
     public static final Layout DRIVE = new Layout(2, 5, 70, 18, 121, 179, 204);
 
-    /** Der Schrank: acht Einschübe nebeneinander, wie an seiner Front. */
-    public static final Layout RACK = new Layout(8, 1, 16, 18, 49, 107, 132);
+    /**
+     * Der Schrank: zwölf Einschübe zu je drei Plätzen, in zwei Säulen.
+     *
+     * <p>Zwölf Reihen untereinander wären 216 Pixel nur für die Plätze — mehr
+     * als ein Fenster hoch sein darf. Zwei Säulen zu sechs sind so hoch wie
+     * eine Doppeltruhe und sehen aus wie ein Schrank von vorn.
+     */
+    public static final Layout RACK = new Layout(6, 6, 29, 18, 139, 197, 222, 3, 10);
 
     private static final int SLOT = 18;
 
@@ -53,13 +82,13 @@ public class ShelfMenu extends AbstractContainerMenu {
         super(FnMenus.SHELF.get(), id);
         this.drive = drive;
         this.layout = drive ? DRIVE : RACK;
-        this.container = shelf != null ? shelf : new SimpleContainer(layout.slots());
+        this.container = shelf != null ? shelf : placeholder(drive, layout.slots());
 
         for (int row = 0; row < layout.rows(); row++) {
             for (int column = 0; column < layout.columns(); column++) {
                 int slot = row * layout.columns() + column;
                 addSlot(new Slot(container, slot,
-                        layout.left() + column * SLOT, layout.top() + row * SLOT) {
+                        layout.columnX(column), layout.rowY(row)) {
                     @Override
                     public boolean mayPlace(ItemStack stack) {
                         return container.canPlaceItem(slot, stack);
@@ -68,6 +97,32 @@ public class ShelfMenu extends AbstractContainerMenu {
             }
         }
         addPlayerSlots(inventory);
+    }
+
+    /**
+     * Die Kiste, die der Client benutzt, bis der Inhalt eintrifft.
+     *
+     * <p>Sie muss dieselben Regeln kennen wie das Regal auf dem Server —
+     * sonst zeigt der Client ein Rechenwerk auf dem Datenträgerplatz, bis
+     * der Server widerspricht, und das sieht aus wie ein Fehler.
+     */
+    private static Container placeholder(boolean drive, int slots) {
+        if (drive) {
+            return new SimpleContainer(slots);
+        }
+        return new SimpleContainer(slots) {
+            @Override
+            public boolean canPlaceItem(int slot, ItemStack stack) {
+                return dev.devpanda.factorynetwork.item.ServerPartItem.partOf(stack)
+                        == dev.devpanda.factorynetwork.block.entity.RackBlockEntity
+                                .partOf(slot);
+            }
+
+            @Override
+            public int getMaxStackSize() {
+                return 1;
+            }
+        };
     }
 
     /** Für den Server: das Regal selbst statt einer leeren Kiste. */

@@ -3,7 +3,7 @@ package dev.devpanda.factorynetwork.client.render;
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.devpanda.factorynetwork.FactoryNetwork;
 import dev.devpanda.factorynetwork.block.entity.RackBlockEntity;
-import dev.devpanda.factorynetwork.item.ProcessorItem;
+import dev.devpanda.factorynetwork.network.ServerBay;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -12,33 +12,46 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 
 /**
- * Zeigt an der Front, welche Einschübe bestückt sind.
+ * Zeigt an der Front, welche Einschübe laufen.
  *
- * <p>Dasselbe wie beim Laufwerk und aus demselben Grund: Ein Schrank, dem man
- * nicht ansieht, ob noch Platz ist, zwingt zum Anklicken.
+ * <p>Drei Zustände, und der mittlere ist der wichtige: <b>angefangen und
+ * nicht fertig</b>. Ein Einschub, in dem zwei von drei Bauteilen stecken,
+ * sieht von weitem aus wie ein voller und rechnet doch nicht — ohne eigene
+ * Farbe dafür sucht man den Fehler im Programm.
+ *
+ * <p>Gezeichnet über zwei Blöcke: Der Schrank ist zwei hoch, die BlockEntity
+ * sitzt unten, und die oberen sechs Einschübe liegen im Nachbarblock.
  */
 public class RackRenderer implements BlockEntityRenderer<RackBlockEntity> {
 
     private static final ResourceLocation BLADES = ResourceLocation.fromNamespaceAndPath(
             FactoryNetwork.MOD_ID, "textures/misc/rack_blades.png");
 
-    /** Leer, Prozessor, Co-Prozessor. */
+    /** Leer, angefangen, laufend. */
     private static final float TILES = 3.0F;
-    private static final double MAX_DISTANCE = 24.0;
+    private static final double MAX_DISTANCE = 32.0;
 
-    /** Die Einschübe liegen so, wie sie {@code textures.py} malt. */
-    private static final float TEXTURE = 64.0F;
-    private static final int BLADE_X = 8;
-    private static final int BLADE_Y = 11;
-    private static final int BLADE_W = 4;
-    private static final int BLADE_H = 36;
-    private static final int STEP = 6;
+    /** Ein Block ist sechzehn Pixel; die Front des Schranks ist zweiunddreißig. */
+    private static final float PIXEL = 16.0F;
+
+    /** So weit liegt die Front hinter dem Rahmen — dieselben zwei Pixel wie im Modell. */
+    private static final float DEPTH = 2.0F / PIXEL;
+
+    private static final float BAY_X0 = 3.0F;
+    private static final float BAY_X1 = 13.0F;
+
+    /** Oberkante des ersten Einschubs, gemessen von oben über beide Blöcke. */
+    private static final float BAY_TOP = 2.0F;
+    private static final float BAY_HEIGHT = 2.0F;
+
+    /** Die achtundzwanzig Pixel zwischen den Rahmenleisten, geteilt durch zwölf. */
+    private static final float BAY_STEP = 28.0F / RackBlockEntity.BAYS;
 
     public RackRenderer(BlockEntityRendererProvider.Context context) {
     }
@@ -54,30 +67,35 @@ public class RackRenderer implements BlockEntityRenderer<RackBlockEntity> {
         poses.pushPose();
         poses.translate(0.5F, 0.5F, 0.5F);
         Matrix4f matrix = poses.last().pose();
-        for (int slot = 0; slot < RackBlockEntity.SLOTS; slot++) {
-            int kind = kindOf(rack.processor(slot));
-            int x = BLADE_X + slot * STEP;
+        for (int bay = 0; bay < RackBlockEntity.BAYS; bay++) {
+            int kind = kindOf(rack.bay(bay));
+            float top = BAY_TOP + bay * BAY_STEP;
             FaceOverlay.tile(buffer, matrix, facing,
-                    x / TEXTURE, BLADE_Y / TEXTURE,
-                    (x + BLADE_W) / TEXTURE, (BLADE_Y + BLADE_H) / TEXTURE,
+                    BAY_X0 / PIXEL, top / PIXEL - 1.0F,
+                    BAY_X1 / PIXEL, (top + BAY_HEIGHT) / PIXEL - 1.0F,
                     kind / TILES, (kind + 1) / TILES,
-                    kind == 0 ? dark : LightTexture.FULL_BRIGHT);
+                    kind == 0 ? dark : LightTexture.FULL_BRIGHT, DEPTH);
         }
         poses.popPose();
     }
 
-    /**
-     * Leer, klein oder groß.
-     *
-     * <p>Unterschieden wird an der Leistung und nicht am Gegenstand: Kommt
-     * einmal ein dritter Prozessor dazu, reiht er sich von selbst ein.
-     */
-    private static int kindOf(ItemStack stack) {
-        int threads = ProcessorItem.threadsOf(stack);
-        if (threads <= 0) {
+    private static int kindOf(ServerBay bay) {
+        if (!bay.occupied()) {
             return 0;
         }
-        return threads >= 8 ? 2 : 1;
+        return bay.complete() ? 2 : 1;
+    }
+
+    /**
+     * Der Schrank reicht einen Block höher als seine BlockEntity.
+     *
+     * <p>Ohne diese Angabe verschwinden die oberen sechs Einschübe, sobald
+     * der untere Block aus dem Blickfeld rutscht — man sieht den Schrank und
+     * seine Lämpchen sind weg.
+     */
+    @Override
+    public AABB getRenderBoundingBox(RackBlockEntity rack) {
+        return new AABB(rack.getBlockPos()).expandTowards(0.0, 1.0, 0.0);
     }
 
     @Override

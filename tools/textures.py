@@ -1178,45 +1178,6 @@ def rack_front():
     return img
 
 
-def processor(gross=False):
-    """Ein Chip mit Kühlkörper. Der grosse hat zwei Kerne und mehr Beine."""
-    ton = (150, 172, 156) if not gross else (168, 152, 186)
-    img = Image.new("RGBA", (N, N), (0, 0, 0, 0))
-
-    mask = Image.new("L", (N, N), 0)
-    ImageDraw.Draw(mask).rectangle([14, 14, 49, 49], fill=255)
-    img.alpha_composite(masked_surface(mask, blend(ton, LIGHT, 0.2),
-                                       blend(ton, EDGE, 0.4), seed=270))
-    d = ImageDraw.Draw(img)
-    d.rectangle([14, 14, 49, 49], outline=EDGE + (255,))
-    raised(img, (14, 14, 49, 49), hoehe=2)
-
-    # Beine an allen vier Seiten: Ein Chip ohne Beine liest sich als Kachel.
-    beine = range(18, 46, 5) if not gross else range(17, 47, 4)
-    for p in beine:
-        for box in ([p, 9, p + 2, 13], [p, 50, p + 2, 54],
-                    [9, p, 13, p + 2], [50, p, 54, p + 2]):
-            d.rectangle(box, fill=BRASS + (255,))
-            d.point((box[0], box[1]), fill=BRASS_HI + (255,))
-
-    # Kühlkörper in der Mitte, versenkt und mit Rippen.
-    d.rectangle([19, 19, 44, 44], fill=blend(BODY_MID, EDGE, 0.35) + (255,))
-    recess(img, (19, 19, 44, 44), tiefe=2)
-    ao(img, (19, 19, 44, 44), depth=3, strength=0.5)
-    for x in range(22, 43, 3):
-        d.line([(x, 22), (x, 41)], fill=blend(LIGHT, EDGE, 0.35) + (255,))
-
-    # Der Kern glüht — einer beim kleinen, zwei beim grossen.
-    kerne = [(27, 27, 36, 36)] if not gross else [(23, 23, 30, 30), (33, 33, 40, 40)]
-    for kern in kerne:
-        glow(img, list(kern), color=ACCENT, radius=5, strength=110)
-    d = ImageDraw.Draw(img)
-    for kern in kerne:
-        d.rectangle(list(kern), fill=blend(ACCENT, EDGE, 0.25) + (255,))
-        d.rectangle(list(kern), outline=ACCENT_HI + (255,))
-    scratches(img, count=2, seed=271 if not gross else 272)
-    return img
-
 # ---- Bestückung, die der Renderer über die Front legt ---------------------
 #
 # Die Front zeigt, was drinsteckt. Gemalt wird sie nicht in die Textur —
@@ -1274,33 +1235,202 @@ def drive_bays():
 
 
 # Ein Einschub des Schranks: 4 Texturpixel breit, 36 hoch — auch hier doppelt.
-BLADE_W, BLADE_H = 8, 72
+# Ein Einschub des Schranks, quer: zehn Blockpixel breit, zwei hoch. Bei
+# achtfacher Auflösung sind das achtzig auf sechzehn.
+BLADE_W, BLADE_H = 80, 16
 
 
 def rack_blades():
-    """Ein Streifen: leerer Einschub, Prozessor, Co-Prozessor."""
-    sorten = [None, (150, 172, 156), (168, 152, 186)]
-    streifen = Image.new("RGBA", (BLADE_W * len(sorten), BLADE_H), (0, 0, 0, 0))
-    for i, ton in enumerate(sorten):
-        kachel = Image.new("RGBA", (BLADE_W, BLADE_H), (0, 0, 0, 0))
-        d = ImageDraw.Draw(kachel)
-        if ton is None:
-            d.rectangle([0, 0, BLADE_W - 1, BLADE_H - 1],
-                        fill=blend(EDGE, BODY_BOT, 0.35) + (255,))
-            ao(kachel, (0, 0, BLADE_W - 1, BLADE_H - 1), depth=2, strength=0.5)
-        else:
-            d.rectangle([0, 0, BLADE_W - 1, BLADE_H - 1], fill=blend(ton, EDGE, 0.35) + (255,))
-            raised(kachel, (0, 0, BLADE_W - 1, BLADE_H - 1), hoehe=1)
-            # Griff oben, Rippen in der Mitte, Lämpchen unten.
-            d.rectangle([1, 2, BLADE_W - 2, 6], fill=blend(ton, LIGHT, 0.3) + (255,))
-            for y in range(12, BLADE_H - 14, 5):
-                d.line([(2, y), (BLADE_W - 3, y)], fill=_dunkler(ton + (255,), 0.35))
-            glow(kachel, [2, BLADE_H - 10, BLADE_W - 3, BLADE_H - 5],
-                 color=ACCENT, radius=3, strength=130)
-            d = ImageDraw.Draw(kachel)
-            d.rectangle([2, BLADE_H - 10, BLADE_W - 3, BLADE_H - 5], fill=ACCENT + (255,))
-        streifen.paste(kachel, (i * BLADE_W, 0))
+    """Ein Streifen: leerer Einschub, angefangener, laufender.
+
+    Der mittlere Zustand ist der wichtige. Ein Einschub mit zwei von drei
+    Bauteilen sieht sonst aus wie ein voller und rechnet doch nicht — und
+    dann sucht man den Fehler im Programm statt im Schrank.
+    """
+    streifen = Image.new("RGBA", (BLADE_W * 3, BLADE_H), (0, 0, 0, 0))
+    for i in range(3):
+        streifen.paste(_blade(i), (i * BLADE_W, 0))
     return streifen
+
+
+def _blade(zustand):
+    kachel = Image.new("RGBA", (BLADE_W, BLADE_H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(kachel)
+    if zustand == 0:
+        # Leer: der nackte Boden des Schachts, ohne Blech davor.
+        d.rectangle([0, 0, BLADE_W - 1, BLADE_H - 1],
+                    fill=blend(EDGE, BODY_BOT, 0.3) + (255,))
+        ao(kachel, (0, 0, BLADE_W - 1, BLADE_H - 1), depth=3, strength=0.6)
+        for x in range(6, BLADE_W - 6, 9):
+            d.line([(x, 4), (x, BLADE_H - 5)], fill=_dunkler(BODY_BOT + (255,), 0.4))
+        return kachel
+
+    ton = (168, 152, 186) if zustand == 2 else (128, 126, 120)
+    lampe = ACCENT if zustand == 2 else (232, 172, 62)
+    d.rectangle([0, 0, BLADE_W - 1, BLADE_H - 1], fill=blend(ton, EDGE, 0.4) + (255,))
+    raised(kachel, (0, 0, BLADE_W - 1, BLADE_H - 1), hoehe=1)
+    # Griff links, Lüftungsrippen in der Mitte, Lämpchen rechts — so herum
+    # liest sich ein Einschub, den man herausziehen würde.
+    d.rectangle([2, 3, 9, BLADE_H - 4], fill=blend(ton, LIGHT, 0.35) + (255,))
+    d.rectangle([2, 3, 9, BLADE_H - 4], outline=_dunkler(ton + (255,), 0.45))
+    for x in range(15, BLADE_W - 18, 6):
+        d.line([(x, 4), (x, BLADE_H - 5)], fill=_dunkler(ton + (255,), 0.4))
+    if zustand == 2:
+        glow(kachel, [BLADE_W - 13, 5, BLADE_W - 5, BLADE_H - 6],
+             color=lampe, radius=4, strength=150)
+        d = ImageDraw.Draw(kachel)
+    d.rectangle([BLADE_W - 13, 5, BLADE_W - 5, BLADE_H - 6], fill=lampe + (255,))
+    d.rectangle([BLADE_W - 13, 5, BLADE_W - 5, BLADE_H - 6],
+                outline=_heller(lampe + (255,), 0.4))
+    return kachel
+
+
+def rack_frame():
+    """Der Rahmen des Schranks: gebürstetes Blech mit Kante und Nieten."""
+    img = surface(top=blend(BODY_TOP, LIGHT, 0.2), bottom=BODY_BOT, seed=91)
+    brushed(img, count=34, seed=92, strength=9)
+    d = ImageDraw.Draw(img)
+    bevel(d, (0, 0, N - 1, N - 1), width=3)
+    for y in range(7, N - 6, 18):
+        rivet(img, 6, y, r=2)
+        rivet(img, N - 7, y, r=2)
+    scratches(img, count=3, seed=93)
+    return img
+
+
+def rack_inner():
+    """Der Boden des Schachts, hinter den Einschüben. Dunkel und tief."""
+    img = surface(top=blend(BODY_BOT, EDGE, 0.4), bottom=EDGE, seed=94)
+    d = ImageDraw.Draw(img)
+    # Zwei senkrechte Führungsschienen, auf denen die Einschübe sitzen.
+    for x in (12, N - 13):
+        d.rectangle([x - 2, 2, x + 2, N - 3], fill=blend(BODY_BOT, LIGHT, 0.2) + (255,))
+        ao(img, (x - 2, 2, x + 2, N - 3), depth=2, strength=0.4)
+    grain(img, amount=5, seed=95)
+    return img
+
+
+# ---- Serverbauteile ------------------------------------------------------
+#
+# Drei Silhouetten, damit man die Art am Umriss erkennt, und vier Töne,
+# damit man die Stufe an der Farbe erkennt. Beides zusammen: Wer zwölf
+# Einschübe bestückt, muss die Bauteile im Rucksack auseinanderhalten
+# können, ohne jedes einzeln anzusehen.
+
+TIER_TONE = [
+    (146, 156, 166),
+    (138, 180, 148),
+    (132, 158, 206),
+    (204, 172, 106),
+]
+
+
+def _tier_glow(img, box, tier):
+    glow(img, list(box), color=blend(TIER_TONE[tier], (255, 255, 255), 0.35),
+         radius=5, strength=90 + tier * 25)
+
+
+def cpu_item(tier):
+    """Ein Chip. Je höher die Stufe, desto mehr Kerne glühen."""
+    ton = TIER_TONE[tier]
+    img = Image.new("RGBA", (N, N), (0, 0, 0, 0))
+    mask = Image.new("L", (N, N), 0)
+    ImageDraw.Draw(mask).rectangle([14, 14, 49, 49], fill=255)
+    img.alpha_composite(masked_surface(mask, blend(ton, LIGHT, 0.25),
+                                       blend(ton, EDGE, 0.45), seed=300 + tier))
+    d = ImageDraw.Draw(img)
+    d.rectangle([14, 14, 49, 49], outline=EDGE + (255,))
+    raised(img, (14, 14, 49, 49), hoehe=2)
+
+    for p in range(18, 46, 5):
+        for box in ([p, 9, p + 2, 13], [p, 50, p + 2, 54],
+                    [9, p, 13, p + 2], [50, p, 54, p + 2]):
+            d.rectangle(box, fill=BRASS + (255,))
+            d.point((box[0], box[1]), fill=BRASS_HI + (255,))
+
+    d.rectangle([19, 19, 44, 44], fill=blend(BODY_MID, EDGE, 0.4) + (255,))
+    recess(img, (19, 19, 44, 44), tiefe=2)
+    ao(img, (19, 19, 44, 44), depth=3, strength=0.5)
+
+    # Ein Kern, vier, neun, sechzehn — die Stufe steht als Quadrat da.
+    seite = tier + 1
+    feld = 24 // seite
+    for zy in range(seite):
+        for zx in range(seite):
+            x0 = 20 + zx * feld
+            y0 = 20 + zy * feld
+            kern = (x0 + 1, y0 + 1, x0 + feld - 2, y0 + feld - 2)
+            _tier_glow(img, kern, tier)
+            k = ImageDraw.Draw(img)
+            k.rectangle(list(kern), fill=blend(ton, EDGE, 0.2) + (255,))
+            k.rectangle(list(kern), outline=_heller(ton + (255,), 0.5))
+    scratches(img, count=2, seed=310 + tier)
+    return img
+
+
+def ram_item(tier):
+    """Ein Riegel mit Kontaktleiste. Die Stufe steht in der Zahl der Bausteine."""
+    ton = TIER_TONE[tier]
+    img = Image.new("RGBA", (N, N), (0, 0, 0, 0))
+    mask = Image.new("L", (N, N), 0)
+    ImageDraw.Draw(mask).rectangle([8, 20, 55, 46], fill=255)
+    img.alpha_composite(masked_surface(mask, blend(ton, LIGHT, 0.2),
+                                       blend(ton, EDGE, 0.5), seed=320 + tier))
+    d = ImageDraw.Draw(img)
+    d.rectangle([8, 20, 55, 46], outline=EDGE + (255,))
+    raised(img, (8, 20, 55, 46), hoehe=2)
+
+    # Kontaktleiste unten, mit der Kerbe, an der man einen Riegel erkennt.
+    d.rectangle([10, 41, 53, 45], fill=BRASS + (255,))
+    for x in range(11, 53, 3):
+        d.line([(x, 41), (x, 45)], fill=_dunkler(BRASS + (255,), 0.4))
+    d.rectangle([28, 41, 33, 45], fill=blend(ton, EDGE, 0.5) + (255,))
+
+    bausteine = 2 + tier * 2
+    breite = 42 // bausteine
+    for i in range(bausteine):
+        x0 = 10 + i * breite
+        box = (x0, 24, x0 + breite - 3, 37)
+        _tier_glow(img, box, tier)
+        k = ImageDraw.Draw(img)
+        k.rectangle(list(box), fill=blend(ton, EDGE, 0.3) + (255,))
+        k.rectangle(list(box), outline=_heller(ton + (255,), 0.45))
+    scratches(img, count=2, seed=330 + tier)
+    return img
+
+
+def disk_item(tier):
+    """Eine Platte im Gehäuse. Die Stufe steht in den Ringen der Scheibe."""
+    ton = TIER_TONE[tier]
+    img = Image.new("RGBA", (N, N), (0, 0, 0, 0))
+    mask = Image.new("L", (N, N), 0)
+    ImageDraw.Draw(mask).rounded_rectangle([10, 12, 53, 51], radius=3, fill=255)
+    img.alpha_composite(masked_surface(mask, blend(ton, LIGHT, 0.2),
+                                       blend(ton, EDGE, 0.5), seed=340 + tier))
+    d = ImageDraw.Draw(img)
+    d.rounded_rectangle([10, 12, 53, 51], radius=3, outline=EDGE + (255,))
+    raised(img, (10, 12, 53, 51), hoehe=2)
+
+    # Das Fenster auf die Scheibe.
+    d.ellipse([16, 17, 47, 46], fill=blend(BODY_MID, EDGE, 0.45) + (255,))
+    ao(img, (16, 17, 47, 46), depth=3, strength=0.5)
+    for i in range(tier + 1):
+        r = 3 + i * (12 // (tier + 1))
+        d.ellipse([31 - r, 31 - r, 32 + r, 32 + r],
+                  outline=blend(ton, ACCENT_HI, 0.3) + (255,))
+    _tier_glow(img, (29, 29, 34, 34), tier)
+    d = ImageDraw.Draw(img)
+    d.ellipse([29, 29, 34, 34], fill=_heller(ton + (255,), 0.5))
+
+    # Anschluss an der Seite, damit es nach Datenträger aussieht.
+    d.rectangle([12, 44, 24, 49], fill=BRASS + (255,))
+    for x in range(13, 24, 3):
+        d.line([(x, 44), (x, 49)], fill=_dunkler(BRASS + (255,), 0.4))
+    for x, y in ((13, 15), (50, 15), (13, 48), (50, 48)):
+        rivet(img, x, y, r=2)
+    scratches(img, count=2, seed=350 + tier)
+    return img
+
 
 def creative_source():
     """Ein Block, der leuchtet — er soll nach Werkzeug aussehen, nicht nach Anlage."""
@@ -1385,6 +1515,8 @@ def main():
     save(press_front(), "block", "press_front")
     save(router_side(), "block", "router_side")
     save(rack_front(), "block", "server_rack_front")
+    save(rack_frame(), "block", "server_rack_frame")
+    save(rack_inner(), "block", "server_rack_inner")
     save(creative_source(), "block", "creative_source")
     save(burner_front(False), "block", "burner_front")
     save(burner_front(True), "block", "burner_front_on")
@@ -1407,8 +1539,12 @@ def main():
         save(storage_cell(label), "item", "cell_k" + label.replace("k", ""))
     for label in ("64", "256", "1024", "4096"):
         save(fluid_cell(label), "item", "fluid_cell_" + label)
-    save(processor(False), "item", "processor")
-    save(processor(True), "item", "co_processor")
+    for tier, wert in enumerate((2, 8, 32, 128)):
+        save(cpu_item(tier), "item", "cpu_%d" % wert)
+    for tier, wert in enumerate((8, 32, 128, 512)):
+        save(ram_item(tier), "item", "ram_%d" % wert)
+    for tier, wert in enumerate((64, 256, 1024, 4096)):
+        save(disk_item(tier), "item", "disk_%d" % wert)
 
 
 if __name__ == "__main__":

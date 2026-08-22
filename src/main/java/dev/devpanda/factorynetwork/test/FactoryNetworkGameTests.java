@@ -42,7 +42,7 @@ public final class FactoryNetworkGameTests {
     private static BlockPos buildSetup(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 1, 1);
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
-        rackWithProcessor(helper, controller.west());
+        rackWithServer(helper, controller.west());
 
         // Kabel nach Osten, daran zwei Connectoren.
         BlockPos cable = controller.east();
@@ -73,7 +73,7 @@ public final class FactoryNetworkGameTests {
     private static BlockPos bareSetup(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 1, 1);
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
-        rackWithProcessor(helper, controller.west());
+        rackWithServer(helper, controller.west());
         BlockPos cable = controller.east();
         helper.setBlock(cable, FnBlocks.CABLE.get());
 
@@ -639,7 +639,7 @@ public final class FactoryNetworkGameTests {
     public static void cablesOfDifferentColoursDoNotConnect(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 1, 1);
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
-        rackWithProcessor(helper, controller.west());
+        rackWithServer(helper, controller.west());
 
         // Grüner Strang zum ersten Connector
         BlockPos green = controller.east();
@@ -671,7 +671,7 @@ public final class FactoryNetworkGameTests {
     public static void plainCableConnectsToEveryColour(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 1, 1);
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
-        rackWithProcessor(helper, controller.west());
+        rackWithServer(helper, controller.west());
 
         // Standardfarbe zwischen Controller und einem blauen Strang
         BlockPos plain = controller.east();
@@ -696,7 +696,7 @@ public final class FactoryNetworkGameTests {
         // nicht über eine fremde Farbe hinweg verbinden.
         BlockPos controller = new BlockPos(1, 1, 1);
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
-        rackWithProcessor(helper, controller.west());
+        rackWithServer(helper, controller.west());
 
         // Grün vom Controller weg
         BlockPos green = controller.east();
@@ -730,7 +730,7 @@ public final class FactoryNetworkGameTests {
     public static void aCableCarriesSixteenChannels(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 2, 1);
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
-        rackWithProcessor(helper, controller.west());
+        rackWithServer(helper, controller.west());
 
         // Eine Kabelreihe nach Osten, darüber und darunter je vier Connectoren
         line(helper, controller.east(), 5);
@@ -767,7 +767,7 @@ public final class FactoryNetworkGameTests {
     public static void loadIsCountedPerStrand(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 2, 1);
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
-        rackWithProcessor(helper, controller.west());
+        rackWithServer(helper, controller.west());
         line(helper, controller.east(), 3);
 
         // Zwei Geräte am Ende der Reihe — über und unter dem letzten Kabel,
@@ -796,7 +796,7 @@ public final class FactoryNetworkGameTests {
     /** Baut Controller, Kabelreihe und drei benannte Kisten. */
     private static ControllerBlockEntity threeChests(GameTestHelper helper, BlockPos controller) {
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
-        rackWithProcessor(helper, controller.west());
+        rackWithServer(helper, controller.west());
         for (int i = 0; i < 4; i++) {
             helper.setBlock(controller.east(i + 1), FnBlocks.CABLE.get());
         }
@@ -883,7 +883,7 @@ public final class FactoryNetworkGameTests {
     public static void aDisplayShowsWhatTheProgramSays(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 1, 1);
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
-        rackWithProcessor(helper, controller.west());
+        rackWithServer(helper, controller.west());
         helper.setBlock(controller.east(), FnBlocks.CABLE.get());
         driveWithCell(helper, controller.above(),
                 dev.devpanda.factorynetwork.storage.CellTier.K64);
@@ -929,7 +929,7 @@ public final class FactoryNetworkGameTests {
     public static void aDisplayWithoutItsDeclarationSaysSo(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 1, 1);
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
-        rackWithProcessor(helper, controller.west());
+        rackWithServer(helper, controller.west());
         helper.setBlock(controller.east(), FnBlocks.CABLE.get());
 
         BlockPos display = controller.east().east();
@@ -1797,7 +1797,7 @@ public final class FactoryNetworkGameTests {
      */
     private static ControllerBlockEntity twoPlants(GameTestHelper helper, BlockPos controller) {
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
-        rackWithProcessor(helper, controller.west());
+        rackWithServer(helper, controller.west());
         for (int i = 0; i < 5; i++) {
             helper.setBlock(controller.east(i + 1), FnBlocks.CABLE.get());
         }
@@ -2022,7 +2022,7 @@ public final class FactoryNetworkGameTests {
      */
     private static ControllerBlockEntity twoCauldrons(GameTestHelper helper, BlockPos controller) {
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
-        rackWithProcessor(helper, controller.west());
+        rackWithServer(helper, controller.west());
         for (int i = 0; i < 4; i++) {
             helper.setBlock(controller.east(i + 1), FnBlocks.CABLE.get());
         }
@@ -2522,7 +2522,7 @@ public final class FactoryNetworkGameTests {
     private static ControllerBlockEntity plantWithTanks(GameTestHelper helper,
             BlockPos controller) {
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
-        rackWithProcessor(helper, controller.west());
+        rackWithServer(helper, controller.west());
         for (int i = 0; i < 4; i++) {
             helper.setBlock(controller.east(i + 1), FnBlocks.CABLE.get());
         }
@@ -2599,7 +2599,7 @@ public final class FactoryNetworkGameTests {
     private static ControllerBlockEntity threeCauldrons(GameTestHelper helper,
             BlockPos controller) {
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
-        rackWithProcessor(helper, controller.west());
+        rackWithServer(helper, controller.west());
         for (int i = 0; i < 5; i++) {
             helper.setBlock(controller.east(i + 1), FnBlocks.CABLE.get());
         }
@@ -2786,7 +2786,7 @@ public final class FactoryNetworkGameTests {
     public static void theAnalyserMarksDevicesWithoutAChannel(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 2, 1);
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
-        rackWithProcessor(helper, controller.west());
+        rackWithServer(helper, controller.west());
         line(helper, controller.east(), 5);
 
         // Mehr Geräte als Kanäle: Die überzähligen müssen auffallen.
@@ -2822,7 +2822,7 @@ public final class FactoryNetworkGameTests {
     public static void theAnalyserMarksFullCables(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 2, 1);
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
-        rackWithProcessor(helper, controller.west());
+        rackWithServer(helper, controller.west());
         line(helper, controller.east(), 5);
         for (int i = 0; i < 8; i++) {
             BlockPos side = i < 4 ? controller.east(i + 1).above()
@@ -2847,7 +2847,7 @@ public final class FactoryNetworkGameTests {
     public static void aDenseCableCarriesFourTimesAsMuch(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 2, 1);
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
-        rackWithProcessor(helper, controller.west());
+        rackWithServer(helper, controller.west());
         for (int i = 0; i < 5; i++) {
             helper.setBlock(controller.east(i + 1), FnBlocks.DENSE_CABLE.get());
         }
@@ -2887,7 +2887,7 @@ public final class FactoryNetworkGameTests {
     public static void theWeakestCableOnThePathDecides(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 2, 1);
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
-        rackWithProcessor(helper, controller.west());
+        rackWithServer(helper, controller.west());
 
         // Dicht, dann ein gewöhnliches Stück, dann wieder dicht: Der Engpass
         // in der Mitte begrenzt, auch wenn davor und dahinter Platz wäre.
@@ -2935,18 +2935,61 @@ public final class FactoryNetworkGameTests {
      * drei Abläufe gleichzeitig laufen wollten. Wer die Grenze selbst prüft,
      * baut sich einen kleineren Schrank.
      */
-    private static final int TEST_PROCESSORS = 8;
+    private static final int TEST_CPU = 32;
+    private static final int TEST_RAM = 128;
+    private static final int TEST_DISK = 4096;
 
-    private static void rackWithProcessor(GameTestHelper helper, BlockPos at) {
-        helper.setBlock(at, FnBlocks.RACK.get());
-        if (helper.getBlockEntity(at)
-                instanceof dev.devpanda.factorynetwork.block.entity.RackBlockEntity rack) {
-            rack.setProcessor(0, new ItemStack(
-                    dev.devpanda.factorynetwork.registry.FnItems.PROCESSOR.get(),
-                    TEST_PROCESSORS));
-        } else {
-            helper.fail("Am Serverschrank hängt keine BlockEntity", at);
+    /**
+     * Setzt einen Serverschrank — beide Hälften, wie beim Setzen von Hand.
+     *
+     * <p>{@code setBlock} geht nicht durch {@code setPlacedBy}, also entsteht
+     * die obere Hälfte nicht von selbst. Ohne sie fiele der Schrank beim
+     * nächsten Nachbarwechsel von oben in sich zusammen — und die Prüfung
+     * scheiterte an etwas ganz anderem als dem, was sie prüft.
+     */
+    private static void placeRack(GameTestHelper helper, BlockPos at) {
+        helper.setBlock(at, FnBlocks.RACK.get().defaultBlockState());
+        helper.setBlock(at.above(), FnBlocks.RACK.get().defaultBlockState()
+                .setValue(dev.devpanda.factorynetwork.block.RackBlock.HALF,
+                        net.minecraft.world.level.block.state.properties
+                                .DoubleBlockHalf.UPPER));
+    }
+
+    /** Der Gegenstand zu Bauteilart und Stufe. */
+    private static ItemStack serverPart(dev.devpanda.factorynetwork.item.ServerPart kind,
+                                        int value) {
+        for (var item : dev.devpanda.factorynetwork.registry.FnItems.SERVER_PARTS.get(kind)) {
+            if (item.get() instanceof dev.devpanda.factorynetwork.item.ServerPartItem part
+                    && part.value() == value) {
+                return new ItemStack(item.get());
+            }
         }
+        throw new IllegalArgumentException("Kein " + kind + " der Stufe " + value);
+    }
+
+    /** Bestückt einen Einschub vollständig. */
+    private static void fillBay(GameTestHelper helper, BlockPos at, int bay,
+                                int cpu, int ram, int disk) {
+        if (!(helper.getBlockEntity(at)
+                instanceof dev.devpanda.factorynetwork.block.entity.RackBlockEntity rack)) {
+            helper.fail("Am Serverschrank hängt keine BlockEntity", at);
+            return;
+        }
+        rack.setItem(dev.devpanda.factorynetwork.block.entity.RackBlockEntity
+                        .slotOf(bay, dev.devpanda.factorynetwork.item.ServerPart.CPU),
+                serverPart(dev.devpanda.factorynetwork.item.ServerPart.CPU, cpu));
+        rack.setItem(dev.devpanda.factorynetwork.block.entity.RackBlockEntity
+                        .slotOf(bay, dev.devpanda.factorynetwork.item.ServerPart.RAM),
+                serverPart(dev.devpanda.factorynetwork.item.ServerPart.RAM, ram));
+        rack.setItem(dev.devpanda.factorynetwork.block.entity.RackBlockEntity
+                        .slotOf(bay, dev.devpanda.factorynetwork.item.ServerPart.DISK),
+                serverPart(dev.devpanda.factorynetwork.item.ServerPart.DISK, disk));
+    }
+
+    /** Ein Serverschrank mit einem reichlich bestückten Einschub. */
+    private static void rackWithServer(GameTestHelper helper, BlockPos at) {
+        placeRack(helper, at);
+        fillBay(helper, at, 0, TEST_CPU, TEST_RAM, TEST_DISK);
     }
 
     /**
@@ -3292,7 +3335,7 @@ public final class FactoryNetworkGameTests {
     public static void routerJoinsOnlyWhatSharesALane(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 2, 1);
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
-        rackWithProcessor(helper, controller.west());
+        rackWithServer(helper, controller.west());
         helper.setBlock(controller.east(), FnBlocks.DENSE_CABLE.get());
 
         BlockPos router = controller.east(2);
@@ -3350,7 +3393,7 @@ public final class FactoryNetworkGameTests {
     public static void aClosedSideCutsTheLineBehindIt(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 2, 1);
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
-        rackWithProcessor(helper, controller.west());
+        rackWithServer(helper, controller.west());
         helper.setBlock(controller.east(), FnBlocks.DENSE_CABLE.get());
 
         BlockPos router = controller.east(2);
@@ -3387,7 +3430,7 @@ public final class FactoryNetworkGameTests {
     public static void aRouterLaneCarriesSixtyFourChannels(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 2, 1);
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
-        rackWithProcessor(helper, controller.west());
+        rackWithServer(helper, controller.west());
         helper.setBlock(controller.east(), FnBlocks.DENSE_CABLE.get());
         BlockPos router = controller.east(2);
         helper.setBlock(router, FnBlocks.ROUTER.get());
@@ -3439,7 +3482,7 @@ public final class FactoryNetworkGameTests {
     public static void theAnalyserReadsTheCapacityFromTheCable(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 2, 1);
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
-        rackWithProcessor(helper, controller.west());
+        rackWithServer(helper, controller.west());
         for (int i = 1; i <= 3; i++) {
             helper.setBlock(controller.east(i), FnBlocks.DENSE_CABLE.get());
         }
@@ -3591,16 +3634,26 @@ public final class FactoryNetworkGameTests {
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void aProcessorGoesIntoTheWindowAndOutAgain(GameTestHelper helper) {
         BlockPos rackPos = new BlockPos(1, 2, 1);
-        helper.setBlock(rackPos, FnBlocks.RACK.get());
+        placeRack(helper, rackPos);
         var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
-        player.getInventory().add(new ItemStack(
-                dev.devpanda.factorynetwork.registry.FnItems.PROCESSOR.get(), 3));
+        player.getInventory().add(
+                serverPart(dev.devpanda.factorynetwork.item.ServerPart.CPU, 8));
+        player.getInventory().add(
+                serverPart(dev.devpanda.factorynetwork.item.ServerPart.RAM, 32));
+        player.getInventory().add(
+                serverPart(dev.devpanda.factorynetwork.item.ServerPart.DISK, 256));
 
         var rack = (dev.devpanda.factorynetwork.block.entity.RackBlockEntity)
                 helper.getBlockEntity(rackPos);
+        // Jedes Bauteil findet seinen Platz von selbst — der Umschalt-Klick
+        // muss nicht wissen, wohin ein Datenträger gehört.
         intoShelf(helper, rackPos, player);
-        helper.assertValueEqual(rack.usedSlots(), 1, "Plätze im Schrank");
-        helper.assertValueEqual(rack.threads(), 6, "drei Prozessoren zu je zwei Abläufen");
+        helper.assertValueEqual(rack.threads(), 0, "ein Rechenwerk allein ist kein Server");
+        intoShelf(helper, rackPos, player);
+        intoShelf(helper, rackPos, player);
+        helper.assertValueEqual(rack.usedSlots(), 3, "Plätze im Schrank");
+        helper.assertValueEqual(rack.runningBays(), 1, "ein laufender Einschub");
+        helper.assertValueEqual(rack.threads(), 8, "sein Rechenwerk");
 
         takeFromShelf(helper, rackPos, 0, player);
         helper.assertValueEqual(rack.threads(), 0, "nach dem Herausnehmen");
@@ -3795,13 +3848,13 @@ public final class FactoryNetworkGameTests {
                 "die Meldung muss den Schrank nennen: " + entity.diagnostics());
 
         // Schrank hin, und dasselbe Programm läuft.
-        rackWithProcessor(helper, controller.west());
+        rackWithServer(helper, controller.west());
         helper.assertTrue(entity.deploy("""
                 fn nichts() {
                     log "hallo"
                 }"""), "mit Server muss es gehen");
-        helper.assertValueEqual(entity.threads(), 2 * TEST_PROCESSORS,
-                "jeder Prozessor trägt zwei");
+        helper.assertValueEqual(entity.threads(), TEST_CPU,
+                "das Rechenwerk des einen Einschubs");
         helper.succeed();
     }
 
@@ -3816,19 +3869,96 @@ public final class FactoryNetworkGameTests {
     public static void threadsAddUpAcrossRacks(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 2, 1);
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
-        rackWithProcessor(helper, controller.west());
-        rackWithProcessor(helper, controller.above());
+        rackWithServer(helper, controller.west());
+        rackWithServer(helper, controller.above());
 
-        // Im zweiten Schrank noch ein Co-Prozessor dazu.
-        var zweiter = (dev.devpanda.factorynetwork.block.entity.RackBlockEntity)
-                helper.getBlockEntity(controller.above());
-        zweiter.setProcessor(1, new ItemStack(
-                dev.devpanda.factorynetwork.registry.FnItems.CO_PROCESSOR.get()));
+        // Im zweiten Schrank noch ein kleiner Einschub dazu.
+        fillBay(helper, controller.above(), 1, 8, 8, 64);
 
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
-        helper.assertValueEqual(entity.threads(), 4 * TEST_PROCESSORS + 8,
-                "zwei Stapel Prozessoren und ein Co-Prozessor");
+        helper.assertValueEqual(entity.threads(), 2 * TEST_CPU + 8,
+                "zwei große Einschübe und ein kleiner");
+        helper.succeed();
+    }
+
+    /**
+     * Ein unvollständiger Einschub trägt nichts.
+     *
+     * <p>Nicht anteilig, gar nichts — sonst wäre der Schrank eine Summe von
+     * Bauteilen und keine Reihe von Servern, und die Entscheidung, welcher
+     * Einschub das große Teil bekommt, gäbe es nicht.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void anIncompleteBayCarriesNothing(GameTestHelper helper) {
+        BlockPos rackPos = new BlockPos(1, 2, 1);
+        placeRack(helper, rackPos);
+        var rack = (dev.devpanda.factorynetwork.block.entity.RackBlockEntity)
+                helper.getBlockEntity(rackPos);
+
+        rack.setItem(dev.devpanda.factorynetwork.block.entity.RackBlockEntity
+                        .slotOf(0, dev.devpanda.factorynetwork.item.ServerPart.CPU),
+                serverPart(dev.devpanda.factorynetwork.item.ServerPart.CPU, 128));
+        rack.setItem(dev.devpanda.factorynetwork.block.entity.RackBlockEntity
+                        .slotOf(0, dev.devpanda.factorynetwork.item.ServerPart.RAM),
+                serverPart(dev.devpanda.factorynetwork.item.ServerPart.RAM, 512));
+        helper.assertValueEqual(rack.threads(), 0, "ohne Datenträger kein Server");
+        helper.assertValueEqual(rack.runningBays(), 0, "kein laufender Einschub");
+        helper.assertValueEqual(rack.incompleteBays(), 1, "einer ist angefangen");
+
+        fillBay(helper, rackPos, 0, 128, 512, 4096);
+        helper.assertValueEqual(rack.threads(), 128, "jetzt trägt er");
+        helper.assertValueEqual(rack.incompleteBays(), 0, "und ist vollständig");
+        helper.succeed();
+    }
+
+    /**
+     * Jeder Platz nimmt nur seine eigene Art.
+     *
+     * <p>Sonst läge ein Rechenwerk auf dem Datenträgerplatz, der Einschub
+     * wäre voll und liefe trotzdem nicht — ein Fehler, den man beim Ansehen
+     * nicht findet.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void aSlotTakesOnlyItsOwnKind(GameTestHelper helper) {
+        BlockPos rackPos = new BlockPos(1, 2, 1);
+        placeRack(helper, rackPos);
+        var rack = (dev.devpanda.factorynetwork.block.entity.RackBlockEntity)
+                helper.getBlockEntity(rackPos);
+
+        int diskSlot = dev.devpanda.factorynetwork.block.entity.RackBlockEntity
+                .slotOf(0, dev.devpanda.factorynetwork.item.ServerPart.DISK);
+        helper.assertTrue(!rack.canPlaceItem(diskSlot,
+                        serverPart(dev.devpanda.factorynetwork.item.ServerPart.CPU, 2)),
+                "ein Rechenwerk gehört nicht auf den Datenträgerplatz");
+        helper.assertTrue(rack.canPlaceItem(diskSlot,
+                        serverPart(dev.devpanda.factorynetwork.item.ServerPart.DISK, 64)),
+                "ein Datenträger schon");
+        helper.succeed();
+    }
+
+    /**
+     * Der Schrank ist zwei Blöcke hoch und trotzdem ein Gerät.
+     *
+     * <p>Wer oben ankabelt, kabelt denselben Schrank an. Zählte die obere
+     * Hälfte für sich, kostete ein Schrank zwei Kanäle und stünde zweimal in
+     * der Liste — und die zweite BlockEntity gäbe es gar nicht.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void aTallRackIsStillOneDevice(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 2, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        // Der Schrank steht neben dem Controller: Seine untere Hälfte
+        // berührt ihn, seine obere ein Kabel, das ebenfalls an ihm hängt.
+        // Zwei Wege zu einem Gerät.
+        rackWithServer(helper, controller.west());
+        helper.setBlock(controller.above(), FnBlocks.CABLE.get());
+
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        helper.assertValueEqual(entity.graph().racks().size(), 1,
+                "ein Schrank, nicht zwei");
+        helper.assertValueEqual(entity.threads(), TEST_CPU, "und er zählt einmal");
         helper.succeed();
     }
 
@@ -3866,7 +3996,7 @@ public final class FactoryNetworkGameTests {
     private static BlockPos threeChestsSetup(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 2, 1);
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
-        rackWithProcessor(helper, controller.west());
+        rackWithServer(helper, controller.west());
         helper.setBlock(controller.east(), FnBlocks.CABLE.get());
         BlockPos connector = controller.east().north();
         helper.setBlock(connector, FnBlocks.CONNECTOR.get().defaultBlockState()
@@ -3883,16 +4013,15 @@ public final class FactoryNetworkGameTests {
         return controller;
     }
 
-    /** Ein Serverschrank mit genau so vielen Prozessoren, wie angegeben. */
-    private static void smallRack(GameTestHelper helper, BlockPos at, int processors) {
-        helper.setBlock(at, FnBlocks.RACK.get());
-        if (helper.getBlockEntity(at)
-                instanceof dev.devpanda.factorynetwork.block.entity.RackBlockEntity rack) {
-            rack.setProcessor(0, new ItemStack(
-                    dev.devpanda.factorynetwork.registry.FnItems.PROCESSOR.get(), processors));
-        } else {
-            helper.fail("Am Serverschrank hängt keine BlockEntity", at);
-        }
+    /**
+     * Ein Serverschrank mit genau so viel Rechenleistung, wie angegeben.
+     *
+     * <p>Speicher und Datenträger reichlich: Wer die Prozessorgrenze prüft,
+     * soll nicht an der Speichergrenze scheitern.
+     */
+    private static void smallRack(GameTestHelper helper, BlockPos at, int cpu) {
+        placeRack(helper, at);
+        fillBay(helper, at, 0, cpu, TEST_RAM, TEST_DISK);
     }
 
     /**
@@ -3907,7 +4036,7 @@ public final class FactoryNetworkGameTests {
     public static void moreFlowsThanThreadsQueueUp(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 2, 1);
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
-        smallRack(helper, controller.west(), 1);
+        smallRack(helper, controller.west(), 2);
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
         helper.assertValueEqual(entity.threads(), 2, "ein Prozessor trägt zwei");
@@ -3946,7 +4075,7 @@ public final class FactoryNetworkGameTests {
     public static void aQueuedFlowSurvivesBeingWrittenDown(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 2, 1);
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
-        smallRack(helper, controller.west(), 1);
+        smallRack(helper, controller.west(), 2);
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
         helper.assertTrue(entity.deploy("""
@@ -3984,7 +4113,7 @@ public final class FactoryNetworkGameTests {
     public static void anOverfullQueueFailsVisibly(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 2, 1);
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
-        smallRack(helper, controller.west(), 1);
+        smallRack(helper, controller.west(), 2);
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
         helper.assertTrue(entity.deploy("""
@@ -4017,7 +4146,7 @@ public final class FactoryNetworkGameTests {
     public static void theAnalyserShowsDrivesRacksAndRouters(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 2, 1);
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
-        rackWithProcessor(helper, controller.west());
+        rackWithServer(helper, controller.west());
         driveWithCell(helper, controller.above(),
                 dev.devpanda.factorynetwork.storage.CellTier.K1);
         helper.setBlock(controller.east(), FnBlocks.DENSE_CABLE.get());
@@ -4083,12 +4212,11 @@ public final class FactoryNetworkGameTests {
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void processorsSurviveBeingWrittenDown(GameTestHelper helper) {
         BlockPos rackPos = new BlockPos(1, 2, 1);
-        smallRack(helper, rackPos, 3);
+        smallRack(helper, rackPos, 2);
+        fillBay(helper, rackPos, 1, 8, 8, 64);
         var rack = (dev.devpanda.factorynetwork.block.entity.RackBlockEntity)
                 helper.getBlockEntity(rackPos);
-        rack.setProcessor(1, new ItemStack(
-                dev.devpanda.factorynetwork.registry.FnItems.CO_PROCESSOR.get()));
-        helper.assertValueEqual(rack.threads(), 14, "drei kleine und ein großer");
+        helper.assertValueEqual(rack.threads(), 10, "ein kleiner und ein mittlerer Einschub");
 
         var registries = helper.getLevel().registryAccess();
         var geladen = (dev.devpanda.factorynetwork.block.entity.RackBlockEntity)
@@ -4096,8 +4224,8 @@ public final class FactoryNetworkGameTests {
                         helper.absolutePos(rackPos), helper.getBlockState(rackPos),
                         rack.saveWithFullMetadata(registries), registries);
         helper.assertTrue(geladen != null, "Der Schrank kam nicht zurück");
-        helper.assertValueEqual(geladen.threads(), 14, "Rechenleistung nach dem Laden");
-        helper.assertValueEqual(geladen.usedSlots(), 2, "belegte Plätze");
+        helper.assertValueEqual(geladen.threads(), 10, "Rechenleistung nach dem Laden");
+        helper.assertValueEqual(geladen.usedSlots(), 6, "belegte Plätze");
         helper.succeed();
     }
 
@@ -4111,7 +4239,7 @@ public final class FactoryNetworkGameTests {
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void abrokenRackDropsItsProcessors(GameTestHelper helper) {
         BlockPos rackPos = new BlockPos(1, 2, 1);
-        smallRack(helper, rackPos, 4);
+        smallRack(helper, rackPos, 8);
         helper.setBlock(rackPos, Blocks.AIR);
         helper.succeedWhenEntityPresent(net.minecraft.world.entity.EntityType.ITEM, rackPos);
     }
@@ -4127,7 +4255,7 @@ public final class FactoryNetworkGameTests {
     public static void withoutAServerAFlowWaitsInstead(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 2, 1);
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
-        rackWithProcessor(helper, controller.west());
+        rackWithServer(helper, controller.west());
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
         helper.assertTrue(entity.deploy("""
@@ -4143,7 +4271,7 @@ public final class FactoryNetworkGameTests {
                 "ohne Server darf nichts anfangen, aber auch nichts wegfallen");
 
         // Schrank zurück, und er läuft.
-        rackWithProcessor(helper, controller.west());
+        rackWithServer(helper, controller.west());
         entity.rebuildNetwork();
         for (int i = 0; i < 5; i++) {
             entity.serverTick();
@@ -4558,7 +4686,7 @@ public final class FactoryNetworkGameTests {
     public static void aflowSurvivesAPowerCut(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 3, 1);
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
-        rackWithProcessor(helper, controller.west());
+        rackWithServer(helper, controller.west());
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
         helper.assertTrue(entity.deploy("""

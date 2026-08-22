@@ -231,10 +231,11 @@ public final class FactoryGraph {
                     // sich erst, wenn alle Wege bekannt sind.
                     Consumer kind = consumerAt(state);
                     if (kind != null) {
-                        reachable.computeIfAbsent(next.immutable(), key -> new ArrayList<>())
+                        BlockPos device = anchorOf(state, next);
+                        reachable.computeIfAbsent(device, key -> new ArrayList<>())
                                 .add(current);
-                        kinds.put(next.immutable(), kind);
-                        visitedDevices.add(next.immutable());
+                        kinds.put(device, kind);
+                        visitedDevices.add(device);
                     }
                 }
             }
@@ -275,6 +276,21 @@ public final class FactoryGraph {
         Consumer(int cost) {
             this.cost = cost;
         }
+    }
+
+    /**
+     * Wo ein Gerät zählt, wenn es mehr als einen Block belegt.
+     *
+     * <p>Der Serverschrank ist zwei Blöcke hoch und trotzdem ein Gerät: ein
+     * Kanal, eine BlockEntity, ein Eintrag in der Liste. Wer oben ankabelt,
+     * kabelt denselben Schrank an — deshalb steht die obere Hälfte hier auf
+     * die untere um, statt ein zweites Mal zu zählen.
+     */
+    private static BlockPos anchorOf(BlockState state, BlockPos pos) {
+        if (state.getBlock() instanceof RackBlock) {
+            return RackBlock.baseOf(state, pos).immutable();
+        }
+        return pos.immutable();
     }
 
     private static Consumer consumerAt(BlockState state) {
@@ -564,6 +580,9 @@ public final class FactoryGraph {
     public boolean contains(BlockPos pos) {
         return cables.contains(pos)
                 || racks.contains(pos)
+                // Der Schrank steht nur mit seiner unteren Hälfte in der
+                // Liste; die obere gehört genauso dazu.
+                || racks.contains(pos.below())
                 || drives.contains(pos)
                 || routers.contains(pos)
                 || unnamed.contains(pos)

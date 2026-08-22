@@ -63,6 +63,20 @@ public final class FlowEngine {
     private boolean frozen;
 
     /**
+     * Wie viele Abläufe überhaupt bestehen dürfen — laufende und wartende.
+     *
+     * <p>Der Speicher der Server. Anders als die Prozessorgrenze ist das
+     * keine Warteschlange, sondern eine Wand: Was nicht mehr hineinpasst,
+     * scheitert sichtbar. <b>Ein Ablauf, der schläft oder auf ein Ereignis
+     * wartet, belegt Speicher genauso wie ein rechnender</b> — er steht
+     * schließlich irgendwo, mit allen seinen Variablen.
+     *
+     * <p>Ohne Controller — etwa in einem Test der Maschine allein — gilt
+     * keine Grenze.
+     */
+    private int memoryLimit = Integer.MAX_VALUE;
+
+    /**
      * So viele dürfen höchstens anstehen.
      *
      * <p>Eine unbegrenzte Warteschlange wäre eine Anlage, die Arbeit
@@ -100,6 +114,19 @@ public final class FlowEngine {
      */
     public void setThreadLimit(int limit) {
         this.threadLimit = Math.max(0, limit);
+    }
+
+    public void setMemoryLimit(int limit) {
+        this.memoryLimit = Math.max(0, limit);
+    }
+
+    public int memoryLimit() {
+        return memoryLimit;
+    }
+
+    /** Wie viele Abläufe gerade Speicher belegen. */
+    public int inMemory() {
+        return occupied() + queued();
     }
 
     public void setFrozen(boolean frozen) {
@@ -153,6 +180,20 @@ public final class FlowEngine {
      * die niemand ansieht.
      */
     private boolean admit(Flow flow) {
+        // Der Speicher zuerst: Ein Ablauf, für den kein Platz im Speicher
+        // ist, wartet auch nicht — er passt schlicht nicht hinein.
+        //
+        // <b>Nicht, solange das Netz steht.</b> Dann ist die Grenze null,
+        // weil es keinen Server gibt, und jeder Ablauf ginge verloren,
+        // statt zu warten, bis wieder einer da ist. Verzögerung ist
+        // wiederherstellbar, Verlust nicht — dieselbe Antwort wie bei der
+        // Überlast.
+        if (!frozen && inMemory() >= memoryLimit) {
+            flow.fail("Der Speicher ist voll — " + memoryLimit
+                    + " Abläufe passen hinein. Bau größere Speicher ein.");
+            remember(flow);
+            return false;
+        }
         // Vor dem Eintragen gefragt: Sonst zählte der neue Ablauf sich selbst
         // mit, und der zweite von zwei Plätzen wäre schon belegt, bevor er
         // ihn bekommt.

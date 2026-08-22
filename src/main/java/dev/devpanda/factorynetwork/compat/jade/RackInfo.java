@@ -1,6 +1,7 @@
 package dev.devpanda.factorynetwork.compat.jade;
 
 import dev.devpanda.factorynetwork.block.entity.RackBlockEntity;
+import dev.devpanda.factorynetwork.network.ServerBay;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -12,45 +13,61 @@ import snownee.jade.api.ITooltip;
 import snownee.jade.api.config.IPluginConfig;
 
 /**
- * Was Jade über einen Serverschrank sagt: wie viele Prozessoren stecken und
- * wie viele Abläufe damit gleichzeitig laufen dürfen.
+ * Was Jade über einen Serverschrank sagt: wie viele Einschübe laufen und was
+ * sie zusammen tragen.
  *
- * <p>Die zweite Zahl ist die, um die es geht. Ein Schrank mit acht kleinen
- * Prozessoren und einer mit zwei Co-Prozessoren sehen gleich voll aus und
- * tragen doch verschieden viel.
+ * <p>Die wichtigste Zeile ist die über die unvollständigen Einschübe. Ein
+ * Schrank, in dem elf Bauteile stecken und trotzdem nichts läuft, ist von
+ * außen nicht von einem vollen zu unterscheiden — und das ist genau der
+ * Fehler, den man ohne Hinweis lange sucht.
  */
 public enum RackInfo implements IBlockComponentProvider, IServerDataProvider<BlockAccessor> {
 
     INSTANCE;
 
-    private static final String KEY_SLOTS = "FnRackSlots";
-    private static final String KEY_THREADS = "FnRackThreads";
+    private static final String KEY_RUNNING = "FnRackRunning";
+    private static final String KEY_INCOMPLETE = "FnRackIncomplete";
+    private static final String KEY_CPU = "FnRackCpu";
+    private static final String KEY_RAM = "FnRackRam";
+    private static final String KEY_DISK = "FnRackDisk";
 
     @Override
     public void appendServerData(CompoundTag data, BlockAccessor accessor) {
         if (!(accessor.getBlockEntity() instanceof RackBlockEntity rack)) {
             return;
         }
-        data.putInt(KEY_SLOTS, rack.usedSlots());
-        data.putInt(KEY_THREADS, rack.threads());
+        ServerBay capacity = rack.capacity();
+        data.putInt(KEY_RUNNING, rack.runningBays());
+        data.putInt(KEY_INCOMPLETE, rack.incompleteBays());
+        data.putInt(KEY_CPU, capacity.cpu());
+        data.putInt(KEY_RAM, capacity.ram());
+        data.putInt(KEY_DISK, capacity.disk());
     }
 
     @Override
     public void appendTooltip(ITooltip tooltip, BlockAccessor accessor, IPluginConfig config) {
         CompoundTag data = accessor.getServerData();
-        if (!data.contains(KEY_SLOTS)) {
+        if (!data.contains(KEY_RUNNING)) {
             return;
         }
-        int slots = data.getInt(KEY_SLOTS);
-        if (slots == 0) {
+        int running = data.getInt(KEY_RUNNING);
+        int incomplete = data.getInt(KEY_INCOMPLETE);
+        if (running == 0 && incomplete == 0) {
             tooltip.add(Component.translatable("jade.factorynetwork.rack.empty")
                     .withStyle(ChatFormatting.YELLOW));
             return;
         }
-        tooltip.add(Component.translatable("jade.factorynetwork.rack.slots",
-                slots, RackBlockEntity.SLOTS).withStyle(ChatFormatting.GRAY));
-        tooltip.add(Component.translatable("jade.factorynetwork.rack.threads",
-                data.getInt(KEY_THREADS)).withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.translatable("jade.factorynetwork.rack.bays",
+                running, RackBlockEntity.BAYS).withStyle(ChatFormatting.GRAY));
+        if (incomplete > 0) {
+            tooltip.add(Component.translatable("jade.factorynetwork.rack.incomplete",
+                    incomplete).withStyle(ChatFormatting.YELLOW));
+        }
+        if (running > 0) {
+            tooltip.add(Component.translatable("jade.factorynetwork.rack.capacity",
+                            data.getInt(KEY_CPU), data.getInt(KEY_RAM), data.getInt(KEY_DISK))
+                    .withStyle(ChatFormatting.GRAY));
+        }
     }
 
     @Override

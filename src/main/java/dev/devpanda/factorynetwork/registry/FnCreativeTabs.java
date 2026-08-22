@@ -34,8 +34,11 @@ public final class FnCreativeTabs {
                         output.accept(FnItems.ANALYSER.get());
                         output.accept(FnItems.DRIVE.get());
                         output.accept(FnItems.RACK.get());
-                        output.accept(FnItems.PROCESSOR.get());
-                        output.accept(FnItems.CO_PROCESSOR.get());
+                        // Erst alle Rechenwerke, dann alle Speicher, dann alle
+                        // Datenträger — nach Art sortiert und darin nach Stufe,
+                        // so wie man sie auch einbaut.
+                        FnItems.SERVER_PARTS.values().forEach(tiers ->
+                                tiers.forEach(part -> output.accept(part.get())));
                         output.accept(FnItems.CREATIVE_SOURCE.get());
                         output.accept(FnItems.CRYSTAL_ORE.get());
                         output.accept(FnItems.DEEPSLATE_CRYSTAL_ORE.get());

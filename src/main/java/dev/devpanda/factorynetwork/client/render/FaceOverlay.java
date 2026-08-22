@@ -40,6 +40,21 @@ public final class FaceOverlay {
     public static void tile(VertexConsumer buffer, Matrix4f matrix, Direction facing,
                             float tx0, float ty0, float tx1, float ty1,
                             float u0, float u1, int light) {
+        tile(buffer, matrix, facing, tx0, ty0, tx1, ty1, u0, u1, light, 0.0F);
+    }
+
+    /**
+     * Dasselbe, aber ein Stück tiefer.
+     *
+     * <p>Der Serverschrank hat eine zurückgesetzte Front: Die Einschübe
+     * liegen hinter dem Rahmen, nicht darauf. Ohne diesen Abstand steckten
+     * sie im Blech.
+     *
+     * @param depth wie weit hinter der Außenfläche, in Blöcken
+     */
+    public static void tile(VertexConsumer buffer, Matrix4f matrix, Direction facing,
+                            float tx0, float ty0, float tx1, float ty1,
+                            float u0, float u1, int light, float depth) {
         float nx = facing.getStepX();
         float nz = facing.getStepZ();
         // Von aussen betrachtet zeigt die Textur nach rechts, wohin die
@@ -49,18 +64,20 @@ public final class FaceOverlay {
         float rx = right.getStepX();
         float rz = right.getStepZ();
 
-        corner(buffer, matrix, nx, nz, rx, rz, tx0, ty0, u0, 0.0F, light);
-        corner(buffer, matrix, nx, nz, rx, rz, tx0, ty1, u0, 1.0F, light);
-        corner(buffer, matrix, nx, nz, rx, rz, tx1, ty1, u1, 1.0F, light);
-        corner(buffer, matrix, nx, nz, rx, rz, tx1, ty0, u1, 0.0F, light);
+        corner(buffer, matrix, nx, nz, rx, rz, tx0, ty0, u0, 0.0F, light, depth);
+        corner(buffer, matrix, nx, nz, rx, rz, tx0, ty1, u0, 1.0F, light, depth);
+        corner(buffer, matrix, nx, nz, rx, rz, tx1, ty1, u1, 1.0F, light, depth);
+        corner(buffer, matrix, nx, nz, rx, rz, tx1, ty0, u1, 0.0F, light, depth);
     }
 
     private static void corner(VertexConsumer buffer, Matrix4f matrix,
                                float nx, float nz, float rx, float rz,
-                               float tx, float ty, float u, float v, int light) {
+                               float tx, float ty, float u, float v, int light,
+                               float depth) {
         float alongRight = tx - 0.5F;
-        float x = nx * OFFSET + rx * alongRight;
-        float z = nz * OFFSET + rz * alongRight;
+        float front = OFFSET - depth;
+        float x = nx * front + rx * alongRight;
+        float z = nz * front + rz * alongRight;
         float y = 0.5F - ty;
         buffer.addVertex(matrix, x, y, z)
                 .setColor(0xFFFFFFFF)

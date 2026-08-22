@@ -1,18 +1,33 @@
 {
   "variants": {
-    "facing=north": {
-      "model": "factorynetwork:block/server_rack"
+    "facing=north,half=lower": {
+      "model": "factorynetwork:block/server_rack_lower"
     },
-    "facing=east": {
-      "model": "factorynetwork:block/server_rack",
+    "facing=east,half=lower": {
+      "model": "factorynetwork:block/server_rack_lower",
       "y": 90
     },
-    "facing=south": {
-      "model": "factorynetwork:block/server_rack",
+    "facing=south,half=lower": {
+      "model": "factorynetwork:block/server_rack_lower",
       "y": 180
     },
-    "facing=west": {
-      "model": "factorynetwork:block/server_rack",
+    "facing=west,half=lower": {
+      "model": "factorynetwork:block/server_rack_lower",
+      "y": 270
+    },
+    "facing=north,half=upper": {
+      "model": "factorynetwork:block/server_rack_upper"
+    },
+    "facing=east,half=upper": {
+      "model": "factorynetwork:block/server_rack_upper",
+      "y": 90
+    },
+    "facing=south,half=upper": {
+      "model": "factorynetwork:block/server_rack_upper",
+      "y": 180
+    },
+    "facing=west,half=upper": {
+      "model": "factorynetwork:block/server_rack_upper",
       "y": 270
     }
   }

@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "factorynetwork:item/co_processor"
+    "layer0": "factorynetwork:item/ram_32"
   }
 }
