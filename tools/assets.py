@@ -524,7 +524,9 @@ def models():
             }],
         })
 
-    for name in ("controller", "connector", "terminal", "display", "drive", "press"):
+    # Die Anzeigetafel fehlt hier: Ihr Blockmodell heißt display_0, weil es
+    # sechzehn davon gibt. Sie steht weiter oben, wo die sechzehn entstehen.
+    for name in ("controller", "connector", "terminal", "drive", "press"):
         write(A + "/models/item/" + name + ".json", {"parent": block(name)})
     write(A + "/models/item/label_gun.json", {
         "parent": "minecraft:item/handheld",
