@@ -83,6 +83,7 @@ Der Editor kennt außerdem:
 | Strg+Pfeil links/rechts | ein Wort weiter |
 | Strg+Rücktaste | ein Wort löschen |
 | Strg+Pos1 / Strg+Ende | an den Anfang oder das Ende des Programms |
+| Strg+F | suchen — Eingabe weiter, Umschalt+Eingabe zurück, Escape schließt |
 
 **Strg+Z und Strg+Y machen beide rückgängig.** GLFW meldet eine Taste nach
 ihrer Lage auf einer US-Tastatur; auf einer deutschen liegt dort, wo „Z"

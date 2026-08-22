@@ -212,5 +212,6 @@
   "jade.factorynetwork.rack.slots": "%s of %s slots",
   "jade.factorynetwork.rack.threads": "%s concurrent flows",
   "screen.factorynetwork.terminal.network.threads": "%s of %s slots busy · %s waiting",
-  "screen.factorynetwork.terminal.network.no_server": "No server rack — the network does not compute"
+  "screen.factorynetwork.terminal.network.no_server": "No server rack — the network does not compute",
+  "screen.factorynetwork.editor.find": "Find — Enter for next, Escape closes"
 }

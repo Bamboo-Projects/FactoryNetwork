@@ -3,6 +3,7 @@ package dev.devpanda.factorynetwork.client.screen;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Prüft die Bearbeitungsschritte des Editors.
@@ -167,5 +168,56 @@ class CodeEditorTest {
         editor.undo();
         assertEquals("abc", editor.text(),
                 "ein gemerkter Leerlauf frisst einen Schritt");
+    }
+    @Test
+    void suchenFindetAlleStellen() {
+        CodeEditor editor = editor("move alpha to beta\nmove ALPHA to gamma\nfertig");
+        editor.openSearch();
+        editor.setSearchTerm("alpha");
+
+        // Ohne Rücksicht auf Groß- und Kleinschreibung: Wer sucht, weiß meist
+        // nur ungefähr, wie es geschrieben war.
+        assertEquals(2, editor.matches().size());
+        assertEquals(1, editor.matchNumber());
+        assertEquals("alpha", editor.selectedText());
+
+        editor.step(1);
+        assertEquals(2, editor.matchNumber());
+        assertEquals("ALPHA", editor.selectedText());
+
+        // Weiter hinter der letzten Stelle fängt vorn wieder an.
+        editor.step(1);
+        assertEquals(1, editor.matchNumber());
+        editor.step(-1);
+        assertEquals(2, editor.matchNumber());
+    }
+
+    @Test
+    void eineAuswahlWirdZumSuchwort() {
+        CodeEditor editor = editor("move alpha to beta");
+        editor.select(0, 5, 0, 10);
+        editor.openSearch();
+        assertEquals("alpha", editor.searchTerm());
+        assertTrue(editor.isSearching());
+    }
+
+    @Test
+    void ohneTrefferPassiertNichts() {
+        CodeEditor editor = editor("move alpha to beta");
+        editor.openSearch();
+        editor.setSearchTerm("gibtesnicht");
+        assertEquals(0, editor.matches().size());
+        assertEquals(0, editor.matchNumber());
+        editor.step(1);
+        assertEquals("move alpha to beta", editor.text(), "der Text bleibt unberührt");
+    }
+
+    @Test
+    void dieSucheLaesstSichSchliessen() {
+        CodeEditor editor = editor("alpha");
+        editor.openSearch();
+        assertTrue(editor.isSearching());
+        editor.closeSearch();
+        assertTrue(!editor.isSearching());
     }
 }

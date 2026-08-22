@@ -25,6 +25,19 @@ public final class EditorColours {
      */
     public static final int SELECTION = 0x664A7BC4;
 
+    /**
+     * Fundstellen der Suche.
+     *
+     * <p>Zwei Töne: alle Treffer matt, der gerade angefahrene kräftig. Ohne
+     * die Unterscheidung sieht man zwar, dass es Treffer gibt, aber nicht,
+     * wo man gerade steht.
+     */
+    public static final int MATCH = 0x40C8A03C;
+    public static final int MATCH_CURRENT = 0x90C8A03C;
+
+    /** Die Suchzeile über dem Text. */
+    public static final int SEARCH_BAR = 0xC0202429;
+
     private EditorColours() {
     }
 }

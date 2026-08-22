@@ -212,5 +212,6 @@
   "jade.factorynetwork.rack.slots": "%s von %s Plätzen",
   "jade.factorynetwork.rack.threads": "%s gleichzeitige Abläufe",
   "screen.factorynetwork.terminal.network.threads": "%s von %s Plätzen belegt · %s warten",
-  "screen.factorynetwork.terminal.network.no_server": "Kein Serverschrank — das Netz rechnet nicht"
+  "screen.factorynetwork.terminal.network.no_server": "Kein Serverschrank — das Netz rechnet nicht",
+  "screen.factorynetwork.editor.find": "Suchen — Eingabe weiter, Escape schließt"
 }

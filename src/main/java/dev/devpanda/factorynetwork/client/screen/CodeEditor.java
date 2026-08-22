@@ -183,6 +183,7 @@ public class CodeEditor {
 
             // Die Auswahl liegt unter dem Text, sonst verschluckt sie ihn.
             drawSelection(graphics, lineIndex, textX, lineY);
+            drawMatches(graphics, lineIndex, textX, lineY);
 
             // Zeilen mit Fehler bekommen einen Streifen statt einer Welle:
             // Wellen sind bei zehn Pixel Zeilenhöhe nicht zu erkennen.
@@ -196,6 +197,7 @@ public class CodeEditor {
 
         drawCursor(graphics, textX);
         drawScrollHint(graphics, visible);
+        drawSearchBar(graphics);
         drawSuggestions(graphics, textX);
     }
 
@@ -363,6 +365,14 @@ public class CodeEditor {
                 }
                 return true;
             }
+            case 70 -> { // F: suchen
+                if (searching) {
+                    closeSearch();
+                } else {
+                    openSearch();
+                }
+                return true;
+            }
             case 68 -> { // D: Zeile verdoppeln
                 remember(EditKind.STRUCTURAL);
                 duplicateLine();
@@ -421,6 +431,11 @@ public class CodeEditor {
 
     public boolean keyPressed(int key, int scanCode, int modifiers) {
         if (handleShortcut(key)) {
+            return true;
+        }
+        // Solange die Suche offen ist, gehören ihr die Tasten: Wer sucht,
+        // tippt ein Wort und keinen Code.
+        if (searching && handleSearchKey(key)) {
             return true;
         }
         // Solange Vorschläge offen sind, gehören ihnen Tab, Pfeile und Escape.
@@ -536,6 +551,10 @@ public class CodeEditor {
         }
         if (Character.isISOControl(character)) {
             return false;
+        }
+        if (searching) {
+            setSearchTerm(searchTerm + character);
+            return true;
         }
         remember(EditKind.TYPING);
         insert(String.valueOf(character));
@@ -1200,5 +1219,175 @@ public class CodeEditor {
         cursorLine = lineAt(mouseY);
         cursorColumn = columnAt(cursorLine, mouseX);
         return true;
+    }
+    // ---- Suchen -----------------------------------------------------------
+
+    /**
+     * Die Suche im Editor.
+     *
+     * <p>Ein Programm wird länger, als es auf den Bildschirm passt, lange
+     * bevor es kompliziert wird. Ohne Suche bleibt nur Scrollen, und wer
+     * einen Connectornamen ändert, muss jede Stelle von Hand finden.
+     *
+     * <p>Gesucht wird ohne Rücksicht auf Groß- und Kleinschreibung: Die
+     * Sprache unterscheidet sie zwar, aber wer sucht, weiß meist nur
+     * ungefähr, wie es geschrieben war.
+     */
+    private boolean searching;
+    private String searchTerm = "";
+    private int matchIndex;
+
+    public boolean isSearching() {
+        return searching;
+    }
+
+    String searchTerm() {
+        return searchTerm;
+    }
+
+    /** Öffnet die Suche. Eine Auswahl wird zum Suchwort. */
+    void openSearch() {
+        searching = true;
+        if (hasSelection()) {
+            String selected = selectedText();
+            if (!selected.contains(NEWLINE)) {
+                searchTerm = selected;
+            }
+        }
+        matchIndex = 0;
+        clearSuggestions();
+        jumpToMatch();
+    }
+
+    void closeSearch() {
+        searching = false;
+    }
+
+    void setSearchTerm(String term) {
+        searchTerm = term == null ? "" : term;
+        matchIndex = 0;
+        jumpToMatch();
+    }
+
+    /**
+     * Alle Fundstellen, von oben nach unten.
+     *
+     * <p>Bei jedem Tastendruck neu gesucht. Ein Programm im Terminal ist ein
+     * paar Dutzend Zeilen — eine Fundstellenliste zu pflegen wäre Buchführung
+     * für eine Rechnung, die niemand merkt.
+     */
+    List<int[]> matches() {
+        if (searchTerm.isEmpty()) {
+            return List.of();
+        }
+        String needle = searchTerm.toLowerCase(java.util.Locale.ROOT);
+        List<int[]> found = new ArrayList<>();
+        for (int i = 0; i < lines.size(); i++) {
+            String haystack = lines.get(i).toLowerCase(java.util.Locale.ROOT);
+            int from = 0;
+            while (true) {
+                int at = haystack.indexOf(needle, from);
+                if (at < 0) {
+                    break;
+                }
+                found.add(new int[] {i, at});
+                from = at + 1;
+            }
+        }
+        return found;
+    }
+
+    /** Zur nächsten Fundstelle, oder zur vorherigen. */
+    void step(int direction) {
+        List<int[]> found = matches();
+        if (found.isEmpty()) {
+            return;
+        }
+        matchIndex = Math.floorMod(matchIndex + direction, found.size());
+        jumpToMatch();
+    }
+
+    /** Welche Fundstelle gerade dran ist, von eins an. Null heißt keine. */
+    int matchNumber() {
+        List<int[]> found = matches();
+        return found.isEmpty() ? 0 : Math.floorMod(matchIndex, found.size()) + 1;
+    }
+
+    private void jumpToMatch() {
+        List<int[]> found = matches();
+        if (found.isEmpty()) {
+            return;
+        }
+        int[] at = found.get(Math.floorMod(matchIndex, found.size()));
+        // Die Fundstelle wird ausgewählt, nicht nur angefahren: Dann trägt
+        // Strg+C sie weiter, und ein Tippen ersetzt sie.
+        select(at[0], at[1], at[0], at[1] + searchTerm.length());
+        ensureVisible();
+    }
+
+    /** Legt einen matten Streifen unter jede Fundstelle in dieser Zeile. */
+    private void drawMatches(GuiGraphics graphics, int lineIndex, int textX, int lineY) {
+        if (!searching || searchTerm.isEmpty()) {
+            return;
+        }
+        List<int[]> found = matches();
+        int current = found.isEmpty() ? -1 : Math.floorMod(matchIndex, found.size());
+        String line = lines.get(lineIndex);
+        for (int i = 0; i < found.size(); i++) {
+            int[] at = found.get(i);
+            if (at[0] != lineIndex) {
+                continue;
+            }
+            int end = Math.min(at[1] + searchTerm.length(), line.length());
+            int left = textX + font.width(line.substring(0, at[1]));
+            int right = textX + font.width(line.substring(0, end));
+            graphics.fill(left, lineY - 1, right, lineY + LINE_HEIGHT - 2,
+                    i == current ? EditorColours.MATCH_CURRENT : EditorColours.MATCH);
+        }
+    }
+
+    /** Die Suchzeile über dem Text. */
+    private void drawSearchBar(GuiGraphics graphics) {
+        if (!searching) {
+            return;
+        }
+        graphics.fill(x, y, x + width, y + 9, EditorColours.SEARCH_BAR);
+        int count = matches().size();
+        String label = searchTerm.isEmpty()
+                ? net.minecraft.network.chat.Component
+                        .translatable("screen.factorynetwork.editor.find").getString()
+                : searchTerm + "  " + matchNumber() + "/" + count;
+        graphics.drawString(font, font.plainSubstrByWidth(label, width - 6), x + 3, y,
+                count == 0 && !searchTerm.isEmpty() ? EditorColours.ERROR : EditorColours.TEXT,
+                false);
+    }
+
+    /**
+     * Tastendrücke, solange die Suche offen ist.
+     *
+     * <p>Sie gehen an die Suche und nicht an den Text: Wer sucht, tippt ein
+     * Wort und keinen Code. Escape schließt, Eingabe geht weiter, Umschalt
+     * und Eingabe zurück.
+     */
+    private boolean handleSearchKey(int key) {
+        switch (key) {
+            case 256 -> { // Escape
+                closeSearch();
+                return true;
+            }
+            case 257, 335 -> { // Eingabe
+                step(net.minecraft.client.gui.screens.Screen.hasShiftDown() ? -1 : 1);
+                return true;
+            }
+            case 259 -> { // Rücktaste
+                if (!searchTerm.isEmpty()) {
+                    setSearchTerm(searchTerm.substring(0, searchTerm.length() - 1));
+                }
+                return true;
+            }
+            default -> {
+                return false;
+            }
+        }
     }
 }
