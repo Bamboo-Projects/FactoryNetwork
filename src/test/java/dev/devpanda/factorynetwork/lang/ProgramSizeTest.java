@@ -17,6 +17,13 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
  */
 class ProgramSizeTest {
 
+    /** Dasselbe, aber Warnungen sind hier erwünscht. */
+    private static int sizeOfWithWarnings(String source) {
+        Parser.ParseResult result = Parser.parse(source);
+        assertFalse(result.hasErrors(), () -> "Unerwartete Fehler: " + result.diagnostics());
+        return ProgramSize.of(result.program());
+    }
+
     private static int sizeOf(String source) {
         Parser.ParseResult result = Parser.parse(source);
         assertFalse(result.hasErrors(), () -> "Unerwartete Fehler: " + result.diagnostics());
@@ -96,18 +103,15 @@ class ProgramSizeTest {
     }
 
     /**
-     * <b>Ein Fund nebenbei:</b> {@code log "hallo"} ohne Klammern kostet
-     * zwei, weil es zwei Anweisungen sind — ein Name und eine Zeichenkette,
-     * beide ohne Wirkung.
-     *
-     * <p>Die Prüfung steht hier, damit die Zahl nicht überrascht. Dass die
-     * Schreibweise überhaupt durchgeht, ist eine Frage an den Parser und
-     * keine an die Größenrechnung.
+     * {@code log "hallo"} ohne Klammern kostet zwei, weil es zwei
+     * Anweisungen sind — ein Name und eine Zeichenkette, beide ohne
+     * Wirkung. Der Parser warnt inzwischen davor; gezählt wird trotzdem,
+     * was dasteht.
      */
     @Test
     @DisplayName("Zwei Ausdrücke nebeneinander sind zwei Anweisungen")
     void twoBareExpressions() {
-        assertEquals(3, sizeOf("""
+        assertEquals(3, sizeOfWithWarnings("""
                 fn sagt() {
                     log "hallo"
                 }"""));

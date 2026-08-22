@@ -26,6 +26,59 @@ class ParserTest {
         return result.program();
     }
 
+    private static List<Diagnostic> warningsOf(String source) {
+        return Parser.parse(source).diagnostics().stream()
+                .filter(diagnostic -> !diagnostic.isError()).toList();
+    }
+
+    @org.junit.jupiter.api.Nested
+    @DisplayName("Anweisungen ohne Wirkung")
+    class OhneWirkung {
+
+        @Test
+        @DisplayName("log ohne Klammern warnt zweimal")
+        void bareCallWarns() {
+            // Ein Name und eine Zeichenkette nebeneinander: zwei
+            // Anweisungen, beide ohne Wirkung. Genau die Falle, wegen der es
+            // die Warnung gibt — das Programm lief und schrieb nichts.
+            List<Diagnostic> warnungen = warningsOf("""
+                    fn sagt() {
+                        log "hallo"
+                    }""");
+            assertEquals(2, warnungen.size(), () -> warnungen.toString());
+            assertTrue(warnungen.get(0).message().contains("bewirkt nichts"));
+            assertTrue(warnungen.get(0).hint().contains("Klammern"));
+        }
+
+        @Test
+        @DisplayName("Mit Klammern ist alles still")
+        void properCallIsQuiet() {
+            assertTrue(warningsOf("""
+                    fn sagt() {
+                        log("hallo")
+                    }""").isEmpty());
+        }
+
+        @Test
+        @DisplayName("Ein Feldzugriff kann Wirkung haben und wird nicht angemeckert")
+        void memberAccessIsQuiet() {
+            assertTrue(warningsOf("""
+                    fn zaehlt() {
+                        storage.count(item:iron_ingot)
+                    }""").isEmpty());
+        }
+
+        @Test
+        @DisplayName("Eine Warnung hält das Programm nicht auf")
+        void warningIsNotAnError() {
+            Parser.ParseResult result = Parser.parse("""
+                    fn sagt() {
+                        log "hallo"
+                    }""");
+            assertFalse(result.hasErrors(), "eine Warnung ist kein Fehler");
+        }
+    }
+
     private static List<Diagnostic> errorsOf(String source) {
         return Parser.parse(source).diagnostics().stream().filter(Diagnostic::isError).toList();
     }

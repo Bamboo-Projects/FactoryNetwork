@@ -559,6 +559,7 @@ public final class Parser {
                     Expr value = parseExpression();
                     return new Stmt.Assign(expr, value, expr.span().to(value.span()));
                 }
+                warnIfWithoutEffect(expr);
                 return new Stmt.ExprStmt(expr, expr.span());
             }
         }
@@ -1096,6 +1097,41 @@ public final class Parser {
 
     private static String quote(String text) {
         return "„" + text + "“";
+    }
+
+    /**
+     * Warnt vor einer Anweisung, die nichts tun kann.
+     *
+     * <p>Der Anlass ist {@code log "hallo"}: Das sieht aus wie ein Aufruf,
+     * ist aber ein Name und eine Zeichenkette nebeneinander — zwei
+     * Anweisungen, die beide nichts bewirken. Der Parser nahm sie klaglos
+     * an, und das Programm lief, ohne etwas zu schreiben. <b>Ein Fehler,
+     * den man nicht findet, weil nichts passiert.</b>
+     *
+     * <p>Eine Warnung und kein Fehler: Das Programm wird übernommen, die
+     * Zeile steht im Reiter Code. Zum Fehler zu machen, was heute
+     * durchgeht, würde Programme brechen, die außer dieser Zeile in Ordnung
+     * sind — und die Zeile tut ja nichts.
+     *
+     * <p>Nur die eindeutigen Fälle: Ein Name, ein Wert, eine Auswahl. Ein
+     * Aufruf und ein Zugriff auf ein Feld können Wirkung haben.
+     */
+    private void warnIfWithoutEffect(Expr expr) {
+        String was = switch (expr) {
+            case Expr.Name ignored -> "Ein Name allein";
+            case Expr.StringLit ignored -> "Eine Zeichenkette allein";
+            case Expr.IntLit ignored -> "Eine Zahl allein";
+            case Expr.FloatLit ignored -> "Eine Zahl allein";
+            case Expr.BoolLit ignored -> "Ein Wahrheitswert allein";
+            case Expr.Selector ignored -> "Eine Auswahl allein";
+            default -> null;
+        };
+        if (was == null) {
+            return;
+        }
+        diagnostics.add(new Diagnostic(Diagnostic.Severity.WARNING, expr.span(),
+                was + " bewirkt nichts.",
+                "Fehlen Klammern? Ein Aufruf heißt log(\"hallo\") und nicht log \"hallo\"."));
     }
 
     private void error(Span span, String message) {

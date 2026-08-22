@@ -3846,7 +3846,7 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(entity.threads(), 0, "ohne Schrank keine Abläufe");
         helper.assertTrue(!entity.deploy("""
                 fn nichts() {
-                    log "hallo"
+                    log("hallo")
                 }"""), "ohne Server darf nichts übernommen werden");
         helper.assertTrue(entity.diagnostics().stream()
                         .anyMatch(d -> d.message().contains("Serverschrank")),
@@ -3856,7 +3856,7 @@ public final class FactoryNetworkGameTests {
         rackWithServer(helper, controller.west());
         helper.assertTrue(entity.deploy("""
                 fn nichts() {
-                    log "hallo"
+                    log("hallo")
                 }"""), "mit Server muss es gehen");
         helper.assertValueEqual(entity.threads(), TEST_CPU,
                 "das Rechenwerk des einen Einschubs");
