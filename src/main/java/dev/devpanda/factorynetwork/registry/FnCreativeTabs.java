@@ -42,6 +42,7 @@ public final class FnCreativeTabs {
                         output.accept(FnItems.RAW_CRYSTAL.get());
                         output.accept(FnItems.CRYSTAL.get());
                         output.accept(FnItems.PRESS.get());
+                        output.accept(FnItems.BURNER.get());
                         output.accept(FnItems.STAMP_PLATE.get());
                         output.accept(FnItems.STAMP_LOGIC.get());
                         output.accept(FnItems.STAMP_MEMORY.get());

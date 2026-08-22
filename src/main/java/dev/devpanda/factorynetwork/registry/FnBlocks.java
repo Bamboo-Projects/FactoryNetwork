@@ -8,6 +8,7 @@ import dev.devpanda.factorynetwork.block.PressBlock;
 import dev.devpanda.factorynetwork.block.RackBlock;
 import dev.devpanda.factorynetwork.block.RouterBlock;
 import dev.devpanda.factorynetwork.block.ConnectorBlock;
+import dev.devpanda.factorynetwork.block.BurnerBlock;
 import dev.devpanda.factorynetwork.block.CreativeSourceBlock;
 import dev.devpanda.factorynetwork.block.ControllerBlock;
 import dev.devpanda.factorynetwork.block.DisplayBlock;
@@ -81,6 +82,20 @@ public final class FnBlocks {
                                     .strength(4.5F, 3.0F)
                                     .sound(SoundType.DEEPSLATE)
                                     .requiresCorrectToolForDrops()));
+
+    /**
+     * Strom aus Ofenbrennstoff — absichtlich mittelmäßig.
+     *
+     * <p>Sie soll nicht mit Generatoren anderer Mods konkurrieren, sondern
+     * dafür sorgen, dass die Fertigungskette der Mod ohne Fremdmod anläuft.
+     */
+    public static final DeferredBlock<Block> BURNER = BLOCKS.register("burner",
+            () -> new BurnerBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.METAL)
+                    .strength(2.0F, 6.0F)
+                    .sound(SoundType.METAL)
+                    .requiresCorrectToolForDrops()
+                    .lightLevel(state -> state.getValue(BurnerBlock.LIT) ? 13 : 0)));
 
     /** Presst Bauteile — der Einstieg in die Fertigungskette. */
     public static final DeferredBlock<Block> PRESS = BLOCKS.register("press",

@@ -1320,6 +1320,50 @@ def creative_source():
     return img
 
 
+def burner_front(lit=False):
+    """Die Front der Brennkammer: eine Klappe mit Sichtfenster.
+
+    Brennt sie, glüht das Fenster und die Klappe wirft einen warmen Schein.
+    Ohne den Unterschied stünde eine leere Kammer aus wie eine laufende.
+    """
+    img = surface(seed=91)
+    d = ImageDraw.Draw(img)
+    raised(img, (1, 1, N - 2, N - 2), hoehe=3)
+
+    # Klappe mit Scharnieren links
+    d.rectangle([10, 12, 53, 51], fill=blend(BODY_TOP, LIGHT, 0.12) + (255,))
+    raised(img, (10, 12, 53, 51), hoehe=2)
+    for y in (18, 45):
+        d.rectangle([7, y, 12, y + 4], fill=blend(BODY_MID, EDGE, 0.2) + (255,))
+        raised(img, (7, y, 12, y + 4), hoehe=1)
+
+    # Sichtfenster
+    fenster = (18, 20, 45, 43)
+    d.rectangle(list(fenster), fill=blend(EDGE, BODY_BOT, 0.45) + (255,))
+    recess(img, fenster, tiefe=2)
+    ao(img, fenster, depth=3, strength=0.5)
+    if lit:
+        glow(img, [20, 22, 43, 41], color=(240, 150, 50), radius=8, strength=200)
+        d = ImageDraw.Draw(img)
+        d.rectangle([20, 22, 43, 41], fill=(206, 92, 30, 255))
+        # Glut unten, Flamme darüber
+        d.rectangle([21, 36, 42, 40], fill=(246, 176, 66, 255))
+        d.polygon([(31, 24), (37, 32), (34, 39), (28, 39), (25, 32)],
+                  fill=(252, 214, 128, 255))
+    else:
+        for x in range(21, 43, 6):
+            d.line([(x, 23), (x, 40)], fill=blend(EDGE, BODY_BOT, 0.6) + (255,))
+
+    # Griff rechts
+    d.rectangle([48, 28, 51, 36], fill=BRASS + (255,))
+    raised(img, (48, 28, 51, 36), hoehe=1)
+
+    for x, y in ((4, 5), (59, 5), (4, 58), (59, 58)):
+        rivet(img, x, y, r=2)
+    scratches(img, seed=92)
+    return img
+
+
 def main():
     print("Blocktexturen (64x64):")
     save(controller_top(), "block", "controller_top")
@@ -1342,6 +1386,8 @@ def main():
     save(router_side(), "block", "router_side")
     save(rack_front(), "block", "server_rack_front")
     save(creative_source(), "block", "creative_source")
+    save(burner_front(False), "block", "burner_front")
+    save(burner_front(True), "block", "burner_front_on")
     save(drive_bays(), "misc", "drive_bays")
     save(rack_blades(), "misc", "rack_blades")
     save(router_lanes(), "misc", "router_lanes")

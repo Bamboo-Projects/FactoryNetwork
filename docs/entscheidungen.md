@@ -1589,3 +1589,46 @@ Entnahmerate null gibt nach außen nichts ab, richtig so — aber
 `extractEnergy` prüft dieselbe Rate, und damit kommt auch die Maschine selbst
 nicht an ihren Vorrat. Dafür gibt es jetzt `InternalBuffer` mit einem Weg nach
 innen, der die Rate nicht fragt.
+
+
+---
+
+## Die Brennkammer (2026-08-22)
+
+**Ich hatte vorher das Gegenteil empfohlen:** kein eigener Generator, der
+konkurriere nur mit besseren. Dabei habe ich das nächstliegende Vorbild
+übersehen — Applied Energistics hat die Vibrationskammer. Sie ist absichtlich
+mittelmäßig, hat keine Ausbaustufen und wird in jedem Pack innerhalb einer
+Stunde ersetzt. **Sie existiert nicht, um zu konkurrieren, sondern damit man
+nicht blockiert ist.**
+
+Und der Fall ist bei uns größer als der Strom des Netzes: Die Presse braucht
+seit einem Tag FE und konnte es von nirgendwo bekommen. Damit war die ganze
+Fertigungskette — Erz, Platte, Kerne, Zellen, Prozessoren — ohne Fremdmod gar
+nicht zu durchlaufen. Das ist kein Ausgleichsproblem, das ist ein Loch im
+Einstieg.
+
+### Absichtlich mittelmäßig
+
+Vierzig FE je Tick aus gewöhnlichem Ofenbrennstoff, kein Ausbau, kein
+Upgrade-Pfad. Eine Kohle trägt ein kleines Netz gut eine Minute. Wer ein Pack
+spielt, stellt nach der ersten Stunde etwas Besseres daneben — das ist der
+Zweck und kein Mangel.
+
+### Sie schiebt, statt bereitzustellen
+
+Der Controller nimmt an und zieht nicht. Eine Quelle, die nur bereitstellt,
+käme bei ihm nie an. Geschoben wird reihum in fester Richtungsfolge, damit
+sich erklären lässt, welcher von zwei Verbrauchern zuerst bekommt.
+
+### Nachgelegt wird nur, wenn Platz ist
+
+Sonst verbrennt eine Kohle, während niemand abnimmt — und das merkt man erst,
+wenn der Kohlenstapel weg ist. Jade sagt zusätzlich „Vorrat voll — niemand
+nimmt ab", weil man einer brennenden Kammer nicht ansieht, ob sie für etwas
+brennt.
+
+### Die Kreativ-Stromquelle bleibt daneben
+
+Sie hat kein Rezept und steht nur im Kreativ-Reiter. Zum Prüfen einer Anlage
+will man keine Kohle nachlegen.

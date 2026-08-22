@@ -34,6 +34,8 @@ public class FactoryNetworkJadePlugin implements IWailaPlugin {
             FactoryNetwork.MOD_ID, "router");
     public static final ResourceLocation RACK = ResourceLocation.fromNamespaceAndPath(
             FactoryNetwork.MOD_ID, "server_rack");
+    public static final ResourceLocation BURNER = ResourceLocation.fromNamespaceAndPath(
+            FactoryNetwork.MOD_ID, "burner");
     public static final ResourceLocation CONNECTOR = ResourceLocation.fromNamespaceAndPath(
             FactoryNetwork.MOD_ID, "connector");
     public static final ResourceLocation CONTROLLER = ResourceLocation.fromNamespaceAndPath(
@@ -54,6 +56,8 @@ public class FactoryNetworkJadePlugin implements IWailaPlugin {
                 dev.devpanda.factorynetwork.block.entity.DriveBlockEntity.class);
         registration.registerBlockDataProvider(RackInfo.INSTANCE,
                 dev.devpanda.factorynetwork.block.entity.RackBlockEntity.class);
+        registration.registerBlockDataProvider(BurnerInfo.INSTANCE,
+                dev.devpanda.factorynetwork.block.entity.BurnerBlockEntity.class);
     }
 
     @Override
@@ -67,6 +71,8 @@ public class FactoryNetworkJadePlugin implements IWailaPlugin {
                 dev.devpanda.factorynetwork.block.DriveBlock.class);
         registration.registerBlockComponent(RackInfo.INSTANCE,
                 dev.devpanda.factorynetwork.block.RackBlock.class);
+        registration.registerBlockComponent(BurnerInfo.INSTANCE,
+                dev.devpanda.factorynetwork.block.BurnerBlock.class);
         registration.registerBlockComponent(ConnectorInfo.INSTANCE,
                 dev.devpanda.factorynetwork.block.ConnectorBlock.class);
         registration.registerBlockComponent(ControllerInfo.INSTANCE,

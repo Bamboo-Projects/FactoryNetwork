@@ -22,6 +22,8 @@ public final class FnClient {
                 dev.devpanda.factorynetwork.client.screen.PressScreen::new);
         event.register(FnMenus.SHELF.get(),
                 dev.devpanda.factorynetwork.client.screen.ShelfScreen::new);
+        event.register(FnMenus.BURNER.get(),
+                dev.devpanda.factorynetwork.client.screen.BurnerScreen::new);
     }
 
     @SubscribeEvent

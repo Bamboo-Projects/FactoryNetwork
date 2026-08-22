@@ -199,6 +199,10 @@ public final class FnItems {
     public static final DeferredItem<Item> CO_PROCESSOR = ITEMS.register("co_processor",
             () -> new dev.devpanda.factorynetwork.item.ProcessorItem(8, new Item.Properties()));
 
+    /** Strom aus Ofenbrennstoff — absichtlich mittelmäßig. */
+    public static final DeferredItem<net.minecraft.world.item.BlockItem> BURNER =
+            ITEMS.registerSimpleBlockItem(FnBlocks.BURNER);
+
     /** Strom ohne Brennstoff — nur zum Ausprobieren. */
     public static final DeferredItem<net.minecraft.world.item.BlockItem> CREATIVE_SOURCE =
             ITEMS.registerSimpleBlockItem(FnBlocks.CREATIVE_SOURCE);

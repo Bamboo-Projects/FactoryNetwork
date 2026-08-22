@@ -214,5 +214,13 @@
   "jade.factorynetwork.controller.power_booting": "Fährt hoch — %s FE/t, %s gespeichert",
   "jade.factorynetwork.controller.power_off": "Kein Strom — %s FE/t nötig",
   "jade.factorynetwork.controller.no_server": "Kein Serverschrank — das Netz rechnet nicht",
-  "block.factorynetwork.creative_source": "Kreativ-Stromquelle"
+  "block.factorynetwork.creative_source": "Kreativ-Stromquelle",
+  "block.factorynetwork.burner": "Brennkammer",
+  "screen.factorynetwork.burner.energy": "%s von %s FE",
+  "screen.factorynetwork.burner.rate": "%s FE/t, solange sie brennt",
+  "config.jade.plugin_factorynetwork.burner": "Brennkammer: Vorrat und Flamme",
+  "jade.factorynetwork.burner.burning": "Brennt — %s FE/t",
+  "jade.factorynetwork.burner.idle": "Kein Brennstoff",
+  "jade.factorynetwork.burner.full": "Vorrat voll — niemand nimmt ab",
+  "jade.factorynetwork.burner.stored": "%s von %s FE"
 }

@@ -229,6 +229,48 @@ def press_background():
     return img
 
 
+def burner_background():
+    """Das Fenster der Brennkammer.
+
+    Ein Platz für Brennstoff, darüber die Flamme, links der Vorrat. Weniger
+    geht nicht — und das ist der Punkt: Sie ist absichtlich die einfachste
+    Maschine der Mod.
+    """
+    breite, hoehe = 176, 166
+    img = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    panel(d, (0, 0, breite - 1, hoehe - 1))
+
+    slot(d, 79, 52)                                   # Brennstoff
+    sunken(d, (79, 33, 94, 48), fill=PANEL_DARK)      # Flamme, leer
+    sunken(d, (11, 16, 21, 72), fill=PANEL_DARK)      # Vorrat, leer
+
+    for row in range(3):
+        for column in range(9):
+            slot(d, 7 + column * 18, 83 + row * 18)
+    for column in range(9):
+        slot(d, 7 + column * 18, 141)
+
+    # Die gefüllten Fassungen liegen rechts daneben, wie bei der Presse.
+    flamme = Image.new("RGBA", (14, 14), (0, 0, 0, 0))
+    fd = ImageDraw.Draw(flamme)
+    fd.polygon([(7, 0), (10, 5), (12, 4), (13, 9), (10, 13), (4, 13), (1, 9),
+                (2, 4), (4, 5)], fill=(226, 130, 40, 255))
+    fd.polygon([(7, 3), (9, 7), (10, 10), (7, 12), (4, 10), (5, 7)],
+               fill=(250, 200, 90, 255))
+    img.paste(flamme, (180, 0))
+
+    energie = Image.new("RGBA", (8, 54), (0, 0, 0, 0))
+    ed = ImageDraw.Draw(energie)
+    for y in range(54):
+        anteil = y / 53.0
+        farbe = (int(220 - 60 * anteil), int(150 + 40 * anteil), 60, 255)
+        ed.line([(0, y), (7, y)], fill=farbe)
+    ed.line([(0, 0), (0, 53)], fill=(255, 226, 150, 255))
+    img.paste(energie, (180, 20))
+    return img
+
+
 # ---- Regale ---------------------------------------------------------------
 #
 # Laufwerk und Serverschrank sind dasselbe Fenster in zwei Zuschnitten: ein
@@ -270,6 +312,7 @@ def main():
     save(screen(), "screen")
     save(widgets(), "widgets")
     save(press_background(), "press")
+    save(burner_background(), "burner")
     for name, columns, rows in (("drive", 2, 5), ("rack", 8, 1)):
         bild, links, oben, inventar, schnell, hoehe = shelf_background(columns, rows)
         save(bild, name)

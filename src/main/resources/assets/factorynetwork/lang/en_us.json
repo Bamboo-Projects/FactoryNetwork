@@ -214,5 +214,13 @@
   "jade.factorynetwork.controller.power_booting": "Booting — %s FE/t, %s stored",
   "jade.factorynetwork.controller.power_off": "No power — %s FE/t needed",
   "jade.factorynetwork.controller.no_server": "No server rack — the network does not compute",
-  "block.factorynetwork.creative_source": "Creative Power Source"
+  "block.factorynetwork.creative_source": "Creative Power Source",
+  "block.factorynetwork.burner": "Burner",
+  "screen.factorynetwork.burner.energy": "%s of %s FE",
+  "screen.factorynetwork.burner.rate": "%s FE/t while burning",
+  "config.jade.plugin_factorynetwork.burner": "Burner: charge and flame",
+  "jade.factorynetwork.burner.burning": "Burning — %s FE/t",
+  "jade.factorynetwork.burner.idle": "No fuel",
+  "jade.factorynetwork.burner.full": "Charge full — nothing is taking it",
+  "jade.factorynetwork.burner.stored": "%s of %s FE"
 }

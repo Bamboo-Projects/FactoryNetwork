@@ -177,6 +177,25 @@ def blockstates():
         "textures": {"all": MOD + ":block/router_side"},
     })
 
+    # Brennkammer: Front mit Klappe, brennend eine zweite Textur.
+    for name, front in (("burner", "burner_front"), ("burner_on", "burner_front_on")):
+        write(A + "/models/block/%s.json" % name, {
+            "parent": "minecraft:block/orientable",
+            "textures": {
+                "front": MOD + ":block/" + front,
+                "side": MOD + ":block/machine_top",
+                "top": MOD + ":block/machine_top",
+            },
+        })
+    burner_variants = {}
+    for lit, model in ((False, "burner"), (True, "burner_on")):
+        for direction, rotation in (("north", {}), ("east", {"y": 90}),
+                                    ("south", {"y": 180}), ("west", {"y": 270})):
+            entry = {"model": block(model)}
+            entry.update(rotation)
+            burner_variants["facing=%s,lit=%s" % (direction, str(lit).lower())] = entry
+    write(A + "/blockstates/burner.json", {"variants": burner_variants})
+
     # Kreativ-Stromquelle: ein schlichter Würfel in der Maschinenfarbe.
     write(A + "/blockstates/creative_source.json",
           {"variants": {"": {"model": block("creative_source")}}})
@@ -185,6 +204,7 @@ def blockstates():
         "textures": {"all": MOD + ":block/creative_source"},
     })
     write(A + "/models/item/creative_source.json", {"parent": block("creative_source")})
+    write(A + "/models/item/burner.json", {"parent": block("burner")})
 
     # Die beiden Erze: schlichte Würfel mit eigener Textur.
     for ore in ("crystal_ore", "deepslate_crystal_ore"):
@@ -470,7 +490,7 @@ def worldgen():
 
 def loot_and_recipes():
     for name in ("controller", "connector", "terminal", "display", "drive",
-                 "press", "router", "server_rack"):
+                 "press", "router", "server_rack", "burner"):
         write(D + "/loot_table/blocks/" + name + ".json", {
             "type": "minecraft:block",
             "pools": [{
@@ -580,6 +600,20 @@ def loot_and_recipes():
             "S": {"item": "minecraft:stick"},
         },
         "result": {"id": MOD + ":label_gun", "count": 1},
+    })
+
+    # Die Brennkammer: bewusst billig. Sie ist der Einstieg in den Strom und
+    # soll niemanden aufhalten.
+    write(D + "/recipe/burner.json", {
+        "type": "minecraft:crafting_shaped",
+        "category": "misc",
+        "pattern": ["III", "IFI", "IRI"],
+        "key": {
+            "I": {"item": "minecraft:iron_ingot"},
+            "F": {"item": "minecraft:furnace"},
+            "R": {"item": "minecraft:redstone_block"},
+        },
+        "result": {"id": MOD + ":burner", "count": 1},
     })
 
     # Der Serverschrank: das Gehäuse allein, die Leistung steckt in den
@@ -820,7 +854,7 @@ def loot_and_recipes():
         "values": [MOD + ":controller", MOD + ":cable", MOD + ":dense_cable",
                    MOD + ":connector", MOD + ":terminal", MOD + ":display",
                    MOD + ":drive", MOD + ":press", MOD + ":router",
-                   MOD + ":server_rack",
+                   MOD + ":server_rack", MOD + ":burner",
                    MOD + ":crystal_ore",
                    MOD + ":deepslate_crystal_ore"],
     })

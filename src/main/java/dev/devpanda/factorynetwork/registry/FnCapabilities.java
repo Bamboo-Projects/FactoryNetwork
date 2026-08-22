@@ -27,6 +27,10 @@ public final class FnCapabilities {
                 FnBlockEntities.PRESS.get(),
                 (PressBlockEntity press, net.minecraft.core.Direction side) -> press.energy());
         event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK,
+                FnBlockEntities.BURNER.get(),
+                (dev.devpanda.factorynetwork.block.entity.BurnerBlockEntity burner,
+                        net.minecraft.core.Direction side) -> burner.energy());
+        event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK,
                 FnBlockEntities.CONTROLLER.get(),
                 (ControllerBlockEntity controller, net.minecraft.core.Direction side)
                         -> controller.power().buffer());

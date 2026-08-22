@@ -4591,6 +4591,68 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    /**
+     * Die Brennkammer erzeugt Strom und schiebt ihn in den Controller.
+     *
+     * <p>Ohne eine Quelle in der Mod selbst wäre die Fertigungskette — Erz,
+     * Platte, Kerne, Zellen, Prozessoren — ohne Fremdmod nicht zu
+     * durchlaufen. Diese Prüfung ist der Nachweis, dass sie es ist.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void theBurnerFeedsTheController(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 2, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        BlockPos burnerPos = controller.east();
+        helper.setBlock(burnerPos, FnBlocks.BURNER.get());
+        var burner = (dev.devpanda.factorynetwork.block.entity.BurnerBlockEntity)
+                helper.getBlockEntity(burnerPos);
+        burner.setItem(dev.devpanda.factorynetwork.block.entity.BurnerBlockEntity.SLOT_FUEL,
+                new ItemStack(Items.COAL, 4));
+
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.power().empty();
+
+        for (int i = 0; i < 10; i++) {
+            dev.devpanda.factorynetwork.block.entity.BurnerBlockEntity.serverTick(
+                    helper.getLevel(), helper.absolutePos(burnerPos),
+                    helper.getBlockState(burnerPos), burner);
+        }
+
+        helper.assertTrue(burner.isBurning(), "sie muss brennen");
+        helper.assertTrue(entity.power().stored() > 0,
+                "und der Strom muss beim Controller ankommen");
+        helper.succeed();
+    }
+
+    /**
+     * Ohne Abnehmer legt sie nicht nach.
+     *
+     * <p>Sonst verbrennt eine Kohle, während niemand etwas abnimmt — und das
+     * merkt man erst, wenn der Kohlenstapel weg ist.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void thebBurnerDoesNotBurnIntoAFullBuffer(GameTestHelper helper) {
+        BlockPos burnerPos = new BlockPos(1, 2, 1);
+        helper.setBlock(burnerPos, FnBlocks.BURNER.get());
+        var burner = (dev.devpanda.factorynetwork.block.entity.BurnerBlockEntity)
+                helper.getBlockEntity(burnerPos);
+        burner.setItem(dev.devpanda.factorynetwork.block.entity.BurnerBlockEntity.SLOT_FUEL,
+                new ItemStack(Items.COAL, 4));
+        burner.energy().charge(
+                dev.devpanda.factorynetwork.block.entity.BurnerBlockEntity.CAPACITY);
+
+        for (int i = 0; i < 20; i++) {
+            dev.devpanda.factorynetwork.block.entity.BurnerBlockEntity.serverTick(
+                    helper.getLevel(), helper.absolutePos(burnerPos),
+                    helper.getBlockState(burnerPos), burner);
+        }
+
+        helper.assertTrue(!burner.isBurning(), "bei vollem Vorrat bleibt sie kalt");
+        helper.assertValueEqual(burner.getItem(dev.devpanda.factorynetwork.block.entity
+                .BurnerBlockEntity.SLOT_FUEL).getCount(), 4, "und verheizt nichts");
+        helper.succeed();
+    }
+
     private FactoryNetworkGameTests() {
     }
 }

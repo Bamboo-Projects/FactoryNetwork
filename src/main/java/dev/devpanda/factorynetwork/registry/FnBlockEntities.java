@@ -5,6 +5,7 @@ import dev.devpanda.factorynetwork.block.entity.ConnectorBlockEntity;
 import dev.devpanda.factorynetwork.block.entity.ControllerBlockEntity;
 import dev.devpanda.factorynetwork.block.entity.DisplayBlockEntity;
 import dev.devpanda.factorynetwork.block.entity.DriveBlockEntity;
+import dev.devpanda.factorynetwork.block.entity.BurnerBlockEntity;
 import dev.devpanda.factorynetwork.block.entity.PressBlockEntity;
 import dev.devpanda.factorynetwork.block.entity.RackBlockEntity;
 import dev.devpanda.factorynetwork.block.entity.RouterBlockEntity;
@@ -42,6 +43,11 @@ public final class FnBlockEntities {
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<RouterBlockEntity>> ROUTER =
             BLOCK_ENTITIES.register("router", () -> BlockEntityType.Builder
                     .of(RouterBlockEntity::new, FnBlocks.ROUTER.get())
+                    .build(null));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<BurnerBlockEntity>>
+            BURNER = BLOCK_ENTITIES.register("burner", () -> BlockEntityType.Builder
+                    .of(BurnerBlockEntity::new, FnBlocks.BURNER.get())
                     .build(null));
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<RackBlockEntity>> RACK =
