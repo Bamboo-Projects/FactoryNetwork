@@ -213,5 +213,6 @@
   "jade.factorynetwork.controller.power": "%s FE/t · %s stored",
   "jade.factorynetwork.controller.power_booting": "Booting — %s FE/t, %s stored",
   "jade.factorynetwork.controller.power_off": "No power — %s FE/t needed",
-  "jade.factorynetwork.controller.no_server": "No server rack — the network does not compute"
+  "jade.factorynetwork.controller.no_server": "No server rack — the network does not compute",
+  "block.factorynetwork.creative_source": "Creative Power Source"
 }

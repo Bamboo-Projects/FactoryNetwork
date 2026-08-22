@@ -213,5 +213,6 @@
   "jade.factorynetwork.controller.power": "%s FE/t · %s gespeichert",
   "jade.factorynetwork.controller.power_booting": "Fährt hoch — %s FE/t, %s gespeichert",
   "jade.factorynetwork.controller.power_off": "Kein Strom — %s FE/t nötig",
-  "jade.factorynetwork.controller.no_server": "Kein Serverschrank — das Netz rechnet nicht"
+  "jade.factorynetwork.controller.no_server": "Kein Serverschrank — das Netz rechnet nicht",
+  "block.factorynetwork.creative_source": "Kreativ-Stromquelle"
 }

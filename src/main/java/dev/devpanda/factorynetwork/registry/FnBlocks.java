@@ -8,6 +8,7 @@ import dev.devpanda.factorynetwork.block.PressBlock;
 import dev.devpanda.factorynetwork.block.RackBlock;
 import dev.devpanda.factorynetwork.block.RouterBlock;
 import dev.devpanda.factorynetwork.block.ConnectorBlock;
+import dev.devpanda.factorynetwork.block.CreativeSourceBlock;
 import dev.devpanda.factorynetwork.block.ControllerBlock;
 import dev.devpanda.factorynetwork.block.DisplayBlock;
 import dev.devpanda.factorynetwork.block.TerminalBlock;
@@ -84,6 +85,20 @@ public final class FnBlocks {
     /** Presst Bauteile — der Einstieg in die Fertigungskette. */
     public static final DeferredBlock<Block> PRESS = BLOCKS.register("press",
             () -> new PressBlock(machineProperties()));
+
+    /**
+     * Strom ohne Brennstoff — nur zum Ausprobieren.
+     *
+     * <p>Die Mod erzeugt keinen Strom. Zum Bauen und Prüfen steht aber kein
+     * Pack daneben, und ohne Quelle steht jedes Netz sofort still.
+     */
+    public static final DeferredBlock<Block> CREATIVE_SOURCE =
+            BLOCKS.register("creative_source", () -> new CreativeSourceBlock(
+                    BlockBehaviour.Properties.of()
+                            .mapColor(MapColor.COLOR_LIGHT_BLUE)
+                            .strength(-1.0F, 3600000.0F)
+                            .sound(SoundType.METAL)
+                            .lightLevel(state -> 10)));
 
     /** Nimmt Prozessoren auf — ohne ihn rechnet das Netz nicht. */
     public static final DeferredBlock<Block> RACK = BLOCKS.register("server_rack",

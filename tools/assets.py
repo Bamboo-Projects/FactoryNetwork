@@ -177,6 +177,15 @@ def blockstates():
         "textures": {"all": MOD + ":block/router_side"},
     })
 
+    # Kreativ-Stromquelle: ein schlichter Würfel in der Maschinenfarbe.
+    write(A + "/blockstates/creative_source.json",
+          {"variants": {"": {"model": block("creative_source")}}})
+    write(A + "/models/block/creative_source.json", {
+        "parent": "minecraft:block/cube_all",
+        "textures": {"all": MOD + ":block/creative_source"},
+    })
+    write(A + "/models/item/creative_source.json", {"parent": block("creative_source")})
+
     # Die beiden Erze: schlichte Würfel mit eigener Textur.
     for ore in ("crystal_ore", "deepslate_crystal_ore"):
         write(A + "/blockstates/%s.json" % ore,

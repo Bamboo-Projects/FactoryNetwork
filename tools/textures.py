@@ -1302,6 +1302,24 @@ def rack_blades():
         streifen.paste(kachel, (i * BLADE_W, 0))
     return streifen
 
+def creative_source():
+    """Ein Block, der leuchtet — er soll nach Werkzeug aussehen, nicht nach Anlage."""
+    img = surface(top=(70, 96, 116), bottom=(34, 52, 68), seed=81)
+    d = ImageDraw.Draw(img)
+    raised(img, (1, 1, N - 2, N - 2), hoehe=3)
+    d.rectangle([10, 10, 53, 53], fill=blend((40, 60, 78), EDGE, 0.3) + (255,))
+    recess(img, (10, 10, 53, 53), tiefe=2)
+    glow(img, [16, 16, 47, 47], color=(120, 210, 255), radius=8, strength=170)
+    d = ImageDraw.Draw(img)
+    for i, kante in enumerate(range(16, 30, 5)):
+        ton = blend((150, 230, 255), (60, 150, 220), i / 3.0)
+        d.rectangle([kante, kante, 63 - kante, 63 - kante], outline=ton + (255,), width=2)
+    for x, y in ((5, 5), (58, 5), (5, 58), (58, 58)):
+        rivet(img, x, y, r=2)
+    scratches(img, seed=82)
+    return img
+
+
 def main():
     print("Blocktexturen (64x64):")
     save(controller_top(), "block", "controller_top")
@@ -1323,6 +1341,7 @@ def main():
     save(press_front(), "block", "press_front")
     save(router_side(), "block", "router_side")
     save(rack_front(), "block", "server_rack_front")
+    save(creative_source(), "block", "creative_source")
     save(drive_bays(), "misc", "drive_bays")
     save(rack_blades(), "misc", "rack_blades")
     save(router_lanes(), "misc", "router_lanes")

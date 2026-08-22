@@ -199,6 +199,10 @@ public final class FnItems {
     public static final DeferredItem<Item> CO_PROCESSOR = ITEMS.register("co_processor",
             () -> new dev.devpanda.factorynetwork.item.ProcessorItem(8, new Item.Properties()));
 
+    /** Strom ohne Brennstoff — nur zum Ausprobieren. */
+    public static final DeferredItem<net.minecraft.world.item.BlockItem> CREATIVE_SOURCE =
+            ITEMS.registerSimpleBlockItem(FnBlocks.CREATIVE_SOURCE);
+
     /** Zeigt das Netz als Gerüst in der Welt — auch durch Wände. */
     public static final DeferredItem<Item> ANALYSER = ITEMS.register("network_analyser",
             () -> new NetworkAnalyserItem(new Item.Properties().stacksTo(1)));
