@@ -4030,6 +4030,120 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
+     * Ist der Speicher voll, scheitert der nächste Ablauf sichtbar.
+     *
+     * <p>Anders als bei den Rechenwerken wird hier nicht angestellt. Ein
+     * Ablauf, für den kein Speicher da ist, wartet nicht — er passt nicht
+     * hinein, und das muss unter den Fehlern stehen, statt lautlos zu
+     * verschwinden.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void afullMemoryRejectsTheNextFlow(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 2, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        placeRack(helper, controller.west());
+        // Reichlich Rechenwerk, knapper Speicher: Die Grenze, die greift,
+        // soll die geprüfte sein.
+        fillBay(helper, controller.west(), 0, 128, 8, TEST_DISK);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        helper.assertValueEqual(entity.memory(), 8, "der kleinste Speicher trägt acht");
+
+        helper.assertTrue(entity.deploy("""
+                fn wartet() {
+                    sleep 400t
+                }"""), "Programm nicht übernommen");
+
+        for (int i = 0; i < 9; i++) {
+            entity.startFlow("wartet", java.util.List.of());
+        }
+        var engine = entity.flowEngine();
+        helper.assertValueEqual(engine.inMemory(), 8, "mehr passt nicht hinein");
+        helper.assertTrue(!engine.failed().isEmpty(),
+                "der neunte muss unter den Fehlern stehen");
+        helper.assertTrue(engine.failed().get(0).detail().contains("Speicher ist voll"),
+                "und der Grund muss den Speicher nennen: "
+                        + engine.failed().get(0).detail());
+        helper.succeed();
+    }
+
+    /**
+     * Ein zu großes Programm wird gar nicht erst übernommen.
+     *
+     * <p>Beim Drücken auf Übernehmen und nicht eine Minute später an einer
+     * Fabrik, die stillsteht. Und mit der Zahl in der Meldung: „zu groß"
+     * allein sagt nicht, um wie viel.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void atooLargeProgramIsRefused(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 2, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        placeRack(helper, controller.west());
+        fillBay(helper, controller.west(), 0, TEST_CPU, TEST_RAM, 64);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        helper.assertValueEqual(entity.diskSpace(), 64, "der kleinste Datenträger");
+
+        String klein = "fn wenig() {\n" + "    log \"x\"\n".repeat(10) + "}";
+        helper.assertTrue(entity.deploy(klein), "ein kleines Programm passt");
+        int vorher = entity.programSize();
+        helper.assertTrue(vorher <= 64, "und liegt unter der Grenze: " + vorher);
+
+        String gross = "fn viel() {\n" + "    log \"x\"\n".repeat(70) + "}";
+        helper.assertTrue(!entity.deploy(gross), "einundsiebzig passen nicht");
+        helper.assertTrue(entity.diagnostics().stream()
+                        .anyMatch(d -> d.message().contains("zu groß")),
+                "die Meldung muss es sagen: " + entity.diagnostics());
+        helper.assertTrue(entity.diagnostics().stream()
+                        .anyMatch(d -> d.message().contains("64")),
+                "und die Grenze nennen: " + entity.diagnostics());
+        // Das alte Programm läuft weiter — ein abgelehntes ersetzt nichts.
+        helper.assertValueEqual(entity.programSize(), vorher, "das kleine steht noch");
+        helper.succeed();
+    }
+
+    /**
+     * Wird der Datenträger gezogen, friert das Netz ein.
+     *
+     * <p>Nicht abbrechen und nicht kürzen — dieselbe Antwort wie bei
+     * Stromausfall. Geprüft mit zwei Einschüben: Bliebe nur einer, wäre der
+     * Schrank ohne Datenträger gar kein Server mehr, und das Netz stünde
+     * aus dem alten Grund still statt aus dem geprüften.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void pullingTheDiskFreezesTheNetwork(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 2, 1);
+        BlockPos rackPos = controller.west();
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        placeRack(helper, rackPos);
+        fillBay(helper, rackPos, 0, TEST_CPU, TEST_RAM, 4096);
+        fillBay(helper, rackPos, 1, 2, 8, 64);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        helper.assertValueEqual(entity.diskSpace(), 4160, "beide Datenträger zusammen");
+
+        String programm = "fn viel() {\n" + "    log \"x\"\n".repeat(200) + "}";
+        helper.assertTrue(entity.deploy(programm), "zweihunderteins passen auf 4160");
+        helper.assertTrue(!entity.flowEngine().isFrozen(), "so läuft es");
+
+        // Den großen Datenträger heraus: Es bleibt ein Server mit 64.
+        var rack = (dev.devpanda.factorynetwork.block.entity.RackBlockEntity)
+                helper.getBlockEntity(rackPos);
+        rack.setItem(dev.devpanda.factorynetwork.block.entity.RackBlockEntity
+                .slotOf(0, dev.devpanda.factorynetwork.item.ServerPart.DISK), ItemStack.EMPTY);
+        entity.rebuildNetwork();
+        helper.assertTrue(entity.hasServer(), "der zweite Einschub rechnet weiter");
+        helper.assertTrue(!entity.programFits(), "das Programm passt nicht mehr");
+        helper.assertTrue(entity.flowEngine().isFrozen(), "also steht das Netz");
+
+        // Wieder hinein, und es läuft weiter.
+        fillBay(helper, rackPos, 0, TEST_CPU, TEST_RAM, 4096);
+        entity.rebuildNetwork();
+        helper.assertTrue(!entity.flowEngine().isFrozen(), "und läuft wieder");
+        helper.succeed();
+    }
+
+    /**
      * Mehr Abläufe als Plätze: Der Rest stellt sich an.
      *
      * <p>Angestellt, nicht abgelehnt. <b>Verzögerung ist wiederherstellbar,

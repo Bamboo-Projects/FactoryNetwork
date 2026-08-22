@@ -31,9 +31,18 @@ public enum RackInfo implements IBlockComponentProvider, IServerDataProvider<Blo
     private static final String KEY_RAM = "FnRackRam";
     private static final String KEY_DISK = "FnRackDisk";
 
+    /**
+     * Die Zahlen stehen in der unteren Hälfte.
+     *
+     * <p>Auf Augenhöhe schaut man auf die obere, und dort sitzt keine
+     * BlockEntity. Ohne diesen Umweg bliebe der Tooltip genau dann leer,
+     * wenn man geradeaus hinsieht.
+     */
     @Override
     public void appendServerData(CompoundTag data, BlockAccessor accessor) {
-        if (!(accessor.getBlockEntity() instanceof RackBlockEntity rack)) {
+        var base = dev.devpanda.factorynetwork.block.RackBlock.baseOf(
+                accessor.getBlockState(), accessor.getPosition());
+        if (!(accessor.getLevel().getBlockEntity(base) instanceof RackBlockEntity rack)) {
             return;
         }
         ServerBay capacity = rack.capacity();

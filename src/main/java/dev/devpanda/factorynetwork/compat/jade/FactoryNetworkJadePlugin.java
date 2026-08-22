@@ -54,8 +54,10 @@ public class FactoryNetworkJadePlugin implements IWailaPlugin {
                 dev.devpanda.factorynetwork.block.entity.PressBlockEntity.class);
         registration.registerBlockDataProvider(DriveInfo.INSTANCE,
                 dev.devpanda.factorynetwork.block.entity.DriveBlockEntity.class);
+        // Am Block und nicht an der BlockEntity: Der Schrank ist zwei hoch,
+        // und auf Augenhöhe sieht man die obere Hälfte — die hat keine.
         registration.registerBlockDataProvider(RackInfo.INSTANCE,
-                dev.devpanda.factorynetwork.block.entity.RackBlockEntity.class);
+                dev.devpanda.factorynetwork.block.RackBlock.class);
         registration.registerBlockDataProvider(BurnerInfo.INSTANCE,
                 dev.devpanda.factorynetwork.block.entity.BurnerBlockEntity.class);
     }
