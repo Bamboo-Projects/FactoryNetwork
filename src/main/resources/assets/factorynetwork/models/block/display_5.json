@@ -2,7 +2,7 @@
   "parent": "minecraft:block/block",
   "textures": {
     "particle": "factorynetwork:block/display_side",
-    "front": "factorynetwork:block/display_front",
+    "front": "factorynetwork:block/display_front_5",
     "side": "factorynetwork:block/display_side"
   },
   "elements": [

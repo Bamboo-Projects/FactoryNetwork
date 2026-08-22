@@ -1797,3 +1797,56 @@ der Inhalt wert; kopieren nach `~/.vscode/extensions` reicht.
 **Keine Fehlerprüfung im Editor.** Sie bräuchte einen Sprachserver, der weiß,
 was gerade in der Welt steht — also eine Verbindung zum laufenden Spiel.
 Solange es die nicht gibt, ist das Terminal die Stelle, an der Fehler stehen.
+
+---
+
+## Die Anzeigenwand (2026-08-23)
+
+Sechs Tafeln nebeneinander waren bisher sechs Anzeigen: sechs Rahmen, und
+wenn alle denselben Namen trugen, sechsmal derselbe Text. Das ist kein
+Bildschirm, das sind sechs Zettel.
+
+### Eine Wand, eine Schrift
+
+Zusammen gehören Tafeln, die in dieselbe Richtung zeigen und sich in ihrer
+Ebene berühren. **Nicht über Ecken:** Eine Tafel an der Nordwand und eine an
+der Ostwand stoßen zwar aneinander, sind aber zwei Bildschirme — man kann
+nicht beide gleichzeitig ansehen.
+
+Geschrieben wird von der Tafel **unten links**, von vorn gesehen. Eine feste
+Regel, weil sie erklärbar sein muss: „warum steht der Text bei dieser" ist
+sonst nicht zu beantworten. Für eine Wand mit Loch oder Stufe gilt trotzdem
+das umschließende Rechteck als Fläche.
+
+### Die Schrift bleibt gleich groß
+
+Der Platz einer großen Wand geht in mehr Zeilen und längere, nicht in größere
+Buchstaben. Eine Wand, deren Text mit ihr wächst, ist aus drei Metern genauso
+lesbar wie eine einzelne Tafel und verschenkt den ganzen Vorteil.
+
+### Der Name gehört der Wand
+
+Die Beschriftungspistole setzt ihn auf alle Tafeln. Wer eine Wand
+beschriftet, hat die Wand beschriftet und nicht die eine Tafel, die er
+getroffen hat — welche davon die schreibende ist, sieht man ihr nicht an.
+Gelesen wird zusätzlich der erste Name in Leserichtung, damit auch eine
+nachträglich angesetzte Tafel nichts kaputt macht.
+
+### Vierundsechzig Blockzustände für einen Rahmen
+
+Der Rahmen fällt weg, wo eine zweite Tafel anschließt. Dafür stehen vier
+Wahrheitswerte im Blockzustand — links, rechts, oben, unten, **von vorn
+gesehen** und nicht in Weltrichtungen. Mal vier Blickrichtungen sind das
+vierundsechzig Zustände und sechzehn Modelle.
+
+Das ist viel für einen Rahmen und trotzdem der richtige Weg: Was man sieht,
+muss im Blockzustand stehen, sonst kann der Renderer es nicht aus dem Modell
+nehmen — und dann zeichnet er jeden Rahmen selbst, bei zwanzig Tafeln
+zwanzigmal je Bild.
+
+### Auch eine Tafel, die niemand gesetzt hat, sieht sich um
+
+`getStateForPlacement` greift nur beim Setzen aus der Hand. Ein Kolben, ein
+Bauwerk oder ein `/setblock` legen die Tafel ohne Nachbarschaft ab, und die
+Nachbarn erfahren zwar davon, die neue Tafel selbst aber nicht. Deshalb
+rechnet auch `onPlace` die vier Seiten nach.

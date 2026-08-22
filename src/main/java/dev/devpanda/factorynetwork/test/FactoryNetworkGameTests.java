@@ -4711,6 +4711,84 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
+     * Eine Wand aus Tafeln schreibt einmal, nicht sechsmal.
+     *
+     * <p>Sechs Tafeln mit demselben Text untereinander sind kein
+     * Bildschirm, sondern sechs Zettel. Geschrieben wird von der Tafel
+     * unten links, und zwar über die ganze Fläche.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void awallOfDisplaysWritesOnce(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 2, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        rackWithServer(helper, controller.west());
+        helper.setBlock(controller.east(), FnBlocks.CABLE.get());
+
+        // Drei breit, zwei hoch, alle nach Norden — und nur die erste
+        // berührt das Kabel.
+        BlockPos ecke = controller.east().north();
+        java.util.List<BlockPos> tafeln = new java.util.ArrayList<>();
+        for (int reihe = 0; reihe < 2; reihe++) {
+            for (int spalte = 0; spalte < 3; spalte++) {
+                BlockPos at = ecke.east(spalte).above(reihe);
+                helper.setBlock(at, FnBlocks.DISPLAY.get().defaultBlockState()
+                        .setValue(dev.devpanda.factorynetwork.block.DisplayBlock.FACING,
+                                Direction.NORTH));
+                tafeln.add(at);
+            }
+        }
+
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        helper.assertValueEqual(entity.graph().displays().size(), 6,
+                "alle sechs Tafeln hängen am Netz");
+
+        // Nur eine bekommt einen Namen — die Wand heißt trotzdem so.
+        var irgendeine = (dev.devpanda.factorynetwork.block.entity.DisplayBlockEntity)
+                helper.getBlockEntity(tafeln.get(4));
+        irgendeine.setDisplayName("wand");
+
+        var wand = irgendeine.wall();
+        helper.assertValueEqual(wand.columns(), 3, "drei Spalten");
+        helper.assertValueEqual(wand.rows(), 2, "zwei Reihen");
+        helper.assertValueEqual(wand.members().size(), 6, "sechs Tafeln");
+
+        helper.assertTrue(entity.deploy("""
+                display wand {
+                    text "hallo"
+                }"""), "das Programm wurde nicht übernommen");
+
+        int schreibende = 0;
+        for (BlockPos at : tafeln) {
+            var tafel = (dev.devpanda.factorynetwork.block.entity.DisplayBlockEntity)
+                    helper.getBlockEntity(at);
+            tafel.serverTick();
+            if (!tafel.lines().isEmpty()) {
+                schreibende++;
+                helper.assertTrue(wand.isAnchor(helper.absolutePos(at)),
+                        "und zwar die unten links");
+            }
+        }
+        helper.assertValueEqual(schreibende, 1, "genau eine Tafel schreibt");
+
+        // Und der Rahmen fällt weg, wo eine zweite Tafel anschließt: Die
+        // mittlere der unteren Reihe hat links, rechts und oben Nachbarn.
+        var mitte = helper.getBlockState(tafeln.get(1));
+        helper.assertTrue(mitte.getValue(
+                        dev.devpanda.factorynetwork.block.DisplayBlock.JOINED_UP),
+                "oben schließt eine an");
+        helper.assertTrue(!mitte.getValue(
+                        dev.devpanda.factorynetwork.block.DisplayBlock.JOINED_DOWN),
+                "unten nicht");
+        helper.assertTrue(mitte.getValue(
+                        dev.devpanda.factorynetwork.block.DisplayBlock.JOINED_LEFT)
+                        && mitte.getValue(
+                                dev.devpanda.factorynetwork.block.DisplayBlock.JOINED_RIGHT),
+                "und zu beiden Seiten");
+        helper.succeed();
+    }
+
+    /**
      * Über eine Anzeige wachsen zwei Farben nicht zusammen.
      *
      * <p>Sie leitet mit der Farbe, mit der sie erreicht wurde. Wäre sie

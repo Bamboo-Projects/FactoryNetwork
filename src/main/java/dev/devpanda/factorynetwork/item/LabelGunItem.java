@@ -167,7 +167,15 @@ public class LabelGunItem extends Item {
             if (wanted.isBlank()) {
                 return InteractionResult.PASS;
             }
-            display.setDisplayName(wanted);
+            // Auf alle Tafeln der Wand: Wer eine Wand beschriftet, hat die
+            // Wand beschriftet und nicht die eine Tafel, die er getroffen
+            // hat. Sonst müsste man wissen, welche davon die schreibende
+            // ist — und das sieht man ihr nicht an.
+            for (net.minecraft.core.BlockPos member : display.wall().members()) {
+                if (level.getBlockEntity(member) instanceof DisplayBlockEntity panel) {
+                    panel.setDisplayName(wanted);
+                }
+            }
             if (player != null) {
                 say(player, "message.factorynetwork.display.named", wanted);
             }

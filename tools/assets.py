@@ -269,13 +269,24 @@ def blockstates():
         variants["facing=" + direction] = entry
     write(A + "/blockstates/connector.json", {"variants": variants})
 
-    # Display hängt flach an der Wand, in vier Richtungen.
+    # Display hängt flach an der Wand, in vier Richtungen — und weiß, an
+    # welchen Seiten eine zweite Tafel anschließt. Vier Richtungen mal
+    # sechzehn Nachbarschaften sind vierundsechzig Zustände; das klingt nach
+    # viel und ist eine Schleife.
     variants = {}
     for direction, rotation in {"north": {}, "south": {"y": 180},
                                 "east": {"y": 90}, "west": {"y": 270}}.items():
-        entry = {"model": block("display")}
-        entry.update(rotation)
-        variants["facing=" + direction] = entry
+        for joined in range(16):
+            entry = {"model": block("display_%d" % joined)}
+            entry.update(rotation)
+            name = ",".join([
+                "facing=" + direction,
+                "joined_down=" + ("true" if joined & EDGE_DOWN else "false"),
+                "joined_left=" + ("true" if joined & EDGE_LEFT else "false"),
+                "joined_right=" + ("true" if joined & EDGE_RIGHT else "false"),
+                "joined_up=" + ("true" if joined & EDGE_UP else "false"),
+            ])
+            variants[name] = entry
     write(A + "/blockstates/display.json", {"variants": variants})
 
     # Terminal steht immer aufrecht.
@@ -398,6 +409,11 @@ SERVER_PARTS = {
 PART_CORE = {"cpu": "core_logic", "ram": "core_memory", "disk": "core_memory"}
 
 
+# Welche Seite einer Anzeigetafel an eine andere stößt — dieselben Zahlen
+# wie in textures.py und in DisplayBlock.java.
+EDGE_UP, EDGE_DOWN, EDGE_LEFT, EDGE_RIGHT = 1, 2, 4, 8
+
+
 def models():
     write(A + "/models/block/controller.json", {
         "parent": "minecraft:block/cube_bottom_top",
@@ -435,27 +451,29 @@ def models():
 
     # Zwei Pixel tief an der Wand. Ein eigenes Modell statt orientable,
     # weil es kein Würfel ist.
-    write(A + "/models/block/display.json", {
-        "parent": "minecraft:block/block",
-        "textures": {
-            "particle": texture("display_side"),
-            "front": texture("display_front"),
-            "side": texture("display_side"),
-        },
-        "elements": [{
-            "from": [0, 0, 14],
-            "to": [16, 16, 16],
-            "faces": {
-                "north": {"texture": "#front"},
-                "south": {"texture": "#side", "cullface": "south"},
-                "east": {"texture": "#side"},
-                "west": {"texture": "#side"},
-                "up": {"texture": "#side"},
-                "down": {"texture": "#side"},
+    for joined in range(16):
+        write(A + "/models/block/display_%d.json" % joined, {
+            "parent": "minecraft:block/block",
+            "textures": {
+                "particle": texture("display_side"),
+                "front": texture("display_front_%d" % joined),
+                "side": texture("display_side"),
             },
-        }],
-    })
-    write(A + "/models/item/display.json", {"parent": block("display")})
+            "elements": [{
+                "from": [0, 0, 14],
+                "to": [16, 16, 16],
+                "faces": {
+                    "north": {"texture": "#front"},
+                    "south": {"texture": "#side", "cullface": "south"},
+                    "east": {"texture": "#side"},
+                    "west": {"texture": "#side"},
+                    "up": {"texture": "#side"},
+                    "down": {"texture": "#side"},
+                },
+            }],
+        })
+    # In der Hand die freistehende Tafel: Sie ist das, was man setzt.
+    write(A + "/models/item/display.json", {"parent": block("display_0")})
 
     write(A + "/models/block/terminal.json", {
         "parent": "minecraft:block/orientable",

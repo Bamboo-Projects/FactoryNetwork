@@ -93,7 +93,15 @@ public class DisplayBlockEntity extends BlockEntity {
      * ob das Netz steht oder der Name falsch ist.
      */
     private List<String> compute() {
-        if (displayName.isBlank()) {
+        // Nur die schreibende Tafel der Wand rechnet. Die anderen bleiben
+        // leer — sonst stünde derselbe Text sechsmal untereinander, und
+        // genau das soll eine Wand ja nicht sein.
+        dev.devpanda.factorynetwork.block.DisplayWall wall = wall();
+        if (!wall.isAnchor(worldPosition)) {
+            return List.of();
+        }
+        String name = wallName(wall);
+        if (name.isBlank()) {
             return List.of("§7ohne Namen");
         }
         var owner = ControllerRegistry.owning(level, worldPosition);
@@ -104,11 +112,11 @@ public class DisplayBlockEntity extends BlockEntity {
         Decl.Display declaration = controller.program().declarations().stream()
                 .filter(Decl.Display.class::isInstance)
                 .map(Decl.Display.class::cast)
-                .filter(candidate -> candidate.name().equals(displayName))
+                .filter(candidate -> candidate.name().equals(name))
                 .findFirst()
                 .orElse(null);
         if (declaration == null) {
-            return List.of("§ckein display " + displayName);
+            return List.of("§ckein display " + name);
         }
 
         DisplayValues values = new DisplayValues(controller.graph(), controller.storage(),
@@ -118,6 +126,32 @@ public class DisplayBlockEntity extends BlockEntity {
             rendered.add(format(line));
         }
         return rendered;
+    }
+
+    /** Die Wand, zu der diese Tafel gehört — auch wenn sie allein steht. */
+    public dev.devpanda.factorynetwork.block.DisplayWall wall() {
+        return dev.devpanda.factorynetwork.block.DisplayWall.around(level, worldPosition,
+                getBlockState().getValue(
+                        net.minecraft.world.level.block.HorizontalDirectionalBlock.FACING));
+    }
+
+    /**
+     * Wie die Wand heißt.
+     *
+     * <p>Der erste Name, der in Leserichtung auftaucht. <b>Nicht der der
+     * schreibenden Tafel:</b> Wer eine Wand baut und dann eine davon
+     * beschriftet, hat sie beschriftet — welche es war, sollte keine Rolle
+     * spielen. Die Beschriftungspistole setzt den Namen ohnehin auf alle,
+     * das hier fängt nur die Fälle auf, in denen sie es nicht war.
+     */
+    private String wallName(dev.devpanda.factorynetwork.block.DisplayWall wall) {
+        for (net.minecraft.core.BlockPos member : wall.members()) {
+            if (level.getBlockEntity(member) instanceof DisplayBlockEntity panel
+                    && !panel.displayName.isBlank()) {
+                return panel.displayName;
+            }
+        }
+        return "";
     }
 
     /**

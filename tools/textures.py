@@ -529,16 +529,61 @@ def terminal_front():
     return img
 
 
-def display_front():
-    """Ein dunkler Schirm mit schmalem Rahmen — er soll Text tragen, nicht
-    selbst auffallen."""
-    img = surface(BODY_MID, BODY_BOT)
+# Welche Seite einer Tafel an eine andere stößt. Dieselben vier Namen wie
+# im Blockzustand, und dieselbe Reihenfolge — die Zahl im Dateinamen ist
+# genau diese Maske.
+EDGE_UP, EDGE_DOWN, EDGE_LEFT, EDGE_RIGHT = 1, 2, 4, 8
+
+SCREEN = (12, 16, 13)
+SCREEN_SHEEN = (28, 40, 32)
+
+# Wie breit der Rahmen ist, in Texturpixeln der 64er-Auflösung.
+FRAME = 5
+
+
+def display_front(joined=0):
+    """Ein dunkler Schirm mit schmalem Rahmen.
+
+    Er soll Text tragen und nicht selbst auffallen — deshalb der schmale
+    Rahmen. <b>Und deshalb fällt er weg, wo eine zweite Tafel anschließt:</b>
+    Sechs Tafeln nebeneinander sollen ein Bildschirm sein und kein Gitter aus
+    sechs Fenstern. ``joined`` sagt, welche Seiten anschließen.
+    """
+    base = surface(BODY_MID, BODY_BOT)
+    img = base.copy()
     d = ImageDraw.Draw(img)
     bevel(d, width=2)
-    d.rectangle([3, 3, 60, 60], fill=EDGE + (255,))
-    d.rectangle([5, 5, 58, 58], fill=(12, 16, 13) + (255,))
-    # Ein feiner Schimmer am oberen Rand, damit die Fläche nicht tot wirkt
-    d.line([(6, 6), (57, 6)], fill=(28, 40, 32) + (255,))
+
+    # Wo eine Nachbartafel anschließt, gibt es keine Außenkante. Ohne das
+    # bleiben in der Rahmenleiste kurze helle Striche stehen, genau dort, wo
+    # zwei Tafeln aneinanderstoßen — und die verraten das Raster.
+    if joined & EDGE_LEFT:
+        img.paste(base.crop((0, 0, 2, N)), (0, 0))
+    if joined & EDGE_RIGHT:
+        img.paste(base.crop((N - 2, 0, N, N)), (N - 2, 0))
+    if joined & EDGE_UP:
+        img.paste(base.crop((0, 0, N, 2)), (0, 0))
+    if joined & EDGE_DOWN:
+        img.paste(base.crop((0, N - 2, N, N)), (0, N - 2))
+    d = ImageDraw.Draw(img)
+
+    # Der Schirm wächst über den Rahmen hinaus, wo eine Nachbartafel steht.
+    links = 0 if joined & EDGE_LEFT else FRAME
+    rechts = N - 1 if joined & EDGE_RIGHT else N - 1 - FRAME
+    oben = 0 if joined & EDGE_UP else FRAME
+    unten = N - 1 if joined & EDGE_DOWN else N - 1 - FRAME
+
+    # Die dunkle Kante nur dort, wo auch ein Rahmen ist.
+    d.rectangle([max(0, links - 2), max(0, oben - 2),
+                 min(N - 1, rechts + 2), min(N - 1, unten + 2)],
+                fill=EDGE + (255,))
+    d.rectangle([links, oben, rechts, unten], fill=SCREEN + (255,))
+    # Ein feiner Schimmer am oberen Rand, damit die Fläche nicht tot wirkt.
+    # Nur an der obersten Tafel: Sonst zöge sich ein heller Strich quer durch
+    # die Wand, wo zwei Reihen aneinanderstoßen.
+    if not joined & EDGE_UP:
+        d.line([(links + 1, oben + 1), (rechts - 1, oben + 1)],
+               fill=SCREEN_SHEEN + (255,))
     return img
 
 
@@ -1515,7 +1560,8 @@ def main():
     save(machine_top(), "block", "machine_top")
     save(terminal_front(), "block", "terminal_front")
     save(terminal_side(), "block", "terminal_side")
-    save(display_front(), "block", "display_front")
+    for joined in range(16):
+        save(display_front(joined), "block", "display_front_%d" % joined)
     save(display_side(), "block", "display_side")
     save(drive_front(), "block", "drive_front")
     save(press_front(), "block", "press_front")
