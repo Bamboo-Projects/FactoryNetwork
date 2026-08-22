@@ -63,6 +63,15 @@ public class ControllerBlockEntity extends BlockEntity {
     private final NetworkStorage storage = new NetworkStorage();
     private final NetworkFluids fluidStorage = new NetworkFluids();
     private final WorkerRuntime runtime = new WorkerRuntime();
+
+    /**
+     * Die Serverschränke im Netz.
+     *
+     * <p>Ohne einen davon rechnet das Netz nicht — weder Worker noch Abläufe.
+     * So wie ein Laufwerk die Voraussetzung dafür ist, dass es lagert.
+     */
+    private final List<dev.devpanda.factorynetwork.block.entity.RackBlockEntity> racks =
+            new ArrayList<>();
     /** Abläufe, die warten können — sie überleben einen Serverneustart. */
     private FlowEngine flows;
 
@@ -127,6 +136,22 @@ public class ControllerBlockEntity extends BlockEntity {
         Parser.ParseResult result = Parser.parse(newSource);
         this.source = newSource;
         this.diagnostics = new ArrayList<>(result.diagnostics());
+        // Erst nachsehen, dann urteilen: Wer eben einen Schrank gesetzt hat,
+        // bekäme sonst „kein Server" zu hören, obwohl einer danebensteht.
+        if (level != null && !hasServer()) {
+            rebuildNetwork();
+        }
+        if (!hasServer()) {
+            // Ein Programm ohne Server ist kein Fehler im Code. Es wird
+            // trotzdem nicht übernommen — sonst stünde es da und liefe nicht,
+            // und niemand wüsste warum.
+            this.diagnostics.add(new Diagnostic(Diagnostic.Severity.ERROR,
+                    new dev.devpanda.factorynetwork.lang.Span(0, 0, 1, 1),
+                    "Kein Serverschrank im Netz.",
+                    "Setze einen Serverschrank ans Kabel und stecke einen Prozessor hinein."));
+            setChanged();
+            return false;
+        }
         setChanged();
         if (result.hasErrors()) {
             return false;
@@ -144,6 +169,27 @@ public class ControllerBlockEntity extends BlockEntity {
             this.pendingFlows = carried;
         }
         return true;
+    }
+
+    // ---- Rechenleistung ---------------------------------------------------
+
+    /**
+     * Wie viele Abläufe gleichzeitig laufen dürfen.
+     *
+     * <p>Die Summe der Prozessoren in allen Serverschränken des Netzes. Null
+     * heißt: Es gibt keinen Server, und dann läuft gar nichts.
+     */
+    public int threads() {
+        int total = 0;
+        for (var rack : racks) {
+            total += rack.threads();
+        }
+        return total;
+    }
+
+    /** Steht im Netz überhaupt Rechenleistung? */
+    public boolean hasServer() {
+        return threads() > 0;
     }
 
     // ---- Netzwerk ---------------------------------------------------------
@@ -202,6 +248,13 @@ public class ControllerBlockEntity extends BlockEntity {
         // Dieselben Laufwerke tragen die Flüssigkeitszellen. Ein zweites
         // Laufwerk nur dafür wäre ein Block mehr für dieselbe Handlung.
         fluidStorage.setDrives(found);
+        racks.clear();
+        for (BlockPos pos : graph.racks()) {
+            if (level.isLoaded(pos) && level.getBlockEntity(pos)
+                    instanceof dev.devpanda.factorynetwork.block.entity.RackBlockEntity rack) {
+                racks.add(rack);
+            }
+        }
         announceDeviceChanges(before);
     }
 
@@ -240,6 +293,17 @@ public class ControllerBlockEntity extends BlockEntity {
         }
         if (level.getGameTime() - lastRebuild >= REBUILD_INTERVAL) {
             rebuildNetwork();
+        }
+        // Ohne Server rechnet das Netz nicht: keine Worker, keine neuen
+        // Abläufe. Was schon läuft, läuft zu Ende — es mittendrin zu töten
+        // hieße, Gegenstände zu verlieren, die gerade in der Hand eines
+        // Ablaufs sind.
+        if (!hasServer()) {
+            tickFlows();
+            pushStorageIfDue();
+            pushFlowsIfDue();
+            setChanged();
+            return;
         }
         // Abläufe laufen auch ohne Worker weiter — ein Programm darf allein
         // aus Funktionen bestehen, die auf Ereignisse warten.

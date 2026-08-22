@@ -29,6 +29,9 @@ public final class FnCreativeTabs {
                         output.accept(FnItems.LABEL_GUN.get());
                         output.accept(FnItems.ANALYSER.get());
                         output.accept(FnItems.DRIVE.get());
+                        output.accept(FnItems.RACK.get());
+                        output.accept(FnItems.PROCESSOR.get());
+                        output.accept(FnItems.CO_PROCESSOR.get());
                         output.accept(FnItems.CRYSTAL_ORE.get());
                         output.accept(FnItems.DEEPSLATE_CRYSTAL_ORE.get());
                         output.accept(FnItems.RAW_CRYSTAL.get());

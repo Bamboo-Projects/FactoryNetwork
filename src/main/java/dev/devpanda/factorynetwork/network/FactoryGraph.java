@@ -5,6 +5,7 @@ import dev.devpanda.factorynetwork.block.CableColour;
 import dev.devpanda.factorynetwork.block.ConnectorBlock;
 import dev.devpanda.factorynetwork.block.DisplayBlock;
 import dev.devpanda.factorynetwork.block.DriveBlock;
+import dev.devpanda.factorynetwork.block.RackBlock;
 import dev.devpanda.factorynetwork.block.RouterBlock;
 import dev.devpanda.factorynetwork.block.entity.ConnectorBlockEntity;
 import dev.devpanda.factorynetwork.block.entity.RouterBlockEntity;
@@ -67,6 +68,8 @@ public final class FactoryGraph {
     private final Set<BlockPos> routers;
     /** Laufwerke am Netz. Sie tragen den Speicher, den das Netz benutzt. */
     private final List<BlockPos> drives;
+    /** Serverschränke am Netz. Sie tragen die Rechenleistung. */
+    private final List<BlockPos> racks;
     /** Wie viele Kanäle jeder Kabelstrang trägt. */
     private final Map<Node, Integer> channelLoad;
     /**
@@ -86,9 +89,10 @@ public final class FactoryGraph {
     private FactoryGraph(Map<String, List<BlockPos>> connectorsByName, List<BlockPos> unnamed,
                          List<BlockPos> starved, List<BlockPos> displays, Set<BlockPos> cables,
                          Set<BlockPos> routers, Map<Node, Integer> channelLoad, List<Edge> edges,
-                         List<BlockPos> drives, boolean truncated) {
+                         List<BlockPos> drives, List<BlockPos> racks, boolean truncated) {
         this.routers = routers;
         this.drives = drives;
+        this.racks = racks;
         this.displays = displays;
         this.connectorsByName = connectorsByName;
         this.unnamed = unnamed;
@@ -101,12 +105,17 @@ public final class FactoryGraph {
 
     public static FactoryGraph empty() {
         return new FactoryGraph(Map.of(), List.of(), List.of(), List.of(),
-                Set.of(), Set.of(), Map.of(), List.of(), List.of(), false);
+                Set.of(), Set.of(), Map.of(), List.of(), List.of(), List.of(), false);
     }
 
     /** Die Laufwerke am Netz. */
     public List<BlockPos> drives() {
         return drives;
+    }
+
+    /** Die Serverschränke am Netz. */
+    public List<BlockPos> racks() {
+        return racks;
     }
 
     /** Die Verbindungen des Netzes, für die Anzeige im Raum. */
@@ -168,6 +177,7 @@ public final class FactoryGraph {
         Set<BlockPos> cables = new HashSet<>();
         Set<BlockPos> routers = new HashSet<>();
         List<BlockPos> drives = new ArrayList<>();
+        List<BlockPos> racks = new ArrayList<>();
         Map<Node, Integer> load = new HashMap<>();
         Map<Node, Node> parents = new HashMap<>();
         Set<BlockPos> visitedDevices = new HashSet<>();
@@ -216,6 +226,13 @@ public final class FactoryGraph {
                     if (visitedDevices.add(next.immutable())) {
                         drives.add(next.immutable());
                     }
+                } else if (state.getBlock() instanceof RackBlock) {
+                    // Ein Serverschrank stellt Rechenleistung bereit, statt
+                    // welche zu brauchen — wie ein Laufwerk kostet er keinen
+                    // Kanal.
+                    if (visitedDevices.add(next.immutable())) {
+                        racks.add(next.immutable());
+                    }
                 } else if (state.getBlock() instanceof DisplayBlock) {
                     // Ein Display zeigt nur an. Es braucht keinen Kanal —
                     // es nimmt dem Netz nichts weg, es liest mit.
@@ -246,7 +263,7 @@ public final class FactoryGraph {
         return new FactoryGraph(Map.copyOf(frozen), List.copyOf(unnamed),
                 List.copyOf(starved), List.copyOf(displays), Set.copyOf(cables),
                 Set.copyOf(routers), Map.copyOf(load), List.copyOf(edges),
-                List.copyOf(drives), truncated);
+                List.copyOf(drives), List.copyOf(racks), truncated);
     }
 
     /**
@@ -500,6 +517,8 @@ public final class FactoryGraph {
     /** Gehört diese Stelle zu diesem Netz — als Kabel, Gerät oder Display? */
     public boolean contains(BlockPos pos) {
         return cables.contains(pos)
+                || racks.contains(pos)
+                || drives.contains(pos)
                 || routers.contains(pos)
                 || unnamed.contains(pos)
                 || starved.contains(pos)

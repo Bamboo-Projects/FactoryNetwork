@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "PPP",
+    "LIL",
+    "PPP"
+  ],
+  "key": {
+    "P": {
+      "item": "factorynetwork:plate"
+    },
+    "L": {
+      "item": "factorynetwork:core_logic"
+    },
+    "I": {
+      "item": "minecraft:iron_block"
+    }
+  },
+  "result": {
+    "id": "factorynetwork:server_rack",
+    "count": 1
+  }
+}

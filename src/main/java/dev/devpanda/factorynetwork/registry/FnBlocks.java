@@ -5,6 +5,7 @@ import dev.devpanda.factorynetwork.block.CableBlock;
 import dev.devpanda.factorynetwork.block.DenseCableBlock;
 import dev.devpanda.factorynetwork.block.DriveBlock;
 import dev.devpanda.factorynetwork.block.PressBlock;
+import dev.devpanda.factorynetwork.block.RackBlock;
 import dev.devpanda.factorynetwork.block.RouterBlock;
 import dev.devpanda.factorynetwork.block.ConnectorBlock;
 import dev.devpanda.factorynetwork.block.ControllerBlock;
@@ -83,6 +84,10 @@ public final class FnBlocks {
     /** Presst Bauteile — der Einstieg in die Fertigungskette. */
     public static final DeferredBlock<Block> PRESS = BLOCKS.register("press",
             () -> new PressBlock(machineProperties()));
+
+    /** Nimmt Prozessoren auf — ohne ihn rechnet das Netz nicht. */
+    public static final DeferredBlock<Block> RACK = BLOCKS.register("server_rack",
+            () -> new RackBlock(machineProperties()));
 
     /** Nimmt Speicherzellen auf — der Lagerraum des Netzes. */
     public static final DeferredBlock<Block> DRIVE = BLOCKS.register("drive",

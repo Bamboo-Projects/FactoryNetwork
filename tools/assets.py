@@ -204,6 +204,23 @@ def blockstates():
         drive_variants["facing=" + direction] = entry
     write(A + "/blockstates/drive.json", {"variants": drive_variants})
 
+    # Serverschrank: Front mit senkrechten Einschüben, sonst Maschinengehäuse.
+    write(A + "/models/block/server_rack.json", {
+        "parent": "minecraft:block/orientable",
+        "textures": {
+            "front": MOD + ":block/server_rack_front",
+            "side": MOD + ":block/machine_top",
+            "top": MOD + ":block/machine_top",
+        },
+    })
+    rack_variants = {}
+    for direction, rotation in (("north", {}), ("east", {"y": 90}),
+                                ("south", {"y": 180}), ("west", {"y": 270})):
+        entry = {"model": block("server_rack")}
+        entry.update(rotation)
+        rack_variants["facing=" + direction] = entry
+    write(A + "/blockstates/server_rack.json", {"variants": rack_variants})
+
     # Connector zeigt in sechs Richtungen.
     facing = {
         "north": {},
@@ -371,6 +388,12 @@ def models():
         })
     write(A + "/models/item/drive.json", {"parent": block("drive")})
     write(A + "/models/item/router.json", {"parent": block("router")})
+    write(A + "/models/item/server_rack.json", {"parent": block("server_rack")})
+    for name in ("processor", "co_processor"):
+        write(A + "/models/item/%s.json" % name, {
+            "parent": "minecraft:item/generated",
+            "textures": {"layer0": MOD + ":item/" + name},
+        })
     for name in ("crystal", "plate", "stamp_plate", "stamp_logic", "stamp_memory",
                  "stamp_network", "core_logic", "core_memory", "core_network"):
         write(A + "/models/item/%s.json" % name, {
@@ -438,7 +461,7 @@ def worldgen():
 
 def loot_and_recipes():
     for name in ("controller", "connector", "terminal", "display", "drive",
-                 "press", "router"):
+                 "press", "router", "server_rack"):
         write(D + "/loot_table/blocks/" + name + ".json", {
             "type": "minecraft:block",
             "pools": [{
@@ -519,6 +542,44 @@ def loot_and_recipes():
             "S": {"item": "minecraft:stick"},
         },
         "result": {"id": MOD + ":label_gun", "count": 1},
+    })
+
+    # Der Serverschrank: das Gehäuse allein, die Leistung steckt in den
+    # Prozessoren.
+    write(D + "/recipe/server_rack.json", {
+        "type": "minecraft:crafting_shaped",
+        "category": "misc",
+        "pattern": ["PPP", "LIL", "PPP"],
+        "key": {
+            "P": {"item": MOD + ":plate"},
+            "L": {"item": MOD + ":core_logic"},
+            "I": {"item": "minecraft:iron_block"},
+        },
+        "result": {"id": MOD + ":server_rack", "count": 1},
+    })
+
+    # Der Prozessor. Der Co-Prozessor bringt dieselbe Leistung wie vier
+    # davon, aber auf einem Platz — im Schrank ist Platz das Knappe.
+    write(D + "/recipe/processor.json", {
+        "type": "minecraft:crafting_shaped",
+        "category": "misc",
+        "pattern": ["PCP", "CLC", "PCP"],
+        "key": {
+            "P": {"item": MOD + ":plate"},
+            "C": {"item": MOD + ":crystal"},
+            "L": {"item": MOD + ":core_logic"},
+        },
+        "result": {"id": MOD + ":processor", "count": 1},
+    })
+    write(D + "/recipe/co_processor.json", {
+        "type": "minecraft:crafting_shaped",
+        "category": "misc",
+        "pattern": [" P ", "PNP", " P "],
+        "key": {
+            "P": {"item": MOD + ":processor"},
+            "N": {"item": MOD + ":core_network"},
+        },
+        "result": {"id": MOD + ":co_processor", "count": 1},
     })
 
     # Der Router: die Kreuzung des dicken Kabels. Er kostet ein dickes
@@ -726,6 +787,7 @@ def loot_and_recipes():
         "values": [MOD + ":controller", MOD + ":cable", MOD + ":dense_cable",
                    MOD + ":connector", MOD + ":terminal", MOD + ":display",
                    MOD + ":drive", MOD + ":press", MOD + ":router",
+                   MOD + ":server_rack",
                    MOD + ":crystal_ore",
                    MOD + ":deepslate_crystal_ore"],
     })

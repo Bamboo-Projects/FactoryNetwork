@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " P ",
+    "PNP",
+    " P "
+  ],
+  "key": {
+    "P": {
+      "item": "factorynetwork:processor"
+    },
+    "N": {
+      "item": "factorynetwork:core_network"
+    }
+  },
+  "result": {
+    "id": "factorynetwork:co_processor",
+    "count": 1
+  }
+}

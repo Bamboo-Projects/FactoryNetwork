@@ -1144,6 +1144,79 @@ def router_lanes():
     return strip
 
 
+# ---- Serverschrank und Prozessoren ---------------------------------------
+# Formensprache: senkrechte Einschübe statt der liegenden Schächte des
+# Laufwerks. Man soll die beiden Blöcke im Regal auseinanderhalten können,
+# ohne den Namen zu lesen.
+
+def rack_front():
+    """Acht senkrechte Einschübe mit Betriebslämpchen."""
+    img = surface(seed=71)
+    d = ImageDraw.Draw(img)
+    raised(img, (1, 1, N - 2, N - 2), hoehe=3)
+
+    d.rectangle([6, 8, 57, 55], fill=blend(BODY_MID, EDGE, 0.4) + (255,))
+    grain(img, amount=6, seed=72)
+    recess(img, (6, 8, 57, 55), tiefe=2)
+
+    for i in range(8):
+        x = 8 + i * 6
+        d.rectangle([x, 11, x + 3, 46], fill=blend(EDGE, BODY_BOT, 0.45) + (255,))
+        ao(img, (x, 11, x + 3, 46), depth=2, strength=0.45)
+        # Griff oben, Lämpchen unten — so herum liest man den Einschub.
+        d.line([(x, 13), (x + 3, 13)], fill=blend(LIGHT, EDGE, 0.3) + (255,))
+        d.rectangle([x + 1, 42, x + 2, 44], fill=blend(ACCENT, EDGE, 0.15) + (255,))
+
+    # Lüftungsschlitze unter den Einschüben.
+    for y in (49, 52):
+        for x in range(9, 54, 4):
+            d.line([(x, y), (x + 2, y)], fill=blend(EDGE, BODY_BOT, 0.3) + (255,))
+
+    for x, y in ((3, 4), (60, 4), (3, 59), (60, 59)):
+        rivet(img, x, y, r=2)
+    scratches(img, seed=73)
+    return img
+
+
+def processor(gross=False):
+    """Ein Chip mit Kühlkörper. Der grosse hat zwei Kerne und mehr Beine."""
+    ton = (150, 172, 156) if not gross else (168, 152, 186)
+    img = Image.new("RGBA", (N, N), (0, 0, 0, 0))
+
+    mask = Image.new("L", (N, N), 0)
+    ImageDraw.Draw(mask).rectangle([14, 14, 49, 49], fill=255)
+    img.alpha_composite(masked_surface(mask, blend(ton, LIGHT, 0.2),
+                                       blend(ton, EDGE, 0.4), seed=270))
+    d = ImageDraw.Draw(img)
+    d.rectangle([14, 14, 49, 49], outline=EDGE + (255,))
+    raised(img, (14, 14, 49, 49), hoehe=2)
+
+    # Beine an allen vier Seiten: Ein Chip ohne Beine liest sich als Kachel.
+    beine = range(18, 46, 5) if not gross else range(17, 47, 4)
+    for p in beine:
+        for box in ([p, 9, p + 2, 13], [p, 50, p + 2, 54],
+                    [9, p, 13, p + 2], [50, p, 54, p + 2]):
+            d.rectangle(box, fill=BRASS + (255,))
+            d.point((box[0], box[1]), fill=BRASS_HI + (255,))
+
+    # Kühlkörper in der Mitte, versenkt und mit Rippen.
+    d.rectangle([19, 19, 44, 44], fill=blend(BODY_MID, EDGE, 0.35) + (255,))
+    recess(img, (19, 19, 44, 44), tiefe=2)
+    ao(img, (19, 19, 44, 44), depth=3, strength=0.5)
+    for x in range(22, 43, 3):
+        d.line([(x, 22), (x, 41)], fill=blend(LIGHT, EDGE, 0.35) + (255,))
+
+    # Der Kern glüht — einer beim kleinen, zwei beim grossen.
+    kerne = [(27, 27, 36, 36)] if not gross else [(23, 23, 30, 30), (33, 33, 40, 40)]
+    for kern in kerne:
+        glow(img, list(kern), color=ACCENT, radius=5, strength=110)
+    d = ImageDraw.Draw(img)
+    for kern in kerne:
+        d.rectangle(list(kern), fill=blend(ACCENT, EDGE, 0.25) + (255,))
+        d.rectangle(list(kern), outline=ACCENT_HI + (255,))
+    scratches(img, count=2, seed=271 if not gross else 272)
+    return img
+
 def main():
     print("Blocktexturen (64x64):")
     save(controller_top(), "block", "controller_top")
@@ -1164,6 +1237,7 @@ def main():
     save(drive_front(), "block", "drive_front")
     save(press_front(), "block", "press_front")
     save(router_side(), "block", "router_side")
+    save(rack_front(), "block", "server_rack_front")
     save(router_lanes(), "misc", "router_lanes")
     save(crystal_ore(False), "block", "crystal_ore")
     save(crystal_ore(True), "block", "deepslate_crystal_ore")
@@ -1181,6 +1255,8 @@ def main():
         save(storage_cell(label), "item", "cell_k" + label.replace("k", ""))
     for label in ("64", "256", "1024", "4096"):
         save(fluid_cell(label), "item", "fluid_cell_" + label)
+    save(processor(False), "item", "processor")
+    save(processor(True), "item", "co_processor")
 
 
 if __name__ == "__main__":

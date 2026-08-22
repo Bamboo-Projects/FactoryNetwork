@@ -6,6 +6,7 @@ import dev.devpanda.factorynetwork.block.entity.ControllerBlockEntity;
 import dev.devpanda.factorynetwork.block.entity.DisplayBlockEntity;
 import dev.devpanda.factorynetwork.block.entity.DriveBlockEntity;
 import dev.devpanda.factorynetwork.block.entity.PressBlockEntity;
+import dev.devpanda.factorynetwork.block.entity.RackBlockEntity;
 import dev.devpanda.factorynetwork.block.entity.RouterBlockEntity;
 import dev.devpanda.factorynetwork.block.entity.TerminalBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -41,6 +42,11 @@ public final class FnBlockEntities {
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<RouterBlockEntity>> ROUTER =
             BLOCK_ENTITIES.register("router", () -> BlockEntityType.Builder
                     .of(RouterBlockEntity::new, FnBlocks.ROUTER.get())
+                    .build(null));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<RackBlockEntity>> RACK =
+            BLOCK_ENTITIES.register("server_rack", () -> BlockEntityType.Builder
+                    .of(RackBlockEntity::new, FnBlocks.RACK.get())
                     .build(null));
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<DisplayBlockEntity>> DISPLAY =

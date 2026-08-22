@@ -198,5 +198,17 @@
   "item.factorynetwork.fluid_cell_4096": "Fluid Cell, 4096 Buckets",
   "jade.factorynetwork.drive.fluids": "%s mB in %s kinds",
   "screen.factorynetwork.terminal.storage.room": "%s slots free · %s for fluids",
-  "screen.factorynetwork.terminal.storage.no_room": "No room for new kinds"
+  "screen.factorynetwork.terminal.storage.no_room": "No room for new kinds",
+  "block.factorynetwork.server_rack": "Server Rack",
+  "item.factorynetwork.processor": "Processor",
+  "item.factorynetwork.co_processor": "Co-Processor",
+  "item.factorynetwork.processor.threads": "%s concurrent flows",
+  "message.factorynetwork.rack.full": "Every slot is taken.",
+  "message.factorynetwork.rack.inserted": "Processor inserted — %s concurrent flows",
+  "message.factorynetwork.rack.removed": "Processor removed — %s concurrent flows",
+  "message.factorynetwork.rack.empty": "No processor in here.",
+  "config.jade.plugin_factorynetwork.server_rack": "Server rack: processors and load",
+  "jade.factorynetwork.rack.empty": "No processor inserted",
+  "jade.factorynetwork.rack.slots": "%s of %s slots",
+  "jade.factorynetwork.rack.threads": "%s concurrent flows"
 }

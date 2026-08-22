@@ -9,6 +9,7 @@
     "factorynetwork:drive",
     "factorynetwork:press",
     "factorynetwork:router",
+    "factorynetwork:server_rack",
     "factorynetwork:crystal_ore",
     "factorynetwork:deepslate_crystal_ore"
   ]

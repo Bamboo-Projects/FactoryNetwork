@@ -182,6 +182,23 @@ public final class FnItems {
         return Map.copyOf(cells);
     }
 
+    /** Nimmt Prozessoren auf — ohne ihn rechnet das Netz nicht. */
+    public static final DeferredItem<net.minecraft.world.item.BlockItem> RACK =
+            ITEMS.registerSimpleBlockItem(FnBlocks.RACK);
+
+    /**
+     * Die beiden Prozessoren.
+     *
+     * <p>Zwei gleichzeitige Abläufe der eine, acht der andere. Der
+     * Co-Prozessor ist nicht schneller, sondern breiter — mehr Dinge auf
+     * einmal statt dieselben Dinge früher fertig.
+     */
+    public static final DeferredItem<Item> PROCESSOR = ITEMS.register("processor",
+            () -> new dev.devpanda.factorynetwork.item.ProcessorItem(2, new Item.Properties()));
+
+    public static final DeferredItem<Item> CO_PROCESSOR = ITEMS.register("co_processor",
+            () -> new dev.devpanda.factorynetwork.item.ProcessorItem(8, new Item.Properties()));
+
     /** Zeigt das Netz als Gerüst in der Welt — auch durch Wände. */
     public static final DeferredItem<Item> ANALYSER = ITEMS.register("network_analyser",
             () -> new NetworkAnalyserItem(new Item.Properties().stacksTo(1)));
