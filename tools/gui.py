@@ -298,6 +298,12 @@ def router_background():
 SHELF_WIDTH = 176
 
 
+# Das Lämpchen hinter einem Einschub: fünf Pixel, zwei Pixel Abstand davor.
+LAMP = 5
+LAMP_PAD = 2
+LAMP_ZONE = LAMP + LAMP_PAD
+
+
 def shelf_background(columns, rows, group=0, gap=0, lamps=False):
     """Ein Regalfenster mit so vielen Plaetzen, wie angegeben.
 
@@ -316,7 +322,9 @@ def shelf_background(columns, rows, group=0, gap=0, lamps=False):
     height = hotbar_y + 18 + 7
 
     bloecke = (columns // group) if group else 1
-    breite = columns * 18 + (bloecke - 1) * gap
+    # Die Lämpchen zaehlen zur Breite: Sonst sitzt das Raster links und der
+    # Rand rechts, und das sieht aus wie ein Fehler beim Zentrieren.
+    breite = columns * 18 + (bloecke - 1) * gap + (LAMP_ZONE if lamps else 0)
     links = (SHELF_WIDTH - breite) // 2
 
     def spalte_x(column):
@@ -333,9 +341,9 @@ def shelf_background(columns, rows, group=0, gap=0, lamps=False):
         if not lamps:
             continue
         for b in range(bloecke):
-            x = spalte_x(b * group + group - 1) + 18 + 2
+            x = spalte_x(b * group + group - 1) + 18 + LAMP_PAD
             y = grid_top + row * 18 + 6
-            sunken(d, (x, y, x + 4, y + 4), fill=(70, 70, 70))
+            sunken(d, (x, y, x + LAMP - 1, y + LAMP - 1), fill=(70, 70, 70))
 
     for row in range(3):
         for column in range(9):

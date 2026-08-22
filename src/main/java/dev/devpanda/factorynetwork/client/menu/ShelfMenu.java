@@ -66,7 +66,7 @@ public class ShelfMenu extends AbstractContainerMenu {
      * als ein Fenster hoch sein darf. Zwei Säulen zu sechs sind so hoch wie
      * eine Doppeltruhe und sehen aus wie ein Schrank von vorn.
      */
-    public static final Layout RACK = new Layout(6, 6, 29, 18, 139, 197, 222, 3, 10);
+    public static final Layout RACK = new Layout(6, 6, 25, 18, 139, 197, 222, 3, 10);
 
     private static final int SLOT = 18;
 
