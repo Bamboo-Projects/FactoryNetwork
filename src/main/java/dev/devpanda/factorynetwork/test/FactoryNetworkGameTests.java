@@ -4508,6 +4508,73 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
+     * Eine Wand aus Anzeigen braucht ein Kabel und nicht sechs.
+     *
+     * <p>Anzeigen leiten weiter: Wer eine Tafel ans Kabel hängt, kann die
+     * nächste daneben setzen. Hinter jede ein Kabel zu legen wäre Arbeit
+     * ohne Entscheidung — und eine Wand, deren Ecken dunkel bleiben, sieht
+     * aus wie ein Fehler.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void awallOfDisplaysNeedsOneCable(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 2, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        BlockPos cable = controller.east();
+        helper.setBlock(cable, FnBlocks.CABLE.get());
+
+        // Eine Reihe von drei, davon berührt nur die erste das Kabel, und
+        // eine vierte darüber — die hängt an der zweiten.
+        BlockPos erste = cable.north();
+        helper.setBlock(erste, FnBlocks.DISPLAY.get());
+        helper.setBlock(erste.north(), FnBlocks.DISPLAY.get());
+        helper.setBlock(erste.north().north(), FnBlocks.DISPLAY.get());
+        helper.setBlock(erste.north().above(), FnBlocks.DISPLAY.get());
+
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        helper.assertValueEqual(entity.graph().displays().size(), 4,
+                "alle vier Tafeln gehören zum Netz");
+        helper.assertValueEqual(entity.graph().channelLoad(
+                        helper.absolutePos(cable), CableColour.NONE),
+                dev.devpanda.factorynetwork.network.Channels.quarters(1),
+                "und zusammen kosten sie einen Kanal");
+        helper.succeed();
+    }
+
+    /**
+     * Über eine Anzeige wachsen zwei Farben nicht zusammen.
+     *
+     * <p>Sie leitet mit der Farbe, mit der sie erreicht wurde. Wäre sie
+     * farbneutral, hinge an jeder Wand ein Loch in der Trennung, das man
+     * beim Bauen nicht sieht.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void adisplayDoesNotBridgeColours(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 2, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        // Roter Strang nach Osten, dahinter eine Anzeige, dahinter blau.
+        BlockPos rot = controller.east();
+        helper.setBlock(rot, FnBlocks.CABLE.get().defaultBlockState()
+                .setValue(dev.devpanda.factorynetwork.block.CableBlock.COLOUR,
+                        CableColour.RED));
+        BlockPos tafel = rot.east();
+        helper.setBlock(tafel, FnBlocks.DISPLAY.get());
+        BlockPos blau = tafel.east();
+        helper.setBlock(blau, FnBlocks.CABLE.get().defaultBlockState()
+                .setValue(dev.devpanda.factorynetwork.block.CableBlock.COLOUR,
+                        CableColour.BLUE));
+        BlockPos dahinter = blau.east();
+        helper.setBlock(dahinter, FnBlocks.DRIVE.get());
+
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        helper.assertValueEqual(entity.graph().displays().size(), 1, "die Tafel hängt am Netz");
+        helper.assertValueEqual(entity.graph().drives().size(), 0,
+                "hinter dem blauen Kabel endet der rote Strang");
+        helper.succeed();
+    }
+
+    /**
      * Ein Laufwerk ohne Kanal lagert nichts.
      *
      * <p>Das ist die Folge daraus, dass es einen kostet: Wer den Strang voll

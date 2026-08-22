@@ -236,6 +236,15 @@ public final class FactoryGraph {
                                 .add(current);
                         kinds.put(device, kind);
                         visitedDevices.add(device);
+                        // Anzeigen leiten weiter. Eine Wand aus sechs Tafeln
+                        // ist ein Bild und keine sechs Geräte, und hinter
+                        // jede ein Kabel zu legen ist Arbeit ohne
+                        // Entscheidung. Alle anderen Geräte enden hier: Wer
+                        // zwei Laufwerke aneinanderstellt, meint zwei
+                        // Laufwerke und keine Leitung.
+                        if (kind == Consumer.DISPLAY) {
+                            visitDisplay(next, current, parents, queue);
+                        }
                     }
                 }
             }
@@ -327,6 +336,28 @@ public final class FactoryGraph {
         }
         if (entered) {
             cables.add(pos.immutable());
+        }
+    }
+
+    /**
+     * Geht durch eine Anzeige hindurch.
+     *
+     * <p>Eine Anzeige führt den Strang weiter, mit der Farbe, mit der sie
+     * erreicht wurde. Sie ist damit ein Stück derselben Leitung: Eine rote
+     * Wand bleibt rot, und zwei verschiedenfarbige Netze wachsen nicht über
+     * eine Anzeige zusammen.
+     *
+     * <p>Sie trägt dabei keine eigene Kanalgrenze — {@code capacityAt} gibt
+     * für alles, was kein Kabel ist, unbegrenzt zurück. Was eine Wand
+     * kostet, begrenzt das Kabel, an dem sie hängt, und das ist die Stelle,
+     * an der man es auch nachsieht.
+     */
+    private static void visitDisplay(BlockPos pos, Node from, Map<Node, Node> parents,
+                                     Deque<Node> queue) {
+        Node node = new Node(pos.immutable(), from.colour());
+        if (!parents.containsKey(node)) {
+            parents.put(node, from);
+            queue.add(node);
         }
     }
 
