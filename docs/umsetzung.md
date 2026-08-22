@@ -140,6 +140,10 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 
 ## 3. Was noch nicht läuft
 
+- **Die Anzeigenwand ist gebaut**, die Schrift wächst aber nicht mit. Wer
+  eine Wand aus zwölf Tafeln baut, bekommt viel Platz für Text in
+  Normalgröße — keine Überschrift, die man aus zwanzig Metern liest. Ob das
+  fehlt, zeigt erst das Spielen.
 - **`device_done`.** `device_online`, `device_offline` und `device_changed`
   laufen; „diese Maschine ist **fertig**" ist die offene Frage. Der
   konservative Weg — melden, dass sich etwas geändert hat, und die Deutung dem
@@ -171,6 +175,36 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
   von vierundsechzig bis viertausendsechsundneunzig. Sie sind gesetzt, nicht
   hergeleitet — wie sie sich anfühlen, zeigt erst das Spielen. Die
   Begründungen stehen in `entscheidungen.md` unter „Der Serverschrank".
+- **Der Controller-Multiblock.** Der Controller hat sechs Seiten. An jeder
+  hängt höchstens ein Strang, ein dichtes Kabel trägt vierundsechzig Kanäle —
+  macht 384 Geräte je Netz. Das reicht heute und soll ausbaubar sein
+  („haben ist besser als brauchen"). Mehrere Controllerblöcke aneinander
+  wären ein Controller mit mehr Außenflächen, also mehr Strängen.
+
+  **Vor dem Bauen ist eine Frage zu beantworten, und sie ist die ganze
+  Schwierigkeit: Wo liegt das Programm, und was passiert damit, wenn genau
+  dieser Block abgebaut wird?** Der Controller hält Programm, Speicherindex,
+  laufende Abläufe und Stromvorrat. Drei Wege:
+
+  1. **Der unterste, nördlichste Block hält alles.** Feste Regel, immer
+     erklärbar. Setzt jemand einen Block *darunter*, wandert der Anker — und
+     mit ihm muss der ganze Zustand umziehen. Auch die Datei neben der Welt
+     heißt nach der Ankerposition und müsste mitwandern.
+  2. **Der zuerst gesetzte hält alles, die anderen sind Anbauten.** Kein
+     Umzug, solange er steht. Wird er abgebaut, ist die Frage nur verschoben:
+     Wer übernimmt, und woher weiß man es beim nächsten Laden?
+  3. **Ein eigener Block für die Erweiterung**, der nie etwas hält — der
+     Controller bleibt einer und bekommt Anbauten, die nur Flächen
+     beisteuern. Kein Umzug, keine Ankerwahl, keine Zustandswanderung. Dafür
+     ein Block mehr im Kreativ-Reiter, und der Ausbau sieht nicht aus wie in
+     AE2.
+
+  Meine Empfehlung ist **(3)**. Die anderen beiden verlagern die
+  Zustandswanderung in die zentralste Klasse der Mod, und ein Fehler dort
+  kostet einem Spieler sein Programm. Ein zweiter Block ist der billigere
+  Preis. Zu entscheiden ist das trotzdem vorher — die drei Wege sehen im
+  Spiel verschieden aus, und danach lässt sich das nicht mehr ohne Bruch
+  ändern.
 - **Autocrafting.** Der letzte ausgegraute Reiter.
 - **Chemikalien** aus Mekanism. Die Schreibweise steht seit dem Entwurf.
 
