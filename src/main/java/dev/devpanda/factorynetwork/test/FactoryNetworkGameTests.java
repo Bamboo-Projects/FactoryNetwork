@@ -4090,6 +4090,101 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    // ---- Farbige Kabel ----------------------------------------------------
+
+    /** Setzt ein Kabel so, wie es der Gegenstand täte — samt Farbe. */
+    private static void placeCable(GameTestHelper helper, BlockPos at,
+            dev.devpanda.factorynetwork.block.CableColour colour) {
+        helper.setBlock(at, dev.devpanda.factorynetwork.block.CableBlock.withConnections(
+                FnBlocks.CABLE.get().defaultBlockState()
+                        .setValue(dev.devpanda.factorynetwork.block.CableBlock.COLOUR, colour),
+                helper.getLevel(), helper.absolutePos(at)));
+    }
+
+    private static boolean connected(GameTestHelper helper, BlockPos from, BlockPos to) {
+        net.minecraft.core.Direction side = towards(helper, from, to);
+        return helper.getBlockState(from).getValue(
+                dev.devpanda.factorynetwork.block.CableBlock.connection(side));
+    }
+
+    /**
+     * Zwei Kabel verschiedener Farbe greifen nicht nacheinander.
+     *
+     * <p>Die Farbe kam vorher aus der Welt statt aus dem Zustand. Beim Setzen
+     * steht an der eigenen Stelle aber noch Luft, und Luft gilt als neutral —
+     * ein rotes Kabel rechnete sich seine Verbindungen deshalb als neutrales
+     * aus und wuchs einen Arm zu jedem Nachbarn, egal welcher Farbe.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void cablesOfDifferentColoursDoNotReachForEachOther(GameTestHelper helper) {
+        var rot = dev.devpanda.factorynetwork.block.CableColour.RED;
+        var gruen = dev.devpanda.factorynetwork.block.CableColour.GREEN;
+        var neutral = dev.devpanda.factorynetwork.block.CableColour.NONE;
+
+        BlockPos links = new BlockPos(1, 2, 1);
+        BlockPos rechts = links.east();
+        placeCable(helper, links, rot);
+        placeCable(helper, rechts, gruen);
+
+        helper.assertTrue(!connected(helper, links, rechts),
+                "das rote Kabel darf nicht nach dem grünen greifen");
+        helper.assertTrue(!connected(helper, rechts, links),
+                "und das grüne nicht nach dem roten");
+
+        // Gleiche Farbe schon.
+        BlockPos zweitesRot = links.west();
+        placeCable(helper, zweitesRot, rot);
+        helper.assertTrue(connected(helper, links, zweitesRot), "rot an rot");
+        helper.assertTrue(connected(helper, zweitesRot, links), "und zurück");
+
+        // Neutral verbindet sich mit allem — das ist der Sinn der Vorgabe.
+        BlockPos oben = links.above();
+        placeCable(helper, oben, neutral);
+        helper.assertTrue(connected(helper, oben, links), "neutral an rot");
+        helper.assertTrue(connected(helper, links, oben), "und zurück");
+        helper.succeed();
+    }
+
+    /**
+     * Ein abgebautes Kabel gibt seine Farbe zurück.
+     *
+     * <p>Die Farbe steht im Blockzustand, der Gegenstand ist je Farbe ein
+     * eigener. Die Loot-Tabelle war leer — es fiel gar nichts heraus.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void abrokenCableDropsItsColour(GameTestHelper helper) {
+        BlockPos at = new BlockPos(1, 2, 1);
+        placeCable(helper, at, dev.devpanda.factorynetwork.block.CableColour.RED);
+
+        var drops = net.minecraft.world.level.block.Block.getDrops(
+                helper.getBlockState(at), helper.getLevel(), helper.absolutePos(at), null);
+        helper.assertValueEqual(drops.size(), 1, "genau ein Gegenstand");
+        helper.assertValueEqual(drops.get(0).getItem(),
+                dev.devpanda.factorynetwork.registry.FnItems.CABLES
+                        .get(dev.devpanda.factorynetwork.block.CableColour.RED).get(),
+                "und zwar das rote Kabel");
+        helper.succeed();
+    }
+
+    /**
+     * Jede Farbe hat ihren eigenen Namen.
+     *
+     * <p>Ein BlockItem nimmt seinen Namen sonst vom Block, und alle siebzehn
+     * zeigen auf denselben — im Kreativ-Reiter stand siebzehnmal „Kabel".
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void everyCableColourHasItsOwnName(GameTestHelper helper) {
+        java.util.Set<String> namen = new java.util.HashSet<>();
+        for (var colour : dev.devpanda.factorynetwork.block.CableColour.values()) {
+            namen.add(new ItemStack(dev.devpanda.factorynetwork.registry.FnItems.CABLES
+                    .get(colour).get()).getDescriptionId());
+            namen.add(new ItemStack(dev.devpanda.factorynetwork.registry.FnItems.DENSE_CABLES
+                    .get(colour).get()).getDescriptionId());
+        }
+        helper.assertValueEqual(namen.size(), 34, "vierunddreißig verschiedene Namen");
+        helper.succeed();
+    }
+
     private FactoryNetworkGameTests() {
     }
 }

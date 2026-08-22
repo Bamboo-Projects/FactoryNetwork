@@ -472,6 +472,35 @@ def loot_and_recipes():
             }],
         })
 
+    # Kabel geben ihre Farbe zurück.
+    #
+    # Die Farbe steht im Blockzustand, der Gegenstand dagegen ist je Farbe ein
+    # eigener. Ohne diese Zuordnung fiele beim Abbauen ein neutrales Kabel
+    # heraus — oder, wie bisher, gar keines: Die Tabelle war leer.
+    for sorte in ("cable", "dense_cable"):
+        kinder = []
+        for farbe in CABLE_COLOURS[1:]:
+            kinder.append({
+                "type": "minecraft:item",
+                "name": "%s:%s_%s" % (MOD, farbe, sorte),
+                "conditions": [{
+                    "condition": "minecraft:block_state_property",
+                    "block": "%s:%s" % (MOD, sorte),
+                    "properties": {"colour": farbe},
+                }],
+            })
+        # Ohne Bedingung und zuletzt: das neutrale Kabel als Rückfall.
+        kinder.append({"type": "minecraft:item", "name": "%s:%s" % (MOD, sorte)})
+        write(D + "/loot_table/blocks/%s.json" % sorte, {
+            "type": "minecraft:block",
+            "pools": [{
+                "rolls": 1,
+                "bonus_rolls": 0,
+                "entries": [{"type": "minecraft:alternatives", "children": kinder}],
+                "conditions": [{"condition": "minecraft:survives_explosion"}],
+            }],
+        })
+
     # Rezepte: bewusst günstig. Wer die Mod spielt, will programmieren,
     # nicht erst eine Materialkette abarbeiten.
     write(D + "/recipe/controller.json", {
@@ -746,11 +775,6 @@ def loot_and_recipes():
         },
         "result": {"id": MOD + ":dense_cable", "count": 1},
     })
-
-    # Beide Sorten fallen als der Gegenstand ihrer Farbe.
-    for sort in ("cable", "dense_cable"):
-        write(D + "/loot_table/blocks/%s.json" % sort,
-              {"type": "minecraft:block", "pools": []})
 
     # Färben: ein Farbstoff auf ein beliebiges Kabel. Über das Tag statt über
     # siebzehn Gegenstände einzeln — sonst wären es je Sorte

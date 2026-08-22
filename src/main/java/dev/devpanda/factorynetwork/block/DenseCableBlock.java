@@ -23,6 +23,12 @@ public class DenseCableBlock extends CableBlock {
     }
 
     @Override
+    protected java.util.Map<CableColour, net.neoforged.neoforge.registries.DeferredItem<
+            net.minecraft.world.item.BlockItem>> items() {
+        return dev.devpanda.factorynetwork.registry.FnItems.DENSE_CABLES;
+    }
+
+    @Override
     protected MapCodec<? extends net.minecraft.world.level.block.Block> codec() {
         return CODEC;
     }

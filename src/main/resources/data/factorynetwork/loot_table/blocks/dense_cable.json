@@ -1,4 +1,233 @@
 {
   "type": "minecraft:block",
-  "pools": []
+  "pools": [
+    {
+      "rolls": 1,
+      "bonus_rolls": 0,
+      "entries": [
+        {
+          "type": "minecraft:alternatives",
+          "children": [
+            {
+              "type": "minecraft:item",
+              "name": "factorynetwork:white_dense_cable",
+              "conditions": [
+                {
+                  "condition": "minecraft:block_state_property",
+                  "block": "factorynetwork:dense_cable",
+                  "properties": {
+                    "colour": "white"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "minecraft:item",
+              "name": "factorynetwork:orange_dense_cable",
+              "conditions": [
+                {
+                  "condition": "minecraft:block_state_property",
+                  "block": "factorynetwork:dense_cable",
+                  "properties": {
+                    "colour": "orange"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "minecraft:item",
+              "name": "factorynetwork:magenta_dense_cable",
+              "conditions": [
+                {
+                  "condition": "minecraft:block_state_property",
+                  "block": "factorynetwork:dense_cable",
+                  "properties": {
+                    "colour": "magenta"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "minecraft:item",
+              "name": "factorynetwork:light_blue_dense_cable",
+              "conditions": [
+                {
+                  "condition": "minecraft:block_state_property",
+                  "block": "factorynetwork:dense_cable",
+                  "properties": {
+                    "colour": "light_blue"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "minecraft:item",
+              "name": "factorynetwork:yellow_dense_cable",
+              "conditions": [
+                {
+                  "condition": "minecraft:block_state_property",
+                  "block": "factorynetwork:dense_cable",
+                  "properties": {
+                    "colour": "yellow"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "minecraft:item",
+              "name": "factorynetwork:lime_dense_cable",
+              "conditions": [
+                {
+                  "condition": "minecraft:block_state_property",
+                  "block": "factorynetwork:dense_cable",
+                  "properties": {
+                    "colour": "lime"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "minecraft:item",
+              "name": "factorynetwork:pink_dense_cable",
+              "conditions": [
+                {
+                  "condition": "minecraft:block_state_property",
+                  "block": "factorynetwork:dense_cable",
+                  "properties": {
+                    "colour": "pink"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "minecraft:item",
+              "name": "factorynetwork:gray_dense_cable",
+              "conditions": [
+                {
+                  "condition": "minecraft:block_state_property",
+                  "block": "factorynetwork:dense_cable",
+                  "properties": {
+                    "colour": "gray"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "minecraft:item",
+              "name": "factorynetwork:light_gray_dense_cable",
+              "conditions": [
+                {
+                  "condition": "minecraft:block_state_property",
+                  "block": "factorynetwork:dense_cable",
+                  "properties": {
+                    "colour": "light_gray"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "minecraft:item",
+              "name": "factorynetwork:cyan_dense_cable",
+              "conditions": [
+                {
+                  "condition": "minecraft:block_state_property",
+                  "block": "factorynetwork:dense_cable",
+                  "properties": {
+                    "colour": "cyan"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "minecraft:item",
+              "name": "factorynetwork:purple_dense_cable",
+              "conditions": [
+                {
+                  "condition": "minecraft:block_state_property",
+                  "block": "factorynetwork:dense_cable",
+                  "properties": {
+                    "colour": "purple"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "minecraft:item",
+              "name": "factorynetwork:blue_dense_cable",
+              "conditions": [
+                {
+                  "condition": "minecraft:block_state_property",
+                  "block": "factorynetwork:dense_cable",
+                  "properties": {
+                    "colour": "blue"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "minecraft:item",
+              "name": "factorynetwork:brown_dense_cable",
+              "conditions": [
+                {
+                  "condition": "minecraft:block_state_property",
+                  "block": "factorynetwork:dense_cable",
+                  "properties": {
+                    "colour": "brown"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "minecraft:item",
+              "name": "factorynetwork:green_dense_cable",
+              "conditions": [
+                {
+                  "condition": "minecraft:block_state_property",
+                  "block": "factorynetwork:dense_cable",
+                  "properties": {
+                    "colour": "green"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "minecraft:item",
+              "name": "factorynetwork:red_dense_cable",
+              "conditions": [
+                {
+                  "condition": "minecraft:block_state_property",
+                  "block": "factorynetwork:dense_cable",
+                  "properties": {
+                    "colour": "red"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "minecraft:item",
+              "name": "factorynetwork:black_dense_cable",
+              "conditions": [
+                {
+                  "condition": "minecraft:block_state_property",
+                  "block": "factorynetwork:dense_cable",
+                  "properties": {
+                    "colour": "black"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "minecraft:item",
+              "name": "factorynetwork:dense_cable"
+            }
+          ]
+        }
+      ],
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ]
+    }
+  ]
 }

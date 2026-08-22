@@ -114,6 +114,26 @@ public class CableBlock extends Block {
         return state.getBlock() instanceof CableBlock cable ? cable.channels() : 0;
     }
 
+    /**
+     * Die Gegenstände zu dieser Kabelsorte, je Farbe einer.
+     *
+     * <p>Gebraucht für die Mitteltaste: Ohne das bekäme man beim Aufnehmen
+     * eines roten Kabels ein neutrales, und die Verbindung, die man gerade
+     * nachbauen wollte, käme nicht zustande.
+     */
+    protected java.util.Map<CableColour, net.neoforged.neoforge.registries.DeferredItem<
+            net.minecraft.world.item.BlockItem>> items() {
+        return dev.devpanda.factorynetwork.registry.FnItems.CABLES;
+    }
+
+    @Override
+    public ItemStack getCloneItemStack(net.minecraft.world.level.LevelReader level,
+                                       BlockPos pos, BlockState state) {
+        var entry = items().get(colourOf(state));
+        return entry == null ? super.getCloneItemStack(level, pos, state)
+                : new ItemStack(entry.get());
+    }
+
     public static CableColour colourOf(BlockState state) {
         return state.getBlock() instanceof CableBlock ? state.getValue(COLOUR) : CableColour.NONE;
     }
@@ -142,30 +162,40 @@ public class CableBlock extends Block {
     protected BlockState updateShape(BlockState state, Direction direction, BlockState neighbour,
                                      LevelAccessor level, BlockPos pos, BlockPos neighbourPos) {
         BooleanProperty property = CONNECTIONS.get(direction);
-        return state.setValue(property, connects(level, pos, neighbourPos, neighbour));
+        return state.setValue(property, connects(state.getValue(COLOUR), neighbour));
     }
 
-    private BlockState withConnections(BlockState state, LevelReader level, BlockPos pos) {
+    /**
+     * Rechnet alle sechs Verbindungen für einen Zustand aus.
+     *
+     * <p>Öffentlich, weil der Gegenstand sie noch einmal braucht: Er setzt
+     * erst die Farbe und muss danach neu rechnen lassen.
+     */
+    public static BlockState withConnections(BlockState state, LevelReader level, BlockPos pos) {
+        CableColour colour = colourOf(state);
         for (Map.Entry<Direction, BooleanProperty> entry : CONNECTIONS.entrySet()) {
-            BlockPos neighbourPos = pos.relative(entry.getKey());
-            BlockState neighbour = level.getBlockState(neighbourPos);
-            state = state.setValue(entry.getValue(),
-                    connects(level, pos, neighbourPos, neighbour));
+            BlockState neighbour = level.getBlockState(pos.relative(entry.getKey()));
+            state = state.setValue(entry.getValue(), connects(colour, neighbour));
         }
         return state;
     }
 
     /**
-     * Verbindet sich der Block an dieser Stelle sichtbar zum Nachbarn?
+     * Verbindet sich ein Kabel dieser Farbe sichtbar zu diesem Nachbarn?
      *
      * <p>Ein Block trägt genau ein Kabel in genau einer Farbe. Zwei Kabel
      * verbinden sich, wenn ihre Farben zueinander passen — neutral zu allem,
      * gleiche Farbe zueinander.
+     *
+     * <p><b>Die Farbe kommt aus dem Zustand, nicht aus der Welt.</b> Vorher
+     * wurde sie an der eigenen Stelle nachgeschlagen; beim Setzen steht dort
+     * aber noch Luft, und Luft gilt als neutral. Ein rotes Kabel rechnete
+     * sich seine Verbindungen deshalb als neutrales aus und griff nach allem,
+     * was danebenlag.
      */
-    private static boolean connects(BlockGetter level, BlockPos pos, BlockPos neighbourPos,
-                                    BlockState neighbour) {
+    private static boolean connects(CableColour colour, BlockState neighbour) {
         if (neighbour.getBlock() instanceof CableBlock) {
-            return colourOf(level.getBlockState(pos)).connectsTo(colourOf(neighbour));
+            return colour.connectsTo(colourOf(neighbour));
         }
         // Alles, was zum Netz gehört, bekommt einen Arm. Laufwerk und
         // Serverschrank fehlten hier: Die Suche findet sie über die
