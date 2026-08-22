@@ -49,6 +49,10 @@ public class DisplayBlockEntity extends BlockEntity {
      */
     private long lastRefresh = -REFRESH_INTERVAL;
 
+    /** Die zuletzt gefundene Wand, und wann. */
+    private dev.devpanda.factorynetwork.block.DisplayWall cachedWall;
+    private long wallComputedAt;
+
     public DisplayBlockEntity(BlockPos pos, BlockState state) {
         super(FnBlockEntities.DISPLAY.get(), pos, state);
     }
@@ -128,11 +132,30 @@ public class DisplayBlockEntity extends BlockEntity {
         return rendered;
     }
 
-    /** Die Wand, zu der diese Tafel gehört — auch wenn sie allein steht. */
+    /**
+     * Die Wand, zu der diese Tafel gehört — auch wenn sie allein steht.
+     *
+     * <p><b>Höchstens einmal je Sekunde gerechnet.</b> Der Renderer fragt
+     * für jedes Bild und für jede Tafel, auch für die leeren: Ohne den
+     * Zwischenspeicher liefe bei einer Wand aus zwanzig Tafeln
+     * zwanzigmal je Bild eine Breitensuche mit frischen Listen — genau der
+     * Aufwand, gegen den es die Entfernungsgrenze überhaupt gibt.
+     *
+     * <p>Eine Sekunde Verzug ist dieselbe Kadenz, in der die Tafel auch
+     * ihren Text neu rechnet. Der Rahmen hängt am Blockzustand und ändert
+     * sich sofort; nur die Aufteilung des Textes hinkt kurz nach, und das
+     * fällt schon deshalb nicht auf, weil der Text es auch tut.
+     */
     public dev.devpanda.factorynetwork.block.DisplayWall wall() {
-        return dev.devpanda.factorynetwork.block.DisplayWall.around(level, worldPosition,
+        long now = level == null ? 0L : level.getGameTime();
+        if (cachedWall != null && now - wallComputedAt < REFRESH_INTERVAL) {
+            return cachedWall;
+        }
+        wallComputedAt = now;
+        cachedWall = dev.devpanda.factorynetwork.block.DisplayWall.around(level, worldPosition,
                 getBlockState().getValue(
                         net.minecraft.world.level.block.HorizontalDirectionalBlock.FACING));
+        return cachedWall;
     }
 
     /**

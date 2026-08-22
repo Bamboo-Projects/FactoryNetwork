@@ -26,13 +26,13 @@ rechtfertigt — sie ist eine Grammatik und ein Satz Bausteine.
 **Windows**
 
 ```
-xcopy /E /I editor\vscode %USERPROFILE%\.vscode\extensions\manifold-0.1.0
+xcopy /E /I editor\vscode %USERPROFILE%\.vscode\extensions\devpanda.manifold-0.1.0
 ```
 
 **Linux und macOS**
 
 ```
-cp -r editor/vscode ~/.vscode/extensions/manifold-0.1.0
+cp -r editor/vscode ~/.vscode/extensions/devpanda.manifold-0.1.0
 ```
 
 Danach VS Code neu starten. Eine `.mf`-Datei sollte farbig sein; unten rechts
