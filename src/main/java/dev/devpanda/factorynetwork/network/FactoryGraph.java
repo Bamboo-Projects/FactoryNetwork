@@ -159,6 +159,10 @@ public final class FactoryGraph {
      */
     public static final int CHANNELS_PER_STRAND = CableBlock.CHANNELS_THIN;
 
+    // Ab hier wird in Vierteln gerechnet — siehe Channels. Erst die Anzeige
+    // rechnet zurück, damit eine Anzeige ein Viertel kosten kann, ohne dass
+    // jede Stelle Bruchrechnung braucht.
+
     /**
      * Baut den Graphen ausgehend vom Controller auf.
      *
@@ -184,6 +188,7 @@ public final class FactoryGraph {
         // Gerät auf die Kabelstränge, über die es erreichbar ist — in der
         // Reihenfolge, in der die Suche sie gefunden hat.
         Map<BlockPos, List<Node>> reachable = new LinkedHashMap<>();
+        Map<BlockPos, Consumer> kinds = new LinkedHashMap<>();
         Deque<Node> queue = new ArrayDeque<>();
 
         // Der Controller selbst ist farbneutral: Von ihm gehen alle Stränge
@@ -219,38 +224,24 @@ public final class FactoryGraph {
                     visitCable(level, next, current, parents, queue, cables);
                 } else if (state.getBlock() instanceof RouterBlock) {
                     visitRouter(level, next, direction, current, parents, queue, routers);
-                } else if (state.getBlock() instanceof DriveBlock) {
-                    // Ein Laufwerk stellt Platz bereit, statt welchen zu
-                    // brauchen. Wie eine Anzeige kostet es keinen Kanal —
-                    // anders als bei AE2, wo auch der Lagerraum einen zieht.
-                    if (visitedDevices.add(next.immutable())) {
-                        drives.add(next.immutable());
-                    }
-                } else if (state.getBlock() instanceof RackBlock) {
-                    // Ein Serverschrank stellt Rechenleistung bereit, statt
-                    // welche zu brauchen — wie ein Laufwerk kostet er keinen
-                    // Kanal.
-                    if (visitedDevices.add(next.immutable())) {
-                        racks.add(next.immutable());
-                    }
-                } else if (state.getBlock() instanceof DisplayBlock) {
-                    // Ein Display zeigt nur an. Es braucht keinen Kanal —
-                    // es nimmt dem Netz nichts weg, es liest mit.
-                    if (visitedDevices.add(next.immutable())) {
-                        displays.add(next.immutable());
-                    }
-                } else if (state.getBlock() instanceof ConnectorBlock) {
-                    // Noch nicht zuteilen: Ein Gerät kann an mehreren
+                } else {
+                    // Alles, was einen Kanal kostet, geht denselben Weg —
+                    // noch nicht zuteilen: Ein Gerät kann an mehreren
                     // Strängen hängen, und welcher es trägt, entscheidet
                     // sich erst, wenn alle Wege bekannt sind.
-                    reachable.computeIfAbsent(next.immutable(), key -> new ArrayList<>())
-                            .add(current);
-                    visitedDevices.add(next.immutable());
+                    Consumer kind = consumerAt(state);
+                    if (kind != null) {
+                        reachable.computeIfAbsent(next.immutable(), key -> new ArrayList<>())
+                                .add(current);
+                        kinds.put(next.immutable(), kind);
+                        visitedDevices.add(next.immutable());
+                    }
                 }
             }
         }
 
-        assignChannels(level, reachable, parents, load, connectors, unnamed, starved);
+        assignChannels(level, reachable, kinds, parents, load, connectors, unnamed,
+                starved, displays, drives, racks);
 
         Map<String, List<BlockPos>> frozen = new LinkedHashMap<>();
         connectors.forEach((label, positions) -> frozen.put(label, List.copyOf(positions)));
@@ -264,6 +255,42 @@ public final class FactoryGraph {
                 List.copyOf(starved), List.copyOf(displays), Set.copyOf(cables),
                 Set.copyOf(routers), Map.copyOf(load), List.copyOf(edges),
                 List.copyOf(drives), List.copyOf(racks), truncated);
+    }
+
+    /**
+     * Was am Netz einen Kanal kostet.
+     *
+     * <p>Die Regel in einem Satz: Was etwas tut, kostet einen Kanal. Eine
+     * Anzeige tut weniger — sie liest nur mit — und kostet ein Viertel. Ein
+     * Router ist Kabel und kein Gerät.
+     */
+    private enum Consumer {
+        CONNECTOR(Channels.CONNECTOR),
+        DRIVE(Channels.DRIVE),
+        RACK(Channels.RACK),
+        DISPLAY(Channels.DISPLAY);
+
+        private final int cost;
+
+        Consumer(int cost) {
+            this.cost = cost;
+        }
+    }
+
+    private static Consumer consumerAt(BlockState state) {
+        if (state.getBlock() instanceof ConnectorBlock) {
+            return Consumer.CONNECTOR;
+        }
+        if (state.getBlock() instanceof DriveBlock) {
+            return Consumer.DRIVE;
+        }
+        if (state.getBlock() instanceof RackBlock) {
+            return Consumer.RACK;
+        }
+        if (state.getBlock() instanceof DisplayBlock) {
+            return Consumer.DISPLAY;
+        }
+        return null;
     }
 
     /**
@@ -329,15 +356,26 @@ public final class FactoryGraph {
      * Kanälen gewinnt das nähere Gerät.
      */
     private static void assignChannels(Level level, Map<BlockPos, List<Node>> reachable,
+                                       Map<BlockPos, Consumer> kinds,
                                        Map<Node, Node> parents, Map<Node, Integer> load,
                                        Map<String, List<BlockPos>> connectors,
-                                       List<BlockPos> unnamed, List<BlockPos> starved) {
+                                       List<BlockPos> unnamed, List<BlockPos> starved,
+                                       List<BlockPos> displays, List<BlockPos> drives,
+                                       List<BlockPos> racks) {
         for (Map.Entry<BlockPos, List<Node>> entry : reachable.entrySet()) {
             BlockPos pos = entry.getKey();
-            if (!(level.getBlockEntity(pos) instanceof ConnectorBlockEntity connector)) {
+            Consumer kind = kinds.get(pos);
+            ConnectorBlockEntity connector =
+                    level.getBlockEntity(pos) instanceof ConnectorBlockEntity found
+                            ? found : null;
+            if (kind == null || (kind == Consumer.CONNECTOR && connector == null)) {
                 continue;
             }
-            int cost = connector.channelCost();
+            // Der Connector nennt seinen Bedarf selbst — ein Gerät mit
+            // höherem Bedarf soll später keine Wanderung durch diesen Code
+            // nach sich ziehen.
+            int cost = kind == Consumer.CONNECTOR
+                    ? Channels.quarters(connector.channelCost()) : kind.cost;
 
             List<Node> chosen = null;
             for (Node entryPoint : entry.getValue()) {
@@ -360,13 +398,21 @@ public final class FactoryGraph {
                 load.merge(node, cost, Integer::sum);
             }
 
-            String label = connector.label();
-            if (label == null || label.isBlank()) {
-                unnamed.add(pos);
-            } else {
-                // Nicht überschreiben: Zwei Connectoren mit demselben Namen
-                // sind ein Fehler, kein Vorrang.
-                connectors.computeIfAbsent(label, key -> new ArrayList<>()).add(pos);
+            switch (kind) {
+                case DRIVE -> drives.add(pos);
+                case RACK -> racks.add(pos);
+                case DISPLAY -> displays.add(pos);
+                case CONNECTOR -> {
+                    String label = connector.label();
+                    if (label == null || label.isBlank()) {
+                        unnamed.add(pos);
+                    } else {
+                        // Nicht überschreiben: Zwei Connectoren mit demselben
+                        // Namen sind ein Fehler, kein Vorrang.
+                        connectors.computeIfAbsent(label, key -> new ArrayList<>()).add(pos);
+                    }
+                }
+                default -> { }
             }
         }
     }
@@ -423,10 +469,10 @@ public final class FactoryGraph {
         if (state.getBlock() instanceof RouterBlock) {
             // Der Router gehört zum dicken Kabel, also trägt jede seiner
             // Bahnen so viel wie ein dickes Kabel.
-            return CableBlock.CHANNELS_DENSE;
+            return Channels.quarters(CableBlock.CHANNELS_DENSE);
         }
         int channels = CableBlock.channelsAt(state);
-        return channels > 0 ? channels : Integer.MAX_VALUE;
+        return channels > 0 ? Channels.quarters(channels) : Integer.MAX_VALUE;
     }
 
     /**

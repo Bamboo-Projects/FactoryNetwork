@@ -159,9 +159,6 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
   Flüssigkeits-Tag geschrieben wird, ist eine Frage an die Sprache und nicht
   nebenbei zu entscheiden — `fluidtag:c/molten` wäre eine vierte Art,
   `tag:` beide zu durchsuchen die andere Möglichkeit.
-- **Kosten Laufwerke einen Kanal?** Bei AE2 ja. Hier nicht — ein Laufwerk gilt
-  wie eine Anzeige als etwas, das dem Netz nichts wegnimmt. Das ist bewusst
-  milder; wer den AE2-Druck will, macht daraus einen Kanalverbraucher.
 - **Die Zahlen an den Prozessoren.** Zwei gleichzeitige Abläufe je Prozessor,
   acht je Co-Prozessor, zweiunddreißig in der Warteschlange. Sie sind gesetzt,
   nicht hergeleitet — wie sie sich anfühlen, zeigt erst das Spielen. Die

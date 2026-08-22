@@ -84,6 +84,8 @@ public final class AnalyserScan {
             // gewöhnliches sechzehn. Mit der festen Zahl meldete der
             // Analysator jede dichte Strecke ab dem sechzehnten Kanal als
             // voll — und wies damit auf eine Enge hin, die es nicht gab.
+            // Beides in Vierteln, damit der Vergleich stimmt; wer die Zahl
+            // anzeigt, rechnet mit Channels.format zurück.
             int capacity = FactoryGraph.capacityAt(controller.getLevel(), edge.to().pos());
             AnalyserData.LinkState state = load >= capacity ? AnalyserData.LinkState.FULL
                     : load * 4 >= capacity * 3 ? AnalyserData.LinkState.TIGHT

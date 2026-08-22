@@ -46,8 +46,10 @@ public enum CableInfo implements IBlockComponentProvider, IServerDataProvider<Bl
         // vierundsechzig, ein gewöhnliches sechzehn. Mit der festen Zahl
         // meldete ein dichtes Kabel ab dem sechzehnten Kanal „voll".
         String load = controller
-                .map(entity -> entity.graph().channelLoad(pos, colour) + "/"
-                        + FactoryGraph.capacityAt(level, pos))
+                .map(entity -> dev.devpanda.factorynetwork.network.Channels.format(
+                                entity.graph().channelLoad(pos, colour)) + "/"
+                        + dev.devpanda.factorynetwork.network.Channels.format(
+                                FactoryGraph.capacityAt(level, pos)))
                 .orElse("—");
         lines.add(StringTag.valueOf(colour.getSerializedName() + " " + load));
         data.put(KEY_STRANDS, lines);

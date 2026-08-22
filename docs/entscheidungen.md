@@ -1474,3 +1474,47 @@ der Unterschied zum zuletzt gesehenen Zustand, nicht jeder Schritt dazwischen.
 Das ist beabsichtigt. Ein Netz, das nach einer Stunde ohne Strom hundert
 nachgeholte Redstone-Ereignisse abfeuert, wäre schlimmer als eines, das den
 Endstand meldet.
+
+
+---
+
+## Wer einen Kanal kostet (2026-08-22)
+
+**Was am Netz etwas tut, kostet einen Kanal.** Vorher zahlten nur die
+Connectoren; Laufwerk und Serverschrank hingen gratis daran. Das war eine
+Ausnahme ohne Begründung — ein Netz aus zwanzig Laufwerken kam mit einem
+einzigen Kanal aus, während zwanzig Kisten zwanzig kosteten.
+
+Der frühere Eintrag „Kosten Laufwerke einen Kanal? Hier nicht" ist damit
+überholt. Er stand unter der Annahme, Lagerraum sei etwas anderes als ein
+Gerät; das ist er nicht.
+
+### Eine Anzeige kostet ein Viertel
+
+Sie liest nur mit und schiebt nichts. Vier an einer Wand kosten zusammen
+einen Kanal — eine Leitstandwand soll kein halbes Netz auffressen, aber
+kostenlos ist sie auch nicht.
+
+**Gerechnet wird deshalb in Vierteln.** Ein Viertel als kleinste Einheit
+macht aus der Bruchrechnung wieder ganze Zahlen; erst die Anzeige rechnet
+zurück und schreibt `12¼ / 16`. Mit Bruchzeichen statt Komma, weil ein
+„12,25" in einer Zeile mit „von 16" nach Messwert aussieht statt nach Anzahl.
+
+### Der Router kostet nichts
+
+Er leitet weiter, wie ein Kabel — und Kabel kosten nichts. Ihn zu bepreisen
+hieße, Kreuzungen zu bestrafen, und genau die soll man bauen dürfen.
+
+### Ohne Kanal keine Wirkung
+
+Ein Laufwerk ohne Kanal lagert nichts, ein Serverschrank ohne Kanal rechnet
+nicht. Das ist die Folge daraus, dass sie einen kosten — sonst wäre die
+Grenze für Lagerraum eine Anzeige ohne Wirkung.
+
+### Die sechs Seiten des Controllers
+
+Sechs dichte Kabel zu je vierundsechzig sind 384 Kanäle für ein Netz. Das ist
+weit jenseits dessen, was eine Anlage braucht; die Grenze, die man wirklich
+trifft, ist die je Kabel. Sollte sie doch binden, ist die Antwort dieselbe wie
+bei AE2: ein Controller aus mehreren Blöcken, dessen Außenflächen alle Kabel
+tragen.
