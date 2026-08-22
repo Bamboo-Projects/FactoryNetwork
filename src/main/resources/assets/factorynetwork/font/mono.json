@@ -1,0 +1,12 @@
+{
+  "providers": [
+    {
+      "type": "ttf",
+      "file": "factorynetwork:jetbrains_mono.ttf",
+      "shift": [0.0, 0.0],
+      "size": 9.0,
+      "oversample": 4.0,
+      "skip": ""
+    }
+  ]
+}

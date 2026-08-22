@@ -158,6 +158,30 @@ public class CodeEditor {
         lastKind = null;
     }
 
+    /**
+     * Misst in der Schrift, in der auch gezeichnet wird.
+     *
+     * <p><b>Das ist die ganze Vorsicht an dieser Umstellung:</b> Messen und
+     * Zeichnen müssen dieselbe Schrift benutzen. Sonst steht der Cursor
+     * woanders als der Text, und niemand fände den Grund.
+     */
+    private int widthOf(String text) {
+        return font.width(mono(text));
+    }
+
+    private static net.minecraft.network.chat.Component mono(String text) {
+        return dev.devpanda.factorynetwork.client.FnFonts.mono(text);
+    }
+
+    /** Schneidet auf eine Breite, ebenfalls in der Schrift des Editors. */
+    private String plainSubstrByWidth(String text, int width) {
+        String rest = text;
+        while (!rest.isEmpty() && widthOf(rest) > width) {
+            rest = rest.substring(0, rest.length() - 1);
+        }
+        return rest;
+    }
+
     private int visibleLines() {
         return Math.max(1, (height - 12) / LINE_HEIGHT);
     }
@@ -177,8 +201,8 @@ public class CodeEditor {
 
             // Zeilennummer, gedämpft — sie soll da sein, aber nicht ablenken.
             String number = String.valueOf(lineIndex + 1);
-            graphics.drawString(font, number,
-                    x + GUTTER_WIDTH - font.width(number) - 2, lineY,
+            graphics.drawString(font, mono(number),
+                    x + GUTTER_WIDTH - widthOf(number) - 2, lineY,
                     EditorColours.COMMENT, false);
 
             // Die Auswahl liegt unter dem Text, sonst verschluckt sie ihn.
@@ -220,8 +244,8 @@ public class CodeEditor {
                 int start = token.span().start();
                 if (start > consumed && start <= code.length()) {
                     String gap = code.substring(consumed, start);
-                    graphics.drawString(font, gap, drawX, lineY, EditorColours.TEXT, false);
-                    drawX += font.width(gap);
+                    graphics.drawString(font, mono(gap), drawX, lineY, EditorColours.TEXT, false);
+                    drawX += widthOf(gap);
                     consumed = start;
                 }
                 int end = Math.min(token.span().end(), code.length());
@@ -229,22 +253,22 @@ public class CodeEditor {
                     continue;
                 }
                 String piece = code.substring(consumed, end);
-                graphics.drawString(font, piece, drawX, lineY, colorFor(token), false);
-                drawX += font.width(piece);
+                graphics.drawString(font, mono(piece), drawX, lineY, colorFor(token), false);
+                drawX += widthOf(piece);
                 consumed = end;
             }
             if (consumed < code.length()) {
                 String rest = code.substring(consumed);
-                graphics.drawString(font, rest, drawX, lineY, EditorColours.TEXT, false);
-                drawX += font.width(rest);
+                graphics.drawString(font, mono(rest), drawX, lineY, EditorColours.TEXT, false);
+                drawX += widthOf(rest);
             }
         } else {
-            graphics.drawString(font, code, drawX, lineY, EditorColours.TEXT, false);
-            drawX += font.width(code);
+            graphics.drawString(font, mono(code), drawX, lineY, EditorColours.TEXT, false);
+            drawX += widthOf(code);
         }
 
         if (comment >= 0) {
-            graphics.drawString(font, line.substring(comment), drawX, lineY,
+            graphics.drawString(font, mono(line.substring(comment)), drawX, lineY,
                     EditorColours.COMMENT, false);
         }
     }
@@ -288,7 +312,7 @@ public class CodeEditor {
         }
         String line = lines.get(cursorLine);
         int column = Math.min(cursorColumn, line.length());
-        int cursorX = textX + font.width(line.substring(0, column));
+        int cursorX = textX + widthOf(line.substring(0, column));
         int cursorY = y + 10 + row * LINE_HEIGHT;
         graphics.fill(cursorX, cursorY - 1, cursorX + 1, cursorY + LINE_HEIGHT - 2,
                 EditorColours.CURSOR);
@@ -589,12 +613,12 @@ public class CodeEditor {
         String line = lines.get(lineIndex);
         int from = lineIndex == b[0] ? Math.min(b[1], line.length()) : 0;
         int to = lineIndex == b[2] ? Math.min(b[3], line.length()) : line.length();
-        int left = textX + font.width(line.substring(0, from));
+        int left = textX + widthOf(line.substring(0, from));
         // Eine leere Zeile mitten in der Auswahl bekommt einen schmalen
         // Streifen — sonst sieht es aus, als wäre sie nicht mit dabei.
         int right = from == to && lineIndex != b[2]
                 ? left + 4
-                : textX + font.width(line.substring(0, to));
+                : textX + widthOf(line.substring(0, to));
         graphics.fill(left, lineY - 1, Math.min(right, x + width - 2),
                 lineY + LINE_HEIGHT - 2, EditorColours.SELECTION);
     }
@@ -868,12 +892,12 @@ public class CodeEditor {
         String line = lines.get(cursorLine);
         int column = Math.min(cursorColumn, line.length());
         String word = Completions.currentWord(line.substring(0, column));
-        int listX = textX + font.width(line.substring(0, column - word.length()));
+        int listX = textX + widthOf(line.substring(0, column - word.length()));
         int listY = y + 10 + (row + 1) * LINE_HEIGHT;
 
         int listWidth = 0;
         for (Completions.Entry entry : suggestions) {
-            listWidth = Math.max(listWidth, font.width(entry.text()) + 8);
+            listWidth = Math.max(listWidth, widthOf(entry.text()) + 8);
         }
         listWidth = Math.min(listWidth, width - 8);
         int listHeight = suggestions.size() * LINE_HEIGHT + 2;
@@ -896,7 +920,7 @@ public class CodeEditor {
                 graphics.fill(listX + 1, entryY - 1, listX + listWidth - 1,
                         entryY + LINE_HEIGHT - 1, 0xFF31363C);
             }
-            graphics.drawString(font, font.plainSubstrByWidth(entry.text(), listWidth - 8),
+            graphics.drawString(font, mono(plainSubstrByWidth(entry.text(), listWidth - 8)),
                     listX + 4, entryY, colorForKind(entry.kind()), false);
         }
     }
@@ -1127,8 +1151,8 @@ public class CodeEditor {
         String line = lines.get(lineIndex);
         int textX = x + GUTTER_WIDTH + TEXT_LEFT;
         for (int column = 0; column < line.length(); column++) {
-            int left = textX + font.width(line.substring(0, column));
-            int right = textX + font.width(line.substring(0, column + 1));
+            int left = textX + widthOf(line.substring(0, column));
+            int right = textX + widthOf(line.substring(0, column + 1));
             if (mouseX < (left + right) / 2.0) {
                 return column;
             }
@@ -1339,8 +1363,8 @@ public class CodeEditor {
                 continue;
             }
             int end = Math.min(at[1] + searchTerm.length(), line.length());
-            int left = textX + font.width(line.substring(0, at[1]));
-            int right = textX + font.width(line.substring(0, end));
+            int left = textX + widthOf(line.substring(0, at[1]));
+            int right = textX + widthOf(line.substring(0, end));
             graphics.fill(left, lineY - 1, right, lineY + LINE_HEIGHT - 2,
                     i == current ? EditorColours.MATCH_CURRENT : EditorColours.MATCH);
         }
@@ -1357,7 +1381,7 @@ public class CodeEditor {
                 ? net.minecraft.network.chat.Component
                         .translatable("screen.factorynetwork.editor.find").getString()
                 : searchTerm + "  " + matchNumber() + "/" + count;
-        graphics.drawString(font, font.plainSubstrByWidth(label, width - 6), x + 3, y,
+        graphics.drawString(font, mono(plainSubstrByWidth(label, width - 6)), x + 3, y,
                 count == 0 && !searchTerm.isEmpty() ? EditorColours.ERROR : EditorColours.TEXT,
                 false);
     }
