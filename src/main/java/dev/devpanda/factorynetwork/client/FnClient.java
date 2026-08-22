@@ -20,6 +20,8 @@ public final class FnClient {
         event.register(FnMenus.TERMINAL.get(), TerminalScreen::new);
         event.register(FnMenus.PRESS.get(),
                 dev.devpanda.factorynetwork.client.screen.PressScreen::new);
+        event.register(FnMenus.SHELF.get(),
+                dev.devpanda.factorynetwork.client.screen.ShelfScreen::new);
     }
 
     @SubscribeEvent
@@ -31,6 +33,12 @@ public final class FnClient {
         event.registerBlockEntityRenderer(
                 dev.devpanda.factorynetwork.registry.FnBlockEntities.ROUTER.get(),
                 dev.devpanda.factorynetwork.client.render.RouterRenderer::new);
+        event.registerBlockEntityRenderer(
+                dev.devpanda.factorynetwork.registry.FnBlockEntities.DRIVE.get(),
+                dev.devpanda.factorynetwork.client.render.DriveRenderer::new);
+        event.registerBlockEntityRenderer(
+                dev.devpanda.factorynetwork.registry.FnBlockEntities.RACK.get(),
+                dev.devpanda.factorynetwork.client.render.RackRenderer::new);
     }
 
     @SubscribeEvent

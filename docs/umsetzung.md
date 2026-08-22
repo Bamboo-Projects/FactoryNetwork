@@ -49,11 +49,14 @@ Alle Blöcke liegen im Kreativ-Reiter „Factory Network".
 2. **Kabel** vom Controller weg legen.
 3. **Serverschrank** ans Kabel setzen und mit einem **Prozessor** in der Hand
    anklicken. Ohne ihn rechnet das Netz nicht: Ein Programm wird gar nicht
-   erst übernommen, und Worker stehen still. Leere Hand nimmt den zuletzt
-   eingesetzten wieder heraus.
+   erst übernommen, und Worker stehen still.
 4. **Laufwerk** ans Kabel setzen und eine **Speicherzelle** hineinklicken.
    Ohne sie lagert das Netz nichts. Für Flüssigkeiten kommt eine
    **Flüssigkeitszelle** in dasselbe Laufwerk.
+
+   Bei beiden gilt: **volle Hand steckt ein, leere Hand macht auf.** Im
+   Fenster liegen die Plätze so, wie sie an der Front sitzen — und an der
+   Front sieht man ohne Anklicken, was steckt.
 5. **Connector** an ein Kabel setzen, mit der Vorderseite an eine Kiste oder
    Maschine. Die Vorderseite zeigt dorthin, wo man den Block angeklickt hat.
 6. **Label-Gun** nehmen und einmal auf den **Controller** rechtsklicken —
@@ -112,6 +115,7 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | Auswahl | einzelne Gegenstände, Tags, Muster, `except` |
 | Flüssigkeiten | `move` und Worker, Bestand in Zellen, in Millibucket |
 | Speicher | Laufwerke mit zehn Plätzen, Zellen in vier Größen, Bestand in der Zelle |
+| | Regalfenster für Laufwerk und Schrank, Bestückung an der Front ablesbar |
 | Rechenleistung | Serverschränke mit acht Plätzen, Prozessor und Co-Prozessor |
 | | Ein laufender Ablauf belegt einen Platz, der Rest stellt sich an |
 | | Zelle in der Hand ans Laufwerk klicken setzt sie ein, leere Hand nimmt die letzte heraus |

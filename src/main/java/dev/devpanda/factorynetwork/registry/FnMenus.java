@@ -18,6 +18,12 @@ public final class FnMenus {
             MENUS.register("press", () -> net.neoforged.neoforge.common.extensions
                     .IMenuTypeExtension.create(PressMenu::new));
 
+    /** Ein Fenster für Laufwerk und Serverschrank — beide sind ein Regal. */
+    public static final DeferredHolder<MenuType<?>, MenuType<
+            dev.devpanda.factorynetwork.client.menu.ShelfMenu>> SHELF =
+            MENUS.register("shelf", () -> IMenuTypeExtension.create(
+                    dev.devpanda.factorynetwork.client.menu.ShelfMenu::new));
+
     public static final DeferredHolder<MenuType<?>, MenuType<TerminalMenu>> TERMINAL =
             MENUS.register("terminal",
                     () -> IMenuTypeExtension.create(TerminalMenu::new));

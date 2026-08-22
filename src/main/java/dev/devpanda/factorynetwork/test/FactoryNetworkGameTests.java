@@ -2923,6 +2923,24 @@ public final class FactoryNetworkGameTests {
         }
     }
 
+    /**
+     * Nimmt ein Bauteil über das Fenster heraus — wie ein Umschalt-Klick.
+     *
+     * <p>Seit es ein Fenster gibt, ist das der Weg. Die leere Hand am Block
+     * macht es auf, statt etwas herauszuziehen.
+     */
+    private static void takeFromShelf(GameTestHelper helper, BlockPos at, int slot,
+                                      net.minecraft.world.entity.player.Player player) {
+        if (!(helper.getBlockEntity(at)
+                instanceof dev.devpanda.factorynetwork.block.entity.ShelfBlockEntity shelf)) {
+            helper.fail("Hier steht kein Regal", at);
+            return;
+        }
+        dev.devpanda.factorynetwork.client.menu.ShelfMenu
+                .of(1, player.getInventory(), shelf)
+                .quickMoveStack(player, slot);
+    }
+
     /** Setzt ein Laufwerk ans Kabel und steckt eine Flüssigkeitszelle hinein. */
     private static void driveWithFluidCell(GameTestHelper helper, BlockPos at,
             dev.devpanda.factorynetwork.storage.FluidCellTier tier) {
@@ -3484,13 +3502,13 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Eine Zelle geht per Klick hinein und wieder heraus.
+     * Eine Zelle geht per Klick hinein und über das Fenster wieder heraus.
      *
-     * <p>Ohne diesen Weg wäre der ganze Speicher nur über Prüfungen
-     * erreichbar — im Spiel stünde ein Block herum, in den nichts hineingeht.
+     * <p>Voll heißt einstecken, leer heißt aufmachen: Wer zehn Zellen
+     * einsetzt, will dafür kein Fenster — wer eine bestimmte sucht, schon.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
-    public static void aCellGoesInAndOutByHand(GameTestHelper helper) {
+    public static void aCellGoesInByHandAndOutThroughTheWindow(GameTestHelper helper) {
         BlockPos drivePos = new BlockPos(1, 2, 1);
         helper.setBlock(drivePos, FnBlocks.DRIVE.get());
         var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
@@ -3505,13 +3523,16 @@ public final class FactoryNetworkGameTests {
         helper.assertTrue(player.getMainHandItem().isEmpty(),
                 "die Zelle muss aus der Hand verschwinden");
 
-        // Leere Hand holt sie zurück.
-        helper.useBlock(drivePos, player);
+        // Über das Fenster wieder heraus.
+        takeFromShelf(helper, drivePos, 0, player);
         helper.assertValueEqual(drive.usedSlots(), 0, "Zellen nach dem Herausnehmen");
         helper.assertTrue(player.getInventory().contains(
                         stack -> stack.getItem() instanceof dev.devpanda.factorynetwork
                                 .storage.StorageCellItem),
                 "die Zelle muss im Rucksack landen");
+        helper.assertTrue(!player.getMainHandItem().isEmpty()
+                        || player.getInventory().contains(stack -> !stack.isEmpty()),
+                "und irgendwo greifbar sein");
         helper.succeed();
     }
 
@@ -3533,7 +3554,7 @@ public final class FactoryNetworkGameTests {
         entity.storage().insert(Items.DIAMOND, 7);
 
         var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
-        helper.useBlock(drivePos, player);
+        takeFromShelf(helper, drivePos, 0, player);
 
         ItemStack pulled = ItemStack.EMPTY;
         for (ItemStack stack : player.getInventory().items) {
@@ -3655,7 +3676,7 @@ public final class FactoryNetworkGameTests {
 
         BlockPos drivePos = controller.above();
         var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
-        helper.useBlock(drivePos, player);
+        takeFromShelf(helper, drivePos, 0, player);
 
         ItemStack pulled = ItemStack.EMPTY;
         for (ItemStack stack : player.getInventory().items) {
@@ -3712,13 +3733,13 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ein Prozessor geht per Klick hinein und wieder heraus.
+     * Ein Prozessor geht per Klick hinein und über das Fenster wieder heraus.
      *
-     * <p>Derselbe Griff wie beim Laufwerk. Wer eines bedienen kann, kann auch
-     * das andere — das ist der Grund, warum es kein eigenes Fenster gibt.
+     * <p>Derselbe Griff wie beim Laufwerk, und dasselbe Fenster: Beide sind
+     * ein Regal, und wer eines bedienen kann, kann auch das andere.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
-    public static void aProcessorGoesInAndOutByHand(GameTestHelper helper) {
+    public static void aProcessorGoesInByHandAndOutThroughTheWindow(GameTestHelper helper) {
         BlockPos rackPos = new BlockPos(1, 2, 1);
         helper.setBlock(rackPos, FnBlocks.RACK.get());
         var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
@@ -3734,7 +3755,7 @@ public final class FactoryNetworkGameTests {
         helper.assertTrue(player.getMainHandItem().isEmpty(),
                 "der Stapel muss aus der Hand verschwinden");
 
-        helper.useBlock(rackPos, player);
+        takeFromShelf(helper, rackPos, 0, player);
         helper.assertValueEqual(rack.threads(), 0, "nach dem Herausnehmen");
         helper.assertTrue(player.getInventory().contains(
                         stack -> stack.getItem()

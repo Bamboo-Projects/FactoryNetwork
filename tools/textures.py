@@ -1217,6 +1217,91 @@ def processor(gross=False):
     scratches(img, count=2, seed=271 if not gross else 272)
     return img
 
+# ---- Bestückung, die der Renderer über die Front legt ---------------------
+#
+# Die Front zeigt, was drinsteckt. Gemalt wird sie nicht in die Textur —
+# zehn Plätze mit je sechs Zuständen wären über sechzig Millionen
+# Blockzustände. Der Renderer legt je Platz ein kleines Stück darüber.
+
+# Ein Schacht des Laufwerks, in Texturpixeln der 64er-Auflösung: 20 breit,
+# 6 hoch. Die Kachel hat dieselbe Form, nur doppelt so fein.
+BAY_W, BAY_H = 40, 12
+
+DRIVE_BAY_TONE = {
+    "k1": (150, 160, 172),
+    "k4": (150, 172, 152),
+    "k16": (172, 160, 140),
+    "k64": (176, 148, 168),
+    "fluid": (114, 160, 182),
+}
+
+
+def drive_bays():
+    """Ein Streifen: leerer Schacht, dann die vier Zellgrößen und die Fluidzelle.
+
+    <b>Die Kachel zeigt die Zelle, nicht ihren Füllstand.</b> Der Inhalt lebt
+    im Laufwerk und steht erst beim Sichern im Gegenstand — was der Client
+    kennt, wäre der Stand von vorhin. Lieber gar keine Anzeige als eine, die
+    hinterherhinkt; wie voll es ist, sagen Jade und das Fenster.
+    """
+    sorten = ["leer", "k1", "k4", "k16", "k64", "fluid"]
+    streifen = Image.new("RGBA", (BAY_W * len(sorten), BAY_H), (0, 0, 0, 0))
+    for i, sorte in enumerate(sorten):
+        kachel = Image.new("RGBA", (BAY_W, BAY_H), (0, 0, 0, 0))
+        d = ImageDraw.Draw(kachel)
+        if sorte == "leer":
+            # Leerer Schacht: dunkel und tief, mit einem Steg in der Mitte.
+            d.rectangle([0, 0, BAY_W - 1, BAY_H - 1],
+                        fill=blend(EDGE, BODY_BOT, 0.35) + (255,))
+            ao(kachel, (0, 0, BAY_W - 1, BAY_H - 1), depth=3, strength=0.5)
+            d.line([(3, BAY_H // 2), (BAY_W - 4, BAY_H // 2)],
+                   fill=blend(EDGE, BODY_BOT, 0.6) + (255,))
+        else:
+            ton = DRIVE_BAY_TONE[sorte]
+            # Die Zelle steckt drin: heller Rücken, Griff links, Lämpchen rechts.
+            d.rectangle([0, 0, BAY_W - 1, BAY_H - 1], fill=blend(ton, EDGE, 0.3) + (255,))
+            raised(kachel, (0, 0, BAY_W - 1, BAY_H - 1), hoehe=1)
+            d.rectangle([2, 2, 6, BAY_H - 3], fill=blend(ton, LIGHT, 0.25) + (255,))
+            for x in range(10, BAY_W - 12, 4):
+                d.line([(x, 3), (x, BAY_H - 4)], fill=_dunkler(ton + (255,), 0.35))
+            licht = ACCENT if sorte != "fluid" else (96, 190, 236)
+            glow(kachel, [BAY_W - 9, 3, BAY_W - 4, BAY_H - 4], color=licht,
+                 radius=3, strength=120)
+            d = ImageDraw.Draw(kachel)
+            d.rectangle([BAY_W - 9, 3, BAY_W - 4, BAY_H - 4], fill=licht + (255,))
+        streifen.paste(kachel, (i * BAY_W, 0))
+    return streifen
+
+
+# Ein Einschub des Schranks: 4 Texturpixel breit, 36 hoch — auch hier doppelt.
+BLADE_W, BLADE_H = 8, 72
+
+
+def rack_blades():
+    """Ein Streifen: leerer Einschub, Prozessor, Co-Prozessor."""
+    sorten = [None, (150, 172, 156), (168, 152, 186)]
+    streifen = Image.new("RGBA", (BLADE_W * len(sorten), BLADE_H), (0, 0, 0, 0))
+    for i, ton in enumerate(sorten):
+        kachel = Image.new("RGBA", (BLADE_W, BLADE_H), (0, 0, 0, 0))
+        d = ImageDraw.Draw(kachel)
+        if ton is None:
+            d.rectangle([0, 0, BLADE_W - 1, BLADE_H - 1],
+                        fill=blend(EDGE, BODY_BOT, 0.35) + (255,))
+            ao(kachel, (0, 0, BLADE_W - 1, BLADE_H - 1), depth=2, strength=0.5)
+        else:
+            d.rectangle([0, 0, BLADE_W - 1, BLADE_H - 1], fill=blend(ton, EDGE, 0.35) + (255,))
+            raised(kachel, (0, 0, BLADE_W - 1, BLADE_H - 1), hoehe=1)
+            # Griff oben, Rippen in der Mitte, Lämpchen unten.
+            d.rectangle([1, 2, BLADE_W - 2, 6], fill=blend(ton, LIGHT, 0.3) + (255,))
+            for y in range(12, BLADE_H - 14, 5):
+                d.line([(2, y), (BLADE_W - 3, y)], fill=_dunkler(ton + (255,), 0.35))
+            glow(kachel, [2, BLADE_H - 10, BLADE_W - 3, BLADE_H - 5],
+                 color=ACCENT, radius=3, strength=130)
+            d = ImageDraw.Draw(kachel)
+            d.rectangle([2, BLADE_H - 10, BLADE_W - 3, BLADE_H - 5], fill=ACCENT + (255,))
+        streifen.paste(kachel, (i * BLADE_W, 0))
+    return streifen
+
 def main():
     print("Blocktexturen (64x64):")
     save(controller_top(), "block", "controller_top")
@@ -1238,6 +1323,8 @@ def main():
     save(press_front(), "block", "press_front")
     save(router_side(), "block", "router_side")
     save(rack_front(), "block", "server_rack_front")
+    save(drive_bays(), "misc", "drive_bays")
+    save(rack_blades(), "misc", "rack_blades")
     save(router_lanes(), "misc", "router_lanes")
     save(crystal_ore(False), "block", "crystal_ore")
     save(crystal_ore(True), "block", "deepslate_crystal_ore")

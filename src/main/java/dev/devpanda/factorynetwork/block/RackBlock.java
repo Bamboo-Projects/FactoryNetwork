@@ -95,30 +95,25 @@ public class RackBlock extends HorizontalDirectionalBlock implements EntityBlock
         return ItemInteractionResult.CONSUME;
     }
 
+    /**
+     * Die leere Hand öffnet das Fenster.
+     *
+     * <p>Voll heißt einstecken, leer heißt aufmachen. Das Einstecken per Klick
+     * bleibt, weil es der häufigere Griff ist — wer zehn Zellen einsetzt, will
+     * dafür kein Fenster.
+     */
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
                                                Player player, BlockHitResult hit) {
         if (level.isClientSide) {
             return InteractionResult.SUCCESS;
         }
-        if (!(level.getBlockEntity(pos) instanceof RackBlockEntity rack)) {
+        if (!(level.getBlockEntity(pos)
+                instanceof dev.devpanda.factorynetwork.block.entity.ShelfBlockEntity shelf)) {
             return InteractionResult.PASS;
         }
-        int slot = rack.lastUsedSlot();
-        if (slot < 0) {
-            player.displayClientMessage(
-                    Component.translatable("message.factorynetwork.rack.empty"), true);
-            return InteractionResult.CONSUME;
-        }
-        ItemStack taken = rack.processor(slot);
-        rack.setProcessor(slot, ItemStack.EMPTY);
-        if (!player.getInventory().add(taken)) {
-            popResource(level, pos, taken);
-        }
-        level.playSound(null, pos, SoundEvents.ITEM_FRAME_REMOVE_ITEM, SoundSource.BLOCKS,
-                0.7F, 1.2F);
-        player.displayClientMessage(Component.translatable(
-                "message.factorynetwork.rack.removed", rack.threads()), true);
+        player.openMenu(shelf, buffer -> buffer.writeBoolean(shelf.layout()
+                == dev.devpanda.factorynetwork.client.menu.ShelfMenu.DRIVE));
         return InteractionResult.CONSUME;
     }
 

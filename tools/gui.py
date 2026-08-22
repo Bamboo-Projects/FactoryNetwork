@@ -229,6 +229,40 @@ def press_background():
     return img
 
 
+# ---- Regale ---------------------------------------------------------------
+#
+# Laufwerk und Serverschrank sind dasselbe Fenster in zwei Zuschnitten: ein
+# Raster fuer die Bauteile, darunter das Spielerinventar. Die Maße richten
+# sich nach dem Vanilla-Container — jede eigene Zahl waere eine, die sich
+# nicht anfuehlt wie der Rest des Spiels.
+
+SHELF_WIDTH = 176
+
+
+def shelf_background(columns, rows):
+    """Ein Regalfenster mit so vielen Plaetzen, wie angegeben."""
+    grid_top = 18
+    inventory_y = grid_top + rows * 18 + 13
+    hotbar_y = inventory_y + 58
+    height = hotbar_y + 18 + 7
+
+    img = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    panel(d, (0, 0, SHELF_WIDTH - 1, height - 1))
+
+    links = (SHELF_WIDTH - columns * 18) // 2
+    for row in range(rows):
+        for column in range(columns):
+            slot(d, links + column * 18 - 1, grid_top + row * 18 - 1)
+
+    for row in range(3):
+        for column in range(9):
+            slot(d, 7 + column * 18, inventory_y - 1 + row * 18)
+    for column in range(9):
+        slot(d, 7 + column * 18, hotbar_y - 1)
+    return img, links, grid_top, inventory_y, hotbar_y, height
+
+
 def main():
     print("Oberflächentexturen:")
     save(background(), "terminal")
@@ -236,6 +270,12 @@ def main():
     save(screen(), "screen")
     save(widgets(), "widgets")
     save(press_background(), "press")
+    for name, columns, rows in (("drive", 2, 5), ("rack", 8, 1)):
+        bild, links, oben, inventar, schnell, hoehe = shelf_background(columns, rows)
+        save(bild, name)
+        print("      %s: Raster bei %d,%d · Inventar bei 8,%d · Schnellzugriff bei 8,%d"
+              " · Fenster %dx%d"
+              % (name, links, oben, inventar, schnell, SHELF_WIDTH, hoehe))
     print("Maße: Fenster %dx%d, Arbeitsfläche %dx%d bei %d,%d"
           % (WIDTH, HEIGHT, WORK_W, WORK_H, WORK_X, WORK_Y))
     print("      Inventar bei %d,%d · Schnellzugriff bei %d,%d"

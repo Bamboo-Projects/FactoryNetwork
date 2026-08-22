@@ -3,6 +3,10 @@ package dev.devpanda.factorynetwork.block;
 import com.mojang.serialization.MapCodec;
 import dev.devpanda.factorynetwork.block.entity.DriveBlockEntity;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
@@ -96,42 +100,25 @@ public class DriveBlock extends HorizontalDirectionalBlock implements EntityBloc
     }
 
     /**
-     * Leere Hand nimmt die zuletzt eingesetzte Zelle wieder heraus.
+     * Die leere Hand öffnet das Fenster.
      *
-     * <p>Die zuletzt eingesetzte, nicht die erste: Wer sich vertut, klickt
-     * einmal zurück. Bei der ersten wäre die Rücknahme eine andere Zelle als
-     * die eben eingesetzte.
+     * <p>Voll heißt einstecken, leer heißt aufmachen. Das Einstecken per Klick
+     * bleibt, weil es der häufigere Griff ist — wer zehn Zellen einsetzt, will
+     * dafür kein Fenster.
      */
     @Override
-    protected net.minecraft.world.InteractionResult useWithoutItem(
-            BlockState state, net.minecraft.world.level.Level level, BlockPos pos,
-            net.minecraft.world.entity.player.Player player,
-            net.minecraft.world.phys.BlockHitResult hit) {
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
+                                               Player player, BlockHitResult hit) {
         if (level.isClientSide) {
-            return net.minecraft.world.InteractionResult.SUCCESS;
+            return InteractionResult.SUCCESS;
         }
-        if (!(level.getBlockEntity(pos) instanceof DriveBlockEntity drive)) {
-            return net.minecraft.world.InteractionResult.PASS;
+        if (!(level.getBlockEntity(pos)
+                instanceof dev.devpanda.factorynetwork.block.entity.ShelfBlockEntity shelf)) {
+            return InteractionResult.PASS;
         }
-        int slot = drive.lastUsedSlot();
-        if (slot < 0) {
-            player.displayClientMessage(net.minecraft.network.chat.Component.translatable(
-                    "message.factorynetwork.drive.empty"), true);
-            return net.minecraft.world.InteractionResult.CONSUME;
-        }
-        // Dieselbe Instanz, keine Kopie: setCell schreibt den Bestand in genau
-        // diesen Gegenstand zurück, und derselbe soll in die Hand.
-        net.minecraft.world.item.ItemStack cell = drive.cell(slot);
-        drive.setCell(slot, net.minecraft.world.item.ItemStack.EMPTY);
-        if (!player.getInventory().add(cell)) {
-            popResource(level, pos, cell);
-        }
-        level.playSound(null, pos, net.minecraft.sounds.SoundEvents.ITEM_FRAME_REMOVE_ITEM,
-                net.minecraft.sounds.SoundSource.BLOCKS, 0.7F, 1.1F);
-        player.displayClientMessage(net.minecraft.network.chat.Component.translatable(
-                "message.factorynetwork.drive.removed",
-                drive.usedSlots(), DriveBlockEntity.SLOTS), true);
-        return net.minecraft.world.InteractionResult.CONSUME;
+        player.openMenu(shelf, buffer -> buffer.writeBoolean(shelf.layout()
+                == dev.devpanda.factorynetwork.client.menu.ShelfMenu.DRIVE));
+        return InteractionResult.CONSUME;
     }
 
     /**
