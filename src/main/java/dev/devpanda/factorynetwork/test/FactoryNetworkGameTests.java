@@ -100,10 +100,31 @@ public final class FactoryNetworkGameTests {
 
     private static ControllerBlockEntity controllerAt(GameTestHelper helper, BlockPos pos) {
         if (helper.getBlockEntity(pos) instanceof ControllerBlockEntity controller) {
+            powerUp(controller);
             return controller;
         }
         helper.fail("Am Controller hängt keine BlockEntity", pos);
         throw new IllegalStateException();
+    }
+
+    /**
+     * Füllt den Stromvorrat und fährt das Netz hoch.
+     *
+     * <p>In der Prüfwelt steht kein Generator. Ohne diesen Griff wäre jede
+     * Prüfung eine über den Stromausfall — und keine über das, was sie
+     * eigentlich prüfen will. Gegangen wird der echte Weg: erst füllen, dann
+     * die Hochfahrzeit abwarten.
+     */
+    private static void powerUp(ControllerBlockEntity controller) {
+        var power = controller.power();
+        if (power.isRunning()) {
+            return;
+        }
+        power.fill(dev.devpanda.factorynetwork.network.Power.CAPACITY);
+        power.setDraw(controller.powerDraw());
+        for (int i = 0; i <= dev.devpanda.factorynetwork.network.Power.BOOT_TICKS; i++) {
+            power.tick();
+        }
     }
 
     @GameTest(template = EMPTY, timeoutTicks = 200)
@@ -4384,6 +4405,186 @@ public final class FactoryNetworkGameTests {
                 "und steht als leer ausgegangen im Bild");
         helper.assertValueEqual(entity.storage().insert(Items.IRON_INGOT, 5), 5L,
                 "ohne Kanal nimmt es nichts an");
+        helper.succeed();
+    }
+
+    // ---- Strom -------------------------------------------------------------
+
+    /** Kurz für die Stromwerte des Netzes. */
+    private static dev.devpanda.factorynetwork.network.NetworkPower powerOf(
+            ControllerBlockEntity entity) {
+        return entity.power();
+    }
+
+    /**
+     * Jedes Gerät am Netz kostet Strom.
+     *
+     * <p>Gezahlt wird für Bereitschaft, nicht für Arbeit: Ein Worker, der
+     * etwas bewegt, kostet nicht mehr als einer, der wartet. Wer seine Anlage
+     * plant, will eine Zahl, die stillsteht.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void everyDeviceOnTheNetworkCostsPower(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 3, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        BlockPos cable = controller.east();
+        helper.setBlock(cable, FnBlocks.CABLE.get());
+        helper.setBlock(cable.north(), FnBlocks.CONNECTOR.get());
+        name(helper, cable.north(), "geraet");
+        helper.setBlock(cable.below(), FnBlocks.DISPLAY.get());
+        driveWithCell(helper, cable.south(), dev.devpanda.factorynetwork.storage.CellTier.K1);
+
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        int erwartet = dev.devpanda.factorynetwork.network.Power.CONTROLLER
+                + dev.devpanda.factorynetwork.network.Power.CONNECTOR
+                + dev.devpanda.factorynetwork.network.Power.DISPLAY
+                + dev.devpanda.factorynetwork.network.Power.DRIVE
+                + dev.devpanda.factorynetwork.network.Power.PER_CELL;
+        helper.assertValueEqual(entity.powerDraw(), erwartet, "Bedarf des Netzes in FE je Tick");
+        helper.succeed();
+    }
+
+    /**
+     * Ohne Strom steht das Netz still — und läuft weiter, wo es war.
+     *
+     * <p>Nichts wird abgebrochen: Ein Ablauf hält zwischen zwei Schritten
+     * keine Gegenstände, also kostet das Einfrieren nichts. Ein Stromausfall
+     * soll eine Pause sein und kein Verlust.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void withoutPowerTheNetworkStandsStill(GameTestHelper helper) {
+        BlockPos controller = threeChestsSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        helper.assertTrue(entity.deploy("""
+                worker holen {
+                    from quelle
+                    to storage
+                    rate 1 per 1t
+                }"""), "Das Programm wurde nicht übernommen");
+
+        for (int i = 0; i < 5; i++) {
+            entity.serverTick();
+        }
+        long bewegt = entity.storage().count(Items.IRON_ORE);
+        helper.assertTrue(bewegt > 0, "mit Strom muss der Worker arbeiten");
+
+        powerOf(entity).empty();
+        for (int i = 0; i < 20; i++) {
+            entity.serverTick();
+        }
+        helper.assertValueEqual(powerOf(entity).state().name(), "OFF", "Zustand ohne Strom");
+        helper.assertValueEqual(entity.storage().count(Items.IRON_ORE), bewegt,
+                "ohne Strom darf sich nichts mehr bewegen");
+        helper.succeed();
+    }
+
+    /**
+     * Kommt der Strom zurück, fährt das Netz erst hoch.
+     *
+     * <p>Ohne diese Zeit wäre ein Stromausfall ein Flackern, das niemand
+     * bemerkt. Mit ihr merkt man sofort, dass die Versorgung nicht reicht.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void powerComingBackMeansBootingUp(GameTestHelper helper) {
+        BlockPos controller = threeChestsSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        powerOf(entity).empty();
+        entity.serverTick();
+        helper.assertValueEqual(powerOf(entity).state().name(), "OFF", "erst einmal aus");
+
+        powerOf(entity).fill(dev.devpanda.factorynetwork.network.Power.CAPACITY);
+        entity.serverTick();
+        helper.assertValueEqual(powerOf(entity).state().name(), "BOOTING",
+                "mit Strom fährt es hoch");
+        helper.assertTrue(!entity.isOnline(), "beim Hochfahren läuft noch nichts");
+
+        for (int i = 0; i < dev.devpanda.factorynetwork.network.Power.BOOT_TICKS; i++) {
+            entity.serverTick();
+        }
+        helper.assertValueEqual(powerOf(entity).state().name(), "RUNNING", "und dann läuft es");
+        helper.assertTrue(entity.isOnline(), "jetzt ist das Netz da");
+        helper.succeed();
+    }
+
+    /**
+     * Eine zu schwache Versorgung lässt das Netz aus, statt es blinken zu
+     * lassen.
+     *
+     * <p>Ohne diese Schwelle liefe es an, verbrauchte den Vorrat beim
+     * Hochfahren und ginge sofort wieder aus — ein Blinken im
+     * Halbminutentakt, das wie ein Fehler aussieht statt wie zu wenig Strom.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void anUndersizedSupplyLeavesTheNetworkOff(GameTestHelper helper) {
+        BlockPos controller = threeChestsSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        powerOf(entity).empty();
+
+        int schwelle = dev.devpanda.factorynetwork.network.Power
+                .restartThreshold(entity.powerDraw());
+        powerOf(entity).fill(schwelle / 2);
+        for (int i = 0; i < 20; i++) {
+            entity.serverTick();
+        }
+        helper.assertValueEqual(powerOf(entity).state().name(), "OFF",
+                "die halbe Schwelle reicht nicht zum Hochfahren");
+
+        powerOf(entity).fill(schwelle);
+        entity.serverTick();
+        helper.assertValueEqual(powerOf(entity).state().name(), "BOOTING",
+                "über der Schwelle geht es los");
+        helper.succeed();
+    }
+
+    /**
+     * Ein Ablauf übersteht den Stromausfall und macht danach weiter.
+     *
+     * <p>Das ist der Grund fürs Einfrieren statt Abbrechen: Wer eine Anlage
+     * nachts ohne Strom lässt, findet sie morgens dort, wo sie
+     * stehengeblieben ist. Auch ein Ereignis, das während des Ausfalls
+     * eintrifft, geht nicht verloren — es bleibt liegen und kommt an, sobald
+     * das Netz wieder läuft.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void aflowSurvivesAPowerCut(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 3, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        rackWithProcessor(helper, controller.west());
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        helper.assertTrue(entity.deploy("""
+                event Takt()
+
+                fn wartet() {
+                    await Takt
+                }"""), "Programm nicht übernommen");
+
+        var flow = entity.startFlow("wartet", java.util.List.of());
+        helper.assertValueEqual(flow.status().name(), "AWAITING", "er wartet");
+
+        // Ein Ereignis während des Ausfalls geht nicht verloren, es bleibt
+        // liegen — und kommt an, sobald das Netz wieder läuft.
+        powerOf(entity).empty();
+        entity.serverTick();
+        entity.fireEvent("Takt", java.util.List.of());
+        for (int i = 0; i < 20; i++) {
+            entity.serverTick();
+        }
+        helper.assertValueEqual(flow.status().name(), "AWAITING",
+                "ohne Strom bleibt er liegen");
+
+        powerOf(entity).fill(dev.devpanda.factorynetwork.network.Power.CAPACITY);
+        for (int i = 0; i < dev.devpanda.factorynetwork.network.Power.BOOT_TICKS + 5; i++) {
+            entity.serverTick();
+        }
+        helper.assertValueEqual(flow.status().name(), "DONE",
+                "und läuft danach zu Ende");
         helper.succeed();
     }
 

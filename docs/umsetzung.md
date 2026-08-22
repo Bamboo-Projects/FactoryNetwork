@@ -117,6 +117,7 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | Speicher | Laufwerke mit zehn Plätzen, Zellen in vier Größen, Bestand in der Zelle |
 | | Regalfenster für Laufwerk und Schrank, Bestückung an der Front ablesbar |
 | Rechenleistung | Serverschränke mit acht Plätzen, Prozessor und Co-Prozessor |
+| Strom | FE in den Controller, Verbrauch je Gerät, aus bei Unterversorgung |
 | | Ein laufender Ablauf belegt einen Platz, der Rest stellt sich an |
 | | Zelle in der Hand ans Laufwerk klicken setzt sie ein, leere Hand nimmt die letzte heraus |
 | Werkzeuge | Beschriftungspistole, Netzanalysator mit Sicht durch Wände |

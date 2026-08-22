@@ -54,6 +54,7 @@ public class ControllerBlockEntity extends BlockEntity {
     private static final String KEY_STORAGE = "Storage";
     private static final String KEY_FLOWS = "Flows";
     private static final String KEY_FLUIDS = "Fluids";
+    private static final String KEY_POWER = "Power";
     private static final int REBUILD_INTERVAL = 100;
 
     private String source = "";
@@ -72,6 +73,18 @@ public class ControllerBlockEntity extends BlockEntity {
      */
     private final List<dev.devpanda.factorynetwork.block.entity.RackBlockEntity> racks =
             new ArrayList<>();
+
+    /** Die Laufwerke im Netz — für den Stromverbrauch je Zelle. */
+    private final List<DriveBlockEntity> drives = new ArrayList<>();
+
+    /**
+     * Der Strom des Netzes.
+     *
+     * <p>Der Puffer sitzt im Controller und nimmt Forge Energy an. Ohne
+     * Strom steht alles still — und muss danach erst wieder hochfahren.
+     */
+    private final dev.devpanda.factorynetwork.network.NetworkPower power =
+            new dev.devpanda.factorynetwork.network.NetworkPower();
     /** Abläufe, die warten können — sie überleben einen Serverneustart. */
     private FlowEngine flows;
 
@@ -171,6 +184,41 @@ public class ControllerBlockEntity extends BlockEntity {
         return true;
     }
 
+    // ---- Strom -------------------------------------------------------------
+
+    public dev.devpanda.factorynetwork.network.NetworkPower power() {
+        return power;
+    }
+
+    /**
+     * Was das Netz gerade zieht, in FE je Tick.
+     *
+     * <p>Gezählt statt mitgeführt, wie die belegten Prozessorplätze: Ein
+     * Zähler müsste bei jedem gesetzten und abgerissenen Block nachgeführt
+     * werden, und der eine vergessene Ort wäre ein Netz, das für Geräte
+     * zahlt, die es nicht mehr gibt.
+     */
+    public int powerDraw() {
+        int total = dev.devpanda.factorynetwork.network.Power.CONTROLLER;
+        total += graph.connectorCount() * dev.devpanda.factorynetwork.network.Power.CONNECTOR;
+        total += graph.displays().size() * dev.devpanda.factorynetwork.network.Power.DISPLAY;
+        total += graph.routers().size() * dev.devpanda.factorynetwork.network.Power.ROUTER;
+        for (DriveBlockEntity drive : drives) {
+            total += dev.devpanda.factorynetwork.network.Power.DRIVE
+                    + drive.usedSlots() * dev.devpanda.factorynetwork.network.Power.PER_CELL;
+        }
+        for (var rack : racks) {
+            total += dev.devpanda.factorynetwork.network.Power.RACK
+                    + rack.usedSlots() * dev.devpanda.factorynetwork.network.Power.PER_PROCESSOR;
+        }
+        return total;
+    }
+
+    /** Läuft das Netz — genug Strom und ein Serverschrank? */
+    public boolean isOnline() {
+        return hasServer() && power.isRunning();
+    }
+
     // ---- Rechenleistung ---------------------------------------------------
 
     /**
@@ -244,6 +292,8 @@ public class ControllerBlockEntity extends BlockEntity {
                 found.add(drive);
             }
         }
+        drives.clear();
+        drives.addAll(found);
         storage.setDrives(found);
         // Dieselben Laufwerke tragen die Flüssigkeitszellen. Ein zweites
         // Laufwerk nur dafür wäre ein Block mehr für dieselbe Handlung.
@@ -294,12 +344,14 @@ public class ControllerBlockEntity extends BlockEntity {
         if (level.getGameTime() - lastRebuild >= REBUILD_INTERVAL) {
             rebuildNetwork();
         }
-        // Ohne Server rechnet das Netz nicht: keine Worker, keine neuen
-        // Abläufe. Was schon läuft, läuft zu Ende — es mittendrin zu töten
-        // hieße, Gegenstände zu verlieren, die gerade in der Hand eines
-        // Ablaufs sind.
-        if (!hasServer()) {
-            tickFlows();
+        power.setDraw(powerDraw());
+        power.tick();
+
+        // Ohne Serverschrank oder ohne Strom steht das Netz still — und läuft
+        // weiter, wo es war, sobald beides wieder da ist. Nichts wird
+        // abgebrochen: Ein Ablauf hält zwischen zwei Schritten keine
+        // Gegenstände, also kostet das Einfrieren nichts.
+        if (!isOnline()) {
             pushStorageIfDue();
             pushFlowsIfDue();
             setChanged();
@@ -683,12 +735,21 @@ public class ControllerBlockEntity extends BlockEntity {
             pendingFlows = null;
             FlowCodec.read(saved, flows);
         }
+        // Ein frisch geladener Controller kennt sein Netz noch nicht. Das ist
+        // etwas anderes als „kein Server, kein Strom" — ohne diesen Aufbau
+        // stünde jedes Netz nach dem Laden still, bis der erste Tick kommt.
+        if (flows != null && !networkKnown) {
+            rebuildNetwork();
+        }
         if (flows != null) {
             // Hier und nicht im Tick: Jeder Zugriff auf die Maschine geht
-            // durch diese Stelle, und die Grenze kann sich zwischen zwei
-            // Ticks ändern — jemand steckt einen Prozessor dazu oder reißt
-            // den Schrank ab.
+            // durch diese Stelle, und beides kann sich zwischen zwei Ticks
+            // ändern — jemand steckt einen Prozessor dazu, reißt den Schrank
+            // ab oder der Strom fällt aus. Ein Knopf am Display und ein
+            // Ereignis treiben die Maschine unmittelbar an, ohne über den
+            // Tick zu gehen; die Sperre muss deshalb hier sitzen.
             flows.setThreadLimit(threads());
+            flows.setFrozen(!isOnline());
         }
         return flows;
     }
@@ -756,6 +817,7 @@ public class ControllerBlockEntity extends BlockEntity {
         source = tag.getString(KEY_SOURCE);
         storage.load(tag.getCompound(KEY_STORAGE), registries);
         fluidStorage.load(tag.getCompound(KEY_FLUIDS), registries);
+        power.load(tag.getCompound(KEY_POWER), registries);
         // Die Abläufe warten auf den ersten Tick: Sie brauchen einen
         // Interpreter, der braucht eine Welt, und die gibt es hier noch nicht
         // verlässlich.
@@ -782,6 +844,9 @@ public class ControllerBlockEntity extends BlockEntity {
         CompoundTag fluidTag = new CompoundTag();
         fluidStorage.save(fluidTag, registries);
         tag.put(KEY_FLUIDS, fluidTag);
+        CompoundTag powerTag = new CompoundTag();
+        power.save(powerTag, registries);
+        tag.put(KEY_POWER, powerTag);
         if (flows != null) {
             tag.put(KEY_FLOWS, FlowCodec.write(flows));
         } else if (pendingFlows != null) {

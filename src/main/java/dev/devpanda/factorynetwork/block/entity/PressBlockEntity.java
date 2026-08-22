@@ -13,7 +13,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.energy.EnergyStorage;
+import dev.devpanda.factorynetwork.network.InternalBuffer;
 
 import java.util.Optional;
 
@@ -50,7 +50,7 @@ public class PressBlockEntity extends BlockEntity
      * <p>Eine Maschine, die ihren Strom weiterreicht, wird zum Kabel — und
      * dann baut jemand eine Kette daraus und wundert sich über die Verluste.
      */
-    private final EnergyStorage energy = new EnergyStorage(CAPACITY, MAX_INPUT, 0) {
+    private final InternalBuffer energy = new InternalBuffer(CAPACITY, MAX_INPUT) {
         @Override
         public int receiveEnergy(int toReceive, boolean simulate) {
             int taken = super.receiveEnergy(toReceive, simulate);
@@ -68,7 +68,7 @@ public class PressBlockEntity extends BlockEntity
         super(FnBlockEntities.PRESS.get(), pos, state);
     }
 
-    public EnergyStorage energy() {
+    public InternalBuffer energy() {
         return energy;
     }
 
@@ -117,10 +117,10 @@ public class PressBlockEntity extends BlockEntity
         PressRecipe found = recipe.get();
         required = Math.max(1, found.ticks());
         int perTick = Math.max(1, found.energy() / required);
-        if (energy.getEnergyStored() < perTick) {
+        if (!energy.has(perTick)) {
             return;
         }
-        energy.extractEnergy(perTick, false);
+        energy.consume(perTick);
         progress++;
         if (progress >= required) {
             finish(found);

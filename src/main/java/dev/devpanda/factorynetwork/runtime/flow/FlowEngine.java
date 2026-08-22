@@ -48,6 +48,21 @@ public final class FlowEngine {
     private int threadLimit = Integer.MAX_VALUE;
 
     /**
+     * Steht das Netz still?
+     *
+     * <p>Ohne Serverschrank oder ohne Strom bewegt sich kein Ablauf — und
+     * zwar <b>eingefroren, nicht abgebrochen</b>: Er läuft weiter, wo er war,
+     * sobald beides wieder da ist.
+     *
+     * <p>Als eigenes Kennzeichen und nicht als Grenze von null: Eine Grenze
+     * hält nur neue Abläufe auf, die laufenden liefen weiter. Und weil
+     * {@code startFlow} und {@code fireEvent} die Maschine unmittelbar
+     * antreiben, ohne über den Tick des Controllers zu gehen, muss die
+     * Sperre in der Maschine sitzen und nicht davor.
+     */
+    private boolean frozen;
+
+    /**
      * So viele dürfen höchstens anstehen.
      *
      * <p>Eine unbegrenzte Warteschlange wäre eine Anlage, die Arbeit
@@ -85,6 +100,14 @@ public final class FlowEngine {
      */
     public void setThreadLimit(int limit) {
         this.threadLimit = Math.max(0, limit);
+    }
+
+    public void setFrozen(boolean frozen) {
+        this.frozen = frozen;
+    }
+
+    public boolean isFrozen() {
+        return frozen;
     }
 
     public int threadLimit() {
@@ -249,6 +272,11 @@ public final class FlowEngine {
      * arbeiten.
      */
     public void tick(long gameTime) {
+        if (frozen) {
+            // Ereignisse bleiben liegen, statt verlorenzugehen: Sie kommen
+            // an, sobald das Netz wieder läuft.
+            return;
+        }
         // Ein Ereignis kann Abläufe wecken, die ihrerseits Ereignisse
         // auslösen. Das darf im selben Tick weitergehen, aber nicht endlos:
         // Zwei Abläufe, die sich gegenseitig aufwecken, würden den Server

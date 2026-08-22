@@ -1518,3 +1518,74 @@ weit jenseits dessen, was eine Anlage braucht; die Grenze, die man wirklich
 trifft, ist die je Kabel. Sollte sie doch binden, ist die Antwort dieselbe wie
 bei AE2: ein Controller aus mehreren Blöcken, dessen Außenflächen alle Kabel
 tragen.
+
+---
+
+## Strom (2026-08-22)
+
+Speicher hängt am Laufwerk, Rechenleistung am Schrank — **Strom ist das dritte
+Bein, und das einzige, das laufend etwas kostet** statt nur einmal beim Bauen.
+Ohne ihn ist ein fertiges Netz gratis.
+
+### FE aus dem Pack, kein eigener Generator
+
+Der Controller nimmt Forge Energy an, wie es die Presse schon tut. Ein eigener
+Energiebegriff wäre näher an Applied Energistics, bräuchte aber eine eigene
+Erzeugerkette — und die Mod setzt mit der Presse ohnehin ein Pack voraus. Ein
+halbherziger eigener Generator konkurriert nur mit besseren.
+
+### Gezahlt wird für Bereitschaft, nicht für Arbeit
+
+Ein Worker, der etwas bewegt, kostet nicht mehr als einer, der wartet.
+Absichtlich grob: Verbrauch, der mit der Last schwankt, ist im Spiel nicht
+nachzuvollziehen, und wer seine Anlage plant, will eine Zahl, die stillsteht.
+
+Kabel kosten nichts. Eine Anlage hat Hunderte davon; zöge jedes auch nur ein
+FE, bestimmte die Länge der Leitung den Verbrauch und nicht das, was daran
+hängt. Der Router dagegen zahlt: Er schaltet aktiv und hat eine BlockEntity.
+
+### Aus heißt aus, und danach wird hochgefahren
+
+Reicht der Vorrat nicht, steht alles. Kommt der Strom zurück, braucht das Netz
+drei Sekunden, in denen es schon zieht und noch nichts tut. **Ohne diese Zeit
+wäre ein Stromausfall ein Flackern, das niemand bemerkt.**
+
+Dazu eine Wiederanlaufschwelle: Das Netz kommt erst zurück, wenn genug
+beisammen ist, um das Hochfahren zu überstehen und danach noch zu laufen. Eine
+Versorgung knapp unter dem Bedarf erzeugte sonst ein Blinken im
+Halbminutentakt, das wie ein Fehler aussieht statt wie zu wenig Strom.
+
+### Einfrieren statt Zuendelaufen — auch beim Serverschrank
+
+Gestern stand hier das Gegenteil: Wird der letzte Schrank abgebaut, sollten
+die laufenden Abläufe zu Ende laufen. **Diese Regel hat einen Tag gehalten.**
+Der Stromausfall hat gezeigt, dass Einfrieren die ehrlichere Antwort auch für
+den Schrank ist:
+
+- Nichts geht verloren. Ein Ablauf hält zwischen zwei Schritten keine
+  Gegenstände — das Einfrieren kostet also nichts.
+- Eine Regel statt zwei. „Kein Server oder kein Strom heißt: Das Netz steht
+  still und läuft weiter, wo es war" ist ein Satz; zwei verschiedene
+  Antworten auf dieselbe Frage sind es nicht.
+- Es ist, was ein Spieler erwartet: aus und wieder an, nicht aus und
+  abgeräumt.
+
+Ereignisse, die während des Stillstands eintreffen, bleiben liegen und kommen
+an, sobald das Netz wieder läuft. Verzögerung ist wiederherstellbar, Verlust
+nicht — dasselbe Argument wie bei der Warteschlange.
+
+**Eine Frist läuft dagegen weiter.** Ein `await` mit `timeout 5s`, das eine
+Stunde ohne Strom stand, nimmt beim Aufwachen seinen `else`-Zweig. Die Frist
+ist eine Aussage über die Welt und nicht über die Rechenzeit; wer sie anders
+meint, meint eigentlich eine Anzahl Schritte.
+
+### Zwei Fehler, die dabei ans Licht kamen
+
+**Der Presse konnte niemand Strom geben.** Sie hatte einen FE-Puffer, aber
+keine Capability-Anmeldung — kein Kabel und kein Generator hätte ihn gefunden.
+
+**Und sie hätte ihn auch nie verbraucht.** Ein `EnergyStorage` mit
+Entnahmerate null gibt nach außen nichts ab, richtig so — aber
+`extractEnergy` prüft dieselbe Rate, und damit kommt auch die Maschine selbst
+nicht an ihren Vorrat. Dafür gibt es jetzt `InternalBuffer` mit einem Weg nach
+innen, der die Rate nicht fragt.
