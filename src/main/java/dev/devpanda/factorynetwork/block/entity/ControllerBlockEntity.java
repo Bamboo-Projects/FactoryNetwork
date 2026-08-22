@@ -416,7 +416,10 @@ public class ControllerBlockEntity extends BlockEntity {
 
     /** Schickt die Abläufe an einen Spieler. */
     public void pushFlowsTo(ServerPlayer player) {
-        PacketDistributor.sendToPlayer(player, new FlowStatePacket(flowLines()));
+        FlowEngine engine = flowEngine();
+        PacketDistributor.sendToPlayer(player, new FlowStatePacket(flowLines(), threads(),
+                engine == null ? 0 : engine.occupied(),
+                engine == null ? 0 : engine.queued()));
     }
 
     /** Die Abläufe als Zeilen — getrennt vom Senden, damit prüfbar. */
@@ -679,6 +682,13 @@ public class ControllerBlockEntity extends BlockEntity {
             CompoundTag saved = pendingFlows;
             pendingFlows = null;
             FlowCodec.read(saved, flows);
+        }
+        if (flows != null) {
+            // Hier und nicht im Tick: Jeder Zugriff auf die Maschine geht
+            // durch diese Stelle, und die Grenze kann sich zwischen zwei
+            // Ticks ändern — jemand steckt einen Prozessor dazu oder reißt
+            // den Schrank ab.
+            flows.setThreadLimit(threads());
         }
         return flows;
     }

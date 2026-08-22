@@ -29,7 +29,32 @@ import java.util.Map;
 public final class FlowEngine {
 
     /** So viele Anweisungen darf ein Ablauf je Tick machen. */
+    /**
+     * So viele Schritte darf <b>ein einzelner</b> Ablauf je Tick machen.
+     *
+     * <p>Das ist kein Kapazitätsmodell, sondern eine Bremse gegen die
+     * Endlosschleife: Eine falsch geschriebene {@code while}-Schleife soll
+     * den Server nicht anhalten. Wie viele Abläufe nebeneinander laufen
+     * dürfen, ist eine andere Frage und steht an den Prozessoren.
+     */
     private static final int STEPS_PER_TICK = 500;
+
+    /**
+     * Wie viele Abläufe gleichzeitig laufen dürfen.
+     *
+     * <p>Setzt der Controller aus den Prozessoren in seinen Serverschränken.
+     * Ohne ihn — etwa in einem Test der Maschine allein — gilt keine Grenze.
+     */
+    private int threadLimit = Integer.MAX_VALUE;
+
+    /**
+     * So viele dürfen höchstens anstehen.
+     *
+     * <p>Eine unbegrenzte Warteschlange wäre eine Anlage, die Arbeit
+     * ansammelt, die sie nie abarbeitet. Was darüber hinausgeht, scheitert
+     * sichtbar und steht unter den letzten Fehlern.
+     */
+    private static final int MAX_QUEUE = 32;
 
     private final Program program;
     private final Interpreter interpreter;
@@ -58,6 +83,88 @@ public final class FlowEngine {
      * wird. Also wartet das Ereignis bis zwischen zwei Schritten. Für den
      * Spieler bleibt es derselbe Tick.
      */
+    public void setThreadLimit(int limit) {
+        this.threadLimit = Math.max(0, limit);
+    }
+
+    public int threadLimit() {
+        return threadLimit;
+    }
+
+    /**
+     * Wie viele Plätze gerade belegt sind.
+     *
+     * <p><b>Gezählt, nicht mitgeführt.</b> Ein Zähler müsste auf jedem
+     * Ausgang wieder herunter — fertig, gescheitert, abgebrochen, veraltet,
+     * Frist abgelaufen —, und der eine vergessene Ausgang wäre ein Netz, das
+     * nach einer Stunde nichts mehr startet. Die Liste ist klein; zählen
+     * kostet nichts und kann nicht lecken.
+     */
+    public int occupied() {
+        int count = 0;
+        for (Flow flow : flows.values()) {
+            switch (flow.status()) {
+                case RUNNING, SLEEPING, AWAITING -> count++;
+                default -> { }
+            }
+        }
+        return count;
+    }
+
+    /** Wie viele gerade anstehen. */
+    public int queued() {
+        int count = 0;
+        for (Flow flow : flows.values()) {
+            if (flow.status() == Flow.Status.QUEUED) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    /**
+     * Stellt einen frisch gebauten Ablauf an, wenn kein Platz frei ist.
+     *
+     * <p>Der Ablauf ist bereits fertig aufgebaut — er wartet nur. So bleibt
+     * er im Terminal sichtbar, statt in einer zweiten Liste zu verschwinden,
+     * die niemand ansieht.
+     */
+    private boolean admit(Flow flow) {
+        // Vor dem Eintragen gefragt: Sonst zählte der neue Ablauf sich selbst
+        // mit, und der zweite von zwei Plätzen wäre schon belegt, bevor er
+        // ihn bekommt.
+        if (occupied() < threadLimit) {
+            return true;
+        }
+        if (queued() >= MAX_QUEUE) {
+            flow.fail("Zu viele Abläufe stehen an — " + MAX_QUEUE + " ist die Grenze.");
+            remember(flow);
+            return false;
+        }
+        flow.queue("wartet auf einen freien Prozessorplatz");
+        return true;
+    }
+
+    /**
+     * Holt an, was ansteht, solange Plätze frei sind.
+     *
+     * <p>Der Ältere zuerst, und nur an dieser einen Stelle im Tick. Eine
+     * Regel, die feststeht und sich erklären lässt — sonst ist „warum lief
+     * meiner nicht" nicht zu beantworten.
+     */
+    private void promote() {
+        List<Flow> waiting = flows.values().stream()
+                .filter(flow -> flow.status() == Flow.Status.QUEUED)
+                .sorted(java.util.Comparator.comparingLong(Flow::id))
+                .toList();
+        for (Flow flow : waiting) {
+            if (occupied() >= threadLimit) {
+                return;
+            }
+            flow.dequeue();
+        }
+    }
+
     public void post(String event, List<Value> arguments) {
         pending.add(new PendingEvent(event, List.copyOf(arguments)));
     }
@@ -108,7 +215,9 @@ public final class FlowEngine {
                     i < arguments.size() ? arguments.get(i) : Value.Nothing.get());
         }
         flow.push(frame);
-        flows.put(flow.id(), flow);
+        if (admit(flow)) {
+            flows.put(flow.id(), flow);
+        }
         return flow;
     }
 
@@ -127,8 +236,10 @@ public final class FlowEngine {
                         i < arguments.size() ? arguments.get(i) : Value.Nothing.get());
             }
             flow.push(frame);
-            flows.put(flow.id(), flow);
-            started.add(flow);
+            if (admit(flow)) {
+                flows.put(flow.id(), flow);
+                started.add(flow);
+            }
         }
         return started;
     }
@@ -187,6 +298,9 @@ public final class FlowEngine {
             }
             return true;
         });
+        // Erst aufräumen, dann nachrücken: Ein Platz, der in diesem Tick frei
+        // wurde, soll noch in diesem Tick wieder belegt werden.
+        promote();
     }
 
     /**

@@ -210,5 +210,7 @@
   "config.jade.plugin_factorynetwork.server_rack": "Serverschrank: Prozessoren und Auslastung",
   "jade.factorynetwork.rack.empty": "Kein Prozessor eingesetzt",
   "jade.factorynetwork.rack.slots": "%s von %s Plätzen",
-  "jade.factorynetwork.rack.threads": "%s gleichzeitige Abläufe"
+  "jade.factorynetwork.rack.threads": "%s gleichzeitige Abläufe",
+  "screen.factorynetwork.terminal.network.threads": "%s von %s Plätzen belegt · %s warten",
+  "screen.factorynetwork.terminal.network.no_server": "Kein Serverschrank — das Netz rechnet nicht"
 }

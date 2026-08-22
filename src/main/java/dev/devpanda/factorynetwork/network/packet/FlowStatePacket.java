@@ -22,7 +22,13 @@ import java.util.List;
  * entscheiden können muss, und die Wahl den richtigen treffen soll — auch
  * wenn sich die Liste zwischen Anzeigen und Klicken verschoben hat.
  */
-public record FlowStatePacket(List<Line> flows) implements CustomPacketPayload {
+public record FlowStatePacket(List<Line> flows, int threads, int occupied, int queued)
+        implements CustomPacketPayload {
+
+    // threads, occupied und queued sind die Zahlen, die man ohne Anzeige nie
+    // sieht: Was eine Schleife an Rechenleistung kostet, sieht niemand — bei
+    // Kanälen ist die Grenze wenigstens offensichtlich. Wer ansteht, muss
+    // lesen können, warum.
 
     /** Eine Zeile der Liste. */
     public record Line(long id, String entry, String status, String detail) {
@@ -42,6 +48,9 @@ public record FlowStatePacket(List<Line> flows) implements CustomPacketPayload {
     public static final StreamCodec<RegistryFriendlyByteBuf, FlowStatePacket> STREAM_CODEC =
             StreamCodec.composite(
                     Line.STREAM_CODEC.apply(ByteBufCodecs.list(256)), FlowStatePacket::flows,
+                    ByteBufCodecs.VAR_INT, FlowStatePacket::threads,
+                    ByteBufCodecs.VAR_INT, FlowStatePacket::occupied,
+                    ByteBufCodecs.VAR_INT, FlowStatePacket::queued,
                     FlowStatePacket::new);
 
     @Override

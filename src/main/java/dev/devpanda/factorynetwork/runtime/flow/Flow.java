@@ -25,6 +25,16 @@ public final class Flow {
     public enum Status {
         /** Läuft und will Schritte machen. */
         RUNNING,
+        /**
+         * Angestellt: Es fehlt ein freier Prozessorplatz.
+         *
+         * <p>Nicht abgelehnt, sondern verschoben. <b>Verzögerung ist
+         * wiederherstellbar, Verlust nicht</b> — ein abgelehntes
+         * {@code device_done} ist für immer weg, und die Gegenstände stehen
+         * bis zum nächsten Neustart in einer Maschine, die niemand mehr
+         * anfasst.
+         */
+        QUEUED,
         /** Wartet auf eine bestimmte Spielzeit. */
         SLEEPING,
         /** Wartet auf ein Ereignis. */
@@ -131,6 +141,18 @@ public final class Flow {
     }
 
     /** Der Ablauf wartete, als das Programm gewechselt wurde. */
+    /** Stellt den Ablauf an: Es fehlt ein Platz. */
+    public void queue(String reason) {
+        status = Status.QUEUED;
+        detail = reason;
+    }
+
+    /** Holt ihn wieder aus der Warteschlange. */
+    public void dequeue() {
+        status = Status.RUNNING;
+        detail = "";
+    }
+
     public void markStale() {
         status = Status.STALE;
         detail = "Programm geändert, während dieser Ablauf wartete";

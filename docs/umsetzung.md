@@ -104,6 +104,7 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | Flüssigkeiten | `move` und Worker, Bestand in Zellen, in Millibucket |
 | Speicher | Laufwerke mit zehn Plätzen, Zellen in vier Größen, Bestand in der Zelle |
 | Rechenleistung | Serverschränke mit acht Plätzen, Prozessor und Co-Prozessor |
+| | Ein laufender Ablauf belegt einen Platz, der Rest stellt sich an |
 | | Zelle in der Hand ans Laufwerk klicken setzt sie ein, leere Hand nimmt die letzte heraus |
 | Werkzeuge | Beschriftungspistole, Netzanalysator mit Sicht durch Wände |
 | Funktionen | Bedingungen, Schleifen, `move`, Redstone lesen, `log` |
@@ -148,18 +149,11 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 - **Kosten Laufwerke einen Kanal?** Bei AE2 ja. Hier nicht — ein Laufwerk gilt
   wie eine Anzeige als etwas, das dem Netz nichts wegnimmt. Das ist bewusst
   milder; wer den AE2-Druck will, macht daraus einen Kanalverbraucher.
-- **Nebenläufigkeit an den Prozessoren.** Der Serverschrank steht, und ohne
-  ihn rechnet das Netz nicht. Was noch fehlt, ist die Grenze selbst: Zurzeit
-  zählen die Prozessoren, aber es hält sich noch niemand daran. Die
-  Entscheidungen dazu stehen in `entscheidungen.md` unter „Serverschränke und
-  Prozessoren" — ein laufender Ablauf belegt einen Platz, bei Überlast wird
-  angestellt statt abgelehnt, ein Co-Prozessor bringt Breite statt Tempo.
-
-  **Was beim Bauen zu beachten ist:** Rechenkosten lassen sich schlecht
-  abschätzen. Bei Kanälen ist die Grenze offensichtlich — acht Geräte, dann
-  Schluss, und der Analysator zeigt wo. Was eine Schleife kostet, sieht
-  niemand. Die Anzeige im Terminal muss deshalb von Anfang an mitgebaut
-  werden, nicht nachgereicht: Wer ansteht, muss lesen können, warum.
+- **Die Zahlen an den Prozessoren.** Zwei gleichzeitige Abläufe je Prozessor,
+  acht je Co-Prozessor, zweiunddreißig in der Warteschlange. Sie sind gesetzt,
+  nicht hergeleitet — wie sie sich anfühlen, zeigt erst das Spielen. Die
+  Begründungen stehen in `entscheidungen.md` unter „Serverschränke und
+  Prozessoren".
 - **Autocrafting.** Der letzte ausgegraute Reiter.
 - **Chemikalien** aus Mekanism. Die Schreibweise steht seit dem Entwurf.
 

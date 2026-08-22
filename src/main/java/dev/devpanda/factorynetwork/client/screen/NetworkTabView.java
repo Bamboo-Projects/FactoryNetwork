@@ -122,6 +122,20 @@ public class NetworkTabView {
 
         line += 3;
         line = section(graphics, line, "screen.factorynetwork.terminal.network.flows");
+        // Erst die Rechenleistung, dann die Abläufe: Wer sieht, dass drei
+        // anstehen, will als Nächstes wissen, wie viele Plätze es gibt.
+        line = text(graphics, line, Component.translatable(
+                        dev.devpanda.factorynetwork.client.ClientFlowState.threads() == 0
+                                ? "screen.factorynetwork.terminal.network.no_server"
+                                : "screen.factorynetwork.terminal.network.threads",
+                        dev.devpanda.factorynetwork.client.ClientFlowState.occupied(),
+                        dev.devpanda.factorynetwork.client.ClientFlowState.threads(),
+                        dev.devpanda.factorynetwork.client.ClientFlowState.queued())
+                        .getString(),
+                dev.devpanda.factorynetwork.client.ClientFlowState.threads() == 0
+                        ? 0xA03030
+                        : dev.devpanda.factorynetwork.client.ClientFlowState.queued() > 0
+                        ? 0xD08A3C : TerminalScreen.TEXT_DIM);
         flows(graphics, line);
     }
 
@@ -147,6 +161,7 @@ public class NetworkTabView {
             boolean stale = "STALE".equals(flow.status());
             int colour = stale ? 0x8A6A20
                     : "FAILED".equals(flow.status()) ? 0xA03030
+                    : "QUEUED".equals(flow.status()) ? 0xD08A3C
                     : "RUNNING".equals(flow.status()) ? 0x2F6B33
                     : TerminalScreen.TEXT_DIM;
             String label = flow.entry() + " — " + describe(flow);

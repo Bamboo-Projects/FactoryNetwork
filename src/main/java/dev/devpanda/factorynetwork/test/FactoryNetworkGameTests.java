@@ -2225,10 +2225,13 @@ public final class FactoryNetworkGameTests {
 
         var ablaeufe = new dev.devpanda.factorynetwork.network.packet.FlowStatePacket(
                 java.util.List.of(new dev.devpanda.factorynetwork.network.packet
-                        .FlowStatePacket.Line(7, "zaehlt", "AWAITING", "wartet auf Takt")));
+                        .FlowStatePacket.Line(7, "zaehlt", "AWAITING", "wartet auf Takt")),
+                16, 5, 2);
         var ablaeufeZurueck = roundTrip(helper,
                 dev.devpanda.factorynetwork.network.packet.FlowStatePacket.STREAM_CODEC, ablaeufe);
         helper.assertValueEqual(ablaeufeZurueck.flows().get(0).id(), 7L, "Kennung des Ablaufs");
+        helper.assertValueEqual(ablaeufeZurueck.threads(), 16, "Plätze im Netz");
+        helper.assertValueEqual(ablaeufeZurueck.queued(), 2, "wie viele anstehen");
         helper.assertValueEqual(ablaeufeZurueck.flows().get(0).detail(), "wartet auf Takt",
                 "Grund");
 
@@ -2895,18 +2898,26 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Setzt einen Serverschrank mit Prozessor neben den Controller.
+     * Setzt einen Serverschrank mit einem Stapel Prozessoren daneben.
      *
      * <p>Seit es Serverschränke gibt, rechnet ein Netz ohne einen davon
      * nicht. Fast jede Prüfung braucht deshalb einen — genau wie fast jede
      * ein Laufwerk braucht, seit es Zellen gibt.
+     *
+     * <p><b>Reichlich bestückt</b>, nämlich mit sechzehn Plätzen: Eine
+     * Prüfung soll an dem scheitern, was sie prüft, und nicht daran, dass
+     * drei Abläufe gleichzeitig laufen wollten. Wer die Grenze selbst prüft,
+     * baut sich einen kleineren Schrank.
      */
+    private static final int TEST_PROCESSORS = 8;
+
     private static void rackWithProcessor(GameTestHelper helper, BlockPos at) {
         helper.setBlock(at, FnBlocks.RACK.get());
         if (helper.getBlockEntity(at)
                 instanceof dev.devpanda.factorynetwork.block.entity.RackBlockEntity rack) {
             rack.setProcessor(0, new ItemStack(
-                    dev.devpanda.factorynetwork.registry.FnItems.PROCESSOR.get()));
+                    dev.devpanda.factorynetwork.registry.FnItems.PROCESSOR.get(),
+                    TEST_PROCESSORS));
         } else {
             helper.fail("Am Serverschrank hängt keine BlockEntity", at);
         }
@@ -3695,7 +3706,8 @@ public final class FactoryNetworkGameTests {
                 fn nichts() {
                     log "hallo"
                 }"""), "mit Server muss es gehen");
-        helper.assertValueEqual(entity.threads(), 2, "ein Prozessor trägt zwei");
+        helper.assertValueEqual(entity.threads(), 2 * TEST_PROCESSORS,
+                "jeder Prozessor trägt zwei");
         helper.succeed();
     }
 
@@ -3752,8 +3764,8 @@ public final class FactoryNetworkGameTests {
 
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
-        helper.assertValueEqual(entity.threads(), 12,
-                "zwei Prozessoren und ein Co-Prozessor");
+        helper.assertValueEqual(entity.threads(), 4 * TEST_PROCESSORS + 8,
+                "zwei Stapel Prozessoren und ein Co-Prozessor");
         helper.succeed();
     }
 
@@ -3806,6 +3818,129 @@ public final class FactoryNetworkGameTests {
         driveWithCell(helper, controller.above(),
                 dev.devpanda.factorynetwork.storage.CellTier.K64);
         return controller;
+    }
+
+    /** Ein Serverschrank mit genau so vielen Prozessoren, wie angegeben. */
+    private static void smallRack(GameTestHelper helper, BlockPos at, int processors) {
+        helper.setBlock(at, FnBlocks.RACK.get());
+        if (helper.getBlockEntity(at)
+                instanceof dev.devpanda.factorynetwork.block.entity.RackBlockEntity rack) {
+            rack.setProcessor(0, new ItemStack(
+                    dev.devpanda.factorynetwork.registry.FnItems.PROCESSOR.get(), processors));
+        } else {
+            helper.fail("Am Serverschrank hängt keine BlockEntity", at);
+        }
+    }
+
+    /**
+     * Mehr Abläufe als Plätze: Der Rest stellt sich an.
+     *
+     * <p>Angestellt, nicht abgelehnt. <b>Verzögerung ist wiederherstellbar,
+     * Verlust nicht</b> — ein abgelehntes Ereignis ist für immer weg, und die
+     * Gegenstände stehen bis zum nächsten Neustart in einer Maschine, die
+     * niemand mehr anfasst.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void moreFlowsThanThreadsQueueUp(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 2, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        smallRack(helper, controller.west(), 1);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        helper.assertValueEqual(entity.threads(), 2, "ein Prozessor trägt zwei");
+
+        helper.assertTrue(entity.deploy("""
+                fn wartet() {
+                    sleep 5t
+                }"""), "Das Programm wurde nicht übernommen");
+
+        for (int i = 0; i < 4; i++) {
+            entity.startFlow("wartet", java.util.List.of());
+        }
+        var engine = entity.flowEngine();
+        helper.assertValueEqual(engine.occupied(), 2, "so viele laufen");
+        helper.assertValueEqual(engine.queued(), 2, "so viele stehen an");
+
+        // Sind die ersten durch, rücken die anderen nach.
+        helper.runAfterDelay(12, () -> {
+            for (int i = 0; i < 12; i++) {
+                entity.serverTick();
+            }
+            helper.assertValueEqual(entity.flowEngine().queued(), 0,
+                    "die Warteschlange muss leerlaufen");
+            helper.succeed();
+        });
+    }
+
+    /**
+     * Ein angestellter Ablauf übersteht das Aufschreiben.
+     *
+     * <p>Er hat noch keinen Schritt gemacht, aber seinen Rahmen schon. Ginge
+     * er beim Sichern verloren, verschwände Arbeit, von der niemand weiß,
+     * dass es sie gab.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void aQueuedFlowSurvivesBeingWrittenDown(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 2, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        smallRack(helper, controller.west(), 1);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        helper.assertTrue(entity.deploy("""
+                fn wartet() {
+                    sleep 200t
+                }"""), "Programm nicht übernommen");
+        for (int i = 0; i < 3; i++) {
+            entity.startFlow("wartet", java.util.List.of());
+        }
+        helper.assertValueEqual(entity.flowEngine().queued(), 1, "einer steht an");
+
+        var registries = helper.getLevel().registryAccess();
+        var block = net.minecraft.world.level.block.entity.BlockEntity.loadStatic(
+                helper.absolutePos(controller), helper.getBlockState(controller),
+                entity.saveWithFullMetadata(registries), registries);
+        ControllerBlockEntity geladen = (ControllerBlockEntity) block;
+        geladen.setLevel(helper.getLevel());
+        var zurueck = geladen.flowEngine().flows().values().stream()
+                .filter(flow -> flow.status()
+                        == dev.devpanda.factorynetwork.runtime.flow.Flow.Status.QUEUED)
+                .count();
+        helper.assertValueEqual((int) zurueck, 1,
+                "der angestellte Ablauf muss zurückkommen");
+        helper.succeed();
+    }
+
+    /**
+     * Eine zu lange Warteschlange scheitert sichtbar.
+     *
+     * <p>Eine unbegrenzte wäre eine Anlage, die Arbeit ansammelt, die sie nie
+     * abarbeitet. Was darüber hinausgeht, steht unter den letzten Fehlern —
+     * still zu verschwinden wäre das Schlimmste von beidem.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void anOverfullQueueFailsVisibly(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 2, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        smallRack(helper, controller.west(), 1);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        helper.assertTrue(entity.deploy("""
+                fn wartet() {
+                    sleep 400t
+                }"""), "Programm nicht übernommen");
+
+        for (int i = 0; i < 40; i++) {
+            entity.startFlow("wartet", java.util.List.of());
+        }
+        var engine = entity.flowEngine();
+        helper.assertValueEqual(engine.occupied(), 2, "so viele laufen");
+        helper.assertValueEqual(engine.queued(), 32, "mehr als das steht nicht an");
+        helper.assertTrue(!engine.failed().isEmpty(),
+                "die abgewiesenen müssen unter den Fehlern stehen");
+        helper.assertTrue(engine.failed().get(0).detail().contains("stehen an"),
+                "und der Grund muss die Warteschlange nennen: "
+                        + engine.failed().get(0).detail());
+        helper.succeed();
     }
 
     private FactoryNetworkGameTests() {
