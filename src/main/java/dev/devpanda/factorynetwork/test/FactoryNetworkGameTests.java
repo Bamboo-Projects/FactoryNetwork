@@ -2924,6 +2924,28 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
+     * Schiebt das erste Bauteil aus dem Rucksack ins Regal — wie ein
+     * Umschalt-Klick im Fenster.
+     */
+    private static void intoShelf(GameTestHelper helper, BlockPos at,
+                                  net.minecraft.world.entity.player.Player player) {
+        if (!(helper.getBlockEntity(at)
+                instanceof dev.devpanda.factorynetwork.block.entity.ShelfBlockEntity shelf)) {
+            helper.fail("Hier steht kein Regal", at);
+            return;
+        }
+        var menu = dev.devpanda.factorynetwork.client.menu.ShelfMenu
+                .of(1, player.getInventory(), shelf);
+        for (int index = shelf.getContainerSize(); index < menu.slots.size(); index++) {
+            if (menu.slots.get(index).hasItem()) {
+                menu.quickMoveStack(player, index);
+                return;
+            }
+        }
+        helper.fail("Im Rucksack liegt nichts zum Einschieben", at);
+    }
+
+    /**
      * Nimmt ein Bauteil über das Fenster heraus — wie ein Umschalt-Klick.
      *
      * <p>Seit es ein Fenster gibt, ist das der Weg. Die leere Hand am Block
@@ -3501,38 +3523,85 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+
     /**
-     * Eine Zelle geht per Klick hinein und über das Fenster wieder heraus.
+     * Eine Zelle geht über das Fenster hinein und wieder heraus.
      *
-     * <p>Voll heißt einstecken, leer heißt aufmachen: Wer zehn Zellen
-     * einsetzt, will dafür kein Fenster — wer eine bestimmte sucht, schon.
+     * <p>Ein Klick auf das Laufwerk macht auf — immer, egal was in der Hand
+     * liegt. Vorher ging ein Bauteil in der Hand direkt hinein; das ersparte
+     * einen Griff, war aber eine eigene Regel für zwei Blöcke.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
-    public static void aCellGoesInByHandAndOutThroughTheWindow(GameTestHelper helper) {
+    public static void aCellGoesIntoTheWindowAndOutAgain(GameTestHelper helper) {
         BlockPos drivePos = new BlockPos(1, 2, 1);
         helper.setBlock(drivePos, FnBlocks.DRIVE.get());
         var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
-        ItemStack cell = new ItemStack(dev.devpanda.factorynetwork.registry.FnItems.CELLS
-                .get(dev.devpanda.factorynetwork.storage.CellTier.K1).get());
-        player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, cell);
+        player.getInventory().add(new ItemStack(dev.devpanda.factorynetwork.registry.FnItems
+                .CELLS.get(dev.devpanda.factorynetwork.storage.CellTier.K1).get()));
 
-        helper.useBlock(drivePos, player);
         var drive = (dev.devpanda.factorynetwork.block.entity.DriveBlockEntity)
                 helper.getBlockEntity(drivePos);
+        // Umschalt-Klick aus dem Rucksack ins Regal und zurück.
+        intoShelf(helper, drivePos, player);
         helper.assertValueEqual(drive.usedSlots(), 1, "Zellen im Laufwerk");
-        helper.assertTrue(player.getMainHandItem().isEmpty(),
-                "die Zelle muss aus der Hand verschwinden");
 
-        // Über das Fenster wieder heraus.
         takeFromShelf(helper, drivePos, 0, player);
         helper.assertValueEqual(drive.usedSlots(), 0, "Zellen nach dem Herausnehmen");
         helper.assertTrue(player.getInventory().contains(
                         stack -> stack.getItem() instanceof dev.devpanda.factorynetwork
                                 .storage.StorageCellItem),
                 "die Zelle muss im Rucksack landen");
-        helper.assertTrue(!player.getMainHandItem().isEmpty()
-                        || player.getInventory().contains(stack -> !stack.isEmpty()),
-                "und irgendwo greifbar sein");
+        helper.succeed();
+    }
+
+    /**
+     * Ein Prozessor geht über das Fenster hinein und wieder heraus.
+     *
+     * <p>Dasselbe Fenster wie beim Laufwerk: Beide sind ein Regal, und wer
+     * eines bedienen kann, kann auch das andere.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void aProcessorGoesIntoTheWindowAndOutAgain(GameTestHelper helper) {
+        BlockPos rackPos = new BlockPos(1, 2, 1);
+        helper.setBlock(rackPos, FnBlocks.RACK.get());
+        var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+        player.getInventory().add(new ItemStack(
+                dev.devpanda.factorynetwork.registry.FnItems.PROCESSOR.get(), 3));
+
+        var rack = (dev.devpanda.factorynetwork.block.entity.RackBlockEntity)
+                helper.getBlockEntity(rackPos);
+        intoShelf(helper, rackPos, player);
+        helper.assertValueEqual(rack.usedSlots(), 1, "Plätze im Schrank");
+        helper.assertValueEqual(rack.threads(), 6, "drei Prozessoren zu je zwei Abläufen");
+
+        takeFromShelf(helper, rackPos, 0, player);
+        helper.assertValueEqual(rack.threads(), 0, "nach dem Herausnehmen");
+        helper.succeed();
+    }
+
+    /** Ist alles belegt, bleibt die elfte Zelle im Rucksack. */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void anEleventhCellFindsNoSlot(GameTestHelper helper) {
+        BlockPos drivePos = new BlockPos(1, 2, 1);
+        helper.setBlock(drivePos, FnBlocks.DRIVE.get());
+        var drive = (dev.devpanda.factorynetwork.block.entity.DriveBlockEntity)
+                helper.getBlockEntity(drivePos);
+        for (int slot = 0; slot < dev.devpanda.factorynetwork.block.entity
+                .DriveBlockEntity.SLOTS; slot++) {
+            drive.setCell(slot, new ItemStack(dev.devpanda.factorynetwork.registry.FnItems.CELLS
+                    .get(dev.devpanda.factorynetwork.storage.CellTier.K1).get()));
+        }
+
+        var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+        player.getInventory().add(new ItemStack(dev.devpanda.factorynetwork.registry.FnItems
+                .CELLS.get(dev.devpanda.factorynetwork.storage.CellTier.K4).get()));
+        intoShelf(helper, drivePos, player);
+
+        helper.assertValueEqual(drive.usedSlots(), 10, "mehr als zehn passen nicht");
+        helper.assertTrue(player.getInventory().contains(
+                        stack -> stack.getItem() == dev.devpanda.factorynetwork.registry.FnItems
+                                .CELLS.get(dev.devpanda.factorynetwork.storage.CellTier.K4).get()),
+                "die überzählige Zelle muss im Rucksack bleiben");
         helper.succeed();
     }
 
@@ -3572,30 +3641,6 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
-    /** Ist alles belegt, bleibt die elfte Zelle in der Hand. */
-    @GameTest(template = EMPTY, timeoutTicks = 400)
-    public static void anEleventhCellStaysInTheHand(GameTestHelper helper) {
-        BlockPos drivePos = new BlockPos(1, 2, 1);
-        helper.setBlock(drivePos, FnBlocks.DRIVE.get());
-        var drive = (dev.devpanda.factorynetwork.block.entity.DriveBlockEntity)
-                helper.getBlockEntity(drivePos);
-        for (int slot = 0; slot < dev.devpanda.factorynetwork.block.entity
-                .DriveBlockEntity.SLOTS; slot++) {
-            drive.setCell(slot, new ItemStack(dev.devpanda.factorynetwork.registry.FnItems.CELLS
-                    .get(dev.devpanda.factorynetwork.storage.CellTier.K1).get()));
-        }
-
-        var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
-        player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND,
-                new ItemStack(dev.devpanda.factorynetwork.registry.FnItems.CELLS
-                        .get(dev.devpanda.factorynetwork.storage.CellTier.K4).get()));
-        helper.useBlock(drivePos, player);
-
-        helper.assertValueEqual(drive.usedSlots(), 10, "mehr als zehn passen nicht");
-        helper.assertTrue(!player.getMainHandItem().isEmpty(),
-                "die überzählige Zelle muss in der Hand bleiben");
-        helper.succeed();
-    }
 
     /**
      * Eine Flüssigkeitszelle hat eine Grenze, und die gilt.
@@ -3732,37 +3777,6 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
-    /**
-     * Ein Prozessor geht per Klick hinein und über das Fenster wieder heraus.
-     *
-     * <p>Derselbe Griff wie beim Laufwerk, und dasselbe Fenster: Beide sind
-     * ein Regal, und wer eines bedienen kann, kann auch das andere.
-     */
-    @GameTest(template = EMPTY, timeoutTicks = 300)
-    public static void aProcessorGoesInByHandAndOutThroughTheWindow(GameTestHelper helper) {
-        BlockPos rackPos = new BlockPos(1, 2, 1);
-        helper.setBlock(rackPos, FnBlocks.RACK.get());
-        var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
-        player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND,
-                new ItemStack(dev.devpanda.factorynetwork.registry.FnItems.PROCESSOR.get(), 3));
-
-        helper.useBlock(rackPos, player);
-        var rack = (dev.devpanda.factorynetwork.block.entity.RackBlockEntity)
-                helper.getBlockEntity(rackPos);
-        helper.assertValueEqual(rack.usedSlots(), 1, "Plätze im Schrank");
-        // Der ganze Stapel geht hinein: drei Prozessoren zu je zwei Abläufen.
-        helper.assertValueEqual(rack.threads(), 6, "gleichzeitige Abläufe");
-        helper.assertTrue(player.getMainHandItem().isEmpty(),
-                "der Stapel muss aus der Hand verschwinden");
-
-        takeFromShelf(helper, rackPos, 0, player);
-        helper.assertValueEqual(rack.threads(), 0, "nach dem Herausnehmen");
-        helper.assertTrue(player.getInventory().contains(
-                        stack -> stack.getItem()
-                                instanceof dev.devpanda.factorynetwork.item.ProcessorItem),
-                "der Stapel muss im Rucksack landen");
-        helper.succeed();
-    }
 
     /**
      * Die Rechenleistung ist die Summe über alle Schränke im Netz.

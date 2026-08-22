@@ -47,16 +47,16 @@ Alle Blöcke liegen im Kreativ-Reiter „Factory Network".
    Programm. **Er allein reicht nicht:** Lagern kann das Netz erst mit einem
    Laufwerk, rechnen erst mit einem Serverschrank.
 2. **Kabel** vom Controller weg legen.
-3. **Serverschrank** ans Kabel setzen und mit einem **Prozessor** in der Hand
-   anklicken. Ohne ihn rechnet das Netz nicht: Ein Programm wird gar nicht
+3. **Serverschrank** ans Kabel setzen, anklicken und einen **Prozessor**
+   hineinlegen. Ohne ihn rechnet das Netz nicht: Ein Programm wird gar nicht
    erst übernommen, und Worker stehen still.
-4. **Laufwerk** ans Kabel setzen und eine **Speicherzelle** hineinklicken.
+4. **Laufwerk** ans Kabel setzen und eine **Speicherzelle** hineinlegen.
    Ohne sie lagert das Netz nichts. Für Flüssigkeiten kommt eine
    **Flüssigkeitszelle** in dasselbe Laufwerk.
 
-   Bei beiden gilt: **volle Hand steckt ein, leere Hand macht auf.** Im
-   Fenster liegen die Plätze so, wie sie an der Front sitzen — und an der
-   Front sieht man ohne Anklicken, was steckt.
+   Beide öffnen sich per Klick wie eine Kiste. Im Fenster liegen die Plätze
+   so, wie sie an der Front sitzen — und an der Front sieht man ohne
+   Anklicken, was steckt.
 5. **Connector** an ein Kabel setzen, mit der Vorderseite an eine Kiste oder
    Maschine. Die Vorderseite zeigt dorthin, wo man den Block angeklickt hat.
 6. **Label-Gun** nehmen und einmal auf den **Controller** rechtsklicken —

@@ -66,41 +66,13 @@ public class RackBlock extends HorizontalDirectionalBlock implements EntityBlock
         return new RackBlockEntity(pos, state);
     }
 
-    @Override
-    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level,
-                                              BlockPos pos, Player player, InteractionHand hand,
-                                              BlockHitResult hit) {
-        if (!(stack.getItem() instanceof ProcessorItem)) {
-            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
-        }
-        if (level.isClientSide) {
-            return ItemInteractionResult.SUCCESS;
-        }
-        if (!(level.getBlockEntity(pos) instanceof RackBlockEntity rack)) {
-            return ItemInteractionResult.FAIL;
-        }
-        int slot = rack.firstFreeSlot();
-        if (slot < 0) {
-            player.displayClientMessage(
-                    Component.translatable("message.factorynetwork.rack.full"), true);
-            return ItemInteractionResult.CONSUME;
-        }
-        // Der ganze Stapel geht hinein: Prozessoren stapeln sich, und acht
-        // Plätze wären sonst acht Klicks für acht Stück desselben.
-        rack.setProcessor(slot, stack.copyAndClear());
-        level.playSound(null, pos, SoundEvents.ITEM_FRAME_ADD_ITEM, SoundSource.BLOCKS,
-                0.7F, 1.4F);
-        player.displayClientMessage(Component.translatable(
-                "message.factorynetwork.rack.inserted", rack.threads()), true);
-        return ItemInteractionResult.CONSUME;
-    }
-
     /**
-     * Die leere Hand öffnet das Fenster.
+     * Ein Klick öffnet das Fenster.
      *
-     * <p>Voll heißt einstecken, leer heißt aufmachen. Das Einstecken per Klick
-     * bleibt, weil es der häufigere Griff ist — wer zehn Zellen einsetzt, will
-     * dafür kein Fenster.
+     * <p>Immer, egal was in der Hand liegt — wie bei jeder Kiste. Vorher ging
+     * ein Bauteil in der Hand direkt hinein; das ersparte zwar einen Griff,
+     * war aber eine eigene Regel für zwei Blöcke, und wer sie nicht kennt,
+     * steckt versehentlich etwas ein, statt nachzusehen.
      */
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,

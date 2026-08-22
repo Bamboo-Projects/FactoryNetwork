@@ -56,55 +56,12 @@ public class DriveBlock extends HorizontalDirectionalBlock implements EntityBloc
 
 
     /**
-     * Eine Zelle in der Hand geht hinein.
+     * Ein Klick öffnet das Fenster.
      *
-     * <p><b>Ohne das war der ganze Speicher nicht erreichbar.</b> Die Zellen
-     * kamen bisher nur über Prüfungen ins Laufwerk — im Spiel stand ein Block
-     * herum, in den nichts hineinging.
-     *
-     * <p>Kein Fenster mit zehn Feldern, sondern ein Griff: Zelle in der Hand
-     * hinein, leere Hand heraus. Ein Fenster wäre der gewohntere Weg, aber es
-     * ist ein eigener Bildschirm samt Hintergrundbild für eine Handlung, die
-     * aus einem Klick besteht. Was drinsteckt, sagt Jade.
-     */
-    @Override
-    protected net.minecraft.world.ItemInteractionResult useItemOn(
-            net.minecraft.world.item.ItemStack stack, BlockState state,
-            net.minecraft.world.level.Level level, BlockPos pos,
-            net.minecraft.world.entity.player.Player player,
-            net.minecraft.world.InteractionHand hand,
-            net.minecraft.world.phys.BlockHitResult hit) {
-        if (!(stack.getItem() instanceof dev.devpanda.factorynetwork.storage.StorageCellItem)) {
-            return net.minecraft.world.ItemInteractionResult
-                    .PASS_TO_DEFAULT_BLOCK_INTERACTION;
-        }
-        if (level.isClientSide) {
-            return net.minecraft.world.ItemInteractionResult.SUCCESS;
-        }
-        if (!(level.getBlockEntity(pos) instanceof DriveBlockEntity drive)) {
-            return net.minecraft.world.ItemInteractionResult.FAIL;
-        }
-        int slot = drive.firstFreeSlot();
-        if (slot < 0) {
-            player.displayClientMessage(net.minecraft.network.chat.Component.translatable(
-                    "message.factorynetwork.drive.full"), true);
-            return net.minecraft.world.ItemInteractionResult.CONSUME;
-        }
-        drive.setCell(slot, stack.split(1));
-        level.playSound(null, pos, net.minecraft.sounds.SoundEvents.ITEM_FRAME_ADD_ITEM,
-                net.minecraft.sounds.SoundSource.BLOCKS, 0.7F, 1.3F);
-        player.displayClientMessage(net.minecraft.network.chat.Component.translatable(
-                "message.factorynetwork.drive.inserted",
-                drive.usedSlots(), DriveBlockEntity.SLOTS), true);
-        return net.minecraft.world.ItemInteractionResult.CONSUME;
-    }
-
-    /**
-     * Die leere Hand öffnet das Fenster.
-     *
-     * <p>Voll heißt einstecken, leer heißt aufmachen. Das Einstecken per Klick
-     * bleibt, weil es der häufigere Griff ist — wer zehn Zellen einsetzt, will
-     * dafür kein Fenster.
+     * <p>Immer, egal was in der Hand liegt — wie bei jeder Kiste. Vorher ging
+     * ein Bauteil in der Hand direkt hinein; das ersparte zwar einen Griff,
+     * war aber eine eigene Regel für zwei Blöcke, und wer sie nicht kennt,
+     * steckt versehentlich etwas ein, statt nachzusehen.
      */
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
