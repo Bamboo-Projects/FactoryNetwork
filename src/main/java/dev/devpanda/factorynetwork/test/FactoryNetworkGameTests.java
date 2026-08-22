@@ -3974,6 +3974,85 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    /**
+     * Die Bahnzuordnung eines Routers übersteht das Aufschreiben.
+     *
+     * <p>Sie steht in der BlockEntity und nicht im Blockzustand — also muss
+     * sie von Hand gesichert werden. Ginge sie verloren, läge nach einem
+     * Neustart alles wieder auf Bahn eins, und zwei Netze, die sich
+     * berührungslos kreuzten, wären plötzlich eines.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void routerLanesSurviveBeingWrittenDown(GameTestHelper helper) {
+        BlockPos routerPos = new BlockPos(1, 2, 1);
+        helper.setBlock(routerPos, FnBlocks.ROUTER.get());
+        var router = (dev.devpanda.factorynetwork.block.entity.RouterBlockEntity)
+                helper.getBlockEntity(routerPos);
+        net.minecraft.core.Direction oben = towards(helper, routerPos, routerPos.above());
+        net.minecraft.core.Direction unten = towards(helper, routerPos, routerPos.below());
+        router.setLane(oben, 3);
+        router.setLane(unten, dev.devpanda.factorynetwork.block.entity
+                .RouterBlockEntity.OFF);
+
+        var registries = helper.getLevel().registryAccess();
+        var geladen = (dev.devpanda.factorynetwork.block.entity.RouterBlockEntity)
+                net.minecraft.world.level.block.entity.BlockEntity.loadStatic(
+                        helper.absolutePos(routerPos), helper.getBlockState(routerPos),
+                        router.saveWithFullMetadata(registries), registries);
+        helper.assertTrue(geladen != null, "Der Router kam nicht zurück");
+        helper.assertValueEqual(geladen.lane(oben), 3, "Bahn oben");
+        helper.assertValueEqual(geladen.lane(unten),
+                dev.devpanda.factorynetwork.block.entity.RouterBlockEntity.OFF,
+                "abgeklemmt bleibt abgeklemmt");
+        // Was niemand angefasst hat, liegt weiter auf der Vorgabe.
+        helper.assertValueEqual(geladen.lane(towards(helper, routerPos, routerPos.north())), 1,
+                "unberührte Seite");
+        helper.succeed();
+    }
+
+    /**
+     * Die Prozessoren überstehen das Aufschreiben.
+     *
+     * <p>Sonst stünde nach einem Neustart ein leerer Schrank da, das Netz
+     * rechnete nicht mehr, und niemand käme auf den Gedanken, dass die
+     * Prozessoren beim Sichern verlorengingen.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void processorsSurviveBeingWrittenDown(GameTestHelper helper) {
+        BlockPos rackPos = new BlockPos(1, 2, 1);
+        smallRack(helper, rackPos, 3);
+        var rack = (dev.devpanda.factorynetwork.block.entity.RackBlockEntity)
+                helper.getBlockEntity(rackPos);
+        rack.setProcessor(1, new ItemStack(
+                dev.devpanda.factorynetwork.registry.FnItems.CO_PROCESSOR.get()));
+        helper.assertValueEqual(rack.threads(), 14, "drei kleine und ein großer");
+
+        var registries = helper.getLevel().registryAccess();
+        var geladen = (dev.devpanda.factorynetwork.block.entity.RackBlockEntity)
+                net.minecraft.world.level.block.entity.BlockEntity.loadStatic(
+                        helper.absolutePos(rackPos), helper.getBlockState(rackPos),
+                        rack.saveWithFullMetadata(registries), registries);
+        helper.assertTrue(geladen != null, "Der Schrank kam nicht zurück");
+        helper.assertValueEqual(geladen.threads(), 14, "Rechenleistung nach dem Laden");
+        helper.assertValueEqual(geladen.usedSlots(), 2, "belegte Plätze");
+        helper.succeed();
+    }
+
+    /**
+     * Ein abgebauter Schrank gibt seine Prozessoren zurück.
+     *
+     * <p>Die Loot-Tabelle sieht nur den Blockzustand, nicht die BlockEntity.
+     * Ohne diesen Weg wäre ein versehentlicher Schlag der Verlust von acht
+     * Prozessoren.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void abrokenRackDropsItsProcessors(GameTestHelper helper) {
+        BlockPos rackPos = new BlockPos(1, 2, 1);
+        smallRack(helper, rackPos, 4);
+        helper.setBlock(rackPos, Blocks.AIR);
+        helper.succeedWhenEntityPresent(net.minecraft.world.entity.EntityType.ITEM, rackPos);
+    }
+
     private FactoryNetworkGameTests() {
     }
 }
