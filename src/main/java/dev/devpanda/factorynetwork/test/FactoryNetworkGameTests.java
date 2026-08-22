@@ -2929,7 +2929,7 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Setzt einen Serverschrank mit einem Stapel Prozessoren daneben.
+     * Setzt einen Serverschrank mit einem bestückten Einschub daneben.
      *
      * <p>Seit es Serverschränke gibt, rechnet ein Netz ohne einen davon
      * nicht. Fast jede Prüfung braucht deshalb einen — genau wie fast jede
@@ -3631,7 +3631,7 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ein Prozessor geht über das Fenster hinein und wieder heraus.
+     * Ein Bauteil geht über das Fenster hinein und wieder heraus.
      *
      * <p>Dasselbe Fenster wie beim Laufwerk: Beide sind ein Regal, und wer
      * eines bedienen kann, kann auch das andere.
@@ -4021,7 +4021,7 @@ public final class FactoryNetworkGameTests {
     /**
      * Ein Serverschrank mit genau so viel Rechenleistung, wie angegeben.
      *
-     * <p>Speicher und Datenträger reichlich: Wer die Prozessorgrenze prüft,
+     * <p>Speicher und Datenträger reichlich: Wer die Rechengrenze prüft,
      * soll nicht an der Speichergrenze scheitern.
      */
     private static void smallRack(GameTestHelper helper, BlockPos at, int cpu) {
@@ -4044,7 +4044,7 @@ public final class FactoryNetworkGameTests {
         smallRack(helper, controller.west(), 2);
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
-        helper.assertValueEqual(entity.threads(), 2, "ein Prozessor trägt zwei");
+        helper.assertValueEqual(entity.threads(), 2, "das kleinste Rechenwerk trägt zwei");
 
         helper.assertTrue(entity.deploy("""
                 fn wartet() {
@@ -4208,11 +4208,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Die Prozessoren überstehen das Aufschreiben.
+     * Die Bauteile überstehen das Aufschreiben.
      *
      * <p>Sonst stünde nach einem Neustart ein leerer Schrank da, das Netz
      * rechnete nicht mehr, und niemand käme auf den Gedanken, dass die
-     * Prozessoren beim Sichern verlorengingen.
+     * Bauteile beim Sichern verlorengingen.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void processorsSurviveBeingWrittenDown(GameTestHelper helper) {
@@ -4235,11 +4235,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ein abgebauter Schrank gibt seine Prozessoren zurück.
+     * Ein abgebauter Schrank gibt seine Bauteile zurück.
      *
      * <p>Die Loot-Tabelle sieht nur den Blockzustand, nicht die BlockEntity.
-     * Ohne diesen Weg wäre ein versehentlicher Schlag der Verlust von acht
-     * Prozessoren.
+     * Ohne diesen Weg wäre ein versehentlicher Schlag der Verlust von
+     * sechsunddreißig Bauteilen.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void abrokenRackDropsItsProcessors(GameTestHelper helper) {
@@ -4728,7 +4728,7 @@ public final class FactoryNetworkGameTests {
      * Die Brennkammer erzeugt Strom und schiebt ihn in den Controller.
      *
      * <p>Ohne eine Quelle in der Mod selbst wäre die Fertigungskette — Erz,
-     * Platte, Kerne, Zellen, Prozessoren — ohne Fremdmod nicht zu
+     * Platte, Kerne, Zellen, Serverbauteile — ohne Fremdmod nicht zu
      * durchlaufen. Diese Prüfung ist der Nachweis, dass sie es ist.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)

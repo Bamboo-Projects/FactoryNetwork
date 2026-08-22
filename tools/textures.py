@@ -1299,12 +1299,18 @@ def rack_frame():
 
 
 def rack_inner():
-    """Der Boden des Schachts, hinter den Einschüben. Dunkel und tief."""
-    img = surface(top=blend(BODY_BOT, EDGE, 0.4), bottom=EDGE, seed=94)
+    """Der Boden des Schachts, hinter den Einschüben.
+
+    Dunkel, aber nicht schwarz: Ein leerer Schrank soll wie ein leerer
+    Schrank aussehen und nicht wie ein Loch. Die zwei Führungsschienen
+    reichen dafür — an ihnen sieht man, dass da etwas hineingehört.
+    """
+    img = surface(top=blend(BODY_BOT, LIGHT, 0.12), bottom=blend(EDGE, BODY_BOT, 0.5),
+                  seed=94)
     d = ImageDraw.Draw(img)
     # Zwei senkrechte Führungsschienen, auf denen die Einschübe sitzen.
     for x in (12, N - 13):
-        d.rectangle([x - 2, 2, x + 2, N - 3], fill=blend(BODY_BOT, LIGHT, 0.2) + (255,))
+        d.rectangle([x - 2, 2, x + 2, N - 3], fill=blend(BODY_BOT, LIGHT, 0.45) + (255,))
         ao(img, (x - 2, 2, x + 2, N - 3), depth=2, strength=0.4)
     grain(img, amount=5, seed=95)
     return img

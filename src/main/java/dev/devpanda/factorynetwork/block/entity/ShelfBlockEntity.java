@@ -15,7 +15,7 @@ import net.minecraft.world.level.block.state.BlockState;
 /**
  * Ein Regal mit Plätzen für Bauteile.
  *
- * <p>Das Laufwerk nimmt Zellen, der Serverschrank Prozessoren — und sonst
+ * <p>Das Laufwerk nimmt Zellen, der Serverschrank Serverbauteile — und sonst
  * unterscheiden sie sich nicht: Beide sind ein Gehäuse, dessen Fähigkeit in
  * dem steckt, was man hineinsteckt. <b>Deshalb steht die Buchführung ein
  * einziges Mal da.</b> Zwei Fassungen wären zwei Orte, an denen ein Bauteil

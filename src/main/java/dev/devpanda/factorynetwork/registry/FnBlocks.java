@@ -115,7 +115,7 @@ public final class FnBlocks {
                             .sound(SoundType.METAL)
                             .lightLevel(state -> 10)));
 
-    /** Nimmt Prozessoren auf — ohne ihn rechnet das Netz nicht. */
+    /** Nimmt zwölf Server auf — ohne ihn rechnet das Netz nicht. */
     public static final DeferredBlock<Block> RACK = BLOCKS.register("server_rack",
             () -> new RackBlock(machineProperties()));
 

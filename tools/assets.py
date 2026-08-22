@@ -320,10 +320,13 @@ def _rack_elements(half, lift=0):
             "south": _face("#side", [0, 0, 16, 16], "south"),
             "west": _face("#side", [2, 0, 16, 16], "west"),
             "east": _face("#side", [0, 0, 14, 16], "east"),
-            "up": _face("#side", [0, 2, 16, 16], "up" if not unten else None),
-            "down": _face("#side", [0, 2, 16, 16], "down" if unten else None),
         },
     }
+    # Die Fläche zur anderen Hälfte gibt es gar nicht. Sie wäre mit deren
+    # Gegenstück deckungsgleich, und zwei Flächen an derselben Stelle
+    # flimmern gegeneinander — sichtbar als zuckende Linie in der Fuge.
+    aussen = "down" if unten else "up"
+    korpus["faces"][aussen] = _face("#side", [0, 2, 16, 16], aussen)
 
     def pfosten(x0, x1, cull):
         von, bis = box(x0, 0, 0, x1, 16, 2)
@@ -334,15 +337,21 @@ def _rack_elements(half, lift=0):
                 "north": _face("#frame", [x0, 0, x1, 16]),
                 "west": _face("#frame", [14, 0, 16, 16], cull if x0 == 0 else None),
                 "east": _face("#frame", [0, 0, 2, 16], cull if x0 != 0 else None),
-                "up": _face("#frame", [x0, 0, x1, 2], "up" if not unten else None),
-                "down": _face("#frame", [x0, 14, x1, 16], "down" if unten else None),
             },
         }
 
-    elemente = [korpus, pfosten(0, 2, "west"), pfosten(14, 16, "east")]
+    def pfosten_mit_deckel(x0, x1, cull):
+        # Dieselbe Fuge wie beim Korpus: Nur die äußere Deckfläche wird
+        # gezeichnet, die zur anderen Hälfte gar nicht.
+        element = pfosten(x0, x1, cull)
+        element["faces"][aussen] = _face("#frame", [x0, 0, x1, 2], aussen)
+        return element
+
+    elemente = [korpus, pfosten_mit_deckel(0, 2, "west"),
+                pfosten_mit_deckel(14, 16, "east")]
 
     # Nur eine Leiste je Hälfte: unten die Sockelleiste, oben die
-    # Deckleiste. Sässe an beiden Hälften beides, teilte eine Doppelleiste
+    # Deckleiste. Säße an beiden Hälften beides, teilte eine Doppelleiste
     # die Öffnung mitten durch.
     if unten:
         von, bis = box(2, 0, 0, 14, 2, 2)

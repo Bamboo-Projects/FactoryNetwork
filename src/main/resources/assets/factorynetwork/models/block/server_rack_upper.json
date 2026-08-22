@@ -66,15 +66,6 @@
           ],
           "texture": "#side",
           "cullface": "up"
-        },
-        "down": {
-          "uv": [
-            0,
-            2,
-            16,
-            16
-          ],
-          "texture": "#side"
         }
       }
     },
@@ -127,15 +118,6 @@
           ],
           "texture": "#frame",
           "cullface": "up"
-        },
-        "down": {
-          "uv": [
-            0,
-            14,
-            2,
-            16
-          ],
-          "texture": "#frame"
         }
       }
     },
@@ -188,15 +170,6 @@
           ],
           "texture": "#frame",
           "cullface": "up"
-        },
-        "down": {
-          "uv": [
-            14,
-            14,
-            16,
-            16
-          ],
-          "texture": "#frame"
         }
       }
     },

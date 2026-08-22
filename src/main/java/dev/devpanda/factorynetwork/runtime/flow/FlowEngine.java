@@ -35,14 +35,14 @@ public final class FlowEngine {
      * <p>Das ist kein Kapazitätsmodell, sondern eine Bremse gegen die
      * Endlosschleife: Eine falsch geschriebene {@code while}-Schleife soll
      * den Server nicht anhalten. Wie viele Abläufe nebeneinander laufen
-     * dürfen, ist eine andere Frage und steht an den Prozessoren.
+     * dürfen, ist eine andere Frage und steht an den Rechenwerken.
      */
     private static final int STEPS_PER_TICK = 500;
 
     /**
      * Wie viele Abläufe gleichzeitig laufen dürfen.
      *
-     * <p>Setzt der Controller aus den Prozessoren in seinen Serverschränken.
+     * <p>Setzt der Controller aus den Rechenwerken in seinen Serverschränken.
      * Ohne ihn — etwa in einem Test der Maschine allein — gilt keine Grenze.
      */
     private int threadLimit = Integer.MAX_VALUE;
@@ -65,7 +65,7 @@ public final class FlowEngine {
     /**
      * Wie viele Abläufe überhaupt bestehen dürfen — laufende und wartende.
      *
-     * <p>Der Speicher der Server. Anders als die Prozessorgrenze ist das
+     * <p>Der Speicher der Server. Anders als die Grenze der Rechenwerke ist das
      * keine Warteschlange, sondern eine Wand: Was nicht mehr hineinpasst,
      * scheitert sichtbar. <b>Ein Ablauf, der schläft oder auf ein Ereignis
      * wartet, belegt Speicher genauso wie ein rechnender</b> — er steht
@@ -205,7 +205,7 @@ public final class FlowEngine {
             remember(flow);
             return false;
         }
-        flow.queue("wartet auf einen freien Prozessorplatz");
+        flow.queue("wartet auf ein freies Rechenwerk");
         return true;
     }
 

@@ -47,9 +47,11 @@ Alle Blöcke liegen im Kreativ-Reiter „Factory Network".
    Programm. **Er allein reicht nicht:** Lagern kann das Netz erst mit einem
    Laufwerk, rechnen erst mit einem Serverschrank.
 2. **Kabel** vom Controller weg legen.
-3. **Serverschrank** ans Kabel setzen, anklicken und einen **Prozessor**
-   hineinlegen. Ohne ihn rechnet das Netz nicht: Ein Programm wird gar nicht
-   erst übernommen, und Worker stehen still.
+3. **Serverschrank** ans Kabel setzen — er ist zwei Blöcke hoch —,
+   anklicken und einen Einschub mit **Rechenwerk, Speicher und Datenträger**
+   bestücken. Erst alle drei zusammen sind ein Server: Ohne einen rechnet das
+   Netz nicht, ein Programm wird gar nicht erst übernommen, und Worker stehen
+   still.
 4. **Laufwerk** ans Kabel setzen und eine **Speicherzelle** hineinlegen.
    Ohne sie lagert das Netz nichts. Für Flüssigkeiten kommt eine
    **Flüssigkeitszelle** in dasselbe Laufwerk.
@@ -117,7 +119,9 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | Speicher | Laufwerke mit zehn Plätzen, Zellen in vier Größen, Bestand in der Zelle |
 | | Regalfenster für Laufwerk und Schrank, Bestückung an der Front ablesbar |
 | | Router: Seite anklicken schaltet weiter, Schleichen öffnet alle sechs auf einmal |
-| Rechenleistung | Serverschränke mit acht Plätzen, Prozessor und Co-Prozessor |
+| Rechenleistung | Serverschränke, zwei Blöcke hoch, mit zwölf Einschüben |
+| | Je Einschub Rechenwerk, Speicher und Datenträger in vier Stufen |
+| | Erst alle drei ergeben einen Server; unfertige Einschübe tragen nichts |
 | Strom | FE in den Controller, Verbrauch je Gerät, aus bei Unterversorgung |
 | | Brennkammer als eigene Quelle, Kreativ-Stromquelle zum Prüfen |
 | | Ein laufender Ablauf belegt einen Platz, der Rest stellt sich an |
@@ -162,11 +166,11 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
   Flüssigkeits-Tag geschrieben wird, ist eine Frage an die Sprache und nicht
   nebenbei zu entscheiden — `fluidtag:c/molten` wäre eine vierte Art,
   `tag:` beide zu durchsuchen die andere Möglichkeit.
-- **Die Zahlen an den Prozessoren.** Zwei gleichzeitige Abläufe je Prozessor,
-  acht je Co-Prozessor, zweiunddreißig in der Warteschlange. Sie sind gesetzt,
-  nicht hergeleitet — wie sie sich anfühlen, zeigt erst das Spielen. Die
-  Begründungen stehen in `entscheidungen.md` unter „Serverschränke und
-  Prozessoren".
+- **Die Zahlen an den Serverbauteilen.** Rechenwerke von zwei bis
+  hundertachtundzwanzig, Speicher von acht bis fünfhundertzwölf, Datenträger
+  von vierundsechzig bis viertausendsechsundneunzig. Sie sind gesetzt, nicht
+  hergeleitet — wie sie sich anfühlen, zeigt erst das Spielen. Die
+  Begründungen stehen in `entscheidungen.md` unter „Der Serverschrank".
 - **Autocrafting.** Der letzte ausgegraute Reiter.
 - **Chemikalien** aus Mekanism. Die Schreibweise steht seit dem Entwurf.
 

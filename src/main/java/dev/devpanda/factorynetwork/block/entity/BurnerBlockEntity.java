@@ -32,7 +32,7 @@ import net.neoforged.neoforge.energy.IEnergyStorage;
  *
  * <p>Der Grund ist konkreter als der Strom des Netzes: Die Presse braucht FE,
  * und ohne eine Quelle in der Mod selbst wäre die ganze Fertigungskette —
- * Erz, Platte, Kerne, Zellen, Prozessoren — ohne Fremdmod nicht zu
+ * Erz, Platte, Kerne, Zellen, Serverbauteile — ohne Fremdmod nicht zu
  * durchlaufen.
  */
 public class BurnerBlockEntity extends BlockEntity implements Container, MenuProvider {

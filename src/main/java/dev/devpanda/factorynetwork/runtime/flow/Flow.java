@@ -26,7 +26,7 @@ public final class Flow {
         /** Läuft und will Schritte machen. */
         RUNNING,
         /**
-         * Angestellt: Es fehlt ein freier Prozessorplatz.
+         * Angestellt: Es fehlt ein freies Rechenwerk.
          *
          * <p>Nicht abgelehnt, sondern verschoben. <b>Verzögerung ist
          * wiederherstellbar, Verlust nicht</b> — ein abgelehntes

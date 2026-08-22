@@ -207,7 +207,7 @@ public class ControllerBlockEntity extends BlockEntity {
     /**
      * Was das Netz gerade zieht, in FE je Tick.
      *
-     * <p>Gezählt statt mitgeführt, wie die belegten Prozessorplätze: Ein
+     * <p>Gezählt statt mitgeführt, wie die belegten Rechenplätze: Ein
      * Zähler müsste bei jedem gesetzten und abgerissenen Block nachgeführt
      * werden, und der eine vergessene Ort wäre ein Netz, das für Geräte
      * zahlt, die es nicht mehr gibt.
@@ -798,7 +798,7 @@ public class ControllerBlockEntity extends BlockEntity {
         if (flows != null) {
             // Hier und nicht im Tick: Jeder Zugriff auf die Maschine geht
             // durch diese Stelle, und beides kann sich zwischen zwei Ticks
-            // ändern — jemand steckt einen Prozessor dazu, reißt den Schrank
+            // ändern — jemand steckt ein Bauteil dazu, reißt den Schrank
             // ab oder der Strom fällt aus. Ein Knopf am Display und ein
             // Ereignis treiben die Maschine unmittelbar an, ohne über den
             // Tick zu gehen; die Sperre muss deshalb hier sitzen.
