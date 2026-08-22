@@ -4419,6 +4419,76 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
+     * Fällt eine Hälfte, geht die andere mit.
+     *
+     * <p>Sonst bliebe nach einer Explosion eine schwebende Blechhaube
+     * stehen, die nichts kann und die man auch nicht mehr als Schrank
+     * erkennt.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void breakingOneHalfTakesTheOther(GameTestHelper helper) {
+        BlockPos unten = new BlockPos(1, 2, 1);
+        placeRack(helper, unten);
+        helper.assertBlockPresent(FnBlocks.RACK.get(), unten.above());
+
+        // Die obere weg — die untere geht mit.
+        helper.setBlock(unten.above(), Blocks.AIR);
+        helper.assertBlockNotPresent(FnBlocks.RACK.get(), unten);
+        helper.assertBlockNotPresent(FnBlocks.RACK.get(), unten.above());
+
+        // Und andersherum.
+        placeRack(helper, unten);
+        helper.setBlock(unten, Blocks.AIR);
+        helper.assertBlockNotPresent(FnBlocks.RACK.get(), unten.above());
+        helper.succeed();
+    }
+
+    /**
+     * Wer oben zuschlägt, bekommt den Schrank und seinen Inhalt.
+     *
+     * <p>Der Gegenstand hängt an der unteren Hälfte, weil die Loot-Tabelle
+     * nur dort etwas hergibt — sonst machte eine Explosion aus einem
+     * Schrank zwei. Ein Spieler, der die obere Hälfte abbaut, meint aber den
+     * Schrank und soll nicht mit leeren Händen dastehen.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void breakingTheUpperHalfStillDropsTheRack(GameTestHelper helper) {
+        BlockPos unten = new BlockPos(1, 2, 1);
+        placeRack(helper, unten);
+        fillBay(helper, unten, 0, 8, 8, 64);
+
+        BlockPos oben = unten.above();
+        var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+        FnBlocks.RACK.get().playerWillDestroy(helper.getLevel(), helper.absolutePos(oben),
+                helper.getBlockState(oben), player);
+
+        helper.assertBlockNotPresent(FnBlocks.RACK.get(), unten);
+        helper.assertBlockNotPresent(FnBlocks.RACK.get(), oben);
+
+        // Ein Schrank und drei Bauteile liegen auf dem Boden.
+        java.util.List<net.minecraft.world.entity.item.ItemEntity> liegend =
+                helper.getLevel().getEntitiesOfClass(
+                        net.minecraft.world.entity.item.ItemEntity.class,
+                        net.minecraft.world.phys.AABB.encapsulatingFullBlocks(
+                                helper.absolutePos(unten.offset(-2, -2, -2)),
+                                helper.absolutePos(unten.offset(2, 3, 2))));
+        int schraenke = 0;
+        int bauteile = 0;
+        for (var eintrag : liegend) {
+            if (eintrag.getItem().getItem()
+                    == dev.devpanda.factorynetwork.registry.FnItems.RACK.get()) {
+                schraenke += eintrag.getItem().getCount();
+            } else if (eintrag.getItem().getItem()
+                    instanceof dev.devpanda.factorynetwork.item.ServerPartItem) {
+                bauteile += eintrag.getItem().getCount();
+            }
+        }
+        helper.assertValueEqual(schraenke, 1, "genau ein Schrank, nicht zwei und nicht null");
+        helper.assertValueEqual(bauteile, 3, "und die drei Bauteile des Einschubs");
+        helper.succeed();
+    }
+
+    /**
      * Ohne Server fängt kein Ablauf an — aber er geht auch nicht verloren.
      *
      * <p>Er stellt sich an und läuft, sobald wieder ein Schrank steht. Das ist
