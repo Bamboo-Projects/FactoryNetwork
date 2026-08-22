@@ -53,6 +53,18 @@ public final class AnalyserScan {
         for (BlockPos pos : graph.displays()) {
             nodes.add(new AnalyserData.Node(pos, AnalyserData.NodeState.DISPLAY, ""));
         }
+        // Laufwerke, Schränke und Kreuzungen gehören zum Netz und waren
+        // trotzdem unsichtbar. Wer sucht, warum nichts lagert oder nichts
+        // rechnet, sucht genau danach.
+        for (BlockPos pos : graph.drives()) {
+            nodes.add(new AnalyserData.Node(pos, AnalyserData.NodeState.DRIVE, ""));
+        }
+        for (BlockPos pos : graph.racks()) {
+            nodes.add(new AnalyserData.Node(pos, AnalyserData.NodeState.RACK, ""));
+        }
+        for (BlockPos pos : graph.routers()) {
+            nodes.add(new AnalyserData.Node(pos, AnalyserData.NodeState.ROUTER, ""));
+        }
         // Geräte ohne Kanal stehen nicht in der Namensliste, wenn sie gar
         // nicht erst aufgenommen wurden. Sie fehlen sonst genau dort, wo man
         // sie sucht.

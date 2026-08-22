@@ -14,7 +14,15 @@ import java.util.List;
  */
 public record AnalyserData(List<Node> nodes, List<Link> links, Summary summary) {
 
-    /** Wie es um einen Knoten steht. Die Reihenfolge ist die Dringlichkeit. */
+    /**
+     * Wie es um einen Knoten steht.
+     *
+     * <p>Die ersten sechs stehen nach Dringlichkeit. Danach kommt, was nur
+     * Auskunft gibt — angehängt und nicht eingeordnet, weil die Reihenfolge
+     * über die Leitung geht: Der Zustand wird als laufende Nummer verschickt,
+     * und eine Einordnung in der Mitte hieße, dass ein alter Client etwas
+     * anderes liest, als ein neuer Server meint.
+     */
     public enum NodeState {
         /** Der Controller selbst. */
         CONTROLLER,
@@ -27,7 +35,13 @@ public record AnalyserData(List<Node> nodes, List<Link> links, Summary summary) 
         /** Der Name ist mehrfach vergeben — alle davon sind unbrauchbar. */
         DUPLICATE,
         /** Am Netz, aber ohne freien Kanal auf dem Weg zum Controller. */
-        STARVED
+        STARVED,
+        /** Ein Laufwerk. Es stellt Platz bereit, statt welchen zu brauchen. */
+        DRIVE,
+        /** Ein Serverschrank. Ohne ihn rechnet das Netz nicht. */
+        RACK,
+        /** Eine Kreuzung. Sie leitet weiter und kostet selbst keinen Kanal. */
+        ROUTER
     }
 
     /** Wie es um eine Kabelstrecke steht. */

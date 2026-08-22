@@ -3943,6 +3943,37 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    /**
+     * Der Analysator zeigt auch, was Platz und Rechenleistung bereitstellt.
+     *
+     * <p>Laufwerke, Serverschränke und Kreuzungen gehörten schon zum Netz und
+     * waren trotzdem unsichtbar. Wer sucht, warum nichts lagert oder nichts
+     * rechnet, sucht genau danach.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void theAnalyserShowsDrivesRacksAndRouters(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 2, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        rackWithProcessor(helper, controller.west());
+        driveWithCell(helper, controller.above(),
+                dev.devpanda.factorynetwork.storage.CellTier.K1);
+        helper.setBlock(controller.east(), FnBlocks.DENSE_CABLE.get());
+        helper.setBlock(controller.east(2), FnBlocks.ROUTER.get());
+
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        var data = dev.devpanda.factorynetwork.analyser.AnalyserScan.of(entity);
+
+        for (var wanted : java.util.List.of(
+                dev.devpanda.factorynetwork.analyser.AnalyserData.NodeState.DRIVE,
+                dev.devpanda.factorynetwork.analyser.AnalyserData.NodeState.RACK,
+                dev.devpanda.factorynetwork.analyser.AnalyserData.NodeState.ROUTER)) {
+            helper.assertTrue(data.nodes().stream().anyMatch(node -> node.state() == wanted),
+                    "Im Bild fehlt: " + wanted);
+        }
+        helper.succeed();
+    }
+
     private FactoryNetworkGameTests() {
     }
 }
