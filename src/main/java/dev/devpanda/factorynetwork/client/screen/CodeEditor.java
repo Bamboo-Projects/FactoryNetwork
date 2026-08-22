@@ -29,6 +29,9 @@ public class CodeEditor {
     private static final int GUTTER_WIDTH = 18;
     private static final int TEXT_LEFT = 4;
 
+    /** So weit rückt eine Stufe ein — hier und in {@code newLine}. */
+    private static final int INDENT = 4;
+
     /** Ein Zeilenende, damit die Bausteine unten ohne Escapes auskommen. */
     private static final String NEWLINE = "\n";
 
@@ -212,6 +215,7 @@ public class CodeEditor {
     public void render(GuiGraphics graphics, List<Diagnostic> diagnostics) {
         int visible = visibleLines();
         int textX = x + GUTTER_WIDTH + TEXT_LEFT;
+        int[] partner = matchingBracket();
 
         for (int i = 0; i < visible; i++) {
             int lineIndex = scrollLine + i;
@@ -220,15 +224,29 @@ public class CodeEditor {
             }
             int lineY = y + 10 + i * LINE_HEIGHT;
 
+            // Die Zeile unter dem Cursor bekommt einen Hauch Hintergrund.
+            // Nicht bei einer Auswahl: Die ist schon eine Hinterlegung, und
+            // zwei übereinander sind keine.
+            if (lineIndex == cursorLine && !hasSelection()) {
+                graphics.fill(x + GUTTER_WIDTH, lineY - 1, x + width - 2,
+                        lineY + LINE_HEIGHT - 2, EditorColours.CURRENT_LINE);
+            }
+
             // Zeilennummer, gedämpft — sie soll da sein, aber nicht ablenken.
+            // Die eigene heller: Sie ist der Bezugspunkt beim Aufsehen.
             String number = String.valueOf(lineIndex + 1);
             graphics.drawString(font, mono(number),
                     x + GUTTER_WIDTH - widthOf(number) - 2, lineY,
-                    EditorColours.COMMENT, false);
+                    lineIndex == cursorLine
+                            ? EditorColours.LINE_NUMBER_ACTIVE : EditorColours.COMMENT,
+                    false);
+
+            drawIndentGuides(graphics, lineIndex, textX, lineY);
 
             // Die Auswahl liegt unter dem Text, sonst verschluckt sie ihn.
             drawSelection(graphics, lineIndex, textX, lineY);
             drawMatches(graphics, lineIndex, textX, lineY);
+            drawBracket(graphics, lineIndex, textX, lineY, partner);
 
             // Zeilen mit Fehler bekommen einen Streifen statt einer Welle:
             // Wellen sind bei zehn Pixel Zeilenhöhe nicht zu erkennen.
@@ -599,7 +617,50 @@ public class CodeEditor {
             return true;
         }
         remember(EditKind.TYPING);
-        insert(String.valueOf(character));
+        if (!typePair(character)) {
+            insert(String.valueOf(character));
+        }
+        return true;
+    }
+
+    /**
+     * Klammern und Anführungszeichen schließen sich selbst.
+     *
+     * <p>Zwei Fälle, und der zweite ist der wichtigere: Wer eine
+     * schließende Klammer tippt, obwohl sie schon dasteht, will darüber
+     * hinweg und nicht zwei davon. Ohne das wäre die Selbstergänzung
+     * lästiger als hilfreich.
+     *
+     * <p>Ergänzt wird nur, wenn rechts vom Cursor nichts Handfestes mehr
+     * steht — Zeilenende, Leerzeichen oder eine andere schließende Klammer.
+     * Wer mitten in ein Wort tippt, meint das eine Zeichen.
+     *
+     * @return ob der Fall behandelt wurde
+     */
+    private boolean typePair(char character) {
+        if (hasSelection()) {
+            return false;
+        }
+        String line = lines.get(cursorLine);
+        int column = Math.min(cursorColumn, line.length());
+        char next = column < line.length() ? line.charAt(column) : '\0';
+
+        // Über ein bereits stehendes Gegenstück hinweg.
+        if ((CLOSERS.indexOf(character) >= 0 || character == '"') && next == character) {
+            cursorColumn = column + 1;
+            return true;
+        }
+        int opener = OPENERS.indexOf(character);
+        boolean quote = character == '"';
+        if (opener < 0 && !quote) {
+            return false;
+        }
+        if (next != '\0' && next != ' ' && CLOSERS.indexOf(next) < 0) {
+            return false;
+        }
+        char closing = quote ? '"' : CLOSERS.charAt(opener);
+        insert(String.valueOf(character) + closing);
+        cursorColumn--;
         return true;
     }
 
@@ -620,6 +681,187 @@ public class CodeEditor {
      * <p>Eine Auswahl ohne Anzeige ist schlimmer als keine: Man weiss nicht,
      * was das nächste Zeichen ersetzt.
      */
+    /**
+     * Die senkrechten Striche der Einrückung.
+     *
+     * <p>Einer je vier Leerzeichen, aber nicht in der Spalte null: Der linke
+     * Rand ist schon eine Kante. Für eine leere Zeile gilt die Einrückung
+     * der Umgebung — sonst reißt jede Leerzeile alle Striche auf, und dann
+     * beantworten sie die Frage nicht mehr, für die sie da sind.
+     */
+    private void drawIndentGuides(GuiGraphics graphics, int lineIndex, int textX, int lineY) {
+        int indent = guideIndentAt(lineIndex);
+        for (int column = INDENT; column < indent; column += INDENT) {
+            int guideX = columnX(textX, column);
+            graphics.fill(guideX, lineY - 1, guideX + 1, lineY + LINE_HEIGHT - 2,
+                    EditorColours.INDENT_GUIDE);
+        }
+    }
+
+    private int guideIndentAt(int lineIndex) {
+        if (!lines.get(lineIndex).isBlank()) {
+            return indentOf(lines.get(lineIndex));
+        }
+        // Eine leere Zeile erbt, was um sie herum steht — der kleinere der
+        // beiden Nachbarn, damit ein Strich nicht ins Leere weiterläuft.
+        int above = 0;
+        for (int i = lineIndex - 1; i >= 0; i--) {
+            if (!lines.get(i).isBlank()) {
+                above = indentOf(lines.get(i));
+                break;
+            }
+        }
+        int below = 0;
+        for (int i = lineIndex + 1; i < lines.size(); i++) {
+            if (!lines.get(i).isBlank()) {
+                below = indentOf(lines.get(i));
+                break;
+            }
+        }
+        return Math.min(above, below);
+    }
+
+    private static int indentOf(String line) {
+        int indent = 0;
+        while (indent < line.length() && line.charAt(indent) == ' ') {
+            indent++;
+        }
+        return indent;
+    }
+
+    // ---- Klammernpaare ----------------------------------------------------
+
+    private static final String OPENERS = "{([";
+    private static final String CLOSERS = "})]";
+
+    /** Steht hier ein Paar ohne Inhalt — {@code ()}, {@code []}, {@code ""}? */
+    private static boolean isEmptyPair(char before, char after) {
+        if (before == '"') {
+            return after == '"';
+        }
+        int opener = OPENERS.indexOf(before);
+        return opener >= 0 && CLOSERS.charAt(opener) == after;
+    }
+
+    /**
+     * Sucht das Gegenstück zur Klammer am Cursor.
+     *
+     * <p>Zuerst rechts vom Cursor, dann links: Wer gerade eine schließende
+     * Klammer getippt hat, steht dahinter und meint sie. Gefunden wird über
+     * eine Tiefenzählung, die Zeichenketten und Kommentare überspringt —
+     * eine geschweifte Klammer in einem Text ist keine.
+     *
+     * @return vier Zahlen — Zeile und Spalte der Klammer am Cursor, dann die
+     *         des Gegenstücks — oder {@code null}
+     */
+    private int[] matchingBracket() {
+        String line = lines.get(cursorLine);
+        int column = Math.min(cursorColumn, line.length());
+        int found = bracketAt(line, column);
+        if (found < 0 && column > 0) {
+            found = bracketAt(line, column - 1);
+            if (found >= 0) {
+                column--;
+            }
+        }
+        if (found < 0) {
+            return null;
+        }
+        char bracket = line.charAt(column);
+        boolean forward = OPENERS.indexOf(bracket) >= 0;
+        char partner = forward
+                ? CLOSERS.charAt(OPENERS.indexOf(bracket))
+                : OPENERS.charAt(CLOSERS.indexOf(bracket));
+        int[] hit = scanFor(cursorLine, column, bracket, partner, forward);
+        if (hit == null) {
+            return null;
+        }
+        return new int[] {cursorLine, column, hit[0], hit[1]};
+    }
+
+    /** Steht an dieser Stelle eine Klammer, die zählt? */
+    private static int bracketAt(String line, int column) {
+        if (column < 0 || column >= line.length()) {
+            return -1;
+        }
+        char at = line.charAt(column);
+        if (OPENERS.indexOf(at) < 0 && CLOSERS.indexOf(at) < 0) {
+            return -1;
+        }
+        return inCode(line, column) ? column : -1;
+    }
+
+    /**
+     * Liegt diese Spalte im Code — also nicht in einem Text und nicht hinter
+     * einem Kommentarzeichen?
+     */
+    private static boolean inCode(String line, int column) {
+        boolean inString = false;
+        for (int i = 0; i < column && i < line.length(); i++) {
+            char c = line.charAt(i);
+            if (c == '"') {
+                inString = !inString;
+            } else if (!inString && c == '/' && i + 1 < line.length()
+                    && line.charAt(i + 1) == '/') {
+                return false;
+            }
+        }
+        return !inString;
+    }
+
+    /**
+     * Zählt sich durch das Dokument, bis die Tiefe wieder null ist.
+     *
+     * <p>Über Zeilengrenzen hinweg: Ein {@code fn}-Block geht über zwanzig
+     * Zeilen, und genau dort will man wissen, wo er endet.
+     */
+    private int[] scanFor(int fromLine, int fromColumn, char bracket, char partner,
+                          boolean forward) {
+        int depth = 0;
+        int lineIndex = fromLine;
+        int column = fromColumn;
+        // Eine Obergrenze, damit ein Dokument ohne Gegenstück nicht bei
+        // jedem Bild ganz durchlaufen wird.
+        int budget = 20_000;
+        while (lineIndex >= 0 && lineIndex < lines.size() && budget-- > 0) {
+            String line = lines.get(lineIndex);
+            while (column >= 0 && column < line.length()) {
+                char at = line.charAt(column);
+                if ((at == bracket || at == partner) && inCode(line, column)) {
+                    depth += at == bracket ? 1 : -1;
+                    if (depth == 0) {
+                        return new int[] {lineIndex, column};
+                    }
+                }
+                column += forward ? 1 : -1;
+            }
+            lineIndex += forward ? 1 : -1;
+            if (lineIndex < 0 || lineIndex >= lines.size()) {
+                return null;
+            }
+            column = forward ? 0 : lines.get(lineIndex).length() - 1;
+        }
+        return null;
+    }
+
+    /** Hinterlegt beide Klammern eines Paares. */
+    private void drawBracket(GuiGraphics graphics, int lineIndex, int textX, int lineY,
+                             int[] partner) {
+        if (partner == null) {
+            return;
+        }
+        for (int pair = 0; pair < 2; pair++) {
+            if (partner[pair * 2] != lineIndex) {
+                continue;
+            }
+            int column = partner[pair * 2 + 1];
+            int left = columnX(textX, column);
+            int right = columnX(textX, column + 1);
+            graphics.fill(left, lineY - 1, right, lineY + LINE_HEIGHT - 2,
+                    EditorColours.BRACKET);
+        }
+    }
+
     private void drawSelection(GuiGraphics graphics, int lineIndex, int textX, int lineY) {
         if (!hasSelection()) {
             return;
@@ -765,7 +1007,7 @@ public class CodeEditor {
         changed();
     }
 
-    private void newLine() {
+    void newLine() {
         String line = lines.get(cursorLine);
         int column = Math.min(cursorColumn, line.length());
         String before = line.substring(0, column);
@@ -776,30 +1018,46 @@ public class CodeEditor {
         while (indent < before.length() && before.charAt(indent) == ' ') {
             indent++;
         }
-        if (before.stripTrailing().endsWith("{")) {
-            indent += 4;
+        boolean opened = before.stripTrailing().endsWith("{");
+        if (opened) {
+            indent += INDENT;
         }
         String padding = " ".repeat(indent);
 
         lines.set(cursorLine, before);
         lines.add(cursorLine + 1, padding + after);
+        // Steht der Cursor zwischen den Klammern, kommt die schließende auf
+        // eine eigene Zeile und der Cursor dazwischen — die Form, in der man
+        // einen Block sowieso geschrieben hätte.
+        if (opened && after.stripLeading().startsWith("}")) {
+            lines.set(cursorLine + 1, padding);
+            lines.add(cursorLine + 2, " ".repeat(indent - INDENT) + after.stripLeading());
+        }
         cursorLine++;
         cursorColumn = padding.length();
         ensureVisible();
         changed();
     }
 
-    private void backspace() {
+    void backspace() {
         String line = lines.get(cursorLine);
         if (cursorColumn > 0) {
             int column = Math.min(cursorColumn, line.length());
             // Vier Leerzeichen am Zeilenanfang gehen gemeinsam weg.
             int remove = 1;
-            if (column >= 4 && line.substring(0, column).endsWith("    ")
+            if (column >= INDENT && line.substring(0, column).endsWith("    ")
                     && line.substring(0, column).isBlank()) {
-                remove = 4;
+                remove = INDENT;
             }
-            lines.set(cursorLine, line.substring(0, column - remove) + line.substring(column));
+            // Und ein leeres Paar auch: Was der Editor zusammen gesetzt hat,
+            // nimmt er zusammen wieder weg. Sonst bleibt nach jedem Vertipper
+            // eine einsame Klammer stehen.
+            int after = column;
+            if (column < line.length() && isEmptyPair(line.charAt(column - 1),
+                    line.charAt(column))) {
+                after = column + 1;
+            }
+            lines.set(cursorLine, line.substring(0, column - remove) + line.substring(after));
             cursorColumn = column - remove;
         } else if (cursorLine > 0) {
             String previous = lines.get(cursorLine - 1);

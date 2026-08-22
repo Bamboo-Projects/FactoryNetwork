@@ -29,6 +29,51 @@ class CodeEditorTest {
     }
 
     @Test
+    void eineKlammerSchliesstSichSelbst() {
+        CodeEditor editor = editor("");
+        type(editor, "fn a(");
+        assertEquals("fn a()", editor.text(), "die schließende kommt mit");
+        assertEquals(5, editor.cursorColumn(), "und der Cursor bleibt dazwischen");
+    }
+
+    @Test
+    void ueberEineStehendeKlammerHinweg() {
+        CodeEditor editor = editor("");
+        type(editor, "fn a()");
+        assertEquals("fn a()", editor.text(), "keine zweite schließende");
+        assertEquals(6, editor.cursorColumn(), "sondern darüber hinweg");
+    }
+
+    @Test
+    void mittenImWortWirdNichtsErgaenzt() {
+        // Vor einem Buchstaben meint man das eine Zeichen. Ergaenzte der
+        // Editor auch hier, muesste man jede zweite Klammer wieder loeschen.
+        CodeEditor editor = editor("abc");
+        editor.setCursor(0, 0);
+        type(editor, "(");
+        assertEquals("(abc", editor.text());
+    }
+
+    @Test
+    void einLeeresPaarGehtZusammenWiederWeg() {
+        CodeEditor editor = editor("");
+        type(editor, "(");
+        editor.backspace();
+        assertEquals("", editor.text(), "was zusammen kam, geht zusammen");
+    }
+
+    @Test
+    void zeilenumbruchZwischenKlammernOeffnetDenBlock() {
+        CodeEditor editor = editor("fn a() {}");
+        editor.setCursor(0, 8);
+        editor.newLine();
+        assertEquals(String.join("\n", "fn a() {", "    ", "}"), editor.text(),
+                "die schließende Klammer bekommt eine eigene Zeile");
+        assertEquals(1, editor.cursorLine());
+        assertEquals(4, editor.cursorColumn(), "und der Cursor steht eingerückt dazwischen");
+    }
+
+    @Test
     void einLaufVonAnschlaegenIstEinSchritt() {
         CodeEditor editor = editor("");
         type(editor, "worker");

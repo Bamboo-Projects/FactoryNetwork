@@ -38,6 +38,36 @@ public final class EditorColours {
     /** Die Suchzeile über dem Text. */
     public static final int SEARCH_BAR = 0xC0202429;
 
+    /**
+     * Die Zeile, in der der Cursor steht.
+     *
+     * <p>Sehr blass. Sie soll den Blick zurückführen, wenn man von der
+     * Tastatur aufsieht, und nicht mitlesen wollen. Bei einer Auswahl bleibt
+     * sie weg — zwei Hinterlegungen übereinander sind keine.
+     */
+    public static final int CURRENT_LINE = 0x18FFFFFF;
+
+    /** Die Nummer der Zeile, in der der Cursor steht. */
+    public static final int LINE_NUMBER_ACTIVE = 0xA8B2BC;
+
+    /**
+     * Die senkrechten Striche der Einrückung.
+     *
+     * <p>Fast unsichtbar, und das ist der Sinn: Sie beantworten „zu welchem
+     * Block gehört diese Zeile" beim Überfliegen, ohne beim Lesen im Weg zu
+     * stehen. In einer Sprache mit geschweiften Klammern ist das die Frage,
+     * die man am häufigsten stellt.
+     */
+    public static final int INDENT_GUIDE = 0x1EFFFFFF;
+
+    /**
+     * Das Klammernpaar um den Cursor.
+     *
+     * <p>Hinterlegt statt eingerahmt: Ein Rahmen um ein Zeichen von fünf
+     * Pixeln Breite ist ein Fleck.
+     */
+    public static final int BRACKET = 0x605A8AC4;
+
     private EditorColours() {
     }
 }
