@@ -471,7 +471,9 @@ public class ControllerBlockEntity extends BlockEntity {
         FlowEngine engine = flowEngine();
         PacketDistributor.sendToPlayer(player, new FlowStatePacket(flowLines(), threads(),
                 engine == null ? 0 : engine.occupied(),
-                engine == null ? 0 : engine.queued()));
+                engine == null ? 0 : engine.queued(),
+                new FlowStatePacket.Supply(power.state().ordinal(), power.stored(),
+                        power.capacity(), powerDraw())));
     }
 
     /** Die Abläufe als Zeilen — getrennt vom Senden, damit prüfbar. */

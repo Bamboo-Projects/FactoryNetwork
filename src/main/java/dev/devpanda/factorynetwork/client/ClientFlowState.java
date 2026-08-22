@@ -17,6 +17,13 @@ public final class ClientFlowState {
     private static int threads;
     private static int occupied;
     private static int queued;
+    private static FlowStatePacket.Supply supply =
+            new FlowStatePacket.Supply(0, 0, 0, 0);
+
+    /** Der Strom des Netzes, wie ihn der Server zuletzt gemeldet hat. */
+    public static FlowStatePacket.Supply supply() {
+        return supply;
+    }
 
     /** Wie viele Abläufe gleichzeitig laufen dürfen. */
     public static int threads() {
@@ -40,6 +47,7 @@ public final class ClientFlowState {
         threads = packet.threads();
         occupied = packet.occupied();
         queued = packet.queued();
+        supply = packet.supply();
         flows = List.copyOf(packet.flows());
     }
 

@@ -206,5 +206,12 @@
   "item.factorynetwork.brown_dense_cable": "Braunes dichtes Kabel",
   "item.factorynetwork.green_dense_cable": "Grünes dichtes Kabel",
   "item.factorynetwork.red_dense_cable": "Rotes dichtes Kabel",
-  "item.factorynetwork.black_dense_cable": "Schwarzes dichtes Kabel"
+  "item.factorynetwork.black_dense_cable": "Schwarzes dichtes Kabel",
+  "screen.factorynetwork.terminal.network.power": "Strom: %s FE/t · %s von %s",
+  "screen.factorynetwork.terminal.network.power_booting": "Fährt hoch — %s FE/t · %s von %s",
+  "screen.factorynetwork.terminal.network.power_off": "Kein Strom — das Netz steht (%s FE/t nötig)",
+  "jade.factorynetwork.controller.power": "%s FE/t · %s gespeichert",
+  "jade.factorynetwork.controller.power_booting": "Fährt hoch — %s FE/t, %s gespeichert",
+  "jade.factorynetwork.controller.power_off": "Kein Strom — %s FE/t nötig",
+  "jade.factorynetwork.controller.no_server": "Kein Serverschrank — das Netz rechnet nicht"
 }

@@ -22,13 +22,35 @@ import java.util.List;
  * entscheiden können muss, und die Wahl den richtigen treffen soll — auch
  * wenn sich die Liste zwischen Anzeigen und Klicken verschoben hat.
  */
-public record FlowStatePacket(List<Line> flows, int threads, int occupied, int queued)
+public record FlowStatePacket(List<Line> flows, int threads, int occupied, int queued,
+                              Supply supply)
         implements CustomPacketPayload {
 
     // threads, occupied und queued sind die Zahlen, die man ohne Anzeige nie
     // sieht: Was eine Schleife an Rechenleistung kostet, sieht niemand — bei
     // Kanälen ist die Grenze wenigstens offensichtlich. Wer ansteht, muss
     // lesen können, warum.
+
+    /**
+     * Der Strom des Netzes.
+     *
+     * <p>Als eigener Satz Zahlen und nicht als vier weitere Felder oben:
+     * {@code StreamCodec.composite} trägt höchstens sechs, und oben sind
+     * vier schon vergeben.
+     *
+     * <p>{@code state} ist die laufende Nummer aus {@code NetworkPower.State}
+     * — der Client soll den Zustand anzeigen und nicht darüber urteilen.
+     */
+    public record Supply(int state, int stored, int capacity, int draw) {
+
+        public static final StreamCodec<RegistryFriendlyByteBuf, Supply> STREAM_CODEC =
+                StreamCodec.composite(
+                        ByteBufCodecs.VAR_INT, Supply::state,
+                        ByteBufCodecs.VAR_INT, Supply::stored,
+                        ByteBufCodecs.VAR_INT, Supply::capacity,
+                        ByteBufCodecs.VAR_INT, Supply::draw,
+                        Supply::new);
+    }
 
     /** Eine Zeile der Liste. */
     public record Line(long id, String entry, String status, String detail) {
@@ -51,6 +73,7 @@ public record FlowStatePacket(List<Line> flows, int threads, int occupied, int q
                     ByteBufCodecs.VAR_INT, FlowStatePacket::threads,
                     ByteBufCodecs.VAR_INT, FlowStatePacket::occupied,
                     ByteBufCodecs.VAR_INT, FlowStatePacket::queued,
+                    Supply.STREAM_CODEC, FlowStatePacket::supply,
                     FlowStatePacket::new);
 
     @Override

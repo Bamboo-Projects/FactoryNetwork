@@ -25,6 +25,10 @@ public enum ControllerInfo implements IBlockComponentProvider, IServerDataProvid
     private static final String KEY_STARVED = "FnStarved";
     private static final String KEY_CABLES = "FnCables";
     private static final String KEY_WORKERS = "FnWorkers";
+    private static final String KEY_POWER_STATE = "FnPowerState";
+    private static final String KEY_POWER_DRAW = "FnPowerDraw";
+    private static final String KEY_POWER_STORED = "FnPowerStored";
+    private static final String KEY_THREADS = "FnThreads";
     private static final String KEY_HALTED = "FnHalted";
 
     @Override
@@ -38,6 +42,10 @@ public enum ControllerInfo implements IBlockComponentProvider, IServerDataProvid
         data.putInt(KEY_STARVED, graph.starvedConnectors().size());
         data.putInt(KEY_CABLES, graph.cableCount());
         data.putInt(KEY_WORKERS, controller.program().workers().size());
+        data.putInt(KEY_POWER_STATE, controller.power().state().ordinal());
+        data.putInt(KEY_POWER_DRAW, controller.powerDraw());
+        data.putInt(KEY_POWER_STORED, controller.power().stored());
+        data.putInt(KEY_THREADS, controller.threads());
         data.putInt(KEY_HALTED, (int) controller.runtime().states().values().stream()
                 .filter(state -> state.status == dev.devpanda.factorynetwork.runtime
                         .WorkerRuntime.Status.HALTED)
@@ -49,6 +57,28 @@ public enum ControllerInfo implements IBlockComponentProvider, IServerDataProvid
         CompoundTag data = accessor.getServerData();
         if (!data.contains(KEY_DEVICES)) {
             return;
+        }
+        // Der Strom zuerst: Ein Netz, das steht, weil der Vorrat leer ist,
+        // sieht aus wie eines mit einem Fehler im Programm.
+        var zustand = dev.devpanda.factorynetwork.network.NetworkPower.State
+                .values()[data.getInt(KEY_POWER_STATE)];
+        String schluessel = switch (zustand) {
+            case RUNNING -> "jade.factorynetwork.controller.power";
+            case BOOTING -> "jade.factorynetwork.controller.power_booting";
+            case OFF -> "jade.factorynetwork.controller.power_off";
+        };
+        net.minecraft.ChatFormatting farbe = switch (zustand) {
+            case RUNNING -> net.minecraft.ChatFormatting.GRAY;
+            case BOOTING -> net.minecraft.ChatFormatting.YELLOW;
+            case OFF -> net.minecraft.ChatFormatting.RED;
+        };
+        tooltip.add(Component.translatable(schluessel, data.getInt(KEY_POWER_DRAW),
+                        String.format(java.util.Locale.GERMANY, "%,d",
+                                data.getInt(KEY_POWER_STORED)))
+                .withStyle(farbe));
+        if (data.getInt(KEY_THREADS) == 0) {
+            tooltip.add(Component.translatable("jade.factorynetwork.controller.no_server")
+                    .withStyle(net.minecraft.ChatFormatting.RED));
         }
         tooltip.add(Component.translatable("jade.factorynetwork.controller.network",
                 data.getInt(KEY_DEVICES), data.getInt(KEY_CABLES))

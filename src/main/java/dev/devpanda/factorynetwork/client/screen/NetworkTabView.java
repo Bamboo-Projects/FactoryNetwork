@@ -122,8 +122,11 @@ public class NetworkTabView {
 
         line += 3;
         line = section(graphics, line, "screen.factorynetwork.terminal.network.flows");
-        // Erst die Rechenleistung, dann die Abläufe: Wer sieht, dass drei
-        // anstehen, will als Nächstes wissen, wie viele Plätze es gibt.
+        // Erst der Strom, dann die Rechenleistung, dann die Abläufe. Wer
+        // sieht, dass nichts läuft, fragt zuerst nach dem Strom.
+        line = supply(graphics, line);
+        // Wer sieht, dass drei anstehen, will als Nächstes wissen, wie viele
+        // Plätze es gibt.
         line = text(graphics, line, Component.translatable(
                         dev.devpanda.factorynetwork.client.ClientFlowState.threads() == 0
                                 ? "screen.factorynetwork.terminal.network.no_server"
@@ -137,6 +140,36 @@ public class NetworkTabView {
                         : dev.devpanda.factorynetwork.client.ClientFlowState.queued() > 0
                         ? 0xD08A3C : TerminalScreen.TEXT_DIM);
         flows(graphics, line);
+    }
+
+    /**
+     * Der Strom des Netzes.
+     *
+     * <p>Was eine Anlage an Strom zieht, sieht man ihr nicht an — und ein
+     * Netz, das steht, weil der Vorrat leer ist, sieht aus wie eines mit
+     * einem Fehler im Programm. Deshalb steht es hier ganz oben.
+     */
+    private int supply(GuiGraphics graphics, int line) {
+        var strom = dev.devpanda.factorynetwork.client.ClientFlowState.supply();
+        var zustand = dev.devpanda.factorynetwork.network.NetworkPower.State
+                .values()[Math.min(strom.state(),
+                        dev.devpanda.factorynetwork.network.NetworkPower.State.values().length - 1)];
+        String schluessel = switch (zustand) {
+            case RUNNING -> "screen.factorynetwork.terminal.network.power";
+            case BOOTING -> "screen.factorynetwork.terminal.network.power_booting";
+            case OFF -> "screen.factorynetwork.terminal.network.power_off";
+        };
+        int colour = switch (zustand) {
+            case RUNNING -> TerminalScreen.TEXT_DIM;
+            case BOOTING -> 0xD08A3C;
+            case OFF -> 0xA03030;
+        };
+        return text(graphics, line, Component.translatable(schluessel, strom.draw(),
+                grouped(strom.stored()), grouped(strom.capacity())).getString(), colour);
+    }
+
+    private static String grouped(int value) {
+        return String.format(java.util.Locale.GERMANY, "%,d", value);
     }
 
     /**
