@@ -139,7 +139,33 @@ public class NetworkTabView {
                         ? 0xA03030
                         : dev.devpanda.factorynetwork.client.ClientFlowState.queued() > 0
                         ? 0xD08A3C : TerminalScreen.TEXT_DIM);
+        line = capacity(graphics, line);
         flows(graphics, line);
+    }
+
+    /**
+     * Speicher und Datenträger.
+     *
+     * <p>Nur, wenn es überhaupt einen Server gibt — sonst stünde dreimal
+     * dieselbe Null da und die Zeile davor sagt es schon.
+     *
+     * <p>Die Programmgröße steht neben dem Platz, weil das die einzige
+     * Grenze ist, die man beim Schreiben überschreitet, ohne es zu merken:
+     * Wer eine Funktion ergänzt, zählt keine Anweisungen mit.
+     */
+    private int capacity(GuiGraphics graphics, int line) {
+        var rechen = dev.devpanda.factorynetwork.client.ClientFlowState.compute();
+        if (rechen.threads() == 0) {
+            return line;
+        }
+        line = text(graphics, line, Component.translatable(
+                "screen.factorynetwork.terminal.network.memory",
+                rechen.occupied() + rechen.queued(), rechen.memory()).getString(),
+                TerminalScreen.TEXT_DIM);
+        return text(graphics, line, Component.translatable(
+                "screen.factorynetwork.terminal.network.disk",
+                rechen.program(), rechen.disk()).getString(),
+                rechen.program() > rechen.disk() ? 0xA03030 : TerminalScreen.TEXT_DIM);
     }
 
     /**

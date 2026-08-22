@@ -22,21 +22,37 @@ import java.util.List;
  * entscheiden können muss, und die Wahl den richtigen treffen soll — auch
  * wenn sich die Liste zwischen Anzeigen und Klicken verschoben hat.
  */
-public record FlowStatePacket(List<Line> flows, int threads, int occupied, int queued,
-                              Supply supply)
+public record FlowStatePacket(List<Line> flows, Compute compute, Supply supply)
         implements CustomPacketPayload {
 
-    // threads, occupied und queued sind die Zahlen, die man ohne Anzeige nie
-    // sieht: Was eine Schleife an Rechenleistung kostet, sieht niemand — bei
-    // Kanälen ist die Grenze wenigstens offensichtlich. Wer ansteht, muss
-    // lesen können, warum.
+    /**
+     * Was die Server tragen und was davon belegt ist.
+     *
+     * <p>Zahlen, die man ohne Anzeige nie sieht: Was eine Schleife an
+     * Rechenleistung kostet, sieht niemand — bei Kanälen ist die Grenze
+     * wenigstens offensichtlich. Wer ansteht, muss lesen können, warum.
+     *
+     * <p>Als eigener Satz und nicht als sechs weitere Felder oben:
+     * {@code StreamCodec.composite} trägt höchstens sechs.
+     */
+    public record Compute(int threads, int occupied, int queued,
+                          int memory, int program, int disk) {
+
+        public static final StreamCodec<RegistryFriendlyByteBuf, Compute> STREAM_CODEC =
+                StreamCodec.composite(
+                        ByteBufCodecs.VAR_INT, Compute::threads,
+                        ByteBufCodecs.VAR_INT, Compute::occupied,
+                        ByteBufCodecs.VAR_INT, Compute::queued,
+                        ByteBufCodecs.VAR_INT, Compute::memory,
+                        ByteBufCodecs.VAR_INT, Compute::program,
+                        ByteBufCodecs.VAR_INT, Compute::disk,
+                        Compute::new);
+    }
 
     /**
      * Der Strom des Netzes.
      *
-     * <p>Als eigener Satz Zahlen und nicht als vier weitere Felder oben:
-     * {@code StreamCodec.composite} trägt höchstens sechs, und oben sind
-     * vier schon vergeben.
+     * <p>Aus demselben Grund ein eigener Satz Zahlen wie {@link Compute}.
      *
      * <p>{@code state} ist die laufende Nummer aus {@code NetworkPower.State}
      * — der Client soll den Zustand anzeigen und nicht darüber urteilen.
@@ -70,9 +86,7 @@ public record FlowStatePacket(List<Line> flows, int threads, int occupied, int q
     public static final StreamCodec<RegistryFriendlyByteBuf, FlowStatePacket> STREAM_CODEC =
             StreamCodec.composite(
                     Line.STREAM_CODEC.apply(ByteBufCodecs.list(256)), FlowStatePacket::flows,
-                    ByteBufCodecs.VAR_INT, FlowStatePacket::threads,
-                    ByteBufCodecs.VAR_INT, FlowStatePacket::occupied,
-                    ByteBufCodecs.VAR_INT, FlowStatePacket::queued,
+                    Compute.STREAM_CODEC, FlowStatePacket::compute,
                     Supply.STREAM_CODEC, FlowStatePacket::supply,
                     FlowStatePacket::new);
 

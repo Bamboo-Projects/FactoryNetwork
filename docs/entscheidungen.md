@@ -1632,3 +1632,116 @@ brennt.
 
 Sie hat kein Rezept und steht nur im Kreativ-Reiter. Zum Prüfen einer Anlage
 will man keine Kohle nachlegen.
+
+
+---
+
+## Der Serverschrank (2026-08-22)
+
+Vorher: ein Würfel mit acht Plätzen für Prozessoren, und die Prozessoren
+addierten sich zu einer Zahl. Jetzt: zwei Blöcke hoch, zwölf Einschübe, und
+in jeden gehören Rechenwerk, Speicher und Datenträger.
+
+### Erst alle drei ergeben einen Server
+
+Ein Einschub mit zwei von drei Bauteilen trägt **nichts** bei — nicht
+anteilig, gar nichts. Das ist die Regel, an der der ganze Block hängt.
+
+Zählte jedes Bauteil für sich, wäre der Schrank eine Summe von zwölf mal drei
+Zahlen, und die Antwort wäre immer dieselbe: von allem das Größte einbauen.
+So ist die Frage eine andere — *welcher* Einschub bekommt das große Teil.
+Man kann einen Einschub auf Rechenleistung auslegen und den nächsten auf
+Speicher, und beides kostet denselben Platz.
+
+Der Preis ist eine Fehlerquelle: Ein Schrank mit elf Bauteilen, der nicht
+läuft, sieht von außen aus wie ein voller. Deshalb hat der unfertige Einschub
+eine eigene Farbe — gelb an der Front, gelb im Fenster, und Jade sagt
+„Unvollständige Einschübe: 2". Ohne diese drei Stellen wäre die Regel eine
+Falle.
+
+### Was die drei Bauteile begrenzen
+
+| Bauteil | Grenze | Warum diese |
+|---|---|---|
+| Rechenwerk | gleichzeitige Abläufe | Was ein Prozessor tut |
+| Speicher | wie viele Abläufe überhaupt bestehen | Ein schlafender Ablauf steht auch irgendwo |
+| Datenträger | Programmgröße in Anweisungen | Was ein Datenträger tut |
+
+Erwogen und verworfen: **Rechenwerk als Schritte je Tick.** Das wäre die
+ehrlichste Übersetzung — ein Prozessor macht Instruktionen pro Sekunde — und
+sie wäre am stärksten zu spüren, weil die Fabrik damit buchstäblich schneller
+liefe. Sie hätte aber die Bremse gegen die Endlosschleife mit der
+Kapazitätsrechnung vermischt, und ein Netz mit einem kleinen Rechenwerk
+machte zwei Schritte je Tick — das sieht nicht nach knapp aus, das sieht nach
+kaputt aus.
+
+### Gezählt werden Anweisungen, nicht Zeichen
+
+Kommentare, Einrückung und lange Namen kosten nichts. Eine Sprache, in der
+Erklären teuer ist, wird nicht erklärt — und ein Programm an der Grenze soll
+man kommentieren dürfen, nicht kürzen müssen.
+
+Die Grenze greift an zwei Stellen: Beim Übernehmen wird ein zu großes
+Programm **abgelehnt**, mit der Zahl in der Meldung. Fällt der Platz später
+weg, weil jemand einen Datenträger herauszieht, **friert** das Netz ein —
+dieselbe Antwort wie bei Stromausfall. Nie stillschweigend kürzen.
+
+### Die Stufen springen um das Vierfache
+
+2 / 8 / 32 / 128 beim Rechenwerk, 8 / 32 / 128 / 512 beim Speicher,
+64 / 256 / 1024 / 4096 beim Datenträger. Jede Stufe kostet vier der
+vorigen — das ist linear und damit für sich genommen kein Gewinn.
+
+**Der Gewinn ist der Platz.** Zwölf Einschübe sind die Obergrenze, und wer
+darüber hinaus will, muss nach oben statt in die Breite. Ab der dritten Stufe
+kostet es zusätzlich einen Diamanten, ab der vierten Netherit: Das große Teil
+soll ein Ziel sein und kein Zwischenschritt.
+
+### Zwei Blöcke hoch, ein Gerät
+
+Ein Kanal, eine BlockEntity, ein Eintrag in der Geräteliste. Wer oben
+ankabelt, kabelt denselben Schrank an — die obere Hälfte rechnet im Graphen
+auf die untere um. Zählte sie für sich, kostete ein Schrank zwei Kanäle, und
+die zweite BlockEntity gäbe es gar nicht.
+
+Warum überhaupt zwei hoch: Zwölf Einschübe auf einer Würfelseite wären
+Kacheln kleiner als das Fadenkreuz. Und ein Schrank, der aussieht wie ein
+Kasten, ist keiner.
+
+### Strom nach laufenden Einschüben, nicht nach Bauteilen
+
+Zwei FE je laufendem Einschub. Ein halb bestückter rechnet nicht, also zahlt
+er auch nicht — sonst kostete ein vergessenes Rechenwerk dauerhaft Strom,
+ohne je etwas zu tun. **Die Stufe spielt keine Rolle:** Der Preis für Ausbau
+steht in der Rezeptkette; ein zweiter Preis obendrauf verkomplizierte die
+Rechnung, ohne eine Entscheidung zu ändern.
+
+### Verworfen: der Server als tragbarer Gegenstand
+
+Reizvoll wäre gewesen, den Server selbst zu einem Gegenstand zu machen — ein
+Gehäuse, in das man CPU, RAM und Datenträger einbaut und das man dann
+fertig bestückt in einen anderen Schrank umsetzt.
+
+Dagegen sprach das Shulkerkisten-Problem: Ein Gegenstand, der andere
+Gegenstände hält, lässt sich im Inventar nicht bearbeiten. Es bräuchte ein
+zweites Fenster für den Gegenstand selbst, und das Verschieben zwischen
+beiden Fenstern ist die Sorte Bedienung, die man einmal erklärt und danach
+umgeht. **Der Einschub im Block ist dasselbe Bild ohne die
+Zwischenschicht** — was man im Fenster als Zeile sieht, ist der Server.
+
+### Ein Platz nimmt nur seine Art
+
+Ein Rechenwerk gehört nicht auf den Datenträgerplatz. Ohne diese Regel wäre
+ein Einschub mit drei Rechenwerken voll und liefe trotzdem nicht — ein
+Fehler, den man beim Ansehen nicht findet, weil ja drei Bauteile drinstecken.
+Und ein Platz nimmt genau eines: Vorher zählte der Schrank Stapel mit, und
+sechzehn Prozessoren auf einem Platz waren sechzehnmal so viel Leistung.
+Damit waren die Plätze keine Grenze, sondern eine Formalität.
+
+### Was das für alte Welten heißt
+
+Prozessor und Co-Prozessor gibt es nicht mehr. Ein Schrank, der in einer
+Welt steht, verliert seinen Inhalt und hat keine obere Hälfte — er steht als
+halber Rahmen da und trägt nichts. Neu setzen. Ein Wanderpfad dafür wäre
+Arbeit für einen Zustand, den es außerhalb dieser Entwicklungswelt nicht
+gibt.

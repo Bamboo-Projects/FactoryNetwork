@@ -2248,13 +2248,18 @@ public final class FactoryNetworkGameTests {
         var ablaeufe = new dev.devpanda.factorynetwork.network.packet.FlowStatePacket(
                 java.util.List.of(new dev.devpanda.factorynetwork.network.packet
                         .FlowStatePacket.Line(7, "zaehlt", "AWAITING", "wartet auf Takt")),
-                16, 5, 2, new dev.devpanda.factorynetwork.network.packet
+                new dev.devpanda.factorynetwork.network.packet
+                        .FlowStatePacket.Compute(16, 5, 2, 64, 37, 256),
+                new dev.devpanda.factorynetwork.network.packet
                         .FlowStatePacket.Supply(0, 12345, 20000, 42));
         var ablaeufeZurueck = roundTrip(helper,
                 dev.devpanda.factorynetwork.network.packet.FlowStatePacket.STREAM_CODEC, ablaeufe);
         helper.assertValueEqual(ablaeufeZurueck.flows().get(0).id(), 7L, "Kennung des Ablaufs");
-        helper.assertValueEqual(ablaeufeZurueck.threads(), 16, "Plätze im Netz");
-        helper.assertValueEqual(ablaeufeZurueck.queued(), 2, "wie viele anstehen");
+        helper.assertValueEqual(ablaeufeZurueck.compute().threads(), 16, "Plätze im Netz");
+        helper.assertValueEqual(ablaeufeZurueck.compute().queued(), 2, "wie viele anstehen");
+        helper.assertValueEqual(ablaeufeZurueck.compute().memory(), 64, "Speicher im Netz");
+        helper.assertValueEqual(ablaeufeZurueck.compute().program(), 37, "Größe des Programms");
+        helper.assertValueEqual(ablaeufeZurueck.compute().disk(), 256, "Platz auf den Trägern");
         helper.assertValueEqual(ablaeufeZurueck.supply().stored(), 12345, "Stromvorrat");
         helper.assertValueEqual(ablaeufeZurueck.supply().draw(), 42, "Bedarf");
         helper.assertValueEqual(ablaeufeZurueck.flows().get(0).detail(), "wartet auf Takt",

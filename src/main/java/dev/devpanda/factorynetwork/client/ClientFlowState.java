@@ -14,9 +14,8 @@ import java.util.List;
 public final class ClientFlowState {
 
     private static List<FlowStatePacket.Line> flows = List.of();
-    private static int threads;
-    private static int occupied;
-    private static int queued;
+    private static FlowStatePacket.Compute compute =
+            new FlowStatePacket.Compute(0, 0, 0, 0, 0, 0);
     private static FlowStatePacket.Supply supply =
             new FlowStatePacket.Supply(0, 0, 0, 0);
 
@@ -25,28 +24,31 @@ public final class ClientFlowState {
         return supply;
     }
 
+    /** Was die Server tragen und was davon belegt ist. */
+    public static FlowStatePacket.Compute compute() {
+        return compute;
+    }
+
     /** Wie viele Abläufe gleichzeitig laufen dürfen. */
     public static int threads() {
-        return threads;
+        return compute.threads();
     }
 
     /** Wie viele Plätze gerade belegt sind. */
     public static int occupied() {
-        return occupied;
+        return compute.occupied();
     }
 
     /** Wie viele anstehen. */
     public static int queued() {
-        return queued;
+        return compute.queued();
     }
 
     private ClientFlowState() {
     }
 
     public static void accept(FlowStatePacket packet) {
-        threads = packet.threads();
-        occupied = packet.occupied();
-        queued = packet.queued();
+        compute = packet.compute();
         supply = packet.supply();
         flows = List.copyOf(packet.flows());
     }

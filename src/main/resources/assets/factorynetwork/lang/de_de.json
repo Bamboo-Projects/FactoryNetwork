@@ -209,6 +209,8 @@
   "jade.factorynetwork.rack.incomplete": "Unvollständige Einschübe: %s",
   "jade.factorynetwork.rack.capacity": "%s Abläufe, Platz für %s, %s Anweisungen",
   "screen.factorynetwork.terminal.network.threads": "%s von %s Plätzen belegt · %s warten",
+  "screen.factorynetwork.terminal.network.memory": "Speicher: %s von %s Abläufen",
+  "screen.factorynetwork.terminal.network.disk": "Programm: %s von %s Anweisungen",
   "screen.factorynetwork.terminal.network.no_server": "Kein Serverschrank — das Netz rechnet nicht",
   "screen.factorynetwork.editor.find": "Suchen — Eingabe weiter, Escape schließt",
   "item.factorynetwork.dense_cable": "Dichtes Kabel",

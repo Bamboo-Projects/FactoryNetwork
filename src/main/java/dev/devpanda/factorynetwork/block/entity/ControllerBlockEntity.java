@@ -519,9 +519,11 @@ public class ControllerBlockEntity extends BlockEntity {
     /** Schickt die Abläufe an einen Spieler. */
     public void pushFlowsTo(ServerPlayer player) {
         FlowEngine engine = flowEngine();
-        PacketDistributor.sendToPlayer(player, new FlowStatePacket(flowLines(), threads(),
-                engine == null ? 0 : engine.occupied(),
-                engine == null ? 0 : engine.queued(),
+        PacketDistributor.sendToPlayer(player, new FlowStatePacket(flowLines(),
+                new FlowStatePacket.Compute(threads(),
+                        engine == null ? 0 : engine.occupied(),
+                        engine == null ? 0 : engine.queued(),
+                        memory(), programSize(), diskSpace()),
                 new FlowStatePacket.Supply(power.state().ordinal(), power.stored(),
                         power.capacity(), powerDraw())));
     }

@@ -209,6 +209,8 @@
   "jade.factorynetwork.rack.incomplete": "Incomplete bays: %s",
   "jade.factorynetwork.rack.capacity": "%s flows, room for %s, %s instructions",
   "screen.factorynetwork.terminal.network.threads": "%s of %s slots busy · %s waiting",
+  "screen.factorynetwork.terminal.network.memory": "Memory: %s of %s flows",
+  "screen.factorynetwork.terminal.network.disk": "Program: %s of %s instructions",
   "screen.factorynetwork.terminal.network.no_server": "No server rack — the network does not compute",
   "screen.factorynetwork.editor.find": "Find — Enter for next, Escape closes",
   "item.factorynetwork.dense_cable": "Dense Cable",
