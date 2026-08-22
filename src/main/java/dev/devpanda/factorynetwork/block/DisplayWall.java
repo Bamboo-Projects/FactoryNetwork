@@ -25,6 +25,13 @@ import java.util.Set;
  * eine an der Ostwand stoßen zwar aneinander, sind aber zwei Bildschirme —
  * man kann nicht beide gleichzeitig ansehen.
  *
+ * <p><b>Eine bekannte Grenze:</b> Gesucht wird über {@code getBlockState},
+ * und das liefert für eine nicht geladene Stelle Luft. Eine sehr breite Wand
+ * an einer Chunk-Grenze kann deshalb für einen Moment kleiner aussehen, als
+ * sie ist — dann wandert die schreibende Tafel, und der Text springt. Zu
+ * beheben wäre das nur mit einer Buchführung über Wände, die Chunkladen und
+ * Weltwechsel überlebt, und das ist für den Fall zu viel Maschinerie.
+ *
  * <p>Die schreibende Tafel ist die <b>unten links</b>, von vorn gesehen. Eine
  * feste Regel, weil sie erklärbar sein muss: „warum steht der Text bei
  * dieser" ist sonst nicht zu beantworten. Für eine Wand mit Loch oder Stufe

@@ -4182,6 +4182,11 @@ public final class FactoryNetworkGameTests {
                 helper.fail("Die Datei ließ sich nicht anfassen: " + failed);
             }
 
+            // Über runAfterDelay und nicht über eine Schleife von
+            // serverTick-Aufrufen: Innerhalb eines Ticks steht die Spielzeit
+            // still, und der Controller sieht nur alle zwanzig Ticks nach.
+            // Fünfundzwanzigmal serverTick im selben Tick würde also
+            // fünfundzwanzigmal nichts tun.
             helper.runAfterDelay(25, () -> {
                 helper.assertTrue(entity.source().contains("fn zwei"),
                         "die Änderung von außen kam nicht an: " + entity.source());
