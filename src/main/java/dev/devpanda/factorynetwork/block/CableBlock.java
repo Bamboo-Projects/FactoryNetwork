@@ -167,11 +167,16 @@ public class CableBlock extends Block {
         if (neighbour.getBlock() instanceof CableBlock) {
             return colourOf(level.getBlockState(pos)).connectsTo(colourOf(neighbour));
         }
+        // Alles, was zum Netz gehört, bekommt einen Arm. Laufwerk und
+        // Serverschrank fehlten hier: Die Suche findet sie über die
+        // Nachbarschaft, aber im Bild hing das Kabel daneben in der Luft.
         return neighbour.getBlock() instanceof ConnectorBlock
                 || neighbour.getBlock() instanceof RouterBlock
                 || neighbour.getBlock() instanceof ControllerBlock
                 || neighbour.getBlock() instanceof TerminalBlock
-                || neighbour.getBlock() instanceof DisplayBlock;
+                || neighbour.getBlock() instanceof DisplayBlock
+                || neighbour.getBlock() instanceof DriveBlock
+                || neighbour.getBlock() instanceof RackBlock;
     }
 
     /** Welche Richtungen dieser Block verbindet. */

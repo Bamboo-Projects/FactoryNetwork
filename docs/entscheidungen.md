@@ -1462,3 +1462,15 @@ Sie mittendrin zu töten hieße, Gegenstände zu verlieren, die gerade in der
 Hand eines Ablaufs sind. Neue Abläufe starten nicht mehr, und die Worker
 stehen still. Dieselbe bewusste Milde wie beim Laufwerk, das keinen Kanal
 kostet.
+
+### Ereignisse während eines Serverausfalls
+
+Reißt jemand den letzten Schrank ab, stehen die Worker still, und die
+Ereignisse, die aus Zustandsänderungen entstehen — Redstone, geändertes
+Inventar — werden nicht mehr gemeldet. Sie kommen nach, sobald wieder ein
+Schrank steht: **einmal, nicht einmal je verpasster Änderung.** Gemeldet wird
+der Unterschied zum zuletzt gesehenen Zustand, nicht jeder Schritt dazwischen.
+
+Das ist beabsichtigt. Ein Netz, das nach einer Stunde ohne Strom hundert
+nachgeholte Redstone-Ereignisse abfeuert, wäre schlimmer als eines, das den
+Endstand meldet.

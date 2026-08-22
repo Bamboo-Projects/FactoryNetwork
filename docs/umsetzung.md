@@ -43,12 +43,20 @@ Minuten und passiert nur einmal.
 
 Alle Blöcke liegen im Kreativ-Reiter „Factory Network".
 
-1. **Controller** setzen. Er ist die Wurzel des Netzwerks und hält Programm
-   und Speicher.
+1. **Controller** setzen. Er ist die Wurzel des Netzwerks und hält das
+   Programm. **Er allein reicht nicht:** Lagern kann das Netz erst mit einem
+   Laufwerk, rechnen erst mit einem Serverschrank.
 2. **Kabel** vom Controller weg legen.
-3. **Connector** an ein Kabel setzen, mit der Vorderseite an eine Kiste oder
+3. **Serverschrank** ans Kabel setzen und mit einem **Prozessor** in der Hand
+   anklicken. Ohne ihn rechnet das Netz nicht: Ein Programm wird gar nicht
+   erst übernommen, und Worker stehen still. Leere Hand nimmt den zuletzt
+   eingesetzten wieder heraus.
+4. **Laufwerk** ans Kabel setzen und eine **Speicherzelle** hineinklicken.
+   Ohne sie lagert das Netz nichts. Für Flüssigkeiten kommt eine
+   **Flüssigkeitszelle** in dasselbe Laufwerk.
+5. **Connector** an ein Kabel setzen, mit der Vorderseite an eine Kiste oder
    Maschine. Die Vorderseite zeigt dorthin, wo man den Block angeklickt hat.
-4. **Label-Gun** nehmen und einmal auf den **Controller** rechtsklicken —
+6. **Label-Gun** nehmen und einmal auf den **Controller** rechtsklicken —
    damit ist sie mit dem Netz verbunden. Dann auf einen Connector klicken: Er
    bekommt einen Namen aus der Maschine dahinter, durchnummeriert
    (`furnace_1`, `furnace_2`, …). Schleichen + Klick übernimmt einen
@@ -56,7 +64,7 @@ Alle Blöcke liegen im Kreativ-Reiter „Factory Network".
 
    Solange die Gun in der Hand ist, schweben die Namen über allen Connectoren
    in der Nähe: grün benannt, grau unbenannt, rot doppelt vergeben.
-5. **Terminal** neben den Controller setzen und anklicken.
+7. **Terminal** neben den Controller setzen und anklicken.
 
 Im Editor:
 
