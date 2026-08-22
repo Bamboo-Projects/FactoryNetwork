@@ -4053,6 +4053,43 @@ public final class FactoryNetworkGameTests {
         helper.succeedWhenEntityPresent(net.minecraft.world.entity.EntityType.ITEM, rackPos);
     }
 
+    /**
+     * Ohne Server fängt kein Ablauf an — aber er geht auch nicht verloren.
+     *
+     * <p>Er stellt sich an und läuft, sobald wieder ein Schrank steht. Das ist
+     * dieselbe Antwort wie bei der Überlast: Verzögerung ist
+     * wiederherstellbar, Verlust nicht.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void withoutAServerAFlowWaitsInstead(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 2, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        rackWithProcessor(helper, controller.west());
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        helper.assertTrue(entity.deploy("""
+                fn kurz() {
+                    sleep 1t
+                }"""), "Programm nicht übernommen");
+
+        // Schrank weg, dann einen Ablauf anstoßen.
+        helper.setBlock(controller.west(), Blocks.AIR);
+        entity.rebuildNetwork();
+        var flow = entity.startFlow("kurz", java.util.List.of());
+        helper.assertValueEqual(flow.status().name(), "QUEUED",
+                "ohne Server darf nichts anfangen, aber auch nichts wegfallen");
+
+        // Schrank zurück, und er läuft.
+        rackWithProcessor(helper, controller.west());
+        entity.rebuildNetwork();
+        for (int i = 0; i < 5; i++) {
+            entity.serverTick();
+        }
+        helper.assertValueEqual(entity.flowEngine().queued(), 0,
+                "mit Server muss er nachrücken");
+        helper.succeed();
+    }
+
     private FactoryNetworkGameTests() {
     }
 }
