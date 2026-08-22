@@ -116,6 +116,7 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | Flüssigkeiten | `move` und Worker, Bestand in Zellen, in Millibucket |
 | Speicher | Laufwerke mit zehn Plätzen, Zellen in vier Größen, Bestand in der Zelle |
 | | Regalfenster für Laufwerk und Schrank, Bestückung an der Front ablesbar |
+| | Router: Seite anklicken schaltet weiter, Schleichen öffnet alle sechs auf einmal |
 | Rechenleistung | Serverschränke mit acht Plätzen, Prozessor und Co-Prozessor |
 | Strom | FE in den Controller, Verbrauch je Gerät, aus bei Unterversorgung |
 | | Brennkammer als eigene Quelle, Kreativ-Stromquelle zum Prüfen |

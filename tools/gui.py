@@ -271,6 +271,23 @@ def burner_background():
     return img
 
 
+def router_background():
+    """Das Fenster des Routers: sechs Zeilen, je eine Seite.
+
+    Keine Plätze — ein Router nimmt nichts auf. Die Knöpfe malt der Bildschirm
+    selbst, damit ihre Farben dieselben sind wie die Ringe am Block; hier
+    liegt nur die Rinne darunter.
+    """
+    breite, hoehe = 176, 162
+    img = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    panel(d, (0, 0, breite - 1, hoehe - 1))
+    for reihe in range(6):
+        y = 32 + reihe * 18
+        sunken(d, (7, y - 1, breite - 8, y + 16), fill=PANEL_DARK)
+    return img
+
+
 # ---- Regale ---------------------------------------------------------------
 #
 # Laufwerk und Serverschrank sind dasselbe Fenster in zwei Zuschnitten: ein
@@ -313,6 +330,7 @@ def main():
     save(widgets(), "widgets")
     save(press_background(), "press")
     save(burner_background(), "burner")
+    save(router_background(), "router")
     for name, columns, rows in (("drive", 2, 5), ("rack", 8, 1)):
         bild, links, oben, inventar, schnell, hoehe = shelf_background(columns, rows)
         save(bild, name)

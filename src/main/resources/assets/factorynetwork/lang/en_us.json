@@ -222,5 +222,8 @@
   "jade.factorynetwork.burner.burning": "Burning — %s FE/t",
   "jade.factorynetwork.burner.idle": "No fuel",
   "jade.factorynetwork.burner.full": "Charge full — nothing is taking it",
-  "jade.factorynetwork.burner.stored": "%s of %s FE"
+  "jade.factorynetwork.burner.stored": "%s of %s FE",
+  "screen.factorynetwork.router.lane": "Lane %s",
+  "screen.factorynetwork.router.load": "%s channels",
+  "screen.factorynetwork.router.off": "Disconnected"
 }

@@ -23,6 +23,11 @@ public final class FnMenus {
             MENUS.register("burner", () -> IMenuTypeExtension.create(
                     dev.devpanda.factorynetwork.client.menu.BurnerMenu::new));
 
+    public static final DeferredHolder<MenuType<?>, MenuType<
+            dev.devpanda.factorynetwork.client.menu.RouterMenu>> ROUTER =
+            MENUS.register("router", () -> IMenuTypeExtension.create(
+                    dev.devpanda.factorynetwork.client.menu.RouterMenu::new));
+
     /** Ein Fenster für Laufwerk und Serverschrank — beide sind ein Regal. */
     public static final DeferredHolder<MenuType<?>, MenuType<
             dev.devpanda.factorynetwork.client.menu.ShelfMenu>> SHELF =

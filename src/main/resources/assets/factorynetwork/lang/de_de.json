@@ -222,5 +222,8 @@
   "jade.factorynetwork.burner.burning": "Brennt — %s FE/t",
   "jade.factorynetwork.burner.idle": "Kein Brennstoff",
   "jade.factorynetwork.burner.full": "Vorrat voll — niemand nimmt ab",
-  "jade.factorynetwork.burner.stored": "%s von %s FE"
+  "jade.factorynetwork.burner.stored": "%s von %s FE",
+  "screen.factorynetwork.router.lane": "Bahn %s",
+  "screen.factorynetwork.router.load": "%s Kanäle",
+  "screen.factorynetwork.router.off": "Abgeklemmt"
 }

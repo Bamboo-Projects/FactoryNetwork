@@ -70,6 +70,12 @@ public class RouterBlock extends Block implements EntityBlock {
         if (!(level.getBlockEntity(pos) instanceof RouterBlockEntity router)) {
             return InteractionResult.PASS;
         }
+        if (player.isSecondaryUseActive()) {
+            // Schleichen macht das Fenster auf: An eine Seite in der Wand
+            // kommt man nicht heran, und dort steht auch, was jede Bahn trägt.
+            player.openMenu(router.menu());
+            return InteractionResult.CONSUME;
+        }
         Direction side = hit.getDirection();
         int lane = router.cycle(side);
         level.playSound(null, pos, SoundEvents.LEVER_CLICK, SoundSource.BLOCKS,

@@ -95,6 +95,38 @@ public class RouterBlockEntity extends BlockEntity {
                 ? router.lane(side) : OFF;
     }
 
+    /**
+     * Das Fenster zum Router.
+     *
+     * <p>Die Bahnlasten holt es sich beim Controller, der das Netz kennt —
+     * der Router selbst weiß nur, welche Seite auf welcher Bahn liegt.
+     */
+    public net.minecraft.world.MenuProvider menu() {
+        return new net.minecraft.world.SimpleMenuProvider(
+                (id, inventory, player) -> new dev.devpanda.factorynetwork.client.menu.RouterMenu(
+                        id,
+                        dev.devpanda.factorynetwork.client.menu.RouterMenu.dataOf(this,
+                                this::laneLoad, this::laneCapacity),
+                        net.minecraft.world.inventory.ContainerLevelAccess.create(
+                                level, worldPosition)),
+                getBlockState().getBlock().getName());
+    }
+
+    private int laneLoad(int lane) {
+        if (level == null) {
+            return 0;
+        }
+        return dev.devpanda.factorynetwork.network.ControllerRegistry
+                .owning(level, worldPosition)
+                .map(controller -> controller.graph().laneLoad(worldPosition, lane))
+                .orElse(0);
+    }
+
+    private int laneCapacity() {
+        return dev.devpanda.factorynetwork.network.Channels.quarters(
+                dev.devpanda.factorynetwork.block.CableBlock.CHANNELS_DENSE);
+    }
+
     /** Wie viele Seiten überhaupt angeschlossen sind. */
     public int connectedSides() {
         int count = 0;
