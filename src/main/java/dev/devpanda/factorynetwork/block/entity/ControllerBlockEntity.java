@@ -107,6 +107,15 @@ public class ControllerBlockEntity extends BlockEntity {
     /** Negativ statt Long.MIN_VALUE: Die Differenz liefe sonst über. */
     private long lastRebuild = -REBUILD_INTERVAL;
 
+    /**
+     * Das Programm als Datei neben der Welt — die Brücke zu VS Code.
+     *
+     * <p>Erst beim ersten Tick angelegt: Vorher gibt es keinen Server und
+     * damit keinen Weltordner.
+     */
+    private dev.devpanda.factorynetwork.lang.ProgramFile programFile;
+    private long lastFileCheck = -dev.devpanda.factorynetwork.lang.ProgramFile.CHECK_INTERVAL;
+
     /** Letzte gesehene Redstone-Stärke je Connector, für das Ereignis. */
     private final Map<String, Integer> lastRedstone = new HashMap<>();
     private final List<String> log = new ArrayList<>();
@@ -149,6 +158,7 @@ public class ControllerBlockEntity extends BlockEntity {
         Parser.ParseResult result = Parser.parse(newSource);
         this.source = newSource;
         this.diagnostics = new ArrayList<>(result.diagnostics());
+        writeProgramFile();
         // Erst nachsehen, dann urteilen: Wer eben einen Schrank gesetzt hat,
         // bekäme sonst „kein Server" zu hören, obwohl einer danebensteht.
         if (level != null && !hasServer()) {
@@ -397,6 +407,10 @@ public class ControllerBlockEntity extends BlockEntity {
         power.setDraw(powerDraw());
         power.tick();
 
+        // Vor dem Ausstieg unten: Ein Netz ohne Strom oder ohne Server ist
+        // genau das Netz, an dessen Programm man gerade arbeitet.
+        checkProgramFile();
+
         // Ohne Serverschrank oder ohne Strom steht das Netz still — und läuft
         // weiter, wo es war, sobald beides wieder da ist. Nichts wird
         // abgebrochen: Ein Ablauf hält zwischen zwei Schritten keine
@@ -428,6 +442,75 @@ public class ControllerBlockEntity extends BlockEntity {
         pushStorageIfDue();
         pushFlowsIfDue();
         setChanged();
+    }
+
+    // ---- Die Datei neben der Welt -----------------------------------------
+
+    /**
+     * Sieht nach, ob jemand das Programm von außen geändert hat.
+     *
+     * <p>Beim allerersten Blick entscheidet, ob es die Datei schon gibt:
+     * Gibt es keine, bekommt sie das laufende Programm. Gibt es eine, gilt
+     * sie — dann hat jemand sie angelegt oder bei ausgeschaltetem Server
+     * bearbeitet, und beides ist eine Absicht.
+     *
+     * <p><b>Ein Controller, der an dieselbe Stelle zurückkommt, findet sein
+     * Programm wieder.</b> Die Datei bleibt beim Abbauen liegen; wer sich
+     * verklickt hat, setzt den Block zurück und hat alles.
+     */
+    private void checkProgramFile() {
+        if (!(level instanceof net.minecraft.server.level.ServerLevel server)) {
+            return;
+        }
+        if (level.getGameTime() - lastFileCheck
+                < dev.devpanda.factorynetwork.lang.ProgramFile.CHECK_INTERVAL) {
+            return;
+        }
+        lastFileCheck = level.getGameTime();
+        if (programFile == null) {
+            programFile = dev.devpanda.factorynetwork.lang.ProgramFile.of(server, worldPosition);
+            if (programFile == null) {
+                return;
+            }
+            if (!java.nio.file.Files.exists(programFile.path())) {
+                programFile.write(source);
+                return;
+            }
+        }
+        String incoming = programFile.poll(source);
+        if (incoming == null) {
+            return;
+        }
+        String name = programFile.path().getFileName().toString();
+        if (deploy(incoming)) {
+            note("Programm aus " + name + " übernommen.");
+        } else {
+            // Die Fehler stehen wie immer im Code-Reiter. Hier nur der
+            // Hinweis, dass es an der Datei lag und nicht am Terminal.
+            note("Fehler in " + name + " — das laufende Programm läuft weiter.");
+        }
+    }
+
+    /**
+     * Wo das Programm als Datei liegt, oder {@code null}, solange noch
+     * niemand danach gesehen hat.
+     */
+    public java.nio.file.Path programFilePath() {
+        return programFile == null ? null : programFile.path();
+    }
+
+    /**
+     * Schreibt das Programm in die Datei.
+     *
+     * <p>Nach <b>jedem</b> Übernehmen, auch nach einem mit Fehlern: Datei und
+     * Terminal müssen denselben Text zeigen. Stünde in der Datei noch die
+     * letzte fehlerfreie Fassung, holte der nächste Blick sie zurück und
+     * überschriebe, was gerade eingetippt wurde.
+     */
+    private void writeProgramFile() {
+        if (programFile != null) {
+            programFile.write(source);
+        }
     }
 
     // ---- Speicheransicht --------------------------------------------------

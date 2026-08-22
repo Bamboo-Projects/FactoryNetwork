@@ -1,0 +1,38 @@
+{
+  "name": "manifold",
+  "displayName": "Manifold",
+  "description": "Syntaxhervorhebung und Bausteine für die Sprache der Mod Factory Network",
+  "version": "0.1.0",
+  "publisher": "devpanda",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Snippets"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "manifold",
+        "aliases": ["Manifold", "manifold"],
+        "extensions": [".mf"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "manifold",
+        "scopeName": "source.manifold",
+        "path": "./syntaxes/manifold.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "manifold",
+        "path": "./snippets/manifold.json"
+      }
+    ]
+  }
+}

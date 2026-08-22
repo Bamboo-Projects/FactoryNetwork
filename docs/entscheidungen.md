@@ -1745,3 +1745,55 @@ Welt steht, verliert seinen Inhalt und hat keine obere Hälfte — er steht als
 halber Rahmen da und trägt nichts. Neu setzen. Ein Wanderpfad dafür wäre
 Arbeit für einen Zustand, den es außerhalb dieser Entwicklungswelt nicht
 gibt.
+
+---
+
+## Die Brücke zu VS Code (2026-08-23)
+
+Der Controller legt sein Programm als Datei neben die Welt:
+`<Welt>/factorynetwork/controller_overworld_10_64_-20.mf`. Wer sie speichert,
+hat sie eine Sekunde später im Spiel; wer im Terminal übernimmt, findet den
+Text sofort in der Datei.
+
+### Wer zuletzt geschrieben hat, gewinnt
+
+Keine Konfliktauflösung, keine Zusammenführung, kein Vorrang für eine Seite.
+Zwei Leute, die gleichzeitig an demselben Programm arbeiten, sind ein Problem,
+das keine Regel löst — und für einen Spieler an seiner eigenen Welt ist die
+Regel offensichtlich richtig.
+
+Damit sich das nicht aufschaukelt, merkt sich die Brücke, was sie selbst
+geschrieben hat. Der Zeitstempel allein reicht nicht: Manche Editoren
+schreiben über eine Zwischendatei und benennen um.
+
+**Geschrieben wird nach jedem Übernehmen, auch nach einem mit Fehlern.** Datei
+und Terminal müssen denselben Text zeigen. Stünde in der Datei noch die letzte
+fehlerfreie Fassung, holte der nächste Blick sie zurück und überschriebe, was
+gerade eingetippt wurde.
+
+### Nachgesehen, nicht überwacht
+
+Ein `WatchService` wäre unmittelbar, bräuchte aber einen eigenen Thread, eine
+Entprellung gegen die Doppelereignisse der Editoren und ein verlässliches
+Aufräumen beim Weltwechsel. Nachsehen im Sekundentakt braucht nichts davon und
+verkraftet nebenbei eine halb geschriebene Datei: Beim nächsten Blick steht sie
+vollständig da.
+
+Eine Sekunde Verzug merkt niemand. Ein hängengebliebener Thread je geladener
+Welt fällt erst nach Stunden auf.
+
+### Die Datei bleibt beim Abbauen liegen
+
+Ein Controller, der an dieselbe Stelle zurückkommt, findet sein Programm
+wieder. Wer sich verklickt hat, setzt den Block zurück und hat alles — das ist
+das Gegenteil von dem, was ein versehentlicher Schlag sonst kostet.
+
+### Die Erweiterung liegt im Repository, nicht im Marktplatz
+
+`editor/vscode` ist eine TextMate-Grammatik, eine Klammernkonfiguration und
+elf Bausteine. Dafür einen Marktplatzeintrag zu pflegen, wäre mehr Arbeit als
+der Inhalt wert; kopieren nach `~/.vscode/extensions` reicht.
+
+**Keine Fehlerprüfung im Editor.** Sie bräuchte einen Sprachserver, der weiß,
+was gerade in der Welt steht — also eine Verbindung zum laufenden Spiel.
+Solange es die nicht gibt, ist das Terminal die Stelle, an der Fehler stehen.

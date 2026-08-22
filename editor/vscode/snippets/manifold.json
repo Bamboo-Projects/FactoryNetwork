@@ -1,0 +1,103 @@
+{
+  "Worker": {
+    "prefix": "worker",
+    "body": [
+      "worker ${1:name} {",
+      "    from ${2:quelle}",
+      "    to ${3:ziel}",
+      "    filter ${4:item:coal}",
+      "    rate ${5:8} per ${6:20t}",
+      "}"
+    ],
+    "description": "Ein Worker schafft laufend etwas von A nach B"
+  },
+  "Worker mit Sollstand": {
+    "prefix": "workermaintain",
+    "body": [
+      "worker ${1:name} {",
+      "    from ${2:quelle}",
+      "    to ${3:ziel}",
+      "    filter ${4:item:coal}",
+      "    maintain ${5:16}",
+      "}"
+    ],
+    "description": "Hält im Ziel eine feste Menge vorrätig"
+  },
+  "Funktion": {
+    "prefix": "fn",
+    "body": [
+      "fn ${1:name}() {",
+      "    $0",
+      "}"
+    ],
+    "description": "Eine Funktion"
+  },
+  "Ereignisblock": {
+    "prefix": "on",
+    "body": [
+      "on ${1|redstone_changed,inventory_changed,device_online,device_offline|}(${2:gerät}, ${3:stärke}) {",
+      "    $0",
+      "}"
+    ],
+    "description": "Läuft, wenn in der Welt etwas geschieht"
+  },
+  "Eigenes Ereignis": {
+    "prefix": "event",
+    "body": [
+      "event ${1:Fertig}(${2:nummer}: ${3|Int,Float,String,Bool|})"
+    ],
+    "description": "Erklärt ein Ereignis, das das Programm selbst auslöst"
+  },
+  "Warten auf ein Ereignis": {
+    "prefix": "await",
+    "body": [
+      "let ${1:ergebnis} = await ${2:Fertig}"
+    ],
+    "description": "Hält den Ablauf an, bis das Ereignis kommt — auch über einen Serverneustart"
+  },
+  "Warten mit Frist": {
+    "prefix": "awaittimeout",
+    "body": [
+      "let ${1:ergebnis} = await ${2:Fertig} timeout ${3:30s} else {",
+      "    $0",
+      "}"
+    ],
+    "description": "Wartet, aber nicht ewig"
+  },
+  "Anzeige": {
+    "prefix": "display",
+    "body": [
+      "display ${1:name} {",
+      "    title \"${2:Überschrift}\"",
+      "    row \"${3:Beschriftung}\" storage.count(${4:item:iron_ingot})",
+      "}"
+    ],
+    "description": "Was auf einer Anzeigetafel steht"
+  },
+  "Gruppe": {
+    "prefix": "group",
+    "body": [
+      "group ${1:name} {",
+      "    members ${2:ofen_1}, ${3:ofen_2}",
+      "}"
+    ],
+    "description": "Fasst mehrere Connectoren unter einem Namen zusammen"
+  },
+  "Multiblock": {
+    "prefix": "multiblock",
+    "body": [
+      "multiblock ${1:name} {",
+      "    devices ${2:eingang}, ${3:ausgang}",
+      "    $0",
+      "}"
+    ],
+    "description": "Eine Anlage aus mehreren Geräten, die als eine zählt"
+  },
+  "Etwas bewegen": {
+    "prefix": "move",
+    "body": [
+      "move ${1:8} ${2:item:iron_ore} from ${3:lager} to ${4:brecher}"
+    ],
+    "description": "Ein einzelner Transport"
+  }
+}

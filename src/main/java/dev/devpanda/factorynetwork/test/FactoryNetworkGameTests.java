@@ -4144,6 +4144,61 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
+     * Das Programm liegt als Datei neben der Welt und lässt sich dort ändern.
+     *
+     * <p>Die Brücke zu einem richtigen Editor. Zwei Richtungen in einer
+     * Prüfung, weil sie nur zusammen etwas taugen: Was im Spiel übernommen
+     * wird, steht in der Datei; was in der Datei steht, gilt im Spiel.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void theProgramLivesInAFileBesideTheWorld(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 2, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        rackWithServer(helper, controller.west());
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        helper.assertTrue(entity.deploy("""
+                fn eins() {
+                    let a = 1
+                }"""), "das erste Programm wurde nicht übernommen");
+
+        helper.runAfterDelay(2, () -> {
+            java.nio.file.Path path = entity.programFilePath();
+            helper.assertTrue(path != null, "es gibt keine Datei");
+            try {
+                helper.assertTrue(java.nio.file.Files.exists(path),
+                        "die Datei liegt nicht da: " + path);
+                helper.assertTrue(java.nio.file.Files.readString(path).contains("fn eins"),
+                        "und enthält das Programm nicht");
+
+                // Von außen etwas anderes hineinschreiben, mit frischem
+                // Zeitstempel: Innerhalb einer Millisekunde wäre er derselbe,
+                // und dann sähe der Controller die Änderung nicht.
+                java.nio.file.Files.writeString(path, "fn zwei() {\n    let b = 2\n}");
+                java.nio.file.Files.setLastModifiedTime(path,
+                        java.nio.file.attribute.FileTime.fromMillis(
+                                System.currentTimeMillis() + 5000L));
+            } catch (java.io.IOException failed) {
+                helper.fail("Die Datei ließ sich nicht anfassen: " + failed);
+            }
+
+            helper.runAfterDelay(25, () -> {
+                helper.assertTrue(entity.source().contains("fn zwei"),
+                        "die Änderung von außen kam nicht an: " + entity.source());
+                helper.assertTrue(entity.program().functions().stream()
+                                .anyMatch(fn -> fn.name().equals("zwei")),
+                        "und wurde nicht übernommen");
+                try {
+                    java.nio.file.Files.deleteIfExists(entity.programFilePath());
+                } catch (java.io.IOException ignored) {
+                    // Eine liegengebliebene Prüfdatei stört niemanden.
+                }
+                helper.succeed();
+            });
+        });
+    }
+
+    /**
      * Mehr Abläufe als Plätze: Der Rest stellt sich an.
      *
      * <p>Angestellt, nicht abgelehnt. <b>Verzögerung ist wiederherstellbar,
