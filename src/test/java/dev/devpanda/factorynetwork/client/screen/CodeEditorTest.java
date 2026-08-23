@@ -286,4 +286,99 @@ class CodeEditorTest {
         editor.closeSearch();
         assertTrue(!editor.isSearching());
     }
+    // ---- Ersetzen ---------------------------------------------------------
+
+    @Test
+    void ersetzenTrifftDieAngefahreneStelle() {
+        CodeEditor editor = editor(String.join("\n",
+                "let kiste_1 = 1", "let kiste_2 = 2", "let ofen = 3"));
+        editor.openSearch();
+        editor.setSearchTerm("kiste_1");
+        editor.setReplaceTerm("truhe_1");
+        editor.replaceCurrent();
+
+        assertEquals(String.join("\n",
+                "let truhe_1 = 1", "let kiste_2 = 2", "let ofen = 3"), editor.text());
+    }
+
+    @Test
+    void alleErsetzenNimmtJedeStelle() {
+        CodeEditor editor = editor(String.join("\n",
+                "from kiste to kiste", "let kiste = 1"));
+        editor.openSearch();
+        editor.setSearchTerm("kiste");
+        editor.setReplaceTerm("fass");
+        editor.replaceAll();
+
+        assertEquals(String.join("\n", "from fass to fass", "let fass = 1"), editor.text());
+    }
+
+    @Test
+    void alleErsetzenIstEinSchrittZurueck() {
+        // Zwanzig Stellen einzeln zurückzunehmen wäre zwanzig Griffe.
+        CodeEditor editor = editor("a a a a");
+        editor.openSearch();
+        editor.setSearchTerm("a");
+        editor.setReplaceTerm("b");
+        editor.replaceAll();
+        assertEquals("b b b b", editor.text());
+
+        editor.undo();
+        assertEquals("a a a a", editor.text());
+    }
+
+    @Test
+    void ersetzenDurchNichtsLoeschtDieStelle() {
+        CodeEditor editor = editor("let x = 1 // weg");
+        editor.openSearch();
+        editor.setSearchTerm(" // weg");
+        editor.setReplaceTerm("");
+        editor.replaceAll();
+
+        assertEquals("let x = 1", editor.text());
+    }
+
+    @Test
+    void fundstellenUeberlappenNicht() {
+        // Ohne diese Regel fände die Suche nach „aa" in „aaa" zwei Stellen,
+        // und alle zu ersetzen schriebe in die eigene Ersetzung hinein.
+        CodeEditor editor = editor("aaa");
+        editor.openSearch();
+        editor.setSearchTerm("aa");
+        assertEquals(1, editor.matches().size());
+
+        editor.setReplaceTerm("b");
+        editor.replaceAll();
+        assertEquals("ba", editor.text());
+    }
+
+    @Test
+    void ohneFundstelleAendertErsetzenNichts() {
+        CodeEditor editor = editor("let x = 1");
+        editor.openSearch();
+        editor.setSearchTerm("gibtsnicht");
+        editor.setReplaceTerm("egal");
+        editor.replaceAll();
+        editor.replaceCurrent();
+
+        assertEquals("let x = 1", editor.text());
+    }
+
+    // ---- Waagerecht schieben ----------------------------------------------
+
+    @Test
+    void derCursorBleibtAuchInDerBreiteImBild() {
+        // 200 Punkte breit, Bundsteg und Rand ab, Vorschub sechs: rund
+        // dreißig Spalten. Eine Zeile mit zweihundert Zeichen lief vorher
+        // einfach aus dem Fenster heraus.
+        CodeEditor editor = editor("x".repeat(200));
+        editor.setCursor(0, 200);
+        assertTrue(editor.firstVisibleColumn() > 0,
+                "der Ausschnitt muss dem Cursor gefolgt sein");
+
+        editor.setCursor(0, 0);
+        assertEquals(0, editor.firstVisibleColumn(),
+                "und am Zeilenanfang wieder ganz nach links");
+    }
+
 }

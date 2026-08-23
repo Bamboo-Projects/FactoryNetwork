@@ -70,6 +70,16 @@ public class CodeEditor {
     private int cursorLine;
     private int cursorColumn;
     private int scrollLine;
+
+    /**
+     * Die erste sichtbare Spalte.
+     *
+     * <p><b>Ohne sie lief eine lange Zeile einfach aus dem Fenster heraus</b>
+     * — über den Rand, über die Fußleiste, über das, was rechts daneben lag.
+     * Ein Umbruch kommt nicht in Frage, weil dann die Zeilennummer nicht mehr
+     * zur Zeile passt; also wird geschoben, wie in jedem Editor.
+     */
+    private int scrollColumn;
     private Consumer<String> changeListener = text -> { };
     private long lastBlink;
     private boolean cursorVisible = true;
@@ -157,6 +167,7 @@ public class CodeEditor {
         cursorLine = 0;
         cursorColumn = 0;
         scrollLine = 0;
+        scrollColumn = 0;
         // Ein neuer Text ist kein Schritt, den man rückgängig machen kann:
         // Er kommt vom Server oder vom Öffnen des Fensters, nicht vom Tippen.
         undoStack.clear();
@@ -181,15 +192,29 @@ public class CodeEditor {
      */
     private float advance() {
         if (advance <= 0.0F) {
+            // Ohne Schrift ein runder Wert. Das ist kein Notbehelf für den
+            // Betrieb — dort gibt es immer eine —, sondern für den Test: Der
+            // baut den Editor ohne Fenster, und seit der Cursor auch
+            // waagerecht im Bild gehalten wird, rechnet jede Änderung mit dem
+            // Vorschub. Gezeichnet wird dabei nichts, also ist jede Zahl
+            // recht; sie darf nur nicht fehlen.
+            if (font == null) {
+                return 6.0F;
+            }
             String probe = "M".repeat(32);
             advance = font.getSplitter().stringWidth(mono(probe)) / 32.0F;
         }
         return advance;
     }
 
-    /** Wo eine Spalte anfängt. */
+    /** Wo eine Spalte anfängt — um den waagerechten Versatz verschoben. */
     private int columnX(int textX, int column) {
-        return textX + Math.round(column * advance());
+        return textX + Math.round((column - scrollColumn) * advance());
+    }
+
+    /** Wie viele Spalten nebeneinander passen. */
+    private int visibleColumns() {
+        return Math.max(8, (int) ((width - GUTTER_WIDTH - TEXT_LEFT - 6) / advance()));
     }
 
     private int widthOf(String text) {
@@ -212,25 +237,29 @@ public class CodeEditor {
 
     // ---- Zeichnen ---------------------------------------------------------
 
+    /**
+     * Zeichnet den Ausschnitt.
+     *
+     * <p><b>Zwei Durchgänge, weil nur einer beschnitten werden darf.</b> Der
+     * Bundsteg — Zeilennummern und Fehlermarken — steht links vom Text und
+     * wandert beim waagerechten Schieben nicht mit; er muss also außerhalb
+     * der Schere liegen. Der Text muss hinein, sonst zeichnet eine lange
+     * Zeile über den Rand hinaus in das, was daneben liegt.
+     *
+     * <p>Und die Schere einmal um den ganzen Durchgang statt einmal je Zeile:
+     * Jede Änderung am Beschnitt leert den Zeichenpuffer, und vierzig
+     * Leerungen je Bild sind vierzig zu viel.
+     */
     public void render(GuiGraphics graphics, List<Diagnostic> diagnostics) {
         int visible = visibleLines();
         int textX = x + GUTTER_WIDTH + TEXT_LEFT;
         int[] partner = matchingBracket();
+        int last = Math.min(visible, lines.size() - scrollLine);
 
-        for (int i = 0; i < visible; i++) {
+        // ---- Erster Durchgang: der Bundsteg, unbeschnitten ----
+        for (int i = 0; i < last; i++) {
             int lineIndex = scrollLine + i;
-            if (lineIndex >= lines.size()) {
-                break;
-            }
             int lineY = y + 10 + i * LINE_HEIGHT;
-
-            // Die Zeile unter dem Cursor bekommt einen Hauch Hintergrund.
-            // Nicht bei einer Auswahl: Die ist schon eine Hinterlegung, und
-            // zwei übereinander sind keine.
-            if (lineIndex == cursorLine && !hasSelection()) {
-                graphics.fill(x + GUTTER_WIDTH, lineY - 1, x + width - 2,
-                        lineY + LINE_HEIGHT - 2, EditorColours.CURRENT_LINE);
-            }
 
             // Zeilennummer, gedämpft — sie soll da sein, aber nicht ablenken.
             // Die eigene heller: Sie ist der Bezugspunkt beim Aufsehen.
@@ -240,6 +269,31 @@ public class CodeEditor {
                     lineIndex == cursorLine
                             ? EditorColours.LINE_NUMBER_ACTIVE : EditorColours.COMMENT,
                     false);
+
+            // Die Marke zu einer Meldung: Der Streifen im Text sagt, dass
+            // etwas ist, aber nicht was. Die Marke ist der Ort, an dem die
+            // Meldung hängt — beim Zeigen steht sie da.
+            Diagnostic problem = diagnosticIn(diagnostics, lineIndex + 1);
+            if (problem != null) {
+                graphics.fill(x + 1, lineY - 1, x + 3, lineY + LINE_HEIGHT - 2,
+                        problem.isError() ? 0xFFE88388 : 0xFFE8AC3E);
+            }
+        }
+
+        // ---- Zweiter Durchgang: der Text, beschnitten ----
+        graphics.enableScissor(x + GUTTER_WIDTH, y + 9, x + width - 2,
+                y + 10 + visible * LINE_HEIGHT);
+        for (int i = 0; i < last; i++) {
+            int lineIndex = scrollLine + i;
+            int lineY = y + 10 + i * LINE_HEIGHT;
+
+            // Die Zeile unter dem Cursor bekommt einen Hauch Hintergrund.
+            // Nicht bei einer Auswahl: Die ist schon eine Hinterlegung, und
+            // zwei übereinander sind keine.
+            if (lineIndex == cursorLine && !hasSelection()) {
+                graphics.fill(x + GUTTER_WIDTH, lineY - 1, x + width - 2,
+                        lineY + LINE_HEIGHT - 2, EditorColours.CURRENT_LINE);
+            }
 
             drawIndentGuides(graphics, lineIndex, textX, lineY);
 
@@ -252,22 +306,22 @@ public class CodeEditor {
             // Wellen sind bei zehn Pixel Zeilenhöhe nicht zu erkennen.
             Diagnostic problem = diagnosticIn(diagnostics, lineIndex + 1);
             if (problem != null) {
-                graphics.fill(textX - 2, lineY - 1, x + width - 2, lineY + LINE_HEIGHT - 2,
+                graphics.fill(x + GUTTER_WIDTH, lineY - 1, x + width - 2,
+                        lineY + LINE_HEIGHT - 2,
                         problem.isError() ? EditorColours.ERROR_LINE
                                 : EditorColours.WARNING_LINE);
-                // Und eine Marke im Bundsteg: Der Streifen sagt, dass etwas
-                // ist, aber nicht was. Die Marke ist der Ort, an dem die
-                // Meldung hängt — beim Zeigen steht sie da.
-                graphics.fill(x + 1, lineY - 1, x + 3, lineY + LINE_HEIGHT - 2,
-                        problem.isError() ? 0xFFE88388 : 0xFFE8AC3E);
             }
 
             drawHighlighted(graphics, lines.get(lineIndex), textX, lineY);
         }
-
         drawCursor(graphics, textX);
+        graphics.disableScissor();
+
+        drawColumnHint(graphics, visible);
         drawScrollHint(graphics, visible);
         drawSearchBar(graphics);
+        // Beide stehen bewusst außerhalb der Schere: Sie dürfen über den
+        // Textbereich hinausragen, das ist der Sinn eines Kastens.
         drawSignature(graphics, textX);
         drawSuggestions(graphics, textX);
     }
@@ -462,6 +516,29 @@ public class CodeEditor {
                 EditorColours.CURSOR);
     }
 
+    /**
+     * Der waagerechte Balken, wenn eine Zeile breiter ist als das Fenster.
+     *
+     * <p>Nur dann: Ein Balken, der immer da ist und immer voll, sagt nichts
+     * und kostet eine Zeile.
+     */
+    private void drawColumnHint(GuiGraphics graphics, int visible) {
+        int longest = longestLine();
+        int columns = visibleColumns();
+        if (longest <= columns) {
+            return;
+        }
+        int trackLeft = x + GUTTER_WIDTH;
+        int trackWidth = x + width - 4 - trackLeft;
+        int thumbWidth = Math.max(12, trackWidth * columns / longest);
+        int maxScroll = longest - columns;
+        int offset = maxScroll == 0 ? 0
+                : (trackWidth - thumbWidth) * Math.min(scrollColumn, maxScroll) / maxScroll;
+        int barY = y + 9 + visible * LINE_HEIGHT;
+        graphics.fill(trackLeft + offset, barY, trackLeft + offset + thumbWidth, barY + 1,
+                EditorColours.COMMENT);
+    }
+
     private void drawScrollHint(GuiGraphics graphics, int visible) {
         if (lines.size() <= visible) {
             return;
@@ -546,9 +623,19 @@ public class CodeEditor {
                 return true;
             }
             case 70 -> { // F: suchen
-                if (searching) {
+                if (searching && !replacing) {
                     closeSearch();
                 } else {
+                    replacing = false;
+                    openSearch();
+                }
+                return true;
+            }
+            case 72 -> { // H: suchen und ersetzen
+                if (searching && replacing) {
+                    closeSearch();
+                } else {
+                    replacing = true;
                     openSearch();
                 }
                 return true;
@@ -615,6 +702,9 @@ public class CodeEditor {
         }
         clearSuggestions();
         movement.run();
+        // Danach und nicht in den Bewegungen selbst: moveRight innerhalb einer
+        // Zeile rief es nicht, und genau dort läuft man aus dem Bild.
+        ensureVisible();
     }
 
     public boolean keyPressed(int key, int scanCode, int modifiers) {
@@ -741,7 +831,11 @@ public class CodeEditor {
             return false;
         }
         if (searching) {
-            setSearchTerm(searchTerm + character);
+            if (editingReplacement) {
+                replaceTerm = replaceTerm + character;
+            } else {
+                setSearchTerm(searchTerm + character);
+            }
             return true;
         }
         remember(EditKind.TYPING);
@@ -792,12 +886,19 @@ public class CodeEditor {
         return true;
     }
 
+    /** Rollen schiebt den Text; mit Umschalt zur Seite. */
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
         if (!inside(mouseX, mouseY)) {
             return false;
         }
+        int step = (int) Math.signum(delta) * 3;
+        if (net.minecraft.client.gui.screens.Screen.hasShiftDown()) {
+            int max = Math.max(0, longestLine() - visibleColumns());
+            scrollColumn = Mth.clamp(scrollColumn - step * 2, 0, max);
+            return true;
+        }
         int max = Math.max(0, lines.size() - visibleLines());
-        scrollLine = Mth.clamp(scrollLine - (int) Math.signum(delta) * 3, 0, max);
+        scrollLine = Mth.clamp(scrollLine - step, 0, max);
         return true;
     }
 
@@ -1240,6 +1341,13 @@ public class CodeEditor {
         ensureVisible();
     }
 
+    /**
+     * Holt den Cursor zurück in den Ausschnitt — senkrecht und waagerecht.
+     *
+     * <p>Waagerecht mit einem Rand von drei Spalten: Stünde der Cursor beim
+     * Tippen genau am Rand, spränge der Ausschnitt bei jedem Zeichen, und man
+     * schriebe gegen eine Wand.
+     */
     private void ensureVisible() {
         int visible = visibleLines();
         if (cursorLine < scrollLine) {
@@ -1248,11 +1356,30 @@ public class CodeEditor {
             scrollLine = cursorLine - visible + 1;
         }
         scrollLine = Mth.clamp(scrollLine, 0, Math.max(0, lines.size() - visible));
+
+        int columns = visibleColumns();
+        int margin = 3;
+        if (cursorColumn < scrollColumn + margin) {
+            scrollColumn = Math.max(0, cursorColumn - margin);
+        } else if (cursorColumn >= scrollColumn + columns - margin) {
+            scrollColumn = cursorColumn - columns + margin + 1;
+        }
+        scrollColumn = Math.max(0, scrollColumn);
+    }
+
+    /** Die längste Zeile, in Zeichen — für den waagerechten Balken. */
+    private int longestLine() {
+        int longest = 0;
+        for (String line : lines) {
+            longest = Math.max(longest, line.length());
+        }
+        return longest;
     }
 
     private void changed() {
         cursorVisible = true;
         lastBlink = System.currentTimeMillis();
+        ensureVisible();
         updateSuggestions();
         changeListener.accept(text());
     }
@@ -1575,7 +1702,7 @@ public class CodeEditor {
         // die Spalte der abgerundete Abstand. Das Runden setzt die Grenze in
         // die Mitte eines Zeichens — ein Klick auf die rechte Hälfte landet
         // dahinter, wie in jedem Editor.
-        int column = (int) Math.round((mouseX - textX) / advance());
+        int column = (int) Math.round((mouseX - textX) / advance()) + scrollColumn;
         return Mth.clamp(column, 0, line.length());
     }
 
@@ -1680,6 +1807,20 @@ public class CodeEditor {
     private String searchTerm = "";
     private int matchIndex;
 
+    /**
+     * Ob die Zeile auch ein Ersetzen anbietet.
+     *
+     * <p>Dieselbe Zeile für beides und kein zweites Fenster: Suchen und
+     * Ersetzen sind eine Handlung mit einem Feld mehr. Strg+F öffnet sie
+     * ohne, Strg+H mit — und aus dem einen wird das andere, ohne dass man
+     * schließt und neu aufmacht.
+     */
+    private boolean replacing;
+    private String replaceTerm = "";
+
+    /** Welches der beiden Felder gerade tippt. Tabulator wechselt. */
+    private boolean editingReplacement;
+
     public boolean isSearching() {
         return searching;
     }
@@ -1698,12 +1839,25 @@ public class CodeEditor {
             }
         }
         matchIndex = 0;
+        editingReplacement = false;
         clearSuggestions();
         jumpToMatch();
     }
 
     void closeSearch() {
         searching = false;
+        replacing = false;
+        editingReplacement = false;
+    }
+
+    /** Wodurch ersetzt wird. */
+    void setReplaceTerm(String term) {
+        replaceTerm = term == null ? "" : term;
+    }
+
+    /** Die erste sichtbare Spalte — für die Prüfung des Schiebens. */
+    int firstVisibleColumn() {
+        return scrollColumn;
     }
 
     void setSearchTerm(String term) {
@@ -1734,7 +1888,11 @@ public class CodeEditor {
                     break;
                 }
                 found.add(new int[] {i, at});
-                from = at + 1;
+                // Hinter die Fundstelle und nicht ein Zeichen weiter: Sonst
+                // fände die Suche nach „aa" in „aaa" zwei Stellen, die
+                // einander überlappen — und „alle ersetzen" schriebe in die
+                // eigene Ersetzung hinein.
+                from = at + needle.length();
             }
         }
         return found;
@@ -1789,20 +1947,58 @@ public class CodeEditor {
         }
     }
 
-    /** Die Suchzeile über dem Text. */
+    /**
+     * Die Such- und Ersetzenzeile über dem Text.
+     *
+     * <p>Das aktive Feld trägt einen Strich; ohne ihn wüsste man nach einem
+     * Tabulator nicht, wohin man tippt. Die Zahl der Fundstellen steht rechts
+     * und wird rot, wenn es keine gibt — ein leeres Ergebnis ist eine
+     * Auskunft und kein Fehler, aber man soll es sehen.
+     */
     private void drawSearchBar(GuiGraphics graphics) {
         if (!searching) {
             return;
         }
         graphics.fill(x, y, x + width, y + 9, EditorColours.SEARCH_BAR);
         int count = matches().size();
-        String label = searchTerm.isEmpty()
+
+        String find = searchTerm.isEmpty()
                 ? net.minecraft.network.chat.Component
                         .translatable("screen.factorynetwork.editor.find").getString()
-                : searchTerm + "  " + matchNumber() + "/" + count;
-        graphics.drawString(font, mono(plainSubstrByWidth(label, width - 6)), x + 3, y,
-                count == 0 && !searchTerm.isEmpty() ? EditorColours.ERROR : EditorColours.TEXT,
+                : searchTerm;
+        int at = x + 3;
+        at = drawField(graphics, at, find, !editingReplacement,
+                count == 0 && !searchTerm.isEmpty());
+
+        if (replacing) {
+            graphics.drawString(font, mono("→"), at + 2, y, EditorColours.COMMENT, false);
+            at += widthOf("→ ") + 4;
+            String to = replaceTerm.isEmpty()
+                    ? net.minecraft.network.chat.Component
+                            .translatable("screen.factorynetwork.editor.replace").getString()
+                    : replaceTerm;
+            at = drawField(graphics, at, to, editingReplacement, false);
+        }
+
+        String tally = matchNumber() + "/" + count;
+        graphics.drawString(font, mono(tally), x + width - widthOf(tally) - 4, y,
+                count == 0 && !searchTerm.isEmpty() ? EditorColours.ERROR
+                        : EditorColours.COMMENT, false);
+    }
+
+    /** Ein Feld der Suchzeile; das aktive bekommt einen Strich darunter. */
+    private int drawField(GuiGraphics graphics, int at, String text, boolean active,
+                          boolean bad) {
+        String shown = plainSubstrByWidth(text, width / 3);
+        graphics.drawString(font, mono(shown), at, y,
+                bad ? EditorColours.ERROR : active ? EditorColours.TEXT : EditorColours.MUTED,
                 false);
+        int shownWidth = Math.max(widthOf(shown), 12);
+        if (active) {
+            graphics.fill(at, y + 8, at + shownWidth, y + 9,
+                    0xFF000000 | EditorColours.SELECTOR);
+        }
+        return at + shownWidth + 6;
     }
 
     /**
@@ -1818,12 +2014,33 @@ public class CodeEditor {
                 closeSearch();
                 return true;
             }
+            case 258 -> { // Tabulator wechselt zwischen den beiden Feldern
+                if (replacing) {
+                    editingReplacement = !editingReplacement;
+                }
+                return true;
+            }
             case 257, 335 -> { // Eingabe
-                step(net.minecraft.client.gui.screens.Screen.hasShiftDown() ? -1 : 1);
+                if (!replacing) {
+                    step(net.minecraft.client.gui.screens.Screen.hasShiftDown() ? -1 : 1);
+                    return true;
+                }
+                // Mit Alt alle auf einmal — Strg und Eingabe ist im Terminal
+                // schon das Übernehmen, und zwei Bedeutungen für einen Griff
+                // sind eine zu viel.
+                if (net.minecraft.client.gui.screens.Screen.hasAltDown()) {
+                    replaceAll();
+                } else {
+                    replaceCurrent();
+                }
                 return true;
             }
             case 259 -> { // Rücktaste
-                if (!searchTerm.isEmpty()) {
+                if (editingReplacement) {
+                    if (!replaceTerm.isEmpty()) {
+                        replaceTerm = replaceTerm.substring(0, replaceTerm.length() - 1);
+                    }
+                } else if (!searchTerm.isEmpty()) {
                     setSearchTerm(searchTerm.substring(0, searchTerm.length() - 1));
                 }
                 return true;
@@ -1832,5 +2049,67 @@ public class CodeEditor {
                 return false;
             }
         }
+    }
+
+    /**
+     * Ersetzt die angefahrene Fundstelle und geht zur nächsten.
+     *
+     * <p>Die Fundstelle ist ausgewählt — {@link #jumpToMatch()} sorgt dafür.
+     * Ersetzt wird also über die Auswahl, mit denselben Handgriffen wie beim
+     * Tippen, und ein Rückgängig nimmt es als einen Schritt zurück.
+     */
+    void replaceCurrent() {
+        if (searchTerm.isEmpty() || matches().isEmpty()) {
+            return;
+        }
+        if (!hasSelection()) {
+            jumpToMatch();
+            if (!hasSelection()) {
+                return;
+            }
+        }
+        remember(EditKind.STRUCTURAL);
+        deleteSelection();
+        if (!replaceTerm.isEmpty()) {
+            insert(replaceTerm);
+        }
+        // Nach dem Ersetzen steht die nächste Fundstelle an derselben Nummer:
+        // Die eben ersetzte ist aus der Liste heraus.
+        List<int[]> rest = matches();
+        if (rest.isEmpty()) {
+            return;
+        }
+        matchIndex = Math.floorMod(matchIndex, rest.size());
+        jumpToMatch();
+    }
+
+    /**
+     * Ersetzt alle Fundstellen auf einmal.
+     *
+     * <p>Zeile für Zeile und von hinten nach vorn innerhalb einer Zeile —
+     * sonst verschöbe die erste Ersetzung die Stellen aller folgenden. Ein
+     * Rückgängig nimmt das Ganze als einen Schritt zurück; alles andere wäre
+     * bei zwanzig Stellen zwanzig Griffe.
+     */
+    void replaceAll() {
+        if (searchTerm.isEmpty()) {
+            return;
+        }
+        List<int[]> found = matches();
+        if (found.isEmpty()) {
+            return;
+        }
+        remember(EditKind.STRUCTURAL);
+        for (int i = found.size() - 1; i >= 0; i--) {
+            int[] at = found.get(i);
+            String line = lines.get(at[0]);
+            int end = Math.min(at[1] + searchTerm.length(), line.length());
+            lines.set(at[0], line.substring(0, at[1]) + replaceTerm + line.substring(end));
+        }
+        clearSelection();
+        cursorLine = Mth.clamp(cursorLine, 0, lines.size() - 1);
+        cursorColumn = Math.min(cursorColumn, lines.get(cursorLine).length());
+        matchIndex = 0;
+        changed();
     }
 }
