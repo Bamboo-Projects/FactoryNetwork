@@ -123,8 +123,7 @@ public class RouterBlockEntity extends BlockEntity {
     }
 
     private int laneCapacity() {
-        return dev.devpanda.factorynetwork.network.Channels.quarters(
-                dev.devpanda.factorynetwork.block.CableBlock.CHANNELS_DENSE);
+        return dev.devpanda.factorynetwork.block.CableBlock.CHANNELS_DENSE;
     }
 
     /** Wie viele Seiten überhaupt angeschlossen sind. */

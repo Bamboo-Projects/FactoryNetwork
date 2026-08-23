@@ -1883,3 +1883,24 @@ zwanzigmal je Bild.
 Bauwerk oder ein `/setblock` legen die Tafel ohne Nachbarschaft ab, und die
 Nachbarn erfahren zwar davon, die neue Tafel selbst aber nicht. Deshalb
 rechnet auch `onPlace` die vier Seiten nach.
+
+
+---
+
+## Keine Viertelkanäle mehr (2026-08-23)
+
+Eine Anzeige kostete ein Viertel Kanal, damit vier an einer Wand sich einen
+teilen. Gerechnet wurde deshalb **überall** in Vierteln, und im Spiel stand
+dann „12¼ von 16".
+
+**Das versteht niemand.** Ein Kanal ist eine Leitung; eine viertel Leitung
+gibt es nicht. Die Bruchzahl war kein Detail der Anzeige, sondern hat die
+ganze Rechnung angesteckt — jede Kapazität, jede Last, jeder Test.
+
+Die Anzeige kostet jetzt **gar keinen** Kanal. Die Begründung ist dieselbe
+wie beim Router: Sie leitet nichts weiter und schiebt nichts, sie liest nur
+mit. Wer sich eine Wand aus zwölf Tafeln in die Halle baut, soll dafür nicht
+ein Netz opfern — sie kostet Strom, und das ist der Preis.
+
+Damit sind alle Zahlen wieder ganze, und `Channels` besteht aus fünf
+Konstanten statt aus fünf Konstanten plus Umrechnung plus Bruchformatierung.

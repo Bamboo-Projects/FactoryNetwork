@@ -159,10 +159,6 @@ public final class FactoryGraph {
      */
     public static final int CHANNELS_PER_STRAND = CableBlock.CHANNELS_THIN;
 
-    // Ab hier wird in Vierteln gerechnet — siehe Channels. Erst die Anzeige
-    // rechnet zurück, damit eine Anzeige ein Viertel kosten kann, ohne dass
-    // jede Stelle Bruchrechnung braucht.
-
     /**
      * Baut den Graphen ausgehend vom Controller auf.
      *
@@ -271,8 +267,8 @@ public final class FactoryGraph {
      * Was am Netz einen Kanal kostet.
      *
      * <p>Die Regel in einem Satz: Was etwas tut, kostet einen Kanal. Eine
-     * Anzeige tut weniger — sie liest nur mit — und kostet ein Viertel. Ein
-     * Router ist Kabel und kein Gerät.
+     * Anzeige tut weniger — sie liest nur mit — und kostet keinen. Ein Router
+     * ist Kabel und kein Gerät.
      */
     private enum Consumer {
         CONNECTOR(Channels.CONNECTOR),
@@ -422,7 +418,7 @@ public final class FactoryGraph {
             // höherem Bedarf soll später keine Wanderung durch diesen Code
             // nach sich ziehen.
             int cost = kind == Consumer.CONNECTOR
-                    ? Channels.quarters(connector.channelCost()) : kind.cost;
+                    ? connector.channelCost() : kind.cost;
 
             List<Node> chosen = null;
             for (Node entryPoint : entry.getValue()) {
@@ -516,10 +512,10 @@ public final class FactoryGraph {
         if (state.getBlock() instanceof RouterBlock) {
             // Der Router gehört zum dicken Kabel, also trägt jede seiner
             // Bahnen so viel wie ein dickes Kabel.
-            return Channels.quarters(CableBlock.CHANNELS_DENSE);
+            return CableBlock.CHANNELS_DENSE;
         }
         int channels = CableBlock.channelsAt(state);
-        return channels > 0 ? Channels.quarters(channels) : Integer.MAX_VALUE;
+        return channels > 0 ? channels : Integer.MAX_VALUE;
     }
 
     /**

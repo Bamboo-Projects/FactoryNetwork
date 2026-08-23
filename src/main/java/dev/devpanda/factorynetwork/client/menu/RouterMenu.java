@@ -56,19 +56,19 @@ public class RouterMenu extends AbstractContainerMenu {
         return data.get(side.ordinal());
     }
 
-    /** Was diese Bahn trägt, in Vierteln. */
+    /** Was diese Bahn trägt. */
     public int load(int lane) {
         return lane >= 1 && lane <= RouterBlockEntity.LANES
                 ? data.get(LOAD_OFFSET + lane - 1) : 0;
     }
 
-    /** Was eine Bahn tragen kann, in Vierteln. */
+    /** Was eine Bahn tragen kann. */
     public int capacity() {
         return data.get(CAPACITY_INDEX);
     }
 
     public String formatLoad(int lane) {
-        return Channels.format(load(lane)) + "/" + Channels.format(capacity());
+        return String.valueOf(load(lane)) + "/" + String.valueOf(capacity());
     }
 
     /** Die Knopfnummer für eine Seite und eine Bahn. */

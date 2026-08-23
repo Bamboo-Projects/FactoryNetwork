@@ -784,11 +784,10 @@ public final class FactoryNetworkGameTests {
         // Beide Wege laufen über das erste Kabel: dort zwei Kanäle belegt.
         int atStart = entity.graph().channelLoad(
                 helper.absolutePos(controller.east(1)), CableColour.NONE);
-        helper.assertValueEqual(atStart, dev.devpanda.factorynetwork.network.Channels.quarters(2), "Kanäle auf dem ersten Kabel");
+        helper.assertValueEqual(atStart, 2, "Kanäle auf dem ersten Kabel");
         helper.assertValueEqual(entity.graph().channelsFree(helper.getLevel(),
                 helper.absolutePos(controller.east(1)), CableColour.NONE),
-                dev.devpanda.factorynetwork.network.Channels.quarters(
-                        dev.devpanda.factorynetwork.block.CableBlock.CHANNELS_THIN - 2),
+                dev.devpanda.factorynetwork.block.CableBlock.CHANNELS_THIN - 2,
                 "freie Kanäle dort");
         helper.succeed();
     }
@@ -2882,8 +2881,7 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(entity.graph().connectorNames().size(), 9, "Geräte mit Kanal");
         helper.assertValueEqual(entity.graph().channelsFree(helper.getLevel(),
                         helper.absolutePos(controller.east(1)), CableColour.NONE),
-                dev.devpanda.factorynetwork.network.Channels.quarters(
-                        dev.devpanda.factorynetwork.block.CableBlock.CHANNELS_DENSE - 18),
+                dev.devpanda.factorynetwork.block.CableBlock.CHANNELS_DENSE - 18,
                 "Von vierundsechzig sind achtzehn belegt");
         helper.succeed();
     }
@@ -3376,7 +3374,7 @@ public final class FactoryNetworkGameTests {
         helper.assertTrue(entity.graph().connector("oben").isPresent(),
                 "oben muss auf derselben Bahn erreichbar sein");
         helper.assertValueEqual(entity.graph().laneLoad(helper.absolutePos(router), 1),
-                dev.devpanda.factorynetwork.network.Channels.quarters(2), "Kanäle auf Bahn eins");
+                2, "Kanäle auf Bahn eins");
 
         // Andere Bahn: Der Weg kreuzt sich berührungslos.
         lane(helper, router, north, 2);
@@ -3386,7 +3384,7 @@ public final class FactoryNetworkGameTests {
         helper.assertTrue(entity.graph().connector("oben").isPresent(),
                 "oben liegt weiter auf Bahn eins");
         helper.assertValueEqual(entity.graph().laneLoad(helper.absolutePos(router), 1),
-                dev.devpanda.factorynetwork.network.Channels.quarters(1), "Kanäle auf Bahn eins, nachdem nord ausgeschert ist");
+                1, "Kanäle auf Bahn eins, nachdem nord ausgeschert ist");
         helper.assertValueEqual(entity.graph().laneLoad(helper.absolutePos(router), 2), 0,
                 "Bahn zwei führt zu keinem Controller und trägt nichts");
 
@@ -3470,8 +3468,7 @@ public final class FactoryNetworkGameTests {
         // Stünde der Router nicht im Weg, bliebe die Bahn hier auf null —
         // dann zählte die Kreuzung nichts und wäre unbegrenzt.
         helper.assertValueEqual(entity.graph().laneLoad(helper.absolutePos(router), 1),
-                dev.devpanda.factorynetwork.network.Channels.quarters(
-                        dev.devpanda.factorynetwork.block.CableBlock.CHANNELS_DENSE),
+                dev.devpanda.factorynetwork.block.CableBlock.CHANNELS_DENSE,
                 "Kanäle auf der Bahn");
         helper.assertTrue(entity.graph().starvedConnectors().isEmpty(),
                 "allein bekommt das Gerät seinen Platz");
@@ -3516,8 +3513,7 @@ public final class FactoryNetworkGameTests {
         helper.assertTrue(!data.links().isEmpty(), "der Analysator muss Strecken finden");
         for (var link : data.links()) {
             helper.assertValueEqual(link.capacity(),
-                    dev.devpanda.factorynetwork.network.Channels.quarters(
-                            dev.devpanda.factorynetwork.block.CableBlock.CHANNELS_DENSE),
+                    dev.devpanda.factorynetwork.block.CableBlock.CHANNELS_DENSE,
                     "Kapazität einer dichten Strecke");
             helper.assertTrue(
                     link.state() != dev.devpanda.factorynetwork.analyser
@@ -4863,28 +4859,29 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
 
-        // Connector, Laufwerk und Schrank je ein ganzer Kanal, die Anzeige
-        // ein Viertel.
+        // Connector, Laufwerk und Schrank je einen Kanal — die Anzeige
+        // keinen, denn sie liest nur mit.
         int erwartet = dev.devpanda.factorynetwork.network.Channels.CONNECTOR
                 + dev.devpanda.factorynetwork.network.Channels.DRIVE
                 + dev.devpanda.factorynetwork.network.Channels.RACK
                 + dev.devpanda.factorynetwork.network.Channels.DISPLAY;
+        helper.assertValueEqual(erwartet, 3, "drei Geräte, eine Anzeige umsonst");
         helper.assertValueEqual(entity.graph().channelLoad(
                         helper.absolutePos(cable), CableColour.NONE), erwartet,
-                "Kanäle auf dem Kabel, in Vierteln");
-        helper.assertValueEqual(dev.devpanda.factorynetwork.network.Channels.format(erwartet),
-                "3¼", "so steht es in der Anzeige");
+                "Kanäle auf dem Kabel");
         helper.succeed();
     }
 
     /**
-     * Vier Anzeigen teilen sich einen Kanal.
+     * Anzeigen kosten keinen Kanal.
      *
-     * <p>Eine Anzeige liest nur mit und schiebt nichts. Eine Leitstandwand
-     * soll kein halbes Netz auffressen.
+     * <p>Eine Anzeige liest nur mit und schiebt nichts — dieselbe Begründung
+     * wie beim Router. Vorher kostete sie ein Viertel, damit vier sich einen
+     * teilen; einen Viertelkanal versteht aber niemand, und ein Netz sollte
+     * nicht in Brüchen rechnen.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
-    public static void fourDisplaysShareOneChannel(GameTestHelper helper) {
+    public static void displaysCostNoChannel(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 3, 1);
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
         BlockPos cable = controller.east();
@@ -4899,8 +4896,8 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(entity.graph().displays().size(), 4, "Anzeigen am Netz");
         helper.assertValueEqual(entity.graph().channelLoad(
                         helper.absolutePos(cable), CableColour.NONE),
-                dev.devpanda.factorynetwork.network.Channels.quarters(1),
-                "vier Anzeigen sind zusammen ein Kanal");
+                0,
+                "und das Kabel trägt trotzdem nichts");
         helper.succeed();
     }
 
@@ -4933,8 +4930,8 @@ public final class FactoryNetworkGameTests {
                 "alle vier Tafeln gehören zum Netz");
         helper.assertValueEqual(entity.graph().channelLoad(
                         helper.absolutePos(cable), CableColour.NONE),
-                dev.devpanda.factorynetwork.network.Channels.quarters(1),
-                "und zusammen kosten sie einen Kanal");
+                0,
+                "und kosten dabei keinen Kanal");
         helper.succeed();
     }
 
