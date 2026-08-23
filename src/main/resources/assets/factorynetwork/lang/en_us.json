@@ -297,5 +297,8 @@
   "screen.factorynetwork.code.help.menu": "Menu in the file tree",
   "screen.factorynetwork.code.help.close": "Close this list",
   "screen.factorynetwork.code.saving": "saving…",
-  "screen.factorynetwork.code.unsaved": "not deployed"
+  "screen.factorynetwork.code.unsaved": "not deployed",
+  "screen.factorynetwork.code.help.goto": "Go to definition",
+  "screen.factorynetwork.code.declared_in": "declared in %s, line %s",
+  "screen.factorynetwork.code.used": "%s more references"
 }

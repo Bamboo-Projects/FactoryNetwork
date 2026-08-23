@@ -543,6 +543,43 @@ public class CodeEditor {
         return dev.devpanda.factorynetwork.lang.Signatures.find(block, keyword);
     }
 
+    /**
+     * Das ganze Wort unter dem Zeiger, oder leer.
+     *
+     * <p>Für den Sprung zur Erklärung. Ein Wort ist hier, was auch ein Name
+     * sein darf: Buchstaben, Ziffern, Unterstrich.
+     */
+    public String wordAt(double mouseX, double mouseY) {
+        if (!inside(mouseX, mouseY)) {
+            return "";
+        }
+        int lineIndex = lineAt(mouseY);
+        String line = lines.get(lineIndex);
+        int column = columnAt(lineIndex, mouseX);
+        if (column >= line.length() || !isWordChar(line.charAt(column))) {
+            // Einen Schritt zurück: Wer hinter das letzte Zeichen eines
+            // Wortes klickt, meint das Wort.
+            column--;
+        }
+        if (column < 0 || column >= line.length() || !isWordChar(line.charAt(column))) {
+            return "";
+        }
+        int from = column;
+        while (from > 0 && isWordChar(line.charAt(from - 1))) {
+            from--;
+        }
+        int to = column;
+        while (to + 1 < line.length() && isWordChar(line.charAt(to + 1))) {
+            to++;
+        }
+        return line.substring(from, to + 1);
+    }
+
+    /** Springt an eine Zeile und Spalte, beide von eins an gezählt. */
+    public void jumpTo(int line, int column) {
+        setCursor(line - 1, Math.max(0, column - 1));
+    }
+
     /** Setzt den Cursor auf die Stelle einer Meldung. */
     public void jumpTo(Diagnostic diagnostic) {
         setCursor(diagnostic.span().line() - 1, Math.max(0, diagnostic.span().column() - 1));

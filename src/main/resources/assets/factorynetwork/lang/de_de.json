@@ -297,5 +297,8 @@
   "screen.factorynetwork.code.help.menu": "Menü im Dateibaum",
   "screen.factorynetwork.code.help.close": "Diese Liste schließen",
   "screen.factorynetwork.code.saving": "sichert…",
-  "screen.factorynetwork.code.unsaved": "nicht übernommen"
+  "screen.factorynetwork.code.unsaved": "nicht übernommen",
+  "screen.factorynetwork.code.help.goto": "Zur Erklärung springen",
+  "screen.factorynetwork.code.declared_in": "erklärt in %s, Zeile %s",
+  "screen.factorynetwork.code.used": "%s weitere Fundstellen"
 }
