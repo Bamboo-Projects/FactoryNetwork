@@ -202,6 +202,7 @@ public class ControllerBlockEntity extends BlockEntity {
         this.project = newProject;
         this.diagnostics = new ArrayList<>(result.diagnostics());
         writeProgramFile();
+        pushProjectToWatchers();
         // Erst nachsehen, dann urteilen: Wer eben einen Schrank gesetzt hat,
         // bekäme sonst „kein Server" zu hören, obwohl einer danebensteht.
         if (level != null && !hasServer()) {
@@ -603,8 +604,25 @@ public class ControllerBlockEntity extends BlockEntity {
     /** Das Terminal ist auf, egal welcher Reiter. */
     public void watchTerminal(ServerPlayer player) {
         terminalWatchers.add(player);
+        pushProjectTo(player);
         pushFlowsTo(player);
         pushDisplaysTo(player);
+    }
+
+    /**
+     * Schickt das ganze Projekt.
+     *
+     * <p>Beim Öffnen und nach jedem Übernehmen — nicht laufend. Ein Projekt
+     * ändert sich, wenn jemand es ändert, und dann weiß der Server es.
+     */
+    public void pushProjectTo(ServerPlayer player) {
+        PacketDistributor.sendToPlayer(player,
+                dev.devpanda.factorynetwork.network.packet.ProjectStatePacket.of(project));
+    }
+
+    /** Und an alle, die gerade zusehen — nach einer Änderung von außen. */
+    private void pushProjectToWatchers() {
+        terminalWatchers.forEach(this::pushProjectTo);
     }
 
     public void unwatchTerminal(ServerPlayer player) {

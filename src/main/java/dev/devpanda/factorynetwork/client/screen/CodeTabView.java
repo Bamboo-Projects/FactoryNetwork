@@ -1,33 +1,44 @@
 package dev.devpanda.factorynetwork.client.screen;
 
 import dev.devpanda.factorynetwork.client.ClientDeployState;
+import dev.devpanda.factorynetwork.client.ClientProjectState;
+import dev.devpanda.factorynetwork.client.FnFonts;
 import dev.devpanda.factorynetwork.lang.Diagnostic;
-import dev.devpanda.factorynetwork.lang.parse.Parser;
+import dev.devpanda.factorynetwork.lang.Project;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Der Code-Reiter.
+ * Der Code-Reiter: ein Projekt aus mehreren Dateien.
  *
- * <p>Der Editor und darunter eine Fußleiste: links, was der Übersetzer sagt,
- * rechts der Knopf zum Übernehmen.
+ * <p>Über dem Editor eine Zeile mit den Dateien, darunter eine Fußleiste mit
+ * der Meldung des Übersetzers und dem Knopf zum Übernehmen.
  *
- * <p><b>Der Knopf ist neu, und er war überfällig.</b> Übernehmen ging nur mit
- * Strg+Eingabe, und nichts im Fenster sagte das — eine Tastenkombination, die
- * man kennen muss, ist keine Bedienung. Die Kombination bleibt; wer sie kennt,
- * ist schneller.
+ * <p><b>Die Dateien stehen quer und nicht als Spalte.</b> Eine Spalte hätte
+ * ein Fünftel der Editorbreite gekostet — bei vierundvierzig Spalten sind das
+ * zwölf. Eine Zeile kostet eine Zeile, und sie ist auch das Bild, das man von
+ * Editor-Reitern kennt.
+ *
+ * <p><b>Übersetzt wird das ganze Projekt, markiert nur die offene Datei.</b>
+ * Ohne diese Trennung markierte ein Fehler in Zeile drei von
+ * {@code worker.mf} die dritte Zeile der gerade offenen {@code anzeigen.mf} —
+ * der Fehler, den man am längsten sucht, weil dort gar nichts falsch ist.
  */
 public class CodeTabView {
 
-    /** Höhe der Fußleiste unter dem Editor. */
+    /** Höhe der Dateizeile über dem Editor. */
+    private static final int FILE_ROW = 11;
+
+    /** Höhe der Fußleiste darunter. */
     private static final int FOOTER = 14;
 
-    /** Der Knopf rechts darin. */
     private static final int BUTTON_WIDTH = 66;
     private static final int BUTTON_HEIGHT = 12;
+    private static final int FILE_GAP = 8;
 
     private final TerminalScreen screen;
     private final Font font;
@@ -37,40 +48,59 @@ public class CodeTabView {
     private final int height;
     private final CodeEditor editor;
 
-    private List<Diagnostic> diagnostics = List.of();
+    private Project project;
+    private String open;
+
+    /** Alle Meldungen des Projekts, und davon die der offenen Datei. */
+    private List<Diagnostic> problems = List.of();
+    private List<Diagnostic> openProblems = List.of();
     private String status = "";
     private int statusColour = TerminalScreen.TEXT_FAINT;
 
-    public CodeTabView(TerminalScreen screen, Font font, int x, int y, int width, int height,
-                       String initial) {
+    public CodeTabView(TerminalScreen screen, Font font, int x, int y, int width, int height) {
         this.screen = screen;
         this.font = font;
         this.x = x;
         this.y = y;
         this.width = width;
         this.height = height;
-        this.editor = new CodeEditor(font, x + 2, y + 2, width - 4, height - FOOTER - 2,
-                initial);
+        this.project = ClientProjectState.project();
+        this.open = project.names().get(0);
+        this.editor = new CodeEditor(font, x + 2, y + FILE_ROW + 2, width - 4,
+                height - FILE_ROW - FOOTER - 2, project.source(open));
         this.editor.setChangeListener(this::onChanged);
-        onChanged(editor.text());
+        recheck();
     }
 
     private void onChanged(String text) {
         // Was der Server zuletzt gesagt hat, gilt für den Text von damals.
-        // Eine stehengebliebene Erfolgsmeldung über geändertem Code ist
-        // schlimmer als keine.
         ClientDeployState.clear();
-        Parser.ParseResult result = Parser.parse(text);
-        diagnostics = result.diagnostics();
-        if (diagnostics.isEmpty()) {
+        project = project.with(open, text);
+        recheck();
+    }
+
+    /** Übersetzt das ganze Projekt und sortiert die Meldungen. */
+    private void recheck() {
+        problems = project.parse().diagnostics();
+        openProblems = problems.stream()
+                .filter(problem -> problem.file().equals(open))
+                .toList();
+        if (problems.isEmpty()) {
             status = Component.translatable("screen.factorynetwork.terminal.ok").getString();
             statusColour = TerminalScreen.TEXT_FAINT;
-        } else {
-            Diagnostic first = diagnostics.get(0);
-            status = first.span().line() + ": " + first.message()
-                    + (first.hint() == null ? "" : " " + first.hint());
-            statusColour = first.isError() ? TerminalScreen.BAD : TerminalScreen.WARN;
+            return;
         }
+        Diagnostic first = problems.get(0);
+        // Der Dateiname nur, wenn er nicht der offene ist — sonst steht er
+        // in jeder Meldung und sagt nichts.
+        String where = first.file().equals(open) ? "" : first.file() + " ";
+        status = where + first.span().line() + ": " + first.message();
+        statusColour = first.isError() ? TerminalScreen.BAD : TerminalScreen.WARN;
+    }
+
+    /** Das Projekt mit dem, was gerade im Editor steht. */
+    public Project project() {
+        return project;
     }
 
     public String text() {
@@ -83,6 +113,96 @@ public class CodeTabView {
                 editor.cursorLine() + 1, editor.cursorColumn() + 1);
     }
 
+    // ---- Die Dateizeile ----------------------------------------------------
+
+    private int fileWidth(String name) {
+        return font.width(FnFonts.mono(name));
+    }
+
+    private int fileX(String wanted) {
+        int at = x + 3;
+        for (String name : project.names()) {
+            if (name.equals(wanted)) {
+                return at;
+            }
+            at += fileWidth(name) + FILE_GAP;
+        }
+        return at;
+    }
+
+    /** Der Platz hinter der letzten Datei — dort sitzt das Pluszeichen. */
+    private int plusX() {
+        int at = x + 3;
+        for (String name : project.names()) {
+            at += fileWidth(name) + FILE_GAP;
+        }
+        return at;
+    }
+
+    private void drawFiles(GuiGraphics graphics, int mouseX, int mouseY) {
+        for (String name : project.names()) {
+            int at = fileX(name);
+            boolean active = name.equals(open);
+            boolean broken = problems.stream()
+                    .anyMatch(problem -> problem.isError() && problem.file().equals(name));
+            int colour = broken ? TerminalScreen.BAD
+                    : active ? TerminalScreen.TEXT : TerminalScreen.TEXT_DIM;
+            graphics.drawString(font, FnFonts.mono(name), at, y + 1, colour, false);
+            if (active) {
+                graphics.fill(at, y + FILE_ROW - 2, at + fileWidth(name), y + FILE_ROW - 1,
+                        0xFF000000 | TerminalScreen.ACCENT);
+            }
+        }
+        boolean hovered = overPlus(mouseX, mouseY);
+        graphics.drawString(font, FnFonts.mono("+"), plusX(), y + 1,
+                hovered ? TerminalScreen.TEXT : TerminalScreen.TEXT_FAINT, false);
+    }
+
+    private boolean overFiles(double mouseY) {
+        return mouseY >= y && mouseY < y + FILE_ROW;
+    }
+
+    private boolean overPlus(double mouseX, double mouseY) {
+        return overFiles(mouseY) && mouseX >= plusX()
+                && mouseX < plusX() + fileWidth("+") + 2;
+    }
+
+    /**
+     * Wechselt die offene Datei.
+     *
+     * <p>Der Text der bisherigen steht schon im Projekt — jeder Anschlag
+     * schreibt ihn dorthin. Hier wird nur geholt, was in der neuen steht.
+     */
+    private void openFile(String name) {
+        if (name.equals(open)) {
+            return;
+        }
+        open = name;
+        editor.setText(project.source(name));
+        recheck();
+    }
+
+    /**
+     * Legt eine Datei an.
+     *
+     * <p>Mit einem durchnummerierten Namen und ohne Frage: Ein Fenster für
+     * einen Dateinamen wäre ein Fenster über einem Fenster. Umbenennen geht
+     * im Ordner neben der Welt — dort ist ohnehin der Ort für alles, was mit
+     * der Gliederung zu tun hat.
+     */
+    private void addFile() {
+        for (int number = 2; number < 100; number++) {
+            String name = "datei" + number + ".mf";
+            if (!project.files().containsKey(name)) {
+                project = project.with(name, "");
+                openFile(name);
+                return;
+            }
+        }
+    }
+
+    // ---- Zeichnen ----------------------------------------------------------
+
     private int buttonX() {
         return x + width - BUTTON_WIDTH - 2;
     }
@@ -92,9 +212,9 @@ public class CodeTabView {
     }
 
     public void render(GuiGraphics graphics, int mouseX, int mouseY) {
-        editor.render(graphics, diagnostics);
+        drawFiles(graphics, mouseX, mouseY);
+        editor.render(graphics, openProblems);
 
-        // Die Fußleiste: die Meldung so breit, wie der Knopf sie lässt.
         int footerY = y + height - FOOTER + 3;
         String shown = ClientDeployState.hasMessage() ? ClientDeployState.message() : status;
         int colour = ClientDeployState.hasMessage()
@@ -119,24 +239,22 @@ public class CodeTabView {
                 && mouseY >= buttonY() && mouseY < buttonY() + BUTTON_HEIGHT;
     }
 
-    /**
-     * Erklärungen beim Zeigen: der Knopf und die Fehlermarken.
-     *
-     * <p>Eine Meldung im Bundsteg statt in der Fußleiste: Dort steht immer
-     * nur die erste, und sie ist auf die Breite gekürzt. Beim Zeigen auf die
-     * Zeile steht sie ganz da, mitsamt dem Hinweis.
-     */
     public void renderTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
         if (overButton(mouseX, mouseY)) {
             graphics.renderTooltip(font, Component.translatable(
                     "screen.factorynetwork.terminal.deploy.hint"), mouseX, mouseY);
             return;
         }
-        Diagnostic problem = editor.diagnosticAt(diagnostics, mouseX, mouseY);
+        if (overPlus(mouseX, mouseY)) {
+            graphics.renderTooltip(font, Component.translatable(
+                    "screen.factorynetwork.terminal.newfile"), mouseX, mouseY);
+            return;
+        }
+        Diagnostic problem = editor.diagnosticAt(openProblems, mouseX, mouseY);
         if (problem == null) {
             return;
         }
-        java.util.List<Component> lines = new java.util.ArrayList<>();
+        List<Component> lines = new ArrayList<>();
         lines.add(Component.literal(problem.message()));
         if (problem.hint() != null) {
             lines.add(Component.literal("§7" + problem.hint()));
@@ -144,14 +262,18 @@ public class CodeTabView {
         graphics.renderComponentTooltip(font, lines, mouseX, mouseY);
     }
 
-    /** Ein Klick auf die Fußleiste springt zur ersten Meldung. */
+    /** Ein Klick auf die Fußleiste springt zur ersten Meldung — auch quer. */
     private boolean jumpToFirstProblem(double mouseX, double mouseY) {
-        if (diagnostics.isEmpty() || mouseY < y + height - FOOTER || mouseX >= buttonX()) {
+        if (problems.isEmpty() || mouseY < y + height - FOOTER || mouseX >= buttonX()) {
             return false;
         }
-        editor.jumpTo(diagnostics.get(0));
+        Diagnostic first = problems.get(0);
+        openFile(first.file().isEmpty() ? open : first.file());
+        editor.jumpTo(first);
         return true;
     }
+
+    // ---- Bedienung ---------------------------------------------------------
 
     public boolean keyPressed(int key, int scanCode, int modifiers) {
         return editor.keyPressed(key, scanCode, modifiers);
@@ -162,11 +284,28 @@ public class CodeTabView {
     }
 
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (button == 0 && overButton(mouseX, mouseY)) {
+        if (button != 0) {
+            return editor.mouseClicked(mouseX, mouseY, button);
+        }
+        if (overButton(mouseX, mouseY)) {
             screen.deploy();
             return true;
         }
-        if (button == 0 && jumpToFirstProblem(mouseX, mouseY)) {
+        if (overPlus(mouseX, mouseY)) {
+            addFile();
+            return true;
+        }
+        if (overFiles(mouseY)) {
+            for (String name : project.names()) {
+                int at = fileX(name);
+                if (mouseX >= at && mouseX < at + fileWidth(name)) {
+                    openFile(name);
+                    return true;
+                }
+            }
+            return true;
+        }
+        if (jumpToFirstProblem(mouseX, mouseY)) {
             return true;
         }
         return editor.mouseClicked(mouseX, mouseY, button);

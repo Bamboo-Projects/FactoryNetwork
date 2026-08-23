@@ -108,8 +108,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         dashboardsView = new DashboardsTabView(font, leftPos + WORK_X, topPos + WORK_Y,
                 WORK_W, WORK_H);
         codeView = new CodeTabView(this, font, leftPos + WORK_X, topPos + WORK_Y,
-                WORK_W, WORK_H,
-                codeView == null ? ClientNetworkState.source() : codeView.text());
+                WORK_W, WORK_H);
         announceTab();
     }
 
@@ -320,7 +319,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
      */
     void deploy() {
         PacketDistributor.sendToServer(
-                new DeployProgramPacket(menu.position(), codeView.text()));
+                DeployProgramPacket.of(menu.position(), codeView.project()));
     }
 
     // ---- Eingabe ----------------------------------------------------------

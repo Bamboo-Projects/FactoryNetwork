@@ -14,6 +14,7 @@
   "screen.factorynetwork.terminal.workers": "Workers",
   "screen.factorynetwork.terminal.code": "main.mf",
   "screen.factorynetwork.terminal.no_connectors": "none named",
+  "screen.factorynetwork.terminal.newfile": "New file — rename it in the folder beside the world",
   "screen.factorynetwork.terminal.ok": "ready",
   "screen.factorynetwork.terminal.deploy_hint": "Ctrl+Enter deploys",
   "block.factorynetwork.dense_cable": "Dense Cable",

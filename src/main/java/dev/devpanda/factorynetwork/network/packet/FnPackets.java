@@ -18,6 +18,8 @@ public final class FnPackets {
                 DeployProgramPacket::handle);
         registrar.playToClient(DeployResultPacket.TYPE, DeployResultPacket.STREAM_CODEC,
                 DeployResultPacket::handle);
+        registrar.playToClient(ProjectStatePacket.TYPE, ProjectStatePacket.STREAM_CODEC,
+                ProjectStatePacket::handle);
         registrar.playToClient(NetworkStatePacket.TYPE, NetworkStatePacket.STREAM_CODEC,
                 NetworkStatePacket::handle);
         registrar.playToClient(StorageSnapshotPacket.TYPE, StorageSnapshotPacket.STREAM_CODEC,

@@ -4,6 +4,8 @@ import dev.devpanda.factorynetwork.FactoryNetwork;
 import dev.devpanda.factorynetwork.block.entity.ControllerBlockEntity;
 import dev.devpanda.factorynetwork.block.entity.TerminalBlockEntity;
 import net.minecraft.core.BlockPos;
+
+import java.util.Map;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -14,14 +16,17 @@ import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /**
- * Übergibt den Code aus dem Editor an den Controller.
+ * Übergibt das Projekt aus dem Editor an den Controller.
  *
- * <p>Der Text kann lang sein, ist aber selten — geschickt wird er nur, wenn
- * jemand „Übernehmen" drückt.
+ * <p>Alle Dateien auf einmal und nicht die offene allein: Wer eine Datei
+ * anlegt und dann eine andere übernimmt, hätte sonst die neue verloren.
+ * Lang, aber selten — geschickt wird es nur, wenn jemand „Übernehmen"
+ * drückt.
  */
-public record DeployProgramPacket(BlockPos terminal, String source) implements CustomPacketPayload {
+public record DeployProgramPacket(BlockPos terminal, Map<String, String> files)
+        implements CustomPacketPayload {
 
-    /** Mehr als das nimmt der Server nicht an. */
+    /** Mehr als das nimmt der Server je Datei nicht an. */
     private static final int MAX_LENGTH = 64 * 1024;
 
     public static final Type<DeployProgramPacket> TYPE = new Type<>(
@@ -30,8 +35,16 @@ public record DeployProgramPacket(BlockPos terminal, String source) implements C
     public static final StreamCodec<RegistryFriendlyByteBuf, DeployProgramPacket> STREAM_CODEC =
             StreamCodec.composite(
                     BlockPos.STREAM_CODEC, DeployProgramPacket::terminal,
-                    ByteBufCodecs.stringUtf8(MAX_LENGTH), DeployProgramPacket::source,
+                    ByteBufCodecs.map(java.util.HashMap::new, ByteBufCodecs.stringUtf8(64),
+                            ByteBufCodecs.stringUtf8(MAX_LENGTH)),
+                    DeployProgramPacket::files,
                     DeployProgramPacket::new);
+
+    /** Für alles, was nur einen Text hat. */
+    public static DeployProgramPacket of(BlockPos terminal,
+                                         dev.devpanda.factorynetwork.lang.Project project) {
+        return new DeployProgramPacket(terminal, project.files());
+    }
 
     @Override
     public Type<? extends CustomPacketPayload> type() {
@@ -53,7 +66,8 @@ public record DeployProgramPacket(BlockPos terminal, String source) implements C
                 return;
             }
             terminal.controller().ifPresentOrElse(controller -> {
-                boolean accepted = controller.deploy(packet.source());
+                boolean accepted = controller.deploy(
+                        new dev.devpanda.factorynetwork.lang.Project(packet.files()));
                 // Der Ausgang gehört in den Editor und nicht nur in den Chat:
                 // Zwei der Gründe — kein Serverschrank, Programm zu groß —
                 // kennt der Client gar nicht, weil er sie nicht selbst

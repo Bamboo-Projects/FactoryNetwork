@@ -14,6 +14,7 @@
   "screen.factorynetwork.terminal.workers": "Worker",
   "screen.factorynetwork.terminal.code": "main.mf",
   "screen.factorynetwork.terminal.no_connectors": "keine benannten",
+  "screen.factorynetwork.terminal.newfile": "Neue Datei — umbenennen im Ordner neben der Welt",
   "screen.factorynetwork.terminal.ok": "bereit",
   "screen.factorynetwork.terminal.deploy_hint": "Strg+Eingabe übernimmt",
   "block.factorynetwork.dense_cable": "Dichtes Kabel",
