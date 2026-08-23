@@ -1302,15 +1302,34 @@ def _blade(zustand):
     kachel = Image.new("RGBA", (BLADE_W, BLADE_H), (0, 0, 0, 0))
     d = ImageDraw.Draw(kachel)
     if zustand == 0:
-        # Leer: der nackte Boden des Schachts, ohne Blech davor.
+        # Leer: ein sichtbares Fach, kein Loch.
+        #
+        # Vorher war die Kachel fast schwarz — im Spiel sah ein Schrank mit
+        # acht freien Einschüben aus, als fehlte ihm die halbe Front. Man
+        # konnte die freien Plätze weder zählen noch als Plätze erkennen.
+        # Ein Fach muss man sehen: Boden, Führungsschienen, und eine helle
+        # Kante oben, an der das Licht bricht.
         d.rectangle([0, 0, BLADE_W - 1, BLADE_H - 1],
-                    fill=blend(EDGE, BODY_BOT, 0.3) + (255,))
-        ao(kachel, (0, 0, BLADE_W - 1, BLADE_H - 1), depth=3, strength=0.6)
-        for x in range(6, BLADE_W - 6, 9):
-            d.line([(x, 4), (x, BLADE_H - 5)], fill=_dunkler(BODY_BOT + (255,), 0.4))
+                    fill=blend(EDGE, BODY_BOT, 0.95) + (255,))
+        # Der Boden liegt tiefer als die Kante — von oben nach unten heller,
+        # das liest das Auge als Vertiefung.
+        for y in range(2, BLADE_H - 2):
+            t = (y - 2) / float(BLADE_H - 5)
+            d.line([(1, y), (BLADE_W - 2, y)],
+                   fill=blend(blend(EDGE, BODY_BOT, 0.7),
+                              blend(BODY_BOT, LIGHT, 0.15), t) + (255,))
+        # Führungsschienen links und rechts, auf denen ein Einschub säße.
+        for x in (3, BLADE_W - 4):
+            d.line([(x, 2), (x, BLADE_H - 3)], fill=blend(BODY_BOT, LIGHT, 0.3) + (255,))
+        # Die obere Kante hell, die untere dunkel: der Fachboden.
+        d.line([(0, 0), (BLADE_W - 1, 0)], fill=blend(BODY_BOT, LIGHT, 0.45) + (255,))
+        d.line([(0, BLADE_H - 1), (BLADE_W - 1, BLADE_H - 1)], fill=EDGE + (255,))
         return kachel
 
-    ton = (168, 152, 186) if zustand == 2 else (128, 126, 120)
+    # Kühles Blech für den laufenden, warmes für den angefangenen. Die
+    # Lämpchen sagen es genauer, aber die sind fünf Pixel breit — auf zehn
+    # Metern trägt nur der Ton.
+    ton = (154, 164, 176) if zustand == 2 else (132, 124, 112)
     lampe = ACCENT if zustand == 2 else (232, 172, 62)
     d.rectangle([0, 0, BLADE_W - 1, BLADE_H - 1], fill=blend(ton, EDGE, 0.4) + (255,))
     raised(kachel, (0, 0, BLADE_W - 1, BLADE_H - 1), hoehe=1)
