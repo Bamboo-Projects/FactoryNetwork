@@ -35,7 +35,16 @@ public class ProjectPanel {
     private static final int ROW = 12;
 
     /** Höhe der Überschrift mit dem Pluszeichen. */
-    private static final int HEADER = 14;
+    private static final int HEADER = 16;
+
+    /** Der Grund der Spalte — die unterste der drei Ebenen. */
+    private static final int WELL = 0xFF0E1214;
+
+    /** Der Streifen, auf dem die Überschrift sitzt. */
+    private static final int HEADER_BAND = 0xFF161C19;
+
+    /** Die offene Datei: heller als der Grund, weil sie oben aufliegt. */
+    private static final int ROW_ACTIVE = 0xFF232B27;
 
     private final Font font;
     private final int x;
@@ -116,16 +125,25 @@ public class ProjectPanel {
     }
 
     public void render(GuiGraphics graphics, int mouseX, int mouseY) {
-        // Der Grund: eine eigene Mulde neben dem Editor, damit die Spalte als
-        // Bereich lesbar ist und nicht als Text, der zufällig links steht.
-        graphics.fill(x - 3, y - 2, x + width, y + height, 0xFF14181A);
-        graphics.fill(x + width, y - 2, x + width + 1, y + height, 0xFF2A322D);
+        // Eine eigene Mulde neben dem Editor, damit die Spalte als Bereich
+        // lesbar ist und nicht als Text, der zufällig links steht. Der Wert
+        // ist deutlich dunkler als die Scheibe und nicht nur ein bisschen:
+        // Auf einer Fläche dieser Größe sieht man keine Kante mehr, sondern
+        // nur noch den Ton.
+        graphics.fill(x - 3, y - 2, x + width, y + height, WELL);
+        // Die senkrechte Kante zum Editor trägt die Trennung. Rechts hell,
+        // wie bei jeder Mulde in diesem Projekt.
+        graphics.fill(x + width, y - 2, x + width + 1, y + height, CodeScreen.EDGE);
+        // Die Überschrift steht auf einem eigenen Streifen — sonst hängt das
+        // Pluszeichen frei im Dunkeln.
+        graphics.fill(x - 3, y - 2, x + width, y + HEADER - 2, HEADER_BAND);
+        graphics.fill(x - 3, y + HEADER - 3, x + width, y + HEADER - 2, 0xFF232B27);
 
         graphics.drawString(font, FnFonts.bold(
                         Component.translatable("screen.factorynetwork.project.title")),
-                x, y + 2, TerminalScreen.TEXT_FAINT, false);
+                x, y + 2, TerminalScreen.TEXT_DIM, false);
         graphics.drawString(font, FnFonts.mono("+"), plusX(), y + 2,
-                overPlus(mouseX, mouseY) ? TerminalScreen.TEXT : TerminalScreen.TEXT_FAINT,
+                overPlus(mouseX, mouseY) ? TerminalScreen.ACCENT : TerminalScreen.TEXT_DIM,
                 false);
 
         int hovered = rowAt(mouseX, mouseY);
@@ -138,11 +156,11 @@ public class ProjectPanel {
             }
             boolean active = name.equals(open);
             if (active) {
-                graphics.fill(x - 3, rowTop - 1, x + width, rowTop + ROW - 1, 0xFF1F2724);
-                graphics.fill(x - 3, rowTop - 1, x - 1, rowTop + ROW - 1,
+                graphics.fill(x - 3, rowTop - 1, x + width, rowTop + ROW - 1, ROW_ACTIVE);
+                graphics.fill(x - 3, rowTop - 1, x, rowTop + ROW - 1,
                         0xFF000000 | TerminalScreen.ACCENT);
             } else if (i == hovered) {
-                graphics.fill(x - 3, rowTop - 1, x + width, rowTop + ROW - 1, 0x18FFFFFF);
+                graphics.fill(x - 3, rowTop - 1, x + width, rowTop + ROW - 1, 0x22FFFFFF);
             }
 
             if (name.equals(renaming)) {

@@ -43,9 +43,24 @@ public class CodeScreen extends Screen {
     private static final int BUTTON_WIDTH = 78;
     private static final int BUTTON_HEIGHT = 14;
 
-    /** Die Farben des Gehäuses — dieselbe Regel wie im Terminal. */
+    /**
+     * Die Farben des Gehäuses.
+     *
+     * <p>Dieselbe Regel wie im Terminal — <b>was vertieft liegt, ist dunkler
+     * als sein Grund</b> —, aber mit größeren Schritten. Im Terminal liegen
+     * die drei Ebenen auf 288 Pixeln dicht beieinander und grenzen überall
+     * aneinander; da reichen vier Werte Unterschied, weil das Auge die Kante
+     * sieht und nicht die Fläche. Hier ist eine Fläche einen halben Bildschirm
+     * groß, und dann sieht man nur noch die Fläche. Der erste Entwurf setzte
+     * den Dateibaum auf {@code 0x14181A} vor eine Scheibe aus
+     * {@code 0x181E1B} — er war unsichtbar, und die Frage war zu Recht, wo
+     * die Seitenspalte bleibt.
+     */
     private static final int CASE = 0xFF232B27;
     private static final int GLASS = 0xFF181E1B;
+
+    /** Die Kante zwischen zwei Ebenen — hell genug, um sie zu sehen. */
+    static final int EDGE = 0xFF39443D;
 
     private final Screen parent;
     private final BlockPos controller;
@@ -159,6 +174,10 @@ public class CodeScreen extends Screen {
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         graphics.fill(0, 0, width, height, CASE);
         graphics.fill(MARGIN - 4, MARGIN - 4, width - MARGIN + 4, height - MARGIN + 4, GLASS);
+        // Die helle Kante um die Scheibe: Ohne sie schwimmt der Inhalt im
+        // Blech, weil zwischen beiden nur ein paar Werte liegen.
+        outline(graphics, MARGIN - 4, MARGIN - 4, width - MARGIN + 4, height - MARGIN + 4,
+                0xFF2E3833);
 
         drawHeader(graphics);
         panel.render(graphics, mouseX, mouseY);
@@ -183,11 +202,22 @@ public class CodeScreen extends Screen {
                 Component.translatable("screen.factorynetwork.code.back"));
         graphics.drawString(font, hint, width - MARGIN - font.width(hint), MARGIN,
                 TerminalScreen.TEXT_FAINT, false);
-        graphics.fill(MARGIN, MARGIN + 12, width - MARGIN, MARGIN + 13, 0xFF2A322D);
+        graphics.fill(MARGIN, MARGIN + 12, width - MARGIN, MARGIN + 13, EDGE);
+    }
+
+    /** Ein Rahmen aus vier Strichen. */
+    static void outline(GuiGraphics graphics, int left, int top, int right, int bottom,
+                        int colour) {
+        graphics.fill(left, top, right, top + 1, colour);
+        graphics.fill(left, bottom - 1, right, bottom, colour);
+        graphics.fill(left, top, left + 1, bottom, colour);
+        graphics.fill(right - 1, top, right, bottom, colour);
     }
 
     private void drawFooter(GuiGraphics graphics, int mouseX, int mouseY) {
         int footerY = height - MARGIN - FOOTER + 6;
+        graphics.fill(MARGIN, height - MARGIN - FOOTER, width - MARGIN,
+                height - MARGIN - FOOTER + 1, EDGE);
         String shown = ClientDeployState.hasMessage() ? ClientDeployState.message() : status;
         int colour = ClientDeployState.hasMessage()
                 ? ClientDeployState.wasAccepted() ? TerminalScreen.GOOD : TerminalScreen.BAD
