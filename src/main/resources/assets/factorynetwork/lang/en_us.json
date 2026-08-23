@@ -93,6 +93,7 @@
   "screen.factorynetwork.label_gun.explain": "Leave empty: the name comes from the machine behind it",
   "screen.factorynetwork.label_gun.name": "Name",
   "screen.factorynetwork.label_gun.apply": "Apply",
+  "screen.factorynetwork.label_gun.recent": "Recently used",
   "screen.factorynetwork.label_gun.ready": "ready",
   "screen.factorynetwork.label_gun.empty": "empty — a name will be suggested",
   "screen.factorynetwork.label_gun.invalid_hint": "Letters, digits and underscore only",

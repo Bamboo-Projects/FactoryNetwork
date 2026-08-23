@@ -93,6 +93,7 @@
   "screen.factorynetwork.label_gun.explain": "Leer lassen: Name kommt aus der Maschine dahinter",
   "screen.factorynetwork.label_gun.name": "Name",
   "screen.factorynetwork.label_gun.apply": "Übernehmen",
+  "screen.factorynetwork.label_gun.recent": "Zuletzt benutzt",
   "screen.factorynetwork.label_gun.ready": "bereit",
   "screen.factorynetwork.label_gun.empty": "leer — der Name wird dann vorgeschlagen",
   "screen.factorynetwork.label_gun.invalid_hint": "Erlaubt sind Buchstaben, Ziffern und Unterstrich",
