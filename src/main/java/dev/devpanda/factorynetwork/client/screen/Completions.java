@@ -34,6 +34,20 @@ public final class Completions {
             "from", "to", "filter", "maintain", "rate", "when", "priority",
             "strategy", "overflow");
 
+    /**
+     * Angaben, die nur in einer Anzeige vorkommen.
+     *
+     * <p>Und <b>nur</b> diese: Ein {@code displayEntry} enthält Ausdrücke,
+     * aber keine Anweisungen — kein {@code if}, keine Schleife, kein
+     * {@code await}. Vorher landete der Cursor in einer Anzeige im Zweig für
+     * Funktionen und bekam genau das vorgeschlagen, was dort verboten ist.
+     */
+    private static final List<String> DISPLAY_ENTRIES = List.of(
+            "title", "row", "text", "progress", "indicator", "list", "button");
+
+    /** Angaben, die nur in einer Gruppe vorkommen. */
+    private static final List<String> GROUP_ENTRIES = List.of("members", "strategy");
+
     private static final List<String> DECLARATIONS = List.of(
             "worker", "group", "multiblock", "event", "display", "fn", "on");
 
@@ -57,6 +71,11 @@ public final class Completions {
         String before = upToCursor.substring(0, upToCursor.length() - prefix.length()).trim();
 
         List<Entry> entries = new ArrayList<>();
+
+        // „display halle " — der Name steht, als Nächstes kommt die Klammer.
+        if (afterDeclarationName(upToCursor, prefix)) {
+            return List.of();
+        }
 
         // Nach from, to und overflow to: Geräte.
         if (before.endsWith("from") || before.endsWith("to")) {
@@ -99,14 +118,28 @@ public final class Completions {
     /** Vorschläge, die von der Stelle im Aufbau abhängen. */
     private static List<Entry> structural(List<Entry> entries, List<String> lines,
                                           int lineIndex, String prefix) {
-        if (insideWorker(lines, lineIndex)) {
-            addAll(entries, WORKER_ENTRIES, prefix, Entry.Kind.KEYWORD);
-            return entries;
-        }
         // Auf oberster Ebene stehen Deklarationen.
         if (indentOf(lines.get(lineIndex)) == 0) {
             addAll(entries, DECLARATIONS, prefix, Entry.Kind.KEYWORD);
             return entries;
+        }
+        String block = enclosingBlock(lines, lineIndex);
+        if (block != null) {
+            switch (block) {
+                case "worker" -> {
+                    addAll(entries, WORKER_ENTRIES, prefix, Entry.Kind.KEYWORD);
+                    return entries;
+                }
+                case "display" -> {
+                    addAll(entries, DISPLAY_ENTRIES, prefix, Entry.Kind.KEYWORD);
+                    return entries;
+                }
+                case "group" -> {
+                    addAll(entries, GROUP_ENTRIES, prefix, Entry.Kind.KEYWORD);
+                    return entries;
+                }
+                default -> { }
+            }
         }
         // In einer Funktion: Connectoren, Eingebautes und Anweisungen.
         addConnectors(entries, prefix);
@@ -117,20 +150,46 @@ public final class Completions {
     }
 
     /**
-     * Steht der Cursor in einem Worker-Block? Gesucht wird rückwärts nach der
-     * öffnenden Zeile — das reicht, weil Deklarationen nicht verschachtelt
-     * sind.
+     * Welche Deklaration den Cursor umgibt, oder {@code null}.
+     *
+     * <p>Rückwärts bis zur ersten Zeile, die auf Spalte null mit einem
+     * Deklarationswort anfängt — das reicht, weil Deklarationen nicht
+     * ineinander stehen.
+     *
+     * <p>Vorher fragte diese Stelle nur „ist das ein Worker", und alles
+     * andere fiel in denselben Topf: In einer Anzeige bekam man die
+     * Anweisungen einer Funktion vorgeschlagen. Jede Blockart hat aber ihre
+     * eigenen Angaben, und außerhalb davon sind sie falsch.
      */
-    private static boolean insideWorker(List<String> lines, int lineIndex) {
+    private static String enclosingBlock(List<String> lines, int lineIndex) {
         for (int i = lineIndex; i >= 0; i--) {
-            String line = lines.get(i).trim();
-            if (line.startsWith("worker ")) {
-                return true;
+            String line = lines.get(i);
+            if (indentOf(line) != 0) {
+                continue;
             }
-            if (line.startsWith("fn ") || line.startsWith("on ")
-                    || line.startsWith("group ") || line.startsWith("display ")
-                    || line.startsWith("multiblock ")) {
-                return false;
+            String trimmed = line.trim();
+            for (String declaration : DECLARATIONS) {
+                if (trimmed.startsWith(declaration + " ")) {
+                    return declaration;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Steht in dieser Zeile schon eine Deklaration mit Namen?
+     *
+     * <p>Dann kommt als Nächstes die geschweifte Klammer, und dafür gibt es
+     * nichts vorzuschlagen. Solange der Name noch getippt wird, gilt das
+     * nicht — daran, dass hinter dem Schlüsselwort genau das angefangene Wort
+     * steht, ist er zu erkennen.
+     */
+    private static boolean afterDeclarationName(String upToCursor, String prefix) {
+        String trimmed = upToCursor.trim();
+        for (String declaration : DECLARATIONS) {
+            if (trimmed.startsWith(declaration + " ")) {
+                return !trimmed.substring(declaration.length()).trim().equals(prefix);
             }
         }
         return false;
@@ -198,7 +257,18 @@ public final class Completions {
         }
     }
 
+    /**
+     * Passt dieser Vorschlag zum angefangenen Wort?
+     *
+     * <p><b>Was schon vollständig dasteht, ist kein Vorschlag.</b> Wer
+     * {@code halle} zu Ende getippt hat, bekam bis eben {@code halle}
+     * angeboten — eine Liste mit einem Eintrag, der nichts ändert, und sie
+     * verdeckt die Zeile darunter.
+     */
     private static boolean matches(String candidate, String prefix) {
+        if (candidate.equalsIgnoreCase(prefix)) {
+            return false;
+        }
         return prefix.isEmpty()
                 || candidate.toLowerCase(Locale.ROOT).startsWith(prefix.toLowerCase(Locale.ROOT));
     }
