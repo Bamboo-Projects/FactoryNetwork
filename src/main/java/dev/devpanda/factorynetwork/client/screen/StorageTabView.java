@@ -115,7 +115,7 @@ public class StorageTabView {
             int bx = sortButtonX(candidate.ordinal());
             int by = y + 2;
             boolean active = ClientStorageView.sort() == candidate;
-            graphics.blit(WIDGETS, bx, by, 32, active ? 16 : 0, 12, 12, 512, 512);
+            graphics.blit(WIDGETS, bx, by, 64, active ? 16 : 0, 12, 12, 512, 512);
 
             // Auf dem Knopf ein Buchstabe, darunter die Richtung.
             graphics.pose().pushPose();
@@ -132,10 +132,7 @@ public class StorageTabView {
 
     private void drawSearch(GuiGraphics graphics) {
         int fieldWidth = sortButtonX(0) - x - 6;
-        for (int drawn = 0; drawn < fieldWidth; drawn += 96) {
-            int piece = Math.min(96, fieldWidth - drawn);
-            graphics.blit(WIDGETS, x + 2 + drawn, y + 2, 0, 32, piece, 12, 512, 512);
-        }
+        Widgets.stretched(graphics, x + 2, y + 2, fieldWidth, 12, 0, 32, 96, 2);
         String shown = search.isEmpty()
                 ? Component.translatable("screen.factorynetwork.terminal.search").getString()
                 : search.toString();

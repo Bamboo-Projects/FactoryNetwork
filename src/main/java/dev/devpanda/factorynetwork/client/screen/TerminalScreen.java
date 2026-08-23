@@ -122,8 +122,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
             int x = leftPos + 5 + candidate.ordinal() * width;
             int y = topPos + 4;
             boolean active = candidate == tab;
-            // Reiterhintergrund aus dem Kleinteil-Atlas
-            graphics.blit(WIDGETS, x, y, 0, active ? 16 : 0, width - 1, 14, 512, 512);
+            Widgets.stretched(graphics, x, y, width - 1, 14, 0, active ? 16 : 0, 64, 4);
             Component title = candidate.title();
             int colour = active ? TEXT : candidate.isReady() ? TEXT_DIM : 0x8B8B8B;
             String shown = font.plainSubstrByWidth(title.getString(), width - 6);
