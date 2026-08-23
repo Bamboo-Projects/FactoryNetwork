@@ -102,7 +102,6 @@ public class StorageTabView {
         }
 
         drawScrollbar(graphics);
-        drawFooter(graphics);
     }
 
     /** Wo die drei Sortierknöpfe sitzen — rechts neben dem Suchfeld. */
@@ -168,32 +167,41 @@ public class StorageTabView {
         graphics.blit(WIDGETS, trackX, thumbY, 96, 32, 12, 15, 512, 512);
     }
 
-    private void drawFooter(GuiGraphics graphics) {
-        int footerY = y + height - 10;
-        Component text;
-        if (ClientStorageView.isTruncated()) {
-            text = Component.translatable("screen.factorynetwork.terminal.storage.truncated",
-                    ClientStorageView.knownTypes(), ClientStorageView.totalTypes());
-        } else {
-            text = Component.translatable("screen.factorynetwork.terminal.storage.summary",
-                    ClientStorageView.rows().size(),
-                    ClientStorageView.shortAmount(ClientStorageView.totalCount()));
+    /**
+     * Was der Reiter in der Statuszeile links stehen hat.
+     *
+     * <p>Früher stand das als eigene Fußzeile unter dem Raster. Die
+     * Statuszeile gibt es jetzt für alle Reiter, und zwei Zeilen
+     * übereinander wären eine zu viel.
+     */
+    public Component statusText() {
+        if (isFull()) {
+            return Component.translatable("screen.factorynetwork.terminal.storage.no_room");
         }
-        graphics.drawString(font, font.plainSubstrByWidth(text.getString(), width - 4),
-                x + 2, footerY, TerminalScreen.TEXT_DIM, false);
+        if (ClientStorageView.isTruncated()) {
+            return Component.translatable("screen.factorynetwork.terminal.storage.truncated",
+                    ClientStorageView.knownTypes(), ClientStorageView.totalTypes());
+        }
+        return Component.translatable("screen.factorynetwork.terminal.storage.summary",
+                ClientStorageView.rows().size(),
+                ClientStorageView.shortAmount(ClientStorageView.totalCount()));
+    }
 
-        // Rechts der Platz, der noch da ist. Ohne ihn merkt man erst am
-        // stehenden Worker, dass keine neue Art mehr hineingeht — und sucht
-        // den Fehler dann beim Worker.
-        int free = ClientStorageView.freeTypes();
-        int freeFluid = ClientStorageView.freeFluidTypes();
-        Component room = free == 0 && freeFluid == 0
-                ? Component.translatable("screen.factorynetwork.terminal.storage.no_room")
-                : Component.translatable("screen.factorynetwork.terminal.storage.room",
-                        free, freeFluid);
-        int roomWidth = font.width(room);
-        graphics.drawString(font, room, x + width - roomWidth - 2, footerY,
-                free == 0 && freeFluid == 0 ? 0xFFD08A3C : TerminalScreen.TEXT_DIM, false);
+    /** Geht keine neue Art mehr hinein? */
+    public boolean isFull() {
+        return ClientStorageView.freeTypes() == 0 && ClientStorageView.freeFluidTypes() == 0;
+    }
+
+    /**
+     * Der freie Platz, als Erklärung beim Zeigen.
+     *
+     * <p>In der Zeile selbst ist dafür kein Raum — und solange noch Platz
+     * ist, ist die Zahl auch keine Nachricht. Wird es eng, tritt sie als
+     * Warnung an die Stelle der Zusammenfassung.
+     */
+    public Component roomHint() {
+        return Component.translatable("screen.factorynetwork.terminal.storage.room",
+                ClientStorageView.freeTypes(), ClientStorageView.freeFluidTypes());
     }
 
     // ---- Bedienung --------------------------------------------------------

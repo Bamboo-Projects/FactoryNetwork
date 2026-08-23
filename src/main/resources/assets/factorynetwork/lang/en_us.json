@@ -59,6 +59,8 @@
   "item.factorynetwork.label_gun.tooltip.empty": "No name ready",
   "item.factorynetwork.label_gun.tooltip.active": "Name: %s",
   "item.factorynetwork.label_gun.tooltip.hint": "Right-click names · at air: type a name · sneak picks up",
+  "screen.factorynetwork.terminal.status": "%s FE · %s/%s · %s/%s",
+  "screen.factorynetwork.terminal.status.hint": "Energy stored · running of possible flows · program size of disk space",
   "screen.factorynetwork.terminal.tab.storage": "Storage",
   "screen.factorynetwork.terminal.tab.crafting": "Crafting",
   "screen.factorynetwork.terminal.tab.crafting.soon": "Autocrafting does not exist yet.",

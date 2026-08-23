@@ -31,11 +31,11 @@ import java.util.Optional;
  */
 public class TerminalMenu extends AbstractContainerMenu {
 
-    /** Dieselben Werte wie in jedem Vanilla-Fenster. */
-    private static final int INV_X = 63;
-    private static final int INV_Y = 154;
-    private static final int HOTBAR_Y = 212;
-    private static final int SLOT_SIZE = 18;
+    /** Dieselben Werte wie in jedem Vanilla-Fenster — siehe TerminalLayout. */
+    private static final int INV_X = TerminalLayout.INV_X;
+    private static final int INV_Y = TerminalLayout.INV_Y;
+    private static final int HOTBAR_Y = TerminalLayout.HOTBAR_Y;
+    private static final int SLOT_SIZE = TerminalLayout.SLOT;
 
     private final ContainerLevelAccess access;
     private final BlockPos position;
@@ -61,6 +61,13 @@ public class TerminalMenu extends AbstractContainerMenu {
         // Schnellzugriff
         for (int column = 0; column < 9; column++) {
             addSlot(new Slot(inventory, column, INV_X + column * SLOT_SIZE, HOTBAR_Y));
+        }
+
+        // Ab jetzt bekommt der Spieler den Netzzustand — die Statuszeile
+        // steht auf jedem Reiter, also darf sie nicht am Speicher hängen.
+        if (inventory.player instanceof ServerPlayer serverPlayer) {
+            controller(serverPlayer).ifPresent(
+                    controller -> controller.watchTerminal(serverPlayer));
         }
     }
 
@@ -125,7 +132,7 @@ public class TerminalMenu extends AbstractContainerMenu {
         super.removed(player);
         // Abmelden, sonst schickt der Controller ewig weiter.
         if (player instanceof ServerPlayer serverPlayer) {
-            controller(player).ifPresent(controller -> controller.unwatchStorage(serverPlayer));
+            controller(player).ifPresent(controller -> controller.unwatchTerminal(serverPlayer));
         }
     }
 

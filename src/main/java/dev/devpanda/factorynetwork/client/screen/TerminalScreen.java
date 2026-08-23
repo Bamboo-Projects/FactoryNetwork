@@ -37,29 +37,27 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
     private static final ResourceLocation WIDGETS = ResourceLocation.fromNamespaceAndPath(
             FactoryNetwork.MOD_ID, "textures/gui/widgets.png");
 
-    static final int WIDTH = 288;
-
-    /** Die Scheibe im Blech — dieselben Zahlen wie in {@code gui.py}. */
-    static final int SCREEN_X0 = 6;
-    static final int SCREEN_X1 = WIDTH - 7;
-    static final int SCREEN_TOP = 6;
-    static final int SCREEN_PAD = 3;
-    static final int TAB_ROW = 14;
-    static final int STATUS_ROW = 11;
-
-    /**
-     * Die Höhe fällt aus der Rechnung heraus und wird nicht gesetzt.
-     *
-     * <p>Beim Entwurf hatte ich sie geraten, und die Statuszeile lag im
-     * Raster. Jede Zeile kennt ihre Höhe; was das Fenster misst, ist die
-     * Summe.
-     */
-    static final int WORK_X = SCREEN_X0 + 3;
-    static final int WORK_Y = SCREEN_TOP + SCREEN_PAD + TAB_ROW + 1;
-    static final int WORK_W = (SCREEN_X1 - 2) - WORK_X;
-    static final int WORK_H = 123;
-    static final int SCREEN_BOTTOM = WORK_Y + WORK_H + 2 + STATUS_ROW;
-    static final int HEIGHT = SCREEN_BOTTOM + 14 + 82;
+    // Die Maße stehen in TerminalLayout, weil das Menü sie auch braucht und
+    // auf einem Server ohne Grafik läuft. Hier nur die kurzen Namen.
+    static final int WIDTH = dev.devpanda.factorynetwork.client.menu.TerminalLayout.WIDTH;
+    static final int HEIGHT = dev.devpanda.factorynetwork.client.menu.TerminalLayout.HEIGHT;
+    static final int SCREEN_X0 =
+            dev.devpanda.factorynetwork.client.menu.TerminalLayout.SCREEN_X0;
+    static final int SCREEN_X1 =
+            dev.devpanda.factorynetwork.client.menu.TerminalLayout.SCREEN_X1;
+    static final int SCREEN_TOP =
+            dev.devpanda.factorynetwork.client.menu.TerminalLayout.SCREEN_TOP;
+    static final int SCREEN_PAD =
+            dev.devpanda.factorynetwork.client.menu.TerminalLayout.SCREEN_PAD;
+    static final int SCREEN_BOTTOM =
+            dev.devpanda.factorynetwork.client.menu.TerminalLayout.SCREEN_BOTTOM;
+    static final int TAB_ROW = dev.devpanda.factorynetwork.client.menu.TerminalLayout.TAB_ROW;
+    static final int STATUS_ROW =
+            dev.devpanda.factorynetwork.client.menu.TerminalLayout.STATUS_ROW;
+    static final int WORK_X = dev.devpanda.factorynetwork.client.menu.TerminalLayout.WORK_X;
+    static final int WORK_Y = dev.devpanda.factorynetwork.client.menu.TerminalLayout.WORK_Y;
+    static final int WORK_W = dev.devpanda.factorynetwork.client.menu.TerminalLayout.WORK_W;
+    static final int WORK_H = dev.devpanda.factorynetwork.client.menu.TerminalLayout.WORK_H;
 
     /** Wie weit die Reiterbeschriftungen auseinanderstehen. */
     private static final int TAB_GAP = 12;
@@ -122,6 +120,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         renderBackground(graphics, mouseX, mouseY, partialTick);
         super.render(graphics, mouseX, mouseY, partialTick);
         renderTabTooltips(graphics, mouseX, mouseY);
+        renderStatusTooltip(graphics, mouseX, mouseY);
         if (tab == TerminalTab.STORAGE) {
             storageView.renderTooltip(graphics, mouseX, mouseY);
         }
@@ -139,6 +138,8 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
             case CODE -> codeView.render(graphics);
             default -> { }
         }
+        // Zuletzt, damit sie über allem liegt, was ein Reiter unten zeichnet.
+        drawStatus(graphics);
     }
 
     /**
@@ -195,6 +196,78 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         int y = topPos + tabY();
         return mouseX >= x && mouseX < x + tabWidth(candidate)
                 && mouseY >= y && mouseY < y + TAB_ROW - 2;
+    }
+
+    /**
+     * Die Statuszeile am unteren Rand der Scheibe.
+     *
+     * <p>Rechts, was das Netz macht — auf jedem Reiter dasselbe. Links, was
+     * der Reiter zu sagen hat. <b>Statuszeilen gehören nach unten</b>; das
+     * weiß jeder, der einen Editor benutzt, und oben wäre sie eine dritte
+     * Zeile Kopf über dem eigentlichen Inhalt.
+     *
+     * <p>Beide Texte werden gemessen und gegeneinander geprüft. Beim Entwurf
+     * hatte ich nur den rechten gemessen, und sie schoben sich ineinander.
+     */
+    private void drawStatus(GuiGraphics graphics) {
+        int y = topPos + SCREEN_BOTTOM - STATUS_ROW + 1;
+        int right = leftPos + SCREEN_X1 - 4;
+        int left = leftPos + WORK_X + 1;
+
+        var supply = dev.devpanda.factorynetwork.client.ClientFlowState.supply();
+        var compute = dev.devpanda.factorynetwork.client.ClientFlowState.compute();
+        var state = dev.devpanda.factorynetwork.network.NetworkPower.State.values()[
+                Math.min(supply.state(), dev.devpanda.factorynetwork.network
+                        .NetworkPower.State.values().length - 1)];
+        int lamp = switch (state) {
+            case RUNNING -> ACCENT;
+            case BOOTING -> 0xD08A3C;
+            case OFF -> 0xA03030;
+        };
+        Component netz = FnFonts.mono(Component.translatable(
+                "screen.factorynetwork.terminal.status",
+                dev.devpanda.factorynetwork.client.ClientStorageView.shortAmount(
+                        supply.stored()),
+                compute.occupied(), compute.threads(),
+                compute.program(), compute.disk()).getString());
+        int netzBreite = font.width(netz);
+        graphics.drawString(font, netz, right - netzBreite, y + 2, TEXT_DIM, false);
+        graphics.fill(right - netzBreite - 8, y + 4, right - netzBreite - 4, y + 8,
+                0xFF000000 | lamp);
+
+        Component eigenes = statusLeft();
+        if (eigenes == null) {
+            return;
+        }
+        int platz = (right - netzBreite - 14) - left;
+        if (platz < 20) {
+            return;
+        }
+        Component gekuerzt = FnFonts.mono(
+                font.plainSubstrByWidth(eigenes.getString(), platz));
+        graphics.drawString(font, gekuerzt, left, y + 2,
+                tab == TerminalTab.STORAGE && storageView.isFull() ? 0xD08A3C : TEXT_FAINT,
+                false);
+    }
+
+    /** Was der aktive Reiter links in der Statuszeile stehen hat. */
+    private Component statusLeft() {
+        return tab == TerminalTab.STORAGE ? storageView.statusText() : null;
+    }
+
+    /** Beim Zeigen auf die Statuszeile steht dort, was die Zahlen bedeuten. */
+    private void renderStatusTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
+        int y = topPos + SCREEN_BOTTOM - STATUS_ROW + 1;
+        if (mouseY < y || mouseY >= y + STATUS_ROW
+                || mouseX < leftPos + SCREEN_X0 || mouseX >= leftPos + SCREEN_X1) {
+            return;
+        }
+        java.util.List<Component> lines = new java.util.ArrayList<>();
+        lines.add(Component.translatable("screen.factorynetwork.terminal.status.hint"));
+        if (tab == TerminalTab.STORAGE && !storageView.isFull()) {
+            lines.add(storageView.roomHint());
+        }
+        graphics.renderComponentTooltip(font, lines, mouseX, mouseY);
     }
 
     private void renderTabTooltips(GuiGraphics graphics, int mouseX, int mouseY) {

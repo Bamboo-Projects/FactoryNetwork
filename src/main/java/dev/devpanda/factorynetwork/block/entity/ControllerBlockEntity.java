@@ -124,9 +124,23 @@ public class ControllerBlockEntity extends BlockEntity {
      * Wer gerade die Speicheransicht offen hat.
      *
      * <p>Nur an diese Spieler wird der Bestand geschickt, und nur solange sie
-     * hinsehen. Wer den Code-Reiter liest, braucht keine Bestandsänderungen.
+     * hinsehen. Wer den Code-Reiter liest, braucht keine Bestandsänderungen —
+     * und der Bestand ist das Teuerste, was über die Leitung geht.
      */
     private final Set<ServerPlayer> storageWatchers = new HashSet<>();
+
+    /**
+     * Wer das Terminal überhaupt offen hat, auf welchem Reiter auch immer.
+     *
+     * <p><b>Getrennt vom Bestand, weil die Statuszeile immer steht.</b> Strom,
+     * Kanäle und Server gehören zu jedem Reiter; sie nur beim Speicher zu
+     * schicken hieße, dass die Zeile im Code-Reiter einfriert und beim
+     * Zurückwechseln springt. Das sieht aus wie ein Fehler und ist einer.
+     *
+     * <p>Teuer ist das nicht: ein paar Zahlen und die Liste der Abläufe, alle
+     * zehn Ticks.
+     */
+    private final Set<ServerPlayer> terminalWatchers = new HashSet<>();
     private long lastStoragePush = -10;
     private boolean storageDirty;
 
@@ -524,11 +538,21 @@ public class ControllerBlockEntity extends BlockEntity {
      */
     private static final int STORAGE_PUSH_INTERVAL = 10;
 
+    /** Das Terminal ist auf, egal welcher Reiter. */
+    public void watchTerminal(ServerPlayer player) {
+        terminalWatchers.add(player);
+        pushFlowsTo(player);
+        pushDisplaysTo(player);
+    }
+
+    public void unwatchTerminal(ServerPlayer player) {
+        terminalWatchers.remove(player);
+        storageWatchers.remove(player);
+    }
+
     public void watchStorage(ServerPlayer player) {
         storageWatchers.add(player);
         pushStorageTo(player, true);
-        pushFlowsTo(player);
-        pushDisplaysTo(player);
     }
 
     public void unwatchStorage(ServerPlayer player) {
@@ -588,12 +612,15 @@ public class ControllerBlockEntity extends BlockEntity {
      * Zeile wert, deren Zustand sich jederzeit ändern kann.
      */
     private void pushFlowsIfDue() {
-        if (level == null || storageWatchers.isEmpty()
+        if (level == null || terminalWatchers.isEmpty()
                 || level.getGameTime() - lastFlowPush < FLOW_PUSH_INTERVAL) {
             return;
         }
         lastFlowPush = level.getGameTime();
-        storageWatchers.forEach(player -> {
+        terminalWatchers.removeIf(player -> player.isRemoved()
+                || player.containerMenu
+                        instanceof net.minecraft.world.inventory.InventoryMenu);
+        terminalWatchers.forEach(player -> {
             pushFlowsTo(player);
             pushDisplaysTo(player);
         });

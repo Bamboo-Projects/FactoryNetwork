@@ -59,6 +59,8 @@
   "item.factorynetwork.label_gun.tooltip.empty": "Kein Name bereitgelegt",
   "item.factorynetwork.label_gun.tooltip.active": "Name: %s",
   "item.factorynetwork.label_gun.tooltip.hint": "Rechtsklick benennt · in die Luft: Name eingeben · Schleichen übernimmt",
+  "screen.factorynetwork.terminal.status": "%s FE · %s/%s · %s/%s",
+  "screen.factorynetwork.terminal.status.hint": "Stromvorrat · laufende von möglichen Abläufen · Programmgröße von Datenträgerplatz",
   "screen.factorynetwork.terminal.tab.storage": "Speicher",
   "screen.factorynetwork.terminal.tab.crafting": "Fertigung",
   "screen.factorynetwork.terminal.tab.crafting.soon": "Autocrafting gibt es noch nicht.",
