@@ -3,7 +3,6 @@ package dev.devpanda.factorynetwork.client.render;
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.devpanda.factorynetwork.FactoryNetwork;
 import dev.devpanda.factorynetwork.block.entity.RackBlockEntity;
-import dev.devpanda.factorynetwork.network.ServerBay;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -21,9 +20,9 @@ import org.joml.Matrix4f;
  * Zeigt an der Front, welche Einschübe laufen.
  *
  * <p>Drei Zustände, und der mittlere ist der wichtige: <b>angefangen und
- * nicht fertig</b>. Ein Einschub, in dem zwei von drei Bauteilen stecken,
- * sieht von weitem aus wie ein voller und rechnet doch nicht — ohne eigene
- * Farbe dafür sucht man den Fehler im Programm.
+ * nicht fertig</b>. Ein Einschub, in dem ein Gehäuse ohne Datenträger
+ * steckt, sieht von weitem aus wie ein voller und rechnet doch nicht — ohne
+ * eigene Farbe dafür sucht man den Fehler im Programm.
  *
  * <p>Gezeichnet über zwei Blöcke: Der Schrank ist zwei hoch, die BlockEntity
  * sitzt unten, und die oberen sechs Einschübe liegen im Nachbarblock.
@@ -68,7 +67,7 @@ public class RackRenderer implements BlockEntityRenderer<RackBlockEntity> {
         poses.translate(0.5F, 0.5F, 0.5F);
         Matrix4f matrix = poses.last().pose();
         for (int bay = 0; bay < RackBlockEntity.BAYS; bay++) {
-            int kind = kindOf(rack.bay(bay));
+            int kind = kindOf(rack, bay);
             float top = BAY_TOP + bay * BAY_STEP;
             FaceOverlay.tile(buffer, matrix, facing,
                     BAY_X0 / PIXEL, top / PIXEL - 1.0F,
@@ -79,11 +78,19 @@ public class RackRenderer implements BlockEntityRenderer<RackBlockEntity> {
         poses.popPose();
     }
 
-    private static int kindOf(ServerBay bay) {
-        if (!bay.occupied()) {
+    /**
+     * Leer, angefangen, laufend.
+     *
+     * <p>Angefangen ist schon ein Gehäuse ohne Hardware: Es sieht aus wie
+     * ein Server und ist keiner. Dieselbe Auskunft gibt das Fenster, und
+     * zwei Stellen, die verschieden zählen, wären schlimmer als eine, die
+     * schweigt.
+     */
+    private static int kindOf(RackBlockEntity rack, int bay) {
+        if (!rack.hasChassis(bay)) {
             return 0;
         }
-        return bay.complete() ? 2 : 1;
+        return rack.bay(bay).complete() ? 2 : 1;
     }
 
     /**

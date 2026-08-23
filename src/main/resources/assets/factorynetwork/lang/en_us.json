@@ -205,7 +205,6 @@
   "screen.factorynetwork.rack.bay": "Bay %s",
   "screen.factorynetwork.rack.running": "%s flows · room for %s · %s instructions",
   "screen.factorynetwork.rack.missing": "Missing: %s",
-  "screen.factorynetwork.rack.free": "Empty",
   "screen.factorynetwork.rack.no_chassis": "No chassis — put one in first",
   "screen.factorynetwork.rack.part.cpu": "Processor",
   "screen.factorynetwork.rack.part.ram": "Memory",

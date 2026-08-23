@@ -205,7 +205,6 @@
   "screen.factorynetwork.rack.bay": "Einschub %s",
   "screen.factorynetwork.rack.running": "%s Abläufe · Platz für %s · %s Anweisungen",
   "screen.factorynetwork.rack.missing": "Es fehlt: %s",
-  "screen.factorynetwork.rack.free": "Leer",
   "screen.factorynetwork.rack.no_chassis": "Kein Gehäuse — erst eines einsetzen",
   "screen.factorynetwork.rack.part.cpu": "Rechenwerk",
   "screen.factorynetwork.rack.part.ram": "Speicher",
