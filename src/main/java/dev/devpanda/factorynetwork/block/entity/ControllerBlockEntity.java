@@ -64,6 +64,15 @@ public class ControllerBlockEntity extends BlockEntity {
      * Übersicht. Alle Dateien teilen einen Namensraum — Dateien sind Ordnung
      * für den Menschen, keine Grenze für die Sprache.
      */
+    /**
+     * Was im Editor steht.
+     *
+     * <p>Neben {@link #project}, das läuft. Ein Tippfehler darf die Fabrik
+     * nicht anhalten: Der Entwurf darf kaputt sein, der laufende Stand nicht.
+     */
+    private dev.devpanda.factorynetwork.lang.Project draft =
+            dev.devpanda.factorynetwork.lang.Project.of("");
+
     private dev.devpanda.factorynetwork.lang.Project project =
             dev.devpanda.factorynetwork.lang.Project.of("");
     private Program program = new Program(List.of());
@@ -201,6 +210,8 @@ public class ControllerBlockEntity extends BlockEntity {
         Parser.ParseResult result = newProject.parse();
         this.project = newProject;
         this.diagnostics = new ArrayList<>(result.diagnostics());
+        // Übernommen heißt: Entwurf und laufender Stand sind dasselbe.
+        this.draft = newProject;
         writeProgramFile();
         pushProjectToWatchers();
         // Erst nachsehen, dann urteilen: Wer eben einen Schrank gesetzt hat,
@@ -491,6 +502,9 @@ public class ControllerBlockEntity extends BlockEntity {
     /** Unter diesem Namen stehen die Dateien des Projekts. */
     private static final String KEY_FILES = "Files";
 
+    /** Und darunter der Entwurf, der noch nicht übernommen wurde. */
+    private static final String KEY_DRAFT = "Draft";
+
     /**
      * Liest das Projekt aus dem Speicherformat.
      *
@@ -512,6 +526,13 @@ public class ControllerBlockEntity extends BlockEntity {
         CompoundTag files = new CompoundTag();
         project.files().forEach(files::putString);
         tag.put(KEY_FILES, files);
+        // Der Entwurf nur, wenn er sich vom Laufenden unterscheidet: Sonst
+        // stünde jedes Programm zweimal in der Welt.
+        if (!draft.files().equals(project.files())) {
+            CompoundTag entwurf = new CompoundTag();
+            draft.files().forEach(entwurf::putString);
+            tag.put(KEY_DRAFT, entwurf);
+        }
         // Der alte Schlüssel bleibt beschrieben: Wer die Welt mit einer
         // älteren Fassung der Mod öffnet, findet wenigstens seinen Text
         // wieder, statt ein leeres Terminal.
@@ -617,7 +638,44 @@ public class ControllerBlockEntity extends BlockEntity {
      */
     public void pushProjectTo(ServerPlayer player) {
         PacketDistributor.sendToPlayer(player,
-                dev.devpanda.factorynetwork.network.packet.ProjectStatePacket.of(project));
+                dev.devpanda.factorynetwork.network.packet.ProjectStatePacket
+                        .of(worldPosition, project, draft));
+    }
+
+    /** Was im Editor steht, auch wenn es noch nicht läuft. */
+    public dev.devpanda.factorynetwork.lang.Project draft() {
+        return draft;
+    }
+
+    /**
+     * Nimmt einen Entwurf entgegen.
+     *
+     * <p><b>Der Grund, warum es ihn gibt:</b> Vorher lebte der Text nur im
+     * Client. Ein Absturz, ein Kick, ein versehentliches Verlassen der Welt —
+     * und eine halbe Stunde Arbeit war weg, weil nur das Übernehmen sie
+     * gesichert hätte. Und Übernehmen geht nur, wenn das Programm fehlerfrei
+     * ist; genau in der Mitte einer Änderung ist es das nie.
+     *
+     * <p>Geschickt wird der ganze Entwurf und keine Änderungsliste. Ein
+     * Programm hier ist ein paar Dutzend Zeilen, gedeckelt auf 64 KB je
+     * Datei, und eine Änderungsliste mit Positionen ist die Sorte Code, in
+     * der sich ein Fehler erst zeigt, wenn der Text schon kaputt ist.
+     *
+     * <p>Der Absender bekommt nichts zurück: Er hat den Text ja gerade
+     * geschickt, und ein Echo träfe ihn mitten im Tippen.
+     */
+    public void acceptDraft(dev.devpanda.factorynetwork.lang.Project incoming,
+                            ServerPlayer author) {
+        if (incoming.files().equals(draft.files())) {
+            return;
+        }
+        this.draft = incoming;
+        setChanged();
+        for (ServerPlayer watcher : terminalWatchers) {
+            if (watcher != author) {
+                pushProjectTo(watcher);
+            }
+        }
     }
 
     /** Und an alle, die gerade zusehen — nach einer Änderung von außen. */
@@ -1117,6 +1175,15 @@ public class ControllerBlockEntity extends BlockEntity {
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         project = readProject(tag);
+        // Ohne eigenen Entwurf ist der laufende Stand der Entwurf.
+        if (tag.contains(KEY_DRAFT)) {
+            CompoundTag entwurf = tag.getCompound(KEY_DRAFT);
+            Map<String, String> sources = new HashMap<>();
+            entwurf.getAllKeys().forEach(name -> sources.put(name, entwurf.getString(name)));
+            draft = new dev.devpanda.factorynetwork.lang.Project(sources);
+        } else {
+            draft = project;
+        }
         storage.load(tag.getCompound(KEY_STORAGE), registries);
         fluidStorage.load(tag.getCompound(KEY_FLUIDS), registries);
         power.load(tag.getCompound(KEY_POWER), registries);

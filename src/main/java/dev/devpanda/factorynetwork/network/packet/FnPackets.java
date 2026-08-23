@@ -20,6 +20,8 @@ public final class FnPackets {
                 DeployResultPacket::handle);
         registrar.playToClient(ProjectStatePacket.TYPE, ProjectStatePacket.STREAM_CODEC,
                 ProjectStatePacket::handle);
+        registrar.playToServer(SaveDraftPacket.TYPE, SaveDraftPacket.STREAM_CODEC,
+                SaveDraftPacket::handle);
         registrar.playToClient(NetworkStatePacket.TYPE, NetworkStatePacket.STREAM_CODEC,
                 NetworkStatePacket::handle);
         registrar.playToClient(StorageSnapshotPacket.TYPE, StorageSnapshotPacket.STREAM_CODEC,

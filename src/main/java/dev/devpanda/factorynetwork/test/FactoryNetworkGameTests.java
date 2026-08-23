@@ -5386,4 +5386,58 @@ public final class FactoryNetworkGameTests {
 
     private FactoryNetworkGameTests() {
     }
+    /**
+     * Der Entwurf überlebt das Speichern und hält die Fabrik nicht an.
+     *
+     * <p>Der eigentliche Zweck der Sache: Wer zwanzig Minuten an einem Worker
+     * gebaut hat und dann abstürzt, hatte vorher alles verloren — Übernehmen
+     * hätte es gesichert, aber Übernehmen geht nur bei fehlerfreiem Code, und
+     * mitten in einer Änderung ist er das nie.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void theDraftSurvivesAndDoesNotRun(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 2, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        rackWithServer(helper, controller.west());
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("fn laeuft() { }"),
+                "das erste Programm wurde nicht übernommen");
+
+        // Ein Entwurf, der nicht übersetzt. Genau der Fall, den es zu
+        // sichern gilt.
+        var kaputt = dev.devpanda.factorynetwork.lang.Project.of("fn halb() { let a =");
+        entity.acceptDraft(kaputt, null);
+
+        helper.assertValueEqual(entity.draft().source("main.mf"), "fn halb() { let a =",
+                "der Entwurf steht im Controller");
+        helper.assertTrue(entity.program().functions().stream()
+                        .anyMatch(fn -> fn.name().equals("laeuft")),
+                "der laufende Stand darf sich davon nicht ändern");
+        helper.assertTrue(entity.program().functions().stream()
+                        .noneMatch(fn -> fn.name().equals("halb")),
+                "ein Entwurf läuft nicht");
+
+        // Über das Speicherformat und zurück.
+        net.minecraft.nbt.CompoundTag tag = entity.saveWithoutMetadata(
+                helper.getLevel().registryAccess());
+        ControllerBlockEntity wieder = new ControllerBlockEntity(
+                helper.absolutePos(controller),
+                FnBlocks.CONTROLLER.get().defaultBlockState());
+        wieder.loadWithComponents(tag, helper.getLevel().registryAccess());
+
+        helper.assertValueEqual(wieder.draft().source("main.mf"), "fn halb() { let a =",
+                "und übersteht das Speichern");
+        helper.assertTrue(wieder.program().functions().stream()
+                        .anyMatch(fn -> fn.name().equals("laeuft")),
+                "der laufende Stand auch");
+
+        // Übernehmen führt beide wieder zusammen.
+        helper.assertTrue(entity.deploy("fn fertig() { }"), "das zweite Übernehmen");
+        helper.assertValueEqual(entity.draft().source("main.mf"), "fn fertig() { }",
+                "nach dem Übernehmen sind Entwurf und laufender Stand dasselbe");
+        helper.succeed();
+    }
+
 }

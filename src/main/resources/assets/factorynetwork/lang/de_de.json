@@ -295,5 +295,7 @@
   "screen.factorynetwork.code.help.deploy": "Übernehmen",
   "screen.factorynetwork.code.help.rename": "Datei umbenennen",
   "screen.factorynetwork.code.help.menu": "Menü im Dateibaum",
-  "screen.factorynetwork.code.help.close": "Diese Liste schließen"
+  "screen.factorynetwork.code.help.close": "Diese Liste schließen",
+  "screen.factorynetwork.code.saving": "sichert…",
+  "screen.factorynetwork.code.unsaved": "nicht übernommen"
 }

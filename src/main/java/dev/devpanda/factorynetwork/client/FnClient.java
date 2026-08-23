@@ -15,6 +15,30 @@ import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 @EventBusSubscriber(modid = FactoryNetwork.MOD_ID, value = Dist.CLIENT)
 public final class FnClient {
 
+    /**
+     * Zählt die Ruhe im Editor und sichert den Entwurf.
+     *
+     * <p>Am Takt des Clients und nicht am Bildschirm: Der Takt läuft weiter,
+     * wenn jemand das Fenster in derselben Sekunde zumacht, in der er das
+     * letzte Zeichen getippt hat.
+     */
+    @SubscribeEvent
+    public static void tickDraft(net.neoforged.neoforge.client.event.ClientTickEvent.Post event) {
+        ClientProjectState.tick();
+    }
+
+    /**
+     * Beim Verlassen einer Welt bleibt nichts stehen.
+     *
+     * <p>Sonst fände der nächste Controller den Entwurf des letzten vor —
+     * und schriebe ihn beim ersten Anschlag über sein eigenes Programm.
+     */
+    @SubscribeEvent
+    public static void forgetDraft(
+            net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingOut event) {
+        ClientProjectState.clear();
+    }
+
     @SubscribeEvent
     public static void registerScreens(RegisterMenuScreensEvent event) {
         event.register(FnMenus.TERMINAL.get(), TerminalScreen::new);

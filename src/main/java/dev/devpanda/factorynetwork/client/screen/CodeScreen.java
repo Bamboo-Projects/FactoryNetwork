@@ -290,13 +290,31 @@ public class CodeScreen extends Screen {
                 FnFonts.mono(font.plainSubstrByWidth(shown, buttonX() - MARGIN - 90)),
                 MARGIN, footerY, colour, false);
 
-        // Rechts neben dem Knopf: wo der Cursor steht, und ob etwas offen ist.
+        // Rechts neben dem Knopf: wo der Cursor steht.
         Component position = FnFonts.mono(Component.translatable(
                 "screen.factorynetwork.terminal.cursor",
                 editor.cursorLine() + 1, editor.cursorColumn() + 1));
-        graphics.drawString(font, position, buttonX() - font.width(position) - 10, footerY,
-                ClientProjectState.isDirty() ? TerminalScreen.WARN : TerminalScreen.TEXT_FAINT,
-                false);
+        int positionX = buttonX() - font.width(position) - 10;
+        graphics.drawString(font, position, positionX, footerY,
+                TerminalScreen.TEXT_FAINT, false);
+
+        // Und davor, in welchem Zustand der Text ist. Drei Fälle, ein Ort:
+        // noch nicht beim Server, beim Server aber nicht übernommen, oder
+        // deckungsgleich mit dem, was läuft. Im letzten Fall steht dort
+        // nichts — ein Hinweis, der immer da ist, wird nicht gelesen.
+        String state = null;
+        int stateColour = TerminalScreen.TEXT_FAINT;
+        if (ClientProjectState.isDirty()) {
+            state = "screen.factorynetwork.code.saving";
+        } else if (!ClientProjectState.isDeployed()) {
+            state = "screen.factorynetwork.code.unsaved";
+            stateColour = TerminalScreen.WARN;
+        }
+        if (state != null) {
+            Component label = FnFonts.mono(Component.translatable(state));
+            graphics.drawString(font, label, positionX - font.width(label) - 12, footerY,
+                    stateColour, false);
+        }
 
         boolean hovered = overButton(mouseX, mouseY);
         graphics.fill(buttonX(), buttonY(), buttonX() + BUTTON_WIDTH,
@@ -436,6 +454,13 @@ public class CodeScreen extends Screen {
             deploy();
             return true;
         }
+        // Strg+S sichert den Entwurf sofort. Er geht ohnehin eine Sekunde
+        // nach dem letzten Anschlag hinaus — der Griff ist für den Moment,
+        // in dem man vom Rechner weggeht und es genau wissen will.
+        if (key == 83 && hasControlDown()) {
+            ClientProjectState.flush();
+            return true;
+        }
         // Der Dateibaum bekommt die Tasten nur, solange er etwas Offenes hat —
         // eine Eingabe oder ein Menü — sowie F2. Alles andere gehört dem
         // Editor, damit die Pfeiltasten immer dasselbe tun.
@@ -465,9 +490,10 @@ public class CodeScreen extends Screen {
         return editor.charTyped(character, modifiers);
     }
 
-    /** Zurück ins Terminal, nicht ins Spiel. */
+    /** Zurück ins Terminal, nicht ins Spiel — und den Entwurf mitnehmen. */
     @Override
     public void onClose() {
+        ClientProjectState.flush();
         minecraft.setScreen(parent);
     }
 

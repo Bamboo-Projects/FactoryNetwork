@@ -401,6 +401,10 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
                 deploy();
                 return true;
             }
+            if (key == 83 && hasControlDown()) {
+                dev.devpanda.factorynetwork.client.ClientProjectState.flush();
+                return true;
+            }
             if (codeView.keyPressed(key, scanCode, modifiers)) {
                 return true;
             }
@@ -435,6 +439,9 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
 
     @Override
     public void onClose() {
+        // Zuerst sichern: Danach ist das Fenster weg, und mit ihm der Anlass,
+        // noch einmal nachzusehen.
+        dev.devpanda.factorynetwork.client.ClientProjectState.flush();
         PacketDistributor.sendToServer(new StorageTabPacket(false));
         ClientStorageView.clear();
         super.onClose();
