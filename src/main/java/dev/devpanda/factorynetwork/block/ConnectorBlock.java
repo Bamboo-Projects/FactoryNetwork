@@ -64,16 +64,14 @@ public class ConnectorBlock extends Block implements EntityBlock {
         if (level.isClientSide) {
             return InteractionResult.SUCCESS;
         }
-        if (level.getBlockEntity(pos) instanceof ConnectorBlockEntity connector) {
-            String label = connector.label();
-            if (label == null || label.isBlank()) {
-                player.displayClientMessage(
-                        Component.translatable("message.factorynetwork.connector.unnamed"), true);
-            } else {
-                player.displayClientMessage(
-                        Component.translatable("message.factorynetwork.connector.named", label), true);
-            }
+        if (!(level.getBlockEntity(pos) instanceof ConnectorBlockEntity)) {
+            return InteractionResult.PASS;
         }
+        player.openMenu(new net.minecraft.world.SimpleMenuProvider(
+                        (id, inventory, owner) -> new dev.devpanda.factorynetwork.client.menu
+                                .NameMenu(id, pos),
+                        Component.translatable("screen.factorynetwork.name.title.connector")),
+                buffer -> buffer.writeBlockPos(pos));
         return InteractionResult.CONSUME;
     }
 

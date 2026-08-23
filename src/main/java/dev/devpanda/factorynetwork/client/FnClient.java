@@ -26,6 +26,8 @@ public final class FnClient {
                 dev.devpanda.factorynetwork.client.screen.BurnerScreen::new);
         event.register(FnMenus.ROUTER.get(),
                 dev.devpanda.factorynetwork.client.screen.RouterScreen::new);
+        event.register(FnMenus.NAME.get(),
+                dev.devpanda.factorynetwork.client.screen.NameScreen::new);
     }
 
     @SubscribeEvent

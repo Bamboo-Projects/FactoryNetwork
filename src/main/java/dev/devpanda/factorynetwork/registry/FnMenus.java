@@ -34,6 +34,18 @@ public final class FnMenus {
             MENUS.register("shelf", () -> IMenuTypeExtension.create(
                     dev.devpanda.factorynetwork.client.menu.ShelfMenu::new));
 
+    /**
+     * Ein Fenster für Connector und Anzeige: beide bekommen einen Namen.
+     *
+     * <p>Bisher ging das nur mit der Beschriftungspistole. Ohne gebaute
+     * Pistole ließ sich kein Gerät ansprechen — und der Rechtsklick sagte
+     * einem nur den Namen, den man ohnehin sah.
+     */
+    public static final DeferredHolder<MenuType<?>, MenuType<
+            dev.devpanda.factorynetwork.client.menu.NameMenu>> NAME =
+            MENUS.register("name", () -> IMenuTypeExtension.create(
+                    dev.devpanda.factorynetwork.client.menu.NameMenu::new));
+
     public static final DeferredHolder<MenuType<?>, MenuType<TerminalMenu>> TERMINAL =
             MENUS.register("terminal",
                     () -> IMenuTypeExtension.create(TerminalMenu::new));

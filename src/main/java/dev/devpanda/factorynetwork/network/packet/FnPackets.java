@@ -26,6 +26,8 @@ public final class FnPackets {
                 StorageTabPacket::handle);
         registrar.playToServer(SetLabelPacket.TYPE, SetLabelPacket.STREAM_CODEC,
                 SetLabelPacket::handle);
+        registrar.playToServer(SetBlockNamePacket.TYPE, SetBlockNamePacket.STREAM_CODEC,
+                SetBlockNamePacket::handle);
         registrar.playToClient(FlowStatePacket.TYPE, FlowStatePacket.STREAM_CODEC,
                 FlowStatePacket::handle);
         registrar.playToServer(FlowActionPacket.TYPE, FlowActionPacket.STREAM_CODEC,

@@ -181,10 +181,12 @@ public class DisplayBlock extends HorizontalDirectionalBlock implements EntityBl
     }
 
     /**
-     * Rechtsklick nennt den Namen — mehr kann ein Display nicht.
+     * Rechtsklick fragt nach dem Namen.
      *
-     * <p>Es rechnet nicht und hat keine Oberfläche. Wer ändern will, was es
-     * zeigt, ändert das Programm.
+     * <p>Vorher sagte er einem den Namen, den man ohnehin an der Tafel las —
+     * eine Handlung, die nichts tut. Jetzt geht das Fenster auf, in dem man
+     * ihn setzt. Was die Tafel <b>zeigt</b>, steht weiterhin im Programm;
+     * hier steht nur, welches Programmstück gemeint ist.
      */
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
@@ -192,12 +194,14 @@ public class DisplayBlock extends HorizontalDirectionalBlock implements EntityBl
         if (level.isClientSide) {
             return InteractionResult.SUCCESS;
         }
-        if (level.getBlockEntity(pos) instanceof DisplayBlockEntity display) {
-            String name = display.displayName();
-            player.displayClientMessage(name.isBlank()
-                    ? Component.translatable("message.factorynetwork.display.unnamed")
-                    : Component.translatable("message.factorynetwork.display.named", name), true);
+        if (!(level.getBlockEntity(pos) instanceof DisplayBlockEntity)) {
+            return InteractionResult.PASS;
         }
+        player.openMenu(new net.minecraft.world.SimpleMenuProvider(
+                        (id, inventory, owner) -> new dev.devpanda.factorynetwork.client.menu
+                                .NameMenu(id, pos),
+                        Component.translatable("screen.factorynetwork.name.title.display")),
+                buffer -> buffer.writeBlockPos(pos));
         return InteractionResult.CONSUME;
     }
 }
