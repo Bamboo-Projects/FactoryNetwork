@@ -65,6 +65,15 @@ public class ControllerBlockEntity extends BlockEntity {
      * für den Menschen, keine Grenze für die Sprache.
      */
     /**
+     * Wer welche Datei gerade bearbeitet.
+     *
+     * <p>Nur zur Laufzeit — eine Sperre über einen Serverneustart hinweg
+     * wäre eine Datei, die niemandem mehr gehört und die keiner aufmacht.
+     */
+    private final dev.devpanda.factorynetwork.network.FileLocks locks =
+            new dev.devpanda.factorynetwork.network.FileLocks();
+
+    /**
      * Was im Editor steht.
      *
      * <p>Neben {@link #project}, das läuft. Ein Tippfehler darf die Fabrik
@@ -641,7 +650,7 @@ public class ControllerBlockEntity extends BlockEntity {
     public void pushProjectTo(ServerPlayer player) {
         PacketDistributor.sendToPlayer(player,
                 dev.devpanda.factorynetwork.network.packet.ProjectStatePacket
-                        .of(worldPosition, project, draft));
+                        .of(worldPosition, project, draft, locksFor(player)));
     }
 
     /**
@@ -741,7 +750,7 @@ public class ControllerBlockEntity extends BlockEntity {
         if (incoming.files().equals(draft.files())) {
             return;
         }
-        this.draft = incoming;
+        this.draft = author == null ? incoming : merge(incoming, author);
         setChanged();
         for (ServerPlayer watcher : terminalWatchers) {
             if (watcher != author) {
@@ -750,12 +759,58 @@ public class ControllerBlockEntity extends BlockEntity {
         }
     }
 
+    /**
+     * Übernimmt vom eingehenden Entwurf nur, was der Absender schreiben darf.
+     *
+     * <p><b>Ohne das überschreiben sich zwei Spieler wortlos.</b> Beide
+     * schicken den ganzen Entwurf; wer zuletzt tippt, gewinnt — auch über
+     * eine Datei, die er gar nicht offen hatte. Der andere merkt es, wenn
+     * seine Arbeit weg ist.
+     *
+     * <p>Eine Datei, die jemand anders hält, bleibt deshalb stehen, wie sie
+     * ist. Der Absender bekommt sie beim nächsten Zustand zurückgeschickt
+     * und sieht sie im Editor als gesperrt.
+     */
+    private dev.devpanda.factorynetwork.lang.Project merge(
+            dev.devpanda.factorynetwork.lang.Project incoming, ServerPlayer author) {
+        long now = level == null ? 0L : level.getGameTime();
+        Map<String, String> merged = new HashMap<>(draft.files());
+        for (Map.Entry<String, String> entry : incoming.files().entrySet()) {
+            if (entry.getValue().equals(draft.source(entry.getKey()))) {
+                // Unverändert mitgeschickt: keine Änderung, also auch kein
+                // Anspruch auf die Datei.
+                continue;
+            }
+            if (locks.claim(entry.getKey(), author.getUUID(),
+                    author.getGameProfile().getName(), now)) {
+                merged.put(entry.getKey(), entry.getValue());
+            }
+        }
+        // Gelöscht wird nur, was der Absender auch halten darf.
+        merged.keySet().removeIf(name -> !incoming.files().containsKey(name)
+                && locks.claim(name, author.getUUID(),
+                        author.getGameProfile().getName(), now));
+        return new dev.devpanda.factorynetwork.lang.Project(merged);
+    }
+
+    /** Wer welche Datei hält, aus Sicht dieses Spielers. */
+    public Map<String, String> locksFor(ServerPlayer player) {
+        return locks.othersFor(player.getUUID(),
+                level == null ? 0L : level.getGameTime());
+    }
+
     /** Und an alle, die gerade zusehen — nach einer Änderung von außen. */
     private void pushProjectToWatchers() {
         terminalWatchers.forEach(this::pushProjectTo);
     }
 
     public void unwatchTerminal(ServerPlayer player) {
+        // Erst freigeben, dann abmelden: Auf den Zeitablauf zu warten hieße,
+        // dass ein anderer eine Minute vor einer Datei steht, die niemand
+        // mehr offen hat.
+        locks.release(player.getUUID());
+        terminalWatchers.stream().filter(other -> other != player)
+                .forEach(this::pushProjectTo);
         terminalWatchers.remove(player);
         storageWatchers.remove(player);
     }

@@ -25,13 +25,18 @@ import java.util.Map;
  * <p>Geschickt wird es beim Öffnen des Terminals und nach jedem Übernehmen —
  * nicht laufend. Ein Projekt ändert sich, wenn jemand es ändert.
  *
+ * <p>{@code locks} sagt, welche Datei gerade jemand anders bearbeitet, und
+ * wer. Die eigenen stehen nicht darin — dass man selbst schreibt, ist keine
+ * Nachricht.
+ *
  * <p><b>Zwei Stände, weil es zwei Wahrheiten gibt.</b> {@code files} ist das
  * Programm, das läuft; {@code draft} ist das, was zuletzt im Editor stand.
  * Solange beide gleich sind, ist nichts offen. Der Entwurf darf kaputt sein,
  * der laufende Stand nicht — ein Tippfehler hält die Fabrik nicht an.
  */
 public record ProjectStatePacket(BlockPos controller, Map<String, String> files,
-                                 Map<String, String> draft) implements CustomPacketPayload {
+                                 Map<String, String> draft, Map<String, String> locks)
+        implements CustomPacketPayload {
 
     /** So lang darf eine einzelne Datei sein. */
     private static final int MAX_FILE = 64 * 1024;
@@ -48,10 +53,14 @@ public record ProjectStatePacket(BlockPos controller, Map<String, String> files,
                     ByteBufCodecs.map(HashMap::new, ByteBufCodecs.stringUtf8(64),
                             ByteBufCodecs.stringUtf8(MAX_FILE)),
                     ProjectStatePacket::draft,
+                    ByteBufCodecs.map(HashMap::new, ByteBufCodecs.stringUtf8(64),
+                            ByteBufCodecs.stringUtf8(64)),
+                    ProjectStatePacket::locks,
                     ProjectStatePacket::new);
 
-    public static ProjectStatePacket of(BlockPos controller, Project project, Project draft) {
-        return new ProjectStatePacket(controller, project.files(), draft.files());
+    public static ProjectStatePacket of(BlockPos controller, Project project, Project draft,
+                                        Map<String, String> locks) {
+        return new ProjectStatePacket(controller, project.files(), draft.files(), locks);
     }
 
     /** Was im Controller läuft. */

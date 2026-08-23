@@ -81,6 +81,15 @@ public class CodeEditor {
      */
     private int scrollColumn;
     private Consumer<String> changeListener = text -> { };
+
+    /**
+     * Ob nur gelesen werden darf.
+     *
+     * <p>Für eine Datei, die gerade jemand anders bearbeitet. Bewegen,
+     * markieren, kopieren und suchen gehen weiter — man will ja sehen, was
+     * dort steht; nur ändern nicht.
+     */
+    private boolean readOnly;
     private long lastBlink;
     private boolean cursorVisible = true;
 
@@ -117,6 +126,18 @@ public class CodeEditor {
 
     public void setChangeListener(Consumer<String> listener) {
         this.changeListener = listener;
+    }
+
+    public void setReadOnly(boolean readOnly) {
+        this.readOnly = readOnly;
+        if (readOnly) {
+            clearSuggestions();
+            closeSearch();
+        }
+    }
+
+    public boolean isReadOnly() {
+        return readOnly;
     }
 
     /** In welcher Zeile der Cursor steht, von null an. */
@@ -802,6 +823,9 @@ public class CodeEditor {
     }
 
     public boolean keyPressed(int key, int scanCode, int modifiers) {
+        if (readOnly) {
+            return readOnlyKey(key, scanCode, modifiers);
+        }
         if (handleShortcut(key)) {
             return true;
         }
@@ -917,7 +941,72 @@ public class CodeEditor {
         }
     }
 
+    /**
+     * Tasten in einer gesperrten Datei.
+     *
+     * <p>Was nichts ändert, geht durch: Pfeile, Sprünge, Auswahl, Kopieren,
+     * Suchen. Alles andere wird verschluckt — <b>und zwar verschluckt und
+     * nicht durchgereicht</b>, sonst schlösse die Inventartaste das Fenster
+     * über einer Datei, in der man gerade liest.
+     */
+    private boolean readOnlyKey(int key, int scanCode, int modifiers) {
+        boolean control = net.minecraft.client.gui.screens.Screen.hasControlDown();
+        if (control && (key == 67 || key == 65)) { // C und A
+            if (key == 65) {
+                anchorLine = 0;
+                anchorColumn = 0;
+                cursorLine = lines.size() - 1;
+                cursorColumn = lines.get(cursorLine).length();
+            } else if (hasSelection()) {
+                Minecraft.getInstance().keyboardHandler.setClipboard(selectedText());
+            }
+            return true;
+        }
+        if (control && key == 70) { // F: suchen
+            if (searching) {
+                closeSearch();
+            } else {
+                replacing = false;
+                openSearch();
+            }
+            return true;
+        }
+        if (searching && handleSearchKey(key)) {
+            return true;
+        }
+        switch (key) {
+            case 263 -> move(control ? this::moveWordLeft : this::moveLeft);
+            case 262 -> move(control ? this::moveWordRight : this::moveRight);
+            case 265 -> move(() -> moveVertically(-1));
+            case 264 -> move(() -> moveVertically(1));
+            case 266 -> move(() -> moveVertically(-visibleLines()));
+            case 267 -> move(() -> moveVertically(visibleLines()));
+            case 268 -> move(() -> {
+                if (control) {
+                    cursorLine = 0;
+                }
+                cursorColumn = 0;
+            });
+            case 269 -> move(() -> {
+                if (control) {
+                    cursorLine = lines.size() - 1;
+                }
+                cursorColumn = lines.get(cursorLine).length();
+            });
+            case 256 -> {
+                return false;
+            }
+            default -> { }
+        }
+        return true;
+    }
+
     public boolean charTyped(char character, int modifiers) {
+        if (readOnly && !searching) {
+            // Verschluckt und nicht durchgereicht: Sonst löste ein „e" in
+            // einer gesperrten Datei das Inventar aus.
+            return true;
+        }
         if (character == '\n' || character == '\r') {
             return false;
         }
@@ -1481,6 +1570,9 @@ public class CodeEditor {
     // ---- Vorschläge -------------------------------------------------------
 
     private void updateSuggestions() {
+        if (readOnly) {
+            return;
+        }
         suggestions = Completions.at(lines, cursorLine, cursorColumn);
         selectedSuggestion = 0;
     }
@@ -1492,7 +1584,7 @@ public class CodeEditor {
 
     /** Übernimmt den ausgewählten Vorschlag und ersetzt das angefangene Wort. */
     private void applySuggestion() {
-        if (suggestions.isEmpty()) {
+        if (suggestions.isEmpty() || readOnly) {
             return;
         }
         Completions.Entry entry = suggestions.get(selectedSuggestion);

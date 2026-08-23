@@ -179,6 +179,12 @@ public class CodeScreen extends Screen {
 
     /** Übersetzt das ganze Projekt und sortiert die Meldungen. */
     private void recheck() {
+        // Eine Datei, die jemand anders hält, lässt sich lesen und nicht
+        // ändern. Der Server würde eine Änderung ohnehin verwerfen — sie
+        // hier gar nicht erst zuzulassen, erspart den Moment, in dem der
+        // eigene Text beim nächsten Zustand verschwindet.
+        editor.setReadOnly(
+                dev.devpanda.factorynetwork.client.ClientProjectState.heldBy(open) != null);
         problems = project.parse(
                 dev.devpanda.factorynetwork.client.ClientNetworkView.INSTANCE)
                 .diagnostics();
@@ -355,6 +361,16 @@ public class CodeScreen extends Screen {
         // nichts — ein Hinweis, der immer da ist, wird nicht gelesen.
         String state = null;
         int stateColour = TerminalScreen.TEXT_FAINT;
+        String holder = ClientProjectState.heldBy(open);
+        if (holder != null) {
+            // Vor allem anderen: Solange die Datei jemand anders hält, ist
+            // jede andere Auskunft über ihren Zustand belanglos.
+            Component label = FnFonts.mono(Component.translatable(
+                    "screen.factorynetwork.code.held_by", holder));
+            graphics.drawString(font, label, positionX - font.width(label) - 12, footerY,
+                    TerminalScreen.WARN, false);
+            return;
+        }
         if (ClientProjectState.isDirty()) {
             state = "screen.factorynetwork.code.saving";
         } else if (!ClientProjectState.isDeployed()) {

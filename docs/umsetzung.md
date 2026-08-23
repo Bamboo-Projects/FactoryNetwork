@@ -400,23 +400,48 @@ sein, der laufende Stand nicht; ein Tippfehler hält die Fabrik nicht an.
 Gesichert wird eine Sekunde nach dem letzten Anschlag, bei Strg+S und beim
 Schließen. Damit ist der Datenverlust weg, der vorher jedem Absturz folgte.
 
+Und weiter in derselben Nacht:
+
+- **Anweisungen** stehen ebenfalls in `Signatures` — `let`, `if`, `while`,
+  `for`, `move`, `emit`, `sleep`, `return`, `await`. `move` war der Fall, an
+  dem sich die Tabelle beweisen musste: `move menge [from quelle] to ziel`
+  hat eine Stelle, die wegfallen darf.
+- **Namen werden gegen das echte Netz geprüft.** `NetworkView` gibt dem
+  Übersetzer wahlweise die Connectoren- und Anzeigenamen; eine Anzeige ohne
+  Wand oder ein Ziel, das niemand so genannt hat, ist eine Warnung mit
+  „meintest du". Der Client prüft beim Tippen, der Server beim Übernehmen —
+  letzteres auch für den, der über den Ordner neben der Welt schreibt.
+- **Strg+Klick** springt zur Erklärung eines Namens oder, wenn er aus der
+  Welt kommt, markiert ihn dort: ein Kasten um den Block und der Name
+  darüber, durch Wände sichtbar. Zeigen nennt Stelle und Fundstellen.
+- **Der Entwurf liegt auf dem Server** und überlebt Absturz und Ausloggen.
+- **Dateisperren.** Wer schreibt, hält die Datei; die anderen sehen sie im
+  Lesemodus mit dem Namen des Halters. Eine Sperre verfällt nach einer
+  Minute ohne Schreiben und beim Schließen des Terminals.
+- **Die VS-Code-Erweiterung** vervollständigt nach denselben Regeln. Ihre
+  Tabelle wird aus `Signatures.java` erzeugt, ein Test hält beide gleich,
+  und `editor/vscode/check.js` prüft die portierte Logik gegen dieselben
+  Fälle wie der Java-Test.
+
 **Fehlt, in dieser Reihenfolge:**
 
-1. **Dateisperre für mehrere Spieler.** Zwei am selben Controller sehen
-   gegenseitig ihre Entwürfe, solange sie nicht selbst tippen; sobald beide
-   tippen, gewinnt der, der zuletzt übernimmt. Richtig wäre: Wer eine Datei
-   offen hat, hält sie, und die anderen sehen sie im Lesemodus mit einem
-   Knopf „Bearbeitung anfragen". Kein CRDT — dafür ist der Fall zu selten.
-2. **Der Sprachdienst über die Signaturen hinaus.** Die Tabelle deckt die
-   Blockangaben ab, nicht die Ausdrücke: `crusher_1.` sollte anbieten, was
-   *dieses* Gerät kann, und beim Zeigen Zustand und Position nennen. Dazu
-   Sprung zur Deklaration, Fundstellen und „im Spiel zeigen". Die
-   Connectordaten liegen für den Netzreiter schon auf dem Client.
-3. **Ausdrücke und Anweisungen bekommen auch Formen.** `move`, `emit`,
-   `await` und die eingebauten Zugriffe stehen noch nicht in `Signatures` —
-   in einer Funktion sieht man weiterhin nur eine Wortliste.
-4. **Kleinkram am Gefühl.** Tastenwiederholung beim Halten prüfen, tote
-   Tasten der deutschen Belegung (`^`, `´`), Strg+Rollen zum Zoomen.
+1. **Der Sprachdienst über die Signaturen hinaus.** Die Tabelle deckt
+   Blockangaben und Anweisungen ab, nicht die Ausdrücke: `crusher_1.` sollte
+   anbieten, was *dieses* Gerät kann, und beim Zeigen seinen Zustand nennen.
+   Dafür müsste der Client wissen, welche Fähigkeiten hinter einem Connector
+   stecken — heute weiß er nur den Namen und die Stelle.
+2. **„Bearbeitung anfragen".** Die Sperre hält, aber wer vor einer fremden
+   Datei steht, kann nur warten. Ein Knopf, der beim Halter anklopft, wäre
+   das fehlende Stück.
+3. **Ein Sprachserver für VS Code.** Erst der brächte dort Fehlerprüfung und
+   Gerätenamen. Er müsste den Übersetzer aus dem Mod-Projekt aufrufen und mit
+   dem laufenden Spiel reden — eine eigene Entscheidung, keine, die nebenbei
+   fällt.
+
+**Geprüft und verworfen:** Tastenwiederholung beim Halten funktioniert schon,
+Minecraft leitet `GLFW_REPEAT` an `keyPressed` weiter. Strg+Rollen zum Zoomen
+bliebe unscharf, weil Minecrafts Schrift bei nicht ganzzahligen Maßstäben
+verwischt — die Spieloberfläche hat dafür eine eigene Einstellung.
 
 **Offene Fragen, nicht entschieden:**
 

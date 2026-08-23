@@ -38,6 +38,14 @@ public final class ClientProjectState {
     /** Wo der Controller steht, dessen Projekt das ist. */
     private static BlockPos controller;
 
+    /**
+     * Welche Datei gerade jemand anders bearbeitet, und wer.
+     *
+     * <p>Die eigenen stehen nicht darin — dass man selbst schreibt, ist keine
+     * Nachricht.
+     */
+    private static java.util.Map<String, String> locks = java.util.Map.of();
+
     /** Was zuletzt zum Server ging — daran hängt, ob etwas offen ist. */
     private static Project sent = deployed;
 
@@ -55,13 +63,14 @@ public final class ClientProjectState {
      * gerade Schreibenden den Text unter den Fingern austauscht, wäre die
      * schlimmere Antwort.
      *
-     * <p>Damit ist auch gesagt, was bei zwei Spielern an einem Controller
-     * passiert: Der zweite sieht den Entwurf des ersten, solange er selbst
-     * nicht tippt. Sobald beide tippen, gewinnt der, der zuletzt übernimmt.
-     * Eine Dateisperre wäre die richtige Antwort und steht noch aus.
+     * <p>Bei zwei Spielern an einem Controller greift zusätzlich die
+     * Dateisperre: Der Server nimmt nur an, was der Absender halten darf, und
+     * meldet in {@code locks}, was jemand anders hält. Der zweite sieht die
+     * fremde Datei, kann sie lesen und nicht ändern.
      */
     public static void accept(ProjectStatePacket packet) {
         controller = packet.controller();
+        locks = java.util.Map.copyOf(packet.locks());
         deployed = packet.project();
         if (!isDirty()) {
             draft = packet.draftProject();
@@ -85,6 +94,11 @@ public final class ClientProjectState {
         }
         draft = project;
         quiet = 0;
+    }
+
+    /** Wer diese Datei hält, oder {@code null}. */
+    public static String heldBy(String file) {
+        return locks.get(file);
     }
 
     /** Steht im Editor etwas anderes als im Controller? */
@@ -135,6 +149,7 @@ public final class ClientProjectState {
         draft = deployed;
         sent = deployed;
         controller = null;
+        locks = java.util.Map.of();
         quiet = 0;
     }
 }

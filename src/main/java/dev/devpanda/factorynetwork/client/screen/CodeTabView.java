@@ -91,6 +91,12 @@ public class CodeTabView {
 
     /** Übersetzt das ganze Projekt und sortiert die Meldungen. */
     private void recheck() {
+        // Eine Datei, die jemand anders hält, lässt sich lesen und nicht
+        // ändern. Der Server würde eine Änderung ohnehin verwerfen — sie
+        // hier gar nicht erst zuzulassen, erspart den Moment, in dem der
+        // eigene Text beim nächsten Zustand verschwindet.
+        editor.setReadOnly(
+                dev.devpanda.factorynetwork.client.ClientProjectState.heldBy(open) != null);
         problems = project.parse(
                 dev.devpanda.factorynetwork.client.ClientNetworkView.INSTANCE)
                 .diagnostics();

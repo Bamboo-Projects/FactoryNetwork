@@ -303,5 +303,6 @@
   "screen.factorynetwork.code.used": "%s weitere Fundstellen",
   "screen.factorynetwork.code.at": "steht bei %s %s %s",
   "screen.factorynetwork.code.locate_hint": "Strg+Klick markiert es in der Welt",
-  "screen.factorynetwork.code.located": "%s markiert — %s %s %s"
+  "screen.factorynetwork.code.located": "%s markiert — %s %s %s",
+  "screen.factorynetwork.code.held_by": "%s bearbeitet diese Datei"
 }

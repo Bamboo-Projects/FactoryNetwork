@@ -170,10 +170,18 @@ public class ProjectPanel {
 
             boolean broken = problems.stream()
                     .anyMatch(problem -> problem.isError() && problem.file().equals(name));
-            int colour = active ? TerminalScreen.TEXT : TerminalScreen.TEXT_DIM;
+            String holder = dev.devpanda.factorynetwork.client.ClientProjectState.heldBy(name);
+            // Eine gesperrte Datei matt: Man darf sie öffnen und lesen, nur
+            // nicht ändern. Grau ist dafür die ehrlichere Farbe als Rot —
+            // es ist kein Fehler, es ist jemand anders.
+            int colour = holder != null ? TerminalScreen.TEXT_FAINT
+                    : active ? TerminalScreen.TEXT : TerminalScreen.TEXT_DIM;
             graphics.drawString(font, FnFonts.mono(clip(name, width - 12)), x + 2, rowTop + 1,
                     colour, false);
-            if (broken) {
+            if (holder != null) {
+                graphics.fill(x + width - 8, rowTop + 3, x + width - 4, rowTop + 8,
+                        0xFF000000 | TerminalScreen.WARN);
+            } else if (broken) {
                 graphics.fill(x + width - 7, rowTop + 4, x + width - 4, rowTop + 7,
                         0xFF000000 | TerminalScreen.BAD);
             }
@@ -223,7 +231,8 @@ public class ProjectPanel {
     }
 
     public void beginRename(String name) {
-        if (name == null) {
+        if (name == null
+                || dev.devpanda.factorynetwork.client.ClientProjectState.heldBy(name) != null) {
             return;
         }
         closeMenu();
@@ -326,6 +335,19 @@ public class ProjectPanel {
 
     private void openMenu(String name, double mouseX, double mouseY) {
         boolean last = project.files().size() <= 1;
+        // Eine Datei, die jemand anders hält, wird weder umbenannt noch
+        // gelöscht — das wäre dasselbe Überschreiben durch die Hintertür.
+        boolean free = dev.devpanda.factorynetwork.client.ClientProjectState.heldBy(name) == null;
+        if (!free) {
+            menu = new ContextMenu(font, (int) mouseX, (int) mouseY, List.of(
+                    new ContextMenu.Entry("screen.factorynetwork.project.rename", false,
+                            () -> { }),
+                    new ContextMenu.Entry("screen.factorynetwork.project.duplicate", true,
+                            () -> duplicate(name)),
+                    new ContextMenu.Entry("screen.factorynetwork.project.delete", false,
+                            () -> { })));
+            return;
+        }
         menu = new ContextMenu(font, (int) mouseX, (int) mouseY, List.of(
                 new ContextMenu.Entry("screen.factorynetwork.project.rename", true,
                         () -> beginRename(name)),

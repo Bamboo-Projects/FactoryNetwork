@@ -2088,3 +2088,38 @@ Taste schließt sie wieder.
 Die Tastennamen stehen fest im Code und nicht in der Sprachdatei — sie
 heißen in jeder Sprache gleich. Was sie tun, steht daneben und kommt aus der
 Sprachdatei.
+
+### Sperren je Datei, genommen durch Schreiben
+
+Zwei Spieler an einem Controller überschrieben sich wortlos: Beide schicken
+den ganzen Entwurf, und wer zuletzt tippt, gewinnt — auch über eine Datei, die
+er gar nicht offen hatte.
+
+**Je Datei und nicht je Projekt**, weil zwei Leute an einer Fabrik fast immer
+an verschiedenen Stücken arbeiten. Das ganze Projekt zu sperren hieße, dass
+einer wartet, obwohl nichts kollidiert.
+
+**Genommen durch Schreiben und nicht durch Öffnen.** Wer eine Datei nur
+ansieht, blockiert sie nicht, und niemand muss daran denken, sie wieder
+freizugeben. Sie verfällt nach einer Minute ohne Schreiben und beim Schließen
+des Terminals.
+
+Der Server nimmt vom eingehenden Entwurf nur an, was der Absender halten darf.
+Damit ist der Datenverlust auch dann weg, wenn der Client die Sperre gar nicht
+kennt — die Anzeige im Editor ist Höflichkeit, die Regel steht auf dem Server.
+
+Was fehlt: ein Knopf „Bearbeitung anfragen". Wer vor einer fremden Datei
+steht, kann heute nur warten.
+
+### Dieselbe Regel zweimal, aber nachgemessen
+
+Die VS-Code-Erweiterung kann nicht in den Java-Code sehen — sie wird kopiert,
+nicht gebaut, und ein Bauschritt hieße `npm install`, und dann kopiert sie
+niemand mehr. Also liegt die Formentabelle als JSON daneben, erzeugt aus
+`Signatures.java`, und ein Test hält beide gleich.
+
+Die *Logik* darüber steht damit trotzdem zweimal da: einmal in Java, einmal in
+JavaScript. Das ließ sich nicht vermeiden, also wurde es wenigstens gemessen —
+`editor/vscode/check.js` prüft dieselben vierzehn Fälle wie der Java-Test, ohne
+Abhängigkeiten. Zwei Fassungen derselben Regel laufen auseinander, wenn niemand
+nachmisst.
