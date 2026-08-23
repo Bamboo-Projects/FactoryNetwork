@@ -1,8 +1,8 @@
 {
   "name": "manifold",
   "displayName": "Manifold",
-  "description": "Syntaxhervorhebung und Bausteine für die Sprache der Mod Factory Network",
-  "version": "0.1.0",
+  "description": "Syntaxhervorhebung, Vervollständigung und Bausteine für die Sprache der Mod Factory Network",
+  "version": "0.2.0",
   "publisher": "devpanda",
   "license": "MIT",
   "engines": {
@@ -16,8 +16,13 @@
     "languages": [
       {
         "id": "manifold",
-        "aliases": ["Manifold", "manifold"],
-        "extensions": [".mf"],
+        "aliases": [
+          "Manifold",
+          "manifold"
+        ],
+        "extensions": [
+          ".mf"
+        ],
         "configuration": "./language-configuration.json"
       }
     ],
@@ -34,5 +39,9 @@
         "path": "./snippets/manifold.json"
       }
     ]
-  }
+  },
+  "main": "./extension.js",
+  "activationEvents": [
+    "onLanguage:manifold"
+  ]
 }

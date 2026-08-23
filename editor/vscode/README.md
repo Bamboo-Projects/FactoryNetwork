@@ -1,46 +1,69 @@
 # Manifold in VS Code
 
-Syntaxhervorhebung, Klammernpaare und Bausteine für `.mf`-Dateien — die
-Sprache, in der Factory Network programmiert wird.
+Syntaxhervorhebung, Vervollständigung, Klammernpaare und Bausteine für
+`.mf`-Dateien — die Sprache, in der Factory Network programmiert wird.
 
 ## Wozu
 
-Der Controller legt sein Programm als Datei neben die Welt:
+Der Controller legt sein Programm als **Ordner** neben die Welt:
 
 ```
-<Weltordner>/factorynetwork/controller_overworld_10_64_-20.mf
+<Weltordner>/factorynetwork/controller_overworld_10_64_-20/
+    main.mf
+    worker.mf
+    anzeigen.mf
 ```
 
-Diese Datei ist das Programm. Wer sie speichert, hat sie eine Sekunde später
-im Spiel übernommen — und was im Terminal übernommen wird, steht sofort in der
-Datei. **Wer zuletzt geschrieben hat, gewinnt.**
+Ein Programm ist ein Projekt aus mehreren Dateien. **Alle teilen einen
+Namensraum:** Ein `fn` in der einen Datei wird in der anderen aufgerufen, ohne
+dass irgendwo `import` steht. Wie man es aufteilt, entscheidet man selbst — die
+Dateien sind Ordnung für den Menschen, keine Grenze für die Sprache.
 
-Damit kann man alles benutzen, was der Bildschirm im Spiel nicht kann:
-mehrere Cursor, Suchen über alle Dateien, Git.
+Wer eine Datei speichert, hat sie eine Sekunde später im Spiel übernommen; was
+im Terminal übernommen wird, steht sofort im Ordner. **Wer zuletzt geschrieben
+hat, gewinnt.** Eine Datei, die hier gelöscht wird, ist auch im Spiel gelöscht
+— in einem Projekt löscht man ein Programmstück absichtlich.
+
+Den Ordner öffnet man am besten als Arbeitsbereich. Dann greifen Suchen über
+alle Dateien, mehrere Cursor und Git.
 
 ## Einbauen
 
-Ohne Marktplatz, weil die Erweiterung nichts tut, was einen Marktplatz
-rechtfertigt — sie ist eine Grammatik und ein Satz Bausteine.
+Ohne Marktplatz und ohne Bauschritt: Die Erweiterung ist reines JavaScript,
+kein `npm install`, kein Übersetzer. Kopieren reicht.
 
 **Windows**
 
 ```
-xcopy /E /I editor\vscode %USERPROFILE%\.vscode\extensions\devpanda.manifold-0.1.0
+xcopy /E /I editor\vscode %USERPROFILE%\.vscode\extensions\devpanda.manifold-0.2.0
 ```
 
 **Linux und macOS**
 
 ```
-cp -r editor/vscode ~/.vscode/extensions/devpanda.manifold-0.1.0
+cp -r editor/vscode ~/.vscode/extensions/devpanda.manifold-0.2.0
 ```
 
 Danach VS Code neu starten. Eine `.mf`-Datei sollte farbig sein; unten rechts
 steht „Manifold".
 
-## Bausteine
+## Was sie kann
 
-Tippen und Tabulator drücken:
+**Vervollständigung nach der Stelle.** In einer Anzeige stehen `title`, `row`,
+`text`, `progress`, `indicator`, `list`, `button` — und sonst nichts, denn ein
+`displayEntry` enthält Ausdrücke, aber keine Anweisungen. In einem Worker seine
+Angaben, in einer Funktion die Anweisungen und die Bestände.
+
+Und innerhalb einer Angabe richtet sie sich danach, welche Stelle dran ist:
+hinter `strategy` die Verteilungen, hinter `move 64` sowohl `from` als auch
+`to` — die Quelle darf ja fehlen.
+
+**Formanzeige.** Beim Tippen steht die ganze Form da, mit der aktiven Stelle
+hervorgehoben: `row string expr`, `move menge [from quelle] to ziel`.
+
+**Erklärung beim Zeigen.** Form und ein Satz dazu.
+
+**Bausteine.** Tippen und Tabulator drücken:
 
 | Kürzel | Was daraus wird |
 |---|---|
@@ -56,10 +79,36 @@ Tippen und Tabulator drücken:
 | `multiblock` | eine Anlage aus mehreren Geräten |
 | `move` | ein einzelner Transport |
 
+## Woher sie weiß, was wohin gehört
+
+Aus `data/signatures.json`. Diese Datei wird aus `Signatures.java` im
+Mod-Projekt erzeugt, und ein Test dort hält beide gleich: Wer eine Angabe
+hinzufügt und die Datei vergisst, bekommt einen roten Test. Damit gibt es die
+Regel „hinter `row` kommt ein Text und dann ein Ausdruck" einmal und nicht
+zweimal.
+
+Dass die Logik trotzdem doppelt dasteht — einmal in Java für den Editor im
+Spiel, einmal in `extension.js` für hier —, lässt sich nicht vermeiden, solange
+die Erweiterung ohne Bauschritt auskommen soll. Deshalb liegt daneben
+`check.js` mit denselben Fällen wie der Java-Test:
+
+```
+node editor/vscode/check.js
+```
+
+Keine Abhängigkeiten. Zwei Fassungen derselben Regel laufen auseinander, wenn
+niemand nachmisst.
+
 ## Was fehlt
 
-Keine Fehlerprüfung und keine Vervollständigung von Gerätenamen. Beides
-bräuchte einen Sprachserver, der weiß, was gerade in der Welt steht — und
-damit eine Verbindung zum laufenden Spiel. Solange es die nicht gibt, ist das
-Terminal die Stelle, an der Fehler stehen: Was nicht übersetzt, wird nicht
-übernommen, und im Reiter **Code** steht, warum.
+**Keine Fehlerprüfung.** Dafür bräuchte es den Übersetzer, und der ist in
+Java. Das Terminal im Spiel ist die Stelle, an der Fehler stehen: Was nicht
+übersetzt, wird nicht übernommen, und im Reiter **Code** steht, warum.
+
+**Keine Gerätenamen in der Vervollständigung.** Welche Connectoren und
+Anzeigen es gibt, weiß nur das laufende Spiel. Im Terminal schlägt der Editor
+sie vor und warnt, wenn ein Name in der Welt nicht vorkommt; hier kann er das
+nicht.
+
+Beides zusammen wäre ein Sprachserver mit Verbindung zum Spiel. Das ist eine
+eigene Entscheidung und keine, die nebenbei fällt.

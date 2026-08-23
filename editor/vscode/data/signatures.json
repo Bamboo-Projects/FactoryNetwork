@@ -1,0 +1,432 @@
+{
+  "blocks": {
+    "display": [
+      {
+        "keyword": "title",
+        "shape": "title string",
+        "help": "Die Überschrift der Wand.",
+        "slots": [
+          {
+            "kind": "STRING",
+            "label": "string",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "keyword": "row",
+        "shape": "row string expr",
+        "help": "Eine Zeile mit Beschriftung und Wert.",
+        "slots": [
+          {
+            "kind": "STRING",
+            "label": "string",
+            "optional": false
+          },
+          {
+            "kind": "EXPR",
+            "label": "expr",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "keyword": "text",
+        "shape": "text expr",
+        "help": "Eine Zeile ohne Beschriftung.",
+        "slots": [
+          {
+            "kind": "EXPR",
+            "label": "expr",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "keyword": "progress",
+        "shape": "progress string expr",
+        "help": "Ein Balken von null bis eins.",
+        "slots": [
+          {
+            "kind": "STRING",
+            "label": "string",
+            "optional": false
+          },
+          {
+            "kind": "EXPR",
+            "label": "expr",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "keyword": "indicator",
+        "shape": "indicator string expr",
+        "help": "Eine Lampe: an, wenn der Ausdruck wahr ist.",
+        "slots": [
+          {
+            "kind": "STRING",
+            "label": "string",
+            "optional": false
+          },
+          {
+            "kind": "EXPR",
+            "label": "expr",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "keyword": "list",
+        "shape": "list string expr",
+        "help": "Eine Aufzählung aus einem Ausdruck.",
+        "slots": [
+          {
+            "kind": "STRING",
+            "label": "string",
+            "optional": false
+          },
+          {
+            "kind": "EXPR",
+            "label": "expr",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "keyword": "button",
+        "shape": "button string function",
+        "help": "Ein Knopf, der eine Funktion aufruft.",
+        "slots": [
+          {
+            "kind": "STRING",
+            "label": "string",
+            "optional": false
+          },
+          {
+            "kind": "FUNCTION",
+            "label": "function",
+            "optional": false
+          }
+        ]
+      }
+    ],
+    "worker": [
+      {
+        "keyword": "from",
+        "shape": "from target",
+        "help": "Woher die Gegenstände kommen.",
+        "slots": [
+          {
+            "kind": "TARGET",
+            "label": "target",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "keyword": "to",
+        "shape": "to target",
+        "help": "Wohin sie gehen.",
+        "slots": [
+          {
+            "kind": "TARGET",
+            "label": "target",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "keyword": "filter",
+        "shape": "filter selection",
+        "help": "Was bewegt wird. Ohne Angabe alles.",
+        "slots": [
+          {
+            "kind": "SELECTION",
+            "label": "selection",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "keyword": "maintain",
+        "shape": "maintain int",
+        "help": "So viele sollen am Ziel liegen bleiben.",
+        "slots": [
+          {
+            "kind": "INT",
+            "label": "int",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "keyword": "rate",
+        "shape": "rate int per duration",
+        "help": "Höchstens so viele in dieser Zeit.",
+        "slots": [
+          {
+            "kind": "INT",
+            "label": "int",
+            "optional": false
+          },
+          {
+            "kind": "LITERAL",
+            "label": "per",
+            "optional": false
+          },
+          {
+            "kind": "DURATION",
+            "label": "duration",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "keyword": "when",
+        "shape": "when expr",
+        "help": "Nur, solange der Ausdruck wahr ist.",
+        "slots": [
+          {
+            "kind": "EXPR",
+            "label": "expr",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "keyword": "priority",
+        "shape": "priority int",
+        "help": "Wer bei knappem Nachschub zuerst drankommt.",
+        "slots": [
+          {
+            "kind": "INT",
+            "label": "int",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "keyword": "strategy",
+        "shape": "strategy strategy",
+        "help": "Wie auf mehrere Ziele verteilt wird.",
+        "slots": [
+          {
+            "kind": "STRATEGY",
+            "label": "strategy",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "keyword": "overflow",
+        "shape": "overflow to target",
+        "help": "Wohin, wenn das Ziel voll ist.",
+        "slots": [
+          {
+            "kind": "LITERAL",
+            "label": "to",
+            "optional": false
+          },
+          {
+            "kind": "TARGET",
+            "label": "target",
+            "optional": false
+          }
+        ]
+      }
+    ],
+    "group": [
+      {
+        "keyword": "members",
+        "shape": "members members",
+        "help": "Die Connectoren der Gruppe, mit Komma getrennt.",
+        "slots": [
+          {
+            "kind": "MEMBERS",
+            "label": "members",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "keyword": "strategy",
+        "shape": "strategy strategy",
+        "help": "Wie auf sie verteilt wird.",
+        "slots": [
+          {
+            "kind": "STRATEGY",
+            "label": "strategy",
+            "optional": false
+          }
+        ]
+      }
+    ],
+    "fn": [
+      {
+        "keyword": "let",
+        "shape": "let name \u003d expr",
+        "help": "Ein neuer Wert mit Namen.",
+        "slots": [
+          {
+            "kind": "NEW_NAME",
+            "label": "name",
+            "optional": false
+          },
+          {
+            "kind": "LITERAL",
+            "label": "\u003d",
+            "optional": false
+          },
+          {
+            "kind": "EXPR",
+            "label": "expr",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "keyword": "if",
+        "shape": "if expr",
+        "help": "Nur, wenn der Ausdruck wahr ist.",
+        "slots": [
+          {
+            "kind": "EXPR",
+            "label": "expr",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "keyword": "while",
+        "shape": "while expr",
+        "help": "Solange der Ausdruck wahr ist.",
+        "slots": [
+          {
+            "kind": "EXPR",
+            "label": "expr",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "keyword": "for",
+        "shape": "for name in expr",
+        "help": "Einmal je Element.",
+        "slots": [
+          {
+            "kind": "NEW_NAME",
+            "label": "name",
+            "optional": false
+          },
+          {
+            "kind": "LITERAL",
+            "label": "in",
+            "optional": false
+          },
+          {
+            "kind": "EXPR",
+            "label": "expr",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "keyword": "move",
+        "shape": "move menge [from quelle] to ziel",
+        "help": "Bewegt Gegenstände von einem Gerät zum anderen.",
+        "slots": [
+          {
+            "kind": "SELECTION",
+            "label": "menge",
+            "optional": false
+          },
+          {
+            "kind": "LITERAL",
+            "label": "from",
+            "optional": true
+          },
+          {
+            "kind": "TARGET",
+            "label": "quelle",
+            "optional": false
+          },
+          {
+            "kind": "LITERAL",
+            "label": "to",
+            "optional": false
+          },
+          {
+            "kind": "TARGET",
+            "label": "ziel",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "keyword": "emit",
+        "shape": "emit event",
+        "help": "Löst ein Ereignis aus.",
+        "slots": [
+          {
+            "kind": "EVENT",
+            "label": "event",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "keyword": "sleep",
+        "shape": "sleep duration",
+        "help": "Wartet eine Zeit lang.",
+        "slots": [
+          {
+            "kind": "DURATION",
+            "label": "duration",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "keyword": "return",
+        "shape": "return expr",
+        "help": "Gibt einen Wert zurück und beendet die Funktion.",
+        "slots": [
+          {
+            "kind": "EXPR",
+            "label": "expr",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "keyword": "await",
+        "shape": "await expr",
+        "help": "Wartet, bis der Ausdruck wahr ist.",
+        "slots": [
+          {
+            "kind": "EXPR",
+            "label": "expr",
+            "optional": false
+          }
+        ]
+      }
+    ]
+  },
+  "strategies": [
+    "round_robin",
+    "first_available",
+    "least_filled",
+    "random",
+    "priority"
+  ],
+  "declarations": [
+    "worker",
+    "group",
+    "multiblock",
+    "event",
+    "display",
+    "fn",
+    "on"
+  ]
+}
