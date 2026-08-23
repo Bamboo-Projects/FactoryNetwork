@@ -598,6 +598,25 @@ public final class FactoryGraph {
         return connectorsByName.values().stream().mapToInt(List::size).sum() + unnamed.size();
     }
 
+    /**
+     * Alles im Netz, das kein Kabel ist.
+     *
+     * <p><b>Ein Gerät ist mehr als ein Connector.</b> Der Tooltip am
+     * Controller schrieb „Geräte" und zählte {@link #connectorCount()} — ein
+     * Netz aus Serverschrank, Laufwerk, Router und Anzeigewand meldete
+     * „0 Geräte". Das stimmte für den Code, der nur Connectoren ansprechen
+     * kann, aber nicht für die Frage, die der Tooltip beantwortet: wie groß
+     * ist dieses Netz.
+     *
+     * <p>Die ohne freien Kanal zählen mit. Sie stehen im Netz, sie ziehen
+     * Strom, sie sind nur nicht erreichbar — und dass eines fehlt, sagt die
+     * eigene Zeile darunter.
+     */
+    public int deviceCount() {
+        return connectorCount() + drives.size() + racks.size() + displays.size()
+                + routers.size() + starved.size();
+    }
+
     /** Displays am Netz. */
     public List<BlockPos> displays() {
         return displays;

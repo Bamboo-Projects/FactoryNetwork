@@ -275,5 +275,6 @@
   "screen.factorynetwork.project.title": "PROJEKT",
   "screen.factorynetwork.project.rename": "Umbenennen",
   "screen.factorynetwork.project.duplicate": "Verdoppeln",
-  "screen.factorynetwork.project.delete": "Löschen"
+  "screen.factorynetwork.project.delete": "Löschen",
+  "jade.factorynetwork.controller.connectors": "%s davon Connectoren"
 }

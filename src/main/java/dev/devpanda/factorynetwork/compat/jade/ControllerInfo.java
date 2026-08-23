@@ -21,6 +21,7 @@ public enum ControllerInfo implements IBlockComponentProvider, IServerDataProvid
     INSTANCE;
 
     private static final String KEY_DEVICES = "FnDevices";
+    private static final String KEY_CONNECTORS = "FnConnectors";
     private static final String KEY_UNNAMED = "FnUnnamed";
     private static final String KEY_STARVED = "FnStarved";
     private static final String KEY_CABLES = "FnCables";
@@ -37,7 +38,8 @@ public enum ControllerInfo implements IBlockComponentProvider, IServerDataProvid
             return;
         }
         var graph = controller.graph();
-        data.putInt(KEY_DEVICES, graph.connectorCount());
+        data.putInt(KEY_DEVICES, graph.deviceCount());
+        data.putInt(KEY_CONNECTORS, graph.connectorCount());
         data.putInt(KEY_UNNAMED, graph.unnamedConnectors().size());
         data.putInt(KEY_STARVED, graph.starvedConnectors().size());
         data.putInt(KEY_CABLES, graph.cableCount());
@@ -83,6 +85,12 @@ public enum ControllerInfo implements IBlockComponentProvider, IServerDataProvid
         tooltip.add(Component.translatable("jade.factorynetwork.controller.network",
                 data.getInt(KEY_DEVICES), data.getInt(KEY_CABLES))
                 .withStyle(ChatFormatting.GRAY));
+        // Und darunter, wie viele davon der Code ansprechen kann. Die beiden
+        // Zahlen gehen weit auseinander: Schränke, Laufwerke, Router und
+        // Anzeigen sind Geräte, aber kein Connector.
+        tooltip.add(Component.translatable("jade.factorynetwork.controller.connectors",
+                data.getInt(KEY_CONNECTORS))
+                .withStyle(ChatFormatting.DARK_GRAY));
 
         int unnamed = data.getInt(KEY_UNNAMED);
         if (unnamed > 0) {
