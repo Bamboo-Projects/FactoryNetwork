@@ -119,12 +119,38 @@ public class CodeTabView {
                 && mouseY >= buttonY() && mouseY < buttonY() + BUTTON_HEIGHT;
     }
 
-    /** Beim Zeigen auf den Knopf steht die Tastenkombination dabei. */
+    /**
+     * Erklärungen beim Zeigen: der Knopf und die Fehlermarken.
+     *
+     * <p>Eine Meldung im Bundsteg statt in der Fußleiste: Dort steht immer
+     * nur die erste, und sie ist auf die Breite gekürzt. Beim Zeigen auf die
+     * Zeile steht sie ganz da, mitsamt dem Hinweis.
+     */
     public void renderTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
         if (overButton(mouseX, mouseY)) {
             graphics.renderTooltip(font, Component.translatable(
                     "screen.factorynetwork.terminal.deploy.hint"), mouseX, mouseY);
+            return;
         }
+        Diagnostic problem = editor.diagnosticAt(diagnostics, mouseX, mouseY);
+        if (problem == null) {
+            return;
+        }
+        java.util.List<Component> lines = new java.util.ArrayList<>();
+        lines.add(Component.literal(problem.message()));
+        if (problem.hint() != null) {
+            lines.add(Component.literal("§7" + problem.hint()));
+        }
+        graphics.renderComponentTooltip(font, lines, mouseX, mouseY);
+    }
+
+    /** Ein Klick auf die Fußleiste springt zur ersten Meldung. */
+    private boolean jumpToFirstProblem(double mouseX, double mouseY) {
+        if (diagnostics.isEmpty() || mouseY < y + height - FOOTER || mouseX >= buttonX()) {
+            return false;
+        }
+        editor.jumpTo(diagnostics.get(0));
+        return true;
     }
 
     public boolean keyPressed(int key, int scanCode, int modifiers) {
@@ -138,6 +164,9 @@ public class CodeTabView {
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (button == 0 && overButton(mouseX, mouseY)) {
             screen.deploy();
+            return true;
+        }
+        if (button == 0 && jumpToFirstProblem(mouseX, mouseY)) {
             return true;
         }
         return editor.mouseClicked(mouseX, mouseY, button);

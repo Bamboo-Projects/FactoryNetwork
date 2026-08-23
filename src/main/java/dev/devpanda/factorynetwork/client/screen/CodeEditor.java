@@ -250,9 +250,16 @@ public class CodeEditor {
 
             // Zeilen mit Fehler bekommen einen Streifen statt einer Welle:
             // Wellen sind bei zehn Pixel Zeilenhöhe nicht zu erkennen.
-            if (hasErrorInLine(diagnostics, lineIndex + 1)) {
+            Diagnostic problem = diagnosticIn(diagnostics, lineIndex + 1);
+            if (problem != null) {
                 graphics.fill(textX - 2, lineY - 1, x + width - 2, lineY + LINE_HEIGHT - 2,
-                        EditorColours.ERROR_LINE);
+                        problem.isError() ? EditorColours.ERROR_LINE
+                                : EditorColours.WARNING_LINE);
+                // Und eine Marke im Bundsteg: Der Streifen sagt, dass etwas
+                // ist, aber nicht was. Die Marke ist der Ort, an dem die
+                // Meldung hängt — beim Zeigen steht sie da.
+                graphics.fill(x + 1, lineY - 1, x + 3, lineY + LINE_HEIGHT - 2,
+                        problem.isError() ? 0xFFE88388 : 0xFFE8AC3E);
             }
 
             drawHighlighted(graphics, lines.get(lineIndex), textX, lineY);
@@ -328,9 +335,37 @@ public class CodeEditor {
         return EditorColours.TEXT;
     }
 
-    private static boolean hasErrorInLine(List<Diagnostic> diagnostics, int line) {
+    /**
+     * Die erste Meldung zu einer Zeile, oder {@code null}.
+     *
+     * <p>Die erste und nicht alle: In eine Zeile passt eine Marke, und wer
+     * den ersten Fehler behebt, sieht den zweiten von selbst. Ein Fehler
+     * verschiebt außerdem oft alle folgenden.
+     */
+    public Diagnostic diagnosticIn(List<Diagnostic> diagnostics, int line) {
         return diagnostics.stream()
-                .anyMatch(diagnostic -> diagnostic.isError() && diagnostic.span().line() == line);
+                .filter(diagnostic -> diagnostic.span().line() == line)
+                .findFirst()
+                .orElse(null);
+    }
+
+    /**
+     * Was unter dem Zeiger steht — für die Erklärung beim Zeigen.
+     *
+     * <p>Die ganze Zeile zählt und nicht nur die Marke: Eine Marke ist zwei
+     * Pixel breit, und niemand trifft zwei Pixel.
+     */
+    public Diagnostic diagnosticAt(List<Diagnostic> diagnostics, double mouseX,
+                                   double mouseY) {
+        if (!inside(mouseX, mouseY)) {
+            return null;
+        }
+        return diagnosticIn(diagnostics, lineAt(mouseY) + 1);
+    }
+
+    /** Setzt den Cursor auf die Stelle einer Meldung. */
+    public void jumpTo(Diagnostic diagnostic) {
+        setCursor(diagnostic.span().line() - 1, Math.max(0, diagnostic.span().column() - 1));
     }
 
     private void drawCursor(GuiGraphics graphics, int textX) {

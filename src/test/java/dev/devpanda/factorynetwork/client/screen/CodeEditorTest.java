@@ -29,6 +29,27 @@ class CodeEditorTest {
     }
 
     @Test
+    void dieMeldungEinerZeileWirdGefunden() {
+        CodeEditor editor = editor(String.join("\n", "fn a() {", "    let b =", "}"));
+        var ergebnis = dev.devpanda.factorynetwork.lang.parse.Parser.parse(editor.text());
+        assertTrue(!ergebnis.diagnostics().isEmpty(), "der Text muss eine Meldung haben");
+        var erste = ergebnis.diagnostics().get(0);
+        assertEquals(erste, editor.diagnosticIn(ergebnis.diagnostics(), erste.span().line()));
+        assertEquals(null, editor.diagnosticIn(ergebnis.diagnostics(), 999),
+                "eine Zeile ohne Meldung hat keine");
+    }
+
+    @Test
+    void derSprungLandetAufDerStelle() {
+        CodeEditor editor = editor(String.join("\n", "fn a() {", "    let b =", "}"));
+        var ergebnis = dev.devpanda.factorynetwork.lang.parse.Parser.parse(editor.text());
+        var erste = ergebnis.diagnostics().get(0);
+        editor.jumpTo(erste);
+        assertEquals(erste.span().line() - 1, editor.cursorLine(), "Zeile");
+        assertTrue(editor.cursorColumn() <= erste.span().column(), "höchstens die Spalte");
+    }
+
+    @Test
     void eineKlammerSchliesstSichSelbst() {
         CodeEditor editor = editor("");
         type(editor, "fn a(");

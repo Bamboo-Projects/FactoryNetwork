@@ -20,6 +20,15 @@ public final class EditorColours {
     public static final int ERROR_LINE = 0x30E88388;
 
     /**
+     * Und dasselbe für eine Warnung.
+     *
+     * <p>Vorher sahen beide gleich aus. Eine Warnung hält das Programm nicht
+     * auf — sie so zu färben wie einen Fehler heißt, dass man beide gleich
+     * ernst nimmt oder beide gleich wenig.
+     */
+    public static final int WARNING_LINE = 0x30E8AC3E;
+
+    /**
      * Die Auswahl: kräftig genug, um sie zu sehen, blass genug, um den Text
      * darüber noch zu lesen.
      */
