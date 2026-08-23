@@ -381,11 +381,20 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
     }
 
     @Override
+    /**
+     * Tasten für das Terminal.
+     *
+     * <p><b>Escape geht durch den Reiter, bevor es das Fenster schließt.</b>
+     * Vorher stand es ganz oben, und die Suchzeile des Speichers wie auch die
+     * Suche im Editor sahen es nie — man schloss das ganze Terminal, wo man
+     * nur eine Eingabe beenden wollte. Jetzt beendet der erste Escape, was
+     * offen ist, und der zweite das Fenster.
+     *
+     * <p>Und die Inventartaste darf keinen Reiter treffen, der tippt: Ein
+     * Fenster mit Inventar schließt sich bei „e", und dann steht man mitten
+     * im Wort „Eisenerz" wieder in der Welt.
+     */
     public boolean keyPressed(int key, int scanCode, int modifiers) {
-        if (key == 256) {
-            onClose();
-            return true;
-        }
         if (tab == TerminalTab.CODE) {
             // Strg+Eingabe übernimmt das Programm.
             if ((key == 257 || key == 335) && hasControlDown()) {
@@ -395,11 +404,19 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
             if (codeView.keyPressed(key, scanCode, modifiers)) {
                 return true;
             }
-            // Wichtig: Im Editor darf die Inventartaste das Fenster nicht
-            // schließen, sonst verliert man beim Tippen eines "e" den Code.
+            if (key == 256) {
+                onClose();
+                return true;
+            }
+            // Alles Übrige verschlucken, damit kein Tastendruck im Text
+            // draußen etwas auslöst.
             return true;
         }
         if (tab == TerminalTab.STORAGE && storageView.keyPressed(key, scanCode, modifiers)) {
+            return true;
+        }
+        if (key == 256) {
+            onClose();
             return true;
         }
         return super.keyPressed(key, scanCode, modifiers);

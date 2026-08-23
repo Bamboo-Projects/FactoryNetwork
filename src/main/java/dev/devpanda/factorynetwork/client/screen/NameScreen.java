@@ -132,6 +132,20 @@ public class NameScreen extends AbstractContainerScreen<NameMenu> {
             confirm();
             return true;
         }
+        if (key == 256) {
+            onClose();
+            return true;
+        }
+        // <b>Solange das Feld tippt, gehören ihm alle übrigen Tasten.</b>
+        // AbstractContainerScreen.keyPressed schließt das Fenster, wenn die
+        // Taste die Inventartaste ist — und die ist standardmäßig „e". Wer
+        // einen Connector „extruder_1" nennen wollte, stand nach dem zweiten
+        // Buchstaben wieder in der Welt. Vanilla löst es im Amboss genauso:
+        // erst das Feld fragen, dann canConsumeInput, und nur wenn beides
+        // verneint, geht die Taste weiter.
+        if (input.keyPressed(key, scanCode, modifiers) || input.canConsumeInput()) {
+            return true;
+        }
         return super.keyPressed(key, scanCode, modifiers);
     }
 

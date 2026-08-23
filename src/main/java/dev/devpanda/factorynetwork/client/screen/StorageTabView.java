@@ -310,16 +310,29 @@ public class StorageTabView {
         return true;
     }
 
+    /**
+     * Tasten für die Suchzeile.
+     *
+     * <p><b>Solange sie tippt, gehören ihr alle Tasten.</b> Vorher gab sie
+     * alles zurück, was sie nicht selbst brauchte, und ein Fenster mit
+     * Inventar schließt sich bei der Inventartaste — also stand man nach dem
+     * „e" in „Eisenerz" wieder in der Welt. Escape gibt die Zeile frei, statt
+     * das Fenster zu schließen: Der erste Escape beendet die Suche, der
+     * zweite das Terminal.
+     */
     public boolean keyPressed(int key, int scanCode, int modifiers) {
         if (!searchFocused) {
             return false;
         }
+        if (key == 256) {
+            searchFocused = false;
+            return true;
+        }
         if (key == 259 && search.length() > 0) {
             search.deleteCharAt(search.length() - 1);
             applySearch();
-            return true;
         }
-        return false;
+        return true;
     }
 
     public boolean charTyped(char character, int modifiers) {
