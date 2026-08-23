@@ -424,3 +424,29 @@ Fähigkeit, mit der Angabe, was dafür in der Welt stehen muss.
 
 Vorher lohnt ein Blick in `entscheidungen.md`: Dort steht zu jedem Punkt,
 warum er so entschieden wurde, und was verworfen wurde.
+
+### Falle: `super.render` am Ende einer Zeichenroutine
+
+`Screen.render` ruft als **erstes** `renderBackground`, und das ruft
+`GameRenderer.processBlurEffect` — einen Nachbearbeitungsschritt, der den
+Bildpuffer weichzeichnet. In Vanilla steht der Aufruf am Anfang, also trifft
+er die Welt hinter dem Fenster; das Fenster wird danach scharf darübergemalt.
+
+Wer eigene Flächen zeichnet und **danach** `super.render(...)` aufruft, schickt
+den Weichzeichner über die eigene Oberfläche. Das sieht nicht nach einem
+Zeichenfehler aus, sondern nach schlechter Farbwahl: Kanten verschwinden,
+Text verschmiert, alles wirkt matschig. Zwei Fenster hatten das —
+`CodeScreen` und `LabelGunScreen`.
+
+Messbar war es erst am Querschnitt durch eine Kante: Eine ein Pixel breite
+helle Linie stand als zwanzig Pixel breiter Verlauf ohne jeden Höhepunkt im
+Bild. Der Mauszeiger daneben war scharf, weil ihn das Betriebssystem malt und
+nicht das Spiel — das ist das Erkennungszeichen.
+
+Richtig ist eines von beidem:
+
+- `renderBackground(...)` ganz am Anfang, `super.render(...)` danach —
+  so machen es die Fenster mit Inventar, und `AbstractContainerScreen.render`
+  hält sich selbst daran.
+- Gar kein Hintergrund, wenn das Fenster ohnehin alles abdeckt, und statt
+  `super.render(...)` nur die Schleife über `this.renderables`.

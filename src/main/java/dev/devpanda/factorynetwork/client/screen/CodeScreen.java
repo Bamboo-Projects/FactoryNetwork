@@ -6,6 +6,7 @@ import dev.devpanda.factorynetwork.client.FnFonts;
 import dev.devpanda.factorynetwork.lang.Diagnostic;
 import dev.devpanda.factorynetwork.lang.Project;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -170,6 +171,29 @@ public class CodeScreen extends Screen {
                 && mouseY >= buttonY() && mouseY < buttonY() + BUTTON_HEIGHT;
     }
 
+    /**
+     * Zeichnet das Fenster.
+     *
+     * <p><b>Kein {@code super.render} und kein {@code renderBackground}.</b>
+     * {@code Screen.render} ruft als erstes {@code renderBackground}, und das
+     * ruft {@code processBlurEffect} — einen Nachbearbeitungsschritt, der das
+     * Bild im Puffer weichzeichnet. In Vanilla steht der Aufruf am Anfang,
+     * also trifft er die Welt hinter dem Fenster; das Fenster selbst wird
+     * danach scharf darübergemalt.
+     *
+     * <p>Der erste Entwurf rief {@code super.render} am <b>Ende</b>. Damit lag
+     * schon alles im Puffer, was hier gezeichnet wird, und der Weichzeichner
+     * ging über die eigene Oberfläche: Aus einer ein Pixel breiten hellen
+     * Kante wurde ein zwanzig Pixel breiter Verlauf, aus Text ein Schmier.
+     * Auf einem Bildschirmfoto sah es aus wie eine falsche Farbwahl, und ich
+     * habe zuerst auch an den Farben gedreht — messbar war es erst am
+     * Querschnitt durch eine Kante, die es gar nicht mehr gab.
+     *
+     * <p>Die Welt dahinter braucht keinen Weichzeichner: Das Fenster deckt
+     * sie vollständig ab. Was von {@code Screen.render} bleibt, ist die
+     * Schleife über die Widgets — für den Fall, dass hier einmal welche
+     * hinzukommen.
+     */
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         graphics.fill(0, 0, width, height, CASE);
@@ -184,7 +208,9 @@ public class CodeScreen extends Screen {
         editor.render(graphics, openProblems);
         drawFooter(graphics, mouseX, mouseY);
 
-        super.render(graphics, mouseX, mouseY, partialTick);
+        for (Renderable renderable : this.renderables) {
+            renderable.render(graphics, mouseX, mouseY, partialTick);
+        }
         renderTooltip(graphics, mouseX, mouseY);
     }
 

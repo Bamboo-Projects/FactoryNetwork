@@ -5,6 +5,7 @@ import dev.devpanda.factorynetwork.item.ConnectorNaming;
 import dev.devpanda.factorynetwork.item.LabelGunItem;
 import dev.devpanda.factorynetwork.network.packet.SetLabelPacket;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
@@ -183,7 +184,14 @@ public class LabelGunScreen extends Screen {
         }
         graphics.pose().popPose();
 
-        super.render(graphics, mouseX, mouseY, partialTick);
+        // Nur die Widgets, nicht super.render: Das ruft noch einmal
+        // renderBackground und damit den Weichzeichner — über alles, was hier
+        // oben schon gezeichnet wurde. Der Grund, warum dieses Fenster
+        // verschmiert aussah. Der Weichzeichner gehört an den Anfang, und
+        // dort steht er auch.
+        for (Renderable renderable : this.renderables) {
+            renderable.render(graphics, mouseX, mouseY, partialTick);
+        }
     }
 
     @Override
