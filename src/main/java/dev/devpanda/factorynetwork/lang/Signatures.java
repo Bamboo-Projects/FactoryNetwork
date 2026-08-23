@@ -1,0 +1,252 @@
+package dev.devpanda.factorynetwork.lang;
+
+import java.util.List;
+import java.util.Locale;
+
+/**
+ * Was hinter einem Schlüsselwort stehen muss.
+ *
+ * <p><b>Die Stelle, an der die Grammatik aufhört, ein Dokument zu sein.</b>
+ * In {@code grammatik.md} steht {@code row STRING expr} — im Editor stand es
+ * nirgends. Wer {@code row} getippt hatte, bekam wieder die Liste der
+ * Schlüsselwörter angeboten und musste die Doku danebenlegen, um zu wissen,
+ * dass jetzt ein Text kommt und danach ein Ausdruck.
+ *
+ * <p>Hier steht dieselbe Tabelle einmal als Daten. Zwei Dinge lesen sie: die
+ * Vervollständigung, um an jeder Stelle das Passende anzubieten, und die
+ * Hinweiszeile, die die ganze Form zeigt und markiert, wo man gerade steht.
+ *
+ * <p><b>Absichtlich im Sprachpaket und nicht im Editor.</b> Sie gehört zur
+ * Sprache, nicht zu einem Fenster — der Editor im Spiel ist nur der erste,
+ * der sie braucht. Ein Sprachserver für VS Code liest dieselbe Tabelle.
+ */
+public final class Signatures {
+
+    /** Was für ein Wert an einer Stelle steht. */
+    public enum Kind {
+        /** Ein Text in Anführungszeichen. */
+        STRING,
+        /** Ein Ausdruck — Bestände, Rechnungen, Vergleiche. */
+        EXPR,
+        /** Eine ganze Zahl. */
+        INT,
+        /** Eine Dauer, etwa {@code 5s} oder {@code 2m}. */
+        DURATION,
+        /** Ein Connector, {@code storage} oder {@code crafting}. */
+        TARGET,
+        /** Ein Auswahlausdruck über Gegenstände oder Tags. */
+        SELECTION,
+        /** Der Name einer Verteilung. */
+        STRATEGY,
+        /** Der Name einer Funktion im Projekt. */
+        FUNCTION,
+        /** Eine Aufzählung von Connectoren oder Mustern. */
+        MEMBERS,
+        /** Ein festes Wort, das genau so dastehen muss. */
+        LITERAL
+    }
+
+    /**
+     * Eine Stelle in einer Form.
+     *
+     * @param kind  was dort stehen muss
+     * @param label wie es in der Hinweiszeile heißt
+     */
+    public record Slot(Kind kind, String label) {
+
+        static Slot of(Kind kind) {
+            return new Slot(kind, kind.name().toLowerCase(Locale.ROOT));
+        }
+
+        static Slot literal(String word) {
+            return new Slot(Kind.LITERAL, word);
+        }
+    }
+
+    /**
+     * Ein Schlüsselwort mit allem, was dahinter gehört.
+     *
+     * @param keyword das Wort selbst
+     * @param slots   die Stellen dahinter, in der Reihenfolge
+     * @param help    ein Satz dazu, für die Erklärung beim Zeigen
+     */
+    public record Signature(String keyword, List<Slot> slots, String help) {
+
+        /** Die ganze Form als Text: {@code row string expr}. */
+        public String shape() {
+            StringBuilder out = new StringBuilder(keyword);
+            for (Slot slot : slots) {
+                out.append(' ').append(slot.label());
+            }
+            return out.toString();
+        }
+
+        /** Was an dieser Stelle steht, oder {@code null} hinter dem Ende. */
+        public Slot slotAt(int index) {
+            return index >= 0 && index < slots.size() ? slots.get(index) : null;
+        }
+    }
+
+    private static Signature of(String keyword, String help, Slot... slots) {
+        return new Signature(keyword, List.of(slots), help);
+    }
+
+    /** Die Angaben in einer Anzeige. */
+    public static final List<Signature> DISPLAY = List.of(
+            of("title", "Die Überschrift der Wand.", Slot.of(Kind.STRING)),
+            of("row", "Eine Zeile mit Beschriftung und Wert.",
+                    Slot.of(Kind.STRING), Slot.of(Kind.EXPR)),
+            of("text", "Eine Zeile ohne Beschriftung.", Slot.of(Kind.EXPR)),
+            of("progress", "Ein Balken von null bis eins.",
+                    Slot.of(Kind.STRING), Slot.of(Kind.EXPR)),
+            of("indicator", "Eine Lampe: an, wenn der Ausdruck wahr ist.",
+                    Slot.of(Kind.STRING), Slot.of(Kind.EXPR)),
+            of("list", "Eine Aufzählung aus einem Ausdruck.",
+                    Slot.of(Kind.STRING), Slot.of(Kind.EXPR)),
+            of("button", "Ein Knopf, der eine Funktion aufruft.",
+                    Slot.of(Kind.STRING), Slot.of(Kind.FUNCTION)));
+
+    /** Die Angaben in einem Worker. */
+    public static final List<Signature> WORKER = List.of(
+            of("from", "Woher die Gegenstände kommen.", Slot.of(Kind.TARGET)),
+            of("to", "Wohin sie gehen.", Slot.of(Kind.TARGET)),
+            of("filter", "Was bewegt wird. Ohne Angabe alles.",
+                    Slot.of(Kind.SELECTION)),
+            of("maintain", "So viele sollen am Ziel liegen bleiben.",
+                    Slot.of(Kind.INT)),
+            of("rate", "Höchstens so viele in dieser Zeit.",
+                    Slot.of(Kind.INT), Slot.literal("per"), Slot.of(Kind.DURATION)),
+            of("when", "Nur, solange der Ausdruck wahr ist.", Slot.of(Kind.EXPR)),
+            of("priority", "Wer bei knappem Nachschub zuerst drankommt.",
+                    Slot.of(Kind.INT)),
+            of("strategy", "Wie auf mehrere Ziele verteilt wird.",
+                    Slot.of(Kind.STRATEGY)),
+            of("overflow", "Wohin, wenn das Ziel voll ist.",
+                    Slot.literal("to"), Slot.of(Kind.TARGET)));
+
+    /** Die Angaben in einer Gruppe. */
+    public static final List<Signature> GROUP = List.of(
+            of("members", "Die Connectoren der Gruppe, mit Komma getrennt.",
+                    Slot.of(Kind.MEMBERS)),
+            of("strategy", "Wie auf sie verteilt wird.", Slot.of(Kind.STRATEGY)));
+
+    /** Die Verteilungen, die {@code strategy} kennt. */
+    public static final List<String> STRATEGIES = List.of(
+            "round_robin", "first_available", "least_filled", "random", "priority");
+
+    /**
+     * Die Formen, die in dieser Blockart gelten.
+     *
+     * @param declaration das Deklarationswort, etwa {@code display}
+     */
+    public static List<Signature> forBlock(String declaration) {
+        if (declaration == null) {
+            return List.of();
+        }
+        return switch (declaration) {
+            case "display" -> DISPLAY;
+            case "worker" -> WORKER;
+            case "group" -> GROUP;
+            default -> List.of();
+        };
+    }
+
+    /** Die Form zu einem Schlüsselwort in dieser Blockart, oder {@code null}. */
+    public static Signature find(String declaration, String keyword) {
+        for (Signature signature : forBlock(declaration)) {
+            if (signature.keyword().equals(keyword)) {
+                return signature;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Wo der Cursor in einer Angabe steht.
+     *
+     * @param signature die Form, die auf dieser Zeile begonnen wurde
+     * @param slotIndex die Stelle, die gerade dran ist; hinter der letzten
+     *                  steht die Zahl der Stellen, dann ist die Angabe voll
+     */
+    public record Where(Signature signature, int slotIndex) {
+
+        /** Was hier stehen muss, oder {@code null}, wenn die Angabe voll ist. */
+        public Slot slot() {
+            return signature.slotAt(slotIndex);
+        }
+
+        public boolean isComplete() {
+            return slot() == null;
+        }
+    }
+
+    /**
+     * Liest aus der angefangenen Zeile, welche Angabe gemeint ist und welche
+     * Stelle davon dran ist.
+     *
+     * <p>Gezählt wird über die Wörter dahinter, wobei ein Text in
+     * Anführungszeichen <b>eines</b> ist — sonst rutschte {@code row "Freier
+     * Platz"} um ein Wort weiter, und die Hinweiszeile zeigte auf die falsche
+     * Stelle.
+     *
+     * <p>Endet die Zeile mit einem Leerzeichen, wird die nächste Stelle
+     * angefangen; sonst wird die letzte noch getippt. Das ist der Unterschied
+     * zwischen „{@code row "a" }" — jetzt kommt der Ausdruck — und
+     * „{@code row "a}" — der Text ist noch nicht fertig.
+     *
+     * @param declaration    das Deklarationswort des umgebenden Blocks
+     * @param lineUpToCursor die Zeile bis zum Cursor
+     * @return wo man steht, oder {@code null} außerhalb jeder bekannten Angabe
+     */
+    public static Where at(String declaration, String lineUpToCursor) {
+        String text = lineUpToCursor.stripLeading();
+        if (text.isEmpty()) {
+            return null;
+        }
+        int wordEnd = text.indexOf(' ');
+        if (wordEnd < 0) {
+            // Das Schlüsselwort selbst wird noch getippt.
+            return null;
+        }
+        Signature signature = find(declaration, text.substring(0, wordEnd));
+        if (signature == null) {
+            return null;
+        }
+        String rest = text.substring(wordEnd);
+        int words = countWords(rest);
+        boolean typing = !rest.isEmpty() && rest.charAt(rest.length() - 1) != ' ';
+        return new Where(signature, typing ? Math.max(0, words - 1) : words);
+    }
+
+    /** Zählt die Wörter, wobei ein Text in Anführungszeichen eines ist. */
+    private static int countWords(String rest) {
+        int words = 0;
+        int i = 0;
+        while (i < rest.length()) {
+            while (i < rest.length() && rest.charAt(i) == ' ') {
+                i++;
+            }
+            if (i >= rest.length()) {
+                break;
+            }
+            words++;
+            if (rest.charAt(i) == '"') {
+                i++;
+                while (i < rest.length() && rest.charAt(i) != '"') {
+                    i++;
+                }
+                // Das schließende Anführungszeichen gehört zum Wort; fehlt es,
+                // ist die Zeile hier zu Ende.
+                i = Math.min(i + 1, rest.length());
+            } else {
+                while (i < rest.length() && rest.charAt(i) != ' ') {
+                    i++;
+                }
+            }
+        }
+        return words;
+    }
+
+    private Signatures() {
+    }
+}

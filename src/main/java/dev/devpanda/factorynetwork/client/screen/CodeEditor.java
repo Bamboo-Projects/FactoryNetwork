@@ -268,7 +268,80 @@ public class CodeEditor {
         drawCursor(graphics, textX);
         drawScrollHint(graphics, visible);
         drawSearchBar(graphics);
+        drawSignature(graphics, textX);
         drawSuggestions(graphics, textX);
+    }
+
+    /**
+     * Die Form der Angabe, in der der Cursor steht.
+     *
+     * <p><b>Die Antwort auf „ich sehe nie, was ich wo angeben muss".</b> Eine
+     * Vorschlagsliste sagt, welche Wörter es gibt; sie sagt nicht, dass hinter
+     * {@code row} erst ein Text und dann ein Ausdruck kommt. Das stand nur in
+     * der Grammatik, also neben dem Bildschirm.
+     *
+     * <p>Hier steht die ganze Form, und die Stelle, die gerade dran ist, ist
+     * hervorgehoben. Sie erscheint von selbst und muss nicht angefordert
+     * werden — sie ist kein Vorschlag, sondern eine Beschriftung.
+     *
+     * <p>Über der Zeile und nicht darunter: Darunter sitzt die
+     * Vorschlagsliste, und zwei Kästen übereinander verdecken den Code, den
+     * man gerade schreibt. Ganz oben rutscht sie nach unten, sonst stünde sie
+     * außerhalb.
+     */
+    private void drawSignature(GuiGraphics graphics, int textX) {
+        if (searching) {
+            return;
+        }
+        var where = Completions.whereAt(lines, cursorLine, cursorColumn);
+        if (where == null) {
+            return;
+        }
+        int row = cursorLine - scrollLine;
+        if (row < 0 || row >= visibleLines()) {
+            return;
+        }
+
+        // Die Teile der Form: erst das Schlüsselwort, dann die Stellen.
+        List<String> parts = new ArrayList<>();
+        parts.add(where.signature().keyword());
+        where.signature().slots().forEach(slot -> parts.add(slot.label()));
+        int active = where.slotIndex() + 1;
+
+        String help = where.signature().help();
+        int shapeWidth = widthOf(String.join(" ", parts));
+        int boxWidth = Math.min(Math.max(shapeWidth, widthOf(help)) + 8, width - 4);
+        int boxHeight = LINE_HEIGHT * 2 + 2;
+
+        int boxX = Math.min(x + GUTTER_WIDTH, x + width - boxWidth - 2);
+        int boxY = y + 10 + row * LINE_HEIGHT - boxHeight - 1;
+        if (boxY < y + 10) {
+            boxY = y + 10 + (row + 1) * LINE_HEIGHT + 1;
+        }
+
+        graphics.fill(boxX, boxY, boxX + boxWidth, boxY + boxHeight, 0xF0161C19);
+        graphics.fill(boxX, boxY, boxX + boxWidth, boxY + 1, 0xFF39443D);
+        graphics.fill(boxX, boxY + boxHeight - 1, boxX + boxWidth, boxY + boxHeight,
+                0xFF39443D);
+
+        int at = boxX + 4;
+        for (int i = 0; i < parts.size(); i++) {
+            String part = parts.get(i);
+            // Die aktive Stelle hell und unterstrichen, die übrigen matt. Das
+            // Schlüsselwort selbst ist nie aktiv — man steht immer dahinter.
+            boolean current = i == active;
+            graphics.drawString(font, mono(part), at, boxY + 2,
+                    current ? EditorColours.SELECTOR
+                            : i == 0 ? EditorColours.KEYWORD : EditorColours.COMMENT,
+                    false);
+            if (current) {
+                graphics.fill(at, boxY + LINE_HEIGHT, at + widthOf(part),
+                        boxY + LINE_HEIGHT + 1, 0xFF000000 | EditorColours.SELECTOR);
+            }
+            at += widthOf(part + " ");
+        }
+        graphics.drawString(font, mono(plainSubstrByWidth(help, boxWidth - 8)),
+                boxX + 4, boxY + LINE_HEIGHT + 2, EditorColours.COMMENT, false);
     }
 
     /** Färbt eine Zeile nach Token-Arten. */
@@ -460,6 +533,18 @@ public class CodeEditor {
                 }
                 return true;
             }
+            case 32 -> {
+                // Leertaste: um Vorschläge bitten.
+                //
+                // <b>Der Griff, ohne den eine Vervollständigung nicht
+                // benutzbar ist.</b> Vorher erschien die Liste nur beim
+                // Tippen und war weg, sobald man sie einmal weggeklickt
+                // hatte — bis zum nächsten Anschlag. Wer wissen wollte, was
+                // an einer Stelle erlaubt ist, musste ein Zeichen tippen und
+                // wieder löschen.
+                updateSuggestions();
+                return true;
+            }
             case 70 -> { // F: suchen
                 if (searching) {
                     closeSearch();
@@ -514,13 +599,21 @@ public class CodeEditor {
         }
     }
 
-    /** Bewegt den Cursor und führt dabei die Auswahl nach. */
+    /**
+     * Bewegt den Cursor und führt dabei die Auswahl nach.
+     *
+     * <p>Eine offene Vorschlagsliste geht dabei zu: Sie galt für die Stelle,
+     * an der sie aufging. Sie stehen zu lassen hieße, dass sie nach zwei
+     * Schritten nach links etwas anbietet, das dort nicht mehr passt. Die
+     * Formzeile bleibt — die wird bei jedem Bild neu bestimmt.
+     */
     private void move(Runnable movement) {
         if (net.minecraft.client.gui.screens.Screen.hasShiftDown()) {
             anchorIfNeeded();
         } else {
             clearSelection();
         }
+        clearSuggestions();
         movement.run();
     }
 
@@ -1206,9 +1299,15 @@ public class CodeEditor {
         int listX = columnX(textX, column - word.length());
         int listY = y + 10 + (row + 1) * LINE_HEIGHT;
 
+        // Breit genug für Wort und Form nebeneinander: „row" allein ist ein
+        // Wort, „row  string expr" ist eine Anleitung.
         int listWidth = 0;
         for (Completions.Entry entry : suggestions) {
-            listWidth = Math.max(listWidth, widthOf(entry.text()) + 8);
+            int needed = widthOf(entry.text()) + 8;
+            if (!entry.detail().isEmpty()) {
+                needed += widthOf(entry.detail()) + 12;
+            }
+            listWidth = Math.max(listWidth, needed);
         }
         listWidth = Math.min(listWidth, width - 8);
         int listHeight = suggestions.size() * LINE_HEIGHT + 2;
@@ -1233,6 +1332,17 @@ public class CodeEditor {
             }
             graphics.drawString(font, mono(plainSubstrByWidth(entry.text(), listWidth - 8)),
                     listX + 4, entryY, colorForKind(entry.kind()), false);
+            if (entry.detail().isEmpty()) {
+                continue;
+            }
+            // Rechtsbündig und matt: Die Form ist die Erklärung zum Wort und
+            // nicht das, was man auswählt.
+            int detailWidth = widthOf(entry.detail());
+            int detailX = listX + listWidth - 4 - detailWidth;
+            if (detailX > listX + 4 + widthOf(entry.text()) + 6) {
+                graphics.drawString(font, mono(entry.detail()), detailX, entryY,
+                        EditorColours.COMMENT, false);
+            }
         }
     }
 

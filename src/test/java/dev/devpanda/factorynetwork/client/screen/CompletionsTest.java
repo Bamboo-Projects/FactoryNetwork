@@ -91,4 +91,80 @@ class CompletionsTest {
 
         assertTrue(shown.contains("display"), () -> shown.toString());
     }
+
+    /** Die Formangaben der Vorschläge. */
+    private static List<String> details(String... lines) {
+        List<String> code = List.of(lines);
+        int last = code.size() - 1;
+        return Completions.at(code, last, code.get(last).length()).stream()
+                .map(Completions.Entry::detail).toList();
+    }
+
+    @Test
+    @DisplayName("Ein Vorschlag bringt seine Form mit")
+    void everyBlockEntryCarriesItsShape() {
+        List<String> shown = at("display halle {", "    ");
+        List<String> shapes = details("display halle {", "    ");
+
+        int row = shown.indexOf("row");
+        assertEquals("string expr", shapes.get(row),
+                "ohne die Form ist ein Vorschlag ein Wort, das man nachschlagen muss");
+        assertEquals("string", shapes.get(shown.indexOf("title")));
+    }
+
+    @Test
+    @DisplayName("Hinter row kommt kein row mehr")
+    void insideAnEntryTheKeywordsAreGone() {
+        // Das war die eigentliche Beschwerde: Nach „row" bot der Editor
+        // wieder „title, row, text …" an — also alles ausser dem, was dort
+        // hingehört.
+        assertFalse(at("display halle {", "    row ").contains("row"),
+                "an dieser Stelle steht ein Text, kein Schlüsselwort");
+        assertFalse(at("display halle {", "    row \"Bestand\" ").contains("title"),
+                "und hier ein Ausdruck");
+    }
+
+    @Test
+    @DisplayName("An einer Textstelle gibt es nichts vorzuschlagen")
+    void nothingToOfferForAString() {
+        assertTrue(at("display halle {", "    title ").isEmpty(),
+                "einen freien Text kann niemand vorschlagen — die Formzeile sagt es");
+    }
+
+    @Test
+    @DisplayName("An einer Ausdrucksstelle stehen die Bestände")
+    void expressionSlotsOfferTheBuiltins() {
+        List<String> shown = at("display halle {", "    text ");
+
+        assertTrue(shown.contains("storage"), () -> shown.toString());
+        assertTrue(shown.contains("network"), () -> shown.toString());
+        assertFalse(shown.contains("if"), () -> "kein Ausdruck ist eine Anweisung: " + shown);
+    }
+
+    @Test
+    @DisplayName("Hinter strategy stehen die Verteilungen")
+    void strategySlotOffersStrategies() {
+        assertTrue(at("worker haul {", "    strategy ").contains("round_robin"));
+    }
+
+    @Test
+    @DisplayName("Hinter button stehen die Funktionen des Projekts")
+    void buttonSlotOffersFunctions() {
+        List<String> shown = at("fn leeren() {", "}", "display halle {",
+                "    button \"Leeren\" ");
+
+        assertTrue(shown.contains("leeren"), () -> shown.toString());
+    }
+
+    @Test
+    @DisplayName("Hinter rate steht das feste Wort per")
+    void literalSlotOffersItsWord() {
+        assertEquals(List.of("per"), at("worker haul {", "    rate 64 "));
+    }
+
+    @Test
+    @DisplayName("Eine volle Angabe schlägt nichts mehr vor")
+    void aCompleteEntryOffersNothing() {
+        assertTrue(at("worker haul {", "    rate 64 per 5s ").isEmpty());
+    }
 }

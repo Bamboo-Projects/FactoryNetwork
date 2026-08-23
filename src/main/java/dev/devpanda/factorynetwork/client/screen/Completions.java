@@ -1,6 +1,7 @@
 package dev.devpanda.factorynetwork.client.screen;
 
 import dev.devpanda.factorynetwork.client.ClientNetworkState;
+import dev.devpanda.factorynetwork.lang.Signatures;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 
@@ -19,40 +20,40 @@ import java.util.Locale;
  * und {@code to} stehen Geräte, hinter {@code filter} Gegenstände, am
  * Zeilenanfang in einem Worker seine Angaben. Ein Vorschlag, der überall
  * dasselbe zeigt, hilft nirgends.
+ *
+ * <p><b>Was wo stehen darf, steht nicht hier, sondern in
+ * {@link Signatures}.</b> Diese Klasse entscheidet nur, welche Stelle gerade
+ * dran ist, und holt sich von dort, was dazu passt. Die Trennung ist der
+ * Grund, warum dieselbe Auskunft auch die Hinweiszeile im Editor speist —
+ * und einmal ein Sprachserver für VS Code.
  */
 public final class Completions {
 
     /** Mehr als das wird nicht angezeigt; alles andere ist Scrollen ohne Nutzen. */
     private static final int MAX = 8;
 
-    public record Entry(String text, String insert, Kind kind) {
+    /**
+     * Ein Vorschlag.
+     *
+     * @param text   was in der Liste steht und womit verglichen wird
+     * @param insert was beim Übernehmen eingesetzt wird
+     * @param kind   die Farbe
+     * @param detail was dahinter gehört — {@code string expr} hinter
+     *               {@code row}. <b>Das ist die Antwort auf „was muss ich wo
+     *               angeben".</b> Ohne sie ist ein Vorschlag ein Wort ohne
+     *               Form, und man legt die Doku daneben.
+     */
+    public record Entry(String text, String insert, Kind kind, String detail) {
+
+        public Entry(String text, String insert, Kind kind) {
+            this(text, insert, kind, "");
+        }
+
         public enum Kind { KEYWORD, CONNECTOR, ITEM, TAG, BUILTIN }
     }
 
-    /** Angaben, die nur in einem Worker vorkommen. */
-    private static final List<String> WORKER_ENTRIES = List.of(
-            "from", "to", "filter", "maintain", "rate", "when", "priority",
-            "strategy", "overflow");
-
-    /**
-     * Angaben, die nur in einer Anzeige vorkommen.
-     *
-     * <p>Und <b>nur</b> diese: Ein {@code displayEntry} enthält Ausdrücke,
-     * aber keine Anweisungen — kein {@code if}, keine Schleife, kein
-     * {@code await}. Vorher landete der Cursor in einer Anzeige im Zweig für
-     * Funktionen und bekam genau das vorgeschlagen, was dort verboten ist.
-     */
-    private static final List<String> DISPLAY_ENTRIES = List.of(
-            "title", "row", "text", "progress", "indicator", "list", "button");
-
-    /** Angaben, die nur in einer Gruppe vorkommen. */
-    private static final List<String> GROUP_ENTRIES = List.of("members", "strategy");
-
     private static final List<String> DECLARATIONS = List.of(
             "worker", "group", "multiblock", "event", "display", "fn", "on");
-
-    private static final List<String> STRATEGIES = List.of(
-            "round_robin", "first_available", "least_filled", "random", "priority");
 
     private static final List<String> BUILTINS = List.of(
             "storage", "crafting", "world", "network", "workers", "multiblocks");
@@ -77,34 +78,25 @@ public final class Completions {
             return List.of();
         }
 
-        // Nach from, to und overflow to: Geräte.
-        if (before.endsWith("from") || before.endsWith("to")) {
-            addConnectors(entries, prefix);
-            addAll(entries, List.of("storage", "crafting"), prefix, Entry.Kind.BUILTIN);
-            return limit(entries);
-        }
-
         // Nach display: die Wände, die in der Welt stehen.
         //
         // "display NAME { … }" verlangt den Namen, den die Tafel trägt. Wer
         // ihn falsch schreibt, bekommt kein Programm, das nicht übersetzt,
         // sondern eine Wand, die schwarz bleibt — der Fehler, den man am
         // längsten sucht.
-        if (before.endsWith("display")) {
+        if (before.endsWith("display") && indentOf(line) == 0) {
             addDisplays(entries, prefix);
             return limit(entries);
         }
 
-        // Nach filter: Gegenstände und Tags.
-        if (before.endsWith("filter")) {
-            addItems(entries, prefix);
-            return limit(entries);
-        }
-
-        // Nach strategy: die Verteilungen.
-        if (before.endsWith("strategy")) {
-            addAll(entries, STRATEGIES, prefix, Entry.Kind.KEYWORD);
-            return limit(entries);
+        // <b>Der Kern.</b> Steht der Cursor hinter einem Schlüsselwort mit
+        // Form, richtet sich der Vorschlag nach der Stelle, die gerade dran
+        // ist — und nicht mehr nach dem Block. Vorher bot der Editor hinter
+        // „row" wieder „title, row, text …" an, also genau das, was dort
+        // nicht hingehört.
+        Signatures.Where where = whereAt(lines, lineIndex, column);
+        if (where != null) {
+            return limit(forSlot(where, entries, prefix, lines));
         }
 
         // Ein angefangener Auswahlausdruck.
@@ -115,6 +107,66 @@ public final class Completions {
         return limit(structural(entries, lines, lineIndex, prefix));
     }
 
+    /**
+     * Wo der Cursor in einer Angabe steht, oder {@code null}.
+     *
+     * <p>Öffentlich, weil der Editor dasselbe wissen muss: Er zeichnet daraus
+     * die Hinweiszeile mit der ganzen Form und der markierten Stelle.
+     */
+    public static Signatures.Where whereAt(List<String> lines, int lineIndex, int column) {
+        String line = lines.get(lineIndex);
+        String upToCursor = line.substring(0, Math.min(column, line.length()));
+        return Signatures.at(enclosingBlock(lines, lineIndex), upToCursor);
+    }
+
+    /** Was an dieser Stelle einer Angabe stehen darf. */
+    private static List<Entry> forSlot(Signatures.Where where, List<Entry> entries,
+                                       String prefix, List<String> lines) {
+        Signatures.Slot slot = where.slot();
+        if (slot == null) {
+            // Die Angabe ist voll. Nichts vorzuschlagen ist hier die Auskunft:
+            // Die Zeile ist fertig.
+            return entries;
+        }
+        switch (slot.kind()) {
+            case TARGET -> {
+                addConnectors(entries, prefix);
+                addAll(entries, List.of("storage", "crafting"), prefix, Entry.Kind.BUILTIN);
+            }
+            case EXPR -> {
+                addConnectors(entries, prefix);
+                addAll(entries, BUILTINS, prefix, Entry.Kind.BUILTIN);
+            }
+            case SELECTION -> addItems(entries, prefix);
+            case STRATEGY -> addAll(entries, Signatures.STRATEGIES, prefix,
+                    Entry.Kind.KEYWORD);
+            case MEMBERS -> addConnectors(entries, prefix);
+            case FUNCTION -> addFunctions(entries, prefix, lines);
+            case LITERAL -> addAll(entries, List.of(slot.label()), prefix,
+                    Entry.Kind.KEYWORD);
+            // Für einen Text, eine Zahl oder eine Dauer gibt es nichts
+            // vorzuschlagen. Die Hinweiszeile sagt trotzdem, was hier steht —
+            // dafür ist sie da.
+            default -> { }
+        }
+        return entries;
+    }
+
+    /** Die Funktionen des Projekts — für den Knopf einer Anzeige. */
+    private static void addFunctions(List<Entry> entries, String prefix, List<String> lines) {
+        for (String line : lines) {
+            String trimmed = line.trim();
+            if (!trimmed.startsWith("fn ")) {
+                continue;
+            }
+            int open = trimmed.indexOf('(');
+            String name = (open < 0 ? trimmed.substring(3) : trimmed.substring(3, open)).trim();
+            if (!name.isEmpty() && matches(name, prefix)) {
+                entries.add(new Entry(name, name, Entry.Kind.KEYWORD, "fn"));
+            }
+        }
+    }
+
     /** Vorschläge, die von der Stelle im Aufbau abhängen. */
     private static List<Entry> structural(List<Entry> entries, List<String> lines,
                                           int lineIndex, String prefix) {
@@ -123,23 +175,19 @@ public final class Completions {
             addAll(entries, DECLARATIONS, prefix, Entry.Kind.KEYWORD);
             return entries;
         }
-        String block = enclosingBlock(lines, lineIndex);
-        if (block != null) {
-            switch (block) {
-                case "worker" -> {
-                    addAll(entries, WORKER_ENTRIES, prefix, Entry.Kind.KEYWORD);
-                    return entries;
+        // In einem Block mit festen Angaben: sie selbst, jede mit ihrer Form.
+        List<Signatures.Signature> shapes =
+                Signatures.forBlock(enclosingBlock(lines, lineIndex));
+        if (!shapes.isEmpty()) {
+            for (Signatures.Signature signature : shapes) {
+                if (matches(signature.keyword(), prefix)) {
+                    String detail = signature.shape()
+                            .substring(signature.keyword().length()).trim();
+                    entries.add(new Entry(signature.keyword(), signature.keyword(),
+                            Entry.Kind.KEYWORD, detail));
                 }
-                case "display" -> {
-                    addAll(entries, DISPLAY_ENTRIES, prefix, Entry.Kind.KEYWORD);
-                    return entries;
-                }
-                case "group" -> {
-                    addAll(entries, GROUP_ENTRIES, prefix, Entry.Kind.KEYWORD);
-                    return entries;
-                }
-                default -> { }
             }
+            return entries;
         }
         // In einer Funktion: Connectoren, Eingebautes und Anweisungen.
         addConnectors(entries, prefix);
