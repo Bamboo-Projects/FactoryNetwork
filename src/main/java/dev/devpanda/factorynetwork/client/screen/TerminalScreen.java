@@ -107,7 +107,8 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         networkView = new NetworkTabView(font, leftPos + WORK_X, topPos + WORK_Y, WORK_W, WORK_H);
         dashboardsView = new DashboardsTabView(font, leftPos + WORK_X, topPos + WORK_Y,
                 WORK_W, WORK_H);
-        codeView = new CodeTabView(font, leftPos + WORK_X, topPos + WORK_Y, WORK_W, WORK_H,
+        codeView = new CodeTabView(this, font, leftPos + WORK_X, topPos + WORK_Y,
+                WORK_W, WORK_H,
                 codeView == null ? ClientNetworkState.source() : codeView.text());
         announceTab();
     }
@@ -137,6 +138,9 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         super.render(graphics, mouseX, mouseY, partialTick);
         renderTabTooltips(graphics, mouseX, mouseY);
         renderStatusTooltip(graphics, mouseX, mouseY);
+        if (tab == TerminalTab.CODE) {
+            codeView.renderTooltip(graphics, mouseX, mouseY);
+        }
         if (tab == TerminalTab.STORAGE) {
             storageView.renderTooltip(graphics, mouseX, mouseY);
         }
@@ -151,7 +155,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
             case STORAGE -> storageView.render(graphics, mouseX, mouseY);
             case NETWORK -> networkView.render(graphics, mouseX, mouseY);
             case DASHBOARDS -> dashboardsView.render(graphics, mouseX, mouseY);
-            case CODE -> codeView.render(graphics);
+            case CODE -> codeView.render(graphics, mouseX, mouseY);
             default -> { }
         }
         // Zuletzt, damit sie über allem liegt, was ein Reiter unten zeichnet.
@@ -268,7 +272,11 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
 
     /** Was der aktive Reiter links in der Statuszeile stehen hat. */
     private Component statusLeft() {
-        return tab == TerminalTab.STORAGE ? storageView.statusText() : null;
+        return switch (tab) {
+            case STORAGE -> storageView.statusText();
+            case CODE -> codeView.cursorPosition();
+            default -> null;
+        };
     }
 
     /** Beim Zeigen auf die Statuszeile steht dort, was die Zahlen bedeuten. */
@@ -300,6 +308,19 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         // beschriftet, so wie in jedem Vanilla-Fenster.
         graphics.drawString(font, playerInventoryTitle, (WIDTH - 9 * 18) / 2,
                 inventoryLabelY, TEXT_DIM, false);
+    }
+
+    /**
+     * Übernimmt das Programm — und lässt das Fenster offen.
+     *
+     * <p>Vorher schloss es sich dabei. Bei einer Ablehnung stand man draußen
+     * mit einer Chatzeile und musste das Terminal wieder aufmachen, um zu
+     * suchen, was nicht ging. Was daraus geworden ist, steht jetzt in der
+     * Fußleiste des Editors.
+     */
+    void deploy() {
+        PacketDistributor.sendToServer(
+                new DeployProgramPacket(menu.position(), codeView.text()));
     }
 
     // ---- Eingabe ----------------------------------------------------------
@@ -357,9 +378,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         if (tab == TerminalTab.CODE) {
             // Strg+Eingabe übernimmt das Programm.
             if ((key == 257 || key == 335) && hasControlDown()) {
-                PacketDistributor.sendToServer(
-                        new DeployProgramPacket(menu.position(), codeView.text()));
-                onClose();
+                deploy();
                 return true;
             }
             if (codeView.keyPressed(key, scanCode, modifiers)) {

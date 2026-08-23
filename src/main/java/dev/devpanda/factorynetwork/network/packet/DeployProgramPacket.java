@@ -54,15 +54,32 @@ public record DeployProgramPacket(BlockPos terminal, String source) implements C
             }
             terminal.controller().ifPresentOrElse(controller -> {
                 boolean accepted = controller.deploy(packet.source());
-                player.sendSystemMessage(accepted
+                // Der Ausgang gehört in den Editor und nicht nur in den Chat:
+                // Zwei der Gründe — kein Serverschrank, Programm zu groß —
+                // kennt der Client gar nicht, weil er sie nicht selbst
+                // übersetzen kann.
+                String line = accepted
                         ? Component.translatable("message.factorynetwork.deploy.accepted",
-                                controller.program().workers().size())
-                        : Component.translatable("message.factorynetwork.deploy.rejected",
-                                controller.diagnostics().size()));
-                controller.diagnostics().forEach(diagnostic ->
-                        player.sendSystemMessage(Component.literal(diagnostic.toString())));
-            }, () -> player.sendSystemMessage(
-                    Component.translatable("message.factorynetwork.deploy.no_controller")));
+                                controller.program().workers().size()).getString()
+                        : controller.diagnostics().isEmpty()
+                                ? Component.translatable(
+                                        "message.factorynetwork.deploy.rejected", 0).getString()
+                                : controller.diagnostics().get(0).message();
+                net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,
+                        new DeployResultPacket(accepted, line));
+                // Die vollständige Liste bleibt im Chat: In eine Fußzeile
+                // passt eine Meldung, nicht zwölf.
+                if (!accepted) {
+                    controller.diagnostics().forEach(diagnostic ->
+                            player.sendSystemMessage(Component.literal(diagnostic.toString())));
+                }
+            }, () -> {
+                net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,
+                        new DeployResultPacket(false, Component.translatable(
+                                "message.factorynetwork.deploy.no_controller").getString()));
+                player.sendSystemMessage(
+                        Component.translatable("message.factorynetwork.deploy.no_controller"));
+            });
         });
     }
 }

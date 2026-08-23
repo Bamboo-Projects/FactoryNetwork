@@ -16,6 +16,8 @@ public final class FnPackets {
         PayloadRegistrar registrar = event.registrar(VERSION);
         registrar.playToServer(DeployProgramPacket.TYPE, DeployProgramPacket.STREAM_CODEC,
                 DeployProgramPacket::handle);
+        registrar.playToClient(DeployResultPacket.TYPE, DeployResultPacket.STREAM_CODEC,
+                DeployResultPacket::handle);
         registrar.playToClient(NetworkStatePacket.TYPE, NetworkStatePacket.STREAM_CODEC,
                 NetworkStatePacket::handle);
         registrar.playToClient(StorageSnapshotPacket.TYPE, StorageSnapshotPacket.STREAM_CODEC,

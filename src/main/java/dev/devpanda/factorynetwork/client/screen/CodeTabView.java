@@ -1,28 +1,35 @@
 package dev.devpanda.factorynetwork.client.screen;
 
-import dev.devpanda.factorynetwork.FactoryNetwork;
+import dev.devpanda.factorynetwork.client.ClientDeployState;
 import dev.devpanda.factorynetwork.lang.Diagnostic;
 import dev.devpanda.factorynetwork.lang.parse.Parser;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 
 import java.util.List;
 
 /**
  * Der Code-Reiter.
  *
- * <p>Die eine Stelle, an der das Terminal nicht wie ein Inventar aussieht: ein
- * dunkler Bildschirm, versenkt ins helle Gehäuse. Ein Texteditor im grauen
- * Panel läse sich falsch — ComputerCraft macht seinen Terminalschirm aus
- * demselben Grund schwarz.
+ * <p>Der Editor und darunter eine Fußleiste: links, was der Übersetzer sagt,
+ * rechts der Knopf zum Übernehmen.
+ *
+ * <p><b>Der Knopf ist neu, und er war überfällig.</b> Übernehmen ging nur mit
+ * Strg+Eingabe, und nichts im Fenster sagte das — eine Tastenkombination, die
+ * man kennen muss, ist keine Bedienung. Die Kombination bleibt; wer sie kennt,
+ * ist schneller.
  */
 public class CodeTabView {
 
-    private static final ResourceLocation SCREEN = ResourceLocation.fromNamespaceAndPath(
-            FactoryNetwork.MOD_ID, "textures/gui/screen.png");
+    /** Höhe der Fußleiste unter dem Editor. */
+    private static final int FOOTER = 14;
 
+    /** Der Knopf rechts darin. */
+    private static final int BUTTON_WIDTH = 66;
+    private static final int BUTTON_HEIGHT = 12;
+
+    private final TerminalScreen screen;
     private final Font font;
     private final int x;
     private final int y;
@@ -32,30 +39,37 @@ public class CodeTabView {
 
     private List<Diagnostic> diagnostics = List.of();
     private String status = "";
-    private int statusColour = 0x6E7A70;
+    private int statusColour = TerminalScreen.TEXT_FAINT;
 
-    public CodeTabView(Font font, int x, int y, int width, int height, String initial) {
+    public CodeTabView(TerminalScreen screen, Font font, int x, int y, int width, int height,
+                       String initial) {
+        this.screen = screen;
         this.font = font;
         this.x = x;
         this.y = y;
         this.width = width;
         this.height = height;
-        this.editor = new CodeEditor(font, x + 2, y + 2, width - 4, height - 12, initial);
+        this.editor = new CodeEditor(font, x + 2, y + 2, width - 4, height - FOOTER - 2,
+                initial);
         this.editor.setChangeListener(this::onChanged);
         onChanged(editor.text());
     }
 
     private void onChanged(String text) {
+        // Was der Server zuletzt gesagt hat, gilt für den Text von damals.
+        // Eine stehengebliebene Erfolgsmeldung über geändertem Code ist
+        // schlimmer als keine.
+        ClientDeployState.clear();
         Parser.ParseResult result = Parser.parse(text);
         diagnostics = result.diagnostics();
         if (diagnostics.isEmpty()) {
             status = Component.translatable("screen.factorynetwork.terminal.ok").getString();
-            statusColour = 0x6E7A70;
+            statusColour = TerminalScreen.TEXT_FAINT;
         } else {
             Diagnostic first = diagnostics.get(0);
             status = first.span().line() + ": " + first.message()
                     + (first.hint() == null ? "" : " " + first.hint());
-            statusColour = first.isError() ? 0xE88388 : 0xE8B888;
+            statusColour = first.isError() ? TerminalScreen.BAD : TerminalScreen.WARN;
         }
     }
 
@@ -63,11 +77,54 @@ public class CodeTabView {
         return editor.text();
     }
 
-    public void render(GuiGraphics graphics) {
-        graphics.blit(SCREEN, x, y, 0, 0, width, height, 512, 512);
+    /** Wo der Cursor steht, für die Statuszeile des Fensters. */
+    public Component cursorPosition() {
+        return Component.translatable("screen.factorynetwork.terminal.cursor",
+                editor.cursorLine() + 1, editor.cursorColumn() + 1);
+    }
+
+    private int buttonX() {
+        return x + width - BUTTON_WIDTH - 2;
+    }
+
+    private int buttonY() {
+        return y + height - FOOTER + 1;
+    }
+
+    public void render(GuiGraphics graphics, int mouseX, int mouseY) {
         editor.render(graphics, diagnostics);
-        graphics.drawString(font, font.plainSubstrByWidth(status, width - 6),
-                x + 3, y + height - 9, statusColour, false);
+
+        // Die Fußleiste: die Meldung so breit, wie der Knopf sie lässt.
+        int footerY = y + height - FOOTER + 3;
+        String shown = ClientDeployState.hasMessage() ? ClientDeployState.message() : status;
+        int colour = ClientDeployState.hasMessage()
+                ? ClientDeployState.wasAccepted() ? TerminalScreen.GOOD : TerminalScreen.BAD
+                : statusColour;
+        graphics.drawString(font,
+                font.plainSubstrByWidth(shown, buttonX() - x - 8), x + 3, footerY,
+                colour, false);
+
+        boolean hovered = overButton(mouseX, mouseY);
+        graphics.fill(buttonX(), buttonY(), buttonX() + BUTTON_WIDTH,
+                buttonY() + BUTTON_HEIGHT,
+                hovered ? TerminalScreen.BUTTON_HOVER : TerminalScreen.BUTTON);
+        Component label = Component.translatable("screen.factorynetwork.terminal.deploy");
+        graphics.drawString(font, label,
+                buttonX() + (BUTTON_WIDTH - font.width(label)) / 2, buttonY() + 2,
+                TerminalScreen.TEXT, false);
+    }
+
+    private boolean overButton(double mouseX, double mouseY) {
+        return mouseX >= buttonX() && mouseX < buttonX() + BUTTON_WIDTH
+                && mouseY >= buttonY() && mouseY < buttonY() + BUTTON_HEIGHT;
+    }
+
+    /** Beim Zeigen auf den Knopf steht die Tastenkombination dabei. */
+    public void renderTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
+        if (overButton(mouseX, mouseY)) {
+            graphics.renderTooltip(font, Component.translatable(
+                    "screen.factorynetwork.terminal.deploy.hint"), mouseX, mouseY);
+        }
     }
 
     public boolean keyPressed(int key, int scanCode, int modifiers) {
@@ -79,6 +136,10 @@ public class CodeTabView {
     }
 
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (button == 0 && overButton(mouseX, mouseY)) {
+            screen.deploy();
+            return true;
+        }
         return editor.mouseClicked(mouseX, mouseY, button);
     }
 
