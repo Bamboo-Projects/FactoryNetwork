@@ -3,6 +3,14 @@ package dev.devpanda.factorynetwork.client.screen;
 /**
  * Die Farben des Code-Bildschirms.
  *
+ * <p><b>Achtung beim Füllen:</b> Die Werte für Text stehen ohne Alphakanal
+ * da. Das geht gut, solange sie in {@code drawString} landen — Minecrafts
+ * Schriftsatz ergänzt volle Deckkraft, wenn die obersten Bits null sind. Eine
+ * Füllung tut das nicht: Dort ist derselbe Wert vollständig durchsichtig.
+ * Wer eine dieser Farben in {@code graphics.fill} verwendet, schreibt
+ * {@code 0xFF000000 |} davor. Der Cursor war ohne das durchsichtig, seit es
+ * ihn gibt — man sieht so etwas nicht, man sucht es.
+ *
  * <p>Dieselben Werte, mit denen die Blocktexturen arbeiten: Blau für
  * Schlüsselwörter, Grün für Auswahlausdrücke. Wer den Controller ansieht und
  * dann den Code, soll denselben Farbklang wiedererkennen.

@@ -565,8 +565,12 @@ public class CodeEditor {
         int column = Math.min(cursorColumn, line.length());
         int cursorX = columnX(textX, column);
         int cursorY = y + 10 + row * LINE_HEIGHT;
+        // <b>Mit Alphakanal.</b> Die Farben in EditorColours sind für Text
+        // gedacht und stehen ohne einen da; Minecrafts Schriftsatz ergänzt
+        // ihn selbst, wenn er fehlt. Eine Füllung tut das nicht — der Cursor
+        // war deshalb durchsichtig, seit es ihn gibt.
         graphics.fill(cursorX, cursorY - 1, cursorX + 1, cursorY + LINE_HEIGHT - 2,
-                EditorColours.CURSOR);
+                0xFF000000 | EditorColours.CURSOR);
     }
 
     /**
@@ -589,7 +593,7 @@ public class CodeEditor {
                 : (trackWidth - thumbWidth) * Math.min(scrollColumn, maxScroll) / maxScroll;
         int barY = y + 9 + visible * LINE_HEIGHT;
         graphics.fill(trackLeft + offset, barY, trackLeft + offset + thumbWidth, barY + 1,
-                EditorColours.COMMENT);
+                0xFF000000 | EditorColours.COMMENT);
     }
 
     private void drawScrollHint(GuiGraphics graphics, int visible) {
@@ -602,7 +606,7 @@ public class CodeEditor {
         int maxScroll = lines.size() - visible;
         int offset = maxScroll == 0 ? 0 : (trackHeight - thumbHeight) * scrollLine / maxScroll;
         graphics.fill(x + width - 3, trackTop + offset, x + width - 1,
-                trackTop + offset + thumbHeight, EditorColours.COMMENT);
+                trackTop + offset + thumbHeight, 0xFF000000 | EditorColours.COMMENT);
     }
 
     // ---- Eingabe ----------------------------------------------------------
