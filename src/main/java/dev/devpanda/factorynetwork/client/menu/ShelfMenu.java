@@ -27,46 +27,60 @@ public class ShelfMenu extends AbstractContainerMenu {
     /**
      * So liegen die Plätze im Fenster — dieselben Zahlen wie in {@code gui.py}.
      *
-     * <p>{@code group} und {@code gap} fassen Spalten zu Blöcken zusammen: Der
-     * Schrank stellt je drei Plätze als einen Einschub nebeneinander und lässt
-     * dann Luft. Ohne diese Lücke wären sechs Plätze in einer Reihe sechs
-     * Plätze und nicht zwei Server.
+     * <p>{@code group} und {@code gap} fassen Spalten zu Blöcken zusammen:
+     * Der Schrank stellt je vier Plätze als einen Einschub nebeneinander und
+     * lässt dann Luft. {@code innerAfter} und {@code innerGap} setzen
+     * innerhalb eines Blocks noch einmal eine kleinere Lücke — nach dem
+     * Gehäuse, damit die drei Bauteile daneben nicht aussehen wie ein
+     * viertes.
+     *
+     * <p>Die Breite steht mit dabei: Ein Schrank mit vier Plätzen je
+     * Einschub passt nicht in die 176 einer Truhe.
      */
-    public record Layout(int columns, int rows, int left, int top,
-                         int inventoryY, int hotbarY, int height,
-                         int group, int gap) {
+    public record Layout(int width, int height, int columns, int rows,
+                         int left, int top, int inventoryY, int hotbarY,
+                         int group, int gap, int innerAfter, int innerGap) {
 
-        public Layout(int columns, int rows, int left, int top,
-                      int inventoryY, int hotbarY, int height) {
-            this(columns, rows, left, top, inventoryY, hotbarY, height, 0, 0);
+        /** Ein Regal ohne Gruppierung — ein schlichtes Raster. */
+        public Layout(int width, int height, int columns, int rows,
+                      int left, int top, int inventoryY, int hotbarY) {
+            this(width, height, columns, rows, left, top, inventoryY, hotbarY, 0, 0, 0, 0);
         }
 
         public int slots() {
             return columns * rows;
         }
 
-        /** Wo eine Spalte anfängt, die Lücken zwischen den Blöcken schon drin. */
+        /** Wo eine Spalte anfängt, die Lücken schon eingerechnet. */
         public int columnX(int column) {
-            int gaps = group > 0 ? column / group : 0;
-            return left + column * SLOT + gaps * gap;
+            int gaps = group > 0 ? (column / group) * gap : 0;
+            int inner = group > 0 && innerGap > 0 && column % group > innerAfter
+                    ? innerGap : 0;
+            return left + column * SLOT + gaps + inner;
         }
 
         public int rowY(int row) {
             return top + row * SLOT;
         }
+
+        /** Das Spielerinventar sitzt mittig, egal wie breit das Fenster ist. */
+        public int inventoryX() {
+            return (width - 9 * SLOT) / 2 + 1;
+        }
     }
 
     /** Das Laufwerk: zwei Spalten, fünf Reihen — wie die Schächte an der Front. */
-    public static final Layout DRIVE = new Layout(2, 5, 70, 18, 121, 179, 204);
+    public static final Layout DRIVE = new Layout(176, 204, 2, 5, 70, 18, 121, 179);
 
     /**
-     * Der Schrank: zwölf Einschübe zu je drei Plätzen, in zwei Säulen.
+     * Der Schrank: zwölf Einschübe, in zwei Säulen zu sechs.
      *
-     * <p>Zwölf Reihen untereinander wären 216 Pixel nur für die Plätze — mehr
-     * als ein Fenster hoch sein darf. Zwei Säulen zu sechs sind so hoch wie
-     * eine Doppeltruhe und sehen aus wie ein Schrank von vorn.
+     * <p>Je Einschub vier Plätze — das Gehäuse und seine drei Bauteile — und
+     * dahinter das Lämpchen. Zwölf Reihen untereinander wären 216 Pixel nur
+     * für die Plätze, mehr als ein Fenster hoch sein darf.
      */
-    public static final Layout RACK = new Layout(6, 6, 25, 18, 139, 197, 222, 3, 10);
+    public static final Layout RACK =
+            new Layout(192, 222, 8, 6, 12, 18, 139, 197, 4, 12, 0, 4);
 
     private static final int SLOT = 18;
 
@@ -113,6 +127,10 @@ public class ShelfMenu extends AbstractContainerMenu {
         return new SimpleContainer(slots) {
             @Override
             public boolean canPlaceItem(int slot, ItemStack stack) {
+                if (dev.devpanda.factorynetwork.block.entity.RackBlockEntity
+                        .isChassisSlot(slot)) {
+                    return dev.devpanda.factorynetwork.item.ServerChassis.is(stack);
+                }
                 return dev.devpanda.factorynetwork.item.ServerPartItem.partOf(stack)
                         == dev.devpanda.factorynetwork.block.entity.RackBlockEntity
                                 .partOf(slot);
@@ -135,14 +153,15 @@ public class ShelfMenu extends AbstractContainerMenu {
     }
 
     private void addPlayerSlots(Inventory inventory) {
+        int left = layout.inventoryX();
         for (int row = 0; row < 3; row++) {
             for (int column = 0; column < 9; column++) {
                 addSlot(new Slot(inventory, 9 + row * 9 + column,
-                        8 + column * SLOT, layout.inventoryY() + row * SLOT));
+                        left + column * SLOT, layout.inventoryY() + row * SLOT));
             }
         }
         for (int column = 0; column < 9; column++) {
-            addSlot(new Slot(inventory, column, 8 + column * SLOT, layout.hotbarY()));
+            addSlot(new Slot(inventory, column, left + column * SLOT, layout.hotbarY()));
         }
     }
 

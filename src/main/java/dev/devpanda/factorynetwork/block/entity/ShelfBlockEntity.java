@@ -81,6 +81,17 @@ public abstract class ShelfBlockEntity extends BlockEntity
         return revision;
     }
 
+    /**
+     * Zählt den Stand hoch, ohne über {@link #setItem} zu gehen.
+     *
+     * <p>Für Unterklassen, die mehrere Plätze in einem Zug umschreiben — der
+     * Serverschrank packt beim Herausziehen eines Gehäuses drei Plätze
+     * gleichzeitig aus.
+     */
+    protected void bumpRevision() {
+        revision++;
+    }
+
     protected NonNullList<ItemStack> parts() {
         return parts;
     }

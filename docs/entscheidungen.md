@@ -1640,12 +1640,14 @@ will man keine Kohle nachlegen.
 
 Vorher: ein Würfel mit acht Plätzen für Prozessoren, und die Prozessoren
 addierten sich zu einer Zahl. Jetzt: zwei Blöcke hoch, zwölf Einschübe, und
-in jeden gehören Rechenwerk, Speicher und Datenträger.
+in jeden gehört ein Servergehäuse mit Rechenwerk, Speicher und Datenträger.
 
 ### Erst alle drei ergeben einen Server
 
 Ein Einschub mit zwei von drei Bauteilen trägt **nichts** bei — nicht
-anteilig, gar nichts. Das ist die Regel, an der der ganze Block hängt.
+anteilig, gar nichts. Das ist die Regel, an der der ganze Block hängt. Seit
+dem Gehäuse sind es vier Teile: ohne Gehäuse gehen die Bauteile gar nicht
+erst hinein.
 
 Zählte jedes Bauteil für sich, wäre der Schrank eine Summe von zwölf mal drei
 Zahlen, und die Antwort wäre immer dieselbe: von allem das Größte einbauen.
@@ -1716,18 +1718,49 @@ ohne je etwas zu tun. **Die Stufe spielt keine Rolle:** Der Preis für Ausbau
 steht in der Rezeptkette; ein zweiter Preis obendrauf verkomplizierte die
 Rechnung, ohne eine Entscheidung zu ändern.
 
-### Verworfen: der Server als tragbarer Gegenstand
+### Zuerst verworfen, dann doch: der Server als tragbarer Gegenstand
 
-Reizvoll wäre gewesen, den Server selbst zu einem Gegenstand zu machen — ein
-Gehäuse, in das man CPU, RAM und Datenträger einbaut und das man dann
-fertig bestückt in einen anderen Schrank umsetzt.
+**Am 22.08. abgelehnt, am 23.08. gebaut.** Die Ablehnung steht hier, weil ihr
+Grund richtig war und die Lösung ihn ausräumt — eine stillschweigend gedrehte
+Entscheidung ist schlimmer als eine falsche.
 
-Dagegen sprach das Shulkerkisten-Problem: Ein Gegenstand, der andere
-Gegenstände hält, lässt sich im Inventar nicht bearbeiten. Es bräuchte ein
-zweites Fenster für den Gegenstand selbst, und das Verschieben zwischen
-beiden Fenstern ist die Sorte Bedienung, die man einmal erklärt und danach
-umgeht. **Der Einschub im Block ist dasselbe Bild ohne die
-Zwischenschicht** — was man im Fenster als Zeile sieht, ist der Server.
+Abgelehnt wurde sie so: Ein Gegenstand, der andere Gegenstände hält, lässt
+sich im Inventar nicht bearbeiten — das Shulkerkisten-Problem. Es bräuchte
+ein zweites Fenster für den Gegenstand selbst, und das Verschieben zwischen
+zwei Fenstern ist die Sorte Bedienung, die man einmal erklärt und danach
+umgeht.
+
+Der Einwand fällt weg, sobald man **nur im Schrank bearbeitet**. Steckt das
+Gehäuse in einem Einschub, liegen seine drei Bauteile in den Plätzen daneben
+und der Gegenstand selbst ist leer; beim Herausziehen wandern sie hinein,
+beim Einsetzen wieder heraus. Es gibt kein zweites Fenster, weil man den
+Gegenstand nie aufmacht — man legt ihn ab, und dann liegt sein Inhalt offen.
+
+Was das gewinnt: Ein fertiger Server ist tragbar. Man baut ihn einmal, zieht
+ihn heraus, steckt ihn in einen anderen Schrank — und was man in der Truhe
+findet, ist ein Server und kein leeres Blech.
+
+**Ohne Gehäuse nimmt ein Einschub keine Bauteile an.** Diese Regel macht den
+Gegenstand erst zu einem: Ohne sie wären die drei Plätze schon der Server,
+und das Gehäuse wäre etwas, das man kauft und das nichts ändert.
+
+#### Die zwei Stellen, an denen es schiefgehen kann
+
+Ein- und Auspacken hängen an genau zwei Punkten, und beide liegen dort, wo
+der Gegenstand die Hand wechselt: `beforeSlotChange` packt ein, **solange das
+alte Gehäuse noch im Platz steht** — der Aufrufer bekommt danach genau dieses
+Stück Blech, mit der Hardware darin. `setItem` packt aus, nachdem das neue
+eingetragen ist.
+
+Geschrieben wird dabei direkt in die Platzliste und nicht wieder über
+`setItem`: Das riefe erneut in `beforeSlotChange` hinein, und ein Aufräumen,
+das sich selbst aufruft, ist ein Aufräumen, das man nicht mehr überblickt.
+
+Der gefährliche Weg ist der Umschalt-Klick: Er nimmt heraus, schiebt, und
+legt bei Misserfolg zurück. Beim Herausnehmen packt das Gehäuse ein, beim
+Zurücklegen wieder aus — **passiert das Packen erst nach dem Herausnehmen,
+hält der Spieler ein leeres Gehäuse und die Hardware ist weg oder doppelt
+da.** Dafür steht eine eigene Prüfung mit vollem Rucksack.
 
 ### Ein Platz nimmt nur seine Art
 

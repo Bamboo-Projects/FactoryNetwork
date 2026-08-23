@@ -2972,7 +2972,19 @@ public final class FactoryNetworkGameTests {
         throw new IllegalArgumentException("Kein " + kind + " der Stufe " + value);
     }
 
-    /** Bestückt einen Einschub vollständig. */
+    /** Ein leeres Servergehäuse. */
+    private static ItemStack chassis() {
+        return new ItemStack(
+                dev.devpanda.factorynetwork.registry.FnItems.SERVER_CHASSIS.get());
+    }
+
+    /**
+     * Bestückt einen Einschub vollständig.
+     *
+     * <p>Das Gehäuse zuerst: Ohne eines nimmt der Einschub keine Bauteile an,
+     * und das ist die Regel, die den Gegenstand überhaupt zu einem Server
+     * macht.
+     */
     private static void fillBay(GameTestHelper helper, BlockPos at, int bay,
                                 int cpu, int ram, int disk) {
         if (!(helper.getBlockEntity(at)
@@ -2980,6 +2992,8 @@ public final class FactoryNetworkGameTests {
             helper.fail("Am Serverschrank hängt keine BlockEntity", at);
             return;
         }
+        rack.setItem(dev.devpanda.factorynetwork.block.entity.RackBlockEntity
+                .chassisSlot(bay), chassis());
         rack.setItem(dev.devpanda.factorynetwork.block.entity.RackBlockEntity
                         .slotOf(bay, dev.devpanda.factorynetwork.item.ServerPart.CPU),
                 serverPart(dev.devpanda.factorynetwork.item.ServerPart.CPU, cpu));
@@ -3641,6 +3655,7 @@ public final class FactoryNetworkGameTests {
         BlockPos rackPos = new BlockPos(1, 2, 1);
         placeRack(helper, rackPos);
         var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+        player.getInventory().add(chassis());
         player.getInventory().add(
                 serverPart(dev.devpanda.factorynetwork.item.ServerPart.CPU, 8));
         player.getInventory().add(
@@ -3650,18 +3665,24 @@ public final class FactoryNetworkGameTests {
 
         var rack = (dev.devpanda.factorynetwork.block.entity.RackBlockEntity)
                 helper.getBlockEntity(rackPos);
-        // Jedes Bauteil findet seinen Platz von selbst — der Umschalt-Klick
-        // muss nicht wissen, wohin ein Datenträger gehört.
+        // Jedes Teil findet seinen Platz von selbst — der Umschalt-Klick muss
+        // nicht wissen, wohin ein Datenträger gehört. Das Gehäuse zuerst,
+        // weil die Bauteile ohne eines gar nicht hineindürfen.
+        intoShelf(helper, rackPos, player);
+        helper.assertValueEqual(rack.usedSlots(), 1, "erst das Gehäuse");
         intoShelf(helper, rackPos, player);
         helper.assertValueEqual(rack.threads(), 0, "ein Rechenwerk allein ist kein Server");
         intoShelf(helper, rackPos, player);
         intoShelf(helper, rackPos, player);
-        helper.assertValueEqual(rack.usedSlots(), 3, "Plätze im Schrank");
+        helper.assertValueEqual(rack.usedSlots(), 4, "Plätze im Schrank");
         helper.assertValueEqual(rack.runningBays(), 1, "ein laufender Einschub");
         helper.assertValueEqual(rack.threads(), 8, "sein Rechenwerk");
 
-        takeFromShelf(helper, rackPos, 0, player);
+        takeFromShelf(helper, rackPos, dev.devpanda.factorynetwork.block.entity
+                .RackBlockEntity.chassisSlot(0), player);
         helper.assertValueEqual(rack.threads(), 0, "nach dem Herausnehmen");
+        helper.assertValueEqual(rack.usedSlots(), 0,
+                "und der Einschub ist ganz leer — die Hardware ging mit");
         helper.succeed();
     }
 
@@ -3888,6 +3909,122 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
+     * Das Gehäuse nimmt seine Hardware mit — und bringt sie wieder.
+     *
+     * <p>Das ist der ganze Zweck des Gegenstands: einen fertigen Server
+     * herausziehen, wegtragen, woanders einsetzen. Ginge die Hardware dabei
+     * verloren oder bliebe sie doppelt zurück, wäre das Gehäuse eine Falle.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void achassisCarriesItsHardware(GameTestHelper helper) {
+        BlockPos rackPos = new BlockPos(1, 2, 1);
+        placeRack(helper, rackPos);
+        fillBay(helper, rackPos, 0, 32, 128, 4096);
+        var rack = (dev.devpanda.factorynetwork.block.entity.RackBlockEntity)
+                helper.getBlockEntity(rackPos);
+        helper.assertValueEqual(rack.threads(), 32, "der Einschub läuft");
+
+        var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+        takeFromShelf(helper, rackPos, dev.devpanda.factorynetwork.block.entity
+                .RackBlockEntity.chassisSlot(0), player);
+
+        helper.assertValueEqual(rack.usedSlots(), 0, "im Schrank ist nichts geblieben");
+        helper.assertValueEqual(rack.threads(), 0, "und er trägt nichts mehr");
+
+        ItemStack gezogen = ItemStack.EMPTY;
+        for (ItemStack stack : player.getInventory().items) {
+            if (dev.devpanda.factorynetwork.item.ServerChassis.is(stack)) {
+                gezogen = stack;
+                break;
+            }
+        }
+        helper.assertTrue(!gezogen.isEmpty(), "das Gehäuse liegt nicht im Rucksack");
+        var darin = dev.devpanda.factorynetwork.item.ServerChassis.read(gezogen);
+        helper.assertValueEqual(dev.devpanda.factorynetwork.item.ServerPartItem.valueOf(
+                        darin.get(dev.devpanda.factorynetwork.item.ServerPart.CPU.ordinal())),
+                32, "das Rechenwerk ist mitgekommen");
+        helper.assertValueEqual(dev.devpanda.factorynetwork.item.ServerPartItem.valueOf(
+                        darin.get(dev.devpanda.factorynetwork.item.ServerPart.DISK.ordinal())),
+                4096, "und der Datenträger auch");
+
+        // Und wieder hinein: die Hardware kommt zurück in die Plätze.
+        intoShelf(helper, rackPos, player);
+        helper.assertValueEqual(rack.usedSlots(), 4, "vier Plätze wieder belegt");
+        helper.assertValueEqual(rack.threads(), 32, "und der Server läuft wieder");
+        helper.assertTrue(dev.devpanda.factorynetwork.item.ServerChassis.isEmpty(
+                        rack.getItem(dev.devpanda.factorynetwork.block.entity
+                                .RackBlockEntity.chassisSlot(0))),
+                "der Gegenstand im Schrank hält nichts mehr — die Plätze tun es");
+        helper.succeed();
+    }
+
+    /**
+     * Passt das Gehäuse nicht in den Rucksack, bleibt alles, wie es war.
+     *
+     * <p>Der Umschalt-Klick nimmt den Gegenstand erst heraus und schiebt ihn
+     * dann — und beim Herausnehmen packt das Gehäuse ein. Schlägt das
+     * Schieben fehl, muss es zurück und wieder auspacken. <b>Genau hier
+     * entstünde sonst ein doppelter oder ein verlorener Server</b>, und man
+     * merkte es erst, wenn der Schrank plötzlich weniger trägt.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void afailedMoveLeavesTheChassisWhereItWas(GameTestHelper helper) {
+        BlockPos rackPos = new BlockPos(1, 2, 1);
+        placeRack(helper, rackPos);
+        fillBay(helper, rackPos, 0, 32, 128, 4096);
+        var rack = (dev.devpanda.factorynetwork.block.entity.RackBlockEntity)
+                helper.getBlockEntity(rackPos);
+
+        var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+        for (int slot = 0; slot < player.getInventory().items.size(); slot++) {
+            player.getInventory().items.set(slot, new ItemStack(Items.DIRT, 64));
+        }
+
+        takeFromShelf(helper, rackPos, dev.devpanda.factorynetwork.block.entity
+                .RackBlockEntity.chassisSlot(0), player);
+
+        helper.assertValueEqual(rack.usedSlots(), 4, "alles ist geblieben");
+        helper.assertValueEqual(rack.threads(), 32, "und der Server läuft weiter");
+        helper.assertTrue(dev.devpanda.factorynetwork.item.ServerChassis.isEmpty(
+                        rack.getItem(dev.devpanda.factorynetwork.block.entity
+                                .RackBlockEntity.chassisSlot(0))),
+                "und die Hardware liegt wieder in den Plätzen, nicht doppelt im Gehäuse");
+        helper.succeed();
+    }
+
+    /**
+     * Ohne Gehäuse nimmt ein Einschub keine Bauteile an.
+     *
+     * <p>Die Regel, die den Gegenstand zu einem Server macht. Ohne sie wären
+     * die drei Plätze schon der Server, und das Gehäuse wäre etwas, das man
+     * kauft und das nichts ändert.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void hardwareNeedsAChassis(GameTestHelper helper) {
+        BlockPos rackPos = new BlockPos(1, 2, 1);
+        placeRack(helper, rackPos);
+        var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+        player.getInventory().add(
+                serverPart(dev.devpanda.factorynetwork.item.ServerPart.CPU, 8));
+
+        var rack = (dev.devpanda.factorynetwork.block.entity.RackBlockEntity)
+                helper.getBlockEntity(rackPos);
+        var menu = dev.devpanda.factorynetwork.client.menu.ShelfMenu
+                .of(1, player.getInventory(), rack);
+        for (int index = rack.getContainerSize(); index < menu.slots.size(); index++) {
+            if (menu.slots.get(index).hasItem()) {
+                menu.quickMoveStack(player, index);
+                break;
+            }
+        }
+        helper.assertValueEqual(rack.usedSlots(), 0, "das Rechenwerk blieb draußen");
+        helper.assertTrue(player.getInventory().contains(
+                        serverPart(dev.devpanda.factorynetwork.item.ServerPart.CPU, 8)),
+                "und liegt noch im Rucksack");
+        helper.succeed();
+    }
+
+    /**
      * Ein unvollständiger Einschub trägt nichts.
      *
      * <p>Nicht anteilig, gar nichts — sonst wäre der Schrank eine Summe von
@@ -3901,6 +4038,8 @@ public final class FactoryNetworkGameTests {
         var rack = (dev.devpanda.factorynetwork.block.entity.RackBlockEntity)
                 helper.getBlockEntity(rackPos);
 
+        rack.setItem(dev.devpanda.factorynetwork.block.entity.RackBlockEntity
+                .chassisSlot(0), chassis());
         rack.setItem(dev.devpanda.factorynetwork.block.entity.RackBlockEntity
                         .slotOf(0, dev.devpanda.factorynetwork.item.ServerPart.CPU),
                 serverPart(dev.devpanda.factorynetwork.item.ServerPart.CPU, 128));
@@ -3933,6 +4072,12 @@ public final class FactoryNetworkGameTests {
 
         int diskSlot = dev.devpanda.factorynetwork.block.entity.RackBlockEntity
                 .slotOf(0, dev.devpanda.factorynetwork.item.ServerPart.DISK);
+        // Ohne Gehäuse geht gar nichts hinein.
+        helper.assertTrue(!rack.canPlaceItem(diskSlot,
+                        serverPart(dev.devpanda.factorynetwork.item.ServerPart.DISK, 64)),
+                "ohne Gehäuse nimmt der Einschub nichts an");
+        rack.setItem(dev.devpanda.factorynetwork.block.entity.RackBlockEntity
+                .chassisSlot(0), chassis());
         helper.assertTrue(!rack.canPlaceItem(diskSlot,
                         serverPart(dev.devpanda.factorynetwork.item.ServerPart.CPU, 2)),
                 "ein Rechenwerk gehört nicht auf den Datenträgerplatz");
@@ -4404,7 +4549,7 @@ public final class FactoryNetworkGameTests {
                         rack.saveWithFullMetadata(registries), registries);
         helper.assertTrue(geladen != null, "Der Schrank kam nicht zurück");
         helper.assertValueEqual(geladen.threads(), 10, "Rechenleistung nach dem Laden");
-        helper.assertValueEqual(geladen.usedSlots(), 6, "belegte Plätze");
+        helper.assertValueEqual(geladen.usedSlots(), 8, "belegte Plätze: zwei Gehäuse, sechs Teile");
         helper.succeed();
     }
 
@@ -4479,17 +4624,25 @@ public final class FactoryNetworkGameTests {
                                 helper.absolutePos(unten.offset(2, 3, 2))));
         int schraenke = 0;
         int bauteile = 0;
+        int server = 0;
         for (var eintrag : liegend) {
-            if (eintrag.getItem().getItem()
+            ItemStack stack = eintrag.getItem();
+            if (stack.getItem()
                     == dev.devpanda.factorynetwork.registry.FnItems.RACK.get()) {
-                schraenke += eintrag.getItem().getCount();
-            } else if (eintrag.getItem().getItem()
+                schraenke += stack.getCount();
+            } else if (stack.getItem()
                     instanceof dev.devpanda.factorynetwork.item.ServerPartItem) {
-                bauteile += eintrag.getItem().getCount();
+                bauteile += stack.getCount();
+            } else if (dev.devpanda.factorynetwork.item.ServerChassis.is(stack)) {
+                server++;
+                helper.assertTrue(!dev.devpanda.factorynetwork.item.ServerChassis
+                                .isEmpty(stack),
+                        "das Gehäuse hat seine Hardware mitgenommen");
             }
         }
         helper.assertValueEqual(schraenke, 1, "genau ein Schrank, nicht zwei und nicht null");
-        helper.assertValueEqual(bauteile, 3, "und die drei Bauteile des Einschubs");
+        helper.assertValueEqual(server, 1, "ein fertiger Server");
+        helper.assertValueEqual(bauteile, 0, "und keine losen Teile daneben");
         helper.succeed();
     }
 

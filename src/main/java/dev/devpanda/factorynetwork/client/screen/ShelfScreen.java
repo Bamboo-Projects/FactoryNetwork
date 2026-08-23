@@ -19,14 +19,13 @@ import java.util.List;
  * Der Bildschirm eines Regals.
  *
  * <p>Zwei Zuschnitte, ein Bildschirm: Das Laufwerk hat zwei Spalten zu fünf
- * Reihen wie seine Schächte, der Schrank zwölf Einschübe zu je drei Plätzen.
- * Wer den Block ansieht und dann das Fenster, findet dieselbe Anordnung
- * wieder.
+ * Reihen wie seine Schächte, der Schrank zwölf Einschübe zu je vier Plätzen —
+ * das Gehäuse und seine drei Bauteile.
  *
  * <p>Was der Schrank zusätzlich zeigt, ist der <b>Zustand je Einschub</b>:
- * ein Lämpchen hinter jedem, grün wenn er läuft, gelb wenn Bauteile darin
- * stecken und trotzdem nichts rechnet. Ohne das sieht ein Einschub mit zwei
- * von drei Bauteilen genauso aus wie ein fertiger.
+ * ein Lämpchen hinter jedem, grün wenn er läuft, gelb wenn ein Gehäuse
+ * steckt und trotzdem nichts rechnet. Ohne das sieht ein Einschub, dem der
+ * Datenträger fehlt, genauso aus wie ein fertiger.
  */
 public class ShelfScreen extends AbstractContainerScreen<ShelfMenu> {
 
@@ -46,26 +45,44 @@ public class ShelfScreen extends AbstractContainerScreen<ShelfMenu> {
 
     public ShelfScreen(ShelfMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
-        this.imageWidth = 176;
+        this.imageWidth = menu.layout().width();
         this.imageHeight = menu.layout().height();
         this.inventoryLabelY = menu.layout().inventoryY() - 11;
+        // Die Beschriftung des Inventars steht über dessen linker Kante und
+        // nicht über der des Fensters — sonst hängt sie beim breiten
+        // Schrankfenster im Nichts.
+        this.inventoryLabelX = menu.layout().inventoryX() - 1;
     }
 
     private boolean isRack() {
         return menu.layout() == ShelfMenu.RACK;
     }
 
-    /** Was in einem Einschub steckt — der Inhalt steht in den Plätzen. */
+    /**
+     * Was in einem Einschub steckt — der Inhalt steht in den Plätzen.
+     *
+     * <p>Ohne Gehäuse nichts, genau wie im Schrank selbst. Sonst zeigte das
+     * Fenster einen laufenden Einschub, wo der Server rechnet, was er nicht
+     * rechnet.
+     */
     private ServerBay bay(int bay) {
+        if (!hasChassis(bay)) {
+            return ServerBay.EMPTY;
+        }
         return ServerBay.of(
                 menu.slots.get(RackBlockEntity.slotOf(bay, ServerPart.CPU)).getItem(),
                 menu.slots.get(RackBlockEntity.slotOf(bay, ServerPart.RAM)).getItem(),
                 menu.slots.get(RackBlockEntity.slotOf(bay, ServerPart.DISK)).getItem());
     }
 
+    private boolean hasChassis(int bay) {
+        return !menu.slots.get(RackBlockEntity.chassisSlot(bay)).getItem().isEmpty();
+    }
+
     /** Die linke obere Ecke des Lämpchens eines Einschubs, im Fenster. */
     private int lampX(int bay) {
-        int column = (bay % 2) * 3 + 2;
+        int column = (bay % 2) * RackBlockEntity.SLOTS_PER_BAY
+                + RackBlockEntity.SLOTS_PER_BAY - 1;
         return menu.layout().columnX(column) + 18 + 2;
     }
 
@@ -81,14 +98,16 @@ public class ShelfScreen extends AbstractContainerScreen<ShelfMenu> {
             return;
         }
         for (int bay = 0; bay < RackBlockEntity.BAYS; bay++) {
-            ServerBay contents = bay(bay);
-            if (!contents.occupied()) {
+            // Ein Gehäuse allein leuchtet schon gelb: Es sieht aus wie ein
+            // Server und ist keiner, und das ist die Auskunft, um die es
+            // hier geht.
+            if (!hasChassis(bay)) {
                 continue;
             }
             int x = leftPos + lampX(bay);
             int y = topPos + lampY(bay);
             graphics.fill(x, y, x + LAMP, y + LAMP,
-                    contents.complete() ? RUNNING : INCOMPLETE);
+                    bay(bay).complete() ? RUNNING : INCOMPLETE);
         }
     }
 
@@ -147,15 +166,18 @@ public class ShelfScreen extends AbstractContainerScreen<ShelfMenu> {
             ServerBay contents = bay(bay);
             List<Component> lines = new ArrayList<>();
             lines.add(Component.translatable("screen.factorynetwork.rack.bay", bay + 1));
+            if (!hasChassis(bay)) {
+                lines.add(Component.translatable("screen.factorynetwork.rack.no_chassis"));
+                graphics.renderComponentTooltip(font, lines, mouseX, mouseY);
+                return;
+            }
             if (contents.complete()) {
                 lines.add(Component.translatable("screen.factorynetwork.rack.running",
                         contents.cpu(), contents.ram(), contents.disk()));
-            } else if (contents.occupied()) {
+            } else {
                 lines.add(Component.translatable("screen.factorynetwork.rack.missing",
                         Component.translatable("screen.factorynetwork.rack.part."
                                 + contents.missing().prefix())));
-            } else {
-                lines.add(Component.translatable("screen.factorynetwork.rack.free"));
             }
             graphics.renderComponentTooltip(font, lines, mouseX, mouseY);
             return;

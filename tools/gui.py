@@ -303,54 +303,70 @@ LAMP = 5
 LAMP_PAD = 2
 LAMP_ZONE = LAMP + LAMP_PAD
 
+# Das Spielerinventar ist überall gleich breit — neun Plätze.
+INVENTORY_WIDTH = 9 * 18
 
-def shelf_background(columns, rows, group=0, gap=0, lamps=False):
-    """Ein Regalfenster mit so vielen Plaetzen, wie angegeben.
 
-    ``group`` und ``gap`` fassen Spalten zu Bloecken zusammen: Der
-    Serverschrank stellt je drei Plaetze als einen Einschub nebeneinander und
-    laesst dann Luft. Ohne diese Luecke waeren sechs Plaetze in einer Reihe
-    sechs Plaetze und nicht zwei Server.
+def shelf_background(width, columns, rows, group=0, gap=0,
+                     inner_after=0, inner_gap=0, lamps=False):
+    """Ein Regalfenster mit so vielen Plätzen, wie angegeben.
+
+    ``group`` und ``gap`` fassen Spalten zu Blöcken zusammen: Der
+    Serverschrank stellt je vier Plätze als einen Einschub nebeneinander und
+    lässt dann Luft. ``inner_after`` und ``inner_gap`` setzen innerhalb eines
+    Blocks noch einmal eine kleinere Lücke — nach dem Gehäuse, damit die drei
+    Bauteile daneben nicht aussehen wie ein viertes.
 
     ``lamps`` setzt hinter jeden Block eine kleine Vertiefung. Was darin
-    leuchtet, malt der Bildschirm zur Laufzeit — es haengt davon ab, was
+    leuchtet, malt der Bildschirm zur Laufzeit — es hängt davon ab, was
     drinsteckt.
+
+    Die Breite steht nicht mehr fest: Ein Schrank mit vier Plätzen je
+    Einschub passt nicht in die 176 einer Truhe, und ein Fenster, in dem
+    alles klebt, ist kein gespartes Bild.
     """
     grid_top = 18
     inventory_y = grid_top + rows * 18 + 13
     hotbar_y = inventory_y + 58
     height = hotbar_y + 18 + 7
 
-    bloecke = (columns // group) if group else 1
-    # Die Lämpchen zaehlen zur Breite: Sonst sitzt das Raster links und der
-    # Rand rechts, und das sieht aus wie ein Fehler beim Zentrieren.
-    breite = columns * 18 + (bloecke - 1) * gap + (LAMP_ZONE if lamps else 0)
-    links = (SHELF_WIDTH - breite) // 2
+    def spalte_rel(column):
+        luecken = (column // group) * gap if group else 0
+        inner = inner_gap if (group and inner_gap and column % group > inner_after) else 0
+        return column * 18 + luecken + inner
 
-    def spalte_x(column):
-        luecken = (column // group) if group else 0
-        return links + column * 18 + luecken * gap
+    breite = spalte_rel(columns - 1) + 18 + (LAMP_ZONE if lamps else 0)
+    links = (width - breite) // 2
+    inventar_links = (width - INVENTORY_WIDTH) // 2
 
     img = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
-    panel(d, (0, 0, SHELF_WIDTH - 1, height - 1))
+    panel(d, (0, 0, width - 1, height - 1))
 
+    bloecke = (columns // group) if group else 1
     for row in range(rows):
         for column in range(columns):
-            slot(d, spalte_x(column) - 1, grid_top + row * 18 - 1)
+            x = links + spalte_rel(column) - 1
+            y = grid_top + row * 18 - 1
+            # Der erste Platz eines Blocks ist der Gehäuseplatz: eine Spur
+            # dunkler, damit man sieht, dass er zuerst dran ist.
+            if group and inner_gap and column % group == 0:
+                sunken(d, (x, y, x + 17, y + 17), fill=(118, 118, 118))
+            else:
+                slot(d, x, y)
         if not lamps:
             continue
         for b in range(bloecke):
-            x = spalte_x(b * group + group - 1) + 18 + LAMP_PAD
+            x = links + spalte_rel(b * group + group - 1) + 18 + LAMP_PAD
             y = grid_top + row * 18 + 6
             sunken(d, (x, y, x + LAMP - 1, y + LAMP - 1), fill=(70, 70, 70))
 
     for row in range(3):
         for column in range(9):
-            slot(d, 7 + column * 18, inventory_y - 1 + row * 18)
+            slot(d, inventar_links + column * 18, inventory_y - 1 + row * 18)
     for column in range(9):
-        slot(d, 7 + column * 18, hotbar_y - 1)
-    return img, links, grid_top, inventory_y, hotbar_y, height
+        slot(d, inventar_links + column * 18, hotbar_y - 1)
+    return img, links, grid_top, inventory_y, hotbar_y, height, width
 
 
 def main():
@@ -362,15 +378,16 @@ def main():
     save(press_background(), "press")
     save(burner_background(), "burner")
     save(router_background(), "router")
-    for name, columns, rows, group, gap, lamps in (
-            ("drive", 2, 5, 0, 0, False),
-            ("rack", 6, 6, 3, 10, True)):
-        bild, links, oben, inventar, schnell, hoehe = shelf_background(
-            columns, rows, group, gap, lamps)
+    for name, breite, columns, rows, group, gap, inner_after, inner_gap, lamps in (
+            ("drive", 176, 2, 5, 0, 0, 0, 0, False),
+            ("rack", 192, 8, 6, 4, 12, 0, 4, True)):
+        bild, links, oben, inventar, schnell, hoehe, fenster = shelf_background(
+            breite, columns, rows, group, gap, inner_after, inner_gap, lamps)
         save(bild, name)
-        print("      %s: Raster bei %d,%d · Inventar bei 8,%d · Schnellzugriff bei 8,%d"
-              " · Fenster %dx%d"
-              % (name, links, oben, inventar, schnell, SHELF_WIDTH, hoehe))
+        print("      %s: Raster bei %d,%d · Inventar bei %d,%d"
+              " · Schnellzugriff bei %d,%d · Fenster %dx%d"
+              % (name, links, oben, (fenster - INVENTORY_WIDTH) // 2 + 1, inventar,
+                 (fenster - INVENTORY_WIDTH) // 2 + 1, schnell, fenster, hoehe))
     print("Maße: Fenster %dx%d, Arbeitsfläche %dx%d bei %d,%d"
           % (WIDTH, HEIGHT, WORK_W, WORK_H, WORK_X, WORK_Y))
     print("      Inventar bei %d,%d · Schnellzugriff bei %d,%d"

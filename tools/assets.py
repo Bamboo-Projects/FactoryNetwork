@@ -566,6 +566,10 @@ def models():
                                       "translation": [0, 0, 0],
                                       "scale": [0.28, 0.28, 0.28]},
         }))
+    write(A + "/models/item/server_chassis.json", {
+        "parent": "minecraft:item/generated",
+        "textures": {"layer0": MOD + ":item/server_chassis"},
+    })
     for kind, tiers in SERVER_PARTS.items():
         for value in tiers:
             name = "%s_%d" % (kind, value)
@@ -796,6 +800,20 @@ def loot_and_recipes():
             "I": {"item": "minecraft:iron_block"},
         },
         "result": {"id": MOD + ":server_rack", "count": 1},
+    })
+
+    # Das Servergehäuse: ein Blech mit Steckplätzen, sonst nichts. Es soll
+    # billig sein — man braucht zwölf davon je Schrank, und teuer ist die
+    # Hardware, die hineinkommt.
+    write(D + "/recipe/server_chassis.json", {
+        "type": "minecraft:crafting_shaped",
+        "category": "misc",
+        "pattern": ["PPP", "I I", "PPP"],
+        "key": {
+            "P": {"item": MOD + ":plate"},
+            "I": {"item": "minecraft:iron_ingot"},
+        },
+        "result": {"id": MOD + ":server_chassis", "count": 1},
     })
 
     # Die Serverbauteile. Die erste Stufe kommt aus Grundstoffen, jede

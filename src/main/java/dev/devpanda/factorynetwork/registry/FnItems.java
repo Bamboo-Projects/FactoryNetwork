@@ -188,6 +188,16 @@ public final class FnItems {
             ITEMS.registerSimpleBlockItem(FnBlocks.RACK);
 
     /**
+     * Das Servergehäuse: ein Blech mit drei Steckplätzen.
+     *
+     * <p>Für sich genommen kann es nichts, und das ist der Punkt. Es macht
+     * aus drei Bauteilen einen Server, den man herausziehen und woanders
+     * hineinstecken kann.
+     */
+    public static final DeferredItem<Item> SERVER_CHASSIS = ITEMS.register("server_chassis",
+            () -> new dev.devpanda.factorynetwork.item.ServerChassisItem(new Item.Properties()));
+
+    /**
      * Die Serverbauteile, nach Art und Stufe.
      *
      * <p>Zwölf Gegenstände aus zwei Schleifen. Von Hand geschrieben wären es

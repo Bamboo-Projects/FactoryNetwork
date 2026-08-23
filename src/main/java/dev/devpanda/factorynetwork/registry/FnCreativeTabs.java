@@ -34,6 +34,7 @@ public final class FnCreativeTabs {
                         output.accept(FnItems.ANALYSER.get());
                         output.accept(FnItems.DRIVE.get());
                         output.accept(FnItems.RACK.get());
+                        output.accept(FnItems.SERVER_CHASSIS.get());
                         // Erst alle Rechenwerke, dann alle Speicher, dann alle
                         // Datenträger — nach Art sortiert und darin nach Stufe,
                         // so wie man sie auch einbaut.

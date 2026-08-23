@@ -173,12 +173,15 @@ public class RackBlock extends HorizontalDirectionalBlock implements EntityBlock
         return InteractionResult.CONSUME;
     }
 
-    /** Beim Abbauen fallen die Bauteile heraus. Die Loot-Tabelle sieht sie nicht. */
+    /** Beim Abbauen fallen die Server heraus. Die Loot-Tabelle sieht sie nicht. */
     @Override
     protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState,
                             boolean moved) {
         if (!state.is(newState.getBlock())
                 && level.getBlockEntity(pos) instanceof RackBlockEntity rack) {
+            // Erst einpacken: Was herausfällt, sollen fertige Server sein und
+            // nicht achtundvierzig Einzelteile, die man wieder sortiert.
+            rack.packAll();
             for (ItemStack stack : rack.contents()) {
                 if (!stack.isEmpty()) {
                     popResource(level, pos, stack);

@@ -1381,6 +1381,45 @@ def _tier_glow(img, box, tier):
          radius=5, strength=90 + tier * 25)
 
 
+def server_chassis():
+    """Ein flaches Blech mit Griff und drei leeren Steckplätzen.
+
+    Es muss auf einen Blick von den Bauteilen zu unterscheiden sein: Die
+    haben eine volle Fläche, das Gehäuse hat Löcher. Wer im Rucksack sucht,
+    erkennt den Server daran, dass man durch ihn hindurchsieht.
+    """
+    ton = (152, 158, 164)
+    img = Image.new("RGBA", (N, N), (0, 0, 0, 0))
+    mask = Image.new("L", (N, N), 0)
+    ImageDraw.Draw(mask).rectangle([6, 18, 57, 45], fill=255)
+    img.alpha_composite(masked_surface(mask, blend(ton, LIGHT, 0.25),
+                                       blend(ton, EDGE, 0.45), seed=360))
+    d = ImageDraw.Draw(img)
+    d.rectangle([6, 18, 57, 45], outline=EDGE + (255,))
+    raised(img, (6, 18, 57, 45), hoehe=2)
+
+    # Griff links, wie am Einschub an der Blockfront.
+    d.rectangle([9, 22, 14, 41], fill=blend(ton, LIGHT, 0.4) + (255,))
+    d.rectangle([9, 22, 14, 41], outline=_dunkler(ton + (255,), 0.45))
+
+    # Drei leere Steckplätze — der Grund, warum es ein Gehäuse heißt.
+    for i in range(3):
+        x = 19 + i * 13
+        d.rectangle([x, 23, x + 9, 40], fill=blend(EDGE, BODY_BOT, 0.3) + (255,))
+        ao(img, (x, 23, x + 9, 40), depth=2, strength=0.6)
+        # Kontaktleiste am Boden des Schachts.
+        for k in range(x + 2, x + 9, 2):
+            d.point((k, 39), fill=BRASS + (255,))
+
+    # Lüftungsschlitze rechts und ein Nietenpaar.
+    for y in range(22, 42, 4):
+        d.line([(52, y), (55, y)], fill=_dunkler(ton + (255,), 0.4))
+    rivet(img, 8, 20, r=2)
+    rivet(img, 8, 43, r=2)
+    scratches(img, count=3, seed=361)
+    return img
+
+
 def cpu_item(tier):
     """Ein Chip. Je höher die Stufe, desto mehr Kerne glühen."""
     ton = TIER_TONE[tier]
@@ -1591,6 +1630,7 @@ def main():
         save(storage_cell(label), "item", "cell_k" + label.replace("k", ""))
     for label in ("64", "256", "1024", "4096"):
         save(fluid_cell(label), "item", "fluid_cell_" + label)
+    save(server_chassis(), "item", "server_chassis")
     for tier, wert in enumerate((2, 8, 32, 128)):
         save(cpu_item(tier), "item", "cpu_%d" % wert)
     for tier, wert in enumerate((8, 32, 128, 512)):
