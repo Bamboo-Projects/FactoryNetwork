@@ -358,6 +358,67 @@ In dieser Reihenfolge, nach Abhängigkeit:
    gibt es keinen Grund, mehr als einen zu bauen.
 4. **Autocrafting.** Der letzte ausgegraute Reiter.
 
+### Der Editor, eigener Strang
+
+Der Code-Editor läuft neben dieser Liste her; er hängt an nichts davon ab.
+Stand heute:
+
+**Steht.** Zeilennummern, Cursor, Auswahl mit Tastatur und Maus, Doppelklick
+auf Wort, Ziehen mit Mitrollen, Kopieren/Einfügen/Ausschneiden, Rückgängig mit
+gruppierten Tippläufen, Suche, Auto-Einrückung, Tabulator über Auswahlen,
+Klammernpaare über Zeilengrenzen, Syntaxfarben, Vorschläge, Fehlermarken.
+Dazu das Projekt aus mehreren Dateien, der Ordner neben der Welt als Brücke,
+und der Dateibaum im eigenen Fenster (`CodeScreen`) mit Anlegen, Umbenennen,
+Verdoppeln, Löschen.
+
+**Fehlt, in dieser Reihenfolge:**
+
+1. **Querscrollen und ein Scissor.** Eine Zeile, die über die Fensterbreite
+   hinausgeht, wird heute darüber hinaus gezeichnet. Das ist kein fehlendes
+   Merkmal, das ist ein Fehler. Dazu die kleinen Dinge, die den Unterschied
+   zwischen „Textfeld" und „Editor" ausmachen: Tastenwiederholung beim
+   Halten prüfen, tote Tasten der deutschen Belegung (`^`, `´`), Strg+Rollen
+   zum Zoomen.
+2. **Entwurf auf dem Server.** Heute lebt er in `ClientProjectState`, also
+   nur solange der Client läuft. Ein Absturz oder das Verlassen der Welt
+   nimmt ihn mit, und zwei Spieler am selben Controller überschreiben
+   einander beim Übernehmen wortlos. Dazu gehören Strg+S und eine
+   Dateisperre mit Lesemodus. **Das ist der wertvollste offene Punkt** — er
+   behebt einen Datenverlust, alles andere ist Komfort.
+3. **Sprachdienst mit Netzschnappschuss.** `Completions` und `Lexer` hinter
+   eine Fassade, dann Vervollständigung aus den echten Connectoren
+   (`crusher_1.` bietet nur, was das Gerät kann), Erklärung beim Zeigen mit
+   Zustand und Position, Sprung zur Deklaration, Fundstellen, „im Spiel
+   zeigen". Die Connectordaten liegen für den Netzreiter schon auf dem
+   Client. Das ist der Punkt, an dem sich das von jedem Textfeld
+   unterscheidet.
+4. **Ersetzen.** Suchen gibt es, Ersetzen nicht.
+
+**Offene Fragen, nicht entschieden:**
+
+- **Ordner im Projekt.** Heute ist der Namensraum flach, und das Namensmuster
+  lässt keinen Schrägstrich zu. Unterordner wären reine Gliederung für den
+  Menschen — die Sprache kennt ohnehin nur einen Namensraum. Bei drei bis
+  acht Dateien tut es die alphabetische Sortierung mit Präfixen
+  (`worker_erz.mf`, `worker_holz.mf`); ab etwa fünfzehn Dateien nicht mehr.
+  Der Umbau beträfe das Namensmuster, den Ordner neben der Welt (rekursiv
+  lesen) und die VS-Code-Seite.
+- **LDLib2 als UI-Grundlage.** Noch nicht geprüft. Zu klären wäre der Stand
+  für 1.21.1/NeoForge und wie die API aussieht. Die Latte liegt hoch: eine
+  harte Abhängigkeit koppelt jeden Release an ein fremdes Projekt, und
+  Dateibaum, Reiter und Felder sind je etwa zweihundert Zeilen von Hand.
+  Docking ist das eine wirklich schwere Stück und zugleich das, was in einem
+  Minecraft-Fenster niemand benutzt.
+- **Die VS-Code-Erweiterung kennt noch Einzeldateien.** Unter `editor/vscode`
+  liegen Grammatik, Klammern und elf Bausteine; die README beschreibt eine
+  einzelne `.mf`-Datei statt eines Ordners.
+
+Nicht vorgesehen: Piece Table, Rope, virtualisiertes Zeichnen, inkrementelles
+Lexen, Mehrfachcursor, Minimap, Faltung. Das längste Beispielprogramm hat
+fünfzehn Zeilen, der beste Datenträger fasst 4096 Anweisungen, und die
+Pakete deckeln bei 64 KB je Datei. Der Renderer lext heute jede sichtbare
+Zeile in jedem Bild neu und kostet nichts messbares.
+
 Zum Ausprobieren stehen lauffähige Programme in `beispiele.md` — eines je
 Fähigkeit, mit der Angabe, was dafür in der Welt stehen muss.
 
