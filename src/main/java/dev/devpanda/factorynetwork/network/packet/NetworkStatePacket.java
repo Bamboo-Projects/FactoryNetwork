@@ -22,9 +22,21 @@ import java.util.List;
  * <p>Die Anlagen stehen mit dabei, weil eine unvollständige sonst unsichtbar
  * bliebe: Sie tut nichts und sagt nichts, und der Spieler sucht den Fehler im
  * Programm statt an der Beschriftung.
+ *
+ * <p><b>Die Anzeigen gehören genauso dazu.</b> {@code display NAME { … }}
+ * verlangt den Namen, den die Tafel in der Welt trägt — und der stand
+ * nirgends, wo der Editor ihn hätte vorschlagen können. Wer seine Wand
+ * benannt hatte, musste sich den Namen merken und richtig abtippen.
+ *
+ * <p>Der Quelltext ist hier ausgezogen. Er stand als Zeichenkette bis 64 KB
+ * in jedem Netzzustand — und der geht raus, sooft sich am Netz etwas ändert,
+ * während ihn seit dem Projektumbau niemand mehr liest. Er kommt über
+ * {@link ProjectStatePacket}, und der geht nur beim Öffnen und beim
+ * Übernehmen.
  */
-public record NetworkStatePacket(String source, List<String> connectors, List<String> workers,
-                                 List<String> plants, List<String> fluids)
+public record NetworkStatePacket(List<String> connectors, List<String> displays,
+                                 List<String> workers, List<String> plants,
+                                 List<String> fluids)
         implements CustomPacketPayload {
 
     public static final Type<NetworkStatePacket> TYPE = new Type<>(
@@ -32,9 +44,10 @@ public record NetworkStatePacket(String source, List<String> connectors, List<St
 
     public static final StreamCodec<RegistryFriendlyByteBuf, NetworkStatePacket> STREAM_CODEC =
             StreamCodec.composite(
-                    ByteBufCodecs.stringUtf8(64 * 1024), NetworkStatePacket::source,
                     ByteBufCodecs.stringUtf8(256).apply(ByteBufCodecs.list(512)),
                     NetworkStatePacket::connectors,
+                    ByteBufCodecs.stringUtf8(256).apply(ByteBufCodecs.list(256)),
+                    NetworkStatePacket::displays,
                     ByteBufCodecs.stringUtf8(256).apply(ByteBufCodecs.list(512)),
                     NetworkStatePacket::workers,
                     ByteBufCodecs.stringUtf8(256).apply(ByteBufCodecs.list(256)),

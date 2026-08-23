@@ -2234,7 +2234,8 @@ public final class FactoryNetworkGameTests {
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void everyPacketSurvivesTheWire(GameTestHelper helper) {
         var netzzustand = new dev.devpanda.factorynetwork.network.packet.NetworkStatePacket(
-                "fn test() { }", java.util.List.of("kiste_1", "kiste_2"),
+                java.util.List.of("kiste_1", "kiste_2"),
+                java.util.List.of("halle"),
                 java.util.List.of("haul: RUNNING"), java.util.List.of("werk_1: Werk"),
                 java.util.List.of("water: 1000 mB"));
         var zurueck = roundTrip(helper,
@@ -2243,6 +2244,7 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(zurueck.fluids().get(0), "water: 1000 mB", "Netzzustand");
         helper.assertValueEqual(zurueck.plants().get(0), "werk_1: Werk", "Anlagen");
         helper.assertValueEqual(zurueck.connectors().size(), 2, "Connectoren");
+        helper.assertValueEqual(zurueck.displays().get(0), "halle", "Anzeigen");
 
         var ablaeufe = new dev.devpanda.factorynetwork.network.packet.FlowStatePacket(
                 java.util.List.of(new dev.devpanda.factorynetwork.network.packet

@@ -66,6 +66,21 @@ public class NetworkTabView {
             }
         }
 
+        // Die Anzeigewände: benannt, im Netz, und bis eben nirgends zu sehen.
+        // Wer eine Wand beschriftet hatte, fand den Namen in keiner Liste
+        // wieder und musste ihn sich merken.
+        List<String> displays = ClientNetworkState.displays();
+        if (!displays.isEmpty()) {
+            line += 3;
+            line = section(graphics, line, "screen.factorynetwork.terminal.network.displays");
+            for (String display : displays) {
+                if (line >= y + height - 40) {
+                    break;
+                }
+                line = text(graphics, line, display, TerminalScreen.TEXT);
+            }
+        }
+
         line += 3;
         line = section(graphics, line, "screen.factorynetwork.terminal.network.workers");
         List<String> workers = ClientNetworkState.workers();

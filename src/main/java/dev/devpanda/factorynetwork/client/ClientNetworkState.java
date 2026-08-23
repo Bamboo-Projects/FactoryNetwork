@@ -8,33 +8,38 @@ import java.util.List;
 /**
  * Was der Client über das Netzwerk weiß.
  *
- * <p>Der Editor braucht die Connectornamen für die Vervollständigung. Sie hier
- * zu halten statt bei jedem Tastendruck nachzufragen, ist der Unterschied
- * zwischen einer Vervollständigung, die sich flüssig anfühlt, und einer, die
- * hakt.
+ * <p>Der Editor braucht die Namen aus dem Netz für die Vervollständigung. Sie
+ * hier zu halten statt bei jedem Tastendruck nachzufragen, ist der
+ * Unterschied zwischen einer Vervollständigung, die sich flüssig anfühlt, und
+ * einer, die hakt.
+ *
+ * <p>Connectoren <b>und</b> Anzeigen: Beide tragen Namen, die im Programm
+ * stehen müssen, und beide sollen vorgeschlagen werden. Der Quelltext lag
+ * früher auch hier; er kommt jetzt über {@code ClientProjectState}.
  */
 public final class ClientNetworkState {
 
-    private static String source = "";
     private static List<String> connectors = new ArrayList<>();
+    private static List<String> displays = new ArrayList<>();
     private static List<String> workers = new ArrayList<>();
     private static List<String> plants = new ArrayList<>();
     private static List<String> fluids = new ArrayList<>();
 
     public static void accept(NetworkStatePacket packet) {
-        source = packet.source();
         connectors = new ArrayList<>(packet.connectors());
+        displays = new ArrayList<>(packet.displays());
         workers = new ArrayList<>(packet.workers());
         plants = new ArrayList<>(packet.plants());
         fluids = new ArrayList<>(packet.fluids());
     }
 
-    public static String source() {
-        return source;
-    }
-
     public static List<String> connectors() {
         return List.copyOf(connectors);
+    }
+
+    /** Die Namen der Anzeigewände im Netz — für {@code display NAME { … }}. */
+    public static List<String> displays() {
+        return List.copyOf(displays);
     }
 
     public static List<String> workers() {

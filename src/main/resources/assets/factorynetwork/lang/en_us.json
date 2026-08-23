@@ -276,5 +276,6 @@
   "screen.factorynetwork.project.rename": "Rename",
   "screen.factorynetwork.project.duplicate": "Duplicate",
   "screen.factorynetwork.project.delete": "Delete",
-  "jade.factorynetwork.controller.connectors": "%s of them connectors"
+  "jade.factorynetwork.controller.connectors": "%s of them connectors",
+  "screen.factorynetwork.terminal.network.displays": "DISPLAYS"
 }

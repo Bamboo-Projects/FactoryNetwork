@@ -65,6 +65,17 @@ public final class Completions {
             return limit(entries);
         }
 
+        // Nach display: die Wände, die in der Welt stehen.
+        //
+        // "display NAME { … }" verlangt den Namen, den die Tafel trägt. Wer
+        // ihn falsch schreibt, bekommt kein Programm, das nicht übersetzt,
+        // sondern eine Wand, die schwarz bleibt — der Fehler, den man am
+        // längsten sucht.
+        if (before.endsWith("display")) {
+            addDisplays(entries, prefix);
+            return limit(entries);
+        }
+
         // Nach filter: Gegenstände und Tags.
         if (before.endsWith("filter")) {
             addItems(entries, prefix);
@@ -129,6 +140,14 @@ public final class Completions {
         for (String connector : ClientNetworkState.connectors()) {
             if (matches(connector, prefix)) {
                 entries.add(new Entry(connector, connector, Entry.Kind.CONNECTOR));
+            }
+        }
+    }
+
+    private static void addDisplays(List<Entry> entries, String prefix) {
+        for (String display : ClientNetworkState.displays()) {
+            if (matches(display, prefix)) {
+                entries.add(new Entry(display, display, Entry.Kind.CONNECTOR));
             }
         }
     }

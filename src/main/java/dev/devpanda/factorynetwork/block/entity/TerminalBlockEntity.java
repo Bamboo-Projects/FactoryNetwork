@@ -54,7 +54,8 @@ public class TerminalBlockEntity extends BlockEntity implements MenuProvider {
         Optional<ControllerBlockEntity> controller = controller();
         if (controller.isEmpty()) {
             PacketDistributor.sendToPlayer(player,
-                    new NetworkStatePacket("", List.of(), List.of(), List.of(), List.of()));
+                    new NetworkStatePacket(List.of(), List.of(), List.of(), List.of(),
+                            List.of()));
             return;
         }
         ControllerBlockEntity entity = controller.get();
@@ -64,8 +65,33 @@ public class TerminalBlockEntity extends BlockEntity implements MenuProvider {
                 .map(state -> state.getKey() + ": " + state.getValue().status)
                 .toList();
         PacketDistributor.sendToPlayer(player,
-                new NetworkStatePacket(entity.source(), connectors, workers, entity.plants(),
-                        entity.fluidLines()));
+                new NetworkStatePacket(connectors, displayNames(entity), workers,
+                        entity.plants(), entity.fluidLines()));
+    }
+
+    /**
+     * Die Namen der Anzeigewände im Netz, jeder einmal.
+     *
+     * <p>Aus den Blöcken und nicht aus dem Graphen: Der Graph merkt sich
+     * Stellen, keine Namen. Eine Wand besteht aus vielen Tafeln, die alle
+     * denselben Namen tragen — {@code distinct} macht daraus wieder eine.
+     *
+     * <p>Namenlose bleiben weg. Sie stehen im Netz, aber im Programm kann man
+     * sie nicht ansprechen, und ein leerer Eintrag in der Vervollständigung
+     * ist schlimmer als keiner.
+     */
+    private List<String> displayNames(ControllerBlockEntity controller) {
+        if (level == null) {
+            return List.of();
+        }
+        return controller.graph().displays().stream()
+                .map(level::getBlockEntity)
+                .filter(DisplayBlockEntity.class::isInstance)
+                .map(found -> ((DisplayBlockEntity) found).displayName())
+                .filter(name -> name != null && !name.isBlank())
+                .distinct()
+                .sorted()
+                .toList();
     }
 
     @Override
