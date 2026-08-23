@@ -5416,7 +5416,7 @@ public final class FactoryNetworkGameTests {
         // Ein Entwurf, der nicht übersetzt. Genau der Fall, den es zu
         // sichern gilt.
         var kaputt = dev.devpanda.factorynetwork.lang.Project.of("fn halb() { let a =");
-        entity.acceptDraft(kaputt, null);
+        entity.acceptDraft(kaputt, null, null);
 
         helper.assertValueEqual(entity.draft().source("main.mf"), "fn halb() { let a =",
                 "der Entwurf steht im Controller");
@@ -5525,6 +5525,80 @@ public final class FactoryNetworkGameTests {
                 helper.succeed();
             });
         });
+    }
+
+    /**
+     * Zwei Spieler überschreiben einander nicht.
+     *
+     * <p>Beide schicken den ganzen Entwurf. Ohne Sperre gewänne, wer zuletzt
+     * tippt — auch über eine Datei, die er gar nicht offen hatte.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void twoPlayersDoNotOverwriteEachOther(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 2, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        rackWithServer(helper, controller.west());
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        // Kennungen statt Attrappen: Ein echter ServerPlayer im Test löst
+        // die Beitrittspakete fremder Mods aus, und gebraucht werden hier
+        // eine Kennung und ein Name.
+        var anna = java.util.UUID.randomUUID();
+        var bert = java.util.UUID.randomUUID();
+
+        var start = new dev.devpanda.factorynetwork.lang.Project(java.util.Map.of(
+                "main.mf", "fn eins() { }",
+                "worker.mf", "fn zwei() { }"));
+        entity.acceptDraft(start, null, null);
+
+        // Anna schreibt main.mf und hält sie damit.
+        entity.acceptDraft(start.with("main.mf", "fn eins() { let a = 1 }"),
+                anna, "Anna");
+        helper.assertValueEqual(entity.draft().source("main.mf"), "fn eins() { let a = 1 }",
+                "Annas Änderung");
+
+        // Bert schickt seinen ganzen Entwurf — mit einem alten Stand von
+        // main.mf und einer eigenen Änderung an worker.mf.
+        entity.acceptDraft(start.with("worker.mf", "fn zwei() { let b = 2 }"),
+                bert, "Bert");
+
+        helper.assertValueEqual(entity.draft().source("main.mf"), "fn eins() { let a = 1 }",
+                "Annas Datei bleibt stehen");
+        helper.assertValueEqual(entity.draft().source("worker.mf"), "fn zwei() { let b = 2 }",
+                "Berts eigene Änderung kommt an");
+
+        // Und Bert sieht, wer main.mf hält.
+        helper.assertValueEqual(entity.locksFor(bert).get("main.mf"), "Anna",
+                "der Halter wird gemeldet");
+        helper.assertTrue(entity.locksFor(anna).get("main.mf") == null,
+                "die eigene Sperre ist keine Nachricht");
+        helper.succeed();
+    }
+
+    /**
+     * Eine frisch angelegte Datei kommt an, obwohl sie leer ist.
+     *
+     * <p>Der erste Anlauf verglich sie mit dem, was der Server hat — und der
+     * hat für eine unbekannte Datei den leeren Text. Damit sah jede neue
+     * Datei wie eine unveränderte aus und fiel durch.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void aFreshEmptyFileStillArrives(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 2, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        rackWithServer(helper, controller.west());
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        var anna = java.util.UUID.randomUUID();
+        var start = dev.devpanda.factorynetwork.lang.Project.of("fn eins() { }");
+        entity.acceptDraft(start, null, null);
+        entity.acceptDraft(start.with("neu.mf", ""), anna, "Anna");
+
+        helper.assertTrue(entity.draft().files().containsKey("neu.mf"),
+                "die neue Datei fehlt: " + entity.draft().names());
+        helper.succeed();
     }
 
 }

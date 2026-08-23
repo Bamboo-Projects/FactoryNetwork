@@ -73,7 +73,8 @@ public record SaveDraftPacket(BlockPos controller, Map<String, String> files)
             }
             if (player.level().getBlockEntity(packet.controller())
                     instanceof ControllerBlockEntity controller) {
-                controller.acceptDraft(new Project(packet.files()), player);
+                controller.acceptDraft(new Project(packet.files()),
+                        player.getUUID(), player.getGameProfile().getName());
             }
         });
     }

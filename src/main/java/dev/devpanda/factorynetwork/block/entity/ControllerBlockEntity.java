@@ -650,7 +650,7 @@ public class ControllerBlockEntity extends BlockEntity {
     public void pushProjectTo(ServerPlayer player) {
         PacketDistributor.sendToPlayer(player,
                 dev.devpanda.factorynetwork.network.packet.ProjectStatePacket
-                        .of(worldPosition, project, draft, locksFor(player)));
+                        .of(worldPosition, project, draft, locksFor(player.getUUID())));
     }
 
     /**
@@ -746,14 +746,14 @@ public class ControllerBlockEntity extends BlockEntity {
      * geschickt, und ein Echo träfe ihn mitten im Tippen.
      */
     public void acceptDraft(dev.devpanda.factorynetwork.lang.Project incoming,
-                            ServerPlayer author) {
+                            java.util.UUID author, String authorName) {
         if (incoming.files().equals(draft.files())) {
             return;
         }
-        this.draft = author == null ? incoming : merge(incoming, author);
+        this.draft = author == null ? incoming : merge(incoming, author, authorName);
         setChanged();
         for (ServerPlayer watcher : terminalWatchers) {
-            if (watcher != author) {
+            if (!watcher.getUUID().equals(author)) {
                 pushProjectTo(watcher);
             }
         }
@@ -772,31 +772,35 @@ public class ControllerBlockEntity extends BlockEntity {
      * und sieht sie im Editor als gesperrt.
      */
     private dev.devpanda.factorynetwork.lang.Project merge(
-            dev.devpanda.factorynetwork.lang.Project incoming, ServerPlayer author) {
+            dev.devpanda.factorynetwork.lang.Project incoming, java.util.UUID author,
+            String authorName) {
         long now = level == null ? 0L : level.getGameTime();
         Map<String, String> merged = new HashMap<>(draft.files());
         for (Map.Entry<String, String> entry : incoming.files().entrySet()) {
-            if (entry.getValue().equals(draft.source(entry.getKey()))) {
+            if (draft.files().containsKey(entry.getKey())
+                    && entry.getValue().equals(draft.source(entry.getKey()))) {
                 // Unverändert mitgeschickt: keine Änderung, also auch kein
                 // Anspruch auf die Datei.
+                //
+                // Die Prüfung auf „gibt es schon" gehört dazu: Eine frisch
+                // angelegte Datei ist leer, und source() liefert für eine
+                // unbekannte ebenfalls den leeren Text. Ohne sie fiele jede
+                // neue Datei hier durch und käme nie beim Server an.
                 continue;
             }
-            if (locks.claim(entry.getKey(), author.getUUID(),
-                    author.getGameProfile().getName(), now)) {
+            if (locks.claim(entry.getKey(), author, authorName, now)) {
                 merged.put(entry.getKey(), entry.getValue());
             }
         }
         // Gelöscht wird nur, was der Absender auch halten darf.
         merged.keySet().removeIf(name -> !incoming.files().containsKey(name)
-                && locks.claim(name, author.getUUID(),
-                        author.getGameProfile().getName(), now));
+                && locks.claim(name, author, authorName, now));
         return new dev.devpanda.factorynetwork.lang.Project(merged);
     }
 
     /** Wer welche Datei hält, aus Sicht dieses Spielers. */
-    public Map<String, String> locksFor(ServerPlayer player) {
-        return locks.othersFor(player.getUUID(),
-                level == null ? 0L : level.getGameTime());
+    public Map<String, String> locksFor(java.util.UUID player) {
+        return locks.othersFor(player, level == null ? 0L : level.getGameTime());
     }
 
     /** Und an alle, die gerade zusehen — nach einer Änderung von außen. */
