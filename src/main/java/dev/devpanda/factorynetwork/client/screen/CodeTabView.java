@@ -91,7 +91,9 @@ public class CodeTabView {
 
     /** Übersetzt das ganze Projekt und sortiert die Meldungen. */
     private void recheck() {
-        problems = project.parse().diagnostics();
+        problems = project.parse(
+                dev.devpanda.factorynetwork.client.ClientNetworkView.INSTANCE)
+                .diagnostics();
         openProblems = problems.stream()
                 .filter(problem -> problem.file().equals(open))
                 .toList();

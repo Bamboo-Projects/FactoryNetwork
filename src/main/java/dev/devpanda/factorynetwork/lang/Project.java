@@ -163,12 +163,39 @@ public record Project(Map<String, String> files) {
      * es dort nicht gibt.
      */
     public Parser.ParseResult parse() {
+        return parse(NetworkView.NONE);
+    }
+
+    /**
+     * Dasselbe, aber mit einem Blick auf das, was wirklich im Netz steht.
+     *
+     * <p>Damit fällt auf, was die Grammatik nicht sieht: eine Anzeige, die es
+     * in der Welt nicht gibt, oder ein Ziel, das niemand so genannt hat.
+     * Beides sind <b>Warnungen</b> — eine Wand, die man erst morgen baut,
+     * darf man heute schon ins Programm schreiben.
+     *
+     * <p>Die Namen, die das Programm selbst vergibt — Gruppen, Multiblocks —
+     * werden vorher über alle Dateien gesammelt. Sonst meldete eine Gruppe in
+     * {@code gruppen.mf} als unbekannt, sobald ein Worker in
+     * {@code worker.mf} sie benutzt.
+     */
+    public Parser.ParseResult parse(NetworkView view) {
         List<Decl> declarations = new ArrayList<>();
         List<Diagnostic> diagnostics = new ArrayList<>();
         Map<String, String> owners = new HashMap<>();
+        Map<String, Parser.ParseResult> parsed = new java.util.LinkedHashMap<>();
         for (String name : names()) {
-            Parser.ParseResult result = Parser.parse(source(name));
+            parsed.put(name, Parser.parse(source(name)));
+        }
+        java.util.Set<String> local = new java.util.HashSet<>();
+        parsed.values().forEach(
+                result -> local.addAll(NetworkCheck.localNames(result.program())));
+
+        for (String name : names()) {
+            Parser.ParseResult result = parsed.get(name);
             result.diagnostics().forEach(
+                    diagnostic -> diagnostics.add(diagnostic.withFile(name)));
+            NetworkCheck.run(result.program(), view, local).forEach(
                     diagnostic -> diagnostics.add(diagnostic.withFile(name)));
             for (Decl declaration : result.program().declarations()) {
                 String taken = duplicateOf(declaration, owners, name);

@@ -5440,4 +5440,83 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    /**
+     * Die Tafel an der Wand zeigt, was im Programm steht.
+     *
+     * <p><b>Geprüft war bisher nur der Reiter im Terminal.</b> Dass die
+     * Tafel selbst zu ihren Zeilen kommt — über ihren Takt, ihren Namen und
+     * den Controller, der sie kennt — hing an vier Stellen, die einzeln
+     * stimmten und zusammen nie nachgemessen wurden.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void theWallItselfShowsTheProgram(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 2, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        rackWithServer(helper, controller.west());
+        BlockPos tafel = controller.east();
+        helper.setBlock(tafel, FnBlocks.DISPLAY.get().defaultBlockState()
+                .setValue(dev.devpanda.factorynetwork.block.DisplayBlock.FACING,
+                        Direction.NORTH));
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        var panel = (dev.devpanda.factorynetwork.block.entity.DisplayBlockEntity)
+                helper.getBlockEntity(tafel);
+        panel.setDisplayName("test");
+        helper.assertTrue(entity.deploy("""
+                display test {
+                    title "Mein Display"
+                    text "testo"
+                }"""), "das Programm wurde nicht übernommen");
+
+        // Die Tafel rechnet einmal je Sekunde. Über runAfterDelay und nicht
+        // über eine Schleife: Innerhalb eines Ticks steht die Spielzeit still.
+        helper.runAfterDelay(25, () -> {
+            var zeilen = panel.lines();
+            helper.assertTrue(!zeilen.isEmpty(),
+                    "die Tafel ist leer geblieben");
+            helper.assertTrue(zeilen.stream().anyMatch(zeile -> zeile.contains("Mein Display")),
+                    "die Überschrift fehlt: " + zeilen);
+            helper.assertTrue(zeilen.stream().anyMatch(zeile -> zeile.contains("testo")),
+                    "die Zeile fehlt: " + zeilen);
+            helper.succeed();
+        });
+    }
+
+    /**
+     * Und sie sagt selbst, warum sie leer ist.
+     *
+     * <p>Eine schwarze Fläche lässt offen, ob das Netz steht, der Name
+     * falsch ist oder das Programm die Tafel nicht kennt. Jeder dieser Fälle
+     * hat einen eigenen Satz — auf der Tafel, denn dort sieht man hin.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void theWallExplainsWhyItIsEmpty(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 2, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        rackWithServer(helper, controller.west());
+        BlockPos tafel = controller.east();
+        helper.setBlock(tafel, FnBlocks.DISPLAY.get().defaultBlockState()
+                .setValue(dev.devpanda.factorynetwork.block.DisplayBlock.FACING,
+                        Direction.NORTH));
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        var panel = (dev.devpanda.factorynetwork.block.entity.DisplayBlockEntity)
+                helper.getBlockEntity(tafel);
+
+        helper.runAfterDelay(25, () -> {
+            helper.assertTrue(panel.lines().stream()
+                            .anyMatch(zeile -> zeile.contains("ohne Namen")),
+                    "eine namenlose Tafel sagt es: " + panel.lines());
+
+            panel.setDisplayName("test");
+            helper.runAfterDelay(25, () -> {
+                helper.assertTrue(panel.lines().stream()
+                                .anyMatch(zeile -> zeile.contains("kein display")),
+                        "und eine ohne Programmstück auch: " + panel.lines());
+                helper.succeed();
+            });
+        });
+    }
+
 }

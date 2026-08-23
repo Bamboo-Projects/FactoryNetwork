@@ -207,7 +207,9 @@ public class ControllerBlockEntity extends BlockEntity {
     }
 
     public boolean deploy(dev.devpanda.factorynetwork.lang.Project newProject) {
-        Parser.ParseResult result = newProject.parse();
+        // Mit dem Blick aufs Netz: Auch wer über den Ordner neben der Welt
+        // schreibt, soll erfahren, dass keine Tafel „test" heißt.
+        Parser.ParseResult result = newProject.parse(networkView());
         this.project = newProject;
         this.diagnostics = new ArrayList<>(result.diagnostics());
         // Übernommen heißt: Entwurf und laufender Stand sind dasselbe.
@@ -640,6 +642,54 @@ public class ControllerBlockEntity extends BlockEntity {
         PacketDistributor.sendToPlayer(player,
                 dev.devpanda.factorynetwork.network.packet.ProjectStatePacket
                         .of(worldPosition, project, draft));
+    }
+
+    /**
+     * Was das Netz an Namen hergibt — für den Übersetzer.
+     *
+     * <p>Damit meldet auch das Übernehmen, was der Editor schon beim Tippen
+     * sagt. Wichtig für den Weg über den Ordner neben der Welt: Wer dort
+     * schreibt, hat keinen Editor, der ihn warnt.
+     */
+    public dev.devpanda.factorynetwork.lang.NetworkView networkView() {
+        List<String> connectorNames = new ArrayList<>(graph.connectorNames());
+        List<String> displayNames = displayNames();
+        return new dev.devpanda.factorynetwork.lang.NetworkView() {
+            @Override
+            public boolean knowsNetwork() {
+                return !connectorNames.isEmpty() || !displayNames.isEmpty();
+            }
+
+            @Override
+            public List<String> connectors() {
+                return connectorNames;
+            }
+
+            @Override
+            public List<String> displays() {
+                return displayNames;
+            }
+        };
+    }
+
+    /**
+     * Die Namen der Anzeigewände im Netz, jeder einmal.
+     *
+     * <p>Aus den Blöcken und nicht aus dem Graphen: Der merkt sich Stellen,
+     * keine Namen. Eine Wand besteht aus vielen Tafeln mit demselben Namen.
+     */
+    public List<String> displayNames() {
+        if (level == null) {
+            return List.of();
+        }
+        return graph.displays().stream()
+                .map(level::getBlockEntity)
+                .filter(DisplayBlockEntity.class::isInstance)
+                .map(found -> ((DisplayBlockEntity) found).displayName())
+                .filter(name -> name != null && !name.isBlank())
+                .distinct()
+                .sorted()
+                .toList();
     }
 
     /** Was im Editor steht, auch wenn es noch nicht läuft. */

@@ -34,9 +34,20 @@ class NameDistanceTest {
     }
 
     @Test
-    @DisplayName("Zwei vertauschte Buchstaben sind Abstand 2")
+    @DisplayName("Zwei vertauschte Buchstaben sind ein Schritt")
     void transposition() {
-        assertEquals(2, NameDistance.between("crusehr_1", "crusher_1"));
+        assertEquals(1, NameDistance.between("crusehr_1", "crusher_1"));
+    }
+
+    @Test
+    @DisplayName("Bei kurzen Namen entscheidet der Dreher über den Vorschlag")
+    void transpositionMattersForShortNames() {
+        // Vorher kostete ein Dreher zwei Schritte. Bei „halle" — fünf
+        // Zeichen, also ein Schritt Spielraum — fiel der Vorschlag damit
+        // aus, und zwar genau in dem Fall, für den es ihn gibt.
+        int abstand = NameDistance.between("halel", "halle");
+        assertEquals(1, abstand);
+        assertTrue(NameDistance.isCloseEnough("halel", abstand));
     }
 
     @Test
