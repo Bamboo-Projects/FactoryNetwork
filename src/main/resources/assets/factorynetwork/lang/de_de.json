@@ -278,5 +278,22 @@
   "screen.factorynetwork.project.delete": "Löschen",
   "jade.factorynetwork.controller.connectors": "%s davon Connectoren",
   "screen.factorynetwork.terminal.network.displays": "ANZEIGEN",
-  "screen.factorynetwork.editor.replace": "ersetzen durch…"
+  "screen.factorynetwork.editor.replace": "ersetzen durch…",
+  "screen.factorynetwork.code.help": "F1 Hilfe · Esc zurück",
+  "screen.factorynetwork.code.help.title": "Griffe",
+  "screen.factorynetwork.code.help.suggest": "Vorschläge zeigen",
+  "screen.factorynetwork.code.help.accept": "Vorschlag übernehmen",
+  "screen.factorynetwork.code.help.find": "Suchen",
+  "screen.factorynetwork.code.help.replace": "Suchen und ersetzen · Alt+Eingabe alle",
+  "screen.factorynetwork.code.help.undo": "Rückgängig",
+  "screen.factorynetwork.code.help.redo": "Wieder vorwärts",
+  "screen.factorynetwork.code.help.duplicate": "Zeile verdoppeln",
+  "screen.factorynetwork.code.help.indent": "Ein- und ausrücken",
+  "screen.factorynetwork.code.help.word": "Wortweise springen",
+  "screen.factorynetwork.code.help.ends": "An den Anfang, ans Ende",
+  "screen.factorynetwork.code.help.sideways": "Waagerecht schieben",
+  "screen.factorynetwork.code.help.deploy": "Übernehmen",
+  "screen.factorynetwork.code.help.rename": "Datei umbenennen",
+  "screen.factorynetwork.code.help.menu": "Menü im Dateibaum",
+  "screen.factorynetwork.code.help.close": "Diese Liste schließen"
 }

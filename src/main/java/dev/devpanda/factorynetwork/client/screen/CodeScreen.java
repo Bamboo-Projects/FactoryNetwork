@@ -66,8 +66,42 @@ public class CodeScreen extends Screen {
     private final Screen parent;
     private final BlockPos controller;
 
+    /**
+     * Die Griffe, die es gibt.
+     *
+     * <p><b>Weil man sie sonst nicht findet.</b> Ein Editor im Spiel hat
+     * keine Menüleiste, in der man nachsieht, und keine Doku, die daneben
+     * liegt. Strg+Leertaste, Strg+H und F2 sind da, aber wer nicht weiß, dass
+     * es sie gibt, benutzt sie nie — und der Editor fühlt sich ärmer an, als
+     * er ist.
+     *
+     * <p>Fest im Code und nicht in der Sprachdatei: Es sind Tastennamen, und
+     * die heißen in jeder Sprache gleich. Was sie tun, steht daneben und
+     * kommt aus der Sprachdatei.
+     */
+    private static final String[][] HELP = {
+            {"Strg+Leer", "help.suggest"},
+            {"Tab", "help.accept"},
+            {"Strg+F", "help.find"},
+            {"Strg+H", "help.replace"},
+            {"Strg+Z", "help.undo"},
+            {"Strg+Umschalt+Z", "help.redo"},
+            {"Strg+D", "help.duplicate"},
+            {"Tab / Umschalt+Tab", "help.indent"},
+            {"Strg+Links / Rechts", "help.word"},
+            {"Strg+Pos1 / Ende", "help.ends"},
+            {"Umschalt+Rollen", "help.sideways"},
+            {"Strg+Eingabe", "help.deploy"},
+            {"F2", "help.rename"},
+            {"Rechtsklick", "help.menu"},
+            {"F1", "help.close"},
+    };
+
     private ProjectPanel panel;
     private CodeEditor editor;
+
+    /** Ob die Griffliste offen ist. */
+    private boolean showingHelp;
 
     private Project project;
     private String open;
@@ -207,6 +241,9 @@ public class CodeScreen extends Screen {
         panel.render(graphics, mouseX, mouseY);
         editor.render(graphics, openProblems);
         drawFooter(graphics, mouseX, mouseY);
+        if (showingHelp) {
+            drawHelp(graphics);
+        }
 
         for (Renderable renderable : this.renderables) {
             renderable.render(graphics, mouseX, mouseY, partialTick);
@@ -224,8 +261,9 @@ public class CodeScreen extends Screen {
     private void drawHeader(GuiGraphics graphics) {
         graphics.drawString(font, FnFonts.bold(title), MARGIN, MARGIN, TerminalScreen.TEXT,
                 false);
-        Component hint = FnFonts.mono(
-                Component.translatable("screen.factorynetwork.code.back"));
+        Component hint = FnFonts.mono(Component.translatable(showingHelp
+                ? "screen.factorynetwork.code.back"
+                : "screen.factorynetwork.code.help"));
         graphics.drawString(font, hint, width - MARGIN - font.width(hint), MARGIN,
                 TerminalScreen.TEXT_FAINT, false);
         graphics.fill(MARGIN, MARGIN + 12, width - MARGIN, MARGIN + 13, EDGE);
@@ -270,8 +308,47 @@ public class CodeScreen extends Screen {
                 buttonY() + 3, TerminalScreen.TEXT, false);
     }
 
+    /**
+     * Die Griffliste über allem.
+     *
+     * <p>In zwei Spalten und mittig: Sie ist eine Nachschlagetafel, kein
+     * Bereich des Fensters. Sie deckt den Code ab, solange sie offen ist —
+     * das ist richtig so, denn wer sie aufmacht, sucht etwas und schreibt
+     * gerade nicht.
+     */
+    private void drawHelp(GuiGraphics graphics) {
+        int rows = HELP.length;
+        int keyWidth = 0;
+        int textWidth = 0;
+        for (String[] entry : HELP) {
+            keyWidth = Math.max(keyWidth, font.width(FnFonts.mono(entry[0])));
+            textWidth = Math.max(textWidth, font.width(Component.translatable(
+                    "screen.factorynetwork.code." + entry[1])));
+        }
+        int boxWidth = keyWidth + textWidth + 40;
+        int boxHeight = rows * 12 + 28;
+        int left = (width - boxWidth) / 2;
+        int top = (height - boxHeight) / 2;
+
+        graphics.fill(left, top, left + boxWidth, top + boxHeight, 0xF60E1214);
+        outline(graphics, left, top, left + boxWidth, top + boxHeight, EDGE);
+        graphics.drawString(font, FnFonts.bold(
+                        Component.translatable("screen.factorynetwork.code.help.title")),
+                left + 14, top + 8, TerminalScreen.TEXT, false);
+        graphics.fill(left + 14, top + 20, left + boxWidth - 14, top + 21, EDGE);
+
+        for (int i = 0; i < rows; i++) {
+            int rowY = top + 26 + i * 12;
+            graphics.drawString(font, FnFonts.mono(HELP[i][0]), left + 14, rowY,
+                    TerminalScreen.ACCENT, false);
+            graphics.drawString(font, Component.translatable(
+                            "screen.factorynetwork.code." + HELP[i][1]),
+                    left + 26 + keyWidth, rowY, TerminalScreen.TEXT_DIM, false);
+        }
+    }
+
     private void renderTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
-        if (panel.hasMenu()) {
+        if (panel.hasMenu() || showingHelp) {
             return;
         }
         if (overButton(mouseX, mouseY)) {
@@ -295,6 +372,10 @@ public class CodeScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (showingHelp) {
+            showingHelp = false;
+            return true;
+        }
         if (panel.mouseClicked(mouseX, mouseY, button)) {
             return true;
         }
@@ -331,6 +412,18 @@ public class CodeScreen extends Screen {
 
     @Override
     public boolean keyPressed(int key, int scanCode, int modifiers) {
+        // F1 vor allem anderen: Die Liste muss sich auch schließen lassen,
+        // während unten eine Eingabe offen steht.
+        if (key == 290) {
+            showingHelp = !showingHelp;
+            return true;
+        }
+        if (showingHelp) {
+            // Solange sie offen ist, geht nichts an den Text. Sonst tippte
+            // man hinter der Tafel weiter, ohne es zu sehen.
+            showingHelp = false;
+            return true;
+        }
         // Strg+Eingabe übernimmt, egal wo der Griff gerade liegt.
         if ((key == 257 || key == 335) && hasControlDown()) {
             deploy();

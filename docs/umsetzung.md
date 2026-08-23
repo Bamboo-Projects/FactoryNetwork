@@ -371,28 +371,47 @@ Dazu das Projekt aus mehreren Dateien, der Ordner neben der Welt als Brücke,
 und der Dateibaum im eigenen Fenster (`CodeScreen`) mit Anlegen, Umbenennen,
 Verdoppeln, Löschen.
 
+**Seit der Nacht auf den 24.08. dazugekommen.** Auslöser war ein Satz, der
+das Kernproblem genauer traf als meine eigene Liste: *„Ich sehe nie, was ich
+wo angeben muss."* Gemessen stimmte er wörtlich — hinter `title `, hinter
+`row ` und hinter `row "Bestand" ` bot der Editor jedes Mal dieselbe Liste
+aller Schlüsselwörter an.
+
+`Signatures` ist die Tabelle aus `grammatik.md` als Daten: je Schlüsselwort
+die Stellen dahinter, ihre Art und ein Satz Erklärung. Sie liegt bewusst im
+Sprachpaket und nicht im Editor — sie gehört zur Sprache, und ein
+Sprachserver für VS Code liest später dieselbe. Daraus kommen:
+
+- Vervollständigung nach der Stelle, die gerade dran ist (Ziel → Connectoren,
+  Ausdruck → Bestände, `strategy` → Verteilungen, `button` → Funktionen des
+  Projekts, Text → nichts)
+- jeder Vorschlag mit seiner Form daneben: `row` steht mit `string expr`
+- eine Formzeile über dem Cursor mit der ganzen Form, der aktiven Stelle
+  hervorgehoben und einem Satz dazu
+- Strg+Leertaste
+- F1 mit einer Griffliste, weil ein Editor im Spiel keine Menüleiste hat
+
+Dazu Querscrollen mit Beschnitt, Ersetzen (Strg+H, Alt+Eingabe für alle) und
+der Dateibaum mit Umbenennen, Verdoppeln und Löschen.
+
 **Fehlt, in dieser Reihenfolge:**
 
-1. **Querscrollen und ein Scissor.** Eine Zeile, die über die Fensterbreite
-   hinausgeht, wird heute darüber hinaus gezeichnet. Das ist kein fehlendes
-   Merkmal, das ist ein Fehler. Dazu die kleinen Dinge, die den Unterschied
-   zwischen „Textfeld" und „Editor" ausmachen: Tastenwiederholung beim
-   Halten prüfen, tote Tasten der deutschen Belegung (`^`, `´`), Strg+Rollen
-   zum Zoomen.
-2. **Entwurf auf dem Server.** Heute lebt er in `ClientProjectState`, also
+1. **Entwurf auf dem Server.** Heute lebt er in `ClientProjectState`, also
    nur solange der Client läuft. Ein Absturz oder das Verlassen der Welt
    nimmt ihn mit, und zwei Spieler am selben Controller überschreiben
    einander beim Übernehmen wortlos. Dazu gehören Strg+S und eine
    Dateisperre mit Lesemodus. **Das ist der wertvollste offene Punkt** — er
    behebt einen Datenverlust, alles andere ist Komfort.
-3. **Sprachdienst mit Netzschnappschuss.** `Completions` und `Lexer` hinter
-   eine Fassade, dann Vervollständigung aus den echten Connectoren
-   (`crusher_1.` bietet nur, was das Gerät kann), Erklärung beim Zeigen mit
-   Zustand und Position, Sprung zur Deklaration, Fundstellen, „im Spiel
-   zeigen". Die Connectordaten liegen für den Netzreiter schon auf dem
-   Client. Das ist der Punkt, an dem sich das von jedem Textfeld
-   unterscheidet.
-4. **Ersetzen.** Suchen gibt es, Ersetzen nicht.
+2. **Der Sprachdienst über die Signaturen hinaus.** Die Tabelle deckt die
+   Blockangaben ab, nicht die Ausdrücke: `crusher_1.` sollte anbieten, was
+   *dieses* Gerät kann, und beim Zeigen Zustand und Position nennen. Dazu
+   Sprung zur Deklaration, Fundstellen und „im Spiel zeigen". Die
+   Connectordaten liegen für den Netzreiter schon auf dem Client.
+3. **Ausdrücke und Anweisungen bekommen auch Formen.** `move`, `emit`,
+   `await` und die eingebauten Zugriffe stehen noch nicht in `Signatures` —
+   in einer Funktion sieht man weiterhin nur eine Wortliste.
+4. **Kleinkram am Gefühl.** Tastenwiederholung beim Halten prüfen, tote
+   Tasten der deutschen Belegung (`^`, `´`), Strg+Rollen zum Zoomen.
 
 **Offene Fragen, nicht entschieden:**
 

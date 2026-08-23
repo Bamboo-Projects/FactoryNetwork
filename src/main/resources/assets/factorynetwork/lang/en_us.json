@@ -278,5 +278,22 @@
   "screen.factorynetwork.project.delete": "Delete",
   "jade.factorynetwork.controller.connectors": "%s of them connectors",
   "screen.factorynetwork.terminal.network.displays": "DISPLAYS",
-  "screen.factorynetwork.editor.replace": "replace with…"
+  "screen.factorynetwork.editor.replace": "replace with…",
+  "screen.factorynetwork.code.help": "F1 help · Esc back",
+  "screen.factorynetwork.code.help.title": "Shortcuts",
+  "screen.factorynetwork.code.help.suggest": "Show suggestions",
+  "screen.factorynetwork.code.help.accept": "Accept suggestion",
+  "screen.factorynetwork.code.help.find": "Find",
+  "screen.factorynetwork.code.help.replace": "Find and replace · Alt+Enter for all",
+  "screen.factorynetwork.code.help.undo": "Undo",
+  "screen.factorynetwork.code.help.redo": "Redo",
+  "screen.factorynetwork.code.help.duplicate": "Duplicate line",
+  "screen.factorynetwork.code.help.indent": "Indent and outdent",
+  "screen.factorynetwork.code.help.word": "Jump by word",
+  "screen.factorynetwork.code.help.ends": "To the start, to the end",
+  "screen.factorynetwork.code.help.sideways": "Scroll sideways",
+  "screen.factorynetwork.code.help.deploy": "Deploy",
+  "screen.factorynetwork.code.help.rename": "Rename file",
+  "screen.factorynetwork.code.help.menu": "Menu in the file tree",
+  "screen.factorynetwork.code.help.close": "Close this list"
 }

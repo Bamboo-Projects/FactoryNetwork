@@ -2006,3 +2006,52 @@ die Pfeiltasten nach einem Klick auf eine Datei zwischen den Dateien statt
 durch den Text, und Entfernen löschte eine Datei statt eines Zeichens. In
 einem Fenster, dessen Hauptsache ein Editor ist, gehören die Pfeiltasten dem
 Editor.
+
+### Die Grammatik liegt einmal als Tabelle vor, nicht als Prosa
+
+`grammatik.md` sagt `row STRING expr`. Im Editor stand das nirgends: Die
+Vervollständigung kannte nur Wortlisten je Block und bot hinter `row` wieder
+alle Schlüsselwörter an. Wer wissen wollte, was an einer Stelle hingehört,
+musste die Doku danebenlegen — und in einem Spiel legt man keine Doku daneben.
+
+`Signatures` ist dieselbe Tabelle als Daten. Sie liegt im Sprachpaket, nicht
+im Editor: Sie gehört zur Sprache, und der Editor im Spiel ist nur der erste,
+der sie liest. Ein Sprachserver für VS Code liest später dieselbe, und dann
+gibt es die Regel weiterhin einmal und nicht zweimal.
+
+Drei Dinge fallen daraus:
+
+**Vorschläge nach der Stelle, nicht nach dem Block.** An einer Zielstelle
+Connectoren, an einer Ausdrucksstelle Bestände, hinter `strategy` die
+Verteilungen, hinter `button` die Funktionen des Projekts. An einer
+Textstelle nichts — einen freien Text kann niemand vorschlagen.
+
+**Die Form steht neben dem Vorschlag.** `row` allein ist ein Wort, das man
+nachschlagen muss; `row  string expr` ist eine Anleitung.
+
+**Die Formzeile erscheint von selbst.** Sie ist kein Vorschlag, sondern eine
+Beschriftung — man fordert sie nicht an, sie steht da, solange der Cursor in
+einer Angabe steht, und markiert die Stelle, die dran ist.
+
+### Warum kein CEF, jedenfalls nicht deswegen
+
+Der Gedanke lag nahe: Chromium einbetten, Monaco laden, und alles, was hier
+von Hand steht, ist geschenkt. Er beantwortet aber nicht die Frage, die
+gestellt war.
+
+Monaco ist eine Hülle. Dass hinter `row` ein Text kommt und dann ein
+Ausdruck, weiß es nicht und kann es nicht wissen — das schreibt man als
+Completion-Provider selbst, in TypeScript statt in Java. Die Arbeit, die
+diese Nacht gekostet hat, wäre mit CEF dieselbe gewesen; nur läge sie
+woanders.
+
+Was CEF wirklich brächte, ist der Rest: Mehrfachcursor, Faltung, Minimap,
+IME, geteilte Ansicht. Das steht auf keiner Liste, die jemand vermisst hat.
+Was es kostet, ist eine harte Abhängigkeit von einigen hundert Megabyte
+nativer Binärdateien je Plattform — in einem Modpack die Sorte Abhängigkeit,
+wegen der man eine Mod austauscht.
+
+Die Reihenfolge ist deshalb: erst der Sprachdienst, der ohnehin nötig ist,
+dann sehen, was noch weh tut. Bleibt danach „das Widget fühlt sich klobig
+an", ist CEF eine ernsthafte Antwort. Ist es weg, haben wir die
+Abhängigkeit gespart.
