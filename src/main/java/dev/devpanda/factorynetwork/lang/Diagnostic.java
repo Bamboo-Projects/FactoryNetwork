@@ -10,7 +10,22 @@ import java.util.Objects;
  * Hilfe macht: „Meinst du den Connector gleichen Namens? Dann schreibe ihn in
  * Rückstriche."
  */
-public record Diagnostic(Severity severity, Span span, String message, String hint) {
+public record Diagnostic(Severity severity, Span span, String message, String hint,
+                         String file) {
+
+    /**
+     * Ohne Datei — der Übersetzer einer einzelnen Datei weiß nicht, wie sie
+     * heißt. Den Namen trägt {@link Project} nach, wenn er die Meldungen
+     * mehrerer Dateien zusammenlegt.
+     */
+    public Diagnostic(Severity severity, Span span, String message, String hint) {
+        this(severity, span, message, hint, "");
+    }
+
+    /** Dieselbe Meldung, aber mit Dateinamen. */
+    public Diagnostic withFile(String file) {
+        return new Diagnostic(severity, span, message, hint, file);
+    }
 
     public enum Severity {
         /** Blockiert die Übernahme. */
@@ -23,6 +38,7 @@ public record Diagnostic(Severity severity, Span span, String message, String hi
         Objects.requireNonNull(severity);
         Objects.requireNonNull(span);
         Objects.requireNonNull(message);
+        file = file == null ? "" : file;
     }
 
     public static Diagnostic error(Span span, String message) {
@@ -44,6 +60,8 @@ public record Diagnostic(Severity severity, Span span, String message, String hi
     @Override
     public String toString() {
         String prefix = severity == Severity.ERROR ? "Fehler" : "Warnung";
-        return prefix + " " + span + ": " + message + (hint == null ? "" : " " + hint);
+        String where = file.isEmpty() ? "" : file + " ";
+        return prefix + " " + where + span + ": " + message
+                + (hint == null ? "" : " " + hint);
     }
 }

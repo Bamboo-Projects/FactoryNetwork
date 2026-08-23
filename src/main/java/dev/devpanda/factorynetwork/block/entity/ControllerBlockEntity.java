@@ -57,7 +57,15 @@ public class ControllerBlockEntity extends BlockEntity {
     private static final String KEY_POWER = "Power";
     private static final int REBUILD_INTERVAL = 100;
 
-    private String source = "";
+    /**
+     * Das Programm als Projekt aus mehreren Dateien.
+     *
+     * <p>Ein Programm von dreihundert Zeilen in einem Stück ist keine
+     * Übersicht. Alle Dateien teilen einen Namensraum — Dateien sind Ordnung
+     * für den Menschen, keine Grenze für die Sprache.
+     */
+    private dev.devpanda.factorynetwork.lang.Project project =
+            dev.devpanda.factorynetwork.lang.Project.of("");
     private Program program = new Program(List.of());
     private List<Diagnostic> diagnostics = new ArrayList<>();
     private FactoryGraph graph = FactoryGraph.empty();
@@ -151,8 +159,19 @@ public class ControllerBlockEntity extends BlockEntity {
 
     // ---- Programm ---------------------------------------------------------
 
+    /** Das Projekt mit allen seinen Dateien. */
+    public dev.devpanda.factorynetwork.lang.Project project() {
+        return project;
+    }
+
+    /**
+     * Der ganze Quelltext am Stück.
+     *
+     * <p>Für alles, was nur lesen will. Wer eine einzelne Datei braucht,
+     * fragt das Projekt.
+     */
     public String source() {
-        return source;
+        return project.joined();
     }
 
     public List<Diagnostic> diagnostics() {
@@ -168,9 +187,19 @@ public class ControllerBlockEntity extends BlockEntity {
      * eine Fabrik, die wegen eines Tippfehlers ausgeht, ist schlimmer als eine,
      * die noch mit der alten Fassung läuft.
      */
+    /**
+     * Übernimmt einen einzelnen Text als ganzes Projekt.
+     *
+     * <p>Der bequeme Weg für alles, was nur einen Text hat — Prüfungen, die
+     * Dateibrücke einer alten Welt, ein Aufruf von außen.
+     */
     public boolean deploy(String newSource) {
-        Parser.ParseResult result = Parser.parse(newSource);
-        this.source = newSource;
+        return deploy(dev.devpanda.factorynetwork.lang.Project.of(newSource));
+    }
+
+    public boolean deploy(dev.devpanda.factorynetwork.lang.Project newProject) {
+        Parser.ParseResult result = newProject.parse();
+        this.project = newProject;
         this.diagnostics = new ArrayList<>(result.diagnostics());
         writeProgramFile();
         // Erst nachsehen, dann urteilen: Wer eben einen Schrank gesetzt hat,
@@ -458,6 +487,36 @@ public class ControllerBlockEntity extends BlockEntity {
         setChanged();
     }
 
+    /** Unter diesem Namen stehen die Dateien des Projekts. */
+    private static final String KEY_FILES = "Files";
+
+    /**
+     * Liest das Projekt aus dem Speicherformat.
+     *
+     * <p><b>Alte Welten mitgelesen:</b> Dort steht ein einzelner Text unter
+     * {@code Source}. Der wird zur {@code main.mf} — ein Projekt aus einer
+     * Datei ist genau das, was ein Controller vorher hatte.
+     */
+    private static dev.devpanda.factorynetwork.lang.Project readProject(CompoundTag tag) {
+        if (tag.contains(KEY_FILES)) {
+            CompoundTag files = tag.getCompound(KEY_FILES);
+            Map<String, String> sources = new HashMap<>();
+            files.getAllKeys().forEach(name -> sources.put(name, files.getString(name)));
+            return new dev.devpanda.factorynetwork.lang.Project(sources);
+        }
+        return dev.devpanda.factorynetwork.lang.Project.of(tag.getString(KEY_SOURCE));
+    }
+
+    private void writeProject(CompoundTag tag) {
+        CompoundTag files = new CompoundTag();
+        project.files().forEach(files::putString);
+        tag.put(KEY_FILES, files);
+        // Der alte Schlüssel bleibt beschrieben: Wer die Welt mit einer
+        // älteren Fassung der Mod öffnet, findet wenigstens seinen Text
+        // wieder, statt ein leeres Terminal.
+        tag.putString(KEY_SOURCE, project.joined());
+    }
+
     // ---- Die Datei neben der Welt -----------------------------------------
 
     /**
@@ -487,11 +546,11 @@ public class ControllerBlockEntity extends BlockEntity {
                 return;
             }
             if (!java.nio.file.Files.exists(programFile.path())) {
-                programFile.write(source);
+                programFile.write(source());
                 return;
             }
         }
-        String incoming = programFile.poll(source);
+        String incoming = programFile.poll(source());
         if (incoming == null) {
             return;
         }
@@ -523,7 +582,7 @@ public class ControllerBlockEntity extends BlockEntity {
      */
     private void writeProgramFile() {
         if (programFile != null) {
-            programFile.write(source);
+            programFile.write(source());
         }
     }
 
@@ -1036,7 +1095,7 @@ public class ControllerBlockEntity extends BlockEntity {
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-        source = tag.getString(KEY_SOURCE);
+        project = readProject(tag);
         storage.load(tag.getCompound(KEY_STORAGE), registries);
         fluidStorage.load(tag.getCompound(KEY_FLUIDS), registries);
         power.load(tag.getCompound(KEY_POWER), registries);
@@ -1047,8 +1106,8 @@ public class ControllerBlockEntity extends BlockEntity {
         // Nach dem Laden wird neu übersetzt: Der Baum selbst wird nicht
         // gespeichert, weil sich die Sprache ändern kann, der Quelltext aber
         // gültig bleibt.
-        if (!source.isBlank()) {
-            Parser.ParseResult result = Parser.parse(source);
+        if (!source().isBlank()) {
+            Parser.ParseResult result = project.parse();
             diagnostics = new ArrayList<>(result.diagnostics());
             if (!result.hasErrors()) {
                 program = result.program();
@@ -1059,7 +1118,7 @@ public class ControllerBlockEntity extends BlockEntity {
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
-        tag.putString(KEY_SOURCE, source);
+        writeProject(tag);
         CompoundTag storageTag = new CompoundTag();
         storage.save(storageTag, registries);
         tag.put(KEY_STORAGE, storageTag);
@@ -1081,7 +1140,7 @@ public class ControllerBlockEntity extends BlockEntity {
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         CompoundTag tag = super.getUpdateTag(registries);
-        tag.putString(KEY_SOURCE, source);
+        writeProject(tag);
         return tag;
     }
 }
