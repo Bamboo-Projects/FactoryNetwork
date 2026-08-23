@@ -4304,42 +4304,51 @@ public final class FactoryNetworkGameTests {
                 }"""), "das erste Programm wurde nicht übernommen");
 
         helper.runAfterDelay(2, () -> {
-            java.nio.file.Path path = entity.programFilePath();
-            helper.assertTrue(path != null, "es gibt keine Datei");
+            java.nio.file.Path folder = entity.programFilePath();
+            helper.assertTrue(folder != null, "es gibt keinen Ordner");
+            java.nio.file.Path main = folder.resolve(
+                    dev.devpanda.factorynetwork.lang.Project.MAIN);
             try {
-                helper.assertTrue(java.nio.file.Files.exists(path),
-                        "die Datei liegt nicht da: " + path);
-                helper.assertTrue(java.nio.file.Files.readString(path).contains("fn eins"),
-                        "und enthält das Programm nicht");
+                helper.assertTrue(java.nio.file.Files.isDirectory(folder),
+                        "der Ordner liegt nicht da: " + folder);
+                helper.assertTrue(java.nio.file.Files.readString(main).contains("fn eins"),
+                        "main.mf enthält das Programm nicht");
 
-                // Von außen etwas anderes hineinschreiben, mit frischem
-                // Zeitstempel: Innerhalb einer Millisekunde wäre er derselbe,
-                // und dann sähe der Controller die Änderung nicht.
-                java.nio.file.Files.writeString(path, "fn zwei() {\n    let b = 2\n}");
-                java.nio.file.Files.setLastModifiedTime(path,
-                        java.nio.file.attribute.FileTime.fromMillis(
-                                System.currentTimeMillis() + 5000L));
+                // Eine zweite Datei von außen: Sie gehört ab jetzt dazu.
+                java.nio.file.Files.writeString(folder.resolve("zwei.mf"),
+                        "fn zwei() {\n    let b = 2\n}");
             } catch (java.io.IOException failed) {
-                helper.fail("Die Datei ließ sich nicht anfassen: " + failed);
+                helper.fail("Der Ordner ließ sich nicht anfassen: " + failed);
             }
 
             // Über runAfterDelay und nicht über eine Schleife von
             // serverTick-Aufrufen: Innerhalb eines Ticks steht die Spielzeit
             // still, und der Controller sieht nur alle zwanzig Ticks nach.
-            // Fünfundzwanzigmal serverTick im selben Tick würde also
-            // fünfundzwanzigmal nichts tun.
             helper.runAfterDelay(25, () -> {
-                helper.assertTrue(entity.source().contains("fn zwei"),
-                        "die Änderung von außen kam nicht an: " + entity.source());
+                helper.assertValueEqual(entity.project().names().size(), 2,
+                        "die neue Datei gehört zum Projekt");
                 helper.assertTrue(entity.program().functions().stream()
                                 .anyMatch(fn -> fn.name().equals("zwei")),
-                        "und wurde nicht übernommen");
+                        "und ihre Funktion wurde übernommen");
+                helper.assertTrue(entity.program().functions().stream()
+                                .anyMatch(fn -> fn.name().equals("eins")),
+                        "die erste ist dabei nicht verlorengegangen");
+
+                // Und wieder weg: Löschen ist in einem Projekt eine Absicht.
                 try {
-                    java.nio.file.Files.deleteIfExists(entity.programFilePath());
-                } catch (java.io.IOException ignored) {
-                    // Eine liegengebliebene Prüfdatei stört niemanden.
+                    java.nio.file.Files.delete(folder.resolve("zwei.mf"));
+                } catch (java.io.IOException failed) {
+                    helper.fail("Die Datei ließ sich nicht löschen: " + failed);
                 }
-                helper.succeed();
+
+                helper.runAfterDelay(25, () -> {
+                    helper.assertValueEqual(entity.project().names().size(), 1,
+                            "die gelöschte Datei ist weg");
+                    helper.assertTrue(entity.program().functions().stream()
+                                    .noneMatch(fn -> fn.name().equals("zwei")),
+                            "und ihre Funktion mit");
+                    helper.succeed();
+                });
             });
         });
     }

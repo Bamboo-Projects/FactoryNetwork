@@ -116,13 +116,13 @@ public class ControllerBlockEntity extends BlockEntity {
     private long lastRebuild = -REBUILD_INTERVAL;
 
     /**
-     * Das Programm als Datei neben der Welt — die Brücke zu VS Code.
+     * Das Projekt als Ordner neben der Welt — die Brücke zu VS Code.
      *
      * <p>Erst beim ersten Tick angelegt: Vorher gibt es keinen Server und
      * damit keinen Weltordner.
      */
-    private dev.devpanda.factorynetwork.lang.ProgramFile programFile;
-    private long lastFileCheck = -dev.devpanda.factorynetwork.lang.ProgramFile.CHECK_INTERVAL;
+    private dev.devpanda.factorynetwork.lang.ProgramFolder programFolder;
+    private long lastFileCheck = -dev.devpanda.factorynetwork.lang.ProgramFolder.CHECK_INTERVAL;
 
     /** Letzte gesehene Redstone-Stärke je Connector, für das Ereignis. */
     private final Map<String, Integer> lastRedstone = new HashMap<>();
@@ -536,53 +536,56 @@ public class ControllerBlockEntity extends BlockEntity {
             return;
         }
         if (level.getGameTime() - lastFileCheck
-                < dev.devpanda.factorynetwork.lang.ProgramFile.CHECK_INTERVAL) {
+                < dev.devpanda.factorynetwork.lang.ProgramFolder.CHECK_INTERVAL) {
             return;
         }
         lastFileCheck = level.getGameTime();
-        if (programFile == null) {
-            programFile = dev.devpanda.factorynetwork.lang.ProgramFile.of(server, worldPosition);
-            if (programFile == null) {
+        if (programFolder == null) {
+            programFolder = dev.devpanda.factorynetwork.lang.ProgramFolder.of(
+                    server, worldPosition);
+            if (programFolder == null) {
                 return;
             }
-            if (!java.nio.file.Files.exists(programFile.path())) {
-                programFile.write(source());
-                return;
-            }
+            // Beim ersten Blick: Ist der Ordner leer, bekommt er das
+            // laufende Projekt. Steht etwas darin, gilt das — dann hat
+            // jemand es angelegt oder bei ausgeschaltetem Server
+            // bearbeitet, und beides ist eine Absicht.
+            programFolder.write(project);
         }
-        String incoming = programFile.poll(source());
+        dev.devpanda.factorynetwork.lang.Project incoming = programFolder.poll(project);
         if (incoming == null) {
             return;
         }
-        String name = programFile.path().getFileName().toString();
+        String name = programFolder.path().getFileName().toString();
         if (deploy(incoming)) {
-            note("Programm aus " + name + " übernommen.");
+            note("Projekt aus " + name + " übernommen: "
+                    + String.join(", ", incoming.names()));
         } else {
             // Die Fehler stehen wie immer im Code-Reiter. Hier nur der
-            // Hinweis, dass es an der Datei lag und nicht am Terminal.
+            // Hinweis, dass es an den Dateien lag und nicht am Terminal.
             note("Fehler in " + name + " — das laufende Programm läuft weiter.");
         }
     }
 
     /**
-     * Wo das Programm als Datei liegt, oder {@code null}, solange noch
+     * Wo das Projekt als Ordner liegt, oder {@code null}, solange noch
      * niemand danach gesehen hat.
      */
     public java.nio.file.Path programFilePath() {
-        return programFile == null ? null : programFile.path();
+        return programFolder == null ? null : programFolder.path();
     }
 
     /**
      * Schreibt das Programm in die Datei.
      *
-     * <p>Nach <b>jedem</b> Übernehmen, auch nach einem mit Fehlern: Datei und
-     * Terminal müssen denselben Text zeigen. Stünde in der Datei noch die
-     * letzte fehlerfreie Fassung, holte der nächste Blick sie zurück und
+     * <p>Nach <b>jedem</b> Übernehmen, auch nach einem mit Fehlern: Ordner
+     * und Terminal müssen denselben Text zeigen. Stünde in den Dateien noch
+     * die letzte fehlerfreie Fassung, holte der nächste Blick sie zurück und
      * überschriebe, was gerade eingetippt wurde.
      */
     private void writeProgramFile() {
-        if (programFile != null) {
-            programFile.write(source());
+        if (programFolder != null) {
+            programFolder.write(project);
         }
     }
 

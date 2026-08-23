@@ -1904,3 +1904,61 @@ ein Netz opfern — sie kostet Strom, und das ist der Preis.
 
 Damit sind alle Zahlen wieder ganze, und `Channels` besteht aus fünf
 Konstanten statt aus fünf Konstanten plus Umrechnung plus Bruchformatierung.
+
+
+---
+
+## Das Programm ist ein Projekt (2026-08-23)
+
+Dreihundert Zeilen in einem Stück sind keine Übersicht — und der eingebaute
+Editor zeigt neun Zeilen und vierundvierzig Spalten davon. Deshalb hält ein
+Controller jetzt mehrere `.mf`-Dateien statt einer Zeichenkette.
+
+### Ein Namensraum, keine Module
+
+Das stand seit dem ersten Tag so da: als Fehlertext beim reservierten
+`import` („Alle .mf-Dateien eines Projekts teilen ohnehin einen Namensraum")
+und im Javadoc von `Program`. Ein `fn` in der einen Datei ruft ein `fn` in
+der anderen, ohne dass irgendwo `import` steht. **Dateien sind Ordnung für
+den Menschen, keine Grenze für die Sprache.** Echte Module mit eigenen
+Namensräumen sind etwas anderes; dafür bleibt `import` reserviert.
+
+### Jede Datei für sich übersetzt
+
+Bekäme der Übersetzer den zusammengehängten Text, zeigte jeder Fehler ab der
+zweiten Datei auf eine Zeile, die es dort nicht gibt — und der Editor
+markierte die falsche. Eine Meldung trägt deshalb ihren Dateinamen.
+
+### Dateinamen sind Nutzereingaben
+
+Sie landen im Speicherformat, im Dateisystem und über die Leitung. `../` darin
+wäre ein Weg, aus dem Weltordner herauszuschreiben. Das Projektmodell selbst
+erzwingt die Regel — Kleinbuchstaben, Ziffern, Unterstrich, Endung `.mf` —,
+und zwar an beiden Enden: beim Anlegen im Spiel und beim Einlesen des
+Ordners. Eine fremde Datei im Ordner wird übergangen, nicht übernommen.
+
+Kleinbuchstaben, damit zwei Dateien nicht auf einem System verschieden und
+auf dem nächsten gleich heißen.
+
+### Alphabetisch, nicht nach Anlagereihenfolge
+
+Sonst hinge die Reihenfolge der Deklarationen daran, wie das Speicherformat
+sie zurückgibt, und ein wartender Ablauf verglichen sich nach einem Neustart
+mit einem anders sortierten Programm.
+
+### Der Ordner vergleicht Inhalte, keine Zeitstempel
+
+Das löst drei Fälle auf einmal, die einzeln zu behandeln wären: Datei
+angelegt, Datei gelöscht, Datei umbenannt — Umbenennen ist von außen nichts
+anderes als beides zusammen. Und „zwei Schreibvorgänge in derselben
+Millisekunde" verschwindet mit.
+
+**Extern gelöscht heißt gelöscht.** Bei einer einzelnen Datei kam sie beim
+nächsten Schreiben zurück, weil man sie kaum absichtlich löscht. In einem
+Projekt löscht man ein Programmstück, das man nicht mehr will.
+
+### Alte Welten ziehen um
+
+Die bisherige `controller_….mf` wird beim ersten Laden zur `main.mf` im
+Ordner und verschwindet — sonst stünden zwei Wahrheiten nebeneinander, und
+die Brücke sähe nur eine.
