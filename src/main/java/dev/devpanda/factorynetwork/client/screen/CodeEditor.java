@@ -490,6 +490,41 @@ public class CodeEditor {
         return diagnosticIn(diagnostics, lineAt(mouseY) + 1);
     }
 
+    /**
+     * Die Form zum Schlüsselwort unter dem Zeiger, oder {@code null}.
+     *
+     * <p>Die Formzeile über dem Cursor sagt, was man gerade schreibt. Beim
+     * <b>Lesen</b> hilft sie nicht: Da steht der Cursor woanders, und man
+     * will wissen, was diese eine Zeile tut. Also dasselbe noch einmal für
+     * den Mauszeiger.
+     *
+     * <p>Erkannt wird nur das erste Wort einer Zeile — das Schlüsselwort.
+     * Was dahinter steht, sind Namen und Werte; die erklärt eine
+     * Signaturtabelle nicht.
+     */
+    public dev.devpanda.factorynetwork.lang.Signatures.Signature signatureAt(double mouseX,
+                                                                            double mouseY) {
+        if (!inside(mouseX, mouseY)) {
+            return null;
+        }
+        int lineIndex = lineAt(mouseY);
+        String line = lines.get(lineIndex);
+        String trimmed = line.trim();
+        int wordEnd = trimmed.indexOf(' ');
+        String keyword = wordEnd < 0 ? trimmed : trimmed.substring(0, wordEnd);
+        if (keyword.isEmpty()) {
+            return null;
+        }
+        // Nur, solange der Zeiger wirklich über dem Wort steht.
+        int start = line.indexOf(keyword);
+        int column = columnAt(lineIndex, mouseX);
+        if (column < start || column > start + keyword.length()) {
+            return null;
+        }
+        String block = Completions.enclosingBlock(lines, lineIndex);
+        return dev.devpanda.factorynetwork.lang.Signatures.find(block, keyword);
+    }
+
     /** Setzt den Cursor auf die Stelle einer Meldung. */
     public void jumpTo(Diagnostic diagnostic) {
         setCursor(diagnostic.span().line() - 1, Math.max(0, diagnostic.span().column() - 1));

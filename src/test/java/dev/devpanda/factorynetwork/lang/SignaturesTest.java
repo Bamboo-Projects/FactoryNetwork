@@ -91,4 +91,64 @@ class SignaturesTest {
             }
         }
     }
+
+    // ---- Anweisungen -------------------------------------------------------
+
+    private static Signatures.Kind inFn(String line) {
+        Signatures.Where where = Signatures.at("fn", line);
+        assertNotNull(where, () -> "keine Anweisung erkannt in: " + line);
+        Signatures.Slot slot = where.slot();
+        return slot == null ? null : slot.kind();
+    }
+
+    @Test
+    @DisplayName("move ohne from überspringt die Quelle mitsamt ihrem Wort")
+    void moveWithoutFromSkipsTheSourcePair() {
+        // Ohne diese Regel landete das „to" auf der Stelle der Quelle, und
+        // ab da zeigte die Formzeile auf alles Falsche.
+        assertEquals(Signatures.Kind.SELECTION, inFn("    move "));
+        assertEquals(Signatures.Kind.LITERAL, inFn("    move 64 "));
+        assertEquals(Signatures.Kind.TARGET, inFn("    move 64 to "));
+        assertNull(inFn("    move 64 to kiste_1 "), "danach ist die Anweisung voll");
+    }
+
+    @Test
+    @DisplayName("move mit from zählt jede Stelle einzeln")
+    void moveWithFromWalksEverySlot() {
+        assertEquals(Signatures.Kind.LITERAL, inFn("    move 64 "));
+        assertEquals(Signatures.Kind.TARGET, inFn("    move 64 from "));
+        assertEquals(Signatures.Kind.LITERAL, inFn("    move 64 from ofen_1 "));
+        assertEquals(Signatures.Kind.TARGET, inFn("    move 64 from ofen_1 to "));
+        assertNull(inFn("    move 64 from ofen_1 to kiste_1 "));
+    }
+
+    @Test
+    @DisplayName("Die Form von move zeigt die Klammern der Grammatik")
+    void moveShapeShowsItsBrackets() {
+        assertEquals("move menge [from quelle] to ziel",
+                Signatures.find("fn", "move").shape());
+    }
+
+    @Test
+    @DisplayName("let und for führen einen neuen Namen ein")
+    void bindingStatementsIntroduceANewName() {
+        assertEquals(Signatures.Kind.NEW_NAME, inFn("    let "));
+        assertEquals(Signatures.Kind.LITERAL, inFn("    let zahl "));
+        assertEquals(Signatures.Kind.EXPR, inFn("    let zahl = "));
+
+        assertEquals(Signatures.Kind.NEW_NAME, inFn("    for "));
+        assertEquals(Signatures.Kind.LITERAL, inFn("    for stapel "));
+        assertEquals(Signatures.Kind.EXPR, inFn("    for stapel in "));
+    }
+
+    @Test
+    @DisplayName("Anweisungen gelten in fn, on und multiblock")
+    void statementsApplyToEveryCodeBlock() {
+        for (String block : new String[] {"fn", "on", "multiblock"}) {
+            assertNotNull(Signatures.at(block, "    sleep "),
+                    () -> "sleep fehlt in " + block);
+        }
+        assertNull(Signatures.at("display", "    sleep "),
+                "eine Anzeige kennt keine Anweisungen");
+    }
 }

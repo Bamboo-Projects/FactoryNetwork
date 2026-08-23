@@ -42,6 +42,10 @@ public final class Signatures {
         FUNCTION,
         /** Eine Aufzählung von Connectoren oder Mustern. */
         MEMBERS,
+        /** Ein Name, der hier erst entsteht — dafür gibt es keinen Vorschlag. */
+        NEW_NAME,
+        /** Der Name eines Ereignisses aus dem Projekt. */
+        EVENT,
         /** Ein festes Wort, das genau so dastehen muss. */
         LITERAL
     }
@@ -52,14 +56,35 @@ public final class Signatures {
      * @param kind  was dort stehen muss
      * @param label wie es in der Hinweiszeile heißt
      */
-    public record Slot(Kind kind, String label) {
+    public record Slot(Kind kind, String label, boolean optional) {
+
+        public Slot(Kind kind, String label) {
+            this(kind, label, false);
+        }
 
         static Slot of(Kind kind) {
             return new Slot(kind, kind.name().toLowerCase(Locale.ROOT));
         }
 
+        static Slot named(Kind kind, String label) {
+            return new Slot(kind, label);
+        }
+
         static Slot literal(String word) {
             return new Slot(Kind.LITERAL, word);
+        }
+
+        /**
+         * Ein festes Wort, das auch fehlen darf.
+         *
+         * <p>Es führt immer genau einen Wert ein — {@code from ziel},
+         * {@code to ziel}. Fehlt das Wort, fehlt auch der Wert, und beim
+         * Zählen werden beide Stellen übersprungen. Das ist die Regel, mit
+         * der {@code move menge [from ziel] to ziel} ohne einen zweiten
+         * Übersetzer auskommt.
+         */
+        static Slot maybe(String word) {
+            return new Slot(Kind.LITERAL, word, true);
         }
     }
 
@@ -75,7 +100,19 @@ public final class Signatures {
         /** Die ganze Form als Text: {@code row string expr}. */
         public String shape() {
             StringBuilder out = new StringBuilder(keyword);
-            for (Slot slot : slots) {
+            for (int i = 0; i < slots.size(); i++) {
+                Slot slot = slots.get(i);
+                if (slot.optional()) {
+                    // Das feste Wort und sein Wert stehen zusammen in eckigen
+                    // Klammern — so schreibt es auch die Grammatik.
+                    out.append(" [").append(slot.label());
+                    if (i + 1 < slots.size()) {
+                        out.append(' ').append(slots.get(i + 1).label());
+                        i++;
+                    }
+                    out.append(']');
+                    continue;
+                }
                 out.append(' ').append(slot.label());
             }
             return out.toString();
@@ -130,6 +167,32 @@ public final class Signatures {
                     Slot.of(Kind.MEMBERS)),
             of("strategy", "Wie auf sie verteilt wird.", Slot.of(Kind.STRATEGY)));
 
+    /**
+     * Die Anweisungen in einer Funktion oder einem Ereignisblock.
+     *
+     * <p>Bedingungen stehen ohne runde Klammern und ein Block ist Pflicht —
+     * deshalb endet die Form von {@code if} beim Ausdruck. Die geschweifte
+     * Klammer setzt der Editor beim Zeilenumbruch selbst.
+     */
+    public static final List<Signature> STATEMENT = List.of(
+            of("let", "Ein neuer Wert mit Namen.",
+                    Slot.named(Kind.NEW_NAME, "name"), Slot.literal("="),
+                    Slot.of(Kind.EXPR)),
+            of("if", "Nur, wenn der Ausdruck wahr ist.", Slot.of(Kind.EXPR)),
+            of("while", "Solange der Ausdruck wahr ist.", Slot.of(Kind.EXPR)),
+            of("for", "Einmal je Element.",
+                    Slot.named(Kind.NEW_NAME, "name"), Slot.literal("in"),
+                    Slot.of(Kind.EXPR)),
+            of("move", "Bewegt Gegenstände von einem Gerät zum anderen.",
+                    Slot.named(Kind.SELECTION, "menge"), Slot.maybe("from"),
+                    Slot.named(Kind.TARGET, "quelle"), Slot.literal("to"),
+                    Slot.named(Kind.TARGET, "ziel")),
+            of("emit", "Löst ein Ereignis aus.", Slot.of(Kind.EVENT)),
+            of("sleep", "Wartet eine Zeit lang.", Slot.of(Kind.DURATION)),
+            of("return", "Gibt einen Wert zurück und beendet die Funktion.",
+                    Slot.of(Kind.EXPR)),
+            of("await", "Wartet, bis der Ausdruck wahr ist.", Slot.of(Kind.EXPR)));
+
     /** Die Verteilungen, die {@code strategy} kennt. */
     public static final List<String> STRATEGIES = List.of(
             "round_robin", "first_available", "least_filled", "random", "priority");
@@ -147,6 +210,8 @@ public final class Signatures {
             case "display" -> DISPLAY;
             case "worker" -> WORKER;
             case "group" -> GROUP;
+            // fn, on und multiblock enthalten Anweisungen, keine Angaben.
+            case "fn", "on", "multiblock" -> STATEMENT;
             default -> List.of();
         };
     }
@@ -213,14 +278,42 @@ public final class Signatures {
             return null;
         }
         String rest = text.substring(wordEnd);
-        int words = countWords(rest);
+        List<String> words = splitWords(rest);
         boolean typing = !rest.isEmpty() && rest.charAt(rest.length() - 1) != ' ';
-        return new Where(signature, typing ? Math.max(0, words - 1) : words);
+        if (typing && !words.isEmpty()) {
+            // Das letzte Wort wird noch getippt und zählt noch nicht.
+            words = words.subList(0, words.size() - 1);
+        }
+        return new Where(signature, slotAfter(signature, words));
     }
 
-    /** Zählt die Wörter, wobei ein Text in Anführungszeichen eines ist. */
-    private static int countWords(String rest) {
-        int words = 0;
+    /**
+     * Welche Stelle nach diesen Wörtern dran ist.
+     *
+     * <p>Wort für Wort durch die Form. Steht dabei eine Stelle an, die ein
+     * festes Wort <b>sein kann</b>, und das Wort passt nicht dazu, fällt sie
+     * samt ihrem Wert weg: {@code move 64 to kiste} hat kein {@code from},
+     * und ohne diese Regel landete das {@code to} auf der Stelle der Quelle.
+     */
+    private static int slotAfter(Signature signature, List<String> words) {
+        int slot = 0;
+        for (String word : words) {
+            while (slot < signature.slots().size()) {
+                Slot candidate = signature.slots().get(slot);
+                if (candidate.optional() && !candidate.label().equals(word)) {
+                    slot += 2;
+                    continue;
+                }
+                break;
+            }
+            slot++;
+        }
+        return slot;
+    }
+
+    /** Die Wörter hinter dem Schlüsselwort; ein Text in Anführungszeichen ist eines. */
+    private static List<String> splitWords(String rest) {
+        List<String> words = new java.util.ArrayList<>();
         int i = 0;
         while (i < rest.length()) {
             while (i < rest.length() && rest.charAt(i) == ' ') {
@@ -229,20 +322,19 @@ public final class Signatures {
             if (i >= rest.length()) {
                 break;
             }
-            words++;
+            int start = i;
             if (rest.charAt(i) == '"') {
                 i++;
                 while (i < rest.length() && rest.charAt(i) != '"') {
                     i++;
                 }
-                // Das schließende Anführungszeichen gehört zum Wort; fehlt es,
-                // ist die Zeile hier zu Ende.
                 i = Math.min(i + 1, rest.length());
             } else {
                 while (i < rest.length() && rest.charAt(i) != ' ') {
                     i++;
                 }
             }
+            words.add(rest.substring(start, i));
         }
         return words;
     }

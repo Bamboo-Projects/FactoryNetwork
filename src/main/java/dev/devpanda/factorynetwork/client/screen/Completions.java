@@ -142,14 +142,43 @@ public final class Completions {
                     Entry.Kind.KEYWORD);
             case MEMBERS -> addConnectors(entries, prefix);
             case FUNCTION -> addFunctions(entries, prefix, lines);
-            case LITERAL -> addAll(entries, List.of(slot.label()), prefix,
-                    Entry.Kind.KEYWORD);
+            case EVENT -> addEvents(entries, prefix, lines);
+            case LITERAL -> {
+                addAll(entries, List.of(slot.label()), prefix, Entry.Kind.KEYWORD);
+                // Darf diese Stelle wegfallen, ist auch das Wort dahinter
+                // erlaubt: Nach „move 64 " kommt „from" oder gleich „to".
+                if (slot.optional()) {
+                    Signatures.Slot next =
+                            where.signature().slotAt(where.slotIndex() + 2);
+                    if (next != null && next.kind() == Signatures.Kind.LITERAL) {
+                        addAll(entries, List.of(next.label()), prefix,
+                                Entry.Kind.KEYWORD);
+                    }
+                }
+            }
+            // Ein Name, der hier erst entsteht, lässt sich nicht vorschlagen.
+            case NEW_NAME -> { }
             // Für einen Text, eine Zahl oder eine Dauer gibt es nichts
             // vorzuschlagen. Die Hinweiszeile sagt trotzdem, was hier steht —
             // dafür ist sie da.
             default -> { }
         }
         return entries;
+    }
+
+    /** Die Ereignisse des Projekts — für {@code emit}. */
+    private static void addEvents(List<Entry> entries, String prefix, List<String> lines) {
+        for (String line : lines) {
+            String trimmed = line.trim();
+            if (!trimmed.startsWith("event ")) {
+                continue;
+            }
+            int open = trimmed.indexOf('(');
+            String name = (open < 0 ? trimmed.substring(6) : trimmed.substring(6, open)).trim();
+            if (!name.isEmpty() && matches(name, prefix)) {
+                entries.add(new Entry(name, name, Entry.Kind.KEYWORD, "event"));
+            }
+        }
     }
 
     /** Die Funktionen des Projekts — für den Knopf einer Anzeige. */
@@ -175,9 +204,10 @@ public final class Completions {
             addAll(entries, DECLARATIONS, prefix, Entry.Kind.KEYWORD);
             return entries;
         }
-        // In einem Block mit festen Angaben: sie selbst, jede mit ihrer Form.
-        List<Signatures.Signature> shapes =
-                Signatures.forBlock(enclosingBlock(lines, lineIndex));
+        // In einem Block: seine Angaben oder seine Anweisungen, jede mit
+        // ihrer Form.
+        String block = enclosingBlock(lines, lineIndex);
+        List<Signatures.Signature> shapes = Signatures.forBlock(block);
         if (!shapes.isEmpty()) {
             for (Signatures.Signature signature : shapes) {
                 if (matches(signature.keyword(), prefix)) {
@@ -187,14 +217,27 @@ public final class Completions {
                             Entry.Kind.KEYWORD, detail));
                 }
             }
+            if (isCodeBlock(block)) {
+                // In einer Funktion ist auch ein Ausdruck eine Anweisung —
+                // also gehören die Bestände und die Connectoren dazu. Und die
+                // drei Wörter ohne eigene Form.
+                addAll(entries, List.of("else", "break", "continue"), prefix,
+                        Entry.Kind.KEYWORD);
+                addConnectors(entries, prefix);
+                addAll(entries, BUILTINS, prefix, Entry.Kind.BUILTIN);
+            }
             return entries;
         }
-        // In einer Funktion: Connectoren, Eingebautes und Anweisungen.
+        // Außerhalb jedes bekannten Blocks: Connectoren und Eingebautes.
         addConnectors(entries, prefix);
         addAll(entries, BUILTINS, prefix, Entry.Kind.BUILTIN);
-        addAll(entries, List.of("let", "if", "else", "for", "while", "move", "emit",
-                "sleep", "await", "return"), prefix, Entry.Kind.KEYWORD);
         return entries;
+    }
+
+    /** Enthält dieser Block Anweisungen statt fester Angaben? */
+    private static boolean isCodeBlock(String declaration) {
+        return "fn".equals(declaration) || "on".equals(declaration)
+                || "multiblock".equals(declaration);
     }
 
     /**
@@ -209,7 +252,7 @@ public final class Completions {
      * Anweisungen einer Funktion vorgeschlagen. Jede Blockart hat aber ihre
      * eigenen Angaben, und außerhalb davon sind sie falsch.
      */
-    private static String enclosingBlock(List<String> lines, int lineIndex) {
+    static String enclosingBlock(List<String> lines, int lineIndex) {
         for (int i = lineIndex; i >= 0; i--) {
             String line = lines.get(i);
             if (indentOf(line) != 0) {

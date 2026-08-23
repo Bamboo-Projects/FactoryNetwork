@@ -167,4 +167,52 @@ class CompletionsTest {
     void aCompleteEntryOffersNothing() {
         assertTrue(at("worker haul {", "    rate 64 per 5s ").isEmpty());
     }
+
+    @Test
+    @DisplayName("Nach move 64 stehen from und to zur Wahl")
+    void anOptionalWordOffersBothPaths() {
+        List<String> shown = at("fn test() {", "    move 64 ");
+
+        assertTrue(shown.contains("from"), () -> shown.toString());
+        assertTrue(shown.contains("to"),
+                () -> "die Quelle darf auch fehlen: " + shown);
+    }
+
+    @Test
+    @DisplayName("In einer Funktion stehen Anweisungen und Ausdrücke nebeneinander")
+    void codeBlocksOfferBoth() {
+        assertTrue(at("fn test() {", "    ").contains("move"),
+                "die Anweisungen stehen zuerst");
+        // Mit einem angefangenen Wort kommt der Ausdruck durch. Ohne eines
+        // ist die Liste schon von den Anweisungen voll — das ist richtig so,
+        // denn eine Zeile fängt weit öfter mit einer Anweisung an.
+        assertTrue(at("fn test() {", "    sto").contains("storage"),
+                "ein Ausdruck ist auch eine Anweisung");
+    }
+
+    @Test
+    @DisplayName("Eine Anweisung bringt ihre Form mit")
+    void statementsCarryTheirShape() {
+        List<String> shown = at("fn test() {", "    ");
+        List<String> shapes = details("fn test() {", "    ");
+
+        assertEquals("menge [from quelle] to ziel", shapes.get(shown.indexOf("move")));
+        assertEquals("duration", shapes.get(shown.indexOf("sleep")));
+    }
+
+    @Test
+    @DisplayName("Hinter emit stehen die Ereignisse des Projekts")
+    void emitOffersProjectEvents() {
+        List<String> shown = at("event ofen_fertig(x: Int)", "fn test() {", "    emit ");
+
+        assertTrue(shown.contains("ofen_fertig"), () -> shown.toString());
+    }
+
+    @Test
+    @DisplayName("Für einen neuen Namen gibt es keinen Vorschlag")
+    void newNamesAreNotSuggested() {
+        assertTrue(at("fn test() {", "    let ").isEmpty(),
+                "wie hiesse er auch — er entsteht ja gerade");
+    }
+
 }

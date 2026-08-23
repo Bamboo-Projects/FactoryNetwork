@@ -295,6 +295,13 @@ public class CodeTabView {
                     "screen.factorynetwork.terminal.newfile"), mouseX, mouseY);
             return;
         }
+        var signature = editor.signatureAt(mouseX, mouseY);
+        if (signature != null) {
+            graphics.renderComponentTooltip(font, List.of(
+                    FnFonts.mono(signature.shape()),
+                    Component.literal("§7" + signature.help())), mouseX, mouseY);
+            return;
+        }
         Diagnostic problem = editor.diagnosticAt(openProblems, mouseX, mouseY);
         if (problem == null) {
             return;
