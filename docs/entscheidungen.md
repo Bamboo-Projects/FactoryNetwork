@@ -2055,3 +2055,36 @@ Die Reihenfolge ist deshalb: erst der Sprachdienst, der ohnehin nötig ist,
 dann sehen, was noch weh tut. Bleibt danach „das Widget fühlt sich klobig
 an", ist CEF eine ernsthafte Antwort. Ist es weg, haben wir die
 Abhängigkeit gespart.
+
+### Entwurf und laufender Stand sind zwei Dinge
+
+Der Editor sicherte bisher nur beim Übernehmen. Übernehmen setzt aber
+fehlerfreien Code voraus — und mitten in einer Änderung ist er das nie. Also
+war genau der Zustand ungesichert, in dem man die meiste Zeit verbringt.
+
+Der Controller hält deshalb zwei Projekte. Das eine läuft, das andere steht im
+Editor. Der Entwurf darf kaputt sein; er wird nicht übersetzt und nicht
+ausgeführt. Beim Übernehmen fallen beide zusammen.
+
+Das ist auch die Antwort auf „ein Tippfehler darf die Fabrik nicht
+anhalten": Er kann es gar nicht, weil der Entwurf nie läuft.
+
+Geschickt wird der ganze Entwurf, nicht eine Änderungsliste. Ein Programm hier
+ist ein paar Dutzend Zeilen und je Datei auf 64 KB gedeckelt; eine Liste aus
+Positionen und Einfügungen wäre die Sorte Code, in der sich ein Fehler erst
+zeigt, wenn der Text schon kaputt ist. Eine Sekunde nach dem letzten Anschlag
+statt bei jedem: Ein Anschlag wäre ein Paket, eine Sekunde Tippen sind fünf
+bis zehn — und eine Sekunde Arbeit verliert niemand ungern.
+
+Der Takt hängt am Client, nicht am Bildschirm. Sonst verlöre man das letzte
+Zeichen, wenn man das Fenster in derselben Sekunde zumacht.
+
+### Die Griffliste ersetzt die Menüleiste
+
+Ein Editor im Spiel hat keine. Strg+Leertaste, Strg+H und F2 waren da,
+lange bevor sie jemand gefunden hätte. F1 legt eine Tafel darüber; jede
+Taste schließt sie wieder.
+
+Die Tastennamen stehen fest im Code und nicht in der Sprachdatei — sie
+heißen in jeder Sprache gleich. Was sie tun, steht daneben und kommt aus der
+Sprachdatei.

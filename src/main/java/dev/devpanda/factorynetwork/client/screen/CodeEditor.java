@@ -356,16 +356,32 @@ public class CodeEditor {
             return;
         }
 
-        // Die Teile der Form: erst das Schlüsselwort, dann die Stellen.
+        // Die Teile der Form: erst das Schlüsselwort, dann die Stellen. Eine
+        // Stelle, die wegfallen darf, steht in eckigen Klammern — mitsamt
+        // dem Wert, den sie einführt, so wie in der Grammatik.
+        var slots = where.signature().slots();
         List<String> parts = new ArrayList<>();
         parts.add(where.signature().keyword());
-        where.signature().slots().forEach(slot -> parts.add(slot.label()));
+        for (int i = 0; i < slots.size(); i++) {
+            if (slots.get(i).optional() && i + 1 < slots.size()) {
+                parts.add("[" + slots.get(i).label());
+                parts.add(slots.get(i + 1).label() + "]");
+                i++;
+                continue;
+            }
+            parts.add(slots.get(i).label());
+        }
         int active = where.slotIndex() + 1;
 
+        // In einem niedrigen Fenster nur die Form ohne den Satz dazu: Im
+        // Reiter des Terminals sind acht Zeilen sichtbar, und ein Kasten von
+        // zwei Zeilen nähme davon ein Viertel.
+        boolean roomy = height >= 120;
         String help = where.signature().help();
         int shapeWidth = widthOf(String.join(" ", parts));
-        int boxWidth = Math.min(Math.max(shapeWidth, widthOf(help)) + 8, width - 4);
-        int boxHeight = LINE_HEIGHT * 2 + 2;
+        int boxWidth = Math.min(
+                Math.max(shapeWidth, roomy ? widthOf(help) : 0) + 8, width - 4);
+        int boxHeight = (roomy ? LINE_HEIGHT * 2 : LINE_HEIGHT) + 2;
 
         int boxX = Math.min(x + GUTTER_WIDTH, x + width - boxWidth - 2);
         int boxY = y + 10 + row * LINE_HEIGHT - boxHeight - 1;
@@ -394,8 +410,10 @@ public class CodeEditor {
             }
             at += widthOf(part + " ");
         }
-        graphics.drawString(font, mono(plainSubstrByWidth(help, boxWidth - 8)),
-                boxX + 4, boxY + LINE_HEIGHT + 2, EditorColours.COMMENT, false);
+        if (roomy) {
+            graphics.drawString(font, mono(plainSubstrByWidth(help, boxWidth - 8)),
+                    boxX + 4, boxY + LINE_HEIGHT + 2, EditorColours.COMMENT, false);
+        }
     }
 
     /** Färbt eine Zeile nach Token-Arten. */

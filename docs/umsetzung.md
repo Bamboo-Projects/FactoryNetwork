@@ -394,14 +394,19 @@ Sprachserver für VS Code liest später dieselbe. Daraus kommen:
 Dazu Querscrollen mit Beschnitt, Ersetzen (Strg+H, Alt+Eingabe für alle) und
 der Dateibaum mit Umbenennen, Verdoppeln und Löschen.
 
+Dazu der **Entwurf auf dem Server**: Der Controller hält jetzt zwei Stände —
+das Programm, das läuft, und das, was im Editor steht. Der Entwurf darf kaputt
+sein, der laufende Stand nicht; ein Tippfehler hält die Fabrik nicht an.
+Gesichert wird eine Sekunde nach dem letzten Anschlag, bei Strg+S und beim
+Schließen. Damit ist der Datenverlust weg, der vorher jedem Absturz folgte.
+
 **Fehlt, in dieser Reihenfolge:**
 
-1. **Entwurf auf dem Server.** Heute lebt er in `ClientProjectState`, also
-   nur solange der Client läuft. Ein Absturz oder das Verlassen der Welt
-   nimmt ihn mit, und zwei Spieler am selben Controller überschreiben
-   einander beim Übernehmen wortlos. Dazu gehören Strg+S und eine
-   Dateisperre mit Lesemodus. **Das ist der wertvollste offene Punkt** — er
-   behebt einen Datenverlust, alles andere ist Komfort.
+1. **Dateisperre für mehrere Spieler.** Zwei am selben Controller sehen
+   gegenseitig ihre Entwürfe, solange sie nicht selbst tippen; sobald beide
+   tippen, gewinnt der, der zuletzt übernimmt. Richtig wäre: Wer eine Datei
+   offen hat, hält sie, und die anderen sehen sie im Lesemodus mit einem
+   Knopf „Bearbeitung anfragen". Kein CRDT — dafür ist der Fall zu selten.
 2. **Der Sprachdienst über die Signaturen hinaus.** Die Tabelle deckt die
    Blockangaben ab, nicht die Ausdrücke: `crusher_1.` sollte anbieten, was
    *dieses* Gerät kann, und beim Zeigen Zustand und Position nennen. Dazu
