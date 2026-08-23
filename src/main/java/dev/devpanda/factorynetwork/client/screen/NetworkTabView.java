@@ -70,7 +70,10 @@ public class NetworkTabView {
         line = section(graphics, line, "screen.factorynetwork.terminal.network.workers");
         List<String> workers = ClientNetworkState.workers();
         if (workers.isEmpty()) {
-            text(graphics, line, Component.translatable(
+            // Die Höhe muss zurück in die Zeile: Sonst zeichnet die nächste
+            // Überschrift über diesen Text, und aus zwei Wörtern wird eines,
+            // das es nicht gibt.
+            line = text(graphics, line, Component.translatable(
                     "screen.factorynetwork.terminal.network.no_workers").getString(), 0x8B8B8B);
         } else {
             for (String worker : workers) {
