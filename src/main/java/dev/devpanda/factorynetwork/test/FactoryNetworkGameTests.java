@@ -5571,6 +5571,11 @@ public final class FactoryNetworkGameTests {
         // Und Bert sieht, wer main.mf hält.
         helper.assertValueEqual(entity.locksFor(bert).get("main.mf"), "Anna",
                 "der Halter wird gemeldet");
+        // Und was hier steht, ist nicht, was Bert geschickt hat: Sein
+        // Entwurf trug einen alten Stand von main.mf. Genau deshalb bekommt
+        // er den Zustand zurück, obwohl er der Absender war.
+        helper.assertTrue(!entity.draft().source("main.mf").equals("fn eins() { }"),
+                "Berts alter Stand darf nicht gewonnen haben");
         helper.assertTrue(entity.locksFor(anna).get("main.mf") == null,
                 "die eigene Sperre ist keine Nachricht");
         helper.succeed();

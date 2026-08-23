@@ -752,8 +752,15 @@ public class ControllerBlockEntity extends BlockEntity {
         }
         this.draft = author == null ? incoming : merge(incoming, author, authorName);
         setChanged();
+        // Der Absender bekommt normalerweise nichts zurück — er hat den Text
+        // ja gerade geschickt, und ein Echo träfe ihn mitten im Tippen.
+        //
+        // <b>Außer, es wurde etwas abgelehnt.</b> Dann ist das Echo die
+        // einzige Auskunft darüber, und ohne sie tippt er weiter in eine
+        // Datei, die niemand mehr annimmt.
+        boolean rejected = !draft.files().equals(incoming.files());
         for (ServerPlayer watcher : terminalWatchers) {
-            if (!watcher.getUUID().equals(author)) {
+            if (!watcher.getUUID().equals(author) || rejected) {
                 pushProjectTo(watcher);
             }
         }
