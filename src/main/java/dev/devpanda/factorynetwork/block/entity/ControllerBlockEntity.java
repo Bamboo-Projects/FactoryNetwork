@@ -673,22 +673,44 @@ public class ControllerBlockEntity extends BlockEntity {
     }
 
     /**
-     * Die Namen der Anzeigewände im Netz, jeder einmal.
+     * Die Anzeigewände im Netz, jede einmal, mit ihrer Stelle.
      *
-     * <p>Aus den Blöcken und nicht aus dem Graphen: Der merkt sich Stellen,
-     * keine Namen. Eine Wand besteht aus vielen Tafeln mit demselben Namen.
+     * <p>Die Namen aus den Blöcken und nicht aus dem Graphen: Der merkt sich
+     * Stellen, keine Namen. Eine Wand besteht aus vielen Tafeln mit
+     * demselben Namen — genommen wird die erste, und die reicht zum
+     * Wiederfinden.
      */
-    public List<String> displayNames() {
+    public List<dev.devpanda.factorynetwork.network.packet.NamedPlace> displayPlaces() {
         if (level == null) {
             return List.of();
         }
-        return graph.displays().stream()
-                .map(level::getBlockEntity)
-                .filter(DisplayBlockEntity.class::isInstance)
-                .map(found -> ((DisplayBlockEntity) found).displayName())
-                .filter(name -> name != null && !name.isBlank())
-                .distinct()
-                .sorted()
+        Map<String, BlockPos> byName = new java.util.TreeMap<>();
+        for (BlockPos pos : graph.displays()) {
+            if (level.getBlockEntity(pos) instanceof DisplayBlockEntity panel) {
+                String name = panel.displayName();
+                if (name != null && !name.isBlank()) {
+                    byName.putIfAbsent(name, pos.immutable());
+                }
+            }
+        }
+        return byName.entrySet().stream()
+                .map(entry -> new dev.devpanda.factorynetwork.network.packet.NamedPlace(
+                        entry.getKey(), entry.getValue()))
+                .toList();
+    }
+
+    /** Nur die Namen — für den Übersetzer, der keine Stellen braucht. */
+    public List<String> displayNames() {
+        return displayPlaces().stream()
+                .map(dev.devpanda.factorynetwork.network.packet.NamedPlace::name)
+                .toList();
+    }
+
+    /** Die Connectoren im Netz mit ihrer Stelle. */
+    public List<dev.devpanda.factorynetwork.network.packet.NamedPlace> connectorPlaces() {
+        return graph.connectors().entrySet().stream()
+                .map(entry -> new dev.devpanda.factorynetwork.network.packet.NamedPlace(
+                        entry.getKey(), entry.getValue()))
                 .toList();
     }
 

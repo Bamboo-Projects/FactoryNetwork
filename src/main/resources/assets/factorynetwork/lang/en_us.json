@@ -300,5 +300,8 @@
   "screen.factorynetwork.code.unsaved": "not deployed",
   "screen.factorynetwork.code.help.goto": "Go to definition",
   "screen.factorynetwork.code.declared_in": "declared in %s, line %s",
-  "screen.factorynetwork.code.used": "%s more references"
+  "screen.factorynetwork.code.used": "%s more references",
+  "screen.factorynetwork.code.at": "sits at %s %s %s",
+  "screen.factorynetwork.code.locate_hint": "Ctrl+click marks it in the world",
+  "screen.factorynetwork.code.located": "%s marked — %s %s %s"
 }

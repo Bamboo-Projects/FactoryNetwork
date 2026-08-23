@@ -1,6 +1,7 @@
 package dev.devpanda.factorynetwork.client.screen;
 
 import dev.devpanda.factorynetwork.client.ClientDeployState;
+import dev.devpanda.factorynetwork.client.ClientNetworkState;
 import dev.devpanda.factorynetwork.client.ClientProjectState;
 import dev.devpanda.factorynetwork.client.FnFonts;
 import dev.devpanda.factorynetwork.lang.Diagnostic;
@@ -104,6 +105,14 @@ public class CodeScreen extends Screen {
     /** Ob die Griffliste offen ist. */
     private boolean showingHelp;
 
+    /**
+     * Die Rückmeldung zur letzten Marke, oder {@code null}.
+     *
+     * <p>Ohne sie wäre der Griff unsichtbar: Die Marke steht in der Welt,
+     * und die sieht man erst, wenn das Fenster zu ist.
+     */
+    private Component located;
+
     private Project project;
     private String open;
     private List<Diagnostic> problems = List.of();
@@ -140,6 +149,7 @@ public class CodeScreen extends Screen {
 
     private void onTextChanged(String text) {
         ClientDeployState.clear();
+        located = null;
         project = project.with(open, text);
         publish();
     }
@@ -198,13 +208,26 @@ public class CodeScreen extends Screen {
      */
     private boolean goToDefinition(double mouseX, double mouseY) {
         String word = editor.wordAt(mouseX, mouseY);
-        var target = dev.devpanda.factorynetwork.lang.Definitions.find(project, word);
-        if (target.isEmpty()) {
+        if (word.isEmpty()) {
             return false;
         }
-        var location = target.get();
-        openFile(location.file());
-        editor.jumpTo(location.line(), location.column());
+        var target = dev.devpanda.factorynetwork.lang.Definitions.find(project, word);
+        if (target.isPresent()) {
+            var location = target.get();
+            openFile(location.file());
+            editor.jumpTo(location.line(), location.column());
+            return true;
+        }
+        // Kein Name aus dem Programm — aber vielleicht einer aus der Welt.
+        // Dann ist die Frage nicht „wo steht das im Code", sondern „welcher
+        // Block ist das", und die beantwortet eine Marke.
+        var place = ClientNetworkState.placeOf(word);
+        if (place == null) {
+            return false;
+        }
+        dev.devpanda.factorynetwork.client.LocateMarker.mark(place, word);
+        located = Component.translatable("screen.factorynetwork.code.located", word,
+                place.getX(), place.getY(), place.getZ());
         return true;
     }
 
@@ -310,6 +333,10 @@ public class CodeScreen extends Screen {
         int colour = ClientDeployState.hasMessage()
                 ? ClientDeployState.wasAccepted() ? TerminalScreen.GOOD : TerminalScreen.BAD
                 : statusColour;
+        if (located != null) {
+            shown = located.getString();
+            colour = TerminalScreen.ACCENT;
+        }
         graphics.drawString(font,
                 FnFonts.mono(font.plainSubstrByWidth(shown, buttonX() - MARGIN - 90)),
                 MARGIN, footerY, colour, false);
@@ -409,12 +436,26 @@ public class CodeScreen extends Screen {
             return false;
         }
         var declared = dev.devpanda.factorynetwork.lang.Definitions.find(project, word);
-        if (declared.isEmpty()) {
+        var inWorld = ClientNetworkState.placeOf(word);
+        if (declared.isEmpty() && inWorld == null) {
             return false;
         }
         var places = dev.devpanda.factorynetwork.lang.Definitions.references(project, word);
         List<Component> lines = new ArrayList<>();
         lines.add(FnFonts.mono(word));
+        if (inWorld != null) {
+            // Die Stelle zuerst: Bei einem Namen aus dem Netz ist „wo ist
+            // das" die Frage, die man stellt.
+            lines.add(Component.translatable("screen.factorynetwork.code.at",
+                    inWorld.getX(), inWorld.getY(), inWorld.getZ())
+                    .withStyle(net.minecraft.ChatFormatting.GRAY));
+            lines.add(Component.translatable("screen.factorynetwork.code.locate_hint")
+                    .withStyle(net.minecraft.ChatFormatting.DARK_GRAY));
+        }
+        if (declared.isEmpty()) {
+            graphics.renderComponentTooltip(font, lines, mouseX, mouseY);
+            return true;
+        }
         lines.add(Component.translatable("screen.factorynetwork.code.declared_in",
                 declared.get().file(), declared.get().line()).withStyle(
                         net.minecraft.ChatFormatting.GRAY));

@@ -60,13 +60,12 @@ public class TerminalBlockEntity extends BlockEntity implements MenuProvider {
         }
         ControllerBlockEntity entity = controller.get();
         entity.rebuildNetwork();
-        List<String> connectors = new ArrayList<>(entity.graph().connectorNames());
         List<String> workers = entity.runtime().states().entrySet().stream()
                 .map(state -> state.getKey() + ": " + state.getValue().status)
                 .toList();
         PacketDistributor.sendToPlayer(player,
-                new NetworkStatePacket(connectors, entity.displayNames(), workers,
-                        entity.plants(), entity.fluidLines()));
+                new NetworkStatePacket(entity.connectorPlaces(), entity.displayPlaces(),
+                        workers, entity.plants(), entity.fluidLines()));
     }
 
 

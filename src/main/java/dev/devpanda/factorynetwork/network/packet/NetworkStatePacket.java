@@ -23,6 +23,10 @@ import java.util.List;
  * bliebe: Sie tut nichts und sagt nichts, und der Spieler sucht den Fehler im
  * Programm statt an der Beschriftung.
  *
+ * <p><b>Mit Stelle und nicht nur mit Namen.</b> Wer im Editor
+ * {@code crusher_1} liest, will wissen, welche Maschine das ist — in einer
+ * Fabrik mit vierzig Öfen führte diese Frage bisher in den Keller.
+ *
  * <p><b>Die Anzeigen gehören genauso dazu.</b> {@code display NAME { … }}
  * verlangt den Namen, den die Tafel in der Welt trägt — und der stand
  * nirgends, wo der Editor ihn hätte vorschlagen können. Wer seine Wand
@@ -34,7 +38,7 @@ import java.util.List;
  * {@link ProjectStatePacket}, und der geht nur beim Öffnen und beim
  * Übernehmen.
  */
-public record NetworkStatePacket(List<String> connectors, List<String> displays,
+public record NetworkStatePacket(List<NamedPlace> connectors, List<NamedPlace> displays,
                                  List<String> workers, List<String> plants,
                                  List<String> fluids)
         implements CustomPacketPayload {
@@ -44,9 +48,9 @@ public record NetworkStatePacket(List<String> connectors, List<String> displays,
 
     public static final StreamCodec<RegistryFriendlyByteBuf, NetworkStatePacket> STREAM_CODEC =
             StreamCodec.composite(
-                    ByteBufCodecs.stringUtf8(256).apply(ByteBufCodecs.list(512)),
+                    NamedPlace.STREAM_CODEC.apply(ByteBufCodecs.list(512)),
                     NetworkStatePacket::connectors,
-                    ByteBufCodecs.stringUtf8(256).apply(ByteBufCodecs.list(256)),
+                    NamedPlace.STREAM_CODEC.apply(ByteBufCodecs.list(256)),
                     NetworkStatePacket::displays,
                     ByteBufCodecs.stringUtf8(256).apply(ByteBufCodecs.list(512)),
                     NetworkStatePacket::workers,

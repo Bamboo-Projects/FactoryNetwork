@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.client;
 
+import dev.devpanda.factorynetwork.network.packet.NamedPlace;
 import dev.devpanda.factorynetwork.network.packet.NetworkStatePacket;
 
 import java.util.ArrayList;
@@ -19,8 +20,8 @@ import java.util.List;
  */
 public final class ClientNetworkState {
 
-    private static List<String> connectors = new ArrayList<>();
-    private static List<String> displays = new ArrayList<>();
+    private static List<NamedPlace> connectors = new ArrayList<>();
+    private static List<NamedPlace> displays = new ArrayList<>();
     private static List<String> workers = new ArrayList<>();
     private static List<String> plants = new ArrayList<>();
     private static List<String> fluids = new ArrayList<>();
@@ -33,13 +34,34 @@ public final class ClientNetworkState {
         fluids = new ArrayList<>(packet.fluids());
     }
 
+    /** Die Namen der Connectoren. */
     public static List<String> connectors() {
-        return List.copyOf(connectors);
+        return connectors.stream().map(NamedPlace::name).toList();
     }
 
     /** Die Namen der Anzeigewände im Netz — für {@code display NAME { … }}. */
     public static List<String> displays() {
-        return List.copyOf(displays);
+        return displays.stream().map(NamedPlace::name).toList();
+    }
+
+    /**
+     * Wo ein Name im Netz hängt, oder {@code null}.
+     *
+     * <p>Connectoren und Anzeigen zusammen: Von der Stelle im Code aus ist
+     * beides dasselbe — ein Name, hinter dem ein Block in der Welt steht.
+     */
+    public static net.minecraft.core.BlockPos placeOf(String name) {
+        for (NamedPlace place : connectors) {
+            if (place.name().equals(name)) {
+                return place.pos();
+            }
+        }
+        for (NamedPlace place : displays) {
+            if (place.name().equals(name)) {
+                return place.pos();
+            }
+        }
+        return null;
     }
 
     public static List<String> workers() {
