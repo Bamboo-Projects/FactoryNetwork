@@ -27,6 +27,21 @@ TEXT       = (64, 64, 64)
 SCREEN     = (22, 26, 24)
 SCREEN_EDGE = (10, 13, 11)
 
+# ---- Das dunkle Gehäuse des Terminals ------------------------------------
+#
+# Drei Ebenen, und <b>eine Regel für alle: Was vertieft liegt, ist dunkler als
+# sein Grund und hat unten rechts eine helle Kante.</b> Blech, Scheibe, Mulde.
+# Andersherum — die Mulde heller als der Grund — liest man sie nicht als
+# Mulde, sondern als Fleck.
+CASE       = (35, 43, 39)
+CASE_HI    = (57, 68, 61)
+CASE_LO    = (13, 17, 15)
+CASE_TEXT  = (168, 178, 172)
+GLASS      = (24, 30, 27)
+GLASS_RIM  = (52, 62, 56)
+WELL       = (16, 20, 18)
+WELL_EDGE  = (8, 10, 9)
+
 
 def panel(draw, box):
     """Erhabene Fläche: oben und links hell, unten und rechts dunkel."""
@@ -64,8 +79,24 @@ def slot(draw, x, y):
 # sitzt mittig darunter — es soll aussehen wie überall, nur eben in einem
 # größeren Gehäuse.
 WIDTH = 288
-HEIGHT = 236
 ATLAS = 512
+
+# Die Höhe fällt aus der Rechnung heraus und wird nicht gesetzt: Scheibe,
+# Reiterzeile, Suchzeile, Raster, Statuszeile — jede Zeile kennt ihre Höhe.
+# Beim ersten Entwurf hatte ich die Zahlen geraten, und die Statuszeile lag
+# im Raster.
+SCREEN_TOP = 6
+SCREEN_PAD = 3
+TAB_ROW = 14
+SEARCH_ROW = 13
+GRID_ROWS = 6
+GRID_COLUMNS = 14
+STATUS_ROW = 11
+
+SCREEN_INNER = (SCREEN_PAD + TAB_ROW + 1 + SEARCH_ROW + 2
+                + GRID_ROWS * 18 + 2 + STATUS_ROW)
+SCREEN_BOTTOM = SCREEN_TOP + SCREEN_INNER
+HEIGHT = SCREEN_BOTTOM + 14 + 82
 
 # Das Inventar mittig, an Vanillas Raster ausgerichtet.
 INV_COLUMNS = 9
@@ -78,57 +109,98 @@ INV_X = INV_LEFT
 INV_Y = HEIGHT - 82      # drei Reihen plus Schnellzugriff
 HOTBAR_Y = HEIGHT - 24
 
-# Der Arbeitsbereich darüber
-TAB_HEIGHT = 18
-WORK_X = 7
-WORK_Y = TAB_HEIGHT + 4
-WORK_W = WIDTH - 14
-WORK_H = INV_Y - WORK_Y - 14
+# Der Bereich, in den die Reiter zeichnen: innerhalb der Scheibe, unter der
+# Reiterzeile und über der Statuszeile.
+SCREEN_X0 = 6
+SCREEN_X1 = WIDTH - 7
+WORK_X = SCREEN_X0 + 3
+WORK_Y = SCREEN_TOP + SCREEN_PAD + TAB_ROW + 1
+WORK_W = (SCREEN_X1 - 2) - WORK_X
+WORK_H = (SCREEN_BOTTOM - 2 - STATUS_ROW) - WORK_Y
+
+
+def raised_dark(d, box):
+    """Erhabenes Blech: oben und links hell, unten und rechts dunkel."""
+    x0, y0, x1, y1 = box
+    d.rectangle(box, fill=CASE + (255,))
+    d.line([(x0, y0), (x1 - 1, y0)], fill=CASE_HI + (255,))
+    d.line([(x0, y0), (x0, y1 - 1)], fill=CASE_HI + (255,))
+    d.line([(x0 + 1, y1), (x1, y1)], fill=CASE_LO + (255,))
+    d.line([(x1, y0 + 1), (x1, y1)], fill=CASE_LO + (255,))
+
+
+def well(d, box, fill=GLASS, light=CASE_HI, shadow=CASE_LO):
+    """Eine Vertiefung: oben und links dunkel, unten und rechts hell.
+
+    Dieselbe Form wie ein Vanilla-Slot, nur in Blech statt in Grau. <b>Die
+    Maße bleiben unangetastet</b> — was man blind trifft, ist die Stelle und
+    nicht die Farbe.
+    """
+    x0, y0, x1, y1 = box
+    d.rectangle(box, fill=fill + (255,))
+    d.line([(x0, y0), (x1 - 1, y0)], fill=shadow + (255,))
+    d.line([(x0, y0), (x0, y1 - 1)], fill=shadow + (255,))
+    d.line([(x0 + 1, y1), (x1, y1)], fill=light + (255,))
+    d.line([(x1, y0 + 1), (x1, y1)], fill=light + (255,))
 
 
 def background():
-    """Das Fenster: Gehäuse, Reiterleiste, Arbeitsfläche, Spielerinventar."""
+    """Das Fenster: Blechgehäuse, Scheibe, Spielerinventar."""
     img = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
 
-    panel(d, (0, 0, WIDTH - 1, HEIGHT - 1))
+    raised_dark(d, (0, 0, WIDTH - 1, HEIGHT - 1))
 
-    # Reiterleiste: eine versenkte Rinne, in der die Reiter sitzen
-    sunken(d, (4, 3, WIDTH - 5, TAB_HEIGHT), fill=PANEL_DARK)
+    # Die Scheibe sitzt in einer dunklen Fuge im Blech.
+    d.rectangle((SCREEN_X0 - 1, SCREEN_TOP - 1, SCREEN_X1 + 1, SCREEN_BOTTOM + 1),
+                fill=WELL_EDGE + (255,))
+    d.rectangle((SCREEN_X0, SCREEN_TOP, SCREEN_X1, SCREEN_BOTTOM), fill=GLASS + (255,))
+    d.line([(SCREEN_X0, SCREEN_BOTTOM), (SCREEN_X1, SCREEN_BOTTOM)],
+           fill=GLASS_RIM + (255,))
+    d.line([(SCREEN_X1, SCREEN_TOP), (SCREEN_X1, SCREEN_BOTTOM)], fill=GLASS_RIM + (255,))
 
-    # Arbeitsfläche
-    sunken(d, (WORK_X, WORK_Y, WORK_X + WORK_W, WORK_Y + WORK_H), fill=PANEL_DARK)
+    # Die Statuszeile liegt noch tiefer als die Scheibe.
+    status_y = SCREEN_BOTTOM - STATUS_ROW + 1
+    d.rectangle((SCREEN_X0 + 1, status_y, SCREEN_X1 - 1, SCREEN_BOTTOM - 1),
+                fill=WELL_EDGE + (255,))
 
-    # Beschriftung des Spielerinventars steht bei Vanilla immer links darüber
+    # Das Spielerinventar: dieselben Stellen wie in jedem Minecraft-Fenster.
     for row in range(3):
         for column in range(9):
-            slot(d, INV_X - 1 + column * 18, INV_Y - 1 + row * 18)
+            x, y = INV_X - 1 + column * 18, INV_Y - 1 + row * 18
+            well(d, (x, y, x + 17, y + 17))
     for column in range(9):
-        slot(d, INV_X - 1 + column * 18, HOTBAR_Y - 1)
+        x = INV_X - 1 + column * 18
+        well(d, (x, HOTBAR_Y - 1, x + 17, HOTBAR_Y + 16))
     return img
 
 
 def slot_grid():
-    """Das Raster für den Netzbestand — sieben Reihen zu vierzehn Slots.
+    """Das Raster für den Netzbestand.
 
     Eigene Textur, weil der Bestand keine echten Slots sein kann: Zwanzig-
     tausend Arten lassen sich nicht anlegen. Sie sehen aber aus wie Slots,
-    damit sie sich anfühlen wie Slots.
+    damit sie sich anfühlen wie Slots — jetzt als Mulden auf der Scheibe.
     """
     img = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
-    for row in range(7):
-        for column in range(14):
-            slot(d, column * 18, row * 18)
+    for row in range(8):
+        for column in range(GRID_COLUMNS):
+            x, y = column * 18, row * 18
+            well(d, (x, y, x + 17, y + 17), fill=WELL,
+                 light=GLASS_RIM, shadow=WELL_EDGE)
     return img
 
 
 def screen():
-    """Der Bildschirm des Code-Reiters, versenkt ins Gehäuse."""
+    """Der Bildschirm des Code-Reiters.
+
+    <b>Nur noch die Fläche, kein eigener Rahmen mehr.</b> Der Code-Reiter
+    zeichnet jetzt in dieselbe Scheibe wie alle anderen; hätte er weiterhin
+    seine eigene Umrandung, säßen zwei Bildschirme ineinander.
+    """
     img = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
-    d = ImageDraw.Draw(img)
-    sunken(d, (0, 0, WORK_W, WORK_H), fill=SCREEN,
-           light=(96, 110, 100), shadow=SCREEN_EDGE)
+    ImageDraw.Draw(img).rectangle((0, 0, WORK_W, WORK_H), fill=WELL + (255,))
     return img
 
 

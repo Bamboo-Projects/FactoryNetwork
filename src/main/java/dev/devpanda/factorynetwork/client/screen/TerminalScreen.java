@@ -1,6 +1,7 @@
 package dev.devpanda.factorynetwork.client.screen;
 
 import dev.devpanda.factorynetwork.FactoryNetwork;
+import dev.devpanda.factorynetwork.client.FnFonts;
 import dev.devpanda.factorynetwork.client.ClientNetworkState;
 import dev.devpanda.factorynetwork.client.ClientStorageView;
 import dev.devpanda.factorynetwork.client.menu.TerminalMenu;
@@ -17,13 +18,17 @@ import net.neoforged.neoforge.network.PacketDistributor;
  * Das Terminal.
  *
  * <p>Ein Fenster mit Reitern statt einer Oberfläche je Block. Das Gehäuse ist
- * bewusst Minecraft: dieselben Grautöne, dasselbe Slotraster, das
- * Spielerinventar an der Stelle, an der es immer sitzt. Ein Inventar soll sich
- * anfühlen wie jedes andere.
+ * bewusst Minecraft: dasselbe Slotraster, das Spielerinventar an der Stelle,
+ * an der es immer sitzt. <b>Was blind funktioniert, ist die Position</b> —
+ * dieselben Stellen, dieselben Maße, dieselben Abstände.
  *
- * <p>Die Ausnahme ist der Code-Reiter. Der ist kein Inventar, sondern ein
- * Bildschirm, und sitzt als dunkle Fläche im hellen Gehäuse — wie ein Gerät,
- * das man eingebaut hat.
+ * <p>Die Farbe ist es nicht. Das Terminal ist ein Gerät und sieht auch so
+ * aus: ein Blechgehäuse mit einer dunklen Scheibe darin, in die alle Reiter
+ * zeichnen. Vorher war nur der Code-Reiter dunkel und alles andere hellgrau —
+ * das waren zwei Entwürfe in einem Fenster.
+ *
+ * <p>Drei Ebenen, eine Regel: <b>Was vertieft liegt, ist dunkler als sein
+ * Grund und hat unten rechts eine helle Kante.</b> Blech, Scheibe, Mulde.
  */
 public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
 
@@ -33,15 +38,39 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
             FactoryNetwork.MOD_ID, "textures/gui/widgets.png");
 
     static final int WIDTH = 288;
-    static final int HEIGHT = 236;
-    static final int TAB_HEIGHT = 18;
-    static final int WORK_X = 7;
-    static final int WORK_Y = 22;
-    static final int WORK_W = 274;
-    static final int WORK_H = 118;
 
-    static final int TEXT = 0x404040;
-    static final int TEXT_DIM = 0x6E6E6E;
+    /** Die Scheibe im Blech — dieselben Zahlen wie in {@code gui.py}. */
+    static final int SCREEN_X0 = 6;
+    static final int SCREEN_X1 = WIDTH - 7;
+    static final int SCREEN_TOP = 6;
+    static final int SCREEN_PAD = 3;
+    static final int TAB_ROW = 14;
+    static final int STATUS_ROW = 11;
+
+    /**
+     * Die Höhe fällt aus der Rechnung heraus und wird nicht gesetzt.
+     *
+     * <p>Beim Entwurf hatte ich sie geraten, und die Statuszeile lag im
+     * Raster. Jede Zeile kennt ihre Höhe; was das Fenster misst, ist die
+     * Summe.
+     */
+    static final int WORK_X = SCREEN_X0 + 3;
+    static final int WORK_Y = SCREEN_TOP + SCREEN_PAD + TAB_ROW + 1;
+    static final int WORK_W = (SCREEN_X1 - 2) - WORK_X;
+    static final int WORK_H = 123;
+    static final int SCREEN_BOTTOM = WORK_Y + WORK_H + 2 + STATUS_ROW;
+    static final int HEIGHT = SCREEN_BOTTOM + 14 + 82;
+
+    /** Wie weit die Reiterbeschriftungen auseinanderstehen. */
+    private static final int TAB_GAP = 12;
+
+    // Schrift auf dunklem Grund. Die Werte sind dieselben wie in der
+    // Blockpalette der Mod — wer den Controller ansieht und dann das
+    // Terminal, soll denselben Farbklang wiedererkennen.
+    static final int TEXT = 0xD3DBD5;
+    static final int TEXT_DIM = 0x8B978F;
+    static final int TEXT_FAINT = 0x5D6862;
+    static final int ACCENT = 0x78DC8C;
 
     private TerminalTab tab = TerminalTab.STORAGE;
     private StorageTabView storageView;
@@ -53,7 +82,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         super(menu, inventory, title);
         this.imageWidth = WIDTH;
         this.imageHeight = HEIGHT;
-        this.inventoryLabelY = 144;
+        this.inventoryLabelY = HEIGHT - 82 - 11;
     }
 
     @Override
@@ -112,34 +141,65 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         }
     }
 
-    private int tabWidth() {
-        return (WIDTH - 10) / TerminalTab.values().length;
+    /**
+     * Wie breit eine Reiterbeschriftung ist.
+     *
+     * <p>Nach dem Text und nicht nach dem Fünftel des Fensters: Reiter sind
+     * jetzt Beschriftungen und keine Karteikarten, und eine Beschriftung ist
+     * so breit, wie sie ist. Nebenbei fällt damit der Fehler weg, dass eine
+     * feste Breite zu einer Grafik fester Breite passen musste.
+     */
+    private int tabWidth(TerminalTab tab) {
+        return font.width(FnFonts.mono(tab.title()));
     }
 
-    private void drawTabs(GuiGraphics graphics, int mouseX, int mouseY) {
-        int width = tabWidth();
+    /** Wo eine Reiterbeschriftung anfängt, im Fenster gerechnet. */
+    private int tabX(TerminalTab wanted) {
+        int x = SCREEN_X0 + 6;
         for (TerminalTab candidate : TerminalTab.values()) {
-            int x = leftPos + 5 + candidate.ordinal() * width;
-            int y = topPos + 4;
+            if (candidate == wanted) {
+                return x;
+            }
+            x += tabWidth(candidate) + TAB_GAP;
+        }
+        return x;
+    }
+
+    private static int tabY() {
+        return SCREEN_TOP + SCREEN_PAD;
+    }
+
+    /**
+     * Die Reiter: flacher Text in der Scheibe, der aktive mit einem Strich.
+     *
+     * <p>Karteikarten sind das Kreativ-Inventar. Ein Gerät hat
+     * Beschriftungen, und welche gilt, sagt eine Linie darunter — so wie in
+     * jedem Editor.
+     */
+    private void drawTabs(GuiGraphics graphics, int mouseX, int mouseY) {
+        for (TerminalTab candidate : TerminalTab.values()) {
+            int x = leftPos + tabX(candidate);
+            int y = topPos + tabY();
             boolean active = candidate == tab;
-            Widgets.stretched(graphics, x, y, width - 1, 14, 0, active ? 16 : 0, 64, 4);
-            Component title = candidate.title();
-            int colour = active ? TEXT : candidate.isReady() ? TEXT_DIM : 0x8B8B8B;
-            String shown = font.plainSubstrByWidth(title.getString(), width - 6);
-            graphics.drawString(font, shown, x + (width - font.width(shown)) / 2, y + 4,
-                    colour, false);
+            int colour = active ? TEXT : candidate.isReady() ? TEXT_DIM : TEXT_FAINT;
+            graphics.drawString(font, FnFonts.mono(candidate.title()), x, y, colour, false);
+            if (active) {
+                graphics.fill(x, y + 11, x + tabWidth(candidate), y + 12, 0xFF000000 | ACCENT);
+            }
         }
     }
 
+    /** Trifft der Zeiger diese Beschriftung? */
+    private boolean overTab(TerminalTab candidate, double mouseX, double mouseY) {
+        int x = leftPos + tabX(candidate);
+        int y = topPos + tabY();
+        return mouseX >= x && mouseX < x + tabWidth(candidate)
+                && mouseY >= y && mouseY < y + TAB_ROW - 2;
+    }
+
     private void renderTabTooltips(GuiGraphics graphics, int mouseX, int mouseY) {
-        int width = tabWidth();
         for (TerminalTab candidate : TerminalTab.values()) {
-            if (candidate.isReady()) {
-                continue;
-            }
-            int x = leftPos + 5 + candidate.ordinal() * width;
-            int y = topPos + 4;
-            if (mouseX >= x && mouseX < x + width - 1 && mouseY >= y && mouseY < y + 14) {
+            if (!candidate.isReady() && overTab(candidate, mouseX, mouseY)) {
                 graphics.renderTooltip(font, candidate.notReadyHint(), mouseX, mouseY);
             }
         }
@@ -149,8 +209,8 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
     protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
         // Der Fenstertitel steht in der Reiterleiste; nur das Inventar wird
         // beschriftet, so wie in jedem Vanilla-Fenster.
-        graphics.drawString(font, playerInventoryTitle, 63, inventoryLabelY,
-                TEXT, false);
+        graphics.drawString(font, playerInventoryTitle, (WIDTH - 9 * 18) / 2,
+                inventoryLabelY, TEXT_DIM, false);
     }
 
     // ---- Eingabe ----------------------------------------------------------
@@ -158,11 +218,8 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         // Reiterleiste zuerst
-        int width = tabWidth();
         for (TerminalTab candidate : TerminalTab.values()) {
-            int x = leftPos + 5 + candidate.ordinal() * width;
-            int y = topPos + 4;
-            if (mouseX >= x && mouseX < x + width - 1 && mouseY >= y && mouseY < y + 14) {
+            if (overTab(candidate, mouseX, mouseY)) {
                 switchTo(candidate);
                 return true;
             }
