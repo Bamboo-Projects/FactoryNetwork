@@ -134,6 +134,14 @@ public final class Completions {
                 addAll(entries, List.of("storage", "crafting"), prefix, Entry.Kind.BUILTIN);
             }
             case EXPR -> {
+                // Ein angefangener Auswahlausdruck ist auch ein Ausdruck.
+                // Ohne diesen Zweig fiele „let x = minecraft:" durch: Die
+                // Prüfung auf den Doppelpunkt steht weiter unten und wird
+                // hier gar nicht mehr erreicht.
+                if (prefix.contains(":")) {
+                    addItems(entries, prefix);
+                    return entries;
+                }
                 addConnectors(entries, prefix);
                 addAll(entries, BUILTINS, prefix, Entry.Kind.BUILTIN);
             }
