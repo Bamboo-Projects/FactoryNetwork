@@ -209,56 +209,33 @@ def widgets():
     img = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
 
-    # Reiter inaktiv (0,0) und aktiv (0,16), je 64x16.
-    #
-    # <b>Sie werden in drei Teilen gezeichnet:</b> vier Pixel linke Kappe,
-    # gedehnte Mitte, vier Pixel rechte Kappe. Vorher lag hier eine Grafik
-    # fester Breite, und der Bildschirm zog sie auf die Reiterbreite — dabei
-    # holte er sich die fehlenden Pixel aus dem Nachbarbild im Atlas, und
-    # mitten durch „Storage" lief ein Strich. Die Mitte ist deshalb glatt und
-    # ohne Rand, damit man beliebig viel davon nehmen kann.
-    panel(d, (0, 0, 63, 15))
-    d.rectangle((0, 0, 63, 15), outline=PANEL_LO + (255,))
-    # Die Mitte von ihren senkrechten Rändern befreien.
-    d.rectangle((4, 1, 59, 14), fill=PANEL + (255,))
-    d.line([(4, 0), (59, 0)], fill=PANEL_LO + (255,))
-    d.line([(4, 1), (59, 1)], fill=PANEL_HI + (255,))
-    d.line([(4, 15), (59, 15)], fill=PANEL_LO + (255,))
+    # (0,0) bis (63,31) ist frei: Dort lagen die Reitergrafiken, solange die
+    # Reiter Karteikarten waren. Jetzt sind sie flacher Text und brauchen
+    # keine.
 
-    panel(d, (0, 16, 63, 31))
-    d.rectangle((4, 17, 59, 31), fill=PANEL + (255,))
-    d.line([(4, 16), (59, 16)], fill=PANEL_HI + (255,))
-    # Der aktive Reiter hat unten keine Kante — er geht in die Fläche über.
-    d.line([(1, 31), (62, 31)], fill=PANEL + (255,))
-
-    # Kleiner Knopf, normal (64,0) und gedrückt (64,16), je 12x12.
+    # Kleiner Knopf (64,0) und gedrückt (64,16), je 12x12.
     # Zwölf Pixel, weil drei davon neben das Suchfeld passen müssen — für
     # Symbole reicht das nicht, deshalb tragen sie Buchstaben.
-    #
-    # Rechts neben den Reitern und nicht mehr bei 32: Die Reiter sind
-    # vierundsechzig breit geworden, und vorher lag der Knopf mitten in
-    # ihnen. Wer den Atlas ändert, muss ihn ganz ansehen.
-    panel(d, (64, 0, 75, 11))
-    sunken(d, (64, 16, 75, 27), fill=PANEL_DARK)
+    raised_dark(d, (64, 0, 75, 11))
+    well(d, (64, 16, 75, 27))
 
     # Breiter Knopf (80,0) und gedrückt (80,16), je 48x16
-    panel(d, (80, 0, 127, 15))
-    sunken(d, (80, 16, 127, 31), fill=PANEL_DARK)
+    raised_dark(d, (80, 0, 127, 15))
+    well(d, (80, 16, 127, 31))
 
-    # Suchfeld (0,32), 96x12 — ebenfalls dreiteilig.
+    # Suchfeld (0,32), 96x12 — dreiteilig, mit randloser Mitte.
     #
-    # Zwei Pixel Kappe links und rechts, die Mitte randlos. Vorher wurde das
-    # ganze Feld gekachelt, und jede Kachel brachte ihren eigenen Rahmen mit:
-    # Alle 96 Pixel lief eine Naht durch die Eingabezeile.
-    sunken(d, (0, 32, 95, 43), fill=(30, 34, 31),
-           light=(96, 110, 100), shadow=SCREEN_EDGE)
-    d.rectangle((2, 33, 93, 42), fill=(30, 34, 31) + (255,))
-    d.line([(2, 32), (93, 32)], fill=SCREEN_EDGE + (255,))
-    d.line([(2, 43), (93, 43)], fill=(96, 110, 100) + (255,))
+    # Zwei Pixel Kappe links und rechts. Wird das ganze Feld gekachelt,
+    # bringt jede Kachel ihren eigenen Rahmen mit, und alle 96 Pixel läuft
+    # eine Naht durch die Eingabezeile.
+    well(d, (0, 32, 95, 43), fill=WELL, light=GLASS_RIM, shadow=WELL_EDGE)
+    d.rectangle((2, 33, 93, 42), fill=WELL + (255,))
+    d.line([(2, 32), (93, 32)], fill=WELL_EDGE + (255,))
+    d.line([(2, 43), (93, 43)], fill=GLASS_RIM + (255,))
 
-    # Rollbalken (96,32), 12x15 — Griff und Rinne
-    panel(d, (96, 32, 107, 46))
-    sunken(d, (108, 32, 119, 46), fill=PANEL_DARK)
+    # Rollbalken: Griff (96,32) und Rinne (108,32), je 12x15
+    raised_dark(d, (96, 32, 107, 46))
+    well(d, (108, 32, 119, 46), fill=WELL, light=GLASS_RIM, shadow=WELL_EDGE)
     return img
 
 

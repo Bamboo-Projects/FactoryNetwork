@@ -32,7 +32,14 @@ public class StorageTabView {
 
     private static final int SLOT = 18;
     private static final int COLUMNS = 14;
-    private static final int ROWS = 5;
+    /**
+     * Sechs Reihen, seit die Fußzeile in die Statuszeile gewandert ist.
+     *
+     * <p>Der Platz, den sie freigemacht hat, geht in vierzehn weitere
+     * sichtbare Arten — und nicht in Luft.
+     */
+    private static final int ROWS = dev.devpanda.factorynetwork.client.menu
+            .TerminalLayout.GRID_ROWS;
 
     private final TerminalScreen screen;
     private final Font font;
@@ -119,11 +126,13 @@ public class StorageTabView {
             // Auf dem Knopf ein Buchstabe, darunter die Richtung.
             graphics.pose().pushPose();
             graphics.pose().translate(0, 0, 100);
+            // Auf dunklem Blech hell: Der gedrückte Knopf war vorher fast
+            // schwarz beschriftet, weil er ein heller Knopf war.
             graphics.drawString(font, candidate.badge(), bx + 3, by + 2,
-                    active ? 0x303030 : 0x6E6E6E, false);
+                    active ? TerminalScreen.TEXT : TerminalScreen.TEXT_DIM, false);
             if (active) {
                 graphics.drawString(font, ClientStorageView.isDescending() ? "▾" : "▴",
-                        bx + 8, by + 2, 0x303030, false);
+                        bx + 8, by + 2, TerminalScreen.ACCENT, false);
             }
             graphics.pose().popPose();
         }
