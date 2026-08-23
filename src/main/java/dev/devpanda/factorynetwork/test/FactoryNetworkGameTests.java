@@ -5014,6 +5014,54 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
+     * Eine benannte Tafel ohne Programmstück steht trotzdem im Reiter.
+     *
+     * <p>Vorher listete er nur die Deklarationen. Eine Tafel, die man
+     * benannt hat und die das Programm nicht kennt, war damit nirgends zu
+     * sehen — sie sagte es nur selbst auf ihrer Front, und die hängt
+     * womöglich drei Räume weiter.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void anunknownDisplayShowsUpInTheList(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 2, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        rackWithServer(helper, controller.west());
+        BlockPos tafel = controller.east();
+        helper.setBlock(tafel, FnBlocks.DISPLAY.get().defaultBlockState()
+                .setValue(dev.devpanda.factorynetwork.block.DisplayBlock.FACING,
+                        Direction.NORTH));
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        // Ohne Namen: eine Zeile, dass da etwas namenlos hängt.
+        helper.assertTrue(entity.displayPanels().stream()
+                        .anyMatch(panel -> panel.lines().stream()
+                                .anyMatch(zeile -> zeile.contains("ohne Namen"))),
+                "die namenlose Tafel fehlt: " + entity.displayPanels());
+
+        // Benannt, aber ohne Programmstück: mit Namen und Hinweis.
+        var panel = (dev.devpanda.factorynetwork.block.entity.DisplayBlockEntity)
+                helper.getBlockEntity(tafel);
+        panel.setDisplayName("wand");
+        helper.assertTrue(entity.displayPanels().stream()
+                        .anyMatch(entry -> entry.name().equals("wand")),
+                "die benannte Tafel fehlt: " + entity.displayPanels());
+
+        // Sobald das Programm sie kennt, steht sie als Anzeige da und nicht
+        // mehr als Hinweis.
+        helper.assertTrue(entity.deploy("""
+                display wand {
+                    text "hallo"
+                }"""), "das Programm wurde nicht übernommen");
+        var eintrag = entity.displayPanels().stream()
+                .filter(entry -> entry.name().equals("wand")).findFirst().orElseThrow();
+        helper.assertTrue(eintrag.lines().stream()
+                        .noneMatch(zeile -> zeile.contains("kennt kein display")),
+                "der Hinweis muss weg sein: " + eintrag.lines());
+        helper.succeed();
+    }
+
+    /**
      * Über eine Anzeige wachsen zwei Farben nicht zusammen.
      *
      * <p>Sie leitet mit der Farbe, mit der sie erreicht wurde. Wäre sie

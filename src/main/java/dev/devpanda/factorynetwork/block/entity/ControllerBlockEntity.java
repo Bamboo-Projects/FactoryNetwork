@@ -683,7 +683,61 @@ public class ControllerBlockEntity extends BlockEntity {
             }
             panels.add(new DisplayStatePacket.Panel(display.name(), lines, buttons));
         }
+        addUnknownPanels(panels);
         return panels;
+    }
+
+    /**
+     * Trägt nach, was in der Welt hängt und im Programm fehlt.
+     *
+     * <p>Bisher listete der Reiter nur die {@code display}-Deklarationen.
+     * Eine benannte Tafel ohne passende Deklaration war damit <b>nirgends</b>
+     * zu sehen — sie sagte es nur selbst auf ihrer Front, und die hängt
+     * womöglich drei Räume weiter. Dasselbe gilt für eine Tafel ohne Namen.
+     *
+     * <p>Das ist dieselbe Sorte Auskunft wie „unbenannter Connector" oder
+     * „Gerät ohne Kanal": etwas hängt im Netz und tut nichts, und der Grund
+     * gehört dorthin, wo man nachsieht.
+     */
+    private void addUnknownPanels(List<DisplayStatePacket.Panel> panels) {
+        if (level == null) {
+            return;
+        }
+        Set<String> declared = new HashSet<>();
+        for (Decl declaration : program.declarations()) {
+            if (declaration instanceof Decl.Display display) {
+                declared.add(display.name());
+            }
+        }
+        Set<BlockPos> walls = new HashSet<>();
+        Set<String> unknown = new java.util.LinkedHashSet<>();
+        int nameless = 0;
+        for (BlockPos pos : graph.displays()) {
+            if (!level.isLoaded(pos)
+                    || !(level.getBlockEntity(pos) instanceof DisplayBlockEntity panel)) {
+                continue;
+            }
+            // Eine Wand einmal, nicht einmal je Tafel.
+            var wall = panel.wall();
+            if (!walls.add(wall.anchor())) {
+                continue;
+            }
+            String name = panel.wallName(wall);
+            if (name.isBlank()) {
+                nameless++;
+            } else if (!declared.contains(name)) {
+                unknown.add(name);
+            }
+        }
+        for (String name : unknown) {
+            panels.add(new DisplayStatePacket.Panel(name,
+                    List.of("§eim Netz, aber das Programm kennt kein display " + name),
+                    List.of()));
+        }
+        if (nameless > 0) {
+            panels.add(new DisplayStatePacket.Panel("—",
+                    List.of("§8" + nameless + " Tafel(n) ohne Namen"), List.of()));
+        }
     }
 
     /**

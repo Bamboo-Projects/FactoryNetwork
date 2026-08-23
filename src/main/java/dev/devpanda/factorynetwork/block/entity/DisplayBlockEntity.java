@@ -167,7 +167,7 @@ public class DisplayBlockEntity extends BlockEntity {
      * spielen. Die Beschriftungspistole setzt den Namen ohnehin auf alle,
      * das hier fängt nur die Fälle auf, in denen sie es nicht war.
      */
-    private String wallName(dev.devpanda.factorynetwork.block.DisplayWall wall) {
+    public String wallName(dev.devpanda.factorynetwork.block.DisplayWall wall) {
         for (net.minecraft.core.BlockPos member : wall.members()) {
             if (level.getBlockEntity(member) instanceof DisplayBlockEntity panel
                     && !panel.displayName.isBlank()) {
