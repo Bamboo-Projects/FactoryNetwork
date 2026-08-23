@@ -75,7 +75,7 @@ public class DashboardsTabView {
                     boolean hovered = mouseX >= x + 6 && mouseX < x + 9 + textWidth
                             && mouseY >= line - 1 && mouseY < line + LINE - 1;
                     graphics.fill(x + 6, line - 1, x + 9 + textWidth, line + 9,
-                            hovered ? 0xFF3A3A3A : 0xFF2A2A2A);
+                            hovered ? TerminalScreen.BUTTON_HOVER : TerminalScreen.BUTTON);
                     hits.add(new Hit(x + 6, line - 1, x + 9 + textWidth, panel.name(), i));
                     graphics.drawString(font, content, x + 8, line, TerminalScreen.TEXT, false);
                 } else {

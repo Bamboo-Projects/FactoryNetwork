@@ -78,9 +78,9 @@ public class NetworkTabView {
                     break;
                 }
                 // Der Zustand steht hinter dem Doppelpunkt und färbt die Zeile.
-                int colour = worker.contains("HALTED") ? 0xA03030
-                        : worker.contains("WAITING") ? 0x8A6A20
-                        : worker.contains("RUNNING") ? 0x2F6B33
+                int colour = worker.contains("HALTED") ? TerminalScreen.BAD
+                        : worker.contains("WAITING") ? TerminalScreen.WARN
+                        : worker.contains("RUNNING") ? TerminalScreen.GOOD
                         : TerminalScreen.TEXT_DIM;
                 graphics.drawString(font, font.plainSubstrByWidth(worker, width - 6),
                         x + 3, line, colour, false);
@@ -113,7 +113,7 @@ public class NetworkTabView {
                 // Was fehlt oder mehrdeutig ist, sticht heraus — danach sucht
                 // man, wenn eine Anlage nichts tut.
                 int colour = plant.contains("fehlt") || plant.contains("mehrere")
-                        ? 0x8A6A20 : TerminalScreen.TEXT_DIM;
+                        ? TerminalScreen.WARN : TerminalScreen.TEXT_DIM;
                 graphics.drawString(font, font.plainSubstrByWidth(plant, width - 6),
                         x + 3, line, colour, false);
                 line += LINE;
@@ -136,9 +136,9 @@ public class NetworkTabView {
                         dev.devpanda.factorynetwork.client.ClientFlowState.queued())
                         .getString(),
                 dev.devpanda.factorynetwork.client.ClientFlowState.threads() == 0
-                        ? 0xA03030
+                        ? TerminalScreen.BAD
                         : dev.devpanda.factorynetwork.client.ClientFlowState.queued() > 0
-                        ? 0xD08A3C : TerminalScreen.TEXT_DIM);
+                        ? TerminalScreen.WARN : TerminalScreen.TEXT_DIM);
         line = capacity(graphics, line);
         flows(graphics, line);
     }
@@ -165,7 +165,7 @@ public class NetworkTabView {
         return text(graphics, line, Component.translatable(
                 "screen.factorynetwork.terminal.network.disk",
                 rechen.program(), rechen.disk()).getString(),
-                rechen.program() > rechen.disk() ? 0xA03030 : TerminalScreen.TEXT_DIM);
+                rechen.program() > rechen.disk() ? TerminalScreen.BAD : TerminalScreen.TEXT_DIM);
     }
 
     /**
@@ -187,8 +187,8 @@ public class NetworkTabView {
         };
         int colour = switch (zustand) {
             case RUNNING -> TerminalScreen.TEXT_DIM;
-            case BOOTING -> 0xD08A3C;
-            case OFF -> 0xA03030;
+            case BOOTING -> TerminalScreen.WARN;
+            case OFF -> TerminalScreen.BAD;
         };
         return text(graphics, line, Component.translatable(schluessel, strom.draw(),
                 grouped(strom.stored()), grouped(strom.capacity())).getString(), colour);
@@ -218,10 +218,10 @@ public class NetworkTabView {
                 break;
             }
             boolean stale = "STALE".equals(flow.status());
-            int colour = stale ? 0x8A6A20
-                    : "FAILED".equals(flow.status()) ? 0xA03030
-                    : "QUEUED".equals(flow.status()) ? 0xD08A3C
-                    : "RUNNING".equals(flow.status()) ? 0x2F6B33
+            int colour = stale ? TerminalScreen.WARN
+                    : "FAILED".equals(flow.status()) ? TerminalScreen.BAD
+                    : "QUEUED".equals(flow.status()) ? TerminalScreen.WARN
+                    : "RUNNING".equals(flow.status()) ? TerminalScreen.GOOD
                     : TerminalScreen.TEXT_DIM;
             String label = flow.entry() + " — " + describe(flow);
             int room = stale ? width - 6 - 2 * BUTTON - 6 : width - 6;
@@ -247,7 +247,7 @@ public class NetworkTabView {
             boolean keep) {
         String label = Component.translatable(
                 "screen.factorynetwork.terminal.network.flow." + key).getString();
-        graphics.fill(left, top - 1, left + BUTTON, top + 9, 0xFF2A2A2A);
+        graphics.fill(left, top - 1, left + BUTTON, top + 9, TerminalScreen.BUTTON);
         graphics.drawString(font, font.plainSubstrByWidth(label, BUTTON - 4),
                 left + 2, top, TerminalScreen.TEXT, false);
         buttons.add(new Button(left, top - 1, id, keep));

@@ -70,6 +70,22 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
     static final int TEXT_FAINT = 0x5D6862;
     static final int ACCENT = 0x78DC8C;
 
+    /**
+     * Zustandsfarben, für dunklen Grund gewählt.
+     *
+     * <p>Die alten waren für helles Grau gedacht: ein dunkles Grün für
+     * „läuft", ein dunkles Rot für „gescheitert". Auf Blech verschlammen die
+     * beiden zu derselben schmutzigen Fläche, und dann sagt die Farbe nichts
+     * mehr.
+     */
+    static final int GOOD = 0x78DC8C;
+    static final int WARN = 0xE8AC3E;
+    static final int BAD = 0xE88388;
+
+    /** Knöpfe im Bildschirm: erhabenes Blech, beim Zeigen heller. */
+    static final int BUTTON = 0xFF232B27;
+    static final int BUTTON_HOVER = 0xFF39443D;
+
     private TerminalTab tab = TerminalTab.STORAGE;
     private StorageTabView storageView;
     private NetworkTabView networkView;
