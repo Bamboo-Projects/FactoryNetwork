@@ -14,7 +14,7 @@
   "screen.factorynetwork.terminal.workers": "Workers",
   "screen.factorynetwork.terminal.code": "main.mf",
   "screen.factorynetwork.terminal.no_connectors": "none named",
-  "screen.factorynetwork.terminal.newfile": "New file — rename it in the folder beside the world",
+  "screen.factorynetwork.terminal.newfile": "New file — name it in the big window",
   "screen.factorynetwork.terminal.ok": "ready",
   "screen.factorynetwork.terminal.deploy_hint": "Ctrl+Enter deploys",
   "block.factorynetwork.dense_cable": "Dense Cable",
@@ -268,5 +268,12 @@
   "jade.factorynetwork.burner.stored": "%s of %s FE",
   "screen.factorynetwork.router.lane": "Lane %s",
   "screen.factorynetwork.router.load": "%s channels",
-  "screen.factorynetwork.router.off": "Disconnected"
+  "screen.factorynetwork.router.off": "Disconnected",
+  "screen.factorynetwork.terminal.expand": "Open the editor full screen",
+  "screen.factorynetwork.code.title": "Project",
+  "screen.factorynetwork.code.back": "Esc — back to the terminal",
+  "screen.factorynetwork.project.title": "PROJECT",
+  "screen.factorynetwork.project.rename": "Rename",
+  "screen.factorynetwork.project.duplicate": "Duplicate",
+  "screen.factorynetwork.project.delete": "Delete"
 }

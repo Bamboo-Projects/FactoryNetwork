@@ -322,6 +322,18 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
                 DeployProgramPacket.of(menu.position(), codeView.project()));
     }
 
+    /**
+     * Öffnet den Editor im ganzen Fenster.
+     *
+     * <p>Das Terminal bleibt dabei offen — es wird nur überdeckt. Es geht
+     * kein {@code closeContainer} an den Server, also bleibt der Spieler beim
+     * Controller angemeldet, und beim Zurückkommen steht das Fenster mit
+     * denselben Zahlen da.
+     */
+    void openBigEditor() {
+        minecraft.setScreen(new CodeScreen(this, menu.position()));
+    }
+
     // ---- Eingabe ----------------------------------------------------------
 
     @Override

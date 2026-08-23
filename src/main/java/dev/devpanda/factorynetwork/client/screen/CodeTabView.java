@@ -27,6 +27,12 @@ import java.util.List;
  * Ohne diese Trennung markierte ein Fehler in Zeile drei von
  * {@code worker.mf} die dritte Zeile der gerade offenen {@code anzeigen.mf} —
  * der Fehler, den man am längsten sucht, weil dort gar nichts falsch ist.
+ *
+ * <p><b>Hier wird nachgesehen und korrigiert, nicht geschrieben.</b> Acht
+ * Zeilen sind das, was neben einem Spielerinventar Platz hat. Wer eine Datei
+ * umbenennt, löscht oder ein Programm wirklich baut, drückt auf das Zeichen
+ * rechts in der Dateizeile und bekommt {@link CodeScreen} — dasselbe Projekt,
+ * derselbe Entwurf, nur ohne die 288 Pixel.
  */
 public class CodeTabView {
 
@@ -64,7 +70,10 @@ public class CodeTabView {
         this.y = y;
         this.width = width;
         this.height = height;
-        this.project = ClientProjectState.project();
+        // Aus dem Entwurf und nicht aus dem, was der Server zuletzt gemeldet
+        // hat: Wer aus dem großen Fenster zurückkommt, findet sonst seine
+        // ungesicherten Zeilen nicht wieder.
+        this.project = ClientProjectState.draft();
         this.open = project.names().get(0);
         this.editor = new CodeEditor(font, x + 2, y + FILE_ROW + 2, width - 4,
                 height - FILE_ROW - FOOTER - 2, project.source(open));
@@ -76,6 +85,7 @@ public class CodeTabView {
         // Was der Server zuletzt gesagt hat, gilt für den Text von damals.
         ClientDeployState.clear();
         project = project.with(open, text);
+        ClientProjectState.setDraft(project);
         recheck();
     }
 
@@ -130,13 +140,47 @@ public class CodeTabView {
         return at;
     }
 
-    /** Der Platz hinter der letzten Datei — dort sitzt das Pluszeichen. */
+    /**
+     * Der Platz hinter der letzten Datei — dort sitzt das Pluszeichen.
+     *
+     * <p>Höchstens bis vor das Zeichen für das große Fenster: Bei sechs
+     * Dateien liefe es sonst darüber hinweg, und zwei Knöpfe an derselben
+     * Stelle sind einer zu viel.
+     */
     private int plusX() {
         int at = x + 3;
         for (String name : project.names()) {
             at += fileWidth(name) + FILE_GAP;
         }
-        return at;
+        return Math.min(at, expandX() - 10);
+    }
+
+    /** Das Zeichen ganz rechts, das den Editor im ganzen Fenster öffnet. */
+    private int expandX() {
+        return x + width - 12;
+    }
+
+    private boolean overExpand(double mouseX, double mouseY) {
+        return overFiles(mouseY) && mouseX >= expandX() - 2 && mouseX < expandX() + 10;
+    }
+
+    /**
+     * Ein Rahmen mit einer offenen Ecke.
+     *
+     * <p>Gezeichnet und nicht getippt: Die Zeichen, die dafür gemeint sind,
+     * stehen nicht in der Schrift, und ein Kästchen aus vier Strichen kostet
+     * vier Zeilen.
+     */
+    private void drawExpandIcon(GuiGraphics graphics, boolean hovered) {
+        int left = expandX();
+        int top = y + 2;
+        int colour = 0xFF000000 | (hovered ? TerminalScreen.TEXT : TerminalScreen.TEXT_FAINT);
+        graphics.fill(left, top, left + 8, top + 1, colour);
+        graphics.fill(left, top + 7, left + 8, top + 8, colour);
+        graphics.fill(left, top, left + 1, top + 8, colour);
+        graphics.fill(left + 7, top, left + 8, top + 8, colour);
+        graphics.fill(left + 3, top + 3, left + 6, top + 4, colour);
+        graphics.fill(left + 5, top + 2, left + 6, top + 5, colour);
     }
 
     private void drawFiles(GuiGraphics graphics, int mouseX, int mouseY) {
@@ -156,6 +200,7 @@ public class CodeTabView {
         boolean hovered = overPlus(mouseX, mouseY);
         graphics.drawString(font, FnFonts.mono("+"), plusX(), y + 1,
                 hovered ? TerminalScreen.TEXT : TerminalScreen.TEXT_FAINT, false);
+        drawExpandIcon(graphics, overExpand(mouseX, mouseY));
     }
 
     private boolean overFiles(double mouseY) {
@@ -183,22 +228,17 @@ public class CodeTabView {
     }
 
     /**
-     * Legt eine Datei an.
+     * Legt eine Datei an — mit einem Platzhalternamen.
      *
-     * <p>Mit einem durchnummerierten Namen und ohne Frage: Ein Fenster für
-     * einen Dateinamen wäre ein Fenster über einem Fenster. Umbenennen geht
-     * im Ordner neben der Welt — dort ist ohnehin der Ort für alles, was mit
-     * der Gliederung zu tun hat.
+     * <p>Benannt wird sie im großen Fenster; hier ist keine Zeile frei für
+     * ein Eingabefeld. Wer gleich einen Namen tippen will, macht dort auch
+     * gleich die neue Datei auf.
      */
     private void addFile() {
-        for (int number = 2; number < 100; number++) {
-            String name = "datei" + number + ".mf";
-            if (!project.files().containsKey(name)) {
-                project = project.with(name, "");
-                openFile(name);
-                return;
-            }
-        }
+        String name = project.freeNameLike("datei");
+        project = project.with(name, "");
+        ClientProjectState.setDraft(project);
+        openFile(name);
     }
 
     // ---- Zeichnen ----------------------------------------------------------
@@ -245,6 +285,11 @@ public class CodeTabView {
                     "screen.factorynetwork.terminal.deploy.hint"), mouseX, mouseY);
             return;
         }
+        if (overExpand(mouseX, mouseY)) {
+            graphics.renderTooltip(font, Component.translatable(
+                    "screen.factorynetwork.terminal.expand"), mouseX, mouseY);
+            return;
+        }
         if (overPlus(mouseX, mouseY)) {
             graphics.renderTooltip(font, Component.translatable(
                     "screen.factorynetwork.terminal.newfile"), mouseX, mouseY);
@@ -289,6 +334,10 @@ public class CodeTabView {
         }
         if (overButton(mouseX, mouseY)) {
             screen.deploy();
+            return true;
+        }
+        if (overExpand(mouseX, mouseY)) {
+            screen.openBigEditor();
             return true;
         }
         if (overPlus(mouseX, mouseY)) {

@@ -86,6 +86,48 @@ public record Project(Map<String, String> files) {
     }
 
     /**
+     * Dasselbe Projekt unter einem anderen Dateinamen.
+     *
+     * <p>Der Inhalt zieht mit, die Reihenfolge ergibt sich neu aus dem
+     * Alphabet. Ist der neue Name ungültig oder schon vergeben, bleibt alles
+     * wie es war — das Umbenennen ist dann eine Eingabe, die der Bildschirm
+     * gar nicht erst annimmt, und hier steht nur die zweite Sicherung.
+     */
+    public Project renamed(String from, String to) {
+        if (!files.containsKey(from) || !isValidName(to) || files.containsKey(to)) {
+            return this;
+        }
+        Map<String, String> next = new HashMap<>(files);
+        next.put(to, next.remove(from));
+        return new Project(next);
+    }
+
+    /**
+     * Ein freier Name in der Art des gegebenen.
+     *
+     * <p>Für das Verdoppeln und für neue Dateien: {@code worker.mf} wird zu
+     * {@code worker2.mf}, und wenn es die schon gibt, zu {@code worker3.mf}.
+     * Eine Ziffer am Ende des Namens wird dabei weitergezählt und nicht
+     * angehängt — sonst hieße die Kopie von {@code worker2.mf} nach dem
+     * dritten Mal {@code worker222.mf}.
+     */
+    public String freeNameLike(String name) {
+        String base = name.endsWith(".mf") ? name.substring(0, name.length() - 3) : name;
+        int end = base.length();
+        while (end > 1 && Character.isDigit(base.charAt(end - 1))) {
+            end--;
+        }
+        String stem = base.substring(0, end);
+        for (int number = 2; number < 1000; number++) {
+            String candidate = stem + number + ".mf";
+            if (isValidName(candidate) && !files.containsKey(candidate)) {
+                return candidate;
+            }
+        }
+        return MAIN;
+    }
+
+    /**
      * Dasselbe Projekt ohne diese Datei.
      *
      * <p>Die letzte lässt sich nicht löschen — ein Projekt ohne Datei wäre

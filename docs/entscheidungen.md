@@ -1962,3 +1962,47 @@ Projekt löscht man ein Programmstück, das man nicht mehr will.
 Die bisherige `controller_….mf` wird beim ersten Laden zur `main.mf` im
 Ordner und verschwindet — sonst stünden zwei Wahrheiten nebeneinander, und
 die Brücke sähe nur eine.
+
+### Der Dateibaum liegt in einem eigenen Fenster — Umkehr
+
+Gestern stand hier sinngemäß: Umbenennen geht im Ordner neben der Welt, ein
+Fenster für einen Dateinamen wäre ein Fenster über einem Fenster, und eine
+Dateispalte kostet ein Viertel der vierundvierzig Spalten. Beide Gründe waren
+richtig. Die Folgerung war es nicht.
+
+Was daraus wurde, stand als Hinweistext im Spiel: *„Neue Datei — umbenennen im
+Ordner neben der Welt."* Ein Fenster, das den Spieler bittet, für einen
+Handgriff das Spiel zu verlassen, hat den Handgriff nicht.
+
+Der Fehler war die Annahme, das Terminal müsse alles können. Es ist 288 Pixel
+breit, weil darunter das Spielerinventar sitzt und das Slotraster nicht
+verhandelbar ist — das ist eine Eigenschaft des Speicher-Reiters, keine des
+Editors. Der Editor bekommt deshalb ein eigenes Fenster ohne Inventar und
+damit ohne feste Breite: links der Dateibaum, rechts vierzig statt acht
+Zeilen.
+
+Der Reiter im Terminal bleibt, was er sein kann: nachsehen und drei Zeilen
+korrigieren, ohne das Inventar zu verlieren. Beide arbeiten am selben
+Entwurf, der deshalb in `ClientProjectState` liegt und nicht in einer der
+beiden Ansichten.
+
+### Umbenannt wird in der Zeile, gelöscht über das Menü
+
+Die Zeile wird zum Eingabefeld. Ein eigenes Fenster für einen Dateinamen
+nähme einem beim Tippen aus den Augen, wie die anderen Dateien heißen —
+genau das, wonach man sich beim Benennen richtet. Ein Name, den es schon gibt
+oder der nicht ins Muster passt, steht rot da, und die Eingabetaste lässt das
+Feld offen: Ein Feld, das sich bei einem Tippfehler selbst schließt, tippt man
+zweimal.
+
+Gelöscht wird nur über das Kontextmenü, dafür ohne Rückfrage. Zwei Klicks an
+einer Stelle, an die man nicht aus Versehen kommt, sind die Rückfrage; ein
+Bestätigungsfenster über dem Editorfenster wäre die dritte Ebene.
+
+### Der Dateibaum nimmt keinen Tastaturgriff
+
+Nur die Eingabe beim Umbenennen und F2. Hätte der Baum einen Griff, wanderten
+die Pfeiltasten nach einem Klick auf eine Datei zwischen den Dateien statt
+durch den Text, und Entfernen löschte eine Datei statt eines Zeichens. In
+einem Fenster, dessen Hauptsache ein Editor ist, gehören die Pfeiltasten dem
+Editor.

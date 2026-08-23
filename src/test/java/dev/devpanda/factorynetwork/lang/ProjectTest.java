@@ -107,4 +107,40 @@ class ProjectTest {
         assertEquals(List.of(Project.MAIN),
                 Project.of("x").without(Project.MAIN).names());
     }
+    @Test
+    @DisplayName("Umbenennen nimmt den Inhalt mit")
+    void renameCarriesTheSource() {
+        Project project = new Project(Map.of("main.mf", "fn eins() { }",
+                "alt.mf", "fn zwei() { }"));
+        Project renamed = project.renamed("alt.mf", "worker.mf");
+
+        assertEquals(List.of("main.mf", "worker.mf"), renamed.names());
+        assertEquals("fn zwei() { }", renamed.source("worker.mf"));
+    }
+
+    @Test
+    @DisplayName("Auf einen belegten oder ungültigen Namen wird nicht umbenannt")
+    void renameRefusesTakenAndInvalidNames() {
+        Project project = new Project(Map.of("main.mf", "a", "worker.mf", "b"));
+
+        assertEquals(project.files(), project.renamed("worker.mf", "main.mf").files(),
+                "ein belegter Name hätte den anderen Inhalt überschrieben");
+        assertEquals(project.files(), project.renamed("worker.mf", "Worker.MF").files(),
+                "Großbuchstaben passen nicht ins Muster");
+        assertEquals(project.files(), project.renamed("worker.mf", "../weg.mf").files(),
+                "ein Pfad wäre ein Weg aus dem Weltordner heraus");
+        assertEquals(project.files(), project.renamed("gibtsnicht.mf", "neu.mf").files());
+    }
+
+    @Test
+    @DisplayName("Der freie Name zählt eine Ziffer weiter, statt sie anzuhängen")
+    void freeNameCountsUpInsteadOfAppending() {
+        Project project = new Project(Map.of("main.mf", ""));
+        assertEquals("worker2.mf", project.freeNameLike("worker.mf"));
+
+        Project zwei = project.with("worker2.mf", "");
+        assertEquals("worker3.mf", zwei.freeNameLike("worker2.mf"),
+                "aus worker2 wird worker3 und nicht worker22");
+    }
+
 }

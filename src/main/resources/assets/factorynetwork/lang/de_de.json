@@ -14,7 +14,7 @@
   "screen.factorynetwork.terminal.workers": "Worker",
   "screen.factorynetwork.terminal.code": "main.mf",
   "screen.factorynetwork.terminal.no_connectors": "keine benannten",
-  "screen.factorynetwork.terminal.newfile": "Neue Datei — umbenennen im Ordner neben der Welt",
+  "screen.factorynetwork.terminal.newfile": "Neue Datei — benannt wird sie im großen Fenster",
   "screen.factorynetwork.terminal.ok": "bereit",
   "screen.factorynetwork.terminal.deploy_hint": "Strg+Eingabe übernimmt",
   "block.factorynetwork.dense_cable": "Dichtes Kabel",
@@ -268,5 +268,12 @@
   "jade.factorynetwork.burner.stored": "%s von %s FE",
   "screen.factorynetwork.router.lane": "Bahn %s",
   "screen.factorynetwork.router.load": "%s Kanäle",
-  "screen.factorynetwork.router.off": "Abgeklemmt"
+  "screen.factorynetwork.router.off": "Abgeklemmt",
+  "screen.factorynetwork.terminal.expand": "Editor im ganzen Fenster öffnen",
+  "screen.factorynetwork.code.title": "Projekt",
+  "screen.factorynetwork.code.back": "Esc — zurück ins Terminal",
+  "screen.factorynetwork.project.title": "PROJEKT",
+  "screen.factorynetwork.project.rename": "Umbenennen",
+  "screen.factorynetwork.project.duplicate": "Verdoppeln",
+  "screen.factorynetwork.project.delete": "Löschen"
 }
