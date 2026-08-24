@@ -54,6 +54,21 @@ public final class FileLocks {
     }
 
     /**
+     * Wer diese Datei gerade hält, oder {@code null}.
+     *
+     * <p>Für „Bearbeitung anfragen": Wer anklopfen will, braucht jemanden zum
+     * Anklopfen. Eine abgelaufene Sperre zählt nicht — dann ist die Datei
+     * frei, und der Anfragende soll sie einfach nehmen.
+     */
+    public UUID holderOf(String file, long now) {
+        Holder holder = holders.get(file);
+        if (holder == null || now - holder.touched() >= TIMEOUT_TICKS) {
+            return null;
+        }
+        return holder.player();
+    }
+
+    /**
      * Gibt alles frei, was diesem Spieler gehört.
      *
      * <p>Beim Schließen des Terminals. Auf den Zeitablauf zu warten hieße,

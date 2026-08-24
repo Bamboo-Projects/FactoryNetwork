@@ -304,6 +304,10 @@
   "screen.factorynetwork.code.at": "steht bei %s %s %s",
   "screen.factorynetwork.code.locate_hint": "Strg+Klick markiert es in der Welt",
   "screen.factorynetwork.code.located": "%s markiert — %s %s %s",
-  "screen.factorynetwork.code.held_by": "%s bearbeitet diese Datei",
-  "screen.factorynetwork.terminal.network.globals": "GLOBALE WERTE"
+  "screen.factorynetwork.code.held_by": "%s bearbeitet diese Datei — F4 fragt an",
+  "screen.factorynetwork.terminal.network.globals": "GLOBALE WERTE",
+  "screen.factorynetwork.code.help.request": "Bearbeitung anfragen",
+  "message.factorynetwork.request_edit.asked": "%s hätte gern die Datei %s.",
+  "message.factorynetwork.request_edit.sent": "Angefragt bei %s.",
+  "message.factorynetwork.request_edit.free": "%s ist frei — du kannst sie bearbeiten."
 }

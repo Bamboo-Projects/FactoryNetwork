@@ -304,6 +304,10 @@
   "screen.factorynetwork.code.at": "sits at %s %s %s",
   "screen.factorynetwork.code.locate_hint": "Ctrl+click marks it in the world",
   "screen.factorynetwork.code.located": "%s marked — %s %s %s",
-  "screen.factorynetwork.code.held_by": "%s is editing this file",
-  "screen.factorynetwork.terminal.network.globals": "GLOBAL VALUES"
+  "screen.factorynetwork.code.held_by": "%s is editing this file — press F4 to ask",
+  "screen.factorynetwork.terminal.network.globals": "GLOBAL VALUES",
+  "screen.factorynetwork.code.help.request": "Ask to edit",
+  "message.factorynetwork.request_edit.asked": "%s would like the file %s.",
+  "message.factorynetwork.request_edit.sent": "Asked %s.",
+  "message.factorynetwork.request_edit.free": "%s is free — you can edit it."
 }

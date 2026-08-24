@@ -95,6 +95,7 @@ public class CodeScreen extends Screen {
             {"Strg+Eingabe", "help.deploy"},
             {"Strg+Klick", "help.goto"},
             {"F2", "help.rename"},
+            {"F4", "help.request"},
             {"Rechtsklick", "help.menu"},
             {"F1", "help.close"},
     };
@@ -506,6 +507,10 @@ public class CodeScreen extends Screen {
         // Strg+S sichert den Entwurf sofort. Er geht ohnehin eine Sekunde
         // nach dem letzten Anschlag hinaus — der Griff ist für den Moment,
         // in dem man vom Rechner weggeht und es genau wissen will.
+        // F4 fragt nach einer Datei, die jemand anders hält.
+        if (key == RequestEdit.KEY && RequestEdit.ask(open)) {
+            return true;
+        }
         if (key == 83 && hasControlDown()) {
             ClientProjectState.flush();
             return true;

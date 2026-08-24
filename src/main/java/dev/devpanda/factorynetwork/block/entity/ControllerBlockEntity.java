@@ -889,6 +889,11 @@ public class ControllerBlockEntity extends BlockEntity {
     }
 
     /** Wer welche Datei hält, aus Sicht dieses Spielers. */
+    /** Wer diese Datei gerade hält, oder {@code null}. */
+    public java.util.UUID holderOf(String file) {
+        return level == null ? null : locks.holderOf(file, level.getGameTime());
+    }
+
     public Map<String, String> locksFor(java.util.UUID player) {
         return locks.othersFor(player, level == null ? 0L : level.getGameTime());
     }

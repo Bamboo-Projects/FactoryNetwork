@@ -364,6 +364,11 @@ public class CodeTabView {
     // ---- Bedienung ---------------------------------------------------------
 
     public boolean keyPressed(int key, int scanCode, int modifiers) {
+        // Dieselbe Taste wie im eigenen Fenster: Wer im Reiter vor einer
+        // fremden Datei steht, hat dieselbe Frage.
+        if (key == RequestEdit.KEY && RequestEdit.ask(open)) {
+            return true;
+        }
         return editor.keyPressed(key, scanCode, modifiers);
     }
 
