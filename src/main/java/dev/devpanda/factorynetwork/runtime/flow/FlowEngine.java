@@ -285,6 +285,19 @@ public final class FlowEngine {
         return flow;
     }
 
+    /**
+     * Steht gerade ein Ablauf und wartet auf dieses Ereignis?
+     *
+     * <p><b>Ein {@code await} ist genauso ein Zuhörer wie ein {@code on}.</b>
+     * Wer nur die Blöcke zählt, hält ein Ereignis für ungehört, auf das
+     * jemand wartet — und der Wartende wacht nie wieder auf. Beim Redstone
+     * und beim Inventar entscheidet diese Frage, ob überhaupt hingesehen
+     * wird.
+     */
+    public boolean awaits(String event) {
+        return flows.values().stream().anyMatch(flow -> flow.waitsFor(event));
+    }
+
     /** Beginnt einen Ablauf für jeden Block, der auf dieses Ereignis hört. */
     public List<Flow> fire(String event, List<Value> arguments) {
         List<Flow> started = new ArrayList<>();

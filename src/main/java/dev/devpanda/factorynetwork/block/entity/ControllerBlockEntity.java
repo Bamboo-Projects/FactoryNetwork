@@ -1227,7 +1227,7 @@ public class ControllerBlockEntity extends BlockEntity {
         if (level == null || level.getGameTime() % 10 != 0) {
             return;
         }
-        if (program.handlers().stream().noneMatch(h -> h.name().equals(BuiltinEvents.DEVICE_CHANGED))) {
+        if (!listensTo(BuiltinEvents.DEVICE_CHANGED)) {
             lastContents.clear();
             return;
         }
@@ -1275,11 +1275,31 @@ public class ControllerBlockEntity extends BlockEntity {
         return hash;
     }
 
+    /**
+     * Hört irgendwer auf dieses Ereignis?
+     *
+     * <p><b>Ein wartender Ablauf zählt mit.</b> Gezählt wurden lange nur die
+     * {@code on}-Blöcke, und damit stand ein
+     *
+     * <pre>let gerät = await device_changed</pre>
+     *
+     * für immer: Ohne Block wurde gar nicht erst hingesehen, das Ereignis
+     * fiel nie, und der Ablauf wartete auf etwas, das niemand mehr auslöste.
+     * Die Abfrage ist teuer genug, um sie zu sparen — aber nur, wenn wirklich
+     * niemand zuhört.
+     */
+    private boolean listensTo(String event) {
+        if (program.handlers().stream().anyMatch(handler -> handler.name().equals(event))) {
+            return true;
+        }
+        return flows != null && flows.awaits(event);
+    }
+
     private void fireRedstoneEvents() {
         if (level == null || level.getGameTime() % 10 != 0) {
             return;
         }
-        if (program.handlers().stream().noneMatch(h -> h.name().equals(BuiltinEvents.REDSTONE_CHANGED))) {
+        if (!listensTo(BuiltinEvents.REDSTONE_CHANGED)) {
             return;
         }
         for (Map.Entry<String, BlockPos> entry : graph.connectors().entrySet()) {

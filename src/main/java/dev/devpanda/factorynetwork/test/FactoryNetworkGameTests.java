@@ -2541,6 +2541,39 @@ public final class FactoryNetworkGameTests {
     }
 
     @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void anAwaitAloneIsEnoughToBeWatched(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        // Ohne on-Block — genau so steht es in beispiele.md, und genau so
+        // wartete es für immer: Gezählt wurden nur die Blöcke, also wurde gar
+        // nicht erst hingesehen, also fiel das Ereignis nie. Ein await ist
+        // aber derselbe Zuhörer.
+        helper.assertTrue(entity.deploy("""
+                fn wartet() {
+                    let gerät = await device_changed
+                    return 1
+                }"""), "Das Programm wurde nicht übernommen");
+
+        var flow = entity.startFlow("wartet", java.util.List.of());
+        helper.assertValueEqual(flow.status().name(), "AWAITING", "Er wartet");
+
+        BlockPos quelle = controller.east().north().north();
+        helper.startSequence()
+                .thenIdle(15)
+                .thenExecute(() -> {
+                    if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity container) {
+                        container.setItem(0, new ItemStack(Items.COBBLESTONE, 5));
+                    }
+                })
+                .thenIdle(15)
+                .thenExecute(() -> helper.assertValueEqual(flow.status().name(), "DONE",
+                        "Ein wartender Ablauf allein muss reichen, damit hingesehen wird"))
+                .thenSucceed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void withoutAHandlerNothingIsWatched(GameTestHelper helper) {
         BlockPos controller = buildSetup(helper);
         ControllerBlockEntity entity = controllerAt(helper, controller);
