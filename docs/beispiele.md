@@ -243,7 +243,20 @@ fn eine_runde() {
 `device_changed` sagt, dass sich etwas getan hat — nicht, dass die Maschine
 fertig ist. Das weiß von außen niemand: Der Ausgang kann von vorher gefüllt
 sein, und jede Mod zählt anders. Was „fertig" bedeutet, schreibt man selbst
-dazu, etwa mit `brecher.count(item:iron_dust) >= 8`.
+dazu.
+
+**Achtung bei `count`:** `brecher.count(item:iron_dust)` zählt den
+**Netzspeicher** und nicht den Brecher — der Gerätename davor ändert daran
+nichts. Was in der Maschine liegt, sagt `brecher.items()`:
+
+```
+fn eine_runde() {
+    move 8 item:iron_ore from lager to brecher
+    let vorher = brecher.items().count()
+    await device_changed
+    move item:iron_dust from brecher to lager
+}
+```
 
 Hingeschaut wird nur, wenn das Programm überhaupt darauf hört, und dann alle
 zehn Ticks.

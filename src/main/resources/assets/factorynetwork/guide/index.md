@@ -55,7 +55,7 @@ Maschine dahinter vor.
 
 Die häufigsten drei Gründe, in dieser Reihenfolge:
 
-- **Kein Strom.** Im Reiter *Netzwerk* steht der Vorrat. Ist er leer, geht das
+- **Kein Strom.** Im Reiter *Netz* steht der Vorrat. Ist er leer, geht das
   Netz aus und muss danach hochfahren.
 - **Kein Kanal.** Jedes Gerät zieht auf seinem ganzen Weg zum Controller einen
   Kanal. Weiter hinten fehlt er dann — ein dichtes Kabel trägt mehr.

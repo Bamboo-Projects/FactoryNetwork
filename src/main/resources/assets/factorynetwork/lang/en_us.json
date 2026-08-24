@@ -22,6 +22,7 @@
   "gui.factorynetwork.press.powered": "Powered",
   "gui.factorynetwork.press.unpowered": "No power — the press is idle",
   "block.factorynetwork.press": "Press",
+  "item.factorynetwork.label_gun": "Label Gun",
   "item.factorynetwork.crystal": "Crystal",
   "item.factorynetwork.plate": "Plate",
   "item.factorynetwork.stamp_plate": "Stamp: Plate",

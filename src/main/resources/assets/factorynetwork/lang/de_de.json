@@ -22,6 +22,7 @@
   "gui.factorynetwork.press.powered": "Versorgt",
   "gui.factorynetwork.press.unpowered": "Kein Strom — die Presse steht",
   "block.factorynetwork.press": "Presse",
+  "item.factorynetwork.label_gun": "Beschriftungspistole",
   "item.factorynetwork.crystal": "Kristall",
   "item.factorynetwork.plate": "Platte",
   "item.factorynetwork.stamp_plate": "Prägestempel: Platte",

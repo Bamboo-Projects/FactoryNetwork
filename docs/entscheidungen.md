@@ -895,9 +895,15 @@ Absatz blieb stehen, obwohl die Antwort zwölf Zeilen weiter steht.
 
 ## Kanäle (2026-08-20)
 
-**Acht je Strang, nicht je Bündel.** Ein Strang ist ein Bündel von acht
-Drähten; jedes Gerät zieht auf seinem ganzen Weg zum Controller einen davon
-ab, und weiter hinten fehlt er dann. Das Vorbild ist Applied Energistics.
+**Je Strang, nicht je Bündel.** Ein Strang ist ein Bündel von Drähten; jedes
+Gerät zieht auf seinem ganzen Weg zum Controller einen davon ab, und weiter
+hinten fehlt er dann. Das Vorbild ist Applied Energistics.
+
+> **Nachgetragen am 2026-08-25:** Hier standen acht. Der Code sagt seit
+> längerem **sechzehn** je dünnem Strang und **vierundsechzig** je dichtem
+> (`CableBlock.CHANNELS_THIN`, `CHANNELS_DENSE`) — das Doppelte des Vorbilds,
+> mit einem Kommentar an der Stelle begründet. Die Verdopplung ist die
+> gültige Zahl; dieser Absatz war die alte.
 
 Der Unterschied zu dort: Bei uns zählt der Strang. Vier Stränge in einem Block
 tragen vier mal acht, weil sie vier getrennte Netze sind — dieselbe Logik wie
