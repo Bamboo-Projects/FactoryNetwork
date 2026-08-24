@@ -97,6 +97,47 @@ public final class WorldHost implements Interpreter.Host {
         return List.copyOf(logs);
     }
 
+    /**
+     * {@code crusher_1.insert(64 item:iron_ore)}
+     *
+     * <p><b>Derselbe Weg wie {@code move … from storage to gerät}</b>, nur
+     * kürzer geschrieben. Das ist kein Zufall, sondern der Grund, warum es
+     * hier nur eine Zeile braucht: Die Auswahl, die Mengenrechnung, die
+     * Unterscheidung zwischen Gegenständen und Flüssigkeiten — alles steht
+     * schon in {@link #move}. Eine zweite Fassung daneben liefe auseinander.
+     */
+    @Override
+    public long insertInto(String device, Value selection) {
+        return move(selection, new Value.Builtin("storage"), new Value.Device(device));
+    }
+
+    /**
+     * {@code crusher_1.items()}
+     *
+     * <p>Was im Gerät liegt, als Liste von Mengen. Leere Fächer fallen weg —
+     * eine Kiste mit siebenundzwanzig Fächern und drei Barren darin soll drei
+     * Einträge liefern und nicht siebenundzwanzig.
+     *
+     * <p>Ein Gerät ohne Inventar liefert eine leere Liste und keinen Fehler:
+     * Ob eines da ist, sagt das Profil im Editor, und ein Programm, das über
+     * ein leeres Gerät läuft, tut einfach nichts.
+     */
+    @Override
+    public List<Value> itemsIn(String device) {
+        IItemHandler handler = handlerOf(new Value.Device(device));
+        if (handler == null) {
+            return List.of();
+        }
+        List<Value> found = new ArrayList<>();
+        for (int slot = 0; slot < handler.getSlots(); slot++) {
+            ItemStack stack = handler.getStackInSlot(slot);
+            if (!stack.isEmpty()) {
+                found.add(new Value.Selection(List.of(stack.getItem()), stack.getCount()));
+            }
+        }
+        return found;
+    }
+
     @Override
     public long move(Value amount, Value from, Value to) {
         // Zuerst die Art: Wasser und Steine gehen verschiedene Wege, und ein

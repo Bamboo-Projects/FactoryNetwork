@@ -158,7 +158,8 @@ class SignaturesTest {
         java.util.List<String> names = Signatures.MEMBERS.stream()
                 .map(Signatures.Member::name).toList();
 
-        assertEquals(java.util.List.of("online", "name", "redstone", "count"), names);
+        assertEquals(java.util.List.of("online", "name", "redstone", "count",
+                "insert", "items"), names);
     }
 
     @Test

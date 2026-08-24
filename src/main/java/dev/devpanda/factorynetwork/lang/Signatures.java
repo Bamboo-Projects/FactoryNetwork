@@ -237,7 +237,12 @@ public final class Signatures {
             new Member("redstone", "int, oder redstone(int)",
                     "Die Redstone-Stärke, 0 bis 15. Mit Zahl gesetzt, ohne gelesen."),
             new Member("count", "count(selection) int",
-                    "Wie viel von einer Art im Netzspeicher liegt."));
+                    "Wie viel von einer Art im Netzspeicher liegt."),
+            new Member("insert", "insert(selection) int",
+                    "Legt aus dem Speicher etwas hinein. Gibt zurück, wie viel ankam — "
+                            + "weniger ist normal."),
+            new Member("items", "items() list",
+                    "Was gerade im Gerät liegt. Leere Fächer fallen weg."));
 
     /**
      * Die Formen, die in dieser Blockart gelten.

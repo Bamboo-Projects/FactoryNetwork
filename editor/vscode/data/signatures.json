@@ -440,6 +440,16 @@
       "name": "count",
       "shape": "count(selection) int",
       "help": "Wie viel von einer Art im Netzspeicher liegt."
+    },
+    {
+      "name": "insert",
+      "shape": "insert(selection) int",
+      "help": "Legt aus dem Speicher etwas hinein. Gibt zurück, wie viel ankam — weniger ist normal."
+    },
+    {
+      "name": "items",
+      "shape": "items() list",
+      "help": "Was gerade im Gerät liegt. Leere Fächer fallen weg."
     }
   ],
   "declarations": [

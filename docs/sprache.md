@@ -383,12 +383,30 @@ crusher_1.online
 furnace_2.items()
 ```
 
+**Was ein Gerät hat:**
+
+| | Bedeutung |
+|---|---|
+| `online` | Hängt es gerade im Netz? |
+| `name` | Der Name, den die Beschriftungspistole vergeben hat |
+| `redstone()` / `redstone(int)` | Die Stärke, 0 bis 15 — gelesen oder gesetzt |
+| `count(auswahl)` | Wie viel von einer Art im **Netzspeicher** liegt |
+| `insert(auswahl)` | Legt aus dem Speicher etwas hinein. Gibt zurück, wie viel ankam — **weniger ist normal** |
+| `items()` | Was gerade drinliegt. Leere Fächer fallen weg |
+
 Gruppen verhalten sich wie ein Gerät, verteilen aber:
 
 ```
 crushers.send(64 item:iron_ore)
 crushers.send(64 item:iron_ore, strategy: least_filled)
 ```
+
+> **Noch nicht gebaut:** `send()` an einer Gruppe und `output()`. Bei `send`
+> fehlt die Verteilung über mehrere Ziele in der Sprache — beim Worker gibt es
+> sie, beim Aufruf noch nicht. Bei `output()` ist offen, was
+> `move crusher.output() to furnace` genau bedeutet: Der Ausdruck liefert eine
+> Auswahl **und** setzt stillschweigend die Quelle, und das ist eine
+> Entscheidung, die getroffen werden muss, bevor man es baut.
 
 ### Redstone
 

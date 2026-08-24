@@ -128,6 +128,29 @@ public final class Interpreter {
         /** Setzt einen globalen Wert. */
         default void setGlobal(String name, Value value) {
         }
+
+        /**
+         * Legt aus dem Netzspeicher etwas in ein Gerät.
+         *
+         * @return wie viel angekommen ist. <b>Weniger als gewünscht ist
+         *         normal</b>, {@code 0} auch: Die Maschine kann voll sein und
+         *         der Speicher leer. Ein Fehler ist es erst, wenn das Gerät
+         *         nicht mehr da ist.
+         */
+        default long insertInto(String device, Value selection) {
+            return 0;
+        }
+
+        /**
+         * Was in einem Gerät liegt.
+         *
+         * <p>Eine leere Liste heißt „nichts drin" und ist kein Fehler — auch
+         * dann nicht, wenn das Gerät gar kein Inventar hat. Wer wissen will,
+         * ob es eines hat, sieht im Editor nach; das Profil sagt es.
+         */
+        default List<Value> itemsIn(String device) {
+            return List.of();
+        }
     }
 
     public Interpreter(Program program, Host host) {
@@ -762,9 +785,19 @@ public final class Interpreter {
                 }
                 case "count" -> new Value.Int(host.count(arguments.isEmpty()
                         ? Value.Nothing.get() : arguments.get(0)));
+                // Legt aus dem Netzspeicher etwas ins Gerät und meldet, wie
+                // viel ankam. Weniger als gewünscht ist normal: Die Maschine
+                // kann voll sein, der Speicher leer.
+                case "insert" -> new Value.Int(host.insertInto(device.name(),
+                        arguments.isEmpty() ? Value.Nothing.get() : arguments.get(0)));
+                // Was gerade drinliegt. Ohne die Listenoperationen aus
+                // sprache.md §12 reicht das für log() und für eine Zählung —
+                // mehr ist es heute nicht, und das ist ehrlicher als eine
+                // Liste, mit der man nichts anfangen kann.
+                case "items" -> new Value.ValueList(host.itemsIn(device.name()));
                 default -> throw new ScriptError(
                         "Ein Gerät kann kein " + name + ".",
-                        "Bekannt sind redstone und count.");
+                        "Bekannt sind redstone, count, insert und items.");
             };
         }
         throw new ScriptError("Auf " + target.describe() + " gibt es kein " + name + ".");

@@ -5633,6 +5633,74 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    // ---- Gerätemitglieder --------------------------------------------------
+
+    /**
+     * {@code insert} und {@code items} in einer echten Welt.
+     *
+     * <p>Der Einheitstest prüft die Sprache gegen eine Welt aus Papier; hier
+     * geht es um die Frage, ob wirklich Gegenstände wandern.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void insertPutsItemsIntoTheMachine(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        // Etwas in den Netzspeicher, damit insert etwas zu holen hat.
+        entity.storage().insert(Items.IRON_INGOT, 30);
+
+        helper.assertTrue(entity.deploy("""
+                fn füllen() {
+                    log(depot.insert(20 item:iron_ingot))
+                }
+
+                fn zeigen() {
+                    log(depot.items())
+                }"""), "das Programm wurde nicht übernommen");
+
+        entity.callFunction("füllen", List.of());
+
+        BlockPos connector = entity.graph().connectors().get("depot");
+        ConnectorBlockEntity port =
+                (ConnectorBlockEntity) helper.getLevel().getBlockEntity(connector);
+        IItemHandler chest = port.machineInventory();
+        helper.assertTrue(chest != null, "hinter depot steht keine Kiste");
+
+        int inChest = 0;
+        for (int slot = 0; slot < chest.getSlots(); slot++) {
+            inChest += chest.getStackInSlot(slot).getCount();
+        }
+        helper.assertValueEqual(inChest, 20, "so viel sollte in der Kiste liegen");
+        helper.assertValueEqual(entity.storage().count(Items.IRON_INGOT), 10L,
+                "und so viel im Netzspeicher übrig sein");
+
+        entity.callFunction("zeigen", List.of());
+        helper.succeed();
+    }
+
+    /**
+     * Was nicht hineinpasst, ist kein Fehler.
+     *
+     * <p>Eine volle Maschine meldet Null, und das Programm läuft weiter —
+     * dieselbe Regel wie bei {@code move}.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void insertIntoNothingIsZeroAndNoError(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        // Nichts im Speicher: Es gibt nichts einzulegen.
+        helper.assertTrue(entity.deploy("""
+                fn füllen() {
+                    log(depot.insert(20 item:iron_ingot))
+                }"""), "das Programm wurde nicht übernommen");
+
+        entity.callFunction("füllen", List.of());
+        helper.succeed();
+    }
+
     // ---- Globale Werte -----------------------------------------------------
 
     /**
