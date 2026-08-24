@@ -121,9 +121,15 @@ nebenbei fällt. Sie steht deshalb hier und nicht im Strom-Entwurf.
 
 Operational Potential ist ein Superset von FE: Draconic-Maschinen sind über
 die vorhandene Energie-Anbindung bereits erreichbar. Aber die Beträge
-erreichen `long`-Größenordnungen. **Zu prüfen:** ob `NetworkPower`,
-`InternalBuffer` und die geplante Stromverteilung das aushalten oder still
-überlaufen.
+erreichen `long`-Größenordnungen.
+
+**Nachgesehen am 2026-08-24:** NeoForges `IEnergyStorage` ist selbst
+`int`-basiert, und `InternalBuffer` erbt davon. Ein Überlauf entsteht damit
+nicht — Mods mit größeren Beträgen deckeln, was sie über diese Schnittstelle
+melden. Der Preis ist eine **abgeschnittene Anzeige**: Wer auf eine
+Draconic-Maschine zeigt, liest den Deckelwert und nicht ihren echten Vorrat.
+Wer das ändern will, braucht Draconics eigene Schnittstelle — eine
+Integration, kein Ressourcentyp.
 
 ---
 
