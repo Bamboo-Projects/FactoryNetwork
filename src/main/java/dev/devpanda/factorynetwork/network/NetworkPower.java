@@ -37,6 +37,12 @@ public final class NetworkPower {
      *
      * <p>Nimmt an, gibt aber nichts heraus: Ein Netz ist kein Akku, aus dem
      * die Nachbarmaschine zapft.
+     *
+     * <p><b>Das beschreibt den Stand, nicht mehr die Absicht.</b> Am
+     * 2026-08-24 wurde entschieden, dass das Netz Strom verteilt — über
+     * Worker mit {@code filter power}, nicht von selbst. Bis das gebaut ist,
+     * stimmt der Satz oben; die Begründung dahinter gilt nicht mehr. Siehe
+     * {@code docs/entscheidungen.md}, „Strom wird geleitet und gespeichert".
      */
     private final InternalBuffer buffer =
             new InternalBuffer(Power.CAPACITY, Power.MAX_INPUT);

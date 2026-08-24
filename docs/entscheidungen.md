@@ -2123,3 +2123,155 @@ JavaScript. Das ließ sich nicht vermeiden, also wurde es wenigstens gemessen �
 `editor/vscode/check.js` prüft dieselben vierzehn Fälle wie der Java-Test, ohne
 Abhängigkeiten. Zwei Fassungen derselben Regel laufen auseinander, wenn niemand
 nachmisst.
+
+---
+
+## Manifold bleibt, kein Lua und kein JavaScript (2026-08-24)
+
+Auf die Frage des Projektinhabers, ob eine eingebettete Sprache — Lua,
+JavaScript, TypeScript — die eigene ersetzen sollte. Bis dahin war die eigene
+Sprache nie gegen etwas abgewogen worden; sie stand von Anfang an im Konzept.
+
+**Ergebnis: Manifold bleibt.** Drei Gründe, nach Gewicht.
+
+### Die Fortsetzung nach dem Neustart hängt an der eigenen Sprache
+
+„Wartender Code überlebt Serverneustarts" ist eine der drei Entscheidungen,
+die alles bestimmen. Eingebettete Sprachen können das nicht: LuaJ serialisiert
+keine Coroutinen, GraalJS keine Continuations. Im Genre sieht man beide Enden
+davon — ComputerCraft persistiert gar nicht, seine Computer starten beim
+Weltneustart neu, und Spieler behelfen sich mit Startskripten. OpenComputers
+hat es gelöst, aber über eine native Bibliothek zur Lua-Persistenz, und damit
+eine dauerhafte Fragilität eingekauft.
+
+Der Unterbau in `runtime/flow` existiert, weil die Sprache für diese
+Eigenschaft entworfen wurde.
+
+### Eine fremde Sprache ersetzt nur die imperative Hälfte
+
+`worker`, `display`, `group`, `on` sind Deklarationen — Daten, keine Aufrufe.
+Ein Programm hat kein Hauptprogramm, das losläuft. An dieser Hälfte hängt
+alles, was die Mod von einem Rechner mit Lager unterscheidet: `Signatures`,
+`NetworkCheck`, die Geräteerkennung, die Stromversorgung.
+
+In Lua würde daraus ein Tabellenaufruf, den niemand prüfen kann, bis er
+läuft. Oder eine DSL darin — also wieder eine eigene Sprache, nur schlechter
+geparst.
+
+### Der Editor lebt davon, dass die Sprache Daten ist
+
+Vervollständigung nach der Stelle, an der der Cursor steht. Namensprüfung
+gegen das echte Netz. Die Formzeile. Alles aus einer Tabelle, die die Sprache
+beschreibt. Mit Lua bräuchte es einen Sprachserver mit eigenen Typangaben, um
+dasselbe schlechter zu erreichen — und im Spiel selbst gar nichts davon.
+
+### Was für den Wechsel gesprochen hätte
+
+Vertraute Schreibweise für alle, die schon programmieren. Keine Sprachpflege:
+Jedes Feature kostet heute Lexer, Parser, Signaturen, Interpreter, Editor und
+die Tabelle für VS Code — eine Steuer, die bei jeder Erweiterung erneut
+anfällt. Dazu ein fertiges Ökosystem.
+
+Der bessere Handel wäre es, wenn die Zielgruppe Programmierer mit großen
+Programmen wären. `sprache.md` sagt das Gegenteil: `it` statt Pfeilschreibweise,
+weil letztere „für Spieler ohne Programmiererfahrung die größte Hürde wäre",
+und das längste Beispielprogramm hat fünfzehn Zeilen.
+
+**Kein Argument war der Umfang des Bestehenden.** Bereits geschriebene Arbeit
+ist kein Grund, an einer Entscheidung festzuhalten; die drei Gründe oben
+gelten unabhängig davon, wie viel schon dasteht.
+
+### Wann die Frage neu zu stellen wäre
+
+Wenn die Programme wachsen und Bibliotheken nötig werden, oder wenn sich
+zeigt, dass die Zielgruppe doch aus Programmierern besteht. Dann wäre nicht
+der Wechsel die Antwort, sondern die Frage, ob Manifold ein Modulsystem
+braucht.
+
+---
+
+## Strom wird geleitet und gespeichert (2026-08-24)
+
+Ergänzt und korrigiert den Eintrag „Strom" vom 2026-08-22. Dort stand, das
+Netz nehme Strom an und gebe nichts ab — „ein Netz ist kein Akku, aus dem die
+Nachbarmaschine zapft". **Dieser Satz ist überholt.** Auf Wunsch des
+Projektinhabers verteilt das Netz Strom an die Maschinen und kann ihn
+speichern.
+
+Was bleibt: Strom ist weiterhin die laufende Betriebsabgabe des Netzes selbst,
+und die Aufnahme kommt weiterhin als Forge Energy aus dem Pack.
+
+### Abgegeben wird nur, was das Programm sagt
+
+Ein Connector versorgt seine Maschine **nicht** von selbst. Ohne Code fließt
+kein Strom — dieselbe Härte wie überall sonst in dieser Mod.
+
+Verworfen: Abgabe von selbst, mit Vorrang im Code nur für den Knappheitsfall.
+Sie wäre bequemer, machte das Netz aber zur Stromleitung, die man nebenbei
+bekommt. Verworfen ebenfalls: Abgabe von selbst ohne jeden Vorrang — dann
+entscheidet eine feste Regel, welche Maschine bei Knappheit ausgeht, und
+niemand hat einen Griff daran.
+
+### Als Worker, nicht als eigene Deklaration
+
+Strom ist eine vierte Ressourcenart neben Gegenstand, Flüssigkeit und
+Chemikalie. Versorgt wird mit demselben Worker wie alles andere:
+
+```
+worker versorgung {
+    from network
+    to crusher_1
+    filter power
+    rate 40 per tick
+    priority 1
+}
+```
+
+`rate`, `priority`, `when` und `maintain` gibt es bereits und bedeuten
+dasselbe wie sonst; `network` ist bereits ein eingebauter Name. Zu bauen ist
+die Ressourcenart, nicht die Schreibweise.
+
+Verworfen: eine eigene Deklaration `power NAME { … }`. Kürzer zu schreiben,
+aber sie müsste `rate`, `priority` und `when` ein zweites Mal erklären — zwei
+Stellen mit derselben Bedeutung, die auseinanderlaufen.
+
+Verworfen: eine Angabe am bestehenden Worker (`power 40 per tick` neben
+`filter tag:c/ores`). Elegant für Maschinen, die ohnehin beliefert werden,
+aber Lampen und Pumpen bekommen nie Material und hätten keinen Worker, an den
+die Angabe passt.
+
+**Beide Richtungen fallen aus einer Form.** `from akku_1 to network` zieht
+Strom aus einem fremden Speicher ins Netz. Dafür braucht es keine eigene
+Mechanik.
+
+### Der Vorrat wächst über Zellen im Laufwerk
+
+Eine dritte Zellenart neben Gegenstands- und Flüssigkeitszelle, in denselben
+Laufwerken. Folgt dem Satz, der schon steht: Speicher hängt am Laufwerk. Das
+Muster ist fertig — `StorageCellItem`, `FluidCellItem`, `CellTier` mit vier
+Größen, das Regalfenster, die Bestückung an der Front, `Power.PER_CELL` für
+die laufenden Kosten.
+
+Verworfen: ein eigener Akkublock. Er stünde neben dem Laufwerk und täte
+dasselbe in anderer Form — zwei Wege, Kapazität hinzuzufügen, mit
+unterschiedlicher Bedienung und ohne eine gute Antwort auf die Frage, welchen
+man nimmt.
+
+### Die Grenze läuft über den Kabelpfad
+
+Ein Transportlimit gibt es heute nur für die Aufnahme (`InternalBuffer` mit
+`Power.MAX_INPUT`). Für die Abgabe kommt es aus derselben Rechnung wie die
+Kanäle: Jedes Gerät zieht auf seinem ganzen Weg zum Controller, und
+`capacityAt` fragt je Kabelsegment, wie viel dort durchpasst. Strom läuft auf
+denselben Pfaden huckepack — der Weg ist ohnehin berechnet.
+
+Dichte Kabel bekommen damit eine zweite Bedeutung: mehr Kanäle und mehr Strom.
+
+### Offen
+
+- Die Regel bei Knappheit. `priority` gibt die Reihenfolge vor, aber nicht,
+  ob ein Gerät mit halber Rate weiterläuft oder ganz leer ausgeht.
+- Der Eigenbedarf des Netzes muss vor der Abgabe bedient werden, sonst
+  schaltet sich das Netz ab, während es Maschinen versorgt.
+- Ob die Abgabe in `draw` mitzählt. Sie ist Durchleitung und keine
+  Bereitschaft, spricht also dagegen.
