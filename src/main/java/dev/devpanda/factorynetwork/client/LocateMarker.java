@@ -39,12 +39,27 @@ public final class LocateMarker {
     /** So nah muss man heran, damit sie von selbst verschwindet. */
     private static final double ARRIVED = 3.0;
 
+    /**
+     * So lange steht sie auf jeden Fall, in Ticks.
+     *
+     * <p><b>Sonst antwortet sie gerade dann nicht, wenn man fragt.</b> Wer
+     * vor vier Connectoren steht und wissen will, welcher {@code kiste_2}
+     * ist, steht näher als {@link #ARRIVED} — die Marke galt damit als
+     * erreicht und verschwand im selben Bild, in dem sie gesetzt wurde. Das
+     * sah aus wie ein kaputter Griff und war eine Annahme über den Abstand,
+     * aus dem jemand sucht.
+     */
+    private static final int MINIMUM = 20 * 30;
+
     private static final int COLOUR = 0xFF78DC8C;
     private static final int BACKGROUND = 0x88000000;
 
     private static BlockPos target;
     private static String label = "";
     private static long until;
+
+    /** Wann sie gesetzt wurde — für {@link #MINIMUM}. */
+    private static long since;
 
     private LocateMarker() {
     }
@@ -57,7 +72,8 @@ public final class LocateMarker {
         }
         target = pos;
         label = name;
-        until = minecraft.level.getGameTime() + LIFETIME;
+        since = minecraft.level.getGameTime();
+        until = since + LIFETIME;
     }
 
     public static void clear() {
@@ -74,9 +90,12 @@ public final class LocateMarker {
             return;
         }
         // Abgelaufen oder angekommen — beides heißt, die Marke hat ihren
-        // Zweck erfüllt.
-        if (minecraft.level.getGameTime() > until
-                || minecraft.player.position().distanceTo(target.getCenter()) < ARRIVED) {
+        // Zweck erfüllt. „Angekommen" gilt aber erst nach MINIMUM: Wer schon
+        // davorsteht, während er fragt, soll trotzdem eine Antwort bekommen.
+        long now = minecraft.level.getGameTime();
+        boolean arrived = now - since >= MINIMUM
+                && minecraft.player.position().distanceTo(target.getCenter()) < ARRIVED;
+        if (now > until || arrived) {
             target = null;
             return;
         }
