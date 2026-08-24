@@ -36,23 +36,40 @@ public record DeviceSnapshotRequestPacket(String connector) implements CustomPac
 
     public static void handle(DeviceSnapshotRequestPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
-            if (!(context.player() instanceof ServerPlayer player)
-                    || !(player.containerMenu instanceof TerminalMenu menu)) {
+            if (!(context.player() instanceof ServerPlayer player)) {
                 return;
             }
-            // Über das offene Menü und nicht über eine mitgeschickte
-            // Koordinate: Wer nach einem Gerät fragt, muss vor dem Terminal
-            // stehen, das dazugehört.
-            //
-            // controller(player) und nicht controller() — das Menü löst den
-            // Controller über den Spieler auf, weil es selbst nur die
-            // Koordinate des Terminals kennt.
-            DeviceSnapshotPacket answer = menu.controller(player)
-                    .map(controller -> DeviceSnapshotPacket.of(controller, packet.connector()))
-                    .orElse(null);
+            DeviceSnapshotPacket answer = answerFor(player, packet.connector());
             if (answer != null) {
                 PacketDistributor.sendToPlayer(player, answer);
             }
         });
+    }
+
+    /**
+     * Die Antwort für diesen Spieler, oder {@code null}.
+     *
+     * <p>Getrennt vom Versand, damit ein GameTest den ganzen Weg gehen kann:
+     * Terminal offen, Name gefragt, Antwort da. Bliebe die Prüfung im
+     * Handler, ließe sie sich nur im laufenden Spiel von Hand nachvollziehen
+     * — und geprüft würde am Ende nur {@code DeviceSnapshotPacket.of}, also
+     * gerade der Teil, der ohnehin am wenigsten schiefgeht.
+     *
+     * <p><b>Über das offene Menü und nicht über eine mitgeschickte
+     * Koordinate:</b> Wer nach einem Gerät fragt, muss vor dem Terminal
+     * stehen, das dazugehört. Eine Koordinate im Paket könnte jeder
+     * schicken.
+     */
+    public static DeviceSnapshotPacket answerFor(net.minecraft.world.entity.player.Player player,
+                                                 String connector) {
+        if (!(player.containerMenu instanceof TerminalMenu menu)) {
+            return null;
+        }
+        // controller(player) und nicht controller() — das Menü löst den
+        // Controller über den Spieler auf, weil es selbst nur die Koordinate
+        // des Terminals kennt.
+        return menu.controller(player)
+                .map(controller -> DeviceSnapshotPacket.of(controller, connector))
+                .orElse(null);
     }
 }

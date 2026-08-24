@@ -5686,6 +5686,54 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    /**
+     * Der ganze Weg einer Anfrage: Terminal offen, Name gefragt, Antwort da.
+     *
+     * <p>Ohne diesen Test prüfte nur {@code DeviceSnapshotPacket.of} — also
+     * gerade der Teil, der ohnehin am wenigsten schiefgeht. Die Kette davor
+     * (steht der Spieler vor einem Terminal, findet das Menü seinen
+     * Controller) ließe sich sonst nur im laufenden Spiel von Hand
+     * nachvollziehen.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void aRequestFromAnOpenTerminalIsAnswered(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        BlockPos terminalPos = controller.below();
+        helper.setBlock(terminalPos, FnBlocks.TERMINAL.get());
+
+        var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+        player.containerMenu = new dev.devpanda.factorynetwork.client.menu.TerminalMenu(
+                0, player.getInventory(), helper.absolutePos(terminalPos));
+
+        var answer = dev.devpanda.factorynetwork.network.packet.DeviceSnapshotRequestPacket
+                .answerFor(player, "quarry_output");
+
+        helper.assertTrue(answer != null,
+                "das offene Terminal hätte antworten müssen");
+        helper.assertValueEqual(answer.connector(), "quarry_output", "gefragtes Gerät");
+        helper.assertValueEqual(answer.slots().size(), 27, "Fächer der Kiste");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void aRequestWithoutAnOpenTerminalIsRefused(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        controllerAt(helper, controller).rebuildNetwork();
+
+        // Kein Terminal offen — der Spieler hat sein eigenes Inventar vor
+        // sich. Eine Antwort wäre hier ein Weg, das Netz auszulesen, ohne
+        // davorzustehen.
+        var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+
+        helper.assertTrue(dev.devpanda.factorynetwork.network.packet
+                        .DeviceSnapshotRequestPacket.answerFor(player, "quarry_output") == null,
+                "ohne offenes Terminal darf es keine Antwort geben");
+        helper.succeed();
+    }
+
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void aSnapshotOfAnUnknownNameIsRefused(GameTestHelper helper) {
         BlockPos controller = buildSetup(helper);
