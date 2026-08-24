@@ -151,4 +151,24 @@ class SignaturesTest {
         assertNull(Signatures.at("display", "    sleep "),
                 "eine Anzeige kennt keine Anweisungen");
     }
+
+    @Test
+    @DisplayName("Nach dem Punkt stehen die vier Dinge, die ein Gerät hat")
+    void afterTheDotTheFourDeviceMembersAreOffered() {
+        java.util.List<String> names = Signatures.MEMBERS.stream()
+                .map(Signatures.Member::name).toList();
+
+        assertEquals(java.util.List.of("online", "name", "redstone", "count"), names);
+    }
+
+    @Test
+    @DisplayName("Jedes Mitglied trägt seine Form")
+    void everyMemberCarriesItsShape() {
+        for (Signatures.Member member : Signatures.MEMBERS) {
+            assertTrue(!member.shape().isBlank(),
+                    () -> member.name() + " hat keine Form");
+            assertTrue(!member.help().isBlank(),
+                    () -> member.name() + " hat keine Erklärung");
+        }
+    }
 }

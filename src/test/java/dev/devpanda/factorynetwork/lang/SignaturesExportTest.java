@@ -81,6 +81,19 @@ class SignaturesExportTest {
         Signatures.STRATEGIES.forEach(strategies::add);
         root.add("strategies", strategies);
 
+        // Was an einem Gerät steht, für die Vervollständigung nach dem Punkt.
+        // Ohne diesen Block wüsste die Erweiterung nichts davon — und die
+        // Behauptung, sie folge denselben Regeln, wäre nur halb wahr.
+        JsonArray members = new JsonArray();
+        for (Signatures.Member member : Signatures.MEMBERS) {
+            JsonObject entry = new JsonObject();
+            entry.addProperty("name", member.name());
+            entry.addProperty("shape", member.shape());
+            entry.addProperty("help", member.help());
+            members.add(entry);
+        }
+        root.add("members", members);
+
         JsonArray declarations = new JsonArray();
         for (String word : new String[] {"worker", "group", "multiblock", "event", "display",
                                          "fn", "on"}) {

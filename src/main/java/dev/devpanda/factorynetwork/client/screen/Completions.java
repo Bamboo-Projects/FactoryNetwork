@@ -80,6 +80,21 @@ public final class Completions {
             return List.of();
         }
 
+        // Nach einem Punkt hinter einem Gerätenamen: was ein Gerät hat.
+        //
+        // Vor der Prüfung auf die Stelle in der Angabe, weil „to crusher_1."
+        // sonst als angefangener Zielname gelesen würde — und dann stünden
+        // dort wieder die Connectoren.
+        if (memberPrefix(upToCursor) != null) {
+            for (Signatures.Member candidate : Signatures.MEMBERS) {
+                if (matches(candidate.name(), prefix)) {
+                    entries.add(new Entry(candidate.name(), candidate.name(),
+                            Entry.Kind.BUILTIN, candidate.shape()));
+                }
+            }
+            return limit(entries);
+        }
+
         // Nach display: die Wände, die in der Welt stehen.
         //
         // "display NAME { … }" verlangt den Namen, den die Tafel trägt. Wer
@@ -294,6 +309,22 @@ public final class Completions {
             }
         }
         return false;
+    }
+
+    /**
+     * Der Gerätename vor dem Punkt, oder {@code null}.
+     *
+     * <p>Nur, wenn davor wirklich ein Connector steht: {@code storage.} ist
+     * etwas anderes, und {@code 3.5} ist gar kein Punktzugriff.
+     */
+    private static String memberPrefix(String upToCursor) {
+        String prefix = currentWord(upToCursor);
+        String before = upToCursor.substring(0, upToCursor.length() - prefix.length());
+        if (!before.endsWith(".")) {
+            return null;
+        }
+        String name = currentWord(before.substring(0, before.length() - 1));
+        return ClientNetworkState.connectors().contains(name) ? name : null;
     }
 
     /**
