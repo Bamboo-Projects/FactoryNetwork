@@ -444,6 +444,9 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         dev.devpanda.factorynetwork.client.ClientProjectState.flush();
         PacketDistributor.sendToServer(new StorageTabPacket(false));
         ClientStorageView.clear();
+        // Was in den Geräten lag, galt für diesen Besuch. Beim nächsten Öffnen
+        // wird neu gefragt.
+        dev.devpanda.factorynetwork.client.ClientDeviceState.clear();
         super.onClose();
     }
 

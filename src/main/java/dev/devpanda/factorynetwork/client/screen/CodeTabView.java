@@ -303,23 +303,7 @@ public class CodeTabView {
                     "screen.factorynetwork.terminal.newfile"), mouseX, mouseY);
             return;
         }
-        var signature = editor.signatureAt(mouseX, mouseY);
-        if (signature != null) {
-            graphics.renderComponentTooltip(font, List.of(
-                    FnFonts.mono(signature.shape()),
-                    Component.literal("§7" + signature.help())), mouseX, mouseY);
-            return;
-        }
-        Diagnostic problem = editor.diagnosticAt(openProblems, mouseX, mouseY);
-        if (problem == null) {
-            return;
-        }
-        List<Component> lines = new ArrayList<>();
-        lines.add(Component.literal(problem.message()));
-        if (problem.hint() != null) {
-            lines.add(Component.literal("§7" + problem.hint()));
-        }
-        graphics.renderComponentTooltip(font, lines, mouseX, mouseY);
+        EditorTooltip.render(graphics, font, editor, project, openProblems, mouseX, mouseY);
     }
 
     /** Ein Klick auf die Fußleiste springt zur ersten Meldung — auch quer. */

@@ -432,70 +432,6 @@ public class CodeScreen extends Screen {
         }
     }
 
-    /**
-     * Erklärt den Namen unter dem Zeiger.
-     *
-     * <p>Wo er erklärt wird und wo er sonst noch steht. <b>Das ist die Frage,
-     * die man vor jeder Umbenennung stellt</b> — und bisher nur beantworten
-     * konnte, indem man jede Datei einzeln durchsah.
-     *
-     * <p>Die Fundstellen kommen aus einer Textsuche über ganze Wörter, nicht
-     * aus dem Baum. Damit steht gelegentlich eine Zeile aus einem Kommentar
-     * dabei. Das ist der bessere Fehler: Man sieht ihn sofort, und keine
-     * Stelle fehlt.
-     *
-     * @return ob etwas gezeigt wurde
-     */
-    private boolean describeName(GuiGraphics graphics, int mouseX, int mouseY) {
-        String word = editor.wordAt(mouseX, mouseY);
-        if (word.isEmpty()) {
-            return false;
-        }
-        var declared = dev.devpanda.factorynetwork.lang.Definitions.find(project, word);
-        var inWorld = ClientNetworkState.placeOf(word);
-        if (declared.isEmpty() && inWorld == null) {
-            return false;
-        }
-        var places = dev.devpanda.factorynetwork.lang.Definitions.references(project, word);
-        List<Component> lines = new ArrayList<>();
-        lines.add(FnFonts.mono(word));
-        if (inWorld != null) {
-            // Die Stelle zuerst: Bei einem Namen aus dem Netz ist „wo ist
-            // das" die Frage, die man stellt.
-            lines.add(Component.translatable("screen.factorynetwork.code.at",
-                    inWorld.getX(), inWorld.getY(), inWorld.getZ())
-                    .withStyle(net.minecraft.ChatFormatting.GRAY));
-            lines.add(Component.translatable("screen.factorynetwork.code.locate_hint")
-                    .withStyle(net.minecraft.ChatFormatting.DARK_GRAY));
-        }
-        if (declared.isEmpty()) {
-            graphics.renderComponentTooltip(font, lines, mouseX, mouseY);
-            return true;
-        }
-        lines.add(Component.translatable("screen.factorynetwork.code.declared_in",
-                declared.get().file(), declared.get().line()).withStyle(
-                        net.minecraft.ChatFormatting.GRAY));
-        // Die Erklärung selbst ist eine Fundstelle; gezählt wird, was sonst
-        // noch da ist.
-        int used = Math.max(0, places.size() - 1);
-        lines.add(Component.translatable("screen.factorynetwork.code.used", used)
-                .withStyle(net.minecraft.ChatFormatting.DARK_GRAY));
-        // Höchstens fünf, sonst deckt der Kasten den halben Bildschirm.
-        int shown = 0;
-        for (var place : places) {
-            if (place.line() == declared.get().line()
-                    && place.file().equals(declared.get().file())) {
-                continue;
-            }
-            if (shown++ >= 5) {
-                break;
-            }
-            lines.add(Component.literal("§8  " + place.file() + ":" + place.line()));
-        }
-        graphics.renderComponentTooltip(font, lines, mouseX, mouseY);
-        return true;
-    }
-
     private void renderTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
         if (panel.hasMenu() || showingHelp) {
             return;
@@ -505,26 +441,7 @@ public class CodeScreen extends Screen {
                     "screen.factorynetwork.terminal.deploy.hint"), mouseX, mouseY);
             return;
         }
-        if (describeName(graphics, mouseX, mouseY)) {
-            return;
-        }
-        var signature = editor.signatureAt(mouseX, mouseY);
-        if (signature != null) {
-            graphics.renderComponentTooltip(font, List.of(
-                    FnFonts.mono(signature.shape()),
-                    Component.literal("§7" + signature.help())), mouseX, mouseY);
-            return;
-        }
-        Diagnostic problem = editor.diagnosticAt(openProblems, mouseX, mouseY);
-        if (problem == null) {
-            return;
-        }
-        List<Component> lines = new ArrayList<>();
-        lines.add(Component.literal(problem.message()));
-        if (problem.hint() != null) {
-            lines.add(Component.literal("§7" + problem.hint()));
-        }
-        graphics.renderComponentTooltip(font, lines, mouseX, mouseY);
+        EditorTooltip.render(graphics, font, editor, project, openProblems, mouseX, mouseY);
     }
 
     // ---- Bedienung ---------------------------------------------------------
