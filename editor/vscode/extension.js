@@ -20,7 +20,8 @@ const vscode = require('vscode');
 const fs = require('fs');
 const path = require('path');
 
-let table = { blocks: {}, strategies: [], declarations: [], members: [], topLevel: [] };
+let table = { blocks: {}, strategies: [], declarations: [], members: [],
+              listMembers: [], topLevel: [] };
 
 /** Zu welchen Blockarten Anweisungen gehören statt fester Angaben. */
 const CODE_BLOCKS = ['fn', 'on', 'multiblock'];
@@ -76,6 +77,18 @@ function load(context) {
 function afterDot(document, position) {
     const upToCursor = document.lineAt(position.line).text.substring(0, position.character);
     return /[a-zA-Z_][a-zA-Z0-9_]*\.[a-zA-Z0-9_]*$/.test(upToCursor);
+}
+
+/**
+ * Steht der Cursor hinter dem Punkt einer Liste?
+ *
+ * <p>Hinter `storage.items().` steht eine Liste und kein Gerät. Vor
+ * afterDot zu prüfen: Dort wird ein Name vor dem Punkt erwartet, hier
+ * steht eine schließende Klammer, und deshalb griff bisher gar nichts.
+ */
+function afterListCall(document, position) {
+    const upToCursor = document.lineAt(position.line).text.substring(0, position.character);
+    return /\)\s*\.[a-zA-Z0-9_]*$/.test(upToCursor);
 }
 
 /** Die Formen, die in dieser Blockart gelten. */
@@ -357,6 +370,11 @@ function activate(context) {
             // Hier ohne Prüfung, ob der Name wirklich ein Connector ist: Die
             // Erweiterung sieht kein laufendes Spiel und kennt die Namen im
             // Netz nicht. Im Spiel prüft der Editor sie, hier wird angeboten.
+            if (afterListCall(document, position)) {
+                return table.listMembers.map(member => item(
+                    member.name, vscode.CompletionItemKind.Method,
+                    member.shape, member.help));
+            }
             if (afterDot(document, position)) {
                 return table.members.map(member => item(
                     member.name, vscode.CompletionItemKind.Property,

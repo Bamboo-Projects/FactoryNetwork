@@ -452,6 +452,33 @@
       "help": "Was gerade im Gerät liegt. Leere Fächer fallen weg."
     }
   ],
+  "listMembers": [
+    {
+      "name": "count",
+      "shape": "count() int",
+      "help": "Wie viele Einträge."
+    },
+    {
+      "name": "first",
+      "shape": "first() any",
+      "help": "Der erste Eintrag, oder nichts."
+    },
+    {
+      "name": "sum",
+      "shape": "sum() int",
+      "help": "Alle Zahlen aufaddiert."
+    },
+    {
+      "name": "where",
+      "shape": "where(expr) list",
+      "help": "Behält, wofür der Ausdruck wahr ist. it ist der Eintrag."
+    },
+    {
+      "name": "sort",
+      "shape": "sort(expr) list",
+      "help": "Ordnet nach dem Ausdruck. it ist der Eintrag."
+    }
+  ],
   "declarations": [
     "worker",
     "group",

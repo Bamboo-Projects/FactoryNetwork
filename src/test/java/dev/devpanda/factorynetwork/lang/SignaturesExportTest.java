@@ -99,6 +99,19 @@ class SignaturesExportTest {
         }
         root.add("members", members);
 
+        // Und dasselbe für eine Liste. Der Editor im Spiel kennt sie seit
+        // langem; ohne diesen Block stand die Erweiterung nach
+        // „storage.items()." ohne einen einzigen Vorschlag da.
+        JsonArray listMembers = new JsonArray();
+        for (Signatures.Member member : Signatures.LIST_MEMBERS) {
+            JsonObject entry = new JsonObject();
+            entry.addProperty("name", member.name());
+            entry.addProperty("shape", member.shape());
+            entry.addProperty("help", member.help());
+            listMembers.add(entry);
+        }
+        root.add("listMembers", listMembers);
+
         JsonArray declarations = new JsonArray();
         for (String word : new String[] {"worker", "group", "multiblock", "event", "display",
                                          "fn", "on", "global"}) {

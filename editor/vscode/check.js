@@ -188,6 +188,16 @@ contains('Ohne Punkt keine Mitglieder', ['fn test() {', '    '], 'online', false
 contains('Eine Zahl mit Punkt ist kein Zugriff',
     ['fn test() {', '    let x = 3.'], 'online', false);
 
+// Hinter einer schließenden Klammer steht eine Liste und kein Gerät.
+// Dieselbe Unterscheidung wie in Completions.afterListCall.
+check('Nach items() die Listenoperationen',
+    complete(['fn test() {', '    let x = storage.items().']),
+    ['count', 'first', 'sum', 'where', 'sort']);
+contains('Nach items() kein online',
+    ['fn test() {', '    let x = storage.items().'], 'online', false);
+contains('Nach einem Gerätepunkt kein where',
+    ['fn test() {', '    if crusher_1.'], 'where', false);
+
 // Auf oberster Ebene: die Deklarationen, und global mit seiner Form.
 contains('Oberste Ebene bietet global', ['gl'], 'global', true);
 contains('In einem Block kein global', ['worker haul {', '    '], 'global', false);
