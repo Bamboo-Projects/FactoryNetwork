@@ -12,8 +12,21 @@ Stand: 2026-08-20
 ./gradlew runClient          Spiel mit der Mod starten
 ./gradlew test               Übersetzer und Laufzeit prüfen (schnell)
 ./gradlew runGameTestServer  In einer echten Welt prüfen (etwa eine Minute)
+./gradlew runServer          Dedizierten Server starten
 ./gradlew syncResources      Texturen und Texte ins laufende Spiel schieben
 ```
+
+**Auf einem Server läuft sie.** Am 2026-08-24 zum ersten Mal geprüft:
+`runServer` fährt hoch und lädt die Welt, ohne dass etwas fehlt. Die Trennung
+hält — außerhalb von `client/` steht kein einziger Import aus
+`net.minecraft.client`, und die Einstiegspunkte dort tragen
+`@EventBusSubscriber(value = Dist.CLIENT)`.
+
+Was im Mehrspieler **nicht** geht, ist der Weg über den Ordner neben der Welt:
+Der liegt serverseitig, und dort hat kein Spieler Dateizugriff. In VS Code zu
+arbeiten ist damit heute eine Sache des Einzelspielers. Siehe
+`entscheidungen.md`, „Die Schnittstelle für externe Editoren wird zweimal
+freigegeben".
 
 ### Ohne Neustart ändern
 
