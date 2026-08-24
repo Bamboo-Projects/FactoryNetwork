@@ -135,6 +135,15 @@ public final class EditorTooltip {
                     + "nichts bekannt."));
             return;
         }
+        // Der Connector zeigt ins Leere. Das ist eine eigene Auskunft und
+        // nicht „nichts anzuschließen": Dort steht gar keine Maschine, und
+        // der Hinweis lautet anders — dreh ihn um, statt eine andere Seite
+        // zu suchen.
+        if (profile.access().isEmpty() && profile.descriptionId().endsWith(".air")) {
+            lines.add(Component.literal("§cZeigt ins Leere — dort steht keine Maschine."));
+            lines.add(Component.literal("§7Dreh den Connector auf die Seite, an der sie steht."));
+            return;
+        }
         lines.add(Component.translatable(profile.descriptionId())
                 .withStyle(ChatFormatting.GRAY));
         lines.add(Component.literal("§7Angeschlossen: "

@@ -306,6 +306,29 @@ public class CodeTabView {
         EditorTooltip.render(graphics, font, editor, project, openProblems, mouseX, mouseY);
     }
 
+    /**
+     * Strg+Klick auf einen Namen.
+     *
+     * <p>Im Code führt er zur Erklärung, in der Welt setzt er eine Marke.
+     * Anders als im eigenen Fenster gibt es hier keine Fußzeile, die die
+     * Koordinate nachträgt — die Marke selbst ist die Antwort, und sie steht
+     * durch die Wand sichtbar da, sobald das Terminal zugeht.
+     */
+    private boolean jumpToName(double mouseX, double mouseY) {
+        String word = editor.wordAt(mouseX, mouseY);
+        NameJump.Jump jump = NameJump.resolve(word, project);
+        if (jump == null) {
+            return false;
+        }
+        if (jump.inCode() != null) {
+            openFile(jump.inCode().file());
+            editor.jumpTo(jump.inCode().line(), jump.inCode().column());
+            return true;
+        }
+        dev.devpanda.factorynetwork.client.LocateMarker.mark(jump.inWorld(), word);
+        return true;
+    }
+
     /** Ein Klick auf die Fußleiste springt zur ersten Meldung — auch quer. */
     private boolean jumpToFirstProblem(double mouseX, double mouseY) {
         if (problems.isEmpty() || mouseY < y + height - FOOTER || mouseX >= buttonX()) {
@@ -330,6 +353,13 @@ public class CodeTabView {
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (button != 0) {
             return editor.mouseClicked(mouseX, mouseY, button);
+        }
+        // Strg+Klick auf einen Namen: zur Erklärung springen oder den Block
+        // in der Welt markieren. Das gab es lange nur im eigenen Fenster —
+        // derselbe Griff, der hier ins Leere führte.
+        if (net.minecraft.client.gui.screens.Screen.hasControlDown()
+                && jumpToName(mouseX, mouseY)) {
+            return true;
         }
         if (overButton(mouseX, mouseY)) {
             screen.deploy();

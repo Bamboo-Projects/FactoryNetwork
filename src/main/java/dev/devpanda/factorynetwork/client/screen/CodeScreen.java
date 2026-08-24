@@ -214,26 +214,20 @@ public class CodeScreen extends Screen {
      */
     private boolean goToDefinition(double mouseX, double mouseY) {
         String word = editor.wordAt(mouseX, mouseY);
-        if (word.isEmpty()) {
+        NameJump.Jump jump = NameJump.resolve(word, project);
+        if (jump == null) {
             return false;
         }
-        var target = dev.devpanda.factorynetwork.lang.Definitions.find(project, word);
-        if (target.isPresent()) {
-            var location = target.get();
-            openFile(location.file());
-            editor.jumpTo(location.line(), location.column());
+        if (jump.inCode() != null) {
+            openFile(jump.inCode().file());
+            editor.jumpTo(jump.inCode().line(), jump.inCode().column());
             return true;
         }
-        // Kein Name aus dem Programm — aber vielleicht einer aus der Welt.
-        // Dann ist die Frage nicht „wo steht das im Code", sondern „welcher
-        // Block ist das", und die beantwortet eine Marke.
-        var place = ClientNetworkState.placeOf(word);
-        if (place == null) {
-            return false;
-        }
-        dev.devpanda.factorynetwork.client.LocateMarker.mark(place, word);
+        // Ein Name aus der Welt: Die Frage ist nicht „wo steht das im Code",
+        // sondern „welcher Block ist das", und die beantwortet eine Marke.
+        dev.devpanda.factorynetwork.client.LocateMarker.mark(jump.inWorld(), word);
         located = Component.translatable("screen.factorynetwork.code.located", word,
-                place.getX(), place.getY(), place.getZ());
+                jump.inWorld().getX(), jump.inWorld().getY(), jump.inWorld().getZ());
         return true;
     }
 

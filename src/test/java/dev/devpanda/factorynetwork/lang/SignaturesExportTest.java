@@ -35,8 +35,13 @@ class SignaturesExportTest {
     @DisplayName("Die Tabelle der Erweiterung ist die aus dem Code")
     void theExportMatchesTheTable() throws IOException {
         String expected = build();
+        // Zeilenenden angeglichen: Mit core.autocrlf=true checkt Git die
+        // Datei unter Windows als CRLF aus, geschrieben wird sie mit LF.
+        // Ohne diese Zeile schlägt der Test nach jedem Zweigwechsel fehl,
+        // obwohl inhaltlich nichts abweicht — und wer das dreimal erlebt hat,
+        // glaubt ihm beim vierten Mal nicht mehr.
         String actual = Files.exists(TARGET)
-                ? Files.readString(TARGET, StandardCharsets.UTF_8) : "";
+                ? Files.readString(TARGET, StandardCharsets.UTF_8).replace("\r\n", "\n") : "";
 
         if (!expected.equals(actual)) {
             // Neu geschrieben statt nur gemeldet: Wer die Tabelle ändert,

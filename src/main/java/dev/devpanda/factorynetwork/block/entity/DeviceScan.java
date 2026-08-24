@@ -45,10 +45,11 @@ public final class DeviceScan {
         if (!level.isLoaded(target)) {
             return DeviceProfile.unreachable();
         }
+        // Luft ist keine fehlende Auskunft, sondern eine: Da steht nichts.
+        // Beides zusammenzuwerfen hieße, einem Spieler „nicht geladen" zu
+        // sagen, während er davorsteht — und die Meldung über die falsche
+        // Seite bliebe aus, weil sie ein Profil braucht.
         BlockState machine = level.getBlockState(target);
-        if (machine.isAir()) {
-            return DeviceProfile.unreachable();
-        }
 
         Map<Side, DeviceProfile.Access> access = new EnumMap<>(Side.class);
         for (Direction direction : Direction.values()) {

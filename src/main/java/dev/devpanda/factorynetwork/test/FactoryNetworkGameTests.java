@@ -5745,8 +5745,17 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    /**
+     * Ein Connector, der ins Leere zeigt.
+     *
+     * <p><b>Luft ist eine Auskunft, keine fehlende.</b> Der Test stand hier
+     * einmal andersherum — er verlangte, dass über Luft „nichts bekannt" sei,
+     * und schrieb damit einen Fehler fest: Im Spiel stand dann „Nicht
+     * geladen" vor einem Spieler, der davorstand. Wer ins Leere zeigt, soll
+     * genau das erfahren.
+     */
     @GameTest(template = EMPTY, timeoutTicks = 200)
-    public static void aConnectorWithoutNeighbourFindsNothing(GameTestHelper helper) {
+    public static void aConnectorPointingAtAirSaysSo(GameTestHelper helper) {
         BlockPos connector = new BlockPos(2, 1, 1);
         helper.setBlock(connector, FnBlocks.CONNECTOR.get().defaultBlockState()
                 .setValue(ConnectorBlock.FACING, Direction.EAST));
@@ -5755,8 +5764,12 @@ public final class FactoryNetworkGameTests {
                 (ConnectorBlockEntity) helper.getBlockEntity(connector);
         DeviceProfile profile = DeviceScan.of(entity);
 
-        helper.assertFalse(profile.reachable(),
-                "über Luft ist nichts bekannt");
+        helper.assertTrue(profile.reachable(),
+                "über Luft ist sehr wohl etwas bekannt: dass dort nichts steht");
+        helper.assertTrue(profile.descriptionId().endsWith(".air"),
+                "dort steht Luft, gemeldet wurde " + profile.descriptionId());
+        helper.assertTrue(profile.access().isEmpty(),
+                "an Luft ist nichts anzuschließen");
         helper.succeed();
     }
 

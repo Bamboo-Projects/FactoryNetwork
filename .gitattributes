@@ -1,0 +1,13 @@
+# Zeilenenden.
+#
+# Ohne diese Datei richtet sich alles nach core.autocrlf des jeweiligen
+# Rechners. Für Quelltext ist das gleichgültig — für erzeugte Dateien nicht:
+# Die Tabelle der VS-Code-Erweiterung wird aus Signatures.java geschrieben und
+# gegen die eingecheckte verglichen. Schreibt der Test LF und checkt Git CRLF
+# aus, schlägt er nach jedem Zweigwechsel fehl, obwohl inhaltlich nichts
+# abweicht.
+
+*.json          text eol=lf
+*.mf            text eol=lf
+gradlew         text eol=lf
+*.bat           text eol=crlf
