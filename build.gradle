@@ -71,6 +71,12 @@ dependencies {
     compileOnly "maven.modrinth:jade:${jade_version}"
     runtimeOnly "maven.modrinth:jade:${jade_version}"
 
+    // GuideME trägt das Handbuch im Spiel. Der Inhalt ist Markdown, gerendert
+    // wird er drinnen — deshalb steht die Spielerdoku dort und nicht als
+    // Website daneben. Stammt von Applied Energistics, läuft aber ohne AE2.
+    compileOnly "org.appliedenergistics:guideme:${guideme_version}:api"
+    runtimeOnly "org.appliedenergistics:guideme:${guideme_version}"
+
     testImplementation platform('org.junit:junit-bom:5.11.4')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'

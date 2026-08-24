@@ -28,5 +28,10 @@ public final class FactoryNetwork {
         FnMenus.MENUS.register(modBus);
         FnCreativeTabs.TABS.register(modBus);
         dev.devpanda.factorynetwork.press.FnRecipes.register(modBus);
+        // Das Handbuch nur, wenn GuideME da ist — sonst startet die Mod ohne
+        // Handbuch statt gar nicht. Dieselbe Haltung wie bei Jade.
+        if (net.neoforged.fml.ModList.get().isLoaded("guideme")) {
+            dev.devpanda.factorynetwork.compat.guide.FnGuide.register();
+        }
     }
 }
