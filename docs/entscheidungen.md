@@ -2338,3 +2338,77 @@ Angaben eines Programms, sondern dort, wo es um das Terminal selbst geht.
   Ersatz für den Ordner. Zwei verschiedene Erlaubnisse oder eine?
 - **Wie sie technisch aussieht.** Ein Port im Client, an dem VS Code
   anklopft — mit der Frage, wer sonst noch anklopfen kann.
+
+---
+
+## Die Dokumentation für Spieler läuft über GuideME (2026-08-24)
+
+Alle vierzehn Dateien in `docs/` sind Entwicklerdokumente — Entwürfe,
+Entscheidungen, Spezifikationen. Für jemanden, der die Mod spielt, gibt es
+genau eine (`beispiele.md`), und die setzt voraus, dass er das Terminal schon
+gefunden hat. Wie man ein Netz baut, was ein Connector ist, warum ein Worker
+nichts tut: steht nirgends.
+
+**Gewählt: GuideME** (`org.appliedenergistics:guideme`, LGPL-3.0), auf Hinweis
+des Projektinhabers geprüft.
+
+### Warum
+
+Es löst den Widerspruch, an dem jede Doku-Entscheidung hängt: **Markdown ist
+schnell zu schreiben und zu pflegen, aber im Spiel liest es niemand.** GuideME
+nimmt Markdown mit YAML-Frontmatter als Quelle und rendert es im Spiel — die
+Schreibweise bleibt dieselbe wie bei allem in `docs/`, nur ist es dort
+lesbar, wo man es braucht: mitten im Bauen.
+
+Dazu kommt, was selbst zu bauen Wochen kostete: Volltextsuche, ein Griff auf
+**G**, interaktive 3D-Szenen aus Structure-Dateien, Inline-Rezepte im
+JEI-Stil, eine Live-Vorschau beim Schreiben und Übersetzungsunterstützung.
+
+Die 3D-Szenen sind der eigentliche Gewinn für diese Mod: Ein Netz ist eine
+räumliche Sache — Controller, Kabel, Connector an der richtigen Seite —, und
+genau das lässt sich in Text schlecht erklären. Wer den Aufbau im Buch drehen
+kann, versteht in zehn Sekunden, wofür ein Absatz nicht reicht.
+
+**Version und Passung:** `v21.1.17` (Juli 2026) ist die Reihe für NeoForge
+21.1, also Minecraft 1.21.1. Aktiv gepflegt, und ohne AE2 lauffähig — es
+stammt von dort, hängt aber nicht daran.
+
+**Einbindung** über Maven Central, zweigeteilt wie üblich:
+`compileOnly "org.appliedenergistics:guideme:VERSION:api"` und
+`runtimeOnly "org.appliedenergistics:guideme:VERSION"`. Registriert wird ein
+Buch mit einer Zeile im Mod-Konstruktor.
+
+**Ort der Seiten:** `src/main/resources/assets/factorynetwork/guide/`.
+
+### Verworfen
+
+**Patchouli.** Der verbreitete Weg, aber der Inhalt wird in JSON geschrieben —
+eine Auszeichnungssprache, die man nur in Minecraft-Mods antrifft, und die
+sich nicht nebenbei lesen lässt. GuideME bringt sogar einen Konverter davon
+mit, was für die Richtung spricht.
+
+**FTB Library.** Ebenfalls geprüft und für diesen Zweck falsch: Es ist eine
+GUI-Bibliothek mit NBT-Editor und SNBT-Werkzeugen, kein Dokumentationssystem.
+Dazu steht es unter proprietärer „visible source"-Lizenz mit CLA-Pflicht für
+Beiträge — als Abhängigkeit eine ganz andere Entscheidung als LGPL.
+
+**Nur Markdown im Repository.** Am schnellsten geschrieben, aber niemand liest
+es, während er spielt. Und wer es dann doch als Website ausliefert, hat eine
+zweite Stelle, die veraltet.
+
+**Eine eigene Lösung.** Die Latte liegt hoch: Suche, Szenen und Rezeptanzeige
+sind je für sich ein Projekt.
+
+### Offen
+
+- **Wann geschrieben wird.** Doku zu einer Sprache, die sich noch ändert,
+  veraltet schneller als sie entsteht — `sprache.md` beschreibt heute schon
+  Dinge, die es nicht gibt. Die Abhängigkeit einzurichten ist klein; der
+  Inhalt gehört an einen Punkt, an dem die Sprache steht.
+- **Die Lizenz des eigenen Projekts.** Es gibt keine. Solange nichts
+  veröffentlicht ist, ist das folgenlos, aber mit der ersten fremden
+  Abhängigkeit wird es eine Frage, die einmal zu beantworten ist.
+- **Ob die Hilfe im Spiel dorthin wandert.** Die F1-Griffliste im Editor und
+  die Formzeile bleiben, wo sie sind — sie beantworten eine andere Frage als
+  ein Buch. Ob es daneben noch Tooltips an den Blöcken braucht, entscheidet
+  sich erst, wenn das Buch steht.
