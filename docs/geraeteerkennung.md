@@ -155,10 +155,17 @@ sie nie füllt.
 Der Aufwand fällt einmal beim Öffnen an: je Connector sieben Zugänge mal drei
 Fähigkeiten, dazu die Slots der gefundenen Handler. Bei vierzig Connectoren
 sind das rund achthundert Capability-Abfragen — die sind in NeoForge
-zwischengespeichert und kosten in dieser Größenordnung nichts. Was etwas
-kosten kann, ist die Annahme-Probe aus Abschnitt 3, weil sie über Slots und
-Kandidaten läuft; sie bleibt deshalb an die Literale des Entwurfs gebunden und
-wächst nicht mit der Größe des Netzes.
+zwischengespeichert und kosten in dieser Größenordnung nichts.
+
+**Die Annahme-Probe aus Abschnitt 3 läuft hier nicht mit.** Sie gehört in die
+Antwort auf Anfrage, aus zwei Gründen. Der wichtigere: Ihre Kandidaten sind
+die Literale des Entwurfs, und der Entwurf ändert sich beim Tippen — eine
+Sekunde nach dem letzten Anschlag steht er auf dem Server. Wer nach dem Öffnen
+`item:iron_ingot` schreibt und dann fragt, ob die Maschine das nimmt, bekäme
+eine Probe gegen den Entwurf von vorhin, also für genau den Gegenstand keine
+Antwort, nach dem er fragt. Der zweite Grund: Kandidaten mal Slots mal
+Connectoren im Öffnen-Paket wächst mit drei Faktoren gleichzeitig, während die
+Anfrage immer nur ein Gerät betrifft.
 
 **Geräte in nicht geladenen Chunks werden übergangen.** Das Profil sagt dann
 nur, dass die Maschine nicht erreichbar ist — nicht, dass sie nichts kann. Der
@@ -192,9 +199,10 @@ Die Antwort ist auf 64 Slots gedeckelt, und **wenn gekürzt wurde, steht das
 dabei**. Ein Fassregal mit zweihundert Fächern soll den Tooltip nicht
 sprengen, aber auch nicht heimlich lügen.
 
-Die Antwort trägt die Struktur gleich mit. Damit ist der Fall „Maschine wurde
-ausgetauscht, während das Terminal offen ist" nebenbei erledigt, ohne dafür
-einen eigenen Mechanismus zu bauen.
+Die Antwort trägt die Struktur gleich mit, und daneben die Annahme-Probe gegen
+den Entwurf, der in diesem Moment auf dem Server liegt. Damit ist der Fall
+„Maschine wurde ausgetauscht, während das Terminal offen ist" nebenbei
+erledigt, ohne dafür einen eigenen Mechanismus zu bauen.
 
 ---
 
@@ -235,12 +243,23 @@ sie kommen, sind sie ein Eintrag in `Signatures` und nichts weiter.
 ### Warnung bei der falschen Seite
 
 `NetworkView` bekommt Zugriff auf die Profile, `NetworkCheck` prüft damit die
-Ziele in `worker`-Blöcken. Zeigt `to tank_1` auf ein Gerät, das an der
-**angeschlossenen** Seite keinen Item-Handler hat, ist das eine Warnung mit
-dem Hinweis, welche Seite einen hätte.
+Ziele in `worker`-Blöcken.
+
+**Die Prüfung ist an die Ressourcenart gebunden.** Ein Worker bewegt
+Gegenstände oder Flüssigkeiten, je nachdem, was sein `filter` meint; ein
+Fluid-Worker mit Ziel Tank wäre nach einer item-blinden Regel fälschlich
+gewarnt, und eine Warnung, die im Normalfall anschlägt, schaltet man ab. Also:
+Item-Worker verlangt einen Item-Handler an der angeschlossenen Seite,
+Fluid-Worker einen Tank.
+
+Die Unterscheidung gibt es schon — `WorkerRuntime.isFluidWorker` liest die Art
+aus dem Selector des Filters. Sie ist reine Arbeit am Syntaxbaum und kennt
+kein Minecraft; sie wandert deshalb ins Sprachpaket, damit Prüfung und
+Laufzeit dieselbe benutzen und nicht zwei Regeln entstehen, die auseinander
+laufen können.
 
 Die Prüfung gilt der angeschlossenen Seite und nicht „irgendeine Seite kann
-Items" — sonst schweigt sie genau in dem Fall, für den sie gebaut wird.
+das" — sonst schweigt sie genau in dem Fall, für den sie gebaut wird.
 
 Über `NetworkView` und nicht nur im Client, weil sonst der Editor warnt und
 das Übernehmen es durchwinkt. Die Trennung „Client beim Tippen, Server beim
@@ -295,6 +314,18 @@ woher der Wert kommen soll — geraten (Eingang voll und Ausgang leer?) wäre
 schlechter als gar nicht.
 
 **Laufende Zustandsübertragung.** Siehe Abschnitt 4.
+
+**Die Seitenwarnung erreicht `move` nicht.** `NetworkCheck` läuft heute über
+Deklarationen — Display, Worker, Group — und besucht keine Anweisungen. Damit
+prüft es `move item:iron_ore from chest to crusher_1` grundsätzlich nicht,
+auch nicht auf unbekannte Namen; die neue Warnung erbt diese Grenze.
+
+Das ist ausdrücklich eine Grenze und keine Absicht: `move` ist im imperativen
+Teil der häufigste Weg, ein Gerät anzusprechen, und dort wäre die Warnung
+genauso richtig. Sie kostet aber einen Durchgang durch die Anweisungen, den es
+noch nirgends gibt, und der gehört nicht in diesen Schritt — er würde
+gleichzeitig die Namensprüfung für `move` mitbringen, und die ist eine eigene
+Entscheidung mit eigenen Fällen (Schleifenvariablen, Multiblock-Namen).
 
 ---
 
