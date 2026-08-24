@@ -339,7 +339,7 @@ public final class Interpreter {
                     .map(item -> (Value) new Value.ItemValue(item)).toList();
             default -> throw new ScriptError(
                     "Darüber lässt sich nicht laufen: " + iterable.describe() + ".",
-                    "for braucht eine Liste, etwa crushers.members().");
+                    "for braucht eine Liste, etwa storage.items() oder tag:c/ores.");
         };
     }
 

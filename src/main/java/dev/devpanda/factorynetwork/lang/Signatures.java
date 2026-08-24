@@ -191,7 +191,7 @@ public final class Signatures {
             of("sleep", "Wartet eine Zeit lang.", Slot.of(Kind.DURATION)),
             of("return", "Gibt einen Wert zurück und beendet die Funktion.",
                     Slot.of(Kind.EXPR)),
-            of("await", "Wartet, bis der Ausdruck wahr ist.", Slot.of(Kind.EXPR)));
+            of("await", "Wartet auf ein Ereignis.", Slot.of(Kind.EVENT)));
 
     /** Die Verteilungen, die {@code strategy} kennt. */
     public static final List<String> STRATEGIES = List.of(

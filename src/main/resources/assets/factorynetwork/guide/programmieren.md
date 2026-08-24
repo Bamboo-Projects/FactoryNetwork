@@ -179,8 +179,11 @@ let ergebnis = await Fertig timeout 30s else {
 Der `else`-Zweig muss den Ablauf verlassen. Danach steht fest, dass
 `ergebnis` einen Wert hat, und niemand muss ihn prüfen.
 
-`move` gibt übrigens zurück, wie viel wirklich bewegt wurde. Weniger als
-gewünscht ist normal, `0` auch — die Quelle kann leer und das Ziel voll sein.
+`move` bewegt so viel, wie geht: Weniger als gewünscht ist normal, gar nichts
+auch — die Quelle kann leer und das Ziel voll sein. **Auffangen lässt sich die
+Zahl noch nicht.** `move` ist eine Anweisung und kein Ausdruck, ein
+`let bewegt = move …` ist deshalb ein Fehler. Wer wissen will, ob etwas
+angekommen ist, sieht danach im Ziel nach.
 
 ## Was ein Gerät kann
 
@@ -217,7 +220,15 @@ fn nachschub_starten() {
 
 `progress` will eine Zahl zwischen 0 und 1 — deshalb die Division. **Der Punkt
 in `640.0` ist nötig:** ohne ihn wird ganzzahlig gerechnet, und der Balken
-bliebe leer, bis der Vorrat vollständig ist.
+bliebe leer, bis der Vorrat vollständig ist. Neben dem Balken steht der Anteil
+in Prozent.
+
+**Eine Anzeige rechnet, aber sie ruft nichts auf.** Ablesbar sind der Bestand
+im Netz, `redstone()` und `online` an einem Gerät, der Zustand eines Workers
+und ein globaler Wert — damit darf gerechnet und verglichen werden. Was
+darüber hinausgeht, erscheint als `?` auf der Tafel, statt still zu
+verschwinden. `gerät.count(…)` gehört heute dazu: In einer Funktion geht es,
+auf einer Anzeige noch nicht.
 
 Die Anzeige erscheint auf jeder Wand, die `leitstand` heißt, und im Reiter
 **Anzeigen** des Terminals. Der Knopf wirkt an beiden Stellen, und er darf

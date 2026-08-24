@@ -222,6 +222,13 @@ public final class Completions {
 
     /** Die Ereignisse des Projekts — für {@code emit}. */
     private static void addEvents(List<Entry> entries, String prefix, List<String> lines) {
+        // Die vier des Netzes zuerst: Sie stehen in keiner Datei und wären
+        // sonst nirgends zu finden — man muss sie auswendig wissen oder in
+        // der Doku nachsehen.
+        addAll(entries,
+                List.copyOf(new java.util.TreeSet<>(
+                        dev.devpanda.factorynetwork.lang.BuiltinEvents.ARITY.keySet())),
+                prefix, Entry.Kind.KEYWORD);
         addDeclaredNames(entries, prefix, lines, "event ", "event");
     }
 

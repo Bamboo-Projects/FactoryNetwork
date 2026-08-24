@@ -401,12 +401,12 @@
       },
       {
         "keyword": "await",
-        "shape": "await expr",
-        "help": "Wartet, bis der Ausdruck wahr ist.",
+        "shape": "await event",
+        "help": "Wartet auf ein Ereignis.",
         "slots": [
           {
-            "kind": "EXPR",
-            "label": "expr",
+            "kind": "EVENT",
+            "label": "event",
             "optional": false
           }
         ]

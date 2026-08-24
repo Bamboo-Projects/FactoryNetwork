@@ -205,9 +205,14 @@ fn nachschub_starten() {
 
 `progress` will eine Zahl zwischen 0 und 1 — deshalb die Division. Der Punkt in
 `640.0` ist nötig: Ohne ihn wird ganzzahlig gerechnet, und der Balken bliebe
-leer, bis der Vorrat vollständig ist.
+leer, bis der Vorrat vollständig ist. Neben dem Balken steht der Anteil in
+Prozent.
 
-An einem Gerät gibt es `redstone()` und `count(…)`, am Speicher `count(…)`.
+**Eine Anzeige rechnet, aber sie ruft nichts auf.** Ablesbar sind
+`storage.count(…)`, `redstone()` an einem Gerät, `online`, ein Workerzustand
+und ein globaler Wert; damit darf gerechnet und verglichen werden.
+`gerät.count(…)` gibt es in einer Funktion, auf einer Anzeige noch nicht —
+dort steht dafür ein `?`.
 
 Die Anzeige erscheint auf jedem Display-Block, der `leitstand` heißt, und im
 Reiter **Anzeigen** des Terminals. Der Knopf wirkt an beiden Stellen; er darf
