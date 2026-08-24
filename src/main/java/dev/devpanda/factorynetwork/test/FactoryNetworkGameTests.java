@@ -2283,7 +2283,8 @@ public final class FactoryNetworkGameTests {
                 new dev.devpanda.factorynetwork.network.packet
                         .FlowStatePacket.Compute(16, 5, 2, 64, 37, 256),
                 new dev.devpanda.factorynetwork.network.packet
-                        .FlowStatePacket.Supply(0, 12345, 20000, 42));
+                        .FlowStatePacket.Supply(0, 12345, 20000, 42),
+                java.util.List.of("modus = nacht", "zaehler = 3"));
         var ablaeufeZurueck = roundTrip(helper,
                 dev.devpanda.factorynetwork.network.packet.FlowStatePacket.STREAM_CODEC, ablaeufe);
         helper.assertValueEqual(ablaeufeZurueck.flows().get(0).id(), 7L, "Kennung des Ablaufs");
@@ -2296,6 +2297,9 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(ablaeufeZurueck.supply().draw(), 42, "Bedarf");
         helper.assertValueEqual(ablaeufeZurueck.flows().get(0).detail(), "wartet auf Takt",
                 "Grund");
+        helper.assertValueEqual(ablaeufeZurueck.globals().size(), 2, "globale Werte");
+        helper.assertValueEqual(ablaeufeZurueck.globals().get(0), "modus = nacht",
+                "und ihr Stand");
 
         var wahl = new dev.devpanda.factorynetwork.network.packet.FlowActionPacket(7, true);
         helper.assertValueEqual(roundTrip(helper,

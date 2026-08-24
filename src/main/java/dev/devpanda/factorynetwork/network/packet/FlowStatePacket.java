@@ -22,7 +22,8 @@ import java.util.List;
  * entscheiden können muss, und die Wahl den richtigen treffen soll — auch
  * wenn sich die Liste zwischen Anzeigen und Klicken verschoben hat.
  */
-public record FlowStatePacket(List<Line> flows, Compute compute, Supply supply)
+public record FlowStatePacket(List<Line> flows, Compute compute, Supply supply,
+                              List<String> globals)
         implements CustomPacketPayload {
 
     /**
@@ -88,6 +89,8 @@ public record FlowStatePacket(List<Line> flows, Compute compute, Supply supply)
                     Line.STREAM_CODEC.apply(ByteBufCodecs.list(256)), FlowStatePacket::flows,
                     Compute.STREAM_CODEC, FlowStatePacket::compute,
                     Supply.STREAM_CODEC, FlowStatePacket::supply,
+                    ByteBufCodecs.stringUtf8(256).apply(ByteBufCodecs.list(128)),
+                    FlowStatePacket::globals,
                     FlowStatePacket::new);
 
     @Override

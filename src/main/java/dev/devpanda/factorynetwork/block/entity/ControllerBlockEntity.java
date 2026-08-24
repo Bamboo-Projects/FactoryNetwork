@@ -994,7 +994,21 @@ public class ControllerBlockEntity extends BlockEntity {
                         engine == null ? 0 : engine.queued(),
                         memory(), programSize(), diskSpace()),
                 new FlowStatePacket.Supply(power.state().ordinal(), power.stored(),
-                        power.capacity(), powerDraw())));
+                        power.capacity(), powerDraw()),
+                globalLines()));
+    }
+
+    /**
+     * Die globalen Werte als Zeilen für das Terminal.
+     *
+     * <p><b>Ein Wert, den man nicht sehen kann, ist beim Fehlersuchen
+     * wertlos.</b> Der Umweg wäre ein {@code log()} in einer Schleife — und
+     * das ist die Sorte Notlösung, die man dann vergisst herauszunehmen.
+     */
+    public List<String> globalLines() {
+        List<String> lines = new ArrayList<>();
+        globals.forEach((name, value) -> lines.add(name + " = " + value.describe()));
+        return lines;
     }
 
     /** Die Abläufe als Zeilen — getrennt vom Senden, damit prüfbar. */

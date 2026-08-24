@@ -14,6 +14,7 @@ import java.util.List;
 public final class ClientFlowState {
 
     private static List<FlowStatePacket.Line> flows = List.of();
+    private static List<String> globals = List.of();
     private static FlowStatePacket.Compute compute =
             new FlowStatePacket.Compute(0, 0, 0, 0, 0, 0);
     private static FlowStatePacket.Supply supply =
@@ -51,6 +52,12 @@ public final class ClientFlowState {
         compute = packet.compute();
         supply = packet.supply();
         flows = List.copyOf(packet.flows());
+        globals = List.copyOf(packet.globals());
+    }
+
+    /** Die globalen Werte des Programms, als „name = wert". */
+    public static List<String> globals() {
+        return globals;
     }
 
     public static List<FlowStatePacket.Line> flows() {

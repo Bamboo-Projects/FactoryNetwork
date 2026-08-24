@@ -158,7 +158,27 @@ public class NetworkTabView {
                         : dev.devpanda.factorynetwork.client.ClientFlowState.queued() > 0
                         ? TerminalScreen.WARN : TerminalScreen.TEXT_DIM);
         line = capacity(graphics, line);
+        line = globals(graphics, line);
         flows(graphics, line);
+    }
+
+    /**
+     * Die globalen Werte des Programms.
+     *
+     * <p>Nur, wenn es welche gibt — ein leerer Abschnitt mit Überschrift
+     * sagt nichts und kostet zwei Zeilen, die die Abläufe darunter brauchen.
+     */
+    private int globals(GuiGraphics graphics, int line) {
+        List<String> werte = dev.devpanda.factorynetwork.client.ClientFlowState.globals();
+        if (werte.isEmpty()) {
+            return line;
+        }
+        line += 3;
+        line = section(graphics, line, "screen.factorynetwork.terminal.network.globals");
+        for (String wert : werte) {
+            line = text(graphics, line, wert, TerminalScreen.TEXT_DIM);
+        }
+        return line;
     }
 
     /**
