@@ -108,6 +108,26 @@ public final class Interpreter {
         default java.util.Collection<String> deviceNames() {
             return List.of();
         }
+
+        /**
+         * Ein globaler Wert, oder {@code null}.
+         *
+         * <p><b>Nicht im Stapel der Geltungsbereiche.</b> Der lebt für einen
+         * Aufruf und wird danach weggeworfen; ein globaler Wert lebt für die
+         * Fabrik und übersteht den Serverneustart. Er liegt deshalb dort, wo
+         * auch Bestände und Redstone liegen — beim Host.
+         *
+         * <p>{@code null} heißt „gibt es nicht" und ist etwas anderes als
+         * {@link Value.Nothing}: Ein globaler Wert, der nichts enthält, ist
+         * erklärt; einer, der nicht erklärt wurde, ist ein Vertipper.
+         */
+        default Value global(String name) {
+            return null;
+        }
+
+        /** Setzt einen globalen Wert. */
+        default void setGlobal(String name, Value value) {
+        }
     }
 
     public Interpreter(Program program, Host host) {
@@ -789,8 +809,15 @@ public final class Interpreter {
                 return;
             }
         }
+        // Kein Name in Reichweite — aber vielleicht ein globaler. Dieselbe
+        // Reihenfolge wie beim Lesen: Was in der Funktion steht, geht vor.
+        if (host.global(name.value()) != null) {
+            host.setGlobal(name.value(), value);
+            return;
+        }
         throw new ScriptError("Unbekannter Name " + name.value() + ".",
-                "Neue Namen bekommen ein let davor.");
+                "Neue Namen bekommen ein let davor. Ein Wert, den alle Dateien "
+                        + "sehen sollen, bekommt ein global auf oberster Ebene.");
     }
 
     private Value find(String name) {
@@ -800,7 +827,12 @@ public final class Interpreter {
                 return value;
             }
         }
-        return null;
+        // Zuletzt die globalen Werte, und ausdrücklich nicht zuerst: Ein
+        // gleichnamiges let in einer Funktion verdeckt sie. Andersherum
+        // könnte man einen globalen Wert nie überdecken, und ein Name, den
+        // jemand in seiner Funktion vergibt, hinge davon ab, was anderswo
+        // im Projekt steht.
+        return host.global(name);
     }
 
     private Value lookup(String name) {
