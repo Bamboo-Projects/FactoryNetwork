@@ -215,4 +215,60 @@ class CompletionsTest {
                 "wie hiesse er auch — er entsteht ja gerade");
     }
 
+    // ---- Nach dem Punkt ----------------------------------------------------
+
+    /**
+     * Ein Netz mit genau diesem Connector, für die Dauer eines Tests.
+     *
+     * <p>{@link dev.devpanda.factorynetwork.client.ClientNetworkState} ist
+     * statisch — es gibt einen Client und ein Netz. Für den Test wird es
+     * gefüllt und danach geleert, sonst sieht der nächste Test ein Netz, das
+     * es nicht gibt.
+     */
+    private static void withNetwork(String connector, Runnable body) {
+        dev.devpanda.factorynetwork.client.ClientNetworkState.accept(
+                new dev.devpanda.factorynetwork.network.packet.NetworkStatePacket(
+                        List.of(new dev.devpanda.factorynetwork.network.packet.NamedPlace(
+                                connector, new net.minecraft.core.BlockPos(1, 2, 3))),
+                        List.of(), List.of(), List.of(), List.of(), List.of()));
+        try {
+            body.run();
+        } finally {
+            dev.devpanda.factorynetwork.client.ClientNetworkState.accept(
+                    new dev.devpanda.factorynetwork.network.packet.NetworkStatePacket(
+                            List.of(), List.of(), List.of(), List.of(), List.of(), List.of()));
+        }
+    }
+
+    @Test
+    @DisplayName("Nach dem Punkt stehen die vier Dinge, die ein Gerät hat")
+    void afterTheDotTheDeviceMembersAreOffered() {
+        withNetwork("crusher_1", () -> assertEquals(
+                List.of("online", "name", "redstone", "count"),
+                at("fn test() {", "    if crusher_1.")));
+    }
+
+    /**
+     * <b>Hier weicht der Editor im Spiel von der Erweiterung ab.</b> Er kennt
+     * das laufende Netz und schlägt nur hinter einem wirklichen Connector
+     * etwas vor. VS Code kennt es nicht und bietet hinter jedem Namen an —
+     * dort ist ein zu großzügiger Vorschlag besser als gar keiner.
+     */
+    @Test
+    @DisplayName("Hinter einem unbekannten Namen gibt es nichts")
+    void afterAnUnknownNameNothingIsOffered() {
+        withNetwork("crusher_1", () -> assertTrue(
+                at("fn test() {", "    if gibt_es_nicht.").isEmpty(),
+                () -> "was kein Connector ist, hat auch keine Mitglieder, war: "
+                        + at("fn test() {", "    if gibt_es_nicht.")));
+    }
+
+    @Test
+    @DisplayName("Eine Zahl mit Punkt ist kein Zugriff")
+    void aNumberWithADotIsNotAMemberAccess() {
+        withNetwork("crusher_1", () -> assertFalse(
+                at("fn test() {", "    let x = 3.").contains("online"),
+                "3.5 ist eine Zahl und kein Gerät"));
+    }
+
 }

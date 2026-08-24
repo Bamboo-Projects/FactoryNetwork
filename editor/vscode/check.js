@@ -5,6 +5,12 @@
 // VS Code —, und zwei Fassungen derselben Regel laufen auseinander, wenn
 // niemand nachmisst.
 //
+// Eine Abweichung ist Absicht und keine Lücke: Nach einem Punkt bietet der
+// Editor im Spiel die Gerätemitglieder nur hinter einem Namen an, den das
+// Netz kennt. VS Code kennt kein laufendes Spiel und bietet sie hinter
+// jedem Namen an — dort ist ein zu großzügiger Vorschlag besser als gar
+// keiner. Der Fall „unbekannter Name" steht deshalb nur im Java-Test.
+//
 // Ohne Abhängigkeiten: node check.js. Das Modul "vscode" gibt es außerhalb
 // von VS Code nicht, also steht hier eine Attrappe.
 const Module = require('module');

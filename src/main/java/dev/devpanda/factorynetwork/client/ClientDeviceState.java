@@ -64,6 +64,13 @@ public final class ClientDeviceState {
 
     public static void accept(DeviceSnapshotPacket packet) {
         snapshots.put(packet.connector(), packet);
+        // Das Profil aus der Antwort ist frischer als das vom Öffnen. Es
+        // gehört nicht nur ins Zeigen, sondern auch dorthin, wo die
+        // Vorschlagsliste und die Prüfung es lesen — sonst behaupten zwei
+        // Stellen Verschiedenes über dasselbe Gerät.
+        ClientNetworkState.updateProfile(packet.connector(),
+                dev.devpanda.factorynetwork.network.packet.DeviceProfileCodec
+                        .fromFlat(packet.profile()));
     }
 
     /** Beim Schließen des Terminals: Der Inhalt von vorhin gilt nicht mehr. */

@@ -56,7 +56,7 @@ und keinen für den seitenlosen Zugang — den gäbe es nur als `null`, und ein
 Monaten zuschnappt. Dazu kommt, dass `NetworkView` und `NetworkCheck` heute ohne
 Minecraft auskommen und ihre Tests deshalb in Millisekunden laufen.
 
-- [ ] **Schritt 1: Den fehlschlagenden Test schreiben**
+- [x] **Schritt 1: Den fehlschlagenden Test schreiben**
 
 `src/test/java/dev/devpanda/factorynetwork/lang/DeviceProfileTest.java`:
 
@@ -150,12 +150,12 @@ class DeviceProfileTest {
 }
 ```
 
-- [ ] **Schritt 2: Den Test laufen lassen, er muss fehlschlagen**
+- [x] **Schritt 2: Den Test laufen lassen, er muss fehlschlagen**
 
 Aufruf: `./gradlew test --tests "*DeviceProfileTest*"`
 Erwartet: Übersetzungsfehler — `Side` und `DeviceProfile` gibt es nicht.
 
-- [ ] **Schritt 3: `Side` anlegen**
+- [x] **Schritt 3: `Side` anlegen**
 
 `src/main/java/dev/devpanda/factorynetwork/lang/Side.java`:
 
@@ -198,7 +198,7 @@ public enum Side {
 }
 ```
 
-- [ ] **Schritt 4: `DeviceProfile` anlegen**
+- [x] **Schritt 4: `DeviceProfile` anlegen**
 
 `src/main/java/dev/devpanda/factorynetwork/lang/DeviceProfile.java`:
 
@@ -349,12 +349,12 @@ public record DeviceProfile(String descriptionId, String namespace,
 Importe der Klasse: `java.util.ArrayList`, `java.util.LinkedHashMap`,
 `java.util.List`, `java.util.Map`.
 
-- [ ] **Schritt 5: Den Test laufen lassen, er muss durchgehen**
+- [x] **Schritt 5: Den Test laufen lassen, er muss durchgehen**
 
 Aufruf: `./gradlew test --tests "*DeviceProfileTest*"`
 Erwartet: 5 Tests, alle grün.
 
-- [ ] **Schritt 6: Committen**
+- [x] **Schritt 6: Committen**
 
 ```bash
 git add src/main/java/dev/devpanda/factorynetwork/lang/Side.java \
@@ -382,7 +382,7 @@ Arbeit am Syntaxbaum und kennen kein Minecraft — sie stehen aber in der
 Laufzeit, wo `NetworkCheck` nicht hinlangen kann, ohne Minecraft mitzuziehen.
 Zwei Fassungen derselben Regel würden auseinanderlaufen.
 
-- [ ] **Schritt 1: Den fehlschlagenden Test schreiben**
+- [x] **Schritt 1: Den fehlschlagenden Test schreiben**
 
 `src/test/java/dev/devpanda/factorynetwork/lang/WorkerKindTest.java`:
 
@@ -465,12 +465,12 @@ class WorkerKindTest {
 }
 ```
 
-- [ ] **Schritt 2: Den Test laufen lassen, er muss fehlschlagen**
+- [x] **Schritt 2: Den Test laufen lassen, er muss fehlschlagen**
 
 Aufruf: `./gradlew test --tests "*WorkerKindTest*"`
 Erwartet: Übersetzungsfehler — `WorkerKind` gibt es nicht.
 
-- [ ] **Schritt 3: `WorkerKind` anlegen**
+- [x] **Schritt 3: `WorkerKind` anlegen**
 
 `src/main/java/dev/devpanda/factorynetwork/lang/WorkerKind.java`:
 
@@ -523,7 +523,7 @@ public final class WorkerKind {
 }
 ```
 
-- [ ] **Schritt 4: `WorkerRuntime` auf die neue Stelle umstellen**
+- [x] **Schritt 4: `WorkerRuntime` auf die neue Stelle umstellen**
 
 In `src/main/java/dev/devpanda/factorynetwork/runtime/WorkerRuntime.java` die
 beiden privaten Methoden `isFluidWorker` und `selectorKind` (Zeilen 786-798)
@@ -540,13 +540,13 @@ Dazu `import dev.devpanda.factorynetwork.lang.WorkerKind;` ergänzen. Die
 Aufrufe von `selectorKind` im Rest der Datei (Suche: `selectorKind(`) auf
 `WorkerKind.selectorKind(` umstellen.
 
-- [ ] **Schritt 5: Alle Tests laufen lassen**
+- [x] **Schritt 5: Alle Tests laufen lassen**
 
 Aufruf: `./gradlew test`
 Erwartet: alles grün, auch die Laufzeittests — die Regel hat sich nicht
 geändert, nur ihr Ort.
 
-- [ ] **Schritt 6: Committen**
+- [x] **Schritt 6: Committen**
 
 ```bash
 git add src/main/java/dev/devpanda/factorynetwork/lang/WorkerKind.java \
@@ -569,7 +569,7 @@ git commit -m "Die Ressourcenart eines Workers steht jetzt bei der Sprache"
 - Liefert: `NetworkView.profile(String) -> DeviceProfile` (Standard:
   `DeviceProfile.unreachable()`). Aufgabe 5 füllt sie auf dem Client.
 
-- [ ] **Schritt 1: Den fehlschlagenden Test schreiben**
+- [x] **Schritt 1: Den fehlschlagenden Test schreiben**
 
 Ans Ende von `NetworkCheckTest.java`, vor die schließende Klammer:
 
@@ -668,12 +668,12 @@ Ans Ende von `NetworkCheckTest.java`, vor die schließende Klammer:
 
 Dazu oben in der Datei ergänzen: `import java.util.Map;` steht schon da.
 
-- [ ] **Schritt 2: Den Test laufen lassen, er muss fehlschlagen**
+- [x] **Schritt 2: Den Test laufen lassen, er muss fehlschlagen**
 
 Aufruf: `./gradlew test --tests "*NetworkCheckTest*"`
 Erwartet: Übersetzungsfehler — `NetworkView.profile` gibt es nicht.
 
-- [ ] **Schritt 3: `NetworkView` erweitern**
+- [x] **Schritt 3: `NetworkView` erweitern**
 
 In `NetworkView.java` nach `displays()` einfügen:
 
@@ -692,7 +692,7 @@ In `NetworkView.java` nach `displays()` einfügen:
 
 Und in der Konstanten `NONE` nichts ergänzen — sie erbt die Standardfassung.
 
-- [ ] **Schritt 4: Die Prüfung in `NetworkCheck` einbauen**
+- [x] **Schritt 4: Die Prüfung in `NetworkCheck` einbauen**
 
 In `NetworkCheck.java` die Methode `checkWorker` ersetzen:
 
@@ -771,12 +771,12 @@ In `NetworkCheck.java` die Methode `checkWorker` ersetzen:
     }
 ```
 
-- [ ] **Schritt 5: Den Test laufen lassen, er muss durchgehen**
+- [x] **Schritt 5: Den Test laufen lassen, er muss durchgehen**
 
 Aufruf: `./gradlew test --tests "*NetworkCheckTest*"`
 Erwartet: alle Tests grün, auch die bisherigen vier.
 
-- [ ] **Schritt 6: Committen**
+- [x] **Schritt 6: Committen**
 
 ```bash
 git add src/main/java/dev/devpanda/factorynetwork/lang/NetworkView.java \
@@ -804,7 +804,7 @@ git commit -m "Ein Connector an der falschen Seite wird jetzt gemeldet"
 seitenlosen Zugang. `ConnectorBlockEntity` holt heute schon `ItemHandler` und
 `FluidHandler` für genau eine Seite — dieselbe Abfrage, siebenmal.
 
-- [ ] **Schritt 1: Den fehlschlagenden GameTest schreiben**
+- [x] **Schritt 1: Den fehlschlagenden GameTest schreiben**
 
 In `FactoryNetworkGameTests.java` ergänzen:
 
@@ -863,12 +863,12 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.Blocks;
 ```
 
-- [ ] **Schritt 2: Den Test laufen lassen, er muss fehlschlagen**
+- [x] **Schritt 2: Den Test laufen lassen, er muss fehlschlagen**
 
 Aufruf: `./gradlew runGameTestServer`
 Erwartet: Übersetzungsfehler — `DeviceScan` gibt es nicht.
 
-- [ ] **Schritt 3: `DeviceScan` anlegen**
+- [x] **Schritt 3: `DeviceScan` anlegen**
 
 `src/main/java/dev/devpanda/factorynetwork/block/entity/DeviceScan.java`:
 
@@ -984,12 +984,12 @@ Connectors, und das kennt seine Seite selbst. Sie käme erst dazu, wenn der
 Editor eine andere als die angeschlossene Seite auslesen soll — heute wäre sie
 toter Code.
 
-- [ ] **Schritt 4: Den GameTest laufen lassen**
+- [x] **Schritt 4: Den GameTest laufen lassen**
 
 Aufruf: `./gradlew runGameTestServer`
 Erwartet: beide neuen Tests grün. Dauert etwa eine Minute.
 
-- [ ] **Schritt 5: Committen**
+- [x] **Schritt 5: Committen**
 
 ```bash
 git add src/main/java/dev/devpanda/factorynetwork/block/entity/DeviceScan.java \
@@ -1020,7 +1020,7 @@ git commit -m "Der Server probt, was eine Maschine an welcher Seite kann"
 danach genau sechs — die Grenze ist erreicht, ein siebtes bräuchte eine von Hand
 geschriebene Fassung wie in `AnalyserDataPacket.SUMMARY`.
 
-- [ ] **Schritt 1: Den fehlschlagenden Test schreiben**
+- [x] **Schritt 1: Den fehlschlagenden Test schreiben**
 
 `src/test/java/dev/devpanda/factorynetwork/network/DeviceProfileCodecTest.java`:
 
@@ -1069,12 +1069,12 @@ class DeviceProfileCodecTest {
 }
 ```
 
-- [ ] **Schritt 2: Den Test laufen lassen, er muss fehlschlagen**
+- [x] **Schritt 2: Den Test laufen lassen, er muss fehlschlagen**
 
 Aufruf: `./gradlew test --tests "*DeviceProfileCodecTest*"`
 Erwartet: Übersetzungsfehler — `DeviceProfileCodec` gibt es nicht.
 
-- [ ] **Schritt 3: `DeviceProfileCodec` anlegen**
+- [x] **Schritt 3: `DeviceProfileCodec` anlegen**
 
 `src/main/java/dev/devpanda/factorynetwork/network/packet/DeviceProfileCodec.java`:
 
@@ -1159,12 +1159,12 @@ public final class DeviceProfileCodec {
 }
 ```
 
-- [ ] **Schritt 4: Den Test laufen lassen, er muss durchgehen**
+- [x] **Schritt 4: Den Test laufen lassen, er muss durchgehen**
 
 Aufruf: `./gradlew test --tests "*DeviceProfileCodecTest*"`
 Erwartet: beide Tests grün.
 
-- [ ] **Schritt 5: Das Paket erweitern**
+- [x] **Schritt 5: Das Paket erweitern**
 
 In `NetworkStatePacket.java` das Record und den Codec ändern:
 
@@ -1196,7 +1196,7 @@ Ins Javadoc der Klasse ergänzen:
  * {@code AnalyserDataPacket}.
 ```
 
-- [ ] **Schritt 6: Den Controller die Profile bauen lassen**
+- [x] **Schritt 6: Den Controller die Profile bauen lassen**
 
 In `ControllerBlockEntity.java` nach `connectorPlaces()` einfügen:
 
@@ -1229,7 +1229,7 @@ In `ControllerBlockEntity.java` nach `connectorPlaces()` einfügen:
 In `TerminalBlockEntity.java` beide Aufrufe ergänzen — der leere Fall bekommt
 ein sechstes `List.of()`, der gefüllte `entity.connectorProfiles()`.
 
-- [ ] **Schritt 7: Der Client hält die Profile**
+- [x] **Schritt 7: Der Client hält die Profile**
 
 In `ClientNetworkState.java` ergänzen:
 
@@ -1270,12 +1270,12 @@ In `ClientNetworkView.java` durchreichen:
     }
 ```
 
-- [ ] **Schritt 8: Alles bauen und laufen lassen**
+- [x] **Schritt 8: Alles bauen und laufen lassen**
 
 Aufruf: `./gradlew test && ./gradlew runGameTestServer`
 Erwartet: alles grün.
 
-- [ ] **Schritt 9: Committen**
+- [x] **Schritt 9: Committen**
 
 ```bash
 git add -A
@@ -1298,7 +1298,7 @@ git commit -m "Die Geräteprofile reisen mit dem Netzzustand zum Editor"
 **Worum es geht:** `addConnectors` setzt heute ein leeres `detail`. Dort gehört
 hinein, was die Maschine ist und kann.
 
-- [ ] **Schritt 1: Den fehlschlagenden Test schreiben**
+- [x] **Schritt 1: Den fehlschlagenden Test schreiben**
 
 `src/test/java/dev/devpanda/factorynetwork/client/CompletionsDetailTest.java`:
 
@@ -1355,12 +1355,12 @@ class CompletionsDetailTest {
 }
 ```
 
-- [ ] **Schritt 2: Den Test laufen lassen, er muss fehlschlagen**
+- [x] **Schritt 2: Den Test laufen lassen, er muss fehlschlagen**
 
 Aufruf: `./gradlew test --tests "*CompletionsDetailTest*"`
 Erwartet: Übersetzungsfehler — `Completions.abilities` gibt es nicht.
 
-- [ ] **Schritt 3: `abilities` schreiben und `addConnectors` umstellen**
+- [x] **Schritt 3: `abilities` schreiben und `addConnectors` umstellen**
 
 In `Completions.java` ergänzen:
 
@@ -1415,7 +1415,7 @@ und `addConnectors` ersetzen:
 Importe ergänzen: `dev.devpanda.factorynetwork.lang.DeviceProfile`,
 `dev.devpanda.factorynetwork.lang.Side`.
 
-- [ ] **Schritt 4: Den Test laufen lassen**
+- [x] **Schritt 4: Den Test laufen lassen**
 
 Aufruf: `./gradlew test --tests "*CompletionsDetailTest*"`
 Erwartet: 3 Tests grün.
@@ -1426,7 +1426,7 @@ Aufruf: `./gradlew runClient`
 Eine Kiste neben einen Connector setzen, benennen, Terminal öffnen, in einem
 Worker `to ` tippen. Hinter dem Namen muss „Kiste · Gegenstände" stehen.
 
-- [ ] **Schritt 6: Committen**
+- [x] **Schritt 6: Committen**
 
 ```bash
 git add src/main/java/dev/devpanda/factorynetwork/client/screen/Completions.java \
@@ -1453,7 +1453,7 @@ git commit -m "Die Vorschlagsliste nennt Maschine und Fähigkeiten"
 nicht vorgeschlagen, auch wenn `sprache.md` §6 mehr beschreibt. Ein Vorschlag,
 der zu einem Laufzeitfehler führt, ist schlimmer als keiner.
 
-- [ ] **Schritt 1: Den fehlschlagenden Test schreiben**
+- [x] **Schritt 1: Den fehlschlagenden Test schreiben**
 
 Ans Ende von `SignaturesTest.java`:
 
@@ -1479,12 +1479,12 @@ Ans Ende von `SignaturesTest.java`:
     }
 ```
 
-- [ ] **Schritt 2: Den Test laufen lassen, er muss fehlschlagen**
+- [x] **Schritt 2: Den Test laufen lassen, er muss fehlschlagen**
 
 Aufruf: `./gradlew test --tests "*SignaturesTest*"`
 Erwartet: Übersetzungsfehler — `Signatures.MEMBERS` gibt es nicht.
 
-- [ ] **Schritt 3: `MEMBERS` in `Signatures` ergänzen**
+- [x] **Schritt 3: `MEMBERS` in `Signatures` ergänzen**
 
 ```java
     /**
@@ -1515,7 +1515,7 @@ Erwartet: Übersetzungsfehler — `Signatures.MEMBERS` gibt es nicht.
                     "Wie viel von einer Art im Netzspeicher liegt."));
 ```
 
-- [ ] **Schritt 4: Die Punkt-Stelle in `Completions.at` einbauen**
+- [x] **Schritt 4: Die Punkt-Stelle in `Completions.at` einbauen**
 
 In `Completions.at` direkt nach der Berechnung von `before` einfügen:
 
@@ -1557,7 +1557,7 @@ und als neue Methode:
     }
 ```
 
-- [ ] **Schritt 5: Beide Tests laufen lassen**
+- [x] **Schritt 5: Beide Tests laufen lassen**
 
 Aufruf: `./gradlew test`
 Erwartet: alles grün.
@@ -1568,7 +1568,7 @@ Aufruf: `./gradlew runClient`
 Im Editor `if crusher_1.` tippen — es müssen vier Vorschläge erscheinen, jeder
 mit seiner Form dahinter.
 
-- [ ] **Schritt 7: Committen**
+- [x] **Schritt 7: Committen**
 
 ```bash
 git add src/main/java/dev/devpanda/factorynetwork/lang/Signatures.java \
@@ -1602,7 +1602,7 @@ geschrieben werden — der Test sagt, mit welchem Aufruf.
 Antwort — ein Fassregal mit zweihundert Fächern soll den Tooltip nicht sprengen
 und auch nicht heimlich lügen.
 
-- [ ] **Schritt 1: Die Anfrage anlegen**
+- [x] **Schritt 1: Die Anfrage anlegen**
 
 `DeviceSnapshotRequestPacket.java`:
 
@@ -1666,7 +1666,7 @@ public record DeviceSnapshotRequestPacket(String connector) implements CustomPac
 }
 ```
 
-- [ ] **Schritt 2: Die Antwort anlegen**
+- [x] **Schritt 2: Die Antwort anlegen**
 
 `DeviceSnapshotPacket.java`:
 
@@ -1774,7 +1774,7 @@ public record DeviceSnapshotPacket(String connector, DeviceProfileCodec.Flat pro
 }
 ```
 
-- [ ] **Schritt 3: `machineEnergy` im Connector ergänzen**
+- [x] **Schritt 3: `machineEnergy` im Connector ergänzen**
 
 In `ConnectorBlockEntity.java` neben `machineTank()`:
 
@@ -1799,7 +1799,7 @@ In `ConnectorBlockEntity.java` neben `machineTank()`:
     }
 ```
 
-- [ ] **Schritt 4: Den Zustand auf dem Client halten**
+- [x] **Schritt 4: Den Zustand auf dem Client halten**
 
 `ClientDeviceState.java`:
 
@@ -1880,7 +1880,7 @@ public final class ClientDeviceState {
 }
 ```
 
-- [ ] **Schritt 5: Die Pakete anmelden**
+- [x] **Schritt 5: Die Pakete anmelden**
 
 In `FnPackets.java` nach der Zeile für `AnalyserDataPacket`:
 
@@ -1892,7 +1892,7 @@ In `FnPackets.java` nach der Zeile für `AnalyserDataPacket`:
                 DeviceSnapshotPacket::handle);
 ```
 
-- [ ] **Schritt 6: Den GameTest schreiben**
+- [x] **Schritt 6: Den GameTest schreiben**
 
 In `FactoryNetworkGameTests.java`:
 
@@ -1952,12 +1952,12 @@ import net.minecraft.world.item.Items;
 import net.neoforged.neoforge.items.IItemHandler;
 ```
 
-- [ ] **Schritt 7: Bauen und laufen lassen**
+- [x] **Schritt 7: Bauen und laufen lassen**
 
 Aufruf: `./gradlew test && ./gradlew runGameTestServer`
 Erwartet: alles grün.
 
-- [ ] **Schritt 8: Committen**
+- [x] **Schritt 8: Committen**
 
 ```bash
 git add -A
@@ -1995,7 +1995,7 @@ Terminal bekommt damit die Namensauskunft, die das eigene Fenster längst hat.
 Genaueste, was unter dem Zeiger stehen kann; die Signatur gilt für die ganze
 Zeile, die Meldung auch.
 
-- [ ] **Schritt 1: `EditorTooltip` anlegen**
+- [x] **Schritt 1: `EditorTooltip` anlegen**
 
 `src/main/java/dev/devpanda/factorynetwork/client/screen/EditorTooltip.java`:
 
@@ -2256,7 +2256,7 @@ public final class EditorTooltip {
 }
 ```
 
-- [ ] **Schritt 2: `CodeScreen` umstellen**
+- [x] **Schritt 2: `CodeScreen` umstellen**
 
 In `CodeScreen.java` die Methode `describeName` (Zeilen 449-497) **löschen** —
 sie lebt jetzt in `EditorTooltip`. In `renderTooltip` alles ab
@@ -2272,7 +2272,7 @@ Die drei Prüfungen davor bleiben: `panel.hasMenu() || showingHelp` und
 sie nicht, `Definitions` und `ChatFormatting` werden aber hier nicht mehr
 gebraucht.
 
-- [ ] **Schritt 3: `CodeTabView` umstellen**
+- [x] **Schritt 3: `CodeTabView` umstellen**
 
 In `CodeTabView.renderTooltip` alles ab `var signature = editor.signatureAt(…)`
 bis zum Ende der Methode ersetzen durch:
@@ -2289,7 +2289,7 @@ stehen.
 Netz, Erklärungsort, Fundstellen. Das ist kein Nebeneffekt, sondern der Grund,
 warum die Methode wandert.
 
-- [ ] **Schritt 4: Beim Schließen aufräumen**
+- [x] **Schritt 4: Beim Schließen aufräumen**
 
 Der Inhalt von vorhin gilt nicht mehr, wenn das Terminal zugeht. In
 `CodeScreen.onClose` und in `TerminalScreen` (dort, wo `removed()` oder
@@ -2299,7 +2299,7 @@ Der Inhalt von vorhin gilt nicht mehr, wenn das Terminal zugeht. In
         ClientDeviceState.clear();
 ```
 
-- [ ] **Schritt 5: Bauen**
+- [x] **Schritt 5: Bauen**
 
 Aufruf: `./gradlew build`
 Erwartet: übersetzt ohne Fehler.
@@ -2324,7 +2324,7 @@ Zu prüfen:
 6. In einem Worker `to ` tippen — Namen mit Beschreibung dahinter.
 7. `crusher_1.` tippen — vier Vorschläge.
 
-- [ ] **Schritt 7: Committen**
+- [x] **Schritt 7: Committen**
 
 ```bash
 git add -A
@@ -2337,7 +2337,7 @@ git commit -m "Zeigen erklärt einen Namen jetzt überall gleich, mit Maschine d
 **Dateien:**
 - Ändern: `docs/umsetzung.md`
 
-- [ ] **Schritt 1: Den Fehlt-Punkt umschreiben**
+- [x] **Schritt 1: Den Fehlt-Punkt umschreiben**
 
 In `docs/umsetzung.md` den Punkt 1 unter „Fehlt, in dieser Reihenfolge"
 („Der Sprachdienst über die Signaturen hinaus") streichen. Die beiden folgenden
@@ -2377,7 +2377,7 @@ Und unter „Offene Fragen, nicht entschieden" anfügen:
   nicht. Siehe `docs/geraeteerkennung.md`, Abschnitt 3.
 ```
 
-- [ ] **Schritt 2: Committen**
+- [x] **Schritt 2: Committen**
 
 ```bash
 git add docs/umsetzung.md

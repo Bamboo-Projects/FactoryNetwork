@@ -85,7 +85,15 @@ public final class Completions {
         // Vor der Prüfung auf die Stelle in der Angabe, weil „to crusher_1."
         // sonst als angefangener Zielname gelesen würde — und dann stünden
         // dort wieder die Connectoren.
-        if (memberPrefix(upToCursor) != null) {
+        //
+        // <b>Und der Punkt beendet die Liste in jedem Fall.</b> Steht davor
+        // kein bekannter Connector, gibt es eben nichts: Vorher fiel dieser
+        // Fall bis zur Ausdrucksstelle durch und bot „storage, crafting,
+        // world …" an — hinter einem Punkt ergibt keines davon einen Satz.
+        if (afterDot(upToCursor)) {
+            if (memberPrefix(upToCursor) == null) {
+                return List.of();
+            }
             for (Signatures.Member candidate : Signatures.MEMBERS) {
                 if (matches(candidate.name(), prefix)) {
                     entries.add(new Entry(candidate.name(), candidate.name(),
@@ -312,17 +320,34 @@ public final class Completions {
     }
 
     /**
-     * Der Gerätename vor dem Punkt, oder {@code null}.
+     * Steht der Cursor hinter einem Punkt, der auf einen Namen folgt?
      *
-     * <p>Nur, wenn davor wirklich ein Connector steht: {@code storage.} ist
-     * etwas anderes, und {@code 3.5} ist gar kein Punktzugriff.
+     * <p>{@code 3.5} zählt nicht: Davor steht eine Zahl und kein Name, und
+     * ein Punktzugriff ist es damit nicht.
      */
-    private static String memberPrefix(String upToCursor) {
+    private static boolean afterDot(String upToCursor) {
         String prefix = currentWord(upToCursor);
         String before = upToCursor.substring(0, upToCursor.length() - prefix.length());
         if (!before.endsWith(".")) {
+            return false;
+        }
+        String name = currentWord(before.substring(0, before.length() - 1));
+        return !name.isEmpty() && !Character.isDigit(name.charAt(0));
+    }
+
+    /**
+     * Der Gerätename vor dem Punkt, oder {@code null}.
+     *
+     * <p>Nur, wenn davor wirklich ein Connector steht: {@code storage.} ist
+     * etwas anderes, und was niemand so genannt hat, hat auch keine
+     * Mitglieder.
+     */
+    private static String memberPrefix(String upToCursor) {
+        if (!afterDot(upToCursor)) {
             return null;
         }
+        String prefix = currentWord(upToCursor);
+        String before = upToCursor.substring(0, upToCursor.length() - prefix.length());
         String name = currentWord(before.substring(0, before.length() - 1));
         return ClientNetworkState.connectors().contains(name) ? name : null;
     }

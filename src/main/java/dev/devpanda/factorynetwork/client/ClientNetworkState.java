@@ -55,6 +55,21 @@ public final class ClientNetworkState {
         return profiles.getOrDefault(connector, DeviceProfile.unreachable());
     }
 
+    /**
+     * Ein Profil aus einer Antwort auf eine Anfrage.
+     *
+     * <p><b>Sonst widersprächen sich zwei Auskünfte.</b> Die Antwort trägt
+     * den frischen Stand mit; läge er nur beim Zeigen vor, sagte der Tooltip
+     * nach einem Maschinentausch „Tank", während die Warnung in der Zeile
+     * noch mit der Kiste rechnet. Hier abgelegt, sehen Vorschlagsliste und
+     * Prüfung dasselbe.
+     */
+    public static void updateProfile(String connector, DeviceProfile profile) {
+        Map<String, DeviceProfile> next = new HashMap<>(profiles);
+        next.put(connector, profile);
+        profiles = next;
+    }
+
     /** Die Namen der Connectoren. */
     public static List<String> connectors() {
         return connectors.stream().map(NamedPlace::name).toList();
