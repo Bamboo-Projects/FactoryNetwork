@@ -37,17 +37,60 @@ public final class WorldHost implements Interpreter.Host {
     private final NetworkFluids fluidStorage;
     private final List<String> logs = new ArrayList<>();
 
+    /**
+     * Die globalen Werte des Netzes, oder {@code null}.
+     *
+     * <p>Sie leben im Controller und nicht hier: Ein Host wird für einen
+     * Durchlauf gebaut, die Werte überdauern ihn. Was hier steht, ist die
+     * Karte selbst und keine Kopie — wer schreibt, schreibt im Controller.
+     *
+     * <p>{@code null} bei Aufrufen ohne Controller. Dann gibt es keine
+     * globalen Werte, und das ist etwas anderes als „keine erklärt": Der
+     * Interpreter meldet einen unbekannten Namen, was richtig ist.
+     */
+    private final java.util.Map<String, Value> globals;
+
+    /** Was zu tun ist, wenn ein globaler Wert sich geändert hat. */
+    private final Runnable onGlobalChanged;
+
     public WorldHost(Level level, FactoryGraph graph, NetworkStorage storage,
-            NetworkFluids fluidStorage) {
+            NetworkFluids fluidStorage, java.util.Map<String, Value> globals,
+            Runnable onGlobalChanged) {
         this.level = level;
         this.graph = graph;
         this.storage = storage;
         this.fluidStorage = fluidStorage == null ? new NetworkFluids() : fluidStorage;
+        this.globals = globals;
+        this.onGlobalChanged = onGlobalChanged;
+    }
+
+    public WorldHost(Level level, FactoryGraph graph, NetworkStorage storage,
+            NetworkFluids fluidStorage) {
+        this(level, graph, storage, fluidStorage, null, null);
     }
 
     /** Ohne Flüssigkeitsspeicher — für Aufrufe, die keine brauchen. */
     public WorldHost(Level level, FactoryGraph graph, NetworkStorage storage) {
-        this(level, graph, storage, null);
+        this(level, graph, storage, null, null, null);
+    }
+
+    @Override
+    public Value global(String name) {
+        return globals == null ? null : globals.get(name);
+    }
+
+    @Override
+    public void setGlobal(String name, Value value) {
+        if (globals == null) {
+            return;
+        }
+        globals.put(name, value);
+        // Ohne das ginge der Wert beim nächsten Speichern verloren: Die
+        // BlockEntity weiß nichts davon, dass in ihrer Karte etwas passiert
+        // ist.
+        if (onGlobalChanged != null) {
+            onGlobalChanged.run();
+        }
     }
 
     public List<String> logs() {

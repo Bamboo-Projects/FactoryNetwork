@@ -62,7 +62,7 @@ Alles hier wurde vor dem Schreiben im Code nachgesehen:
 `switch` unvollständig — der Übersetzer nennt die Stellen, und das ist
 erwünscht. Sie werden in Aufgabe 2 abgearbeitet.
 
-- [ ] **Schritt 1: Den fehlschlagenden Test schreiben**
+- [x] **Schritt 1: Den fehlschlagenden Test schreiben**
 
 `src/test/java/dev/devpanda/factorynetwork/lang/parse/GlobalParseTest.java`:
 
@@ -153,14 +153,14 @@ class GlobalParseTest {
 }
 ```
 
-- [ ] **Schritt 2: Den Test laufen lassen, er muss fehlschlagen**
+- [x] **Schritt 2: Den Test laufen lassen, er muss fehlschlagen**
 
 Aufruf: `./gradlew test --tests "*GlobalParseTest*"`
 Erwartet: Übersetzungsfehler — `Decl.Global` gibt es nicht.
 
 **Hinweis:** Prüfe vorher mit `grep -n "record Text\|Text(" src/main/java/dev/devpanda/factorynetwork/lang/ast/Expr.java`, wie das Literal für Texte wirklich heißt, und setze den Test darauf. Steht dort ein anderer Name, ist der Test anzupassen — nicht der Code.
 
-- [ ] **Schritt 3: `TokenType` erweitern**
+- [x] **Schritt 3: `TokenType` erweitern**
 
 In der Aufzählung neben `WORKER, GROUP, MULTIBLOCK, EVENT, DISPLAY, ON, IMPORT`
 das Wort `GLOBAL` ergänzen, und in der Schlüsselwortkarte:
@@ -172,7 +172,7 @@ das Wort `GLOBAL` ergänzen, und in der Schlüsselwortkarte:
 Dazu die Stelle prüfen, an der `TokenType` entscheidet, was ein
 Deklarationswort ist (dieselbe Datei, Zeile 97) — `GLOBAL` gehört dazu.
 
-- [ ] **Schritt 4: `Decl.Global` anlegen**
+- [x] **Schritt 4: `Decl.Global` anlegen**
 
 In `Decl.java`, bei den anderen Records:
 
@@ -196,7 +196,7 @@ In `Decl.java`, bei den anderen Records:
     record Global(String name, Expr value, Span span) implements Decl {}
 ```
 
-- [ ] **Schritt 5: Den Parser erweitern**
+- [x] **Schritt 5: Den Parser erweitern**
 
 Im `switch` über den Tokentyp (Zeile 77-82) ergänzen:
 
@@ -233,7 +233,7 @@ Heißt das Zuweisungszeichen anders (etwa `EQ` oder `ASSIGN`), ist der Code
 darauf zu setzen. Gibt es `expectName` nicht, nimm, was `parseWorker` für den
 Namen benutzt.
 
-- [ ] **Schritt 6: Die Fehlerbehebung ergänzen**
+- [x] **Schritt 6: Die Fehlerbehebung ergänzen**
 
 In Zeile 961 steht die Liste der Wörter, an denen der Parser nach einem
 Fehler wieder aufsetzt:
@@ -245,12 +245,12 @@ Fehler wieder aufsetzt:
 `GLOBAL` gehört dazu — sonst verschluckt ein Fehler in einer
 `global`-Zeile die nächste Deklaration. Genau das prüft der letzte Test.
 
-- [ ] **Schritt 7: Den Test laufen lassen**
+- [x] **Schritt 7: Den Test laufen lassen**
 
 Aufruf: `./gradlew test --tests "*GlobalParseTest*"`
 Erwartet: 5 Tests grün.
 
-- [ ] **Schritt 8: Committen**
+- [x] **Schritt 8: Committen**
 
 ```bash
 git add -A
@@ -287,12 +287,12 @@ Für jede entscheiden — **nicht durchwinken**:
 | `BlockIndex` | Kein Block, keine Anweisungen — nichts zu indizieren |
 | `WorkerRuntime` | Kein Worker — übergehen |
 
-- [ ] **Schritt 1: Übersetzen und die Stellen sammeln**
+- [x] **Schritt 1: Übersetzen und die Stellen sammeln**
 
 Aufruf: `./gradlew build -x test`
 Erwartet: Fehler wegen unvollständiger `switch`-Ausdrücke. Liste notieren.
 
-- [ ] **Schritt 2: Den Test für den Sprung schreiben**
+- [x] **Schritt 2: Den Test für den Sprung schreiben**
 
 Ans Ende von `src/test/java/dev/devpanda/factorynetwork/lang/DefinitionsTest.java`:
 
@@ -317,7 +317,7 @@ Ans Ende von `src/test/java/dev/devpanda/factorynetwork/lang/DefinitionsTest.jav
 
 Die Importe der Datei prüfen und ergänzen, was fehlt.
 
-- [ ] **Schritt 3: Jede Stelle abarbeiten**
+- [x] **Schritt 3: Jede Stelle abarbeiten**
 
 `Definitions` braucht nichts, wenn es über `declaration.name()` läuft — dann
 greift es von selbst, weil `Decl.Global` einen Namen hat. **Prüfen, nicht
@@ -328,12 +328,12 @@ Für `ProgramSize`: Ein globaler Wert kostet so viel wie eine Zeile Code. Die
 vorhandene Rechnung ansehen und einen Wert wählen, der zu ihr passt — nicht
 null, weil sonst tausend globale Werte gratis wären.
 
-- [ ] **Schritt 4: Alles bauen und testen**
+- [x] **Schritt 4: Alles bauen und testen**
 
 Aufruf: `./gradlew test`
 Erwartet: alles grün, auch der neue Definitions-Test.
 
-- [ ] **Schritt 5: Committen**
+- [x] **Schritt 5: Committen**
 
 ```bash
 git add -A
@@ -365,7 +365,7 @@ Typprüfer**. Geprüft wird deshalb nur, was ohne einen entscheidbar ist:
 
 Alles andere fällt zur Laufzeit auf, wie überall sonst in der Sprache.
 
-- [ ] **Schritt 1: Den fehlschlagenden Test schreiben**
+- [x] **Schritt 1: Den fehlschlagenden Test schreiben**
 
 ```java
 package dev.devpanda.factorynetwork.lang;
@@ -457,11 +457,11 @@ class GlobalCheckTest {
 }
 ```
 
-- [ ] **Schritt 2: Den Test laufen lassen, er muss fehlschlagen**
+- [x] **Schritt 2: Den Test laufen lassen, er muss fehlschlagen**
 
 Aufruf: `./gradlew test --tests "*GlobalCheckTest*"`
 
-- [ ] **Schritt 3: `GlobalCheck` schreiben**
+- [x] **Schritt 3: `GlobalCheck` schreiben**
 
 Der Aufbau folgt `NetworkCheck`: eine Klasse mit privatem Konstruktor, eine
 statische `run`, Meldungen als `Diagnostic.Severity.WARNING` bei Vertippern
@@ -489,18 +489,18 @@ grep -rn "Stmt.Block\|walk\|visit\|forEach" src/main/java/dev/devpanda/factoryne
 Gibt es keinen, ist ein kleiner rekursiver Durchgang in `GlobalCheck` die
 richtige Stelle — nicht ein allgemeiner Besucher für die ganze Sprache.
 
-- [ ] **Schritt 4: In `Project.parse` einhängen**
+- [x] **Schritt 4: In `Project.parse` einhängen**
 
 Dort, wo `NetworkCheck.run(...)` aufgerufen wird, die Meldungen von
 `GlobalCheck.run(program)` dazunehmen. **Auch in der Fassung ohne
 `NetworkView`** — diese Prüfung braucht kein Netz.
 
-- [ ] **Schritt 5: Testen**
+- [x] **Schritt 5: Testen**
 
 Aufruf: `./gradlew test`
 Erwartet: alles grün.
 
-- [ ] **Schritt 6: Committen**
+- [x] **Schritt 6: Committen**
 
 ```bash
 git add -A
@@ -524,7 +524,7 @@ git commit -m "Ein globaler Wert braucht einen festen Anfangswert"
 der lebt nur für einen Aufruf. Sie liegen beim Host, wie Bestände und
 Redstone auch.
 
-- [ ] **Schritt 1: Den fehlschlagenden Test schreiben**
+- [x] **Schritt 1: Den fehlschlagenden Test schreiben**
 
 Ein Test mit einer Welt aus Papier. **Vorher ansehen**, wie die vorhandenen
 Laufzeittests ihren Host bauen:
@@ -547,7 +547,7 @@ Der neue Test baut darauf auf und prüft:
 
 Punkt 4 ist der, an dem sich die Umsetzung beweisen muss.
 
-- [ ] **Schritt 2: Den Host erweitern**
+- [x] **Schritt 2: Den Host erweitern**
 
 In `Interpreter.Host`:
 
@@ -568,7 +568,7 @@ In `Interpreter.Host`:
         }
 ```
 
-- [ ] **Schritt 3: `find` und `assign` erweitern**
+- [x] **Schritt 3: `find` und `assign` erweitern**
 
 In `find(String name)`: Findet der Stapel nichts, den Host fragen — **danach**
 und nicht davor, damit ein `let` gleichen Namens vorgeht.
@@ -578,11 +578,11 @@ nichts, aber der Host kennt den Namen, dann `host.setGlobal(...)` statt der
 Fehlermeldung. Kennt ihn auch der Host nicht, bleibt die Meldung
 „Unbekannter Name" — sie ist richtig.
 
-- [ ] **Schritt 4: Testen**
+- [x] **Schritt 4: Testen**
 
 Aufruf: `./gradlew test`
 
-- [ ] **Schritt 5: Committen**
+- [x] **Schritt 5: Committen**
 
 ```bash
 git add -A

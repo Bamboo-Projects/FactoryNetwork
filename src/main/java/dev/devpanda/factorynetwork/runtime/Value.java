@@ -118,4 +118,29 @@ public sealed interface Value {
             case Nothing ignored -> "nichts";
         };
     }
+
+    /**
+     * Ein Literal aus dem Syntaxbaum als Wert.
+     *
+     * <p>Gebraucht für den Anfangswert eines globalen Werts: Er steht als
+     * Literal im Programm und muss beim Übernehmen zu einem Wert werden, den
+     * die Laufzeit hält. Ein Ausdruck, der keiner ist, liefert
+     * {@link Nothing} — dass es ein Literal sein muss, prüft
+     * {@code GlobalCheck} und meldet es dort, wo man es sieht.
+     */
+    static Value ofLiteral(dev.devpanda.factorynetwork.lang.ast.Expr expr) {
+        return switch (expr) {
+            case dev.devpanda.factorynetwork.lang.ast.Expr.IntLit number ->
+                    new Int(number.value());
+            case dev.devpanda.factorynetwork.lang.ast.Expr.FloatLit number ->
+                    new Decimal(number.value());
+            case dev.devpanda.factorynetwork.lang.ast.Expr.StringLit text ->
+                    new Text(text.value());
+            case dev.devpanda.factorynetwork.lang.ast.Expr.BoolLit flag ->
+                    new Bool(flag.value());
+            case dev.devpanda.factorynetwork.lang.ast.Expr.DurationLit duration ->
+                    new Duration(duration.ticks());
+            case null, default -> Nothing.get();
+        };
+    }
 }

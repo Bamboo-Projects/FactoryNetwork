@@ -55,6 +55,7 @@ public class ControllerBlockEntity extends BlockEntity {
     private static final String KEY_FLOWS = "Flows";
     private static final String KEY_FLUIDS = "Fluids";
     private static final String KEY_POWER = "Power";
+    private static final String KEY_GLOBALS = "Globals";
     private static final int REBUILD_INTERVAL = 100;
 
     /**
@@ -85,6 +86,18 @@ public class ControllerBlockEntity extends BlockEntity {
     private dev.devpanda.factorynetwork.lang.Project project =
             dev.devpanda.factorynetwork.lang.Project.of("");
     private Program program = new Program(List.of());
+
+    /**
+     * Die globalen Werte des Programms.
+     *
+     * <p>Sie gehören zum Netz wie der Stromvorrat und der Speicherinhalt, und
+     * sie überleben aus demselben Grund den Serverneustart: Ein Wert, der
+     * sagt, in welchem Modus die Fabrik läuft, wäre nach einem Neustart
+     * sinnlos, wenn er wieder auf dem Anfangswert stünde.
+     */
+    private final Map<String, dev.devpanda.factorynetwork.runtime.Value> globals =
+            new java.util.LinkedHashMap<>();
+
     private List<Diagnostic> diagnostics = new ArrayList<>();
     private FactoryGraph graph = FactoryGraph.empty();
     private final NetworkStorage storage = new NetworkStorage();
@@ -265,6 +278,7 @@ public class ControllerBlockEntity extends BlockEntity {
         // sich als STALE. Ein Weg, ein Verhalten — statt zwei, die
         // auseinanderlaufen.
         CompoundTag carried = flows == null ? null : FlowCodec.write(flows);
+        adoptGlobals(result.program());
         this.program = result.program();
         runtime.reset();
         this.flows = null;
@@ -272,6 +286,50 @@ public class ControllerBlockEntity extends BlockEntity {
             this.pendingFlows = carried;
         }
         return true;
+    }
+
+    // ---- Globale Werte -----------------------------------------------------
+
+    /** Was das Programm an globalen Werten hält. */
+    public Map<String, dev.devpanda.factorynetwork.runtime.Value> globals() {
+        return globals;
+    }
+
+    /**
+     * Stellt die globalen Werte auf ein neues Programm um.
+     *
+     * <p>Die Regel in vier Fällen:
+     *
+     * <ul>
+     *   <li><b>Gleicher Name, gleiche Art:</b> Der Wert bleibt. Wer den Modus
+     *       auf „nacht" gestellt hat und dann einen Worker ändert, will nicht
+     *       wieder bei „tag" anfangen.
+     *   <li><b>Neuer Name:</b> der Anfangswert aus der Deklaration.
+     *   <li><b>Name weg:</b> vergessen.
+     *   <li><b>Gleicher Name, andere Art:</b> der neue Anfangswert. Ein Text,
+     *       der plötzlich als Zahl gelesen wird, ist kein erhaltenswerter
+     *       Zustand.
+     * </ul>
+     *
+     * <p>Dieselbe Haltung wie bei den Worker-Zuständen: Was noch passt,
+     * bleibt; was nicht mehr passt, fängt neu an.
+     */
+    private void adoptGlobals(Program incoming) {
+        Map<String, dev.devpanda.factorynetwork.runtime.Value> next =
+                new java.util.LinkedHashMap<>();
+        for (dev.devpanda.factorynetwork.lang.ast.Decl declaration : incoming.declarations()) {
+            if (!(declaration instanceof dev.devpanda.factorynetwork.lang.ast.Decl.Global global)) {
+                continue;
+            }
+            dev.devpanda.factorynetwork.runtime.Value fresh =
+                    dev.devpanda.factorynetwork.runtime.Value.ofLiteral(global.value());
+            dev.devpanda.factorynetwork.runtime.Value kept = globals.get(global.name());
+            boolean sameKind = kept != null && kept.getClass() == fresh.getClass();
+            next.put(global.name(), sameKind ? kept : fresh);
+        }
+        globals.clear();
+        globals.putAll(next);
+        setChanged();
     }
 
     // ---- Strom -------------------------------------------------------------
@@ -1247,7 +1305,7 @@ public class ControllerBlockEntity extends BlockEntity {
     public FlowEngine flowEngine() {
         if (flows == null && level != null) {
             flows = new FlowEngine(program, new Interpreter(program,
-                    new WorldHost(level, graph, storage, fluidStorage)));
+                    new WorldHost(level, graph, storage, fluidStorage, globals, this::setChanged)));
         }
         if (flows != null && pendingFlows != null) {
             CompoundTag saved = pendingFlows;
@@ -1303,7 +1361,7 @@ public class ControllerBlockEntity extends BlockEntity {
         if (level == null) {
             throw new ScriptError("Keine Welt.");
         }
-        WorldHost host = new WorldHost(level, graph, storage, fluidStorage);
+        WorldHost host = new WorldHost(level, graph, storage, fluidStorage, globals, this::setChanged);
         Interpreter interpreter = new Interpreter(program, host);
         FlowEngine engine = flowEngine();
         if (engine != null) {
@@ -1350,6 +1408,12 @@ public class ControllerBlockEntity extends BlockEntity {
         storage.load(tag.getCompound(KEY_STORAGE), registries);
         fluidStorage.load(tag.getCompound(KEY_FLUIDS), registries);
         power.load(tag.getCompound(KEY_POWER), registries);
+        globals.clear();
+        CompoundTag globalsTag = tag.getCompound(KEY_GLOBALS);
+        for (String name : globalsTag.getAllKeys()) {
+            globals.put(name, dev.devpanda.factorynetwork.runtime.flow.ValueCodec
+                    .read(globalsTag.getCompound(name)));
+        }
         // Die Abläufe warten auf den ersten Tick: Sie brauchen einen
         // Interpreter, der braucht eine Welt, und die gibt es hier noch nicht
         // verlässlich.
@@ -1379,6 +1443,10 @@ public class ControllerBlockEntity extends BlockEntity {
         CompoundTag powerTag = new CompoundTag();
         power.save(powerTag, registries);
         tag.put(KEY_POWER, powerTag);
+        CompoundTag globalsTag = new CompoundTag();
+        globals.forEach((name, value) -> globalsTag.put(name,
+                dev.devpanda.factorynetwork.runtime.flow.ValueCodec.write(value)));
+        tag.put(KEY_GLOBALS, globalsTag);
         if (flows != null) {
             tag.put(KEY_FLOWS, FlowCodec.write(flows));
         } else if (pendingFlows != null) {

@@ -5629,6 +5629,97 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    // ---- Globale Werte -----------------------------------------------------
+
+    /**
+     * Ein globaler Wert überlebt den Serverneustart.
+     *
+     * <p>Geprüft wird über denselben Weg, den auch ein Neustart geht:
+     * aufschreiben, neue BlockEntity, zurücklesen. Ein Wert, der sagt, in
+     * welchem Modus die Fabrik läuft, wäre nach einem Neustart sinnlos, wenn
+     * er wieder auf dem Anfangswert stünde.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void aGlobalSurvivesARestart(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+
+        helper.assertTrue(entity.deploy("""
+                global modus = "tag"
+
+                fn nachtschicht() {
+                    modus = "nacht"
+                }"""), "das Programm wurde nicht übernommen");
+
+        helper.assertValueEqual(entity.globals().get("modus").describe(), "tag",
+                "der Anfangswert");
+
+        entity.callFunction("nachtschicht", List.of());
+        helper.assertValueEqual(entity.globals().get("modus").describe(), "nacht",
+                "nach dem Aufruf");
+
+        // Der Weg durch einen Serverneustart.
+        var registries = helper.getLevel().registryAccess();
+        var saved = entity.saveWithFullMetadata(registries);
+        ControllerBlockEntity reborn = new ControllerBlockEntity(
+                controller, entity.getBlockState());
+        reborn.loadWithComponents(saved, registries);
+
+        helper.assertTrue(reborn.globals().containsKey("modus"),
+                "der Wert ist beim Speichern verlorengegangen");
+        helper.assertValueEqual(reborn.globals().get("modus").describe(), "nacht",
+                "nach dem Neustart gilt, was zuletzt gesetzt wurde");
+        helper.succeed();
+    }
+
+    /**
+     * Beim Programmwechsel bleibt, was noch passt.
+     *
+     * <p>Dieselbe Haltung wie bei den Worker-Zuständen: Wer den Modus auf
+     * „nacht" gestellt hat und dann einen Worker ändert, will nicht wieder
+     * bei „tag" anfangen.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void aGlobalSurvivesADeploy(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+
+        entity.deploy("""
+                global modus = "tag"
+
+                fn nachtschicht() {
+                    modus = "nacht"
+                }""");
+        entity.callFunction("nachtschicht", List.of());
+
+        // Dasselbe Programm mit einer zusätzlichen Zeile.
+        entity.deploy("""
+                global modus = "tag"
+                global zaehler = 0
+
+                fn nachtschicht() {
+                    modus = "nacht"
+                }""");
+
+        helper.assertValueEqual(entity.globals().get("modus").describe(), "nacht",
+                "gleicher Name, gleiche Art — der Wert bleibt");
+        helper.assertValueEqual(entity.globals().get("zaehler").describe(), "0",
+                "der neue Name bekommt seinen Anfangswert");
+
+        // Und derselbe Name mit anderer Art fängt neu an.
+        entity.deploy("""
+                global modus = 0
+
+                fn nachtschicht() {
+                }""");
+
+        helper.assertValueEqual(entity.globals().get("modus").describe(), "0",
+                "ein Text, der zur Zahl wird, ist kein erhaltenswerter Zustand");
+        helper.assertFalse(entity.globals().containsKey("zaehler"),
+                "was nicht mehr erklärt wird, wird vergessen");
+        helper.succeed();
+    }
+
     // ---- Geräteerkennung ---------------------------------------------------
 
     @GameTest(template = EMPTY, timeoutTicks = 200)
