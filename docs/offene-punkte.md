@@ -88,7 +88,7 @@ Stand: 2026-08-25 (nach der Nacht)
 | # | Was | Status | Wo | Größe |
 |---|---|---|---|---|
 | 6.1 | **Angebunden**, Inhalt begonnen. Weitere Seiten fehlen: Sprache im Detail, Multiblocks, Abläufe | F | `assets/factorynetwork/guide/` | groß |
-| 6.2 | **Keine Lizenzdatei.** `gradle.properties` sagt bereits `mod_license=MIT` — es fehlt nur die Datei, und MIT verträgt sich mit GuideMEs LGPL | F | `gradle.properties` | klein |
+| 6.2 | ~~Lizenzdatei~~ — **angelegt**, MIT wie in `gradle.properties` seit jeher deklariert. Verträgt sich mit GuideMEs LGPL | | `LICENSE` | |
 | 6.3 | Ob die Hilfe im Spiel ins Buch wandert | E | `entscheidungen.md:2411` | klein |
 | 6.4 | ~~WorkerRuntime-Javadoc~~ — **berichtigt** | | | |
 | 6.5 | ~~README-Frage~~ — **entfernt**, sie war beantwortet | | | |
