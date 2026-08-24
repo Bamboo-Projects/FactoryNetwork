@@ -525,6 +525,13 @@ public final class WorldHost implements Interpreter.Host {
         if (value instanceof Value.ItemValue item) {
             return List.of(item.item());
         }
+        // Eine schon aufgelöste Auswahl — so kommt jeder Eintrag aus
+        // storage.items() und crusher_1.items() daher. Ohne diese Zeile
+        // scheiterte jede Schleife über einen Bestand an „aus dem Speicher
+        // muss stehen, was bewegt wird", obwohl es dastand.
+        if (value instanceof Value.Selection selection) {
+            return selection.items();
+        }
         String written = switch (value) {
             case Value.Request request -> request.selector();
             case Value.Text text -> text.value();
@@ -577,10 +584,21 @@ public final class WorldHost implements Interpreter.Host {
     }
 
     /** Ohne vorangestellte Menge ist alles gemeint, was verfügbar ist. */
+    /**
+     * Wie viel bewegt werden soll — ohne Angabe alles.
+     *
+     * <p><b>Auch für schon aufgelöste Auswahlen.</b> Stand hier nur
+     * {@link Value.Request}, lieferte {@code move 8 sorte} in einer Schleife
+     * {@code Long.MAX_VALUE} — also alles. Das sah aus wie ein Programm, das
+     * tut, was dasteht, und räumte das Lager leer.
+     */
     private static long amountOf(Value value) {
-        if (value instanceof Value.Request request && request.hasAmount()) {
-            return request.amount();
-        }
-        return Long.MAX_VALUE;
+        return switch (value) {
+            case Value.Request request when request.hasAmount() -> request.amount();
+            case Value.Selection selection when selection.amount() > 0 -> selection.amount();
+            case Value.FluidSelection selection when selection.amount() > 0 ->
+                    selection.amount();
+            default -> Long.MAX_VALUE;
+        };
     }
 }

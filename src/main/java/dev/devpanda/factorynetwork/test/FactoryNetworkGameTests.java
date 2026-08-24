@@ -5690,6 +5690,36 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
+     * Eine Menge vor einer Schleifenvariablen gilt wirklich.
+     *
+     * <p><b>Der gefährlichste Fehler, den diese Sprache hatte.</b>
+     * {@code move 8 sorte} bewegte alles statt acht, weil die Menge nur auf
+     * geschriebene Auswahlausdrücke gesetzt wurde — eine Schleifenvariable
+     * ist ein aufgelöster Wert. Das Programm sah dabei aus, als täte es, was
+     * dasteht, und räumte das Lager leer.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void anAmountBeforeALoopVariableIsKept(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        entity.storage().insert(Items.IRON_INGOT, 64);
+
+        helper.assertTrue(entity.deploy("""
+                fn verteilen() {
+                    for sorte in storage.items() {
+                        move 8 sorte from storage to depot
+                    }
+                }"""), "das Programm wurde nicht übernommen");
+
+        entity.callFunction("verteilen", List.of());
+
+        helper.assertValueEqual(entity.storage().count(Items.IRON_INGOT), 56L,
+                "acht sollten weg sein, nicht alle");
+        helper.succeed();
+    }
+
+    /**
      * Eine Anzeige nennt einen globalen Wert beim Namen.
      *
      * <p>Geprüft wird der Text selbst und nicht, ob überhaupt etwas dasteht —

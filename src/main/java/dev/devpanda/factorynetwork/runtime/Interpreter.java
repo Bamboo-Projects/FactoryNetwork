@@ -640,12 +640,38 @@ public final class Interpreter {
         };
     }
 
-    /** Setzt die vorangestellte Menge auf eine Auswahl. */
+    /**
+     * Setzt die vorangestellte Menge auf eine Auswahl.
+     *
+     * <p><b>Für jede Art von Auswahl, nicht nur für geschriebene.</b> Hier
+     * stand einmal nur {@link Value.Request} — der Fall, in dem
+     * {@code 8 item:iron_ore} wörtlich im Programm steht. Eine
+     * Schleifenvariable ist aber ein aufgelöster Wert, und für die fiel die
+     * Menge stillschweigend weg:
+     *
+     * <pre>
+     * for sorte in storage.items() {
+     *     move 8 sorte to ofen     // bewegte alles, nicht acht
+     * }
+     * </pre>
+     *
+     * <p>Das ist der schlimmste Fehler, den diese Sprache haben kann — er
+     * räumt ein Lager leer und sieht dabei aus wie ein Programm, das tut, was
+     * dasteht.
+     */
     private static Value withAmount(Value selection, Long count) {
-        if (selection instanceof Value.Request request && count != null) {
-            return new Value.Request(request.selector(), count);
+        if (count == null) {
+            return selection;
         }
-        return selection;
+        return switch (selection) {
+            case Value.Request request -> new Value.Request(request.selector(), count);
+            case Value.ItemValue item -> new Value.Selection(List.of(item.item()), count);
+            case Value.Selection choice -> new Value.Selection(choice.items(), count);
+            case Value.FluidValue fluid -> new Value.FluidSelection(List.of(fluid.fluid()), count);
+            case Value.FluidSelection choice ->
+                    new Value.FluidSelection(choice.fluids(), count);
+            default -> selection;
+        };
     }
 
     private static String written(Expr.Selector selector) {
