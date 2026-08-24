@@ -190,12 +190,19 @@ public record Project(Map<String, String> files) {
         java.util.Set<String> local = new java.util.HashSet<>();
         parsed.values().forEach(
                 result -> local.addAll(NetworkCheck.localNames(result.program())));
+        // Dasselbe für die globalen Werte: Sie gelten über alle Dateien, und
+        // eine Zuweisung in der einen meint die Erklärung in der anderen.
+        Map<String, String> globals = new HashMap<>();
+        parsed.values().forEach(
+                result -> globals.putAll(GlobalCheck.declaredKinds(result.program())));
 
         for (String name : names()) {
             Parser.ParseResult result = parsed.get(name);
             result.diagnostics().forEach(
                     diagnostic -> diagnostics.add(diagnostic.withFile(name)));
             NetworkCheck.run(result.program(), view, local).forEach(
+                    diagnostic -> diagnostics.add(diagnostic.withFile(name)));
+            GlobalCheck.run(result.program(), globals).forEach(
                     diagnostic -> diagnostics.add(diagnostic.withFile(name)));
             for (Decl declaration : result.program().declarations()) {
                 String taken = duplicateOf(declaration, owners, name);
