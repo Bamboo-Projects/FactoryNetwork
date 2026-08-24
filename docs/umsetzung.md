@@ -423,13 +423,37 @@ Und weiter in derselben Nacht:
   und `editor/vscode/check.js` prüft die portierte Logik gegen dieselben
   Fälle wie der Java-Test.
 
+**Die Geräte hinter den Connectoren** (seit dem 24.08.). Der Server probt beim
+Öffnen alle sechs Seiten der Maschine und den seitenlosen Zugang; daraus weiß
+der Editor, was dort steht und was es an welcher Seite annimmt. Das speist
+drei Stellen:
+
+- Die **Vorschlagsliste** nennt hinter jedem Connector Maschine und
+  Fähigkeiten: `crusher_1 — Crusher · Gegenstände, Strom`.
+- Das **Zeigen** nennt dazu die Fächer je Seitengruppe und, auf Anfrage, ihren
+  Inhalt. Gefragt wird erst, wenn der Zeiger eine Viertelsekunde stillhält.
+- Ein **Worker**, der Gegenstände an eine Seite schickt, die keine annimmt,
+  bekommt eine Warnung mit der Seite, an der es ginge. Nach Ressourcenart
+  unterschieden: Ein Flüssigkeits-Worker am Tank ist in Ordnung.
+
+Dazu Vorschläge nach dem Punkt: `crusher_1.` bietet `online`, `name`,
+`redstone()` und `count()` an — die vier, die der Interpreter wirklich kennt.
+Auch in VS Code, über dieselbe erzeugte Tabelle.
+
+Nebenbei begradigt: Die Erklärung eines Namens beim Zeigen — Stelle im Netz,
+Erklärungsort, Fundstellen — gab es nur im eigenen Fenster, nicht im Reiter.
+Sie steht jetzt in `EditorTooltip` und gilt für beide.
+
+Der Entwurf dazu ist `docs/geraeteerkennung.md`, der Umsetzungsplan
+`docs/plan-geraeteerkennung.md`.
+
 **Fehlt, in dieser Reihenfolge:**
 
-1. **Der Sprachdienst über die Signaturen hinaus.** Die Tabelle deckt
-   Blockangaben und Anweisungen ab, nicht die Ausdrücke: `crusher_1.` sollte
-   anbieten, was *dieses* Gerät kann, und beim Zeigen seinen Zustand nennen.
-   Dafür müsste der Client wissen, welche Fähigkeiten hinter einem Connector
-   stecken — heute weiß er nur den Namen und die Stelle.
+1. **Die Gerätemitglieder aus `sprache.md` §6.** `insert()`, `items()`,
+   `output()`, `send()` und `busy` sind beschrieben und nicht gebaut; nach
+   dem Punkt stehen deshalb für jedes Gerät dieselben vier Einträge. Bei
+   `busy` ist vorher zu klären, woher der Wert kommen soll — es gibt keine
+   Capability, über die eine fremde Maschine „ich arbeite gerade" meldet.
 2. **„Bearbeitung anfragen".** Die Sperre hält, aber wer vor einer fremden
    Datei steht, kann nur warten. Ein Knopf, der beim Halter anklopft, wäre
    das fehlende Stück.
@@ -461,6 +485,12 @@ verwischt — die Spieloberfläche hat dafür eine eigene Einstellung.
 - **Die VS-Code-Erweiterung kennt noch Einzeldateien.** Unter `editor/vscode`
   liegen Grammatik, Klammern und elf Bausteine; die README beschreibt eine
   einzelne `.mf`-Datei statt eines Ordners.
+- **Die Annahme-Probe.** Ob ein Fach einen bestimmten Gegenstand nimmt, lässt
+  sich nur durch einen simulierten Einfügeversuch beantworten, und der braucht
+  Kandidaten. Vorgesehen sind die `item:`-Literale des Entwurfs; gebaut ist es
+  nicht. Das Zeigen sagt heute, welche Fächer es gibt und was drin liegt, aber
+  nicht, ob `iron_ore` in Fach 0 passt. Siehe `docs/geraeteerkennung.md`,
+  Abschnitt 3.
 
 Nicht vorgesehen: Piece Table, Rope, virtualisiertes Zeichnen, inkrementelles
 Lexen, Mehrfachcursor, Minimap, Faltung. Das längste Beispielprogramm hat
