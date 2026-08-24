@@ -2318,11 +2318,21 @@ Erlaubnis, der Clientteil den Schalter.
 
 ### Offen
 
-- **Wo der Spieler schaltet:** in der Konfigurationsdatei oder im Spiel. Eine
-  Datei ist für eine Sicherheitsfrage der ehrlichere Ort — man kommt nicht
-  aus Versehen dorthin. Im Spiel ist sie auffindbar, aber ein Schalter im
-  Terminal, der eine Netzwerkverbindung öffnet, steht dort neben Dingen, die
-  nur Gegenstände bewegen.
+### Geschaltet wird an beiden Stellen
+
+Konfigurationsdatei **und** ein Schalter im Spiel, beide vollwertig. Auf
+Wunsch des Projektinhabers.
+
+Der Einwand dagegen war die Auffindbarkeit in der falschen Richtung: Ein
+Schalter im Terminal steht neben Angaben, die nur Gegenstände bewegen, und
+öffnet doch einen Port auf dem Rechner des Spielers. Er ist damit der einzige
+Griff im ganzen Spiel, dessen Wirkung außerhalb des Spiels liegt.
+
+Verworfen wurde er trotzdem nicht, denn im Einzelspieler ist er belanglos, und
+eine Einstellung, die niemand findet, ist keine. **Die Bedenken entscheiden
+stattdessen seine Form:** Er sagt beim Einschalten, was er tut — dass ein
+Port aufgeht und wer daran horcht —, und er steht nicht zwischen den
+Angaben eines Programms, sondern dort, wo es um das Terminal selbst geht.
 - **Was die Schnittstelle überhaupt darf.** Nur lesen (Namen, Fehler) wäre die
   kleine Fassung; auch schreiben (den Entwurf setzen) macht sie erst zum
   Ersatz für den Ordner. Zwei verschiedene Erlaubnisse oder eine?
