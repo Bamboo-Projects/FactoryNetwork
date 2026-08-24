@@ -2275,3 +2275,56 @@ Dichte Kabel bekommen damit eine zweite Bedeutung: mehr Kanäle und mehr Strom.
   schaltet sich das Netz ab, während es Maschinen versorgt.
 - Ob die Abgabe in `draw` mitzählt. Sie ist Durchleitung und keine
   Bereitschaft, spricht also dagegen.
+
+---
+
+## Die Schnittstelle für externe Editoren wird zweimal freigegeben (2026-08-24)
+
+Ein Sprachserver für VS Code — Fehlerprüfung und Gerätenamen außerhalb des
+Spiels — braucht eine Verbindung zum laufenden Spiel. Diese Verbindung ist
+**nicht** von selbst da.
+
+### Warum es die Frage überhaupt gibt
+
+Der Ordner neben der Welt (`ProgramFolder`) liegt **serverseitig**. Im
+Einzelspieler ist das der eigene Rechner, und wer will, öffnet ihn in VS Code.
+Auf einem Server liegt er dort, wo der Spieler keinen Dateizugriff hat — dort
+gibt es heute **keinen** Weg, in einem richtigen Editor zu arbeiten.
+
+Die Schnittstelle reicht genau das nach. Damit gibt sie aber einen Zugang
+preis, den der Serverbetreiber nie erlaubt hat, und der nicht nur liest:
+Programmtext, der über sie hereinkommt, läuft anschließend in seiner Welt.
+
+### Zwei Stufen, beide nötig
+
+**Der Server sagt, ob es überhaupt erlaubt ist.** Verbietet er es, gibt es
+keine Schnittstelle — unabhängig davon, was der Spieler eingestellt hat. Die
+Auskunft kommt beim Betreten, nicht auf Nachfrage: Ein Client, der es erst
+beim Verbindungsversuch erführe, hätte den Zugang in der Zwischenzeit schon
+offen.
+
+**Der Spieler schaltet sie im Client ein.** Auch wenn der Server sie erlaubt,
+ist sie zunächst aus. Eine Verbindung, die man nicht aufgemacht hat, soll
+nicht offenstehen, bloß weil ein Server nichts dagegen hatte.
+
+Die Reihenfolge ist nicht beliebig: Der Server hat das letzte Wort über sein
+Spiel, der Spieler über seinen Rechner. Keiner kann den anderen überstimmen.
+
+### Was daraus folgt
+
+Die Mod bekommt eine Konfiguration, die es bisher nicht gibt — getrennt nach
+Server und Client, wie NeoForge es vorsieht. Der Serverteil trägt die
+Erlaubnis, der Clientteil den Schalter.
+
+### Offen
+
+- **Wo der Spieler schaltet:** in der Konfigurationsdatei oder im Spiel. Eine
+  Datei ist für eine Sicherheitsfrage der ehrlichere Ort — man kommt nicht
+  aus Versehen dorthin. Im Spiel ist sie auffindbar, aber ein Schalter im
+  Terminal, der eine Netzwerkverbindung öffnet, steht dort neben Dingen, die
+  nur Gegenstände bewegen.
+- **Was die Schnittstelle überhaupt darf.** Nur lesen (Namen, Fehler) wäre die
+  kleine Fassung; auch schreiben (den Entwurf setzen) macht sie erst zum
+  Ersatz für den Ordner. Zwei verschiedene Erlaubnisse oder eine?
+- **Wie sie technisch aussieht.** Ein Port im Client, an dem VS Code
+  anklopft — mit der Frage, wer sonst noch anklopfen kann.
