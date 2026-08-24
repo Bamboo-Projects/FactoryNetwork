@@ -3,10 +3,14 @@ package dev.devpanda.factorynetwork.test;
 import dev.devpanda.factorynetwork.FactoryNetwork;
 import dev.devpanda.factorynetwork.block.entity.ConnectorBlockEntity;
 import dev.devpanda.factorynetwork.block.entity.ControllerBlockEntity;
+import dev.devpanda.factorynetwork.block.entity.DeviceScan;
 import dev.devpanda.factorynetwork.block.entity.DisplayBlockEntity;
 import dev.devpanda.factorynetwork.block.CableBlock;
 import dev.devpanda.factorynetwork.block.CableColour;
+import dev.devpanda.factorynetwork.block.ConnectorBlock;
 import dev.devpanda.factorynetwork.item.ConnectorNaming;
+import dev.devpanda.factorynetwork.lang.DeviceProfile;
+import dev.devpanda.factorynetwork.lang.Side;
 import dev.devpanda.factorynetwork.registry.FnBlocks;
 import dev.devpanda.factorynetwork.runtime.ScriptError;
 import dev.devpanda.factorynetwork.runtime.Value;
@@ -5603,6 +5607,50 @@ public final class FactoryNetworkGameTests {
 
         helper.assertTrue(entity.draft().files().containsKey("neu.mf"),
                 "die neue Datei fehlt: " + entity.draft().names());
+        helper.succeed();
+    }
+
+    // ---- Geräteerkennung ---------------------------------------------------
+
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void aChestIsRecognisedFromEverySide(GameTestHelper helper) {
+        BlockPos connector = new BlockPos(2, 1, 1);
+        BlockPos chest = connector.east();
+        helper.setBlock(chest, Blocks.CHEST);
+        helper.setBlock(connector, FnBlocks.CONNECTOR.get().defaultBlockState()
+                .setValue(ConnectorBlock.FACING, Direction.EAST));
+
+        ConnectorBlockEntity entity =
+                (ConnectorBlockEntity) helper.getBlockEntity(connector);
+        DeviceProfile profile = DeviceScan.of(entity);
+
+        helper.assertTrue(profile.reachable(), "die Kiste wurde nicht erkannt");
+        helper.assertTrue(profile.descriptionId().contains("chest"),
+                "falscher Übersetzungsschlüssel: " + profile.descriptionId());
+        helper.assertTrue(profile.connectedSide() == Side.EAST,
+                "die angeschlossene Seite stimmt nicht: " + profile.connectedSide());
+        helper.assertTrue(profile.hasItems(Side.EAST),
+                "eine Kiste nimmt an jeder Seite Gegenstände an");
+        helper.assertTrue(profile.accessAt(Side.EAST).slots() == 27,
+                "eine Kiste hat 27 Fächer, gezählt wurden "
+                        + profile.accessAt(Side.EAST).slots());
+        helper.assertFalse(profile.hasFluids(Side.EAST),
+                "eine Kiste hat keinen Tank");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void aConnectorWithoutNeighbourFindsNothing(GameTestHelper helper) {
+        BlockPos connector = new BlockPos(2, 1, 1);
+        helper.setBlock(connector, FnBlocks.CONNECTOR.get().defaultBlockState()
+                .setValue(ConnectorBlock.FACING, Direction.EAST));
+
+        ConnectorBlockEntity entity =
+                (ConnectorBlockEntity) helper.getBlockEntity(connector);
+        DeviceProfile profile = DeviceScan.of(entity);
+
+        helper.assertFalse(profile.reachable(),
+                "über Luft ist nichts bekannt");
         helper.succeed();
     }
 
