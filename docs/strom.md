@@ -64,6 +64,20 @@ Rückstrich schreiben — dieselbe Regel, die für `for` schon gilt
 (`sprache.md`, Abschnitt 4). Das ist die kleinere Zumutung, verglichen mit
 einem Doppelpunkt, hinter dem nichts steht.
 
+### Die Seitenwarnung gilt mit
+
+`Selector.Kind` bekommt einen fünften Wert, und damit wird das `switch` in
+`NetworkCheck.checkSide` unvollständig — der Übersetzer sagt es, und der neue
+Zweig schreibt sich von selbst: **Ein Strom-Worker verlangt einen
+Energiespeicher an der angeschlossenen Seite.** Das Profil aus der
+Geräteerkennung weiß das bereits (`hasEnergy`), die Warnung fällt ohne
+Zusatzarbeit ab.
+
+Wer seinen Connector an eine Seite hängt, an der die Maschine keinen Strom
+annimmt, erfährt es also beim Tippen — und nicht daran, dass die Maschine
+stumm stehen bleibt. Dieselben Stellen betrifft es in `Value.Kind` und
+`WorldHost`; auch dort meldet der Übersetzer, was fehlt.
+
 ### Beide Richtungen aus einer Form
 
 `from network to crusher_1` versorgt. `from akku_1 to network` zieht aus einem
@@ -140,9 +154,29 @@ Strom. Wer eine Halle mit vielen Maschinen versorgt, zieht eine dicke Leitung
 dorthin — nicht weil eine Regel es verlangt, sondern weil sonst nicht genug
 ankommt.
 
-**Was das kostet:** Die Pfadrechnung läuft heute beim Neubau des Netzes, nicht
-je Tick. Die Stromgrenzen gehören dorthin — sie ändern sich nur, wenn jemand
-Kabel legt oder ein Programm übernimmt.
+### Angemeldet wird beim Übernehmen, geflossen wird je Tick
+
+Hier steckt ein Widerspruch, der sonst der Implementierung überlassen bliebe:
+Die Pfadrechnung läuft beim **Neubau** des Netzes, die Verteilung nach
+`priority` entscheidet sich **je Tick**. Beides gegeneinander zu rechnen geht
+nicht — entweder die Kapazität ist fest vergeben, dann ist `priority`
+bedeutungslos, weil nie mehr angemeldet wird als passt; oder sie wird je Tick
+geprüft, dann läuft die Pfadrechnung sechzigmal in der Sekunde.
+
+**Entschieden: angemeldet wird statisch, geflossen wird frei.**
+
+Beim Übernehmen eines Programms meldet jeder Strom-Worker seine `rate` auf
+seinem Pfad an. Passt die Summe nicht durch ein Kabel, ist das eine **Meldung
+beim Übernehmen** — dieselbe Stelle, an der auch ein fehlender Kanal auffällt,
+und dieselbe Erfahrung: Man sieht es beim Bauen, nicht beim Suchen.
+
+Was dann tatsächlich fließt, ist je Tick frei: Ruft ein Worker seine Rate
+nicht ab, weil seine Maschine voll ist, darf ein anderer über dasselbe Kabel
+mehr ziehen — bis zu seiner eigenen angemeldeten Rate. Es entsteht kein
+Anspruch auf ungenutzte Kapazität, und niemand rechnet Pfade nach.
+
+Die Pfadrechnung bleibt damit dort, wo sie heute ist: beim Neubau und beim
+Übernehmen.
 
 ---
 
