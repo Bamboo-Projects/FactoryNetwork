@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.block.entity;
 
+import dev.devpanda.factorynetwork.lang.BuiltinEvents;
 import dev.devpanda.factorynetwork.lang.Diagnostic;
 import dev.devpanda.factorynetwork.lang.ast.Decl;
 import dev.devpanda.factorynetwork.lang.ast.Expr;
@@ -507,14 +508,14 @@ public class ControllerBlockEntity extends BlockEntity {
         Set<String> now = graph.connectorNames();
         for (String name : now) {
             if (!before.contains(name)) {
-                fireEvent("device_online", List.of(new Value.Device(name)));
+                fireEvent(BuiltinEvents.DEVICE_ONLINE, List.of(new Value.Device(name)));
             }
         }
         for (String name : before) {
             if (!now.contains(name)) {
                 // Kein Value.Device: Das Gerät gibt es nicht mehr, und ein
                 // Verweis darauf ließe sich nicht mehr auflösen.
-                fireEvent("device_offline", List.of(new Value.Text(name)));
+                fireEvent(BuiltinEvents.DEVICE_OFFLINE, List.of(new Value.Text(name)));
             }
         }
     }
@@ -1226,7 +1227,7 @@ public class ControllerBlockEntity extends BlockEntity {
         if (level == null || level.getGameTime() % 10 != 0) {
             return;
         }
-        if (program.handlers().stream().noneMatch(h -> h.name().equals("device_changed"))) {
+        if (program.handlers().stream().noneMatch(h -> h.name().equals(BuiltinEvents.DEVICE_CHANGED))) {
             lastContents.clear();
             return;
         }
@@ -1243,7 +1244,7 @@ public class ControllerBlockEntity extends BlockEntity {
                 // geändert, es war nur nichts bekannt.
                 continue;
             }
-            fireEvent("device_changed", List.of(new Value.Device(entry.getKey())));
+            fireEvent(BuiltinEvents.DEVICE_CHANGED, List.of(new Value.Device(entry.getKey())));
         }
     }
 
@@ -1278,7 +1279,7 @@ public class ControllerBlockEntity extends BlockEntity {
         if (level == null || level.getGameTime() % 10 != 0) {
             return;
         }
-        if (program.handlers().stream().noneMatch(h -> h.name().equals("redstone_changed"))) {
+        if (program.handlers().stream().noneMatch(h -> h.name().equals(BuiltinEvents.REDSTONE_CHANGED))) {
             return;
         }
         for (Map.Entry<String, BlockPos> entry : graph.connectors().entrySet()) {
@@ -1292,7 +1293,7 @@ public class ControllerBlockEntity extends BlockEntity {
             }
             // Über die Ablaufmaschine, damit ein on redstone_changed selbst
             // warten darf — auf eine Maschine, auf einen Zähler, auf Zeit.
-            fireEvent("redstone_changed",
+            fireEvent(BuiltinEvents.REDSTONE_CHANGED,
                     List.of(new Value.Device(entry.getKey()), new Value.Int(strength)));
         }
     }

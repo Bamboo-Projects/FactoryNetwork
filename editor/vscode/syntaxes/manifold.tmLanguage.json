@@ -5,6 +5,7 @@
   "patterns": [
     { "include": "#comment" },
     { "include": "#string" },
+    { "include": "#escaped-name" },
     { "include": "#selector" },
     { "include": "#duration" },
     { "include": "#number" },
@@ -14,6 +15,7 @@
     { "include": "#display" },
     { "include": "#source" },
     { "include": "#constant" },
+    { "include": "#name-pattern" },
     { "include": "#call" },
     { "include": "#operator" }
   ],
@@ -23,17 +25,20 @@
       "match": "//.*$"
     },
     "string": {
+      "comment": "Ohne Escapes: Der Lexer beendet den Text am ersten Anführungszeichen, also darf hier keines mittendrin durchgehen",
       "name": "string.quoted.double.manifold",
       "begin": "\"",
-      "end": "\"",
-      "patterns": [
-        { "name": "constant.character.escape.manifold", "match": "\\\\." }
-      ]
+      "end": "\""
+    },
+    "escaped-name": {
+      "comment": "`for` — ein Connector, der wie ein Schlüsselwort heißt. Steht vor allen Wortregeln, sonst färbt sich der Inhalt als Schlüsselwort",
+      "name": "variable.other.escaped.manifold",
+      "match": "`[^`]*`"
     },
     "selector": {
-      "comment": "item:iron_ingot, fluid:water, tag:c/ingots, chemical:oxygen — und mit Stern als Muster",
+      "comment": "item:iron_ingot, tag:c/ingots, ofen_* als Muster — und power allein, weil Strom keine Sorte hat. Der Namensraum steht vor einem Schrägstrich, nicht vor einem zweiten Doppelpunkt",
       "name": "support.constant.selector.manifold",
-      "match": "\\b(item|fluid|chemical|tag):[A-Za-z0-9_./*:-]+"
+      "match": "\\b(item|fluid|chemical|tag):[A-Za-z0-9_./*-]+|\\bpower\\b"
     },
     "duration": {
       "comment": "Die Einheit gehört zur Zahl: 5t, 30s, 2min, 1h",
@@ -47,7 +52,7 @@
     "declaration": {
       "comment": "Was auf oberster Ebene stehen darf",
       "name": "keyword.declaration.manifold",
-      "match": "\\b(fn|worker|group|multiblock|event|display|on|import)\\b"
+      "match": "\\b(fn|worker|group|multiblock|event|display|on|import|global)\\b"
     },
     "control": {
       "name": "keyword.control.manifold",
@@ -71,6 +76,11 @@
     "constant": {
       "name": "constant.language.manifold",
       "match": "\\b(true|false|it)\\b"
+    },
+    "name-pattern": {
+      "comment": "ofen_* in members — der Stern gehört zum Namen und ist hier kein Malzeichen",
+      "name": "variable.other.pattern.manifold",
+      "match": "\\b[A-Za-z_][A-Za-z0-9_]*\\*"
     },
     "call": {
       "name": "entity.name.function.manifold",

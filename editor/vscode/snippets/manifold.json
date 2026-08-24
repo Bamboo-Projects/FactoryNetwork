@@ -35,11 +35,20 @@
   "Ereignisblock": {
     "prefix": "on",
     "body": [
-      "on ${1|redstone_changed,inventory_changed,device_online,device_offline|}(${2:gerät}, ${3:stärke}) {",
+      "on ${1|device_online,device_offline,device_changed|}(${2:gerät}) {",
       "    $0",
       "}"
     ],
-    "description": "Läuft, wenn in der Welt etwas geschieht"
+    "description": "Läuft, wenn ein Gerät auftaucht, verschwindet oder sich ändert"
+  },
+  "Ereignisblock für Redstone": {
+    "prefix": "onredstone",
+    "body": [
+      "on redstone_changed(${1:gerät}, ${2:stärke}) {",
+      "    $0",
+      "}"
+    ],
+    "description": "Läuft, wenn sich ein Redstonesignal ändert — das einzige Ereignis mit zwei Werten"
   },
   "Eigenes Ereignis": {
     "prefix": "event",
@@ -87,7 +96,10 @@
     "prefix": "multiblock",
     "body": [
       "multiblock ${1:name} {",
-      "    devices ${2:eingang}, ${3:ausgang}",
+      "    devices {",
+      "        ${2:eingang}",
+      "        ${3:ausgang}",
+      "    }",
       "    $0",
       "}"
     ],
