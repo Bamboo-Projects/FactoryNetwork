@@ -843,16 +843,26 @@ wäre.
 
 Vorgesehen sind:
 
-```
-where    aussortieren
-sort     ordnen
-first    das erste Element
-count    zählen
-sum      aufaddieren
-```
+| | | Stand |
+|---|---|---|
+| `count` | zählen | **gebaut** |
+| `first` | das erste Element, oder nichts | **gebaut** |
+| `sum` | alle Zahlen aufaddieren | **gebaut** |
+| `where` | aussortieren | fehlt |
+| `sort` | ordnen | fehlt |
 
 Mehr nicht — kein `map`, kein `groupBy`. In einer Fabrik gibt es dafür bisher
 keinen Fall, und hinzufügen lässt sich später leicht, wegnehmen nicht.
+
+> **Warum `where` und `sort` fehlen:** Sie werten ihren Ausdruck **je
+> Element** aus. Alle anderen Argumente werden ausgerechnet, bevor der Aufruf
+> beginnt — hier muss stattdessen der Ausdruck selbst durchgereicht und für
+> jeden Eintrag neu ausgewertet werden, mit `it` im Geltungsbereich. Das ist
+> ein Eingriff in den Aufrufpfad und kein Nachtrag. Wer sie heute schreibt,
+> bekommt eine Meldung, die genau das sagt.
+
+Woher eine Liste kommt: `storage.items()` für den Netzspeicher,
+`crusher_1.items()` für ein Gerät.
 
 **Verschachtelt braucht `it` einen Namen.** Zwei ineinandergeschachtelte
 `where` können sich nicht dasselbe `it` teilen:

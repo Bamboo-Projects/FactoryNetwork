@@ -390,6 +390,42 @@ abgelehnt — das kann sie nicht. Gemeldet wird jetzt, was ohne Typsystem
 entscheidbar ist: Literal gegen Literal. Der Rest fällt zur Laufzeit auf, wie
 überall sonst.
 
+### In der Nacht auf den 25.08.
+
+**Ein Gerät kann mehr.** `insert(auswahl)` legt aus dem Netzspeicher etwas
+hinein und meldet, wie viel ankam; `items()` sagt, was drinliegt. Beide gehen
+denselben Weg wie `move` — dieselbe Auswahl, dieselbe Mengenrechnung, dieselbe
+Unterscheidung zwischen Gegenständen und Flüssigkeiten.
+
+**Listen können etwas.** `count()`, `first()` und `sum()`, dazu
+`storage.items()` als Quelle. `where` und `sort` fehlen und melden sich als
+fehlend — sie brauchen einen Eingriff in den Aufrufpfad, siehe `sprache.md`
+§12.
+
+**Die Annahme-Probe.** Beim Zeigen auf ein Gerät steht jetzt, welches Fach
+aufnimmt, welches abgibt, und welcher der Gegenstände aus dem Entwurf
+hineinpasst. Die Kandidaten kommen über eine Textsuche aus dem Programm
+(`ItemCandidates`) — wer `item:iron_ore` tippt, fragt sich über Eisenerz
+etwas.
+
+**Strom in der Sprache.** `filter power` ist eine vierte Ressourcenart, ohne
+Doppelpunkt, weil Strom keine Sorten hat. Die Seitenwarnung gilt mit: Ein
+Strom-Worker verlangt einen Energiespeicher an der angeschlossenen Seite.
+**Verteilt wird noch nichts** — ein Strom-Worker sagt das und steht auf
+`HALTED`, statt still nichts zu tun.
+
+**Bearbeitung anfragen.** F4 klopft beim Halter einer gesperrten Datei an, in
+beiden Fenstern. Kein Übernehmen — die Sperre wegzunehmen wäre genau das,
+wogegen sie gebaut wurde.
+
+**Das Handbuch im Spiel.** GuideME ist eingebunden (`compat/guide`), die
+ersten Seiten liegen unter `assets/factorynetwork/guide/`. Markdown als
+Quelle, gerendert wird im Spiel.
+
+**Und beide Editoren kennen jetzt das ganze Projekt.** Die Vervollständigung
+im Spiel las bisher nur die offene Datei — dabei teilen alle Dateien einen
+Namensraum. Die VS-Code-Erweiterung liest die Nachbardateien ebenfalls.
+
 ### Der Editor, eigener Strang
 
 Der Code-Editor läuft neben dieser Liste her; er hängt an nichts davon ab.
