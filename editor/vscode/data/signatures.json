@@ -449,6 +449,31 @@
     "event",
     "display",
     "fn",
-    "on"
+    "on",
+    "global"
+  ],
+  "topLevel": [
+    {
+      "keyword": "global",
+      "shape": "global name \u003d expr",
+      "help": "Ein Wert, den alle Dateien sehen.",
+      "slots": [
+        {
+          "kind": "NEW_NAME",
+          "label": "name",
+          "optional": false
+        },
+        {
+          "kind": "LITERAL",
+          "label": "\u003d",
+          "optional": false
+        },
+        {
+          "kind": "EXPR",
+          "label": "expr",
+          "optional": false
+        }
+      ]
+    }
   ]
 }

@@ -197,6 +197,20 @@ public final class Signatures {
     public static final List<String> STRATEGIES = List.of(
             "round_robin", "first_available", "least_filled", "random", "priority");
 
+    /**
+     * Was auf oberster Ebene eine Form hat.
+     *
+     * <p>Bisher gab es hier nichts: Alle Deklarationen öffnen einen Block, und
+     * die Frage „was kommt hinter dem Wort" stellte sich erst darin.
+     * {@code global} ist die erste, die in einer Zeile fertig wird — und
+     * damit die erste, für die eine Formzeile auf oberster Ebene einen Sinn
+     * ergibt.
+     */
+    public static final List<Signature> TOP_LEVEL = List.of(
+            of("global", "Ein Wert, den alle Dateien sehen.",
+                    Slot.named(Kind.NEW_NAME, "name"), Slot.literal("="),
+                    Slot.of(Kind.EXPR)));
+
     /** Ein Ding, das an einem Gerät steht. */
     public record Member(String name, String shape, String help) {
     }
@@ -232,7 +246,9 @@ public final class Signatures {
      */
     public static List<Signature> forBlock(String declaration) {
         if (declaration == null) {
-            return List.of();
+            // Kein Block heißt oberste Ebene, und dort steht seit global
+            // etwas mit Form.
+            return TOP_LEVEL;
         }
         return switch (declaration) {
             case "display" -> DISPLAY;

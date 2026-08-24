@@ -55,7 +55,7 @@ public final class Completions {
     }
 
     private static final List<String> DECLARATIONS = List.of(
-            "worker", "group", "multiblock", "event", "display", "fn", "on");
+            "worker", "group", "multiblock", "event", "display", "fn", "on", "global");
 
     private static final List<String> BUILTINS = List.of(
             "storage", "crafting", "world", "network", "workers", "multiblocks");
@@ -232,9 +232,19 @@ public final class Completions {
     /** Vorschläge, die von der Stelle im Aufbau abhängen. */
     private static List<Entry> structural(List<Entry> entries, List<String> lines,
                                           int lineIndex, String prefix) {
-        // Auf oberster Ebene stehen Deklarationen.
+        // Auf oberster Ebene stehen Deklarationen. Die meisten öffnen einen
+        // Block und haben keine Form; global ist die Ausnahme und bringt
+        // seine mit.
         if (indentOf(lines.get(lineIndex)) == 0) {
-            addAll(entries, DECLARATIONS, prefix, Entry.Kind.KEYWORD);
+            for (String word : DECLARATIONS) {
+                if (!matches(word, prefix)) {
+                    continue;
+                }
+                Signatures.Signature shape = Signatures.find(null, word);
+                String detail = shape == null ? ""
+                        : shape.shape().substring(word.length()).trim();
+                entries.add(new Entry(word, word, Entry.Kind.KEYWORD, detail));
+            }
             return entries;
         }
         // In einem Block: seine Angaben oder seine Anweisungen, jede mit

@@ -121,5 +121,9 @@ contains('Ohne Punkt keine Mitglieder', ['fn test() {', '    '], 'online', false
 contains('Eine Zahl mit Punkt ist kein Zugriff',
     ['fn test() {', '    let x = 3.'], 'online', false);
 
+// Auf oberster Ebene: die Deklarationen, und global mit seiner Form.
+contains('Oberste Ebene bietet global', ['gl'], 'global', true);
+contains('In einem Block kein global', ['worker haul {', '    '], 'global', false);
+
 console.log(failures === 0 ? '\nalle Faelle stimmen' : '\n' + failures + ' Abweichungen');
 process.exit(failures === 0 ? 0 : 1);

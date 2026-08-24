@@ -101,10 +101,31 @@ class SignaturesExportTest {
 
         JsonArray declarations = new JsonArray();
         for (String word : new String[] {"worker", "group", "multiblock", "event", "display",
-                                         "fn", "on"}) {
+                                         "fn", "on", "global"}) {
             declarations.add(word);
         }
         root.add("declarations", declarations);
+
+        // Die Formen der obersten Ebene — heute nur global, aber die
+        // Erweiterung kann sie ohne diesen Block nicht anbieten.
+        JsonArray topLevel = new JsonArray();
+        for (Signatures.Signature signature : Signatures.TOP_LEVEL) {
+            JsonObject entry = new JsonObject();
+            entry.addProperty("keyword", signature.keyword());
+            entry.addProperty("shape", signature.shape());
+            entry.addProperty("help", signature.help());
+            JsonArray slots = new JsonArray();
+            for (Signatures.Slot slot : signature.slots()) {
+                JsonObject one = new JsonObject();
+                one.addProperty("kind", slot.kind().name());
+                one.addProperty("label", slot.label());
+                one.addProperty("optional", slot.optional());
+                slots.add(one);
+            }
+            entry.add("slots", slots);
+            topLevel.add(entry);
+        }
+        root.add("topLevel", topLevel);
 
         return new GsonBuilder().setPrettyPrinting().create().toJson(root) + "\n";
     }

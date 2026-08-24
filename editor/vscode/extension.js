@@ -16,7 +16,7 @@ const vscode = require('vscode');
 const fs = require('fs');
 const path = require('path');
 
-let table = { blocks: {}, strategies: [], declarations: [], members: [] };
+let table = { blocks: {}, strategies: [], declarations: [], members: [], topLevel: [] };
 
 /** Zu welchen Blockarten Anweisungen gehören statt fester Angaben. */
 const CODE_BLOCKS = ['fn', 'on', 'multiblock'];
@@ -209,8 +209,15 @@ function activate(context) {
             const block = enclosingBlock(document, position.line);
             const indented = /^\s/.test(document.lineAt(position.line).text);
             if (!indented) {
-                return table.declarations.map(word =>
-                    item(word, vscode.CompletionItemKind.Keyword));
+                // Die meisten Deklarationen öffnen einen Block und haben
+                // keine Form; global ist die Ausnahme und bringt seine mit.
+                return table.declarations.map(word => {
+                    const shape = (table.topLevel || []).find(s => s.keyword === word);
+                    return shape
+                        ? item(word, vscode.CompletionItemKind.Keyword,
+                            shape.shape.substring(word.length).trim(), shape.help)
+                        : item(word, vscode.CompletionItemKind.Keyword);
+                });
             }
             const entries = shapesFor(block).map(signature => item(
                 signature.keyword,
