@@ -91,6 +91,18 @@ public final class Completions {
         // Fall bis zur Ausdrucksstelle durch und bot „storage, crafting,
         // world …" an — hinter einem Punkt ergibt keines davon einen Satz.
         if (afterDot(upToCursor)) {
+            // Hinter „…items()." steht eine Liste und kein Gerät. Der Editor
+            // kennt keine Typen, aber diesen einen Fall erkennt er am Text —
+            // und er ist der einzige, der heute vorkommt.
+            if (afterListCall(upToCursor)) {
+                for (Signatures.Member candidate : Signatures.LIST_MEMBERS) {
+                    if (matches(candidate.name(), prefix)) {
+                        entries.add(new Entry(candidate.name(), candidate.name(),
+                                Entry.Kind.BUILTIN, candidate.shape()));
+                    }
+                }
+                return limit(entries);
+            }
             if (memberPrefix(upToCursor) == null) {
                 return List.of();
             }
@@ -383,6 +395,21 @@ public final class Completions {
         }
         String name = currentWord(before.substring(0, before.length() - 1));
         return !name.isEmpty() && !Character.isDigit(name.charAt(0));
+    }
+
+    /**
+     * Steht vor dem Punkt ein Aufruf, der eine Liste liefert?
+     *
+     * <p>Heute gibt es genau einen: {@code items()}. Das über den Text zu
+     * erkennen ist grob, aber ehrlicher als die Alternative — der Editor
+     * kennt keine Typen, und einen halben Typprüfer für die
+     * Vervollständigung zu bauen wäre die falsche Antwort auf eine Frage,
+     * die sich mit sechs Zeichen beantworten lässt.
+     */
+    private static boolean afterListCall(String upToCursor) {
+        String prefix = currentWord(upToCursor);
+        String before = upToCursor.substring(0, upToCursor.length() - prefix.length());
+        return before.endsWith("items().");
     }
 
     /**

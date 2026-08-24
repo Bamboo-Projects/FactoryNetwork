@@ -245,6 +245,18 @@ public final class Signatures {
                     "Was gerade im Gerät liegt. Leere Fächer fallen weg."));
 
     /**
+     * Was an einer Liste steht.
+     *
+     * <p>Drei von fünf, die {@code sprache.md} §12 nennt. {@code where} und
+     * {@code sort} fehlen, weil sie ihren Ausdruck je Element auswerten
+     * müssen — sie hier anzubieten hieße, auf einen Laufzeitfehler zu zeigen.
+     */
+    public static final List<Member> LIST_MEMBERS = List.of(
+            new Member("count", "count() int", "Wie viele Einträge."),
+            new Member("first", "first() any", "Der erste Eintrag, oder nichts."),
+            new Member("sum", "sum() int", "Alle Zahlen aufaddiert."));
+
+    /**
      * Die Formen, die in dieser Blockart gelten.
      *
      * @param declaration das Deklarationswort, etwa {@code display}

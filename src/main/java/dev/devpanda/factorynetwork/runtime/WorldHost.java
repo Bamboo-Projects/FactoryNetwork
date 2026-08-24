@@ -112,6 +112,22 @@ public final class WorldHost implements Interpreter.Host {
     }
 
     /**
+     * {@code storage.items()} — was im Netz lagert.
+     *
+     * <p>Die Reihenfolge ist die des Speichers und keine sortierte: Wer
+     * ordnen will, braucht {@code sort}, und das gibt es noch nicht. Eine
+     * stillschweigende Sortierung hier wäre eine Zusage, die niemand
+     * eingefordert hat und die später im Weg stünde.
+     */
+    @Override
+    public List<Value> storedItems() {
+        List<Value> found = new ArrayList<>();
+        storage.contents().forEach((item, count) ->
+                found.add(new Value.Selection(List.of(item), count)));
+        return found;
+    }
+
+    /**
      * {@code crusher_1.items()}
      *
      * <p>Was im Gerät liegt, als Liste von Mengen. Leere Fächer fallen weg —

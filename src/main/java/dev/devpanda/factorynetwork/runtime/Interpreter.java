@@ -151,6 +151,16 @@ public final class Interpreter {
         default List<Value> itemsIn(String device) {
             return List.of();
         }
+
+        /**
+         * Was im Netzspeicher liegt.
+         *
+         * <p>Dieselbe Form wie {@link #itemsIn}, andere Quelle: Ein Bestand
+         * ist ein Bestand, ob er in einer Zelle liegt oder in einer Kiste.
+         */
+        default List<Value> storedItems() {
+            return List.of();
+        }
     }
 
     public Interpreter(Program program, Host host) {
@@ -773,6 +783,12 @@ public final class Interpreter {
                 return new Value.Int(host.count(arguments.isEmpty()
                         ? Value.Nothing.get() : arguments.get(0)));
             }
+            if ("items".equals(name)) {
+                return new Value.ValueList(host.storedItems());
+            }
+        }
+        if (target instanceof Value.ValueList list) {
+            return listMember(list, name);
         }
         if (target instanceof Value.Device device) {
             return switch (name) {
@@ -801,6 +817,42 @@ public final class Interpreter {
             };
         }
         throw new ScriptError("Auf " + target.describe() + " gibt es kein " + name + ".");
+    }
+
+    /**
+     * Was sich mit einer Liste anfangen lässt.
+     *
+     * <p>Drei von fünf, die {@code sprache.md} §12 nennt. {@code where} und
+     * {@code sort} fehlen, weil sie ihren Ausdruck <b>je Element</b> auswerten
+     * müssen — und Argumente werden hier vorher ausgewertet. Das ist ein
+     * eigener Eingriff und kein Nachtrag.
+     *
+     * <p>Eine leere Liste ist nirgends ein Fehler: {@code first()} gibt
+     * nichts, {@code sum()} gibt null. Wer über einen leeren Bestand rechnet,
+     * hat einen leeren Bestand — keinen Programmfehler.
+     */
+    private Value listMember(Value.ValueList list, String name) {
+        return switch (name) {
+            case "count" -> new Value.Int(list.entries().size());
+            case "first" -> list.entries().isEmpty()
+                    ? Value.Nothing.get() : list.entries().get(0);
+            case "sum" -> {
+                double total = 0;
+                boolean whole = true;
+                for (Value entry : list.entries()) {
+                    total += number(entry, "sum");
+                    whole = whole && entry instanceof Value.Int;
+                }
+                yield numberValue(total, whole);
+            }
+            case "where", "sort" -> throw new ScriptError(
+                    name + " gibt es noch nicht.",
+                    "Es muss seinen Ausdruck für jeden Eintrag einzeln auswerten, und das "
+                            + "kann diese Fassung nicht. Bekannt sind count, first und sum.");
+            default -> throw new ScriptError(
+                    "Eine Liste kann kein " + name + ".",
+                    "Bekannt sind count, first und sum.");
+        };
     }
 
     private Value callFree(String name, List<Value> arguments) {

@@ -312,6 +312,14 @@ class CompletionsTest {
     }
 
     @Test
+    @DisplayName("Hinter items() steht eine Liste, kein Gerät")
+    void afterItemsCallTheListMembersAreOffered() {
+        withNetwork("crusher_1", () -> assertEquals(
+                List.of("count", "first", "sum"),
+                at("fn test() {", "    log(crusher_1.items().")));
+    }
+
+    @Test
     @DisplayName("Eine Zahl mit Punkt ist kein Zugriff")
     void aNumberWithADotIsNotAMemberAccess() {
         withNetwork("crusher_1", () -> assertFalse(
