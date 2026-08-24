@@ -123,4 +123,97 @@ class NetworkCheckTest {
         assertFalse(result.hasErrors(),
                 "eine Wand, die man erst morgen baut, darf man heute schreiben");
     }
+
+    // ---- Die Seite, an der der Connector hängt -----------------------------
+
+    /** Ein Netz, in dem ein Gerät ein bekanntes Profil hat. */
+    private static NetworkView netWith(String name, DeviceProfile profile) {
+        return new NetworkView() {
+            @Override
+            public List<String> connectors() {
+                return List.of(name);
+            }
+
+            @Override
+            public List<String> displays() {
+                return List.of();
+            }
+
+            @Override
+            public DeviceProfile profile(String wanted) {
+                return name.equals(wanted) ? profile : DeviceProfile.unreachable();
+            }
+        };
+    }
+
+    @Test
+    @DisplayName("Ein Ziel ohne Gegenstandsfach an der angeschlossenen Seite wird gemeldet")
+    void aTargetWithoutItemsOnTheConnectedSideIsReported() {
+        DeviceProfile tank = new DeviceProfile("block.mekanism.tank", "mekanism",
+                Side.UP, Map.of(
+                        Side.UP, new DeviceProfile.Access(0, 1, false),
+                        Side.NORTH, new DeviceProfile.Access(2, 0, false)));
+
+        List<Diagnostic> problems = check("""
+                worker mahlen {
+                    from storage
+                    to tank_1
+                    filter item:iron_ore
+                }""", netWith("tank_1", tank));
+
+        assertTrue(problems.stream().anyMatch(problem ->
+                        problem.message().contains("tank_1") && !problem.isError()),
+                () -> "die Meldung fehlt: " + problems);
+        assertTrue(problems.stream().anyMatch(problem ->
+                        problem.hint() != null && problem.hint().contains("Norden")),
+                () -> "der Hinweis auf die brauchbare Seite fehlt: " + problems);
+    }
+
+    @Test
+    @DisplayName("Ein Flüssigkeits-Worker am Tank wird nicht gemeldet")
+    void aFluidWorkerAtATankIsFine() {
+        DeviceProfile tank = new DeviceProfile("block.mekanism.tank", "mekanism",
+                Side.UP, Map.of(Side.UP, new DeviceProfile.Access(0, 1, false)));
+
+        List<Diagnostic> problems = check("""
+                worker pumpen {
+                    from storage
+                    to tank_1
+                    filter fluid:water
+                }""", netWith("tank_1", tank));
+
+        assertTrue(problems.isEmpty(),
+                () -> "hier ist alles in Ordnung, gemeldet wurde: " + problems);
+    }
+
+    @Test
+    @DisplayName("Über ein Gerät ohne Profil wird nichts behauptet")
+    void nothingIsClaimedAboutAnUnknownDevice() {
+        List<Diagnostic> problems = check("""
+                worker mahlen {
+                    from storage
+                    to crusher_1
+                    filter item:iron_ore
+                }""", netWith("crusher_1", DeviceProfile.unreachable()));
+
+        assertTrue(problems.isEmpty(),
+                () -> "ein nicht geladenes Gerät ist kein Fehler: " + problems);
+    }
+
+    @Test
+    @DisplayName("Ein Worker ohne Filter löst keine Seitenwarnung aus")
+    void aWorkerWithoutFilterIsNotChecked() {
+        DeviceProfile tank = new DeviceProfile("block.mekanism.tank", "mekanism",
+                Side.UP, Map.of(Side.UP, new DeviceProfile.Access(0, 1, false)));
+
+        List<Diagnostic> problems = check("""
+                worker schieben {
+                    from storage
+                    to tank_1
+                }""", netWith("tank_1", tank));
+
+        assertTrue(problems.stream().noneMatch(problem ->
+                        problem.message().contains("Seite")),
+                () -> "ohne Filter darf die Art nicht geraten werden: " + problems);
+    }
 }

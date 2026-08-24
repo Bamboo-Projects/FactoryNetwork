@@ -197,6 +197,34 @@ public final class Signatures {
     public static final List<String> STRATEGIES = List.of(
             "round_robin", "first_available", "least_filled", "random", "priority");
 
+    /** Ein Ding, das an einem Gerät steht. */
+    public record Member(String name, String shape, String help) {
+    }
+
+    /**
+     * Was an einem Gerät steht — {@code crusher_1.online}.
+     *
+     * <p><b>Vier und nicht mehr.</b> Der Interpreter kennt {@code online},
+     * {@code name}, {@code redstone()} und {@code count()};
+     * {@code sprache.md} §6 beschreibt darüber hinaus {@code insert()},
+     * {@code items()} und {@code busy}, die es noch nicht gibt. Was hier
+     * steht, muss laufen — ein Vorschlag, der in einen Laufzeitfehler führt,
+     * ist schlimmer als gar keiner.
+     *
+     * <p>Für jedes Gerät dieselben: Gerätespezifisches gibt es nach dem Punkt
+     * erst, wenn die Mitglieder aus §6 gebaut sind. Dann ist es ein Eintrag
+     * hier und nichts weiter.
+     */
+    public static final List<Member> MEMBERS = List.of(
+            new Member("online", "bool",
+                    "Ob das Gerät gerade im Netz hängt."),
+            new Member("name", "string",
+                    "Der Name, den die Beschriftungspistole vergeben hat."),
+            new Member("redstone", "int, oder redstone(int)",
+                    "Die Redstone-Stärke, 0 bis 15. Mit Zahl gesetzt, ohne gelesen."),
+            new Member("count", "count(selection) int",
+                    "Wie viel von einer Art im Netzspeicher liegt."));
+
     /**
      * Die Formen, die in dieser Blockart gelten.
      *

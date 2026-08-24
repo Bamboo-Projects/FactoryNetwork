@@ -5,6 +5,12 @@
 // VS Code —, und zwei Fassungen derselben Regel laufen auseinander, wenn
 // niemand nachmisst.
 //
+// Eine Abweichung ist Absicht und keine Lücke: Nach einem Punkt bietet der
+// Editor im Spiel die Gerätemitglieder nur hinter einem Namen an, den das
+// Netz kennt. VS Code kennt kein laufendes Spiel und bietet sie hinter
+// jedem Namen an — dort ist ein zu großzügiger Vorschlag besser als gar
+// keiner. Der Fall „unbekannter Name" steht deshalb nur im Java-Test.
+//
 // Ohne Abhängigkeiten: node check.js. Das Modul "vscode" gibt es außerhalb
 // von VS Code nicht, also steht hier eine Attrappe.
 const Module = require('module');
@@ -16,7 +22,7 @@ Module._load = function (request) {
         const stub = function (label, kind) { return { label, kind }; };
         return {
             CompletionItem: function (label, kind) { this.label = label; this.kind = kind; },
-            CompletionItemKind: { Keyword: 0, Variable: 1, EnumMember: 2 },
+            CompletionItemKind: { Keyword: 0, Variable: 1, EnumMember: 2, Property: 3 },
             MarkdownString: function () {
                 this.appendCodeblock = () => this;
                 this.appendText = () => this;
@@ -103,6 +109,17 @@ contains('Funktion bietet storage', ['fn test() {', '    '], 'storage', true);
 check('Volle Anweisung bietet nichts',
     complete(['worker haul {', '    rate 64 per 5s ']), []);
 contains('Oberste Ebene bietet display', ['di'], 'display', true);
+
+// Nach dem Punkt: die vier Dinge, die ein Gerät hat. Dieselbe Liste wie in
+// Signatures.MEMBERS — hier kommt sie aus signatures.json, und der
+// Java-Test hält beide gleich.
+check('Nach dem Punkt die Gerätemitglieder',
+    complete(['fn test() {', '    if crusher_1.']),
+    ['online', 'name', 'redstone', 'count']);
+contains('Nach dem Punkt kein from', ['fn test() {', '    if crusher_1.'], 'from', false);
+contains('Ohne Punkt keine Mitglieder', ['fn test() {', '    '], 'online', false);
+contains('Eine Zahl mit Punkt ist kein Zugriff',
+    ['fn test() {', '    let x = 3.'], 'online', false);
 
 console.log(failures === 0 ? '\nalle Faelle stimmen' : '\n' + failures + ' Abweichungen');
 process.exit(failures === 0 ? 0 : 1);

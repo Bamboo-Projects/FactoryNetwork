@@ -1,6 +1,8 @@
 package dev.devpanda.factorynetwork.client.screen;
 
 import dev.devpanda.factorynetwork.client.ClientNetworkState;
+import dev.devpanda.factorynetwork.lang.DeviceProfile;
+import dev.devpanda.factorynetwork.lang.Side;
 import dev.devpanda.factorynetwork.lang.Signatures;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
@@ -76,6 +78,29 @@ public final class Completions {
         // „display halle " — der Name steht, als Nächstes kommt die Klammer.
         if (afterDeclarationName(upToCursor, prefix)) {
             return List.of();
+        }
+
+        // Nach einem Punkt hinter einem Gerätenamen: was ein Gerät hat.
+        //
+        // Vor der Prüfung auf die Stelle in der Angabe, weil „to crusher_1."
+        // sonst als angefangener Zielname gelesen würde — und dann stünden
+        // dort wieder die Connectoren.
+        //
+        // <b>Und der Punkt beendet die Liste in jedem Fall.</b> Steht davor
+        // kein bekannter Connector, gibt es eben nichts: Vorher fiel dieser
+        // Fall bis zur Ausdrucksstelle durch und bot „storage, crafting,
+        // world …" an — hinter einem Punkt ergibt keines davon einen Satz.
+        if (afterDot(upToCursor)) {
+            if (memberPrefix(upToCursor) == null) {
+                return List.of();
+            }
+            for (Signatures.Member candidate : Signatures.MEMBERS) {
+                if (matches(candidate.name(), prefix)) {
+                    entries.add(new Entry(candidate.name(), candidate.name(),
+                            Entry.Kind.BUILTIN, candidate.shape()));
+                }
+            }
+            return limit(entries);
         }
 
         // Nach display: die Wände, die in der Welt stehen.
@@ -294,11 +319,85 @@ public final class Completions {
         return false;
     }
 
+    /**
+     * Steht der Cursor hinter einem Punkt, der auf einen Namen folgt?
+     *
+     * <p>{@code 3.5} zählt nicht: Davor steht eine Zahl und kein Name, und
+     * ein Punktzugriff ist es damit nicht.
+     */
+    private static boolean afterDot(String upToCursor) {
+        String prefix = currentWord(upToCursor);
+        String before = upToCursor.substring(0, upToCursor.length() - prefix.length());
+        if (!before.endsWith(".")) {
+            return false;
+        }
+        String name = currentWord(before.substring(0, before.length() - 1));
+        return !name.isEmpty() && !Character.isDigit(name.charAt(0));
+    }
+
+    /**
+     * Der Gerätename vor dem Punkt, oder {@code null}.
+     *
+     * <p>Nur, wenn davor wirklich ein Connector steht: {@code storage.} ist
+     * etwas anderes, und was niemand so genannt hat, hat auch keine
+     * Mitglieder.
+     */
+    private static String memberPrefix(String upToCursor) {
+        if (!afterDot(upToCursor)) {
+            return null;
+        }
+        String prefix = currentWord(upToCursor);
+        String before = upToCursor.substring(0, upToCursor.length() - prefix.length());
+        String name = currentWord(before.substring(0, before.length() - 1));
+        return ClientNetworkState.connectors().contains(name) ? name : null;
+    }
+
+    /**
+     * Was ein Gerät kann, in einer Zeile.
+     *
+     * <p>Über alle Seiten zusammengefasst und nicht je Seite: In der
+     * Vorschlagsliste ist Platz für ein paar Wörter, und die Frage dort
+     * lautet „taugt das überhaupt". Welche Seite es genau ist, sagt das
+     * Zeigen.
+     */
+    public static String abilities(DeviceProfile profile) {
+        if (!profile.reachable()) {
+            return "";
+        }
+        List<String> can = new ArrayList<>();
+        for (Side side : Side.values()) {
+            if (profile.hasItems(side) && !can.contains("Gegenstände")) {
+                can.add("Gegenstände");
+            }
+            if (profile.hasFluids(side) && !can.contains("Flüssigkeiten")) {
+                can.add("Flüssigkeiten");
+            }
+            if (profile.hasEnergy(side) && !can.contains("Strom")) {
+                can.add("Strom");
+            }
+        }
+        return can.isEmpty() ? "nichts anzuschließen" : String.join(", ", can);
+    }
+
+    /**
+     * Die Connectoren, jeder mit der Maschine dahinter.
+     *
+     * <p>Das {@code detail} stand hier lange leer. Es ist die billigste
+     * Stelle mit dem größten Nutzen: Sie steht in jeder Vorschlagsliste, ohne
+     * dass jemand etwas dafür tun muss.
+     */
     private static void addConnectors(List<Entry> entries, String prefix) {
         for (String connector : ClientNetworkState.connectors()) {
-            if (matches(connector, prefix)) {
-                entries.add(new Entry(connector, connector, Entry.Kind.CONNECTOR));
+            if (!matches(connector, prefix)) {
+                continue;
             }
+            DeviceProfile profile = ClientNetworkState.profile(connector);
+            String detail = profile.reachable()
+                    ? net.minecraft.network.chat.Component
+                            .translatable(profile.descriptionId()).getString()
+                            + " · " + abilities(profile)
+                    : "";
+            entries.add(new Entry(connector, connector, Entry.Kind.CONNECTOR, detail));
         }
     }
 

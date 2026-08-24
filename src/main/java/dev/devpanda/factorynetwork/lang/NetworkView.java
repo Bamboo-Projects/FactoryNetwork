@@ -60,6 +60,17 @@ public interface NetworkView {
     /** Die Namen der Anzeigewände im Netz. */
     List<String> displays();
 
+    /**
+     * Was hinter einem Connector steht.
+     *
+     * <p>Standardmäßig unbekannt: Ein Test hat kein Netz, und der Server
+     * kannte bis hierher nur Namen. Wer nichts weiß, sagt zu keinem Gerät
+     * etwas — das ist etwas anderes, als ein Gerät für leer zu erklären.
+     */
+    default DeviceProfile profile(String connector) {
+        return DeviceProfile.unreachable();
+    }
+
     /** Der ähnlichste Connectorname, für „meintest du". */
     default Optional<String> closestConnector(String wanted) {
         return closest(wanted, connectors());

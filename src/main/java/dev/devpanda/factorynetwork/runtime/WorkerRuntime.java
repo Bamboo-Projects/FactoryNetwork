@@ -1,6 +1,7 @@
 package dev.devpanda.factorynetwork.runtime;
 
 import dev.devpanda.factorynetwork.block.entity.ConnectorBlockEntity;
+import dev.devpanda.factorynetwork.lang.WorkerKind;
 import dev.devpanda.factorynetwork.lang.ast.Decl;
 import dev.devpanda.factorynetwork.lang.ast.Expr;
 import dev.devpanda.factorynetwork.lang.ast.Program;
@@ -782,19 +783,14 @@ public final class WorkerRuntime {
         return resolved;
     }
 
-    /** Meint der Filter dieses Workers Flüssigkeiten? */
+    /**
+     * Meint der Filter dieses Workers Flüssigkeiten?
+     *
+     * <p>Die Regel selbst steht in {@link WorkerKind}, weil die Prüfung im
+     * Editor dieselbe braucht. Zwei Fassungen davon liefen auseinander.
+     */
     private static boolean isFluidWorker(Decl.Worker worker) {
-        Decl.Worker.Entry filter = worker.entry(Decl.Worker.Entry.Kind.FILTER);
-        return filter != null && selectorKind(filter.value()) == Expr.Selector.Kind.FLUID;
-    }
-
-    private static Expr.Selector.Kind selectorKind(Expr expr) {
-        return switch (expr) {
-            case Expr.Selector selector -> selector.kind();
-            case Expr.Amount amount -> selectorKind(amount.selection());
-            case Expr.Except except -> selectorKind(except.base());
-            case null, default -> null;
-        };
+        return WorkerKind.of(worker) == Expr.Selector.Kind.FLUID;
     }
 
     // ---- maintain und when ------------------------------------------------

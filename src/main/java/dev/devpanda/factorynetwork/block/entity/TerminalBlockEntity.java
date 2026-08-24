@@ -55,7 +55,7 @@ public class TerminalBlockEntity extends BlockEntity implements MenuProvider {
         if (controller.isEmpty()) {
             PacketDistributor.sendToPlayer(player,
                     new NetworkStatePacket(List.of(), List.of(), List.of(), List.of(),
-                            List.of()));
+                            List.of(), List.of()));
             return;
         }
         ControllerBlockEntity entity = controller.get();
@@ -65,7 +65,8 @@ public class TerminalBlockEntity extends BlockEntity implements MenuProvider {
                 .toList();
         PacketDistributor.sendToPlayer(player,
                 new NetworkStatePacket(entity.connectorPlaces(), entity.displayPlaces(),
-                        workers, entity.plants(), entity.fluidLines()));
+                        workers, entity.plants(), entity.fluidLines(),
+                        entity.connectorProfiles()));
     }
 
 

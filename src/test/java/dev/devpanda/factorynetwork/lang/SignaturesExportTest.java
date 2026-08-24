@@ -35,8 +35,13 @@ class SignaturesExportTest {
     @DisplayName("Die Tabelle der Erweiterung ist die aus dem Code")
     void theExportMatchesTheTable() throws IOException {
         String expected = build();
+        // Zeilenenden angeglichen: Mit core.autocrlf=true checkt Git die
+        // Datei unter Windows als CRLF aus, geschrieben wird sie mit LF.
+        // Ohne diese Zeile schlägt der Test nach jedem Zweigwechsel fehl,
+        // obwohl inhaltlich nichts abweicht — und wer das dreimal erlebt hat,
+        // glaubt ihm beim vierten Mal nicht mehr.
         String actual = Files.exists(TARGET)
-                ? Files.readString(TARGET, StandardCharsets.UTF_8) : "";
+                ? Files.readString(TARGET, StandardCharsets.UTF_8).replace("\r\n", "\n") : "";
 
         if (!expected.equals(actual)) {
             // Neu geschrieben statt nur gemeldet: Wer die Tabelle ändert,
@@ -80,6 +85,19 @@ class SignaturesExportTest {
         JsonArray strategies = new JsonArray();
         Signatures.STRATEGIES.forEach(strategies::add);
         root.add("strategies", strategies);
+
+        // Was an einem Gerät steht, für die Vervollständigung nach dem Punkt.
+        // Ohne diesen Block wüsste die Erweiterung nichts davon — und die
+        // Behauptung, sie folge denselben Regeln, wäre nur halb wahr.
+        JsonArray members = new JsonArray();
+        for (Signatures.Member member : Signatures.MEMBERS) {
+            JsonObject entry = new JsonObject();
+            entry.addProperty("name", member.name());
+            entry.addProperty("shape", member.shape());
+            entry.addProperty("help", member.help());
+            members.add(entry);
+        }
+        root.add("members", members);
 
         JsonArray declarations = new JsonArray();
         for (String word : new String[] {"worker", "group", "multiblock", "event", "display",

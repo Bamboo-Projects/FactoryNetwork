@@ -16,7 +16,7 @@ const vscode = require('vscode');
 const fs = require('fs');
 const path = require('path');
 
-let table = { blocks: {}, strategies: [], declarations: [] };
+let table = { blocks: {}, strategies: [], declarations: [], members: [] };
 
 /** Zu welchen Blockarten Anweisungen gehören statt fester Angaben. */
 const CODE_BLOCKS = ['fn', 'on', 'multiblock'];
@@ -27,6 +27,16 @@ const BUILTINS = ['storage', 'crafting', 'world', 'network', 'workers', 'multibl
 function load(context) {
     const file = path.join(context.extensionPath, 'data', 'signatures.json');
     table = JSON.parse(fs.readFileSync(file, 'utf8'));
+}
+
+/**
+ * Steht der Cursor hinter einem Punkt, der auf einen Namen folgt?
+ *
+ * <p>Eine Zahl davor zählt nicht: `3.5` ist kein Punktzugriff.
+ */
+function afterDot(document, position) {
+    const upToCursor = document.lineAt(position.line).text.substring(0, position.character);
+    return /[a-zA-Z_][a-zA-Z0-9_]*\.[a-zA-Z0-9_]*$/.test(upToCursor);
 }
 
 /** Die Formen, die in dieser Blockart gelten. */
@@ -180,6 +190,18 @@ function activate(context) {
 
     context.subscriptions.push(vscode.languages.registerCompletionItemProvider('manifold', {
         provideCompletionItems(document, position) {
+            // Nach einem Punkt: was an einem Gerät steht. Vor der Prüfung auf
+            // die Stelle in einer Angabe, weil „to crusher_1." sonst als
+            // angefangener Zielname gelesen würde.
+            //
+            // Hier ohne Prüfung, ob der Name wirklich ein Connector ist: Die
+            // Erweiterung sieht kein laufendes Spiel und kennt die Namen im
+            // Netz nicht. Im Spiel prüft der Editor sie, hier wird angeboten.
+            if (afterDot(document, position)) {
+                return table.members.map(member => item(
+                    member.name, vscode.CompletionItemKind.Property,
+                    member.shape, member.help));
+            }
             const where = whereAt(document, position);
             if (where) {
                 return completionsFor(where);

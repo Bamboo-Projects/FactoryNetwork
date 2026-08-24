@@ -723,6 +723,31 @@ public class ControllerBlockEntity extends BlockEntity {
                 .toList();
     }
 
+    /**
+     * Die Profile aller Connectoren, für den Editor.
+     *
+     * <p>Einmal beim Öffnen des Terminals. Wer nicht geladen ist, liefert ein
+     * Profil, das nichts über sich sagt — und das ist etwas anderes als eines,
+     * das nichts kann.
+     */
+    public List<dev.devpanda.factorynetwork.network.packet.DeviceProfileCodec.Flat>
+            connectorProfiles() {
+        List<dev.devpanda.factorynetwork.network.packet.DeviceProfileCodec.Flat> profiles =
+                new java.util.ArrayList<>();
+        if (level == null) {
+            return profiles;
+        }
+        for (Map.Entry<String, BlockPos> entry : graph.connectors().entrySet()) {
+            if (!(level.getBlockEntity(entry.getValue())
+                    instanceof ConnectorBlockEntity connector)) {
+                continue;
+            }
+            profiles.add(dev.devpanda.factorynetwork.network.packet.DeviceProfileCodec.toFlat(
+                    entry.getKey(), DeviceScan.of(connector)));
+        }
+        return profiles;
+    }
+
     /** Was im Editor steht, auch wenn es noch nicht läuft. */
     public dev.devpanda.factorynetwork.lang.Project draft() {
         return draft;

@@ -3,10 +3,15 @@ package dev.devpanda.factorynetwork.test;
 import dev.devpanda.factorynetwork.FactoryNetwork;
 import dev.devpanda.factorynetwork.block.entity.ConnectorBlockEntity;
 import dev.devpanda.factorynetwork.block.entity.ControllerBlockEntity;
+import dev.devpanda.factorynetwork.block.entity.DeviceScan;
 import dev.devpanda.factorynetwork.block.entity.DisplayBlockEntity;
 import dev.devpanda.factorynetwork.block.CableBlock;
 import dev.devpanda.factorynetwork.block.CableColour;
+import dev.devpanda.factorynetwork.block.ConnectorBlock;
 import dev.devpanda.factorynetwork.item.ConnectorNaming;
+import dev.devpanda.factorynetwork.lang.DeviceProfile;
+import dev.devpanda.factorynetwork.lang.Side;
+import dev.devpanda.factorynetwork.network.packet.DeviceSnapshotPacket;
 import dev.devpanda.factorynetwork.registry.FnBlocks;
 import dev.devpanda.factorynetwork.runtime.ScriptError;
 import dev.devpanda.factorynetwork.runtime.Value;
@@ -20,6 +25,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.neoforged.neoforge.gametest.GameTestHolder;
+import net.neoforged.neoforge.items.IItemHandler;
 
 import java.util.List;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
@@ -2243,7 +2249,13 @@ public final class FactoryNetworkGameTests {
                         new dev.devpanda.factorynetwork.network.packet.NamedPlace(
                                 "halle", new BlockPos(7, 8, 9))),
                 java.util.List.of("haul: RUNNING"), java.util.List.of("werk_1: Werk"),
-                java.util.List.of("water: 1000 mB"));
+                java.util.List.of("water: 1000 mB"),
+                java.util.List.of(
+                        dev.devpanda.factorynetwork.network.packet.DeviceProfileCodec.toFlat(
+                                "kiste_1", new DeviceProfile("block.minecraft.chest",
+                                        "minecraft", Side.EAST, java.util.Map.of(
+                                        Side.EAST, new DeviceProfile.Access(27, 0, false),
+                                        Side.ANY, new DeviceProfile.Access(27, 0, false))))));
         var zurueck = roundTrip(helper,
                 dev.devpanda.factorynetwork.network.packet.NetworkStatePacket.STREAM_CODEC,
                 netzzustand);
@@ -2253,6 +2265,17 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(zurueck.displays().get(0).name(), "halle", "Anzeigen");
         helper.assertValueEqual(zurueck.connectors().get(0).pos(),
                 new BlockPos(1, 2, 3), "und die Stelle kommt mit");
+
+        // Das Profil kommt als flache Liste über die Leitung und muss drüben
+        // wieder dasselbe Gerät sein — samt seitenlosem Zugang.
+        var profil = dev.devpanda.factorynetwork.network.packet.DeviceProfileCodec
+                .fromFlat(zurueck.profiles().get(0));
+        helper.assertValueEqual(zurueck.profiles().get(0).name(), "kiste_1", "Name im Profil");
+        helper.assertValueEqual(profil.descriptionId(), "block.minecraft.chest", "Maschine");
+        helper.assertValueEqual(profil.connectedSide(), Side.EAST, "angeschlossene Seite");
+        helper.assertValueEqual(profil.accessAt(Side.EAST).slots(), 27, "Fächer");
+        helper.assertValueEqual(profil.accessAt(Side.WEST).slots(), 27,
+                "der seitenlose Zugang gilt für jede Seite");
 
         var ablaeufe = new dev.devpanda.factorynetwork.network.packet.FlowStatePacket(
                 java.util.List.of(new dev.devpanda.factorynetwork.network.packet
@@ -5603,6 +5626,150 @@ public final class FactoryNetworkGameTests {
 
         helper.assertTrue(entity.draft().files().containsKey("neu.mf"),
                 "die neue Datei fehlt: " + entity.draft().names());
+        helper.succeed();
+    }
+
+    // ---- Geräteerkennung ---------------------------------------------------
+
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void aChestIsRecognisedFromEverySide(GameTestHelper helper) {
+        BlockPos connector = new BlockPos(2, 1, 1);
+        BlockPos chest = connector.east();
+        helper.setBlock(chest, Blocks.CHEST);
+        helper.setBlock(connector, FnBlocks.CONNECTOR.get().defaultBlockState()
+                .setValue(ConnectorBlock.FACING, Direction.EAST));
+
+        ConnectorBlockEntity entity =
+                (ConnectorBlockEntity) helper.getBlockEntity(connector);
+        DeviceProfile profile = DeviceScan.of(entity);
+
+        helper.assertTrue(profile.reachable(), "die Kiste wurde nicht erkannt");
+        helper.assertTrue(profile.descriptionId().contains("chest"),
+                "falscher Übersetzungsschlüssel: " + profile.descriptionId());
+        helper.assertTrue(profile.connectedSide() == Side.EAST,
+                "die angeschlossene Seite stimmt nicht: " + profile.connectedSide());
+        helper.assertTrue(profile.hasItems(Side.EAST),
+                "eine Kiste nimmt an jeder Seite Gegenstände an");
+        helper.assertTrue(profile.accessAt(Side.EAST).slots() == 27,
+                "eine Kiste hat 27 Fächer, gezählt wurden "
+                        + profile.accessAt(Side.EAST).slots());
+        helper.assertFalse(profile.hasFluids(Side.EAST),
+                "eine Kiste hat keinen Tank");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void aSnapshotReportsWhatIsInTheChest(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        // Zwei Barren in die Kiste hinter quarry_output.
+        BlockPos connector = entity.graph().connectors().get("quarry_output");
+        helper.assertTrue(connector != null, "quarry_output fehlt im Netz");
+        ConnectorBlockEntity port =
+                (ConnectorBlockEntity) helper.getLevel().getBlockEntity(connector);
+        IItemHandler chest = port.machineInventory();
+        helper.assertTrue(chest != null, "hinter quarry_output steht keine Kiste");
+        chest.insertItem(0, new ItemStack(Items.IRON_INGOT, 2), false);
+
+        DeviceSnapshotPacket snapshot =
+                DeviceSnapshotPacket.of(entity, "quarry_output");
+
+        helper.assertTrue(snapshot != null, "es kam keine Antwort");
+        helper.assertValueEqual(snapshot.slots().size(), 27, "Fächer der Kiste");
+        helper.assertValueEqual(snapshot.slotsOmitted(), 0, "bei 27 Fächern wird nichts gekürzt");
+        helper.assertValueEqual(snapshot.slots().get(0).getCount(), 2, "Inhalt des ersten Fachs");
+        helper.assertTrue(snapshot.profile().descriptionId().contains("chest"),
+                "die Antwort trägt kein Profil der Kiste: "
+                        + snapshot.profile().descriptionId());
+        helper.succeed();
+    }
+
+    /**
+     * Der ganze Weg einer Anfrage: Terminal offen, Name gefragt, Antwort da.
+     *
+     * <p>Ohne diesen Test prüfte nur {@code DeviceSnapshotPacket.of} — also
+     * gerade der Teil, der ohnehin am wenigsten schiefgeht. Die Kette davor
+     * (steht der Spieler vor einem Terminal, findet das Menü seinen
+     * Controller) ließe sich sonst nur im laufenden Spiel von Hand
+     * nachvollziehen.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void aRequestFromAnOpenTerminalIsAnswered(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        BlockPos terminalPos = controller.below();
+        helper.setBlock(terminalPos, FnBlocks.TERMINAL.get());
+
+        var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+        player.containerMenu = new dev.devpanda.factorynetwork.client.menu.TerminalMenu(
+                0, player.getInventory(), helper.absolutePos(terminalPos));
+
+        var answer = dev.devpanda.factorynetwork.network.packet.DeviceSnapshotRequestPacket
+                .answerFor(player, "quarry_output");
+
+        helper.assertTrue(answer != null,
+                "das offene Terminal hätte antworten müssen");
+        helper.assertValueEqual(answer.connector(), "quarry_output", "gefragtes Gerät");
+        helper.assertValueEqual(answer.slots().size(), 27, "Fächer der Kiste");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void aRequestWithoutAnOpenTerminalIsRefused(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        controllerAt(helper, controller).rebuildNetwork();
+
+        // Kein Terminal offen — der Spieler hat sein eigenes Inventar vor
+        // sich. Eine Antwort wäre hier ein Weg, das Netz auszulesen, ohne
+        // davorzustehen.
+        var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+
+        helper.assertTrue(dev.devpanda.factorynetwork.network.packet
+                        .DeviceSnapshotRequestPacket.answerFor(player, "quarry_output") == null,
+                "ohne offenes Terminal darf es keine Antwort geben");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void aSnapshotOfAnUnknownNameIsRefused(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(DeviceSnapshotPacket.of(entity, "gibt_es_nicht") == null,
+                "auf einen unbekannten Namen darf es keine Antwort geben");
+        helper.succeed();
+    }
+
+    /**
+     * Ein Connector, der ins Leere zeigt.
+     *
+     * <p><b>Luft ist eine Auskunft, keine fehlende.</b> Der Test stand hier
+     * einmal andersherum — er verlangte, dass über Luft „nichts bekannt" sei,
+     * und schrieb damit einen Fehler fest: Im Spiel stand dann „Nicht
+     * geladen" vor einem Spieler, der davorstand. Wer ins Leere zeigt, soll
+     * genau das erfahren.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void aConnectorPointingAtAirSaysSo(GameTestHelper helper) {
+        BlockPos connector = new BlockPos(2, 1, 1);
+        helper.setBlock(connector, FnBlocks.CONNECTOR.get().defaultBlockState()
+                .setValue(ConnectorBlock.FACING, Direction.EAST));
+
+        ConnectorBlockEntity entity =
+                (ConnectorBlockEntity) helper.getBlockEntity(connector);
+        DeviceProfile profile = DeviceScan.of(entity);
+
+        helper.assertTrue(profile.reachable(),
+                "über Luft ist sehr wohl etwas bekannt: dass dort nichts steht");
+        helper.assertTrue(profile.descriptionId().endsWith(".air"),
+                "dort steht Luft, gemeldet wurde " + profile.descriptionId());
+        helper.assertTrue(profile.access().isEmpty(),
+                "an Luft ist nichts anzuschließen");
         helper.succeed();
     }
 

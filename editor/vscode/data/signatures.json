@@ -420,6 +420,28 @@
     "random",
     "priority"
   ],
+  "members": [
+    {
+      "name": "online",
+      "shape": "bool",
+      "help": "Ob das Gerät gerade im Netz hängt."
+    },
+    {
+      "name": "name",
+      "shape": "string",
+      "help": "Der Name, den die Beschriftungspistole vergeben hat."
+    },
+    {
+      "name": "redstone",
+      "shape": "int, oder redstone(int)",
+      "help": "Die Redstone-Stärke, 0 bis 15. Mit Zahl gesetzt, ohne gelesen."
+    },
+    {
+      "name": "count",
+      "shape": "count(selection) int",
+      "help": "Wie viel von einer Art im Netzspeicher liegt."
+    }
+  ],
   "declarations": [
     "worker",
     "group",
