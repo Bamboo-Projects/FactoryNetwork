@@ -49,6 +49,11 @@ public final class ProgramSize {
                 yield inner;
             }
             case Decl.Event event -> event.parameters().size();
+            // Ein globaler Wert kostet seine eine Zeile und nichts weiter:
+            // Sein Anfangswert ist ein Literal, keine Anweisung. Null wäre
+            // trotzdem falsch — die Eins davor zählt ihn, und damit sind
+            // tausend globale Werte nicht gratis.
+            case Decl.Global ignored -> 0;
             case Decl.Invalid ignored -> 0;
         };
     }

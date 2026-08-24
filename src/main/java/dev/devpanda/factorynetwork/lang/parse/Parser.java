@@ -81,6 +81,7 @@ public final class Parser {
             case DISPLAY -> parseDisplay();
             case FN -> parseFn();
             case ON -> parseOn();
+            case GLOBAL -> parseGlobal();
             case IMPORT -> {
                 error(start.span(), "Module gibt es noch nicht.",
                         "import ist für später reserviert. Alle .mf-Dateien eines Projekts "
@@ -92,7 +93,7 @@ public final class Parser {
                 error(start.span(),
                         "Hier wird eine Deklaration erwartet, gefunden wurde " + describe(start) + ".",
                         "Auf oberster Ebene stehen worker, group, multiblock, event, display, "
-                                + "fn und on. Anweisungen gehören in eine Funktion.");
+                                + "fn, on und global. Anweisungen gehören in eine Funktion.");
                 recoverToDeclaration();
                 yield null;
             }
@@ -393,6 +394,41 @@ public final class Parser {
         advance();
         Expr value = parseExpression();
         return new Decl.Display.Entry(kind, label.text(), value, start.span().to(value.span()));
+    }
+
+    /**
+     * {@code global modus = "tag"}
+     *
+     * <p>Die einzige Deklaration ohne {@code parseBlock}: Die Zeile endet mit
+     * dem Wert. Ob der ein Literal ist, prüft nicht der Parser, sondern
+     * {@code GlobalCheck} — hier steht die Form, dort die Regel.
+     */
+    private Decl parseGlobal() {
+        Token keyword = advance();
+        String name = expectName("globalen Wert");
+        boolean hasEquals = expect(TokenType.EQ,
+                "Nach " + name + " fehlt das Gleichheitszeichen.");
+
+        // <b>Der Wert muss auf derselben Zeile stehen.</b>
+        //
+        // Nach einem Gleichheitszeichen erzeugt der Lexer absichtlich kein
+        // Zeilenende (siehe {@code Lexer.breaksStatement}): Ein Ausdruck muss
+        // folgen, und er darf umbrechen. Bei einem Block stimmt das; hier
+        // verschlingt es die nächste Deklaration. Aus „global kaputt ="
+        // gefolgt von „worker erz {" würde sonst ein globaler Wert namens
+        // „worker", und der Worker wäre weg — samt allem, was in ihm steht.
+        //
+        // Geprüft wird deshalb die Zeile und nicht das Zeilenende.
+        if (!hasEquals || peek().span().line() != previous().span().line()) {
+            error(peek().span(), "Nach " + name + " fehlt der Wert.",
+                    "Ein globaler Wert bekommt seinen Typ aus dem, was hier steht — "
+                            + "etwa \"tag\" oder 0. Er muss in derselben Zeile stehen.");
+            recoverToDeclaration();
+            return new Decl.Invalid(name, keyword.span().to(peek().span()));
+        }
+
+        Expr value = parseExpression();
+        return new Decl.Global(name, value, keyword.span().to(value.span()));
     }
 
     private Decl parseFn() {
@@ -958,7 +994,7 @@ public final class Parser {
     private void recoverToDeclaration() {
         while (!at(TokenType.EOF)) {
             switch (peek().type()) {
-                case WORKER, GROUP, MULTIBLOCK, EVENT, DISPLAY, FN, ON -> {
+                case WORKER, GROUP, MULTIBLOCK, EVENT, DISPLAY, FN, ON, GLOBAL -> {
                     return;
                 }
                 default -> advance();

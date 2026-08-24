@@ -70,6 +70,27 @@ public sealed interface Decl {
      */
     record On(String name, List<String> parameters, Block body, Span span) implements Decl {}
 
+    // ---- Globaler Wert ----------------------------------------------------
+
+    /**
+     * {@code global modus = "tag"} — ein Wert, den alle Dateien sehen.
+     *
+     * <p><b>Die einzige Deklaration ohne Klammern.</b> Alle anderen sammeln
+     * Angaben in einem Block; diese erklärt einen Wert, und dafür ist eine
+     * Zeile die ehrlichere Form.
+     *
+     * <p><b>Und kein {@code let} auf oberster Ebene.</b> Ein Programm besteht
+     * nur aus Deklarationen, es gibt kein Hauptprogramm, das beim Laden
+     * losläuft — ein {@code let} draußen sähe aus wie eine Anweisung, die
+     * niemand ausführt. {@code global} sagt außerdem, was es ist: etwas, das
+     * alle sehen.
+     *
+     * @param value der Anfangswert. Ein Literal, und keine Rechnung: Wann
+     *              liefe die? Beim Übernehmen, beim Serverstart, bei jedem
+     *              Laden des Chunks? Ein Literal hat diese Frage nicht.
+     */
+    record Global(String name, Expr value, Span span) implements Decl {}
+
     /** Steht für eine Deklaration, die der Parser nicht lesen konnte. */
     record Invalid(String name, Span span) implements Decl {}
 }
