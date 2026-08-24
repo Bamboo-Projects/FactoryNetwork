@@ -41,6 +41,7 @@ program     = { NL } { declaration { NL } } EOF
 
 declaration = workerDecl | groupDecl | multiblockDecl
             | eventDecl  | displayDecl | fnDecl | onDecl
+            | globalDecl
 ```
 
 Ein Programm besteht nur aus Deklarationen. Anweisungen stehen immer in einer
@@ -72,6 +73,20 @@ target      = NAME | 'storage' | 'crafting'
 `from` und `to` müssen genau einmal vorkommen, alles andere höchstens einmal.
 Das prüft nicht die Grammatik, sondern der Übersetzer — so kann er sagen,
 welche Angabe fehlt, statt nur „unerwartetes Zeichen".
+
+### Globaler Wert
+
+```
+globalDecl  = 'global' NAME '=' literal
+```
+
+**Die einzige Deklaration ohne Block.** Alle anderen sammeln Angaben zwischen
+geschweiften Klammern; diese erklärt einen Wert und ist mit der Zeile fertig.
+
+Der Wert muss ein Literal sein und **in derselben Zeile stehen**. Das ist
+keine Schönheitsregel: Nach einem Gleichheitszeichen erzeugt der Lexer kein
+Zeilenende, weil ein Ausdruck folgen muss und umbrechen darf — ohne die Regel
+verschlänge `global kaputt =` die nächste Deklaration.
 
 ### Gruppe
 

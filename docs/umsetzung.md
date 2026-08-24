@@ -126,6 +126,7 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | | |
 |---|---|
 | Sprache | Lexer, Parser, Fehlerbehebung — die Grammatik vollständig |
+| | `global`: ein Wert, den alle Dateien sehen, mit Anzeige im Terminal |
 | Worker | `from`, `to`, `filter`, `maintain`, `rate`, `when`, `strategy`, `overflow` |
 | Auswahl | einzelne Gegenstände, Tags, Muster, `except` |
 | Flüssigkeiten | `move` und Worker, Bestand in Zellen, in Millibucket |
@@ -370,6 +371,24 @@ In dieser Reihenfolge, nach Abhängigkeit:
 3. **Ein eigener Speicherblock.** Solange der Speicher im Controller sitzt,
    gibt es keinen Grund, mehr als einen zu bauen.
 4. **Autocrafting.** Der letzte ausgegraute Reiter.
+
+### Globale Werte (seit dem 24.08.)
+
+`global modus = "tag"` erklärt einen Wert, den alle Dateien sehen. Er wird aus
+Funktionen und Ereignisblöcken geschrieben, überlebt Serverneustart und
+Programmwechsel, und das Terminal zeigt ihn im Reiter **Netzwerk**.
+
+**Reaktivität kostete fast nichts.** Anzeigen und `when` werten ihre Ausdrücke
+ohnehin je Tick aus — ein Worker mit `when modus == "tag"` schläft ein, sobald
+der Wert kippt, ohne dass es dafür einen Beobachter bräuchte. Gebaut werden
+musste nur der Wert selbst: wo er liegt, wer ihn ändern darf, was beim
+Programmwechsel mit ihm geschieht.
+
+Was dabei auffiel und im Entwurf korrigiert wurde: **Die Sprache hat keinen
+Typprüfer.** Der Entwurf versprach, `modus = 3` werde beim Übersetzen
+abgelehnt — das kann sie nicht. Gemeldet wird jetzt, was ohne Typsystem
+entscheidbar ist: Literal gegen Literal. Der Rest fällt zur Laufzeit auf, wie
+überall sonst.
 
 ### Der Editor, eigener Strang
 

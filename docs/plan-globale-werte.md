@@ -611,7 +611,7 @@ git commit -m "Der Interpreter liest und schreibt globale Werte über seinen Hos
 | Name weg | Vergessen |
 | Gleicher Name, anderer Typ | Anfangswert aus der neuen Deklaration |
 
-- [ ] **Schritt 1: Den GameTest schreiben**
+- [x] **Schritt 1: Den GameTest schreiben**
 
 Er baut ein Netz mit `buildSetup`, übernimmt ein Programm mit einem globalen
 Wert, ändert ihn über einen Funktionsaufruf, speichert und lädt die
@@ -630,7 +630,7 @@ Und wie das Speichern und Laden geprüft wird:
 grep -n "saveAdditional\|loadAdditional\|saveWithFullMetadata" src/main/java/dev/devpanda/factorynetwork/test/FactoryNetworkGameTests.java | head -5
 ```
 
-- [ ] **Schritt 2: Die Werte im Controller halten**
+- [x] **Schritt 2: Die Werte im Controller halten**
 
 Eine `Map<String, Value>` neben Programm und Entwurf, dazu:
 
@@ -643,16 +643,16 @@ Für den Typvergleich reicht ein Vergleich der `Value`-Art — `ValueCodec`
 schreibt sie ohnehin als Zeichenkette (`KEY_TYPE`), und dieselbe
 Unterscheidung genügt hier.
 
-- [ ] **Schritt 3: `WorldHost` durchreichen**
+- [x] **Schritt 3: `WorldHost` durchreichen**
 
 `global` und `setGlobal` auf die Karte des Controllers legen. `setGlobal` muss
 `setChanged()` auslösen, sonst geht der Wert beim nächsten Speichern verloren.
 
-- [ ] **Schritt 4: GameTests laufen lassen**
+- [x] **Schritt 4: GameTests laufen lassen**
 
 Aufruf: `./gradlew runGameTestServer`
 
-- [ ] **Schritt 5: Committen**
+- [x] **Schritt 5: Committen**
 
 ```bash
 git add -A
@@ -673,7 +673,7 @@ git commit -m "Globale Werte überleben den Serverneustart"
 **Schnittstellen:**
 - Braucht: Aufgabe 1.
 
-- [ ] **Schritt 1: `global` in die Vorschläge**
+- [x] **Schritt 1: `global` in die Vorschläge**
 
 `DECLARATIONS` in `Completions` (Zeile 55) und die Liste in
 `SignaturesExportTest.build()` kennen die Deklarationswörter. Beide brauchen
@@ -711,13 +711,13 @@ aufruft. Prüfen, wer das tut:
 grep -rn "forBlock(" src/main/java/ | head
 ```
 
-- [ ] **Schritt 2: Die Tabelle für VS Code**
+- [x] **Schritt 2: Die Tabelle für VS Code**
 
 `SignaturesExportTest` schreibt sie neu und schlägt fehl, bis sie eingecheckt
 ist. `TOP_LEVEL` gehört in den Export, und `extension.js` muss die Formen auf
 oberster Ebene anbieten. `check.js` bekommt einen Fall dafür.
 
-- [ ] **Schritt 3: Die Werte im Netz-Reiter zeigen**
+- [x] **Schritt 3: Die Werte im Netz-Reiter zeigen**
 
 Ein Abschnitt mit Namen und Stand. Ohne ihn ist ein globaler Wert beim
 Fehlersuchen unsichtbar, und der Umweg wäre `log()` in einer Schleife.
@@ -732,7 +732,7 @@ geschriebene Fassung wie `AnalyserDataPacket.SUMMARY`. Das ist der Punkt, an
 dem diese Aufgabe größer wird als sie aussieht — sie darf deshalb auch als
 letzte stehen bleiben.
 
-- [ ] **Schritt 4: Testen und committen**
+- [x] **Schritt 4: Testen und committen**
 
 ```bash
 ./gradlew test && cd editor/vscode && node check.js && cd ../..
@@ -744,14 +744,14 @@ git commit -m "Der Editor kennt global, und das Terminal zeigt die Werte"
 
 ## Aufgabe 7: Doku und Beispiele
 
-- [ ] **Schritt 1: `sprache.md`** um einen Abschnitt zu globalen Werten
+- [x] **Schritt 1: `sprache.md`** um einen Abschnitt zu globalen Werten
       ergänzen — sie sind Teil der Sprache und stehen dort noch nicht.
-- [ ] **Schritt 2: `grammatik.md`** um `globalDecl = 'global' NAME '=' expr`
+- [x] **Schritt 2: `grammatik.md`** um `globalDecl = 'global' NAME '=' expr`
       ergänzen, bei den anderen Deklarationen.
-- [ ] **Schritt 3: `beispiele.md`** um ein Programm ergänzen, das einen
+- [x] **Schritt 3: `beispiele.md`** um ein Programm ergänzen, das einen
       Modus schaltet. Der Test, der jedes Beispiel übersetzt, prüft es mit.
-- [ ] **Schritt 4: `umsetzung.md`** nachziehen.
-- [ ] **Schritt 5: Committen**
+- [x] **Schritt 4: `umsetzung.md`** nachziehen.
+- [x] **Schritt 5: Committen**
 
 ---
 

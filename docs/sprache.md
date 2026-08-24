@@ -322,6 +322,56 @@ getrennt.
 
 ---
 
+## 5b. Globale Werte
+
+Ein Wert, den alle Dateien sehen, und eine Änderung, von der der Rest des
+Programms erfährt:
+
+```
+global modus = "tag"
+
+worker erz {
+    from grube
+    to storage
+    when modus == "tag"
+}
+
+display halle {
+    row "Modus" modus
+}
+
+fn nachtschicht() {
+    modus = "nacht"
+}
+```
+
+Ein Aufruf von `nachtschicht()` legt den Worker schlafen und ändert die
+Anzeige. **Ohne dass irgendwo steht, dass er das tun soll** — Anzeigen und
+`when` werten ihre Ausdrücke ohnehin laufend aus.
+
+### Die Regeln
+
+- **`global` und nicht `let`.** Ein Programm besteht nur aus Deklarationen;
+  ein `let` auf oberster Ebene sähe aus wie eine Anweisung, die niemand
+  ausführt.
+- **Der Anfangswert ist ein Literal.** Eine Rechnung hätte keinen festen
+  Zeitpunkt — liefe sie beim Übernehmen, beim Serverstart, bei jedem Laden
+  des Chunks?
+- **Der Typ kommt aus dem Anfangswert.** Wer einem Text eine Zahl zuweist,
+  bekommt eine Warnung, solange beide Seiten Literale sind. Weiter reicht die
+  Prüfung nicht: Die Sprache hat keinen Typprüfer, und Typfehler fallen sonst
+  zur Laufzeit auf.
+- **Geschrieben wird aus Funktionen und Ereignisblöcken.** Ein Worker ist eine
+  Zusage über einen Dauerzustand und hat keinen Ort für eine Anweisung; eine
+  Anzeige zeigt an.
+- **Ein gleichnamiges `let` verdeckt ihn**, wie überall.
+- **Er überlebt den Serverneustart** und den Programmwechsel — solange Name
+  und Art gleich bleiben. Ein Text, der zur Zahl wird, fängt neu an.
+
+Was gerade drinsteht, zeigt das Terminal im Reiter **Netzwerk**.
+
+---
+
 ## 6. Geräte ansprechen
 
 Ein Connector gibt einer Maschine einen Namen. Der Name ist im Code direkt

@@ -247,3 +247,46 @@ dazu, etwa mit `brecher.count(item:iron_dust) >= 8`.
 
 Hingeschaut wird nur, wenn das Programm überhaupt darauf hört, und dann alle
 zehn Ticks.
+
+---
+
+## 9. Ein Modus für die ganze Fabrik
+
+```
+global modus = "tag"
+
+worker erz {
+    from grube
+    to storage
+    filter tag:c/ores
+    when modus == "tag"
+}
+
+display halle {
+    title "Fabrik"
+    row "Modus" modus
+}
+
+fn nachtschicht() {
+    modus = "nacht"
+}
+
+fn tagschicht() {
+    modus = "tag"
+}
+```
+
+**Was in der Welt stehen muss:** ein Connector namens `grube`, eine
+Anzeigewand namens `halle`.
+
+Ein Aufruf von `nachtschicht()` legt den Worker schlafen und ändert die
+Anzeige — ohne dass irgendwo steht, dass er das tun soll. Anzeigen und `when`
+werten ihre Ausdrücke ohnehin laufend aus, und der Wert steht an einer Stelle
+statt an dreien.
+
+Der Modus überlebt den Serverneustart. Wer die Fabrik nachts verlässt, findet
+sie morgens im selben Zustand vor.
+
+**Auslösen lässt sich das von überall:** aus einem Knopf auf der Anzeige, aus
+einem `on redstone_changed`, oder aus einem Ablauf, der auf die Uhrzeit
+wartet.
