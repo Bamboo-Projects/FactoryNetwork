@@ -112,6 +112,14 @@ class SignaturesExportTest {
         }
         root.add("listMembers", listMembers);
 
+        // Die Ereignisse, die das Netz selbst auslöst. Sie stehen in keiner
+        // Datei des Spielers — ohne diesen Block kann die Erweiterung sie
+        // nicht vorschlagen, und ein vertippter Name fällt erst auf, wenn
+        // der Block nie läuft.
+        JsonArray builtinEvents = new JsonArray();
+        new java.util.TreeSet<>(BuiltinEvents.ARITY.keySet()).forEach(builtinEvents::add);
+        root.add("builtinEvents", builtinEvents);
+
         JsonArray declarations = new JsonArray();
         for (String word : new String[] {"worker", "group", "multiblock", "event", "display",
                                          "fn", "on", "global"}) {

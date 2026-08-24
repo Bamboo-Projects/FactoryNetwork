@@ -129,6 +129,18 @@ public final class Completions {
             return limit(entries);
         }
 
+        // Nach on: die Ereignisse, auf die sich hören lässt.
+        //
+        // Die vier des Netzes stehen in keiner Datei — wer sie nicht
+        // auswendig weiß, sucht sie in der Doku. Und ein vertippter Name ist
+        // hier besonders teuer: Ein on braucht keine Deklaration, der Block
+        // wird übernommen und läuft nie. Der Editor kann diesen Fehler
+        // verhindern, statt ihn hinterher zu melden.
+        if (before.endsWith("on") && indentOf(line) == 0) {
+            addEvents(entries, prefix, lines);
+            return limit(entries);
+        }
+
         // <b>Der Kern.</b> Steht der Cursor hinter einem Schlüsselwort mit
         // Form, richtet sich der Vorschlag nach der Stelle, die gerade dran
         // ist — und nicht mehr nach dem Block. Vorher bot der Editor hinter

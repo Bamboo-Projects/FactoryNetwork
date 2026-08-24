@@ -198,6 +198,16 @@ contains('Nach items() kein online',
 contains('Nach einem Gerätepunkt kein where',
     ['fn test() {', '    if crusher_1.'], 'where', false);
 
+// Nach on steht ein Ereignisname und keine Deklaration. Die vier des Netzes
+// stehen in keiner Datei und kommen aus der Tabelle.
+check('Nach on die vier Ereignisse', complete(['on ']).sort(),
+    ['device_changed', 'device_offline', 'device_online', 'redstone_changed']);
+contains('Nach on kein worker', ['on '], 'worker', false);
+contains('Nach on auch das eigene Ereignis',
+    ['event Fertig(nummer: Int)', '', 'on '], 'Fertig', true);
+contains('await bietet die eingebauten Ereignisse',
+    ['fn test() {', '    await '], 'device_changed', true);
+
 // Auf oberster Ebene: die Deklarationen, und global mit seiner Form.
 contains('Oberste Ebene bietet global', ['gl'], 'global', true);
 contains('In einem Block kein global', ['worker haul {', '    '], 'global', false);

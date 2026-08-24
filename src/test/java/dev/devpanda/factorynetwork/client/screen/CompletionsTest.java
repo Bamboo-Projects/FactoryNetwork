@@ -50,6 +50,30 @@ class CompletionsTest {
     }
 
     @Test
+    @DisplayName("Nach on stehen die Ereignisse")
+    void afterOnTheEventsAreOffered() {
+        List<String> shown = at("on ");
+
+        // Die vier des Netzes stehen in keiner Datei. Wer sie nicht auswendig
+        // weiß, tippt irgendetwas — und ein on mit vertipptem Namen wird
+        // übernommen und läuft nie.
+        assertTrue(shown.contains("device_online"), () -> "device_online fehlt: " + shown);
+        assertTrue(shown.contains("device_offline"), () -> "device_offline fehlt: " + shown);
+        assertTrue(shown.contains("device_changed"), () -> "device_changed fehlt: " + shown);
+        assertTrue(shown.contains("redstone_changed"), () -> "redstone_changed fehlt: " + shown);
+        assertFalse(shown.contains("worker"),
+                () -> "hier steht ein Ereignisname, keine Deklaration: " + shown);
+    }
+
+    @Test
+    @DisplayName("Nach on gehören auch die selbst erklärten Ereignisse dazu")
+    void afterOnOwnEventsCountToo() {
+        List<String> shown = at("event Fertig(nummer: Int)", "", "on ");
+
+        assertTrue(shown.contains("Fertig"), () -> "das eigene Ereignis fehlt: " + shown);
+    }
+
+    @Test
     @DisplayName("In einem Worker stehen seine Angaben")
     void insideWorkerOnlyWorkerEntries() {
         List<String> shown = at("worker haul {", "    ");

@@ -21,7 +21,7 @@ const fs = require('fs');
 const path = require('path');
 
 let table = { blocks: {}, strategies: [], declarations: [], members: [],
-              listMembers: [], topLevel: [] };
+              listMembers: [], builtinEvents: [], topLevel: [] };
 
 /** Zu welchen Blockarten Anweisungen gehören statt fester Angaben. */
 const CODE_BLOCKS = ['fn', 'on', 'multiblock'];
@@ -315,6 +315,17 @@ function symbolItems(symbols, keywords, kind) {
 }
 
 /** Was an dieser Stelle stehen darf. */
+/**
+ * Die Ereignisse: erst die vier des Netzes, dann die des Projekts.
+ *
+ * Die vier stehen in keiner Datei und kommen deshalb aus der Tabelle.
+ */
+function eventItems(symbols) {
+    return (table.builtinEvents || [])
+        .map(name => item(name, vscode.CompletionItemKind.Event))
+        .concat(symbolItems(symbols, ['event'], vscode.CompletionItemKind.Event));
+}
+
 function completionsFor(where, symbols) {
     const slot = where.slot;
     if (!slot) {
@@ -327,7 +338,7 @@ function completionsFor(where, symbols) {
         case 'FUNCTION':
             return symbolItems(symbols, ['fn'], vscode.CompletionItemKind.Function);
         case 'EVENT':
-            return symbolItems(symbols, ['event'], vscode.CompletionItemKind.Event);
+            return eventItems(symbols);
         case 'MEMBERS':
             // Mitglieder sind Connectoren, und die kennt nur das laufende
             // Spiel. Was die Erweiterung beisteuern kann, sind die Namen aus
@@ -387,6 +398,13 @@ function activate(context) {
             }
             const block = enclosingBlock(document, position.line);
             const indented = /^\s/.test(document.lineAt(position.line).text);
+            // Nach „on " steht ein Ereignisname und keine Deklaration. Ein
+            // Block mit vertipptem Namen wird übernommen und läuft nie —
+            // hier lässt sich das verhindern statt melden.
+            if (!indented && /^on\s+[a-zA-Z0-9_]*$/.test(
+                    document.lineAt(position.line).text.substring(0, position.character))) {
+                return eventItems(symbols);
+            }
             if (!indented) {
                 // Die meisten Deklarationen öffnen einen Block und haben
                 // keine Form; global ist die Ausnahme und bringt seine mit.

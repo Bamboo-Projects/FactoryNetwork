@@ -479,6 +479,12 @@
       "help": "Ordnet nach dem Ausdruck. it ist der Eintrag."
     }
   ],
+  "builtinEvents": [
+    "device_changed",
+    "device_offline",
+    "device_online",
+    "redstone_changed"
+  ],
   "declarations": [
     "worker",
     "group",
