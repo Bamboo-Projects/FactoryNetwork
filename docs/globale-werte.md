@@ -79,8 +79,21 @@ draußen sähe aus wie eine Anweisung, die niemand ausführt.
 Frage berechtigt, warum ein Name in einer anderen Datei sichtbar ist.
 
 **Der Typ kommt aus dem Anfangswert**, wie überall in der Sprache. `modus` ist
-ein Text, `vorrat` eine Zahl, und wer `modus = 3` schreibt, bekommt einen
-Fehler beim Übersetzen.
+ein Text, `vorrat` eine Zahl.
+
+**Wie weit die Prüfung reicht, entscheidet der Bestand:** Die Sprache hat
+keinen Typprüfer — `lang` prüft Namen und Größe, mehr nicht, und Typfehler
+fallen zur Laufzeit auf. Einen Prüfer nur für globale Werte zu bauen, wäre
+eine Insel mit eigenen Regeln.
+
+Gemeldet wird deshalb, **was ohne Typsystem erkennbar ist**: Steht auf beiden
+Seiten ein Literal, ist der Fall entscheidbar. `global modus = "tag"` und
+irgendwo `modus = 3` ist eine Warnung beim Übersetzen — und das ist der Fall,
+der in der Praxis vorkommt, weil er ein Vertipper ist.
+
+`modus = irgendeineFunktion()` bleibt dagegen offen, bis es läuft. Das ist
+dieselbe Grenze wie überall sonst in der Sprache, und sie hier zu verschieben
+hieße, den Typprüfer nebenbei anzufangen.
 
 **Der Anfangswert ist ein Literal**, kein Ausdruck. `global x = storage.count(…)`
 wäre eine Rechnung ohne festen Zeitpunkt: Wann liefe sie? Beim Übernehmen,
@@ -179,6 +192,9 @@ Netze teilen nichts.
 
 ## 8. Offene Punkte
 
+- **Ob die Prüfung später ein echter Typprüfer wird.** Heute erkennt sie
+  Literal gegen Literal. Ein Prüfer über Ausdrücke wäre ein eigenes Vorhaben
+  und beträfe die ganze Sprache, nicht nur die globalen Werte.
 - **Ob es Konstanten braucht.** `global` ist veränderlich; ein fester Wert
   (`const rate = 64`) wäre etwas anderes und vielleicht der häufigere Fall.
 - **Ob der Netz-Reiter Schreibrechte bekommt** (Abschnitt 6).
