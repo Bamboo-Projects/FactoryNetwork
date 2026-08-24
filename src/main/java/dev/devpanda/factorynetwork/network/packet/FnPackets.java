@@ -44,6 +44,11 @@ public final class FnPackets {
                 DisplayActionPacket::handle);
         registrar.playToClient(AnalyserDataPacket.TYPE, AnalyserDataPacket.STREAM_CODEC,
                 AnalyserDataPacket::handle);
+        registrar.playToServer(DeviceSnapshotRequestPacket.TYPE,
+                DeviceSnapshotRequestPacket.STREAM_CODEC,
+                DeviceSnapshotRequestPacket::handle);
+        registrar.playToClient(DeviceSnapshotPacket.TYPE, DeviceSnapshotPacket.STREAM_CODEC,
+                DeviceSnapshotPacket::handle);
     }
 
     private FnPackets() {

@@ -11,6 +11,7 @@ import dev.devpanda.factorynetwork.block.ConnectorBlock;
 import dev.devpanda.factorynetwork.item.ConnectorNaming;
 import dev.devpanda.factorynetwork.lang.DeviceProfile;
 import dev.devpanda.factorynetwork.lang.Side;
+import dev.devpanda.factorynetwork.network.packet.DeviceSnapshotPacket;
 import dev.devpanda.factorynetwork.registry.FnBlocks;
 import dev.devpanda.factorynetwork.runtime.ScriptError;
 import dev.devpanda.factorynetwork.runtime.Value;
@@ -24,6 +25,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.neoforged.neoforge.gametest.GameTestHolder;
+import net.neoforged.neoforge.items.IItemHandler;
 
 import java.util.List;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
@@ -5653,6 +5655,45 @@ public final class FactoryNetworkGameTests {
                         + profile.accessAt(Side.EAST).slots());
         helper.assertFalse(profile.hasFluids(Side.EAST),
                 "eine Kiste hat keinen Tank");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void aSnapshotReportsWhatIsInTheChest(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        // Zwei Barren in die Kiste hinter quarry_output.
+        BlockPos connector = entity.graph().connectors().get("quarry_output");
+        helper.assertTrue(connector != null, "quarry_output fehlt im Netz");
+        ConnectorBlockEntity port =
+                (ConnectorBlockEntity) helper.getLevel().getBlockEntity(connector);
+        IItemHandler chest = port.machineInventory();
+        helper.assertTrue(chest != null, "hinter quarry_output steht keine Kiste");
+        chest.insertItem(0, new ItemStack(Items.IRON_INGOT, 2), false);
+
+        DeviceSnapshotPacket snapshot =
+                DeviceSnapshotPacket.of(entity, "quarry_output");
+
+        helper.assertTrue(snapshot != null, "es kam keine Antwort");
+        helper.assertValueEqual(snapshot.slots().size(), 27, "Fächer der Kiste");
+        helper.assertValueEqual(snapshot.slotsOmitted(), 0, "bei 27 Fächern wird nichts gekürzt");
+        helper.assertValueEqual(snapshot.slots().get(0).getCount(), 2, "Inhalt des ersten Fachs");
+        helper.assertTrue(snapshot.profile().descriptionId().contains("chest"),
+                "die Antwort trägt kein Profil der Kiste: "
+                        + snapshot.profile().descriptionId());
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void aSnapshotOfAnUnknownNameIsRefused(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(DeviceSnapshotPacket.of(entity, "gibt_es_nicht") == null,
+                "auf einen unbekannten Namen darf es keine Antwort geben");
         helper.succeed();
     }
 

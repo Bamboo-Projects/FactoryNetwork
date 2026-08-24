@@ -117,6 +117,25 @@ public class ConnectorBlockEntity extends BlockEntity {
         return level.getCapability(Capabilities.FluidHandler.BLOCK, target, facing.getOpposite());
     }
 
+    /**
+     * Der Stromspeicher der Maschine, auf die der Connector zeigt.
+     *
+     * <p>Derselbe Nachbar, dieselbe Seite — dritte Fähigkeit. Gelesen wird er
+     * heute nur für das Zeigen im Editor; verteilt wird noch kein Strom.
+     */
+    public @Nullable net.neoforged.neoforge.energy.IEnergyStorage machineEnergy() {
+        if (level == null) {
+            return null;
+        }
+        Direction facing = ConnectorBlock.machineSide(getBlockState());
+        BlockPos target = worldPosition.relative(facing);
+        if (!level.isLoaded(target)) {
+            return null;
+        }
+        return level.getCapability(Capabilities.EnergyStorage.BLOCK, target,
+                facing.getOpposite());
+    }
+
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
