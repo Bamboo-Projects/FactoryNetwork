@@ -1896,27 +1896,60 @@ In `FnPackets.java` nach der Zeile für `AnalyserDataPacket`:
 
 In `FactoryNetworkGameTests.java`:
 
+**Der Test muss `of()` wirklich aufrufen.** `buildSetup` stellt bereits einen
+Controller mit zwei benannten Connectoren an Kisten hin — `quarry_output` und
+`depot`. Genau der Aufbau, den die Antwort braucht.
+
 ```java
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void aSnapshotReportsWhatIsInTheChest(GameTestHelper helper) {
-        BlockPos connector = new BlockPos(2, 1, 1);
-        BlockPos chest = connector.east();
-        helper.setBlock(chest, Blocks.CHEST);
-        helper.setBlock(connector, FnBlocks.CONNECTOR.get().defaultBlockState()
-                .setValue(ConnectorBlock.FACING, Direction.EAST));
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
 
-        ConnectorBlockEntity entity =
-                (ConnectorBlockEntity) helper.getBlockEntity(connector);
-        IItemHandler handler = entity.machineInventory();
-        helper.assertTrue(handler != null, "die Kiste hat kein Inventar");
-        handler.insertItem(0, new ItemStack(Items.IRON_INGOT, 5), false);
+        // Zwei Barren in die Kiste hinter quarry_output.
+        BlockPos connector = entity.graph().connectors().get("quarry_output");
+        helper.assertTrue(connector != null, "quarry_output fehlt im Netz");
+        ConnectorBlockEntity port =
+                (ConnectorBlockEntity) helper.getLevel().getBlockEntity(connector);
+        IItemHandler chest = port.machineInventory();
+        helper.assertTrue(chest != null, "hinter quarry_output steht keine Kiste");
+        chest.insertItem(0, new ItemStack(Items.IRON_INGOT, 2), false);
 
-        helper.assertTrue(handler.getStackInSlot(0).getCount() == 5,
-                "der Barren liegt nicht im ersten Fach");
-        helper.assertTrue(handler.getSlots() == 27,
-                "eine Kiste hat 27 Fächer");
+        DeviceSnapshotPacket snapshot =
+                DeviceSnapshotPacket.of(entity, "quarry_output");
+
+        helper.assertTrue(snapshot != null, "es kam keine Antwort");
+        helper.assertTrue(snapshot.slots().size() == 27,
+                "eine Kiste hat 27 Fächer, gemeldet wurden " + snapshot.slots().size());
+        helper.assertTrue(snapshot.slotsOmitted() == 0,
+                "bei 27 Fächern wird nichts gekürzt");
+        helper.assertTrue(snapshot.slots().get(0).getCount() == 2,
+                "der Inhalt des ersten Fachs stimmt nicht");
+        helper.assertTrue(snapshot.profile().descriptionId().contains("chest"),
+                "die Antwort trägt kein Profil der Kiste: "
+                        + snapshot.profile().descriptionId());
         helper.succeed();
     }
+
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void aSnapshotOfAnUnknownNameIsRefused(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(DeviceSnapshotPacket.of(entity, "gibt_es_nicht") == null,
+                "auf einen unbekannten Namen darf es keine Antwort geben");
+        helper.succeed();
+    }
+```
+
+Zusätzliche Importe in dieser Datei:
+
+```java
+import dev.devpanda.factorynetwork.network.packet.DeviceSnapshotPacket;
+import net.minecraft.world.item.Items;
+import net.neoforged.neoforge.items.IItemHandler;
 ```
 
 - [ ] **Schritt 7: Bauen und laufen lassen**
@@ -1937,38 +1970,51 @@ git commit -m "Der Editor kann den Inhalt eines Geräts erfragen"
 
 **Dateien:**
 - Anlegen: `src/main/java/dev/devpanda/factorynetwork/client/screen/EditorTooltip.java`
+- Ändern: `src/main/java/dev/devpanda/factorynetwork/client/screen/CodeScreen.java:449-527`
 - Ändern: `src/main/java/dev/devpanda/factorynetwork/client/screen/CodeTabView.java:290-322`
-- Ändern: `src/main/java/dev/devpanda/factorynetwork/client/screen/CodeScreen.java:505-525`
 - Test: von Hand im Spiel — was gezeichnet wird, prüft kein Einheitstest sinnvoll
 
 **Schnittstellen:**
 - Braucht: `Completions.abilities` (Aufgabe 6), `ClientDeviceState` (Aufgabe 8),
-  `ClientNetworkState.profile` (Aufgabe 5).
-- Liefert: `EditorTooltip.render(GuiGraphics, Font, CodeEditor, List<Diagnostic>,
-  int, int)`.
+  `ClientNetworkState.profile` (Aufgabe 5), `DeviceProfile.grouped` (Aufgabe 1).
+- Liefert: `EditorTooltip.render(GuiGraphics, Font, CodeEditor, Project,
+  List<Diagnostic>, int, int)`.
 
-**Worum es geht:** Der Zeigen-Pfad steht heute zweimal, in `CodeTabView` und in
-`CodeScreen`, beide Male gleich gebaut: Signatur, dann Meldung. Der dritte Fall
-ist der Anlass, ihn zusammenzuziehen — zwei Kopien mit drei Fällen laufen
-auseinander.
+**Die Lage, und warum sie anders ist als gedacht:** Die beiden Zeigen-Pfade sind
+**nicht** gleich gebaut. `CodeScreen` hat mit `describeName` (Zeile 449) längst
+eine Namensauskunft — Koordinate im Netz, Erklärungsort im Projekt, Fundstellen.
+`CodeTabView` hat sie nicht; dort gibt es nur Signatur und Meldung.
 
-**Reihenfolge der Fälle:** Gerät vor Signatur vor Meldung. Ein Gerätename ist
-das Genaueste, was unter dem Zeiger stehen kann; die Signatur gilt für die ganze
-Zeile.
+Daraus folgt zweierlei. Erstens gehört die Geräteauskunft **in `describeName`
+hinein** und nicht als vierter Fall daneben — wer auf `crusher_1` zeigt, stellt
+eine Frage, und „wo steht das" und „was ist das" sind zwei Hälften derselben
+Antwort. Zweitens ist das der Anlass, die Methode zu teilen: Der Reiter im
+Terminal bekommt damit die Namensauskunft, die das eigene Fenster längst hat.
+
+**Reihenfolge der Fälle:** Name vor Signatur vor Meldung. Ein Name ist das
+Genaueste, was unter dem Zeiger stehen kann; die Signatur gilt für die ganze
+Zeile, die Meldung auch.
 
 - [ ] **Schritt 1: `EditorTooltip` anlegen**
+
+`src/main/java/dev/devpanda/factorynetwork/client/screen/EditorTooltip.java`:
 
 ```java
 package dev.devpanda.factorynetwork.client.screen;
 
 import dev.devpanda.factorynetwork.client.ClientDeviceState;
 import dev.devpanda.factorynetwork.client.ClientNetworkState;
+import dev.devpanda.factorynetwork.client.FnFonts;
 import dev.devpanda.factorynetwork.lang.DeviceProfile;
+import dev.devpanda.factorynetwork.lang.Definitions;
 import dev.devpanda.factorynetwork.lang.Diagnostic;
+import dev.devpanda.factorynetwork.lang.Project;
 import dev.devpanda.factorynetwork.lang.Side;
 import dev.devpanda.factorynetwork.network.packet.DeviceSnapshotPacket;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 
@@ -1978,25 +2024,36 @@ import java.util.List;
 /**
  * Was beim Zeigen im Editor dasteht.
  *
- * <p>An einer Stelle und nicht in jedem Fenster einzeln: Den Pfad gab es
- * zweimal, in {@code CodeTabView} und in {@code CodeScreen}, beide Male
- * gleich gebaut. Mit dem dritten Fall wäre er auseinandergelaufen.
+ * <p>An einer Stelle und nicht in jedem Fenster einzeln. Der Anlass war eine
+ * Ungleichheit, die niemandem aufgefallen war: Das eigene Fenster erklärte
+ * einen Namen unter dem Zeiger — Stelle im Netz, Erklärungsort, Fundstellen —,
+ * der Reiter im Terminal nicht. Dieselbe Frage, zwei Antworten, je nachdem wo
+ * man tippt.
  *
- * <p>Die Reihenfolge ist Absicht: Ein Gerätename ist das Genaueste, was unter
- * dem Zeiger stehen kann. Die Signatur gilt für die ganze Zeile, die Meldung
- * auch.
+ * <p>Die Reihenfolge ist Absicht: Ein Name ist das Genaueste, was unter dem
+ * Zeiger stehen kann. Die Signatur gilt für die ganze Zeile, die Meldung auch.
  */
 public final class EditorTooltip {
+
+    /** Mehr Fundstellen deckten den halben Bildschirm. */
+    private static final int MAX_PLACES = 5;
+
+    /** Und mehr belegte Fächer auch. */
+    private static final int MAX_SLOTS_SHOWN = 6;
 
     private EditorTooltip() {
     }
 
-    /** Zeichnet den Tooltip, wenn es einen gibt. */
+    /**
+     * Zeichnet den Tooltip, wenn es einen gibt.
+     *
+     * <p>Die Prüfungen auf Knöpfe und offene Menüs bleiben beim jeweiligen
+     * Fenster — sie unterscheiden sich, und sie kennen ihre eigenen Flächen.
+     */
     public static void render(GuiGraphics graphics, Font font, CodeEditor editor,
-                              List<Diagnostic> problems, int mouseX, int mouseY) {
-        List<Component> device = deviceLines(editor, mouseX, mouseY);
-        if (!device.isEmpty()) {
-            graphics.renderComponentTooltip(font, device, mouseX, mouseY);
+                              Project project, List<Diagnostic> problems,
+                              int mouseX, int mouseY) {
+        if (describeName(graphics, font, editor, project, mouseX, mouseY)) {
             return;
         }
         ClientDeviceState.notHovering();
@@ -2022,26 +2079,66 @@ public final class EditorTooltip {
     }
 
     /**
-     * Die Zeilen zu einem Gerät, oder leer.
+     * Der Name unter dem Zeiger, erklärt.
      *
-     * <p>Was schon bekannt ist, steht sofort da. Der Inhalt kommt dazu, wenn
-     * die Antwort eintrifft — der Tooltip springt dabei um eine Zeile, und
-     * das ist besser als einer, der eine Viertelsekunde gar nicht da ist.
+     * <p>Übernommen aus {@code CodeScreen}, um die Maschine dahinter
+     * erweitert. Die Reihenfolge im Kasten folgt der Frage, die man stellt:
+     * erst was es ist, dann wo es steht, dann was im Programm damit passiert.
+     *
+     * @return ob etwas gezeichnet wurde
      */
-    private static List<Component> deviceLines(CodeEditor editor, int mouseX, int mouseY) {
+    private static boolean describeName(GuiGraphics graphics, Font font, CodeEditor editor,
+                                        Project project, int mouseX, int mouseY) {
         String word = editor.wordAt(mouseX, mouseY);
-        if (word.isEmpty() || !ClientNetworkState.connectors().contains(word)) {
-            return List.of();
+        if (word.isEmpty()) {
+            return false;
         }
-        DeviceProfile profile = ClientNetworkState.profile(word);
-        if (!profile.reachable()) {
-            return List.of(Component.literal(word),
-                    Component.literal("§7Nicht geladen — über das Gerät ist nichts bekannt."));
+        var declared = Definitions.find(project, word);
+        BlockPos inWorld = ClientNetworkState.placeOf(word);
+        boolean isConnector = ClientNetworkState.connectors().contains(word);
+        if (declared.isEmpty() && inWorld == null) {
+            return false;
         }
-        ClientDeviceState.hovering(word);
+
+        // Vor der Prüfung auf ein bekanntes Profil: Ein Gerät, dessen Chunk
+        // beim Öffnen nicht geladen war, hat noch keines — und die Antwort
+        // auf die Anfrage bringt es mit. Wer hier erst fragt, wenn schon
+        // etwas bekannt ist, bekommt für genau diese Geräte nie etwas.
+        if (isConnector) {
+            ClientDeviceState.hovering(word);
+        } else {
+            ClientDeviceState.notHovering();
+        }
 
         List<Component> lines = new ArrayList<>();
-        lines.add(Component.translatable(profile.descriptionId()));
+        lines.add(FnFonts.mono(word));
+        if (isConnector) {
+            addDevice(lines, word);
+        }
+        if (inWorld != null) {
+            lines.add(Component.translatable("screen.factorynetwork.code.at",
+                            inWorld.getX(), inWorld.getY(), inWorld.getZ())
+                    .withStyle(ChatFormatting.GRAY));
+            lines.add(Component.translatable("screen.factorynetwork.code.locate_hint")
+                    .withStyle(ChatFormatting.DARK_GRAY));
+        }
+        if (declared.isPresent()) {
+            addDeclaration(lines, project, word, declared.get());
+        }
+        graphics.renderComponentTooltip(font, lines, mouseX, mouseY);
+        return true;
+    }
+
+    /** Was die Maschine ist, kann und gerade enthält. */
+    private static void addDevice(List<Component> lines, String connector) {
+        DeviceProfile profile = profileOf(connector);
+        if (!profile.reachable()) {
+            lines.add(Component.literal("§8Nicht geladen — über die Maschine ist "
+                    + "nichts bekannt."));
+            return;
+        }
+        lines.add(Component.translatable(profile.descriptionId())
+                .withStyle(ChatFormatting.GRAY));
         lines.add(Component.literal("§7Angeschlossen: "
                 + profile.connectedSide().written()));
 
@@ -2059,28 +2156,35 @@ public final class EditorTooltip {
                 what.add("Strom");
             }
             List<String> sides = group.sides().stream().map(Side::written).toList();
-            lines.add(Component.literal("§7" + String.join(", ", sides)
+            lines.add(Component.literal("§8" + String.join(", ", sides)
                     + ": " + String.join(", ", what)));
         }
 
-        // Die Seite, an der der Connector hängt, kann nichts — dann steht
-        // hier, welche es könnte. Der Fehler, den man sonst nur durch
-        // Ausprobieren findet.
-        if (!profile.hasItems(profile.connectedSide())
-                && !profile.hasFluids(profile.connectedSide())
-                && !profile.hasEnergy(profile.connectedSide())) {
-            List<Side> elsewhere = new ArrayList<>();
-            elsewhere.addAll(profile.sidesWith(DeviceProfile.Access.Ability.ITEMS));
+        // An der angeschlossenen Seite geht gar nichts — der Fehler, den man
+        // sonst nur durch Ausprobieren findet.
+        Side connected = profile.connectedSide();
+        if (profile.accessAt(connected) == null) {
+            List<Side> elsewhere = new ArrayList<>(
+                    profile.sidesWith(DeviceProfile.Access.Ability.ITEMS));
             elsewhere.addAll(profile.sidesWith(DeviceProfile.Access.Ability.FLUIDS));
-            if (!elsewhere.isEmpty()) {
-                lines.add(Component.literal("§cDort geht nichts — "
-                        + elsewhere.get(0).written() + " ginge."));
-            }
+            lines.add(Component.literal(elsewhere.isEmpty()
+                    ? "§cDort ist nichts anzuschließen."
+                    : "§cDort ist nichts anzuschließen — "
+                            + elsewhere.get(0).written() + " ginge."));
         }
+        addContents(lines, connector);
+    }
 
-        DeviceSnapshotPacket snapshot = ClientDeviceState.snapshot(word);
+    /**
+     * Was gerade drin liegt, sobald die Antwort da ist.
+     *
+     * <p>Vorher steht hier nichts. Der Kasten springt dann um ein paar Zeilen
+     * — besser als einer, der eine Viertelsekunde lang gar nicht da ist.
+     */
+    private static void addContents(List<Component> lines, String connector) {
+        DeviceSnapshotPacket snapshot = ClientDeviceState.snapshot(connector);
         if (snapshot == null) {
-            return lines;
+            return;
         }
         int shown = 0;
         for (int slot = 0; slot < snapshot.slots().size(); slot++) {
@@ -2088,7 +2192,7 @@ public final class EditorTooltip {
             if (stack.isEmpty()) {
                 continue;
             }
-            if (shown == 6) {
+            if (shown == MAX_SLOTS_SHOWN) {
                 lines.add(Component.literal("§8…"));
                 break;
             }
@@ -2097,7 +2201,7 @@ public final class EditorTooltip {
                     .append(Component.literal(" §7×" + stack.getCount())));
             shown++;
         }
-        if (shown == 0) {
+        if (shown == 0 && !snapshot.slots().isEmpty()) {
             lines.add(Component.literal("§8leer"));
         }
         if (snapshot.slotsOmitted() > 0) {
@@ -2108,59 +2212,124 @@ public final class EditorTooltip {
             lines.add(Component.literal("§7Strom: " + snapshot.energy()
                     + " / " + snapshot.energyCapacity()));
         }
-        return lines;
+    }
+
+    /** Wo der Name erklärt wird und wo er sonst noch vorkommt. */
+    private static void addDeclaration(List<Component> lines, Project project, String word,
+                                       Definitions.Location declared) {
+        List<Definitions.Location> places = Definitions.references(project, word);
+        lines.add(Component.translatable("screen.factorynetwork.code.declared_in",
+                        declared.file(), declared.line())
+                .withStyle(ChatFormatting.GRAY));
+        // Die Erklärung selbst ist eine Fundstelle; gezählt wird, was sonst
+        // noch da ist.
+        int used = Math.max(0, places.size() - 1);
+        lines.add(Component.translatable("screen.factorynetwork.code.used", used)
+                .withStyle(ChatFormatting.DARK_GRAY));
+        int shown = 0;
+        for (Definitions.Location place : places) {
+            if (place.line() == declared.line() && place.file().equals(declared.file())) {
+                continue;
+            }
+            if (shown++ >= MAX_PLACES) {
+                break;
+            }
+            lines.add(Component.literal("§8  " + place.file() + ":" + place.line()));
+        }
+    }
+
+    /**
+     * Das Profil, bevorzugt aus der letzten Antwort.
+     *
+     * <p>Die Antwort auf eine Anfrage trägt die Struktur mit. Wer sie
+     * bevorzugt, bekommt eine ausgetauschte Maschine mit — und ein Gerät,
+     * dessen Chunk beim Öffnen nicht geladen war, überhaupt erst.
+     */
+    private static DeviceProfile profileOf(String connector) {
+        DeviceSnapshotPacket snapshot = ClientDeviceState.snapshot(connector);
+        if (snapshot != null) {
+            return dev.devpanda.factorynetwork.network.packet.DeviceProfileCodec
+                    .fromFlat(snapshot.profile());
+        }
+        return ClientNetworkState.profile(connector);
     }
 }
 ```
 
-- [ ] **Schritt 2: Beide Fenster umstellen**
+- [ ] **Schritt 2: `CodeScreen` umstellen**
 
-In `CodeTabView.renderTooltip` alles ab `var signature = …` ersetzen durch:
+In `CodeScreen.java` die Methode `describeName` (Zeilen 449-497) **löschen** —
+sie lebt jetzt in `EditorTooltip`. In `renderTooltip` alles ab
+`if (describeName(…))` bis zum Ende der Methode ersetzen durch:
 
 ```java
-        EditorTooltip.render(graphics, font, editor, openProblems, mouseX, mouseY);
+        EditorTooltip.render(graphics, font, editor, project, openProblems, mouseX, mouseY);
+    }
 ```
 
-Die Prüfungen auf die Knöpfe davor bleiben stehen. Dasselbe in `CodeScreen`,
-Zeile 511 aufwärts.
+Die drei Prüfungen davor bleiben: `panel.hasMenu() || showingHelp` und
+`overButton`. Ungenutzt gewordene Importe entfernen — der Übersetzer meldet
+sie nicht, `Definitions` und `ChatFormatting` werden aber hier nicht mehr
+gebraucht.
 
-- [ ] **Schritt 3: Beim Schließen aufräumen**
+- [ ] **Schritt 3: `CodeTabView` umstellen**
 
-In `CodeScreen` und im Terminal, wo das Fenster geschlossen wird (Suche:
-`onClose`), ergänzen:
+In `CodeTabView.renderTooltip` alles ab `var signature = editor.signatureAt(…)`
+bis zum Ende der Methode ersetzen durch:
+
+```java
+        EditorTooltip.render(graphics, font, editor, project, openProblems, mouseX, mouseY);
+    }
+```
+
+Die Prüfungen auf `overButton`, `overExpand` und `overPlus` bleiben davor
+stehen.
+
+**Damit bekommt der Reiter die Namensauskunft, die er nie hatte** — Stelle im
+Netz, Erklärungsort, Fundstellen. Das ist kein Nebeneffekt, sondern der Grund,
+warum die Methode wandert.
+
+- [ ] **Schritt 4: Beim Schließen aufräumen**
+
+Der Inhalt von vorhin gilt nicht mehr, wenn das Terminal zugeht. In
+`CodeScreen.onClose` und in `TerminalScreen` (dort, wo `removed()` oder
+`onClose()` steht) ergänzen:
 
 ```java
         ClientDeviceState.clear();
 ```
 
-- [ ] **Schritt 4: Bauen**
+- [ ] **Schritt 5: Bauen**
 
 Aufruf: `./gradlew build`
 Erwartet: übersetzt ohne Fehler.
 
-- [ ] **Schritt 5: Im Spiel prüfen**
+- [ ] **Schritt 6: Im Spiel prüfen**
 
 Aufruf: `./gradlew runClient`
 
-Aufbau: Controller, Kabel, zwei Connectoren. An einem eine Kiste mit ein paar
-Gegenständen, am anderen einen Block ohne Inventar (Stein). Beide beschriften.
+Aufbau: Controller, Laufwerk mit Zelle, Kabel, drei Connectoren. Am ersten eine
+Kiste mit ein paar Gegenständen, am zweiten einen Stein, am dritten eine Kiste,
+wobei der Connector von der Kiste **weg** zeigt. Alle drei beschriften.
 
 Zu prüfen:
-1. Auf den Kistennamen zeigen — Name, „Gegenstände", angeschlossene Seite, nach
-   kurzem Halten der Inhalt.
-2. Auf den Steinnamen zeigen — „nichts anzuschließen".
-3. Den Connector an der Kiste so drehen, dass er ins Leere zeigt — die Warnung
-   in der Zeile muss erscheinen.
-4. In einem Worker `to ` tippen — beide Namen mit Beschreibung dahinter.
-5. `crusher_1.` tippen — vier Vorschläge.
+1. Auf den ersten Namen zeigen — Name, „Kiste", angeschlossene Seite, „27
+   Fächer", nach kurzem Halten der Inhalt.
+2. Auf den zweiten zeigen — kein Fächereintrag, kein Inhalt.
+3. Auf den dritten zeigen — die rote Zeile „Dort ist nichts anzuschließen".
+4. Denselben Namen in einem `worker`-Block mit `filter item:...` als `to`
+   verwenden — die Warnung muss in der Zeile stehen.
+5. Dasselbe im Reiter des Terminals **und** im eigenen Fenster: Beide müssen
+   jetzt gleich viel zeigen.
+6. In einem Worker `to ` tippen — Namen mit Beschreibung dahinter.
+7. `crusher_1.` tippen — vier Vorschläge.
 
-- [ ] **Schritt 6: Committen**
+- [ ] **Schritt 7: Committen**
 
 ```bash
 git add -A
-git commit -m "Zeigen nennt Maschine, Fähigkeiten und Inhalt"
+git commit -m "Zeigen erklärt einen Namen jetzt überall gleich, mit Maschine dahinter"
 ```
-
 ---
 
 ## Aufgabe 10: Die Dokumentation nachziehen
