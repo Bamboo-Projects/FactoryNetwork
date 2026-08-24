@@ -234,6 +234,27 @@ public final class Lexer {
             while (!atEnd() && isSelectorPart(peek())) {
                 advance();
             }
+            // Ein zweiter Doppelpunkt gehört noch dazu — nicht weil die
+            // Sprache ihn kennt, sondern damit der Parser ihn sieht.
+            //
+            // <b>Aus JEI kopiert man mekanism:steel_ingot.</b> Wer daraus
+            // item:mekanism:steel_ingot macht, bekam sieben Fehler in einer
+            // Zeile, von denen keiner den Grund nannte: „Bei move fehlt das
+            // Ziel", „from ist ein Schlüsselwort". Der Lexer hörte am
+            // Doppelpunkt auf, und der Rest der Zeile zerfiel. Als ein Wort
+            // gelesen wird daraus eine Meldung, die die richtige Schreibweise
+            // nennt.
+            //
+            // Dieselbe Bedingung wie oben: nur mitlesen, wenn ein
+            // Auswahlzeichen folgt. Sonst verschluckt ein halb getippter
+            // Ausdruck den Rest der Zeile.
+            if (!atEnd() && peek() == ':'
+                    && pos + 1 < source.length() && isSelectorPart(source.charAt(pos + 1))) {
+                advance();
+                while (!atEnd() && isSelectorPart(peek())) {
+                    advance();
+                }
+            }
             add(TokenType.SELECTOR, source.substring(start, pos), start, pos);
             return;
         }

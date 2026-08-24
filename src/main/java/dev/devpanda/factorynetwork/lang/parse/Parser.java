@@ -940,6 +940,22 @@ public final class Parser {
             default -> Expr.Selector.Kind.TAG;
         };
         String rest = text.substring(colon + 1);
+
+        // Aus JEI kopiert man „mekanism:steel_ingot" — hier steht der
+        // Namensraum vor einem Schrägstrich. Das ist der häufigste Fehler
+        // überhaupt, sobald mehr als eine Mod im Spiel ist, und er verdient
+        // eine Meldung, die die richtige Zeile gleich hinschreibt.
+        int mark = rest.indexOf(':');
+        if (mark >= 0) {
+            String corrected = text.substring(0, colon + 1)
+                    + rest.substring(0, mark) + "/" + rest.substring(mark + 1);
+            error(token.span(), "Der Namensraum steht vor einem Schrägstrich, "
+                            + "nicht vor einem zweiten Doppelpunkt.",
+                    "Schreibe " + corrected + ". Die Form mit Doppelpunkt zeigt JEI an.");
+            return new Expr.Selector(kind, rest.substring(0, mark),
+                    rest.substring(mark + 1), token.span());
+        }
+
         int slash = rest.indexOf('/');
         String namespace = null;
         String path = rest;
