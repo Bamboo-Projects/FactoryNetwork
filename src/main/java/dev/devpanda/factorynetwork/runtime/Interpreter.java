@@ -986,6 +986,31 @@ public final class Interpreter {
         return value;
     }
 
+    /**
+     * Wertet einen Ausdruck als Bedingung aus.
+     *
+     * <p>Für das {@code when} eines Workers, das je Durchgang geprüft wird.
+     * Ein frischer Geltungsbereich, weil es dort keine Umgebung gibt — nur
+     * globale Werte, Bestände und Gerätezustände, und die kommen alle vom
+     * Host.
+     *
+     * <p><b>Ohne Seiteneffekte gemeint, aber nicht erzwungen.</b> Wer in ein
+     * {@code when} einen Aufruf schreibt, der etwas bewegt, bewegt es je
+     * Durchgang. Das ist die Folge davon, dass eine Bedingung ein gewöhnlicher
+     * Ausdruck ist, und die Alternative — eine zweite, eingeschränkte
+     * Ausdruckssprache nur für {@code when} — wäre schlimmer.
+     */
+    public boolean evaluateAsBoolean(Expr expr) {
+        scopes.clear();
+        scopes.push(new HashMap<>());
+        steps = 0;
+        try {
+            return truth(evaluate(expr));
+        } finally {
+            scopes.clear();
+        }
+    }
+
     // ---- Umwandlungen -----------------------------------------------------
 
     private static boolean truth(Value value) {

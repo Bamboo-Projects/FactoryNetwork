@@ -552,7 +552,9 @@ public class ControllerBlockEntity extends BlockEntity {
                     level.isLoaded(position)
                             && level.getBlockEntity(position) instanceof ConnectorBlockEntity connector
                             ? connector : null);
-            runtime.tick(level, program, graph, storage, fluidStorage);
+            runtime.tick(level, program, graph, storage, fluidStorage,
+                    new WorldHost(level, graph, storage, fluidStorage, globals,
+                            this::setChanged));
             // Was weder Speicher noch Gerät annahm, fällt auf den Boden.
             // Hässlich, aber die einzige Antwort, die nichts verschwinden
             // lässt.

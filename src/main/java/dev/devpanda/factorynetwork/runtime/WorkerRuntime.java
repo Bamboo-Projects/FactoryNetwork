@@ -53,6 +53,10 @@ public final class WorkerRuntime {
     private final Map<String, DeviceGroup> groups = new LinkedHashMap<>();
     private final java.util.random.RandomGenerator random = new java.util.Random();
 
+    /** Womit eine {@code when}-Bedingung ausgewertet wird, oder {@code null}. */
+    private Interpreter.Host conditionHost;
+    private Program conditionProgram;
+
     /** Der Zustand eines Workers, wie er auch im Terminal steht. */
     public static final class WorkerState {
         public Status status = Status.IDLE;
@@ -97,6 +101,24 @@ public final class WorkerRuntime {
     /** Ein Tick: läuft über alle Worker und bewegt, was ansteht. */
     public void tick(Level level, Program program, FactoryGraph graph, NetworkStorage storage,
             NetworkFluids fluids) {
+        tick(level, program, graph, storage, fluids, null);
+    }
+
+    /**
+     * Derselbe Tick, aber mit einem Host für die Bedingungen.
+     *
+     * <p><b>Ohne ihn kann {@code when} fast nichts.</b> Es gab hier einen
+     * eigenen kleinen Auswerter, der Literale und {@code storage.count(…)}
+     * kannte — alles andere galt als wahr. Ein Worker mit
+     * {@code when modus == "tag"} lief damit immer, auch nachts, und das
+     * Merkwürdige daran: Er meldete es sogar („Bedingung noch nicht
+     * auswertbar"), nur eben in einer Zeile, die niemand liest, während er
+     * weiterarbeitete.
+     */
+    public void tick(Level level, Program program, FactoryGraph graph, NetworkStorage storage,
+            NetworkFluids fluids, Interpreter.Host host) {
+        this.conditionHost = host;
+        this.conditionProgram = program;
         this.fluids = fluids == null ? new NetworkFluids() : fluids;
         long now = level.getGameTime();
         currentStorage = storage;
@@ -874,6 +896,25 @@ public final class WorkerRuntime {
         if (condition instanceof Expr.BoolLit literal) {
             return literal.value();
         }
+
+        // Mit dem echten Interpreter, damit hier dasselbe gilt wie überall
+        // sonst in der Sprache: Texte, globale Werte, Gerätezustände.
+        if (conditionHost != null && conditionProgram != null) {
+            try {
+                return new Interpreter(conditionProgram, conditionHost).evaluateAsBoolean(condition);
+            } catch (ScriptError error) {
+                // Eine kaputte Bedingung hält den Worker an, statt ihn
+                // stillschweigend laufen zu lassen. Andersherum wäre es die
+                // gefährlichere Wahl: Ein Worker, der bei jedem Fehler
+                // arbeitet, bewegt Dinge, die niemand bewegt haben wollte.
+                state.status = Status.HALTED;
+                state.detail = error.getMessage();
+                note(worker.name() + ": " + error.getMessage());
+                return false;
+            }
+        }
+
+        // Ohne Host bleibt der alte Weg: Zahlen gegen Zahlen.
         if (condition instanceof Expr.Binary binary) {
             Double left = observableNumber(binary.left());
             Double right = observableNumber(binary.right());

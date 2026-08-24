@@ -14,6 +14,7 @@ import dev.devpanda.factorynetwork.lang.Side;
 import dev.devpanda.factorynetwork.network.packet.DeviceSnapshotPacket;
 import dev.devpanda.factorynetwork.registry.FnBlocks;
 import dev.devpanda.factorynetwork.runtime.ScriptError;
+import dev.devpanda.factorynetwork.runtime.WorkerRuntime;
 import dev.devpanda.factorynetwork.runtime.Value;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -5631,6 +5632,61 @@ public final class FactoryNetworkGameTests {
         helper.assertTrue(entity.draft().files().containsKey("neu.mf"),
                 "die neue Datei fehlt: " + entity.draft().names());
         helper.succeed();
+    }
+
+    /**
+     * Ein Worker mit einer Textbedingung schaltet wirklich ab.
+     *
+     * <p><b>Der Test, der lange gefehlt hat.</b> {@code when} hatte einen
+     * eigenen kleinen Auswerter, der nur Zahlen konnte — alles andere galt
+     * als wahr. {@code when modus == "tag"} lief damit rund um die Uhr, und
+     * die Doku versprach das Gegenteil. Hier steht jetzt, was gelten soll.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void aTextConditionReallySwitchesTheWorkerOff(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        entity.storage().insert(Items.IRON_INGOT, 64);
+
+        helper.assertTrue(entity.deploy("""
+                global modus = "nacht"
+
+                worker liefern {
+                    from storage
+                    to depot
+                    filter item:iron_ingot
+                    when modus == "tag"
+                }
+
+                fn tagschicht() {
+                    modus = "tag"
+                }"""), "das Programm wurde nicht übernommen");
+
+        // Erster Durchgang: Der Modus ist „nacht", der Worker muss schlafen.
+        entity.serverTick();
+        var zustand = entity.runtime().states().get("liefern");
+        helper.assertTrue(zustand != null, "den Worker gibt es nicht");
+        helper.assertTrue(zustand.status == WorkerRuntime.Status.WAITING_CONDITION,
+                "erwartet WAITING_CONDITION, war " + zustand.status
+                        + " (" + zustand.detail + ")");
+        helper.assertValueEqual(entity.storage().count(Items.IRON_INGOT), 64L,
+                "es darf nichts bewegt worden sein");
+
+        // Umschalten — jetzt muss er laufen.
+        //
+        // Mit Abstand: Ein Worker ohne rate läuft alle zwanzig Ticks, und ein
+        // zweiter Tick im selben Augenblick würde übersprungen. Er behielte
+        // dann seinen alten Zustand, und der Test prüfte nichts.
+        entity.callFunction("tagschicht", List.of());
+        helper.runAfterDelay(25, () -> {
+            entity.serverTick();
+            WorkerRuntime.WorkerState danach = entity.runtime().states().get("liefern");
+            helper.assertTrue(danach.status != WorkerRuntime.Status.WAITING_CONDITION,
+                    "nach dem Umschalten darf er nicht mehr auf die Bedingung warten, war "
+                            + danach.status + " (" + danach.detail + ")");
+            helper.succeed();
+        });
     }
 
     // ---- Gerätemitglieder --------------------------------------------------
