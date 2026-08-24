@@ -37,4 +37,9 @@ public final class ClientNetworkView implements NetworkView {
     public List<String> displays() {
         return ClientNetworkState.displays();
     }
+
+    @Override
+    public dev.devpanda.factorynetwork.lang.DeviceProfile profile(String connector) {
+        return ClientNetworkState.profile(connector);
+    }
 }

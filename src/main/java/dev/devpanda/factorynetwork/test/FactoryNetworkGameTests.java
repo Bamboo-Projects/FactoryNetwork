@@ -2247,7 +2247,13 @@ public final class FactoryNetworkGameTests {
                         new dev.devpanda.factorynetwork.network.packet.NamedPlace(
                                 "halle", new BlockPos(7, 8, 9))),
                 java.util.List.of("haul: RUNNING"), java.util.List.of("werk_1: Werk"),
-                java.util.List.of("water: 1000 mB"));
+                java.util.List.of("water: 1000 mB"),
+                java.util.List.of(
+                        dev.devpanda.factorynetwork.network.packet.DeviceProfileCodec.toFlat(
+                                "kiste_1", new DeviceProfile("block.minecraft.chest",
+                                        "minecraft", Side.EAST, java.util.Map.of(
+                                        Side.EAST, new DeviceProfile.Access(27, 0, false),
+                                        Side.ANY, new DeviceProfile.Access(27, 0, false))))));
         var zurueck = roundTrip(helper,
                 dev.devpanda.factorynetwork.network.packet.NetworkStatePacket.STREAM_CODEC,
                 netzzustand);
@@ -2257,6 +2263,17 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(zurueck.displays().get(0).name(), "halle", "Anzeigen");
         helper.assertValueEqual(zurueck.connectors().get(0).pos(),
                 new BlockPos(1, 2, 3), "und die Stelle kommt mit");
+
+        // Das Profil kommt als flache Liste über die Leitung und muss drüben
+        // wieder dasselbe Gerät sein — samt seitenlosem Zugang.
+        var profil = dev.devpanda.factorynetwork.network.packet.DeviceProfileCodec
+                .fromFlat(zurueck.profiles().get(0));
+        helper.assertValueEqual(zurueck.profiles().get(0).name(), "kiste_1", "Name im Profil");
+        helper.assertValueEqual(profil.descriptionId(), "block.minecraft.chest", "Maschine");
+        helper.assertValueEqual(profil.connectedSide(), Side.EAST, "angeschlossene Seite");
+        helper.assertValueEqual(profil.accessAt(Side.EAST).slots(), 27, "Fächer");
+        helper.assertValueEqual(profil.accessAt(Side.WEST).slots(), 27,
+                "der seitenlose Zugang gilt für jede Seite");
 
         var ablaeufe = new dev.devpanda.factorynetwork.network.packet.FlowStatePacket(
                 java.util.List.of(new dev.devpanda.factorynetwork.network.packet

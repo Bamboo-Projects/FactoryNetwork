@@ -32,6 +32,15 @@ import java.util.List;
  * nirgends, wo der Editor ihn hätte vorschlagen können. Wer seine Wand
  * benannt hatte, musste sich den Namen merken und richtig abtippen.
  *
+ * <p><b>Die Profile sagen, was hinter den Connectoren steht.</b> Sie reisen
+ * hier mit und nicht auf Anfrage, weil sie sich nur ändern, wenn jemand die
+ * Maschine austauscht. Was gerade in den Fächern liegt, kommt dagegen über
+ * {@link DeviceSnapshotPacket} — das ändert sich im Sekundentakt.
+ *
+ * <p><b>Sechs Felder sind die Grenze.</b> {@code StreamCodec.composite} trägt
+ * nicht mehr; ein siebtes bräuchte eine von Hand geschriebene Fassung wie in
+ * {@link AnalyserDataPacket}.
+ *
  * <p>Der Quelltext ist hier ausgezogen. Er stand als Zeichenkette bis 64 KB
  * in jedem Netzzustand — und der geht raus, sooft sich am Netz etwas ändert,
  * während ihn seit dem Projektumbau niemand mehr liest. Er kommt über
@@ -40,7 +49,8 @@ import java.util.List;
  */
 public record NetworkStatePacket(List<NamedPlace> connectors, List<NamedPlace> displays,
                                  List<String> workers, List<String> plants,
-                                 List<String> fluids)
+                                 List<String> fluids,
+                                 List<DeviceProfileCodec.Flat> profiles)
         implements CustomPacketPayload {
 
     public static final Type<NetworkStatePacket> TYPE = new Type<>(
@@ -58,6 +68,8 @@ public record NetworkStatePacket(List<NamedPlace> connectors, List<NamedPlace> d
                     NetworkStatePacket::plants,
                     ByteBufCodecs.stringUtf8(128).apply(ByteBufCodecs.list(256)),
                     NetworkStatePacket::fluids,
+                    DeviceProfileCodec.Flat.STREAM_CODEC.apply(ByteBufCodecs.list(512)),
+                    NetworkStatePacket::profiles,
                     NetworkStatePacket::new);
 
     @Override

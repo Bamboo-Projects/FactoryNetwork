@@ -1,10 +1,14 @@
 package dev.devpanda.factorynetwork.client;
 
+import dev.devpanda.factorynetwork.lang.DeviceProfile;
+import dev.devpanda.factorynetwork.network.packet.DeviceProfileCodec;
 import dev.devpanda.factorynetwork.network.packet.NamedPlace;
 import dev.devpanda.factorynetwork.network.packet.NetworkStatePacket;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Was der Client über das Netzwerk weiß.
@@ -25,6 +29,7 @@ public final class ClientNetworkState {
     private static List<String> workers = new ArrayList<>();
     private static List<String> plants = new ArrayList<>();
     private static List<String> fluids = new ArrayList<>();
+    private static Map<String, DeviceProfile> profiles = Map.of();
 
     public static void accept(NetworkStatePacket packet) {
         connectors = new ArrayList<>(packet.connectors());
@@ -32,6 +37,22 @@ public final class ClientNetworkState {
         workers = new ArrayList<>(packet.workers());
         plants = new ArrayList<>(packet.plants());
         fluids = new ArrayList<>(packet.fluids());
+
+        Map<String, DeviceProfile> received = new HashMap<>();
+        for (DeviceProfileCodec.Flat flat : packet.profiles()) {
+            received.put(flat.name(), DeviceProfileCodec.fromFlat(flat));
+        }
+        profiles = received;
+    }
+
+    /**
+     * Was hinter einem Connector steht.
+     *
+     * <p>Nie {@code null}: Wer nach einem Namen fragt, den es nicht gibt,
+     * bekommt ein Profil, das über sich nichts sagt.
+     */
+    public static DeviceProfile profile(String connector) {
+        return profiles.getOrDefault(connector, DeviceProfile.unreachable());
     }
 
     /** Die Namen der Connectoren. */
