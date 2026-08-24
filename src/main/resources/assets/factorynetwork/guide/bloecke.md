@@ -36,9 +36,11 @@ rechnen erst mit einem Serverschrank.
 Hier schreibst du den Code und siehst, was das Netz tut. Es muss **direkt an
 den Controller** — es sucht ihn in der Nachbarschaft, nicht über das Kabel.
 
-Fünf Reiter: **Code** für das Programm, **Netz** für Strom, Worker, Abläufe
-und globale Werte, **Speicher** für den Bestand, **Anzeigen** für die
-Displays. **Fertigung** ist ausgegraut; Autocrafting gibt es noch nicht.
+Fünf Reiter, in dieser Reihenfolge: **Speicher** für den Bestand,
+**Fertigung**, **Code** für das Programm, **Netz** für Strom, Worker, Abläufe
+und globale Werte, **Anzeigen** für die Displays. Die Fertigung ist
+ausgegraut — Autocrafting gibt es noch nicht. Sie steht trotzdem da, damit man
+sieht, wohin es geht.
 
 *Kostet: keinen Kanal, keinen Strom.*
 

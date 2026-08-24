@@ -315,7 +315,7 @@ class CompletionsTest {
     @DisplayName("Hinter items() steht eine Liste, kein Gerät")
     void afterItemsCallTheListMembersAreOffered() {
         withNetwork("crusher_1", () -> assertEquals(
-                List.of("count", "first", "sum"),
+                List.of("count", "first", "sum", "where", "sort"),
                 at("fn test() {", "    log(crusher_1.items().")));
     }
 

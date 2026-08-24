@@ -137,6 +137,75 @@ class ListMemberTest {
     }
 
     @Test
+    @DisplayName("where sortiert aus, mit it als Eintrag")
+    void whereFiltersWithIt() {
+        TestHost host = new TestHost();
+        host.contents.add(new Value.Int(3));
+        host.contents.add(new Value.Int(30));
+        host.contents.add(new Value.Int(7));
+        Interpreter interpreter = interpreterFor("""
+                fn zeigen() {
+                    log(crusher_1.items().where(it > 5).count())
+                }""", host);
+
+        interpreter.call("zeigen", List.of());
+
+        assertEquals(List.of("2"), host.logs);
+    }
+
+    @Test
+    @DisplayName("sort ordnet nach dem Ausdruck")
+    void sortOrdersByTheExpression() {
+        TestHost host = new TestHost();
+        host.contents.add(new Value.Int(30));
+        host.contents.add(new Value.Int(3));
+        host.contents.add(new Value.Int(7));
+        Interpreter interpreter = interpreterFor("""
+                fn zeigen() {
+                    log(crusher_1.items().sort(it).first())
+                }""", host);
+
+        interpreter.call("zeigen", List.of());
+
+        assertEquals(List.of("3"), host.logs);
+    }
+
+    @Test
+    @DisplayName("it lebt nur im Aufruf und verschwindet danach")
+    void itLivesOnlyInsideTheCall() {
+        TestHost host = new TestHost();
+        host.contents.add(new Value.Int(1));
+        Interpreter interpreter = interpreterFor("""
+                fn zeigen() {
+                    log(crusher_1.items().where(it > 0).count())
+                    log(crusher_1.items().where(it > 5).count())
+                }""", host);
+
+        interpreter.call("zeigen", List.of());
+
+        assertEquals(List.of("1", "0"), host.logs,
+                "der zweite Aufruf sieht sein eigenes it, nicht das des ersten");
+    }
+
+    @Test
+    @DisplayName("Ein Name von außen bleibt im Ausdruck erreichbar")
+    void anOuterNameStaysReachableInside() {
+        TestHost host = new TestHost();
+        host.contents.add(new Value.Int(3));
+        host.contents.add(new Value.Int(30));
+        Interpreter interpreter = interpreterFor("""
+                fn zeigen() {
+                    let grenze = 5
+                    log(crusher_1.items().where(it > grenze).count())
+                }""", host);
+
+        interpreter.call("zeigen", List.of());
+
+        assertEquals(List.of("1"), host.logs,
+                "it legt sich darüber, es schneidet nicht ab");
+    }
+
+    @Test
     @DisplayName("sum über eine leere Liste ist null")
     void sumOfNothingIsZero() {
         TestHost host = new TestHost();

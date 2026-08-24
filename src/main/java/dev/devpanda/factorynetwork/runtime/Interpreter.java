@@ -760,6 +760,20 @@ public final class Interpreter {
     }
 
     private Value call(Expr.Call call) {
+        // <b>Zwei Aufrufe werten ihr Argument nicht vorher aus.</b>
+        // {@code where} und {@code sort} brauchen es für jeden Eintrag
+        // einzeln, mit einem anderen {@code it} — würde es hier ausgerechnet,
+        // stünde am Ende ein einziger Wert da, und die Liste hätte nichts
+        // davon.
+        if (call.callee() instanceof Expr.Member member
+                && ("where".equals(member.name()) || "sort".equals(member.name()))
+                && !call.arguments().isEmpty()) {
+            Value target = evaluate(member.target());
+            if (target instanceof Value.ValueList list) {
+                return perEntry(list, member.name(), call.arguments().get(0).value());
+            }
+        }
+
         List<Value> arguments = call.arguments().stream()
                 .map(argument -> evaluate(argument.value()))
                 .toList();
@@ -845,14 +859,58 @@ public final class Interpreter {
                 }
                 yield numberValue(total, whole);
             }
+            // where und sort kommen hier nicht an: Sie werden in call()
+            // abgefangen, weil sie ihren Ausdruck ungerechnet brauchen. Ohne
+            // Argument landen sie doch hier, und dann fehlt genau das.
             case "where", "sort" -> throw new ScriptError(
-                    name + " gibt es noch nicht.",
-                    "Es muss seinen Ausdruck für jeden Eintrag einzeln auswerten, und das "
-                            + "kann diese Fassung nicht. Bekannt sind count, first und sum.");
+                    name + " braucht einen Ausdruck.",
+                    "Zum Beispiel: items().where(it) oder items().sort(it).");
             default -> throw new ScriptError(
                     "Eine Liste kann kein " + name + ".",
-                    "Bekannt sind count, first und sum.");
+                    "Bekannt sind count, first, sum, where und sort.");
         };
+    }
+
+    /**
+     * {@code where} und {@code sort} — der Ausdruck gilt je Eintrag.
+     *
+     * <p><b>{@code it} ist der Eintrag</b>, und er lebt in einem eigenen
+     * Geltungsbereich, der nach jedem Eintrag wieder verschwindet. Damit
+     * verdeckt er nichts, was außen steht, und zwei ineinandergeschachtelte
+     * Aufrufe kommen sich nicht in die Quere — der innere legt sein eigenes
+     * {@code it} darüber.
+     *
+     * <p>Ein Vergleich in {@code sort} braucht Zahlen. Was keine ist, zählt
+     * als Null: Eine Liste zu sortieren, in der etwas Unvergleichbares steht,
+     * ist kein Grund, das Programm anzuhalten — sie steht dann eben vorn.
+     */
+    private Value perEntry(Value.ValueList list, String operation, Expr expression) {
+        if ("where".equals(operation)) {
+            List<Value> kept = new java.util.ArrayList<>();
+            for (Value entry : list.entries()) {
+                if (truth(withIt(entry, expression))) {
+                    kept.add(entry);
+                }
+            }
+            return new Value.ValueList(kept);
+        }
+        List<Value> sorted = new java.util.ArrayList<>(list.entries());
+        sorted.sort(java.util.Comparator.comparingDouble(entry -> {
+            Value key = withIt(entry, expression);
+            return key instanceof Value.Int number ? number.value()
+                    : key instanceof Value.Decimal decimal ? decimal.value() : 0;
+        }));
+        return new Value.ValueList(sorted);
+    }
+
+    /** Wertet einen Ausdruck aus, in dem {@code it} dieser Eintrag ist. */
+    private Value withIt(Value entry, Expr expression) {
+        scopes.push(new HashMap<>(Map.of("it", entry)));
+        try {
+            return evaluate(expression);
+        } finally {
+            scopes.pop();
+        }
     }
 
     private Value callFree(String name, List<Value> arguments) {

@@ -848,18 +848,23 @@ Vorgesehen sind:
 | `count` | zählen | **gebaut** |
 | `first` | das erste Element, oder nichts | **gebaut** |
 | `sum` | alle Zahlen aufaddieren | **gebaut** |
-| `where` | aussortieren | fehlt |
-| `sort` | ordnen | fehlt |
+| `where` | aussortieren | **gebaut** |
+| `sort` | ordnen | **gebaut** |
 
 Mehr nicht — kein `map`, kein `groupBy`. In einer Fabrik gibt es dafür bisher
 keinen Fall, und hinzufügen lässt sich später leicht, wegnehmen nicht.
 
-> **Warum `where` und `sort` fehlen:** Sie werten ihren Ausdruck **je
-> Element** aus. Alle anderen Argumente werden ausgerechnet, bevor der Aufruf
-> beginnt — hier muss stattdessen der Ausdruck selbst durchgereicht und für
-> jeden Eintrag neu ausgewertet werden, mit `it` im Geltungsbereich. Das ist
-> ein Eingriff in den Aufrufpfad und kein Nachtrag. Wer sie heute schreibt,
-> bekommt eine Meldung, die genau das sagt.
+**`where` und `sort` werten ihren Ausdruck je Eintrag aus.** Alle anderen
+Argumente werden ausgerechnet, bevor der Aufruf beginnt; diese beiden bekommen
+den Ausdruck selbst und werten ihn für jeden Eintrag neu aus, mit `it` als
+diesem Eintrag.
+
+`it` lebt dabei nur im Aufruf: Es legt sich über das, was außen steht, ohne
+es abzuschneiden — `where(it > grenze)` sieht beides. Und zwei Aufrufe
+nacheinander sehen jeder ihr eigenes.
+
+`it` ist ein Schlüsselwort. Wer eine Variable so nennen will, schreibt sie in
+Rückstriche.
 
 Woher eine Liste kommt: `storage.items()` für den Netzspeicher,
 `crusher_1.items()` für ein Gerät.

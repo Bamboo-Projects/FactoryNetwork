@@ -247,14 +247,18 @@ public final class Signatures {
     /**
      * Was an einer Liste steht.
      *
-     * <p>Drei von fünf, die {@code sprache.md} §12 nennt. {@code where} und
-     * {@code sort} fehlen, weil sie ihren Ausdruck je Element auswerten
-     * müssen — sie hier anzubieten hieße, auf einen Laufzeitfehler zu zeigen.
+     * <p>Alle fünf, die {@code sprache.md} §12 nennt. {@code where} und
+     * {@code sort} werten ihren Ausdruck je Eintrag aus, mit {@code it} als
+     * diesem Eintrag.
      */
     public static final List<Member> LIST_MEMBERS = List.of(
             new Member("count", "count() int", "Wie viele Einträge."),
             new Member("first", "first() any", "Der erste Eintrag, oder nichts."),
-            new Member("sum", "sum() int", "Alle Zahlen aufaddiert."));
+            new Member("sum", "sum() int", "Alle Zahlen aufaddiert."),
+            new Member("where", "where(expr) list",
+                    "Behält, wofür der Ausdruck wahr ist. it ist der Eintrag."),
+            new Member("sort", "sort(expr) list",
+                    "Ordnet nach dem Ausdruck. it ist der Eintrag."));
 
     /**
      * Die Formen, die in dieser Blockart gelten.
