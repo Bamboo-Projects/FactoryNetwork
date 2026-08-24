@@ -5689,6 +5689,37 @@ public final class FactoryNetworkGameTests {
         });
     }
 
+    /**
+     * Eine Anzeige nennt einen globalen Wert beim Namen.
+     *
+     * <p>Geprüft wird der Text selbst und nicht, ob überhaupt etwas dasteht —
+     * ein Fragezeichen ist auch etwas, und genau das kam vorher heraus.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void aDisplayShowsAGlobalValue(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                global modus = "nachtschicht"
+
+                display halle {
+                    row "Modus" modus
+                }"""), "das Programm wurde nicht übernommen");
+
+        var werte = new dev.devpanda.factorynetwork.runtime.DisplayValues(
+                entity.graph(), entity.storage(), entity.runtime(), entity.globals());
+        var zeilen = werte.evaluate((dev.devpanda.factorynetwork.lang.ast.Decl.Display)
+                entity.program().declarations().stream()
+                        .filter(d -> d instanceof dev.devpanda.factorynetwork.lang.ast.Decl.Display)
+                        .findFirst().orElseThrow());
+
+        helper.assertValueEqual(zeilen.get(0).value(), "nachtschicht",
+                "die Anzeige muss den Wert nennen, nicht ein Fragezeichen");
+        helper.succeed();
+    }
+
     // ---- Gerätemitglieder --------------------------------------------------
 
     /**

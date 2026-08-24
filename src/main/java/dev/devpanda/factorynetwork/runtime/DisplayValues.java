@@ -37,10 +37,26 @@ public final class DisplayValues {
     private final NetworkStorage storage;
     private final WorkerRuntime runtime;
 
+    /**
+     * Die globalen Werte des Netzes, oder leer.
+     *
+     * <p><b>Ein globaler Wert ist genau das, was oben steht: ein Wert, den
+     * man nennt.</b> Er kostet keine Rechnung, nur einen Blick in eine Karte
+     * — deshalb passt er hierher, während {@code storage.count(…) / 640.0}
+     * es weiterhin nicht tut.
+     */
+    private final java.util.Map<String, Value> globals;
+
     public DisplayValues(FactoryGraph graph, NetworkStorage storage, WorkerRuntime runtime) {
+        this(graph, storage, runtime, java.util.Map.of());
+    }
+
+    public DisplayValues(FactoryGraph graph, NetworkStorage storage, WorkerRuntime runtime,
+                         java.util.Map<String, Value> globals) {
         this.graph = graph;
         this.storage = storage;
         this.runtime = runtime;
+        this.globals = globals == null ? java.util.Map.of() : globals;
     }
 
     public List<Line> evaluate(Decl.Display display) {
@@ -99,6 +115,13 @@ public final class DisplayValues {
                 case "name" -> device.value();
                 default -> "?";
             };
+        }
+        // Ein globaler Wert steht für sich — kein Aufruf, keine Rechnung.
+        if (expr instanceof Expr.Name name) {
+            Value value = globals.get(name.value());
+            if (value != null) {
+                return value.describe();
+            }
         }
         return "?";
     }
