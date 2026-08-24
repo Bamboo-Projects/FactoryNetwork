@@ -1,6 +1,8 @@
 package dev.devpanda.factorynetwork.client.screen;
 
 import dev.devpanda.factorynetwork.client.ClientNetworkState;
+import dev.devpanda.factorynetwork.lang.DeviceProfile;
+import dev.devpanda.factorynetwork.lang.Side;
 import dev.devpanda.factorynetwork.lang.Signatures;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
@@ -294,11 +296,52 @@ public final class Completions {
         return false;
     }
 
+    /**
+     * Was ein Gerät kann, in einer Zeile.
+     *
+     * <p>Über alle Seiten zusammengefasst und nicht je Seite: In der
+     * Vorschlagsliste ist Platz für ein paar Wörter, und die Frage dort
+     * lautet „taugt das überhaupt". Welche Seite es genau ist, sagt das
+     * Zeigen.
+     */
+    public static String abilities(DeviceProfile profile) {
+        if (!profile.reachable()) {
+            return "";
+        }
+        List<String> can = new ArrayList<>();
+        for (Side side : Side.values()) {
+            if (profile.hasItems(side) && !can.contains("Gegenstände")) {
+                can.add("Gegenstände");
+            }
+            if (profile.hasFluids(side) && !can.contains("Flüssigkeiten")) {
+                can.add("Flüssigkeiten");
+            }
+            if (profile.hasEnergy(side) && !can.contains("Strom")) {
+                can.add("Strom");
+            }
+        }
+        return can.isEmpty() ? "nichts anzuschließen" : String.join(", ", can);
+    }
+
+    /**
+     * Die Connectoren, jeder mit der Maschine dahinter.
+     *
+     * <p>Das {@code detail} stand hier lange leer. Es ist die billigste
+     * Stelle mit dem größten Nutzen: Sie steht in jeder Vorschlagsliste, ohne
+     * dass jemand etwas dafür tun muss.
+     */
     private static void addConnectors(List<Entry> entries, String prefix) {
         for (String connector : ClientNetworkState.connectors()) {
-            if (matches(connector, prefix)) {
-                entries.add(new Entry(connector, connector, Entry.Kind.CONNECTOR));
+            if (!matches(connector, prefix)) {
+                continue;
             }
+            DeviceProfile profile = ClientNetworkState.profile(connector);
+            String detail = profile.reachable()
+                    ? net.minecraft.network.chat.Component
+                            .translatable(profile.descriptionId()).getString()
+                            + " · " + abilities(profile)
+                    : "";
+            entries.add(new Entry(connector, connector, Entry.Kind.CONNECTOR, detail));
         }
     }
 
