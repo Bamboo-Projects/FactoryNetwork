@@ -474,7 +474,11 @@ public final class WorldHost implements Interpreter.Host {
                 throw new ScriptError("Unbekannter Connector " + name + ".",
                         graph.starvedConnectors().size() + " Geräte im Netz haben keinen "
                                 + "freien Kanal bekommen — vielleicht ist eines davon gemeint. "
-                                + "Ein Kabelstrang trägt acht.");
+                                + "Ein dünner Strang trägt "
+                                + dev.devpanda.factorynetwork.block.CableBlock.CHANNELS_THIN
+                                + ", ein dichter "
+                                + dev.devpanda.factorynetwork.block.CableBlock.CHANNELS_DENSE
+                                + ".");
             }
             String suggestion = suggestDevice(name);
             throw new ScriptError("Unbekannter Connector " + name + ".",

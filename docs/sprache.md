@@ -866,6 +866,11 @@ nacheinander sehen jeder ihr eigenes.
 `it` ist ein Schlüsselwort. Wer eine Variable so nennen will, schreibt sie in
 Rückstriche.
 
+**`where` und `sort` sind auf Listen reserviert.** Sie werden im Aufrufpfad
+abgefangen, bevor eigene Funktionen an die Reihe kommen — eine Funktion
+dieses Namens ließe sich zwar noch schreiben, aber auf einer Liste käme sie
+nie zum Zug. Nimm einen anderen Namen.
+
 Woher eine Liste kommt: `storage.items()` für den Netzspeicher,
 `crusher_1.items()` für ein Gerät.
 

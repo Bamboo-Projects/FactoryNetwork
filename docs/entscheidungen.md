@@ -127,7 +127,7 @@ Rateverfahren.
    bis heute nicht.
 2. ~~Konkrete Syntax~~ — gebaut.
 3. ~~Speichermodell~~ — gebaut, Zellen in Laufwerken.
-4. ~~Netzwerktopologie und Channels~~ — gebaut, acht je Strang.
+4. ~~Netzwerktopologie und Channels~~ — gebaut, sechzehn je dünnem Strang.
 5. **Erkennung von Maschinen-Rezepten** (Konzept 22.5) — Voraussetzung für
    Autocrafting. Unverändert offen.
 
