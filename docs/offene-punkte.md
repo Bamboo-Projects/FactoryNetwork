@@ -2,7 +2,15 @@
 
 Alles, was in `docs/` und im Code als unfertig steht, an einer Stelle.
 
-Stand: 2026-08-25 (nach der Nacht)
+Stand: 2026-08-25 (nach der zweiten Nacht)
+
+> **Nacht auf den 25.08., zweiter Durchgang:** 1.2 (`where` und `sort` stehen
+> jetzt vollständig), dazu vier Dinge, die vorher niemand auf der Liste
+> hatte, weil sie niemandem aufgefallen waren: ein Display, das jede Rechnung
+> auf 0 fallen ließ, ein `on` mit vertipptem Ereignisnamen, das still nie
+> lief, ein `await device_changed` ohne Block, das ewig wartete, und eine aus
+> JEI kopierte ID, die sieben Fehlermeldungen erzeugte. Alle vier sind
+> behoben. Neu auf der Liste stehen 1.13 bis 1.15, 3.9 und 4.5.
 
 > **Was in der Nacht auf den 25.08. erledigt wurde:** 2.1 (globale Werte),
 > 3.1 (Annahme-Probe), 3.3 (Flüssigkeitsstände), 3.4 (Bearbeitung anfragen),
@@ -25,7 +33,7 @@ Stand: 2026-08-25 (nach der Nacht)
 | # | Was | Status | Wo | Größe | Blockiert durch |
 |---|---|---|---|---|---|
 | 1.1 | **Teilweise gebaut.** `insert()` und `items()` stehen; offen sind `output()` und `send()` — beide unterspezifiziert (siehe `sprache.md` §6) — und `busy` | E | `sprache.md:325` | mittel | `output()`: was `move crusher.output() to x` als Quelle meint. `send()`: Verteilung im Aufruf. `busy`: keine Capability |
-| 1.2 | **Teilweise gebaut.** `count`, `first`, `sum` und `storage.items()` stehen. `where` und `sort` fehlen: Sie werten je Element aus, und Argumente werden vorher ausgerechnet | F | `sprache.md` §12 | mittel | Eingriff in den Aufrufpfad |
+| 1.2 | ~~Listenoperationen~~ — **fertig**, alle fünf. `where` und `sort` werten je Eintrag aus, mit `it` als diesem Eintrag | | `sprache.md` §12 | | |
 | 1.3 | Flüssigkeits-Tags: `tag:` löst nur Gegenstands-Tags auf | E | `umsetzung.md:182` | klein | Schreibweise (`fluidtag:` oder `tag:` durchsucht beides) |
 | 1.4 | Chemikalien: Schreibweise steht, Anbindung fehlt, Laufzeit wirft | F | `WorldHost.java:461` | mittel–groß | Mekanism als Abhängigkeit |
 | 1.5 | `import`/Module — reserviert, tut nichts | Z | `Parser.java:86` | — | bewusst, bis ein Projekt den Namensraum sprengt |
@@ -36,6 +44,9 @@ Stand: 2026-08-25 (nach der Nacht)
 | 1.10 | Konstanten (`const rate = 64`) neben dem veränderlichen `global` | E | `globale-werte.md:198` | klein | Entscheidung |
 | 1.11 | Listen und Karten als globale Werte | E | `globale-werte.md:201` | mittel | 1.2 und Entscheidung |
 | 1.12 | Einstellbare Grenzen für Nutzercode. Das Schrittbudget (500) und die Schrankplätze gibt es; „jeweils einstellbar" nicht | F | `entscheidungen.md:118` | groß | 4.2 — es gibt keine Konfiguration |
+| 1.13 | **Die JEI-Schreibweise annehmen?** `item:mekanism:steel_ingot` meldet jetzt die richtige Form, statt die Zeile zerfallen zu lassen. Sie *anzunehmen* wäre eine Änderung der Spezifikation: Lexer, Parser, EBNF, `sprache.md`, die VS-Code-Grammatik und der Guide. Dafür spricht, dass jeder Spieler IDs aus JEI kopiert | E | `Parser.parseSelector` | mittel | Entscheidung über die Spezifikation |
+| 1.14 | **Gruppen sind kein Wert.** `pumps.stop()` und `crushers.members()` stehen an mehreren Stellen in `sprache.md` und `konzept.md`; die Laufzeit kennt eine Gruppe nur als Verteilziel eines Workers. Entweder Gruppen bekommen Werte-Charakter mit `members()`, oder die Spezifikation streicht die Form | E | `sprache.md:39`, `:90`, `:836` | mittel | Entscheidung |
+| 1.15 | **`move` gibt nichts zurück.** `sprache.md:444` zeigt `let bewegt = move …`; `move` ist eine Anweisung, kein Ausdruck, und beide Ausführungspfade verwerfen die Zahl. Der Guide sagt es inzwischen ehrlich | E | `sprache.md:444`, `Interpreter.java:269` | klein | Entscheidung |
 
 ## 2. Laufzeit
 
@@ -64,6 +75,7 @@ Stand: 2026-08-25 (nach der Nacht)
 | 3.6 | LDLib2 als UI-Grundlage — nicht einmal geprüft | E | `umsetzung.md:512` | klein | Entscheidung |
 | 3.7 | Ob das Geräteprofil dem Analysator etwas zu geben hat | E | `geraeteerkennung.md:340` | klein | — |
 | 3.8 | Ob der Netz-Reiter globale Werte ändern darf | E | `globale-werte.md:200` | klein | 2.1 |
+| 3.9 | **`gerät.count(…)` auf einer Anzeige.** In einer Funktion geht es, auf einer Tafel steht `?`. Eine Anzeige rechnet seit dem 25.08., aber sie liest nur den Netzbestand und das Redstonesignal — ein Blick in eine Maschine ist ein Zugriff je Tafel und Sekunde | E | `DisplayValues.java` | klein | Entscheidung über die Kosten |
 
 ## 4. VS-Code-Erweiterung
 
@@ -73,6 +85,7 @@ Stand: 2026-08-25 (nach der Nacht)
 | 4.2 | **Die Mod hat keine Konfiguration.** Weder Server- noch Clientteil | F | `entscheidungen.md:2313` | mittel | Voraussetzung für 4.1 und 1.12 |
 | 4.3 | ~~Projektweite Symbole~~ — **fertig**, in VS Code **und** im Spiel | | | | |
 | 4.4 | Die Logik steht zweimal da, gehalten durch `check.js` und den Export-Test | Z | `entscheidungen.md:2114` | — | bewusst |
+| 4.5 | **In der `on`-Kopfzeile werden die Ereignisse nicht vorgeschlagen.** Nach `on ` bieten beide Editoren die Deklarationswörter an. Die vier eingebauten stehen seit dem 25.08. in `BuiltinEvents` und werden bei `await` und `emit` vorgeschlagen — die Kopfzeile eines `on` erkennt bisher keiner von beiden | F | `Completions.java`, `extension.js` | klein | — |
 
 ## 5. Blöcke und Welt
 
@@ -116,10 +129,12 @@ abgenickt: Knappheit strikt nach `priority`, `power` als Schlüsselwort,
 Anmeldung beim Übernehmen, Abgabe ruht bei `OFF`. **Danach ist die
 Verteilung reine Arbeit** — der Entwurf steht, die Sprachseite auch.
 
-**2. `where` und `sort`** (1.2). Sie machen `items()` erst nützlich, und sie
-sind der einzige Grund, warum §12 halb dasteht. Kein Entscheidungsbedarf, nur
-ein Eingriff in den Aufrufpfad: Das Argument darf nicht vorher ausgewertet
-werden.
+**2. Drei Stellen, an denen die Spezifikation mehr verspricht als der Code
+kann** (1.13, 1.14, 1.15). Gruppen als Wert, `move` als Ausdruck, die
+JEI-Schreibweise. Alle drei sind Entscheidungen und keine Arbeit — und
+solange sie offen sind, steht in `sprache.md` Code, den niemand ausführen
+kann. Ein Beispiel, das nicht läuft, kostet mehr Vertrauen als eine fehlende
+Zeile.
 
 **3. Weitere Handbuchseiten** (6.1). Die Anbindung steht, die ersten Seiten
 auch. Der Rest ist Schreibarbeit ohne Risiko — und das, was die Mod für
