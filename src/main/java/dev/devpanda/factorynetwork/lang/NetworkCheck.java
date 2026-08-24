@@ -77,10 +77,70 @@ public final class NetworkCheck {
                 case FROM, TO, OVERFLOW -> {
                     checkTarget(entry.value(), view, local, problems);
                     checkTarget(entry.second(), view, local, problems);
+                    checkSide(worker, entry.value(), view, problems);
                 }
                 default -> { }
             }
         }
+    }
+
+    /**
+     * Passt die Seite, an der der Connector hängt, zu dem, was der Worker
+     * bewegt?
+     *
+     * <p>Der Fehler dahinter ist der stillste von allen: Der Worker läuft,
+     * bewegt nichts, und meldet nichts — denn „nichts bewegt" ist der
+     * Normalfall. Wer die Maschine falsch herum ankabelt, sucht das im
+     * Programm.
+     *
+     * <p><b>Geprüft wird die angeschlossene Seite</b>, nicht ob irgendeine
+     * Seite es könnte. Sonst schweigt die Warnung genau in dem Fall, für den
+     * sie gebaut ist.
+     */
+    private static void checkSide(Decl.Worker worker, Expr target, NetworkView view,
+                                  List<Diagnostic> problems) {
+        if (!(target instanceof Expr.Name name)) {
+            return;
+        }
+        DeviceProfile profile = view.profile(name.value());
+        if (!profile.reachable()) {
+            return;
+        }
+        Expr.Selector.Kind kind = WorkerKind.of(worker);
+        if (kind == null) {
+            return;
+        }
+        DeviceProfile.Access.Ability needed = switch (kind) {
+            case ITEM, TAG -> DeviceProfile.Access.Ability.ITEMS;
+            case FLUID -> DeviceProfile.Access.Ability.FLUIDS;
+            // Chemikalien sind noch nicht angebunden; über sie wird nichts
+            // behauptet, solange der Server sie nicht proben kann.
+            case CHEMICAL -> null;
+        };
+        if (needed == null || profile.can(profile.connectedSide(), needed)) {
+            return;
+        }
+        List<Side> elsewhere = profile.sidesWith(needed);
+        String what = needed == DeviceProfile.Access.Ability.FLUIDS
+                ? "Flüssigkeiten" : "Gegenstände";
+        String hint = elsewhere.isEmpty()
+                ? "Diese Maschine nimmt an keiner Seite " + what + " an."
+                : "An " + written(elsewhere) + " ginge es — häng den Connector dorthin.";
+        problems.add(new Diagnostic(Diagnostic.Severity.WARNING, name.span(),
+                "Der Connector „" + name.value() + "“ hängt "
+                        + profile.connectedSide().written()
+                        + " — dort nimmt die Maschine keine " + what + " an.",
+                hint));
+    }
+
+    /** „Norden", „Norden und Süden", „Norden, Süden und oben". */
+    private static String written(List<Side> sides) {
+        List<String> words = sides.stream().map(Side::written).toList();
+        if (words.size() == 1) {
+            return words.get(0);
+        }
+        return String.join(", ", words.subList(0, words.size() - 1))
+                + " und " + words.get(words.size() - 1);
     }
 
     private static void checkGroup(Decl.Group group, NetworkView view, Set<String> local,
