@@ -1047,7 +1047,7 @@ public class ControllerBlockEntity extends BlockEntity {
     /** Die Anzeigen als fertige Zeilen — getrennt vom Senden, damit prüfbar. */
     public List<DisplayStatePacket.Panel> displayPanels() {
         List<DisplayStatePacket.Panel> panels = new ArrayList<>();
-        DisplayValues values = new DisplayValues(graph, storage, runtime, globals);
+        DisplayValues values = new DisplayValues(graph, storage, runtime, globals, level);
         for (Decl declaration : program.declarations()) {
             if (!(declaration instanceof Decl.Display display)) {
                 continue;

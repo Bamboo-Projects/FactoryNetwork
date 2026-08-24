@@ -2445,6 +2445,9 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
         entity.storage().insert(Items.IRON_ORE, 320);
+        // Ohne Signal ist das Lämpchen aus, und die Prüfung darauf beweist
+        // nichts. Ein Redstoneblock neben depot macht die Frage erst zu einer.
+        helper.setBlock(controller.east().south().above(), Blocks.REDSTONE_BLOCK);
 
         // Was in beispiele.md steht, muss nicht nur übersetzen, sondern laufen.
         // Ein Beispiel mit einem Methodennamen, den es nicht gibt, ist
@@ -2453,7 +2456,7 @@ public final class FactoryNetworkGameTests {
                 display leitstand {
                     title "Erzlinie"
                     row "Eisenerz" storage.count(item:iron_ore)
-                    progress "Kohlevorrat" storage.count(item:iron_ore) / 640.0
+                    progress "Erzvorrat" storage.count(item:iron_ore) / 640.0
                     indicator "Depot unter Strom" depot.redstone() > 0
                     button "Nachschub" nachschub_starten
                 }
@@ -2476,11 +2479,18 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(zeilen.size(), 5, "Fünf Zeilen");
         helper.assertTrue(zeilen.get(1).contains("320"),
                 "Der Bestand steht da: " + zeilen.get(1));
-        helper.assertTrue(zeilen.get(2).contains("█") || zeilen.get(2).contains("0,5")
-                        || zeilen.get(2).contains("0.5"),
-                "Der halbe Balken: " + zeilen.get(2));
-        helper.assertTrue(zeilen.get(3).contains("Depot"),
-                "Das Lämpchen: " + zeilen.get(3));
+        // Der Balken zeichnet immer zehn Blöcke, und das Label steht auch an
+        // einem dunklen Lämpchen: contains("█") und contains("Depot") trafen
+        // beide auch dann, wenn gar nichts ausgewertet wurde. Geprüft wird
+        // deshalb die Grenze zwischen hell und dunkel — ein halber Balken
+        // trägt sein §8 in der Mitte, ein leerer gleich am Anfang.
+        helper.assertTrue(zeilen.get(2).contains("§a█████§8█████"),
+                "320 von 640 sind ein halber Balken: " + zeilen.get(2));
+        helper.assertTrue(zeilen.get(2).contains("50 %"),
+                "Neben dem Balken steht sein Anteil: " + zeilen.get(2));
+        helper.assertTrue(zeilen.get(3).startsWith("§a●"),
+                "Der Redstoneblock liegt daneben, das Lämpchen muss leuchten: "
+                        + zeilen.get(3));
 
         // Der Knopf und der Ereignisblock laufen wirklich.
         // Eine Variable als Auswahl in move — steht so in beispiele.md.
