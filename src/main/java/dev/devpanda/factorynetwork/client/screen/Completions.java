@@ -90,19 +90,22 @@ public final class Completions {
         // kein bekannter Connector, gibt es eben nichts: Vorher fiel dieser
         // Fall bis zur Ausdrucksstelle durch und bot „storage, crafting,
         // world …" an — hinter einem Punkt ergibt keines davon einen Satz.
-        if (afterDot(upToCursor)) {
-            // Hinter „…items()." steht eine Liste und kein Gerät. Der Editor
-            // kennt keine Typen, aber diesen einen Fall erkennt er am Text —
-            // und er ist der einzige, der heute vorkommt.
-            if (afterListCall(upToCursor)) {
-                for (Signatures.Member candidate : Signatures.LIST_MEMBERS) {
-                    if (matches(candidate.name(), prefix)) {
-                        entries.add(new Entry(candidate.name(), candidate.name(),
-                                Entry.Kind.BUILTIN, candidate.shape()));
-                    }
+        // Hinter „…items()." steht eine Liste und kein Gerät. Vor afterDot
+        // geprüft, weil dort ein Name vor dem Punkt erwartet wird — hier
+        // steht eine schließende Klammer.
+        //
+        // Der Editor kennt keine Typen, aber diesen einen Fall erkennt er am
+        // Text, und er ist der einzige, der heute vorkommt.
+        if (afterListCall(upToCursor)) {
+            for (Signatures.Member candidate : Signatures.LIST_MEMBERS) {
+                if (matches(candidate.name(), prefix)) {
+                    entries.add(new Entry(candidate.name(), candidate.name(),
+                            Entry.Kind.BUILTIN, candidate.shape()));
                 }
-                return limit(entries);
             }
+            return limit(entries);
+        }
+        if (afterDot(upToCursor)) {
             if (memberPrefix(upToCursor) == null) {
                 return List.of();
             }
