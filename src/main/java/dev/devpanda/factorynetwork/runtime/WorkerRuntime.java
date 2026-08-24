@@ -157,6 +157,19 @@ public final class WorkerRuntime {
             return;
         }
 
+        // <b>Strom kennt die Sprache, die Laufzeit noch nicht.</b> Ohne diese
+        // Stelle liefe ein Strom-Worker in den Gegenstandspfad, dort träfe
+        // die Auswahl nichts, und er stünde für immer auf IDLE — der stille
+        // Fehlschlag, den man am längsten sucht. Lieber einmal sagen, was
+        // fehlt.
+        if (WorkerKind.of(worker) == Expr.Selector.Kind.POWER) {
+            state.status = Status.HALTED;
+            state.detail = "Strom wird noch nicht verteilt";
+            note(worker.name() + ": Die Schreibweise für Strom steht, die Verteilung "
+                    + "kommt noch. Siehe docs/strom.md.");
+            return;
+        }
+
         int batch = batchOf(worker);
         List<Item> filter = filterItems(worker);
         state.strategyOverride = strategyOf(worker);

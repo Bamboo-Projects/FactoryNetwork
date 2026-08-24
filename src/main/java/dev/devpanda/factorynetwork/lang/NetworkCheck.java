@@ -113,6 +113,11 @@ public final class NetworkCheck {
         DeviceProfile.Access.Ability needed = switch (kind) {
             case ITEM, TAG -> DeviceProfile.Access.Ability.ITEMS;
             case FLUID -> DeviceProfile.Access.Ability.FLUIDS;
+            // Ein Strom-Worker verlangt einen Energiespeicher an der
+            // angeschlossenen Seite. Das Profil weiß es bereits — die Warnung
+            // fällt ohne Zusatzarbeit ab, weil die Geräteerkennung Energie
+            // ohnehin probt.
+            case POWER -> DeviceProfile.Access.Ability.ENERGY;
             // Chemikalien sind noch nicht angebunden; über sie wird nichts
             // behauptet, solange der Server sie nicht proben kann.
             case CHEMICAL -> null;
@@ -121,8 +126,11 @@ public final class NetworkCheck {
             return;
         }
         List<Side> elsewhere = profile.sidesWith(needed);
-        String what = needed == DeviceProfile.Access.Ability.FLUIDS
-                ? "Flüssigkeiten" : "Gegenstände";
+        String what = switch (needed) {
+            case FLUIDS -> "Flüssigkeiten";
+            case ENERGY -> "Strom";
+            case ITEMS -> "Gegenstände";
+        };
         String hint = elsewhere.isEmpty()
                 ? "Diese Maschine nimmt an keiner Seite " + what + " an."
                 : "An " + written(elsewhere) + " ginge es — häng den Connector dorthin.";

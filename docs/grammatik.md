@@ -74,6 +74,19 @@ target      = NAME | 'storage' | 'crafting'
 Das prüft nicht die Grammatik, sondern der Übersetzer — so kann er sagen,
 welche Angabe fehlt, statt nur „unerwartetes Zeichen".
 
+### Auswahl von Strom
+
+```
+selection   = itemSel | fluidSel | chemicalSel | tagSel | 'power'
+```
+
+**`power` steht allein, ohne Doppelpunkt.** Alle anderen Auswahlausdrücke
+tragen eine Sorte dahinter — `item:iron_ore`, `fluid:water`. Strom hat keine:
+Es gibt nur FE. Ein `power:` mit leerem Rest wäre eine Lüge über die Form.
+
+Damit ist `power` ein Schlüsselwort. Wer seinen Connector so nennt, schreibt
+ihn in Rückstrichen — dieselbe Regel wie für `for`.
+
 ### Globaler Wert
 
 ```

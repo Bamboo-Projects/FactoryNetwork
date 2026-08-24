@@ -39,7 +39,18 @@ public sealed interface Expr {
      */
     record Selector(Kind kind, String namespace, String path, Span span) implements Expr {
 
-        public enum Kind { ITEM, FLUID, CHEMICAL, TAG }
+        public enum Kind {
+            ITEM, FLUID, CHEMICAL, TAG,
+            /**
+             * Strom.
+             *
+             * <p><b>Der einzige ohne Sorte.</b> Es gibt nur FE, und
+             * {@code power:} mit leerem Rest wäre eine Lüge über die Form —
+             * deshalb steht {@code power} allein und ohne Doppelpunkt. Der
+             * Pfad ist leer.
+             */
+            POWER
+        }
 
         public boolean hasPattern() {
             return path.indexOf('*') >= 0;

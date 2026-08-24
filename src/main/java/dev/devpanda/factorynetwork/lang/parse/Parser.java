@@ -850,6 +850,13 @@ public final class Parser {
                 advance();
                 return parseSelector(token);
             }
+            // „power" steht allein, weil Strom keine Sorte hat. Ein echtes
+            // Schlüsselwort und kein Name: Wer seinen Connector so nennt,
+            // schreibt ihn in Rückstrichen — dieselbe Regel wie bei „for".
+            case POWER -> {
+                advance();
+                return new Expr.Selector(Expr.Selector.Kind.POWER, "", "", token.span());
+            }
             case NAME_PATTERN -> {
                 advance();
                 return new Expr.NamePattern(token.text(), token.span());
@@ -1122,6 +1129,7 @@ public final class Parser {
             case STRING -> "der Text " + quote(token.text());
             case DURATION -> "die Zeitangabe " + token.text();
             case SELECTOR -> "die Auswahl " + token.text();
+            case POWER -> "power";
             case NAME, ESCAPED_NAME -> quote(token.text());
             case LBRACE -> "eine geschweifte Klammer";
             case RBRACE -> "eine schließende geschweifte Klammer";

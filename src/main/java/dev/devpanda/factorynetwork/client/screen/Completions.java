@@ -170,7 +170,13 @@ public final class Completions {
                 addConnectors(entries, prefix);
                 addAll(entries, BUILTINS, prefix, Entry.Kind.BUILTIN);
             }
-            case SELECTION -> addItems(entries, prefix);
+            case SELECTION -> {
+                addItems(entries, prefix);
+                // Strom steht ohne Doppelpunkt und taucht deshalb in der
+                // Gegenstandssuche nicht auf — er muss eigens angeboten
+                // werden, sonst findet ihn niemand.
+                addAll(entries, List.of("power"), prefix, Entry.Kind.KEYWORD);
+            }
             case STRATEGY -> addAll(entries, Signatures.STRATEGIES, prefix,
                     Entry.Kind.KEYWORD);
             case MEMBERS -> addConnectors(entries, prefix);
