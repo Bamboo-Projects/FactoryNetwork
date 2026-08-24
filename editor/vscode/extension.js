@@ -4,10 +4,14 @@
 // kopiert, nicht gebaut. Ein Übersetzungsschritt hieße npm install und tsc,
 // und dann kopiert sie niemand mehr.
 //
-// Was sie weiß, steht in data/signatures.json. Diese Datei wird aus
-// Signatures.java erzeugt; ein Test im Mod-Projekt hält beide gleich. Damit
-// gibt es die Regel „hinter row kommt ein Text und dann ein Ausdruck"
-// weiterhin einmal und nicht zweimal.
+// Was sie über die Sprache weiß, steht in data/signatures.json. Diese Datei
+// wird aus Signatures.java erzeugt; ein Test im Mod-Projekt hält beide
+// gleich. Damit gibt es die Regel „hinter row kommt ein Text und dann ein
+// Ausdruck" weiterhin einmal und nicht zweimal.
+//
+// Was sie über das einzelne Programm weiß, liest sie aus dem Ordner: Alle
+// .mf-Dateien darin teilen einen Namensraum, und ohne die Nachbardateien
+// kennt sie die Hälfte der Namen nicht, die man gerade tippen will.
 //
 // Was sie nicht kann: Fehler melden. Dafür bräuchte es den Übersetzer, und
 // der ist in Java. Fehler zeigt das Terminal im Spiel.
@@ -23,6 +27,41 @@ const CODE_BLOCKS = ['fn', 'on', 'multiblock'];
 
 /** Was an einer Ausdrucksstelle immer geht. */
 const BUILTINS = ['storage', 'crafting', 'world', 'network', 'workers', 'multiblocks'];
+
+/**
+ * Woran eine Zeile zu erkennen ist, die einen Namen vergibt.
+ *
+ * Über den Text und nicht über einen Parser: Der steht in Java, und ihn
+ * hier ein zweites Mal zu schreiben hieße, zwei Fassungen derselben
+ * Grammatik gleich zu halten. Die erste Zeile einer Deklaration ändert sich
+ * selten — für sie reicht eine Zeilenform.
+ *
+ * Auch eingerückt: Ein fn steckt auch in einem multiblock, und von dort aus
+ * wird es genauso gerufen wie eines auf oberster Ebene.
+ *
+ * Und großzügig gelesen: Die Klammer hinter dem Namen ist nicht Bedingung.
+ * Wer gerade tippt, hat sie noch nicht — und ein Name zu viel in der Liste
+ * ist der kleinere Fehler als ein fehlender.
+ */
+const DECLARED_NAMES = [
+    { keyword: 'fn', pattern: /^fn\s+([A-Za-z_][A-Za-z0-9_]*)/ },
+    { keyword: 'worker', pattern: /^worker\s+([A-Za-z_][A-Za-z0-9_]*)/ },
+    { keyword: 'group', pattern: /^group\s+([A-Za-z_][A-Za-z0-9_]*)/ },
+    { keyword: 'multiblock', pattern: /^multiblock\s+([A-Za-z_][A-Za-z0-9_]*)/ },
+    { keyword: 'event', pattern: /^event\s+([A-Za-z_][A-Za-z0-9_]*)/ },
+    { keyword: 'display', pattern: /^display\s+([A-Za-z_][A-Za-z0-9_]*)/ },
+    // global ist die einzige Deklaration ohne Block, und hier die einzige
+    // mit Bedingung: Ohne das Gleichheitszeichen ist die Zeile keine
+    // Erklärung, sondern eine halb getippte — der Übersetzer sagt dazu
+    // dasselbe.
+    { keyword: 'global', pattern: /^global\s+([A-Za-z_][A-Za-z0-9_]*)\s*=/ },
+];
+
+/** Wie lange ein einmal gelesener Ordner gilt. */
+const FOLDER_MS = 2000;
+
+/** Was in den Ordnern steht: Pfad -> { files: {Dateiname: Namen}, stamp }. */
+const folders = new Map();
 
 function load(context) {
     const file = path.join(context.extensionPath, 'data', 'signatures.json');
@@ -156,8 +195,114 @@ function item(label, kind, detail, doc) {
     return entry;
 }
 
+/** Die Namen, die dieser Text vergibt. */
+function symbolsIn(text, file) {
+    const found = [];
+    for (const raw of text.split('\n')) {
+        const line = raw.trim();
+        for (const declaration of DECLARED_NAMES) {
+            const match = declaration.pattern.exec(line);
+            if (match) {
+                found.push({ keyword: declaration.keyword, name: match[1], file });
+                // Eine Zeile erklärt höchstens einen Namen.
+                break;
+            }
+        }
+    }
+    return found;
+}
+
+/**
+ * Die Namen der Nachbardateien, höchstens alle zwei Sekunden neu gelesen.
+ *
+ * Bei jedem Tastendruck den Ordner zu lesen wäre bezahlbar, aber unnötig;
+ * ihn einmal zu lesen und für immer zu behalten wäre falsch: In denselben
+ * Ordner schreibt auch das Spiel, und wer zuletzt geschrieben hat, gewinnt.
+ * Eine kurze Frist trifft beides — und wer hier speichert, wirft den
+ * Zwischenspeicher ohnehin sofort weg.
+ */
+function filesOf(folder) {
+    const cached = folders.get(folder);
+    if (cached && Date.now() - cached.stamp < FOLDER_MS) {
+        return cached.files;
+    }
+    const files = {};
+    let names = [];
+    try {
+        names = fs.readdirSync(folder);
+    } catch (error) {
+        // Kein Ordner, keine Nachbarn. Beim Tippen ist ein fehlender
+        // Vorschlag die bessere Antwort als eine Fehlermeldung.
+        names = [];
+    }
+    for (const name of names) {
+        if (!name.endsWith('.mf')) {
+            continue;
+        }
+        try {
+            const text = fs.readFileSync(path.join(folder, name), 'utf8');
+            files[name] = symbolsIn(text, name);
+        } catch (error) {
+            // Zwischen Auflisten und Lesen kann die Datei weg sein: Das
+            // Spiel schreibt und löscht in demselben Ordner.
+        }
+    }
+    folders.set(folder, { files, stamp: Date.now() });
+    return files;
+}
+
+/**
+ * Alle Namen, die das Projekt um dieses Dokument herum vergibt.
+ *
+ * Ein Projekt ist ein Ordner, und alle Dateien darin teilen einen
+ * Namensraum. Die Funktion, die hier gerufen wird, steht deshalb meistens
+ * nebenan — und es gibt kein import, das sie nennt. Wer nur die offene
+ * Datei liest, schlägt in einem Projekt aus acht Dateien ein Achtel vor.
+ *
+ * Die offene Datei kommt aus dem Puffer statt von der Platte: Wer gerade
+ * `fn heizen()` geschrieben hat, ruft es zwei Zeilen später auf, ohne
+ * vorher zu speichern.
+ */
+function projectSymbols(document) {
+    const own = document.uri && document.uri.scheme === 'file'
+        ? document.uri.fsPath : null;
+    const symbols = [];
+    if (own) {
+        const files = filesOf(path.dirname(own));
+        const self = path.basename(own);
+        for (const name of Object.keys(files)) {
+            if (name !== self) {
+                symbols.push(...files[name]);
+            }
+        }
+    }
+    symbols.push(...symbolsIn(document.getText(), own ? path.basename(own) : null));
+    return symbols;
+}
+
+/**
+ * Die Namen dieser Deklarationsarten als Vorschläge, jeder einmal.
+ *
+ * Zwei Dateien dürfen denselben Namen nicht zweimal vergeben; dass sie es
+ * doch tun, meldet der Übersetzer. Hier steht der Name deswegen trotzdem
+ * nur einmal in der Liste — zweimal dasselbe Wort hilft niemandem.
+ */
+function symbolItems(symbols, keywords, kind) {
+    const items = [];
+    const seen = [];
+    for (const symbol of symbols) {
+        if (!keywords.includes(symbol.keyword) || seen.includes(symbol.name)) {
+            continue;
+        }
+        seen.push(symbol.name);
+        items.push(item(symbol.name, kind, symbol.keyword,
+            symbol.file ? 'Steht in ' + symbol.file : undefined));
+    }
+    return items;
+}
+
 /** Was an dieser Stelle stehen darf. */
-function completionsFor(where) {
+function completionsFor(where, symbols) {
     const slot = where.slot;
     if (!slot) {
         return [];
@@ -166,9 +311,24 @@ function completionsFor(where) {
         case 'STRATEGY':
             return table.strategies.map(name =>
                 item(name, vscode.CompletionItemKind.EnumMember));
-        case 'EXPR':
+        case 'FUNCTION':
+            return symbolItems(symbols, ['fn'], vscode.CompletionItemKind.Function);
+        case 'EVENT':
+            return symbolItems(symbols, ['event'], vscode.CompletionItemKind.Event);
+        case 'MEMBERS':
+            // Mitglieder sind Connectoren, und die kennt nur das laufende
+            // Spiel. Was die Erweiterung beisteuern kann, sind die Namen aus
+            // dem Projekt: Gruppen und Multiblocks stehen hier genauso.
+            return symbolItems(symbols, ['group', 'multiblock'],
+                vscode.CompletionItemKind.Variable);
         case 'TARGET':
-            return BUILTINS.map(name => item(name, vscode.CompletionItemKind.Variable));
+            return BUILTINS.map(name => item(name, vscode.CompletionItemKind.Variable))
+                .concat(symbolItems(symbols, ['group', 'multiblock'],
+                    vscode.CompletionItemKind.Variable));
+        case 'EXPR':
+            return BUILTINS.map(name => item(name, vscode.CompletionItemKind.Variable))
+                .concat(symbolItems(symbols, ['global'],
+                    vscode.CompletionItemKind.Variable));
         case 'LITERAL': {
             const words = [slot.label];
             const next = where.signature.slots[where.index + 2];
@@ -202,9 +362,10 @@ function activate(context) {
                     member.name, vscode.CompletionItemKind.Property,
                     member.shape, member.help));
             }
+            const symbols = projectSymbols(document);
             const where = whereAt(document, position);
             if (where) {
-                return completionsFor(where);
+                return completionsFor(where, symbols);
             }
             const block = enclosingBlock(document, position.line);
             const indented = /^\s/.test(document.lineAt(position.line).text);
@@ -231,6 +392,14 @@ function activate(context) {
                 for (const word of ['else', 'break', 'continue']) {
                     entries.push(item(word, vscode.CompletionItemKind.Keyword));
                 }
+                // In einer Funktion ist ein Ausdruck auch eine Anweisung —
+                // und der Aufruf einer Funktion aus der Nachbardatei steht
+                // genau hier. Ohne diese Zeile findet ihn niemand: Es gibt
+                // kein import, das sie nennt.
+                entries.push(...symbolItems(symbols, ['fn'],
+                    vscode.CompletionItemKind.Function));
+                entries.push(...symbolItems(symbols, ['global'],
+                    vscode.CompletionItemKind.Variable));
             }
             return entries;
         }
@@ -279,6 +448,15 @@ function activate(context) {
             return help;
         }
     }, ' ', '"'));
+
+    // Beim Speichern die gelesenen Ordner vergessen. Wer eine Funktion
+    // anlegt und die Datei speichert, will sie im nächsten Vorschlag sehen
+    // und nicht erst, wenn die Frist von selbst abläuft.
+    //
+    // Alle Ordner und nicht nur der eine: Welcher betroffen ist, wäre
+    // auszurechnen, und es sind selten mehr als zwei.
+    context.subscriptions.push(
+        vscode.workspace.onDidSaveTextDocument(() => folders.clear()));
 }
 
 function deactivate() {

@@ -58,6 +58,16 @@ Und innerhalb einer Angabe richtet sie sich danach, welche Stelle dran ist:
 hinter `strategy` die Verteilungen, hinter `move 64` sowohl `from` als auch
 `to` — die Quelle darf ja fehlen.
 
+**Namen aus dem ganzen Projekt.** Alle `.mf`-Dateien eines Ordners teilen einen
+Namensraum, und die Vervollständigung liest sie alle: Eine Funktion aus
+`werte.mf` steht in `main.mf` in der Liste, ohne dass irgendwo `import` steht.
+Genauso die Ereignisse hinter `emit`, Gruppen und Multiblocks hinter `from`,
+`to` und `members`, globale Werte an jeder Ausdrucksstelle. Die offene Datei
+zählt dabei aus dem Puffer mit — eine Funktion, die man gerade geschrieben hat,
+lässt sich sofort aufrufen und nicht erst nach dem Speichern. Der Ordner selbst
+wird beim Speichern neu gelesen und sonst höchstens alle zwei Sekunden: In
+denselben Ordner schreibt auch das Spiel.
+
 **Formanzeige.** Beim Tippen steht die ganze Form da, mit der aktiven Stelle
 hervorgehoben: `row string expr`, `move menge [from quelle] to ziel`.
 
