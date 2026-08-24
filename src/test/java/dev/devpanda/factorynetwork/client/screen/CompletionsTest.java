@@ -263,6 +263,54 @@ class CompletionsTest {
                         + at("fn test() {", "    if gibt_es_nicht.")));
     }
 
+    // ---- Namen aus dem ganzen Projekt --------------------------------------
+
+    /**
+     * Ein Projekt aus mehreren Dateien, für die Dauer eines Tests.
+     *
+     * <p>{@code ClientProjectState} ist statisch — es gibt einen Client und
+     * einen Entwurf. Danach wird geleert, sonst sieht der nächste Test
+     * Dateien, die es nicht gibt.
+     */
+    private static void withProject(java.util.Map<String, String> files, Runnable body) {
+        dev.devpanda.factorynetwork.client.ClientProjectState.setDraft(
+                new dev.devpanda.factorynetwork.lang.Project(files));
+        try {
+            body.run();
+        } finally {
+            dev.devpanda.factorynetwork.client.ClientProjectState.setDraft(
+                    dev.devpanda.factorynetwork.lang.Project.of(""));
+        }
+    }
+
+    @Test
+    @DisplayName("Eine Funktion aus einer anderen Datei wird vorgeschlagen")
+    void aFunctionFromAnotherFileIsOffered() {
+        withProject(java.util.Map.of(
+                "werte.mf", "fn heizen() {\n}",
+                "main.mf", "display halle {\n    button \"An\" \n}"), () ->
+                assertTrue(at("display halle {", "    button \"An\" ").contains("heizen"),
+                        "alle Dateien teilen einen Namensraum"));
+    }
+
+    @Test
+    @DisplayName("Ein Ereignis aus einer anderen Datei auch")
+    void anEventFromAnotherFileToo() {
+        withProject(java.util.Map.of(
+                "ereignisse.mf", "event nachschub(menge)",
+                "main.mf", "fn test() {\n    emit \n}"), () ->
+                assertTrue(at("fn test() {", "    emit ").contains("nachschub"),
+                        () -> at("fn test() {", "    emit ").toString()));
+    }
+
+    @Test
+    @DisplayName("Ohne Projekt bleibt die offene Datei die Quelle")
+    void withoutAProjectTheOpenFileIsTheSource() {
+        assertTrue(at("fn heizen() {", "}", "display halle {", "    button \"An\" ")
+                        .contains("heizen"),
+                "was im Text steht, gilt immer — auch ohne Entwurf auf dem Client");
+    }
+
     @Test
     @DisplayName("Eine Zahl mit Punkt ist kein Zugriff")
     void aNumberWithADotIsNotAMemberAccess() {

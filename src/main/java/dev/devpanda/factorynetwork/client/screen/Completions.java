@@ -201,30 +201,64 @@ public final class Completions {
 
     /** Die Ereignisse des Projekts — für {@code emit}. */
     private static void addEvents(List<Entry> entries, String prefix, List<String> lines) {
-        for (String line : lines) {
-            String trimmed = line.trim();
-            if (!trimmed.startsWith("event ")) {
-                continue;
-            }
-            int open = trimmed.indexOf('(');
-            String name = (open < 0 ? trimmed.substring(6) : trimmed.substring(6, open)).trim();
-            if (!name.isEmpty() && matches(name, prefix)) {
-                entries.add(new Entry(name, name, Entry.Kind.KEYWORD, "event"));
-            }
-        }
+        addDeclaredNames(entries, prefix, lines, "event ", "event");
     }
 
     /** Die Funktionen des Projekts — für den Knopf einer Anzeige. */
     private static void addFunctions(List<Entry> entries, String prefix, List<String> lines) {
+        addDeclaredNames(entries, prefix, lines, "fn ", "fn");
+    }
+
+    /**
+     * Namen, die das Projekt vergibt — aus <b>allen</b> Dateien.
+     *
+     * <p>Alle Dateien teilen einen Namensraum: Ein {@code fn} in
+     * {@code werte.mf} wird in {@code main.mf} aufgerufen, ohne dass irgendwo
+     * ein Import steht. Wer nur die offene Datei liest, schlägt genau die
+     * Namen nicht vor, für die man den Editor am ehesten braucht — die aus
+     * einer Datei, die man gerade <b>nicht</b> vor sich hat.
+     *
+     * <p><b>Die offene Datei kommt trotzdem aus dem Text</b> und nicht aus
+     * dem Entwurf auf dem Client: Sie enthält, was gerade getippt wird, und
+     * eine Funktion soll aufrufbar sein, sobald ihr Name dasteht — nicht erst
+     * nach dem Speichern.
+     *
+     * <p>Über den Text und nicht über den Baum, wie bei
+     * {@code Definitions.references}: Unfertiger Code hat keinen Baum, und
+     * gerade dort soll die Vervollständigung helfen.
+     */
+    private static void addDeclaredNames(List<Entry> entries, String prefix,
+                                         List<String> lines, String keyword, String detail) {
+        java.util.Set<String> seen = new java.util.LinkedHashSet<>();
+        collectNames(seen, lines, keyword);
+
+        dev.devpanda.factorynetwork.lang.Project project =
+                dev.devpanda.factorynetwork.client.ClientProjectState.draft();
+        for (String file : project.names()) {
+            collectNames(seen, List.of(project.source(file).split("\n", -1)), keyword);
+        }
+
+        for (String name : seen) {
+            if (matches(name, prefix)) {
+                entries.add(new Entry(name, name, Entry.Kind.KEYWORD, detail));
+            }
+        }
+    }
+
+    private static void collectNames(java.util.Set<String> into, List<String> lines,
+                                     String keyword) {
         for (String line : lines) {
             String trimmed = line.trim();
-            if (!trimmed.startsWith("fn ")) {
+            if (!trimmed.startsWith(keyword)) {
                 continue;
             }
             int open = trimmed.indexOf('(');
-            String name = (open < 0 ? trimmed.substring(3) : trimmed.substring(3, open)).trim();
-            if (!name.isEmpty() && matches(name, prefix)) {
-                entries.add(new Entry(name, name, Entry.Kind.KEYWORD, "fn"));
+            String name = (open < 0 ? trimmed.substring(keyword.length())
+                    : trimmed.substring(keyword.length(), open)).trim();
+            // Ein „fn" in einem Multiblock zählt mit: Es ist eine Erklärung
+            // wie jede andere, nur eingerückt.
+            if (!name.isEmpty()) {
+                into.add(name);
             }
         }
     }
