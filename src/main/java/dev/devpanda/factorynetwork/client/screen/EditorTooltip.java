@@ -15,6 +15,7 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.ArrayList;
@@ -214,9 +215,54 @@ public final class EditorTooltip {
             lines.add(Component.literal("§8und " + snapshot.slotsOmitted()
                     + " weitere Fächer"));
         }
-        if (snapshot.energyCapacity() > 0) {
-            lines.add(Component.literal("§7Strom: " + snapshot.energy()
-                    + " / " + snapshot.energyCapacity()));
+        if (snapshot.power().capacity() > 0) {
+            lines.add(Component.literal("§7Strom: " + snapshot.power().stored()
+                    + " / " + snapshot.power().capacity()));
+        }
+        addProbes(lines, snapshot);
+    }
+
+    /**
+     * Was die Fächer können — und womit sie sich abfinden würden.
+     *
+     * <p><b>Zwei verschiedene Auskünfte in einer Zeile</b>, und der
+     * Unterschied muss lesbar bleiben: „nimmt auf" und „gibt ab" sind
+     * Tatsachen, die geprüft wurden. Was dahinter steht, ist eine
+     * <b>Stichprobe</b> aus dem, was im Programm steht — eine Maschine nimmt
+     * womöglich hundert Dinge an, von denen hier nur die auftauchen, über die
+     * gerade jemand schreibt.
+     *
+     * <p>Deshalb steht dort „passt" und nicht „nimmt an": Das eine sagt etwas
+     * über den geprüften Gegenstand, das andere über die Maschine.
+     */
+    private static void addProbes(List<Component> lines, DeviceSnapshotPacket snapshot) {
+        int shown = 0;
+        for (DeviceSnapshotPacket.SlotProbe probe : snapshot.probes()) {
+            if (!probe.takes() && !probe.gives()) {
+                continue;
+            }
+            if (shown == MAX_SLOTS_SHOWN) {
+                lines.add(Component.literal("§8…"));
+                break;
+            }
+            StringBuilder text = new StringBuilder("§8Fach " + probe.slot() + ": ");
+            text.append(probe.takes() ? "nimmt auf" : "gibt ab");
+            if (probe.takes() && probe.gives()) {
+                text.append(", gibt ab");
+            }
+            lines.add(Component.literal(text.toString()));
+            if (!probe.accepts().isEmpty()) {
+                MutableComponent passt = Component.literal("§8    ");
+                for (int i = 0; i < probe.accepts().size(); i++) {
+                    if (i > 0) {
+                        passt.append(Component.literal("§8, "));
+                    }
+                    passt.append(Component.translatable(probe.accepts().get(i))
+                            .withStyle(ChatFormatting.DARK_GRAY));
+                }
+                lines.add(passt.append(Component.literal("§8 passt")));
+            }
+            shown++;
         }
     }
 

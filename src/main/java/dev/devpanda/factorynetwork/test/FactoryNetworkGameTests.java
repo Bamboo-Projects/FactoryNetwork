@@ -5897,6 +5897,40 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    /**
+     * Die Annahme-Probe gegen die Gegenstände aus dem Entwurf.
+     *
+     * <p>Eine Kiste nimmt alles an — der Test prüft deshalb nicht, ob die
+     * Probe klug ist, sondern ob sie überhaupt läuft: dass die Kandidaten aus
+     * dem Programm gelesen werden und dass jedes Fach eine Auskunft bekommt.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void theProbeUsesTheItemsFromTheDraft(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        // Der Entwurf nennt einen Gegenstand — daraus wird der Kandidat.
+        helper.assertTrue(entity.deploy("""
+                worker mahlen {
+                    from storage
+                    to depot
+                    filter item:iron_ingot
+                }"""), "das Programm wurde nicht übernommen");
+
+        var snapshot = DeviceSnapshotPacket.of(entity, "depot");
+        helper.assertTrue(snapshot != null, "es kam keine Antwort");
+        helper.assertValueEqual(snapshot.probes().size(), 27, "eine Auskunft je Fach");
+
+        var erstes = snapshot.probes().get(0);
+        helper.assertTrue(erstes.takes(), "eine Kiste nimmt an");
+        helper.assertTrue(!erstes.accepts().isEmpty(),
+                "der Barren aus dem Entwurf muss als passend erkannt werden");
+        helper.assertTrue(erstes.accepts().get(0).contains("iron_ingot"),
+                "gemeldet wurde: " + erstes.accepts());
+        helper.succeed();
+    }
+
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void aSnapshotOfAnUnknownNameIsRefused(GameTestHelper helper) {
         BlockPos controller = buildSetup(helper);
