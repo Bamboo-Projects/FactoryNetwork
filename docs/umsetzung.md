@@ -453,9 +453,29 @@ Dazu Vorschläge nach dem Punkt: `crusher_1.` bietet `online`, `name`,
 `redstone()` und `count()` an — die vier, die der Interpreter wirklich kennt.
 Auch in VS Code, über dieselbe erzeugte Tabelle.
 
-Nebenbei begradigt: Die Erklärung eines Namens beim Zeigen — Stelle im Netz,
-Erklärungsort, Fundstellen — gab es nur im eigenen Fenster, nicht im Reiter.
-Sie steht jetzt in `EditorTooltip` und gilt für beide.
+Nebenbei begradigt, alles beim Prüfen im Spiel gefunden:
+
+- Die **Erklärung eines Namens** beim Zeigen — Stelle im Netz, Erklärungsort,
+  Fundstellen — gab es nur im eigenen Fenster, nicht im Reiter. Sie steht
+  jetzt in `EditorTooltip` und gilt für beide.
+- **Strg+Klick** gab es ebenfalls nur im eigenen Fenster. Der neue Tooltip
+  kündigte ihn im Reiter an, wo er ins Leere lief — ein Hinweistext, der auf
+  etwas verweist, das es nicht gibt. Die Logik steht jetzt in `NameJump`,
+  beide Fenster nutzen sie, und beide melden zurück, wo markiert wurde.
+- **Luft ist keine fehlende Auskunft.** Ein Connector, der ins Leere zeigt,
+  meldete „Nicht geladen" — vor einem Spieler, der davorstand. Jetzt sagt er,
+  dass dort keine Maschine steht, und rät, ihn umzudrehen. Ein GameTest hatte
+  den Fehler festgeschrieben.
+- **Die Marke stand nie, wenn man davorstand.** Sie verschwand, sobald der
+  Spieler näher als drei Blöcke war — also immer dann, wenn man vor vier
+  Connectoren steht und fragt, welcher gemeint ist. Sie hält jetzt eine halbe
+  Minute auf jeden Fall.
+- **Und sie lag hinter den Wänden**, obwohl ihr Zweck das Gegenteil ist:
+  `RenderType.lines()` bringt einen Tiefentest mit. Sie wird jetzt gezeichnet
+  wie das Netz im Analysator, mit `RenderSystem.disableDepthTest()`.
+- `SignaturesExportTest` schlug nach jedem Zweigwechsel fehl, weil er LF
+  schreibt und Git unter Windows CRLF auscheckt. Es gibt jetzt eine
+  `.gitattributes`, und der Test gleicht Zeilenenden an.
 
 Der Entwurf dazu ist `docs/geraeteerkennung.md`, der Umsetzungsplan
 `docs/plan-geraeteerkennung.md`.

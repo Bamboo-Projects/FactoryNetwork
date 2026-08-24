@@ -1420,7 +1420,7 @@ Importe ergänzen: `dev.devpanda.factorynetwork.lang.DeviceProfile`,
 Aufruf: `./gradlew test --tests "*CompletionsDetailTest*"`
 Erwartet: 3 Tests grün.
 
-- [ ] **Schritt 5: Im Spiel ansehen**
+- [x] **Schritt 5: Im Spiel ansehen**
 
 Aufruf: `./gradlew runClient`
 Eine Kiste neben einen Connector setzen, benennen, Terminal öffnen, in einem
@@ -1562,7 +1562,7 @@ und als neue Methode:
 Aufruf: `./gradlew test`
 Erwartet: alles grün.
 
-- [ ] **Schritt 6: Im Spiel ansehen**
+- [x] **Schritt 6: Im Spiel ansehen**
 
 Aufruf: `./gradlew runClient`
 Im Editor `if crusher_1.` tippen — es müssen vier Vorschläge erscheinen, jeder
@@ -2304,7 +2304,7 @@ Der Inhalt von vorhin gilt nicht mehr, wenn das Terminal zugeht. In
 Aufruf: `./gradlew build`
 Erwartet: übersetzt ohne Fehler.
 
-- [ ] **Schritt 6: Im Spiel prüfen**
+- [x] **Schritt 6: Im Spiel prüfen**
 
 Aufruf: `./gradlew runClient`
 
