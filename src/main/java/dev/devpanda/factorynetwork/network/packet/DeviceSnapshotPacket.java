@@ -13,6 +13,8 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.energy.IEnergyStorage;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
@@ -33,26 +35,36 @@ import java.util.List;
  */
 public record DeviceSnapshotPacket(String connector, DeviceProfileCodec.Flat profile,
                                    List<ItemStack> slots, int slotsOmitted,
-                                   Power power, List<SlotProbe> probes)
+                                   Levels levels, List<SlotProbe> probes)
         implements CustomPacketPayload {
 
     /** Mehr passt in keinen Tooltip. */
     public static final int MAX_SLOTS = 64;
 
     /**
-     * Der Stromstand der Maschine.
+     * Die Füllstände der Maschine: Strom und Flüssigkeiten.
      *
-     * <p>Als eigener Satz und nicht als zwei weitere Felder oben:
+     * <p>Als eigener Satz und nicht als weitere Felder oben:
      * {@code StreamCodec.composite} trägt höchstens sechs, und die Probe
      * braucht eines davon.
+     *
+     * <p><b>Die Behälter als fertige Zeilen</b> und nicht als Fluid-Kennungen
+     * mit Mengen: Eine Flüssigkeit trägt ihren Namen in der Registry, ihre
+     * Menge in Millibucket und ihr Fassungsvermögen je Behälter — das über
+     * die Leitung zu schicken, um es drüben wieder zusammenzusetzen, wäre
+     * dreimal so viel Code für dieselbe Zeile. Übersetzt wird trotzdem
+     * richtig: {@code fluidName} liefert den Anzeigenamen der Flüssigkeit in
+     * der Sprache des Servers — der einzige Ort, an dem das hier auffällt.
      */
-    public record Power(int stored, int capacity) {
+    public record Levels(int energy, int energyCapacity, List<String> tanks) {
 
-        public static final StreamCodec<RegistryFriendlyByteBuf, Power> STREAM_CODEC =
+        public static final StreamCodec<RegistryFriendlyByteBuf, Levels> STREAM_CODEC =
                 StreamCodec.composite(
-                        ByteBufCodecs.VAR_INT, Power::stored,
-                        ByteBufCodecs.VAR_INT, Power::capacity,
-                        Power::new);
+                        ByteBufCodecs.VAR_INT, Levels::energy,
+                        ByteBufCodecs.VAR_INT, Levels::energyCapacity,
+                        ByteBufCodecs.stringUtf8(128).apply(ByteBufCodecs.list(32)),
+                        Levels::tanks,
+                        Levels::new);
     }
 
     /**
@@ -91,7 +103,7 @@ public record DeviceSnapshotPacket(String connector, DeviceProfileCodec.Flat pro
                     ItemStack.OPTIONAL_STREAM_CODEC.apply(ByteBufCodecs.list(MAX_SLOTS)),
                     DeviceSnapshotPacket::slots,
                     ByteBufCodecs.VAR_INT, DeviceSnapshotPacket::slotsOmitted,
-                    Power.STREAM_CODEC, DeviceSnapshotPacket::power,
+                    Levels.STREAM_CODEC, DeviceSnapshotPacket::levels,
                     SlotProbe.STREAM_CODEC.apply(ByteBufCodecs.list(MAX_SLOTS)),
                     DeviceSnapshotPacket::probes,
                     DeviceSnapshotPacket::new);
@@ -136,8 +148,36 @@ public record DeviceSnapshotPacket(String connector, DeviceProfileCodec.Flat pro
 
         return new DeviceSnapshotPacket(connector,
                 DeviceProfileCodec.toFlat(connector, DeviceScan.of(entity)),
-                stacks, omitted, new Power(energy, capacity),
+                stacks, omitted, new Levels(energy, capacity, tanksOf(entity)),
                 probe(items, controller.draft()));
+    }
+
+    /**
+     * Die Behälter der Maschine als lesbare Zeilen.
+     *
+     * <p>Leere Behälter fallen weg — bis auf den Fall, dass alle leer sind:
+     * Dann sagt „leer" mehr als gar nichts, weil es die Frage beantwortet,
+     * ob überhaupt einer da ist.
+     */
+    private static List<String> tanksOf(ConnectorBlockEntity entity) {
+        IFluidHandler tanks = entity.machineTank();
+        List<String> lines = new ArrayList<>();
+        if (tanks == null) {
+            return lines;
+        }
+        for (int tank = 0; tank < tanks.getTanks() && lines.size() < 32; tank++) {
+            FluidStack inside = tanks.getFluidInTank(tank);
+            int capacity = tanks.getTankCapacity(tank);
+            if (inside.isEmpty()) {
+                continue;
+            }
+            lines.add(inside.getHoverName().getString() + ": "
+                    + inside.getAmount() + " / " + capacity + " mB");
+        }
+        if (lines.isEmpty() && tanks.getTanks() > 0) {
+            lines.add("leer");
+        }
+        return lines;
     }
 
     /**

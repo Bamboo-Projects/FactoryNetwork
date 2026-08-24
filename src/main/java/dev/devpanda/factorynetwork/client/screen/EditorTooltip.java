@@ -215,9 +215,12 @@ public final class EditorTooltip {
             lines.add(Component.literal("§8und " + snapshot.slotsOmitted()
                     + " weitere Fächer"));
         }
-        if (snapshot.power().capacity() > 0) {
-            lines.add(Component.literal("§7Strom: " + snapshot.power().stored()
-                    + " / " + snapshot.power().capacity()));
+        if (snapshot.levels().energyCapacity() > 0) {
+            lines.add(Component.literal("§7Strom: " + snapshot.levels().energy()
+                    + " / " + snapshot.levels().energyCapacity()));
+        }
+        for (String tank : snapshot.levels().tanks()) {
+            lines.add(Component.literal("§7" + tank));
         }
         addProbes(lines, snapshot);
     }
