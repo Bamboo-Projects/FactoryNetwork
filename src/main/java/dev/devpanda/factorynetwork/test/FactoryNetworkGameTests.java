@@ -2710,7 +2710,7 @@ public final class FactoryNetworkGameTests {
         helper.assertTrue(entity.deploy("""
                 group ziele {
                     members ziel_*
-                    strategy emptiest
+                    strategy least_filled
                 }
 
                 worker verteilen {

@@ -151,7 +151,22 @@ public final class Parser {
             }
             case STRATEGY -> {
                 advance();
-                return entry(Decl.Worker.Entry.Kind.STRATEGY, parseExpression(), start);
+                if (isStrategyWord(peek())) {
+                    Token chosen = advance();
+                    return entry(Decl.Worker.Entry.Kind.STRATEGY,
+                            new Expr.Name(chosen.text(), chosen.span()), start);
+                }
+                Expr value = parseExpression();
+                // Am Worker steht dieselbe Angabe wie an der Gruppe, und sie
+                // hat denselben Fallstrick: Ein unbekannter Name fiel still
+                // auf round_robin zurück.
+                if (value instanceof Expr.Name chosen
+                        && !dev.devpanda.factorynetwork.lang.Signatures.STRATEGIES
+                                .contains(chosen.value())) {
+                    error(value.span(), "„" + chosen.value() + "“ ist keine Verteilung.",
+                            closestStrategy(chosen.value()));
+                }
+                return entry(Decl.Worker.Entry.Kind.STRATEGY, value, start);
             }
             case RATE -> {
                 advance();
@@ -222,9 +237,23 @@ public final class Parser {
             } else if (start.is(TokenType.STRATEGY)) {
                 advance();
                 Token value = peek();
-                if (value.is(TokenType.NAME)) {
+                // „priority" ist zugleich eine Worker-Angabe und damit ein
+                // Schlüsselwort — als Verteilungsname war es deshalb gar nicht
+                // schreibbar, obwohl es in jeder Liste steht. Hinter
+                // „strategy" ist der Zusammenhang eindeutig.
+                if (value.is(TokenType.NAME) || isStrategyWord(value)) {
                     advance();
                     strategy = value.text();
+                    // Ein unbekannter Name fiel stillschweigend auf
+                    // round_robin zurück. Im Bestand stand jahrelang
+                    // „strategy emptiest" — gemeint war least_filled,
+                    // verteilt wurde reihum, und niemand konnte es sehen.
+                    if (!dev.devpanda.factorynetwork.lang.Signatures.STRATEGIES
+                            .contains(strategy)) {
+                        error(value.span(),
+                                "„" + strategy + "“ ist keine Verteilung.",
+                                closestStrategy(strategy));
+                    }
                 } else {
                     error(value.span(), "Nach strategy fehlt der Name einer Verteilung.",
                             "Erlaubt sind round_robin, first_available, least_filled, "
@@ -1200,5 +1229,35 @@ public final class Parser {
 
     private void error(Span span, String message, String hint) {
         diagnostics.add(new Diagnostic(Diagnostic.Severity.ERROR, span, message, hint));
+    }
+
+    /** Benennt dieses Token eine Verteilung, auch wenn es ein Schlüsselwort ist? */
+    private static boolean isStrategyWord(Token token) {
+        return dev.devpanda.factorynetwork.lang.Signatures.STRATEGIES.contains(token.text());
+    }
+
+    /**
+     * Der Hinweis unter einem falschen Verteilungsnamen.
+     *
+     * <p>Bei einem Vertipper der richtige Name, sonst die ganze Liste — es
+     * sind fünf, und wer den passenden sucht, hat ihn dann vor sich.
+     */
+    private static String closestStrategy(String wanted) {
+        String best = null;
+        int bestDistance = Integer.MAX_VALUE;
+        for (String candidate : dev.devpanda.factorynetwork.lang.Signatures.STRATEGIES) {
+            int distance = dev.devpanda.factorynetwork.util.NameDistance
+                    .between(wanted, candidate);
+            if (distance < bestDistance) {
+                bestDistance = distance;
+                best = candidate;
+            }
+        }
+        if (best != null && dev.devpanda.factorynetwork.util.NameDistance
+                .isCloseEnough(wanted, bestDistance)) {
+            return "Meinst du " + best + "?";
+        }
+        return "Erlaubt sind " + String.join(", ",
+                dev.devpanda.factorynetwork.lang.Signatures.STRATEGIES) + ".";
     }
 }

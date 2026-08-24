@@ -443,7 +443,7 @@ public final class WorkerRuntime {
      *
      * <p>Ohne diese Fassung würde eine Gruppe von Tanks nach Gegenstands-Slots
      * sortiert, die es dort nicht gibt: Jeder Tank sähe gleich voll aus, und
-     * {@code strategy emptiest} verteilte in Wahrheit zufällig.
+     * {@code strategy least_filled} verteilte in Wahrheit zufällig.
      */
     private long tankLevelOf(String device) {
         IFluidHandler tank = lastGraph == null ? null
