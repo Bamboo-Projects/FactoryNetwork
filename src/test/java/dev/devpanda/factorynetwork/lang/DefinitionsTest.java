@@ -95,4 +95,36 @@ class DefinitionsTest {
         assertTrue(Definitions.find(project, "heizen").isPresent(),
                 "sie steht verschachtelt, ist aber eine Erklärung");
     }
+
+    @Test
+    @DisplayName("Ein globaler Wert wird an seiner global-Zeile erklärt")
+    void aGlobalIsDeclaredAtItsLine() {
+        Project project = new Project(Map.of("main.mf", String.join("\n",
+                "global modus = \"tag\"",
+                "",
+                "fn test() {",
+                "    log(modus)",
+                "}")));
+
+        var found = Definitions.find(project, "modus");
+
+        assertTrue(found.isPresent(), "die Erklärung fehlt");
+        assertEquals(1, found.get().line(), "sie steht in der ersten Zeile");
+    }
+
+    @Test
+    @DisplayName("Ein globaler Wert wird auch aus einer anderen Datei gefunden")
+    void aGlobalIsFoundAcrossFiles() {
+        Project project = new Project(Map.of(
+                "werte.mf", "global modus = \"tag\"",
+                "main.mf", String.join("\n",
+                        "fn test() {",
+                        "    log(modus)",
+                        "}")));
+
+        var found = Definitions.find(project, "modus");
+
+        assertTrue(found.isPresent(), "alle Dateien teilen einen Namensraum");
+        assertEquals("werte.mf", found.get().file());
+    }
 }
