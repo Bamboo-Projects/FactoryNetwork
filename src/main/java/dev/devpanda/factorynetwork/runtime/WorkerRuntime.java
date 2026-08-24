@@ -32,12 +32,13 @@ import java.util.Optional;
  * kein Programmzähler, sondern für jeden Worker ein Zustand. Die Laufzeit
  * entscheidet selbst, wann sie tätig wird.
  *
- * <p>Diese Fassung deckt den Weg ab, den die erste spielbare Version braucht:
- * {@code from} und {@code to} zwischen Connector und Speicher, mit
- * {@code filter} und {@code rate}. {@code maintain}, {@code when},
- * {@code strategy} und {@code overflow} sind vorgesehen, aber noch nicht
- * ausgeführt — was fehlt, meldet die Laufzeit, statt es stillschweigend zu
- * übergehen.
+ * <p>Ausgeführt werden alle Angaben, die ein Worker kennt: {@code from},
+ * {@code to}, {@code filter}, {@code rate}, {@code maintain}, {@code when},
+ * {@code priority}, {@code strategy} und {@code overflow}.
+ *
+ * <p>Was die Laufzeit <b>nicht</b> kann, meldet sie, statt es stillschweigend
+ * zu übergehen — bei {@code when} etwa eine Bedingung, die über
+ * Zahlvergleiche hinausgeht.
  */
 public final class WorkerRuntime {
 

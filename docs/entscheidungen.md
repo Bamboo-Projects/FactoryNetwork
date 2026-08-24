@@ -115,20 +115,21 @@ Rateverfahren.
 
 ## Offen, in dieser Reihenfolge zu klären
 
-1. **Grenzen für Nutzercode auf dem Server** (Konzept 22.9) — durch die
-   Entscheidung für persistente Abläufe dringender geworden: Wer Abläufe über
-   Tage am Leben halten kann, kann auch beliebig viele davon erzeugen. Nötig
-   sind Grenzen für Rechenzeit je Tick, Speicher und Anzahl gleichzeitiger
-   Abläufe. Lässt sich schwer nachrüsten.
-2. **Konkrete Syntax** — der Charakter steht (siehe oben), die Schreibweise
-   nicht.
-3. **Speichermodell** — wie Bestände abgelegt und abgefragt werden, ohne bei
-   jedem Zugriff alles zu durchlaufen. Die Messungen aus
-   `ae2sfm/spike-me-zugriff.md` gelten hier unverändert.
-4. **Netzwerktopologie und Channels** — wie Kabel, Controller und Grenzen
-   technisch funktionieren.
+> **Stand 2026-08-24:** Die Punkte 2 bis 4 sind gebaut — die Schreibweise
+> steht in `sprache.md` und `grammatik.md`, das Speichermodell in den Zellen
+> und Laufwerken, Topologie und Kanäle in `FactoryGraph`. Was von dieser
+> Liste bleibt, steht darunter. Die vollständige Übersicht ist
+> `offene-punkte.md`.
+
+1. **Grenzen für Nutzercode auf dem Server** (Konzept 22.9) — teilweise
+   gebaut: Ein Schrittbudget je Durchlauf und die Plätze im Serverschrank gibt
+   es. **Einstellbar** ist nichts davon, und eine Konfiguration hat die Mod
+   bis heute nicht.
+2. ~~Konkrete Syntax~~ — gebaut.
+3. ~~Speichermodell~~ — gebaut, Zellen in Laufwerken.
+4. ~~Netzwerktopologie und Channels~~ — gebaut, acht je Strang.
 5. **Erkennung von Maschinen-Rezepten** (Konzept 22.5) — Voraussetzung für
-   Autocrafting.
+   Autocrafting. Unverändert offen.
 
 ---
 
@@ -883,12 +884,12 @@ Klasse ohne jeden Minecraft-Bezug, und ein gewöhnlicher Test liest die
 erzeugten Modelldateien und vergleicht sie. Er prüft auch, dass kein Strang
 aus dem Block ragt und keine zwei sich überlappen.
 
-### Was noch offen ist
+### Nachgetragen: als vier
 
-Ob ein Bündel für die Kanäle als ein Kabel zählt oder als vier. Das ist keine
-Modellfrage, sondern eine des Spielgleichgewichts — vier Stränge in einem
-Block sind entweder eine Platzersparnis oder eine Verdopplung der Kapazität.
-Kanäle gibt es bei uns ohnehin noch nicht.
+Hier stand die Frage, ob ein Bündel für die Kanäle als ein Kabel zählt oder
+als vier. **Sie ist im nächsten Abschnitt beantwortet** — vier Stränge in
+einem Block tragen vier mal acht, weil sie vier getrennte Netze sind. Der
+Absatz blieb stehen, obwohl die Antwort zwölf Zeilen weiter steht.
 
 ---
 

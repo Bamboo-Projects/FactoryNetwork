@@ -534,9 +534,6 @@ verwischt — die Spieloberfläche hat dafür eine eigene Einstellung.
   Dateibaum, Reiter und Felder sind je etwa zweihundert Zeilen von Hand.
   Docking ist das eine wirklich schwere Stück und zugleich das, was in einem
   Minecraft-Fenster niemand benutzt.
-- **Die VS-Code-Erweiterung kennt noch Einzeldateien.** Unter `editor/vscode`
-  liegen Grammatik, Klammern und elf Bausteine; die README beschreibt eine
-  einzelne `.mf`-Datei statt eines Ordners.
 - **Die Annahme-Probe.** Ob ein Fach einen bestimmten Gegenstand nimmt, lässt
   sich nur durch einen simulierten Einfügeversuch beantworten, und der braucht
   Kandidaten. Vorgesehen sind die `item:`-Literale des Entwurfs; gebaut ist es
