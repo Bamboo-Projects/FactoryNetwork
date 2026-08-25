@@ -76,7 +76,7 @@
   "screen.factorynetwork.terminal.tab.code": "Code",
   "screen.factorynetwork.terminal.tab.network": "Netz",
   "screen.factorynetwork.terminal.tab.dashboards": "Anzeigen",
-  "screen.factorynetwork.terminal.tab.log": "Protokoll",
+  "screen.factorynetwork.terminal.tab.log": "Log",
   "screen.factorynetwork.terminal.log.debug": "Debug",
   "screen.factorynetwork.terminal.log.info": "Info",
   "screen.factorynetwork.terminal.log.warn": "Warnung",

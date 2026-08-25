@@ -1,13 +1,13 @@
 ---
 navigation:
-  title: Protokoll
+  title: Log
   position: 58
 ---
 
-# Protokoll
+# Log
 
 Ein Programm, das nichts sagen kann, lässt beim Suchen eines Fehlers nur das
-Raten übrig. Deshalb der Reiter **Protokoll** im Terminal — und vier
+Raten übrig. Deshalb der Reiter **Log** im Terminal — und vier
 Funktionen, mit denen dein Programm hineinschreibt.
 
 ```

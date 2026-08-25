@@ -720,6 +720,10 @@ public class ControllerBlockEntity extends BlockEntity {
         pushProjectTo(player);
         pushFlowsTo(player);
         pushDisplaysTo(player);
+        // Sonst bliebe der Reiter leer, bis das nächste Fenster des
+        // regelmäßigen Schickens auftut — und wer ihn gezielt aufmacht,
+        // hätte den Eindruck, es sei nichts passiert.
+        pushLogTo(player);
     }
 
     /**

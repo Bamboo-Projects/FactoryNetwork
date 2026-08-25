@@ -176,14 +176,33 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         return font.width(FnFonts.mono(tab.title()));
     }
 
+    /**
+     * Der Abstand zwischen zwei Beschriftungen.
+     *
+     * <p><b>Schrumpft, wenn es eng wird.</b> Mit einem festen Abstand lief
+     * der sechste Reiter aus dem Fenster, und der siebte täte es wieder. Die
+     * Leiste rechnet lieber selbst nach, als dass jemand beim nächsten Reiter
+     * daran denken muss.
+     */
+    private int tabGap() {
+        int labels = 0;
+        for (TerminalTab candidate : TerminalTab.values()) {
+            labels += tabWidth(candidate);
+        }
+        int room = SCREEN_X1 - (SCREEN_X0 + 6) - labels;
+        int gaps = Math.max(1, TerminalTab.values().length - 1);
+        return Math.max(3, Math.min(TAB_GAP, room / gaps));
+    }
+
     /** Wo eine Reiterbeschriftung anfängt, im Fenster gerechnet. */
     private int tabX(TerminalTab wanted) {
         int x = SCREEN_X0 + 6;
+        int gap = tabGap();
         for (TerminalTab candidate : TerminalTab.values()) {
             if (candidate == wanted) {
                 return x;
             }
-            x += tabWidth(candidate) + TAB_GAP;
+            x += tabWidth(candidate) + gap;
         }
         return x;
     }
