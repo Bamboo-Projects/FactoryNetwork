@@ -479,6 +479,33 @@
       "help": "Ordnet nach dem Ausdruck. it ist der Eintrag."
     }
   ],
+  "freeFunctions": [
+    {
+      "name": "log",
+      "shape": "log(text)",
+      "help": "Schreibt ins Protokoll, als info."
+    },
+    {
+      "name": "info",
+      "shape": "info(text)",
+      "help": "Was gut lief."
+    },
+    {
+      "name": "warn",
+      "shape": "warn(text)",
+      "help": "Etwas stimmt nicht, die Fabrik läuft weiter."
+    },
+    {
+      "name": "error",
+      "shape": "error(text)",
+      "help": "Etwas ist stehen geblieben."
+    },
+    {
+      "name": "debug",
+      "shape": "debug(text)",
+      "help": "Zwischenstände beim Suchen. Im Terminal erst auf Wunsch sichtbar."
+    }
+  ],
   "builtinEvents": [
     "device_changed",
     "device_offline",

@@ -36,6 +36,8 @@ public final class FnPackets {
                 SetBlockNamePacket::handle);
         registrar.playToClient(FlowStatePacket.TYPE, FlowStatePacket.STREAM_CODEC,
                 FlowStatePacket::handle);
+        registrar.playToClient(LogStatePacket.TYPE, LogStatePacket.STREAM_CODEC,
+                LogStatePacket::handle);
         registrar.playToServer(FlowActionPacket.TYPE, FlowActionPacket.STREAM_CODEC,
                 FlowActionPacket::handle);
         registrar.playToClient(DisplayStatePacket.TYPE, DisplayStatePacket.STREAM_CODEC,

@@ -16,7 +16,8 @@ public enum TerminalTab {
     CRAFTING("crafting", false),
     CODE("code", true),
     NETWORK("network", true),
-    DASHBOARDS("dashboards", true);
+    DASHBOARDS("dashboards", true),
+    LOG("log", true);
 
     private final String key;
     private final boolean ready;

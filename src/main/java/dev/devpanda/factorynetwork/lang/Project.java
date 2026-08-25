@@ -212,6 +212,22 @@ public record Project(Map<String, String> files) {
             EventCheck.run(result.program(), events).forEach(
                     diagnostic -> diagnostics.add(diagnostic.withFile(name)));
             for (Decl declaration : result.program().declarations()) {
+                // Eine eigene Funktion, die wie eine eingebaute heißt, wäre
+                // nie erreichbar: Der Interpreter prüft die eingebauten
+                // zuerst. Das still hinzunehmen hieße, dass ein fn dasteht
+                // und nie läuft — derselbe Fehler wie ein on mit vertipptem
+                // Ereignisnamen.
+                if (declaration instanceof Decl.Fn
+                        && Signatures.FREE_FUNCTIONS.stream()
+                                .anyMatch(free -> free.name().equals(declaration.name()))) {
+                    diagnostics.add(new Diagnostic(Diagnostic.Severity.ERROR,
+                            declaration.span(),
+                            "„" + declaration.name() + "“ ist eingebaut.",
+                            "Es schreibt ins Protokoll. Nenn deine Funktion anders — "
+                                    + "sonst stünde sie da und liefe nie.",
+                            name));
+                    continue;
+                }
                 String taken = duplicateOf(declaration, owners, name);
                 if (taken != null) {
                     diagnostics.add(new Diagnostic(Diagnostic.Severity.ERROR,

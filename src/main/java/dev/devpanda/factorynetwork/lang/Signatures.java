@@ -193,6 +193,22 @@ public final class Signatures {
                     Slot.of(Kind.EXPR)),
             of("await", "Wartet auf ein Ereignis.", Slot.of(Kind.EVENT)));
 
+    /**
+     * Die Funktionen, die es ohne Empfänger gibt.
+     *
+     * <p>Sie waren nirgends aufgeführt, und deshalb schlug sie kein Editor
+     * vor — {@code log()} gibt es seit dem ersten Tag, und finden musste man
+     * es in der Doku.
+     */
+    public static final List<Member> FREE_FUNCTIONS = List.of(
+            new Member("log", "log(text)", "Schreibt ins Protokoll, als info."),
+            new Member("info", "info(text)", "Was gut lief."),
+            new Member("warn", "warn(text)",
+                    "Etwas stimmt nicht, die Fabrik läuft weiter."),
+            new Member("error", "error(text)", "Etwas ist stehen geblieben."),
+            new Member("debug", "debug(text)",
+                    "Zwischenstände beim Suchen. Im Terminal erst auf Wunsch sichtbar."));
+
     /** Die Verteilungen, die {@code strategy} kennt. */
     public static final List<String> STRATEGIES = List.of(
             "round_robin", "first_available", "least_filled", "random", "priority");

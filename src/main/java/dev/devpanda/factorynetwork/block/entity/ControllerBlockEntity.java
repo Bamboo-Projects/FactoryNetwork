@@ -1010,6 +1010,7 @@ public class ControllerBlockEntity extends BlockEntity {
         terminalWatchers.forEach(player -> {
             pushFlowsTo(player);
             pushDisplaysTo(player);
+            pushLogTo(player);
         });
     }
 
@@ -1024,6 +1025,18 @@ public class ControllerBlockEntity extends BlockEntity {
                 new FlowStatePacket.Supply(power.state().ordinal(), power.stored(),
                         power.capacity(), powerDraw()),
                 globalLines()));
+    }
+
+    /** Schickt das Protokoll an einen Spieler. */
+    public void pushLogTo(ServerPlayer player) {
+        List<dev.devpanda.factorynetwork.network.packet.LogStatePacket.Line> lines =
+                new ArrayList<>(log.size());
+        for (dev.devpanda.factorynetwork.runtime.LogEntry entry : log) {
+            lines.add(new dev.devpanda.factorynetwork.network.packet.LogStatePacket.Line(
+                    entry.level().key(), entry.time(), entry.source(), entry.text()));
+        }
+        PacketDistributor.sendToPlayer(player,
+                new dev.devpanda.factorynetwork.network.packet.LogStatePacket(lines));
     }
 
     /**

@@ -340,6 +340,15 @@ public final class Completions {
                 // drei Wörter ohne eigene Form.
                 addAll(entries, List.of("else", "break", "continue"), prefix,
                         Entry.Kind.KEYWORD);
+                // Die Funktionen ohne Empfänger: log und die drei Stufen
+                // daneben. Sie standen nirgends und wurden deshalb nie
+                // vorgeschlagen — man musste wissen, dass es sie gibt.
+                for (Signatures.Member function : Signatures.FREE_FUNCTIONS) {
+                    if (matches(function.name(), prefix)) {
+                        entries.add(new Entry(function.name(), function.name(),
+                                Entry.Kind.BUILTIN, function.shape()));
+                    }
+                }
                 addConnectors(entries, prefix);
                 addAll(entries, BUILTINS, prefix, Entry.Kind.BUILTIN);
             }

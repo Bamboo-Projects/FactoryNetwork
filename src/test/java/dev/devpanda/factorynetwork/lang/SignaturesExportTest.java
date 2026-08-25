@@ -116,6 +116,18 @@ class SignaturesExportTest {
         // Datei des Spielers — ohne diesen Block kann die Erweiterung sie
         // nicht vorschlagen, und ein vertippter Name fällt erst auf, wenn
         // der Block nie läuft.
+        // Die Funktionen ohne Empfänger. Ohne sie schlug die Erweiterung
+        // nicht einmal log() vor, das es seit dem ersten Tag gibt.
+        JsonArray freeFunctions = new JsonArray();
+        for (Signatures.Member function : Signatures.FREE_FUNCTIONS) {
+            JsonObject entry = new JsonObject();
+            entry.addProperty("name", function.name());
+            entry.addProperty("shape", function.shape());
+            entry.addProperty("help", function.help());
+            freeFunctions.add(entry);
+        }
+        root.add("freeFunctions", freeFunctions);
+
         JsonArray builtinEvents = new JsonArray();
         new java.util.TreeSet<>(BuiltinEvents.ARITY.keySet()).forEach(builtinEvents::add);
         root.add("builtinEvents", builtinEvents);

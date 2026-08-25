@@ -21,7 +21,7 @@ const fs = require('fs');
 const path = require('path');
 
 let table = { blocks: {}, strategies: [], declarations: [], members: [],
-              listMembers: [], builtinEvents: [], topLevel: [] };
+              listMembers: [], builtinEvents: [], freeFunctions: [], topLevel: [] };
 
 /** Zu welchen Blockarten Anweisungen gehören statt fester Angaben. */
 const CODE_BLOCKS = ['fn', 'on', 'multiblock'];
@@ -427,6 +427,13 @@ function activate(context) {
                 }
                 for (const word of ['else', 'break', 'continue']) {
                     entries.push(item(word, vscode.CompletionItemKind.Keyword));
+                }
+                // Die Funktionen ohne Empfänger: log und die drei Stufen
+                // daneben. Sie standen in keiner Tabelle und wurden deshalb
+                // nie vorgeschlagen — man musste wissen, dass es sie gibt.
+                for (const fn of table.freeFunctions || []) {
+                    entries.push(item(fn.name, vscode.CompletionItemKind.Function,
+                        fn.shape, fn.help));
                 }
                 // In einer Funktion ist ein Ausdruck auch eine Anweisung —
                 // und der Aufruf einer Funktion aus der Nachbardatei steht

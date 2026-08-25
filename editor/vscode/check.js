@@ -208,6 +208,11 @@ contains('Nach on auch das eigene Ereignis',
 contains('await bietet die eingebauten Ereignisse',
     ['fn test() {', '    await '], 'device_changed', true);
 
+// Die Funktionen ohne Empfänger — sie standen in keiner Tabelle.
+contains('Funktion bietet log', ['fn test() {', '    '], 'log', true);
+contains('Funktion bietet warn', ['fn test() {', '    '], 'warn', true);
+contains('Ein Worker bietet kein warn', ['worker haul {', '    '], 'warn', false);
+
 // Auf oberster Ebene: die Deklarationen, und global mit seiner Form.
 contains('Oberste Ebene bietet global', ['gl'], 'global', true);
 contains('In einem Block kein global', ['worker haul {', '    '], 'global', false);
