@@ -139,6 +139,9 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | | Erst alle drei ergeben einen Server; unfertige Einschübe tragen nichts |
 | Strom | FE in den Controller, Verbrauch je Gerät, aus bei Unterversorgung |
 | | Brennkammer als eigene Quelle, Kreativ-Stromquelle zum Prüfen |
+| | `filter power`: aus dem Netz in eine Maschine und aus einer Maschine ins Netz |
+| | Bei Knappheit bekommt der Worker mit der kleinen `priority` seine ganze Rate |
+| | Energiezellen im Laufwerk, vier Größen — der Vorrat wächst mit ihnen |
 | | Ein laufender Ablauf belegt einen Platz, der Rest stellt sich an |
 | | Zelle in der Hand ans Laufwerk klicken setzt sie ein, leere Hand nimmt die letzte heraus |
 | Werkzeuge | Beschriftungspistole, Netzanalysator mit Sicht durch Wände |
@@ -151,7 +154,7 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | Netzwerk | Graph über Kabel, Speicher schlüsselbasiert, Kanäle je Strang |
 | Editor | Syntaxfarben, Fehler beim Tippen, Vervollständigung nach Stelle |
 | Anzeigen | Am Block und im Terminal, Knöpfe starten Abläufe |
-| Prüfung | 87 Einheitstests, 86 GameTests |
+| Prüfung | 349 Einheitstests, 202 GameTests |
 
 ## 3. Was noch nicht läuft
 
@@ -368,8 +371,7 @@ etwas.
 **Strom in der Sprache.** `filter power` ist eine vierte Ressourcenart, ohne
 Doppelpunkt, weil Strom keine Sorten hat. Die Seitenwarnung gilt mit: Ein
 Strom-Worker verlangt einen Energiespeicher an der angeschlossenen Seite.
-**Verteilt wird noch nichts** — ein Strom-Worker sagt das und steht auf
-`HALTED`, statt still nichts zu tun.
+Verteilt wurde damit noch nichts; das kam am Abend desselben Tages dazu.
 
 **Bearbeitung anfragen.** F4 klopft beim Halter einer gesperrten Datei an, in
 beiden Fenstern. Kein Übernehmen — die Sperre wegzunehmen wäre genau das,
@@ -382,6 +384,36 @@ Quelle, gerendert wird im Spiel.
 **Und beide Editoren kennen jetzt das ganze Projekt.** Die Vervollständigung
 im Spiel las bisher nur die offene Datei — dabei teilen alle Dateien einen
 Namensraum. Die VS-Code-Erweiterung liest die Nachbardateien ebenfalls.
+
+### Die Stromverteilung (seit dem 25.08.)
+
+Ein Worker mit `filter power` bewegt jetzt wirklich Strom. **Eine Seite ist
+immer das Netz** — `from network to crusher_1` versorgt, `from akku_1 to
+network` speist ein; Strom von Maschine zu Maschine wäre eine Leitung ohne
+Kabel. Wer es doch schreibt, liest den Satz im Terminal, statt ihn zu erraten.
+
+Es gibt **keine Kabelgrenze**. Was fließt, begrenzen die Rate des Workers, der
+Vorrat des Netzes und was die Maschine annimmt. Eine zweite Knappheit neben
+`priority` hätte zwei Ursachen für dasselbe Symptom bedeutet, und die zweite
+sieht man nirgends.
+
+Dabei fiel auf, dass **`priority` bis dahin überhaupt nichts tat**: Die Zahl
+stand seit dem ersten Tag in der Grammatik und in jedem Beispiel, gelesen hat
+sie niemand. Jetzt sortiert sie die Worker vor dem Tick — für Gegenstände und
+Flüssigkeiten mit.
+
+**Der Vorrat des Netzes liegt im Laufwerk.** Energiezellen sind die dritte
+Zellenart neben Gegenstands- und Flüssigkeitszellen, in denselben Laufwerken.
+Eine Energiezelle hat nur eine Zahl: Bei Strom gibt es keine Sorten, und damit
+fehlt der Reiz, der bei den anderen im Sortieren liegt. Ein Akku ist eine
+Zahl.
+
+Der Puffer im Controller wird zuerst gefüllt und zuerst geleert; die Zellen
+sind die Reserve. Was durchläuft, berührt damit keinen einzigen Gegenstand.
+
+Die übrigen Befunde stehen in `strom.md` §10 — darunter der, dass die
+Kreativquelle nichts hergab und die Einspeiserichtung deshalb nicht prüfbar
+war.
 
 ### `device_output` (seit dem 25.08.)
 

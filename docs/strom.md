@@ -1,9 +1,10 @@
-# Strom leiten und speichern — Entwurf
+# Strom leiten und speichern
 
-Wie aus dem Netz, das Strom verbraucht, eines wird, das ihn auch verteilt und
+Wie aus dem Netz, das Strom verbraucht, eines wurde, das ihn auch verteilt und
 vorhält.
 
-Stand: 2026-08-24
+Stand: 2026-08-25 — **gebaut.** Der Entwurf vom 24.08. steht unverändert
+darunter; was sich beim Bauen anders ergab, steht in §10.
 
 Setzt um, was `entscheidungen.md` unter „Strom wird geleitet und gespeichert"
 festhält. Dort steht das Was und Warum, hier das Wie.
@@ -225,3 +226,56 @@ als einer, der wartet — die Regel von 2026-08-22 gilt unverändert.
   25.08.:** `rate 40 per 1t`. `1t` ist eine gültige Dauer, die Grammatik kann
   es heute; ein eigenes Wort `tick` wäre eine zweite Schreibweise für dieselbe
   Sache und zöge `per second` nach sich.
+
+---
+
+## 10. Was sich beim Bauen ergab
+
+Fünf Dinge, die im Entwurf so nicht standen.
+
+**`priority` tat bis dahin nichts.** Die Zahl stand seit dem ersten Tag in der
+Grammatik, in der Doku und in jedem Beispiel — gelesen hat sie niemand. Der
+Entwurf setzt sie in §4 voraus, also musste sie gebaut werden, und sie sortiert
+jetzt die Worker vor jedem Tick. Das gilt für Gegenstände und Flüssigkeiten
+mit; dort war die Reihenfolge vorher die des Programmtexts.
+
+**Die Kreativquelle musste etwas abgeben können.** Sie schob ihre 100.000 FE
+je Tick in die Nachbarn, bot aber selbst keinen Speicher an, aus dem sich
+etwas holen ließe. Damit war `from quelle to network` — die Richtung aus §2 —
+im Spiel nicht erlebbar und im Test nicht belegbar. Eine Maschine bleibt
+weiterhin kein Akku: Die Presse verweigert die Entnahme nach wie vor mit
+Absicht, und genau deshalb braucht es eine Quelle, die es nicht tut.
+
+**Der Anschluss für Fremdmods ist nicht mehr der Puffer.** Er zeigt jetzt auf
+den ganzen Vorrat. Sonst bliebe jede Energiezelle für immer leer: Strom kommt
+von außen durch den Controller, und der endete am Rand seiner zwanzigtausend.
+Die Aufnahmerate bleibt, was sie war — sie ist nach §5 die einzige
+Stromgrenze im System, und sie gilt für die Aufnahme des Netzes, nicht für
+einen Topf darin.
+
+**Beim Ausgehen behalten die Zellen ihren Rest.** Der Puffer wird geleert wie
+bisher; die Zellen nicht. Ein Gegenstand, dem still der Inhalt gelöscht wird,
+ist ein Verlust, den niemand kommen sieht. Die Ausnahme ist das ausdrückliche
+Leeren des Vorrats — wer den auf null setzt, meint den ganzen.
+
+**Die Abgabe wird über eine Sekunde gemittelt.** §7 verlangt sie als eigene
+Zahl; je Tick genommen wäre sie bei `rate 800 per 20t` neunzehnmal null und
+einmal achthundert. Niemand liest daraus, dass vierzig fließen.
+
+### Die Zahlen der Energiezellen
+
+Vier Stufen, viermal je Stufe, wie bei den anderen Zellen: **64k, 256k, 1024k,
+4096k FE.** Die kleinste trägt gut das Dreifache des Controllerpuffers — genug,
+dass sich das Einsetzen sofort bemerkbar macht, und wenig genug, dass die große
+noch etwas bedeutet.
+
+Das Rezept folgt der Leiter der anderen Zellen: die kleinste aus Platten,
+Kristall und einem Redstoneblock, jede weitere aus vier der vorherigen mit
+Kupfer in der Mitte. Statt Speicherkern und Eimer steht hier, was Strom hält.
+
+### Was aus §7 noch fehlt
+
+Die **Einspeisung** hat keine eigene Zahl im Netz-Reiter. Dort stehen jetzt
+Bedarf, Abgabe und Vorrat; was aus fremden Generatoren hereinkommt, sieht man
+nur daran, dass der Vorrat steigt. Eine vierte Zahl in derselben Zeile wäre
+mehr, als eine Zeile trägt.

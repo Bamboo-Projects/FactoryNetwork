@@ -2199,6 +2199,10 @@ braucht.
 
 ## Strom wird geleitet und gespeichert (2026-08-24)
 
+**Gebaut am 25.08.** Was sich dabei anders ergab — darunter, dass die
+Kreativquelle nichts hergab und `priority` bis dahin nichts tat — steht in
+`strom.md` §10.
+
 Ergänzt und korrigiert den Eintrag „Strom" vom 2026-08-22. Dort stand, das
 Netz nehme Strom an und gebe nichts ab — „ein Netz ist kein Akku, aus dem die
 Nachbarmaschine zapft". **Dieser Satz ist überholt.** Auf Wunsch des

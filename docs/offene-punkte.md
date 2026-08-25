@@ -32,6 +32,12 @@ Vorentscheidungen)
 >
 > Die Zeilen unten sind entsprechend angepasst.
 
+> **Später am 25.08.:** Die Stromverteilung (2.2) ist gebaut — beide
+> Richtungen, die Reihenfolge nach `priority`, die Energiezellen und die
+> Abgabe im Netz-Reiter. Dabei fiel auf, dass `priority` bis dahin überhaupt
+> nichts tat und dass die Kreativquelle nichts hergab; beides ist mit
+> behoben. Siehe `strom.md` §10.
+
 > **Abend des 25.08.:** Die ganze Entscheidungsliste durchgesprochen und
 > danach abgearbeitet. Gebaut: Filter-Vorlagen, `it.item`/`it.amount` am
 > Posten, `move` mit Rückgabe, die JEI-Schreibweise, `fluidtag:`, `const`,
@@ -84,7 +90,7 @@ Vorentscheidungen)
 | # | Was | Status | Wo | Größe | Blockiert durch |
 |---|---|---|---|---|---|
 | 2.1 | ~~Globale Werte~~ — **fertig**, alle sieben Aufgaben | | `plan-globale-werte.md` | | |
-| 2.2 | **Alle vier Entscheidungen sind gefallen** (25.08.): Knappheit nach `priority`, `power` als Schlüsselwort, Abgabe nur bei `RUNNING` — und **keine Kabelgrenze**, die Anmeldung entfällt damit. Zu bauen sind die Abgabe und die Energiezellen | F | `strom.md`, `entscheidungen.md` „Entscheidungsrunde" | groß | — |
+| 2.2 | ~~Stromverteilung~~ — **fertig** (25.08.). Abgabe und Einspeisung als Worker, Reihenfolge nach `priority`, Energiezellen im Laufwerk, Abgabe als eigene Zahl im Netz-Reiter. Was sich beim Bauen anders ergab, steht in `strom.md` §10 | | `strom.md` | | |
 | 2.3 | ~~Abgabe bei `OFF`/`BOOTING`~~ — **beantwortet.** Es fließt nichts ab, solange das Netz nicht läuft; der Fall kann nicht eintreten | | `strom.md` §3 | | |
 | 2.4 | ~~Einheit der Abgaberate~~ — **entschieden:** `rate 40 per 1t`, keine neue Form. Ein eigenes Wort `tick` zöge sofort `per second` nach sich | | `strom.md` §9 | | |
 | 2.5 | Strom als Wert in der Sprache (`crusher_1.energy`) | F | `strom.md:228` | klein | 1.1 |
@@ -164,21 +170,19 @@ Entscheidung** — 5.4, die Zahlen an den Serverbauteilen, und die beantwortet
 eine Runde Spielen. Dazu 1.11, das beim Bauen wieder zur Entscheidung wurde.
 Alles andere ist Arbeit.
 
-**1. Die Stromverteilung** (2.2). Die vier Entscheidungen sind gefallen, und
-eine davon macht die Arbeit kleiner: Es gibt keine Kabelgrenze, also keine
-Pfadrechnung und keine Anmeldung. Zu bauen sind die Abgabe nach `priority`
-und die dritte Zellenart. **Der größte einzelne Gewinn im Spiel** — danach
-versorgt eine Fabrik ihre Maschinen selbst.
+~~**1. Die Stromverteilung** (2.2).~~ **Gebaut am 25.08.** Eine Fabrik
+versorgt ihre Maschinen jetzt selbst, und der Vorrat wächst mit den
+Energiezellen im Laufwerk.
 
-**2. Der Controller-Multiblock** (5.1). Entschieden am 25.08., gebaut ist kein
+**1. Der Controller-Multiblock** (5.1). Entschieden am 25.08., gebaut ist kein
 Block. Ohne ihn ist bei 384 Geräten Schluss, und der Anbaublock ist die
 Antwort, die keine Zustandswanderung braucht.
 
-**3. Weitere Handbuchseiten** (6.1). Die Anbindung steht, die ersten Seiten
+**2. Weitere Handbuchseiten** (6.1). Die Anbindung steht, die ersten Seiten
 auch. Schreibarbeit ohne Risiko — und das, was die Mod für jemanden von außen
 zugänglich macht.
 
-**4. Autocrafting** (2.9, 2.10). Der letzte ausgegraute Reiter, und der
+**3. Autocrafting** (2.9, 2.10). Der letzte ausgegraute Reiter, und der
 Grund, warum `crafting` als Quelle noch nirgends steht.
 
 **Kleines mit großer Wirkung:** `list` auf einer Anzeige (6.10) ist seit 1.16

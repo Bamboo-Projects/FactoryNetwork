@@ -384,3 +384,50 @@ Welche Nummer das Ausgangsfach hat, zeigt der Netzanalysator beim Rechtsklick
 auf den Connector — und der Tooltip im Editor, wenn der Zeiger auf dem Namen
 steht.
 
+---
+
+## 12. Maschinen mit Strom versorgen
+
+```
+worker ofen_zuerst {
+    from network
+    to schmelze
+    filter power
+    rate 200 per 1t
+    priority 1
+}
+
+worker der_rest {
+    from network
+    to brecher
+    filter power
+    rate 200 per 1t
+    priority 9
+}
+
+worker einspeisen {
+    from generator
+    to network
+    filter power
+    rate 800 per 1t
+}
+```
+
+**Was in der Welt stehen muss:** je ein Connector an Schmelze, Brecher und
+Generator, dazu genug im Vorrat — oder eben nicht genug, denn darum geht es
+hier.
+
+Bei Strom ist **eine Seite immer `network`**. Von einer Maschine direkt in die
+andere zu schieben wäre eine Leitung ohne Kabel; dafür gibt es Kabel.
+
+Wird es knapp, entscheidet `priority`: Die Schmelze bekommt ihre vollen 200,
+der Brecher steht still. Das ist Absicht — liefen beide halb, würde keine
+fertig, und man sucht lange, warum nichts vorangeht.
+
+Wie viel gerade abfließt, steht im Reiter **Netzwerk** als eigene Zahl neben
+dem Bedarf. Der Bedarf zählt sie nicht mit: Was das Netz durchreicht, ist
+nicht, was es für sich braucht.
+
+**Mehr Vorrat** gibt es nicht über einen größeren Controller, sondern über
+Energiezellen im Laufwerk — dieselben Regale, in denen auch die Gegenstands-
+und Flüssigkeitszellen stecken.
