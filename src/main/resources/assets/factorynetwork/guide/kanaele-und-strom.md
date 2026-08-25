@@ -81,6 +81,10 @@ Forge Energy an, wie jede Maschine im Pack — vom Kabel eines fremden
 Generators, oder von der Brennkammer, die ihren Strom aktiv hineinschiebt. Er
 puffert 20 000 FE und nimmt bis zu 2 000 FE je Tick auf.
 
+Das Netz **verbraucht** Strom für seine eigene Bereitschaft, **gibt** ihn an
+Maschinen ab, wenn ein Programm das sagt, und **hält** ihn in Energiezellen
+vor. Die drei Abschnitte dazu stehen unten.
+
 ### Was ein Netz verbraucht
 
 Alles in FE je Tick:
@@ -134,14 +138,70 @@ Halbminutentakt, das wie ein Fehler aussieht statt wie zu wenig Strom.
 Wenn dein Netz also nach dem Einschalten der Brennkammer nicht sofort
 anspringt: Das ist kein Fehler, es sammelt.
 
+### Strom an Maschinen abgeben
+
+Ein Connector versorgt seine Maschine **nicht** von selbst. Ohne Code fließt
+kein Strom — dieselbe Härte wie überall in dieser Mod.
+
+```
+worker versorgung {
+    from network
+    to schmelze
+    filter power
+    rate 200 per 1t
+    priority 1
+}
+```
+
+`filter power` steht ohne Doppelpunkt, denn Strom hat keine Sorten: Es gibt
+nur FE.
+
+**Eine Seite ist immer `network`.** Andersherum geht es auch — `from generator
+to network` holt aus einem fremden Speicher ins Netz. Von einer Maschine
+direkt in die andere zu schieben wäre dagegen eine Leitung ohne Kabel; dafür
+gibt es Kabel.
+
+**Es gibt keine Kabelgrenze.** Was fließt, begrenzen die Rate deines Workers,
+der Vorrat des Netzes und das, was die Maschine annimmt. Ein dünnes Kabel
+trägt so viel Strom wie ein dichtes — Kabelstufen entscheiden allein über
+Kanäle.
+
+Wird der Vorrat knapp, gilt die **`priority`**: kleine Zahl zuerst. Wer
+drankommt, bekommt seine ganze Rate; wer leer ausgeht, geht leer aus. Das ist
+Absicht. Bekämen alle etwas, liefen bei Knappheit sämtliche Maschinen langsam
+und keine würde fertig — der Zustand, in dem man am längsten sucht, warum
+nichts vorangeht.
+
+Ein Worker, der nichts abbekommt, steht als `WAITING_TARGET` da — derselbe
+Zustand wie ein Gegenstands-Worker vor einer vollen Kiste.
+
+### Mehr Vorrat: Energiezellen
+
+Die 20 000 FE im Controller sind ein Puffer, kein Speicher. Wer mehr halten
+will, steckt **Energiezellen** ins Laufwerk — dieselben Regale, in denen auch
+Gegenstands- und Flüssigkeitszellen stecken. Es gibt sie in vier Größen von
+64k bis 4096k FE.
+
+Der Vorrat des Netzes ist danach der Puffer **plus** alles, was in den Zellen
+liegt. Gefüllt wird der Puffer zuerst, geleert auch — die Zellen sind die
+Reserve.
+
+Eine eingesetzte Energiezelle kostet 1 FE je Tick wie jede andere Zelle. Ein
+Akku, der Strom kostet, um Strom zu halten, ist ein Akku mit Selbstentladung.
+
 ### Wo du es abliest
 
 Im Terminal, Reiter **Netz**, ganz oben in den Abläufen — und in der
 Statuszeile jedes Reiters. Drei Zeilen sind möglich:
 
-- `Strom: 13 FE/t · 18.400 von 20.000` — es läuft.
+- `Strom: 13 FE/t · Abgabe 40 · 18.400 von 84.000` — es läuft.
 - `Fährt hoch — …` — die drei Sekunden.
 - `Kein Strom — das Netz steht (13 FE/t nötig)` — in Rot.
+
+Die mittlere Zahl ist, was gerade an Maschinen abfließt, gemittelt über eine
+Sekunde. Sie zählt **nicht** zum Bedarf davor: Was das Netz durchreicht, ist
+nicht, was es für sich braucht — sonst schaltete sich ein Netz ab, weil es zu
+viel liefert.
 
 Am Controller steht dasselbe im Tooltip, und an der Brennkammer, ob sie
 brennt, leer ist oder ihren Vorrat nicht loswird.

@@ -53,6 +53,24 @@ Programm in **Millibucket** — ein Eimer sind 1000. Eine Flüssigkeitszelle geh
 in dasselbe Laufwerk wie eine Speicherzelle. Getrennt werden die beiden erst
 beim Zählen: Gegenstände füllen keine Flüssigkeitszelle und umgekehrt.
 
+## Energiezellen
+
+Die dritte Zellenart, und die einfachste: **Sie hat nur eine Zahl.**
+
+- **64k FE**
+- **256k FE**
+- **1024k FE**
+- **4096k FE**
+
+Bei Strom gibt es keine Sorten, also auch keine zweite Grenze. Damit fehlt hier
+der Reiz, der bei den anderen im Sortieren liegt — und das ist kein Mangel,
+sondern die Sache selbst: Ein Akku ist eine Zahl. Wer mehr will, steckt eine
+größere Zelle ein oder eine zweite dazu.
+
+Was in ihr liegt, gehört zum **Stromvorrat des Netzes** und nicht zum
+Lagerbestand; im Reiter *Speicher* taucht sie deshalb nicht auf. Mehr dazu
+steht unter *Kanäle und Strom*.
+
 ## Einsetzen und herausnehmen
 
 **Ein Klick öffnet das Regalfenster — immer**, egal was in der Hand liegt, wie
