@@ -122,10 +122,10 @@ public final class Completions {
             // stehen andere Dinge. Vorher fiel es durch memberPrefix, das
             // nur bekannte Connectoren durchlässt — nach „it." kam damit
             // gar nichts.
-            String vorDemPunkt = wordBeforeDot(upToCursor);
+            String receiver = wordBeforeDot(upToCursor);
             // Eine Gruppe ist kein Gerät: An ihr stehen members und send, und
             // sonst nichts.
-            if (isGroupName(vorDemPunkt, lines)) {
+            if (isGroupName(receiver, lines)) {
                 for (Signatures.Member candidate : Signatures.GROUP_MEMBERS) {
                     if (matches(candidate.name(), prefix)) {
                         entries.add(new Entry(candidate.name(), candidate.name(),
