@@ -345,7 +345,7 @@ class CompletionsTest {
     @DisplayName("Nach dem Punkt steht, was ein Gerät hat")
     void afterTheDotTheDeviceMembersAreOffered() {
         withNetwork("crusher_1", () -> assertEquals(
-                List.of("online", "name", "redstone", "count", "insert", "items"),
+                List.of("online", "name", "redstone", "count", "insert", "items", "slots"),
                 at("fn test() {", "    if crusher_1.")));
     }
 

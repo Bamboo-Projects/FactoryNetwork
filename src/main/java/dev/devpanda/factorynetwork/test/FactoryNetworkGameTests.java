@@ -6721,6 +6721,87 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
+     * <b>Nur den Ausgang abräumen.</b>
+     *
+     * <p>Der Fall, für den es die Fächer gibt: Eine Maschine, die Eingang und
+     * Ausgang im selben Inventar hält, und ein move, das den Eingang stehen
+     * lässt. Ein zweiter Connector an einer anderen Seite ist ausdrücklich
+     * nicht die Antwort — ein Anschluss je Maschine soll reichen.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void movingOnlyFromCertainSlots(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        BlockPos quelle = controller.east().north().north();
+        if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity container) {
+            // Fach 0 ist der „Eingang", Fach 3 der „Ausgang".
+            container.setItem(0, new ItemStack(Items.IRON_ORE, 8));
+            container.setItem(3, new ItemStack(Items.GOLD_ORE, 5));
+        }
+
+        helper.assertTrue(entity.deploy("""
+                fn abraeumen() {
+                    move 64 item:gold_ore from quarry_output.slots(3) to storage
+                }"""), "Das Programm wurde nicht übernommen");
+
+        entity.startFlow("abraeumen", List.of());
+        helper.startSequence()
+                .thenIdle(10)
+                .thenExecute(() -> {
+                    helper.assertValueEqual(entity.storage().count(Items.GOLD_ORE), 5L,
+                            "Der Ausgang ist abgeräumt");
+                    helper.assertValueEqual(entity.storage().count(Items.IRON_ORE), 0L,
+                            "Der Eingang bleibt stehen");
+                })
+                .thenSucceed();
+    }
+
+    /**
+     * {@code slots(…)} liest gezielt einzelne Fächer.
+     *
+     * <p>Über das ganze Inventar: Ein Anschluss je Maschine soll reichen,
+     * und welches Fach gemeint ist, entscheidet der Code.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void slotsReadSingleSlots(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        BlockPos quelle = controller.east().north().north();
+        if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity container) {
+            container.setItem(0, new ItemStack(Items.IRON_ORE, 7));
+            container.setItem(3, new ItemStack(Items.GOLD_ORE, 5));
+        }
+
+        helper.assertTrue(entity.deploy("""
+                global vorne = 0
+                global hinten = 0
+                global posten = 0
+
+                fn zaehlt() {
+                    vorne = quarry_output.slots(0..2).sum()
+                    hinten = quarry_output.slots(3).sum()
+                    posten = quarry_output.slots(0..26).count()
+                }"""), "Das Programm wurde nicht übernommen");
+
+        entity.startFlow("zaehlt", List.of());
+        helper.startSequence()
+                .thenIdle(10)
+                .thenExecute(() -> {
+                    helper.assertValueEqual(entity.globals().get("vorne"),
+                            new Value.Int(7), "In den Fächern null bis zwei liegen sieben");
+                    helper.assertValueEqual(entity.globals().get("hinten"),
+                            new Value.Int(5), "In Fach drei liegen fünf");
+                    helper.assertValueEqual(entity.globals().get("posten"),
+                            new Value.Int(2), "Leere Fächer fallen weg");
+                })
+                .thenSucceed();
+    }
+
+    /**
      * Eine Tafel darf in eine Maschine sehen.
      *
      * <p>Der Preis ist ein Blick in eine BlockEntity je Tafel und Sekunde —

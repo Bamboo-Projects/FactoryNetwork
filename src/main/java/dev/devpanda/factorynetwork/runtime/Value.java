@@ -84,6 +84,16 @@ public sealed interface Value {
     record Device(String name) implements Value {}
 
     /**
+     * Bestimmte Fächer eines Geräts — {@code brecher_1.slots(2..3)}.
+     *
+     * <p><b>Zum Lesen und zum Bewegen dieselbe Form.</b> Gelesen verhält sie
+     * sich wie eine Liste von Posten, als Quelle oder Ziel eines
+     * {@code move} wie ein Gerät, das nur diese Fächer hat. Damit braucht es
+     * keine zweite Schreibweise für „nimm nur aus dem Ausgang".
+     */
+    record DeviceSlots(String device, List<Integer> slots) implements Value {}
+
+    /**
      * Eine Gerätegruppe, über ihren Namen.
      *
      * <p><b>Der Name und nicht die Mitglieder.</b> Wer heute in der Gruppe
@@ -125,6 +135,9 @@ public sealed interface Value {
                     .getKey(value.fluid()).toString();
             case Device value -> value.name();
             case Group value -> value.name();
+            case DeviceSlots value -> value.device() + " Fach "
+                    + (value.slots().size() == 1 ? value.slots().get(0)
+                            : value.slots().size() + " Stück");
             case Builtin value -> value.name();
             case ValueList value -> value.entries().size() + " Einträge";
             case Nothing ignored -> "nichts";

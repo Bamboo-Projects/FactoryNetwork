@@ -2746,8 +2746,36 @@ Verworfen: ein Schalter am Connector („diese Seite" oder „alles"). Dann stü
 die Bedeutung eines Namens in der Welt statt im Programm, und wer den Code
 liest, sähe ihm nicht an, worauf er zugreift.
 
-Offen sind die Baufragen: die genaue Schreibweise für Bereiche, ob `insert()`
-eine Fachangabe bekommt und was `items()` an einem Fach liefert.
+### Die Form kam vom Projektinhaber: `slots(…)`
+
+Skizziert war eine Angabe am `move` (`from ofen slot 2`). Der Vorschlag des
+Projektinhabers ist besser und wurde übernommen:
+
+```
+brecher_1.slots(3)
+brecher_1.slots(1..5)
+```
+
+`slots(…)` steht an derselben Stelle wie `items()` und verhält sich beim
+Lesen wie eine Liste von Posten — damit greifen `count`, `sum`, `where` und
+`sort` ohne Zutun. **Und dieselbe Form ist Quelle und Ziel eines `move`:**
+`move 64 item:gold_ore from brecher_1.slots(3) to storage` räumt den Ausgang
+ab und lässt den Eingang stehen. Eine zweite Schreibweise braucht es nicht.
+
+Dafür kommt die Bereichsform `1..5` in die Sprache — eine Liste ganzer
+Zahlen, die auch `for fach in 0..8` möglich macht.
+
+**Verworfen: `slots(OUTPUT)`.** Ein Ausgangsfach ist von außen nicht sicher
+zu erkennen; nachprüfbar wäre allein „ein Fach, das nichts annimmt", und das
+hängt an der Sorgfalt der fremden Mod. Eine Maschine, die alles annimmt,
+lieferte eine leere Liste — und die sieht aus wie eine leere Maschine.
+
+**Nicht die Antwort: ein zweiter Connector.** Der Projektinhaber hat das
+zweimal zurückgewiesen, und er hat recht: Ein Connector kostet einen Kanal
+auf seinem ganzen Weg zum Controller. Drei Rollen an einer Maschine über drei
+Seiten zu lösen hieße drei Kanäle je Maschine, und damit wäre die
+Kanalrechnung die Bremse beim Bauen. **Ein Anschluss je Maschine reicht;
+welches Fach gemeint ist, entscheidet der Code.**
 
 ### Nicht entschieden, weil es sich nicht entscheiden lässt
 

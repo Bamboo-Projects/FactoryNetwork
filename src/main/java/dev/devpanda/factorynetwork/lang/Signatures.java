@@ -272,7 +272,10 @@ public final class Signatures {
                     "Legt aus dem Speicher etwas hinein. Gibt zurück, wie viel ankam — "
                             + "weniger ist normal."),
             new Member("items", "items() list",
-                    "Was gerade im Gerät liegt. Leere Fächer fallen weg."));
+                    "Was gerade im Gerät liegt. Leere Fächer fallen weg."),
+            new Member("slots", "slots(nummer) list",
+                    "Bestimmte Fächer — eine Nummer oder ein Bereich wie 1..5. "
+                            + "Auch als Quelle oder Ziel eines move."));
 
     /**
      * Was an einer Liste steht.

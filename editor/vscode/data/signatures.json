@@ -464,6 +464,11 @@
       "name": "items",
       "shape": "items() list",
       "help": "Was gerade im Gerät liegt. Leere Fächer fallen weg."
+    },
+    {
+      "name": "slots",
+      "shape": "slots(nummer) list",
+      "help": "Bestimmte Fächer — eine Nummer oder ein Bereich wie 1..5. Auch als Quelle oder Ziel eines move."
     }
   ],
   "listMembers": [

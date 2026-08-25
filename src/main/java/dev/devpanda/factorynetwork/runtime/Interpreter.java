@@ -206,6 +206,18 @@ public final class Interpreter {
         }
 
         /**
+         * Was in bestimmten Fächern eines Geräts liegt.
+         *
+         * <p><b>Über das ganze Inventar</b> und nicht über die Seite, an der
+         * der Connector hängt: Eine Fachnummer schreibt nur, wer die Maschine
+         * kennt, und ein Anschluss je Maschine soll reichen.
+         */
+        default java.util.List<Value> itemsInSlots(String device,
+                java.util.List<Integer> slots) {
+            return java.util.List.of();
+        }
+
+        /**
          * Was im Netzspeicher liegt.
          *
          * <p>Dieselbe Form wie {@link #itemsIn}, andere Quelle: Ein Bestand
@@ -702,6 +714,7 @@ public final class Interpreter {
             case Expr.Except except -> resolvedSelection(except);
             case Expr.Move move -> new Value.Int(
                     doMove(move.amount(), move.from(), move.to()));
+            case Expr.Range range -> rangeList(range);
             case Expr.Unary unary -> unary(unary);
             case Expr.Binary binary -> binary(binary);
             case Expr.Member member -> member(member);
@@ -810,6 +823,24 @@ public final class Interpreter {
         return new ScriptError("Die Auswahl trifft nichts.",
                 "Gibt es den Gegenstand oder den Tag in diesem Pack? Und nimmt das "
                         + "except vielleicht alles wieder heraus?");
+    }
+
+    /**
+     * {@code 1..5} als Liste, beide Enden eingeschlossen.
+     *
+     * <p>Rückwärts gibt nichts: {@code 5..1} ist leer und kein Fehler. Wer
+     * eine Grenze ausrechnet, bekommt sonst einen Abbruch für einen Fall, den
+     * er nicht vorhergesehen hat — und eine leere Liste ist genau das, was
+     * dort gemeint ist.
+     */
+    private Value rangeList(Expr.Range range) {
+        long from = Math.round(number(evaluate(range.from()), "Bereich"));
+        long to = Math.round(number(evaluate(range.to()), "Bereich"));
+        List<Value> entries = new java.util.ArrayList<>();
+        for (long i = from; i <= to; i++) {
+            entries.add(new Value.Int(i));
+        }
+        return new Value.ValueList(List.copyOf(entries));
     }
 
     /** Die Menge, die vor einer Auswahl steht, oder -1 ohne Angabe. */
@@ -1044,6 +1075,9 @@ public final class Interpreter {
                 && ("where".equals(member.name()) || "sort".equals(member.name()))
                 && !call.arguments().isEmpty()) {
             Value target = evaluate(member.target());
+            if (target instanceof Value.DeviceSlots view) {
+                target = new Value.ValueList(host.itemsInSlots(view.device(), view.slots()));
+            }
             if (target instanceof Value.ValueList list) {
                 return perEntry(list, member.name(), call.arguments().get(0).value());
             }
@@ -1078,6 +1112,11 @@ public final class Interpreter {
         }
         if (target instanceof Value.ValueList list) {
             return listMember(list, name);
+        }
+        // Fächer verhalten sich beim Lesen wie eine Liste ihrer Posten.
+        if (target instanceof Value.DeviceSlots view) {
+            return listMember(new Value.ValueList(
+                    host.itemsInSlots(view.device(), view.slots())), name);
         }
         if (target instanceof Value.Group group) {
             return switch (name) {
@@ -1122,12 +1161,46 @@ public final class Interpreter {
                 // mehr ist es heute nicht, und das ist ehrlicher als eine
                 // Liste, mit der man nichts anfangen kann.
                 case "items" -> new Value.ValueList(host.itemsIn(device.name()));
+                // <b>Fächer sehen das ganze Inventar</b>, nicht nur die Seite,
+                // an der der Connector hängt. Wer eine Nummer schreibt, weiß,
+                // was er tut — und ein Connector je Maschine soll reichen.
+                case "slots" -> new Value.DeviceSlots(device.name(),
+                        slotNumbers(arguments));
                 default -> throw new ScriptError(
                         "Ein Gerät kann kein " + name + ".",
                         "Bekannt sind redstone, count, insert und items.");
             };
         }
         throw new ScriptError("Auf " + target.describe() + " gibt es kein " + name + ".");
+    }
+
+    /**
+     * Die Fachnummern aus dem Argument von {@code slots(…)}.
+     *
+     * <p>Eine Zahl oder ein Bereich — {@code slots(2)} und
+     * {@code slots(1..5)}. Gezählt wird ab null, wie überall dort, wo man
+     * Fachnummern sonst zu sehen bekommt.
+     */
+    private static List<Integer> slotNumbers(List<Value> arguments) {
+        if (arguments.isEmpty()) {
+            throw new ScriptError("slots braucht eine Fachnummer.",
+                    "Zum Beispiel: brecher_1.slots(2) oder brecher_1.slots(1..5)");
+        }
+        Value first = arguments.get(0);
+        if (first instanceof Value.Int single) {
+            return List.of((int) single.value());
+        }
+        if (first instanceof Value.ValueList list) {
+            List<Integer> found = new java.util.ArrayList<>();
+            for (Value entry : list.entries()) {
+                if (entry instanceof Value.Int number) {
+                    found.add((int) number.value());
+                }
+            }
+            return List.copyOf(found);
+        }
+        throw new ScriptError("slots erwartet eine Zahl oder einen Bereich.",
+                "Zum Beispiel: brecher_1.slots(2) oder brecher_1.slots(1..5)");
     }
 
     /**

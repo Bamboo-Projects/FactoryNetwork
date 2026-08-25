@@ -177,6 +177,42 @@ public final class WorldHost implements Interpreter.Host {
      * Ob eines da ist, sagt das Profil im Editor, und ein Programm, das über
      * ein leeres Gerät läuft, tut einfach nichts.
      */
+    /**
+     * {@code brecher_1.slots(1..5)} — was in bestimmten Fächern liegt.
+     *
+     * <p>Über das ungeteilte Inventar, nicht über die Seite: Wer eine
+     * Fachnummer schreibt, kennt die Maschine, und ein Anschluss je Maschine
+     * soll reichen.
+     *
+     * <p>Leere Fächer fallen weg, wie bei {@link #itemsIn} — eine Kiste mit
+     * siebenundzwanzig Fächern und drei Barren soll drei Einträge liefern.
+     * Eine Nummer, die es nicht gibt, wird übergangen: Die Zahl der Fächer
+     * hängt an der fremden Maschine, und ein Bereich, der über sie
+     * hinausreicht, ist kein Programmfehler.
+     */
+    @Override
+    public List<Value> itemsInSlots(String device, List<Integer> slots) {
+        ConnectorBlockEntity connector = connectorFor(device);
+        if (connector == null) {
+            return List.of();
+        }
+        IItemHandler handler = connector.machineInventoryAll();
+        if (handler == null) {
+            return List.of();
+        }
+        List<Value> found = new ArrayList<>();
+        for (int slot : slots) {
+            if (slot < 0 || slot >= handler.getSlots()) {
+                continue;
+            }
+            ItemStack stack = handler.getStackInSlot(slot);
+            if (!stack.isEmpty()) {
+                found.add(new Value.Selection(List.of(stack.getItem()), stack.getCount()));
+            }
+        }
+        return List.copyOf(found);
+    }
+
     @Override
     public List<Value> itemsIn(String device) {
         IItemHandler handler = handlerOf(new Value.Device(device));
@@ -694,6 +730,24 @@ public final class WorldHost implements Interpreter.Host {
         }
         if (value instanceof Value.Group group) {
             return handlerOf(memberFor(group));
+        }
+        // Bestimmte Fächer sind ein Gerät mit weniger Fächern — und zwar über
+        // das ungeteilte Inventar. Genau das ist der Griff, mit dem ein move
+        // nur den Ausgang leert.
+        if (value instanceof Value.DeviceSlots view) {
+            ConnectorBlockEntity connector = connectorFor(view.device());
+            if (connector == null) {
+                throw new ScriptError("Der Connector " + view.device()
+                        + " ist nicht erreichbar.",
+                        "Vielleicht ist sein Chunk gerade nicht geladen.");
+            }
+            IItemHandler all = connector.machineInventoryAll();
+            if (all == null) {
+                throw new ScriptError("An " + view.device()
+                        + " hängt keine Maschine mit Inventar.");
+            }
+            return NotifyingHandlers.items(SlotView.of(all, view.slots()),
+                    noticeFor(view.device()));
         }
         if (!(value instanceof Value.Device device)) {
             throw new ScriptError("Hier wird ein Gerät erwartet, gefunden wurde "

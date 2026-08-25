@@ -279,7 +279,17 @@ public final class Lexer {
             case '{' -> add(TokenType.LBRACE, "{", start, pos);
             case '}' -> add(TokenType.RBRACE, "}", start, pos);
             case ',' -> add(TokenType.COMMA, ",", start, pos);
-            case '.' -> add(TokenType.DOT, ".", start, pos);
+            // Zwei Punkte sind ein Bereich: 1..5. Eine Kommazahl kommt
+            // hier nie an — readNumberOrDuration nimmt den Punkt nur mit,
+            // wenn eine Ziffer folgt.
+            case '.' -> {
+                if (!atEnd() && peek() == '.') {
+                    advance();
+                    add(TokenType.DOT_DOT, "..", start, pos);
+                } else {
+                    add(TokenType.DOT, ".", start, pos);
+                }
+            }
             case ':' -> add(TokenType.COLON, ":", start, pos);
             case '+' -> add(TokenType.PLUS, "+", start, pos);
             case '-' -> add(TokenType.MINUS, "-", start, pos);

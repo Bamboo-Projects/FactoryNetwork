@@ -81,6 +81,15 @@ public sealed interface Expr {
     record Amount(Long count, Expr selection, Span span) implements Expr {}
 
     /**
+     * {@code 1..5} — ein Bereich ganzer Zahlen, beide Enden eingeschlossen.
+     *
+     * <p>Zur Laufzeit eine Liste, kein eigener Werttyp: Damit greifen
+     * {@code count}, {@code where} und {@code sort} ohne Zutun, und
+     * {@code for i in 1..5} fällt mit ab.
+     */
+    record Range(Expr from, Expr to, Span span) implements Expr {}
+
+    /**
      * {@code move 64 item:iron_ore from chest to crusher_1} als Ausdruck.
      *
      * <p><b>Warum ein Ausdruck und nicht nur eine Anweisung:</b>

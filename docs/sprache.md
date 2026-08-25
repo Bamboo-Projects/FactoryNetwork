@@ -234,6 +234,19 @@ einziger Zweck das Aufräumen dieser Überschneidungen ist. Namensmuster fangen
 auf, was Tags nicht abdecken. Ausnahmen fangen die einzelne Maschine auf, die
 mit genau einem Eintrag nicht klarkommt.
 
+### Bereiche
+
+`1..5` ist eine Liste ganzer Zahlen, beide Enden eingeschlossen:
+
+```
+brecher_1.slots(1..5)
+for fach in 0..8 { … }
+```
+
+Rückwärts gibt nichts — `5..1` ist leer und kein Fehler. Wer eine Grenze
+ausrechnet, bekommt sonst einen Abbruch für einen Fall, den er nicht
+vorhergesehen hat.
+
 ### Wo der Platzhalter stehen darf
 
 `*` steht für beliebig viele Zeichen und darf an jeder Stelle des Namens
@@ -477,6 +490,30 @@ furnace_2.items()
 | `count(auswahl)` | Wie viel von einer Art **in diesem Gerät** liegt. Ohne Auswahl alles zusammen |
 | `insert(auswahl)` | Legt aus dem Speicher etwas hinein. Gibt zurück, wie viel ankam — **weniger ist normal** |
 | `items()` | Was gerade drinliegt. Leere Fächer fallen weg |
+| `slots(nummer)` | Bestimmte Fächer — eine Nummer oder ein Bereich, `slots(1..5)` |
+
+### Bestimmte Fächer
+
+```
+brecher_1.slots(3).sum()                              was in Fach 3 liegt
+brecher_1.slots(1..5).where(it.amount > 0).count()    wie viele davon belegt sind
+move 64 item:gold_ore from brecher_1.slots(3) to storage
+```
+
+**Wozu:** Eine Maschine, die Eingang und Ausgang im selben Inventar hält,
+lässt sich sonst nicht abräumen, ohne das Erz wieder mitzunehmen, das gerade
+hineingelegt wurde. Mit einer Fachnummer steht im Code, was gemeint ist.
+
+**Gezählt wird ab null**, und `slots(…)` sieht das **ganze** Inventar — nicht
+nur die Seite, an der der Connector hängt. Ein Anschluss je Maschine reicht;
+welches Fach gemeint ist, entscheidet der Code und nicht die Bauform.
+
+Der Preis steht dabei: Wer eine Nummer schreibt, kennt seine Maschine. Baut
+eine Mod ihr Inventar um, zeigt die Nummer auf ein anderes Fach — deshalb ist
+die Fachangabe ausdrücklich und gilt nicht überall stillschweigend.
+
+Nummern, die es nicht gibt, fallen weg: Ein `slots(0..26)` an einer Maschine
+mit vier Fächern liefert vier Posten und keinen Fehler.
 
 Gruppen verhalten sich wie ein Gerät, verteilen aber:
 

@@ -45,7 +45,7 @@ public enum TokenType {
     EQ, EQ_EQ, BANG, BANG_EQ, LT, LT_EQ, GT, GT_EQ, AND_AND, OR_OR,
 
     // Zeichen
-    LPAREN, RPAREN, LBRACE, RBRACE, COMMA, DOT, COLON,
+    LPAREN, RPAREN, LBRACE, RBRACE, COMMA, DOT, DOT_DOT, COLON,
 
     // Struktur
     NL, EOF,

@@ -97,6 +97,12 @@ public final class ValueCodec {
                 tag.putString(KEY_TYPE, "grp");
                 tag.putString(KEY_VALUE, group.name());
             }
+            case Value.DeviceSlots view -> {
+                tag.putString(KEY_TYPE, "slots");
+                tag.putString(KEY_VALUE, view.device());
+                tag.putIntArray(KEY_ITEMS,
+                        view.slots().stream().mapToInt(Integer::intValue).toArray());
+            }
             case Value.Builtin builtin -> {
                 tag.putString(KEY_TYPE, "builtin");
                 tag.putString(KEY_VALUE, builtin.name());
@@ -127,6 +133,8 @@ public final class ValueCodec {
             case "fluidsel" -> readFluidSelection(tag);
             case "dev" -> new Value.Device(tag.getString(KEY_VALUE));
             case "grp" -> new Value.Group(tag.getString(KEY_VALUE));
+            case "slots" -> new Value.DeviceSlots(tag.getString(KEY_VALUE),
+                    java.util.Arrays.stream(tag.getIntArray(KEY_ITEMS)).boxed().toList());
             case "builtin" -> new Value.Builtin(tag.getString(KEY_VALUE));
             case "list" -> readList(tag);
             case "nothing" -> Value.Nothing.get();

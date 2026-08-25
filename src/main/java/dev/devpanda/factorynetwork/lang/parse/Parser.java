@@ -208,12 +208,20 @@ public final class Parser {
             case STORAGE, CRAFTING, WORLD, NETWORK, WORKERS, MULTIBLOCKS -> parsePrimary();
             case NAME, ESCAPED_NAME -> {
                 advance();
-                yield new Expr.Name(token.text(), token.span());
+                Expr name = new Expr.Name(token.text(), token.span());
+                // <b>brecher_1.slots(2..3) ist auch ein Ziel.</b> Ein Punkt
+                // hinter dem Namen heißt: Es geht nicht um das ganze Gerät,
+                // sondern um einen Ausschnitt davon.
+                if (at(TokenType.DOT)) {
+                    yield parsePostfixFrom(name);
+                }
+                yield name;
             }
             default -> {
                 error(token.span(),
                         "Hier wird ein Gerät erwartet, gefunden wurde " + describe(token) + ".",
-                        "Ein Ziel ist ein Connector, eine Gruppe, storage oder crafting.");
+                        "Ein Ziel ist ein Connector, eine Gruppe, storage oder crafting — "
+                                + "oder bestimmte Fächer, etwa brecher_1.slots(2..3).");
                 advance();
                 yield new Expr.Invalid(token.span());
             }
@@ -782,7 +790,22 @@ public final class Parser {
         if (at(TokenType.AWAIT)) {
             return parseAwait();
         }
-        return parseOr();
+        return parseRange();
+    }
+
+    /**
+     * {@code 1..5}
+     *
+     * <p>Über allem anderen, damit {@code 1..n * 2} das Erwartete tut: Erst
+     * rechnen, dann den Bereich bilden.
+     */
+    private Expr parseRange() {
+        Expr from = parseOr();
+        if (!match(TokenType.DOT_DOT)) {
+            return from;
+        }
+        Expr to = parseOr();
+        return new Expr.Range(from, to, from.span().to(to.span()));
     }
 
     private Expr parseAwait() {
@@ -904,7 +927,12 @@ public final class Parser {
     }
 
     private Expr parsePostfix() {
-        Expr expr = parsePrimary();
+        return parsePostfixFrom(parsePrimary());
+    }
+
+    /** Derselbe Nachlauf, aber mit einem schon gelesenen Anfang. */
+    private Expr parsePostfixFrom(Expr start) {
+        Expr expr = start;
         while (true) {
             if (at(TokenType.DOT)) {
                 advance();

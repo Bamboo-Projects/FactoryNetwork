@@ -86,6 +86,26 @@ public class ConnectorBlockEntity extends BlockEntity {
     }
 
     /** Das Inventar der Maschine, auf die der Connector zeigt. */
+    /**
+     * Das <b>ganze</b> Inventar der Maschine, ohne Rücksicht auf Seiten.
+     *
+     * <p>Gebraucht für {@code slots(…)}: Ein Anschluss je Maschine soll
+     * reichen, und welches Fach gemeint ist, entscheidet der Code. Die
+     * seitenbezogene Fassung darüber bleibt die Vorgabe für alles andere —
+     * dort hält die Maschine ihre eigenen Regeln.
+     */
+    public @Nullable IItemHandler machineInventoryAll() {
+        if (level == null) {
+            return null;
+        }
+        Direction facing = ConnectorBlock.machineSide(getBlockState());
+        BlockPos target = worldPosition.relative(facing);
+        if (!level.isLoaded(target)) {
+            return null;
+        }
+        return level.getCapability(Capabilities.ItemHandler.BLOCK, target, null);
+    }
+
     public @Nullable IItemHandler machineInventory() {
         if (level == null) {
             return null;

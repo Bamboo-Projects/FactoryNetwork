@@ -67,7 +67,7 @@ workerEntry = 'from'     target
             | 'strategy' NAME
             | 'overflow' 'to' target
 
-target      = NAME | 'storage' | 'crafting'
+target      = NAME [ '.' 'slots' '(' expr ')' ] | 'storage' | 'crafting'
 ```
 
 `from` und `to` müssen genau einmal vorkommen, alles andere höchstens einmal.
@@ -213,7 +213,9 @@ Bedingungen stehen ohne runde Klammern; ein Block ist Pflicht. Damit ist
 Von schwach nach stark bindend:
 
 ```
-expr        = orExpr [ awaitTail ]
+expr        = rangeExpr [ awaitTail ]
+
+rangeExpr   = orExpr [ '..' orExpr ]
 
 orExpr      = andExpr   { '||' andExpr }
 andExpr     = cmpExpr   { '&&' cmpExpr }
