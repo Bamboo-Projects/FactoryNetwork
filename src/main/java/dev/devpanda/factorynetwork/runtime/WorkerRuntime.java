@@ -270,6 +270,11 @@ public final class WorkerRuntime {
             return;
         }
 
+        if (isCrafting(from.value())) {
+            tickCraftingWorker(worker, state, to);
+            return;
+        }
+
         int batch = batchOf(worker);
         List<Item> filter = filterItems(worker, state);
         if (state.status == Status.HALTED) {
@@ -659,6 +664,127 @@ public final class WorkerRuntime {
     private static boolean isStorage(Expr expr) {
         return expr instanceof Expr.Builtin builtin
                 && builtin.kind() == Expr.Builtin.Kind.STORAGE;
+    }
+
+    private static boolean isCrafting(Expr expr) {
+        return expr instanceof Expr.Builtin builtin
+                && builtin.kind() == Expr.Builtin.Kind.CRAFTING;
+    }
+
+    // ---- Nachschub ---------------------------------------------------------
+
+    /**
+     * Die Fertigung des Netzes; setzt der Controller.
+     *
+     * <p>Zwei Fragen, und die zweite ist die, an der es sonst schiefgeht: Ein
+     * Worker, der nur den Bestand ansieht, bestellt jede Runde neu, solange
+     * der Auftrag läuft — aus „halte 256 vor" werden Tausende.
+     */
+    public interface Crafting {
+
+        /** Wie viel von dieser Art bestellt und noch nicht geliefert ist. */
+        long pending(Item item);
+
+        /** Bestellt; {@code false}, wenn es dafür kein Rezept gibt. */
+        boolean order(Item item, int amount);
+    }
+
+    private Crafting crafting;
+
+    public void setCrafting(Crafting crafting) {
+        this.crafting = crafting;
+    }
+
+    /**
+     * Ein Worker, der bestellt statt zu schieben.
+     *
+     * <p>{@code from crafting} ist eine Quelle wie jede andere — das ist der
+     * Grund, warum {@code from} eine Quelle nennt und keine Betriebsart.
+     * Vorratshaltung braucht damit keine eigene Form:
+     *
+     * <pre>
+     * worker keep_ingots {
+     *     from crafting
+     *     to storage
+     *     filter item:iron_ingot
+     *     maintain 256
+     * }
+     * </pre>
+     *
+     * <p>Drei Formentscheidungen stecken darin. <b>Das Ziel ist der
+     * Speicher</b>, und nur der: Gefertigt wird ins Lager, und von dort holt
+     * es ein zweiter Worker ab — dem Fabricator ein Ziel beizubringen, das er
+     * nicht hat, wäre der teurere Weg. <b>{@code maintain} ist Pflicht</b>,
+     * denn ohne eine Zahl hieße die Anweisung „bestelle endlos". Und
+     * <b>{@code rate} begrenzt die Bestellung nur, wenn es dasteht</b>: Wer
+     * es schreibt, meint „höchstens so viel je Runde"; wer es weglässt, will
+     * die Lücke geschlossen haben und nicht in Häppchen von vierundsechzig.
+     */
+    private void tickCraftingWorker(Decl.Worker worker, WorkerState state,
+                                    Decl.Worker.Entry to) {
+        if (crafting == null) {
+            state.status = Status.HALTED;
+            state.detail = "an diesem Netz hängt keine Fertigung";
+            return;
+        }
+        if (!isStorage(to.value())) {
+            state.status = Status.HALTED;
+            state.detail = "from crafting liefert nur to storage";
+            note(worker, "from crafting braucht to storage — gefertigt wird ins Lager, "
+                    + "und von dort holt es ein zweiter Worker ab.");
+            return;
+        }
+        int maintain = maintainOf(worker);
+        if (maintain <= 0) {
+            state.status = Status.HALTED;
+            state.detail = "from crafting braucht ein maintain";
+            note(worker, "from crafting ohne maintain — wie viel soll vorgehalten werden? "
+                    + "Ohne eine Zahl hieße die Anweisung „bestelle endlos\".");
+            return;
+        }
+        List<Item> filter = filterItems(worker, state);
+        if (state.status == Status.HALTED) {
+            return;
+        }
+        if (filter.isEmpty()) {
+            state.status = Status.HALTED;
+            state.detail = "from crafting braucht ein filter";
+            note(worker, "from crafting ohne filter — was soll bestellt werden?");
+            return;
+        }
+        long cap = worker.entry(Decl.Worker.Entry.Kind.RATE) != null
+                ? batchOf(worker) : Long.MAX_VALUE;
+        List<String> ordered = new ArrayList<>();
+        List<String> unknown = new ArrayList<>();
+        for (Item item : filter) {
+            // Der Bestand allein reicht nicht: Er steigt erst, wenn der
+            // Auftrag fertig ist.
+            long have = currentStorage.count(item) + crafting.pending(item);
+            long gap = Math.min(maintain - have, cap);
+            if (gap <= 0) {
+                continue;
+            }
+            String name = item.getDescription().getString();
+            if (crafting.order(item, (int) gap)) {
+                ordered.add(gap + " " + name);
+            } else {
+                unknown.add(name);
+            }
+        }
+        if (!ordered.isEmpty()) {
+            state.status = Status.RUNNING;
+            state.detail = "bestellt: " + String.join(", ", ordered);
+            return;
+        }
+        if (!unknown.isEmpty()) {
+            state.status = Status.HALTED;
+            state.detail = "kein Rezept: " + String.join(", ", unknown);
+            note(worker, "kein Rezept für " + String.join(", ", unknown)
+                    + " — das Netz kann nur bestellen, was eine Werkbank baut.");
+            return;
+        }
+        state.status = Status.IDLE;
+        state.detail = "Vorrat steht (" + maintain + " je Art)";
     }
 
     private static int batchOf(Decl.Worker worker) {

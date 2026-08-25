@@ -2924,3 +2924,66 @@ Der Schritt trägt danach die fertige Entnahmeliste. Der Ausführende entnimmt,
 was dort steht, und wählt nicht noch einmal aus: Sonst könnte er sich anders
 entscheiden als der Plan, und der Schritt darüber fände nicht vor, was er
 erwartet.
+
+---
+
+## `from crafting` bekommt drei Regeln (2026-08-25)
+
+`sprache.md` zeigt Nachschub seit dem Entwurf als gewöhnlichen Worker:
+
+```
+worker keep_ingots {
+    from crafting
+    to storage
+    filter item:iron_ingot
+    maintain 256
+}
+```
+
+Das ist der Grund, warum `from` eine Quelle nennt und keine Betriebsart — zwei
+Deklarationsformen für „hol es aus dem Lager" und „lass es herstellen" hätten
+dieselbe Bedeutung zweimal beschrieben. Beim Bauen stellten sich drei Fragen,
+die der Entwurf offengelassen hatte.
+
+### Das Ziel ist `storage`, und nur das
+
+`to <gerät>` hält an und verweist auf `to storage`. Verlockend wäre das
+Gegenteil: `from crafting to ofen` läse sich, als bestellte man direkt in die
+Maschine.
+
+Dagegen steht, dass der Fabricator kein Ziel hat. Er legt ins Netz, und alles
+Weitere ist ein Transport — und für Transporte gibt es bereits einen Worker.
+`from crafting to ofen` müsste deshalb entweder zwei Dinge in einer Zeile tun
+(bestellen und schieben, mit zwei Zuständen und einem `maintain`, das nicht
+mehr weiß, worauf es sich bezieht) oder der Fertigung ein Ziel beibringen, das
+sie nicht hat. Zwei Worker sind hier die kürzere Erklärung.
+
+### `maintain` ist Pflicht
+
+Ohne Zahl hieße `from crafting to storage filter item:iron_ingot` „bestelle
+Eisenbarren, endlos". Das ist keine sinnvolle Anweisung, sondern ein Programm,
+das eine Fabrik in einer Nacht zum Stillstand bringt. Der Worker hält an und
+sagt es — dieselbe Antwort wie bei `maintain` ohne `filter`.
+
+### `rate` begrenzt nur, wenn es dasteht
+
+Ein Worker hat einen Vorgabe-Stapel von 64. Ihn auf Bestellungen anzuwenden
+hieße: `maintain 256` legt vier Aufträge über je 64 an, weil jede Runde nur
+64 durchgehen. Vier Zeilen im Reiter für eine Sache, die eine ist.
+
+Ohne `rate` wird deshalb die ganze Lücke auf einmal bestellt. Steht `rate 64
+per 1s` da, gilt es: Wer es schreibt, meint „höchstens so viel je Runde", und
+das ist eine Angabe über Bestellungen so gut wie über Bewegungen.
+
+### Der Fehler, der ohne Gegenrechnung entstanden wäre
+
+Der Bestand steigt erst, wenn ein Auftrag fertig ist. Ein Worker, der nur ihn
+ansieht, bestellt jede Runde dieselbe Lücke noch einmal — bei einem Takt von
+einer Sekunde sind das sechzig Aufträge in der Minute, alle über dasselbe.
+Gerechnet wird deshalb gegen Bestand **und** offene Aufträge.
+
+Das ist auch die Antwort auf die Frage nach Reservierungen, die beim ersten
+Schnitt offenblieb: Weil der Plan bei jedem Takt neu gerechnet wird, sieht
+jeder Auftrag den Bestand, den ihm die anderen gelassen haben. Eine
+Vormerkungstabelle bräuchte es erst, wenn ein Auftrag Zutaten über mehrere
+Takte hinweg festhielte — und das tut hier keiner.

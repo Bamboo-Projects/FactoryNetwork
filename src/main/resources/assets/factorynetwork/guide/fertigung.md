@@ -81,6 +81,39 @@ ein Rezeptpaar, an dem eine Suche ewig laufen könnte. Sie tut es nicht: Sie
 merkt den Kreis und meldet stattdessen das, was du hinlegen kannst — die
 Barren.
 
+## Nachschub, der sich selbst bestellt
+
+Ein Auftrag ist einmalig. Wer einen Vorrat halten will, schreibt einen Worker
+— denselben wie überall, nur mit `crafting` als Quelle:
+
+```
+worker eisen_vorrat {
+    from crafting
+    to storage
+    filter item:iron_ingot
+    maintain 256
+}
+```
+
+Fällt der Bestand unter 256, bestellt er die Lücke. Ein zweites Mal bestellt
+er sie nicht: Er rechnet gegen den Bestand **und** die offenen Aufträge —
+sonst würden aus „halte 256 vor" Tausende, denn der Bestand steigt erst, wenn
+gebaut ist.
+
+Drei Dinge sind hier anders als bei einem Worker, der schiebt:
+
+- **Das Ziel ist `storage`**, und nur das. Gefertigt wird ins Lager; wer es in
+  einer Maschine haben will, schreibt einen zweiten Worker `from storage to
+  maschine`.
+- **`maintain` ist Pflicht.** Ohne Zahl hieße die Anweisung „bestelle endlos".
+- **`rate` begrenzt die Bestellung nur, wenn du es hinschreibst.** `rate 64
+  per 1s` heißt „höchstens 64 je Runde". Ohne Angabe wird die ganze Lücke auf
+  einmal bestellt.
+
+Ein `filter`, der mehrere Arten trifft, hält von **jeder** die Menge vor — wie
+`maintain` überall. Bei `tag:c/ingots` ist das eine große Bestellung; das ist
+gewollt, aber du solltest wissen, dass du sie aufgibst.
+
 ## Wenn es fertig ist
 
 ```

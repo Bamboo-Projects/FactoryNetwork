@@ -443,9 +443,11 @@ List<T>  Set<T>
 ```
 
 > **Noch nicht gebaut:** `Set<T>`, `Job` und `Chemical` gibt es im Wertemodell
-> nicht (`offene-punkte.md` 1.8). `Job` wartet auf das Autocrafting,
-> `Chemical` auf die Anbindung an Mekanism, und für `Set<T>` fehlt bisher der
-> Fall, der ihn braucht.
+> nicht (`offene-punkte.md` 1.8). Das Autocrafting steht inzwischen, `craft`
+> liefert aber eine Kennung als Zahl — ein eigener Typ käme erst, wenn jemand
+> mehr am Auftrag ablesen will als seine Nummer. `Chemical` wartet auf die
+> Anbindung an Mekanism, und für `Set<T>` fehlt bisher der Fall, der ihn
+> braucht.
 
 Die Namen sind englisch, aus demselben Grund wie die Schlüsselwörter.
 `Duration` ist der Typ der Zeitangaben aus Abschnitt 13 und bewusst von `Int`
@@ -764,7 +766,7 @@ worker fuel_supply {
 
 ```
 from <gerät | gruppe | storage | crafting>    Pflicht
-to <gerät | gruppe | storage>                 Pflicht
+to <gerät | gruppe | storage>                 Pflicht — bei crafting nur storage
 filter <auswahl | vorlage>                    sonst: alles
 maintain <menge>                              sonst: schieben, was geht
 rate <menge> per <zeit>                        sonst: so schnell es geht
@@ -792,10 +794,26 @@ worker keep_ingots {
 }
 ```
 
-> **Noch nicht gebaut:** `crafting` als Quelle. Es wartet auf das Autocrafting
-> (`offene-punkte.md` 2.10), und bis dahin bieten die Editoren es auch nicht
-> mehr an — ein Vorschlag, der in eine Fehlermeldung führt, ist schlechter als
-> keiner.
+Drei Dinge gelten dabei anders als bei einem Worker, der schiebt:
+
+**Das Ziel ist `storage`, und nur das.** Gefertigt wird ins Lager; wer es in
+eine Maschine will, schreibt einen zweiten Worker `from storage to maschine`.
+Ein `to <gerät>` hält an und sagt es.
+
+**`maintain` ist Pflicht.** Ohne eine Zahl hieße die Anweisung „bestelle
+endlos". Ein `filter` braucht es ohnehin — sonst stünde nicht da, was bestellt
+werden soll.
+
+**`rate` begrenzt die Bestellung nur, wenn es dasteht.** Wer es schreibt,
+meint „höchstens so viel je Runde"; wer es weglässt, will die Lücke
+geschlossen haben und nicht in Häppchen. Der Takt gilt in beiden Fällen.
+
+Gerechnet wird gegen Bestand **und offene Aufträge**. Ein Worker, der nur den
+Bestand ansieht, bestellt jede Runde neu, solange der Auftrag läuft — aus
+„halte 256 vor" würden Tausende.
+
+Was kein Rezept hat, wird nicht bestellt; der Worker hält an und nennt es. Wie
+tief das Netz nach Zutaten sucht, steht unter *Fertigung*.
 
 Das ist der Grund, warum `from` eine Quelle nennt und nicht eine Betriebsart.
 Zwei Deklarationsformen für „hol es aus dem Lager" und „lass es herstellen"

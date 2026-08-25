@@ -145,6 +145,7 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | Ausbau | Controller-Anbau: sechs weitere Seiten für Kabelstränge je Block |
 | Fertigung | Fabricator baut Werkbank-Rezepte aus dem Netzspeicher, mehrstufig |
 | | Fehlt eine Zutat, wird sie gebaut; genannt wird der Grundstoff |
+| | `from crafting` hält einen Vorrat, gerechnet gegen offene Aufträge |
 | | `craft(64 item:chest)` im Code, Aufträge im Reiter, mit Abbruch |
 | Server | `config/factorynetwork-server.toml`: Schrittbudget und Suchtiefe |
 | | Schutz fremder Programme, wahlweise nach Besitzer oder Operator |
@@ -160,7 +161,7 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | Netzwerk | Graph über Kabel, Speicher schlüsselbasiert, Kanäle je Strang |
 | Editor | Syntaxfarben, Fehler beim Tippen, Vervollständigung nach Stelle |
 | Anzeigen | Am Block und im Terminal, Knöpfe starten Abläufe |
-| Prüfung | 383 Einheitstests, 237 GameTests |
+| Prüfung | 384 Einheitstests, 243 GameTests |
 
 ## 3. Was noch nicht läuft
 
@@ -177,9 +178,6 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
   von vierundsechzig bis viertausendsechsundneunzig. Sie sind gesetzt, nicht
   hergeleitet — wie sie sich anfühlen, zeigt erst das Spielen. Die
   Begründungen stehen in `entscheidungen.md` unter „Der Serverschrank".
-- **`from crafting` als Worker-Quelle.** Die Fertigung selbst ist
-  mehrstufig; was fehlt, ist die Vorratshaltung: ein Worker, der einen
-  Auftrag aufgibt, sobald ein Bestand unter `maintain` fällt.
 - **Processing-Rezepte** (2.9). Was ein Brecher aus Erz macht, weiß nur die
   Maschine. Für den Fabricator brauchte es das nicht: Werkbank-Rezepte stehen
   im Server.
@@ -455,6 +453,28 @@ Zwei neue Grenzen stehen in der Serverkonfiguration: `craftingDepth` (acht
 Ebenen) und `craftingBudget` (512 Bedarfe). Die zweite greift bei Rezept­
 bäumen, die sich in viele erlaubte Sorten verzweigen — dort wächst die Suche
 schneller als ihre Tiefe.
+
+### Nachschub ist derselbe Worker (seit dem 25.08.)
+
+`from crafting` bestellt, was unter `maintain` gefallen ist. Der Grund, warum
+`from` eine Quelle nennt und keine Betriebsart: „hol es aus dem Lager" und
+„lass es herstellen" bekommen dieselbe Form, und Vorratshaltung braucht keine
+eigene.
+
+**Gerechnet wird gegen Bestand und offene Aufträge.** Das ist die Stelle, an
+der so ein Worker sonst schiefgeht: Der Bestand steigt erst, wenn der Auftrag
+fertig ist, und ein Worker, der nur ihn ansieht, bestellt jede Runde neu. Aus
+„halte 256 vor" würden Tausende, und die Fabrik verstopft sich mit
+Bestellungen über dasselbe.
+
+**Drei Formentscheidungen**, alle drei selbst getroffen und in
+`entscheidungen.md` begründet: Ziel ist `storage` und nur das, `maintain` ist
+Pflicht, und `rate` begrenzt die Bestellung nur, wenn es dasteht.
+
+**`crafting` steht wieder in beiden Editoren** — aber nur hinter `from`. Es
+war mit Punkt 3.10 herausgeflogen, weil ein Vorschlag, der in eine
+Fehlermeldung führt, schlechter ist als keiner. Jetzt führt er irgendwohin,
+und hinter `to` weiterhin nicht.
 
 ### Rechte im Mehrspielerbetrieb (seit dem 25.08.)
 

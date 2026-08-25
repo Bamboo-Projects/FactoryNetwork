@@ -583,6 +583,7 @@ public class ControllerBlockEntity extends BlockEntity {
                             && level.getBlockEntity(position) instanceof ConnectorBlockEntity connector
                             ? connector : null);
             runtime.setPower(power);
+            runtime.setCrafting(craftingForWorkers);
             runtime.tick(level, program, graph, storage, fluidStorage,
                     newHost());
             // Was die Worker zu melden hatten, gehört ins Protokoll. Bisher
@@ -649,6 +650,33 @@ public class ControllerBlockEntity extends BlockEntity {
         setChanged();
         return job;
     }
+
+    /**
+     * Die Fertigung, wie ein {@code from crafting}-Worker sie sieht.
+     *
+     * <p>Ein Feld und keine neue Instanz je Tick: Der Worker fragt sie
+     * mehrmals je Runde, und ein Objekt, das zwanzigmal je Sekunde entsteht,
+     * ist Müll ohne Zweck.
+     */
+    private final dev.devpanda.factorynetwork.runtime.WorkerRuntime.Crafting craftingForWorkers =
+            new dev.devpanda.factorynetwork.runtime.WorkerRuntime.Crafting() {
+
+                @Override
+                public long pending(net.minecraft.world.item.Item item) {
+                    long open = 0;
+                    for (var job : jobs) {
+                        if (job.target() == item) {
+                            open += job.remaining();
+                        }
+                    }
+                    return open;
+                }
+
+                @Override
+                public boolean order(net.minecraft.world.item.Item item, int amount) {
+                    return requestCraft(item, amount) != null;
+                }
+            };
 
     /** Bricht einen Auftrag ab. */
     public boolean cancelCraft(long id) {

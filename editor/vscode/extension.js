@@ -28,10 +28,16 @@ const CODE_BLOCKS = ['fn', 'on', 'multiblock'];
 
 /** Was an einer Ausdrucksstelle immer geht. */
 // Nur, was der Interpreter auch auswertet. Die Sprache parst mehr —
-// crafting, world, network, workers, multiblocks —, aber wer sie hinschreibt,
-// bekommt eine Fehlermeldung. Ein Vorschlag, der dorthin führt, ist schlechter
-// als keiner. Sie kommen zurück, sobald sie etwas tun.
+// world, network, workers, multiblocks —, aber wer sie hinschreibt, bekommt
+// eine Fehlermeldung. Ein Vorschlag, der dorthin führt, ist schlechter als
+// keiner. Sie kommen zurück, sobald sie etwas tun.
 const BUILTINS = ['storage'];
+
+/** Was nur als Quelle taugt: `from crafting` bestellt, was fehlt. */
+// Und nur dort. Gefertigt wird in den Speicher, und von dort holt es ein
+// zweiter Worker ab — `to crafting` führte in eine Meldung, die dem Vorschlag
+// widerspricht, der sie ausgelöst hat.
+const SOURCES = ['crafting'];
 
 /**
  * Woran eine Zeile zu erkennen ist, die einen Namen vergibt.
@@ -355,10 +361,13 @@ function completionsFor(where, symbols) {
             // dem Projekt: Gruppen und Multiblocks stehen hier genauso.
             return symbolItems(symbols, ['group', 'multiblock'],
                 vscode.CompletionItemKind.Variable);
-        case 'TARGET':
-            return BUILTINS.map(name => item(name, vscode.CompletionItemKind.Variable))
+        case 'TARGET': {
+            const names = where.signature.keyword === 'from'
+                ? BUILTINS.concat(SOURCES) : BUILTINS;
+            return names.map(name => item(name, vscode.CompletionItemKind.Variable))
                 .concat(symbolItems(symbols, ['group', 'multiblock'],
                     vscode.CompletionItemKind.Variable));
+        }
         case 'EXPR':
             return BUILTINS.map(name => item(name, vscode.CompletionItemKind.Variable))
                 .concat(symbolItems(symbols, ['global'],

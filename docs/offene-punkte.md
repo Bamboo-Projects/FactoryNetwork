@@ -68,6 +68,14 @@ Vorentscheidungen)
 > fest.** Für einen einzigen Schritt fiel das nie auf, für eine Kette schon —
 > wer nur Fichtenstämme hatte, bekam „es fehlen 8 Eichenbretter". Neu in der
 > Serverkonfiguration: `craftingDepth` und `craftingBudget`.
+>
+> Danach der Rest von 2.10: **`from crafting`** hält einen Vorrat und rechnet
+> dabei gegen Bestand *und* offene Aufträge — ohne das bestellte ein solcher
+> Worker jede Runde dieselbe Lücke neu. Drei Formentscheidungen selbst
+> getroffen (Ziel nur `storage`, `maintain` Pflicht, `rate` begrenzt nur, wenn
+> es dasteht) und in `entscheidungen.md` begründet. Damit ist **2.10 fertig**
+> und `crafting` steht wieder in beiden Editoren — hinter `from`, nicht
+> hinter `to`.
 
 **Status:** **F** = fehlt schlicht · **E** = wartet auf eine Entscheidung ·
 **Z** = bewusst zurückgestellt, kein Versäumnis
@@ -112,7 +120,7 @@ Vorentscheidungen)
 | 2.7 | ~~`when`-Bedingungen~~ — **überholt.** Im laufenden Spiel wertet der echte Interpreter aus: Texte, globale Werte, Gerätezustände. Der alte Weg — Zahl gegen Zahl — greift nur ohne Host, also in Prüfungen ohne Welt. Eine kaputte Bedingung hält den Worker an | | `WorkerRuntime.conditionHolds` | | |
 | 2.8 | ~~`NetworkCheck` besucht keine Anweisungen~~ — **fertig.** Ein `move` mit unbekanntem Gerätenamen wird gewarnt, in der Anweisung wie im Ausdruck. Ausgespart bleiben örtliche Namen: Parameter, `let`, Schleifenvariablen, globale Werte, Festwerte, Vorlagen, Gruppen und die Rollen eines Multiblocks | | `NetworkCheck.checkMoves` | | |
 | 2.9 | **Erkennung von Maschinen-Rezepten.** Was ein Brecher aus Erz macht, weiß nur die Maschine. **Keine Voraussetzung mehr für 2.10**: Der Fabricator baut Werkbank-Rezepte, und die stehen im Server. Gebraucht wird 2.9 für Processing-Rezepte am Connector | F | `entscheidungen.md`, `konzept.md` §8 | groß | — |
-| 2.10 | **Mehrstufig gebaut** (25.08.): Fabricator, Aufträge am Controller, `craft(64 item:chest)`, der Reiter zeigt sie, `crafting_finished`/`crafting_failed` lösen aus, alles übersteht den Neustart. Der Planner zerlegt eine Bestellung bis zu dem, was dasteht, trägt Zutaten-Auswahlen durch und kommt mit Kreisen zurecht. Offen: `from crafting` als Worker-Quelle | F | `CraftingPlanner`, `RecipeLookup` | klein | — |
+| 2.10 | ~~Autocrafting~~ — **fertig** (25.08.), in drei Schritten an einem Tag. Fabricator und Aufträge am Controller, `craft(64 item:chest)`, der Reiter, die beiden Ereignisse, alles übersteht den Neustart. Der Planner zerlegt eine Bestellung bis zu dem, was dasteht, trägt Zutaten-Auswahlen durch und kommt mit Kreisen zurecht. `from crafting` hält einen Vorrat, gerechnet gegen Bestand und offene Aufträge | | `CraftingPlanner`, `WorkerRuntime.tickCraftingWorker` | | |
 
 ## 3. Editor im Spiel
 
@@ -126,7 +134,7 @@ Vorentscheidungen)
 | 3.6 | **Entschieden: prüfen** — gegen meine Empfehlung, und als Prüfauftrag, nicht als Zusage. Die Frage ist, ob künftige Fenster damit schneller gehen; die vorhandenen werden nicht neu gebaut | F | `umsetzung.md:512` | klein | — |
 | 3.7 | ~~Ob das Geräteprofil dem Analysator etwas zu geben hat~~ — **fertig**, aber an anderer Stelle als gedacht: Die Knotenbeschriftung wird gar nicht gezeichnet, der Analysator malt Würfel. Die Auskunft hängt jetzt am Rechtsklick — „brecher_1: Gegenstände · Fächer 0–26" —, also dort, wo man ohnehin vor der Maschine steht | | `NetworkAnalyserItem.deviceLine` | | |
 | 3.8 | ~~Ob der Netz-Reiter globale Werte ändern darf~~ — **entschieden: nur anzeigen.** Sonst wird der Zustand der Fabrik an zwei Stellen umgestellt, und niemand sieht ihr an, wer zuletzt geschaltet hat. Wer schalten will, baut einen Knopf | | `globale-werte.md:200` | | |
-| 3.10 | ~~Der Editor bietet an, was nichts kann~~ — **erledigt.** Beide Editoren schlagen nur noch `storage` vor; `crafting`, `world`, `network`, `workers` und `multiblocks` sind draußen, bis sie etwas tun. `power` bleibt: Die Schreibweise ist entschieden, und ein Strom-Worker hält mit einer Meldung an, die auf `strom.md` zeigt | | `Completions.BUILTINS`, `extension.js` | | |
+| 3.10 | ~~Der Editor bietet an, was nichts kann~~ — **erledigt.** `world`, `network`, `workers` und `multiblocks` sind in beiden Editoren draußen, bis sie etwas tun. `crafting` ist am 25.08. zurückgekommen, aber **nur hinter `from`** — es ist eine Quelle und kein Ziel. `power` blieb durchweg: Die Schreibweise ist entschieden, und ein Strom-Worker hält mit einer Meldung an, die auf `strom.md` zeigt | | `Completions.SOURCES`, `extension.js` | | |
 | 3.11 | ~~Auflösungsanzeige~~ — **fertig** (25.08.) im Editor im Spiel: Zeiger auf einen Auswahlausdruck, und im Kasten stehen die Zahl der Arten und die ersten Namen; „trifft nichts" in Rot. In VS Code nicht — dort gibt es keine Registry | | `SelectionSummary`, `Selectors` | | |
 | 3.9 | ~~`gerät.count(…)` auf einer Anzeige~~ — **fertig.** Eine Tafel liest jetzt auch aus einer Maschine, mit Auswahl oder ohne. Ohne Welt bleibt es beim `?`: Eine erfundene Null schickte den Spieler zur falschen Maschine | | `DisplayValues.deviceCount` | | |
 
@@ -194,11 +202,20 @@ Geräte je Netz sind keine Grenze mehr.
 auch. Schreibarbeit ohne Risiko — und das, was die Mod für jemanden von außen
 zugänglich macht.
 
-**2. `from crafting`** (2.10, Rest). Die Fertigung ist mehrstufig; was fehlt,
-ist die Vorratshaltung — ein Worker, der bestellt, sobald ein Bestand unter
-`maintain` fällt. Danach steht `crafting` als Quelle auch in den Editoren.
+~~**2. Autocrafting**~~ (2.10). **Fertig am 25.08.** Der letzte ausgegraute
+Reiter ist keiner mehr, und `crafting` steht als Quelle in beiden Editoren.
+Offen bleibt daneben 2.9 — Processing-Rezepte an Maschinen —, aber das ist ein
+eigenes Vorhaben und keine Lücke im Autocrafting.
 
-**Kleines mit großer Wirkung:** `list` auf einer Anzeige (6.10) ist seit 1.16
-nicht mehr blockiert, die Auflösungsanzeige im Editor (3.11) fehlt weiter, und
-die Konfiguration (4.2) ist die Voraussetzung für den Sprachserver und für
-einstellbare Grenzen.
+**2. Die kleineren Reste:** 3.5 (Ordner im Projekt), 5.2 (Speicherblock), 5.3
+(Schrift auf der Anzeigenwand), 3.6 (LDLib2 prüfen), 1.11 (globale Listen —
+braucht vorher eine Entscheidung über Listenliteral und Ändern-vs-Ersetzen).
+
+**3. Rezepte an Maschinen erkennen** (2.9). Groß, und seit dem Autocrafting
+keine Voraussetzung mehr für irgendetwas — der Fabricator baut Werkbank-
+Rezepte, und die stehen im Server. Gebraucht wird es für Processing-Rezepte am
+Connector.
+
+Was hier bis zum 25.08. unter „Kleines mit großer Wirkung" stand — `list` auf
+einer Anzeige (6.10), die Auflösungsanzeige im Editor (3.11), die
+Serverkonfiguration (4.2) —, ist gebaut.

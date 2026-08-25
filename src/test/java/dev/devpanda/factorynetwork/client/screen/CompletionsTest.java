@@ -99,14 +99,24 @@ class CompletionsTest {
         List<String> shown = at("worker haul {", "    to ");
 
         assertTrue(shown.contains("storage"), () -> "storage fehlt: " + shown);
-        // crafting, world, network, workers und multiblocks parst die Sprache,
-        // aber der Interpreter kennt keines davon: Wer sie hinschreibt,
-        // bekommt „Als Ziel taugt nur ein Name" — eine Meldung, die dem
-        // Vorschlag widerspricht, der sie ausgelöst hat.
-        assertFalse(shown.contains("crafting"),
-                () -> "crafting wird nicht ausgewertet: " + shown);
+        // world, network, workers und multiblocks parst die Sprache, aber der
+        // Interpreter kennt keines davon: Wer sie hinschreibt, bekommt „Als
+        // Ziel taugt nur ein Name" — eine Meldung, die dem Vorschlag
+        // widerspricht, der sie ausgelöst hat.
         assertFalse(shown.contains("network"), () -> shown.toString());
         assertFalse(shown.contains("multiblocks"), () -> shown.toString());
+        // Und crafting ist eine Quelle: Gefertigt wird in den Speicher.
+        assertFalse(shown.contains("crafting"),
+                () -> "crafting ist kein Ziel: " + shown);
+    }
+
+    @Test
+    @DisplayName("crafting steht bei from, weil es eine Quelle ist")
+    void craftingIsOfferedAsAsource() {
+        List<String> shown = at("worker nachschub {", "    from ");
+
+        assertTrue(shown.contains("crafting"), () -> "crafting fehlt: " + shown);
+        assertTrue(shown.contains("storage"), () -> "storage fehlt: " + shown);
     }
 
     @Test

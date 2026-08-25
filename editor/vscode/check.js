@@ -286,6 +286,10 @@ contains('Ziel bietet den Multiblock',
     ['worker neu {', '    to '], 'Werk', true, 'main.mf');
 contains('Ziel bietet weiter storage',
     ['worker neu {', '    to '], 'storage', true, 'main.mf');
+contains('Quelle bietet crafting',
+    ['worker neu {', '    from '], 'crafting', true, 'main.mf');
+contains('Ziel bietet crafting nicht',
+    ['worker neu {', '    to '], 'crafting', false, 'main.mf');
 contains('Mitglieder bieten die Gruppe',
     ['group neu {', '    members '], 'oefen', true, 'main.mf');
 contains('Ausdrucksstelle bietet den globalen Wert',

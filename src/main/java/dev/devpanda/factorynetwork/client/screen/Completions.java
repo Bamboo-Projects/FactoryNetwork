@@ -61,16 +61,20 @@ public final class Completions {
     /**
      * Die eingebauten Namen, die der Interpreter <b>wirklich</b> kennt.
      *
-     * <p>Die Sprache parst auch {@code crafting}, {@code world},
-     * {@code network}, {@code workers} und {@code multiblocks} — auswerten
-     * kann sie keines davon. Sie anzubieten hieß: Wer {@code to crafting}
-     * schreibt, bekommt „Als Ziel taugt nur ein Name", eine Meldung, die dem
-     * Vorschlag widerspricht, der sie ausgelöst hat.
+     * <p>Die Sprache parst auch {@code world}, {@code network},
+     * {@code workers} und {@code multiblocks} — auswerten kann sie keines
+     * davon. Sie anzubieten hieß: Wer {@code to network} schreibt, bekommt
+     * „Als Ziel taugt nur ein Name", eine Meldung, die dem Vorschlag
+     * widerspricht, der sie ausgelöst hat.
      *
-     * <p>Sie kommen zurück, sobald sie etwas tun — {@code network} mit der
-     * Stromverteilung, {@code crafting} mit dem Autocrafting.
+     * <p>Sie kommen zurück, sobald sie etwas tun. {@code crafting} ist diesen
+     * Weg gegangen und steht in {@link #SOURCES} — als Quelle, denn ein Ziel
+     * ist es nicht.
      */
     private static final List<String> BUILTINS = List.of("storage");
+
+    /** Was nur als Quelle taugt — {@code from crafting} bestellt, was fehlt. */
+    private static final List<String> SOURCES = List.of("crafting");
 
     /**
      * Was an dieser Stelle passt.
@@ -220,10 +224,14 @@ public final class Completions {
         switch (slot.kind()) {
             case TARGET -> {
                 addConnectors(entries, prefix);
-                // crafting stand hier mit: sprache.md zeigt es als Quelle für
-                // Nachschub, gebaut ist das Autocrafting nicht. Es kommt
-                // zurück, sobald es etwas tut.
                 addAll(entries, BUILTINS, prefix, Entry.Kind.BUILTIN);
+                // crafting ist eine Quelle und kein Ziel: Gefertigt wird in
+                // den Speicher, und von dort holt es ein zweiter Worker ab.
+                // Es bei „to" vorzuschlagen führte in eine Meldung, die dem
+                // Vorschlag widerspricht, der sie ausgelöst hat.
+                if ("from".equals(where.signature().keyword())) {
+                    addAll(entries, SOURCES, prefix, Entry.Kind.BUILTIN);
+                }
             }
             case EXPR -> {
                 // Ein angefangener Auswahlausdruck ist auch ein Ausdruck.

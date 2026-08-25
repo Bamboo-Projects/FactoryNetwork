@@ -7917,6 +7917,188 @@ public final class FactoryNetworkGameTests {
                 .thenSucceed();
     }
 
+    /**
+     * Nachschub ist derselbe Worker.
+     *
+     * <p>Der Grund, warum {@code from} eine Quelle nennt und keine Betriebsart:
+     * „hol es aus dem Lager" und „lass es herstellen" bekommen dieselbe Form.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 600)
+    public static void acraftingWorkerOrdersWhatIsMissing(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        helper.setBlock(controller.east().above(), FnBlocks.FABRICATOR.get());
+        entity.rebuildNetwork();
+        entity.storage().insert(Items.OAK_PLANKS, 64);
+
+        helper.assertTrue(entity.deploy("""
+                worker nachschub {
+                    from crafting
+                    to storage
+                    filter item:chest
+                    maintain 4
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+
+        helper.startSequence()
+                .thenIdle(160)
+                .thenExecute(() -> helper.assertValueEqual(
+                        entity.storage().count(Items.CHEST), 4L, "vier Truhen im Vorrat"))
+                .thenSucceed();
+    }
+
+    /**
+     * Und er bestellt genau einmal.
+     *
+     * <p>Der Bestand steigt erst, wenn der Auftrag fertig ist. Ein Worker, der
+     * nur den Bestand ansieht, bestellt in der Zwischenzeit jede Runde neu —
+     * und aus „halte vier vor" werden vierzig.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void acraftingWorkerOrdersOnlyOnce(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        // Kein Fabricator: Der Auftrag steht und wird nie fertig.
+        entity.rebuildNetwork();
+        entity.storage().insert(Items.OAK_PLANKS, 64);
+
+        helper.assertTrue(entity.deploy("""
+                worker nachschub {
+                    from crafting
+                    to storage
+                    filter item:chest
+                    maintain 4
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+
+        helper.startSequence()
+                .thenIdle(140)
+                .thenExecute(() -> {
+                    helper.assertValueEqual(entity.craftingJobs().size(), 1,
+                            "genau ein Auftrag, nicht einer je Runde");
+                    helper.assertValueEqual(entity.craftingJobs().get(0).wanted(), 4,
+                            "über die vier, die fehlen");
+                })
+                .thenSucceed();
+    }
+
+    /** Steht der Vorrat, bestellt er nichts. */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void acraftingWorkerWithAfullStockOrdersNothing(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        entity.storage().insert(Items.CHEST, 8);
+
+        helper.assertTrue(entity.deploy("""
+                worker nachschub {
+                    from crafting
+                    to storage
+                    filter item:chest
+                    maintain 4
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+
+        helper.startSequence()
+                .thenIdle(60)
+                .thenExecute(() -> {
+                    helper.assertTrue(entity.craftingJobs().isEmpty(), "kein Auftrag");
+                    helper.assertValueEqual(
+                            entity.runtime().states().get("nachschub").status.name(), "IDLE",
+                            "und der Worker ruht");
+                })
+                .thenSucceed();
+    }
+
+    /**
+     * Gefertigt wird in den Speicher, nicht in eine Maschine.
+     *
+     * <p>Der Weg dahin steht schon: Ein zweiter Worker holt es aus dem Lager
+     * und legt es in die Maschine. Beides in eine Zeile zu ziehen hieße, dem
+     * Fabricator ein Ziel beizubringen, das er nicht hat.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void acraftingWorkerDeliversOnlyToStorage(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                worker nachschub {
+                    from crafting
+                    to brecher
+                    filter item:chest
+                    maintain 4
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+
+        helper.startSequence()
+                .thenIdle(60)
+                .thenExecute(() -> {
+                    var state = entity.runtime().states().get("nachschub");
+                    helper.assertValueEqual(state.status.name(), "HALTED",
+                            "der Worker muss anhalten");
+                    helper.assertTrue(state.detail.contains("storage"),
+                            "und auf storage zeigen: " + state.detail);
+                    helper.assertTrue(entity.craftingJobs().isEmpty(), "und nichts bestellen");
+                })
+                .thenSucceed();
+    }
+
+    /** Ohne {@code maintain} weiß niemand, wie viel bestellt werden soll. */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void acraftingWorkerWithoutMaintainStops(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                worker nachschub {
+                    from crafting
+                    to storage
+                    filter item:chest
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+
+        helper.startSequence()
+                .thenIdle(60)
+                .thenExecute(() -> {
+                    var state = entity.runtime().states().get("nachschub");
+                    helper.assertValueEqual(state.status.name(), "HALTED",
+                            "der Worker muss anhalten");
+                    helper.assertTrue(state.detail.contains("maintain"),
+                            "und maintain nennen: " + state.detail);
+                })
+                .thenSucceed();
+    }
+
+    /** Was kein Rezept hat, wird nicht bestellt — und der Worker sagt es. */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void whatHasNorecipeIsNotOrdered(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                worker nachschub {
+                    from crafting
+                    to storage
+                    filter item:cobblestone
+                    maintain 64
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+
+        helper.startSequence()
+                .thenIdle(60)
+                .thenExecute(() -> {
+                    helper.assertTrue(entity.craftingJobs().isEmpty(), "kein Auftrag");
+                    var state = entity.runtime().states().get("nachschub");
+                    helper.assertTrue(state.detail.contains("kein Rezept"),
+                            "der Grund fehlt: " + state.detail);
+                })
+                .thenSucceed();
+    }
+
     // ---- Der Anbau am Controller -------------------------------------------
 
     /**
