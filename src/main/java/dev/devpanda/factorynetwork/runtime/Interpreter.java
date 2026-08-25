@@ -103,6 +103,17 @@ public final class Interpreter {
             throw new ScriptError("Ohne Welt lässt sich nicht in ein Gerät sehen.");
         }
 
+        /**
+         * Die Geräte einer Gruppe, in der Reihenfolge ihrer Verteilung.
+         *
+         * <p>Aufgelöst gegen das Netz und nicht gegen das Programm: Ein
+         * Muster nimmt auf, was gerade dasteht. Ein Host ohne Welt kennt
+         * keine Gruppen und liefert nichts.
+         */
+        default java.util.List<String> membersOf(String group) {
+            return java.util.List.of();
+        }
+
         /** Redstone-Stärke eines Geräts, 0 bis 15. */
         int redstone(String device);
 
@@ -858,6 +869,15 @@ public final class Interpreter {
         if (template != null) {
             return template;
         }
+        // Eine Gruppe steht im Programm, ihre Mitglieder stehen im Netz.
+        // Deshalb trägt der Wert nur den Namen — nachgesehen wird erst, wenn
+        // jemand fragt.
+        for (dev.devpanda.factorynetwork.lang.ast.Decl declaration : program.declarations()) {
+            if (declaration instanceof dev.devpanda.factorynetwork.lang.ast.Decl.Group group
+                    && group.name().equals(name)) {
+                return new Value.Group(name);
+            }
+        }
         // In einer Vorlage meint ein Gerätename immer das eigene Gerät. Erst
         // wenn die Anlage keines dieses Namens hat, zählt der Rest des Netzes
         // — sonst wäre ein Netzspeicher aus einer Vorlage heraus unerreichbar.
@@ -963,6 +983,11 @@ public final class Interpreter {
         if (entry != null) {
             return entry;
         }
+        if (target instanceof Value.Group group) {
+            throw new ScriptError("Eine Gruppe hat kein " + name + ".",
+                    "Mit Klammern: " + group.name() + ".members() und "
+                            + group.name() + ".send(…).");
+        }
         throw new ScriptError("Auf " + target.describe() + " gibt es kein " + name + ".");
     }
 
@@ -1053,6 +1078,23 @@ public final class Interpreter {
         }
         if (target instanceof Value.ValueList list) {
             return listMember(list, name);
+        }
+        if (target instanceof Value.Group group) {
+            return switch (name) {
+                case "members" -> new Value.ValueList(host.membersOf(group.name()).stream()
+                        .map(each -> (Value) new Value.Device(each))
+                        .toList());
+                // send ist move in kurz: aus dem Speicher an die Gruppe, und
+                // wie verteilt wird, entscheidet die Gruppe selbst.
+                case "send" -> new Value.Int(host.move(
+                        arguments.isEmpty() ? Value.Nothing.get() : arguments.get(0),
+                        new Value.Builtin("storage"), group));
+                default -> throw new ScriptError(
+                        "Eine Gruppe kann kein " + name + ".",
+                        "Bekannt sind members und send. Was ein einzelnes Gerät kann, "
+                                + "fragt man an einem Mitglied: "
+                                + group.name() + ".members().first()." + name + "()");
+            };
         }
         if (target instanceof Value.Device device) {
             return switch (name) {

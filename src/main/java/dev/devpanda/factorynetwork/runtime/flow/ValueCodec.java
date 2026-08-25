@@ -90,6 +90,13 @@ public final class ValueCodec {
                 tag.putString(KEY_TYPE, "dev");
                 tag.putString(KEY_VALUE, device.name());
             }
+            // Eine Gruppe trägt nur ihren Namen, und genau deshalb übersteht
+            // sie den Neustart unbeschadet: Wer heute darin steht, entscheidet
+            // beim nächsten Blick wieder das Netz.
+            case Value.Group group -> {
+                tag.putString(KEY_TYPE, "grp");
+                tag.putString(KEY_VALUE, group.name());
+            }
             case Value.Builtin builtin -> {
                 tag.putString(KEY_TYPE, "builtin");
                 tag.putString(KEY_VALUE, builtin.name());
@@ -119,6 +126,7 @@ public final class ValueCodec {
             case "fluid" -> new Value.FluidValue(fluid(tag.getString(KEY_VALUE)));
             case "fluidsel" -> readFluidSelection(tag);
             case "dev" -> new Value.Device(tag.getString(KEY_VALUE));
+            case "grp" -> new Value.Group(tag.getString(KEY_VALUE));
             case "builtin" -> new Value.Builtin(tag.getString(KEY_VALUE));
             case "list" -> readList(tag);
             case "nothing" -> Value.Nothing.get();

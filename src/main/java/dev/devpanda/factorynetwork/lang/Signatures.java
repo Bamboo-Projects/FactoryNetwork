@@ -291,6 +291,20 @@ public final class Signatures {
                     "Ordnet nach dem Ausdruck. it ist der Eintrag."));
 
     /**
+     * Was an einer Gerätegruppe steht.
+     *
+     * <p>Zwei Aufrufe und sonst nichts. Was ein einzelnes Gerät kann, fragt
+     * man an einem Mitglied — eine Gruppe ist kein Gerät mit mehr Fächern,
+     * sondern eine Verteilung.
+     */
+    public static final List<Member> GROUP_MEMBERS = List.of(
+            new Member("members", "members() list",
+                    "Die Geräte der Gruppe, in der Reihenfolge ihrer Verteilung."),
+            new Member("send", "send(selection) int",
+                    "Schickt aus dem Speicher an die Gruppe. Wohin, entscheidet ihre "
+                            + "strategy."));
+
+    /**
      * Was an einem einzelnen Posten steht — {@code it.amount}.
      *
      * <p>Zwei Angaben und eine dritte für Flüssigkeiten. Der Editor kennt

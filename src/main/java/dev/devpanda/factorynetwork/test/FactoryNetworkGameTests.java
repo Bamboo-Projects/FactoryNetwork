@@ -2588,6 +2588,48 @@ public final class FactoryNetworkGameTests {
                 .thenSucceed();
     }
 
+    /**
+     * Eine Gruppe ist ein Wert: Sie nennt ihre Mitglieder und nimmt an.
+     *
+     * <p>Im GameTest, weil beides am Netz hängt — welche Geräte in der Gruppe
+     * sind, entscheidet die Welt und nicht das Programm.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void aGroupIsAValue(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        entity.storage().insert(Items.COBBLESTONE, 32);
+
+        helper.assertTrue(entity.deploy("""
+                group kisten {
+                    members quarry_output, depot
+                }
+
+                global anzahl = 0
+
+                fn zaehlt() {
+                    anzahl = kisten.members().count()
+                }
+
+                fn schickt() {
+                    kisten.send(16 item:cobblestone)
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+
+        entity.startFlow("zaehlt", List.of());
+        entity.startFlow("schickt", List.of());
+        helper.startSequence()
+                .thenIdle(15)
+                .thenExecute(() -> {
+                    helper.assertValueEqual(entity.globals().get("anzahl"),
+                            new Value.Int(2), "Die Gruppe hat zwei Mitglieder");
+                    helper.assertValueEqual(entity.storage().count(Items.COBBLESTONE), 16L,
+                            "Sechzehn sind an ein Mitglied gegangen");
+                })
+                .thenSucceed();
+    }
+
     /** Ein Festwert wird gelesen wie ein globaler, nur nie geschrieben. */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void aConstantIsReadableAtRuntime(GameTestHelper helper) {

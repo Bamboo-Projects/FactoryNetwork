@@ -57,6 +57,14 @@ class InterpreterTest {
             return devices.contains(name);
         }
 
+        /** Die Mitglieder je Gruppe. */
+        final List<String> groupMembers = new ArrayList<>(List.of("chest", "crusher_1"));
+
+        @Override
+        public List<String> membersOf(String group) {
+            return groupMembers;
+        }
+
         @Override
         public String suggestDevice(String name) {
             return devices.stream()
@@ -315,5 +323,63 @@ class InterpreterTest {
 
         assertEquals(1, host.moves.size(), () -> host.moves.toString());
         assertTrue(host.logs.isEmpty(), () -> host.logs.toString());
+    }
+
+    @Test
+    @DisplayName("members() gibt die Geräte einer Gruppe")
+    void membersYieldsTheDevices() {
+        TestHost host = new TestHost();
+        Interpreter interpreter = interpreterFor("""
+                group brecher {
+                    members chest, crusher_1
+                }
+
+                fn zeigen() {
+                    for maschine in brecher.members() {
+                        log(maschine.name)
+                    }
+                }""", host);
+
+        interpreter.call("zeigen", List.of());
+
+        assertEquals(List.of("chest", "crusher_1"), host.logs);
+    }
+
+    @Test
+    @DisplayName("send() schickt aus dem Speicher an die Gruppe")
+    void sendGoesFromStorageToTheGroup() {
+        TestHost host = new TestHost();
+        Interpreter interpreter = interpreterFor("""
+                group brecher {
+                    members chest, crusher_1
+                }
+
+                fn schicken() {
+                    brecher.send(64 item:iron_ore)
+                }""", host);
+
+        interpreter.call("schicken", List.of());
+
+        assertEquals(1, host.moves.size(), () -> host.moves.toString());
+        assertTrue(host.moves.get(0).startsWith("storage -> brecher"),
+                () -> "aus dem Speicher an die Gruppe: " + host.moves);
+    }
+
+    @Test
+    @DisplayName("Eine Gruppe kann nichts, was ein Gerät kann")
+    void aGroupIsNoDevice() {
+        TestHost host = new TestHost();
+        Interpreter interpreter = interpreterFor("""
+                group brecher {
+                    members chest, crusher_1
+                }
+
+                fn fragen() {
+                    log(brecher.redstone())
+                }""", host);
+
+        ScriptError error = org.junit.jupiter.api.Assertions.assertThrows(
+                ScriptError.class, () -> interpreter.call("fragen", List.of()));
+        assertTrue(error.getMessage().contains("Gruppe"), error.getMessage());
     }
 }

@@ -57,7 +57,9 @@ fn keepStock(item, amount) {
 
 on redstone_changed(tank_sensor, strength) {
     if strength >= 12 {
-        pumps.stop()
+        for pumpe in pumps.members() {
+            pumpe.redstone(0)
+        }
     }
 }
 ```
@@ -480,12 +482,12 @@ Gruppen verhalten sich wie ein Gerät, verteilen aber:
 
 ```
 crushers.send(64 item:iron_ore)
-crushers.send(64 item:iron_ore, strategy: least_filled)
 ```
 
-> **Noch nicht gebaut:** `send()` an einer Gruppe. Die Verteilung über
-> mehrere Ziele gibt es beim Worker, beim Aufruf noch nicht; sie kommt,
-> sobald eine Gruppe ein Wert ist.
+Wohin es geht, entscheidet die `strategy` der Gruppe — nicht der Aufruf. Ein
+zweiter Ort für dieselbe Entscheidung hieße, dass zwei Stellen im Code
+festlegen, welcher Brecher zuerst drankommt.
+
 >
 > **Gestrichen am 25.08.: `output()`.** `move 64 item:x from brecher to
 > storage` nimmt ohnehin nur das, was die Maschine herausgeben will — ein
@@ -505,7 +507,9 @@ alarm.redstone(15)
 ```
 on redstone_changed(sensor, strength) {
     if strength >= 12 {
-        pumps.stop()
+        for pumpe in pumps.members() {
+            pumpe.redstone(0)
+        }
     }
 }
 ```
@@ -720,6 +724,27 @@ soll ihn nicht auch noch im Code eintragen müssen — die Gruppe nimmt ihn auf,
 sobald er im Netz ist. Das geht hier, weil Connectoren dutzendweise vorkommen
 und nicht zu Tausenden.
 
+### Was an einer Gruppe steht
+
+```
+crushers.members()              die Geräte, in der Reihenfolge ihrer Verteilung
+crushers.send(64 item:iron_ore) aus dem Speicher an die Gruppe
+```
+
+Mehr nicht. Was ein einzelnes Gerät kann, fragt man an einem Mitglied —
+`crushers.members().first().count()`. Eine Gruppe ist kein Gerät mit mehr
+Fächern, sondern eine Verteilung.
+
+`members()` fragt das Netz und nicht das Programm: Ein Muster nimmt auf, was
+gerade dasteht. Wer einen Ofen dazustellt, findet ihn beim nächsten Aufruf in
+der Liste.
+
+Als Ziel steht eine Gruppe überall, wo ein Gerät steht:
+
+```
+move 64 item:iron_ore from storage to crushers
+```
+
 ### Strategien
 
 ```
@@ -825,7 +850,9 @@ Reaktive Logik läuft über Ereignisse, nicht über Abfragen in Schleifen.
 ```
 on redstone_changed(sensor, strength) {
     if strength >= 12 {
-        pumps.stop()
+        for pumpe in pumps.members() {
+            pumpe.redstone(0)
+        }
     }
 }
 ```

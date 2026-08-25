@@ -73,6 +73,17 @@ public final class WorldHost implements Interpreter.Host {
     private final Runnable onGlobalChanged;
 
     /**
+     * Die Gerätegruppen des Netzes, aufgelöst.
+     *
+     * <p>Dieselben, mit denen die Worker arbeiten — samt ihrem Zeiger für
+     * {@code round_robin}. Zwei Auflösungen nebeneinander hießen zwei
+     * Reihenfolgen: Ein {@code move to crushers} aus einer Funktion und ein
+     * Worker auf dieselbe Gruppe verteilten dann jeder für sich reihum, und
+     * beide träfen immer dasselbe Gerät zuerst.
+     */
+    private Map<String, DeviceGroup> groups = Map.of();
+
+    /**
      * Wem zu melden ist, dass das Netz in ein Gerät geschrieben hat.
      *
      * <p>Der Controller zieht daraufhin die Grundlinie für
@@ -337,6 +348,9 @@ public final class WorldHost implements Interpreter.Host {
     }
 
     private IFluidHandler tankOf(Value value) {
+        if (value instanceof Value.Group group) {
+            return tankOf(memberFor(group));
+        }
         if (!(value instanceof Value.Device device)) {
             throw new ScriptError("Bei move fehlt der Tank.",
                     "Zum Beispiel: move 1000 fluid:water from bottich to kessel");
@@ -567,6 +581,60 @@ public final class WorldHost implements Interpreter.Host {
         return onDeviceFilled == null ? null : () -> onDeviceFilled.accept(device);
     }
 
+    /** Die aufgelösten Gruppen des Netzes; setzt der Controller. */
+    public void setGroups(Map<String, DeviceGroup> resolved) {
+        this.groups = resolved == null ? Map.of() : resolved;
+    }
+
+    @Override
+    public List<String> membersOf(String group) {
+        DeviceGroup found = groups.get(group);
+        return found == null ? List.of() : found.members();
+    }
+
+    /**
+     * Das Gerät, an das eine Gruppe gerade verteilt.
+     *
+     * <p>Die Reihenfolge kommt aus der Gruppe selbst — reihum, das leerste,
+     * das erste, das kann. Genommen wird das erste Mitglied, hinter dem
+     * wirklich etwas hängt: Ein Gerät, dessen Chunk gerade nicht geladen ist,
+     * darf die Verteilung nicht anhalten.
+     */
+    private Value.Device memberFor(Value.Group group) {
+        DeviceGroup resolved = groups.get(group.name());
+        if (resolved == null || resolved.isEmpty()) {
+            throw new ScriptError("Die Gruppe " + group.name() + " hat kein Mitglied im Netz.",
+                    "Steht sie im Programm, und hängen ihre Geräte am Netz?");
+        }
+        for (String candidate : resolved.order(this::fillLevelOf, new java.util.Random())) {
+            BlockPos position = graph.connector(candidate).orElse(null);
+            if (position != null && level.isLoaded(position)
+                    && level.getBlockEntity(position) instanceof ConnectorBlockEntity) {
+                return new Value.Device(candidate);
+            }
+        }
+        throw new ScriptError("Kein Gerät der Gruppe " + group.name() + " ist erreichbar.",
+                "Vielleicht ist gerade kein Chunk davon geladen.");
+    }
+
+    /** Wie voll ein Gerät ist — für die Verteilung nach dem leersten. */
+    private long fillLevelOf(String device) {
+        BlockPos position = graph.connector(device).orElse(null);
+        if (position == null || !level.isLoaded(position)
+                || !(level.getBlockEntity(position) instanceof ConnectorBlockEntity connector)) {
+            return Long.MAX_VALUE;
+        }
+        IItemHandler handler = connector.machineInventory();
+        if (handler == null) {
+            return Long.MAX_VALUE;
+        }
+        long found = 0;
+        for (int slot = 0; slot < handler.getSlots(); slot++) {
+            found += handler.getStackInSlot(slot).getCount();
+        }
+        return found;
+    }
+
     /** Schickt jede Zeile sofort dorthin, statt sie zu sammeln. */
     public void setLogSink(java.util.function.Consumer<LogEntry> sink) {
         this.logSink = sink;
@@ -623,6 +691,9 @@ public final class WorldHost implements Interpreter.Host {
     private IItemHandler handlerOf(Value value) {
         if (isStorage(value)) {
             return null;
+        }
+        if (value instanceof Value.Group group) {
+            return handlerOf(memberFor(group));
         }
         if (!(value instanceof Value.Device device)) {
             throw new ScriptError("Hier wird ein Gerät erwartet, gefunden wurde "

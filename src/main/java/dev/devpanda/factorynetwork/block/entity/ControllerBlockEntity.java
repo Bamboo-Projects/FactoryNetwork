@@ -300,6 +300,10 @@ public class ControllerBlockEntity extends BlockEntity {
         adoptGlobals(result.program());
         this.program = result.program();
         runtime.reset();
+        // Gruppen sofort auflösen und nicht erst im nächsten Tick: Ein
+        // Ablauf, der gleich nach dem Übernehmen startet, fragt sonst eine
+        // leere Gruppe.
+        runtime.resolveGroups(this.program, graph);
         this.flows = null;
         if (!FlowCodec.isEmpty(carried)) {
             this.pendingFlows = carried;
@@ -1545,6 +1549,8 @@ public class ControllerBlockEntity extends BlockEntity {
                 this::setChanged);
         host.setLogSink(this::add);
         host.setDeviceFilled(this::noteFilled);
+        // Dieselben Gruppen wie die Worker, samt ihrem Zeiger für round_robin.
+        host.setGroups(runtime.groups());
         return host;
     }
 

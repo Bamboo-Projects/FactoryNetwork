@@ -111,6 +111,18 @@ public final class Completions {
             // stehen andere Dinge. Vorher fiel es durch memberPrefix, das
             // nur bekannte Connectoren durchlässt — nach „it." kam damit
             // gar nichts.
+            String vorDemPunkt = wordBeforeDot(upToCursor);
+            // Eine Gruppe ist kein Gerät: An ihr stehen members und send, und
+            // sonst nichts.
+            if (isGroupName(vorDemPunkt, lines)) {
+                for (Signatures.Member candidate : Signatures.GROUP_MEMBERS) {
+                    if (matches(candidate.name(), prefix)) {
+                        entries.add(new Entry(candidate.name(), candidate.name(),
+                                Entry.Kind.BUILTIN, candidate.shape()));
+                    }
+                }
+                return limit(entries);
+            }
             if ("it".equals(wordBeforeDot(upToCursor))) {
                 for (Signatures.Member candidate : Signatures.ENTRY_MEMBERS) {
                     if (matches(candidate.name(), prefix)) {
@@ -264,6 +276,16 @@ public final class Completions {
     /** Die Funktionen des Projekts — für den Knopf einer Anzeige. */
     private static void addFunctions(List<Entry> entries, String prefix, List<String> lines) {
         addDeclaredNames(entries, prefix, lines, "fn ", "fn");
+    }
+
+    /** Heißt so eine Gruppe im Projekt? */
+    private static boolean isGroupName(String word, List<String> lines) {
+        if (word == null || word.isEmpty()) {
+            return false;
+        }
+        List<Entry> groups = new ArrayList<>();
+        addDeclaredNames(groups, "", lines, "group ", "group");
+        return groups.stream().anyMatch(entry -> entry.text().equals(word));
     }
 
     /** Die Filter-Vorlagen des Projekts. */

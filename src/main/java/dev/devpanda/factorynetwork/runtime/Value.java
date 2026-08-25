@@ -83,6 +83,16 @@ public sealed interface Value {
     /** Ein Gerät im Netzwerk, über seinen Namen. */
     record Device(String name) implements Value {}
 
+    /**
+     * Eine Gerätegruppe, über ihren Namen.
+     *
+     * <p><b>Der Name und nicht die Mitglieder.</b> Wer heute in der Gruppe
+     * steht, entscheidet das Netz: Ein Muster wie {@code furnace_*} nimmt den
+     * Ofen auf, sobald er dasteht. Ein Wert, der die Mitglieder mitträgt,
+     * wäre schon veraltet, wenn er einen Tick später gelesen wird.
+     */
+    record Group(String name) implements Value {}
+
     /** Der Netzwerkspeicher oder ein anderes eingebautes Ziel. */
     record Builtin(String name) implements Value {}
 
@@ -114,6 +124,7 @@ public sealed interface Value {
             case FluidValue value -> net.minecraft.core.registries.BuiltInRegistries.FLUID
                     .getKey(value.fluid()).toString();
             case Device value -> value.name();
+            case Group value -> value.name();
             case Builtin value -> value.name();
             case ValueList value -> value.entries().size() + " Einträge";
             case Nothing ignored -> "nichts";

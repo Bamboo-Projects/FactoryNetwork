@@ -188,8 +188,12 @@ public final class WorkerRuntime {
      * <p>Bei jedem Tick, aber billig: Es sind wenige Gruppen mit wenigen
      * Mustern. Und es muss laufend geschehen — ein Ofen, der dazukommt, soll
      * ohne erneutes Übernehmen in seiner Gruppe landen.
+     *
+     * <p><b>Und einmal beim Übernehmen</b>, weil eine Gruppe sonst einen Tick
+     * lang leer wäre: Ein Ablauf, der sofort nach dem Übernehmen startet,
+     * fragte {@code kisten.members()} und bekäme nichts.
      */
-    private void resolveGroups(Program program, FactoryGraph graph) {
+    public void resolveGroups(Program program, FactoryGraph graph) {
         for (Decl declaration : program.declarations()) {
             if (declaration instanceof Decl.Group group) {
                 DeviceGroup previous = groups.get(group.name());
