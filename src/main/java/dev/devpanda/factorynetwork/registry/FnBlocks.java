@@ -30,6 +30,18 @@ public final class FnBlocks {
     public static final DeferredBlock<Block> CONTROLLER = BLOCKS.register("controller",
             () -> new ControllerBlock(machineProperties()));
 
+    /**
+     * Mehr Außenflächen für Kabel, und sonst nichts.
+     *
+     * <p>Er hält weder Programm noch Speicher noch Strom — deshalb kann die
+     * Master-Rolle nicht wandern. Siehe {@link
+     * dev.devpanda.factorynetwork.block.ControllerExtensionBlock}.
+     */
+    public static final DeferredBlock<Block> CONTROLLER_EXTENSION =
+            BLOCKS.register("controller_extension",
+                    () -> new dev.devpanda.factorynetwork.block.ControllerExtensionBlock(
+                            machineProperties()));
+
     /** Verbindet Blöcke zu einem Netzwerk. */
     public static final DeferredBlock<Block> CABLE = BLOCKS.register("cable",
             () -> new CableBlock(BlockBehaviour.Properties.of()

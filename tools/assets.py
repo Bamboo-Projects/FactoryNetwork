@@ -130,6 +130,8 @@ D = "data/" + MOD
 def blockstates():
     write(A + "/blockstates/controller.json",
           {"variants": {"": {"model": block("controller")}}})
+    write(A + "/blockstates/controller_extension.json",
+          {"variants": {"": {"model": block("controller_extension")}}})
 
     # Kabel: ein Kern, dazu ein Arm je Verbindung. Die Farbe kommt nicht aus
     # der Blockstate — sie wird zur Laufzeit eingefärbt, sonst brauchte jede
@@ -424,6 +426,13 @@ def models():
         },
     })
 
+    # Der Anbau zeigt auf allen sechs Seiten dasselbe: Er hat keine
+    # Vorderseite, weil jede seiner Seiten dieselbe Aufgabe hat.
+    write(A + "/models/block/controller_extension.json", {
+        "parent": "minecraft:block/cube_all",
+        "textures": {"all": texture("controller_extension")},
+    })
+
     cable_models()
 
     write(A + "/models/block/connector.json", {
@@ -526,7 +535,8 @@ def models():
 
     # Die Anzeigetafel fehlt hier: Ihr Blockmodell heißt display_0, weil es
     # sechzehn davon gibt. Sie steht weiter oben, wo die sechzehn entstehen.
-    for name in ("controller", "connector", "terminal", "drive", "press"):
+    for name in ("controller", "controller_extension", "connector", "terminal",
+                 "drive", "press"):
         write(A + "/models/item/" + name + ".json", {"parent": block(name)})
     write(A + "/models/item/label_gun.json", {
         "parent": "minecraft:item/handheld",
@@ -666,8 +676,8 @@ def loot_and_recipes():
             ],
         }],
     })
-    for name in ("controller", "connector", "terminal", "display", "drive",
-                 "press", "router", "burner"):
+    for name in ("controller", "controller_extension", "connector", "terminal",
+                 "display", "drive", "press", "router", "burner"):
         write(D + "/loot_table/blocks/" + name + ".json", {
             "type": "minecraft:block",
             "pools": [{
@@ -989,6 +999,20 @@ def loot_and_recipes():
             "result": {"id": MOD + ":energy_cell_" + groesser, "count": 1},
         })
 
+    # Der Anbau: ein Controller ohne Kern. Genau das ist er auch — dasselbe
+    # Gehäuse, nur ohne das, was den Controller ausmacht, und deshalb ohne
+    # den Netzkern im Rezept.
+    write(D + "/recipe/controller_extension.json", {
+        "type": "minecraft:crafting_shaped",
+        "category": "misc",
+        "pattern": ["PPP", "PCP", "PPP"],
+        "key": {
+            "P": {"item": MOD + ":plate"},
+            "C": {"item": MOD + ":crystal"},
+        },
+        "result": {"id": MOD + ":controller_extension", "count": 2},
+    })
+
     # ---- Die Fertigungskette -------------------------------------------
 
     # Die Presse selbst: noch von Hand, sonst käme man nie hinein.
@@ -1106,7 +1130,8 @@ def loot_and_recipes():
 
     # Spitzhacke reicht zum Abbauen.
     write(D + "/tags/block/mineable/pickaxe.json", {
-        "values": [MOD + ":controller", MOD + ":cable", MOD + ":dense_cable",
+        "values": [MOD + ":controller", MOD + ":controller_extension",
+                   MOD + ":cable", MOD + ":dense_cable",
                    MOD + ":connector", MOD + ":terminal", MOD + ":display",
                    MOD + ":drive", MOD + ":press", MOD + ":router",
                    MOD + ":server_rack", MOD + ":burner",

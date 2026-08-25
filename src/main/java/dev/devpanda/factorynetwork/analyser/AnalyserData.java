@@ -41,7 +41,9 @@ public record AnalyserData(List<Node> nodes, List<Link> links, Summary summary) 
         /** Ein Serverschrank. Ohne ihn rechnet das Netz nicht. */
         RACK,
         /** Eine Kreuzung. Sie leitet weiter und kostet selbst keinen Kanal. */
-        ROUTER
+        ROUTER,
+        /** Ein Anbau am Controller. Er bringt Seiten mit, statt welche zu belegen. */
+        EXTENSION
     }
 
     /** Wie es um eine Kabelstrecke steht. */

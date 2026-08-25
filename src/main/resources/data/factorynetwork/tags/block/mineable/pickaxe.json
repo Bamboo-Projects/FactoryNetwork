@@ -1,6 +1,7 @@
 {
   "values": [
     "factorynetwork:controller",
+    "factorynetwork:controller_extension",
     "factorynetwork:cable",
     "factorynetwork:dense_cable",
     "factorynetwork:connector",

@@ -23,6 +23,10 @@ public final class FnItems {
             DeferredRegister.createItems(FactoryNetwork.MOD_ID);
 
     public static final DeferredItem<BlockItem> CONTROLLER = ITEMS.registerSimpleBlockItem(FnBlocks.CONTROLLER);
+
+    /** Der Anbau: Seiten für Kabel, sonst nichts. */
+    public static final DeferredItem<BlockItem> CONTROLLER_EXTENSION =
+            ITEMS.registerSimpleBlockItem(FnBlocks.CONTROLLER_EXTENSION);
     /**
      * Ein Kabelgegenstand je Farbe.
      *

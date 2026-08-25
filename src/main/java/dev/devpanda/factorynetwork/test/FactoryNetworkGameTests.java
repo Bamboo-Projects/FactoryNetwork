@@ -7091,6 +7091,108 @@ public final class FactoryNetworkGameTests {
                 .thenSucceed();
     }
 
+    // ---- Der Anbau am Controller -------------------------------------------
+
+    /**
+     * Ein Kabel am Anbau gehört zum Netz.
+     *
+     * <p>Der Anbau bringt Seiten mit, und an einer Seite hängt ein Strang wie
+     * an jeder Seite des Controllers. Ohne das wäre er ein Zierblock.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void acableOnTheExtensionBelongsToTheNetwork(GameTestHelper helper) {
+        BlockPos controller = bareSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+
+        // Nach Norden: Anbau, Kabel, Connector — der Controller selbst wird
+        // dabei nie berührt.
+        BlockPos anbau = controller.north();
+        helper.setBlock(anbau, FnBlocks.CONTROLLER_EXTENSION.get());
+        helper.setBlock(anbau.north(), FnBlocks.CABLE.get());
+        BlockPos connector = anbau.north().north();
+        helper.setBlock(connector, FnBlocks.CONNECTOR.get().defaultBlockState()
+                .setValue(dev.devpanda.factorynetwork.block.ConnectorBlock.FACING, Direction.NORTH));
+        helper.setBlock(connector.north(), Blocks.CHEST);
+        name(helper, connector, "am_anbau");
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.graph().connectorNames().contains("am_anbau"),
+                "Der Connector am Anbau muss im Netz hängen, gefunden wurden: "
+                        + entity.graph().connectorNames());
+        helper.succeed();
+    }
+
+    /**
+     * Ein Anbau ohne Controller daneben tut nichts.
+     *
+     * <p><b>Der Anbau muss den Controller berühren</b> — unmittelbar oder über
+     * andere Anbauten. Ließe er sich über ein Kabel anschließen, wäre er ein
+     * beliebig oft setzbarer Kanalvermehrer: sechs neue Seiten für einen
+     * Block, und die Kanalgrenze bedeutete nichts mehr.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void anextensionAtTheEndOfACableIsNothing(GameTestHelper helper) {
+        BlockPos controller = bareSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+
+        // Ein Kabel vom Controller zum Anbau, und vom Anbau soll es
+        // weitergehen — soll es aber nicht.
+        BlockPos anbau = controller.north().north();
+        helper.setBlock(controller.north(), FnBlocks.CABLE.get());
+        helper.setBlock(anbau, FnBlocks.CONTROLLER_EXTENSION.get());
+        helper.setBlock(anbau.east(), FnBlocks.CABLE.get());
+        BlockPos connector = anbau.east().east();
+        helper.setBlock(connector, FnBlocks.CONNECTOR.get().defaultBlockState()
+                .setValue(dev.devpanda.factorynetwork.block.ConnectorBlock.FACING, Direction.EAST));
+        helper.setBlock(connector.east(), Blocks.CHEST);
+        name(helper, connector, "hinter_dem_anbau");
+        entity.rebuildNetwork();
+
+        helper.assertFalse(entity.graph().connectorNames().contains("hinter_dem_anbau"),
+                "Hinter einem angekabelten Anbau darf nichts hängen");
+        helper.succeed();
+    }
+
+    /** Zwei Anbauten hintereinander reichen die Seiten weiter. */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void extensionsChain(GameTestHelper helper) {
+        BlockPos controller = bareSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+
+        BlockPos erster = controller.north();
+        BlockPos zweiter = erster.north();
+        helper.setBlock(erster, FnBlocks.CONTROLLER_EXTENSION.get());
+        helper.setBlock(zweiter, FnBlocks.CONTROLLER_EXTENSION.get());
+        helper.setBlock(zweiter.east(), FnBlocks.CABLE.get());
+        BlockPos connector = zweiter.east().east();
+        helper.setBlock(connector, FnBlocks.CONNECTOR.get().defaultBlockState()
+                .setValue(dev.devpanda.factorynetwork.block.ConnectorBlock.FACING, Direction.EAST));
+        helper.setBlock(connector.east(), Blocks.CHEST);
+        name(helper, connector, "am_zweiten");
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.graph().connectorNames().contains("am_zweiten"),
+                "Auch der zweite Anbau bringt Seiten mit");
+        helper.succeed();
+    }
+
+    /** Der Anbau kostet Strom wie jedes andere Bauteil am Netz. */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void anextensionCostsPower(GameTestHelper helper) {
+        BlockPos controller = bareSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        int ohne = entity.powerDraw();
+
+        helper.setBlock(controller.north(), FnBlocks.CONTROLLER_EXTENSION.get());
+        entity.rebuildNetwork();
+
+        helper.assertValueEqual(entity.powerDraw(),
+                ohne + dev.devpanda.factorynetwork.network.Power.EXTENSION,
+                "Der Anbau kostet Strom");
+        helper.succeed();
+    }
+
     // ---- Energiezellen -----------------------------------------------------
 
     /** Das Laufwerk im Standardaufbau, samt einer Energiezelle im zweiten Platz. */

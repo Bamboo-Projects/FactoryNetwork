@@ -318,6 +318,41 @@ def controller_side():
     return img
 
 
+def controller_extension():
+    """Der Anbau: dieselbe Familie, aber ohne Kern.
+
+    <b>Er darf dem Controller nicht zu ähnlich sehen.</b> Wer eine Wand aus
+    beidem baut, muss auf einen Blick wissen, welcher der eine ist, den es nur
+    einmal gibt — deshalb fehlt hier der leuchtende Kern, und an seiner Stelle
+    sitzt ein Anschlussfeld: vier Buchsen, weil der Anbau genau dafür da ist,
+    Seiten beizusteuern.
+    """
+    img = surface(seed=57)
+    d = ImageDraw.Draw(img)
+    raised(img, (1, 1, N - 2, N - 2), hoehe=3)
+
+    # Dieselbe versenkte Fassung wie beim Controller — die Verwandtschaft.
+    d.rectangle([9, 9, 54, 54], fill=blend(BODY_MID, EDGE, 0.3) + (255,))
+    grain(img, amount=7, seed=58)
+    recess(img, (9, 9, 54, 54), tiefe=2)
+    ao(img, (9, 9, 54, 54), depth=4, strength=0.4)
+
+    # Vier Buchsen statt eines Kerns, jede mit einem schwachen Lämpchen.
+    for x, y in ((17, 17), (35, 17), (17, 35), (35, 35)):
+        d.rectangle([x, y, x + 11, y + 11], fill=EDGE + (255,))
+        ao(img, (x, y, x + 11, y + 11), depth=2, strength=0.45)
+        d = ImageDraw.Draw(img)
+        d.rectangle([x + 3, y + 3, x + 8, y + 8],
+                    fill=blend(ACCENT, EDGE, 0.55) + (255,))
+        d.line([(x + 3, y + 3), (x + 8, y + 3)],
+               fill=blend(ACCENT_HI, EDGE, 0.4) + (255,))
+
+    for x, y in ((5, 5), (58, 5), (5, 58), (58, 58)):
+        rivet(img, x, y)
+    scratches(img, count=3, seed=59)
+    return img
+
+
 # ---- Kabel ---------------------------------------------------------------
 # Formensprache: durchgehende Längsstruktur, keine Rahmen.
 
@@ -1688,6 +1723,7 @@ def main():
     save(crystal_ore(True), "block", "deepslate_crystal_ore")
     print("Gegenstandstexturen:")
     save(label_gun(), "item", "label_gun")
+    save(controller_extension(), "block", "controller_extension")
     save(network_analyser(), "item", "network_analyser")
     save(raw_crystal(), "item", "raw_crystal")
     save(crystal_cut(), "item", "crystal")

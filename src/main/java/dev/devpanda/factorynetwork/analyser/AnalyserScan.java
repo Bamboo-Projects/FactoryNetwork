@@ -65,6 +65,12 @@ public final class AnalyserScan {
         for (BlockPos pos : graph.routers()) {
             nodes.add(new AnalyserData.Node(pos, AnalyserData.NodeState.ROUTER, ""));
         }
+        // Der Anbau sieht aus wie ein Block neben dem Controller. Ob er
+        // wirklich dazugehört — ob er den Controller berührt —, sieht man
+        // ihm nicht an; hier schon.
+        for (BlockPos pos : graph.extensions()) {
+            nodes.add(new AnalyserData.Node(pos, AnalyserData.NodeState.EXTENSION, ""));
+        }
         // Geräte ohne Kanal stehen nicht in der Namensliste, wenn sie gar
         // nicht erst aufgenommen wurden. Sie fehlen sonst genau dort, wo man
         // sie sucht.

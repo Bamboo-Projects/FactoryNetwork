@@ -25,6 +25,15 @@ public final class Power {
     /** Ein Connector, und damit die Maschine dahinter. */
     public static final int CONNECTOR = 1;
 
+    /**
+     * Ein Anbau am Controller.
+     *
+     * <p>Er schafft Kanäle, statt welche zu verbrauchen — einen Kanal kostet
+     * er deshalb nicht. Strom schon: Er ist Gerät am Netz wie Laufwerk und
+     * Router, und ein Ausbau, der nichts kostet, ist keine Entscheidung.
+     */
+    public static final int EXTENSION = 1;
+
     /** Eine Anzeige. */
     public static final int DISPLAY = 1;
 

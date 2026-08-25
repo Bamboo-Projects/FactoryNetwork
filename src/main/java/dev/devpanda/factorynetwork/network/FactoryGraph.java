@@ -3,6 +3,7 @@ package dev.devpanda.factorynetwork.network;
 import dev.devpanda.factorynetwork.block.CableBlock;
 import dev.devpanda.factorynetwork.block.CableColour;
 import dev.devpanda.factorynetwork.block.ConnectorBlock;
+import dev.devpanda.factorynetwork.block.ControllerExtensionBlock;
 import dev.devpanda.factorynetwork.block.DisplayBlock;
 import dev.devpanda.factorynetwork.block.DriveBlock;
 import dev.devpanda.factorynetwork.block.RackBlock;
@@ -70,6 +71,14 @@ public final class FactoryGraph {
     private final List<BlockPos> drives;
     /** Serverschränke am Netz. Sie tragen die Rechenleistung. */
     private final List<BlockPos> racks;
+    /**
+     * Die Anbauten am Controller.
+     *
+     * <p>Sie hängen nicht am Netz, sie <b>sind</b> das Netz — jeder bringt
+     * eigene Seiten mit, an denen ein Strang beginnen kann. Aufgehoben werden
+     * sie für den Strombedarf und für den Analysator.
+     */
+    private final List<BlockPos> extensions;
     /** Wie viele Kanäle jeder Kabelstrang trägt. */
     private final Map<Node, Integer> channelLoad;
     /**
@@ -89,7 +98,9 @@ public final class FactoryGraph {
     private FactoryGraph(Map<String, List<BlockPos>> connectorsByName, List<BlockPos> unnamed,
                          List<BlockPos> starved, List<BlockPos> displays, Set<BlockPos> cables,
                          Set<BlockPos> routers, Map<Node, Integer> channelLoad, List<Edge> edges,
-                         List<BlockPos> drives, List<BlockPos> racks, boolean truncated) {
+                         List<BlockPos> drives, List<BlockPos> racks, List<BlockPos> extensions,
+                         boolean truncated) {
+        this.extensions = extensions;
         this.routers = routers;
         this.drives = drives;
         this.racks = racks;
@@ -105,7 +116,13 @@ public final class FactoryGraph {
 
     public static FactoryGraph empty() {
         return new FactoryGraph(Map.of(), List.of(), List.of(), List.of(),
-                Set.of(), Set.of(), Map.of(), List.of(), List.of(), List.of(), false);
+                Set.of(), Set.of(), Map.of(), List.of(), List.of(), List.of(),
+                List.of(), false);
+    }
+
+    /** Die Anbauten am Controller. */
+    public List<BlockPos> extensions() {
+        return extensions;
     }
 
     /** Die Laufwerke am Netz. */
@@ -187,11 +204,18 @@ public final class FactoryGraph {
         Map<BlockPos, Consumer> kinds = new LinkedHashMap<>();
         Deque<Node> queue = new ArrayDeque<>();
 
-        // Der Controller selbst ist farbneutral: Von ihm gehen alle Stränge
-        // aus, die an ihm hängen.
+        // Der Controller und seine Anbauten sind farbneutral: Von jedem von
+        // ihnen gehen alle Stränge aus, die an ihm hängen. Mehrere Wurzeln
+        // sind genau der Sinn des Anbaus — sechs Seiten je Block.
+        List<BlockPos> extensions = extensionsAround(level, controller);
         Node root = new Node(controller, CableColour.NONE);
         queue.add(root);
         parents.put(root, null);
+        for (BlockPos extension : extensions) {
+            Node node = new Node(extension, CableColour.NONE);
+            queue.add(node);
+            parents.put(node, null);
+        }
         boolean truncated = false;
 
         while (!queue.isEmpty()) {
@@ -260,7 +284,43 @@ public final class FactoryGraph {
         return new FactoryGraph(Map.copyOf(frozen), List.copyOf(unnamed),
                 List.copyOf(starved), List.copyOf(displays), Set.copyOf(cables),
                 Set.copyOf(routers), Map.copyOf(load), List.copyOf(edges),
-                List.copyOf(drives), List.copyOf(racks), truncated);
+                List.copyOf(drives), List.copyOf(racks), List.copyOf(extensions),
+                truncated);
+    }
+
+    /**
+     * Die Anbauten, die den Controller berühren — unmittelbar oder über
+     * andere Anbauten.
+     *
+     * <p><b>Nur über Flächen, nie über ein Kabel.</b> Ließe sich ein Anbau
+     * ankabeln, wäre er ein beliebig oft setzbarer Kanalvermehrer: sechs neue
+     * Seiten für einen Block, irgendwo im Gelände, und die Kanalgrenze
+     * bedeutete nichts mehr. Wer ausbauen will, baut am Controller.
+     *
+     * <p>Eine Obergrenze gibt es nicht. Sechs Seiten je Block, und jeder
+     * Anbau bringt neue — begrenzt wird das von der Bauform und vom
+     * Strombedarf, nicht von einer Zahl im Code.
+     */
+    private static List<BlockPos> extensionsAround(Level level, BlockPos controller) {
+        List<BlockPos> found = new ArrayList<>();
+        Set<BlockPos> seen = new HashSet<>();
+        Deque<BlockPos> queue = new ArrayDeque<>();
+        seen.add(controller.immutable());
+        queue.add(controller.immutable());
+        while (!queue.isEmpty() && found.size() < MAX_NODES) {
+            BlockPos current = queue.poll();
+            for (Direction direction : Direction.values()) {
+                BlockPos next = current.relative(direction).immutable();
+                if (!seen.add(next) || !level.isLoaded(next)) {
+                    continue;
+                }
+                if (level.getBlockState(next).getBlock() instanceof ControllerExtensionBlock) {
+                    found.add(next);
+                    queue.add(next);
+                }
+            }
+        }
+        return found;
     }
 
     /**

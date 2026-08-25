@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "PPP",
+    "PCP",
+    "PPP"
+  ],
+  "key": {
+    "P": {
+      "item": "factorynetwork:plate"
+    },
+    "C": {
+      "item": "factorynetwork:crystal"
+    }
+  },
+  "result": {
+    "id": "factorynetwork:controller_extension",
+    "count": 2
+  }
+}

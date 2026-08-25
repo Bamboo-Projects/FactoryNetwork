@@ -374,6 +374,7 @@ public class ControllerBlockEntity extends BlockEntity {
         total += graph.connectorCount() * dev.devpanda.factorynetwork.network.Power.CONNECTOR;
         total += graph.displays().size() * dev.devpanda.factorynetwork.network.Power.DISPLAY;
         total += graph.routers().size() * dev.devpanda.factorynetwork.network.Power.ROUTER;
+        total += graph.extensions().size() * dev.devpanda.factorynetwork.network.Power.EXTENSION;
         for (DriveBlockEntity drive : drives) {
             total += dev.devpanda.factorynetwork.network.Power.DRIVE
                     + drive.usedSlots() * dev.devpanda.factorynetwork.network.Power.PER_CELL;

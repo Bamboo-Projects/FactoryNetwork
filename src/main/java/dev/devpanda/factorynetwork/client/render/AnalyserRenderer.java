@@ -123,6 +123,8 @@ public final class AnalyserRenderer {
             case DRIVE -> new float[] {0.45f, 0.85f, 0.60f, 0.75f};
             case RACK -> new float[] {0.85f, 0.65f, 0.35f, 0.75f};
             case ROUTER -> new float[] {0.70f, 0.75f, 0.85f, 0.60f};
+            // Blasser als der Controller: dieselbe Familie, andere Rolle.
+            case EXTENSION -> new float[] {0.40f, 0.70f, 1.00f, 0.55f};
         };
     }
 
