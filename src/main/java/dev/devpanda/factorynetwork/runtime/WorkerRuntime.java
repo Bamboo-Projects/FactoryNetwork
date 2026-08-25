@@ -994,7 +994,7 @@ public final class WorkerRuntime {
         // Protokoll und verdeckte alles andere. Zurückgesetzt wird das
         // Gedächtnis beim Übernehmen eines Programms — dann darf der Hinweis
         // wiederkommen, denn dann ist er eine neue Auskunft.
-        if (!saidBefore.add(source + " " + message)) {
+        if (!saidBefore.add(source + "\n" + message)) {
             return;
         }
         notes.add(new LogEntry(level, System.currentTimeMillis(), source, message));
