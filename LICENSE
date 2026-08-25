@@ -1,26 +1,6 @@
-# Lizenz — Entwurf, nicht in Kraft
-
-`gradle.properties` sagt seit jeher `mod_license=MIT`, aber es gibt keine
-`LICENSE`-Datei. Der Text dafür steht hier fertig.
-
-**Warum er hier steht und nicht dort:** Eine Lizenzdatei ist eine
-rechtsverbindliche Erklärung, und drei Angaben darin trifft nur der
-Rechteinhaber selbst — wessen Name im Copyright steht, ob überhaupt ein
-Klarname, und welches Jahr. Der Name unten stammt aus der Git-Identität; das
-ist eine Vermutung und keine Entscheidung.
-
-**Wenn er stimmt:** Datei nach `LICENSE` im Wurzelverzeichnis kopieren, den
-Kopf (`# Lizenz — Entwurf …` bis hierher) entfernen, committen.
-
-MIT verträgt sich mit GuideMEs LGPL-3.0 — eine Abhängigkeit, kein
-eingebetteter Code.
-
----
-
-```
 MIT License
 
-Copyright (c) 2026 <NAME EINSETZEN>
+Copyright (c) 2026 DevPanda (Florian Richter)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -39,4 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-```

@@ -123,7 +123,7 @@ Vorentscheidungen)
 | # | Was | Status | Wo | Größe |
 |---|---|---|---|---|
 | 6.1 | **Angebunden**, Inhalt begonnen. Weitere Seiten fehlen: Sprache im Detail, Multiblocks, Abläufe | F | `assets/factorynetwork/guide/` | groß |
-| 6.2 | **Lizenzdatei fehlt.** Der Text liegt fertig in `lizenz-entwurf.md` und braucht nur eine Unterschrift — Name und Jahr im Copyright trifft der Rechteinhaber selbst, nicht ich | E | `lizenz-entwurf.md` | klein |
+| 6.2 | ~~Lizenzdatei~~ — **fertig.** MIT, Copyright 2026 DevPanda (Florian Richter). Der Entwurf ist aufgegangen und entfallen | | `LICENSE` | |
 | 6.3 | Ob die Hilfe im Spiel ins Buch wandert | E | `entscheidungen.md:2411` | klein |
 | 6.4 | ~~WorkerRuntime-Javadoc~~ — **berichtigt** | | | |
 | 6.5 | ~~README-Frage~~ — **entfernt**, sie war beantwortet | | | |
