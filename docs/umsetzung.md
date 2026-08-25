@@ -154,7 +154,7 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | Netzwerk | Graph über Kabel, Speicher schlüsselbasiert, Kanäle je Strang |
 | Editor | Syntaxfarben, Fehler beim Tippen, Vervollständigung nach Stelle |
 | Anzeigen | Am Block und im Terminal, Knöpfe starten Abläufe |
-| Prüfung | 349 Einheitstests, 202 GameTests |
+| Prüfung | 349 Einheitstests, 203 GameTests |
 
 ## 3. Was noch nicht läuft
 
