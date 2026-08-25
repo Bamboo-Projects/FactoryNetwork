@@ -2589,6 +2589,57 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
+     * Eine Vorlage legt zusammen und nimmt heraus.
+     *
+     * <p>Im GameTest und nicht als Einheitstest: Welche Gegenstände hinter
+     * einer Auswahl stehen, weiß erst die Registry.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 100)
+    public static void aFilterTemplateGathersAndExcludes(GameTestHelper helper) {
+        var result = dev.devpanda.factorynetwork.lang.parse.Parser.parse("""
+                filter erze {
+                    item:iron_ore
+                    item:gold_ore
+                    item:copper_ore
+                    except item:gold_ore
+                }""");
+        helper.assertFalse(result.hasErrors(), "Die Vorlage wurde nicht gelesen");
+        var template = (dev.devpanda.factorynetwork.lang.ast.Decl.FilterTemplate)
+                result.program().declarations().get(0);
+
+        List<Item> items = dev.devpanda.factorynetwork.runtime.FilterTemplates.items(template);
+
+        helper.assertValueEqual(items.size(), 2, "Zwei bleiben übrig");
+        helper.assertTrue(items.contains(Items.IRON_ORE), "Eisenerz gehört dazu");
+        helper.assertTrue(items.contains(Items.COPPER_ORE), "Kupfererz gehört dazu");
+        helper.assertFalse(items.contains(Items.GOLD_ORE),
+                "Golderz ist ausdrücklich ausgenommen");
+        helper.succeed();
+    }
+
+    /** Bleibt nach den Ausnahmen nichts übrig, ist das kein stiller Leerlauf. */
+    @GameTest(template = EMPTY, timeoutTicks = 100)
+    public static void aFilterTemplateThatMatchesNothingSaysSo(GameTestHelper helper) {
+        var result = dev.devpanda.factorynetwork.lang.parse.Parser.parse("""
+                filter leer {
+                    item:iron_ore
+                    except item:iron_ore
+                }""");
+        var template = (dev.devpanda.factorynetwork.lang.ast.Decl.FilterTemplate)
+                result.program().declarations().get(0);
+
+        try {
+            dev.devpanda.factorynetwork.runtime.FilterTemplates.items(template);
+            helper.fail("Eine Vorlage, die nichts trifft, muss sich melden");
+        } catch (ScriptError expected) {
+            helper.assertTrue(expected.getMessage().contains("leer"),
+                    "Die Meldung muss die Vorlage beim Namen nennen: "
+                            + expected.getMessage());
+        }
+        helper.succeed();
+    }
+
+    /**
      * Das Gegenstück zu {@link #aChangedInventoryWakesAWaitingFlow}: Nicht
      * jede Regung, sondern nur, was dazugekommen ist.
      */
