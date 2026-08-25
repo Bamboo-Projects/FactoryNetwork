@@ -740,9 +740,33 @@ public final class Interpreter {
         long amount = amountIn(expr);
         if (dev.devpanda.factorynetwork.lang.WorkerKind.selectorKind(expr)
                 == Expr.Selector.Kind.FLUID) {
-            return new Value.FluidSelection(FluidSelection.resolve(expr), amount);
+            List<net.minecraft.world.level.material.Fluid> fluids =
+                    FluidSelection.resolve(expr);
+            if (fluids.isEmpty()) {
+                throw nothingSelected();
+            }
+            return new Value.FluidSelection(fluids, amount);
         }
-        return new Value.Selection(ItemSelection.resolve(expr), amount);
+        List<net.minecraft.world.item.Item> items = ItemSelection.resolve(expr);
+        if (items.isEmpty()) {
+            throw nothingSelected();
+        }
+        return new Value.Selection(items, amount);
+    }
+
+    /**
+     * Nichts getroffen ist ein Fehler und keine leere Auswahl.
+     *
+     * <p><b>Sonst bewegte ein vertippter Tag alles.</b> Eine leere Liste
+     * heißt für {@code move} „kein Filter", und kein Filter heißt „alles".
+     * Solange die Ausnahme wegfiel, ging so ein Ausdruck über den Weg der
+     * geschriebenen Auswahl und meldete sich dort; wer selbst auflöst, muss
+     * selbst melden.
+     */
+    private static ScriptError nothingSelected() {
+        return new ScriptError("Die Auswahl trifft nichts.",
+                "Gibt es den Gegenstand oder den Tag in diesem Pack? Und nimmt das "
+                        + "except vielleicht alles wieder heraus?");
     }
 
     /** Die Menge, die vor einer Auswahl steht, oder -1 ohne Angabe. */

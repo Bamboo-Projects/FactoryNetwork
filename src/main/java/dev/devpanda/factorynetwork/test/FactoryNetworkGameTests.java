@@ -2589,6 +2589,78 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
+     * <b>Eine Auswahl, die nichts trifft, darf nicht alles bewegen.</b>
+     *
+     * <p>Eine leere Liste heißt für {@code move} „kein Filter", und kein
+     * Filter heißt „alles". Solange der Interpreter die Ausnahme wegwarf,
+     * ging ein vertippter Tag über den Weg der geschriebenen Auswahl und
+     * meldete sich; seit er auflöst, muss er selbst melden.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void anEmptySelectionMovesNothing(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        BlockPos quelle = controller.east().north().north();
+        if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity container) {
+            container.setItem(0, new ItemStack(Items.IRON_ORE, 8));
+            container.setItem(1, new ItemStack(Items.GOLD_ORE, 8));
+        }
+
+        helper.assertTrue(entity.deploy("""
+                fn holt() {
+                    move item:gibtsnicht except item:gold_ore from quarry_output to storage
+                }"""), "Das Programm wurde nicht übernommen");
+
+        entity.startFlow("holt", List.of());
+        helper.startSequence()
+                .thenIdle(10)
+                .thenExecute(() -> {
+                    helper.assertValueEqual(entity.storage().count(Items.IRON_ORE), 0L,
+                            "Eisenerz steht in keiner Auswahl");
+                    helper.assertValueEqual(entity.storage().count(Items.GOLD_ORE), 0L,
+                            "Golderz erst recht nicht");
+                    helper.assertTrue(!entity.flowEngine().failed().isEmpty(),
+                            "Der Ablauf muss sich melden und nicht still nichts tun");
+                })
+                .thenSucceed();
+    }
+
+    /** Eine Menge vor einer Vorlage heißt insgesamt, nicht je Art. */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void anAmountBeforeATemplateMeansTotal(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        BlockPos quelle = controller.east().north().north();
+        if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity container) {
+            container.setItem(0, new ItemStack(Items.IRON_ORE, 8));
+            container.setItem(1, new ItemStack(Items.COPPER_ORE, 8));
+        }
+
+        helper.assertTrue(entity.deploy("""
+                filter erze {
+                    item:iron_ore
+                    item:copper_ore
+                }
+
+                fn holt() {
+                    move 3 erze from quarry_output to storage
+                }"""), "Das Programm wurde nicht übernommen");
+
+        entity.startFlow("holt", List.of());
+        helper.startSequence()
+                .thenIdle(10)
+                .thenExecute(() -> helper.assertValueEqual(
+                        entity.storage().count(Items.IRON_ORE)
+                                + entity.storage().count(Items.COPPER_ORE), 3L,
+                        "Drei zusammen, nicht drei je Art"))
+                .thenSucceed();
+    }
+
+    /**
      * <b>Die Ausnahme wirkte nur im Worker.</b> Der Interpreter wertete
      * {@code Expr.Except} als seine Grundlage aus und warf die Ausschlüsse
      * weg — in einem {@code move} stand die Ausnahme also da und tat nichts,
