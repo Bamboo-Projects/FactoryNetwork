@@ -99,7 +99,7 @@ Vorentscheidungen)
 | 3.8 | ~~Ob der Netz-Reiter globale Werte ändern darf~~ — **entschieden: nur anzeigen.** Sonst wird der Zustand der Fabrik an zwei Stellen umgestellt, und niemand sieht ihr an, wer zuletzt geschaltet hat. Wer schalten will, baut einen Knopf | | `globale-werte.md:200` | | |
 | 3.10 | ~~Der Editor bietet an, was nichts kann~~ — **erledigt.** Beide Editoren schlagen nur noch `storage` vor; `crafting`, `world`, `network`, `workers` und `multiblocks` sind draußen, bis sie etwas tun. `power` bleibt: Die Schreibweise ist entschieden, und ein Strom-Worker hält mit einer Meldung an, die auf `strom.md` zeigt | | `Completions.BUILTINS`, `extension.js` | | |
 | 3.11 | **Die Anzeige, worauf sich ein Muster auflöst, gibt es nicht.** `sprache.md` verspricht sie an zwei Stellen — bei `except` („der Editor zeigt zu jedem Muster an, was es gerade trifft") und bei `maintain`, wo ohne sie nicht abzusehen ist, was man zugesagt hat. Beide Stellen sind inzwischen gekennzeichnet | F | `sprache.md` §4, §11 | mittel | — |
-| 3.9 | **Entschieden: zugelassen.** Ein Blick in eine BlockEntity je Tafel und Sekunde ist der bessere Tausch gegen ein `?`, das niemand erklären kann. Bisher: In einer Funktion geht es, auf einer Tafel steht `?`. Eine Anzeige rechnet seit dem 25.08., aber sie liest nur den Netzbestand und das Redstonesignal — ein Blick in eine Maschine ist ein Zugriff je Tafel und Sekunde | F | `DisplayValues.java` | klein | — |
+| 3.9 | ~~`gerät.count(…)` auf einer Anzeige~~ — **fertig.** Eine Tafel liest jetzt auch aus einer Maschine, mit Auswahl oder ohne. Ohne Welt bleibt es beim `?`: Eine erfundene Null schickte den Spieler zur falschen Maschine | | `DisplayValues.deviceCount` | | |
 
 ## 4. VS-Code-Erweiterung
 

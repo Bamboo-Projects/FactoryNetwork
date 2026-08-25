@@ -6720,6 +6720,45 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    /**
+     * Eine Tafel darf in eine Maschine sehen.
+     *
+     * <p>Der Preis ist ein Blick in eine BlockEntity je Tafel und Sekunde —
+     * die Anzeige liest den Netzbestand ohnehin in diesem Takt. Ein `?` auf
+     * der Tafel, das niemand erklären kann, wäre der schlechtere Tausch.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void adisplayCanLookIntoAMachine(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        BlockPos quelle = controller.east().north().north();
+        if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity container) {
+            container.setItem(0, new ItemStack(Items.IRON_ORE, 7));
+        }
+
+        helper.assertTrue(entity.deploy("""
+                display halle {
+                    row "Im Ger\u00e4t" quarry_output.count(item:iron_ore)
+                    row "Im Netz" storage.count(item:iron_ore)
+                }"""), "das Programm wurde nicht übernommen");
+
+        var werte = new dev.devpanda.factorynetwork.runtime.DisplayValues(
+                entity.graph(), entity.storage(), entity.runtime(), entity.globals(),
+                helper.getLevel());
+        var zeilen = werte.evaluate((dev.devpanda.factorynetwork.lang.ast.Decl.Display)
+                entity.program().declarations().stream()
+                        .filter(d -> d instanceof dev.devpanda.factorynetwork.lang.ast.Decl.Display)
+                        .findFirst().orElseThrow());
+
+        helper.assertValueEqual(zeilen.get(0).value(), "7",
+                "die Tafel muss in die Kiste sehen können");
+        helper.assertValueEqual(zeilen.get(1).value(), "0",
+                "und den leeren Netzspeicher davon unterscheiden");
+        helper.succeed();
+    }
+
     // ---- Gerätemitglieder --------------------------------------------------
 
     /**

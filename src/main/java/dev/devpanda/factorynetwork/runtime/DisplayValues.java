@@ -126,6 +126,9 @@ public final class DisplayValues {
             return String.format(Locale.GERMAN, "%.1f", number.value());
         }
         Long count = storageCount(expr);
+        if (count == null) {
+            count = deviceCount(expr);
+        }
         if (count != null) {
             return shorten(count);
         }
@@ -198,6 +201,9 @@ public final class DisplayValues {
             return number.value();
         }
         Long count = storageCount(expr);
+        if (count == null) {
+            count = deviceCount(expr);
+        }
         if (count != null) {
             return (double) count;
         }
@@ -258,6 +264,47 @@ public final class DisplayValues {
     }
 
     /** {@code storage.count(item:…)} — der häufigste Fall auf einem Display. */
+    /**
+     * {@code brecher.count(item:iron_ore)} — was in der Maschine liegt.
+     *
+     * <p>Ein Blick in eine BlockEntity je Tafel und Sekunde. Den Netzbestand
+     * liest die Anzeige ohnehin in diesem Takt; ein {@code ?} auf der Tafel,
+     * das niemand erklären kann, wäre der schlechtere Tausch.
+     *
+     * <p>Ohne Welt — in den Prüfungen — bleibt es beim {@code null}: Eine
+     * erfundene Null schickte den Spieler zur falschen Maschine.
+     */
+    private Long deviceCount(Expr expr) {
+        if (!(expr instanceof Expr.Call call)
+                || !(call.callee() instanceof Expr.Member member)
+                || !"count".equals(member.name())
+                || !(member.target() instanceof Expr.Name device)
+                || level == null) {
+            return null;
+        }
+        var position = graph.connector(device.value()).orElse(null);
+        if (position == null || !level.isLoaded(position)
+                || !(level.getBlockEntity(position)
+                        instanceof dev.devpanda.factorynetwork.block.entity
+                                .ConnectorBlockEntity connector)) {
+            return null;
+        }
+        var amounts = dev.devpanda.factorynetwork.block.entity.DeviceAmounts.of(connector);
+        if (call.arguments().isEmpty()) {
+            return amounts.items().values().stream().mapToLong(Long::longValue).sum();
+        }
+        Expr wanted = call.arguments().get(0).value();
+        List<Item> items = ItemSelection.resolve(wanted);
+        if (!items.isEmpty()) {
+            return items.stream()
+                    .mapToLong(item -> amounts.items().getOrDefault(item, 0L))
+                    .sum();
+        }
+        return FluidSelection.resolve(wanted).stream()
+                .mapToLong(fluid -> amounts.fluids().getOrDefault(fluid, 0L))
+                .sum();
+    }
+
     private Long storageCount(Expr expr) {
         if (!(expr instanceof Expr.Call call)
                 || !(call.callee() instanceof Expr.Member member)
