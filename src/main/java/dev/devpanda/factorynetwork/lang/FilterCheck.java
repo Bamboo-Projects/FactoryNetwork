@@ -102,9 +102,8 @@ public final class FilterCheck {
                 switch (selector.kind()) {
                     case CHEMICAL -> problems.add(new Diagnostic(Diagnostic.Severity.ERROR,
                             selector.span(),
-                            "Chemikalien sind noch nicht angebunden.",
-                            "Die Schreibweise steht, die Laufzeit kann sie noch nicht "
-                                    + "bewegen."));
+                            dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.reason(),
+                            dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.hint()));
                     case POWER -> problems.add(new Diagnostic(Diagnostic.Severity.ERROR,
                             selector.span(),
                             "Strom ist keine Auswahl, die sich sammeln lässt.",

@@ -3375,3 +3375,69 @@ wie bei den Chemikalien entschieden.
 von selbst kennen soll (A allein, mit einer harten Grenze bei allem Modded)
 oder ob der Spieler sie ihr beibringt (B). Das ist dieselbe Art Frage wie
 „Muster-Items ja oder nein", und die hat der Projektinhaber beantwortet.
+
+---
+
+## Mekanism: das Teilstück, das jetzt geht (2026-08-26)
+
+Punkt 1.4 ist als Kompatibilitätsmodul entschieden — `compileOnly` plus
+`runtimeOnly`, Code unter `compat/mekanism`, ohne Mekanism läuft die Mod wie
+heute. Eine Zusage aus diesem Eintrag ließ sich ohne jede Abhängigkeit
+einlösen, der Rest nicht. Beides steht hier.
+
+### Gebaut: die richtige Meldung
+
+„Chemikalien sind noch nicht angebunden" stand an drei Stellen — im
+Übersetzer, in der Laufzeit und in der Auflösungsanzeige des Editors — und war
+die halbe Wahrheit. Es klingt nach einer Baustelle in dieser Mod; in einem
+Pack ohne Mekanism gibt es die Chemikalien aber überhaupt nicht, und der
+Spieler sucht den Fehler an der falschen Stelle.
+
+`FnMekanism` beantwortet jetzt beides an einer Stelle: **ist Mekanism da**, und
+**wie heißt die Meldung dann**. Ohne Mekanism: „Chemikalien brauchen
+Mekanism", mit dem Hinweis auf die Modliste. Mit Mekanism bleibt es bei „noch
+nicht angebunden", denn das ist dann wieder wahr.
+
+**Ohne geladene Modliste gilt „nicht installiert".** Ein Einheitstest lädt
+kein FML — dieselbe Vorsicht wie bei `FnConfig`, und dieselbe Richtung: Die
+Vorgabe ist die, die niemanden in die Irre schickt.
+
+### Nachgesehen: die Abhängigkeit gibt es
+
+Mekanism für 1.21.1 steht bei 10.7.15.81 (August 2025) und liegt auf
+**ModMaven** mit einem `:api`-Klassifikator — dasselbe Muster, das GuideME hier
+schon benutzt:
+
+```gradle
+repositories { maven { url = 'https://modmaven.dev/' } }
+dependencies {
+    compileOnly "mekanism:Mekanism:${mekanism_version}:api"
+    runtimeOnly "mekanism:Mekanism:${mekanism_version}"
+}
+```
+
+Eingebaut ist das **nicht**, und zwar aus einem Grund, der nicht mir gehört:
+`runtimeOnly` zieht Mekanism in **jeden** Prüflauf. Ab dann laufen alle 250
+GameTests unter einer fremden Mod, jeder Mitwirkende lädt sie herunter, und
+jeder Lauf dauert länger. Das ist eine Entscheidung über die
+Entwicklungsumgebung und über die Zeit anderer Leute — sie gehört dem
+Projektinhaber, nicht dem, der gerade an der Reihe ist.
+
+### Offen: wie weit die Chemikalien gehen
+
+Die zweite Frage ist Umfang, und sie ist Balance:
+
+| | Was es kann | Was es kostet |
+|---|---|---|
+| **Bewegen** | `move chemical:… from a to b`, `gerät.count(chemical:…)` | ein Auflöser gegen die Chemikalien-Registry und ein Zweig im Worker |
+| **Lagern** | dazu Chemikalien im Netzspeicher | eine dritte Zellenart mit eigenen Zahlen, ein Zweig im Index, eine Spalte im Terminal, ein Codec — die Fläche der Flüssigkeiten noch einmal |
+
+Die Zahlen einer Chemikalien-Zelle — wie viele Sorten, wie viel Inhalt — sind
+genau die Sorte Frage, die bei den Serverbauteilen (5.4) ausdrücklich einer
+Runde Spielen überlassen wurde. Sie hier nebenbei zu setzen wäre derselbe
+Fehler an einer neuen Stelle.
+
+**Empfohlen wird der erste Schritt allein: bewegen.** Er ist für sich
+brauchbar — Wasserstoff aus dem Elektrolyseur in den Tank ist die häufigste
+Aufgabe —, er braucht keine neue Zahl, und er lässt die zweite Entscheidung
+offen, bis jemand mit einem Pack davorsitzt.

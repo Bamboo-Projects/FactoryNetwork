@@ -83,12 +83,22 @@ class FilterCheckTest {
     }
 
     @Test
-    @DisplayName("Chemikalien sind noch nicht angebunden")
-    void chemicalsAreNotConnectedYet() {
+    @DisplayName("Ohne Mekanism sagt die Meldung, dass Mekanism fehlt")
+    void withoutMekanismThemessageSaysSo() {
+        // „Chemikalien sind noch nicht angebunden" war die halbe Wahrheit:
+        // In einem Pack ohne Mekanism gibt es sie überhaupt nicht, und der
+        // Spieler sucht den Fehler bei dieser Mod statt bei seiner Modliste.
+        // Ohne geladene Modliste — also im Einheitstest — gilt „nicht
+        // installiert": Das ist die ehrlichere Vorgabe.
         hasError(check("""
                 filter gase {
                     chemical:mekanism/hydrogen
-                }"""), "Chemikalien");
+                }"""), "Mekanism");
+        assertTrue(check("""
+                filter gase {
+                    chemical:mekanism/hydrogen
+                }""").get(0).hint().contains("nicht installiert"),
+                "der Hinweis muss auf die Modliste zeigen");
     }
 
     @Test

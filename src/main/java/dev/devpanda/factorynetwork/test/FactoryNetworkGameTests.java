@@ -7776,6 +7776,45 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
+     * Ohne Mekanism sagt die Meldung, dass Mekanism fehlt.
+     *
+     * <p>Vorher stand überall „Chemikalien sind noch nicht angebunden" — eine
+     * Baustelle in dieser Mod. In einem Pack ohne Mekanism gibt es die
+     * Chemikalien aber überhaupt nicht, und der Spieler sucht den Fehler an
+     * der falschen Stelle. Im Prüflauf ist Mekanism nie geladen, der Fall ist
+     * also derselbe wie in einem Pack ohne sie.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void withoutMekanismThemessageSaysSo(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                fn holen() {
+                    move chemical:mekanism/hydrogen from depot to storage
+                }"""), "Das Programm wurde nicht übernommen");
+        try {
+            entity.callFunction("holen", List.of());
+            helper.fail("Ohne Mekanism darf eine Chemikalien-Auswahl nicht durchgehen");
+            return;
+        } catch (dev.devpanda.factorynetwork.runtime.ScriptError expected) {
+            helper.assertTrue(expected.getMessage().contains("Mekanism"),
+                    "Die Meldung muss Mekanism nennen: " + expected.getMessage());
+            helper.assertTrue(expected.hint().contains("nicht installiert"),
+                    "Der Hinweis muss auf die Modliste zeigen: " + expected.hint());
+        }
+
+        // Und im Editor dieselbe Auskunft, aus derselben Quelle.
+        var summary = dev.devpanda.factorynetwork.runtime.SelectionSummary.of(
+                dev.devpanda.factorynetwork.lang.Selectors.parse(
+                        "chemical:mekanism/hydrogen"));
+        helper.assertTrue(summary.get(0).contains("Mekanism"),
+                "auch im Kasten des Editors: " + summary);
+        helper.succeed();
+    }
+
+    /**
      * Was nichts trifft, sagt das.
      *
      * <p>Die häufigste Ursache ist ein Tag, den dieses Pack nicht kennt — und

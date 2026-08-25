@@ -114,6 +114,12 @@ Vorentscheidungen)
 > Handbuchseiten), 1.4/7.1 (Mekanism), 4.1 (Sprachserver) und 5.4 (die einzige
 > offene Entscheidung, und die beantwortet eine Runde Spielen).
 >
+> **1.4 hat ein Teilstück bekommen.** `chemical:` meldet die fehlende Mod
+> statt einer Baustelle — die eine Zusage aus dem Eintrag, die ohne jede
+> Abhängigkeit einzulösen war. Die Abhängigkeit selbst ist nachgesehen und
+> nicht eingebaut: `runtimeOnly` zöge Mekanism in jeden Prüflauf, und das ist
+> eine Entscheidung über die Zeit anderer Leute.
+>
 > **2.9 ist erkundet, nicht gebaut.** Automatische Erkennung fremder
 > Maschinenrezepte ist in 1.21.1 nachweislich nicht möglich — die
 > Schnittstelle gibt es nicht her, und AE2 wie Refined Storage lassen deshalb
@@ -132,7 +138,7 @@ Vorentscheidungen)
 | 1.1 | ~~`output()`, `send()`, `busy`~~ — **erledigt.** `output()` und `busy` sind gestrichen (sie sagten dasselbe wie `move` beziehungsweise nichts Nachprüfbares), `send()` an einer Gruppe ist mit 1.14 gebaut | | `sprache.md` §6, §8 | | |
 | 1.2 | ~~Listenoperationen~~ — **fertig**, alle fünf. `where` und `sort` werten je Eintrag aus, mit `it` als diesem Eintrag | | `sprache.md` §12 | | |
 | 1.3 | ~~Flüssigkeits-Tags~~ — **fertig.** `fluidtag:c/molten` löst gegen die Fluid-Registry auf, `tag:` bleibt bei den Gegenständen. Ein Worker mit `fluidtag:` gilt als Flüssigkeits-Worker: `WorkerKind` nennt die Ressource, nicht die Schreibweise | | `FluidSelection`, `WorkerKind.resource` | | |
-| 1.4 | **Entschieden:** Anbindung als Kompatibilitätsmodul, wie GuideME — `compileOnly` plus `runtimeOnly`, Code unter `compat/mekanism`. Ohne Mekanism läuft die Mod wie heute, `chemical:` meldet die fehlende Mod statt zu werfen | F | `WorldHost.java:461` | mittel–groß | — |
+| 1.4 | **Teilstück gebaut** (26.08.): `chemical:` meldet jetzt die fehlende Mod statt einer Baustelle — an allen drei Stellen aus einer Quelle (`FnMekanism`), mit Rückfall auf „nicht installiert", wenn keine Modliste geladen ist. Die Abhängigkeit ist nachgesehen (ModMaven, `:api`, 10.7.15.81), aber nicht eingebaut. **Zwei Fragen offen:** ob `runtimeOnly` in jeden Prüflauf soll (Entwicklungsumgebung), und ob Chemikalien nur bewegt oder auch gelagert werden (Balance). Empfohlen: erst bewegen | E | `compat/mekanism/FnMekanism` | mittel–groß | zwei Entscheidungen, siehe `entscheidungen.md` |
 | 1.5 | `import`/Module — reserviert, tut nichts | Z | `Parser.java:86` | — | bewusst, bis ein Projekt den Namensraum sprengt |
 | 1.6 | Request/Response als eigene Form | Z | `sprache.md:992` | mittel | mit `emit`/`on`/`await` nachbaubar |
 | 1.7 | ~~Rechte im Mehrspielerbetrieb~~ — **gebaut** (25.08.). `protection.programs` in der Serverkonfiguration: `OFF` (Vorgabe, wie bisher), `OWNER`, `OPS`. Geschützt sind Übernehmen und Entwurf speichern; die Beschriftungspistole nicht — sie ändert die Welt, und dafür gibt es Schutzmods | | `FnProtection` | | |
@@ -220,7 +226,7 @@ Vorentscheidungen)
 
 | # | Was | Status | Wo | Größe |
 |---|---|---|---|---|
-| 7.1 | Mekanism-Chemikalien — **entschieden als Kompatibilitätsmodul** (siehe 1.4), nicht als Pflicht-Abhängigkeit | F | `compat/mekanism` (geplant) | mittel–groß |
+| 7.1 | Mekanism-Chemikalien — **entschieden als Kompatibilitätsmodul** (siehe 1.4), nicht als Pflicht-Abhängigkeit. Der Ordner `compat/mekanism` steht seit dem 26.08., mit dem Teil, der ohne die Mod geht | E | `compat/mekanism` | mittel–groß |
 | 7.2 | ~~GuideME eingebunden~~ — **fertig**, `compat/guide` | | | |
 | 7.3 | Das Fertig-Signal je Mod (Weg 3) | Z | `umsetzung.md:177` | groß |
 | 7.4 | Eigene Generatoren | Z | `strom.md:220` | — |

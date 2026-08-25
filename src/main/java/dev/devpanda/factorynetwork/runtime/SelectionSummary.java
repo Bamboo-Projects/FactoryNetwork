@@ -43,7 +43,11 @@ public final class SelectionSummary {
             return lines;
         }
         if (selector.kind() == Expr.Selector.Kind.CHEMICAL) {
-            lines.add("Chemikalien sind noch nicht angebunden");
+            // Ohne Punkt am Ende: Im Kasten des Editors steht eine Auskunft
+            // und kein Satz.
+            String reason = dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.reason();
+            lines.add(reason.endsWith(".")
+                    ? reason.substring(0, reason.length() - 1) : reason);
             return lines;
         }
         boolean fluids = selector.kind() == Expr.Selector.Kind.FLUID

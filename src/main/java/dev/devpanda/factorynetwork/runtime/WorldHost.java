@@ -901,8 +901,9 @@ public final class WorldHost implements Interpreter.Host {
             throw new ScriptError("Unbekannte Art in " + written + ".");
         }
         if (parsed.kind() == Expr.Selector.Kind.CHEMICAL) {
-            throw new ScriptError("Chemikalien kann diese Fassung noch nicht.",
-                    "Die Schreibweise steht, die Anbindung an Mekanism kommt später.");
+            throw new ScriptError(
+                    dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.reason(),
+                    dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.hint());
         }
         return parsed;
     }
