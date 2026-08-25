@@ -144,7 +144,7 @@ Vorentscheidungen)
 
 | # | Was | Status | Wo | Größe |
 |---|---|---|---|---|
-| 6.1 | **Angebunden**, Inhalt begonnen. Weitere Seiten fehlen: Sprache im Detail, Multiblocks, Abläufe | F | `assets/factorynetwork/guide/` | groß |
+| 6.1 | ~~Handbuch~~ — **dreizehn Seiten** (25.08.). Multiblocks (`anlagen`) und Abläufe (`ablaeufe`) standen längst; „Sprache im Detail" ist jetzt die **Referenzseite**, und die wird aus `Signatures` erzeugt, damit sie nicht auseinanderläuft. Weitere Seiten kommen mit dem, was noch gebaut wird | | `guide/referenz.md`, `GuideReferenceTest` | |
 | 6.2 | ~~Lizenzdatei~~ — **fertig.** MIT, Copyright 2026 DevPanda (Florian Richter). Der Entwurf ist aufgegangen und entfallen | | `LICENSE` | |
 | 6.3 | ~~Ob die Hilfe im Spiel ins Buch wandert~~ — **entschieden: nein, nebeneinander.** Die Griffliste beantwortet „was steht hier", das Buch „wie funktioniert das" | | `entscheidungen.md` | |
 | 6.4 | ~~WorkerRuntime-Javadoc~~ — **berichtigt** | | | |

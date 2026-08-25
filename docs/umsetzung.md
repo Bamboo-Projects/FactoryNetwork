@@ -376,6 +376,18 @@ Quelle, gerendert wird im Spiel.
 im Spiel las bisher nur die offene Datei — dabei teilen alle Dateien einen
 Namensraum. Die VS-Code-Erweiterung liest die Nachbardateien ebenfalls.
 
+### Die Referenzseite im Handbuch (seit dem 25.08.)
+
+Alles, was die Sprache kennt, auf einer Seite — und **erzeugt statt
+geschrieben**, aus `Signatures`, mit demselben Verfahren wie `signatures.json`:
+Der Test baut die Seite aus dem Code, vergleicht sie mit der eingecheckten,
+schreibt sie bei Abweichung neu und scheitert trotzdem.
+
+Eine Referenz ist die Seite, die niemand liest, bis sie gebraucht wird — und
+dann muss sie stimmen. Von Hand gepflegt wäre sie nach der dritten neuen
+Angabe die Fassung von vorletzter Woche, und man merkte es genau dann nicht,
+wenn man sich darauf verlässt.
+
 ### Die Serverkonfiguration (seit dem 25.08.)
 
 Bis dahin war jede Grenze für Nutzercode eine Zahl im Quelltext. Für den
