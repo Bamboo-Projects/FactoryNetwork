@@ -247,10 +247,10 @@ public final class Signatures {
      *
      * <p><b>Nur, was der Interpreter wirklich kennt:</b> {@code online},
      * {@code name}, {@code redstone()}, {@code count()}, {@code insert()} und
-     * {@code items()}. {@code sprache.md} §6 beschreibt darüber hinaus
-     * {@code output()}, {@code send()} an einer Gruppe und {@code busy}, die
-     * es nicht gibt. Was hier steht, muss laufen — ein Vorschlag, der in
-     * einen Laufzeitfehler führt, ist schlimmer als gar keiner.
+     * {@code items()}. Offen bleibt allein {@code send()} an einer Gruppe;
+     * {@code output()} und {@code busy} sind am 25.08. gestrichen worden.
+     * Was hier steht, muss laufen — ein Vorschlag, der in einen
+     * Laufzeitfehler führt, ist schlimmer als gar keiner.
      *
      * <p>Für jedes Gerät dieselben: Gerätespezifisches gibt es nach dem Punkt
      * erst, wenn die Mitglieder aus §6 gebaut sind. Dann ist es ein Eintrag

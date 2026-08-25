@@ -457,12 +457,15 @@ crushers.send(64 item:iron_ore)
 crushers.send(64 item:iron_ore, strategy: least_filled)
 ```
 
-> **Noch nicht gebaut:** `send()` an einer Gruppe und `output()`. Bei `send`
-> fehlt die Verteilung über mehrere Ziele in der Sprache — beim Worker gibt es
-> sie, beim Aufruf noch nicht. Bei `output()` ist offen, was
-> `move crusher.output() to furnace` genau bedeutet: Der Ausdruck liefert eine
-> Auswahl **und** setzt stillschweigend die Quelle, und das ist eine
-> Entscheidung, die getroffen werden muss, bevor man es baut.
+> **Noch nicht gebaut:** `send()` an einer Gruppe. Die Verteilung über
+> mehrere Ziele gibt es beim Worker, beim Aufruf noch nicht; sie kommt,
+> sobald eine Gruppe ein Wert ist.
+>
+> **Gestrichen am 25.08.: `output()`.** `move 64 item:x from brecher to
+> storage` nimmt ohnehin nur das, was die Maschine herausgeben will — ein
+> Eingangsfach lehnt die Entnahme von sich aus ab, und das entscheidet die
+> Maschine und nicht diese Mod. `output()` hätte dasselbe ein zweites Mal
+> gesagt, und dabei stillschweigend auch noch die Quelle gesetzt.
 
 ### Redstone
 
@@ -730,9 +733,9 @@ multiblock OrePlant {
     fn process(ore: Item) {
         move ore to crusher
         await device_output(crusher)
-        move crusher.output() to furnace
+        move item:*_dust from crusher to furnace
         await device_output(furnace)
-        move furnace.output() to output
+        move item:*_ingot from furnace to output
     }
 }
 ```
@@ -899,12 +902,13 @@ sondern ruft eine Funktion auf, wenn jemand ihn drückt.
 ## 12. Listen und Mengen
 
 ```
-crushers.members().where(it.busy).count()
+storage.items().where(it.amount > 64).count()
 storage.items().sort(it.amount).first()
 ```
 
-`it` ist das jeweilige Element. Das spart die Pfeilschreibweise
-(`m => m.busy`), die für Spieler ohne Programmiererfahrung die größte Hürde
+`it` ist das jeweilige Element, und an einem Eintrag stehen zwei Angaben:
+`it.item` ist die Art, `it.amount` die Menge. Das spart die Pfeilschreibweise
+(`m => m.amount`), die für Spieler ohne Programmiererfahrung die größte Hürde
 wäre.
 
 Vorgesehen sind:
@@ -1045,7 +1049,7 @@ Ziel eine Meldung schriebe, hätte das Terminal in Minuten zugeschüttet.
 
 ```
 let bewegt = move item:iron_ore from chest to crusher_1   // 0 ist normal
-if crusher_1.busy { ... }
+if crusher_1.count(item:iron_ore) > 0 { ... }
 ```
 
 Unerwartet ist, was auf einen Bruch hindeutet: Der Connector ist abgebaut, das
