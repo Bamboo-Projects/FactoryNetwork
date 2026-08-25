@@ -75,6 +75,9 @@ const FOLDER_MS = 2000;
 /** Was in den Ordnern steht: Pfad -> { files: {Dateiname: Namen}, stamp }. */
 const folders = new Map();
 
+/** Und wo die Wurzel eines Projekts liegt, je Datei. */
+const roots = new Map();
+
 function load(context) {
     const file = path.join(context.extensionPath, 'data', 'signatures.json');
     table = JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -251,28 +254,108 @@ function filesOf(folder) {
         return cached.files;
     }
     const files = {};
+    collect(folder, '', files, 0);
+    folders.set(folder, { files, stamp: Date.now() });
+    return files;
+}
+
+/** Wie tief unter der Wurzel gesucht wird — Bremse gegen einen Verweiskreis. */
+const MAX_DEPTH = 16;
+
+/**
+ * Sammelt die Dateien unter einem Ordner, mitsamt Unterordnern.
+ *
+ * Ein Projekt darf gegliedert sein — `erz/brecher.mf` —, und die Ordner sind
+ * reine Ordnung für den Menschen: Der Namensraum bleibt einer. Wer nur den
+ * eigenen Ordner liest, schlägt in einem gegliederten Projekt genau den Teil
+ * vor, den man gerade nicht braucht.
+ *
+ * Der Name trägt den Pfad mit Schrägstrichen, so wie im Spiel. Auf Windows
+ * liefert `path.join` den Rückstrich, und `Steht in erz\brecher.mf` wäre ein
+ * Name, den es im Projekt nicht gibt.
+ */
+function collect(folder, prefix, files, depth) {
+    if (depth > MAX_DEPTH) {
+        return;
+    }
     let names = [];
     try {
         names = fs.readdirSync(folder);
     } catch (error) {
         // Kein Ordner, keine Nachbarn. Beim Tippen ist ein fehlender
         // Vorschlag die bessere Antwort als eine Fehlermeldung.
-        names = [];
+        return;
     }
     for (const name of names) {
+        const full = path.join(folder, name);
+        let isFolder = false;
+        try {
+            isFolder = fs.statSync(full).isDirectory();
+        } catch (error) {
+            // Zwischen Auflisten und Nachsehen kann der Eintrag weg sein.
+            continue;
+        }
+        if (isFolder) {
+            collect(full, prefix + name + '/', files, depth + 1);
+            continue;
+        }
         if (!name.endsWith('.mf')) {
             continue;
         }
         try {
-            const text = fs.readFileSync(path.join(folder, name), 'utf8');
-            files[name] = symbolsIn(text, name);
+            const text = fs.readFileSync(full, 'utf8');
+            files[prefix + name] = symbolsIn(text, prefix + name);
         } catch (error) {
             // Zwischen Auflisten und Lesen kann die Datei weg sein: Das
             // Spiel schreibt und löscht in demselben Ordner.
         }
     }
-    folders.set(folder, { files, stamp: Date.now() });
-    return files;
+}
+
+/**
+ * Die Wurzel des Projekts, zu dem diese Datei gehört.
+ *
+ * Nicht ihr Ordner: In `erz/brecher.mf` steht ein `fn`, das `main.mf` eine
+ * Ebene höher ruft, und beide teilen einen Namensraum.
+ *
+ * Nach oben gegangen wird, solange der Ordner darüber selbst Programmdateien
+ * enthält — sonst landete man bei jemandem, der zufällig eine `.mf` im
+ * Stammverzeichnis liegen hat. Und Schluss ist in jedem Fall an einem Ordner,
+ * der `controller_` heißt: Das ist die Wurzel, die die Brücke neben der Welt
+ * anlegt, und darüber liegen die Ordner der anderen Controller.
+ */
+function projectRootOf(file) {
+    const cached = roots.get(file);
+    if (cached && Date.now() - cached.stamp < FOLDER_MS) {
+        return cached.root;
+    }
+    let dir = path.dirname(file);
+    for (let step = 0; step < MAX_DEPTH; step++) {
+        if (path.basename(dir).startsWith('controller_')) {
+            break;
+        }
+        const parent = path.dirname(dir);
+        if (parent === dir || !hasProgram(parent)) {
+            break;
+        }
+        dir = parent;
+    }
+    roots.set(file, { root: dir, stamp: Date.now() });
+    return dir;
+}
+
+/** Liegt in diesem Ordner unmittelbar eine Programmdatei? */
+function hasProgram(folder) {
+    try {
+        return fs.readdirSync(folder).some(name => name.endsWith('.mf'));
+    } catch (error) {
+        return false;
+    }
+}
+
+/** Der Name einer Datei im Projekt: ihr Pfad unter der Wurzel, mit Schrägstrichen. */
+function nameUnder(root, file) {
+    return path.relative(root, file).split(path.sep).join('/');
 }
 
 /**
@@ -291,16 +374,18 @@ function projectSymbols(document) {
     const own = document.uri && document.uri.scheme === 'file'
         ? document.uri.fsPath : null;
     const symbols = [];
+    let self = null;
     if (own) {
-        const files = filesOf(path.dirname(own));
-        const self = path.basename(own);
+        const root = projectRootOf(own);
+        self = nameUnder(root, own);
+        const files = filesOf(root);
         for (const name of Object.keys(files)) {
             if (name !== self) {
                 symbols.push(...files[name]);
             }
         }
     }
-    symbols.push(...symbolsIn(document.getText(), own ? path.basename(own) : null));
+    symbols.push(...symbolsIn(document.getText(), self));
     return symbols;
 }
 
@@ -518,7 +603,10 @@ function activate(context) {
     // Alle Ordner und nicht nur der eine: Welcher betroffen ist, wäre
     // auszurechnen, und es sind selten mehr als zwei.
     context.subscriptions.push(
-        vscode.workspace.onDidSaveTextDocument(() => folders.clear()));
+        vscode.workspace.onDidSaveTextDocument(() => {
+            folders.clear();
+            roots.clear();
+        }));
 }
 
 function deactivate() {

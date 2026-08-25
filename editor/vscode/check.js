@@ -28,18 +28,54 @@ const realFs = require('fs');
 const PROJECT = path.join(__dirname, 'erfundenes-projekt');
 const projectFiles = {};
 
+/** Liegt dieser Pfad im erfundenen Projekt? */
+function inProject(file) {
+    return file === PROJECT || file.startsWith(PROJECT + path.sep);
+}
+
+/** Der Schluessel in projectFiles: der Pfad unter PROJECT, mit Schraegstrichen. */
+function keyOf(file) {
+    return file.substring(PROJECT.length + 1).split(path.sep).join('/');
+}
+
+/**
+ * Was unmittelbar in diesem Ordner liegt — Dateien und Unterordner.
+ *
+ * Die Schluessel von projectFiles duerfen Schraegstriche tragen; damit hat
+ * das erfundene Projekt Unterordner, ohne dass etwas auf der Platte liegt.
+ */
+function entriesIn(folder) {
+    const prefix = folder === PROJECT ? '' : keyOf(folder) + '/';
+    const seen = [];
+    for (const name of Object.keys(projectFiles)) {
+        if (!name.startsWith(prefix)) {
+            continue;
+        }
+        const rest = name.substring(prefix.length);
+        const cut = rest.indexOf('/');
+        const entry = cut < 0 ? rest : rest.substring(0, cut);
+        if (!seen.includes(entry)) {
+            seen.push(entry);
+        }
+    }
+    return seen;
+}
+
 const original = Module._load;
 Module._load = function (request) {
     if (request === 'fs') {
         const stub = Object.create(realFs);
-        stub.readdirSync = (folder) => folder === PROJECT
-            ? Object.keys(projectFiles)
+        stub.readdirSync = (folder) => inProject(folder)
+            ? entriesIn(folder)
             : realFs.readdirSync(folder);
+        stub.statSync = (file) => inProject(file)
+            ? { isDirectory: () => file === PROJECT || !(keyOf(file) in projectFiles) }
+            : realFs.statSync(file);
         stub.readFileSync = (file, encoding) => {
-            if (path.dirname(file) !== PROJECT) {
+            if (!inProject(file)) {
                 return realFs.readFileSync(file, encoding);
             }
-            const name = path.basename(file);
+            const name = keyOf(file);
             if (!(name in projectFiles)) {
                 // Wie im Spiel: Zwischen Auflisten und Lesen kann eine
                 // Datei verschwinden. Die Erweiterung muss das aushalten.
@@ -317,6 +353,18 @@ contains('Die eigene Datei kommt aus dem Puffer',
 
 // Der Zwischenspeicher hält einen Ordner nur bis zum nächsten Speichern.
 project({ 'werte.mf': 'fn heizen() {\n}\n' });
+// Ordner im Projekt: Alle Dateien teilen einen Namensraum, auch über Ebenen
+// hinweg. Wer nur den eigenen Ordner liest, schlägt in einem gegliederten
+// Projekt genau den Teil vor, den man gerade nicht braucht.
+project({
+    'main.mf': 'fn hauptsache() {\n}\n',
+    'erz/brecher.mf': 'fn zerkleinern() {\n}\n',
+});
+contains('Die Wurzel sieht in den Unterordner',
+    ['fn main() {', '    '], 'zerkleinern', true, 'main.mf');
+contains('Und der Unterordner die Wurzel',
+    ['fn main() {', '    '], 'hauptsache', true, 'erz/brecher.mf');
+
 contains('Vor der Änderung gibt es kuehlen nicht',
     ['fn main() {', '    '], 'kuehlen', false, 'main.mf');
 project({ 'werte.mf': 'fn kuehlen() {\n}\n' });

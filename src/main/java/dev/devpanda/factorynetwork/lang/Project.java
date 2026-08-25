@@ -41,11 +41,31 @@ public record Project(Map<String, String> files) {
      *
      * <p><b>Streng, weil der Name in drei Welten landet:</b> ins
      * Speicherformat, ins Dateisystem neben der Welt und über die Leitung.
-     * Ein {@code ../} darin wäre ein Weg, aus dem Weltordner
-     * herauszuschreiben. Kleinbuchstaben, damit zwei Dateien nicht auf einem
-     * System verschieden und auf dem nächsten gleich heißen.
+     * Kleinbuchstaben, damit zwei Dateien nicht auf einem System verschieden
+     * und auf dem nächsten gleich heißen.
+     *
+     * <p><b>Ordner sind erlaubt</b>, als Abschnitte mit Schrägstrich davor:
+     * {@code erz/brecher.mf}. Sie sind reine Gliederung für den Menschen —
+     * alle Dateien teilen weiterhin einen Namensraum, und ein {@code fn} in
+     * {@code erz/brecher.mf} ruft eines in {@code main.mf} ohne Umweg.
+     *
+     * <p><b>Der Punkt steht nicht im Alphabet eines Abschnitts.</b> Damit ist
+     * {@code ../} nicht verboten, sondern unmöglich, und dasselbe gilt für
+     * den Rückstrich von Windows und den Doppelpunkt eines Laufwerks. Eine
+     * Verbotsliste hätte man umgehen können; ein Alphabet nicht.
      */
-    private static final Pattern NAME = Pattern.compile("[a-z0-9_]{1,32}\\.mf");
+    private static final Pattern NAME =
+            Pattern.compile("([a-z0-9_]{1,32}/)*[a-z0-9_]{1,32}\\.mf");
+
+    /**
+     * Und wie lang der ganze Pfad höchstens ist.
+     *
+     * <p>Vorher lag die Grenze bei fünfunddreißig Zeichen, weil ein Name aus
+     * genau einem Abschnitt bestand. Ohne eine neue wüchse mit jeder Ebene
+     * das Speicherformat, das Paket über die Leitung und der Pfad im
+     * Dateisystem — und der hat auf Windows selbst eine Grenze.
+     */
+    private static final int MAX_NAME = 96;
 
     public Project {
         Map<String, String> sorted = new TreeMap<>();
@@ -66,7 +86,7 @@ public record Project(Map<String, String> files) {
     }
 
     public static boolean isValidName(String name) {
-        return name != null && NAME.matcher(name).matches();
+        return name != null && name.length() <= MAX_NAME && NAME.matcher(name).matches();
     }
 
     /** Die Dateinamen, alphabetisch. */
@@ -110,14 +130,22 @@ public record Project(Map<String, String> files) {
      * Eine Ziffer am Ende des Namens wird dabei weitergezählt und nicht
      * angehängt — sonst hieße die Kopie von {@code worker2.mf} nach dem
      * dritten Mal {@code worker222.mf}.
+     *
+     * <p><b>Gezählt wird im letzten Abschnitt.</b> Die Kopie von
+     * {@code erz/brecher.mf} heißt {@code erz/brecher2.mf} und bleibt damit
+     * neben ihrer Vorlage. Eine Ziffer am Ordner zöge sie in einen Ordner,
+     * den es nicht gibt.
      */
     public String freeNameLike(String name) {
         String base = name.endsWith(".mf") ? name.substring(0, name.length() - 3) : name;
-        int end = base.length();
-        while (end > 1 && Character.isDigit(base.charAt(end - 1))) {
+        int cut = base.lastIndexOf('/') + 1;
+        String folder = base.substring(0, cut);
+        String file = base.substring(cut);
+        int end = file.length();
+        while (end > 1 && Character.isDigit(file.charAt(end - 1))) {
             end--;
         }
-        String stem = base.substring(0, end);
+        String stem = folder + file.substring(0, end);
         for (int number = 2; number < 1000; number++) {
             String candidate = stem + number + ".mf";
             if (isValidName(candidate) && !files.containsKey(candidate)) {

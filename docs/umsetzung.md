@@ -160,8 +160,9 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | Fortsetzen | Wartende Abläufe überleben Serverneustart und Programmwechsel |
 | Netzwerk | Graph über Kabel, Speicher schlüsselbasiert, Kanäle je Strang |
 | Editor | Syntaxfarben, Fehler beim Tippen, Vervollständigung nach Stelle |
+| | Projekt aus mehreren Dateien, Ordner im Namen: `erz/brecher.mf` |
 | Anzeigen | Am Block und im Terminal, Knöpfe starten Abläufe |
-| Prüfung | 384 Einheitstests, 243 GameTests |
+| Prüfung | 397 Einheitstests, 243 GameTests |
 
 ## 3. Was noch nicht läuft
 
@@ -453,6 +454,42 @@ Zwei neue Grenzen stehen in der Serverkonfiguration: `craftingDepth` (acht
 Ebenen) und `craftingBudget` (512 Bedarfe). Die zweite greift bei Rezept­
 bäumen, die sich in viele erlaubte Sorten verzweigen — dort wächst die Suche
 schneller als ihre Tiefe.
+
+### Ordner im Projekt (seit dem 25.08.)
+
+`erz/brecher.mf` geht. Der Umbau war kleiner als die offene Frage aussah — im
+Kern ein Namensmuster mit Abschnitten —, hatte aber zwei Stellen, an denen es
+still schiefgeht.
+
+**Der Punkt steht nicht im Alphabet eines Abschnitts.** Damit ist `../` nicht
+verboten, sondern unmöglich, und dasselbe gilt für den Rückstrich von Windows
+und den Doppelpunkt eines Laufwerks. Eine Verbotsliste hätte man umgehen
+können; ein Alphabet nicht. Dazu eine Obergrenze für den ganzen Pfad: Vorher
+lag sie bei fünfunddreißig Zeichen, weil ein Name aus genau einem Abschnitt
+bestand.
+
+**Der Rückstrich auf Windows.** `Path.relativize` liefert dort
+`erz\brecher.mf`, und das entspricht keinem `erz/brecher.mf` im Projekt. Die
+Brücke neben der Welt sähe im Sekundentakt eine fremde Datei und zugleich eine
+fehlende und schriebe zwei Wahrheiten gegeneinander. Der Name wird deshalb
+beim Lesen auf Schrägstriche gebracht. `ProgramFolder` hat dafür jetzt eine
+Prüfung — es gab bisher keine, weil die Klasse einen Server brauchte; für den
+Weg hin und zurück braucht sie nur einen Ordner, und den kann ein Test
+hinstellen.
+
+**Die Erweiterung sucht die Wurzel des Projekts.** Sie las bisher den Ordner
+der offenen Datei; in `erz/brecher.mf` wären das die Geschwister im Ordner
+`erz` und nicht `main.mf` eine Ebene höher — und der Namensraum ist einer. Sie
+geht jetzt nach oben, solange der Ordner darüber selbst Programmdateien
+enthält, und hält in jedem Fall an einem Ordner namens `controller_` an. Ohne
+diese zweite Bedingung liefe sie über `factorynetwork` hinaus und mischte die
+Namen fremder Controller unter.
+
+**Die Liste im Spiel bleibt flach.** Der Schrägstrich sortiert vor Buchstaben
+und Ziffern, also stehen die Dateien eines Ordners von selbst beieinander. Ein
+Klappbaum bräuchte einen Griff mehr für dieselbe Auskunft. Was nicht in die
+Spalte passt, wird vorn gekürzt — `…/schmelzen.mf` —, denn von rechts gekürzt
+sähen zwei Dateien desselben Ordners gleich aus.
 
 ### Nachschub ist derselbe Worker (seit dem 25.08.)
 
@@ -773,13 +810,6 @@ verwischt — die Spieloberfläche hat dafür eine eigene Einstellung.
 
 **Offene Fragen, nicht entschieden:**
 
-- **Ordner im Projekt.** Heute ist der Namensraum flach, und das Namensmuster
-  lässt keinen Schrägstrich zu. Unterordner wären reine Gliederung für den
-  Menschen — die Sprache kennt ohnehin nur einen Namensraum. Bei drei bis
-  acht Dateien tut es die alphabetische Sortierung mit Präfixen
-  (`worker_erz.mf`, `worker_holz.mf`); ab etwa fünfzehn Dateien nicht mehr.
-  Der Umbau beträfe das Namensmuster, den Ordner neben der Welt (rekursiv
-  lesen) und die VS-Code-Seite.
 - **LDLib2 als UI-Grundlage.** Noch nicht geprüft. Zu klären wäre der Stand
   für 1.21.1/NeoForge und wie die API aussieht. Die Latte liegt hoch: eine
   harte Abhängigkeit koppelt jeden Release an ein fremdes Projekt, und

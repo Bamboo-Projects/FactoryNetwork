@@ -2987,3 +2987,86 @@ Schnitt offenblieb: Weil der Plan bei jedem Takt neu gerechnet wird, sieht
 jeder Auftrag den Bestand, den ihm die anderen gelassen haben. Eine
 Vormerkungstabelle bräuchte es erst, wenn ein Auftrag Zutaten über mehrere
 Takte hinweg festhielte — und das tut hier keiner.
+
+---
+
+## Ordner im Projekt sind Namen, keine Struktur (2026-08-25)
+
+Beschlossen war „Ordner kommen" (3.5), gegen meine Empfehlung — mein Einwand,
+dass alle Dateien einen Namensraum teilen und ein Ordner also nur sortiert,
+bleibt richtig und war nie ein Hinderungsgrund. Vier Fragen entschied erst das
+Bauen.
+
+### Der Ordner steckt im Dateinamen
+
+`erz/brecher.mf` ist ein Name und kein Baum. Das Projekt bleibt eine Karte von
+Namen auf Quelltexte, das Speicherformat bleibt dasselbe, und alte Welten
+lesen sich weiter — ein flacher Name ist ein gültiger Name mit null
+Abschnitten.
+
+Die Alternative wäre ein Knotenmodell gewesen: Ordner als eigene Sache, mit
+Anlegen, Umbenennen, Verschieben und Leersein. Das ist viermal so viel Code
+für dieselbe Auskunft, und es bringt eine Frage mit, die sonst gar nicht
+entsteht: Was ist ein leerer Ordner in einem Speicherformat, das nur Dateien
+kennt?
+
+Deshalb gibt es auch **keinen eigenen Griff „Ordner anlegen"**. Wer einen
+Ordner will, tippt einen Schrägstrich in den Dateinamen. Ein Menüpunkt, der
+etwas anlegt, das man ohne Datei darin nicht sieht, wäre ein Griff, der nichts
+tut.
+
+### Der Punkt steht nicht im Alphabet
+
+Ein Abschnitt darf Kleinbuchstaben, Ziffern und Unterstriche tragen und sonst
+nichts. Damit ist `../` nicht verboten, sondern **unmöglich** — und dasselbe
+gilt für den Rückstrich von Windows und den Doppelpunkt eines Laufwerks. Eine
+Verbotsliste hätte man umgehen können; ein Alphabet nicht.
+
+Dazu eine Obergrenze für den ganzen Pfad, sechsundneunzig Zeichen. Vorher lag
+sie bei fünfunddreißig, weil ein Name aus genau einem Abschnitt bestand; ohne
+eine neue wüchse mit jeder Ebene das Speicherformat, das Paket über die
+Leitung und der Pfad im Dateisystem.
+
+### Die Liste im Spiel bleibt flach
+
+Kein Klappbaum. Der Schrägstrich sortiert vor Buchstaben und Ziffern, also
+stehen die Dateien eines Ordners von selbst beieinander — `erz/brecher.mf`
+kommt vor `erz2.mf`. Ein Baum bräuchte einen Griff mehr (auf- und zuklappen,
+mit einem Zustand, der irgendwo überleben muss) für dieselbe Auskunft.
+
+Gekürzt wird **vorn**: `…/schmelzen.mf`. Von rechts gekürzt sähen zwei Dateien
+desselben Ordners gleich aus, und der Name ist das, wonach man sucht.
+
+Die echten Ordner leben da, wo Ordner etwas tun: im Dateisystem neben der Welt
+und in VS Code.
+
+### Die Wurzel eines Projekts wird gesucht, nicht angenommen
+
+Die Erweiterung las bisher den Ordner der offenen Datei. In `erz/brecher.mf`
+wären das die Geschwister im Ordner `erz` — und nicht `main.mf` eine Ebene
+höher, obwohl beide einen Namensraum teilen.
+
+Sie geht jetzt nach oben, **solange der Ordner darüber selbst Programmdateien
+enthält**, und hält in jedem Fall an einem Ordner an, dessen Name mit
+`controller_` beginnt. Zwei Bedingungen, und beide werden gebraucht: Ohne die
+erste liefe sie bei einer einzelnen `.mf` irgendwo auf der Platte bis zum
+Stammverzeichnis hinauf; ohne die zweite liefe sie über `factorynetwork`
+hinaus und mischte die Namen fremder Controller unter.
+
+### Was dabei auffiel: der Rückstrich
+
+`Path.relativize` liefert auf Windows `erz\brecher.mf`. Im Projekt heißt die
+Datei `erz/brecher.mf`, und die Brücke vergleicht Inhalte je Name — sie sähe
+also im Sekundentakt eine fremde Datei und zugleich eine fehlende und schriebe
+zwei Wahrheiten gegeneinander. Der Name wird beim Lesen auf Schrägstriche
+gebracht.
+
+`ProgramFolder` hatte bis dahin keine einzige Prüfung, weil die Klasse einen
+laufenden Server verlangte. Sie verlangt ihn nur, um **den Ordner zu finden**
+— was mit dem Ordner geschieht, braucht nur einen Ordner. Die beiden Fragen
+sind jetzt getrennt, und der Weg hin und zurück steht als Prüfung in einem
+Wegwerfverzeichnis.
+
+Ein leerer Ordner bleibt nach dem Löschen der letzten Datei darin liegen. Ihn
+wegzuräumen hieße, im Weltordner aufzuräumen, was jemand anders angelegt haben
+könnte — und ein leerer Ordner tut niemandem weh.

@@ -76,6 +76,13 @@ Vorentscheidungen)
 > es dasteht) und in `entscheidungen.md` begründet. Damit ist **2.10 fertig**
 > und `crafting` steht wieder in beiden Editoren — hinter `from`, nicht
 > hinter `to`.
+>
+> Dann 3.5: **Ordner im Projekt.** Kleiner als die offene Frage aussah — im
+> Kern ein Namensmuster mit Abschnitten —, aber mit zwei Stellen, an denen es
+> still schiefgeht: Auf Windows liefert `relativize` den Rückstrich, und die
+> Erweiterung las den Ordner der offenen Datei statt der Wurzel des Projekts.
+> `ProgramFolder` hat jetzt eine eigene Prüfung; vorher hatte es keine, weil
+> die Klasse einen Server verlangte.
 
 **Status:** **F** = fehlt schlicht · **E** = wartet auf eine Entscheidung ·
 **Z** = bewusst zurückgestellt, kein Versäumnis
@@ -130,7 +137,7 @@ Vorentscheidungen)
 | 3.2 | ~~Annahme-Probe für Flüssigkeiten~~ — **fertig** (25.08.). `fill(…, SIMULATE)` mit einem Eimer je Probe und den `fluid:`-Angaben aus dem Programm; die Zeile steht bei den Behältern im Tooltip | | `DeviceSnapshotPacket.tankProbe` | | |
 | 3.3 | ~~Flüssigkeitsstände im Tooltip~~ — **fertig** | | | | |
 | 3.4 | ~~Bearbeitung anfragen~~ — **fertig**, F4 in beiden Fenstern | | `RequestEdit.java` | | |
-| 3.5 | **Entschieden: Ordner kommen** — gegen meine Empfehlung. Dateiliste, Anlegen, Umbenennen und die Brücke zu VS Code ziehen mit | F | `umsetzung.md:505` | mittel | — |
+| 3.5 | ~~Ordner im Projekt~~ — **fertig** (25.08.). `erz/brecher.mf`, zwei Ebenen tief; Anlegen und Umbenennen nehmen den Pfad entgegen, ein eigener Griff dafür fehlt bewusst. Der Ordner neben der Welt liest rekursiv, VS Code sucht die Wurzel des Projekts. Der Punkt steht nicht im Alphabet eines Abschnitts — damit ist `../` unmöglich statt verboten | | `Project.NAME`, `ProgramFolder.listNames` | | |
 | 3.6 | **Entschieden: prüfen** — gegen meine Empfehlung, und als Prüfauftrag, nicht als Zusage. Die Frage ist, ob künftige Fenster damit schneller gehen; die vorhandenen werden nicht neu gebaut | F | `umsetzung.md:512` | klein | — |
 | 3.7 | ~~Ob das Geräteprofil dem Analysator etwas zu geben hat~~ — **fertig**, aber an anderer Stelle als gedacht: Die Knotenbeschriftung wird gar nicht gezeichnet, der Analysator malt Würfel. Die Auskunft hängt jetzt am Rechtsklick — „brecher_1: Gegenstände · Fächer 0–26" —, also dort, wo man ohnehin vor der Maschine steht | | `NetworkAnalyserItem.deviceLine` | | |
 | 3.8 | ~~Ob der Netz-Reiter globale Werte ändern darf~~ — **entschieden: nur anzeigen.** Sonst wird der Zustand der Fabrik an zwei Stellen umgestellt, und niemand sieht ihr an, wer zuletzt geschaltet hat. Wer schalten will, baut einen Knopf | | `globale-werte.md:200` | | |
@@ -207,9 +214,10 @@ Reiter ist keiner mehr, und `crafting` steht als Quelle in beiden Editoren.
 Offen bleibt daneben 2.9 — Processing-Rezepte an Maschinen —, aber das ist ein
 eigenes Vorhaben und keine Lücke im Autocrafting.
 
-**2. Die kleineren Reste:** 3.5 (Ordner im Projekt), 5.2 (Speicherblock), 5.3
-(Schrift auf der Anzeigenwand), 3.6 (LDLib2 prüfen), 1.11 (globale Listen —
-braucht vorher eine Entscheidung über Listenliteral und Ändern-vs-Ersetzen).
+**2. Die kleineren Reste:** 5.2 (Speicherblock), 5.3 (Schrift auf der
+Anzeigenwand), 3.6 (LDLib2 prüfen), 1.11 (globale Listen — braucht vorher eine
+Entscheidung über Listenliteral und Ändern-vs-Ersetzen). 3.5 (Ordner im
+Projekt) ist am 25.08. dazugekommen und wieder weg.
 
 **3. Rezepte an Maschinen erkennen** (2.9). Groß, und seit dem Autocrafting
 keine Voraussetzung mehr für irgendetwas — der Fabricator baut Werkbank-

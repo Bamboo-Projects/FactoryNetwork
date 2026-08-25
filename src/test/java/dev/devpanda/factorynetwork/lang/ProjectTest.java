@@ -89,7 +89,9 @@ class ProjectTest {
         assertTrue(Project.isValidName("worker.mf"));
         assertTrue(Project.isValidName("anzeigen_2.mf"));
         assertFalse(Project.isValidName("../evil.mf"), "kein Weg nach oben");
-        assertFalse(Project.isValidName("unter/ordner.mf"), "kein Pfadtrenner");
+        // Ein Pfadtrenner ist seit den Ordnern erlaubt; was er nicht darf,
+        // steht in „Aus dem Ordner heraus führt kein Name".
+        assertTrue(Project.isValidName("unter/ordner.mf"), "ein Ordner geht");
         assertFalse(Project.isValidName("Gross.mf"), "keine Großbuchstaben");
         assertFalse(Project.isValidName("ohne_endung"), "die Endung gehört dazu");
         assertFalse(Project.isValidName(""), "und leer schon gar nicht");
@@ -141,6 +143,77 @@ class ProjectTest {
         Project zwei = project.with("worker2.mf", "");
         assertEquals("worker3.mf", zwei.freeNameLike("worker2.mf"),
                 "aus worker2 wird worker3 und nicht worker22");
+    }
+
+    // ---- Ordner ------------------------------------------------------------
+
+    @Test
+    @DisplayName("Ein Name darf einen Ordner nennen")
+    void anameMayNameAfolder() {
+        assertTrue(Project.isValidName("erz/brecher.mf"), "ein Ordner");
+        assertTrue(Project.isValidName("erz/eisen/schmelzen.mf"), "und zwei");
+        assertTrue(Project.isValidName("main.mf"), "ohne Ordner geht es weiter");
+    }
+
+    @Test
+    @DisplayName("Aus dem Ordner heraus führt kein Name")
+    void nonameLeadsOutOfTheFolder() {
+        // Der Punkt steht nicht im Alphabet eines Abschnitts. Damit ist „..“
+        // nicht verboten, sondern unmöglich — eine Verbotsliste hätte man
+        // umgehen können.
+        assertFalse(Project.isValidName("../weg.mf"), "hinaus");
+        assertFalse(Project.isValidName("erz/../../weg.mf"), "und hinaus über Umwege");
+        assertFalse(Project.isValidName("/weg.mf"), "von der Wurzel");
+        assertFalse(Project.isValidName("C:/weg.mf"), "mit Laufwerk");
+        assertFalse(Project.isValidName("erz\brecher.mf"), "mit dem Trenner von Windows");
+    }
+
+    @Test
+    @DisplayName("Ein Abschnitt ohne Inhalt ist keiner")
+    void anemptySegmentIsNone() {
+        assertFalse(Project.isValidName("erz//brecher.mf"), "zwei Schrägstriche");
+        assertFalse(Project.isValidName("erz/.mf"), "ein Ordner ohne Datei");
+        assertFalse(Project.isValidName("/main.mf"), "führender Schrägstrich");
+        assertFalse(Project.isValidName("erz/"), "und gar keine Datei");
+    }
+
+    @Test
+    @DisplayName("Ein Pfad hat eine Obergrenze")
+    void apathHasAnupperBound() {
+        // Vorher lag sie bei fünfunddreißig Zeichen, weil ein Name aus einem
+        // Abschnitt bestand. Ohne eine neue wüchse jedes Paket und jeder
+        // Dateipfad ins Offene.
+        String tief = "a/".repeat(60) + "x.mf";
+        assertFalse(Project.isValidName(tief), "zu lang: " + tief.length() + " Zeichen");
+    }
+
+    @Test
+    @DisplayName("Der freie Name zählt im letzten Abschnitt weiter")
+    void thefreeNameCountsUpInTheLastSegment() {
+        Project project = new Project(Map.of("erz/brecher.mf", ""));
+
+        assertEquals("erz/brecher2.mf", project.freeNameLike("erz/brecher.mf"),
+                "der Ordner bleibt, die Ziffer zieht an die Datei");
+    }
+
+    @Test
+    @DisplayName("Ein Ordner steht vor dem Namen, der so anfängt")
+    void afolderComesBeforeThenameThatStartsThatWay() {
+        // Der Schrägstrich sortiert vor Ziffern und Buchstaben, also stehen
+        // die Dateien eines Ordners von selbst beieinander. Das ist der
+        // Grund, warum die Liste im Spiel flach bleiben darf.
+        Project project = new Project(Map.of(
+                "erz2.mf", "", "erz/brecher.mf", "", "main.mf", ""));
+
+        assertEquals(List.of("erz/brecher.mf", "erz2.mf", "main.mf"), project.names());
+    }
+
+    @Test
+    @DisplayName("Ein Fehler in einer Datei im Ordner nennt ihren ganzen Pfad")
+    void anerrorInAfolderNamesItsWholePath() {
+        Project project = new Project(Map.of("erz/brecher.mf", "worker {"));
+
+        assertEquals("erz/brecher.mf", project.parse().diagnostics().get(0).file());
     }
 
 }

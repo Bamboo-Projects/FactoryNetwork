@@ -176,8 +176,8 @@ public class ProjectPanel {
             // es ist kein Fehler, es ist jemand anders.
             int colour = holder != null ? TerminalScreen.TEXT_FAINT
                     : active ? TerminalScreen.TEXT : TerminalScreen.TEXT_DIM;
-            graphics.drawString(font, FnFonts.mono(clip(name, width - 12)), x + 2, rowTop + 1,
-                    colour, false);
+            graphics.drawString(font, FnFonts.mono(clipName(name, width - 12)),
+                    x + 2, rowTop + 1, colour, false);
             if (holder != null) {
                 graphics.fill(x + width - 8, rowTop + 3, x + width - 4, rowTop + 8,
                         0xFF000000 | TerminalScreen.WARN);
@@ -213,6 +213,31 @@ public class ProjectPanel {
         return font.width(FnFonts.mono(text)) <= available
                 ? text
                 : font.plainSubstrByWidth(text, available);
+    }
+
+    /**
+     * Ein Dateiname, so gekürzt, dass der Name übrig bleibt.
+     *
+     * <p>Bei {@code erz/eisen/schmelzen.mf} steht das Wichtige hinten. Von
+     * rechts zu kürzen ergäbe {@code erz/eisen/schm}, und damit sähen zwei
+     * Dateien desselben Ordners gleich aus. Gekürzt wird deshalb von vorn:
+     * {@code …/schmelzen.mf}.
+     *
+     * <p>Ohne Ordner bleibt es beim Kürzen von rechts — dort steht die
+     * Endung, und die ist bei jeder Datei dieselbe.
+     */
+    private String clipName(String name, int available) {
+        if (font.width(FnFonts.mono(name)) <= available || name.indexOf('/') < 0) {
+            return clip(name, available);
+        }
+        String rest = name;
+        while (rest.indexOf('/') >= 0) {
+            rest = rest.substring(rest.indexOf('/') + 1);
+            if (font.width(FnFonts.mono("…/" + rest)) <= available) {
+                return "…/" + rest;
+            }
+        }
+        return clip(rest, available);
     }
 
     // ---- Umbenennen --------------------------------------------------------

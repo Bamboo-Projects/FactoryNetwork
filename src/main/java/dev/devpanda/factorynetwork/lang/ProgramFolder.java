@@ -73,11 +73,23 @@ public final class ProgramFolder {
             Path folder = root.resolve(name);
             Files.createDirectories(folder);
             migrateSingleFile(root, name, folder);
-            return new ProgramFolder(folder);
+            return at(folder);
         } catch (IOException | RuntimeException failed) {
             // Ohne Ordner läuft alles weiter, nur eben ohne Brücke.
             return null;
         }
+    }
+
+    /**
+     * Die Brücke zu einem beliebigen Ordner.
+     *
+     * <p>Getrennt von {@link #of}, weil es zwei Fragen sind: <b>welcher
+     * Ordner</b> — dafür braucht es Welt und Position — und <b>was mit dem
+     * Ordner geschieht</b>. Nur die zweite ist hier interessant, und nur sie
+     * lässt sich ohne laufenden Server vorführen.
+     */
+    public static ProgramFolder at(Path folder) {
+        return new ProgramFolder(folder);
     }
 
     /**
@@ -116,6 +128,12 @@ public final class ProgramFolder {
         try {
             for (Map.Entry<String, String> file : project.files().entrySet()) {
                 Path path = folder.resolve(file.getKey());
+                // Der Ordner einer Datei entsteht mit ihr. Ohne das schlüge
+                // die erste Datei in einem neuen Ordner fehl, und zwar still.
+                Path parent = path.getParent();
+                if (parent != null) {
+                    Files.createDirectories(parent);
+                }
                 if (!Files.exists(path)
                         || !Files.readString(path, StandardCharsets.UTF_8)
                                 .equals(file.getValue())) {
@@ -159,11 +177,31 @@ public final class ProgramFolder {
         return new Project(found);
     }
 
-    /** Alle gültigen Dateinamen im Ordner. */
+    /**
+     * Wie tief unter dem Ordner nachgesehen wird.
+     *
+     * <p>Weiter, als ein gültiger Name reichen kann: Ein Name hat höchstens
+     * sechsundneunzig Zeichen, und jede Ebene kostet zwei. Die Zahl ist die
+     * Bremse gegen einen Ordner, in den jemand einen Verweiskreis gelegt hat
+     * — nicht die Grenze für den Menschen.
+     */
+    private static final int MAX_DEPTH = 16;
+
+    /**
+     * Alle gültigen Dateinamen im Ordner, mitsamt Unterordnern.
+     *
+     * <p><b>Der Name ist der Pfad unter dem Ordner, mit Schrägstrichen.</b>
+     * Auf Windows liefert {@code relativize} den Rückstrich, und ein
+     * {@code erz\brecher.mf} entspricht keinem {@code erz/brecher.mf} im
+     * Projekt: Die Brücke sähe eine fremde Datei und zugleich eine fehlende
+     * und schriebe im Sekundentakt zwei Wahrheiten gegeneinander.
+     */
     private List<String> listNames() throws IOException {
-        try (Stream<Path> entries = Files.list(folder)) {
-            return entries.map(path -> path.getFileName().toString())
+        try (Stream<Path> entries = Files.walk(folder, MAX_DEPTH)) {
+            return entries.filter(Files::isRegularFile)
+                    .map(path -> folder.relativize(path).toString().replace('\\', '/'))
                     .filter(Project::isValidName)
+                    .sorted()
                     .toList();
         }
     }
@@ -173,9 +211,13 @@ public final class ProgramFolder {
      *
      * <p>Dateien mit einem Namen, den das Projekt nicht erlaubt, werden
      * übergangen. Eine {@code Notizen.txt} im Ordner ist kein Programmstück,
-     * und ein Name mit Pfadtrenner erst recht nicht.
+     * und ein {@code Erz/Gross.mf} mit Großbuchstaben auch nicht.
+     *
+     * <p>Öffentlich für die Prüfung: Der Weg hin und zurück ist die eine
+     * Sache, die an dieser Klasse schiefgehen kann, und er lässt sich in
+     * einem Wegwerfordner vorführen.
      */
-    private Map<String, String> read() {
+    public Map<String, String> read() {
         try {
             Map<String, String> found = new HashMap<>();
             for (String name : listNames()) {

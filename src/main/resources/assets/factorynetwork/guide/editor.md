@@ -103,6 +103,29 @@ Auf einen Namen im Code:
   halbe Minute und ist durch Wände zu sehen; du musst also nicht erst die
   Kammer finden, in der das Gerät hängt.
 
+## Ordner im Projekt
+
+Ein Dateiname darf einen Ordner nennen: `erz/brecher.mf`, auch zwei Ebenen
+tief. Anlegen und Umbenennen nehmen den Pfad einfach entgegen — es gibt keinen
+eigenen Griff dafür, ein Schrägstrich im Namen genügt.
+
+**Ein Ordner ist Ordnung für dich, keine Grenze für die Sprache.** Alle
+Dateien eines Projekts teilen weiterhin einen Namensraum: Ein `fn` in
+`erz/brecher.mf` ruft eines in `main.mf`, ohne dass irgendwo etwas eingebunden
+werden muss. Zwei gleiche Namen in zwei Ordnern sind deshalb weiterhin einer
+zu viel.
+
+Die Liste links bleibt flach und alphabetisch. Der Schrägstrich sortiert vor
+Buchstaben und Ziffern, also stehen die Dateien eines Ordners von selbst
+beieinander — ein Klappbaum bräuchte einen Griff mehr für dieselbe Auskunft.
+Wird ein Pfad zu lang für die Spalte, wird er vorn gekürzt: `…/schmelzen.mf`.
+Dort steht der Name, und darauf kommt es an.
+
+Erlaubt sind Kleinbuchstaben, Ziffern und Unterstriche, je Abschnitt bis
+zweiunddreißig Zeichen und im Ganzen bis sechsundneunzig. Ein Punkt gehört
+nicht dazu — damit gibt es kein `..`, und aus dem Ordner deiner Welt führt
+kein Dateiname heraus.
+
 ## Wenn jemand anders die Datei hält
 
 Im Mehrspielerbetrieb gehört eine Datei dem, der sie geöffnet hat — sonst
@@ -115,7 +138,8 @@ freigeben.
 Neben der Welt liegt ein Ordner `factorynetwork`, und darin einer je
 Controller. Was dort in `.mf`-Dateien steht, ist dasselbe Programm — mit einem
 richtigen Editor bearbeitbar, versionierbar, kopierbar. Änderungen von außen
-liest das Netz von selbst wieder ein.
+liest das Netz von selbst wieder ein. Unterordner sind dort echte Ordner, und
+wer einen von außen anlegt, hat ihn beim nächsten Blick auch im Spiel.
 
 Für **VS Code** liegt eine Erweiterung bei: Syntaxfarben, dieselben Vorschläge
 wie im Spiel und die Formzeile zu jeder Angabe. Fehler meldet sie nicht — dafür
