@@ -390,9 +390,20 @@ public final class Interpreter {
                     if (!(assign.target() instanceof Expr.Name name)) {
                         throw new ScriptError("Dorthin lässt sich nichts zuweisen.");
                     }
-                    if (!scope.assign(name.value(), evaluate(assign.value()))) {
-                        throw new ScriptError("Unbekannter Name " + name.value() + ".",
-                                "Neue Namen bekommen ein let davor.");
+                    Value assigned = evaluate(assign.value());
+                    if (!scope.assign(name.value(), assigned)) {
+                        // Der Rahmen eines Ablaufs kennt nur seine eigenen
+                        // Namen. Ohne diesen Zweig scheiterte jedes
+                        // „modus = …" in einem Ablauf — und ein Ablauf ist
+                        // alles, was über einen Knopf, ein Ereignis oder ein
+                        // await läuft, also fast alles.
+                        if (host.global(name.value()) == null) {
+                            throw new ScriptError("Unbekannter Name " + name.value() + ".",
+                                    "Neue Namen bekommen ein let davor. Ein Wert, den alle "
+                                            + "Dateien sehen sollen, bekommt ein global auf "
+                                            + "oberster Ebene.");
+                        }
+                        host.setGlobal(name.value(), assigned);
                     }
                     yield Step.Next.get();
                 }
@@ -684,6 +695,16 @@ public final class Interpreter {
         Value local = externalScope != null ? externalScope.find(name) : find(name);
         if (local != null) {
             return local;
+        }
+        // Ein Ablauf sucht in seinem eigenen Rahmen und sonst nirgends. Der
+        // globale Wert kommt danach — dieselbe Reihenfolge wie beim
+        // gewöhnlichen Aufruf, wo find() ihn zuletzt selbst holt. Ohne das
+        // hier war ein globaler Wert in einem Ablauf schlicht unbekannt.
+        if (externalScope != null) {
+            Value shared = host.global(name);
+            if (shared != null) {
+                return shared;
+            }
         }
         // In einer Vorlage meint ein Gerätename immer das eigene Gerät. Erst
         // wenn die Anlage keines dieses Namens hat, zählt der Rest des Netzes

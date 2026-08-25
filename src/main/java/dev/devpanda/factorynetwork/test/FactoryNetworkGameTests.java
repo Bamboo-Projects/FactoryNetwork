@@ -1560,19 +1560,22 @@ public final class FactoryNetworkGameTests {
 
         // Der eigentliche Zweck der Sache: für jede Maschine etwas anstoßen
         // und auf ihre Rückmeldung warten, bevor die nächste drankommt.
+        //
+        // Genau drei Sorten im Speicher, und die Schleife läuft bis ans Ende.
+        // Vorher lief sie über tag:minecraft/planks und brach nach drei
+        // Runden ab — dass sie überhaupt endet, prüfte damit niemand.
+        entity.storage().insert(Items.IRON_ORE, 1);
+        entity.storage().insert(Items.COAL, 1);
+        entity.storage().insert(Items.COBBLESTONE, 1);
+
         helper.assertTrue(entity.deploy("""
                 event Takt(nummer: Int)
 
                 fn reihum() {
                     let summe = 0
-                    let runden = 0
-                    for sorte in tag:minecraft/planks {
+                    for sorte in storage.items() {
                         let wert = await Takt
                         summe = summe + wert
-                        runden = runden + 1
-                        if runden >= 3 {
-                            break
-                        }
                     }
                     return summe
                 }"""), "Das Programm wurde nicht übernommen");
@@ -1586,7 +1589,8 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(flow.status().name(), "AWAITING", "Und in jeder weiteren");
         tick(helper, entity, 3);
 
-        helper.assertValueEqual(flow.status().name(), "DONE", "Nach dem break ist Schluss");
+        helper.assertValueEqual(flow.status().name(), "DONE",
+                "Nach der dritten Sorte ist die Liste zu Ende");
         helper.assertValueEqual(resultOf(flow), 6L, "Drei Runden, drei Werte");
         helper.succeed();
     }
@@ -1597,25 +1601,41 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
 
+        // Die Schleife läuft bis ans Ende der Liste und gibt zurück, wie oft
+        // sie herumkam.
+        //
+        // <b>Verglichen wird mit einem Lauf ohne Neustart.</b> Vorher stand
+        // hier ein „break" nach drei Runden — damit war die Stelle in der
+        // Liste von außen unsichtbar: Sprang der Zeiger beim Laden auf null
+        // zurück, kamen trotzdem drei Runden heraus. Der Test blieb grün,
+        // auch wenn der Stand gar nicht mitgeschrieben wurde. Wie lang die
+        // Liste ist, muss dafür niemand wissen — nur, dass beide Läufe
+        // dieselbe Zahl ergeben.
         helper.assertTrue(entity.deploy("""
                 event Takt(nummer: Int)
 
                 fn reihum() {
-                    let summe = 0
                     let runden = 0
                     for sorte in tag:minecraft/planks {
                         let wert = await Takt
-                        summe = summe + wert
                         runden = runden + 1
-                        if runden >= 3 {
-                            break
-                        }
                     }
-                    return summe
+                    return runden
                 }"""), "Das Programm wurde nicht übernommen");
+
+        var ungestoert = entity.startFlow("reihum", java.util.List.of());
+        long erwartet = runToEnd(helper, entity, ungestoert);
+        helper.assertTrue(erwartet >= 3,
+                "Die Liste muss mehr als zwei Einträge haben, sonst prüft das hier nichts");
 
         var flow = entity.startFlow("reihum", java.util.List.of());
         tick(helper, entity, 1);
+        // Erst der Tick führt den geweckten Lauf wirklich weiter. Ohne ihn
+        // stünde der Zeiger beim Speichern noch auf dem ersten Eintrag, und
+        // ein Rücksprung auf null wäre gar kein Unterschied.
+        entity.serverTick();
+        helper.assertValueEqual(flow.status().name(), "AWAITING",
+                "Der Lauf steht jetzt beim zweiten Eintrag");
 
         var registries = helper.getLevel().registryAccess();
         var block = net.minecraft.world.level.block.entity.BlockEntity.loadStatic(
@@ -1629,12 +1649,28 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(wieder.status().name(), "AWAITING", "Er wartet weiter");
 
         // Wäre der Stand des Laufs nicht mitgeschrieben, begänne die Liste von
-        // vorn — und täte alles ein zweites Mal.
-        tick(helper, geladen, 2);
-        tick(helper, geladen, 3);
-        helper.assertValueEqual(wieder.status().name(), "DONE", "Drei Runden, dann Schluss");
-        helper.assertValueEqual(resultOf(wieder), 6L, "Über den Neustart hinweg gezählt");
+        // vorn — und käme auf mehr Runden als der ungestörte Lauf.
+        long gezaehlt = runToEnd(helper, geladen, wieder);
+        helper.assertValueEqual(gezaehlt, erwartet,
+                "Über den Neustart hinweg dieselbe Zahl Runden wie ohne");
         helper.succeed();
+    }
+
+    /**
+     * Taktet, bis der Lauf fertig ist, und liefert sein Ergebnis.
+     *
+     * <p>Wie lang die Liste ist, muss der Test nicht wissen — nur, dass sie
+     * endet. Die Grenze fängt eine Schleife ab, die sich nicht aufbraucht.
+     */
+    private static long runToEnd(GameTestHelper helper, ControllerBlockEntity entity,
+                                 dev.devpanda.factorynetwork.runtime.flow.Flow flow) {
+        for (int takt = 0; takt < 60 && !flow.status().name().equals("DONE"); takt++) {
+            tick(helper, entity, 1);
+            entity.serverTick();
+        }
+        helper.assertValueEqual(flow.status().name(), "DONE",
+                "Der Lauf über die Liste muss enden: " + flow.detail());
+        return resultOf(flow);
     }
 
     @GameTest(template = EMPTY, timeoutTicks = 400)
@@ -2538,6 +2574,57 @@ public final class FactoryNetworkGameTests {
                 .thenExecute(() -> helper.assertValueEqual(flow.status().name(), "DONE",
                         "Eine Änderung am Inventar muss den Wartenden wecken"))
                 .thenSucceed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void aFlowReadsAndWritesGlobals(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        // <b>Der Weg, den ein Spieler wirklich nimmt.</b> Ein Knopf auf einer
+        // Anzeige, ein on-Block, ein await — alles drei läuft über die
+        // Ablaufmaschine, und die kannte die globalen Werte nicht. „modus =
+        // nacht" in einer Funktion warf „Unbekannter Name modus" und riet
+        // dazu, ein let davorzusetzen: Das übersetzt, läuft, meldet nichts
+        // und ändert den globalen Wert nicht. Genau dieses Muster steht im
+        // Handbuch und in beispiele.md.
+        helper.assertTrue(entity.deploy("""
+                global modus = "tag"
+                global runden = 0
+
+                display halle {
+                    title "Fabrik"
+                    row "Modus" modus
+                    button "Umschalten" umschalten
+                }
+
+                fn umschalten() {
+                    runden = runden + 1
+                    if modus == "tag" {
+                        modus = "nacht"
+                    } else {
+                        modus = "tag"
+                    }
+                }"""), "Das Programm wurde nicht übernommen");
+
+        var flow = entity.startFlow("umschalten", java.util.List.of());
+        helper.assertValueEqual(flow.status().name(), "DONE",
+                "Der Ablauf muss durchlaufen: " + flow.detail());
+        helper.assertValueEqual(entity.globals().get("modus").describe(), "nacht",
+                "Ein Ablauf muss einen globalen Wert ändern können");
+        helper.assertValueEqual(entity.globals().get("runden").describe(), "1",
+                "Und ihn dabei auch lesen");
+
+        // Und über den Knopf, weil das der Weg aus dem Handbuch ist.
+        entity.pressDisplayButton("halle", 2);
+        helper.assertValueEqual(entity.globals().get("modus").describe(), "tag",
+                "Der Knopf schaltet zurück");
+        helper.assertValueEqual(entity.globals().get("runden").describe(), "2",
+                "Zweimal gelesen und geschrieben");
+        helper.assertTrue(entity.flowEngine().failed().isEmpty(),
+                "Nichts darf dabei scheitern: " + entity.flowEngine().failed());
+        helper.succeed();
     }
 
     @GameTest(template = EMPTY, timeoutTicks = 400)
