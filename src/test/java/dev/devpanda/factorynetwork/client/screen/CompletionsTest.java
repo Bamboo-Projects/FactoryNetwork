@@ -42,6 +42,7 @@ class CompletionsTest {
         assertTrue(shown.contains("title"), () -> "title fehlt: " + shown);
         assertTrue(shown.contains("row"), () -> "row fehlt: " + shown);
         assertTrue(shown.contains("progress"), () -> "progress fehlt: " + shown);
+        assertTrue(shown.contains("scale"), () -> "scale fehlt: " + shown);
         assertFalse(shown.contains("if"),
                 () -> "eine Anzeige kennt keine Anweisungen: " + shown);
         assertFalse(shown.contains("let"), () -> shown.toString());

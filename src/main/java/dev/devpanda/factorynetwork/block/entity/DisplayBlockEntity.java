@@ -38,9 +38,28 @@ public class DisplayBlockEntity extends BlockEntity {
 
     private static final String KEY_NAME = "DisplayName";
     private static final String KEY_LINES = "Lines";
+    private static final String KEY_SCALE = "TextScale";
+
+    /**
+     * Die größte Schrift, die zugelassen wird.
+     *
+     * <p>Achtmal so groß ist auf einer einzelnen Tafel nicht mehr als eine
+     * Zeile mit anderthalb Buchstaben. Wer mehr will, baut breiter — und
+     * darum geht es ja.
+     */
+    public static final int MAX_SCALE = 8;
 
     private String displayName = "";
     private List<String> lines = List.of();
+
+    /**
+     * Wie groß die Schrift ist; 1 ist normal.
+     *
+     * <p><b>Sie steht hier und nicht beim Zeichnen</b>, weil sie aus dem
+     * Programm kommt: {@code scale 4} im Display-Block. Der Client bekommt
+     * sie mit den Zeilen und muss die Sprache nicht kennen.
+     */
+    private int textScale = 1;
     /**
      * Anfangs so gesetzt, dass der erste Tick sofort rechnet.
      *
@@ -72,15 +91,21 @@ public class DisplayBlockEntity extends BlockEntity {
         return lines;
     }
 
+    /** Wie groß die Schrift ist; 1 ist normal. */
+    public int textScale() {
+        return textScale;
+    }
+
     public void serverTick() {
         if (level == null || level.getGameTime() - lastRefresh < REFRESH_INTERVAL) {
             return;
         }
         lastRefresh = level.getGameTime();
 
-        List<String> fresh = compute();
-        if (!fresh.equals(lines)) {
-            lines = fresh;
+        Rendered fresh = compute();
+        if (!fresh.lines().equals(lines) || fresh.scale() != textScale) {
+            lines = fresh.lines();
+            textScale = fresh.scale();
             setChanged();
             // Nur bei Änderung übertragen — ein Display, dessen Zahlen
             // stillstehen, soll keine Pakete erzeugen.
@@ -96,21 +121,34 @@ public class DisplayBlockEntity extends BlockEntity {
      * Display es selbst; eine leere Fläche ließe den Spieler im Unklaren,
      * ob das Netz steht oder der Name falsch ist.
      */
-    private List<String> compute() {
+    /** Was auf der Tafel steht, und wie groß. */
+    private record Rendered(List<String> lines, int scale) {
+
+        static Rendered of(List<String> lines) {
+            return new Rendered(lines, 1);
+        }
+    }
+
+    /** Ein Maßstab, der sich zeichnen lässt. */
+    private static int clampScale(int wanted) {
+        return Math.max(1, Math.min(MAX_SCALE, wanted));
+    }
+
+    private Rendered compute() {
         // Nur die schreibende Tafel der Wand rechnet. Die anderen bleiben
         // leer — sonst stünde derselbe Text sechsmal untereinander, und
         // genau das soll eine Wand ja nicht sein.
         dev.devpanda.factorynetwork.block.DisplayWall wall = wall();
         if (!wall.isAnchor(worldPosition)) {
-            return List.of();
+            return Rendered.of(List.of());
         }
         String name = wallName(wall);
         if (name.isBlank()) {
-            return List.of("§7ohne Namen");
+            return Rendered.of(List.of("§7ohne Namen"));
         }
         var owner = ControllerRegistry.owning(level, worldPosition);
         if (owner.isEmpty()) {
-            return List.of("§8an keinem Netz");
+            return Rendered.of(List.of("§8an keinem Netz"));
         }
         var controller = owner.get();
         Decl.Display declaration = controller.program().declarations().stream()
@@ -120,7 +158,7 @@ public class DisplayBlockEntity extends BlockEntity {
                 .findFirst()
                 .orElse(null);
         if (declaration == null) {
-            return List.of("§ckein display " + name);
+            return Rendered.of(List.of("§ckein display " + name));
         }
 
         DisplayValues values = new DisplayValues(controller.graph(), controller.storage(),
@@ -129,7 +167,26 @@ public class DisplayBlockEntity extends BlockEntity {
         for (DisplayValues.Line line : values.evaluate(declaration)) {
             rendered.add(format(line));
         }
-        return rendered;
+        return new Rendered(rendered, scaleOf(declaration));
+    }
+
+    /**
+     * Der Maßstab, den das Programm für diese Tafel nennt.
+     *
+     * <p>Der <b>letzte</b> gewinnt, wenn jemand zwei hinschreibt — dieselbe
+     * Regel wie bei jeder doppelten Angabe: Was weiter unten steht, hat der
+     * Schreibende zuletzt gemeint.
+     */
+    private static int scaleOf(Decl.Display declaration) {
+        int found = 1;
+        for (Decl.Display.Entry entry : declaration.entries()) {
+            if (entry.kind() == Decl.Display.Entry.Kind.SCALE
+                    && entry.value() instanceof dev.devpanda.factorynetwork.lang.ast.Expr.IntLit
+                            number) {
+                found = clampScale((int) number.value());
+            }
+        }
+        return found;
     }
 
     /**
@@ -194,6 +251,8 @@ public class DisplayBlockEntity extends BlockEntity {
             case INDICATOR -> (line.flag() ? "§a● " : "§8● ") + "§7" + line.label();
             case LIST -> "§7" + line.label() + " §f" + line.value();
             case BUTTON -> "§8[" + line.label() + "]";
+            // Kommt hier nie an — scale erzeugt keine Zeile.
+            case SCALE -> "";
         };
     }
 
@@ -209,6 +268,9 @@ public class DisplayBlockEntity extends BlockEntity {
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         displayName = tag.getString(KEY_NAME);
+        // Ohne Angabe die Vorgabe: Eine Welt von gestern hat den Schlüssel
+        // nicht, und eine Tafel mit Maßstab null wäre unsichtbar.
+        textScale = tag.contains(KEY_SCALE) ? clampScale(tag.getInt(KEY_SCALE)) : 1;
         ListTag list = tag.getList(KEY_LINES, Tag.TAG_STRING);
         List<String> loaded = new ArrayList<>(list.size());
         for (int i = 0; i < list.size(); i++) {
@@ -221,6 +283,7 @@ public class DisplayBlockEntity extends BlockEntity {
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
         tag.putString(KEY_NAME, displayName);
+        tag.putInt(KEY_SCALE, textScale);
         ListTag list = new ListTag();
         lines.forEach(line -> list.add(StringTag.valueOf(line)));
         tag.put(KEY_LINES, list);

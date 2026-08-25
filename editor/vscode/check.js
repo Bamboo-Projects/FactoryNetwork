@@ -195,6 +195,7 @@ function contains(name, lines, word, shouldHave, file) {
 
 // Dieselben Faelle wie in CompletionsTest und SignaturesTest.
 contains('Anzeige bietet title', ['display halle {', '    '], 'title', true);
+contains('Anzeige bietet scale', ['display halle {', '    '], 'scale', true);
 contains('Anzeige bietet kein if', ['display halle {', '    '], 'if', false);
 contains('Anzeige bietet kein from', ['display halle {', '    '], 'from', false);
 contains('Worker bietet from', ['worker haul {', '    '], 'from', true);

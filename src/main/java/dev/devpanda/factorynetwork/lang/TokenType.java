@@ -26,7 +26,7 @@ public enum TokenType {
     MEMBERS, DEVICES,
 
     // Display
-    TITLE, ROW, TEXT, PROGRESS, INDICATOR, LIST, BUTTON,
+    TITLE, ROW, TEXT, PROGRESS, INDICATOR, LIST, BUTTON, SCALE,
 
     // Ereignisse
     EMIT, AWAIT, WHERE, TIMEOUT, SLEEP,
@@ -72,6 +72,7 @@ public enum TokenType {
             Map.entry("title", TITLE), Map.entry("row", ROW), Map.entry("text", TEXT),
             Map.entry("progress", PROGRESS), Map.entry("indicator", INDICATOR),
             Map.entry("list", LIST), Map.entry("button", BUTTON),
+            Map.entry("scale", SCALE),
             Map.entry("emit", EMIT), Map.entry("await", AWAIT), Map.entry("where", WHERE),
             Map.entry("timeout", TIMEOUT), Map.entry("sleep", SLEEP),
             Map.entry("move", MOVE), Map.entry("except", EXCEPT),

@@ -109,6 +109,18 @@
             "optional": false
           }
         ]
+      },
+      {
+        "keyword": "scale",
+        "shape": "scale int",
+        "help": "Wie groß die Schrift ist; 1 ist normal.",
+        "slots": [
+          {
+            "kind": "INT",
+            "label": "int",
+            "optional": false
+          }
+        ]
       }
     ],
     "worker": [

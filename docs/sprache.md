@@ -116,7 +116,7 @@ Worker      from  to  filter  maintain  rate  per  when  priority
             strategy  overflow
 Gruppen     members
 Multiblock  devices
-Display     title  row  text  progress  indicator  list  button
+Display     title  row  text  progress  indicator  list  button  scale
 Ereignisse  emit  await  where  timeout  sleep
 Auswahl     move  except
 Eingebaut   storage  crafting  world  network  workers  multiblocks
@@ -1125,7 +1125,36 @@ progress <text> <0..1>    Fortschrittsbalken
 indicator <text> <bool>   Lämpchen
 list <text> <liste>       Aufzählung, etwa Bestände oder Aufträge
 button <text> <funktion>  löst eine Funktion aus
+scale <zahl>              wie groß die Schrift ist; 1 ist normal
 ```
+
+### Die Größe der Schrift
+
+Eine Wand aus zwölf Tafeln ist ein großer Bildschirm, und ihr Platz geht in
+**mehr Zeilen**, nicht in größere Buchstaben — eine Wand, deren Text von
+selbst mitwächst, ist aus drei Metern genauso lesbar wie eine einzelne Tafel
+und verschenkt den ganzen Vorteil.
+
+Wer eine Überschrift will, die man von weitem liest, sagt es:
+
+```
+display halle {
+    scale 4
+    title "ERZLAGER"
+}
+```
+
+Viermal so groß, ein Viertel der Zeilen, und aus viermal so weit sichtbar —
+die Entfernung, ab der eine Tafel nicht mehr gezeichnet wird, wächst mit.
+Erlaubt ist 1 bis 8; was darüber oder darunter steht, wird darauf gezogen.
+
+**Eine feste Zahl, kein Ausdruck.** Die Größe der Schrift ist Aufbau und nicht
+Inhalt; ein Maßstab, der sich beim Zusehen ändert, bräche die Wand jedes Mal
+neu um, und was dabei aus dem Bild fällt, sähe wie ein Fehler aus.
+
+**Sie gilt für die ganze Tafel.** Eine große Überschrift über kleinen Zeilen
+gibt es nicht in einem Block — dafür sind es zwei Wände mit einer Lücke
+dazwischen, denn zusammenhängende Tafeln sind eine Wand.
 
 ### Was ein Display nicht darf
 

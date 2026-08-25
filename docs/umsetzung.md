@@ -161,19 +161,12 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | Netzwerk | Graph über Kabel, Speicher schlüsselbasiert, Kanäle je Strang |
 | Editor | Syntaxfarben, Fehler beim Tippen, Vervollständigung nach Stelle |
 | | Projekt aus mehreren Dateien, Ordner im Namen: `erz/brecher.mf` |
+| | Anzeigenwand mit `scale`: große Schrift statt vieler Zeilen |
 | Anzeigen | Am Block und im Terminal, Knöpfe starten Abläufe |
-| Prüfung | 397 Einheitstests, 244 GameTests |
+| Prüfung | 399 Einheitstests, 246 GameTests |
 
 ## 3. Was noch nicht läuft
 
-- **Die Anzeigenwand ist gebaut**, die Schrift wächst aber nicht mit. Wer
-  eine Wand aus zwölf Tafeln baut, bekommt viel Platz für Text in
-  Normalgröße — keine Überschrift, die man aus zwanzig Metern liest. Ob das
-  fehlt, zeigt erst das Spielen.
-- **Flüssigkeits-Tags.** `tag:` löst heute Gegenstands-Tags auf. Wie ein
-  Flüssigkeits-Tag geschrieben wird, ist eine Frage an die Sprache und nicht
-  nebenbei zu entscheiden — `fluidtag:c/molten` wäre eine vierte Art,
-  `tag:` beide zu durchsuchen die andere Möglichkeit.
 - **Die Zahlen an den Serverbauteilen.** Rechenwerke von zwei bis
   hundertachtundzwanzig, Speicher von acht bis fünfhundertzwölf, Datenträger
   von vierundsechzig bis viertausendsechsundneunzig. Sie sind gesetzt, nicht
@@ -459,6 +452,32 @@ Zwei neue Grenzen stehen in der Serverkonfiguration: `craftingDepth` (acht
 Ebenen) und `craftingBudget` (512 Bedarfe). Die zweite greift bei Rezept­
 bäumen, die sich in viele erlaubte Sorten verzweigen — dort wächst die Suche
 schneller als ihre Tiefe.
+
+### Die Schrift auf der Anzeigenwand (seit dem 26.08.)
+
+Der Renderer hatte die Frage schon beantwortet und die Antwort war richtig:
+Die Schrift wächst **nicht** von selbst mit der Wand. Der Platz einer großen
+Wand geht in mehr Zeilen und längere; eine Wand, deren Text mitwächst, ist aus
+drei Metern genauso lesbar wie eine einzelne Tafel.
+
+Was fehlte, war der Griff für den Fall, den man wirklich will: eine
+Überschrift, die man aus zwanzig Metern liest. Den gibt jetzt `scale 4` im
+Display-Block. Damit entscheidet der, der die Wand gebaut hat — und wer nichts
+schreibt, bekommt genau das, was die Tafel vorher tat.
+
+**Eine feste Zahl, kein Ausdruck.** Die Größe ist Aufbau und nicht Inhalt; ein
+Maßstab, der sich beim Zusehen ändert, bräche die Wand jedes Mal neu um.
+
+**Die Sichtweite wächst mit.** Sechzehn Blöcke waren die Entfernung, ab der
+nicht mehr gezeichnet wird — bei Normalgröße richtig, bei vierfacher nicht.
+Ohne das wäre `scale` ein Griff, der die Schrift vergrößert und sie genau
+dort verschwinden lässt, wo man sie lesen wollte.
+
+**Eine Zahl für die ganze Tafel**, nicht je Zeile. Eine große Überschrift über
+kleinen Zeilen bräuchte einen Maßstab je Zeile, und damit eine Zeilenhöhe je
+Zeile im Speicherformat, im Paket und im Umbruch. Der Fall lässt sich mit zwei
+Wänden und einer Lücke dazwischen bauen; die Kosten der allgemeinen Lösung
+stünden dazu in keinem Verhältnis.
 
 ### Ordner im Projekt (seit dem 25.08.)
 

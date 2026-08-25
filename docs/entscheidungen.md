@@ -3070,3 +3070,52 @@ Wegwerfverzeichnis.
 Ein leerer Ordner bleibt nach dem Löschen der letzten Datei darin liegen. Ihn
 wegzuräumen hieße, im Weltordner aufzuräumen, was jemand anders angelegt haben
 könnte — und ein leerer Ordner tut niemandem weh.
+
+---
+
+## Die Schrift auf der Wand wächst nicht von selbst (2026-08-26)
+
+Punkt 5.3 stand als Mangel auf der Liste: „Die Anzeigenwand ist gebaut, die
+Schrift wächst aber nicht mit." Beim Nachsehen war die Frage längst
+entschieden, und die Entscheidung war richtig — sie stand nur im Javadoc des
+Renderers und nicht hier.
+
+**Sie wächst weiterhin nicht von selbst.** Der Platz einer großen Wand geht in
+mehr Zeilen und längere, nicht in größere Buchstaben. Eine Wand, deren Text
+mitwächst, ist aus drei Metern genauso lesbar wie eine einzelne Tafel — dafür
+baut niemand zwölf Blöcke.
+
+Der Mangel war ein anderer: Es gab keinen Weg zu dem Fall, den man wirklich
+will — eine Überschrift, die man aus zwanzig Metern liest. **Also sagt es das
+Programm:** `scale 4` im Display-Block. Wer nichts schreibt, bekommt genau
+das, was die Tafel vorher tat.
+
+### Eine feste Zahl, kein Ausdruck
+
+`scale storage.count(…)` wird abgelehnt. Die Größe der Schrift ist Aufbau und
+nicht Inhalt; ein Maßstab, der sich beim Zusehen ändert, bräche die Wand jedes
+Mal neu um, und was dabei aus dem Bild fällt, sähe wie ein Fehler aus. Es ist
+die einzige Angabe eines Displays, die keinen Ausdruck nimmt — und sie ist
+auch die einzige, die nichts anzeigt.
+
+Ein Wert außerhalb von 1 bis 8 wird gezogen statt abgelehnt. Null ist keine
+Aussage über eine Tafel, sondern ein Tippfehler, und eine unsichtbare Anzeige
+wäre die teuerste Art, ihn zu melden.
+
+### Eine Zahl für die ganze Tafel, nicht je Zeile
+
+Eine große Überschrift über kleinen Zeilen wäre der schönere Fall, und er
+kostet unverhältnismäßig: ein Maßstab je Zeile heißt eine Zeilenhöhe je Zeile
+im Speicherformat, im Paket zum Client und im Umbruch. Der Fall lässt sich
+bauen — zwei Wände mit einer Lücke dazwischen, denn Tafeln, die sich berühren,
+sind eine Wand. Das ist eine Bauentscheidung von zehn Sekunden gegen ein
+Datenformat, das für immer bleibt.
+
+### Die Sichtweite wächst mit
+
+Sechzehn Blöcke war die Entfernung, ab der nicht mehr gezeichnet wird — bei
+Normalgröße die richtige Zahl, bei vierfacher nicht. Ohne diese Kopplung wäre
+`scale` ein Griff, der die Schrift vergrößert und sie genau dort verschwinden
+lässt, wo man sie lesen wollte. Sie ist der Grund, warum der Maßstab am Block
+liegt und nicht erst beim Zeichnen aus dem Programm geholt wird: `shouldRender`
+läuft je Bild und je Tafel und darf nichts nachschlagen.

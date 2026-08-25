@@ -24,11 +24,14 @@ import java.util.List;
  * ein umständliches Terminal.
  *
  * <p><b>Eine Wand aus Tafeln ist ein Bildschirm.</b> Geschrieben wird von der
- * Tafel unten links, und zwar über die ganze Fläche. Die Schrift bleibt dabei
- * gleich groß: Der Platz einer großen Wand geht in mehr Zeilen und längere,
- * nicht in größere Buchstaben — eine Wand, deren Text mit ihr wächst, ist aus
- * drei Metern genauso lesbar wie eine einzelne Tafel und verschenkt den
- * ganzen Vorteil.
+ * Tafel unten links, und zwar über die ganze Fläche.
+ *
+ * <p><b>Die Schrift wächst nicht von selbst mit.</b> Der Platz einer großen
+ * Wand geht in mehr Zeilen und längere — eine Wand, deren Text mit ihr wächst,
+ * ist aus drei Metern genauso lesbar wie eine einzelne Tafel und verschenkt
+ * den ganzen Vorteil. Wer eine Überschrift will, die man aus zwanzig Metern
+ * liest, schreibt {@code scale 4} in den Display-Block: Dann entscheidet der,
+ * der die Wand gebaut hat, und nicht die Wand.
  *
  * <p>Ab einer gewissen Entfernung wird nichts mehr gezeichnet: Zwanzig
  * Displays an einer Wand, jedes mit zehn Zeilen, sind zweihundert Textblöcke
@@ -38,7 +41,6 @@ public class DisplayRenderer implements BlockEntityRenderer<DisplayBlockEntity> 
 
     /** Weiter als das ist die Schrift ohnehin nicht zu lesen. */
     private static final double MAX_DISTANCE = 16.0;
-    private static final double MAX_DISTANCE_SQUARED = MAX_DISTANCE * MAX_DISTANCE;
 
     private static final float SCALE = 0.006F;
     private static final int LINE_HEIGHT = 9;
@@ -65,22 +67,29 @@ public class DisplayRenderer implements BlockEntityRenderer<DisplayBlockEntity> 
 
         Direction facing = display.getBlockState().getValue(HorizontalDirectionalBlock.FACING);
         DisplayWall wall = display.wall();
+        int textScale = display.textScale();
         poses.pushPose();
 
         // In die Mitte der Vorderseite, dann in die Blickrichtung drehen.
         poses.translate(0.5, 0.5, 0.5);
         poses.mulPose(com.mojang.math.Axis.YP.rotationDegrees(-facing.toYRot()));
         poses.translate(0, 0, -0.47);
-        poses.scale(-SCALE, -SCALE, SCALE);
+        poses.scale(-SCALE * textScale, -SCALE * textScale, SCALE);
 
         // Von der eigenen Tafel in die Mitte der Wand. Der Maßstab steht
         // schon, also wird hier in Schrifteinheiten gerechnet — und die
         // x-Achse ist gespiegelt, deshalb das Minus.
         float toCentreX = -((wall.columns() - 1) / 2.0F - wall.anchorColumn());
         float toCentreY = -((wall.rows() - 1) / 2.0F - wall.anchorRow());
-        poses.translate(toCentreX * UNITS_PER_BLOCK, toCentreY * UNITS_PER_BLOCK, 0.0F);
+        // Der Maßstab steckt jetzt in der Matrix, also ist ein Block weniger
+        // Schrifteinheiten breit. Ohne die Teilung liefe die Verschiebung
+        // mit der Schriftgröße mit und die Wand rutschte aus dem Rahmen.
+        float unitsPerBlock = UNITS_PER_BLOCK / textScale;
+        poses.translate(toCentreX * unitsPerBlock, toCentreY * unitsPerBlock, 0.0F);
 
-        int room = wall.rows() * LINES_PER_PANEL;
+        // Große Schrift, weniger Zeilen — der Tausch steht offen da, und der
+        // Spieler hat ihn selbst gewählt.
+        int room = Math.max(1, wall.rows() * LINES_PER_PANEL / textScale);
         int shown = Math.min(lines.size(), room);
         int totalHeight = shown * LINE_HEIGHT;
         int top = -totalHeight / 2;
@@ -115,10 +124,19 @@ public class DisplayRenderer implements BlockEntityRenderer<DisplayBlockEntity> 
         return box;
     }
 
-    /** Aus der Ferne nicht zeichnen — die Schrift wäre ohnehin unlesbar. */
+    /**
+     * Aus der Ferne nicht zeichnen — die Schrift wäre ohnehin unlesbar.
+     *
+     * <p><b>Die Grenze wächst mit dem Maßstab.</b> Sechzehn Blöcke waren die
+     * Entfernung, aus der Schrift in Normalgröße noch etwas hergibt; eine
+     * viermal so große gibt auf viermal so weit etwas her. Ohne das wäre
+     * {@code scale} ein Griff, der die Schrift vergrößert und sie trotzdem
+     * genau dort verschwinden lässt, wo man sie lesen wollte.
+     */
     @Override
     public boolean shouldRender(DisplayBlockEntity display, Vec3 camera) {
-        return camera.closerThan(Vec3.atCenterOf(display.getBlockPos()), MAX_DISTANCE)
-                && display.getBlockPos().distToCenterSqr(camera) < MAX_DISTANCE_SQUARED;
+        double reach = MAX_DISTANCE * display.textScale();
+        return camera.closerThan(Vec3.atCenterOf(display.getBlockPos()), reach)
+                && display.getBlockPos().distToCenterSqr(camera) < reach * reach;
     }
 }

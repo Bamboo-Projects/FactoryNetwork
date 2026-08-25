@@ -26,7 +26,7 @@ fn nachschub_starten() {
 Diese Anzeige erscheint an **jeder Wand, die `leitstand` heißt**, und im
 Reiter *Anzeigen* des Terminals. Der Knopf wirkt an beiden Stellen.
 
-## Die sieben Zeilenarten
+## Die Bausteine
 
 | | |
 |---|---|
@@ -35,11 +35,36 @@ Reiter *Anzeigen* des Terminals. Der Knopf wirkt an beiden Stellen.
 | `text wert` | Nur der Wert, ohne Beschriftung |
 | `progress "…" anteil` | Ein Balken aus zehn Blöcken, daneben der Anteil in Prozent |
 | `indicator "…" bedingung` | Ein Lämpchen, hell oder dunkel |
-| `list "…" wert` | Wie `row` — die Aufzählung mehrerer Einträge kommt noch |
+| `list "…" bestand` | Eine Aufzählung: Überschrift und je Posten eine Zeile |
 | `button "…" funktion` | Ein Knopf, der eine Funktion startet |
+| `scale zahl` | Wie groß die Schrift ist; 1 ist normal |
 
 Ein Knopf darf etwas anstoßen, das wartet: Die Funktion dahinter wird ein
 Ablauf wie jeder andere und übersteht auch einen Serverneustart.
+
+## Große Schrift
+
+Eine Wand aus zwölf Tafeln gibt dir **mehr Zeilen**, keine größeren
+Buchstaben. Das ist Absicht: Eine Wand, deren Text von selbst mitwächst, ist
+aus drei Metern genauso lesbar wie eine einzelne Tafel — der ganze Vorteil
+wäre weg.
+
+Wenn du eine Überschrift willst, die man von weitem liest, sag es:
+
+```
+display halle {
+    scale 4
+    title "ERZLAGER"
+}
+```
+
+Viermal so groß, ein Viertel der Zeilen — und aus viermal so weit sichtbar,
+denn die Entfernung, ab der eine Tafel nicht mehr gezeichnet wird, wächst mit.
+Erlaubt ist 1 bis 8.
+
+Die Größe gilt für die **ganze Tafel**. Eine große Überschrift über kleinen
+Zeilen bekommst du nicht in einem Block, sondern mit zwei Wänden und einer
+Lücke dazwischen: Tafeln, die sich berühren, sind eine Wand.
 
 ## Was auf einer Anzeige ausgewertet wird
 

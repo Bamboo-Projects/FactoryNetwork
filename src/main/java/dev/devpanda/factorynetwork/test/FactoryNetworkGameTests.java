@@ -944,6 +944,86 @@ public final class FactoryNetworkGameTests {
         });
     }
 
+    /**
+     * {@code scale} macht die Schrift größer, und die Zeile bleibt eine Zeile.
+     *
+     * <p>Der Maßstab gehört zur Tafel und nicht in ihren Text: Er geht mit
+     * den Zeilen hinüber, damit der Client die Sprache nicht kennen muss —
+     * aber er schreibt nichts hin.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void scaleMakesTheTextBigger(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 1, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        rackWithServer(helper, controller.west());
+        helper.setBlock(controller.east(), FnBlocks.CABLE.get());
+
+        BlockPos display = controller.east().east();
+        helper.setBlock(display, FnBlocks.DISPLAY.get());
+        if (helper.getBlockEntity(display) instanceof DisplayBlockEntity entity) {
+            entity.setDisplayName("halle");
+        } else {
+            helper.fail("Am Display hängt keine BlockEntity", display);
+            return;
+        }
+
+        ControllerBlockEntity controllerEntity = controllerAt(helper, controller);
+        controllerEntity.rebuildNetwork();
+        helper.assertTrue(controllerEntity.deploy("""
+                display halle {
+                    scale 4
+                    title "ERZLAGER"
+                }"""), "Das Programm wurde nicht übernommen");
+        controllerEntity.rebuildNetwork();
+
+        helper.runAfterDelay(25, () -> {
+            if (!(helper.getBlockEntity(display) instanceof DisplayBlockEntity shown)) {
+                helper.fail("Display verschwunden", display);
+                return;
+            }
+            helper.assertValueEqual(shown.textScale(), 4, "der Maßstab");
+            helper.assertValueEqual(shown.lines().size(), 1,
+                    "scale ist keine Zeile: " + shown.lines());
+            helper.assertTrue(shown.lines().get(0).contains("ERZLAGER"),
+                    "die Überschrift fehlt: " + shown.lines());
+            helper.succeed();
+        });
+    }
+
+    /** Ein unsinniger Maßstab wird auf das Machbare gezogen. */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void anabsurdScaleIsPulledIntoRange(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 1, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        rackWithServer(helper, controller.west());
+        helper.setBlock(controller.east(), FnBlocks.CABLE.get());
+
+        BlockPos display = controller.east().east();
+        helper.setBlock(display, FnBlocks.DISPLAY.get());
+        if (helper.getBlockEntity(display) instanceof DisplayBlockEntity entity) {
+            entity.setDisplayName("halle");
+        }
+
+        ControllerBlockEntity controllerEntity = controllerAt(helper, controller);
+        controllerEntity.rebuildNetwork();
+        // Null wäre eine unsichtbare Tafel, tausend ein Buchstabe über der
+        // halben Wand. Beides ist kein Fehler im Programm, sondern eine Zahl,
+        // die niemand so gemeint hat.
+        helper.assertTrue(controllerEntity.deploy("""
+                display halle {
+                    scale 0
+                    text "unten"
+                }"""), "Das Programm wurde nicht übernommen");
+        controllerEntity.rebuildNetwork();
+
+        helper.runAfterDelay(25, () -> {
+            if (helper.getBlockEntity(display) instanceof DisplayBlockEntity shown) {
+                helper.assertValueEqual(shown.textScale(), 1, "null wird eins");
+                helper.succeed();
+            }
+        });
+    }
+
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void aDisplayWithoutItsDeclarationSaysSo(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 1, 1);

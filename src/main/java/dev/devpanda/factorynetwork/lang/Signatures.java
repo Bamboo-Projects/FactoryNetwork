@@ -141,7 +141,9 @@ public final class Signatures {
             of("list", "Eine Aufzählung aus einem Ausdruck.",
                     Slot.of(Kind.STRING), Slot.of(Kind.EXPR)),
             of("button", "Ein Knopf, der eine Funktion aufruft.",
-                    Slot.of(Kind.STRING), Slot.of(Kind.FUNCTION)));
+                    Slot.of(Kind.STRING), Slot.of(Kind.FUNCTION)),
+            of("scale", "Wie groß die Schrift ist; 1 ist normal.",
+                    Slot.of(Kind.INT)));
 
     /** Die Angaben in einem Worker. */
     public static final List<Signature> WORKER = List.of(

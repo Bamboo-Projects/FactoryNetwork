@@ -85,6 +85,7 @@ Je Zeile eine Angabe. Gezeichnet wird von oben nach unten.
 | `indicator string expr` | Eine Lampe: an, wenn der Ausdruck wahr ist. |
 | `list string expr` | Eine Aufzählung aus einem Ausdruck. |
 | `button string function` | Ein Knopf, der eine Funktion aufruft. |
+| `scale int` | Wie groß die Schrift ist; 1 ist normal. |
 
 ## Freie Funktionen
 

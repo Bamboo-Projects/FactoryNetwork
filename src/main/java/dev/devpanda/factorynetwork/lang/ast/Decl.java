@@ -54,7 +54,7 @@ public sealed interface Decl {
     record Display(String name, List<Entry> entries, Span span) implements Decl {
 
         public record Entry(Kind kind, String label, Expr value, Span span) {
-            public enum Kind { TITLE, ROW, TEXT, PROGRESS, INDICATOR, LIST, BUTTON }
+            public enum Kind { TITLE, ROW, TEXT, PROGRESS, INDICATOR, LIST, BUTTON, SCALE }
         }
     }
 

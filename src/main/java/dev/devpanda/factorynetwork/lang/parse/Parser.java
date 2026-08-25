@@ -437,15 +437,35 @@ public final class Parser {
             case INDICATOR -> Decl.Display.Entry.Kind.INDICATOR;
             case LIST -> Decl.Display.Entry.Kind.LIST;
             case BUTTON -> Decl.Display.Entry.Kind.BUTTON;
+            case SCALE -> Decl.Display.Entry.Kind.SCALE;
             default -> null;
         };
         if (kind == null) {
             error(start.span(), describe(start) + " ist kein Baustein für ein Display.",
-                    "Erlaubt sind title, row, text, progress, indicator, list und button.");
+                    "Erlaubt sind title, row, text, progress, indicator, list, button "
+                            + "und scale.");
             recoverToLineEnd();
             return null;
         }
         advance();
+
+        // scale trägt eine feste Zahl und keinen Ausdruck: Die Größe der
+        // Schrift ist Aufbau und nicht Inhalt. Ein Maßstab, der sich beim
+        // Zusehen ändert, wäre eine Spielerei, für die die Wand jedes Mal neu
+        // umbricht — und was dabei aus dem Bild fällt, sähe wie ein Fehler aus.
+        if (kind == Decl.Display.Entry.Kind.SCALE) {
+            Token number = peek();
+            if (!number.is(TokenType.INT)) {
+                error(number.span(), "Nach scale fehlt die Zahl.",
+                        "Zum Beispiel: scale 4 — viermal so groß wie normal.");
+                recoverToLineEnd();
+                return null;
+            }
+            advance();
+            Expr value = new Expr.IntLit(Long.parseLong(number.text()), number.span());
+            return new Decl.Display.Entry(kind, null, value,
+                    start.span().to(number.span()));
+        }
 
         // title und text tragen nur einen Wert, alles andere Beschriftung und Wert.
         if (kind == Decl.Display.Entry.Kind.TITLE) {

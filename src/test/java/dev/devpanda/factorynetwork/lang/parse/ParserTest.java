@@ -372,6 +372,29 @@ class ParserTest {
         }
 
         @Test
+        void displayScale() {
+            Program program = parseClean("""
+                    display halle {
+                        scale 4
+                        title "ERZLAGER"
+                    }""");
+            Decl.Display display = (Decl.Display) program.declarations().get(0);
+            assertEquals(Decl.Display.Entry.Kind.SCALE, display.entries().get(0).kind());
+            assertEquals(4, ((Expr.IntLit) display.entries().get(0).value()).value());
+        }
+
+        @Test
+        void displayScaleWantsAnumber() {
+            // Eine Zahl und kein Ausdruck: Die Größe der Schrift ist Aufbau
+            // und nicht Inhalt. Ein Maßstab, der sich beim Zusehen ändert,
+            // wäre eine Spielerei, für die die Wand jedes Mal neu umbricht.
+            assertTrue(Parser.parse("""
+                    display halle {
+                        scale storage.count(item:coal)
+                    }""").hasErrors(), "ein Ausdruck darf nicht durchgehen");
+        }
+
+        @Test
         void eventWithTypedParameters() {
             Program program = parseClean("event OreBatchReady(item: Item, amount: Int)");
             Decl.Event event = (Decl.Event) program.declarations().get(0);

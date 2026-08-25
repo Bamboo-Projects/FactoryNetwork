@@ -97,6 +97,12 @@ public final class DisplayValues {
     public List<Line> evaluate(Decl.Display display) {
         List<Line> lines = new ArrayList<>();
         for (Decl.Display.Entry entry : display.entries()) {
+            // scale ist keine Zeile, sondern eine Angabe über die Tafel.
+            // Sie steht im Block, weil sie zu dieser Anzeige gehört — aber
+            // sie schreibt nichts hin.
+            if (entry.kind() == Decl.Display.Entry.Kind.SCALE) {
+                continue;
+            }
             // Eine Aufzählung ist mehr als eine Zeile — das ist ihr ganzer
             // Sinn und der Unterschied zu row.
             if (entry.kind() == Decl.Display.Entry.Kind.LIST) {
@@ -200,6 +206,10 @@ public final class DisplayValues {
                     0, truth(entry.value()));
             case LIST -> Line.text(entry.kind(), entry.label(), describe(entry.value()));
             case BUTTON -> Line.text(entry.kind(), entry.label(), "");
+            // Kommt hier nie an: evaluate(Decl.Display) überspringt es. Der
+            // Fall steht trotzdem da, damit der Übersetzer beim nächsten
+            // neuen Baustein wieder meckert.
+            case SCALE -> Line.text(entry.kind(), null, "");
         };
     }
 
