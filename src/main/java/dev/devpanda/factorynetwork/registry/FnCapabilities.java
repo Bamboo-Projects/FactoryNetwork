@@ -34,6 +34,12 @@ public final class FnCapabilities {
                 FnBlockEntities.CONTROLLER.get(),
                 (ControllerBlockEntity controller, net.minecraft.core.Direction side)
                         -> controller.power().buffer());
+        // Ohne BlockEntity: Die Kreativquelle ist ein schlichter Block, und
+        // ihr Speicher ist eine Zahl ohne Zustand.
+        event.registerBlock(Capabilities.EnergyStorage.BLOCK,
+                (level, pos, state, blockEntity, side)
+                        -> dev.devpanda.factorynetwork.block.CreativeSourceBlock.TAP,
+                dev.devpanda.factorynetwork.registry.FnBlocks.CREATIVE_SOURCE.get());
     }
 
     private FnCapabilities() {

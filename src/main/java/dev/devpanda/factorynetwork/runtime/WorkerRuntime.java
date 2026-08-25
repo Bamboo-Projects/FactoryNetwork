@@ -17,6 +17,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.Fluid;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.energy.IEnergyStorage;
 import net.neoforged.neoforge.items.IItemHandler;
 
 import java.util.ArrayList;
@@ -84,6 +85,14 @@ public final class WorkerRuntime {
 
     /** Das Programm, aus dem die Vorlagen stammen — für den Vergleich. */
     private Program templateSource;
+
+    /**
+     * Der Stromvorrat des Netzes, oder {@code null}.
+     *
+     * <p>Setzt der Controller. Ohne ihn — in Prüfungen ohne Welt — hält ein
+     * Strom-Worker an und sagt es, statt so zu tun, als flösse etwas.
+     */
+    private dev.devpanda.factorynetwork.network.NetworkPower power;
     private final java.util.random.RandomGenerator random = new java.util.Random();
 
     /** Womit eine {@code when}-Bedingung ausgewertet wird, oder {@code null}. */
@@ -171,7 +180,7 @@ public final class WorkerRuntime {
             templates.putAll(FilterTemplates.of(program));
             templateSource = program;
         }
-        for (Decl.Worker worker : program.workers()) {
+        for (Decl.Worker worker : byPriority(program.workers())) {
             WorkerState state = states.computeIfAbsent(worker.name(), name -> new WorkerState());
             int interval = intervalOf(worker);
             if (now - state.lastRun < interval) {
@@ -180,6 +189,32 @@ public final class WorkerRuntime {
             state.lastRun = now;
             runWorker(worker, state, graph, storage);
         }
+    }
+
+    /**
+     * Die Worker in der Reihenfolge, in der sie drankommen.
+     *
+     * <p><b>Kleine Zahl zuerst</b>, wie überall in der Sprache, und bei
+     * gleicher Zahl in der Reihenfolge, in der sie dastehen. Das war bisher
+     * eine Zusage ohne Wirkung: {@code priority} stand in der Doku und wurde
+     * nirgends gelesen.
+     *
+     * <p>Beim Strom entscheidet die Reihenfolge, wer bei Knappheit leer
+     * ausgeht — und bei Gegenständen, wer den letzten Stapel aus einem
+     * knappen Lager bekommt.
+     */
+    private static List<Decl.Worker> byPriority(List<Decl.Worker> workers) {
+        List<Decl.Worker> sorted = new ArrayList<>(workers);
+        sorted.sort(java.util.Comparator.comparingInt(WorkerRuntime::priorityOf));
+        return sorted;
+    }
+
+    private static int priorityOf(Decl.Worker worker) {
+        Decl.Worker.Entry entry = worker.entry(Decl.Worker.Entry.Kind.PRIORITY);
+        if (entry == null || !(entry.value() instanceof Expr.IntLit number)) {
+            return 0;
+        }
+        return (int) number.value();
     }
 
     /**
@@ -230,16 +265,8 @@ public final class WorkerRuntime {
             return;
         }
 
-        // <b>Strom kennt die Sprache, die Laufzeit noch nicht.</b> Ohne diese
-        // Stelle liefe ein Strom-Worker in den Gegenstandspfad, dort träfe
-        // die Auswahl nichts, und er stünde für immer auf IDLE — der stille
-        // Fehlschlag, den man am längsten sucht. Lieber einmal sagen, was
-        // fehlt.
         if (WorkerKind.of(worker, templates) == Expr.Selector.Kind.POWER) {
-            state.status = Status.HALTED;
-            state.detail = "Strom wird noch nicht verteilt";
-            note(worker, "Die Schreibweise für Strom steht, die Verteilung "
-                    + "kommt noch. Siehe docs/strom.md.");
+            tickPowerWorker(worker, state, graph, from, to);
             return;
         }
 
@@ -700,6 +727,132 @@ public final class WorkerRuntime {
         }
     }
 
+
+    // ---- Strom -------------------------------------------------------------
+
+    /** Der Stromvorrat des Netzes; setzt der Controller. */
+    public void setPower(dev.devpanda.factorynetwork.network.NetworkPower supply) {
+        this.power = supply;
+    }
+
+    /**
+     * Ein Worker, der Strom bewegt.
+     *
+     * <p><b>Eine Seite ist immer das Netz.</b> {@code from network to
+     * crusher_1} versorgt, {@code from akku_1 to network} speist ein. Strom
+     * von einer Maschine direkt in die andere zu schieben wäre eine Leitung
+     * ohne Kabel — dafür gibt es Kabel.
+     *
+     * <p>Es gibt <b>keine Kabelgrenze</b> (entschieden am 25.08.): Was
+     * fließt, begrenzen die Rate des Workers, der Vorrat des Netzes und was
+     * die Maschine annimmt. Eine zweite Knappheit neben {@code priority}
+     * hätte zwei Ursachen für dasselbe Symptom bedeutet.
+     *
+     * <p>Bei Knappheit gilt die Reihenfolge der {@code priority}: Wer zuerst
+     * drankommt, bekommt bis zu seiner Rate, und wer leer ausgeht, geht leer
+     * aus. Die Reihenfolge stellt {@link #tick} her.
+     */
+    private void tickPowerWorker(Decl.Worker worker, WorkerState state, FactoryGraph graph,
+                                 Decl.Worker.Entry from, Decl.Worker.Entry to) {
+        if (power == null) {
+            state.status = Status.HALTED;
+            state.detail = "Kein Stromvorrat";
+            return;
+        }
+        boolean fromNetwork = isNetwork(from.value());
+        boolean toNetwork = isNetwork(to.value());
+        if (fromNetwork == toNetwork) {
+            state.status = Status.HALTED;
+            state.detail = "Bei Strom ist eine Seite network";
+            note(worker, "Strom fließt aus dem Netz in eine Maschine oder aus einer "
+                    + "Maschine ins Netz — from network to … oder from … to network.");
+            return;
+        }
+        int batch = batchOf(worker);
+        int moved = fromNetwork
+                ? supply(to.value(), graph, state, batch)
+                : drawIn(from.value(), graph, state, batch);
+        state.moved += moved;
+        if (state.status != Status.HALTED && state.status != Status.WAITING_TARGET) {
+            state.status = moved > 0 ? Status.RUNNING : Status.IDLE;
+            state.detail = moved > 0 ? moved + " FE" : "nichts zu tun";
+        }
+    }
+
+    /** Aus dem Netz in eine Maschine. */
+    private int supply(Expr target, FactoryGraph graph, WorkerState state, int batch) {
+        IEnergyStorage machine = energyOf(target, graph, state);
+        if (machine == null) {
+            return 0;
+        }
+        // Erst fragen, wie viel hineinpasst, dann erst aus dem Vorrat nehmen:
+        // Was die Maschine nicht annimmt, wäre sonst für einen Tick weg.
+        int room = machine.receiveEnergy(batch, true);
+        if (room <= 0) {
+            state.status = Status.WAITING_TARGET;
+            state.detail = "Die Maschine ist voll";
+            return 0;
+        }
+        int taken = power.take(room);
+        if (taken <= 0) {
+            state.status = Status.WAITING_TARGET;
+            state.detail = "Kein Strom übrig";
+            return 0;
+        }
+        int accepted = machine.receiveEnergy(taken, false);
+        if (accepted < taken) {
+            // Zwischen Frage und Antwort kann sich etwas geändert haben.
+            power.fill(taken - accepted);
+        }
+        return accepted;
+    }
+
+    /** Aus einer Maschine ins Netz. */
+    private int drawIn(Expr source, FactoryGraph graph, WorkerState state, int batch) {
+        IEnergyStorage machine = energyOf(source, graph, state);
+        if (machine == null) {
+            return 0;
+        }
+        int room = Math.min(batch, power.room());
+        if (room <= 0) {
+            state.status = Status.WAITING_TARGET;
+            state.detail = "Der Vorrat ist voll";
+            return 0;
+        }
+        int taken = machine.extractEnergy(room, false);
+        if (taken <= 0) {
+            state.status = Status.WAITING_TARGET;
+            state.detail = "Die Quelle gibt nichts";
+            return 0;
+        }
+        power.fill(taken);
+        return taken;
+    }
+
+    private static boolean isNetwork(Expr expr) {
+        return expr instanceof Expr.Builtin builtin
+                && builtin.kind() == Expr.Builtin.Kind.NETWORK;
+    }
+
+    /** Der Stromspeicher hinter einem Ziel. */
+    private IEnergyStorage energyOf(Expr target, FactoryGraph graph, WorkerState state) {
+        return resolve(target, graph, state, ConnectorBlockEntity::machineEnergy,
+                "An diesem Connector hängt nichts, das Strom annimmt", this::energyLevelOf);
+    }
+
+    /**
+     * Wie voll der Stromspeicher eines Geräts ist — für {@code least_filled}.
+     *
+     * <p>Ohne diese Fassung sortierte eine Gruppe von Maschinen nach
+     * Gegenstands-Fächern, die für Strom nichts aussagen: Alle sähen gleich
+     * voll aus, und die Verteilung wäre in Wahrheit reihum.
+     */
+    private long energyLevelOf(String device) {
+        IEnergyStorage machine = lastGraph == null ? null
+                : resolveDevice(device, lastGraph, new WorkerState(),
+                        ConnectorBlockEntity::machineEnergy, "");
+        return machine == null ? Long.MAX_VALUE : machine.getEnergyStored();
+    }
 
     // ---- Flüssigkeiten ----------------------------------------------------
 

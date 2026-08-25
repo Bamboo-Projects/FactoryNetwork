@@ -575,6 +575,7 @@ public class ControllerBlockEntity extends BlockEntity {
                     level.isLoaded(position)
                             && level.getBlockEntity(position) instanceof ConnectorBlockEntity connector
                             ? connector : null);
+            runtime.setPower(power);
             runtime.tick(level, program, graph, storage, fluidStorage,
                     newHost());
             // Was die Worker zu melden hatten, gehört ins Protokoll. Bisher

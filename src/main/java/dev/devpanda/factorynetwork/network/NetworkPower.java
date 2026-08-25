@@ -133,6 +133,26 @@ public final class NetworkPower {
     }
 
     /**
+     * Nimmt bis zu {@code amount} aus dem Vorrat und sagt, wie viel es wurde.
+     *
+     * <p>Für die Abgabe an eine Maschine. <b>Bis zu</b>, weil ein leeres Netz
+     * kein Fehler ist: Wer nichts hat, gibt nichts ab, und der Worker steht
+     * danach als {@code WAITING_TARGET} da wie vor einer vollen Kiste.
+     */
+    public int take(int amount) {
+        int taken = Math.min(Math.max(amount, 0), buffer.getEnergyStored());
+        if (taken > 0) {
+            buffer.consume(taken);
+        }
+        return taken;
+    }
+
+    /** Wie viel noch hineinpasst. */
+    public int room() {
+        return Math.max(0, buffer.getMaxEnergyStored() - buffer.getEnergyStored());
+    }
+
+    /**
      * Leert den Vorrat auf einen Schlag.
      *
      * <p>Für den Fall, dass die Versorgung wegbricht — und für Prüfungen, die

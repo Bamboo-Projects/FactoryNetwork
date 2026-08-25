@@ -6925,6 +6925,138 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    // ---- Strom verteilen ---------------------------------------------------
+
+    /**
+     * Das Netz versorgt eine Maschine.
+     *
+     * <p>Die Presse ist die einzige Maschine der Mod, die Strom annimmt — und
+     * damit die ehrlichste Prüfstrecke: Was hier ankommt, ist wirklich
+     * angekommen.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void thenetworkSuppliesAMachine(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        BlockPos maschine = controller.east().north().north();
+        helper.setBlock(maschine, FnBlocks.PRESS.get());
+        entity.rebuildNetwork();
+        entity.power().fill(10_000);
+
+        helper.assertTrue(entity.deploy("""
+                worker versorgung {
+                    from network
+                    to quarry_output
+                    filter power
+                    rate 40 per 1t
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+
+        helper.startSequence()
+                .thenIdle(30)
+                .thenExecute(() -> {
+                    if (!(helper.getBlockEntity(maschine)
+                            instanceof dev.devpanda.factorynetwork.block.entity.PressBlockEntity
+                                    presse)) {
+                        helper.fail("Da steht keine Presse", maschine);
+                        return;
+                    }
+                    helper.assertTrue(presse.energy().getEnergyStored() > 0,
+                            "In der Presse muss Strom angekommen sein");
+                })
+                .thenSucceed();
+    }
+
+    /** Und andersherum: aus einer Maschine ins Netz. */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void amachineFeedsTheNetwork(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        // Die Kreativquelle ist die einzige Stromquelle dieser Mod, die
+        // etwas hergibt: Eine Maschine ist kein Akku, und die Presse
+        // verweigert die Entnahme mit Absicht.
+        BlockPos quelle = controller.east().north().north();
+        helper.setBlock(quelle, FnBlocks.CREATIVE_SOURCE.get());
+        entity.rebuildNetwork();
+        // Der Puffer startet voll; ohne Platz darin fließt nichts hinein.
+        // Entnommen statt geleert: empty() schaltet das Netz ab, und ein
+        // abgeschaltetes Netz lässt keine Worker laufen.
+        entity.power().take(entity.power().stored() - 2_000);
+
+        helper.assertTrue(entity.deploy("""
+                worker einspeisen {
+                    from quarry_output
+                    to network
+                    filter power
+                    rate 200 per 1t
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+
+        int vorher = entity.power().stored();
+        helper.startSequence()
+                .thenIdle(30)
+                .thenExecute(() -> helper.assertTrue(entity.power().stored() > vorher,
+                        "Der Vorrat muss gewachsen sein: " + vorher
+                                + " → " + entity.power().stored()))
+                .thenSucceed();
+    }
+
+    /**
+     * Bei Knappheit gilt die Reihenfolge der {@code priority}.
+     *
+     * <p>Zwei Worker, einer mit Vorrang, und weniger Strom, als beide
+     * zusammen wollen. Der mit der kleinen Zahl läuft voll, der andere geht
+     * leer aus — nicht beide halb.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void priorityDecidesWhoGetsPower(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        BlockPos erste = controller.east().north().north();
+        BlockPos zweite = controller.east().south().south();
+        helper.setBlock(erste, FnBlocks.PRESS.get());
+        helper.setBlock(zweite, FnBlocks.PRESS.get());
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                worker wichtig {
+                    from network
+                    to quarry_output
+                    filter power
+                    rate 100 per 1t
+                    priority 1
+                }
+
+                worker unwichtig {
+                    from network
+                    to depot
+                    filter power
+                    rate 100 per 1t
+                    priority 9
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+
+        helper.startSequence()
+                .thenExecute(() -> {
+                    // Knapp, aber laufend: Was übrig bleibt, reicht für ein
+                    // paar Würfe und nicht für beide Worker.
+                    entity.power().take(entity.power().stored() - 300);
+                })
+                .thenIdle(40)
+                .thenExecute(() -> {
+                    var bevorzugt = (dev.devpanda.factorynetwork.block.entity.PressBlockEntity)
+                            helper.getBlockEntity(erste);
+                    var nachrangig = (dev.devpanda.factorynetwork.block.entity.PressBlockEntity)
+                            helper.getBlockEntity(zweite);
+                    helper.assertTrue(bevorzugt.energy().getEnergyStored()
+                                    > nachrangig.energy().getEnergyStored(),
+                            "Der Worker mit Vorrang bekommt mehr: "
+                                    + bevorzugt.energy().getEnergyStored() + " gegen "
+                                    + nachrangig.energy().getEnergyStored());
+                })
+                .thenSucceed();
+    }
+
     // ---- Gerätemitglieder --------------------------------------------------
 
     /**

@@ -30,6 +30,46 @@ public class CreativeSourceBlock extends Block {
     /** Reichlich: Der Block soll nie der Engpass sein. */
     private static final int PER_TICK = 100_000;
 
+    /**
+     * Und dasselbe zum Abholen.
+     *
+     * <p>Schieben allein reicht nicht mehr, seit ein Worker Strom
+     * <b>holen</b> kann: {@code from quelle to network} fragt den Block nach
+     * seinem Speicher. Ohne diesen hier stünde die Kreativquelle als einzige
+     * Stromquelle da, an die kein Programm herankommt.
+     */
+    public static final IEnergyStorage TAP = new IEnergyStorage() {
+        @Override
+        public int receiveEnergy(int toReceive, boolean simulate) {
+            return 0;
+        }
+
+        @Override
+        public int extractEnergy(int toExtract, boolean simulate) {
+            return Math.max(0, toExtract);
+        }
+
+        @Override
+        public int getEnergyStored() {
+            return PER_TICK;
+        }
+
+        @Override
+        public int getMaxEnergyStored() {
+            return PER_TICK;
+        }
+
+        @Override
+        public boolean canExtract() {
+            return true;
+        }
+
+        @Override
+        public boolean canReceive() {
+            return false;
+        }
+    };
+
     public CreativeSourceBlock(Properties properties) {
         super(properties);
     }
