@@ -2589,6 +2589,106 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
+     * <b>Die Ausnahme wirkte nur im Worker.</b> Der Interpreter wertete
+     * {@code Expr.Except} als seine Grundlage aus und warf die Ausschlüsse
+     * weg — in einem {@code move} stand die Ausnahme also da und tat nichts,
+     * obwohl sprache.md sie zeigt.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void exceptWorksInMoveToo(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        BlockPos quelle = controller.east().north().north();
+        if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity container) {
+            container.setItem(0, new ItemStack(Items.IRON_ORE, 8));
+            container.setItem(1, new ItemStack(Items.GOLD_ORE, 8));
+        }
+
+        helper.assertTrue(entity.deploy("""
+                fn holt() {
+                    move 64 item:*_ore except item:gold_ore from quarry_output to storage
+                }"""), "Das Programm wurde nicht übernommen");
+
+        entity.startFlow("holt", List.of());
+        helper.startSequence()
+                .thenIdle(10)
+                .thenExecute(() -> {
+                    helper.assertValueEqual(entity.storage().count(Items.IRON_ORE), 8L,
+                            "Eisenerz trifft das Muster");
+                    helper.assertValueEqual(entity.storage().count(Items.GOLD_ORE), 0L,
+                            "Golderz ist ausdrücklich ausgenommen");
+                })
+                .thenSucceed();
+    }
+
+    /** Dieselbe Vorlage wie im Worker, aber in einem move. */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void moveUsesAFilterTemplate(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        BlockPos quelle = controller.east().north().north();
+        if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity container) {
+            container.setItem(0, new ItemStack(Items.IRON_ORE, 8));
+            container.setItem(1, new ItemStack(Items.GOLD_ORE, 8));
+        }
+
+        helper.assertTrue(entity.deploy("""
+                filter erze {
+                    item:iron_ore
+                    item:gold_ore
+                    except item:gold_ore
+                }
+
+                fn holt() {
+                    move erze from quarry_output to storage
+                }"""), "Das Programm wurde nicht übernommen");
+
+        entity.startFlow("holt", List.of());
+        helper.startSequence()
+                .thenIdle(10)
+                .thenExecute(() -> {
+                    helper.assertValueEqual(entity.storage().count(Items.IRON_ORE), 8L,
+                            "Eisenerz steht in der Vorlage");
+                    helper.assertValueEqual(entity.storage().count(Items.GOLD_ORE), 0L,
+                            "Golderz nimmt die Ausnahme heraus");
+                })
+                .thenSucceed();
+    }
+
+    /** Eine Vorlage zählt auch, wenn nur gelesen wird. */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void countUsesAFilterTemplate(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        entity.storage().insert(Items.IRON_ORE, 5);
+        entity.storage().insert(Items.GOLD_ORE, 7);
+
+        helper.assertTrue(entity.deploy("""
+                filter erze {
+                    item:iron_ore
+                    item:gold_ore
+                }
+
+                global gezaehlt = 0
+
+                fn zaehlt() {
+                    gezaehlt = storage.count(erze)
+                }"""), "Das Programm wurde nicht übernommen");
+
+        entity.startFlow("zaehlt", List.of());
+        helper.startSequence()
+                .thenIdle(10)
+                .thenExecute(() -> helper.assertValueEqual(entity.globals().get("gezaehlt"),
+                        new Value.Int(12), "Beide Sorten zusammen"))
+                .thenSucceed();
+    }
+
+    /**
      * Ein Worker filtert nach einer Vorlage.
      *
      * <p>Drei Sorten liegen in der Kiste, zwei stehen in der Vorlage, eine

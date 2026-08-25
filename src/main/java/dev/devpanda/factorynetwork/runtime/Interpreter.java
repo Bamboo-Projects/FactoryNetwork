@@ -185,9 +185,20 @@ public final class Interpreter {
         }
     }
 
+    /**
+     * Die Filter-Vorlagen des Programms, nach Namen.
+     *
+     * <p>Aus dem Programm und nicht über den {@link Host}: Eine Vorlage steht
+     * im Code und nicht in der Welt. Der Host ist die Naht zu dem, was
+     * draußen liegt — Bestände, Geräte, Redstone.
+     */
+    private final Map<String, dev.devpanda.factorynetwork.lang.ast.Decl.FilterTemplate>
+            templates;
+
     public Interpreter(Program program, Host host) {
         this.program = program;
         this.host = host;
+        this.templates = FilterTemplates.of(program);
     }
 
     // ---- Einstiegspunkte --------------------------------------------------
@@ -656,7 +667,12 @@ public final class Interpreter {
                     builtin.kind().name().toLowerCase(java.util.Locale.ROOT));
             case Expr.Selector selector -> new Value.Request(written(selector), -1);
             case Expr.Amount amount -> withAmount(evaluate(amount.selection()), amount.count());
-            case Expr.Except except -> evaluate(except.base());
+            // Eine Ausnahme lässt sich erst nach dem Auflösen anwenden:
+            // Aus einem Tag etwas herauszunehmen heißt, die Menge zu kennen.
+            // Solange hier evaluate(except.base()) stand, fielen die
+            // Ausschlüsse weg — im Worker wirkte except, in move und count
+            // nicht.
+            case Expr.Except except -> resolvedSelection(except);
             case Expr.Unary unary -> unary(unary);
             case Expr.Binary binary -> binary(binary);
             case Expr.Member member -> member(member);
@@ -713,6 +729,51 @@ public final class Interpreter {
                 + selector.path();
     }
 
+    /**
+     * Eine Auswahl, die schon aufgelöst ist.
+     *
+     * <p>Gebraucht überall dort, wo der geschriebene Text allein nicht mehr
+     * reicht — bei {@code except} und bei einer Filter-Vorlage. Aufgelöst
+     * wird über dieselbe Stelle wie sonst auch, mitsamt Zwischenspeicher.
+     */
+    private Value resolvedSelection(Expr expr) {
+        long amount = amountIn(expr);
+        if (dev.devpanda.factorynetwork.lang.WorkerKind.selectorKind(expr)
+                == Expr.Selector.Kind.FLUID) {
+            return new Value.FluidSelection(FluidSelection.resolve(expr), amount);
+        }
+        return new Value.Selection(ItemSelection.resolve(expr), amount);
+    }
+
+    /** Die Menge, die vor einer Auswahl steht, oder -1 ohne Angabe. */
+    private static long amountIn(Expr expr) {
+        return switch (expr) {
+            case Expr.Amount amount -> amount.count() == null ? -1 : amount.count();
+            case Expr.Except except -> amountIn(except.base());
+            case null, default -> -1;
+        };
+    }
+
+    /**
+     * Die Auswahl hinter dem Namen einer Filter-Vorlage, oder {@code null}.
+     *
+     * <p>Nachgesehen wird <b>vor</b> den Geräten: Ein Vorlagenname steht im
+     * Programm, ein Gerätename kommt aus der Beschriftungspistole. Hinge die
+     * Bedeutung eines Programms daran, wie jemand später einen Connector
+     * benennt, wäre es aus der Ferne nicht mehr zu lesen. Dass eine Vorlage
+     * ein gleichnamiges Gerät verdeckt, meldet der Editor als Warnung.
+     */
+    private Value templateValue(String name) {
+        var template = templates.get(name);
+        if (template == null) {
+            return null;
+        }
+        return dev.devpanda.factorynetwork.lang.FilterKind.of(template)
+                        == dev.devpanda.factorynetwork.lang.FilterKind.FLUID
+                ? new Value.FluidSelection(FilterTemplates.fluids(template), -1)
+                : new Value.Selection(FilterTemplates.items(template), -1);
+    }
+
     private Value resolveName(String name) {
         Value local = externalScope != null ? externalScope.find(name) : find(name);
         if (local != null) {
@@ -727,6 +788,10 @@ public final class Interpreter {
             if (shared != null) {
                 return shared;
             }
+        }
+        Value template = templateValue(name);
+        if (template != null) {
+            return template;
         }
         // In einer Vorlage meint ein Gerätename immer das eigene Gerät. Erst
         // wenn die Anlage keines dieses Namens hat, zählt der Rest des Netzes
