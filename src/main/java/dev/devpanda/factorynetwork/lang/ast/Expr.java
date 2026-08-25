@@ -67,6 +67,21 @@ public sealed interface Expr {
     /** Eine Auswahl mit vorangestellter Menge, etwa {@code 64 item:iron_ingot}. */
     record Amount(Long count, Expr selection, Span span) implements Expr {}
 
+    /**
+     * {@code move 64 item:iron_ore from chest to crusher_1} als Ausdruck.
+     *
+     * <p><b>Warum ein Ausdruck und nicht nur eine Anweisung:</b>
+     * {@code crusher.insert(64 item:x)} und {@code move 64 item:x from
+     * storage to crusher} sind dieselbe Operation — {@code insertInto} ruft
+     * {@code move} auf. Die eine lieferte die angekommene Menge, die andere
+     * warf sie weg.
+     *
+     * <p>Die Anweisungsform bleibt daneben bestehen ({@code Stmt.Move}): In
+     * einem Ablauf ist ein {@code move} ein Schritt, und das braucht die
+     * Fortsetzung nach einem Serverneustart.
+     */
+    record Move(Expr amount, Expr from, Expr to, Span span) implements Expr {}
+
     // ---- Namen ------------------------------------------------------------
 
     record Name(String value, Span span) implements Expr {}

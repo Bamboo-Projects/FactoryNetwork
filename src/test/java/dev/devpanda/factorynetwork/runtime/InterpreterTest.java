@@ -267,4 +267,53 @@ class InterpreterTest {
             assertTrue(error.hint().contains("Abläufen"), error::hint);
         }
     }
+
+    @Test
+    @DisplayName("move gibt zurück, wie viel bewegt wurde")
+    void moveReportsWhatItMoved() {
+        TestHost host = new TestHost();
+        Interpreter interpreter = interpreterFor("""
+                fn holen() {
+                    let bewegt = move 64 item:iron_ore from chest to crusher_1
+                    log(bewegt)
+                }""", host);
+
+        interpreter.call("holen", List.of());
+
+        // Der Testhost meldet immer eine Bewegung; entscheidend ist, dass sie
+        // ankommt statt verworfen zu werden.
+        assertEquals(List.of("1"), host.logs);
+        assertEquals(1, host.moves.size(), () -> host.moves.toString());
+    }
+
+    @Test
+    @DisplayName("move steht auch in einer Bedingung")
+    void moveWorksInACondition() {
+        TestHost host = new TestHost();
+        Interpreter interpreter = interpreterFor("""
+                fn holen() {
+                    if move 64 item:iron_ore from chest to crusher_1 > 0 {
+                        log("etwas kam an")
+                    }
+                }""", host);
+
+        interpreter.call("holen", List.of());
+
+        assertEquals(List.of("etwas kam an"), host.logs);
+    }
+
+    @Test
+    @DisplayName("move als Anweisung bleibt eine Anweisung")
+    void moveAsAStatementStillWorks() {
+        TestHost host = new TestHost();
+        Interpreter interpreter = interpreterFor("""
+                fn holen() {
+                    move 64 item:iron_ore from chest to crusher_1
+                }""", host);
+
+        interpreter.call("holen", List.of());
+
+        assertEquals(1, host.moves.size(), () -> host.moves.toString());
+        assertTrue(host.logs.isEmpty(), () -> host.logs.toString());
+    }
 }

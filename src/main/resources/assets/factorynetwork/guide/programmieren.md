@@ -180,10 +180,17 @@ Der `else`-Zweig muss den Ablauf verlassen. Danach steht fest, dass
 `ergebnis` einen Wert hat, und niemand muss ihn prüfen.
 
 `move` bewegt so viel, wie geht: Weniger als gewünscht ist normal, gar nichts
-auch — die Quelle kann leer und das Ziel voll sein. **Auffangen lässt sich die
-Zahl noch nicht.** `move` ist eine Anweisung und kein Ausdruck, ein
-`let bewegt = move …` ist deshalb ein Fehler. Wer wissen will, ob etwas
-angekommen ist, sieht danach im Ziel nach.
+auch — die Quelle kann leer und das Ziel voll sein. **Wie viel es wurde, sagt
+es dir:**
+
+```
+let bewegt = move 64 item:iron_ore from kiste to brecher
+if bewegt == 0 {
+    warn("die Kiste ist leer")
+}
+```
+
+Wer die Zahl nicht braucht, schreibt `move` einfach als Zeile für sich.
 
 ## Was ein Gerät kann
 

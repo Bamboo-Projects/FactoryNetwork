@@ -194,7 +194,8 @@ forStmt     = 'for' NAME 'in' expr block
 whileStmt   = 'while' expr block
 returnStmt  = 'return' [ expr ]
 
-moveStmt    = 'move' amount [ 'from' target ] 'to' target
+moveStmt    = moveExpr
+moveExpr    = 'move' amount [ 'from' target ] 'to' target
 emitStmt    = 'emit' NAME '(' [ argList ] ')'
 sleepStmt   = 'sleep' DURATION
 
@@ -228,6 +229,7 @@ primary     = INT | FLOAT | STRING | DURATION | 'true' | 'false' | 'it'
             | 'storage' | 'crafting' | 'world' | 'network'
             | 'workers' | 'multiblocks'
             | NAME '(' [ argList ] ')'
+            | moveExpr
             | '(' expr ')'
 
 argList     = arg { ',' arg }

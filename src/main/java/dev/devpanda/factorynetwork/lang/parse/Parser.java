@@ -697,6 +697,22 @@ public final class Parser {
     }
 
     private Stmt parseMove() {
+        Expr moved = parseMoveExpr();
+        if (moved instanceof Expr.Move move) {
+            return new Stmt.Move(move.amount(), move.from(), move.to(), move.span());
+        }
+        return new Stmt.Invalid(moved.span());
+    }
+
+    /**
+     * Dasselbe {@code move} als Ausdruck.
+     *
+     * <p>Es liefert die bewegte Menge, und deshalb steht es überall dort, wo
+     * ein Wert steht: {@code let bewegt = move …}, {@code if move … > 0}.
+     * Die Anweisungsform darüber baut denselben Ausdruck und wirft den Wert
+     * weg — gelesen wird beides an einer Stelle.
+     */
+    private Expr parseMoveExpr() {
         Token keyword = advance();
         Expr amount = parseAmount();
         Expr from = null;
@@ -705,10 +721,10 @@ public final class Parser {
         }
         if (!expect(TokenType.TO, "Bei move fehlt das Ziel.",
                 "Zum Beispiel: move 64 item:iron_ore from chest to crusher_1")) {
-            return new Stmt.Invalid(keyword.span());
+            return new Expr.Invalid(keyword.span());
         }
         Expr to = parseTarget();
-        return new Stmt.Move(amount, from, to, keyword.span().to(to.span()));
+        return new Expr.Move(amount, from, to, keyword.span().to(to.span()));
     }
 
     /** Eine Auswahl mit wahlweise vorangestellter Menge. */
@@ -897,6 +913,9 @@ public final class Parser {
     private Expr parsePrimary() {
         Token token = peek();
         switch (token.type()) {
+            case MOVE -> {
+                return parseMoveExpr();
+            }
             case INT -> {
                 advance();
                 // Eine Zahl vor einer Auswahl ist die Menge: 64 item:iron_ingot

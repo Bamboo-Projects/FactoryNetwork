@@ -319,9 +319,7 @@ public final class Interpreter {
             case Stmt.If branch -> executeIf(branch);
             case Stmt.While loop -> executeWhile(loop);
             case Stmt.For loop -> executeFor(loop);
-            case Stmt.Move move -> host.move(evaluate(move.amount()),
-                    move.from() == null ? null : evaluate(move.from()),
-                    evaluate(move.to()));
+            case Stmt.Move move -> doMove(move.amount(), move.from(), move.to());
             case Stmt.Emit emit -> emit(emit.eventName(),
                     emit.arguments().stream().map(argument -> evaluate(argument.value())).toList());
             case Stmt.Sleep ignored -> throw new ScriptError(
@@ -491,9 +489,7 @@ public final class Interpreter {
                 case Stmt.Break ignored -> new Step.Break();
                 case Stmt.Continue ignored -> new Step.Continue();
                 case Stmt.Move move -> {
-                    host.move(evaluate(move.amount()),
-                            move.from() == null ? null : evaluate(move.from()),
-                            evaluate(move.to()));
+                    doMove(move.amount(), move.from(), move.to());
                     yield Step.Next.get();
                 }
                 case Stmt.Emit emit -> {
@@ -693,6 +689,8 @@ public final class Interpreter {
             // Ausschlüsse weg — im Worker wirkte except, in move und count
             // nicht.
             case Expr.Except except -> resolvedSelection(except);
+            case Expr.Move move -> new Value.Int(
+                    doMove(move.amount(), move.from(), move.to()));
             case Expr.Unary unary -> unary(unary);
             case Expr.Binary binary -> binary(binary);
             case Expr.Member member -> member(member);
@@ -756,6 +754,19 @@ public final class Interpreter {
      * reicht — bei {@code except} und bei einer Filter-Vorlage. Aufgelöst
      * wird über dieselbe Stelle wie sonst auch, mitsamt Zwischenspeicher.
      */
+    /**
+     * Bewegt und liefert, wie viel es wurde.
+     *
+     * <p>An einer Stelle, weil es drei Aufrufer gibt: die Anweisung in einer
+     * Funktion, dieselbe Anweisung als Schritt eines Ablaufs, und den
+     * Ausdruck. Drei Fassungen liefen auseinander.
+     */
+    private long doMove(Expr amount, Expr from, Expr to) {
+        return host.move(evaluate(amount),
+                from == null ? null : evaluate(from),
+                evaluate(to));
+    }
+
     private Value resolvedSelection(Expr expr) {
         long amount = amountIn(expr);
         if (dev.devpanda.factorynetwork.lang.WorkerKind.selectorKind(expr)
