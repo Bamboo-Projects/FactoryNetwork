@@ -32,6 +32,15 @@ Vorentscheidungen)
 >
 > Die Zeilen unten sind entsprechend angepasst.
 
+> **Tag des 25.08.:** `device_output` gebaut (2.6), der Controller-Anker
+> entschieden (5.1, gebaut ist nichts), Filter-Vorlagen gebaut — eine Auswahl
+> mit Namen, die überall steht, wo eine Auswahl steht. Dabei drei Dinge
+> gefunden, die niemand auf der Liste hatte: `except` wirkte nur im Worker
+> und nicht in `move` und `count`; eine Auswahl, die nichts trifft, hätte
+> nach der Reparatur beinahe alles bewegt; und `gerät.count(…)` las den
+> Netzspeicher statt das Gerät. Alle drei behoben. Neu auf der Liste steht
+> 3.11, überholt sind 2.7 und 2.6.
+
 **Status:** **F** = fehlt schlicht · **E** = wartet auf eine Entscheidung ·
 **Z** = bewusst zurückgestellt, kein Versäumnis
 
@@ -155,10 +164,16 @@ Zeile.
 auch. Der Rest ist Schreibarbeit ohne Risiko — und das, was die Mod für
 jemanden von außen überhaupt zugänglich macht.
 
+**4. Was an einem Listeneintrag steht** (1.16). Es hängt mehr daran, als die
+Zeile vermuten lässt: `where`, `sort` und `sum` über einen Bestand sind ohne
+das nicht benutzbar, `list` auf einer Anzeige bleibt eine `row` (6.10), und
+der Editor bietet alle fünf trotzdem an.
+
 **Die zwei, die vor allem anderen zu entscheiden waren, sind entschieden:**
 `device_output` (2.6) und der Controller-Anker (5.1), beide am 25.08. Damit
 sind sie von der Entscheidungs- auf die Arbeitsliste gewandert; die
 Begründungen stehen in `entscheidungen.md`. Was an ihnen jetzt noch offen
-ist, sind Baufragen und keine Weichenstellungen mehr.
+ist, sind Baufragen und keine Weichenstellungen mehr — beim Controller
+allerdings eine große: Gebaut ist davon kein Block.
 
 
