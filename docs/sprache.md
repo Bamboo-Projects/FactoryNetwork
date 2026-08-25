@@ -441,6 +441,25 @@ Ein Aufruf von `nachtschicht()` legt den Worker schlafen und ändert die
 Anzeige. **Ohne dass irgendwo steht, dass er das tun soll** — Anzeigen und
 `when` werten ihre Ausdrücke ohnehin laufend aus.
 
+### Rechnen
+
+`+ - * / %`, Vergleiche, `&&` `||` `!`. **Ganz bleibt ganz:** `7 / 2` ist 3,
+`7.0 / 2` ist 3.5 — sobald eine Seite gebrochen ist, bleibt das Ergebnis
+gebrochen. Wer mit Stückzahlen rechnet, bekommt Stückzahlen.
+
+Dazu sieben Funktionen:
+
+```
+min(64, vorhanden)        die kleinere, auch mit mehr als zwei Zahlen
+max(0, rest)              die größere
+abs(differenz)            ohne Vorzeichen
+round(3.6)   floor(3.6)   ceil(3.2)      auf eine ganze Zahl
+random(1, 6)              eine Zahl dazwischen, beide Enden eingeschlossen
+```
+
+`min` und `max` behalten die Art ihrer Zahlen; `round`, `floor` und `ceil`
+liefern immer eine ganze — sie sind dazu da, eine gebrochene loszuwerden.
+
 ### Festwerte
 
 `const stapel = 64` erklärt einen Wert, der sich nie ändert. Gelesen wird er

@@ -218,7 +218,15 @@ public final class Signatures {
                     "Etwas stimmt nicht, die Fabrik läuft weiter."),
             new Member("error", "error(text)", "Etwas ist stehen geblieben."),
             new Member("debug", "debug(text)",
-                    "Zwischenstände beim Suchen. Im Terminal erst auf Wunsch sichtbar."));
+                    "Zwischenstände beim Suchen. Im Terminal erst auf Wunsch sichtbar."),
+            new Member("min", "min(zahl, zahl) zahl", "Die kleinere. Auch mit mehr als zwei."),
+            new Member("max", "max(zahl, zahl) zahl", "Die größere. Auch mit mehr als zwei."),
+            new Member("abs", "abs(zahl) zahl", "Ohne Vorzeichen."),
+            new Member("round", "round(zahl) int", "Auf die nächste ganze Zahl."),
+            new Member("floor", "floor(zahl) int", "Abgerundet."),
+            new Member("ceil", "ceil(zahl) int", "Aufgerundet."),
+            new Member("random", "random(von, bis) int",
+                    "Eine Zahl dazwischen, beide Enden eingeschlossen."));
 
     /** Die Verteilungen, die {@code strategy} kennt. */
     public static final List<String> STRATEGIES = List.of(

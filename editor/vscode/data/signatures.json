@@ -540,6 +540,41 @@
       "name": "debug",
       "shape": "debug(text)",
       "help": "Zwischenstände beim Suchen. Im Terminal erst auf Wunsch sichtbar."
+    },
+    {
+      "name": "min",
+      "shape": "min(zahl, zahl) zahl",
+      "help": "Die kleinere. Auch mit mehr als zwei."
+    },
+    {
+      "name": "max",
+      "shape": "max(zahl, zahl) zahl",
+      "help": "Die größere. Auch mit mehr als zwei."
+    },
+    {
+      "name": "abs",
+      "shape": "abs(zahl) zahl",
+      "help": "Ohne Vorzeichen."
+    },
+    {
+      "name": "round",
+      "shape": "round(zahl) int",
+      "help": "Auf die nächste ganze Zahl."
+    },
+    {
+      "name": "floor",
+      "shape": "floor(zahl) int",
+      "help": "Abgerundet."
+    },
+    {
+      "name": "ceil",
+      "shape": "ceil(zahl) int",
+      "help": "Aufgerundet."
+    },
+    {
+      "name": "random",
+      "shape": "random(von, bis) int",
+      "help": "Eine Zahl dazwischen, beide Enden eingeschlossen."
     }
   ],
   "builtinEvents": [

@@ -382,4 +382,87 @@ class InterpreterTest {
                 ScriptError.class, () -> interpreter.call("fragen", List.of()));
         assertTrue(error.getMessage().contains("Gruppe"), error.getMessage());
     }
+
+    @Test
+    @DisplayName("min und max nehmen die kleinere und die größere Zahl")
+    void minAndMax() {
+        TestHost host = new TestHost();
+        Interpreter interpreter = interpreterFor("""
+                fn rechnen() {
+                    log(min(64, 20))
+                    log(max(64, 20))
+                    log(min(3, 7, 5))
+                }""", host);
+
+        interpreter.call("rechnen", List.of());
+
+        assertEquals(List.of("20", "64", "3"), host.logs);
+    }
+
+    @Test
+    @DisplayName("Ganze Zahlen bleiben ganz")
+    void wholeNumbersStayWhole() {
+        TestHost host = new TestHost();
+        Interpreter interpreter = interpreterFor("""
+                fn rechnen() {
+                    log(min(64, 20))
+                    log(min(64, 19.5))
+                }""", host);
+
+        interpreter.call("rechnen", List.of());
+
+        // Sobald eine Seite gebrochen ist, bleibt es gebrochen — dieselbe
+        // Regel wie beim Rechnen mit + und *.
+        assertEquals(List.of("20", "19.5"), host.logs);
+    }
+
+    @Test
+    @DisplayName("abs, round, floor und ceil")
+    void theOtherFour() {
+        TestHost host = new TestHost();
+        Interpreter interpreter = interpreterFor("""
+                fn rechnen() {
+                    log(abs(0 - 7))
+                    log(round(3.6))
+                    log(floor(3.6))
+                    log(ceil(3.2))
+                }""", host);
+
+        interpreter.call("rechnen", List.of());
+
+        assertEquals(List.of("7", "4", "3", "4"), host.logs);
+    }
+
+    @Test
+    @DisplayName("random bleibt zwischen den Grenzen")
+    void randomStaysInside() {
+        TestHost host = new TestHost();
+        Interpreter interpreter = interpreterFor("""
+                fn rechnen() {
+                    let gezogen = random(5, 7)
+                    if gezogen >= 5 && gezogen <= 7 {
+                        log("drin")
+                    }
+                }""", host);
+
+        for (int versuch = 0; versuch < 20; versuch++) {
+            interpreter.call("rechnen", List.of());
+        }
+
+        assertEquals(20, host.logs.size(), () -> "jede Ziehung lag drin: " + host.logs);
+    }
+
+    @Test
+    @DisplayName("Eine Rechenfunktion ohne Zahl meldet sich")
+    void aMathFunctionWithoutANumberComplains() {
+        TestHost host = new TestHost();
+        Interpreter interpreter = interpreterFor("""
+                fn rechnen() {
+                    log(min())
+                }""", host);
+
+        ScriptError error = org.junit.jupiter.api.Assertions.assertThrows(
+                ScriptError.class, () -> interpreter.call("rechnen", List.of()));
+        assertTrue(error.getMessage().contains("min"), error.getMessage());
+    }
 }

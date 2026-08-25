@@ -1326,6 +1326,10 @@ public final class Interpreter {
             host.log(level, arguments.isEmpty() ? "" : arguments.get(0).describe());
             return Value.Nothing.get();
         }
+        Value calculated = math(name, arguments);
+        if (calculated != null) {
+            return calculated;
+        }
         boolean known = program.functions().stream()
                 .anyMatch(function -> function.name().equals(name));
         if (!known) {
@@ -1341,6 +1345,73 @@ public final class Interpreter {
             scopes.clear();
             scopes.addAll(outerScopes);
         }
+    }
+
+    /**
+     * Die Rechenfunktionen, oder {@code null} bei einem anderen Namen.
+     *
+     * <p><b>Ganz bleibt ganz.</b> {@code min(64, 20)} ist eine ganze Zahl,
+     * {@code min(64, 19.5)} eine gebrochene — dieselbe Regel wie beim Rechnen
+     * mit {@code +} und {@code *}. Wer Stückzahlen vergleicht, bekommt eine
+     * Stückzahl zurück und keine 20.0.
+     *
+     * <p>{@code round}, {@code floor} und {@code ceil} liefern immer eine
+     * ganze Zahl: Sie sind dazu da, eine gebrochene loszuwerden.
+     */
+    private Value math(String name, List<Value> arguments) {
+        return switch (name) {
+            case "min" -> fold(name, arguments, Math::min);
+            case "max" -> fold(name, arguments, Math::max);
+            case "abs" -> {
+                double value = single(name, arguments);
+                yield numberValue(Math.abs(value), allWhole(arguments));
+            }
+            case "round" -> new Value.Int(Math.round(single(name, arguments)));
+            case "floor" -> new Value.Int((long) Math.floor(single(name, arguments)));
+            case "ceil" -> new Value.Int((long) Math.ceil(single(name, arguments)));
+            // <b>Beide Enden eingeschlossen</b>, wie bei einem Bereich:
+            // random(1, 6) ist ein Würfel und nicht fünf Sechstel davon.
+            case "random" -> {
+                if (arguments.size() < 2) {
+                    throw new ScriptError("random braucht zwei Zahlen.",
+                            "Zum Beispiel: random(1, 6) — beide Enden zählen mit.");
+                }
+                long from = Math.round(number(arguments.get(0), "random"));
+                long to = Math.round(number(arguments.get(1), "random"));
+                if (to < from) {
+                    throw new ScriptError("Bei random ist die zweite Zahl die größere.",
+                            "random(1, 6), nicht random(6, 1).");
+                }
+                yield new Value.Int(from + (long) (Math.random() * (to - from + 1)));
+            }
+            case null, default -> null;
+        };
+    }
+
+    private double single(String name, List<Value> arguments) {
+        if (arguments.isEmpty()) {
+            throw new ScriptError(name + " braucht eine Zahl.",
+                    "Zum Beispiel: " + name + "(3.6)");
+        }
+        return number(arguments.get(0), name);
+    }
+
+    /** {@code min(3, 7, 5)} geht auch — der Reihe nach, von links. */
+    private Value fold(String name, List<Value> arguments,
+                       java.util.function.DoubleBinaryOperator step) {
+        if (arguments.isEmpty()) {
+            throw new ScriptError(name + " braucht mindestens zwei Zahlen.",
+                    "Zum Beispiel: " + name + "(64, vorhanden)");
+        }
+        double result = number(arguments.get(0), name);
+        for (int i = 1; i < arguments.size(); i++) {
+            result = step.applyAsDouble(result, number(arguments.get(i), name));
+        }
+        return numberValue(result, allWhole(arguments));
+    }
+
+    private static boolean allWhole(List<Value> arguments) {
+        return arguments.stream().allMatch(value -> value instanceof Value.Int);
     }
 
     // ---- Umgebung ---------------------------------------------------------
