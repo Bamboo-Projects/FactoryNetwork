@@ -6087,13 +6087,41 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
 
-        // Nichts im Speicher: Es gibt nichts einzulegen.
+        // <b>Der Rückgabewert war die ganze Frage und wurde nie geprüft.</b>
+        // Der Test rief die Funktion auf und war zufrieden, dass nichts
+        // scheiterte — die Null im Namen sah sich niemand an. Ein Programm,
+        // dem insert 20 meldet, obwohl nichts ankam, bucht Bestand ab, den es
+        // nie bewegt hat.
         helper.assertTrue(entity.deploy("""
                 fn füllen() {
-                    log(depot.insert(20 item:iron_ingot))
+                    return depot.insert(20 item:iron_ingot)
                 }"""), "das Programm wurde nicht übernommen");
 
-        entity.callFunction("füllen", List.of());
+        // Nichts im Speicher: Es gibt nichts einzulegen.
+        long ohneBestand = ((dev.devpanda.factorynetwork.runtime.Value.Int)
+                entity.callFunction("füllen", List.of())).value();
+        helper.assertValueEqual(ohneBestand, 0L, "Aus einem leeren Speicher kommt nichts");
+
+        // Fünf im Speicher, zwanzig gewünscht: Es können nur fünf werden.
+        entity.storage().insert(Items.IRON_INGOT, 5);
+        long mitFuenf = ((dev.devpanda.factorynetwork.runtime.Value.Int)
+                entity.callFunction("füllen", List.of())).value();
+        helper.assertValueEqual(mitFuenf, 5L, "Gemeldet wird, was wirklich ankam");
+        helper.assertValueEqual(entity.storage().count(Items.IRON_INGOT), 0L,
+                "Und der Speicher ist sie los");
+
+        BlockPos ziel = controller.east().south().south();
+        if (helper.getBlockEntity(ziel) instanceof ChestBlockEntity kiste) {
+            int gefunden = 0;
+            for (int slot = 0; slot < kiste.getContainerSize(); slot++) {
+                if (kiste.getItem(slot).getItem() == Items.IRON_INGOT) {
+                    gefunden += kiste.getItem(slot).getCount();
+                }
+            }
+            helper.assertValueEqual(gefunden, 5, "Die fünf liegen wirklich im Depot");
+        } else {
+            helper.fail("Keine Kiste am Depot", ziel);
+        }
         helper.succeed();
     }
 
