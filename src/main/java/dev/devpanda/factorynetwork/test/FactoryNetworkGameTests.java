@@ -6721,6 +6721,34 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
+     * Die Fachnummern im Editor sind die, die das Programm anspricht.
+     *
+     * <p>Eine Seite zeigt ihre Fächer unter eigenen Nummern; {@code slots(3)}
+     * meint das dritte Fach der Maschine. Zeigte der Tooltip die Nummern der
+     * Seite, wiese die Auskunft woandershin, als sie greift.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void theSnapshotNumbersMatchTheProgram(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        BlockPos quelle = controller.east().north().north();
+        if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity container) {
+            container.setItem(3, new ItemStack(Items.GOLD_ORE, 5));
+        }
+
+        var snapshot = dev.devpanda.factorynetwork.network.packet.DeviceSnapshotPacket
+                .of(entity, "quarry_output");
+        helper.assertTrue(snapshot != null, "Kein Blick auf das Gerät");
+        helper.assertTrue(snapshot.slots().size() > 3,
+                "Die Kiste hat mehr als vier Fächer: " + snapshot.slots().size());
+        helper.assertValueEqual(snapshot.slots().get(3).getCount(), 5,
+                "Fach 3 im Editor ist Fach 3 im Programm");
+        helper.succeed();
+    }
+
+    /**
      * <b>Nur den Ausgang abräumen.</b>
      *
      * <p>Der Fall, für den es die Fächer gibt: Eine Maschine, die Eingang und

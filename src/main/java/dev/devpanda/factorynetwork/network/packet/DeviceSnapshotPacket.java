@@ -127,7 +127,15 @@ public record DeviceSnapshotPacket(String connector, DeviceProfileCodec.Flat pro
 
         List<ItemStack> stacks = new ArrayList<>();
         int omitted = 0;
-        IItemHandler items = entity.machineInventory();
+        // <b>Das ungeteilte Inventar, nicht die Seite.</b> Die Nummern hier
+        // sind die, die jemand in slots(3) schreibt — und eine Seite zeigt
+        // ihre Fächer unter anderen Nummern. Was im Tooltip steht, muss
+        // dasselbe Fach meinen wie das Programm, sonst zeigt die Auskunft
+        // woandershin, als sie greift.
+        IItemHandler items = entity.machineInventoryAll();
+        if (items == null) {
+            items = entity.machineInventory();
+        }
         if (items != null) {
             for (int slot = 0; slot < items.getSlots(); slot++) {
                 if (stacks.size() >= MAX_SLOTS) {
