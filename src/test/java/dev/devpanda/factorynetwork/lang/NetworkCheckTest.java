@@ -55,6 +55,56 @@ class NetworkCheckTest {
     }
 
     @Test
+    @DisplayName("Ein unbekanntes Gerät in einem move wird gemeldet")
+    void anUnknownDeviceInAMoveIsReported() {
+        List<Diagnostic> problems = check("""
+                fn holen() {
+                    move 64 item:iron_ore from kist to ofen
+                }""", net(List.of("kiste", "ofen"), List.of()));
+
+        assertTrue(problems.stream().anyMatch(problem ->
+                        problem.message().contains("kist") && !problem.isError()),
+                () -> "der Vertipper muss auffallen: " + problems);
+    }
+
+    @Test
+    @DisplayName("Örtliche Namen in einem move sind keine Geräte")
+    void localNamesInAMoveAreNotDevices() {
+        List<Diagnostic> problems = check("""
+                global lager = 0
+                const takt = 5
+
+                group oefen {
+                    members ofen
+                }
+
+                filter erze {
+                    tag:c/ores
+                }
+
+                fn holen(ziel: Item) {
+                    let quelle = kiste
+                    move erze from quelle to ziel
+                    move 64 item:iron_ore from kiste to oefen
+                }""", net(List.of("kiste", "ofen"), List.of()));
+
+        assertTrue(problems.isEmpty(),
+                () -> "kein Name hier ist ein unbekanntes Gerät: " + problems);
+    }
+
+    @Test
+    @DisplayName("Auch ein move als Ausdruck wird geprüft")
+    void aMoveExpressionIsCheckedToo() {
+        List<Diagnostic> problems = check("""
+                fn holen() {
+                    let bewegt = move 64 item:iron_ore from kist to ofen
+                }""", net(List.of("kiste", "ofen"), List.of()));
+
+        assertTrue(problems.stream().anyMatch(problem -> problem.message().contains("kist")),
+                () -> "auch hier: " + problems);
+    }
+
+    @Test
     @DisplayName("Eine Vorlage, die wie ein Gerät heißt, wird gemeldet")
     void aTemplateShadowingADeviceIsReported() {
         List<Diagnostic> problems = check("""

@@ -50,6 +50,19 @@ public final class NetworkCheck {
                 case Decl.Group group -> checkGroup(group, view, local, problems);
                 case Decl.FilterTemplate template ->
                         checkTemplateName(template, view, problems);
+                case Decl.Fn function -> checkMoves(function.body(), view,
+                        withParameters(local, function), problems);
+                case Decl.On handler -> checkMoves(handler.body(), view,
+                        with(local, handler.parameters()), problems);
+                // In einer Vorlage meint ein Gerätename das Gerät der Anlage
+                // und nicht eines im Netz. Deshalb zählen ihre Rollen mit.
+                case Decl.Multiblock template -> {
+                    for (Decl.Fn function : template.functions()) {
+                        checkMoves(function.body(), view,
+                                withParameters(with(local, template.devices()), function),
+                                problems);
+                    }
+                }
                 default -> { }
             }
         }
@@ -183,6 +196,110 @@ public final class NetworkCheck {
         }
     }
 
+    private static Set<String> with(Set<String> names, List<String> more) {
+        Set<String> all = new java.util.HashSet<>(names);
+        all.addAll(more);
+        return all;
+    }
+
+    private static Set<String> withParameters(Set<String> names, Decl.Fn function) {
+        Set<String> all = new java.util.HashSet<>(names);
+        function.parameters().forEach(parameter -> all.add(parameter.name()));
+        return all;
+    }
+
+    /**
+     * Sucht die Gerätenamen in den {@code move}-Anweisungen eines Blocks.
+     *
+     * <p><b>Örtliche Namen werden ausgespart</b> — Parameter, {@code let},
+     * Schleifenvariablen, globale Werte, Festwerte, Filter-Vorlagen, Gruppen
+     * und die Rollen eines Multiblocks. Genau das war der Grund, warum es
+     * diese Prüfung lange nicht gab: Eine, die vor richtigen Programmen
+     * warnt, schaltet man ab.
+     *
+     * <p>Großzügig gerechnet: Ein {@code let} gilt für den ganzen Block und
+     * nicht erst ab seiner Zeile. Eine Warnung zu wenig ist hier besser als
+     * eine zu viel.
+     */
+    private static void checkMoves(dev.devpanda.factorynetwork.lang.ast.Block block,
+                                   NetworkView view, Set<String> known,
+                                   List<Diagnostic> problems) {
+        if (block == null) {
+            return;
+        }
+        Set<String> inner = new java.util.HashSet<>(known);
+        for (dev.devpanda.factorynetwork.lang.ast.Stmt statement : block.statements()) {
+            if (statement instanceof dev.devpanda.factorynetwork.lang.ast.Stmt.Let let) {
+                inner.add(let.name());
+            }
+        }
+        for (dev.devpanda.factorynetwork.lang.ast.Stmt statement : block.statements()) {
+            checkStatementMoves(statement, view, inner, problems);
+        }
+    }
+
+    private static void checkStatementMoves(dev.devpanda.factorynetwork.lang.ast.Stmt statement,
+                                            NetworkView view, Set<String> known,
+                                            List<Diagnostic> problems) {
+        switch (statement) {
+            case dev.devpanda.factorynetwork.lang.ast.Stmt.Move move -> {
+                checkTarget(move.from(), view, known, problems);
+                checkTarget(move.to(), view, known, problems);
+            }
+            case dev.devpanda.factorynetwork.lang.ast.Stmt.Let let ->
+                    checkExprMoves(let.value(), view, known, problems);
+            case dev.devpanda.factorynetwork.lang.ast.Stmt.Assign assign ->
+                    checkExprMoves(assign.value(), view, known, problems);
+            case dev.devpanda.factorynetwork.lang.ast.Stmt.Return ret ->
+                    checkExprMoves(ret.value(), view, known, problems);
+            case dev.devpanda.factorynetwork.lang.ast.Stmt.ExprStmt expr ->
+                    checkExprMoves(expr.expr(), view, known, problems);
+            case dev.devpanda.factorynetwork.lang.ast.Stmt.If branch -> {
+                checkExprMoves(branch.condition(), view, known, problems);
+                checkMoves(branch.thenBody(), view, known, problems);
+                checkMoves(branch.elseBlock(), view, known, problems);
+                if (branch.elseIf() != null) {
+                    checkStatementMoves(branch.elseIf(), view, known, problems);
+                }
+            }
+            case dev.devpanda.factorynetwork.lang.ast.Stmt.While loop -> {
+                checkExprMoves(loop.condition(), view, known, problems);
+                checkMoves(loop.body(), view, known, problems);
+            }
+            case dev.devpanda.factorynetwork.lang.ast.Stmt.For loop -> {
+                Set<String> inner = new java.util.HashSet<>(known);
+                inner.add(loop.variable());
+                checkExprMoves(loop.iterable(), view, inner, problems);
+                checkMoves(loop.body(), view, inner, problems);
+            }
+            default -> { }
+        }
+    }
+
+    /** Ein {@code move} steht auch mitten in einem Ausdruck. */
+    private static void checkExprMoves(Expr expr, NetworkView view, Set<String> known,
+                                       List<Diagnostic> problems) {
+        switch (expr) {
+            case Expr.Move move -> {
+                checkTarget(move.from(), view, known, problems);
+                checkTarget(move.to(), view, known, problems);
+                checkExprMoves(move.amount(), view, known, problems);
+            }
+            case Expr.Binary binary -> {
+                checkExprMoves(binary.left(), view, known, problems);
+                checkExprMoves(binary.right(), view, known, problems);
+            }
+            case Expr.Unary unary -> checkExprMoves(unary.operand(), view, known, problems);
+            case Expr.Call call -> {
+                checkExprMoves(call.callee(), view, known, problems);
+                call.arguments().forEach(argument ->
+                        checkExprMoves(argument.value(), view, known, problems));
+            }
+            case Expr.Member member -> checkExprMoves(member.target(), view, known, problems);
+            case null, default -> { }
+        }
+    }
+
     /**
      * Ein Ziel muss ein Connector sein, eine Gruppe, ein Multiblock oder
      * etwas Eingebautes.
@@ -211,7 +328,14 @@ public final class NetworkCheck {
     public static Set<String> localNames(Program program) {
         Set<String> names = new java.util.HashSet<>();
         for (Decl declaration : program.declarations()) {
-            if (declaration instanceof Decl.Group || declaration instanceof Decl.Multiblock) {
+            // Alles, was das Programm selbst benennt und was an derselben
+            // Stelle stehen darf wie ein Gerät. Ohne die letzten drei würde
+            // die Prüfung in einem move vor richtigen Programmen warnen.
+            if (declaration instanceof Decl.Group
+                    || declaration instanceof Decl.Multiblock
+                    || declaration instanceof Decl.Global
+                    || declaration instanceof Decl.Const
+                    || declaration instanceof Decl.FilterTemplate) {
                 names.add(declaration.name());
             }
         }
