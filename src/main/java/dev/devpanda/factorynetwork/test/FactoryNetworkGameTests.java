@@ -7368,6 +7368,87 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    /**
+     * {@code all except …} räumt alles bis auf eines ab.
+     *
+     * <p>Der natürlichste Gebrauch von {@code all}, und die Grammatik erlaubt
+     * ihn: {@code selection = selTerm { 'except' selTerm }}. Aufgelöst wird
+     * die Ausnahme gegen das, was wirklich dasteht — gegen die Registry ginge
+     * es nicht, denn „alles" ist dort jeder Gegenstand des Packs.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void moveAllCanSpareSomething(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        BlockPos quelle = controller.east().north().north();
+        BlockPos ziel = controller.east().south().south();
+        if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity kiste) {
+            kiste.setItem(0, new ItemStack(Items.IRON_INGOT, 30));
+            kiste.setItem(1, new ItemStack(Items.GOLD_INGOT, 12));
+        }
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                fn raeumen() {
+                    return move all except item:gold_ingot from quarry_output to depot
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+        entity.callFunction("raeumen", List.of());
+
+        helper.assertValueEqual(countIn(helper, ziel), 30, "Das Eisen ist weg");
+        helper.assertValueEqual(countIn(helper, quelle), 12, "Das Gold bleibt liegen");
+        helper.succeed();
+    }
+
+    /** {@code filter all} in einem Worker ist dasselbe wie kein Filter. */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void aworkerWithFilterAllTakesEverything(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        BlockPos quelle = controller.east().north().north();
+        BlockPos ziel = controller.east().south().south();
+        if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity kiste) {
+            kiste.setItem(0, new ItemStack(Items.IRON_INGOT, 30));
+            kiste.setItem(1, new ItemStack(Items.GOLD_INGOT, 12));
+        }
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                worker raeumen {
+                    from quarry_output
+                    to depot
+                    filter all
+                    rate 64 per 1t
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+
+        helper.startSequence()
+                .thenIdle(30)
+                .thenExecute(() -> helper.assertValueEqual(countIn(helper, ziel), 42,
+                        "Ein Worker mit filter all nimmt alles"))
+                .thenSucceed();
+    }
+
+    /** {@code insert(all)} legt hinein, was der Speicher hergibt. */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void insertAllPutsInWhatThereIs(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        BlockPos ziel = controller.east().south().south();
+        entity.rebuildNetwork();
+        entity.storage().insert(Items.IRON_INGOT, 20);
+
+        helper.assertTrue(entity.deploy("""
+                fn fuellen() {
+                    return depot.insert(all)
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+        entity.callFunction("fuellen", List.of());
+
+        helper.assertValueEqual(countIn(helper, ziel), 20, "Alles ist angekommen");
+        helper.succeed();
+    }
+
     // ---- Der Anbau am Controller -------------------------------------------
 
     /**

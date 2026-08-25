@@ -219,6 +219,20 @@ Aus dem Speicher heraus ist es die eine Antwort auf „sag, was bewegt wird":
 `move all from storage to kiste` nimmt den ganzen Bestand. Jede andere leere
 Auswahl bleibt dort ein Fehler.
 
+Mit `except` lässt sich etwas aussparen — der natürlichste Gebrauch davon:
+
+```
+move all except item:cobblestone from brecher to storage
+```
+
+Das kostet etwas mehr als ein schlichtes `all`: Um eine Ausnahme abzuziehen,
+muss die Sprache erst wissen, wovon — sie geht dafür die Gegenstände des Packs
+durch, genau wie bei `item:* except …`. Ohne `except` fragt sie gar nicht
+erst.
+
+`filter all` in einem Worker ist dasselbe wie kein `filter`. Wer es
+hinschreibt, sagt damit ausdrücklich, was sonst zwischen den Zeilen steht.
+
 Bei einer Auswahl über mehrere Arten zählt die Menge **insgesamt**:
 
 ```

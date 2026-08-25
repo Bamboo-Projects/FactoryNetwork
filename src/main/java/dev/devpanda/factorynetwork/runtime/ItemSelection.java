@@ -74,6 +74,18 @@ public final class ItemSelection {
         if (selector.kind() == Expr.Selector.Kind.TAG) {
             return fromTag(selector);
         }
+        // „all" ist jeder Gegenstand — dasselbe wie item:*, und über
+        // denselben Zwischenspeicher.
+        //
+        // <p><b>Nur hier, wo aufgelöst werden muss.</b> Ein schlichtes
+        // move all fragt gar nicht erst: Dort heißt eine leere Liste „kein
+        // Filter", und die Kiste wird abgeräumt, ohne dass jemand die
+        // Registry durchgeht. Gebraucht wird diese Auflösung erst bei
+        // all except …, und da kostet sie so viel wie item:* except …,
+        // das die Sprache ohnehin erlaubt.
+        if (selector.kind() == Expr.Selector.Kind.ALL) {
+            return List.copyOf(BuiltInRegistries.ITEM.stream().toList());
+        }
         if (selector.kind() != Expr.Selector.Kind.ITEM) {
             // Flüssigkeiten und Chemikalien sind geschrieben, aber noch nicht
             // angebunden. Sie hier still als leer zu behandeln wäre schlimmer
