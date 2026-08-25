@@ -57,6 +57,16 @@ public class ControllerBlockEntity extends BlockEntity {
     private static final String KEY_FLUIDS = "Fluids";
     private static final String KEY_POWER = "Power";
     private static final String KEY_GLOBALS = "Globals";
+    private static final String KEY_LOG = "Log";
+
+    /**
+     * So viele Zeilen hält das Protokoll.
+     *
+     * <p>Es geht mit der Welt auf die Platte, also darf es nicht wachsen.
+     * Zweihundert Zeilen sind genug, um zu sehen, was in der letzten Stunde
+     * schiefging, und klein genug, dass niemand sie bemerkt.
+     */
+    private static final int LOG_LIMIT = 200;
     private static final int REBUILD_INTERVAL = 100;
 
     /**
@@ -158,7 +168,14 @@ public class ControllerBlockEntity extends BlockEntity {
 
     /** Letzte gesehene Redstone-Stärke je Connector, für das Ereignis. */
     private final Map<String, Integer> lastRedstone = new HashMap<>();
-    private final List<String> log = new ArrayList<>();
+    /**
+     * Was das Netz zu sagen hatte.
+     *
+     * <p>Geht mit der Welt auf die Platte: Wer morgens nachsieht, warum die
+     * Anlage nachts stehen blieb, findet die Zeile auch dann noch, wenn der
+     * Server zwischendurch neu startete.
+     */
+    private final List<dev.devpanda.factorynetwork.runtime.LogEntry> log = new ArrayList<>();
 
     /**
      * Wer gerade die Speicheransicht offen hat.
@@ -554,8 +571,10 @@ public class ControllerBlockEntity extends BlockEntity {
                             && level.getBlockEntity(position) instanceof ConnectorBlockEntity connector
                             ? connector : null);
             runtime.tick(level, program, graph, storage, fluidStorage,
-                    new WorldHost(level, graph, storage, fluidStorage, globals,
-                            this::setChanged));
+                    newHost());
+            // Was die Worker zu melden hatten, gehört ins Protokoll. Bisher
+            // sammelte die Laufzeit diese Hinweise und niemand las sie.
+            runtime.drainNotes().forEach(this::add);
             // Was weder Speicher noch Gerät annahm, fällt auf den Boden.
             // Hässlich, aber die einzige Antwort, die nichts verschwinden
             // lässt.
@@ -657,7 +676,8 @@ public class ControllerBlockEntity extends BlockEntity {
         } else {
             // Die Fehler stehen wie immer im Code-Reiter. Hier nur der
             // Hinweis, dass es an den Dateien lag und nicht am Terminal.
-            note("Fehler in " + name + " — das laufende Programm läuft weiter.");
+            note(dev.devpanda.factorynetwork.runtime.LogLevel.ERROR, name,
+                    "Fehler beim Übernehmen — das laufende Programm läuft weiter.");
         }
     }
 
@@ -1180,7 +1200,8 @@ public class ControllerBlockEntity extends BlockEntity {
         }
         String function = functionNameOf(entry.value());
         if (function == null) {
-            note("Der Knopf " + entry.label() + " nennt keine Funktion.");
+            note(dev.devpanda.factorynetwork.runtime.LogLevel.ERROR, display.name(),
+                    "Der Knopf " + entry.label() + " nennt keine Funktion.");
             return;
         }
         try {
@@ -1347,7 +1368,7 @@ public class ControllerBlockEntity extends BlockEntity {
     public FlowEngine flowEngine() {
         if (flows == null && level != null) {
             flows = new FlowEngine(program, new Interpreter(program,
-                    new WorldHost(level, graph, storage, fluidStorage, globals, this::setChanged)));
+                    newHost()));
         }
         if (flows != null && pendingFlows != null) {
             CompoundTag saved = pendingFlows;
@@ -1403,7 +1424,7 @@ public class ControllerBlockEntity extends BlockEntity {
         if (level == null) {
             throw new ScriptError("Keine Welt.");
         }
-        WorldHost host = new WorldHost(level, graph, storage, fluidStorage, globals, this::setChanged);
+        WorldHost host = newHost();
         Interpreter interpreter = new Interpreter(program, host);
         FlowEngine engine = flowEngine();
         if (engine != null) {
@@ -1411,25 +1432,56 @@ public class ControllerBlockEntity extends BlockEntity {
             // ein Ablauf wartet.
             interpreter.setEventSink(engine::post);
         }
+        interpreter.setLogSource(name);
         try {
             return interpreter.call(name, arguments);
         } finally {
-            host.logs().forEach(this::note);
             if (engine != null) {
                 engine.tick(level.getGameTime());
             }
         }
     }
 
-    public List<String> log() {
+    public List<dev.devpanda.factorynetwork.runtime.LogEntry> log() {
         return List.copyOf(log);
     }
 
+    /** Löscht das Protokoll — nur auf ausdrücklichen Wunsch im Terminal. */
+    public void clearLog() {
+        log.clear();
+        setChanged();
+    }
+
+    /**
+     * Ein Host, der ins Protokoll schreibt.
+     *
+     * <p>An einer Stelle gebaut, weil es sonst drei sind — für die Worker,
+     * für die Ablaufmaschine und für den Aufruf aus dem Terminal. Eine davon
+     * wurde vergessen, und die Meldungen der Abläufe kamen nirgends an.
+     */
+    private WorldHost newHost() {
+        WorldHost host = new WorldHost(level, graph, storage, fluidStorage, globals,
+                this::setChanged);
+        host.setLogSink(this::add);
+        return host;
+    }
+
     private void note(String message) {
-        log.add(message);
-        if (log.size() > 100) {
+        note(dev.devpanda.factorynetwork.runtime.LogLevel.INFO, "", message);
+    }
+
+    private void note(dev.devpanda.factorynetwork.runtime.LogLevel level,
+                      String source, String message) {
+        add(new dev.devpanda.factorynetwork.runtime.LogEntry(
+                level, System.currentTimeMillis(), source, message));
+    }
+
+    private void add(dev.devpanda.factorynetwork.runtime.LogEntry entry) {
+        log.add(entry);
+        while (log.size() > LOG_LIMIT) {
             log.remove(0);
         }
+        setChanged();
     }
 
     // ---- Speichern --------------------------------------------------------
@@ -1455,6 +1507,13 @@ public class ControllerBlockEntity extends BlockEntity {
         for (String name : globalsTag.getAllKeys()) {
             globals.put(name, dev.devpanda.factorynetwork.runtime.flow.ValueCodec
                     .read(globalsTag.getCompound(name)));
+        }
+        log.clear();
+        net.minecraft.nbt.ListTag logTag =
+                tag.getList(KEY_LOG, net.minecraft.nbt.Tag.TAG_COMPOUND);
+        for (int i = 0; i < logTag.size(); i++) {
+            log.add(dev.devpanda.factorynetwork.runtime.LogEntry
+                    .read(logTag.getCompound(i)));
         }
         // Die Abläufe warten auf den ersten Tick: Sie brauchen einen
         // Interpreter, der braucht eine Welt, und die gibt es hier noch nicht
@@ -1489,6 +1548,9 @@ public class ControllerBlockEntity extends BlockEntity {
         globals.forEach((name, value) -> globalsTag.put(name,
                 dev.devpanda.factorynetwork.runtime.flow.ValueCodec.write(value)));
         tag.put(KEY_GLOBALS, globalsTag);
+        net.minecraft.nbt.ListTag logTag = new net.minecraft.nbt.ListTag();
+        log.forEach(entry -> logTag.add(entry.write()));
+        tag.put(KEY_LOG, logTag);
         if (flows != null) {
             tag.put(KEY_FLOWS, FlowCodec.write(flows));
         } else if (pendingFlows != null) {

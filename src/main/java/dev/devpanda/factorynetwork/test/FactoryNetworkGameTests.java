@@ -2630,6 +2630,85 @@ public final class FactoryNetworkGameTests {
     }
 
     @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void theLogKeepsLevelSourceAndSurvivesARestart(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                fn schreiben() {
+                    debug("Zwischenstand")
+                    info("Alles gut")
+                    warn("Kohle wird knapp")
+                    error("Brecher ist weg")
+                    log("Ohne Stufe")
+                }"""), "Das Programm wurde nicht übernommen");
+
+        entity.startFlow("schreiben", java.util.List.of());
+        var zeilen = entity.log();
+        helper.assertValueEqual(zeilen.size(), 5, "Fünf Zeilen: " + zeilen);
+
+        var stufen = zeilen.stream()
+                .map(eintrag -> eintrag.level().key())
+                .toList();
+        helper.assertValueEqual(String.join(",", stufen), "debug,info,warn,error,info",
+                "Die Stufen in der Reihenfolge, in der sie geschrieben wurden");
+        helper.assertValueEqual(zeilen.get(2).text(), "Kohle wird knapp", "Der Text");
+        helper.assertValueEqual(zeilen.get(2).source(), "schreiben",
+                "Und wer es geschrieben hat");
+        helper.assertTrue(zeilen.get(0).time() > 0, "Mit Zeitstempel");
+
+        // Der eigentliche Zweck: Wer morgens nachsieht, warum die Anlage
+        // nachts stehen blieb, findet die Zeile auch nach einem Neustart.
+        var registries = helper.getLevel().registryAccess();
+        var block = net.minecraft.world.level.block.entity.BlockEntity.loadStatic(
+                helper.absolutePos(controller), helper.getBlockState(controller),
+                entity.saveWithFullMetadata(registries), registries);
+        ControllerBlockEntity geladen = (ControllerBlockEntity) block;
+
+        helper.assertValueEqual(geladen.log().size(), 5,
+                "Das Protokoll überlebt den Neustart: " + geladen.log());
+        helper.assertValueEqual(geladen.log().get(3).level().key(), "error",
+                "Samt Stufe");
+        helper.assertValueEqual(geladen.log().get(3).source(), "schreiben",
+                "Und samt Herkunft");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void aWorkerHintReachesTheLogOnlyOnce(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        // maintain ohne filter — der Worker weiß nicht, was er vorhalten
+        // soll, und sagt es. Bisher sammelte die Laufzeit diesen Hinweis und
+        // niemand las ihn.
+        helper.assertTrue(entity.deploy("""
+                worker nachschub {
+                    from quarry_output
+                    to depot
+                    maintain 16
+                }"""), "Das Programm wurde nicht übernommen");
+
+        for (int i = 0; i < 60; i++) {
+            entity.serverTick();
+        }
+
+        var hinweise = entity.log().stream()
+                .filter(eintrag -> eintrag.text().contains("maintain ohne filter"))
+                .toList();
+        helper.assertValueEqual(hinweise.size(), 1,
+                "Ein Worker läuft zwanzigmal je Sekunde — der Hinweis gehört einmal ins "
+                        + "Protokoll: " + entity.log());
+        helper.assertValueEqual(hinweise.get(0).source(), "nachschub",
+                "Der Worker steht als Herkunft daneben, nicht im Text");
+        helper.assertValueEqual(hinweise.get(0).level().key(), "warn",
+                "Er läuft weiter, er tut nur nichts");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void aFlowReadsAndWritesGlobals(GameTestHelper helper) {
         BlockPos controller = buildSetup(helper);
         ControllerBlockEntity entity = controllerAt(helper, controller);

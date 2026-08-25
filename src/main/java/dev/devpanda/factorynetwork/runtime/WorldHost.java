@@ -35,7 +35,26 @@ public final class WorldHost implements Interpreter.Host {
     private final FactoryGraph graph;
     private final NetworkStorage storage;
     private final NetworkFluids fluidStorage;
-    private final List<String> logs = new ArrayList<>();
+    private final List<LogEntry> logs = new ArrayList<>();
+
+    /**
+     * Wer gerade schreibt.
+     *
+     * <p>Setzt der Aufrufer vor dem Ausführen: die Ablaufmaschine je Ablauf,
+     * die Workerlaufzeit je Worker, das Terminal je Aufruf.
+     */
+    private String logSource = "";
+
+    /**
+     * Wohin die Zeilen gehen, oder {@code null}.
+     *
+     * <p><b>Sofort weiterreichen statt sammeln.</b> Es gibt mehrere Hosts —
+     * einen für die Worker, einen für die Ablaufmaschine, einen je Aufruf aus
+     * dem Terminal —, und wer sie einsammeln will, muss an jede einzelne
+     * Stelle denken. Genau eine davon wurde vergessen, und die Meldungen der
+     * Abläufe kamen nie an.
+     */
+    private java.util.function.Consumer<LogEntry> logSink;
 
     /**
      * Die globalen Werte des Netzes, oder {@code null}.
@@ -93,7 +112,7 @@ public final class WorldHost implements Interpreter.Host {
         }
     }
 
-    public List<String> logs() {
+    public List<LogEntry> logs() {
         return List.copyOf(logs);
     }
 
@@ -438,10 +457,33 @@ public final class WorldHost implements Interpreter.Host {
 
     @Override
     public void log(String message) {
-        logs.add(message);
+        log(LogLevel.INFO, message);
+    }
+
+    @Override
+    public void log(LogLevel level, String message) {
+        // Die Zeit steht schon hier fest und nicht erst beim Einsammeln:
+        // Zwischen dem Schreiben und dem Abholen liegt ein ganzer Tick mit
+        // allen Workern darin.
+        LogEntry entry = new LogEntry(level, System.currentTimeMillis(), logSource, message);
+        if (logSink != null) {
+            logSink.accept(entry);
+            return;
+        }
+        logs.add(entry);
         if (logs.size() > 100) {
             logs.remove(0);
         }
+    }
+
+    /** Schickt jede Zeile sofort dorthin, statt sie zu sammeln. */
+    public void setLogSink(java.util.function.Consumer<LogEntry> sink) {
+        this.logSink = sink;
+    }
+
+    @Override
+    public void setLogSource(String source) {
+        this.logSource = source == null ? "" : source;
     }
 
     @Override

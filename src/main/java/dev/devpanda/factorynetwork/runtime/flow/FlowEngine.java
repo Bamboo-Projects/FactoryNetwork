@@ -547,6 +547,10 @@ public final class FlowEngine {
             }
             Stmt statement = frame.block().statements().get(frame.index());
             try {
+                // Wer gerade schreibt, steht im Protokoll daneben. Ohne das
+                // steht dort „Kohle wird knapp" und niemand weiß, welcher der
+                // dreißig Abläufe das meint.
+                interpreter.setLogSource(flow.entryPoint());
                 Step step = interpreter.perform(statement, new FlowScope(flow), gameTime);
                 apply(flow, frame, step);
             } catch (ScriptError error) {

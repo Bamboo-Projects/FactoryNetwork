@@ -89,8 +89,30 @@ public final class Interpreter {
         /** Setzt die Redstone-Stärke eines Geräts. */
         void setRedstone(String device, int strength);
 
-        /** Schreibt eine Zeile ins Terminal. */
+        /** Schreibt eine Zeile ins Protokoll. */
         void log(String message);
+
+        /**
+         * Dasselbe mit einer Stufe.
+         *
+         * <p>Als Voreinstellung auf die schlichte Fassung zurück, damit ein
+         * Host, der nur Text sammelt — die Prüfungen tun das —, nichts
+         * nachziehen muss.
+         */
+        default void log(LogLevel level, String message) {
+            log(message);
+        }
+
+        /**
+         * Wer gerade schreibt — ein Worker, ein Ablauf, eine Funktion.
+         *
+         * <p>Wird vor dem Ausführen gesetzt und gilt, bis jemand anderes sie
+         * setzt. <b>Ohne sie ist eine Protokollzeile bei dreißig Workern
+         * kaum etwas wert:</b> Man liest „Kohle wird knapp" und weiß nicht,
+         * welcher von ihnen das meint.
+         */
+        default void setLogSource(String source) {
+        }
 
         /** Gibt es ein Gerät dieses Namens? */
         boolean hasDevice(String name);
@@ -964,9 +986,28 @@ public final class Interpreter {
         }
     }
 
-    private Value callFree(String name, List<Value> arguments) {
+    /**
+     * Die Stufe, unter der dieser Aufruf schreibt — oder {@code null}.
+     *
+     * <p>{@code log()} bleibt und schreibt als {@code info}: Es steht in
+     * jeder Doku und in jedem Programm, das es schon gibt.
+     */
+    /** Reicht durch, wer gerade schreibt. */
+    public void setLogSource(String source) {
+        host.setLogSource(source);
+    }
+
+    private static LogLevel logLevel(String name) {
         if ("log".equals(name)) {
-            host.log(arguments.isEmpty() ? "" : arguments.get(0).describe());
+            return LogLevel.INFO;
+        }
+        return LogLevel.of(name);
+    }
+
+    private Value callFree(String name, List<Value> arguments) {
+        LogLevel level = logLevel(name);
+        if (level != null) {
+            host.log(level, arguments.isEmpty() ? "" : arguments.get(0).describe());
             return Value.Nothing.get();
         }
         boolean known = program.functions().stream()

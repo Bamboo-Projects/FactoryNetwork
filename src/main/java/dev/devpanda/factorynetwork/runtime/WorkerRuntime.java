@@ -48,7 +48,17 @@ public final class WorkerRuntime {
     private static final int DEFAULT_INTERVAL = 20;
 
     private final Map<String, WorkerState> states = new LinkedHashMap<>();
-    private final List<String> notes = new ArrayList<>();
+    /** Hinweise, die noch niemand abgeholt hat. */
+    private final List<LogEntry> notes = new ArrayList<>();
+
+    /**
+     * Was schon einmal gesagt wurde.
+     *
+     * <p>Getrennt von {@link #notes}, weil die abgeholt und geleert werden:
+     * Ohne dieses Gedächtnis stünde derselbe Hinweis nach jedem Abholen
+     * wieder da, und ein Worker läuft zwanzigmal je Sekunde.
+     */
+    private final java.util.Set<String> saidBefore = new java.util.HashSet<>();
     /** Die Gruppen des Programms, gegen das Netz aufgelöst. */
     private final Map<String, DeviceGroup> groups = new LinkedHashMap<>();
     private final java.util.random.RandomGenerator random = new java.util.Random();
@@ -84,13 +94,22 @@ public final class WorkerRuntime {
         return states;
     }
 
-    public List<String> notes() {
-        return List.copyOf(notes);
+    /**
+     * Holt die neuen Hinweise ab und leert die Liste.
+     *
+     * <p>Abholen statt Ansehen: Der Controller schreibt sie ins Protokoll,
+     * und was dort steht, muss hier nicht noch einmal liegen.
+     */
+    public List<LogEntry> drainNotes() {
+        List<LogEntry> out = List.copyOf(notes);
+        notes.clear();
+        return out;
     }
 
     public void reset() {
         states.clear();
         notes.clear();
+        saidBefore.clear();
         groups.clear();
     }
 
@@ -187,7 +206,7 @@ public final class WorkerRuntime {
         if (WorkerKind.of(worker) == Expr.Selector.Kind.POWER) {
             state.status = Status.HALTED;
             state.detail = "Strom wird noch nicht verteilt";
-            note(worker.name() + ": Die Schreibweise für Strom steht, die Verteilung "
+            note(worker, "Die Schreibweise für Strom steht, die Verteilung "
                     + "kommt noch. Siehe docs/strom.md.");
             return;
         }
@@ -213,7 +232,7 @@ public final class WorkerRuntime {
             if (filter.isEmpty()) {
                 state.status = Status.HALTED;
                 state.detail = "maintain braucht ein filter";
-                note(worker.name() + ": maintain ohne filter — welche Art soll vorgehalten werden?");
+                note(worker, "maintain ohne filter — welche Art soll vorgehalten werden?");
                 return;
             }
             Map<Item, Long> present = presentPerType(to.value(), graph, storage, filter, state);
@@ -593,7 +612,7 @@ public final class WorkerRuntime {
         }
         List<Item> resolved = ItemSelection.resolve(filter.value());
         if (resolved.isEmpty()) {
-            note(worker.name() + ": die Auswahl trifft zurzeit nichts");
+            note(worker, "die Auswahl trifft zurzeit nichts");
         }
         return resolved;
     }
@@ -814,7 +833,7 @@ public final class WorkerRuntime {
         }
         List<Fluid> resolved = FluidSelection.resolve(filter.value());
         if (resolved.isEmpty()) {
-            note(worker.name() + ": die Auswahl trifft zurzeit keine Flüssigkeit");
+            note(worker, "die Auswahl trifft zurzeit keine Flüssigkeit");
         }
         return resolved;
     }
@@ -909,7 +928,7 @@ public final class WorkerRuntime {
                 // arbeitet, bewegt Dinge, die niemand bewegt haben wollte.
                 state.status = Status.HALTED;
                 state.detail = error.getMessage();
-                note(worker.name() + ": " + error.getMessage());
+                note(worker, error.getMessage());
                 return false;
             }
         }
@@ -930,7 +949,7 @@ public final class WorkerRuntime {
                 };
             }
         }
-        note(worker.name() + ": diese Bedingung kann die Laufzeit noch nicht auswerten");
+        note(worker, "diese Bedingung kann die Laufzeit noch nicht auswerten");
         state.detail = "Bedingung noch nicht auswertbar";
         return true;
     }
@@ -958,9 +977,29 @@ public final class WorkerRuntime {
     /** Der Speicher des laufenden Ticks, damit Bedingungen ihn lesen können. */
     private NetworkStorage currentStorage = new NetworkStorage();
 
-    private void note(String message) {
-        if (!notes.contains(message)) {
-            notes.add(message);
+    /**
+     * Ein Hinweis zu einem Worker.
+     *
+     * <p>Der Name steht als Herkunft daneben und nicht mehr im Text: So
+     * lässt er sich im Protokoll filtern, und die Zeile wiederholt ihn nicht.
+     * Warnung und nicht Fehler — der Worker läuft weiter, er tut nur nichts.
+     */
+    private void note(Decl.Worker worker, String message) {
+        note(LogLevel.WARN, worker.name(), message);
+    }
+
+    private void note(LogLevel level, String source, String message) {
+        // <b>Einmal und nicht öfter.</b> Ein Worker läuft zwanzigmal je
+        // Sekunde; ohne diese Prüfung stünde derselbe Hinweis ebenso oft im
+        // Protokoll und verdeckte alles andere. Zurückgesetzt wird das
+        // Gedächtnis beim Übernehmen eines Programms — dann darf der Hinweis
+        // wiederkommen, denn dann ist er eine neue Auskunft.
+        if (!saidBefore.add(source + " " + message)) {
+            return;
+        }
+        notes.add(new LogEntry(level, System.currentTimeMillis(), source, message));
+        if (notes.size() > 100) {
+            notes.remove(0);
         }
     }
 }
