@@ -22,7 +22,7 @@ import java.util.Map;
  *
  * @param <T> Gegenstand oder Flüssigkeit
  */
-public final class CellInventory<T> {
+public final class CellInventory<T> implements CellView {
 
     private final ItemStack cell;
     private final CellSize size;
@@ -48,10 +48,12 @@ public final class CellInventory<T> {
     }
 
     /** Der Gegenstand, zu dem diese Sicht gehört. */
+    @Override
     public ItemStack stack() {
         return cell;
     }
 
+    @Override
     public boolean isValid() {
         return size != null;
     }

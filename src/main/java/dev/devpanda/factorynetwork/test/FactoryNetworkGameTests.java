@@ -11,6 +11,7 @@ import dev.devpanda.factorynetwork.block.ConnectorBlock;
 import dev.devpanda.factorynetwork.item.ConnectorNaming;
 import dev.devpanda.factorynetwork.lang.DeviceProfile;
 import dev.devpanda.factorynetwork.lang.Side;
+import dev.devpanda.factorynetwork.network.Power;
 import dev.devpanda.factorynetwork.network.packet.DeviceSnapshotPacket;
 import dev.devpanda.factorynetwork.registry.FnBlocks;
 import dev.devpanda.factorynetwork.runtime.ScriptError;
@@ -7055,6 +7056,160 @@ public final class FactoryNetworkGameTests {
                                     + nachrangig.energy().getEnergyStored());
                 })
                 .thenSucceed();
+    }
+
+    // ---- Energiezellen -----------------------------------------------------
+
+    /** Das Laufwerk im Standardaufbau, samt einer Energiezelle im zweiten Platz. */
+    private static dev.devpanda.factorynetwork.storage.EnergyCellView energyCell(
+            GameTestHelper helper, BlockPos controller,
+            dev.devpanda.factorynetwork.storage.EnergyCellTier tier) {
+        BlockPos at = controller.above();
+        if (!(helper.getBlockEntity(at)
+                instanceof dev.devpanda.factorynetwork.block.entity.DriveBlockEntity drive)) {
+            helper.fail("Über dem Controller steht kein Laufwerk", at);
+            return null;
+        }
+        drive.setCell(1, new ItemStack(
+                dev.devpanda.factorynetwork.registry.FnItems.ENERGY_CELLS.get(tier).get()));
+        return drive.energyCells().get(0);
+    }
+
+    /**
+     * Eine Energiezelle vergrößert den Vorrat.
+     *
+     * <p>Der Puffer im Controller bleibt, was er war — die Zelle kommt dazu.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void anenergyCellEnlargesTheSupply(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        int ohne = entity.power().capacity();
+
+        var tier = dev.devpanda.factorynetwork.storage.EnergyCellTier.FE64K;
+        energyCell(helper, controller, tier);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.power().capacity() == ohne + tier.capacity(),
+                "Der Vorrat muss um die Zelle wachsen: " + ohne + " → "
+                        + entity.power().capacity());
+        helper.succeed();
+    }
+
+    /**
+     * Das Netz läuft auch, wenn nur die Zelle etwas hat.
+     *
+     * <p><b>Der Kern der ganzen Sache.</b> Ein Vorrat, der nur im
+     * Controllerpuffer zählt, lässt ein Netz mit vollen Zellen ausgehen — und
+     * zwar mitten im Betrieb, ohne dass irgendwo eine Zahl auf null steht.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void thenetworkRunsOnACellAlone(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        var zelle = energyCell(helper, controller,
+                dev.devpanda.factorynetwork.storage.EnergyCellTier.FE64K);
+        entity.rebuildNetwork();
+        // Der Puffer auf null, die Zelle voll: Alles, was das Netz hat, liegt
+        // im Laufwerk.
+        entity.power().empty();
+        if (zelle != null) {
+            zelle.fill(64_000);
+        }
+
+        helper.startSequence()
+                .thenIdle(Power.BOOT_TICKS + 40)
+                .thenExecute(() -> helper.assertTrue(entity.power().isRunning(),
+                        "Das Netz muss auf der Zelle laufen, steht aber auf "
+                                + entity.power().state() + " mit "
+                                + entity.power().stored() + " FE"))
+                .thenSucceed();
+    }
+
+    /** Was das Netz verbraucht, zahlt am Ende die Zelle. */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void theCellPaysWhenTheBufferIsEmpty(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        var zelle = energyCell(helper, controller,
+                dev.devpanda.factorynetwork.storage.EnergyCellTier.FE64K);
+        entity.rebuildNetwork();
+        entity.power().empty();
+        if (zelle == null) {
+            return;
+        }
+        zelle.fill(64_000);
+
+        int vorher = zelle.stored();
+        helper.startSequence()
+                .thenIdle(60)
+                .thenExecute(() -> helper.assertTrue(zelle.stored() < vorher,
+                        "Die Zelle muss den Betrieb zahlen: " + vorher
+                                + " → " + zelle.stored()))
+                .thenSucceed();
+    }
+
+    /**
+     * Wer den Puffer füllt, füllt danach die Zellen.
+     *
+     * <p>Sonst bliebe eine Energiezelle für immer leer: Strom kommt von außen
+     * durch den Anschluss am Controller, und der endet ohne diesen Weg am
+     * Rand des Puffers.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void powerFlowsOnIntoTheCell(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        var zelle = energyCell(helper, controller,
+                dev.devpanda.factorynetwork.storage.EnergyCellTier.FE64K);
+        entity.rebuildNetwork();
+        if (zelle == null) {
+            return;
+        }
+        // Erst auf null, dann den Puffer randvoll: Der Aufbau lässt das Netz
+        // laufen und hat ihn dabei schon fast gefüllt.
+        entity.power().empty();
+        entity.power().fill(Power.CAPACITY);
+
+        // Der Weg von außen: derselbe, den ein fremdes Kabel nimmt.
+        int angenommen = entity.power().port().receiveEnergy(1_000, false);
+
+        helper.assertTrue(angenommen == 1_000,
+                "Bei vollem Puffer nimmt die Zelle an: " + angenommen);
+        helper.assertTrue(zelle.stored() == 1_000,
+                "In der Zelle müssen 1000 FE liegen, es sind " + zelle.stored());
+        helper.succeed();
+    }
+
+    /** Eine Zelle, die herausgeht, nimmt ihre Ladung mit. */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void acellCarriesItsChargeOut(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        var zelle = energyCell(helper, controller,
+                dev.devpanda.factorynetwork.storage.EnergyCellTier.FE64K);
+        entity.rebuildNetwork();
+        if (zelle == null) {
+            return;
+        }
+        zelle.fill(12_345);
+
+        var drive = (dev.devpanda.factorynetwork.block.entity.DriveBlockEntity)
+                helper.getBlockEntity(controller.above());
+        // Der Gegenstand selbst, keine Kopie: Das Zurückschreiben geschieht
+        // erst beim Herausnehmen, und eine Kopie von vorher hätte es nicht
+        // mitbekommen. Im Spiel wandert genau dieser Gegenstand in die Hand.
+        ItemStack heraus = drive.cell(1);
+        drive.setCell(1, ItemStack.EMPTY);
+
+        // Der Gegenstand in der Hand: Was jetzt darin steht, ist alles, was
+        // von der Ladung bleibt.
+        helper.assertTrue(
+                dev.devpanda.factorynetwork.storage.EnergyCellItem.chargeOf(heraus) == 12_345,
+                "Die Ladung muss im Gegenstand stehen, es sind "
+                        + dev.devpanda.factorynetwork.storage.EnergyCellItem.chargeOf(heraus));
+        helper.succeed();
     }
 
     // ---- Gerätemitglieder --------------------------------------------------

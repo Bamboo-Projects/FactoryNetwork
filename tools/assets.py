@@ -546,6 +546,11 @@ def models():
             "parent": "minecraft:item/generated",
             "textures": {"layer0": MOD + ":item/fluid_cell_" + tier},
         })
+    for tier in ("64k", "256k", "1024k", "4096k"):
+        write(A + "/models/item/energy_cell_%s.json" % tier, {
+            "parent": "minecraft:item/generated",
+            "textures": {"layer0": MOD + ":item/energy_cell_" + tier},
+        })
     write(A + "/models/item/drive.json", {"parent": block("drive")})
     write(A + "/models/item/router.json", {"parent": block("router")})
     # Der Schrank in der Hand: beide Hälften übereinander in einem Modell,
@@ -955,6 +960,33 @@ def loot_and_recipes():
                 "I": {"item": "minecraft:iron_ingot"},
             },
             "result": {"id": MOD + ":fluid_cell_" + groesser, "count": 1},
+        })
+
+    # Die Energiezellen. Dieselbe Leiter, dieselbe Rechnung — statt des
+    # Speicherkerns steckt hier Redstone, und das Eisen in der Ausbaustufe
+    # weicht der Kupferspule. Eine Zelle, die Strom hält, soll nicht
+    # aussehen wie eine, die Eisenbarren zählt.
+    write(D + "/recipe/energy_cell_64k.json", {
+        "type": "minecraft:crafting_shaped",
+        "category": "misc",
+        "pattern": ["PCP", "CRC", "PPP"],
+        "key": {
+            "P": {"item": MOD + ":plate"},
+            "C": {"item": MOD + ":crystal"},
+            "R": {"item": "minecraft:redstone_block"},
+        },
+        "result": {"id": MOD + ":energy_cell_64k", "count": 1},
+    })
+    for kleiner, groesser in (("64k", "256k"), ("256k", "1024k"), ("1024k", "4096k")):
+        write(D + "/recipe/energy_cell_%s.json" % groesser, {
+            "type": "minecraft:crafting_shaped",
+            "category": "misc",
+            "pattern": [" C ", "CKC", " C "],
+            "key": {
+                "C": {"item": MOD + ":energy_cell_" + kleiner},
+                "K": {"item": "minecraft:copper_ingot"},
+            },
+            "result": {"id": MOD + ":energy_cell_" + groesser, "count": 1},
         })
 
     # ---- Die Fertigungskette -------------------------------------------

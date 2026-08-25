@@ -505,6 +505,10 @@ public class ControllerBlockEntity extends BlockEntity {
         // Dieselben Laufwerke tragen die Flüssigkeitszellen. Ein zweites
         // Laufwerk nur dafür wäre ein Block mehr für dieselbe Handlung.
         fluidStorage.setDrives(found);
+        // Und dieselben tragen die Energiezellen. Ohne diese Zeile ist der
+        // Vorrat der Puffer im Controller, egal wie viele Akkus im Regal
+        // stecken.
+        power.setDrives(found);
         racks.clear();
         for (BlockPos pos : graph.racks()) {
             if (level.isLoaded(pos) && level.getBlockEntity(pos)

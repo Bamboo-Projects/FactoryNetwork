@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " C ",
+    "CKC",
+    " C "
+  ],
+  "key": {
+    "C": {
+      "item": "factorynetwork:energy_cell_256k"
+    },
+    "K": {
+      "item": "minecraft:copper_ingot"
+    }
+  },
+  "result": {
+    "id": "factorynetwork:energy_cell_1024k",
+    "count": 1
+  }
+}

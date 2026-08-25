@@ -2,6 +2,9 @@ package dev.devpanda.factorynetwork.block.entity;
 
 import dev.devpanda.factorynetwork.registry.FnBlockEntities;
 import dev.devpanda.factorynetwork.storage.CellInventory;
+import dev.devpanda.factorynetwork.storage.CellView;
+import dev.devpanda.factorynetwork.storage.EnergyCellItem;
+import dev.devpanda.factorynetwork.storage.EnergyCellView;
 import dev.devpanda.factorynetwork.storage.FluidCellItem;
 import dev.devpanda.factorynetwork.storage.StorageCellItem;
 import net.minecraft.core.BlockPos;
@@ -41,6 +44,15 @@ public class DriveBlockEntity extends ShelfBlockEntity {
     private final java.util.Map<Integer, CellInventory<net.minecraft.world.level.material.Fluid>>
             openFluids = new java.util.HashMap<>();
 
+    /**
+     * Die offenen Energiezellen, nach Platznummer.
+     *
+     * <p>Die dritte Abbildung aus demselben Grund wie die zweite — und mit
+     * demselben Gewinn: Eine Energiezelle trägt eine Zahl, keine Karte, und
+     * damit passt sie in {@link CellInventory} nicht hinein.
+     */
+    private final java.util.Map<Integer, EnergyCellView> openEnergy = new java.util.HashMap<>();
+
     public DriveBlockEntity(BlockPos pos, BlockState state) {
         super(FnBlockEntities.DRIVE.get(), pos, state, SLOTS);
     }
@@ -48,7 +60,8 @@ public class DriveBlockEntity extends ShelfBlockEntity {
     @Override
     public boolean accepts(ItemStack stack) {
         return stack.getItem() instanceof StorageCellItem
-                || stack.getItem() instanceof FluidCellItem;
+                || stack.getItem() instanceof FluidCellItem
+                || stack.getItem() instanceof EnergyCellItem;
     }
 
     @Override
@@ -76,12 +89,15 @@ public class DriveBlockEntity extends ShelfBlockEntity {
      */
     @Override
     protected void beforeSlotChange(int slot) {
-        CellInventory<?> alt = openItems.remove(slot);
-        if (alt == null) {
-            alt = openFluids.remove(slot);
+        CellView leaving = openItems.remove(slot);
+        if (leaving == null) {
+            leaving = openFluids.remove(slot);
         }
-        if (alt != null) {
-            alt.flush();
+        if (leaving == null) {
+            leaving = openEnergy.remove(slot);
+        }
+        if (leaving != null) {
+            leaving.flush();
         }
     }
 
@@ -109,13 +125,24 @@ public class DriveBlockEntity extends ShelfBlockEntity {
         return live(openFluids, FluidCellItem.class, CellInventory::ofFluids);
     }
 
-    private <T> List<CellInventory<T>> live(
-            java.util.Map<Integer, CellInventory<T>> cache, Class<?> kind,
-            java.util.function.Function<ItemStack, CellInventory<T>> open) {
-        List<CellInventory<T>> found = new ArrayList<>(SLOTS);
+    /**
+     * Und auf die Energiezellen.
+     *
+     * <p>Sie zählen zum Stromvorrat des Netzes, nicht zum Speicher. Wer sie
+     * abfragt, ist deshalb nicht der Netzindex, sondern
+     * {@code NetworkPower}.
+     */
+    public List<EnergyCellView> energyCells() {
+        return live(openEnergy, EnergyCellItem.class, EnergyCellView::of);
+    }
+
+    private <V extends CellView> List<V> live(
+            java.util.Map<Integer, V> cache, Class<?> kind,
+            java.util.function.Function<ItemStack, V> open) {
+        List<V> found = new ArrayList<>(SLOTS);
         for (int slot = 0; slot < SLOTS; slot++) {
             ItemStack stack = getItem(slot);
-            CellInventory<T> alive = cache.get(slot);
+            V alive = cache.get(slot);
             if (!kind.isInstance(stack.getItem())) {
                 if (alive != null) {
                     cache.remove(slot);
@@ -145,12 +172,14 @@ public class DriveBlockEntity extends ShelfBlockEntity {
     public void flushCells() {
         openItems.values().forEach(CellInventory::flush);
         openFluids.values().forEach(CellInventory::flush);
+        openEnergy.values().forEach(EnergyCellView::flush);
     }
 
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         openItems.clear();
         openFluids.clear();
+        openEnergy.clear();
         super.loadAdditional(tag, registries);
     }
 

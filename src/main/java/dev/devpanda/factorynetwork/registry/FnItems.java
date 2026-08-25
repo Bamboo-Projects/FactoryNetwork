@@ -183,6 +183,28 @@ public final class FnItems {
         return Map.copyOf(cells);
     }
 
+    /**
+     * Die vier Größen der Energiezelle.
+     *
+     * <p>Nur eine Zahl je Stufe, denn Strom hat keine Sorten. Die kleinste
+     * trägt schon mehr als der Puffer im Controller — wer eine einsetzt, sieht
+     * den Unterschied.
+     */
+    public static final Map<dev.devpanda.factorynetwork.storage.EnergyCellTier,
+            DeferredItem<Item>> ENERGY_CELLS = registerEnergyCells();
+
+    private static Map<dev.devpanda.factorynetwork.storage.EnergyCellTier,
+            DeferredItem<Item>> registerEnergyCells() {
+        Map<dev.devpanda.factorynetwork.storage.EnergyCellTier, DeferredItem<Item>> cells =
+                new LinkedHashMap<>();
+        for (var tier : dev.devpanda.factorynetwork.storage.EnergyCellTier.values()) {
+            cells.put(tier, ITEMS.register("energy_cell_" + tier.getSerializedName(),
+                    () -> new dev.devpanda.factorynetwork.storage.EnergyCellItem(
+                            tier, new Item.Properties())));
+        }
+        return Map.copyOf(cells);
+    }
+
     /** Nimmt Server auf — ohne ihn rechnet das Netz nicht. */
     public static final DeferredItem<net.minecraft.world.item.BlockItem> RACK =
             ITEMS.registerSimpleBlockItem(FnBlocks.RACK);

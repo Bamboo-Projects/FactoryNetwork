@@ -816,6 +816,52 @@ def fluid_cell(label):
     return img
 
 
+ENERGY_CELL_TONE = {
+    "64k": (168, 148, 112),
+    "256k": (180, 144, 96),
+    "1024k": (190, 138, 82),
+    "4096k": (198, 128, 68),
+}
+
+
+def energy_cell(label):
+    """Energiezelle: dieselbe Kassette, aber mit Ladebalken statt Schauglas.
+
+    Vier Segmente übereinander, drei davon warm leuchtend. Wer eine Zelle in
+    der Hand hat, soll auf einen Blick sehen, was hineingehört, ohne den Namen
+    zu lesen — bei der Flüssigkeitszelle tut das der Stand im Glas, hier die
+    Balkenreihe.
+    """
+    ton = ENERGY_CELL_TONE[label]
+    img = cell_shell(ton, seed=240)
+    d = ImageDraw.Draw(img)
+
+    # Das Fenster: versenkt wie bei den anderen, damit die Reihe stimmt.
+    d.rectangle([19, 19, 45, 37], fill=blend(BODY_MID, EDGE, 0.55) + (255,))
+    recess(img, (19, 19, 45, 37), tiefe=2)
+    ao(img, (19, 19, 45, 37), depth=3, strength=0.45)
+
+    # Die Ladung: vier Segmente, das oberste dunkel.
+    warm = blend(ton, (255, 190, 70), 0.62)
+    for i, y in enumerate((34, 30, 26, 22)):
+        if i < 3:
+            glow(img, [23, y, 41, y + 2], color=warm, radius=3, strength=95)
+            d = ImageDraw.Draw(img)
+            d.rectangle([23, y, 41, y + 2], fill=warm + (255,))
+            d.line([(23, y), (41, y)], fill=_heller(warm + (255,), 0.5))
+        else:
+            d.rectangle([23, y, 41, y + 2], fill=_dunkler(ton + (255,), 0.45))
+
+    # Zwei Pole oben auf dem Gehäuse — der Unterschied auf den zweiten Blick.
+    for x in (24, 38):
+        d.rectangle([x, 15, x + 3, 18], fill=BRASS + (255,))
+        d.line([(x, 15), (x + 2, 15)], fill=BRASS_HI + (255,))
+
+    cell_contacts(img, d)
+    scratches(img, count=2, seed=241)
+    return img
+
+
 def drive_front():
     """Zehn Schächte in zwei Reihen, jeder mit Lämpchen.
 
@@ -1239,18 +1285,19 @@ DRIVE_BAY_TONE = {
     "k16": (172, 160, 140),
     "k64": (176, 148, 168),
     "fluid": (114, 160, 182),
+    "energy": (180, 144, 96),
 }
 
 
 def drive_bays():
-    """Ein Streifen: leerer Schacht, dann die vier Zellgrößen und die Fluidzelle.
+    """Ein Streifen: leerer Schacht, die vier Zellgrößen, Fluid- und Energiezelle.
 
     <b>Die Kachel zeigt die Zelle, nicht ihren Füllstand.</b> Der Inhalt lebt
     im Laufwerk und steht erst beim Sichern im Gegenstand — was der Client
     kennt, wäre der Stand von vorhin. Lieber gar keine Anzeige als eine, die
     hinterherhinkt; wie voll es ist, sagen Jade und das Fenster.
     """
-    sorten = ["leer", "k1", "k4", "k16", "k64", "fluid"]
+    sorten = ["leer", "k1", "k4", "k16", "k64", "fluid", "energy"]
     streifen = Image.new("RGBA", (BAY_W * len(sorten), BAY_H), (0, 0, 0, 0))
     for i, sorte in enumerate(sorten):
         kachel = Image.new("RGBA", (BAY_W, BAY_H), (0, 0, 0, 0))
@@ -1270,7 +1317,11 @@ def drive_bays():
             d.rectangle([2, 2, 6, BAY_H - 3], fill=blend(ton, LIGHT, 0.25) + (255,))
             for x in range(10, BAY_W - 12, 4):
                 d.line([(x, 3), (x, BAY_H - 4)], fill=_dunkler(ton + (255,), 0.35))
-            licht = ACCENT if sorte != "fluid" else (96, 190, 236)
+            licht = ACCENT
+            if sorte == "fluid":
+                licht = (96, 190, 236)
+            elif sorte == "energy":
+                licht = (244, 176, 72)
             glow(kachel, [BAY_W - 9, 3, BAY_W - 4, BAY_H - 4], color=licht,
                  radius=3, strength=120)
             d = ImageDraw.Draw(kachel)
@@ -1649,6 +1700,8 @@ def main():
         save(storage_cell(label), "item", "cell_k" + label.replace("k", ""))
     for label in ("64", "256", "1024", "4096"):
         save(fluid_cell(label), "item", "fluid_cell_" + label)
+    for label in ("64k", "256k", "1024k", "4096k"):
+        save(energy_cell(label), "item", "energy_cell_" + label)
     save(server_chassis(), "item", "server_chassis")
     for tier, wert in enumerate((2, 8, 32, 128)):
         save(cpu_item(tier), "item", "cpu_%d" % wert)

@@ -33,7 +33,7 @@ public final class FnCapabilities {
         event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK,
                 FnBlockEntities.CONTROLLER.get(),
                 (ControllerBlockEntity controller, net.minecraft.core.Direction side)
-                        -> controller.power().buffer());
+                        -> controller.power().port());
         // Ohne BlockEntity: Die Kreativquelle ist ein schlichter Block, und
         // ihr Speicher ist eine Zahl ohne Zustand.
         event.registerBlock(Capabilities.EnergyStorage.BLOCK,

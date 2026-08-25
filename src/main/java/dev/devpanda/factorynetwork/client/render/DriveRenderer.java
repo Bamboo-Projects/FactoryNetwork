@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import dev.devpanda.factorynetwork.FactoryNetwork;
 import dev.devpanda.factorynetwork.block.entity.DriveBlockEntity;
 import dev.devpanda.factorynetwork.storage.CellTier;
+import dev.devpanda.factorynetwork.storage.EnergyCellItem;
 import dev.devpanda.factorynetwork.storage.FluidCellItem;
 import dev.devpanda.factorynetwork.storage.StorageCellItem;
 import net.minecraft.client.renderer.LevelRenderer;
@@ -37,7 +38,7 @@ public class DriveRenderer implements BlockEntityRenderer<DriveBlockEntity> {
             FactoryNetwork.MOD_ID, "textures/misc/drive_bays.png");
 
     /** Leer, dann die vier Größen, dann die Flüssigkeitszelle. */
-    private static final float TILES = 6.0F;
+    private static final float TILES = 7.0F;
 
     /** Weiter als das ist ein Schacht von fünf Blockpixeln nicht zu lesen. */
     private static final double MAX_DISTANCE = 24.0;
@@ -87,6 +88,9 @@ public class DriveRenderer implements BlockEntityRenderer<DriveBlockEntity> {
     private static int kindOf(ItemStack stack) {
         if (stack.getItem() instanceof FluidCellItem) {
             return 5;
+        }
+        if (stack.getItem() instanceof EnergyCellItem) {
+            return 6;
         }
         CellTier tier = StorageCellItem.tierOf(stack);
         return tier == null ? 0 : tier.ordinal() + 1;
