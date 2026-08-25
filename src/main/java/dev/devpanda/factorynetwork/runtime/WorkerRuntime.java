@@ -52,6 +52,17 @@ public final class WorkerRuntime {
     private final List<LogEntry> notes = new ArrayList<>();
 
     /**
+     * Wem zu melden ist, dass ein Worker in ein Gerät geschrieben hat.
+     *
+     * <p>Der Controller zieht daraufhin die Grundlinie für
+     * {@code device_output} nach. <b>Ohne das meldete jede Lieferung eine
+     * Ausgabe, die es nie gab</b> — ein Worker, der alle zwanzig Ticks acht
+     * Stück in eine Maschine legt, weckte damit im Sekundentakt jeden, der
+     * auf ihre Ausgabe wartet.
+     */
+    private java.util.function.Consumer<String> onDeviceFilled;
+
+    /**
      * Was schon einmal gesagt wurde.
      *
      * <p>Getrennt von {@link #notes}, weil die abgeholt und geleert werden:
@@ -406,13 +417,31 @@ public final class WorkerRuntime {
      * eine Wahl: Ein volles Gerät darf den Transfer nicht beenden.
      */
     private IItemHandler handlerOf(Expr target, FactoryGraph graph, WorkerState state) {
-        return resolve(target, graph, state, ConnectorBlockEntity::machineInventory,
+        return resolve(target, graph, state,
+                connector -> NotifyingHandlers.items(
+                        connector.machineInventory(), noticeFor(connector)),
                 "An diesem Connector hängt keine Maschine mit Inventar", this::fillLevelOf);
     }
 
     private IFluidHandler tankOf(Expr target, FactoryGraph graph, WorkerState state) {
-        return resolve(target, graph, state, ConnectorBlockEntity::machineTank,
+        return resolve(target, graph, state,
+                connector -> NotifyingHandlers.fluids(
+                        connector.machineTank(), noticeFor(connector)),
                 "An diesem Connector hängt nichts, das Flüssigkeit hält", this::tankLevelOf);
+    }
+
+    /** Sagt Bescheid, sobald ein Worker in ein Gerät geschrieben hat. */
+    public void setDeviceFilled(java.util.function.Consumer<String> listener) {
+        this.onDeviceFilled = listener;
+    }
+
+    /** Die Meldung für dieses Gerät, oder {@code null} ohne Empfänger. */
+    private Runnable noticeFor(ConnectorBlockEntity connector) {
+        if (onDeviceFilled == null) {
+            return null;
+        }
+        String device = connector.label();
+        return () -> onDeviceFilled.accept(device);
     }
 
     /**

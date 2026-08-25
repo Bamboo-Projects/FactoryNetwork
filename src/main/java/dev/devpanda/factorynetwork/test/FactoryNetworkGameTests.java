@@ -105,6 +105,18 @@ public final class FactoryNetworkGameTests {
         }
     }
 
+    /** Wie viel in der Kiste an dieser Stelle liegt, über alle Fächer. */
+    private static int countIn(GameTestHelper helper, BlockPos pos) {
+        if (!(helper.getBlockEntity(pos) instanceof ChestBlockEntity container)) {
+            return 0;
+        }
+        int found = 0;
+        for (int slot = 0; slot < container.getContainerSize(); slot++) {
+            found += container.getItem(slot).getCount();
+        }
+        return found;
+    }
+
     private static ControllerBlockEntity controllerAt(GameTestHelper helper, BlockPos pos) {
         if (helper.getBlockEntity(pos) instanceof ControllerBlockEntity controller) {
             powerUp(controller);
@@ -2573,6 +2585,196 @@ public final class FactoryNetworkGameTests {
                 .thenIdle(15)
                 .thenExecute(() -> helper.assertValueEqual(flow.status().name(), "DONE",
                         "Eine Änderung am Inventar muss den Wartenden wecken"))
+                .thenSucceed();
+    }
+
+    /**
+     * Das Gegenstück zu {@link #aChangedInventoryWakesAWaitingFlow}: Nicht
+     * jede Regung, sondern nur, was dazugekommen ist.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void newContentInADeviceWakesAWaitingFlow(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                fn wartet() {
+                    let gerät = await device_output
+                    return 1
+                }"""), "Das Programm wurde nicht übernommen");
+
+        var flow = entity.startFlow("wartet", List.of());
+        helper.assertValueEqual(flow.status().name(), "AWAITING", "Er wartet");
+
+        BlockPos quelle = controller.east().north().north();
+        helper.startSequence()
+                .thenIdle(15)
+                .thenExecute(() -> {
+                    if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity container) {
+                        container.setItem(0, new ItemStack(Items.COBBLESTONE, 5));
+                    }
+                })
+                .thenIdle(15)
+                .thenExecute(() -> helper.assertValueEqual(flow.status().name(), "DONE",
+                        "Was im Gerät dazukommt, muss den Wartenden wecken"))
+                .thenSucceed();
+    }
+
+    /**
+     * <b>Der Grund, warum das Ereignis eine Grundlinie braucht.</b> Ohne sie
+     * meldete das Netz seine eigene Lieferung als Ausgabe — und ein Ablauf,
+     * der einlegt und dann wartet, wäre sofort wieder wach, ohne dass die
+     * Maschine auch nur angefangen hätte.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void whatTheNetworkPutsInIsNoOutput(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        entity.storage().insert(Items.COBBLESTONE, 64);
+
+        // Im Ziel liegt schon etwas: genau der Fall, an dem die einfache
+        // Fassung scheiterte, die gegen leer vergleicht.
+        BlockPos ziel = controller.east().south().south();
+        if (helper.getBlockEntity(ziel) instanceof ChestBlockEntity container) {
+            container.setItem(0, new ItemStack(Items.COBBLESTONE, 5));
+        }
+
+        helper.assertTrue(entity.deploy("""
+                fn wartet() {
+                    let gerät = await device_output
+                    return 1
+                }
+
+                fn füllt() {
+                    move 5 item:cobblestone from storage to depot
+                }"""), "Das Programm wurde nicht übernommen");
+
+        var flow = entity.startFlow("wartet", List.of());
+        helper.startSequence()
+                .thenIdle(15)
+                .thenExecute(() -> entity.startFlow("füllt", List.of()))
+                .thenIdle(25)
+                .thenExecute(() -> helper.assertValueEqual(flow.status().name(), "AWAITING",
+                        "Was das Netz selbst einlegt, ist keine Ausgabe"))
+                .thenSucceed();
+    }
+
+    /**
+     * <b>Der Worker schreibt auf eigenem Weg.</b> Er geht nicht durch den
+     * Interpreter, sondern legt selbst ein — und wenn diese Stelle die
+     * Grundlinie nicht nachzieht, meldet jede Lieferung des Netzes eine
+     * Ausgabe, die es nie gab.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void whatAWorkerPutsInIsNoOutput(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        entity.storage().insert(Items.COBBLESTONE, 64);
+
+        helper.assertTrue(entity.deploy("""
+                worker liefert {
+                    from storage
+                    to depot
+                    rate 8 per 20t
+                }
+
+                fn wartet() {
+                    let gerät = await device_output
+                    return 1
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+
+        BlockPos ziel = controller.east().south().south();
+        var flow = entity.startFlow("wartet", List.of());
+        // Langsam genug, dass noch geliefert wird, wenn die Grundlinie steht:
+        // Ein Worker, der in den ersten zehn Ticks fertig ist, liefe ganz vor
+        // dem ersten Blick ab, und der meldet nie etwas. Der Test wäre grün,
+        // ohne je etwas geprüft zu haben.
+        int[] zwischenstand = new int[1];
+        helper.startSequence()
+                .thenIdle(25)
+                .thenExecute(() -> zwischenstand[0] = countIn(helper, ziel))
+                .thenIdle(45)
+                .thenExecute(() -> {
+                    helper.assertTrue(countIn(helper, ziel) > zwischenstand[0],
+                            "Der Worker muss noch liefern, sonst prüft der Test nichts"
+                                    + " (Stand: " + zwischenstand[0] + ")");
+                    helper.assertValueEqual(flow.status().name(), "AWAITING",
+                            "Was ein Worker einlegt, ist keine Ausgabe");
+                })
+                .thenSucceed();
+    }
+
+    /** Weniger ist nichts Neues: Entnehmen darf nichts auslösen. */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void takingSomethingOutIsNoOutput(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        BlockPos quelle = controller.east().north().north();
+        if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity container) {
+            container.setItem(0, new ItemStack(Items.COBBLESTONE, 5));
+        }
+
+        helper.assertTrue(entity.deploy("""
+                fn wartet() {
+                    let gerät = await device_output
+                    return 1
+                }"""), "Das Programm wurde nicht übernommen");
+
+        var flow = entity.startFlow("wartet", List.of());
+        helper.startSequence()
+                .thenIdle(15)
+                .thenExecute(() -> {
+                    if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity container) {
+                        container.setItem(0, ItemStack.EMPTY);
+                    }
+                })
+                .thenIdle(15)
+                .thenExecute(() -> helper.assertValueEqual(flow.status().name(), "AWAITING",
+                        "Entnehmen ist keine Ausgabe"))
+                .thenSucceed();
+    }
+
+    /**
+     * <b>Kein Einmalschuss.</b> Eine Maschine, die eine Ladung stückweise
+     * ausgibt, muss jedes Stück melden — sonst bliebe der Rest in ihr stehen,
+     * und genau das ist der Verlust, den das Ereignis vermeiden soll.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void everyNewStackIsReported(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                global zaehler = 0
+
+                on device_output(gerät) {
+                    zaehler = zaehler + 1
+                }"""), "Das Programm wurde nicht übernommen");
+
+        BlockPos quelle = controller.east().north().north();
+        helper.startSequence()
+                .thenIdle(15)
+                .thenExecute(() -> {
+                    if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity container) {
+                        container.setItem(0, new ItemStack(Items.COBBLESTONE, 1));
+                    }
+                })
+                .thenIdle(15)
+                .thenExecute(() -> {
+                    if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity container) {
+                        container.setItem(1, new ItemStack(Items.COBBLESTONE, 1));
+                    }
+                })
+                .thenIdle(15)
+                .thenExecute(() -> helper.assertValueEqual(entity.globals().get("zaehler"),
+                        new Value.Int(2), "Jedes Stück wird gemeldet, nicht nur das erste"))
                 .thenSucceed();
     }
 

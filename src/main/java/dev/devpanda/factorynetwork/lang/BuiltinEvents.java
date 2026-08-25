@@ -28,6 +28,15 @@ public final class BuiltinEvents {
     /** An einem Gerät hat sich der Inhalt geändert. */
     public static final String DEVICE_CHANGED = "device_changed";
 
+    /**
+     * In einem Gerät ist etwas dazugekommen.
+     *
+     * <p><b>Nicht „fertig".</b> Ob eine Maschine ihre Arbeit beendet hat,
+     * weiß von außen niemand; gemessen wird der Unterschied zum letzten
+     * Blick. Was das Netz selbst einlegt, zählt nie mit.
+     */
+    public static final String DEVICE_OUTPUT = "device_output";
+
     /** Das Redstonesignal an einem Connector ist ein anderes geworden. */
     public static final String REDSTONE_CHANGED = "redstone_changed";
 
@@ -42,6 +51,7 @@ public final class BuiltinEvents {
             DEVICE_ONLINE, 1,
             DEVICE_OFFLINE, 1,
             DEVICE_CHANGED, 1,
+            DEVICE_OUTPUT, 1,
             REDSTONE_CHANGED, 2);
 
     private BuiltinEvents() {

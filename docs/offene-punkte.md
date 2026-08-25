@@ -67,7 +67,7 @@ Vorentscheidungen)
 | 2.3 | Abgabe bei `OFF`/`BOOTING`: „Netz füllt sich langsam, während Maschinen ziehen" nicht durchgerechnet | E | `strom.md:239` | klein | 2.2 |
 | 2.4 | Einheit der Abgaberate: `per tick` gegen `per 5s` | E | `strom.md:249` | klein | 2.2 |
 | 2.5 | Strom als Wert in der Sprache (`crusher_1.energy`) | F | `strom.md:228` | klein | 1.1 |
-| 2.6 | **Entschieden am 25.08.:** Weg (1) kommt dazu — gemessen als Unterschied zum Stand beim Einlegen, damit ein vorher gefüllter Ausgang nichts auslöst, und benannt nach dem, was gemessen wird: **`device_output`**, nicht `device_done`. `device_changed` bleibt daneben stehen. Gebaut ist davon nichts | F | `entscheidungen.md` „Das Fertig-Signal heißt `device_output`" | mittel | — |
+| 2.6 | ~~Das Fertig-Signal~~ — **fertig.** `device_output` meldet, wenn in einem Gerät von einer Art mehr liegt als beim letzten Blick; was das Netz selbst einlegt, zieht die Grundlinie nach und zählt nie mit. Nicht `device_done`: gemessen wird „dazugekommen", nicht „fertig" | | `DeviceAmounts`, `NotifyingHandlers` | | |
 | 2.11 | ~~`log()` sieht niemand~~ — **fertig.** Vier Stufen (`info`, `warn`, `error`, `debug`), Reiter „Log" mit Filter, Herkunft je Zeile, überlebt den Neustart. Die Hinweise der Laufzeit laufen mit hinein | | `LogTabView`, `LogEntry` | | |
 | 2.7 | `when`-Bedingungen: nur Zahlvergleiche mit Literalen und `storage.count(...)` | F | `WorkerRuntime.java:860` | mittel | teils 1.1 |
 | 2.8 | `NetworkCheck` besucht keine Anweisungen — weder Seitenwarnung noch Namensprüfung erreichen ein `move` | F | `geraeteerkennung.md:316` | mittel | Entscheidung zur Namensprüfung bei `move` |

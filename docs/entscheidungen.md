@@ -2474,17 +2474,38 @@ fällt dem Spieler erst auf, wenn Gegenstände fehlen.
 **Weg (3), die Anbindung je Mod**, bleibt zurückgestellt (`offene-punkte.md`
 7.3): am genauesten, und in einem großen Pack sind es Dutzende.
 
-### Offen für den Bau
+### Beim Bauen beantwortet (25.08.)
 
-- **Was das Ereignis übergibt.** Ein Wert wie bei `device_changed` (das
-  Gerät) ist die einfache Antwort. Zwei — Gerät und was dazugekommen ist —
-  wären nützlicher, brauchen aber einen Wert für „Posten", und den gibt es
-  bis 1.16 nicht.
-- **Der Vergleich je Slot.** Heute steht je Gerät ein Fingerabdruck als
-  einzelne Zahl; ein Delta braucht den Inhalt selbst. Das gilt nur für
-  Geräte mit offenem Einlegen und nicht für alle Connectoren.
-- **Wie lange ein Einlegen offen bleibt.** Eine Maschine, die nie etwas
-  ausgibt, hielte sonst ihre Momentaufnahme für immer.
+**Beobachtet wird jedes Gerät, nicht erst eines nach dem Einlegen.** Die
+Grundlinie ist der letzte Blick, und das eigene Einlegen frischt sie sofort
+auf. Die Zusage bleibt dieselbe — ein vorher gefüllter Ausgang löst nichts
+aus, die eigene Lieferung auch nicht —, aber sie hängt nicht mehr daran, dass
+das Netz das Gerät vorher befüllt hat: Eine Baumfarm oder ein Quarry melden
+ihren Nachschub genauso. Damit fällt auch die Frage weg, wie lange ein
+Einlegen offen bleibt und was beim Serverneustart aus ihm wird.
+
+**Eingang und Ausgang werden nicht auseinandergehalten.** Was im Gerät mehr
+wird, gilt als dazugekommen. Das Netz könnte ausprobieren, ob ein Fach
+Einlagerung annimmt, und nur ablehnende Fächer als Ausgang zählen — genauer,
+aber es hinge daran, dass jede fremde Maschine ihre Fächer sauber beschränkt.
+Tut sie es nicht, meldete sie nie etwas, und der Ablauf, der darauf wartet,
+hinge ohne Meldung. Wer von Hand etwas nachlegt, löst das Ereignis also mit
+aus. Ärgerlich, aber nichts geht dabei verloren.
+
+**Übergeben wird ein Wert, das Gerät** — wie bei `device_changed`. Was
+dazugekommen ist, wäre nützlicher, braucht aber einen Wert für „Posten", und
+den gibt es bis `offene-punkte.md` 1.16 nicht.
+
+**Verglichen wird nach Art, nicht nach Fach.** Maschinen schieben ihren
+Inhalt zwischen Fächern hin und her; fachweise verglichen wäre jedes Umräumen
+eine Ausgabe.
+
+**Die Meldung hängt am Inventar, nicht an der Aufrufstelle.** Der Entwurf
+ging davon aus, dass alle Wege durch `WorldHost.move` laufen — die Worker
+schreiben aber auf eigenem Weg, und beide legen zurück, wenn der Netzspeicher
+voll ist. Statt vier Stellen, von denen eine vergessene genügt, damit ein
+Ablauf sich selbst weckt, gibt ein aufgelöstes Gerät jetzt ein meldendes
+Inventar heraus (`NotifyingHandlers`).
 
 ---
 

@@ -72,6 +72,15 @@ public final class WorldHost implements Interpreter.Host {
     /** Was zu tun ist, wenn ein globaler Wert sich geändert hat. */
     private final Runnable onGlobalChanged;
 
+    /**
+     * Wem zu melden ist, dass das Netz in ein Gerät geschrieben hat.
+     *
+     * <p>Der Controller zieht daraufhin die Grundlinie für
+     * {@code device_output} nach. Ohne Empfänger — in Aufrufen ohne
+     * Controller — bleiben die Inventare unverändert.
+     */
+    private java.util.function.Consumer<String> onDeviceFilled;
+
     public WorldHost(Level level, FactoryGraph graph, NetworkStorage storage,
             NetworkFluids fluidStorage, java.util.Map<String, Value> globals,
             Runnable onGlobalChanged) {
@@ -342,7 +351,7 @@ public final class WorldHost implements Interpreter.Host {
         if (tank == null) {
             throw new ScriptError("An " + device.name() + " hängt nichts, das Flüssigkeit hält.");
         }
-        return tank;
+        return NotifyingHandlers.fluids(tank, noticeFor(device.name()));
     }
 
     /** Die Sorten einer Flüssigkeits-Auswahl. */
@@ -476,6 +485,21 @@ public final class WorldHost implements Interpreter.Host {
         }
     }
 
+    /**
+     * Sagt Bescheid, sobald das Netz in ein Gerät geschrieben hat.
+     *
+     * <p>Setzt der Controller. Was daran hängt, steht bei
+     * {@link dev.devpanda.factorynetwork.runtime.NotifyingHandlers}.
+     */
+    public void setDeviceFilled(java.util.function.Consumer<String> listener) {
+        this.onDeviceFilled = listener;
+    }
+
+    /** Die Meldung für ein bestimmtes Gerät, oder {@code null} ohne Empfänger. */
+    private Runnable noticeFor(String device) {
+        return onDeviceFilled == null ? null : () -> onDeviceFilled.accept(device);
+    }
+
     /** Schickt jede Zeile sofort dorthin, statt sie zu sammeln. */
     public void setLogSink(java.util.function.Consumer<LogEntry> sink) {
         this.logSink = sink;
@@ -547,7 +571,7 @@ public final class WorldHost implements Interpreter.Host {
         if (handler == null) {
             throw new ScriptError("An " + device.name() + " hängt keine Maschine mit Inventar.");
         }
-        return handler;
+        return NotifyingHandlers.items(handler, noticeFor(device.name()));
     }
 
     private static boolean isStorage(Value value) {

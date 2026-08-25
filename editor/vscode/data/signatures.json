@@ -510,6 +510,7 @@
     "device_changed",
     "device_offline",
     "device_online",
+    "device_output",
     "redstone_changed"
   ],
   "declarations": [

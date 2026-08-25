@@ -35,11 +35,11 @@
   "Ereignisblock": {
     "prefix": "on",
     "body": [
-      "on ${1|device_online,device_offline,device_changed|}(${2:gerät}) {",
+      "on ${1|device_online,device_offline,device_changed,device_output|}(${2:gerät}) {",
       "    $0",
       "}"
     ],
-    "description": "Läuft, wenn ein Gerät auftaucht, verschwindet oder sich ändert"
+    "description": "Läuft, wenn ein Gerät auftaucht, verschwindet, sich ändert oder etwas ausgibt"
   },
   "Ereignisblock für Redstone": {
     "prefix": "onredstone",

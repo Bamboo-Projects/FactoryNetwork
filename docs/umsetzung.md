@@ -142,7 +142,7 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | | Zelle in der Hand ans Laufwerk klicken setzt sie ein, leere Hand nimmt die letzte heraus |
 | Werkzeuge | Beschriftungspistole, Netzanalysator mit Sicht durch Wände |
 | Funktionen | Bedingungen, Schleifen, `move`, Redstone lesen, `log` |
-| Ereignisse | `redstone_changed`, `device_online/offline/changed`, eigene über `emit` und `on` |
+| Ereignisse | `redstone_changed`, `device_online/offline/changed/output`, eigene über `emit` und `on` |
 | Abläufe | `sleep`, `await` mit `where`, `timeout` und `else`, `for` mit Warten je Runde |
 | Aufrufe | Eine gerufene Funktion darf selbst warten — beide Rahmen überstehen den Neustart |
 | Multiblocks | Vorlagen, gebaute Anlagen über `anlage/rolle`, Aufruf an der Instanz |
@@ -158,15 +158,6 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
   eine Wand aus zwölf Tafeln baut, bekommt viel Platz für Text in
   Normalgröße — keine Überschrift, die man aus zwanzig Metern liest. Ob das
   fehlt, zeigt erst das Spielen.
-- **`device_output`** — entschieden am 25.08., gebaut ist es noch nicht.
-  `device_online`, `device_offline` und `device_changed` laufen. Für „hier ist
-  etwas dazugekommen" kommt ein viertes Ereignis dazu: Das Netz merkt sich beim
-  Einlegen den Stand des Geräts und meldet später den Unterschied — ein vorher
-  gefüllter Ausgang löst damit nichts aus. Es heißt nach dem, was es misst, und
-  nicht `device_done`: Ob eine Maschine *fertig* ist, weiß von außen niemand,
-  und ein Name, der es zusagt, wird nicht nachgeprüft. Begründung und
-  verworfene Wege stehen in `entscheidungen.md` unter „Das Fertig-Signal heißt
-  `device_output`".
 - **Flüssigkeits-Tags.** `tag:` löst heute Gegenstands-Tags auf. Wie ein
   Flüssigkeits-Tag geschrieben wird, ist eine Frage an die Sprache und nicht
   nebenbei zu entscheiden — `fluidtag:c/molten` wäre eine vierte Art,
@@ -331,14 +322,11 @@ deshalb liegt in den Tests dort eine Welt aus Papier.
 
 In dieser Reihenfolge, nach Abhängigkeit:
 
-1. **`device_output` bauen.** Entschieden ist es seit dem 25.08. (siehe
-   oben). Der Baustein, der Multiblocks rund macht — ohne ihn muss jede
-   Vorlage ihre eigenen Ereignisse auslösen.
-2. **Flüssigkeiten und Chemikalien.** Die Schreibweise steht seit dem Entwurf;
+1. **Flüssigkeiten und Chemikalien.** Die Schreibweise steht seit dem Entwurf;
    die Anbindung an fremde Mods ist die eigentliche Arbeit.
-3. **Ein eigener Speicherblock.** Solange der Speicher im Controller sitzt,
+2. **Ein eigener Speicherblock.** Solange der Speicher im Controller sitzt,
    gibt es keinen Grund, mehr als einen zu bauen.
-4. **Autocrafting.** Der letzte ausgegraute Reiter.
+3. **Autocrafting.** Der letzte ausgegraute Reiter.
 
 ### Globale Werte (seit dem 24.08.)
 
@@ -393,6 +381,32 @@ Quelle, gerendert wird im Spiel.
 **Und beide Editoren kennen jetzt das ganze Projekt.** Die Vervollständigung
 im Spiel las bisher nur die offene Datei — dabei teilen alle Dateien einen
 Namensraum. Die VS-Code-Erweiterung liest die Nachbardateien ebenfalls.
+
+### `device_output` (seit dem 25.08.)
+
+`await device_output(crusher)` wartet, bis im Brecher etwas liegt, das das
+Netz nicht hineingelegt hat. Verglichen werden die Mengen je Art mit denen
+vom letzten Blick — alle zehn Ticks, in derselben Schleife wie
+`device_changed`, und nur, wenn ein Programm zuhört. Nur mehr zählt, also
+löst weder Verbrauch noch Entnahme etwas aus, und gemeldet wird jeder
+Zuwachs: Eine Maschine, die eine Ladung stückweise ausgibt, meldet jedes
+Stück.
+
+**Was das Netz selbst einlegt, zählt nie mit** — jede Lieferung zieht die
+Grundlinie sofort nach. Das war die Stelle, an der der Entwurf beim Bauen
+nachgab: Gedacht war ein Rückruf im Interpreter, weil dort `move` und
+`insert()` zusammenlaufen. Die Worker schreiben aber auf eigenem Weg, und
+beide legen zurück, wenn der Netzspeicher voll ist — vier Stellen, von denen
+eine vergessene genügt hätte, damit ein Ablauf sich selbst weckt. Jetzt hängt
+die Meldung am Inventar (`NotifyingHandlers`): Wer ein Gerät auflöst, bekommt
+ein meldendes Inventar, und wer schreibt, muss nichts davon wissen.
+
+**Der Test, der zuerst nichts prüfen konnte.** Der erste Worker-Test lief mit
+`rate 8 per 1t` und war nach acht Ticks fertig — noch vor dem ersten Blick,
+und der erste Blick meldet nie. Er war grün, ohne den Fehler je fangen zu
+können. Mit `rate 8 per 20t` und einer Zwischenmessung liefert der Worker
+noch, während die Grundlinie längst steht; erst so schlug er fehl, und erst
+danach war seine grüne Farbe etwas wert.
 
 ### Der Editor, eigener Strang
 

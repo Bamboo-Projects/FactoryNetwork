@@ -752,17 +752,20 @@ redstone_changed(device, strength)   Redstone-Stärke 0..15 hat sich geändert
 device_online(device)                Gerät ist erreichbar geworden
 device_offline(name)                 Gerät ist verschwunden — nur noch der Name
 device_changed(device)               Inhalt eines Geräts hat sich geändert
-device_output(device)                neuer Inhalt seit dem Einlegen
+device_output(device)                im Gerät ist etwas dazugekommen
 crafting_finished(job)               Fertigungsauftrag ist fertig
 crafting_failed(job, reason)         Fertigungsauftrag ist gescheitert
 ```
 
-> **Noch nicht gebaut:** `device_output` — am 25.08. entschieden, siehe
-> `entscheidungen.md`. Es meldet ausdrücklich nicht „fertig": Ob eine Maschine
-> ihre Arbeit beendet hat, weiß von außen niemand, gemessen wird der
-> Unterschied zum Stand beim Einlegen. Ebenfalls noch nicht gebaut sind
-> `crafting_finished` und `crafting_failed` — sie warten auf das Autocrafting,
-> und bis dahin weist die Prüfung sie als unbekanntes Ereignis zurück.
+`device_output` meldet ausdrücklich nicht „fertig": Ob eine Maschine ihre
+Arbeit beendet hat, weiß von außen niemand. Gemessen wird der Unterschied zum
+letzten Blick — ist von einer Art mehr da, ist etwas dazugekommen. Was das
+Netz selbst einlegt, zählt nie mit, und gemeldet wird jeder Zuwachs: Eine
+Maschine, die eine Ladung stückweise ausgibt, meldet jedes Stück.
+
+> **Noch nicht gebaut:** `crafting_finished` und `crafting_failed` — sie warten
+> auf das Autocrafting, und bis dahin weist die Prüfung sie als unbekanntes
+> Ereignis zurück.
 
 Bewusst nicht dabei ist ein Ereignis für jede Bestandsänderung. In einem Lager
 mit zwanzigtausend Arten feuert das im Sekundentakt, und niemand kann darauf

@@ -204,6 +204,7 @@ public class ControllerBlockEntity extends BlockEntity {
     public ControllerBlockEntity(BlockPos pos, BlockState state) {
         super(FnBlockEntities.CONTROLLER.get(), pos, state);
         storage.setChangeListener(this::markStorageDirty);
+        runtime.setDeviceFilled(this::noteFilled);
     }
 
     // ---- Programm ---------------------------------------------------------
@@ -1248,30 +1249,47 @@ public class ControllerBlockEntity extends BlockEntity {
     /** Der zuletzt gesehene Inhalt je Gerät, als Fingerabdruck. */
     private final Map<String, Integer> lastContents = new HashMap<>();
 
+    /** Die zuletzt gesehenen Mengen je Gerät — die Grundlinie für device_output. */
+    private final Map<String, DeviceAmounts> lastAmounts = new HashMap<>();
+
     /**
-     * Meldet, wenn sich der Inhalt eines Geräts geändert hat.
+     * Meldet, was an den Geräten geschieht.
      *
-     * <p><b>Nicht „fertig".</b> Ob eine Maschine fertig ist, weiß niemand von
-     * außen: Der Ausgang kann von vorher gefüllt sein, und jede Mod zählt
-     * anders. Was sich sagen lässt, ist, dass sich etwas geändert hat — was
-     * das bedeutet, schreibt der Spieler selbst. Eine Automatisierung, die
-     * einmal zu früh weiterschaltet, verliert Gegenstände in einer Kiste, die
-     * niemand mehr findet.
+     * <p><b>{@code device_changed}: irgendetwas hat sich geregt.</b> Mehr
+     * sagt es nicht, und mehr kann es nicht sagen — auch das Verbrennen von
+     * Kohle ist eine Änderung. Was das bedeutet, schreibt der Spieler selbst.
      *
-     * <p>Daneben tritt einmal {@code device_output}: Am 25.08. entschieden,
-     * noch nicht gebaut — es merkt sich beim Einlegen den Stand des Geräts
-     * und meldet den Unterschied. Es heißt nicht {@code device_done}, weil es
-     * „neuer Inhalt seit dem Einlegen" messen kann und „fertig" nicht.
+     * <p><b>{@code device_output}: es ist etwas dazugekommen.</b> Verglichen
+     * werden die Mengen je Art mit denen vom letzten Blick; nur mehr zählt,
+     * also lösen Verbrauch und Entnahme nie etwas aus. Was das Netz selbst
+     * einlegt, zieht die Grundlinie sofort nach (siehe {@link #noteFilled})
+     * und geht deshalb nie als Ausgabe durch. Gemeldet wird jeder Zuwachs
+     * und nicht nur der erste: Eine Maschine, die eine Ladung stückweise
+     * ausgibt, meldet jedes Stück — sonst bliebe der Rest in ihr stehen.
+     *
+     * <p><b>Nicht „fertig".</b> Ob eine Maschine ihre Arbeit beendet hat,
+     * weiß von außen niemand: Der Ausgang kann von vorher gefüllt sein, und
+     * jede Mod zählt anders. Eine Automatisierung, die einmal zu früh
+     * weiterschaltet, verliert Gegenstände in einer Kiste, die niemand mehr
+     * findet — deshalb sagt der Name, was gemessen wird, und nicht, was der
+     * Spieler daraus schließen möchte.
      *
      * <p>Abgefragt statt gemeldet und nur alle zehn Ticks, wie beim Redstone —
-     * und nur, wenn das Programm überhaupt darauf hört.
+     * und je Ereignis nur, wenn das Programm überhaupt darauf hört.
      */
     private void fireInventoryEvents() {
         if (level == null || level.getGameTime() % 10 != 0) {
             return;
         }
-        if (!listensTo(BuiltinEvents.DEVICE_CHANGED)) {
+        boolean watchChanges = listensTo(BuiltinEvents.DEVICE_CHANGED);
+        boolean watchOutput = listensTo(BuiltinEvents.DEVICE_OUTPUT);
+        if (!watchChanges) {
             lastContents.clear();
+        }
+        if (!watchOutput) {
+            lastAmounts.clear();
+        }
+        if (!watchChanges && !watchOutput) {
             return;
         }
         for (Map.Entry<String, BlockPos> entry : graph.connectors().entrySet()) {
@@ -1280,15 +1298,56 @@ public class ControllerBlockEntity extends BlockEntity {
                             instanceof ConnectorBlockEntity connector)) {
                 continue;
             }
-            int fingerprint = contentsFingerprint(connector);
-            Integer previous = lastContents.put(entry.getKey(), fingerprint);
-            if (previous == null || previous == fingerprint) {
-                // Beim ersten Sehen wird nicht gemeldet: Da hat sich nichts
-                // geändert, es war nur nichts bekannt.
-                continue;
+            // Beim ersten Sehen wird nicht gemeldet: Da hat sich nichts
+            // geändert, es war nur nichts bekannt.
+            if (watchChanges) {
+                int fingerprint = contentsFingerprint(connector);
+                Integer previous = lastContents.put(entry.getKey(), fingerprint);
+                if (previous != null && previous != fingerprint) {
+                    fireEvent(BuiltinEvents.DEVICE_CHANGED,
+                            List.of(new Value.Device(entry.getKey())));
+                }
             }
-            fireEvent(BuiltinEvents.DEVICE_CHANGED, List.of(new Value.Device(entry.getKey())));
+            if (watchOutput) {
+                DeviceAmounts amounts = DeviceAmounts.of(connector);
+                DeviceAmounts previous = lastAmounts.put(entry.getKey(), amounts);
+                if (previous != null && amounts.hasMoreThan(previous)) {
+                    fireEvent(BuiltinEvents.DEVICE_OUTPUT,
+                            List.of(new Value.Device(entry.getKey())));
+                }
+            }
         }
+    }
+
+    /**
+     * Das Netz hat gerade selbst etwas in ein Gerät gelegt.
+     *
+     * <p>Die Grundlinie wird sofort nachgezogen, damit die eigene Lieferung
+     * beim nächsten Blick nicht als Ausgabe des Geräts durchgeht. Ohne das
+     * weckte ein Ablauf, der einlegt und dann wartet, sich selbst.
+     *
+     * <p>Nur für Geräte, die schon beobachtet werden. Wer noch keine
+     * Grundlinie hat, bekommt sie beim nächsten Blick — und der erste Blick
+     * meldet nie.
+     */
+    public void noteFilled(String device) {
+        lastAmounts.computeIfPresent(device, (name, previous) -> {
+            ConnectorBlockEntity connector = connectorNamed(name);
+            // Ein Gerät, das gerade nicht erreichbar ist, behält seine alte
+            // Grundlinie. Eine leere hieße: Beim nächsten Blick ist alles
+            // darin neu.
+            return connector == null ? previous : DeviceAmounts.of(connector);
+        });
+    }
+
+    /** Die BlockEntity des Connectors mit diesem Namen, oder {@code null}. */
+    private ConnectorBlockEntity connectorNamed(String device) {
+        BlockPos position = graph.connectors().get(device);
+        if (position == null || level == null || !level.isLoaded(position)) {
+            return null;
+        }
+        return level.getBlockEntity(position) instanceof ConnectorBlockEntity connector
+                ? connector : null;
     }
 
     /**
@@ -1485,6 +1544,7 @@ public class ControllerBlockEntity extends BlockEntity {
         WorldHost host = new WorldHost(level, graph, storage, fluidStorage, globals,
                 this::setChanged);
         host.setLogSink(this::add);
+        host.setDeviceFilled(this::noteFilled);
         return host;
     }
 

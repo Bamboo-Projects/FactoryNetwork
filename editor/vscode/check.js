@@ -198,10 +198,11 @@ contains('Nach items() kein online',
 contains('Nach einem Gerätepunkt kein where',
     ['fn test() {', '    if crusher_1.'], 'where', false);
 
-// Nach on steht ein Ereignisname und keine Deklaration. Die vier des Netzes
+// Nach on steht ein Ereignisname und keine Deklaration. Die fünf des Netzes
 // stehen in keiner Datei und kommen aus der Tabelle.
-check('Nach on die vier Ereignisse', complete(['on ']).sort(),
-    ['device_changed', 'device_offline', 'device_online', 'redstone_changed']);
+check('Nach on die fünf Ereignisse', complete(['on ']).sort(),
+    ['device_changed', 'device_offline', 'device_online', 'device_output',
+        'redstone_changed']);
 contains('Nach on kein worker', ['on '], 'worker', false);
 contains('Nach on auch das eigene Ereignis',
     ['event Fertig(nummer: Int)', '', 'on '], 'Fertig', true);
