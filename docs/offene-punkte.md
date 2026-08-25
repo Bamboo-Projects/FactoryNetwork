@@ -110,7 +110,7 @@ Vorentscheidungen)
 | # | Was | Status | Wo | Größe | Blockiert durch |
 |---|---|---|---|---|---|
 | 3.1 | ~~Annahme-Probe~~ — **fertig**, Kandidaten aus dem Entwurf | | `ItemCandidates.java` | | |
-| 3.2 | **Entschieden: ja**, mit `fill(…, SIMULATE)` und den `fluid:`-Angaben aus dem Programm. Mitnehmen, wenn ohnehin an den Flüssigkeiten gearbeitet wird | F | `geraeteerkennung.md:336` | klein | — |
+| 3.2 | ~~Annahme-Probe für Flüssigkeiten~~ — **fertig** (25.08.). `fill(…, SIMULATE)` mit einem Eimer je Probe und den `fluid:`-Angaben aus dem Programm; die Zeile steht bei den Behältern im Tooltip | | `DeviceSnapshotPacket.tankProbe` | | |
 | 3.3 | ~~Flüssigkeitsstände im Tooltip~~ — **fertig** | | | | |
 | 3.4 | ~~Bearbeitung anfragen~~ — **fertig**, F4 in beiden Fenstern | | `RequestEdit.java` | | |
 | 3.5 | **Entschieden: Ordner kommen** — gegen meine Empfehlung. Dateiliste, Anlegen, Umbenennen und die Brücke zu VS Code ziehen mit | F | `umsetzung.md:505` | mittel | — |

@@ -7449,6 +7449,59 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    /**
+     * Die Annahme-Probe gilt auch für Behälter.
+     *
+     * <p>Dieselbe Frage wie bei den Fächern, dieselbe Antwort: Ein
+     * {@code IFluidHandler} kann nicht sagen, was er annimmt. Also wird
+     * gefragt — mit den Flüssigkeiten, die im Entwurf stehen, und mit
+     * {@code fill(…, SIMULATE)}, das nichts bewegt.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void theProbeAlsoAsksTheTanks(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        // Vor dem Connector steht ein leerer Kessel statt der Kiste.
+        helper.setBlock(controller.east().south().south(), Blocks.CAULDRON);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                worker kuehlen {
+                    from storage
+                    to depot
+                    filter fluid:water
+                }"""), "das Programm wurde nicht übernommen");
+
+        var snapshot = DeviceSnapshotPacket.of(entity, "depot");
+        helper.assertTrue(snapshot != null, "es kam keine Antwort");
+        helper.assertTrue(snapshot.levels().tanks().stream()
+                        .anyMatch(line -> line.contains("nimmt")),
+                "der Kessel muss sagen, dass er Wasser nimmt: "
+                        + snapshot.levels().tanks());
+        helper.succeed();
+    }
+
+    /** Eine Kiste hat keine Behälter und sagt dazu nichts. */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void achestSaysNothingAboutTanks(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                worker kuehlen {
+                    from storage
+                    to depot
+                    filter fluid:water
+                }"""), "das Programm wurde nicht übernommen");
+
+        var snapshot = DeviceSnapshotPacket.of(entity, "depot");
+        helper.assertTrue(snapshot != null, "es kam keine Antwort");
+        helper.assertTrue(snapshot.levels().tanks().isEmpty(),
+                "eine Kiste hat keine Behälter: " + snapshot.levels().tanks());
+        helper.succeed();
+    }
+
     // ---- Der Anbau am Controller -------------------------------------------
 
     /**

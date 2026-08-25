@@ -43,11 +43,31 @@ public final class ItemCandidates {
     private ItemCandidates() {
     }
 
+    /**
+     * Dasselbe für {@code fluid:}.
+     *
+     * <p>Getrennt gesammelt und nicht in einem Topf: Ein Behälter wird mit
+     * Flüssigkeiten geprobt und ein Fach mit Gegenständen — wer beides
+     * mischte, bekäme zwei Listen voller Kandidaten, die nirgends passen
+     * können.
+     */
+    private static final Pattern FLUID_SELECTOR =
+            Pattern.compile("\\bfluid:([a-z0-9_.-]+(?:/[a-z0-9_./-]+)?)");
+
     /** Was im ganzen Projekt an {@code item:}-Literalen steht. */
     public static Set<String> of(Project project) {
+        return collectAll(project, ITEM_SELECTOR);
+    }
+
+    /** Und was an {@code fluid:}-Literalen. */
+    public static Set<String> fluidsOf(Project project) {
+        return collectAll(project, FLUID_SELECTOR);
+    }
+
+    private static Set<String> collectAll(Project project, Pattern pattern) {
         Set<String> found = new LinkedHashSet<>();
         for (String name : project.names()) {
-            collect(project.source(name), found);
+            collect(project.source(name), found, pattern);
             if (found.size() >= MAX) {
                 break;
             }
@@ -55,8 +75,8 @@ public final class ItemCandidates {
         return found;
     }
 
-    private static void collect(String source, Set<String> into) {
-        Matcher matcher = ITEM_SELECTOR.matcher(source);
+    private static void collect(String source, Set<String> into, Pattern pattern) {
+        Matcher matcher = pattern.matcher(source);
         while (matcher.find() && into.size() < MAX) {
             into.add(matcher.group(1));
         }

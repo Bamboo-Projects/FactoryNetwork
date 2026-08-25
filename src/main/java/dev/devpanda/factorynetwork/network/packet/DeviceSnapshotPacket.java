@@ -156,7 +156,8 @@ public record DeviceSnapshotPacket(String connector, DeviceProfileCodec.Flat pro
 
         return new DeviceSnapshotPacket(connector,
                 DeviceProfileCodec.toFlat(connector, DeviceScan.of(entity)),
-                stacks, omitted, new Levels(energy, capacity, tanksOf(entity)),
+                stacks, omitted,
+                new Levels(energy, capacity, tanksOf(entity, controller.draft())),
                 probe(items, controller.draft()));
     }
 
@@ -167,7 +168,8 @@ public record DeviceSnapshotPacket(String connector, DeviceProfileCodec.Flat pro
      * Dann sagt „leer" mehr als gar nichts, weil es die Frage beantwortet,
      * ob überhaupt einer da ist.
      */
-    private static List<String> tanksOf(ConnectorBlockEntity entity) {
+    private static List<String> tanksOf(ConnectorBlockEntity entity,
+                                       dev.devpanda.factorynetwork.lang.Project draft) {
         IFluidHandler tanks = entity.machineTank();
         List<String> lines = new ArrayList<>();
         if (tanks == null) {
@@ -184,6 +186,51 @@ public record DeviceSnapshotPacket(String connector, DeviceProfileCodec.Flat pro
         }
         if (lines.isEmpty() && tanks.getTanks() > 0) {
             lines.add("leer");
+        }
+        lines.addAll(tankProbe(tanks, draft));
+        return lines;
+    }
+
+    /**
+     * Was die Behälter annehmen würden.
+     *
+     * <p>Dieselbe Frage wie bei den Fächern und aus demselben Grund: Ein
+     * {@code IFluidHandler} kann nicht sagen, was er annimmt. Also wird die
+     * Frage umgedreht — mit den Flüssigkeiten, die im Entwurf stehen. Wer
+     * {@code fluid:water} tippt, fragt sich über Wasser etwas.
+     *
+     * <p><b>Ein Eimer je Probe.</b> Mit einem Millibucket sagt ein Tank oft
+     * ja, der in Wahrheit nur volle Eimer nimmt; mit einem Eimer antwortet
+     * er auf die Frage, die man wirklich hat.
+     *
+     * <p>Alles simuliert: {@code fill} mit {@code SIMULATE} bewegt nichts.
+     */
+    private static List<String> tankProbe(IFluidHandler tanks,
+                                          dev.devpanda.factorynetwork.lang.Project draft) {
+        List<String> lines = new ArrayList<>();
+        List<net.minecraft.world.level.material.Fluid> candidates = new ArrayList<>();
+        for (String name : dev.devpanda.factorynetwork.lang.ItemCandidates.fluidsOf(draft)) {
+            ResourceLocation id = ResourceLocation.tryParse(
+                    name.contains(":") ? name : name.replace('/', ':'));
+            if (id == null) {
+                continue;
+            }
+            var fluid = net.minecraft.core.registries.BuiltInRegistries.FLUID.get(id);
+            if (fluid != net.minecraft.world.level.material.Fluids.EMPTY) {
+                candidates.add(fluid);
+            }
+        }
+        for (int tank = 0; tank < tanks.getTanks() && lines.size() < 8; tank++) {
+            List<String> accepts = new ArrayList<>();
+            for (var fluid : candidates) {
+                FluidStack probe = new FluidStack(fluid, 1000);
+                if (tanks.fill(probe, IFluidHandler.FluidAction.SIMULATE) > 0) {
+                    accepts.add(probe.getHoverName().getString());
+                }
+            }
+            if (!accepts.isEmpty()) {
+                lines.add("Behälter " + tank + " nimmt: " + String.join(", ", accepts));
+            }
         }
         return lines;
     }

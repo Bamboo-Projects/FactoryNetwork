@@ -332,8 +332,10 @@ Entscheidung mit eigenen Fällen (Schleifenvariablen, Multiblock-Namen).
 ## 9. Was danach offen bleibt
 
 - Die Gerätemitglieder, und davor die Frage nach `busy`.
-- Ob die Annahme-Probe auch für Flüssigkeiten sinnvoll ist. `isFluidValid` hat
-  dasselbe Problem wie `isItemValid`, aber die Kandidatenmenge ist kleiner,
-  und Tanks sind seltener rezeptgebunden als Slots.
+- ~~Ob die Annahme-Probe auch für Flüssigkeiten sinnvoll ist.~~ **Gebaut am
+  25.08.** Dieselbe Umkehrung wie bei den Fächern, mit `fill(…, SIMULATE)` und
+  den `fluid:`-Angaben aus dem Entwurf. Geprobt wird mit **einem Eimer**: Mit
+  einem Millibucket sagt ein Tank oft ja, der in Wahrheit nur volle Eimer
+  nimmt.
 - Ob das Profil auch dem Analysator etwas zu geben hat. Er zeigt heute das
   Netz, nicht die Geräte daran.
