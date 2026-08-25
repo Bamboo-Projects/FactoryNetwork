@@ -242,10 +242,10 @@ public final class Completions {
                 // Stelle meistens sie und nicht den einzelnen Gegenstand.
                 addTemplates(entries, prefix, lines);
                 addItems(entries, prefix);
-                // Strom steht ohne Doppelpunkt und taucht deshalb in der
-                // Gegenstandssuche nicht auf — er muss eigens angeboten
-                // werden, sonst findet ihn niemand.
-                addAll(entries, List.of("power"), prefix, Entry.Kind.KEYWORD);
+                // Die beiden ohne Doppelpunkt tauchen in der
+                // Gegenstandssuche nicht auf — sie müssen eigens angeboten
+                // werden, sonst findet sie niemand.
+                addAll(entries, List.of("power", "all"), prefix, Entry.Kind.KEYWORD);
             }
             case STRATEGY -> addAll(entries, Signatures.STRATEGIES, prefix,
                     Entry.Kind.KEYWORD);

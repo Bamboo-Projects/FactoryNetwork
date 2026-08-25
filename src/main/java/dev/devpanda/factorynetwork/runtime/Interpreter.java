@@ -778,6 +778,14 @@ public final class Interpreter {
     }
 
     private static String written(Expr.Selector selector) {
+        // Die beiden ohne Sorte stehen ohne Doppelpunkt da — so, wie sie
+        // geschrieben werden. Ein „all:" mit leerem Rest wäre eine Lüge über
+        // die Form, und die Auflösung suchte danach einen Gegenstand
+        // namens nichts.
+        if (selector.kind() == Expr.Selector.Kind.ALL
+                || selector.kind() == Expr.Selector.Kind.POWER) {
+            return selector.kind().name().toLowerCase(java.util.Locale.ROOT);
+        }
         String kind = selector.kind().name().toLowerCase(java.util.Locale.ROOT);
         return kind + ":" + (selector.hasNamespace() ? selector.namespace() + "/" : "")
                 + selector.path();

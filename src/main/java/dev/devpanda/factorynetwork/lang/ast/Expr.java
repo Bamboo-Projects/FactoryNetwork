@@ -62,7 +62,20 @@ public sealed interface Expr {
              * deshalb steht {@code power} allein und ohne Doppelpunkt. Der
              * Pfad ist leer.
              */
-            POWER
+            POWER,
+            /**
+             * Alles, was da ist.
+             *
+             * <p>Die Auswahl, die nichts aussucht — {@code move all from
+             * brecher to storage}. Ein Worker ohne {@code filter} tat das
+             * seit jeher; in einer Funktion gab es keine Schreibweise dafür,
+             * und {@code move} verlangt eine Auswahl.
+             *
+             * <p>Sie meint <b>Gegenstände</b>, wie ein Worker ohne Filter.
+             * Flüssigkeiten bleiben ausdrücklich: Wer sie meint, schreibt
+             * {@code fluid:}, und niemand räumt versehentlich einen Tank leer.
+             */
+            ALL
         }
 
         public boolean hasPattern() {

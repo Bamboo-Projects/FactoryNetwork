@@ -17,7 +17,7 @@ public enum TokenType {
     TRUE, FALSE, IT,
 
     // Deklarationen
-    WORKER, GROUP, MULTIBLOCK, EVENT, DISPLAY, ON, IMPORT, GLOBAL, CONST, POWER,
+    WORKER, GROUP, MULTIBLOCK, EVENT, DISPLAY, ON, IMPORT, GLOBAL, CONST, POWER, ALL,
 
     // Worker
     FROM, TO, FILTER, MAINTAIN, RATE, PER, WHEN, PRIORITY, STRATEGY, OVERFLOW,
@@ -63,7 +63,7 @@ public enum TokenType {
             Map.entry("multiblock", MULTIBLOCK), Map.entry("event", EVENT),
             Map.entry("display", DISPLAY), Map.entry("on", ON), Map.entry("import", IMPORT),
             Map.entry("global", GLOBAL), Map.entry("const", CONST),
-            Map.entry("power", POWER),
+            Map.entry("power", POWER), Map.entry("all", ALL),
             Map.entry("from", FROM), Map.entry("to", TO), Map.entry("filter", FILTER),
             Map.entry("maintain", MAINTAIN), Map.entry("rate", RATE), Map.entry("per", PER),
             Map.entry("when", WHEN), Map.entry("priority", PRIORITY),
@@ -95,7 +95,7 @@ public enum TokenType {
     public boolean endsExpression() {
         return switch (this) {
             case INT, FLOAT, STRING, DURATION, SELECTOR, NAME, ESCAPED_NAME, NAME_PATTERN,
-                 TRUE, FALSE, IT, RPAREN, RBRACE, POWER,
+                 TRUE, FALSE, IT, RPAREN, RBRACE, POWER, ALL,
                  STORAGE, CRAFTING, WORLD, NETWORK, WORKERS, MULTIBLOCKS -> true;
             default -> false;
         };

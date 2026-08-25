@@ -200,6 +200,25 @@ move item:iron_ingot from chest to furnace     // alles, was da ist
 move 64 item:iron_ingot from chest to furnace  // höchstens 64
 ```
 
+### Alles, was darin liegt
+
+```
+move all from brecher to storage       // was auch immer drin ist
+move 8 all from brecher to storage     // acht Stück von irgendwas
+```
+
+`all` ist die Auswahl, die nichts aussucht. Ein Worker ohne `filter` tat das
+seit jeher; in einer Funktion gab es dafür keine Schreibweise, weil `move` eine
+Auswahl verlangt.
+
+**`all` meint Gegenstände**, wie ein Worker ohne Filter. Flüssigkeiten bleiben
+ausdrücklich — wer sie meint, schreibt `fluid:`, und niemand räumt versehentlich
+einen Tank leer.
+
+Aus dem Speicher heraus ist es die eine Antwort auf „sag, was bewegt wird":
+`move all from storage to kiste` nimmt den ganzen Bestand. Jede andere leere
+Auswahl bleibt dort ein Fehler.
+
 Bei einer Auswahl über mehrere Arten zählt die Menge **insgesamt**:
 
 ```

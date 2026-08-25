@@ -1009,6 +1009,13 @@ public final class Parser {
                 advance();
                 return new Expr.Selector(Expr.Selector.Kind.POWER, "", "", token.span());
             }
+            // „all" ist die Auswahl, die nichts aussucht: was auch immer
+            // darin liegt. Ein Worker ohne filter konnte das seit jeher, eine
+            // Funktion hatte keine Schreibweise dafür.
+            case ALL -> {
+                advance();
+                return new Expr.Selector(Expr.Selector.Kind.ALL, "", "", token.span());
+            }
             case NAME_PATTERN -> {
                 advance();
                 return new Expr.NamePattern(token.text(), token.span());
@@ -1300,6 +1307,7 @@ public final class Parser {
             case DURATION -> "die Zeitangabe " + token.text();
             case SELECTOR -> "die Auswahl " + token.text();
             case POWER -> "power";
+            case ALL -> "all";
             case NAME, ESCAPED_NAME -> quote(token.text());
             case LBRACE -> "eine geschweifte Klammer";
             case RBRACE -> "eine schließende geschweifte Klammer";

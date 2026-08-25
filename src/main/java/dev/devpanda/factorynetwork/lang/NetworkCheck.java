@@ -145,7 +145,8 @@ public final class NetworkCheck {
             return;
         }
         DeviceProfile.Access.Ability needed = switch (kind) {
-            case ITEM, TAG -> DeviceProfile.Access.Ability.ITEMS;
+            // „all" meint Gegenstände, wie ein Worker ohne Filter.
+            case ITEM, TAG, ALL -> DeviceProfile.Access.Ability.ITEMS;
             // FLUIDTAG kommt hier nie an — WorkerKind.of nennt die
             // Ressource und nicht die Schreibweise. Der Fall steht trotzdem
             // da: Der Schalter ist erschöpfend, und eine stille Lücke wäre

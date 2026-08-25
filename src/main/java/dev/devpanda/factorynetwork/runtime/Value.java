@@ -38,7 +38,7 @@ public sealed interface Value {
     record Request(String selector, long amount) implements Value {
 
         /** Worauf sich eine Auswahl bezieht. */
-        public enum Kind { ITEM, FLUID, CHEMICAL, TAG, FLUIDTAG, UNKNOWN }
+        public enum Kind { ITEM, FLUID, CHEMICAL, TAG, FLUIDTAG, ALL, UNKNOWN }
 
         public boolean hasAmount() {
             return amount >= 0;
@@ -55,6 +55,10 @@ public sealed interface Value {
          * können.
          */
         public Kind kind() {
+            // „all" trägt keine Sorte und deshalb keinen Doppelpunkt.
+            if ("all".equals(selector)) {
+                return Kind.ALL;
+            }
             int colon = selector.indexOf(':');
             if (colon < 0) {
                 return Kind.UNKNOWN;

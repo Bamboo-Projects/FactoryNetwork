@@ -7290,6 +7290,84 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    // ---- Alles von A nach B ------------------------------------------------
+
+    /**
+     * {@code move all} nimmt, was auch immer darin liegt.
+     *
+     * <p>Ein Worker ohne {@code filter} konnte das seit jeher; in einer
+     * Funktion gab es keine Schreibweise dafür. Aufgefallen ist die Lücke beim
+     * Streichen von {@code output()}.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void moveAllTakesWhateverIsThere(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        BlockPos quelle = controller.east().north().north();
+        BlockPos ziel = controller.east().south().south();
+        if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity kiste) {
+            kiste.setItem(0, new ItemStack(Items.IRON_INGOT, 30));
+            kiste.setItem(1, new ItemStack(Items.GOLD_INGOT, 12));
+        }
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                fn raeumen() {
+                    return move all from quarry_output to depot
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+        entity.callFunction("raeumen", List.of());
+
+        helper.assertValueEqual(countIn(helper, quelle), 0, "Die Quelle ist leer");
+        helper.assertValueEqual(countIn(helper, ziel), 42, "Alles ist angekommen");
+        helper.succeed();
+    }
+
+    /** Auch aus dem Netzspeicher — dort steht sonst „sag, was bewegt wird". */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void moveAllEmptiesTheStorage(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        BlockPos ziel = controller.east().south().south();
+        entity.rebuildNetwork();
+        entity.storage().insert(Items.IRON_INGOT, 20);
+        entity.storage().insert(Items.GOLD_INGOT, 5);
+
+        helper.assertTrue(entity.deploy("""
+                fn raeumen() {
+                    return move all from storage to depot
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+        entity.callFunction("raeumen", List.of());
+
+        helper.assertValueEqual(countIn(helper, ziel), 25, "Alles ist angekommen");
+        helper.succeed();
+    }
+
+    /** Mit Menge davor: {@code move 8 all} nimmt acht Stück von irgendwas. */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void moveAllTakesAnAmount(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        BlockPos quelle = controller.east().north().north();
+        BlockPos ziel = controller.east().south().south();
+        if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity kiste) {
+            kiste.setItem(0, new ItemStack(Items.IRON_INGOT, 30));
+        }
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                fn raeumen() {
+                    return move 8 all from quarry_output to depot
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+        entity.callFunction("raeumen", List.of());
+
+        helper.assertValueEqual(countIn(helper, ziel), 8, "Acht Stück");
+        helper.assertValueEqual(countIn(helper, quelle), 22, "Der Rest bleibt liegen");
+        helper.succeed();
+    }
+
     // ---- Der Anbau am Controller -------------------------------------------
 
     /**

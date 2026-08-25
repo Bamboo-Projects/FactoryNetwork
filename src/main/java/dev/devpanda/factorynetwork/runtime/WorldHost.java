@@ -250,8 +250,17 @@ public final class WorldHost implements Interpreter.Host {
         }
         if (fromStorage) {
             if (items.isEmpty()) {
-                throw new ScriptError("Aus dem Speicher muss stehen, was bewegt wird.",
-                        "Zum Beispiel: move 64 item:iron_ore from storage to crusher_1");
+                // „all" ist die eine Antwort auf diese Frage: Wer sie
+                // schreibt, hat gesagt, was bewegt wird — nämlich alles.
+                // Ohne diesen Zweig stünde die Meldung darunter vor einem
+                // Programm, in dem die Auswahl ausdrücklich dasteht.
+                if (isEverything(amount)) {
+                    items = List.copyOf(storage.contents().keySet());
+                } else {
+                    throw new ScriptError("Aus dem Speicher muss stehen, was bewegt wird.",
+                            "Zum Beispiel: move 64 item:iron_ore from storage to crusher_1 "
+                                    + "— oder all, wenn wirklich alles gemeint ist.");
+                }
             }
             long moved = 0;
             for (Item item : items) {
@@ -276,6 +285,12 @@ public final class WorldHost implements Interpreter.Host {
     }
 
     /** Meint diese Auswahl Flüssigkeiten? */
+    /** Steht dort ausdrücklich {@code all}? */
+    private static boolean isEverything(Value value) {
+        return value instanceof Value.Request request
+                && request.kind() == Value.Request.Kind.ALL;
+    }
+
     private static boolean isFluidRequest(Value value) {
         Value inner = value instanceof Value.Request request ? request : value;
         if (inner instanceof Value.FluidSelection) {
@@ -806,6 +821,12 @@ public final class WorldHost implements Interpreter.Host {
         // muss stehen, was bewegt wird", obwohl es dastand.
         if (value instanceof Value.Selection selection) {
             return selection.items();
+        }
+        // „all" sucht nichts aus: eine leere Liste heißt hier „kein Filter",
+        // und genau das ist gemeint. Weiter unten würde die Auflösung sonst
+        // nach einer Sorte hinter einem Doppelpunkt suchen, den es nicht gibt.
+        if (isEverything(value)) {
+            return List.of();
         }
         String written = switch (value) {
             case Value.Request request -> request.selector();

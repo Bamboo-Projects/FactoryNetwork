@@ -262,11 +262,15 @@ amount      = [ INT ] selection
 
 selection   = selTerm { 'except' selTerm }
 
-selTerm     = KIND ':' [ NAMESPACE ( '/' | ':' ) ] pathPattern
+selTerm     = KIND ':' [ NAMESPACE ( '/' | ':' ) ] pathPattern | 'all'
 
 KIND        = 'item' | 'fluid' | 'chemical' | 'tag' | 'fluidtag'
 pathPattern = ( NAMECHAR | '*' ) { NAMECHAR | '*' | '/' }
 ```
+
+**`all` steht allein, wie `power`.** Es ist die Auswahl, die nichts aussucht:
+was auch immer darin liegt. Damit ist auch `all` ein Schlüsselwort — wer
+seinen Connector so nennt, schreibt ihn in Rückstrichen.
 
 `*` darf an jeder Stelle stehen, auch mehrfach.
 
