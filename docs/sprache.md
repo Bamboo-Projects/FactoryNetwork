@@ -416,6 +416,21 @@ Ein Aufruf von `nachtschicht()` legt den Worker schlafen und ändert die
 Anzeige. **Ohne dass irgendwo steht, dass er das tun soll** — Anzeigen und
 `when` werten ihre Ausdrücke ohnehin laufend aus.
 
+### Festwerte
+
+`const stapel = 64` erklärt einen Wert, der sich nie ändert. Gelesen wird er
+wie ein globaler Wert, geschrieben gar nicht — wer es versucht, bekommt eine
+Meldung beim Übernehmen und keinen Fehler zur Laufzeit.
+
+Zwei Unterschiede zu `global`: Ein Festwert wird nicht gespeichert, weil ein
+Wert, der im Programm steht, aus dem Programm wiederkommt. Und ein Name gehört
+einer Erklärung — `global` und `const` mit demselben Namen ist ein Fehler.
+
+Beachte: Wörter, die die Sprache selbst benutzt, taugen nicht als Name.
+`const rate = 64` geht nicht, weil `rate` eine Worker-Angabe ist; in
+Rückstrichen (`` `rate` ``) ginge es, aber ein anderer Name ist die bessere
+Wahl.
+
 ### Die Regeln
 
 - **`global` und nicht `let`.** Ein Programm besteht nur aus Deklarationen;

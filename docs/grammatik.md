@@ -41,7 +41,7 @@ program     = { NL } { declaration { NL } } EOF
 
 declaration = workerDecl | groupDecl | filterDecl | multiblockDecl
             | eventDecl  | displayDecl | fnDecl | onDecl
-            | globalDecl
+            | globalDecl | constDecl
 ```
 
 Ein Programm besteht nur aus Deklarationen. Anweisungen stehen immer in einer
@@ -91,6 +91,7 @@ ihn in Rückstrichen — dieselbe Regel wie für `for`.
 
 ```
 globalDecl  = 'global' NAME '=' literal
+constDecl   = 'const'  NAME '=' literal
 ```
 
 **Die einzige Deklaration ohne Block.** Alle anderen sammeln Angaben zwischen

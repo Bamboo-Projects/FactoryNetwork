@@ -195,6 +195,9 @@ public record Project(Map<String, String> files) {
         Map<String, String> globals = new HashMap<>();
         parsed.values().forEach(
                 result -> globals.putAll(GlobalCheck.declaredKinds(result.program())));
+        Map<String, String> constants = new HashMap<>();
+        parsed.values().forEach(
+                result -> constants.putAll(GlobalCheck.declaredConstants(result.program())));
         // Und für die Ereignisse: Ein on in der einen Datei meint das event in
         // der anderen.
         Map<String, Integer> events = new HashMap<>();
@@ -213,7 +216,7 @@ public record Project(Map<String, String> files) {
                     diagnostic -> diagnostics.add(diagnostic.withFile(name)));
             NetworkCheck.run(result.program(), view, local).forEach(
                     diagnostic -> diagnostics.add(diagnostic.withFile(name)));
-            GlobalCheck.run(result.program(), globals).forEach(
+            GlobalCheck.run(result.program(), globals, constants).forEach(
                     diagnostic -> diagnostics.add(diagnostic.withFile(name)));
             EventCheck.run(result.program(), events).forEach(
                     diagnostic -> diagnostics.add(diagnostic.withFile(name)));

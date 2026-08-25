@@ -2588,6 +2588,29 @@ public final class FactoryNetworkGameTests {
                 .thenSucceed();
     }
 
+    /** Ein Festwert wird gelesen wie ein globaler, nur nie geschrieben. */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void aConstantIsReadableAtRuntime(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                const stapel = 64
+                global doppelt = 0
+
+                fn rechnet() {
+                    doppelt = stapel * 2
+                }"""), "Das Programm wurde nicht übernommen");
+
+        entity.startFlow("rechnet", List.of());
+        helper.startSequence()
+                .thenIdle(10)
+                .thenExecute(() -> helper.assertValueEqual(entity.globals().get("doppelt"),
+                        new Value.Int(128), "Der Festwert steht in der Rechnung"))
+                .thenSucceed();
+    }
+
     /**
      * Ein Posten aus dem Bestand kennt seine Art und seine Menge.
      *

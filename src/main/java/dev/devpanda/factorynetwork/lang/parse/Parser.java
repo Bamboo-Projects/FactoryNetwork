@@ -82,6 +82,7 @@ public final class Parser {
             case FN -> parseFn();
             case ON -> parseOn();
             case GLOBAL -> parseGlobal();
+            case CONST -> parseConst();
             case FILTER -> parseFilterTemplate();
             case IMPORT -> {
                 error(start.span(), "Module gibt es noch nicht.",
@@ -94,8 +95,8 @@ public final class Parser {
                 error(start.span(),
                         "Hier wird eine Deklaration erwartet, gefunden wurde " + describe(start) + ".",
                         "Auf oberster Ebene stehen worker, group, filter, multiblock, event, "
-                                + "display, fn, on und global. Anweisungen gehören in eine "
-                                + "Funktion.");
+                                + "display, fn, on, global und const. Anweisungen gehören in "
+                                + "eine Funktion.");
                 recoverToDeclaration();
                 yield null;
             }
@@ -510,6 +511,29 @@ public final class Parser {
 
         Expr value = parseExpression();
         return new Decl.Global(name, value, keyword.span().to(value.span()));
+    }
+
+    /**
+     * {@code const rate = 64}
+     *
+     * <p>Dieselbe Form wie {@code global} und dieselbe Regel für den Wert.
+     * Gelesen wird beides an einer Stelle; was sie unterscheidet, steht
+     * nicht im Parser, sondern in der Prüfung und in der Laufzeit.
+     */
+    private Decl parseConst() {
+        Token keyword = advance();
+        String name = expectName("Festwert");
+        boolean hasEquals = expect(TokenType.EQ,
+                "Nach " + name + " fehlt das Gleichheitszeichen.");
+        if (!hasEquals || peek().span().line() != previous().span().line()) {
+            error(peek().span(), "Nach " + name + " fehlt der Wert.",
+                    "Ein Festwert bekommt seinen Typ aus dem, was hier steht — "
+                            + "etwa 64 oder \"tag\". Er muss in derselben Zeile stehen.");
+            recoverToDeclaration();
+            return new Decl.Invalid(name, keyword.span().to(peek().span()));
+        }
+        Expr value = parseExpression();
+        return new Decl.Const(name, value, keyword.span().to(value.span()));
     }
 
     private Decl parseFn() {
@@ -1118,7 +1142,8 @@ public final class Parser {
     private void recoverToDeclaration() {
         while (!at(TokenType.EOF)) {
             switch (peek().type()) {
-                case WORKER, GROUP, FILTER, MULTIBLOCK, EVENT, DISPLAY, FN, ON, GLOBAL -> {
+                case WORKER, GROUP, FILTER, MULTIBLOCK, EVENT, DISPLAY, FN, ON, GLOBAL,
+                     CONST -> {
                     return;
                 }
                 default -> advance();

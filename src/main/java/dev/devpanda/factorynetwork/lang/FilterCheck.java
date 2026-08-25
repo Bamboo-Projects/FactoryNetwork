@@ -41,6 +41,7 @@ public final class FilterCheck {
                 case Decl.Multiblock ignored -> "einen Multiblock";
                 case Decl.Fn ignored -> "eine Funktion";
                 case Decl.Global ignored -> "einen globalen Wert";
+                case Decl.Const ignored -> "einen Festwert";
                 case null, default -> null;
             };
             if (kind != null) {

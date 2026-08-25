@@ -157,4 +157,41 @@ class GlobalCheckTest {
                 () -> "Zahl bleibt Zahl — die Sprache rechnet ohnehin mit beiden: "
                         + problems);
     }
+
+    @Test
+    @DisplayName("Ein Festwert lässt sich lesen")
+    void aConstantCanBeRead() {
+        assertTrue(check("""
+                const stapel = 64
+
+                fn tun() {
+                    log(stapel)
+                }""").isEmpty(), "einen Festwert zu lesen ist der Normalfall");
+    }
+
+    @Test
+    @DisplayName("Ein Festwert lässt sich nicht schreiben")
+    void aConstantCannotBeWritten() {
+        List<Diagnostic> problems = check("""
+                const stapel = 64
+
+                fn tun() {
+                    stapel = 32
+                }""");
+
+        assertTrue(problems.stream().anyMatch(problem ->
+                        problem.isError() && problem.message().contains("Festwert")),
+                () -> "der Versuch muss gemeldet werden: " + problems);
+    }
+
+    @Test
+    @DisplayName("Ein Festwert und ein globaler Wert dürfen nicht gleich heißen")
+    void aConstantAndAGlobalCannotShareAName() {
+        List<Diagnostic> problems = check("""
+                global modus = "tag"
+                const modus = 64""");
+
+        assertTrue(problems.stream().anyMatch(Diagnostic::isError),
+                () -> "zwei Erklärungen für einen Namen: " + problems);
+    }
 }

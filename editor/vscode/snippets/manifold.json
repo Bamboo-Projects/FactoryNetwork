@@ -32,6 +32,11 @@
     ],
     "description": "Eine Funktion"
   },
+  "Festwert": {
+    "prefix": "const",
+    "body": ["const ${1:name} = ${2:64}"],
+    "description": "Ein Wert, der sich nie ändert"
+  },
   "Filter-Vorlage": {
     "prefix": "filter",
     "body": [

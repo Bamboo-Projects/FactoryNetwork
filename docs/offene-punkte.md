@@ -59,7 +59,7 @@ Vorentscheidungen)
 | 1.7 | **Rechte im Mehrspielerbetrieb.** Im Code gibt es *keinerlei* Berechtigungsprüfung — nur Dateisperren | F | `sprache.md:999` | mittel | — |
 | 1.8 | Die Typen `Set<T>`, `Job`, `Chemical` fehlen im Wertemodell | F | `sprache.md:308`, `Value.java:13` | mittel | teils 1.2, teils 1.4 |
 | 1.9 | Echter Typprüfer über Ausdrücke — **zurückgestellt.** Literal gegen Literal bleibt; alles andere fällt zur Laufzeit auf, mit Meldungen, die wissen, was erwartet war | Z | `globale-werte.md:195` | groß | eigenes Vorhaben über die ganze Sprache |
-| 1.10 | **Entschieden: `const` kommt** — gegen meine Empfehlung. Ein Festwert sagt seine Absicht hin und kostet zur Laufzeit nichts | F | `globale-werte.md:198` | klein | — |
+| 1.10 | ~~Konstanten~~ — **fertig.** `const stapel = 64` wird gelesen wie ein globaler Wert und nie geschrieben; der Versuch ist ein Fehler beim Übernehmen. Nicht gespeichert, weil ein Wert aus dem Programm aus dem Programm wiederkommt | | `Decl.Const`, `GlobalCheck` | | |
 | 1.11 | **Entschieden: kommen** — gegen meine Empfehlung. Die Speicherfrage kommt damit als Baufrage wieder: wie eine Liste im Anfangswert steht, wie sie neben der Welt liegt, was beim Programmwechsel geschieht | F | `globale-werte.md:201` | mittel | 1.16 |
 | 1.12 | Einstellbare Grenzen für Nutzercode. Das Schrittbudget (500) und die Schrankplätze gibt es; „jeweils einstellbar" nicht | F | `entscheidungen.md:118` | groß | 4.2 — es gibt keine Konfiguration |
 | 1.13 | ~~Die JEI-Schreibweise~~ — **fertig.** `item:mekanism:steel_ingot` meint dasselbe wie `item:mekanism/steel_ingot`. Der Parser hatte die Zerlegung schon; er hat sie nur mit einer Meldung begleitet, die bei jeder kopierten ID wiederkam | | `Parser.parseSelector` | | |

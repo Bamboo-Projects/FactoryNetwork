@@ -86,17 +86,65 @@ public final class GlobalCheck {
     }
 
     /**
+     * Die Festwerte dieser Datei, Name auf Art.
+     *
+     * <p>Getrennt von {@link #declaredKinds}, weil ein Festwert eine andere
+     * Frage beantwortet: Bei einem globalen Wert geht es darum, ob eine
+     * Zuweisung zum Typ passt — bei einem Festwert darum, dass es sie gar
+     * nicht geben darf.
+     */
+    public static Map<String, String> declaredConstants(Program program) {
+        Map<String, String> constants = new HashMap<>();
+        for (Decl declaration : program.declarations()) {
+            if (declaration instanceof Decl.Const constant) {
+                String kind = literalKind(constant.value());
+                constants.putIfAbsent(constant.name(), kind == null ? "Festwert" : kind);
+            }
+        }
+        return constants;
+    }
+
+    /**
      * Sucht, was ohne Typprüfer zu finden ist.
      *
      * @param kinds die Arten aller globalen Werte des Projekts, aus
      *              {@link #declaredKinds} über alle Dateien gesammelt
      */
     public static List<Diagnostic> run(Program program, Map<String, String> kinds) {
+        return run(program, kinds, Map.of());
+    }
+
+    /**
+     * @param constants die Festwerte des Projekts, aus
+     *                  {@link #declaredConstants} über alle Dateien gesammelt
+     */
+    public static List<Diagnostic> run(Program program, Map<String, String> kinds,
+                                       Map<String, String> constants) {
         List<Diagnostic> problems = new ArrayList<>();
 
         for (Decl declaration : program.declarations()) {
+            if (declaration instanceof Decl.Const constant) {
+                if (literalKind(constant.value()) == null) {
+                    problems.add(new Diagnostic(Diagnostic.Severity.ERROR, constant.span(),
+                            "Ein Festwert braucht einen festen Wert.",
+                            "Eine Rechnung hätte keinen festen Zeitpunkt — schreib ein "
+                                    + "Literal, etwa 64 oder \"tag\"."));
+                }
+                if (kinds.containsKey(constant.name())) {
+                    problems.add(new Diagnostic(Diagnostic.Severity.ERROR, constant.span(),
+                            "„" + constant.name() + "“ ist schon ein globaler Wert.",
+                            "Ein Name gehört einer Erklärung. Der eine lässt sich ändern, "
+                                    + "der andere nicht — beides zugleich geht nicht."));
+                }
+                continue;
+            }
             if (!(declaration instanceof Decl.Global global)) {
                 continue;
+            }
+            if (constants.containsKey(global.name())) {
+                problems.add(new Diagnostic(Diagnostic.Severity.ERROR, global.span(),
+                        "„" + global.name() + "“ ist schon ein Festwert.",
+                        "Ein Name gehört einer Erklärung."));
             }
             if (literalKind(global.value()) == null) {
                 problems.add(new Diagnostic(Diagnostic.Severity.ERROR, global.span(),
@@ -110,11 +158,11 @@ public final class GlobalCheck {
 
         for (Decl declaration : program.declarations()) {
             switch (declaration) {
-                case Decl.Fn fn -> checkBlock(fn.body(), kinds, problems, Set.of());
-                case Decl.On on -> checkBlock(on.body(), kinds, problems, Set.of());
+                case Decl.Fn fn -> checkBlock(fn.body(), kinds, constants, problems, Set.of());
+                case Decl.On on -> checkBlock(on.body(), kinds, constants, problems, Set.of());
                 case Decl.Multiblock multiblock -> {
                     for (Decl.Fn function : multiblock.functions()) {
-                        checkBlock(function.body(), kinds, problems, Set.of());
+                        checkBlock(function.body(), kinds, constants, problems, Set.of());
                     }
                 }
                 default -> { }
@@ -133,6 +181,7 @@ public final class GlobalCheck {
      * falsche.
      */
     private static void checkBlock(Block block, Map<String, String> kinds,
+                                   Map<String, String> constants,
                                    List<Diagnostic> problems, Set<String> shadowedOutside) {
         if (block == null) {
             return;
@@ -146,19 +195,20 @@ public final class GlobalCheck {
                 shadowed.add(let.name());
                 continue;
             }
-            checkStatement(statement, kinds, problems, shadowed);
+            checkStatement(statement, kinds, constants, problems, shadowed);
         }
     }
 
     private static void checkStatement(Stmt statement, Map<String, String> kinds,
+                                       Map<String, String> constants,
                                        List<Diagnostic> problems, Set<String> shadowed) {
         switch (statement) {
-            case Stmt.Assign assign -> checkAssign(assign, kinds, problems, shadowed);
+            case Stmt.Assign assign -> checkAssign(assign, kinds, constants, problems, shadowed);
             case Stmt.If branch -> {
-                checkBlock(branch.thenBody(), kinds, problems, shadowed);
-                checkBlock(branch.elseBlock(), kinds, problems, shadowed);
+                checkBlock(branch.thenBody(), kinds, constants, problems, shadowed);
+                checkBlock(branch.elseBlock(), kinds, constants, problems, shadowed);
                 if (branch.elseIf() != null) {
-                    checkStatement(branch.elseIf(), kinds, problems, shadowed);
+                    checkStatement(branch.elseIf(), kinds, constants, problems, shadowed);
                 }
             }
             // Die Schleifenvariable verdeckt einen gleichnamigen globalen Wert
@@ -166,9 +216,9 @@ public final class GlobalCheck {
             case Stmt.For loop -> {
                 Set<String> inner = new HashSet<>(shadowed);
                 inner.add(loop.variable());
-                checkBlock(loop.body(), kinds, problems, inner);
+                checkBlock(loop.body(), kinds, constants, problems, inner);
             }
-            case Stmt.While loop -> checkBlock(loop.body(), kinds, problems, shadowed);
+            case Stmt.While loop -> checkBlock(loop.body(), kinds, constants, problems, shadowed);
             default -> { }
         }
     }
@@ -182,8 +232,19 @@ public final class GlobalCheck {
      * Sorte Meldung, die man abschaltet.
      */
     private static void checkAssign(Stmt.Assign assign, Map<String, String> kinds,
+                                    Map<String, String> constants,
                                     List<Diagnostic> problems, Set<String> shadowed) {
         if (!(assign.target() instanceof Expr.Name name) || shadowed.contains(name.value())) {
+            return;
+        }
+        // <b>Ein Festwert ist keiner, wenn er sich schreiben lässt.</b> Das
+        // ist der einzige Unterschied zu einem globalen Wert, und er wird
+        // hier gemacht — nicht in der Laufzeit, wo er erst beim Laufen
+        // auffiele.
+        if (constants.containsKey(name.value())) {
+            problems.add(new Diagnostic(Diagnostic.Severity.ERROR, assign.span(),
+                    "„" + name.value() + "“ ist ein Festwert und lässt sich nicht ändern.",
+                    "Soll er sich ändern können, erkläre ihn mit global statt const."));
             return;
         }
         String declared = kinds.get(name.value());

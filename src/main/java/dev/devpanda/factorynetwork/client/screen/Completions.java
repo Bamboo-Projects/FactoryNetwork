@@ -56,7 +56,7 @@ public final class Completions {
 
     private static final List<String> DECLARATIONS = List.of(
             "worker", "group", "filter", "multiblock", "event", "display", "fn", "on",
-            "global");
+            "global", "const");
 
     private static final List<String> BUILTINS = List.of(
             "storage", "crafting", "world", "network", "workers", "multiblocks");

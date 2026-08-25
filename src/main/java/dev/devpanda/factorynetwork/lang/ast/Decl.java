@@ -91,6 +91,16 @@ public sealed interface Decl {
      */
     record Global(String name, Expr value, Span span) implements Decl {}
 
+    /**
+     * {@code const rate = 64} — ein Wert, der sich nie ändert.
+     *
+     * <p>Wie {@link Global} in einer Zeile erklärt, und mit demselben
+     * Anspruch an den Wert: ein Literal, keine Rechnung. Zwei Unterschiede —
+     * schreiben lässt er sich nicht, und er wird nicht gespeichert, weil ein
+     * Wert, der im Programm steht, aus dem Programm wiederkommt.
+     */
+    record Const(String name, Expr value, Span span) implements Decl {}
+
     // ---- Filter-Vorlage ---------------------------------------------------
 
     /**

@@ -845,6 +845,15 @@ public final class Interpreter {
                 return shared;
             }
         }
+        // Ein Festwert steht im Programm und nicht in der Welt: Er kommt
+        // aus derselben Quelle wie eine Filter-Vorlage und braucht keinen
+        // Weg über den Host.
+        for (dev.devpanda.factorynetwork.lang.ast.Decl declaration : program.declarations()) {
+            if (declaration instanceof dev.devpanda.factorynetwork.lang.ast.Decl.Const constant
+                    && constant.name().equals(name)) {
+                return Value.ofLiteral(constant.value());
+            }
+        }
         Value template = templateValue(name);
         if (template != null) {
             return template;

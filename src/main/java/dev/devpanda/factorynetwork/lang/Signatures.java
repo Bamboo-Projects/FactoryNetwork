@@ -236,6 +236,9 @@ public final class Signatures {
     public static final List<Signature> TOP_LEVEL = List.of(
             of("global", "Ein Wert, den alle Dateien sehen.",
                     Slot.named(Kind.NEW_NAME, "name"), Slot.literal("="),
+                    Slot.of(Kind.EXPR)),
+            of("const", "Ein Wert, der sich nie ändert.",
+                    Slot.named(Kind.NEW_NAME, "name"), Slot.literal("="),
                     Slot.of(Kind.EXPR)));
 
     /** Ein Ding, das an einem Gerät steht. */

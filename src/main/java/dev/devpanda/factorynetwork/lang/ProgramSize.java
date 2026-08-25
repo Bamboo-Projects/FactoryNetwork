@@ -58,6 +58,9 @@ public final class ProgramSize {
             // trotzdem falsch — die Eins davor zählt ihn, und damit sind
             // tausend globale Werte nicht gratis.
             case Decl.Global ignored -> 0;
+            // Ein Festwert kostet seine Zeile wie ein globaler Wert. Die Eins
+            // davor zählt ihn; tausend Festwerte sind nicht gratis.
+            case Decl.Const ignored -> 0;
             case Decl.Invalid ignored -> 0;
         };
     }

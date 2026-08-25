@@ -144,7 +144,7 @@ class SignaturesExportTest {
 
         JsonArray declarations = new JsonArray();
         for (String word : new String[] {"worker", "group", "filter", "multiblock", "event",
-                                         "display", "fn", "on", "global"}) {
+                                         "display", "fn", "on", "global", "const"}) {
             declarations.add(word);
         }
         root.add("declarations", declarations);
