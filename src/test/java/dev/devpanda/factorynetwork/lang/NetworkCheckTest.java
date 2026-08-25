@@ -55,6 +55,30 @@ class NetworkCheckTest {
     }
 
     @Test
+    @DisplayName("Eine Vorlage, die wie ein Gerät heißt, wird gemeldet")
+    void aTemplateShadowingADeviceIsReported() {
+        List<Diagnostic> problems = check("""
+                filter brecher_1 {
+                    tag:c/ores
+                }""", net(List.of("brecher_1"), List.of()));
+
+        assertTrue(problems.stream().anyMatch(problem ->
+                        problem.message().contains("verdeckt") && !problem.isError()),
+                () -> "die Warnung fehlt: " + problems);
+    }
+
+    @Test
+    @DisplayName("Ohne Gerät gleichen Namens ist die Vorlage still")
+    void aTemplateWithoutACollisionIsQuiet() {
+        List<Diagnostic> problems = check("""
+                filter erze {
+                    tag:c/ores
+                }""", net(List.of("brecher_1"), List.of()));
+
+        assertTrue(problems.isEmpty(), () -> "unerwartete Meldung: " + problems);
+    }
+
+    @Test
     @DisplayName("Ein Vertipper bekommt einen Vorschlag")
     void aTypoGetsASuggestion() {
         List<Diagnostic> problems = check("""

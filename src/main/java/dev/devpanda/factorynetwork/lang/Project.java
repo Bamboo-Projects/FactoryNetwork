@@ -200,6 +200,12 @@ public record Project(Map<String, String> files) {
         Map<String, Integer> events = new HashMap<>();
         parsed.values().forEach(
                 result -> events.putAll(EventCheck.declaredEvents(result.program())));
+        // Und für die Filter-Vorlagen: Eine Vorlage in der einen Datei darf
+        // nicht heißen wie eine Gruppe in der anderen — beide stehen in
+        // Ausdrücken.
+        Map<String, String> takenNames = new HashMap<>();
+        parsed.values().forEach(
+                result -> takenNames.putAll(FilterCheck.declaredNames(result.program())));
 
         for (String name : names()) {
             Parser.ParseResult result = parsed.get(name);
@@ -210,6 +216,8 @@ public record Project(Map<String, String> files) {
             GlobalCheck.run(result.program(), globals).forEach(
                     diagnostic -> diagnostics.add(diagnostic.withFile(name)));
             EventCheck.run(result.program(), events).forEach(
+                    diagnostic -> diagnostics.add(diagnostic.withFile(name)));
+            FilterCheck.run(result.program(), takenNames).forEach(
                     diagnostic -> diagnostics.add(diagnostic.withFile(name)));
             for (Decl declaration : result.program().declarations()) {
                 // Eine eigene Funktion, die wie eine eingebaute heißt, wäre

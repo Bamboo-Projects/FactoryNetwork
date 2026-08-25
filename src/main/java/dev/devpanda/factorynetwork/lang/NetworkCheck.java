@@ -48,10 +48,31 @@ public final class NetworkCheck {
                 case Decl.Display display -> checkDisplay(display, view, problems);
                 case Decl.Worker worker -> checkWorker(worker, view, local, problems);
                 case Decl.Group group -> checkGroup(group, view, local, problems);
+                case Decl.FilterTemplate template ->
+                        checkTemplateName(template, view, problems);
                 default -> { }
             }
         }
         return problems;
+    }
+
+    /**
+     * Eine Vorlage, die heißt wie ein Gerät im Netz.
+     *
+     * <p>Nur eine Warnung, und die Vorlage geht vor: Gerätenamen kommen aus
+     * der Beschriftungspistole und nicht aus dem Programm. Hinge die
+     * Bedeutung eines Programms daran, wie jemand später einen Connector
+     * benennt, wäre es aus der Ferne nicht mehr zu lesen.
+     */
+    private static void checkTemplateName(Decl.FilterTemplate template, NetworkView view,
+                                          List<Diagnostic> problems) {
+        if (!view.connectors().contains(template.name())) {
+            return;
+        }
+        problems.add(new Diagnostic(Diagnostic.Severity.WARNING, template.span(),
+                "Die Vorlage „" + template.name() + "“ verdeckt das Gerät gleichen Namens.",
+                "Wo der Name steht, ist die Vorlage gemeint. Das Gerät ist damit "
+                        + "aus dem Programm nicht mehr erreichbar."));
     }
 
     private static void checkDisplay(Decl.Display display, NetworkView view,
