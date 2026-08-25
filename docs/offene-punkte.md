@@ -10,7 +10,14 @@ Stand: 2026-08-25 (nach der zweiten Nacht)
 > auf 0 fallen ließ, ein `on` mit vertipptem Ereignisnamen, das still nie
 > lief, ein `await device_changed` ohne Block, das ewig wartete, und eine aus
 > JEI kopierte ID, die sieben Fehlermeldungen erzeugte. Alle vier sind
-> behoben. Neu auf der Liste stehen 1.13 bis 1.15, 3.9 und 4.5.
+> behoben, dazu ein fünftes, nach dem niemand gesucht hatte: **In einem
+> Ablauf gab es die globalen Werte gar nicht.** `modus = "nacht"` warf
+> „Unbekannter Name" auf jedem Weg, den ein Spieler wirklich nimmt — Knopf,
+> Ereignis, `await` —, und der Hinweis riet zu einem `let`, das still ins
+> Leere schreibt. Dazu `strategy priority`, das nie schreibbar war, und
+> `strategy emptiest`, das es nie gab und trotzdem wirkte.
+>
+> Neu auf der Liste stehen 1.13 bis 1.16, 2.10, 3.9, 3.10, 4.5, 6.9 und 6.10.
 
 > **Was in der Nacht auf den 25.08. erledigt wurde:** 2.1 (globale Werte),
 > 3.1 (Annahme-Probe), 3.3 (Flüssigkeitsstände), 3.4 (Bearbeitung anfragen),
@@ -46,6 +53,7 @@ Stand: 2026-08-25 (nach der zweiten Nacht)
 | 1.12 | Einstellbare Grenzen für Nutzercode. Das Schrittbudget (500) und die Schrankplätze gibt es; „jeweils einstellbar" nicht | F | `entscheidungen.md:118` | groß | 4.2 — es gibt keine Konfiguration |
 | 1.13 | **Die JEI-Schreibweise annehmen?** `item:mekanism:steel_ingot` meldet jetzt die richtige Form, statt die Zeile zerfallen zu lassen. Sie *anzunehmen* wäre eine Änderung der Spezifikation: Lexer, Parser, EBNF, `sprache.md`, die VS-Code-Grammatik und der Guide. Dafür spricht, dass jeder Spieler IDs aus JEI kopiert | E | `Parser.parseSelector` | mittel | Entscheidung über die Spezifikation |
 | 1.14 | **Gruppen sind kein Wert.** `pumps.stop()` und `crushers.members()` stehen an mehreren Stellen in `sprache.md` und `konzept.md`; die Laufzeit kennt eine Gruppe nur als Verteilziel eines Workers. Entweder Gruppen bekommen Werte-Charakter mit `members()`, oder die Spezifikation streicht die Form | E | `sprache.md:39`, `:90`, `:836` | mittel | Entscheidung |
+| 1.16 | **Ein Eintrag einer Bestandsliste hat keine Angaben.** `storage.items()` liefert je Posten eine Auswahl, und `Value.Selection` kennt kein einziges Member — damit ist `where` nicht benutzbar (es gibt kein Beispiel, das läuft), `sum` wirft, und `sort` sortiert nach lauter Nullen. Der Editor bietet alle fünf trotzdem an | F | `Interpreter.java:777`, `Signatures.LIST_MEMBERS` | mittel | Entscheidung, was an einem Eintrag steht |
 | 1.15 | **`move` gibt nichts zurück.** `sprache.md:444` zeigt `let bewegt = move …`; `move` ist eine Anweisung, kein Ausdruck, und beide Ausführungspfade verwerfen die Zahl. Der Guide sagt es inzwischen ehrlich | E | `sprache.md:444`, `Interpreter.java:269` | klein | Entscheidung |
 
 ## 2. Laufzeit
@@ -58,6 +66,7 @@ Stand: 2026-08-25 (nach der zweiten Nacht)
 | 2.4 | Einheit der Abgaberate: `per tick` gegen `per 5s` | E | `strom.md:249` | klein | 2.2 |
 | 2.5 | Strom als Wert in der Sprache (`crusher_1.energy`) | F | `strom.md:228` | klein | 1.1 |
 | 2.6 | **`device_done`:** gebaut ist Weg (2), offen ob Weg (1) dazukommt. Vor dem Bau zu entscheiden — ein falsches Fertig-Signal lässt eine Anlage Gegenstände verlieren | E | `umsetzung.md:160` | mittel | Entscheidung |
+| 2.10 | **Der Netzbestand verschwindet beim Tick.** Gemessen in einem GameTest: Nach drei `insert` stehen drei Sorten im Speicher, nach `deploy` und `startFlow` immer noch — nach einem `serverTick()` null. Der Zelleninhalt lebt in einem Zwischenspeicher je Laufwerk und wird erst beim Sichern in den Gegenstand geschrieben; wird er vorher neu aufgebaut, ist er weg. Ob das nur den Testaufbau trifft oder auch das laufende Spiel, ist **ungeklärt** — im Zweifel ist es verlorener Spielerbestand | F | `NetworkStorage.cells()`, `DriveBlockEntity.live()` | offen | **zuerst messen, dann urteilen** |
 | 2.7 | `when`-Bedingungen: nur Zahlvergleiche mit Literalen und `storage.count(...)` | F | `WorkerRuntime.java:860` | mittel | teils 1.1 |
 | 2.8 | `NetworkCheck` besucht keine Anweisungen — weder Seitenwarnung noch Namensprüfung erreichen ein `move` | F | `geraeteerkennung.md:316` | mittel | Entscheidung zur Namensprüfung bei `move` |
 | 2.9 | Erkennung von Maschinen-Rezepten | F | `entscheidungen.md:131` | groß | — |
@@ -75,6 +84,7 @@ Stand: 2026-08-25 (nach der zweiten Nacht)
 | 3.6 | LDLib2 als UI-Grundlage — nicht einmal geprüft | E | `umsetzung.md:512` | klein | Entscheidung |
 | 3.7 | Ob das Geräteprofil dem Analysator etwas zu geben hat | E | `geraeteerkennung.md:340` | klein | — |
 | 3.8 | Ob der Netz-Reiter globale Werte ändern darf | E | `globale-werte.md:200` | klein | 2.1 |
+| 3.10 | **Der Editor bietet an, was nichts kann.** `crafting`, `world`, `network`, `workers` und `multiblocks` stehen an jeder Ziel- und Ausdrucksstelle zur Auswahl; ausgewertet wird allein `storage`. Wer `to crafting` schreibt, bekommt „Als Ziel taugt nur ein Name" — eine Meldung, die dem Vorschlag widerspricht, der sie ausgelöst hat. Dazu `power` an jeder Auswahlstelle, obwohl ein Strom-Worker sofort anhält | F | `Completions.java:60`, `:186`, `Parser.java:213` | klein | 2.2 und 1.1 |
 | 3.9 | **`gerät.count(…)` auf einer Anzeige.** In einer Funktion geht es, auf einer Tafel steht `?`. Eine Anzeige rechnet seit dem 25.08., aber sie liest nur den Netzbestand und das Redstonesignal — ein Blick in eine Maschine ist ein Zugriff je Tafel und Sekunde | E | `DisplayValues.java` | klein | Entscheidung über die Kosten |
 
 ## 4. VS-Code-Erweiterung
@@ -107,6 +117,8 @@ Stand: 2026-08-25 (nach der zweiten Nacht)
 | 6.5 | ~~README-Frage~~ — **entfernt**, sie war beantwortet | | | |
 | 6.6 | ~~Prioritätenliste~~ — **berichtigt**, mit Vermerk | | | |
 | 6.7 | ~~Plan-Kästchen~~ — **abgehakt** | | | |
+| 6.10 | **`list` auf einer Anzeige ist eine `row`.** Die Spezifikation nennt es „Aufzählung, etwa Bestände oder Aufträge"; gezeichnet wird eine einzelne Zeile wie bei `row`. Solange ein Listeneintrag keine Angaben hat (1.16), lässt sich daran auch nichts ändern | F | `DisplayValues.java`, `sprache.md:814` | klein | 1.16 |
+| 6.9 | **Tests, die nicht fehlschlagen können.** Vier sind repariert. Offen: `abrokenRackDropsItsProcessors` prüft nur, dass *irgendein* Gegenstand fällt — ein leeres Gehäuse genügt; `insertIntoNothingIsZeroAndNoError` prüft die Null nie, womit der Rückgabewert von `WorldHost.insertInto` gar keinen Test hat; `theAnalyserMarksFullCables` legt die Last genau auf die Grenze und nimmt mit ODER beide Antworten an, während `isHealthy()` ein randvolles Kabel als „in Ordnung" meldet | F | `FactoryNetworkGameTests` | mittel | — |
 | 6.8 | **Teilweise.** §6 und §12 sind gekennzeichnet; §8 und der Rest noch nicht | F | `sprache.md` | klein |
 | 6.9 | ~~Kabelbündel-Frage~~ — **nachgetragen** | | | |
 
@@ -139,6 +151,11 @@ Zeile.
 **3. Weitere Handbuchseiten** (6.1). Die Anbindung steht, die ersten Seiten
 auch. Der Rest ist Schreibarbeit ohne Risiko — und das, was die Mod für
 jemanden von außen überhaupt zugänglich macht.
+
+**Dazwischen, weil es keine Entscheidung braucht:** 2.10 nachmessen. Ein
+Speicher, der beim Ticken leer wird, ist entweder ein Testartefakt oder der
+Verlust von Spielerbestand — und der Unterschied ist eine Stunde Messen wert,
+bevor irgendjemand mit einer echten Welt anfängt.
 
 **Vor allem anderen zu entscheiden, unverändert:** `device_done` (2.6) und der
 Controller-Anker (5.1). Beides ist **Entscheidung, nicht Arbeit** — und beides
