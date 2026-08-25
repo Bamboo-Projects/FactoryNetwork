@@ -570,6 +570,24 @@ public class CodeEditor {
      * <p>Für den Sprung zur Erklärung. Ein Wort ist hier, was auch ein Name
      * sein darf: Buchstaben, Ziffern, Unterstrich.
      */
+    /**
+     * Der Auswahlausdruck unter dem Zeiger, oder ein leerer Text.
+     *
+     * <p>Ein Selektor ist mehr als ein Wort — {@code item:*_ore} trägt
+     * Doppelpunkt, Stern und Unterstrich. {@link #wordAt} hört an jedem davon
+     * auf; die Regel dafür steht in {@code Selectors}, weil beide Editoren
+     * dieselbe brauchen.
+     */
+    public String selectorAt(double mouseX, double mouseY) {
+        if (!inside(mouseX, mouseY)) {
+            return "";
+        }
+        int lineIndex = lineAt(mouseY);
+        String line = lines.get(lineIndex);
+        return dev.devpanda.factorynetwork.lang.Selectors.at(
+                line, columnAt(lineIndex, mouseX));
+    }
+
     public String wordAt(double mouseX, double mouseY) {
         if (!inside(mouseX, mouseY)) {
             return "";

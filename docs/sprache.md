@@ -337,9 +337,15 @@ item:*_dust except item:dirty_*
 
 Deshalb gehört `except` zur Auswahl und nicht in die Nachbesserung.
 
-> **Noch nicht gebaut:** die Anzeige, was ein Muster gerade trifft. Ohne sie
-> ist ein Muster über zwanzigtausend Einträge nicht zu überblicken — sie
-> steht als offener Punkt 3.11.
+**Was ein Muster gerade trifft**, zeigt der Editor im Spiel: Zeiger auf den
+Ausdruck, und im Kasten stehen die Zahl der Arten und die ersten Namen. Ohne
+das ist ein Muster über zwanzigtausend Einträge nicht zu überblicken.
+
+Trifft es nichts, steht das in Rot — die häufigste Ursache ist ein Tag, den
+dieses Pack nicht kennt, und der sieht im Editor aus wie jeder andere.
+
+> **In VS Code nicht.** Dort gibt es keine Registry: Welche Gegenstände es
+> gibt, weiß nur die laufende Welt.
 
 **Auflösungszeitpunkt:** Muster werden beim Übersetzen gegen die Registry
 aufgelöst, nicht bei jeder Ausführung. Ein Muster über zwanzigtausend Einträge
@@ -780,9 +786,10 @@ Drei Festlegungen, ohne die es mehrdeutig ist:
   64 in *jedem* Generator. Bei `to storage` fallen beide Lesarten zusammen,
   weil es ein Ziel ist.
 - **Pro Gegenstandsart, nicht insgesamt.** `filter tag:c/coals` mit
-  `maintain 64` hält 64 von jeder Kohleart. Was das Muster trifft, sollte der
-  Editor anzeigen — diese Anzeige gibt es noch nicht (offener Punkt 3.11),
-  und ohne sie ist nicht abzusehen, was man gerade zugesagt hat.
+  `maintain 64` hält 64 von jeder Kohleart. Was das Muster trifft, zeigt der
+  Editor im Spiel: Zeiger auf den Ausdruck, und im Kasten stehen die Zahl der
+  Arten und die ersten Namen. Ohne sie ist nicht abzusehen, was man gerade
+  zugesagt hat.
 - **Nur auffüllen, nie abziehen.** Liegen 300 statt 256 im Lager, holt der
   Worker die 44 nicht zurück. Wer das will, schreibt einen zweiten Worker in
   die Gegenrichtung.

@@ -58,6 +58,10 @@ public final class EditorTooltip {
         }
         ClientDeviceState.notHovering();
 
+        if (describeSelector(graphics, font, editor, mouseX, mouseY)) {
+            return;
+        }
+
         var signature = editor.signatureAt(mouseX, mouseY);
         if (signature != null) {
             graphics.renderComponentTooltip(font, List.of(
@@ -76,6 +80,44 @@ public final class EditorTooltip {
             lines.add(Component.literal("§7" + problem.hint()));
         }
         graphics.renderComponentTooltip(font, lines, mouseX, mouseY);
+    }
+
+    /**
+     * Worauf sich der Auswahlausdruck unter dem Zeiger gerade auflöst.
+     *
+     * <p><b>Ein Muster ist eine Suche</b>, und eine Suche ohne Trefferliste
+     * ist eine Zusage ins Blaue: {@code maintain 64 tag:c/ores} hält von jeder
+     * Art vierundsechzig, und wie viele Arten das sind, weiß nur das Pack.
+     *
+     * <p>Aufgelöst wird gegen die Registry des Clients — dieselbe, aus der
+     * auch JEI liest. Was hier steht, gilt für diese Welt und nicht für die
+     * Sprache.
+     *
+     * @return ob etwas gezeichnet wurde
+     */
+    private static boolean describeSelector(GuiGraphics graphics, Font font,
+                                            CodeEditor editor, int mouseX, int mouseY) {
+        var selector = dev.devpanda.factorynetwork.lang.Selectors.parse(
+                editor.selectorAt(mouseX, mouseY));
+        if (selector == null) {
+            return false;
+        }
+        List<String> summary =
+                dev.devpanda.factorynetwork.runtime.SelectionSummary.of(selector);
+        if (summary.isEmpty()) {
+            return false;
+        }
+        List<Component> lines = new ArrayList<>();
+        // Die erste Zeile ist die Zahl, und sie ist die Antwort. Rot, wenn es
+        // keine gibt: Ein Tag, den dieses Pack nicht kennt, sieht im Editor
+        // aus wie jeder andere.
+        lines.add(Component.literal(("trifft nichts".equals(summary.get(0)) ? "§c" : "§f")
+                + summary.get(0)));
+        for (int i = 1; i < summary.size(); i++) {
+            lines.add(Component.literal("§7" + summary.get(i)));
+        }
+        graphics.renderComponentTooltip(font, lines, mouseX, mouseY);
+        return true;
     }
 
     /**

@@ -7502,6 +7502,63 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    // ---- Worauf sich ein Muster auflöst -------------------------------------
+
+    /**
+     * Ein Muster sagt, was es trifft.
+     *
+     * <p>Ohne diese Auskunft ist {@code maintain 64 tag:c/ores} eine Zusage
+     * ins Blaue: Gehalten werden vierundsechzig <b>je Art</b>, und wie viele
+     * Arten das sind, weiß nur das Pack.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 100)
+    public static void apatternSaysWhatItHits(GameTestHelper helper) {
+        var summary = dev.devpanda.factorynetwork.runtime.SelectionSummary.of(
+                dev.devpanda.factorynetwork.lang.Selectors.parse("item:*_ore"));
+
+        helper.assertTrue(!summary.isEmpty(), "es kam keine Auskunft");
+        helper.assertTrue(summary.get(0).startsWith("trifft "),
+                "die erste Zeile nennt die Zahl: " + summary.get(0));
+        helper.assertTrue(summary.size() > 1, "und dann die Namen: " + summary);
+        helper.succeed();
+    }
+
+    /** Ein einzelner Gegenstand trifft genau eine Art. */
+    @GameTest(template = EMPTY, timeoutTicks = 100)
+    public static void asingleItemHitsOne(GameTestHelper helper) {
+        var summary = dev.devpanda.factorynetwork.runtime.SelectionSummary.of(
+                dev.devpanda.factorynetwork.lang.Selectors.parse("item:iron_ore"));
+
+        helper.assertValueEqual(summary.get(0), "trifft 1 Art", "die Zahl");
+        helper.succeed();
+    }
+
+    /**
+     * Was nichts trifft, sagt das.
+     *
+     * <p>Die häufigste Ursache ist ein Tag, den dieses Pack nicht kennt — und
+     * der sieht im Editor aus wie jeder andere.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 100)
+    public static void whatHitsNothingSaysSo(GameTestHelper helper) {
+        var summary = dev.devpanda.factorynetwork.runtime.SelectionSummary.of(
+                dev.devpanda.factorynetwork.lang.Selectors.parse("item:gibtsnicht"));
+
+        helper.assertValueEqual(summary.get(0), "trifft nichts", "die Auskunft");
+        helper.succeed();
+    }
+
+    /** Flüssigkeiten gehen denselben Weg. */
+    @GameTest(template = EMPTY, timeoutTicks = 100)
+    public static void fluidsGoTheSameWay(GameTestHelper helper) {
+        var summary = dev.devpanda.factorynetwork.runtime.SelectionSummary.of(
+                dev.devpanda.factorynetwork.lang.Selectors.parse("fluid:water"));
+
+        helper.assertValueEqual(summary.get(0), "trifft 1 Art", "die Zahl");
+        helper.assertTrue(summary.size() > 1, "und der Name: " + summary);
+        helper.succeed();
+    }
+
     // ---- Der Anbau am Controller -------------------------------------------
 
     /**

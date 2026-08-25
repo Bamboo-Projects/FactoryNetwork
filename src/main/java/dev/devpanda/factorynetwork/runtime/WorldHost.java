@@ -853,32 +853,21 @@ public final class WorldHost implements Interpreter.Host {
 
     /** Baut aus der geschriebenen Form wieder einen Auswahlausdruck. */
     private static Expr parseSelector(String written) {
-        int colon = written.indexOf(':');
-        if (colon < 0) {
+        // Die Zerlegung steht in Selectors — der Editor braucht dieselbe, um
+        // zu zeigen, worauf sich ein Muster auflöst. Was hier bleibt, sind
+        // die Meldungen: Hier läuft ein Programm, dort schwebt ein Zeiger.
+        if (written.indexOf(':') < 0) {
             throw new ScriptError("Das ist keine Auswahl: " + written + ".");
         }
-        Expr.Selector.Kind kind = switch (written.substring(0, colon)) {
-            case "item" -> Expr.Selector.Kind.ITEM;
-            case "fluid" -> Expr.Selector.Kind.FLUID;
-            case "chemical" -> Expr.Selector.Kind.CHEMICAL;
-            case "fluidtag" -> Expr.Selector.Kind.FLUIDTAG;
-            case "tag" -> Expr.Selector.Kind.TAG;
-            default -> throw new ScriptError("Unbekannte Art in " + written + ".");
-        };
-        if (kind == Expr.Selector.Kind.CHEMICAL) {
+        Expr.Selector parsed = dev.devpanda.factorynetwork.lang.Selectors.parse(written);
+        if (parsed == null) {
+            throw new ScriptError("Unbekannte Art in " + written + ".");
+        }
+        if (parsed.kind() == Expr.Selector.Kind.CHEMICAL) {
             throw new ScriptError("Chemikalien kann diese Fassung noch nicht.",
                     "Die Schreibweise steht, die Anbindung an Mekanism kommt später.");
         }
-        String rest = written.substring(colon + 1);
-        int slash = rest.indexOf('/');
-        String namespace = null;
-        String path = rest;
-        if (slash >= 0 && (kind == Expr.Selector.Kind.TAG
-                || kind == Expr.Selector.Kind.FLUIDTAG || !rest.startsWith("*"))) {
-            namespace = rest.substring(0, slash);
-            path = rest.substring(slash + 1);
-        }
-        return new Expr.Selector(kind, namespace, path, new Span(0, 0, 1, 1));
+        return parsed;
     }
 
     /** Ohne vorangestellte Menge ist alles gemeint, was verfügbar ist. */
