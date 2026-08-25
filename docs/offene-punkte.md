@@ -17,7 +17,7 @@ Stand: 2026-08-25 (nach der zweiten Nacht)
 > Leere schreibt. Dazu `strategy priority`, das nie schreibbar war, und
 > `strategy emptiest`, das es nie gab und trotzdem wirkte.
 >
-> Neu auf der Liste stehen 1.13 bis 1.16, 2.10, 3.9, 3.10, 4.5, 6.9 und 6.10.
+> Neu auf der Liste stehen 1.13 bis 1.16, 3.9, 3.10, 4.5, 6.9 und 6.10.
 
 > **Was in der Nacht auf den 25.08. erledigt wurde:** 2.1 (globale Werte),
 > 3.1 (Annahme-Probe), 3.3 (Flüssigkeitsstände), 3.4 (Bearbeitung anfragen),
@@ -66,7 +66,6 @@ Stand: 2026-08-25 (nach der zweiten Nacht)
 | 2.4 | Einheit der Abgaberate: `per tick` gegen `per 5s` | E | `strom.md:249` | klein | 2.2 |
 | 2.5 | Strom als Wert in der Sprache (`crusher_1.energy`) | F | `strom.md:228` | klein | 1.1 |
 | 2.6 | **`device_done`:** gebaut ist Weg (2), offen ob Weg (1) dazukommt. Vor dem Bau zu entscheiden — ein falsches Fertig-Signal lässt eine Anlage Gegenstände verlieren | E | `umsetzung.md:160` | mittel | Entscheidung |
-| 2.10 | **Der Netzbestand verschwindet beim Tick.** Gemessen in einem GameTest: Nach drei `insert` stehen drei Sorten im Speicher, nach `deploy` und `startFlow` immer noch — nach einem `serverTick()` null. Der Zelleninhalt lebt in einem Zwischenspeicher je Laufwerk und wird erst beim Sichern in den Gegenstand geschrieben; wird er vorher neu aufgebaut, ist er weg. Ob das nur den Testaufbau trifft oder auch das laufende Spiel, ist **ungeklärt** — im Zweifel ist es verlorener Spielerbestand | F | `NetworkStorage.cells()`, `DriveBlockEntity.live()` | offen | **zuerst messen, dann urteilen** |
 | 2.7 | `when`-Bedingungen: nur Zahlvergleiche mit Literalen und `storage.count(...)` | F | `WorkerRuntime.java:860` | mittel | teils 1.1 |
 | 2.8 | `NetworkCheck` besucht keine Anweisungen — weder Seitenwarnung noch Namensprüfung erreichen ein `move` | F | `geraeteerkennung.md:316` | mittel | Entscheidung zur Namensprüfung bei `move` |
 | 2.9 | Erkennung von Maschinen-Rezepten | F | `entscheidungen.md:131` | groß | — |
@@ -151,11 +150,6 @@ Zeile.
 **3. Weitere Handbuchseiten** (6.1). Die Anbindung steht, die ersten Seiten
 auch. Der Rest ist Schreibarbeit ohne Risiko — und das, was die Mod für
 jemanden von außen überhaupt zugänglich macht.
-
-**Dazwischen, weil es keine Entscheidung braucht:** 2.10 nachmessen. Ein
-Speicher, der beim Ticken leer wird, ist entweder ein Testartefakt oder der
-Verlust von Spielerbestand — und der Unterschied ist eine Stunde Messen wert,
-bevor irgendjemand mit einer echten Welt anfängt.
 
 **Vor allem anderen zu entscheiden, unverändert:** `device_done` (2.6) und der
 Controller-Anker (5.1). Beides ist **Entscheidung, nicht Arbeit** — und beides

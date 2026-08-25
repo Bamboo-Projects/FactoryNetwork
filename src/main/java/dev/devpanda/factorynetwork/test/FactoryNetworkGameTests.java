@@ -2577,6 +2577,59 @@ public final class FactoryNetworkGameTests {
     }
 
     @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void whatIsStoredSurvivesATick(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        // <b>Die einfachste Frage überhaupt, und sie hatte keinen Test.</b>
+        // Aufgefallen ist das beim Schärfen eines ganz anderen Tests: Nach
+        // dem Einlagern standen drei Sorten im Speicher, nach dem Übernehmen
+        // eines Programms auch — nach einem Tick keine mehr.
+        entity.storage().insert(Items.IRON_ORE, 64);
+        entity.storage().insert(Items.COAL, 32);
+        helper.assertValueEqual(entity.storage().count(Items.IRON_ORE), 64L,
+                "Eingelagert ist eingelagert");
+
+        entity.serverTick();
+        helper.assertValueEqual(entity.storage().count(Items.IRON_ORE), 64L,
+                "Ein Tick darf den Bestand nicht anrühren");
+        helper.assertValueEqual(entity.storage().count(Items.COAL), 32L,
+                "Auch nicht die zweite Sorte");
+
+        for (int i = 0; i < 20; i++) {
+            entity.serverTick();
+        }
+        helper.assertValueEqual(entity.storage().count(Items.IRON_ORE), 64L,
+                "Und zwanzig Ticks auch nicht");
+        helper.assertValueEqual(entity.storage().contents().size(), 2,
+                "Beide Sorten stehen noch da");
+
+        // Und derselbe Weg noch einmal mit einem Programm, das über den
+        // Bestand läuft und dabei wartet — genau die Lage, in der der
+        // Bestand einmal leer dastand.
+        helper.assertTrue(entity.deploy("""
+                event Takt(nummer: Int)
+
+                fn reihum() {
+                    let runden = 0
+                    for sorte in storage.items() {
+                        let wert = await Takt
+                        runden = runden + 1
+                    }
+                    return runden
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.startFlow("reihum", java.util.List.of());
+        tick(helper, entity, 1);
+        entity.serverTick();
+        helper.assertValueEqual(entity.storage().count(Items.IRON_ORE), 64L,
+                "Auch ein laufender Ablauf über den Bestand rührt ihn nicht an");
+        helper.assertValueEqual(entity.storage().contents().size(), 2,
+                "Und beide Sorten stehen noch da");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void aFlowReadsAndWritesGlobals(GameTestHelper helper) {
         BlockPos controller = buildSetup(helper);
         ControllerBlockEntity entity = controllerAt(helper, controller);
