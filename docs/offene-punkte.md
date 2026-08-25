@@ -83,6 +83,36 @@ Vorentscheidungen)
 > Erweiterung las den Ordner der offenen Datei statt der Wurzel des Projekts.
 > `ProgramFolder` hat jetzt eine eigene Prüfung; vorher hatte es keine, weil
 > die Klasse einen Server verlangte.
+>
+> **5.2 hat sich aufgelöst statt erfüllt.** Die Zeile verlangte einen eigenen
+> Speicherblock, weil der Speicher im Controller sitze — er sitzt seit den
+> Zellen in Laufwerken. Was fehlte, war der Nachweis: Alle Speichertests
+> hatten genau ein Laufwerk, und damit war die Zusage „wer mehr Platz will,
+> stellt eines dazu" nirgends geprüft. Der Test lief auf Anhieb durch.
+>
+> **5.3 ist beantwortet, aber anders als gefragt.** Die Schrift wächst
+> weiterhin nicht von selbst mit der Wand — das wäre der ganze Vorteil einer
+> Wand. Es gibt jetzt `scale 4` im Display-Block, eine feste Zahl für die
+> ganze Tafel, und die Sichtweite wächst mit.
+>
+> **3.6 ist geprüft und abgelehnt.** LDLib2 ist gut — 2.2.x für 1.21.1, reines
+> Java, LGPL, sogar ein CodeEditor-Widget. Zwei Gründe dagegen: Eine
+> Oberfläche lässt sich nicht weich einbinden und wäre die erste
+> Pflicht-Abhängigkeit der Mod, und die Fenster sind gebaut. Der Stand steht
+> in `entscheidungen.md`, damit ein zweiter Blick billig bleibt.
+>
+> **1.11: Listen kommen, und sie werden ersetzt statt geändert.** `[a, b]`,
+> `[]`, mehrzeilig; dazu `plus`, `without`, `rest` und kein `add`. Der Grund
+> stand schon im Code: `const` und der Mehrspielerschutz bewachen Zuweisungen,
+> und der `ValueCodec` trennt beim Neustart zwei Namen für dieselbe Liste.
+> Neu in der Serverkonfiguration: `globalListSize`. Dabei fiel auf, dass der
+> Netzprüfer nicht in Listenliterale hineinsah und dass `describe()` einer
+> Liste nur ihre Länge nannte.
+>
+> **Damit ist die Reihe der kleineren Punkte leer.** Offen bleiben 2.9
+> (Processing-Rezepte, groß und ohne Vorentscheidung), 6.1 (weitere
+> Handbuchseiten), 1.4/7.1 (Mekanism), 4.1 (Sprachserver) und 5.4 (die einzige
+> offene Entscheidung, und die beantwortet eine Runde Spielen).
 
 **Status:** **F** = fehlt schlicht · **E** = wartet auf eine Entscheidung ·
 **Z** = bewusst zurückgestellt, kein Versäumnis
