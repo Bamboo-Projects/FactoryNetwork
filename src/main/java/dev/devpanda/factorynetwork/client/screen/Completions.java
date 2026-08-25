@@ -58,8 +58,19 @@ public final class Completions {
             "worker", "group", "filter", "multiblock", "event", "display", "fn", "on",
             "global", "const");
 
-    private static final List<String> BUILTINS = List.of(
-            "storage", "crafting", "world", "network", "workers", "multiblocks");
+    /**
+     * Die eingebauten Namen, die der Interpreter <b>wirklich</b> kennt.
+     *
+     * <p>Die Sprache parst auch {@code crafting}, {@code world},
+     * {@code network}, {@code workers} und {@code multiblocks} — auswerten
+     * kann sie keines davon. Sie anzubieten hieß: Wer {@code to crafting}
+     * schreibt, bekommt „Als Ziel taugt nur ein Name", eine Meldung, die dem
+     * Vorschlag widerspricht, der sie ausgelöst hat.
+     *
+     * <p>Sie kommen zurück, sobald sie etwas tun — {@code network} mit der
+     * Stromverteilung, {@code crafting} mit dem Autocrafting.
+     */
+    private static final List<String> BUILTINS = List.of("storage");
 
     /**
      * Was an dieser Stelle passt.
@@ -209,7 +220,10 @@ public final class Completions {
         switch (slot.kind()) {
             case TARGET -> {
                 addConnectors(entries, prefix);
-                addAll(entries, List.of("storage", "crafting"), prefix, Entry.Kind.BUILTIN);
+                // crafting stand hier mit: sprache.md zeigt es als Quelle für
+                // Nachschub, gebaut ist das Autocrafting nicht. Es kommt
+                // zurück, sobald es etwas tut.
+                addAll(entries, BUILTINS, prefix, Entry.Kind.BUILTIN);
             }
             case EXPR -> {
                 // Ein angefangener Auswahlausdruck ist auch ein Ausdruck.

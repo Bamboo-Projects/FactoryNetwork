@@ -94,6 +94,22 @@ class CompletionsTest {
     }
 
     @Test
+    @DisplayName("Vorgeschlagen wird nur, was die Laufzeit auch kann")
+    void onlyWhatTheRuntimeCanDo() {
+        List<String> shown = at("worker haul {", "    to ");
+
+        assertTrue(shown.contains("storage"), () -> "storage fehlt: " + shown);
+        // crafting, world, network, workers und multiblocks parst die Sprache,
+        // aber der Interpreter kennt keines davon: Wer sie hinschreibt,
+        // bekommt „Als Ziel taugt nur ein Name" — eine Meldung, die dem
+        // Vorschlag widerspricht, der sie ausgelöst hat.
+        assertFalse(shown.contains("crafting"),
+                () -> "crafting wird nicht ausgewertet: " + shown);
+        assertFalse(shown.contains("network"), () -> shown.toString());
+        assertFalse(shown.contains("multiblocks"), () -> shown.toString());
+    }
+
+    @Test
     @DisplayName("In der on-Kopfzeile stehen die Ereignisse und keine Deklarationen")
     void theOnHeaderOffersEvents() {
         List<String> shown = at("on ");
@@ -218,7 +234,11 @@ class CompletionsTest {
         List<String> shown = at("display halle {", "    text ");
 
         assertTrue(shown.contains("storage"), () -> shown.toString());
-        assertTrue(shown.contains("network"), () -> shown.toString());
+        // network stand hier früher mit: Die Sprache parst es, ausgewertet
+        // wird es nirgends — auch nicht in einer Anzeige. Ein Vorschlag, der
+        // in eine Fehlermeldung führt, ist schlechter als keiner.
+        assertFalse(shown.contains("network"),
+                () -> "network wird nicht ausgewertet: " + shown);
         assertFalse(shown.contains("if"), () -> "kein Ausdruck ist eine Anweisung: " + shown);
     }
 

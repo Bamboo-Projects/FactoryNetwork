@@ -27,7 +27,11 @@ let table = { blocks: {}, strategies: [], declarations: [], members: [],
 const CODE_BLOCKS = ['fn', 'on', 'multiblock'];
 
 /** Was an einer Ausdrucksstelle immer geht. */
-const BUILTINS = ['storage', 'crafting', 'world', 'network', 'workers', 'multiblocks'];
+// Nur, was der Interpreter auch auswertet. Die Sprache parst mehr —
+// crafting, world, network, workers, multiblocks —, aber wer sie hinschreibt,
+// bekommt eine Fehlermeldung. Ein Vorschlag, der dorthin führt, ist schlechter
+// als keiner. Sie kommen zurück, sobald sie etwas tun.
+const BUILTINS = ['storage'];
 
 /**
  * Woran eine Zeile zu erkennen ist, die einen Namen vergibt.
