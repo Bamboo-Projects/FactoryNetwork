@@ -73,4 +73,19 @@ class WorkerKindTest {
         assertNull(WorkerKind.of(worker),
                 "ohne Filter darf nichts geraten werden");
     }
+
+    @Test
+    @DisplayName("Ein Flüssigkeits-Tag macht einen Flüssigkeits-Worker")
+    void aFluidTagMakesAFluidWorker() {
+        Decl.Worker worker = firstWorker("""
+                worker w {
+                    from bottich
+                    to kessel
+                    filter fluidtag:c/molten
+                }""");
+
+        // Die Art ist die Ressource und nicht die Schreibweise: Wer auf einen
+        // Flüssigkeits-Tag filtert, bewegt Flüssigkeiten.
+        assertEquals(Expr.Selector.Kind.FLUID, WorkerKind.of(worker));
+    }
 }

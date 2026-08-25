@@ -54,7 +54,19 @@ public final class WorkerKind {
                 case MIXED, EMPTY -> null;
             };
         }
-        return selectorKind(filter.value());
+        return resource(selectorKind(filter.value()));
+    }
+
+    /**
+     * Die Ressource hinter einer Schreibweise.
+     *
+     * <p>Ein Flüssigkeits-Tag bewegt Flüssigkeiten. Die Art eines Workers
+     * fragt nach dem, was er bewegt, nicht danach, wie es geschrieben steht —
+     * sonst müsste jede Stelle, die den Ausführungspfad wählt, beide Formen
+     * kennen.
+     */
+    public static Expr.Selector.Kind resource(Expr.Selector.Kind written) {
+        return written == Expr.Selector.Kind.FLUIDTAG ? Expr.Selector.Kind.FLUID : written;
     }
 
     /**

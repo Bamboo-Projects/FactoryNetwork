@@ -53,7 +53,7 @@ public enum FilterKind {
             for (Expr.Selector selector : selectorsOf(entry)) {
                 switch (selector.kind()) {
                     case ITEM, TAG -> items = true;
-                    case FLUID -> fluids = true;
+                    case FLUID, FLUIDTAG -> fluids = true;
                     // Chemikalien und Strom sagen nichts über Gegenstand oder
                     // Flüssigkeit. Dass sie hier nichts zu suchen haben,
                     // meldet FilterCheck.

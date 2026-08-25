@@ -2892,6 +2892,30 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
+     * Ein Flüssigkeits-Tag löst sich gegen die Fluid-Registry auf.
+     *
+     * <p>Vanilla führt {@code minecraft:water} als Tag über Wasser und
+     * fließendes Wasser — der einzige, auf den in einer leeren Welt Verlass
+     * ist.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 100)
+    public static void aFluidTagResolvesAgainstFluids(GameTestHelper helper) {
+        var result = dev.devpanda.factorynetwork.lang.parse.Parser.parse("""
+                filter kuehlmittel {
+                    fluidtag:minecraft/water
+                }""");
+        helper.assertFalse(result.hasErrors(), "Die Vorlage wurde nicht gelesen");
+        var template = (dev.devpanda.factorynetwork.lang.ast.Decl.FilterTemplate)
+                result.program().declarations().get(0);
+
+        var fluids = dev.devpanda.factorynetwork.runtime.FilterTemplates.fluids(template);
+
+        helper.assertTrue(fluids.contains(net.minecraft.world.level.material.Fluids.WATER),
+                "Wasser gehört dazu: " + fluids);
+        helper.succeed();
+    }
+
+    /**
      * Eine Vorlage legt zusammen und nimmt heraus.
      *
      * <p>Im GameTest und nicht als Einheitstest: Welche Gegenstände hinter

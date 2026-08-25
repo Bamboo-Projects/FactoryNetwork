@@ -24,7 +24,8 @@ import java.util.Set;
  */
 public final class Lexer {
 
-    private static final Set<String> SELECTOR_KINDS = Set.of("item", "fluid", "chemical", "tag");
+    private static final Set<String> SELECTOR_KINDS =
+            Set.of("item", "fluid", "chemical", "tag", "fluidtag");
     private static final Set<String> TIME_UNITS = Set.of("t", "s", "min", "h");
 
     private final String source;

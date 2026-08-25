@@ -1037,6 +1037,7 @@ public final class Parser {
             case "item" -> Expr.Selector.Kind.ITEM;
             case "fluid" -> Expr.Selector.Kind.FLUID;
             case "chemical" -> Expr.Selector.Kind.CHEMICAL;
+            case "fluidtag" -> Expr.Selector.Kind.FLUIDTAG;
             default -> Expr.Selector.Kind.TAG;
         };
         String rest = text.substring(colon + 1);
@@ -1059,7 +1060,8 @@ public final class Parser {
         String namespace = null;
         String path = rest;
         // Beim Tag ist der erste Abschnitt immer der Namensraum (tag:c/ores).
-        if (slash >= 0 && (kind == Expr.Selector.Kind.TAG || !rest.startsWith("*"))) {
+        if (slash >= 0 && (kind == Expr.Selector.Kind.TAG
+                || kind == Expr.Selector.Kind.FLUIDTAG || !rest.startsWith("*"))) {
             namespace = rest.substring(0, slash);
             path = rest.substring(slash + 1);
         }

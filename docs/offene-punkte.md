@@ -52,7 +52,7 @@ Vorentscheidungen)
 |---|---|---|---|---|---|
 | 1.1 | **Entschieden am 25.08.:** `output()` und `busy` werden gestrichen — das erste sagt dasselbe wie `move … from gerät`, das zweite wäre eine Vermutung mit dem Anschein einer Auskunft. `send()` an einer Gruppe wird gebaut und fällt mit 1.14 ab | F | `sprache.md:325` | klein (Streichung) | 1.14 für `send()` |
 | 1.2 | ~~Listenoperationen~~ — **fertig**, alle fünf. `where` und `sort` werten je Eintrag aus, mit `it` als diesem Eintrag | | `sprache.md` §12 | | |
-| 1.3 | **Entschieden:** Flüssigkeits-Tags heißen `fluidtag:`. Nicht `tag:` für beides — die Sorte muss aus dem Text ablesbar bleiben, sonst kann `WorkerKind` den Ausführungspfad nicht wählen | F | `FluidSelection`, `Lexer.SELECTOR_KINDS` | mittel | — |
+| 1.3 | ~~Flüssigkeits-Tags~~ — **fertig.** `fluidtag:c/molten` löst gegen die Fluid-Registry auf, `tag:` bleibt bei den Gegenständen. Ein Worker mit `fluidtag:` gilt als Flüssigkeits-Worker: `WorkerKind` nennt die Ressource, nicht die Schreibweise | | `FluidSelection`, `WorkerKind.resource` | | |
 | 1.4 | **Entschieden:** Anbindung als Kompatibilitätsmodul, wie GuideME — `compileOnly` plus `runtimeOnly`, Code unter `compat/mekanism`. Ohne Mekanism läuft die Mod wie heute, `chemical:` meldet die fehlende Mod statt zu werfen | F | `WorldHost.java:461` | mittel–groß | — |
 | 1.5 | `import`/Module — reserviert, tut nichts | Z | `Parser.java:86` | — | bewusst, bis ein Projekt den Namensraum sprengt |
 | 1.6 | Request/Response als eigene Form | Z | `sprache.md:992` | mittel | mit `emit`/`on`/`await` nachbaubar |

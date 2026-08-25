@@ -139,4 +139,34 @@ class JeiIdTest {
                         == dev.devpanda.factorynetwork.lang.TokenType.TO),
                 () -> "und to ein to: " + tokens);
     }
+
+    @Test
+    @DisplayName("fluidtag: ist eine eigene Art")
+    void aFluidTagIsItsOwnKind() {
+        Expr.Selector selector = selectorOf("""
+                worker w {
+                    from bottich
+                    to kessel
+                    filter fluidtag:c/molten
+                }""");
+
+        assertEquals(Expr.Selector.Kind.FLUIDTAG, selector.kind());
+        assertEquals("c", selector.namespace());
+        assertEquals("molten", selector.path());
+    }
+
+    @Test
+    @DisplayName("Auch in der JEI-Schreibweise")
+    void aFluidTagFromJei() {
+        Expr.Selector selector = selectorOf("""
+                worker w {
+                    from bottich
+                    to kessel
+                    filter fluidtag:c:molten
+                }""");
+
+        assertEquals(Expr.Selector.Kind.FLUIDTAG, selector.kind());
+        assertEquals("c", selector.namespace());
+        assertEquals("molten", selector.path());
+    }
 }

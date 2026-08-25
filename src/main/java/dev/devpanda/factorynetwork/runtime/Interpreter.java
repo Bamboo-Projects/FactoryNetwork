@@ -769,7 +769,8 @@ public final class Interpreter {
 
     private Value resolvedSelection(Expr expr) {
         long amount = amountIn(expr);
-        if (dev.devpanda.factorynetwork.lang.WorkerKind.selectorKind(expr)
+        if (dev.devpanda.factorynetwork.lang.WorkerKind.resource(
+                dev.devpanda.factorynetwork.lang.WorkerKind.selectorKind(expr))
                 == Expr.Selector.Kind.FLUID) {
             List<net.minecraft.world.level.material.Fluid> fluids =
                     FluidSelection.resolve(expr);

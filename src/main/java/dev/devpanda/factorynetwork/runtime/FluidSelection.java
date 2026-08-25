@@ -63,7 +63,9 @@ public final class FluidSelection {
     }
 
     private static List<Fluid> compute(Expr.Selector selector) {
-        if (selector.kind() == Expr.Selector.Kind.TAG) {
+        // tag: bleibt hier stumm: Ein Gegenstands-Tag trifft keine
+        // Flüssigkeit, und fluidtag: gibt es genau deshalb.
+        if (selector.kind() == Expr.Selector.Kind.FLUIDTAG) {
             return fromTag(selector);
         }
         if (selector.kind() != Expr.Selector.Kind.FLUID) {

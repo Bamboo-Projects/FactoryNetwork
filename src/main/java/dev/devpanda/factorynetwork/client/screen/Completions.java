@@ -583,6 +583,10 @@ public final class Completions {
             entries.add(new Entry("item:", "item:", Entry.Kind.KEYWORD));
             entries.add(new Entry("tag:", "tag:", Entry.Kind.KEYWORD));
             entries.add(new Entry("fluid:", "fluid:", Entry.Kind.KEYWORD));
+            // Ein Tag über Flüssigkeiten hat eine eigene Art, weil aus der
+            // Zeile hervorgehen muss, ob Gegenstände oder Flüssigkeiten
+            // gemeint sind.
+            entries.add(new Entry("fluidtag:", "fluidtag:", Entry.Kind.KEYWORD));
             return;
         }
         String needle = search.toLowerCase(Locale.ROOT);

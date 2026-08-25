@@ -215,6 +215,11 @@ item:mekanism/*                             // alles aus einer Mod
 tag:c/ores except item:ancient_debris       // mit Ausnahme
 ```
 
+**Tags gibt es zweimal:** `tag:` trifft Gegenstände, `fluidtag:` trifft
+Flüssigkeiten. Zwei Wörter statt einem, weil aus der Zeile hervorgehen muss,
+wovon sie handelt — ein Worker, eine Vorlage und ein `move` wählen daran ihren
+Weg, und ein Tag, der beides treffen könnte, ließe diese Wahl offen.
+
 **Namensraum und Pfad trennt ein Schrägstrich — oder ein Doppelpunkt.**
 `item:mekanism/steel_ingot` und `item:mekanism:steel_ingot` meinen dasselbe.
 Die zweite Form ist die, die JEI anzeigt und die jeder von dort kopiert; sie

@@ -133,7 +133,11 @@ public final class NetworkCheck {
         }
         DeviceProfile.Access.Ability needed = switch (kind) {
             case ITEM, TAG -> DeviceProfile.Access.Ability.ITEMS;
-            case FLUID -> DeviceProfile.Access.Ability.FLUIDS;
+            // FLUIDTAG kommt hier nie an — WorkerKind.of nennt die
+            // Ressource und nicht die Schreibweise. Der Fall steht trotzdem
+            // da: Der Schalter ist erschöpfend, und eine stille Lücke wäre
+            // eine ausbleibende Warnung.
+            case FLUID, FLUIDTAG -> DeviceProfile.Access.Ability.FLUIDS;
             // Ein Strom-Worker verlangt einen Energiespeicher an der
             // angeschlossenen Seite. Das Profil weiß es bereits — die Warnung
             // fällt ohne Zusatzarbeit ab, weil die Geräteerkennung Energie

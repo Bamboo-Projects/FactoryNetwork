@@ -41,6 +41,19 @@ public sealed interface Expr {
 
         public enum Kind {
             ITEM, FLUID, CHEMICAL, TAG,
+
+            /**
+             * Ein Tag über Flüssigkeiten, {@code fluidtag:c/molten}.
+             *
+             * <p><b>Eine eigene Art und kein {@code tag:}, das beides
+             * durchsucht.</b> An mehreren Stellen muss aus dem geschriebenen
+             * Text allein hervorgehen, ob Gegenstände oder Flüssigkeiten
+             * gemeint sind: {@code WorkerKind} wählt danach den
+             * Ausführungspfad, {@code FilterKind} die Sorte einer Vorlage,
+             * {@code move} den Weg. Ein Tag, der beides treffen kann, macht
+             * genau diese Entscheidung unmöglich.
+             */
+            FLUIDTAG,
             /**
              * Strom.
              *

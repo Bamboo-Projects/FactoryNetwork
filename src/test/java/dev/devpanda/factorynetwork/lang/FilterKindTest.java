@@ -105,4 +105,24 @@ class FilterKindTest {
                     except item:iron_ingot
                 }""")));
     }
+
+    @Test
+    @DisplayName("Ein Flüssigkeits-Tag macht eine Flüssigkeitsvorlage")
+    void aFluidTagMakesAFluidTemplate() {
+        assertEquals(FilterKind.FLUID, FilterKind.of(template("""
+                filter kuehlmittel {
+                    fluidtag:c/molten
+                    except fluid:lava
+                }""")));
+    }
+
+    @Test
+    @DisplayName("Ein Flüssigkeits-Tag neben einem Gegenstand ist gemischt")
+    void aFluidTagNextToAnItemIsMixed() {
+        assertEquals(FilterKind.MIXED, FilterKind.of(template("""
+                filter durcheinander {
+                    fluidtag:c/molten
+                    item:iron_ingot
+                }""")));
+    }
 }

@@ -261,7 +261,7 @@ selection   = selTerm { 'except' selTerm }
 
 selTerm     = KIND ':' [ NAMESPACE ( '/' | ':' ) ] pathPattern
 
-KIND        = 'item' | 'fluid' | 'chemical' | 'tag'
+KIND        = 'item' | 'fluid' | 'chemical' | 'tag' | 'fluidtag'
 pathPattern = ( NAMECHAR | '*' ) { NAMECHAR | '*' | '/' }
 ```
 

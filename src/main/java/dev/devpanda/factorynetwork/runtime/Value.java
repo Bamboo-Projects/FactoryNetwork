@@ -38,7 +38,7 @@ public sealed interface Value {
     record Request(String selector, long amount) implements Value {
 
         /** Worauf sich eine Auswahl bezieht. */
-        public enum Kind { ITEM, FLUID, CHEMICAL, TAG, UNKNOWN }
+        public enum Kind { ITEM, FLUID, CHEMICAL, TAG, FLUIDTAG, UNKNOWN }
 
         public boolean hasAmount() {
             return amount >= 0;
@@ -63,6 +63,7 @@ public sealed interface Value {
                 case "item" -> Kind.ITEM;
                 case "fluid" -> Kind.FLUID;
                 case "chemical" -> Kind.CHEMICAL;
+                case "fluidtag" -> Kind.FLUIDTAG;
                 case "tag" -> Kind.TAG;
                 default -> Kind.UNKNOWN;
             };

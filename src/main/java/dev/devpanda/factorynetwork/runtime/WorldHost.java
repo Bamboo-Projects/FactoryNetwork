@@ -698,6 +698,7 @@ public final class WorldHost implements Interpreter.Host {
             case "item" -> Expr.Selector.Kind.ITEM;
             case "fluid" -> Expr.Selector.Kind.FLUID;
             case "chemical" -> Expr.Selector.Kind.CHEMICAL;
+            case "fluidtag" -> Expr.Selector.Kind.FLUIDTAG;
             case "tag" -> Expr.Selector.Kind.TAG;
             default -> throw new ScriptError("Unbekannte Art in " + written + ".");
         };
@@ -709,7 +710,8 @@ public final class WorldHost implements Interpreter.Host {
         int slash = rest.indexOf('/');
         String namespace = null;
         String path = rest;
-        if (slash >= 0 && (kind == Expr.Selector.Kind.TAG || !rest.startsWith("*"))) {
+        if (slash >= 0 && (kind == Expr.Selector.Kind.TAG
+                || kind == Expr.Selector.Kind.FLUIDTAG || !rest.startsWith("*"))) {
             namespace = rest.substring(0, slash);
             path = rest.substring(slash + 1);
         }
