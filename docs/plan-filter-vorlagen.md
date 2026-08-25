@@ -43,7 +43,7 @@ Alles hier wurde vor dem Schreiben im Code nachgesehen:
 | `parseDeclaration()` schaltet über den Tokentyp | `parse/Parser.java:74-95` |
 | `parseGroup()` ist die Vorlage für eine Blockdeklaration | `parse/Parser.java:222` |
 | `Decl` ist versiegelt mit `name()` und `span()` | `lang/ast/Decl.java:14` |
-| **Fünf erschöpfende Schalter** brechen bei einem neuen Record | `GlobalCheck:112`, `NetworkCheck:47`, `ProgramSize:38`, `Signatures:290`, `flow/BlockIndex:42` |
+| **Ein erschöpfender Schalter** bricht bei einem neuen Record: `ProgramSize:38`. Die anderen vier haben ein `default` und mussten trotzdem angesehen werden | `ProgramSize:38`; dazu `GlobalCheck:112`, `NetworkCheck:47`, `Signatures:290`, `flow/BlockIndex:42` |
 | `Definitions` findet die Erklärung zu einem Namen | `lang/Definitions.java` |
 | `ItemSelection.resolve(Expr)` löst Selektor, `Except` und `Amount` auf | `runtime/ItemSelection.java:43` |
 | `FluidSelection.resolve(Expr)` tut dasselbe für Flüssigkeiten | `runtime/FluidSelection.java:39` |
@@ -77,7 +77,7 @@ eine Deklaration, im Worker-Block eine Angabe. Und `Decl` ist versiegelt: Der
 neue Record macht fünf `switch` unvollständig. Der Übersetzer nennt sie, und
 das ist erwünscht — sie werden in Aufgabe 2 abgearbeitet.
 
-- [ ] **Schritt 1: Den fehlschlagenden Test schreiben**
+- [x] **Schritt 1: Den fehlschlagenden Test schreiben**
 
 ```java
 class FilterTemplateParseTest {
@@ -132,17 +132,17 @@ class FilterTemplateParseTest {
 }
 ```
 
-- [ ] **Schritt 2: Test laufen lassen, Fehlschlag ansehen** (`./gradlew test`)
-- [ ] **Schritt 3: `Decl.FilterTemplate` ergänzen**, mit Javadoc: warum
+- [x] **Schritt 2: Test laufen lassen, Fehlschlag ansehen** (`./gradlew test`)
+- [x] **Schritt 3: `Decl.FilterTemplate` ergänzen**, mit Javadoc: warum
       nackte Zeilen und nicht `members` (siehe Entwurf).
-- [ ] **Schritt 4: `parseFilterTemplate()`** nach dem Muster von
+- [x] **Schritt 4: `parseFilterTemplate()`** nach dem Muster von
       `parseGroup()`: Name, `{`, dann je Zeile — bei `except` erst
       `advance()`, dann die Auswahl in `excludes`, sonst in `includes`.
       Die Auswahl selbst kommt aus dem bestehenden Ausdrucksparser.
-- [ ] **Schritt 5: `parseDeclaration()`** um `case FILTER` ergänzen; die
+- [x] **Schritt 5: `parseDeclaration()`** um `case FILTER` ergänzen; die
       Aufzählung der Deklarationswörter in der Fehlermeldung und in der
       Fehlerbehebung (`recoverToDeclaration`, `Parser:1059`) mitziehen.
-- [ ] **Schritt 6: Test grün, `./gradlew test` ganz, committen.**
+- [x] **Schritt 6: Test grün, `./gradlew test` ganz, committen.**
 
 ---
 
@@ -156,25 +156,25 @@ dazu `Definitions.java` und `Project.java`.
 was eine Vorlage dort bedeutet. Wer sie nur mit `default -> {}` stillstellt,
 verliert genau die Auskunft, für die die Klasse da ist.
 
-- [ ] **Schritt 1:** `./gradlew compileJava` — der Übersetzer nennt die
+- [x] **Schritt 1:** `./gradlew compileJava` — der Übersetzer nennt die
       Stellen. Die Liste in den Commit schreiben.
-- [ ] **Schritt 2: `ProgramSize`** — eine Vorlage zählt wie eine Gruppe:
+- [x] **Schritt 2: `ProgramSize`** — eine Vorlage zählt wie eine Gruppe:
       die Deklaration selbst plus je Zeile eins. Nachsehen, wie `Decl.Group`
       dort gezählt wird, und es genauso machen.
-- [ ] **Schritt 3: `BlockIndex`** — eine Vorlage hat keinen Anweisungsblock,
+- [x] **Schritt 3: `BlockIndex`** — eine Vorlage hat keinen Anweisungsblock,
       also nichts zu indizieren. Mit einer Zeile Kommentar, warum.
-- [ ] **Schritt 4: `GlobalCheck`** — in einer Vorlage stehen nur Auswahlen,
+- [x] **Schritt 4: `GlobalCheck`** — in einer Vorlage stehen nur Auswahlen,
       keine Namen. Nichts zu prüfen, mit Begründung im Code.
-- [ ] **Schritt 5: `NetworkCheck`** — hier kommt in Aufgabe 4 die
+- [x] **Schritt 5: `NetworkCheck`** — hier kommt in Aufgabe 4 die
       Verdeckungswarnung hin. Vorerst die Stelle mit einem `case` und einem
       Verweis auf Aufgabe 4 versehen.
-- [ ] **Schritt 6: `Signatures`** — die Form der Deklaration für den Editor:
+- [x] **Schritt 6: `Signatures`** — die Form der Deklaration für den Editor:
       `filter NAME { … }`. Test: `SignaturesExportTest` schreibt
       `signatures.json` neu; die Datei einchecken.
-- [ ] **Schritt 7: `Definitions`** — der Name einer Vorlage muss auffindbar
+- [x] **Schritt 7: `Definitions`** — der Name einer Vorlage muss auffindbar
       sein, sonst zeigt „wo ist das erklärt" im Editor ins Leere. Test in
       `DefinitionsTest`.
-- [ ] **Schritt 8:** `./gradlew test`, committen.
+- [x] **Schritt 8:** `./gradlew test`, committen.
 
 ---
 
@@ -200,19 +200,19 @@ zeilenweise abwechselnd. Ein `LinkedHashSet` hält dabei die Reihenfolge, in
 der die Arten zuerst auftauchten; das ist die, die der Spieler geschrieben
 hat.
 
-- [ ] **Schritt 1: Der fehlschlagende Test für `FilterKind`** — eine Vorlage
+- [x] **Schritt 1: Der fehlschlagende Test für `FilterKind`** — eine Vorlage
       aus `item:` und `tag:` ist `ITEM`, eine aus `fluid:` ist `FLUID`, beides
       zusammen `MIXED`, ein leerer Block `EMPTY`. Ein `tag:` allein zählt als
       `ITEM`, solange Flüssigkeits-Tags nicht aufgelöst werden
       (`offene-punkte.md` 1.3) — mit dieser Begründung als Kommentar.
-- [ ] **Schritt 2: `FilterKind` bauen**, Test grün.
-- [ ] **Schritt 3: `FilterTemplates` bauen.** Auflösung ausschließlich über
+- [x] **Schritt 2: `FilterKind` bauen**, Test grün.
+- [x] **Schritt 3: `FilterTemplates` bauen.** Auflösung ausschließlich über
       `ItemSelection.resolve` und `FluidSelection.resolve`; **keine zweite
       Fassung der Selektorauflösung.**
-- [ ] **Schritt 4: GameTest** `aFilterTemplateResolvesToSeveralKinds` — eine
+- [x] **Schritt 4: GameTest** `aFilterTemplateResolvesToSeveralKinds` — eine
       Vorlage aus zwei Selektoren plus einer Ausnahme, geprüft an echten
       Gegenständen. Der einzige Ort, an dem die Registry dafür da ist.
-- [ ] **Schritt 5:** beide Läufe, committen.
+- [x] **Schritt 5:** beide Läufe, committen.
 
 ---
 
@@ -241,13 +241,13 @@ Geprüft wird:
 gemischte oder leere Vorlage wird durch eine weitere Datei nicht besser; sie
 ist an Ort und Stelle falsch.
 
-- [ ] **Schritt 1: Der fehlschlagende Test** — je ein Fall aus der Tabelle,
+- [x] **Schritt 1: Der fehlschlagende Test** — je ein Fall aus der Tabelle,
       der letzte (Verdeckung) im GameTest, weil er Gerätenamen braucht.
-- [ ] **Schritt 2: `FilterCheck` bauen und einhängen**, wo `EventCheck`
+- [x] **Schritt 2: `FilterCheck` bauen und einhängen**, wo `EventCheck`
       eingehängt ist.
-- [ ] **Schritt 3: `Project`** um die Namensprüfung ergänzen.
-- [ ] **Schritt 4: `NetworkCheck`** um die Verdeckungswarnung ergänzen.
-- [ ] **Schritt 5:** beide Läufe, committen.
+- [x] **Schritt 3: `Project`** sammelt die Namen projektweit ein; geprüft wird in `FilterCheck`. `Project.duplicateOf` schlüsselt nach Art und Name und sähe eine Vorlage neben einer Gruppe deshalb nicht.
+- [x] **Schritt 4: `NetworkCheck`** um die Verdeckungswarnung ergänzen.
+- [x] **Schritt 5:** beide Läufe, committen.
 
 ---
 
@@ -259,18 +259,18 @@ ist an Ort und Stelle falsch.
 `Map<String, Decl.FilterTemplate>`, gefüllt beim Übernehmen an derselben
 Stelle wie `groups` (`WorkerRuntime:178-185`).
 
-- [ ] **Schritt 1: GameTest** `aWorkerFiltersByTemplate` — ein Worker mit
+- [x] **Schritt 1: GameTest** `aWorkerFiltersByTemplate` — ein Worker mit
       `filter ore_factory` bewegt genau die Arten der Vorlage und die
       ausgenommene nicht. **Der Test muss auch zeigen, dass die Ausnahme
       wirkt** — sonst prüft er nur, dass irgendetwas bewegt wurde.
-- [ ] **Schritt 2: `filterItems`** ergänzen: Ist die Angabe ein
+- [x] **Schritt 2: `filterItems`** ergänzen: Ist die Angabe ein
       `Expr.Name` und steht dafür eine Vorlage, über `FilterTemplates`
       auflösen; sonst wie bisher.
-- [ ] **Schritt 3:** Dasselbe für den Flüssigkeits-Worker.
-- [ ] **Schritt 4:** Ein unbekannter Name in `filter` meldet weiterhin
+- [x] **Schritt 3:** Dasselbe für den Flüssigkeits-Worker.
+- [x] **Schritt 4:** Ein unbekannter Name in `filter` meldet weiterhin
       verständlich — nicht „trifft nichts", sondern „unbekannte Vorlage",
       mit dem nächstliegenden Namen als Hinweis (`NameDistance`).
-- [ ] **Schritt 5:** beide Läufe, committen.
+- [x] **Schritt 5:** beide Läufe, committen.
 
 ---
 
@@ -285,25 +285,25 @@ Stelle wie `groups` (`WorkerRuntime:178-185`).
 `move` und `count` nicht — obwohl `sprache.md:215` es zeigt. Das ist genau
 die Stelle, durch die auch die Vorlage geht.
 
-- [ ] **Schritt 1: Der Test, der die Lücke zeigt.** GameTest:
+- [x] **Schritt 1: Der Test, der die Lücke zeigt.** GameTest:
       `move tag:… except item:… from a to b` bewegt die ausgenommene Art
       nicht. Er muss **rot** sein, bevor etwas geändert wird — wenn nicht,
       war die Annahme falsch, und dann wird der Befund im Plan berichtigt
       statt ein Fix eingebaut.
-- [ ] **Schritt 2:** `Expr.Except` zu einer aufgelösten Auswahl auswerten:
+- [x] **Schritt 2:** `Expr.Except` zu einer aufgelösten Auswahl auswerten:
       `ItemSelection.resolve` beziehungsweise `FluidSelection.resolve` auf
       den ganzen Ausdruck, Ergebnis als `Value.Selection` /
       `Value.FluidSelection`. Test grün.
-- [ ] **Schritt 3: Der Test für die Vorlage** — `move ore_factory from a to b`
+- [x] **Schritt 3: Der Test für die Vorlage** — `move ore_factory from a to b`
       und `storage.count(ore_factory)`.
-- [ ] **Schritt 4: `resolveName`** ergänzen: **nach** dem globalen Wert und
+- [x] **Schritt 4: `resolveName`** ergänzen: **nach** dem globalen Wert und
       **vor** den Geräten nach einer Vorlage sehen (Begründung im Entwurf:
       Gerätenamen kommen aus der Welt, nicht aus dem Programm). Die
       Deklarationen liegen im `Program`, das der Interpreter ohnehin hält —
       kein neuer Zugang über den `Host`.
-- [ ] **Schritt 5:** `64 ore_factory` prüfen: Die Menge sitzt über
+- [x] **Schritt 5:** `64 ore_factory` prüfen: Die Menge sitzt über
       `withAmount` auf der aufgelösten Auswahl und heißt 64 insgesamt.
-- [ ] **Schritt 6:** beide Läufe, committen.
+- [x] **Schritt 6:** beide Läufe, committen.
 
 ---
 
@@ -311,17 +311,17 @@ die Stelle, durch die auch die Vorlage geht.
 
 **Dateien:** `client/screen/Completions.java`, `lang/Signatures.java`
 
-- [ ] **Schritt 1:** `filter` steht in der Auswahl der Deklarationen auf
+- [x] **Schritt 1:** `filter` steht in der Auswahl der Deklarationen auf
       oberster Ebene.
-- [ ] **Schritt 2:** Wo eine Auswahl erwartet wird, stehen die Namen der
+- [x] **Schritt 2:** Wo eine Auswahl erwartet wird, stehen die Namen der
       Vorlagen des Projekts zur Wahl — neben `item:`, `fluid:` und `tag:`.
-- [ ] **Schritt 3:** Im Block einer Vorlage wird `except` vorgeschlagen und
+- [x] **Schritt 3:** Im Block einer Vorlage wird `except` vorgeschlagen und
       **keine** Deklarationswörter.
-- [ ] **Schritt 4:** Die Anzeige, worauf sich eine Auswahl auflöst, gilt auch
-      für einen Vorlagennamen. Wenn es sie für Muster schon gibt, dieselbe
-      Stelle benutzen; wenn nicht, hier keine neue bauen — dann in die
-      offenen Punkte damit.
-- [ ] **Schritt 5:** `./gradlew test`, committen.
+- [x] **Schritt 4:** Die Anzeige, worauf sich eine Auswahl auflöst, **gibt es
+      nicht** — auch nicht für Muster, obwohl `sprache.md` sie an zwei Stellen
+      verspricht. Nicht gebaut, wie hier vorgesehen: steht als offener Punkt
+      3.11, und beide Stellen in `sprache.md` sind gekennzeichnet.
+- [x] **Schritt 5:** `./gradlew test`, committen.
 
 ---
 
@@ -330,15 +330,15 @@ die Stelle, durch die auch die Vorlage geht.
 **Dateien:** `editor/vscode/` — Grammatik, `snippets/manifold.json`,
 `check.js`, `data/signatures.json` (erzeugt)
 
-- [ ] **Schritt 1:** `check.js` um die Fälle ergänzen: nach `filter ` auf
+- [x] **Schritt 1:** `check.js` um die Fälle ergänzen: nach `filter ` auf
       oberster Ebene ein Name, im Block `except`, an einer Auswahlstelle die
       Vorlagennamen der offenen Dateien.
-- [ ] **Schritt 2:** Die Grammatik prüfen — `filter` ist als Wort schon
+- [x] **Schritt 2:** Die Grammatik prüfen — `filter` ist als Wort schon
       eingefärbt; ein Block danach darf die Einfärbung nicht verlieren.
-- [ ] **Schritt 3:** Einen Baustein für die Vorlage in die Snippets.
-- [ ] **Schritt 4:** `./gradlew test` schreibt `signatures.json` neu;
+- [x] **Schritt 3:** Einen Baustein für die Vorlage in die Snippets.
+- [x] **Schritt 4:** `./gradlew test` schreibt `signatures.json` neu;
       einchecken. `node editor/vscode/check.js` muss grün sein.
-- [ ] **Schritt 5:** committen.
+- [x] **Schritt 5:** committen.
 
 ---
 
@@ -347,21 +347,21 @@ die Stelle, durch die auch die Vorlage geht.
 **Dateien:** `docs/sprache.md`, `docs/grammatik.md`, `docs/umsetzung.md`,
 `docs/offene-punkte.md`, `docs/beispiele.md`
 
-- [ ] **Schritt 1: `grammatik.md`** — `filterDecl = 'filter' NAME '{' NL {
+- [x] **Schritt 1: `grammatik.md`** — `filterDecl = 'filter' NAME '{' NL {
       filterEntry NL } '}'`, `filterEntry = [ 'except' ] selection`, und die
       Zeile bei den Deklarationen mitziehen.
-- [ ] **Schritt 2: `sprache.md`** — ein Abschnitt bei den Auswahlen, mit dem
+- [x] **Schritt 2: `sprache.md`** — ein Abschnitt bei den Auswahlen, mit dem
       Beispiel aus dem Entwurf und den drei Festlegungen: Menge heißt
       insgesamt, Gegenstände oder Flüssigkeiten, keine Verschachtelung.
-- [ ] **Schritt 3: `umsetzung.md`** — Merkmalstabelle und ein Abschnitt
+- [x] **Schritt 3: `umsetzung.md`** — Merkmalstabelle und ein Abschnitt
       „Filter-Vorlagen (seit dem Umsetzungstag)" mit dem, was beim Bauen
       auffiel.
-- [ ] **Schritt 4: `offene-punkte.md`** — die `except`-Lücke als erledigt
+- [x] **Schritt 4: `offene-punkte.md`** — die `except`-Lücke als erledigt
       oder, falls Aufgabe 6 sie nicht bestätigt hat, den Befund berichtigen.
-- [ ] **Schritt 5: `beispiele.md`** — ein Beispiel, das die Vorlage in zwei
+- [x] **Schritt 5: `beispiele.md`** — ein Beispiel, das die Vorlage in zwei
       Workern benutzt. Es muss laufen; abgeschrieben wird nur, was geprüft
       ist.
-- [ ] **Schritt 6:** committen.
+- [x] **Schritt 6:** committen.
 
 ---
 

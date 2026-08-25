@@ -308,3 +308,41 @@ sie morgens im selben Zustand vor.
 **Auslösen lässt sich das von überall:** aus einem Knopf auf der Anzeige, aus
 einem `on redstone_changed`, oder aus einem Ablauf, der auf die Uhrzeit
 wartet.
+
+---
+
+## 10. Dieselbe Auswahl an mehreren Stellen
+
+```
+filter erze {
+    tag:c/ores
+    item:deepslate_coal_ore
+    except item:ancient_debris
+}
+
+worker aus_der_grube {
+    from grube
+    to storage
+    filter erze
+}
+
+worker aus_der_kiste {
+    from sammelkiste
+    to storage
+    filter erze
+}
+
+fn aufraeumen() {
+    move erze from brecher to storage
+}
+```
+
+**Was in der Welt stehen muss:** Connectoren namens `grube`, `sammelkiste`
+und `brecher`.
+
+Zwei Worker und ein Ablauf meinen dieselben Sorten. Kommt eine Mod mit einem
+neuen Erz dazu, das der Tag nicht kennt, steht die Ergänzung an einer Stelle
+statt an dreien — und `except` nimmt an allen dreien dasselbe heraus.
+
+Ohne die Vorlage ginge das nicht einmal in zwei Zeilen: Ein Worker nimmt nur
+eine `filter`-Zeile, eine zweite würde stillschweigend übergangen.

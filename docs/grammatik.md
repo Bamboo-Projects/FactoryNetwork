@@ -39,7 +39,7 @@ findet.
 ```
 program     = { NL } { declaration { NL } } EOF
 
-declaration = workerDecl | groupDecl | multiblockDecl
+declaration = workerDecl | groupDecl | filterDecl | multiblockDecl
             | eventDecl  | displayDecl | fnDecl | onDecl
             | globalDecl
 ```
@@ -112,6 +112,18 @@ groupEntry  = 'members'  memberList
 memberList  = memberRef { ',' memberRef }
 memberRef   = NAME | NAMEPATTERN
 ```
+
+### Filter-Vorlage
+
+```
+filterDecl  = 'filter' NAME '{' NL { filterEntry NL } '}'
+
+filterEntry = [ 'except' ] selection
+```
+
+Dasselbe Wort wie die Worker-Angabe; unterschieden wird nach dem Ort. Eine
+Zeile ist für sich eine `selection` und darf deshalb ihr eigenes `except`
+enthalten — steht `except` dagegen am Zeilenanfang, gehört es zur Vorlage.
 
 ### Multiblock
 

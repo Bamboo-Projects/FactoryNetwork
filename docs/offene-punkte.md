@@ -87,6 +87,7 @@ Vorentscheidungen)
 | 3.7 | Ob das Geräteprofil dem Analysator etwas zu geben hat | E | `geraeteerkennung.md:340` | klein | — |
 | 3.8 | Ob der Netz-Reiter globale Werte ändern darf | E | `globale-werte.md:200` | klein | 2.1 |
 | 3.10 | **Der Editor bietet an, was nichts kann.** `crafting`, `world`, `network`, `workers` und `multiblocks` stehen an jeder Ziel- und Ausdrucksstelle zur Auswahl; ausgewertet wird allein `storage`. Wer `to crafting` schreibt, bekommt „Als Ziel taugt nur ein Name" — eine Meldung, die dem Vorschlag widerspricht, der sie ausgelöst hat. Dazu `power` an jeder Auswahlstelle, obwohl ein Strom-Worker sofort anhält | F | `Completions.java:60`, `:186`, `Parser.java:213` | klein | 2.2 und 1.1 |
+| 3.11 | **Die Anzeige, worauf sich ein Muster auflöst, gibt es nicht.** `sprache.md` verspricht sie an zwei Stellen — bei `except` („der Editor zeigt zu jedem Muster an, was es gerade trifft") und bei `maintain`, wo ohne sie nicht abzusehen ist, was man zugesagt hat. Beide Stellen sind inzwischen gekennzeichnet | F | `sprache.md` §4, §11 | mittel | — |
 | 3.9 | **`gerät.count(…)` auf einer Anzeige.** In einer Funktion geht es, auf einer Tafel steht `?`. Eine Anzeige rechnet seit dem 25.08., aber sie liest nur den Netzbestand und das Redstonesignal — ein Blick in eine Maschine ist ein Zugriff je Tafel und Sekunde | E | `DisplayValues.java` | klein | Entscheidung über die Kosten |
 
 ## 4. VS-Code-Erweiterung

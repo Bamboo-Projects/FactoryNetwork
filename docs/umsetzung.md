@@ -129,6 +129,7 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | | `global`: ein Wert, den alle Dateien sehen, mit Anzeige im Terminal |
 | Worker | `from`, `to`, `filter`, `maintain`, `rate`, `when`, `strategy`, `overflow` |
 | Auswahl | einzelne Gegenstände, Tags, Muster, `except` |
+| | `filter name { … }`: eine Auswahl mit Namen, überall verwendbar |
 | Flüssigkeiten | `move` und Worker, Bestand in Zellen, in Millibucket |
 | Speicher | Laufwerke mit zehn Plätzen, Zellen in vier Größen, Bestand in der Zelle |
 | | Regalfenster für Laufwerk und Schrank, Bestückung an der Front ablesbar |
@@ -407,6 +408,36 @@ und der erste Blick meldet nie. Er war grün, ohne den Fehler je fangen zu
 können. Mit `rate 8 per 20t` und einer Zwischenmessung liefert der Worker
 noch, während die Grundlinie längst steht; erst so schlug er fehl, und erst
 danach war seine grüne Farbe etwas wert.
+
+### Filter-Vorlagen (seit dem 25.08.)
+
+`filter erze { … }` gibt einer Auswahl einen Namen, und der steht überall,
+wo eine Auswahl steht — im Worker, in `move`, in `count`. Jede Zeile im Block
+legt dazu, eine Zeile mit `except` nimmt weg; erst alles zusammen, dann die
+Ausnahmen.
+
+**Die Sprache brauchte dafür weniger, als der Entwurf annahm.** `except` gab
+es schon. Neu sind nur der Name für eine Auswahl und die Vereinigung mehrerer
+— ein Worker nimmt genau eine `filter`-Zeile, eine zweite wäre stillschweigend
+übergangen worden.
+
+**`except` wirkte bis dahin nur im Worker.** Der Interpreter wertete
+`Expr.Except` als seine Grundlage aus und warf die Ausschlüsse weg; in `move`
+und `count` stand die Ausnahme da und tat nichts, obwohl `sprache.md` sie seit
+dem Entwurf zeigt. Gefunden beim Nachsehen für den Entwurf, repariert im
+selben Zug — beide brauchen dieselbe Stelle, weil sich eine Ausnahme erst
+nach dem Auflösen anwenden lässt.
+
+**Nur einer der Schalter war erschöpfend.** Der Plan rechnete mit fünf
+`switch` über `Decl`, die ein neuer Record unvollständig macht. Vier davon
+haben ein `default` — gebrochen ist nur `ProgramSize`. Die anderen vier
+mussten trotzdem angesehen werden: Ein `default`, das eine neue
+Deklarationsart verschluckt, ist kein Übersetzungsfehler, sondern eine
+Auskunft, die ausbleibt.
+
+**Ein unbekannter Vorlagenname hält den Worker an.** Der naheliegende Weg —
+eine leere Liste zurückgeben — hieße für ihn „kein Filter", und kein Filter
+heißt „alles": Ein Tippfehler im Namen hätte das ganze Lager umgezogen.
 
 ### Der Editor, eigener Strang
 

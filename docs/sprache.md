@@ -271,13 +271,69 @@ kein fertiger Staub, sondern ein Zwischenschritt der Verarbeitungskette. Wer
 item:*_dust except item:dirty_*
 ```
 
-Deshalb gehört `except` zur Auswahl und nicht in die Nachbesserung. Der Editor
-zeigt zu jedem Muster an, was es gerade trifft; ohne diese Anzeige ist ein
-Muster über zwanzigtausend Einträge nicht zu überblicken.
+Deshalb gehört `except` zur Auswahl und nicht in die Nachbesserung.
+
+> **Noch nicht gebaut:** die Anzeige, was ein Muster gerade trifft. Ohne sie
+> ist ein Muster über zwanzigtausend Einträge nicht zu überblicken — sie
+> steht als offener Punkt 3.11.
 
 **Auflösungszeitpunkt:** Muster werden beim Übersetzen gegen die Registry
 aufgelöst, nicht bei jeder Ausführung. Ein Muster über zwanzigtausend Einträge
 darf den Server nicht pro Tick beschäftigen.
+
+### Eine Auswahl mit einem Namen
+
+Dieselbe Auswahl steht selten nur an einer Stelle. `filter` gibt ihr einen
+Namen:
+
+```
+filter ore_factory {
+    tag:c/ores
+    item:deepslate_coal_ore
+    except item:ancient_debris
+}
+```
+
+Jede Zeile ohne `except` legt dazu, jede mit nimmt weg. **Erst alles
+zusammen, dann die Ausnahmen** — die Reihenfolge der Zeilen ist damit
+gleichgültig. Eine einzelne Zeile darf für sich schon eine vollständige
+Auswahl sein, also auch `tag:c/ores except item:ancient_debris`.
+
+Der Name steht überall, wo eine Auswahl steht:
+
+```
+worker erz_holen {
+    from grube
+    to storage
+    filter ore_factory
+}
+
+move 64 ore_factory from brecher to storage
+if storage.count(ore_factory) < 500 { … }
+```
+
+Damit kann eine Vorlage zwei Dinge, die eine geschriebene Auswahl nicht kann:
+Sie steht an mehreren Stellen, ohne wiederholt zu werden, und sie legt
+mehrere Auswahlen zusammen — ein Worker nimmt nur **eine** `filter`-Zeile.
+
+Drei Festlegungen:
+
+- **Eine Menge davor heißt insgesamt.** `64 ore_factory` sind 64 zusammen,
+  nicht 64 je Art — genau wie `64 tag:c/ores`. Bei `maintain` bleibt es je
+  Art, aus demselben Grund wie dort.
+- **Gegenstände oder Flüssigkeiten, nie beides.** Woran es erkannt wird: an
+  den Zeilen. Gemischt ist ein Fehler beim Übernehmen — `move` schickt Wasser
+  und Steine über verschiedene Wege, und eine Vorlage mit beidem wäre an
+  jeder Stelle etwas anderes.
+- **Keine Vorlage in einer Vorlage.** Wer die gemeinsamen Zeilen in zweien
+  braucht, schreibt sie in beide. Ineinandergelegte Vorlagen können sich
+  gegenseitig enthalten, und dann wäre nicht mehr zu sagen, was sie
+  auswählen.
+
+Heißt eine Vorlage wie ein Gerät im Netz, **geht die Vorlage vor**, und der
+Editor warnt. Gerätenamen kommen aus der Beschriftungspistole; hinge die
+Bedeutung eines Programms daran, wie jemand später einen Connector benennt,
+wäre es aus der Ferne nicht mehr zu lesen.
 
 ---
 
@@ -515,7 +571,7 @@ worker fuel_supply {
 ```
 from <gerät | gruppe | storage | crafting>    Pflicht
 to <gerät | gruppe | storage>                 Pflicht
-filter <auswahl>                              sonst: alles
+filter <auswahl | vorlage>                    sonst: alles
 maintain <menge>                              sonst: schieben, was geht
 rate <menge> per <zeit>                        sonst: so schnell es geht
 when <bedingung>                              sonst: immer
@@ -554,9 +610,9 @@ Drei Festlegungen, ohne die es mehrdeutig ist:
   64 in *jedem* Generator. Bei `to storage` fallen beide Lesarten zusammen,
   weil es ein Ziel ist.
 - **Pro Gegenstandsart, nicht insgesamt.** `filter tag:c/coals` mit
-  `maintain 64` hält 64 von jeder Kohleart. Der Editor zeigt an, worauf sich
-  das Muster auflöst — ohne diese Anzeige wäre nicht abzusehen, was man
-  gerade zugesagt hat.
+  `maintain 64` hält 64 von jeder Kohleart. Was das Muster trifft, sollte der
+  Editor anzeigen — diese Anzeige gibt es noch nicht (offener Punkt 3.11),
+  und ohne sie ist nicht abzusehen, was man gerade zugesagt hat.
 - **Nur auffüllen, nie abziehen.** Liegen 300 statt 256 im Lager, holt der
   Worker die 44 nicht zurück. Wer das will, schreibt einen zweiten Worker in
   die Gegenrichtung.
