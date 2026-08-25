@@ -109,7 +109,7 @@ Vorentscheidungen)
 | 4.2 | **Die Mod hat keine Konfiguration.** Weder Server- noch Clientteil | F | `entscheidungen.md:2313` | mittel | Voraussetzung für 4.1 und 1.12 |
 | 4.3 | ~~Projektweite Symbole~~ — **fertig**, in VS Code **und** im Spiel | | | | |
 | 4.4 | Die Logik steht zweimal da, gehalten durch `check.js` und den Export-Test | Z | `entscheidungen.md:2114` | — | bewusst |
-| 4.5 | **In der `on`-Kopfzeile werden die Ereignisse nicht vorgeschlagen.** Nach `on ` bieten beide Editoren die Deklarationswörter an. Die vier eingebauten stehen seit dem 25.08. in `BuiltinEvents` und werden bei `await` und `emit` vorgeschlagen — die Kopfzeile eines `on` erkennt bisher keiner von beiden | F | `Completions.java`, `extension.js` | klein | — |
+| 4.5 | ~~In der `on`-Kopfzeile werden die Ereignisse nicht vorgeschlagen~~ — **überholt.** Beide Editoren tun es längst: `check.js` prüft es für VS Code, und für den Editor im Spiel steht der Fall jetzt als Test in `CompletionsTest`. Die Zeile war stehengeblieben | | `CompletionsTest`, `check.js` | | |
 
 ## 5. Blöcke und Welt
 

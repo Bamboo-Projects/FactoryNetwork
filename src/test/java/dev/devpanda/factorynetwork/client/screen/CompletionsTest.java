@@ -94,6 +94,19 @@ class CompletionsTest {
     }
 
     @Test
+    @DisplayName("In der on-Kopfzeile stehen die Ereignisse und keine Deklarationen")
+    void theOnHeaderOffersEvents() {
+        List<String> shown = at("on ");
+
+        assertTrue(shown.contains("device_output"), () -> "device_output fehlt: " + shown);
+        assertTrue(shown.contains("redstone_changed"),
+                () -> "redstone_changed fehlt: " + shown);
+        assertFalse(shown.contains("worker"),
+                () -> "hinter on steht kein Deklarationswort: " + shown);
+        assertFalse(shown.contains("global"), () -> shown.toString());
+    }
+
+    @Test
     @DisplayName("Nach on stehen die Ereignisse")
     void afterOnTheEventsAreOffered() {
         List<String> shown = at("on ");
