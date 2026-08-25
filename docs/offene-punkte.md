@@ -204,7 +204,7 @@ Vorentscheidungen)
 
 | # | Was | Status | Wo | Größe |
 |---|---|---|---|---|
-| 6.1 | ~~Handbuch~~ — **dreizehn Seiten** (25.08.). Multiblocks (`anlagen`) und Abläufe (`ablaeufe`) standen längst; „Sprache im Detail" ist jetzt die **Referenzseite**, und die wird aus `Signatures` erzeugt, damit sie nicht auseinanderläuft. Weitere Seiten kommen mit dem, was noch gebaut wird | | `guide/referenz.md`, `GuideReferenceTest` | |
+| 6.1 | ~~Handbuch~~ — **vierzehn Seiten** (26.08.). „Sprache im Detail" ist die **Referenzseite** und wird aus `Signatures` erzeugt, damit sie nicht auseinanderläuft; neu dazu ist `listen.md`. Alle Beispiele im Handbuch werden übersetzt (`DocExamplesTest`) — die Prüfung nimmt seit dem 26.08. auch `const` und Vorlagen-Deklarationen mit und fand dabei einen Fehler | | `guide/listen.md`, `DocExamplesTest` | |
 | 6.2 | ~~Lizenzdatei~~ — **fertig.** MIT, Copyright 2026 DevPanda (Florian Richter). Der Entwurf ist aufgegangen und entfallen | | `LICENSE` | |
 | 6.3 | ~~Ob die Hilfe im Spiel ins Buch wandert~~ — **entschieden: nein, nebeneinander.** Die Griffliste beantwortet „was steht hier", das Buch „wie funktioniert das" | | `entscheidungen.md` | |
 | 6.4 | ~~WorkerRuntime-Javadoc~~ — **berichtigt** | | | |
@@ -241,9 +241,11 @@ Energiezellen im Laufwerk.
 ~~**1. Der Controller-Multiblock** (5.1).~~ **Gebaut am 25.08.** Die 384
 Geräte je Netz sind keine Grenze mehr.
 
-**1. Weitere Handbuchseiten** (6.1). Die Anbindung steht, die ersten Seiten
-auch. Schreibarbeit ohne Risiko — und das, was die Mod für jemanden von außen
-zugänglich macht.
+**1. Weitere Handbuchseiten** (6.1). Vierzehn Seiten stehen; `listen.md` kam
+am 26.08. dazu. Schreibarbeit ohne Risiko — und das, was die Mod für jemanden
+von außen zugänglich macht. Was noch fehlt, zeigt am ehesten ein Blick auf
+`sprache.md`: Was dort ein eigenes Kapitel hat und im Handbuch nur nebenbei
+vorkommt, ist ein Kandidat.
 
 ~~**2. Autocrafting**~~ (2.10). **Fertig am 25.08.** Der letzte ausgegraute
 Reiter ist keiner mehr, und `crafting` steht als Quelle in beiden Editoren.

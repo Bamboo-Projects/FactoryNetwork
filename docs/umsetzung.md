@@ -164,7 +164,7 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | | Projekt aus mehreren Dateien, Ordner im Namen: `erz/brecher.mf` |
 | | Anzeigenwand mit `scale`: große Schrift statt vieler Zeilen |
 | Anzeigen | Am Block und im Terminal, Knöpfe starten Abläufe |
-| Prüfung | 416 Einheitstests, 248 GameTests |
+| Prüfung | 417 Einheitstests, 248 GameTests |
 
 ## 3. Was noch nicht läuft
 
