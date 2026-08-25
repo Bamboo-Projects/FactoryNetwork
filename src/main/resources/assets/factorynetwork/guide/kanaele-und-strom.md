@@ -23,6 +23,10 @@ Zwanzig Kisten am Ende eines langen Strangs belegen also zwanzig Kanäle auf
 der ganzen Strecke — und das siebzehnte Gerät bekommt nichts mehr, obwohl bei
 ihm hinten reichlich Platz wäre.
 
+**Sechs Seiten mal 64 macht 384 Geräte je Netz.** Reicht das nicht, setz
+einen **Controller-Anbau** neben den Controller: Er bringt sechs weitere
+Seiten mit und kostet selbst keinen Kanal. Mehr dazu unter *Blöcke*.
+
 ### Was einen Kanal kostet
 
 Was am Netz **etwas tut**, kostet einen:

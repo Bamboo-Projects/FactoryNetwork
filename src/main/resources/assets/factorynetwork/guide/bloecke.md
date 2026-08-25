@@ -31,6 +31,22 @@ viele ohne freien Kanal dastehen.
 **Er allein reicht nicht.** Lagern kann das Netz erst mit einem Laufwerk,
 rechnen erst mit einem Serverschrank.
 
+## Controller-Anbau
+
+Mehr Seiten für Kabel, und sonst nichts. Sechs Seiten am Controller, je ein
+Strang, ein dichtes Kabel mit 64 Kanälen — das sind 384 Geräte. Wer mehr
+braucht, setzt Anbauten daneben; jeder bringt sechs eigene Seiten mit, und an
+jede kommt ein Strang.
+
+**Er muss den Controller berühren** — unmittelbar oder über andere Anbauten.
+Ein Anbau am Ende eines Kabels tut nichts: Sonst wäre er ein Kanalvermehrer
+zum Hinstellen, und die Kanalgrenze bedeutete nichts mehr.
+
+Er hält nichts: kein Programm, keinen Speicher, keinen Strom. Der Controller
+bleibt genau einer je Netz.
+
+*Kostet: keinen Kanal, 1 FE/t.*
+
 ## Terminal
 
 Hier schreibst du den Code und siehst, was das Netz tut. Es muss **direkt an

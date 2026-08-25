@@ -142,6 +142,7 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | | `filter power`: aus dem Netz in eine Maschine und aus einer Maschine ins Netz |
 | | Bei Knappheit bekommt der Worker mit der kleinen `priority` seine ganze Rate |
 | | Energiezellen im Laufwerk, vier Größen — der Vorrat wächst mit ihnen |
+| Ausbau | Controller-Anbau: sechs weitere Seiten für Kabelstränge je Block |
 | | Ein laufender Ablauf belegt einen Platz, der Rest stellt sich an |
 | | Zelle in der Hand ans Laufwerk klicken setzt sie ein, leere Hand nimmt die letzte heraus |
 | Werkzeuge | Beschriftungspistole, Netzanalysator mit Sicht durch Wände |
@@ -154,7 +155,7 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | Netzwerk | Graph über Kabel, Speicher schlüsselbasiert, Kanäle je Strang |
 | Editor | Syntaxfarben, Fehler beim Tippen, Vervollständigung nach Stelle |
 | Anzeigen | Am Block und im Terminal, Knöpfe starten Abläufe |
-| Prüfung | 349 Einheitstests, 203 GameTests |
+| Prüfung | 349 Einheitstests, 207 GameTests |
 
 ## 3. Was noch nicht läuft
 
@@ -171,17 +172,6 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
   von vierundsechzig bis viertausendsechsundneunzig. Sie sind gesetzt, nicht
   hergeleitet — wie sie sich anfühlen, zeigt erst das Spielen. Die
   Begründungen stehen in `entscheidungen.md` unter „Der Serverschrank".
-- **Der Controller-Multiblock** — entschieden am 25.08., gebaut ist er noch
-  nicht. Der Controller hat sechs Seiten. An jeder hängt höchstens ein Strang,
-  ein dichtes Kabel trägt vierundsechzig Kanäle — macht 384 Geräte je Netz.
-  Das reicht heute und soll ausbaubar sein („haben ist besser als brauchen").
-  Ausgebaut wird über einen **zweiten Blocktyp**: Der Controller bleibt genau
-  einer und hält weiterhin Programm, Speicherindex, laufende Abläufe und
-  Stromvorrat; ein Anbaublock steuert nur Außenflächen für Kabel bei und hält
-  nie etwas. Damit kann die Master-Rolle nicht wandern — und mit ihr nicht die
-  Programmdatei, die nach der Position des Controllers heißt und an der die
-  Brücke zu VS Code hängt. Die verworfenen Wege stehen in `entscheidungen.md`
-  unter „Der Controller bleibt ein Block".
 - **Autocrafting.** Der letzte ausgegraute Reiter.
 - **Chemikalien** aus Mekanism. Die Schreibweise steht seit dem Entwurf.
 
@@ -384,6 +374,27 @@ Quelle, gerendert wird im Spiel.
 **Und beide Editoren kennen jetzt das ganze Projekt.** Die Vervollständigung
 im Spiel las bisher nur die offene Datei — dabei teilen alle Dateien einen
 Namensraum. Die VS-Code-Erweiterung liest die Nachbardateien ebenfalls.
+
+### Der Controller-Anbau (seit dem 25.08.)
+
+Der Controller hat sechs Seiten, an jeder hängt ein Strang, ein dichtes Kabel
+trägt vierundsechzig Kanäle — 384 Geräte je Netz. Der **Anbau** bringt sechs
+weitere Seiten mit, und die Suche im Graphen beginnt seither nicht mehr an
+einem Knoten, sondern an allen Blöcken der Gruppe.
+
+Das ist die ganze Änderung am Netz: Wer eine Wurzel mehr hat, hat sechs
+Stränge mehr, und alles Weitere — Kanäle je Kabelstück, Farben, Router —
+rechnet unverändert.
+
+**Der Anbau muss den Controller berühren.** Diese Frage stand im Entwurf
+nicht und ist die wichtigste: Ließe sich ein Anbau ankabeln, wäre er ein
+beliebig oft setzbarer Kanalvermehrer, sechs neue Seiten für einen Block
+irgendwo im Gelände, und die Kanalgrenze bedeutete nichts mehr. Der Test dazu
+war der einzige, der von Anfang an grün stand — und muss es bleiben.
+
+Er hält nichts, hat keine BlockEntity und kostet keinen Kanal. Strom kostet er
+wie Laufwerk und Router: Ein Ausbau, der nichts kostet, ist keine
+Entscheidung.
 
 ### Die Stromverteilung (seit dem 25.08.)
 

@@ -32,6 +32,10 @@ Vorentscheidungen)
 >
 > Die Zeilen unten sind entsprechend angepasst.
 
+> **Später am 25.08.:** Auch der Controller-Anbau (5.1) steht. Er berührt
+> den Controller, bringt sechs Seiten mit, kostet keinen Kanal und 1 FE/t;
+> über ein Kabel angeschlossen tut er nichts.
+
 > **Später am 25.08.:** Die Stromverteilung (2.2) ist gebaut — beide
 > Richtungen, die Reihenfolge nach `priority`, die Energiezellen und die
 > Abgabe im Netz-Reiter. Dabei fiel auf, dass `priority` bis dahin überhaupt
@@ -131,7 +135,7 @@ Vorentscheidungen)
 
 | # | Was | Status | Wo | Größe | Blockiert durch |
 |---|---|---|---|---|---|
-| 5.1 | **Controller-Multiblock. Entschieden am 25.08.:** Weg (3) — der Controller bleibt genau ein Block und hält weiterhin alles; ein Anbaublock steuert nur Außenflächen für Kabel bei und hält nie etwas. Die Master-Rolle steht am Blocktyp fest, also kann sie nicht wandern. Gebaut ist davon nichts | F | `entscheidungen.md` „Der Controller bleibt ein Block" | groß | — |
+| 5.1 | ~~Controller-Multiblock~~ — **fertig** (25.08.). Der Controller bleibt genau ein Block; der Anbau steuert Seiten bei und hält nie etwas. Er muss den Controller berühren, kostet keinen Kanal und 1 FE/t | | `entscheidungen.md` „Der Controller bleibt ein Block" | | |
 | 5.2 | Ein eigener Speicherblock | F | `umsetzung.md:370` | mittel | — |
 | 5.3 | Anzeigenwand: die Schrift wächst nicht mit der Wand | F | `umsetzung.md:156` | mittel | zeigt erst das Spielen |
 | 5.4 | Die Zahlen an den Serverbauteilen sind gesetzt, nicht hergeleitet | E | `umsetzung.md:186` | klein | Spielprüfung |
@@ -174,15 +178,14 @@ Alles andere ist Arbeit.
 versorgt ihre Maschinen jetzt selbst, und der Vorrat wächst mit den
 Energiezellen im Laufwerk.
 
-**1. Der Controller-Multiblock** (5.1). Entschieden am 25.08., gebaut ist kein
-Block. Ohne ihn ist bei 384 Geräten Schluss, und der Anbaublock ist die
-Antwort, die keine Zustandswanderung braucht.
+~~**1. Der Controller-Multiblock** (5.1).~~ **Gebaut am 25.08.** Die 384
+Geräte je Netz sind keine Grenze mehr.
 
-**2. Weitere Handbuchseiten** (6.1). Die Anbindung steht, die ersten Seiten
+**1. Weitere Handbuchseiten** (6.1). Die Anbindung steht, die ersten Seiten
 auch. Schreibarbeit ohne Risiko — und das, was die Mod für jemanden von außen
 zugänglich macht.
 
-**3. Autocrafting** (2.9, 2.10). Der letzte ausgegraute Reiter, und der
+**2. Autocrafting** (2.9, 2.10). Der letzte ausgegraute Reiter, und der
 Grund, warum `crafting` als Quelle noch nirgends steht.
 
 **Kleines mit großer Wirkung:** `list` auf einer Anzeige (6.10) ist seit 1.16

@@ -2563,15 +2563,21 @@ abgebaut, muss ein anderer übernehmen, und beim nächsten Laden muss die Welt
 wissen, welcher es war — also doch eine gespeicherte Ankerposition, mit
 allem, was daran hängt.
 
-### Offen für den Bau
+### Beim Bau beantwortet (25.08.)
 
-- **Ob der Anbaublock selbst einen Kanal kostet.** Laufwerk und Serverschrank
-  tun es (siehe „Wer einen Kanal kostet"); der Anbau schafft Kanäle, statt
-  welche zu verbrauchen, und fällt damit vermutlich heraus.
-- **Ob es eine Obergrenze gibt.** Sechs Seiten je Block, und jeder Anbau
-  bringt neue — irgendwann ist die Zahl der Stränge nur noch von der Bauform
-  begrenzt.
-- **Ob der Anbau Strom und Kabel durchreicht** oder nur Fläche ist.
+- **Einen Kanal kostet er nicht.** Er schafft welche, statt welche zu
+  verbrauchen — die Vermutung von oben trägt.
+- **Strom kostet er: 1 FE/t**, wie Laufwerk und Router. Ein Ausbau, der nichts
+  kostet, ist keine Entscheidung.
+- **Eine Obergrenze gibt es nicht.** Begrenzt wird das von der Bauform und vom
+  Strombedarf, nicht von einer Zahl im Code.
+- **Er ist nur Fläche.** Kabel verbindet er nicht, Strom nimmt er nicht an.
+  Zwei Anbauten nebeneinander bringen Seiten und keinen Draht.
+- **Er muss den Controller berühren**, unmittelbar oder über andere Anbauten.
+  Diese Frage stand oben nicht und ist die wichtigste: Ließe sich ein Anbau
+  ankabeln, wäre er ein beliebig oft setzbarer Kanalvermehrer — sechs neue
+  Seiten für einen Block irgendwo im Gelände, und die Kanalgrenze bedeutete
+  nichts mehr.
 
 ---
 
