@@ -32,6 +32,16 @@
     ],
     "description": "Eine Funktion"
   },
+  "Filter-Vorlage": {
+    "prefix": "filter",
+    "body": [
+      "filter ${1:name} {",
+      "    ${2:tag:c/ores}",
+      "    except ${3:item:ancient_debris}",
+      "}"
+    ],
+    "description": "Eine Auswahl mit einem Namen, die überall steht, wo eine Auswahl steht"
+  },
   "Ereignisblock": {
     "prefix": "on",
     "body": [

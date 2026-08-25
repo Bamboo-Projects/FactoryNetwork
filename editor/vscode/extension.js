@@ -48,6 +48,7 @@ const DECLARED_NAMES = [
     { keyword: 'fn', pattern: /^fn\s+([A-Za-z_][A-Za-z0-9_]*)/ },
     { keyword: 'worker', pattern: /^worker\s+([A-Za-z_][A-Za-z0-9_]*)/ },
     { keyword: 'group', pattern: /^group\s+([A-Za-z_][A-Za-z0-9_]*)/ },
+    { keyword: 'filter', pattern: /^filter\s+([A-Za-z_][A-Za-z0-9_]*)/ },
     { keyword: 'multiblock', pattern: /^multiblock\s+([A-Za-z_][A-Za-z0-9_]*)/ },
     { keyword: 'event', pattern: /^event\s+([A-Za-z_][A-Za-z0-9_]*)/ },
     { keyword: 'display', pattern: /^display\s+([A-Za-z_][A-Za-z0-9_]*)/ },
@@ -332,6 +333,11 @@ function completionsFor(where, symbols) {
         return [];
     }
     switch (slot.kind) {
+        case 'SELECTION':
+            // Gegenstände und Tags kennt nur das laufende Spiel. Was die
+            // Erweiterung beisteuern kann, sind die Filter-Vorlagen des
+            // Projekts — und die sind an dieser Stelle oft das Gemeinte.
+            return symbolItems(symbols, ['filter'], vscode.CompletionItemKind.Variable);
         case 'STRATEGY':
             return table.strategies.map(name =>
                 item(name, vscode.CompletionItemKind.EnumMember));

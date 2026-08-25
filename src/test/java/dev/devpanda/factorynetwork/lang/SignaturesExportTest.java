@@ -133,8 +133,8 @@ class SignaturesExportTest {
         root.add("builtinEvents", builtinEvents);
 
         JsonArray declarations = new JsonArray();
-        for (String word : new String[] {"worker", "group", "multiblock", "event", "display",
-                                         "fn", "on", "global"}) {
+        for (String word : new String[] {"worker", "group", "filter", "multiblock", "event",
+                                         "display", "fn", "on", "global"}) {
             declarations.add(word);
         }
         root.add("declarations", declarations);

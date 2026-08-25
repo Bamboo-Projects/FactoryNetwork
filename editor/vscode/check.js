@@ -204,6 +204,15 @@ check('Nach on die fünf Ereignisse', complete(['on ']).sort(),
     ['device_changed', 'device_offline', 'device_online', 'device_output',
         'redstone_changed']);
 contains('Nach on kein worker', ['on '], 'worker', false);
+
+// Filter-Vorlagen: eine Deklaration mehr, ein Block mit except, und ihr Name
+// überall dort, wo eine Auswahl steht.
+contains('Auf oberster Ebene gibt es filter', [''], 'filter', true);
+contains('In einer Vorlage steht except', ['filter erze {', '    '], 'except', true);
+contains('In einer Vorlage steht kein worker', ['filter erze {', '    '], 'worker', false);
+contains('Nach filter im Worker steht die Vorlage',
+    ['filter erze {', '    tag:c/ores', '}', '', 'worker holt {', '    from grube',
+        '    to storage', '    filter '], 'erze', true);
 contains('Nach on auch das eigene Ereignis',
     ['event Fertig(nummer: Int)', '', 'on '], 'Fertig', true);
 contains('await bietet die eingebauten Ereignisse',

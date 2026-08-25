@@ -530,6 +530,7 @@
   "declarations": [
     "worker",
     "group",
+    "filter",
     "multiblock",
     "event",
     "display",
