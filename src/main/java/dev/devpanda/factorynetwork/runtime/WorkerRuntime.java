@@ -986,10 +986,14 @@ public final class WorkerRuntime {
     /**
      * Wertet {@code when} aus.
      *
-     * <p>Erlaubt sind nur beobachtbare Zustände. Diese Fassung versteht
-     * Vergleiche über den Bestand im Speicher — mehr braucht der erste Schnitt
-     * nicht, und alles Weitere ohne Beobachtbarkeit einzubauen hieße, genau
-     * die Polling-Schleife zurückzuholen, gegen die Worker erfunden wurden.
+     * <p><b>Mit dem echten Interpreter</b>, sobald ein Host da ist: Damit gilt
+     * hier dasselbe wie überall sonst in der Sprache — Texte, globale Werte,
+     * Gerätezustände. Ohne Host bleibt der alte Weg, Zahl gegen Zahl; das
+     * betrifft Prüfungen ohne Welt.
+     *
+     * <p>Erlaubt sind trotzdem nur beobachtbare Zustände: Eine Bedingung, für
+     * die jemand eine Schleife schreiben müsste, holte genau das Polling
+     * zurück, gegen das Worker erfunden wurden.
      */
     private boolean conditionHolds(Decl.Worker worker, WorkerState state) {
         Decl.Worker.Entry when = worker.entry(Decl.Worker.Entry.Kind.WHEN);
