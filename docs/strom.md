@@ -38,7 +38,7 @@ worker versorgung {
     from network
     to crusher_1
     filter power
-    rate 40 per tick
+    rate 40 per 1t
     priority 1
 }
 ```
@@ -134,51 +134,28 @@ derselbe Zustand wie ein Gegenstands-Worker vor einer vollen Kiste.
 
 ---
 
-## 5. Die Grenze läuft über den Kabelpfad
+## 5. Keine Grenze über den Kabelpfad
 
-Ein Transportlimit gibt es heute nur für die **Aufnahme**: `InternalBuffer`
-mit `Power.MAX_INPUT`. Für die Abgabe kommt es aus derselben Rechnung wie die
+**Verworfen am 25.08.** Hier stand ein Transportlimit: Jeder Strom-Worker
+meldet seine `rate` auf seinem Kabelpfad an, `capacityAt` fragt je Segment,
+wie viel durchpasst, und wer nicht durchpasst, bekommt eine Meldung beim
+Übernehmen. Dichte Kabel hätten damit eine zweite Bedeutung bekommen — mehr
+Kanäle und mehr Strom.
+
+Der Einwand des Projektinhabers: **Warum überhaupt begrenzen?** Er trägt. Eine
+Kabelgrenze wäre eine *zweite* Knappheit neben `priority`, für dieselbe
+Ressource. Wer zu wenig Strom bekommt, müsste dann herausfinden, ob es am
+Vorrat lag oder am Kabel — zwei Ursachen für dasselbe Symptom, und die zweite
+sieht man nirgends.
+
+**Es gibt damit genau eine Stromgrenze: die Aufnahme.** `Power.MAX_INPUT` im
+`InternalBuffer` deckelt, was je Tick in den Controller läuft; die gibt es
+schon. Kabel tragen beliebig viel, Kabelstufen entscheiden allein über
 Kanäle.
 
-`FactoryGraph` rechnet bereits pfadweise: Jedes Gerät zieht auf seinem **ganzen
-Weg** zum Controller einen Kanal (`channelLoad` je Knoten), und `capacityAt`
-sagt je Kabelsegment, wie viel dort durchpasst — dünn wenig, dicht viel. Der
-Weg ist also schon berechnet.
-
-**Strom läuft huckepack darauf.** Neben `channelLoad` tritt ein `powerLoad`
-je Knoten, in FE je Tick. Ein Strom-Worker addiert seine `rate` auf jedes
-Kabel seines Weges; überschreitet er dort die Kapazität, wird er gedeckelt.
-
-Damit bekommen dichte Kabel eine zweite Bedeutung: mehr Kanäle **und** mehr
-Strom. Wer eine Halle mit vielen Maschinen versorgt, zieht eine dicke Leitung
-dorthin — nicht weil eine Regel es verlangt, sondern weil sonst nicht genug
-ankommt.
-
-### Angemeldet wird beim Übernehmen, geflossen wird je Tick
-
-Hier steckt ein Widerspruch, der sonst der Implementierung überlassen bliebe:
-Die Pfadrechnung läuft beim **Neubau** des Netzes, die Verteilung nach
-`priority` entscheidet sich **je Tick**. Beides gegeneinander zu rechnen geht
-nicht — entweder die Kapazität ist fest vergeben, dann ist `priority`
-bedeutungslos, weil nie mehr angemeldet wird als passt; oder sie wird je Tick
-geprüft, dann läuft die Pfadrechnung sechzigmal in der Sekunde.
-
-**Entschieden: angemeldet wird statisch, geflossen wird frei.**
-
-Beim Übernehmen eines Programms meldet jeder Strom-Worker seine `rate` auf
-seinem Pfad an. Passt die Summe nicht durch ein Kabel, ist das eine **Meldung
-beim Übernehmen** — dieselbe Stelle, an der auch ein fehlender Kanal auffällt,
-und dieselbe Erfahrung: Man sieht es beim Bauen, nicht beim Suchen.
-
-Was dann tatsächlich fließt, ist je Tick frei: Ruft ein Worker seine Rate
-nicht ab, weil seine Maschine voll ist, darf ein anderer über dasselbe Kabel
-mehr ziehen — bis zu seiner eigenen angemeldeten Rate. Es entsteht kein
-Anspruch auf ungenutzte Kapazität, und niemand rechnet Pfade nach.
-
-Die Pfadrechnung bleibt damit dort, wo sie heute ist: beim Neubau und beim
-Übernehmen.
-
----
+Was damit aus diesem Entwurf fällt: die Pfadrechnung für Strom, die Anmeldung
+beim Übernehmen und jeder zweite Zahlensatz am Kabel. Der Preis, offen
+benannt: Ein einzelnes dünnes Kabel versorgt eine beliebig große Fabrik.
 
 ## 6. Der Vorrat: Energiezellen im Laufwerk
 
@@ -240,12 +217,11 @@ als einer, der wartet — die Regel von 2026-08-22 gilt unverändert.
   in ihrem eigenen Puffer liegt, und laufen daraus weiter. Das ist
   wahrscheinlich richtig — aber es heißt, dass ein Stromausfall im Netz an den
   Maschinen erst verzögert ankommt.
-- **Ob die Abgabe den Wiederanlauf verzögern darf.** `Power.restartThreshold`
-  verlangt einen Vorrat, bevor das Netz hochfährt. Wenn gleichzeitig Strom
-  abfließt, könnte es diesen Punkt nie erreichen. Vermutlich muss die Abgabe
-  im Zustand `OFF` und `BOOTING` ruhen — das steht oben schon so, aber der
-  Fall „Netz füllt sich langsam, während Maschinen ziehen" ist noch nicht
-  durchgerechnet.
-- **Ob `rate ... per tick` überhaupt die richtige Einheit ist.** Bei
-  Gegenständen ist `rate 64 per 5s` üblich, bei Strom ist FE/Tick die Einheit,
-  in der jede Maschine spricht. Vielleicht braucht es beides.
+- ~~Ob die Abgabe den Wiederanlauf verzögern darf.~~ **Beantwortet am
+  25.08.:** Nein. Bei `OFF` und `BOOTING` fließt nichts ab, also kann das Netz
+  seinen `restartThreshold` immer erreichen. Der Fall „Netz füllt sich
+  langsam, während Maschinen ziehen" tritt nicht ein.
+- ~~Ob `rate ... per tick` die richtige Einheit ist.~~ **Entschieden am
+  25.08.:** `rate 40 per 1t`. `1t` ist eine gültige Dauer, die Grammatik kann
+  es heute; ein eigenes Wort `tick` wäre eine zweite Schreibweise für dieselbe
+  Sache und zöge `per second` nach sich.

@@ -2568,3 +2568,158 @@ allem, was daran hängt.
   bringt neue — irgendwann ist die Zahl der Stränge nur noch von der Bauform
   begrenzt.
 - **Ob der Anbau Strom und Kabel durchreicht** oder nur Fläche ist.
+
+---
+
+## Die Entscheidungsrunde vom 25.08. (2026-08-25)
+
+An einem Abend durchgesprochen, was auf `offene-punkte.md` als **E** stand.
+Hier steht, was entschieden wurde und warum — die Zeilen dort tragen von nun
+an ein **F** oder ein **Z** und keine Frage mehr.
+
+### Strom: drei Punkte bestätigt, einer gekippt
+
+**Bestätigt: Knappheit strikt nach `priority`.** Kleine Zahl zuerst, jeder bis
+zu seiner `rate`, und wer leer ausgeht, geht leer aus. Innerhalb eines
+Workers wird nicht gedeckelt — eine Maschine, die 40 FE will und 25 bekommt,
+arbeitet langsamer, wie bei FE-Maschinen üblich.
+
+**Bestätigt: `power` wird ein Schlüsselwort.** Strom hat keine Sorten;
+`power:` mit leerem Rest wäre eine Lüge über die Form. Wer seinen Connector
+`power` nennt, schreibt ihn in Rückstriche.
+
+**Bestätigt: Eigenbedarf zuerst, Abgabe nur im Zustand `RUNNING`.** Ein Netz,
+das sich abschaltet, während es Maschinen füttert, wäre absurd; ein Netz, das
+hochfährt, versorgt niemanden. Die Abgabe zählt nicht in `draw` — sie ist
+Durchleitung und keine Bereitschaft. **Damit ist auch der offene Punkt 2.3
+beantwortet:** Der Fall „Netz füllt sich langsam, während Maschinen ziehen"
+kann nicht eintreten, weil bei `OFF` und `BOOTING` nichts abfließt.
+
+**Gekippt: die Transportgrenze über den Kabelpfad.** Der Entwurf sah vor,
+dass jeder Strom-Worker seine Rate auf seinem Pfad anmeldet und ein zu dünnes
+Kabel beim Übernehmen gemeldet wird — Symmetrie zu den Kanälen, und dichte
+Kabel hätten eine zweite Bedeutung bekommen.
+
+Der Einwand des Projektinhabers: **Warum überhaupt begrenzen?** Er trägt.
+Eine Kabelgrenze wäre eine *zweite* Knappheit neben `priority`, für dieselbe
+Ressource. Wer zu wenig Strom bekommt, müsste dann erst herausfinden, ob es
+am Vorrat lag oder am Kabel — zwei Ursachen für dasselbe Symptom, und die
+zweite sieht man nirgends.
+
+**Es gibt damit genau eine Stromgrenze: die Aufnahme** in den Controller
+(`Power.MAX_INPUT` im `InternalBuffer`), und die gibt es schon. Kabel tragen
+beliebig viel; Kabelstufen entscheiden allein über Kanäle. Aus dem Entwurf
+fallen die Pfadrechnung für Strom und die Meldung beim Übernehmen. Der Preis,
+offen benannt: Ein einzelnes dünnes Kabel versorgt eine beliebig große
+Fabrik.
+
+**Die Rate bleibt `rate 40 per 1t`** (2.4). `1t` ist eine gültige Dauer, die
+Grammatik kann es heute. Ein eigenes Wort `tick` wäre eine zweite
+Schreibweise für dieselbe Sache und zöge sofort die Frage nach `per second`
+nach sich. In `strom.md` steht an einer Stelle `per tick` — das ist eine
+Berichtigung im Entwurf, keine Sprachänderung.
+
+### Sprache: sechs Formen, die kommen
+
+**Die JEI-Schreibweise wird angenommen** (1.13). `item:mekanism:steel_ingot`
+neben `item:mekanism/steel_ingot`. Der Grund ist der Alltag: Jeder Spieler
+kopiert IDs aus JEI, und dort steht ein Doppelpunkt. Eine Meldung, die bei
+jeder kopierten ID erscheint, ist eine Meldung zu viel. Betroffen sind Lexer,
+Parser, EBNF, `sprache.md`, die VS-Code-Grammatik und der Guide.
+
+**Gruppen werden ein Wert** (1.14). `crushers.members()` liefert die Geräte,
+`pumps.stop()` geht an alle. Damit läuft, was `sprache.md` und `konzept.md`
+an mehreren Stellen zeigen. Die Gegenrichtung — die Formen streichen — wurde
+verworfen.
+
+**`move` gibt die bewegte Menge zurück** (1.15). Der eigentliche Grund steht
+nicht in der Doku, sondern im Code: `crusher.insert(64 item:x)` und
+`move 64 item:x from storage to crusher` sind **dieselbe Operation** —
+`insertInto` ruft `move` auf. Die eine liefert die angekommene Menge, die
+andere warf sie weg. Diese Asymmetrie war der Fehler. Dass damit
+`if move … > 0` schreibbar wird, ist hingenommen: `if crusher.insert(…) > 0`
+geht heute schon.
+
+**Ein Listeneintrag bekommt `it.item` und `it.amount`** (1.16). Zwei
+Angaben, mehr nicht. Damit sind `where`, `sort` und `sum` über einen Bestand
+zum ersten Mal benutzbar — `sum()` zählt die Mengen zusammen, statt zu
+werfen. Löst nebenbei 6.10: `list` auf einer Anzeige kann mehr werden als
+eine `row`.
+
+**Flüssigkeits-Tags heißen `fluidtag:`** (1.3). Nicht `tag:`, das beides
+durchsucht. Der Grund ist technisch: An mehreren Stellen muss aus dem
+geschriebenen Text allein hervorgehen, ob Gegenstände oder Flüssigkeiten
+gemeint sind — `WorkerKind` entscheidet danach den Ausführungspfad,
+`FilterKind` die Sorte einer Vorlage, `move` den Weg. Ein `tag:`, das beides
+treffen kann, macht genau diese Entscheidung unmöglich.
+
+**`const` kommt** (1.10) und **Listen und Karten als globale Werte** (1.11).
+Beides gegen meine Empfehlung entschieden: Ich hatte `const` für eine zweite
+Form ohne eigenen Zweck gehalten und globale Listen für Aufwand ohne Anlass.
+Der Projektinhaber hat anders entschieden; bei den Listen kommt die
+Speicherfrage damit als **Baufrage** wieder hoch — wie sie im Anfangswert
+steht, wie sie neben der Welt liegt, was beim Programmwechsel mit ihr
+geschieht.
+
+**Der Typprüfer bleibt zurückgestellt** (1.9). Heute wird Literal gegen
+Literal geprüft, alles andere fällt zur Laufzeit auf — mit verständlichen
+Meldungen, weil jede Stelle weiß, was sie erwartet hat. Ein echter Prüfer ist
+ein eigenes Vorhaben über die ganze Sprache.
+
+**`output()` und `busy` werden gestrichen, `send()` gebaut** (1.1).
+`move 64 item:x from brecher to storage` nimmt ohnehin nur, was die Maschine
+herausgeben will — `extractItem` auf einem Eingangsfach liefert leer, und das
+entscheidet die Maschine und nicht diese Mod. `output()` sagte damit dasselbe
+noch einmal. Für `busy` gibt es keine Capability; eine Schätzung über „der
+Inhalt hat sich zuletzt geändert" wäre eine Vermutung mit dem Anschein einer
+Auskunft, und wer darauf wartet, wartet falsch. `send()` an einer Gruppe
+fällt mit 1.14 ab, sobald Gruppen ein Wert sind.
+
+### Chemikalien werden ein Kompatibilitätsmodul
+
+Derselbe Weg wie bei GuideME (1.4, 7.1): `compileOnly` gegen Mekanisms API,
+`runtimeOnly` fürs Spiel, der Code unter `compat/mekanism`. Ohne Mekanism
+läuft die Mod wie heute, und `chemical:` meldet verständlich, dass die Mod
+fehlt, statt zu werfen.
+
+Verworfen: Mekanism zur Pflicht zu machen. Für eine Mod, die ausdrücklich
+eigenständig ist, wäre das eine große Zumutung. Verworfen ebenso, die
+Schreibweise zu streichen — sie steht seit dem Entwurf und wird gebraucht.
+
+### Editor und Umfeld
+
+- **Namen in einem `move` werden geprüft** (2.8), als Warnung wie beim
+  Worker. Der Prüfer muss dabei örtliche Namen aussparen — Variablen,
+  Parameter, globale Werte, Filter-Vorlagen —, sonst warnt er vor richtigen
+  Programmen. Genau das war der Grund, warum es die Prüfung noch nicht gibt.
+- **Die Annahme-Probe kommt auch für Flüssigkeiten** (3.2), mit
+  `fill(…, SIMULATE)` und den `fluid:`-Angaben aus dem Programm. Kein eigenes
+  Vorhaben: mitnehmen, wenn ohnehin an den Flüssigkeiten gearbeitet wird.
+- **Ordner im Projekt kommen** (3.5), gegen meine Empfehlung. Mein Einwand —
+  alle Dateien teilen einen Namensraum, ein Ordner sortiert also nur — bleibt
+  gültig und ist kein Hinderungsgrund. Dateiliste, Anlegen, Umbenennen und
+  die Brücke zu VS Code ziehen mit.
+- **LDLib2 wird geprüft** (3.6), gegen meine Empfehlung. Ein Prüfauftrag und
+  keine Zusage: Die Frage ist, ob künftige Fenster damit schneller gehen —
+  nicht, ob die vorhandenen neu gebaut werden.
+- **Das Geräteprofil zeigt sich im Analysator** (3.7): was an einer Seite
+  hängt — Inventar, Tank, Stromspeicher —, steht neben Kanälen und Kabellast.
+- **Der Netz-Reiter zeigt globale Werte nur an** (3.8). Sie dort auch ändern
+  zu lassen hieße, dass der Zustand der Fabrik an zwei Stellen umgestellt
+  wird und man der Anlage nicht ansieht, wer zuletzt geschaltet hat. Wer
+  schalten will, baut einen Knopf auf eine Anzeige.
+- **Eine Anzeigetafel darf in eine Maschine sehen** (3.9). Der Preis ist ein
+  Blick in eine BlockEntity je Tafel und Sekunde — die Anzeige liest den
+  Netzbestand ohnehin in diesem Takt. Ein `?` auf der Tafel, das niemand
+  erklären kann, ist der schlechtere Tausch.
+- **Die Hilfe im Spiel bleibt neben dem Buch** (6.3). Die F1-Griffliste
+  beantwortet „was steht hier, während ich tippe", das Buch „wie funktioniert
+  das überhaupt". Zwei Fragen, zwei Orte.
+- **Die Lizenz ist in Kraft** (6.2): MIT, Copyright 2026 DevPanda (Florian
+  Richter).
+
+### Nicht entschieden, weil es sich nicht entscheiden lässt
+
+Die Zahlen an den Serverbauteilen (5.4) bleiben offen. Ob sich Rechenwerke
+von zwei bis hundertachtundzwanzig richtig anfühlen, zeigt eine Runde
+Spielen und kein Gespräch.
