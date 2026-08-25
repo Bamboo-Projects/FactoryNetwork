@@ -2718,6 +2718,37 @@ Schreibweise zu streichen — sie steht seit dem Entwurf und wird gebraucht.
 - **Die Lizenz ist in Kraft** (6.2): MIT, Copyright 2026 DevPanda (Florian
   Richter).
 
+### Fächer sind ansprechbar, aber nur ausdrücklich
+
+Aus derselben Runde, angestoßen von der Frage „wie spreche ich die Slots einer
+Maschine an?". Bisher gar nicht: Der Connector holt sich die Capability für
+**seine** Seite (`getCapability(…, facing.getOpposite())`), und innerhalb
+dieser Seite entscheidet die Maschine, was sie hergibt und annimmt. Drei
+Rollen an einem Ofen heißen drei Connectoren an drei Seiten.
+
+SFM kann mehr: Dort greift ein Connector auf das ungeteilte Inventar und
+adressiert Fächer über ihre Nummer. Technisch ist das eine Zeile —
+`getCapability(…, null)` statt einer Seite.
+
+**Entschieden: die Seite bleibt die Vorgabe, Fächer sind der ausdrückliche
+Weg.** `move … from ofen` nimmt weiter das, was die Seite hergibt; bestehende
+Programme ändern sich nicht, und die Maschine behält ihre eigenen Regeln. Wer
+mehr will, schreibt es hin — `from ofen slot 2`, `from ofen slots 0..3` —
+und greift damit auf das ungeteilte Inventar.
+
+Der Grund für diese Teilung: Beides hat einen Preis, und der soll dort
+sichtbar sein, wo er anfällt. Greift jeder Connector immer aufs ganze
+Inventar, fällt der Schutz der Maschine überall weg — ein `move` ohne
+Fachangabe könnte dann den Eingang leeren, und man sieht dem Programm nicht
+an, dass es das tut. Mit einer Fachnummer steht es da.
+
+Verworfen: ein Schalter am Connector („diese Seite" oder „alles"). Dann stünde
+die Bedeutung eines Namens in der Welt statt im Programm, und wer den Code
+liest, sähe ihm nicht an, worauf er zugreift.
+
+Offen sind die Baufragen: die genaue Schreibweise für Bereiche, ob `insert()`
+eine Fachangabe bekommt und was `items()` an einem Fach liefert.
+
 ### Nicht entschieden, weil es sich nicht entscheiden lässt
 
 Die Zahlen an den Serverbauteilen (5.4) bleiben offen. Ob sich Rechenwerke
