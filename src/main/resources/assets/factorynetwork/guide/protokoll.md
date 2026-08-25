@@ -61,6 +61,17 @@ Ein Worker läuft zwanzigmal je Sekunde; sein Hinweis steht trotzdem genau
 einmal da. Nach dem Übernehmen eines Programms darf er wiederkommen — dann ist
 er eine neue Auskunft.
 
+## Mitnehmen und aufräumen
+
+Ein **Klick auf eine Zeile** legt sie in die Zwischenablage — mit Datum,
+Stufe und Herkunft. Beim Melden eines Fehlers ist genau das die Zeile, die
+gebraucht wird, und abtippen will sie niemand.
+
+Rechts oben stehen zwei Knöpfe: **Kopieren** nimmt alles mit, was der Filter
+gerade durchlässt. **Leeren** löscht das Protokoll — für einen sauberen
+Anfang vor dem nächsten Versuch. Es ist der einzige Knopf hier, der etwas
+wegnimmt, und steht deshalb ganz außen.
+
 ## Es bleibt über den Neustart
 
 Das Protokoll geht mit der Welt auf die Platte, die letzten zweihundert

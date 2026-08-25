@@ -40,6 +40,8 @@ public final class FnPackets {
                 LogStatePacket::handle);
         registrar.playToServer(FlowActionPacket.TYPE, FlowActionPacket.STREAM_CODEC,
                 FlowActionPacket::handle);
+        registrar.playToServer(ClearLogPacket.TYPE, ClearLogPacket.STREAM_CODEC,
+                ClearLogPacket::handle);
         registrar.playToClient(DisplayStatePacket.TYPE, DisplayStatePacket.STREAM_CODEC,
                 DisplayStatePacket::handle);
         registrar.playToServer(DisplayActionPacket.TYPE, DisplayActionPacket.STREAM_CODEC,

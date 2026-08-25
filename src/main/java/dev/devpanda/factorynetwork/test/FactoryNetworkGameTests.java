@@ -2672,6 +2672,17 @@ public final class FactoryNetworkGameTests {
                 "Samt Stufe");
         helper.assertValueEqual(geladen.log().get(3).source(), "schreiben",
                 "Und samt Herkunft");
+
+        // Leeren heißt leeren: Wer einen sauberen Anfang für den nächsten
+        // Versuch will, soll ihn bekommen — auch nach einem Neustart.
+        entity.clearLog();
+        helper.assertTrue(entity.log().isEmpty(),
+                "Nach dem Leeren steht nichts mehr da: " + entity.log());
+        var nachher = net.minecraft.world.level.block.entity.BlockEntity.loadStatic(
+                helper.absolutePos(controller), helper.getBlockState(controller),
+                entity.saveWithFullMetadata(registries), registries);
+        helper.assertTrue(((ControllerBlockEntity) nachher).log().isEmpty(),
+                "Und es bleibt geleert");
         helper.succeed();
     }
 
