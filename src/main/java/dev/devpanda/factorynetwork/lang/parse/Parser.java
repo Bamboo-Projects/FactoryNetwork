@@ -82,6 +82,7 @@ public final class Parser {
             case FN -> parseFn();
             case ON -> parseOn();
             case GLOBAL -> parseGlobal();
+            case FILTER -> parseFilterTemplate();
             case IMPORT -> {
                 error(start.span(), "Module gibt es noch nicht.",
                         "import ist für später reserviert. Alle .mf-Dateien eines Projekts "
@@ -92,8 +93,9 @@ public final class Parser {
             default -> {
                 error(start.span(),
                         "Hier wird eine Deklaration erwartet, gefunden wurde " + describe(start) + ".",
-                        "Auf oberster Ebene stehen worker, group, multiblock, event, display, "
-                                + "fn, on und global. Anweisungen gehören in eine Funktion.");
+                        "Auf oberster Ebene stehen worker, group, filter, multiblock, event, "
+                                + "display, fn, on und global. Anweisungen gehören in eine "
+                                + "Funktion.");
                 recoverToDeclaration();
                 yield null;
             }
@@ -270,6 +272,46 @@ public final class Parser {
         }
         Token end = expectBrace(keyword, "group");
         return new Decl.Group(name, List.copyOf(members), strategy,
+                keyword.span().to(end.span()));
+    }
+
+    // ---- Filter-Vorlage ---------------------------------------------------
+
+    /**
+     * {@code filter ore_factory { … }} — eine Auswahl mit einem Namen.
+     *
+     * <p>Dasselbe Wort wie die Worker-Angabe, und das ist Absicht: Es meint
+     * an beiden Orten dasselbe. Unterschieden wird nach dem Ort — auf
+     * oberster Ebene folgen ein Name und ein Block, im Worker eine Auswahl.
+     *
+     * <p>Jede Zeile ist für sich eine Auswahl und darf deshalb selbst ein
+     * {@code except} enthalten. Steht {@code except} dagegen am Anfang der
+     * Zeile, gehört es zur Vorlage: Diese Zeile nimmt weg, statt dazuzulegen.
+     */
+    private Decl parseFilterTemplate() {
+        Token keyword = advance();
+        String name = expectName("Vorlage");
+        if (!expect(TokenType.LBRACE, "Nach dem Namen der Vorlage fehlt die geschweifte Klammer.")) {
+            recoverToDeclaration();
+            return new Decl.Invalid(name, keyword.span());
+        }
+        List<Expr> includes = new ArrayList<>();
+        List<Expr> excludes = new ArrayList<>();
+        skipNewlines();
+        while (!at(TokenType.RBRACE) && !at(TokenType.EOF)) {
+            boolean removes = match(TokenType.EXCEPT);
+            Expr selection = parseExpression();
+            if (selection instanceof Expr.Invalid) {
+                recoverToLineEnd();
+            } else if (removes) {
+                excludes.add(selection);
+            } else {
+                includes.add(selection);
+            }
+            skipNewlines();
+        }
+        Token end = expectBrace(keyword, "filter");
+        return new Decl.FilterTemplate(name, List.copyOf(includes), List.copyOf(excludes),
                 keyword.span().to(end.span()));
     }
 
@@ -1056,7 +1098,7 @@ public final class Parser {
     private void recoverToDeclaration() {
         while (!at(TokenType.EOF)) {
             switch (peek().type()) {
-                case WORKER, GROUP, MULTIBLOCK, EVENT, DISPLAY, FN, ON, GLOBAL -> {
+                case WORKER, GROUP, FILTER, MULTIBLOCK, EVENT, DISPLAY, FN, ON, GLOBAL -> {
                     return;
                 }
                 default -> advance();

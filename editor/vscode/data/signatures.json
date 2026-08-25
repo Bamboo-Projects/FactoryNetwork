@@ -262,6 +262,20 @@
         ]
       }
     ],
+    "filter": [
+      {
+        "keyword": "except",
+        "shape": "except selection",
+        "help": "Nimmt wieder heraus, was die Zeilen darüber einschließen.",
+        "slots": [
+          {
+            "kind": "SELECTION",
+            "label": "selection",
+            "optional": false
+          }
+        ]
+      }
+    ],
     "fn": [
       {
         "keyword": "let",

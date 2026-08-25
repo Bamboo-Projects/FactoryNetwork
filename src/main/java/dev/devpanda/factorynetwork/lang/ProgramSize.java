@@ -49,6 +49,10 @@ public final class ProgramSize {
                 yield inner;
             }
             case Decl.Event event -> event.parameters().size();
+            // Wie bei einer Gruppe: je Zeile eine. Eine Vorlage über zwanzig
+            // Selektoren ist nichts, was der Server nebenbei mitträgt.
+            case Decl.FilterTemplate template ->
+                    template.includes().size() + template.excludes().size();
             // Ein globaler Wert kostet seine eine Zeile und nichts weiter:
             // Sein Anfangswert ist ein Literal, keine Anweisung. Null wäre
             // trotzdem falsch — die Eins davor zählt ihn, und damit sind

@@ -168,6 +168,17 @@ public final class Signatures {
             of("strategy", "Wie auf sie verteilt wird.", Slot.of(Kind.STRATEGY)));
 
     /**
+     * Die Zeilen in einer Filter-Vorlage.
+     *
+     * <p>Nur eine Form, und die ist die Ausnahme: Eine gewöhnliche Zeile ist
+     * eine Auswahl und braucht kein Wort davor. Der Editor schlägt deshalb
+     * an dieser Stelle die Auswahlen selbst vor und {@code except} dazu.
+     */
+    public static final List<Signature> FILTER = List.of(
+            of("except", "Nimmt wieder heraus, was die Zeilen darüber einschließen.",
+                    Slot.of(Kind.SELECTION)));
+
+    /**
      * Die Anweisungen in einer Funktion oder einem Ereignisblock.
      *
      * <p>Bedingungen stehen ohne runde Klammern und ein Block ist Pflicht —
@@ -291,6 +302,7 @@ public final class Signatures {
             case "display" -> DISPLAY;
             case "worker" -> WORKER;
             case "group" -> GROUP;
+            case "filter" -> FILTER;
             // fn, on und multiblock enthalten Anweisungen, keine Angaben.
             case "fn", "on", "multiblock" -> STATEMENT;
             default -> List.of();

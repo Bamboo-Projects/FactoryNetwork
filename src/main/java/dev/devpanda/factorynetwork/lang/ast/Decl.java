@@ -91,6 +91,31 @@ public sealed interface Decl {
      */
     record Global(String name, Expr value, Span span) implements Decl {}
 
+    // ---- Filter-Vorlage ---------------------------------------------------
+
+    /**
+     * {@code filter ore_factory { … }} — eine Auswahl mit einem Namen.
+     *
+     * <p>Sie steht überall, wo eine geschriebene Auswahl steht: im Worker, in
+     * {@code move}, in {@code count}. Zwei Dinge kann die Sprache dadurch,
+     * die sie vorher nicht konnte — dieselbe Auswahl an mehreren Stellen
+     * nennen, ohne sie zu wiederholen, und mehrere Auswahlen zu einer
+     * zusammenlegen. Ein Worker nimmt nur eine {@code filter}-Zeile.
+     *
+     * <p><b>Nackte Zeilen statt {@code members}.</b> Eine Gruppe hat zwei
+     * Arten von Zeilen — {@code members} und {@code strategy} — und braucht
+     * deshalb ein Wort zur Unterscheidung. Eine Vorlage hat nur eine Art; ein
+     * zweites Wort wäre Zeremonie ohne Aufgabe.
+     *
+     * @param includes was dazugehört, je Zeile ein Eintrag
+     * @param excludes was wieder herausfällt — die Zeilen mit {@code except}.
+     *                 <b>Erst alles zusammen, dann die Ausnahmen</b>, damit
+     *                 die Reihenfolge der Zeilen gleichgültig ist und niemand
+     *                 beim Lesen einen Zwischenstand mitführen muss.
+     */
+    record FilterTemplate(String name, List<Expr> includes, List<Expr> excludes, Span span)
+            implements Decl {}
+
     /** Steht für eine Deklaration, die der Parser nicht lesen konnte. */
     record Invalid(String name, Span span) implements Decl {}
 }

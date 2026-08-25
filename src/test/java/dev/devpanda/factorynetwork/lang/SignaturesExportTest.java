@@ -60,7 +60,7 @@ class SignaturesExportTest {
         JsonObject root = new JsonObject();
 
         JsonObject blocks = new JsonObject();
-        for (String block : new String[] {"display", "worker", "group", "fn"}) {
+        for (String block : new String[] {"display", "worker", "group", "filter", "fn"}) {
             JsonArray entries = new JsonArray();
             for (Signatures.Signature signature : Signatures.forBlock(block)) {
                 JsonObject entry = new JsonObject();
