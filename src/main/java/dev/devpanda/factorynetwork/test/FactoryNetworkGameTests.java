@@ -2375,12 +2375,16 @@ public final class FactoryNetworkGameTests {
         var anzeigen = new dev.devpanda.factorynetwork.network.packet.DisplayStatePacket(
                 java.util.List.of(new dev.devpanda.factorynetwork.network.packet
                         .DisplayStatePacket.Panel("leitstand",
-                        java.util.List.of("§fZeile", "§8[Knopf]"), java.util.List.of(1))));
+                        java.util.List.of("§fZeile", "§8[Knopf]"),
+                        java.util.List.of(new dev.devpanda.factorynetwork.network.packet
+                                .DisplayStatePacket.Button(1, 1)))));
         var anzeigenZurueck = roundTrip(helper,
                 dev.devpanda.factorynetwork.network.packet.DisplayStatePacket.STREAM_CODEC,
                 anzeigen);
-        helper.assertValueEqual(anzeigenZurueck.panels().get(0).buttons().get(0), 1,
+        helper.assertValueEqual(anzeigenZurueck.panels().get(0).buttons().get(0).line(), 1,
                 "Welche Zeile ein Knopf ist");
+        helper.assertValueEqual(anzeigenZurueck.panels().get(0).buttons().get(0).entry(), 1,
+                "Und welchen Eintrag sie meint");
 
         var netz = new dev.devpanda.factorynetwork.network.packet.AnalyserDataPacket(
                 java.util.List.of(new dev.devpanda.factorynetwork.analyser.AnalyserData.Node(
@@ -2446,7 +2450,7 @@ public final class FactoryNetworkGameTests {
         var anzeigen = entity.displayPanels();
         helper.assertValueEqual(anzeigen.size(), 1, "Eine Anzeige");
         helper.assertValueEqual(anzeigen.get(0).lines().size(), 4, "Vier Zeilen");
-        helper.assertValueEqual(anzeigen.get(0).buttons().get(0), 3,
+        helper.assertValueEqual(anzeigen.get(0).buttons().get(0).line(), 3,
                 "Der Knopf steht in der vierten Zeile");
         helper.assertTrue(anzeigen.get(0).lines().get(1).contains("Steine"),
                 "Die Zeile mit dem Bestand: " + anzeigen.get(0).lines().get(1));
@@ -7089,6 +7093,147 @@ public final class FactoryNetworkGameTests {
                         "Die Abgabe muss zu sehen sein, steht aber auf "
                                 + entity.power().supplied()))
                 .thenSucceed();
+    }
+
+    /**
+     * {@code list} ist eine Aufzählung, keine Zeile.
+     *
+     * <p>Die Spezifikation nennt es „Aufzählung, etwa Bestände oder
+     * Aufträge". Gezeichnet wurde bis dahin eine einzelne Zeile wie bei
+     * {@code row} — mit einem Text darin, den niemand lesen wollte.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void alistShowsOneRowPerEntry(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 1, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        rackWithServer(helper, controller.west());
+        helper.setBlock(controller.east(), FnBlocks.CABLE.get());
+        driveWithCell(helper, controller.above(),
+                dev.devpanda.factorynetwork.storage.CellTier.K64);
+
+        BlockPos display = controller.east().east();
+        helper.setBlock(display, FnBlocks.DISPLAY.get());
+        if (helper.getBlockEntity(display) instanceof DisplayBlockEntity tafel) {
+            tafel.setDisplayName("lager");
+        } else {
+            helper.fail("Am Display hängt keine BlockEntity", display);
+            return;
+        }
+
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        entity.storage().insert(Items.IRON_INGOT, 64);
+        entity.storage().insert(Items.GOLD_INGOT, 32);
+        helper.assertTrue(entity.deploy("""
+                display lager {
+                    list "Bestand" storage.items()
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+
+        helper.runAfterDelay(25, () -> {
+            if (!(helper.getBlockEntity(display) instanceof DisplayBlockEntity shown)) {
+                helper.fail("Display verschwunden", display);
+                return;
+            }
+            var lines = shown.lines();
+            // Eine Überschrift und zwei Posten — nicht eine Zeile für alles.
+            helper.assertValueEqual(lines.size(), 3, "Zeilen auf dem Display: " + lines);
+            helper.assertTrue(lines.stream().anyMatch(line -> line.contains("64")),
+                    "Die Menge des Eisens fehlt: " + lines);
+            helper.assertTrue(lines.stream().anyMatch(line -> line.contains("32")),
+                    "Die Menge des Goldes fehlt: " + lines);
+            helper.succeed();
+        });
+    }
+
+    /** Ein leerer Bestand sagt es, statt eine leere Zeile zu zeichnen. */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void anemptyListSaysSo(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 1, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        rackWithServer(helper, controller.west());
+        helper.setBlock(controller.east(), FnBlocks.CABLE.get());
+        driveWithCell(helper, controller.above(),
+                dev.devpanda.factorynetwork.storage.CellTier.K64);
+
+        BlockPos display = controller.east().east();
+        helper.setBlock(display, FnBlocks.DISPLAY.get());
+        if (helper.getBlockEntity(display) instanceof DisplayBlockEntity tafel) {
+            tafel.setDisplayName("lager");
+        } else {
+            helper.fail("Am Display hängt keine BlockEntity", display);
+            return;
+        }
+
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        helper.assertTrue(entity.deploy("""
+                display lager {
+                    list "Bestand" storage.items()
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+
+        helper.runAfterDelay(25, () -> {
+            if (!(helper.getBlockEntity(display) instanceof DisplayBlockEntity shown)) {
+                helper.fail("Display verschwunden", display);
+                return;
+            }
+            var lines = shown.lines();
+            helper.assertValueEqual(lines.size(), 1, "Eine Zeile: " + lines);
+            helper.assertTrue(lines.get(0).contains("leer"),
+                    "Der leere Bestand muss es sagen: " + lines.get(0));
+            helper.succeed();
+        });
+    }
+
+    /**
+     * Ein Knopf hinter einer Aufzählung trifft trotzdem.
+     *
+     * <p>Der Reiter nimmt die Nummer, die im Paket steht, und schickt sie
+     * zurück — genau das prüft dieser Test, statt eine Nummer zu erfinden.
+     * <b>Solange jeder Eintrag genau eine Zeile war, waren beide Nummern
+     * dieselbe</b>, und der Unterschied fiel niemandem auf. Eine Aufzählung
+     * bringt mehrere Zeilen mit, und ab da zeigt eine Zeilennummer auf einen
+     * anderen Eintrag.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void abuttonBehindAlistStillHits(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        entity.storage().insert(Items.IRON_INGOT, 64);
+        entity.storage().insert(Items.GOLD_INGOT, 32);
+
+        helper.assertTrue(entity.deploy("""
+                event Takt(nummer: Int)
+
+                display leitstand {
+                    title "Leitstand"
+                    list "Bestand" storage.items()
+                    button "Anstoßen" anstossen
+                }
+
+                fn anstossen() {
+                    let wert = await Takt
+                    return wert
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+
+        var panel = entity.displayPanels().stream()
+                .filter(candidate -> candidate.name().equals("leitstand"))
+                .findFirst().orElse(null);
+        if (panel == null) {
+            helper.fail("Die Anzeige fehlt im Reiter");
+            return;
+        }
+        helper.assertValueEqual(panel.buttons().size(), 1, "Ein Knopf");
+
+        // Was der Reiter beim Klicken schickt.
+        entity.pressDisplayButton("leitstand", panel.buttons().get(0).entry());
+
+        helper.assertValueEqual(entity.flowEngine().flows().size(), 1,
+                "Der Knopf muss treffen, auch mit einer Aufzählung darüber");
+        helper.succeed();
     }
 
     // ---- Der Anbau am Controller -------------------------------------------

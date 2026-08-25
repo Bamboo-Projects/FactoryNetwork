@@ -1102,18 +1102,45 @@ public class ControllerBlockEntity extends BlockEntity {
                 continue;
             }
             List<String> lines = new ArrayList<>();
-            List<Integer> buttons = new ArrayList<>();
+            List<DisplayStatePacket.Button> buttons = new ArrayList<>();
             List<DisplayValues.Line> evaluated = values.evaluate(display);
+            // Der Eintrag zählt für sich: Eine Aufzählung bringt mehrere
+            // Zeilen mit, und die Zeilennummer läuft danach voraus.
+            int entryIndex = -1;
+            Decl.Display.Entry.Kind previous = null;
             for (int i = 0; i < evaluated.size(); i++) {
-                lines.add(DisplayBlockEntity.format(evaluated.get(i)));
-                if (evaluated.get(i).kind() == Decl.Display.Entry.Kind.BUTTON) {
-                    buttons.add(i);
+                DisplayValues.Line line = evaluated.get(i);
+                if (belongsToPreviousEntry(line, previous)) {
+                    lines.add(DisplayBlockEntity.format(line));
+                    continue;
+                }
+                entryIndex++;
+                previous = line.kind();
+                lines.add(DisplayBlockEntity.format(line));
+                if (line.kind() == Decl.Display.Entry.Kind.BUTTON) {
+                    buttons.add(new DisplayStatePacket.Button(i, entryIndex));
                 }
             }
             panels.add(new DisplayStatePacket.Panel(display.name(), lines, buttons));
         }
         addUnknownPanels(panels);
         return panels;
+    }
+
+    /**
+     * Gehört diese Zeile noch zum Eintrag davor?
+     *
+     * <p>Nur eine Aufzählung bringt mehr als eine Zeile mit: Auf ihre
+     * Überschrift folgen die Posten als Zeilen, bis der nächste Eintrag
+     * beginnt. Alles andere ist eins zu eins.
+     */
+    private static boolean belongsToPreviousEntry(DisplayValues.Line line,
+                                                  Decl.Display.Entry.Kind previous) {
+        if (previous != Decl.Display.Entry.Kind.LIST) {
+            return false;
+        }
+        return line.kind() == Decl.Display.Entry.Kind.ROW
+                || line.kind() == Decl.Display.Entry.Kind.TEXT;
     }
 
     /**

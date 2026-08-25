@@ -9,6 +9,7 @@ import net.minecraft.world.item.Item;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * Wertet aus, was ein Display zeigt.
@@ -83,12 +84,109 @@ public final class DisplayValues {
         this.level = level;
     }
 
+    /**
+     * Wie viele Posten eine Aufzählung höchstens zeigt.
+     *
+     * <p>Eine Tafel trägt sechs Zeilen, eine Wand mehr — wie viele, weiß erst
+     * der Client, der sie zeichnet. Acht ist die Zahl, die auf einer
+     * zweireihigen Wand aufgeht und auf einer einzelnen Tafel ehrlich
+     * abgeschnitten wird: Die letzte Zeile sagt dann, wie viele fehlen.
+     */
+    private static final int LIST_LIMIT = 8;
+
     public List<Line> evaluate(Decl.Display display) {
         List<Line> lines = new ArrayList<>();
         for (Decl.Display.Entry entry : display.entries()) {
-            lines.add(evaluate(entry));
+            // Eine Aufzählung ist mehr als eine Zeile — das ist ihr ganzer
+            // Sinn und der Unterschied zu row.
+            if (entry.kind() == Decl.Display.Entry.Kind.LIST) {
+                lines.addAll(listing(entry));
+            } else {
+                lines.add(evaluate(entry));
+            }
         }
         return lines;
+    }
+
+    /**
+     * Eine Aufzählung: Überschrift und je Posten eine Zeile.
+     *
+     * <p>Absteigend nach Menge, denn wer auf eine Wand sieht, sucht meist,
+     * wovon zu viel oder zu wenig da ist. Was über {@link #LIST_LIMIT} hinaus
+     * geht, wird gezählt statt weggelassen — eine Liste, die still endet,
+     * liest sich wie ein vollständiger Bestand.
+     */
+    private List<Line> listing(Decl.Display.Entry entry) {
+        List<Line> lines = new ArrayList<>();
+        List<Map.Entry<String, Long>> posten = entries(entry.value());
+        if (posten == null) {
+            // Kein Bestand, sondern etwas anderes — dann wie bisher eine
+            // Zeile, samt der Meldung, die describe() dafür kennt.
+            lines.add(Line.text(entry.kind(), entry.label(), describe(entry.value())));
+            return lines;
+        }
+        posten.sort(java.util.Comparator.comparingLong(
+                (Map.Entry<String, Long> item) -> item.getValue()).reversed());
+        lines.add(Line.text(entry.kind(), entry.label(),
+                posten.isEmpty() ? "leer" : posten.size() + " Arten"));
+        for (int i = 0; i < Math.min(posten.size(), LIST_LIMIT); i++) {
+            lines.add(Line.text(Decl.Display.Entry.Kind.ROW,
+                    posten.get(i).getKey(), shorten(posten.get(i).getValue())));
+        }
+        if (posten.size() > LIST_LIMIT) {
+            lines.add(Line.text(Decl.Display.Entry.Kind.TEXT, null,
+                    "… und " + (posten.size() - LIST_LIMIT) + " weitere"));
+        }
+        return lines;
+    }
+
+    /**
+     * Die Posten hinter {@code storage.items()} oder {@code brecher.items()},
+     * oder {@code null}, wenn dort etwas anderes steht.
+     *
+     * <p>Nur diese beiden. Ein Display rechnet nicht — es liest ab, und die
+     * Grenze ist dieselbe wie überall sonst in dieser Klasse.
+     */
+    private List<Map.Entry<String, Long>> entries(Expr expr) {
+        if (!(expr instanceof Expr.Call call)
+                || !(call.callee() instanceof Expr.Member member)
+                || !"items".equals(member.name())
+                || !call.arguments().isEmpty()) {
+            return null;
+        }
+        if (member.target() instanceof Expr.Builtin builtin
+                && builtin.kind() == Expr.Builtin.Kind.STORAGE) {
+            return named(storage.contents(), item -> item.getDescription().getString());
+        }
+        if (!(member.target() instanceof Expr.Name device) || level == null) {
+            return null;
+        }
+        var position = graph.connector(device.value()).orElse(null);
+        if (position == null || !level.isLoaded(position)
+                || !(level.getBlockEntity(position)
+                        instanceof dev.devpanda.factorynetwork.block.entity
+                                .ConnectorBlockEntity connector)) {
+            return null;
+        }
+        var amounts = dev.devpanda.factorynetwork.block.entity.DeviceAmounts.of(connector);
+        List<Map.Entry<String, Long>> found =
+                named(amounts.items(), item -> item.getDescription().getString());
+        // Eine Maschine kann beides führen. Getrennt zu zählen und zusammen
+        // zu zeigen ist genau das, was man vor ihr wissen will.
+        found.addAll(named(amounts.fluids(), fluid -> fluid.getFluidType()
+                .getDescription().getString()));
+        return found;
+    }
+
+    private static <T> List<Map.Entry<String, Long>> named(
+            Map<T, Long> contents, java.util.function.Function<T, String> naming) {
+        List<Map.Entry<String, Long>> found = new ArrayList<>(contents.size());
+        contents.forEach((key, amount) -> {
+            if (amount > 0) {
+                found.add(Map.entry(naming.apply(key), amount));
+            }
+        });
+        return found;
     }
 
     private Line evaluate(Decl.Display.Entry entry) {

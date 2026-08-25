@@ -69,14 +69,19 @@ public class DashboardsTabView {
             line += LINE + 1;
             for (int i = 0; i < panel.lines().size() && line <= y + height - LINE; i++) {
                 String content = panel.lines().get(i);
-                boolean button = panel.buttons().contains(i);
+                final int lineIndex = i;
+                DisplayStatePacket.Button button = panel.buttons().stream()
+                        .filter(candidate -> candidate.line() == lineIndex)
+                        .findFirst().orElse(null);
                 int textWidth = font.width(content);
-                if (button) {
+                if (button != null) {
                     boolean hovered = mouseX >= x + 6 && mouseX < x + 9 + textWidth
                             && mouseY >= line - 1 && mouseY < line + LINE - 1;
                     graphics.fill(x + 6, line - 1, x + 9 + textWidth, line + 9,
                             hovered ? TerminalScreen.BUTTON_HOVER : TerminalScreen.BUTTON);
-                    hits.add(new Hit(x + 6, line - 1, x + 9 + textWidth, panel.name(), i));
+                    // Getroffen wird die Zeile, geschickt der Eintrag.
+                    hits.add(new Hit(x + 6, line - 1, x + 9 + textWidth, panel.name(),
+                            button.entry()));
                     graphics.drawString(font, content, x + 8, line, TerminalScreen.TEXT, false);
                 } else {
                     graphics.drawString(font, font.plainSubstrByWidth(content, width - 12),
