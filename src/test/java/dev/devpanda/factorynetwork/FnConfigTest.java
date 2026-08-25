@@ -21,6 +21,8 @@ class FnConfigTest {
     void withoutAloadedConfigTheDefaultsApply() {
         assertEquals(FnConfig.DEFAULT_STEP_BUDGET, FnConfig.stepBudget());
         assertEquals(FnConfig.DEFAULT_NETWORK_NODES, FnConfig.networkNodes());
+        assertEquals(FnConfig.DEFAULT_CRAFTING_DEPTH, FnConfig.craftingDepth());
+        assertEquals(FnConfig.DEFAULT_CRAFTING_BUDGET, FnConfig.craftingBudget());
     }
 
     @Test

@@ -575,10 +575,14 @@ Die Auswahl muss **eine Art** meinen. Ein Auftrag über „irgendein Erz" hätte
 keine Antwort auf die Frage, was gebaut werden soll; ein Tag mit genau einem
 Treffer geht durch, dann ist sie beantwortet.
 
-Gebaut wird, was im Netz an **Fabricators** hängt, und zwar **einstufig**:
-Fehlen Bretter, macht das Netz keine aus Stämmen. Das ist ein Schnitt und kein
-Mangel — ein Auftrag, der im Hintergrund einen Baum fällt, den niemand
-bestellt hat, ist die unangenehmere Überraschung. Mehrstufig kommt später.
+Gebaut wird, was im Netz an **Fabricators** hängt, und zwar **mehrstufig**:
+Fehlen Bretter, macht das Netz welche aus Stämmen. Fehlen auch die, wartet der
+Auftrag und nennt den Stamm — genannt wird immer der Grundstoff und nie eine
+Zwischenstufe, die das Netz selbst herstellen könnte.
+
+Geht der Plan nicht auf, wird **gar nichts** gebaut. Ein Auftrag, der schon
+einmal die Bretter macht und beim Leder hängenbleibt, hinterlässt einen Stapel
+Zwischenzeug, das niemand bestellt hat.
 
 ### Strom ablesen
 

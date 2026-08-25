@@ -60,6 +60,15 @@ Vorentscheidungen)
 > Netzspeicher statt das Gerät. Alle drei behoben. Neu auf der Liste steht
 > 3.11, überholt sind 2.7 und 2.6.
 
+> **Nacht auf den 26.08.:** Die Fertigung ist **mehrstufig** (2.10, erster
+> Teil). Der Planner zerlegt eine Bestellung, bis er bei etwas ankommt, das
+> dasteht — eine Truhe aus zwei Stämmen läuft in zwei Schritten. Dabei fiel
+> ein Fehler auf, den erst die Rekursion sichtbar machte: **Eine Zutat ist
+> eine Auswahl, und die Zutatenliste legte sich beim Planen auf eine Sorte
+> fest.** Für einen einzigen Schritt fiel das nie auf, für eine Kette schon —
+> wer nur Fichtenstämme hatte, bekam „es fehlen 8 Eichenbretter". Neu in der
+> Serverkonfiguration: `craftingDepth` und `craftingBudget`.
+
 **Status:** **F** = fehlt schlicht · **E** = wartet auf eine Entscheidung ·
 **Z** = bewusst zurückgestellt, kein Versäumnis
 
@@ -103,7 +112,7 @@ Vorentscheidungen)
 | 2.7 | ~~`when`-Bedingungen~~ — **überholt.** Im laufenden Spiel wertet der echte Interpreter aus: Texte, globale Werte, Gerätezustände. Der alte Weg — Zahl gegen Zahl — greift nur ohne Host, also in Prüfungen ohne Welt. Eine kaputte Bedingung hält den Worker an | | `WorkerRuntime.conditionHolds` | | |
 | 2.8 | ~~`NetworkCheck` besucht keine Anweisungen~~ — **fertig.** Ein `move` mit unbekanntem Gerätenamen wird gewarnt, in der Anweisung wie im Ausdruck. Ausgespart bleiben örtliche Namen: Parameter, `let`, Schleifenvariablen, globale Werte, Festwerte, Vorlagen, Gruppen und die Rollen eines Multiblocks | | `NetworkCheck.checkMoves` | | |
 | 2.9 | **Erkennung von Maschinen-Rezepten.** Was ein Brecher aus Erz macht, weiß nur die Maschine. **Keine Voraussetzung mehr für 2.10**: Der Fabricator baut Werkbank-Rezepte, und die stehen im Server. Gebraucht wird 2.9 für Processing-Rezepte am Connector | F | `entscheidungen.md`, `konzept.md` §8 | groß | — |
-| 2.10 | **Erster Schnitt gebaut** (25.08.): Fabricator, Aufträge am Controller, `craft(64 item:chest)`, der Reiter zeigt sie, `crafting_finished`/`crafting_failed` lösen aus, alles übersteht den Neustart. **Einstufig** — fehlende Zutaten werden nicht ihrerseits gebaut. Offen: Rekursion (der Planner) und `from crafting` als Worker-Quelle | F | `crafting/`, `CraftingTabView` | mittel | — |
+| 2.10 | **Mehrstufig gebaut** (25.08.): Fabricator, Aufträge am Controller, `craft(64 item:chest)`, der Reiter zeigt sie, `crafting_finished`/`crafting_failed` lösen aus, alles übersteht den Neustart. Der Planner zerlegt eine Bestellung bis zu dem, was dasteht, trägt Zutaten-Auswahlen durch und kommt mit Kreisen zurecht. Offen: `from crafting` als Worker-Quelle | F | `CraftingPlanner`, `RecipeLookup` | klein | — |
 
 ## 3. Editor im Spiel
 
@@ -185,8 +194,9 @@ Geräte je Netz sind keine Grenze mehr.
 auch. Schreibarbeit ohne Risiko — und das, was die Mod für jemanden von außen
 zugänglich macht.
 
-**2. Autocrafting** (2.9, 2.10). Der letzte ausgegraute Reiter, und der
-Grund, warum `crafting` als Quelle noch nirgends steht.
+**2. `from crafting`** (2.10, Rest). Die Fertigung ist mehrstufig; was fehlt,
+ist die Vorratshaltung — ein Worker, der bestellt, sobald ein Bestand unter
+`maintain` fällt. Danach steht `crafting` als Quelle auch in den Editoren.
 
 **Kleines mit großer Wirkung:** `list` auf einer Anzeige (6.10) ist seit 1.16
 nicht mehr blockiert, die Auflösungsanzeige im Editor (3.11) fehlt weiter, und

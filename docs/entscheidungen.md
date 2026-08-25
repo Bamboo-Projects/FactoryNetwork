@@ -147,11 +147,12 @@ kann, weiß das Spiel bereits. Ein Netz, das sich seine Rezepte erst auf
 Papierschnipsel schreiben lässt, verlangt Arbeit für eine Auskunft, die schon
 dasteht — und in einem großen Pack ist das die Arbeit von Stunden.
 
-**Einstufig.** Fehlen Bretter, werden keine aus Stämmen gemacht. Verworfen
-wurde der umgekehrte Weg — erst den Planner, dann den Block —, weil Rekursion
-ohne sichtbaren Fabricator untestbare Logik ist und ein Fabricator ohne
-Rekursion ein fertiges Feature. Der Preis, offen benannt: Wer eine Kette
-will, schreibt sie vorerst selbst.
+**Zuerst einstufig.** Fehlen Bretter, werden keine aus Stämmen gemacht.
+Verworfen wurde der umgekehrte Weg — erst den Planner, dann den Block —, weil
+Rekursion ohne sichtbaren Fabricator untestbare Logik ist und ein Fabricator
+ohne Rekursion ein fertiges Feature. Der Preis, offen benannt: Wer eine Kette
+will, schreibt sie vorerst selbst. *(Überholt am selben Tag — siehe „Die
+Fertigung wird mehrstufig".)*
 
 **Der Auftrag lebt am Controller.** Nicht am Gerät: Einer, der dort hinge,
 wäre weg, sobald jemand es abbaut. Das Konzept nennt Aufträge in §11
@@ -166,11 +167,12 @@ sie irgendwo im Programm steht.
 
 ### Offen für später
 
-- **Die Rekursion**, und mit ihr Reservierungen für gleichzeitige Aufträge.
-  Für einstufig reicht „beim Schritt entnehmen"; erst mehrere Ebenen brauchen
-  Vormerkungen.
+- ~~**Die Rekursion**~~ — gebaut, siehe „Die Fertigung wird mehrstufig".
+  Reservierungen für gleichzeitige Aufträge brauchte es dafür nicht: Weil der
+  Plan bei jedem Takt neu gerechnet wird, sieht jeder Auftrag den Bestand, den
+  der andere ihm gelassen hat.
 - **`from crafting`** als Worker-Quelle. Braucht die Rekursion nicht: Ein
-  `maintain`-Worker, der einstufige Aufträge anstößt, ist schon nützlich.
+  `maintain`-Worker, der Aufträge anstößt, ist schon nützlich.
 
 ---
 
@@ -2841,3 +2843,84 @@ welches Fach gemeint ist, entscheidet der Code.**
 Die Zahlen an den Serverbauteilen (5.4) bleiben offen. Ob sich Rechenwerke
 von zwei bis hundertachtundzwanzig richtig anfühlen, zeigt eine Runde
 Spielen und kein Gespräch.
+
+---
+
+## Die Fertigung wird mehrstufig (2026-08-25)
+
+Der erste Schnitt der Fertigung baute, was aus dem Speicher zu bauen war, und
+sagte sonst „es fehlen 8 Bretter" — auch dann, wenn zwei Stämme im Laufwerk
+lagen und der Weg dahin ein einziges Rezept war. Der Planner geht diesen Weg.
+Vier Entscheidungen sind dabei gefallen.
+
+### Der Plan wird gerechnet, nicht gemerkt
+
+Ein Fertigungsauftrag könnte seinen Plan beim Anlegen berechnen und danach
+abarbeiten. Er tut es nicht: Der Controller rechnet ihn bei **jedem
+Fertigungstakt neu** und führt davon den untersten Schritt aus.
+
+Der Grund ist der Bestand. Ein gespeicherter Plan wäre ab dem Moment falsch,
+in dem ein Worker etwas einlagert — und genau das tun Worker den ganzen Tag.
+Ein Auftrag, der um 12 Uhr beschlossen hat, Bretter aus Stämmen zu machen,
+soll um 12:01 die Bretter nehmen, die inzwischen aus dem Sägewerk kamen.
+
+Dazu kommt, was nicht gebaut werden musste: Ein Plan im Speicherformat wäre
+ein zweites Datenformat mit eigener Fassungsverwaltung, das einen Neustart
+überstehen muss. So übersteht der Auftrag den Neustart wie bisher — Ziel,
+Menge, Stand — und der Plan entsteht danach neu.
+
+Der Preis ist Rechenzeit: einmal je Sekunde je Auftrag ein Rezeptbaum. Dagegen
+steht ein Verzeichnis der Rezepte nach Ergebnis, gebaut einmal je Tick, sowie
+zwei Grenzen in der Serverkonfiguration (`craftingDepth`, `craftingBudget`).
+
+### Fehlt ein Grundstoff, wird gar nichts gebaut
+
+Ein Plan, der nicht aufgeht, könnte trotzdem loslegen: die Bretter schon
+machen und beim Leder warten. Er tut es nicht — **der Auftrag wartet
+vollständig.**
+
+Das Gegenteil ist verlockend, weil es beschäftigt aussieht. Es hinterlässt
+aber Zwischenzeug, das niemand bestellt hat: Wer einen Auftrag abbricht,
+dessen Leder nie kam, findet einen Stapel Bretter im Lager und weiß nicht,
+woher. Und der Vorteil wäre keiner — der Auftrag hinge trotzdem.
+
+### Genannt wird der Grundstoff, nicht die Zwischenstufe
+
+Die Fehlzeile hat sich damit geändert: Aus „es fehlt: 8 Eichenholzbretter"
+wurde „es fehlt: 2 Eichenstamm". Das ist der Punkt der ganzen Übung — genannt
+wird, was ein Mensch hinlegen muss, und nicht, was das Netz selbst kann.
+
+Zwei Sonderfälle laufen anders herum:
+
+**Der Kreis.** „Barren aus Block" und „Block aus Barren" ist ein Rezeptpaar,
+an dem eine Suche ewig läuft. Sie merkt den Kreis und meldet dann **die Ebene
+darüber** — bei einem Auftrag über einen Block also die neun Barren. Dort das
+zu melden, was gerade in Arbeit ist, hieße dem Spieler zu sagen, es fehle ihm
+das, was er bestellt hat.
+
+**Die Grenze.** Wo die Suche wegen `craftingDepth` oder `craftingBudget`
+aufhört, steht genau das in der Zeile, wonach sie als Nächstes gesucht hätte.
+Das ist etwas, das jemand hinlegen kann — anders als beim Kreis.
+
+### Eine Zutat bleibt eine Auswahl
+
+Eine Zutat ist in Minecraft kein Gegenstand, sondern eine Auswahl: `#planks`,
+nicht „Eichenbrett". Die erste Fassung legte sich beim Planen fest — auf die
+Sorte, von der am meisten dalag, und wenn von keiner etwas dalag, auf die
+erste der Liste. Wer nur Fichtenstämme hatte, bekam „es fehlen 8
+Eichenbretter", und im Laufwerk lag das Holz.
+
+Der Planner trägt die Auswahl deshalb durch. Er deckt sie erst aus dem
+Bestand — die reichste Sorte zuerst und **gemischt**, wenn keine allein reicht
+(fünf Eiche, drei Fichte; von Hand ginge es auch) —, und was offenbleibt,
+versucht er zu bauen: eine Sorte nach der anderen, bis eine aufgeht. Ein
+Versuch, der scheitert, wird vollständig zurückgenommen, samt seiner
+Fehlmeldungen — sonst hielte er der Sorte, die gelingt, den Grundstoff vor.
+
+Geht keine, steht die **erste** in der Fehlzeile. Irgendeine muss es sein, und
+die erste ist die, auf die auch ein Spieler zeigen würde.
+
+Der Schritt trägt danach die fertige Entnahmeliste. Der Ausführende entnimmt,
+was dort steht, und wählt nicht noch einmal aus: Sonst könnte er sich anders
+entscheiden als der Plan, und der Schritt darüber fände nicht vor, was er
+erwartet.

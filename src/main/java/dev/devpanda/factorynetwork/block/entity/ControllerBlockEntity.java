@@ -640,8 +640,7 @@ public class ControllerBlockEntity extends BlockEntity {
         if (level == null || amount <= 0) {
             return null;
         }
-        if (dev.devpanda.factorynetwork.crafting.RecipeLookup.find(
-                level, target, storage::count) == null) {
+        if (!recipes().known(target)) {
             return null;
         }
         var job = new dev.devpanda.factorynetwork.crafting.CraftingJob(
@@ -711,7 +710,38 @@ public class ControllerBlockEntity extends BlockEntity {
     }
 
     /**
+     * Das Rezeptverzeichnis dieses Ticks.
+     *
+     * <p>Einmal je Tick gebaut und dann für alle Aufträge und alle Knoten
+     * ihrer Rezeptbäume benutzt. Länger aufzubewahren hieße, sich darauf zu
+     * verlassen, dass ein {@code /reload} den Rezeptverwalter austauscht —
+     * und das ist keine Zusage, sondern Innenleben.
+     */
+    private dev.devpanda.factorynetwork.crafting.RecipeLookup recipeCache;
+    private long recipeCacheTick = Long.MIN_VALUE;
+
+    private dev.devpanda.factorynetwork.crafting.RecipeLookup recipes() {
+        long now = level.getGameTime();
+        if (recipeCache == null || recipeCacheTick != now) {
+            recipeCache = dev.devpanda.factorynetwork.crafting.RecipeLookup.of(level);
+            recipeCacheTick = now;
+        }
+        return recipeCache;
+    }
+
+    /**
      * Ein Durchlauf für einen Auftrag.
+     *
+     * <p><b>Erst planen, dann einen Schritt.</b> Der Plan zerlegt die
+     * Bestellung bis zu dem, was dasteht — acht Bretter, die es nicht gibt,
+     * werden zu zwei Stämmen, die es gibt. Ausgeführt wird davon der unterste
+     * Schritt, also der, der sofort laufen kann; den nächsten findet der
+     * nächste Takt.
+     *
+     * <p><b>Und der Plan wird jedes Mal neu gerechnet</b>, nicht gemerkt. Ein
+     * gemerkter Plan wäre ab dem Moment falsch, in dem ein Worker etwas
+     * einlagert — und genau das tun Worker den ganzen Tag. Dafür kostet er
+     * nichts an Speicherformat und übersteht jeden Neustart von selbst.
      *
      * <p>Erst prüfen, dann entnehmen, dann einlagern. Anders ginge es nicht:
      * Ein Rezept, dem nach der halben Entnahme etwas fehlt, hätte die andere
@@ -720,37 +750,55 @@ public class ControllerBlockEntity extends BlockEntity {
      * @return ob wirklich gebaut wurde
      */
     private boolean craftOnce(dev.devpanda.factorynetwork.crafting.CraftingJob job) {
-        var plan = dev.devpanda.factorynetwork.crafting.RecipeLookup.find(
-                level, job.target(), storage::count);
-        if (plan == null) {
+        var recipes = recipes();
+        if (!recipes.known(job.target())) {
             // Ein Rezept, das es nicht mehr gibt: Der Auftrag kann nicht mehr
             // fertig werden, und darauf zu warten hieße, für immer zu warten.
             job.note(dev.devpanda.factorynetwork.crafting.CraftingJob.Status.FAILED,
                     "kein Rezept mehr");
             return false;
         }
-        // So viele Durchläufe, wie noch fehlen — höchstens ein Stapel je
-        // Schritt. Ein Auftrag über zehntausend soll nicht einen Tick lang
-        // den Server halten.
-        final int perCraft = plan.perCraft();
-        final int runs = Math.max(1, Math.min(job.remaining() / perCraft,
-                job.target().getDefaultMaxStackSize() / perCraft));
-        String missing = dev.devpanda.factorynetwork.crafting.RecipeLookup.missing(
-                plan, runs, storage::count);
-        if (!missing.isEmpty()) {
-            job.note(dev.devpanda.factorynetwork.crafting.CraftingJob.Status.WAITING, missing);
+        // Höchstens ein Stapel des Ziels je Schritt. Ein Auftrag über
+        // zehntausend soll nicht einen Tick lang den Server halten.
+        long want = Math.min(job.remaining(), job.target().getDefaultMaxStackSize());
+        var plan = dev.devpanda.factorynetwork.crafting.CraftingPlanner.plan(
+                recipes, storage::count, job.target(), want,
+                dev.devpanda.factorynetwork.FnConfig.craftingDepth(),
+                dev.devpanda.factorynetwork.FnConfig.craftingBudget());
+        if (!plan.complete()) {
+            job.note(dev.devpanda.factorynetwork.crafting.CraftingJob.Status.WAITING,
+                    dev.devpanda.factorynetwork.crafting.RecipeLookup.missing(plan.missing()));
             return false;
         }
-        plan.ingredients().forEach((item, count) ->
-                storage.extract(item, (long) count * runs));
-        long left = storage.insert(job.target(), (long) perCraft * runs);
+        var step = plan.steps().get(0);
+        // Der Plan hat mit demselben Bestand gerechnet, aus dem gleich
+        // entnommen wird. Die Probe kostet nichts und hält die Zusage, dass
+        // nie eine halbe Entnahme stehenbleibt.
+        for (var entry : step.consumed().entrySet()) {
+            if (storage.count(entry.getKey()) < entry.getValue()) {
+                job.note(dev.devpanda.factorynetwork.crafting.CraftingJob.Status.WAITING,
+                        "es fehlt: " + entry.getValue() + " "
+                                + entry.getKey().getDescription().getString());
+                return false;
+            }
+        }
+        step.consumed().forEach(storage::extract);
+        long left = storage.insert(step.result(), step.yield());
         if (left > 0) {
             // Der Speicher ist voll. Was nicht hineinpasst, fällt zu Boden —
             // dieselbe Antwort wie bei einem Worker, dessen Ziel voll ist.
             net.minecraft.world.level.block.Block.popResource(level, worldPosition,
-                    new net.minecraft.world.item.ItemStack(job.target(), (int) left));
+                    new net.minecraft.world.item.ItemStack(step.result(), (int) left));
         }
-        job.produced(perCraft * runs);
+        if (step.result() == job.target()) {
+            job.produced((int) step.yield());
+        } else {
+            // Eine Zwischenstufe zählt nicht als Fortschritt der Bestellung —
+            // aber sie soll dastehen, sonst sieht ein Auftrag über eine
+            // Maschine minutenlang aus, als geschehe nichts.
+            job.note(dev.devpanda.factorynetwork.crafting.CraftingJob.Status.RUNNING,
+                    "baut " + step.yield() + " " + step.result().getDescription().getString());
+        }
         return true;
     }
 

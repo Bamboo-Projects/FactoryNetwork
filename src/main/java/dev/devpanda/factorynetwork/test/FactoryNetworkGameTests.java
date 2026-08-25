@@ -7830,6 +7830,93 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    /**
+     * Was fehlt, baut das Netz selbst.
+     *
+     * <p>Der Schnitt, der vorher hier lag: Ein Auftrag über eine Truhe stand
+     * still und meldete „es fehlen 8 Bretter", während im Laufwerk Stämme
+     * lagen und der Weg dahin ein einziges Rezept war.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void amissingIngredientIsCraftedInTurn(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        helper.setBlock(controller.east().above(), FnBlocks.FABRICATOR.get());
+        entity.rebuildNetwork();
+        // Zwei Stämme sind acht Bretter sind eine Truhe.
+        entity.storage().insert(Items.OAK_LOG, 2);
+
+        entity.requestCraft(Items.CHEST, 1);
+
+        helper.startSequence()
+                .thenIdle(100)
+                .thenExecute(() -> {
+                    helper.assertValueEqual(entity.storage().count(Items.CHEST), 1L,
+                            "die Truhe");
+                    helper.assertValueEqual(entity.storage().count(Items.OAK_LOG), 0L,
+                            "die Stämme sind verbraucht");
+                })
+                .thenSucceed();
+    }
+
+    /**
+     * Das Netz nimmt das Holz, das es hat.
+     *
+     * <p>Eine Zutat ist eine Auswahl — {@code #planks} und nicht
+     * „Eichenbrett". Wer sich beim Planen auf die erste Sorte festlegt,
+     * meldet einem Spieler mit einem Laufwerk voll Fichtenstämmen, es fehlten
+     * ihm Eichenbretter.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void thenetworkTakesTheWoodItHas(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        helper.setBlock(controller.east().above(), FnBlocks.FABRICATOR.get());
+        entity.rebuildNetwork();
+        // Keine Eiche weit und breit.
+        entity.storage().insert(Items.SPRUCE_LOG, 2);
+
+        entity.requestCraft(Items.CHEST, 1);
+
+        helper.startSequence()
+                .thenIdle(100)
+                .thenExecute(() -> {
+                    helper.assertValueEqual(entity.storage().count(Items.CHEST), 1L,
+                            "die Truhe aus Fichte");
+                    helper.assertValueEqual(entity.storage().count(Items.SPRUCE_LOG), 0L,
+                            "die Fichtenstämme sind verbraucht");
+                })
+                .thenSucceed();
+    }
+
+    /**
+     * Die Fehlzeile nennt den Grundstoff, nicht die Zwischenstufe.
+     *
+     * <p>„Es fehlen 8 Bretter" hilft niemandem, der Bretter herstellen kann.
+     * Gesucht ist das, was jemand hinlegen muss.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void whatIsMissingIsNamedDownToTheRawMaterial(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        helper.setBlock(controller.east().above(), FnBlocks.FABRICATOR.get());
+        entity.rebuildNetwork();
+
+        entity.requestCraft(Items.CHEST, 1);
+
+        helper.startSequence()
+                .thenIdle(60)
+                .thenExecute(() -> {
+                    String detail = entity.craftingJobs().get(0).detail().toLowerCase();
+                    helper.assertTrue(detail.contains("log") || detail.contains("wood")
+                                    || detail.contains("holz"),
+                            "die Fehlzeile muss den Stamm nennen: " + detail);
+                    helper.assertTrue(!detail.contains("plank") && !detail.contains("brett"),
+                            "und nicht die Bretter, die das Netz selbst macht: " + detail);
+                })
+                .thenSucceed();
+    }
+
     // ---- Der Anbau am Controller -------------------------------------------
 
     /**

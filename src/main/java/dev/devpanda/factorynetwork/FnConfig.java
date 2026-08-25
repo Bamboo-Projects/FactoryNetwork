@@ -34,8 +34,22 @@ public final class FnConfig {
     /** Und wie weit der Aufbau des Netzgraphen sucht. */
     public static final int DEFAULT_NETWORK_NODES = 4_096;
 
+    /**
+     * Wie viele Rezepte tief eine Fertigung sucht.
+     *
+     * <p>Acht Ebenen reichen für alles, was ein Pack an Ketten kennt — Erz zu
+     * Barren zu Platte zu Bauteil zu Maschine sind fünf. Wer tiefer sucht,
+     * findet keine neuen Wege, sondern nur längere.
+     */
+    public static final int DEFAULT_CRAFTING_DEPTH = 8;
+
+    /** Und wie viele Bedarfe sie dabei ansehen darf. */
+    public static final int DEFAULT_CRAFTING_BUDGET = 512;
+
     private static final ModConfigSpec.IntValue STEP_BUDGET;
     private static final ModConfigSpec.IntValue NETWORK_NODES;
+    private static final ModConfigSpec.IntValue CRAFTING_DEPTH;
+    private static final ModConfigSpec.IntValue CRAFTING_BUDGET;
     private static final ModConfigSpec.EnumValue<FnProtection.Mode> PROTECTION;
 
     public static final ModConfigSpec SERVER_SPEC;
@@ -58,6 +72,17 @@ public final class FnConfig {
                         "Die Zahl begrenzt die Suche, nicht die Zahl der Geräte —",
                         "dafür gibt es die Kanäle.")
                 .defineInRange("networkNodes", DEFAULT_NETWORK_NODES, 256, 1_000_000);
+        CRAFTING_DEPTH = builder
+                .comment("Wie viele Rezepte tief ein Fertigungsauftrag sucht, wenn eine",
+                        "Zutat fehlt. Bei 1 baut das Netz nur aus dem, was dasteht.",
+                        "Was jenseits der Grenze liegt, steht als fehlend im Auftrag —",
+                        "abgebrochen wird nichts.")
+                .defineInRange("craftingDepth", DEFAULT_CRAFTING_DEPTH, 1, 64);
+        CRAFTING_BUDGET = builder
+                .comment("Wie viele Bedarfe eine solche Suche ansehen darf. Die Grenze",
+                        "greift bei Rezeptbäumen, die sich in viele erlaubte Sorten",
+                        "verzweigen — dort wächst die Suche schneller als ihre Tiefe.")
+                .defineInRange("craftingBudget", DEFAULT_CRAFTING_BUDGET, 16, 100_000);
         builder.pop();
         builder.comment("Wer eine fremde Fabrik umbauen darf.")
                 .push("protection");
@@ -94,6 +119,16 @@ public final class FnConfig {
     /** Wie weit der Aufbau des Netzgraphen sucht. */
     public static int networkNodes() {
         return SERVER_SPEC.isLoaded() ? NETWORK_NODES.get() : DEFAULT_NETWORK_NODES;
+    }
+
+    /** Wie viele Rezepte tief eine Fertigung sucht. */
+    public static int craftingDepth() {
+        return SERVER_SPEC.isLoaded() ? CRAFTING_DEPTH.get() : DEFAULT_CRAFTING_DEPTH;
+    }
+
+    /** Und wie viele Bedarfe sie dabei ansieht. */
+    public static int craftingBudget() {
+        return SERVER_SPEC.isLoaded() ? CRAFTING_BUDGET.get() : DEFAULT_CRAFTING_BUDGET;
     }
 
     /**

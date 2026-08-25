@@ -1,8 +1,8 @@
 package dev.devpanda.factorynetwork.crafting;
 
+import net.minecraft.core.HolderLookup;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeHolder;
@@ -10,13 +10,14 @@ import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.ToLongFunction;
 
 /**
- * Findet das Rezept zu einem Gegenstand und sagt, was es kostet.
+ * Findet die Rezepte zu einem Gegenstand und sagt, was sie kosten.
  *
  * <p><b>Eine eigene Klasse und nicht drei Zeilen in der BlockEntity:</b> Die
  * Rezeptsuche ist die Stelle, an der eine Fertigung falsch liegt, ohne dass
@@ -28,33 +29,40 @@ import java.util.function.ToLongFunction;
  * das, was jeder Spieler von Hand im 3x3 baut — und was ein Netz ihm deshalb
  * abnehmen kann, ohne ein einziges Muster-Item.
  *
- * <p><b>Einstufig.</b> Fehlt eine Zutat, wird sie nicht ihrerseits gebaut.
- * Das ist ein Schnitt und kein Mangel: Ein Auftrag, der stillsteht und sagt
- * „es fehlen acht Bretter", ist ehrlicher als einer, der im Hintergrund einen
- * Baum fällt, den niemand bestellt hat.
+ * <p><b>Ein Verzeichnis, kein Durchsuchen.</b> Die Rezeptliste eines Packs
+ * hat fünfstellige Länge, und der Planner fragt sie für jeden Knoten eines
+ * Rezeptbaums. Deshalb wird sie einmal nach Ergebnis geordnet und dann
+ * nachgeschlagen. Das Verzeichnis lebt genau einen Tick: Es nach einem
+ * {@code /reload} von Hand ungültig zu machen hieße, sich auf Innenleben zu
+ * verlassen, das keine Zusage ist.
  */
-public final class RecipeLookup {
+public final class RecipeLookup implements CraftingPlanner.Recipes<Item> {
 
-    /**
-     * Ein gefundenes Rezept: was herauskommt und was hineingeht.
-     *
-     * <p>Die Zutaten stehen als Karte, weil zwei gleiche Zutaten in einem
-     * Rezept zusammengehören: Acht Bretter sind acht Bretter und nicht
-     * achtmal eines.
-     */
-    public record Plan(Item result, int perCraft, Map<Item, Integer> ingredients) {
+    private final Map<Item, List<RecipeHolder<CraftingRecipe>>> byResult;
+    private final HolderLookup.Provider registries;
 
-        /** Wie oft dieses Rezept laufen muss, um so viele zu liefern. */
-        public int runsFor(int wanted) {
-            return Math.max(1, (wanted + perCraft - 1) / perCraft);
+    private RecipeLookup(Map<Item, List<RecipeHolder<CraftingRecipe>>> byResult,
+                         HolderLookup.Provider registries) {
+        this.byResult = byResult;
+        this.registries = registries;
+    }
+
+    /** Das Verzeichnis der Werkbank-Rezepte dieser Welt. */
+    public static RecipeLookup of(Level level) {
+        Map<Item, List<RecipeHolder<CraftingRecipe>>> byResult = new HashMap<>();
+        for (RecipeHolder<CraftingRecipe> holder
+                : level.getRecipeManager().getAllRecipesFor(RecipeType.CRAFTING)) {
+            ItemStack result = holder.value().getResultItem(level.registryAccess());
+            if (result.isEmpty()) {
+                continue;
+            }
+            byResult.computeIfAbsent(result.getItem(), item -> new ArrayList<>()).add(holder);
         }
-    }
-
-    private RecipeLookup() {
+        return new RecipeLookup(byResult, level.registryAccess());
     }
 
     /**
-     * Das erste Rezept, dessen Zutaten der Speicher hergibt.
+     * Das erste Rezept, dessen Zutaten der Bestand hergibt.
      *
      * <p><b>Der Bestand entscheidet mit</b>, und das ist der ganze Trick an
      * dieser Stelle: Für einen Gegenstand gibt es oft mehrere Rezepte, und
@@ -66,70 +74,88 @@ public final class RecipeLookup {
      * erste überhaupt zurück — dann steht im Auftrag, was fehlt, statt „kein
      * Rezept".
      *
-     * @param available wie viel der Speicher von einer Art hat
-     * @return der Plan, oder {@code null}, wenn es gar kein Rezept gibt
+     * @param available wie viel von einer Art zur Verfügung steht; beim
+     *                  Planen ist das nicht der Speicher, sondern der Stand
+     *                  der Planung
      */
-    public static Plan find(Level level, Item target, ToLongFunction<Item> available) {
-        Plan first = null;
-        for (RecipeHolder<CraftingRecipe> holder
-                : level.getRecipeManager().getAllRecipesFor(RecipeType.CRAFTING)) {
-            ItemStack result = holder.value().getResultItem(level.registryAccess());
-            if (result.isEmpty() || result.getItem() != target) {
+    @Override
+    public CraftingPlanner.Recipe<Item> find(Item target, ToLongFunction<Item> available) {
+        CraftingPlanner.Recipe<Item> first = null;
+        for (RecipeHolder<CraftingRecipe> holder : byResult.getOrDefault(target, List.of())) {
+            ItemStack result = holder.value().getResultItem(registries);
+            List<CraftingPlanner.Need<Item>> needs = needsOf(holder.value());
+            if (needs == null || needs.isEmpty()) {
                 continue;
             }
-            Map<Item, Integer> ingredients = ingredientsOf(holder.value(), available);
-            if (ingredients == null) {
-                continue;
-            }
-            Plan plan = new Plan(target, result.getCount(), ingredients);
+            CraftingPlanner.Recipe<Item> recipe =
+                    new CraftingPlanner.Recipe<>(target, result.getCount(), needs);
             if (first == null) {
-                first = plan;
+                first = recipe;
             }
-            if (covered(ingredients, available)) {
-                return plan;
+            if (covered(needs, available)) {
+                return recipe;
             }
         }
         return first;
     }
 
+    /** Ob es für diesen Gegenstand überhaupt ein Rezept gibt. */
+    public boolean known(Item target) {
+        return find(target, item -> 0L) != null;
+    }
+
     /**
-     * Die Zutaten eines Rezepts, auf feste Gegenstände festgelegt.
+     * Die Zutaten eines Rezepts.
      *
-     * <p>Eine Zutat ist in Minecraft eine <b>Auswahl</b> — „irgendein Brett"
-     * — und keine Art. Festgelegt wird auf das, wovon der Speicher am meisten
-     * hat: Wer aus zwei Sorten wählen kann, nimmt die, die er ohnehin
-     * loswerden will.
+     * <p>Eine Zutat bleibt eine <b>Auswahl</b> — „irgendein Brett" —, und
+     * genau so wird sie weitergereicht. Sich hier auf eine Art festzulegen
+     * war der Fehler der ersten Fassung: Sie nahm die Sorte, von der am
+     * meisten dalag, und wenn von keiner etwas dalag, die erste. Wer nur
+     * Fichtenstämme hatte, bekam „es fehlen 8 Eichenbretter".
      *
      * @return {@code null}, wenn eine Zutat gar nichts zulässt
      */
-    private static Map<Item, Integer> ingredientsOf(CraftingRecipe recipe,
-                                                    ToLongFunction<Item> available) {
-        Map<Item, Integer> needed = new LinkedHashMap<>();
+    private static List<CraftingPlanner.Need<Item>> needsOf(CraftingRecipe recipe) {
+        // Gleiche Auswahlen gehören zusammen: Acht Bretter sind ein Bedarf
+        // über acht und nicht acht Bedarfe über eines.
+        Map<List<Item>, Integer> merged = new LinkedHashMap<>();
         for (Ingredient ingredient : recipe.getIngredients()) {
             if (ingredient.isEmpty()) {
                 continue;
             }
-            ItemStack[] candidates = ingredient.getItems();
-            if (candidates.length == 0) {
-                return null;
-            }
-            Item chosen = candidates[0].getItem();
-            long best = -1;
-            for (ItemStack candidate : candidates) {
-                long have = available.applyAsLong(candidate.getItem());
-                if (have > best) {
-                    best = have;
-                    chosen = candidate.getItem();
+            List<Item> options = new ArrayList<>();
+            for (ItemStack candidate : ingredient.getItems()) {
+                if (!candidate.isEmpty() && !options.contains(candidate.getItem())) {
+                    options.add(candidate.getItem());
                 }
             }
-            needed.merge(chosen, 1, Integer::sum);
+            if (options.isEmpty()) {
+                return null;
+            }
+            merged.merge(List.copyOf(options), 1, Integer::sum);
         }
-        return needed;
+        List<CraftingPlanner.Need<Item>> needs = new ArrayList<>();
+        merged.forEach((options, count) ->
+                needs.add(new CraftingPlanner.Need<>(options, count)));
+        return needs;
     }
 
-    private static boolean covered(Map<Item, Integer> needed, ToLongFunction<Item> available) {
-        for (Map.Entry<Item, Integer> entry : needed.entrySet()) {
-            if (available.applyAsLong(entry.getKey()) < entry.getValue()) {
+    /**
+     * Ob der Bestand die Zutaten hergibt.
+     *
+     * <p>Grob gerechnet: Zwei Bedarfe, die dieselbe Sorte zulassen, zählen
+     * sie beide. Das reicht für die Frage, die hier ansteht — welches von
+     * mehreren Rezepten dem Bestand am nächsten kommt. Wie viel wirklich
+     * gedeckt ist, rechnet der Planner, und der rechnet es genau.
+     */
+    private static boolean covered(List<CraftingPlanner.Need<Item>> needs,
+                                   ToLongFunction<Item> available) {
+        for (CraftingPlanner.Need<Item> need : needs) {
+            long have = 0;
+            for (Item option : need.options()) {
+                have += available.applyAsLong(option);
+            }
+            if (have < need.count()) {
                 return false;
             }
         }
@@ -137,41 +163,20 @@ public final class RecipeLookup {
     }
 
     /**
-     * Was von den Zutaten fehlt, als lesbare Zeile.
+     * Was fehlt, als lesbare Zeile.
      *
      * <p>Leer, wenn nichts fehlt. Ein Auftrag, der stillsteht, muss den Grund
-     * nennen — sonst sucht man ihn beim Netz statt beim Bestand.
+     * nennen — sonst sucht man ihn beim Netz statt beim Bestand. Genannt wird
+     * der <b>Grundstoff</b> und nicht die Zwischenstufe: „es fehlen 8
+     * Bretter" hilft niemandem, der Bretter herstellen kann.
      */
-    public static String missing(Plan plan, int runs, ToLongFunction<Item> available) {
+    public static String missing(Map<Item, Long> missing) {
+        if (missing.isEmpty()) {
+            return "";
+        }
         List<String> lines = new ArrayList<>();
-        for (Map.Entry<Item, Integer> entry : plan.ingredients().entrySet()) {
-            long need = (long) entry.getValue() * runs;
-            long have = available.applyAsLong(entry.getKey());
-            if (have < need) {
-                lines.add((need - have) + " " + entry.getKey().getDescription().getString());
-            }
-        }
-        return lines.isEmpty() ? "" : "es fehlt: " + String.join(", ", lines);
-    }
-
-    /**
-     * Baut die Eingabe, die ein Rezept zum Rechnen braucht.
-     *
-     * <p>Gebraucht wird sie nicht zum Prüfen — das tut {@link #covered} über
-     * die Zutatenliste —, sondern für {@code assemble}: Manche Rezepte
-     * rechnen ihre Ausgabe aus der Eingabe aus, und die brauchen ein Gitter,
-     * kein Verzeichnis.
-     */
-    public static CraftingInput inputFor(Map<Item, Integer> ingredients) {
-        List<ItemStack> grid = new ArrayList<>(9);
-        ingredients.forEach((item, count) -> {
-            for (int i = 0; i < count && grid.size() < 9; i++) {
-                grid.add(new ItemStack(item));
-            }
-        });
-        while (grid.size() < 9) {
-            grid.add(ItemStack.EMPTY);
-        }
-        return CraftingInput.of(3, 3, grid);
+        missing.forEach((item, amount) ->
+                lines.add(amount + " " + item.getDescription().getString()));
+        return "es fehlt: " + String.join(", ", lines);
     }
 }

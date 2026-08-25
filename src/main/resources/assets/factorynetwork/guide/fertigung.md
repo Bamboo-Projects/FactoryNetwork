@@ -36,9 +36,13 @@ keine Antwort auf die Frage, was gebaut werden soll.
 ## Was der Reiter zeigt
 
 Im Terminal unter **Fertigung**: je Auftrag, wie weit er ist, und darunter,
-woran es hängt — „es fehlt: 8 Eichenholzbretter" oder „kein Fabricator im
-Netz". Rechts ein **×**: Das bricht ihn ab. Was schon gebaut wurde, bleibt im
-Speicher.
+woran es hängt — „baut 8 Eichenholzbretter", „es fehlt: 2 Eichenstamm" oder
+„kein Fabricator im Netz". Rechts ein **×**: Das bricht ihn ab. Was schon
+gebaut wurde, bleibt im Speicher.
+
+Was dort als fehlend steht, ist immer der **Grundstoff** und nie eine
+Zwischenstufe: „es fehlen 8 Bretter" hülfe dir nicht, denn Bretter kann das
+Netz selbst machen. Genannt wird, was du hinlegen musst.
 
 ## Keine Muster-Items
 
@@ -49,15 +53,33 @@ Welches Rezept genommen wird, **entscheidet dein Bestand**: Gibt es mehrere,
 nimmt das Netz das, dessen Zutaten dastehen. Wer Eichenbretter im Laufwerk
 hat, bekommt keine Meldung über fehlendes Fichtenholz.
 
-## Einstufig, und warum
+Dasselbe gilt innerhalb eines Rezepts. Eine Truhe braucht acht **Bretter**,
+nicht acht Eichenbretter — welche Sorte, entscheidet das Netz nach dem, was da
+ist. Reicht keine Sorte allein, mischt es: fünf Eiche, drei Fichte. Von Hand
+ginge es auch.
 
-**Fehlen Bretter, macht das Netz keine aus Stämmen.** Der Auftrag wartet und
-sagt es.
+## Mehrstufig
 
-Das ist Absicht und kein Mangel. Ein Auftrag, der im Hintergrund einen Baum
-fällt, den niemand bestellt hat, ist die unangenehmere Überraschung — und wer
-eine Kette will, schreibt sie: Erst Bretter bestellen, dann Truhen. Mehrstufig
-kommt später.
+**Fehlen Bretter, macht das Netz welche aus Stämmen.** Und fehlen die Stämme,
+sagt es das.
+
+Ein Auftrag über eine Truhe bei zwei Eichenstämmen im Laufwerk läuft in zwei
+Schritten: erst acht Bretter, dann die Truhe. Du siehst beide im Reiter
+vorbeiziehen. Wie tief das Netz dabei sucht, steht in der Serverkonfiguration
+(`craftingDepth`, Vorgabe acht Ebenen) — das reicht für jede Kette, die ein
+Pack kennt.
+
+Zwei Dinge, die du dabei wissen solltest:
+
+**Es baut nichts halb.** Geht der Plan nicht auf — irgendwo fehlt ein
+Grundstoff —, dann wartet der Auftrag, statt schon einmal die Bretter zu
+machen. Sonst stünde am Ende ein Stapel Zwischenzeug herum, das niemand
+bestellt hat, und der Auftrag hinge trotzdem.
+
+**Ein Kreis hält nichts auf.** „Barren aus Block" und „Block aus Barren" ist
+ein Rezeptpaar, an dem eine Suche ewig laufen könnte. Sie tut es nicht: Sie
+merkt den Kreis und meldet stattdessen das, was du hinlegen kannst — die
+Barren.
 
 ## Wenn es fertig ist
 

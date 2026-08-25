@@ -143,7 +143,8 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | | Bei Knappheit bekommt der Worker mit der kleinen `priority` seine ganze Rate |
 | | Energiezellen im Laufwerk, vier Größen — der Vorrat wächst mit ihnen |
 | Ausbau | Controller-Anbau: sechs weitere Seiten für Kabelstränge je Block |
-| Fertigung | Fabricator baut Werkbank-Rezepte aus dem Netzspeicher, einstufig |
+| Fertigung | Fabricator baut Werkbank-Rezepte aus dem Netzspeicher, mehrstufig |
+| | Fehlt eine Zutat, wird sie gebaut; genannt wird der Grundstoff |
 | | `craft(64 item:chest)` im Code, Aufträge im Reiter, mit Abbruch |
 | Server | `config/factorynetwork-server.toml`: Schrittbudget und Suchtiefe |
 | | Schutz fremder Programme, wahlweise nach Besitzer oder Operator |
@@ -159,7 +160,7 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | Netzwerk | Graph über Kabel, Speicher schlüsselbasiert, Kanäle je Strang |
 | Editor | Syntaxfarben, Fehler beim Tippen, Vervollständigung nach Stelle |
 | Anzeigen | Am Block und im Terminal, Knöpfe starten Abläufe |
-| Prüfung | 366 Einheitstests, 234 GameTests |
+| Prüfung | 383 Einheitstests, 237 GameTests |
 
 ## 3. Was noch nicht läuft
 
@@ -176,10 +177,9 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
   von vierundsechzig bis viertausendsechsundneunzig. Sie sind gesetzt, nicht
   hergeleitet — wie sie sich anfühlen, zeigt erst das Spielen. Die
   Begründungen stehen in `entscheidungen.md` unter „Der Serverschrank".
-- **Autocrafting, mehrstufig.** Der erste Schnitt steht: Der Fabricator baut
-  Werkbank-Rezepte aus dem Speicher, Aufträge leben am Controller und
-  überstehen den Neustart. Was fehlt, ist die **Rekursion** — fehlen Bretter,
-  werden keine aus Stämmen gemacht — und `from crafting` als Worker-Quelle.
+- **`from crafting` als Worker-Quelle.** Die Fertigung selbst ist
+  mehrstufig; was fehlt, ist die Vorratshaltung: ein Worker, der einen
+  Auftrag aufgibt, sobald ein Bestand unter `maintain` fällt.
 - **Processing-Rezepte** (2.9). Was ein Brecher aus Erz macht, weiß nur die
   Maschine. Für den Fabricator brauchte es das nicht: Werkbank-Rezepte stehen
   im Server.
@@ -395,11 +395,10 @@ Werkbank-Rezept steht im Server. Ein Netz, das sich seine Rezepte erst auf
 Papierschnipsel schreiben lässt, verlangt Arbeit für eine Auskunft, die schon
 dasteht.
 
-**Einstufig.** Fehlen Bretter, macht der Fabricator keine aus Stämmen, sondern
-wartet und sagt „es fehlt: 8 Eichenholzbretter". Ein Schnitt und kein Mangel:
-Ein Auftrag, der im Hintergrund einen Baum fällt, den niemand bestellt hat,
-ist die unangenehmere Überraschung. Die Rekursion kommt als eigener Schritt —
-und sie wird einfacher, weil der einstufige Pfad steht und geprüft ist.
+**Zuerst einstufig.** Fehlten Bretter, machte der Fabricator keine aus
+Stämmen, sondern wartete und sagte „es fehlt: 8 Eichenholzbretter" — auch
+dann, wenn zwei Stämme im Laufwerk lagen. Das war der Schnitt des ersten
+Tages; der Planner hat ihn noch am selben Tag aufgehoben (siehe unten).
 
 **Der Bestand entscheidet über das Rezept.** Für einen Gegenstand gibt es oft
 mehrere, und eines davon passt zu dem, was dasteht. Wer nur das erstbeste
@@ -417,6 +416,45 @@ wissen will, was noch offen war.
 `crafting_failed` löst nur bei einem verschwundenen Rezept aus. Fehlende
 Zutaten sind kein Fehlschlag: Wer darauf wartet, wartet, und morgen liegen sie
 vielleicht da.
+
+### Die Fertigung wird mehrstufig (seit dem 25.08.)
+
+Der Planner zerlegt eine Bestellung, bis er bei etwas ankommt, das dasteht.
+Ein Auftrag über eine Truhe bei zwei Stämmen im Laufwerk läuft in zwei
+Schritten: erst acht Bretter, dann die Truhe.
+
+**Der Plan wird gerechnet, nicht gemerkt.** Bei jedem Fertigungstakt neu, und
+ausgeführt wird davon der unterste Schritt. Ein gespeicherter Plan wäre ab dem
+Moment falsch, in dem ein Worker etwas einlagert — und genau das tun Worker
+den ganzen Tag. Nebenbei spart es ein Speicherformat: Der Auftrag übersteht
+den Neustart wie bisher, der Plan entsteht danach neu.
+
+**Eine Zutat ist eine Auswahl, und sie bleibt eine.** Das war der Fehler, den
+erst die Rekursion sichtbar machte: Die Zutatenliste legte sich beim Planen
+auf eine Sorte fest. Für einen einzigen Schritt fiel das nie auf — der Bestand
+entschied ja mit. Für eine Kette schon: Wer nur Fichtenstämme hat, hat von
+keiner Brettersorte etwas, und dann nahm die Liste die erste. „Es fehlen 8
+Eichenbretter", und im Laufwerk lag das Holz. Jetzt wird die Auswahl
+durchgetragen — erst aus dem Bestand gedeckt, notfalls gemischt, und was
+offenbleibt, wird gebaut: eine Sorte nach der anderen, bis eine aufgeht.
+
+**Es baut nichts halb.** Geht der Plan nicht auf, wartet der Auftrag
+vollständig. Sonst stünde am Ende ein Stapel Zwischenzeug im Lager, das
+niemand bestellt hat — und der Auftrag hinge trotzdem.
+
+**Die Fehlzeile hat sich geändert.** Aus „es fehlt: 8 Eichenholzbretter" wurde
+„es fehlt: 2 Eichenstamm". Genannt wird, was ein Mensch hinlegen muss.
+
+**Ein Verzeichnis statt eines Durchsuchens.** Die Rezeptliste eines Packs hat
+fünfstellige Länge, und der Planner fragt sie für jeden Knoten eines
+Rezeptbaums. Sie wird deshalb einmal je Tick nach Ergebnis geordnet. Länger
+aufzubewahren hieße, sich darauf zu verlassen, dass ein `/reload` den
+Rezeptverwalter austauscht — und das ist keine Zusage, sondern Innenleben.
+
+Zwei neue Grenzen stehen in der Serverkonfiguration: `craftingDepth` (acht
+Ebenen) und `craftingBudget` (512 Bedarfe). Die zweite greift bei Rezept­
+bäumen, die sich in viele erlaubte Sorten verzweigen — dort wächst die Suche
+schneller als ihre Tiefe.
 
 ### Rechte im Mehrspielerbetrieb (seit dem 25.08.)
 
