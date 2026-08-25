@@ -55,7 +55,8 @@ public final class Completions {
     }
 
     private static final List<String> DECLARATIONS = List.of(
-            "worker", "group", "multiblock", "event", "display", "fn", "on", "global");
+            "worker", "group", "filter", "multiblock", "event", "display", "fn", "on",
+            "global");
 
     private static final List<String> BUILTINS = List.of(
             "storage", "crafting", "world", "network", "workers", "multiblocks");
@@ -198,6 +199,9 @@ public final class Completions {
                 addAll(entries, BUILTINS, prefix, Entry.Kind.BUILTIN);
             }
             case SELECTION -> {
+                // Die Vorlagen zuerst: Wer eine angelegt hat, meint an dieser
+                // Stelle meistens sie und nicht den einzelnen Gegenstand.
+                addTemplates(entries, prefix, lines);
                 addItems(entries, prefix);
                 // Strom steht ohne Doppelpunkt und taucht deshalb in der
                 // Gegenstandssuche nicht auf — er muss eigens angeboten
@@ -249,6 +253,11 @@ public final class Completions {
         addDeclaredNames(entries, prefix, lines, "fn ", "fn");
     }
 
+    /** Die Filter-Vorlagen des Projekts. */
+    private static void addTemplates(List<Entry> entries, String prefix, List<String> lines) {
+        addDeclaredNames(entries, prefix, lines, "filter ", "filter");
+    }
+
     /**
      * Namen, die das Projekt vergibt — aus <b>allen</b> Dateien.
      *
@@ -285,6 +294,19 @@ public final class Completions {
         }
     }
 
+    /** Die erste der beiden Klammern, oder -1. */
+    private static int firstOf(String text, char one, char other) {
+        int first = text.indexOf(one);
+        int second = text.indexOf(other);
+        if (first < 0) {
+            return second;
+        }
+        if (second < 0) {
+            return first;
+        }
+        return Math.min(first, second);
+    }
+
     private static void collectNames(java.util.Set<String> into, List<String> lines,
                                      String keyword) {
         for (String line : lines) {
@@ -292,7 +314,10 @@ public final class Completions {
             if (!trimmed.startsWith(keyword)) {
                 continue;
             }
-            int open = trimmed.indexOf('(');
+            // Der Name endet an der Klammer — bei einer Funktion an der
+            // runden, bei einer Vorlage an der geschweiften. Ohne die zweite
+            // hieß die Vorlage „erze {".
+            int open = firstOf(trimmed, '(', '{');
             String name = (open < 0 ? trimmed.substring(keyword.length())
                     : trimmed.substring(keyword.length(), open)).trim();
             // Ein „fn" in einem Multiblock zählt mit: Es ist eine Erklärung
@@ -333,6 +358,13 @@ public final class Completions {
                     entries.add(new Entry(signature.keyword(), signature.keyword(),
                             Entry.Kind.KEYWORD, detail));
                 }
+            }
+            // In einer Vorlage ist jede Zeile eine Auswahl. Ohne das stünde
+            // dort nur „except" zur Wahl — das Wort für die Ausnahme, aber
+            // nichts für den Regelfall.
+            if ("filter".equals(block)) {
+                addItems(entries, prefix);
+                return entries;
             }
             if (isCodeBlock(block)) {
                 // In einer Funktion ist auch ein Ausdruck eine Anweisung —

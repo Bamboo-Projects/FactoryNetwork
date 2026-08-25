@@ -50,6 +50,38 @@ class CompletionsTest {
     }
 
     @Test
+    @DisplayName("Auf oberster Ebene steht filter neben den anderen Deklarationen")
+    void filterIsADeclaration() {
+        List<String> shown = at("");
+
+        assertTrue(shown.contains("filter"), () -> "filter fehlt: " + shown);
+        assertTrue(shown.contains("group"), () -> "group fehlt: " + shown);
+    }
+
+    @Test
+    @DisplayName("In einer Vorlage steht except und keine Deklaration")
+    void insideATemplateOnlyExcept() {
+        List<String> shown = at("filter erze {", "    ");
+
+        assertTrue(shown.contains("except"), () -> "except fehlt: " + shown);
+        assertFalse(shown.contains("worker"),
+                () -> "in einer Vorlage steht keine Deklaration: " + shown);
+        assertFalse(shown.contains("from"),
+                () -> "from gehört in einen Worker: " + shown);
+        assertFalse(shown.contains("if"),
+                () -> "eine Vorlage kennt keine Anweisungen: " + shown);
+    }
+
+    @Test
+    @DisplayName("An einer Auswahlstelle stehen die Vorlagen des Projekts")
+    void templatesAreOfferedWhereASelectionFits() {
+        List<String> shown = at("filter erze {", "    tag:c/ores", "}", "",
+                "worker holt {", "    from grube", "    to storage", "    filter ");
+
+        assertTrue(shown.contains("erze"), () -> "die Vorlage fehlt: " + shown);
+    }
+
+    @Test
     @DisplayName("Nach on stehen die Ereignisse")
     void afterOnTheEventsAreOffered() {
         List<String> shown = at("on ");
