@@ -83,24 +83,12 @@ class GlobalRuntimeTest {
                 () -> "Übersetzungsfehler: " + result.diagnostics());
         for (var declaration : result.program().declarations()) {
             if (declaration instanceof dev.devpanda.factorynetwork.lang.ast.Decl.Global global) {
-                host.globals.put(global.name(), literal(global.value()));
+                host.globals.put(global.name(), Value.ofLiteral(global.value()));
             }
         }
         return new Interpreter(result.program(), host);
     }
 
-    /** Ein Literal aus dem Baum als Wert. */
-    private static Value literal(dev.devpanda.factorynetwork.lang.ast.Expr expr) {
-        return switch (expr) {
-            case dev.devpanda.factorynetwork.lang.ast.Expr.IntLit number ->
-                    new Value.Int(number.value());
-            case dev.devpanda.factorynetwork.lang.ast.Expr.StringLit text ->
-                    new Value.Text(text.value());
-            case dev.devpanda.factorynetwork.lang.ast.Expr.BoolLit flag ->
-                    new Value.Bool(flag.value());
-            default -> Value.Nothing.get();
-        };
-    }
 
     @Test
     @DisplayName("Ein globaler Wert lässt sich lesen")
@@ -190,5 +178,65 @@ class GlobalRuntimeTest {
         interpreter.call("zaehlen", List.of());
 
         assertEquals("3", host.globals.get("zaehler").describe());
+    }
+
+    // ---- Listen als globale Werte ------------------------------------------
+
+    @Test
+    @DisplayName("Eine globale Liste fängt leer an")
+    void aglobalListStartsEmpty() {
+        TestHost host = new TestHost();
+        interpreterFor("""
+                global warteschlange = []
+
+                fn nichts() {
+                }""", host);
+
+        assertEquals("[]", host.globals.get("warteschlange").describe(),
+                "der Anfangswert muss eine leere Liste sein, nicht nichts");
+    }
+
+    @Test
+    @DisplayName("Angehängt wird über eine Zuweisung")
+    void appendingGoesThroughAnassignment() {
+        // Die Entscheidung in einer Zeile: `liste = liste.plus(x)` und kein
+        // änderndes `add`. Damit läuft jede Änderung über denselben Pfad wie
+        // bei einer Zahl — und damit durch die Wache für const und den
+        // Schutz im Mehrspielerbetrieb.
+        TestHost host = new TestHost();
+        Interpreter interpreter = interpreterFor("""
+                global warteschlange = []
+
+                fn anhaengen(was: Text) {
+                    warteschlange = warteschlange.plus(was)
+                }""", host);
+
+        interpreter.call("anhaengen", List.of(new Value.Text("eisen")));
+        interpreter.call("anhaengen", List.of(new Value.Text("gold")));
+
+        assertEquals("[eisen, gold]", host.globals.get("warteschlange").describe());
+    }
+
+    @Test
+    @DisplayName("Eine Liste, die zu groß wird, hält das Programm an")
+    void alistThatGrowsTooBigStopsTheProgram() {
+        // Ohne Deckel wäre ein globaler Listenwert der einzige Weg, mit einer
+        // Schleife unbegrenzt Speicher zu belegen, der den Neustart übersteht.
+        TestHost host = new TestHost();
+        Interpreter interpreter = interpreterFor("""
+                global warteschlange = []
+
+                fn fuellen() {
+                    let i = 0
+                    while i < 100000 {
+                        warteschlange = warteschlange.plus(i)
+                        i = i + 1
+                    }
+                }""", host);
+
+        ScriptError error = assertThrows(ScriptError.class,
+                () -> interpreter.call("fuellen", List.of()));
+
+        assertTrue(error.getMessage().contains("zu lang"), error.getMessage());
     }
 }

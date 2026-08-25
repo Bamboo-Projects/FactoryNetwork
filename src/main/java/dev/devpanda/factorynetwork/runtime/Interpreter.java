@@ -42,6 +42,10 @@ public final class Interpreter {
      */
     private final int maxSteps = dev.devpanda.factorynetwork.FnConfig.stepBudget();
 
+    /** Wie lang ein globaler Listenwert werden darf. */
+    private final int maxGlobalList =
+            dev.devpanda.factorynetwork.FnConfig.globalListSize();
+
     private final Program program;
     private final Host host;
     private final Deque<Map<String, Value>> scopes = new ArrayDeque<>();
@@ -507,7 +511,7 @@ public final class Interpreter {
                                             + "Dateien sehen sollen, bekommt ein global auf "
                                             + "oberster Ebene.");
                         }
-                        host.setGlobal(name.value(), assigned);
+                        writeGlobal(name.value(), assigned);
                     }
                     yield Step.Next.get();
                 }
@@ -729,6 +733,8 @@ public final class Interpreter {
             case Expr.StringLit literal -> new Value.Text(literal.value());
             case Expr.BoolLit literal -> new Value.Bool(literal.value());
             case Expr.DurationLit literal -> new Value.Duration(literal.ticks());
+            case Expr.ListLit literal -> new Value.ValueList(
+                    literal.entries().stream().map(this::evaluate).toList());
             case Expr.It ignored -> lookup("it");
             case Expr.Name name -> resolveName(name.value());
             case Expr.NamePattern pattern -> new Value.Text(pattern.pattern());
@@ -1149,12 +1155,12 @@ public final class Interpreter {
             }
         }
         if (target instanceof Value.ValueList list) {
-            return listMember(list, name);
+            return listMember(list, name, arguments);
         }
         // Fächer verhalten sich beim Lesen wie eine Liste ihrer Posten.
         if (target instanceof Value.DeviceSlots view) {
             return listMember(new Value.ValueList(
-                    host.itemsInSlots(view.device(), view.slots())), name);
+                    host.itemsInSlots(view.device(), view.slots())), name, arguments);
         }
         if (target instanceof Value.Group group) {
             return switch (name) {
@@ -1267,9 +1273,57 @@ public final class Interpreter {
         return null;
     }
 
-    private Value listMember(Value.ValueList list, String name) {
+    /**
+     * Was eine Liste kann.
+     *
+     * <p><b>Alles liefert Neues, nichts ändert.</b> Das ist keine Vorliebe,
+     * sondern folgt aus zwei Dingen, die schon da sind: Ein änderndes
+     * {@code add} wäre keine Zuweisung und liefe damit an der Wache für
+     * {@code const} und am Schutz im Mehrspielerbetrieb vorbei — beide hängen
+     * am Schreibpfad. Und ein wartender Ablauf überlebt den Neustart über den
+     * {@code ValueCodec}, der Verweise auf denselben Wert trennt: Vor dem
+     * Neustart wäre eine Änderung durch zwei Namen sichtbar, danach nur noch
+     * durch einen. Mit unveränderlichen Werten gibt es den Unterschied nicht.
+     *
+     * <p>Geschrieben wird deshalb {@code liste = liste.plus(x)} — wortreicher
+     * als {@code add}, aber die Sprache schreibt Zustand ohnehin über eine
+     * Zuweisung.
+     */
+    private Value listMember(Value.ValueList list, String name, List<Value> arguments) {
         return switch (name) {
             case "count" -> new Value.Int(list.entries().size());
+            case "plus" -> {
+                if (arguments.isEmpty()) {
+                    throw new ScriptError("plus braucht den Wert, der dazukommt.",
+                            "Zum Beispiel: warteschlange = warteschlange.plus(\"eisen\")");
+                }
+                List<Value> longer = new java.util.ArrayList<>(list.entries());
+                longer.add(arguments.get(0));
+                yield new Value.ValueList(List.copyOf(longer));
+            }
+            // Verglichen wird wie mit == — jedes Vorkommen und nicht nur das erste: „ohne Eisen" heißt
+            // ohne Eisen. Wer nur eines herausnehmen will, hat eine
+            // Warteschlange, und dafür gibt es first und rest.
+            case "without" -> {
+                if (arguments.isEmpty()) {
+                    throw new ScriptError("without braucht den Wert, der wegfällt.",
+                            "Zum Beispiel: warteschlange.without(\"eisen\")");
+                }
+                List<Value> kept = new java.util.ArrayList<>();
+                for (Value entry : list.entries()) {
+                    if (!equal(entry, arguments.get(0))) {
+                        kept.add(entry);
+                    }
+                }
+                yield new Value.ValueList(List.copyOf(kept));
+            }
+            // Alles außer dem ersten. Mit first zusammen ist das die
+            // Warteschlange — und der Grund, warum es keinen Zugriff über
+            // eine Nummer gibt: Eine Liste, in die man an beliebiger Stelle
+            // greift, will auch an beliebiger Stelle geändert werden.
+            case "rest" -> new Value.ValueList(list.entries().isEmpty()
+                    ? List.of()
+                    : List.copyOf(list.entries().subList(1, list.entries().size())));
             case "first" -> list.entries().isEmpty()
                     ? Value.Nothing.get() : list.entries().get(0);
             case "sum" -> {
@@ -1297,7 +1351,8 @@ public final class Interpreter {
                     "Zum Beispiel: items().where(it) oder items().sort(it).");
             default -> throw new ScriptError(
                     "Eine Liste kann kein " + name + ".",
-                    "Bekannt sind count, first, sum, where und sort.");
+                    "Bekannt sind count, first, sum, where, sort, plus, without "
+                            + "und rest.");
         };
     }
 
@@ -1481,12 +1536,35 @@ public final class Interpreter {
         // Kein Name in Reichweite — aber vielleicht ein globaler. Dieselbe
         // Reihenfolge wie beim Lesen: Was in der Funktion steht, geht vor.
         if (host.global(name.value()) != null) {
-            host.setGlobal(name.value(), value);
+            writeGlobal(name.value(), value);
             return;
         }
         throw new ScriptError("Unbekannter Name " + name.value() + ".",
                 "Neue Namen bekommen ein let davor. Ein Wert, den alle Dateien "
                         + "sehen sollen, bekommt ein global auf oberster Ebene.");
+    }
+
+    /**
+     * Schreibt einen globalen Wert — die einzige Stelle, an der das geschieht.
+     *
+     * <p>Es gibt zwei Wege dorthin, den geradeaus laufenden Interpreter und
+     * die Ablaufmaschine, und beide gehen hier durch. Das ist der Grund,
+     * warum {@code plus} keine ändernde Fassung hat: Solange jede Änderung
+     * eine Zuweisung ist, muss der Deckel nur an einer Stelle stehen — und
+     * dasselbe gilt für die Wache über {@code const} und den Schutz im
+     * Mehrspielerbetrieb.
+     */
+    private void writeGlobal(String name, Value value) {
+        if (value instanceof Value.ValueList list
+                && list.entries().size() > maxGlobalList) {
+            throw new ScriptError(
+                    "Die Liste " + name + " wird zu lang (" + list.entries().size()
+                            + " von " + maxGlobalList + ").",
+                    "Ein globaler Wert übersteht den Neustart und liegt in der "
+                            + "Weltdatei. Nimm heraus, was erledigt ist — "
+                            + name + " = " + name + ".rest()");
+        }
+        host.setGlobal(name, value);
     }
 
     private Value find(String name) {

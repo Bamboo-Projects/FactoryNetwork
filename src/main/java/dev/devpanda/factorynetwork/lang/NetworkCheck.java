@@ -297,6 +297,11 @@ public final class NetworkCheck {
                         checkExprMoves(argument.value(), view, known, problems));
             }
             case Expr.Member member -> checkExprMoves(member.target(), view, known, problems);
+            // Das einzige Literal, das Ausdrücke enthält. Ohne diese Zeile
+            // liefe ein falscher Gerätename in einer Liste durch — und eine
+            // Liste von Zielen ist der offensichtliche Gebrauch.
+            case Expr.ListLit list -> list.entries().forEach(entry ->
+                    checkExprMoves(entry, view, known, problems));
             case null, default -> { }
         }
     }

@@ -46,10 +46,20 @@ public final class FnConfig {
     /** Und wie viele Bedarfe sie dabei ansehen darf. */
     public static final int DEFAULT_CRAFTING_BUDGET = 512;
 
+    /**
+     * Wie lang ein globaler Listenwert werden darf.
+     *
+     * <p>Er ist der einzige Wert, den ein Programm in einer Schleife wachsen
+     * lassen kann und der den Neustart übersteht. Ohne Deckel wäre er der
+     * einzige Weg, mit drei Zeilen Nutzercode eine Weltdatei zu sprengen.
+     */
+    public static final int DEFAULT_GLOBAL_LIST = 256;
+
     private static final ModConfigSpec.IntValue STEP_BUDGET;
     private static final ModConfigSpec.IntValue NETWORK_NODES;
     private static final ModConfigSpec.IntValue CRAFTING_DEPTH;
     private static final ModConfigSpec.IntValue CRAFTING_BUDGET;
+    private static final ModConfigSpec.IntValue GLOBAL_LIST;
     private static final ModConfigSpec.EnumValue<FnProtection.Mode> PROTECTION;
 
     public static final ModConfigSpec SERVER_SPEC;
@@ -83,6 +93,12 @@ public final class FnConfig {
                         "greift bei Rezeptbäumen, die sich in viele erlaubte Sorten",
                         "verzweigen — dort wächst die Suche schneller als ihre Tiefe.")
                 .defineInRange("craftingBudget", DEFAULT_CRAFTING_BUDGET, 16, 100_000);
+        GLOBAL_LIST = builder
+                .comment("Wie viele Einträge ein globaler Listenwert tragen darf.",
+                        "Darüber hinaus hält das Programm mit einer Meldung an.",
+                        "Er ist der einzige Wert, der in einer Schleife wachsen kann",
+                        "und den Neustart übersteht.")
+                .defineInRange("globalListSize", DEFAULT_GLOBAL_LIST, 8, 100_000);
         builder.pop();
         builder.comment("Wer eine fremde Fabrik umbauen darf.")
                 .push("protection");
@@ -129,6 +145,11 @@ public final class FnConfig {
     /** Und wie viele Bedarfe sie dabei ansieht. */
     public static int craftingBudget() {
         return SERVER_SPEC.isLoaded() ? CRAFTING_BUDGET.get() : DEFAULT_CRAFTING_BUDGET;
+    }
+
+    /** Wie lang ein globaler Listenwert werden darf. */
+    public static int globalListSize() {
+        return SERVER_SPEC.isLoaded() ? GLOBAL_LIST.get() : DEFAULT_GLOBAL_LIST;
     }
 
     /**

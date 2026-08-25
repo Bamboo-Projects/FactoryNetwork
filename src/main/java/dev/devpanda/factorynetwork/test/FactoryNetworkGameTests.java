@@ -2758,6 +2758,73 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
+     * Eine globale Liste übersteht den Neustart.
+     *
+     * <p>Der Grund, warum es sie überhaupt gibt: Eine Warteschlange, die beim
+     * Serverneustart verschwindet, ist keine. Geprüft wird der ganze Weg —
+     * anhängen über eine Zuweisung, speichern, zurücklesen.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void aglobalListSurvivesArestart(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                global warteschlange = []
+
+                fn anstellen() {
+                    warteschlange = warteschlange.plus("eisen")
+                    warteschlange = warteschlange.plus("gold")
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.callFunction("anstellen", List.of());
+
+        var registries = helper.getLevel().registryAccess();
+        var wieder = (ControllerBlockEntity)
+                net.minecraft.world.level.block.entity.BlockEntity.loadStatic(
+                        helper.absolutePos(controller), helper.getBlockState(controller),
+                        entity.saveWithFullMetadata(registries), registries);
+
+        helper.assertTrue(wieder != null, "Der Controller kam nicht zurück");
+        helper.assertValueEqual(wieder.globals().get("warteschlange").describe(),
+                "[eisen, gold]", "die Liste hat den Neustart nicht überlebt");
+        helper.succeed();
+    }
+
+    /**
+     * Eine Liste als Festwert lässt sich nicht ändern.
+     *
+     * <p><b>Das ist geschenkt</b> und der Grund für die Entscheidung: Weil
+     * Anhängen eine Zuweisung ist, bewacht dieselbe Prüfung, die
+     * {@code stapel = 65} meldet, auch {@code sorten = sorten.plus(…)}. Ein
+     * änderndes {@code add} liefe daran vorbei.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void aconstListCannotBeChanged(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        // Erst die Gegenprobe: Dasselbe Programm ohne die Zuweisung geht
+        // durch. Ohne sie wäre der Test auch dann grün, wenn schon das
+        // Listenliteral nicht übersetzt — und geprüft wäre gar nichts.
+        helper.assertTrue(entity.deploy("""
+                const sorten = ["eisen", "gold"]
+
+                fn dazu() {
+                    log(sorten.plus("kupfer"))
+                }"""), "Lesen und Anhängen ohne Zuweisung muss erlaubt sein");
+
+        helper.assertTrue(!entity.deploy("""
+                const sorten = ["eisen", "gold"]
+
+                fn dazu() {
+                    sorten = sorten.plus("kupfer")
+                }"""), "Ein Festwert darf sich nicht überschreiben lassen");
+        helper.succeed();
+    }
+
+    /**
      * Ein Posten aus dem Bestand kennt seine Art und seine Menge.
      *
      * <p>Im GameTest, weil eine Art ohne Registry keine ist: Der Einheitstest

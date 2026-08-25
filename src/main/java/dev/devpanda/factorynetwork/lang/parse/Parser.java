@@ -982,6 +982,35 @@ public final class Parser {
         }
     }
 
+    /**
+     * {@code ["eisen", "gold"]} — eine hingeschriebene Liste.
+     *
+     * <p>Ein nachgestelltes Komma ist erlaubt. Wer eine Liste über mehrere
+     * Zeilen schreibt, hängt unten etwas an, und dann steht das Komma schon
+     * da — es dafür zu melden wäre eine Strenge ohne Nutzen.
+     */
+    private Expr parseListLiteral() {
+        Token open = advance();
+        List<Expr> entries = new ArrayList<>();
+        skipNewlines();
+        while (!at(TokenType.RBRACKET) && !at(TokenType.EOF)) {
+            entries.add(parseExpression());
+            skipNewlines();
+            if (!at(TokenType.COMMA)) {
+                break;
+            }
+            advance();
+            skipNewlines();
+        }
+        if (!at(TokenType.RBRACKET)) {
+            error(peek().span(), "Der Liste fehlt die schließende eckige Klammer.",
+                    "Zum Beispiel: [\"eisen\", \"gold\"]");
+            return new Expr.ListLit(List.copyOf(entries), open.span());
+        }
+        Token close = advance();
+        return new Expr.ListLit(List.copyOf(entries), open.span().to(close.span()));
+    }
+
     private Expr parsePrimary() {
         Token token = peek();
         switch (token.type()) {
@@ -1017,6 +1046,9 @@ public final class Parser {
             case IT -> {
                 advance();
                 return new Expr.It(token.span());
+            }
+            case LBRACKET -> {
+                return parseListLiteral();
             }
             case SELECTOR -> {
                 advance();

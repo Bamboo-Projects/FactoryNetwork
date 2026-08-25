@@ -28,6 +28,19 @@ public sealed interface Expr {
     /** Zeitangabe, schon in Ticks umgerechnet. */
     record DurationLit(long ticks, String written, Span span) implements Expr {}
 
+    /**
+     * Eine hingeschriebene Liste: {@code ["eisen", "gold"]}.
+     *
+     * <p>Der Grund, warum es sie gibt: Ein globaler Listenwert muss irgendwo
+     * anfangen, und fast immer fängt er leer an. Ohne {@code []} müsste man
+     * ihn mit einem Platzhalter beginnen und den gleich wieder herausnehmen.
+     *
+     * <p>Sie ist ein Literal wie jedes andere und trotzdem das einzige, das
+     * Ausdrücke enthält. Wer über die Elemente laufen muss — der Netzprüfer
+     * etwa —, muss deshalb hineingehen.
+     */
+    record ListLit(java.util.List<Expr> entries, Span span) implements Expr {}
+
     // ---- Auswahl ----------------------------------------------------------
 
     /**

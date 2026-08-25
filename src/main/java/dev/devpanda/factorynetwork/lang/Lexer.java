@@ -276,6 +276,16 @@ public final class Lexer {
         switch (c) {
             case '(' -> { parenDepth++; add(TokenType.LPAREN, "(", start, pos); }
             case ')' -> { if (parenDepth > 0) { parenDepth--; } add(TokenType.RPAREN, ")", start, pos); }
+            // Eckige Klammern zählen wie runde: Was zwischen ihnen steht,
+            // ist ein Ausdruck, und ein Ausdruck endet nicht an einer Zeile.
+            // Eine Liste aus sechs Namen schreibt niemand in eine Zeile.
+            case '[' -> { parenDepth++; add(TokenType.LBRACKET, "[", start, pos); }
+            case ']' -> {
+                if (parenDepth > 0) {
+                    parenDepth--;
+                }
+                add(TokenType.RBRACKET, "]", start, pos);
+            }
             case '{' -> add(TokenType.LBRACE, "{", start, pos);
             case '}' -> add(TokenType.RBRACE, "}", start, pos);
             case ',' -> add(TokenType.COMMA, ",", start, pos);

@@ -196,6 +196,10 @@ function contains(name, lines, word, shouldHave, file) {
 // Dieselben Faelle wie in CompletionsTest und SignaturesTest.
 contains('Anzeige bietet title', ['display halle {', '    '], 'title', true);
 contains('Anzeige bietet scale', ['display halle {', '    '], 'scale', true);
+contains('Hinter einer Liste steht plus',
+    ['fn test() {', '    let x = storage.items().'], 'plus', true);
+contains('Hinter einer Liste steht rest',
+    ['fn test() {', '    let x = storage.items().'], 'rest', true);
 contains('Anzeige bietet kein if', ['display halle {', '    '], 'if', false);
 contains('Anzeige bietet kein from', ['display halle {', '    '], 'from', false);
 contains('Worker bietet from', ['worker haul {', '    '], 'from', true);
@@ -229,7 +233,7 @@ contains('Eine Zahl mit Punkt ist kein Zugriff',
 // Dieselbe Unterscheidung wie in Completions.afterListCall.
 check('Nach items() die Listenoperationen',
     complete(['fn test() {', '    let x = storage.items().']),
-    ['count', 'first', 'sum', 'where', 'sort']);
+    ['count', 'first', 'sum', 'where', 'sort', 'plus', 'without', 'rest']);
 contains('Nach items() kein online',
     ['fn test() {', '    let x = storage.items().'], 'online', false);
 contains('Nach einem Gerätepunkt kein where',

@@ -103,7 +103,7 @@ Vorentscheidungen)
 | 1.8 | Die Typen `Set<T>`, `Job`, `Chemical` fehlen im Wertemodell | F | `sprache.md:308`, `Value.java:13` | mittel | teils 1.2, teils 1.4 |
 | 1.9 | Echter Typprüfer über Ausdrücke — **zurückgestellt.** Literal gegen Literal bleibt; alles andere fällt zur Laufzeit auf, mit Meldungen, die wissen, was erwartet war | Z | `globale-werte.md:195` | groß | eigenes Vorhaben über die ganze Sprache |
 | 1.10 | ~~Konstanten~~ — **fertig.** `const stapel = 64` wird gelesen wie ein globaler Wert und nie geschrieben; der Versuch ist ein Fehler beim Übernehmen. Nicht gespeichert, weil ein Wert aus dem Programm aus dem Programm wiederkommt | | `Decl.Const`, `GlobalCheck` | | |
-| 1.11 | **Entschieden: kommen** — beim Bauen aufgehalten. Die Speicherung ist das kleinere Problem (`ValueCodec` kann Listen schon); es fehlt die Sprache drumherum: Es gibt **keine Schreibweise für eine Liste** (`[a, b]` kennt der Lexer nicht) und **keinen Weg, einer Liste etwas hinzuzufügen** — `count`, `first`, `sum`, `where` und `sort` liefern alle nur Neues, ändern nie. Ohne beides wäre ein globaler Listenwert einer, den man nur ganz ersetzen kann. Das ist eine Entscheidung über die Sprache und keine Baufrage | E | `Lexer`, `Interpreter.listMember` | mittel | Entscheidung: Listenliteral, und Änderung oder Ersetzung |
+| 1.11 | ~~Globale Listen~~ — **fertig** (26.08.). `[a, b]` und `[]`, mehrzeilig; dazu `plus`, `without`, `rest`. Die Entscheidung lautet **ersetzen, nicht ändern**: Kein `add`, angehängt wird über eine Zuweisung — damit greifen `const` und der Mehrspielerschutz ohne Zusatzarbeit, und der Neustart trennt keine Verweise. Kein Zugriff über eine Nummer. Obergrenze in der Serverkonfiguration (`globalListSize`) | | `Expr.ListLit`, `Interpreter.writeGlobal` | | |
 | 1.12 | **Halb erledigt** (25.08.): Schrittbudget und Suchtiefe des Netzgraphen stehen in der Serverkonfiguration. Die Schrankplätze bleiben bewusst draußen — sie sind Spielinhalt und gehören zum Ausgleich der Mod, nicht zur Serverlast | Z | `FnConfig` | | |
 | 1.13 | ~~Die JEI-Schreibweise~~ — **fertig.** `item:mekanism:steel_ingot` meint dasselbe wie `item:mekanism/steel_ingot`. Der Parser hatte die Zerlegung schon; er hat sie nur mit einer Meldung begleitet, die bei jeder kopierten ID wiederkam | | `Parser.parseSelector` | | |
 | 1.14 | ~~Gruppen sind kein Wert~~ — **fertig.** `crushers.members()` liefert die Geräte, `crushers.send(…)` schickt aus dem Speicher an die Gruppe, und als Ziel steht sie überall, wo ein Gerät steht. Der Wert trägt nur den Namen — wer heute dazugehört, entscheidet das Netz | | `Value.Group`, `WorldHost.memberFor` | | |
@@ -193,10 +193,10 @@ Vorentscheidungen)
 
 ## Was am meisten bringt
 
-Stand nach dem 25.08.: **Auf der ganzen Liste steht nur noch eine offene
+Stand nach dem 26.08.: **Auf der ganzen Liste steht nur noch eine offene
 Entscheidung** — 5.4, die Zahlen an den Serverbauteilen, und die beantwortet
-eine Runde Spielen. Dazu 1.11, das beim Bauen wieder zur Entscheidung wurde.
-Alles andere ist Arbeit.
+eine Runde Spielen und kein Gespräch. Alles andere ist Arbeit, und davon steht
+nur noch Großes und Freiwilliges da.
 
 ~~**1. Die Stromverteilung** (2.2).~~ **Gebaut am 25.08.** Eine Fabrik
 versorgt ihre Maschinen jetzt selbst, und der Vorrat wächst mit den
@@ -214,11 +214,10 @@ Reiter ist keiner mehr, und `crafting` steht als Quelle in beiden Editoren.
 Offen bleibt daneben 2.9 — Processing-Rezepte an Maschinen —, aber das ist ein
 eigenes Vorhaben und keine Lücke im Autocrafting.
 
-**2. Der letzte kleinere Rest:** 1.11 (globale Listen — braucht vorher eine
-Entscheidung über Listenliteral und Ändern-vs-Ersetzen). 3.5 (Ordner im
-Projekt) und 5.3 (Schrift auf der Anzeigenwand) sind am 25. und 26.08.
-dazugekommen und wieder weg, 5.2 hat sich beim Nachsehen aufgelöst, und 3.6
-ist geprüft und abgelehnt.
+~~**2. Die kleineren Reste.**~~ **Alle durch** (25./26.08.): 3.5 (Ordner im
+Projekt), 5.3 (Schrift auf der Anzeigenwand) und 1.11 (globale Listen) sind
+gebaut, 5.2 hat sich beim Nachsehen aufgelöst, und 3.6 ist geprüft und
+abgelehnt.
 
 **3. Rezepte an Maschinen erkennen** (2.9). Groß, und seit dem Autocrafting
 keine Voraussetzung mehr für irgendetwas — der Fabricator baut Werkbank-

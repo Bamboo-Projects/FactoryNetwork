@@ -155,6 +155,7 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | Funktionen | Bedingungen, Schleifen, `move`, Redstone lesen, `log` |
 | Ereignisse | `redstone_changed`, `device_online/offline/changed/output`, eigene über `emit` und `on` |
 | Abläufe | `sleep`, `await` mit `where`, `timeout` und `else`, `for` mit Warten je Runde |
+| Listen | `[a, b]`, `plus`, `without`, `rest` — auch als globaler Wert |
 | Aufrufe | Eine gerufene Funktion darf selbst warten — beide Rahmen überstehen den Neustart |
 | Multiblocks | Vorlagen, gebaute Anlagen über `anlage/rolle`, Aufruf an der Instanz |
 | Fortsetzen | Wartende Abläufe überleben Serverneustart und Programmwechsel |
@@ -163,7 +164,7 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | | Projekt aus mehreren Dateien, Ordner im Namen: `erz/brecher.mf` |
 | | Anzeigenwand mit `scale`: große Schrift statt vieler Zeilen |
 | Anzeigen | Am Block und im Terminal, Knöpfe starten Abläufe |
-| Prüfung | 399 Einheitstests, 246 GameTests |
+| Prüfung | 416 Einheitstests, 248 GameTests |
 
 ## 3. Was noch nicht läuft
 
@@ -452,6 +453,40 @@ Zwei neue Grenzen stehen in der Serverkonfiguration: `craftingDepth` (acht
 Ebenen) und `craftingBudget` (512 Bedarfe). Die zweite greift bei Rezept­
 bäumen, die sich in viele erlaubte Sorten verzweigen — dort wächst die Suche
 schneller als ihre Tiefe.
+
+### Globale Listen (seit dem 26.08.)
+
+Punkt 1.11 stand als „entschieden: kommen" und war beim Bauen wieder zur
+Entscheidung geworden: Es fehlte eine Schreibweise für eine Liste und ein Weg,
+ihr etwas hinzuzufügen.
+
+**`[a, b]`, und `[]` gehört dazu.** Eckige Klammern zählen im Lexer wie runde:
+Zwischen ihnen trennt kein Zeilenumbruch. Das kostete eine Zeile, weil der
+Mechanismus für runde Klammern schon dastand.
+
+**Ersetzen statt Ändern.** Es gibt kein `add`; angehängt wird über eine
+Zuweisung. Die beiden Gründe standen schon im Code: `const` bewacht
+Zuweisungen (und der Mehrspielerschutz auch), und der `ValueCodec` trennt beim
+Neustart zwei Namen für dieselbe Liste in zwei Listen. Unveränderliche Werte
+haben beide Probleme nicht — und alle fünf vorhandenen Operationen hielten es
+ohnehin so.
+
+**Drei Operationen, kein Index.** `plus`, `without`, `rest`. `liste[2]` gibt
+es nicht: Eine Liste, in die man an beliebiger Stelle greift, will auch an
+beliebiger Stelle geändert werden.
+
+**Eine Obergrenze beim Betreiber.** `globalListSize` neben `stepBudget`, denn
+ein globaler Listenwert ist der einzige Wert, der in einer Schleife wachsen
+kann und den Neustart übersteht. Geprüft an einer einzigen Stelle —
+`writeGlobal` —, durch die beide Ausführungswege gehen. Auch das ein Geschenk
+der Entscheidung oben.
+
+**Zwei Stellen fielen dabei auf.** Der Netzprüfer läuft über Ausdrücke, um
+Gerätenamen zu finden, und ein Listenliteral ist der einzige Ausdruck, der
+Ausdrücke enthält — ohne einen Zweig dorthin liefe ein Vertipper in einer
+Liste von Zielen durch. Und `describe()` einer Liste lieferte „3 Einträge",
+was im Protokoll und im Netz-Reiter niemandem half; jetzt steht dort
+`[eisen, gold]`, ab sieben Einträgen gekürzt mit einer Zählung.
 
 ### Die Schrift auf der Anzeigenwand (seit dem 26.08.)
 

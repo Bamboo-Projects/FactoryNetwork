@@ -1192,6 +1192,9 @@ Vorgesehen sind:
 | `sum` | alle Zahlen aufaddieren — an einem Bestandsposten seine Menge | **gebaut** |
 | `where` | aussortieren | **gebaut** |
 | `sort` | ordnen | **gebaut** |
+| `plus` | dieselbe Liste mit einem mehr | **gebaut** |
+| `without` | dieselbe Liste ohne jedes Vorkommen davon | **gebaut** |
+| `rest` | alles außer dem ersten | **gebaut** |
 
 An einem Posten stehen:
 
@@ -1207,6 +1210,44 @@ nur raten.
 
 Mehr nicht — kein `map`, kein `groupBy`. In einer Fabrik gibt es dafür bisher
 keinen Fall, und hinzufügen lässt sich später leicht, wegnehmen nicht.
+
+### Eine Liste hinschreiben
+
+```
+global warteschlange = []
+
+fn anstellen(was: Text) {
+    warteschlange = warteschlange.plus(was)
+}
+
+fn abarbeiten() {
+    let naechstes = warteschlange.first()
+    warteschlange = warteschlange.rest()
+    log(naechstes)
+}
+```
+
+`[a, b]` ist eine Liste, `[]` eine leere. Über mehrere Zeilen geht sie auch —
+zwischen eckigen Klammern trennt kein Zeilenumbruch, wie zwischen runden.
+
+**Nichts ändert eine Liste, alles liefert eine neue.** Es gibt kein `add`;
+angehängt wird über eine Zuweisung. Das ist wortreicher und hat zwei Gründe,
+die schwerer wiegen: Ein `const` bewacht Zuweisungen, und ein änderndes `add`
+liefe daran vorbei — genau wie am Schutz im Mehrspielerbetrieb. Und ein
+wartender Ablauf übersteht den Neustart, indem seine Werte geschrieben und
+zurückgelesen werden; dabei werden zwei Namen für dieselbe Liste zu zwei
+Listen. Solange nichts ändert, fällt das niemandem auf.
+
+**Keinen Zugriff über eine Nummer.** `liste[2]` gibt es nicht. Eine Liste, in
+die man an beliebiger Stelle greift, will auch an beliebiger Stelle geändert
+werden — und dann steht dieselbe Frage wieder da. Für die Warteschlange
+reichen `first` und `rest`, für alles andere `where` und `for`.
+
+**Ein globaler Listenwert hat eine Obergrenze.** Er ist der einzige Wert, der
+in einer Schleife wachsen kann und den Neustart übersteht; ohne Deckel wäre er
+der kürzeste Weg, eine Weltdatei zu sprengen. Die Zahl steht in der
+Serverkonfiguration (`globalListSize`, Vorgabe 256), und wer sie reißt, bekommt
+eine Meldung mit dem Hinweis auf `rest()`.
 
 **`where` und `sort` werten ihren Ausdruck je Eintrag aus.** Alle anderen
 Argumente werden ausgerechnet, bevor der Aufruf beginnt; diese beiden bekommen

@@ -290,4 +290,21 @@ class NetworkCheckTest {
                         problem.message().contains("Seite")),
                 () -> "ohne Filter darf die Art nicht geraten werden: " + problems);
     }
+
+    @Test
+    @DisplayName("Auch in einer Liste wird ein Vertipper gefunden")
+    void atypoInsideAlistIsFoundToo() {
+        // Ein Listenliteral ist der einzige Ausdruck, der Ausdrücke enthält.
+        // Wer beim Prüfen nicht hineingeht, lässt genau dort einen falschen
+        // Gerätenamen durch — und dort steht er bald, denn eine Liste von
+        // Zielen ist der offensichtliche Gebrauch.
+        List<Diagnostic> problems = check("""
+                fn holen() {
+                    let wege = [move 64 item:iron_ore from kist to ofen]
+                }""", net(List.of("kiste", "ofen"), List.of()));
+
+        assertTrue(problems.stream().anyMatch(problem ->
+                        problem.message().contains("kist")),
+                () -> "der Vertipper in der Liste muss auffallen: " + problems);
+    }
 }

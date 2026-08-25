@@ -301,4 +301,101 @@ class ListMemberTest {
                 ScriptError.class, () -> interpreter.call("zeigen", List.of()));
         assertTrue(error.getMessage().contains("Art"), error.getMessage());
     }
+
+    // ---- Listen im Programm ------------------------------------------------
+
+    @Test
+    @DisplayName("Eine Liste lässt sich hinschreiben")
+    void alistCanBeWrittenDown() {
+        TestHost host = new TestHost();
+        Interpreter interpreter = interpreterFor("""
+                fn zeigen() {
+                    log([3, 4, 5].count())
+                }""", host);
+
+        interpreter.call("zeigen", List.of());
+
+        assertEquals(List.of("3"), host.logs);
+    }
+
+    @Test
+    @DisplayName("plus liefert eine neue Liste und lässt die alte in Ruhe")
+    void plusGivesAnewListAndLeavesTheOldAlone() {
+        // Das ist die Entscheidung, die hier festgenagelt wird: Eine Liste
+        // wird ersetzt, nicht geändert. Ein änderndes add liefe an der Wache
+        // für const und am Schutz im Mehrspielerbetrieb vorbei — beide hängen
+        // am Zuweisen.
+        TestHost host = new TestHost();
+        Interpreter interpreter = interpreterFor("""
+                fn zeigen() {
+                    let alt = [1, 2]
+                    let neu = alt.plus(3)
+                    log(alt.count())
+                    log(neu.count())
+                }""", host);
+
+        interpreter.call("zeigen", List.of());
+
+        assertEquals(List.of("2", "3"), host.logs, "die alte Liste bleibt zweielementig");
+    }
+
+    @Test
+    @DisplayName("without nimmt jedes Vorkommen heraus")
+    void withoutRemovesEveryOccurrence() {
+        TestHost host = new TestHost();
+        Interpreter interpreter = interpreterFor("""
+                fn zeigen() {
+                    log([1, 2, 1].without(1).count())
+                }""", host);
+
+        interpreter.call("zeigen", List.of());
+
+        assertEquals(List.of("1"), host.logs);
+    }
+
+    @Test
+    @DisplayName("rest ist alles außer dem ersten")
+    void restIsEverythingButThefirst() {
+        // Mit first zusammen ist das die Warteschlange: nimm den vordersten,
+        // behalte den Rest. Ein Zugriff über die Nummer gibt es nicht.
+        TestHost host = new TestHost();
+        Interpreter interpreter = interpreterFor("""
+                fn zeigen() {
+                    log([7, 8, 9].rest().first())
+                }""", host);
+
+        interpreter.call("zeigen", List.of());
+
+        assertEquals(List.of("8"), host.logs);
+    }
+
+    @Test
+    @DisplayName("rest einer leeren Liste ist eine leere Liste")
+    void restOfAnemptyListIsAnemptyList() {
+        TestHost host = new TestHost();
+        Interpreter interpreter = interpreterFor("""
+                fn zeigen() {
+                    log([].rest().count())
+                }""", host);
+
+        interpreter.call("zeigen", List.of());
+
+        assertEquals(List.of("0"), host.logs, "keine Ausnahme, sondern nichts");
+    }
+
+    @Test
+    @DisplayName("Über ein Listenliteral lässt sich laufen")
+    void alistLiteralCanBeWalked() {
+        TestHost host = new TestHost();
+        Interpreter interpreter = interpreterFor("""
+                fn zeigen() {
+                    for name in ["a", "b"] {
+                        log(name)
+                    }
+                }""", host);
+
+        interpreter.call("zeigen", List.of());
+
+        assertEquals(List.of("a", "b"), host.logs);
+    }
 }

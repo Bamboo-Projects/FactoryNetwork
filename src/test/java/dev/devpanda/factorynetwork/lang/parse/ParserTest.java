@@ -395,6 +395,48 @@ class ParserTest {
         }
 
         @Test
+        void listLiteral() {
+            Program program = parseClean("""
+                    fn zeigen() {
+                        let namen = ["a", "b"]
+                    }""");
+            Stmt.Let let = (Stmt.Let) ((Decl.Fn) program.declarations().get(0))
+                    .body().statements().get(0);
+            Expr.ListLit list = assertInstanceOf(Expr.ListLit.class, let.value());
+            assertEquals(2, list.entries().size());
+        }
+
+        @Test
+        void anemptyListLiteral() {
+            // Der häufigste Anfangswert einer globalen Liste: noch nichts
+            // drin. Ohne ihn müsste man eine Liste mit einem Platzhalter
+            // beginnen und den gleich wieder herausnehmen.
+            Program program = parseClean("global warteschlange = []");
+            Decl.Global global = (Decl.Global) program.declarations().get(0);
+            assertEquals(0, assertInstanceOf(Expr.ListLit.class, global.value())
+                    .entries().size());
+        }
+
+        @Test
+        void amultilineListLiteral() {
+            Program program = parseClean("""
+                    global sorten = [
+                        "eisen",
+                        "gold"
+                    ]""");
+            Decl.Global global = (Decl.Global) program.declarations().get(0);
+            assertEquals(2, ((Expr.ListLit) global.value()).entries().size());
+        }
+
+        @Test
+        void anunclosedListIsAnerror() {
+            assertTrue(Parser.parse("""
+                    fn zeigen() {
+                        let namen = ["a", "b"
+                    }""").hasErrors(), "die fehlende Klammer muss auffallen");
+        }
+
+        @Test
         void eventWithTypedParameters() {
             Program program = parseClean("event OreBatchReady(item: Item, amount: Int)");
             Decl.Event event = (Decl.Event) program.declarations().get(0);

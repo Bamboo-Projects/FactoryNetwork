@@ -513,6 +513,21 @@
       "name": "sort",
       "shape": "sort(expr) list",
       "help": "Ordnet nach dem Ausdruck. it ist der Eintrag."
+    },
+    {
+      "name": "plus",
+      "shape": "plus(any) list",
+      "help": "Dieselbe Liste mit einem mehr."
+    },
+    {
+      "name": "without",
+      "shape": "without(any) list",
+      "help": "Dieselbe Liste ohne jedes Vorkommen davon."
+    },
+    {
+      "name": "rest",
+      "shape": "rest() list",
+      "help": "Alles außer dem ersten Eintrag."
     }
   ],
   "entryMembers": [

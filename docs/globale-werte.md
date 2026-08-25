@@ -198,7 +198,13 @@ Netze teilen nichts.
 - **Ob es Konstanten braucht.** `global` ist veränderlich; ein fester Wert
   (`const rate = 64`) wäre etwas anderes und vielleicht der häufigere Fall.
 - **Ob der Netz-Reiter Schreibrechte bekommt** (Abschnitt 6).
-- **Ob Listen und Karten als globale Werte erlaubt sind.** Die Sprache kennt
-  Listen (`storage.items()`), aber eine veränderliche globale Liste wirft
-  Fragen auf, die ein Text oder eine Zahl nicht hat: Wer darf anhängen, was
-  passiert beim Programmwechsel, wie groß darf sie werden.
+- ~~**Ob Listen und Karten als globale Werte erlaubt sind.**~~ **Listen: ja**
+  (26.08.). Die drei Fragen sind beantwortet, und die erste beantwortet die
+  anderen mit: **Niemand hängt an — es wird ersetzt.** `warteschlange =
+  warteschlange.plus(x)` geht denselben Weg wie `modus = "nacht"`, also durch
+  dieselbe Wache für `const` und denselben Schutz im Mehrspielerbetrieb. Beim
+  Programmwechsel gilt die Regel wie bei jedem anderen Wert: gleiche Art,
+  gleicher Inhalt — sonst der neue Anfangswert. Und die Größe steht in der
+  Serverkonfiguration (`globalListSize`, Vorgabe 256); wer sie reißt, hält mit
+  einer Meldung an. **Karten weiterhin nein:** Es gibt keinen Fall dafür, und
+  eine Schreibweise dafür wäre eine Entscheidung ohne Anlass.

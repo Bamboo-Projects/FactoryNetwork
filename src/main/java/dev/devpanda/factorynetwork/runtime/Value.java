@@ -143,9 +143,36 @@ public sealed interface Value {
                     + (value.slots().size() == 1 ? value.slots().get(0)
                             : value.slots().size() + " Stück");
             case Builtin value -> value.name();
-            case ValueList value -> value.entries().size() + " Einträge";
+            case ValueList value -> listText(value);
             case Nothing ignored -> "nichts";
         };
+    }
+
+    /** So viele Einträge einer Liste werden genannt, der Rest gezählt. */
+    int LIST_SHOWN = 6;
+
+    /**
+     * Eine Liste, wie sie im Protokoll und im Netz-Reiter erscheint.
+     *
+     * <p>Vorher stand hier die Zahl der Einträge, und die half niemandem:
+     * Wer eine Liste hinschreibt, will wissen, was darin steht. Gekürzt wird
+     * mit einer Zählung und nicht mit einem Abbruch — eine Liste, die still
+     * endet, liest sich wie eine vollständige.
+     */
+    private static String listText(ValueList list) {
+        StringBuilder out = new StringBuilder("[");
+        int shown = Math.min(list.entries().size(), LIST_SHOWN);
+        for (int i = 0; i < shown; i++) {
+            if (i > 0) {
+                out.append(", ");
+            }
+            out.append(list.entries().get(i).describe());
+        }
+        if (list.entries().size() > shown) {
+            out.append(shown == 0 ? "" : ", ").append("… +")
+                    .append(list.entries().size() - shown);
+        }
+        return out.append(']').toString();
     }
 
     /**
@@ -169,6 +196,11 @@ public sealed interface Value {
                     new Bool(flag.value());
             case dev.devpanda.factorynetwork.lang.ast.Expr.DurationLit duration ->
                     new Duration(duration.ticks());
+            // Auch der Anfangswert einer Liste ist ein Literal. Ohne diesen
+            // Fall stünde „global warteschlange = []" beim Übernehmen als
+            // Nothing da — ein globaler Wert, den es gibt und der nichts ist.
+            case dev.devpanda.factorynetwork.lang.ast.Expr.ListLit list ->
+                    new ValueList(list.entries().stream().map(Value::ofLiteral).toList());
             case null, default -> Nothing.get();
         };
     }

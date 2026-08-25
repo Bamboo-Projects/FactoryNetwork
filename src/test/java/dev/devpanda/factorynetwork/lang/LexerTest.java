@@ -26,6 +26,31 @@ class LexerTest {
                 .toList();
     }
 
+
+    @Nested
+    @DisplayName("Eckige Klammern")
+    class EckigeKlammern {
+
+        @Test
+        @DisplayName("Eine Liste ist ein Paar Klammern mit Kommas darin")
+        void alistIsApairOfBracketsWithCommas() {
+            assertEquals(List.of(TokenType.LBRACKET, TokenType.INT, TokenType.COMMA,
+                            TokenType.INT, TokenType.RBRACKET),
+                    typesOf("[1, 2]"));
+        }
+
+        @Test
+        @DisplayName("Zwischen Klammern zählt kein Zeilenumbruch")
+        void betweenBracketsAnewlineDoesNotCount() {
+            // Eine Liste aus sechs Namen schreibt niemand in eine Zeile.
+            // Dieselbe Regel wie bei runden Klammern, und aus demselben
+            // Grund: Dort steht ein Ausdruck, und ein Ausdruck endet nicht
+            // an einer Zeile.
+            assertFalse(typesOf("[1,\n2]").contains(TokenType.NL),
+                    "in Klammern trennt kein Umbruch");
+        }
+    }
+
     @Nested
     @DisplayName("Auswahlausdrücke gegen Typangaben")
     class Selectors {

@@ -134,6 +134,9 @@ diesem Eintrag.
 | `sum() int` | Alle Zahlen aufaddiert. |
 | `where(expr) list` | Behält, wofür der Ausdruck wahr ist. it ist der Eintrag. |
 | `sort(expr) list` | Ordnet nach dem Ausdruck. it ist der Eintrag. |
+| `plus(any) list` | Dieselbe Liste mit einem mehr. |
+| `without(any) list` | Dieselbe Liste ohne jedes Vorkommen davon. |
+| `rest() list` | Alles außer dem ersten Eintrag. |
 
 ## Was an einer Gruppe steht
 

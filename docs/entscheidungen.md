@@ -3185,3 +3185,89 @@ Lizenz, Einbindung. Zu prüfen wäre dann vor allem, ob sich ein einzelnes
 Fenster darauf bauen lässt, ohne dass die übrigen ihr Aussehen verlieren —
 diese Mod hat eine eigene Formsprache aus Mulden und hellen Kanten, und zwei
 Oberflächen nebeneinander sähe man sofort.
+
+---
+
+## Eine Liste wird ersetzt, nicht geändert (2026-08-26)
+
+Punkt 1.11 stand als „entschieden: kommen", war beim Bauen aber wieder zur
+Entscheidung geworden: Es fehlte eine Schreibweise für eine Liste, und es
+fehlte ein Weg, ihr etwas hinzuzufügen. Beides ist jetzt entschieden.
+
+### `[a, b]`, und `[]` gehört dazu
+
+Eckige Klammern, Kommas dazwischen, ein nachgestelltes Komma erlaubt. Sie
+zählen im Lexer wie runde: Zwischen ihnen trennt kein Zeilenumbruch, denn eine
+Liste aus sechs Namen schreibt niemand in eine Zeile.
+
+Die leere Liste ist der wichtigere Fall. Ein globaler Listenwert fängt fast
+immer leer an, und ohne `[]` müsste man ihn mit einem Platzhalter beginnen und
+den gleich wieder herausnehmen.
+
+### Ersetzen statt Ändern
+
+**Es gibt kein `add`.** Angehängt wird über eine Zuweisung:
+
+```
+warteschlange = warteschlange.plus("eisen")
+```
+
+Das ist wortreicher als `warteschlange.add("eisen")`, und beide Gründe dagegen
+stehen schon im Code:
+
+**`const` bewacht Zuweisungen.** `stapel = 65` ist ein Fehler beim Übernehmen,
+und dieselbe Prüfung greift ohne eine Zeile Zusatzarbeit bei
+`sorten = sorten.plus(…)`. Ein änderndes `add` ist keine Zuweisung und liefe
+daran vorbei — genauso am Schutz fremder Programme im Mehrspielerbetrieb, der
+ebenfalls am Schreibpfad hängt. Der GameTest
+`aconstListCannotBeChanged` hält das fest, mitsamt der Gegenprobe, dass
+dasselbe Programm ohne die Zuweisung durchgeht.
+
+**Der Neustart trennt Verweise.** Ein wartender Ablauf überlebt ihn über den
+`ValueCodec`: Werte werden geschrieben und zurückgelesen. Zwei Namen für
+dieselbe Liste sind danach zwei Listen. Mit einem ändernden `add` wäre eine
+Änderung vor dem Neustart durch beide Namen sichtbar und danach nur noch durch
+einen — ein Unterschied, den niemand erklären kann und den auch niemand sucht.
+Mit unveränderlichen Werten gibt es ihn nicht.
+
+Dazu passt, dass alle fünf vorhandenen Operationen es ohnehin so halten:
+`count`, `first`, `sum`, `where`, `sort` liefern nur Neues und ändern nie.
+
+### Drei Operationen, kein Index
+
+`plus(x)`, `without(x)` — jedes Vorkommen, verglichen wie mit `==` — und
+`rest()`. Mit `first()` zusammen ist `rest()` die Warteschlange: nimm den
+vordersten, behalte den Rest.
+
+**`liste[2]` gibt es nicht.** Eine Liste, in die man an beliebiger Stelle
+greift, will auch an beliebiger Stelle geändert werden, und dann stünde die
+Frage von oben wieder da. Für die Warteschlange reichen `first` und `rest`,
+für alles andere `where` und `for`.
+
+### Eine Obergrenze, und sie steht beim Betreiber
+
+Ein globaler Listenwert ist der einzige Wert, den ein Programm in einer
+Schleife wachsen lassen kann und der den Neustart übersteht — der kürzeste Weg
+zu einer gesprengten Weltdatei. `globalListSize` steht deshalb neben
+`stepBudget` unter `limits`, mit derselben Begründung: Grenzen für Nutzercode
+gehören dem, der den Server bezahlt.
+
+Geprüft wird beim Zuweisen und an einer einzigen Stelle — `writeGlobal` im
+Interpreter, durch die beide Wege gehen, der geradeaus laufende und die
+Ablaufmaschine. Auch das ist ein Geschenk der Entscheidung oben: Solange jede
+Änderung eine Zuweisung ist, gibt es genau einen Ort für solche Prüfungen.
+
+### Nebenbei: Eine Liste sagt jetzt, was drinsteht
+
+`describe()` lieferte „3 Einträge". Das half niemandem — nicht im Protokoll
+und erst recht nicht im Netz-Reiter, der globale Werte anzeigt. Jetzt steht da
+`[eisen, gold]`, ab sieben Einträgen gekürzt mit einer Zählung:
+`[0, 1, 2, 3, 4, 5, … +3]`. Gezählt und nicht abgeschnitten, aus demselben
+Grund wie bei der Aufzählung auf einer Anzeigetafel: Eine Liste, die still
+endet, liest sich wie eine vollständige.
+
+### Karten bleiben draußen
+
+Für `Map<K, V>` gibt es keinen Fall in einer Fabrik, und eine Schreibweise
+dafür wäre eine Entscheidung ohne Anlass. Hinzufügen lässt sich später leicht,
+wegnehmen nicht.

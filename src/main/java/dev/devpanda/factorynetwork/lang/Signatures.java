@@ -306,7 +306,11 @@ public final class Signatures {
             new Member("where", "where(expr) list",
                     "Behält, wofür der Ausdruck wahr ist. it ist der Eintrag."),
             new Member("sort", "sort(expr) list",
-                    "Ordnet nach dem Ausdruck. it ist der Eintrag."));
+                    "Ordnet nach dem Ausdruck. it ist der Eintrag."),
+            new Member("plus", "plus(any) list", "Dieselbe Liste mit einem mehr."),
+            new Member("without", "without(any) list",
+                    "Dieselbe Liste ohne jedes Vorkommen davon."),
+            new Member("rest", "rest() list", "Alles außer dem ersten Eintrag."));
 
     /**
      * Was an einer Gerätegruppe steht.

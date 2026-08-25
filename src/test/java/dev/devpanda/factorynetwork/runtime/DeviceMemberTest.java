@@ -148,7 +148,10 @@ class DeviceMemberTest {
 
         interpreter.call("zeigen", List.of());
 
-        assertEquals(List.of("2 Einträge"), host.logs);
+        // Die Zahl allein half niemandem: Wer eine Liste ins Protokoll
+        // schreibt oder einen globalen Listenwert im Netz-Reiter ansieht,
+        // will wissen, was darin steht.
+        assertEquals(List.of("[64 iron_ore, 3 coal]"), host.logs);
     }
 
     @Test
@@ -162,7 +165,26 @@ class DeviceMemberTest {
 
         interpreter.call("zeigen", List.of());
 
-        assertEquals(List.of("0 Einträge"), host.logs);
+        assertEquals(List.of("[]"), host.logs);
+    }
+
+    @Test
+    @DisplayName("Eine lange Liste wird gekürzt, nicht abgeschnitten")
+    void alongListIsShortenedNotCutOff() {
+        // Eine Liste, die still endet, liest sich wie eine vollständige —
+        // dieselbe Regel wie bei der Aufzählung auf einer Anzeigetafel.
+        TestHost host = new TestHost();
+        for (int i = 0; i < 9; i++) {
+            host.contents.add(new Value.Int(i));
+        }
+        Interpreter interpreter = interpreterFor("""
+                fn zeigen() {
+                    log(crusher_1.items())
+                }""", host);
+
+        interpreter.call("zeigen", List.of());
+
+        assertEquals(List.of("[0, 1, 2, 3, 4, 5, … +3]"), host.logs);
     }
 
     @Test

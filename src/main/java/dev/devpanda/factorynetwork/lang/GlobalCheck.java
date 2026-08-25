@@ -56,6 +56,10 @@ public final class GlobalCheck {
             case Expr.StringLit ignored -> "Text";
             case Expr.BoolLit ignored -> "Wahrheitswert";
             case Expr.DurationLit ignored -> "Dauer";
+            // Elementunabhängig, und `[]` gehört dazu: Was in einer Liste
+            // steht, weiß die Sprache ohne Typprüfer nicht — dass es eine
+            // Liste ist, reicht, um eine Zuweisung von "tag" daran zu melden.
+            case Expr.ListLit ignored -> "Liste";
             case null, default -> null;
         };
     }
