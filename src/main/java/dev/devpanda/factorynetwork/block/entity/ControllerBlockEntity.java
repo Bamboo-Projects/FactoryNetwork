@@ -606,6 +606,7 @@ public class ControllerBlockEntity extends BlockEntity {
 
     /** Und darunter der Entwurf, der noch nicht übernommen wurde. */
     private static final String KEY_DRAFT = "Draft";
+    private static final String KEY_OWNER = "Owner";
 
     /**
      * Liest das Projekt aus dem Speicherformat.
@@ -1605,11 +1606,31 @@ public class ControllerBlockEntity extends BlockEntity {
         setChanged();
     }
 
+    /**
+     * Wer den Controller gesetzt hat, oder {@code null}.
+     *
+     * <p>Gebraucht nur, wenn der Server es verlangt (siehe {@code FnConfig},
+     * Abschnitt {@code protection}). Gemerkt wird es trotzdem immer: Wer den
+     * Schutz erst später einschaltet, hätte sonst lauter herrenlose Anlagen.
+     */
+    private java.util.UUID owner;
+
+    public java.util.UUID owner() {
+        return owner;
+    }
+
+    /** Setzt der Block beim Platzieren. */
+    public void setOwner(java.util.UUID who) {
+        this.owner = who;
+        setChanged();
+    }
+
     // ---- Speichern --------------------------------------------------------
 
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
+        owner = tag.hasUUID(KEY_OWNER) ? tag.getUUID(KEY_OWNER) : null;
         project = readProject(tag);
         // Ohne eigenen Entwurf ist der laufende Stand der Entwurf.
         if (tag.contains(KEY_DRAFT)) {
@@ -1655,6 +1676,9 @@ public class ControllerBlockEntity extends BlockEntity {
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
+        if (owner != null) {
+            tag.putUUID(KEY_OWNER, owner);
+        }
         writeProject(tag);
         CompoundTag storageTag = new CompoundTag();
         storage.save(storageTag, registries);

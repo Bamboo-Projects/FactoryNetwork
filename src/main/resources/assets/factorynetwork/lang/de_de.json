@@ -10,6 +10,7 @@
   "message.factorynetwork.controller.status": "%s Connectoren (%s ohne Namen) · %s Kabel",
   "message.factorynetwork.deploy.accepted": "Übernommen: %s Worker laufen",
   "message.factorynetwork.deploy.rejected": "Nicht übernommen — %s Meldungen. Das alte Programm läuft weiter.",
+  "message.factorynetwork.protection.denied": "Diese Anlage gehört jemand anderem.",
   "message.factorynetwork.deploy.no_controller": "An diesem Terminal hängt kein Controller.",
   "screen.factorynetwork.terminal.network": "Im Netz",
   "screen.factorynetwork.terminal.no_connectors": "keine benannten",

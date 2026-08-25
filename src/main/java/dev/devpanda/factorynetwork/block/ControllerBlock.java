@@ -7,6 +7,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
@@ -50,6 +51,23 @@ public class ControllerBlock extends Block implements EntityBlock {
         return type == FnBlockEntities.CONTROLLER.get()
                 ? (l, p, s, entity) -> ((ControllerBlockEntity) entity).serverTick()
                 : null;
+    }
+
+    /**
+     * Merkt sich, wer den Controller gesetzt hat.
+     *
+     * <p>Gebraucht nur, wenn der Server den Schutz einschaltet — gemerkt wird
+     * es trotzdem immer: Wer ihn erst später einschaltet, hätte sonst lauter
+     * herrenlose Anlagen.
+     */
+    @Override
+    public void setPlacedBy(Level level, BlockPos pos, BlockState state,
+                            net.minecraft.world.entity.LivingEntity placer, ItemStack stack) {
+        super.setPlacedBy(level, pos, state, placer, stack);
+        if (placer instanceof Player player
+                && level.getBlockEntity(pos) instanceof ControllerBlockEntity controller) {
+            controller.setOwner(player.getUUID());
+        }
     }
 
     @Override

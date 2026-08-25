@@ -51,6 +51,21 @@ public record DeployProgramPacket(BlockPos terminal, Map<String, String> files)
         return TYPE;
     }
 
+    /**
+     * Darf dieser Spieler hier etwas ändern?
+     *
+     * <p>Die Rechnung steht in {@code FnProtection}; hier stehen nur die
+     * Angaben, die es dafür braucht. Operatoren dürfen immer — sonst hätte
+     * ein Server niemanden, der eine verwaiste Anlage wieder in Gang bringt.
+     */
+    static boolean mayEdit(ServerPlayer player,
+                           dev.devpanda.factorynetwork.block.entity.ControllerBlockEntity
+                                   controller) {
+        return dev.devpanda.factorynetwork.FnProtection.mayEdit(
+                dev.devpanda.factorynetwork.FnConfig.protection(),
+                controller.owner(), player.getUUID(), player.hasPermissions(2));
+    }
+
     public static void handle(DeployProgramPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
             if (!(context.player() instanceof ServerPlayer player)) {
@@ -66,6 +81,14 @@ public record DeployProgramPacket(BlockPos terminal, Map<String, String> files)
                 return;
             }
             terminal.controller().ifPresentOrElse(controller -> {
+                // Erst die Erlaubnis, dann der Übersetzer: Wer nicht darf,
+                // soll das erfahren und nicht erst seine Tippfehler.
+                if (!mayEdit(player, controller)) {
+                    net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,
+                            new DeployResultPacket(false, Component.translatable(
+                                    "message.factorynetwork.protection.denied").getString()));
+                    return;
+                }
                 boolean accepted = controller.deploy(
                         new dev.devpanda.factorynetwork.lang.Project(packet.files()));
                 // Der Ausgang gehört in den Editor und nicht nur in den Chat:

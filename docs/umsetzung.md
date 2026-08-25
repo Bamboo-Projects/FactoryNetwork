@@ -144,6 +144,7 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | | Energiezellen im Laufwerk, vier Größen — der Vorrat wächst mit ihnen |
 | Ausbau | Controller-Anbau: sechs weitere Seiten für Kabelstränge je Block |
 | Server | `config/factorynetwork-server.toml`: Schrittbudget und Suchtiefe |
+| | Schutz fremder Programme, wahlweise nach Besitzer oder Operator |
 | | Ein laufender Ablauf belegt einen Platz, der Rest stellt sich an |
 | | Zelle in der Hand ans Laufwerk klicken setzt sie ein, leere Hand nimmt die letzte heraus |
 | Werkzeuge | Beschriftungspistole, Netzanalysator mit Sicht durch Wände |
@@ -375,6 +376,29 @@ Quelle, gerendert wird im Spiel.
 **Und beide Editoren kennen jetzt das ganze Projekt.** Die Vervollständigung
 im Spiel las bisher nur die offene Datei — dabei teilen alle Dateien einen
 Namensraum. Die VS-Code-Erweiterung liest die Nachbardateien ebenfalls.
+
+### Rechte im Mehrspielerbetrieb (seit dem 25.08.)
+
+Bis hierher durfte jeder alles: Wer an ein Terminal kam, konnte das Programm
+einer fremden Fabrik überschreiben. Im Einzelspieler ist das richtig, auf
+einem Server nicht — und es fiel nirgends auf, weil ein überschriebenes
+Programm keine Meldung hinterlässt, sondern nur eine Anlage, die plötzlich
+etwas anderes tut.
+
+Drei Stufen in der Serverkonfiguration, **Vorgabe bleibt „jeder"**: Eine Mod,
+die nach einem Update Fabriken sperrt, an denen zwei Leute gemeinsam bauen,
+hat dasselbe Problem in die andere Richtung.
+
+Der Besitzer wird beim Setzen des Controllers gemerkt — **auch dann, wenn der
+Schutz aus ist.** Wer ihn erst später einschaltet, hätte sonst lauter
+herrenlose Anlagen. Und ein Controller ohne Besitzer gehört allen: Ihn
+niemandem zuzuordnen wäre eine Sperre, die niemand aufheben kann.
+
+Geschützt sind die zwei Wege zum Programm — übernehmen und den Entwurf
+speichern. Die Beschriftungspistole nicht: Einen Connector umzubenennen
+bricht Programme genauso, ist aber eine Handlung in der Welt wie das Abbauen
+eines Blocks, und dafür gibt es Schutzmods, die es besser können als eine
+Logistikmod.
 
 ### Die Referenzseite im Handbuch (seit dem 25.08.)
 

@@ -1363,5 +1363,9 @@ unentschieden, sondern noch nicht gebraucht:
 2. **Wie eine Multiblock-Instanz in der Welt entsteht** — Controller, Bereich,
    Zuordnung. Das ist keine Sprachfrage, muss aber festliegen, bevor
    Multiblocks gebaut werden.
-3. **Rechte im Mehrspielerbetrieb** — wer welchen Code übernehmen und welches
-   Terminal bedienen darf.
+3. ~~**Rechte im Mehrspielerbetrieb**~~ — **entschieden und gebaut am 25.08.**
+   Der Serverbetreiber stellt es ein (`protection.programs`): `OFF` wie
+   bisher, `OWNER` für „nur wer den Controller gesetzt hat", `OPS` für
+   „nur Operatoren". Die Vorgabe bleibt `OFF` — eine Mod, die nach einem
+   Update Fabriken sperrt, an denen zwei Leute gemeinsam bauen, hat dasselbe
+   Problem in die andere Richtung.

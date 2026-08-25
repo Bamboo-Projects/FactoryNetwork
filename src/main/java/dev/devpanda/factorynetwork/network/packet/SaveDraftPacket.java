@@ -73,6 +73,13 @@ public record SaveDraftPacket(BlockPos controller, Map<String, String> files)
             }
             if (player.level().getBlockEntity(packet.controller())
                     instanceof ControllerBlockEntity controller) {
+                // Derselbe Schutz wie beim Übernehmen: Ein überschriebener
+                // Entwurf ist verlorene Arbeit, auch wenn er nie lief.
+                if (!DeployProgramPacket.mayEdit(player, controller)) {
+                    player.sendSystemMessage(net.minecraft.network.chat.Component.translatable(
+                            "message.factorynetwork.protection.denied"));
+                    return;
+                }
                 controller.acceptDraft(new Project(packet.files()),
                         player.getUUID(), player.getGameProfile().getName());
             }

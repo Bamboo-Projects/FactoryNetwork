@@ -10,6 +10,7 @@
   "message.factorynetwork.controller.status": "%s connectors (%s unnamed) · %s cables",
   "message.factorynetwork.deploy.accepted": "Deployed: %s workers running",
   "message.factorynetwork.deploy.rejected": "Not deployed — %s messages. The previous program keeps running.",
+  "message.factorynetwork.protection.denied": "This factory belongs to someone else.",
   "message.factorynetwork.deploy.no_controller": "No controller attached to this terminal.",
   "screen.factorynetwork.terminal.network": "Network",
   "screen.factorynetwork.terminal.no_connectors": "none named",

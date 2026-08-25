@@ -36,6 +36,7 @@ public final class FnConfig {
 
     private static final ModConfigSpec.IntValue STEP_BUDGET;
     private static final ModConfigSpec.IntValue NETWORK_NODES;
+    private static final ModConfigSpec.EnumValue<FnProtection.Mode> PROTECTION;
 
     public static final ModConfigSpec SERVER_SPEC;
 
@@ -58,6 +59,19 @@ public final class FnConfig {
                         "dafür gibt es die Kanäle.")
                 .defineInRange("networkNodes", DEFAULT_NETWORK_NODES, 256, 1_000_000);
         builder.pop();
+        builder.comment("Wer eine fremde Fabrik umbauen darf.")
+                .push("protection");
+        PROTECTION = builder
+                .comment("OFF: jeder darf — der Stand vor dieser Einstellung.",
+                        "OWNER: nur wer den Controller gesetzt hat, und Operatoren.",
+                        "OPS: nur Operatoren.",
+                        "Betroffen sind die zwei Wege zum Programm: es übernehmen",
+                        "und den Entwurf speichern. Zusehen und Knöpfe drücken bleibt",
+                        "allen offen — das ist Benutzen und nicht Umbauen.",
+                        "Die Beschriftungspistole ist nicht dabei: Sie ändert die Welt,",
+                        "und dafür gibt es Schutzmods.")
+                .defineEnum("programs", FnProtection.Mode.OFF);
+        builder.pop();
         SERVER_SPEC = builder.build();
     }
 
@@ -79,5 +93,16 @@ public final class FnConfig {
     /** Wie weit der Aufbau des Netzgraphen sucht. */
     public static int networkNodes() {
         return SERVER_SPEC.isLoaded() ? NETWORK_NODES.get() : DEFAULT_NETWORK_NODES;
+    }
+
+    /**
+     * Wer eine fremde Fabrik umbauen darf.
+     *
+     * <p>Ohne geladene Konfiguration: jeder. Eine Sperre, die aus einem
+     * fehlenden Wert entsteht, ist die falsche Richtung — sie stünde genau
+     * dann da, wenn niemand sie eingerichtet hat.
+     */
+    public static FnProtection.Mode protection() {
+        return SERVER_SPEC.isLoaded() ? PROTECTION.get() : FnProtection.Mode.OFF;
     }
 }

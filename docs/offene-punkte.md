@@ -75,7 +75,7 @@ Vorentscheidungen)
 | 1.4 | **Entschieden:** Anbindung als Kompatibilitätsmodul, wie GuideME — `compileOnly` plus `runtimeOnly`, Code unter `compat/mekanism`. Ohne Mekanism läuft die Mod wie heute, `chemical:` meldet die fehlende Mod statt zu werfen | F | `WorldHost.java:461` | mittel–groß | — |
 | 1.5 | `import`/Module — reserviert, tut nichts | Z | `Parser.java:86` | — | bewusst, bis ein Projekt den Namensraum sprengt |
 | 1.6 | Request/Response als eigene Form | Z | `sprache.md:992` | mittel | mit `emit`/`on`/`await` nachbaubar |
-| 1.7 | **Rechte im Mehrspielerbetrieb.** Im Code gibt es *keinerlei* Berechtigungsprüfung — nur Dateisperren | F | `sprache.md:999` | mittel | — |
+| 1.7 | ~~Rechte im Mehrspielerbetrieb~~ — **gebaut** (25.08.). `protection.programs` in der Serverkonfiguration: `OFF` (Vorgabe, wie bisher), `OWNER`, `OPS`. Geschützt sind Übernehmen und Entwurf speichern; die Beschriftungspistole nicht — sie ändert die Welt, und dafür gibt es Schutzmods | | `FnProtection` | | |
 | 1.8 | Die Typen `Set<T>`, `Job`, `Chemical` fehlen im Wertemodell | F | `sprache.md:308`, `Value.java:13` | mittel | teils 1.2, teils 1.4 |
 | 1.9 | Echter Typprüfer über Ausdrücke — **zurückgestellt.** Literal gegen Literal bleibt; alles andere fällt zur Laufzeit auf, mit Meldungen, die wissen, was erwartet war | Z | `globale-werte.md:195` | groß | eigenes Vorhaben über die ganze Sprache |
 | 1.10 | ~~Konstanten~~ — **fertig.** `const stapel = 64` wird gelesen wie ein globaler Wert und nie geschrieben; der Versuch ist ein Fehler beim Übernehmen. Nicht gespeichert, weil ein Wert aus dem Programm aus dem Programm wiederkommt | | `Decl.Const`, `GlobalCheck` | | |
