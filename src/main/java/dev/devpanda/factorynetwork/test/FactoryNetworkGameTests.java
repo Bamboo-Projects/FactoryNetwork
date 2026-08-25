@@ -2333,7 +2333,7 @@ public final class FactoryNetworkGameTests {
                 new dev.devpanda.factorynetwork.network.packet
                         .FlowStatePacket.Compute(16, 5, 2, 64, 37, 256),
                 new dev.devpanda.factorynetwork.network.packet
-                        .FlowStatePacket.Supply(0, 12345, 20000, 42),
+                        .FlowStatePacket.Supply(0, 12345, 20000, 42, 96),
                 java.util.List.of("modus = nacht", "zaehler = 3"));
         var ablaeufeZurueck = roundTrip(helper,
                 dev.devpanda.factorynetwork.network.packet.FlowStatePacket.STREAM_CODEC, ablaeufe);
@@ -7055,6 +7055,39 @@ public final class FactoryNetworkGameTests {
                                     + bevorzugt.energy().getEnergyStored() + " gegen "
                                     + nachrangig.energy().getEnergyStored());
                 })
+                .thenSucceed();
+    }
+
+    /**
+     * Die Abgabe steht als eigene Zahl im Netz-Reiter.
+     *
+     * <p>Ohne sie sieht ein Netz, das vierzig FE je Tick durchreicht, aus wie
+     * eines, das nichts tut: Der Bedarf zählt sie nicht mit, und der Vorrat
+     * steht still, solange genug nachkommt.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void thesupplyIsItsOwnNumber(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        BlockPos maschine = controller.east().north().north();
+        helper.setBlock(maschine, FnBlocks.PRESS.get());
+        entity.rebuildNetwork();
+        entity.power().fill(Power.CAPACITY);
+
+        helper.assertTrue(entity.deploy("""
+                worker versorgung {
+                    from network
+                    to quarry_output
+                    filter power
+                    rate 40 per 1t
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+
+        helper.startSequence()
+                .thenIdle(60)
+                .thenExecute(() -> helper.assertTrue(entity.power().supplied() > 0,
+                        "Die Abgabe muss zu sehen sein, steht aber auf "
+                                + entity.power().supplied()))
                 .thenSucceed();
     }
 

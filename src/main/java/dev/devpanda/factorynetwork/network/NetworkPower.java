@@ -66,9 +66,39 @@ public final class NetworkPower {
     private int bootTicks;
     private int draw;
 
+    /** Was das Netz zuletzt je Tick abgegeben hat, gemittelt über eine Sekunde. */
+    private int supplied;
+
+    /** Was in der laufenden Sekunde bisher abgeflossen ist. */
+    private int suppliedWindow;
+
+    private int windowTicks;
+
     /** Wie viel das Netz gerade zieht, in FE je Tick. */
     public int draw() {
         return draw;
+    }
+
+    /**
+     * Was das Netz an Maschinen abgibt, in FE je Tick.
+     *
+     * <p><b>Gemittelt über eine Sekunde, nicht der letzte Tick.</b> Ein
+     * Worker mit {@code rate 800 per 20t} schiebt einmal und ruht neunzehnmal;
+     * die Zahl im Tick wäre neunzehnmal null und einmal achthundert, und
+     * niemand liest daraus, dass vierzig fließen.
+     *
+     * <p>Sie gehört nicht zum {@link #draw()}: Der ist, was das Netz für
+     * seine Bereitschaft braucht. Strom, der durchgereicht wird, ist kein
+     * Eigenbedarf — ihn mitzuzählen hieße, dass ein Netz sich abschaltet,
+     * weil es zu viel liefert.
+     */
+    public int supplied() {
+        return supplied;
+    }
+
+    /** Meldet, was ein Worker gerade an eine Maschine gegeben hat. */
+    public void noteSupplied(int amount) {
+        suppliedWindow += Math.max(0, amount);
     }
 
     public void setDraw(int perTick) {
@@ -225,6 +255,14 @@ public final class NetworkPower {
      * Hochfahren zu überstehen und danach noch zu laufen.
      */
     public void tick() {
+        // Zuerst das Fenster, denn darunter wird an mehreren Stellen
+        // ausgestiegen — und eine Abgabe, die beim Hochfahren stehenbleibt,
+        // sähe aus wie eine, die noch fließt.
+        if (++windowTicks >= 20) {
+            supplied = (suppliedWindow + windowTicks / 2) / windowTicks;
+            suppliedWindow = 0;
+            windowTicks = 0;
+        }
         if (draw <= 0) {
             // Ein Netz ohne Verbraucher braucht nichts und läuft immer.
             state = State.RUNNING;

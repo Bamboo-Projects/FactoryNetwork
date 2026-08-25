@@ -18,7 +18,7 @@ public final class ClientFlowState {
     private static FlowStatePacket.Compute compute =
             new FlowStatePacket.Compute(0, 0, 0, 0, 0, 0);
     private static FlowStatePacket.Supply supply =
-            new FlowStatePacket.Supply(0, 0, 0, 0);
+            new FlowStatePacket.Supply(0, 0, 0, 0, 0);
 
     /** Der Strom des Netzes, wie ihn der Server zuletzt gemeldet hat. */
     public static FlowStatePacket.Supply supply() {

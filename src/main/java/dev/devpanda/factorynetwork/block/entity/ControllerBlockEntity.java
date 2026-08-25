@@ -1037,7 +1037,7 @@ public class ControllerBlockEntity extends BlockEntity {
                         engine == null ? 0 : engine.queued(),
                         memory(), programSize(), diskSpace()),
                 new FlowStatePacket.Supply(power.state().ordinal(), power.stored(),
-                        power.capacity(), powerDraw()),
+                        power.capacity(), powerDraw(), power.supplied()),
                 globalLines()));
     }
 

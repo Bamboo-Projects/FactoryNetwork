@@ -804,6 +804,10 @@ public final class WorkerRuntime {
             // Zwischen Frage und Antwort kann sich etwas geändert haben.
             power.fill(taken - accepted);
         }
+        // Damit die Abgabe im Netz-Reiter steht: Sie zählt nicht zum Bedarf,
+        // und ohne diese Meldung sähe ein Netz, das kräftig liefert, aus wie
+        // eines, das nichts tut.
+        power.noteSupplied(accepted);
         return accepted;
     }
 

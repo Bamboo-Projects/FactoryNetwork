@@ -57,8 +57,11 @@ public record FlowStatePacket(List<Line> flows, Compute compute, Supply supply,
      *
      * <p>{@code state} ist die laufende Nummer aus {@code NetworkPower.State}
      * — der Client soll den Zustand anzeigen und nicht darüber urteilen.
+     *
+     * <p>{@code draw} und {@code supplied} sind zwei verschiedene Dinge: was
+     * das Netz für sich braucht, und was es an Maschinen weiterreicht.
      */
-    public record Supply(int state, int stored, int capacity, int draw) {
+    public record Supply(int state, int stored, int capacity, int draw, int supplied) {
 
         public static final StreamCodec<RegistryFriendlyByteBuf, Supply> STREAM_CODEC =
                 StreamCodec.composite(
@@ -66,6 +69,7 @@ public record FlowStatePacket(List<Line> flows, Compute compute, Supply supply,
                         ByteBufCodecs.VAR_INT, Supply::stored,
                         ByteBufCodecs.VAR_INT, Supply::capacity,
                         ByteBufCodecs.VAR_INT, Supply::draw,
+                        ByteBufCodecs.VAR_INT, Supply::supplied,
                         Supply::new);
     }
 

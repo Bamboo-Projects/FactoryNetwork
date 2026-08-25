@@ -228,6 +228,14 @@ public class NetworkTabView {
             case BOOTING -> TerminalScreen.WARN;
             case OFF -> TerminalScreen.BAD;
         };
+        // Die Abgabe steht nur in der laufenden Zeile: Ein Netz, das
+        // hochfährt oder steht, gibt nichts ab, und eine Null dort wäre eine
+        // Zahl, die nichts sagt.
+        if (zustand == dev.devpanda.factorynetwork.network.NetworkPower.State.RUNNING) {
+            return text(graphics, line, Component.translatable(schluessel, strom.draw(),
+                    strom.supplied(), grouped(strom.stored()),
+                    grouped(strom.capacity())).getString(), colour);
+        }
         return text(graphics, line, Component.translatable(schluessel, strom.draw(),
                 grouped(strom.stored()), grouped(strom.capacity())).getString(), colour);
     }
