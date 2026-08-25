@@ -3797,9 +3797,30 @@ public final class FactoryNetworkGameTests {
         entity.rebuildNetwork();
 
         var data = dev.devpanda.factorynetwork.analyser.AnalyserScan.of(entity);
-        // Acht Geräte zu je zwei Kanälen füllen ein gewöhnliches Kabel aus.
-        helper.assertTrue(data.summary().fullLinks() > 0 || data.summary().tightLinks() > 0,
-                "Die Strecke am Controller muss als eng erkannt werden");
+        // Acht Geräte zu je zwei Kanälen füllen ein gewöhnliches Kabel genau
+        // aus: sechzehn von sechzehn.
+        //
+        // <b>Vorher stand hier ein ODER über voll und eng</b>, und damit
+        // bestand der Test auch, wenn die Strecke nur als „eng" durchging —
+        // also genau dann, wenn die Erkennung nicht mehr stimmt. Geprüft wird
+        // deshalb die eine Antwort, die richtig ist, und dazu der Gegenfall
+        // mit halber Last.
+        helper.assertValueEqual(data.summary().fullLinks() > 0, true,
+                "Sechzehn von sechzehn Kanälen sind ein volles Kabel");
+        helper.assertValueEqual(data.summary().isHealthy(), false,
+                "Ein volles Kabel ist kein Netz in Ordnung — es hat keine Reserve");
+
+        // Dieselbe Anlage mit vier Geräten: acht von sechzehn, und nichts ist
+        // voll. Ohne diesen Gegenfall bestünde der Test auch, wenn jede
+        // Strecke als voll gälte.
+        for (int i = 4; i < 8; i++) {
+            BlockPos side = controller.east(i - 3).below();
+            helper.setBlock(side, Blocks.AIR);
+        }
+        entity.rebuildNetwork();
+        var halb = dev.devpanda.factorynetwork.analyser.AnalyserScan.of(entity);
+        helper.assertValueEqual(halb.summary().fullLinks(), 0,
+                "Acht von sechzehn Kanälen sind kein volles Kabel");
         helper.succeed();
     }
 
@@ -5528,7 +5549,32 @@ public final class FactoryNetworkGameTests {
         BlockPos rackPos = new BlockPos(1, 2, 1);
         smallRack(helper, rackPos, 8);
         helper.setBlock(rackPos, Blocks.AIR);
-        helper.succeedWhenEntityPresent(net.minecraft.world.entity.EntityType.ITEM, rackPos);
+
+        // <b>Nicht „irgendein Gegenstand fällt".</b> Ein leeres Gehäuse hätte
+        // diesen Test bestanden, und dahinter stünde genau der Verlust, den er
+        // verhindern soll: sechsunddreißig Bauteile, die niemand
+        // wiederbekommt.
+        //
+        // Herausfallen tut ein <b>fertiger Server</b> und keine Einzelteile —
+        // das Gehäuse trägt seine Bauteile in sich (siehe RackBlock.onRemove).
+        // Geprüft wird deshalb, dass es nicht leer ist.
+        helper.succeedWhen(() -> {
+            helper.assertItemEntityPresent(
+                    dev.devpanda.factorynetwork.registry.FnItems.SERVER_CHASSIS.get(),
+                    rackPos, 2.0);
+            boolean packed = helper.getLevel()
+                    .getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class,
+                            new net.minecraft.world.phys.AABB(helper.absolutePos(rackPos))
+                                    .inflate(2.0))
+                    .stream()
+                    .map(net.minecraft.world.entity.item.ItemEntity::getItem)
+                    .filter(stack -> stack.is(dev.devpanda.factorynetwork.registry
+                            .FnItems.SERVER_CHASSIS.get()))
+                    .anyMatch(stack -> !dev.devpanda.factorynetwork.item.ServerChassis
+                            .isEmpty(stack));
+            helper.assertTrue(packed,
+                    "Das Gehäuse fällt heraus, aber ohne seine Bauteile");
+        });
     }
 
     /**

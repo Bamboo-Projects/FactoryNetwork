@@ -132,7 +132,7 @@ Vorentscheidungen)
 | 6.6 | ~~Prioritätenliste~~ — **berichtigt**, mit Vermerk | | | |
 | 6.7 | ~~Plan-Kästchen~~ — **abgehakt** | | | |
 | 6.10 | **`list` auf einer Anzeige ist eine `row`.** Die Spezifikation nennt es „Aufzählung, etwa Bestände oder Aufträge"; gezeichnet wird eine einzelne Zeile wie bei `row`. **Seit 1.16 nicht mehr blockiert** — ein Posten kennt jetzt Art und Menge, eine Aufzählung lässt sich also zeichnen | F | `DisplayValues.java`, `sprache.md:814` | klein | — |
-| 6.11 | **Tests, die nicht fehlschlagen können.** Fünf sind repariert. Offen bleiben zwei: `abrokenRackDropsItsProcessors` prüft nur, dass *irgendein* Gegenstand fällt — ein leeres Gehäuse genügt, und dahinter stünde der Verlust von sechsunddreißig Bauteilen; `theAnalyserMarksFullCables` legt die Last genau auf die Grenze und nimmt mit ODER beide Antworten an, während `isHealthy()` ein randvolles Kabel als „in Ordnung" meldet | F | `FactoryNetworkGameTests` | klein | — |
+| 6.11 | ~~Tests, die nicht fehlschlagen können~~ — **fertig**, alle sieben. `abrokenRackDropsItsProcessors` prüft jetzt, dass das herausfallende Gehäuse seine Bauteile trägt (gegengeprobt: ohne `packAll` fällt er); `theAnalyserMarksFullCables` prüft die eine richtige Antwort statt zweier mit ODER, dazu den Gegenfall mit halber Last | | `FactoryNetworkGameTests` | | |
 | 6.8 | **Teilweise.** §6 und §12 sind gekennzeichnet; §8 und der Rest noch nicht | F | `sprache.md` | klein |
 | 6.9 | ~~Kabelbündel-Frage~~ — **nachgetragen** | | | |
 
