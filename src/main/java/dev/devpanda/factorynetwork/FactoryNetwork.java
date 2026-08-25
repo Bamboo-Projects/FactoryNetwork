@@ -22,6 +22,10 @@ public final class FactoryNetwork {
     public static final String MOD_ID = "factorynetwork";
 
     public FactoryNetwork(IEventBus modBus, ModContainer container) {
+        // Die Grenzen für Nutzercode gehören dem Serverbetreiber, nicht dem
+        // Quelltext. Ohne diese Zeile liegt die Datei nie neben der Welt.
+        container.registerConfig(net.neoforged.fml.config.ModConfig.Type.SERVER,
+                FnConfig.SERVER_SPEC);
         FnBlocks.BLOCKS.register(modBus);
         FnItems.ITEMS.register(modBus);
         FnBlockEntities.BLOCK_ENTITIES.register(modBus);

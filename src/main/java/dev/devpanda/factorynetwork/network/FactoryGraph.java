@@ -43,8 +43,15 @@ import java.util.Set;
  */
 public final class FactoryGraph {
 
-    /** Weiter als das sucht der Aufbau nicht; schützt vor Endlosnetzen. */
-    private static final int MAX_NODES = 4096;
+    /**
+     * Weiter als das sucht der Aufbau nicht; schützt vor Endlosnetzen.
+     *
+     * <p>Einstellbar in der Serverkonfiguration — der Betreiber eines Packs
+     * kennt seine Spieler und seine Hardware, die Mod nicht.
+     */
+    private static int maxNodes() {
+        return dev.devpanda.factorynetwork.FnConfig.networkNodes();
+    }
 
     /**
      * Name auf Positionen. Mehr als eine Position bedeutet: Der Name ist
@@ -219,7 +226,7 @@ public final class FactoryGraph {
         boolean truncated = false;
 
         while (!queue.isEmpty()) {
-            if (parents.size() > MAX_NODES) {
+            if (parents.size() > maxNodes()) {
                 truncated = true;
                 break;
             }
@@ -307,7 +314,7 @@ public final class FactoryGraph {
         Deque<BlockPos> queue = new ArrayDeque<>();
         seen.add(controller.immutable());
         queue.add(controller.immutable());
-        while (!queue.isEmpty() && found.size() < MAX_NODES) {
+        while (!queue.isEmpty() && found.size() < maxNodes()) {
             BlockPos current = queue.poll();
             for (Direction direction : Direction.values()) {
                 BlockPos next = current.relative(direction).immutable();

@@ -121,10 +121,12 @@ Rateverfahren.
 > Liste bleibt, steht darunter. Die vollständige Übersicht ist
 > `offene-punkte.md`.
 
-1. **Grenzen für Nutzercode auf dem Server** (Konzept 22.9) — teilweise
-   gebaut: Ein Schrittbudget je Durchlauf und die Plätze im Serverschrank gibt
-   es. **Einstellbar** ist nichts davon, und eine Konfiguration hat die Mod
-   bis heute nicht.
+1. ~~**Grenzen für Nutzercode auf dem Server**~~ (Konzept 22.9) — **gebaut
+   am 25.08.** Das Schrittbudget je Durchlauf und die Suchtiefe des
+   Netzgraphen stehen in `config/factorynetwork-server.toml`. Die Plätze im
+   Serverschrank bleiben draußen: Sie sind Spielinhalt und gehören zum
+   Ausgleich der Mod, nicht zur Serverlast — wer sie ändert, ändert das Spiel
+   und nicht seine Last.
 2. ~~Konkrete Syntax~~ — gebaut.
 3. ~~Speichermodell~~ — gebaut, Zellen in Laufwerken.
 4. ~~Netzwerktopologie und Channels~~ — gebaut, sechzehn je dünnem Strang.

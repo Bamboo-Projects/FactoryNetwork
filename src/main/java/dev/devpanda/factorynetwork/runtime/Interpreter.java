@@ -35,8 +35,12 @@ public final class Interpreter {
      * wird. Kein Tickbudget mit Fortsetzung, sondern eine harte Grenze —
      * solange es keine Continuations gibt, kann ein Ablauf nicht angehalten
      * und später fortgesetzt werden.
+     *
+     * <p><b>Einmal je Interpreter gelesen</b>, nicht bei jedem Schritt: Die
+     * Grenze soll sich nicht mitten in einer Schleife verschieben, wenn
+     * jemand die Konfiguration neu lädt.
      */
-    private static final int MAX_STEPS = 10_000;
+    private final int maxSteps = dev.devpanda.factorynetwork.FnConfig.stepBudget();
 
     private final Program program;
     private final Host host;
@@ -339,9 +343,9 @@ public final class Interpreter {
     }
 
     private void execute(Stmt statement) {
-        if (++steps > MAX_STEPS) {
+        if (++steps > maxSteps) {
             throw new ScriptError("Der Ablauf ist zu lang geworden und wurde angehalten.",
-                    "Mehr als " + MAX_STEPS + " Schritte. Gehört das in einen Worker?");
+                    "Mehr als " + maxSteps + " Schritte. Gehört das in einen Worker?");
         }
         switch (statement) {
             case Stmt.Let let -> declare(let.name(), evaluate(let.value()));
@@ -379,7 +383,7 @@ public final class Interpreter {
 
     private void executeWhile(Stmt.While loop) {
         while (truth(evaluate(loop.condition()))) {
-            if (++steps > MAX_STEPS) {
+            if (++steps > maxSteps) {
                 throw new ScriptError("Die Schleife läuft zu lange.",
                         "Dauerhafte Aufgaben gehören in einen Worker, nicht in eine Schleife.");
             }

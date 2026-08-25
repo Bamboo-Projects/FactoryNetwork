@@ -143,6 +143,7 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | | Bei Knappheit bekommt der Worker mit der kleinen `priority` seine ganze Rate |
 | | Energiezellen im Laufwerk, vier Größen — der Vorrat wächst mit ihnen |
 | Ausbau | Controller-Anbau: sechs weitere Seiten für Kabelstränge je Block |
+| Server | `config/factorynetwork-server.toml`: Schrittbudget und Suchtiefe |
 | | Ein laufender Ablauf belegt einen Platz, der Rest stellt sich an |
 | | Zelle in der Hand ans Laufwerk klicken setzt sie ein, leere Hand nimmt die letzte heraus |
 | Werkzeuge | Beschriftungspistole, Netzanalysator mit Sicht durch Wände |
@@ -374,6 +375,30 @@ Quelle, gerendert wird im Spiel.
 **Und beide Editoren kennen jetzt das ganze Projekt.** Die Vervollständigung
 im Spiel las bisher nur die offene Datei — dabei teilen alle Dateien einen
 Namensraum. Die VS-Code-Erweiterung liest die Nachbardateien ebenfalls.
+
+### Die Serverkonfiguration (seit dem 25.08.)
+
+Bis dahin war jede Grenze für Nutzercode eine Zahl im Quelltext. Für den
+Betreiber eines Packs ist das die falsche Stelle: Er kennt seine Spieler und
+seine Hardware, die Mod nicht.
+
+Zwei Werte in `config/factorynetwork-server.toml`: das **Schrittbudget** je
+Durchlauf — die Grenze, an der eine Endlosschleife abbricht — und die
+**Suchtiefe** beim Aufbau des Netzgraphen.
+
+**Nur Grenzen, keine Spielzahlen.** Was ein Connector an Strom kostet und wie
+viele Kanäle ein Kabel trägt, steht bewusst nicht dort: Das ist Spielinhalt
+und gehört zum Ausgleich der Mod. Wer es ändert, ändert das Spiel und nicht
+seine Serverlast.
+
+**Kein Clientteil.** Er kommt, wenn es etwas gibt, das ihn braucht — die
+Brücke zu VS Code. Leere Abschnitte auf Vorrat wären Fragen an den Betreiber,
+die niemand beantworten kann.
+
+Der Rückfall auf die Vorgaben ist dabei die eigentliche Sorgfalt: Ein
+Einheitstest lädt keine Konfigurationsdatei, ein Datengenerator auch nicht,
+und ein Wert, der dann wirft, macht aus einer Einstellung einen Absturz an
+Stellen, die mit Einstellungen nichts zu tun haben.
 
 ### Der Controller-Anbau (seit dem 25.08.)
 
