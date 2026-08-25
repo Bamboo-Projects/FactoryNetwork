@@ -16,9 +16,10 @@ import java.util.UUID;
  * in die andere Richtung. Wer schützen will, stellt es ein — der
  * Serverbetreiber kennt seine Spieler, die Mod nicht.
  *
- * <p>Geschützt sind die zwei Wege, über die ein <b>Programm</b> geändert
- * wird: es übernehmen und den Entwurf speichern. Zusehen, Bestände lesen und
- * Knöpfe drücken bleibt allen offen — das ist Benutzen und nicht Umbauen.
+ * <p>Geschützt ist, was eine fremde Anlage <b>umbaut</b>: ein Programm
+ * übernehmen, einen Entwurf speichern, einen Fertigungsauftrag abbrechen.
+ * Zusehen, Bestände lesen und Knöpfe drücken bleibt allen offen — das ist
+ * Benutzen und nicht Umbauen.
  *
  * <p><b>Nicht dabei: die Beschriftungspistole.</b> Einen Connector
  * umzubenennen bricht Programme genauso, ist aber eine Handlung in der Welt

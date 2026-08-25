@@ -5,15 +5,15 @@ import net.minecraft.network.chat.Component;
 /**
  * Die Reiter des Terminals.
  *
- * <p>Die Fertigung steht mit in der Leiste, ist aber ausgegraut: Autocrafting
- * gibt es noch nicht. Sie zu zeigen ist ehrlicher, als sie zu verstecken — der
- * Spieler sieht, wohin es geht, und stößt nicht auf einen Reiter, der eines
- * Tages unerklärt auftaucht.
+ * <p>Alle sechs tun inzwischen etwas. Die Fertigung stand lange ausgegraut in
+ * der Leiste — sichtbar, damit man sah, wohin es geht, statt sie zu
+ * verstecken und eines Tages unerklärt auftauchen zu lassen. Seit dem 25.08.
+ * steht darin, was sie versprochen hat.
  */
 public enum TerminalTab {
 
     STORAGE("storage", true),
-    CRAFTING("crafting", false),
+    CRAFTING("crafting", true),
     CODE("code", true),
     NETWORK("network", true),
     DASHBOARDS("dashboards", true),

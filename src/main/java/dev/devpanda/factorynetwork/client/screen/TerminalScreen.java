@@ -90,6 +90,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
     private StorageTabView storageView;
     private NetworkTabView networkView;
     private DashboardsTabView dashboardsView;
+    private CraftingTabView craftingView;
     private LogTabView logView;
     private CodeTabView codeView;
 
@@ -107,6 +108,8 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
                 WORK_W, WORK_H);
         networkView = new NetworkTabView(font, leftPos + WORK_X, topPos + WORK_Y, WORK_W, WORK_H);
         dashboardsView = new DashboardsTabView(font, leftPos + WORK_X, topPos + WORK_Y,
+                WORK_W, WORK_H);
+        craftingView = new CraftingTabView(font, leftPos + WORK_X, topPos + WORK_Y,
                 WORK_W, WORK_H);
         logView = new LogTabView(font, leftPos + WORK_X, topPos + WORK_Y, WORK_W, WORK_H);
         codeView = new CodeTabView(this, font, leftPos + WORK_X, topPos + WORK_Y,
@@ -156,6 +159,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
             case STORAGE -> storageView.render(graphics, mouseX, mouseY);
             case NETWORK -> networkView.render(graphics, mouseX, mouseY);
             case DASHBOARDS -> dashboardsView.render(graphics, mouseX, mouseY);
+            case CRAFTING -> craftingView.render(graphics, mouseX, mouseY);
             case LOG -> logView.render(graphics, mouseX, mouseY);
             case CODE -> codeView.render(graphics, mouseX, mouseY);
             default -> { }
@@ -372,6 +376,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
             case CODE -> codeView.mouseClicked(mouseX, mouseY, button);
             case NETWORK -> networkView.mouseClicked(mouseX, mouseY, button);
             case DASHBOARDS -> dashboardsView.mouseClicked(mouseX, mouseY, button);
+            case CRAFTING -> craftingView.mouseClicked(mouseX, mouseY, button);
             case LOG -> logView.mouseClicked(mouseX, mouseY, button);
             default -> false;
         };

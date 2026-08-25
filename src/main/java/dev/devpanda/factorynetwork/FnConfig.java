@@ -65,9 +65,10 @@ public final class FnConfig {
                 .comment("OFF: jeder darf — der Stand vor dieser Einstellung.",
                         "OWNER: nur wer den Controller gesetzt hat, und Operatoren.",
                         "OPS: nur Operatoren.",
-                        "Betroffen sind die zwei Wege zum Programm: es übernehmen",
-                        "und den Entwurf speichern. Zusehen und Knöpfe drücken bleibt",
-                        "allen offen — das ist Benutzen und nicht Umbauen.",
+                        "Betroffen ist, was eine Anlage umbaut: ein Programm",
+                        "übernehmen, einen Entwurf speichern, einen Fertigungsauftrag",
+                        "abbrechen. Zusehen und Knöpfe drücken bleibt allen offen —",
+                        "das ist Benutzen und nicht Umbauen.",
                         "Die Beschriftungspistole ist nicht dabei: Sie ändert die Welt,",
                         "und dafür gibt es Schutzmods.")
                 .defineEnum("programs", FnProtection.Mode.OFF);

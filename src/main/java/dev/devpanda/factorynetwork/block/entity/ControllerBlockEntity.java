@@ -1174,6 +1174,7 @@ public class ControllerBlockEntity extends BlockEntity {
             pushFlowsTo(player);
             pushDisplaysTo(player);
             pushLogTo(player);
+            pushCraftingTo(player);
         });
     }
 
@@ -1188,6 +1189,32 @@ public class ControllerBlockEntity extends BlockEntity {
                 new FlowStatePacket.Supply(power.state().ordinal(), power.stored(),
                         power.capacity(), powerDraw(), power.supplied()),
                 globalLines()));
+    }
+
+    /**
+     * Schickt die Fertigungsaufträge an einen Spieler.
+     *
+     * <p>Der Name des Ziels als fertiger Text: Der Client soll ihn zeigen und
+     * nicht auflösen müssen.
+     */
+    public void pushCraftingTo(ServerPlayer player) {
+        PacketDistributor.sendToPlayer(player,
+                new dev.devpanda.factorynetwork.network.packet.CraftingStatePacket(
+                        craftingLines()));
+    }
+
+    /** Die Aufträge als fertige Zeilen — getrennt vom Senden, damit prüfbar. */
+    public List<dev.devpanda.factorynetwork.network.packet.CraftingStatePacket.Line>
+            craftingLines() {
+        List<dev.devpanda.factorynetwork.network.packet.CraftingStatePacket.Line> lines =
+                new ArrayList<>(jobs.size());
+        for (var job : jobs) {
+            lines.add(new dev.devpanda.factorynetwork.network.packet
+                    .CraftingStatePacket.Line(job.id(),
+                    job.target().getDescription().getString(), job.wanted(), job.done(),
+                    job.status().name(), job.detail()));
+        }
+        return lines;
     }
 
     /** Schickt das Protokoll an einen Spieler. */

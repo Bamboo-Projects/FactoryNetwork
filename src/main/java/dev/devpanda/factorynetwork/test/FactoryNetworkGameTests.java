@@ -2386,6 +2386,25 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(anzeigenZurueck.panels().get(0).buttons().get(0).entry(), 1,
                 "Und welchen Eintrag sie meint");
 
+        // Die Fertigung geht denselben Weg über die Leitung. Im Einzelspieler
+        // fällt ein kaputter Codec nicht auf, auf einem Server sofort.
+        var auftraege = new dev.devpanda.factorynetwork.network.packet.CraftingStatePacket(
+                java.util.List.of(new dev.devpanda.factorynetwork.network.packet
+                        .CraftingStatePacket.Line(3, "Truhe", 64, 8, "WAITING",
+                        "es fehlt: 8 Eichenholzbretter")));
+        var auftraegeZurueck = roundTrip(helper,
+                dev.devpanda.factorynetwork.network.packet.CraftingStatePacket.STREAM_CODEC,
+                auftraege);
+        helper.assertValueEqual(auftraegeZurueck.jobs().get(0).id(), 3L, "Kennung");
+        helper.assertValueEqual(auftraegeZurueck.jobs().get(0).done(), 8, "Wie viele fertig");
+        helper.assertValueEqual(auftraegeZurueck.jobs().get(0).detail(),
+                "es fehlt: 8 Eichenholzbretter", "Der Grund");
+
+        var abbruch = new dev.devpanda.factorynetwork.network.packet.CraftingActionPacket(3);
+        helper.assertValueEqual(roundTrip(helper,
+                dev.devpanda.factorynetwork.network.packet.CraftingActionPacket.STREAM_CODEC,
+                abbruch).id(), 3L, "Der Abbruch trifft denselben Auftrag");
+
         var netz = new dev.devpanda.factorynetwork.network.packet.AnalyserDataPacket(
                 java.util.List.of(new dev.devpanda.factorynetwork.analyser.AnalyserData.Node(
                         BlockPos.ZERO,
@@ -7765,6 +7784,49 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(((Value.Int) kennung).value(), 0L,
                 "ohne Rezept keine Kennung");
         helper.assertTrue(entity.craftingJobs().isEmpty(), "und kein Auftrag");
+        helper.succeed();
+    }
+
+    /**
+     * Der Reiter bekommt die Aufträge als fertige Zeilen.
+     *
+     * <p>Geprüft wird nicht das Zeichnen, sondern das, was hinübergeht: Der
+     * Name des Ziels als Text, die Zahlen, der Zustand und der Grund.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void thecraftingTabGetsItsLines(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        entity.requestCraft(Items.CHEST, 12);
+
+        helper.startSequence()
+                .thenIdle(40)
+                .thenExecute(() -> {
+                    var lines = entity.craftingLines();
+                    helper.assertValueEqual(lines.size(), 1, "ein Auftrag");
+                    helper.assertValueEqual(lines.get(0).wanted(), 12, "die Menge");
+                    helper.assertValueEqual(lines.get(0).done(), 0, "noch nichts gebaut");
+                    helper.assertTrue(!lines.get(0).target().isBlank(),
+                            "der Name des Ziels fehlt");
+                    helper.assertValueEqual(lines.get(0).detail(),
+                            "kein Fabricator im Netz", "und der Grund");
+                })
+                .thenSucceed();
+    }
+
+    /** Ein abgebrochener Auftrag ist weg — das Gebaute bleibt. */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void acancelledJobIsGone(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        var job = entity.requestCraft(Items.CHEST, 12);
+
+        helper.assertTrue(entity.cancelCraft(job.id()), "der Abbruch muss greifen");
+        helper.assertTrue(entity.craftingJobs().isEmpty(), "und der Auftrag weg sein");
+        helper.assertTrue(!entity.cancelCraft(job.id()),
+                "ein zweiter Abbruch findet nichts mehr");
         helper.succeed();
     }
 
