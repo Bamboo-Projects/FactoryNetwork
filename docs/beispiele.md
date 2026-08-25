@@ -346,3 +346,41 @@ statt an dreien — und `except` nimmt an allen dreien dasselbe heraus.
 
 Ohne die Vorlage ginge das nicht einmal in zwei Zeilen: Ein Worker nimmt nur
 eine `filter`-Zeile, eine zweite würde stillschweigend übergangen.
+
+---
+
+## 11. Nur den Ausgang abräumen
+
+```
+const ausgang = 3
+
+filter erze {
+    tag:c/ores
+}
+
+group brecher {
+    members brecher_*
+    strategy least_filled
+}
+
+fn nachschub() {
+    brecher.send(64 erze)
+}
+
+on device_output(maschine) {
+    move 64 item:iron_dust from maschine.slots(ausgang) to storage
+}
+```
+
+**Was in der Welt stehen muss:** ein Connector je Brecher, benannt
+`brecher_1`, `brecher_2` und so fort.
+
+Ein Anschluss je Maschine, und trotzdem wird der Eingang nicht mit abgeräumt:
+Die Fachnummer sagt, was gemeint ist. `send` verteilt auf den Brecher, in dem
+am wenigsten liegt, und `device_output` meldet sich, sobald einer etwas
+ausgegeben hat.
+
+Welche Nummer das Ausgangsfach hat, zeigt der Netzanalysator beim Rechtsklick
+auf den Connector — und der Tooltip im Editor, wenn der Zeiger auf dem Namen
+steht.
+
