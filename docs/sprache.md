@@ -181,8 +181,11 @@ bestehenden Arten gezwängt werden müsste.
 
 > **Noch nicht gebaut:** die Anbindung selbst. Entschieden am 25.08. als
 > Kompatibilitätsmodul — ohne Mekanism läuft die Mod wie heute, mit ihm
-> bewegt sie Chemikalien. Bis dahin weist der Übersetzer `chemical:` in einer
-> Filter-Vorlage zurück, und die Laufzeit meldet sich.
+> bewegt sie Chemikalien. Bis dahin weist der Übersetzer `chemical:` zurück,
+> und die Laufzeit meldet sich. **Die Meldung unterscheidet seit dem 26.08.
+> zwei Fälle:** Ohne Mekanism heißt sie „Chemikalien brauchen Mekanism" und
+> zeigt auf die Modliste; mit Mekanism bleibt es bei „noch nicht angebunden",
+> denn dann ist das die Wahrheit.
 
 ### Mengen
 
