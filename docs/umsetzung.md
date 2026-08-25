@@ -834,12 +834,6 @@ verwischt — die Spieloberfläche hat dafür eine eigene Einstellung.
 
 **Offene Fragen, nicht entschieden:**
 
-- **LDLib2 als UI-Grundlage.** Noch nicht geprüft. Zu klären wäre der Stand
-  für 1.21.1/NeoForge und wie die API aussieht. Die Latte liegt hoch: eine
-  harte Abhängigkeit koppelt jeden Release an ein fremdes Projekt, und
-  Dateibaum, Reiter und Felder sind je etwa zweihundert Zeilen von Hand.
-  Docking ist das eine wirklich schwere Stück und zugleich das, was in einem
-  Minecraft-Fenster niemand benutzt.
 - **Die Annahme-Probe.** Ob ein Fach einen bestimmten Gegenstand nimmt, lässt
   sich nur durch einen simulierten Einfügeversuch beantworten, und der braucht
   Kandidaten. Vorgesehen sind die `item:`-Literale des Entwurfs; gebaut ist es

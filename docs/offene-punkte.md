@@ -138,7 +138,7 @@ Vorentscheidungen)
 | 3.3 | ~~Flüssigkeitsstände im Tooltip~~ — **fertig** | | | | |
 | 3.4 | ~~Bearbeitung anfragen~~ — **fertig**, F4 in beiden Fenstern | | `RequestEdit.java` | | |
 | 3.5 | ~~Ordner im Projekt~~ — **fertig** (25.08.). `erz/brecher.mf`, zwei Ebenen tief; Anlegen und Umbenennen nehmen den Pfad entgegen, ein eigener Griff dafür fehlt bewusst. Der Ordner neben der Welt liest rekursiv, VS Code sucht die Wurzel des Projekts. Der Punkt steht nicht im Alphabet eines Abschnitts — damit ist `../` unmöglich statt verboten | | `Project.NAME`, `ProgramFolder.listNames` | | |
-| 3.6 | **Entschieden: prüfen** — gegen meine Empfehlung, und als Prüfauftrag, nicht als Zusage. Die Frage ist, ob künftige Fenster damit schneller gehen; die vorhandenen werden nicht neu gebaut | F | `umsetzung.md:512` | klein | — |
+| 3.6 | ~~LDLib2 prüfen~~ — **geprüft, nicht genommen** (26.08.). Gute Bibliothek: 2.2.x für 1.21.1, reines Java, LGPL, sogar ein CodeEditor-Widget. Absage aus zwei Gründen: Eine Oberfläche lässt sich nicht weich einbinden — sie wäre die erste Pflicht-Abhängigkeit der Mod —, und die Fenster sind gebaut. Der Stand steht in `entscheidungen.md`, damit ein zweiter Blick billig bleibt | | `entscheidungen.md` „LDLib2 geprüft" | | |
 | 3.7 | ~~Ob das Geräteprofil dem Analysator etwas zu geben hat~~ — **fertig**, aber an anderer Stelle als gedacht: Die Knotenbeschriftung wird gar nicht gezeichnet, der Analysator malt Würfel. Die Auskunft hängt jetzt am Rechtsklick — „brecher_1: Gegenstände · Fächer 0–26" —, also dort, wo man ohnehin vor der Maschine steht | | `NetworkAnalyserItem.deviceLine` | | |
 | 3.8 | ~~Ob der Netz-Reiter globale Werte ändern darf~~ — **entschieden: nur anzeigen.** Sonst wird der Zustand der Fabrik an zwei Stellen umgestellt, und niemand sieht ihr an, wer zuletzt geschaltet hat. Wer schalten will, baut einen Knopf | | `globale-werte.md:200` | | |
 | 3.10 | ~~Der Editor bietet an, was nichts kann~~ — **erledigt.** `world`, `network`, `workers` und `multiblocks` sind in beiden Editoren draußen, bis sie etwas tun. `crafting` ist am 25.08. zurückgekommen, aber **nur hinter `from`** — es ist eine Quelle und kein Ziel. `power` blieb durchweg: Die Schreibweise ist entschieden, und ein Strom-Worker hält mit einer Meldung an, die auf `strom.md` zeigt | | `Completions.SOURCES`, `extension.js` | | |
@@ -214,10 +214,11 @@ Reiter ist keiner mehr, und `crafting` steht als Quelle in beiden Editoren.
 Offen bleibt daneben 2.9 — Processing-Rezepte an Maschinen —, aber das ist ein
 eigenes Vorhaben und keine Lücke im Autocrafting.
 
-**2. Die kleineren Reste:** 3.6 (LDLib2 prüfen), 1.11 (globale Listen —
-braucht vorher eine Entscheidung über Listenliteral und Ändern-vs-Ersetzen).
-3.5 (Ordner im Projekt) und 5.3 (Schrift auf der Anzeigenwand) sind am 25. und
-26.08. dazugekommen und wieder weg, 5.2 hat sich beim Nachsehen aufgelöst.
+**2. Der letzte kleinere Rest:** 1.11 (globale Listen — braucht vorher eine
+Entscheidung über Listenliteral und Ändern-vs-Ersetzen). 3.5 (Ordner im
+Projekt) und 5.3 (Schrift auf der Anzeigenwand) sind am 25. und 26.08.
+dazugekommen und wieder weg, 5.2 hat sich beim Nachsehen aufgelöst, und 3.6
+ist geprüft und abgelehnt.
 
 **3. Rezepte an Maschinen erkennen** (2.9). Groß, und seit dem Autocrafting
 keine Voraussetzung mehr für irgendetwas — der Fabricator baut Werkbank-

@@ -3119,3 +3119,69 @@ Normalgröße die richtige Zahl, bei vierfacher nicht. Ohne diese Kopplung wäre
 lässt, wo man sie lesen wollte. Sie ist der Grund, warum der Maßstab am Block
 liegt und nicht erst beim Zeichnen aus dem Programm geholt wird: `shouldRender`
 läuft je Bild und je Tafel und darf nichts nachschlagen.
+
+---
+
+## LDLib2 geprüft — und nicht genommen (2026-08-26)
+
+Punkt 3.6 war ein Prüfauftrag und keine Zusage: „Die Frage ist, ob künftige
+Fenster damit schneller gehen — nicht, ob die vorhandenen neu gebaut werden."
+Hier steht, was das Nachsehen ergeben hat, damit die Frage nicht in einem Jahr
+noch einmal von vorn beginnt.
+
+### Was LDLib2 ist, Stand heute
+
+Ein vollständiger Neubau der alten LDLib, ausgelegt auf 1.21+ und NeoForge.
+Für 1.21.1 gibt es 2.2.x, zuletzt vor Stunden aktualisiert; über zwei
+Millionen Downloads auf Modrinth, mehr auf CurseForge. Lizenz LGPL-3.0-only,
+was für eine MIT-Mod unproblematisch ist, solange die Bibliothek eine eigene
+Mod daneben bleibt — und das ist sie.
+
+Reines Java, kein Kotlin zur Laufzeit. Eine Zeile Gradle über
+`maven.firstdark.dev`. Die Oberfläche wird in XML mit LSS-Stylesheets
+beschrieben, mit Taffy als Layout, dazu über dreißig fertige Bausteine,
+Datenbindung, RPC, HUD-Ebenen — und ein **CodeEditor-Widget mit
+Syntaxhervorhebung**, also ausgerechnet das teuerste Stück, das hier von Hand
+steht.
+
+Es ist also keine schlechte Bibliothek. Die Absage hat einen anderen Grund.
+
+### Der Grund: Eine Oberfläche lässt sich nicht weich einbinden
+
+Diese Mod verlangt keine fremde Mod. Jade ist `optional` in der
+`mods.toml` und wird über eine Anbindung geladen, die ohne Jade gar nicht
+erst greift. GuideME wird mit `ModList.isLoaded("guideme")` abgefragt — ohne
+GuideME startet die Mod ohne Handbuch statt gar nicht. Mekanism ist als
+Kompatibilitätsmodul entschieden (1.4), aus demselben Grund.
+
+Eine Oberfläche geht diesen Weg nicht. Ein Terminal, das es nur gibt, wenn
+jemand eine zweite Mod installiert hat, ist kein Terminal. Wer LDLib2 für
+Fenster nimmt, nimmt es als **Pflicht-Abhängigkeit** — und damit hängt jeder
+Release der Mod an einem fremden Zeitplan, in einem Pack, das die Bibliothek
+vielleicht in einer anderen Fassung mitbringt.
+
+Das ist keine Kritik an LDLib2, sondern eine Regel dieses Projekts, die es
+schon dreimal angewandt hat.
+
+### Der zweite Grund: Die Fenster sind gebaut
+
+Die Frage lautete, ob **künftige** Fenster schneller gehen. Inzwischen gibt es
+kaum noch künftige: Terminal mit seinen Reitern, Codefenster mit Dateibaum und
+Editor, Kontextmenü, Anzeigen an der Wand — alles steht. Was auf der Liste
+offen ist, braucht überwiegend gar keine Oberfläche: globale Listen (1.11)
+sind Sprache, Mekanism (1.4) ist eine Anbindung.
+
+Ein Wort mehr zum CodeEditor-Widget: Es wäre vor drei Wochen ein Argument
+gewesen. Heute steht der Editor, er kennt Manifold, seine Vorschläge kommen
+aus `Signatures`, und er wird ausdrücklich nicht neu gebaut. Ein Baustein, der
+das ersetzt, was schon läuft, spart nichts.
+
+### Was die Entscheidung umstoßen würde
+
+Ein großes neues Fenster mit eigener Interaktion — der wahrscheinlichste
+Kandidat wäre eine Rezeptübersicht zu 2.9. Dann lohnt sich ein zweiter Blick,
+und der ist billig, weil das Nachsehen jetzt aufgeschrieben ist: Stand, Preis,
+Lizenz, Einbindung. Zu prüfen wäre dann vor allem, ob sich ein einzelnes
+Fenster darauf bauen lässt, ohne dass die übrigen ihr Aussehen verlieren —
+diese Mod hat eine eigene Formsprache aus Mulden und hellen Kanten, und zwei
+Oberflächen nebeneinander sähe man sofort.
