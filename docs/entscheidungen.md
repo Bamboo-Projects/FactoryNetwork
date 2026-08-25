@@ -130,8 +130,47 @@ Rateverfahren.
 2. ~~Konkrete Syntax~~ — gebaut.
 3. ~~Speichermodell~~ — gebaut, Zellen in Laufwerken.
 4. ~~Netzwerktopologie und Channels~~ — gebaut, sechzehn je dünnem Strang.
-5. **Erkennung von Maschinen-Rezepten** (Konzept 22.5) — Voraussetzung für
-   Autocrafting. Unverändert offen.
+5. **Erkennung von Maschinen-Rezepten** (Konzept 22.5) — offen, aber
+   **keine Voraussetzung mehr für Autocrafting.** Der Fabricator baut
+   Werkbank-Rezepte, und die stehen im Server; gebraucht wird die Erkennung
+   für Processing-Rezepte am Connector (Konzept §8).
+
+---
+
+## Der Fabricator baut ohne Muster (2026-08-25)
+
+Der erste Schnitt des Autocraftings. Drei Entscheidungen, die zusammengehören:
+
+**Keine Muster-Items.** Das Konzept sah sie in §9 schon nicht vor („keine
+zwingenden physischen Pattern-Items"), und der Grund trägt: Was gebaut werden
+kann, weiß das Spiel bereits. Ein Netz, das sich seine Rezepte erst auf
+Papierschnipsel schreiben lässt, verlangt Arbeit für eine Auskunft, die schon
+dasteht — und in einem großen Pack ist das die Arbeit von Stunden.
+
+**Einstufig.** Fehlen Bretter, werden keine aus Stämmen gemacht. Verworfen
+wurde der umgekehrte Weg — erst den Planner, dann den Block —, weil Rekursion
+ohne sichtbaren Fabricator untestbare Logik ist und ein Fabricator ohne
+Rekursion ein fertiges Feature. Der Preis, offen benannt: Wer eine Kette
+will, schreibt sie vorerst selbst.
+
+**Der Auftrag lebt am Controller.** Nicht am Gerät: Einer, der dort hinge,
+wäre weg, sobald jemand es abbaut. Das Konzept nennt Aufträge in §11
+ausdrücklich als Netzsache, und dieselbe Regel gilt schon für Abläufe.
+
+### Bestellt wird im Code
+
+`craft(64 item:chest)` und kein Knopf im Reiter. Der Reiter zeigt, was daraus
+wurde — bestellt wird geschrieben, wie alles in dieser Mod. Ein Bestellknopf
+wäre der erste Griff im Spiel, der eine dauerhafte Zusage erzeugt, ohne dass
+sie irgendwo im Programm steht.
+
+### Offen für später
+
+- **Die Rekursion**, und mit ihr Reservierungen für gleichzeitige Aufträge.
+  Für einstufig reicht „beim Schritt entnehmen"; erst mehrere Ebenen brauchen
+  Vormerkungen.
+- **`from crafting`** als Worker-Quelle. Braucht die Rekursion nicht: Ein
+  `maintain`-Worker, der einstufige Aufträge anstößt, ist schon nützlich.
 
 ---
 

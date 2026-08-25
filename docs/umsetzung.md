@@ -143,6 +143,8 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | | Bei Knappheit bekommt der Worker mit der kleinen `priority` seine ganze Rate |
 | | Energiezellen im Laufwerk, vier Größen — der Vorrat wächst mit ihnen |
 | Ausbau | Controller-Anbau: sechs weitere Seiten für Kabelstränge je Block |
+| Fertigung | Fabricator baut Werkbank-Rezepte aus dem Netzspeicher, einstufig |
+| | `craft(64 item:chest)` im Code, Aufträge im Reiter, mit Abbruch |
 | Server | `config/factorynetwork-server.toml`: Schrittbudget und Suchtiefe |
 | | Schutz fremder Programme, wahlweise nach Besitzer oder Operator |
 | | Ein laufender Ablauf belegt einen Platz, der Rest stellt sich an |
@@ -157,7 +159,7 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | Netzwerk | Graph über Kabel, Speicher schlüsselbasiert, Kanäle je Strang |
 | Editor | Syntaxfarben, Fehler beim Tippen, Vervollständigung nach Stelle |
 | Anzeigen | Am Block und im Terminal, Knöpfe starten Abläufe |
-| Prüfung | 349 Einheitstests, 207 GameTests |
+| Prüfung | 366 Einheitstests, 234 GameTests |
 
 ## 3. Was noch nicht läuft
 
@@ -174,7 +176,13 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
   von vierundsechzig bis viertausendsechsundneunzig. Sie sind gesetzt, nicht
   hergeleitet — wie sie sich anfühlen, zeigt erst das Spielen. Die
   Begründungen stehen in `entscheidungen.md` unter „Der Serverschrank".
-- **Autocrafting.** Der letzte ausgegraute Reiter.
+- **Autocrafting, mehrstufig.** Der erste Schnitt steht: Der Fabricator baut
+  Werkbank-Rezepte aus dem Speicher, Aufträge leben am Controller und
+  überstehen den Neustart. Was fehlt, ist die **Rekursion** — fehlen Bretter,
+  werden keine aus Stämmen gemacht — und `from crafting` als Worker-Quelle.
+- **Processing-Rezepte** (2.9). Was ein Brecher aus Erz macht, weiß nur die
+  Maschine. Für den Fabricator brauchte es das nicht: Werkbank-Rezepte stehen
+  im Server.
 - **Chemikalien** aus Mekanism. Die Schreibweise steht seit dem Entwurf.
 
 ---
@@ -376,6 +384,39 @@ Quelle, gerendert wird im Spiel.
 **Und beide Editoren kennen jetzt das ganze Projekt.** Die Vervollständigung
 im Spiel las bisher nur die offene Datei — dabei teilen alle Dateien einen
 Namensraum. Die VS-Code-Erweiterung liest die Nachbardateien ebenfalls.
+
+### Die Fertigung, erster Schnitt (seit dem 25.08.)
+
+Der Reiter *Fertigung* stand seit dem ersten Tag ausgegraut in der Leiste.
+Jetzt stehen Aufträge darin.
+
+**Keine Muster-Items.** Was gebaut werden kann, weiß das Spiel bereits — jedes
+Werkbank-Rezept steht im Server. Ein Netz, das sich seine Rezepte erst auf
+Papierschnipsel schreiben lässt, verlangt Arbeit für eine Auskunft, die schon
+dasteht.
+
+**Einstufig.** Fehlen Bretter, macht der Fabricator keine aus Stämmen, sondern
+wartet und sagt „es fehlt: 8 Eichenholzbretter". Ein Schnitt und kein Mangel:
+Ein Auftrag, der im Hintergrund einen Baum fällt, den niemand bestellt hat,
+ist die unangenehmere Überraschung. Die Rekursion kommt als eigener Schritt —
+und sie wird einfacher, weil der einstufige Pfad steht und geprüft ist.
+
+**Der Bestand entscheidet über das Rezept.** Für einen Gegenstand gibt es oft
+mehrere, und eines davon passt zu dem, was dasteht. Wer nur das erstbeste
+nähme, meldete „es fehlt Fichtenholz", während ein Stapel Eichenbretter im
+Laufwerk liegt.
+
+**Bestellt wird im Code**, nicht im Reiter: `craft(64 item:chest)`. Dieselbe
+Haltung wie überall — ein Netz tut nichts von selbst. Was der Reiter
+beiträgt, ist die Antwort darauf: was daraus wurde und woran es hängt.
+
+**Der Auftrag lebt am Controller.** Einer, der am Fabricator hinge, wäre weg,
+sobald jemand das Gerät abbaut — und das ist genau der Moment, in dem man
+wissen will, was noch offen war.
+
+`crafting_failed` löst nur bei einem verschwundenen Rezept aus. Fehlende
+Zutaten sind kein Fehlschlag: Wer darauf wartet, wartet, und morgen liegen sie
+vielleicht da.
 
 ### Rechte im Mehrspielerbetrieb (seit dem 25.08.)
 

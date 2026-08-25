@@ -561,6 +561,25 @@ furnace_2.items()
 | `slots(nummer)` | Bestimmte Fächer — eine Nummer oder ein Bereich, `slots(1..5)` |
 | `energy()` | Wie viel Strom in der Maschine steht, in FE. Ohne Speicher null |
 
+### Fertigen lassen
+
+```
+let auftrag = craft(64 item:chest)
+```
+
+`craft` bestellt beim Netz und liefert die **Kennung** des Auftrags. Null
+heißt genau eines: Es gibt kein Rezept dafür. Fehlende Zutaten sind kein
+Grund — dann wartet der Auftrag und sagt im Reiter *Fertigung*, was fehlt.
+
+Die Auswahl muss **eine Art** meinen. Ein Auftrag über „irgendein Erz" hätte
+keine Antwort auf die Frage, was gebaut werden soll; ein Tag mit genau einem
+Treffer geht durch, dann ist sie beantwortet.
+
+Gebaut wird, was im Netz an **Fabricators** hängt, und zwar **einstufig**:
+Fehlen Bretter, macht das Netz keine aus Stämmen. Das ist ein Schnitt und kein
+Mangel — ein Auftrag, der im Hintergrund einen Baum fällt, den niemand
+bestellt hat, ist die unangenehmere Überraschung. Mehrstufig kommt später.
+
 ### Strom ablesen
 
 ```
@@ -1019,9 +1038,14 @@ letzten Blick — ist von einer Art mehr da, ist etwas dazugekommen. Was das
 Netz selbst einlegt, zählt nie mit, und gemeldet wird jeder Zuwachs: Eine
 Maschine, die eine Ladung stückweise ausgibt, meldet jedes Stück.
 
-> **Noch nicht gebaut:** `crafting_finished` und `crafting_failed` — sie warten
-> auf das Autocrafting, und bis dahin weist die Prüfung sie als unbekanntes
-> Ereignis zurück.
+**Gebaut am 25.08.**, mit einer Einschränkung in der Form: Übergeben wird die
+**Kennung** des Auftrags als Zahl und kein Wert vom Typ `Job` — den gibt es im
+Wertemodell nicht (`offene-punkte.md` 1.8). `crafting_failed` nennt dazu den
+Grund als Text.
+
+`crafting_failed` löst nur aus, wenn ein Auftrag **nicht mehr fertig werden
+kann** — wenn also sein Rezept verschwunden ist. Fehlende Zutaten sind kein
+Fehlschlag: Wer darauf wartet, wartet, und morgen liegen sie vielleicht da.
 
 Bewusst nicht dabei ist ein Ereignis für jede Bestandsänderung. In einem Lager
 mit zwanzigtausend Arten feuert das im Sekundentakt, und niemand kann darauf

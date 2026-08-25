@@ -102,8 +102,8 @@ Vorentscheidungen)
 | 2.11 | ~~`log()` sieht niemand~~ — **fertig.** Vier Stufen (`info`, `warn`, `error`, `debug`), Reiter „Log" mit Filter, Herkunft je Zeile, überlebt den Neustart. Die Hinweise der Laufzeit laufen mit hinein | | `LogTabView`, `LogEntry` | | |
 | 2.7 | ~~`when`-Bedingungen~~ — **überholt.** Im laufenden Spiel wertet der echte Interpreter aus: Texte, globale Werte, Gerätezustände. Der alte Weg — Zahl gegen Zahl — greift nur ohne Host, also in Prüfungen ohne Welt. Eine kaputte Bedingung hält den Worker an | | `WorkerRuntime.conditionHolds` | | |
 | 2.8 | ~~`NetworkCheck` besucht keine Anweisungen~~ — **fertig.** Ein `move` mit unbekanntem Gerätenamen wird gewarnt, in der Anweisung wie im Ausdruck. Ausgespart bleiben örtliche Namen: Parameter, `let`, Schleifenvariablen, globale Werte, Festwerte, Vorlagen, Gruppen und die Rollen eines Multiblocks | | `NetworkCheck.checkMoves` | | |
-| 2.9 | Erkennung von Maschinen-Rezepten | F | `entscheidungen.md:131` | groß | — |
-| 2.10 | Autocrafting — der letzte ausgegraute Reiter | F | `umsetzung.md:221` | groß | 2.9 |
+| 2.9 | **Erkennung von Maschinen-Rezepten.** Was ein Brecher aus Erz macht, weiß nur die Maschine. **Keine Voraussetzung mehr für 2.10**: Der Fabricator baut Werkbank-Rezepte, und die stehen im Server. Gebraucht wird 2.9 für Processing-Rezepte am Connector | F | `entscheidungen.md`, `konzept.md` §8 | groß | — |
+| 2.10 | **Erster Schnitt gebaut** (25.08.): Fabricator, Aufträge am Controller, `craft(64 item:chest)`, der Reiter zeigt sie, `crafting_finished`/`crafting_failed` lösen aus, alles übersteht den Neustart. **Einstufig** — fehlende Zutaten werden nicht ihrerseits gebaut. Offen: Rekursion (der Planner) und `from crafting` als Worker-Quelle | F | `crafting/`, `CraftingTabView` | mittel | — |
 
 ## 3. Editor im Spiel
 

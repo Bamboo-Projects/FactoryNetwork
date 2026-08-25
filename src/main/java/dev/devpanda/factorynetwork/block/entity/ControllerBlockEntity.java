@@ -672,15 +672,22 @@ public class ControllerBlockEntity extends BlockEntity {
         if (jobs.isEmpty()) {
             return;
         }
-        // Fertige melden sich, bevor sie aus der Liste fallen. Ein Ereignis
+        // Erledigte melden sich, bevor sie aus der Liste fallen. Ein Ereignis
         // nach dem Verschwinden hätte niemanden mehr, über den es spricht.
         jobs.removeIf(job -> {
-            if (job.status() != dev.devpanda.factorynetwork.crafting.CraftingJob.Status.DONE) {
-                return false;
+            if (job.status() == dev.devpanda.factorynetwork.crafting.CraftingJob.Status.DONE) {
+                fireEvent(dev.devpanda.factorynetwork.lang.BuiltinEvents.CRAFTING_FINISHED,
+                        List.of(new dev.devpanda.factorynetwork.runtime.Value.Int(job.id())));
+                return true;
             }
-            fireEvent(dev.devpanda.factorynetwork.lang.BuiltinEvents.CRAFTING_FINISHED,
-                    List.of(new dev.devpanda.factorynetwork.runtime.Value.Int(job.id())));
-            return true;
+            if (job.status() == dev.devpanda.factorynetwork.crafting.CraftingJob.Status.FAILED) {
+                fireEvent(dev.devpanda.factorynetwork.lang.BuiltinEvents.CRAFTING_FAILED,
+                        List.of(new dev.devpanda.factorynetwork.runtime.Value.Int(job.id()),
+                                new dev.devpanda.factorynetwork.runtime.Value.Text(
+                                        job.detail())));
+                return true;
+            }
+            return false;
         });
         if (jobs.isEmpty() || level.getGameTime() % CRAFT_INTERVAL != 0) {
             return;
@@ -716,7 +723,9 @@ public class ControllerBlockEntity extends BlockEntity {
         var plan = dev.devpanda.factorynetwork.crafting.RecipeLookup.find(
                 level, job.target(), storage::count);
         if (plan == null) {
-            job.note(dev.devpanda.factorynetwork.crafting.CraftingJob.Status.WAITING,
+            // Ein Rezept, das es nicht mehr gibt: Der Auftrag kann nicht mehr
+            // fertig werden, und darauf zu warten hieße, für immer zu warten.
+            job.note(dev.devpanda.factorynetwork.crafting.CraftingJob.Status.FAILED,
                     "kein Rezept mehr");
             return false;
         }

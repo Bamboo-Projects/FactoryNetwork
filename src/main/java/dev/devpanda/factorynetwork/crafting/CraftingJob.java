@@ -27,7 +27,15 @@ public final class CraftingJob {
         /** Es fehlt etwas — Zutaten oder ein Fabricator. */
         WAITING,
         /** Fertig. */
-        DONE
+        DONE,
+        /**
+         * Kann nicht mehr fertig werden.
+         *
+         * <p>Der einzige Grund ist ein Rezept, das es nicht mehr gibt — etwa
+         * weil eine Mod aus dem Pack ist. Fehlende Zutaten sind keiner: Wer
+         * darauf wartet, wartet, und morgen liegen sie vielleicht da.
+         */
+        FAILED
     }
 
     private static final String KEY_ID = "Id";
