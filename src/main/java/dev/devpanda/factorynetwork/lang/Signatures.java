@@ -283,7 +283,9 @@ public final class Signatures {
                     "Was gerade im Gerät liegt. Leere Fächer fallen weg."),
             new Member("slots", "slots(nummer) list",
                     "Bestimmte Fächer — eine Nummer oder ein Bereich wie 1..5. "
-                            + "Auch als Quelle oder Ziel eines move."));
+                            + "Auch als Quelle oder Ziel eines move."),
+            new Member("energy", "energy() int",
+                    "Wie viel Strom in der Maschine steht, in FE. Ohne Speicher null."));
 
     /**
      * Was an einer Liste steht.

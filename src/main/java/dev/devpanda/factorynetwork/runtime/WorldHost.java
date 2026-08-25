@@ -511,6 +511,23 @@ public final class WorldHost implements Interpreter.Host {
         return countItems(connector, items);
     }
 
+    /**
+     * Der Stromstand einer Maschine.
+     *
+     * <p>Gelesen wird ungeteilt, nicht seitenbezogen: Wer nach dem Strom
+     * einer Maschine fragt, meint die Maschine und nicht die Seite, an der
+     * sein Connector hängt.
+     */
+    @Override
+    public long energyIn(String device) {
+        ConnectorBlockEntity connector = connectorFor(device);
+        if (connector == null) {
+            return 0;
+        }
+        var storage = connector.machineEnergy();
+        return storage == null ? 0 : storage.getEnergyStored();
+    }
+
     /** Ohne Auswahl zählt alles mit. */
     private static long countItems(ConnectorBlockEntity connector, List<Item> items) {
         IItemHandler handler = connector.machineInventory();

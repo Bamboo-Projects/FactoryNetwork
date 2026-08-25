@@ -153,13 +153,15 @@ class SignaturesTest {
     }
 
     @Test
-    @DisplayName("Nach dem Punkt stehen die vier Dinge, die ein Gerät hat")
-    void afterTheDotTheFourDeviceMembersAreOffered() {
+    // Ohne Zahl im Namen: Es waren einmal vier, dann sieben, jetzt acht — und
+    // die Zahl im Titel war jedes Mal die von vorletzter Woche.
+    @DisplayName("Nach dem Punkt steht, was ein Gerät hat")
+    void afterTheDotTheDeviceMembersAreOffered() {
         java.util.List<String> names = Signatures.MEMBERS.stream()
                 .map(Signatures.Member::name).toList();
 
         assertEquals(java.util.List.of("online", "name", "redstone", "count",
-                "insert", "items", "slots"), names);
+                "insert", "items", "slots", "energy"), names);
     }
 
     @Test

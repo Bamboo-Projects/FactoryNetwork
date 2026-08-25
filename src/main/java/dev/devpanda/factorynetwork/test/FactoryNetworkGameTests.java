@@ -7236,6 +7236,60 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    /**
+     * {@code brecher.energy()} liest den Stromstand einer Maschine.
+     *
+     * <p>Mit Klammern wie {@code redstone()} und {@code count()}: Es ist ein
+     * Blick in die Welt und kein Name, den das Programm ohnehin kennt.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void adeviceTellsItsEnergy(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        BlockPos maschine = controller.east().north().north();
+        helper.setBlock(maschine, FnBlocks.PRESS.get());
+        entity.rebuildNetwork();
+        if (helper.getBlockEntity(maschine)
+                instanceof dev.devpanda.factorynetwork.block.entity.PressBlockEntity presse) {
+            presse.energy().charge(4_200);
+        } else {
+            helper.fail("Da steht keine Presse", maschine);
+            return;
+        }
+
+        helper.assertTrue(entity.deploy("""
+                fn nachsehen() {
+                    return quarry_output.energy()
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+
+        Value result = entity.callFunction("nachsehen", List.of());
+        helper.assertValueEqual(((Value.Int) result).value(), 4_200L,
+                "Der Stromstand der Maschine");
+        helper.succeed();
+    }
+
+    /** Eine Maschine ohne Stromspeicher meldet null und keinen Fehler. */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void adeviceWithoutEnergySaysZero(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        // An quarry_output hängt eine Kiste. Sie hat keinen Strom, und das
+        // ist kein Programmfehler, sondern eine Kiste.
+        helper.assertTrue(entity.deploy("""
+                fn nachsehen() {
+                    return quarry_output.energy()
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+
+        Value result = entity.callFunction("nachsehen", List.of());
+        helper.assertValueEqual(((Value.Int) result).value(), 0L,
+                "Eine Kiste hat null Strom");
+        helper.succeed();
+    }
+
     // ---- Der Anbau am Controller -------------------------------------------
 
     /**

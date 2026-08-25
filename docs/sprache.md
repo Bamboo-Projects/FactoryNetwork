@@ -520,6 +520,26 @@ furnace_2.items()
 | `insert(auswahl)` | Legt aus dem Speicher etwas hinein. Gibt zurück, wie viel ankam — **weniger ist normal** |
 | `items()` | Was gerade drinliegt. Leere Fächer fallen weg |
 | `slots(nummer)` | Bestimmte Fächer — eine Nummer oder ein Bereich, `slots(1..5)` |
+| `energy()` | Wie viel Strom in der Maschine steht, in FE. Ohne Speicher null |
+
+### Strom ablesen
+
+```
+when brecher.energy() < 1000
+```
+
+**Mit Klammern, nicht ohne.** Der Entwurf schrieb einmal `brecher.energy`;
+gebaut ist `energy()`, weil es ein Blick in die Welt ist wie `redstone()` und
+`count()`. Ohne Klammern stehen nur die beiden Dinge, die das Programm ohnehin
+weiß: `online` und `name`.
+
+Eine Obergrenze gibt es nicht dazu. Wer einen Balken will, nennt sie selbst —
+`progress "Ofen" brecher.energy() / 100000.0` —, dieselbe Regel wie bei jedem
+anderen Fortschrittsbalken: Worauf er sich bezieht, weiß nur der, der ihn
+aufhängt.
+
+Eine Kiste meldet null. Das ist keine erfundene Antwort, sondern die Wahrheit
+über eine Kiste.
 
 ### Bestimmte Fächer
 

@@ -469,6 +469,11 @@
       "name": "slots",
       "shape": "slots(nummer) list",
       "help": "Bestimmte Fächer — eine Nummer oder ein Bereich wie 1..5. Auch als Quelle oder Ziel eines move."
+    },
+    {
+      "name": "energy",
+      "shape": "energy() int",
+      "help": "Wie viel Strom in der Maschine steht, in FE. Ohne Speicher null."
     }
   ],
   "listMembers": [

@@ -182,7 +182,7 @@ contains('Oberste Ebene bietet display', ['di'], 'display', true);
 // Java-Test hält beide gleich.
 check('Nach dem Punkt die Gerätemitglieder',
     complete(['fn test() {', '    if crusher_1.']),
-    ['online', 'name', 'redstone', 'count', 'insert', 'items', 'slots']);
+    ['online', 'name', 'redstone', 'count', 'insert', 'items', 'slots', 'energy']);
 contains('Nach dem Punkt kein from', ['fn test() {', '    if crusher_1.'], 'from', false);
 contains('Ohne Punkt keine Mitglieder', ['fn test() {', '    '], 'online', false);
 contains('Eine Zahl mit Punkt ist kein Zugriff',

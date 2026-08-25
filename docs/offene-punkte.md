@@ -97,7 +97,7 @@ Vorentscheidungen)
 | 2.2 | ~~Stromverteilung~~ — **fertig** (25.08.). Abgabe und Einspeisung als Worker, Reihenfolge nach `priority`, Energiezellen im Laufwerk, Abgabe als eigene Zahl im Netz-Reiter. Was sich beim Bauen anders ergab, steht in `strom.md` §10 | | `strom.md` | | |
 | 2.3 | ~~Abgabe bei `OFF`/`BOOTING`~~ — **beantwortet.** Es fließt nichts ab, solange das Netz nicht läuft; der Fall kann nicht eintreten | | `strom.md` §3 | | |
 | 2.4 | ~~Einheit der Abgaberate~~ — **entschieden:** `rate 40 per 1t`, keine neue Form. Ein eigenes Wort `tick` zöge sofort `per second` nach sich | | `strom.md` §9 | | |
-| 2.5 | Strom als Wert in der Sprache (`crusher_1.energy`) | F | `strom.md:228` | klein | 1.1 |
+| 2.5 | **Halb erledigt** (25.08.): `crusher_1.energy()` liest den Stand einer Maschine, mit Klammern wie `redstone()`. Offen bleibt `network.power` — `network` ist als Wert nirgends gebaut | F | `strom.md` §8 | klein | — |
 | 2.6 | ~~Das Fertig-Signal~~ — **fertig.** `device_output` meldet, wenn in einem Gerät von einer Art mehr liegt als beim letzten Blick; was das Netz selbst einlegt, zieht die Grundlinie nach und zählt nie mit. Nicht `device_done`: gemessen wird „dazugekommen", nicht „fertig" | | `DeviceAmounts`, `NotifyingHandlers` | | |
 | 2.11 | ~~`log()` sieht niemand~~ — **fertig.** Vier Stufen (`info`, `warn`, `error`, `debug`), Reiter „Log" mit Filter, Herkunft je Zeile, überlebt den Neustart. Die Hinweise der Laufzeit laufen mit hinein | | `LogTabView`, `LogEntry` | | |
 | 2.7 | ~~`when`-Bedingungen~~ — **überholt.** Im laufenden Spiel wertet der echte Interpreter aus: Texte, globale Werte, Gerätezustände. Der alte Weg — Zahl gegen Zahl — greift nur ohne Host, also in Prüfungen ohne Welt. Eine kaputte Bedingung hält den Worker an | | `WorkerRuntime.conditionHolds` | | |
@@ -151,7 +151,7 @@ Vorentscheidungen)
 | 6.5 | ~~README-Frage~~ — **entfernt**, sie war beantwortet | | | |
 | 6.6 | ~~Prioritätenliste~~ — **berichtigt**, mit Vermerk | | | |
 | 6.7 | ~~Plan-Kästchen~~ — **abgehakt** | | | |
-| 6.10 | **`list` auf einer Anzeige ist eine `row`.** Die Spezifikation nennt es „Aufzählung, etwa Bestände oder Aufträge"; gezeichnet wird eine einzelne Zeile wie bei `row`. **Seit 1.16 nicht mehr blockiert** — ein Posten kennt jetzt Art und Menge, eine Aufzählung lässt sich also zeichnen | F | `DisplayValues.java`, `sprache.md:814` | klein | — |
+| 6.10 | ~~`list` auf einer Anzeige~~ — **fertig** (25.08.). Überschrift und je Posten eine Zeile, absteigend nach Menge, ab acht Posten gezählt statt weggelassen. Dabei fiel auf, dass die Knopfnummer im Paket eine Zeilennummer war und der Controller sie als Eintragsnummer las | | `DisplayValues.listing` | | |
 | 6.11 | ~~Tests, die nicht fehlschlagen können~~ — **fertig**, alle sieben. `abrokenRackDropsItsProcessors` prüft jetzt, dass das herausfallende Gehäuse seine Bauteile trägt (gegengeprobt: ohne `packAll` fällt er); `theAnalyserMarksFullCables` prüft die eine richtige Antwort statt zweier mit ODER, dazu den Gegenfall mit halber Last | | `FactoryNetworkGameTests` | | |
 | 6.8 | ~~Kennzeichnung der Abschnitte~~ — **fertig.** Was `sprache.md` verspricht und der Code nicht hält, trägt jetzt überall einen Vermerk: Chemikalien, `crafting` als Quelle, die drei fehlenden Typen, `send()`, `crafting_finished`, die Auflösungsanzeige | | `sprache.md` | | |
 | 6.9 | ~~Kabelbündel-Frage~~ — **nachgetragen** | | | |

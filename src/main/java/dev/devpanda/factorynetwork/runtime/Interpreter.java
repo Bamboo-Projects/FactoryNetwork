@@ -104,6 +104,18 @@ public final class Interpreter {
         }
 
         /**
+         * Wie viel Strom in einem Gerät steht, in FE.
+         *
+         * <p>Ein Gerät ohne Stromspeicher meldet null. <b>Das ist keine
+         * erfundene Antwort</b>, anders als bei {@code countIn}: Eine Kiste
+         * hat keinen Strom, und null ist die Wahrheit über eine Kiste. Ein
+         * Host ohne Welt kann dagegen gar nicht nachsehen und sagt es.
+         */
+        default long energyIn(String device) {
+            throw new ScriptError("Ohne Welt lässt sich kein Stromstand ablesen.");
+        }
+
+        /**
          * Die Geräte einer Gruppe, in der Reihenfolge ihrer Verteilung.
          *
          * <p>Aufgelöst gegen das Netz und nicht gegen das Programm: Ein
@@ -1166,9 +1178,12 @@ public final class Interpreter {
                 // was er tut — und ein Connector je Maschine soll reichen.
                 case "slots" -> new Value.DeviceSlots(device.name(),
                         slotNumbers(arguments));
+                // Mit Klammern wie redstone() und count(): Es ist ein Blick
+                // in die Welt und kein Name, den das Programm ohnehin kennt.
+                case "energy" -> new Value.Int(host.energyIn(device.name()));
                 default -> throw new ScriptError(
                         "Ein Gerät kann kein " + name + ".",
-                        "Bekannt sind redstone, count, insert und items.");
+                        "Bekannt sind redstone, count, insert, items, slots und energy.");
             };
         }
         throw new ScriptError("Auf " + target.describe() + " gibt es kein " + name + ".");
