@@ -2419,3 +2419,131 @@ sind je für sich ein Projekt.
   die Formzeile bleiben, wo sie sind — sie beantworten eine andere Frage als
   ein Buch. Ob es daneben noch Tooltips an den Blöcken braucht, entscheidet
   sich erst, wenn das Buch steht.
+
+---
+
+## Das Fertig-Signal heißt `device_output` (2026-08-25)
+
+`umsetzung.md` stellte drei Wege zur Wahl, und gebaut war der konservative:
+`device_changed` meldet, dass sich am Inhalt eines Geräts etwas geändert hat,
+die Deutung schreibt der Spieler. **Weg (1) kommt dazu — aber mit zwei
+Änderungen gegenüber der Beschreibung dort.**
+
+### Gemessen wird gegen den Stand beim Einlegen, nicht gegen leer
+
+Der Einwand gegen Weg (1) lautete: „meldet zu früh, wenn im Ausgang schon
+etwas von vorher lag". Er trifft die Fassung, die fragt, ob im Gerät etwas
+liegt, das das Netz nicht eingelegt hat. Merkt sich das Netz beim Einlegen
+den Stand des Geräts und vergleicht später dagegen, ist Altbestand kein
+Thema mehr: Gemeldet wird der Unterschied, und der ist bei einem vollen
+Ausgang genauso null wie bei einem leeren. Die Momentaufnahme kostet nichts,
+was nicht ohnehin da wäre — `insert()` meldet seit dem 25.08., was
+tatsächlich angekommen ist, und angesehen wird ein Gerät nur, solange ein
+Einlegen offen ist.
+
+### Der Name sagt, was gemessen wird
+
+Das Ereignis kann „neuer Inhalt seit dem Einlegen" garantieren. „Fertig"
+kann es nicht: Eine Maschine, die eine Ladung von acht Stück einzeln
+ausgibt, ist nach dem ersten Stück nicht fertig, und keine Messung von außen
+weiß, ob noch sieben kommen. **Wo Name und Messung auseinanderfallen, lügt
+das Ereignis** — und ein Name, der etwas zusagt, prüft niemand nach. Deshalb
+`device_output`.
+
+Die Folge davon ist benannt und in Kauf genommen: Als Ereignis, das
+wiederholt fällt, ist ein früher Wurf harmlos — der nächste holt den Rest.
+In einem `await device_output` mitten in einem Ablauf läuft der Ablauf nach
+dem ersten Stück weiter, und der Rest bleibt in der Maschine stehen. Genau
+das ist der Verlust, vor dem die Notiz warnte; mit dem ehrlichen Namen ist
+er wenigstens absehbar, statt vom Wort „done" zugedeckt zu werden.
+
+`device_changed` bleibt unverändert daneben stehen. Es beantwortet eine
+andere Frage — „hier hat sich etwas geregt" statt „hier ist etwas
+dazugekommen, das ich nicht hingelegt habe" — und ist das einzige der
+beiden, das ohne vorheriges Einlegen etwas melden kann.
+
+### Verworfen
+
+**Weg (1) unverändert.** Der Fehlalarm bei vorher gefülltem Ausgang ist
+vermeidbar, also wird er vermieden.
+
+**Der Name `device_done`.** Er liest sich in Vorlagen besser und trifft, was
+der Spieler meint. Er trifft aber nicht, was die Mod weiß, und diese Lücke
+fällt dem Spieler erst auf, wenn Gegenstände fehlen.
+
+**Weg (3), die Anbindung je Mod**, bleibt zurückgestellt (`offene-punkte.md`
+7.3): am genauesten, und in einem großen Pack sind es Dutzende.
+
+### Offen für den Bau
+
+- **Was das Ereignis übergibt.** Ein Wert wie bei `device_changed` (das
+  Gerät) ist die einfache Antwort. Zwei — Gerät und was dazugekommen ist —
+  wären nützlicher, brauchen aber einen Wert für „Posten", und den gibt es
+  bis 1.16 nicht.
+- **Der Vergleich je Slot.** Heute steht je Gerät ein Fingerabdruck als
+  einzelne Zahl; ein Delta braucht den Inhalt selbst. Das gilt nur für
+  Geräte mit offenem Einlegen und nicht für alle Connectoren.
+- **Wie lange ein Einlegen offen bleibt.** Eine Maschine, die nie etwas
+  ausgibt, hielte sonst ihre Momentaufnahme für immer.
+
+---
+
+## Der Controller bleibt ein Block (2026-08-25)
+
+Sechs Seiten, je ein Strang, ein dichtes Kabel mit vierundsechzig Kanälen —
+384 Geräte je Netz. Wer mehr braucht, setzt in AE2 mehrere Controllerblöcke
+aneinander und bekommt mehr Außenflächen. Hier hält dieser Block aber
+etwas, was ein AE2-Controller nicht hält: Programm, Speicherindex, laufende
+Abläufe und Stromvorrat. Sobald es mehrere Blöcke sind, muss einer der
+Master sein, und die Frage war, **wie er bestimmt wird.**
+
+**Entschieden ist Weg (3): zwei Blocktypen.** Der Controller ist immer der
+Master, bleibt genau einer je Netz und hält alles wie bisher. Daneben gibt es
+einen Anbaublock, der ausschließlich Außenflächen für Kabel beisteuert und
+nie etwas hält — ohne Controller nebenan tut er nichts. Die Master-Rolle
+steht damit am Blocktyp fest statt an Position oder Reihenfolge.
+
+### Warum nicht der Anker unter gleichen Blöcken
+
+Der bekannte Grund: Ein wandernder Anker verlegt den gesamten Zustand in der
+zentralsten Klasse der Mod, und ein Fehler dort kostet einem Spieler sein
+Programm.
+
+Der zweite Grund ist seit der ersten Empfehlung dazugekommen und wiegt
+schwerer, weil er kein Risiko beschreibt, sondern einen Bruch an gebautem
+Verhalten: **Das Programm liegt als Datei neben der Welt und heißt nach der
+Position des Controllers** (`controller_overworld_10_64_-20.mf`). Die Brücke
+zu VS Code sieht im Sekundentakt genau dort nach, und „die Datei bleibt beim
+Abbauen liegen" ist eine zugesagte Eigenschaft — wer sich verklickt, setzt
+den Block zurück und hat alles wieder. Wandert der Anker, wandert der
+Dateiname mit. Wer die alte Datei in VS Code offen hat, schreibt ab da in
+ein Programm, das niemand mehr liest, und merkt es nicht: Speichern
+funktioniert, im Spiel kommt nichts an.
+
+### Der Preis, offen benannt
+
+Ein Block mehr im Kreativ-Reiter, und der Ausbau sieht nicht aus wie in AE2 —
+dort wächst der Controller aus lauter gleichen Blöcken. Das ist der billigere
+Preis: Ein zweiter Block ist Arbeit, eine wandernde Zustandshaltung ist ein
+Fehler, der erst beim Spieler auffällt.
+
+### Verworfen
+
+**Der unterste, nördlichste Block hält alles.** Feste Regel, immer erklärbar
+— aber jeder Block, den jemand darunter setzt, löst einen Umzug samt
+Dateiumbenennung aus. Ein Bauhandgriff darf ein Programm nicht verlegen.
+
+**Der zuerst gesetzte hält alles.** Verschiebt die Frage nur: Wird er
+abgebaut, muss ein anderer übernehmen, und beim nächsten Laden muss die Welt
+wissen, welcher es war — also doch eine gespeicherte Ankerposition, mit
+allem, was daran hängt.
+
+### Offen für den Bau
+
+- **Ob der Anbaublock selbst einen Kanal kostet.** Laufwerk und Serverschrank
+  tun es (siehe „Wer einen Kanal kostet"); der Anbau schafft Kanäle, statt
+  welche zu verbrauchen, und fällt damit vermutlich heraus.
+- **Ob es eine Obergrenze gibt.** Sechs Seiten je Block, und jeder Anbau
+  bringt neue — irgendwann ist die Zahl der Stränge nur noch von der Bauform
+  begrenzt.
+- **Ob der Anbau Strom und Kabel durchreicht** oder nur Fläche ist.

@@ -1251,12 +1251,17 @@ public class ControllerBlockEntity extends BlockEntity {
     /**
      * Meldet, wenn sich der Inhalt eines Geräts geändert hat.
      *
-     * <p><b>Nicht {@code device_done}.</b> Ob eine Maschine <em>fertig</em>
-     * ist, weiß niemand von außen: Der Ausgang kann von vorher gefüllt sein,
-     * und jede Mod zählt anders. Was sich sagen lässt, ist, dass sich etwas
-     * geändert hat — was das bedeutet, schreibt der Spieler selbst. Eine
-     * Automatisierung, die einmal zu früh weiterschaltet, verliert Gegenstände
-     * in einer Kiste, die niemand mehr findet.
+     * <p><b>Nicht „fertig".</b> Ob eine Maschine fertig ist, weiß niemand von
+     * außen: Der Ausgang kann von vorher gefüllt sein, und jede Mod zählt
+     * anders. Was sich sagen lässt, ist, dass sich etwas geändert hat — was
+     * das bedeutet, schreibt der Spieler selbst. Eine Automatisierung, die
+     * einmal zu früh weiterschaltet, verliert Gegenstände in einer Kiste, die
+     * niemand mehr findet.
+     *
+     * <p>Daneben tritt einmal {@code device_output}: Am 25.08. entschieden,
+     * noch nicht gebaut — es merkt sich beim Einlegen den Stand des Geräts
+     * und meldet den Unterschied. Es heißt nicht {@code device_done}, weil es
+     * „neuer Inhalt seit dem Einlegen" messen kann und „fertig" nicht.
      *
      * <p>Abgefragt statt gemeldet und nur alle zehn Ticks, wie beim Redstone —
      * und nur, wenn das Programm überhaupt darauf hört.

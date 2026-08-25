@@ -673,9 +673,9 @@ multiblock OrePlant {
 
     fn process(ore: Item) {
         move ore to crusher
-        await device_done(crusher)
+        await device_output(crusher)
         move crusher.output() to furnace
-        await device_done(furnace)
+        await device_output(furnace)
         move furnace.output() to output
     }
 }
@@ -752,10 +752,17 @@ redstone_changed(device, strength)   Redstone-Stärke 0..15 hat sich geändert
 device_online(device)                Gerät ist erreichbar geworden
 device_offline(name)                 Gerät ist verschwunden — nur noch der Name
 device_changed(device)               Inhalt eines Geräts hat sich geändert
-device_done(device)                  Gerät hat seine Arbeit beendet
+device_output(device)                neuer Inhalt seit dem Einlegen
 crafting_finished(job)               Fertigungsauftrag ist fertig
 crafting_failed(job, reason)         Fertigungsauftrag ist gescheitert
 ```
+
+> **Noch nicht gebaut:** `device_output` — am 25.08. entschieden, siehe
+> `entscheidungen.md`. Es meldet ausdrücklich nicht „fertig": Ob eine Maschine
+> ihre Arbeit beendet hat, weiß von außen niemand, gemessen wird der
+> Unterschied zum Stand beim Einlegen. Ebenfalls noch nicht gebaut sind
+> `crafting_finished` und `crafting_failed` — sie warten auf das Autocrafting,
+> und bis dahin weist die Prüfung sie als unbekanntes Ereignis zurück.
 
 Bewusst nicht dabei ist ein Ereignis für jede Bestandsänderung. In einem Lager
 mit zwanzigtausend Arten feuert das im Sekundentakt, und niemand kann darauf

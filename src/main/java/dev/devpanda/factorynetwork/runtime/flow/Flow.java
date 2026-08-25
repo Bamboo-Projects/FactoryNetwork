@@ -30,9 +30,9 @@ public final class Flow {
          *
          * <p>Nicht abgelehnt, sondern verschoben. <b>Verzögerung ist
          * wiederherstellbar, Verlust nicht</b> — ein abgelehntes
-         * {@code device_done} ist für immer weg, und die Gegenstände stehen
-         * bis zum nächsten Neustart in einer Maschine, die niemand mehr
-         * anfasst.
+         * {@code device_changed} ist für immer weg, und die Gegenstände
+         * stehen bis zum nächsten Neustart in einer Maschine, die niemand
+         * mehr anfasst.
          */
         QUEUED,
         /** Wartet auf eine bestimmte Spielzeit. */

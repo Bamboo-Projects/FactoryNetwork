@@ -158,28 +158,15 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
   eine Wand aus zwölf Tafeln baut, bekommt viel Platz für Text in
   Normalgröße — keine Überschrift, die man aus zwanzig Metern liest. Ob das
   fehlt, zeigt erst das Spielen.
-- **`device_done`.** `device_online`, `device_offline` und `device_changed`
-  laufen; „diese Maschine ist **fertig**" ist die offene Frage. Der
-  konservative Weg — melden, dass sich etwas geändert hat, und die Deutung dem
-  Spieler überlassen — ist gebaut. Was noch fehlt, ist die Bequemlichkeit. **Sie gehört entschieden, bevor
-  sie gebaut wird** — ein falsches Fertig-Signal lässt eine Anlage Gegenstände
-  verlieren, und das ist schlimmer als gar kein Signal.
-
-  Drei Wege stehen zur Wahl:
-
-  1. **Nach dem, was das Netz eingelegt hat.** Der Controller weiß, was er in
-     ein Gerät gelegt hat. Taucht dort etwas anderes auf, ist verarbeitet
-     worden. Braucht keine Fremdmod zu kennen, meldet aber zu früh, wenn im
-     Ausgang schon etwas von vorher lag.
-  2. **Gar kein `device_done`, dafür `device_changed`.** Das Inventar eines
-     Geräts hat sich geändert — was „fertig" heißt, schreibt der Spieler
-     selbst. Ehrlich und nie falsch, aber jede Vorlage muss es ausformulieren.
-  3. **Je Mod angebunden.** Am genauesten und am teuersten; in einem großen
-     Pack sind es Dutzende.
-
-  Gebaut ist **(2)**. Offen ist, ob **(1)** dazukommt. Eine
-  Automatisierung, die einmal zu früh weiterschaltet, verliert Gegenstände in
-  einer Kiste, die niemand mehr findet.
+- **`device_output`** — entschieden am 25.08., gebaut ist es noch nicht.
+  `device_online`, `device_offline` und `device_changed` laufen. Für „hier ist
+  etwas dazugekommen" kommt ein viertes Ereignis dazu: Das Netz merkt sich beim
+  Einlegen den Stand des Geräts und meldet später den Unterschied — ein vorher
+  gefüllter Ausgang löst damit nichts aus. Es heißt nach dem, was es misst, und
+  nicht `device_done`: Ob eine Maschine *fertig* ist, weiß von außen niemand,
+  und ein Name, der es zusagt, wird nicht nachgeprüft. Begründung und
+  verworfene Wege stehen in `entscheidungen.md` unter „Das Fertig-Signal heißt
+  `device_output`".
 - **Flüssigkeits-Tags.** `tag:` löst heute Gegenstands-Tags auf. Wie ein
   Flüssigkeits-Tag geschrieben wird, ist eine Frage an die Sprache und nicht
   nebenbei zu entscheiden — `fluidtag:c/molten` wäre eine vierte Art,
@@ -189,36 +176,17 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
   von vierundsechzig bis viertausendsechsundneunzig. Sie sind gesetzt, nicht
   hergeleitet — wie sie sich anfühlen, zeigt erst das Spielen. Die
   Begründungen stehen in `entscheidungen.md` unter „Der Serverschrank".
-- **Der Controller-Multiblock.** Der Controller hat sechs Seiten. An jeder
-  hängt höchstens ein Strang, ein dichtes Kabel trägt vierundsechzig Kanäle —
-  macht 384 Geräte je Netz. Das reicht heute und soll ausbaubar sein
-  („haben ist besser als brauchen"). Mehrere Controllerblöcke aneinander
-  wären ein Controller mit mehr Außenflächen, also mehr Strängen.
-
-  **Vor dem Bauen ist eine Frage zu beantworten, und sie ist die ganze
-  Schwierigkeit: Wo liegt das Programm, und was passiert damit, wenn genau
-  dieser Block abgebaut wird?** Der Controller hält Programm, Speicherindex,
-  laufende Abläufe und Stromvorrat. Drei Wege:
-
-  1. **Der unterste, nördlichste Block hält alles.** Feste Regel, immer
-     erklärbar. Setzt jemand einen Block *darunter*, wandert der Anker — und
-     mit ihm muss der ganze Zustand umziehen. Auch die Datei neben der Welt
-     heißt nach der Ankerposition und müsste mitwandern.
-  2. **Der zuerst gesetzte hält alles, die anderen sind Anbauten.** Kein
-     Umzug, solange er steht. Wird er abgebaut, ist die Frage nur verschoben:
-     Wer übernimmt, und woher weiß man es beim nächsten Laden?
-  3. **Ein eigener Block für die Erweiterung**, der nie etwas hält — der
-     Controller bleibt einer und bekommt Anbauten, die nur Flächen
-     beisteuern. Kein Umzug, keine Ankerwahl, keine Zustandswanderung. Dafür
-     ein Block mehr im Kreativ-Reiter, und der Ausbau sieht nicht aus wie in
-     AE2.
-
-  Meine Empfehlung ist **(3)**. Die anderen beiden verlagern die
-  Zustandswanderung in die zentralste Klasse der Mod, und ein Fehler dort
-  kostet einem Spieler sein Programm. Ein zweiter Block ist der billigere
-  Preis. Zu entscheiden ist das trotzdem vorher — die drei Wege sehen im
-  Spiel verschieden aus, und danach lässt sich das nicht mehr ohne Bruch
-  ändern.
+- **Der Controller-Multiblock** — entschieden am 25.08., gebaut ist er noch
+  nicht. Der Controller hat sechs Seiten. An jeder hängt höchstens ein Strang,
+  ein dichtes Kabel trägt vierundsechzig Kanäle — macht 384 Geräte je Netz.
+  Das reicht heute und soll ausbaubar sein („haben ist besser als brauchen").
+  Ausgebaut wird über einen **zweiten Blocktyp**: Der Controller bleibt genau
+  einer und hält weiterhin Programm, Speicherindex, laufende Abläufe und
+  Stromvorrat; ein Anbaublock steuert nur Außenflächen für Kabel bei und hält
+  nie etwas. Damit kann die Master-Rolle nicht wandern — und mit ihr nicht die
+  Programmdatei, die nach der Position des Controllers heißt und an der die
+  Brücke zu VS Code hängt. Die verworfenen Wege stehen in `entscheidungen.md`
+  unter „Der Controller bleibt ein Block".
 - **Autocrafting.** Der letzte ausgegraute Reiter.
 - **Chemikalien** aus Mekanism. Die Schreibweise steht seit dem Entwurf.
 
@@ -363,9 +331,9 @@ deshalb liegt in den Tests dort eine Welt aus Papier.
 
 In dieser Reihenfolge, nach Abhängigkeit:
 
-1. **`device_done` entscheiden** (siehe oben) und bauen. Der Baustein, der
-   Multiblocks rund macht — ohne ihn muss jede Vorlage ihre eigenen Ereignisse
-   auslösen.
+1. **`device_output` bauen.** Entschieden ist es seit dem 25.08. (siehe
+   oben). Der Baustein, der Multiblocks rund macht — ohne ihn muss jede
+   Vorlage ihre eigenen Ereignisse auslösen.
 2. **Flüssigkeiten und Chemikalien.** Die Schreibweise steht seit dem Entwurf;
    die Anbindung an fremde Mods ist die eigentliche Arbeit.
 3. **Ein eigener Speicherblock.** Solange der Speicher im Controller sitzt,

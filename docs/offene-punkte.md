@@ -2,7 +2,8 @@
 
 Alles, was in `docs/` und im Code als unfertig steht, an einer Stelle.
 
-Stand: 2026-08-25 (nach der zweiten Nacht und dem Protokoll)
+Stand: 2026-08-25 (nach der zweiten Nacht, dem Protokoll und den beiden
+Vorentscheidungen)
 
 > **Nacht auf den 25.08., zweiter Durchgang:** 1.2 (`where` und `sort` stehen
 > jetzt vollständig), dazu vier Dinge, die vorher niemand auf der Liste
@@ -66,7 +67,7 @@ Stand: 2026-08-25 (nach der zweiten Nacht und dem Protokoll)
 | 2.3 | Abgabe bei `OFF`/`BOOTING`: „Netz füllt sich langsam, während Maschinen ziehen" nicht durchgerechnet | E | `strom.md:239` | klein | 2.2 |
 | 2.4 | Einheit der Abgaberate: `per tick` gegen `per 5s` | E | `strom.md:249` | klein | 2.2 |
 | 2.5 | Strom als Wert in der Sprache (`crusher_1.energy`) | F | `strom.md:228` | klein | 1.1 |
-| 2.6 | **`device_done`:** gebaut ist Weg (2), offen ob Weg (1) dazukommt. Vor dem Bau zu entscheiden — ein falsches Fertig-Signal lässt eine Anlage Gegenstände verlieren | E | `umsetzung.md:160` | mittel | Entscheidung |
+| 2.6 | **Entschieden am 25.08.:** Weg (1) kommt dazu — gemessen als Unterschied zum Stand beim Einlegen, damit ein vorher gefüllter Ausgang nichts auslöst, und benannt nach dem, was gemessen wird: **`device_output`**, nicht `device_done`. `device_changed` bleibt daneben stehen. Gebaut ist davon nichts | F | `entscheidungen.md` „Das Fertig-Signal heißt `device_output`" | mittel | — |
 | 2.11 | ~~`log()` sieht niemand~~ — **fertig.** Vier Stufen (`info`, `warn`, `error`, `debug`), Reiter „Log" mit Filter, Herkunft je Zeile, überlebt den Neustart. Die Hinweise der Laufzeit laufen mit hinein | | `LogTabView`, `LogEntry` | | |
 | 2.7 | `when`-Bedingungen: nur Zahlvergleiche mit Literalen und `storage.count(...)` | F | `WorkerRuntime.java:860` | mittel | teils 1.1 |
 | 2.8 | `NetworkCheck` besucht keine Anweisungen — weder Seitenwarnung noch Namensprüfung erreichen ein `move` | F | `geraeteerkennung.md:316` | mittel | Entscheidung zur Namensprüfung bei `move` |
@@ -102,7 +103,7 @@ Stand: 2026-08-25 (nach der zweiten Nacht und dem Protokoll)
 
 | # | Was | Status | Wo | Größe | Blockiert durch |
 |---|---|---|---|---|---|
-| 5.1 | **Controller-Multiblock.** Die Vorfrage ist die schwere: Wo liegt das Programm, wenn genau dieser Block abgebaut wird? Empfehlung (3): ein Erweiterungsblock ohne Zustand | E | `umsetzung.md:191` | groß | Entscheidung — danach nicht ohne Bruch änderbar |
+| 5.1 | **Controller-Multiblock. Entschieden am 25.08.:** Weg (3) — der Controller bleibt genau ein Block und hält weiterhin alles; ein Anbaublock steuert nur Außenflächen für Kabel bei und hält nie etwas. Die Master-Rolle steht am Blocktyp fest, also kann sie nicht wandern. Gebaut ist davon nichts | F | `entscheidungen.md` „Der Controller bleibt ein Block" | groß | — |
 | 5.2 | Ein eigener Speicherblock | F | `umsetzung.md:370` | mittel | — |
 | 5.3 | Anzeigenwand: die Schrift wächst nicht mit der Wand | F | `umsetzung.md:156` | mittel | zeigt erst das Spielen |
 | 5.4 | Die Zahlen an den Serverbauteilen sind gesetzt, nicht hergeleitet | E | `umsetzung.md:186` | klein | Spielprüfung |
@@ -129,7 +130,7 @@ Stand: 2026-08-25 (nach der zweiten Nacht und dem Protokoll)
 |---|---|---|---|---|
 | 7.1 | Mekanism-Chemikalien — die einzige harte Anbindung, die die Sprache verspricht und die Laufzeit verweigert | F | `WorldHost.java:461` | mittel–groß |
 | 7.2 | ~~GuideME eingebunden~~ — **fertig**, `compat/guide` | | | |
-| 7.3 | `device_done` je Mod (Weg 3) | Z | `umsetzung.md:177` | groß |
+| 7.3 | Das Fertig-Signal je Mod (Weg 3) | Z | `umsetzung.md:177` | groß |
 | 7.4 | Eigene Generatoren | Z | `strom.md:220` | — |
 
 ---
@@ -153,8 +154,10 @@ Zeile.
 auch. Der Rest ist Schreibarbeit ohne Risiko — und das, was die Mod für
 jemanden von außen überhaupt zugänglich macht.
 
-**Vor allem anderen zu entscheiden, unverändert:** `device_done` (2.6) und der
-Controller-Anker (5.1). Beides ist **Entscheidung, nicht Arbeit** — und beides
-ist nach dem Bau nicht mehr ohne Bruch zu ändern.
+**Die zwei, die vor allem anderen zu entscheiden waren, sind entschieden:**
+`device_output` (2.6) und der Controller-Anker (5.1), beide am 25.08. Damit
+sind sie von der Entscheidungs- auf die Arbeitsliste gewandert; die
+Begründungen stehen in `entscheidungen.md`. Was an ihnen jetzt noch offen
+ist, sind Baufragen und keine Weichenstellungen mehr.
 
 
