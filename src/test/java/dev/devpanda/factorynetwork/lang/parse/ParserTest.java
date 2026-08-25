@@ -437,6 +437,24 @@ class ParserTest {
         }
 
         @Test
+        @DisplayName("Eine Zahl vor einem Namen ist eine Menge, nicht nur vor einer Auswahl")
+        void anumberBeforeAnameIsAnamount() {
+            // `move 64 erze` ging längst, `send(64 erze)` nicht — dieselbe
+            // Form an zwei Stellen mit zwei Antworten. Aufgefallen ist es an
+            // einem Beispiel in der Doku, das genau das versprach.
+            Program program = parseClean("""
+                    fn nachschub() {
+                        brecher.send(64 erze)
+                    }""");
+            Stmt.ExprStmt statement = (Stmt.ExprStmt) ((Decl.Fn) program.declarations().get(0))
+                    .body().statements().get(0);
+            Expr.Call call = assertInstanceOf(Expr.Call.class, statement.expr());
+            Expr.Amount amount = assertInstanceOf(Expr.Amount.class,
+                    call.arguments().get(0).value());
+            assertEquals(64, amount.count());
+        }
+
+        @Test
         void eventWithTypedParameters() {
             Program program = parseClean("event OreBatchReady(item: Item, amount: Int)");
             Decl.Event event = (Decl.Event) program.declarations().get(0);

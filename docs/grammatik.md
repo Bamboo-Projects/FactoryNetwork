@@ -258,7 +258,7 @@ den es nie gab. Der `else`-Block muss den Ablauf verlassen; auch das prüft der
 ## 6. Auswahl von Gegenständen
 
 ```
-amount      = [ INT ] selection
+amount      = [ INT ] ( selection | NAME )
 
 selection   = selTerm { 'except' selTerm }
 
@@ -267,6 +267,12 @@ selTerm     = KIND ':' [ NAMESPACE ( '/' | ':' ) ] pathPattern | 'all'
 KIND        = 'item' | 'fluid' | 'chemical' | 'tag' | 'fluidtag'
 pathPattern = ( NAMECHAR | '*' ) { NAMECHAR | '*' | '/' }
 ```
+
+**Eine Zahl darf auch vor einem Namen stehen.** `64 erze` meint 64 aus der
+Filter-Vorlage `erze` — der Parser kann nicht wissen, ob ein Name eine Vorlage
+meint, aber er weiß, dass eine Zahl unmittelbar vor einem Namen sonst nichts
+heißt. Ohne diese Regel ging `move 64 erze`, `brecher.send(64 erze)` dagegen
+nicht: dieselbe Form an zwei Stellen mit zwei Antworten.
 
 **`all` steht allein, wie `power`.** Es ist die Auswahl, die nichts aussucht:
 was auch immer darin liegt. Damit ist auch `all` ein Schlüsselwort — wer

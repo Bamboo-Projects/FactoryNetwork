@@ -44,7 +44,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class DocExamplesTest {
 
     private static final List<String> DECLARATIONS = List.of(
-            "worker ", "fn ", "on ", "event ", "display ", "multiblock ", "group ", "global ");
+            "worker ", "fn ", "on ", "event ", "display ", "multiblock ", "group ", "global ",
+            // const fehlte hier, seit es das Wort gibt: Ein Beispiel, das
+            // damit anfängt, wurde übersprungen statt geprüft.
+            "const ");
 
     /**
      * Die Dateien, deren Beispiele stimmen müssen.
@@ -109,6 +112,14 @@ class DocExamplesTest {
 
     private static boolean isProgram(String block) {
         String trimmed = block.stripLeading();
+        // <b>filter ist zweideutig</b>, und deshalb steht es nicht in der
+        // Liste oben: „filter erze {" erklärt eine Vorlage, „filter
+        // tag:c/ores" ist die Angabe eines Workers, aus dem Zusammenhang
+        // gerissen. Nur die erste Form ist ein Programm — die zweite ist ein
+        // Bruchstück, und ein Bruchstück muss nicht für sich übersetzen.
+        if (trimmed.startsWith("filter ")) {
+            return trimmed.lines().findFirst().orElse("").stripTrailing().endsWith("{");
+        }
         return DECLARATIONS.stream().anyMatch(trimmed::startsWith);
     }
 }

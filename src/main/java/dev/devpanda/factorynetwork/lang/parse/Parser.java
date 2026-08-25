@@ -1019,8 +1019,16 @@ public final class Parser {
             }
             case INT -> {
                 advance();
-                // Eine Zahl vor einer Auswahl ist die Menge: 64 item:iron_ingot
-                if (at(TokenType.SELECTOR)) {
+                // Eine Zahl vor einer Auswahl ist die Menge: 64 item:iron_ingot.
+                //
+                // <b>Und vor einem Namen auch</b>, denn eine Filter-Vorlage
+                // ist eine Auswahl mit Namen: 64 erze. Der Parser kann nicht
+                // wissen, ob ein Name eine Vorlage meint — aber er weiß, dass
+                // eine Zahl unmittelbar vor einem Namen sonst gar nichts
+                // heißt. Ohne diese Zeile ging `move 64 erze` und
+                // `brecher.send(64 erze)` nicht: dieselbe Form an zwei Stellen
+                // mit zwei Antworten.
+                if (at(TokenType.SELECTOR) || at(TokenType.NAME)) {
                     Expr selection = parsePostfix();
                     return new Expr.Amount(Long.parseLong(token.text()), selection,
                             token.span().to(selection.span()));
