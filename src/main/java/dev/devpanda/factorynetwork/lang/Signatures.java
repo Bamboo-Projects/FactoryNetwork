@@ -30,7 +30,7 @@ public final class Signatures {
         EXPR,
         /** Eine ganze Zahl. */
         INT,
-        /** Eine Dauer, etwa {@code 5s} oder {@code 2m}. */
+        /** Eine Dauer, etwa {@code 5s} oder {@code 2min}. */
         DURATION,
         /** Ein Connector, {@code storage} oder {@code crafting}. */
         TARGET,
@@ -218,7 +218,7 @@ public final class Signatures {
     /**
      * Was an einem Gerät steht — {@code crusher_1.online}.
      *
-     * <p><b>Vier und nicht mehr.</b> Der Interpreter kennt {@code online},
+     * <p><b>Nur, was der Interpreter wirklich kennt.</b> Der Interpreter kennt {@code online},
      * {@code name}, {@code redstone()} und {@code count()};
      * {@code sprache.md} §6 beschreibt darüber hinaus {@code insert()},
      * {@code items()} und {@code busy}, die es noch nicht gibt. Was hier

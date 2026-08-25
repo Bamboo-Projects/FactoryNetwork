@@ -4370,8 +4370,10 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(engine.inMemory(), 8, "mehr passt nicht hinein");
         helper.assertTrue(!engine.failed().isEmpty(),
                 "der neunte muss unter den Fehlern stehen");
-        helper.assertTrue(engine.failed().get(0).detail().contains("Speicher ist voll"),
-                "und der Grund muss den Speicher nennen: "
+        // „Arbeitsspeicher" und nicht nur „Speicher": Die Zellen im Laufwerk
+        // heißen auch so, und wer diese Meldung las, ging Zellen einbauen.
+        helper.assertTrue(engine.failed().get(0).detail().contains("Arbeitsspeicher"),
+                "und der Grund muss den richtigen Speicher nennen: "
                         + engine.failed().get(0).detail());
         helper.succeed();
     }

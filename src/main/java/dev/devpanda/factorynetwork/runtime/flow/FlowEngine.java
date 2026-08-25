@@ -189,8 +189,10 @@ public final class FlowEngine {
         // wiederherstellbar, Verlust nicht — dieselbe Antwort wie bei der
         // Überlast.
         if (!frozen && inMemory() >= memoryLimit) {
-            flow.fail("Der Speicher ist voll — " + memoryLimit
-                    + " Abläufe passen hinein. Bau größere Speicher ein.");
+            // „Der Speicher ist voll" heißt woanders: die Zellen im Laufwerk.
+            // Wer beides kennt, ging bei dieser Meldung Zellen einbauen.
+            flow.fail("Kein Platz im Arbeitsspeicher — " + memoryLimit
+                    + " Abläufe passen hinein. Bau größere Speicher in den Serverschrank.");
             remember(flow);
             return false;
         }

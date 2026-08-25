@@ -300,7 +300,7 @@ public final class WorkerRuntime {
                     dropped.add(zurueck);
                 }
                 state.status = Status.WAITING_TARGET;
-                state.detail = "Der Speicher ist voll";
+                state.detail = "Der Netzspeicher ist voll";
             }
             moved += taken.getCount() - rest;
         }
@@ -702,7 +702,7 @@ public final class WorkerRuntime {
             long fits = fluids.room(inside.getFluid(), asked);
             if (fits <= 0) {
                 state.status = Status.WAITING_TARGET;
-                state.detail = "Der Speicher ist voll";
+                state.detail = "Der Netzspeicher ist voll";
                 continue;
             }
             FluidStack wanted = new FluidStack(inside.getFluid(), (int) fits);
