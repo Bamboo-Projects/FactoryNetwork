@@ -897,6 +897,64 @@ def energy_cell(label):
     return img
 
 
+def fabricator_top():
+    """Die Oberseite: ein Gitter aus neun Feldern.
+
+    <b>Das Bild sagt, was er tut.</b> Neun Felder sind die Werkbank, und wer
+    sie sieht, weiß, dass hier gebaut wird — ohne den Namen zu lesen. Der Kern
+    des Controllers fehlt: Der Fabricator hält nichts, er arbeitet nur.
+    """
+    img = surface(seed=61)
+    d = ImageDraw.Draw(img)
+    raised(img, (1, 1, N - 2, N - 2), hoehe=3)
+
+    d.rectangle([8, 8, 55, 55], fill=blend(BODY_MID, EDGE, 0.32) + (255,))
+    recess(img, (8, 8, 55, 55), tiefe=2)
+    ao(img, (8, 8, 55, 55), depth=3, strength=0.4)
+
+    # Neun Felder, das mittlere hell — dort entsteht etwas.
+    for reihe in range(3):
+        for spalte in range(3):
+            x = 11 + spalte * 15
+            y = 11 + reihe * 15
+            mitte = reihe == 1 and spalte == 1
+            if mitte:
+                glow(img, [x, y, x + 11, y + 11], color=ACCENT, radius=4, strength=110)
+                d = ImageDraw.Draw(img)
+                d.rectangle([x, y, x + 11, y + 11], fill=ACCENT + (255,))
+                d.rectangle([x + 3, y + 3, x + 8, y + 8], fill=ACCENT_HI + (255,))
+            else:
+                d.rectangle([x, y, x + 11, y + 11], fill=blend(EDGE, BODY_BOT, 0.4) + (255,))
+                ao(img, (x, y, x + 11, y + 11), depth=2, strength=0.45)
+                d = ImageDraw.Draw(img)
+
+    for x, y in ((4, 4), (59, 4), (4, 59), (59, 59)):
+        rivet(img, x, y)
+    scratches(img, count=3, seed=62)
+    return img
+
+
+def fabricator_side():
+    """Die Seite: Lamellen oben, ein Schauglas mit Werkzeugspur darunter."""
+    img = surface(seed=63)
+    d = ImageDraw.Draw(img)
+    bevel(d)
+    for y in range(12, 27, 5):
+        d.rectangle([12, y, 51, y + 1], fill=EDGE + (255,))
+        d.line([(12, y + 2), (51, y + 2)], fill=LIGHT + (255,))
+
+    d.rectangle([12, 33, 51, 52], fill=blend(BODY_MID, EDGE, 0.5) + (255,))
+    recess(img, (12, 33, 51, 52), tiefe=2)
+    glow(img, [16, 37, 47, 48], color=ACCENT, radius=5, strength=70)
+    d = ImageDraw.Draw(img)
+    d.rectangle([16, 37, 47, 48], fill=blend(ACCENT, EDGE, 0.62) + (255,))
+    # Drei Striche wie Werkzeugspuren im Glas.
+    for x in (22, 31, 40):
+        d.line([(x, 39), (x, 46)], fill=blend(ACCENT_HI, EDGE, 0.35) + (255,))
+    scratches(img, count=2, seed=64)
+    return img
+
+
 def drive_front():
     """Zehn Schächte in zwei Reihen, jeder mit Lämpchen.
 
@@ -1724,6 +1782,8 @@ def main():
     print("Gegenstandstexturen:")
     save(label_gun(), "item", "label_gun")
     save(controller_extension(), "block", "controller_extension")
+    save(fabricator_top(), "block", "fabricator_top")
+    save(fabricator_side(), "block", "fabricator_side")
     save(network_analyser(), "item", "network_analyser")
     save(raw_crystal(), "item", "raw_crystal")
     save(crystal_cut(), "item", "crystal")

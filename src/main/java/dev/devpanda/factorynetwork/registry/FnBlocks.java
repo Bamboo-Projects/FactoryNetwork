@@ -42,6 +42,14 @@ public final class FnBlocks {
                     () -> new dev.devpanda.factorynetwork.block.ControllerExtensionBlock(
                             machineProperties()));
 
+    /**
+     * Baut, was das Netz bestellt.
+     *
+     * <p>Ohne Muster-Items: Jedes Werkbank-Rezept steht schon im Server.
+     */
+    public static final DeferredBlock<Block> FABRICATOR = BLOCKS.register("fabricator",
+            () -> new dev.devpanda.factorynetwork.block.FabricatorBlock(machineProperties()));
+
     /** Verbindet Blöcke zu einem Netzwerk. */
     public static final DeferredBlock<Block> CABLE = BLOCKS.register("cable",
             () -> new CableBlock(BlockBehaviour.Properties.of()

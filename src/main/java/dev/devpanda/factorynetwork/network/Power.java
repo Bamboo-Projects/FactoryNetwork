@@ -40,6 +40,9 @@ public final class Power {
     /** Ein Router. Er schaltet aktiv und hat eine BlockEntity — Kabel nicht. */
     public static final int ROUTER = 1;
 
+    /** Ein Fabricator. */
+    public static final int FABRICATOR = 1;
+
     /** Ein Laufwerk, leer. */
     public static final int DRIVE = 1;
 

@@ -24,6 +24,9 @@ public final class Channels {
     /** Ein Serverschrank. */
     public static final int RACK = 1;
 
+    /** Ein Fabricator. Er baut, also kostet er einen. */
+    public static final int FABRICATOR = 1;
+
     /**
      * Eine Anzeige: nichts.
      *

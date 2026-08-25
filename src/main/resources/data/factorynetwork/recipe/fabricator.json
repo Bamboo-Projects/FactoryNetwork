@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "PWP",
+    "PNP",
+    "PPP"
+  ],
+  "key": {
+    "P": {
+      "item": "factorynetwork:plate"
+    },
+    "W": {
+      "item": "minecraft:crafting_table"
+    },
+    "N": {
+      "item": "factorynetwork:core_network"
+    }
+  },
+  "result": {
+    "id": "factorynetwork:fabricator",
+    "count": 1
+  }
+}

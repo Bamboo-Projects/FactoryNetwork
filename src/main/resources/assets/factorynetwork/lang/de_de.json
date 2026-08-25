@@ -1,5 +1,6 @@
 {
   "itemGroup.factorynetwork": "Factory Network",
+  "block.factorynetwork.fabricator": "Fabricator",
   "block.factorynetwork.controller_extension": "Controller-Anbau",
   "block.factorynetwork.controller": "Controller",
   "block.factorynetwork.cable": "Kabel",

@@ -7559,6 +7559,104 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    // ---- Fertigung ---------------------------------------------------------
+
+    /**
+     * Ein Auftrag über vierundsechzig Truhen zieht Bretter und liefert Truhen.
+     *
+     * <p><b>Einstufig</b>: Der Fabricator baut, was er aus dem Speicher bauen
+     * kann. Fehlen Bretter, macht er keine aus Stämmen — das kommt später und
+     * ist ein bewusster Schnitt, kein Mangel.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 600)
+    public static void afabricatorCraftsFromStock(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        helper.setBlock(controller.east().above(), FnBlocks.FABRICATOR.get());
+        entity.rebuildNetwork();
+        // Acht Bretter je Truhe, vierundsechzig Truhen.
+        entity.storage().insert(Items.OAK_PLANKS, 512);
+
+        entity.requestCraft(Items.CHEST, 64);
+
+        helper.startSequence()
+                .thenIdle(200)
+                .thenExecute(() -> {
+                    helper.assertValueEqual(entity.storage().count(Items.CHEST), 64L,
+                            "Truhen im Speicher");
+                    helper.assertValueEqual(entity.storage().count(Items.OAK_PLANKS), 0L,
+                            "Bretter verbraucht");
+                })
+                .thenSucceed();
+    }
+
+    /**
+     * Ohne Zutaten wartet der Auftrag und sagt, was fehlt.
+     *
+     * <p>Dieselbe Ehrlichkeit wie bei einem Worker vor einer vollen Kiste:
+     * Ein Auftrag, der nichts tut, muss den Grund nennen.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void ajobWithoutIngredientsSaysWhatIsMissing(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        helper.setBlock(controller.east().above(), FnBlocks.FABRICATOR.get());
+        entity.rebuildNetwork();
+
+        entity.requestCraft(Items.CHEST, 1);
+
+        helper.startSequence()
+                .thenIdle(60)
+                .thenExecute(() -> {
+                    var jobs = entity.craftingJobs();
+                    helper.assertValueEqual(jobs.size(), 1, "ein Auftrag");
+                    helper.assertValueEqual(jobs.get(0).status().name(), "WAITING",
+                            "er wartet, statt zu scheitern");
+                    helper.assertTrue(!jobs.get(0).detail().isEmpty(),
+                            "und sagt, was fehlt");
+                })
+                .thenSucceed();
+    }
+
+    /** Ohne Fabricator im Netz wird gar nichts gefertigt. */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void withoutAfabricatorNothingIsCrafted(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        entity.storage().insert(Items.OAK_PLANKS, 512);
+
+        entity.requestCraft(Items.CHEST, 8);
+
+        helper.startSequence()
+                .thenIdle(60)
+                .thenExecute(() -> {
+                    helper.assertValueEqual(entity.storage().count(Items.CHEST), 0L,
+                            "ohne Fabricator entsteht nichts");
+                    // Auf den Grund geprüft und nicht auf den Zustand: WAITING
+                    // steht schon beim Anlegen da, der Satz erst nach dem
+                    // ersten Takt.
+                    helper.assertValueEqual(entity.craftingJobs().get(0).detail(),
+                            "kein Fabricator im Netz", "der Auftrag sagt, woran es liegt");
+                })
+                .thenSucceed();
+    }
+
+    /** Ein Rezept, das es nicht gibt, wird gar nicht erst angenommen. */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void arequestWithoutArecipeIsRefused(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        helper.setBlock(controller.east().above(), FnBlocks.FABRICATOR.get());
+        entity.rebuildNetwork();
+
+        // Bruchstein hat kein Rezept — er kommt aus der Welt.
+        helper.assertTrue(entity.requestCraft(Items.COBBLESTONE, 1) == null,
+                "ohne Rezept darf kein Auftrag entstehen");
+        helper.assertTrue(entity.craftingJobs().isEmpty(), "und keiner in der Liste stehen");
+        helper.succeed();
+    }
+
     // ---- Der Anbau am Controller -------------------------------------------
 
     /**

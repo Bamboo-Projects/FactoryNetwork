@@ -375,6 +375,8 @@ public class ControllerBlockEntity extends BlockEntity {
         total += graph.displays().size() * dev.devpanda.factorynetwork.network.Power.DISPLAY;
         total += graph.routers().size() * dev.devpanda.factorynetwork.network.Power.ROUTER;
         total += graph.extensions().size() * dev.devpanda.factorynetwork.network.Power.EXTENSION;
+        total += graph.fabricators().size()
+                * dev.devpanda.factorynetwork.network.Power.FABRICATOR;
         for (DriveBlockEntity drive : drives) {
             total += dev.devpanda.factorynetwork.network.Power.DRIVE
                     + drive.usedSlots() * dev.devpanda.factorynetwork.network.Power.PER_CELL;
@@ -594,11 +596,145 @@ public class ControllerBlockEntity extends BlockEntity {
             }
         }
         tickFlows();
+        tickCrafting();
         fireRedstoneEvents();
         fireInventoryEvents();
         pushStorageIfDue();
         pushFlowsIfDue();
         setChanged();
+    }
+
+    // ---- Fertigung --------------------------------------------------------
+
+    /** Alle zwanzig Ticks ein Schritt je Fabricator. */
+    private static final int CRAFT_INTERVAL = 20;
+
+    /**
+     * Die Fertigungsaufträge des Netzes.
+     *
+     * <p>Sie leben hier und nicht am Fabricator: Ein Auftrag, der am Gerät
+     * hinge, wäre weg, sobald jemand das Gerät abbaut — und das ist genau der
+     * Moment, in dem man wissen will, was noch offen war.
+     */
+    private final List<dev.devpanda.factorynetwork.crafting.CraftingJob> jobs =
+            new ArrayList<>();
+
+    private long nextJobId = 1;
+
+    public List<dev.devpanda.factorynetwork.crafting.CraftingJob> craftingJobs() {
+        return List.copyOf(jobs);
+    }
+
+    /**
+     * Nimmt einen Auftrag an, oder lehnt ihn ab.
+     *
+     * <p><b>Abgelehnt wird nur, was gar kein Rezept hat.</b> Fehlende Zutaten
+     * sind kein Grund: Der Auftrag wartet dann und sagt, was fehlt — wer 64
+     * Truhen bestellt und danach Bretter einlagert, soll nicht noch einmal
+     * bestellen müssen.
+     *
+     * @return der Auftrag, oder {@code null}, wenn es kein Rezept gibt
+     */
+    public dev.devpanda.factorynetwork.crafting.CraftingJob requestCraft(
+            net.minecraft.world.item.Item target, int amount) {
+        if (level == null || amount <= 0) {
+            return null;
+        }
+        if (dev.devpanda.factorynetwork.crafting.RecipeLookup.find(
+                level, target, storage::count) == null) {
+            return null;
+        }
+        var job = new dev.devpanda.factorynetwork.crafting.CraftingJob(
+                nextJobId++, target, amount);
+        jobs.add(job);
+        setChanged();
+        return job;
+    }
+
+    /** Bricht einen Auftrag ab. */
+    public boolean cancelCraft(long id) {
+        boolean removed = jobs.removeIf(job -> job.id() == id);
+        if (removed) {
+            setChanged();
+        }
+        return removed;
+    }
+
+    /**
+     * Ein Fertigungstakt.
+     *
+     * <p><b>Ein Schritt je Fabricator</b>, und ein Schritt ist ein Durchlauf
+     * eines Rezepts, so oft er in einen Stapel passt. Wer schneller fertigen
+     * will, stellt einen zweiten Fabricator hin — das ist dieselbe Antwort
+     * wie bei Kanälen und Laufwerken: Mehr Gerät, mehr Durchsatz.
+     */
+    private void tickCrafting() {
+        if (jobs.isEmpty()) {
+            return;
+        }
+        jobs.removeIf(job -> job.status()
+                == dev.devpanda.factorynetwork.crafting.CraftingJob.Status.DONE);
+        if (jobs.isEmpty() || level.getGameTime() % CRAFT_INTERVAL != 0) {
+            return;
+        }
+        int steps = graph.fabricators().size();
+        if (steps == 0) {
+            jobs.forEach(job -> job.note(
+                    dev.devpanda.factorynetwork.crafting.CraftingJob.Status.WAITING,
+                    "kein Fabricator im Netz"));
+            return;
+        }
+        for (var job : jobs) {
+            if (steps <= 0) {
+                break;
+            }
+            if (craftOnce(job)) {
+                steps--;
+            }
+        }
+        setChanged();
+    }
+
+    /**
+     * Ein Durchlauf für einen Auftrag.
+     *
+     * <p>Erst prüfen, dann entnehmen, dann einlagern. Anders ginge es nicht:
+     * Ein Rezept, dem nach der halben Entnahme etwas fehlt, hätte die andere
+     * Hälfte verschwinden lassen.
+     *
+     * @return ob wirklich gebaut wurde
+     */
+    private boolean craftOnce(dev.devpanda.factorynetwork.crafting.CraftingJob job) {
+        var plan = dev.devpanda.factorynetwork.crafting.RecipeLookup.find(
+                level, job.target(), storage::count);
+        if (plan == null) {
+            job.note(dev.devpanda.factorynetwork.crafting.CraftingJob.Status.WAITING,
+                    "kein Rezept mehr");
+            return false;
+        }
+        // So viele Durchläufe, wie noch fehlen — höchstens ein Stapel je
+        // Schritt. Ein Auftrag über zehntausend soll nicht einen Tick lang
+        // den Server halten.
+        final int perCraft = plan.perCraft();
+        final int runs = Math.max(1, Math.min(job.remaining() / perCraft,
+                job.target().getDefaultMaxStackSize() / perCraft));
+        String missing = dev.devpanda.factorynetwork.crafting.RecipeLookup.missing(
+                plan, runs, storage::count);
+        if (!missing.isEmpty()) {
+            job.note(dev.devpanda.factorynetwork.crafting.CraftingJob.Status.WAITING, missing);
+            return false;
+        }
+        plan.ingredients().forEach((item, count) ->
+                storage.extract(item, (long) count * runs));
+        long left = storage.insert(job.target(), (long) perCraft * runs);
+        if (left > 0) {
+            // Der Speicher ist voll. Was nicht hineinpasst, fällt zu Boden —
+            // dieselbe Antwort wie bei einem Worker, dessen Ziel voll ist.
+            net.minecraft.world.level.block.Block.popResource(level, worldPosition,
+                    new net.minecraft.world.item.ItemStack(job.target(), (int) left));
+        }
+        job.produced(perCraft * runs);
+        return true;
     }
 
     /** Unter diesem Namen stehen die Dateien des Projekts. */

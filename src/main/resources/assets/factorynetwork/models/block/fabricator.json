@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "top": "factorynetwork:block/fabricator_top",
+    "bottom": "factorynetwork:block/controller_extension",
+    "side": "factorynetwork:block/fabricator_side"
+  }
+}

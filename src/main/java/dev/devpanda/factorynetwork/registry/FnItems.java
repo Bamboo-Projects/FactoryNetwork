@@ -24,6 +24,10 @@ public final class FnItems {
 
     public static final DeferredItem<BlockItem> CONTROLLER = ITEMS.registerSimpleBlockItem(FnBlocks.CONTROLLER);
 
+    /** Baut, was das Netz bestellt. */
+    public static final DeferredItem<BlockItem> FABRICATOR =
+            ITEMS.registerSimpleBlockItem(FnBlocks.FABRICATOR);
+
     /** Der Anbau: Seiten für Kabel, sonst nichts. */
     public static final DeferredItem<BlockItem> CONTROLLER_EXTENSION =
             ITEMS.registerSimpleBlockItem(FnBlocks.CONTROLLER_EXTENSION);

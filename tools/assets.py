@@ -132,6 +132,8 @@ def blockstates():
           {"variants": {"": {"model": block("controller")}}})
     write(A + "/blockstates/controller_extension.json",
           {"variants": {"": {"model": block("controller_extension")}}})
+    write(A + "/blockstates/fabricator.json",
+          {"variants": {"": {"model": block("fabricator")}}})
 
     # Kabel: ein Kern, dazu ein Arm je Verbindung. Die Farbe kommt nicht aus
     # der Blockstate — sie wird zur Laufzeit eingefärbt, sonst brauchte jede
@@ -433,6 +435,15 @@ def models():
         "textures": {"all": texture("controller_extension")},
     })
 
+    write(A + "/models/block/fabricator.json", {
+        "parent": "minecraft:block/cube_bottom_top",
+        "textures": {
+            "top": texture("fabricator_top"),
+            "bottom": texture("controller_extension"),
+            "side": texture("fabricator_side"),
+        },
+    })
+
     cable_models()
 
     write(A + "/models/block/connector.json", {
@@ -535,8 +546,8 @@ def models():
 
     # Die Anzeigetafel fehlt hier: Ihr Blockmodell heißt display_0, weil es
     # sechzehn davon gibt. Sie steht weiter oben, wo die sechzehn entstehen.
-    for name in ("controller", "controller_extension", "connector", "terminal",
-                 "drive", "press"):
+    for name in ("controller", "controller_extension", "fabricator", "connector",
+                 "terminal", "drive", "press"):
         write(A + "/models/item/" + name + ".json", {"parent": block(name)})
     write(A + "/models/item/label_gun.json", {
         "parent": "minecraft:item/handheld",
@@ -676,8 +687,8 @@ def loot_and_recipes():
             ],
         }],
     })
-    for name in ("controller", "controller_extension", "connector", "terminal",
-                 "display", "drive", "press", "router", "burner"):
+    for name in ("controller", "controller_extension", "fabricator", "connector",
+                 "terminal", "display", "drive", "press", "router", "burner"):
         write(D + "/loot_table/blocks/" + name + ".json", {
             "type": "minecraft:block",
             "pools": [{
@@ -1013,6 +1024,20 @@ def loot_and_recipes():
         "result": {"id": MOD + ":controller_extension", "count": 2},
     })
 
+    # Der Fabricator: eine Werkbank, die das Netz bedient. Deshalb steckt
+    # eine im Rezept — und ein Netzkern, weil er ohne Netz nichts tut.
+    write(D + "/recipe/fabricator.json", {
+        "type": "minecraft:crafting_shaped",
+        "category": "misc",
+        "pattern": ["PWP", "PNP", "PPP"],
+        "key": {
+            "P": {"item": MOD + ":plate"},
+            "W": {"item": "minecraft:crafting_table"},
+            "N": {"item": MOD + ":core_network"},
+        },
+        "result": {"id": MOD + ":fabricator", "count": 1},
+    })
+
     # ---- Die Fertigungskette -------------------------------------------
 
     # Die Presse selbst: noch von Hand, sonst käme man nie hinein.
@@ -1131,6 +1156,7 @@ def loot_and_recipes():
     # Spitzhacke reicht zum Abbauen.
     write(D + "/tags/block/mineable/pickaxe.json", {
         "values": [MOD + ":controller", MOD + ":controller_extension",
+                   MOD + ":fabricator",
                    MOD + ":cable", MOD + ":dense_cable",
                    MOD + ":connector", MOD + ":terminal", MOD + ":display",
                    MOD + ":drive", MOD + ":press", MOD + ":router",

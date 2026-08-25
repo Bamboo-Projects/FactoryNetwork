@@ -20,6 +20,7 @@ public final class FnCreativeTabs {
                     .displayItems((parameters, output) -> {
                         output.accept(FnItems.CONTROLLER.get());
                         output.accept(FnItems.CONTROLLER_EXTENSION.get());
+                        output.accept(FnItems.FABRICATOR.get());
                         // Alle Kabelfarben, Standardfarbe zuerst — erst die
                         // dünnen, dann die dichten, und der Router dahinter:
                         // Er gehört zum dichten Kabel.
