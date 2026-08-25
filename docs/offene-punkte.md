@@ -2,7 +2,7 @@
 
 Alles, was in `docs/` und im Code als unfertig steht, an einer Stelle.
 
-Stand: 2026-08-25 (nach der zweiten Nacht)
+Stand: 2026-08-25 (nach der zweiten Nacht und dem Protokoll)
 
 > **Nacht auf den 25.08., zweiter Durchgang:** 1.2 (`where` und `sort` stehen
 > jetzt vollständig), dazu vier Dinge, die vorher niemand auf der Liste
@@ -17,7 +17,8 @@ Stand: 2026-08-25 (nach der zweiten Nacht)
 > Leere schreibt. Dazu `strategy priority`, das nie schreibbar war, und
 > `strategy emptiest`, das es nie gab und trotzdem wirkte.
 >
-> Neu auf der Liste stehen 1.13 bis 1.16, 2.11, 3.9, 3.10, 4.5, 6.9 und 6.10.
+> Neu auf der Liste stehen 1.13 bis 1.16, 3.9, 3.10, 6.10 und 6.11 — 2.11 und
+> 4.5 sind inzwischen gebaut.
 
 > **Was in der Nacht auf den 25.08. erledigt wurde:** 2.1 (globale Werte),
 > 3.1 (Annahme-Probe), 3.3 (Flüssigkeitsstände), 3.4 (Bearbeitung anfragen),
@@ -66,7 +67,7 @@ Stand: 2026-08-25 (nach der zweiten Nacht)
 | 2.4 | Einheit der Abgaberate: `per tick` gegen `per 5s` | E | `strom.md:249` | klein | 2.2 |
 | 2.5 | Strom als Wert in der Sprache (`crusher_1.energy`) | F | `strom.md:228` | klein | 1.1 |
 | 2.6 | **`device_done`:** gebaut ist Weg (2), offen ob Weg (1) dazukommt. Vor dem Bau zu entscheiden — ein falsches Fertig-Signal lässt eine Anlage Gegenstände verlieren | E | `umsetzung.md:160` | mittel | Entscheidung |
-| 2.11 | **`log()` sieht niemand.** Weder die Ausgabe eines Programms noch die Hinweise der Laufzeit werden irgendwo gelesen: kein Reiter, kein Sprachschlüssel, kein Aufrufer. Damit verschwinden „Der Knopf X nennt keine Funktion", „maintain ohne filter" und jedes `log()`, das ein Spieler selbst schreibt — obwohl der Übersetzer die Schreibweise aktiv beibringt. Der Verweis „Siehe docs/strom.md" zeigt zusätzlich auf eine Datei, die nicht im Jar liegt; er gehört auf die Handbuchseite | E | `ControllerBlockEntity.log()`, `WorkerRuntime.notes()` | mittel | Entscheidung: eigener Reiter, Chat oder Ereignisliste |
+| 2.11 | ~~`log()` sieht niemand~~ — **fertig.** Vier Stufen (`info`, `warn`, `error`, `debug`), Reiter „Log" mit Filter, Herkunft je Zeile, überlebt den Neustart. Die Hinweise der Laufzeit laufen mit hinein | | `LogTabView`, `LogEntry` | | |
 | 2.7 | `when`-Bedingungen: nur Zahlvergleiche mit Literalen und `storage.count(...)` | F | `WorkerRuntime.java:860` | mittel | teils 1.1 |
 | 2.8 | `NetworkCheck` besucht keine Anweisungen — weder Seitenwarnung noch Namensprüfung erreichen ein `move` | F | `geraeteerkennung.md:316` | mittel | Entscheidung zur Namensprüfung bei `move` |
 | 2.9 | Erkennung von Maschinen-Rezepten | F | `entscheidungen.md:131` | groß | — |
@@ -118,7 +119,7 @@ Stand: 2026-08-25 (nach der zweiten Nacht)
 | 6.6 | ~~Prioritätenliste~~ — **berichtigt**, mit Vermerk | | | |
 | 6.7 | ~~Plan-Kästchen~~ — **abgehakt** | | | |
 | 6.10 | **`list` auf einer Anzeige ist eine `row`.** Die Spezifikation nennt es „Aufzählung, etwa Bestände oder Aufträge"; gezeichnet wird eine einzelne Zeile wie bei `row`. Solange ein Listeneintrag keine Angaben hat (1.16), lässt sich daran auch nichts ändern | F | `DisplayValues.java`, `sprache.md:814` | klein | 1.16 |
-| 6.9 | **Tests, die nicht fehlschlagen können.** Vier sind repariert. Offen: `abrokenRackDropsItsProcessors` prüft nur, dass *irgendein* Gegenstand fällt — ein leeres Gehäuse genügt; `insertIntoNothingIsZeroAndNoError` prüft die Null nie, womit der Rückgabewert von `WorldHost.insertInto` gar keinen Test hat; `theAnalyserMarksFullCables` legt die Last genau auf die Grenze und nimmt mit ODER beide Antworten an, während `isHealthy()` ein randvolles Kabel als „in Ordnung" meldet | F | `FactoryNetworkGameTests` | mittel | — |
+| 6.11 | **Tests, die nicht fehlschlagen können.** Fünf sind repariert. Offen bleiben zwei: `abrokenRackDropsItsProcessors` prüft nur, dass *irgendein* Gegenstand fällt — ein leeres Gehäuse genügt, und dahinter stünde der Verlust von sechsunddreißig Bauteilen; `theAnalyserMarksFullCables` legt die Last genau auf die Grenze und nimmt mit ODER beide Antworten an, während `isHealthy()` ein randvolles Kabel als „in Ordnung" meldet | F | `FactoryNetworkGameTests` | klein | — |
 | 6.8 | **Teilweise.** §6 und §12 sind gekennzeichnet; §8 und der Rest noch nicht | F | `sprache.md` | klein |
 | 6.9 | ~~Kabelbündel-Frage~~ — **nachgetragen** | | | |
 
