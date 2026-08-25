@@ -113,6 +113,12 @@ Vorentscheidungen)
 > (Processing-Rezepte, groß und ohne Vorentscheidung), 6.1 (weitere
 > Handbuchseiten), 1.4/7.1 (Mekanism), 4.1 (Sprachserver) und 5.4 (die einzige
 > offene Entscheidung, und die beantwortet eine Runde Spielen).
+>
+> **2.9 ist erkundet, nicht gebaut.** Automatische Erkennung fremder
+> Maschinenrezepte ist in 1.21.1 nachweislich nicht möglich — die
+> Schnittstelle gibt es nicht her, und AE2 wie Refined Storage lassen deshalb
+> beide hinterlegen. Damit ist aus einer Bauaufgabe eine Produktfrage
+> geworden: drei Wege, Empfehlung B, Entscheidung offen.
 
 **Status:** **F** = fehlt schlicht · **E** = wartet auf eine Entscheidung ·
 **Z** = bewusst zurückgestellt, kein Versäumnis
@@ -156,7 +162,7 @@ Vorentscheidungen)
 | 2.11 | ~~`log()` sieht niemand~~ — **fertig.** Vier Stufen (`info`, `warn`, `error`, `debug`), Reiter „Log" mit Filter, Herkunft je Zeile, überlebt den Neustart. Die Hinweise der Laufzeit laufen mit hinein | | `LogTabView`, `LogEntry` | | |
 | 2.7 | ~~`when`-Bedingungen~~ — **überholt.** Im laufenden Spiel wertet der echte Interpreter aus: Texte, globale Werte, Gerätezustände. Der alte Weg — Zahl gegen Zahl — greift nur ohne Host, also in Prüfungen ohne Welt. Eine kaputte Bedingung hält den Worker an | | `WorkerRuntime.conditionHolds` | | |
 | 2.8 | ~~`NetworkCheck` besucht keine Anweisungen~~ — **fertig.** Ein `move` mit unbekanntem Gerätenamen wird gewarnt, in der Anweisung wie im Ausdruck. Ausgespart bleiben örtliche Namen: Parameter, `let`, Schleifenvariablen, globale Werte, Festwerte, Vorlagen, Gruppen und die Rollen eines Multiblocks | | `NetworkCheck.checkMoves` | | |
-| 2.9 | **Erkennung von Maschinen-Rezepten.** Was ein Brecher aus Erz macht, weiß nur die Maschine. **Keine Voraussetzung mehr für 2.10**: Der Fabricator baut Werkbank-Rezepte, und die stehen im Server. Gebraucht wird 2.9 für Processing-Rezepte am Connector | F | `entscheidungen.md`, `konzept.md` §8 | groß | — |
+| 2.9 | **Erkennung von Maschinen-Rezepten** — **erkundet** (26.08.), Ergebnis in `entscheidungen.md` „Processing-Rezepte: die Erkundung". Automatisch geht nicht: `Recipe.getIngredients()` liefert als Vorgabe eine leere Liste, eine `Ingredient` trägt keine Menge, Flüssigkeiten und Strom stehen nicht darin, `getResultItem` kennt nur eine Ausgabe. AE2 und Refined Storage lassen deshalb beide hinterlegen. Drei Wege stehen zur Wahl, empfohlen ist **B** (lesbare Rezeptarten automatisch, alles andere als `recipe`-Deklaration im Programm) | E | `entscheidungen.md`, `konzept.md` §8 | groß | Produktentscheidung: Weg A, B oder C |
 | 2.10 | ~~Autocrafting~~ — **fertig** (25.08.), in drei Schritten an einem Tag. Fabricator und Aufträge am Controller, `craft(64 item:chest)`, der Reiter, die beiden Ereignisse, alles übersteht den Neustart. Der Planner zerlegt eine Bestellung bis zu dem, was dasteht, trägt Zutaten-Auswahlen durch und kommt mit Kreisen zurecht. `from crafting` hält einen Vorrat, gerechnet gegen Bestand und offene Aufträge | | `CraftingPlanner`, `WorkerRuntime.tickCraftingWorker` | | |
 
 ## 3. Editor im Spiel
@@ -252,7 +258,11 @@ abgelehnt.
 **3. Rezepte an Maschinen erkennen** (2.9). Groß, und seit dem Autocrafting
 keine Voraussetzung mehr für irgendetwas — der Fabricator baut Werkbank-
 Rezepte, und die stehen im Server. Gebraucht wird es für Processing-Rezepte am
-Connector.
+Connector. **Erkundet am 26.08.**, und dabei wurde aus einer Bauaufgabe eine
+Frage: Automatisch geht es nachweislich nicht, also entscheidet sich, ob eine
+Fabrik nur kann, was das Spiel selbst offenlegt (Ofen, Steinsäge, Presse) oder
+ob der Spieler ihr den Rest beibringt. Das ist Spielgefühl und liegt beim
+Projektinhaber; die Grundlage steht in `entscheidungen.md`.
 
 Was hier bis zum 25.08. unter „Kleines mit großer Wirkung" stand — `list` auf
 einer Anzeige (6.10), die Auflösungsanzeige im Editor (3.11), die

@@ -3271,3 +3271,107 @@ endet, liest sich wie eine vollständige.
 Für `Map<K, V>` gibt es keinen Fall in einer Fabrik, und eine Schreibweise
 dafür wäre eine Entscheidung ohne Anlass. Hinzufügen lässt sich später leicht,
 wegnehmen nicht.
+
+---
+
+## Processing-Rezepte: die Erkundung (2026-08-26)
+
+Punkt 2.9 — „Erkennung von Maschinen-Rezepten" — ist der letzte große Posten,
+und das Konzept (§8) hält drei Wege offen: automatisch erkannt, manuell
+hinterlegt, oder über mod-spezifische Adapter. **Welcher es wird, ist eine
+Produktentscheidung und liegt beim Projektinhaber**; hier steht, was das
+Nachsehen ergeben hat, damit sie sich auf Zahlen stützen kann und nicht auf
+Vermutungen.
+
+### Automatisch geht nicht — und das lässt sich belegen
+
+In 1.21.1 sieht die Schnittstelle `Recipe` so aus:
+
+```java
+default NonNullList<Ingredient> getIngredients() {
+    return NonNullList.create();
+}
+```
+
+**Eine leere Liste als Vorgabe.** Ein Maschinenrezept einer fremden Mod, das
+sie nicht überschreibt, meldet „keine Zutaten" — und das tun viele, weil die
+Methode für das 3x3-Gitter gedacht ist und ihre eigene Maschine sie nicht
+braucht.
+
+Vier weitere Löcher, jedes für sich schon entscheidend:
+
+- **Eine `Ingredient` trägt keine Menge.** Sie ist ein Prüfer und kein Posten;
+  bei Werkbank-Rezepten steckt die Menge in der Zahl der Gitterfelder. Ein
+  Maschinenrezept über „drei Erze" ist generisch nicht von einem über eines zu
+  unterscheiden. NeoForge hat dafür `SizedIngredient` nachgereicht — aber
+  `getIngredients()` liefert weiterhin die schmucklose Fassung.
+- **Flüssigkeiten und Strom stehen nirgends darin.** Ein Rezept, das Wasser
+  und 200 FE braucht, sieht generisch aus wie eines, das nichts braucht.
+- **`getResultItem` liefert genau einen Stapel.** Nebenprodukte und Ausgaben
+  mit Wahrscheinlichkeit fallen weg — und ein Netz, das für zwei Staub bestellt
+  und eines bekommt, wartet für immer.
+- **Die Dauer fehlt.** Sie steht in der Maschine, nicht im Rezept.
+
+Dazu kommt ein Hinweis, der schwerer wiegt als jedes Einzelargument: **Es
+macht niemand.** AE2 lässt Muster im Mustterminal anlegen, Refined Storage im
+Pattern Grid. Beide bieten als Abkürzung an, ein Rezept aus JEI/REI/EMI
+herüberzuziehen — aber hinterlegt wird es, und zwar vom Spieler. Zwei Mods mit
+zusammen zweistelligen Millionen Downloads haben denselben Weg gewählt; wer
+den anderen geht, sollte einen Grund nennen können, den die beiden übersehen
+haben. Es gibt keinen.
+
+### Was doch automatisch ginge
+
+Nicht alles ist gleich undurchsichtig. Es gibt Rezeptarten mit **fester,
+bekannter Form**, und die lassen sich zuverlässig lesen:
+
+- `AbstractCookingRecipe` — Ofen, Schmelzofen, Räucherofen, Lagerfeuer: genau
+  eine Zutat, genau eine Ausgabe, Dauer und Erfahrung stehen dabei.
+- Steinsäge (`StonecutterRecipe`): eine Zutat, eine Ausgabe.
+- Die eigene Presse dieser Mod.
+
+Der Ofen ist die häufigste Verarbeitungsmaschine des Spiels. Ein Netz, das
+Erz zu Barren schmelzen kann, ohne dass jemand es aufschreibt, deckt einen
+großen Teil des Alltags ab — und für diesen Teil sind die vier Löcher oben
+zugemauert, weil die Form der Rezeptart bekannt ist.
+
+### Der dritte Weg, den diese Mod hat und AE2 nicht
+
+**Muster-Items passen nicht hierher.** Der Fabricator baut ohne, und das ist
+eine getroffene Entscheidung mit einer Begründung, die weiterträgt: Was das
+Spiel schon weiß, soll niemand abschreiben müssen. Ein Musterterminal wäre der
+zweite Ort, an dem eine Fabrik erklärt wird — der erste ist das Programm.
+
+Naheliegend wäre deshalb, ein Processing-Rezept **hinzuschreiben**, in der
+Sprache, die es ohnehin gibt:
+
+```
+recipe erz_mahlen at brecher {
+    in 1 item:iron_ore
+    out 2 item:iron_dust
+}
+```
+
+Das ist derselbe Weg wie bei allem anderen in dieser Mod: kein Klicken, kein
+Gegenstand in der Hand, sondern eine Deklaration neben den Workern. Sie steht
+im Projekt, sie geht mit der Datei nach VS Code, sie lässt sich versionieren,
+und sie ist über den Editor prüfbar — ein Rezept, das auf einen Connector
+zeigt, den es nicht gibt, meldet sich beim Übernehmen.
+
+### Die drei Wege, wie sie hier heißen würden
+
+| | Was der Spieler tut | Preis |
+|---|---|---|
+| **A — nur was sicher lesbar ist** | nichts | Ofen, Schmelzofen, Steinsäge, Presse laufen von selbst; jede Modmaschine geht gar nicht |
+| **B — A plus `recipe` im Programm** | schreibt auf, was seine Maschinen können | eine Deklaration mehr in der Sprache; deckt alles ab |
+| **C — Adapter je Mod** | nichts, wenn seine Mods dabei sind | ein Kompatibilitätsmodul je Mod, für immer zu pflegen; ohne Modul geht die Mod gar nicht |
+
+**Empfohlen wird B**, und A ist der erste Schnitt davon. C bleibt daneben
+möglich: Ein Mekanism-Modul (1.4) könnte seine Rezepte beisteuern, und dann
+schreibt niemand sie auf — aber es ist eine Zugabe und keine Grundlage, genau
+wie bei den Chemikalien entschieden.
+
+**Nicht entschieden**, weil es Spielgefühl ist: ob eine Fabrik ihre Maschinen
+von selbst kennen soll (A allein, mit einer harten Grenze bei allem Modded)
+oder ob der Spieler sie ihr beibringt (B). Das ist dieselbe Art Frage wie
+„Muster-Items ja oder nein", und die hat der Projektinhaber beantwortet.
