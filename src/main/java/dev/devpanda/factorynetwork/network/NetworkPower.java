@@ -175,6 +175,28 @@ public final class NetworkPower {
         return (int) Math.max(0, Math.min(Integer.MAX_VALUE, total));
     }
 
+    /**
+     * Meldet, dass sich in den Zellen etwas geändert hat.
+     *
+     * <p><b>Die Laufwerke müssen mit.</b> Die Ladung liegt im Arbeitsspeicher
+     * und geht erst beim Sichern in den Gegenstand; ohne diese Meldung weiß
+     * Minecraft nicht, dass der Chunk gesichert werden muss. Ein Laufwerk in
+     * einem anderen Chunk als der Controller hätte nach einem Neustart die
+     * Ladung von vorhin — derselbe Grund wie beim Lagerbestand, siehe
+     * {@code NetworkStorage.markChanged}.
+     *
+     * <p>Nur wenn wirklich eine Zelle berührt wurde. Der Puffer wird zuerst
+     * gefüllt und zuerst geleert, und ein Netz, das nur durchreicht, würde
+     * sonst jeden Tick alle seine Laufwerke zum Sichern anmelden.
+     */
+    private void markCellsChanged() {
+        for (DriveBlockEntity drive : drives) {
+            if (!drive.isRemoved()) {
+                drive.setChanged();
+            }
+        }
+    }
+
     /** Alle Energiezellen in allen Laufwerken des Netzes. */
     private List<EnergyCellView> cells() {
         if (drives.isEmpty()) {
@@ -308,11 +330,17 @@ public final class NetworkPower {
         int intoBuffer = Math.min(rest, buffer.getMaxEnergyStored() - buffer.getEnergyStored());
         buffer.charge(intoBuffer);
         rest -= intoBuffer;
+        boolean touchedCells = false;
         for (EnergyCellView cell : cells()) {
             if (rest <= 0) {
                 break;
             }
-            rest -= cell.fill(rest);
+            int taken = cell.fill(rest);
+            touchedCells |= taken > 0;
+            rest -= taken;
+        }
+        if (touchedCells) {
+            markCellsChanged();
         }
     }
 
@@ -322,11 +350,17 @@ public final class NetworkPower {
         int fromBuffer = Math.min(rest, buffer.getEnergyStored());
         buffer.consume(fromBuffer);
         rest -= fromBuffer;
+        boolean touchedCells = false;
         for (EnergyCellView cell : cells()) {
             if (rest <= 0) {
                 break;
             }
-            rest -= cell.take(rest);
+            int given = cell.take(rest);
+            touchedCells |= given > 0;
+            rest -= given;
+        }
+        if (touchedCells) {
+            markCellsChanged();
         }
     }
 
@@ -355,8 +389,12 @@ public final class NetworkPower {
      */
     public void empty() {
         buffer.drain();
+        boolean touchedCells = false;
         for (EnergyCellView cell : cells()) {
-            cell.take(cell.stored());
+            touchedCells |= cell.take(cell.stored()) > 0;
+        }
+        if (touchedCells) {
+            markCellsChanged();
         }
         state = State.OFF;
         bootTicks = 0;

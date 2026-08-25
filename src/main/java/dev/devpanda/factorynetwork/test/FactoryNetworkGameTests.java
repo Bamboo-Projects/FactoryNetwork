@@ -7245,6 +7245,42 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    /**
+     * Wer eine Zelle leert, sagt dem Laufwerk Bescheid.
+     *
+     * <p>Die Ladung liegt im Arbeitsspeicher und geht erst beim Sichern in den
+     * Gegenstand. Ohne diese Meldung weiß Minecraft nicht, dass der Chunk
+     * gesichert werden muss — und ein Laufwerk in einem anderen Chunk als der
+     * Controller hätte nach einem Neustart die Ladung von vorhin.
+     *
+     * <p>Derselbe Grund wie beim Lagerbestand, siehe
+     * {@code NetworkStorage.markChanged}.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void drainingACellMarksTheDrive(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        var zelle = energyCell(helper, controller,
+                dev.devpanda.factorynetwork.storage.EnergyCellTier.FE64K);
+        entity.rebuildNetwork();
+        if (zelle == null) {
+            return;
+        }
+        entity.power().empty();
+        zelle.fill(1_000);
+
+        var chunk = helper.getLevel().getChunkAt(helper.absolutePos(controller.above()));
+        chunk.setUnsaved(false);
+        // Der Puffer ist leer, also zahlt die Zelle — und zwischen diesen
+        // beiden Zeilen läuft nichts anderes.
+        entity.power().take(50);
+
+        helper.assertTrue(chunk.isUnsaved(),
+                "Das Laufwerk muss als geändert gelten, sonst geht die Ladung "
+                        + "beim Entladen des Chunks verloren");
+        helper.succeed();
+    }
+
     // ---- Gerätemitglieder --------------------------------------------------
 
     /**
