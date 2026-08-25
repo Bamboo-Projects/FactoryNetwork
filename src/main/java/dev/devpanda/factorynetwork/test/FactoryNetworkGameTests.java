@@ -7657,6 +7657,117 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    /**
+     * Ein Auftrag übersteht den Neustart.
+     *
+     * <p>Das ist der ganze Grund, warum er am Controller lebt und nicht am
+     * Gerät: Wer eine Bestellung über zehntausend Barren aufgibt und den
+     * Server neu startet, will sie wiederfinden.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void ajobSurvivesArestart(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        helper.setBlock(controller.east().above(), FnBlocks.FABRICATOR.get());
+        entity.rebuildNetwork();
+        entity.storage().insert(Items.OAK_PLANKS, 16);
+        entity.requestCraft(Items.CHEST, 64);
+
+        var registries = helper.getLevel().registryAccess();
+        var wieder = (ControllerBlockEntity)
+                net.minecraft.world.level.block.entity.BlockEntity.loadStatic(
+                        helper.absolutePos(controller), helper.getBlockState(controller),
+                        entity.saveWithFullMetadata(registries), registries);
+
+        helper.assertTrue(wieder != null, "Der Controller kam nicht zurück");
+        helper.assertValueEqual(wieder.craftingJobs().size(), 1,
+                "Der Auftrag hat den Neustart nicht überlebt");
+        helper.assertValueEqual(wieder.craftingJobs().get(0).wanted(), 64,
+                "und auch nicht seine Menge");
+        helper.assertValueEqual(wieder.craftingJobs().get(0).target(), Items.CHEST,
+                "und nicht sein Ziel");
+        helper.succeed();
+    }
+
+    /** Ein fertiger Auftrag meldet sich als Ereignis. */
+    @GameTest(template = EMPTY, timeoutTicks = 600)
+    public static void afinishedJobFiresAnEvent(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        helper.setBlock(controller.east().above(), FnBlocks.FABRICATOR.get());
+        entity.rebuildNetwork();
+        entity.storage().insert(Items.OAK_PLANKS, 8);
+
+        helper.assertTrue(entity.deploy("""
+                global fertig = 0
+
+                on crafting_finished(auftrag) {
+                    fertig = 1
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+        entity.requestCraft(Items.CHEST, 1);
+
+        helper.startSequence()
+                .thenIdle(120)
+                .thenExecute(() -> helper.assertValueEqual(
+                        entity.globals().get("fertig").describe(), "1",
+                        "crafting_finished muss ausgelöst haben"))
+                .thenSucceed();
+    }
+
+    /**
+     * {@code craft(64 item:chest)} bestellt aus dem Programm.
+     *
+     * <p>Der Weg, der zu dieser Mod gehört: Ein Netz tut nichts von selbst,
+     * also wird auch eine Bestellung geschrieben und nicht geklickt. Der
+     * Reiter zeigt danach, was daraus wurde.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 600)
+    public static void craftOrdersFromCode(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        helper.setBlock(controller.east().above(), FnBlocks.FABRICATOR.get());
+        entity.rebuildNetwork();
+        entity.storage().insert(Items.OAK_PLANKS, 64);
+
+        helper.assertTrue(entity.deploy("""
+                fn bestellen() {
+                    return craft(8 item:chest)
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+
+        Value kennung = entity.callFunction("bestellen", List.of());
+        helper.assertTrue(((Value.Int) kennung).value() > 0,
+                "craft muss die Kennung des Auftrags liefern");
+        helper.assertValueEqual(entity.craftingJobs().size(), 1, "ein Auftrag");
+
+        helper.startSequence()
+                .thenIdle(120)
+                .thenExecute(() -> helper.assertValueEqual(
+                        entity.storage().count(Items.CHEST), 8L, "acht Truhen"))
+                .thenSucceed();
+    }
+
+    /** Ohne Rezept liefert {@code craft} eine Null und legt nichts an. */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void craftWithoutArecipeGivesZero(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                fn bestellen() {
+                    return craft(1 item:cobblestone)
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+
+        Value kennung = entity.callFunction("bestellen", List.of());
+        helper.assertValueEqual(((Value.Int) kennung).value(), 0L,
+                "ohne Rezept keine Kennung");
+        helper.assertTrue(entity.craftingJobs().isEmpty(), "und kein Auftrag");
+        helper.succeed();
+    }
+
     // ---- Der Anbau am Controller -------------------------------------------
 
     /**

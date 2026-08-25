@@ -580,9 +580,16 @@
       "name": "random",
       "shape": "random(von, bis) int",
       "help": "Eine Zahl dazwischen, beide Enden eingeschlossen."
+    },
+    {
+      "name": "craft",
+      "shape": "craft(auswahl) int",
+      "help": "Bestellt eine Fertigung und liefert die Kennung des Auftrags. Null heißt: kein Rezept."
     }
   ],
   "builtinEvents": [
+    "crafting_failed",
+    "crafting_finished",
     "device_changed",
     "device_offline",
     "device_online",

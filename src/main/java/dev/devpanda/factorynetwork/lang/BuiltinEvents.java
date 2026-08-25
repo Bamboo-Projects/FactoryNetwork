@@ -41,6 +41,19 @@ public final class BuiltinEvents {
     public static final String REDSTONE_CHANGED = "redstone_changed";
 
     /**
+     * Ein Fertigungsauftrag ist fertig.
+     *
+     * <p>Übergeben wird der Auftrag — heute als Zahl, seine Kennung. Ein
+     * eigener Typ {@code Job} steht in {@code sprache.md} und fehlt im
+     * Wertemodell; eine Kennung ist das, was sich davon heute ehrlich sagen
+     * lässt.
+     */
+    public static final String CRAFTING_FINISHED = "crafting_finished";
+
+    /** Und einer, der nicht mehr weiterkommt — mit dem Grund als Text. */
+    public static final String CRAFTING_FAILED = "crafting_failed";
+
+    /**
      * Wie viele Werte ein Block bekommt.
      *
      * <p>Nur {@code redstone_changed} übergibt zwei — das Gerät und die
@@ -52,7 +65,9 @@ public final class BuiltinEvents {
             DEVICE_OFFLINE, 1,
             DEVICE_CHANGED, 1,
             DEVICE_OUTPUT, 1,
-            REDSTONE_CHANGED, 2);
+            REDSTONE_CHANGED, 2,
+            CRAFTING_FINISHED, 1,
+            CRAFTING_FAILED, 2);
 
     private BuiltinEvents() {
     }

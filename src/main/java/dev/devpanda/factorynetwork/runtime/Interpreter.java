@@ -108,6 +108,20 @@ public final class Interpreter {
         }
 
         /**
+         * Bestellt eine Fertigung und liefert die Kennung des Auftrags.
+         *
+         * <p>Null heißt „kein Auftrag" — und der einzige Grund dafür ist ein
+         * fehlendes Rezept. Fehlende Zutaten sind keiner: Der Auftrag wartet
+         * dann und sagt, was fehlt.
+         *
+         * <p>Ein Host ohne Welt kennt keine Rezepte und liefert null. Das ist
+         * hier keine erfundene Antwort, sondern dieselbe wie „gibt es nicht".
+         */
+        default long craft(Value what) {
+            return 0;
+        }
+
+        /**
          * Wie viel Strom in einem Gerät steht, in FE.
          *
          * <p>Ein Gerät ohne Stromspeicher meldet null. <b>Das ist keine
@@ -1356,6 +1370,12 @@ public final class Interpreter {
         Value calculated = math(name, arguments);
         if (calculated != null) {
             return calculated;
+        }
+        // Bestellen ist eine Anweisung an das Netz wie log() — kein Punkt
+        // davor, weil es nicht einem Gerät gehört, sondern dem Netz.
+        if ("craft".equals(name)) {
+            return new Value.Int(host.craft(arguments.isEmpty()
+                    ? Value.Nothing.get() : arguments.get(0)));
         }
         boolean known = program.functions().stream()
                 .anyMatch(function -> function.name().equals(name));

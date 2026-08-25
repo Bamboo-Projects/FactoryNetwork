@@ -226,7 +226,10 @@ public final class Signatures {
             new Member("floor", "floor(zahl) int", "Abgerundet."),
             new Member("ceil", "ceil(zahl) int", "Aufgerundet."),
             new Member("random", "random(von, bis) int",
-                    "Eine Zahl dazwischen, beide Enden eingeschlossen."));
+                    "Eine Zahl dazwischen, beide Enden eingeschlossen."),
+            new Member("craft", "craft(auswahl) int",
+                    "Bestellt eine Fertigung und liefert die Kennung des Auftrags. "
+                            + "Null heißt: kein Rezept."));
 
     /** Die Verteilungen, die {@code strategy} kennt. */
     public static final List<String> STRATEGIES = List.of(

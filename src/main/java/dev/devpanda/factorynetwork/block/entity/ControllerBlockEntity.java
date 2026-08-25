@@ -672,8 +672,16 @@ public class ControllerBlockEntity extends BlockEntity {
         if (jobs.isEmpty()) {
             return;
         }
-        jobs.removeIf(job -> job.status()
-                == dev.devpanda.factorynetwork.crafting.CraftingJob.Status.DONE);
+        // Fertige melden sich, bevor sie aus der Liste fallen. Ein Ereignis
+        // nach dem Verschwinden hätte niemanden mehr, über den es spricht.
+        jobs.removeIf(job -> {
+            if (job.status() != dev.devpanda.factorynetwork.crafting.CraftingJob.Status.DONE) {
+                return false;
+            }
+            fireEvent(dev.devpanda.factorynetwork.lang.BuiltinEvents.CRAFTING_FINISHED,
+                    List.of(new dev.devpanda.factorynetwork.runtime.Value.Int(job.id())));
+            return true;
+        });
         if (jobs.isEmpty() || level.getGameTime() % CRAFT_INTERVAL != 0) {
             return;
         }
@@ -736,6 +744,9 @@ public class ControllerBlockEntity extends BlockEntity {
         job.produced(perCraft * runs);
         return true;
     }
+
+    private static final String KEY_JOBS = "Jobs";
+    private static final String KEY_NEXT_JOB = "NextJob";
 
     /** Unter diesem Namen stehen die Dateien des Projekts. */
     private static final String KEY_FILES = "Files";
@@ -1721,6 +1732,11 @@ public class ControllerBlockEntity extends BlockEntity {
         host.setDeviceFilled(this::noteFilled);
         // Dieselben Gruppen wie die Worker, samt ihrem Zeiger für round_robin.
         host.setGroups(runtime.groups());
+        // Bestellungen gehen an dieselbe Liste, die auch der Reiter zeigt.
+        host.setCrafting((item, amount) -> {
+            var job = requestCraft(item, amount);
+            return job == null ? 0 : job.id();
+        });
         return host;
     }
 
@@ -1767,6 +1783,17 @@ public class ControllerBlockEntity extends BlockEntity {
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         owner = tag.hasUUID(KEY_OWNER) ? tag.getUUID(KEY_OWNER) : null;
+        jobs.clear();
+        nextJobId = Math.max(1, tag.getLong(KEY_NEXT_JOB));
+        net.minecraft.nbt.ListTag jobList = tag.getList(KEY_JOBS,
+                net.minecraft.nbt.Tag.TAG_COMPOUND);
+        for (int i = 0; i < jobList.size(); i++) {
+            var job = dev.devpanda.factorynetwork.crafting.CraftingJob
+                    .load(jobList.getCompound(i));
+            if (job != null) {
+                jobs.add(job);
+            }
+        }
         project = readProject(tag);
         // Ohne eigenen Entwurf ist der laufende Stand der Entwurf.
         if (tag.contains(KEY_DRAFT)) {
@@ -1815,6 +1842,10 @@ public class ControllerBlockEntity extends BlockEntity {
         if (owner != null) {
             tag.putUUID(KEY_OWNER, owner);
         }
+        net.minecraft.nbt.ListTag jobList = new net.minecraft.nbt.ListTag();
+        jobs.forEach(job -> jobList.add(job.save()));
+        tag.put(KEY_JOBS, jobList);
+        tag.putLong(KEY_NEXT_JOB, nextJobId);
         writeProject(tag);
         CompoundTag storageTag = new CompoundTag();
         storage.save(storageTag, registries);

@@ -200,9 +200,9 @@ contains('Nach einem Gerätepunkt kein where',
 
 // Nach on steht ein Ereignisname und keine Deklaration. Die fünf des Netzes
 // stehen in keiner Datei und kommen aus der Tabelle.
-check('Nach on die fünf Ereignisse', complete(['on ']).sort(),
-    ['device_changed', 'device_offline', 'device_online', 'device_output',
-        'redstone_changed']);
+check('Nach on die eingebauten Ereignisse', complete(['on ']).sort(),
+    ['crafting_failed', 'crafting_finished', 'device_changed', 'device_offline',
+        'device_online', 'device_output', 'redstone_changed']);
 contains('Nach on kein worker', ['on '], 'worker', false);
 
 // Filter-Vorlagen: eine Deklaration mehr, ein Block mit except, und ihr Name

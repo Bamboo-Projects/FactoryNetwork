@@ -104,6 +104,7 @@ Ohne Punkt davor, überall aufrufbar.
 | `floor(zahl) int` | Abgerundet. |
 | `ceil(zahl) int` | Aufgerundet. |
 | `random(von, bis) int` | Eine Zahl dazwischen, beide Enden eingeschlossen. |
+| `craft(auswahl) int` | Bestellt eine Fertigung und liefert die Kennung des Auftrags. Null heißt: kein Rezept. |
 
 ## Was ein Gerät hat
 

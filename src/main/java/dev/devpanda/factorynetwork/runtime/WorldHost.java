@@ -92,6 +92,20 @@ public final class WorldHost implements Interpreter.Host {
      */
     private java.util.function.Consumer<String> onDeviceFilled;
 
+    /**
+     * Wer eine Fertigung annimmt, oder {@code null}.
+     *
+     * <p>Der Controller: Die Aufträge leben dort. Ohne ihn — in Aufrufen ohne
+     * Netz — gibt es keine Fertigung, und {@code craft} liefert null statt
+     * einer Kennung, die zu nichts gehört.
+     */
+    private java.util.function.ToLongBiFunction<Item, Integer> crafting;
+
+    /** Setzt der Controller. */
+    public void setCrafting(java.util.function.ToLongBiFunction<Item, Integer> accept) {
+        this.crafting = accept;
+    }
+
     public WorldHost(Level level, FactoryGraph graph, NetworkStorage storage,
             NetworkFluids fluidStorage, java.util.Map<String, Value> globals,
             Runnable onGlobalChanged) {
@@ -524,6 +538,29 @@ public final class WorldHost implements Interpreter.Host {
         }
         List<Item> items = what instanceof Value.Nothing ? List.of() : itemsOf(what);
         return countItems(connector, items);
+    }
+
+    /**
+     * Bestellt eine Fertigung.
+     *
+     * <p>Die Auswahl muss <b>eine</b> Art meinen: Ein Auftrag über „irgendein
+     * Erz" hätte keine Antwort auf die Frage, was gebaut werden soll. Ein Tag
+     * mit genau einem Treffer geht durch — dann ist die Frage beantwortet.
+     */
+    @Override
+    public long craft(Value what) {
+        if (crafting == null) {
+            return 0;
+        }
+        List<Item> items = itemsOf(what);
+        if (items.size() != 1) {
+            throw new ScriptError("craft braucht genau eine Art.",
+                    "Zum Beispiel: craft(64 item:chest). Ein Tag, der mehreres "
+                            + "trifft, sagt nicht, was gebaut werden soll.");
+        }
+        long amount = amountOf(what);
+        return crafting.applyAsLong(items.get(0),
+                (int) Math.max(1, Math.min(amount, 100_000)));
     }
 
     /**
