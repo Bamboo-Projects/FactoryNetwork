@@ -32,6 +32,15 @@ Vorentscheidungen)
 >
 > Die Zeilen unten sind entsprechend angepasst.
 
+> **Abend des 25.08.:** Die ganze Entscheidungsliste durchgesprochen und
+> danach abgearbeitet. Gebaut: Filter-Vorlagen, `it.item`/`it.amount` am
+> Posten, `move` mit Rückgabe, die JEI-Schreibweise, `fluidtag:`, `const`,
+> Gruppen als Wert samt `send()`, `slots(1..5)` mitsamt Bereichsform, die
+> Namensprüfung im `move`, `count` auf der Anzeigetafel, das Geräteprofil am
+> Analysator. Gestrichen: `output()`, `busy`, `pumps.stop()`. Neu gefunden und
+> behoben: die `except`-Lücke, eine Auswahl, die alles bewegte, `count` am
+> Gerät, das den Speicher las.
+>
 > **Tag des 25.08.:** `device_output` gebaut (2.6), der Controller-Anker
 > entschieden (5.1, gebaut ist nichts), Filter-Vorlagen gebaut — eine Auswahl
 > mit Namen, die überall steht, wo eine Auswahl steht. Dabei drei Dinge
@@ -150,33 +159,29 @@ Vorentscheidungen)
 
 ## Was am meisten bringt
 
-**1. Die vier Strom-Entscheidungen bestätigen oder kippen** (2.2). Sie sind
-in `entscheidungen.md` festgehalten, aber vom Projektinhaber nie ausdrücklich
-abgenickt: Knappheit strikt nach `priority`, `power` als Schlüsselwort,
-Anmeldung beim Übernehmen, Abgabe ruht bei `OFF`. **Danach ist die
-Verteilung reine Arbeit** — der Entwurf steht, die Sprachseite auch.
+Stand nach dem 25.08.: **Auf der ganzen Liste steht nur noch eine offene
+Entscheidung** — 5.4, die Zahlen an den Serverbauteilen, und die beantwortet
+eine Runde Spielen. Dazu 1.11, das beim Bauen wieder zur Entscheidung wurde.
+Alles andere ist Arbeit.
 
-**2. Drei Stellen, an denen die Spezifikation mehr verspricht als der Code
-kann** (1.13, 1.14, 1.15). Gruppen als Wert, `move` als Ausdruck, die
-JEI-Schreibweise. Alle drei sind Entscheidungen und keine Arbeit — und
-solange sie offen sind, steht in `sprache.md` Code, den niemand ausführen
-kann. Ein Beispiel, das nicht läuft, kostet mehr Vertrauen als eine fehlende
-Zeile.
+**1. Die Stromverteilung** (2.2). Die vier Entscheidungen sind gefallen, und
+eine davon macht die Arbeit kleiner: Es gibt keine Kabelgrenze, also keine
+Pfadrechnung und keine Anmeldung. Zu bauen sind die Abgabe nach `priority`
+und die dritte Zellenart. **Der größte einzelne Gewinn im Spiel** — danach
+versorgt eine Fabrik ihre Maschinen selbst.
+
+**2. Der Controller-Multiblock** (5.1). Entschieden am 25.08., gebaut ist kein
+Block. Ohne ihn ist bei 384 Geräten Schluss, und der Anbaublock ist die
+Antwort, die keine Zustandswanderung braucht.
 
 **3. Weitere Handbuchseiten** (6.1). Die Anbindung steht, die ersten Seiten
-auch. Der Rest ist Schreibarbeit ohne Risiko — und das, was die Mod für
-jemanden von außen überhaupt zugänglich macht.
+auch. Schreibarbeit ohne Risiko — und das, was die Mod für jemanden von außen
+zugänglich macht.
 
-**4. Was an einem Listeneintrag steht** (1.16). Es hängt mehr daran, als die
-Zeile vermuten lässt: `where`, `sort` und `sum` über einen Bestand sind ohne
-das nicht benutzbar, `list` auf einer Anzeige bleibt eine `row` (6.10), und
-der Editor bietet alle fünf trotzdem an.
+**4. Autocrafting** (2.9, 2.10). Der letzte ausgegraute Reiter, und der
+Grund, warum `crafting` als Quelle noch nirgends steht.
 
-**Die zwei, die vor allem anderen zu entscheiden waren, sind entschieden:**
-`device_output` (2.6) und der Controller-Anker (5.1), beide am 25.08. Damit
-sind sie von der Entscheidungs- auf die Arbeitsliste gewandert; die
-Begründungen stehen in `entscheidungen.md`. Was an ihnen jetzt noch offen
-ist, sind Baufragen und keine Weichenstellungen mehr — beim Controller
-allerdings eine große: Gebaut ist davon kein Block.
-
-
+**Kleines mit großer Wirkung:** `list` auf einer Anzeige (6.10) ist seit 1.16
+nicht mehr blockiert, die Auflösungsanzeige im Editor (3.11) fehlt weiter, und
+die Konfiguration (4.2) ist die Voraussetzung für den Sprachserver und für
+einstellbare Grenzen.
