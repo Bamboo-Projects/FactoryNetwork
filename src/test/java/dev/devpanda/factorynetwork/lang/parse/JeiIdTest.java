@@ -86,18 +86,31 @@ class JeiIdTest {
     }
 
     @Test
-    @DisplayName("Ein Doppelpunkt ohne Auswahl dahinter frisst die Zeile nicht")
-    void aTrailingColonDoesNotSwallowTheLine() {
+    @DisplayName("Ein Doppelpunkt ohne Auswahl dahinter bleibt außerhalb der Auswahl")
+    void aTrailingColonStaysOutsideTheSelector() {
         // Beim Tippen steht der Doppelpunkt kurz allein da. Verschluckte der
-        // Lexer den Rest, liefe die Vervollständigung bei jedem Tastendruck
-        // auf einem halben Ausdruck.
-        List<Diagnostic> errors = errorsOf("""
-                fn t() {
-                    move 1 item:iron_ore: from lager to ofen
-                }""");
+        // Lexer den Rest der Zeile, liefe die Vervollständigung bei jedem
+        // Tastendruck auf einem halben Ausdruck — deshalb wird der zweite
+        // Doppelpunkt nur mitgelesen, wenn wirklich eine Auswahl folgt.
+        //
+        // Geprüft wird am Lexer und nicht an den Meldungen: Ein einzelnes „:"
+        // ist syntaktisch kaputt, und dass der Parser danach über from und to
+        // stolpert, ist erwartbar. Die Frage ist allein, wo die Auswahl endet.
+        var tokens = dev.devpanda.factorynetwork.lang.Lexer
+                .tokenize("move 1 item:iron_ore: from a to b").tokens();
+        var auswahl = tokens.stream()
+                .filter(token -> token.type()
+                        == dev.devpanda.factorynetwork.lang.TokenType.SELECTOR)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Die Auswahl fehlt ganz: " + tokens));
 
-        assertTrue(errors.stream().noneMatch(problem ->
-                        problem.message().contains("Schrägstrich")),
-                () -> "hier ist kein Namensraum gemeint: " + errors);
+        assertEquals("item:iron_ore", auswahl.text(),
+                "Der Doppelpunkt am Ende gehört nicht mehr dazu");
+        assertTrue(tokens.stream().anyMatch(token -> token.type()
+                        == dev.devpanda.factorynetwork.lang.TokenType.FROM),
+                () -> "from muss ein from bleiben: " + tokens);
+        assertTrue(tokens.stream().anyMatch(token -> token.type()
+                        == dev.devpanda.factorynetwork.lang.TokenType.TO),
+                () -> "und to ein to: " + tokens);
     }
 }

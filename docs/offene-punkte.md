@@ -17,7 +17,7 @@ Stand: 2026-08-25 (nach der zweiten Nacht)
 > Leere schreibt. Dazu `strategy priority`, das nie schreibbar war, und
 > `strategy emptiest`, das es nie gab und trotzdem wirkte.
 >
-> Neu auf der Liste stehen 1.13 bis 1.16, 3.9, 3.10, 4.5, 6.9 und 6.10.
+> Neu auf der Liste stehen 1.13 bis 1.16, 2.11, 3.9, 3.10, 4.5, 6.9 und 6.10.
 
 > **Was in der Nacht auf den 25.08. erledigt wurde:** 2.1 (globale Werte),
 > 3.1 (Annahme-Probe), 3.3 (Flüssigkeitsstände), 3.4 (Bearbeitung anfragen),
@@ -66,6 +66,7 @@ Stand: 2026-08-25 (nach der zweiten Nacht)
 | 2.4 | Einheit der Abgaberate: `per tick` gegen `per 5s` | E | `strom.md:249` | klein | 2.2 |
 | 2.5 | Strom als Wert in der Sprache (`crusher_1.energy`) | F | `strom.md:228` | klein | 1.1 |
 | 2.6 | **`device_done`:** gebaut ist Weg (2), offen ob Weg (1) dazukommt. Vor dem Bau zu entscheiden — ein falsches Fertig-Signal lässt eine Anlage Gegenstände verlieren | E | `umsetzung.md:160` | mittel | Entscheidung |
+| 2.11 | **`log()` sieht niemand.** Weder die Ausgabe eines Programms noch die Hinweise der Laufzeit werden irgendwo gelesen: kein Reiter, kein Sprachschlüssel, kein Aufrufer. Damit verschwinden „Der Knopf X nennt keine Funktion", „maintain ohne filter" und jedes `log()`, das ein Spieler selbst schreibt — obwohl der Übersetzer die Schreibweise aktiv beibringt. Der Verweis „Siehe docs/strom.md" zeigt zusätzlich auf eine Datei, die nicht im Jar liegt; er gehört auf die Handbuchseite | E | `ControllerBlockEntity.log()`, `WorkerRuntime.notes()` | mittel | Entscheidung: eigener Reiter, Chat oder Ereignisliste |
 | 2.7 | `when`-Bedingungen: nur Zahlvergleiche mit Literalen und `storage.count(...)` | F | `WorkerRuntime.java:860` | mittel | teils 1.1 |
 | 2.8 | `NetworkCheck` besucht keine Anweisungen — weder Seitenwarnung noch Namensprüfung erreichen ein `move` | F | `geraeteerkennung.md:316` | mittel | Entscheidung zur Namensprüfung bei `move` |
 | 2.9 | Erkennung von Maschinen-Rezepten | F | `entscheidungen.md:131` | groß | — |

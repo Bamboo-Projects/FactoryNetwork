@@ -124,6 +124,6 @@ zu sein.
 ### Was eine Gruppe nicht ist
 
 Eine Gruppe ist ein Ziel, kein Wert. `brecher.online` oder
-`brecher.members()` gibt es nicht: Der Name steht dort, wo ein Gerätename
-steht, und nicht in einem Ausdruck. Wer über die Mitglieder laufen will,
-schreibt sie heute einzeln hin.
+`brecher.members()` gibt es nicht: Der Name steht als Ziel eines Workers und
+nicht in einem Ausdruck. Wer über die Mitglieder laufen will, schreibt sie
+heute einzeln hin.
