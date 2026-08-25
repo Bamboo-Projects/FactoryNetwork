@@ -177,7 +177,12 @@ die eine Sorte ließe sich nirgends lagern.
 
 `chemical:` bezeichnet Mekanisms Gase, Schlämme und Infusionen. Die
 Schreibweise steht hier fest, weil sie sonst später nachträglich zwischen die
-bestehenden Arten gezwängt werden müsste; die Anbindung selbst kommt später.
+bestehenden Arten gezwängt werden müsste.
+
+> **Noch nicht gebaut:** die Anbindung selbst. Entschieden am 25.08. als
+> Kompatibilitätsmodul — ohne Mekanism läuft die Mod wie heute, mit ihm
+> bewegt sie Chemikalien. Bis dahin weist der Übersetzer `chemical:` in einer
+> Filter-Vorlage zurück, und die Laufzeit meldet sich.
 
 ### Mengen
 
@@ -397,6 +402,11 @@ Device   Group    Multiblock
 Job      Worker   Event
 List<T>  Set<T>
 ```
+
+> **Noch nicht gebaut:** `Set<T>`, `Job` und `Chemical` gibt es im Wertemodell
+> nicht (`offene-punkte.md` 1.8). `Job` wartet auf das Autocrafting,
+> `Chemical` auf die Anbindung an Mekanism, und für `Set<T>` fehlt bisher der
+> Fall, der ihn braucht.
 
 Die Namen sind englisch, aus demselben Grund wie die Schlüsselwörter.
 `Duration` ist der Typ der Zeitangaben aus Abschnitt 13 und bewusst von `Int`
@@ -667,6 +677,11 @@ worker keep_ingots {
     maintain 256
 }
 ```
+
+> **Noch nicht gebaut:** `crafting` als Quelle. Es wartet auf das Autocrafting
+> (`offene-punkte.md` 2.10), und bis dahin bieten die Editoren es auch nicht
+> mehr an — ein Vorschlag, der in eine Fehlermeldung führt, ist schlechter als
+> keiner.
 
 Das ist der Grund, warum `from` eine Quelle nennt und nicht eine Betriebsart.
 Zwei Deklarationsformen für „hol es aus dem Lager" und „lass es herstellen"
