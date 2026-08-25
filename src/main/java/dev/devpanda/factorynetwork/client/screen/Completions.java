@@ -555,22 +555,7 @@ public final class Completions {
      * Zeigen.
      */
     public static String abilities(DeviceProfile profile) {
-        if (!profile.reachable()) {
-            return "";
-        }
-        List<String> can = new ArrayList<>();
-        for (Side side : Side.values()) {
-            if (profile.hasItems(side) && !can.contains("Gegenstände")) {
-                can.add("Gegenstände");
-            }
-            if (profile.hasFluids(side) && !can.contains("Flüssigkeiten")) {
-                can.add("Flüssigkeiten");
-            }
-            if (profile.hasEnergy(side) && !can.contains("Strom")) {
-                can.add("Strom");
-            }
-        }
-        return can.isEmpty() ? "nichts anzuschließen" : String.join(", ", can);
+        return profile.abilities();
     }
 
     /**

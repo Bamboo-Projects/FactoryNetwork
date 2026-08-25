@@ -6720,6 +6720,25 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    /** Der Analysator sagt, was an einem Gerät hängt — und wie viele Fächer. */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void theAnalyserNamesWhatADeviceCan(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        BlockPos connector = controller.east().north();
+        if (!(helper.getBlockEntity(connector) instanceof ConnectorBlockEntity verbunden)) {
+            helper.fail("Am Connector hängt keine BlockEntity", connector);
+            return;
+        }
+        var profil = DeviceScan.of(verbunden);
+
+        helper.assertValueEqual(profil.abilities(), "Gegenstände",
+                "An einer Kiste hängen Gegenstände");
+        helper.succeed();
+    }
+
     /**
      * Die Fachnummern im Editor sind die, die das Programm anspricht.
      *

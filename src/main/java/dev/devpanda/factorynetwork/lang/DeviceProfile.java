@@ -138,4 +138,34 @@ public record DeviceProfile(String descriptionId, String namespace,
         }
         return groups;
     }
+
+    /**
+     * Was an diesem Gerät hängt, in einer Zeile.
+     *
+     * <p>Über alle Seiten zusammengefasst und nicht je Seite: Die Frage
+     * lautet „taugt das überhaupt". Welche Seite es genau ist, sagt das
+     * Zeigen.
+     *
+     * <p>Hier und nicht im Editor, weil zwei Stellen sie brauchen — die
+     * Vorschlagsliste im Spiel und der Netzanalysator, der auf dem Server
+     * läuft.
+     */
+    public String abilities() {
+        if (!reachable()) {
+            return "";
+        }
+        java.util.List<String> can = new java.util.ArrayList<>();
+        for (Side side : Side.values()) {
+            if (hasItems(side) && !can.contains("Gegenstände")) {
+                can.add("Gegenstände");
+            }
+            if (hasFluids(side) && !can.contains("Flüssigkeiten")) {
+                can.add("Flüssigkeiten");
+            }
+            if (hasEnergy(side) && !can.contains("Strom")) {
+                can.add("Strom");
+            }
+        }
+        return can.isEmpty() ? "nichts anzuschließen" : String.join(", ", can);
+    }
 }

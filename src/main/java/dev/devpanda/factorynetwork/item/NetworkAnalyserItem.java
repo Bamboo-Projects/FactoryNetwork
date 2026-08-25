@@ -61,10 +61,34 @@ public class NetworkAnalyserItem extends Item {
         }
         remember(context.getItemInHand(), controller.get().getBlockPos());
         if (context.getPlayer() != null) {
-            context.getPlayer().displayClientMessage(Component.translatable(
-                    "message.factorynetwork.analyser.watching"), true);
+            context.getPlayer().displayClientMessage(deviceLine(level, pos), true);
         }
         return InteractionResult.CONSUME;
+    }
+
+    /**
+     * Was hier hängt — oder, wenn es kein Gerät ist, dass das Netz beobachtet
+     * wird.
+     *
+     * <p><b>Am Rechtsklick und nicht in der Sicht durch Wände.</b> Die
+     * Knotenbeschriftung wird gar nicht gezeichnet; der Analysator malt
+     * Würfel. Die Frage „was kann diese Maschine" stellt sich ohnehin dort,
+     * wo man davorsteht.
+     */
+    private static Component deviceLine(Level level, BlockPos pos) {
+        if (level.getBlockEntity(pos)
+                instanceof dev.devpanda.factorynetwork.block.entity.ConnectorBlockEntity
+                        connector) {
+            var profile = dev.devpanda.factorynetwork.block.entity.DeviceScan.of(connector);
+            String name = connector.label().isEmpty() ? "Ohne Namen" : connector.label();
+            String slots = "";
+            var items = connector.machineInventoryAll();
+            if (items != null && items.getSlots() > 0) {
+                slots = " · Fächer 0–" + (items.getSlots() - 1);
+            }
+            return Component.literal(name + ": " + profile.abilities() + slots);
+        }
+        return Component.translatable("message.factorynetwork.analyser.watching");
     }
 
     @Override
