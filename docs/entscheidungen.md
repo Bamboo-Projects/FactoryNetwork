@@ -2770,6 +2770,14 @@ zu erkennen; nachprüfbar wäre allein „ein Fach, das nichts annimmt", und das
 hängt an der Sorgfalt der fremden Mod. Eine Maschine, die alles annimmt,
 lieferte eine leere Liste — und die sieht aus wie eine leere Maschine.
 
+**Dieselbe Form legt auch hinein.** `move 8 item:coal from storage to
+ofen.slots(1)` bringt den Brennstoff ins Brennstofffach — der eigentliche
+Grund, warum ein Anschluss je Maschine reicht. Der Preis ist größer als beim
+Lesen: Über ein Fach gelten die Seitenregeln der Maschine nicht, und
+`slots(2)` an einem Ofen legt ins Ergebnisfach. Hingenommen und in
+`sprache.md` benannt: Wer eine Fachnummer schreibt, sagt damit, dass er die
+Maschine kennt.
+
 **Nicht die Antwort: ein zweiter Connector.** Der Projektinhaber hat das
 zweimal zurückgewiesen, und er hat recht: Ein Connector kostet einen Kanal
 auf seinem ganzen Weg zum Controller. Drei Rollen an einer Maschine über drei

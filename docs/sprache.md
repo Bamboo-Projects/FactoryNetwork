@@ -518,9 +518,22 @@ hineingelegt wurde. Mit einer Fachnummer steht im Code, was gemeint ist.
 nur die Seite, an der der Connector hängt. Ein Anschluss je Maschine reicht;
 welches Fach gemeint ist, entscheidet der Code und nicht die Bauform.
 
-Der Preis steht dabei: Wer eine Nummer schreibt, kennt seine Maschine. Baut
-eine Mod ihr Inventar um, zeigt die Nummer auf ein anderes Fach — deshalb ist
-die Fachangabe ausdrücklich und gilt nicht überall stillschweigend.
+**Auch hinein**, nicht nur heraus:
+
+```
+move 8 item:coal from storage to ofen.slots(1)
+```
+
+Das ist der Grund, warum ein Anschluss je Maschine reicht: Der Brennstoff
+kommt ins Brennstofffach, ohne dass jemand einen zweiten Connector an die
+Seite setzt.
+
+Der Preis steht dabei, und er ist an dieser Stelle größer als beim Lesen: Über
+ein Fach gelten die **Seitenregeln der Maschine nicht**. Wer `slots(2)` an
+einem Ofen schreibt, legt ins Ergebnisfach — etwas, das kein Trichter der Welt
+könnte. Wer eine Nummer schreibt, kennt seine Maschine; baut eine Mod ihr
+Inventar um, zeigt die Nummer auf ein anderes Fach. Deshalb ist die
+Fachangabe ausdrücklich und gilt nicht überall stillschweigend.
 
 Nummern, die es nicht gibt, fallen weg: Ein `slots(0..26)` an einer Maschine
 mit vier Fächern liefert vier Posten und keinen Fehler.

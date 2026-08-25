@@ -6768,6 +6768,44 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
+     * <b>In ein bestimmtes Fach legen.</b>
+     *
+     * <p>Die Kehrseite von {@link #movingOnlyFromCertainSlots}: Wer eine
+     * Fachnummer schreibt, legt auch dorthin — am ungeteilten Inventar, also
+     * ohne die Seitenregeln der Maschine. Genau dafür ist die Form da (ein
+     * Anschluss je Maschine, der Brennstoff kommt trotzdem ins Brennstofffach),
+     * und genau deshalb steht der Preis in sprache.md.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void movingIntoACertainSlot(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        entity.storage().insert(Items.COAL, 8);
+
+        helper.assertTrue(entity.deploy("""
+                fn einlegen() {
+                    move 8 item:coal from storage to depot.slots(5)
+                }"""), "Das Programm wurde nicht übernommen");
+
+        BlockPos ziel = controller.east().south().south();
+        entity.startFlow("einlegen", List.of());
+        helper.startSequence()
+                .thenIdle(10)
+                .thenExecute(() -> {
+                    if (!(helper.getBlockEntity(ziel) instanceof ChestBlockEntity container)) {
+                        helper.fail("Am Ziel hängt keine Kiste", ziel);
+                        return;
+                    }
+                    helper.assertValueEqual(container.getItem(5).getCount(), 8,
+                            "Die Kohle liegt in Fach 5 und nirgends sonst");
+                    helper.assertTrue(container.getItem(0).isEmpty(),
+                            "Fach 0 bleibt leer");
+                })
+                .thenSucceed();
+    }
+
+    /**
      * <b>Nur den Ausgang abräumen.</b>
      *
      * <p>Der Fall, für den es die Fächer gibt: Eine Maschine, die Eingang und
