@@ -446,7 +446,7 @@ furnace_2.items()
 | `online` | Hängt es gerade im Netz? |
 | `name` | Der Name, den die Beschriftungspistole vergeben hat |
 | `redstone()` / `redstone(int)` | Die Stärke, 0 bis 15 — gelesen oder gesetzt |
-| `count(auswahl)` | Wie viel von einer Art im **Netzspeicher** liegt |
+| `count(auswahl)` | Wie viel von einer Art **in diesem Gerät** liegt. Ohne Auswahl alles zusammen |
 | `insert(auswahl)` | Legt aus dem Speicher etwas hinein. Gibt zurück, wie viel ankam — **weniger ist normal** |
 | `items()` | Was gerade drinliegt. Leere Fächer fallen weg |
 

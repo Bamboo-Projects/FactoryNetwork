@@ -2589,6 +2589,50 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
+     * {@code gerät.count(…)} zählt das Gerät und nicht den Speicher.
+     *
+     * <p>Der Netzspeicher bleibt im Test ausdrücklich leer. Läge in beiden
+     * dasselbe, zeigte der Test nichts — er könnte die Verwechslung nicht von
+     * der richtigen Antwort unterscheiden.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void countAtADeviceCountsTheDevice(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        BlockPos quelle = controller.east().north().north();
+        if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity container) {
+            container.setItem(0, new ItemStack(Items.IRON_ORE, 8));
+            container.setItem(1, new ItemStack(Items.GOLD_ORE, 5));
+        }
+
+        helper.assertTrue(entity.deploy("""
+                global im_geraet = 0
+                global insgesamt = 0
+                global im_netz = 0
+
+                fn zaehlt() {
+                    im_geraet = quarry_output.count(item:iron_ore)
+                    insgesamt = quarry_output.count()
+                    im_netz = storage.count(item:iron_ore)
+                }"""), "Das Programm wurde nicht übernommen");
+
+        entity.startFlow("zaehlt", List.of());
+        helper.startSequence()
+                .thenIdle(10)
+                .thenExecute(() -> {
+                    helper.assertValueEqual(entity.globals().get("im_geraet"),
+                            new Value.Int(8), "Acht Eisenerz liegen in der Kiste");
+                    helper.assertValueEqual(entity.globals().get("insgesamt"),
+                            new Value.Int(13), "Ohne Auswahl zählt alles mit");
+                    helper.assertValueEqual(entity.globals().get("im_netz"),
+                            new Value.Int(0), "Im Netzspeicher liegt nichts");
+                })
+                .thenSucceed();
+    }
+
+    /**
      * <b>Eine Auswahl, die nichts trifft, darf nicht alles bewegen.</b>
      *
      * <p>Eine leere Liste heißt für {@code move} „kein Filter", und kein

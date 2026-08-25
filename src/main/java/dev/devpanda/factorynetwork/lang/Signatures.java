@@ -245,12 +245,12 @@ public final class Signatures {
     /**
      * Was an einem Gerät steht — {@code crusher_1.online}.
      *
-     * <p><b>Nur, was der Interpreter wirklich kennt.</b> Der Interpreter kennt {@code online},
-     * {@code name}, {@code redstone()} und {@code count()};
-     * {@code sprache.md} §6 beschreibt darüber hinaus {@code insert()},
-     * {@code items()} und {@code busy}, die es noch nicht gibt. Was hier
-     * steht, muss laufen — ein Vorschlag, der in einen Laufzeitfehler führt,
-     * ist schlimmer als gar keiner.
+     * <p><b>Nur, was der Interpreter wirklich kennt:</b> {@code online},
+     * {@code name}, {@code redstone()}, {@code count()}, {@code insert()} und
+     * {@code items()}. {@code sprache.md} §6 beschreibt darüber hinaus
+     * {@code output()}, {@code send()} an einer Gruppe und {@code busy}, die
+     * es nicht gibt. Was hier steht, muss laufen — ein Vorschlag, der in
+     * einen Laufzeitfehler führt, ist schlimmer als gar keiner.
      *
      * <p>Für jedes Gerät dieselben: Gerätespezifisches gibt es nach dem Punkt
      * erst, wenn die Mitglieder aus §6 gebaut sind. Dann ist es ein Eintrag
@@ -264,7 +264,7 @@ public final class Signatures {
             new Member("redstone", "redstone() int, redstone(int)",
                     "Die Redstone-Stärke, 0 bis 15. Mit Zahl gesetzt, ohne gelesen."),
             new Member("count", "count(selection) int",
-                    "Wie viel von einer Art im Netzspeicher liegt."),
+                    "Wie viel von einer Art in diesem Gerät liegt. Ohne Auswahl alles."),
             new Member("insert", "insert(selection) int",
                     "Legt aus dem Speicher etwas hinein. Gibt zurück, wie viel ankam — "
                             + "weniger ist normal."),

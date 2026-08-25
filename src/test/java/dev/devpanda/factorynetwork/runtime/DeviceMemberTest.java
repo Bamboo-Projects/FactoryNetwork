@@ -78,6 +78,18 @@ class DeviceMemberTest {
         public List<Value> itemsIn(String device) {
             return contents;
         }
+
+        /** Wonach im Gerät gezählt wurde — Gerät und Auswahl. */
+        final List<String> counted = new ArrayList<>();
+
+        /** Was der Blick ins Gerät findet. */
+        long inDevice = 7;
+
+        @Override
+        public long countIn(String device, Value what) {
+            counted.add(device + " ? " + what.describe());
+            return inDevice;
+        }
     }
 
     private static Interpreter interpreterFor(String source, TestHost host) {
@@ -166,5 +178,56 @@ class DeviceMemberTest {
                 () -> interpreter.call("versuchen", List.of()));
 
         assertTrue(error.getMessage().contains("gibtesnicht"), error.getMessage());
+    }
+
+    @Test
+    @DisplayName("count am Gerät fragt das Gerät, nicht den Speicher")
+    void countAsksTheDevice() {
+        TestHost host = new TestHost();
+        // Der Speicher dieses Hosts zählt null. Käme die Zahl von dort,
+        // stünde hier null statt sieben.
+        host.inDevice = 7;
+        Interpreter interpreter = interpreterFor("""
+                fn zaehlen() {
+                    log(crusher_1.count(item:iron_ore))
+                }""", host);
+
+        interpreter.call("zaehlen", List.of());
+
+        assertEquals(List.of("7"), host.logs);
+        assertTrue(host.counted.stream().anyMatch(entry -> entry.startsWith("crusher_1 ?")),
+                () -> "gefragt wurde: " + host.counted);
+    }
+
+    @Test
+    @DisplayName("Ohne Auswahl zählt es alles im Gerät")
+    void countWithoutASelection() {
+        TestHost host = new TestHost();
+        Interpreter interpreter = interpreterFor("""
+                fn zaehlen() {
+                    log(crusher_1.count())
+                }""", host);
+
+        interpreter.call("zaehlen", List.of());
+
+        assertTrue(host.counted.contains("crusher_1 ? nichts"),
+                () -> "ohne Auswahl muss die Frage trotzdem am Gerät ankommen: "
+                        + host.counted);
+    }
+
+    @Test
+    @DisplayName("count am Speicher bleibt der Speicher")
+    void countOnStorageIsUnchanged() {
+        TestHost host = new TestHost();
+        Interpreter interpreter = interpreterFor("""
+                fn zaehlen() {
+                    log(storage.count(item:iron_ore))
+                }""", host);
+
+        interpreter.call("zaehlen", List.of());
+
+        assertEquals(List.of("0"), host.logs);
+        assertTrue(host.counted.isEmpty(),
+                () -> "der Speicher darf dafür nicht ins Gerät sehen: " + host.counted);
     }
 }

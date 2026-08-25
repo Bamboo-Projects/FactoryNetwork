@@ -83,6 +83,26 @@ public final class Interpreter {
         /** Wie viel von einer Art im Speicher liegt. */
         long count(Value what);
 
+        /**
+         * Wie viel von einer Art in einem Gerät liegt.
+         *
+         * <p>Getrennt von {@link #count(Value)}, weil es eine andere Frage
+         * ist: {@code storage.count(…)} zählt den Netzspeicher,
+         * {@code brecher.count(…)} den Brecher. Bis zum 25.08. taten beide
+         * dasselbe — die Schreibweise am Gerät maß den Speicher, und niemand
+         * konnte das sehen.
+         *
+         * <p><b>Die Vorgabe meldet sich, statt null zu liefern.</b> Ein Host
+         * ohne Welt — die Prüfungen, der Editor — kann nicht in ein Gerät
+         * sehen, und eine erfundene Null wäre eine Antwort auf eine Frage,
+         * die er nicht beantworten kann.
+         *
+         * @param what die Auswahl, oder {@link Value.Nothing} für alles
+         */
+        default long countIn(String device, Value what) {
+            throw new ScriptError("Ohne Welt lässt sich nicht in ein Gerät sehen.");
+        }
+
         /** Redstone-Stärke eines Geräts, 0 bis 15. */
         int redstone(String device);
 
@@ -975,8 +995,13 @@ public final class Interpreter {
                     host.setRedstone(device.name(), (int) number(arguments.get(0), "redstone"));
                     yield Value.Nothing.get();
                 }
-                case "count" -> new Value.Int(host.count(arguments.isEmpty()
-                        ? Value.Nothing.get() : arguments.get(0)));
+                // <b>Das Gerät und nicht der Speicher.</b> Hier stand
+                // host.count(…), also dieselbe Zahl wie bei storage.count(…):
+                // Die Schreibweise sagte „im Brecher", gemessen wurde das
+                // Netz. Alle anderen Mitglieder am Gerät meinten schon immer
+                // dieses Gerät.
+                case "count" -> new Value.Int(host.countIn(device.name(),
+                        arguments.isEmpty() ? Value.Nothing.get() : arguments.get(0)));
                 // Legt aus dem Netzspeicher etwas ins Gerät und meldet, wie
                 // viel ankam. Weniger als gewünscht ist normal: Die Maschine
                 // kann voll sein, der Speicher leer.

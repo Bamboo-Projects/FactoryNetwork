@@ -453,7 +453,7 @@
     {
       "name": "count",
       "shape": "count(selection) int",
-      "help": "Wie viel von einer Art im Netzspeicher liegt."
+      "help": "Wie viel von einer Art in diesem Gerät liegt. Ohne Auswahl alles."
     },
     {
       "name": "insert",

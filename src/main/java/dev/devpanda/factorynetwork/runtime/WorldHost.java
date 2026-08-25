@@ -437,6 +437,73 @@ public final class WorldHost implements Interpreter.Host {
         return rest;
     }
 
+    /**
+     * {@code brecher.count(item:iron_ore)} — was im Gerät liegt.
+     *
+     * <p>Inventar und Tank, wie überall am Gerät: Welches gemeint ist, sagt
+     * die Auswahl. Ohne Auswahl zählt es alles zusammen — die Frage „wie voll
+     * ist die Maschine", für die es sonst keine Form gibt.
+     *
+     * <p>Ein Gerät ohne Inventar liefert null und keinen Fehler. Dass keines
+     * da ist, sagt das Profil im Editor; ein Programm, das über ein leeres
+     * Gerät rechnet, hat ein leeres Gerät und keinen Programmfehler.
+     */
+    @Override
+    public long countIn(String device, Value what) {
+        ConnectorBlockEntity connector = connectorFor(device);
+        if (connector == null) {
+            return 0;
+        }
+        if (isFluidRequest(what)) {
+            return countFluids(connector, fluidsOf(what));
+        }
+        List<Item> items = what instanceof Value.Nothing ? List.of() : itemsOf(what);
+        return countItems(connector, items);
+    }
+
+    /** Ohne Auswahl zählt alles mit. */
+    private static long countItems(ConnectorBlockEntity connector, List<Item> items) {
+        IItemHandler handler = connector.machineInventory();
+        if (handler == null) {
+            return 0;
+        }
+        long found = 0;
+        for (int slot = 0; slot < handler.getSlots(); slot++) {
+            ItemStack stack = handler.getStackInSlot(slot);
+            if (!stack.isEmpty() && (items.isEmpty() || items.contains(stack.getItem()))) {
+                found += stack.getCount();
+            }
+        }
+        return found;
+    }
+
+    private static long countFluids(ConnectorBlockEntity connector, List<Fluid> fluids) {
+        IFluidHandler tank = connector.machineTank();
+        if (tank == null) {
+            return 0;
+        }
+        long found = 0;
+        for (int index = 0; index < tank.getTanks(); index++) {
+            FluidStack stack = tank.getFluidInTank(index);
+            if (!stack.isEmpty() && (fluids.isEmpty() || fluids.contains(stack.getFluid()))) {
+                found += stack.getAmount();
+            }
+        }
+        return found;
+    }
+
+    /** Die BlockEntity eines Connectors, oder {@code null}. */
+    private ConnectorBlockEntity connectorFor(String device) {
+        // connectorPosition meldet sich selbst, wenn der Name unbekannt oder
+        // doppelt vergeben ist. Hier bleibt der geladene Chunk.
+        BlockPos position = connectorPosition(device);
+        if (!level.isLoaded(position)) {
+            return null;
+        }
+        return level.getBlockEntity(position) instanceof ConnectorBlockEntity connector
+                ? connector : null;
+    }
+
     @Override
     public long count(Value what) {
         if (isFluidRequest(what)) {
