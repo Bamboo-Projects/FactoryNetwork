@@ -259,13 +259,17 @@ amount      = [ INT ] selection
 
 selection   = selTerm { 'except' selTerm }
 
-selTerm     = KIND ':' [ NAMESPACE '/' ] pathPattern
+selTerm     = KIND ':' [ NAMESPACE ( '/' | ':' ) ] pathPattern
 
 KIND        = 'item' | 'fluid' | 'chemical' | 'tag'
 pathPattern = ( NAMECHAR | '*' ) { NAMECHAR | '*' | '/' }
 ```
 
 `*` darf an jeder Stelle stehen, auch mehrfach.
+
+Namensraum und Pfad trennt ein Schrägstrich oder ein Doppelpunkt — die zweite
+Form ist die, die JEI anzeigt. Ein Pfad behält seine weiteren Schrägstriche:
+`tag:c:ingots/iron` meint den Namensraum `c` und den Pfad `ingots/iron`.
 
 **Der Selektor ist ein einziges Token, und der Leerraum entscheidet darüber.**
 `item:iron_ingot` und `fn craft(item: Item)` beginnen gleich — dieselben vier

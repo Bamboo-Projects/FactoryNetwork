@@ -1,26 +1,29 @@
 package dev.devpanda.factorynetwork.lang.parse;
 
 import dev.devpanda.factorynetwork.lang.Diagnostic;
+import dev.devpanda.factorynetwork.lang.ast.Decl;
+import dev.devpanda.factorynetwork.lang.ast.Expr;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Eine aus JEI kopierte ID bekommt eine Antwort, keine Kaskade.
+ * Eine aus JEI kopierte ID wird angenommen.
  *
- * <p><b>Jeder kopiert IDs aus JEI</b>, und dort steht {@code mekanism:steel_ingot}.
- * Wer daraus {@code item:mekanism:steel_ingot} macht, bekam sieben
- * Fehlermeldungen in einer Zeile — „Bei move fehlt das Ziel", „from ist ein
- * Schlüsselwort" —, von denen keine einzige den Grund nannte. Der Lexer hörte
- * am zweiten Doppelpunkt auf, und der Rest der Zeile zerfiel in Bruchstücke.
+ * <p><b>Jeder kopiert IDs aus JEI</b>, und dort steht
+ * {@code mekanism:steel_ingot}. Wer daraus {@code item:mekanism:steel_ingot}
+ * machte, bekam zuerst sieben Fehlermeldungen in einer Zeile, dann eine, die
+ * die richtige Schreibweise nannte — und musste sie trotzdem bei jeder
+ * kopierten ID von Hand berichtigen.
  *
- * <p>Deshalb prüft dieser Test auf <b>genau eine</b> Meldung. Ein
- * {@code anyMatch} hätte auch bestanden, als es sieben waren, und die
- * Kaskade war das eigentliche Problem.
+ * <p>Seit dem 25.08. gelten beide Formen. Der Doppelpunkt trennt Namensraum
+ * und Pfad genauso wie der Schrägstrich; welchen jemand schreibt, ist seine
+ * Sache.
  */
 class JeiIdTest {
 
@@ -30,53 +33,80 @@ class JeiIdTest {
                 .toList();
     }
 
-    @Test
-    @DisplayName("Der zweite Doppelpunkt bringt eine Meldung, nicht sieben")
-    void aSecondColonYieldsOneMessage() {
-        List<Diagnostic> errors = errorsOf("""
-                fn t() {
-                    move 1 item:mekanism:steel_ingot from lager to ofen
-                }""");
-
-        assertEquals(1, errors.size(), () -> "genau eine Meldung: " + errors);
-        assertTrue(errors.get(0).message().contains("Schrägstrich"),
-                () -> "der Grund muss dastehen: " + errors.get(0));
-        assertTrue(errors.get(0).hint().contains("item:mekanism/steel_ingot"),
-                () -> "die richtige Zeile muss dastehen: " + errors.get(0).hint());
+    /** Die Auswahl aus der {@code filter}-Zeile des ersten Workers. */
+    private static Expr.Selector selectorOf(String source) {
+        Parser.ParseResult result = Parser.parse(source);
+        assertTrue(result.diagnostics().stream().noneMatch(Diagnostic::isError),
+                () -> "unerwartete Meldung: " + result.diagnostics());
+        Decl.Worker worker = assertInstanceOf(Decl.Worker.class,
+                result.program().declarations().get(0));
+        return assertInstanceOf(Expr.Selector.class,
+                worker.entry(Decl.Worker.Entry.Kind.FILTER).value());
     }
 
     @Test
-    @DisplayName("Auch im Worker, wo die Meldung vorher besonders irreführend war")
-    void theSameInsideAWorker() {
-        // Vorher: „„:" ist keine Angabe, die ein Worker kennt."
-        List<Diagnostic> errors = errorsOf("""
+    @DisplayName("Die JEI-Schreibweise wird angenommen")
+    void theJeiFormIsAccepted() {
+        Expr.Selector selector = selectorOf("""
                 worker w {
                     from lager
                     to ofen
                     filter item:mekanism:steel_ingot
                 }""");
 
-        assertEquals(1, errors.size(), () -> "genau eine Meldung: " + errors);
-        assertTrue(errors.get(0).hint().contains("item:mekanism/steel_ingot"),
-                () -> "die richtige Zeile muss dastehen: " + errors.get(0).hint());
+        assertEquals(Expr.Selector.Kind.ITEM, selector.kind());
+        assertEquals("mekanism", selector.namespace());
+        assertEquals("steel_ingot", selector.path());
     }
 
     @Test
-    @DisplayName("Ein Tag aus JEI ebenso")
-    void aTagFromJeiToo() {
-        List<Diagnostic> errors = errorsOf("""
-                fn t() {
-                    move 1 tag:c:ingots/iron from lager to ofen
+    @DisplayName("Sie meint dasselbe wie die Form mit Schrägstrich")
+    void bothFormsMeanTheSame() {
+        Expr.Selector mitDoppelpunkt = selectorOf("""
+                worker w {
+                    from lager
+                    to ofen
+                    filter item:mekanism:steel_ingot
+                }""");
+        Expr.Selector mitSchraegstrich = selectorOf("""
+                worker w {
+                    from lager
+                    to ofen
+                    filter item:mekanism/steel_ingot
                 }""");
 
-        assertEquals(1, errors.size(), () -> "genau eine Meldung: " + errors);
-        assertTrue(errors.get(0).hint().contains("tag:c/ingots/iron"),
-                () -> "die richtige Zeile muss dastehen: " + errors.get(0).hint());
+        assertEquals(mitSchraegstrich.kind(), mitDoppelpunkt.kind());
+        assertEquals(mitSchraegstrich.namespace(), mitDoppelpunkt.namespace());
+        assertEquals(mitSchraegstrich.path(), mitDoppelpunkt.path());
     }
 
     @Test
-    @DisplayName("Die richtige Schreibweise bleibt fehlerfrei")
-    void theCorrectFormStaysClean() {
+    @DisplayName("Ein Tag aus JEI ebenso — der Pfad darf Schrägstriche behalten")
+    void aTagFromJeiToo() {
+        Expr.Selector selector = selectorOf("""
+                worker w {
+                    from lager
+                    to ofen
+                    filter tag:c:ingots/iron
+                }""");
+
+        assertEquals(Expr.Selector.Kind.TAG, selector.kind());
+        assertEquals("c", selector.namespace());
+        assertEquals("ingots/iron", selector.path());
+    }
+
+    @Test
+    @DisplayName("In einem move ebenfalls, ohne Meldung")
+    void insideAMoveToo() {
+        assertTrue(errorsOf("""
+                fn t() {
+                    move 1 item:mekanism:steel_ingot from lager to ofen
+                }""").isEmpty(), "die JEI-Form ist kein Fehler mehr");
+    }
+
+    @Test
+    @DisplayName("Die Form mit Schrägstrich bleibt fehlerfrei")
+    void theSlashFormStaysClean() {
         assertTrue(errorsOf("""
                 fn t() {
                     move 1 item:mekanism/steel_ingot from lager to ofen
@@ -92,10 +122,6 @@ class JeiIdTest {
         // Lexer den Rest der Zeile, liefe die Vervollständigung bei jedem
         // Tastendruck auf einem halben Ausdruck — deshalb wird der zweite
         // Doppelpunkt nur mitgelesen, wenn wirklich eine Auswahl folgt.
-        //
-        // Geprüft wird am Lexer und nicht an den Meldungen: Ein einzelnes „:"
-        // ist syntaktisch kaputt, und dass der Parser danach über from und to
-        // stolpert, ist erwartbar. Die Frage ist allein, wo die Auswahl endet.
         var tokens = dev.devpanda.factorynetwork.lang.Lexer
                 .tokenize("move 1 item:iron_ore: from a to b").tokens();
         var auswahl = tokens.stream()

@@ -36,9 +36,9 @@
       "match": "`[^`]*`"
     },
     "selector": {
-      "comment": "item:iron_ingot, tag:c/ingots, ofen_* als Muster — und power allein, weil Strom keine Sorte hat. Der Namensraum steht vor einem Schrägstrich, nicht vor einem zweiten Doppelpunkt",
+      "comment": "item:iron_ingot, tag:c/ingots, ofen_* als Muster — und power allein, weil Strom keine Sorte hat. Namensraum und Pfad trennt ein Schrägstrich oder ein Doppelpunkt; die zweite Form zeigt JEI an",
       "name": "support.constant.selector.manifold",
-      "match": "\\b(item|fluid|chemical|tag):[A-Za-z0-9_./*-]+|\\bpower\\b"
+      "match": "\\b(item|fluid|chemical|tag):[A-Za-z0-9_./*-]+(:[A-Za-z0-9_./*-]+)?|\\bpower\\b"
     },
     "duration": {
       "comment": "Die Einheit gehört zur Zahl: 5t, 30s, 2min, 1h",

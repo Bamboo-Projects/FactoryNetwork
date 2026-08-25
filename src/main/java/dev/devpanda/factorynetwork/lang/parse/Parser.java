@@ -1041,17 +1041,16 @@ public final class Parser {
         };
         String rest = text.substring(colon + 1);
 
-        // Aus JEI kopiert man „mekanism:steel_ingot" — hier steht der
-        // Namensraum vor einem Schrägstrich. Das ist der häufigste Fehler
-        // überhaupt, sobald mehr als eine Mod im Spiel ist, und er verdient
-        // eine Meldung, die die richtige Zeile gleich hinschreibt.
+        // <b>Aus JEI kopiert man „mekanism:steel_ingot".</b> Seit dem 25.08.
+        // trennt der Doppelpunkt Namensraum und Pfad genauso wie der
+        // Schrägstrich. Vorher stand hier eine Meldung mit der richtigen
+        // Schreibweise — sie war richtig und kam trotzdem bei jeder
+        // kopierten ID wieder.
+        //
+        // Der Rest des Pfades behält seine Schrägstriche: tag:c:ingots/iron
+        // meint den Namensraum c und den Pfad ingots/iron.
         int mark = rest.indexOf(':');
         if (mark >= 0) {
-            String corrected = text.substring(0, colon + 1)
-                    + rest.substring(0, mark) + "/" + rest.substring(mark + 1);
-            error(token.span(), "Der Namensraum steht vor einem Schrägstrich, "
-                            + "nicht vor einem zweiten Doppelpunkt.",
-                    "Schreibe " + corrected + ". Die Form mit Doppelpunkt zeigt JEI an.");
             return new Expr.Selector(kind, rest.substring(0, mark),
                     rest.substring(mark + 1), token.span());
         }

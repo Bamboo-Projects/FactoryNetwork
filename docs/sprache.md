@@ -215,6 +215,12 @@ item:mekanism/*                             // alles aus einer Mod
 tag:c/ores except item:ancient_debris       // mit Ausnahme
 ```
 
+**Namensraum und Pfad trennt ein Schrägstrich — oder ein Doppelpunkt.**
+`item:mekanism/steel_ingot` und `item:mekanism:steel_ingot` meinen dasselbe.
+Die zweite Form ist die, die JEI anzeigt und die jeder von dort kopiert; sie
+zurückzuweisen hieße, bei jeder kopierten ID eine Berichtigung von Hand zu
+verlangen.
+
 **Warum alle drei:** In einem großen Pack sind Tags der Normalfall, aber sie
 fehlen, überschneiden sich oder schneiden zu grob — es gibt eigene Mods, deren
 einziger Zweck das Aufräumen dieser Überschneidungen ist. Namensmuster fangen
