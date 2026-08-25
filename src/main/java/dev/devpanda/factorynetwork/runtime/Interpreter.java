@@ -798,9 +798,13 @@ public final class Interpreter {
             return switch (name) {
                 case "online" -> new Value.Bool(host.hasDevice(device.name()));
                 case "name" -> new Value.Text(device.name());
+                // Wer hierher kommt, hat meistens die Klammern vergessen —
+                // „Bekannt sind online und name" verschwieg genau das und
+                // ließ ihn glauben, es gäbe nichts weiter.
                 default -> throw new ScriptError(
                         "Ein Gerät hat kein " + name + ".",
-                        "Bekannt sind online und name.");
+                        "Ohne Klammern gibt es nur online und name. Mit Klammern: "
+                                + "redstone(), count(…), insert(…) und items().");
             };
         }
         throw new ScriptError("Auf " + target.describe() + " gibt es kein " + name + ".");

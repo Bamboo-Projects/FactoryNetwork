@@ -5342,6 +5342,10 @@ public final class FactoryNetworkGameTests {
                 + dev.devpanda.factorynetwork.network.Power.DISPLAY
                 + dev.devpanda.factorynetwork.network.Power.DRIVE
                 + dev.devpanda.factorynetwork.network.Power.PER_CELL;
+        // Auf eine Zahl festgenagelt, sonst prüft der Test nur seine eigene
+        // Rechnung: Stünde DISPLAY auf null, bliebe er grün — obwohl er
+        // gerade behauptet, jedes Gerät koste Strom.
+        helper.assertValueEqual(erwartet, 8, "Vier für den Controller, je eins für den Rest");
         helper.assertValueEqual(entity.powerDraw(), erwartet, "Bedarf des Netzes in FE je Tick");
         helper.succeed();
     }

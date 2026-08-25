@@ -433,7 +433,7 @@
     },
     {
       "name": "redstone",
-      "shape": "int, oder redstone(int)",
+      "shape": "redstone() int, redstone(int)",
       "help": "Die Redstone-Stärke, 0 bis 15. Mit Zahl gesetzt, ohne gelesen."
     },
     {

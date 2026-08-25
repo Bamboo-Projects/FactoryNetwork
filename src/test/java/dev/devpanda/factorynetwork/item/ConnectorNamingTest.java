@@ -17,9 +17,19 @@ class ConnectorNamingTest {
     @Test
     @DisplayName("Namen werden nach NFC normalisiert")
     void namesAreNormalized() {
-        // Einmal zusammengesetzt, einmal zerlegt — dasselbe Ergebnis.
-        assertEquals(ConnectorNaming.normalize("ofen_süd"),
-                ConnectorNaming.normalize("ofen_süd"));
+        // <b>Die beiden Literale sehen gleich aus und sind es nicht.</b>
+        // Genau darin lag der Fehler: Vorher standen hier zwei
+        // zusammengesetzte Umlaute — byteweise dasselbe Literal zweimal,
+        // also assertEquals(f(x), f(x)) und damit wahr für jede Fassung,
+        // auch für eine, die gar nicht normalisiert. Die Längenprüfung
+        // darunter ist der Wächter dagegen: Fällt das zerlegte ü beim
+        // nächsten Bearbeiten wieder zusammen, wird sie rot.
+        String zerlegt = "ofen_süd";
+        String zusammen = "ofen_süd";
+        assertEquals(zusammen.length() + 1, zerlegt.length(),
+                "Die zerlegte Form muss wirklich ein Zeichen länger sein");
+        assertEquals(zusammen, ConnectorNaming.normalize(zerlegt),
+                "Wer den Namen zerlegt eingibt, meint denselben Connector");
     }
 
     @Test

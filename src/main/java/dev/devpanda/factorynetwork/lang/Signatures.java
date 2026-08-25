@@ -234,7 +234,7 @@ public final class Signatures {
                     "Ob das Gerät gerade im Netz hängt."),
             new Member("name", "string",
                     "Der Name, den die Beschriftungspistole vergeben hat."),
-            new Member("redstone", "int, oder redstone(int)",
+            new Member("redstone", "redstone() int, redstone(int)",
                     "Die Redstone-Stärke, 0 bis 15. Mit Zahl gesetzt, ohne gelesen."),
             new Member("count", "count(selection) int",
                     "Wie viel von einer Art im Netzspeicher liegt."),

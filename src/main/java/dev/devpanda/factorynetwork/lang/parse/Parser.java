@@ -414,9 +414,19 @@ public final class Parser {
         }
         Token label = peek();
         if (!label.is(TokenType.STRING)) {
+            // Je Bausteinart ein eigenes Beispiel. Für button war das eine
+            // Beispiel für alle sogar falsch: Dort steht ein Funktionsname,
+            // und ein storage.count(…) dahinter meldet später „Der Knopf
+            // nennt keine Funktion" — an einer ganz anderen Stelle.
+            String example = switch (kind) {
+                case BUTTON -> " \"Nachschub\" nachschub_starten";
+                case PROGRESS -> " \"Kohle\" storage.count(item:coal) / 640.0";
+                case INDICATOR -> " \"Brecher am Netz\" brecher.online";
+                default -> " \"Eisen\" storage.count(item:iron_ingot)";
+            };
             error(label.span(),
                     "Nach " + start.text() + " fehlt die Beschriftung in Anführungszeichen.",
-                    "Zum Beispiel: " + start.text() + " \"Eisen\" storage.count(item:iron_ingot)");
+                    "Zum Beispiel: " + start.text() + example);
             recoverToLineEnd();
             return null;
         }
