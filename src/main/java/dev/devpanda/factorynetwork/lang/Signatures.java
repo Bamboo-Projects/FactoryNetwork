@@ -288,6 +288,21 @@ public final class Signatures {
                     "Ordnet nach dem Ausdruck. it ist der Eintrag."));
 
     /**
+     * Was an einem einzelnen Posten steht — {@code it.amount}.
+     *
+     * <p>Zwei Angaben und eine dritte für Flüssigkeiten. Der Editor kennt
+     * keine Typen und kann deshalb nicht wissen, ob ein Posten Gegenstände
+     * oder Flüssigkeiten meint; er bietet beides an und sagt in der Form,
+     * wofür es gilt.
+     */
+    public static final List<Member> ENTRY_MEMBERS = List.of(
+            new Member("amount", "amount int", "Die Menge dieses Postens."),
+            new Member("item", "item item",
+                    "Die Art dieses Postens — nur, wenn er genau eine meint."),
+            new Member("fluid", "fluid fluid",
+                    "Die Sorte dieses Postens, bei einer Flüssigkeitsliste."));
+
+    /**
      * Die Formen, die in dieser Blockart gelten.
      *
      * @param declaration das Deklarationswort, etwa {@code display}

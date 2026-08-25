@@ -917,9 +917,21 @@ Vorgesehen sind:
 |---|---|---|
 | `count` | zählen | **gebaut** |
 | `first` | das erste Element, oder nichts | **gebaut** |
-| `sum` | alle Zahlen aufaddieren | **gebaut** |
+| `sum` | alle Zahlen aufaddieren — an einem Bestandsposten seine Menge | **gebaut** |
 | `where` | aussortieren | **gebaut** |
 | `sort` | ordnen | **gebaut** |
+
+An einem Posten stehen:
+
+| | | |
+|---|---|---|
+| `it.amount` | die Menge | **gebaut** |
+| `it.item` | die Art — nur, wenn der Posten genau eine meint | **gebaut** |
+| `it.fluid` | dasselbe an einer Flüssigkeitsliste | **gebaut** |
+
+`it.item` an einer Auswahl über mehrere Arten — einer Filter-Vorlage etwa —
+ist ein Fehler und keine Vermutung: Welche der Arten gemeint wäre, ließe sich
+nur raten.
 
 Mehr nicht — kein `map`, kein `groupBy`. In einer Fabrik gibt es dafür bisher
 keinen Fall, und hinzufügen lässt sich später leicht, wegnehmen nicht.

@@ -218,4 +218,87 @@ class ListMemberTest {
 
         assertEquals(List.of("0"), host.logs);
     }
+
+    @Test
+    @DisplayName("An einem Eintrag steht seine Menge")
+    void anEntryCarriesItsAmount() {
+        TestHost host = new TestHost();
+        host.contents.add(new Value.Selection(List.of(), 5));
+
+        Interpreter interpreter = interpreterFor("""
+                fn zeigen() {
+                    log(crusher_1.items().first().amount)
+                }""", host);
+        interpreter.call("zeigen", List.of());
+
+        assertEquals(List.of("5"), host.logs);
+    }
+
+    @Test
+    @DisplayName("sum zählt die Mengen zusammen")
+    void sumAddsTheAmounts() {
+        TestHost host = new TestHost();
+        host.contents.add(new Value.Selection(List.of(), 5));
+        host.contents.add(new Value.Selection(List.of(), 7));
+
+        Interpreter interpreter = interpreterFor("""
+                fn zeigen() {
+                    log(crusher_1.items().sum())
+                }""", host);
+        interpreter.call("zeigen", List.of());
+
+        // Vorher warf sum an dieser Stelle: Ein Posten war keine Zahl, und
+        // eine Bestandsliste ist der Fall, für den sum überhaupt da ist.
+        assertEquals(List.of("12"), host.logs);
+    }
+
+    @Test
+    @DisplayName("where filtert nach der Menge")
+    void whereFiltersByAmount() {
+        TestHost host = new TestHost();
+        host.contents.add(new Value.Selection(List.of(), 5));
+        host.contents.add(new Value.Selection(List.of(), 70));
+        host.contents.add(new Value.Selection(List.of(), 90));
+
+        Interpreter interpreter = interpreterFor("""
+                fn zeigen() {
+                    log(crusher_1.items().where(it.amount > 64).count())
+                }""", host);
+        interpreter.call("zeigen", List.of());
+
+        assertEquals(List.of("2"), host.logs);
+    }
+
+    @Test
+    @DisplayName("sort ordnet nach der Menge")
+    void sortOrdersByAmount() {
+        TestHost host = new TestHost();
+        host.contents.add(new Value.Selection(List.of(), 90));
+        host.contents.add(new Value.Selection(List.of(), 5));
+
+        Interpreter interpreter = interpreterFor("""
+                fn zeigen() {
+                    log(crusher_1.items().sort(it.amount).first().amount)
+                }""", host);
+        interpreter.call("zeigen", List.of());
+
+        assertEquals(List.of("5"), host.logs, "der kleinste Posten steht vorn");
+    }
+
+    @Test
+    @DisplayName("Eine Auswahl über mehrere Arten hat keine eine Art")
+    void aSelectionOverSeveralKindsHasNoSingleItem() {
+        TestHost host = new TestHost();
+        host.contents.add(new Value.Selection(List.of(), 5));
+
+        Interpreter interpreter = interpreterFor("""
+                fn zeigen() {
+                    log(crusher_1.items().first().item)
+                }""", host);
+
+        // Ohne Art ist it.item keine Auskunft, die sich erfinden lässt.
+        ScriptError error = org.junit.jupiter.api.Assertions.assertThrows(
+                ScriptError.class, () -> interpreter.call("zeigen", List.of()));
+        assertTrue(error.getMessage().contains("Art"), error.getMessage());
+    }
 }

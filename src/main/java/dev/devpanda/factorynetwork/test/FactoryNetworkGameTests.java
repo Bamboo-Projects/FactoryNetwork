@@ -2589,6 +2589,45 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
+     * Ein Posten aus dem Bestand kennt seine Art und seine Menge.
+     *
+     * <p>Im GameTest, weil eine Art ohne Registry keine ist: Der Einheitstest
+     * kann nur prüfen, was ohne Welt zu prüfen ist.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void aStockEntryKnowsItsKindAndAmount(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        entity.storage().insert(Items.IRON_ORE, 5);
+        entity.storage().insert(Items.GOLD_ORE, 70);
+
+        helper.assertTrue(entity.deploy("""
+                global grosse_posten = 0
+                global kleinster = 0
+
+                fn zaehlt() {
+                    grosse_posten = storage.items().where(it.amount > 64).count()
+                    kleinster = storage.items().sort(it.amount).first().amount
+                    log(storage.items().sort(it.amount).first().item)
+                }"""), "Das Programm wurde nicht übernommen");
+
+        entity.startFlow("zaehlt", List.of());
+        helper.startSequence()
+                .thenIdle(10)
+                .thenExecute(() -> {
+                    helper.assertValueEqual(entity.globals().get("grosse_posten"),
+                            new Value.Int(1), "Nur das Golderz liegt über 64");
+                    helper.assertValueEqual(entity.globals().get("kleinster"),
+                            new Value.Int(5), "Der kleinste Posten sind die fünf Eisenerze");
+                    helper.assertTrue(entity.log().stream().anyMatch(zeile ->
+                                    zeile.text().contains("iron_ore")),
+                            "it.item muss die Art nennen: " + entity.log());
+                })
+                .thenSucceed();
+    }
+
+    /**
      * {@code gerät.count(…)} zählt das Gerät und nicht den Speicher.
      *
      * <p>Der Netzspeicher bleibt im Test ausdrücklich leer. Läge in beiden

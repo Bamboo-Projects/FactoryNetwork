@@ -938,7 +938,54 @@ public final class Interpreter {
                                 + "redstone(), count(…), insert(…) und items().");
             };
         }
+        Value entry = entryMember(target, name);
+        if (entry != null) {
+            return entry;
+        }
         throw new ScriptError("Auf " + target.describe() + " gibt es kein " + name + ".");
+    }
+
+    /**
+     * Was an einem Posten steht: {@code it.item} und {@code it.amount}.
+     *
+     * <p><b>Zwei Angaben, mehr nicht.</b> Ohne sie war eine Bestandsliste
+     * nicht zu gebrauchen: {@code where} hatte nichts zu vergleichen,
+     * {@code sort} sortierte nach lauter Nullen, und {@code sum} warf.
+     *
+     * <p>{@code it.item} gibt es nur, wenn der Posten genau eine Art meint.
+     * Eine Auswahl über mehrere — etwa eine Filter-Vorlage — hat keine eine
+     * Art, und sich für die erste zu entscheiden wäre geraten.
+     *
+     * @return {@code null}, wenn dieser Wert kein Posten ist
+     */
+    private static Value entryMember(Value target, String name) {
+        if (target instanceof Value.Selection selection) {
+            return switch (name) {
+                case "amount" -> new Value.Int(selection.amount());
+                case "item" -> selection.items().size() == 1
+                        ? new Value.ItemValue(selection.items().get(0))
+                        : throwNoSingleKind(selection.items().size());
+                default -> null;
+            };
+        }
+        if (target instanceof Value.FluidSelection selection) {
+            return switch (name) {
+                case "amount" -> new Value.Int(selection.amount());
+                case "fluid" -> selection.fluids().size() == 1
+                        ? new Value.FluidValue(selection.fluids().get(0))
+                        : throwNoSingleKind(selection.fluids().size());
+                default -> null;
+            };
+        }
+        return null;
+    }
+
+    private static Value throwNoSingleKind(int kinds) {
+        throw new ScriptError("Diese Auswahl meint " + (kinds == 0 ? "keine" : kinds)
+                + " Art" + (kinds == 1 ? "" : "en") + ".",
+                "it.item gibt es nur an einem Posten, der genau eine Art meint — "
+                        + "etwa aus storage.items(). Bei einer Vorlage oder einem Tag "
+                        + "wäre die eine Art geraten.");
     }
 
     private Value call(Expr.Call call) {
@@ -1032,6 +1079,17 @@ public final class Interpreter {
      * nichts, {@code sum()} gibt null. Wer über einen leeren Bestand rechnet,
      * hat einen leeren Bestand — keinen Programmfehler.
      */
+    /** Die Menge eines Postens, oder {@code null} bei allem anderen. */
+    private static Double amountOf(Value entry) {
+        if (entry instanceof Value.Selection selection) {
+            return (double) selection.amount();
+        }
+        if (entry instanceof Value.FluidSelection selection) {
+            return (double) selection.amount();
+        }
+        return null;
+    }
+
     private Value listMember(Value.ValueList list, String name) {
         return switch (name) {
             case "count" -> new Value.Int(list.entries().size());
@@ -1041,6 +1099,14 @@ public final class Interpreter {
                 double total = 0;
                 boolean whole = true;
                 for (Value entry : list.entries()) {
+                    // Ein Posten ist keine Zahl, trägt aber eine: seine
+                    // Menge. Ohne diese Zeile warf sum genau an der Liste,
+                    // für die es gedacht war — dem Bestand.
+                    Double amount = amountOf(entry);
+                    if (amount != null) {
+                        total += amount;
+                        continue;
+                    }
                     total += number(entry, "sum");
                     whole = whole && entry instanceof Value.Int;
                 }

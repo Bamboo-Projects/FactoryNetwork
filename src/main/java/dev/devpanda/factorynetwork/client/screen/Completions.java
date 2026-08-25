@@ -107,6 +107,19 @@ public final class Completions {
             return limit(entries);
         }
         if (afterDot(upToCursor)) {
+            // <b>it ist kein Gerät.</b> Es steht für einen Posten, und daran
+            // stehen andere Dinge. Vorher fiel es durch memberPrefix, das
+            // nur bekannte Connectoren durchlässt — nach „it." kam damit
+            // gar nichts.
+            if ("it".equals(wordBeforeDot(upToCursor))) {
+                for (Signatures.Member candidate : Signatures.ENTRY_MEMBERS) {
+                    if (matches(candidate.name(), prefix)) {
+                        entries.add(new Entry(candidate.name(), candidate.name(),
+                                Entry.Kind.BUILTIN, candidate.shape()));
+                    }
+                }
+                return limit(entries);
+            }
             if (memberPrefix(upToCursor) == null) {
                 return List.of();
             }
@@ -486,10 +499,15 @@ public final class Completions {
         if (!afterDot(upToCursor)) {
             return null;
         }
+        String name = wordBeforeDot(upToCursor);
+        return ClientNetworkState.connectors().contains(name) ? name : null;
+    }
+
+    /** Das Wort vor dem Punkt, ohne zu prüfen, ob es etwas bedeutet. */
+    private static String wordBeforeDot(String upToCursor) {
         String prefix = currentWord(upToCursor);
         String before = upToCursor.substring(0, upToCursor.length() - prefix.length());
-        String name = currentWord(before.substring(0, before.length() - 1));
-        return ClientNetworkState.connectors().contains(name) ? name : null;
+        return currentWord(before.substring(0, before.length() - 1));
     }
 
     /**

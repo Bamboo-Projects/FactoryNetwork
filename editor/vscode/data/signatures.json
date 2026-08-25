@@ -493,6 +493,23 @@
       "help": "Ordnet nach dem Ausdruck. it ist der Eintrag."
     }
   ],
+  "entryMembers": [
+    {
+      "name": "amount",
+      "shape": "amount int",
+      "help": "Die Menge dieses Postens."
+    },
+    {
+      "name": "item",
+      "shape": "item item",
+      "help": "Die Art dieses Postens — nur, wenn er genau eine meint."
+    },
+    {
+      "name": "fluid",
+      "shape": "fluid fluid",
+      "help": "Die Sorte dieses Postens, bei einer Flüssigkeitsliste."
+    }
+  ],
   "freeFunctions": [
     {
       "name": "log",

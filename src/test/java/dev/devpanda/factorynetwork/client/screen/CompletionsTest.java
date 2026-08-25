@@ -82,6 +82,18 @@ class CompletionsTest {
     }
 
     @Test
+    @DisplayName("Nach it. stehen die Angaben eines Postens")
+    void afterItTheEntryMembers() {
+        List<String> shown = at("fn test() {", "    log(storage.items().where(it.");
+
+        assertTrue(shown.contains("amount"), () -> "amount fehlt: " + shown);
+        assertTrue(shown.contains("item"), () -> "item fehlt: " + shown);
+        assertFalse(shown.contains("online"),
+                () -> "ein Posten ist kein Gerät: " + shown);
+        assertFalse(shown.contains("insert"), () -> shown.toString());
+    }
+
+    @Test
     @DisplayName("Nach on stehen die Ereignisse")
     void afterOnTheEventsAreOffered() {
         List<String> shown = at("on ");
