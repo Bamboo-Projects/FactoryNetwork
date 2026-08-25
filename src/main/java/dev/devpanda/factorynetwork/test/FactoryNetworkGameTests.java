@@ -2734,6 +2734,45 @@ public final class FactoryNetworkGameTests {
                 .thenSucceed();
     }
 
+    /**
+     * Eine Menge vor einem Vorlagennamen bewegt auch wirklich etwas.
+     *
+     * <p>Dass {@code send(64 erze)} übersetzt, sagt der Prüfer für die
+     * Doku-Beispiele. Ob der Interpreter den Namen an dieser Stelle auch
+     * <b>auflöst</b>, sagt er nicht — er übersetzt nur. Genau dort lag der
+     * Fehler vorher: Das Beispiel stand in {@code beispiele.md} und ließ sich
+     * nicht einmal lesen.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void anamountBeforeAtemplateNameReallyMoves(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        entity.storage().insert(Items.IRON_ORE, 32);
+
+        helper.assertTrue(entity.deploy("""
+                filter erze {
+                    tag:c/ores
+                }
+
+                group kisten {
+                    members quarry_output, depot
+                }
+
+                fn schickt() {
+                    kisten.send(16 erze)
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+
+        entity.startFlow("schickt", List.of());
+        helper.startSequence()
+                .thenIdle(15)
+                .thenExecute(() -> helper.assertValueEqual(
+                        entity.storage().count(Items.IRON_ORE), 16L,
+                        "Sechzehn Erze sind über die Vorlage an ein Mitglied gegangen"))
+                .thenSucceed();
+    }
+
     /** Ein Festwert wird gelesen wie ein globaler, nur nie geschrieben. */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void aConstantIsReadableAtRuntime(GameTestHelper helper) {

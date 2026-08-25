@@ -3313,7 +3313,7 @@ Vier weitere Löcher, jedes für sich schon entscheidend:
 - **Die Dauer fehlt.** Sie steht in der Maschine, nicht im Rezept.
 
 Dazu kommt ein Hinweis, der schwerer wiegt als jedes Einzelargument: **Es
-macht niemand.** AE2 lässt Muster im Mustterminal anlegen, Refined Storage im
+macht niemand.** AE2 lässt Muster im Musterterminal anlegen, Refined Storage im
 Pattern Grid. Beide bieten als Abkürzung an, ein Rezept aus JEI/REI/EMI
 herüberzuziehen — aber hinterlegt wird es, und zwar vom Spieler. Zwei Mods mit
 zusammen zweistelligen Millionen Downloads haben denselben Weg gewählt; wer
