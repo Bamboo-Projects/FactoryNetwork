@@ -160,7 +160,7 @@ Vorentscheidungen)
 | # | Was | Status | Wo | Größe | Blockiert durch |
 |---|---|---|---|---|---|
 | 5.1 | ~~Controller-Multiblock~~ — **fertig** (25.08.). Der Controller bleibt genau ein Block; der Anbau steuert Seiten bei und hält nie etwas. Er muss den Controller berühren, kostet keinen Kanal und 1 FE/t | | `entscheidungen.md` „Der Controller bleibt ein Block" | | |
-| 5.2 | Ein eigener Speicherblock | F | `umsetzung.md:370` | mittel | — |
+| 5.2 | ~~Ein eigener Speicherblock~~ — **hat sich aufgelöst** (26.08.). Die Zeile stammt aus der Zeit, als der Speicher im Controller saß; seit den Zellen liegt er in Laufwerken, und wer mehr Platz will, stellt eines dazu. Nachgeprüft, weil die Zusage nirgends belegt war: `asecondDriveEnlargesTheStorage` | | `NetworkStorage`, `DriveBlockEntity` | | |
 | 5.3 | Anzeigenwand: die Schrift wächst nicht mit der Wand | F | `umsetzung.md:156` | mittel | zeigt erst das Spielen |
 | 5.4 | Die Zahlen an den Serverbauteilen sind gesetzt, nicht hergeleitet | E | `umsetzung.md:186` | klein | Spielprüfung |
 
@@ -214,10 +214,10 @@ Reiter ist keiner mehr, und `crafting` steht als Quelle in beiden Editoren.
 Offen bleibt daneben 2.9 — Processing-Rezepte an Maschinen —, aber das ist ein
 eigenes Vorhaben und keine Lücke im Autocrafting.
 
-**2. Die kleineren Reste:** 5.2 (Speicherblock), 5.3 (Schrift auf der
-Anzeigenwand), 3.6 (LDLib2 prüfen), 1.11 (globale Listen — braucht vorher eine
-Entscheidung über Listenliteral und Ändern-vs-Ersetzen). 3.5 (Ordner im
-Projekt) ist am 25.08. dazugekommen und wieder weg.
+**2. Die kleineren Reste:** 5.3 (Schrift auf der Anzeigenwand), 3.6 (LDLib2
+prüfen), 1.11 (globale Listen — braucht vorher eine Entscheidung über
+Listenliteral und Ändern-vs-Ersetzen). 3.5 (Ordner im Projekt) ist am 25.08.
+dazugekommen und wieder weg, 5.2 hat sich beim Nachsehen aufgelöst.
 
 **3. Rezepte an Maschinen erkennen** (2.9). Groß, und seit dem Autocrafting
 keine Voraussetzung mehr für irgendetwas — der Fabricator baut Werkbank-

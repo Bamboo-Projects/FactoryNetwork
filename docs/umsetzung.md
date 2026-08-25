@@ -162,7 +162,7 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | Editor | Syntaxfarben, Fehler beim Tippen, Vervollständigung nach Stelle |
 | | Projekt aus mehreren Dateien, Ordner im Namen: `erz/brecher.mf` |
 | Anzeigen | Am Block und im Terminal, Knöpfe starten Abläufe |
-| Prüfung | 397 Einheitstests, 243 GameTests |
+| Prüfung | 397 Einheitstests, 244 GameTests |
 
 ## 3. Was noch nicht läuft
 
@@ -323,13 +323,18 @@ deshalb liegt in den Tests dort eine Welt aus Papier.
 
 ## 6. Was als Nächstes ansteht
 
-In dieser Reihenfolge, nach Abhängigkeit:
+Diese Liste stand hier vom ersten Tag an und ist abgearbeitet: Flüssigkeiten
+laufen, der Speicher liegt in Zellen in Laufwerken, und das Autocrafting ist
+mehrstufig. Was offen ist, steht in `offene-punkte.md` — dort mit Zustand und
+Begründung, statt hier als Reihenfolge, die niemand nachzieht.
 
-1. **Flüssigkeiten und Chemikalien.** Die Schreibweise steht seit dem Entwurf;
-   die Anbindung an fremde Mods ist die eigentliche Arbeit.
-2. **Ein eigener Speicherblock.** Solange der Speicher im Controller sitzt,
-   gibt es keinen Grund, mehr als einen zu bauen.
-3. **Autocrafting.** Der letzte ausgegraute Reiter.
+Der Punkt „ein eigener Speicherblock" hat sich dabei nicht erfüllt, sondern
+aufgelöst: Er stand da mit der Begründung, solange der Speicher im Controller
+sitze, gebe es keinen Grund für einen zweiten. Der Speicher sitzt seit den
+Zellen nicht mehr im Controller. **Das Laufwerk ist der Speicherblock**, wer
+mehr Platz will, stellt eines dazu — nachgeprüft in
+`asecondDriveEnlargesTheStorage`, denn genau diese Zusage war bis dahin
+nirgends belegt.
 
 ### Globale Werte (seit dem 24.08.)
 

@@ -4163,6 +4163,43 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    /**
+     * Ein zweites Laufwerk vergrößert den Speicher.
+     *
+     * <p>Das ist die Antwort auf „ein eigener Speicherblock": Er steht, und
+     * er heißt Laufwerk. Geprüft wird die Zusage, die daran hängt — <b>wer
+     * mehr Platz will, stellt eines dazu</b>. Ohne sie wäre das Laufwerk ein
+     * Speicher mit fester Größe an anderer Stelle.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void asecondDriveEnlargesTheStorage(GameTestHelper helper) {
+        BlockPos controller = bareSetup(helper);
+        driveWithCell(helper, controller.above(),
+                dev.devpanda.factorynetwork.storage.CellTier.K1);
+        driveWithCell(helper, controller.below(),
+                dev.devpanda.factorynetwork.storage.CellTier.K1);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        // Acht Arten füllen die Artenplätze einer 1k-Zelle.
+        Item[] acht = {Items.IRON_INGOT, Items.GOLD_INGOT, Items.COPPER_INGOT,
+                Items.COBBLESTONE, Items.DIRT, Items.SAND, Items.GRAVEL, Items.OAK_LOG};
+        for (Item art : acht) {
+            helper.assertValueEqual(entity.storage().insert(art, 1), 0L,
+                    "Art " + art + " muss hineinpassen");
+        }
+
+        // Die neunte scheiterte an einer einzelnen Zelle. Mit einem zweiten
+        // Laufwerk findet sie dort Platz.
+        helper.assertValueEqual(entity.storage().insert(Items.STONE, 1), 0L,
+                "Die neunte Art gehört ins zweite Laufwerk");
+        helper.assertValueEqual(entity.storage().count(Items.STONE), 1L,
+                "und der Bestand zählt über beide zusammen");
+        helper.assertValueEqual(entity.storage().count(Items.IRON_INGOT), 1L,
+                "das erste bleibt dabei lesbar");
+        helper.succeed();
+    }
+
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void thePressNeedsPowerAndTime(GameTestHelper helper) {
         BlockPos at = new BlockPos(1, 1, 1);
