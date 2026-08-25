@@ -72,6 +72,18 @@ public final class WorkerRuntime {
     private final java.util.Set<String> saidBefore = new java.util.HashSet<>();
     /** Die Gruppen des Programms, gegen das Netz aufgelöst. */
     private final Map<String, DeviceGroup> groups = new LinkedHashMap<>();
+
+    /**
+     * Die Filter-Vorlagen des Programms, nach Namen.
+     *
+     * <p>Neu eingelesen, wenn ein anderes Programm kommt — nicht bei jedem
+     * Tick wie die Gruppen. Eine Vorlage hängt an keinem Gerät: Was sie
+     * auswählt, ändert sich nicht dadurch, dass ein Ofen dazukommt.
+     */
+    private final Map<String, Decl.FilterTemplate> templates = new LinkedHashMap<>();
+
+    /** Das Programm, aus dem die Vorlagen stammen — für den Vergleich. */
+    private Program templateSource;
     private final java.util.random.RandomGenerator random = new java.util.Random();
 
     /** Womit eine {@code when}-Bedingung ausgewertet wird, oder {@code null}. */
@@ -154,6 +166,11 @@ public final class WorkerRuntime {
         currentStorage = storage;
         lastGraph = graph;
         resolveGroups(program, graph);
+        if (templateSource != program) {
+            templates.clear();
+            templates.putAll(FilterTemplates.of(program));
+            templateSource = program;
+        }
         for (Decl.Worker worker : program.workers()) {
             WorkerState state = states.computeIfAbsent(worker.name(), name -> new WorkerState());
             int interval = intervalOf(worker);
@@ -214,7 +231,7 @@ public final class WorkerRuntime {
         // die Auswahl nichts, und er stünde für immer auf IDLE — der stille
         // Fehlschlag, den man am längsten sucht. Lieber einmal sagen, was
         // fehlt.
-        if (WorkerKind.of(worker) == Expr.Selector.Kind.POWER) {
+        if (WorkerKind.of(worker, templates) == Expr.Selector.Kind.POWER) {
             state.status = Status.HALTED;
             state.detail = "Strom wird noch nicht verteilt";
             note(worker, "Die Schreibweise für Strom steht, die Verteilung "
@@ -223,7 +240,10 @@ public final class WorkerRuntime {
         }
 
         int batch = batchOf(worker);
-        List<Item> filter = filterItems(worker);
+        List<Item> filter = filterItems(worker, state);
+        if (state.status == Status.HALTED) {
+            return;
+        }
         state.strategyOverride = strategyOf(worker);
 
         boolean fromStorage = isStorage(from.value());
@@ -634,16 +654,46 @@ public final class WorkerRuntime {
      * wurden: In einem AllTheMods-Pack ist {@code tag:c/ores} der Normalfall
      * und die Aufzählung die Ausnahme.
      */
-    private List<Item> filterItems(Decl.Worker worker) {
+    private List<Item> filterItems(Decl.Worker worker, WorkerState state) {
         Decl.Worker.Entry filter = worker.entry(Decl.Worker.Entry.Kind.FILTER);
         if (filter == null) {
             return List.of();
+        }
+        if (filter.value() instanceof Expr.Name name) {
+            return fromTemplate(worker, state, name, FilterTemplates::items);
         }
         List<Item> resolved = ItemSelection.resolve(filter.value());
         if (resolved.isEmpty()) {
             note(worker, "die Auswahl trifft zurzeit nichts");
         }
         return resolved;
+    }
+
+    /**
+     * Die Arten hinter einem Vorlagennamen.
+     *
+     * <p><b>Halten statt weitermachen.</b> Eine leere Liste heißt für den
+     * Worker „kein Filter", und kein Filter heißt „alles" — wegen eines
+     * Tippfehlers im Vorlagennamen zöge er dann das ganze Lager um.
+     */
+    private <T> List<T> fromTemplate(Decl.Worker worker, WorkerState state, Expr.Name name,
+            java.util.function.Function<Decl.FilterTemplate, List<T>> resolve) {
+        Decl.FilterTemplate template = templates.get(name.value());
+        if (template == null) {
+            state.status = Status.HALTED;
+            state.detail = "Die Vorlage " + name.value() + " gibt es nicht";
+            note(worker, "filter " + name.value() + " — eine Vorlage dieses Namens steht "
+                    + "in keiner Datei des Projekts.");
+            return List.of();
+        }
+        try {
+            return resolve.apply(template);
+        } catch (ScriptError error) {
+            state.status = Status.HALTED;
+            state.detail = error.getMessage();
+            note(worker, error.getMessage());
+            return List.of();
+        }
     }
 
 
@@ -662,7 +712,10 @@ public final class WorkerRuntime {
             NetworkFluids fluids, WorkerState state, Decl.Worker.Entry from,
             Decl.Worker.Entry to) {
         int batch = batchOf(worker);
-        List<Fluid> filter = filterFluids(worker);
+        List<Fluid> filter = filterFluids(worker, state);
+        if (state.status == Status.HALTED) {
+            return;
+        }
         state.strategyOverride = strategyOf(worker);
 
         boolean fromStorage = isStorage(from.value());
@@ -855,10 +908,13 @@ public final class WorkerRuntime {
     }
 
     /** Die Sorten, auf die gefiltert wird. */
-    private List<Fluid> filterFluids(Decl.Worker worker) {
+    private List<Fluid> filterFluids(Decl.Worker worker, WorkerState state) {
         Decl.Worker.Entry filter = worker.entry(Decl.Worker.Entry.Kind.FILTER);
         if (filter == null) {
             return List.of();
+        }
+        if (filter.value() instanceof Expr.Name name) {
+            return fromTemplate(worker, state, name, FilterTemplates::fluids);
         }
         List<Fluid> resolved = FluidSelection.resolve(filter.value());
         if (resolved.isEmpty()) {
@@ -873,8 +929,8 @@ public final class WorkerRuntime {
      * <p>Die Regel selbst steht in {@link WorkerKind}, weil die Prüfung im
      * Editor dieselbe braucht. Zwei Fassungen davon liefen auseinander.
      */
-    private static boolean isFluidWorker(Decl.Worker worker) {
-        return WorkerKind.of(worker) == Expr.Selector.Kind.FLUID;
+    private boolean isFluidWorker(Decl.Worker worker) {
+        return WorkerKind.of(worker, templates) == Expr.Selector.Kind.FLUID;
     }
 
     // ---- maintain und when ------------------------------------------------

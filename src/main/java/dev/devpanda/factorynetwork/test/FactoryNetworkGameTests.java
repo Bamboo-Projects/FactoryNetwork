@@ -2589,6 +2589,54 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
+     * Ein Worker filtert nach einer Vorlage.
+     *
+     * <p>Drei Sorten liegen in der Kiste, zwei stehen in der Vorlage, eine
+     * davon nimmt sie wieder heraus. Nur so zeigt der Test beides: dass die
+     * Vorlage greift und dass ihre Ausnahme wirkt.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void aWorkerFiltersByTemplate(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        BlockPos quelle = controller.east().north().north();
+        if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity container) {
+            container.setItem(0, new ItemStack(Items.IRON_ORE, 8));
+            container.setItem(1, new ItemStack(Items.GOLD_ORE, 8));
+            container.setItem(2, new ItemStack(Items.COPPER_ORE, 8));
+        }
+
+        helper.assertTrue(entity.deploy("""
+                filter erze {
+                    item:iron_ore
+                    item:copper_ore
+                    except item:copper_ore
+                }
+
+                worker holt {
+                    from quarry_output
+                    to storage
+                    filter erze
+                    rate 64 per 1t
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+
+        helper.startSequence()
+                .thenIdle(20)
+                .thenExecute(() -> {
+                    helper.assertValueEqual(entity.storage().count(Items.IRON_ORE), 8L,
+                            "Eisenerz steht in der Vorlage");
+                    helper.assertValueEqual(entity.storage().count(Items.COPPER_ORE), 0L,
+                            "Kupfererz nimmt die Ausnahme wieder heraus");
+                    helper.assertValueEqual(entity.storage().count(Items.GOLD_ORE), 0L,
+                            "Golderz steht gar nicht erst darin");
+                })
+                .thenSucceed();
+    }
+
+    /**
      * Eine Vorlage legt zusammen und nimmt heraus.
      *
      * <p>Im GameTest und nicht als Einheitstest: Welche Gegenstände hinter

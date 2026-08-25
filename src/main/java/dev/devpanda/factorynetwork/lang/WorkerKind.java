@@ -3,6 +3,8 @@ package dev.devpanda.factorynetwork.lang;
 import dev.devpanda.factorynetwork.lang.ast.Decl;
 import dev.devpanda.factorynetwork.lang.ast.Expr;
 
+import java.util.Map;
+
 /**
  * Was ein Worker bewegt: Gegenstände, Flüssigkeiten oder Chemikalien.
  *
@@ -25,8 +27,34 @@ public final class WorkerKind {
      * die falsch ist.
      */
     public static Expr.Selector.Kind of(Decl.Worker worker) {
+        return of(worker, Map.of());
+    }
+
+    /**
+     * Dieselbe Frage, wenn das Projekt Filter-Vorlagen kennt.
+     *
+     * <p><b>Ohne die Vorlagen bliebe ein {@code filter kuehlmittel}
+     * unbestimmt</b>, und ein Worker für Flüssigkeiten liefe in den
+     * Gegenstandspfad: Dort träfe seine Auswahl nichts, und er stünde für
+     * immer auf IDLE.
+     */
+    public static Expr.Selector.Kind of(Decl.Worker worker,
+            Map<String, Decl.FilterTemplate> templates) {
         Decl.Worker.Entry filter = worker.entry(Decl.Worker.Entry.Kind.FILTER);
-        return filter == null ? null : selectorKind(filter.value());
+        if (filter == null) {
+            return null;
+        }
+        if (filter.value() instanceof Expr.Name name) {
+            Decl.FilterTemplate template = templates.get(name.value());
+            return template == null ? null : switch (FilterKind.of(template)) {
+                case ITEM -> Expr.Selector.Kind.ITEM;
+                case FLUID -> Expr.Selector.Kind.FLUID;
+                // Gemischt und leer sind Fehler, die FilterCheck meldet. Hier
+                // heißt beides „unbekannt" — geraten wird nicht.
+                case MIXED, EMPTY -> null;
+            };
+        }
+        return selectorKind(filter.value());
     }
 
     /**
