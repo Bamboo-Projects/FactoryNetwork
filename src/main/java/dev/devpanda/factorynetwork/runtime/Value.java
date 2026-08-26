@@ -108,13 +108,23 @@ public sealed interface Value {
             if (colon < 0) {
                 return Kind.UNKNOWN;
             }
-            return switch (selector.substring(0, colon)) {
-                case "item" -> Kind.ITEM;
-                case "fluid" -> Kind.FLUID;
-                case "chemical" -> Kind.CHEMICAL;
-                case "fluidtag" -> Kind.FLUIDTAG;
-                case "tag" -> Kind.TAG;
-                default -> Kind.UNKNOWN;
+            // Dieselbe Liste wie im Lexer und im Parser, und das ist der
+            // Punkt: Sie stand hier einmal zum vierten Mal, mit einer
+            // eigenen Antwort auf ein unbekanntes Wort.
+            var written = ResourceKinds.kindOf(selector.substring(0, colon));
+            if (written == null) {
+                return Kind.UNKNOWN;
+            }
+            return switch (written) {
+                case ITEM -> Kind.ITEM;
+                case FLUID -> Kind.FLUID;
+                case CHEMICAL -> Kind.CHEMICAL;
+                case FLUIDTAG -> Kind.FLUIDTAG;
+                case TAG -> Kind.TAG;
+                // Eine angemeldete fremde Art. Aus einem Text allein lässt
+                // sich hier nicht mehr sagen; wer mehr braucht, nimmt den
+                // Auswahlausdruck und nicht seine Schreibweise.
+                case CUSTOM, POWER, ALL -> Kind.UNKNOWN;
             };
         }
     }

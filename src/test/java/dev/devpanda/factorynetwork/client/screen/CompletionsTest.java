@@ -51,6 +51,24 @@ class CompletionsTest {
     }
 
     @Test
+    @DisplayName("Die angebotenen Präfixe sind die, die es wirklich gibt")
+    void theofferedPrefixesAreTheOnesThatExist() {
+        List<String> shown = at("worker w {", "    filter ");
+
+        // Diese Liste stand einmal fest im Editor, vier Einträge lang, und
+        // kannte „chemical:" nicht — obwohl es das seit dem 26.08. gibt.
+        // Jetzt kommt sie aus der Registry, und damit steht dort dasselbe,
+        // was der Übersetzer annimmt.
+        for (String prefix : dev.devpanda.factorynetwork.runtime.ResourceKinds
+                .selectorPrefixes()) {
+            assertTrue(shown.contains(prefix + ":"),
+                    () -> prefix + ": fehlt im Editor: " + shown);
+        }
+        assertTrue(shown.contains("chemical:"),
+                () -> "chemical: hat vier Monate gefehlt: " + shown);
+    }
+
+    @Test
     @DisplayName("Auf oberster Ebene steht filter neben den anderen Deklarationen")
     void filterIsADeclaration() {
         List<String> shown = at("");

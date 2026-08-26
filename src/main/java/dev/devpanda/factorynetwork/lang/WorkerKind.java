@@ -76,10 +76,22 @@ public final class WorkerKind {
      * ihre Art nicht an der Wurzel.
      */
     public static Expr.Selector.Kind selectorKind(Expr expr) {
+        Expr.Selector selector = selectorOf(expr);
+        return selector == null ? null : selector.kind();
+    }
+
+    /**
+     * Der Auswahlausdruck selbst, durch Menge und Ausnahme hindurch.
+     *
+     * <p>Gebraucht, seit es fremde Arten gibt: Ihre Schreibweise ist
+     * {@code CUSTOM}, und welche Art gemeint ist, steht im Präfix. Wer nur
+     * die Aufzählung hat, kann sie nicht mehr auseinanderhalten.
+     */
+    public static Expr.Selector selectorOf(Expr expr) {
         return switch (expr) {
-            case Expr.Selector selector -> selector.kind();
-            case Expr.Amount amount -> selectorKind(amount.selection());
-            case Expr.Except except -> selectorKind(except.base());
+            case Expr.Selector selector -> selector;
+            case Expr.Amount amount -> selectorOf(amount.selection());
+            case Expr.Except except -> selectorOf(except.base());
             case null, default -> null;
         };
     }

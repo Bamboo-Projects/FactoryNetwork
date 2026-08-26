@@ -50,7 +50,22 @@ public sealed interface Expr {
      * entscheidet erst der Übersetzer: ohne Platzhalter {@code minecraft}, mit
      * Platzhalter alle Namensräume.
      */
-    record Selector(Kind kind, String namespace, String path, Span span) implements Expr {
+    record Selector(Kind kind, String prefix, String namespace, String path, Span span)
+            implements Expr {
+
+        /**
+         * Das Wort vor dem Doppelpunkt, so wie es dastand.
+         *
+         * <p><b>Es ist die Wahrheit, {@link #kind()} ist die Abkürzung.</b>
+         * Seit die Ressourcenarten eine offene Registry sind, gibt es
+         * Präfixe, für die es keinen Aufzählungswert gibt — und für die steht
+         * {@link Kind#CUSTOM} da. Wer den geschriebenen Text braucht, etwa
+         * für eine Meldung, nimmt diesen hier und nicht den Namen der
+         * Aufzählung.
+         */
+        public String prefix() {
+            return prefix;
+        }
 
         public enum Kind {
             ITEM, FLUID, CHEMICAL, TAG,
@@ -88,7 +103,20 @@ public sealed interface Expr {
              * Flüssigkeiten bleiben ausdrücklich: Wer sie meint, schreibt
              * {@code fluid:}, und niemand räumt versehentlich einen Tank leer.
              */
-            ALL
+            ALL,
+            /**
+             * Eine Art, die eine fremde Mod angemeldet hat.
+             *
+             * <p>Welche, sagt {@link Selector#prefix()}. Hier steht nur, dass
+             * es keine der eingebauten ist — der Kern kennt sie nicht, und
+             * das ist seit dem 26.08. erlaubt.
+             *
+             * <p><b>Sie geht durch, wo nach der Art gefragt wird, und bleibt
+             * stehen, wo es um Gegenstände geht.</b> Ein Filter aus
+             * {@code source:} ist keine Gegenstandsauswahl, und
+             * {@code FilterKind} sagt deshalb „unbekannt" statt zu raten.
+             */
+            CUSTOM
         }
 
         public boolean hasPattern() {

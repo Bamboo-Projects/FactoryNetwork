@@ -155,6 +155,24 @@ class ForeignResourceKindTest {
     }
 
     @Test
+    @DisplayName("Ein Programm darf die fremde Art hinschreiben")
+    void aprogramMayWriteTheForeignKind() {
+        // Der eigentliche Beweis: Der Übersetzer kennt „testsource" nicht und
+        // nimmt es trotzdem an — weil er die Registry fragt, statt eine
+        // eingebaute Liste zu haben. Ohne diese Zeile wäre die Registry ein
+        // Innenausbau ohne Tür.
+        var result = new dev.devpanda.factorynetwork.lang.Project(
+                java.util.Map.of("main.mf", """
+                        fn f() {
+                            move 5 testsource:mana from quelle to storage
+                        }""")).parse();
+
+        assertEquals(List.of(), result.diagnostics().stream()
+                        .filter(dev.devpanda.factorynetwork.lang.Diagnostic::isError).toList(),
+                "eine angemeldete Art muss sich hinschreiben lassen");
+    }
+
+    @Test
     @DisplayName("Zweimal dasselbe Präfix ist ein Fehler, kein Zufall")
     void thesamePrefixTwiceIsAnerror() {
         assertThrows(IllegalStateException.class, () -> ResourceKinds.register(SOURCE));

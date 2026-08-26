@@ -633,13 +633,20 @@ public final class Completions {
                 : prefix;
         boolean asTag = prefix.startsWith("tag:");
         if (search.length() < 2 && !prefix.contains(":")) {
-            entries.add(new Entry("item:", "item:", Entry.Kind.KEYWORD));
-            entries.add(new Entry("tag:", "tag:", Entry.Kind.KEYWORD));
-            entries.add(new Entry("fluid:", "fluid:", Entry.Kind.KEYWORD));
-            // Ein Tag über Flüssigkeiten hat eine eigene Art, weil aus der
-            // Zeile hervorgehen muss, ob Gegenstände oder Flüssigkeiten
-            // gemeint sind.
-            entries.add(new Entry("fluidtag:", "fluidtag:", Entry.Kind.KEYWORD));
+            // Aus der Registry und nicht aus einer Liste hier: Seit dem 26.08.
+            // dürfen fremde Mods eigene Arten anmelden, und was der Editor
+            // anbietet, muss dasselbe sein, was der Übersetzer annimmt.
+            //
+            // Die Liste hier stand vier Einträge lang da und kannte
+            // „chemical:" nicht — obwohl es das seit dem 26.08. gibt. Genau
+            // das passiert mit einer Kopie, die niemand nachzieht.
+            //
+            // „tag:" und „fluidtag:" sind keine Arten, sondern Schreibweisen
+            // für zwei davon; selectorPrefixes() trägt beides zusammen.
+            new java.util.TreeSet<>(dev.devpanda.factorynetwork.runtime.ResourceKinds
+                    .selectorPrefixes())
+                    .forEach(known -> entries.add(
+                            new Entry(known + ":", known + ":", Entry.Kind.KEYWORD)));
             return;
         }
         String needle = search.toLowerCase(Locale.ROOT);

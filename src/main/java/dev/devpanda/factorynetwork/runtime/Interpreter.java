@@ -872,8 +872,12 @@ public final class Interpreter {
     }
 
     private Value resolvedSelection(Expr expr) {
-        ResourceKind kind = ResourceKind.orItems(
-                dev.devpanda.factorynetwork.lang.WorkerKind.selectorKind(expr));
+        // Über den Ausdruck und nicht über seine Schreibweise: Eine fremde
+        // Art heißt in der Aufzählung nur CUSTOM, und welche es ist, steht
+        // im Präfix.
+        ResourceKind written = ResourceKind.of(
+                dev.devpanda.factorynetwork.lang.WorkerKind.selectorOf(expr));
+        ResourceKind kind = written == null ? ResourceKinds.ITEM : written;
         List<?> keys = kind.resolve(expr);
         if (keys.isEmpty()) {
             // Ohne Mekanism trifft eine Chemikalienauswahl nichts, und die

@@ -50,6 +50,15 @@ public final class ResourceKinds {
 
     private static boolean frozen;
 
+    /**
+     * Die Liste für den Lexer, einmal gebaut.
+     *
+     * <p>Er fragt sie bei <b>jedem</b> Wort im Quelltext. Sie dort jedes Mal
+     * neu zusammenzusetzen wäre eine Allokation je Token — und die Liste
+     * ändert sich nur beim Anmelden.
+     */
+    private static Set<String> selectorPrefixes;
+
     private ResourceKinds() {
     }
 
@@ -193,6 +202,7 @@ public final class ResourceKinds {
         claim(BY_TAG, kind.tag(), kind, "Der Name auf der Platte „" + kind.tag() + "“");
         claim(BY_TAG, kind.selectionTag(), kind,
                 "Der Name auf der Platte „" + kind.selectionTag() + "“");
+        selectorPrefixes = null;
     }
 
     private static <K> void claim(Map<K, ResourceKind> where, K key, ResourceKind kind,
@@ -244,6 +254,75 @@ public final class ResourceKinds {
     /** Die Präfixe, die ein Programm schreiben darf. */
     public static Set<String> prefixes() {
         return Set.copyOf(BY_PREFIX.keySet());
+    }
+
+    /**
+     * Was der Lexer als Auswahl zusammenkleben darf.
+     *
+     * <p>Die angemeldeten Arten und dazu {@code tag} und {@code fluidtag} —
+     * die sind keine Arten, sondern Schreibweisen für zwei davon.
+     * {@code power} und {@code all} stehen ohne Doppelpunkt und gehören
+     * deshalb nicht dazu.
+     *
+     * <p><b>Diese Liste stand einmal viermal da:</b> im Lexer, im Parser, in
+     * {@code Selectors} und im Wertemodell. Vier Kopien mit drei
+     * verschiedenen Antworten auf ein unbekanntes Wort — der Lexer klebte
+     * nicht, der Parser machte einen Tag daraus, {@code Selectors} gab
+     * {@code null}. Jetzt steht sie hier.
+     */
+    public static Set<String> selectorPrefixes() {
+        Set<String> known = selectorPrefixes;
+        if (known == null) {
+            java.util.Set<String> all = new java.util.LinkedHashSet<>(BY_PREFIX.keySet());
+            all.add("tag");
+            all.add("fluidtag");
+            known = java.util.Set.copyOf(all);
+            selectorPrefixes = known;
+        }
+        return known;
+    }
+
+    /**
+     * Die Schreibweise hinter einem Präfix, oder {@code null}.
+     *
+     * <p>{@code null} heißt: Dieses Wort ist keine Ressourcenart. Der
+     * Aufrufer meldet das — er weiß, wo im Programm es steht.
+     */
+    public static Expr.Selector.Kind kindOf(String prefix) {
+        return switch (prefix) {
+            case "item" -> Expr.Selector.Kind.ITEM;
+            case "fluid" -> Expr.Selector.Kind.FLUID;
+            case "chemical" -> Expr.Selector.Kind.CHEMICAL;
+            case "fluidtag" -> Expr.Selector.Kind.FLUIDTAG;
+            case "tag" -> Expr.Selector.Kind.TAG;
+            default -> BY_PREFIX.containsKey(prefix) ? Expr.Selector.Kind.CUSTOM : null;
+        };
+    }
+
+    /**
+     * Das Präfix, das jemand gemeint haben könnte, oder {@code null}.
+     *
+     * <p>Derselbe Maßstab wie bei Connectornamen und Ereignissen: Ein
+     * ähnlicher Name ist die beste Auskunft, die ganze Liste die zweitbeste.
+     */
+    public static String suggest(String wanted) {
+        String best = null;
+        int bestDistance = Integer.MAX_VALUE;
+        for (String candidate : selectorPrefixes()) {
+            int distance = dev.devpanda.factorynetwork.util.NameDistance
+                    .between(wanted, candidate);
+            if (distance < bestDistance) {
+                bestDistance = distance;
+                best = candidate;
+            }
+        }
+        return dev.devpanda.factorynetwork.util.NameDistance.isCloseEnough(wanted, bestDistance)
+                ? best : null;
+    }
+
+    /** Die bekannten Präfixe, sortiert — für eine Meldung. */
+    public static String known() {
+        return String.join(", ", new java.util.TreeSet<>(selectorPrefixes()));
     }
 
     /**

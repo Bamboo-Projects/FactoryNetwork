@@ -133,8 +133,26 @@ public interface ResourceKind {
             case ITEM, TAG -> ResourceKinds.ITEM;
             case FLUID, FLUIDTAG -> ResourceKinds.FLUID;
             case CHEMICAL -> ResourceKinds.CHEMICAL;
-            case POWER, ALL -> null;
+            // Eine angemeldete fremde Art lässt sich aus der Schreibweise
+            // allein nicht bestimmen — welche es ist, steht im Präfix. Wer
+            // sie braucht, nimmt of(Expr.Selector) und nicht diese hier.
+            case CUSTOM, POWER, ALL -> null;
         };
+    }
+
+    /**
+     * Die Art hinter einem Auswahlausdruck, oder {@code null}.
+     *
+     * <p>Die Fassung, die auch fremde Arten trifft: Bei ihnen steht die
+     * Antwort im Präfix und nicht in der Aufzählung.
+     */
+    static ResourceKind of(Expr.Selector selector) {
+        if (selector == null) {
+            return null;
+        }
+        return selector.kind() == Expr.Selector.Kind.CUSTOM
+                ? ResourceKinds.byPrefix(selector.prefix())
+                : of(selector.kind());
     }
 
     /** Dieselbe Frage für eine Auswahl, die noch als Text dasteht. */

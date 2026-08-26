@@ -240,7 +240,12 @@ public final class NetworkCheck {
             case POWER -> DeviceProfile.Access.Ability.ENERGY;
             // Chemikalien sind noch nicht angebunden; über sie wird nichts
             // behauptet, solange der Server sie nicht proben kann.
-            case CHEMICAL -> null;
+            //
+            // Und über eine fremde Art erst recht nicht: Das Geräteprofil
+            // probt Gegenstände, Flüssigkeiten und Energie — was eine Mod
+            // sonst an einer Maschine erwartet, kann es nicht wissen. Das ist
+            // die zweite Achse aus entscheidungen.md, und sie fehlt.
+            case CHEMICAL, CUSTOM -> null;
         };
         if (needed == null || profile.can(profile.connectedSide(), needed)) {
             return;

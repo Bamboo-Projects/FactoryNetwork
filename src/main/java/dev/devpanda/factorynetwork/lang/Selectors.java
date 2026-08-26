@@ -75,14 +75,9 @@ public final class Selectors {
         if (colon < 0) {
             return null;
         }
-        Expr.Selector.Kind kind = switch (written.substring(0, colon)) {
-            case "item" -> Expr.Selector.Kind.ITEM;
-            case "fluid" -> Expr.Selector.Kind.FLUID;
-            case "chemical" -> Expr.Selector.Kind.CHEMICAL;
-            case "fluidtag" -> Expr.Selector.Kind.FLUIDTAG;
-            case "tag" -> Expr.Selector.Kind.TAG;
-            default -> null;
-        };
+        String prefix = written.substring(0, colon);
+        Expr.Selector.Kind kind = dev.devpanda.factorynetwork.runtime.ResourceKinds
+                .kindOf(prefix);
         if (kind == null) {
             return null;
         }
@@ -98,6 +93,6 @@ public final class Selectors {
             namespace = rest.substring(0, slash);
             path = rest.substring(slash + 1);
         }
-        return new Expr.Selector(kind, namespace, path, new Span(0, 0, 1, 1));
+        return new Expr.Selector(kind, prefix, namespace, path, new Span(0, 0, 1, 1));
     }
 }

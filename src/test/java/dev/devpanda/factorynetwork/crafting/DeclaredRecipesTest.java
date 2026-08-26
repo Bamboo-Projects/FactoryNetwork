@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 class DeclaredRecipesTest {
 
     private static Expr.Selector wasser() {
-        return new Expr.Selector(Expr.Selector.Kind.FLUID, "minecraft", "water",
+        return new Expr.Selector(Expr.Selector.Kind.FLUID, "fluid", "minecraft", "water",
                 Span.of(0, 0, 1, 1));
     }
 

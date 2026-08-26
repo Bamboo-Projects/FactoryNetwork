@@ -1194,14 +1194,16 @@ public final class Parser {
             // schreibt ihn in Rückstrichen — dieselbe Regel wie bei „for".
             case POWER -> {
                 advance();
-                return new Expr.Selector(Expr.Selector.Kind.POWER, "", "", token.span());
+                return new Expr.Selector(
+                        Expr.Selector.Kind.POWER, "power", "", "", token.span());
             }
             // „all" ist die Auswahl, die nichts aussucht: was auch immer
             // darin liegt. Ein Worker ohne filter konnte das seit jeher, eine
             // Funktion hatte keine Schreibweise dafür.
             case ALL -> {
                 advance();
-                return new Expr.Selector(Expr.Selector.Kind.ALL, "", "", token.span());
+                return new Expr.Selector(
+                        Expr.Selector.Kind.ALL, "all", "", "", token.span());
             }
             case NAME_PATTERN -> {
                 advance();
@@ -1209,6 +1211,10 @@ public final class Parser {
             }
             case NAME, ESCAPED_NAME -> {
                 advance();
+                Expr unknown = unknownPrefix(token);
+                if (unknown != null) {
+                    return unknown;
+                }
                 if (at(TokenType.LPAREN)) {
                     Expr callee = new Expr.Name(token.text(), token.span());
                     List<Expr.Argument> arguments = parseArguments();
@@ -1246,6 +1252,52 @@ public final class Parser {
         }
     }
 
+    /**
+     * Ein Wort vor einem Doppelpunkt, das keine Ressourcenart ist.
+     *
+     * <p><b>Der Fehler, der nicht sagt, was los ist.</b> {@code
+     * chemiacl:hydrogen} zerfiel in sechs Meldungen — „Bei move fehlt das
+     * Ziel", „Hier wird ein Wert erwartet, gefunden wurde :", „from ist ein
+     * Schlüsselwort" —, und keine nannte den Tippfehler. Dieselbe Falle wie
+     * bei der aus JEI kopierten Kennung, die am 25.08. behoben wurde; nur galt
+     * die Reparatur dort für die eine Form und nicht für diese.
+     *
+     * <p>Der Lexer klebt eine Auswahl nur zusammen, wenn er ihr Präfix kennt —
+     * und seit die Ressourcenarten offen sind, kennt er die angemeldeten.
+     * Bleibt ein Wort übrig, das mit einem Doppelpunkt weitergeht, war eine
+     * Auswahl gemeint.
+     *
+     * <p><b>Nur wo ein Wert erwartet wird.</b> {@code fn f(x:Int)} steht in
+     * einer Parameterliste und kommt hier nie an, {@code sort(strategy: x)}
+     * hat das Paar schon vorher verbraucht. Beides ist geprüft.
+     *
+     * @return ein Ersatz für den Ausdruck, oder {@code null}, wenn hier
+     *         nichts dergleichen steht
+     */
+    private Expr unknownPrefix(Token name) {
+        if (!at(TokenType.COLON) || peek().span().start() != name.span().end()) {
+            return null;
+        }
+        Token colon = peek();
+        advance();
+        // Der Rest der Auswahl gehört zur Meldung und nicht zur nächsten:
+        // Was unmittelbar folgt, hätte hinter dem Doppelpunkt gestanden.
+        Span span = name.span().to(colon.span());
+        while (!at(TokenType.EOF) && !at(TokenType.NL)
+                && peek().span().start() == previous().span().end()) {
+            span = span.to(peek().span());
+            advance();
+        }
+        String suggestion = dev.devpanda.factorynetwork.runtime.ResourceKinds
+                .suggest(name.text());
+        error(span, quote(name.text()) + " ist keine Ressourcenart.",
+                suggestion != null
+                        ? "Meinst du " + suggestion + ":?"
+                        : "Hier gibt es " + dev.devpanda.factorynetwork.runtime.ResourceKinds
+                                .known() + ". Eine weitere bringt eine Mod mit.");
+        return new Expr.Invalid(span);
+    }
+
     private Expr builtin(Expr.Builtin.Kind kind, Token token) {
         return new Expr.Builtin(kind, token.span());
     }
@@ -1279,13 +1331,12 @@ public final class Parser {
     private Expr parseSelector(Token token) {
         String text = token.text();
         int colon = text.indexOf(':');
-        Expr.Selector.Kind kind = switch (text.substring(0, colon)) {
-            case "item" -> Expr.Selector.Kind.ITEM;
-            case "fluid" -> Expr.Selector.Kind.FLUID;
-            case "chemical" -> Expr.Selector.Kind.CHEMICAL;
-            case "fluidtag" -> Expr.Selector.Kind.FLUIDTAG;
-            default -> Expr.Selector.Kind.TAG;
-        };
+        // Der Lexer klebt nur zusammen, was die Registry kennt — hier kann
+        // deshalb nichts Unbekanntes ankommen. Vorher stand hier ein
+        // default-Zweig, der jedes fremde Wort zu einem Tag machte.
+        String prefix = text.substring(0, colon);
+        Expr.Selector.Kind kind = dev.devpanda.factorynetwork.runtime.ResourceKinds
+                .kindOf(prefix);
         String rest = text.substring(colon + 1);
 
         // <b>Aus JEI kopiert man „mekanism:steel_ingot".</b> Seit dem 25.08.
@@ -1298,7 +1349,7 @@ public final class Parser {
         // meint den Namensraum c und den Pfad ingots/iron.
         int mark = rest.indexOf(':');
         if (mark >= 0) {
-            return new Expr.Selector(kind, rest.substring(0, mark),
+            return new Expr.Selector(kind, prefix, rest.substring(0, mark),
                     rest.substring(mark + 1), token.span());
         }
 
@@ -1311,7 +1362,7 @@ public final class Parser {
             namespace = rest.substring(0, slash);
             path = rest.substring(slash + 1);
         }
-        return new Expr.Selector(kind, namespace, path, token.span());
+        return new Expr.Selector(kind, prefix, namespace, path, token.span());
     }
 
     private List<Expr.Argument> parseArguments() {

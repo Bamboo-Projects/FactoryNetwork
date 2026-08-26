@@ -135,10 +135,10 @@ Der Umbau muss nicht am Stück geschehen, und er sollte es nicht.
    `ResourceStore` heißt sie, `NetworkStores` hält sie nach Art. Der Satz
    „danach ist ein vierter Speicher ein Eintrag und keine Klasse" war zu
    stark — nachgemessen in Abschnitt 5b.
-3. **Die Registry selbst.** ~~Erst jetzt, und dann ist sie klein~~ —
-   **halb gebaut** (26.08.): `ResourceKind` ist eine Schnittstelle,
-   `ResourceKinds` die Registry. Was unterhalb des Übersetzers liegt, ist
-   offen; die Sprachfläche noch nicht. Siehe Abschnitt 5c.
+3. ~~**Die Registry selbst.**~~ **Gebaut** (26.08.), in zwei Hälften:
+   erst `ResourceKind` als Schnittstelle und `ResourceKinds` als Registry
+   (Abschnitt 5c), dann der Übersetzer, der sie fragt statt vier eigene
+   Listen zu führen (Abschnitt 5d).
 4. **Ein Fremdeintrag als Beweis.** Ars Nouveau Source, in `compat/ars` —
    und wenn der Kern dafür angefasst werden muss, ist die Registry nicht
    fertig.
@@ -240,16 +240,84 @@ wurde dafür nicht angefasst.
 
 ### Was noch fehlt, ehrlich benannt
 
-**Der Übersetzer kennt die Präfixe weiterhin fest.** Die Liste steht an
-**vier** Stellen — `Lexer.SELECTOR_KINDS`, `Parser.parseSelector`,
-`Selectors.parse` und `Value.Request.kind()` —, und keine davon fragt die
-Registry. `source:mana` wird deshalb heute noch nicht einmal als Auswahl
-gelesen. Das ist die zweite Hälfte von Schritt 3.
-
 **Die zweite Achse gibt es nicht.** Ein Eintrag sagt, wie seine Art aussieht,
 wie sie sich auflöst und wo sie lagert — nicht, wie man sie an einer fremden
 Maschine liest und schreibt. Steht in `entscheidungen.md` als die benannte
 Grenze dieses Schnitts.
+
+---
+
+## 5d. Schritt 3, zweite Hälfte: der Übersetzer fragt
+
+Gebaut am 26.08. Ein Programm darf jetzt hinschreiben, was eine fremde Mod
+angemeldet hat — belegt in `ForeignResourceKindTest`: `move 5
+testsource:mana` übersetzt ohne einen Fehler, und `testsource` steht nirgends
+im Kern.
+
+### Die Liste stand viermal da, mit drei verschiedenen Antworten
+
+| Stelle | was sie mit einem unbekannten Wort tat |
+|---|---|
+| `Lexer.SELECTOR_KINDS` | klebte es nicht zusammen |
+| `Parser.parseSelector` | machte einen **Tag** daraus |
+| `Selectors.parse` | gab `null` |
+| `Value.Request.kind()` | gab `UNKNOWN` |
+
+Vier Kopien, und keine zwei waren sich einig. Jetzt gibt es
+`ResourceKinds.kindOf(prefix)` und `selectorPrefixes()`, und alle vier fragen
+dort. Der `default`-Zweig im Parser, der jedes fremde Wort zu einem Tag
+machte, ist damit ersatzlos weg: Was der Lexer nicht zusammenklebt, kommt dort
+gar nicht an.
+
+`Expr.Selector` trägt sein Präfix jetzt selbst. Für die eingebauten fünf
+Schreibweisen ist das eine Wiederholung der Aufzählung; für eine fremde Art
+ist es die einzige Wahrheit, und `Kind.CUSTOM` sagt nur noch, dass es keine
+eingebaute ist.
+
+### Der Fehler, der nicht sagte, was los ist
+
+Beim Messen fiel auf, was ein **Tippfehler** heute kostet.
+`move 5 chemiacl:hydrogen from lager to tank` erzeugte:
+
+```
+Bei move fehlt das Ziel. Zum Beispiel: move 64 item:iron_ore from …
+Hier wird ein Wert erwartet, gefunden wurde „:".
+Ein Name allein bewirkt nichts. Fehlen Klammern?
+„from" ist ein Schlüsselwort. Meinst du den Connector gleichen Namens?
+Ein Name allein bewirkt nichts. Fehlen Klammern?
+„to" ist ein Schlüsselwort. Meinst du den Connector gleichen Namens?
+```
+
+Sechs Meldungen, und keine nennt den Tippfehler. **Es ist dieselbe Falle, die
+am 25.08. für eine aus JEI kopierte Kennung behoben wurde** —
+`item:mekanism:steel_ingot`, sieben Meldungen; der Vermerk dazu steht bis
+heute im Lexer. Nur galt die Reparatur für die eine Form und nicht für die
+andere.
+
+Jetzt ist es eine Meldung: *„chemiacl" ist keine Ressourcenart. Meinst du
+chemical:?* Und wenn nichts nah genug liegt, steht die Liste dessen da, was es
+gibt.
+
+Der Parser erkennt sie daran, dass ein Name unmittelbar — ohne Leerzeichen —
+von einem Doppelpunkt gefolgt wird, **an einer Stelle, an der ein Wert
+erwartet wird**. Das ist der Unterschied, den der Lexer nicht machen kann:
+`fn f(x:Int)` steht in einer Parameterliste, `sort(strategy: x)` hat sein Paar
+schon vorher verbraucht. Beides ist als Prüfung festgehalten, denn beides war
+vorher gültig und muss es bleiben.
+
+### Und eine Kopie mehr, im Editor
+
+`Completions` bot vier Präfixe an — `item:`, `tag:`, `fluid:`, `fluidtag:` —
+und kannte `chemical:` nicht, obwohl es das seit dem 26.08. gibt. Eine fünfte
+Kopie derselben Liste, die niemand nachgezogen hatte. Sie kommt jetzt aus der
+Registry.
+
+### Was VS Code angeht
+
+Dort gibt es die Liste gar nicht: Die Erweiterung schlägt keine Präfixe vor.
+Damit ist nichts kaputtgegangen, aber der Weg aus Abschnitt 4 steht weiter
+aus — die Präfixe über `.fn-status.json` hinaustragen, damit VS Code sie
+kennt, und ohne die Datei auf die eingebauten zurückfallen und es sagen.
 
 ---
 

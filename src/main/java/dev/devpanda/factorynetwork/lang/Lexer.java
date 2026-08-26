@@ -24,8 +24,18 @@ import java.util.Set;
  */
 public final class Lexer {
 
-    private static final Set<String> SELECTOR_KINDS =
-            Set.of("item", "fluid", "chemical", "tag", "fluidtag");
+    /**
+     * Was als Auswahl zusammengeklebt wird.
+     *
+     * <p>Nicht mehr fest, sondern aus der Registry: Seit dem 26.08. dürfen
+     * fremde Mods eigene Arten anmelden, und {@code source:mana} muss dann
+     * ein Wort sein und nicht drei. Gefragt wird bei jedem Aufruf — die
+     * Registry steht nach dem Laden fest, und ein Zwischenspeicher hier wäre
+     * eine zweite Wahrheit über dieselbe Liste.
+     */
+    private static Set<String> selectorKinds() {
+        return dev.devpanda.factorynetwork.runtime.ResourceKinds.selectorPrefixes();
+    }
     private static final Set<String> TIME_UNITS = Set.of("t", "s", "min", "h");
 
     private final String source;
@@ -229,7 +239,7 @@ public final class Lexer {
 
         // item:iron_ingot ist eine Auswahl, "item: Item" eine Typangabe.
         // Den Unterschied macht der Leerraum hinter dem Doppelpunkt.
-        if (SELECTOR_KINDS.contains(text) && !atEnd() && peek() == ':'
+        if (selectorKinds().contains(text) && !atEnd() && peek() == ':'
                 && pos + 1 < source.length() && isSelectorPart(source.charAt(pos + 1))) {
             advance();
             while (!atEnd() && isSelectorPart(peek())) {

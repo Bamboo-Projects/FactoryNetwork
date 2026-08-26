@@ -965,6 +965,31 @@ kostet eine neue Art jetzt einen Aufzählungswert, und der Übersetzer fragt
 dazu vier Dinge in einer Datei ab. Was daneben bleibt, ist die Anbindung an
 den Speicher — drei Verzweigungen in `WorldHost` —, und das ist Schnitt 2.
 
+### Der Übersetzer fragt die Registry (seit dem 26.08.)
+
+Schnitt 3, zweite Hälfte. Ein Programm darf jetzt hinschreiben, was eine
+fremde Mod angemeldet hat.
+
+**Die Präfixliste stand viermal da, und keine zwei Kopien waren sich einig,**
+was ein unbekanntes Wort bedeutet: Der Lexer klebte es nicht zusammen, der
+Parser machte einen Tag daraus, `Selectors` gab `null`, das Wertemodell
+`UNKNOWN`. Jetzt fragen alle vier `ResourceKinds`.
+
+**Der Fund dabei war ein Tippfehler.** `chemiacl:hydrogen` erzeugte sechs
+Meldungen, von denen keine ihn nannte — dieselbe Falle wie bei der aus JEI
+kopierten Kennung am 25.08., nur für die andere Form. Der Parser erkennt sie
+jetzt daran, dass ein Name unmittelbar von einem Doppelpunkt gefolgt wird, an
+einer Stelle, an der ein Wert erwartet wird. Das ist die Unterscheidung, die
+der Lexer nicht treffen kann: `fn f(x:Int)` ist gültig und steht in einer
+Parameterliste.
+
+**Und eine fünfte Kopie im Editor:** `Completions` bot `item:`, `tag:`,
+`fluid:` und `fluidtag:` an — `chemical:` fehlte, seit es das gibt.
+
+Was VS Code angeht, ist nichts kaputtgegangen: Dort gibt es die Liste gar
+nicht. Der Weg dorthin — Präfixe über `.fn-status.json`, Rückfall auf die
+eingebauten — steht weiter aus.
+
 ### Die Registry der Ressourcenarten (seit dem 26.08.)
 
 Schnitt 3, erste Hälfte, nachdem die Haltungsfrage mit Ja beantwortet war.

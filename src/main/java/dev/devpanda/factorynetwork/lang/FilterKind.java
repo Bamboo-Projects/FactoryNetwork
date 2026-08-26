@@ -54,10 +54,10 @@ public enum FilterKind {
                 switch (selector.kind()) {
                     case ITEM, TAG -> items = true;
                     case FLUID, FLUIDTAG -> fluids = true;
-                    // Chemikalien und Strom sagen nichts über Gegenstand oder
-                    // Flüssigkeit. Dass sie hier nichts zu suchen haben,
-                    // meldet FilterCheck.
-                    case CHEMICAL, POWER -> { }
+                    // Chemikalien, Strom und fremde Arten sagen nichts über
+                    // Gegenstand oder Flüssigkeit. Dass sie hier nichts zu
+                    // suchen haben, meldet FilterCheck.
+                    case CHEMICAL, POWER, CUSTOM -> { }
                 }
             }
         }
