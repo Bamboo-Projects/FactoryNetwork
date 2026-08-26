@@ -351,17 +351,18 @@ verschwieg, obwohl ohne ihn kein Programm übernommen wird.
 **Damit ist alles leer, was ohne eine Antwort von dir weitergeht** — bis auf
 das Handbuch.
 
-**Drei Fragen liegen bei dir**, und jede blockiert etwas Benanntes:
+**Zwei der drei Fragen sind am 26.08. beantwortet:**
 
-1. **Die Haltungsfrage** (`ressourcenarten.md` §6): Dürfen fremde Mods die
-   Sprache erweitern? Sie entscheidet Schnitt 3 und damit **Ars Nouveau**
-   (7.5), weil Source eine Art ist, die der Kern nicht kennen kann. AE2 und
-   Refined Storage haben sich für 1.21.1 beide dafür entschieden. Schnitt 1
-   und 2 sind gebaut und von der Antwort unabhängig.
-2. **Punkt 4.1, der Serverfall:** nur lesen oder auch schreiben. Der
-   Einzelspielerfall läuft seit dem 26.08. über `.fn-status.json`.
+1. ~~**Die Haltungsfrage**~~ (`ressourcenarten.md` §6): **Ja** — fremde Mods
+   dürfen die Sprache erweitern. Damit ist Schnitt 3 frei und **Ars Nouveau**
+   (7.5) hat einen Weg. Die Begründung steht in `entscheidungen.md`, samt dem,
+   was daran nicht umkehrbar ist.
+2. ~~**Punkt 4.1, der Serverfall:**~~ **lesen und schreiben**, und der
+   Serverbetreiber entscheidet in der Konfiguration — dreistufig: aus, lesen,
+   schreiben. Offen bleibt allein die **Technik**: wie die Verbindung
+   aussieht und wer daran anklopfen kann.
 3. **Punkt 5.4:** die Zahlen an den Serverbauteilen. Die beantwortet eine
-   Runde Spielen und kein Gespräch.
+   Runde Spielen und kein Gespräch — sie ist die letzte offene Frage.
 
 **Was ohne Antwort weitergeht:** weitere Handbuchseiten (6.1). Neunzehn
 stehen. Was fehlt, ist keine Lücke im Stoff mehr — eher Feinarbeit: eine

@@ -295,7 +295,15 @@ Antwort ist damit zu niedrig und nie zu hoch.
 
 ---
 
-## 6. Was zu entscheiden ist
+## 6. Was zu entscheiden war — beantwortet am 26.08.
+
+**Ja.** Fremde Mods dürfen die Sprache erweitern; die Ressourcenart wird eine
+offene Registry. Die Begründung und das, was daran nicht umkehrbar ist, stehen
+in `entscheidungen.md`, „Fremde Mods dürfen die Sprache erweitern".
+
+Was unten steht, ist die Frage, wie sie gestellt war.
+
+---
 
 Nicht die Technik — die steht oben. Sondern:
 

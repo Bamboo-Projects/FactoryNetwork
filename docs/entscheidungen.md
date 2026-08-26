@@ -2370,7 +2370,40 @@ Die Mod bekommt eine Konfiguration, die es bisher nicht gibt — getrennt nach
 Server und Client, wie NeoForge es vorsieht. Der Serverteil trägt die
 Erlaubnis, der Clientteil den Schalter.
 
-### Offen
+### Sie darf lesen und schreiben — und der Betreiber entscheidet (2026-08-26)
+
+Die kleine Fassung wäre gewesen, nur zu lesen: Namen und Fehler hinaus, mehr
+nicht. Sie ist verworfen. Eine Schnittstelle, die den Entwurf nicht setzen
+kann, ersetzt den Ordner neben der Welt nicht — und genau dafür gibt es sie.
+Wer auf einem Server arbeitet, säße dann weiter im Fenster im Spiel und hätte
+daneben eine Anzeige, die ihm sagt, was er dort falsch macht.
+
+**Entschieden wird das aber nicht von der Mod, sondern vom Serverbetreiber, in
+der Konfiguration.** Das ist dieselbe Haltung wie bei `protection.programs`:
+Was in seiner Welt läuft, bestimmt er, und die Mod fragt ihn, statt es
+anzunehmen.
+
+Daraus folgt eine **dreistufige** Einstellung und kein Schalter. Der Betreiber
+hat drei Antworten und nicht zwei:
+
+| Stufe | was hinausgeht | was hereinkommt |
+|---|---|---|
+| aus | nichts | nichts |
+| lesen | Namen, Fehler, Anzeigen | nichts |
+| schreiben | dasselbe | der Entwurf |
+
+Die mittlere Stufe ist keine Sparsamkeit: Ein Betreiber, der die Auskunft
+gerne gibt, aber keinen zweiten Weg will, auf dem Programmtext in seine Welt
+kommt, hat damit eine Antwort. Ohne sie müsste er zwischen „gar nichts" und
+„alles" wählen, und die meisten wählten dann gar nichts.
+
+Die zweite Stufe aus dem Abschnitt darüber bleibt daneben bestehen: Auch wo
+der Server schreiben erlaubt, ist die Verbindung im Client zunächst aus. Der
+Server hat das letzte Wort über sein Spiel, der Spieler über seinen Rechner.
+
+**Weiter offen bleibt die Technik.** Wie die Verbindung aussieht — ein Port im
+Client, an dem VS Code anklopft, und wer sonst noch anklopfen kann — ist damit
+nicht beantwortet. Entschieden ist, *was* sie darf, nicht *wie* sie es tut.
 
 ### Geschaltet wird an beiden Stellen
 
@@ -2387,9 +2420,8 @@ eine Einstellung, die niemand findet, ist keine. **Die Bedenken entscheiden
 stattdessen seine Form:** Er sagt beim Einschalten, was er tut — dass ein
 Port aufgeht und wer daran horcht —, und er steht nicht zwischen den
 Angaben eines Programms, sondern dort, wo es um das Terminal selbst geht.
-- **Was die Schnittstelle überhaupt darf.** Nur lesen (Namen, Fehler) wäre die
-  kleine Fassung; auch schreiben (den Entwurf setzen) macht sie erst zum
-  Ersatz für den Ordner. Zwei verschiedene Erlaubnisse oder eine?
+- ~~**Was die Schnittstelle überhaupt darf.**~~ Beantwortet am 26.08., siehe
+  oben: lesen und schreiben, und der Betreiber entscheidet in drei Stufen.
 - **Wie sie technisch aussieht.** Ein Port im Client, an dem VS Code
   anklopft — mit der Frage, wer sonst noch anklopfen kann.
 
@@ -3883,3 +3915,53 @@ sehen aus wie Zwillinge, sagen aber Verschiedenes, wenn nichts getroffen wird.
 Sie stehen hinter einem `keysOf`, das nach der Art aussucht; zusammengelegt
 werden sie erst, wenn jemand die Meldungen gleichmachen will — und das wäre
 eine Verschlechterung.
+
+## Fremde Mods dürfen die Sprache erweitern (2026-08-26)
+
+Die Haltungsfrage aus `ressourcenarten.md` §6, seit dem 24.08. offen, ist
+beantwortet: **Ja.** Die Ressourcenart wird eine offene Registry statt eines
+festen Aufzählungswerts.
+
+### Was den Ausschlag gab
+
+**Ars Nouveau geht sonst gar nicht.** Source ist eine Art, die der Kern nicht
+kennen kann — mit einem festen Aufzählungswert käme sie nur als
+Kompatibilitätsmodul in *diese* Mod. Das hieße: Für jede Mod, die jemand
+anbinden will, schreibt der Projektinhaber selbst Code, oder es gibt sie
+nicht.
+
+**Zwei große Netze sind unabhängig zum selben Schluss gekommen.** AE2 hat
+`AEKeyType`, Refined Storage hat `ResourceType`, beide für 1.21.1.
+`Applied-Mekanistics` bringt so die Chemikalien hinein, `arseng` das Source —
+und AE2 musste für keine der beiden angefasst werden. Das ist kein Beweis,
+aber es ist das stärkste Argument, das ein Umfeld liefern kann.
+
+**Der Preis war schon bezahlt.** Schnitt 1 und 2 sind am 26.08. gebaut worden,
+beide unabhängig von dieser Frage. Was die Registry teuer gemacht hätte — die
+Zwillinge im Wertemodell, die drei Speicher — ist durch.
+
+### Was daran nicht umkehrbar ist, offen benannt
+
+**Was einmal registriert werden darf, lässt sich nicht mehr einsammeln.** Ein
+Programm mit `source:mana` läuft in einer Welt, deren Kern das Wort nie
+gesehen hat. Wer die Öffnung später zurücknähme, bräche fremde Programme.
+
+**Der Übersetzer kennt die gültigen Präfixe erst zur Laufzeit.** Heute weiß
+er, dass `chemiacl:` ein Tippfehler ist. Danach weiß er es nur, wo die
+Registry erreichbar ist — im Spiel ja, in VS Code über die Statusdatei, und
+ohne sie fällt die Erweiterung auf die eingebauten vier zurück und sagt es.
+
+Beides war vorher benannt und ist mit der Antwort angenommen.
+
+### Was die Registry nicht mitbringt
+
+Sie beantwortet **eine** von zwei Achsen. Ein Eintrag sagt, wie seine Art
+aussieht, wie sie sich auflöst und wo sie lagert — nicht, wie man sie an einer
+fremden Maschine liest und schreibt. Dafür stehen `IItemHandler`,
+`IFluidHandler` und Mekanisms `IChemicalHandler` nebeneinander, und sie haben
+nichts miteinander zu tun.
+
+Das ist keine Nachlässigkeit, sondern die Grenze dieses Schnitts, und sie
+steht hier, damit der Beweis aus §5 Schritt 4 richtig gelesen wird: Wenn Ars
+Nouveau später an dieser Achse hängenbleibt, ist das keine unfertige Registry,
+sondern die zweite Achse, die es noch nicht gibt.
