@@ -50,6 +50,35 @@ public final class WorldHost implements Interpreter.Host {
         this.chemicals = store == null
                 ? dev.devpanda.factorynetwork.network.ChemicalStore.NONE : store;
     }
+
+    /**
+     * Der Stromvorrat des Netzes; setzt der Controller.
+     *
+     * <p>Nachgereicht wie der Chemikalienspeicher. Fehlt er, ist das kein
+     * leeres Netz, sondern gar keines — und dann meldet sich {@code
+     * network.power}, statt null zu erfinden.
+     */
+    private dev.devpanda.factorynetwork.network.NetworkPower power;
+
+    public void setPower(dev.devpanda.factorynetwork.network.NetworkPower store) {
+        this.power = store;
+    }
+
+    @Override
+    public long networkPower() {
+        if (power == null) {
+            return Interpreter.Host.super.networkPower();
+        }
+        return power.stored();
+    }
+
+    @Override
+    public long networkCapacity() {
+        if (power == null) {
+            return Interpreter.Host.super.networkCapacity();
+        }
+        return power.capacity();
+    }
     private final List<LogEntry> logs = new ArrayList<>();
 
     /**

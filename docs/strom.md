@@ -203,11 +203,11 @@ Einstieg, alles Weitere kommt aus dem Pack. Dass das Netz jetzt verteilt,
 ändert daran nichts — es macht die Frage sogar kleiner, weil fremde
 Generatoren über `from generator_1 to network` einspeisen.
 
-**Strom als Wert in der Sprache.** ~~`crusher_1.energy` oder
-`network.power` gibt es nicht.~~ **Halb gebaut am 25.08.:**
-`crusher_1.energy()` liest den Stand einer Maschine — mit Klammern, wie
-`redstone()`. `network.power` gibt es weiterhin nicht: `network` ist als Wert
-nirgends gebaut, und der Vorrat des Netzes steht im Netz-Reiter.
+~~**Strom als Wert in der Sprache.**~~ **Gebaut**, in zwei Schritten:
+`crusher_1.energy()` liest seit dem 25.08. den Stand einer Maschine — mit
+Klammern, wie `redstone()`. Seit dem 26.08. liest `network.power` den Vorrat
+des Netzes und `network.capacity`, was hineinpasst — beide **ohne** Klammern,
+weil sie im Controller liegen und keine Nachfrage in der Welt sind.
 
 **Verbrauchsabhängige Kosten.** Ein Worker, der viel bewegt, kostet nicht mehr
 als einer, der wartet — die Regel von 2026-08-22 gilt unverändert.

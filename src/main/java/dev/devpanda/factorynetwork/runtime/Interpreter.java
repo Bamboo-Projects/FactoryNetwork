@@ -138,6 +138,33 @@ public final class Interpreter {
         }
 
         /**
+         * Wie viel Strom im Netz steht, in FE.
+         *
+         * <p><b>Der eigene Vorrat und keine Nachfrage in der Welt.</b> Er
+         * liegt im Controller, der ihn ohnehin je Takt fortschreibt — deshalb
+         * steht er ohne Klammern da, anders als {@link #energyIn(String)}.
+         *
+         * <p>Ein Host ohne Welt hat kein Netz und sagt es, statt null zu
+         * erfinden: Null hieße „leer", und leer ist etwas anderes als
+         * „gibt es hier nicht".
+         */
+        default long networkPower() {
+            throw new ScriptError("Ohne Welt gibt es keinen Netzvorrat.");
+        }
+
+        /**
+         * Und wie viel hineinpasst.
+         *
+         * <p>Die Bezugsgröße dazu. Eine Zahl allein lässt sich nicht
+         * anzeigen: {@code progress(…)} will einen Anteil, und „12.000 FE"
+         * heißt in einem Netz mit einer Energiezelle etwas anderes als in
+         * einem mit dreißig.
+         */
+        default long networkCapacity() {
+            throw new ScriptError("Ohne Welt gibt es keinen Netzvorrat.");
+        }
+
+        /**
          * Die Geräte einer Gruppe, in der Reihenfolge ihrer Verteilung.
          *
          * <p>Aufgelöst gegen das Netz und nicht gegen das Programm: Ein
@@ -1041,6 +1068,19 @@ public final class Interpreter {
     private Value member(Expr.Member member) {
         Value target = evaluate(member.target());
         String name = member.name();
+        // Das Netz selbst. Ohne Klammern, wie online: Was hier steht, weiß
+        // der Controller ohnehin — es ist kein Blick in eine fremde Maschine.
+        if (target instanceof Value.Builtin builtin && "network".equals(builtin.name())) {
+            return switch (name) {
+                case "power" -> new Value.Int(host.networkPower());
+                case "capacity" -> new Value.Int(host.networkCapacity());
+                default -> throw new ScriptError(
+                        "Am Netz gibt es kein " + name + ".",
+                        "Bekannt sind power und capacity, beide in FE. "
+                                + "Der Stand einer einzelnen Maschine ist "
+                                + "geraet.energy().");
+            };
+        }
         if (target instanceof Value.Device device) {
             return switch (name) {
                 case "online" -> new Value.Bool(host.hasDevice(device.name()));

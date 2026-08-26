@@ -1281,6 +1281,107 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    /**
+     * {@code network.power} liest den Vorrat des laufenden Netzes.
+     *
+     * <p>Die Rechnung dahinter steht im Einheitstest; hier geht es um die
+     * <b>Verdrahtung</b>. Der Controller hält den Vorrat, der Ausdruck fragt
+     * den Host, und ein vergessenes {@code setPower} fiele sonst nirgends
+     * auf: Ohne Welt meldet sich der Ausdruck ehrlich, mit Welt aber sähe man
+     * dieselbe Meldung und hielte sie für richtig.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void networkPowerReadsTheRunningNetwork(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        entity.power().fill(10_000);
+
+        helper.assertTrue(entity.deploy("""
+                fn vorrat() {
+                    return network.power
+                }"""), "Das Programm wurde nicht übernommen");
+
+        var flow = entity.startFlow("vorrat", java.util.List.of());
+
+        helper.assertValueEqual(flow.status().name(), "DONE", "Der Ablauf muss durchlaufen");
+        helper.assertValueEqual(
+                ((dev.devpanda.factorynetwork.runtime.Value.Int) flow.result()).value(),
+                (long) entity.power().stored(),
+                "und dieselbe Zahl liefern, die der Controller hält");
+        helper.succeed();
+    }
+
+    /**
+     * Und ein Worker darf danach fragen: {@code when network.power > …}.
+     *
+     * <p>Das Handbuch verspricht genau diese Zeile — ein Worker, der aufhört,
+     * bevor das Netz ausgeht. Sie hängt an derselben Verdrahtung wie oben,
+     * aber an einem anderen Weg dorthin: Die Bedingung eines Workers wertet
+     * die Laufzeit aus, nicht ein Ablauf.
+     *
+     * <p><b>Geprüft wird der Status und nicht nur der Stillstand.</b> Ein
+     * Worker, der die Bedingung gar nicht auswerten kann, steht auch still —
+     * dann aber auf {@code HALTED}. Der Unterschied ist der ganze Punkt.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void aworkerCanAskForTheNetworkReserve(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        if (helper.getBlockEntity(controller.east().north().north())
+                instanceof ChestBlockEntity chest) {
+            chest.setItem(0, new ItemStack(Items.COBBLESTONE, 64));
+        } else {
+            helper.fail("Keine Kiste als Quelle");
+        }
+
+        // Eine Schwelle, die kein Netz erreicht: Der Worker muss sie ablesen
+        // können und darf trotzdem nicht arbeiten.
+        helper.assertTrue(entity.deploy("""
+                worker holen {
+                    from quarry_output
+                    to storage
+                    filter item:cobblestone
+                    when network.power > 999999999
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+
+        helper.startSequence()
+                .thenIdle(40)
+                .thenExecute(() -> {
+                    var state = entity.runtime().states().get("holen");
+                    helper.assertValueEqual(state.status.name(), "WAITING_CONDITION",
+                            "die Bedingung muss ablesbar und unerfüllt sein, nicht kaputt: "
+                                    + state.detail);
+                    helper.assertValueEqual(entity.storage().count(Items.COBBLESTONE), 0L,
+                            "und nichts bewegt haben");
+                })
+                .thenSucceed();
+    }
+
+    /** Und {@code network.capacity}, wie viel hineinpasst. */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void networkCapacityReadsWhatFits(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                fn platz() {
+                    return network.capacity
+                }"""), "Das Programm wurde nicht übernommen");
+
+        var flow = entity.startFlow("platz", java.util.List.of());
+
+        helper.assertValueEqual(flow.status().name(), "DONE", "Der Ablauf muss durchlaufen");
+        helper.assertValueEqual(
+                ((dev.devpanda.factorynetwork.runtime.Value.Int) flow.result()).value(),
+                (long) entity.power().capacity(),
+                "und die Bezugsgröße liefern, nicht den Stand");
+        helper.succeed();
+    }
+
     /** Ein Programm mit await in if in while — die Vorlage der Ablauf-Tests. */
     private static final String COUNTING_PROGRAM = """
             event Takt(nummer: Int)

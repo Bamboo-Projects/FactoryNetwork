@@ -832,6 +832,44 @@ Er hält nichts, hat keine BlockEntity und kostet keinen Kanal. Strom kostet er
 wie Laufwerk und Router: Ein Ausbau, der nichts kostet, ist keine
 Entscheidung.
 
+### Der Vorrat des Netzes als Wert (seit dem 26.08.)
+
+```
+when network.power < 5000
+```
+
+Damit ist 2.5 zu. `strom.md` §8 nannte `network.power` seit langem als das,
+was es nicht gibt: `network` war ein Ziel für Strom und sonst nichts, und wer
+einen Worker anhalten wollte, solange der Vorrat knapp ist, hatte keine Zahl
+dafür — der Stand stand nur im Netz-Reiter, und den liest kein Programm.
+
+**Ohne Klammern**, anders als `brecher.energy()`. Der Unterschied ist keine
+Geschmacksfrage: `energy()` ist ein Blick in eine fremde Maschine und kostet
+eine Abfrage; der eigene Vorrat liegt im Controller, der ihn ohnehin je Takt
+fortschreibt. Damit steht er auf derselben Stufe wie `online`.
+
+**`capacity` kommt mit**, obwohl die Punkteliste nur `power` nannte. Eine Zahl
+ohne Bezugsgröße lässt sich nicht anzeigen: `progress` will einen Anteil, und
+„12.000 FE" heißt in einem Netz mit einer Energiezelle etwas anderes als in
+einem mit dreißig. Bei `energy()` gibt es die Bezugsgröße nicht — dort weiß
+das Netz nicht, wie groß der Speicher einer fremden Maschine ist.
+
+**Ohne Welt wird nichts erfunden.** Ein Host ohne Netz meldet sich, statt null
+zu liefern — dieselbe Haltung wie bei `countIn`. Null hieße „leer", und leer
+ist etwas anderes als „gibt es hier nicht".
+
+**Der Fehler, den erst der Prüflauf zeigte:** Das erste Handbuchbeispiel
+schrieb `progress "Netz" network.power / network.capacity`. Beides sind ganze
+Zahlen, also teilt Java ganzzahlig, und der Balken hätte immer auf null
+gestanden. Jetzt steht `* 1.0` dort, und ein Einheitstest hält beide Fälle
+fest, statt es nur zu behaupten.
+
+Verdrahtet ist es an derselben Stelle wie der Chemikalienspeicher —
+nachgereicht statt im Konstruktor. Ein vergessenes `setPower` fiele sonst
+nirgends auf: Ohne Welt meldet sich der Ausdruck ehrlich, mit Welt sähe man
+dieselbe Meldung und hielte sie für richtig. Deshalb steht die Verdrahtung als
+eigener Prüflauf da, gegengeprobt durch Entfernen der Zeile.
+
 ### Die Stromverteilung (seit dem 25.08.)
 
 Ein Worker mit `filter power` bewegt jetzt wirklich Strom. **Eine Seite ist

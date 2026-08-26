@@ -113,6 +113,18 @@ class SignaturesExportTest {
         }
         root.add("listMembers", listMembers);
 
+        // Und das Netz. Ohne diesen Block bot die Erweiterung nach
+        // „network." die Gerätemitglieder an — also redstone() an einem Netz.
+        JsonArray networkMembers = new JsonArray();
+        for (Signatures.Member member : Signatures.NETWORK_MEMBERS) {
+            JsonObject entry = new JsonObject();
+            entry.addProperty("name", member.name());
+            entry.addProperty("shape", member.shape());
+            entry.addProperty("help", member.help());
+            networkMembers.add(entry);
+        }
+        root.add("networkMembers", networkMembers);
+
         JsonArray entryMembers = new JsonArray();
         for (Signatures.Member member : Signatures.ENTRY_MEMBERS) {
             JsonObject entry = new JsonObject();

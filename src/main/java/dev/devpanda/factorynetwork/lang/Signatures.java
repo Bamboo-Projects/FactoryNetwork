@@ -305,6 +305,18 @@ public final class Signatures {
                     "Wie viel Strom in der Maschine steht, in FE. Ohne Speicher null."));
 
     /**
+     * Was am Netz selbst steht: {@code network.power}.
+     *
+     * <p><b>Ohne Klammern</b>, anders als {@code geraet.energy()}. Der
+     * Unterschied ist nicht Geschmack: Der Stand einer fremden Maschine ist
+     * ein Blick in die Welt, der eigene Vorrat liegt im Controller.
+     */
+    public static final List<Member> NETWORK_MEMBERS = List.of(
+            new Member("power", "int", "Wie viel Strom im Netz steht, in FE."),
+            new Member("capacity", "int",
+                    "Wie viel hineinpasst, in FE. Die Bezugsgröße zu power."));
+
+    /**
      * Was an einer Liste steht.
      *
      * <p>Alle fünf, die {@code sprache.md} §12 nennt. {@code where} und

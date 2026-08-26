@@ -110,6 +110,11 @@ class GuideReferenceTest {
                 diesem Eintrag.
                 """, Signatures.LIST_MEMBERS);
 
+        members(out, "Was am Netz steht", """
+                Hinter `network`, ohne Klammern. Der Stand einer einzelnen Maschine ist
+                `geraet.energy()`.
+                """, Signatures.NETWORK_MEMBERS);
+
         members(out, "Was an einer Gruppe steht", """
                 Hinter dem Namen einer Gruppe.
                 """, Signatures.GROUP_MEMBERS);

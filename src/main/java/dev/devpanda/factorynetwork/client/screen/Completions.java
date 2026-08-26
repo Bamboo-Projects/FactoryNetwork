@@ -127,6 +127,18 @@ public final class Completions {
             // nur bekannte Connectoren durchlässt — nach „it." kam damit
             // gar nichts.
             String receiver = wordBeforeDot(upToCursor);
+            // Das Netz ist kein Gerät: An ihm stehen power und capacity, und
+            // sonst nichts. Vor der Prüfung auf einen Connector, denn
+            // „network" ist keiner und fiele sonst auf die leere Liste.
+            if ("network".equals(receiver)) {
+                for (Signatures.Member candidate : Signatures.NETWORK_MEMBERS) {
+                    if (matches(candidate.name(), prefix)) {
+                        entries.add(new Entry(candidate.name(), candidate.name(),
+                                Entry.Kind.BUILTIN, candidate.shape()));
+                    }
+                }
+                return limit(entries);
+            }
             // Eine Gruppe ist kein Gerät: An ihr stehen members und send, und
             // sonst nichts.
             if (isGroupName(receiver, lines)) {

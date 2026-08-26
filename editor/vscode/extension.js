@@ -21,7 +21,8 @@ const fs = require('fs');
 const path = require('path');
 
 let table = { blocks: {}, strategies: [], declarations: [], members: [],
-              listMembers: [], builtinEvents: [], freeFunctions: [], topLevel: [] };
+              listMembers: [], networkMembers: [], builtinEvents: [],
+              freeFunctions: [], topLevel: [] };
 
 /** Zu welchen Blockarten Anweisungen gehören statt fester Angaben. */
 const CODE_BLOCKS = ['fn', 'on', 'multiblock'];
@@ -133,6 +134,20 @@ function load(context) {
 function afterDot(document, position) {
     const upToCursor = document.lineAt(position.line).text.substring(0, position.character);
     return /[a-zA-Z_][a-zA-Z0-9_]*\.[a-zA-Z0-9_]*$/.test(upToCursor);
+}
+
+/**
+ * Steht der Cursor hinter dem Punkt eines bestimmten Wortes?
+ *
+ * <p>Fuer `network.`: Das ist ein Punktzugriff wie an einem Geraet, aber die
+ * Mitglieder sind andere. Ohne die Unterscheidung boete die Erweiterung an
+ * einem Netz redstone() an.
+ *
+ * <p>Der Wortanfang wird mitgeprueft, sonst passte `mein_network.` auch.
+ */
+function afterDotOn(document, position, word) {
+    const upToCursor = document.lineAt(position.line).text.substring(0, position.character);
+    return new RegExp('(^|[^a-zA-Z0-9_])' + word + '\\.[a-zA-Z0-9_]*$').test(upToCursor);
 }
 
 /**
@@ -535,6 +550,14 @@ function activate(context) {
             if (afterListCall(document, position)) {
                 return table.listMembers.map(member => item(
                     member.name, vscode.CompletionItemKind.Method,
+                    member.shape, member.help));
+            }
+            // Vor den Geraetemitgliedern: network ist auch ein Punktzugriff,
+            // aber kein Geraet. Ohne diese Zeile bot die Erweiterung an einem
+            // Netz redstone() an.
+            if (afterDotOn(document, position, 'network')) {
+                return table.networkMembers.map(member => item(
+                    member.name, vscode.CompletionItemKind.Property,
                     member.shape, member.help));
             }
             if (afterDot(document, position)) {

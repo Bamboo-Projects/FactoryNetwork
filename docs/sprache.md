@@ -635,6 +635,31 @@ aufhängt.
 Eine Kiste meldet null. Das ist keine erfundene Antwort, sondern die Wahrheit
 über eine Kiste.
 
+### Der Vorrat des Netzes
+
+```
+when network.power < 5000
+```
+
+`network.power` ist der Stromvorrat des ganzen Netzes in FE,
+`network.capacity`, was hineinpasst. Damit lässt sich ein Worker anhalten,
+solange es knapp ist, oder ein Balken aufhängen — **das `* 1.0` gehört dazu**,
+sonst teilt eine Ganzzahl durch eine Ganzzahl und der Balken steht auf null:
+
+```
+progress "Netz" network.power * 1.0 / network.capacity
+```
+
+**Ohne Klammern**, anders als `brecher.energy()` — und der Unterschied ist
+nicht Geschmack. Der Stand einer fremden Maschine ist ein Blick in die Welt,
+der eine Abfrage kostet. Der eigene Vorrat liegt im Controller, der ihn
+ohnehin je Takt fortschreibt; er steht damit auf derselben Stufe wie `online`.
+
+Die Bezugsgröße kommt hier mit, anders als bei `energy()`. Der Grund ist
+derselbe wie dort, nur mit anderer Antwort: Bei einer fremden Maschine weiß
+das Netz nicht, wie groß ihr Speicher ist — beim eigenen Vorrat weiß es das
+genau, und eine Zahl ohne Bezug ließe sich nicht anzeigen.
+
 ### Bestimmte Fächer
 
 ```

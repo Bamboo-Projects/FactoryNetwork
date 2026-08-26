@@ -138,6 +138,16 @@ diesem Eintrag.
 | `without(any) list` | Dieselbe Liste ohne jedes Vorkommen davon. |
 | `rest() list` | Alles außer dem ersten Eintrag. |
 
+## Was am Netz steht
+
+Hinter `network`, ohne Klammern. Der Stand einer einzelnen Maschine ist
+`geraet.energy()`.
+
+| Form | Bedeutung |
+|---|---|
+| `int` | Wie viel Strom im Netz steht, in FE. |
+| `int` | Wie viel hineinpasst, in FE. Die Bezugsgröße zu power. |
+
 ## Was an einer Gruppe steht
 
 Hinter dem Namen einer Gruppe.

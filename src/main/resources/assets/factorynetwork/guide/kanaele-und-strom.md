@@ -209,3 +209,34 @@ viel liefert.
 
 Am Controller steht dasselbe im Tooltip, und an der Brennkammer, ob sie
 brennt, leer ist oder ihren Vorrat nicht loswird.
+
+## Den Vorrat im Programm ablesen
+
+Was im Netz-Reiter steht, liest auch ein Programm:
+
+```
+worker mahlen {
+    from lager
+    to brecher
+    filter tag:c/ores
+    when network.power > 5000
+}
+```
+
+So läuft der Worker nur, solange genug Strom da ist — und hört von selbst auf,
+bevor das Netz ausgeht.
+
+`network.power` ist der Vorrat in FE, `network.capacity`, was hineinpasst.
+Zusammen ergeben sie einen Balken auf einer Anzeigenwand. Das `* 1.0` gehört
+dazu: Ohne es teilt eine ganze Zahl durch eine ganze Zahl, und der Balken
+steht immer auf null.
+
+```
+display Wand {
+    progress "Netz" network.power * 1.0 / network.capacity
+}
+```
+
+Der Stand einer **einzelnen Maschine** heißt anders: `brecher.energy()`, mit
+Klammern. Das ist ein Blick in die fremde Maschine; der Vorrat des Netzes
+liegt im Controller und braucht keine.

@@ -441,6 +441,24 @@ class CompletionsTest {
     }
 
     @Test
+    @DisplayName("Nach network. steht, was am Netz abzulesen ist")
+    void afterNetworkDotTheNetworkMembersAreOffered() {
+        // network ist ein Punktzugriff wie an einem Gerät und doch keiner:
+        // Ohne die Unterscheidung stünde an einem Netz redstone().
+        withNetwork("crusher_1", () -> assertEquals(
+                List.of("power", "capacity"),
+                at("fn test() {", "    if network.")));
+    }
+
+    @Test
+    @DisplayName("An einem Gerät gibt es kein power")
+    void adeviceHasNopower() {
+        withNetwork("crusher_1", () -> assertFalse(
+                at("fn test() {", "    if crusher_1.").contains("power"),
+                "der Stand einer Maschine heißt energy()"));
+    }
+
+    @Test
     @DisplayName("Eine Zahl mit Punkt ist kein Zugriff")
     void aNumberWithADotIsNotAMemberAccess() {
         withNetwork("crusher_1", () -> assertFalse(

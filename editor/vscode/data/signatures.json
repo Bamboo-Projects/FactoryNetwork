@@ -566,6 +566,18 @@
       "help": "Alles außer dem ersten Eintrag."
     }
   ],
+  "networkMembers": [
+    {
+      "name": "power",
+      "shape": "int",
+      "help": "Wie viel Strom im Netz steht, in FE."
+    },
+    {
+      "name": "capacity",
+      "shape": "int",
+      "help": "Wie viel hineinpasst, in FE. Die Bezugsgröße zu power."
+    }
+  ],
   "entryMembers": [
     {
       "name": "amount",

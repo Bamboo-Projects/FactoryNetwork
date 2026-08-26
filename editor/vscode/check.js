@@ -265,6 +265,17 @@ contains('Ohne Punkt keine Mitglieder', ['fn test() {', '    '], 'online', false
 contains('Eine Zahl mit Punkt ist kein Zugriff',
     ['fn test() {', '    let x = 3.'], 'online', false);
 
+// Nach network. steht das Netz selbst und kein Geraet. Beides sind
+// Punktzugriffe, und ohne diese Unterscheidung boete die Erweiterung an einem
+// Netz redstone() an.
+check('Nach network. die Netzmitglieder',
+    complete(['fn test() {', '    if network.']),
+    ['power', 'capacity']);
+contains('Nach network. kein redstone',
+    ['fn test() {', '    if network.'], 'redstone', false);
+contains('Nach einem Geraetepunkt kein power',
+    ['fn test() {', '    if crusher_1.'], 'power', false);
+
 // Hinter einer schließenden Klammer steht eine Liste und kein Gerät.
 // Dieselbe Unterscheidung wie in Completions.afterListCall.
 check('Nach items() die Listenoperationen',
