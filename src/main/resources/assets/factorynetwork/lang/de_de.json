@@ -64,6 +64,7 @@
   "screen.factorynetwork.terminal.status.hint": "Stromvorrat · laufende von möglichen Abläufen · Programmgröße von Datenträgerplatz",
   "screen.factorynetwork.name.title.display": "Anzeige benennen",
   "screen.factorynetwork.name.title.connector": "Gerät benennen",
+  "screen.factorynetwork.name.instance": "Anlage (leer lassen, wenn keine)",
   "screen.factorynetwork.name.field": "Name",
   "screen.factorynetwork.name.apply": "Übernehmen",
   "screen.factorynetwork.name.empty": "Leer lassen nimmt den Namen weg",

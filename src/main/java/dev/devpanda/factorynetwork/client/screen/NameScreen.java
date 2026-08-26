@@ -29,6 +29,25 @@ public class NameScreen extends AbstractContainerScreen<NameMenu> {
     private static final int BUTTON = 20;
     private static final int LINE = 11;
 
+    /** Der Schrägstrich, der eine Anlage von ihrer Rolle trennt. */
+    private static final char SEPARATOR =
+            dev.devpanda.factorynetwork.runtime.MultiblockInstances.SEPARATOR;
+
+    /**
+     * Die Anlage, zu der dieses Gerät gehört — oder leer.
+     *
+     * <p><b>Ein eigenes Feld und kein Schrägstrich zum Tippen.</b> Eine
+     * Anlage entsteht dadurch, dass ihre Geräte {@code werk_1/eingang}
+     * heißen; das steht so in {@code anlagen.md}. Nur sah man dem Fenster
+     * nicht an, dass es das gibt — und bis heute ließ es sich dort nicht
+     * einmal eintippen.
+     *
+     * <p>Was hinausgeht, ist derselbe Name wie vorher. Die zwei Felder sind
+     * eine Lesehilfe und kein zweites Format: Wer den Schrägstrich ins
+     * Namensfeld tippt, bekommt dasselbe Ergebnis.
+     */
+    private EditBox instance;
+
     private EditBox input;
     private Component note = Component.empty();
     private int noteColour = TerminalScreen.TEXT_DIM;
@@ -36,8 +55,28 @@ public class NameScreen extends AbstractContainerScreen<NameMenu> {
     public NameScreen(NameMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
         this.imageWidth = 192;
-        // Rand, Titel, Feld, Hinweiszeile, Knöpfe, Rand.
-        this.imageHeight = PAD + LINE + 4 + FIELD + 3 + LINE + 4 + BUTTON + PAD;
+        // Rand, Titel, Anlage, Titel, Feld, Hinweiszeile, Knöpfe, Rand.
+        this.imageHeight = PAD + LINE + 4 + FIELD + 4
+                + LINE + 4 + FIELD + 3 + LINE + 4 + BUTTON + PAD;
+    }
+
+    /** Der Teil vor dem Schrägstrich, oder leer. */
+    private static String instancePart(String label) {
+        int cut = label.indexOf(SEPARATOR);
+        return cut <= 0 ? "" : label.substring(0, cut);
+    }
+
+    /** Der Teil dahinter — oder der ganze Name, wenn keiner dasteht. */
+    private static String rolePart(String label) {
+        int cut = label.indexOf(SEPARATOR);
+        return cut <= 0 ? label : label.substring(cut + 1);
+    }
+
+    /** Was am Ende hinausgeht. */
+    private String composed() {
+        String anlage = ConnectorNaming.normalize(instance.getValue());
+        String rolle = ConnectorNaming.normalize(input.getValue());
+        return anlage.isEmpty() ? rolle : anlage + SEPARATOR + rolle;
     }
 
     /** Was gerade dransteht — aus dem Block, nicht aus dem Paket. */
@@ -68,12 +107,21 @@ public class NameScreen extends AbstractContainerScreen<NameMenu> {
         super.init();
         int left = leftPos + PAD;
         int width = imageWidth - 2 * PAD;
-        int y = topPos + PAD + LINE + 4;
+        int top = topPos + PAD + LINE + 4;
+        String label = currentName();
 
+        instance = new EditBox(font, left, top, width, FIELD,
+                Component.translatable("screen.factorynetwork.name.instance"));
+        instance.setMaxLength(64);
+        instance.setValue(instancePart(label));
+        instance.setResponder(text -> onTyped(input == null ? "" : input.getValue()));
+        addRenderableWidget(instance);
+
+        int y = top + FIELD + 4 + LINE + 4;
         input = new EditBox(font, left, y, width, FIELD,
                 Component.translatable("screen.factorynetwork.name.field"));
         input.setMaxLength(64);
-        input.setValue(currentName());
+        input.setValue(rolePart(label));
         input.setResponder(this::onTyped);
         addRenderableWidget(input);
         setInitialFocus(input);
@@ -95,7 +143,9 @@ public class NameScreen extends AbstractContainerScreen<NameMenu> {
      * der Server. Hier steht nur, was sich ohne Netzwissen sagen lässt.
      */
     private void onTyped(String text) {
-        ConnectorNaming.Warning result = ConnectorNaming.check(text, null);
+        // Geprüft wird der zusammengesetzte Name und nicht das Feld: Was
+        // hinausgeht, ist werk_1/eingang, und daran hängen die Regeln.
+        ConnectorNaming.Warning result = ConnectorNaming.check(composed(), null);
         switch (result.kind()) {
             case EMPTY -> {
                 note = Component.translatable("screen.factorynetwork.name.empty");
@@ -110,15 +160,17 @@ public class NameScreen extends AbstractContainerScreen<NameMenu> {
                 noteColour = TerminalScreen.WARN;
             }
             default -> {
-                note = Component.translatable("screen.factorynetwork.name.ready");
+                // Der volle Name als Rückmeldung: In einer Anlage steht am
+                // Ende etwas anderes da als das, was man gerade tippt.
+                note = FnFonts.mono(Component.literal(composed()));
                 noteColour = TerminalScreen.GOOD;
             }
         }
     }
 
     private void confirm() {
-        String name = ConnectorNaming.normalize(input.getValue());
-        if (!name.isEmpty() && !ConnectorNaming.isValidIdentifier(name)) {
+        String name = composed();
+        if (!name.isEmpty() && !ConnectorNaming.isValidDeviceName(name)) {
             return;
         }
         PacketDistributor.sendToServer(new SetBlockNamePacket(menu.position(), name));
@@ -143,7 +195,9 @@ public class NameScreen extends AbstractContainerScreen<NameMenu> {
         // Buchstaben wieder in der Welt. Vanilla löst es im Amboss genauso:
         // erst das Feld fragen, dann canConsumeInput, und nur wenn beides
         // verneint, geht die Taste weiter.
-        if (input.keyPressed(key, scanCode, modifiers) || input.canConsumeInput()) {
+        if (input.keyPressed(key, scanCode, modifiers) || input.canConsumeInput()
+                || instance.keyPressed(key, scanCode, modifiers)
+                || instance.canConsumeInput()) {
             return true;
         }
         return super.keyPressed(key, scanCode, modifiers);
@@ -155,18 +209,26 @@ public class NameScreen extends AbstractContainerScreen<NameMenu> {
                 topPos + imageHeight + 1, 0xFF080A09);
         graphics.fill(leftPos, topPos, leftPos + imageWidth, topPos + imageHeight,
                 0xFF232B27);
-        graphics.fill(leftPos + PAD - 1, topPos + PAD + LINE + 3,
-                leftPos + imageWidth - PAD + 1, topPos + PAD + LINE + 4 + FIELD + 1,
-                0xFF080A09);
+        int first = topPos + PAD + LINE + 3;
+        graphics.fill(leftPos + PAD - 1, first,
+                leftPos + imageWidth - PAD + 1, first + FIELD + 1, 0xFF080A09);
+        int second = first + FIELD + 4 + LINE + 4;
+        graphics.fill(leftPos + PAD - 1, second,
+                leftPos + imageWidth - PAD + 1, second + FIELD + 1, 0xFF080A09);
     }
 
     @Override
     protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
+        graphics.drawString(font, FnFonts.mono(Component.translatable(
+                        "screen.factorynetwork.name.instance")),
+                PAD, PAD, TerminalScreen.TEXT_DIM, false);
+        int second = PAD + LINE + 4 + FIELD + 4;
         graphics.drawString(font, FnFonts.mono(Component.translatable(isDisplay()
                         ? "screen.factorynetwork.name.title.display"
                         : "screen.factorynetwork.name.title.connector")),
-                PAD, PAD, TerminalScreen.TEXT, false);
-        graphics.drawString(font, note, PAD, PAD + LINE + 4 + FIELD + 3, noteColour, false);
+                PAD, second, TerminalScreen.TEXT, false);
+        graphics.drawString(font, note, PAD, second + LINE + 4 + FIELD + 3,
+                noteColour, false);
     }
 
     @Override

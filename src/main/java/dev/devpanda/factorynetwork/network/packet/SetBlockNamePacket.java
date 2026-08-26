@@ -75,7 +75,7 @@ public record SetBlockNamePacket(BlockPos position, String name)
      */
     private static void nameWall(DisplayBlockEntity display, String wanted,
                                  ServerPlayer player) {
-        if (!wanted.isEmpty() && !ConnectorNaming.isValidIdentifier(wanted)) {
+        if (!wanted.isEmpty() && !ConnectorNaming.isValidDeviceName(wanted)) {
             say(player, "message.factorynetwork.label_gun.invalid", wanted);
             return;
         }

@@ -147,7 +147,7 @@ public class LabelGunScreen extends Screen {
 
     private void confirm() {
         String name = ConnectorNaming.normalize(input.getValue());
-        if (!name.isEmpty() && !ConnectorNaming.isValidIdentifier(name)) {
+        if (!name.isEmpty() && !ConnectorNaming.isValidDeviceName(name)) {
             return;
         }
         PacketDistributor.sendToServer(new SetLabelPacket(name));

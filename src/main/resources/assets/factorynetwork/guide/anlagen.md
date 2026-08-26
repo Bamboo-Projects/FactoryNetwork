@@ -48,10 +48,16 @@ werk_2/eingang
 werk_2/ausgang
 ```
 
-Damit stehen zwei Anlagen in der Welt. Es braucht dafür keinen weiteren Block,
-keinen Bereich, den man abstecken müsste, und keine Zuordnungsmaske — und die
-Geräte einer Anlage dürfen quer durchs Gebäude verteilt sein, was in großen
-Packs der Normalfall ist.
+Damit stehen zwei Anlagen in der Welt. Es braucht dafür keinen weiteren Block
+und keinen Bereich, den man abstecken müsste — und die Geräte einer Anlage
+dürfen quer durchs Gebäude verteilt sein, was in großen Packs der Normalfall
+ist.
+
+**Den Schrägstrich musst du nicht tippen.** Das Fenster am Connector hat zwei
+Felder: oben die **Anlage**, darunter den **Namen**. Bleibt das obere leer,
+gehört das Gerät zu keiner Anlage. Unter beiden steht, was am Ende
+herauskommt — bei einer Anlage ist das etwas anderes als das, was du gerade
+tippst.
 
 **Der Name der Vorlage steht nirgends in der Beschriftung.** Zu welcher Vorlage
 eine Anlage gehört, wird aus ihren Rollen erschlossen. Die Alternative hätte

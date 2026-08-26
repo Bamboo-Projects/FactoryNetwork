@@ -67,7 +67,7 @@ public final class ConnectorNaming {
         if (trimmed.isBlank()) {
             return new Warning(Kind.EMPTY, null);
         }
-        if (!isValidIdentifier(trimmed)) {
+        if (!isValidDeviceName(trimmed)) {
             return new Warning(Kind.NOT_AN_IDENTIFIER, null);
         }
         if (TokenType.isKeyword(trimmed)) {
@@ -109,7 +109,41 @@ public final class ConnectorNaming {
         return name == null ? "" : Normalizer.normalize(name.trim(), Normalizer.Form.NFC);
     }
 
-    /** Taugt der Name als Bezeichner in Manifold? */
+    /**
+     * Taugt das als Name eines Geräts im Netz?
+     *
+     * <p><b>Ein Bezeichner, oder zwei mit einem Schrägstrich dazwischen.</b>
+     * Die zweite Form baut eine Anlage: {@code werk_1/eingang} heißt „die
+     * Rolle eingang in der Anlage werk_1", und {@code anlagen.md} nennt die
+     * Beschriftungspistole ausdrücklich den Weg, auf dem eine Anlage
+     * entsteht.
+     *
+     * <p><b>Nur ging das nicht.</b> Hier stand {@link #isValidIdentifier},
+     * und der kennt keinen Schrägstrich — Fenster wie Pistole lehnten
+     * {@code werk_1/eingang} ab. Ein Multiblock ließ sich im Spiel damit gar
+     * nicht bauen, obwohl das Handbuch genau diesen Weg beschreibt.
+     *
+     * <p>Zwei Ebenen gibt es nicht: {@code a/b/c} bleibt draußen. Im Code
+     * steht {@code werk_1.schleusen()}, und dafür braucht es genau einen
+     * Namen und eine Rolle.
+     */
+    public static boolean isValidDeviceName(String name) {
+        int cut = name.indexOf(
+                dev.devpanda.factorynetwork.runtime.MultiblockInstances.SEPARATOR);
+        if (cut < 0) {
+            return isValidIdentifier(name);
+        }
+        String instance = name.substring(0, cut);
+        String role = name.substring(cut + 1);
+        return isValidIdentifier(instance) && isValidIdentifier(role);
+    }
+
+    /**
+     * Taugt der Name als Bezeichner in Manifold?
+     *
+     * <p>Ohne Schrägstrich: Der steht in der Beschriftung und nie im Code.
+     * Wer einen Gerätenamen prüft, nimmt {@link #isValidDeviceName}.
+     */
     public static boolean isValidIdentifier(String name) {
         if (name.isEmpty()) {
             return false;

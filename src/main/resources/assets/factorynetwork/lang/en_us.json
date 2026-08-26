@@ -64,6 +64,7 @@
   "screen.factorynetwork.terminal.status.hint": "Energy stored · running of possible flows · program size of disk space",
   "screen.factorynetwork.name.title.display": "Name the display",
   "screen.factorynetwork.name.title.connector": "Name the device",
+  "screen.factorynetwork.name.instance": "Assembly (leave empty for none)",
   "screen.factorynetwork.name.field": "Name",
   "screen.factorynetwork.name.apply": "Apply",
   "screen.factorynetwork.name.empty": "Leave empty to remove the name",

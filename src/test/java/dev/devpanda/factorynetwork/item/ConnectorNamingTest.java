@@ -67,4 +67,37 @@ class ConnectorNamingTest {
         assertEquals("ofen_süd", ConnectorNaming.stripSuffix("ofen_süd"));
         assertEquals("furnace_", ConnectorNaming.stripSuffix("furnace_"));
     }
+
+    @Test
+    @DisplayName("Ein Anlagenname mit Schrägstrich ist ein gültiger Gerätename")
+    void aninstanceNameWithAslashIsAvalidDeviceName() {
+        // anlagen.md nennt die Beschriftungspistole den Weg, auf dem eine
+        // Anlage entsteht: werk_1/eingang. Nur ging das nicht — die Prüfung
+        // kannte den Schrägstrich nicht, und Fenster wie Pistole lehnten ab.
+        // Ein Multiblock liess sich damit im Spiel gar nicht bauen.
+        assertTrue(ConnectorNaming.isValidDeviceName("werk_1/eingang"));
+        assertTrue(ConnectorNaming.isValidDeviceName("schmelze/ofen_2"));
+        assertEquals(ConnectorNaming.Kind.NONE,
+                ConnectorNaming.check("werk_1/eingang", null).kind());
+    }
+
+    @Test
+    @DisplayName("Zwei Schrägstriche sind keine zwei Ebenen")
+    void twoSlashesAreNotTwoLevels() {
+        // Eine Anlage und eine Rolle, mehr nicht. Eine zweite Ebene gäbe es
+        // im Code nicht wiederzugeben — dort steht anlage.rolle und sonst
+        // nichts.
+        assertFalse(ConnectorNaming.isValidDeviceName("a/b/c"));
+        assertFalse(ConnectorNaming.isValidDeviceName("/eingang"));
+        assertFalse(ConnectorNaming.isValidDeviceName("werk_1/"));
+        assertFalse(ConnectorNaming.isValidDeviceName("werk 1/eingang"));
+    }
+
+    @Test
+    @DisplayName("Der Schrägstrich bleibt aus dem Bezeichner heraus")
+    void theslashStaysOutOfTheIdentifier() {
+        // isValidIdentifier sagt, was in Manifold als Name steht. Dort gibt
+        // es keinen Schrägstrich — er steht nur in der Beschriftung.
+        assertFalse(ConnectorNaming.isValidIdentifier("werk_1/eingang"));
+    }
 }
