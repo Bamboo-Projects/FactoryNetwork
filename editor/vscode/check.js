@@ -11,10 +11,6 @@
 // jedem Namen an — dort ist ein zu großzügiger Vorschlag besser als gar
 // keiner. Der Fall „unbekannter Name" steht deshalb nur im Java-Test.
 //
-// Eine zweite Abweichung, und die ist eine Lücke: Was an einem Posten
-// steht — it.item, it.fluid, it.chemical —, bietet nur der Editor im Spiel
-// an. signatures.json trägt die Liste bereits; hier fehlt der Zweig, der
-// sie hinter „it." zeigt. Nicht schlimm, aber auch kein Vorsatz.
 //
 // Ohne Abhängigkeiten: node check.js. Das Modul "vscode" gibt es außerhalb
 // von VS Code nicht, also steht hier eine Attrappe.
@@ -286,6 +282,12 @@ contains('Nach einem Geraetepunkt kein power',
 check('Nach items() die Listenoperationen',
     complete(['fn test() {', '    let x = storage.items().']),
     ['count', 'first', 'sum', 'where', 'sort', 'plus', 'without', 'rest']);
+// Was an einem Posten steht. Dieselbe Liste wie Signatures.ENTRY_MEMBERS —
+// „it" ist kein Gerät, und redstone() daran wäre Unsinn.
+check('Nach it. die Angaben eines Postens',
+    complete(['fn test() {', '    log(it.']),
+    ['amount', 'item', 'fluid', 'chemical']);
+contains('Nach it. kein redstone', ['fn test() {', '    log(it.'], 'redstone', false);
 contains('Nach items() kein online',
     ['fn test() {', '    let x = storage.items().'], 'online', false);
 contains('Nach einem Gerätepunkt kein where',

@@ -21,8 +21,8 @@ const fs = require('fs');
 const path = require('path');
 
 let table = { blocks: {}, strategies: [], declarations: [], members: [],
-              listMembers: [], networkMembers: [], builtinEvents: [],
-              freeFunctions: [], topLevel: [] };
+              listMembers: [], networkMembers: [], entryMembers: [],
+              builtinEvents: [], freeFunctions: [], topLevel: [] };
 
 /** Zu welchen Blockarten Anweisungen gehören statt fester Angaben. */
 const CODE_BLOCKS = ['fn', 'on', 'multiblock'];
@@ -555,6 +555,14 @@ function activate(context) {
             // Vor den Geraetemitgliedern: network ist auch ein Punktzugriff,
             // aber kein Geraet. Ohne diese Zeile bot die Erweiterung an einem
             // Netz redstone() an.
+            // „it" ist ein Posten und kein Gerät: Daran stehen die Menge und
+            // die Sorte, nicht redstone(). signatures.json trug die Liste
+            // schon; gezeigt hat sie hier nie jemand.
+            if (afterDotOn(document, position, 'it')) {
+                return table.entryMembers.map(member => item(
+                    member.name, vscode.CompletionItemKind.Property,
+                    member.shape, member.help));
+            }
             if (afterDotOn(document, position, 'network')) {
                 return table.networkMembers.map(member => item(
                     member.name, vscode.CompletionItemKind.Property,
