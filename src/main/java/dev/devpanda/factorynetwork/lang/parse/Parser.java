@@ -118,7 +118,7 @@ public final class Parser {
      */
     private Decl parseStore() {
         Token keyword = advance();
-        String device = expectName("Gerät");
+        String device = expectName("des Geräts");
         if (device.isEmpty()) {
             recoverToDeclaration();
             return new Decl.Invalid(device, keyword.span());
@@ -169,13 +169,13 @@ public final class Parser {
      */
     private Decl parseRecipe() {
         Token keyword = advance();
-        String name = expectName("Rezept");
+        String name = expectName("des Rezepts");
         if (!expect(TokenType.AT, "Nach dem Namen des Rezepts fehlt at.",
                 "Zum Beispiel: recipe erz_mahlen at brecher { … }")) {
             recoverToDeclaration();
             return new Decl.Invalid(name, keyword.span());
         }
-        String device = expectName("Gerät");
+        String device = expectName("des Geräts");
         if (!expect(TokenType.LBRACE, "Nach dem Gerät fehlt die geschweifte Klammer.")) {
             recoverToDeclaration();
             return new Decl.Invalid(name, keyword.span());
@@ -234,7 +234,7 @@ public final class Parser {
 
     private Decl parseWorker() {
         Token keyword = advance();
-        String name = expectName("Worker");
+        String name = expectName("des Workers");
         if (!expect(TokenType.LBRACE, "Nach dem Namen des Workers fehlt die geschweifte Klammer.")) {
             recoverToDeclaration();
             return new Decl.Invalid(name, keyword.span());
@@ -359,7 +359,7 @@ public final class Parser {
 
     private Decl parseGroup() {
         Token keyword = advance();
-        String name = expectName("Gruppe");
+        String name = expectName("der Gruppe");
         if (!expect(TokenType.LBRACE, "Nach dem Namen der Gruppe fehlt die geschweifte Klammer.")) {
             recoverToDeclaration();
             return new Decl.Invalid(name, keyword.span());
@@ -426,7 +426,7 @@ public final class Parser {
      */
     private Decl parseFilterTemplate() {
         Token keyword = advance();
-        String name = expectName("Vorlage");
+        String name = expectName("der Vorlage");
         if (!expect(TokenType.LBRACE, "Nach dem Namen der Vorlage fehlt die geschweifte Klammer.")) {
             recoverToDeclaration();
             return new Decl.Invalid(name, keyword.span());
@@ -474,7 +474,7 @@ public final class Parser {
 
     private Decl parseMultiblock() {
         Token keyword = advance();
-        String name = expectName("Multiblock");
+        String name = expectName("des Multiblocks");
         if (!expect(TokenType.LBRACE, "Nach dem Namen fehlt die geschweifte Klammer.")) {
             recoverToDeclaration();
             return new Decl.Invalid(name, keyword.span());
@@ -529,14 +529,14 @@ public final class Parser {
 
     private Decl parseEvent() {
         Token keyword = advance();
-        String name = expectName("Ereignis");
+        String name = expectName("des Ereignisses");
         List<Decl.Param> parameters = parseParamList(true);
         return new Decl.Event(name, parameters, keyword.span().to(previous().span()));
     }
 
     private Decl parseDisplay() {
         Token keyword = advance();
-        String name = expectName("Display");
+        String name = expectName("des Displays");
         if (!expect(TokenType.LBRACE, "Nach dem Namen fehlt die geschweifte Klammer.")) {
             recoverToDeclaration();
             return new Decl.Invalid(name, keyword.span());
@@ -642,7 +642,7 @@ public final class Parser {
      */
     private Decl parseGlobal() {
         Token keyword = advance();
-        String name = expectName("globalen Wert");
+        String name = expectName("des globalen Werts");
         boolean hasEquals = expect(TokenType.EQ,
                 "Nach " + name + " fehlt das Gleichheitszeichen.");
 
@@ -677,7 +677,7 @@ public final class Parser {
      */
     private Decl parseConst() {
         Token keyword = advance();
-        String name = expectName("Festwert");
+        String name = expectName("des Festwerts");
         boolean hasEquals = expect(TokenType.EQ,
                 "Nach " + name + " fehlt das Gleichheitszeichen.");
         if (!hasEquals || peek().span().line() != previous().span().line()) {
@@ -693,7 +693,7 @@ public final class Parser {
 
     private Decl parseFn() {
         Token keyword = advance();
-        String name = expectName("Funktion");
+        String name = expectName("der Funktion");
         List<Decl.Param> parameters = parseParamList(true);
         Block body = parseBlock();
         return new Decl.Fn(name, parameters, body, keyword.span().to(body.span()));
@@ -701,7 +701,7 @@ public final class Parser {
 
     private Decl parseOn() {
         Token keyword = advance();
-        String name = expectName("Ereignis");
+        String name = expectName("des Ereignisses");
         List<Decl.Param> parameters = parseParamList(false);
         Block body = parseBlock();
         List<String> names = parameters.stream().map(Decl.Param::name).toList();
@@ -796,7 +796,7 @@ public final class Parser {
         switch (start.type()) {
             case LET -> {
                 advance();
-                String name = expectName("Variable");
+                String name = expectName("der Variablen");
                 expect(TokenType.EQ, "Nach " + name + " fehlt das Gleichheitszeichen.");
                 Expr value = parseExpression();
                 return new Stmt.Let(name, value, start.span().to(value.span()));
@@ -806,7 +806,7 @@ public final class Parser {
             }
             case FOR -> {
                 advance();
-                String variable = expectName("Schleifenvariable");
+                String variable = expectName("der Schleifenvariablen");
                 expect(TokenType.IN, "Nach " + variable + " fehlt in.");
                 Expr iterable = parseExpression();
                 Block body = parseBlock();
@@ -839,7 +839,7 @@ public final class Parser {
             }
             case EMIT -> {
                 advance();
-                String name = expectName("Ereignis");
+                String name = expectName("des Ereignisses");
                 List<Expr.Argument> arguments = parseArguments();
                 return new Stmt.Emit(name, arguments, start.span().to(previous().span()));
             }
@@ -957,7 +957,7 @@ public final class Parser {
 
     private Expr parseAwait() {
         Token keyword = advance();
-        String eventName = expectName("Ereignis");
+        String eventName = expectName("des Ereignisses");
         Expr where = null;
         if (match(TokenType.WHERE)) {
             where = parseOr();
@@ -1444,6 +1444,20 @@ public final class Parser {
 
     // ---- Hilfen -----------------------------------------------------------
 
+    /**
+     * Der Name hinter einem Deklarationswort.
+     *
+     * <p><b>{@code what} steht im Genitiv</b>, und das ist keine Pedanterie:
+     * Vorher stand hier „Der Name der " + what + "", und {@code what} war das
+     * nackte Wort. Für die drei weiblichen ging das auf — „der Name der
+     * Gruppe" —, für alle anderen kam „der Name der Gerät", „der Name der
+     * Worker", „der Name der Display" heraus. Beim ersten Spielen stand es
+     * genau so im Fenster.
+     *
+     * <p>Der Hinweis danach spricht vom <b>Namen</b> und nicht von der Sache:
+     * „Soll er wirklich so heißen" geht für jedes Geschlecht auf, ohne dass
+     * hier eine zweite Angabe mitgeschleppt werden müsste.
+     */
     private String expectName(String what) {
         Token token = peek();
         if (token.is(TokenType.NAME) || token.is(TokenType.ESCAPED_NAME)) {
@@ -1452,13 +1466,13 @@ public final class Parser {
         }
         if (TokenType.isKeyword(token.text())) {
             error(token.span(),
-                    "Der Name der " + what + " fehlt — " + quote(token.text())
+                    "Der Name " + what + " fehlt — " + quote(token.text())
                             + " ist ein Schlüsselwort.",
-                    "Soll die " + what + " wirklich so heißen? Dann schreibe sie in "
+                    "Soll er wirklich so heißen? Dann schreib ihn in "
                             + "Rückstriche: `" + token.text() + "`");
         } else {
             error(token.span(),
-                    "Hier wird der Name der " + what + " erwartet, gefunden wurde "
+                    "Hier wird der Name " + what + " erwartet, gefunden wurde "
                             + describe(token) + ".");
         }
         return "?";

@@ -97,6 +97,36 @@ class UnknownPrefixTest {
     }
 
     @Test
+    @DisplayName("Die Meldung über einen fehlenden Namen ist deutsch")
+    void themessageAboutAmissingNameIsGerman() {
+        // Beim ersten Spielen im Fenster gelesen: „Hier wird der Name der
+        // Gerät erwartet." Der Satz stand einmal da und setzte das nackte
+        // Wort ein — für die drei weiblichen ging das auf, für die acht
+        // anderen nicht.
+        // Dritte Spalte: der Satz, der vorher dastand. Ohne ihn prüfte diese
+        // Schleife nur, dass irgendetwas Richtiges dabeisteht — und nicht,
+        // dass das Falsche weg ist.
+        for (String[] fall : new String[][] {
+                {"store", "des Geräts", "der Gerät"},
+                {"worker", "des Workers", "der Worker"},
+                {"display", "des Displays", "der Display"},
+                {"recipe", "des Rezepts", "der Rezept"},
+                {"multiblock", "des Multiblocks", "der Multiblock"},
+                {"event", "des Ereignisses", "der Ereignis"},
+                {"group", "der Gruppe", null},
+                {"filter", "der Vorlage", null},
+                {"fn", "der Funktion", null}}) {
+            List<Diagnostic> errors = errorsIn(fall[0]);
+            assertTrue(errors.stream().anyMatch(d -> d.message().contains(fall[1])),
+                    () -> fall[0] + " soll " + fall[1] + " nennen: " + errors);
+            if (fall[2] != null) {
+                assertTrue(errors.stream().noneMatch(d -> d.message().contains(fall[2])),
+                        () -> fall[0] + " darf nicht mehr " + fall[2] + " sagen: " + errors);
+            }
+        }
+    }
+
+    @Test
     @DisplayName("Eine Typangabe ohne Leerzeichen bleibt eine Typangabe")
     void atypeAnnotationWithoutAspaceStaysOne() {
         // fn f(x:Int) ist gültig und war es immer. Die neue Meldung darf sie
