@@ -10345,4 +10345,59 @@ public final class FactoryNetworkGameTests {
                 what + ": danach liegt nichts mehr da");
     }
 
+    /**
+     * Eine Chemikalienauswahl, die nichts trifft, meldet sich.
+     *
+     * <p><b>Die dritte Abdrift derselben Art.</b> Schnitt 1 fand sie im
+     * Wertemodell, die Suche in Schnitt 2 fand keine in den Speichern — sie
+     * saß in den Auflösern: Bei Gegenständen und Flüssigkeiten ist „trifft
+     * nichts" ein Fehler mit Meldung, bei Chemikalien kam eine leere Liste
+     * zurück.
+     *
+     * <p>Und leer heißt weiter unten <b>alles</b>: {@code MekTanks.matches}
+     * lässt jede Sorte durch, wenn keine dasteht, und
+     * {@code fillIntoHandler} nimmt dann den ganzen Netzbestand. Ein
+     * Tippfehler in {@code chemical:…} füllte damit irgendein Gas in die
+     * Maschine — dieselbe Klasse Fehler wie ein {@code move} mit leerem
+     * Filter, das die Kiste leerräumt.
+     *
+     * <p>Geprüft wird die <b>Meldung</b> und nicht das Gas: Ein per
+     * {@code setBlock} gestellter Mekanism-Tank gibt an keiner Seite eine
+     * Capability heraus, und der Fehler muss ohnehin fallen, bevor irgendein
+     * Behälter gefragt wird.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void achemicalSelectionThatHitsNothingSaysSo(GameTestHelper helper) {
+        BlockPos controller = bareSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        driveWithChemicalCell(helper, controller.above(),
+                dev.devpanda.factorynetwork.storage.ChemicalCellTier.K256);
+        entity.rebuildNetwork();
+        entity.chemicals().insert("mekanism:hydrogen", 3000);
+
+        helper.assertTrue(
+                dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.installed(),
+                "Der Prüflauf soll Mekanism kennen");
+        helper.assertTrue(entity.deploy("""
+                fn versuchen() {
+                    move 100 chemical:mekanism/gibtesnicht from storage to depot
+                }"""), "Das Programm wurde nicht übernommen");
+
+        boolean gemeldet = false;
+        try {
+            entity.callFunction("versuchen", java.util.List.of());
+        } catch (ScriptError error) {
+            gemeldet = true;
+            helper.assertTrue(error.getMessage().contains("trifft"),
+                    "Die Meldung soll sagen, dass die Auswahl nichts trifft: "
+                            + error.getMessage());
+        }
+        helper.assertTrue(gemeldet,
+                "Eine Chemikalienauswahl, die nichts trifft, darf nicht still 0 liefern — "
+                        + "leer heißt weiter unten alles");
+        helper.assertValueEqual(entity.chemicals().count("mekanism:hydrogen"), 3000L,
+                "und der Wasserstoff muss unangetastet im Netz liegen");
+        helper.succeed();
+    }
+
 }

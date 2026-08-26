@@ -256,11 +256,34 @@ und ist bewusst nicht Teil dieses: Die vierzehn Commits vom 26.08. sind
 test-grün und ungespielt, und der Speicher ist die Stelle, an der ein Fehler
 einen Bestand kostet statt einer Meldung.
 
-### Abgedriftet war hier nichts
+### Die dritte Abdrift saß woanders
 
-In Schritt 1 hatte der Umbau einen Fehler zutage gefördert. Hier wurde
-danach gesucht — drei Verdachtsstellen, an denen die Kopien hätten
-auseinanderlaufen können: der zweite Durchlauf beim Ablegen, die Meldung an
+Gesucht wurde in den Speichern, gefunden wurde sie in den **Auflösern**.
+`itemsOf` und `fluidsOf` in `WorldHost` werfen, wenn eine Auswahl nichts
+trifft; `chemicalsOf` gab eine leere Liste zurück, solange Mekanism nur
+installiert war.
+
+Und leer heißt weiter unten **alles**: `MekTanks.matches` lässt jede Sorte
+durch, wenn keine dasteht, und `fillIntoHandler` nimmt dann den ganzen
+Netzbestand. Ein Tippfehler in `chemical:…` füllte damit irgendein Gas in die
+Maschine, ohne ein Wort zu sagen — dieselbe Klasse Fehler wie in Schnitt 1,
+nur eine Schicht tiefer.
+
+Behoben am 26.08.: `chemicalsOf` wirft jetzt wie die anderen beiden, mit einer
+eigenen Meldung. Der Prüflauf dazu heißt
+`achemicalSelectionThatHitsNothingSaysSo` und prüft die **Meldung** — der
+Fehler muss fallen, bevor irgendein Behälter gefragt wird, und ein per
+`setBlock` gestellter Mekanism-Tank gibt ohnehin keine Capability heraus.
+
+**Damit ist die Geschichte vollständig:** Schnitt 1 fand die erste Abdrift im
+Wertemodell, die Suche in Schnitt 2 fand keine in den Speichern, und die
+dritte saß in den Auflösern. Drei Kopien, drei Stände.
+
+### Abgedriftet war in den Speichern nichts
+
+In Schritt 1 hatte der Umbau einen Fehler zutage gefördert. In den drei
+Speichern wurde danach gesucht — drei Verdachtsstellen, an denen die Kopien
+hätten auseinanderlaufen können: der zweite Durchlauf beim Ablegen, die Meldung an
 das Laufwerk (ohne sie ginge ein Bestand in einem fremden Klotz beim Neustart
 verloren) und der Vergleich der Laufwerksstände. **Alle drei stimmen in allen
 drei Speichern überein.** Der einzige Unterschied war ein fehlendes `room`

@@ -453,7 +453,19 @@ public final class WorldHost implements Interpreter.Host {
                 chemicals, level, target.pos(), target.side(), ids, pulled);
     }
 
-    /** Die Kennungen hinter einer Chemikalien-Auswahl. */
+    /**
+     * Die Kennungen hinter einer Chemikalien-Auswahl.
+     *
+     * <p><b>Nichts getroffen ist ein Fehler und keine leere Liste</b> —
+     * dieselbe Regel wie bei Gegenständen und Flüssigkeiten. Sie fehlte hier,
+     * und das war teuer: Leer heißt weiter unten <i>alles</i>
+     * ({@code MekTanks.matches} lässt jede Sorte durch, wenn keine dasteht).
+     * Ein Tippfehler in {@code chemical:…} füllte damit irgendein Gas aus dem
+     * Netz in die Maschine, ohne ein Wort zu sagen.
+     *
+     * <p>Fehlt Mekanism, sagt die Meldung das, statt so zu tun, als sei das
+     * Pack schuld.
+     */
     private List<String> chemicalsOf(Value value) {
         // Eine schon aufgelöste Auswahl — so kommt jede Chemikalie aus einer
         // Schleife und aus jedem it. Ohne diese beiden Zeilen bliebe die
@@ -469,11 +481,15 @@ public final class WorldHost implements Interpreter.Host {
         if (value instanceof Value.Request request) {
             List<String> ids = dev.devpanda.factorynetwork.compat.mekanism.Chemicals.resolve(
                     dev.devpanda.factorynetwork.lang.Selectors.parse(request.selector()));
-            if (ids.isEmpty()
-                    && !dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.installed()) {
-                throw new ScriptError(
-                        dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.reason(),
-                        dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.hint());
+            if (ids.isEmpty()) {
+                throw dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.installed()
+                        ? new ScriptError("Die Auswahl " + request.selector()
+                                + " trifft keine Chemikalie.",
+                                "Gibt es sie in diesem Pack? Ohne Namensraum ist "
+                                        + "mekanism gemeint.")
+                        : new ScriptError(
+                                dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.reason(),
+                                dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.hint());
             }
             return ids;
         }

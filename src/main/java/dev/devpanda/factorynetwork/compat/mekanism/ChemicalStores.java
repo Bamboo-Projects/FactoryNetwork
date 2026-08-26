@@ -169,6 +169,11 @@ public final class ChemicalStores {
         // Ohne Angabe alles, was im Netz liegt. Der Bestand kommt mit den
         // Schlüsseln der Art heraus — hier sind es Kennungen, und der Weg
         // dorthin lässt keine anderen zu.
+        //
+        // Aus der Sprache kommt diese leere Liste nicht mehr: Ein Worker
+        // ohne filter hält an, und eine Auswahl, die nichts trifft, meldet
+        // sich seit dem 26.08. in WorldHost.chemicalsOf. Vorher tat sie es
+        // nicht, und dann füllte ein Tippfehler irgendein Gas ein.
         java.util.Collection<?> wanted = ids.isEmpty() ? store.contents().keySet() : ids;
         for (Object key : wanted) {
             String id = String.valueOf(key);

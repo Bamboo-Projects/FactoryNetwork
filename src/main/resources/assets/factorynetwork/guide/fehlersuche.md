@@ -183,10 +183,14 @@ lernen. Schreib es auf — `recipe … at … { in … out … }`, siehe *Fertig
 
 ## 6. `chemical:` tut nichts
 
-Zwei verschiedene Meldungen, und der Unterschied sagt dir, wo du suchen musst:
+Drei verschiedene Meldungen, und der Unterschied sagt dir, wo du suchen musst:
 
 - **„Chemikalien brauchen Mekanism"** — die Mod liegt nicht im Pack. Das ist
   eine Auskunft über deine Modliste, nicht über diese Mod.
+- **„Die Auswahl … trifft keine Chemikalie"** — Mekanism läuft, aber diese
+  Sorte gibt es nicht. Meist ein Tippfehler oder ein Gas aus einer Mod, die
+  nicht im Pack liegt. Ohne Namensraum ist `mekanism` gemeint:
+  `chemical:hydrogen` und `chemical:mekanism/hydrogen` sind dasselbe.
 - Kommt nichts an, obwohl Mekanism läuft: **Prüf die Seite.** Eine
   Mekanism-Maschine hat eine Seitenkonfiguration, und das Netz hält sich
   daran. Der Connector muss an einer Seite hängen, die etwas herausgibt oder

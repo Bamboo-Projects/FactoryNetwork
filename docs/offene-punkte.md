@@ -321,9 +321,11 @@ Namen auf der Platte und die Texte aus `describe()` —, weil beides ein
 Übersetzer nie meldet und erst in einer alten Welt oder im Protokoll auffällt.
 
 ~~**Schnitt 2, die drei Speicher hinter eine Schnittstelle.**~~ **Gebaut am
-26.08.** `ResourceStore` und `NetworkStores`; nachgemessen in §5b. Abgedriftet
-war hier nichts — gesucht wurde danach, und dass nichts gefunden wurde, steht
-ebenfalls dort. Ausdrücklich stehengeblieben sind die Maschinenseite (die
+26.08.** `ResourceStore` und `NetworkStores`; nachgemessen in §5b. In den
+Speichern war nichts abgedriftet — in den **Auflösern** schon: `chemicalsOf`
+gab eine leere Liste zurück, wo `itemsOf` und `fluidsOf` werfen, und leer
+heißt weiter unten *alles*. Ein Tippfehler in `chemical:…` füllte irgendein
+Gas ein. Behoben, mit Prüflauf. Ausdrücklich stehengeblieben sind die Maschinenseite (die
 zweite Achse, die eine Registry ebenfalls braucht) und die gemeinsame
 Index-Mechanik der drei Speicher: Die Commits dieses Tages sind ungespielt,
 und der Speicher ist die Stelle, an der ein Fehler einen Bestand kostet statt
