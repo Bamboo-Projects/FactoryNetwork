@@ -2405,6 +2405,12 @@ Server hat das letzte Wort über sein Spiel, der Spieler über seinen Rechner.
 Client, an dem VS Code anklopft, und wer sonst noch anklopfen kann — ist damit
 nicht beantwortet. Entschieden ist, *was* sie darf, nicht *wie* sie es tut.
 
+Der **Entwurf dazu steht seit dem 26.08.** in `editorbruecke.md`: drei Wege
+gemessen, Empfehlung ist ein Ordner, den der Client führt, statt eines Ports.
+Der Einwand gegen den Port ist damit nicht ausgeräumt, sondern umgangen — ein
+Port auf `localhost` ist für jedes Programm des Benutzers erreichbar, nicht
+nur für das eine, für das er gedacht war.
+
 ### Geschaltet wird an beiden Stellen
 
 Konfigurationsdatei **und** ein Schalter im Spiel, beide vollwertig. Auf

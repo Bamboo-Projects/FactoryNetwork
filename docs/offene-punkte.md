@@ -383,10 +383,13 @@ VS Code, das dort vorher gar keine vorschlug.
   `IFluidHandler` und Mekanisms `IChemicalHandler` stehen dafür nebeneinander
   und haben nichts miteinander zu tun. **Ohne sie wird 7.5 nicht fertig**, und
   das ist kein Mangel der Registry — es steht so in `entscheidungen.md`.
-- **Die Technik von 4.1:** wie die Verbindung aussieht und wer daran anklopfen
-  kann. Die Konfiguration dazu kommt mit der Verbindung und nicht davor — ein
-  leerer Abschnitt auf Vorrat wäre eine Frage an den Betreiber, die niemand
-  beantworten kann (dieselbe Regel wie bei 4.2).
+- **Die Technik von 4.1:** **Entwurf steht** (`editorbruecke.md`, 26.08.).
+  Drei Wege gemessen, Empfehlung ist **B — ein Ordner, den der Client führt**,
+  statt eines Ports auf dem Rechner des Spielers. Es macht nichts nach außen
+  auf, benutzt den Weg, der seit dem 25.08. läuft, und erbt die Trennung
+  zwischen Entwurf und laufendem Stand, die die Konfliktfrage schon
+  beantwortet. **Zu entscheiden: ob B statt A.** Die Konfiguration kommt mit
+  der Verbindung und nicht davor — dieselbe Regel wie bei 4.2.
 
 **Was ohne weitere Antwort weitergeht:** die zweite Achse (sie ist Arbeit,
 keine Frage — der Entwurf dafür fehlt allerdings noch) und weitere
