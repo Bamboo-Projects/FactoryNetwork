@@ -141,6 +141,37 @@ tasks.register('syncResources') {
     }
 }
 
+/**
+ * Der Prueflauf der VS-Code-Erweiterung.
+ *
+ * Er stand bis zum 26.08. daneben und musste von Hand gestartet werden —
+ * und niemand tat das zuverlaessig. Die Erweiterung fuehrt dieselben Regeln
+ * wie der Editor im Spiel; zwei Fassungen derselben Regel laufen
+ * auseinander, wenn niemand nachmisst.
+ *
+ * Ohne node wird uebersprungen statt gemeckert: Wer nur die Mod baut,
+ * braucht keine Node-Installation.
+ */
+tasks.register('editorCheck', Exec) {
+    description = 'Prueft die VS-Code-Erweiterung gegen dieselben Faelle wie den Editor im Spiel.'
+    group = 'verification'
+    workingDir = projectDir
+    commandLine 'node', 'editor/vscode/check.js'
+    onlyIf {
+        try {
+            def probe = new ProcessBuilder('node', '--version').start()
+            probe.waitFor() == 0
+        } catch (Exception ignored) {
+            logger.lifecycle('node fehlt — der Prueflauf der Erweiterung wird uebersprungen.')
+            false
+        }
+    }
+}
+
+tasks.named('test') {
+    finalizedBy 'editorCheck'
+}
+
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
     options.release = 21

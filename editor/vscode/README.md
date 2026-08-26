@@ -1,7 +1,8 @@
 # Manifold in VS Code
 
-Syntaxhervorhebung, Vervollständigung, Klammernpaare und Bausteine für
-`.mf`-Dateien — die Sprache, in der Factory Network programmiert wird.
+Syntaxhervorhebung, Vervollständigung, Gliederung, Sprung zur Deklaration,
+Umbenennen, Schnellkorrekturen und Fehlermarker für `.mf`-Dateien — die
+Sprache, in der Factory Network programmiert wird.
 
 ## Wozu
 
@@ -35,13 +36,13 @@ kein `npm install`, kein Übersetzer. Kopieren reicht.
 **Windows**
 
 ```
-xcopy /E /I editor\vscode %USERPROFILE%\.vscode\extensions\devpanda.manifold-0.2.0
+xcopy /E /I editor\vscode %USERPROFILE%\.vscode\extensions\devpanda.manifold-1.0.0
 ```
 
 **Linux und macOS**
 
 ```
-cp -r editor/vscode ~/.vscode/extensions/devpanda.manifold-0.2.0
+cp -r editor/vscode ~/.vscode/extensions/devpanda.manifold-1.0.0
 ```
 
 Danach VS Code neu starten. Eine `.mf`-Datei sollte farbig sein; unten rechts
@@ -57,6 +58,28 @@ Angaben, in einer Funktion die Anweisungen und die Bestände.
 Und innerhalb einer Angabe richtet sie sich danach, welche Stelle dran ist:
 hinter `strategy` die Verteilungen, hinter `move 64` sowohl `from` als auch
 `to` — die Quelle darf ja fehlen.
+
+**Gliederung.** Was eine Datei erklärt, steht in der Übersicht — Funktionen,
+Worker, Ereignisse, Anzeigen, globale Werte, Gruppen, Vorlagen und
+Multiblöcke, jedes mit seiner Art. Nur die eigene Datei: Die Gliederung gehört
+zum Fenster, und darin steht eine.
+
+**Sprung zur Deklaration** (F12). Über das ganze Projekt, aus demselben Grund
+wie die Vervollständigung: Der Namensraum ist einer. Ist ein Name doppelt
+vergeben, kommen beide Stellen — dass er doppelt ist, meldet ohnehin der
+Übersetzer, und bis dahin ist eine Auswahl ehrlicher als ein geratener Treffer.
+
+**Umbenennen** (F2). Ebenfalls über das ganze Projekt, und ebenfalls nur als
+ganzes Wort: Wer `kiste` in `kiste_1` mit umbenennt, hat ein Programm
+zerschrieben, das vorher lief. **Nur erklärte Namen** lassen sich umbenennen —
+ein Gerätename steht am Block in der Welt und nicht in einer Datei.
+
+**Schnellkorrekturen.** Wo das Spiel weiß, was gemeint war — `chemiacl:` statt
+`chemical:` —, steht der Vorschlag als anwendbare Korrektur da. Der Vorschlag
+kommt aus dem Übersetzer und reist in der Statusdatei mit; diese Erweiterung
+rät nicht selbst. Ersetzt wird dabei nur das Wort vor dem Doppelpunkt, obwohl
+die Meldung die ganze Auswahl unterstreicht: Was dahinter steht, war ja
+richtig.
 
 **Namen aus dem ganzen Projekt.** Alle `.mf`-Dateien eines Ordners teilen einen
 Namensraum, und die Vervollständigung liest sie alle: Eine Funktion aus

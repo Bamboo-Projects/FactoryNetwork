@@ -302,21 +302,80 @@ function item(label, kind, detail, doc) {
     return entry;
 }
 
-/** Die Namen, die dieser Text vergibt. */
+/**
+ * Die Namen, die dieser Text vergibt — mit der Stelle, an der sie stehen.
+ *
+ * Zeile und Spalte zählen ab null, wie in VS Code. Sie kosten hier nichts und
+ * sind die Grundlage für Gliederung, Sprung zur Deklaration und Umbenennen:
+ * Ohne sie weiß der Index, dass es einen Namen gibt, aber nicht, wo.
+ *
+ * Die Spalte wird hinter dem Schlüsselwort gesucht und nicht im ganzen
+ * Fundstück. `global l = 1` hat ein `l` in `global`, und wer von vorn sucht,
+ * springt in das Schlüsselwort statt auf den Namen.
+ */
 function symbolsIn(text, file) {
     const found = [];
-    for (const raw of text.split('\n')) {
+    const lines = text.split('\n');
+    for (let number = 0; number < lines.length; number++) {
+        const raw = lines[number];
         const line = raw.trim();
+        const indent = raw.length - raw.trimStart().length;
         for (const declaration of DECLARED_NAMES) {
             const match = declaration.pattern.exec(line);
             if (match) {
-                found.push({ keyword: declaration.keyword, name: match[1], file });
+                const at = line.indexOf(match[1], declaration.keyword.length);
+                found.push({
+                    keyword: declaration.keyword,
+                    name: match[1],
+                    file,
+                    line: number,
+                    column: indent + at,
+                });
                 // Eine Zeile erklärt höchstens einen Namen.
                 break;
             }
         }
     }
     return found;
+}
+
+/** Die Art, die VS Code in der Gliederung neben einen Namen malt. */
+function symbolKind(keyword) {
+    switch (keyword) {
+        case 'fn':
+            return vscode.SymbolKind.Function;
+        case 'worker':
+            return vscode.SymbolKind.Method;
+        case 'event':
+            return vscode.SymbolKind.Event;
+        case 'global':
+            return vscode.SymbolKind.Variable;
+        case 'display':
+            return vscode.SymbolKind.Interface;
+        default:
+            return vscode.SymbolKind.Struct;
+    }
+}
+
+/** Die Stelle eines Symbols als Bereich — der Name, nicht die ganze Zeile. */
+function rangeOf(symbol) {
+    return new vscode.Range(symbol.line, symbol.column,
+        symbol.line, symbol.column + symbol.name.length);
+}
+
+/**
+ * Die Datei, in der ein Symbol steht.
+ *
+ * Der Index führt den Namen unter dem Projekt mit Schrägstrichen — so wie das
+ * Spiel ihn schreibt. Zurück auf die Platte geht es über den Ordner, aus dem
+ * er gelesen wurde.
+ */
+function fileOf(symbol, root, self) {
+    const name = symbol.file || self;
+    if (!name) {
+        return null;
+    }
+    return path.join(root, ...name.split('/'));
 }
 
 /**
@@ -488,6 +547,95 @@ function symbolItems(symbols, keywords, kind) {
             symbol.file ? 'Steht in ' + symbol.file : undefined));
     }
     return items;
+}
+
+/**
+ * Jede Datei des Projekts mit ihrem Text.
+ *
+ * Nicht zwischengespeichert: Umbenannt wird selten, und ein veralteter Text
+ * schriebe hier an die falsche Stelle. Der Zwischenspeicher der
+ * Vervollständigung darf altern, dieser Weg nicht.
+ */
+function textsOf(root) {
+    const found = {};
+    readTexts(root, '', found, 0);
+    return found;
+}
+
+function readTexts(folder, prefix, found, depth) {
+    if (depth > MAX_DEPTH) {
+        return;
+    }
+    let names = [];
+    try {
+        names = fs.readdirSync(folder);
+    } catch (error) {
+        return;
+    }
+    for (const name of names) {
+        const full = path.join(folder, name);
+        let isFolder = false;
+        try {
+            isFolder = fs.statSync(full).isDirectory();
+        } catch (error) {
+            continue;
+        }
+        if (isFolder) {
+            readTexts(full, prefix + name + '/', found, depth + 1);
+            continue;
+        }
+        if (!name.endsWith('.mf')) {
+            continue;
+        }
+        try {
+            found[prefix + name] = fs.readFileSync(full, 'utf8');
+        } catch (error) {
+            // Zwischen Auflisten und Lesen kann die Datei weg sein.
+        }
+    }
+}
+
+/**
+ * Jede Stelle, an der dieses Wort <b>als ganzes Wort</b> steht.
+ *
+ * Als ganzes Wort, weil ein Name in einem längeren steckt: Wer `kiste` in
+ * `kiste_1` mit umbenennt, hat ein Programm zerschrieben, das vorher lief.
+ */
+function occurrences(text, word) {
+    const found = [];
+    const lines = text.split('\n');
+    for (let number = 0; number < lines.length; number++) {
+        const line = lines[number];
+        let at = line.indexOf(word);
+        while (at >= 0) {
+            const before = at === 0 ? '' : line[at - 1];
+            const after = line[at + word.length] || '';
+            if (!/[A-Za-z0-9_]/.test(before) && !/[A-Za-z0-9_]/.test(after)) {
+                found.push({ line: number, column: at });
+            }
+            at = line.indexOf(word, at + 1);
+        }
+    }
+    return found;
+}
+
+/**
+ * Das Wort unter dem Zeiger, oder nichts.
+ *
+ * Ohne Datei gibt es kein Projekt und damit keinen Sprung: Eine Datei, die nie
+ * gespeichert wurde, liegt in keinem Ordner.
+ */
+function wordAt(document, position) {
+    if (!document.uri || document.uri.scheme !== 'file') {
+        return null;
+    }
+    const range = document.getWordRangeAtPosition(position);
+    return range ? document.getText(range) : null;
+}
+
+/** Erklärt dieses Projekt diesen Namen irgendwo? */
+function declaredIn(document, word) {
+    return projectSymbols(document).some(symbol => symbol.name === word);
 }
 
 /** Was an dieser Stelle stehen darf. */
@@ -716,6 +864,131 @@ function activate(context) {
     // Die Fehler aus dem Spiel. Sie kommen ueber die Statusdatei, die der
     // Controller neben die Programme schreibt — kein Port, keine Verbindung,
     // nichts einzuschalten.
+    /**
+     * Die Gliederung: was diese Datei erklärt.
+     *
+     * Nur die eigene Datei — die Gliederung gehört zum Editorfenster, und
+     * darin steht eine. Was die Nachbardateien erklären, findet der Sprung
+     * zur Deklaration.
+     */
+    context.subscriptions.push(vscode.languages.registerDocumentSymbolProvider('manifold', {
+        provideDocumentSymbols(document) {
+            return symbolsIn(document.getText(), null).map(symbol => {
+                const range = rangeOf(symbol);
+                return new vscode.DocumentSymbol(symbol.name, symbol.keyword,
+                    symbolKind(symbol.keyword), range, range);
+            });
+        },
+    }));
+
+    /**
+     * Der Sprung zur Deklaration.
+     *
+     * Über das ganze Projekt und nicht nur über die Datei: Der Namensraum ist
+     * einer, und ein `fn` aus `erz/brecher.mf` wird von `main.mf` gerufen.
+     *
+     * Mehrere Treffer werden alle zurückgegeben. Zwei Dateien dürfen denselben
+     * Namen nicht zweimal vergeben — dass sie es doch tun, meldet der
+     * Übersetzer, und bis dahin ist eine Auswahl ehrlicher als ein geratener
+     * Treffer.
+     */
+    context.subscriptions.push(vscode.languages.registerDefinitionProvider('manifold', {
+        provideDefinition(document, position) {
+            const wanted = wordAt(document, position);
+            if (!wanted) {
+                return null;
+            }
+            const found = [];
+            for (const symbol of projectSymbols(document)) {
+                if (symbol.name !== wanted || symbol.line === undefined) {
+                    continue;
+                }
+                const file = fileOf(symbol, projectRootOf(document.uri.fsPath),
+                    nameUnder(projectRootOf(document.uri.fsPath), document.uri.fsPath));
+                if (file) {
+                    found.push(new vscode.Location(vscode.Uri.file(file), rangeOf(symbol)));
+                }
+            }
+            return found;
+        },
+    }));
+
+    /**
+     * Umbenennen — über das ganze Projekt.
+     *
+     * <b>Warum nicht nur in dieser Datei:</b> Der Namensraum ist einer. Ein
+     * `fn`, das in drei Dateien gerufen wird, hieße nach einer Umbenennung in
+     * nur einer Datei an zwei Stellen anders — und das Programm liefe nicht
+     * mehr.
+     *
+     * <b>Nur erklärte Namen.</b> Über einem Schlüsselwort oder einem
+     * Gerätenamen sagt {@code prepareRename} nein: Gerätenamen stehen am
+     * Block in der Welt, nicht in einer Datei, und ein Schlüsselwort
+     * umzubenennen hieße, die Sprache umzubenennen.
+     */
+    context.subscriptions.push(vscode.languages.registerRenameProvider('manifold', {
+        prepareRename(document, position) {
+            const range = document.getWordRangeAtPosition(position);
+            const word = range ? document.getText(range) : null;
+            if (!word || !declaredIn(document, word)) {
+                throw new Error('Nur erklärte Namen lassen sich umbenennen — '
+                    + 'Gerätenamen stehen am Block in der Welt.');
+            }
+            return range;
+        },
+        provideRenameEdits(document, position, newName) {
+            const wanted = wordAt(document, position);
+            if (!wanted || !declaredIn(document, wanted)) {
+                return null;
+            }
+            if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(newName)) {
+                throw new Error('„' + newName + '" ist kein Name: Buchstaben, '
+                    + 'Ziffern und Unterstrich, und keine Ziffer am Anfang.');
+            }
+            const root = projectRootOf(document.uri.fsPath);
+            const texts = textsOf(root);
+            const change = new vscode.WorkspaceEdit();
+            for (const name of Object.keys(texts)) {
+                const file = vscode.Uri.file(path.join(root, ...name.split('/')));
+                for (const at of occurrences(texts[name], wanted)) {
+                    change.replace(file, new vscode.Range(at.line, at.column,
+                        at.line, at.column + wanted.length), newName);
+                }
+            }
+            return change;
+        },
+    }));
+
+    /**
+     * Schnellkorrekturen — was das Spiel vorschlägt, mit einem Klick.
+     *
+     * <b>Nicht selbst geraten.</b> Der Vorschlag kommt aus der Statusdatei und
+     * damit aus dem Übersetzer, der als Einziger weiß, was gemeint war. Hier
+     * steht nur, wie man ihn anwendet.
+     */
+    context.subscriptions.push(vscode.languages.registerCodeActionsProvider('manifold', {
+        provideCodeActions(document, range, actionContext) {
+            const actions = [];
+            for (const problem of actionContext.diagnostics || []) {
+                if (!problem.fix) {
+                    continue;
+                }
+                const action = new vscode.CodeAction(
+                    'Ersetzen durch „' + problem.fix.text + '"',
+                    vscode.CodeActionKind.QuickFix);
+                action.edit = new vscode.WorkspaceEdit();
+                action.edit.replace(document.uri,
+                    new vscode.Range(problem.fix.line, problem.fix.column,
+                        problem.fix.line, problem.fix.column + problem.fix.length),
+                    problem.fix.text);
+                action.diagnostics = [problem];
+                action.isPreferred = true;
+                actions.push(action);
+            }
+            return actions;
+        },
+    }, { providedCodeActionKinds: [vscode.CodeActionKind.QuickFix] }));
+
     const problems = vscode.languages.createDiagnosticCollection('manifold');
     context.subscriptions.push(problems);
 
@@ -782,6 +1055,17 @@ function refreshDiagnostics(collection, document) {
                 ? vscode.DiagnosticSeverity.Warning
                 : vscode.DiagnosticSeverity.Error);
         entry.source = 'Factory Network';
+        // Der anwendbare Vorschlag reist an der Meldung mit: Die
+        // Schnellkorrektur bekommt von VS Code genau diese Meldungen und
+        // sonst nichts.
+        if (problem.fixText) {
+            entry.fix = {
+                text: problem.fixText,
+                line: Math.max(0, (problem.fixLine || 1) - 1),
+                column: Math.max(0, (problem.fixColumn || 1) - 1),
+                length: Math.max(1, problem.fixLength || 1),
+            };
+        }
         return entry;
     }));
 }

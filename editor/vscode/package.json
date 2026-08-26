@@ -2,7 +2,7 @@
   "name": "manifold",
   "displayName": "Manifold",
   "description": "Syntaxhervorhebung, Vervollständigung und Bausteine für die Sprache der Mod Factory Network",
-  "version": "0.2.0",
+  "version": "1.0.0",
   "publisher": "devpanda",
   "license": "MIT",
   "engines": {
@@ -10,7 +10,13 @@
   },
   "categories": [
     "Programming Languages",
-    "Snippets"
+    "Snippets",
+    "Linters"
+  ],
+  "keywords": [
+    "manifold",
+    "factorynetwork",
+    "minecraft"
   ],
   "contributes": {
     "languages": [

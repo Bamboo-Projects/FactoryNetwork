@@ -1295,6 +1295,11 @@ public final class Parser {
                         ? "Meinst du " + suggestion + ":?"
                         : "Hier gibt es " + dev.devpanda.factorynetwork.runtime.ResourceKinds
                                 .known() + ". Eine weitere bringt eine Mod mit.");
+        if (suggestion != null) {
+            // Nur das Wort davor, nicht die ganze unterstrichene Auswahl:
+            // Was hinter dem Doppelpunkt steht, war ja richtig.
+            replaceLast(name.span(), suggestion);
+        }
         return new Expr.Invalid(span);
     }
 
@@ -1614,6 +1619,21 @@ public final class Parser {
 
     private void error(Span span, String message, String hint) {
         diagnostics.add(new Diagnostic(Diagnostic.Severity.ERROR, span, message, hint));
+    }
+
+    /**
+     * Hängt der zuletzt gemeldeten Meldung einen anwendbaren Vorschlag an.
+     *
+     * <p>Nachträglich und nicht als weiterer Parameter von {@code error}: Der
+     * Vorschlag ist die Ausnahme, und drei Fassungen von {@code error} wären
+     * mehr Aufwand als die eine Stelle wert ist, die ihn heute erzeugt.
+     */
+    private void replaceLast(Span where, String text) {
+        if (diagnostics.isEmpty()) {
+            return;
+        }
+        int last = diagnostics.size() - 1;
+        diagnostics.set(last, diagnostics.get(last).withFix(where, text));
     }
 
     /** Benennt dieses Token eine Verteilung, auch wenn es ein Schlüsselwort ist? */

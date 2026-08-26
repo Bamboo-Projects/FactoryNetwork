@@ -11,7 +11,31 @@ import java.util.Objects;
  * Rückstriche."
  */
 public record Diagnostic(Severity severity, Span span, String message, String hint,
-                         String file) {
+                         String file, Fix fix) {
+
+    /**
+     * Ein Vorschlag, den eine Maschine anwenden kann.
+     *
+     * <p><b>Getrennt vom Hinweis, und mit eigener Stelle.</b> Der Hinweis ist
+     * ein Satz für einen Menschen — „Meinst du {@code chemical}:?" —, und ein
+     * Editor müsste ihn zerpflücken, um daraus eine Schnellkorrektur zu
+     * bauen. Zwei Fassungen derselben Auskunft laufen auseinander; deshalb
+     * steht sie hier zweimal in <i>einer</i> Meldung, einmal als Satz und
+     * einmal als Ersetzung.
+     *
+     * <p>Die eigene Stelle ist nötig, weil sie selten die der Meldung ist:
+     * Bei einer verschriebenen Ressourcenart unterstreicht die Meldung die
+     * ganze Auswahl — {@code chemiacl:hydrogen} —, ersetzt wird aber nur das
+     * Wort davor.
+     */
+    public record Fix(Span span, String text) {
+    }
+
+    /** Ohne Vorschlag — der Normalfall. */
+    public Diagnostic(Severity severity, Span span, String message, String hint,
+                      String file) {
+        this(severity, span, message, hint, file, null);
+    }
 
     /**
      * Ohne Datei — der Übersetzer einer einzelnen Datei weiß nicht, wie sie
@@ -19,12 +43,17 @@ public record Diagnostic(Severity severity, Span span, String message, String hi
      * mehrerer Dateien zusammenlegt.
      */
     public Diagnostic(Severity severity, Span span, String message, String hint) {
-        this(severity, span, message, hint, "");
+        this(severity, span, message, hint, "", null);
     }
 
     /** Dieselbe Meldung, aber mit Dateinamen. */
     public Diagnostic withFile(String file) {
-        return new Diagnostic(severity, span, message, hint, file);
+        return new Diagnostic(severity, span, message, hint, file, fix);
+    }
+
+    /** Dieselbe Meldung, aber mit einem Vorschlag zum Anwenden. */
+    public Diagnostic withFix(Span where, String text) {
+        return new Diagnostic(severity, span, message, hint, file, new Fix(where, text));
     }
 
     public enum Severity {

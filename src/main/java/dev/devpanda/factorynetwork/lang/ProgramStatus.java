@@ -62,7 +62,19 @@ public record ProgramStatus(Map<String, List<Problem>> diagnostics,
      * die Umrechnung gehört dorthin, wo sie gebraucht wird.
      */
     public record Problem(int line, int column, int length, String severity,
-                          String message, String hint) {
+                          String message, String hint,
+                          String fixText, int fixLine, int fixColumn, int fixLength) {
+
+        /** Ohne anwendbaren Vorschlag. */
+        public Problem(int line, int column, int length, String severity,
+                       String message, String hint) {
+            this(line, column, length, severity, message, hint, "", 0, 0, 0);
+        }
+
+        /** Trägt diese Meldung einen Vorschlag, den ein Editor anwenden kann? */
+        public boolean hasFix() {
+            return fixText != null && !fixText.isEmpty();
+        }
     }
 
     /** Der leere Stand — für einen Ordner, in dem noch nichts steht. */
@@ -149,7 +161,29 @@ public record ProgramStatus(Map<String, List<Problem>> diagnostics,
                 + ", \"length\": " + Math.max(1, span.end() - span.start())
                 + ", \"severity\": " + quote(problem.isError() ? "error" : "warning")
                 + ", \"message\": " + quote(problem.message())
-                + ", \"hint\": " + quote(problem.hint()) + "}";
+                + ", \"hint\": " + quote(problem.hint())
+                + fixJson(problem.fix()) + "}";
+    }
+
+    /**
+     * Der anwendbare Vorschlag, flach danebengeschrieben.
+     *
+     * <p>Flach und nicht als eigenes Objekt: Der Leser hier drüber ist von
+     * Hand geschrieben und kennt Zahlen und Zeichenketten — ein
+     * verschachteltes Objekt wäre ein zweiter Leser.
+     *
+     * <p>Ohne Vorschlag steht gar nichts da. Ein leeres Feld wäre dasselbe in
+     * länger.
+     */
+    private static String fixJson(Diagnostic.Fix fix) {
+        if (fix == null) {
+            return "";
+        }
+        return ", \"fixText\": " + quote(fix.text())
+                + ", \"fixLine\": " + fix.span().line()
+                + ", \"fixColumn\": " + fix.span().column()
+                + ", \"fixLength\": "
+                + Math.max(1, fix.span().end() - fix.span().start());
     }
 
     private static String array(List<String> values) {
@@ -228,7 +262,9 @@ public record ProgramStatus(Map<String, List<Problem>> diagnostics,
             String one = body.substring(at + 1, end);
             found.add(new Problem(number(one, "line"), number(one, "column"),
                     number(one, "length"), text(one, "severity"),
-                    text(one, "message"), text(one, "hint")));
+                    text(one, "message"), text(one, "hint"),
+                    text(one, "fixText"), number(one, "fixLine"),
+                    number(one, "fixColumn"), number(one, "fixLength")));
             at = end + 1;
         }
         return List.copyOf(found);

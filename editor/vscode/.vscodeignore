@@ -1,0 +1,14 @@
+# Was nicht ins Paket gehört.
+#
+# Der Prüflauf und sein erfundenes Projekt sind Werkzeug und keine Funktion:
+# Sie laufen bei uns, nicht bei dem, der die Erweiterung installiert.
+check.js
+erfundenes-projekt/**
+
+# Die Quelle der Formtabelle liegt im Mod-Projekt; hier steht nur ihr
+# Erzeugnis, und das wird gebraucht.
+!data/signatures.json
+
+.vscode/**
+.gitignore
+**/*.map

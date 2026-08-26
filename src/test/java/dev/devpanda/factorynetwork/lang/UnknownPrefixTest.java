@@ -63,6 +63,43 @@ class UnknownPrefixTest {
     }
 
     @Test
+    @DisplayName("Der Vorschlag ist anwendbar und trifft nur das Wort davor")
+    void thesuggestionIsApplicableAndHitsOnlyTheWordBefore() {
+        // Der Hinweis ist ein Satz für einen Menschen. Ein Editor müsste ihn
+        // zerpflücken, um daraus eine Schnellkorrektur zu bauen — und zwei
+        // Fassungen derselben Auskunft laufen auseinander. Deshalb trägt die
+        // Meldung den Vorschlag zusätzlich als Ersetzung.
+        Diagnostic error = errorsIn("""
+                fn f() {
+                    move 5 chemiacl:hydrogen from lager to tank
+                }""").get(0);
+
+        assertTrue(error.fix() != null, () -> "ohne Vorschlag: " + error);
+        assertEquals("chemical", error.fix().text());
+
+        // Unterstrichen wird die ganze Auswahl, ersetzt nur das Wort davor:
+        // Was hinter dem Doppelpunkt steht, war ja richtig.
+        assertEquals("chemiacl".length(),
+                error.fix().span().end() - error.fix().span().start(),
+                () -> "der Vorschlag greift zu weit: " + error.fix().span());
+        assertTrue(error.span().end() > error.fix().span().end(),
+                () -> "die Meldung soll mehr unterstreichen als sie ersetzt: " + error);
+    }
+
+    @Test
+    @DisplayName("Ohne gemeinte Art gibt es auch nichts anzuwenden")
+    void withoutAmeantKindThereIsNothingToApply() {
+        // Ein Vorschlag wäre hier geraten, und eine Schnellkorrektur, die rät,
+        // ist schlimmer als keine.
+        Diagnostic error = errorsIn("""
+                fn f() {
+                    move 5 source:mana from quelle to storage
+                }""").get(0);
+
+        assertTrue(error.fix() == null, () -> "geraten: " + error.fix());
+    }
+
+    @Test
     @DisplayName("Ein Präfix aus einer Mod, die fehlt, nennt die bekannten")
     void aprefixFromAmissingModNamesTheKnownOnes() {
         // Kein Tippfehler, sondern eine Art, die es in diesem Pack nicht gibt.

@@ -109,6 +109,34 @@ Module._load = function (request) {
                 this.from = from;
                 this.endLine = endLine;
                 this.to = to;
+                // Wie im echten Gerüst: Ein Bereich hat zwei Enden, und die
+                // Erweiterung greift darauf zu.
+                this.start = { line, character: from };
+                this.end = { line: endLine, character: to };
+            },
+            Uri: { file: (fsPath) => ({ scheme: 'file', fsPath }) },
+            Location: function (uri, range) { this.uri = uri; this.range = range; },
+            WorkspaceEdit: function () {
+                this.edits = [];
+                this.replace = (uri, range, text) => {
+                    this.edits.push(keyOf(uri.fsPath) + '@' + range.line
+                        + ':' + range.from
+                        + (range.to > range.from ? '+' + (range.to - range.from) : '')
+                        + '>' + text);
+                };
+            },
+            CodeAction: function (title, kind) { this.title = title; this.kind = kind; },
+            CodeActionKind: { QuickFix: 'quickfix' },
+            DocumentSymbol: function (name, detail, kind, range, selection) {
+                this.name = name;
+                this.detail = detail;
+                this.kind = kind;
+                this.range = range;
+                this.selectionRange = selection;
+            },
+            SymbolKind: {
+                Function: 11, Method: 5, Event: 23, Variable: 12,
+                Interface: 10, Struct: 22,
             },
             Diagnostic: function (range, message, severity) {
                 this.range = range;
@@ -120,6 +148,10 @@ Module._load = function (request) {
                 registerCompletionItemProvider: (...a) => providers.completion = a[1],
                 registerHoverProvider: (...a) => providers.hover = a[1],
                 registerSignatureHelpProvider: (...a) => providers.signature = a[1],
+                registerDocumentSymbolProvider: (...a) => providers.symbols = a[1],
+                registerDefinitionProvider: (...a) => providers.definition = a[1],
+                registerRenameProvider: (...a) => providers.rename = a[1],
+                registerCodeActionsProvider: (...a) => providers.codeActions = a[1],
                 // Festgehalten wie die Provider: Damit laesst sich pruefen,
                 // was die Erweiterung wirklich eintraegt.
                 createDiagnosticCollection: () => {
@@ -174,9 +206,87 @@ function doc(lines, file) {
         lineAt: (i) => ({ text: lines[i] }),
         // Mit Bereich fragt nur die Erklärung beim Zeigen, und die bekommt
         // hier nichts zu lesen; ohne Bereich ist der ganze Puffer gemeint.
-        getText: (range) => range ? '' : lines.join('\n'),
-        getWordRangeAtPosition: () => null,
+        getText: (range) => {
+            if (!range) {
+                return lines.join('\n');
+            }
+            if (range.start && range.start.line === range.end.line) {
+                return (lines[range.start.line] || '')
+                    .substring(range.start.character, range.end.character);
+            }
+            return '';
+        },
+        // Wie im echten Gerüst: das Wort, in dem der Zeiger steht.
+        getWordRangeAtPosition: (position) => {
+            const text = lines[position.line] || '';
+            const words = /[A-Za-z_][A-Za-z0-9_]*/g;
+            let match;
+            while ((match = words.exec(text)) !== null) {
+                const to = match.index + match[0].length;
+                if (position.character >= match.index && position.character <= to) {
+                    return {
+                        start: { line: position.line, character: match.index },
+                        end: { line: position.line, character: to },
+                    };
+                }
+            }
+            return null;
+        },
     };
+}
+
+/**
+ * Was ein Umbenennen an dieser Stelle änderte — Datei, Zeile, Spalte, Text.
+ *
+ * Ein Fehlschlag wird als Wort zurückgegeben statt geworfen: Die Prüfung soll
+ * die Meldung sehen, nicht daran sterben.
+ */
+function rename(lines, file, line, character, newName) {
+    try {
+        const change = providers.rename
+            .provideRenameEdits(doc(lines, file), { line, character }, newName);
+        return change ? change.edits : [];
+    } catch (error) {
+        return ['FEHLER'];
+    }
+}
+
+/** Ob sich an dieser Stelle überhaupt umbenennen lässt. */
+function renameable(lines, file, line, character) {
+    try {
+        return providers.rename.prepareRename(doc(lines, file), { line, character }) !== null;
+    } catch (error) {
+        return false;
+    }
+}
+
+/**
+ * Die Schnellkorrekturen zu den Meldungen dieser Datei.
+ *
+ * Der Weg ist der von VS Code: Erst traegt die Erweiterung die Meldungen ein,
+ * dann bekommt der Anbieter genau diese Meldungen zurueckgereicht.
+ */
+function fixes(lines, file) {
+    const document = doc(lines, file);
+    providers.opened(document);
+    const found = providers.diagnostics.entries.get(document.uri.fsPath) || [];
+    const actions = providers.codeActions
+        .provideCodeActions(document, null, { diagnostics: found }) || [];
+    return actions.map(action => action.title + ' | ' + action.edit.edits.join(','));
+}
+
+/** Die Namen in der Gliederung dieser Datei. */
+function outline(lines, file) {
+    const found = providers.symbols
+        .provideDocumentSymbols(doc(lines, file)) || [];
+    return found.map(entry => entry.name + ':' + entry.detail + '@' + entry.range.line);
+}
+
+/** Wohin der Sprung an dieser Stelle führt — als Datei und Zeile. */
+function jump(lines, file, line, character) {
+    const found = providers.definition
+        .provideDefinition(doc(lines, file), { line, character }) || [];
+    return found.map(entry => keyOf(entry.uri.fsPath) + '@' + entry.range.line);
 }
 
 function complete(lines, file) {
@@ -492,6 +602,130 @@ contains('Ohne Spiel bleiben die eingebauten',
     ['worker neu {', '    filter '], 'item:', true, 'main.mf');
 contains('Und eine fremde Art steht dann nicht da',
     ['worker neu {', '    filter '], 'source:', false, 'main.mf');
+
+// ---- Gliederung ---------------------------------------------------------
+
+project({ 'main.mf': 'fn main() {\n}\n' });
+
+check('Die Gliederung nennt jede Erklaerung mit Art und Zeile',
+    outline([
+        'global modus = "tag"',
+        '',
+        'fn holen() {',
+        '}',
+        '',
+        'worker nachschub {',
+        '}',
+    ], 'main.mf'),
+    ['modus:global@0', 'holen:fn@2', 'nachschub:worker@5']);
+
+check('Ein Name, der wie ein Schluesselwort anfaengt, wird nicht darin gesucht',
+    outline(['global l = 1'], 'main.mf'),
+    ['l:global@0']);
+
+check('Eine halb getippte Erklaerung steht nicht in der Gliederung',
+    outline(['global modus'], 'main.mf'),
+    []);
+
+// ---- Sprung zur Deklaration --------------------------------------------
+
+project({
+    'main.mf': 'fn main() {\n    holen()\n}\n',
+    'erz/brecher.mf': 'fn holen() {\n}\n',
+});
+
+check('Der Sprung findet die Erklaerung in der Nachbardatei',
+    jump(['fn main() {', '    holen()', '}'], 'main.mf', 1, 6),
+    ['erz/brecher.mf@0']);
+
+// Zwei Dateien duerfen denselben Namen nicht zweimal vergeben; dass sie es
+// doch tun, meldet der Uebersetzer. Bis dahin ist eine Auswahl ehrlicher als
+// ein geratener Treffer.
+check('Ein doppelt vergebener Name liefert beide Stellen',
+    jump(['fn holen() {', '}', 'fn main() {', '    holen()', '}'], 'main.mf', 3, 6),
+    ['erz/brecher.mf@0', 'main.mf@0']);
+
+project({ 'main.mf': 'fn holen() {\n}\n' });
+
+check('Und die eigene Datei allein reicht auch',
+    jump(['fn holen() {', '}', 'fn main() {', '    holen()', '}'], 'main.mf', 3, 6),
+    ['main.mf@0']);
+
+check('Auf einem Wort ohne Erklaerung fuehrt er nirgendwohin',
+    jump(['fn main() {', '    gibt_es_nicht()', '}'], 'main.mf', 1, 8),
+    []);
+
+// ---- Umbenennen ---------------------------------------------------------
+
+project({
+    'main.mf': 'fn holen() {\n}\n\nfn main() {\n    holen()\n}\n',
+    'erz/brecher.mf': 'fn zweit() {\n    holen()\n}\n',
+});
+
+check('Umbenennen fasst jede Datei des Projekts an',
+    rename(['fn holen() {', '}', '', 'fn main() {', '    holen()', '}'],
+        'main.mf', 0, 4, 'abholen'),
+    ['main.mf@0:3+5>abholen', 'main.mf@4:4+5>abholen', 'erz/brecher.mf@1:4+5>abholen']);
+
+project({ 'main.mf': 'fn kiste() {\n}\n\nfn main() {\n    kiste_1.count()\n}\n' });
+
+check('Ein Name in einem laengeren bleibt unberuehrt',
+    rename(['fn kiste() {', '}', '', 'fn main() {', '    kiste_1.count()', '}'],
+        'main.mf', 0, 4, 'lager'),
+    ['main.mf@0:3+5>lager']);
+
+check('Ein Name, den das Projekt nicht erklaert, laesst sich nicht umbenennen',
+    renameable(['fn main() {', '    kiste_1.count()', '}'], 'main.mf', 1, 6),
+    false);
+
+check('Ein erklaerter Name schon',
+    renameable(['fn kiste() {', '}'], 'main.mf', 0, 4),
+    true);
+
+check('Und ein Zielname, der keiner ist, wird abgelehnt',
+    rename(['fn kiste() {', '}'], 'main.mf', 0, 4, '1lager'),
+    ['FEHLER']);
+
+// ---- Schnellkorrektur ---------------------------------------------------
+
+project({
+    'main.mf': 'fn f() {\n    move 5 chemiacl:hydrogen from a to b\n}\n',
+    '.fn-status.json': JSON.stringify({
+        diagnostics: {
+            'main.mf': [{
+                line: 2, column: 12, length: 17,
+                severity: 'error',
+                message: '„chemiacl" ist keine Ressourcenart.',
+                hint: 'Meinst du chemical:?',
+                fixText: 'chemical', fixLine: 2, fixColumn: 12, fixLength: 8,
+            }],
+        },
+        connectors: [], displays: [], prefixes: [],
+    }),
+});
+
+check('Eine Meldung mit Vorschlag wird zur Schnellkorrektur',
+    fixes(['fn f() {', '    move 5 chemiacl:hydrogen from a to b', '}'], 'main.mf'),
+    ['Ersetzen durch \u201echemical" | main.mf@1:11+8>chemical']);
+
+project({
+    'main.mf': 'fn f() {\n    move 5 source:mana from a to b\n}\n',
+    '.fn-status.json': JSON.stringify({
+        diagnostics: {
+            'main.mf': [{
+                line: 2, column: 12, length: 11,
+                severity: 'error',
+                message: '„source" ist keine Ressourcenart.',
+                hint: 'Hier gibt es item, tag, fluid.',
+            }],
+        },
+        connectors: [], displays: [], prefixes: [],
+    }),
+});
+
+check('Eine Meldung ohne Vorschlag bekommt keine',
+    fixes(['fn f() {', '    move 5 source:mana from a to b', '}'], 'main.mf'),
+    []);
 
 console.log(failures === 0 ? '\nalle Faelle stimmen' : '\n' + failures + ' Abweichungen');
 process.exit(failures === 0 ? 0 : 1);
