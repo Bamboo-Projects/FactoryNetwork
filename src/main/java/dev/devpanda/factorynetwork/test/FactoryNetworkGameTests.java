@@ -7776,16 +7776,19 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ohne Mekanism sagt die Meldung, dass Mekanism fehlt.
+     * Mit Mekanism sagt die Meldung etwas anderes als ohne.
      *
-     * <p>Vorher stand überall „Chemikalien sind noch nicht angebunden" — eine
-     * Baustelle in dieser Mod. In einem Pack ohne Mekanism gibt es die
-     * Chemikalien aber überhaupt nicht, und der Spieler sucht den Fehler an
-     * der falschen Stelle. Im Prüflauf ist Mekanism nie geladen, der Fall ist
-     * also derselbe wie in einem Pack ohne sie.
+     * <p>Zwei Auskünfte statt einer: „Chemikalien brauchen Mekanism" schickt
+     * den Spieler zu seiner Modliste, „noch nicht angebunden" zu dieser Mod.
+     * Vorher stand überall die zweite, auch in Packs ohne Mekanism — und dann
+     * suchte man den Fehler an der falschen Stelle.
+     *
+     * <p><b>Im Prüflauf ist Mekanism geladen</b>, seit die Abhängigkeit
+     * dasteht; der Fall ohne sie steht als Einheitstest in
+     * {@code FilterCheckTest}, wo keine Modliste geladen wird.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
-    public static void withoutMekanismThemessageSaysSo(GameTestHelper helper) {
+    public static void withMekanismThemessageChanges(GameTestHelper helper) {
         BlockPos controller = buildSetup(helper);
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
@@ -7799,17 +7802,23 @@ public final class FactoryNetworkGameTests {
             helper.fail("Ohne Mekanism darf eine Chemikalien-Auswahl nicht durchgehen");
             return;
         } catch (dev.devpanda.factorynetwork.runtime.ScriptError expected) {
-            helper.assertTrue(expected.getMessage().contains("Mekanism"),
-                    "Die Meldung muss Mekanism nennen: " + expected.getMessage());
-            helper.assertTrue(expected.hint().contains("nicht installiert"),
-                    "Der Hinweis muss auf die Modliste zeigen: " + expected.hint());
+            // Mekanism liegt im Prüflauf, also gilt die andere der beiden
+            // Auskünfte — und ausdrücklich nicht die über die Modliste.
+            helper.assertTrue(
+                    dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.installed(),
+                    "Der Prüflauf soll Mekanism kennen");
+            helper.assertTrue(expected.getMessage().contains("angebunden"),
+                    "Mit Mekanism ist es eine Baustelle dieser Mod: "
+                            + expected.getMessage());
+            helper.assertTrue(!expected.hint().contains("nicht installiert"),
+                    "und kein Hinweis auf die Modliste: " + expected.hint());
         }
 
         // Und im Editor dieselbe Auskunft, aus derselben Quelle.
         var summary = dev.devpanda.factorynetwork.runtime.SelectionSummary.of(
                 dev.devpanda.factorynetwork.lang.Selectors.parse(
                         "chemical:mekanism/hydrogen"));
-        helper.assertTrue(summary.get(0).contains("Mekanism"),
+        helper.assertTrue(summary.get(0).contains("angebunden"),
                 "auch im Kasten des Editors: " + summary);
         helper.succeed();
     }

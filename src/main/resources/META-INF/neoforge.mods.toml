@@ -35,3 +35,13 @@ type = "optional"
 versionRange = "[15.0.0,)"
 ordering = "AFTER"
 side = "CLIENT"
+
+# Mekanism trägt die Chemikalien. Freiwillig: Ohne Mekanism gibt es
+# chemical: nicht, und die Meldung sagt genau das — alles andere läuft
+# unverändert weiter.
+[[dependencies.${mod_id}]]
+modId = "mekanism"
+type = "optional"
+versionRange = "[10.7.0,)"
+ordering = "AFTER"
+side = "BOTH"

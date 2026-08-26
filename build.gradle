@@ -62,6 +62,12 @@ repositories {
         forRepository { maven { url = 'https://api.modrinth.com/maven' } }
         filter { includeGroup 'maven.modrinth' }
     }
+    // Mekanism hat ein eigenes Maven. Der :api-Klassifikator trägt nur die
+    // Schnittstellen — mehr braucht das Übersetzen nicht.
+    exclusiveContent {
+        forRepository { maven { url = 'https://modmaven.dev/' } }
+        filter { includeGroup 'mekanism' }
+    }
 }
 
 dependencies {
@@ -76,6 +82,12 @@ dependencies {
     // Website daneben. Stammt von Applied Energistics, läuft aber ohne AE2.
     compileOnly "org.appliedenergistics:guideme:${guideme_version}:api"
     runtimeOnly "org.appliedenergistics:guideme:${guideme_version}"
+
+    // Mekanism trägt die Chemikalien. Ohne die Mod läuft alles wie bisher:
+    // Was sie anfasst, liegt unter compat/mekanism und wird nur betreten,
+    // wenn ModList sie meldet.
+    compileOnly "mekanism:Mekanism:${mekanism_version}:api"
+    runtimeOnly "mekanism:Mekanism:${mekanism_version}"
 
     testImplementation platform('org.junit:junit-bom:5.11.4')
     testImplementation 'org.junit.jupiter:junit-jupiter'
