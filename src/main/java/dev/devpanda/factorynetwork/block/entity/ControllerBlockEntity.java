@@ -548,6 +548,7 @@ public class ControllerBlockEntity extends BlockEntity {
         // Vorrat der Puffer im Controller, egal wie viele Akkus im Regal
         // stecken.
         power.setDrives(found);
+        rebuildBuses();
         racks.clear();
         for (BlockPos pos : graph.racks()) {
             if (level.isLoaded(pos) && level.getBlockEntity(pos)
@@ -594,6 +595,10 @@ public class ControllerBlockEntity extends BlockEntity {
         if (level.getGameTime() - lastRebuild >= REBUILD_INTERVAL) {
             rebuildNetwork();
         }
+        // Eine Kiste am store ändert sich, ohne es jemandem zu sagen. Einmal
+        // je Tick nachsehen ist der Preis dafür, dass ihr Inhalt zum Bestand
+        // zählt — und billiger als bei jeder Frage zu zählen.
+        storage.refreshBuses();
         power.setDraw(powerDraw());
         power.tick();
 
@@ -1228,6 +1233,47 @@ public class ControllerBlockEntity extends BlockEntity {
             taken += handler.extractItem(slot, (int) (limit - taken), false).getCount();
         }
         return taken;
+    }
+
+    /**
+     * Welche fremden Inventare zum Speicher zählen.
+     *
+     * <p>Aus den {@code store}-Zeilen des Programms, aufgelöst gegen das
+     * Netz. Ein Name, den es nicht gibt, fällt weg — gemeldet hat ihn schon
+     * die Prüfung beim Übernehmen, und ein Auftrag, der deshalb abbräche,
+     * hälfe niemandem.
+     *
+     * <p>Höhere Priorität zuerst: Wer {@code priority 10} schreibt, will,
+     * dass dort vor den Zellen eingelagert wird.
+     */
+    private void rebuildBuses() {
+        var program = program();
+        if (program == null) {
+            storage.setBuses(java.util.List.of());
+            return;
+        }
+        java.util.List<dev.devpanda.factorynetwork.network.StorageBus> found =
+                new java.util.ArrayList<>();
+        for (var declaration : program.declarations()) {
+            if (!(declaration instanceof dev.devpanda.factorynetwork.lang.ast.Decl.Store store)) {
+                continue;
+            }
+            if (graph.connector(store.device()).isEmpty()) {
+                continue;
+            }
+            String device = store.device();
+            // Der Filter wird hier aufgelöst und nicht je Ablage: Eine
+            // Auswahl gegen die Registry zu prüfen ist teuer, und sie ändert
+            // sich nur, wenn sich das Programm ändert.
+            var erlaubt = store.filter() == null ? java.util.List
+                    .<net.minecraft.world.item.Item>of()
+                    : dev.devpanda.factorynetwork.runtime.ItemSelection.resolve(store.filter());
+            found.add(new dev.devpanda.factorynetwork.network.StorageBus(
+                    device, store.priority(), erlaubt, () -> machineSide(device)));
+        }
+        found.sort(java.util.Comparator.comparingLong(
+                dev.devpanda.factorynetwork.network.StorageBus::priority).reversed());
+        storage.setBuses(found);
     }
 
     /** Der seitenbezogene Zugriff auf die Maschine hinter einem Connector. */

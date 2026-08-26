@@ -85,6 +85,7 @@ public final class Parser {
             case CONST -> parseConst();
             case FILTER -> parseFilterTemplate();
             case RECIPE -> parseRecipe();
+            case STORE -> parseStore();
             case IMPORT -> {
                 error(start.span(), "Module gibt es noch nicht.",
                         "import ist für später reserviert. Alle .mf-Dateien eines Projekts "
@@ -102,6 +103,59 @@ public final class Parser {
                 yield null;
             }
         };
+    }
+
+    // ---- Fremder Speicher am Netz -----------------------------------------
+
+    /**
+     * {@code store kiste_1 { priority 5  filter tag:c/ores }}
+     *
+     * <p><b>Das Gerät steht direkt hinter dem Wort</b> und nicht hinter einem
+     * {@code at} wie beim Rezept. Der Unterschied ist keine Laune: Ein Rezept
+     * hat einen eigenen Namen und läuft <i>an</i> einer Maschine; ein
+     * Speicher <i>ist</i> das Gerät, und ein zweiter Name daneben wäre einer
+     * zu viel.
+     */
+    private Decl parseStore() {
+        Token keyword = advance();
+        String device = expectName("Gerät");
+        if (device.isEmpty()) {
+            recoverToDeclaration();
+            return new Decl.Invalid(device, keyword.span());
+        }
+        if (!expect(TokenType.LBRACE, "Nach dem Gerät fehlt die geschweifte Klammer.",
+                "Zum Beispiel: store kiste_1 { priority 5 }")) {
+            recoverToDeclaration();
+            return new Decl.Invalid(device, keyword.span());
+        }
+        long priority = 0;
+        Expr filter = null;
+        skipNewlines();
+        while (!at(TokenType.RBRACE) && !at(TokenType.EOF)) {
+            Token start = peek();
+            if (start.is(TokenType.PRIORITY)) {
+                advance();
+                Token number = peek();
+                if (!number.is(TokenType.INT)) {
+                    error(number.span(), "Nach priority fehlt die Zahl.",
+                            "Höher heißt: zuerst hierhin. Die Zellen stehen auf 0.");
+                    recoverToLineEnd();
+                } else {
+                    advance();
+                    priority = Long.parseLong(number.text());
+                }
+            } else if (start.is(TokenType.FILTER)) {
+                advance();
+                filter = parseExpression();
+            } else {
+                error(start.span(), describe(start) + " gehört nicht in einen store.",
+                        "Erlaubt sind priority und filter.");
+                recoverToLineEnd();
+            }
+            skipNewlines();
+        }
+        Token end = expectBrace(keyword, "store");
+        return new Decl.Store(device, priority, filter, keyword.span().to(end.span()));
     }
 
     // ---- Rezept an einer Maschine -----------------------------------------

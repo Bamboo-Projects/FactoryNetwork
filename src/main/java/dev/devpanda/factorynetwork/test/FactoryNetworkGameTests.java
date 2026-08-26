@@ -1509,6 +1509,187 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    /**
+     * {@code store kiste_1 { }} — was in der Kiste liegt, gehört dem Netz.
+     *
+     * <p>Der Speicherbus, wie AE2 ihn hat, nur ohne eigenen Block. Der
+     * Unterschied zu einem gewöhnlichen Gerät ist der ganze Punkt: Ohne diese
+     * Zeile ist die Kiste etwas, aus dem man mit {@code move} holt; mit ihr
+     * zählt ihr Inhalt zum Bestand, den jeder Auftrag und jede Anzeige sieht.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void astoreCountsTowardsTheNetwork(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        if (helper.getBlockEntity(controller.east().north().north())
+                instanceof ChestBlockEntity chest) {
+            chest.setItem(0, new ItemStack(Items.IRON_ORE, 12));
+        } else {
+            helper.fail("Keine Kiste als Speicher");
+        }
+
+        helper.assertValueEqual(entity.storage().count(Items.IRON_ORE), 0L,
+                "vorher gehört die Kiste sich selbst");
+
+        helper.assertTrue(entity.deploy("""
+                store quarry_output {
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+
+        helper.assertValueEqual(entity.storage().count(Items.IRON_ORE), 12L,
+                "danach zählt ihr Inhalt zum Netz");
+        helper.assertTrue(entity.storage().contents().containsKey(Items.IRON_ORE),
+                "und steht im Bestand, den das Terminal zeigt");
+        helper.succeed();
+    }
+
+    /**
+     * Und was jemand hineinlegt, sieht das Netz beim nächsten Blick.
+     *
+     * <p>Der Unterschied zwischen einer Kopie und einer Sicht: Eine Kiste
+     * ändert sich ohne das Netz — ein Spieler räumt sie aus, ein Trichter
+     * füllt sie. Ein Bestand, der das erst nach einem Neuaufbau merkt, wäre
+     * falsch, und ein Auftrag, der darauf rechnet, hinterließe halbe Arbeit.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void astoreSeesWhatSomebodyPutsIn(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        helper.assertTrue(entity.deploy("""
+                store quarry_output {
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+
+        helper.startSequence()
+                .thenExecute(() -> {
+                    if (helper.getBlockEntity(controller.east().north().north())
+                            instanceof ChestBlockEntity chest) {
+                        chest.setItem(0, new ItemStack(Items.COBBLESTONE, 5));
+                    } else {
+                        helper.fail("Keine Kiste als Speicher");
+                    }
+                })
+                .thenIdle(10)
+                .thenExecute(() -> helper.assertValueEqual(
+                        entity.storage().count(Items.COBBLESTONE), 5L,
+                        "was hineinkommt, gehört ab dann dem Netz"))
+                .thenSucceed();
+    }
+
+    /**
+     * Was das Netz einlagert, darf in der Kiste landen.
+     *
+     * <p>Die andere Hälfte des Speicherbusses, und ohne sie wäre die erste
+     * gefährlich: Ein Bestand, den man sieht und nicht anfassen kann, bringt
+     * jeden Auftrag durcheinander, der damit rechnet.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void astoreTakesWhatTheNetworkPutsAway(GameTestHelper helper) {
+        BlockPos controller = bareSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        // Kein Laufwerk, keine Zelle — die Kiste ist der ganze Speicher.
+        helper.assertTrue(entity.deploy("""
+                store quarry_output {
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+
+        long rest = entity.storage().insert(Items.IRON_ORE, 7);
+
+        helper.assertValueEqual(rest, 0L, "alles muss untergekommen sein");
+        helper.assertValueEqual(entity.storage().count(Items.IRON_ORE), 7L,
+                "und im Bestand stehen");
+        if (helper.getBlockEntity(controller.east().north().north())
+                instanceof ChestBlockEntity chest) {
+            helper.assertValueEqual(chest.getItem(0).getCount(), 7,
+                    "und wirklich in der Kiste liegen");
+        } else {
+            helper.fail("Keine Kiste als Speicher");
+        }
+        helper.succeed();
+    }
+
+    /** Und das Netz holt es dort auch wieder heraus. */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void astoreGivesBackWhatTheNetworkAsksFor(GameTestHelper helper) {
+        BlockPos controller = bareSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        if (helper.getBlockEntity(controller.east().north().north())
+                instanceof ChestBlockEntity chest) {
+            chest.setItem(0, new ItemStack(Items.IRON_ORE, 9));
+        } else {
+            helper.fail("Keine Kiste als Speicher");
+        }
+
+        helper.assertTrue(entity.deploy("""
+                store quarry_output {
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+
+        long geholt = entity.storage().extract(Items.IRON_ORE, 4);
+
+        helper.assertValueEqual(geholt, 4L, "vier davon muss es hergeben");
+        helper.assertValueEqual(entity.storage().count(Items.IRON_ORE), 5L,
+                "und der Bestand muss nachziehen");
+        helper.succeed();
+    }
+
+    /**
+     * Ein {@code filter} sagt, was in die Kiste darf.
+     *
+     * <p>Wie in AE2: Der Bus nimmt nur an, was dasteht. Was schon drinliegt,
+     * zählt trotzdem zum Bestand — es zu verschweigen, weil es nicht zum
+     * Filter passt, wäre eine Lüge über etwas, das jeder sehen kann.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void afilterSaysWhatMayGoIn(GameTestHelper helper) {
+        BlockPos controller = bareSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                store quarry_output {
+                    filter item:iron_ore
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+
+        helper.assertValueEqual(entity.storage().insert(Items.IRON_ORE, 3), 0L,
+                "Erz gehört hinein");
+        helper.assertValueEqual(entity.storage().insert(Items.COBBLESTONE, 3), 3L,
+                "Kopfsteinpflaster nicht — es kommt zurück");
+        helper.assertValueEqual(entity.storage().count(Items.COBBLESTONE), 0L,
+                "und steht in keinem Bestand");
+        helper.succeed();
+    }
+
+    /** Was schon drinliegt, zählt auch gegen den Filter. */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void whatIsAlreadyInsideStillCounts(GameTestHelper helper) {
+        BlockPos controller = bareSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        if (helper.getBlockEntity(controller.east().north().north())
+                instanceof ChestBlockEntity chest) {
+            chest.setItem(0, new ItemStack(Items.COBBLESTONE, 8));
+        } else {
+            helper.fail("Keine Kiste als Speicher");
+        }
+
+        helper.assertTrue(entity.deploy("""
+                store quarry_output {
+                    filter item:iron_ore
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+
+        helper.assertValueEqual(entity.storage().count(Items.COBBLESTONE), 8L,
+                "was dort liegt, ist da — Filter hin oder her");
+        helper.succeed();
+    }
+
     /** Ein Programm mit await in if in while — die Vorlage der Ablauf-Tests. */
     private static final String COUNTING_PROGRAM = """
             event Takt(nummer: Int)

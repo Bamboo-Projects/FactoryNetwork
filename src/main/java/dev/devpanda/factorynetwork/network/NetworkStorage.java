@@ -67,6 +67,51 @@ public final class NetworkStorage {
         indexValid = false;
     }
 
+    /**
+     * Die fremden Inventare, die zum Speicher zählen.
+     *
+     * <p>Aus den {@code store}-Zeilen des Programms; setzt der Controller bei
+     * jedem Neuaufbau, wie die Laufwerke. Ohne sie ist eine Kiste am Netz
+     * weiterhin ein Gerät und nichts weiter.
+     */
+    private final List<StorageBus> buses = new ArrayList<>();
+
+    public void setBuses(List<StorageBus> found) {
+        buses.clear();
+        buses.addAll(found);
+        for (StorageBus bus : buses) {
+            bus.refresh();
+        }
+        indexValid = false;
+    }
+
+    /**
+     * Liest die fremden Inventare neu — einmal je Tick.
+     *
+     * <p>Eine Kiste ändert sich ohne das Netz, und sie sagt es niemandem.
+     * Deshalb sieht der Controller nach; hier wird nur der Index verworfen,
+     * wenn sich wirklich etwas geändert hat, damit nicht jeder Tick alle
+     * Zellen neu zählt.
+     *
+     * @return ob sich etwas geändert hat
+     */
+    public boolean refreshBuses() {
+        boolean changed = false;
+        for (StorageBus bus : buses) {
+            changed |= bus.refresh();
+        }
+        if (changed) {
+            indexValid = false;
+            onChange.run();
+        }
+        return changed;
+    }
+
+    /** Die Busse, in der Reihenfolge, in der eingelagert wird. */
+    public List<StorageBus> buses() {
+        return List.copyOf(buses);
+    }
+
     /** Der Bestand, frisch genug. */
     private Map<Item, Long> index() {
         if (!indexValid || drivesChanged()) {
@@ -98,6 +143,11 @@ public final class NetworkStorage {
         for (CellInventory<Item> cell : cells()) {
             cell.contentsView().forEach((item, count) -> index.merge(item, count, Long::sum));
         }
+        // Und was in den fremden Inventaren liegt. Gelesen wird hier nicht —
+        // das tut refreshBuses je Tick; hier steht nur, was zuletzt dastand.
+        for (StorageBus bus : buses) {
+            bus.contents().forEach((item, count) -> index.merge(item, count, Long::sum));
+        }
         seenRevisions = new long[drives.size()];
         for (int i = 0; i < seenRevisions.length; i++) {
             seenRevisions[i] = drives.get(i).revision();
@@ -105,8 +155,14 @@ public final class NetworkStorage {
         indexValid = true;
     }
 
+    /**
+     * Ob überhaupt Platz da ist.
+     *
+     * <p>Ein Bus zählt mit: Ein Netz ohne Laufwerk, aber mit einer Kiste am
+     * {@code store}, lagert sehr wohl etwas — nur eben dort.
+     */
     public boolean hasDrives() {
-        return !drives.isEmpty();
+        return !drives.isEmpty() || !buses.isEmpty();
     }
 
     /** Alle Zellen aller Laufwerke, frisch gelesen. */
@@ -132,6 +188,13 @@ public final class NetworkStorage {
         // eigene Ablage die einzige Änderung, und die ist bekannt.
         Map<Item, Long> stock = index();
         long left = count;
+        // Wer sich vorgedrängt hat, kommt vor die Zellen.
+        for (StorageBus bus : buses) {
+            if (left <= 0 || bus.priority() <= 0) {
+                break;
+            }
+            left = bus.insert(item, left);
+        }
         List<CellInventory<Item>> cells = cells();
         for (CellInventory<Item> cell : cells) {
             if (left <= 0) {
@@ -146,6 +209,15 @@ public final class NetworkStorage {
                 break;
             }
             left -= cell.insert(item, left);
+        }
+        // Und zuletzt die fremden Inventare — es sei denn, eines hat sich
+        // vorgedrängt: priority höher als null heißt „hierhin zuerst". Bei
+        // Gleichstand gewinnen die Zellen, denn die gehören dem Netz.
+        for (StorageBus bus : buses) {
+            if (left <= 0) {
+                break;
+            }
+            left = bus.insert(item, left);
         }
         if (left < count) {
             stock.merge(item, count - left, Long::sum);
@@ -170,6 +242,16 @@ public final class NetworkStorage {
                 break;
             }
             taken += cell.extract(item, count - taken);
+        }
+        // Aus den fremden Inventaren erst, wenn die Zellen leer sind. Was in
+        // einer Kiste liegt, hat oft einen Grund — ein Drawer als Puffer, ein
+        // Vorrat für die Hand. Die Zellen gehören dem Netz und sind der Ort,
+        // an dem es zuerst zugreift.
+        for (StorageBus bus : buses) {
+            if (taken >= count) {
+                break;
+            }
+            taken += bus.extract(item, count - taken);
         }
         if (taken > 0) {
             long rest = stock.getOrDefault(item, 0L) - taken;

@@ -64,6 +64,7 @@ public final class NetworkCheck {
                     }
                 }
                 case Decl.Recipe recipe -> checkRecipe(recipe, view, local, problems);
+                case Decl.Store store -> checkStore(store, view, local, problems);
                 default -> { }
             }
         }
@@ -123,6 +124,30 @@ public final class NetworkCheck {
                                 + "Zeile kann weg."));
             }
         }
+    }
+
+    /**
+     * Ein Speicher an einem Gerät, das es nicht gibt.
+     *
+     * <p>Derselbe Vertipper wie beim Rezept, und hier fällt er noch schwerer
+     * auf die Füße: Im Terminal stünde ein Bestand, dem eine Kiste fehlt, die
+     * es nie gab. Niemand käme darauf, dafür im Programm nachzusehen.
+     *
+     * <p>Eine Warnung und kein Fehler — wer die Kiste erst morgen hinstellt,
+     * darf die Zeile heute schon schreiben.
+     */
+    private static void checkStore(Decl.Store store, NetworkView view,
+                                   Set<String> local, List<Diagnostic> problems) {
+        if (view.connectors().isEmpty() || local.contains(store.device())
+                || view.connectors().contains(store.device())) {
+            return;
+        }
+        String hint = view.closestConnector(store.device())
+                .map(near -> "Meintest du „" + near + "“?")
+                .orElseGet(() -> "Im Netz gibt es: "
+                        + String.join(", ", view.connectors()));
+        problems.add(new Diagnostic(Diagnostic.Severity.WARNING, store.span(),
+                "Nichts im Netz heißt „" + store.device() + "“.", hint));
     }
 
     /**

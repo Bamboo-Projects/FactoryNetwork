@@ -324,6 +324,32 @@
         ]
       }
     ],
+    "store": [
+      {
+        "keyword": "priority",
+        "shape": "priority int",
+        "help": "Wohin zuerst eingelagert wird. Die Zellen stehen auf 0.",
+        "slots": [
+          {
+            "kind": "INT",
+            "label": "int",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "keyword": "filter",
+        "shape": "filter selection",
+        "help": "Was hinein darf. Ohne Angabe alles.",
+        "slots": [
+          {
+            "kind": "SELECTION",
+            "label": "selection",
+            "optional": false
+          }
+        ]
+      }
+    ],
     "fn": [
       {
         "keyword": "let",
@@ -689,6 +715,7 @@
     "event",
     "display",
     "recipe",
+    "store",
     "fn",
     "on",
     "global",

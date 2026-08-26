@@ -1350,6 +1350,57 @@ und wird jetzt beim Übernehmen gewarnt, statt still zu verschwinden.
 
 ---
 
+## 11b. Fremde Inventare am Speicher
+
+```
+store kiste_1 {
+    priority 5
+    filter tag:c/ores
+}
+```
+
+Der **Speicherbus**, wie AE2 ihn hat — nur ohne eigenen Block. Der Connector
+hängt ohnehin an der Kiste; diese Zeile sagt, dass ihr Inhalt zum Netz gehört.
+
+Der Unterschied zu einem gewöhnlichen Gerät ist der ganze Punkt. Ohne die
+Zeile ist die Kiste etwas, aus dem man mit `move` holt. Mit ihr:
+
+- `storage.count(item:iron_ore)` zählt die Erze darin mit,
+- ein Auftrag der Fertigung rechnet mit ihnen,
+- ein Worker `to storage` darf dort landen,
+- und im Terminal steht ihr Inhalt zwischen dem der Zellen.
+
+### Die Angaben
+
+**`filter`** sagt, was hinein darf — eine Auswahl wie überall, also auch ein
+Tag, ein Platzhalter oder eine Vorlage. Ohne Angabe alles.
+
+**Für das Herausholen gilt er nicht.** Was schon drinliegt, gehört zum Bestand
+und ist erreichbar. Es zu verschweigen, weil es nicht zum Filter passt, wäre
+eine Lüge über etwas, das jeder sehen kann.
+
+**`priority`** sagt, wohin zuerst eingelagert wird. Die Zellen stehen auf
+null; wer `priority 10` schreibt, bekommt seine Kiste vor ihnen befüllt. Bei
+Gleichstand gewinnen die Zellen — sie gehören dem Netz.
+
+**Herausgeholt wird umgekehrt:** erst aus den Zellen, dann aus den Kisten. Was
+in einer Kiste liegt, hat oft einen Grund.
+
+### Was zu wissen ist
+
+**Der Inhalt bleibt, wo er ist.** Er wandert nicht in die Zellen, und er wird
+auch nicht dorthin gespeichert — die Kiste speichert Minecraft selbst. Wer die
+Zeile wieder löscht, hat seine Kiste zurück, mit allem darin.
+
+**Gelesen wird je Tick.** Eine Kiste ändert sich, ohne es jemandem zu sagen —
+ein Spieler räumt sie aus, ein Trichter füllt sie. Das Netz sieht deshalb
+einmal je Tick nach; der Bestand ist nie älter als das.
+
+**Ein Gerätename, den es nicht gibt**, meldet sich beim Übernehmen — wie beim
+Rezept.
+
+---
+
 ## 12. Listen und Mengen
 
 ```

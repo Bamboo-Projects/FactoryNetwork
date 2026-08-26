@@ -229,6 +229,10 @@ function contains(name, lines, word, shouldHave, file) {
 contains('Anzeige bietet title', ['display halle {', '    '], 'title', true);
 contains('Anzeige bietet scale', ['display halle {', '    '], 'scale', true);
 contains('Oberste Ebene bietet recipe', [''], 'recipe', true);
+contains('Oberste Ebene bietet store', [''], 'store', true);
+contains('Speicher bietet priority', ['store kiste_1 {', '    '], 'priority', true);
+contains('Speicher bietet filter', ['store kiste_1 {', '    '], 'filter', true);
+contains('Speicher bietet kein in', ['store kiste_1 {', '    '], 'in', false);
 contains('Rezept bietet in', ['recipe mahlen at brecher {', '    '], 'in', true);
 contains('Rezept bietet out', ['recipe mahlen at brecher {', '    '], 'out', true);
 contains('Rezept bietet kein from',

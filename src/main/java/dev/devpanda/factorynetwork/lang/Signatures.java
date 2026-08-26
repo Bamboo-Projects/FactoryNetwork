@@ -157,6 +157,19 @@ public final class Signatures {
             of("out", "Was dabei herauskommt, mit Menge.",
                     Slot.of(Kind.INT), Slot.of(Kind.SELECTION)));
 
+    /**
+     * Die Angaben in einem {@code store}.
+     *
+     * <p>Zwei, und beide dürfen fehlen: Ein Speicher ohne Angaben nimmt alles
+     * und steht gleichauf mit den Zellen. Mehr braucht der häufigste Fall
+     * nicht — eine Kiste, die zum Netz gehören soll.
+     */
+    public static final List<Signature> STORE = List.of(
+            of("priority", "Wohin zuerst eingelagert wird. Die Zellen stehen auf 0.",
+                    Slot.of(Kind.INT)),
+            of("filter", "Was hinein darf. Ohne Angabe alles.",
+                    Slot.of(Kind.SELECTION)));
+
     /** Die Angaben in einem Worker. */
     public static final List<Signature> WORKER = List.of(
             of("from", "Woher die Gegenstände kommen.", Slot.of(Kind.TARGET)),
@@ -265,6 +278,30 @@ public final class Signatures {
             of("const", "Ein Wert, der sich nie ändert.",
                     Slot.named(Kind.NEW_NAME, "name"), Slot.literal("="),
                     Slot.of(Kind.EXPR)));
+
+    /**
+     * Die Wörter, mit denen eine Deklaration anfängt.
+     *
+     * <p><b>Hier und nur hier.</b> Sie stand dreimal da — im Editor im Spiel,
+     * im Export für VS Code, und im Parser sowieso. Aufgefallen ist das beim
+     * Hinzufügen von {@code store}: Der Editor im Spiel bot es an, VS Code
+     * nicht, und beide Prüfläufe waren grün, weil jeder seine eigene Liste
+     * prüfte.
+     */
+    public static final List<String> DECLARATIONS = List.of(
+            "worker", "group", "filter", "multiblock", "event", "display", "recipe",
+            "store", "fn", "on", "global", "const");
+
+    /**
+     * Die Deklarationen, in denen Angaben mit einer Form stehen.
+     *
+     * <p>Nicht alle: {@code fn}, {@code on} und {@code multiblock} enthalten
+     * Anweisungen, {@code event} und {@code global} sind in einer Zeile
+     * fertig. Für die anderen gibt es eine Liste erlaubter Wörter, und die
+     * braucht beide Editoren.
+     */
+    public static final List<String> BLOCKS_WITH_ENTRIES = List.of(
+            "display", "worker", "group", "filter", "recipe", "store", "fn");
 
     /** Ein Ding, das an einem Gerät steht. */
     public record Member(String name, String shape, String help) {
@@ -384,6 +421,7 @@ public final class Signatures {
         return switch (declaration) {
             case "display" -> DISPLAY;
             case "recipe" -> RECIPE;
+            case "store" -> STORE;
             case "worker" -> WORKER;
             case "group" -> GROUP;
             case "filter" -> FILTER;

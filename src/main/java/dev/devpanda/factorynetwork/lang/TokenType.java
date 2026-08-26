@@ -29,7 +29,7 @@ public enum TokenType {
     TITLE, ROW, TEXT, PROGRESS, INDICATOR, LIST, BUTTON, SCALE,
 
     // Rezepte an Maschinen
-    RECIPE, AT, OUT,
+    RECIPE, AT, OUT, STORE,
 
     // Ereignisse
     EMIT, AWAIT, WHERE, TIMEOUT, SLEEP,
@@ -78,6 +78,7 @@ public enum TokenType {
             Map.entry("list", LIST), Map.entry("button", BUTTON),
             Map.entry("scale", SCALE),
             Map.entry("recipe", RECIPE), Map.entry("at", AT), Map.entry("out", OUT),
+            Map.entry("store", STORE),
             Map.entry("emit", EMIT), Map.entry("await", AWAIT), Map.entry("where", WHERE),
             Map.entry("timeout", TIMEOUT), Map.entry("sleep", SLEEP),
             Map.entry("move", MOVE), Map.entry("except", EXCEPT),

@@ -250,7 +250,7 @@ Vorentscheidungen)
 | 7.2 | ~~GuideME eingebunden~~ — **fertig**, `compat/guide` | | | |
 | 7.3 | Das Fertig-Signal je Mod (Weg 3) | Z | `umsetzung.md:177` | groß |
 | 7.4 | Eigene Generatoren | Z | `strom.md:220` | — |
-| 7.8 | **Ein Speicherbus wie in AE2.** Gewünscht am 26.08. Ein fremdes Inventar — Kiste, Drawer, ein anderes Speichersystem — wird **Teil des Netzspeichers**, statt ein Gerät zu sein, aus dem man mit `move` holt. **Entwurf steht:** `speicherbus.md` — durchgereicht statt gespiegelt (eine Kopie ist falsch, sobald jemand die Kiste anfasst), vier Schnitte, und die Artenplätze, das Speichern und der Change-Listener sind darin geklärt. **Offen ist die Form:** eigener Block wie in AE2 oder eine Deklaration im Programm wie bei `recipe`. Empfohlen ist die Deklaration; die Entscheidung liegt beim Projektinhaber | E/F | `speicherbus.md` | groß | Formfrage |
+| 7.8 | **Ein Speicherbus wie in AE2** — **gebaut** (26.08.), Schnitte 1 bis 3 am Tag des Wunsches. `store kiste_1 { priority 5  filter tag:c/ores }`: Der Inhalt zählt zum Bestand, das Netz lagert dort ein und holt dort heraus, der Filter gilt fürs Einlagern und nicht fürs Holen. Durchgereicht statt gespiegelt, einmal je Tick gelesen. Form entschieden: Deklaration im Programm. **Offen bleibt Schnitt 4:** mehrere Busse mit Messung gegen das Schrittbudget (1.12) | F | `speicherbus.md`, `StorageBus` | klein | — |
 | 7.5 | **Ars Nouveau.** Gewünscht am 26.08. Source ist eine eigene Ressourcenart und damit der Fall, der 1.19 entscheidet: Mit einem festen Aufzählungswert käme sie nicht herein, ohne den Kern für jede Mod aufzumachen. Dazu die Blöcke, die von sich aus nach oben abgeben — die brauchen keinen eigenen Weg, der Connector hängt an der Kiste darüber | F | — | groß | 1.19 |
 | 7.6 | **Industrial Foregoing.** Gewünscht am 26.08. Gegenstände und Flüssigkeiten laufen schon heute; zu prüfen ist, was darüber hinaus eigen ist (Pink Slime, die Fächer der Maschinen) | F | — | mittel | Prüfung, was fehlt |
 | 7.7 | **Applied Energistics.** Gewünscht am 26.08. Ein ME-Netz als Quelle und Ziel — der Punkt, an dem das Vorgängerprojekt angefangen hat. Zu entscheiden ist, ob das Netz im ME-Netz lagert oder daneben steht | F | `umfeld-atm10.md` | groß | Entwurf |
@@ -293,9 +293,10 @@ andere schreibt der Spieler ein `recipe` ins Programm.
 auf, bewegt sich, wird gezählt und lagert in Chemikalienzellen. Ohne Mekanism
 läuft alles wie vorher.
 
-**Was jetzt oben steht:** der Storage Bus (7.8) und die drei Mods (7.5 bis
-7.7) — der Connector, der klickt (1.20), ist am selben Tag gebaut worden, und
-der Stromanschluss gibt seit dem 26.08. auch heraus. Sie hängen an **einer** Frage,
+**Was jetzt oben steht:** die drei Mods (7.5 bis 7.7). Die anderen Wünsche vom
+26.08. sind am selben Tag gebaut worden — der Connector, der klickt (1.20),
+der Stromanschluss, der auch herausgibt, und der Speicherbus (7.8) in seinen
+ersten drei Schnitten. Die drei Mods hängen an **einer** Frage,
 und das ist dieselbe, die seit dem 24.08. nur in `umfeld-atm10.md` stand:
 **ob die Ressourcenart eine offene Registry wird** statt eines festen
 Aufzählungswerts (1.19). Ars Nouveau entscheidet sie faktisch — Source ist

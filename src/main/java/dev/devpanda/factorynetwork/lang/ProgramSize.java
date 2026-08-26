@@ -51,6 +51,11 @@ public final class ProgramSize {
             case Decl.Event event -> event.parameters().size();
             // Ein Rezept kostet seine Zeilen: je Zutat und je Ergebnis eine.
             case Decl.Recipe recipe -> recipe.inputs().size() + recipe.outputs().size();
+            // Ein Speicher kostet seine Angaben. Die Eins davor zählt ihn
+            // selbst; ein store ohne Klammerinhalt ist damit nicht gratis,
+            // denn er kostet das Netz je Tick eine Inventarlesung.
+            case Decl.Store store -> (store.filter() == null ? 0 : 1)
+                    + (store.priority() == 0 ? 0 : 1);
             // Wie bei einer Gruppe: je Zeile eine. Eine Vorlage über zwanzig
             // Selektoren ist nichts, was der Server nebenbei mitträgt.
             case Decl.FilterTemplate template ->

@@ -60,8 +60,7 @@ class SignaturesExportTest {
         JsonObject root = new JsonObject();
 
         JsonObject blocks = new JsonObject();
-        for (String block : new String[] {"display", "worker", "group", "filter",
-                                          "recipe", "fn"}) {
+        for (String block : Signatures.BLOCKS_WITH_ENTRIES) {
             JsonArray entries = new JsonArray();
             for (Signatures.Signature signature : Signatures.forBlock(block)) {
                 JsonObject entry = new JsonObject();
@@ -155,12 +154,11 @@ class SignaturesExportTest {
         new java.util.TreeSet<>(BuiltinEvents.ARITY.keySet()).forEach(builtinEvents::add);
         root.add("builtinEvents", builtinEvents);
 
+        // Dieselbe Liste wie im Editor im Spiel. Sie stand hier einmal
+        // eigenständig da, und ein neues Wort landete deshalb nur in einem
+        // der beiden Editoren.
         JsonArray declarations = new JsonArray();
-        for (String word : new String[] {"worker", "group", "filter", "multiblock", "event",
-                                         "display", "recipe", "fn", "on", "global",
-                                         "const"}) {
-            declarations.add(word);
-        }
+        Signatures.DECLARATIONS.forEach(declarations::add);
         root.add("declarations", declarations);
 
         // Die Formen der obersten Ebene — heute nur global, aber die

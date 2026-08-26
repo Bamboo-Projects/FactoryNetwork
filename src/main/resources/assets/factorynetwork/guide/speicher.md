@@ -209,3 +209,33 @@ wird, was im Netzspeicher liegt.
 
 Und wenn nichts eingelagert wird, obwohl Platz zu sein scheint: Es gibt zwei
 Arten von Platz. Die Menge kann reichen und der Artenplatz trotzdem fehlen.
+
+## Eine Kiste zum Netz machen
+
+Du hast eine Wand voll Drawer oder eine Truhe mit Vorräten, und das Netz soll
+sie sehen, ohne dass du alles umlagerst. Dafür ist der **Speicherbus** da —
+hier ist er keine Kiste am Block, sondern eine Zeile im Programm:
+
+```
+store lager {
+    priority 5
+    filter tag:c/ores
+}
+```
+
+`lager` ist der Name des Connectors, der an der Truhe hängt. Ab dieser Zeile
+zählt ihr Inhalt zum Netzbestand: Er steht im Terminal, ein Auftrag rechnet
+damit, und ein Worker `to storage` darf dort landen.
+
+`filter` sagt, was hinein darf — hier nur Erze. Was schon drinliegt, zählt
+trotzdem und lässt sich auch herausholen; der Filter gilt nur für das
+Einlagern.
+
+`priority` sagt, wohin zuerst. Deine Zellen stehen auf 0, also landet mit
+`priority 5` das Erz in der Truhe, bevor eine Zelle es bekommt. Beides ist
+freiwillig — `store lager { }` reicht, wenn die Truhe einfach alles nehmen
+soll.
+
+**Der Inhalt bleibt, wo er ist.** Nichts wandert in deine Zellen, nichts geht
+verloren, wenn du die Zeile wieder löschst. Die Truhe gehört dann wieder sich
+selbst.

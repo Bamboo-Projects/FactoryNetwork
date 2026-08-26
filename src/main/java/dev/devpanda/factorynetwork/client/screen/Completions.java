@@ -67,9 +67,8 @@ public final class Completions {
         public enum Kind { KEYWORD, CONNECTOR, ITEM, TAG, BUILTIN }
     }
 
-    private static final List<String> DECLARATIONS = List.of(
-            "worker", "group", "filter", "multiblock", "event", "display", "recipe", "fn",
-            "on", "global", "const");
+    /** Dieselbe Liste, die auch VS Code bekommt — sie steht in Signatures. */
+    private static final List<String> DECLARATIONS = Signatures.DECLARATIONS;
 
     /**
      * Die eingebauten Namen, die der Interpreter <b>wirklich</b> kennt.

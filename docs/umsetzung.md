@@ -832,6 +832,36 @@ Er hält nichts, hat keine BlockEntity und kostet keinen Kanal. Strom kostet er
 wie Laufwerk und Router: Ein Ausbau, der nichts kostet, ist keine
 Entscheidung.
 
+### Der Speicherbus (seit dem 26.08.)
+
+`store kiste_1 { priority 5  filter tag:c/ores }`. Die Begründung für die Form
+steht in `entscheidungen.md`, der Entwurf in `speicherbus.md`; hier das
+Handwerk.
+
+**Der Zugriff steht hinter einem Supplier** und nicht als festes
+`IItemHandler`. Ein Connector kann abgebaut, die Kiste zerschlagen, der Klotz
+entladen werden — ein festgehaltener Zeiger wäre einer auf etwas, das es nicht
+mehr gibt. Gefragt wird bei jedem Zugriff neu.
+
+**Der Filter wird beim Netzaufbau aufgelöst**, nicht je Ablage. Eine Auswahl
+gegen die Registry zu prüfen ist teuer, und sie ändert sich nur, wenn sich das
+Programm ändert.
+
+**Der gemerkte Inhalt wird mitgeführt.** Nach einer Ablage steht die neue Zahl
+da, ohne dass das Inventar neu gelesen wird — sonst wäre das Lesen je Tick
+umsonst.
+
+**`hasDrives()` heißt jetzt „hat Platz".** Ein Netz ohne Laufwerk, aber mit
+einer Kiste am `store`, lagert sehr wohl etwas. Ohne diese Zeile hätte der
+erste Prüflauf ohne Laufwerk stillgestanden und die Ursache wäre an einer
+Stelle gewesen, die mit Bussen nichts zu tun hat.
+
+**Der Fund nebenbei:** Die Liste der Deklarationswörter stand dreimal da — im
+Editor im Spiel, im Export für VS Code, und im Parser sowieso. Aufgefallen ist
+es, weil `store` im Spiel angeboten wurde und in VS Code nicht, während beide
+Prüfläufe grün waren: Jeder prüfte seine eigene Liste. Jetzt hält
+`Signatures.DECLARATIONS` sie, und beide lesen dort.
+
 ### Der Connector fasst an (seit dem 26.08.)
 
 `altar.click()` — für die Maschinen, die von sich aus nichts tun. Die

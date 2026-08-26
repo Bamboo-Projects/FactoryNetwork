@@ -261,6 +261,9 @@ den es nie gab. Der `else`-Block muss den Ablauf verlassen; auch das prüft der
 recipeDecl  = 'recipe' NAME 'at' NAME '{' { recipePart } '}'
 recipePart  = ( 'in' | 'out' ) INT selection
 
+storeDecl   = 'store' NAME '{' { storeEntry } '}'
+storeEntry  = 'priority' INT | 'filter' selection
+
 amount      = [ INT ] ( selection | NAME )
 
 selection   = selTerm { 'except' selTerm }

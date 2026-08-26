@@ -3557,6 +3557,40 @@ Mekanism-Block zum Netz läuft erst, wenn jemand ihn im Spiel hinstellt.
 
 ---
 
+## Der Speicherbus steht im Programm (2026-08-26)
+
+Gewünscht war „so wie er in AE2 auch ist". Das Verhalten ist es auch: Der
+Inhalt eines fremden Inventars zählt zum Netzbestand, das Netz lagert dort ein
+und holt dort heraus, ein Filter sagt, was hinein darf, eine Priorität, wohin
+zuerst.
+
+**Was anders ist, ist nur der Ort der Erklärung.** Kein Block mit Fenster,
+sondern `store kiste_1 { … }` im Programm — vorgelegt und so entschieden:
+„wir können ihn per Code anbinden aber im Endeffekt soll er das machen was er
+bei AE2 auch macht."
+
+Der Grund ist derselbe wie bei den Rezepten: Ein Filter in einem Fenster ist
+nicht versionierbar, geht nicht mit der Datei nach VS Code, und ein Vertipper
+darin fällt niemandem auf. Als Zeile im Programm meldet sich ein unbekannter
+Gerätename beim Übernehmen, und der Filter kann alles, was die Sprache kann —
+Tags, Platzhalter, Vorlagen, `except`.
+
+**Durchgereicht und nicht gespiegelt.** Eine Kopie ist falsch, sobald jemand
+die Kiste anfasst, und ein Auftrag, der darauf rechnet, hinterließe genau den
+halben Stapel Zwischenzeug, den die Fertigung vermeidet. Gelesen wird einmal
+je Tick — nicht bei jeder Frage, sonst zählte jeder Worker jedes Inventar neu.
+
+**Der Filter gilt nur fürs Einlagern.** Was schon drinliegt, gehört zum
+Bestand und ist erreichbar. Es zu verschweigen, weil es nicht zum Filter
+passt, wäre eine Lüge über etwas, das jeder sehen kann — und ein Bestand, aus
+dem man nichts holen kann, wäre die schlimmere Hälfte davon.
+
+**Nichts wandert.** Der Inhalt bleibt in der Kiste und wird nicht in die
+Zellen gespeichert; das täte Minecraft doppelt. Wer die Zeile löscht, hat
+seine Kiste zurück.
+
+---
+
 ## Der Stromanschluss gibt auch heraus (2026-08-26)
 
 Bisher nahm er nur an, und die Begründung stand daneben: Wer sein Kabel an den

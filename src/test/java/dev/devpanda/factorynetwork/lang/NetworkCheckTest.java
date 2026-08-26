@@ -55,6 +55,33 @@ class NetworkCheckTest {
     }
 
     @Test
+    @DisplayName("Ein Speicher an einem Gerät, das es nicht gibt, wird gemeldet")
+    void astoreAtAnunknownDeviceIsReported() {
+        // Sonst steht im Terminal ein Bestand, der eine Kiste vermisst, die
+        // es nie gab — und niemand käme darauf, im Programm nachzusehen.
+        List<Diagnostic> problems = check("store kist_1 { }",
+                net(List.of("kiste_1", "ofen"), List.of()));
+
+        assertTrue(problems.stream().anyMatch(problem ->
+                        problem.message().contains("kist_1") && !problem.isError()),
+                () -> "der Vertipper muss auffallen: " + problems);
+        assertTrue(problems.stream().anyMatch(problem ->
+                        problem.hint() != null && problem.hint().contains("kiste_1")),
+                () -> "und der Hinweis auf das gemeinte Gerät fehlt: " + problems);
+    }
+
+    @Test
+    @DisplayName("Ein Speicher an einem Gerät, das es gibt, wird nicht gemeldet")
+    void astoreAtAknownDeviceIsQuiet() {
+        List<Diagnostic> problems = check("store kiste_1 { }",
+                net(List.of("kiste_1"), List.of()));
+
+        assertFalse(problems.stream().anyMatch(problem ->
+                        problem.message().contains("kiste_1")),
+                () -> "das ist in Ordnung: " + problems);
+    }
+
+    @Test
     @DisplayName("Strom in einem Rezept wird gemeldet, statt still zu verschwinden")
     void powerInArecipeIsReported() {
         // „in 1000 power" parst — power ist eine Auswahl wie jede andere.

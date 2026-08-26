@@ -4,8 +4,13 @@ Ein fremdes Inventar wird Teil des Netzspeichers. Gewünscht am 26.08.:
 „es fehlt noch was wie ein StorageBus um andere Storage Systeme anzubinden,
 also der StorageBus so wie er in AE2 auch ist."
 
-Dieses Dokument ist ein **Entwurf** und kein Bericht. Es sagt, was zu
-entscheiden ist, und empfiehlt bei jedem Punkt eine Antwort.
+Dieses Dokument war ein Entwurf. **Die Schnitte 1 bis 3 sind gebaut** (26.08.)
+— Lesen, Schreiben, Filter und Priorität. Was hier steht, ist damit teils
+Begründung und teils noch Plan; die Abschnitte sagen, was gilt.
+
+Die Form ist entschieden: **Deklaration im Programm**, auf Antwort des
+Projektinhabers („wir können ihn per Code anbinden aber im Endeffekt soll er
+das machen was er bei AE2 auch macht").
 
 ---
 
@@ -34,8 +39,9 @@ eine fremde Maschine leert sie im selben Tick.
 
 ## 2. Die Form: Block oder Deklaration?
 
-Hier liegt die eine Frage, die der Projektinhaber entscheiden sollte. Beide
-Antworten sind vertretbar, und beide haben im Projekt einen Präzedenzfall.
+**Entschieden am 26.08.: Form B, die Deklaration.** Die Abwägung bleibt
+stehen, weil sie erklärt, warum — und weil sie die Grenze markiert: Am
+Verhalten ändert die Form nichts, es ist das von AE2.
 
 ### Form A — ein eigener Block
 
@@ -156,6 +162,8 @@ verschwinden lässt.
 ---
 
 ## 5. Wie er in Schnitte zerfällt
+
+Die ersten drei sind gebaut (26.08.), der vierte steht aus.
 
 1. **Lesen.** Ein Bus, kein Filter, keine Priorität. `storage.count(…)` und
    `contents()` sehen die Kiste. Das Terminal zeigt sie.

@@ -71,6 +71,31 @@ public sealed interface Decl {
      * versionieren, und ein Rezept an einem Gerät, das es nicht gibt, meldet
      * sich beim Übernehmen.
      */
+    /**
+     * {@code store kiste_1 { … }} — ein fremdes Inventar zählt zum Netzspeicher.
+     *
+     * <p>Der Speicherbus, wie AE2 ihn hat, nur ohne eigenen Block. Der
+     * Connector hängt ohnehin an der Kiste; diese Zeile sagt, dass ihr Inhalt
+     * zum Netz gehört: {@code storage.count(…)} sieht ihn, ein Auftrag rechnet
+     * damit, ein Worker {@code to storage} darf dort landen.
+     *
+     * <p><b>Im Programm und nicht in einem Fenster</b>, aus demselben Grund
+     * wie bei {@code recipe}: Ein Filter, den man nur im Spiel sieht, ist
+     * nicht versionierbar, geht nicht mit der Datei nach VS Code, und ein
+     * Vertipper darin fällt niemandem auf. Die Begründung steht in
+     * {@code speicherbus.md}.
+     *
+     * @param priority wohin zuerst eingelagert wird; die Zellen stehen auf 0
+     * @param filter   was hinein darf, oder {@code null} für alles
+     */
+    record Store(String device, long priority, Expr filter, Span span) implements Decl {
+
+        @Override
+        public String name() {
+            return device;
+        }
+    }
+
     record Recipe(String name, String device, List<Part> inputs, List<Part> outputs,
                   Span span) implements Decl {
 
