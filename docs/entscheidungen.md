@@ -3371,10 +3371,28 @@ möglich: Ein Mekanism-Modul (1.4) könnte seine Rezepte beisteuern, und dann
 schreibt niemand sie auf — aber es ist eine Zugabe und keine Grundlage, genau
 wie bei den Chemikalien entschieden.
 
-**Nicht entschieden**, weil es Spielgefühl ist: ob eine Fabrik ihre Maschinen
-von selbst kennen soll (A allein, mit einer harten Grenze bei allem Modded)
-oder ob der Spieler sie ihr beibringt (B). Das ist dieselbe Art Frage wie
-„Muster-Items ja oder nein", und die hat der Projektinhaber beantwortet.
+### Entschieden am 26.08.: Weg B
+
+Der Projektinhaber hat **B** gewählt. Das Lesbare geht von selbst, alles
+andere schreibt der Spieler auf — als `recipe`-Deklaration im Programm und
+nicht als Muster-Item.
+
+### Berichtigt: Steinsäge und Lagerfeuer
+
+Die Liste „was doch automatisch ginge" oben war um zwei Einträge zu lang, und
+der Unterschied ist **lesbar** gegen **ausführbar**:
+
+- **Die Steinsäge hat keine BlockEntity.** Ihr Rezept lässt sich lesen, aber
+  in den Block hineinschieben kann niemand — es gibt kein Inventar. Sie
+  läuft deshalb **am Fabricator**, wie ein Werkbank-Rezept: Beides ist
+  Handarbeit ohne Maschine, beides steht im Server, beides ist deterministisch
+  und in einem Zug erledigt. Der Fabricator kann damit zwei Rezeptarten — und
+  das ist keine Ausweitung seiner Rolle, sondern ihre genaue Beschreibung.
+- **Das Lagerfeuer fällt weg.** Kein Gegenstandsspeicher, den ein Connector
+  ansprechen könnte, und es ist eine Kochstelle und keine Maschine.
+
+Übrig als **Maschinen mit Wartezeit** bleiben Ofen, Schmelzofen und
+Räucherofen — sowie die eigene Presse dieser Mod.
 
 ---
 
@@ -3441,3 +3459,25 @@ Fehler an einer neuen Stelle.
 brauchbar — Wasserstoff aus dem Elektrolyseur in den Tank ist die häufigste
 Aufgabe —, er braucht keine neue Zahl, und er lässt die zweite Entscheidung
 offen, bis jemand mit einem Pack davorsitzt.
+
+### Entschieden am 26.08.: beides
+
+Der Projektinhaber hat beide Fragen beantwortet. **Mekanism darf in den
+Prüflauf** — die Abhängigkeit kommt als `compileOnly` plus `runtimeOnly` wie
+GuideME. Und **Chemikalien werden auch gelagert**: Es kommt eine dritte
+Zellenart, gegen die Empfehlung und in Kenntnis dessen, dass ihre Zahlen
+gesetzt und nicht hergeleitet sind — dieselbe Lage wie bei den
+Serverbauteilen (5.4).
+
+Zwei Dinge, die daraus folgen und beim Bauen gelten:
+
+**Die Chemikalien-Zelle wird immer registriert, funktioniert aber nur mit
+Mekanism.** Eine bedingte Registrierung hieße: Wer Mekanism entfernt, verliert
+die Zellen aus seiner Welt — samt Inhalt. Ein Gegenstand, den es immer gibt
+und dessen Tooltip „braucht Mekanism" sagt, ist die freundlichere Antwort und
+erfüllt dieselbe Zusage. Die Item-Klasse darf dafür keinen Mekanism-Typ in
+einer Signatur tragen.
+
+**Kein `CellFormat.CHEMICALS` im Kern.** Das statische Feld lüde beim
+Initialisieren der Klasse Mekanism-Typen, und dann startet die Mod ohne
+Mekanism nicht mehr. Das Format entsteht in `compat/mekanism`.

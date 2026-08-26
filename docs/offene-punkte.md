@@ -123,8 +123,12 @@ Vorentscheidungen)
 > **2.9 ist erkundet, nicht gebaut.** Automatische Erkennung fremder
 > Maschinenrezepte ist in 1.21.1 nachweislich nicht möglich — die
 > Schnittstelle gibt es nicht her, und AE2 wie Refined Storage lassen deshalb
-> beide hinterlegen. Damit ist aus einer Bauaufgabe eine Produktfrage
-> geworden: drei Wege, Empfehlung B, Entscheidung offen.
+> beide hinterlegen. Damit war aus einer Bauaufgabe eine Produktfrage
+> geworden.
+>
+> **Die drei offenen Fragen sind am 26.08. beantwortet:** 2.9 wird **Weg B**,
+> Mekanism darf in den Prüflauf, und Chemikalien werden **auch gelagert**.
+> Damit steht auf der Liste nichts Offenes mehr außer 5.4 — nur noch Arbeit.
 
 **Status:** **F** = fehlt schlicht · **E** = wartet auf eine Entscheidung ·
 **Z** = bewusst zurückgestellt, kein Versäumnis
@@ -138,7 +142,7 @@ Vorentscheidungen)
 | 1.1 | ~~`output()`, `send()`, `busy`~~ — **erledigt.** `output()` und `busy` sind gestrichen (sie sagten dasselbe wie `move` beziehungsweise nichts Nachprüfbares), `send()` an einer Gruppe ist mit 1.14 gebaut | | `sprache.md` §6, §8 | | |
 | 1.2 | ~~Listenoperationen~~ — **fertig**, alle fünf. `where` und `sort` werten je Eintrag aus, mit `it` als diesem Eintrag | | `sprache.md` §12 | | |
 | 1.3 | ~~Flüssigkeits-Tags~~ — **fertig.** `fluidtag:c/molten` löst gegen die Fluid-Registry auf, `tag:` bleibt bei den Gegenständen. Ein Worker mit `fluidtag:` gilt als Flüssigkeits-Worker: `WorkerKind` nennt die Ressource, nicht die Schreibweise | | `FluidSelection`, `WorkerKind.resource` | | |
-| 1.4 | **Teilstück gebaut** (26.08.): `chemical:` meldet jetzt die fehlende Mod statt einer Baustelle — an allen drei Stellen aus einer Quelle (`FnMekanism`), mit Rückfall auf „nicht installiert", wenn keine Modliste geladen ist. Die Abhängigkeit ist nachgesehen (ModMaven, `:api`, 10.7.15.81), aber nicht eingebaut. **Zwei Fragen offen:** ob `runtimeOnly` in jeden Prüflauf soll (Entwicklungsumgebung), und ob Chemikalien nur bewegt oder auch gelagert werden (Balance). Empfohlen: erst bewegen | E | `compat/mekanism/FnMekanism` | mittel–groß | zwei Entscheidungen, siehe `entscheidungen.md` |
+| 1.4 | **Teilstück gebaut** (26.08.): `chemical:` meldet die fehlende Mod statt einer Baustelle, aus einer Quelle (`FnMekanism`). **Beide Fragen entschieden** (26.08.): Mekanism kommt als `compileOnly` plus `runtimeOnly` in den Prüflauf, und Chemikalien werden **auch gelagert** — eine dritte Zellenart. Die Zelle wird immer registriert und funktioniert nur mit Mekanism; ohne bedingte Registrierung, sonst verschwinden Zellen samt Inhalt aus der Welt | F | `compat/mekanism` | groß | — |
 | 1.5 | `import`/Module — reserviert, tut nichts | Z | `Parser.java:86` | — | bewusst, bis ein Projekt den Namensraum sprengt |
 | 1.6 | Request/Response als eigene Form | Z | `sprache.md:992` | mittel | mit `emit`/`on`/`await` nachbaubar |
 | 1.7 | ~~Rechte im Mehrspielerbetrieb~~ — **gebaut** (25.08.). `protection.programs` in der Serverkonfiguration: `OFF` (Vorgabe, wie bisher), `OWNER`, `OPS`. Geschützt sind Übernehmen und Entwurf speichern; die Beschriftungspistole nicht — sie ändert die Welt, und dafür gibt es Schutzmods | | `FnProtection` | | |
@@ -168,7 +172,7 @@ Vorentscheidungen)
 | 2.11 | ~~`log()` sieht niemand~~ — **fertig.** Vier Stufen (`info`, `warn`, `error`, `debug`), Reiter „Log" mit Filter, Herkunft je Zeile, überlebt den Neustart. Die Hinweise der Laufzeit laufen mit hinein | | `LogTabView`, `LogEntry` | | |
 | 2.7 | ~~`when`-Bedingungen~~ — **überholt.** Im laufenden Spiel wertet der echte Interpreter aus: Texte, globale Werte, Gerätezustände. Der alte Weg — Zahl gegen Zahl — greift nur ohne Host, also in Prüfungen ohne Welt. Eine kaputte Bedingung hält den Worker an | | `WorkerRuntime.conditionHolds` | | |
 | 2.8 | ~~`NetworkCheck` besucht keine Anweisungen~~ — **fertig.** Ein `move` mit unbekanntem Gerätenamen wird gewarnt, in der Anweisung wie im Ausdruck. Ausgespart bleiben örtliche Namen: Parameter, `let`, Schleifenvariablen, globale Werte, Festwerte, Vorlagen, Gruppen und die Rollen eines Multiblocks | | `NetworkCheck.checkMoves` | | |
-| 2.9 | **Erkennung von Maschinen-Rezepten** — **erkundet** (26.08.), Ergebnis in `entscheidungen.md` „Processing-Rezepte: die Erkundung". Automatisch geht nicht: `Recipe.getIngredients()` liefert als Vorgabe eine leere Liste, eine `Ingredient` trägt keine Menge, Flüssigkeiten und Strom stehen nicht darin, `getResultItem` kennt nur eine Ausgabe. AE2 und Refined Storage lassen deshalb beide hinterlegen. Drei Wege stehen zur Wahl, empfohlen ist **B** (lesbare Rezeptarten automatisch, alles andere als `recipe`-Deklaration im Programm) | E | `entscheidungen.md`, `konzept.md` §8 | groß | Produktentscheidung: Weg A, B oder C |
+| 2.9 | **Erkennung von Maschinen-Rezepten** — erkundet und **entschieden: Weg B** (26.08.). Automatisch geht nicht: `Recipe.getIngredients()` liefert als Vorgabe eine leere Liste, eine `Ingredient` trägt keine Menge, Flüssigkeiten und Strom stehen nicht darin. Also: Ofen, Schmelzofen und Räucherofen als Maschinen mit Wartezeit, Steinsäge am Fabricator, alles andere als `recipe`-Deklaration im Programm | F | `entscheidungen.md` „Processing-Rezepte" | groß | — |
 | 2.10 | ~~Autocrafting~~ — **fertig** (25.08.), in drei Schritten an einem Tag. Fabricator und Aufträge am Controller, `craft(64 item:chest)`, der Reiter, die beiden Ereignisse, alles übersteht den Neustart. Der Planner zerlegt eine Bestellung bis zu dem, was dasteht, trägt Zutaten-Auswahlen durch und kommt mit Kreisen zurecht. `from crafting` hält einen Vorrat, gerechnet gegen Bestand und offene Aufträge | | `CraftingPlanner`, `WorkerRuntime.tickCraftingWorker` | | |
 
 ## 3. Editor im Spiel
@@ -226,7 +230,7 @@ Vorentscheidungen)
 
 | # | Was | Status | Wo | Größe |
 |---|---|---|---|---|
-| 7.1 | Mekanism-Chemikalien — **entschieden als Kompatibilitätsmodul** (siehe 1.4), nicht als Pflicht-Abhängigkeit. Der Ordner `compat/mekanism` steht seit dem 26.08., mit dem Teil, der ohne die Mod geht | E | `compat/mekanism` | mittel–groß |
+| 7.1 | Mekanism-Chemikalien — **entschieden als Kompatibilitätsmodul** (siehe 1.4), nicht als Pflicht-Abhängigkeit. Der Ordner `compat/mekanism` steht seit dem 26.08., mit dem Teil, der ohne die Mod geht. Umfang seit dem 26.08. entschieden: bewegen **und** lagern | F | `compat/mekanism` | groß |
 | 7.2 | ~~GuideME eingebunden~~ — **fertig**, `compat/guide` | | | |
 | 7.3 | Das Fertig-Signal je Mod (Weg 3) | Z | `umsetzung.md:177` | groß |
 | 7.4 | Eigene Generatoren | Z | `strom.md:220` | — |
@@ -237,8 +241,8 @@ Vorentscheidungen)
 
 Stand nach dem 26.08.: **Auf der ganzen Liste steht nur noch eine offene
 Entscheidung** — 5.4, die Zahlen an den Serverbauteilen, und die beantwortet
-eine Runde Spielen und kein Gespräch. Alles andere ist Arbeit, und davon steht
-nur noch Großes und Freiwilliges da.
+eine Runde Spielen und kein Gespräch. Alles andere ist Arbeit, und die beiden
+großen Posten (2.9 und 1.4) haben ihre Richtung.
 
 ~~**1. Die Stromverteilung** (2.2).~~ **Gebaut am 25.08.** Eine Fabrik
 versorgt ihre Maschinen jetzt selbst, und der Vorrat wächst mit den
