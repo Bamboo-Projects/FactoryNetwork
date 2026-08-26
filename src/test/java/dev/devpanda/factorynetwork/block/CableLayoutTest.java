@@ -129,8 +129,8 @@ class CableLayoutTest {
                 String name = prefix + "connector_part_" + facing.getName() + ".json";
                 String json = read(name);
 
-                double[] plate = CableShapes.slabBox(facing, 0, CableLayout.PART_DEPTH,
-                        wide, 16 - wide);
+                double[] plate = CableShapes.slabBox(facing, -CableLayout.PART_OVERHANG,
+                        CableLayout.PART_DEPTH, wide, 16 - wide);
                 assertTrue(json.contains(corner("from", plate, 0)),
                         name + ": die Platte beginnt woanders als in CableLayout");
                 assertTrue(json.contains(corner("to", plate, 3)),
@@ -145,10 +145,21 @@ class CableLayoutTest {
         }
     }
 
-    /** Eine Ecke als das, was im Modell steht: {@code "from":[2,2,0]}. */
+    /** Eine Ecke als das, was im Modell steht: {@code "from":[2,2,-0.05]}. */
     private static String corner(String key, double[] box, int at) {
-        return "\"" + key + "\":[" + (int) box[at] + "," + (int) box[at + 1]
-                + "," + (int) box[at + 2] + "]";
+        return "\"" + key + "\":[" + number(box[at]) + "," + number(box[at + 1])
+                + "," + number(box[at + 2]) + "]";
+    }
+
+    /**
+     * Eine Zahl so, wie das Modellskript sie schreibt.
+     *
+     * <p>Ganze Zahlen ohne Komma, gebrochene mit — genau das macht Pythons
+     * {@code json.dumps} mit einem {@code int} und einem {@code float}.
+     */
+    private static String number(double value) {
+        return value == Math.rint(value) ? String.valueOf((int) value)
+                : String.valueOf(value);
     }
 
     private static int elementCount(String json) {

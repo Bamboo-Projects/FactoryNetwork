@@ -58,6 +58,23 @@ public final class CableLayout {
     /** Wie breit die Platte eines Anschlusses ist. */
     public static final int PART_WIDTH = 12;
 
+    /**
+     * Wie weit die Platte über die Blockkante hinausragt.
+     *
+     * <p><b>Gegen Z-Fighting.</b> Seit das Kabel einen Arm zu jeder Fläche
+     * mit Anschluss wachsen lässt, enden Arm und Platte beide genau auf der
+     * Blockkante — zwei Flächen in derselben Ebene. Steht dahinter eine
+     * Maschine, schneidet Minecraft beide weg und man sieht nichts davon.
+     * Zeigt der Anschluss ins Leere, flimmert die Farbe des Kabels quer über
+     * sein Gesicht.
+     *
+     * <p>Ein zwanzigstel Blockpixel reicht, damit die Platte gewinnt. Das ist
+     * ein Dreitausendstel Block — im Spiel unsichtbar, und in die Maschine
+     * dahinter ragt es nur dorthin, wo deren eigene Fläche es ohnehin
+     * verdeckt.
+     */
+    public static final double PART_OVERHANG = 0.05;
+
     /** Wo die Platte beginnt — sie sitzt mittig auf der Fläche. */
     public static int partOffset() {
         return (16 - PART_WIDTH) / 2;

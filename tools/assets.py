@@ -39,6 +39,11 @@ DENSE = 10
 PART_DEPTH = 3
 PART_WIDTH = 12
 
+# Ein zwanzigstel Blockpixel vor der Blockkante: Sonst liegt die Platte in
+# derselben Ebene wie der Kabelarm, der zu ihr wächst, und die Farbe des
+# Kabels flimmert quer über ihr Gesicht. Dieselbe Zahl steht in CableLayout.
+PART_OVERHANG = 0.05
+
 FACES = ("north", "south", "east", "west", "up", "down")
 OPPOSITE = {"north": "south", "south": "north", "east": "west",
             "west": "east", "up": "down", "down": "up"}
@@ -82,7 +87,7 @@ def connector_part_models():
     for size in (THIN, DENSE):
         prefix = "" if size == THIN else "dense_"
         for facing in FACES:
-            near, far = slab_box(facing, 0, PART_DEPTH, wide, 16 - wide)
+            near, far = slab_box(facing, -PART_OVERHANG, PART_DEPTH, wide, 16 - wide)
             plate = {"from": near, "to": far, "faces": {}}
             for face in FACES:
                 which = "front" if face == facing else (
