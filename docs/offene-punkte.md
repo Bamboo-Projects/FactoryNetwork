@@ -336,6 +336,20 @@ Zustand wirklich ändert. Betrieb und Füllstand bleiben draußen; die Rechnung
 dazu steht in `statusanzeige.md` §3. Nebenbei liest Jade jetzt denselben
 Stempel, statt dieselbe Frage ein zweites Mal zu rechnen.
 
+### Stand nach der Nacht auf den 27.08.
+
+Fünf Punkte durchgezogen: die VS-Code-Erweiterung auf 1.0, Source aus Ars
+Nouveau als Ressourcenart, der AE2-Entwurf, die Prüfung von Industrial
+Foregoing und die Gateway-Textur. Was danach oben ansteht:
+
+1. **Schnitt 3 aus `maschinenzugriff.md`** — die eingebauten drei Arten ziehen
+   auf `machine()` um. Er stand unter „erst wenn jemand gespielt hat"; seit dem
+   AE2-Entwurf hat er einen zweiten Grund: **Ohne ihn kommt kein ME-Netz als
+   Quelle für `item:` herein**, außer über eine Sonderabfrage mitten im
+   Gegenstandsweg.
+2. **Die AE2-Brücke** (`ae2.md`, Schnitte 2 und 3). Wartet auf 1.
+3. **4.1, der Serverfall der Editorbrücke** — die Technik steht noch aus.
+
 **Womit es weitergeht: einmal spielen.** Weg B ist vollständig, und alles
 daran ist test-grün und im Client nie gelaufen. Was ein Prüflauf grundsätzlich
 nicht sehen kann, steht an drei Stellen:
