@@ -203,6 +203,17 @@ Einstieg, alles Weitere kommt aus dem Pack. Dass das Netz jetzt verteilt,
 ändert daran nichts — es macht die Frage sogar kleiner, weil fremde
 Generatoren über `from generator_1 to network` einspeisen.
 
+~~**Strom aus dem Netz herausziehen.**~~ **Gebaut am 26.08.** Der Anschluss
+des Controllers gibt jetzt auch heraus — ein Flux Plug, ein Kabel, ein
+Verbraucher hängt direkt daran. **Ohne Ratengrenze:** Die galt der Aufnahme,
+und für die Abgabe wäre sie genau das, was stört. Vorher führte der Weg über
+einen Worker in einen Energiewürfel, und dessen eigene Rate war der Engpass.
+
+Die eine Grenze, die bleibt, ist keine Rate, sondern ein Boden: Gezogen wird
+bis auf die Anlaufschwelle. Darunter ginge das Netz aus, führe drei Sekunden
+hoch und ginge wieder aus — ein Flackern, das wie ein Fehler aussieht und
+keiner ist.
+
 ~~**Strom als Wert in der Sprache.**~~ **Gebaut**, in zwei Schritten:
 `crusher_1.energy()` liest seit dem 25.08. den Stand einer Maschine — mit
 Klammern, wie `redstone()`. Seit dem 26.08. liest `network.power` den Vorrat

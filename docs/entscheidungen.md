@@ -3557,6 +3557,32 @@ Mekanism-Block zum Netz läuft erst, wenn jemand ihn im Spiel hinstellt.
 
 ---
 
+## Der Stromanschluss gibt auch heraus (2026-08-26)
+
+Bisher nahm er nur an, und die Begründung stand daneben: Wer sein Kabel an den
+Controller legt, soll den Vorrat füllen. Herausgeben war nicht verboten,
+sondern nie gebaut.
+
+Der Weg hinaus gab es trotzdem — ein Worker `from network to energy_cube`,
+und daran der fremde Anschluss. **Der Umweg ist der Grund für diese
+Änderung:** Ein Energiewürfel hat seine eigene Übertragungsrate, und die wird
+zum Engpass für alles, was dahinter hängt. Auf Hinweis des Projektinhabers,
+dem an der Rate mehr liegt als daran, dass niemand das Netz leersaugt.
+
+**Keine Ratengrenze für die Abgabe.** `MAX_INPUT` galt der Aufnahme und bleibt
+dort. Nach außen wäre sie genau das, was stört.
+
+**Ein Boden statt einer Rate.** Gezogen wird bis auf die Anlaufschwelle.
+Darunter ginge das Netz aus, führe drei Sekunden hoch und ginge wieder aus —
+ein Flackern, das wie ein Fehler aussieht und keiner ist. Das ist keine
+Sicherheitsgrenze gegen fremden Zugriff, sondern die gegen einen Zustand, den
+niemand haben will. Wer den Rest auch noch will, schaltet das Netz ab.
+
+**Wer selbst begrenzen will**, hängt statt des Kabels einen Worker mit `rate`
+dazwischen. Die Grenze liegt dann beim Spieler und nicht im Block.
+
+---
+
 ## Der Connector klickt, statt einer zu werden (2026-08-26)
 
 Gewünscht war „eine weitere Variante von den Connector, der z. B. auch Klicks

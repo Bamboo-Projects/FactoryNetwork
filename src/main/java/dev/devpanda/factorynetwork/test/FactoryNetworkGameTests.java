@@ -1453,6 +1453,62 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    /**
+     * Eine fremde Leitung darf am Controller <b>ziehen</b>, nicht nur einspeisen.
+     *
+     * <p>Bisher nahm der Anschluss nur an. Wer Strom aus dem Netz in ein
+     * anderes System wollte, brauchte einen Worker in einen Energiewürfel und
+     * daran den fremden Anschluss — und genau dieser Umweg kostet
+     * Übertragungsrate, denn der Würfel hat seine eigene.
+     *
+     * <p>Jetzt geht es direkt: Ein Flux Plug, ein Kabel, ein Verbraucher zieht
+     * am Controller. <b>Ohne Ratengrenze</b> — die galt der Aufnahme, und für
+     * die Abgabe wäre sie genau das, was hier stört.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void aforeignLineMayDrawFromTheController(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        entity.power().fill(entity.power().capacity());
+
+        var port = entity.power().port();
+        int vorher = port.getEnergyStored();
+        helper.assertTrue(port.canExtract(), "Der Anschluss muss herausgeben");
+
+        int gezogen = port.extractEnergy(5_000, false);
+
+        helper.assertValueEqual(gezogen, 5_000, "und zwar so viel, wie verlangt wurde");
+        helper.assertValueEqual(port.getEnergyStored(), vorher - 5_000,
+                "und der Vorrat muss um genau das kleiner sein");
+        helper.succeed();
+    }
+
+    /**
+     * Und er hört auf, bevor das Netz sich selbst abschaltet.
+     *
+     * <p>Die eine Grenze, die bleibt — und sie ist keine Rate, sondern ein
+     * Boden. Ohne ihn zöge eine fremde Leitung das Netz bis unter die
+     * Anlaufschwelle, es ginge aus, führe drei Sekunden hoch, ginge wieder
+     * aus: ein Flackern, das wie ein Fehler aussieht und keiner ist.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void drawingStopsAtTheFloor(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        entity.power().fill(entity.power().capacity());
+
+        var port = entity.power().port();
+        port.extractEnergy(Integer.MAX_VALUE, false);
+
+        helper.assertTrue(entity.power().stored() > 0,
+                "das Netz darf sich nicht selbst leersaugen lassen");
+        helper.assertValueEqual(port.extractEnergy(1_000, false), 0,
+                "und am Boden gibt es nichts mehr");
+        helper.succeed();
+    }
+
     /** Ein Programm mit await in if in while — die Vorlage der Ablauf-Tests. */
     private static final String COUNTING_PROGRAM = """
             event Takt(nummer: Int)

@@ -242,9 +242,30 @@ public final class NetworkPower {
             return accepted;
         }
 
+        /**
+         * Und hinaus, ohne Ratengrenze.
+         *
+         * <p><b>Die Grenze galt der Aufnahme</b>, und für die Abgabe wäre sie
+         * genau das, was stört: Wer Strom aus dem Netz in ein anderes System
+         * leitet, ging bisher über einen Energiewürfel, und dessen eigene
+         * Rate war der Engpass. Der Umweg ist der Grund, warum es diesen Weg
+         * gibt.
+         *
+         * <p><b>Bis auf den Boden und nicht bis auf null.</b> Die eine
+         * Grenze, die bleibt, ist keine Rate: Zöge eine fremde Leitung unter
+         * die Anlaufschwelle, ginge das Netz aus, führe drei Sekunden hoch
+         * und ginge wieder aus — ein Flackern, das wie ein Fehler aussieht
+         * und keiner ist. Wer den Rest auch noch will, schaltet das Netz ab.
+         */
         @Override
         public int extractEnergy(int toExtract, boolean simulate) {
-            return 0;
+            int floor = Power.restartThreshold(draw());
+            int free = Math.max(0, stored() - floor);
+            int taken = Math.min(Math.max(0, toExtract), free);
+            if (!simulate && taken > 0) {
+                consume(taken);
+            }
+            return taken;
         }
 
         @Override
@@ -259,7 +280,7 @@ public final class NetworkPower {
 
         @Override
         public boolean canExtract() {
-            return false;
+            return true;
         }
 
         @Override

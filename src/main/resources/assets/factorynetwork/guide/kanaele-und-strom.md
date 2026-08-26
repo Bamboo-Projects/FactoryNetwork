@@ -210,6 +210,30 @@ viel liefert.
 Am Controller steht dasselbe im Tooltip, und an der Brennkammer, ob sie
 brennt, leer ist oder ihren Vorrat nicht loswird.
 
+## Strom in ein anderes System
+
+Am Controller hängt ein Anschluss, der in beide Richtungen geht. Ein Kabel aus
+einer anderen Mod — ein Flux Plug, eine Leitung, ein Verbraucher — kommt
+direkt dran, ohne Umweg über einen Energiewürfel und ohne dessen
+Übertragungsrate.
+
+Gezogen wird bis auf einen Rest. Der bleibt liegen, damit das Netz nicht
+ausgeht und drei Sekunden lang hochfährt, während jemand daran hängt.
+
+Wenn du selbst bestimmen willst, wie viel abfließt, nimm statt des Kabels
+einen Worker:
+
+```
+worker abgeben {
+    from network
+    to energy_cube
+    filter power
+    rate 2000 per 1t
+}
+```
+
+Dann liegt die Grenze bei dir und nicht beim Block.
+
 ## Den Vorrat im Programm ablesen
 
 Was im Netz-Reiter steht, liest auch ein Programm:
