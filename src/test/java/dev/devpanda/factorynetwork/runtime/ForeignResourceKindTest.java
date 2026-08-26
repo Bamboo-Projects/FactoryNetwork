@@ -173,6 +173,22 @@ class ForeignResourceKindTest {
     }
 
     @Test
+    @DisplayName("Ohne Maschinenzugriff bewegt sie sich nirgends, und sagt das")
+    void withoutMachineAccessItMovesNowhere() {
+        // Die zweite Achse: Wo eine Art im Netz liegt, sagt newStore(); wie
+        // sie an eine fremde Maschine kommt, sagt machine(). Beides darf
+        // fehlen, und beides fehlt dann hörbar statt still.
+        assertSame(dev.devpanda.factorynetwork.network.MachineAccess.NONE, SOURCE.machine());
+
+        var none = dev.devpanda.factorynetwork.network.MachineAccess.NONE;
+        assertEquals(0L, none.count(null, null, null, List.of("ars:mana")));
+        assertEquals(0L, none.fill(dev.devpanda.factorynetwork.network.ResourceStore.NONE,
+                null, null, null, List.of("ars:mana"), 100));
+        assertEquals(0L, none.drain(null, null, null, List.of("ars:mana"),
+                dev.devpanda.factorynetwork.network.ResourceStore.NONE, 100));
+    }
+
+    @Test
     @DisplayName("Zweimal dasselbe Präfix ist ein Fehler, kein Zufall")
     void thesamePrefixTwiceIsAnerror() {
         assertThrows(IllegalStateException.class, () -> ResourceKinds.register(SOURCE));

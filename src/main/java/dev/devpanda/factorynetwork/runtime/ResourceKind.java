@@ -119,6 +119,25 @@ public interface ResourceKind {
     }
 
     /**
+     * Wie diese Art an einer fremden Maschine gelesen und geschrieben wird.
+     *
+     * <p><b>Die zweite Achse.</b> {@link #newStore()} sagt, wo die Art im Netz
+     * liegt; das hier sagt, wie sie dort hin und wieder heraus kommt. Beides
+     * braucht eine Art, um in einem Programm nützlich zu sein.
+     *
+     * <p><b>Standardmäßig keiner.</b> Eine Art darf im Netz liegen, ohne dass
+     * eine Maschine sie kennt — so wie sie sich bewegen darf, ohne lagerbar
+     * zu sein. {@code move} sagt das dann und liefert keine stille Null.
+     *
+     * <p>Die eingebauten drei liefern hier ebenfalls nichts: Ihr Weg steht
+     * heute in {@code WorldHost} und zieht erst mit Schnitt 3 hierher um.
+     * Siehe {@code maschinenzugriff.md}.
+     */
+    default dev.devpanda.factorynetwork.network.MachineAccess machine() {
+        return dev.devpanda.factorynetwork.network.MachineAccess.NONE;
+    }
+
+    /**
      * Die Art hinter einer Schreibweise, oder {@code null}.
      *
      * <p>{@code null} heißt „keine Ressourcenart" und nicht „Gegenstände":

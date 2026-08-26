@@ -350,6 +350,13 @@ public final class WorldHost implements Interpreter.Host {
         if (kind == ResourceKinds.CHEMICAL) {
             return moveChemical(amount, from, to);
         }
+        // Eine Art, die eine fremde Mod angemeldet hat: Sie geht über die
+        // zweite Achse, und die bringt die Mod selbst mit. Ohne diese Zeilen
+        // liefe sie in die Gegenstandsauflösung — und was dort niemanden
+        // trifft, hieße „kein Filter".
+        if (kind != null && kind != ResourceKinds.ITEM) {
+            return moveForeign(kind, amount, from, to);
+        }
         List<Item> items = itemsOf(amount);
         long limit = amountOf(amount);
 
@@ -395,6 +402,47 @@ public final class WorldHost implements Interpreter.Host {
             return drainInto(source, items, limit);
         }
         return transfer(source, target, items, limit);
+    }
+
+    /**
+     * Bewegt eine Art, die eine fremde Mod mitgebracht hat.
+     *
+     * <p><b>Über den Netzspeicher, auch von Gerät zu Gerät.</b> Dieselbe
+     * Zurückhaltung wie bei den Chemikalien: Ohne die Zwischenstation
+     * bräuchte es einen dritten Weg für denselben Vorgang, und was unterwegs
+     * verlorenginge, hätte niemand gezählt. Ob das die richtige Antwort
+     * bleibt, ist eine Produktfrage und steht in {@code maschinenzugriff.md}.
+     */
+    private long moveForeign(ResourceKind kind, Value amount, Value from, Value to) {
+        var machine = kind.machine();
+        if (machine == dev.devpanda.factorynetwork.network.MachineAccess.NONE) {
+            throw new ScriptError(kind.prefix() + " lässt sich an keiner Maschine bewegen.",
+                    "Die Mod, die diese Art mitbringt, hat dafür keinen Zugriff "
+                            + "angemeldet. Im Netz lagern kann sie trotzdem.");
+        }
+        List<?> keys = keysOf(kind, amount);
+        long limit = amountOf(amount);
+        var store = stores.of(kind);
+        boolean fromStorage = isStorage(from);
+        boolean toStorage = isStorage(to);
+        if (fromStorage && toStorage) {
+            return 0;
+        }
+        if (fromStorage) {
+            var target = machineOf(to);
+            return machine.fill(store, level, target.pos(), target.side(), keys, limit);
+        }
+        if (toStorage) {
+            var source = machineOf(from);
+            return machine.drain(level, source.pos(), source.side(), keys, store, limit);
+        }
+        var source = machineOf(from);
+        var target = machineOf(to);
+        long pulled = machine.drain(level, source.pos(), source.side(), keys, store, limit);
+        if (pulled <= 0) {
+            return 0;
+        }
+        return machine.fill(store, level, target.pos(), target.side(), keys, pulled);
     }
 
     /**
@@ -745,6 +793,14 @@ public final class WorldHost implements Interpreter.Host {
             return 0;
         }
         ResourceKind kind = ResourceKind.of(what);
+        if (kind != null && kind != ResourceKinds.ITEM && kind != ResourceKinds.FLUID
+                && kind != ResourceKinds.CHEMICAL) {
+            net.minecraft.core.Direction facing = dev.devpanda.factorynetwork.block
+                    .ConnectorBlock.machineSide(connector.getBlockState());
+            return kind.machine().count(level,
+                    connector.getBlockPos().relative(facing), facing.getOpposite(),
+                    keysOf(kind, what));
+        }
         if (kind == ResourceKinds.FLUID) {
             return countFluids(connector, fluidsOf(what));
         }
@@ -1073,10 +1129,47 @@ public final class WorldHost implements Interpreter.Host {
         if (kind == ResourceKinds.CHEMICAL) {
             return chemicalsOf(value);
         }
-        // Und alles andere über die Gegenstandsauflösung — auch eine fremde
-        // Art, solange die zweite Achse fehlt. Sie trifft dort nichts und
-        // meldet es; das ist die ehrlichere Antwort als ein stilles Nichts.
+        // Eine fremde Art löst ihre Auswahl selbst auf — sie kennt ihre
+        // Registry, und der Kern kennt sie nicht. Eine schon aufgelöste
+        // Auswahl trägt ihre Schlüssel dagegen bereits: So kommt sie aus
+        // einer Schleife und aus jedem it.
+        if (kind != null && kind != ResourceKinds.ITEM) {
+            if (value instanceof Value.Selection selection && selection.kind() == kind) {
+                return selection.keys();
+            }
+            if (value instanceof Value.Resource resource && resource.kind() == kind) {
+                return List.of(resource.key());
+            }
+            List<?> found = kind.resolve(selectorFor(value));
+            if (found.isEmpty()) {
+                throw new ScriptError("Die Auswahl trifft kein " + kind.prefix() + ".",
+                        "Gibt es das in diesem Pack?");
+            }
+            return found;
+        }
         return itemsOf(value);
+    }
+
+    /**
+     * Der Auswahlausdruck hinter einem Wert, für eine fremde Art.
+     *
+     * <p>Eine schon aufgelöste Auswahl trägt ihre Schlüssel bereits; nur ein
+     * geschriebener Text muss noch einmal durch den Parser. Dieselbe
+     * Zerlegung wie bei den eingebauten Arten, über {@code Selectors}.
+     */
+    private Expr selectorFor(Value value) {
+        if (value instanceof Value.Request request) {
+            Expr parsed = selectorCache.get(request.selector());
+            if (parsed == null) {
+                parsed = dev.devpanda.factorynetwork.lang.Selectors.parse(request.selector());
+                if (parsed == null) {
+                    throw new ScriptError("Das ist keine Auswahl: " + request.selector() + ".");
+                }
+                selectorCache.put(request.selector(), parsed);
+            }
+            return parsed;
+        }
+        return null;
     }
 
     private static boolean isStorage(Value value) {
