@@ -205,6 +205,9 @@ Hinter dem Punkt eines Connectornamens steht:
 - `insert(auswahl)` — legt aus dem Netzspeicher etwas hinein und meldet, wie
   viel ankam. Weniger ist normal.
 - `items()` — was gerade in diesem Gerät liegt. Leere Fächer fallen weg.
+- `click()` — fasst die Maschine an, wie ein Rechtsklick mit leerer Hand. Für
+  die Maschinen, die von sich aus nichts tun. Zurück kommt, ob der Klick
+  angekommen ist; ein Fenster geht dabei nicht auf.
 
 Der Editor bietet das nach dem Punkt an, und zeigt hinter jedem Connector
 gleich mit, welche Maschine dahintersteht.

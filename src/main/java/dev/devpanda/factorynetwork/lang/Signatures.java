@@ -302,7 +302,10 @@ public final class Signatures {
                     "Bestimmte Fächer — eine Nummer oder ein Bereich wie 1..5. "
                             + "Auch als Quelle oder Ziel eines move."),
             new Member("energy", "energy() int",
-                    "Wie viel Strom in der Maschine steht, in FE. Ohne Speicher null."));
+                    "Wie viel Strom in der Maschine steht, in FE. Ohne Speicher null."),
+            new Member("click", "click() bool",
+                    "Fasst die Maschine an, wie ein Rechtsklick. Gibt zurück, ob er "
+                            + "angekommen ist. Ein Fenster geht dabei nicht auf."));
 
     /**
      * Was am Netz selbst steht: {@code network.power}.

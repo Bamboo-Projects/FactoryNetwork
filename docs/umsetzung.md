@@ -832,6 +832,27 @@ Er hält nichts, hat keine BlockEntity und kostet keinen Kanal. Strom kostet er
 wie Laufwerk und Router: Ein Ausbau, der nichts kostet, ist keine
 Entscheidung.
 
+### Der Connector fasst an (seit dem 26.08.)
+
+`altar.click()` — für die Maschinen, die von sich aus nichts tun. Die
+Begründung für die Form steht in `entscheidungen.md`; hier das Handwerk:
+
+**Der Platzhalter-Spieler braucht eine Position.** Seit 1.21 prüft Minecraft
+die Reichweite eines Klicks. Ein Spieler im Nullpunkt klickt ins Leere, und
+der Aufruf käme folgenlos zurück — ohne Fehler, ohne Hinweis, einfach
+`falsch`. Er steht deshalb auf dem Connector.
+
+**Geprüft an einem Hebel.** Er ist die einzige Vanilla-Antwort auf einen
+Klick, die man sehen kann, ohne ein Fenster zu öffnen: Sein Zustand kippt, und
+das steht im Block. Eine Kiste hätte „Erfolg" gemeldet und nichts bewiesen.
+
+**Der Fund nebenbei:** Der Editor im Spiel kürzte jede Vorschlagsliste auf
+acht. Mit `click` sind es neun Gerätemitglieder — und das neunte fiel hinten
+heraus, still. Das Limit gilt jetzt nur noch den Namen aus der Welt
+(zwanzigtausend Gegenstände, dreihundert Geräte); was die Sprache selbst
+hergibt, ist abzählbar und steht ganz da. Aufgefallen ist es nur, weil der
+Prüflauf die Liste vollständig vergleicht und nicht auf Enthaltensein.
+
 ### Eine Chemikalie als Wert (seit dem 26.08.)
 
 `chemical:` ließ sich längst bewegen, zählen und filtern — aber ein Posten aus

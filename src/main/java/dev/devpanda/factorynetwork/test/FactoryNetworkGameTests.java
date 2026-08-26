@@ -1382,6 +1382,77 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    /**
+     * {@code hebel.click()} fasst die Maschine an, auf die der Connector zeigt.
+     *
+     * <p>Manche Maschinen tun nichts, bis jemand sie anfasst — und für die
+     * gab es bisher keinen Griff. <b>Kein zweiter Block:</b> Ein- und Ausgang
+     * trennt hier schon der Code und nicht die Bauform, und für eine dritte
+     * Fähigkeit gilt dasselbe.
+     *
+     * <p>Geprüft an einem Hebel, und das ist Absicht: Er ist die einzige
+     * Vanilla-Antwort auf einen Klick, die man <b>sehen</b> kann, ohne ein
+     * Fenster zu öffnen — sein Zustand kippt, und das steht im Block.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void clickTouchesTheMachine(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        BlockPos hebel = controller.east().north().north();
+        helper.setBlock(hebel, Blocks.LEVER.defaultBlockState()
+                .setValue(net.minecraft.world.level.block.LeverBlock.FACE,
+                        net.minecraft.world.level.block.state.properties.AttachFace.FLOOR));
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                fn druecken() {
+                    return quarry_output.click()
+                }"""), "Das Programm wurde nicht übernommen");
+
+        boolean vorher = helper.getBlockState(hebel)
+                .getValue(net.minecraft.world.level.block.LeverBlock.POWERED);
+        var flow = entity.startFlow("druecken", java.util.List.of());
+
+        helper.assertValueEqual(flow.status().name(), "DONE",
+                "Der Ablauf muss durchlaufen: " + flow.detail());
+        helper.assertValueEqual(
+                ((dev.devpanda.factorynetwork.runtime.Value.Bool) flow.result()).value(), true,
+                "und melden, dass der Klick angekommen ist");
+        helper.assertValueEqual(helper.getBlockState(hebel)
+                        .getValue(net.minecraft.world.level.block.LeverBlock.POWERED),
+                !vorher, "der Hebel muss umgelegt sein");
+        helper.succeed();
+    }
+
+    /**
+     * Und an einem Block, den ein Klick nicht interessiert, meldet er das.
+     *
+     * <p>Kein Fehler: Ein Stein, der auf einen Rechtsklick nicht reagiert,
+     * ist kein kaputtes Programm. Aber {@code false} statt {@code true},
+     * damit ein Ablauf, der auf Wirkung wartet, das merkt.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void clickOnastoneChangesNothing(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        helper.setBlock(controller.east().north().north(), Blocks.STONE);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                fn druecken() {
+                    return quarry_output.click()
+                }"""), "Das Programm wurde nicht übernommen");
+
+        var flow = entity.startFlow("druecken", java.util.List.of());
+
+        helper.assertValueEqual(flow.status().name(), "DONE",
+                "Der Ablauf muss durchlaufen: " + flow.detail());
+        helper.assertValueEqual(
+                ((dev.devpanda.factorynetwork.runtime.Value.Bool) flow.result()).value(), false,
+                "und melden, dass nichts geschehen ist");
+        helper.succeed();
+    }
+
     /** Ein Programm mit await in if in while — die Vorlage der Ablauf-Tests. */
     private static final String COUNTING_PROGRAM = """
             event Takt(nummer: Int)

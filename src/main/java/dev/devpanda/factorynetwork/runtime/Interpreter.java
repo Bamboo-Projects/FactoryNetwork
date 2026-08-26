@@ -138,6 +138,21 @@ public final class Interpreter {
         }
 
         /**
+         * Fasst die Maschine hinter einem Gerät an — ein Rechtsklick.
+         *
+         * <p>Für die Maschinen, die von sich aus nichts tun: Ein Altar, der
+         * auf eine Hand wartet, ein Hebel, ein Knopf. Ohne diesen Griff gäbe
+         * es für sie keinen.
+         *
+         * <p>Ein Host ohne Welt kann niemanden anfassen und sagt es.
+         *
+         * @return ob der Klick angekommen ist
+         */
+        default boolean clickAt(String device) {
+            throw new ScriptError("Ohne Welt lässt sich nichts anfassen.");
+        }
+
+        /**
          * Wie viel Strom im Netz steht, in FE.
          *
          * <p><b>Der eigene Vorrat und keine Nachfrage in der Welt.</b> Er
@@ -1116,7 +1131,7 @@ public final class Interpreter {
                 default -> throw new ScriptError(
                         "Ein Gerät hat kein " + name + ".",
                         "Ohne Klammern gibt es nur online und name. Mit Klammern: "
-                                + "redstone(), count(…), insert(…) und items().");
+                                + "redstone(), count(…), insert(…), items() und click().");
             };
         }
         Value entry = entryMember(target, name);
@@ -1287,9 +1302,14 @@ public final class Interpreter {
                 // Mit Klammern wie redstone() und count(): Es ist ein Blick
                 // in die Welt und kein Name, den das Programm ohnehin kennt.
                 case "energy" -> new Value.Int(host.energyIn(device.name()));
+                // Mit Klammern wie alles, was in die Welt greift — und hier
+                // greift es am weitesten: Ein Klick ist derselbe Vorgang wie
+                // ein Rechtsklick eines Spielers, mit allem, was daran hängt.
+                case "click" -> new Value.Bool(host.clickAt(device.name()));
                 default -> throw new ScriptError(
                         "Ein Gerät kann kein " + name + ".",
-                        "Bekannt sind redstone, count, insert, items, slots und energy.");
+                        "Bekannt sind redstone, count, insert, items, slots, energy "
+                                + "und click.");
             };
         }
         throw new ScriptError("Auf " + target.describe() + " gibt es kein " + name + ".");

@@ -255,12 +255,13 @@ check('Volle Anweisung bietet nichts',
     complete(['worker haul {', '    rate 64 per 5s ']), []);
 contains('Oberste Ebene bietet display', ['di'], 'display', true);
 
-// Nach dem Punkt: die vier Dinge, die ein Gerät hat. Dieselbe Liste wie in
+// Nach dem Punkt: was ein Gerät hat. Dieselbe Liste wie in
 // Signatures.MEMBERS — hier kommt sie aus signatures.json, und der
 // Java-Test hält beide gleich.
 check('Nach dem Punkt die Gerätemitglieder',
     complete(['fn test() {', '    if crusher_1.']),
-    ['online', 'name', 'redstone', 'count', 'insert', 'items', 'slots', 'energy']);
+    ['online', 'name', 'redstone', 'count', 'insert', 'items', 'slots', 'energy',
+     'click']);
 contains('Nach dem Punkt kein from', ['fn test() {', '    if crusher_1.'], 'from', false);
 contains('Ohne Punkt keine Mitglieder', ['fn test() {', '    '], 'online', false);
 contains('Eine Zahl mit Punkt ist kein Zugriff',

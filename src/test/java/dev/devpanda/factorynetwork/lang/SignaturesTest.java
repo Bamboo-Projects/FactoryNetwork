@@ -161,7 +161,7 @@ class SignaturesTest {
                 .map(Signatures.Member::name).toList();
 
         assertEquals(java.util.List.of("online", "name", "redstone", "count",
-                "insert", "items", "slots", "energy"), names);
+                "insert", "items", "slots", "energy", "click"), names);
     }
 
     @Test

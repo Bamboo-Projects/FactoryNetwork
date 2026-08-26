@@ -121,6 +121,7 @@ Hinter dem Namen eines Connectors: `brecher_1.count(item:iron_ore)`.
 | `items() list` | Was gerade im Gerät liegt. Leere Fächer fallen weg. |
 | `slots(nummer) list` | Bestimmte Fächer — eine Nummer oder ein Bereich wie 1..5. Auch als Quelle oder Ziel eines move. |
 | `energy() int` | Wie viel Strom in der Maschine steht, in FE. Ohne Speicher null. |
+| `click() bool` | Fasst die Maschine an, wie ein Rechtsklick. Gibt zurück, ob er angekommen ist. Ein Fenster geht dabei nicht auf. |
 
 ## Was an einer Liste steht
 

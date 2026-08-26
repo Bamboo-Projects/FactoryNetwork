@@ -35,6 +35,19 @@ public final class Completions {
     private static final int MAX = 8;
 
     /**
+     * Eine vollständige Liste wird nicht gekürzt.
+     *
+     * <p>Das Limit gilt den Namen aus der Welt: zwanzigtausend Gegenstände,
+     * dreihundert Geräte — dort ist Abschneiden richtig. Was die Sprache
+     * selbst hergibt, ist abzählbar und muss ganz dastehen. Aufgefallen ist
+     * es beim neunten Gerätemitglied: {@code click} fiel hinten heraus, und
+     * der Editor verschwieg eine Fähigkeit, statt zu scrollen.
+     */
+    private static List<Entry> whole(List<Entry> entries) {
+        return entries;
+    }
+
+    /**
      * Ein Vorschlag.
      *
      * @param text   was in der Liste steht und womit verglichen wird
@@ -119,7 +132,7 @@ public final class Completions {
                             Entry.Kind.BUILTIN, candidate.shape()));
                 }
             }
-            return limit(entries);
+            return whole(entries);
         }
         if (afterDot(upToCursor)) {
             // <b>it ist kein Gerät.</b> Es steht für einen Posten, und daran
@@ -137,7 +150,7 @@ public final class Completions {
                                 Entry.Kind.BUILTIN, candidate.shape()));
                     }
                 }
-                return limit(entries);
+                return whole(entries);
             }
             // Eine Gruppe ist kein Gerät: An ihr stehen members und send, und
             // sonst nichts.
@@ -148,7 +161,7 @@ public final class Completions {
                                 Entry.Kind.BUILTIN, candidate.shape()));
                     }
                 }
-                return limit(entries);
+                return whole(entries);
             }
             if ("it".equals(wordBeforeDot(upToCursor))) {
                 for (Signatures.Member candidate : Signatures.ENTRY_MEMBERS) {
@@ -157,7 +170,7 @@ public final class Completions {
                                 Entry.Kind.BUILTIN, candidate.shape()));
                     }
                 }
-                return limit(entries);
+                return whole(entries);
             }
             if (memberPrefix(upToCursor) == null) {
                 return List.of();
@@ -168,7 +181,7 @@ public final class Completions {
                             Entry.Kind.BUILTIN, candidate.shape()));
                 }
             }
-            return limit(entries);
+            return whole(entries);
         }
 
         // Nach display: die Wände, die in der Welt stehen.

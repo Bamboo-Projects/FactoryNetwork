@@ -64,6 +64,61 @@ public final class WorldHost implements Interpreter.Host {
         this.power = store;
     }
 
+    /**
+     * Der Name, unter dem das Netz in fremden Protokollen auftaucht.
+     *
+     * <p>Fest und nicht zufällig: Claim-Mods erkennen einen Handelnden an
+     * seiner Kennung, und ein Netz, das bei jedem Neustart anders heißt,
+     * ließe sich in keiner Schutzzone freischalten.
+     */
+    private static final com.mojang.authlib.GameProfile CLICKER =
+            new com.mojang.authlib.GameProfile(
+                    java.util.UUID.fromString("f4c704e7-0000-4000-8000-000000000001"),
+                    "[factorynetwork]");
+
+    /**
+     * {@code altar.click()} — ein Rechtsklick auf die Maschine.
+     *
+     * <p><b>Über den vollen Weg und nicht über die Abkürzung.</b> Direkt
+     * {@code useWithoutItem} zu rufen wäre kürzer, würde aber
+     * {@code PlayerInteractEvent.RightClickBlock} nicht auslösen — und genau
+     * daran hängen die Schutzmods. Diese Mod schützt die Welt nicht selbst
+     * („dafür gibt es Schutzmods", steht bei der Beschriftungspistole); dann
+     * muss sie wenigstens denen den Weg lassen, die es tun.
+     *
+     * <p><b>Ein Fenster geht nicht auf.</b> Wer einen Block anklickt, der ein
+     * Menü öffnen würde, bekommt {@code true} und sieht nichts: Für einen
+     * Spieler, den es nicht gibt, ist {@code openMenu} folgenlos. Was ein
+     * Inventar hergibt, holt man mit {@code move}, nicht mit einem Klick.
+     */
+    @Override
+    public boolean clickAt(String device) {
+        var position = graph.connector(device).orElse(null);
+        if (position == null || !(level instanceof net.minecraft.server.level.ServerLevel server)
+                || !(level.getBlockEntity(position)
+                        instanceof dev.devpanda.factorynetwork.block.entity.ConnectorBlockEntity
+                                connector)) {
+            throw new ScriptError("Nichts im Netz heißt „" + device + "“.",
+                    "Ein Klick geht an ein Gerät, das im Netz hängt.");
+        }
+        var facing = dev.devpanda.factorynetwork.block.ConnectorBlock
+                .machineSide(connector.getBlockState());
+        var target = position.relative(facing);
+        var player = net.neoforged.neoforge.common.util.FakePlayerFactory
+                .get(server, CLICKER);
+        // Die Reichweite wird seit 1.21 geprüft: Ein Spieler im Nullpunkt
+        // klickt ins Leere, und der Aufruf käme folgenlos zurück.
+        player.setPos(position.getX() + 0.5, position.getY(), position.getZ() + 0.5);
+        var hit = new net.minecraft.world.phys.BlockHitResult(
+                net.minecraft.world.phys.Vec3.atCenterOf(target)
+                        .relative(facing.getOpposite(), 0.5),
+                facing.getOpposite(), target, false);
+        var result = player.gameMode.useItemOn(player, level,
+                net.minecraft.world.item.ItemStack.EMPTY,
+                net.minecraft.world.InteractionHand.MAIN_HAND, hit);
+        return result.consumesAction();
+    }
+
     @Override
     public long networkPower() {
         if (power == null) {

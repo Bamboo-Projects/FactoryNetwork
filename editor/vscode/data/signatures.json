@@ -522,6 +522,11 @@
       "name": "energy",
       "shape": "energy() int",
       "help": "Wie viel Strom in der Maschine steht, in FE. Ohne Speicher null."
+    },
+    {
+      "name": "click",
+      "shape": "click() bool",
+      "help": "Fasst die Maschine an, wie ein Rechtsklick. Gibt zurück, ob er angekommen ist. Ein Fenster geht dabei nicht auf."
     }
   ],
   "listMembers": [

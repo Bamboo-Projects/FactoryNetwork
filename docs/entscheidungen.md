@@ -3557,6 +3557,31 @@ Mekanism-Block zum Netz läuft erst, wenn jemand ihn im Spiel hinstellt.
 
 ---
 
+## Der Connector klickt, statt einer zu werden (2026-08-26)
+
+Gewünscht war „eine weitere Variante von den Connector, der z. B. auch Klicks
+ausführen kann". Gebaut ist die Fähigkeit und nicht die Variante:
+`altar.click()` an dem Connector, der ohnehin dranhängt.
+
+**Der Grund ist derselbe wie bei Ein- und Ausgang.** Dort war eine zweite
+Bauform schon einmal die naheliegende Antwort und wurde abgelehnt: Was ein
+Gerät tut, entscheidet der Code und nicht, welchen Block jemand hingestellt
+hat. Eine dritte Fähigkeit ändert daran nichts — sonst stünden irgendwann drei
+Connectoren an derselben Maschine, und welcher wofür ist, wüsste niemand mehr.
+
+**Über den vollen Weg.** Nicht `useWithoutItem` direkt, sondern der Umweg über
+einen Platzhalter-Spieler und `useItemOn`. Das ist umständlicher und der
+einzige Weg, auf dem `PlayerInteractEvent.RightClickBlock` ausgelöst wird — und
+daran hängen die Schutzmods. Diese Mod schützt die Welt nicht selbst; dann
+muss sie wenigstens denen den Weg lassen, die es tun. Der Platzhalter trägt
+eine feste Kennung, damit eine Claim-Mod ihn freischalten kann.
+
+**Ein Fenster geht nicht auf**, und das steht in der Doku. Ein Klick auf eine
+Kiste meldet Erfolg und tut nichts — für einen Spieler, den es nicht gibt, ist
+`openMenu` folgenlos. Wer an ein Inventar will, nimmt `move`.
+
+---
+
 ## Strom gehört nicht in ein Rezept (2026-08-26)
 
 Als die Flüssigkeiten in `recipe` einzogen, stand Strom auf derselben Liste —

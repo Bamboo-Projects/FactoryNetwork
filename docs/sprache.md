@@ -590,6 +590,7 @@ furnace_2.items()
 | `items()` | Was gerade drinliegt. Leere Fächer fallen weg |
 | `slots(nummer)` | Bestimmte Fächer — eine Nummer oder ein Bereich, `slots(1..5)` |
 | `energy()` | Wie viel Strom in der Maschine steht, in FE. Ohne Speicher null |
+| `click()` | Fasst die Maschine an, wie ein Rechtsklick. Gibt zurück, ob er ankam |
 
 ### Fertigen lassen
 
@@ -640,6 +641,35 @@ aufhängt.
 
 Eine Kiste meldet null. Das ist keine erfundene Antwort, sondern die Wahrheit
 über eine Kiste.
+
+### Die Maschine anfassen
+
+```
+fn beschwoeren() {
+    if altar.click() {
+        log("angefangen")
+    }
+}
+```
+
+Manche Maschinen tun nichts, bis jemand sie anfasst — Ars Nouveau ist voll
+davon. `click()` ist derselbe Vorgang wie ein Rechtsklick mit leerer Hand, auf
+den Block, auf den der Connector zeigt. Zurück kommt, ob er angekommen ist;
+ein Stein sagt `falsch` und ist kein Fehler.
+
+**Kein zweiter Block.** Ein- und Ausgang trennt hier schon der Code und nicht
+die Bauform, und für eine dritte Fähigkeit gilt dasselbe: Ein Connector je
+Maschine soll reichen.
+
+**Ein Fenster geht nicht auf.** Wer einen Block anklickt, der ein Menü öffnen
+würde, bekommt `wahr` und sieht nichts — für einen Spieler, den es nicht gibt,
+ist das folgenlos. Was ein Inventar hergibt, holt man mit `move`.
+
+**Schutzmods entscheiden mit.** Der Klick läuft denselben Weg wie der eines
+Spielers und löst dieselben Ereignisse aus. In einer fremden Claim passiert
+also nichts — dieselbe Haltung wie bei der Beschriftungspistole: Diese Mod
+schützt die Welt nicht selbst, aber sie geht denen nicht aus dem Weg, die es
+tun.
 
 ### Der Vorrat des Netzes
 

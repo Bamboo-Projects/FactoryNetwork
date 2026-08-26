@@ -162,7 +162,7 @@ Vorentscheidungen)
 | 1.7 | ~~Rechte im Mehrspielerbetrieb~~ — **gebaut** (25.08.). `protection.programs` in der Serverkonfiguration: `OFF` (Vorgabe, wie bisher), `OWNER`, `OPS`. Geschützt sind Übernehmen und Entwurf speichern; die Beschriftungspistole nicht — sie ändert die Welt, und dafür gibt es Schutzmods | | `FnProtection` | | |
 | 1.8 | **Zum Teil gebaut** (26.08.): `Chemical` steht im Wertemodell — eine Chemikalie ist ein Wert wie eine Gegenstandsart, trägt eine Menge, steht in einer Schleife und ist an einem Posten mit `it.chemical` abzulesen. Im Kern als Kennung und nie als Mekanism-Typ. **Offen mit Begründung:** `Job` — `craft` liefert eine Nummer, und mehr will bisher niemand ablesen; dafür gibt es `crafting_finished` und den Reiter. `Set<T>` — der Fall, der ihn braucht, fehlt weiter | F | `Value.ChemicalValue`, `sprache.md` §5 | klein | — |
 | 1.19 | **Die Ressourcenart als offene Registry** statt eines festen Aufzählungswerts. Stand seit dem 24.08. nur in `umfeld-atm10.md`; entschieden ist sie nicht, aber der Wunsch nach Ars Nouveau (7.5) beantwortet sie faktisch: Source ist eine Art, die der Kern nicht kennen kann. AE2 und Refined Storage haben sich für 1.21.1 beide dafür entschieden. Betrifft `Expr.Selector.Kind`, `WorkerKind`, `power` in `strom.md` | E/F | `umfeld-atm10.md` | groß | Entwurf |
-| 1.20 | **Ein Connector, der klickt.** Gewünscht am 26.08. Manche Maschinen tun nichts, bis jemand sie anfasst — Ars Nouveau ist voll davon. **Kein zweiter Block:** Ein- und Ausgang trennt hier schon der Code und nicht die Bauform, und dieselbe Regel gilt für eine dritte Fähigkeit. Also `altar.click()` an dem Connector, der ohnehin dranhängt | F | `Signatures.MEMBERS` | mittel | — |
+| 1.20 | ~~Ein Connector, der klickt~~ — **gebaut** (26.08.), am selben Tag gewünscht. `altar.click()` an dem Connector, der ohnehin dranhängt, und kein zweiter Block: Ein- und Ausgang trennt hier schon der Code und nicht die Bauform. Läuft über den vollen Vanilla-Weg, damit Schutzmods ihre Ereignisse bekommen. Ein Fenster geht nicht auf — für einen Spieler, den es nicht gibt, ist das folgenlos | | `WorldHost.clickAt`, `Signatures.MEMBERS` | | |
 | 1.9 | Echter Typprüfer über Ausdrücke — **zurückgestellt.** Literal gegen Literal bleibt; alles andere fällt zur Laufzeit auf, mit Meldungen, die wissen, was erwartet war | Z | `globale-werte.md:195` | groß | eigenes Vorhaben über die ganze Sprache |
 | 1.10 | ~~Konstanten~~ — **fertig.** `const stapel = 64` wird gelesen wie ein globaler Wert und nie geschrieben; der Versuch ist ein Fehler beim Übernehmen. Nicht gespeichert, weil ein Wert aus dem Programm aus dem Programm wiederkommt | | `Decl.Const`, `GlobalCheck` | | |
 | 1.11 | ~~Globale Listen~~ — **fertig** (26.08.). `[a, b]` und `[]`, mehrzeilig; dazu `plus`, `without`, `rest`. Die Entscheidung lautet **ersetzen, nicht ändern**: Kein `add`, angehängt wird über eine Zuweisung — damit greifen `const` und der Mehrspielerschutz ohne Zusatzarbeit, und der Neustart trennt keine Verweise. Kein Zugriff über eine Nummer. Obergrenze in der Serverkonfiguration (`globalListSize`) | | `Expr.ListLit`, `Interpreter.writeGlobal` | | |
@@ -292,9 +292,9 @@ andere schreibt der Spieler ein `recipe` ins Programm.
 auf, bewegt sich, wird gezählt und lagert in Chemikalienzellen. Ohne Mekanism
 läuft alles wie vorher.
 
-**Was jetzt oben steht:** die Wünsche vom 26.08. — ein Connector, der klickt
-(1.20), und die drei Mods (7.5 bis 7.7). Sie hängen an **einer** Frage, und
-das ist dieselbe, die seit dem 24.08. nur in `umfeld-atm10.md` stand:
+**Was jetzt oben steht:** die drei Mods (7.5 bis 7.7) — der Connector, der
+klickt (1.20), ist am selben Tag gebaut worden. Sie hängen an **einer** Frage,
+und das ist dieselbe, die seit dem 24.08. nur in `umfeld-atm10.md` stand:
 **ob die Ressourcenart eine offene Registry wird** statt eines festen
 Aufzählungswerts (1.19). Ars Nouveau entscheidet sie faktisch — Source ist
 eine Art, die der Kern nicht kennen kann. AE2 und Refined Storage haben sich
