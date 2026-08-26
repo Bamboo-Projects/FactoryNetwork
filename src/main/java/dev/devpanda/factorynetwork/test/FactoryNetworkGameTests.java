@@ -10400,4 +10400,78 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    /** Wie viel von einer Art in der Kiste an dieser Stelle liegt. */
+    private static int countIn(GameTestHelper helper, BlockPos pos, Item wanted) {
+        if (!(helper.getBlockEntity(pos) instanceof ChestBlockEntity container)) {
+            return 0;
+        }
+        int found = 0;
+        for (int slot = 0; slot < container.getContainerSize(); slot++) {
+            ItemStack stack = container.getItem(slot);
+            if (stack.is(wanted)) {
+                found += stack.getCount();
+            }
+        }
+        return found;
+    }
+
+    /**
+     * Zwei Speicherbusse nebeneinander, und die priority entscheidet.
+     *
+     * <p>Schnitt 4 aus {@code speicherbus.md}. Die drei Schnitte davor sind
+     * mit <b>einem</b> Bus geprüft worden — dass mehrere zusammen einen
+     * Bestand ergeben und dass die Reihenfolge beim Einlagern stimmt, war
+     * eine Zusage ohne Beleg. Dieselbe Lücke wie beim zweiten Laufwerk (5.2).
+     *
+     * <p>Geprüft werden beide Hälften: Der Bestand ist die <b>Summe</b>
+     * beider Kisten, und was das Netz einlagert, geht in die mit der höheren
+     * {@code priority} — nicht in die, die zufällig zuerst im Programm steht.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void twoStoresAddUpAndPriorityDecides(GameTestHelper helper) {
+        BlockPos controller = bareSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        BlockPos erste = controller.east().north().north();
+        BlockPos zweite = controller.east().south().south();
+        entity.rebuildNetwork();
+
+        if (helper.getBlockEntity(erste) instanceof ChestBlockEntity chest) {
+            chest.setItem(0, new ItemStack(Items.IRON_ORE, 12));
+        } else {
+            helper.fail("Keine Kiste an quarry_output", erste);
+        }
+        if (helper.getBlockEntity(zweite) instanceof ChestBlockEntity chest) {
+            chest.setItem(0, new ItemStack(Items.COBBLESTONE, 7));
+        } else {
+            helper.fail("Keine Kiste an depot", zweite);
+        }
+
+        // quarry_output steht zuerst im Programm und hat die niedrigere
+        // priority — damit sagt der Test etwas über die Reihenfolge und
+        // nicht über die Schreibreihenfolge.
+        helper.assertTrue(entity.deploy("""
+                store quarry_output {
+                }
+
+                store depot {
+                    priority 10
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+
+        helper.assertValueEqual(entity.storage().count(Items.IRON_ORE), 12L,
+                "die erste Kiste zählt zum Bestand");
+        helper.assertValueEqual(entity.storage().count(Items.COBBLESTONE), 7L,
+                "die zweite auch — ein Bestand ist die Summe aller Busse");
+
+        // Kein Laufwerk im Aufbau: Was hineingeht, muss in eine der Kisten.
+        long rest = entity.storage().insert(Items.GOLD_INGOT, 5);
+
+        helper.assertValueEqual(rest, 0L, "fünf Barren passen in eine Kiste");
+        helper.assertValueEqual(countIn(helper, zweite, Items.GOLD_INGOT), 5,
+                "und gehen in die Kiste mit der höheren priority");
+        helper.assertValueEqual(countIn(helper, erste, Items.GOLD_INGOT), 0,
+                "die andere bleibt unberührt");
+        helper.succeed();
+    }
+
 }

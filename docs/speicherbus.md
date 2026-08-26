@@ -163,7 +163,7 @@ verschwinden lässt.
 
 ## 5. Wie er in Schnitte zerfällt
 
-Die ersten drei sind gebaut (26.08.), der vierte steht aus.
+Alle vier sind gebaut (26.08.).
 
 1. **Lesen.** Ein Bus, kein Filter, keine Priorität. `storage.count(…)` und
    `contents()` sehen die Kiste. Das Terminal zeigt sie.
@@ -171,10 +171,71 @@ Die ersten drei sind gebaut (26.08.), der vierte steht aus.
    Reihenfolge zwischen Zellen und Bus.
 3. **Filter und Priorität.** Erst hier wird die Deklaration mehr als ein Name.
 4. **Mehrere Busse**, und das Tick-Lesen aus Abschnitt 3 mit Messung gegen das
-   Schrittbudget.
+   Schrittbudget. Siehe Abschnitt 7.
 
 Jeder Schnitt ist für sich brauchbar und prüfbar. Der erste allein beantwortet
 schon die häufigste Frage: „Warum sieht mein Netz die Kiste nicht?"
+
+---
+
+## 7. Schnitt 4: mehrere Busse, gemessen
+
+Zwei Fragen standen offen, und beide sind beantwortet.
+
+### Tragen mehrere Busse?
+
+**Ja, und sie taten es schon** — es hatte nur nie jemand nachgesehen. Die
+ersten drei Schnitte sind mit genau einem Bus geprüft worden; dass ein Bestand
+die Summe mehrerer Kisten ist und dass die `priority` die Reihenfolge beim
+Einlagern entscheidet, war eine Zusage ohne Beleg. Dieselbe Lücke wie beim
+zweiten Laufwerk (Punkt 5.2), und derselbe Ausgang: Der Prüflauf lief auf
+Anhieb durch.
+
+Er heißt `twoStoresAddUpAndPriorityDecides` und prüft beide Hälften. Die Kiste
+mit der niedrigeren `priority` steht dabei **zuerst** im Programm — sonst
+sagte der Test etwas über die Schreibreihenfolge und nichts über die
+Priorität.
+
+### Was kostet das Lesen je Tick?
+
+Gemessen am 26.08. in einem Prüflauf, gegen einen Behälter aus reinem Speicher
+(`ItemStackHandler`), voll besetzt. Ein Tick sind 50 000 000 ns.
+
+| Aufbau | Fächer | ns/Tick | Anteil an einem Tick |
+|---|---:|---:|---:|
+| 1 Kiste | 27 | 9 100 | 0,02 % |
+| 8 Kisten | 216 | 6 400 | 0,01 % |
+| 8 Doppelkisten | 432 | 10 700 | 0,02 % |
+| 32 Kisten | 864 | 26 100 | 0,05 % |
+| 64 Kisten | 1 728 | 56 200 | 0,11 % |
+| 4 große Behälter | 4 000 | 101 300 | 0,20 % |
+| 1 sehr großer | 10 000 | 236 300 | 0,47 % |
+| 2 sehr große | 20 000 | 489 100 | 0,98 % |
+
+Es wächst linear mit der Zahl der **Fächer** und nicht mit der Zahl der Busse:
+rund **24 ns je Fach**. Vierundsechzig Kisten am Netz kosten ein Neuntausendstel
+eines Ticks.
+
+**Antwort: keine Grenze.** Es gibt nichts zu begrenzen — weder eine Zahl von
+Bussen noch ein Fächerbudget in der Serverkonfiguration. Eine Grenze auf
+Vorrat wäre eine Frage an den Betreiber, die niemand beantworten kann, und sie
+nähme dem Spieler etwas, das nichts kostet.
+
+### Was die Messung nicht sagt
+
+Sie misst **diese Mod**, nicht den fremden Behälter. Gezählt wurde gegen ein
+Feld im Speicher; ein `getStackInSlot` ist dort ein Array-Zugriff.
+
+Ein Drawer-Controller ist etwas anderes: Er stellt womöglich tausende Fächer
+und rechnet je Aufruf. Die Zahl oben ist damit ein **Boden und keine Decke**.
+Was sie trotzdem sagt: Der Anteil, der auf unsere Seite entfällt, ist auch bei
+zwanzigtausend Fächern unter einem Prozent — wenn es je klemmt, liegt es an
+dem, was hinter `getStackInSlot` steht, und dann ist die Antwort eine andere
+als eine Zahl in der Konfiguration.
+
+Der Prototyp der Messung ist Wegwerfcode und liegt nicht in der Codebasis;
+übernommen ist nur die Erkenntnis. Dieselbe Handhabung wie bei
+`referenz-messung-speicherzugriff.md`.
 
 ---
 
