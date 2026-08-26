@@ -7,6 +7,7 @@
   "block.factorynetwork.cable": "Kabel",
   "block.factorynetwork.connector": "Connector",
   "block.factorynetwork.terminal": "Terminal",
+  "message.factorynetwork.connector.no_room": "Dort ist kein Platz für einen Anschluss.",
   "message.factorynetwork.connector.unnamed": "Dieser Connector hat noch keinen Namen.",
   "message.factorynetwork.connector.named": "Connector: %s",
   "message.factorynetwork.controller.status": "%s Connectoren (%s ohne Namen) · %s Kabel",

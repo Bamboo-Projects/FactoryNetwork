@@ -69,6 +69,23 @@ public final class FnClient {
         event.registerBlockEntityRenderer(
                 dev.devpanda.factorynetwork.registry.FnBlockEntities.RACK.get(),
                 dev.devpanda.factorynetwork.client.render.RackRenderer::new);
+        event.registerBlockEntityRenderer(
+                dev.devpanda.factorynetwork.registry.FnBlockEntities.CABLE_BUS.get(),
+                dev.devpanda.factorynetwork.client.render.CableBusRenderer::new);
+    }
+
+    /**
+     * Die Modelle der Anschlüsse gehören zu keinem Blockzustand.
+     *
+     * <p>Welche Flächen eines Kabels ein Teil tragen, steht in der
+     * BlockEntity. Modelle, die niemand über eine Blockstate-Datei anfordert,
+     * lädt Minecraft nicht von selbst — sie werden hier angemeldet und vom
+     * CableBusRenderer gezeichnet.
+     */
+    @SubscribeEvent
+    public static void registerPartModels(
+            net.neoforged.neoforge.client.event.ModelEvent.RegisterAdditional event) {
+        dev.devpanda.factorynetwork.client.render.ConnectorPartModels.all(event::register);
     }
 
     @SubscribeEvent

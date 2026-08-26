@@ -1417,3 +1417,44 @@ Leitung. Seit es Anschlüsse trägt, ist es beides — der Strang läuft durch,
 und was daran hängt, gehört zur Anlage. Ohne diesen Schritt hätte ein
 Anschluss am Kabel den Anlagennamen des Gateways nie bekommen, und jedes
 Programm mit `werk_1/eingang` hätte ihn nicht gefunden.
+
+### Ein Anschluss geht an das Kabel (seit dem 26.08.)
+
+Der letzte Schnitt von Weg B ist der erste, den man im Spiel sieht. Vier
+Entscheidungen darin sind nicht offensichtlich.
+
+**Ein Fehlschlag muss „erledigt" melden.** `ServerPlayerGameMode.useItemOn`
+bricht nur ab, wenn das Ergebnis `consumesAction()` ist — `FAIL` und
+`SKIP_DEFAULT_BLOCK_INTERACTION` fallen beide weiter durch auf
+`stack.useOn(...)`. Wer also auf eine besetzte Kabelfläche klickt und dort
+ehrlich `FAIL` meldet, bekommt einen Connectorblock in die Lücke daneben
+gesetzt. Die Antwort ist ein `sidedSuccess` mit einem Satz an den Spieler.
+
+**Die Fluchtluke ist schon da.** Derselbe Code rechnet
+`flag1 = isSecondaryUseActive() && irgendeine Hand voll`. Wer schleichend mit
+einem Gegenstand klickt, überspringt `useItemOn` ganz — der Connectorblock
+wird gesetzt wie eh und je. Wer schleichend mit **beiden Händen leer** klickt,
+landet dagegen in `useWithoutItem`: Genau darauf beruht, dass Abnehmen und
+Benennen sich denselben Klick teilen können.
+
+**`onRemove` feuert bei jedem Zustandswechsel.** `LevelChunk.setBlockState`
+ruft es auch dann, wenn derselbe Block stehen bleibt — und ein Kabel wechselt
+seinen Zustand bei jedem Nachbarn, der auftaucht. Ohne die Prüfung
+`state.is(newState.getBlock())` fielen die Anschlüsse beim **Bauen** der
+Leitung heraus, nicht beim Abbauen. Ein Test hält genau das fest.
+
+**Zwölf Modelldateien statt zweier gedrehter.** Ein einziges Modell zu drehen
+verlangte Quaternionen im Renderer, und ob eine davon stimmt, sieht man erst
+im Spiel. Sechs Richtungen mal zwei Kabelstärken kosten dagegen nichts und
+lassen sich Zahl für Zahl gegen `CableLayout` prüfen: Die Formel steht
+zweimal da — einmal als `CableShapes.slabBox` in Java, einmal als `slab_box`
+in `tools/assets.py` —, und `CableLayoutTest` liest beide. Die Gegenprobe mit
+absichtlich geänderter Tiefe hat bestätigt, dass er dabei wirklich zuschlägt.
+
+**Gezeichnet statt gebacken.** Welche Flächen Teile tragen, steht in der
+BlockEntity. Im Blockzustand wären es sechs weitere Wahrheitswerte — mal sechs
+Verbindungen, mal siebzehn Farben: fast siebzigtausend Zustände je Kabelart,
+die Minecraft alle beim Start anlegt. Der Preis der anderen Seite: Mit einem
+angemeldeten Renderer landet jede Kabel-BlockEntity in der Zeichenliste, auch
+die ohne Teile. Der Rücksprung steht in der ersten Zeile, und die Kosten
+stehen als offener Punkt.

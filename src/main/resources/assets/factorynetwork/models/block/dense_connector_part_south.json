@@ -1,0 +1,44 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "particle": "factorynetwork:block/connector_side",
+    "front": "factorynetwork:block/connector_front",
+    "back": "factorynetwork:block/connector_back",
+    "side": "factorynetwork:block/connector_side"
+  },
+  "elements": [
+    {
+      "from": [
+        2,
+        2,
+        13
+      ],
+      "to": [
+        14,
+        14,
+        16
+      ],
+      "faces": {
+        "north": {
+          "texture": "#back"
+        },
+        "south": {
+          "texture": "#front",
+          "cullface": "south"
+        },
+        "east": {
+          "texture": "#side"
+        },
+        "west": {
+          "texture": "#side"
+        },
+        "up": {
+          "texture": "#side"
+        },
+        "down": {
+          "texture": "#side"
+        }
+      }
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.block;
 
+import net.minecraft.core.Direction;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -108,5 +109,69 @@ class CableLayoutTest {
         for (String direction : List.of("north", "south", "east", "west", "up", "down")) {
             assertTrue(json.contains("\"" + direction + "\""), "Arm nach " + direction + " fehlt");
         }
+    }
+
+    /**
+     * Die Anschlüsse an den Flächen: zwölf Modelle, dieselben Zahlen.
+     *
+     * <p>Hier zahlt sich die doppelte Buchführung aus. {@code CableShapes}
+     * rechnet die Trefferfläche, {@code tools/assets.py} das Modell — beide
+     * mit derselben Formel, aber in zwei Sprachen. Läuft eine der beiden
+     * davon, greift man neben das, was man sieht.
+     */
+    @Test
+    @DisplayName("Platte und Stiel im Modell haben die Maße aus CableLayout")
+    void partModelsMatchLayout() throws IOException {
+        int wide = CableLayout.partOffset();
+        for (int size : new int[] {CableLayout.THIN, CableLayout.DENSE}) {
+            String prefix = size == CableLayout.THIN ? "" : "dense_";
+            for (Direction facing : Direction.values()) {
+                String name = prefix + "connector_part_" + facing.getName() + ".json";
+                String json = read(name);
+
+                double[] plate = CableShapes.slabBox(facing, 0, CableLayout.PART_DEPTH,
+                        wide, 16 - wide);
+                assertTrue(json.contains(corner("from", plate, 0)),
+                        name + ": die Platte beginnt woanders als in CableLayout");
+                assertTrue(json.contains(corner("to", plate, 3)),
+                        name + ": die Platte endet woanders als in CableLayout");
+
+                int lo = CableLayout.offset(size);
+                if (CableLayout.stemLength(size) > 0) {
+                    double[] stem = CableShapes.slabBox(facing, CableLayout.PART_DEPTH, lo,
+                            lo, CableLayout.far(size));
+                    assertTrue(json.contains(corner("from", stem, 0)),
+                            name + ": der Stiel beginnt woanders als in CableLayout");
+                    assertTrue(json.contains(corner("to", stem, 3)),
+                            name + ": der Stiel endet woanders als in CableLayout");
+                } else {
+                    assertEquals(1, elementCount(json),
+                            name + ": ohne Stiel gehört auch kein zweiter Kasten hinein");
+                }
+            }
+        }
+    }
+
+    @Test
+    @DisplayName("Der Stiel fehlt genau beim dichten Kabel")
+    void denseCableHasNoStem() {
+        assertEquals(2, CableLayout.stemLength(CableLayout.THIN));
+        assertEquals(0, CableLayout.stemLength(CableLayout.DENSE));
+    }
+
+    /** Eine Ecke als das, was im Modell steht: {@code "from":[2,2,0]}. */
+    private static String corner(String key, double[] box, int at) {
+        return "\"" + key + "\":[" + (int) box[at] + "," + (int) box[at + 1]
+                + "," + (int) box[at + 2] + "]";
+    }
+
+    private static int elementCount(String json) {
+        int found = 0;
+        int at = json.indexOf("\"from\":");
+        while (at >= 0) {
+            found++;
+            at = json.indexOf("\"from\":", at + 1);
+        }
+        return found;
     }
 }

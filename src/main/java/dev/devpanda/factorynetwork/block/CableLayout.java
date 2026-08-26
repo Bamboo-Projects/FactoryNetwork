@@ -46,6 +46,34 @@ public final class CableLayout {
     /** Wie breit eine Kanallinie ist, in Blockpixeln. */
     public static final double LANE_WIDTH = 0.25;
 
+    /**
+     * Wie tief ein Anschluss aus der Blockfläche in den Block ragt.
+     *
+     * <p>Drei Blockpixel — genug, um ihn als eigenes Ding zu sehen und zu
+     * treffen, und wenig genug, dass er beim dichten Kabel gerade an dessen
+     * Mantel stößt: Dort beginnt der Kern schon bei drei.
+     */
+    public static final int PART_DEPTH = 3;
+
+    /** Wie breit die Platte eines Anschlusses ist. */
+    public static final int PART_WIDTH = 12;
+
+    /** Wo die Platte beginnt — sie sitzt mittig auf der Fläche. */
+    public static int partOffset() {
+        return (16 - PART_WIDTH) / 2;
+    }
+
+    /**
+     * Wie lang der Stiel vom Anschluss zum Kabelkern ist.
+     *
+     * <p>Null beim dichten Kabel: Dessen Mantel beginnt bei drei, und dort
+     * endet die Platte schon. Ein Kasten ohne Tiefe gehört nicht ins Modell
+     * und nicht in die Trefferfläche.
+     */
+    public static int stemLength(int size) {
+        return Math.max(0, offset(size) - PART_DEPTH);
+    }
+
     private CableLayout() {
     }
 }

@@ -34,6 +34,86 @@ CABLE_COLOURS = [
 THIN = 6
 DENSE = 10
 
+# Ein Anschluss an einer Kabelfläche: drei Blockpixel tief, zwölf breit.
+# Dieselben Zahlen stehen in CableLayout; CableLayoutTest hält sie zusammen.
+PART_DEPTH = 3
+PART_WIDTH = 12
+
+FACES = ("north", "south", "east", "west", "up", "down")
+OPPOSITE = {"north": "south", "south": "north", "east": "west",
+            "west": "east", "up": "down", "down": "up"}
+
+
+def slab_box(facing, near, far, lo, hi):
+    """Ein Kasten, von einer Blockfläche nach innen gemessen.
+
+    <b>near</b> und <b>far</b> sind der Abstand von der Fläche, zu der
+    <b>facing</b> zeigt; <b>lo</b> und <b>hi</b> spannen die beiden anderen
+    Achsen. Wort für Wort dieselbe Rechnung wie CableShapes.slabBox — und
+    genau deshalb steht sie zweimal da: Minecraft hält Modell und
+    Trefferfläche getrennt, und CableLayoutTest liest beide.
+    """
+    if facing == "north":
+        return [lo, lo, near], [hi, hi, far]
+    if facing == "south":
+        return [lo, lo, 16 - far], [hi, hi, 16 - near]
+    if facing == "west":
+        return [near, lo, lo], [far, hi, hi]
+    if facing == "east":
+        return [16 - far, lo, lo], [16 - near, hi, hi]
+    if facing == "down":
+        return [lo, near, lo], [hi, far, hi]
+    return [lo, 16 - far, lo], [hi, 16 - near, hi]
+
+
+def connector_part_models():
+    """Der Anschluss an einer Kabelfläche — sechs Modelle je Kabelstärke.
+
+    <b>Sechs Dateien statt eines gedrehten Modells:</b> Drehen müsste der
+    BlockEntity-Renderer, und ob eine Quaternion stimmt, sieht man nur im
+    Spiel. Sechs erzeugte Dateien kosten nichts und lassen sich Zahl für Zahl
+    gegen CableLayout prüfen.
+
+    Der Stiel schließt die Lücke zwischen Platte und Kabelkern. Beim dichten
+    Kabel gibt es ihn nicht: Dessen Mantel beginnt bei drei, und dort endet
+    die Platte schon.
+    """
+    wide = (16 - PART_WIDTH) // 2
+    for size in (THIN, DENSE):
+        prefix = "" if size == THIN else "dense_"
+        lo = (16 - size) // 2
+        for facing in FACES:
+            near, far = slab_box(facing, 0, PART_DEPTH, wide, 16 - wide)
+            plate = {"from": near, "to": far, "faces": {}}
+            for face in FACES:
+                which = "front" if face == facing else (
+                    "back" if face == OPPOSITE[facing] else "side")
+                entry = {"texture": "#" + which}
+                if face == facing:
+                    # Die Platte liegt bündig in der Blockfläche.
+                    entry["cullface"] = facing
+                plate["faces"][face] = entry
+            elements = [plate]
+
+            if lo > PART_DEPTH:
+                near, far = slab_box(facing, PART_DEPTH, lo, lo, lo + size)
+                elements.append({
+                    "from": near, "to": far,
+                    "faces": {face: {"texture": "#side"} for face in FACES},
+                })
+
+            write(A + "/models/block/%sconnector_part_%s.json" % (prefix, facing), {
+                "parent": "minecraft:block/block",
+                "textures": {
+                    "particle": texture("connector_side"),
+                    "front": texture("connector_front"),
+                    "back": texture("connector_back"),
+                    "side": texture("connector_side"),
+                },
+                "elements": elements,
+            })
+
+
 
 def cable_models():
     """Kern und Arm eines Kabels.
@@ -445,6 +525,7 @@ def models():
     })
 
     cable_models()
+    connector_part_models()
 
     write(A + "/models/block/connector.json", {
         "parent": "minecraft:block/block",

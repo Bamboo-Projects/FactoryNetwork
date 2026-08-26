@@ -5,6 +5,7 @@ import net.minecraft.world.phys.shapes.BooleanOp;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
+import java.util.Collection;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
@@ -56,12 +57,69 @@ public final class CableShapes {
 
     /** Kern samt der Arme, die wirklich verbunden sind. */
     public static VoxelShape whole(int size, List<Direction> connections) {
+        return whole(size, connections, List.of());
+    }
+
+    /**
+     * Kern, Arme und die Anschlüsse an den Flächen.
+     *
+     * <p>Ein Anschluss ist zwei Kästen: die Platte an der Blockfläche und der
+     * Stiel zum Kern. Ohne den Stiel schwebte die Platte, sobald das Kabel
+     * dünn ist — beim dichten stößt sie ohnehin an den Mantel, und dann gibt
+     * es keinen.
+     */
+    public static VoxelShape whole(int size, List<Direction> connections,
+                                   Collection<Direction> parts) {
         VoxelShape shape = CORES.getOrDefault(size, CORES.get(CableLayout.THIN));
         Map<Direction, VoxelShape> arms = ARMS.getOrDefault(size, ARMS.get(CableLayout.THIN));
         for (Direction direction : connections) {
             shape = Shapes.join(shape, arms.get(direction), BooleanOp.OR);
         }
+        for (Direction direction : parts) {
+            shape = Shapes.join(shape, part(size, direction), BooleanOp.OR);
+        }
         return shape;
+    }
+
+    /** Platte und Stiel eines Anschlusses an dieser Fläche. */
+    public static VoxelShape part(int size, Direction facing) {
+        int wide = CableLayout.partOffset();
+        VoxelShape plate = slab(facing, 0, CableLayout.PART_DEPTH, wide, 16 - wide);
+        int stem = CableLayout.stemLength(size);
+        if (stem == 0) {
+            return plate;
+        }
+        return Shapes.join(plate,
+                slab(facing, CableLayout.PART_DEPTH, CableLayout.offset(size),
+                        CableLayout.offset(size), CableLayout.far(size)),
+                BooleanOp.OR);
+    }
+
+    /**
+     * Ein Kasten, gemessen von einer Blockfläche nach innen.
+     *
+     * <p>{@code near} und {@code far} sind der Abstand von der Fläche, zu der
+     * {@code facing} zeigt; {@code lo} und {@code hi} spannen die beiden
+     * anderen Achsen. Dieselbe Rechnung erzeugt im Modellskript die Modelle —
+     * {@code CableLayoutTest} hält beide zusammen.
+     */
+    public static VoxelShape slab(Direction facing, double near, double far,
+                                  double lo, double hi) {
+        double[] box = slabBox(facing, near, far, lo, hi);
+        return box(box[0], box[1], box[2], box[3], box[4], box[5]);
+    }
+
+    /** Dieselben Zahlen als {@code from}/{@code to} eines Modellkastens. */
+    public static double[] slabBox(Direction facing, double near, double far,
+                                   double lo, double hi) {
+        return switch (facing) {
+            case NORTH -> new double[] {lo, lo, near, hi, hi, far};
+            case SOUTH -> new double[] {lo, lo, 16 - far, hi, hi, 16 - near};
+            case WEST -> new double[] {near, lo, lo, far, hi, hi};
+            case EAST -> new double[] {16 - far, lo, lo, 16 - near, hi, hi};
+            case DOWN -> new double[] {lo, near, lo, hi, far, hi};
+            case UP -> new double[] {lo, 16 - far, lo, hi, 16 - near, hi};
+        };
     }
 
     private CableShapes() {

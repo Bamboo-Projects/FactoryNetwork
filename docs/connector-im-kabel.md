@@ -235,9 +235,40 @@ anfassen.
    stehen zwei Beschriftungen aufeinander. Das ist Anzeige und keine
    Mechanik; es gehört zu Schnitt 4, wo Teile überhaupt erst zu sehen und zu
    treffen sind.
-4. **Setzen, Treffen, Aussehen.** Ein Connector wird an eine Kabelfläche
-   gesetzt statt daneben; Form und Modell setzen sich aus Kabel und Teilen
-   zusammen. `CableLayoutTest` hält beides zusammen.
+4. ~~**Setzen, Treffen, Aussehen.**~~ **Gebaut** (26.08.).
+   Rechtsklick mit einem Connector auf eine Kabelfläche setzt ihn dorthin;
+   schleichend mit leerer Hand nimmt ihn wieder ab; beim Abbauen des Kabels
+   fallen alle seine Anschlüsse heraus. Die Trefferfläche wächst um Platte
+   und Stiel, und der Renderer zeichnet beides.
+
+   Vier Entscheidungen, jede mit ihrem Grund:
+
+   - **Eine belegte Fläche meldet „erledigt", nicht „Fehlschlag".** Ein
+     `FAIL` fällt in Minecraft durch auf den Gegenstand — und der setzt dann
+     einen Connectorblock in die Lücke daneben. Wer auf eine besetzte Fläche
+     klickt, bekommt deshalb einen Satz statt eines Blocks an falscher
+     Stelle. Die Fluchtluke ist der schleichende Klick: Er umgeht diesen Weg
+     ganz.
+   - **Eine Fläche mit Anschluss verbindet nicht.** Sonst liefe der Arm des
+     Kabels mitten durch die Platte. Der Stiel des Teils schließt die Lücke
+     zum Kern, und damit bleibt `CONNECTIONS` unberührt.
+   - **Zwölf Modelldateien statt zweier gedrehter.** Drehen müsste der
+     Renderer, und ob eine Quaternion stimmt, sieht man erst im Spiel.
+     Erzeugte Dateien lassen sich Zahl für Zahl gegen `CableLayout` prüfen —
+     `CableLayoutTest` tut das, und eine Gegenprobe mit geänderter Tiefe hat
+     bestätigt, dass er dabei wirklich zuschlägt.
+   - **Gezeichnet statt gebacken.** Welche Flächen ein Teil tragen, steht in
+     der BlockEntity. Es in den Blockzustand zu nehmen hieße sechs weitere
+     Wahrheitswerte — mal sechs Verbindungen, mal siebzehn Farben: fast
+     siebzigtausend Zustände je Kabelart. **Der Preis:** Mit einem
+     angemeldeten Renderer landet jede Kabel-BlockEntity in der Zeichenliste,
+     auch die ohne Teile; der Rücksprung steht in der ersten Zeile. Was das
+     bei zehntausend Kabeln kostet, ist ungemessen — ein Wechsel auf ein
+     gebackenes Modell bliebe möglich, weil hier nichts gespeichert wird.
 
 Nach Schnitt 2 gibt es Anschlüsse im Kabelblock; nach Schnitt 3 mehrere je
-Block; nach Schnitt 4 sieht man es und trifft es.
+Block; nach Schnitt 4 sieht man sie, trifft sie und kann sie bauen.
+
+**Offen bleibt 4b:** Namenszug über dem Block, Jade und der Analysator zeigen
+weiter einen Anschluss je Stelle — sitzen zwei daran, stehen zwei
+Beschriftungen aufeinander.

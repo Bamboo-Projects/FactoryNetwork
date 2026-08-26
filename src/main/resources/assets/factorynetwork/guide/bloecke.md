@@ -87,9 +87,37 @@ Er gibt der Maschine dahinter einen Namen im Netz. Seine Vorderseite zeigt
 dorthin, wo du beim Setzen hingeklickt hast — und **an genau dieser Seite**
 muss die Maschine annehmen, was du ihr schicken willst.
 
+### Zwei Bauformen
+
+Du kannst ihn **als eigenen Block** neben das Kabel setzen — oder **an eine
+Fläche des Kabels selbst**. Rechtsklick mit dem Connector in der Hand auf ein
+Kabel setzt ihn an die getroffene Fläche.
+
+Der Unterschied ist Platz: Ein Kabelblock trägt bis zu sechs Anschlüsse, einen
+je Fläche. Eine Maschinenwand kostet damit **einen** Block, wo sonst sechs
+stehen. Jeder Anschluss hat seinen eigenen Namen, seinen eigenen Kanal und
+seine eigene Maschine.
+
+Auf eine Fläche, an der das Kabel weiterläuft, geht keiner: Dort ist kein
+Platz. Willst du an dieser Stelle trotzdem den eigenen Block setzen, klicke
+**schleichend** — dann geht der Connector wie gewohnt in die Lücke daneben.
+
+Wieder abnehmen: **schleichend mit leerer Hand** auf den Anschluss klicken.
+Er fällt heraus. Beim Abbauen des Kabels fallen alle seine Anschlüsse mit.
+
+### Benennen und Redstone
+
 Benannt wird er mit der Beschriftungspistole oder per Rechtsklick mit leerer
-Hand. Er gibt außerdem Redstone nach allen Seiten aus, wenn das Programm es
-verlangt: `alarm.redstone(15)`.
+Hand — am Kabel gilt dabei die Fläche, die du triffst.
+
+Redstone gibt er aus, wenn das Programm es verlangt: `alarm.redstone(15)`.
+Eine Fläche mit Anschluss gibt genau dessen Stärke, eine freie die stärkste
+am Block — sechs Anschlüsse an einem Kabel schalten also sechs Maschinen
+unabhängig, und ein Lämpchen neben dem Kabel leuchtet trotzdem.
+
+Gelesen wird dagegen am Block: `gerät.redstone()` meldet, was den Block
+erreicht. Ein Hebel neben dem Anschluss zählt, die Maschine davor nicht —
+die sitzt ja auf der Fläche.
 
 *Kostet: 1 Kanal, 1 FE/t.*
 

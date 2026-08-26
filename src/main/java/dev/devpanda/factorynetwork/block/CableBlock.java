@@ -180,7 +180,10 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
     protected BlockState updateShape(BlockState state, Direction direction, BlockState neighbour,
                                      LevelAccessor level, BlockPos pos, BlockPos neighbourPos) {
         BooleanProperty property = CONNECTIONS.get(direction);
-        return state.setValue(property, connects(state.getValue(COLOUR), neighbour));
+        // Eine Fläche mit Anschluss verbindet nicht: Dort sitzt schon etwas,
+        // und ein Arm dahin liefe mitten durch die Platte.
+        return state.setValue(property, !hasPart(level, pos, direction)
+                && connects(state.getValue(COLOUR), neighbour));
     }
 
     /**
@@ -193,7 +196,8 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
         CableColour colour = colourOf(state);
         for (Map.Entry<Direction, BooleanProperty> entry : CONNECTIONS.entrySet()) {
             BlockState neighbour = level.getBlockState(pos.relative(entry.getKey()));
-            state = state.setValue(entry.getValue(), connects(colour, neighbour));
+            state = state.setValue(entry.getValue(), !hasPart(level, pos, entry.getKey())
+                    && connects(colour, neighbour));
         }
         return state;
     }
@@ -241,10 +245,137 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos,
                                   CollisionContext context) {
-        return CableShapes.whole(size, connectionsOf(state));
+        return CableShapes.whole(size, connectionsOf(state), partsOf(level, pos));
+    }
+
+    /** Wie stark das Kabel an dieser Stelle ist, in Blockpixeln. */
+    public static int sizeOf(BlockState state) {
+        return state.getBlock() instanceof CableBlock cable ? cable.size() : CableLayout.THIN;
+    }
+
+    /** Die Flächen, an denen ein Anschluss sitzt. */
+    public static java.util.Set<Direction> partsOf(BlockGetter level, BlockPos pos) {
+        return level.getBlockEntity(pos) instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus
+                ? bus.parts().keySet() : java.util.Set.of();
+    }
+
+    private static boolean hasPart(BlockGetter level, BlockPos pos, Direction side) {
+        return level.getBlockEntity(pos) instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus
+                && bus.partAt(side) != null;
+    }
+
+    /**
+     * Welchen Anschluss dieser Klick meint.
+     *
+     * <p>Meist die getroffene Fläche. Aber die Platte ragt aus dem Kabel
+     * heraus, und wer ihre Schmalseite trifft, bekommt von Minecraft die
+     * Richtung <b>dieser Schmalseite</b> — die zeigt woandershin als das
+     * Teil. Dann entscheidet, in wessen Kasten der Treffer liegt.
+     */
+    public static @org.jetbrains.annotations.Nullable Direction partSideAt(
+            BlockGetter level, BlockPos pos, BlockHitResult hit) {
+        java.util.Set<Direction> parts = partsOf(level, pos);
+        if (parts.isEmpty()) {
+            return null;
+        }
+        if (parts.contains(hit.getDirection())) {
+            return hit.getDirection();
+        }
+        Vec3 local = hit.getLocation().subtract(pos.getX(), pos.getY(), pos.getZ());
+        int size = sizeOf(level.getBlockState(pos));
+        for (Direction side : parts) {
+            if (CableShapes.part(size, side).bounds().inflate(1.0E-4).contains(local)) {
+                return side;
+            }
+        }
+        return null;
     }
 
     // ---- Anschlüsse an den Flächen ----------------------------------------
+
+    /**
+     * Setzt einen Anschluss an die getroffene Fläche.
+     *
+     * <p><b>Warum nicht daneben:</b> Das ist der Griff, um den es bei AE2s
+     * Bauform geht — ein Block bedient bis zu sechs Nachbarn, wo bisher sechs
+     * Blöcke standen.
+     *
+     * <p><b>Warum ein Fehlschlag hier trotzdem „erledigt" meldet:</b> Ein
+     * {@code FAIL} fällt durch auf den Gegenstand, und der setzt dann einen
+     * Connectorblock in die Lücke daneben. Wer auf eine besetzte Fläche
+     * klickt, bekommt deshalb einen Satz statt eines Blocks an falscher
+     * Stelle.
+     *
+     * <p><b>Die Fluchtluke:</b> Wer schleichend klickt, umgeht diesen Weg
+     * ganz — dann wird der Connectorblock gesetzt wie eh und je.
+     */
+    @Override
+    protected net.minecraft.world.ItemInteractionResult useItemOn(
+            ItemStack stack, BlockState state, Level level, BlockPos pos, Player player,
+            net.minecraft.world.InteractionHand hand, BlockHitResult hit) {
+        if (!stack.is(dev.devpanda.factorynetwork.registry.FnBlocks.CONNECTOR.get().asItem())
+                || !(level.getBlockEntity(pos) instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus)) {
+            return net.minecraft.world.ItemInteractionResult
+                    .PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        }
+        Direction side = hit.getDirection();
+        if (bus.partAt(side) != null || state.getValue(connection(side))) {
+            if (!level.isClientSide) {
+                player.displayClientMessage(net.minecraft.network.chat.Component.translatable(
+                        "message.factorynetwork.connector.no_room"), true);
+            }
+            return net.minecraft.world.ItemInteractionResult.sidedSuccess(level.isClientSide);
+        }
+        if (!level.isClientSide) {
+            bus.addPart(side);
+            if (!player.getAbilities().instabuild) {
+                stack.shrink(1);
+            }
+            dev.devpanda.factorynetwork.network.ControllerRegistry.refreshAround(level, pos);
+        }
+        return net.minecraft.world.ItemInteractionResult.sidedSuccess(level.isClientSide);
+    }
+
+    /**
+     * Nimmt den Anschluss ab und gibt ihn zurück.
+     *
+     * <p>Ohne diesen Weg käme man nur an sein Teil zurück, indem man das
+     * ganze Kabel abbaut — und mit ihm alle anderen Anschlüsse daran.
+     */
+    private static void removePart(Level level, BlockPos pos, Direction side, Player player) {
+        if (!(level.getBlockEntity(pos) instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus)
+                || bus.removePart(side) == null) {
+            return;
+        }
+        if (!player.getAbilities().instabuild) {
+            popResource(level, pos, new ItemStack(dev.devpanda.factorynetwork.registry.FnBlocks.CONNECTOR.get()));
+        }
+        // Die Fläche ist wieder frei: Vielleicht will das Kabel dorthin
+        // jetzt einen Arm.
+        level.setBlock(pos, withConnections(level.getBlockState(pos), level, pos), UPDATE_ALL);
+        dev.devpanda.factorynetwork.network.ControllerRegistry.refreshAround(level, pos);
+    }
+
+    /**
+     * Wer das Kabel abbaut, bekommt seine Anschlüsse zurück.
+     *
+     * <p><b>Nur, wenn dort wirklich ein anderer Block hinkommt.</b>
+     * {@code onRemove} feuert auch bei jedem Zustandswechsel, und ein Kabel
+     * wechselt seinen Zustand bei jedem Nachbarn, der auftaucht oder
+     * verschwindet — ohne diese Prüfung fielen die Teile beim <i>Bauen</i>
+     * der Leitung heraus.
+     */
+    @Override
+    protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState,
+                            boolean movedByPiston) {
+        if (!state.is(newState.getBlock())) {
+            int found = partsOf(level, pos).size();
+            for (int i = 0; i < found; i++) {
+                popResource(level, pos, new ItemStack(dev.devpanda.factorynetwork.registry.FnBlocks.CONNECTOR.get()));
+            }
+        }
+        super.onRemove(state, level, pos, newState, movedByPiston);
+    }
 
     /**
      * Öffnet das Namensfenster des Anschlusses an der getroffenen Fläche.
@@ -259,10 +390,18 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
     @Override
     protected net.minecraft.world.InteractionResult useWithoutItem(
             BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
-        Direction side = hit.getDirection();
-        if (!(level.getBlockEntity(pos) instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus)
-                || bus.partAt(side) == null) {
+        Direction side = partSideAt(level, pos, hit);
+        if (side == null) {
             return net.minecraft.world.InteractionResult.PASS;
+        }
+        // Schleichen mit leeren Händen nimmt ab statt zu benennen. Minecraft
+        // ruft diesen Weg auch beim Schleichen, solange beide Hände leer
+        // sind — genau darauf beruht die Unterscheidung.
+        if (player.isSecondaryUseActive()) {
+            if (!level.isClientSide) {
+                removePart(level, pos, side, player);
+            }
+            return net.minecraft.world.InteractionResult.sidedSuccess(level.isClientSide);
         }
         if (level.isClientSide) {
             return net.minecraft.world.InteractionResult.SUCCESS;

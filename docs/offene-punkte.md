@@ -264,7 +264,7 @@ Handbucharbeit)
 | 7.8 | ~~**Ein Speicherbus wie in AE2**~~ — **fertig** (26.08.), alle vier Schnitte am Tag des Wunsches. `store kiste_1 { priority 5  filter tag:c/ores }`: Der Inhalt zählt zum Bestand, das Netz lagert dort ein und holt dort heraus, der Filter gilt fürs Einlagern und nicht fürs Holen. Durchgereicht statt gespiegelt, einmal je Tick gelesen. Schnitt 4 hat nichts gebaut, sondern zwei Dinge belegt: Mehrere Busse tragen (der Prüflauf lief auf Anhieb durch, wie bei 5.2), und das Tick-Lesen kostet rund 24 ns je Fach — bei 64 Kisten ein Neuntausendstel Tick. **Keine Grenze**, weil es nichts zu begrenzen gibt; die Messung steht in `speicherbus.md` §7 samt dem, was sie nicht sagt | | `speicherbus.md` §7, `StorageBus` | | |
 | 7.5 | **Ars Nouveau.** Gewünscht am 26.08. Source ist eine eigene Ressourcenart und damit der Fall, der 1.19 entscheidet: Mit einem festen Aufzählungswert käme sie nicht herein, ohne den Kern für jede Mod aufzumachen. Dazu die Blöcke, die von sich aus nach oben abgeben — die brauchen keinen eigenen Weg, der Connector hängt an der Kiste darüber | F | `ressourcenarten.md` | groß | 1.19 |
 | 5.5 | ~~**Eine Anlage über einen Block statt über Namen**~~ — **gebaut** (26.08.), am Tag des Wunsches. Der `GatewayBlock` ist ein Kabelstück mit Namensschild: Was hinter ihm am Kabel hängt, gehört zu seiner Anlage. Die Beschriftung gewinnt, ein zweites Gateway ist die Grenze, zwei auf einem Gerät heben sich auf, Kanäle vermehrt er nicht. Der Name entsteht im Graphen — Sprache, Wertemodell und beide Editoren mussten nicht angefasst werden | | `entscheidungen.md` „Eine Anlage darf auch ein Block sein", `GatewayRegions` | | |
-| 5.6 | **Der Connector im Kabelblock**, wie bei AE2. Gewünscht am 26.08., entschieden auf **Weg B** (echtes Multipart). **Drei von vier Schnitten sind gebaut** (26.08.). Schnitt 1: `ConnectorPart` ist alles, was ein Connector ist, ohne alles, was ein Block ist — kein Verhalten geändert, belegt durch den unveränderten Prüflauf. Schnitt 2: `CableBusBlockEntity` trägt bis zu sechs davon, `Connectors` ist der eine Weg, einen zu finden; `move` läuft Ende zu Ende durch einen Anschluss am Kabel. Schnitt 3: **ein Gerät ist Ort und Seite** (`DevicePos`) — zwei Anschlüsse an einem Block sind zwei Geräte, und die drei schweren Stellen sind gelöst: Redstone gibt je Fläche die eigene Stärke und auf freien Flächen die stärkste, das Benennen trägt die Fläche vom Klick bis zum Paket, `machineSide(state)` ist als Frage an einen Anschluss verschwunden. Dabei fiel auf, dass die **Anlagenerkennung** ein Kabel nur für eine Leitung hielt: Ein Anschluss daran hätte den Anlagennamen des Gateways nie bekommen. **Offen ist Schnitt 4** — Setzen an eine Kabelfläche, Formen, Modelle; erst danach sind Teile im Spiel überhaupt zu bauen. Mit ihm gehören Namenszug, Jade und Analysator nachgezogen: Sie zeigen weiter einen Anschluss je Stelle | E | `connector-im-kabel.md` §8 | Schnitt 4 mittel | |
+| 5.6 | **Der Connector im Kabelblock**, wie bei AE2. Gewünscht am 26.08., entschieden auf **Weg B** (echtes Multipart). **Drei von vier Schnitten sind gebaut** (26.08.). Schnitt 1: `ConnectorPart` ist alles, was ein Connector ist, ohne alles, was ein Block ist — kein Verhalten geändert, belegt durch den unveränderten Prüflauf. Schnitt 2: `CableBusBlockEntity` trägt bis zu sechs davon, `Connectors` ist der eine Weg, einen zu finden; `move` läuft Ende zu Ende durch einen Anschluss am Kabel. Schnitt 3: **ein Gerät ist Ort und Seite** (`DevicePos`) — zwei Anschlüsse an einem Block sind zwei Geräte, und die drei schweren Stellen sind gelöst: Redstone gibt je Fläche die eigene Stärke und auf freien Flächen die stärkste, das Benennen trägt die Fläche vom Klick bis zum Paket, `machineSide(state)` ist als Frage an einen Anschluss verschwunden. Dabei fiel auf, dass die **Anlagenerkennung** ein Kabel nur für eine Leitung hielt: Ein Anschluss daran hätte den Anlagennamen des Gateways nie bekommen. Schnitt 4: **Setzen, Treffen, Aussehen** — Rechtsklick mit einem Connector auf eine Kabelfläche setzt ihn dorthin, schleichend mit leerer Hand nimmt ihn ab, beim Abbauen des Kabels fallen alle heraus; Trefferfläche und zwölf erzeugte Modelle stehen unter demselben Test. **Offen ist 4b**: Namenszug, Jade und Analysator zeigen weiter einen Anschluss je Stelle | E | `connector-im-kabel.md` §8 | 4b klein | |
 | 7.6 | **Industrial Foregoing.** Gewünscht am 26.08. Gegenstände und Flüssigkeiten laufen schon heute; zu prüfen ist, was darüber hinaus eigen ist (Pink Slime, die Fächer der Maschinen) | F | — | mittel | Prüfung, was fehlt |
 | 7.7 | **Applied Energistics.** Gewünscht am 26.08. Ein ME-Netz als Quelle und Ziel — der Punkt, an dem das Vorgängerprojekt angefangen hat. Zu entscheiden ist, ob das Netz im ME-Netz lagert oder daneben steht | F | `umfeld-atm10.md` | groß | Entwurf |
 
@@ -320,16 +320,19 @@ läuft alles wie vorher.
 
 ### Womit die nächste Sitzung anfängt
 
-**Schnitt 4 aus `connector-im-kabel.md`** — der letzte von Weg B und der
-erste, den man im Spiel sieht: Ein Anschluss wird an eine Kabelfläche
-gesetzt statt daneben, Form und Modell setzen sich aus Kabel und Teilen
-zusammen, `CableLayoutTest` hält Trefferfläche und Modell zusammen. Bis
-dahin gibt es Teile am Kabel nur im Prüflauf — gebaut werden können sie
-nicht.
+~~**Schnitt 4 aus `connector-im-kabel.md`**~~ — **gebaut am 26.08.**
+Weg B ist damit vollständig: Ein Kabelblock trägt bis zu sechs Anschlüsse,
+sie lassen sich setzen, treffen, benennen, abnehmen und sehen.
 
-Mit ihm gehören drei Anzeigen nachgezogen, die weiter einen Anschluss je
-Stelle zeigen: der Namenszug über dem Block, Jade und der Analysator. Zwei
-Anschlüsse an einem Block schreiben dort zwei Beschriftungen übereinander.
+**Schnitt 4b, die drei Anzeigen.** Namenszug über dem Block, Jade und der
+Analysator zeigen weiter einen Anschluss je Stelle — sitzen zwei an einem
+Kabelblock, stehen zwei Beschriftungen aufeinander, und Jade nennt nur einen.
+Das ist Anzeige und keine Mechanik; nichts läuft dadurch falsch, es liest
+sich nur falsch.
+
+**Und ungespielt:** Alle vier Schnitte sind test-grün und im Client nie
+gelaufen. Der Renderer der Teile ist der einzige Teil dieser Arbeit, den kein
+Prüflauf sehen kann.
 
 ~~**Schnitt 1 aus `ressourcenarten.md`**~~ — **gebaut am 26.08.**, als erster
 Commit der Sitzung. Nachgemessen in §5a desselben Dokuments: Von zehn Stellen

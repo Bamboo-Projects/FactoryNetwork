@@ -10957,4 +10957,196 @@ public final class FactoryNetworkGameTests {
                         + net.graph().connectorNames());
         helper.succeed();
     }
+
+    // ---- Anschlüsse an einer Kabelfläche setzen und wegnehmen --------------
+
+    /** Der Kabelblock samt seiner BlockEntity, oder der Test schlägt fehl. */
+    private static dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity busAt(
+            GameTestHelper helper, BlockPos cable) {
+        if (helper.getBlockEntity(cable)
+                instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus) {
+            return bus;
+        }
+        helper.fail("Am Kabel hängt keine BlockEntity für Teile", cable);
+        return null;
+    }
+
+    /** Ein Treffer mitten auf einer Fläche des Blocks. */
+    private static net.minecraft.world.phys.BlockHitResult hitOn(
+            GameTestHelper helper, BlockPos block, Direction face) {
+        BlockPos here = helper.absolutePos(block);
+        return new net.minecraft.world.phys.BlockHitResult(
+                net.minecraft.world.phys.Vec3.atCenterOf(here).relative(face, 0.5),
+                face, here, false);
+    }
+
+    /**
+     * Ein Connector wird an eine Kabelfläche gesetzt.
+     *
+     * <p>Das ist der Griff, um den es bei AE2s Bauform geht: Der Anschluss
+     * geht nicht <b>neben</b> das Kabel, sondern <b>an</b> es. Bis hierher
+     * ließ sich ein Teil nur im Prüflauf anlegen — im Spiel gab es keinen
+     * Weg dorthin.
+     *
+     * <p>Geprüft wird gleich mit, dass eine belegte Fläche nichts annimmt:
+     * Wo das Kabel schon weiterläuft, ist kein Platz, und ein zweites Teil
+     * auf derselben Fläche gibt es nicht.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void bapartIsPlacedOnAcableFace(GameTestHelper helper) {
+        BlockPos cable = new BlockPos(2, 1, 1);
+        helper.setBlock(cable, FnBlocks.CABLE.get());
+        helper.setBlock(cable.north(), Blocks.CHEST);
+        // Nach Osten läuft das Kabel weiter — dort ist kein Platz.
+        helper.setBlock(cable.east(), FnBlocks.CABLE.get());
+
+        var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+        ItemStack stack = new ItemStack(FnBlocks.CONNECTOR.get());
+        stack.setCount(2);
+        player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, stack);
+
+        helper.getBlockState(cable).useItemOn(stack, helper.getLevel(), player,
+                net.minecraft.world.InteractionHand.MAIN_HAND,
+                hitOn(helper, cable, Direction.NORTH));
+
+        var bus = busAt(helper, cable);
+        if (bus == null) {
+            return;
+        }
+        helper.assertTrue(bus.partAt(Direction.NORTH) != null,
+                "an der geklickten Fläche muss ein Anschluss sitzen");
+        helper.assertValueEqual(stack.getCount(), 1, "und einer aus der Hand");
+
+        // Noch einmal dieselbe Fläche: Sie ist besetzt.
+        helper.getBlockState(cable).useItemOn(stack, helper.getLevel(), player,
+                net.minecraft.world.InteractionHand.MAIN_HAND,
+                hitOn(helper, cable, Direction.NORTH));
+        helper.assertValueEqual(stack.getCount(), 1, "eine besetzte Fläche nimmt nichts");
+
+        // Und die Fläche, an der das Kabel weiterläuft.
+        helper.getBlockState(cable).useItemOn(stack, helper.getLevel(), player,
+                net.minecraft.world.InteractionHand.MAIN_HAND,
+                hitOn(helper, cable, Direction.EAST));
+        helper.assertTrue(bus.partAt(Direction.EAST) == null,
+                "wo das Kabel weiterläuft, ist kein Platz");
+        helper.succeed();
+    }
+
+    /**
+     * Schleichen mit leerer Hand nimmt den Anschluss wieder ab.
+     *
+     * <p>Ohne diesen Weg käme man nur an sein Teil zurück, indem man das
+     * ganze Kabel abbaut — und mit ihm alle anderen Anschlüsse daran.
+     *
+     * <p>Der leere Klick ohne Schleichen bleibt das Namensfenster. Die
+     * Unterscheidung geht auf, weil Minecraft {@code useWithoutItem} auch
+     * beim Schleichen ruft, solange beide Hände leer sind.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void bapartComesOffAgainWhenSneaking(GameTestHelper helper) {
+        BlockPos cable = new BlockPos(2, 1, 1);
+        helper.setBlock(cable, FnBlocks.CABLE.get());
+        helper.setBlock(cable.north(), Blocks.CHEST);
+        var bus = busAt(helper, cable);
+        if (bus == null) {
+            return;
+        }
+        bus.addPart(Direction.NORTH);
+
+        var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+        player.setShiftKeyDown(true);
+        helper.getBlockState(cable).useWithoutItem(helper.getLevel(), player,
+                hitOn(helper, cable, Direction.NORTH));
+
+        helper.assertTrue(bus.partAt(Direction.NORTH) == null,
+                "der Anschluss muss ab sein");
+        helper.assertItemEntityPresent(FnBlocks.CONNECTOR.get().asItem(), cable, 2.0);
+        helper.succeed();
+    }
+
+    /**
+     * Wer das Kabel abbaut, bekommt seine Anschlüsse zurück.
+     *
+     * <p>Sonst verschwänden sie mit dem Block — zwei Gegenstände weg, ohne
+     * dass etwas darauf hinweist.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void btwopartsDropWithTheCable(GameTestHelper helper) {
+        BlockPos cable = new BlockPos(2, 1, 1);
+        helper.setBlock(cable, FnBlocks.CABLE.get());
+        var bus = busAt(helper, cable);
+        if (bus == null) {
+            return;
+        }
+        bus.addPart(Direction.NORTH);
+        bus.addPart(Direction.SOUTH);
+
+        helper.destroyBlock(cable);
+
+        helper.assertItemEntityCountIs(FnBlocks.CONNECTOR.get().asItem(), cable, 2.0, 2);
+        helper.succeed();
+    }
+
+    /**
+     * Ein Nachbar, der dazukommt, kostet keinen Anschluss.
+     *
+     * <p><b>Der Klassiker an dieser Stelle:</b> {@code onRemove} feuert bei
+     * jedem Zustandswechsel, und ein Kabel wechselt seinen Zustand bei jedem
+     * Nachbarn, der auftaucht oder verschwindet. Ohne die Prüfung, ob dort
+     * wirklich ein anderer Block hinkommt, fielen die Teile bei jedem
+     * Verbindungsupdate heraus — beim Bauen der Leitung, nicht beim Abbauen.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void bapartSurvivesAnewNeighbour(GameTestHelper helper) {
+        BlockPos cable = new BlockPos(2, 1, 1);
+        helper.setBlock(cable, FnBlocks.CABLE.get());
+        helper.setBlock(cable.north(), Blocks.CHEST);
+        var bus = busAt(helper, cable);
+        if (bus == null) {
+            return;
+        }
+        bus.addPart(Direction.NORTH).setLabel("kiste_1");
+
+        // Die Leitung wächst weiter: Der Zustand des Kabels ändert sich.
+        helper.setBlock(cable.east(), FnBlocks.CABLE.get());
+        helper.setBlock(cable.west(), FnBlocks.CABLE.get());
+
+        var after = busAt(helper, cable);
+        helper.assertTrue(after != null && after.partAt(Direction.NORTH) != null,
+                "der Anschluss muss den Nachbarn überleben");
+        helper.assertValueEqual(after.partAt(Direction.NORTH).label(), "kiste_1",
+                "mitsamt seinem Namen");
+        helper.assertItemEntityNotPresent(FnBlocks.CONNECTOR.get().asItem(), cable, 2.0);
+        helper.succeed();
+    }
+
+    /**
+     * Woran man hängenbleibt, ist auch der Anschluss.
+     *
+     * <p>Ohne eigene Trefferfläche griffe man durch ihn hindurch: Der Klick
+     * träfe das Kabel dahinter, und benennen ließe sich nichts.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void bapartHasItsOwnHitBox(GameTestHelper helper) {
+        BlockPos cable = new BlockPos(2, 1, 1);
+        helper.setBlock(cable, FnBlocks.CABLE.get());
+        helper.setBlock(cable.north(), Blocks.CHEST);
+
+        var shape = helper.getBlockState(cable).getShape(
+                helper.getLevel(), helper.absolutePos(cable));
+        helper.assertTrue(shape.min(Direction.Axis.Z) > 0.0,
+                "ohne Anschluss endet das Kabel vor der Blockkante");
+
+        var bus = busAt(helper, cable);
+        if (bus == null) {
+            return;
+        }
+        bus.addPart(Direction.NORTH);
+
+        var withPart = helper.getBlockState(cable).getShape(
+                helper.getLevel(), helper.absolutePos(cable));
+        helper.assertValueEqual(withPart.min(Direction.Axis.Z), 0.0,
+                "mit Anschluss reicht die Trefferfläche bis an die Blockkante");
+        helper.succeed();
+    }
 }
