@@ -119,6 +119,40 @@ nebeneinander.
 neu gerechnet — er ist nur eine Absicht. Ein Erz, das im Ofen liegt, ist keine
 Absicht, sondern eine Tatsache; die wird aufgeschrieben.
 
+## Maschinen aus anderen Mods
+
+Ofen, Schmelzofen, Räucherofen und die Presse kennt das Netz. Einen Brecher
+aus einer anderen Mod kennt es nicht — und es kann ihn auch nicht kennenlernen:
+Minecraft gibt für ein fremdes Maschinenrezept nicht genug her, um es zu lesen.
+Deshalb machen AE2 und Refined Storage dasselbe wie diese Mod: Der Spieler
+schreibt es auf.
+
+Nur schreibst du hier kein Muster auf einen Gegenstand, sondern eine Zeile ins
+Programm:
+
+```
+recipe erz_mahlen at brecher {
+    in 1 item:iron_ore
+    out 2 item:iron_dust
+}
+```
+
+Ab jetzt weiß das Netz, dass der Brecher aus einem Erz zwei Staub macht — und
+benutzt ihn für jeden Auftrag, der Staub braucht, auch mitten in einer Kette.
+
+Drei Dinge dazu:
+
+- **`at` ist Pflicht.** Wo es läuft, ist der ganze Grund für die Zeile.
+- **Die Menge steht immer da**, auch die Eins.
+- **Keine Fachnummern.** Wo etwas hingehört, entscheidet die Maschine selbst.
+
+Schreibst du ein Gerät hin, das es nicht gibt, sagt es das Terminal beim
+Übernehmen — das ist der Vorteil davon, dass ein Rezept im Programm steht und
+nicht auf einem Zettel.
+
+Was noch nicht geht: Flüssigkeiten und Strom als Zutat. Wer eine Maschine mit
+Wasserbedarf hat, versorgt sie mit einem Worker daneben.
+
 ## Nachschub, der sich selbst bestellt
 
 Ein Auftrag ist einmalig. Wer einen Vorrat halten will, schreibt einen Worker

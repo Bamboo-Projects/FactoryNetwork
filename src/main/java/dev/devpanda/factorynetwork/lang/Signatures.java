@@ -145,6 +145,18 @@ public final class Signatures {
             of("scale", "Wie groß die Schrift ist; 1 ist normal.",
                     Slot.of(Kind.INT)));
 
+    /**
+     * Die Angaben in einem Rezept an einer Maschine.
+     *
+     * <p>Zwei, und beide dürfen mehrfach stehen: {@code in} für jede Zutat,
+     * {@code out} für jedes Ergebnis. Die Menge steht immer da, auch die Eins.
+     */
+    public static final List<Signature> RECIPE = List.of(
+            of("in", "Eine Zutat, mit Menge.",
+                    Slot.of(Kind.INT), Slot.of(Kind.SELECTION)),
+            of("out", "Was dabei herauskommt, mit Menge.",
+                    Slot.of(Kind.INT), Slot.of(Kind.SELECTION)));
+
     /** Die Angaben in einem Worker. */
     public static final List<Signature> WORKER = List.of(
             of("from", "Woher die Gegenstände kommen.", Slot.of(Kind.TARGET)),
@@ -354,6 +366,7 @@ public final class Signatures {
         }
         return switch (declaration) {
             case "display" -> DISPLAY;
+            case "recipe" -> RECIPE;
             case "worker" -> WORKER;
             case "group" -> GROUP;
             case "filter" -> FILTER;

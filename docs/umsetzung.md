@@ -146,6 +146,7 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | Fertigung | Fabricator baut Werkbank-Rezepte aus dem Netzspeicher, mehrstufig |
 | | Fehlt eine Zutat, wird sie gebaut; genannt wird der Grundstoff |
 | | Ofen, Schmelzofen, Räucherofen und Presse arbeiten für einen Auftrag mit |
+| | `recipe … at …` erklärt, was eine fremde Maschine kann |
 | | `from crafting` hält einen Vorrat, gerechnet gegen offene Aufträge |
 | | `craft(64 item:chest)` im Code, Aufträge im Reiter, mit Abbruch |
 | Server | `config/factorynetwork-server.toml`: Schrittbudget und Suchtiefe |
@@ -165,7 +166,7 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | | Projekt aus mehreren Dateien, Ordner im Namen: `erz/brecher.mf` |
 | | Anzeigenwand mit `scale`: große Schrift statt vieler Zeilen |
 | Anzeigen | Am Block und im Terminal, Knöpfe starten Abläufe |
-| Prüfung | 419 Einheitstests, 253 GameTests |
+| Prüfung | 424 Einheitstests, 255 GameTests |
 
 ## 3. Was noch nicht läuft
 
@@ -550,6 +551,42 @@ und Ziffern, also stehen die Dateien eines Ordners von selbst beieinander. Ein
 Klappbaum bräuchte einen Griff mehr für dieselbe Auskunft. Was nicht in die
 Spalte passt, wird vorn gekürzt — `…/schmelzen.mf` —, denn von rechts gekürzt
 sähen zwei Dateien desselben Ordners gleich aus.
+
+### Rezepte im Programm (seit dem 26.08.)
+
+Der zweite Schnitt von Weg B, und damit ist 2.9 gebaut:
+
+```
+recipe erz_mahlen at brecher {
+    in 1 item:iron_ore
+    out 2 item:iron_dust
+}
+```
+
+**Eine Deklaration und kein Muster-Item.** Der Fabricator baut ohne Muster,
+und der Grund trägt hierher weiter: Ein Musterterminal wäre der zweite Ort, an
+dem eine Fabrik erklärt wird — der erste ist das Programm. Eine Zeile im
+Programm geht mit der Datei nach VS Code, lässt sich versionieren, und ein
+Rezept an einem Gerät, das es nicht gibt, meldet sich beim Übernehmen. Ein
+Muster mit vertipptem Ziel merkt niemand, bis die Fabrik stillsteht.
+
+**Keine Fachnummern.** Bei der Ofenfamilie kennt diese Mod die Fächer und
+greift direkt zu; bei einer fremden Maschine weiß nur sie selbst, wo was
+hingehört, und dafür gibt es den seitenbezogenen Zugriff, auf den sich auch
+`move` verlässt. Zwei Zugriffswege für zwei verschiedene Lagen, und beide sind
+begründbar.
+
+**Erst proben, dann entnehmen.** Ein erklärtes Rezept darf mehrere Zutaten
+haben, und eine Maschine, die die zweite ablehnt, hätte sonst die erste
+geschluckt und den Auftrag mit einem halben Rezept stehenlassen.
+
+**Die erklärten Rezepte hängen am Programm, nicht am Tick.** Sie ändern sich
+nur beim Übernehmen — im Gegensatz zu den Rezepten des Servers, die ein
+`/reload` austauschen kann.
+
+Offen als dokumentierter Schnitt: Flüssigkeiten und Strom als Zutat. Sie
+parsen, werden beim Auflösen aber übergangen — der Planner rechnet mit
+Gegenständen.
 
 ### Maschinen im Autocrafting (seit dem 26.08.)
 

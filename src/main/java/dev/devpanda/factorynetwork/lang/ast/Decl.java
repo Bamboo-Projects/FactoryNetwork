@@ -58,6 +58,32 @@ public sealed interface Decl {
         }
     }
 
+    /**
+     * {@code recipe erz_mahlen at brecher { in 1 item:iron_ore out 2 item:iron_dust }}
+     *
+     * <p>Was eine Maschine kann, die das Netz nicht von selbst lesen kann.
+     * Die Ofenfamilie und die eigene Presse gehen ohne das; alles andere ist
+     * generisch nicht zu lesen (siehe {@code entscheidungen.md},
+     * „Processing-Rezepte"), und deshalb schreibt es der Spieler auf.
+     *
+     * <p><b>Kein Muster-Item, sondern eine Zeile im Programm.</b> Sie steht
+     * neben den Workern, geht mit der Datei nach VS Code, lässt sich
+     * versionieren, und ein Rezept an einem Gerät, das es nicht gibt, meldet
+     * sich beim Übernehmen.
+     */
+    record Recipe(String name, String device, List<Part> inputs, List<Part> outputs,
+                  Span span) implements Decl {
+
+        /**
+         * So viel von dieser Auswahl.
+         *
+         * <p>Die Menge steht immer da, auch die Eins. Ein Rezept ohne Mengen
+         * wäre an der Stelle mehrdeutig, an der es am meisten kostet.
+         */
+        public record Part(long amount, Expr selection, Span span) {
+        }
+    }
+
     // ---- Funktion und Ereignisblock ---------------------------------------
 
     record Fn(String name, List<Param> parameters, Block body, Span span) implements Decl {}

@@ -55,8 +55,8 @@ public final class Completions {
     }
 
     private static final List<String> DECLARATIONS = List.of(
-            "worker", "group", "filter", "multiblock", "event", "display", "fn", "on",
-            "global", "const");
+            "worker", "group", "filter", "multiblock", "event", "display", "recipe", "fn",
+            "on", "global", "const");
 
     /**
      * Die eingebauten Namen, die der Interpreter <b>wirklich</b> kennt.

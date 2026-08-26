@@ -8183,6 +8183,79 @@ public final class FactoryNetworkGameTests {
                 .thenSucceed();
     }
 
+    /**
+     * Ein Rezept aus dem Programm zieht seine Zutaten in die Maschine.
+     *
+     * <p>Geprüft an einer Kiste, und das ist Absicht: Sie ist keine Maschine,
+     * aber sie nimmt an und gibt heraus — genau die beiden Eigenschaften, auf
+     * die sich ein erklärtes Rezept verlässt. Eine echte Fremdmod-Maschine
+     * steht in keinem Prüflauf zur Verfügung; was hier zählt, ist der Weg der
+     * Gegenstände.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void adeclaredRecipeFeedsItsMachine(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        helper.setBlock(controller.east().above(), FnBlocks.FABRICATOR.get());
+        entity.rebuildNetwork();
+        entity.storage().insert(Items.IRON_ORE, 4);
+
+        helper.assertTrue(entity.deploy("""
+                recipe erz_mahlen at quarry_output {
+                    in 1 item:iron_ore
+                    out 2 item:iron_nugget
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+        entity.requestCraft(Items.IRON_NUGGET, 2);
+
+        helper.startSequence()
+                .thenIdle(60)
+                .thenExecute(() -> {
+                    // Das Erz ist aus dem Speicher in die Kiste gewandert, und
+                    // der Auftrag wartet auf das, was zurückkommen soll.
+                    helper.assertValueEqual(entity.storage().count(Items.IRON_ORE), 3L,
+                            "ein Erz ist in die Maschine gegangen");
+                    var job = entity.craftingJobs().get(0);
+                    helper.assertTrue(job.running() != null,
+                            "der Auftrag muss auf die Maschine warten: " + job.detail());
+                    helper.assertValueEqual(job.running().device(), "quarry_output",
+                            "und wissen, an welcher");
+
+                    // Jetzt liefert die „Maschine": Was sie herausgibt, holt
+                    // das Netz von selbst ab.
+                    if (helper.getBlockEntity(controller.east().north().north())
+                            instanceof ChestBlockEntity chest) {
+                        chest.setItem(1, new ItemStack(Items.IRON_NUGGET, 2));
+                    } else {
+                        helper.fail("Keine Kiste zum Beliefern");
+                    }
+                })
+                .thenIdle(60)
+                .thenExecute(() -> helper.assertValueEqual(
+                        entity.storage().count(Items.IRON_NUGGET), 2L,
+                        "das Ergebnis holt das Netz selbst ab"))
+                .thenSucceed();
+    }
+
+    /** Ein Rezept an einem Gerät, das es nicht gibt, meldet sich beim Übernehmen. */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void arecipeAtAnunknownDeviceIsReported(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                recipe erz_mahlen at gibtsnicht {
+                    in 1 item:iron_ore
+                    out 2 item:iron_nugget
+                }"""), "Eine Warnung hält das Programm nicht auf");
+
+        helper.assertTrue(entity.diagnostics().stream().anyMatch(problem ->
+                        problem.message().contains("gibtsnicht")),
+                "Der unbekannte Gerätename muss auffallen: " + entity.diagnostics());
+        helper.succeed();
+    }
+
     /** Ohne Ofen im Netz wartet der Auftrag und sagt es. */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void withoutAnovenThejobWaitsAndSaysSo(GameTestHelper helper) {

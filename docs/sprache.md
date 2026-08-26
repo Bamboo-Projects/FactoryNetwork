@@ -117,6 +117,7 @@ Worker      from  to  filter  maintain  rate  per  when  priority
 Gruppen     members
 Multiblock  devices
 Display     title  row  text  progress  indicator  list  button  scale
+Rezept      recipe  at  out
 Ereignisse  emit  await  where  timeout  sleep
 Auswahl     move  except
 Eingebaut   storage  crafting  world  network  workers  multiblocks
@@ -584,6 +585,9 @@ Gebaut wird am **Fabricator** — Werkbank- und Steinsägen-Rezepte, beides
 Handarbeit ohne Maschine. Hängt ein **Ofen, Schmelzofen, Räucherofen** oder
 eine **Presse** am Netz, benutzt ein Auftrag sie von selbst: einlegen, warten,
 abholen. Den Brennstoff legt der Spieler hin.
+
+Was eine Maschine aus einer anderen Mod kann, schreibt man auf — siehe
+*Rezepte an Maschinen* weiter unten.
 
 Und zwar **mehrstufig**:
 Fehlen Bretter, macht das Netz welche aus Stämmen. Fehlen auch die, wartet der
@@ -1176,6 +1180,62 @@ davon hängen in einem großen Netz schnell dreißig an der Wand.
 
 `button` ist die einzige Ausnahme, und auch nur einseitig: Er zeigt nichts an,
 sondern ruft eine Funktion auf, wenn jemand ihn drückt.
+
+---
+
+## 11a. Rezepte an Maschinen
+
+```
+recipe erz_mahlen at brecher {
+    in 1 item:iron_ore
+    out 2 item:iron_dust
+}
+```
+
+Was ein Brecher aus Erz macht, weiß nur der Brecher — und **generisch lesen
+lässt es sich nicht**: Die Schnittstelle von Minecraft gibt für ein fremdes
+Maschinenrezept als Vorgabe eine leere Zutatenliste zurück, eine Zutat trägt
+keine Menge, Flüssigkeiten und Strom stehen gar nicht darin. Die Belege stehen
+in `entscheidungen.md` unter „Processing-Rezepte".
+
+Also schreibt es der Spieler auf, und zwar **im Programm** und nicht auf einem
+Muster-Item. Das ist dieselbe Haltung wie überall hier: Eine Deklaration steht
+neben den Workern, geht mit der Datei nach VS Code, lässt sich versionieren,
+und ein Rezept an einem Gerät, das es nicht gibt, meldet sich beim Übernehmen.
+
+### Die Angaben
+
+```
+recipe <name> at <gerät> {
+    in <menge> <auswahl>       mehrfach erlaubt
+    out <menge> <auswahl>      mehrfach erlaubt, das erste zählt
+}
+```
+
+**Das `at` ist Pflicht.** Ein Rezept ohne Maschine wäre keines — wo es läuft,
+ist der ganze Grund, warum es aufgeschrieben wird.
+
+**Die Menge steht immer da**, auch die Eins. Ein Rezept ist die eine Stelle,
+an der eine fehlende Zahl teuer wird: Sie entscheidet, wie oft die Maschine
+läuft.
+
+**Eine Auswahl bleibt eine Auswahl.** `in 8 tag:c/plates` heißt acht von
+irgendwelchen Platten, und welche, sucht der Planner nach Bestand aus — wie
+bei jedem anderen Rezept auch.
+
+**Das erste `out` zählt.** Ein Rezept darf mehrere Ergebnisse nennen; geplant
+wird auf das erste. Die anderen landen trotzdem im Netz, wenn das Ergebnis
+abgeholt wird — sie sind eine Zugabe und kein Ziel.
+
+**Keine Fachnummern.** Wo bei einer fremden Maschine was hingehört, weiß nur
+sie selbst; das Netz legt ein, wo sie annimmt, und holt heraus, wo sie
+herausgibt. Bei der Ofenfamilie kennt diese Mod die Fächer und benutzt sie
+direkt — dort ist es kein Raten.
+
+> **Noch nicht gebaut:** Flüssigkeiten und Strom im Rezept. `in 1000
+> fluid:water` parst, wird aber beim Auflösen übergangen: Der Planner rechnet
+> heute nur mit Gegenständen. Wer eine Maschine mit Wasserbedarf hat, versorgt
+> sie mit einem Worker daneben.
 
 ---
 

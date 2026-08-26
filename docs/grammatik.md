@@ -258,6 +258,9 @@ den es nie gab. Der `else`-Block muss den Ablauf verlassen; auch das prüft der
 ## 6. Auswahl von Gegenständen
 
 ```
+recipeDecl  = 'recipe' NAME 'at' NAME '{' { recipePart } '}'
+recipePart  = ( 'in' | 'out' ) INT selection
+
 amount      = [ INT ] ( selection | NAME )
 
 selection   = selTerm { 'except' selTerm }

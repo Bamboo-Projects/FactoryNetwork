@@ -60,7 +60,8 @@ class SignaturesExportTest {
         JsonObject root = new JsonObject();
 
         JsonObject blocks = new JsonObject();
-        for (String block : new String[] {"display", "worker", "group", "filter", "fn"}) {
+        for (String block : new String[] {"display", "worker", "group", "filter",
+                                          "recipe", "fn"}) {
             JsonArray entries = new JsonArray();
             for (Signatures.Signature signature : Signatures.forBlock(block)) {
                 JsonObject entry = new JsonObject();
@@ -144,7 +145,8 @@ class SignaturesExportTest {
 
         JsonArray declarations = new JsonArray();
         for (String word : new String[] {"worker", "group", "filter", "multiblock", "event",
-                                         "display", "fn", "on", "global", "const"}) {
+                                         "display", "recipe", "fn", "on", "global",
+                                         "const"}) {
             declarations.add(word);
         }
         root.add("declarations", declarations);

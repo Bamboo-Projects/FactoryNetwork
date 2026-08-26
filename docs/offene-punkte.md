@@ -129,6 +129,11 @@ Vorentscheidungen)
 > **Die drei offenen Fragen sind am 26.08. beantwortet:** 2.9 wird **Weg B**,
 > Mekanism darf in den Prüflauf, und Chemikalien werden **auch gelagert**.
 > Damit steht auf der Liste nichts Offenes mehr außer 5.4 — nur noch Arbeit.
+>
+> **2.9 ist danach gebaut**, in zwei Schnitten: erst die Maschinen mit fester
+> Form (Ofenfamilie, Presse) samt asynchronem Ausführer, dann `recipe … at …`
+> für alles andere. Der laufende Schritt wird gespeichert, der Plan nicht —
+> ein Plan ist eine Absicht, ein Erz im Ofen eine Tatsache über die Welt.
 
 **Status:** **F** = fehlt schlicht · **E** = wartet auf eine Entscheidung ·
 **Z** = bewusst zurückgestellt, kein Versäumnis
@@ -172,7 +177,7 @@ Vorentscheidungen)
 | 2.11 | ~~`log()` sieht niemand~~ — **fertig.** Vier Stufen (`info`, `warn`, `error`, `debug`), Reiter „Log" mit Filter, Herkunft je Zeile, überlebt den Neustart. Die Hinweise der Laufzeit laufen mit hinein | | `LogTabView`, `LogEntry` | | |
 | 2.7 | ~~`when`-Bedingungen~~ — **überholt.** Im laufenden Spiel wertet der echte Interpreter aus: Texte, globale Werte, Gerätezustände. Der alte Weg — Zahl gegen Zahl — greift nur ohne Host, also in Prüfungen ohne Welt. Eine kaputte Bedingung hält den Worker an | | `WorkerRuntime.conditionHolds` | | |
 | 2.8 | ~~`NetworkCheck` besucht keine Anweisungen~~ — **fertig.** Ein `move` mit unbekanntem Gerätenamen wird gewarnt, in der Anweisung wie im Ausdruck. Ausgespart bleiben örtliche Namen: Parameter, `let`, Schleifenvariablen, globale Werte, Festwerte, Vorlagen, Gruppen und die Rollen eines Multiblocks | | `NetworkCheck.checkMoves` | | |
-| 2.9 | **Erkennung von Maschinen-Rezepten** — erkundet und **entschieden: Weg B** (26.08.). Automatisch geht nicht: `Recipe.getIngredients()` liefert als Vorgabe eine leere Liste, eine `Ingredient` trägt keine Menge, Flüssigkeiten und Strom stehen nicht darin. Also: Ofen, Schmelzofen und Räucherofen als Maschinen mit Wartezeit, Steinsäge am Fabricator, alles andere als `recipe`-Deklaration im Programm | F | `entscheidungen.md` „Processing-Rezepte" | groß | — |
+| 2.9 | ~~Erkennung von Maschinen-Rezepten~~ — **gebaut** (26.08.), Weg B in zwei Schnitten. Ofen, Schmelzofen, Räucherofen und Presse arbeiten für einen Auftrag mit: einlegen, warten, abholen, und der laufende Schritt übersteht den Neustart. Alles andere erklärt `recipe … at … { in … out … }` im Programm. Offen als Schnitt: Flüssigkeiten und Strom als Zutat | | `MachineRecipes`, `DeclaredRecipes` | | |
 | 2.10 | ~~Autocrafting~~ — **fertig** (25.08.), in drei Schritten an einem Tag. Fabricator und Aufträge am Controller, `craft(64 item:chest)`, der Reiter, die beiden Ereignisse, alles übersteht den Neustart. Der Planner zerlegt eine Bestellung bis zu dem, was dasteht, trägt Zutaten-Auswahlen durch und kommt mit Kreisen zurecht. `from crafting` hält einen Vorrat, gerechnet gegen Bestand und offene Aufträge | | `CraftingPlanner`, `WorkerRuntime.tickCraftingWorker` | | |
 
 ## 3. Editor im Spiel
@@ -267,14 +272,10 @@ Projekt), 5.3 (Schrift auf der Anzeigenwand) und 1.11 (globale Listen) sind
 gebaut, 5.2 hat sich beim Nachsehen aufgelöst, und 3.6 ist geprüft und
 abgelehnt.
 
-**3. Rezepte an Maschinen erkennen** (2.9). Groß, und seit dem Autocrafting
-keine Voraussetzung mehr für irgendetwas — der Fabricator baut Werkbank-
-Rezepte, und die stehen im Server. Gebraucht wird es für Processing-Rezepte am
-Connector. **Erkundet am 26.08.**, und dabei wurde aus einer Bauaufgabe eine
-Frage: Automatisch geht es nachweislich nicht, also entscheidet sich, ob eine
-Fabrik nur kann, was das Spiel selbst offenlegt (Ofen, Steinsäge, Presse) oder
-ob der Spieler ihr den Rest beibringt. Das ist Spielgefühl und liegt beim
-Projektinhaber; die Grundlage steht in `entscheidungen.md`.
+~~**3. Rezepte an Maschinen erkennen**~~ (2.9). **Gebaut am 26.08.**, Weg B in
+zwei Schnitten: Was das Spiel offenlegt, kann die Fabrik von selbst; für alles
+andere schreibt der Spieler ein `recipe` ins Programm. Damit ist der letzte
+große Posten der Liste zu — offen bleibt nur noch 1.4 (Mekanism).
 
 Was hier bis zum 25.08. unter „Kleines mit großer Wirkung" stand — `list` auf
 einer Anzeige (6.10), die Auflösungsanzeige im Editor (3.11), die

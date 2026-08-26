@@ -455,6 +455,57 @@ class ParserTest {
         }
 
         @Test
+        @DisplayName("Ein Rezept nennt seine Maschine, seine Zutaten und sein Ergebnis")
+        void arecipeNamesItsMachineInputsAndOutput() {
+            Program program = parseClean("""
+                    recipe erz_mahlen at brecher {
+                        in 1 item:iron_ore
+                        out 2 item:iron_dust
+                    }""");
+            Decl.Recipe recipe = (Decl.Recipe) program.declarations().get(0);
+            assertEquals("erz_mahlen", recipe.name());
+            assertEquals("brecher", recipe.device());
+            assertEquals(1, recipe.inputs().size());
+            assertEquals(2, recipe.outputs().get(0).amount());
+        }
+
+        @Test
+        @DisplayName("Ein Rezept darf mehrere Zutaten haben")
+        void arecipeMayHaveSeveralInputs() {
+            Program program = parseClean("""
+                    recipe legierung at mischer {
+                        in 3 item:copper_ingot
+                        in 1 item:tin_ingot
+                        out 4 item:bronze_ingot
+                    }""");
+            Decl.Recipe recipe = (Decl.Recipe) program.declarations().get(0);
+            assertEquals(2, recipe.inputs().size());
+        }
+
+        @Test
+        @DisplayName("Ohne at fehlt die Maschine")
+        void withoutAtThemachineIsMissing() {
+            List<Diagnostic> errors = errorsOf("""
+                    recipe erz_mahlen {
+                        in 1 item:iron_ore
+                        out 2 item:iron_dust
+                    }""");
+            assertFalse(errors.isEmpty(), "das at muss verlangt werden");
+            assertTrue(errors.get(0).message().contains("at")
+                            || errors.get(0).hint().contains("at"),
+                    () -> errors.toString());
+        }
+
+        @Test
+        @DisplayName("Ein Rezept ohne Ergebnis ist keines")
+        void arecipeWithoutAnoutputIsNone() {
+            assertFalse(errorsOf("""
+                    recipe leer at brecher {
+                        in 1 item:iron_ore
+                    }""").isEmpty(), "ohne out wäre nicht zu sagen, was entsteht");
+        }
+
+        @Test
         void eventWithTypedParameters() {
             Program program = parseClean("event OreBatchReady(item: Item, amount: Int)");
             Decl.Event event = (Decl.Event) program.declarations().get(0);

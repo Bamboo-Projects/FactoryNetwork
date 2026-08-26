@@ -84,6 +84,7 @@ public final class Parser {
             case GLOBAL -> parseGlobal();
             case CONST -> parseConst();
             case FILTER -> parseFilterTemplate();
+            case RECIPE -> parseRecipe();
             case IMPORT -> {
                 error(start.span(), "Module gibt es noch nicht.",
                         "import ist für später reserviert. Alle .mf-Dateien eines Projekts "
@@ -95,12 +96,84 @@ public final class Parser {
                 error(start.span(),
                         "Hier wird eine Deklaration erwartet, gefunden wurde " + describe(start) + ".",
                         "Auf oberster Ebene stehen worker, group, filter, multiblock, event, "
-                                + "display, fn, on, global und const. Anweisungen gehören in "
-                                + "eine Funktion.");
+                                + "display, recipe, fn, on, global und const. Anweisungen "
+                                + "gehören in eine Funktion.");
                 recoverToDeclaration();
                 yield null;
             }
         };
+    }
+
+    // ---- Rezept an einer Maschine -----------------------------------------
+
+    /**
+     * {@code recipe erz_mahlen at brecher { in … out … }}
+     *
+     * <p><b>Das {@code at} ist Pflicht.</b> Ein Rezept ohne Maschine wäre
+     * keines: Wo es läuft, ist der ganze Grund, warum es aufgeschrieben wird —
+     * was ohne Maschine geht, weiß das Spiel schon.
+     */
+    private Decl parseRecipe() {
+        Token keyword = advance();
+        String name = expectName("Rezept");
+        if (!expect(TokenType.AT, "Nach dem Namen des Rezepts fehlt at.",
+                "Zum Beispiel: recipe erz_mahlen at brecher { … }")) {
+            recoverToDeclaration();
+            return new Decl.Invalid(name, keyword.span());
+        }
+        String device = expectName("Gerät");
+        if (!expect(TokenType.LBRACE, "Nach dem Gerät fehlt die geschweifte Klammer.")) {
+            recoverToDeclaration();
+            return new Decl.Invalid(name, keyword.span());
+        }
+        List<Decl.Recipe.Part> inputs = new ArrayList<>();
+        List<Decl.Recipe.Part> outputs = new ArrayList<>();
+        skipNewlines();
+        while (!at(TokenType.RBRACE) && !at(TokenType.EOF)) {
+            Token start = peek();
+            if (start.is(TokenType.IN)) {
+                advance();
+                addPart(inputs, start);
+            } else if (start.is(TokenType.OUT)) {
+                advance();
+                addPart(outputs, start);
+            } else {
+                error(start.span(), describe(start) + " gehört nicht in ein Rezept.",
+                        "Erlaubt sind in und out, jeweils mit Menge und Auswahl: "
+                                + "in 1 item:iron_ore");
+                recoverToLineEnd();
+            }
+            skipNewlines();
+        }
+        Token end = expectBrace(keyword, "recipe");
+        if (outputs.isEmpty()) {
+            error(keyword.span().to(end.span()),
+                    "Das Rezept " + name + " sagt nicht, was herauskommt.",
+                    "Ohne ein out wäre nicht zu sagen, wofür es gebraucht wird.");
+        }
+        return new Decl.Recipe(name, device, List.copyOf(inputs), List.copyOf(outputs),
+                keyword.span().to(end.span()));
+    }
+
+    /**
+     * {@code 1 item:iron_ore} — Menge und Auswahl.
+     *
+     * <p>Die Menge steht immer da, auch die Eins: Ein Rezept ist die eine
+     * Stelle, an der eine fehlende Zahl teuer wird — sie entscheidet, wie oft
+     * die Maschine läuft.
+     */
+    private void addPart(List<Decl.Recipe.Part> parts, Token keyword) {
+        Token count = peek();
+        if (!count.is(TokenType.INT)) {
+            error(count.span(), "Nach " + keyword.text() + " fehlt die Menge.",
+                    "Zum Beispiel: " + keyword.text() + " 1 item:iron_ore");
+            recoverToLineEnd();
+            return;
+        }
+        advance();
+        Expr selection = parseExpression();
+        parts.add(new Decl.Recipe.Part(Long.parseLong(count.text()), selection,
+                keyword.span().to(selection.span())));
     }
 
     // ---- Worker -----------------------------------------------------------

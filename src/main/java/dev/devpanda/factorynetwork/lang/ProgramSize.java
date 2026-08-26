@@ -49,6 +49,8 @@ public final class ProgramSize {
                 yield inner;
             }
             case Decl.Event event -> event.parameters().size();
+            // Ein Rezept kostet seine Zeilen: je Zutat und je Ergebnis eine.
+            case Decl.Recipe recipe -> recipe.inputs().size() + recipe.outputs().size();
             // Wie bei einer Gruppe: je Zeile eine. Eine Vorlage über zwanzig
             // Selektoren ist nichts, was der Server nebenbei mitträgt.
             case Decl.FilterTemplate template ->

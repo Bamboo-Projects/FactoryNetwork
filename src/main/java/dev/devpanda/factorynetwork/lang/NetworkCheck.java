@@ -63,10 +63,33 @@ public final class NetworkCheck {
                                 problems);
                     }
                 }
+                case Decl.Recipe recipe -> checkRecipe(recipe, view, local, problems);
                 default -> { }
             }
         }
         return problems;
+    }
+
+    /**
+     * Ein Rezept zeigt auf ein Gerät, das es geben muss.
+     *
+     * <p>Das ist der Grund, warum ein Rezept im Programm steht und nicht auf
+     * einem Muster-Item: Ein Muster mit vertipptem Ziel merkt niemand, bis
+     * die Fabrik stillsteht. Eine Warnung und kein Fehler — wer die Maschine
+     * erst morgen hinstellt, darf das Rezept heute schon schreiben.
+     */
+    private static void checkRecipe(Decl.Recipe recipe, NetworkView view,
+                                    Set<String> local, List<Diagnostic> problems) {
+        if (view.connectors().isEmpty() || local.contains(recipe.device())
+                || view.connectors().contains(recipe.device())) {
+            return;
+        }
+        String hint = view.closestConnector(recipe.device())
+                .map(near -> "Meintest du „" + near + "“?")
+                .orElseGet(() -> "Im Netz gibt es: "
+                        + String.join(", ", view.connectors()));
+        problems.add(new Diagnostic(Diagnostic.Severity.WARNING, recipe.span(),
+                "Nichts im Netz heißt „" + recipe.device() + "“.", hint));
     }
 
     /**

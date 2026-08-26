@@ -749,12 +749,24 @@ public class ControllerBlockEntity extends BlockEntity {
     private dev.devpanda.factorynetwork.crafting.MachineRecipes machineCache;
     private long recipeCacheTick = Long.MIN_VALUE;
 
+    private dev.devpanda.factorynetwork.crafting.DeclaredRecipes declaredCache;
+    private Program declaredFrom;
+
     private void refreshRecipes() {
         long now = level.getGameTime();
         if (handCache == null || recipeCacheTick != now) {
             handCache = dev.devpanda.factorynetwork.crafting.RecipeLookup.of(level);
             machineCache = dev.devpanda.factorynetwork.crafting.MachineRecipes.of(level);
             recipeCacheTick = now;
+        }
+        // Die erklärten Rezepte hängen am Programm und nicht am Tick: Sie
+        // ändern sich nur beim Übernehmen. Das laufende Programm ist ohnehin
+        // schon übersetzt — es noch einmal zu lesen wäre der teuerste Weg zu
+        // einer Auskunft, die danebenliegt.
+        if (declaredCache == null || declaredFrom != program()) {
+            declaredFrom = program();
+            declaredCache =
+                    dev.devpanda.factorynetwork.crafting.DeclaredRecipes.of(declaredFrom);
         }
     }
 
@@ -771,7 +783,7 @@ public class ControllerBlockEntity extends BlockEntity {
             net.minecraft.world.item.Item> recipes() {
         refreshRecipes();
         return dev.devpanda.factorynetwork.crafting.CraftingPlanner.anyOf(
-                handCache, machineCache);
+                handCache, machineCache, declaredCache);
     }
 
     /** Ob es für diesen Gegenstand überhaupt ein Rezept gibt — in einer der Quellen. */
@@ -874,6 +886,11 @@ public class ControllerBlockEntity extends BlockEntity {
     private boolean startAtMachine(dev.devpanda.factorynetwork.crafting.CraftingJob job,
             dev.devpanda.factorynetwork.crafting.CraftingPlanner.Step<
                     net.minecraft.world.item.Item> step) {
+        String declared = dev.devpanda.factorynetwork.crafting.DeclaredRecipes
+                .deviceOf(step.station());
+        if (declared != null) {
+            return startAtDeclared(job, step, declared);
+        }
         var station = dev.devpanda.factorynetwork.crafting.MachineRecipes
                 .stationOf(step.station());
         if (station == null) {
@@ -920,6 +937,100 @@ public class ControllerBlockEntity extends BlockEntity {
     }
 
     /**
+     * Ein Rezept aus dem Programm: die Zutaten in die genannte Maschine.
+     *
+     * <p><b>Ohne Fachnummern.</b> Wo bei einer fremden Maschine was hingehört,
+     * weiß nur sie selbst — und genau dafür gibt es den seitenbezogenen
+     * Zugriff, den auch {@code move} benutzt. Der Ofen ist der Sonderfall, bei
+     * dem diese Mod die Fächer kennt; eine Maschine aus einer fremden Mod ist
+     * es nicht, und sie soll ihre eigenen Regeln behalten.
+     *
+     * <p>Anders als bei der Ofenfamilie werden <b>alle</b> Zutaten auf einmal
+     * eingelegt: Ein erklärtes Rezept darf mehrere haben, und eine Maschine,
+     * die nur die halbe Rechnung bekommt, fängt gar nicht erst an.
+     */
+    private boolean startAtDeclared(dev.devpanda.factorynetwork.crafting.CraftingJob job,
+            dev.devpanda.factorynetwork.crafting.CraftingPlanner.Step<
+                    net.minecraft.world.item.Item> step, String device) {
+        var handler = machineSide(device);
+        if (handler == null) {
+            job.note(dev.devpanda.factorynetwork.crafting.CraftingJob.Status.WAITING,
+                    "an " + device + " hängt keine Maschine");
+            return false;
+        }
+        // Erst proben, dann entnehmen: Eine Maschine, die die zweite Zutat
+        // ablehnt, hätte sonst die erste geschluckt und den Auftrag mit einem
+        // halben Rezept stehenlassen.
+        for (var entry : step.consumed().entrySet()) {
+            net.minecraft.world.item.ItemStack probe = new net.minecraft.world.item.ItemStack(
+                    entry.getKey(), (int) (long) entry.getValue());
+            if (!insertAll(handler, probe, true).isEmpty()) {
+                job.note(dev.devpanda.factorynetwork.crafting.CraftingJob.Status.WAITING,
+                        device + " nimmt gerade nicht alles an");
+                return false;
+            }
+        }
+        for (var entry : step.consumed().entrySet()) {
+            long got = storage.extract(entry.getKey(), entry.getValue());
+            net.minecraft.world.item.ItemStack rest = insertAll(handler,
+                    new net.minecraft.world.item.ItemStack(entry.getKey(), (int) got), false);
+            if (!rest.isEmpty()) {
+                storage.insert(entry.getKey(), rest.getCount());
+            }
+        }
+        job.setRunning(new dev.devpanda.factorynetwork.crafting.CraftingJob.Running(
+                step.station(), device, step.result(), step.yield(), 0));
+        job.note(dev.devpanda.factorynetwork.crafting.CraftingJob.Status.RUNNING,
+                "läuft in " + device);
+        return true;
+    }
+
+    /**
+     * Legt einen Stapel in irgendein Fach, das ihn nimmt.
+     *
+     * <p>Welches, entscheidet die Maschine über ihre Seitenregeln — dieselbe
+     * Auskunft, auf die sich {@code move} verlässt.
+     */
+    private static net.minecraft.world.item.ItemStack insertAll(
+            net.neoforged.neoforge.items.IItemHandler handler,
+            net.minecraft.world.item.ItemStack stack, boolean simulate) {
+        net.minecraft.world.item.ItemStack rest = stack;
+        for (int slot = 0; slot < handler.getSlots() && !rest.isEmpty(); slot++) {
+            rest = handler.insertItem(slot, rest, simulate);
+        }
+        return rest;
+    }
+
+    /**
+     * Zieht ein Ergebnis aus irgendeinem Fach, das es hergibt.
+     *
+     * <p>Ein Eingangsfach gibt von sich aus nichts heraus — das entscheidet
+     * die Maschine, und deshalb holt diese Schleife nie versehentlich die
+     * Zutat zurück, die gerade verarbeitet wird.
+     */
+    private static long extractAll(net.neoforged.neoforge.items.IItemHandler handler,
+            net.minecraft.world.item.Item wanted, long limit) {
+        long taken = 0;
+        for (int slot = 0; slot < handler.getSlots() && taken < limit; slot++) {
+            if (handler.getStackInSlot(slot).getItem() != wanted) {
+                continue;
+            }
+            taken += handler.extractItem(slot, (int) (limit - taken), false).getCount();
+        }
+        return taken;
+    }
+
+    /** Der seitenbezogene Zugriff auf die Maschine hinter einem Connector. */
+    private net.neoforged.neoforge.items.IItemHandler machineSide(String device) {
+        var position = graph.connector(device).orElse(null);
+        if (position == null || !level.isLoaded(position)
+                || !(level.getBlockEntity(position) instanceof ConnectorBlockEntity connector)) {
+            return null;
+        }
+        return connector.machineInventory();
+    }
+
+    /**
      * Holt ab, was die Maschine fertig hat.
      *
      * <p>Das Netz holt selbst und wartet nicht darauf, dass jemand einen
@@ -929,27 +1040,33 @@ public class ControllerBlockEntity extends BlockEntity {
      */
     private boolean collectRunning(dev.devpanda.factorynetwork.crafting.CraftingJob job) {
         var running = job.running();
+        boolean declared = dev.devpanda.factorynetwork.crafting.DeclaredRecipes
+                .deviceOf(running.station()) != null;
         var station = dev.devpanda.factorynetwork.crafting.MachineRecipes
                 .stationOf(running.station());
-        var handler = machineInventory(running.device());
-        if (station == null || handler == null) {
+        var handler = declared ? machineSide(running.device())
+                : machineInventory(running.device());
+        if (handler == null || (!declared && station == null)) {
             job.note(dev.devpanda.factorynetwork.crafting.CraftingJob.Status.WAITING,
                     running.device() + " ist nicht erreichbar");
             return false;
         }
-        net.minecraft.world.item.ItemStack ready =
-                handler.extractItem(station.outputSlot(), (int) running.left(), false);
-        if (ready.isEmpty()) {
+        long got = declared
+                ? extractAll(handler, running.result(), running.left())
+                : handler.extractItem(station.outputSlot(), (int) running.left(), false)
+                        .getCount();
+        if (got <= 0) {
             job.note(dev.devpanda.factorynetwork.crafting.CraftingJob.Status.WAITING,
-                    "wartet auf " + running.device() + " — hat er " + station.supply() + "?");
+                    "wartet auf " + running.device()
+                            + (declared ? "" : " — hat er " + station.supply() + "?"));
             return false;
         }
-        long rest = storage.insert(ready.getItem(), ready.getCount());
+        long rest = storage.insert(running.result(), got);
         if (rest > 0) {
             net.minecraft.world.level.block.Block.popResource(level, worldPosition,
-                    new net.minecraft.world.item.ItemStack(ready.getItem(), (int) rest));
+                    new net.minecraft.world.item.ItemStack(running.result(), (int) rest));
         }
-        long done = running.done() + ready.getCount();
+        long done = running.done() + got;
         if (done < running.expected()) {
             job.setRunning(running.withDone(done));
             job.note(dev.devpanda.factorynetwork.crafting.CraftingJob.Status.RUNNING,

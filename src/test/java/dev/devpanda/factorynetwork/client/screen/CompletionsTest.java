@@ -158,6 +158,14 @@ class CompletionsTest {
     }
 
     @Test
+    @DisplayName("In einem Rezept stehen in und out")
+    void insideArecipeOnlyInAndOut() {
+        List<String> shown = at("recipe mahlen at brecher {", "    ");
+
+        assertEquals(List.of("in", "out"), shown);
+    }
+
+    @Test
     @DisplayName("In einem Worker stehen seine Angaben")
     void insideWorkerOnlyWorkerEntries() {
         List<String> shown = at("worker haul {", "    ");

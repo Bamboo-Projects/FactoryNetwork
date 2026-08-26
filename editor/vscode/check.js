@@ -196,6 +196,11 @@ function contains(name, lines, word, shouldHave, file) {
 // Dieselben Faelle wie in CompletionsTest und SignaturesTest.
 contains('Anzeige bietet title', ['display halle {', '    '], 'title', true);
 contains('Anzeige bietet scale', ['display halle {', '    '], 'scale', true);
+contains('Oberste Ebene bietet recipe', [''], 'recipe', true);
+contains('Rezept bietet in', ['recipe mahlen at brecher {', '    '], 'in', true);
+contains('Rezept bietet out', ['recipe mahlen at brecher {', '    '], 'out', true);
+contains('Rezept bietet kein from',
+    ['recipe mahlen at brecher {', '    '], 'from', false);
 contains('Hinter einer Liste steht plus',
     ['fn test() {', '    let x = storage.items().'], 'plus', true);
 contains('Hinter einer Liste steht rest',

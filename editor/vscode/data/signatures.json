@@ -288,6 +288,42 @@
         ]
       }
     ],
+    "recipe": [
+      {
+        "keyword": "in",
+        "shape": "in int selection",
+        "help": "Eine Zutat, mit Menge.",
+        "slots": [
+          {
+            "kind": "INT",
+            "label": "int",
+            "optional": false
+          },
+          {
+            "kind": "SELECTION",
+            "label": "selection",
+            "optional": false
+          }
+        ]
+      },
+      {
+        "keyword": "out",
+        "shape": "out int selection",
+        "help": "Was dabei herauskommt, mit Menge.",
+        "slots": [
+          {
+            "kind": "INT",
+            "label": "int",
+            "optional": false
+          },
+          {
+            "kind": "SELECTION",
+            "label": "selection",
+            "optional": false
+          }
+        ]
+      }
+    ],
     "fn": [
       {
         "keyword": "let",
@@ -630,6 +666,7 @@
     "multiblock",
     "event",
     "display",
+    "recipe",
     "fn",
     "on",
     "global",
