@@ -50,6 +50,54 @@ class CompletionsTest {
                 () -> "from gehört in einen Worker, nicht in eine Anzeige: " + shown);
     }
 
+    /** Was ein Vorschlag wirklich einfügt. */
+    private static String insertOf(String wanted, String... lines) {
+        List<String> code = List.of(lines);
+        int last = code.size() - 1;
+        return Completions.at(code, last, code.get(last).length()).stream()
+                .filter(entry -> entry.text().equals(wanted))
+                .map(Completions.Entry::insert)
+                .findFirst()
+                .orElse(null);
+    }
+
+    @Test
+    @DisplayName("Was Klammern hat, wird mit Klammern eingefügt")
+    void whatHasParenthesesIsInsertedWithThem() {
+        // Beim ersten Spielen aufgefallen: Der Vorschlag setzte den Namen und
+        // nichts weiter, und man tippte die Klammern jedes Mal von Hand nach.
+        // Ob welche dazugehören, steht in der Form — es braucht keine zweite
+        // Liste, die auseinanderläuft.
+        assertEquals("log()", insertOf("log", "fn f() {", "    lo"),
+                "log ist ein Aufruf");
+        assertEquals("count()",
+                insertOf("count", "fn f() {", "    storage.items().cou"),
+                "count() steht mit Klammern in der Form");
+        assertEquals("sum()",
+                insertOf("sum", "fn f() {", "    storage.items().su"),
+                "sum() auch");
+    }
+
+    @Test
+    @DisplayName("Was keine hat, bekommt auch keine")
+    void whatHasNoneGetsNone() {
+        // network.power liegt im Controller und ist keine Nachfrage in der
+        // Welt — deshalb steht es ohne Klammern, und der Vorschlag darf
+        // daraus keinen Aufruf machen.
+        assertEquals("power", insertOf("power", "fn f() {", "    network.pow"));
+        assertEquals("amount",
+                insertOf("amount", "fn f() {", "    log(storage.items().where(it.amo"));
+    }
+
+    @Test
+    @DisplayName("Eine eigene Funktion steht im Rumpf und wird gerufen")
+    void anownFunctionStandsInTheBodyAndIsCalled() {
+        // Sie wurde dort gar nicht angeboten: Wer seine eigene Funktion rufen
+        // wollte, tippte den Namen vollständig aus.
+        assertEquals("kuehlen()",
+                insertOf("kuehlen", "fn kuehlen() {", "}", "fn main() {", "    kue"));
+    }
+
     @Test
     @DisplayName("Die angebotenen Präfixe sind die, die es wirklich gibt")
     void theofferedPrefixesAreTheOnesThatExist() {

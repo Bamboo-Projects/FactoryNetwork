@@ -71,6 +71,24 @@ public final class Completions {
     private static final List<String> DECLARATIONS = Signatures.DECLARATIONS;
 
     /**
+     * Ein Vorschlag, der seine Klammern mitbringt.
+     *
+     * <p><b>Beim ersten Spielen aufgefallen:</b> Der Vorschlag setzte den
+     * Namen und nichts weiter, und man tippte {@code ()} jedes Mal von Hand
+     * nach — bei {@code log}, bei {@code count()}, bei jedem Aufruf.
+     *
+     * <p>Ob welche dazugehören, steht in der <b>Form</b> und nicht in einer
+     * zweiten Liste: {@code redstone() int} hat welche, {@code power int}
+     * nicht. Damit kann die Antwort nicht von der Wahrheit abweichen, und
+     * ein neues Mitglied bringt sie von selbst mit.
+     */
+    private static Entry callable(Signatures.Member member, Entry.Kind kind) {
+        boolean call = member.shape().contains("(");
+        return new Entry(member.name(), call ? member.name() + "()" : member.name(),
+                kind, member.shape());
+    }
+
+    /**
      * Die eingebauten Namen, die der Interpreter <b>wirklich</b> kennt.
      *
      * <p>Die Sprache parst auch {@code world}, {@code network},
@@ -127,8 +145,7 @@ public final class Completions {
         if (afterListCall(upToCursor)) {
             for (Signatures.Member candidate : Signatures.LIST_MEMBERS) {
                 if (matches(candidate.name(), prefix)) {
-                    entries.add(new Entry(candidate.name(), candidate.name(),
-                            Entry.Kind.BUILTIN, candidate.shape()));
+                    entries.add(callable(candidate, Entry.Kind.BUILTIN));
                 }
             }
             return whole(entries);
@@ -145,8 +162,7 @@ public final class Completions {
             if ("network".equals(receiver)) {
                 for (Signatures.Member candidate : Signatures.NETWORK_MEMBERS) {
                     if (matches(candidate.name(), prefix)) {
-                        entries.add(new Entry(candidate.name(), candidate.name(),
-                                Entry.Kind.BUILTIN, candidate.shape()));
+                        entries.add(callable(candidate, Entry.Kind.BUILTIN));
                     }
                 }
                 return whole(entries);
@@ -156,8 +172,7 @@ public final class Completions {
             if (isGroupName(receiver, lines)) {
                 for (Signatures.Member candidate : Signatures.GROUP_MEMBERS) {
                     if (matches(candidate.name(), prefix)) {
-                        entries.add(new Entry(candidate.name(), candidate.name(),
-                                Entry.Kind.BUILTIN, candidate.shape()));
+                        entries.add(callable(candidate, Entry.Kind.BUILTIN));
                     }
                 }
                 return whole(entries);
@@ -165,8 +180,7 @@ public final class Completions {
             if ("it".equals(wordBeforeDot(upToCursor))) {
                 for (Signatures.Member candidate : Signatures.ENTRY_MEMBERS) {
                     if (matches(candidate.name(), prefix)) {
-                        entries.add(new Entry(candidate.name(), candidate.name(),
-                                Entry.Kind.BUILTIN, candidate.shape()));
+                        entries.add(callable(candidate, Entry.Kind.BUILTIN));
                     }
                 }
                 return whole(entries);
@@ -176,8 +190,7 @@ public final class Completions {
             }
             for (Signatures.Member candidate : Signatures.MEMBERS) {
                 if (matches(candidate.name(), prefix)) {
-                    entries.add(new Entry(candidate.name(), candidate.name(),
-                            Entry.Kind.BUILTIN, candidate.shape()));
+                    entries.add(callable(candidate, Entry.Kind.BUILTIN));
                 }
             }
             return whole(entries);
@@ -324,6 +337,23 @@ public final class Completions {
         addDeclaredNames(entries, prefix, lines, "fn ", "fn");
     }
 
+    /**
+     * Dieselben Funktionen, aber als Aufruf.
+     *
+     * <p>Der Unterschied zu {@link #addFunctions} ist die Stelle: Am
+     * {@code button} einer Anzeige steht der <b>Name</b> einer Funktion, in
+     * einem Rumpf steht ihr <b>Aufruf</b>. Ein Vorschlag, der beide Male
+     * dasselbe einfügt, hat an einer der zwei Stellen unrecht.
+     */
+    private static void addCalls(List<Entry> entries, String prefix, List<String> lines) {
+        List<Entry> named = new ArrayList<>();
+        addDeclaredNames(named, prefix, lines, "fn ", "fn");
+        for (Entry entry : named) {
+            entries.add(new Entry(entry.text(), entry.text() + "()",
+                    entry.kind(), entry.detail()));
+        }
+    }
+
     /** Heißt so eine Gruppe im Projekt? */
     private static boolean isGroupName(String word, List<String> lines) {
         if (word == null || word.isEmpty()) {
@@ -458,10 +488,14 @@ public final class Completions {
                 // vorgeschlagen — man musste wissen, dass es sie gibt.
                 for (Signatures.Member function : Signatures.FREE_FUNCTIONS) {
                     if (matches(function.name(), prefix)) {
-                        entries.add(new Entry(function.name(), function.name(),
-                                Entry.Kind.BUILTIN, function.shape()));
+                        entries.add(callable(function, Entry.Kind.BUILTIN));
                     }
                 }
+                // Die eigenen Funktionen des Projekts. Sie standen hier
+                // nicht, und wer seine eigene rufen wollte, tippte den Namen
+                // vollständig aus — obwohl der Editor ihn kennt, weil er ihn
+                // im Sprungziel und in VS Code längst anbietet.
+                addCalls(entries, prefix, lines);
                 addConnectors(entries, prefix);
                 addAll(entries, BUILTINS, prefix, Entry.Kind.BUILTIN);
             }
