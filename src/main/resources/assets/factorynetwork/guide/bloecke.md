@@ -98,6 +98,10 @@ je Fläche. Eine Maschinenwand kostet damit **einen** Block, wo sonst sechs
 stehen. Jeder Anschluss hat seinen eigenen Namen, seinen eigenen Kanal und
 seine eigene Maschine.
 
+**Solange du den Connector in der Hand hast, zeichnet ein Umriss die Fläche,
+an die er ginge** — weiß, wenn dort Platz ist, rot, wenn nicht. Ein Kabel ist
+schmal, und ohne die Vorschau zielt man leicht auf die Fläche daneben.
+
 Auf eine Fläche, an der das Kabel weiterläuft, geht keiner: Dort ist kein
 Platz. Willst du an dieser Stelle trotzdem den eigenen Block setzen, klicke
 **schleichend** — dann geht der Connector wie gewohnt in die Lücke daneben.

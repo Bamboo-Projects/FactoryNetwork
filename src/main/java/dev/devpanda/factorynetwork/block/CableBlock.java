@@ -278,6 +278,20 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
                 ? bus.parts().keySet() : java.util.Set.of();
     }
 
+    /**
+     * Passt an diese Fläche noch ein Anschluss?
+     *
+     * <p>Zwei Gründe sprechen dagegen: Dort sitzt schon einer, oder das Kabel
+     * läuft dorthin weiter. <b>An einer Stelle</b>, weil zwei sie brauchen —
+     * das Setzen und die Vorschau davor. Zwei Fassungen wären zwei
+     * Gelegenheiten, dass die Vorschau etwas verspricht, was das Setzen dann
+     * ablehnt.
+     */
+    public static boolean hasRoomForPart(BlockState state, BlockGetter level, BlockPos pos,
+                                         Direction side) {
+        return !hasPart(level, pos, side) && !state.getValue(connection(side));
+    }
+
     private static boolean hasPart(BlockGetter level, BlockPos pos, Direction side) {
         return level.getBlockEntity(pos) instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus
                 && bus.partAt(side) != null;
@@ -338,7 +352,7 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
                     .PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
         Direction side = hit.getDirection();
-        if (bus.partAt(side) != null || state.getValue(connection(side))) {
+        if (!hasRoomForPart(state, level, pos, side)) {
             if (!level.isClientSide) {
                 player.displayClientMessage(net.minecraft.network.chat.Component.translatable(
                         "message.factorynetwork.connector.no_room"), true);
