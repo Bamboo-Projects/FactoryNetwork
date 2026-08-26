@@ -104,6 +104,11 @@ dependencies {
     // ihr Zugriff steht in compat/ars gegen deren ISourceCap. Geladen werden
     // die Klassen erst, wenn FnArs.installed() wahr ist — dasselbe Muster wie
     // bei Mekanism.
+    // Applied Energistics: ein ME-Netz als Quelle und Ziel (Punkt 7.7).
+    // Zum Uebersetzen und zum Spielen — der Entwurf haengt an Fragen, die
+    // nur das echte Jar beantwortet.
+    compileOnly "maven.modrinth:ae2:${ae2_version}"
+    runtimeOnly "maven.modrinth:ae2:${ae2_version}"
     compileOnly "maven.modrinth:ars-nouveau:${ars_nouveau_version}"
     runtimeOnly "maven.modrinth:ars-nouveau:${ars_nouveau_version}"
     // Ars Nouveau verlangt beide und bringt sie nicht mit.

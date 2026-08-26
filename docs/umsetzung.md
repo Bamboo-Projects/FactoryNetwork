@@ -1625,3 +1625,39 @@ gehört dem Spieler.
 `UnknownPrefixTest` benutzte `source:` als Beispiel für eine Art, die es nicht
 gibt. Seit heute gibt es sie. Das Beispiel heißt jetzt `pressure:` — ein
 Beispiel, das im Spiel etwas anderes bedeutet als im Einheitstest, ist keins.
+
+### Zwei Mods gelesen statt geraten (seit dem 26.08.)
+
+Für Punkt 7.6 und 7.7 stand in der Liste „prüfen" und „entwerfen". Beides
+hätte sich aus dem Gedächtnis schreiben lassen. Stattdessen liegen jetzt beide
+Jars auf der Platte, und was in den Dokumenten steht, ist abgelesen.
+
+**Industrial Foregoing: nichts fehlt.** Das Paket `capability` der Mod enthält
+zwei Klassen, und beide sind Titanium-Bausteine über den Standardschnittstellen
+— kein eigener Capability-Typ. Pink Slime, das in der Liste als Sonderfall
+stand, ist Gegenstand und Flüssigkeit; `item:` und `fluid:` erreichen es
+heute. Der Punkt schließt, ohne dass eine Zeile geschrieben wurde, und das ist
+das beste Ergebnis, das eine Prüfung haben kann.
+
+**Applied Energistics: zwei Befunde, die den Entwurf umgestellt haben.**
+
+Der erste: `appeng.init.InitCapabilityProviders` meldet **siebzehn**
+gewöhnliche Item-Handler und dreizehn Fluid-Handler an. Ein Connector an einem
+Pattern Provider funktioniert damit heute, ohne dass irgendjemand etwas baut.
+Die Frage ist also nicht „ob AE2 geht", sondern „ob das ganze Netz geht".
+
+Der zweite: das ganze Netz hängt an `AECapabilities.ME_STORAGE` — einer
+gewöhnlichen Block-Capability am ME Interface, an der ME Chest und am
+Condenser. Sie zu fragen ist kein Umbau, sondern ein `MachineAccess` mehr.
+
+**Und ein Glücksfall:** `AEKeyType` ist bei AE2 ein Registry-Eintrag, so wie
+`ResourceKind` bei uns seit heute. Die Brücke zwischen beiden ist damit eine
+Tabelle zwischen zwei offenen Registries und keine Fallunterscheidung — legt
+jemand Applied Mekanistics dazu, wächst sie von selbst.
+
+Der Haken steht ebenfalls im Entwurf, und er ist architektonisch: Für die
+eingebauten drei Arten fragt `move` heute nicht `machine()`, sondern greift
+direkt auf `IItemHandler`. Ein ME-Netz als Quelle für `item:` verlangt deshalb
+zuerst den Schnitt, der die eingebauten drei nachziehen lässt. Der Umweg —
+eine Sonderabfrage für AE2 mitten im Gegenstandsweg — wäre genau die Kopie,
+gegen die diese Sitzung dreimal angetreten ist.
