@@ -1,19 +1,18 @@
 package dev.devpanda.factorynetwork.test;
 
 import dev.devpanda.factorynetwork.FactoryNetwork;
-import dev.devpanda.factorynetwork.block.entity.ConnectorBlockEntity;
 import dev.devpanda.factorynetwork.block.entity.ControllerBlockEntity;
 import dev.devpanda.factorynetwork.block.entity.DeviceScan;
 import dev.devpanda.factorynetwork.block.entity.DisplayBlockEntity;
 import dev.devpanda.factorynetwork.block.CableBlock;
 import dev.devpanda.factorynetwork.block.CableColour;
-import dev.devpanda.factorynetwork.block.ConnectorBlock;
 import dev.devpanda.factorynetwork.item.ConnectorNaming;
 import dev.devpanda.factorynetwork.lang.DeviceProfile;
 import dev.devpanda.factorynetwork.lang.Side;
 import dev.devpanda.factorynetwork.network.Power;
 import dev.devpanda.factorynetwork.network.packet.DeviceSnapshotPacket;
 import dev.devpanda.factorynetwork.registry.FnBlocks;
+import dev.devpanda.factorynetwork.registry.FnItems;
 import dev.devpanda.factorynetwork.runtime.ScriptError;
 import dev.devpanda.factorynetwork.runtime.WorkerRuntime;
 import dev.devpanda.factorynetwork.runtime.Value;
@@ -58,10 +57,8 @@ public final class FactoryNetworkGameTests {
 
         BlockPos sourceConnector = cable.north();
         BlockPos targetConnector = cable.south();
-        helper.setBlock(sourceConnector, FnBlocks.CONNECTOR.get().defaultBlockState()
-                .setValue(dev.devpanda.factorynetwork.block.ConnectorBlock.FACING, Direction.NORTH));
-        helper.setBlock(targetConnector, FnBlocks.CONNECTOR.get().defaultBlockState()
-                .setValue(dev.devpanda.factorynetwork.block.ConnectorBlock.FACING, Direction.SOUTH));
+        connector(helper, sourceConnector, Direction.NORTH);
+        connector(helper, targetConnector, Direction.SOUTH);
 
         helper.setBlock(sourceConnector.north(), Blocks.CHEST);
         helper.setBlock(targetConnector.south(), Blocks.CHEST);
@@ -87,10 +84,8 @@ public final class FactoryNetworkGameTests {
 
         BlockPos sourceConnector = cable.north();
         BlockPos targetConnector = cable.south();
-        helper.setBlock(sourceConnector, FnBlocks.CONNECTOR.get().defaultBlockState()
-                .setValue(dev.devpanda.factorynetwork.block.ConnectorBlock.FACING, Direction.NORTH));
-        helper.setBlock(targetConnector, FnBlocks.CONNECTOR.get().defaultBlockState()
-                .setValue(dev.devpanda.factorynetwork.block.ConnectorBlock.FACING, Direction.SOUTH));
+        connector(helper, sourceConnector, Direction.NORTH);
+        connector(helper, targetConnector, Direction.SOUTH);
         helper.setBlock(sourceConnector.north(), Blocks.CHEST);
         helper.setBlock(targetConnector.south(), Blocks.CHEST);
         name(helper, sourceConnector, "quarry_output");
@@ -98,11 +93,64 @@ public final class FactoryNetworkGameTests {
         return controller;
     }
 
+    /**
+     * Ein Kabel mit einem Anschluss an dieser Fläche.
+     *
+     * <p><b>Der Ersatz für den alten Connectorblock</b>, an derselben Stelle
+     * und mit derselben Blickrichtung — deshalb bleibt in den Prüfläufen
+     * jede Kiste liegen, wo sie lag.
+     *
+     * <p>Ein Unterschied bleibt und ist keiner zu wenig: Diese Stelle ist
+     * jetzt ein Kabel und <b>leitet weiter</b>. Wo ein Prüflauf sich darauf
+     * verließ, dass ein Connector eine Sackgasse ist, steht das jetzt
+     * ausdrücklich da.
+     */
+    private static void connector(GameTestHelper helper, BlockPos pos, Direction facing) {
+        connector(helper, pos, facing, CableColour.NONE);
+    }
+
+    /** Dasselbe an einem farbigen Strang — die Farbe trennt wie überall. */
+    private static void connector(GameTestHelper helper, BlockPos pos, Direction facing,
+                                  CableColour colour) {
+        partOn(helper, pos, facing, FnBlocks.CABLE.get().defaultBlockState()
+                .setValue(CableBlock.COLOUR, colour));
+    }
+
+    /**
+     * Ein Anschluss an einem <b>dichten</b> Kabel.
+     *
+     * <p>Nötig, wo der Strang vierundsechzig Kanäle trägt: Ein dünnes Kabel
+     * an dieser Stelle wäre das schwächste Glied und deckelte die ganze
+     * Strecke auf sechzehn.
+     */
+    private static void denseConnector(GameTestHelper helper, BlockPos pos, Direction facing) {
+        partOn(helper, pos, facing, FnBlocks.DENSE_CABLE.get().defaultBlockState());
+    }
+
+    private static void partOn(GameTestHelper helper, BlockPos pos, Direction facing,
+                               net.minecraft.world.level.block.state.BlockState cable) {
+        helper.setBlock(pos, cable);
+        if (helper.getBlockEntity(pos)
+                instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus) {
+            bus.addPart(facing);
+        } else {
+            helper.fail("Am Kabel hängt keine BlockEntity für Teile", pos);
+        }
+    }
+
+    /** Der Anschluss an dieser Stelle — es sitzt genau einer dort. */
+    private static dev.devpanda.factorynetwork.block.entity.ConnectorPart partAt(
+            GameTestHelper helper, BlockPos pos) {
+        return dev.devpanda.factorynetwork.block.entity.Connectors.at(
+                helper.getLevel(), helper.absolutePos(pos));
+    }
+
     private static void name(GameTestHelper helper, BlockPos pos, String label) {
-        if (helper.getBlockEntity(pos) instanceof ConnectorBlockEntity connector) {
+        var connector = partAt(helper, pos);
+        if (connector != null) {
             connector.setLabel(label);
         } else {
-            helper.fail("Am Connector hängt keine BlockEntity", pos);
+            helper.fail("An dieser Stelle sitzt kein Anschluss", pos);
         }
     }
 
@@ -167,7 +215,7 @@ public final class FactoryNetworkGameTests {
         BlockPos controller = buildSetup(helper);
         // Ein dritter Connector ohne Namen darf im Netz nicht auftauchen.
         BlockPos extra = controller.east().above();
-        helper.setBlock(extra, FnBlocks.CONNECTOR.get());
+        connector(helper, extra, Direction.NORTH);
 
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
@@ -583,9 +631,7 @@ public final class FactoryNetworkGameTests {
 
         // Zerlegte Form setzen, wie sie manche Texteingabe liefert.
         String decomposed = "ofen_su\u0308d";
-        if (helper.getBlockEntity(connector) instanceof ConnectorBlockEntity entity) {
-            entity.setLabel(ConnectorNaming.normalize(decomposed));
-        }
+        partAt(helper, connector).setLabel(ConnectorNaming.normalize(decomposed));
 
         ControllerBlockEntity controllerEntity = controllerAt(helper, controller);
         controllerEntity.rebuildNetwork();
@@ -665,8 +711,11 @@ public final class FactoryNetworkGameTests {
         BlockPos green = controller.east();
         helper.setBlock(green, FnBlocks.CABLE.get().defaultBlockState()
                 .setValue(CableBlock.COLOUR, CableColour.GREEN));
+        // Der Anschluss sitzt am grünen Strang und trägt dessen Farbe: Ein
+        // farbloses Kabel an dieser Stelle verbände beide Stränge, und genau
+        // das soll der Prüflauf ausschließen.
         BlockPos reachable = green.east();
-        helper.setBlock(reachable, FnBlocks.CONNECTOR.get());
+        connector(helper, reachable, Direction.NORTH, CableColour.GREEN);
         name(helper, reachable, "erreichbar");
 
         // Roter Strang, an den grünen angesetzt — darf nicht durchleiten
@@ -674,7 +723,7 @@ public final class FactoryNetworkGameTests {
         helper.setBlock(red, FnBlocks.CABLE.get().defaultBlockState()
                 .setValue(CableBlock.COLOUR, CableColour.RED));
         BlockPos hidden = red.east();
-        helper.setBlock(hidden, FnBlocks.CONNECTOR.get());
+        connector(helper, hidden, Direction.NORTH, CableColour.RED);
         name(helper, hidden, "getrennt");
 
         ControllerBlockEntity entity = controllerAt(helper, controller);
@@ -700,7 +749,7 @@ public final class FactoryNetworkGameTests {
         helper.setBlock(blue, FnBlocks.CABLE.get().defaultBlockState()
                 .setValue(CableBlock.COLOUR, CableColour.BLUE));
         BlockPos target = blue.east();
-        helper.setBlock(target, FnBlocks.CONNECTOR.get());
+        connector(helper, target, Direction.NORTH);
         name(helper, target, "dahinter");
 
         ControllerBlockEntity entity = controllerAt(helper, controller);
@@ -729,7 +778,7 @@ public final class FactoryNetworkGameTests {
                 .setValue(CableBlock.COLOUR, CableColour.RED));
 
         BlockPos behind = redOnly.east();
-        helper.setBlock(behind, FnBlocks.CONNECTOR.get());
+        connector(helper, behind, Direction.NORTH);
         name(helper, behind, "dahinter");
 
         ControllerBlockEntity entity = controllerAt(helper, controller);
@@ -761,13 +810,11 @@ public final class FactoryNetworkGameTests {
                 if (placed >= 9) {
                     break;
                 }
-                helper.setBlock(side, FnBlocks.CONNECTOR.get());
+                connector(helper, side, Direction.NORTH);
                 name(helper, side, "gerät_" + placed);
                 // Zwei Kanäle je Gerät: Neun Geräte wollen achtzehn, das
                 // Kabel trägt sechzehn. Das neunte geht leer aus.
-                if (helper.getBlockEntity(side) instanceof ConnectorBlockEntity connector) {
-                    connector.setChannelCost(2);
-                }
+                partAt(helper, side).setChannelCost(2);
                 placed++;
             }
         }
@@ -793,9 +840,9 @@ public final class FactoryNetworkGameTests {
         // Zwei Geräte am Ende der Reihe — über und unter dem letzten Kabel,
         // nicht auf ihm: Ein Connector an dessen Stelle nähme ihm den Platz.
         BlockPos last = controller.east(3);
-        helper.setBlock(last.above(), FnBlocks.CONNECTOR.get());
+        connector(helper, last.above(), Direction.NORTH);
         name(helper, last.above(), "ende_0");
-        helper.setBlock(last.below(), FnBlocks.CONNECTOR.get());
+        connector(helper, last.below(), Direction.NORTH);
         name(helper, last.below(), "ende_1");
 
         ControllerBlockEntity entity = controllerAt(helper, controller);
@@ -821,9 +868,7 @@ public final class FactoryNetworkGameTests {
         }
         for (int i = 0; i < 3; i++) {
             BlockPos connector = controller.east(i + 2).above();
-            helper.setBlock(connector, FnBlocks.CONNECTOR.get().defaultBlockState()
-                    .setValue(dev.devpanda.factorynetwork.block.ConnectorBlock.FACING,
-                            net.minecraft.core.Direction.UP));
+            connector(helper, connector, Direction.UP);
             helper.setBlock(connector.above(), Blocks.CHEST);
             name(helper, connector, "kiste_" + (i + 1));
         }
@@ -1065,12 +1110,12 @@ public final class FactoryNetworkGameTests {
         entity.callFunction("alarm", java.util.List.of(
                 new dev.devpanda.factorynetwork.runtime.Value.Int(15)));
 
-        if (helper.getBlockEntity(connector) instanceof ConnectorBlockEntity emitter) {
-            helper.assertValueEqual(emitter.emittedRedstone(), 15, "gesetzte Stärke");
-        } else {
-            helper.fail("Kein Connector", connector);
+        var emitter = partAt(helper, connector);
+        if (emitter == null) {
+            helper.fail("Kein Anschluss", connector);
             return;
         }
+        helper.assertValueEqual(emitter.emittedRedstone(), 15, "gesetzte Stärke");
         // Und der Block gibt es auch wirklich nach außen weiter.
         helper.assertTrue(helper.getLevel().getBestNeighborSignal(
                 helper.absolutePos(connector.above())) > 0,
@@ -1078,9 +1123,8 @@ public final class FactoryNetworkGameTests {
 
         entity.callFunction("alarm", java.util.List.of(
                 new dev.devpanda.factorynetwork.runtime.Value.Int(0)));
-        if (helper.getBlockEntity(connector) instanceof ConnectorBlockEntity afterwards) {
-            helper.assertValueEqual(afterwards.emittedRedstone(), 0, "wieder aus");
-        }
+        helper.assertValueEqual(partAt(helper, connector).emittedRedstone(), 0,
+                "wieder aus");
         helper.succeed();
     }
 
@@ -2348,9 +2392,7 @@ public final class FactoryNetworkGameTests {
         String[] labels = {"werk_1/eingang", "werk_1/ausgang", "werk_2/eingang"};
         for (int i = 0; i < labels.length; i++) {
             BlockPos connector = controller.east(i + 2).above();
-            helper.setBlock(connector, FnBlocks.CONNECTOR.get().defaultBlockState()
-                    .setValue(dev.devpanda.factorynetwork.block.ConnectorBlock.FACING,
-                            net.minecraft.core.Direction.UP));
+            connector(helper, connector, Direction.UP);
             helper.setBlock(connector.above(), Blocks.CHEST);
             name(helper, connector, labels[i]);
         }
@@ -2500,9 +2542,7 @@ public final class FactoryNetworkGameTests {
 
         // Ein neuer Connector am Kabel: Das Netz kennt ihn beim nächsten Aufbau.
         BlockPos weiterer = controller.east().above();
-        helper.setBlock(weiterer, FnBlocks.CONNECTOR.get().defaultBlockState()
-                .setValue(dev.devpanda.factorynetwork.block.ConnectorBlock.FACING,
-                        net.minecraft.core.Direction.UP));
+        connector(helper, weiterer, Direction.UP);
         helper.setBlock(weiterer.above(), Blocks.CHEST);
         name(helper, weiterer, "nachzuegler");
         entity.rebuildNetwork();
@@ -2573,9 +2613,7 @@ public final class FactoryNetworkGameTests {
         String[] labels = {"bottich", "kessel"};
         for (int i = 0; i < labels.length; i++) {
             BlockPos connector = controller.east(i + 2).above();
-            helper.setBlock(connector, FnBlocks.CONNECTOR.get().defaultBlockState()
-                    .setValue(dev.devpanda.factorynetwork.block.ConnectorBlock.FACING,
-                            net.minecraft.core.Direction.UP));
+            connector(helper, connector, Direction.UP);
             helper.setBlock(connector.above(), Blocks.CAULDRON);
             name(helper, connector, labels[i]);
         }
@@ -4108,9 +4146,7 @@ public final class FactoryNetworkGameTests {
         String[] labels = {"sude_1/bottich", "sude_1/kessel"};
         for (int i = 0; i < labels.length; i++) {
             BlockPos connector = controller.east(i + 2).above();
-            helper.setBlock(connector, FnBlocks.CONNECTOR.get().defaultBlockState()
-                    .setValue(dev.devpanda.factorynetwork.block.ConnectorBlock.FACING,
-                            net.minecraft.core.Direction.UP));
+            connector(helper, connector, Direction.UP);
             helper.setBlock(connector.above(), Blocks.CAULDRON);
             name(helper, connector, labels[i]);
         }
@@ -4185,9 +4221,7 @@ public final class FactoryNetworkGameTests {
         String[] labels = {"bottich", "ziel_a", "ziel_b"};
         for (int i = 0; i < labels.length; i++) {
             BlockPos connector = controller.east(i + 2).above();
-            helper.setBlock(connector, FnBlocks.CONNECTOR.get().defaultBlockState()
-                    .setValue(dev.devpanda.factorynetwork.block.ConnectorBlock.FACING,
-                            net.minecraft.core.Direction.UP));
+            connector(helper, connector, Direction.UP);
             helper.setBlock(connector.above(), Blocks.CAULDRON);
             name(helper, connector, labels[i]);
         }
@@ -4376,11 +4410,9 @@ public final class FactoryNetworkGameTests {
                 if (placed >= 9) {
                     break;
                 }
-                helper.setBlock(side, FnBlocks.CONNECTOR.get());
+                connector(helper, side, Direction.NORTH);
                 name(helper, side, "gerät_" + placed);
-                if (helper.getBlockEntity(side) instanceof ConnectorBlockEntity connector) {
-                    connector.setChannelCost(2);
-                }
+                partAt(helper, side).setChannelCost(2);
                 placed++;
             }
         }
@@ -4406,11 +4438,9 @@ public final class FactoryNetworkGameTests {
         for (int i = 0; i < 8; i++) {
             BlockPos side = i < 4 ? controller.east(i + 1).above()
                     : controller.east(i - 3).below();
-            helper.setBlock(side, FnBlocks.CONNECTOR.get());
+            connector(helper, side, Direction.NORTH);
             name(helper, side, "gerät_" + i);
-            if (helper.getBlockEntity(side) instanceof ConnectorBlockEntity connector) {
-                connector.setChannelCost(2);
-            }
+            partAt(helper, side).setChannelCost(2);
         }
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
@@ -4461,11 +4491,9 @@ public final class FactoryNetworkGameTests {
                 if (placed >= 9) {
                     break;
                 }
-                helper.setBlock(side, FnBlocks.CONNECTOR.get());
+                connector(helper, side, Direction.NORTH);
                 name(helper, side, "gerät_" + placed);
-                if (helper.getBlockEntity(side) instanceof ConnectorBlockEntity connector) {
-                    connector.setChannelCost(2);
-                }
+                partAt(helper, side).setChannelCost(2);
                 placed++;
             }
         }
@@ -4505,11 +4533,9 @@ public final class FactoryNetworkGameTests {
                 if (placed >= 6) {
                     break;
                 }
-                helper.setBlock(side, FnBlocks.CONNECTOR.get());
+                connector(helper, side, Direction.NORTH);
                 name(helper, side, "gerät_" + placed);
-                if (helper.getBlockEntity(side) instanceof ConnectorBlockEntity connector) {
-                    connector.setChannelCost(3);
-                }
+                partAt(helper, side).setChannelCost(3);
                 placed++;
             }
         }
@@ -4992,10 +5018,10 @@ public final class FactoryNetworkGameTests {
         helper.setBlock(router, FnBlocks.ROUTER.get());
 
         BlockPos north = router.north();
-        helper.setBlock(north, FnBlocks.CONNECTOR.get());
+        connector(helper, north, Direction.NORTH);
         name(helper, north, "nord");
         BlockPos above = router.above();
-        helper.setBlock(above, FnBlocks.CONNECTOR.get());
+        connector(helper, above, Direction.NORTH);
         name(helper, above, "oben");
 
         ControllerBlockEntity entity = controllerAt(helper, controller);
@@ -5051,7 +5077,7 @@ public final class FactoryNetworkGameTests {
         BlockPos behind = controller.east(3);
         helper.setBlock(behind, FnBlocks.DENSE_CABLE.get());
         BlockPos device = behind.north();
-        helper.setBlock(device, FnBlocks.CONNECTOR.get());
+        connector(helper, device, Direction.NORTH);
         name(helper, device, "dahinter");
 
         ControllerBlockEntity entity = controllerAt(helper, controller);
@@ -5087,12 +5113,10 @@ public final class FactoryNetworkGameTests {
 
         // Ein einziges Gerät, das die ganze Bahn füllt, und eins mehr.
         BlockPos first = router.north();
-        helper.setBlock(first, FnBlocks.CONNECTOR.get());
+        denseConnector(helper, first, Direction.NORTH);
         name(helper, first, "gross");
-        if (helper.getBlockEntity(first) instanceof ConnectorBlockEntity connector) {
-            connector.setChannelCost(
-                    dev.devpanda.factorynetwork.block.CableBlock.CHANNELS_DENSE);
-        }
+        partAt(helper, first).setChannelCost(
+                dev.devpanda.factorynetwork.block.CableBlock.CHANNELS_DENSE);
 
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
@@ -5110,7 +5134,7 @@ public final class FactoryNetworkGameTests {
         // die Suchreihenfolge — dass eines leer ausgeht, entscheidet die
         // Grenze.
         BlockPos second = router.above();
-        helper.setBlock(second, FnBlocks.CONNECTOR.get());
+        denseConnector(helper, second, Direction.NORTH);
         name(helper, second, "klein");
         entity.rebuildNetwork();
         helper.assertValueEqual(entity.graph().starvedConnectors().size(), 1,
@@ -5136,7 +5160,7 @@ public final class FactoryNetworkGameTests {
             helper.setBlock(controller.east(i), FnBlocks.DENSE_CABLE.get());
         }
         BlockPos device = controller.east(3).above();
-        helper.setBlock(device, FnBlocks.CONNECTOR.get());
+        denseConnector(helper, device, Direction.NORTH);
         name(helper, device, "ziel");
 
         ControllerBlockEntity entity = controllerAt(helper, controller);
@@ -5778,9 +5802,7 @@ public final class FactoryNetworkGameTests {
         rackWithServer(helper, controller.west());
         helper.setBlock(controller.east(), FnBlocks.CABLE.get());
         BlockPos connector = controller.east().north();
-        helper.setBlock(connector, FnBlocks.CONNECTOR.get().defaultBlockState()
-                .setValue(dev.devpanda.factorynetwork.block.ConnectorBlock.FACING,
-                        Direction.NORTH));
+        connector(helper, connector, Direction.NORTH);
         helper.setBlock(connector.north(), Blocks.CHEST);
         name(helper, connector, "quelle");
         if (helper.getBlockEntity(connector.north())
@@ -6519,7 +6541,7 @@ public final class FactoryNetworkGameTests {
         BlockPos cable = controller.east();
         helper.setBlock(cable, FnBlocks.CABLE.get());
 
-        helper.setBlock(cable.north(), FnBlocks.CONNECTOR.get());
+        connector(helper, cable.north(), Direction.NORTH);
         name(helper, cable.north(), "geraet");
         helper.setBlock(cable.south(), FnBlocks.DRIVE.get());
         helper.setBlock(cable.above(), FnBlocks.RACK.get());
@@ -6779,11 +6801,10 @@ public final class FactoryNetworkGameTests {
         helper.setBlock(cable, FnBlocks.CABLE.get());
 
         // Ein Gerät, das den dünnen Strang allein füllt.
-        helper.setBlock(cable.north(), FnBlocks.CONNECTOR.get());
+        connector(helper, cable.north(), Direction.NORTH);
         name(helper, cable.north(), "vielfrass");
-        if (helper.getBlockEntity(cable.north()) instanceof ConnectorBlockEntity gross) {
-            gross.setChannelCost(dev.devpanda.factorynetwork.block.CableBlock.CHANNELS_THIN);
-        }
+        partAt(helper, cable.north()).setChannelCost(
+                dev.devpanda.factorynetwork.block.CableBlock.CHANNELS_THIN);
         driveWithCell(helper, cable.south(),
                 dev.devpanda.factorynetwork.storage.CellTier.K64);
 
@@ -6820,7 +6841,7 @@ public final class FactoryNetworkGameTests {
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
         BlockPos cable = controller.east();
         helper.setBlock(cable, FnBlocks.CABLE.get());
-        helper.setBlock(cable.north(), FnBlocks.CONNECTOR.get());
+        connector(helper, cable.north(), Direction.NORTH);
         name(helper, cable.north(), "geraet");
         helper.setBlock(cable.below(), FnBlocks.DISPLAY.get());
         driveWithCell(helper, cable.south(), dev.devpanda.factorynetwork.storage.CellTier.K1);
@@ -7383,11 +7404,12 @@ public final class FactoryNetworkGameTests {
         entity.rebuildNetwork();
 
         BlockPos connector = controller.east().north();
-        if (!(helper.getBlockEntity(connector) instanceof ConnectorBlockEntity verbunden)) {
-            helper.fail("Am Connector hängt keine BlockEntity", connector);
+        var verbunden = partAt(helper, connector);
+        if (verbunden == null) {
+            helper.fail("An dieser Stelle sitzt kein Anschluss", connector);
             return;
         }
-        var profil = DeviceScan.of(verbunden.part());
+        var profil = DeviceScan.of(verbunden);
 
         helper.assertValueEqual(profil.abilities(), "Gegenstände",
                 "An einer Kiste hängen Gegenstände");
@@ -9539,8 +9561,7 @@ public final class FactoryNetworkGameTests {
         helper.setBlock(anbau, FnBlocks.CONTROLLER_EXTENSION.get());
         helper.setBlock(anbau.north(), FnBlocks.CABLE.get());
         BlockPos connector = anbau.north().north();
-        helper.setBlock(connector, FnBlocks.CONNECTOR.get().defaultBlockState()
-                .setValue(dev.devpanda.factorynetwork.block.ConnectorBlock.FACING, Direction.NORTH));
+        connector(helper, connector, Direction.NORTH);
         helper.setBlock(connector.north(), Blocks.CHEST);
         name(helper, connector, "am_anbau");
         entity.rebuildNetwork();
@@ -9569,10 +9590,13 @@ public final class FactoryNetworkGameTests {
         BlockPos anbau = controller.north().north();
         helper.setBlock(controller.north(), FnBlocks.CABLE.get());
         helper.setBlock(anbau, FnBlocks.CONTROLLER_EXTENSION.get());
-        helper.setBlock(anbau.east(), FnBlocks.CABLE.get());
-        BlockPos connector = anbau.east().east();
-        helper.setBlock(connector, FnBlocks.CONNECTOR.get().defaultBlockState()
-                .setValue(dev.devpanda.factorynetwork.block.ConnectorBlock.FACING, Direction.EAST));
+        // Nach oben und nicht nach Osten: Östlich liegt der Grundaufbau, und
+        // seit ein Anschluss auf einem Kabel sitzt, ist diese Stelle selbst
+        // eine Leitung — der Strang liefe am Anbau vorbei, und der Prüflauf
+        // prüfte etwas anderes, als er behauptet.
+        helper.setBlock(anbau.above(), FnBlocks.CABLE.get());
+        BlockPos connector = anbau.above().above();
+        connector(helper, connector, Direction.EAST);
         helper.setBlock(connector.east(), Blocks.CHEST);
         name(helper, connector, "hinter_dem_anbau");
         entity.rebuildNetwork();
@@ -9594,8 +9618,7 @@ public final class FactoryNetworkGameTests {
         helper.setBlock(zweiter, FnBlocks.CONTROLLER_EXTENSION.get());
         helper.setBlock(zweiter.east(), FnBlocks.CABLE.get());
         BlockPos connector = zweiter.east().east();
-        helper.setBlock(connector, FnBlocks.CONNECTOR.get().defaultBlockState()
-                .setValue(dev.devpanda.factorynetwork.block.ConnectorBlock.FACING, Direction.EAST));
+        connector(helper, connector, Direction.EAST);
         helper.setBlock(connector.east(), Blocks.CHEST);
         name(helper, connector, "am_zweiten");
         entity.rebuildNetwork();
@@ -10006,12 +10029,9 @@ public final class FactoryNetworkGameTests {
         BlockPos connector = new BlockPos(2, 1, 1);
         BlockPos chest = connector.east();
         helper.setBlock(chest, Blocks.CHEST);
-        helper.setBlock(connector, FnBlocks.CONNECTOR.get().defaultBlockState()
-                .setValue(ConnectorBlock.FACING, Direction.EAST));
+        connector(helper, connector, Direction.EAST);
 
-        ConnectorBlockEntity entity =
-                (ConnectorBlockEntity) helper.getBlockEntity(connector);
-        DeviceProfile profile = DeviceScan.of(entity.part());
+        DeviceProfile profile = DeviceScan.of(partAt(helper, connector));
 
         helper.assertTrue(profile.reachable(), "die Kiste wurde nicht erkannt");
         helper.assertTrue(profile.descriptionId().contains("chest"),
@@ -10161,12 +10181,9 @@ public final class FactoryNetworkGameTests {
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void aConnectorPointingAtAirSaysSo(GameTestHelper helper) {
         BlockPos connector = new BlockPos(2, 1, 1);
-        helper.setBlock(connector, FnBlocks.CONNECTOR.get().defaultBlockState()
-                .setValue(ConnectorBlock.FACING, Direction.EAST));
+        connector(helper, connector, Direction.EAST);
 
-        ConnectorBlockEntity entity =
-                (ConnectorBlockEntity) helper.getBlockEntity(connector);
-        DeviceProfile profile = DeviceScan.of(entity.part());
+        DeviceProfile profile = DeviceScan.of(partAt(helper, connector));
 
         helper.assertTrue(profile.reachable(),
                 "über Luft ist sehr wohl etwas bekannt: dass dort nichts steht");
@@ -10528,25 +10545,38 @@ public final class FactoryNetworkGameTests {
     @GameTest(template = EMPTY, timeoutTicks = 100)
     public static void aconnectorSendsItsNameToTheClient(GameTestHelper helper) {
         BlockPos connector = new BlockPos(2, 1, 1);
-        helper.setBlock(connector, FnBlocks.CONNECTOR.get().defaultBlockState()
-                .setValue(ConnectorBlock.FACING, Direction.EAST));
-        if (!(helper.getBlockEntity(connector) instanceof ConnectorBlockEntity entity)) {
-            helper.fail("Am Connector hängt keine BlockEntity", connector);
+        connector(helper, connector, Direction.EAST);
+        var entity = partAt(helper, connector);
+        if (entity == null) {
+            helper.fail("An dieser Stelle sitzt kein Anschluss", connector);
             return;
         }
 
         entity.setLabel("kiste_1");
 
-        var packet = entity.getUpdatePacket();
+        // Das Paket kommt vom Kabelblock: Er trägt die Anschlüsse, also
+        // schickt er sie auch.
+        var packet = helper.getBlockEntity(connector).getUpdatePacket();
         helper.assertTrue(packet != null,
                 "Ohne Paket erfährt der Client nie, wie das Gerät heißt");
         helper.assertTrue(packet
                         instanceof net.minecraft.network.protocol.game
                                 .ClientboundBlockEntityDataPacket data
                         && data.getTag() != null
-                        && "kiste_1".equals(data.getTag().getString("Label")),
+                        && labelledIn(data.getTag(), "kiste_1"),
                 "und im Paket muss der Name stehen");
         helper.succeed();
+    }
+
+    /** Steht dieser Name an einem der Anschlüsse im Paket? */
+    private static boolean labelledIn(net.minecraft.nbt.CompoundTag tag, String label) {
+        var parts = tag.getList("Parts", net.minecraft.nbt.Tag.TAG_COMPOUND);
+        for (int i = 0; i < parts.size(); i++) {
+            if (label.equals(parts.getCompound(i).getString("Label"))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -10581,8 +10611,7 @@ public final class FactoryNetworkGameTests {
         helper.setBlock(beyond, FnBlocks.CABLE.get());
 
         BlockPos connector = beyond.north();
-        helper.setBlock(connector, FnBlocks.CONNECTOR.get().defaultBlockState()
-                .setValue(ConnectorBlock.FACING, Direction.NORTH));
+        connector(helper, connector, Direction.NORTH);
         helper.setBlock(connector.north(), Blocks.CHEST);
         name(helper, connector, "eingang");
 
@@ -10623,8 +10652,7 @@ public final class FactoryNetworkGameTests {
         helper.setBlock(cable, FnBlocks.CABLE.get());
 
         BlockPos connector = cable.north();
-        helper.setBlock(connector, FnBlocks.CONNECTOR.get().defaultBlockState()
-                .setValue(ConnectorBlock.FACING, Direction.NORTH));
+        connector(helper, connector, Direction.NORTH);
         helper.setBlock(connector.north(), Blocks.CHEST);
         name(helper, connector, "werk_2/ausgang");
 
@@ -11001,7 +11029,7 @@ public final class FactoryNetworkGameTests {
         helper.setBlock(cable.east(), FnBlocks.CABLE.get());
 
         var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
-        ItemStack stack = new ItemStack(FnBlocks.CONNECTOR.get());
+        ItemStack stack = new ItemStack(FnItems.CONNECTOR.get());
         stack.setCount(2);
         player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, stack);
 
@@ -11060,7 +11088,7 @@ public final class FactoryNetworkGameTests {
 
         helper.assertTrue(bus.partAt(Direction.NORTH) == null,
                 "der Anschluss muss ab sein");
-        helper.assertItemEntityPresent(FnBlocks.CONNECTOR.get().asItem(), cable, 2.0);
+        helper.assertItemEntityPresent(FnItems.CONNECTOR.get(), cable, 2.0);
         helper.succeed();
     }
 
@@ -11083,7 +11111,7 @@ public final class FactoryNetworkGameTests {
 
         helper.destroyBlock(cable);
 
-        helper.assertItemEntityCountIs(FnBlocks.CONNECTOR.get().asItem(), cable, 2.0, 2);
+        helper.assertItemEntityCountIs(FnItems.CONNECTOR.get(), cable, 2.0, 2);
         helper.succeed();
     }
 
@@ -11116,7 +11144,7 @@ public final class FactoryNetworkGameTests {
                 "der Anschluss muss den Nachbarn überleben");
         helper.assertValueEqual(after.partAt(Direction.NORTH).label(), "kiste_1",
                 "mitsamt seinem Namen");
-        helper.assertItemEntityNotPresent(FnBlocks.CONNECTOR.get().asItem(), cable, 2.0);
+        helper.assertItemEntityNotPresent(FnItems.CONNECTOR.get(), cable, 2.0);
         helper.succeed();
     }
 
@@ -11350,7 +11378,7 @@ public final class FactoryNetworkGameTests {
         helper.setBlock(cable.north(), Blocks.CHEST);
 
         var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
-        ItemStack stack = new ItemStack(FnBlocks.CONNECTOR.get());
+        ItemStack stack = new ItemStack(FnItems.CONNECTOR.get());
         player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, stack);
         helper.getBlockState(cable).useItemOn(stack, helper.getLevel(), player,
                 net.minecraft.world.InteractionHand.MAIN_HAND,
