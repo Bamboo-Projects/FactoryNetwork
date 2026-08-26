@@ -10507,7 +10507,15 @@ public final class FactoryNetworkGameTests {
     @GameTest(template = EMPTY, timeoutTicks = 100)
     public static void theresourceKindsAreClosedInArunningGame(GameTestHelper helper) {
         var kinds = dev.devpanda.factorynetwork.runtime.ResourceKinds.all();
-        helper.assertValueEqual(kinds.size(), 3, "die drei eingebauten Arten");
+        // Drei eingebaute und Source aus compat/ars. Die vierte steht hier
+        // nicht als Beiwerk: Sie ist der Beweis, dass eine fremde Art im
+        // laufenden Spiel wirklich dabei ist — angemeldet beim Laden, wie
+        // jede andere auch.
+        helper.assertValueEqual(kinds.size(), 4, "drei eingebaute und Source");
+        helper.assertTrue(dev.devpanda.factorynetwork.runtime.ResourceKinds
+                        .byPrefix("source") != null,
+                "Source muss angemeldet sein, auch ohne Ars Nouveau: sonst hieße "
+                        + "source:source keine Ressourcenart statt diese Mod fehlt");
 
         boolean gemeldet = false;
         try {

@@ -139,7 +139,7 @@ Der Umbau muss nicht am Stück geschehen, und er sollte es nicht.
    erst `ResourceKind` als Schnittstelle und `ResourceKinds` als Registry
    (Abschnitt 5c), dann der Übersetzer, der sie fragt statt vier eigene
    Listen zu führen (Abschnitt 5d).
-4. **Ein Fremdeintrag als Beweis.** Ars Nouveau Source, in `compat/ars` —
+4. ~~**Ein Fremdeintrag als Beweis.**~~ **Gebaut** (26.08.), in `compat/ars` —
    und wenn der Kern dafür angefasst werden muss, ist die Registry nicht
    fertig.
 
@@ -448,3 +448,64 @@ bedeutet.
 
 Der Unterschied ist keiner der Machbarkeit, sondern einer der Haltung — und
 deshalb steht er hier und wird nicht nebenbei entschieden.
+
+---
+
+## 7. Der Fremdeintrag, gebaut (26.08.)
+
+Source aus Ars Nouveau ist angemeldet. **Was sie kostet, steht vollständig in
+`compat/ars`:** vier Klassen und ein Aufruf beim Laden. Keine Zeile in
+`ResourceKinds`, keine im Parser, keine im Wertemodell — das war die Zusage
+des Entwurfs, und sie hält.
+
+| Datei | Wofür |
+|---|---|
+| `FnArs` | Ist die Mod da? Dieselbe Tür wie `FnMekanism` |
+| `ArsSource` | Die Art: Präfix, Kennung, Plattenname, Auflösung |
+| `SourceAccess` | Die zweite Achse — lesen und schreiben an fremden Blöcken |
+| `SourceBuffer` | Der Zwischenhalt im Netz |
+
+### Geschrieben wird `source:source`
+
+Das liest sich doppelt, und die Alternative war das nackte Wort — so wie
+`power`. Sie geht nicht:
+
+- **`power` ist ein Schlüsselwort im Lexer.** Schlüsselwörter gehören der
+  Sprache: Sie stehen in der Grammatik für VS Code, in der EBNF und im
+  Handbuch, und keine dieser Stellen kann eine Mod beim Laden ergänzen.
+- **Ein nacktes `source` kollidierte mit einer Filtervorlage dieses Namens.**
+  `filter source` wäre mehrdeutig, und die Sprache hat heute keine Regel, die
+  das auflöst.
+
+Die Präfixform ist damit die einzige, die eine fremde Mod bekommen kann. Sie
+ist auch nicht falsch: Vor dem Doppelpunkt steht, **was für eine** Ressource
+gemeint ist, dahinter **welche** — bei einer ungeteilten Menge ist beides
+dasselbe Wort.
+
+### Angemeldet wird auch ohne die Mod
+
+Sonst hieße `source:source` in einem Pack ohne Ars Nouveau „keine
+Ressourcenart", und der Spieler suchte einen Tippfehler. Was ohne die Mod
+fehlt, ist der **Zugriff auf die Maschinen** — und der meldet sich von selbst:
+`count` liefert null, `move` findet keine Capability.
+
+### Der Zwischenhalt ist eine offene Frage
+
+`move` führt auch von Gerät zu Gerät über den Netzspeicher. Source braucht
+deshalb einen, damit es sich überhaupt bewegen lässt. Er hält **10 000** und
+überlebt keinen Neustart.
+
+**Die Zahl ist eine Annahme.** Gegenstände, Flüssigkeiten und Chemikalien
+liegen in Zellen in einem Laufwerk, und wie viel hineinpasst, entscheidet die
+Zelle. Für Source gibt es keine Zelle; ein Netzspeicher, der ohne Zelle
+beliebig viel hält, wäre Lagerraum geschenkt. Zehntausend ist reichlich für
+jeden Transport und zu wenig, um als Lager zu taugen — welche Zahl richtig
+ist, sagt eine Runde Spielen. **Das ist eine Balancefrage und gehört dem
+Spieler.**
+
+### Was kein Prüflauf zeigen kann
+
+Der Zugriff auf echte Blöcke von Ars Nouveau. Die Einheitstests prüfen die
+Art, die Auflösung und den Zwischenhalt; ob ein Quellglas wirklich abgibt,
+zeigt erst das Spiel. Ars Nouveau liegt im Prüfstand — der Weg dorthin ist
+offen und ungegangen.

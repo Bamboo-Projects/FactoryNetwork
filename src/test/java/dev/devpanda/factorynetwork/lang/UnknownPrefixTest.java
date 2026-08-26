@@ -93,7 +93,7 @@ class UnknownPrefixTest {
         // ist schlimmer als keine.
         Diagnostic error = errorsIn("""
                 fn f() {
-                    move 5 source:mana from quelle to storage
+                    move 5 pressure:air from quelle to storage
                 }""").get(0);
 
         assertTrue(error.fix() == null, () -> "geraten: " + error.fix());
@@ -104,15 +104,22 @@ class UnknownPrefixTest {
     void aprefixFromAmissingModNamesTheKnownOnes() {
         // Kein Tippfehler, sondern eine Art, die es in diesem Pack nicht gibt.
         // Ein Vorschlag wäre hier geraten; die Liste ist die ehrliche Antwort.
+        //
+        // Nicht mehr „source": Seit dem 26.08. meldet compat/ars diese Art
+        // beim Laden an, auch ohne Ars Nouveau — sonst hieße source:source in
+        // einem Pack ohne die Mod „keine Ressourcenart" statt „diese Mod
+        // fehlt". Ein Einheitstest lädt kein FML und sähe sie deshalb
+        // trotzdem nicht; ein Beispiel, das im Spiel etwas anderes bedeutet
+        // als hier, ist aber keins.
         List<Diagnostic> errors = errorsIn("""
                 fn f() {
-                    move 5 source:mana from quelle to storage
+                    move 5 pressure:air from quelle to storage
                 }""");
 
         assertEquals(1, errors.size(),
                 () -> "erwartet war eine Meldung, gekommen sind: " + errors);
         String whole = errors.get(0).message() + " " + errors.get(0).hint();
-        assertTrue(whole.contains("source"), () -> "das Wort muss dastehen: " + whole);
+        assertTrue(whole.contains("pressure"), () -> "das Wort muss dastehen: " + whole);
         assertTrue(whole.contains("item") && whole.contains("fluid"),
                 () -> "und was es hier gibt: " + whole);
     }

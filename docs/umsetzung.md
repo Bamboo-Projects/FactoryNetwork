@@ -1578,3 +1578,50 @@ Rot), die Kanalkapazität (ein dünnes Kabel deckelte eine dichte Strecke auf
 sechzehn) und ein Anbau-Prüflauf, dessen Kabelarm quer durch den Grundaufbau
 lief. Alle drei waren keine Testfehler, sondern Stellen, an denen der Prüflauf
 etwas anderes geprüft hätte, als er behauptet.
+
+### Eine fremde Ressourcenart, gebaut (seit dem 26.08.)
+
+Die offene Registry hatte bis heute einen erfundenen Beweis: eine vierte Art,
+die es nicht gibt. Jetzt hat sie einen echten. Source aus Ars Nouveau kostet
+vier Klassen in `compat/ars` und einen Aufruf beim Laden — **keine Zeile im
+Kern.**
+
+Möglich war das, weil Ars Nouveau seine Source als gewöhnliche
+Block-Capability anmeldet: `BlockCapability<ISourceCap, Direction>`, in
+derselben Form, in der auch Strom und Flüssigkeit danebenliegen. Die zweite
+Achse — `MachineAccess` — passte ohne Anpassung darauf.
+
+**Die Schreibweise war die eigentliche Entscheidung.** Source ist eine
+ungeteilte Menge wie Strom, und Strom schreibt man nackt: `filter power`. Für
+eine fremde Art geht das nicht, aus zwei Gründen, und beide sind lehrreich:
+
+`power` ist ein **Schlüsselwort im Lexer**. Schlüsselwörter gehören der
+Sprache — sie stehen in der Grammatik für VS Code, in der EBNF und im
+Handbuch, und keine dieser Stellen kann eine Mod beim Laden ergänzen. Eine
+Registry, die Schlüsselwörter verteilt, verteilt Grammatik.
+
+Und ein nacktes `source` **kollidierte mit einer Filtervorlage** dieses
+Namens. `filter source` wäre mehrdeutig, und die Sprache hat heute keine
+Regel, die das auflöst.
+
+Bleibt `source:source`. Es liest sich doppelt und ist nicht falsch: Vor dem
+Doppelpunkt steht, was für eine Ressource gemeint ist, dahinter welche — bei
+einer ungeteilten Menge ist beides dasselbe Wort.
+
+**Angemeldet wird auch ohne die Mod.** Sonst hieße `source:source` in einem
+Pack ohne Ars Nouveau „keine Ressourcenart", und der Spieler suchte einen
+Tippfehler statt einer fehlenden Mod. Was ohne die Mod fehlt, ist der Zugriff
+auf die Maschinen, und der meldet sich von selbst.
+
+**Ein Zwischenhalt, kein Lager.** `move` führt auch von Gerät zu Gerät über
+den Netzspeicher — ohne ihn bräuchte es einen dritten Weg für denselben
+Vorgang. Source braucht deshalb einen Speicher, damit es sich überhaupt
+bewegen lässt. Er hält zehntausend und überlebt keinen Neustart: Für die
+anderen Arten entscheidet die Zelle im Laufwerk, wie viel hineinpasst, und für
+Source gibt es keine Zelle. Welche Zahl richtig ist, ist eine Balancefrage und
+gehört dem Spieler.
+
+**Ein Prüflauf musste nachgezogen werden**, und das ist der ehrlichste Teil:
+`UnknownPrefixTest` benutzte `source:` als Beispiel für eine Art, die es nicht
+gibt. Seit heute gibt es sie. Das Beispiel heißt jetzt `pressure:` — ein
+Beispiel, das im Spiel etwas anderes bedeutet als im Einheitstest, ist keins.

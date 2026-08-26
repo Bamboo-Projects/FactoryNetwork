@@ -100,6 +100,11 @@ dependencies {
     // Ressourcenart, an der die offene Registry ihren Beweis bekommt.
     runtimeOnly "maven.modrinth:sophisticated-core:${sophisticated_core_version}"
     runtimeOnly "maven.modrinth:sophisticated-storage:${sophisticated_storage_version}"
+    // Ars Nouveau auch zum Uebersetzen: Source ist eine Ressourcenart, und
+    // ihr Zugriff steht in compat/ars gegen deren ISourceCap. Geladen werden
+    // die Klassen erst, wenn FnArs.installed() wahr ist — dasselbe Muster wie
+    // bei Mekanism.
+    compileOnly "maven.modrinth:ars-nouveau:${ars_nouveau_version}"
     runtimeOnly "maven.modrinth:ars-nouveau:${ars_nouveau_version}"
     // Ars Nouveau verlangt beide und bringt sie nicht mit.
     runtimeOnly "maven.modrinth:geckolib:${geckolib_version}"

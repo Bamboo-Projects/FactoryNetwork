@@ -29,8 +29,13 @@ public final class FactoryNetwork {
         // Die Ressourcenarten sind offen, aber nur beim Laden: Was ein
         // Programm bedeutet, darf nicht davon abhängen, wann jemand etwas
         // anmeldet. Der Aufruf lädt die Klasse und damit die eingebauten drei.
-        modBus.addListener((net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent event) ->
-                dev.devpanda.factorynetwork.runtime.ResourceKinds.freeze());
+        modBus.addListener((net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent event) -> {
+            // Fremde Arten vor dem Einfrieren. Auch ohne die Mod, die sie
+            // mitbringt: Sonst hieße source:source in einem Pack ohne Ars
+            // Nouveau „keine Ressourcenart" statt „diese Mod fehlt".
+            dev.devpanda.factorynetwork.compat.ars.ArsSource.register();
+            dev.devpanda.factorynetwork.runtime.ResourceKinds.freeze();
+        });
         FnBlocks.BLOCKS.register(modBus);
         FnItems.ITEMS.register(modBus);
         FnBlockEntities.BLOCK_ENTITIES.register(modBus);

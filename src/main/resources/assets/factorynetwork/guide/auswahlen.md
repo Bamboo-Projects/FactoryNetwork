@@ -17,11 +17,17 @@ tag:c/ores                     alles, was in diesem Tag steht
 fluid:water                    eine Flüssigkeit
 fluidtag:c/molten              alles in einem Flüssigkeits-Tag
 chemical:mekanism/hydrogen     eine Chemikalie (braucht Mekanism)
+source:source                  Source (braucht Ars Nouveau)
 ```
 
 Der **Doppelpunkt** trennt die Art, der **Schrägstrich** den Namensraum. Fehlt
 der Namensraum, ist `minecraft` gemeint — bei `chemical:` dagegen `mekanism`,
 denn Chemikalien gibt es in Minecraft nicht.
+
+`source:source` liest sich doppelt, und das hat einen Grund: Source ist eine
+ungeteilte Menge wie Strom — es gibt nur eine Sorte, und sie heißt wie ihre
+Art. Vor dem Doppelpunkt steht, **was für eine** Ressource gemeint ist,
+dahinter **welche**; bei Source ist beides dasselbe Wort.
 
 `tag:` sucht nur unter Gegenständen. Für Flüssigkeiten gibt es `fluidtag:`,
 und das ist Absicht: Ein Tag, der beides durchsuchte, träfe je nach Pack mal
