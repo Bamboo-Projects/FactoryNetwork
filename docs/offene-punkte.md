@@ -186,7 +186,7 @@ Vorentscheidungen)
 | 2.11 | ~~`log()` sieht niemand~~ — **fertig.** Vier Stufen (`info`, `warn`, `error`, `debug`), Reiter „Log" mit Filter, Herkunft je Zeile, überlebt den Neustart. Die Hinweise der Laufzeit laufen mit hinein | | `LogTabView`, `LogEntry` | | |
 | 2.7 | ~~`when`-Bedingungen~~ — **überholt.** Im laufenden Spiel wertet der echte Interpreter aus: Texte, globale Werte, Gerätezustände. Der alte Weg — Zahl gegen Zahl — greift nur ohne Host, also in Prüfungen ohne Welt. Eine kaputte Bedingung hält den Worker an | | `WorkerRuntime.conditionHolds` | | |
 | 2.8 | ~~`NetworkCheck` besucht keine Anweisungen~~ — **fertig.** Ein `move` mit unbekanntem Gerätenamen wird gewarnt, in der Anweisung wie im Ausdruck. Ausgespart bleiben örtliche Namen: Parameter, `let`, Schleifenvariablen, globale Werte, Festwerte, Vorlagen, Gruppen und die Rollen eines Multiblocks | | `NetworkCheck.checkMoves` | | |
-| 2.9 | ~~Erkennung von Maschinen-Rezepten~~ — **gebaut** (26.08.), Weg B in zwei Schnitten. Ofen, Schmelzofen, Räucherofen und Presse arbeiten für einen Auftrag mit: einlegen, warten, abholen, und der laufende Schritt übersteht den Neustart. Alles andere erklärt `recipe … at … { in … out … }` im Programm. Flüssigkeiten und Chemikalien dürfen als Zutat darin stehen (26.08.): Der Auftrag füllt sie beim Anfangen aus dem Netzspeicher ein, beschafft sie aber nicht — fehlen sie, wartet er und nennt Sorte und Menge, ohne die Gegenstände anzufassen. Offen als Schnitt: Strom als Zutat | | `MachineRecipes`, `DeclaredRecipes` | | |
+| 2.9 | ~~Erkennung von Maschinen-Rezepten~~ — **gebaut** (26.08.), Weg B in zwei Schnitten. Ofen, Schmelzofen, Räucherofen und Presse arbeiten für einen Auftrag mit: einlegen, warten, abholen, und der laufende Schritt übersteht den Neustart. Alles andere erklärt `recipe … at … { in … out … }` im Programm. Flüssigkeiten und Chemikalien dürfen als Zutat darin stehen (26.08.): Der Auftrag füllt sie beim Anfangen aus dem Netzspeicher ein, beschafft sie aber nicht — fehlen sie, wartet er und nennt Sorte und Menge, ohne die Gegenstände anzufassen. Strom bleibt draußen — **geprüft und zurückgestellt** (26.08.): Die Maschine bekommt ihn über die Stromverteilung, und eine Zahl im Rezept wäre geraten. `in 1000 power` wird beim Übernehmen gewarnt, statt still zu verschwinden | | `MachineRecipes`, `DeclaredRecipes`, `NetworkCheck.checkRecipePower` | | |
 | 2.10 | ~~Autocrafting~~ — **fertig** (25.08.), in drei Schritten an einem Tag. Fabricator und Aufträge am Controller, `craft(64 item:chest)`, der Reiter, die beiden Ereignisse, alles übersteht den Neustart. Der Planner zerlegt eine Bestellung bis zu dem, was dasteht, trägt Zutaten-Auswahlen durch und kommt mit Kreisen zurecht. `from crafting` hält einen Vorrat, gerechnet gegen Bestand und offene Aufträge | | `CraftingPlanner`, `WorkerRuntime.tickCraftingWorker` | | |
 
 ## 3. Editor im Spiel
@@ -289,9 +289,10 @@ läuft alles wie vorher.
 
 **Was jetzt oben steht:** die Handbuchseiten (6.1) und der Serverfall von 4.1
 — der Einzelspielerfall ist am 26.08. gebaut worden.
-Von den drei benannten Schnitten dieser Nacht sind zwei erledigt: der Worker
-mit `filter chemical:…`, und Flüssigkeiten wie Chemikalien als Zutat in einem
-`recipe`. Übrig bleibt **Strom als Zutat**. Und eine Frage, die seit dem 24.08. nur in
+Die drei benannten Schnitte dieser Nacht sind durch: der Worker mit
+`filter chemical:…`, Flüssigkeiten wie Chemikalien als Zutat in einem
+`recipe`, und Strom als Zutat — der letzte durch eine Prüfung, die ihn
+zurückstellt. Und eine Frage, die seit dem 24.08. nur in
 `umfeld-atm10.md` steht und nie hierher wanderte: **ob die Ressourcenart eine
 offene Registry wird** statt eines festen Aufzählungswerts. AE2 und Refined
 Storage haben sich für 1.21.1 beide dafür entschieden; es betrifft `power` in

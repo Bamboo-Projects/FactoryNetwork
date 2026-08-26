@@ -174,8 +174,10 @@ Worker, der aus einem Tank zieht, oder von Hand mit einem Eimer.
 Und er wartet, ohne etwas anzufassen. Ohne Wasser bleibt auch das Erz liegen:
 Eine Maschine mit halber Rechnung fängt nie an, und dein Erz wäre weg.
 
-Was noch nicht geht: Strom als Zutat. Eine Maschine, die Strom braucht,
-versorgst du wie bisher selbst.
+Strom gehört nicht ins Rezept. Den bekommt die Maschine über die
+Stromverteilung, ganz von selbst — und wie viel sie zieht, weiß sie besser als
+du. Schreibst du trotzdem `in 1000 power` hin, sagt es dir das Terminal beim
+Übernehmen.
 
 ## Nachschub, der sich selbst bestellt
 

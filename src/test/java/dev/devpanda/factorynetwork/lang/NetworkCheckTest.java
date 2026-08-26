@@ -55,6 +55,43 @@ class NetworkCheckTest {
     }
 
     @Test
+    @DisplayName("Strom in einem Rezept wird gemeldet, statt still zu verschwinden")
+    void powerInArecipeIsReported() {
+        // „in 1000 power" parst — power ist eine Auswahl wie jede andere.
+        // Nur tut es nichts: Der Auftrag legt Gegenstände ein und füllt
+        // Flüssigkeiten auf, Strom bekommt die Maschine über die
+        // Stromverteilung. Seit Flüssigkeiten wirklich eingefüllt werden,
+        // ist dieses Schweigen irreführender als vorher — die Zeile daneben
+        // hält, was sie verspricht, diese nicht.
+        List<Diagnostic> problems = check("""
+                recipe pressen at presse {
+                    in 1 item:iron_ingot
+                    in 1000 power
+                    out 1 item:iron_nugget
+                }""", net(List.of("presse"), List.of()));
+
+        assertTrue(problems.stream().anyMatch(problem ->
+                        problem.message().toLowerCase().contains("strom")
+                                && !problem.isError()),
+                () -> "die Meldung fehlt: " + problems);
+    }
+
+    @Test
+    @DisplayName("Ein Rezept ohne Strom wird nicht gemeldet")
+    void arecipeWithoutPowerIsNotReported() {
+        List<Diagnostic> problems = check("""
+                recipe pressen at presse {
+                    in 1 item:iron_ingot
+                    in 1000 fluid:water
+                    out 1 item:iron_nugget
+                }""", net(List.of("presse"), List.of()));
+
+        assertFalse(problems.stream().anyMatch(problem ->
+                        problem.message().toLowerCase().contains("strom")),
+                () -> "Wasser wird eingefüllt und ist keine Meldung wert: " + problems);
+    }
+
+    @Test
     @DisplayName("Ein unbekanntes Gerät in einem move wird gemeldet")
     void anUnknownDeviceInAMoveIsReported() {
         List<Diagnostic> problems = check("""

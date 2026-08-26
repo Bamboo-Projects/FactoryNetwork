@@ -3557,6 +3557,37 @@ Mekanism-Block zum Netz läuft erst, wenn jemand ihn im Spiel hinstellt.
 
 ---
 
+## Strom gehört nicht in ein Rezept (2026-08-26)
+
+Als die Flüssigkeiten in `recipe` einzogen, stand Strom auf derselben Liste —
+`in 1000 power`, dieselbe Zeile, dieselbe Mechanik. Geprüft und
+**zurückgestellt**, aus vier Gründen:
+
+**Die Verteilung tut es schon.** Seit dem 25.08. versorgt das Netz seine
+Maschinen von selbst. Ein Rezept-Gate wäre doppelte Buchführung über dieselbe
+Ressource.
+
+**Das Argument für Flüssigkeiten trägt hier nicht.** Dort galt: Die Zeile
+behauptet einen Verbrauch, also muss er stattfinden. Wasser wird je Durchgang
+verbraucht und lässt sich einfüllen. Strom zieht die Maschine je Tick, und wie
+viel, hängt an ihren Upgrades und an der Mod — die Zahl im Rezept wäre geraten
+und nirgends nachprüfbar.
+
+**Ohne das Feature ist das Verhalten schon ehrlich.** Eine unversorgte
+Maschine liefert nicht, und der Auftrag wartet beim Abholen — derselbe Fall
+wie der Ofen, dem der Spieler den Brennstoff hinlegt.
+
+**Ein Warte-Gate hätte sich verklemmt.** Genau wie der verworfene
+Nur-prüfen-Entwurf bei den Flüssigkeiten: Die Verteilung senkt laufend den
+Vorrat, auf den gewartet würde.
+
+Was bleibt, ist die **Meldung**. `in 1000 power` parst weiterhin, denn `power`
+ist eine Auswahl wie jede andere; beim Übernehmen steht jetzt eine Warnung
+daneben. Seit die Flüssigkeit in der Zeile darüber wirklich eingefüllt wird,
+wäre das Schweigen irreführender als vorher.
+
+---
+
 ## Der Rückweg der Brücke läuft über den Ordner (2026-08-26)
 
 Punkt 4.1 verlangt Fehlerprüfung und Gerätenamen in VS Code. Beides kann die

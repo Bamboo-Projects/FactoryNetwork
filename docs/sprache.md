@@ -1312,8 +1312,11 @@ hinein; das Wasser hält mit.
 wird die genommen, von der genug da ist. Ein Tank hält meist genau eine, und
 zwei hineinzumischen wäre kein Rezept, sondern ein Unfall.
 
-> **Noch nicht gebaut:** Strom im Rezept. Wer eine Maschine mit Strombedarf
-> hat, versorgt sie wie bisher selbst.
+Strom bleibt draußen, und das ist entschieden und nicht offen. Die Maschine
+bekommt ihn über die Stromverteilung, je Tick und nach ihrem eigenen Bedarf.
+Eine Zahl im Rezept wäre geraten: Was eine fremde Maschine je Durchgang zieht,
+hängt an ihren Upgrades und an der Mod. `in 1000 power` parst weiterhin —
+und wird jetzt beim Übernehmen gewarnt, statt still zu verschwinden.
 
 ---
 

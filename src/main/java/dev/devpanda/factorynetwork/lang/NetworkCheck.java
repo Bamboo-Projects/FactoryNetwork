@@ -80,6 +80,7 @@ public final class NetworkCheck {
      */
     private static void checkRecipe(Decl.Recipe recipe, NetworkView view,
                                     Set<String> local, List<Diagnostic> problems) {
+        checkRecipePower(recipe, problems);
         if (view.connectors().isEmpty() || local.contains(recipe.device())
                 || view.connectors().contains(recipe.device())) {
             return;
@@ -90,6 +91,38 @@ public final class NetworkCheck {
                         + String.join(", ", view.connectors()));
         problems.add(new Diagnostic(Diagnostic.Severity.WARNING, recipe.span(),
                 "Nichts im Netz heißt „" + recipe.device() + "“.", hint));
+    }
+
+    /**
+     * {@code in 1000 power} — eine Zeile, die nichts tut.
+     *
+     * <p>Sie parst, weil {@code power} eine Auswahl ist wie jede andere. Nur
+     * legt der Auftrag Gegenstände ein und füllt Flüssigkeiten auf; Strom
+     * bekommt die Maschine über die <b>Stromverteilung</b>, und zwar je Tick
+     * und nach ihrem eigenen Bedarf.
+     *
+     * <p><b>Und das bleibt so.</b> Eine Zahl im Rezept wäre geraten: Was eine
+     * fremde Maschine je Durchgang zieht, hängt an ihren Upgrades und an der
+     * Mod, und nachprüfbar ist es nirgends. Ein Warte-Gate auf den Netzvorrat
+     * hätte obendrein dieselbe Verklemmung wie der verworfene
+     * Nur-prüfen-Entwurf bei Flüssigkeiten: Die Verteilung senkt laufend
+     * genau den Vorrat, auf den gewartet würde.
+     *
+     * <p>Eine Warnung und kein Fehler — die Zeile schadet nicht, sie hält
+     * bloß nicht, was sie verspricht. Seit die Flüssigkeit daneben wirklich
+     * eingefüllt wird, ist ihr Schweigen irreführender als vorher.
+     */
+    private static void checkRecipePower(Decl.Recipe recipe, List<Diagnostic> problems) {
+        for (Decl.Recipe.Part part : recipe.inputs()) {
+            if (part.selection() instanceof Expr.Selector selector
+                    && selector.kind() == Expr.Selector.Kind.POWER) {
+                problems.add(new Diagnostic(Diagnostic.Severity.WARNING, part.span(),
+                        "Strom in einem Rezept tut nichts.",
+                        "Die Maschine bekommt ihn über die Stromverteilung, nach ihrem "
+                                + "eigenen Bedarf. Was hier stünde, wäre geraten. Die "
+                                + "Zeile kann weg."));
+            }
+        }
     }
 
     /**
