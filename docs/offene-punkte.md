@@ -2,8 +2,8 @@
 
 Alles, was in `docs/` und im Code als unfertig steht, an einer Stelle.
 
-Stand: 2026-08-25 (nach der zweiten Nacht, dem Protokoll und den beiden
-Vorentscheidungen)
+Stand: 2026-08-26 (nach den beiden Schnitten am Wertemodell und der
+Handbucharbeit)
 
 > **Nacht auf den 25.08., zweiter Durchgang:** 1.2 (`where` und `sort` stehen
 > jetzt vollständig), dazu vier Dinge, die vorher niemand auf der Liste
@@ -335,23 +335,46 @@ Index-Mechanik der drei Speicher: Die Commits dieses Tages sind ungespielt,
 und der Speicher ist die Stelle, an der ein Fehler einen Bestand kostet statt
 einer Meldung.
 
-**Damit ist die Reihe der entscheidungsfreien Schnitte leer.** Schnitt 3 ist
-die Registry selbst und braucht die Antwort auf die Haltungsfrage in
-Abschnitt 6 von `ressourcenarten.md`. Als Nächstes steht deshalb wieder die
-Liste an — die Handbuchseiten (6.1) sind das, was am meisten bringt.
+~~**Schnitt 4 des Speicherbusses (7.8).**~~ **Erledigt am 26.08.**, und zwar
+ohne eine Zeile Code: Mehrere Busse tragen (Prüflauf lief auf Anhieb durch),
+und das Tick-Lesen kostet rund 24 ns je Fach. **Keine Grenze**, weil es nichts
+zu begrenzen gibt. Die Messung samt dem, was sie nicht sagt, steht in
+`speicherbus.md` §7.
 
-**Was jetzt oben steht:** die drei Mods (7.5 bis 7.7). Die anderen Wünsche vom
-26.08. sind am selben Tag gebaut worden — der Connector, der klickt (1.20),
-der Stromanschluss, der auch herausgibt, und der Speicherbus (7.8) in seinen
-ersten drei Schnitten. Die drei Mods hängen an **einer** Frage,
-und das ist dieselbe, die seit dem 24.08. nur in `umfeld-atm10.md` stand:
-**ob die Ressourcenart eine offene Registry wird** statt eines festen
-Aufzählungswerts (1.19). Ars Nouveau entscheidet sie faktisch — Source ist
-eine Art, die der Kern nicht kennen kann. AE2 und Refined Storage haben sich
-für 1.21.1 beide dafür entschieden.
+Dazu am Handbuch: `ereignisse.md` und `erste-anlage.md` sind neu, `const`
+steht jetzt bei den Werten statt nur in einem Beispiel, und **fünf Stellen
+waren dem Code hinterher** — darunter eine Titelseite, die den Serverschrank
+verschwieg, obwohl ohne ihn kein Programm übernommen wird.
 
-Dahinter: die Handbuchseiten (6.1) und der Serverfall von 4.1 — der
-Einzelspielerfall ist am 26.08. gebaut worden.
+---
+
+**Damit ist alles leer, was ohne eine Antwort von dir weitergeht** — bis auf
+das Handbuch.
+
+**Drei Fragen liegen bei dir**, und jede blockiert etwas Benanntes:
+
+1. **Die Haltungsfrage** (`ressourcenarten.md` §6): Dürfen fremde Mods die
+   Sprache erweitern? Sie entscheidet Schnitt 3 und damit **Ars Nouveau**
+   (7.5), weil Source eine Art ist, die der Kern nicht kennen kann. AE2 und
+   Refined Storage haben sich für 1.21.1 beide dafür entschieden. Schnitt 1
+   und 2 sind gebaut und von der Antwort unabhängig.
+2. **Punkt 4.1, der Serverfall:** nur lesen oder auch schreiben. Der
+   Einzelspielerfall läuft seit dem 26.08. über `.fn-status.json`.
+3. **Punkt 5.4:** die Zahlen an den Serverbauteilen. Die beantwortet eine
+   Runde Spielen und kein Gespräch.
+
+**Was ohne Antwort weitergeht:** weitere Handbuchseiten (6.1). Neunzehn
+stehen. Was fehlt, ist keine Lücke im Stoff mehr — eher Feinarbeit: eine
+Seite zum Netzanalysator, mehr Bilder beziehungsweise die 3D-Szenen, die
+GuideME kann und die diese Mod noch nirgends nutzt.
+
+**Und was Vorrang hat vor allem:** Bericht aus dem Spiel. Die Commits vom
+26.08. sind test-grün und ungespielt, und drei Stellen tragen Restrisiko —
+`click()` an echten Ars-Nouveau-Blöcken, der offene Stromanschluss unter einem
+Flux-Netz, das im Tick-Takt zieht, und der Speicherbus an einem
+Drawer-Controller. Zum letzten sagt `speicherbus.md` §7 jetzt, was gemessen
+ist und was nicht: Der Anteil dieser Mod ist klein, was hinter fremdem
+`getStackInSlot` steckt, ist ungemessen.
 Die drei benannten Schnitte dieser Nacht sind durch: der Worker mit
 `filter chemical:…`, Flüssigkeiten wie Chemikalien als Zutat in einem
 `recipe`, und Strom als Zutat — der letzte durch eine Prüfung, die ihn
