@@ -66,6 +66,11 @@ const erzsorten = [
 ]
 ```
 
+`const` steht unter *Werte und Gruppen*: derselbe Wert für die ganze Fabrik
+wie ein `global`, nur ohne die Möglichkeit, ihn zu überschreiben. Für eine
+Liste, die eine Aufzählung ist und keine Warteschlange, ist er die
+naheliegendere Wahl.
+
 Und darüber laufen wie über alles andere:
 
 ```

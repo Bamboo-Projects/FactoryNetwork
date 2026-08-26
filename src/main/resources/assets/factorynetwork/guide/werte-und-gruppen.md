@@ -71,6 +71,39 @@ diese Frage nicht. Rechnen darfst du danach, so oft du willst.
 Der Reiter **Netz** im Terminal zeigt, was gerade in den globalen Werten
 steht.
 
+## Ein Wert, der sich nie ändert
+
+```
+const stapel = 64
+const kuehlung = "minecraft:water"
+```
+
+Ein `const` liest sich überall so wie ein globaler Wert — in einem `when`, auf
+einer Anzeige, in einer Funktion. Der Unterschied ist die eine Sache, die er
+nicht kann: Er lässt sich nicht zuweisen. Der Versuch ist ein **Fehler beim
+Übernehmen** und keine Überraschung im Betrieb: *„stapel ist ein Festwert und
+lässt sich nicht ändern."*
+
+Wofür das gut ist: Eine Zahl, die an fünf Stellen im Programm steht, gehört an
+eine. Wenn sie sich außerdem nie ändern soll, sagt `const` das mit — und der
+Übersetzer hält dich daran fest, statt es dir zuzutrauen.
+
+Er wird **nicht gespeichert**, anders als ein `global`. Er muss es nicht: Ein
+Wert, der aus dem Programm kommt, kommt beim nächsten Start wieder aus dem
+Programm. Ein globaler Wert dagegen trägt, was die Fabrik inzwischen erlebt
+hat — und das steht nirgendwo sonst.
+
+Denselben Namen zweimal, einmal als `global` und einmal als `const`, gibt es
+nicht: Ein Name gehört einer Erklärung. Der eine lässt sich ändern, der andere
+nicht — beides zugleich wäre nicht zu lesen.
+
+Auch ein `const` braucht einen festen Wert, aus demselben Grund wie oben. Eine
+Liste zählt dazu, und für die ist `const` sogar die naheliegendere Wahl:
+
+```
+const erzsorten = [item:iron_ore, item:gold_ore]
+```
+
 ## Ein Name für mehrere Geräte
 
 ```
