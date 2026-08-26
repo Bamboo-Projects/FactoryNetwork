@@ -44,9 +44,17 @@ public final class ConnectorNameOverlay {
     /** Weiter als das wird nicht beschriftet — sonst steht der Bildschirm voll. */
     private static final int RANGE = 16;
 
-    private static final int COLOR_NAMED = 0xFFA3D9A5;
-    private static final int COLOR_UNNAMED = 0xFF8A939C;
-    private static final int COLOR_CONFLICT = 0xFFE88388;
+    // Dieselbe Palette wie die Lämpchen an den Anschlüssen: Rot heißt an
+    // beiden Stellen dasselbe, und es steht nur einmal da.
+    private static final int COLOR_NAMED = dev.devpanda.factorynetwork.client.render
+            .DeviceStateColours.opaque(dev.devpanda.factorynetwork.network
+                    .DeviceState.ONLINE);
+    private static final int COLOR_UNNAMED = dev.devpanda.factorynetwork.client.render
+            .DeviceStateColours.opaque(dev.devpanda.factorynetwork.network
+                    .DeviceState.UNNAMED);
+    private static final int COLOR_CONFLICT = dev.devpanda.factorynetwork.client.render
+            .DeviceStateColours.opaque(dev.devpanda.factorynetwork.network
+                    .DeviceState.DUPLICATE);
     private static final int BACKGROUND = 0x66000000;
 
     @SubscribeEvent

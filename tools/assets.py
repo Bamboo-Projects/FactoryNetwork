@@ -93,7 +93,19 @@ def connector_part_models():
                     # Die Platte liegt bündig in der Blockfläche.
                     entry["cullface"] = facing
                 plate["faces"][face] = entry
-            elements = [plate]
+            # Das Statuslämpchen: ein Ring um die Platte, einen Blockpixel
+            # vorstehend, damit man ihn von den Seiten sieht — die Vorderseite
+            # der Platte steckt ja in der Maschine. tintindex 0 heißt: Die
+            # Farbe kommt zur Laufzeit, aus dem Netzzustand des Anschlusses.
+            near, far = slab_box(facing, 0.5, 2.5, 1, 15)
+            ring = {"from": near, "to": far, "faces": {}}
+            for face in FACES:
+                if face == facing or face == OPPOSITE[facing]:
+                    # Vorn steckt die Maschine, hinten die Platte: beides
+                    # unsichtbar, und ein Quad dafür wäre Arbeit für nichts.
+                    continue
+                ring["faces"][face] = {"texture": "#status", "tintindex": 0}
+            elements = [plate, ring]
 
             if lo > PART_DEPTH:
                 near, far = slab_box(facing, PART_DEPTH, lo, lo, lo + size)
@@ -109,9 +121,23 @@ def connector_part_models():
                     "front": texture("connector_front"),
                     "back": texture("connector_back"),
                     "side": texture("connector_side"),
+                    "status": texture("status_light"),
                 },
                 "elements": elements,
             })
+
+
+def status_pad(facing, size=4, out=0.02):
+    '''Ein Lämpchen, bündig auf einer Blockfläche.
+
+    Nur die nach außen zeigende Fläche bekommt ein Quad — die anderen fünf
+    stecken im Block.
+    '''
+    near, far = slab_box(facing, -out, out, (16 - size) / 2, (16 + size) / 2)
+    return {
+        "from": near, "to": far,
+        "faces": {facing: {"texture": "#status", "tintindex": 0}},
+    }
 
 
 
@@ -535,6 +561,7 @@ def models():
             "front": texture("connector_front"),
             "back": texture("connector_back"),
             "side": texture("connector_side"),
+            "status": texture("status_light"),
         },
         "elements": [{
             "from": [0, 0, 0],
@@ -547,7 +574,7 @@ def models():
                 "west": {"texture": "#side", "cullface": "west"},
                 "east": {"texture": "#side", "cullface": "east"},
             },
-        }],
+        }] + [status_pad(face) for face in ("up", "down", "east", "west")],
     })
 
     # Zwei Pixel tief an der Wand. Ein eigenes Modell statt orientable,

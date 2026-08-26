@@ -105,6 +105,23 @@ Platz. Willst du an dieser Stelle trotzdem den eigenen Block setzen, klicke
 Wieder abnehmen: **schleichend mit leerer Hand** auf den Anschluss klicken.
 Er fällt heraus. Beim Abbauen des Kabels fallen alle seine Anschlüsse mit.
 
+### Das Lämpchen
+
+Jeder Anschluss trägt ein kleines Licht — am Kabel als Ring um die Platte, am
+eigenen Block an seinen vier Seiten. Es sagt, wie es um ihn im Netz steht:
+
+| Farbe | Heißt |
+|---|---|
+| hellgrün | benannt und erreichbar |
+| grau | hängt am Netz, hat aber keinen Namen |
+| gelb | der Name ist doppelt vergeben — beide sind unbrauchbar |
+| rot | am Netz, aber kein Kanal mehr frei |
+| dunkelgrau | gar nicht am Netz |
+
+Die letzten drei sehen sich sonst zum Verwechseln ähnlich, und sie schicken
+einen an drei verschiedene Stellen: zum zweiten Anschluss mit demselben Namen,
+an die Kanalgrenze, oder an die Leitung.
+
 ### Benennen und Redstone
 
 Benannt wird er mit der Beschriftungspistole oder per Rechtsklick mit leerer

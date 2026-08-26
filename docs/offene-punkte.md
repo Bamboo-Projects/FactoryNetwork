@@ -327,6 +327,15 @@ sie lassen sich setzen, treffen, benennen, abnehmen und sehen.
 ~~**Schnitt 4b, die drei Anzeigen.**~~ **Gebaut am 26.08.** Namenszug,
 Jade und Analysator kennen jetzt Anschlüsse an Kabelflächen.
 
+**Die Statusanzeige am Anschluss ist gebaut** (26.08.). Jeder Anschluss trägt
+ein Lämpchen: hellgrün erreichbar, grau namenlos, gelb doppelt vergeben, rot
+ohne Kanal, dunkelgrau ohne Netz. **Null zusätzliche Zeichenaufrufe** — der
+Ring liegt im Teilmodell, das ohnehin gezeichnet wird, und das Lämpchen am
+Connectorblock im gebackenen Blockmodell. Ein Paket geht nur, wenn sich der
+Zustand wirklich ändert. Betrieb und Füllstand bleiben draußen; die Rechnung
+dazu steht in `statusanzeige.md` §3. Nebenbei liest Jade jetzt denselben
+Stempel, statt dieselbe Frage ein zweites Mal zu rechnen.
+
 **Womit es weitergeht: einmal spielen.** Weg B ist vollständig, und alles
 daran ist test-grün und im Client nie gelaufen. Was ein Prüflauf grundsätzlich
 nicht sehen kann, steht an drei Stellen:
@@ -334,6 +343,9 @@ nicht sehen kann, steht an drei Stellen:
 - **Die Teile am Kabel** — Modell, Renderer, Trefferfläche im Zusammenspiel.
   Ob eine Platte an der richtigen Fläche sitzt, sagt keine Zusicherung.
 - **Der Namenszug** mit mehreren Namen übereinander.
+- **Die Lämpchen** — ob der Ring an der richtigen Fläche sitzt, ob das
+  Lämpchen am Connectorblock zu sehen ist und ob sich die fünf Farben
+  nebeneinander unterscheiden lassen.
 - **Die drei alten Restrisiken**: `click()` an echten Ars-Nouveau-Blöcken, ein
   offener Stromanschluss unter einem Flux-Netz im Tick-Takt, ein Speicherbus
   an einem Drawer-Controller.

@@ -43,16 +43,21 @@ public class CableBusRenderer implements BlockEntityRenderer<CableBusBlockEntity
         if (!bus.hasParts()) {
             return;
         }
-        BlockState state = bus.getBlockState();
-        int size = CableBlock.sizeOf(state);
+        BlockState cable = bus.getBlockState();
+        int size = CableBlock.sizeOf(cable);
         var models = Minecraft.getInstance().getModelManager();
         // Dieselbe Zeichenart wie das Kabel: Die Ränder der Textur sind
         // durchsichtig.
         var buffer = buffers.getBuffer(RenderType.cutout());
-        for (Direction side : bus.parts().keySet()) {
-            blocks.getModelRenderer().renderModel(poses.last(), buffer, state,
-                    models.getModel(ConnectorPartModels.of(size, side)),
-                    1.0F, 1.0F, 1.0F, light, overlay, ModelData.EMPTY, RenderType.cutout());
+        for (var entry : bus.parts().entrySet()) {
+            // Die Farbe trifft nur den Lämpchenring: renderModel färbt allein
+            // Flächen mit tintindex, und den hat im Teilmodell nur er.
+            var state = entry.getValue().state();
+            blocks.getModelRenderer().renderModel(poses.last(), buffer, cable,
+                    models.getModel(ConnectorPartModels.of(size, entry.getKey())),
+                    DeviceStateColours.red(state), DeviceStateColours.green(state),
+                    DeviceStateColours.blue(state),
+                    light, overlay, ModelData.EMPTY, RenderType.cutout());
         }
     }
 }

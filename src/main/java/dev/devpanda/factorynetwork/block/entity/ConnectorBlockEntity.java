@@ -135,7 +135,9 @@ public class ConnectorBlockEntity extends BlockEntity implements ConnectorPart.H
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         CompoundTag tag = super.getUpdateTag(registries);
-        tag.putString(ConnectorPart.KEY_LABEL, part.label());
+        // Das ganze Teil und nicht nur der Name: Seit der Anschluss seinen
+        // Netzzustand trägt, muss auch der beim Client ankommen.
+        part.save(tag);
         return tag;
     }
 

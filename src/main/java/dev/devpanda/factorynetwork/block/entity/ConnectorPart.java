@@ -1,6 +1,7 @@
 package dev.devpanda.factorynetwork.block.entity;
 
 import net.minecraft.core.BlockPos;
+import dev.devpanda.factorynetwork.network.DeviceState;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
@@ -28,6 +29,7 @@ import org.jetbrains.annotations.Nullable;
 public final class ConnectorPart {
 
     public static final String KEY_LABEL = "Label";
+    private static final String KEY_STATE = "State";
     private static final String KEY_COST = "ChannelCost";
     private static final String KEY_REDSTONE = "Redstone";
 
@@ -60,6 +62,7 @@ public final class ConnectorPart {
     }
 
     private final Host host;
+    private DeviceState state = DeviceState.OFFLINE;
 
     private String label = "";
 
@@ -100,6 +103,32 @@ public final class ConnectorPart {
 
     public void setChannelCost(int cost) {
         this.channelCost = Math.max(1, cost);
+        host.partChanged();
+    }
+
+    /**
+     * Wie es um diesen Anschluss im Netz steht.
+     *
+     * <p>Gestempelt vom Controller beim Neuaufbau. Ohne Netz bleibt er
+     * {@link DeviceState#OFFLINE} — das ist auch der Anfangswert, denn ein
+     * frisch gesetzter Anschluss hängt an nichts, bis ihn eine Suche findet.
+     */
+    public DeviceState state() {
+        return state;
+    }
+
+    /**
+     * Setzt den Zustand — und meldet ihn nur, wenn er sich geändert hat.
+     *
+     * <p>Der Neuaufbau läuft alle hundert Ticks und stempelt jedes Mal alle
+     * Geräte. Ohne diese Prüfung schickte jedes Netz alle fünf Sekunden ein
+     * Paket je Anschluss an jeden, der den Chunk verfolgt.
+     */
+    public void setState(DeviceState wanted) {
+        if (wanted == state) {
+            return;
+        }
+        state = wanted;
         host.partChanged();
     }
 
@@ -211,11 +240,16 @@ public final class ConnectorPart {
         tag.putString(KEY_LABEL, label);
         tag.putInt(KEY_COST, channelCost);
         tag.putInt(KEY_REDSTONE, emittedRedstone);
+        // Auch auf die Platte: Wer eine Welt lädt, sieht sonst fünf Sekunden
+        // lang lauter offline gemeldete Anschlüsse, bis der erste Neuaufbau
+        // durch ist.
+        tag.putByte(KEY_STATE, state.id());
     }
 
     public void load(CompoundTag tag) {
         label = tag.getString(KEY_LABEL);
         channelCost = Math.max(1, tag.getInt(KEY_COST));
         emittedRedstone = tag.getInt(KEY_REDSTONE);
+        state = DeviceState.byId(tag.getByte(KEY_STATE));
     }
 }

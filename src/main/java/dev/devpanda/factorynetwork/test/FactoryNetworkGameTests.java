@@ -11193,4 +11193,141 @@ public final class FactoryNetworkGameTests {
                 "und er nennt beide Namen: " + label);
         helper.succeed();
     }
+
+    // ---- Der Netzzustand am Anschluss --------------------------------------
+
+    /**
+     * Ein Anschluss weiß, wie es um ihn steht.
+     *
+     * <p>Vier Zustände sehen im Spiel bisher gleich aus: benannt und
+     * erreichbar, ohne Namen, doppelt vergeben, ohne freien Kanal. Wer den
+     * letzten für einen Tippfehler hält, sucht lange — und wer davorsteht,
+     * sieht dem Block gar nichts an.
+     *
+     * <p>Der Zustand ist ein Schatten des Graphen und keine eigene Wahrheit:
+     * Der Controller stempelt ihn beim Neuaufbau, gerechnet wird er dort.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void bstatusTellsTheNetworkState(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 2, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        rackWithServer(helper, controller.west());
+
+        BlockPos cable = controller.east();
+        helper.setBlock(cable, FnBlocks.CABLE.get());
+        var bus = busAt(helper, cable);
+        if (bus == null) {
+            return;
+        }
+        bus.addPart(Direction.NORTH).setLabel("kiste_1");
+        bus.addPart(Direction.SOUTH).setLabel("");
+        bus.addPart(Direction.UP).setLabel("doppelt");
+        bus.addPart(Direction.DOWN).setLabel("doppelt");
+
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertValueEqual(bus.partAt(Direction.NORTH).state(),
+                dev.devpanda.factorynetwork.network.DeviceState.ONLINE,
+                "benannt und erreichbar");
+        helper.assertValueEqual(bus.partAt(Direction.SOUTH).state(),
+                dev.devpanda.factorynetwork.network.DeviceState.UNNAMED,
+                "ohne Namen");
+        helper.assertValueEqual(bus.partAt(Direction.UP).state(),
+                dev.devpanda.factorynetwork.network.DeviceState.DUPLICATE,
+                "doppelt vergeben");
+        helper.assertValueEqual(bus.partAt(Direction.DOWN).state(),
+                dev.devpanda.factorynetwork.network.DeviceState.DUPLICATE,
+                "und der zweite genauso");
+        helper.succeed();
+    }
+
+    /**
+     * Ohne Kanal und ohne Netz sind zwei verschiedene Dinge.
+     *
+     * <p>Beide bedeuten „nicht ansprechbar", und beide sehen am Block gleich
+     * aus. Der Unterschied entscheidet aber, wo man sucht: einmal an der
+     * Kanalgrenze, einmal an der Leitung.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void bstatusTellsCutOffFromWithoutAnetwork(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 3, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        rackWithServer(helper, controller.west());
+
+        BlockPos cable = controller.east();
+        helper.setBlock(cable, FnBlocks.CABLE.get());
+        var bus = busAt(helper, cable);
+        if (bus == null) {
+            return;
+        }
+        // Einer frisst den ganzen dünnen Strang, der zweite geht leer aus.
+        var vielfrass = bus.addPart(Direction.NORTH);
+        vielfrass.setLabel("vielfrass");
+        vielfrass.setChannelCost(dev.devpanda.factorynetwork.block.CableBlock.CHANNELS_THIN);
+        bus.addPart(Direction.SOUTH).setLabel("zu_spaet");
+
+        // Und einer, der mit dem Netz nichts zu tun hat.
+        BlockPos allein = new BlockPos(1, 1, 1);
+        helper.setBlock(allein, FnBlocks.CABLE.get());
+        var fern = busAt(helper, allein);
+        if (fern == null) {
+            return;
+        }
+        fern.addPart(Direction.NORTH).setLabel("einsam");
+
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertValueEqual(bus.partAt(Direction.SOUTH).state(),
+                dev.devpanda.factorynetwork.network.DeviceState.STARVED,
+                "im Netz, aber ohne freien Kanal");
+        helper.assertValueEqual(fern.partAt(Direction.NORTH).state(),
+                dev.devpanda.factorynetwork.network.DeviceState.OFFLINE,
+                "gar nicht am Netz");
+        helper.succeed();
+    }
+
+    /**
+     * Wer aus dem Netz fällt, erfährt es auch.
+     *
+     * <p>Das ist die Stelle, an der ein Zustand als Schatten schiefgehen
+     * kann: Ein Anschluss, den der Graph nicht mehr kennt, bekommt von
+     * niemandem mehr etwas gesagt — und stünde für immer auf seinem letzten
+     * Zustand. Ein grünes Lämpchen an einem abgeschnittenen Gerät wäre
+     * schlimmer als gar keines.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void bstatusGoesOfflineWhenTheCableIsCut(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 1, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        rackWithServer(helper, controller.west());
+
+        BlockPos mitte = controller.east();
+        BlockPos ende = mitte.east();
+        helper.setBlock(mitte, FnBlocks.CABLE.get());
+        helper.setBlock(ende, FnBlocks.CABLE.get());
+        helper.setBlock(ende.north(), Blocks.CHEST);
+
+        var bus = busAt(helper, ende);
+        if (bus == null) {
+            return;
+        }
+        bus.addPart(Direction.NORTH).setLabel("kiste_1");
+
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        helper.assertValueEqual(bus.partAt(Direction.NORTH).state(),
+                dev.devpanda.factorynetwork.network.DeviceState.ONLINE,
+                "am Netz und benannt");
+
+        // Die Leitung dazwischen weg — der Anschluss hängt an nichts mehr.
+        helper.destroyBlock(mitte);
+        entity.rebuildNetwork();
+
+        helper.assertValueEqual(bus.partAt(Direction.NORTH).state(),
+                dev.devpanda.factorynetwork.network.DeviceState.OFFLINE,
+                "abgeschnitten, und das muss dranstehen");
+        helper.succeed();
+    }
 }

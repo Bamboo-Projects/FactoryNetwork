@@ -7,6 +7,8 @@ import dev.devpanda.factorynetwork.lang.ast.Expr;
 import dev.devpanda.factorynetwork.lang.ast.Program;
 import dev.devpanda.factorynetwork.lang.parse.Parser;
 import dev.devpanda.factorynetwork.network.ControllerRegistry;
+import dev.devpanda.factorynetwork.network.DevicePos;
+import dev.devpanda.factorynetwork.network.DeviceState;
 import dev.devpanda.factorynetwork.network.FactoryGraph;
 import dev.devpanda.factorynetwork.network.NetworkFluids;
 import dev.devpanda.factorynetwork.network.NetworkStorage;
@@ -37,6 +39,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -549,6 +552,7 @@ public class ControllerBlockEntity extends BlockEntity {
         graph = FactoryGraph.build(level, worldPosition);
         lastRebuild = level.getGameTime();
         networkKnown = true;
+        stampDeviceStates();
         // Der Speicher ist die Summe der Laufwerke im Netz. Ohne diesen
         // Schritt lagert der Controller nichts — was auch stimmt: Ohne
         // Laufwerk gibt es keinen Platz.
@@ -1679,6 +1683,82 @@ public class ControllerBlockEntity extends BlockEntity {
                     name, DeviceScan.of(connector)));
         }
         return profiles;
+    }
+
+
+    // ---- Der Netzzustand am Anschluss --------------------------------------
+
+    /**
+     * Welche Anschlüsse dieser Controller zuletzt gestempelt hat.
+     *
+     * <p>Gebraucht für die, die aus dem Netz fallen: Wer nicht mehr im
+     * Graphen steht, bekommt niemanden mehr, der ihm etwas sagt — und stünde
+     * sonst für immer auf seinem letzten Zustand. Ein grünes Lämpchen an
+     * einem abgeschnittenen Gerät wäre schlimmer als gar keines.
+     */
+    private java.util.Set<DevicePos> stamped = java.util.Set.of();
+
+    /**
+     * Schreibt jedem Anschluss auf, wie es um ihn steht.
+     *
+     * <p><b>Der Zustand ist ein Schatten des Graphen.</b> Gerechnet wird er
+     * hier, beim Neuaufbau — alle hundert Ticks und bei jeder Änderung am
+     * Netz. Der Anschluss hebt ihn nur auf, damit ein Blick auf den Block ihn
+     * beantworten kann, ohne den Controller zu fragen.
+     *
+     * <p><b>Was das kostet:</b> nichts, was der Graph nicht ohnehin rechnet,
+     * und ein Paket nur dort, wo sich wirklich etwas geändert hat — darum
+     * kümmert sich {@code ConnectorPart.setState}.
+     *
+     * <p>Hängt ein Anschluss an zwei Netzen, gewinnt der Controller, der
+     * zuletzt gestempelt hat. Das ist derselbe Fall, den der Reiter
+     * <i>Netz</i> als umstritten meldet, und er ist selten genug, um ihn hier
+     * nicht eigens aufzulösen.
+     */
+    private void stampDeviceStates() {
+        Map<DevicePos, DeviceState> wanted = statesFromGraph();
+        for (DevicePos where : stamped) {
+            if (!wanted.containsKey(where)) {
+                stamp(where, DeviceState.OFFLINE);
+            }
+        }
+        wanted.forEach(this::stamp);
+        stamped = java.util.Set.copyOf(wanted.keySet());
+    }
+
+    /** Was der Graph über jeden Anschluss sagt. */
+    private Map<DevicePos, DeviceState> statesFromGraph() {
+        Map<DevicePos, DeviceState> found = new LinkedHashMap<>();
+        graph.connectors().forEach((name, where) ->
+                found.put(where, DeviceState.ONLINE));
+        // Mehrfach vergebene Namen stehen nicht in connectors() — genau
+        // deshalb, und genau deshalb müssen sie hier eigens dazu.
+        for (String name : graph.ambiguousNames()) {
+            for (DevicePos where : graph.positionsOf(name)) {
+                found.put(where, DeviceState.DUPLICATE);
+            }
+        }
+        for (DevicePos where : graph.unnamedConnectors()) {
+            found.put(where, DeviceState.UNNAMED);
+        }
+        for (DevicePos where : graph.starvedConnectors()) {
+            // Ohne Kanal bleiben auch Laufwerke und Schränke; die tragen
+            // keinen Zustand, und ihre Stelle hat keine Fläche.
+            if (where.side() != null) {
+                found.put(where, DeviceState.STARVED);
+            }
+        }
+        return found;
+    }
+
+    private void stamp(DevicePos where, DeviceState state) {
+        if (level == null || where.side() == null || !level.isLoaded(where.pos())) {
+            return;
+        }
+        ConnectorPart part = Connectors.at(level, where.pos(), where.side());
+        if (part != null) {
+            part.setState(state);
+        }
     }
 
     /** Was im Editor steht, auch wenn es noch nicht läuft. */

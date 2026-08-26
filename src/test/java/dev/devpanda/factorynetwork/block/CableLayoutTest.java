@@ -144,10 +144,10 @@ class CableLayoutTest {
                             name + ": der Stiel beginnt woanders als in CableLayout");
                     assertTrue(json.contains(corner("to", stem, 3)),
                             name + ": der Stiel endet woanders als in CableLayout");
-                } else {
-                    assertEquals(1, elementCount(json),
-                            name + ": ohne Stiel gehört auch kein zweiter Kasten hinein");
                 }
+                // Platte, Lämpchenring, und beim dünnen Kabel der Stiel.
+                assertEquals(CableLayout.stemLength(size) > 0 ? 3 : 2, elementCount(json),
+                        name + ": ein Kasten zu viel oder zu wenig");
             }
         }
     }

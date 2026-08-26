@@ -1480,3 +1480,49 @@ sie zeigt:
 Die Regel dahinter ist nicht „mehrere Anschlüsse anzeigen", sondern: **Wer
 fragt, bestimmt die Antwort.** Ein Blick hat eine Fläche, ein Schwebetext hat
 keine, ein Punkt im Raum hat eine Stelle.
+
+### Ein Lämpchen, das nichts kostet (seit dem 26.08.)
+
+Die Frage lautete „wie viel Performance frisst eine Statusanzeige" — und sie
+hat keine Antwort, solange nicht feststeht, **was** sie anzeigt. Es sind drei
+verschiedene Töpfe, und sie verhalten sich völlig verschieden.
+
+**Zeichnen ist null**, nicht wenig. Das Lämpchen ist kein eigenes Ding, das
+jemand malt, sondern ein Kasten in einem Modell, das ohnehin gezeichnet wird:
+am Kabel ein Ring im Teilmodell des `CableBusRenderer`, am Connectorblock vier
+kleine Flächen im gebackenen Blockmodell. Die Farbe kommt über `tintindex` —
+denselben Weg, den die Kabelfarben schon gehen. Ein eigener Renderer für den
+Connectorblock hätte jeden Connector in die Zeichenliste gebracht, für vier
+Quads, die das Modell umsonst mitbringt.
+
+Dabei zahlt sich eine Einzelheit aus, die man leicht übersieht:
+`ModelBlockRenderer.renderQuadList` färbt **nur Quads mit tintindex**. Der
+Renderer kann dem ganzen Teilmodell eine Farbe mitgeben, und sie trifft
+trotzdem allein den Ring — kein zweites Modell, kein zweiter Aufruf.
+
+**Übertragen kostet nur bei Änderung.** Der Neuaufbau stempelt alle hundert
+Ticks alles; ohne die Prüfung in `setState` ginge alle fünf Sekunden ein Paket
+je Anschluss an jeden, der den Chunk verfolgt — bei hundert Anschlüssen 4 KB/s
+je Spieler für nichts. Diese eine Zeile ist der ganze Unterschied.
+
+**Rechnen kostet gar nichts**, weil der Graph `starved`, `unnamed` und
+`isAmbiguous` beim Neuaufbau ohnehin ermittelt.
+
+**Warum Betrieb und Füllstand draußen bleiben:** dort kippt der zweite Topf.
+Hundert Anschlüsse im Tick-Takt wären 400 KB/s je Spieler. Und schwerer als
+die Zahl wiegt, dass die Schleife, die den Inhalt der Maschinen abtastet,
+heute nur läuft, wenn ein Programm auf `device_changed` oder `device_output`
+hört — eine Statusanzeige machte aus dieser Opt-in-Last eine dauernde.
+
+**Ein Schatten braucht eine Rückstellung.** Der Zustand wird im Graphen
+gerechnet und am Anschluss aufgehoben. Wer aus dem Graphen fällt, bekommt von
+niemandem mehr etwas gesagt — und stünde für immer auf seinem letzten
+Zustand. Ein grünes Lämpchen an einem abgeschnittenen Gerät wäre schlimmer als
+gar keines, deshalb merkt sich der Controller, wen er zuletzt gestempelt hat.
+Der Prüflauf dazu war auf Anhieb grün; erst die Gegenprobe mit ausgebauter
+Rückstellung hat gezeigt, dass er wirklich zuschlägt.
+
+**Und dieselbe Falle wie dreimal zuvor:** Jade rechnete den Zustand ein
+zweites Mal aus dem Graphen. Dieselbe Frage, zwei Antworten — und die eine
+hätte Verbesserungen bekommen, die der anderen fehlen. Jetzt liest es
+denselben Stempel wie das Lämpchen.

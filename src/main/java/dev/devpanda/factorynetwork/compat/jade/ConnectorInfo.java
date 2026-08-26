@@ -1,6 +1,5 @@
 package dev.devpanda.factorynetwork.compat.jade;
 
-import dev.devpanda.factorynetwork.network.ControllerRegistry;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -26,12 +25,6 @@ public enum ConnectorInfo implements IBlockComponentProvider, IServerDataProvide
     private static final String KEY_STATE = "FnState";
     private static final String KEY_COST = "FnCost";
 
-    private static final int STATE_FINE = 0;
-    private static final int STATE_UNNAMED = 1;
-    private static final int STATE_DUPLICATE = 2;
-    private static final int STATE_NO_CHANNEL = 3;
-    private static final int STATE_NO_NETWORK = 4;
-
     @Override
     public void appendServerData(CompoundTag data, BlockAccessor accessor) {
         var connector = partAt(accessor);
@@ -41,25 +34,12 @@ public enum ConnectorInfo implements IBlockComponentProvider, IServerDataProvide
         String label = connector.label();
         data.putString(KEY_LABEL, label == null ? "" : label);
         data.putInt(KEY_COST, connector.channelCost());
-
-        var pos = accessor.getPosition();
-        var owner = ControllerRegistry.owning(accessor.getLevel(), pos);
-        if (owner.isEmpty()) {
-            data.putInt(KEY_STATE, STATE_NO_NETWORK);
-            return;
-        }
-        var graph = owner.get().graph();
-        int state;
-        if (graph.isStarved(pos)) {
-            state = STATE_NO_CHANNEL;
-        } else if (label == null || label.isBlank()) {
-            state = STATE_UNNAMED;
-        } else if (graph.isAmbiguous(label)) {
-            state = STATE_DUPLICATE;
-        } else {
-            state = STATE_FINE;
-        }
-        data.putInt(KEY_STATE, state);
+        // <b>Derselbe Zustand, den das Lämpchen zeigt.</b> Vorher rechnete
+        // Jade ihn hier ein zweites Mal aus dem Graphen — dieselbe Frage,
+        // zwei Antworten, und die eine bekam Verbesserungen, die der anderen
+        // fehlten. Gerechnet wird er beim Neuaufbau, und der läuft bei jeder
+        // Änderung am Netz.
+        data.putInt(KEY_STATE, connector.state().id());
     }
 
     @Override
@@ -71,20 +51,20 @@ public enum ConnectorInfo implements IBlockComponentProvider, IServerDataProvide
         String label = data.getString(KEY_LABEL);
         int state = data.getInt(KEY_STATE);
 
-        switch (state) {
-            case STATE_FINE -> tooltip.add(Component.translatable(
+        switch (dev.devpanda.factorynetwork.network.DeviceState.byId(state)) {
+            case ONLINE -> tooltip.add(Component.translatable(
                     "jade.factorynetwork.connector.named", label)
                     .withStyle(ChatFormatting.GREEN));
-            case STATE_UNNAMED -> tooltip.add(Component.translatable(
+            case UNNAMED -> tooltip.add(Component.translatable(
                     "jade.factorynetwork.connector.unnamed")
                     .withStyle(ChatFormatting.GRAY));
-            case STATE_DUPLICATE -> tooltip.add(Component.translatable(
+            case DUPLICATE -> tooltip.add(Component.translatable(
                     "jade.factorynetwork.connector.duplicate", label)
                     .withStyle(ChatFormatting.RED));
-            case STATE_NO_CHANNEL -> tooltip.add(Component.translatable(
+            case STARVED -> tooltip.add(Component.translatable(
                     "jade.factorynetwork.connector.no_channel")
                     .withStyle(ChatFormatting.RED));
-            default -> tooltip.add(Component.translatable(
+            case OFFLINE -> tooltip.add(Component.translatable(
                     "jade.factorynetwork.connector.no_network")
                     .withStyle(ChatFormatting.DARK_GRAY));
         }
