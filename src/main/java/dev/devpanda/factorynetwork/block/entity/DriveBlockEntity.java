@@ -53,6 +53,16 @@ public class DriveBlockEntity extends ShelfBlockEntity {
      */
     private final java.util.Map<Integer, EnergyCellView> openEnergy = new java.util.HashMap<>();
 
+    /**
+     * Die offenen Chemikalienzellen.
+     *
+     * <p>Als {@link CellView} und nicht als {@code CellInventory<Chemical>}:
+     * Der Typ einer Chemikalie gehört Mekanism, und diese Klasse wird immer
+     * geladen. Wer die Zellen wirklich lesen will, bringt seine eigene Fabrik
+     * mit — und die steht in {@code compat/mekanism}.
+     */
+    private final java.util.Map<Integer, CellView> openChemicals = new java.util.HashMap<>();
+
     public DriveBlockEntity(BlockPos pos, BlockState state) {
         super(FnBlockEntities.DRIVE.get(), pos, state, SLOTS);
     }
@@ -91,6 +101,9 @@ public class DriveBlockEntity extends ShelfBlockEntity {
     protected void beforeSlotChange(int slot) {
         CellView leaving = openItems.remove(slot);
         if (leaving == null) {
+            leaving = openChemicals.remove(slot);
+        }
+        if (leaving == null) {
             leaving = openFluids.remove(slot);
         }
         if (leaving == null) {
@@ -123,6 +136,20 @@ public class DriveBlockEntity extends ShelfBlockEntity {
     /** Dieselbe Sicht auf die Flüssigkeitszellen. */
     public List<CellInventory<net.minecraft.world.level.material.Fluid>> fluidInventories() {
         return live(openFluids, FluidCellItem.class, CellInventory::ofFluids);
+    }
+
+    /**
+     * Die Chemikalienzellen, geöffnet mit einer Fabrik von außen.
+     *
+     * <p>Die Fabrik kommt aus {@code compat/mekanism} und ist der einzige
+     * Weg, wie hier ein Mekanism-Typ ins Spiel kommt — als Rückgabe hinter
+     * {@link CellView}, das der Kern kennt. Ohne Mekanism ruft niemand diese
+     * Methode, und die Zellen bleiben ungeöffnet im Laufwerk liegen.
+     */
+    public List<CellView> chemicalCells(
+            java.util.function.Function<ItemStack, CellView> open) {
+        return live(openChemicals,
+                dev.devpanda.factorynetwork.storage.ChemicalCellItem.class, open);
     }
 
     /**
@@ -173,6 +200,7 @@ public class DriveBlockEntity extends ShelfBlockEntity {
         openItems.values().forEach(CellInventory::flush);
         openFluids.values().forEach(CellInventory::flush);
         openEnergy.values().forEach(EnergyCellView::flush);
+        openChemicals.values().forEach(CellView::flush);
     }
 
     @Override

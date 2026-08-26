@@ -192,6 +192,30 @@ public final class FnItems {
     }
 
     /**
+     * Die vier Größen der Chemikalienzelle.
+     *
+     * <p><b>Immer registriert, auch ohne Mekanism.</b> Bedingt zu
+     * registrieren hieße: Wer die Mod entfernt, verliert seine Zellen aus der
+     * Welt — samt Inhalt, denn ein unbekannter Gegenstand verschwindet beim
+     * Laden. Ein Gegenstand, den es immer gibt und dessen Tooltip sagt, was
+     * ihm fehlt, ist die freundlichere Antwort.
+     */
+    public static final Map<dev.devpanda.factorynetwork.storage.ChemicalCellTier,
+            DeferredItem<Item>> CHEMICAL_CELLS = registerChemicalCells();
+
+    private static Map<dev.devpanda.factorynetwork.storage.ChemicalCellTier,
+            DeferredItem<Item>> registerChemicalCells() {
+        Map<dev.devpanda.factorynetwork.storage.ChemicalCellTier, DeferredItem<Item>> cells =
+                new LinkedHashMap<>();
+        for (var tier : dev.devpanda.factorynetwork.storage.ChemicalCellTier.values()) {
+            cells.put(tier, ITEMS.register("chemical_cell_" + tier.getSerializedName(),
+                    () -> new dev.devpanda.factorynetwork.storage.ChemicalCellItem(
+                            tier, new Item.Properties())));
+        }
+        return Map.copyOf(cells);
+    }
+
+    /**
      * Die vier Größen der Energiezelle.
      *
      * <p>Nur eine Zahl je Stufe, denn Strom hat keine Sorten. Die kleinste

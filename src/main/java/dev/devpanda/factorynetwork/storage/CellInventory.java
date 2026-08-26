@@ -36,6 +36,18 @@ public final class CellInventory<T> implements CellView {
         this.contents = new LinkedHashMap<>(format.read(cell));
     }
 
+    /**
+     * Eine Zelle beliebiger Art.
+     *
+     * <p>Offen, weil es eine dritte Art gibt, die dieser Kern nicht kennen
+     * darf: Chemikalien gehören Mekanism. Wer sie öffnet, bringt Größe und
+     * Format selbst mit — die Rechnung mit Sorten und Mengen bleibt dieselbe.
+     */
+    public static <T> CellInventory<T> of(ItemStack cell, CellSize size,
+                                          CellFormat<T> format) {
+        return new CellInventory<>(cell, size, format);
+    }
+
     /** Eine Gegenstandszelle. Ungültig, wenn dort keine steckt. */
     public static CellInventory<Item> ofItems(ItemStack cell) {
         return new CellInventory<>(cell, StorageCellItem.tierOf(cell), CellFormat.ITEMS);

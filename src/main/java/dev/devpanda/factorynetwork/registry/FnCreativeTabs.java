@@ -60,6 +60,8 @@ public final class FnCreativeTabs {
                         FnItems.CELLS.values().forEach(cell -> output.accept(cell.get()));
                         FnItems.FLUID_CELLS.values()
                                 .forEach(cell -> output.accept(cell.get()));
+                        FnItems.CHEMICAL_CELLS.values()
+                                .forEach(cell -> output.accept(cell.get()));
                         FnItems.ENERGY_CELLS.values()
                                 .forEach(cell -> output.accept(cell.get()));
                     })

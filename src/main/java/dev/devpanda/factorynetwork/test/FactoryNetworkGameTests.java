@@ -7819,6 +7819,94 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    /** Setzt ein Laufwerk ans Kabel und steckt eine Chemikalienzelle hinein. */
+    private static void driveWithChemicalCell(GameTestHelper helper, BlockPos at,
+            dev.devpanda.factorynetwork.storage.ChemicalCellTier tier) {
+        helper.setBlock(at, FnBlocks.DRIVE.get());
+        if (helper.getBlockEntity(at)
+                instanceof dev.devpanda.factorynetwork.block.entity.DriveBlockEntity drive) {
+            drive.setCell(0, new ItemStack(dev.devpanda.factorynetwork.registry.FnItems
+                    .CHEMICAL_CELLS.get(tier).get()));
+        } else {
+            helper.fail("Am Laufwerk hängt keine BlockEntity", at);
+        }
+    }
+
+    /**
+     * Eine Chemikalienzelle hält Chemikalien.
+     *
+     * <p>Dieselben zwei Grenzen wie überall — so viele Sorten, so viel Menge —
+     * und dieselbe Rechnung dahinter: Sie stand seit den Flüssigkeiten offen
+     * für den Typ, und Chemikalien haben nichts daran geändert.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void achemicalCellHoldsChemicals(GameTestHelper helper) {
+        BlockPos controller = bareSetup(helper);
+        driveWithChemicalCell(helper, controller.above(),
+                dev.devpanda.factorynetwork.storage.ChemicalCellTier.K64);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertValueEqual(entity.chemicals().insert("mekanism:hydrogen", 1000), 0L,
+                "das passt hinein");
+        helper.assertValueEqual(entity.chemicals().count("mekanism:hydrogen"), 1000L,
+                "und steht danach im Netz");
+
+        // Die kleinste Zelle fasst 64.000 mB; was darüber geht, bleibt draußen.
+        helper.assertValueEqual(entity.chemicals().insert("mekanism:oxygen", 64_000), 1000L,
+                "was über die Menge geht, bleibt draußen");
+
+        helper.assertValueEqual(entity.chemicals().extract("mekanism:hydrogen", 400), 400L,
+                "und es kommt wieder heraus");
+        helper.assertValueEqual(entity.chemicals().count("mekanism:hydrogen"), 600L,
+                "der Rest bleibt liegen");
+        helper.succeed();
+    }
+
+    /** Ohne Laufwerk lagert das Netz keine Chemikalien. */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void withoutAdriveNochemicalsAreStored(GameTestHelper helper) {
+        BlockPos controller = bareSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertValueEqual(entity.chemicals().insert("mekanism:hydrogen", 500), 500L,
+                "ohne Laufwerk passt nichts hinein");
+        helper.assertValueEqual(entity.chemicals().count("mekanism:hydrogen"), 0L, "Bestand");
+        helper.succeed();
+    }
+
+    /**
+     * Der Inhalt fährt in der Zelle mit.
+     *
+     * <p>Der Grund, warum eine Zelle etwas wert ist — und derselbe wie bei den
+     * anderen beiden Arten.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void thestoredChemicalsRideAlongInThecell(GameTestHelper helper) {
+        BlockPos controller = bareSetup(helper);
+        BlockPos drivePos = controller.above();
+        driveWithChemicalCell(helper, drivePos,
+                dev.devpanda.factorynetwork.storage.ChemicalCellTier.K256);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        entity.chemicals().insert("mekanism:hydrogen", 2500);
+
+        var drive = (dev.devpanda.factorynetwork.block.entity.DriveBlockEntity)
+                helper.getBlockEntity(drivePos);
+        drive.flushCells();
+        var inhalt = dev.devpanda.factorynetwork.compat.mekanism.ChemicalStores
+                .read(drive.cell(0));
+        helper.assertValueEqual(inhalt.getOrDefault("mekanism:hydrogen", 0L), 2500L,
+                "Die Zelle trägt ihren Inhalt selbst");
+
+        drive.setCell(0, ItemStack.EMPTY);
+        entity.rebuildNetwork();
+        helper.assertValueEqual(entity.chemicals().count("mekanism:hydrogen"), 0L,
+                "Ohne die Zelle ist der Bestand weg");
+        helper.succeed();
+    }
+
     /**
      * Eine Chemikalien-Auswahl löst sich auf.
      *

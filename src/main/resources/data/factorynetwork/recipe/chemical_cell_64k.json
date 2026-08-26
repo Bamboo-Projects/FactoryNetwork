@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "PCP",
+    "CBC",
+    "PPP"
+  ],
+  "key": {
+    "P": {
+      "item": "factorynetwork:plate"
+    },
+    "C": {
+      "item": "factorynetwork:crystal"
+    },
+    "B": {
+      "tag": "c:ingots/osmium"
+    }
+  },
+  "result": {
+    "id": "factorynetwork:chemical_cell_64k",
+    "count": 1
+  }
+}

@@ -113,6 +113,18 @@ public class ControllerBlockEntity extends BlockEntity {
     private FactoryGraph graph = FactoryGraph.empty();
     private final NetworkStorage storage = new NetworkStorage();
     private final NetworkFluids fluidStorage = new NetworkFluids();
+
+    /**
+     * Der Chemikalienspeicher.
+     *
+     * <p>Eine Schnittstelle und keine Klasse: Chemikalien gehören Mekanism,
+     * und ein Feld mit einem Mekanism-Typ ließe diesen Controller in einem
+     * Pack ohne die Mod nicht mehr laden. Ohne Mekanism steht hier der
+     * Speicher, der nichts kann — und das ist die Wahrheit über ein solches
+     * Pack, keine Notlösung.
+     */
+    private final dev.devpanda.factorynetwork.network.ChemicalStore chemicalStorage =
+            dev.devpanda.factorynetwork.compat.mekanism.ChemicalStores.create();
     private final WorkerRuntime runtime = new WorkerRuntime();
 
     /**
@@ -464,6 +476,11 @@ public class ControllerBlockEntity extends BlockEntity {
         return fluidStorage;
     }
 
+    /** Der Chemikalienspeicher; ohne Mekanism einer, der nichts kann. */
+    public dev.devpanda.factorynetwork.network.ChemicalStore chemicals() {
+        return chemicalStorage;
+    }
+
     public WorkerRuntime runtime() {
         return runtime;
     }
@@ -508,6 +525,9 @@ public class ControllerBlockEntity extends BlockEntity {
         // Dieselben Laufwerke tragen die Flüssigkeitszellen. Ein zweites
         // Laufwerk nur dafür wäre ein Block mehr für dieselbe Handlung.
         fluidStorage.setDrives(found);
+        // Und dieselben tragen die Chemikalienzellen — ohne Mekanism nimmt
+        // dieser Speicher die Liste entgegen und tut nichts damit.
+        chemicalStorage.setDrives(found);
         // Und dieselben tragen die Energiezellen. Ohne diese Zeile ist der
         // Vorrat der Puffer im Controller, egal wie viele Akkus im Regal
         // stecken.
