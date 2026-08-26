@@ -7776,46 +7776,203 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Mit Mekanism sagt die Meldung etwas anderes als ohne.
+     * Mit Mekanism geht eine Chemikalien-Auswahl durch.
      *
-     * <p>Zwei Auskünfte statt einer: „Chemikalien brauchen Mekanism" schickt
-     * den Spieler zu seiner Modliste, „noch nicht angebunden" zu dieser Mod.
-     * Vorher stand überall die zweite, auch in Packs ohne Mekanism — und dann
-     * suchte man den Fehler an der falschen Stelle.
+     * <p>Der Test hieß einmal „ohne Mekanism sagt die Meldung, dass Mekanism
+     * fehlt", und er hat zweimal die Wahrheit gewechselt: erst, als die
+     * Abhängigkeit in den Prüflauf kam, dann, als die Anbindung stand. Jetzt
+     * prüft er, was ab hier gilt — mit Mekanism ist {@code chemical:} eine
+     * Auswahl wie jede andere.
      *
-     * <p><b>Im Prüflauf ist Mekanism geladen</b>, seit die Abhängigkeit
-     * dasteht; der Fall ohne sie steht als Einheitstest in
+     * <p>Der Fall ohne Mekanism steht als Einheitstest in
      * {@code FilterCheckTest}, wo keine Modliste geladen wird.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
-    public static void withMekanismThemessageChanges(GameTestHelper helper) {
+    public static void withMekanismChemicalsGoThrough(GameTestHelper helper) {
         BlockPos controller = buildSetup(helper);
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
 
+        helper.assertTrue(
+                dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.installed(),
+                "Der Prüflauf soll Mekanism kennen");
         helper.assertTrue(entity.deploy("""
                 fn holen() {
                     move chemical:mekanism/hydrogen from depot to storage
                 }"""), "Das Programm wurde nicht übernommen");
-        try {
-            entity.callFunction("holen", List.of());
-            helper.fail("Ohne Mekanism darf eine Chemikalien-Auswahl nicht durchgehen");
-            return;
-        } catch (dev.devpanda.factorynetwork.runtime.ScriptError expected) {
-            // Mekanism liegt im Prüflauf, also gilt die andere der beiden
-            // Auskünfte — und ausdrücklich nicht die über die Modliste.
-            helper.assertTrue(
-                    dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.installed(),
-                    "Der Prüflauf soll Mekanism kennen");
-            helper.assertTrue(expected.getMessage().contains("angebunden"),
-                    "Mit Mekanism ist es eine Baustelle dieser Mod: "
-                            + expected.getMessage());
-            helper.assertTrue(!expected.hint().contains("nicht installiert"),
-                    "und kein Hinweis auf die Modliste: " + expected.hint());
-        }
 
-        // Der Editor zeigt inzwischen die Auflösung statt einer Absage — das
-        // prüft theeditorShowsWhatAchemicalResolvesTo.
+        // An depot hängt eine Kiste und kein Tank — es kommt nichts, aber es
+        // wirft auch nichts. Ein Gerät ohne Chemikalien ist keine
+        // Fehlermeldung, sondern ein leeres Gerät.
+        // An depot hängt eine Kiste, also kommt nichts — aber es wirft auch
+        // nichts, und das ist der Unterschied zu vorher.
+        entity.callFunction("holen", List.of());
+
+        // Und eine Vorlage nimmt chemical: jetzt an, statt es abzulehnen.
+        helper.assertTrue(entity.deploy("""
+                filter gase {
+                    chemical:mekanism/hydrogen
+                }"""), "Mit Mekanism gehört chemical: in eine Vorlage");
+        helper.succeed();
+    }
+
+    /**
+     * Chemikalien gehen aus dem Netz in einen Behälter und wieder zurück.
+     *
+     * <p><b>Der Behälter ist keiner in der Welt, sondern einer aus Mekanisms
+     * API.</b> Das ist kein Ausweichen, sondern die Folge einer Messung: Ein
+     * Chemikalientank, den ein Prüflauf per {@code setBlock} hinstellt, gibt
+     * an <b>keiner</b> Seite eine Capability heraus und nimmt auch ungeteilt
+     * nichts an — ihm fehlt die Seitenkonfiguration, die ein Spieler beim
+     * Platzieren mitbringt. Nachgemessen mit allen sechs Seiten.
+     *
+     * <p>Was hier eigen ist und deshalb geprüft wird, ist das Hin und Her mit
+     * dem Netzspeicher: erst proben, dann entnehmen, und was der Behälter
+     * doch nicht nimmt, zurücklegen. Wie der Behälter gefunden wird, ist
+     * derselbe Weg wie bei Flüssigkeiten.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void chemicalsGoIntoAtankAndBack(GameTestHelper helper) {
+        BlockPos controller = bareSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        driveWithChemicalCell(helper, controller.above(),
+                dev.devpanda.factorynetwork.storage.ChemicalCellTier.K256);
+        entity.rebuildNetwork();
+        entity.chemicals().insert("mekanism:hydrogen", 3000);
+
+        var tank = mekanism.api.chemical.BasicChemicalTank.create(
+                10_000, mekanism.api.functions.ConstantPredicates.alwaysTrueBi(),
+                mekanism.api.functions.ConstantPredicates.alwaysTrueBi(),
+                mekanism.api.functions.ConstantPredicates.alwaysTrue(), null);
+        var handler = new mekanism.api.chemical.IChemicalHandler() {
+            @Override
+            public int getChemicalTanks() {
+                return 1;
+            }
+
+            @Override
+            public mekanism.api.chemical.ChemicalStack getChemicalInTank(int slot) {
+                return tank.getStack();
+            }
+
+            @Override
+            public void setChemicalInTank(int slot,
+                    mekanism.api.chemical.ChemicalStack stack) {
+                tank.setStack(stack);
+            }
+
+            @Override
+            public long getChemicalTankCapacity(int slot) {
+                return tank.getCapacity();
+            }
+
+            @Override
+            public boolean isValid(int slot, mekanism.api.chemical.ChemicalStack stack) {
+                return true;
+            }
+
+            @Override
+            public mekanism.api.chemical.ChemicalStack insertChemical(int slot,
+                    mekanism.api.chemical.ChemicalStack stack, mekanism.api.Action action) {
+                return tank.insert(stack, action, mekanism.api.AutomationType.EXTERNAL);
+            }
+
+            @Override
+            public mekanism.api.chemical.ChemicalStack extractChemical(int slot, long amount,
+                    mekanism.api.Action action) {
+                return tank.extract(amount, action, mekanism.api.AutomationType.EXTERNAL);
+            }
+        };
+
+        long gegeben = dev.devpanda.factorynetwork.compat.mekanism.ChemicalStores
+                .fillIntoHandler(entity.chemicals(), handler,
+                        List.of("mekanism:hydrogen"), 1000);
+        helper.assertValueEqual(gegeben, 1000L, "Tausend gehen in den Behälter");
+        helper.assertValueEqual(entity.chemicals().count("mekanism:hydrogen"), 2000L,
+                "und fehlen im Netz");
+
+        long geholt = dev.devpanda.factorynetwork.compat.mekanism.ChemicalStores
+                .drainIntoHandler(handler, List.of("mekanism:hydrogen"),
+                        entity.chemicals(), 1000);
+        helper.assertValueEqual(geholt, 1000L, "und wieder heraus");
+        helper.assertValueEqual(entity.chemicals().count("mekanism:hydrogen"), 3000L,
+                "ohne dass unterwegs etwas verschwindet");
+        helper.succeed();
+    }
+
+    /**
+     * Was der Speicher nicht fasst, bleibt im Behälter.
+     *
+     * <p>Die Zusage, die bei Flüssigkeiten schon gilt: Ein Gas, das draußen
+     * ist und nirgends hineinpasst, wäre weg.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void whatThestoreCannotHoldStaysInThetank(GameTestHelper helper) {
+        BlockPos controller = bareSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        // Die kleinste Zelle: 64.000 mB.
+        driveWithChemicalCell(helper, controller.above(),
+                dev.devpanda.factorynetwork.storage.ChemicalCellTier.K64);
+        entity.rebuildNetwork();
+        entity.chemicals().insert("mekanism:hydrogen", 60_000);
+
+        var tank = mekanism.api.chemical.BasicChemicalTank.create(
+                100_000, mekanism.api.functions.ConstantPredicates.alwaysTrueBi(),
+                mekanism.api.functions.ConstantPredicates.alwaysTrueBi(),
+                mekanism.api.functions.ConstantPredicates.alwaysTrue(), null);
+        tank.setStack(new mekanism.api.chemical.ChemicalStack(
+                mekanism.api.MekanismAPI.CHEMICAL_REGISTRY.get(
+                        net.minecraft.resources.ResourceLocation.parse("mekanism:hydrogen")),
+                20_000));
+        var handler = new mekanism.api.chemical.IChemicalHandler() {
+            @Override
+            public int getChemicalTanks() {
+                return 1;
+            }
+
+            @Override
+            public mekanism.api.chemical.ChemicalStack getChemicalInTank(int slot) {
+                return tank.getStack();
+            }
+
+            @Override
+            public void setChemicalInTank(int slot,
+                    mekanism.api.chemical.ChemicalStack stack) {
+                tank.setStack(stack);
+            }
+
+            @Override
+            public long getChemicalTankCapacity(int slot) {
+                return tank.getCapacity();
+            }
+
+            @Override
+            public boolean isValid(int slot, mekanism.api.chemical.ChemicalStack stack) {
+                return true;
+            }
+
+            @Override
+            public mekanism.api.chemical.ChemicalStack insertChemical(int slot,
+                    mekanism.api.chemical.ChemicalStack stack, mekanism.api.Action action) {
+                return tank.insert(stack, action, mekanism.api.AutomationType.EXTERNAL);
+            }
+
+            @Override
+            public mekanism.api.chemical.ChemicalStack extractChemical(int slot, long amount,
+                    mekanism.api.Action action) {
+                return tank.extract(amount, action, mekanism.api.AutomationType.EXTERNAL);
+            }
+        };
+
+        long geholt = dev.devpanda.factorynetwork.compat.mekanism.ChemicalStores
+                .drainIntoHandler(handler, List.of("mekanism:hydrogen"),
+                        entity.chemicals(), 20_000);
+
+        helper.assertValueEqual(geholt, 4000L, "nur, was noch hineinpasst");
+        helper.assertValueEqual(entity.chemicals().count("mekanism:hydrogen"), 64_000L,
+                "die Zelle ist voll");
+        helper.assertValueEqual(tank.getStored(), 16_000L,
+                "und der Rest liegt weiter im Behälter");
         helper.succeed();
     }
 

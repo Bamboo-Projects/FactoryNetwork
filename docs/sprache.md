@@ -180,13 +180,19 @@ die eine Sorte ließe sich nirgends lagern.
 Schreibweise steht hier fest, weil sie sonst später nachträglich zwischen die
 bestehenden Arten gezwängt werden müsste.
 
-> **Noch nicht gebaut:** die Anbindung selbst. Entschieden am 25.08. als
-> Kompatibilitätsmodul — ohne Mekanism läuft die Mod wie heute, mit ihm
-> bewegt sie Chemikalien. Bis dahin weist der Übersetzer `chemical:` zurück,
-> und die Laufzeit meldet sich. **Die Meldung unterscheidet seit dem 26.08.
-> zwei Fälle:** Ohne Mekanism heißt sie „Chemikalien brauchen Mekanism" und
-> zeigt auf die Modliste; mit Mekanism bleibt es bei „noch nicht angebunden",
-> denn dann ist das die Wahrheit.
+**Gebaut seit dem 26.08.**, als Kompatibilitätsmodul: Mit Mekanism ist
+`chemical:` eine Auswahl wie jede andere — sie löst sich auf, sie steht in
+einer Vorlage, sie bewegt sich mit `move`, sie wird gezählt, und sie lagert in
+Chemikalienzellen im Laufwerk. Ohne Mekanism gibt es sie nicht, und die
+Meldung zeigt auf die Modliste statt auf diese Mod.
+
+Ohne Namensraum ist **`mekanism`** gemeint und nicht `minecraft`: Chemikalien
+gibt es in Minecraft nicht.
+
+> **Zwei Schnitte, die bleiben:** Chemikalien in einem `recipe`-Block werden
+> beim Auflösen übergangen — der Planner rechnet mit Gegenständen. Und ein
+> Worker mit `filter chemical:…` bewegt noch nichts; dafür schreibt man ein
+> `move` in eine Funktion.
 
 ### Mengen
 

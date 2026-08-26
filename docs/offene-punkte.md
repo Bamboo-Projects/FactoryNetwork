@@ -114,11 +114,13 @@ Vorentscheidungen)
 > Handbuchseiten), 1.4/7.1 (Mekanism), 4.1 (Sprachserver) und 5.4 (die einzige
 > offene Entscheidung, und die beantwortet eine Runde Spielen).
 >
-> **1.4 hat ein Teilstück bekommen.** `chemical:` meldet die fehlende Mod
-> statt einer Baustelle — die eine Zusage aus dem Eintrag, die ohne jede
-> Abhängigkeit einzulösen war. Die Abhängigkeit selbst ist nachgesehen und
-> nicht eingebaut: `runtimeOnly` zöge Mekanism in jeden Prüflauf, und das ist
-> eine Entscheidung über die Zeit anderer Leute.
+> **1.4 und 7.1 sind gebaut.** `chemical:` löst sich auf, bewegt sich, wird
+> gezählt und lagert in Chemikalienzellen. Der Kern spricht dabei in Texten,
+> weil Java die Klassen einer Signatur beim Laden auflöst — eine Klasse mit
+> einem Mekanism-Typ im Rückgabetyp ließe sich ohne die Mod nicht mehr laden.
+> Dabei wurde ein Rückfall gebaut und nach einer Messung wieder
+> zurückgenommen, und eine Lücke im Prüflauf benannt: Ein per `setBlock`
+> gesetzter Mekanism-Tank gibt an keiner Seite eine Capability heraus.
 >
 > **2.9 ist erkundet, nicht gebaut.** Automatische Erkennung fremder
 > Maschinenrezepte ist in 1.21.1 nachweislich nicht möglich — die
@@ -147,7 +149,7 @@ Vorentscheidungen)
 | 1.1 | ~~`output()`, `send()`, `busy`~~ — **erledigt.** `output()` und `busy` sind gestrichen (sie sagten dasselbe wie `move` beziehungsweise nichts Nachprüfbares), `send()` an einer Gruppe ist mit 1.14 gebaut | | `sprache.md` §6, §8 | | |
 | 1.2 | ~~Listenoperationen~~ — **fertig**, alle fünf. `where` und `sort` werten je Eintrag aus, mit `it` als diesem Eintrag | | `sprache.md` §12 | | |
 | 1.3 | ~~Flüssigkeits-Tags~~ — **fertig.** `fluidtag:c/molten` löst gegen die Fluid-Registry auf, `tag:` bleibt bei den Gegenständen. Ein Worker mit `fluidtag:` gilt als Flüssigkeits-Worker: `WorkerKind` nennt die Ressource, nicht die Schreibweise | | `FluidSelection`, `WorkerKind.resource` | | |
-| 1.4 | **Teilstück gebaut** (26.08.): `chemical:` meldet die fehlende Mod statt einer Baustelle, aus einer Quelle (`FnMekanism`). **Beide Fragen entschieden** (26.08.): Mekanism kommt als `compileOnly` plus `runtimeOnly` in den Prüflauf, und Chemikalien werden **auch gelagert** — eine dritte Zellenart. Die Zelle wird immer registriert und funktioniert nur mit Mekanism; ohne bedingte Registrierung, sonst verschwinden Zellen samt Inhalt aus der Welt | F | `compat/mekanism` | groß | — |
+| 1.4 | ~~Mekanism-Anbindung~~ — **gebaut** (26.08.). `chemical:` löst sich auf, bewegt sich mit `move`, wird gezählt und lagert in Chemikalienzellen im Laufwerk. Der Kern spricht in Texten, Mekanism-Typen stehen in drei Klassen unter `compat/mekanism`. Offen als Schnitt: Chemikalien in `recipe` und als Worker-Filter | | `compat/mekanism`, `ChemicalStore` | | |
 | 1.5 | `import`/Module — reserviert, tut nichts | Z | `Parser.java:86` | — | bewusst, bis ein Projekt den Namensraum sprengt |
 | 1.6 | Request/Response als eigene Form | Z | `sprache.md:992` | mittel | mit `emit`/`on`/`await` nachbaubar |
 | 1.7 | ~~Rechte im Mehrspielerbetrieb~~ — **gebaut** (25.08.). `protection.programs` in der Serverkonfiguration: `OFF` (Vorgabe, wie bisher), `OWNER`, `OPS`. Geschützt sind Übernehmen und Entwurf speichern; die Beschriftungspistole nicht — sie ändert die Welt, und dafür gibt es Schutzmods | | `FnProtection` | | |
@@ -235,7 +237,7 @@ Vorentscheidungen)
 
 | # | Was | Status | Wo | Größe |
 |---|---|---|---|---|
-| 7.1 | Mekanism-Chemikalien — **entschieden als Kompatibilitätsmodul** (siehe 1.4), nicht als Pflicht-Abhängigkeit. Der Ordner `compat/mekanism` steht seit dem 26.08., mit dem Teil, der ohne die Mod geht. Umfang seit dem 26.08. entschieden: bewegen **und** lagern | F | `compat/mekanism` | groß |
+| 7.1 | ~~Mekanism-Chemikalien~~ — **gebaut** (26.08.), siehe 1.4. Kompatibilitätsmodul und keine Pflicht-Abhängigkeit: Ohne Mekanism läuft alles wie vorher | | `compat/mekanism` | |
 | 7.2 | ~~GuideME eingebunden~~ — **fertig**, `compat/guide` | | | |
 | 7.3 | Das Fertig-Signal je Mod (Weg 3) | Z | `umsetzung.md:177` | groß |
 | 7.4 | Eigene Generatoren | Z | `strom.md:220` | — |

@@ -35,6 +35,21 @@ public final class WorldHost implements Interpreter.Host {
     private final FactoryGraph graph;
     private final NetworkStorage storage;
     private final NetworkFluids fluidStorage;
+
+    /**
+     * Der Chemikalienspeicher; setzt der Controller.
+     *
+     * <p>Nicht im Konstruktor, sondern nachgereicht — wie der Stromvorrat
+     * beim Worker. Ohne ihn steht hier der Speicher, der nichts kann, und
+     * jeder Zugriff auf Chemikalien ist einfach leer.
+     */
+    private dev.devpanda.factorynetwork.network.ChemicalStore chemicals =
+            dev.devpanda.factorynetwork.network.ChemicalStore.NONE;
+
+    public void setChemicals(dev.devpanda.factorynetwork.network.ChemicalStore store) {
+        this.chemicals = store == null
+                ? dev.devpanda.factorynetwork.network.ChemicalStore.NONE : store;
+    }
     private final List<LogEntry> logs = new ArrayList<>();
 
     /**
@@ -251,6 +266,9 @@ public final class WorldHost implements Interpreter.Host {
         if (isFluidRequest(amount)) {
             return moveFluid(amount, from, to);
         }
+        if (isChemicalRequest(amount)) {
+            return moveChemical(amount, from, to);
+        }
         List<Item> items = itemsOf(amount);
         long limit = amountOf(amount);
 
@@ -305,6 +323,13 @@ public final class WorldHost implements Interpreter.Host {
                 && request.kind() == Value.Request.Kind.ALL;
     }
 
+    /** Meint diese Auswahl Chemikalien? */
+    private static boolean isChemicalRequest(Value value) {
+        Value inner = value instanceof Value.Request request ? request : value;
+        return inner instanceof Value.Request request
+                && request.kind() == Value.Request.Kind.CHEMICAL;
+    }
+
     private static boolean isFluidRequest(Value value) {
         Value inner = value instanceof Value.Request request ? request : value;
         if (inner instanceof Value.FluidSelection) {
@@ -312,6 +337,91 @@ public final class WorldHost implements Interpreter.Host {
         }
         return inner instanceof Value.Request request
                 && request.kind() == Value.Request.Kind.FLUID;
+    }
+
+    // ---- Chemikalien ------------------------------------------------------
+
+    /**
+     * Bewegt Chemikalien, in Millibucket.
+     *
+     * <p>Derselbe Aufbau wie bei Flüssigkeiten, und derselbe Grund für jede
+     * Zeile: Was der Speicher nicht nimmt, darf gar nicht erst aus dem
+     * Behälter kommen — ein Gas, das draußen ist und nirgends hineinpasst,
+     * wäre weg.
+     *
+     * <p>Was Mekanism anfasst, steht in {@code compat/mekanism}; hier stehen
+     * nur Kennungen als Text.
+     */
+    private long moveChemical(Value amount, Value from, Value to) {
+        List<String> ids = chemicalsOf(amount);
+        long limit = amountOf(amount);
+        boolean fromStorage = isStorage(from);
+        boolean toStorage = isStorage(to);
+        if (fromStorage && toStorage) {
+            return 0;
+        }
+        if (fromStorage) {
+            var target = machineOf(to);
+            return dev.devpanda.factorynetwork.compat.mekanism.ChemicalStores.fillFrom(
+                    chemicals, level, target.pos(), target.side(), ids, limit);
+        }
+        if (toStorage) {
+            var source = machineOf(from);
+            return dev.devpanda.factorynetwork.compat.mekanism.ChemicalStores.drainInto(
+                    level, source.pos(), source.side(), ids, chemicals, limit);
+        }
+        // Gerät zu Gerät läuft über den Netzspeicher als Zwischenstation.
+        // Ohne ihn bräuchte es einen dritten Weg für denselben Vorgang, und
+        // die Menge, die unterwegs verlorenginge, hätte niemand gezählt.
+        var source = machineOf(from);
+        var target = machineOf(to);
+        long pulled = dev.devpanda.factorynetwork.compat.mekanism.ChemicalStores.drainInto(
+                level, source.pos(), source.side(), ids, chemicals, limit);
+        if (pulled <= 0) {
+            return 0;
+        }
+        return dev.devpanda.factorynetwork.compat.mekanism.ChemicalStores.fillFrom(
+                chemicals, level, target.pos(), target.side(), ids, pulled);
+    }
+
+    /** Die Kennungen hinter einer Chemikalien-Auswahl. */
+    private List<String> chemicalsOf(Value value) {
+        if (value instanceof Value.Request request) {
+            List<String> ids = dev.devpanda.factorynetwork.compat.mekanism.Chemicals.resolve(
+                    dev.devpanda.factorynetwork.lang.Selectors.parse(request.selector()));
+            if (ids.isEmpty()
+                    && !dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.installed()) {
+                throw new ScriptError(
+                        dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.reason(),
+                        dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.hint());
+            }
+            return ids;
+        }
+        return List.of();
+    }
+
+    /** Wo eine Maschine steht und von welcher Seite der Connector sie ansieht. */
+    private record Machine(BlockPos pos, net.minecraft.core.Direction side) {
+    }
+
+    private Machine machineOf(Value value) {
+        if (value instanceof Value.Group group) {
+            return machineOf(memberFor(group));
+        }
+        if (!(value instanceof Value.Device device)) {
+            throw new ScriptError("Bei move fehlt die Maschine.",
+                    "Zum Beispiel: move 1000 chemical:mekanism/hydrogen "
+                            + "from elektrolyseur to storage");
+        }
+        BlockPos position = connectorPosition(device.name());
+        if (!level.isLoaded(position)
+                || !(level.getBlockEntity(position) instanceof ConnectorBlockEntity connector)) {
+            throw new ScriptError("Der Connector " + device.name() + " ist nicht erreichbar.",
+                    "Vielleicht ist sein Chunk gerade nicht geladen.");
+        }
+        net.minecraft.core.Direction facing = dev.devpanda.factorynetwork.block.ConnectorBlock
+                .machineSide(connector.getBlockState());
+        return new Machine(connector.getBlockPos().relative(facing), facing.getOpposite());
     }
 
     // ---- Flüssigkeiten ----------------------------------------------------
@@ -536,6 +646,13 @@ public final class WorldHost implements Interpreter.Host {
         if (isFluidRequest(what)) {
             return countFluids(connector, fluidsOf(what));
         }
+        if (isChemicalRequest(what)) {
+            net.minecraft.core.Direction facing = dev.devpanda.factorynetwork.block
+                    .ConnectorBlock.machineSide(connector.getBlockState());
+            return dev.devpanda.factorynetwork.compat.mekanism.ChemicalStores.amountAt(
+                    level, connector.getBlockPos().relative(facing), facing.getOpposite(),
+                    chemicalsOf(what));
+        }
         List<Item> items = what instanceof Value.Nothing ? List.of() : itemsOf(what);
         return countItems(connector, items);
     }
@@ -627,6 +744,9 @@ public final class WorldHost implements Interpreter.Host {
     public long count(Value what) {
         if (isFluidRequest(what)) {
             return fluidsOf(what).stream().mapToLong(fluidStorage::count).sum();
+        }
+        if (isChemicalRequest(what)) {
+            return chemicalsOf(what).stream().mapToLong(chemicals::count).sum();
         }
         return itemsOf(what).stream().mapToLong(storage::count).sum();
     }

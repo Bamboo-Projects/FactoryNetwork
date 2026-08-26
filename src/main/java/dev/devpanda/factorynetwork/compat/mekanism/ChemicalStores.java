@@ -45,6 +45,120 @@ public final class ChemicalStores {
     }
 
     /**
+     * Wie viel von diesen Sorten in der Maschine an dieser Stelle liegt.
+     *
+     * <p>Ohne Mekanism null — es gibt dort keine Chemikalien.
+     */
+    public static long amountAt(net.minecraft.world.level.Level level,
+            net.minecraft.core.BlockPos pos, net.minecraft.core.Direction side,
+            java.util.Collection<String> ids) {
+        if (!FnMekanism.installed()) {
+            return 0;
+        }
+        var handler = MekTanks.at(level, pos, side);
+        return handler == null ? 0 : MekTanks.amountIn(handler, ids);
+    }
+
+    /**
+     * Zieht aus einer Maschine in den Netzspeicher.
+     *
+     * <p><b>Erst fragen, dann ziehen.</b> Was der Speicher nicht nimmt, darf
+     * gar nicht erst aus dem Behälter kommen: Ein Gas, das draußen ist und
+     * nirgends hineinpasst, wäre weg. Dieselbe Vorsicht wie bei
+     * Flüssigkeiten.
+     *
+     * @return wie viel angekommen ist
+     */
+    public static long drainInto(net.minecraft.world.level.Level level,
+            net.minecraft.core.BlockPos pos, net.minecraft.core.Direction side,
+            java.util.Collection<String> ids,
+            dev.devpanda.factorynetwork.network.ChemicalStore store, long limit) {
+        if (!FnMekanism.installed() || limit <= 0) {
+            return 0;
+        }
+        var handler = MekTanks.at(level, pos, side);
+        return handler == null ? 0 : drainIntoHandler(handler, ids, store, limit);
+    }
+
+    /**
+     * Dasselbe, aber mit einem Behälter statt einer Stelle in der Welt.
+     *
+     * <p>Getrennt, weil die <b>Rechnung</b> das Prüfbare ist: Ein
+     * Mekanism-Tank, der per {@code setBlock} in einen Prüflauf gestellt wird,
+     * hat keine Seitenkonfiguration und nimmt deshalb nichts an — nachgemessen.
+     * Die Suche nach dem Behälter ist dieselbe wie bei Flüssigkeiten und
+     * anderswo geprüft; was hier eigen ist, ist das Hin und Her mit dem
+     * Speicher, und das lässt sich mit einem Behälter aus dem API-Jar
+     * vorführen.
+     */
+    public static long drainIntoHandler(mekanism.api.chemical.IChemicalHandler handler,
+            java.util.Collection<String> ids,
+            dev.devpanda.factorynetwork.network.ChemicalStore store, long limit) {
+        long moved = 0;
+        for (int guard = 0; guard < 8 && moved < limit; guard++) {
+            var taken = MekTanks.drain(handler, ids, limit - moved);
+            if (taken.isEmpty()) {
+                break;
+            }
+            String id = MekTanks.idOf(taken);
+            long rest = store.insert(id, taken.getAmount());
+            if (rest > 0) {
+                // Zurück in den Behälter, was der Speicher nicht wollte.
+                MekTanks.fill(handler, id, rest, false);
+            }
+            moved += taken.getAmount() - rest;
+            if (rest > 0) {
+                break;
+            }
+        }
+        return moved;
+    }
+
+    /**
+     * Füllt aus dem Netzspeicher in eine Maschine.
+     *
+     * @return wie viel angekommen ist
+     */
+    public static long fillFrom(dev.devpanda.factorynetwork.network.ChemicalStore store,
+            net.minecraft.world.level.Level level, net.minecraft.core.BlockPos pos,
+            net.minecraft.core.Direction side, java.util.Collection<String> ids, long limit) {
+        if (!FnMekanism.installed() || limit <= 0) {
+            return 0;
+        }
+        var handler = MekTanks.at(level, pos, side);
+        return handler == null ? 0 : fillIntoHandler(store, handler, ids, limit);
+    }
+
+    /** Dasselbe, aber mit einem Behälter statt einer Stelle in der Welt. */
+    public static long fillIntoHandler(
+            dev.devpanda.factorynetwork.network.ChemicalStore store,
+            mekanism.api.chemical.IChemicalHandler handler,
+            java.util.Collection<String> ids, long limit) {
+        long moved = 0;
+        for (String id : ids.isEmpty() ? store.contents().keySet() : ids) {
+            if (moved >= limit) {
+                break;
+            }
+            long have = store.count(id);
+            if (have <= 0) {
+                continue;
+            }
+            // Erst proben: Was die Maschine nicht nimmt, bleibt im Speicher.
+            long fits = MekTanks.fill(handler, id, Math.min(have, limit - moved), true);
+            if (fits <= 0) {
+                continue;
+            }
+            long got = store.extract(id, fits);
+            long placed = MekTanks.fill(handler, id, got, false);
+            if (placed < got) {
+                store.insert(id, got - placed);
+            }
+            moved += placed;
+        }
+        return moved;
+    }
+
+    /**
      * Was in einer Zelle liegt, als Kennung auf Menge.
      *
      * <p>Für den Tooltip: Der Gegenstand gibt es immer, auch ohne Mekanism —

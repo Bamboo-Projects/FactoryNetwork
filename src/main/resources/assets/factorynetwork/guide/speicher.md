@@ -53,6 +53,30 @@ Programm in **Millibucket** — ein Eimer sind 1000. Eine Flüssigkeitszelle geh
 in dasselbe Laufwerk wie eine Speicherzelle. Getrennt werden die beiden erst
 beim Zählen: Gegenstände füllen keine Flüssigkeitszelle und umgekehrt.
 
+## Chemikalienzellen
+
+Nur mit **Mekanism** — ohne die Mod gibt es die Zellen zwar, aber es geht
+nichts hinein, und der Tooltip sagt es.
+
+Dieselbe Rechnung, wieder andere Zahlen:
+
+- **64k** — 4 Sorten, 64.000 mB
+- **256k** — 8 Sorten, 256.000 mB
+- **1024k** — 16 Sorten, 1.024.000 mB
+- **4096k** — 32 Sorten, 4.096.000 mB
+
+Gemeint sind Mekanisms Gase, Schlämme, Pigmente und Infusionen — seit
+Mekanism 10.7 sind das alles **Chemikalien** und nicht mehr vier getrennte
+Arten. Im Programm heißen sie `chemical:mekanism/hydrogen`; ohne Namensraum
+ist `mekanism` gemeint, denn Chemikalien gibt es in Minecraft nicht.
+
+Sie gehen in dasselbe Laufwerk wie die anderen Zellen.
+
+**Beim Anschluss zählt die Seite.** Eine Mekanism-Maschine hat eine
+Seitenkonfiguration, und das Netz hält sich daran: Der Connector muss an einer
+Seite hängen, die etwas herausgibt oder annimmt. Steht dort „nichts", passiert
+nichts — und das ist deine Einstellung, nicht ein Fehler des Netzes.
+
 ## Energiezellen
 
 Die dritte Zellenart, und die einfachste: **Sie hat nur eine Zahl.**

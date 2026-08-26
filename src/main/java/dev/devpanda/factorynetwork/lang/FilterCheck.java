@@ -100,10 +100,20 @@ public final class FilterCheck {
             }
             for (Expr.Selector selector : selectors) {
                 switch (selector.kind()) {
-                    case CHEMICAL -> problems.add(new Diagnostic(Diagnostic.Severity.ERROR,
-                            selector.span(),
-                            dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.reason(),
-                            dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.hint()));
+                    // Mit Mekanism ist eine Chemikalie eine Auswahl wie jede
+                    // andere. Ohne bleibt es ein Fehler, und die Meldung zeigt
+                    // auf die Modliste statt auf diese Mod.
+                    case CHEMICAL -> {
+                        if (!dev.devpanda.factorynetwork.compat.mekanism.FnMekanism
+                                .installed()) {
+                            problems.add(new Diagnostic(Diagnostic.Severity.ERROR,
+                                    selector.span(),
+                                    dev.devpanda.factorynetwork.compat.mekanism.FnMekanism
+                                            .reason(),
+                                    dev.devpanda.factorynetwork.compat.mekanism.FnMekanism
+                                            .hint()));
+                        }
+                    }
                     case POWER -> problems.add(new Diagnostic(Diagnostic.Severity.ERROR,
                             selector.span(),
                             "Strom ist keine Auswahl, die sich sammeln lässt.",

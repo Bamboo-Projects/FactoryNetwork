@@ -2165,6 +2165,7 @@ public class ControllerBlockEntity extends BlockEntity {
         WorldHost host = new WorldHost(level, graph, storage, fluidStorage, globals,
                 this::setChanged);
         host.setLogSink(this::add);
+        host.setChemicals(chemicalStorage);
         host.setDeviceFilled(this::noteFilled);
         // Dieselben Gruppen wie die Worker, samt ihrem Zeiger für round_robin.
         host.setGroups(runtime.groups());

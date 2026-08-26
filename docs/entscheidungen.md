@@ -3481,3 +3481,76 @@ einer Signatur tragen.
 **Kein `CellFormat.CHEMICALS` im Kern.** Das statische Feld lüde beim
 Initialisieren der Klasse Mekanism-Typen, und dann startet die Mod ohne
 Mekanism nicht mehr. Das Format entsteht in `compat/mekanism`.
+
+---
+
+## Was das Bauen an Mekanism lehrte (2026-08-26)
+
+Die Anbindung steht: `chemical:` löst sich auf, bewegt sich, wird gezählt und
+lagert in Zellen. Drei Dinge fielen dabei auf, die keine Vermutung waren,
+sondern eine Messung.
+
+### Der Kern spricht in Texten, und zwar aus einem harten Grund
+
+Java löst die Klassen einer Signatur beim **Laden** auf. Eine Klasse mit
+`Registry<Chemical>` in einem Rückgabetyp ließe sich in einem Pack ohne
+Mekanism nicht mehr laden — und mit ihr fiele alles, was sie ruft, bis hin
+zum Controller.
+
+Deshalb heißt eine Chemikalie außerhalb von `compat/mekanism`
+`"mekanism:hydrogen"`, und `ChemicalStore` ist eine Schnittstelle mit
+`String`-Kennungen. Mekanism-Typen stehen in genau drei Klassen, und jede wird
+erst betreten, wenn die Modliste die Mod meldet.
+
+Der Preis ist eine Registry-Suche je Frage statt eines Objektvergleichs. Bei
+einem Index über ein paar Dutzend Chemikalien ist das nichts.
+
+### Die Rechnung stand schon da
+
+`CellInventory` und `CellFormat` sind seit den Flüssigkeiten offen für den
+Typ. Was sich zwischen Gegenständen, Flüssigkeiten und Chemikalien
+unterscheidet, ist die Registry und die Größe — keine Zeile der Rechnung mit
+Sorten und Mengen. Der Mekanism-Teil der Zellen besteht deshalb aus einem
+Format und drei Umrechnungen.
+
+Und `MekanismAPI.CHEMICAL_REGISTRY` ist eine gewöhnliche `Registry`. Das war
+die eine Annahme, die alles getragen hätte oder nicht, und sie wurde vor dem
+ersten Bau im API-Jar nachgesehen.
+
+### Die Capability wird selbst gebaut
+
+Mekanism hält sie in `mekanism.common.capabilities.Capabilities` — im Bauch
+der Mod, nicht im API-Jar. Gegen `common` zu übersetzen wäre eine
+Abhängigkeit auf Innenleben ohne Zusage.
+
+NeoForge gibt für denselben Namen und denselben Typ dieselbe Instanz zurück.
+Der Name steht in Mekanisms Bytecode: `mekanism:chemical_handler`. Ändert er
+sich, findet die Anbindung keine Behälter mehr — ein Ausfall, kein Absturz.
+
+### Ein Rückfall, der zurückgenommen wurde
+
+Beim Schreiben des Prüflaufs nahm ein frisch gesetzter Chemikalientank nichts
+an. Die erste Antwort darauf war ein Rückfall: Wenn die Seite nichts hergibt,
+den ungeteilten Zugriff nehmen. Sie stand eine Viertelstunde und ist wieder
+weg, weil die Messung sie widerlegte — der ungeteilte Handler eines Tanks
+lässt sich **lesen**, nimmt aber ebenfalls nichts an. Er ist kein
+Hintereingang, sondern eine Auskunft.
+
+Geblieben ist der seitenbezogene Zugriff, wie bei Gegenständen und
+Flüssigkeiten: **Die Seitenkonfiguration gehört dem Spieler.** Wer eine Seite
+auf „nichts" stellt, will dort nichts.
+
+### Was das für den Prüflauf heißt
+
+Ein Mekanism-Tank, den ein GameTest per `setBlock` hinstellt, gibt an keiner
+der sechs Seiten eine Capability heraus — nachgemessen, alle sechs. Ihm fehlt,
+was ein Spieler beim Platzieren mitbringt.
+
+Geprüft wird deshalb die **Rechnung** und nicht die Weltverdrahtung: `move`
+gegen einen Behälter aus Mekanisms API, mit allem, worauf es ankommt — erst
+proben, dann entnehmen, und was der Speicher nicht fasst, bleibt im Behälter.
+Wie ein Behälter in der Welt gefunden wird, ist derselbe Weg wie bei
+Flüssigkeiten und dort geprüft.
+
+Das ist eine benannte Lücke und kein Versehen: Der Weg von einem echten
+Mekanism-Block zum Netz läuft erst, wenn jemand ihn im Spiel hinstellt.

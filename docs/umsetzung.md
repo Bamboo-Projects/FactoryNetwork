@@ -142,6 +142,7 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | | `filter power`: aus dem Netz in eine Maschine und aus einer Maschine ins Netz |
 | | Bei Knappheit bekommt der Worker mit der kleinen `priority` seine ganze Rate |
 | | Energiezellen im Laufwerk, vier Größen — der Vorrat wächst mit ihnen |
+| Chemikalien | Mit Mekanism: `chemical:` bewegt, zählt und lagert in Zellen |
 | Ausbau | Controller-Anbau: sechs weitere Seiten für Kabelstränge je Block |
 | Fertigung | Fabricator baut Werkbank-Rezepte aus dem Netzspeicher, mehrstufig |
 | | Fehlt eine Zutat, wird sie gebaut; genannt wird der Grundstoff |
@@ -166,7 +167,7 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | | Projekt aus mehreren Dateien, Ordner im Namen: `erz/brecher.mf` |
 | | Anzeigenwand mit `scale`: große Schrift statt vieler Zeilen |
 | Anzeigen | Am Block und im Terminal, Knöpfe starten Abläufe |
-| Prüfung | 424 Einheitstests, 255 GameTests |
+| Prüfung | 424 Einheitstests, 263 GameTests |
 
 ## 3. Was noch nicht läuft
 
@@ -551,6 +552,40 @@ und Ziffern, also stehen die Dateien eines Ordners von selbst beieinander. Ein
 Klappbaum bräuchte einen Griff mehr für dieselbe Auskunft. Was nicht in die
 Spalte passt, wird vorn gekürzt — `…/schmelzen.mf` —, denn von rechts gekürzt
 sähen zwei Dateien desselben Ordners gleich aus.
+
+### Chemikalien aus Mekanism (seit dem 26.08.)
+
+Punkt 1.4 und 7.1, als Kompatibilitätsmodul: `chemical:mekanism/hydrogen`
+löst sich auf, bewegt sich mit `move`, wird gezählt und liegt in
+Chemikalienzellen im Laufwerk. Ohne Mekanism gibt es nichts davon, und die
+Meldung zeigt auf die Modliste.
+
+**Der Kern spricht in Texten.** Das ist keine Vorliebe: Java löst die Klassen
+einer Signatur beim Laden auf, und eine Klasse mit `Registry<Chemical>` im
+Rückgabetyp ließe sich in einem Pack ohne Mekanism nicht mehr laden — mit ihr
+fiele der Controller. Mekanism-Typen stehen in drei Klassen unter
+`compat/mekanism`, jede wird erst betreten, wenn die Modliste die Mod meldet.
+
+**Die Rechnung stand schon da.** `CellInventory` und `CellFormat` sind seit
+den Flüssigkeiten offen für den Typ; der Mekanism-Teil der Zellen besteht aus
+einem Format und drei Umrechnungen. Dass `MekanismAPI.CHEMICAL_REGISTRY` eine
+gewöhnliche `Registry` ist, wurde vor dem ersten Bau im API-Jar nachgesehen —
+es war die eine Annahme, die alles getragen hätte oder nicht.
+
+**Die Capability wird selbst gebaut.** Mekanism hält sie in `common`, nicht im
+API-Jar; NeoForge gibt für denselben Namen dieselbe Instanz zurück, und der
+Name steht in Mekanisms Bytecode.
+
+**Ein Rückfall wurde zurückgenommen.** Als ein frisch gesetzter Tank im
+Prüflauf nichts annahm, stand kurz ein Rückfall auf den ungeteilten Zugriff
+da. Die Messung widerlegte ihn: Der ungeteilte Handler lässt sich lesen, nimmt
+aber ebenfalls nichts an. Geblieben ist der seitenbezogene Zugriff — die
+Seitenkonfiguration gehört dem Spieler.
+
+**Eine benannte Lücke:** Ein Mekanism-Tank, den ein GameTest per `setBlock`
+hinstellt, gibt an keiner der sechs Seiten eine Capability heraus. Geprüft
+wird deshalb die Rechnung gegen einen Behälter aus Mekanisms API; der Weg von
+einem echten Block zum Netz läuft erst, wenn jemand ihn im Spiel hinstellt.
 
 ### Rezepte im Programm (seit dem 26.08.)
 
