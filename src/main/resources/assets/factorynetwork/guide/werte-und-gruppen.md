@@ -121,9 +121,28 @@ Hängt kein einziges Mitglied im Netz, sagt der Worker das im Reiter **Netz**:
 *„Die Gruppe … hat kein Mitglied im Netz"* — er steht dann still, statt still
 zu sein.
 
-### Was eine Gruppe nicht ist
+### Was an einer Gruppe steht
 
-Eine Gruppe ist ein Ziel, kein Wert. `brecher.online` oder
-`brecher.members()` gibt es nicht: Der Name steht als Ziel eines Workers und
-nicht in einem Ausdruck. Wer über die Mitglieder laufen will, schreibt sie
-heute einzeln hin.
+Zwei Dinge, und beide meinen die Gruppe als Ganzes:
+
+```
+group brecher {
+    members brecher_1, brecher_2
+}
+
+fn verteilen() {
+    for jeder in brecher.members() {
+        log(jeder.name)
+    }
+    brecher.send(64 item:iron_ore)
+}
+```
+
+`members()` gibt die Connectoren, die **heute** dazugehören — bei einem
+Muster kann das morgen ein anderer Satz sein. `send(…)` ist `move` in kurz:
+aus dem Netzspeicher an die Gruppe, und wie verteilt wird, entscheidet die
+Gruppe selbst.
+
+**Was einem einzelnen Gerät gehört, gehört nicht der Gruppe.**
+`brecher.online` gibt es nicht — welcher der beiden wäre gemeint? Wer es
+wissen will, fragt ein Mitglied: `brecher.members().first().online`.

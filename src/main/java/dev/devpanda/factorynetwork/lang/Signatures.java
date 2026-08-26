@@ -310,16 +310,16 @@ public final class Signatures {
     /**
      * Was an einem Gerät steht — {@code crusher_1.online}.
      *
-     * <p><b>Nur, was der Interpreter wirklich kennt:</b> {@code online},
-     * {@code name}, {@code redstone()}, {@code count()}, {@code insert()} und
-     * {@code items()}. Offen bleibt allein {@code send()} an einer Gruppe;
-     * {@code output()} und {@code busy} sind am 25.08. gestrichen worden.
-     * Was hier steht, muss laufen — ein Vorschlag, der in einen
-     * Laufzeitfehler führt, ist schlimmer als gar keiner.
+     * <p><b>Nur, was der Interpreter wirklich kennt.</b> Die Liste unten ist
+     * vollzählig; {@code output()} und {@code busy} sind am 25.08. gestrichen
+     * worden, weil das eine dasselbe sagte wie {@code move} und das andere
+     * nichts Nachprüfbares. Was hier steht, muss laufen — ein Vorschlag, der
+     * in einen Laufzeitfehler führt, ist schlimmer als gar keiner.
      *
      * <p>Für jedes Gerät dieselben: Gerätespezifisches gibt es nach dem Punkt
      * erst, wenn die Mitglieder aus §6 gebaut sind. Dann ist es ein Eintrag
-     * hier und nichts weiter.
+     * hier und nichts weiter. Was eine <b>Gruppe</b> kann, steht getrennt in
+     * {@link #GROUP_MEMBERS} — es sind andere Dinge.
      */
     public static final List<Member> MEMBERS = List.of(
             new Member("online", "bool",

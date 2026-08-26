@@ -52,11 +52,10 @@ bleibt genau einer je Netz.
 Hier schreibst du den Code und siehst, was das Netz tut. Es muss **direkt an
 den Controller** — es sucht ihn in der Nachbarschaft, nicht über das Kabel.
 
-Fünf Reiter, in dieser Reihenfolge: **Speicher** für den Bestand,
-**Fertigung**, **Code** für das Programm, **Netz** für Strom, Worker, Abläufe
-und globale Werte, **Anzeigen** für die Displays. Die Fertigung ist
-ausgegraut — Autocrafting gibt es noch nicht. Sie steht trotzdem da, damit man
-sieht, wohin es geht.
+Sechs Reiter, in dieser Reihenfolge: **Speicher** für den Bestand,
+**Fertigung** für die Aufträge, **Code** für das Programm, **Netz** für Strom,
+Worker, Abläufe und globale Werte, **Anzeigen** für die Displays und **Log**
+für die Meldungen. Alle sechs tun etwas.
 
 *Kostet: keinen Kanal, keinen Strom.*
 
@@ -105,13 +104,21 @@ Regalfenster; die Plätze liegen darin so, wie sie an der Front sitzen, und an
 der Front sieht man ohne Anklicken, was steckt. Beim Abbauen fallen die Zellen
 heraus.
 
-- **Speicherzellen** in vier Größen: 1k, 4k, 16k, 64k.
+Vier Arten von Zellen, jede in vier Größen:
+
+- **Speicherzellen** für Gegenstände: 1k, 4k, 16k, 64k.
 - **Flüssigkeitszellen** zu 64, 256, 1024 und 4096 Eimern.
+- **Chemikalienzellen** für Mekanisms Gase — dieselben vier Größen wie die
+  Flüssigkeitszellen. Ohne Mekanism gibt es sie nicht.
+- **Energiezellen**, die den Stromvorrat des Netzes vergrößern: 64k bis 4096k
+  FE. Sie haben keine Sortengrenze — es gibt nur FE.
 
 *Kostet: 1 Kanal, 1 FE/t — und je eingesetzter Zelle noch einmal 1 FE/t.*
 
 **Ohne Zelle lagert das Netz nichts.** Eine Zelle hat zwei Grenzen: wie viele
 Arten sie führt und wie viel Menge sie fasst. Meist ist die erste die knappe.
+Ein zweites Laufwerk daneben vergrößert den Speicher wie ein zweites Regal;
+alle Laufwerke im Netz zählen zusammen.
 
 ## Serverschrank
 

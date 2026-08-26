@@ -80,10 +80,19 @@ Damit darf gerechnet und verglichen werden: `storage.count(item:coal) / 640.0`
 ergibt einen Anteil für den Balken, `depot.redstone() > 0` ein Lämpchen, und
 `modus == "tag"` prüft auch einen Text.
 
+`gerät.count(…)` steht ebenfalls dort — eine Tafel liest auch aus einer
+einzelnen Maschine, mit Auswahl oder ohne:
+
+```
+display leitstand {
+    row "Im Brecher" brecher.count()
+    row "Erz im Brecher" brecher.count(tag:c/ores)
+}
+```
+
 Was darüber hinausgeht — ein Funktionsaufruf, eine Schleife —, erscheint als
 `?` auf der Tafel. Eine leere Stelle wäre schlimmer: Dann sucht man den Fehler
-im Netz statt im Programm. `gerät.count(…)` gehört heute dazu; in einer
-Funktion geht es, auf einer Anzeige noch nicht.
+im Netz statt im Programm.
 
 ## Der Balken braucht seine Obergrenze
 

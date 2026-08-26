@@ -234,11 +234,10 @@ bliebe leer, bis der Vorrat vollständig ist. Neben dem Balken steht der Anteil
 in Prozent.
 
 **Eine Anzeige rechnet, aber sie ruft nichts auf.** Ablesbar sind der Bestand
-im Netz, `redstone()` und `online` an einem Gerät, der Zustand eines Workers
-und ein globaler Wert — damit darf gerechnet und verglichen werden. Was
-darüber hinausgeht, erscheint als `?` auf der Tafel, statt still zu
-verschwinden. `gerät.count(…)` gehört heute dazu: In einer Funktion geht es,
-auf einer Anzeige noch nicht.
+im Netz, `gerät.count(…)`, `redstone()` und `online` an einem Gerät, der
+Zustand eines Workers und ein globaler Wert — damit darf gerechnet und
+verglichen werden. Was darüber hinausgeht, erscheint als `?` auf der Tafel,
+statt still zu verschwinden.
 
 Die Anzeige erscheint auf jeder Wand, die `leitstand` heißt, und im Reiter
 **Anzeigen** des Terminals. Der Knopf wirkt an beiden Stellen, und er darf
