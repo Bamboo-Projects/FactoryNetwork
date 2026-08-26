@@ -180,10 +180,8 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
     protected BlockState updateShape(BlockState state, Direction direction, BlockState neighbour,
                                      LevelAccessor level, BlockPos pos, BlockPos neighbourPos) {
         BooleanProperty property = CONNECTIONS.get(direction);
-        // Eine Fläche mit Anschluss verbindet nicht: Dort sitzt schon etwas,
-        // und ein Arm dahin liefe mitten durch die Platte.
-        return state.setValue(property, !hasPart(level, pos, direction)
-                && connects(state.getValue(COLOUR), neighbour));
+        return state.setValue(property, connectsOrCarries(level, pos, direction,
+                state.getValue(COLOUR), neighbour));
     }
 
     /**
@@ -196,10 +194,31 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
         CableColour colour = colourOf(state);
         for (Map.Entry<Direction, BooleanProperty> entry : CONNECTIONS.entrySet()) {
             BlockState neighbour = level.getBlockState(pos.relative(entry.getKey()));
-            state = state.setValue(entry.getValue(), !hasPart(level, pos, entry.getKey())
-                    && connects(colour, neighbour));
+            state = state.setValue(entry.getValue(), connectsOrCarries(
+                    level, pos, entry.getKey(), colour, neighbour));
         }
         return state;
+    }
+
+    /**
+     * Bekommt diese Fläche einen Arm?
+     *
+     * <p><b>Ein Anschluss zählt wie ein Nachbar.</b> Bis zum 26.08. galt die
+     * umgekehrte Regel — eine Fläche mit Anschluss verband nicht, damit kein
+     * Arm mitten durch die Platte lief. Der Preis war ein grauer Stiel
+     * zwischen Platte und Kern: ein Fremdkörper in einer Leitung, die sonst
+     * überall durchläuft, und an einem Kabelbündel sah es aus, als hinge der
+     * Anschluss daneben statt daran.
+     *
+     * <p>Jetzt trägt der Arm, was der Stiel trug — er läuft in der Farbe des
+     * Kabels bis unter die Platte, und am Kabel entsteht eine sichtbare
+     * Kreuzung. Durch die Platte läuft er nicht: Sie hat keinen Stiel mehr,
+     * vor dem er halten müsste, und ihre Vorderseite deckt ihn ab.
+     */
+    private static boolean connectsOrCarries(BlockGetter level, BlockPos pos,
+                                             Direction direction, CableColour colour,
+                                             BlockState neighbour) {
+        return hasPart(level, pos, direction) || connects(colour, neighbour);
     }
 
     /**
@@ -331,6 +350,10 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
             if (!player.getAbilities().instabuild) {
                 stack.shrink(1);
             }
+            // Der Arm zum Anschluss steht im Blockzustand und muss jetzt
+            // dazu — ohne das bliebe die Kreuzung bis zum nächsten
+            // Nachbarwechsel aus.
+            level.setBlock(pos, withConnections(state, level, pos), UPDATE_ALL);
             dev.devpanda.factorynetwork.network.ControllerRegistry.refreshAround(level, pos);
         }
         return net.minecraft.world.ItemInteractionResult.sidedSuccess(level.isClientSide);

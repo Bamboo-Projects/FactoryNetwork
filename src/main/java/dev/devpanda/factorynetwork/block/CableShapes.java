@@ -81,18 +81,19 @@ public final class CableShapes {
         return shape;
     }
 
-    /** Platte und Stiel eines Anschlusses an dieser Fläche. */
+    /**
+     * Die Platte eines Anschlusses an dieser Fläche.
+     *
+     * <p>Nur die Platte: Die Strecke zum Kern deckt der Arm ab, den das Kabel
+     * zu jeder Fläche mit Anschluss wachsen lässt.
+     *
+     * <p>{@code size} spielt keine Rolle mehr und bleibt trotzdem stehen —
+     * die Platte ist an beiden Kabelstärken dieselbe, und die Aufrufer sollen
+     * sich das nicht merken müssen.
+     */
     public static VoxelShape part(int size, Direction facing) {
         int wide = CableLayout.partOffset();
-        VoxelShape plate = slab(facing, 0, CableLayout.PART_DEPTH, wide, 16 - wide);
-        int stem = CableLayout.stemLength(size);
-        if (stem == 0) {
-            return plate;
-        }
-        return Shapes.join(plate,
-                slab(facing, CableLayout.PART_DEPTH, CableLayout.offset(size),
-                        CableLayout.offset(size), CableLayout.far(size)),
-                BooleanOp.OR);
+        return slab(facing, 0, CableLayout.PART_DEPTH, wide, 16 - wide);
     }
 
     /**

@@ -239,7 +239,8 @@ anfassen.
    Rechtsklick mit einem Connector auf eine Kabelfläche setzt ihn dorthin;
    schleichend mit leerer Hand nimmt ihn wieder ab; beim Abbauen des Kabels
    fallen alle seine Anschlüsse heraus. Die Trefferfläche wächst um Platte
-   und Stiel, und der Renderer zeichnet beides.
+   und Stiel, und der Renderer zeichnet beides. <i>(Der Stiel ist am selben
+   Tag wieder verschwunden — siehe unten.)</i>
 
    Vier Entscheidungen, jede mit ihrem Grund:
 
@@ -249,9 +250,18 @@ anfassen.
      klickt, bekommt deshalb einen Satz statt eines Blocks an falscher
      Stelle. Die Fluchtluke ist der schleichende Klick: Er umgeht diesen Weg
      ganz.
-   - **Eine Fläche mit Anschluss verbindet nicht.** Sonst liefe der Arm des
-     Kabels mitten durch die Platte. Der Stiel des Teils schließt die Lücke
-     zum Kern, und damit bleibt `CONNECTIONS` unberührt.
+   - ~~**Eine Fläche mit Anschluss verbindet nicht.**~~ **Am selben Tag
+     umgedreht.** Die Regel war richtig gedacht und im Spiel falsch: Der
+     graue Stiel zwischen Platte und Kern war ein Fremdkörper in einer
+     Leitung, die sonst überall durchläuft — am Kabelbündel sah es aus, als
+     hinge der Anschluss daneben statt daran.
+
+     **Jetzt gilt: Ein Anschluss zählt wie ein Nachbar.** Die Fläche bekommt
+     einen gewöhnlichen Arm in der Farbe des Kabels, und am Kabel entsteht
+     eine sichtbare Kreuzung. Durch die Platte läuft er nicht: Sie hat keinen
+     Stiel mehr, vor dem er halten müsste, und ihre Vorderseite deckt ihn ab.
+     Damit fällt auch `CableLayout.stemLength` weg, und ein Teilmodell hat an
+     beiden Kabelstärken dieselben zwei Kästen — Platte und Lämpchenring.
    - **Zwölf Modelldateien statt zweier gedrehter.** Drehen müsste der
      Renderer, und ob eine Quaternion stimmt, sieht man erst im Spiel.
      Erzeugte Dateien lassen sich Zahl für Zahl gegen `CableLayout` prüfen —

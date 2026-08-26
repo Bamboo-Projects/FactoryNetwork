@@ -64,15 +64,13 @@ public final class CableLayout {
     }
 
     /**
-     * Wie lang der Stiel vom Anschluss zum Kabelkern ist.
+     * <b>Den Stiel gibt es nicht mehr.</b>
      *
-     * <p>Null beim dichten Kabel: Dessen Mantel beginnt bei drei, und dort
-     * endet die Platte schon. Ein Kasten ohne Tiefe gehört nicht ins Modell
-     * und nicht in die Trefferfläche.
+     * <p>Bis zum 26.08. saß zwischen Platte und Kabelkern ein grauer Kasten.
+     * Seit die Fläche mit Anschluss einen gewöhnlichen Arm bekommt, trägt der
+     * Arm diese Strecke — in der Farbe des Kabels, und am Kabel entsteht eine
+     * sichtbare Kreuzung statt eines Fremdkörpers.
      */
-    public static int stemLength(int size) {
-        return Math.max(0, offset(size) - PART_DEPTH);
-    }
 
     private CableLayout() {
     }

@@ -1526,3 +1526,24 @@ Rückstellung hat gezeigt, dass er wirklich zuschlägt.
 zweites Mal aus dem Graphen. Dieselbe Frage, zwei Antworten — und die eine
 hätte Verbesserungen bekommen, die der anderen fehlen. Jetzt liest es
 denselben Stempel wie das Lämpchen.
+
+### Eine Regel, die im Spiel falsch war (seit dem 26.08.)
+
+„Eine Fläche mit Anschluss verbindet nicht" stand als benannte Entscheidung im
+Entwurf, mit einer Begründung, die stimmte: Sonst liefe der Arm des Kabels
+mitten durch die Platte. Sie hat einen halben Tag gehalten.
+
+Im Spiel sah man etwas anderes als im Entwurf. Der graue Stiel zwischen Platte
+und Kern war ein Fremdkörper in einer Leitung, die sonst überall durchläuft —
+und an einem Kabelbündel wirkte es, als hinge der Anschluss **neben** dem
+Kabel statt **an** ihm. Genau das Bild, gegen das Weg B angetreten war.
+
+Die Umkehr ist zwei Zeilen: Ein Anschluss zählt wie ein Nachbar, die Fläche
+bekommt einen gewöhnlichen Arm in der Farbe des Kabels, und der Stiel fällt
+aus dem Modell. Was die Begründung fürchtete, tritt nicht ein — ohne Stiel
+gibt es nichts, wovor der Arm halten müsste, und die Vorderseite der Platte
+deckt ihn ab.
+
+Das Lehrstück ist nicht die Regel, sondern wie sie starb: Sie war aus der
+Geometrie hergeleitet und nie angesehen worden. Eine Entscheidung über das
+Aussehen hält so lange, bis jemand hinsieht.

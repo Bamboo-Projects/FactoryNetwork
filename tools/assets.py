@@ -81,7 +81,6 @@ def connector_part_models():
     wide = (16 - PART_WIDTH) // 2
     for size in (THIN, DENSE):
         prefix = "" if size == THIN else "dense_"
-        lo = (16 - size) // 2
         for facing in FACES:
             near, far = slab_box(facing, 0, PART_DEPTH, wide, 16 - wide)
             plate = {"from": near, "to": far, "faces": {}}
@@ -105,14 +104,10 @@ def connector_part_models():
                     # unsichtbar, und ein Quad dafür wäre Arbeit für nichts.
                     continue
                 ring["faces"][face] = {"texture": "#status", "tintindex": 0}
+            # Kein Stiel mehr zwischen Platte und Kern: Diese Strecke deckt
+            # der Arm ab, den das Kabel zu jeder Fläche mit Anschluss wachsen
+            # lässt — in seiner eigenen Farbe, mit sichtbarer Kreuzung.
             elements = [plate, ring]
-
-            if lo > PART_DEPTH:
-                near, far = slab_box(facing, PART_DEPTH, lo, lo, lo + size)
-                elements.append({
-                    "from": near, "to": far,
-                    "faces": {face: {"texture": "#side"} for face in FACES},
-                })
 
             write(A + "/models/block/%sconnector_part_%s.json" % (prefix, facing), {
                 "parent": "minecraft:block/block",

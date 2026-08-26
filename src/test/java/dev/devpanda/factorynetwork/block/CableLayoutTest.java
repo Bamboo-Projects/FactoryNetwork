@@ -136,27 +136,13 @@ class CableLayoutTest {
                 assertTrue(json.contains(corner("to", plate, 3)),
                         name + ": die Platte endet woanders als in CableLayout");
 
-                int lo = CableLayout.offset(size);
-                if (CableLayout.stemLength(size) > 0) {
-                    double[] stem = CableShapes.slabBox(facing, CableLayout.PART_DEPTH, lo,
-                            lo, CableLayout.far(size));
-                    assertTrue(json.contains(corner("from", stem, 0)),
-                            name + ": der Stiel beginnt woanders als in CableLayout");
-                    assertTrue(json.contains(corner("to", stem, 3)),
-                            name + ": der Stiel endet woanders als in CableLayout");
-                }
-                // Platte, Lämpchenring, und beim dünnen Kabel der Stiel.
-                assertEquals(CableLayout.stemLength(size) > 0 ? 3 : 2, elementCount(json),
+                // Platte und Lämpchenring — mehr nicht. Die Strecke zum Kern
+                // deckt der Arm des Kabels ab, und ein Stiel dort wäre ein
+                // zweiter Kasten an derselben Stelle.
+                assertEquals(2, elementCount(json),
                         name + ": ein Kasten zu viel oder zu wenig");
             }
         }
-    }
-
-    @Test
-    @DisplayName("Der Stiel fehlt genau beim dichten Kabel")
-    void denseCableHasNoStem() {
-        assertEquals(2, CableLayout.stemLength(CableLayout.THIN));
-        assertEquals(0, CableLayout.stemLength(CableLayout.DENSE));
     }
 
     /** Eine Ecke als das, was im Modell steht: {@code "from":[2,2,0]}. */

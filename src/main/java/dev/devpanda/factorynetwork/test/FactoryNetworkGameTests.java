@@ -11330,4 +11330,39 @@ public final class FactoryNetworkGameTests {
                 "abgeschnitten, und das muss dranstehen");
         helper.succeed();
     }
+
+    /**
+     * Das Kabel wächst einen Arm zu seinem Anschluss.
+     *
+     * <p>Bis hierher galt die umgekehrte Regel: Eine Fläche mit Anschluss
+     * verband nicht, damit kein Arm mitten durch die Platte lief. Der Preis
+     * war ein grauer Stiel zwischen Platte und Kern — ein Fremdkörper in
+     * einer Leitung, die sonst überall durchläuft.
+     *
+     * <p>Jetzt trägt der Arm selbst, was der Stiel trug. Damit entsteht am
+     * Kabel eine sichtbare Kreuzung, und die Leitung endet dort, wo sie
+     * hingehört: am Anschluss.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void bacableGrowsAnArmToItsPart(GameTestHelper helper) {
+        BlockPos cable = new BlockPos(2, 1, 1);
+        helper.setBlock(cable, FnBlocks.CABLE.get());
+        helper.setBlock(cable.north(), Blocks.CHEST);
+
+        var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+        ItemStack stack = new ItemStack(FnBlocks.CONNECTOR.get());
+        player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, stack);
+        helper.getBlockState(cable).useItemOn(stack, helper.getLevel(), player,
+                net.minecraft.world.InteractionHand.MAIN_HAND,
+                hitOn(helper, cable, Direction.NORTH));
+
+        helper.assertTrue(helper.getBlockState(cable).getValue(
+                        dev.devpanda.factorynetwork.block.CableBlock.connection(Direction.NORTH)),
+                "das Kabel muss einen Arm zum Anschluss wachsen lassen");
+        // Nach Süden liegt nichts — dort bleibt es beim blanken Kern.
+        helper.assertFalse(helper.getBlockState(cable).getValue(
+                        dev.devpanda.factorynetwork.block.CableBlock.connection(Direction.SOUTH)),
+                "und nur dorthin");
+        helper.succeed();
+    }
 }
