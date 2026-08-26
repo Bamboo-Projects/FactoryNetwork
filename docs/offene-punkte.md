@@ -351,8 +351,13 @@ nicht sehen kann, steht an drei Stellen:
   an einem Drawer-Controller.
 
 Danach zieht die Liste oben weiter — 1.19 fehlt nur noch die zweite Achse
-nicht mehr, offen sind vor allem 4.1 (Serverfall der Editorbrücke) und die
-Gateway-Textur, die vom Controller-Anbau geliehen ist.
+nicht mehr, und offen ist vor allem 4.1 (Serverfall der Editorbrücke).
+
+~~Die Gateway-Textur, vom Controller-Anbau geliehen~~ — **gezeichnet am
+26.08.** Sie war Byte für Byte dieselbe; zwei Blöcke mit demselben Gesicht
+sind im Spiel nicht zu unterscheiden, und das Gateway ist genau der Block, den
+man in einer Anlage sucht. Der Rahmen bleibt der der Familie, eigen ist das
+Motiv: ein Torbogen statt der vier Zellen.
 
 ~~**Schnitt 1 aus `ressourcenarten.md`**~~ — **gebaut am 26.08.**, als erster
 Commit der Sitzung. Nachgemessen in §5a desselben Dokuments: Von zehn Stellen
