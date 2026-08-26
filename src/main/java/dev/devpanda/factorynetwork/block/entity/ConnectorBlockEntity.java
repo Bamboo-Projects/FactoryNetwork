@@ -194,4 +194,25 @@ public class ConnectorBlockEntity extends BlockEntity {
         tag.putString(KEY_LABEL, label);
         return tag;
     }
+
+    /**
+     * Das Paket, mit dem eine Änderung beim Client ankommt.
+     *
+     * <p><b>Ohne diese Zeilen erfährt der Client den Namen nie.</b>
+     * {@code setLabel} ruft {@code sendBlockUpdated} — aber das schickt
+     * genau das, was hier zurückkommt, und die Vorgabe von
+     * {@link BlockEntity} ist {@code null}. Der Name stand damit nur im
+     * {@code getUpdateTag}, und das wird allein beim Laden des Klotzes
+     * gelesen: Wer benannte und dann das Fenster öffnete, sah ein leeres
+     * Feld vor einem Gerät, das längst einen Namen hatte.
+     *
+     * <p>Beim Display steht dieselbe Methode seit jeher. Der Connector war
+     * die Kopie, die niemand nachgezogen hat.
+     */
+    @Override
+    public @Nullable net.minecraft.network.protocol.Packet<
+            net.minecraft.network.protocol.game.ClientGamePacketListener> getUpdatePacket() {
+        return net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket
+                .create(this);
+    }
 }

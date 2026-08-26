@@ -10508,4 +10508,46 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    /**
+     * Der Connector schickt seinen Namen zum Client.
+     *
+     * <p><b>Gefunden beim ersten Spielen.</b> Das Fenster „Gerät benennen"
+     * stand leer vor einem Connector, der längst {@code kiste_1} hieß. Der
+     * Grund lag nicht im Fenster: Es liest den Namen aus der BlockEntity auf
+     * der Clientseite, und dort kam er nie an.
+     *
+     * <p>{@code setLabel} ruft {@code sendBlockUpdated} — aber das schickt
+     * nur, was {@code getUpdatePacket()} liefert, und das war nicht
+     * überschrieben. Die Vorgabe gibt {@code null}, also ging nichts hinaus.
+     * Beim Display stand die Methode seit jeher da; der Connector war die
+     * Kopie, die niemand nachgezogen hat.
+     *
+     * <p>Geprüft wird das Paket und nicht das Fenster: Ein Prüflauf hat
+     * keinen Client. Was hier gezeigt wird, ist die Stelle, an der es hakte —
+     * ohne Paket kommt beim Client nichts an, mit Paket steht der Name darin.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 100)
+    public static void aconnectorSendsItsNameToTheClient(GameTestHelper helper) {
+        BlockPos connector = new BlockPos(2, 1, 1);
+        helper.setBlock(connector, FnBlocks.CONNECTOR.get().defaultBlockState()
+                .setValue(ConnectorBlock.FACING, Direction.EAST));
+        if (!(helper.getBlockEntity(connector) instanceof ConnectorBlockEntity entity)) {
+            helper.fail("Am Connector hängt keine BlockEntity", connector);
+            return;
+        }
+
+        entity.setLabel("kiste_1");
+
+        var packet = entity.getUpdatePacket();
+        helper.assertTrue(packet != null,
+                "Ohne Paket erfährt der Client nie, wie das Gerät heißt");
+        helper.assertTrue(packet
+                        instanceof net.minecraft.network.protocol.game
+                                .ClientboundBlockEntityDataPacket data
+                        && data.getTag() != null
+                        && "kiste_1".equals(data.getTag().getString("Label")),
+                "und im Paket muss der Name stehen");
+        helper.succeed();
+    }
+
 }
