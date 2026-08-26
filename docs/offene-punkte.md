@@ -346,10 +346,21 @@ steht jetzt bei den Werten statt nur in einem Beispiel, und **fünf Stellen
 waren dem Code hinterher** — darunter eine Titelseite, die den Serverschrank
 verschwieg, obwohl ohne ihn kein Programm übernommen wird.
 
----
+~~**Schnitt 3, die Registry.**~~ **Gebaut am 26.08.**, nachdem die
+Haltungsfrage beantwortet war — in zwei Hälften. Erst `ResourceKind` als
+Schnittstelle und `ResourceKinds` als Registry: Eine fremde Art kostet eine
+Klasse und einen Aufruf und **keine Zeile im Kern**, belegt an einer
+erfundenen vierten Art statt an den eigenen drei. Dann der Übersetzer, der
+sie fragt, statt vier eigene Listen zu führen — die hatten drei verschiedene
+Antworten auf ein unbekanntes Wort.
 
-**Damit ist alles leer, was ohne eine Antwort von dir weitergeht** — bis auf
-das Handbuch.
+Dabei fielen zwei Dinge auf, die niemand gesucht hatte: Ein **Tippfehler** im
+Präfix erzeugte sechs Meldungen, von denen keine ihn nannte (jetzt eine, mit
+Vorschlag), und der Editor im Spiel bot vier Präfixe an, ohne `chemical:` —
+eine fünfte Kopie derselben Liste. Die Präfixe gehen seitdem auch nach
+VS Code, das dort vorher gar keine vorschlug.
+
+---
 
 **Zwei der drei Fragen sind am 26.08. beantwortet:**
 
@@ -362,11 +373,25 @@ das Handbuch.
    schreiben. Offen bleibt allein die **Technik**: wie die Verbindung
    aussieht und wer daran anklopfen kann.
 3. **Punkt 5.4:** die Zahlen an den Serverbauteilen. Die beantwortet eine
-   Runde Spielen und kein Gespräch — sie ist die letzte offene Frage.
+   Runde Spielen und kein Gespräch.
 
-**Was ohne Antwort weitergeht:** weitere Handbuchseiten (6.1). Neunzehn
-stehen. Was fehlt, ist keine Lücke im Stoff mehr — eher Feinarbeit: eine
-Seite zum Netzanalysator, mehr Bilder beziehungsweise die 3D-Szenen, die
+**Was von den beiden Antworten noch aussteht:**
+
+- **Die zweite Achse** (1.19, letzter Rest): Ein Registry-Eintrag sagt, wie
+  seine Art aussieht, wie sie sich auflöst und wo sie lagert — nicht, wie man
+  sie an einer fremden Maschine liest und schreibt. `IItemHandler`,
+  `IFluidHandler` und Mekanisms `IChemicalHandler` stehen dafür nebeneinander
+  und haben nichts miteinander zu tun. **Ohne sie wird 7.5 nicht fertig**, und
+  das ist kein Mangel der Registry — es steht so in `entscheidungen.md`.
+- **Die Technik von 4.1:** wie die Verbindung aussieht und wer daran anklopfen
+  kann. Die Konfiguration dazu kommt mit der Verbindung und nicht davor — ein
+  leerer Abschnitt auf Vorrat wäre eine Frage an den Betreiber, die niemand
+  beantworten kann (dieselbe Regel wie bei 4.2).
+
+**Was ohne weitere Antwort weitergeht:** die zweite Achse (sie ist Arbeit,
+keine Frage — der Entwurf dafür fehlt allerdings noch) und weitere
+Handbuchseiten (6.1). Neunzehn stehen; was fehlt, ist keine Lücke im Stoff
+mehr, eher Feinarbeit — eine Seite zum Netzanalysator, und die 3D-Szenen, die
 GuideME kann und die diese Mod noch nirgends nutzt.
 
 **Und was Vorrang hat vor allem:** Bericht aus dem Spiel. Die Commits vom
