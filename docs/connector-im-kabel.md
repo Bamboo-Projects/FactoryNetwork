@@ -168,7 +168,7 @@ hier.
 ## 8. Wie B in Schnitte zerfällt
 
 Die Messung in Abschnitt 3 sagt, wo der Preis liegt: an den Stellen, die
-{@code getBlockEntity(pos)} fragen und genau einen Connector erwarten. Es sind
+`getBlockEntity(pos)` fragen und genau einen Connector erwarten. Es sind
 **einunddreißig** echte Zugriffe, zweiundzwanzig weitere Nennungen stehen in
 den Prüfläufen. Die Schnitte sind danach geordnet, wie viele davon sie
 anfassen.
