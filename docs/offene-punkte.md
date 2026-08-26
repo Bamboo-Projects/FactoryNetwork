@@ -293,6 +293,23 @@ andere schreibt der Spieler ein `recipe` ins Programm.
 auf, bewegt sich, wird gezählt und lagert in Chemikalienzellen. Ohne Mekanism
 läuft alles wie vorher.
 
+### Womit die nächste Sitzung anfängt
+
+**Schnitt 1 aus `ressourcenarten.md`: die Zwillinge im Wertemodell
+zusammenlegen.** `Selection`, `FluidSelection` und `ChemicalSelection` werden
+ein Record mit einem Art-Feld, dasselbe für die Einzelwerte. Der Grund steht
+dort gemessen: Eine neue Ressourcenart kostet heute zehn Stellen, neun davon
+Kopien voneinander.
+
+Er ist bewusst der **erste** Commit einer Sitzung und nicht der letzte einer
+anderen: Es ist ein Umbau am Wertemodell, dessen Fehler beim Spielen auffallen
+und nicht im Prüflauf — Anzeigetexte, gespeicherte Abläufe aus alten Welten.
+Und er ist unabhängig von der Haltungsfrage in Abschnitt 6 desselben
+Dokuments: Er macht den Code kleiner, egal wie sie ausgeht.
+
+Danach Schnitt 2 (die drei Speicher hinter eine Schnittstelle), und erst dann
+braucht es die Antwort.
+
 **Was jetzt oben steht:** die drei Mods (7.5 bis 7.7). Die anderen Wünsche vom
 26.08. sind am selben Tag gebaut worden — der Connector, der klickt (1.20),
 der Stromanschluss, der auch herausgibt, und der Speicherbus (7.8) in seinen
