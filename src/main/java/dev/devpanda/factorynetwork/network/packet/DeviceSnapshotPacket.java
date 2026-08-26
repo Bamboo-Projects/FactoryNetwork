@@ -1,7 +1,6 @@
 package dev.devpanda.factorynetwork.network.packet;
 
 import dev.devpanda.factorynetwork.FactoryNetwork;
-import dev.devpanda.factorynetwork.block.entity.ConnectorBlockEntity;
 import dev.devpanda.factorynetwork.block.entity.ControllerBlockEntity;
 import dev.devpanda.factorynetwork.block.entity.DeviceScan;
 import dev.devpanda.factorynetwork.client.ClientDeviceState;
@@ -118,10 +117,13 @@ public record DeviceSnapshotPacket(String connector, DeviceProfileCodec.Flat pro
         if (controller.getLevel() == null) {
             return null;
         }
-        BlockPos pos = controller.graph().connectors().get(connector);
-        if (pos == null
-                || !(controller.getLevel().getBlockEntity(pos)
-                        instanceof ConnectorBlockEntity entity)) {
+        var where = controller.graph().connectors().get(connector);
+        if (where == null || where.side() == null) {
+            return null;
+        }
+        var entity = dev.devpanda.factorynetwork.block.entity.Connectors.at(
+                controller.getLevel(), where.pos(), where.side());
+        if (entity == null) {
             return null;
         }
 
@@ -168,7 +170,8 @@ public record DeviceSnapshotPacket(String connector, DeviceProfileCodec.Flat pro
      * Dann sagt „leer" mehr als gar nichts, weil es die Frage beantwortet,
      * ob überhaupt einer da ist.
      */
-    private static List<String> tanksOf(ConnectorBlockEntity entity,
+    private static List<String> tanksOf(
+            dev.devpanda.factorynetwork.block.entity.ConnectorPart entity,
                                        dev.devpanda.factorynetwork.lang.Project draft) {
         IFluidHandler tanks = entity.machineTank();
         List<String> lines = new ArrayList<>();

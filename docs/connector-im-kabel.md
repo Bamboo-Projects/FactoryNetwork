@@ -195,10 +195,46 @@ anfassen.
    keine Seite; `twopartsOnOneBlockAreTwoDevices` hält fest, was Schnitt 3 zu
    lösen hat. Und **jeder** Kabelblock trägt jetzt eine BlockEntity, auch
    ohne Teile: Was das bei zehntausend Kabeln kostet, ist ungemessen.
-3. **Ein Gerät ist Ort und Seite.** Der Graph merkt sich `(pos, seite)` statt
-   `pos`. Danach sind zwei Anschlüsse an einem Block unterscheidbar, und die
-   drei schweren Stellen aus Abschnitt 3 — Redstone, Benennen,
-   `machineSide(state)` — sind zu lösen.
+3. ~~**Ein Gerät ist Ort und Seite.**~~ **Gebaut** (26.08.).
+   `DevicePos` ist Ort **und** Fläche, und der Graph schlüsselt damit auf.
+   Zwei benannte Anschlüsse an einem Kabelblock sind seither zwei Geräte mit
+   zwei Namen, zwei Kanälen und zwei Maschinen dahinter
+   (`btwoNamedPartsOnOneCableAreTwoDevices`). Die Fläche ist `null`, wo es
+   keine gibt: Ein Laufwerk, ein Schrank, eine Anzeige sind ganze Blöcke.
+
+   Die drei schweren Stellen aus Abschnitt 3, jede mit ihrer Regel:
+
+   - **Redstone.** *Eine Fläche mit Anschluss gibt genau dessen Stärke; eine
+     freie gibt die stärkste.* Der erste Teil ist der Sinn der Sache — sechs
+     Anschlüsse schalten sechs Maschinen, und eine gemeinsame Stärke wären
+     sechs Maschinen an einem Schalter. Der zweite hält, was der
+     Connectorblock schon konnte: Bei einem einzigen Anschluss kommt nach
+     allen Seiten dasselbe heraus, und ein Lämpchen neben dem Kabel leuchtet
+     weiter. **Gelesen** wird dagegen weiter am Block und nicht an der Fläche
+     — wer einen Hebel neben einen Anschluss legt, meint diesen Anschluss,
+     und die Fläche davor ist von der Maschine besetzt. Der Kommentar an
+     `WorldHost.redstone` behauptete bis heute das Gegenteil von dem, was der
+     Code tat; jetzt steht dort die Regel.
+   - **Das Benennen.** Der Klick trägt die Fläche mit: `NameMenu` und
+     `SetBlockNamePacket` führen sie, `CableBlock.useWithoutItem` liest sie
+     aus dem Treffer. Der Connectorblock schickt seine eigene Blickrichtung
+     mit — er hat nur eine, aber dahinter läuft derselbe Weg. Die
+     Beschriftungspistole fragt erst die getroffene Fläche und dann den
+     Block.
+   - **`machineSide(state)`.** Ist als Frage an einen Anschluss verschwunden:
+     Sie steht nur noch dort, wo es wirklich um den Connectorblock geht.
+     Alles andere fragt `ConnectorPart.facing()`.
+
+   **Nebenbei gefunden:** Die Anlagenerkennung hielt an jedem Kabel für eine
+   Leitung und sammelte nur ganze Blöcke ein — ein Anschluss am Kabel hätte
+   den Anlagennamen des Gateways nie bekommen und in jedem Programm gefehlt,
+   das `werk_1/eingang` schreibt (`bagatewayNamesApartOnTheCable`).
+
+   **Offen und benannt:** Der Namenszug über dem Block, Jade und der
+   Analysator zeigen weiter einen Anschluss je Stelle — sitzen zwei daran,
+   stehen zwei Beschriftungen aufeinander. Das ist Anzeige und keine
+   Mechanik; es gehört zu Schnitt 4, wo Teile überhaupt erst zu sehen und zu
+   treffen sind.
 4. **Setzen, Treffen, Aussehen.** Ein Connector wird an eine Kabelfläche
    gesetzt statt daneben; Form und Modell setzen sich aus Kabel und Teilen
    zusammen. `CableLayoutTest` hält beides zusammen.

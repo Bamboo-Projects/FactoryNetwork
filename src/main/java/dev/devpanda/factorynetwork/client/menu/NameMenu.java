@@ -2,6 +2,7 @@ package dev.devpanda.factorynetwork.client.menu;
 
 import dev.devpanda.factorynetwork.registry.FnMenus;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -30,18 +31,41 @@ public class NameMenu extends AbstractContainerMenu {
     private static final double REACH = 8.0;
 
     private final BlockPos position;
+    /**
+     * Die Fläche, an der der Anschluss sitzt — {@code null} bei allem, was
+     * ein ganzer Block ist.
+     *
+     * <p>An einem Kabelblock hängen bis zu sechs Anschlüsse. Welcher gemeint
+     * ist, weiß nur der Klick, der das Fenster geöffnet hat: Danach ist es
+     * nicht mehr zu erfahren.
+     */
+    private final @org.jetbrains.annotations.Nullable Direction side;
 
     public NameMenu(int id, Inventory inventory, RegistryFriendlyByteBuf buffer) {
-        this(id, buffer.readBlockPos());
+        this(id, buffer.readBlockPos(), sideOf(buffer.readByte()));
     }
 
     public NameMenu(int id, BlockPos position) {
+        this(id, position, null);
+    }
+
+    public NameMenu(int id, BlockPos position,
+                    @org.jetbrains.annotations.Nullable Direction side) {
         super(FnMenus.NAME.get(), id);
         this.position = position;
+        this.side = side;
+    }
+
+    private static @org.jetbrains.annotations.Nullable Direction sideOf(byte written) {
+        return written < 0 ? null : Direction.from3DDataValue(written);
     }
 
     public BlockPos position() {
         return position;
+    }
+
+    public @org.jetbrains.annotations.Nullable Direction side() {
+        return side;
     }
 
     @Override

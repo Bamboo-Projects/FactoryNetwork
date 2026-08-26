@@ -1,6 +1,5 @@
 package dev.devpanda.factorynetwork.runtime;
 
-import dev.devpanda.factorynetwork.block.entity.ConnectorBlockEntity;
 import dev.devpanda.factorynetwork.lang.Span;
 import dev.devpanda.factorynetwork.lang.ast.Expr;
 import dev.devpanda.factorynetwork.network.FactoryGraph;
@@ -89,16 +88,14 @@ public final class WorldHost implements Interpreter.Host {
      */
     @Override
     public boolean clickAt(String device) {
-        var position = graph.connector(device).orElse(null);
-        if (position == null || !(level instanceof net.minecraft.server.level.ServerLevel server)
-                || !(level.getBlockEntity(position)
-                        instanceof dev.devpanda.factorynetwork.block.entity.ConnectorBlockEntity
-                                connector)) {
+        var connector = connectorFor(device);
+        if (connector == null
+                || !(level instanceof net.minecraft.server.level.ServerLevel server)) {
             throw new ScriptError("Nichts im Netz heißt „" + device + "“.",
                     "Ein Klick geht an ein Gerät, das im Netz hängt.");
         }
-        var facing = dev.devpanda.factorynetwork.block.ConnectorBlock
-                .machineSide(connector.getBlockState());
+        var position = connector.pos();
+        var facing = connector.facing();
         var target = position.relative(facing);
         var player = net.neoforged.neoforge.common.util.FakePlayerFactory
                 .get(server, CLICKER);
@@ -557,10 +554,7 @@ public final class WorldHost implements Interpreter.Host {
                     "Zum Beispiel: move 1000 chemical:mekanism/hydrogen "
                             + "from elektrolyseur to storage");
         }
-        BlockPos position = connectorPosition(device.name());
-        var connector = level.isLoaded(position)
-                ? dev.devpanda.factorynetwork.block.entity.Connectors.at(level, position)
-                : null;
+        var connector = connectorFor(device.name());
         if (connector == null) {
             throw new ScriptError("Der Connector " + device.name() + " ist nicht erreichbar.",
                     "Vielleicht ist sein Chunk gerade nicht geladen.");
@@ -568,7 +562,7 @@ public final class WorldHost implements Interpreter.Host {
         // Die Blickrichtung kommt vom Teil und nicht mehr aus dem BlockState:
         // An einem Kabelblock sitzen bis zu sechs, und jedes zeigt woandershin.
         net.minecraft.core.Direction facing = connector.facing();
-        return new Machine(position.relative(facing), facing.getOpposite());
+        return new Machine(connector.pos().relative(facing), facing.getOpposite());
     }
 
     // ---- Flüssigkeiten ----------------------------------------------------
@@ -677,10 +671,7 @@ public final class WorldHost implements Interpreter.Host {
             throw new ScriptError("Bei move fehlt der Tank.",
                     "Zum Beispiel: move 1000 fluid:water from bottich to kessel");
         }
-        BlockPos position = connectorPosition(device.name());
-        var connector = level.isLoaded(position)
-                ? dev.devpanda.factorynetwork.block.entity.Connectors.at(level, position)
-                : null;
+        var connector = connectorFor(device.name());
         if (connector == null) {
             throw new ScriptError("Der Connector " + device.name() + " ist nicht erreichbar.",
                     "Vielleicht ist sein Chunk gerade nicht geladen.");
@@ -802,7 +793,7 @@ public final class WorldHost implements Interpreter.Host {
                 && kind != ResourceKinds.CHEMICAL) {
             net.minecraft.core.Direction facing = connector.facing();
             return kind.machine().count(level,
-                    connectorPosition(device).relative(facing), facing.getOpposite(),
+                    connector.pos().relative(facing), facing.getOpposite(),
                     keysOf(kind, what));
         }
         if (kind == ResourceKinds.FLUID) {
@@ -811,7 +802,7 @@ public final class WorldHost implements Interpreter.Host {
         if (kind == ResourceKinds.CHEMICAL) {
             net.minecraft.core.Direction facing = connector.facing();
             return dev.devpanda.factorynetwork.compat.mekanism.ChemicalStores.amountAt(
-                    level, connectorPosition(device).relative(facing), facing.getOpposite(),
+                    level, connector.pos().relative(facing), facing.getOpposite(),
                     chemicalsOf(what));
         }
         List<Item> items = what instanceof Value.Nothing ? List.of() : itemsOf(what);
@@ -894,13 +885,14 @@ public final class WorldHost implements Interpreter.Host {
             String device) {
         // connectorPosition meldet sich selbst, wenn der Name unbekannt oder
         // doppelt vergeben ist. Hier bleibt der geladene Chunk.
-        BlockPos position = connectorPosition(device);
-        if (!level.isLoaded(position)) {
+        var where = connectorPosition(device);
+        if (where.side() == null || !level.isLoaded(where.pos())) {
             return null;
         }
-        // Über Connectors: Ein Anschluss sitzt entweder allein in einem
-        // Connectorblock oder an einer Fläche eines Kabels.
-        return dev.devpanda.factorynetwork.block.entity.Connectors.at(level, position);
+        // Über Ort und Seite: Ein Anschluss sitzt entweder allein in einem
+        // Connectorblock oder an einer Fläche eines Kabels — beide Male
+        // sieht er in genau eine Richtung.
+        return dev.devpanda.factorynetwork.block.entity.Connectors.at(level, where.pos(), where.side());
     }
 
     @Override
@@ -916,15 +908,17 @@ public final class WorldHost implements Interpreter.Host {
 
     @Override
     public int redstone(String device) {
-        BlockPos position = connectorPosition(device);
-        // Gelesen wird an der Maschine, auf die der Connector zeigt.
-        return level.getBestNeighborSignal(position);
+        // <b>Gelesen wird am Block, nicht an der Fläche.</b> Wer einen Hebel
+        // neben einen Anschluss legt, meint diesen Anschluss — und die Fläche,
+        // in die er sieht, ist von der Maschine besetzt. Sitzen sechs
+        // Anschlüsse an einem Kabelblock, lesen alle sechs dasselbe: Was den
+        // Block erreicht, erreicht jeden davon.
+        return level.getBestNeighborSignal(connectorPosition(device).pos());
     }
 
     @Override
     public void setRedstone(String device, int strength) {
-        BlockPos position = connectorPosition(device);
-        var connector = dev.devpanda.factorynetwork.block.entity.Connectors.at(level, position);
+        var connector = connectorFor(device);
         if (connector == null) {
             throw new ScriptError("Der Connector " + device + " ist nicht erreichbar.");
         }
@@ -996,9 +990,7 @@ public final class WorldHost implements Interpreter.Host {
                     "Steht sie im Programm, und hängen ihre Geräte am Netz?");
         }
         for (String candidate : resolved.order(this::fillLevelOf, new java.util.Random())) {
-            BlockPos position = graph.connector(candidate).orElse(null);
-            if (position != null && level.isLoaded(position)
-                    && dev.devpanda.factorynetwork.block.entity.Connectors.any(level, position)) {
+            if (connectorFor(candidate) != null) {
                 return new Value.Device(candidate);
             }
         }
@@ -1008,10 +1000,7 @@ public final class WorldHost implements Interpreter.Host {
 
     /** Wie voll ein Gerät ist — für die Verteilung nach dem leersten. */
     private long fillLevelOf(String device) {
-        BlockPos position = graph.connector(device).orElse(null);
-        var connector = position != null && level.isLoaded(position)
-                ? dev.devpanda.factorynetwork.block.entity.Connectors.at(level, position)
-                : null;
+        var connector = connectorFor(device);
         if (connector == null) {
             return Long.MAX_VALUE;
         }
@@ -1053,8 +1042,9 @@ public final class WorldHost implements Interpreter.Host {
 
     // ---- Auflösen ---------------------------------------------------------
 
-    private BlockPos connectorPosition(String name) {
-        Optional<BlockPos> position = graph.connector(name);
+    private dev.devpanda.factorynetwork.network.DevicePos connectorPosition(String name) {
+        Optional<dev.devpanda.factorynetwork.network.DevicePos> position =
+                graph.connector(name);
         if (position.isEmpty()) {
             if (graph.isAmbiguous(name)) {
                 throw new ScriptError("Der Name " + name + " ist "
@@ -1108,10 +1098,7 @@ public final class WorldHost implements Interpreter.Host {
             throw new ScriptError("Hier wird ein Gerät erwartet, gefunden wurde "
                     + value.describe() + ".");
         }
-        BlockPos position = connectorPosition(device.name());
-        var connector = level.isLoaded(position)
-                ? dev.devpanda.factorynetwork.block.entity.Connectors.at(level, position)
-                : null;
+        var connector = connectorFor(device.name());
         if (connector == null) {
             throw new ScriptError("Der Connector " + device.name() + " ist nicht erreichbar.",
                     "Vielleicht ist sein Chunk gerade nicht geladen.");

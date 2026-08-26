@@ -243,4 +243,87 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
                                   CollisionContext context) {
         return CableShapes.whole(size, connectionsOf(state));
     }
+
+    // ---- Anschlüsse an den Flächen ----------------------------------------
+
+    /**
+     * Öffnet das Namensfenster des Anschlusses an der getroffenen Fläche.
+     *
+     * <p>Die Fläche entscheidet, welcher gemeint ist. Ohne sie wäre ein Klick
+     * auf einen Kabelblock mit sechs Anschlüssen eine Frage ohne Antwort —
+     * und eine geratene Antwort benennt das falsche Gerät.
+     *
+     * <p>Ein Kabel ohne Anschlüsse verhält sich wie zuvor: Der Klick geht
+     * durch, damit ein Kabel in der Hand weiterhin gesetzt wird.
+     */
+    @Override
+    protected net.minecraft.world.InteractionResult useWithoutItem(
+            BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        Direction side = hit.getDirection();
+        if (!(level.getBlockEntity(pos) instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus)
+                || bus.partAt(side) == null) {
+            return net.minecraft.world.InteractionResult.PASS;
+        }
+        if (level.isClientSide) {
+            return net.minecraft.world.InteractionResult.SUCCESS;
+        }
+        player.openMenu(new net.minecraft.world.SimpleMenuProvider(
+                        (id, inventory, owner) -> new dev.devpanda.factorynetwork.client.menu
+                                .NameMenu(id, pos, side),
+                        net.minecraft.network.chat.Component.translatable(
+                                "screen.factorynetwork.name.title.connector")),
+                buffer -> {
+                    buffer.writeBlockPos(pos);
+                    buffer.writeByte(side.get3DDataValue());
+                });
+        return net.minecraft.world.InteractionResult.CONSUME;
+    }
+
+    /**
+     * Gibt Redstone aus, wenn ein Anschluss daran es verlangt.
+     *
+     * <p><b>Eine Fläche mit Anschluss gibt genau dessen Stärke; eine freie
+     * gibt die stärkste.</b> Der erste Teil ist der Sinn der Sache: Sechs
+     * Anschlüsse an einem Block schalten sechs Maschinen, und mit einer
+     * gemeinsamen Stärke wären es sechs Maschinen an einem Schalter. Der
+     * zweite hält, was der Connectorblock schon konnte — dort kommt bei einem
+     * einzigen Anschluss nach allen Seiten dasselbe heraus, und ein Lämpchen
+     * neben dem Kabel leuchtet weiter.
+     *
+     * <p><b>Der Preis:</b> {@code isSignalSource} sieht nur den BlockState und
+     * damit nicht, ob hier Teile sitzen. Es steht deshalb bedingungslos auf
+     * {@code true}, und Redstonestaub zeigt auch auf ein leeres Kabel. Das
+     * Gegenteil verlangte einen zweiten Zustand im BlockState — und damit
+     * eine zweite Wahrheit darüber, ob ein Kabel Anschlüsse trägt.
+     */
+    @Override
+    protected boolean isSignalSource(BlockState state) {
+        return true;
+    }
+
+    @Override
+    protected int getSignal(BlockState state, BlockGetter level, BlockPos pos,
+                            Direction direction) {
+        if (!(level.getBlockEntity(pos) instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus)
+                || !bus.hasParts()) {
+            return 0;
+        }
+        // Wer aus Richtung direction fragt, steht auf der Gegenseite: Ihm
+        // sieht das Teil an der Fläche direction.getOpposite() ins Gesicht.
+        dev.devpanda.factorynetwork.block.entity.ConnectorPart ahead = bus.partAt(direction.getOpposite());
+        if (ahead != null) {
+            return ahead.emittedRedstone();
+        }
+        int strongest = 0;
+        for (dev.devpanda.factorynetwork.block.entity.ConnectorPart part : bus.parts().values()) {
+            strongest = Math.max(strongest, part.emittedRedstone());
+        }
+        return strongest;
+    }
+
+    @Override
+    protected int getDirectSignal(BlockState state, BlockGetter level, BlockPos pos,
+                                  Direction direction) {
+        return getSignal(state, level, pos, direction);
+    }
 }

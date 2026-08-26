@@ -6792,8 +6792,7 @@ public final class FactoryNetworkGameTests {
 
         helper.assertValueEqual(entity.graph().drives().size(), 0,
                 "das Laufwerk bekommt keinen Kanal mehr");
-        helper.assertTrue(entity.graph().starvedConnectors()
-                        .contains(helper.absolutePos(cable.south())),
+        helper.assertTrue(entity.graph().isStarved(helper.absolutePos(cable.south())),
                 "und steht als leer ausgegangen im Bild");
         helper.assertValueEqual(entity.storage().insert(Items.IRON_INGOT, 5), 5L,
                 "ohne Kanal nimmt es nichts an");
@@ -7388,7 +7387,7 @@ public final class FactoryNetworkGameTests {
             helper.fail("Am Connector hängt keine BlockEntity", connector);
             return;
         }
-        var profil = DeviceScan.of(verbunden);
+        var profil = DeviceScan.of(verbunden.part());
 
         helper.assertValueEqual(profil.abilities(), "Gegenstände",
                 "An einer Kiste hängen Gegenstände");
@@ -9841,9 +9840,9 @@ public final class FactoryNetworkGameTests {
 
         entity.callFunction("füllen", List.of());
 
-        BlockPos connector = entity.graph().connectors().get("depot");
-        ConnectorBlockEntity port =
-                (ConnectorBlockEntity) helper.getLevel().getBlockEntity(connector);
+        var connector = entity.graph().connectors().get("depot");
+        var port = dev.devpanda.factorynetwork.block.entity.Connectors.at(
+                helper.getLevel(), connector.pos(), connector.side());
         IItemHandler chest = port.machineInventory();
         helper.assertTrue(chest != null, "hinter depot steht keine Kiste");
 
@@ -10012,7 +10011,7 @@ public final class FactoryNetworkGameTests {
 
         ConnectorBlockEntity entity =
                 (ConnectorBlockEntity) helper.getBlockEntity(connector);
-        DeviceProfile profile = DeviceScan.of(entity);
+        DeviceProfile profile = DeviceScan.of(entity.part());
 
         helper.assertTrue(profile.reachable(), "die Kiste wurde nicht erkannt");
         helper.assertTrue(profile.descriptionId().contains("chest"),
@@ -10036,10 +10035,10 @@ public final class FactoryNetworkGameTests {
         entity.rebuildNetwork();
 
         // Zwei Barren in die Kiste hinter quarry_output.
-        BlockPos connector = entity.graph().connectors().get("quarry_output");
+        var connector = entity.graph().connectors().get("quarry_output");
         helper.assertTrue(connector != null, "quarry_output fehlt im Netz");
-        ConnectorBlockEntity port =
-                (ConnectorBlockEntity) helper.getLevel().getBlockEntity(connector);
+        var port = dev.devpanda.factorynetwork.block.entity.Connectors.at(
+                helper.getLevel(), connector.pos(), connector.side());
         IItemHandler chest = port.machineInventory();
         helper.assertTrue(chest != null, "hinter quarry_output steht keine Kiste");
         chest.insertItem(0, new ItemStack(Items.IRON_INGOT, 2), false);
@@ -10167,7 +10166,7 @@ public final class FactoryNetworkGameTests {
 
         ConnectorBlockEntity entity =
                 (ConnectorBlockEntity) helper.getBlockEntity(connector);
-        DeviceProfile profile = DeviceScan.of(entity);
+        DeviceProfile profile = DeviceScan.of(entity.part());
 
         helper.assertTrue(profile.reachable(),
                 "über Luft ist sehr wohl etwas bekannt: dass dort nichts steht");
@@ -10800,4 +10799,162 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    /**
+     * Zwei benannte Anschlüsse an einem Kabelblock sind zwei Geräte.
+     *
+     * <p>Das ist der Gewinn, um den es bei AE2s Bauform geht: ein Block, zwei
+     * Maschinen. Bis hierher merkte sich der Graph <b>einen Ort</b> — und ein
+     * Ort mit zwei Anschlüssen war deshalb kein Gerät, sondern gar keines:
+     * {@code Connectors.at(level, pos)} gibt ohne Seite keine Antwort, und die
+     * Kanalzuteilung ließ den Ort aus. Beide Namen fehlten im Netz.
+     *
+     * <p>Geprüft wird nicht nur, dass beide Namen dastehen, sondern dass jeder
+     * <b>seine eigene</b> Maschine trifft: Der nördliche Anschluss holt Erz,
+     * der südliche holt Kohle, und keiner holt beides.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void btwoNamedPartsOnOneCableAreTwoDevices(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 1, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        rackWithServer(helper, controller.west());
+        driveWithCell(helper, controller.above(),
+                dev.devpanda.factorynetwork.storage.CellTier.K64);
+
+        BlockPos cable = controller.east();
+        helper.setBlock(cable, FnBlocks.CABLE.get());
+        fillChest(helper, cable.north(), Items.IRON_ORE, 12);
+        fillChest(helper, cable.south(), Items.COAL, 7);
+
+        if (!(helper.getBlockEntity(cable)
+                instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus)) {
+            helper.fail("Am Kabel hängt keine BlockEntity für Teile", cable);
+            return;
+        }
+        bus.addPart(Direction.NORTH).setLabel("erzkiste");
+        bus.addPart(Direction.SOUTH).setLabel("kohlekiste");
+
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.graph().connectorNames().contains("erzkiste"),
+                "Der nördliche Anschluss fehlt im Netz: "
+                        + entity.graph().connectorNames());
+        helper.assertTrue(entity.graph().connectorNames().contains("kohlekiste"),
+                "Der südliche Anschluss fehlt im Netz: "
+                        + entity.graph().connectorNames());
+
+        helper.assertTrue(entity.deploy("""
+                fn holen() {
+                    move all from erzkiste to storage
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.callFunction("holen", List.of());
+
+        helper.assertValueEqual(entity.storage().count(Items.IRON_ORE), 12L,
+                "Der nördliche Anschluss muss die nördliche Kiste treffen");
+        helper.assertValueEqual(entity.storage().count(Items.COAL), 0L,
+                "und nicht die südliche mit");
+        helper.succeed();
+    }
+
+    /**
+     * Jeder Anschluss gibt sein Redstone an seine eigene Maschine.
+     *
+     * <p>Der Connectorblock gibt nach allen Seiten dasselbe — er hat ja nur
+     * ein Gesicht. Am Kabelblock ginge das nicht: Sechs Anschlüsse mit einer
+     * gemeinsamen Stärke wären sechs Maschinen an einem Schalter, und
+     * {@code setRedstone} verlöre seinen Sinn.
+     *
+     * <p>Die Regel, die für beide Bauformen dasselbe bedeutet: <b>Eine Fläche
+     * mit Anschluss gibt genau dessen Stärke. Eine freie Fläche gibt die
+     * stärkste</b> — sonst ließe sich an einem Kabel kein Lämpchen mehr
+     * schalten, und am Connectorblock käme etwas anderes heraus als bisher.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void bapartEmitsRedstoneTowardsItsOwnMachine(GameTestHelper helper) {
+        BlockPos cable = new BlockPos(2, 1, 1);
+        helper.setBlock(cable, FnBlocks.CABLE.get());
+
+        if (!(helper.getBlockEntity(cable)
+                instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus)) {
+            helper.fail("Am Kabel hängt keine BlockEntity für Teile", cable);
+            return;
+        }
+        bus.addPart(Direction.NORTH).setEmittedRedstone(15);
+        bus.addPart(Direction.SOUTH).setEmittedRedstone(3);
+
+        var level = helper.getLevel();
+        BlockPos here = helper.absolutePos(cable);
+        // Wer nördlich steht, fragt mit SOUTH: Die Richtung zeigt von ihm zum
+        // Kabel. Ihm antwortet das Teil, das ihn ansieht — das an der
+        // Nordfläche.
+        helper.assertValueEqual(level.getSignal(here, Direction.SOUTH), 15,
+                "Nach Norden geht die Stärke des nördlichen Anschlusses");
+        helper.assertValueEqual(level.getSignal(here, Direction.NORTH), 3,
+                "und nach Süden die des südlichen");
+        helper.assertValueEqual(level.getSignal(here, Direction.UP), 15,
+                "Eine freie Fläche gibt die stärkste — sonst schaltete ein "
+                        + "Kabel kein Lämpchen mehr");
+        helper.succeed();
+    }
+
+    /** Eine Kiste mit Inhalt, weil drei Tests dieselben sechs Zeilen brauchten. */
+    private static void fillChest(GameTestHelper helper, BlockPos at,
+                                  net.minecraft.world.item.Item what, int amount) {
+        helper.setBlock(at, Blocks.CHEST);
+        if (helper.getBlockEntity(at) instanceof ChestBlockEntity container) {
+            container.setItem(0, new ItemStack(what, amount));
+        } else {
+            helper.fail("Keine Kiste", at);
+        }
+    }
+
+    /**
+     * Ein Anschluss am Kabel gehört zur Anlage des Gateways.
+     *
+     * <p>Die Anlagenerkennung geht von Block zu Block und hielt an allem an,
+     * was kein Kabel ist — ein Kabel <b>war</b> nur eine Leitung. Seit es
+     * Anschlüsse an seinen Flächen trägt, ist es beides: Der Strang läuft
+     * durch, und was daran hängt, gehört dazu.
+     *
+     * <p>Ohne diesen Schritt hieße das Gerät weiter {@code eingang} — und
+     * jedes Programm, das {@code werk_1/eingang} schreibt, fände es nicht.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void bagatewayNamesApartOnTheCable(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 1, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        rackWithServer(helper, controller.west());
+
+        // Controller — Kabel — Gateway — Kabel mit Anschluss an der Nordseite.
+        BlockPos cable = controller.east();
+        BlockPos gateway = cable.east();
+        BlockPos beyond = gateway.east();
+        helper.setBlock(cable, FnBlocks.CABLE.get());
+        helper.setBlock(gateway, FnBlocks.GATEWAY.get());
+        helper.setBlock(beyond, FnBlocks.CABLE.get());
+        helper.setBlock(beyond.north(), Blocks.CHEST);
+
+        if (!(helper.getBlockEntity(beyond)
+                instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus)) {
+            helper.fail("Am Kabel hängt keine BlockEntity für Teile", beyond);
+            return;
+        }
+        bus.addPart(Direction.NORTH).setLabel("eingang");
+
+        if (helper.getBlockEntity(gateway)
+                instanceof dev.devpanda.factorynetwork.block.entity.GatewayBlockEntity entity) {
+            entity.setInstance("werk_1");
+        } else {
+            helper.fail("Am Gateway hängt keine BlockEntity", gateway);
+            return;
+        }
+
+        ControllerBlockEntity net = controllerAt(helper, controller);
+        net.rebuildNetwork();
+
+        helper.assertTrue(net.graph().connectorNames().contains("werk_1/eingang"),
+                "Auch ein Anschluss am Kabel gehört zur Anlage: "
+                        + net.graph().connectorNames());
+        helper.succeed();
+    }
 }

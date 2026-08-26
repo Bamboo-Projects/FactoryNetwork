@@ -76,9 +76,12 @@ public class NetworkAnalyserItem extends Item {
      * wo man davorsteht.
      */
     private static Component deviceLine(Level level, BlockPos pos) {
-        if (level.getBlockEntity(pos)
-                instanceof dev.devpanda.factorynetwork.block.entity.ConnectorBlockEntity
-                        connector) {
+        // Über Connectors und nicht über die BlockEntity: An dieser Stelle
+        // kann ein Connectorblock stehen oder ein Kabel mit einem Anschluss.
+        // Sitzen mehrere daran, gibt es hier keine Auskunft — welcher gemeint
+        // wäre, sagt ein Punkt im Raum nicht.
+        var connector = dev.devpanda.factorynetwork.block.entity.Connectors.at(level, pos);
+        if (connector != null) {
             var profile = dev.devpanda.factorynetwork.block.entity.DeviceScan.of(connector);
             String name = connector.label().isEmpty() ? "Ohne Namen" : connector.label();
             String slots = "";

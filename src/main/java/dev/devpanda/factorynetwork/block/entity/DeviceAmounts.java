@@ -30,8 +30,8 @@ public record DeviceAmounts(Map<Item, Long> items, Map<Fluid, Long> fluids) {
 
     private static final DeviceAmounts EMPTY = new DeviceAmounts(Map.of(), Map.of());
 
-    /** Was gerade in dem Gerät hinter diesem Connector liegt. */
-    public static DeviceAmounts of(ConnectorBlockEntity connector) {
+    /** Was gerade in dem Gerät hinter diesem Anschluss liegt. */
+    public static DeviceAmounts of(ConnectorPart connector) {
         if (connector == null) {
             return EMPTY;
         }

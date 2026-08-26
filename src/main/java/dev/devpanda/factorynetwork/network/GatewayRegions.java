@@ -2,7 +2,6 @@ package dev.devpanda.factorynetwork.network;
 
 import dev.devpanda.factorynetwork.block.CableBlock;
 import dev.devpanda.factorynetwork.block.GatewayBlock;
-import dev.devpanda.factorynetwork.block.entity.ConnectorBlockEntity;
 import dev.devpanda.factorynetwork.block.entity.GatewayBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -128,7 +127,14 @@ public final class GatewayRegions {
                 BlockState state = level.getBlockState(next);
                 if (state.getBlock() instanceof CableBlock) {
                     queue.add(next);
-                } else if (level.getBlockEntity(next) instanceof ConnectorBlockEntity) {
+                    // Ein Kabel leitet weiter und trägt zugleich Anschlüsse an
+                    // seinen Flächen. Beides gilt: Der Strang läuft durch, und
+                    // was daran hängt, gehört zu dieser Anlage.
+                    if (dev.devpanda.factorynetwork.block.entity.Connectors.any(level, next)) {
+                        found.add(next);
+                    }
+                } else if (dev.devpanda.factorynetwork.block.entity.Connectors
+                        .any(level, next)) {
                     found.add(next);
                 }
                 // Alles andere endet hier — auch ein zweites Gateway.

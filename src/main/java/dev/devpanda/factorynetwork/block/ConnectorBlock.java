@@ -67,11 +67,18 @@ public class ConnectorBlock extends Block implements EntityBlock {
         if (!(level.getBlockEntity(pos) instanceof ConnectorBlockEntity)) {
             return InteractionResult.PASS;
         }
+        // Auch dieser Block nennt seine Fläche. Er hat nur eine, aber
+        // dahinter läuft derselbe Weg wie am Kabelblock — und der kennt
+        // keinen Anschluss ohne Seite.
+        Direction side = machineSide(state);
         player.openMenu(new net.minecraft.world.SimpleMenuProvider(
                         (id, inventory, owner) -> new dev.devpanda.factorynetwork.client.menu
-                                .NameMenu(id, pos),
+                                .NameMenu(id, pos, side),
                         Component.translatable("screen.factorynetwork.name.title.connector")),
-                buffer -> buffer.writeBlockPos(pos));
+                buffer -> {
+                    buffer.writeBlockPos(pos);
+                    buffer.writeByte(side.get3DDataValue());
+                });
         return InteractionResult.CONSUME;
     }
 

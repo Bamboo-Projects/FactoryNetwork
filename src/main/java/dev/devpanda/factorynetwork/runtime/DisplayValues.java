@@ -167,11 +167,8 @@ public final class DisplayValues {
         if (!(member.target() instanceof Expr.Name device) || level == null) {
             return null;
         }
-        var position = graph.connector(device.value()).orElse(null);
-        if (position == null || !level.isLoaded(position)
-                || !(level.getBlockEntity(position)
-                        instanceof dev.devpanda.factorynetwork.block.entity
-                                .ConnectorBlockEntity connector)) {
+        var connector = connectorNamed(device.value());
+        if (connector == null) {
             return null;
         }
         var amounts = dev.devpanda.factorynetwork.block.entity.DeviceAmounts.of(connector);
@@ -359,7 +356,7 @@ public final class DisplayValues {
         }
         // Ohne Connector gibt es keine Antwort — dasselbe wie bei online.
         return graph.connector(device.value())
-                .map(level::getBestNeighborSignal)
+                .map(where -> level.getBestNeighborSignal(where.pos()))
                 .orElse(null);
     }
 
@@ -390,11 +387,8 @@ public final class DisplayValues {
                 || level == null) {
             return null;
         }
-        var position = graph.connector(device.value()).orElse(null);
-        if (position == null || !level.isLoaded(position)
-                || !(level.getBlockEntity(position)
-                        instanceof dev.devpanda.factorynetwork.block.entity
-                                .ConnectorBlockEntity connector)) {
+        var connector = connectorNamed(device.value());
+        if (connector == null) {
             return null;
         }
         var amounts = dev.devpanda.factorynetwork.block.entity.DeviceAmounts.of(connector);
@@ -561,5 +555,17 @@ public final class DisplayValues {
             return String.format(Locale.GERMAN, "%.1fk", amount / 1000.0);
         }
         return String.format(Locale.GERMAN, "%.1fM", amount / 1_000_000.0);
+    }
+
+    /** Der Anschluss mit diesem Namen, oder {@code null}. */
+    private dev.devpanda.factorynetwork.block.entity.ConnectorPart connectorNamed(
+            String device) {
+        var where = graph.connector(device).orElse(null);
+        if (where == null || where.side() == null || level == null
+                || !level.isLoaded(where.pos())) {
+            return null;
+        }
+        return dev.devpanda.factorynetwork.block.entity.Connectors
+                .at(level, where.pos(), where.side());
     }
 }

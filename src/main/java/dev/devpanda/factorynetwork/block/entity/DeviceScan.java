@@ -33,15 +33,14 @@ public final class DeviceScan {
     private DeviceScan() {
     }
 
-    /** Das Profil der Maschine hinter diesem Connector. */
-    public static DeviceProfile of(ConnectorBlockEntity connector) {
-        Level level = connector.getLevel();
+    /** Das Profil der Maschine hinter diesem Anschluss. */
+    public static DeviceProfile of(ConnectorPart connector) {
+        Level level = connector.level();
         if (level == null) {
             return DeviceProfile.unreachable();
         }
-        BlockState state = connector.getBlockState();
-        Direction facing = ConnectorBlock.machineSide(state);
-        BlockPos target = connector.getBlockPos().relative(facing);
+        Direction facing = connector.facing();
+        BlockPos target = connector.pos().relative(facing);
         if (!level.isLoaded(target)) {
             return DeviceProfile.unreachable();
         }

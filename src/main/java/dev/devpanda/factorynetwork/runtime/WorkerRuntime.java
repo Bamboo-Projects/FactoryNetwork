@@ -1,6 +1,5 @@
 package dev.devpanda.factorynetwork.runtime;
 
-import dev.devpanda.factorynetwork.block.entity.ConnectorBlockEntity;
 import dev.devpanda.factorynetwork.lang.WorkerKind;
 import dev.devpanda.factorynetwork.lang.ast.Decl;
 import dev.devpanda.factorynetwork.lang.ast.Expr;
@@ -504,7 +503,7 @@ public final class WorkerRuntime {
     }
 
     /** Die Meldung für dieses Gerät, oder {@code null} ohne Empfänger. */
-    private Runnable noticeFor(ConnectorBlockEntity connector) {
+    private Runnable noticeFor(dev.devpanda.factorynetwork.block.entity.ConnectorPart connector) {
         if (onDeviceFilled == null) {
             return null;
         }
@@ -521,7 +520,7 @@ public final class WorkerRuntime {
      * Fassung bekäme Verbesserungen, die der anderen fehlen.
      */
     private <T> T resolve(Expr target, FactoryGraph graph, WorkerState state,
-            java.util.function.Function<ConnectorBlockEntity, T> extract,
+            java.util.function.Function<dev.devpanda.factorynetwork.block.entity.ConnectorPart, T> extract,
             String missingDetail, java.util.function.ToLongFunction<String> fillLevel) {
         if (!(target instanceof Expr.Name name)) {
             state.status = Status.HALTED;
@@ -564,7 +563,7 @@ public final class WorkerRuntime {
     private long tankLevelOf(String device) {
         IFluidHandler tank = lastGraph == null ? null
                 : resolveDevice(device, lastGraph, new WorkerState(),
-                        ConnectorBlockEntity::machineTank, "");
+                        dev.devpanda.factorynetwork.block.entity.ConnectorPart::machineTank, "");
         if (tank == null) {
             return Long.MAX_VALUE;
         }
@@ -614,16 +613,17 @@ public final class WorkerRuntime {
     private NetworkFluids fluids = new NetworkFluids();
 
     private IItemHandler handlerFor(String deviceName, FactoryGraph graph, WorkerState state) {
-        return resolveDevice(deviceName, graph, state, ConnectorBlockEntity::machineInventory,
+        return resolveDevice(deviceName, graph, state, dev.devpanda.factorynetwork.block.entity.ConnectorPart::machineInventory,
                 "An diesem Connector hängt keine Maschine mit Inventar");
     }
 
     private <T> T resolveDevice(String deviceName, FactoryGraph graph, WorkerState state,
-            java.util.function.Function<ConnectorBlockEntity, T> extract,
+            java.util.function.Function<dev.devpanda.factorynetwork.block.entity.ConnectorPart, T> extract,
             String missingDetail) {
         Expr.Name name = new Expr.Name(deviceName, new dev.devpanda.factorynetwork.lang.Span(
                 0, 0, 1, 1));
-        Optional<BlockPos> position = graph.connector(name.value());
+        Optional<dev.devpanda.factorynetwork.network.DevicePos> position =
+                graph.connector(name.value());
         if (position.isEmpty()) {
             state.status = Status.HALTED;
             // Zwischen "gibt es nicht" und "gibt es zweimal" unterscheiden:
@@ -647,8 +647,8 @@ public final class WorkerRuntime {
             }
             return null;
         }
-        // Der Aufrufer hält die Welt; hier reicht der Connector selbst.
-        ConnectorBlockEntity connector = connectorAt(position.get());
+        // Der Aufrufer hält die Welt; hier reicht der Anschluss selbst.
+        dev.devpanda.factorynetwork.block.entity.ConnectorPart connector = connectorAt(position.get());
         if (connector == null) {
             state.status = Status.WAITING_TARGET;
             state.detail = "Connector gerade nicht erreichbar";
@@ -663,14 +663,18 @@ public final class WorkerRuntime {
     }
 
     /** Wird vom Controller vor jedem Tick gesetzt, damit hier keine Welt liegt. */
-    private java.util.function.Function<BlockPos, ConnectorBlockEntity> connectorLookup = pos -> null;
+    private java.util.function.Function<
+            dev.devpanda.factorynetwork.network.DevicePos, dev.devpanda.factorynetwork.block.entity.ConnectorPart>
+            connectorLookup = where -> null;
 
-    public void setConnectorLookup(java.util.function.Function<BlockPos, ConnectorBlockEntity> lookup) {
+    public void setConnectorLookup(java.util.function.Function<
+            dev.devpanda.factorynetwork.network.DevicePos, dev.devpanda.factorynetwork.block.entity.ConnectorPart> lookup) {
         this.connectorLookup = lookup;
     }
 
-    private ConnectorBlockEntity connectorAt(BlockPos position) {
-        return connectorLookup.apply(position);
+    private dev.devpanda.factorynetwork.block.entity.ConnectorPart connectorAt(
+            dev.devpanda.factorynetwork.network.DevicePos where) {
+        return connectorLookup.apply(where);
     }
 
     private static boolean isStorage(Expr expr) {
@@ -978,7 +982,7 @@ public final class WorkerRuntime {
 
     /** Der Stromspeicher hinter einem Ziel. */
     private IEnergyStorage energyOf(Expr target, FactoryGraph graph, WorkerState state) {
-        return resolve(target, graph, state, ConnectorBlockEntity::machineEnergy,
+        return resolve(target, graph, state, dev.devpanda.factorynetwork.block.entity.ConnectorPart::machineEnergy,
                 "An diesem Connector hängt nichts, das Strom annimmt", this::energyLevelOf);
     }
 
@@ -992,7 +996,7 @@ public final class WorkerRuntime {
     private long energyLevelOf(String device) {
         IEnergyStorage machine = lastGraph == null ? null
                 : resolveDevice(device, lastGraph, new WorkerState(),
-                        ConnectorBlockEntity::machineEnergy, "");
+                        dev.devpanda.factorynetwork.block.entity.ConnectorPart::machineEnergy, "");
         return machine == null ? Long.MAX_VALUE : machine.getEnergyStored();
     }
 
@@ -1331,7 +1335,7 @@ public final class WorkerRuntime {
      * nicht gibt, einer, den es zweimal gibt, und einer ohne freien Kanal.
      * Drei verschiedene Meldungen für drei verschiedene Suchen.
      */
-    private ConnectorBlockEntity connectorOf(Expr target, WorkerState state) {
+    private dev.devpanda.factorynetwork.block.entity.ConnectorPart connectorOf(Expr target, WorkerState state) {
         if (!(target instanceof Expr.Name name) || lastGraph == null) {
             state.status = Status.HALTED;
             state.detail = "Ein Chemikalien-Worker braucht ein Gerät";
@@ -1342,39 +1346,36 @@ public final class WorkerRuntime {
     }
 
     private long amountAt(Expr target, String id, WorkerState state) {
-        ConnectorBlockEntity connector = connectorOf(target, state);
+        dev.devpanda.factorynetwork.block.entity.ConnectorPart connector = connectorOf(target, state);
         if (connector == null) {
             state.status = Status.RUNNING;
             return 0;
         }
-        var facing = dev.devpanda.factorynetwork.block.ConnectorBlock
-                .machineSide(connector.getBlockState());
+        var facing = connector.facing();
         return dev.devpanda.factorynetwork.compat.mekanism.ChemicalStores.amountAt(
-                connector.getLevel(), connector.getBlockPos().relative(facing),
+                connector.level(), connector.pos().relative(facing),
                 facing.getOpposite(), List.of(id));
     }
 
     private long fillDevice(Expr target, List<String> filter, long limit, WorkerState state) {
-        ConnectorBlockEntity connector = connectorOf(target, state);
+        dev.devpanda.factorynetwork.block.entity.ConnectorPart connector = connectorOf(target, state);
         if (connector == null) {
             return 0;
         }
-        var facing = dev.devpanda.factorynetwork.block.ConnectorBlock
-                .machineSide(connector.getBlockState());
+        var facing = connector.facing();
         return dev.devpanda.factorynetwork.compat.mekanism.ChemicalStores.fillFrom(
-                chemicals, connector.getLevel(),
-                connector.getBlockPos().relative(facing), facing.getOpposite(), filter, limit);
+                chemicals, connector.level(),
+                connector.pos().relative(facing), facing.getOpposite(), filter, limit);
     }
 
     private long drainDevice(Expr source, List<String> filter, long limit, WorkerState state) {
-        ConnectorBlockEntity connector = connectorOf(source, state);
+        dev.devpanda.factorynetwork.block.entity.ConnectorPart connector = connectorOf(source, state);
         if (connector == null) {
             return 0;
         }
-        var facing = dev.devpanda.factorynetwork.block.ConnectorBlock
-                .machineSide(connector.getBlockState());
+        var facing = connector.facing();
         return dev.devpanda.factorynetwork.compat.mekanism.ChemicalStores.drainInto(
-                connector.getLevel(), connector.getBlockPos().relative(facing),
+                connector.level(), connector.pos().relative(facing),
                 facing.getOpposite(), filter, chemicals, limit);
     }
 

@@ -116,6 +116,22 @@ public final class ConnectorPart {
         host.redstoneChanged();
     }
 
+    /** Die Welt, in der dieses Teil sitzt. */
+    public @Nullable Level level() {
+        return host.level();
+    }
+
+    /**
+     * Der Block, an dem dieses Teil sitzt.
+     *
+     * <p>Nicht die Maschine davor — die steht in {@link #machinePos()}. Der
+     * Unterschied ist am Kabelbus wichtiger als am eigenen Block: Dort teilen
+     * sich bis zu sechs Teile diese eine Stelle.
+     */
+    public BlockPos pos() {
+        return host.pos();
+    }
+
     /** Wohin dieses Teil zeigt. */
     public Direction facing() {
         return host.facing();

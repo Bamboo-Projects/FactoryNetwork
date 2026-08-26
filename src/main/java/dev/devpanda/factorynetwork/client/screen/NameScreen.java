@@ -1,6 +1,5 @@
 package dev.devpanda.factorynetwork.client.screen;
 
-import dev.devpanda.factorynetwork.block.entity.ConnectorBlockEntity;
 import dev.devpanda.factorynetwork.block.entity.DisplayBlockEntity;
 import dev.devpanda.factorynetwork.client.FnFonts;
 import dev.devpanda.factorynetwork.client.menu.NameMenu;
@@ -96,8 +95,14 @@ public class NameScreen extends AbstractContainerScreen<NameMenu> {
         if (entity instanceof DisplayBlockEntity display) {
             return display.displayName();
         }
-        if (entity instanceof ConnectorBlockEntity connector) {
-            return connector.label();
+        // Mit Fläche, wenn der Klick eine genannt hat: Am Kabelblock ist der
+        // Ort allein kein Anschluss.
+        var part = menu.side() == null
+                ? dev.devpanda.factorynetwork.block.entity.Connectors.at(level, menu.position())
+                : dev.devpanda.factorynetwork.block.entity.Connectors.at(
+                        level, menu.position(), menu.side());
+        if (part != null) {
+            return part.label();
         }
         if (entity instanceof dev.devpanda.factorynetwork.block.entity
                 .GatewayBlockEntity gateway) {
@@ -200,7 +205,10 @@ public class NameScreen extends AbstractContainerScreen<NameMenu> {
         if (!name.isEmpty() && !ConnectorNaming.isValidDeviceName(name)) {
             return;
         }
-        PacketDistributor.sendToServer(new SetBlockNamePacket(menu.position(), name));
+        PacketDistributor.sendToServer(new SetBlockNamePacket(menu.position(),
+                menu.side() == null
+                        ? SetBlockNamePacket.NO_SIDE : menu.side().get3DDataValue(),
+                name));
         onClose();
     }
 

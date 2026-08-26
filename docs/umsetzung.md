@@ -1366,3 +1366,54 @@ Richtig ist eines von beidem:
   hält sich selbst daran.
 - Gar kein Hintergrund, wenn das Fenster ohnehin alles abdeckt, und statt
   `super.render(...)` nur die Schleife über `this.renderables`.
+
+### Ein Gerät ist Ort und Seite (seit dem 26.08.)
+
+Zwei Anschlüsse an einem Kabelblock waren für den Graphen **kein** Gerät —
+nicht zwei und nicht eines. Er merkte sich einen Ort, `Connectors.at(pos)`
+gab ohne Fläche keine Antwort, und die Kanalzuteilung ließ die Stelle
+kommentarlos aus: Beide Namen fehlten im Netz. `DevicePos` ist Ort **und**
+Fläche und schlüsselt seither auf.
+
+Die Fläche ist `null`, wo es keine gibt. Ein Laufwerk, ein Schrank, eine
+Anzeige sind ganze Blöcke — wer sie von zwei Seiten ankabelt, hat eines und
+nicht zwei. Nur ein Anschluss sieht in eine Richtung, und er hat immer eine:
+auch im eigenen Connectorblock, wo sie im `FACING` steht. Genau das macht den
+Umbau billig — nach ihm läuft **jeder** Zugriff auf einen Anschluss über Ort
+und Seite, in beiden Bauformen gleich, und die Frage „welcher steht hier"
+stellt sich nicht mehr.
+
+**Der Code widersprach seinem eigenen Kommentar.** An `WorldHost.redstone`
+stand „gelesen wird an der Maschine, auf die der Connector zeigt"; gelesen
+wurde `getBestNeighborSignal` — alle sechs Nachbarn. Zwei Prüfläufe nageln
+das Verhalten fest, beide mit einem Redstoneblock **über** dem Connector.
+Geändert wurde deshalb der Kommentar und nicht der Code: Wer einen Hebel
+neben einen Anschluss legt, meint diesen Anschluss, und die Fläche davor ist
+von der Maschine besetzt. Am Kabelblock lesen alle Anschlüsse dasselbe — was
+den Block erreicht, erreicht jeden davon.
+
+**Beim Abgeben ging das nicht.** Sechs Anschlüsse mit einer gemeinsamen
+Stärke wären sechs Maschinen an einem Schalter, und `setRedstone` verlöre
+seinen Sinn. Die Regel, die für beide Bauformen dasselbe bedeutet: *Eine
+Fläche mit Anschluss gibt genau dessen Stärke, eine freie gibt die stärkste.*
+Am Connectorblock kommt damit heraus, was vorher herauskam — nach allen
+Seiten dasselbe —, und ein Lämpchen neben einem Kabel leuchtet weiter.
+
+Die Richtungsregel dahinter ist die von `getBestNeighborSignal`: Es fragt den
+Nachbarn bei `pos.relative(d)` mit genau diesem `d`. Wer also aus Richtung
+`d` fragt, steht auf der Gegenseite — ihm antwortet das Teil an der Fläche
+`d.getOpposite()`.
+
+**Was der Compiler nicht fand.** Ein Test prüfte
+`starvedConnectors().contains(einBlockPos)`. Aus der Liste war eine Liste von
+`DevicePos` geworden, aber `List.contains` nimmt `Object`: Die Zusicherung
+wurde stillschweigend immer falsch und fiel erst im Prüflauf auf. Dieselbe
+Falle steht in jeder Sammlung, deren Elementtyp sich ändert — `contains`,
+`remove`, `indexOf`.
+
+**Und was niemand gesucht hatte:** Die Anlagenerkennung ging von Block zu
+Block und hielt an allem an, was kein Kabel ist. Ein Kabel *war* nur eine
+Leitung. Seit es Anschlüsse trägt, ist es beides — der Strang läuft durch,
+und was daran hängt, gehört zur Anlage. Ohne diesen Schritt hätte ein
+Anschluss am Kabel den Anlagennamen des Gateways nie bekommen, und jedes
+Programm mit `werk_1/eingang` hätte ihn nicht gefunden.

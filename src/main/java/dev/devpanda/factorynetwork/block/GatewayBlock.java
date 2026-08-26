@@ -67,7 +67,10 @@ public class GatewayBlock extends Block implements EntityBlock {
                         (id, inventory, owner) -> new dev.devpanda.factorynetwork.client.menu
                                 .NameMenu(id, pos),
                         Component.translatable("screen.factorynetwork.name.title.gateway")),
-                buffer -> buffer.writeBlockPos(pos));
+                buffer -> {
+                    buffer.writeBlockPos(pos);
+                    buffer.writeByte(dev.devpanda.factorynetwork.network.packet.SetBlockNamePacket.NO_SIDE);
+                });
         return InteractionResult.CONSUME;
     }
 }

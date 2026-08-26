@@ -1,6 +1,5 @@
 package dev.devpanda.factorynetwork.item;
 
-import dev.devpanda.factorynetwork.block.entity.ConnectorBlockEntity;
 import dev.devpanda.factorynetwork.block.entity.ControllerBlockEntity;
 import dev.devpanda.factorynetwork.block.entity.DisplayBlockEntity;
 import dev.devpanda.factorynetwork.network.FactoryGraph;
@@ -182,7 +181,16 @@ public class LabelGunItem extends Item {
             return InteractionResult.CONSUME;
         }
 
-        if (!(entity instanceof ConnectorBlockEntity connector)) {
+        // Erst die getroffene Fläche, dann der Block: An einem Kabelblock
+        // sitzen bis zu sechs Anschlüsse, und der Klick sagt, welcher gemeint
+        // ist. Am eigenen Connectorblock trifft man oft eine andere Fläche
+        // als die, in die er sieht — dort gilt weiter „genau einer da".
+        var connector = dev.devpanda.factorynetwork.block.entity.Connectors.at(
+                level, pos, context.getClickedFace());
+        if (connector == null) {
+            connector = dev.devpanda.factorynetwork.block.entity.Connectors.at(level, pos);
+        }
+        if (connector == null) {
             // Auf eine Maschine neben einem Connector geklickt: Das ist der
             // häufigste Irrtum, und stillschweigend nichts zu tun hilft nicht.
             if (player != null && hasAdjacentConnector(level, pos)) {
@@ -220,16 +228,14 @@ public class LabelGunItem extends Item {
         String wanted = activeLabel(gun);
         if (wanted.isBlank()) {
             wanted = ConnectorNaming.suggestFor(
-                    level.getBlockState(pos.relative(
-                            dev.devpanda.factorynetwork.block.ConnectorBlock
-                                    .machineSide(connector.getBlockState()))),
-                    graph);
+                    level.getBlockState(pos.relative(connector.facing())), graph);
         }
         return apply(connector, gun, graph, wanted, player);
     }
 
-    private InteractionResult apply(ConnectorBlockEntity connector, ItemStack gun,
-                                    FactoryGraph graph, String wanted, Player player) {
+    private InteractionResult apply(
+            dev.devpanda.factorynetwork.block.entity.ConnectorPart connector, ItemStack gun,
+            FactoryGraph graph, String wanted, Player player) {
         // Nochmal derselbe Name: Der Klick nimmt ihn wieder weg.
         if (wanted.equals(connector.label())) {
             connector.setLabel("");
@@ -323,7 +329,8 @@ public class LabelGunItem extends Item {
 
     private static boolean hasAdjacentConnector(Level level, BlockPos pos) {
         for (net.minecraft.core.Direction direction : net.minecraft.core.Direction.values()) {
-            if (level.getBlockEntity(pos.relative(direction)) instanceof ConnectorBlockEntity) {
+            if (dev.devpanda.factorynetwork.block.entity.Connectors
+                    .any(level, pos.relative(direction))) {
                 return true;
             }
         }

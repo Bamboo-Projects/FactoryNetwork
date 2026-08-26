@@ -26,21 +26,25 @@ public final class AnalyserScan {
     public static AnalyserData of(ControllerBlockEntity controller) {
         FactoryGraph graph = controller.graph();
         List<AnalyserData.Node> nodes = new ArrayList<>();
-        Set<BlockPos> starved = new HashSet<>(graph.starvedConnectors());
-        Set<BlockPos> unnamed = new HashSet<>(graph.unnamedConnectors());
+        // Gezeichnet wird an Blöcken: Zwei Anschlüsse an einem Kabelblock
+        // stehen an derselben Stelle im Raum, und der Punkt dort gilt für
+        // beide.
+        Set<BlockPos> starved = places(graph.starvedConnectors());
+        Set<BlockPos> unnamed = places(graph.unnamedConnectors());
 
         // Doppelt vergebene Namen: Alle Stellen dazu sind unbrauchbar, nicht
         // nur die zweite — deshalb zählen sie alle als solche.
         Set<BlockPos> duplicates = new HashSet<>();
         for (String name : graph.ambiguousNames()) {
-            duplicates.addAll(graph.positionsOf(name));
+            duplicates.addAll(places(graph.positionsOf(name)));
         }
 
         nodes.add(new AnalyserData.Node(controller.getBlockPos(),
                 AnalyserData.NodeState.CONTROLLER, ""));
 
-        for (Map.Entry<String, BlockPos> entry : graph.connectors().entrySet()) {
-            BlockPos pos = entry.getValue();
+        for (Map.Entry<String, dev.devpanda.factorynetwork.network.DevicePos> entry
+                : graph.connectors().entrySet()) {
+            BlockPos pos = entry.getValue().pos();
             AnalyserData.NodeState state = duplicates.contains(pos)
                     ? AnalyserData.NodeState.DUPLICATE
                     : starved.contains(pos) ? AnalyserData.NodeState.STARVED
@@ -107,5 +111,19 @@ public final class AnalyserScan {
                 graph.connectorNames().size(), graph.cableCount(),
                 starved.size(), unnamed.size(), duplicates.size(), tight, full);
         return new AnalyserData(List.copyOf(nodes), List.copyOf(links), summary);
+    }
+
+    /**
+     * Die Blöcke, an denen diese Geräte sitzen.
+     *
+     * <p>Weniger als Geräte, sobald zwei Anschlüsse an einem Kabelblock
+     * hängen — für eine Zeichnung im Raum ist das richtig: Dort steht ein
+     * Block.
+     */
+    private static Set<BlockPos> places(
+            java.util.List<dev.devpanda.factorynetwork.network.DevicePos> devices) {
+        Set<BlockPos> found = new HashSet<>();
+        devices.forEach(device -> found.add(device.pos()));
+        return found;
     }
 }

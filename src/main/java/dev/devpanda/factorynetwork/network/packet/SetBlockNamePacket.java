@@ -1,7 +1,6 @@
 package dev.devpanda.factorynetwork.network.packet;
 
 import dev.devpanda.factorynetwork.FactoryNetwork;
-import dev.devpanda.factorynetwork.block.entity.ConnectorBlockEntity;
 import dev.devpanda.factorynetwork.block.entity.DisplayBlockEntity;
 import dev.devpanda.factorynetwork.item.ConnectorNaming;
 import dev.devpanda.factorynetwork.network.ControllerRegistry;
@@ -24,8 +23,11 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
  * mit demselben Namen machen beide unbrauchbar. Der Client wiederholt die
  * Prüfung nur, um früh zu warnen; verlassen darf man sich darauf nicht.
  */
-public record SetBlockNamePacket(BlockPos position, String name)
+public record SetBlockNamePacket(BlockPos position, int side, String name)
         implements CustomPacketPayload {
+
+    /** Kein Anschluss an einer Fläche, sondern ein ganzer Block. */
+    public static final int NO_SIDE = -1;
 
     /** So weit darf der Block weg sein — dasselbe wie im Fenster. */
     private static final double REACH = 8.0;
@@ -36,6 +38,7 @@ public record SetBlockNamePacket(BlockPos position, String name)
     public static final StreamCodec<RegistryFriendlyByteBuf, SetBlockNamePacket> STREAM_CODEC =
             StreamCodec.composite(
                     BlockPos.STREAM_CODEC, SetBlockNamePacket::position,
+                    ByteBufCodecs.VAR_INT, SetBlockNamePacket::side,
                     ByteBufCodecs.stringUtf8(64), SetBlockNamePacket::name,
                     SetBlockNamePacket::new);
 
@@ -57,6 +60,18 @@ public record SetBlockNamePacket(BlockPos position, String name)
                 return;
             }
             String wanted = ConnectorNaming.normalize(packet.name());
+            // Sagt der Klick eine Fläche, gilt sie: An einem Kabelblock
+            // hängen bis zu sechs Anschlüsse, und der Ort allein benennt
+            // irgendeinen davon.
+            if (packet.side() != NO_SIDE) {
+                var part = dev.devpanda.factorynetwork.block.entity.Connectors.at(
+                        player.level(), pos,
+                        net.minecraft.core.Direction.from3DDataValue(packet.side()));
+                if (part != null) {
+                    nameConnector(part, wanted, player);
+                }
+                return;
+            }
             var entity = player.level().getBlockEntity(pos);
             if (entity instanceof dev.devpanda.factorynetwork.block.entity
                     .GatewayBlockEntity gateway) {
@@ -65,8 +80,12 @@ public record SetBlockNamePacket(BlockPos position, String name)
             }
             if (entity instanceof DisplayBlockEntity display) {
                 nameWall(display, wanted, player);
-            } else if (entity instanceof ConnectorBlockEntity connector) {
-                nameConnector(connector, wanted, player);
+                return;
+            }
+            var single = dev.devpanda.factorynetwork.block.entity.Connectors.at(
+                    player.level(), pos);
+            if (single != null) {
+                nameConnector(single, wanted, player);
             }
         });
     }
@@ -102,14 +121,15 @@ public record SetBlockNamePacket(BlockPos position, String name)
      * Anders als die Pistole schlägt das Fenster nichts vor — wer tippt,
      * bekommt gesagt, was nicht geht, und tippt weiter.
      */
-    private static void nameConnector(ConnectorBlockEntity connector, String wanted,
-                                      ServerPlayer player) {
+    private static void nameConnector(
+            dev.devpanda.factorynetwork.block.entity.ConnectorPart connector, String wanted,
+            ServerPlayer player) {
         if (wanted.isEmpty()) {
             connector.setLabel("");
             say(player, "message.factorynetwork.connector.unnamed");
             return;
         }
-        FactoryGraph graph = ControllerRegistry.owning(player.level(), connector.getBlockPos())
+        FactoryGraph graph = ControllerRegistry.owning(player.level(), connector.pos())
                 .map(controller -> controller.graph())
                 .orElse(null);
         ConnectorNaming.Warning warning = ConnectorNaming.check(wanted, graph);

@@ -640,10 +640,10 @@ public class ControllerBlockEntity extends BlockEntity {
         // Abläufe laufen auch ohne Worker weiter — ein Programm darf allein
         // aus Funktionen bestehen, die auf Ereignisse warten.
         if (!program.workers().isEmpty()) {
-            runtime.setConnectorLookup(position ->
-                    level.isLoaded(position)
-                            && level.getBlockEntity(position) instanceof ConnectorBlockEntity connector
-                            ? connector : null);
+            runtime.setConnectorLookup(where ->
+                    where.side() != null && level.isLoaded(where.pos())
+                            ? dev.devpanda.factorynetwork.block.entity.Connectors.at(level, where.pos(), where.side())
+                            : null);
             runtime.setPower(power);
             runtime.setCrafting(craftingForWorkers);
             runtime.tick(level, program, graph, stores,
@@ -1184,14 +1184,12 @@ public class ControllerBlockEntity extends BlockEntity {
             return "es fehlen " + (need - chemicalStorage.count(first)) + " mB "
                     + dev.devpanda.factorynetwork.compat.mekanism.Chemicals.nameOf(first);
         }
-        var position = graph.connector(device).orElse(null);
-        if (position == null || !(level.getBlockEntity(position)
-                instanceof ConnectorBlockEntity connector)) {
+        var connector = connectorNamed(device);
+        if (connector == null) {
             return "an " + device + " hängt keine Maschine";
         }
-        var facing = dev.devpanda.factorynetwork.block.ConnectorBlock
-                .machineSide(connector.getBlockState());
-        var target = position.relative(facing);
+        var facing = connector.facing();
+        var target = connector.pos().relative(facing);
         String name = dev.devpanda.factorynetwork.compat.mekanism.Chemicals.nameOf(chosen);
         if (dev.devpanda.factorynetwork.compat.mekanism.ChemicalStores.roomFor(
                 level, target, facing.getOpposite(), chosen, need) < need) {
@@ -1212,12 +1210,8 @@ public class ControllerBlockEntity extends BlockEntity {
 
     /** Der Tank der Maschine hinter einem Gerätenamen. */
     private net.neoforged.neoforge.fluids.capability.IFluidHandler machineTank(String device) {
-        var position = graph.connector(device).orElse(null);
-        if (position == null || !level.isLoaded(position)
-                || !(level.getBlockEntity(position) instanceof ConnectorBlockEntity connector)) {
-            return null;
-        }
-        return connector.machineTank();
+        var connector = connectorNamed(device);
+        return connector == null ? null : connector.machineTank();
     }
 
     /**
@@ -1298,12 +1292,8 @@ public class ControllerBlockEntity extends BlockEntity {
 
     /** Der seitenbezogene Zugriff auf die Maschine hinter einem Connector. */
     private net.neoforged.neoforge.items.IItemHandler machineSide(String device) {
-        var position = graph.connector(device).orElse(null);
-        if (position == null || !level.isLoaded(position)
-                || !(level.getBlockEntity(position) instanceof ConnectorBlockEntity connector)) {
-            return null;
-        }
-        return connector.machineInventory();
+        var connector = connectorNamed(device);
+        return connector == null ? null : connector.machineInventory();
     }
 
     /**
@@ -1370,9 +1360,8 @@ public class ControllerBlockEntity extends BlockEntity {
             dev.devpanda.factorynetwork.crafting.MachineRecipes.Station shape,
             net.minecraft.world.item.Item ingredient) {
         for (var entry : graph.connectors().entrySet()) {
-            if (!level.isLoaded(entry.getValue())
-                    || !(level.getBlockEntity(entry.getValue())
-                            instanceof ConnectorBlockEntity connector)) {
+            var connector = connectorNamed(entry.getKey());
+            if (connector == null) {
                 continue;
             }
             if (!dev.devpanda.factorynetwork.crafting.MachineRecipes.fits(
@@ -1397,12 +1386,8 @@ public class ControllerBlockEntity extends BlockEntity {
     }
 
     private net.neoforged.neoforge.items.IItemHandler machineInventory(String device) {
-        var position = graph.connector(device).orElse(null);
-        if (position == null || !level.isLoaded(position)
-                || !(level.getBlockEntity(position) instanceof ConnectorBlockEntity connector)) {
-            return null;
-        }
-        return connector.machineInventoryAll();
+        var connector = connectorNamed(device);
+        return connector == null ? null : connector.machineInventoryAll();
     }
 
     /** Wie die Maschine einer Station im Klartext heißt. */
@@ -1658,11 +1643,16 @@ public class ControllerBlockEntity extends BlockEntity {
                 .toList();
     }
 
-    /** Die Connectoren im Netz mit ihrer Stelle. */
+    /**
+     * Die Connectoren im Netz mit ihrer Stelle.
+     *
+     * <p>Der Ort und nicht die Fläche: Der Name wird über dem Block
+     * geschrieben, an dem der Anschluss sitzt.
+     */
     public List<dev.devpanda.factorynetwork.network.packet.NamedPlace> connectorPlaces() {
         return graph.connectors().entrySet().stream()
                 .map(entry -> new dev.devpanda.factorynetwork.network.packet.NamedPlace(
-                        entry.getKey(), entry.getValue()))
+                        entry.getKey(), entry.getValue().pos()))
                 .toList();
     }
 
@@ -1680,13 +1670,13 @@ public class ControllerBlockEntity extends BlockEntity {
         if (level == null) {
             return profiles;
         }
-        for (Map.Entry<String, BlockPos> entry : graph.connectors().entrySet()) {
-            if (!(level.getBlockEntity(entry.getValue())
-                    instanceof ConnectorBlockEntity connector)) {
+        for (String name : graph.connectors().keySet()) {
+            var connector = connectorNamed(name);
+            if (connector == null) {
                 continue;
             }
             profiles.add(dev.devpanda.factorynetwork.network.packet.DeviceProfileCodec.toFlat(
-                    entry.getKey(), DeviceScan.of(connector)));
+                    name, DeviceScan.of(connector)));
         }
         return profiles;
     }
@@ -2203,10 +2193,10 @@ public class ControllerBlockEntity extends BlockEntity {
         if (!watchChanges && !watchOutput) {
             return;
         }
-        for (Map.Entry<String, BlockPos> entry : graph.connectors().entrySet()) {
-            if (!level.isLoaded(entry.getValue())
-                    || !(level.getBlockEntity(entry.getValue())
-                            instanceof ConnectorBlockEntity connector)) {
+        for (Map.Entry<String, dev.devpanda.factorynetwork.network.DevicePos> entry
+                : graph.connectors().entrySet()) {
+            var connector = connectorNamed(entry.getKey());
+            if (connector == null) {
                 continue;
             }
             // Beim ersten Sehen wird nicht gemeldet: Da hat sich nichts
@@ -2243,7 +2233,7 @@ public class ControllerBlockEntity extends BlockEntity {
      */
     public void noteFilled(String device) {
         lastAmounts.computeIfPresent(device, (name, previous) -> {
-            ConnectorBlockEntity connector = connectorNamed(name);
+            var connector = connectorNamed(name);
             // Ein Gerät, das gerade nicht erreichbar ist, behält seine alte
             // Grundlinie. Eine leere hieße: Beim nächsten Blick ist alles
             // darin neu.
@@ -2251,14 +2241,19 @@ public class ControllerBlockEntity extends BlockEntity {
         });
     }
 
-    /** Die BlockEntity des Connectors mit diesem Namen, oder {@code null}. */
-    private ConnectorBlockEntity connectorNamed(String device) {
-        BlockPos position = graph.connectors().get(device);
-        if (position == null || level == null || !level.isLoaded(position)) {
+    /**
+     * Der Anschluss mit diesem Namen, oder {@code null}.
+     *
+     * <p>Über Ort <b>und</b> Fläche: Sitzen sechs Anschlüsse an einem
+     * Kabelblock, ist der Ort allein keine Antwort.
+     */
+    private ConnectorPart connectorNamed(String device) {
+        var where = graph.connector(device).orElse(null);
+        if (where == null || where.side() == null || level == null
+                || !level.isLoaded(where.pos())) {
             return null;
         }
-        return level.getBlockEntity(position) instanceof ConnectorBlockEntity connector
-                ? connector : null;
+        return Connectors.at(level, where.pos(), where.side());
     }
 
     /**
@@ -2267,7 +2262,7 @@ public class ControllerBlockEntity extends BlockEntity {
      * <p>Inventar und Tank zusammen — eine Maschine kann beides haben, und wer
      * auf sie wartet, will von beidem wissen.
      */
-    private static int contentsFingerprint(ConnectorBlockEntity connector) {
+    private static int contentsFingerprint(ConnectorPart connector) {
         int hash = 17;
         var handler = connector.machineInventory();
         if (handler != null) {
@@ -2315,11 +2310,15 @@ public class ControllerBlockEntity extends BlockEntity {
         if (!listensTo(BuiltinEvents.REDSTONE_CHANGED)) {
             return;
         }
-        for (Map.Entry<String, BlockPos> entry : graph.connectors().entrySet()) {
-            if (!level.isLoaded(entry.getValue())) {
+        for (Map.Entry<String, dev.devpanda.factorynetwork.network.DevicePos> entry
+                : graph.connectors().entrySet()) {
+            if (!level.isLoaded(entry.getValue().pos())) {
                 continue;
             }
-            int strength = level.getBestNeighborSignal(entry.getValue());
+            // Am Block gelesen und nicht an der Fläche — dieselbe Regel wie
+            // in WorldHost.redstone: Was den Block erreicht, erreicht jeden
+            // Anschluss daran.
+            int strength = level.getBestNeighborSignal(entry.getValue().pos());
             Integer previous = lastRedstone.put(entry.getKey(), strength);
             if (previous != null && previous == strength) {
                 continue;

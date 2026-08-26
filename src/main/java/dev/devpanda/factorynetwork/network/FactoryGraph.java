@@ -9,7 +9,6 @@ import dev.devpanda.factorynetwork.block.DriveBlock;
 import dev.devpanda.factorynetwork.block.FabricatorBlock;
 import dev.devpanda.factorynetwork.block.RackBlock;
 import dev.devpanda.factorynetwork.block.RouterBlock;
-import dev.devpanda.factorynetwork.block.entity.ConnectorBlockEntity;
 import dev.devpanda.factorynetwork.block.entity.RouterBlockEntity;
 import dev.devpanda.factorynetwork.util.NameDistance;
 import net.minecraft.core.BlockPos;
@@ -56,10 +55,14 @@ public final class FactoryGraph {
     }
 
     /**
-     * Name auf Positionen. Mehr als eine Position bedeutet: Der Name ist
-     * doppelt vergeben und damit unbrauchbar — siehe {@link #isAmbiguous}.
+     * Name auf Stellen. Mehr als eine bedeutet: Der Name ist doppelt
+     * vergeben und damit unbrauchbar — siehe {@link #isAmbiguous}.
+     *
+     * <p>Eine Stelle ist Ort <b>und</b> Fläche ({@link DevicePos}): An einem
+     * Kabelblock sitzen bis zu sechs Anschlüsse, und zwei davon sind zwei
+     * Geräte mit zwei Namen.
      */
-    private final Map<String, List<BlockPos>> connectorsByName;
+    private final Map<String, List<DevicePos>> connectorsByName;
     /**
      * Connectoren ohne Namen.
      *
@@ -68,9 +71,9 @@ public final class FactoryGraph {
      * wegzulassen hieß, dass der Controller „0 Connectoren" meldete, während
      * drei danebenhingen.
      */
-    private final List<BlockPos> unnamed;
+    private final List<DevicePos> unnamed;
     /** Geräte, die im Netz hängen, aber keinen freien Kanal bekommen haben. */
-    private final List<BlockPos> starved;
+    private final List<DevicePos> starved;
     /** Displays am Netz. Sie zeigen nur an und brauchen keinen Kanal. */
     private final List<BlockPos> displays;
     private final Set<BlockPos> cables;
@@ -114,8 +117,9 @@ public final class FactoryGraph {
     /** Eine Verbindung zwischen zwei Knoten des Netzes. */
     public record Edge(Node from, Node to) {}
 
-    private FactoryGraph(Map<String, List<BlockPos>> connectorsByName, List<BlockPos> unnamed,
-                         List<BlockPos> starved, List<BlockPos> displays, Set<BlockPos> cables,
+    private FactoryGraph(Map<String, List<DevicePos>> connectorsByName,
+                         List<DevicePos> unnamed,
+                         List<DevicePos> starved, List<BlockPos> displays, Set<BlockPos> cables,
                          Set<BlockPos> routers, Map<Node, Integer> channelLoad, List<Edge> edges,
                          List<BlockPos> drives, List<BlockPos> racks, List<BlockPos> extensions,
                          List<BlockPos> fabricators, Set<BlockPos> contested,
@@ -214,9 +218,9 @@ public final class FactoryGraph {
      * offline" nicht zu beantworten.
      */
     public static FactoryGraph build(Level level, BlockPos controller) {
-        Map<String, List<BlockPos>> connectors = new LinkedHashMap<>();
-        List<BlockPos> unnamed = new ArrayList<>();
-        List<BlockPos> starved = new ArrayList<>();
+        Map<String, List<DevicePos>> connectors = new LinkedHashMap<>();
+        List<DevicePos> unnamed = new ArrayList<>();
+        List<DevicePos> starved = new ArrayList<>();
         List<BlockPos> displays = new ArrayList<>();
         Set<BlockPos> cables = new HashSet<>();
         Set<BlockPos> routers = new HashSet<>();
@@ -226,11 +230,14 @@ public final class FactoryGraph {
         List<BlockPos> fabricators = new ArrayList<>();
         Map<Node, Integer> load = new HashMap<>();
         Map<Node, Node> parents = new HashMap<>();
-        Set<BlockPos> visitedDevices = new HashSet<>();
         // Gerät auf die Kabelstränge, über die es erreichbar ist — in der
         // Reihenfolge, in der die Suche sie gefunden hat.
-        Map<BlockPos, List<Node>> reachable = new LinkedHashMap<>();
-        Map<BlockPos, Consumer> kinds = new LinkedHashMap<>();
+        //
+        // Der Schlüssel ist Ort und Fläche und nicht nur der Ort: Sechs
+        // Anschlüsse an einem Kabelblock sind sechs Geräte, jedes mit
+        // eigenem Namen und eigenem Kanalbedarf.
+        Map<DevicePos, List<Node>> reachable = new LinkedHashMap<>();
+        Map<DevicePos, Consumer> kinds = new LinkedHashMap<>();
         Deque<Node> queue = new ArrayDeque<>();
 
         // Der Controller und seine Anbauten sind farbneutral: Von jedem von
@@ -271,15 +278,16 @@ public final class FactoryGraph {
                 BlockState state = level.getBlockState(next);
                 if (state.getBlock() instanceof CableBlock) {
                     Node node = visitCable(level, next, current, parents, queue, cables);
-                    // Ein Kabel mit Anschlüssen an seinen Flächen ist selbst
-                    // ein Gerät — und sein Weg zum Controller führt über sich
-                    // selbst, nicht über das Kabel davor.
-                    if (node != null && dev.devpanda.factorynetwork.block.entity.Connectors
-                            .any(level, next)) {
-                        BlockPos device = next.immutable();
-                        reachable.computeIfAbsent(device, key -> new ArrayList<>()).add(node);
-                        kinds.put(device, Consumer.CONNECTOR);
-                        visitedDevices.add(device);
+                    // Jeder Anschluss an einer Fläche dieses Kabels ist ein
+                    // eigenes Gerät — und sein Weg zum Controller führt über
+                    // das Kabel selbst, nicht über das davor.
+                    if (node != null) {
+                        for (Direction side : partsAt(level, next)) {
+                            DevicePos device = DevicePos.of(next, side);
+                            reachable.computeIfAbsent(device, key -> new ArrayList<>())
+                                    .add(node);
+                            kinds.put(device, Consumer.CONNECTOR);
+                        }
                     }
                 } else if (state.getBlock()
                         instanceof dev.devpanda.factorynetwork.block.GatewayBlock) {
@@ -300,11 +308,10 @@ public final class FactoryGraph {
                     // sich erst, wenn alle Wege bekannt sind.
                     Consumer kind = consumerAt(state);
                     if (kind != null) {
-                        BlockPos device = anchorOf(state, next);
+                        DevicePos device = deviceAt(state, next);
                         reachable.computeIfAbsent(device, key -> new ArrayList<>())
                                 .add(current);
                         kinds.put(device, kind);
-                        visitedDevices.add(device);
                         // Anzeigen leiten weiter. Eine Wand aus sechs Tafeln
                         // ist ein Bild und keine sechs Geräte, und hinter
                         // jede ein Kabel zu legen ist Arbeit ohne
@@ -327,7 +334,7 @@ public final class FactoryGraph {
         assignChannels(level, reachable, kinds, parents, load, connectors, unnamed,
                 starved, displays, drives, racks, fabricators, regions);
 
-        Map<String, List<BlockPos>> frozen = new LinkedHashMap<>();
+        Map<String, List<DevicePos>> frozen = new LinkedHashMap<>();
         connectors.forEach((label, positions) -> frozen.put(label, List.copyOf(positions)));
         List<Edge> edges = new ArrayList<>();
         parents.forEach((node, parent) -> {
@@ -405,12 +412,34 @@ public final class FactoryGraph {
      * Kanal, eine BlockEntity, ein Eintrag in der Liste. Wer oben ankabelt,
      * kabelt denselben Schrank an — deshalb steht die obere Hälfte hier auf
      * die untere um, statt ein zweites Mal zu zählen.
+     *
+     * <p>Eine Fläche bekommt nur ein Anschluss. Alles andere ist ein ganzer
+     * Block: Wer ein Laufwerk von zwei Seiten ankabelt, hat ein Laufwerk und
+     * nicht zwei.
      */
-    private static BlockPos anchorOf(BlockState state, BlockPos pos) {
-        if (state.getBlock() instanceof RackBlock) {
-            return RackBlock.baseOf(state, pos).immutable();
+    private static DevicePos deviceAt(BlockState state, BlockPos pos) {
+        if (state.getBlock() instanceof ConnectorBlock) {
+            // Auch der eigene Block hat eine Fläche: Sein FACING ist sie.
+            // Damit läuft danach jeder Zugriff auf einen Anschluss über Ort
+            // und Seite — gleich, in welcher Bauform er sitzt.
+            return DevicePos.of(pos, ConnectorBlock.machineSide(state));
         }
-        return pos.immutable();
+        if (state.getBlock() instanceof RackBlock) {
+            return DevicePos.of(RackBlock.baseOf(state, pos));
+        }
+        return DevicePos.of(pos);
+    }
+
+    /**
+     * Die Flächen eines Kabelblocks, an denen ein Anschluss sitzt.
+     *
+     * <p>Leer bei jedem gewöhnlichen Kabel — und das ist der Normalfall, den
+     * die Suche tausendfach durchläuft.
+     */
+    private static List<Direction> partsAt(Level level, BlockPos pos) {
+        return level.getBlockEntity(pos)
+                instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus
+                ? List.copyOf(bus.parts().keySet()) : List.of();
     }
 
     private static Consumer consumerAt(BlockState state) {
@@ -517,23 +546,26 @@ public final class FactoryGraph {
      * <p>Die Reihenfolge ist die der Suche, also nach Entfernung: Bei knappen
      * Kanälen gewinnt das nähere Gerät.
      */
-    private static void assignChannels(Level level, Map<BlockPos, List<Node>> reachable,
-                                       Map<BlockPos, Consumer> kinds,
+    private static void assignChannels(Level level, Map<DevicePos, List<Node>> reachable,
+                                       Map<DevicePos, Consumer> kinds,
                                        Map<Node, Node> parents, Map<Node, Integer> load,
-                                       Map<String, List<BlockPos>> connectors,
-                                       List<BlockPos> unnamed, List<BlockPos> starved,
+                                       Map<String, List<DevicePos>> connectors,
+                                       List<DevicePos> unnamed, List<DevicePos> starved,
                                        List<BlockPos> displays, List<BlockPos> drives,
                                        List<BlockPos> racks, List<BlockPos> fabricators,
                                        GatewayRegions regions) {
-        for (Map.Entry<BlockPos, List<Node>> entry : reachable.entrySet()) {
-            BlockPos pos = entry.getKey();
-            Consumer kind = kinds.get(pos);
+        for (Map.Entry<DevicePos, List<Node>> entry : reachable.entrySet()) {
+            DevicePos device = entry.getKey();
+            BlockPos pos = device.pos();
+            Consumer kind = kinds.get(device);
             // Über Connectors und nicht über die BlockEntity: Ein Anschluss
             // sitzt entweder allein in einem Connectorblock oder an einer
-            // Fläche eines Kabels. Welcher von beiden, geht die Zuteilung
-            // nichts an.
+            // Fläche eines Kabels. Welche Bauform, geht die Zuteilung nichts
+            // an — die Fläche schon.
             dev.devpanda.factorynetwork.block.entity.ConnectorPart connector =
-                    dev.devpanda.factorynetwork.block.entity.Connectors.at(level, pos);
+                    device.side() == null ? null
+                            : dev.devpanda.factorynetwork.block.entity.Connectors
+                                    .at(level, pos, device.side());
             if (kind == null || (kind == Consumer.CONNECTOR && connector == null)) {
                 continue;
             }
@@ -557,7 +589,7 @@ public final class FactoryGraph {
                 }
             }
             if (chosen == null) {
-                starved.add(pos);
+                starved.add(device);
                 continue;
             }
             for (Node node : chosen) {
@@ -570,13 +602,16 @@ public final class FactoryGraph {
                 case FABRICATOR -> fabricators.add(pos);
                 case DISPLAY -> displays.add(pos);
                 case CONNECTOR -> {
+                    // Die Anlage steht am Ort und nicht an der Fläche: Ein
+                    // Gateway benennt, was um es herum hängt, und ein
+                    // Kabelblock hängt mit allen seinen Anschlüssen dort.
                     String label = effectiveLabel(connector.label(), regions.instanceAt(pos));
                     if (label == null || label.isBlank()) {
-                        unnamed.add(pos);
+                        unnamed.add(device);
                     } else {
                         // Nicht überschreiben: Zwei Connectoren mit demselben
                         // Namen sind ein Fehler, kein Vorrang.
-                        connectors.computeIfAbsent(label, key -> new ArrayList<>()).add(pos);
+                        connectors.computeIfAbsent(label, key -> new ArrayList<>()).add(device);
                     }
                 }
                 default -> { }
@@ -695,12 +730,20 @@ public final class FactoryGraph {
     }
 
     /** Geräte ohne freien Kanal — im Netz sichtbar, aber nicht ansprechbar. */
-    public List<BlockPos> starvedConnectors() {
+    public List<DevicePos> starvedConnectors() {
         return starved;
     }
 
+    /**
+     * Hungert an dieser Stelle ein Gerät?
+     *
+     * <p>Nach dem Ort gefragt und nicht nach der Fläche: Wer davorsteht,
+     * sieht einen Block, und Jade schreibt an einen Block. Sitzen sechs
+     * Anschlüsse daran und geht einer leer aus, ist der Block der richtige
+     * Ort für den Hinweis.
+     */
     public boolean isStarved(BlockPos pos) {
-        return starved.contains(pos);
+        return atPos(starved, pos);
     }
 
     /**
@@ -708,16 +751,16 @@ public final class FactoryGraph {
      * wenn der Name doppelt vergeben ist. Ein mehrdeutiger Name darf nicht
      * stillschweigend auf einen der beiden zeigen.
      */
-    public Optional<BlockPos> connector(String name) {
-        List<BlockPos> positions = connectorsByName.get(name);
-        return positions != null && positions.size() == 1
-                ? Optional.of(positions.get(0)) : Optional.empty();
+    public Optional<DevicePos> connector(String name) {
+        List<DevicePos> found = connectorsByName.get(name);
+        return found != null && found.size() == 1
+                ? Optional.of(found.get(0)) : Optional.empty();
     }
 
     /** Ist dieser Name mehr als einmal vergeben? */
     public boolean isAmbiguous(String name) {
-        List<BlockPos> positions = connectorsByName.get(name);
-        return positions != null && positions.size() > 1;
+        List<DevicePos> found = connectorsByName.get(name);
+        return found != null && found.size() > 1;
     }
 
     /** Alle Namen, die mehr als einmal vergeben sind. */
@@ -728,8 +771,8 @@ public final class FactoryGraph {
                 .toList();
     }
 
-    /** Alle Positionen zu einem Namen — bei einem Konflikt mehr als eine. */
-    public List<BlockPos> positionsOf(String name) {
+    /** Alle Stellen zu einem Namen — bei einem Konflikt mehr als eine. */
+    public List<DevicePos> positionsOf(String name) {
         return connectorsByName.getOrDefault(name, List.of());
     }
 
@@ -743,18 +786,18 @@ public final class FactoryGraph {
     }
 
     /** Nur die eindeutigen Connectoren — die, mit denen sich arbeiten lässt. */
-    public Map<String, BlockPos> connectors() {
-        Map<String, BlockPos> unique = new LinkedHashMap<>();
-        connectorsByName.forEach((name, positions) -> {
-            if (positions.size() == 1) {
-                unique.put(name, positions.get(0));
+    public Map<String, DevicePos> connectors() {
+        Map<String, DevicePos> unique = new LinkedHashMap<>();
+        connectorsByName.forEach((name, found) -> {
+            if (found.size() == 1) {
+                unique.put(name, found.get(0));
             }
         });
         return unique;
     }
 
     /** Connectoren ohne Namen — im Netz, aber nicht ansprechbar. */
-    public List<BlockPos> unnamedConnectors() {
+    public List<DevicePos> unnamedConnectors() {
         return unnamed;
     }
 
@@ -796,10 +839,17 @@ public final class FactoryGraph {
                 || racks.contains(pos.below())
                 || drives.contains(pos)
                 || routers.contains(pos)
-                || unnamed.contains(pos)
-                || starved.contains(pos)
                 || displays.contains(pos)
-                || connectorsByName.values().stream().anyMatch(list -> list.contains(pos));
+                // Bei den Anschlüssen zählt allein der Ort: Gefragt wird, ob
+                // dieser Block zum Netz gehört, nicht welche seiner Flächen.
+                || atPos(unnamed, pos)
+                || atPos(starved, pos)
+                || connectorsByName.values().stream()
+                        .anyMatch(found -> atPos(found, pos));
+    }
+
+    private static boolean atPos(List<DevicePos> devices, BlockPos pos) {
+        return devices.stream().anyMatch(device -> device.pos().equals(pos));
     }
 
     public int cableCount() {

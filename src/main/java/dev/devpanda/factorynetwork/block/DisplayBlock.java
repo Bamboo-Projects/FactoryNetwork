@@ -201,7 +201,10 @@ public class DisplayBlock extends HorizontalDirectionalBlock implements EntityBl
                         (id, inventory, owner) -> new dev.devpanda.factorynetwork.client.menu
                                 .NameMenu(id, pos),
                         Component.translatable("screen.factorynetwork.name.title.display")),
-                buffer -> buffer.writeBlockPos(pos));
+                buffer -> {
+                    buffer.writeBlockPos(pos);
+                    buffer.writeByte(dev.devpanda.factorynetwork.network.packet.SetBlockNamePacket.NO_SIDE);
+                });
         return InteractionResult.CONSUME;
     }
 }
