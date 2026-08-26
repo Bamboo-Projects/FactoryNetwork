@@ -299,7 +299,7 @@ public final class WorldHost implements Interpreter.Host {
      */
     @Override
     public List<Value> itemsInSlots(String device, List<Integer> slots) {
-        ConnectorBlockEntity connector = connectorFor(device);
+        dev.devpanda.factorynetwork.block.entity.ConnectorPart connector = connectorFor(device);
         if (connector == null) {
             return List.of();
         }
@@ -558,14 +558,17 @@ public final class WorldHost implements Interpreter.Host {
                             + "from elektrolyseur to storage");
         }
         BlockPos position = connectorPosition(device.name());
-        if (!level.isLoaded(position)
-                || !(level.getBlockEntity(position) instanceof ConnectorBlockEntity connector)) {
+        var connector = level.isLoaded(position)
+                ? dev.devpanda.factorynetwork.block.entity.Connectors.at(level, position)
+                : null;
+        if (connector == null) {
             throw new ScriptError("Der Connector " + device.name() + " ist nicht erreichbar.",
                     "Vielleicht ist sein Chunk gerade nicht geladen.");
         }
-        net.minecraft.core.Direction facing = dev.devpanda.factorynetwork.block.ConnectorBlock
-                .machineSide(connector.getBlockState());
-        return new Machine(connector.getBlockPos().relative(facing), facing.getOpposite());
+        // Die Blickrichtung kommt vom Teil und nicht mehr aus dem BlockState:
+        // An einem Kabelblock sitzen bis zu sechs, und jedes zeigt woandershin.
+        net.minecraft.core.Direction facing = connector.facing();
+        return new Machine(position.relative(facing), facing.getOpposite());
     }
 
     // ---- Flüssigkeiten ----------------------------------------------------
@@ -675,8 +678,10 @@ public final class WorldHost implements Interpreter.Host {
                     "Zum Beispiel: move 1000 fluid:water from bottich to kessel");
         }
         BlockPos position = connectorPosition(device.name());
-        if (!level.isLoaded(position)
-                || !(level.getBlockEntity(position) instanceof ConnectorBlockEntity connector)) {
+        var connector = level.isLoaded(position)
+                ? dev.devpanda.factorynetwork.block.entity.Connectors.at(level, position)
+                : null;
+        if (connector == null) {
             throw new ScriptError("Der Connector " + device.name() + " ist nicht erreichbar.",
                     "Vielleicht ist sein Chunk gerade nicht geladen.");
         }
@@ -788,27 +793,25 @@ public final class WorldHost implements Interpreter.Host {
      */
     @Override
     public long countIn(String device, Value what) {
-        ConnectorBlockEntity connector = connectorFor(device);
+        dev.devpanda.factorynetwork.block.entity.ConnectorPart connector = connectorFor(device);
         if (connector == null) {
             return 0;
         }
         ResourceKind kind = ResourceKind.of(what);
         if (kind != null && kind != ResourceKinds.ITEM && kind != ResourceKinds.FLUID
                 && kind != ResourceKinds.CHEMICAL) {
-            net.minecraft.core.Direction facing = dev.devpanda.factorynetwork.block
-                    .ConnectorBlock.machineSide(connector.getBlockState());
+            net.minecraft.core.Direction facing = connector.facing();
             return kind.machine().count(level,
-                    connector.getBlockPos().relative(facing), facing.getOpposite(),
+                    connectorPosition(device).relative(facing), facing.getOpposite(),
                     keysOf(kind, what));
         }
         if (kind == ResourceKinds.FLUID) {
             return countFluids(connector, fluidsOf(what));
         }
         if (kind == ResourceKinds.CHEMICAL) {
-            net.minecraft.core.Direction facing = dev.devpanda.factorynetwork.block
-                    .ConnectorBlock.machineSide(connector.getBlockState());
+            net.minecraft.core.Direction facing = connector.facing();
             return dev.devpanda.factorynetwork.compat.mekanism.ChemicalStores.amountAt(
-                    level, connector.getBlockPos().relative(facing), facing.getOpposite(),
+                    level, connectorPosition(device).relative(facing), facing.getOpposite(),
                     chemicalsOf(what));
         }
         List<Item> items = what instanceof Value.Nothing ? List.of() : itemsOf(what);
@@ -847,7 +850,7 @@ public final class WorldHost implements Interpreter.Host {
      */
     @Override
     public long energyIn(String device) {
-        ConnectorBlockEntity connector = connectorFor(device);
+        dev.devpanda.factorynetwork.block.entity.ConnectorPart connector = connectorFor(device);
         if (connector == null) {
             return 0;
         }
@@ -856,7 +859,7 @@ public final class WorldHost implements Interpreter.Host {
     }
 
     /** Ohne Auswahl zählt alles mit. */
-    private static long countItems(ConnectorBlockEntity connector, List<Item> items) {
+    private static long countItems(dev.devpanda.factorynetwork.block.entity.ConnectorPart connector, List<Item> items) {
         IItemHandler handler = connector.machineInventory();
         if (handler == null) {
             return 0;
@@ -871,7 +874,7 @@ public final class WorldHost implements Interpreter.Host {
         return found;
     }
 
-    private static long countFluids(ConnectorBlockEntity connector, List<Fluid> fluids) {
+    private static long countFluids(dev.devpanda.factorynetwork.block.entity.ConnectorPart connector, List<Fluid> fluids) {
         IFluidHandler tank = connector.machineTank();
         if (tank == null) {
             return 0;
@@ -887,15 +890,17 @@ public final class WorldHost implements Interpreter.Host {
     }
 
     /** Die BlockEntity eines Connectors, oder {@code null}. */
-    private ConnectorBlockEntity connectorFor(String device) {
+    private dev.devpanda.factorynetwork.block.entity.ConnectorPart connectorFor(
+            String device) {
         // connectorPosition meldet sich selbst, wenn der Name unbekannt oder
         // doppelt vergeben ist. Hier bleibt der geladene Chunk.
         BlockPos position = connectorPosition(device);
         if (!level.isLoaded(position)) {
             return null;
         }
-        return level.getBlockEntity(position) instanceof ConnectorBlockEntity connector
-                ? connector : null;
+        // Über Connectors: Ein Anschluss sitzt entweder allein in einem
+        // Connectorblock oder an einer Fläche eines Kabels.
+        return dev.devpanda.factorynetwork.block.entity.Connectors.at(level, position);
     }
 
     @Override
@@ -919,7 +924,8 @@ public final class WorldHost implements Interpreter.Host {
     @Override
     public void setRedstone(String device, int strength) {
         BlockPos position = connectorPosition(device);
-        if (!(level.getBlockEntity(position) instanceof ConnectorBlockEntity connector)) {
+        var connector = dev.devpanda.factorynetwork.block.entity.Connectors.at(level, position);
+        if (connector == null) {
             throw new ScriptError("Der Connector " + device + " ist nicht erreichbar.");
         }
         if (strength < 0 || strength > 15) {
@@ -992,7 +998,7 @@ public final class WorldHost implements Interpreter.Host {
         for (String candidate : resolved.order(this::fillLevelOf, new java.util.Random())) {
             BlockPos position = graph.connector(candidate).orElse(null);
             if (position != null && level.isLoaded(position)
-                    && level.getBlockEntity(position) instanceof ConnectorBlockEntity) {
+                    && dev.devpanda.factorynetwork.block.entity.Connectors.any(level, position)) {
                 return new Value.Device(candidate);
             }
         }
@@ -1003,8 +1009,10 @@ public final class WorldHost implements Interpreter.Host {
     /** Wie voll ein Gerät ist — für die Verteilung nach dem leersten. */
     private long fillLevelOf(String device) {
         BlockPos position = graph.connector(device).orElse(null);
-        if (position == null || !level.isLoaded(position)
-                || !(level.getBlockEntity(position) instanceof ConnectorBlockEntity connector)) {
+        var connector = position != null && level.isLoaded(position)
+                ? dev.devpanda.factorynetwork.block.entity.Connectors.at(level, position)
+                : null;
+        if (connector == null) {
             return Long.MAX_VALUE;
         }
         IItemHandler handler = connector.machineInventory();
@@ -1082,7 +1090,7 @@ public final class WorldHost implements Interpreter.Host {
         // das ungeteilte Inventar. Genau das ist der Griff, mit dem ein move
         // nur den Ausgang leert.
         if (value instanceof Value.DeviceSlots view) {
-            ConnectorBlockEntity connector = connectorFor(view.device());
+            dev.devpanda.factorynetwork.block.entity.ConnectorPart connector = connectorFor(view.device());
             if (connector == null) {
                 throw new ScriptError("Der Connector " + view.device()
                         + " ist nicht erreichbar.",
@@ -1101,8 +1109,10 @@ public final class WorldHost implements Interpreter.Host {
                     + value.describe() + ".");
         }
         BlockPos position = connectorPosition(device.name());
-        if (!level.isLoaded(position)
-                || !(level.getBlockEntity(position) instanceof ConnectorBlockEntity connector)) {
+        var connector = level.isLoaded(position)
+                ? dev.devpanda.factorynetwork.block.entity.Connectors.at(level, position)
+                : null;
+        if (connector == null) {
             throw new ScriptError("Der Connector " + device.name() + " ist nicht erreichbar.",
                     "Vielleicht ist sein Chunk gerade nicht geladen.");
         }

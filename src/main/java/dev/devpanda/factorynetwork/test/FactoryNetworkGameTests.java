@@ -10664,4 +10664,140 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    /**
+     * Ein Anschluss am Kabelblock zählt zum Netz.
+     *
+     * <p>Bisher stand für jede Maschine ein eigener Connectorblock <b>neben</b>
+     * dem Kabel — eine Maschinenwand kostete sechs Blöcke, wo einer reicht.
+     * Seit dem Kabelbus sitzt der Anschluss an einer Fläche des Kabels, wie
+     * bei AE2.
+     *
+     * <p>Geprüft wird, was das Netz kennt: Der Anschluss muss unter seinem
+     * Namen im Graphen stehen und die Maschine dahinter erreichen — beides
+     * hing bisher daran, dass ein eigener Block dort stand.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void aparIsSeenOnTheCableItself(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 1, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        rackWithServer(helper, controller.west());
+
+        BlockPos cable = controller.east();
+        helper.setBlock(cable, FnBlocks.CABLE.get());
+        // Die Kiste liegt nördlich; der Anschluss sitzt an derselben Fläche
+        // des Kabels — kein eigener Block dazwischen.
+        helper.setBlock(cable.north(), Blocks.CHEST);
+
+        if (helper.getBlockEntity(cable)
+                instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus) {
+            bus.addPart(Direction.NORTH).setLabel("kiste_1");
+        } else {
+            helper.fail("Am Kabel hängt keine BlockEntity für Teile", cable);
+            return;
+        }
+
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.graph().connectorNames().contains("kiste_1"),
+                "Das Netz muss den Anschluss am Kabel kennen: "
+                        + entity.graph().connectorNames());
+
+        var part = dev.devpanda.factorynetwork.block.entity.Connectors.at(
+                helper.getLevel(), helper.absolutePos(cable), Direction.NORTH);
+        helper.assertTrue(part != null, "und er muss über Ort und Seite zu finden sein");
+        helper.assertTrue(part.machineInventory() != null,
+                "und die Kiste dahinter erreichen");
+        helper.succeed();
+    }
+
+    /**
+     * Zwei Anschlüsse an einem Kabelblock sind zwei Geräte.
+     *
+     * <p>Das ist der Gewinn, um den es ging: ein Block, zwei Maschinen. Der
+     * Graph unterscheidet sie noch nicht — er merkt sich einen Ort und keine
+     * Seite —, und genau deshalb steht dieser Test hier: Er hält fest, was
+     * der nächste Schnitt zu lösen hat.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void twopartsOnOneBlockAreTwoDevices(GameTestHelper helper) {
+        BlockPos cable = new BlockPos(2, 1, 1);
+        helper.setBlock(cable, FnBlocks.CABLE.get());
+        helper.setBlock(cable.north(), Blocks.CHEST);
+        helper.setBlock(cable.south(), Blocks.CHEST);
+
+        if (!(helper.getBlockEntity(cable)
+                instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus)) {
+            helper.fail("Am Kabel hängt keine BlockEntity für Teile", cable);
+            return;
+        }
+        bus.addPart(Direction.NORTH).setLabel("nord");
+        bus.addPart(Direction.SOUTH).setLabel("sued");
+
+        helper.assertValueEqual(bus.parts().size(), 2, "zwei Anschlüsse an einem Block");
+        var level = helper.getLevel();
+        BlockPos here = helper.absolutePos(cable);
+        helper.assertValueEqual(
+                dev.devpanda.factorynetwork.block.entity.Connectors
+                        .at(level, here, Direction.NORTH).label(), "nord",
+                "der nördliche");
+        helper.assertValueEqual(
+                dev.devpanda.factorynetwork.block.entity.Connectors
+                        .at(level, here, Direction.SOUTH).label(), "sued",
+                "und der südliche");
+        // Ohne Seite gibt es keine Antwort — geraten wird nicht.
+        helper.assertTrue(dev.devpanda.factorynetwork.block.entity.Connectors
+                        .at(level, here) == null,
+                "und ohne Seite gibt es keine Antwort");
+        helper.succeed();
+    }
+
+    /**
+     * Ein Programm bewegt Gegenstände durch einen Anschluss am Kabel.
+     *
+     * <p>Der Beweis, dass es nicht bei der Buchhaltung bleibt: Der Graph
+     * kennt den Anschluss, und die Laufzeit greift durch ihn hindurch auf die
+     * Maschine. Bis hierher war beides an einen eigenen Connectorblock
+     * gebunden.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void amoveRunsThroughApartOnTheCable(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 1, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        rackWithServer(helper, controller.west());
+        driveWithCell(helper, controller.above(),
+                dev.devpanda.factorynetwork.storage.CellTier.K64);
+
+        BlockPos cable = controller.east();
+        helper.setBlock(cable, FnBlocks.CABLE.get());
+        BlockPos chest = cable.north();
+        helper.setBlock(chest, Blocks.CHEST);
+        if (helper.getBlockEntity(chest) instanceof ChestBlockEntity container) {
+            container.setItem(0, new ItemStack(Items.IRON_ORE, 12));
+        } else {
+            helper.fail("Keine Kiste", chest);
+            return;
+        }
+        if (helper.getBlockEntity(cable)
+                instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus) {
+            bus.addPart(Direction.NORTH).setLabel("kiste_1");
+        } else {
+            helper.fail("Am Kabel hängt keine BlockEntity für Teile", cable);
+            return;
+        }
+
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        helper.assertTrue(entity.deploy("""
+                fn holen() {
+                    move all from kiste_1 to storage
+                }"""), "Das Programm wurde nicht übernommen");
+
+        entity.callFunction("holen", List.of());
+
+        helper.assertValueEqual(entity.storage().count(Items.IRON_ORE), 12L,
+                "Das Erz muss durch den Anschluss am Kabel ins Netz gekommen sein");
+        helper.succeed();
+    }
+
 }

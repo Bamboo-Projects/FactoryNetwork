@@ -270,7 +270,17 @@ public final class FactoryGraph {
                 }
                 BlockState state = level.getBlockState(next);
                 if (state.getBlock() instanceof CableBlock) {
-                    visitCable(level, next, current, parents, queue, cables);
+                    Node node = visitCable(level, next, current, parents, queue, cables);
+                    // Ein Kabel mit Anschlüssen an seinen Flächen ist selbst
+                    // ein Gerät — und sein Weg zum Controller führt über sich
+                    // selbst, nicht über das Kabel davor.
+                    if (node != null && dev.devpanda.factorynetwork.block.entity.Connectors
+                            .any(level, next)) {
+                        BlockPos device = next.immutable();
+                        reachable.computeIfAbsent(device, key -> new ArrayList<>()).add(node);
+                        kinds.put(device, Consumer.CONNECTOR);
+                        visitedDevices.add(device);
+                    }
                 } else if (state.getBlock()
                         instanceof dev.devpanda.factorynetwork.block.GatewayBlock) {
                     // Er reicht den Strang durch wie ein Kabel und vermehrt
@@ -426,21 +436,22 @@ public final class FactoryGraph {
      * Geht in einen Kabelblock hinein — aber nur, wenn seine Farbe zu der
      * passt, aus der man kommt.
      */
-    private static void visitCable(Level level, BlockPos pos, Node from, Map<Node, Node> parents,
+    private static Node visitCable(Level level, BlockPos pos, Node from,
+                                   Map<Node, Node> parents,
                                    Deque<Node> queue, Set<BlockPos> cables) {
-        boolean entered = false;
         CableColour colour = CableBlock.colourOf(level.getBlockState(pos));
-        if (from.colour().connectsTo(colour)) {
-            Node node = new Node(pos.immutable(), colour);
-            if (!parents.containsKey(node)) {
-                parents.put(node, from);
-                queue.add(node);
-                entered = true;
-            }
+        if (!from.colour().connectsTo(colour)) {
+            return null;
         }
-        if (entered) {
+        Node node = new Node(pos.immutable(), colour);
+        if (!parents.containsKey(node)) {
+            parents.put(node, from);
+            queue.add(node);
             cables.add(pos.immutable());
         }
+        // Auch ein schon besuchtes Kabel darf seine Teile beisteuern: Der
+        // Knoten ist derselbe, und über ihn läuft ihr Weg zum Controller.
+        return node;
     }
 
     /**
@@ -517,9 +528,12 @@ public final class FactoryGraph {
         for (Map.Entry<BlockPos, List<Node>> entry : reachable.entrySet()) {
             BlockPos pos = entry.getKey();
             Consumer kind = kinds.get(pos);
-            ConnectorBlockEntity connector =
-                    level.getBlockEntity(pos) instanceof ConnectorBlockEntity found
-                            ? found : null;
+            // Über Connectors und nicht über die BlockEntity: Ein Anschluss
+            // sitzt entweder allein in einem Connectorblock oder an einer
+            // Fläche eines Kabels. Welcher von beiden, geht die Zuteilung
+            // nichts an.
+            dev.devpanda.factorynetwork.block.entity.ConnectorPart connector =
+                    dev.devpanda.factorynetwork.block.entity.Connectors.at(level, pos);
             if (kind == null || (kind == Consumer.CONNECTOR && connector == null)) {
                 continue;
             }

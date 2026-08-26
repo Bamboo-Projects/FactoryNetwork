@@ -180,11 +180,21 @@ anfassen.
    `ConnectorBlockEntity` mit genau einem. **Keine der einunddreißig Stellen
    angefasst**, kein Verhalten geändert; belegt durch den unveränderten
    Prüflauf.
-2. **Der Kabelblock trägt Teile.** Eine `CableBusBlockEntity` mit bis zu sechs
-   `ConnectorPart`, dazu `Connectors.at(level, pos, seite)` als der eine Weg,
-   einen Anschluss zu finden. Die einunddreißig Stellen ziehen um — die
-   meisten mechanisch, weil sie den Anschluss ohnehin über den Graphen
-   bekommen.
+2. ~~**Der Kabelblock trägt Teile.**~~ **Gebaut** (26.08.).
+   `CableBusBlockEntity` hält bis zu sechs `ConnectorPart`, je Fläche eine
+   eigene Sicht auf denselben Block; `Connectors.at(level, pos, seite)` ist
+   der eine Weg, einen Anschluss zu finden, und `Connectors.at(level, pos)`
+   beantwortet die alte Frage weiter — aber nur, wenn es genau einen gibt.
+   Der Graph zählt ein Kabel mit Anschlüssen als Gerät, die Laufzeit greift
+   durch sie hindurch. Belegt Ende zu Ende: `amoveRunsThroughApartOnTheCable`
+   holt Erz aus einer Kiste, die an einem Kabel und nicht an einem
+   Connectorblock hängt.
+
+   **Zwei Dinge stehen noch aus und sind benannt:** Zwei Anschlüsse an einem
+   Block sind für den Graphen noch ein Gerät — er merkt sich einen Ort und
+   keine Seite; `twopartsOnOneBlockAreTwoDevices` hält fest, was Schnitt 3 zu
+   lösen hat. Und **jeder** Kabelblock trägt jetzt eine BlockEntity, auch
+   ohne Teile: Was das bei zehntausend Kabeln kostet, ist ungemessen.
 3. **Ein Gerät ist Ort und Seite.** Der Graph merkt sich `(pos, seite)` statt
    `pos`. Danach sind zwei Anschlüsse an einem Block unterscheidbar, und die
    drei schweren Stellen aus Abschnitt 3 — Redstone, Benennen,

@@ -34,7 +34,7 @@ import java.util.Map;
  * der Luft ist ein Würfel, eines zwischen zwei Nachbarn eine Röhre. Das ist
  * reine Optik, gelaufen wird über {@code FactoryGraph}.
  */
-public class CableBlock extends Block {
+public class CableBlock extends Block implements net.minecraft.world.level.block.EntityBlock {
 
     public static final MapCodec<CableBlock> CODEC = simpleCodec(CableBlock::new);
 
@@ -91,6 +91,24 @@ public class CableBlock extends Block {
     }
 
     /** Das gewöhnliche Kabel trägt sechzehn Kanäle. */
+    /**
+     * Jeder Kabelblock trägt eine BlockEntity für seine Anschlüsse.
+     *
+     * <p><b>Auch wenn keiner daran sitzt.</b> Die Alternative — sie erst
+     * anlegen, wenn ein Teil dazukommt — verlangt einen Zustand im
+     * BlockState, der sich beim Setzen und Abbauen ändert, und damit eine
+     * zweite Wahrheit darüber, ob hier Teile sitzen. AE2 legt sie ebenfalls
+     * überall an.
+     *
+     * <p>Was das bei zehntausend Kabeln kostet, ist <b>ungemessen</b> und
+     * steht als offener Punkt in {@code connector-im-kabel.md}.
+     */
+    @Override
+    public net.minecraft.world.level.block.entity.@org.jetbrains.annotations.Nullable BlockEntity
+            newBlockEntity(net.minecraft.core.BlockPos pos, BlockState state) {
+        return new dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity(pos, state);
+    }
+
     public static final int CHANNELS_THIN = 16;
 
     /** Das dichte vierundsechzig — viermal so viel, wie bei AE2 auch. */

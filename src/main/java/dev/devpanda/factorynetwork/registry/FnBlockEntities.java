@@ -32,6 +32,20 @@ public final class FnBlockEntities {
                             dev.devpanda.factorynetwork.registry.FnBlocks.GATEWAY.get())
                     .build(null));
 
+    /**
+     * Der Kabelblock, der Anschlüsse trägt.
+     *
+     * <p>Beide Kabelarten teilen ihn: Ein dichtes Kabel trägt dieselben
+     * Teile wie ein gewöhnliches, nur mehr Kanäle.
+     */
+    public static final DeferredHolder<BlockEntityType<?>,
+            BlockEntityType<dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity>>
+            CABLE_BUS = BLOCK_ENTITIES.register("cable_bus", () -> BlockEntityType.Builder
+                    .of(dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity::new,
+                            dev.devpanda.factorynetwork.registry.FnBlocks.CABLE.get(),
+                            dev.devpanda.factorynetwork.registry.FnBlocks.DENSE_CABLE.get())
+                    .build(null));
+
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<ConnectorBlockEntity>> CONNECTOR =
             BLOCK_ENTITIES.register("connector", () -> BlockEntityType.Builder
                     .of(ConnectorBlockEntity::new, FnBlocks.CONNECTOR.get())
