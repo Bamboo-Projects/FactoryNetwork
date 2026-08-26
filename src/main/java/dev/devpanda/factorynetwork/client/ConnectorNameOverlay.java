@@ -74,7 +74,8 @@ public final class ConnectorNameOverlay {
     private static void render(RenderLevelStageEvent event, Minecraft minecraft,
                                Level level, Player player) {
         BlockPos center = player.blockPosition();
-        List<ConnectorBlockEntity> connectors = nearbyConnectors(level, center);
+        Map<BlockPos, List<dev.devpanda.factorynetwork.block.entity.ConnectorPart>> connectors =
+                nearbyConnectors(level, center);
         if (connectors.isEmpty()) {
             return;
         }
@@ -82,10 +83,12 @@ public final class ConnectorNameOverlay {
         // Namen, die mehr als einmal vorkommen, sind unbrauchbar — beide
         // Connectoren werden rot, nicht einer davon.
         Map<String, Integer> counts = new HashMap<>();
-        for (ConnectorBlockEntity connector : connectors) {
-            String label = connector.label();
-            if (!label.isBlank()) {
-                counts.merge(label, 1, Integer::sum);
+        for (List<dev.devpanda.factorynetwork.block.entity.ConnectorPart> parts : connectors.values()) {
+            for (dev.devpanda.factorynetwork.block.entity.ConnectorPart connector : parts) {
+                String label = connector.label();
+                if (!label.isBlank()) {
+                    counts.merge(label, 1, Integer::sum);
+                }
             }
         }
 
@@ -96,26 +99,39 @@ public final class ConnectorNameOverlay {
                 minecraft.renderBuffers().bufferSource();
         Font font = minecraft.font;
 
-        for (ConnectorBlockEntity connector : connectors) {
-            String label = connector.label();
-            String shown = label.isBlank() ? "?" : label;
-            int color = label.isBlank() ? COLOR_UNNAMED
-                    : counts.getOrDefault(label, 0) > 1 ? COLOR_CONFLICT : COLOR_NAMED;
+        for (Map.Entry<BlockPos, List<dev.devpanda.factorynetwork.block.entity.ConnectorPart>> entry
+                : connectors.entrySet()) {
+            BlockPos pos = entry.getKey();
+            List<dev.devpanda.factorynetwork.block.entity.ConnectorPart> parts = entry.getValue();
+            for (int i = 0; i < parts.size(); i++) {
+                dev.devpanda.factorynetwork.block.entity.ConnectorPart connector = parts.get(i);
+                String label = connector.label();
+                String shown = label.isBlank() ? "?" : label;
+                // Erst wenn mehrere an einem Block hängen, muss dabeistehen,
+                // welche Fläche gemeint ist. Bei einem einzigen wäre die
+                // Angabe nur Beiwerk.
+                if (parts.size() > 1) {
+                    shown = mark(connector.facing()) + " " + shown;
+                }
+                int color = label.isBlank() ? COLOR_UNNAMED
+                        : counts.getOrDefault(label, 0) > 1 ? COLOR_CONFLICT : COLOR_NAMED;
 
-            BlockPos pos = connector.getBlockPos();
-            poses.pushPose();
-            poses.translate(
-                    pos.getX() + 0.5 - cameraPosition.x,
-                    pos.getY() + 1.1 - cameraPosition.y,
-                    pos.getZ() + 0.5 - cameraPosition.z);
-            poses.mulPose(camera.rotation());
-            poses.scale(-0.025F, -0.025F, 0.025F);
+                poses.pushPose();
+                // Übereinander, nicht ineinander: Sechs Namen an einem
+                // Kabelblock stünden sonst alle an derselben Stelle.
+                poses.translate(
+                        pos.getX() + 0.5 - cameraPosition.x,
+                        pos.getY() + 1.1 + i * LINE_HEIGHT - cameraPosition.y,
+                        pos.getZ() + 0.5 - cameraPosition.z);
+                poses.mulPose(camera.rotation());
+                poses.scale(-0.025F, -0.025F, 0.025F);
 
-            Matrix4f matrix = poses.last().pose();
-            float half = -font.width(shown) / 2.0F;
-            font.drawInBatch(shown, half, 0, color, false, matrix, buffers,
-                    Font.DisplayMode.SEE_THROUGH, BACKGROUND, 0xF000F0);
-            poses.popPose();
+                Matrix4f matrix = poses.last().pose();
+                float half = -font.width(shown) / 2.0F;
+                font.drawInBatch(shown, half, 0, color, false, matrix, buffers,
+                        Font.DisplayMode.SEE_THROUGH, BACKGROUND, 0xF000F0);
+                poses.popPose();
+            }
         }
         buffers.endBatch();
     }
@@ -127,8 +143,10 @@ public final class ConnectorNameOverlay {
      * Abtasten der Blöcke: Ein Würfel von 33 Blocklänge wären
      * fünfunddreißigtausend Positionen — in jedem Bild.
      */
-    private static List<ConnectorBlockEntity> nearbyConnectors(Level level, BlockPos center) {
-        List<ConnectorBlockEntity> found = new ArrayList<>();
+    private static Map<BlockPos, List<dev.devpanda.factorynetwork.block.entity.ConnectorPart>> nearbyConnectors(
+            Level level, BlockPos center) {
+        Map<BlockPos, List<dev.devpanda.factorynetwork.block.entity.ConnectorPart>> found =
+                new java.util.LinkedHashMap<>();
         int chunkRange = (RANGE >> 4) + 1;
         int centerChunkX = center.getX() >> 4;
         int centerChunkZ = center.getZ() >> 4;
@@ -138,14 +156,43 @@ public final class ConnectorNameOverlay {
                     continue;
                 }
                 for (BlockEntityHolder holder : entitiesIn(level, x, z)) {
-                    if (holder.entity() instanceof ConnectorBlockEntity connector
-                            && connector.getBlockPos().distSqr(center) <= RANGE * RANGE) {
-                        found.add(connector);
+                    var entity = holder.entity();
+                    if (entity.getBlockPos().distSqr(center) > RANGE * RANGE) {
+                        continue;
+                    }
+                    if (entity instanceof ConnectorBlockEntity connector) {
+                        found.put(connector.getBlockPos(), List.of(connector.part()));
+                    } else if (entity instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus
+                            && bus.hasParts()) {
+                        // Nach Flächen geordnet, weil die Karte eine EnumMap
+                        // ist: Dieselben sechs Namen stehen immer in
+                        // derselben Reihenfolge übereinander.
+                        found.put(bus.getBlockPos(), List.copyOf(bus.parts().values()));
                     }
                 }
             }
         }
         return found;
+    }
+
+    /** Wie weit zwei Namen übereinander auseinanderstehen, in Blöcken. */
+    private static final double LINE_HEIGHT = 0.28;
+
+    /**
+     * Die Fläche in zwei Zeichen.
+     *
+     * <p>Deutsch und ohne Pfeile: Ob die Schriftart einen Pfeil hat, sieht
+     * man erst im Spiel — {@code Ob} und {@code Un} hat sie sicher.
+     */
+    private static String mark(net.minecraft.core.Direction side) {
+        return switch (side) {
+            case NORTH -> "N";
+            case SOUTH -> "S";
+            case EAST -> "O";
+            case WEST -> "W";
+            case UP -> "Ob";
+            case DOWN -> "Un";
+        };
     }
 
     private record BlockEntityHolder(net.minecraft.world.level.block.entity.BlockEntity entity) {}

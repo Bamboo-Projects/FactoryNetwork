@@ -42,14 +42,20 @@ public final class AnalyserScan {
         nodes.add(new AnalyserData.Node(controller.getBlockPos(),
                 AnalyserData.NodeState.CONTROLLER, ""));
 
-        for (Map.Entry<String, dev.devpanda.factorynetwork.network.DevicePos> entry
-                : graph.connectors().entrySet()) {
-            BlockPos pos = entry.getValue().pos();
+        // <b>Ein Kabelblock ist ein Punkt</b>, auch wenn sechs Anschlüsse
+        // daran hängen: Zwei Knoten an derselben Stelle hießen zwei
+        // Beschriftungen übereinander, und lesbar wäre keine davon. Der
+        // Punkt nennt deshalb alle Namen, die dort sitzen.
+        java.util.Map<BlockPos, List<String>> namesAt = new java.util.LinkedHashMap<>();
+        graph.connectors().forEach((name, where) ->
+                namesAt.computeIfAbsent(where.pos(), key -> new ArrayList<>()).add(name));
+        for (Map.Entry<BlockPos, List<String>> entry : namesAt.entrySet()) {
+            BlockPos pos = entry.getKey();
             AnalyserData.NodeState state = duplicates.contains(pos)
                     ? AnalyserData.NodeState.DUPLICATE
                     : starved.contains(pos) ? AnalyserData.NodeState.STARVED
                     : AnalyserData.NodeState.DEVICE;
-            nodes.add(new AnalyserData.Node(pos, state, entry.getKey()));
+            nodes.add(new AnalyserData.Node(pos, state, String.join(", ", entry.getValue())));
         }
         for (BlockPos pos : unnamed) {
             nodes.add(new AnalyserData.Node(pos, AnalyserData.NodeState.UNNAMED, ""));

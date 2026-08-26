@@ -1,6 +1,5 @@
 package dev.devpanda.factorynetwork.compat.jade;
 
-import dev.devpanda.factorynetwork.block.entity.ConnectorBlockEntity;
 import dev.devpanda.factorynetwork.network.ControllerRegistry;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
@@ -35,7 +34,8 @@ public enum ConnectorInfo implements IBlockComponentProvider, IServerDataProvide
 
     @Override
     public void appendServerData(CompoundTag data, BlockAccessor accessor) {
-        if (!(accessor.getBlockEntity() instanceof ConnectorBlockEntity connector)) {
+        var connector = partAt(accessor);
+        if (connector == null) {
             return;
         }
         String label = connector.label();
@@ -94,6 +94,24 @@ public enum ConnectorInfo implements IBlockComponentProvider, IServerDataProvide
             tooltip.add(Component.translatable("jade.factorynetwork.connector.cost", cost)
                     .withStyle(ChatFormatting.DARK_GRAY));
         }
+    }
+
+    /**
+     * Der Anschluss, auf den der Spieler gerade sieht.
+     *
+     * <p>Am Kabelblock entscheidet die getroffene Fläche: Dort hängen bis zu
+     * sechs, und ohne sie stünde im Fenster irgendeiner davon. Am eigenen
+     * Connectorblock gibt es nur einen, und der Weg über die Fläche fällt
+     * still auf ihn zurück.
+     */
+    private static dev.devpanda.factorynetwork.block.entity.ConnectorPart partAt(BlockAccessor accessor) {
+        var level = accessor.getLevel();
+        var pos = accessor.getPosition();
+        var side = dev.devpanda.factorynetwork.block.CableBlock.partSideAt(
+                level, pos, accessor.getHitResult());
+        return side == null
+                ? dev.devpanda.factorynetwork.block.entity.Connectors.at(level, pos)
+                : dev.devpanda.factorynetwork.block.entity.Connectors.at(level, pos, side);
     }
 
     @Override

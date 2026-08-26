@@ -77,6 +77,9 @@ public class FactoryNetworkJadePlugin implements IWailaPlugin {
                 dev.devpanda.factorynetwork.block.BurnerBlock.class);
         registration.registerBlockComponent(ConnectorInfo.INSTANCE,
                 dev.devpanda.factorynetwork.block.ConnectorBlock.class);
+        // Auch am Kabel: Dort sitzen die Anschlüsse seit dem Kabelbus, und
+        // ohne diese Zeile sagte Jade über sie kein Wort.
+        registration.registerBlockComponent(ConnectorInfo.INSTANCE, CableBlock.class);
         registration.registerBlockComponent(ControllerInfo.INSTANCE,
                 dev.devpanda.factorynetwork.block.ControllerBlock.class);
     }

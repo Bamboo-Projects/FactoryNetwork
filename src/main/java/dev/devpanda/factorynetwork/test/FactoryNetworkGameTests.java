@@ -11149,4 +11149,48 @@ public final class FactoryNetworkGameTests {
                 "mit Anschluss reicht die Trefferfläche bis an die Blockkante");
         helper.succeed();
     }
+
+    /**
+     * Zwei Anschlüsse an einem Block sind ein Punkt im Bild.
+     *
+     * <p>Der Analysator zeichnet Punkte in den Raum, und ein Kabelblock ist
+     * <b>ein</b> Punkt — auch wenn sechs Anschlüsse daran hängen. Zwei
+     * Knoten an derselben Stelle hießen zwei Beschriftungen übereinander:
+     * lesbar wäre keine davon.
+     *
+     * <p>Der Punkt nennt deshalb beide Namen.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void btwopartsAreOnePointInThePicture(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 1, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        rackWithServer(helper, controller.west());
+
+        BlockPos cable = controller.east();
+        helper.setBlock(cable, FnBlocks.CABLE.get());
+        helper.setBlock(cable.north(), Blocks.CHEST);
+        helper.setBlock(cable.south(), Blocks.CHEST);
+
+        var bus = busAt(helper, cable);
+        if (bus == null) {
+            return;
+        }
+        bus.addPart(Direction.NORTH).setLabel("erzkiste");
+        bus.addPart(Direction.SOUTH).setLabel("kohlekiste");
+
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        var data = dev.devpanda.factorynetwork.analyser.AnalyserScan.of(entity);
+        BlockPos here = helper.absolutePos(cable);
+        var atCable = data.nodes().stream()
+                .filter(node -> node.pos().equals(here))
+                .toList();
+
+        helper.assertValueEqual(atCable.size(), 1, "ein Punkt je Stelle");
+        String label = atCable.get(0).label();
+        helper.assertTrue(label.contains("erzkiste") && label.contains("kohlekiste"),
+                "und er nennt beide Namen: " + label);
+        helper.succeed();
+    }
 }

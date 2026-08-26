@@ -1458,3 +1458,25 @@ die Minecraft alle beim Start anlegt. Der Preis der anderen Seite: Mit einem
 angemeldeten Renderer landet jede Kabel-BlockEntity in der Zeichenliste, auch
 die ohne Teile. Der Rücksprung steht in der ersten Zeile, und die Kosten
 stehen als offener Punkt.
+
+### Drei Anzeigen, drei verschiedene Antworten (seit dem 26.08.)
+
+Namenszug, Jade und Analysator lasen alle drei einen Anschluss je Stelle. Es
+lag nahe, dreimal dasselbe zu tun — es wäre dreimal falsch gewesen. Was eine
+Anzeige mit sechs Anschlüssen an einem Block anfangen soll, hängt daran, was
+sie zeigt:
+
+- Der **Namenszug** schwebt über einem Block und gehört keinem Klick. Er kann
+  nicht wissen, welcher gemeint ist, also zeigt er alle — gestapelt, und mit
+  der Fläche davor, sobald es mehr als einer ist.
+- **Jade** gehört einem Blick. Der Blick trifft eine Fläche, und die Fläche
+  ist die Antwort. Dabei fiel auf, dass Jade am Kabel über Anschlüsse
+  überhaupt nichts sagte: Der Block war nie angemeldet, weil es dort nie
+  welche gab.
+- Der **Analysator** zeichnet einen Punkt je Stelle im Raum. Er kann nicht
+  stapeln — die Punkte stehen im Netzbild, nicht in einer Liste —, also fasst
+  er zusammen: ein Punkt, beide Namen.
+
+Die Regel dahinter ist nicht „mehrere Anschlüsse anzeigen", sondern: **Wer
+fragt, bestimmt die Antwort.** Ein Blick hat eine Fläche, ein Schwebetext hat
+keine, ein Punkt im Raum hat eine Stelle.

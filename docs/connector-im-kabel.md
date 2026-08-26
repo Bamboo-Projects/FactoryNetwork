@@ -269,6 +269,22 @@ anfassen.
 Nach Schnitt 2 gibt es Anschlüsse im Kabelblock; nach Schnitt 3 mehrere je
 Block; nach Schnitt 4 sieht man sie, trifft sie und kann sie bauen.
 
-**Offen bleibt 4b:** Namenszug über dem Block, Jade und der Analysator zeigen
-weiter einen Anschluss je Stelle — sitzen zwei daran, stehen zwei
-Beschriftungen aufeinander.
+### 4b — die drei Anzeigen (26.08., gebaut)
+
+Alle drei lasen einen Anschluss je Stelle. Jede bekam die Antwort, die zu ihr
+passt, und die drei Antworten sind verschieden:
+
+- **Der Namenszug** stapelt. Sechs Namen an einem Kabelblock stehen
+  übereinander statt ineinander, und sobald mehr als einer da ist, steht die
+  Fläche davor: `N kiste_1`. Bei einem einzigen bleibt es beim nackten Namen —
+  die Angabe wäre dort nur Beiwerk.
+- **Jade** fragt die getroffene Fläche. Wer auf einen Anschluss sieht, liest
+  über diesen; am eigenen Connectorblock fällt der Weg still auf den einen
+  zurück, der dort sitzt. Nebenbei stand Jade am Kabel bis heute gar nichts
+  über Anschlüsse — der Block war nicht angemeldet.
+- **Der Analysator** fasst zusammen. Er zeichnet Punkte in den Raum, und ein
+  Kabelblock ist **ein** Punkt; zwei Knoten an derselben Stelle hießen zwei
+  Beschriftungen aufeinander. Der Punkt nennt deshalb beide Namen
+  (`btwopartsAreOnePointInThePicture`).
+
+Damit ist Weg B vollständig.
