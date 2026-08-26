@@ -241,7 +241,7 @@ Vorentscheidungen)
 
 | # | Was | Status | Wo | Größe |
 |---|---|---|---|---|
-| 6.1 | ~~Handbuch~~ — **achtzehn Seiten** (26.08.). „Sprache im Detail" ist die **Referenzseite** und wird aus `Signatures` erzeugt, damit sie nicht auseinanderläuft; dazu kamen `listen.md`, `auswahlen.md`, `fluessigkeiten.md`, `server.md` und `ereignisse.md`. `fluessigkeiten.md` bündelt, was über das Bewegen von Flüssigkeiten und Gasen auf vier Seiten verstreut lag; `server.md` ist die erste Seite, die nicht an den Spieler gerichtet ist; `ereignisse.md` war die letzte große Lücke — die sieben eingebauten Ereignisse standen nirgends beisammen, und der Unterschied zwischen `device_output` und `device_changed` entscheidet, ob eine Fabrik im Kreis läuft. Alle Beispiele werden übersetzt (`DocExamplesTest`). **Fünf Stellen berichtigt** (26.08.), an denen das Handbuch dem Code widersprach: fünf Reiter statt sechs mit ausgegrauter Fertigung, zwei von vier Zellenarten, zweimal „`gerät.count(…)` auf einer Anzeige geht noch nicht" (geht seit dem 25.08.) und „eine Gruppe ist ein Ziel, kein Wert" (seit 1.14 falsch) | | `guide/ereignisse.md`, `DocExamplesTest` | |
+| 6.1 | ~~Handbuch~~ — **neunzehn Seiten** (26.08.). „Sprache im Detail" ist die **Referenzseite** und wird aus `Signatures` erzeugt, damit sie nicht auseinanderläuft; dazu kamen `listen.md`, `auswahlen.md`, `fluessigkeiten.md`, `server.md`, `ereignisse.md` und `erste-anlage.md`. `fluessigkeiten.md` bündelt, was über das Bewegen von Flüssigkeiten und Gasen auf vier Seiten verstreut lag; `server.md` ist die erste Seite, die nicht an den Spieler gerichtet ist; `ereignisse.md` war die letzte große Lücke — die sieben eingebauten Ereignisse standen nirgends beisammen, und der Unterschied zwischen `device_output` und `device_changed` entscheidet, ob eine Fabrik im Kreis läuft. Alle Beispiele werden übersetzt (`DocExamplesTest`). **Fünf Stellen berichtigt** (26.08.), an denen das Handbuch dem Code widersprach: fünf Reiter statt sechs mit ausgegrauter Fertigung, zwei von vier Zellenarten, zweimal „`gerät.count(…)` auf einer Anzeige geht noch nicht" (geht seit dem 25.08.) und „eine Gruppe ist ein Ziel, kein Wert" (seit 1.14 falsch) | | `guide/ereignisse.md`, `DocExamplesTest` | |
 | 6.2 | ~~Lizenzdatei~~ — **fertig.** MIT, Copyright 2026 DevPanda (Florian Richter). Der Entwurf ist aufgegangen und entfallen | | `LICENSE` | |
 | 6.3 | ~~Ob die Hilfe im Spiel ins Buch wandert~~ — **entschieden: nein, nebeneinander.** Die Griffliste beantwortet „was steht hier", das Buch „wie funktioniert das" | | `entscheidungen.md` | |
 | 6.4 | ~~WorkerRuntime-Javadoc~~ — **berichtigt** | | | |
@@ -285,16 +285,20 @@ Energiezellen im Laufwerk.
 ~~**1. Der Controller-Multiblock** (5.1).~~ **Gebaut am 25.08.** Die 384
 Geräte je Netz sind keine Grenze mehr.
 
-**1. Weitere Handbuchseiten** (6.1). Achtzehn Seiten stehen; `listen.md`,
-`auswahlen.md`, `fluessigkeiten.md`, `server.md` und `ereignisse.md` kamen am
-26.08. dazu, und die Fehlersuche kennt jetzt die Meldungen der Fertigung und
+**1. Weitere Handbuchseiten** (6.1). Neunzehn Seiten stehen; `listen.md`,
+`auswahlen.md`, `fluessigkeiten.md`, `server.md`, `ereignisse.md` und
+`erste-anlage.md` kamen am 26.08. dazu, und die Fehlersuche kennt jetzt die Meldungen der Fertigung und
 der Chemikalien. Schreibarbeit ohne Risiko — und das, was die Mod für
 jemanden von außen zugänglich macht.
 
-Was noch fehlt, ist keine Lücke im Stoff mehr, sondern eine im Einstieg:
-**eine Seite, die eine erste Anlage von der Kiste bis zur Ausgabe
-durchspielt.** Heute erklären `bloecke.md` die Teile und `programmieren.md`
-die Sprache, aber niemand geht einmal den ganzen Weg.
+~~Was noch fehlt, ist eine Lücke im Einstieg.~~ **Geschrieben** (26.08.):
+`erste-anlage.md` geht den ganzen Weg einmal durch. Dabei fielen zwei Dinge
+auf, die keine Schreibarbeit waren: Die Titelseite versprach „vier Blöcke,
+dann läuft es" und verschwieg den Serverschrank — ohne ihn nimmt das Netz
+kein Programm an. Und ein Ofen braucht **zwei** Connectoren: Er nimmt oben an
+und gibt unten heraus, und `machineInventory()` fragt die Capability
+seitengenau. Ein Beispiel mit einem Connector hätte das Erz gleich wieder aus
+dem Eingang geholt.
 
 ~~**2. Autocrafting**~~ (2.10). **Fertig am 25.08.** Der letzte ausgegraute
 Reiter ist keiner mehr, und `crafting` steht als Quelle in beiden Editoren.

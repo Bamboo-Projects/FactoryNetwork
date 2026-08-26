@@ -19,8 +19,6 @@ tut.
 
 ## Das erste Netz
 
-Vier Blöcke, dann läuft es:
-
 1. **Controller** — das Herz. Er hält das Programm, den Speicher und den
    Stromvorrat. Es gibt genau einen je Netz.
 2. **Terminal** — direkt an den Controller. Hier schreibst du den Code und
@@ -30,8 +28,13 @@ Vier Blöcke, dann läuft es:
 4. **Connector** — an jede Maschine, die mitmachen soll. Er zeigt auf sie,
    und er braucht einen **Namen**.
 
-Dazu ein **Laufwerk** mit einer Speicherzelle, sonst lagert das Netz nichts,
-und eine Stromquelle — die **Brennkammer** reicht zum Anfangen.
+Dazu drei, ohne die nichts geht: ein **Serverschrank** mit einem bestückten
+Einschub — ohne ihn nimmt das Netz **kein Programm an** —, ein **Laufwerk**
+mit einer Speicherzelle, sonst lagert es nichts, und eine Stromquelle. Die
+**Brennkammer** reicht zum Anfangen.
+
+Den ganzen Weg einmal durch, von der ersten Kiste bis zur laufenden Linie,
+gibt es unter *Die erste Anlage*.
 
 ## Warum der Name so wichtig ist
 
