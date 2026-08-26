@@ -160,6 +160,38 @@ Die selteneren Ursachen, in dieser Reihenfolge:
   Nachbarschaft, nicht über das Kabel. Dann meldet es „An diesem Terminal
   hängt kein Controller."
 
+## 5. Ein Fertigungsauftrag steht still
+
+Der Reiter **Fertigung** sagt es, und die Zeile darunter ist die Antwort:
+
+- **„es fehlt: 2 Eichenstamm"** — genannt wird immer der **Grundstoff** und
+  nie eine Zwischenstufe. Bretter kann das Netz selbst machen; Stämme muss
+  jemand hinlegen.
+- **„wartet auf einen Ofen im Netz"** — für dieses Rezept braucht es eine
+  Maschine, und keine passende hängt am Kabel oder alle sind beschäftigt.
+- **„wartet auf ofen_1 — hat er Brennstoff?"** — die Zutat liegt drin, aber es
+  kommt nichts zurück. **Das Netz heizt nicht.** Ein Worker mit
+  `to ofen_1.slots(1)` und `filter item:coal` löst es.
+- **„kein Fabricator im Netz"** — für Werkbank- und Steinsägen-Rezepte braucht
+  es einen.
+- **„kein Rezept mehr"** — der einzige Grund, aus dem ein Auftrag wirklich
+  scheitert: Sein Rezept ist aus dem Pack verschwunden.
+
+Und wenn ein Auftrag über etwas aus einer **fremden Maschine** gar nicht erst
+angenommen wird: Das Netz kennt ihr Rezept nicht und kann es auch nicht
+lernen. Schreib es auf — `recipe … at … { in … out … }`, siehe *Fertigung*.
+
+## 6. `chemical:` tut nichts
+
+Zwei verschiedene Meldungen, und der Unterschied sagt dir, wo du suchen musst:
+
+- **„Chemikalien brauchen Mekanism"** — die Mod liegt nicht im Pack. Das ist
+  eine Auskunft über deine Modliste, nicht über diese Mod.
+- Kommt nichts an, obwohl Mekanism läuft: **Prüf die Seite.** Eine
+  Mekanism-Maschine hat eine Seitenkonfiguration, und das Netz hält sich
+  daran. Der Connector muss an einer Seite hängen, die etwas herausgibt oder
+  annimmt — steht dort „nichts", passiert nichts.
+
 ## Was der Editor sonst noch weiß
 
 - **Zeigen auf ein Wort** erklärt, was dort erwartet wird, und bei einem
@@ -168,3 +200,16 @@ Die selteneren Ursachen, in dieser Reihenfolge:
   du gerade schreibst, mit der aktiven Stelle hervorgehoben.
 - **Strg+Leertaste** erzwingt die Vorschläge, **Tab** übernimmt einen.
 - **F1** öffnet die Griffliste mit allen Tasten.
+
+## Und in VS Code
+
+Die Fehler stehen dort auch — dieselben, vom selben Übersetzer. Das Spiel
+schreibt sie neben die Programmdateien, und die Erweiterung trägt sie ein;
+eine Sekunde nach dem Speichern stehen sie da.
+
+Dasselbe gilt für die **Gerätenamen**: Sie stehen in keiner Datei, sondern
+kommen aus der Beschriftungspistole — hinter `from` und `to` schlägt die
+Erweiterung sie trotzdem vor.
+
+Beides braucht Zugriff auf den Ordner neben der Welt. Im Einzelspieler ist das
+dein eigener Rechner; auf einem fremden Server geht es nicht.

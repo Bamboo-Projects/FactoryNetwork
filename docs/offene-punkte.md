@@ -228,7 +228,7 @@ Vorentscheidungen)
 
 | # | Was | Status | Wo | Größe |
 |---|---|---|---|---|
-| 6.1 | ~~Handbuch~~ — **vierzehn Seiten** (26.08.). „Sprache im Detail" ist die **Referenzseite** und wird aus `Signatures` erzeugt, damit sie nicht auseinanderläuft; neu dazu ist `listen.md`. Alle Beispiele im Handbuch werden übersetzt (`DocExamplesTest`) — die Prüfung nimmt seit dem 26.08. auch `const` und Vorlagen-Deklarationen mit und fand dabei einen Fehler | | `guide/listen.md`, `DocExamplesTest` | |
+| 6.1 | ~~Handbuch~~ — **fünfzehn Seiten** (26.08.). „Sprache im Detail" ist die **Referenzseite** und wird aus `Signatures` erzeugt, damit sie nicht auseinanderläuft; neu dazu sind `listen.md` und `auswahlen.md`. Die Fehlersuche kennt die Meldungen der Fertigung und der Chemikalien. Alle Beispiele werden übersetzt (`DocExamplesTest`) | | `guide/auswahlen.md`, `DocExamplesTest` | |
 | 6.2 | ~~Lizenzdatei~~ — **fertig.** MIT, Copyright 2026 DevPanda (Florian Richter). Der Entwurf ist aufgegangen und entfallen | | `LICENSE` | |
 | 6.3 | ~~Ob die Hilfe im Spiel ins Buch wandert~~ — **entschieden: nein, nebeneinander.** Die Griffliste beantwortet „was steht hier", das Buch „wie funktioniert das" | | `entscheidungen.md` | |
 | 6.4 | ~~WorkerRuntime-Javadoc~~ — **berichtigt** | | | |
@@ -266,11 +266,10 @@ Energiezellen im Laufwerk.
 ~~**1. Der Controller-Multiblock** (5.1).~~ **Gebaut am 25.08.** Die 384
 Geräte je Netz sind keine Grenze mehr.
 
-**1. Weitere Handbuchseiten** (6.1). Vierzehn Seiten stehen; `listen.md` kam
-am 26.08. dazu. Schreibarbeit ohne Risiko — und das, was die Mod für jemanden
-von außen zugänglich macht. Was noch fehlt, zeigt am ehesten ein Blick auf
-`sprache.md`: Was dort ein eigenes Kapitel hat und im Handbuch nur nebenbei
-vorkommt, ist ein Kandidat.
+**1. Weitere Handbuchseiten** (6.1). Fünfzehn Seiten stehen; `listen.md` und
+`auswahlen.md` kamen am 26.08. dazu, und die Fehlersuche kennt jetzt die
+Meldungen der Fertigung und der Chemikalien. Schreibarbeit ohne Risiko — und
+das, was die Mod für jemanden von außen zugänglich macht.
 
 ~~**2. Autocrafting**~~ (2.10). **Fertig am 25.08.** Der letzte ausgegraute
 Reiter ist keiner mehr, und `crafting` steht als Quelle in beiden Editoren.
