@@ -241,7 +241,7 @@ Handbucharbeit)
 
 | # | Was | Status | Wo | Größe |
 |---|---|---|---|---|
-| 6.1 | ~~Handbuch~~ — **neunzehn Seiten** (26.08.). „Sprache im Detail" ist die **Referenzseite** und wird aus `Signatures` erzeugt, damit sie nicht auseinanderläuft; dazu kamen `listen.md`, `auswahlen.md`, `fluessigkeiten.md`, `server.md`, `ereignisse.md` und `erste-anlage.md`. `fluessigkeiten.md` bündelt, was über das Bewegen von Flüssigkeiten und Gasen auf vier Seiten verstreut lag; `server.md` ist die erste Seite, die nicht an den Spieler gerichtet ist; `ereignisse.md` war die letzte große Lücke — die sieben eingebauten Ereignisse standen nirgends beisammen, und der Unterschied zwischen `device_output` und `device_changed` entscheidet, ob eine Fabrik im Kreis läuft. Alle Beispiele werden übersetzt (`DocExamplesTest`). **Fünf Stellen berichtigt** (26.08.), an denen das Handbuch dem Code widersprach: fünf Reiter statt sechs mit ausgegrauter Fertigung, zwei von vier Zellenarten, zweimal „`gerät.count(…)` auf einer Anzeige geht noch nicht" (geht seit dem 25.08.) und „eine Gruppe ist ein Ziel, kein Wert" (seit 1.14 falsch) | | `guide/ereignisse.md`, `DocExamplesTest` | |
+| 6.1 | ~~Handbuch~~ — **zwanzig Seiten** (26.08.). „Sprache im Detail" ist die **Referenzseite** und wird aus `Signatures` erzeugt, damit sie nicht auseinanderläuft; dazu kamen `listen.md`, `auswahlen.md`, `fluessigkeiten.md`, `server.md`, `ereignisse.md`, `erste-anlage.md` und `analysator.md`. `fluessigkeiten.md` bündelt, was über das Bewegen von Flüssigkeiten und Gasen auf vier Seiten verstreut lag; `server.md` ist die erste Seite, die nicht an den Spieler gerichtet ist; `ereignisse.md` war die letzte große Lücke — die sieben eingebauten Ereignisse standen nirgends beisammen, und der Unterschied zwischen `device_output` und `device_changed` entscheidet, ob eine Fabrik im Kreis läuft. Alle Beispiele werden übersetzt (`DocExamplesTest`). **Fünf Stellen berichtigt** (26.08.), an denen das Handbuch dem Code widersprach: fünf Reiter statt sechs mit ausgegrauter Fertigung, zwei von vier Zellenarten, zweimal „`gerät.count(…)` auf einer Anzeige geht noch nicht" (geht seit dem 25.08.) und „eine Gruppe ist ein Ziel, kein Wert" (seit 1.14 falsch) | | `guide/ereignisse.md`, `DocExamplesTest` | |
 | 6.2 | ~~Lizenzdatei~~ — **fertig.** MIT, Copyright 2026 DevPanda (Florian Richter). Der Entwurf ist aufgegangen und entfallen | | `LICENSE` | |
 | 6.3 | ~~Ob die Hilfe im Spiel ins Buch wandert~~ — **entschieden: nein, nebeneinander.** Die Griffliste beantwortet „was steht hier", das Buch „wie funktioniert das" | | `entscheidungen.md` | |
 | 6.4 | ~~WorkerRuntime-Javadoc~~ — **berichtigt** | | | |
@@ -391,11 +391,16 @@ VS Code, das dort vorher gar keine vorschlug.
   beantwortet. **Zu entscheiden: ob B statt A.** Die Konfiguration kommt mit
   der Verbindung und nicht davor — dieselbe Regel wie bei 4.2.
 
-**Was ohne weitere Antwort weitergeht:** die zweite Achse (sie ist Arbeit,
-keine Frage — der Entwurf dafür fehlt allerdings noch) und weitere
-Handbuchseiten (6.1). Neunzehn stehen; was fehlt, ist keine Lücke im Stoff
-mehr, eher Feinarbeit — eine Seite zum Netzanalysator, und die 3D-Szenen, die
-GuideME kann und die diese Mod noch nirgends nutzt.
+**Was ohne weitere Antwort weitergeht:** weitere Handbuchseiten (6.1).
+Zwanzig stehen; die zweite Achse und der Netzanalysator sind am 26.08.
+dazugekommen. Was noch fehlt, ist die Feinarbeit — die 3D-Szenen, die GuideME
+kann und die diese Mod noch nirgends nutzt.
+
+**Nebenbei gefunden** (26.08.): `AnalyserData.Summary` reist zum Client und
+wird dort **nirgends gezeichnet**. Die Zahlen — Geräte, Kabel, ohne Kanal,
+ohne Namen, doppelte Namen, knappe und volle Strecken — sind da; es fehlt die
+Zeile, die sie anzeigt. Deshalb steht die Zusammenfassung auch nicht im
+Handbuch: Was nicht zu sehen ist, wird dort nicht versprochen.
 
 **Und was Vorrang hat vor allem:** Bericht aus dem Spiel. Die Commits vom
 26.08. sind test-grün und ungespielt, und drei Stellen tragen Restrisiko —
