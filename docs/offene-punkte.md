@@ -241,7 +241,7 @@ Vorentscheidungen)
 
 | # | Was | Status | Wo | Größe |
 |---|---|---|---|---|
-| 6.1 | ~~Handbuch~~ — **siebzehn Seiten** (26.08.). „Sprache im Detail" ist die **Referenzseite** und wird aus `Signatures` erzeugt, damit sie nicht auseinanderläuft; neu dazu sind `listen.md`, `auswahlen.md`, `fluessigkeiten.md` und `server.md`. `fluessigkeiten.md` bündelt, was über das Bewegen von Flüssigkeiten und Gasen auf vier Seiten verstreut lag, und `server.md` ist die erste Seite, die nicht an den Spieler gerichtet ist: Rechte und Grenzen für den, der den Server betreibt. Die Fehlersuche kennt die Meldungen der Fertigung und der Chemikalien. Alle Beispiele werden übersetzt (`DocExamplesTest`) | | `guide/auswahlen.md`, `DocExamplesTest` | |
+| 6.1 | ~~Handbuch~~ — **achtzehn Seiten** (26.08.). „Sprache im Detail" ist die **Referenzseite** und wird aus `Signatures` erzeugt, damit sie nicht auseinanderläuft; dazu kamen `listen.md`, `auswahlen.md`, `fluessigkeiten.md`, `server.md` und `ereignisse.md`. `fluessigkeiten.md` bündelt, was über das Bewegen von Flüssigkeiten und Gasen auf vier Seiten verstreut lag; `server.md` ist die erste Seite, die nicht an den Spieler gerichtet ist; `ereignisse.md` war die letzte große Lücke — die sieben eingebauten Ereignisse standen nirgends beisammen, und der Unterschied zwischen `device_output` und `device_changed` entscheidet, ob eine Fabrik im Kreis läuft. Alle Beispiele werden übersetzt (`DocExamplesTest`) | | `guide/ereignisse.md`, `DocExamplesTest` | |
 | 6.2 | ~~Lizenzdatei~~ — **fertig.** MIT, Copyright 2026 DevPanda (Florian Richter). Der Entwurf ist aufgegangen und entfallen | | `LICENSE` | |
 | 6.3 | ~~Ob die Hilfe im Spiel ins Buch wandert~~ — **entschieden: nein, nebeneinander.** Die Griffliste beantwortet „was steht hier", das Buch „wie funktioniert das" | | `entscheidungen.md` | |
 | 6.4 | ~~WorkerRuntime-Javadoc~~ — **berichtigt** | | | |
@@ -285,10 +285,16 @@ Energiezellen im Laufwerk.
 ~~**1. Der Controller-Multiblock** (5.1).~~ **Gebaut am 25.08.** Die 384
 Geräte je Netz sind keine Grenze mehr.
 
-**1. Weitere Handbuchseiten** (6.1). Sechzehn Seiten stehen; `listen.md`,
-`auswahlen.md` und `fluessigkeiten.md` kamen am 26.08. dazu, und die
-Fehlersuche kennt jetzt die Meldungen der Fertigung und der Chemikalien. Schreibarbeit ohne Risiko — und
-das, was die Mod für jemanden von außen zugänglich macht.
+**1. Weitere Handbuchseiten** (6.1). Achtzehn Seiten stehen; `listen.md`,
+`auswahlen.md`, `fluessigkeiten.md`, `server.md` und `ereignisse.md` kamen am
+26.08. dazu, und die Fehlersuche kennt jetzt die Meldungen der Fertigung und
+der Chemikalien. Schreibarbeit ohne Risiko — und das, was die Mod für
+jemanden von außen zugänglich macht.
+
+Was noch fehlt, ist keine Lücke im Stoff mehr, sondern eine im Einstieg:
+**eine Seite, die eine erste Anlage von der Kiste bis zur Ausgabe
+durchspielt.** Heute erklären `bloecke.md` die Teile und `programmieren.md`
+die Sprache, aber niemand geht einmal den ganzen Weg.
 
 ~~**2. Autocrafting**~~ (2.10). **Fertig am 25.08.** Der letzte ausgegraute
 Reiter ist keiner mehr, und `crafting` steht als Quelle in beiden Editoren.

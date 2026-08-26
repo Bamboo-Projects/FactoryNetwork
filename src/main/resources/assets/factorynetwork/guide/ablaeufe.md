@@ -161,9 +161,9 @@ rot, mit dem Grund dahinter.
 
 Drei Wege, und keiner davon ist eine Schleife:
 
-1. **Ein `on`-Block**, wenn sein Ereignis eintritt — aus der Welt
-   (`redstone_changed`, `device_online`, `device_offline`, `device_changed`)
-   oder aus einem `emit` im eigenen Programm.
+1. **Ein `on`-Block**, wenn sein Ereignis eintritt — eines der sieben, die
+   das Netz selbst auslöst, oder eines aus einem `emit` im eigenen Programm.
+   Welche es gibt und wann sie kommen, steht unter *Ereignisse*.
 2. **Ein Knopf auf einer Anzeige.** Er darf ausdrücklich etwas anstoßen, das
    wartet.
 3. **Ein Aufruf aus einem Ablauf, der schon läuft.** Die gerufene Funktion darf
