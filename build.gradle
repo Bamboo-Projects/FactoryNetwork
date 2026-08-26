@@ -89,6 +89,22 @@ dependencies {
     compileOnly "mekanism:Mekanism:${mekanism_version}:api"
     runtimeOnly "mekanism:Mekanism:${mekanism_version}"
 
+    // Drei Mods nur fuer den Prüfstand, ohne compileOnly: An ihnen haengen
+    // Risiken, die kein Test abdeckt.
+    //
+    // Sophisticated Storage: ein Behaelter mit vielen Faechern hinter einem
+    // fremden getStackInSlot — genau die Decke, die die Messung in
+    // speicherbus.md §7 ausdruecklich nicht kennt.
+    //
+    // Ars Nouveau: die Bloecke fuer click(), und Source als die
+    // Ressourcenart, an der die offene Registry ihren Beweis bekommt.
+    runtimeOnly "maven.modrinth:sophisticated-core:${sophisticated_core_version}"
+    runtimeOnly "maven.modrinth:sophisticated-storage:${sophisticated_storage_version}"
+    runtimeOnly "maven.modrinth:ars-nouveau:${ars_nouveau_version}"
+    // Ars Nouveau verlangt beide und bringt sie nicht mit.
+    runtimeOnly "maven.modrinth:geckolib:${geckolib_version}"
+    runtimeOnly "maven.modrinth:curios:${curios_version}"
+
     testImplementation platform('org.junit:junit-bom:5.11.4')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
