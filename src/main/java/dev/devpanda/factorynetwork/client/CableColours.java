@@ -30,6 +30,14 @@ public final class CableColours {
     /** Grauwert der Textur, auf den die Farbe multipliziert wird. */
     private static final int NEUTRAL = 0xFFFFFF;
 
+    /**
+     * Beide Kabelarten.
+     *
+     * <p><b>Das dichte fehlte hier</b>, seit es das dichte gibt: Es trug
+     * seine Farbe im Blockzustand, Jade nannte sie im Tooltip, und der Block
+     * blieb grau. Angemeldet wird deshalb aus einer Liste — die nächste
+     * Kabelart kann nicht mehr vergessen werden.
+     */
     @SubscribeEvent
     public static void registerBlockColours(RegisterColorHandlersEvent.Block event) {
         event.register((state, level, pos, tintIndex) -> {
@@ -37,20 +45,23 @@ public final class CableColours {
                 return NEUTRAL;
             }
             return tint(CableBlock.colourOf(state));
-        }, FnBlocks.CABLE.get());
+        }, FnBlocks.CABLE.get(), FnBlocks.DENSE_CABLE.get());
     }
 
     @SubscribeEvent
     public static void registerItemColours(RegisterColorHandlersEvent.Item event) {
         // In der Hand gibt es keine BlockEntity — die Farbe steht im Gegenstand.
-        FnItems.CABLES.values().forEach(holder ->
-                event.register((stack, tintIndex) -> {
-                    if (tintIndex != 0) {
-                        return NEUTRAL;
-                    }
-                    return stack.getItem() instanceof ColouredCableItem cable
-                            ? tint(cable.colour()) : NEUTRAL;
-                }, holder.get()));
+        // Auch hier beide Arten: Ein dichtes Kabel im Rucksack sah aus wie
+        // jedes andere.
+        List.of(FnItems.CABLES, FnItems.DENSE_CABLES).forEach(cables ->
+                cables.values().forEach(holder ->
+                        event.register((stack, tintIndex) -> {
+                            if (tintIndex != 0) {
+                                return NEUTRAL;
+                            }
+                            return stack.getItem() instanceof ColouredCableItem cable
+                                    ? tint(cable.colour()) : NEUTRAL;
+                        }, holder.get())));
     }
 
     /**

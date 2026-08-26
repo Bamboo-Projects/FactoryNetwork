@@ -60,6 +60,18 @@ public class FactoryNetworkJadePlugin implements IWailaPlugin {
                 dev.devpanda.factorynetwork.block.RackBlock.class);
         registration.registerBlockDataProvider(BurnerInfo.INSTANCE,
                 dev.devpanda.factorynetwork.block.entity.BurnerBlockEntity.class);
+        // <b>Diese beiden Zeilen fehlten, seit es ConnectorInfo gibt.</b> Die
+        // Klasse war nur als Client-Komponente angemeldet; ihr Server-Teil
+        // lief nie, KEY_STATE stand nie im Beutel, und der Tooltip brach
+        // stillschweigend ab. Jade sagte über keinen einzigen Anschluss ein
+        // Wort — auch nicht am eigenen Connectorblock.
+        //
+        // Dieselbe Falle wie beim Kabel eine Handvoll Zeilen weiter oben.
+        // Wer hier einen Anbieter hinzufügt, muss <b>beide</b> Seiten
+        // anmelden: register für die Daten, registerClient für die Zeilen.
+        registration.registerBlockDataProvider(ConnectorInfo.INSTANCE,
+                dev.devpanda.factorynetwork.block.ConnectorBlock.class);
+        registration.registerBlockDataProvider(ConnectorInfo.INSTANCE, CableBlock.class);
     }
 
     @Override
