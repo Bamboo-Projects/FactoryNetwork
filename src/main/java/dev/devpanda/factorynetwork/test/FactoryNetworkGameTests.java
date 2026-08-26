@@ -7976,6 +7976,75 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    /**
+     * Ein Chemikalien-Worker braucht ein filter.
+     *
+     * <p>Dieselbe Regel wie bei Flüssigkeiten und aus demselben Grund: Ein
+     * Behälter hält meist genau eine Sorte, und die falsche zu ziehen ist
+     * teurer als bei Gegenständen.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void achemicalWorkerNeedsAfilter(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        // Ohne filter ist der Worker gar kein Chemikalien-Worker — er fällt
+        // in den Gegenstandszweig. Also mit filter, aber ohne Ziel im Netz:
+        // Auch das muss eine Meldung geben und keinen stillen Stillstand.
+        helper.assertTrue(entity.deploy("""
+                worker gase {
+                    from gibtsnicht
+                    to storage
+                    filter chemical:mekanism/hydrogen
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+
+        helper.startSequence()
+                .thenIdle(40)
+                .thenExecute(() -> {
+                    var state = entity.runtime().states().get("gase");
+                    helper.assertValueEqual(state.status.name(), "HALTED",
+                            "der Worker muss anhalten");
+                    helper.assertTrue(state.detail.contains("gibtsnicht"),
+                            "und sagen, welches Gerät fehlt: " + state.detail);
+                })
+                .thenSucceed();
+    }
+
+    /**
+     * Und er geht nur zwischen Gerät und Speicher.
+     *
+     * <p>Von Gerät zu Gerät läuft es über den Speicher; dafür schreibt man
+     * zwei Worker. Ein dritter Weg für denselben Vorgang wäre eine dritte
+     * Stelle, an der eine Menge unterwegs verlorengehen kann.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void achemicalWorkerGoesBetweenDeviceAndStorage(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                worker gase {
+                    from quarry_output
+                    to depot
+                    filter chemical:mekanism/hydrogen
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+
+        helper.startSequence()
+                .thenIdle(40)
+                .thenExecute(() -> {
+                    var state = entity.runtime().states().get("gase");
+                    helper.assertValueEqual(state.status.name(), "HALTED",
+                            "der Worker muss anhalten");
+                    helper.assertTrue(state.detail.contains("Speicher"),
+                            "und auf den Speicher zeigen: " + state.detail);
+                })
+                .thenSucceed();
+    }
+
     /** Setzt ein Laufwerk ans Kabel und steckt eine Chemikalienzelle hinein. */
     private static void driveWithChemicalCell(GameTestHelper helper, BlockPos at,
             dev.devpanda.factorynetwork.storage.ChemicalCellTier tier) {

@@ -72,6 +72,19 @@ ist `mekanism` gemeint, denn Chemikalien gibt es in Minecraft nicht.
 
 Sie gehen in dasselbe Laufwerk wie die anderen Zellen.
 
+Bewegt werden sie wie Flüssigkeiten — mit einem Worker:
+
+```
+worker wasserstoff {
+    from elektrolyseur
+    to storage
+    filter chemical:mekanism/hydrogen
+}
+```
+
+Ein `filter` ist dabei Pflicht: Ein Behälter hält meist genau eine Sorte, und
+die falsche zu ziehen ist teurer als bei Gegenständen.
+
 **Beim Anschluss zählt die Seite.** Eine Mekanism-Maschine hat eine
 Seitenkonfiguration, und das Netz hält sich daran: Der Connector muss an einer
 Seite hängen, die etwas herausgibt oder annimmt. Steht dort „nichts", passiert

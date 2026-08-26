@@ -143,6 +143,7 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | | Bei Knappheit bekommt der Worker mit der kleinen `priority` seine ganze Rate |
 | | Energiezellen im Laufwerk, vier Größen — der Vorrat wächst mit ihnen |
 | Chemikalien | Mit Mekanism: `chemical:` bewegt, zählt und lagert in Zellen |
+| | Ein Worker mit `filter chemical:…` holt und bringt sie |
 | Ausbau | Controller-Anbau: sechs weitere Seiten für Kabelstränge je Block |
 | Fertigung | Fabricator baut Werkbank-Rezepte aus dem Netzspeicher, mehrstufig |
 | | Fehlt eine Zutat, wird sie gebaut; genannt wird der Grundstoff |
@@ -168,7 +169,7 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | | VS Code zeigt die Fehler des Spiels und kennt die Gerätenamen |
 | | Anzeigenwand mit `scale`: große Schrift statt vieler Zeilen |
 | Anzeigen | Am Block und im Terminal, Knöpfe starten Abläufe |
-| Prüfung | 429 Einheitstests, 264 GameTests |
+| Prüfung | 429 Einheitstests, 266 GameTests |
 
 ## 3. Was noch nicht läuft
 

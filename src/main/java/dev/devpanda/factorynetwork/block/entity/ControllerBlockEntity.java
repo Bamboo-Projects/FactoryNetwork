@@ -620,6 +620,7 @@ public class ControllerBlockEntity extends BlockEntity {
                             ? connector : null);
             runtime.setPower(power);
             runtime.setCrafting(craftingForWorkers);
+            runtime.setChemicals(chemicalStorage);
             runtime.tick(level, program, graph, storage, fluidStorage,
                     newHost());
             // Was die Worker zu melden hatten, gehört ins Protokoll. Bisher

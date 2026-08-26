@@ -189,10 +189,21 @@ Meldung zeigt auf die Modliste statt auf diese Mod.
 Ohne Namensraum ist **`mekanism`** gemeint und nicht `minecraft`: Chemikalien
 gibt es in Minecraft nicht.
 
-> **Zwei Schnitte, die bleiben:** Chemikalien in einem `recipe`-Block werden
-> beim Auflösen übergangen — der Planner rechnet mit Gegenständen. Und ein
-> Worker mit `filter chemical:…` bewegt noch nichts; dafür schreibt man ein
-> `move` in eine Funktion.
+Ein Worker mit `filter chemical:…` bewegt sie wie ein Flüssigkeits-Worker —
+dieselben Regeln: **Ein `filter` ist Pflicht** (ein Behälter hält meist genau
+eine Sorte), und es geht **zwischen Gerät und Speicher**, in beide Richtungen.
+Von Gerät zu Gerät läuft es über den Speicher; dafür schreibt man zwei Worker.
+
+```
+worker wasserstoff {
+    from elektrolyseur
+    to storage
+    filter chemical:mekanism/hydrogen
+}
+```
+
+> **Ein Schnitt, der bleibt:** Chemikalien in einem `recipe`-Block werden beim
+> Auflösen übergangen — der Planner rechnet mit Gegenständen.
 
 ### Mengen
 
