@@ -118,6 +118,22 @@ final class MekChemicalStore implements ChemicalStore {
         return found;
     }
 
+    @Override
+    public long room(String id, long wanted) {
+        Chemical chemical = chemical(id);
+        if (chemical == null || wanted <= 0) {
+            return 0;
+        }
+        long free = 0;
+        for (CellInventory<Chemical> cell : cells()) {
+            free += cell.room(chemical);
+            if (free >= wanted) {
+                return wanted;
+            }
+        }
+        return free;
+    }
+
     /**
      * Legt ab und liefert, was nicht hineinpasste.
      *

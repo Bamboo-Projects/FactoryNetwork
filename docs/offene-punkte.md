@@ -114,6 +114,13 @@ Vorentscheidungen)
 > Handbuchseiten), 1.4/7.1 (Mekanism), 4.1 (Sprachserver) und 5.4 (die einzige
 > offene Entscheidung, und die beantwortet eine Runde Spielen).
 >
+> **2.9 ist gebaut**, Weg B in zwei Schnitten. Erst die Maschinen mit fester
+> Form: Ofen, Schmelzofen, Räucherofen und die eigene Presse arbeiten für
+> einen Auftrag mit — einlegen, warten, abholen. Der laufende Schritt wird
+> gespeichert, der Plan nicht: Ein Plan ist eine Absicht, ein Erz im Ofen eine
+> Tatsache über die Welt. Dann `recipe … at … { in … out … }` für alles
+> andere, als Deklaration im Programm und nicht als Muster-Item.
+>
 > **1.4 und 7.1 sind gebaut.** `chemical:` löst sich auf, bewegt sich, wird
 > gezählt und lagert in Chemikalienzellen. Der Kern spricht dabei in Texten,
 > weil Java die Klassen einer Signatur beim Laden auflöst — eine Klasse mit
@@ -122,7 +129,7 @@ Vorentscheidungen)
 > zurückgenommen, und eine Lücke im Prüflauf benannt: Ein per `setBlock`
 > gesetzter Mekanism-Tank gibt an keiner Seite eine Capability heraus.
 >
-> **2.9 ist erkundet, nicht gebaut.** Automatische Erkennung fremder
+> **2.9 war zuerst nur erkundet.** Automatische Erkennung fremder
 > Maschinenrezepte ist in 1.21.1 nachweislich nicht möglich — die
 > Schnittstelle gibt es nicht her, und AE2 wie Refined Storage lassen deshalb
 > beide hinterlegen. Damit war aus einer Bauaufgabe eine Produktfrage
@@ -248,8 +255,9 @@ Vorentscheidungen)
 
 Stand nach dem 26.08.: **Auf der ganzen Liste steht nur noch eine offene
 Entscheidung** — 5.4, die Zahlen an den Serverbauteilen, und die beantwortet
-eine Runde Spielen und kein Gespräch. Alles andere ist Arbeit, und die beiden
-großen Posten (2.9 und 1.4) haben ihre Richtung.
+eine Runde Spielen und kein Gespräch. Die beiden großen Posten (2.9 und 1.4)
+sind gebaut. Was bleibt, ist Schreibarbeit, benannte Schnitte und der
+Sprachserver.
 
 ~~**1. Die Stromverteilung** (2.2).~~ **Gebaut am 25.08.** Eine Fabrik
 versorgt ihre Maschinen jetzt selbst, und der Vorrat wächst mit den
@@ -266,8 +274,6 @@ vorkommt, ist ein Kandidat.
 
 ~~**2. Autocrafting**~~ (2.10). **Fertig am 25.08.** Der letzte ausgegraute
 Reiter ist keiner mehr, und `crafting` steht als Quelle in beiden Editoren.
-Offen bleibt daneben 2.9 — Processing-Rezepte an Maschinen —, aber das ist ein
-eigenes Vorhaben und keine Lücke im Autocrafting.
 
 ~~**2. Die kleineren Reste.**~~ **Alle durch** (25./26.08.): 3.5 (Ordner im
 Projekt), 5.3 (Schrift auf der Anzeigenwand) und 1.11 (globale Listen) sind
@@ -276,8 +282,20 @@ abgelehnt.
 
 ~~**3. Rezepte an Maschinen erkennen**~~ (2.9). **Gebaut am 26.08.**, Weg B in
 zwei Schnitten: Was das Spiel offenlegt, kann die Fabrik von selbst; für alles
-andere schreibt der Spieler ein `recipe` ins Programm. Damit ist der letzte
-große Posten der Liste zu — offen bleibt nur noch 1.4 (Mekanism).
+andere schreibt der Spieler ein `recipe` ins Programm.
+
+~~**4. Mekanism**~~ (1.4, 7.1). **Gebaut am 26.08.** `chemical:` löst sich
+auf, bewegt sich, wird gezählt und lagert in Chemikalienzellen. Ohne Mekanism
+läuft alles wie vorher.
+
+**Was jetzt oben steht:** die Handbuchseiten (6.1) und der Sprachserver (4.1).
+Dazu drei benannte Schnitte aus dieser Nacht — Flüssigkeiten und Strom in
+einem `recipe`, Chemikalien in einem `recipe`, und ein Worker mit
+`filter chemical:…`. Und eine Frage, die seit dem 24.08. nur in
+`umfeld-atm10.md` steht und nie hierher wanderte: **ob die Ressourcenart eine
+offene Registry wird** statt eines festen Aufzählungswerts. AE2 und Refined
+Storage haben sich für 1.21.1 beide dafür entschieden; es betrifft `power` in
+`strom.md` und wäre eine Entscheidung des Projektinhabers.
 
 Was hier bis zum 25.08. unter „Kleines mit großer Wirkung" stand — `list` auf
 einer Anzeige (6.10), die Auflösungsanzeige im Editor (3.11), die

@@ -95,21 +95,34 @@ public final class ChemicalStores {
             java.util.Collection<String> ids,
             dev.devpanda.factorynetwork.network.ChemicalStore store, long limit) {
         long moved = 0;
+        // Höchstens acht Sorten je Zug: Ein Behälter mit mehr wird über
+        // mehrere Aufrufe geleert, und die Schleife kann nicht ins Endlose
+        // laufen, wenn eine Sorte weder passt noch weicht.
         for (int guard = 0; guard < 8 && moved < limit; guard++) {
-            var taken = MekTanks.drain(handler, ids, limit - moved);
+            var oben = MekTanks.peek(handler, ids);
+            if (oben.isEmpty()) {
+                break;
+            }
+            String id = MekTanks.idOf(oben);
+            // Erst fragen: So viel, wie der Speicher wirklich nimmt — und
+            // keinen Tropfen mehr. Was draußen ist und nirgends hineinpasst,
+            // müsste zurück, und das Zurücklegen kann scheitern.
+            long room = store.room(id, Math.min(limit - moved, oben.getAmount()));
+            if (room <= 0) {
+                break;
+            }
+            var taken = MekTanks.drain(handler, java.util.List.of(id), room);
             if (taken.isEmpty()) {
                 break;
             }
-            String id = MekTanks.idOf(taken);
             long rest = store.insert(id, taken.getAmount());
             if (rest > 0) {
-                // Zurück in den Behälter, was der Speicher nicht wollte.
+                // Sollte nach der Frage nicht mehr vorkommen; wenn doch, ist
+                // Zurücklegen die einzige Antwort, die nichts verschwinden
+                // lässt.
                 MekTanks.fill(handler, id, rest, false);
             }
             moved += taken.getAmount() - rest;
-            if (rest > 0) {
-                break;
-            }
         }
         return moved;
     }

@@ -27,6 +27,17 @@ public interface ChemicalStore {
     /** Wie viel von dieser Chemikalie im Netz liegt, in Millibucket. */
     long count(String id);
 
+    /**
+     * Wie viel von dieser Sorte noch hineinginge.
+     *
+     * <p>Gebraucht, <b>bevor</b> ein Behälter geleert wird: Was der Speicher
+     * nicht nimmt, darf gar nicht erst herauskommen. Bei Gegenständen kann
+     * man den Rest zurücklegen; ein Gas, das draußen ist und dessen Behälter
+     * es inzwischen nicht mehr annimmt, wäre weg. Dieselbe Vorsicht wie bei
+     * Flüssigkeiten, und derselbe Grund.
+     */
+    long room(String id, long wanted);
+
     /** Lagert ein und meldet, was nicht hineinpasste. */
     long insert(String id, long amount);
 
@@ -49,6 +60,11 @@ public interface ChemicalStore {
 
         @Override
         public long count(String id) {
+            return 0;
+        }
+
+        @Override
+        public long room(String id, long wanted) {
             return 0;
         }
 

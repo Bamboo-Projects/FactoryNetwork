@@ -66,6 +66,25 @@ final class MekTanks {
     }
 
     /**
+     * Was oben liegt, ohne es herauszunehmen.
+     *
+     * <p>Der Blick, den es braucht, um <b>vorher</b> zu fragen: Erst wenn die
+     * Sorte bekannt ist, lässt sich der Speicher nach Platz fragen — und erst
+     * dann darf gezogen werden.
+     *
+     * @return der Stapel im ersten passenden Behälter, oder leer
+     */
+    static ChemicalStack peek(IChemicalHandler handler, Collection<String> ids) {
+        for (int tank = 0; tank < handler.getChemicalTanks(); tank++) {
+            ChemicalStack stack = handler.getChemicalInTank(tank);
+            if (!stack.isEmpty() && matches(stack, ids)) {
+                return stack;
+            }
+        }
+        return ChemicalStack.EMPTY;
+    }
+
+    /**
      * Zieht heraus und meldet, was kam — als Kennung und Menge.
      *
      * <p>Höchstens eine Sorte je Zug: Wer zwei Gase in einem Behälter hat,
