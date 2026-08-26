@@ -24,10 +24,14 @@ import java.util.function.ToLongFunction;
  * es auffällt — ein anderes Rezept, eine andere Zutat, dieselbe Ausgabe. So
  * lässt sie sich in einer echten Welt prüfen, ohne einen Block zu setzen.
  *
- * <p><b>Nur Werkbank-Rezepte.</b> Was eine Maschine kann, weiß die Maschine,
- * und das herauszufinden ist eine eigene Aufgabe (Punkt 2.9). Hier geht es um
- * das, was jeder Spieler von Hand im 3x3 baut — und was ein Netz ihm deshalb
- * abnehmen kann, ohne ein einziges Muster-Item.
+ * <p><b>Was ohne Maschine geht.</b> Werkbank und Steinsäge: Beides ist
+ * Handarbeit, beides steht im Server, beides ist in einem Zug erledigt — und
+ * deshalb läuft beides am Fabricator, ohne ein einziges Muster-Item. Was eine
+ * Maschine und Zeit braucht, steht in {@link MachineRecipes}.
+ *
+ * <p>Die Steinsäge stand zuerst dort, und das war falsch: Ihr Rezept ist
+ * lesbar, aber der Block hat keine BlockEntity — niemand kann hineinschieben.
+ * Lesbar und ausführbar sind zwei verschiedene Fragen.
  *
  * <p><b>Ein Verzeichnis, kein Durchsuchen.</b> Die Rezeptliste eines Packs
  * hat fünfstellige Länge, und der Planner fragt sie für jeden Knoten eines
@@ -38,27 +42,39 @@ import java.util.function.ToLongFunction;
  */
 public final class RecipeLookup implements CraftingPlanner.Recipes<Item> {
 
-    private final Map<Item, List<RecipeHolder<CraftingRecipe>>> byResult;
-    private final HolderLookup.Provider registries;
+    private final Map<Item, List<CraftingPlanner.Recipe<Item>>> byResult;
 
-    private RecipeLookup(Map<Item, List<RecipeHolder<CraftingRecipe>>> byResult,
-                         HolderLookup.Provider registries) {
+    private RecipeLookup(Map<Item, List<CraftingPlanner.Recipe<Item>>> byResult) {
         this.byResult = byResult;
-        this.registries = registries;
     }
 
-    /** Das Verzeichnis der Werkbank-Rezepte dieser Welt. */
+    /** Das Verzeichnis dessen, was der Fabricator kann. */
     public static RecipeLookup of(Level level) {
-        Map<Item, List<RecipeHolder<CraftingRecipe>>> byResult = new HashMap<>();
+        HolderLookup.Provider registries = level.registryAccess();
+        Map<Item, List<CraftingPlanner.Recipe<Item>>> byResult = new HashMap<>();
         for (RecipeHolder<CraftingRecipe> holder
                 : level.getRecipeManager().getAllRecipesFor(RecipeType.CRAFTING)) {
-            ItemStack result = holder.value().getResultItem(level.registryAccess());
-            if (result.isEmpty()) {
+            ItemStack result = holder.value().getResultItem(registries);
+            List<CraftingPlanner.Need<Item>> needs = needsOf(holder.value());
+            if (result.isEmpty() || needs == null || needs.isEmpty()) {
                 continue;
             }
-            byResult.computeIfAbsent(result.getItem(), item -> new ArrayList<>()).add(holder);
+            byResult.computeIfAbsent(result.getItem(), item -> new ArrayList<>())
+                    .add(new CraftingPlanner.Recipe<>(result.getItem(),
+                            result.getCount(), needs));
         }
-        return new RecipeLookup(byResult, level.registryAccess());
+        for (RecipeHolder<net.minecraft.world.item.crafting.StonecutterRecipe> holder
+                : level.getRecipeManager().getAllRecipesFor(RecipeType.STONECUTTING)) {
+            ItemStack result = holder.value().getResultItem(registries);
+            List<CraftingPlanner.Need<Item>> needs = needsOf(holder.value());
+            if (result.isEmpty() || needs == null || needs.isEmpty()) {
+                continue;
+            }
+            byResult.computeIfAbsent(result.getItem(), item -> new ArrayList<>())
+                    .add(new CraftingPlanner.Recipe<>(result.getItem(),
+                            result.getCount(), needs));
+        }
+        return new RecipeLookup(byResult);
     }
 
     /**
@@ -81,18 +97,11 @@ public final class RecipeLookup implements CraftingPlanner.Recipes<Item> {
     @Override
     public CraftingPlanner.Recipe<Item> find(Item target, ToLongFunction<Item> available) {
         CraftingPlanner.Recipe<Item> first = null;
-        for (RecipeHolder<CraftingRecipe> holder : byResult.getOrDefault(target, List.of())) {
-            ItemStack result = holder.value().getResultItem(registries);
-            List<CraftingPlanner.Need<Item>> needs = needsOf(holder.value());
-            if (needs == null || needs.isEmpty()) {
-                continue;
-            }
-            CraftingPlanner.Recipe<Item> recipe =
-                    new CraftingPlanner.Recipe<>(target, result.getCount(), needs);
+        for (CraftingPlanner.Recipe<Item> recipe : byResult.getOrDefault(target, List.of())) {
             if (first == null) {
                 first = recipe;
             }
-            if (covered(needs, available)) {
+            if (CraftingPlanner.covers(recipe, available)) {
                 return recipe;
             }
         }
@@ -115,7 +124,8 @@ public final class RecipeLookup implements CraftingPlanner.Recipes<Item> {
      *
      * @return {@code null}, wenn eine Zutat gar nichts zulässt
      */
-    private static List<CraftingPlanner.Need<Item>> needsOf(CraftingRecipe recipe) {
+    private static List<CraftingPlanner.Need<Item>> needsOf(
+            net.minecraft.world.item.crafting.Recipe<?> recipe) {
         // Gleiche Auswahlen gehören zusammen: Acht Bretter sind ein Bedarf
         // über acht und nicht acht Bedarfe über eines.
         Map<List<Item>, Integer> merged = new LinkedHashMap<>();
@@ -138,28 +148,6 @@ public final class RecipeLookup implements CraftingPlanner.Recipes<Item> {
         merged.forEach((options, count) ->
                 needs.add(new CraftingPlanner.Need<>(options, count)));
         return needs;
-    }
-
-    /**
-     * Ob der Bestand die Zutaten hergibt.
-     *
-     * <p>Grob gerechnet: Zwei Bedarfe, die dieselbe Sorte zulassen, zählen
-     * sie beide. Das reicht für die Frage, die hier ansteht — welches von
-     * mehreren Rezepten dem Bestand am nächsten kommt. Wie viel wirklich
-     * gedeckt ist, rechnet der Planner, und der rechnet es genau.
-     */
-    private static boolean covered(List<CraftingPlanner.Need<Item>> needs,
-                                   ToLongFunction<Item> available) {
-        for (CraftingPlanner.Need<Item> need : needs) {
-            long have = 0;
-            for (Item option : need.options()) {
-                have += available.applyAsLong(option);
-            }
-            if (have < need.count()) {
-                return false;
-            }
-        }
-        return true;
     }
 
     /**

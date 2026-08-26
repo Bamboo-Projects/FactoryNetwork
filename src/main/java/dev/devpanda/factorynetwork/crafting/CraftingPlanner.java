@@ -50,8 +50,21 @@ public final class CraftingPlanner<T> {
      *
      * <p>Gleiche Zutaten gehören zusammen: Acht Bretter sind ein Bedarf über
      * acht und nicht acht Bedarfe über eines.
+     *
+     * <p>{@code station} nennt die Rezeptart, wenn eine Maschine gebraucht
+     * wird — {@code minecraft:smelting} etwa. Leer heißt: am Fabricator, in
+     * einem Zug.
      */
-    public record Recipe<T>(T result, int perCraft, List<Need<T>> needs) {
+    public record Recipe<T>(T result, int perCraft, List<Need<T>> needs, String station) {
+
+        /**
+         * Ein Rezept ohne Station — es läuft am Fabricator.
+         *
+         * <p>Der häufigere Fall, und der, den es zuerst gab.
+         */
+        public Recipe(T result, int perCraft, List<Need<T>> needs) {
+            this(result, perCraft, needs, "");
+        }
     }
 
     /**
@@ -61,8 +74,16 @@ public final class CraftingPlanner<T> {
      * getroffen. Der Ausführende entnimmt, was hier steht, und wählt nicht
      * noch einmal; sonst könnte er sich anders entscheiden als der Plan, und
      * der Schritt darüber fände nicht vor, was er erwartet.
+     *
+     * <p>{@code station} sagt, <b>wo</b> er läuft: leer für den Fabricator,
+     * sonst die Kennung einer Rezeptart wie {@code minecraft:smelting}. Der
+     * Planner versteht sie nicht — er reicht durch, was die Rezeptquelle
+     * dazugeschrieben hat. Der Unterschied zählt erst beim Ausführen: Was am
+     * Fabricator läuft, ist in einem Zug erledigt; was eine Maschine braucht,
+     * braucht auch Zeit.
      */
-    public record Step<T>(T result, int perCraft, long runs, Map<T, Long> consumed) {
+    public record Step<T>(T result, int perCraft, long runs, Map<T, Long> consumed,
+                         String station) {
 
         /** Was der Schritt liefert. */
         public long yield() {
@@ -164,6 +185,59 @@ public final class CraftingPlanner<T> {
     }
 
     /**
+     * Ob der Bestand die Zutaten eines Rezepts hergibt.
+     *
+     * <p>Grob gerechnet: Zwei Bedarfe, die dieselbe Sorte zulassen, zählen
+     * sie beide. Das reicht für die Frage, für die es gedacht ist — welches
+     * von mehreren Rezepten dem Bestand am nächsten kommt. Wie viel wirklich
+     * gedeckt ist, rechnet der Planner selbst, und der rechnet es genau.
+     *
+     * <p>Hier und nicht in der Rezeptquelle, weil es inzwischen mehrere
+     * Quellen gibt und jede dieselbe Frage stellt.
+     */
+    public static <T> boolean covers(Recipe<T> recipe, ToLongFunction<T> available) {
+        for (Need<T> need : recipe.needs()) {
+            long have = 0;
+            for (T option : need.options()) {
+                have += available.applyAsLong(option);
+            }
+            if (have < need.count()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Mehrere Rezeptquellen als eine.
+     *
+     * <p>Werkbank und Ofen können dasselbe herstellen — neun Barren aus einem
+     * Block, ein Barren aus Roherz. <b>Der Bestand entscheidet</b>, wie schon
+     * innerhalb einer Quelle: Genommen wird das erste Rezept, dessen Zutaten
+     * dastehen, und sonst das erste überhaupt.
+     */
+    @SafeVarargs
+    public static <T> Recipes<T> anyOf(Recipes<T>... sources) {
+        List<Recipes<T>> all = List.of(sources);
+        return (target, available) -> {
+            Recipe<T> first = null;
+            for (Recipes<T> source : all) {
+                Recipe<T> found = source.find(target, available);
+                if (found == null) {
+                    continue;
+                }
+                if (first == null) {
+                    first = found;
+                }
+                if (covers(found, available)) {
+                    return found;
+                }
+            }
+            return first;
+        };
+    }
+
+    /**
      * Deckt einen Bedarf — aus dem Bestand, sonst durch ein Rezept.
      *
      * @param useStock ob der Bestand zählt; beim Ziel selbst tut er es nicht
@@ -238,7 +312,8 @@ public final class CraftingPlanner<T> {
         // nächsten Bedarf mit. Ohne das liefe der Grundstoff mehrfach: einmal
         // für jeden Zweig, der ihn braucht.
         available.put(item, available(item) + runs * recipe.perCraft() - needed);
-        steps.add(new Step<>(item, recipe.perCraft(), runs, Map.copyOf(consumed)));
+        steps.add(new Step<>(item, recipe.perCraft(), runs, Map.copyOf(consumed),
+                recipe.station()));
         return Outcome.COVERED;
     }
 

@@ -300,6 +300,36 @@ class CraftingPlannerTest {
     }
 
     @Test
+    @DisplayName("Ein Schritt weiß, wo er läuft")
+    void astepKnowsWhereItRuns() {
+        // Ein Werkbank-Rezept läuft am Fabricator und ist in einem Zug
+        // erledigt; ein Ofenrezept braucht eine Maschine und Zeit. Der
+        // Planner unterscheidet die beiden nicht — er reicht nur durch, was
+        // die Rezeptquelle dazugeschrieben hat.
+        CraftingPlanner.Recipes<String> book = (target, available) ->
+                "ingot".equals(target)
+                        ? new CraftingPlanner.Recipe<>("ingot", 1,
+                                List.of(one("raw_iron", 1)), "minecraft:smelting")
+                        : null;
+
+        CraftingPlanner.Plan<String> plan = CraftingPlanner.plan(
+                book, stock("raw_iron", 4), "ingot", 1, DEPTH, BUDGET);
+
+        assertEquals("minecraft:smelting", plan.steps().get(0).station());
+    }
+
+    @Test
+    @DisplayName("Ohne Angabe läuft ein Schritt am Fabricator")
+    void withoutAnentryAstepRunsAtThefabricator() {
+        Book book = new Book().add("chest", 1, one("planks", 8));
+
+        CraftingPlanner.Plan<String> plan = plan(book, stock("planks", 8), "chest", 1);
+
+        assertEquals("", plan.steps().get(0).station(),
+                "leer heißt: kein Gerät, sondern der Fabricator");
+    }
+
+    @Test
     @DisplayName("Ein verworfener Versuch verbraucht nichts")
     void adiscardedAttemptConsumesNothing() {
         // Der Versuch, Eichenbretter zu bauen, scheitert erst tief unten —

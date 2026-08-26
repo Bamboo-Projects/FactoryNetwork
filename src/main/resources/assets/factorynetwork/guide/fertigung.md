@@ -47,7 +47,8 @@ Netz selbst machen. Genannt wird, was du hinlegen musst.
 ## Keine Muster-Items
 
 Was gebaut werden kann, weiß das Spiel bereits — jedes Werkbank-Rezept steht
-im Server. Du musst nichts anlernen und nichts einlegen.
+im Server, und Steinsägen-Rezepte auch. Beides ist Handarbeit ohne Maschine,
+beides macht der Fabricator. Du musst nichts anlernen und nichts einlegen.
 
 Welches Rezept genommen wird, **entscheidet dein Bestand**: Gibt es mehrere,
 nimmt das Netz das, dessen Zutaten dastehen. Wer Eichenbretter im Laufwerk
@@ -80,6 +81,43 @@ bestellt hat, und der Auftrag hinge trotzdem.
 ein Rezeptpaar, an dem eine Suche ewig laufen könnte. Sie tut es nicht: Sie
 merkt den Kreis und meldet stattdessen das, was du hinlegen kannst — die
 Barren.
+
+## Maschinen, die mitarbeiten
+
+Nicht alles baut der Fabricator. Ein Barren kommt aus dem **Ofen**, und das
+dauert.
+
+Hängt ein Ofen am Netz, benutzt ein Auftrag ihn von selbst: Er legt das Erz
+ein, wartet, und holt den Barren ab. Du musst dafür keinen Worker schreiben —
+das Netz holt selbst.
+
+Erkannt werden **Ofen, Schmelzofen und Räucherofen** sowie die **Presse**
+dieser Mod. Bei ihnen steht die Form des Rezepts fest: eine Zutat, eine
+Ausgabe, eine Dauer. Für alles andere — jede Maschine aus einer anderen Mod —
+schreibst du das Rezept selbst auf; wie, steht weiter unten.
+
+**Den Brennstoff legst du hin.** Das Netz heizt nicht. Ein Worker reicht:
+
+```
+worker kohle {
+    from storage
+    to ofen.slots(1)
+    filter item:coal
+    maintain 8
+}
+```
+
+Fach 1 ist das Brennstofffach eines Ofens — bei der Presse ist Fach 0 der
+Stempel. Wartet ein Auftrag lange, sagt er es: *„wartet auf ofen_1 — hat er
+Brennstoff?"*
+
+**Ein Auftrag benutzt eine Maschine, die frei ist.** Steht in einem Ofen schon
+etwas, geht er zum nächsten. Hängen drei am Netz, laufen drei Aufträge
+nebeneinander.
+
+**Was im Ofen liegt, überlebt den Serverneustart.** Der Plan wird jedes Mal
+neu gerechnet — er ist nur eine Absicht. Ein Erz, das im Ofen liegt, ist keine
+Absicht, sondern eine Tatsache; die wird aufgeschrieben.
 
 ## Nachschub, der sich selbst bestellt
 

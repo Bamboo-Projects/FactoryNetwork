@@ -8093,6 +8093,120 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
+     * Stellt einen Ofen mit Brennstoff an einen Connector des Netzes.
+     *
+     * <p>Der Brennstoff gehört dem Spieler: Das Netz legt die Zutat ein und
+     * holt das Ergebnis, aber es heizt nicht. Wer will, dass es heizt,
+     * schreibt einen Worker.
+     */
+    private static void furnaceWithFuel(GameTestHelper helper, BlockPos connector,
+                                        net.minecraft.world.level.block.Block kind) {
+        BlockPos machine = connector.north();
+        helper.setBlock(machine, kind);
+        if (helper.getBlockEntity(machine)
+                instanceof net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity oven) {
+            oven.setItem(1, new ItemStack(Items.COAL, 8));
+        } else {
+            helper.fail("Am Ofen hängt keine BlockEntity", machine);
+        }
+    }
+
+    /**
+     * Ein Ofen im Netz schmilzt für einen Fertigungsauftrag.
+     *
+     * <p>Das ist der Unterschied zwischen Werkbank und Maschine: Ein
+     * Werkbank-Rezept ist in einem Zug erledigt, ein Ofenrezept braucht
+     * Zeit. Der Auftrag legt ein, wartet und holt ab — und dazwischen tut er
+     * nichts anderes.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 800)
+    public static void anovenInThenetworkSmeltsForAjob(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        // quarry_output zeigt nach Norden; dort stand eine Kiste.
+        furnaceWithFuel(helper, controller.east().north(), Blocks.FURNACE);
+        helper.setBlock(controller.east().above(), FnBlocks.FABRICATOR.get());
+        entity.rebuildNetwork();
+        entity.storage().insert(Items.RAW_IRON, 2);
+
+        entity.requestCraft(Items.IRON_INGOT, 2);
+
+        helper.startSequence()
+                .thenIdle(600)
+                .thenExecute(() -> helper.assertValueEqual(
+                        entity.storage().count(Items.IRON_INGOT), 2L,
+                        "zwei Barren aus dem Ofen"))
+                .thenSucceed();
+    }
+
+    /**
+     * Was im Ofen liegt, übersteht den Neustart.
+     *
+     * <p><b>Der Unterschied zum Plan.</b> Den rechnet der Controller bei
+     * jedem Takt neu, weil er nur eine Absicht ist. Ein laufender Schritt ist
+     * eine Tatsache über die Welt: Die Zutaten liegen im Ofen. Wer das
+     * vergisst, hat sie verloren und legt beim nächsten Mal neue nach.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void whatIsIntheovenSurvivesArestart(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        furnaceWithFuel(helper, controller.east().north(), Blocks.FURNACE);
+        helper.setBlock(controller.east().above(), FnBlocks.FABRICATOR.get());
+        entity.rebuildNetwork();
+        entity.storage().insert(Items.RAW_IRON, 2);
+        entity.requestCraft(Items.IRON_INGOT, 2);
+
+        helper.startSequence()
+                .thenIdle(40)
+                .thenExecute(() -> {
+                    var job = entity.craftingJobs().get(0);
+                    helper.assertTrue(job.running() != null,
+                            "es muss etwas im Ofen liegen: " + job.detail());
+
+                    var registries = helper.getLevel().registryAccess();
+                    var wieder = (ControllerBlockEntity)
+                            net.minecraft.world.level.block.entity.BlockEntity.loadStatic(
+                                    helper.absolutePos(controller),
+                                    helper.getBlockState(controller),
+                                    entity.saveWithFullMetadata(registries), registries);
+
+                    helper.assertTrue(wieder != null, "Der Controller kam nicht zurück");
+                    var zurueck = wieder.craftingJobs().get(0).running();
+                    helper.assertTrue(zurueck != null,
+                            "der laufende Schritt hat den Neustart nicht überlebt");
+                    helper.assertValueEqual(zurueck.result(), Items.IRON_INGOT,
+                            "und weiß noch, worauf er wartet");
+                    helper.assertValueEqual(zurueck.device(), "quarry_output",
+                            "und an welcher Maschine");
+                })
+                .thenSucceed();
+    }
+
+    /** Ohne Ofen im Netz wartet der Auftrag und sagt es. */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void withoutAnovenThejobWaitsAndSaysSo(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        helper.setBlock(controller.east().above(), FnBlocks.FABRICATOR.get());
+        entity.rebuildNetwork();
+        entity.storage().insert(Items.RAW_IRON, 2);
+
+        entity.requestCraft(Items.IRON_INGOT, 1);
+
+        helper.startSequence()
+                .thenIdle(60)
+                .thenExecute(() -> {
+                    var job = entity.craftingJobs().get(0);
+                    helper.assertValueEqual(job.status().name(), "WAITING", "er wartet");
+                    helper.assertTrue(job.detail().toLowerCase().contains("ofen")
+                                    || job.detail().toLowerCase().contains("furnace"),
+                            "und sagt, welche Maschine fehlt: " + job.detail());
+                })
+                .thenSucceed();
+    }
+
+    /**
      * Was fehlt, baut das Netz selbst.
      *
      * <p>Der Schnitt, der vorher hier lag: Ein Auftrag über eine Truhe stand

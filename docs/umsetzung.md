@@ -145,6 +145,7 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | Ausbau | Controller-Anbau: sechs weitere Seiten für Kabelstränge je Block |
 | Fertigung | Fabricator baut Werkbank-Rezepte aus dem Netzspeicher, mehrstufig |
 | | Fehlt eine Zutat, wird sie gebaut; genannt wird der Grundstoff |
+| | Ofen, Schmelzofen, Räucherofen und Presse arbeiten für einen Auftrag mit |
 | | `from crafting` hält einen Vorrat, gerechnet gegen offene Aufträge |
 | | `craft(64 item:chest)` im Code, Aufträge im Reiter, mit Abbruch |
 | Server | `config/factorynetwork-server.toml`: Schrittbudget und Suchtiefe |
@@ -164,7 +165,7 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | | Projekt aus mehreren Dateien, Ordner im Namen: `erz/brecher.mf` |
 | | Anzeigenwand mit `scale`: große Schrift statt vieler Zeilen |
 | Anzeigen | Am Block und im Terminal, Knöpfe starten Abläufe |
-| Prüfung | 417 Einheitstests, 250 GameTests |
+| Prüfung | 419 Einheitstests, 253 GameTests |
 
 ## 3. Was noch nicht läuft
 
@@ -549,6 +550,39 @@ und Ziffern, also stehen die Dateien eines Ordners von selbst beieinander. Ein
 Klappbaum bräuchte einen Griff mehr für dieselbe Auskunft. Was nicht in die
 Spalte passt, wird vorn gekürzt — `…/schmelzen.mf` —, denn von rechts gekürzt
 sähen zwei Dateien desselben Ordners gleich aus.
+
+### Maschinen im Autocrafting (seit dem 26.08.)
+
+Der erste Schnitt von Weg B (2.9): Die Rezeptarten mit **fester, bekannter
+Form** laufen von selbst — Ofen, Schmelzofen, Räucherofen und die eigene
+Presse. Was eine fremde Mod kann, schreibt der Spieler auf; das ist der zweite
+Schnitt.
+
+**Steinsäge und Werkbank laufen beide am Fabricator.** Das war eine
+Berichtigung an der eigenen Erkundung: Ein Steinsägen-Rezept ist lesbar, aber
+der Block hat keine BlockEntity — niemand kann hineinschieben. Lesbar und
+ausführbar sind zwei Fragen. Am Fabricator passt es, denn beides ist Handarbeit
+ohne Maschine und in einem Zug erledigt.
+
+**Der laufende Schritt wird gespeichert, der Plan nicht.** Das ist der
+Unterschied, an dem die ganze Ausführung hängt: Ein Plan ist eine Absicht und
+darf veralten; ein Erz, das im Ofen liegt, ist eine Tatsache über die Welt.
+Solange ein Schritt läuft, tut der Auftrag nichts anderes — sonst sähe der neu
+gerechnete Plan „Erz weg, Barren nicht da" und legte ein zweites Mal ein.
+
+**Die Station im Plan ist die Rezeptart, nicht das Gerät.** Welcher Ofen es
+wird, entscheidet erst der Ausführende, und er nimmt einen freien. Stünde
+schon beim Planen ein Gerätename da, wartete ein Auftrag vor einem
+beschäftigten Ofen, während zwei leere danebenstehen.
+
+**Erkannt wird an der Klasse der BlockEntity**, nicht am Namen: Ein Ofen heißt
+auf einem englischen Server anders als im deutschen Client.
+
+**Der Zugriff geht über das ungeteilte Inventar**, wie bei `slots(…)`. Ein
+Ofen nimmt oben an und gibt unten aus; über die Seitenregeln bräuchte ein
+Auftrag zwei Connectoren, und dass einer reicht, ist eine getroffene
+Entscheidung. Den Brennstoff legt weiterhin der Spieler hin — das Netz baut,
+der Spieler versorgt.
 
 ### Nachschub ist derselbe Worker (seit dem 25.08.)
 

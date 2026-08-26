@@ -38,12 +38,62 @@ public final class CraftingJob {
         FAILED
     }
 
+    /**
+     * Ein Schritt, der an einer Maschine läuft.
+     *
+     * <p><b>Der wird gespeichert</b> — im Gegensatz zum Plan, den der
+     * Controller bei jedem Takt neu rechnet. Der Unterschied ist keiner der
+     * Bequemlichkeit: Ein Plan ist eine Absicht und darf veralten, ein
+     * laufender Schritt ist eine <b>Tatsache über die Welt</b>. Die Zutaten
+     * liegen im Ofen. Wer das vergisst, hat sie verloren und legt beim
+     * nächsten Mal neue nach.
+     *
+     * @param station  die Rezeptart, für den Ausführenden
+     * @param device   der Connector, an dem die Maschine hängt
+     * @param result   was herauskommen soll
+     * @param expected wie viel davon
+     * @param done     wie viel davon schon abgeholt ist
+     */
+    public record Running(String station, String device, Item result,
+                          long expected, long done) {
+
+        /** Wie viel noch fehlt. */
+        public long left() {
+            return Math.max(0, expected - done);
+        }
+
+        public Running withDone(long delivered) {
+            return new Running(station, device, result, expected, delivered);
+        }
+
+        CompoundTag save() {
+            CompoundTag tag = new CompoundTag();
+            tag.putString("Station", station);
+            tag.putString("Device", device);
+            tag.putString("Result", BuiltInRegistries.ITEM.getKey(result).toString());
+            tag.putLong("Expected", expected);
+            tag.putLong("Done", done);
+            return tag;
+        }
+
+        static Running load(CompoundTag tag) {
+            ResourceLocation id = ResourceLocation.tryParse(tag.getString("Result"));
+            if (id == null || !BuiltInRegistries.ITEM.containsKey(id)) {
+                return null;
+            }
+            return new Running(tag.getString("Station"), tag.getString("Device"),
+                    BuiltInRegistries.ITEM.get(id), tag.getLong("Expected"),
+                    tag.getLong("Done"));
+        }
+    }
+
     private static final String KEY_ID = "Id";
     private static final String KEY_TARGET = "Target";
     private static final String KEY_WANTED = "Wanted";
     private static final String KEY_DONE = "Done";
     private static final String KEY_STATUS = "Status";
     private static final String KEY_DETAIL = "Detail";
+    private static final String KEY_RUNNING = "Running";
 
     private final long id;
     private final Item target;
@@ -51,6 +101,9 @@ public final class CraftingJob {
     private int done;
     private Status status = Status.WAITING;
     private String detail = "";
+
+    /** Was gerade in einer Maschine liegt, oder {@code null}. */
+    private Running running;
 
     public CraftingJob(long id, Item target, int wanted) {
         this.id = id;
@@ -83,6 +136,15 @@ public final class CraftingJob {
         return detail;
     }
 
+    /** Was gerade in einer Maschine liegt, oder {@code null}. */
+    public Running running() {
+        return running;
+    }
+
+    public void setRunning(Running step) {
+        this.running = step;
+    }
+
     /** Wie viele noch fehlen. */
     public int remaining() {
         return Math.max(0, wanted - done);
@@ -111,6 +173,9 @@ public final class CraftingJob {
         tag.putInt(KEY_DONE, done);
         tag.putString(KEY_STATUS, status.name());
         tag.putString(KEY_DETAIL, detail);
+        if (running != null) {
+            tag.put(KEY_RUNNING, running.save());
+        }
         return tag;
     }
 
@@ -131,6 +196,9 @@ public final class CraftingJob {
                 BuiltInRegistries.ITEM.get(id), tag.getInt(KEY_WANTED));
         job.done = tag.getInt(KEY_DONE);
         job.detail = tag.getString(KEY_DETAIL);
+        if (tag.contains(KEY_RUNNING)) {
+            job.running = Running.load(tag.getCompound(KEY_RUNNING));
+        }
         for (Status candidate : Status.values()) {
             if (candidate.name().equals(tag.getString(KEY_STATUS))) {
                 job.status = candidate;

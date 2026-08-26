@@ -641,7 +641,7 @@ public class ControllerBlockEntity extends BlockEntity {
         if (level == null || amount <= 0) {
             return null;
         }
-        if (!recipes().known(target)) {
+        if (!recipeKnown(target)) {
             return null;
         }
         var job = new dev.devpanda.factorynetwork.crafting.CraftingJob(
@@ -745,16 +745,38 @@ public class ControllerBlockEntity extends BlockEntity {
      * verlassen, dass ein {@code /reload} den Rezeptverwalter austauscht —
      * und das ist keine Zusage, sondern Innenleben.
      */
-    private dev.devpanda.factorynetwork.crafting.RecipeLookup recipeCache;
+    private dev.devpanda.factorynetwork.crafting.RecipeLookup handCache;
+    private dev.devpanda.factorynetwork.crafting.MachineRecipes machineCache;
     private long recipeCacheTick = Long.MIN_VALUE;
 
-    private dev.devpanda.factorynetwork.crafting.RecipeLookup recipes() {
+    private void refreshRecipes() {
         long now = level.getGameTime();
-        if (recipeCache == null || recipeCacheTick != now) {
-            recipeCache = dev.devpanda.factorynetwork.crafting.RecipeLookup.of(level);
+        if (handCache == null || recipeCacheTick != now) {
+            handCache = dev.devpanda.factorynetwork.crafting.RecipeLookup.of(level);
+            machineCache = dev.devpanda.factorynetwork.crafting.MachineRecipes.of(level);
             recipeCacheTick = now;
         }
-        return recipeCache;
+    }
+
+    /**
+     * Alle Rezepte, die das Netz lesen kann.
+     *
+     * <p>Zwei Quellen: was ohne Maschine geht (Werkbank, Steinsäge) und was
+     * eine Maschine braucht (Ofenfamilie, Presse). Für einen Gegenstand
+     * können beide etwas haben — neun Barren aus einem Block, ein Barren aus
+     * Roherz —, und <b>der Bestand entscheidet</b>, wie schon innerhalb einer
+     * Quelle.
+     */
+    private dev.devpanda.factorynetwork.crafting.CraftingPlanner.Recipes<
+            net.minecraft.world.item.Item> recipes() {
+        refreshRecipes();
+        return dev.devpanda.factorynetwork.crafting.CraftingPlanner.anyOf(
+                handCache, machineCache);
+    }
+
+    /** Ob es für diesen Gegenstand überhaupt ein Rezept gibt — in einer der Quellen. */
+    private boolean recipeKnown(net.minecraft.world.item.Item target) {
+        return recipes().find(target, item -> 0L) != null;
     }
 
     /**
@@ -778,8 +800,14 @@ public class ControllerBlockEntity extends BlockEntity {
      * @return ob wirklich gebaut wurde
      */
     private boolean craftOnce(dev.devpanda.factorynetwork.crafting.CraftingJob job) {
+        // Liegt schon etwas in einer Maschine, geschieht sonst nichts. Ein
+        // neu gerechneter Plan saehe die Zutat verschwunden und das Ergebnis
+        // noch nicht da - und legte ein zweites Mal ein.
+        if (job.running() != null) {
+            return collectRunning(job);
+        }
         var recipes = recipes();
-        if (!recipes.known(job.target())) {
+        if (!recipeKnown(job.target())) {
             // Ein Rezept, das es nicht mehr gibt: Der Auftrag kann nicht mehr
             // fertig werden, und darauf zu warten hieße, für immer zu warten.
             job.note(dev.devpanda.factorynetwork.crafting.CraftingJob.Status.FAILED,
@@ -810,6 +838,9 @@ public class ControllerBlockEntity extends BlockEntity {
                 return false;
             }
         }
+        if (!step.station().isEmpty()) {
+            return startAtMachine(job, step);
+        }
         step.consumed().forEach(storage::extract);
         long left = storage.insert(step.result(), step.yield());
         if (left > 0) {
@@ -828,6 +859,162 @@ public class ControllerBlockEntity extends BlockEntity {
                     "baut " + step.yield() + " " + step.result().getDescription().getString());
         }
         return true;
+    }
+
+    /**
+     * Legt die Zutat in eine freie Maschine und merkt sich, worauf gewartet wird.
+     *
+     * <p><b>Eine Sorte je Durchgang.</b> Der Plan darf mischen — fünf
+     * Eisenerze und drei Roheisen für acht Barren —, ein Ofenfach kann das
+     * nicht. Genommen wird deshalb die erste Sorte und so viel davon, wie in
+     * ein Fach passt; der Rest kommt beim nächsten Takt dran.
+     *
+     * @return ob wirklich etwas angefangen wurde
+     */
+    private boolean startAtMachine(dev.devpanda.factorynetwork.crafting.CraftingJob job,
+            dev.devpanda.factorynetwork.crafting.CraftingPlanner.Step<
+                    net.minecraft.world.item.Item> step) {
+        var station = dev.devpanda.factorynetwork.crafting.MachineRecipes
+                .stationOf(step.station());
+        if (station == null) {
+            job.note(dev.devpanda.factorynetwork.crafting.CraftingJob.Status.FAILED,
+                    "unbekannte Station " + step.station());
+            return false;
+        }
+        var first = step.consumed().entrySet().iterator().next();
+        net.minecraft.world.item.Item ingredient = first.getKey();
+        String free = freeMachine(step.station(), station, ingredient);
+        if (free == null) {
+            job.note(dev.devpanda.factorynetwork.crafting.CraftingJob.Status.WAITING,
+                    "wartet auf " + machineName(step.station()) + " im Netz");
+            return false;
+        }
+        var handler = machineInventory(free);
+        int room = handler.getSlotLimit(station.inputSlot());
+        long take = Math.min(first.getValue(), Math.min(room, step.runs()));
+        if (take <= 0) {
+            return false;
+        }
+        long got = storage.extract(ingredient, take);
+        if (got <= 0) {
+            return false;
+        }
+        net.minecraft.world.item.ItemStack rest = handler.insertItem(station.inputSlot(),
+                new net.minecraft.world.item.ItemStack(ingredient, (int) got), false);
+        long placed = got - rest.getCount();
+        if (!rest.isEmpty()) {
+            // Was die Maschine doch nicht nahm, geht zurück — dasselbe Muster
+            // wie überall, wo diese Mod etwas anbietet.
+            storage.insert(ingredient, rest.getCount());
+        }
+        if (placed <= 0) {
+            job.note(dev.devpanda.factorynetwork.crafting.CraftingJob.Status.WAITING,
+                    machineName(step.station()) + " nimmt gerade nichts an");
+            return false;
+        }
+        job.setRunning(new dev.devpanda.factorynetwork.crafting.CraftingJob.Running(
+                step.station(), free, step.result(), placed * step.perCraft(), 0));
+        job.note(dev.devpanda.factorynetwork.crafting.CraftingJob.Status.RUNNING,
+                placed + " " + ingredient.getDescription().getString() + " in " + free);
+        return true;
+    }
+
+    /**
+     * Holt ab, was die Maschine fertig hat.
+     *
+     * <p>Das Netz holt selbst und wartet nicht darauf, dass jemand einen
+     * Worker dafür schreibt. Ein Auftrag, der stillsteht, weil eine Zeile im
+     * Programm fehlt, die niemand verlangt hat, wäre die unangenehmste Sorte
+     * Stillstand.
+     */
+    private boolean collectRunning(dev.devpanda.factorynetwork.crafting.CraftingJob job) {
+        var running = job.running();
+        var station = dev.devpanda.factorynetwork.crafting.MachineRecipes
+                .stationOf(running.station());
+        var handler = machineInventory(running.device());
+        if (station == null || handler == null) {
+            job.note(dev.devpanda.factorynetwork.crafting.CraftingJob.Status.WAITING,
+                    running.device() + " ist nicht erreichbar");
+            return false;
+        }
+        net.minecraft.world.item.ItemStack ready =
+                handler.extractItem(station.outputSlot(), (int) running.left(), false);
+        if (ready.isEmpty()) {
+            job.note(dev.devpanda.factorynetwork.crafting.CraftingJob.Status.WAITING,
+                    "wartet auf " + running.device() + " — hat er " + station.supply() + "?");
+            return false;
+        }
+        long rest = storage.insert(ready.getItem(), ready.getCount());
+        if (rest > 0) {
+            net.minecraft.world.level.block.Block.popResource(level, worldPosition,
+                    new net.minecraft.world.item.ItemStack(ready.getItem(), (int) rest));
+        }
+        long done = running.done() + ready.getCount();
+        if (done < running.expected()) {
+            job.setRunning(running.withDone(done));
+            job.note(dev.devpanda.factorynetwork.crafting.CraftingJob.Status.RUNNING,
+                    done + " von " + running.expected() + " aus " + running.device());
+            return true;
+        }
+        job.setRunning(null);
+        if (running.result() == job.target()) {
+            job.produced((int) done);
+        } else {
+            job.note(dev.devpanda.factorynetwork.crafting.CraftingJob.Status.RUNNING,
+                    done + " " + running.result().getDescription().getString() + " fertig");
+        }
+        return true;
+    }
+
+    /**
+     * Ein Connector, an dem eine passende und freie Maschine hängt.
+     *
+     * <p><b>Frei heißt: das Ausgangsfach ist leer</b> und ins Eingangsfach
+     * passt die Zutat. Wer schon etwas anderes schmilzt, wird nicht
+     * angerührt — sonst mischte ein Auftrag sein Erz unter fremde Arbeit.
+     */
+    private String freeMachine(String station,
+            dev.devpanda.factorynetwork.crafting.MachineRecipes.Station shape,
+            net.minecraft.world.item.Item ingredient) {
+        for (var entry : graph.connectors().entrySet()) {
+            if (!level.isLoaded(entry.getValue())
+                    || !(level.getBlockEntity(entry.getValue())
+                            instanceof ConnectorBlockEntity connector)) {
+                continue;
+            }
+            if (!dev.devpanda.factorynetwork.crafting.MachineRecipes.fits(
+                    station, connector.machineBlockEntity())) {
+                continue;
+            }
+            var handler = connector.machineInventoryAll();
+            if (handler == null || handler.getSlots() <= shape.outputSlot()) {
+                continue;
+            }
+            if (!handler.getStackInSlot(shape.outputSlot()).isEmpty()) {
+                continue;
+            }
+            net.minecraft.world.item.ItemStack probe =
+                    new net.minecraft.world.item.ItemStack(ingredient);
+            if (handler.insertItem(shape.inputSlot(), probe, true).getCount()
+                    < probe.getCount()) {
+                return entry.getKey();
+            }
+        }
+        return null;
+    }
+
+    private net.neoforged.neoforge.items.IItemHandler machineInventory(String device) {
+        var position = graph.connector(device).orElse(null);
+        if (position == null || !level.isLoaded(position)
+                || !(level.getBlockEntity(position) instanceof ConnectorBlockEntity connector)) {
+            return null;
+        }
+        return connector.machineInventoryAll();
+    }
+
+    /** Wie die Maschine einer Station im Klartext heißt. */
+    private static String machineName(String station) {
+        return dev.devpanda.factorynetwork.crafting.MachineRecipes.machineName(station);
     }
 
     private static final String KEY_JOBS = "Jobs";

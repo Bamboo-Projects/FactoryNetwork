@@ -106,6 +106,22 @@ public class ConnectorBlockEntity extends BlockEntity {
         return level.getCapability(Capabilities.ItemHandler.BLOCK, target, null);
     }
 
+    /**
+     * Die BlockEntity der Maschine, oder {@code null}.
+     *
+     * <p>Gebraucht, um eine Maschine an ihrer <b>Art</b> zu erkennen und
+     * nicht an ihrem Namen: Ein Ofen heißt auf einem englischen Server anders
+     * als im deutschen Client, aber er ist überall dieselbe Klasse.
+     */
+    public @Nullable net.minecraft.world.level.block.entity.BlockEntity machineBlockEntity() {
+        if (level == null) {
+            return null;
+        }
+        Direction facing = ConnectorBlock.machineSide(getBlockState());
+        BlockPos target = worldPosition.relative(facing);
+        return level.isLoaded(target) ? level.getBlockEntity(target) : null;
+    }
+
     public @Nullable IItemHandler machineInventory() {
         if (level == null) {
             return null;

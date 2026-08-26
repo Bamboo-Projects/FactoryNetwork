@@ -580,7 +580,12 @@ Die Auswahl muss **eine Art** meinen. Ein Auftrag über „irgendein Erz" hätte
 keine Antwort auf die Frage, was gebaut werden soll; ein Tag mit genau einem
 Treffer geht durch, dann ist sie beantwortet.
 
-Gebaut wird, was im Netz an **Fabricators** hängt, und zwar **mehrstufig**:
+Gebaut wird am **Fabricator** — Werkbank- und Steinsägen-Rezepte, beides
+Handarbeit ohne Maschine. Hängt ein **Ofen, Schmelzofen, Räucherofen** oder
+eine **Presse** am Netz, benutzt ein Auftrag sie von selbst: einlegen, warten,
+abholen. Den Brennstoff legt der Spieler hin.
+
+Und zwar **mehrstufig**:
 Fehlen Bretter, macht das Netz welche aus Stämmen. Fehlen auch die, wartet der
 Auftrag und nennt den Stamm — genannt wird immer der Grundstoff und nie eine
 Zwischenstufe, die das Netz selbst herstellen könnte.
