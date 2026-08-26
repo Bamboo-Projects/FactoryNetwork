@@ -53,6 +53,9 @@ Programm in **Millibucket** — ein Eimer sind 1000. Eine Flüssigkeitszelle geh
 in dasselbe Laufwerk wie eine Speicherzelle. Getrennt werden die beiden erst
 beim Zählen: Gegenstände füllen keine Flüssigkeitszelle und umgekehrt.
 
+Wie sie bewegt werden — Worker, Tanks, Mengen in Millibucket —, steht unter
+*Flüssigkeiten und Gase*.
+
 ## Chemikalienzellen
 
 Nur mit **Mekanism** — ohne die Mod gibt es die Zellen zwar, aber es geht
