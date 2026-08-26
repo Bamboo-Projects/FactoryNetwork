@@ -161,6 +161,8 @@ Vorentscheidungen)
 | 1.6 | Request/Response als eigene Form | Z | `sprache.md:992` | mittel | mit `emit`/`on`/`await` nachbaubar |
 | 1.7 | ~~Rechte im Mehrspielerbetrieb~~ — **gebaut** (25.08.). `protection.programs` in der Serverkonfiguration: `OFF` (Vorgabe, wie bisher), `OWNER`, `OPS`. Geschützt sind Übernehmen und Entwurf speichern; die Beschriftungspistole nicht — sie ändert die Welt, und dafür gibt es Schutzmods | | `FnProtection` | | |
 | 1.8 | **Zum Teil gebaut** (26.08.): `Chemical` steht im Wertemodell — eine Chemikalie ist ein Wert wie eine Gegenstandsart, trägt eine Menge, steht in einer Schleife und ist an einem Posten mit `it.chemical` abzulesen. Im Kern als Kennung und nie als Mekanism-Typ. **Offen mit Begründung:** `Job` — `craft` liefert eine Nummer, und mehr will bisher niemand ablesen; dafür gibt es `crafting_finished` und den Reiter. `Set<T>` — der Fall, der ihn braucht, fehlt weiter | F | `Value.ChemicalValue`, `sprache.md` §5 | klein | — |
+| 1.19 | **Die Ressourcenart als offene Registry** statt eines festen Aufzählungswerts. Stand seit dem 24.08. nur in `umfeld-atm10.md`; entschieden ist sie nicht, aber der Wunsch nach Ars Nouveau (7.5) beantwortet sie faktisch: Source ist eine Art, die der Kern nicht kennen kann. AE2 und Refined Storage haben sich für 1.21.1 beide dafür entschieden. Betrifft `Expr.Selector.Kind`, `WorkerKind`, `power` in `strom.md` | E/F | `umfeld-atm10.md` | groß | Entwurf |
+| 1.20 | **Ein Connector, der klickt.** Gewünscht am 26.08. Manche Maschinen tun nichts, bis jemand sie anfasst — Ars Nouveau ist voll davon. **Kein zweiter Block:** Ein- und Ausgang trennt hier schon der Code und nicht die Bauform, und dieselbe Regel gilt für eine dritte Fähigkeit. Also `altar.click()` an dem Connector, der ohnehin dranhängt | F | `Signatures.MEMBERS` | mittel | — |
 | 1.9 | Echter Typprüfer über Ausdrücke — **zurückgestellt.** Literal gegen Literal bleibt; alles andere fällt zur Laufzeit auf, mit Meldungen, die wissen, was erwartet war | Z | `globale-werte.md:195` | groß | eigenes Vorhaben über die ganze Sprache |
 | 1.10 | ~~Konstanten~~ — **fertig.** `const stapel = 64` wird gelesen wie ein globaler Wert und nie geschrieben; der Versuch ist ein Fehler beim Übernehmen. Nicht gespeichert, weil ein Wert aus dem Programm aus dem Programm wiederkommt | | `Decl.Const`, `GlobalCheck` | | |
 | 1.11 | ~~Globale Listen~~ — **fertig** (26.08.). `[a, b]` und `[]`, mehrzeilig; dazu `plus`, `without`, `rest`. Die Entscheidung lautet **ersetzen, nicht ändern**: Kein `add`, angehängt wird über eine Zuweisung — damit greifen `const` und der Mehrspielerschutz ohne Zusatzarbeit, und der Neustart trennt keine Verweise. Kein Zugriff über eine Nummer. Obergrenze in der Serverkonfiguration (`globalListSize`) | | `Expr.ListLit`, `Interpreter.writeGlobal` | | |
@@ -248,6 +250,9 @@ Vorentscheidungen)
 | 7.2 | ~~GuideME eingebunden~~ — **fertig**, `compat/guide` | | | |
 | 7.3 | Das Fertig-Signal je Mod (Weg 3) | Z | `umsetzung.md:177` | groß |
 | 7.4 | Eigene Generatoren | Z | `strom.md:220` | — |
+| 7.5 | **Ars Nouveau.** Gewünscht am 26.08. Source ist eine eigene Ressourcenart und damit der Fall, der 1.19 entscheidet: Mit einem festen Aufzählungswert käme sie nicht herein, ohne den Kern für jede Mod aufzumachen. Dazu die Blöcke, die von sich aus nach oben abgeben — die brauchen keinen eigenen Weg, der Connector hängt an der Kiste darüber | F | — | groß | 1.19 |
+| 7.6 | **Industrial Foregoing.** Gewünscht am 26.08. Gegenstände und Flüssigkeiten laufen schon heute; zu prüfen ist, was darüber hinaus eigen ist (Pink Slime, die Fächer der Maschinen) | F | — | mittel | Prüfung, was fehlt |
+| 7.7 | **Applied Energistics.** Gewünscht am 26.08. Ein ME-Netz als Quelle und Ziel — der Punkt, an dem das Vorgängerprojekt angefangen hat. Zu entscheiden ist, ob das Netz im ME-Netz lagert oder daneben steht | F | `umfeld-atm10.md` | groß | Entwurf |
 
 ---
 
@@ -287,16 +292,20 @@ andere schreibt der Spieler ein `recipe` ins Programm.
 auf, bewegt sich, wird gezählt und lagert in Chemikalienzellen. Ohne Mekanism
 läuft alles wie vorher.
 
-**Was jetzt oben steht:** die Handbuchseiten (6.1) und der Serverfall von 4.1
-— der Einzelspielerfall ist am 26.08. gebaut worden.
+**Was jetzt oben steht:** die Wünsche vom 26.08. — ein Connector, der klickt
+(1.20), und die drei Mods (7.5 bis 7.7). Sie hängen an **einer** Frage, und
+das ist dieselbe, die seit dem 24.08. nur in `umfeld-atm10.md` stand:
+**ob die Ressourcenart eine offene Registry wird** statt eines festen
+Aufzählungswerts (1.19). Ars Nouveau entscheidet sie faktisch — Source ist
+eine Art, die der Kern nicht kennen kann. AE2 und Refined Storage haben sich
+für 1.21.1 beide dafür entschieden.
+
+Dahinter: die Handbuchseiten (6.1) und der Serverfall von 4.1 — der
+Einzelspielerfall ist am 26.08. gebaut worden.
 Die drei benannten Schnitte dieser Nacht sind durch: der Worker mit
 `filter chemical:…`, Flüssigkeiten wie Chemikalien als Zutat in einem
 `recipe`, und Strom als Zutat — der letzte durch eine Prüfung, die ihn
-zurückstellt. Und eine Frage, die seit dem 24.08. nur in
-`umfeld-atm10.md` steht und nie hierher wanderte: **ob die Ressourcenart eine
-offene Registry wird** statt eines festen Aufzählungswerts. AE2 und Refined
-Storage haben sich für 1.21.1 beide dafür entschieden; es betrifft `power` in
-`strom.md` und wäre eine Entscheidung des Projektinhabers.
+zurückstellt.
 
 Was hier bis zum 25.08. unter „Kleines mit großer Wirkung" stand — `list` auf
 einer Anzeige (6.10), die Auflösungsanzeige im Editor (3.11), die
