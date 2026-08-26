@@ -1,10 +1,8 @@
 package dev.devpanda.factorynetwork.runtime;
 
 import dev.devpanda.factorynetwork.lang.ast.Expr;
-import net.minecraft.core.registries.BuiltInRegistries;
+import dev.devpanda.factorynetwork.network.ResourceStore;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.level.material.Fluid;
 
 import java.util.List;
 
@@ -24,41 +22,28 @@ import java.util.List;
  * <p>Jetzt trägt der Wert seine Art als Feld, und was je Art verschieden ist,
  * steht hier — an einer Stelle und vollzählig.
  *
- * <p><b>Noch ein Aufzählungswert und keine Registry.</b> Ob fremde Mods eigene
- * Arten anmelden dürfen, ist eine Haltungsfrage und in
- * {@code ressourcenarten.md}, Abschnitt 6 noch offen. Dieser Schritt ist von
- * ihr unabhängig richtig: Er macht den Code kleiner, egal wie sie ausgeht.
+ * <p><b>Und die Liste der Arten ist offen.</b> Seit dem 26.08. ist
+ * entschieden, dass fremde Mods die Sprache erweitern dürfen: Wer eine eigene
+ * Art mitbringt, erfüllt diese Schnittstelle und meldet sie bei
+ * {@link ResourceKinds} an. Der Kern muss dafür nicht angefasst werden. Die
+ * Begründung und das, was daran nicht umkehrbar ist, stehen in
+ * {@code entscheidungen.md}, „Fremde Mods dürfen die Sprache erweitern".
  *
- * <p><b>Eine Chemikalie ist ein Text.</b> Das ist die Naht, an der die
- * Mekanism-Anbindung hängt — eine Signatur mit einem Mekanism-Typ ließe sich
- * ohne die Mod nicht mehr laden. Deshalb ist der Träger einer Ressource hier
- * {@code Object} und nicht ein gemeinsamer Obertyp: Einen solchen gäbe es nur,
- * wenn alle drei aus derselben Hand kämen, und {@link String} kommt aus keiner.
+ * <p><b>Der Schlüssel ist ein {@code Object}.</b> Ein gemeinsamer Obertyp
+ * gäbe es nur, wenn alle Arten aus derselben Hand kämen — ein Gegenstand ist
+ * ein {@code Item}, eine Chemikalie ist ein {@link String}, weil eine Signatur
+ * mit einem Mekanism-Typ die Klasse beim Laden auflösen würde. Welche Form zu
+ * dieser Art gehört, sagt {@link #type()}, und der Wert prüft sie beim
+ * Anlegen.
+ *
+ * <p><b>Eine Art ist ein einziges Ding.</b> Angemeldet wird sie einmal, und
+ * Gleichheit ist Identität — {@code ==} statt {@code equals}. Zwei Einträge
+ * mit demselben Präfix lehnt die Registry ab, statt einen davon zu verdecken.
  */
-public enum ResourceKind {
+public interface ResourceKind {
 
-    /** Gegenstandsarten. Ein {@code tag:} löst sich hierauf auf. */
-    ITEM("item", "Arten", Item.class, "item", "sel"),
-
-    /** Flüssigkeitssorten, gemessen in Millibucket. */
-    FLUID("fluid", "Flüssigkeiten", Fluid.class, "fluid", "fluidsel"),
-
-    /** Chemikalien aus Mekanism, als Kennung. */
-    CHEMICAL("chemical", "Chemikalien", String.class, "chem", "chemsel");
-
-    private final String prefix;
-    private final String plural;
-    private final Class<?> type;
-    private final String tag;
-    private final String selectionTag;
-
-    ResourceKind(String prefix, String plural, Class<?> type, String tag, String selectionTag) {
-        this.prefix = prefix;
-        this.plural = plural;
-        this.type = type;
-        this.tag = tag;
-        this.selectionTag = selectionTag;
-    }
+    /** Die Kennung dieser Art, etwa {@code arsnouveau:source}. */
+    ResourceLocation id();
 
     /**
      * Was vor dem Doppelpunkt steht — und wie der Posten danach gefragt wird.
@@ -68,117 +53,69 @@ public enum ResourceKind {
      * {@code it.chemical} ab. Zwei Wörter für dieselbe Art wären zwei Dinge
      * zum Merken.
      */
-    public String prefix() {
-        return prefix;
-    }
+    String prefix();
 
     /** Wie eine Auswahl dieser Art im Protokoll gezählt wird. */
-    public String plural() {
-        return plural;
-    }
+    String plural();
 
     /** Woran eine Ressource dieser Art zu erkennen ist. */
-    public Class<?> type() {
-        return type;
-    }
+    Class<?> type();
 
     /**
      * Wie diese Art auf der Platte heißt.
      *
-     * <p><b>Unregelmäßig, und das bleibt so.</b> {@code item} gegen
-     * {@code sel}, aber {@code chem} gegen {@code chemsel} — gewachsen, nicht
-     * entworfen. Ein wartender Ablauf liegt mit diesen Namen in der Welt;
-     * sie geradezuziehen hieße, alte Welten ihre Abläufe verlieren zu lassen.
-     * Festgehalten in {@code ValueCodecFormatTest}.
+     * <p>Bei den eingebauten drei ist der Name <b>unregelmäßig</b>, und das
+     * bleibt so: {@code item} gegen {@code sel}, aber {@code chem} gegen
+     * {@code chemsel} — gewachsen, nicht entworfen. Ein wartender Ablauf
+     * liegt mit diesen Namen in der Welt; sie geradezuziehen hieße, alten
+     * Welten ihre Abläufe verlieren zu lassen. Festgehalten in
+     * {@code ValueCodecFormatTest}.
+     *
+     * <p>Eine fremde Art wählt ihren eigenen. Er muss über Neustarts hinweg
+     * derselbe bleiben und darf keinem anderen gleichen — beides prüft
+     * {@link ResourceKinds}.
      */
-    public String tag() {
-        return tag;
-    }
+    String tag();
 
     /** Dasselbe für eine Auswahl. */
-    public String selectionTag() {
-        return selectionTag;
-    }
+    String selectionTag();
 
-    /**
-     * Die Kennung einer Ressource, wie sie auf der Platte steht.
-     *
-     * @throws IllegalArgumentException wenn die Ressource nicht zur Art passt
-     */
-    public String idOf(Object resource) {
-        return switch (this) {
-            case ITEM -> BuiltInRegistries.ITEM.getKey(cast(resource, Item.class)).toString();
-            case FLUID -> BuiltInRegistries.FLUID.getKey(cast(resource, Fluid.class)).toString();
-            case CHEMICAL -> cast(resource, String.class);
-        };
-    }
+    /** Die Kennung einer Ressource, wie sie auf der Platte steht. */
+    String idOf(Object key);
 
     /**
      * Die Ressource hinter einer Kennung.
      *
-     * <p>Gegenstände und Flüssigkeiten werden gegen die Registry geprüft und
-     * scheitern mit Meldung, wenn es sie nicht mehr gibt: Eine Variable, mit
-     * der weitergerechnet wird, darf sich nicht heimlich in etwas anderes
-     * verwandeln.
-     *
-     * <p><b>Chemikalien nicht.</b> Ihre Registry gehört Mekanism, und ohne
-     * die Mod gibt es sie nicht. Eine Kennung, die niemand mehr auflösen
-     * kann, ist immer noch die Wahrheit darüber, was der Ablauf gemeint hat.
+     * <p>Ob dabei gegen eine Registry geprüft wird, entscheidet die Art.
+     * Gegenstände und Flüssigkeiten scheitern mit Meldung, wenn es sie nicht
+     * mehr gibt: Eine Variable, mit der weitergerechnet wird, darf sich nicht
+     * heimlich in etwas anderes verwandeln. Chemikalien tun es nicht — ihre
+     * Registry gehört Mekanism, und ohne die Mod gibt es sie nicht.
      */
-    public Object fromId(String id) {
-        return switch (this) {
-            case ITEM -> {
-                ResourceLocation key = ResourceLocation.tryParse(id);
-                if (key == null || !BuiltInRegistries.ITEM.containsKey(key)) {
-                    throw new ScriptError("Den Gegenstand " + id + " gibt es nicht mehr.",
-                            "Der Ablauf hielt ihn in einer Variablen fest. Wurde eine Mod "
-                                    + "aus dem Pack genommen?");
-                }
-                yield BuiltInRegistries.ITEM.get(key);
-            }
-            case FLUID -> {
-                ResourceLocation key = ResourceLocation.tryParse(id);
-                if (key == null || !BuiltInRegistries.FLUID.containsKey(key)) {
-                    throw new ScriptError("Die Flüssigkeit " + id + " gibt es nicht mehr.",
-                            "Der Ablauf hielt sie in einer Variablen fest. Wurde eine Mod "
-                                    + "aus dem Pack genommen?");
-                }
-                yield BuiltInRegistries.FLUID.get(key);
-            }
-            case CHEMICAL -> id;
-        };
-    }
+    Object fromId(String id);
 
-    /**
-     * Wie eine einzelne Ressource im Protokoll erscheint.
-     *
-     * <p>Bei einer Chemikalie über {@code Chemicals.nameOf}, damit dort
-     * „Wasserstoff" steht und nicht die Kennung. Fehlt Mekanism, steht die
-     * Kennung da — erfunden wird nichts.
-     */
-    public String nameOf(Object resource) {
-        return switch (this) {
-            case ITEM -> cast(resource, Item.class).toString();
-            case FLUID -> idOf(resource);
-            case CHEMICAL -> dev.devpanda.factorynetwork.compat.mekanism.Chemicals
-                    .nameOf(cast(resource, String.class));
-        };
-    }
+    /** Wie eine einzelne Ressource im Protokoll erscheint. */
+    String nameOf(Object key);
 
     /**
      * Worauf sich ein Auswahlausdruck dieser Art auflöst.
      *
-     * <p>Die drei Auflöser bleiben getrennt — sie sind keine Zwillinge,
-     * sondern drei verschiedene Registries mit drei verschiedenen
-     * Zwischenspeichern. Was hier zusammenkommt, ist allein die Frage,
-     * welchen davon eine Stelle braucht.
+     * <p>Die Auflöser bleiben getrennt — sie sind keine Zwillinge, sondern
+     * verschiedene Registries mit verschiedenen Zwischenspeichern. Was
+     * zusammenkommt, ist allein die Frage, welchen davon eine Stelle braucht.
      */
-    public List<?> resolve(Expr expr) {
-        return switch (this) {
-            case ITEM -> ItemSelection.resolve(expr);
-            case FLUID -> FluidSelection.resolve(expr);
-            case CHEMICAL -> dev.devpanda.factorynetwork.compat.mekanism.Chemicals.resolve(expr);
-        };
+    List<?> resolve(Expr selector);
+
+    /**
+     * Der Speicher, in dem diese Art im Netz liegt.
+     *
+     * <p><b>Standardmäßig keiner.</b> Eine Art darf beweglich sein, ohne
+     * lagerbar zu sein — und {@link ResourceStore#NONE} ist die ehrliche
+     * Antwort darauf: Er nimmt nichts an und gibt nichts her. Wer lagern
+     * will, liefert hier je Netz einen neuen.
+     */
+    default ResourceStore newStore() {
+        return ResourceStore.NONE;
     }
 
     /**
@@ -188,27 +125,27 @@ public enum ResourceKind {
      * {@code power} und {@code all} tragen keine Sorte, und wer sie als
      * Gegenstände läse, bewegte bei {@code power} das Falsche.
      */
-    public static ResourceKind of(Expr.Selector.Kind written) {
+    static ResourceKind of(Expr.Selector.Kind written) {
         if (written == null) {
             return null;
         }
         return switch (written) {
-            case ITEM, TAG -> ITEM;
-            case FLUID, FLUIDTAG -> FLUID;
-            case CHEMICAL -> CHEMICAL;
+            case ITEM, TAG -> ResourceKinds.ITEM;
+            case FLUID, FLUIDTAG -> ResourceKinds.FLUID;
+            case CHEMICAL -> ResourceKinds.CHEMICAL;
             case POWER, ALL -> null;
         };
     }
 
     /** Dieselbe Frage für eine Auswahl, die noch als Text dasteht. */
-    public static ResourceKind of(Value.Request.Kind written) {
+    static ResourceKind of(Value.Request.Kind written) {
         if (written == null) {
             return null;
         }
         return switch (written) {
-            case ITEM, TAG -> ITEM;
-            case FLUID, FLUIDTAG -> FLUID;
-            case CHEMICAL -> CHEMICAL;
+            case ITEM, TAG -> ResourceKinds.ITEM;
+            case FLUID, FLUIDTAG -> ResourceKinds.FLUID;
+            case CHEMICAL -> ResourceKinds.CHEMICAL;
             case ALL, UNKNOWN -> null;
         };
     }
@@ -220,17 +157,17 @@ public enum ResourceKind {
      * <p>Ohne Art sind <b>Gegenstände</b> gemeint: {@code all} sagt das
      * ausdrücklich, ein Worker ohne Filter tut es seit jeher, und eine
      * Schreibweise, die niemand kennt, fällt beim Auflösen auf und nicht
-     * hier. Gebraucht überall dort, wo als Nächstes aufgelöst wird.
+     * hier.
      */
-    public static ResourceKind orItems(Expr.Selector.Kind written) {
+    static ResourceKind orItems(Expr.Selector.Kind written) {
         ResourceKind kind = of(written);
-        return kind == null ? ITEM : kind;
+        return kind == null ? ResourceKinds.ITEM : kind;
     }
 
     /** Dasselbe für eine Auswahl, die noch als Text dasteht. */
-    public static ResourceKind orItems(Value.Request.Kind written) {
+    static ResourceKind orItems(Value.Request.Kind written) {
         ResourceKind kind = of(written);
-        return kind == null ? ITEM : kind;
+        return kind == null ? ResourceKinds.ITEM : kind;
     }
 
     /**
@@ -244,20 +181,12 @@ public enum ResourceKind {
      * Gegenstandsauflösung, traf dort nichts, und keine Auswahl heißt dort
      * <i>alles</i>.
      */
-    public static ResourceKind of(Value value) {
+    static ResourceKind of(Value value) {
         return switch (value) {
             case Value.Resource resource -> resource.kind();
             case Value.Selection selection -> selection.kind();
             case Value.Request request -> of(request.kind());
             case null, default -> null;
         };
-    }
-
-    private <T> T cast(Object resource, Class<T> expected) {
-        if (!expected.isInstance(resource)) {
-            throw new IllegalArgumentException("Eine Ressource der Art " + this
-                    + " ist kein " + (resource == null ? "nichts" : resource.getClass()) + ".");
-        }
-        return expected.cast(resource);
     }
 }

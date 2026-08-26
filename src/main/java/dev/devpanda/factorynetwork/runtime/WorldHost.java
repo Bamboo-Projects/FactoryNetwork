@@ -344,10 +344,10 @@ public final class WorldHost implements Interpreter.Host {
         // Fluid-Selektor, der in der Gegenstandsauflösung landet, trifft
         // nichts — was dort ununterscheidbar von "kein Filter" wäre.
         ResourceKind kind = ResourceKind.of(amount);
-        if (kind == ResourceKind.FLUID) {
+        if (kind == ResourceKinds.FLUID) {
             return moveFluid(amount, from, to);
         }
-        if (kind == ResourceKind.CHEMICAL) {
+        if (kind == ResourceKinds.CHEMICAL) {
             return moveChemical(amount, from, to);
         }
         List<Item> items = itemsOf(amount);
@@ -471,11 +471,11 @@ public final class WorldHost implements Interpreter.Host {
         // Schleife und aus jedem it. Ohne diese beiden Zeilen bliebe die
         // Liste leer, und leer heißt weiter unten „kein Filter".
         if (value instanceof Value.Selection selection
-                && selection.kind() == ResourceKind.CHEMICAL) {
+                && selection.kind() == ResourceKinds.CHEMICAL) {
             return selection.chemicals();
         }
         if (value instanceof Value.Resource resource
-                && resource.kind() == ResourceKind.CHEMICAL) {
+                && resource.kind() == ResourceKinds.CHEMICAL) {
             return List.of(resource.chemical());
         }
         if (value instanceof Value.Request request) {
@@ -642,11 +642,11 @@ public final class WorldHost implements Interpreter.Host {
     /** Die Sorten einer Flüssigkeits-Auswahl. */
     private List<Fluid> fluidsOf(Value value) {
         if (value instanceof Value.Selection selection
-                && selection.kind() == ResourceKind.FLUID) {
+                && selection.kind() == ResourceKinds.FLUID) {
             return selection.fluids();
         }
         if (value instanceof Value.Resource resource
-                && resource.kind() == ResourceKind.FLUID) {
+                && resource.kind() == ResourceKinds.FLUID) {
             return List.of(resource.fluid());
         }
         String written = value instanceof Value.Request request ? request.selector() : null;
@@ -745,10 +745,10 @@ public final class WorldHost implements Interpreter.Host {
             return 0;
         }
         ResourceKind kind = ResourceKind.of(what);
-        if (kind == ResourceKind.FLUID) {
+        if (kind == ResourceKinds.FLUID) {
             return countFluids(connector, fluidsOf(what));
         }
-        if (kind == ResourceKind.CHEMICAL) {
+        if (kind == ResourceKinds.CHEMICAL) {
             net.minecraft.core.Direction facing = dev.devpanda.factorynetwork.block
                     .ConnectorBlock.machineSide(connector.getBlockState());
             return dev.devpanda.factorynetwork.compat.mekanism.ChemicalStores.amountAt(
@@ -848,7 +848,7 @@ public final class WorldHost implements Interpreter.Host {
         // Schnittstelle stehen: Was noch je Art verschieden ist, ist allein
         // die Auflösung der Auswahl.
         ResourceKind found = ResourceKind.of(what);
-        ResourceKind kind = found == null ? ResourceKind.ITEM : found;
+        ResourceKind kind = found == null ? ResourceKinds.ITEM : found;
         var store = stores.of(kind);
         return keysOf(kind, what).stream().mapToLong(store::count).sum();
     }
@@ -1067,11 +1067,16 @@ public final class WorldHost implements Interpreter.Host {
      * zusammenkommt, ist allein die Frage, welchen davon eine Stelle braucht.
      */
     private List<?> keysOf(ResourceKind kind, Value value) {
-        return switch (kind) {
-            case ITEM -> itemsOf(value);
-            case FLUID -> fluidsOf(value);
-            case CHEMICAL -> chemicalsOf(value);
-        };
+        if (kind == ResourceKinds.FLUID) {
+            return fluidsOf(value);
+        }
+        if (kind == ResourceKinds.CHEMICAL) {
+            return chemicalsOf(value);
+        }
+        // Und alles andere über die Gegenstandsauflösung — auch eine fremde
+        // Art, solange die zweite Achse fehlt. Sie trifft dort nichts und
+        // meldet es; das ist die ehrlichere Antwort als ein stilles Nichts.
+        return itemsOf(value);
     }
 
     private static boolean isStorage(Value value) {
@@ -1089,7 +1094,7 @@ public final class WorldHost implements Interpreter.Host {
      */
     private List<Item> itemsOf(Value value) {
         if (value instanceof Value.Resource resource
-                && resource.kind() == ResourceKind.ITEM) {
+                && resource.kind() == ResourceKinds.ITEM) {
             return List.of(resource.item());
         }
         // Eine schon aufgelöste Auswahl — so kommt jeder Eintrag aus
@@ -1101,7 +1106,7 @@ public final class WorldHost implements Interpreter.Host {
         // und count fest, aber eine Flüssigkeitsauswahl als Gegenstandsliste
         // zu lesen wäre ein Fehler, den erst ein Absturz zeigt.
         if (value instanceof Value.Selection selection
-                && selection.kind() == ResourceKind.ITEM) {
+                && selection.kind() == ResourceKinds.ITEM) {
             return selection.items();
         }
         // „all" sucht nichts aus: eine leere Liste heißt hier „kein Filter",

@@ -107,16 +107,14 @@ public final class ValueCodec {
 
     public static Value read(CompoundTag tag) {
         String type = tag.getString(KEY_TYPE);
-        // Erst die Ressourcen: Ihre Namen sind je Art verschieden, und die
-        // Art kennt ihre eigenen. Was danach bleibt, hat genau einen.
-        for (dev.devpanda.factorynetwork.runtime.ResourceKind kind
-                : dev.devpanda.factorynetwork.runtime.ResourceKind.values()) {
-            if (kind.tag().equals(type)) {
-                return new Value.Resource(kind, kind.fromId(tag.getString(KEY_VALUE)));
-            }
-            if (kind.selectionTag().equals(type)) {
-                return readSelection(kind, tag);
-            }
+        // Erst die Ressourcen: Ihre Namen gehören der Art, und welche Art zu
+        // einem Namen gehört, weiß die Registry. Ohne diesen Umweg stünde
+        // für jede neue Art eine Zeile mehr in diesem Codec.
+        var kind = dev.devpanda.factorynetwork.runtime.ResourceKinds.byTag(type);
+        if (kind != null) {
+            return kind.tag().equals(type)
+                    ? new Value.Resource(kind, kind.fromId(tag.getString(KEY_VALUE)))
+                    : readSelection(kind, tag);
         }
         return switch (type) {
             case "int" -> new Value.Int(tag.getLong(KEY_VALUE));
@@ -132,7 +130,13 @@ public final class ValueCodec {
             case "builtin" -> new Value.Builtin(tag.getString(KEY_VALUE));
             case "list" -> readList(tag);
             case "nothing" -> Value.Nothing.get();
-            default -> throw new ScriptError("Unbekannte Art von Wert: " + type + ".");
+            // Eine Art, die niemand mehr kennt. Seit die Registry offen ist,
+            // ist das der wahrscheinlichere Fall: Nicht der Codec ist kaputt,
+            // sondern die Mod fehlt, die diese Art mitgebracht hat.
+            default -> throw new ScriptError(
+                    "Diese Art von Wert kennt hier niemand: " + type + ".",
+                    "Ein wartender Ablauf hielt sie fest. Wurde eine Mod aus dem "
+                            + "Pack genommen?");
         };
     }
 

@@ -879,7 +879,7 @@ public final class Interpreter {
             // Ohne Mekanism trifft eine Chemikalienauswahl nichts, und die
             // Meldung muss sagen, woran es liegt — nicht so tun, als sei das
             // Pack schuld.
-            throw kind == ResourceKind.CHEMICAL
+            throw kind == ResourceKinds.CHEMICAL
                     && !dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.installed()
                     ? new ScriptError("Dafür fehlt Mekanism.",
                             dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.hint())

@@ -965,6 +965,41 @@ kostet eine neue Art jetzt einen Aufzählungswert, und der Übersetzer fragt
 dazu vier Dinge in einer Datei ab. Was daneben bleibt, ist die Anbindung an
 den Speicher — drei Verzweigungen in `WorldHost` —, und das ist Schnitt 2.
 
+### Die Registry der Ressourcenarten (seit dem 26.08.)
+
+Schnitt 3, erste Hälfte, nachdem die Haltungsfrage mit Ja beantwortet war.
+`ResourceKind` ist eine Schnittstelle geworden, `ResourceKinds` die Registry.
+
+**Der Beweis stand vor dem Umbau.** `ForeignResourceKindTest` erfindet eine
+Art namens `testsource` — eine Mod, die es nicht gibt, mit Kennungen als
+Schlüsseln und einer Auflösung, die sich zwei Einträge ausdenkt. Der Test ließ
+sich nicht übersetzen, solange `ResourceKind` eine Aufzählung war; das war das
+Rot. Danach prüft er, was unterhalb des Übersetzers liegt: Wert, Anzeigetext,
+Platte, Konstruktorprüfung, Speicher. Am Kern wurde dafür keine Zeile
+geändert.
+
+**Der Speicher gehört jetzt der Art.** `ResourceKind.newStore()` gibt je Netz
+einen neuen, mit `ResourceStore.NONE` als Vorgabe — eine Art darf beweglich
+sein, ohne lagerbar zu sein. `NetworkStores` baut daraus, statt drei Felder
+anzulegen; die beiden benannten Zugänge sind seitdem ein Blick in dieselbe
+Karte.
+
+**Zugemacht wird beim Laden.** `freeze()` hängt an `FMLCommonSetupEvent`, und
+ein Prüflauf im laufenden Spiel zeigt, dass die Tür wirklich zu ist —
+`theresourceKindsAreClosedInArunningGame`. Ohne diesen Test wäre der Aufruf
+eine Zeile, von der niemand weiß, ob sie je läuft.
+
+**Nach Identität, nicht nach Gleichheit.** Eine Art wird einmal angemeldet und
+ist dann dieses eine Ding. `NetworkStores` nimmt deshalb eine
+`IdentityHashMap`: Eine fremde Art, die `equals` eigenwillig überschreibt,
+kann darin nichts verwechseln.
+
+**Was nicht angefasst wurde, und das ist die Hälfte:** Der Übersetzer kennt
+die Präfixe weiterhin fest, an vier Stellen — Lexer, Parser, `Selectors` und
+`Value.Request`. `source:mana` wird heute nicht einmal als Auswahl gelesen.
+Das ist die zweite Hälfte von Schritt 3, und die vier Stellen sind genau die,
+die dabei zu einer werden.
+
 ### Die drei Speicher hinter einer Schnittstelle (seit dem 26.08.)
 
 Schnitt 2 aus `ressourcenarten.md`, unmittelbar nach Schnitt 1. `ResourceStore`

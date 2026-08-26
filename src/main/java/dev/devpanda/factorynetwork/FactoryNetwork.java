@@ -26,6 +26,11 @@ public final class FactoryNetwork {
         // Quelltext. Ohne diese Zeile liegt die Datei nie neben der Welt.
         container.registerConfig(net.neoforged.fml.config.ModConfig.Type.SERVER,
                 FnConfig.SERVER_SPEC);
+        // Die Ressourcenarten sind offen, aber nur beim Laden: Was ein
+        // Programm bedeutet, darf nicht davon abhängen, wann jemand etwas
+        // anmeldet. Der Aufruf lädt die Klasse und damit die eingebauten drei.
+        modBus.addListener((net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent event) ->
+                dev.devpanda.factorynetwork.runtime.ResourceKinds.freeze());
         FnBlocks.BLOCKS.register(modBus);
         FnItems.ITEMS.register(modBus);
         FnBlockEntities.BLOCK_ENTITIES.register(modBus);

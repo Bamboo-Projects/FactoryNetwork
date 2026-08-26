@@ -53,7 +53,7 @@ class ResourceValueTest {
         // aufstellt. Vorher war sie durch drei getrennte Records erzwungen;
         // jetzt steht sie im Konstruktor, und deshalb wird sie hier geprüft.
         assertThrows(IllegalArgumentException.class, () -> new Value.Selection(
-                ResourceKind.ITEM, List.of("mekanism:hydrogen"), 5));
+                ResourceKinds.ITEM, List.of("mekanism:hydrogen"), 5));
     }
 
     @Test
@@ -62,13 +62,13 @@ class ResourceValueTest {
         // Genau diese Frage wählt in move und count den Weg. Vorher gab es
         // sie zweimal — einmal für Flüssigkeiten, einmal für Chemikalien —,
         // und die zweite kannte die aufgelöste Auswahl nicht.
-        assertEquals(ResourceKind.CHEMICAL, ResourceKind.of(
+        assertEquals(ResourceKinds.CHEMICAL, ResourceKind.of(
                 Value.Selection.ofChemicals(List.of("mekanism:hydrogen"), 100)));
-        assertEquals(ResourceKind.CHEMICAL, ResourceKind.of(
+        assertEquals(ResourceKinds.CHEMICAL, ResourceKind.of(
                 Value.Resource.ofChemical("mekanism:hydrogen")));
-        assertEquals(ResourceKind.FLUID,
+        assertEquals(ResourceKinds.FLUID,
                 ResourceKind.of(new Value.Request("fluid:water", -1)));
-        assertEquals(ResourceKind.ITEM,
+        assertEquals(ResourceKinds.ITEM,
                 ResourceKind.of(new Value.Request("tag:c/ores", -1)));
     }
 

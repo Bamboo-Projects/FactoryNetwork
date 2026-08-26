@@ -47,15 +47,15 @@ public sealed interface Value {
         }
 
         public static Resource ofItem(Item item) {
-            return new Resource(ResourceKind.ITEM, item);
+            return new Resource(ResourceKinds.ITEM, item);
         }
 
         public static Resource ofFluid(net.minecraft.world.level.material.Fluid fluid) {
-            return new Resource(ResourceKind.FLUID, fluid);
+            return new Resource(ResourceKinds.FLUID, fluid);
         }
 
         public static Resource ofChemical(String id) {
-            return new Resource(ResourceKind.CHEMICAL, id);
+            return new Resource(ResourceKinds.CHEMICAL, id);
         }
 
         public Item item() {
@@ -145,16 +145,16 @@ public sealed interface Value {
         }
 
         public static Selection ofItems(List<Item> items, long amount) {
-            return new Selection(ResourceKind.ITEM, items, amount);
+            return new Selection(ResourceKinds.ITEM, items, amount);
         }
 
         public static Selection ofFluids(
                 List<net.minecraft.world.level.material.Fluid> fluids, long amount) {
-            return new Selection(ResourceKind.FLUID, fluids, amount);
+            return new Selection(ResourceKinds.FLUID, fluids, amount);
         }
 
         public static Selection ofChemicals(List<String> ids, long amount) {
-            return new Selection(ResourceKind.CHEMICAL, ids, amount);
+            return new Selection(ResourceKinds.CHEMICAL, ids, amount);
         }
 
         @SuppressWarnings("unchecked")

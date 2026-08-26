@@ -8285,7 +8285,7 @@ public final class FactoryNetworkGameTests {
         helper.assertTrue(flow.result()
                         instanceof dev.devpanda.factorynetwork.runtime.Value.Resource resource
                         && resource.kind()
-                                == dev.devpanda.factorynetwork.runtime.ResourceKind.CHEMICAL,
+                                == dev.devpanda.factorynetwork.runtime.ResourceKinds.CHEMICAL,
                 "und eine Chemikalie liefern: " + flow.result().describe());
         helper.succeed();
     }
@@ -10309,13 +10309,13 @@ public final class FactoryNetworkGameTests {
         entity.rebuildNetwork();
 
         keepsTheContract(helper, entity.store(
-                dev.devpanda.factorynetwork.runtime.ResourceKind.ITEM),
+                dev.devpanda.factorynetwork.runtime.ResourceKinds.ITEM),
                 Items.IRON_INGOT, 64, "Gegenstände");
         keepsTheContract(helper, entity.store(
-                dev.devpanda.factorynetwork.runtime.ResourceKind.FLUID),
+                dev.devpanda.factorynetwork.runtime.ResourceKinds.FLUID),
                 net.minecraft.world.level.material.Fluids.WATER, 1000, "Flüssigkeiten");
         keepsTheContract(helper, entity.store(
-                dev.devpanda.factorynetwork.runtime.ResourceKind.CHEMICAL),
+                dev.devpanda.factorynetwork.runtime.ResourceKinds.CHEMICAL),
                 "mekanism:hydrogen", 500, "Chemikalien");
         helper.succeed();
     }
@@ -10471,6 +10471,40 @@ public final class FactoryNetworkGameTests {
                 "und gehen in die Kiste mit der höheren priority");
         helper.assertValueEqual(countIn(helper, erste, Items.GOLD_INGOT), 0,
                 "die andere bleibt unberührt");
+        helper.succeed();
+    }
+
+    /**
+     * Im laufenden Spiel ist die Liste der Ressourcenarten zu.
+     *
+     * <p>Die Registry ist offen — aber nur beim Laden. Das ist keine Bitte an
+     * fremde Mods, sondern die Zusage, auf der alles andere ruht: <b>Was ein
+     * Programm bedeutet, hängt nicht davon ab, wann jemand etwas anmeldet.</b>
+     * Ohne sie könnte eine Mod mitten im Spiel ein Präfix belegen, und
+     * dasselbe Programm hieße vorher und nachher etwas anderes.
+     *
+     * <p>Geprüft wird deshalb die geschlossene Tür und nicht die offene: Dass
+     * man anmelden <i>kann</i>, zeigt {@code ForeignResourceKindTest}. Dass es
+     * danach nicht mehr geht, kann nur ein laufendes Spiel zeigen — der
+     * Aufruf, der zumacht, hängt am Mod-Ladevorgang.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 100)
+    public static void theresourceKindsAreClosedInArunningGame(GameTestHelper helper) {
+        var kinds = dev.devpanda.factorynetwork.runtime.ResourceKinds.all();
+        helper.assertValueEqual(kinds.size(), 3, "die drei eingebauten Arten");
+
+        boolean gemeldet = false;
+        try {
+            dev.devpanda.factorynetwork.runtime.ResourceKinds.register(
+                    dev.devpanda.factorynetwork.runtime.ResourceKinds.ITEM);
+        } catch (IllegalStateException error) {
+            gemeldet = true;
+            helper.assertTrue(error.getMessage().contains("Laden"),
+                    "Die Meldung soll sagen, wann angemeldet wird: " + error.getMessage());
+        }
+        helper.assertTrue(gemeldet,
+                "Nach dem Laden darf keine Art mehr dazukommen — sonst hinge die "
+                        + "Bedeutung eines Programms am Zeitpunkt");
         helper.succeed();
     }
 

@@ -2,8 +2,9 @@ package dev.devpanda.factorynetwork.network;
 
 import dev.devpanda.factorynetwork.block.entity.DriveBlockEntity;
 import dev.devpanda.factorynetwork.runtime.ResourceKind;
+import dev.devpanda.factorynetwork.runtime.ResourceKinds;
 
-import java.util.EnumMap;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -27,26 +28,29 @@ import java.util.Map;
  */
 public final class NetworkStores {
 
-    private final NetworkStorage items = new NetworkStorage();
-    private final NetworkFluids fluids = new NetworkFluids();
-
     /**
-     * Ohne Mekanism der Speicher, der nichts kann.
+     * Je Art ein Speicher, und welche es gibt, sagt die Registry.
      *
-     * <p>Das ist keine Notlösung: In einem Pack ohne die Mod gibt es keine
-     * Chemikalien, und ein Speicher, der so täte, wäre eine Lüge mit
-     * Nebenwirkungen.
+     * <p><b>Nach Identität und nicht nach Gleichheit.</b> Eine Art wird
+     * einmal angemeldet und ist dann dieses eine Ding; zwei Einträge mit
+     * demselben Präfix lehnt die Registry ab. Damit ist {@code ==} die
+     * richtige Frage, und eine fremde Art, die {@code equals} eigenwillig
+     * überschreibt, kann hier nichts verwechseln.
      */
-    private final ResourceStore chemicals =
-            dev.devpanda.factorynetwork.compat.mekanism.ChemicalStores.create();
+    private final Map<ResourceKind, ResourceStore> byKind = new IdentityHashMap<>();
 
-    private final Map<ResourceKind, ResourceStore> byKind =
-            new EnumMap<>(ResourceKind.class);
+    private final NetworkStorage items;
+    private final NetworkFluids fluids;
 
     public NetworkStores() {
-        byKind.put(ResourceKind.ITEM, items);
-        byKind.put(ResourceKind.FLUID, fluids);
-        byKind.put(ResourceKind.CHEMICAL, chemicals);
+        for (ResourceKind kind : ResourceKinds.all()) {
+            byKind.put(kind, kind.newStore());
+        }
+        // Die beiden mit eigenen Fragen — Speicherbusse, Sortenplätze. Dass
+        // ihre Art diesen Speicher liefert, steht in ResourceKinds und ist
+        // die einzige Stelle, an der es so sein muss.
+        this.items = (NetworkStorage) byKind.get(ResourceKinds.ITEM);
+        this.fluids = (NetworkFluids) byKind.get(ResourceKinds.FLUID);
     }
 
     /**
@@ -71,8 +75,15 @@ public final class NetworkStores {
         return fluids;
     }
 
+    /**
+     * Ohne Mekanism der Speicher, der nichts kann.
+     *
+     * <p>Das ist keine Notlösung: In einem Pack ohne die Mod gibt es keine
+     * Chemikalien, und ein Speicher, der so täte, wäre eine Lüge mit
+     * Nebenwirkungen.
+     */
     public ResourceStore chemicals() {
-        return chemicals;
+        return of(ResourceKinds.CHEMICAL);
     }
 
     /**

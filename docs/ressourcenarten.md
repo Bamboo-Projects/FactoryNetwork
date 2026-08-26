@@ -135,8 +135,10 @@ Der Umbau muss nicht am Stück geschehen, und er sollte es nicht.
    `ResourceStore` heißt sie, `NetworkStores` hält sie nach Art. Der Satz
    „danach ist ein vierter Speicher ein Eintrag und keine Klasse" war zu
    stark — nachgemessen in Abschnitt 5b.
-3. **Die Registry selbst.** Erst jetzt, und dann ist sie klein: Was die
-   Einträge können müssen, steht nach Schritt 1 und 2 fest.
+3. **Die Registry selbst.** ~~Erst jetzt, und dann ist sie klein~~ —
+   **halb gebaut** (26.08.): `ResourceKind` ist eine Schnittstelle,
+   `ResourceKinds` die Registry. Was unterhalb des Übersetzers liegt, ist
+   offen; die Sprachfläche noch nicht. Siehe Abschnitt 5c.
 4. **Ein Fremdeintrag als Beweis.** Ars Nouveau Source, in `compat/ars` —
    und wenn der Kern dafür angefasst werden muss, ist die Registry nicht
    fertig.
@@ -197,6 +199,57 @@ Die Sprachfläche: `item:iron_ore`, `it.item`, `signatures.json`, die
 Referenzseite, beide Editoren. Und die Haltungsfrage aus Abschnitt 6 — sie ist
 weder beantwortet noch vorweggenommen. `ResourceKind` ist ein
 Aufzählungswert und darf einer bleiben.
+
+---
+
+## 5c. Schritt 3, erste Hälfte: die Registry steht
+
+Gebaut am 26.08., nachdem die Haltungsfrage mit **Ja** beantwortet war.
+
+`ResourceKind` ist keine Aufzählung mehr, sondern eine Schnittstelle;
+`ResourceKinds` hält die angemeldeten Arten und die eingebauten drei. Angemeldet
+wird im Mod-Konstruktor, und mit `FMLCommonSetupEvent` ist Schluss —
+`freeze()`.
+
+### Was eine fremde Art jetzt kostet
+
+| | |
+|---|---|
+| eine Klasse, die `ResourceKind` erfüllt | zehn Methoden, zwei davon mit Vorgabe |
+| ein Aufruf `ResourceKinds.register(…)` | im Mod-Konstruktor |
+| Zeilen im Kern dieser Mod | **keine** |
+
+Gemessen wird das nicht an den eigenen drei — die liefen vorher auch. Es ist
+an einer **vierten** gemessen, die nirgends im Kern steht:
+`ForeignResourceKindTest` erfindet `testsource`, meldet sie an und prüft
+danach Wert, Anzeigetext, Platte, Konstruktorprüfung und Speicher. Der Kern
+wurde dafür nicht angefasst.
+
+### Was die Registry hart ablehnt
+
+- **Ein Präfix gehört einer Art.** Zwei Einträge mit demselben Wort sind ein
+  Fehler und keine Reihenfolgefrage. Welcher gewönne, hinge daran, welche Mod
+  zuerst lädt — keine Erklärung, die ein Spieler lesen kann.
+- **`tag`, `fluidtag`, `power` und `all` gehören der Sprache.** Wer sie
+  belegte, machte bestehende Programme mehrdeutig.
+- **Nach dem Laden ist zu.** Was ein Programm bedeutet, darf nicht davon
+  abhängen, wann jemand etwas anmeldet. Geprüft im laufenden Spiel:
+  `theresourceKindsAreClosedInArunningGame`.
+- **Auch die Namen auf der Platte sind vergeben.** Zwei Arten mit demselben
+  NBT-Namen lösen einen wartenden Ablauf beim Neustart in die falsche auf.
+
+### Was noch fehlt, ehrlich benannt
+
+**Der Übersetzer kennt die Präfixe weiterhin fest.** Die Liste steht an
+**vier** Stellen — `Lexer.SELECTOR_KINDS`, `Parser.parseSelector`,
+`Selectors.parse` und `Value.Request.kind()` —, und keine davon fragt die
+Registry. `source:mana` wird deshalb heute noch nicht einmal als Auswahl
+gelesen. Das ist die zweite Hälfte von Schritt 3.
+
+**Die zweite Achse gibt es nicht.** Ein Eintrag sagt, wie seine Art aussieht,
+wie sie sich auflöst und wo sie lagert — nicht, wie man sie an einer fremden
+Maschine liest und schreibt. Steht in `entscheidungen.md` als die benannte
+Grenze dieses Schnitts.
 
 ---
 
