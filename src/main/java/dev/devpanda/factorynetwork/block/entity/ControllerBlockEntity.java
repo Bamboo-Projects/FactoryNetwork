@@ -1530,7 +1530,12 @@ public class ControllerBlockEntity extends BlockEntity {
         }
         statusStale = false;
         dev.devpanda.factorynetwork.lang.ProgramStatus.write(programFolder.path(),
-                diagnostics, List.copyOf(graph.connectorNames()), displayNames());
+                diagnostics, List.copyOf(graph.connectorNames()), displayNames(),
+                // Was in diesem Pack eine Ressourcenart ist, weiß nur das
+                // laufende Spiel — seit fremde Mods eigene anmelden dürfen.
+                List.copyOf(new java.util.TreeSet<>(
+                        dev.devpanda.factorynetwork.runtime.ResourceKinds
+                                .selectorPrefixes())));
     }
 
 

@@ -469,5 +469,29 @@ contains('Nach dem Speichern steht die neue Funktion da',
 contains('Nach dem Speichern ist die alte weg',
     ['fn main() {', '    '], 'heizen', false, 'main.mf');
 
+// Die Praefixe kommen aus dem Spiel, seit die Ressourcenarten eine offene
+// Registry sind: Was eine fremde Mod anmeldet, kann diese Erweiterung nicht
+// wissen. Ohne Statusdatei bleiben die eingebauten.
+project({
+    'main.mf': 'fn main() {\n}\n',
+    '.fn-status.json': JSON.stringify({
+        diagnostics: {},
+        connectors: [],
+        displays: [],
+        prefixes: ['item', 'tag', 'fluid', 'fluidtag', 'chemical', 'source'],
+    }),
+});
+
+contains('Die Praefixe aus dem Spiel stehen bei filter',
+    ['worker neu {', '    filter '], 'source:', true, 'main.mf');
+contains('Und die eingebauten auch',
+    ['worker neu {', '    filter '], 'item:', true, 'main.mf');
+
+project({ 'main.mf': 'fn main() {\n}\n' });
+contains('Ohne Spiel bleiben die eingebauten',
+    ['worker neu {', '    filter '], 'item:', true, 'main.mf');
+contains('Und eine fremde Art steht dann nicht da',
+    ['worker neu {', '    filter '], 'source:', false, 'main.mf');
+
 console.log(failures === 0 ? '\nalle Faelle stimmen' : '\n' + failures + ' Abweichungen');
 process.exit(failures === 0 ? 0 : 1);

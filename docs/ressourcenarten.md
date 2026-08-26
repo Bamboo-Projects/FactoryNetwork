@@ -312,12 +312,19 @@ und kannte `chemical:` nicht, obwohl es das seit dem 26.08. gibt. Eine fünfte
 Kopie derselben Liste, die niemand nachgezogen hatte. Sie kommt jetzt aus der
 Registry.
 
-### Was VS Code angeht
+### Und VS Code fragt jetzt auch
 
-Dort gibt es die Liste gar nicht: Die Erweiterung schlägt keine Präfixe vor.
-Damit ist nichts kaputtgegangen, aber der Weg aus Abschnitt 4 steht weiter
-aus — die Präfixe über `.fn-status.json` hinaustragen, damit VS Code sie
-kennt, und ohne die Datei auf die eingebauten zurückfallen und es sagen.
+Der Weg aus Abschnitt 4, gebaut am 26.08.: `.fn-status.json` trägt neben den
+Fehlern und den Gerätenamen jetzt die **Präfixe**, und die Erweiterung bietet
+sie dort an, wo eine Auswahl hingehört. Vorher schlug sie dort gar keine vor.
+
+**Ohne Spiel bleiben die eingebauten, und das steht dabei.** Der Vorschlag
+trägt dann den Zusatz *„Ressourcenart (ohne Spiel)"* — es ist nicht falsch,
+was dort steht, aber es kann unvollständig sein, und ein Editor, der das
+verschweigt, lügt über seine eigene Reichweite.
+
+Kein Port, keine neue Erlaubnis: derselbe Kanal wie für die Fehler. Wer die
+Programmdateien sieht, sieht auch das.
 
 ---
 

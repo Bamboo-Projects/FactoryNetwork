@@ -26,6 +26,10 @@ import java.util.Map;
  *       Fassung derselben Regeln: Es rechnet der, der es ohnehin tut.</li>
  *   <li><b>Die Namen aus der Welt</b> — Connectoren und Anzeigen. Sie stehen
  *       in keiner Datei; sie kommen aus der Beschriftungspistole.</li>
+ *   <li><b>Die Präfixe der Ressourcenarten.</b> Seit dem 26.08. dürfen fremde
+ *       Mods eigene anmelden, und was in einem Pack gilt, weiß nur das
+ *       laufende Spiel. Ohne diese Zeile schlüge ein Editor daneben genau
+ *       die vier vor, die er selbst kennt — und verschwiege den Rest.</li>
  * </ul>
  *
  * <p><b>Kein Port, keine neue Erlaubnis.</b> Das ist der Einzelspieler-Schnitt
@@ -41,9 +45,11 @@ import java.util.Map;
  * @param diagnostics Fehler und Warnungen, nach Datei
  * @param connectors  die benannten Geräte im Netz
  * @param displays    die Anzeigen in der Welt
+ * @param prefixes    die Ressourcenarten, die dieses Pack kennt
  */
 public record ProgramStatus(Map<String, List<Problem>> diagnostics,
-                            List<String> connectors, List<String> displays) {
+                            List<String> connectors, List<String> displays,
+                            List<String> prefixes) {
 
     /** So heißt die Datei im Ordner des Controllers. */
     public static final String FILE = ".fn-status.json";
@@ -61,7 +67,7 @@ public record ProgramStatus(Map<String, List<Problem>> diagnostics,
 
     /** Der leere Stand — für einen Ordner, in dem noch nichts steht. */
     public static ProgramStatus empty() {
-        return new ProgramStatus(Map.of(), List.of(), List.of());
+        return new ProgramStatus(Map.of(), List.of(), List.of(), List.of());
     }
 
     /**
@@ -72,8 +78,9 @@ public record ProgramStatus(Map<String, List<Problem>> diagnostics,
      * denselben Inhalt noch einmal.
      */
     public static void write(Path folder, List<Diagnostic> problems,
-                             List<String> connectors, List<String> displays) {
-        String json = toJson(problems, connectors, displays);
+                             List<String> connectors, List<String> displays,
+                             List<String> prefixes) {
+        String json = toJson(problems, connectors, displays, prefixes);
         Path file = folder.resolve(FILE);
         try {
             if (Files.exists(file)
@@ -109,7 +116,7 @@ public record ProgramStatus(Map<String, List<Problem>> diagnostics,
     // ---- Schreiben ---------------------------------------------------------
 
     private static String toJson(List<Diagnostic> problems, List<String> connectors,
-                                 List<String> displays) {
+                                 List<String> displays, List<String> prefixes) {
         Map<String, List<Diagnostic>> byFile = new LinkedHashMap<>();
         for (Diagnostic problem : problems) {
             byFile.computeIfAbsent(problem.file(), name -> new ArrayList<>()).add(problem);
@@ -131,6 +138,7 @@ public record ProgramStatus(Map<String, List<Problem>> diagnostics,
         out.append(firstFile ? "}" : "\n  }");
         out.append(",\n  \"connectors\": ").append(array(connectors));
         out.append(",\n  \"displays\": ").append(array(displays));
+        out.append(",\n  \"prefixes\": ").append(array(prefixes));
         return out.append("\n}\n").toString();
     }
 
@@ -208,7 +216,8 @@ public record ProgramStatus(Map<String, List<Problem>> diagnostics,
             }
         }
         return new ProgramStatus(Map.copyOf(diagnostics),
-                stringList(json, "connectors"), stringList(json, "displays"));
+                stringList(json, "connectors"), stringList(json, "displays"),
+                stringList(json, "prefixes"));
     }
 
     private static List<Problem> problems(String body) {

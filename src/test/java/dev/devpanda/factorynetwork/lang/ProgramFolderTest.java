@@ -132,11 +132,15 @@ class ProgramFolderTest {
                 new Span(10, 18, 3, 5), "Nichts im Netz heißt kist.",
                 "Meintest du kiste?", "erz/brecher.mf"));
 
-        ProgramStatus.write(dir, problems, List.of("kiste", "ofen"), List.of("halle"));
+        ProgramStatus.write(dir, problems, List.of("kiste", "ofen"), List.of("halle"),
+                List.of("item", "fluid", "source"));
 
         ProgramStatus back = ProgramStatus.read(dir);
         assertEquals(List.of("kiste", "ofen"), back.connectors());
         assertEquals(List.of("halle"), back.displays());
+        // Die Präfixe kommen aus dem Spiel: Was eine fremde Mod anmeldet,
+        // kann ein Editor daneben nicht wissen.
+        assertEquals(List.of("item", "fluid", "source"), back.prefixes());
         List<ProgramStatus.Problem> inFile = back.diagnostics().get("erz/brecher.mf");
         assertEquals(1, inFile.size(), () -> back.diagnostics().toString());
         assertEquals(3, inFile.get(0).line());
@@ -151,7 +155,7 @@ class ProgramFolderTest {
     void withoutErrorsAnemptyListStandsThere() {
         // Sonst wüsste die Erweiterung nicht, ob alles stimmt oder ob nur
         // niemand nachgesehen hat — und ließe alte Fehler stehen.
-        ProgramStatus.write(dir, List.of(), List.of(), List.of());
+        ProgramStatus.write(dir, List.of(), List.of(), List.of(), List.of());
 
         ProgramStatus back = ProgramStatus.read(dir);
         assertTrue(back.diagnostics().isEmpty(), "keine Fehler");
@@ -163,11 +167,11 @@ class ProgramFolderTest {
     void twiceThesameDoesNotWriteTwice() throws IOException {
         // Ein Datei-Wächter in VS Code weckt sonst jede Sekunde die
         // Erweiterung, obwohl sich nichts geändert hat.
-        ProgramStatus.write(dir, List.of(), List.of("kiste"), List.of());
+        ProgramStatus.write(dir, List.of(), List.of("kiste"), List.of(), List.of());
         java.nio.file.attribute.FileTime first =
                 Files.getLastModifiedTime(dir.resolve(ProgramStatus.FILE));
 
-        ProgramStatus.write(dir, List.of(), List.of("kiste"), List.of());
+        ProgramStatus.write(dir, List.of(), List.of("kiste"), List.of(), List.of());
 
         assertEquals(first, Files.getLastModifiedTime(dir.resolve(ProgramStatus.FILE)),
                 "dieselbe Auskunft, dieselbe Datei");

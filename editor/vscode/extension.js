@@ -102,7 +102,7 @@ function statusOf(root) {
     if (cached && Date.now() - cached.stamp < FOLDER_MS) {
         return cached.value;
     }
-    let value = { diagnostics: {}, connectors: [], displays: [] };
+    let value = { diagnostics: {}, connectors: [], displays: [], prefixes: [] };
     try {
         value = JSON.parse(fs.readFileSync(path.join(root, STATUS_FILE), 'utf8'));
     } catch (error) {
@@ -119,6 +119,29 @@ function connectorsFor(document) {
         return [];
     }
     return statusOf(projectRootOf(document.uri.fsPath)).connectors || [];
+}
+
+/**
+ * Die Präfixe, die in diesem Pack eine Ressourcenart benennen.
+ *
+ * Seit dem 26.08. ist die Liste offen: Eine fremde Mod meldet ihre eigene Art
+ * an, und was dann gilt, weiß nur das laufende Spiel. Es schickt sie über die
+ * Statusdatei mit.
+ *
+ * Ohne Spiel bleiben die eingebauten. Das ist keine Vollständigkeit, sondern
+ * das, was sich ohne Nachfrage sagen lässt — und deshalb steht es auch
+ * dabei, wenn jemand den Vorschlag ansieht.
+ */
+const BUILTIN_PREFIXES = ['chemical', 'fluid', 'fluidtag', 'item', 'tag'];
+
+function prefixesFor(document) {
+    if (!document.uri || document.uri.scheme !== 'file') {
+        return { names: BUILTIN_PREFIXES, fromGame: false };
+    }
+    const known = statusOf(projectRootOf(document.uri.fsPath)).prefixes;
+    return known && known.length
+        ? { names: known.slice().sort(), fromGame: true }
+        : { names: BUILTIN_PREFIXES, fromGame: false };
 }
 
 function load(context) {
@@ -479,7 +502,7 @@ function eventItems(symbols) {
         .concat(symbolItems(symbols, ['event'], vscode.CompletionItemKind.Event));
 }
 
-function completionsFor(where, symbols, devices) {
+function completionsFor(where, symbols, devices, prefixes) {
     const slot = where.slot;
     if (!slot) {
         return [];
@@ -489,7 +512,16 @@ function completionsFor(where, symbols, devices) {
             // Gegenstände und Tags kennt nur das laufende Spiel. Was die
             // Erweiterung beisteuern kann, sind die Filter-Vorlagen des
             // Projekts — und die sind an dieser Stelle oft das Gemeinte.
-            return symbolItems(symbols, ['filter'], vscode.CompletionItemKind.Variable);
+            //
+            // Dazu die Präfixe: Sie sind das erste, was hier hingehört, und
+            // seit die Ressourcenarten offen sind, weiß nur das Spiel, welche
+            // es gibt. Ohne Spiel stehen die eingebauten da, und der Zusatz
+            // sagt, dass es nicht die ganze Liste sein muss.
+            return prefixes.names.map(name => item(name + ':',
+                vscode.CompletionItemKind.Keyword,
+                prefixes.fromGame ? 'Ressourcenart' : 'Ressourcenart (ohne Spiel)'))
+                .concat(symbolItems(symbols, ['filter'],
+                    vscode.CompletionItemKind.Variable));
         case 'STRATEGY':
             return table.strategies.map(name =>
                 item(name, vscode.CompletionItemKind.EnumMember));
@@ -576,7 +608,8 @@ function activate(context) {
             const symbols = projectSymbols(document);
             const where = whereAt(document, position);
             if (where) {
-                return completionsFor(where, symbols, connectorsFor(document));
+                return completionsFor(where, symbols, connectorsFor(document),
+                    prefixesFor(document));
             }
             const block = enclosingBlock(document, position.line);
             const indented = /^\s/.test(document.lineAt(position.line).text);
