@@ -470,16 +470,9 @@ public final class Interpreter {
             // Nach der Art fragen und nicht raten: Ein Flüssigkeits-Selektor
             // träfe in der Gegenstandsauflösung nichts, und eine Schleife über
             // nichts sieht aus wie eine, die nichts zu tun hatte.
-            if (request.kind() == Value.Request.Kind.FLUID) {
-                return FluidSelection.resolve(iterable).stream()
-                        .map(fluid -> (Value) new Value.FluidValue(fluid)).toList();
-            }
-            if (request.kind() == Value.Request.Kind.CHEMICAL) {
-                return dev.devpanda.factorynetwork.compat.mekanism.Chemicals.resolve(iterable).stream()
-                        .map(id -> (Value) new Value.ChemicalValue(id)).toList();
-            }
-            return ItemSelection.resolve(iterable).stream()
-                    .map(item -> (Value) new Value.ItemValue(item)).toList();
+            ResourceKind kind = ResourceKind.orItems(request.kind());
+            return kind.resolve(iterable).stream()
+                    .map(key -> (Value) new Value.Resource(kind, key)).toList();
         }
         return entriesOf(value);
     }
@@ -487,12 +480,8 @@ public final class Interpreter {
     private static List<Value> entriesOf(Value iterable) {
         return switch (iterable) {
             case Value.ValueList list -> list.entries();
-            case Value.FluidSelection selection -> selection.fluids().stream()
-                    .map(fluid -> (Value) new Value.FluidValue(fluid)).toList();
-            case Value.ChemicalSelection selection -> selection.ids().stream()
-                    .map(id -> (Value) new Value.ChemicalValue(id)).toList();
-            case Value.Selection selection -> selection.items().stream()
-                    .map(item -> (Value) new Value.ItemValue(item)).toList();
+            case Value.Selection selection -> selection.keys().stream()
+                    .map(key -> (Value) new Value.Resource(selection.kind(), key)).toList();
             default -> throw new ScriptError(
                     "Darüber lässt sich nicht laufen: " + iterable.describe() + ".",
                     "for braucht eine Liste, etwa storage.items() oder tag:c/ores.");
@@ -840,15 +829,10 @@ public final class Interpreter {
         }
         return switch (selection) {
             case Value.Request request -> new Value.Request(request.selector(), count);
-            case Value.ItemValue item -> new Value.Selection(List.of(item.item()), count);
-            case Value.Selection choice -> new Value.Selection(choice.items(), count);
-            case Value.FluidValue fluid -> new Value.FluidSelection(List.of(fluid.fluid()), count);
-            case Value.FluidSelection choice ->
-                    new Value.FluidSelection(choice.fluids(), count);
-            case Value.ChemicalValue sort ->
-                    new Value.ChemicalSelection(List.of(sort.id()), count);
-            case Value.ChemicalSelection choice ->
-                    new Value.ChemicalSelection(choice.ids(), count);
+            case Value.Resource resource ->
+                    new Value.Selection(resource.kind(), List.of(resource.key()), count);
+            case Value.Selection choice ->
+                    new Value.Selection(choice.kind(), choice.keys(), count);
             default -> selection;
         };
     }
@@ -888,37 +872,20 @@ public final class Interpreter {
     }
 
     private Value resolvedSelection(Expr expr) {
-        long amount = amountIn(expr);
-        if (dev.devpanda.factorynetwork.lang.WorkerKind.resource(
-                dev.devpanda.factorynetwork.lang.WorkerKind.selectorKind(expr))
-                == Expr.Selector.Kind.FLUID) {
-            List<net.minecraft.world.level.material.Fluid> fluids =
-                    FluidSelection.resolve(expr);
-            if (fluids.isEmpty()) {
-                throw nothingSelected();
-            }
-            return new Value.FluidSelection(fluids, amount);
+        ResourceKind kind = ResourceKind.orItems(
+                dev.devpanda.factorynetwork.lang.WorkerKind.selectorKind(expr));
+        List<?> keys = kind.resolve(expr);
+        if (keys.isEmpty()) {
+            // Ohne Mekanism trifft eine Chemikalienauswahl nichts, und die
+            // Meldung muss sagen, woran es liegt — nicht so tun, als sei das
+            // Pack schuld.
+            throw kind == ResourceKind.CHEMICAL
+                    && !dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.installed()
+                    ? new ScriptError("Dafür fehlt Mekanism.",
+                            dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.hint())
+                    : nothingSelected();
         }
-        if (dev.devpanda.factorynetwork.lang.WorkerKind.resource(
-                dev.devpanda.factorynetwork.lang.WorkerKind.selectorKind(expr))
-                == Expr.Selector.Kind.CHEMICAL) {
-            List<String> ids = dev.devpanda.factorynetwork.compat.mekanism.Chemicals.resolve(expr);
-            if (ids.isEmpty()) {
-                // Ohne Mekanism trifft eine Chemikalienauswahl nichts, und
-                // die Meldung muss sagen, woran es liegt — nicht so tun, als
-                // sei das Pack schuld.
-                throw dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.installed()
-                        ? nothingSelected()
-                        : new ScriptError("Dafür fehlt Mekanism.",
-                                dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.hint());
-            }
-            return new Value.ChemicalSelection(ids, amount);
-        }
-        List<net.minecraft.world.item.Item> items = ItemSelection.resolve(expr);
-        if (items.isEmpty()) {
-            throw nothingSelected();
-        }
-        return new Value.Selection(items, amount);
+        return new Value.Selection(kind, keys, amountIn(expr));
     }
 
     /**
@@ -979,8 +946,8 @@ public final class Interpreter {
         }
         return dev.devpanda.factorynetwork.lang.FilterKind.of(template)
                         == dev.devpanda.factorynetwork.lang.FilterKind.FLUID
-                ? new Value.FluidSelection(FilterTemplates.fluids(template), -1)
-                : new Value.Selection(FilterTemplates.items(template), -1);
+                ? Value.Selection.ofFluids(FilterTemplates.fluids(template), -1)
+                : Value.Selection.ofItems(FilterTemplates.items(template), -1);
     }
 
     private Value resolveName(String name) {
@@ -1160,42 +1127,29 @@ public final class Interpreter {
      * @return {@code null}, wenn dieser Wert kein Posten ist
      */
     private static Value entryMember(Value target, String name) {
-        if (target instanceof Value.Selection selection) {
-            return switch (name) {
-                case "amount" -> new Value.Int(selection.amount());
-                case "item" -> selection.items().size() == 1
-                        ? new Value.ItemValue(selection.items().get(0))
-                        : throwNoSingleKind(selection.items().size());
-                default -> null;
-            };
+        if (!(target instanceof Value.Selection selection)) {
+            return null;
         }
-        if (target instanceof Value.FluidSelection selection) {
-            return switch (name) {
-                case "amount" -> new Value.Int(selection.amount());
-                case "fluid" -> selection.fluids().size() == 1
-                        ? new Value.FluidValue(selection.fluids().get(0))
-                        : throwNoSingleKind(selection.fluids().size());
-                default -> null;
-            };
+        if ("amount".equals(name)) {
+            return new Value.Int(selection.amount());
         }
-        if (target instanceof Value.ChemicalSelection selection) {
-            return switch (name) {
-                case "amount" -> new Value.Int(selection.amount());
-                case "chemical" -> selection.ids().size() == 1
-                        ? new Value.ChemicalValue(selection.ids().get(0))
-                        : throwNoSingleKind(selection.ids().size());
-                default -> null;
-            };
+        // Die Sorte heißt wie die Art: it.item, it.fluid, it.chemical. Nach
+        // einer anderen zu fragen ist keine Ausnahme, sondern schlicht kein
+        // Mitglied — die Meldung dazu steht bei member().
+        if (!selection.kind().prefix().equals(name)) {
+            return null;
         }
-        return null;
+        return selection.keys().size() == 1
+                ? selection.single()
+                : throwNoSingleKind(selection.kind(), selection.keys().size());
     }
 
-    private static Value throwNoSingleKind(int kinds) {
+    private static Value throwNoSingleKind(ResourceKind kind, int kinds) {
         throw new ScriptError("Diese Auswahl meint " + (kinds == 0 ? "keine" : kinds)
                 + " Art" + (kinds == 1 ? "" : "en") + ".",
-                "it.item gibt es nur an einem Posten, der genau eine Art meint — "
-                        + "etwa aus storage.items(). Bei einer Vorlage oder einem Tag "
-                        + "wäre die eine Art geraten.");
+                "it." + kind.prefix() + " gibt es nur an einem Posten, der genau eine "
+                        + "Art meint — etwa aus storage.items(). Bei einer Vorlage oder "
+                        + "einem Tag wäre die eine Art geraten.");
     }
 
     private Value call(Expr.Call call) {
@@ -1358,16 +1312,9 @@ public final class Interpreter {
      */
     /** Die Menge eines Postens, oder {@code null} bei allem anderen. */
     private static Double amountOf(Value entry) {
-        if (entry instanceof Value.Selection selection) {
-            return (double) selection.amount();
-        }
-        if (entry instanceof Value.FluidSelection selection) {
-            return (double) selection.amount();
-        }
-        if (entry instanceof Value.ChemicalSelection selection) {
-            return (double) selection.amount();
-        }
-        return null;
+        return entry instanceof Value.Selection selection
+                ? (double) selection.amount()
+                : null;
     }
 
     /**

@@ -925,6 +925,46 @@ noch `it.fluid`. `signatures.json` trägt die Liste, aber der Zweig, der sie
 hinter dem Punkt zeigt, fehlt. Steht jetzt als Vermerk in `check.js`, damit es
 niemand für Absicht hält.
 
+### Eine Form für drei Ressourcenarten (seit dem 26.08.)
+
+Schnitt 1 aus `ressourcenarten.md`, und der erste Commit einer Sitzung statt
+des letzten einer anderen: Es ist ein Umbau am Wertemodell, dessen Fehler beim
+Spielen auffallen und nicht im Prüflauf.
+
+Aus sechs Records wurden zwei. `Value.Resource(kind, key)` ist eine einzelne
+Ressource, `Value.Selection(kind, keys, amount)` eine aufgelöste Auswahl und
+zugleich ein Posten aus einer Bestandsliste. Was je Art verschieden ist, steht
+in `ResourceKind`: die Silbe vor dem Doppelpunkt, das Wort für die Zählung im
+Protokoll, der Name auf der Platte, die Auflösung gegen die jeweilige
+Registry.
+
+**Der Umbau hat einen Fehler gefunden, nach dem niemand gesucht hatte.** `move`
+wählte den Weg über zwei getrennte Fragen, und die für Chemikalien kannte die
+schon aufgelöste Auswahl nicht — eine Chemikalie aus einer Schleife landete in
+der Gegenstandsauflösung, traf dort nichts, und keine Auswahl heißt dort
+*alles*. Die Kiste ging leer aus. Dasselbe in `count`, in `gerät.count(…)` und
+bei jedem bloßen Einzelwert. Der Prüflauf hat ihn jetzt: `aresolvedChemical`
+`DoesNotTravelOnTheItemPath` braucht dafür keinen Chemikalientank — es genügt,
+dass die Auswahl sich auflöst und danach nichts passieren soll.
+
+**Die Reihenfolge hat sich ausgezahlt.** Erst zwei Absicherungen, die grün
+sein mussten, bevor irgendetwas angefasst wurde: die Namen auf der Platte
+(`ValueCodecFormatTest` und ein Prüflauf für die beiden Arten mit Registry)
+und die Texte, die `describe()` liefert. Beide prüfen etwas, das ein
+Übersetzer nie meldet und das erst in einer alten Welt oder im Protokoll
+auffällt. Dann der rote Prüflauf für den Fehler oben, dann der Umbau.
+
+**Das Versiegelte hat wieder gearbeitet.** Drei Records zu löschen macht jede
+`switch`-Anweisung über `Value` unvollständig, und der Übersetzer nennt genau
+die Stellen, die der Entwurf gemessen hatte — dieselbe Liste, nur diesmal
+rückwärts.
+
+**Von zehn Stellen bleiben drei**, und alle drei sind Sprachfläche:
+`Signatures.ENTRY_MEMBERS` und die beiden Editorlisten. Das Wertemodell selbst
+kostet eine neue Art jetzt einen Aufzählungswert, und der Übersetzer fragt
+dazu vier Dinge in einer Datei ab. Was daneben bleibt, ist die Anbindung an
+den Speicher — drei Verzweigungen in `WorldHost` —, und das ist Schnitt 2.
+
 ### Der Vorrat des Netzes als Wert (seit dem 26.08.)
 
 ```

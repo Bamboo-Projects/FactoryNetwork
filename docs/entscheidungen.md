@@ -3734,3 +3734,88 @@ Die Mod hat keine im Übersetzungspfad, und der Inhalt ist flach: zwei Listen
 und eine Karte. Ein Schreiber von vierzig Zeilen ist billiger als eine
 Abhängigkeit — und was ihn lesen muss, ist ohnehin JavaScript. Der Leser auf
 der Java-Seite existiert nur, damit sich das Format nachmessen lässt.
+
+## Die drei Zwillinge werden eine Form (2026-08-26)
+
+Schnitt 1 aus `ressourcenarten.md`. `Value` trug drei Paare nebeneinander —
+`ItemValue`/`Selection`, `FluidValue`/`FluidSelection`,
+`ChemicalValue`/`ChemicalSelection` —, und mit ihnen drei Zweige an jeder
+Stelle, die Werte behandelt. Jetzt sind es zwei Records mit einem Art-Feld:
+`Resource(kind, key)` und `Selection(kind, keys, amount)`, dazu ein
+`ResourceKind`, in dem steht, was je Art verschieden ist.
+
+Die Messung stand seit dem 26.08. im Entwurf: zehn Stellen für eine neue Art,
+neun davon Kopien. Was dort **nicht** stand, ist der Grund, der beim Bauen
+sichtbar wurde.
+
+### Kopien laufen auseinander, und diese waren es schon
+
+`move` entscheidet an der Art, welchen Weg eine Ressource nimmt. Die Frage
+danach stand zweimal da — `isFluidRequest` und `isChemicalRequest` —, und die
+beiden kannten verschiedene Ausschnitte des Wertemodells: Die
+Flüssigkeitsfrage hatte irgendwann den Nachtrag für die **schon aufgelöste**
+Auswahl bekommen, die Chemikalienfrage nicht.
+
+Damit lief das hier ins Leere:
+
+```
+for gas in chemical:mekanism/hydrogen {
+    move 100 gas from kiste to depot
+}
+```
+
+`gas` ist nach der Schleife eine aufgelöste Chemikalienauswahl. Die
+Chemikalienfrage sah sie nicht, also ging der Aufruf in die
+Gegenstandsauflösung — dort traf die Auswahl nichts, und **keine Auswahl heißt
+dort „alles"**. Die Kiste wurde leergeräumt. Derselbe Fehler steckte in
+`count` und in `gerät.count(…)`, und ein bloßer `ChemicalValue` ohne Menge
+traf ihn ebenso wie ein bloßer `FluidValue`.
+
+Das ist der Fehler, den `sprache.md` als den schlimmsten der Sprache
+bezeichnet: Ein Programm tut etwas anderes als das, was dasteht, und sagt
+nichts. Er ist nicht durch Unachtsamkeit entstanden, sondern durch die
+Bauform — bei drei Kopien wird die dritte irgendwann vergessen. Jetzt gibt es
+die Frage einmal (`ResourceKind.of(Value)`), und sie kann keine Art übersehen.
+
+### Der Träger ist `Object` und kein gemeinsamer Obertyp
+
+Einen solchen gäbe es nur, wenn alle drei aus derselben Hand kämen. Ein
+Gegenstand ist ein `Item`, eine Flüssigkeit ein `Fluid` — und eine Chemikalie
+ist ein `String`, weil eine Signatur mit einem Mekanism-Typ die Klasse beim
+Laden auflösen würde und ohne die Mod nichts mehr liefe. Ein eigener
+Umschlagtyp über allen dreien wäre eine vierte Klasse, die nichts kann außer
+die Frage zu verschieben.
+
+Was `Object` an Sicherheit kostet, holt der Konstruktor zurück: Er prüft jeden
+Eintrag gegen `ResourceKind.type()`. Eine Auswahl über Wasser und Stein gibt
+es damit nicht — dieselbe Regel, die `FilterKind` für Vorlagen aufstellt, nur
+jetzt auch für den Wert. Wer die Ressourcen herausholt, nimmt `items()`,
+`fluids()` oder `chemicals()`.
+
+### Auf der Platte ändert sich nichts
+
+Ein wartender Ablauf liegt in der Welt, und seine Variablen liegen darin als
+NBT: `item`, `sel`, `fluid`, `fluidsel`, `chem`, `chemsel`. Die Namen sind
+unregelmäßig — gewachsen, nicht entworfen —, und sie bleiben es. Sie
+geradezuziehen hieße, alten Welten ihre Abläufe zu nehmen, und dafür ist eine
+saubere Tabelle kein Preis wert. Jede Art trägt ihre beiden Namen jetzt selbst,
+und ein Test hält sie fest, indem er ein **von Hand gebautes** Tag einliest und
+wieder hinausschreibt. Ein Rundlauf durch den eigenen Schreiber hätte nichts
+bewiesen: Der ist mit sich selbst immer einig, auch wenn beide Seiten
+gemeinsam abgedriftet sind.
+
+### Was Schnitt 1 ausdrücklich nicht anfasst
+
+**Die Sprachfläche.** `item:iron_ore` heißt weiter `item:iron_ore`, `it.item`
+weiter `it.item`. `Signatures`, `signatures.json`, die Referenzseite und beide
+Editoren sind unverändert — hätte der Test sie neu geschrieben, wäre das ein
+Zeichen für einen Fehler und nicht für den bekannten Zwei-Lauf-Umstand.
+
+**Die drei Speicher.** `NetworkStorage`, `NetworkFluids` und `ChemicalStore`
+erfüllen weiter dieselben vier Methoden dreimal, und `WorldHost` verzweigt an
+drei Stellen nach der Art dorthin. Das ist Schnitt 2 und steht so im Entwurf.
+
+**Die Registry.** Die Haltungsfrage aus Abschnitt 6 des Entwurfs ist damit
+weder beantwortet noch vorweggenommen. `ResourceKind` ist ein
+Aufzählungswert. Wird die Frage mit Nein beantwortet, bleibt er einer — und
+der Code ist trotzdem kleiner.

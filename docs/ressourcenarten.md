@@ -127,11 +127,10 @@ fehlt, statt so zu tun, als sei das Pack schuld.
 
 Der Umbau muss nicht am Stück geschehen, und er sollte es nicht.
 
-1. **Die Zwillinge zusammenlegen.** `Value.Selection`, `FluidSelection` und
-   `ChemicalSelection` werden ein Record mit einem Art-Feld; dasselbe für die
-   Einzelwerte. Das ist der Schnitt, der die zehn Stellen aus Abschnitt 2 auf
-   eine reduziert — **und er bringt für sich allein schon etwas**, auch wenn
-   die Registry nie kommt.
+1. ~~**Die Zwillinge zusammenlegen.**~~ **Gebaut** (26.08.). Aus sechs Records
+   wurden zwei: `Value.Resource(kind, key)` und
+   `Value.Selection(kind, keys, amount)`, dazu `ResourceKind` für das, was je
+   Art verschieden ist. Nachgemessen steht darunter in Abschnitt 5a.
 2. **Die Speicher hinter eine Schnittstelle.** `NetworkStorage`,
    `NetworkFluids` und `ChemicalStore` erfüllen dieselben vier Methoden
    dreimal. Danach ist ein vierter Speicher ein Eintrag und keine Klasse.
@@ -144,6 +143,59 @@ Der Umbau muss nicht am Stück geschehen, und er sollte es nicht.
 **Schritt 1 und 2 sind auch ohne Entscheidung richtig.** Sie machen den Code
 kleiner, egal was danach kommt. Wer die Registry ablehnt, hat trotzdem etwas
 davon.
+
+---
+
+## 5a. Was Schritt 1 wirklich gekostet und gebracht hat
+
+Gebaut am 26.08. Die Tabelle aus Abschnitt 2, noch einmal — diesmal mit dem,
+was heute dasteht:
+
+| Stelle | vorher | jetzt |
+|---|---|---|
+| `Value` | zwei Records je Art | keiner; die Art ist ein Feld |
+| `Value.describe` | zwei Fälle | keiner |
+| `Interpreter.entriesOf` | zweimal | keiner |
+| `Interpreter.withAmount` | zwei Fälle | keiner |
+| `Interpreter.resolvedSelection` | ein Zweig samt Meldung | die Meldung „Dafür fehlt Mekanism" bleibt |
+| `Interpreter.entryMember` | ein Block | keiner |
+| `Interpreter.amountOf` | ein Fall | keiner |
+| `ValueCodec` | Schreiben, Lesen, eigener Leser | keiner; die Namen trägt die Art |
+| `Signatures.ENTRY_MEMBERS` | ein Eintrag | **bleibt** |
+| beide Editoren | je eine Liste | **bleibt** |
+
+**Von zehn Stellen bleiben drei, und alle drei sind Sprachfläche.** Neu
+dazugekommen ist eine: der Aufzählungswert in `ResourceKind`, wo der
+Übersetzer vier Fragen stellt (Kennung schreiben, Kennung lesen, Anzeigename,
+Auflösung). Die vier stehen in einer Datei und werden erzwungen — anders als
+die neun Zwillinge, die von Hand über die Fluid-Fälle gesucht werden mussten.
+
+Was daneben weiter je Art dasteht, ist die Anbindung an den Speicher: drei
+Verzweigungen in `WorldHost` nach `NetworkStorage`, `NetworkFluids` und
+`ChemicalStore`. Genau das ist Schritt 2.
+
+### Der Beleg, den niemand bestellt hatte
+
+Die Messung in Abschnitt 2 zählte Arbeit. Beim Bauen kam ein zweites Argument
+dazu, und es wiegt schwerer: **Die Zwillinge waren schon auseinandergelaufen.**
+
+`move` entscheidet an der Art über den Weg, und die Frage danach stand
+zweimal da. Die für Flüssigkeiten hatte den Nachtrag für die schon aufgelöste
+Auswahl bekommen, die für Chemikalien nicht. Eine Chemikalie aus einer
+Schleife ging damit in die Gegenstandsauflösung, traf dort nichts — und keine
+Auswahl heißt dort *alles*. Die Kiste wurde leergeräumt, ohne Meldung.
+Dasselbe in `count` und in `gerät.count(…)`.
+
+Das ist kein Versehen, das jemandem zuzuschreiben wäre; es ist das, was drei
+Kopien mit der Zeit tun. Der Fehler ist mit dem Schnitt behoben, weil es die
+Frage nur noch einmal gibt.
+
+### Was der Schnitt nicht angefasst hat
+
+Die Sprachfläche: `item:iron_ore`, `it.item`, `signatures.json`, die
+Referenzseite, beide Editoren. Und die Haltungsfrage aus Abschnitt 6 — sie ist
+weder beantwortet noch vorweggenommen. `ResourceKind` ist ein
+Aufzählungswert und darf einer bleiben.
 
 ---
 

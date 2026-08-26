@@ -2,12 +2,9 @@ package dev.devpanda.factorynetwork.runtime.flow;
 
 import dev.devpanda.factorynetwork.runtime.ScriptError;
 import dev.devpanda.factorynetwork.runtime.Value;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.Item;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -55,51 +52,26 @@ public final class ValueCodec {
                 tag.putString(KEY_TYPE, "dur");
                 tag.putLong(KEY_VALUE, duration.ticks());
             }
-            case Value.ItemValue item -> {
-                tag.putString(KEY_TYPE, "item");
-                tag.putString(KEY_VALUE, BuiltInRegistries.ITEM.getKey(item.item()).toString());
+            // Alle drei Arten auf einem Weg — und trotzdem stehen auf der
+            // Platte dieselben Namen wie vorher: Ein wartender Ablauf aus
+            // einer alten Welt muss seine Variablen wiederfinden. Welcher
+            // Name zu welcher Art gehört, sagt ResourceKind.
+            case Value.Resource resource -> {
+                tag.putString(KEY_TYPE, resource.kind().tag());
+                tag.putString(KEY_VALUE, resource.kind().idOf(resource.key()));
+            }
+            case Value.Selection selection -> {
+                tag.putString(KEY_TYPE, selection.kind().selectionTag());
+                ListTag keys = new ListTag();
+                selection.keys().forEach(key -> keys.add(
+                        net.minecraft.nbt.StringTag.valueOf(selection.kind().idOf(key))));
+                tag.put(KEY_ITEMS, keys);
+                tag.putLong(KEY_AMOUNT, selection.amount());
             }
             case Value.Request request -> {
                 tag.putString(KEY_TYPE, "req");
                 tag.putString(KEY_VALUE, request.selector());
                 tag.putLong(KEY_AMOUNT, request.amount());
-            }
-            case Value.Selection selection -> {
-                tag.putString(KEY_TYPE, "sel");
-                ListTag items = new ListTag();
-                selection.items().forEach(item -> items.add(
-                        net.minecraft.nbt.StringTag.valueOf(
-                                BuiltInRegistries.ITEM.getKey(item).toString())));
-                tag.put(KEY_ITEMS, items);
-                tag.putLong(KEY_AMOUNT, selection.amount());
-            }
-            case Value.FluidValue sort -> {
-                tag.putString(KEY_TYPE, "fluid");
-                tag.putString(KEY_VALUE, BuiltInRegistries.FLUID.getKey(sort.fluid()).toString());
-            }
-            case Value.FluidSelection selection -> {
-                tag.putString(KEY_TYPE, "fluidsel");
-                ListTag fluids = new ListTag();
-                selection.fluids().forEach(fluid -> fluids.add(
-                        net.minecraft.nbt.StringTag.valueOf(
-                                BuiltInRegistries.FLUID.getKey(fluid).toString())));
-                tag.put(KEY_ITEMS, fluids);
-                tag.putLong(KEY_AMOUNT, selection.amount());
-            }
-            // Eine Chemikalie trägt ihre Kennung, sonst nichts: Der Codec
-            // kennt keine Mekanism-Typen, und beim Lesen steht dieselbe
-            // Kennung wieder da — auch dann, wenn die Mod inzwischen fehlt.
-            case Value.ChemicalValue sort -> {
-                tag.putString(KEY_TYPE, "chem");
-                tag.putString(KEY_VALUE, sort.id());
-            }
-            case Value.ChemicalSelection selection -> {
-                tag.putString(KEY_TYPE, "chemsel");
-                ListTag ids = new ListTag();
-                selection.ids().forEach(id -> ids.add(
-                        net.minecraft.nbt.StringTag.valueOf(id)));
-                tag.put(KEY_ITEMS, ids);
-                tag.putLong(KEY_AMOUNT, selection.amount());
             }
             case Value.Device device -> {
                 tag.putString(KEY_TYPE, "dev");
@@ -135,19 +107,24 @@ public final class ValueCodec {
 
     public static Value read(CompoundTag tag) {
         String type = tag.getString(KEY_TYPE);
+        // Erst die Ressourcen: Ihre Namen sind je Art verschieden, und die
+        // Art kennt ihre eigenen. Was danach bleibt, hat genau einen.
+        for (dev.devpanda.factorynetwork.runtime.ResourceKind kind
+                : dev.devpanda.factorynetwork.runtime.ResourceKind.values()) {
+            if (kind.tag().equals(type)) {
+                return new Value.Resource(kind, kind.fromId(tag.getString(KEY_VALUE)));
+            }
+            if (kind.selectionTag().equals(type)) {
+                return readSelection(kind, tag);
+            }
+        }
         return switch (type) {
             case "int" -> new Value.Int(tag.getLong(KEY_VALUE));
             case "dec" -> new Value.Decimal(tag.getDouble(KEY_VALUE));
             case "bool" -> new Value.Bool(tag.getBoolean(KEY_VALUE));
             case "text" -> new Value.Text(tag.getString(KEY_VALUE));
             case "dur" -> new Value.Duration(tag.getLong(KEY_VALUE));
-            case "item" -> new Value.ItemValue(item(tag.getString(KEY_VALUE)));
             case "req" -> new Value.Request(tag.getString(KEY_VALUE), tag.getLong(KEY_AMOUNT));
-            case "sel" -> readSelection(tag);
-            case "fluid" -> new Value.FluidValue(fluid(tag.getString(KEY_VALUE)));
-            case "fluidsel" -> readFluidSelection(tag);
-            case "chem" -> new Value.ChemicalValue(tag.getString(KEY_VALUE));
-            case "chemsel" -> readChemicalSelection(tag);
             case "dev" -> new Value.Device(tag.getString(KEY_VALUE));
             case "grp" -> new Value.Group(tag.getString(KEY_VALUE));
             case "slots" -> new Value.DeviceSlots(tag.getString(KEY_VALUE),
@@ -159,50 +136,21 @@ public final class ValueCodec {
         };
     }
 
-    private static Value readSelection(CompoundTag tag) {
-        ListTag items = tag.getList(KEY_ITEMS, Tag.TAG_STRING);
-        List<Item> resolved = new ArrayList<>(items.size());
-        for (int i = 0; i < items.size(); i++) {
-            resolved.add(item(items.getString(i)));
-        }
-        return new Value.Selection(List.copyOf(resolved), tag.getLong(KEY_AMOUNT));
-    }
-
     /**
-     * Chemikalien kommen zurück, wie sie hineingingen.
+     * Eine Auswahl, Eintrag für Eintrag.
      *
-     * <p>Ohne Prüfung gegen eine Registry, anders als bei Gegenständen und
-     * Flüssigkeiten: Die Registry gehört Mekanism, und ohne die Mod gibt es
-     * sie nicht. Eine Kennung, die niemand mehr auflösen kann, ist immer noch
-     * die Wahrheit darüber, was der Ablauf gemeint hat — sie stillschweigend
-     * durch Wasser zu ersetzen wäre schlimmer.
+     * <p>Ob eine Kennung gegen eine Registry geprüft wird, entscheidet die
+     * Art — und das ist der einzige Unterschied, der von den drei Lesern
+     * übrig ist. Er steht in {@code ResourceKind.fromId}.
      */
-    private static Value readChemicalSelection(CompoundTag tag) {
+    private static Value readSelection(
+            dev.devpanda.factorynetwork.runtime.ResourceKind kind, CompoundTag tag) {
         ListTag entries = tag.getList(KEY_ITEMS, Tag.TAG_STRING);
-        List<String> ids = new ArrayList<>(entries.size());
+        List<Object> resolved = new ArrayList<>(entries.size());
         for (int i = 0; i < entries.size(); i++) {
-            ids.add(entries.getString(i));
+            resolved.add(kind.fromId(entries.getString(i)));
         }
-        return new Value.ChemicalSelection(List.copyOf(ids), tag.getLong(KEY_AMOUNT));
-    }
-
-    private static Value readFluidSelection(CompoundTag tag) {
-        ListTag entries = tag.getList(KEY_ITEMS, Tag.TAG_STRING);
-        List<net.minecraft.world.level.material.Fluid> resolved = new ArrayList<>(entries.size());
-        for (int i = 0; i < entries.size(); i++) {
-            resolved.add(fluid(entries.getString(i)));
-        }
-        return new Value.FluidSelection(List.copyOf(resolved), tag.getLong(KEY_AMOUNT));
-    }
-
-    private static net.minecraft.world.level.material.Fluid fluid(String key) {
-        ResourceLocation id = ResourceLocation.tryParse(key);
-        if (id == null || !BuiltInRegistries.FLUID.containsKey(id)) {
-            throw new ScriptError("Die Flüssigkeit " + key + " gibt es nicht mehr.",
-                    "Der Ablauf hielt sie in einer Variablen fest. Wurde eine Mod "
-                            + "aus dem Pack genommen?");
-        }
-        return BuiltInRegistries.FLUID.get(id);
+        return new Value.Selection(kind, List.copyOf(resolved), tag.getLong(KEY_AMOUNT));
     }
 
     private static Value readList(CompoundTag tag) {
@@ -214,13 +162,4 @@ public final class ValueCodec {
         return new Value.ValueList(List.copyOf(values));
     }
 
-    private static Item item(String key) {
-        ResourceLocation id = ResourceLocation.tryParse(key);
-        if (id == null || !BuiltInRegistries.ITEM.containsKey(id)) {
-            throw new ScriptError("Den Gegenstand " + key + " gibt es nicht mehr.",
-                    "Der Ablauf hielt ihn in einer Variablen fest. Wurde eine Mod "
-                            + "aus dem Pack genommen?");
-        }
-        return BuiltInRegistries.ITEM.get(id);
-    }
 }

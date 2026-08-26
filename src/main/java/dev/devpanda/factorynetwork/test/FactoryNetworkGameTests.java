@@ -8282,8 +8282,10 @@ public final class FactoryNetworkGameTests {
 
         helper.assertValueEqual(flow.status().name(), "DONE",
                 "Der Ablauf muss durchlaufen: " + flow.detail());
-        helper.assertTrue(flow.result() instanceof
-                        dev.devpanda.factorynetwork.runtime.Value.ChemicalValue,
+        helper.assertTrue(flow.result()
+                        instanceof dev.devpanda.factorynetwork.runtime.Value.Resource resource
+                        && resource.kind()
+                                == dev.devpanda.factorynetwork.runtime.ResourceKind.CHEMICAL,
                 "und eine Chemikalie liefern: " + flow.result().describe());
         helper.succeed();
     }
@@ -10173,6 +10175,102 @@ public final class FactoryNetworkGameTests {
                 "dort steht Luft, gemeldet wurde " + profile.descriptionId());
         helper.assertTrue(profile.access().isEmpty(),
                 "an Luft ist nichts anzuschließen");
+        helper.succeed();
+    }
+
+
+    /**
+     * Eine Chemikalie fährt nicht auf dem Gegenstandsweg.
+     *
+     * <p><b>Der schlimmste Fehler, den diese Sprache haben kann</b>, in der
+     * Ausgabe von 2026-08-26: {@code move} entschied den Weg an der Art, und
+     * es fragte dafür nur die geschriebene Auswahl. Eine schon aufgelöste —
+     * so kommt sie aus einer Schleife und aus jedem {@code it} — hatte für
+     * Flüssigkeiten einen Nachtrag bekommen, für Chemikalien nicht. Damit
+     * landete eine Chemikalie in der Gegenstandsauflösung, traf dort nichts,
+     * und keine Auswahl heißt dort <i>alles</i>: Die Kiste ging leer aus.
+     *
+     * <p>Der Prüflauf braucht dafür keinen Chemikalientank. Es genügt, dass
+     * die Auswahl sich auflöst — was danach passieren soll, ist nichts.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void aresolvedChemicalDoesNotTravelOnTheItemPath(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+
+        BlockPos source = controller.east().north().north();
+        if (helper.getBlockEntity(source) instanceof ChestBlockEntity container) {
+            container.setItem(0, new ItemStack(Items.IRON_ORE, 32));
+        } else {
+            helper.fail("Keine Kiste an der Quelle", source);
+        }
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                fn versuchen() {
+                    for gas in chemical:mekanism/hydrogen {
+                        move 100 gas from quarry_output to depot
+                    }
+                }"""), "Das Programm wurde nicht übernommen");
+
+        entity.callFunction("versuchen", List.of());
+
+        helper.assertValueEqual(countIn(helper, source), 32,
+                "Das Erz muss liegen bleiben — eine Chemikalie meint kein Erz");
+        helper.assertValueEqual(countIn(helper, controller.east().south().south()), 0,
+                "und in der Zielkiste darf nichts angekommen sein");
+        helper.succeed();
+    }
+
+    /**
+     * Ein gespeicherter Gegenstand heißt auf der Platte weiterhin so.
+     *
+     * <p>Dieselbe Zusage wie in {@code ValueCodecFormatTest}, nur für die
+     * beiden Arten, die eine Registry brauchen: Ein wartender Ablauf aus
+     * einer alten Welt muss seine Variablen wiederfinden. Von Hand gebaut
+     * und nicht über einen Rundlauf — ein Rundlauf ist mit sich selbst
+     * immer einig.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void asavedItemKeepsItsNameOnDisk(GameTestHelper helper) {
+        net.minecraft.nbt.CompoundTag single = new net.minecraft.nbt.CompoundTag();
+        single.putString("t", "item");
+        single.putString("v", "minecraft:iron_ore");
+        helper.assertValueEqual(
+                dev.devpanda.factorynetwork.runtime.flow.ValueCodec.write(
+                        dev.devpanda.factorynetwork.runtime.flow.ValueCodec.read(single)),
+                single, "die Form eines gespeicherten Gegenstands");
+
+        net.minecraft.nbt.ListTag items = new net.minecraft.nbt.ListTag();
+        items.add(net.minecraft.nbt.StringTag.valueOf("minecraft:iron_ore"));
+        items.add(net.minecraft.nbt.StringTag.valueOf("minecraft:copper_ore"));
+        net.minecraft.nbt.CompoundTag selection = new net.minecraft.nbt.CompoundTag();
+        selection.putString("t", "sel");
+        selection.put("i", items);
+        selection.putLong("a", 64);
+        helper.assertValueEqual(
+                dev.devpanda.factorynetwork.runtime.flow.ValueCodec.write(
+                        dev.devpanda.factorynetwork.runtime.flow.ValueCodec.read(selection)),
+                selection, "die Form einer gespeicherten Gegenstandsauswahl");
+
+        net.minecraft.nbt.CompoundTag fluid = new net.minecraft.nbt.CompoundTag();
+        fluid.putString("t", "fluid");
+        fluid.putString("v", "minecraft:water");
+        helper.assertValueEqual(
+                dev.devpanda.factorynetwork.runtime.flow.ValueCodec.write(
+                        dev.devpanda.factorynetwork.runtime.flow.ValueCodec.read(fluid)),
+                fluid, "die Form einer gespeicherten Flüssigkeit");
+
+        net.minecraft.nbt.ListTag fluids = new net.minecraft.nbt.ListTag();
+        fluids.add(net.minecraft.nbt.StringTag.valueOf("minecraft:water"));
+        net.minecraft.nbt.CompoundTag fluidSelection = new net.minecraft.nbt.CompoundTag();
+        fluidSelection.putString("t", "fluidsel");
+        fluidSelection.put("i", fluids);
+        fluidSelection.putLong("a", -1);
+        helper.assertValueEqual(
+                dev.devpanda.factorynetwork.runtime.flow.ValueCodec.write(
+                        dev.devpanda.factorynetwork.runtime.flow.ValueCodec.read(fluidSelection)),
+                fluidSelection, "die Form einer gespeicherten Flüssigkeitsauswahl");
         helper.succeed();
     }
 

@@ -223,7 +223,7 @@ class ListMemberTest {
     @DisplayName("An einem Eintrag steht seine Menge")
     void anEntryCarriesItsAmount() {
         TestHost host = new TestHost();
-        host.contents.add(new Value.Selection(List.of(), 5));
+        host.contents.add(Value.Selection.ofItems(List.of(), 5));
 
         Interpreter interpreter = interpreterFor("""
                 fn zeigen() {
@@ -238,8 +238,8 @@ class ListMemberTest {
     @DisplayName("sum zählt die Mengen zusammen")
     void sumAddsTheAmounts() {
         TestHost host = new TestHost();
-        host.contents.add(new Value.Selection(List.of(), 5));
-        host.contents.add(new Value.Selection(List.of(), 7));
+        host.contents.add(Value.Selection.ofItems(List.of(), 5));
+        host.contents.add(Value.Selection.ofItems(List.of(), 7));
 
         Interpreter interpreter = interpreterFor("""
                 fn zeigen() {
@@ -256,9 +256,9 @@ class ListMemberTest {
     @DisplayName("where filtert nach der Menge")
     void whereFiltersByAmount() {
         TestHost host = new TestHost();
-        host.contents.add(new Value.Selection(List.of(), 5));
-        host.contents.add(new Value.Selection(List.of(), 70));
-        host.contents.add(new Value.Selection(List.of(), 90));
+        host.contents.add(Value.Selection.ofItems(List.of(), 5));
+        host.contents.add(Value.Selection.ofItems(List.of(), 70));
+        host.contents.add(Value.Selection.ofItems(List.of(), 90));
 
         Interpreter interpreter = interpreterFor("""
                 fn zeigen() {
@@ -273,8 +273,8 @@ class ListMemberTest {
     @DisplayName("sort ordnet nach der Menge")
     void sortOrdersByAmount() {
         TestHost host = new TestHost();
-        host.contents.add(new Value.Selection(List.of(), 90));
-        host.contents.add(new Value.Selection(List.of(), 5));
+        host.contents.add(Value.Selection.ofItems(List.of(), 90));
+        host.contents.add(Value.Selection.ofItems(List.of(), 5));
 
         Interpreter interpreter = interpreterFor("""
                 fn zeigen() {
@@ -289,7 +289,7 @@ class ListMemberTest {
     @DisplayName("Eine Auswahl über mehrere Arten hat keine eine Art")
     void aSelectionOverSeveralKindsHasNoSingleItem() {
         TestHost host = new TestHost();
-        host.contents.add(new Value.Selection(List.of(), 5));
+        host.contents.add(Value.Selection.ofItems(List.of(), 5));
 
         Interpreter interpreter = interpreterFor("""
                 fn zeigen() {

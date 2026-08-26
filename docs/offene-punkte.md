@@ -144,6 +144,17 @@ Vorentscheidungen)
 > für alles andere. Der laufende Schritt wird gespeichert, der Plan nicht —
 > ein Plan ist eine Absicht, ein Erz im Ofen eine Tatsache über die Welt.
 
+> **Schnitt 1 aus `ressourcenarten.md` steht (26.08.).** Die drei Zwillingspaare
+> im Wertemodell sind zwei Records mit einem Art-Feld geworden. Der Entwurf
+> hatte Arbeit gemessen; gefunden wurde ein Fehler: **Die Frage, welchen Weg
+> `move` nimmt, stand zweimal da**, und die Fassung für Chemikalien kannte die
+> schon aufgelöste Auswahl nicht. Eine Chemikalie aus einer Schleife ging
+> damit in die Gegenstandsauflösung, traf nichts — und keine Auswahl heißt
+> dort *alles*. Die Kiste wurde leergeräumt, ohne Meldung; dasselbe in `count`
+> und `gerät.count(…)`. Das ist der Fehler, den `sprache.md` den schlimmsten
+> der Sprache nennt, und er ist kein Versehen, sondern das, was drei Kopien
+> mit der Zeit tun.
+
 **Status:** **F** = fehlt schlicht · **E** = wartet auf eine Entscheidung ·
 **Z** = bewusst zurückgestellt, kein Versäumnis
 
@@ -161,7 +172,7 @@ Vorentscheidungen)
 | 1.6 | Request/Response als eigene Form | Z | `sprache.md:992` | mittel | mit `emit`/`on`/`await` nachbaubar |
 | 1.7 | ~~Rechte im Mehrspielerbetrieb~~ — **gebaut** (25.08.). `protection.programs` in der Serverkonfiguration: `OFF` (Vorgabe, wie bisher), `OWNER`, `OPS`. Geschützt sind Übernehmen und Entwurf speichern; die Beschriftungspistole nicht — sie ändert die Welt, und dafür gibt es Schutzmods | | `FnProtection` | | |
 | 1.8 | **Zum Teil gebaut** (26.08.): `Chemical` steht im Wertemodell — eine Chemikalie ist ein Wert wie eine Gegenstandsart, trägt eine Menge, steht in einer Schleife und ist an einem Posten mit `it.chemical` abzulesen. Im Kern als Kennung und nie als Mekanism-Typ. **Offen mit Begründung:** `Job` — `craft` liefert eine Nummer, und mehr will bisher niemand ablesen; dafür gibt es `crafting_finished` und den Reiter. `Set<T>` — der Fall, der ihn braucht, fehlt weiter | F | `Value.ChemicalValue`, `sprache.md` §5 | klein | — |
-| 1.19 | **Die Ressourcenart als offene Registry** statt eines festen Aufzählungswerts. **Entwurf steht:** `ressourcenarten.md` — mit der Messung, was eine neue Art heute kostet (zehn Stellen für `chemical`, neun davon Zwillinge), dem Preis (der Übersetzer kennt die Präfixe erst zur Laufzeit) und vier Schnitten. **Die ersten zwei sind auch ohne Entscheidung richtig:** Sie legen die Zwillinge zusammen und machen den Code kleiner, egal was danach kommt. Zu entscheiden bleibt eine Haltungsfrage — ob fremde Mods die Sprache erweitern dürfen | E | `ressourcenarten.md` | groß | Haltungsfrage |
+| 1.19 | **Die Ressourcenart als offene Registry** statt eines festen Aufzählungswerts. **Schnitt 1 ist gebaut** (26.08.): Aus sechs Records im Wertemodell wurden zwei mit einem Art-Feld, dazu `ResourceKind`. Von den zehn gemessenen Stellen bleiben drei, und alle drei sind Sprachfläche; nachgemessen in `ressourcenarten.md` §5a. Dabei fiel ein Fehler auf, nach dem niemand gesucht hatte: Die Artfrage in `move` stand zweimal da, und die für Chemikalien kannte die aufgelöste Auswahl nicht — eine Chemikalie aus einer Schleife räumte die Kiste leer. **Offen:** Schnitt 2 (die drei Speicher hinter eine Schnittstelle, ebenfalls entscheidungsfrei), danach die Haltungsfrage — ob fremde Mods die Sprache erweitern dürfen | E/F | `ressourcenarten.md` | groß | Haltungsfrage (erst ab Schnitt 3) |
 | 1.20 | ~~Ein Connector, der klickt~~ — **gebaut** (26.08.), am selben Tag gewünscht. `altar.click()` an dem Connector, der ohnehin dranhängt, und kein zweiter Block: Ein- und Ausgang trennt hier schon der Code und nicht die Bauform. Läuft über den vollen Vanilla-Weg, damit Schutzmods ihre Ereignisse bekommen. Ein Fenster geht nicht auf — für einen Spieler, den es nicht gibt, ist das folgenlos | | `WorldHost.clickAt`, `Signatures.MEMBERS` | | |
 | 1.9 | Echter Typprüfer über Ausdrücke — **zurückgestellt.** Literal gegen Literal bleibt; alles andere fällt zur Laufzeit auf, mit Meldungen, die wissen, was erwartet war | Z | `globale-werte.md:195` | groß | eigenes Vorhaben über die ganze Sprache |
 | 1.10 | ~~Konstanten~~ — **fertig.** `const stapel = 64` wird gelesen wie ein globaler Wert und nie geschrieben; der Versuch ist ein Fehler beim Übernehmen. Nicht gespeichert, weil ein Wert aus dem Programm aus dem Programm wiederkommt | | `Decl.Const`, `GlobalCheck` | | |
@@ -259,11 +270,13 @@ Vorentscheidungen)
 
 ## Was am meisten bringt
 
-Stand nach dem 26.08.: **Auf der ganzen Liste steht nur noch eine offene
-Entscheidung** — 5.4, die Zahlen an den Serverbauteilen, und die beantwortet
-eine Runde Spielen und kein Gespräch. Die beiden großen Posten (2.9 und 1.4)
-sind gebaut. Was bleibt, ist Schreibarbeit, benannte Schnitte und der
-Sprachserver.
+Stand nach dem 26.08.: **Drei Fragen liegen offen**, und keine davon hält
+Arbeit auf. 5.4 (die Zahlen an den Serverbauteilen) beantwortet eine Runde
+Spielen und kein Gespräch. 1.19 (die offene Registry) ist eine Haltungsfrage,
+und ihre ersten beiden Schnitte sind unabhängig davon richtig — der erste ist
+gebaut. 4.1 (der Serverfall der Brücke) wartet auf Umfang und Technik. Die
+beiden großen Posten (2.9 und 1.4) sind gebaut. Was bleibt, ist
+Schreibarbeit, benannte Schnitte und der Sprachserver.
 
 ~~**1. Die Stromverteilung** (2.2).~~ **Gebaut am 25.08.** Eine Fabrik
 versorgt ihre Maschinen jetzt selbst, und der Vorrat wächst mit den
@@ -295,20 +308,18 @@ läuft alles wie vorher.
 
 ### Womit die nächste Sitzung anfängt
 
-**Schnitt 1 aus `ressourcenarten.md`: die Zwillinge im Wertemodell
-zusammenlegen.** `Selection`, `FluidSelection` und `ChemicalSelection` werden
-ein Record mit einem Art-Feld, dasselbe für die Einzelwerte. Der Grund steht
-dort gemessen: Eine neue Ressourcenart kostet heute zehn Stellen, neun davon
-Kopien voneinander.
+~~**Schnitt 1 aus `ressourcenarten.md`**~~ — **gebaut am 26.08.**, als erster
+Commit der Sitzung. Nachgemessen in §5a desselben Dokuments: Von zehn Stellen
+bleiben drei, und alle drei sind Sprachfläche. Die Absicherungen zuerst — die
+Namen auf der Platte und die Texte aus `describe()` —, weil beides ein
+Übersetzer nie meldet und erst in einer alten Welt oder im Protokoll auffällt.
 
-Er ist bewusst der **erste** Commit einer Sitzung und nicht der letzte einer
-anderen: Es ist ein Umbau am Wertemodell, dessen Fehler beim Spielen auffallen
-und nicht im Prüflauf — Anzeigetexte, gespeicherte Abläufe aus alten Welten.
-Und er ist unabhängig von der Haltungsfrage in Abschnitt 6 desselben
-Dokuments: Er macht den Code kleiner, egal wie sie ausgeht.
-
-Danach Schnitt 2 (die drei Speicher hinter eine Schnittstelle), und erst dann
-braucht es die Antwort.
+**Als Nächstes: Schnitt 2, die drei Speicher hinter eine Schnittstelle.**
+`NetworkStorage`, `NetworkFluids` und `ChemicalStore` erfüllen dieselben vier
+Methoden dreimal, und `WorldHost` verzweigt an drei Stellen nach der Art
+dorthin. Danach ist ein vierter Speicher ein Eintrag und keine Klasse. Auch
+dieser Schnitt ist von der Haltungsfrage in Abschnitt 6 unabhängig — erst
+Schnitt 3 braucht die Antwort.
 
 **Was jetzt oben steht:** die drei Mods (7.5 bis 7.7). Die anderen Wünsche vom
 26.08. sind am selben Tag gebaut worden — der Connector, der klickt (1.20),

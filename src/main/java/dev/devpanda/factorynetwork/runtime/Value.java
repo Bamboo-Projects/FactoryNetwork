@@ -23,8 +23,53 @@ public sealed interface Value {
     /** Eine Zeitangabe, in Ticks. */
     record Duration(long ticks) implements Value {}
 
-    /** Eine Gegenstandsart. */
-    record ItemValue(Item item) implements Value {}
+    /**
+     * Eine einzelne Ressource — eine Gegenstandsart, eine Flüssigkeitssorte,
+     * eine Chemikalie.
+     *
+     * <p><b>Eine Form für drei Arten.</b> Vorher standen hier drei Records
+     * nebeneinander, und mit ihnen drei Zwillingszweige in jeder Stelle, die
+     * Werte behandelt. Was je Art verschieden ist, steht in
+     * {@link ResourceKind}; was gleich ist, steht hier einmal.
+     *
+     * <p>{@code key} trägt die Ressource selbst: einen {@link Item}, einen
+     * {@code Fluid} oder — bei einer Chemikalie — ihre Kennung als Text. Dass
+     * sie zur Art passt, prüft der Konstruktor; wer sie herausholt, nimmt
+     * {@link #item()}, {@link #fluid()} oder {@link #chemical()}.
+     */
+    record Resource(ResourceKind kind, Object key) implements Value {
+
+        public Resource {
+            if (!kind.type().isInstance(key)) {
+                throw new IllegalArgumentException("Eine Ressource der Art " + kind
+                        + " ist kein " + (key == null ? "nichts" : key.getClass()) + ".");
+            }
+        }
+
+        public static Resource ofItem(Item item) {
+            return new Resource(ResourceKind.ITEM, item);
+        }
+
+        public static Resource ofFluid(net.minecraft.world.level.material.Fluid fluid) {
+            return new Resource(ResourceKind.FLUID, fluid);
+        }
+
+        public static Resource ofChemical(String id) {
+            return new Resource(ResourceKind.CHEMICAL, id);
+        }
+
+        public Item item() {
+            return (Item) key;
+        }
+
+        public net.minecraft.world.level.material.Fluid fluid() {
+            return (net.minecraft.world.level.material.Fluid) key;
+        }
+
+        public String chemical() {
+            return (String) key;
+        }
+    }
 
     /**
      * Eine Auswahl mit wahlweise vorangestellter Menge, wie in
@@ -74,28 +119,70 @@ public sealed interface Value {
         }
     }
 
-    /** Eine einzelne Flüssigkeitssorte. */
-    record FluidValue(net.minecraft.world.level.material.Fluid fluid) implements Value {}
-
-    /** Eine Auswahl von Flüssigkeiten, schon aufgelöst. Mengen in Millibucket. */
-    record FluidSelection(List<net.minecraft.world.level.material.Fluid> fluids, long amount)
-            implements Value {}
-
     /**
-     * Eine Chemikalienart, über ihre Kennung.
+     * Eine Auswahl, schon aufgelöst — und zugleich ein Posten aus einer
+     * Bestandsliste.
      *
-     * <p><b>Ein Text und kein Mekanism-Typ.</b> Eine Signatur mit
-     * {@code Chemical} darin würde die Klasse beim Laden auflösen — und dann
-     * bräche ohne die Mod alles zusammen, was diesen Wert auch nur streift.
-     * Mekanism-Typen stehen ausschließlich unter {@code compat/mekanism}.
+     * <p>Mengen bei Gegenständen in Stück, bei Flüssigkeiten und Chemikalien
+     * in Millibucket. {@code amount} ist {@code -1}, wenn keine dastand.
+     *
+     * <p>Die Ressourcen selbst liegen in {@code keys}, in der Form, die
+     * {@link ResourceKind#type()} für diese Art nennt. Gemischt geht nicht:
+     * Der Konstruktor prüft jeden Eintrag. Eine Auswahl über Wasser und Stein
+     * wäre an jeder Verwendungsstelle etwas anderes — dieselbe Regel, die
+     * {@code FilterKind} für Vorlagen aufstellt.
      */
-    record ChemicalValue(String id) implements Value {}
+    record Selection(ResourceKind kind, List<?> keys, long amount) implements Value {
 
-    /** Eine Auswahl von Chemikalien, schon aufgelöst. Mengen in Millibucket. */
-    record ChemicalSelection(List<String> ids, long amount) implements Value {}
+        public Selection {
+            keys = List.copyOf(keys);
+            for (Object key : keys) {
+                if (!kind.type().isInstance(key)) {
+                    throw new IllegalArgumentException("Eine Auswahl der Art " + kind
+                            + " kann kein " + key.getClass() + " enthalten.");
+                }
+            }
+        }
 
-    /** Eine Auswahl von Gegenstandsarten, schon aufgelöst. */
-    record Selection(List<Item> items, long amount) implements Value {}
+        public static Selection ofItems(List<Item> items, long amount) {
+            return new Selection(ResourceKind.ITEM, items, amount);
+        }
+
+        public static Selection ofFluids(
+                List<net.minecraft.world.level.material.Fluid> fluids, long amount) {
+            return new Selection(ResourceKind.FLUID, fluids, amount);
+        }
+
+        public static Selection ofChemicals(List<String> ids, long amount) {
+            return new Selection(ResourceKind.CHEMICAL, ids, amount);
+        }
+
+        @SuppressWarnings("unchecked")
+        public List<Item> items() {
+            return (List<Item>) keys;
+        }
+
+        @SuppressWarnings("unchecked")
+        public List<net.minecraft.world.level.material.Fluid> fluids() {
+            return (List<net.minecraft.world.level.material.Fluid>) keys;
+        }
+
+        @SuppressWarnings("unchecked")
+        public List<String> chemicals() {
+            return (List<String>) keys;
+        }
+
+        /**
+         * Der erste Eintrag als einzelner Wert.
+         *
+         * <p>Gemeint ist der Fall, in dem es nur einen gibt. Dass es so ist,
+         * prüft der Aufrufer — er hat die Meldung dafür, hier gäbe es nur
+         * eine geratene.
+         */
+        public Resource single() {
+            return new Resource(kind, keys.get(0));
+        }
+    }
 
     /** Ein Gerät im Netzwerk, über seinen Namen. */
     record Device(String name) implements Value {}
@@ -143,19 +230,13 @@ public sealed interface Value {
             case Bool value -> value.value() ? "wahr" : "falsch";
             case Text value -> value.value();
             case Duration value -> value.ticks() + "t";
-            case ItemValue value -> value.item().toString();
             case Request value -> (value.hasAmount() ? value.amount() + " " : "")
                     + value.selector();
-            case Selection value -> value.items().size() + " Arten";
-            case FluidSelection value -> value.fluids().size() + " Flüssigkeiten";
-            case FluidValue value -> net.minecraft.core.registries.BuiltInRegistries.FLUID
-                    .getKey(value.fluid()).toString();
             // Über nameOf, damit im Protokoll „Wasserstoff" steht und nicht
             // die Kennung. Ohne Mekanism gibt es keinen Namen, und dann steht
             // die Kennung da — erfunden wird nichts.
-            case ChemicalValue value -> dev.devpanda.factorynetwork.compat.mekanism.Chemicals
-                    .nameOf(value.id());
-            case ChemicalSelection value -> value.ids().size() + " Chemikalien";
+            case Resource value -> value.kind().nameOf(value.key());
+            case Selection value -> value.keys().size() + " " + value.kind().plural();
             case Device value -> value.name();
             case Group value -> value.name();
             case DeviceSlots value -> value.device() + " Fach "

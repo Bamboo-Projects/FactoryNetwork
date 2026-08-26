@@ -275,7 +275,7 @@ public final class WorldHost implements Interpreter.Host {
     public List<Value> storedItems() {
         List<Value> found = new ArrayList<>();
         storage.contents().forEach((item, count) ->
-                found.add(new Value.Selection(List.of(item), count)));
+                found.add(Value.Selection.ofItems(List.of(item), count)));
         return found;
     }
 
@@ -320,7 +320,8 @@ public final class WorldHost implements Interpreter.Host {
             }
             ItemStack stack = handler.getStackInSlot(slot);
             if (!stack.isEmpty()) {
-                found.add(new Value.Selection(List.of(stack.getItem()), stack.getCount()));
+                found.add(Value.Selection.ofItems(
+                        List.of(stack.getItem()), stack.getCount()));
             }
         }
         return List.copyOf(found);
@@ -336,7 +337,8 @@ public final class WorldHost implements Interpreter.Host {
         for (int slot = 0; slot < handler.getSlots(); slot++) {
             ItemStack stack = handler.getStackInSlot(slot);
             if (!stack.isEmpty()) {
-                found.add(new Value.Selection(List.of(stack.getItem()), stack.getCount()));
+                found.add(Value.Selection.ofItems(
+                        List.of(stack.getItem()), stack.getCount()));
             }
         }
         return found;
@@ -347,10 +349,11 @@ public final class WorldHost implements Interpreter.Host {
         // Zuerst die Art: Wasser und Steine gehen verschiedene Wege, und ein
         // Fluid-Selektor, der in der Gegenstandsauflösung landet, trifft
         // nichts — was dort ununterscheidbar von "kein Filter" wäre.
-        if (isFluidRequest(amount)) {
+        ResourceKind kind = ResourceKind.of(amount);
+        if (kind == ResourceKind.FLUID) {
             return moveFluid(amount, from, to);
         }
-        if (isChemicalRequest(amount)) {
+        if (kind == ResourceKind.CHEMICAL) {
             return moveChemical(amount, from, to);
         }
         List<Item> items = itemsOf(amount);
@@ -400,27 +403,15 @@ public final class WorldHost implements Interpreter.Host {
         return transfer(source, target, items, limit);
     }
 
-    /** Meint diese Auswahl Flüssigkeiten? */
-    /** Steht dort ausdrücklich {@code all}? */
+    /**
+     * Steht dort ausdrücklich {@code all}?
+     *
+     * <p>Bleibt eine eigene Frage: {@code all} ist keine Ressourcenart,
+     * sondern die Ansage, dass es keinen Filter gibt.
+     */
     private static boolean isEverything(Value value) {
         return value instanceof Value.Request request
                 && request.kind() == Value.Request.Kind.ALL;
-    }
-
-    /** Meint diese Auswahl Chemikalien? */
-    private static boolean isChemicalRequest(Value value) {
-        Value inner = value instanceof Value.Request request ? request : value;
-        return inner instanceof Value.Request request
-                && request.kind() == Value.Request.Kind.CHEMICAL;
-    }
-
-    private static boolean isFluidRequest(Value value) {
-        Value inner = value instanceof Value.Request request ? request : value;
-        if (inner instanceof Value.FluidSelection) {
-            return true;
-        }
-        return inner instanceof Value.Request request
-                && request.kind() == Value.Request.Kind.FLUID;
     }
 
     // ---- Chemikalien ------------------------------------------------------
@@ -470,6 +461,17 @@ public final class WorldHost implements Interpreter.Host {
 
     /** Die Kennungen hinter einer Chemikalien-Auswahl. */
     private List<String> chemicalsOf(Value value) {
+        // Eine schon aufgelöste Auswahl — so kommt jede Chemikalie aus einer
+        // Schleife und aus jedem it. Ohne diese beiden Zeilen bliebe die
+        // Liste leer, und leer heißt weiter unten „kein Filter".
+        if (value instanceof Value.Selection selection
+                && selection.kind() == ResourceKind.CHEMICAL) {
+            return selection.chemicals();
+        }
+        if (value instanceof Value.Resource resource
+                && resource.kind() == ResourceKind.CHEMICAL) {
+            return List.of(resource.chemical());
+        }
         if (value instanceof Value.Request request) {
             List<String> ids = dev.devpanda.factorynetwork.compat.mekanism.Chemicals.resolve(
                     dev.devpanda.factorynetwork.lang.Selectors.parse(request.selector()));
@@ -629,8 +631,13 @@ public final class WorldHost implements Interpreter.Host {
 
     /** Die Sorten einer Flüssigkeits-Auswahl. */
     private List<Fluid> fluidsOf(Value value) {
-        if (value instanceof Value.FluidSelection selection) {
+        if (value instanceof Value.Selection selection
+                && selection.kind() == ResourceKind.FLUID) {
             return selection.fluids();
+        }
+        if (value instanceof Value.Resource resource
+                && resource.kind() == ResourceKind.FLUID) {
+            return List.of(resource.fluid());
         }
         String written = value instanceof Value.Request request ? request.selector() : null;
         if (written == null) {
@@ -727,10 +734,11 @@ public final class WorldHost implements Interpreter.Host {
         if (connector == null) {
             return 0;
         }
-        if (isFluidRequest(what)) {
+        ResourceKind kind = ResourceKind.of(what);
+        if (kind == ResourceKind.FLUID) {
             return countFluids(connector, fluidsOf(what));
         }
-        if (isChemicalRequest(what)) {
+        if (kind == ResourceKind.CHEMICAL) {
             net.minecraft.core.Direction facing = dev.devpanda.factorynetwork.block
                     .ConnectorBlock.machineSide(connector.getBlockState());
             return dev.devpanda.factorynetwork.compat.mekanism.ChemicalStores.amountAt(
@@ -826,10 +834,11 @@ public final class WorldHost implements Interpreter.Host {
 
     @Override
     public long count(Value what) {
-        if (isFluidRequest(what)) {
+        ResourceKind kind = ResourceKind.of(what);
+        if (kind == ResourceKind.FLUID) {
             return fluidsOf(what).stream().mapToLong(fluidStorage::count).sum();
         }
-        if (isChemicalRequest(what)) {
+        if (kind == ResourceKind.CHEMICAL) {
             return chemicalsOf(what).stream().mapToLong(chemicals::count).sum();
         }
         return itemsOf(what).stream().mapToLong(storage::count).sum();
@@ -1053,14 +1062,20 @@ public final class WorldHost implements Interpreter.Host {
      * nur Erze. Ein falsches Ergebnis ohne Meldung ist der schlimmste Fall.
      */
     private List<Item> itemsOf(Value value) {
-        if (value instanceof Value.ItemValue item) {
-            return List.of(item.item());
+        if (value instanceof Value.Resource resource
+                && resource.kind() == ResourceKind.ITEM) {
+            return List.of(resource.item());
         }
         // Eine schon aufgelöste Auswahl — so kommt jeder Eintrag aus
         // storage.items() und crusher_1.items() daher. Ohne diese Zeile
         // scheiterte jede Schleife über einen Bestand an „aus dem Speicher
         // muss stehen, was bewegt wird", obwohl es dastand.
-        if (value instanceof Value.Selection selection) {
+        //
+        // Nach der Art gefragt wird trotzdem: Der Weg hierher steht in move
+        // und count fest, aber eine Flüssigkeitsauswahl als Gegenstandsliste
+        // zu lesen wäre ein Fehler, den erst ein Absturz zeigt.
+        if (value instanceof Value.Selection selection
+                && selection.kind() == ResourceKind.ITEM) {
             return selection.items();
         }
         // „all" sucht nichts aus: eine leere Liste heißt hier „kein Filter",
@@ -1125,8 +1140,6 @@ public final class WorldHost implements Interpreter.Host {
         return switch (value) {
             case Value.Request request when request.hasAmount() -> request.amount();
             case Value.Selection selection when selection.amount() > 0 -> selection.amount();
-            case Value.FluidSelection selection when selection.amount() > 0 ->
-                    selection.amount();
             default -> Long.MAX_VALUE;
         };
     }

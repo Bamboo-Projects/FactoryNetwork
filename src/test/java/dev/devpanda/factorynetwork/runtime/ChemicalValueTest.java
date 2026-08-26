@@ -89,7 +89,7 @@ class ChemicalValueTest {
     @DisplayName("it.chemical nennt die Sorte eines Postens")
     void itChemicalNamesTheKind() {
         TestHost host = new TestHost();
-        host.stored.add(new Value.ChemicalSelection(List.of("mekanism:hydrogen"), 500));
+        host.stored.add(Value.Selection.ofChemicals(List.of("mekanism:hydrogen"), 500));
         Interpreter interpreter = interpreterFor("""
                 fn zeigen() {
                     for posten in storage.items() {
@@ -112,7 +112,7 @@ class ChemicalValueTest {
         // Dieselbe Regel wie bei it.item: Sich für die erste zu entscheiden
         // wäre geraten.
         TestHost host = new TestHost();
-        host.stored.add(new Value.ChemicalSelection(
+        host.stored.add(Value.Selection.ofChemicals(
                 List.of("mekanism:hydrogen", "mekanism:oxygen"), 500));
         Interpreter interpreter = interpreterFor("""
                 fn zeigen() {
@@ -128,9 +128,9 @@ class ChemicalValueTest {
     @DisplayName("Eine Chemikalie übersteht das Speichern eines Ablaufs")
     void achemicalSurvivesSavingAflow() {
         // Ein Ablauf, der auf ein Ereignis wartet, wird gespeichert. Ohne
-        // Zwilling im Codec verlöre ein wartender Ablauf still seinen Wert.
-        Value single = new Value.ChemicalValue("mekanism:hydrogen");
-        Value selection = new Value.ChemicalSelection(
+        // Eintrag im Codec verlöre ein wartender Ablauf still seinen Wert.
+        Value single = Value.Resource.ofChemical("mekanism:hydrogen");
+        Value selection = Value.Selection.ofChemicals(
                 List.of("mekanism:hydrogen", "mekanism:oxygen"), 500);
 
         assertEquals(single, dev.devpanda.factorynetwork.runtime.flow.ValueCodec.read(
@@ -145,6 +145,6 @@ class ChemicalValueTest {
         // describe() geht über Chemicals.nameOf, und das gibt ohne die Mod
         // die Kennung zurück. Erfunden wird nichts.
         assertEquals("mekanism:hydrogen",
-                new Value.ChemicalValue("mekanism:hydrogen").describe());
+                Value.Resource.ofChemical("mekanism:hydrogen").describe());
     }
 }
