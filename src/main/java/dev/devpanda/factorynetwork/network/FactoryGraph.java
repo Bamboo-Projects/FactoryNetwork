@@ -2,7 +2,6 @@ package dev.devpanda.factorynetwork.network;
 
 import dev.devpanda.factorynetwork.block.CableBlock;
 import dev.devpanda.factorynetwork.block.CableColour;
-import dev.devpanda.factorynetwork.block.ConnectorBlock;
 import dev.devpanda.factorynetwork.block.ControllerExtensionBlock;
 import dev.devpanda.factorynetwork.block.DisplayBlock;
 import dev.devpanda.factorynetwork.block.DriveBlock;
@@ -418,12 +417,6 @@ public final class FactoryGraph {
      * nicht zwei.
      */
     private static DevicePos deviceAt(BlockState state, BlockPos pos) {
-        if (state.getBlock() instanceof ConnectorBlock) {
-            // Auch der eigene Block hat eine Fläche: Sein FACING ist sie.
-            // Damit läuft danach jeder Zugriff auf einen Anschluss über Ort
-            // und Seite — gleich, in welcher Bauform er sitzt.
-            return DevicePos.of(pos, ConnectorBlock.machineSide(state));
-        }
         if (state.getBlock() instanceof RackBlock) {
             return DevicePos.of(RackBlock.baseOf(state, pos));
         }
@@ -443,9 +436,9 @@ public final class FactoryGraph {
     }
 
     private static Consumer consumerAt(BlockState state) {
-        if (state.getBlock() instanceof ConnectorBlock) {
-            return Consumer.CONNECTOR;
-        }
+        // Ein Anschluss steht hier nicht mehr: Er ist kein Block, sondern
+        // ein Teil an einer Kabelfläche, und den findet die Suche im
+        // Kabelzweig.
         if (state.getBlock() instanceof DriveBlock) {
             return Consumer.DRIVE;
         }

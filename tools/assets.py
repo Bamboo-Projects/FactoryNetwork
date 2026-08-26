@@ -367,13 +367,6 @@ def blockstates():
         "up": {"x": 270},
         "down": {"x": 90},
     }
-    variants = {}
-    for direction, rotation in facing.items():
-        entry = {"model": block("connector")}
-        entry.update(rotation)
-        variants["facing=" + direction] = entry
-    write(A + "/blockstates/connector.json", {"variants": variants})
-
     # Display hängt flach an der Wand, in vier Richtungen — und weiß, an
     # welchen Seiten eine zweite Tafel anschließt. Vier Richtungen mal
     # sechzehn Nachbarschaften sind vierundsechzig Zustände; das klingt nach
@@ -649,9 +642,12 @@ def models():
 
     # Die Anzeigetafel fehlt hier: Ihr Blockmodell heißt display_0, weil es
     # sechzehn davon gibt. Sie steht weiter oben, wo die sechzehn entstehen.
-    for name in ("controller", "controller_extension", "fabricator", "connector",
+    for name in ("controller", "controller_extension", "fabricator",
                  "terminal", "drive", "press"):
         write(A + "/models/item/" + name + ".json", {"parent": block(name)})
+    # Der Anschluss hat keinen eigenen Block mehr. In der Hand zeigt er das
+    # Teil, das er wird — die Platte, die an eine Kabelfläche geht.
+    write(A + "/models/item/connector.json", {"parent": block("connector_part_north")})
     write(A + "/models/item/label_gun.json", {
         "parent": "minecraft:item/handheld",
         "textures": {"layer0": MOD + ":item/label_gun"},
@@ -790,7 +786,7 @@ def loot_and_recipes():
             ],
         }],
     })
-    for name in ("controller", "controller_extension", "fabricator", "connector",
+    for name in ("controller", "controller_extension", "fabricator",
                  "terminal", "display", "drive", "press", "router", "burner"):
         write(D + "/loot_table/blocks/" + name + ".json", {
             "type": "minecraft:block",
@@ -1261,7 +1257,7 @@ def loot_and_recipes():
         "values": [MOD + ":controller", MOD + ":controller_extension",
                    MOD + ":fabricator",
                    MOD + ":cable", MOD + ":dense_cable",
-                   MOD + ":connector", MOD + ":terminal", MOD + ":display",
+                   MOD + ":terminal", MOD + ":display",
                    MOD + ":drive", MOD + ":press", MOD + ":router",
                    MOD + ":server_rack", MOD + ":burner",
                    MOD + ":crystal_ore",

@@ -1547,3 +1547,34 @@ deckt ihn ab.
 Das Lehrstück ist nicht die Regel, sondern wie sie starb: Sie war aus der
 Geometrie hergeleitet und nie angesehen worden. Eine Entscheidung über das
 Aussehen hält so lange, bis jemand hinsieht.
+
+### Zwei Bauformen waren eine zu viel (seit dem 26.08.)
+
+Weg B hat den Anschluss ans Kabel gebracht und den eigenen Block stehen
+lassen — bewusst, damit jeder Schnitt für sich grün bleibt. Nach der ersten
+Runde Spielen fiel die Entscheidung, ihn ganz auszubauen.
+
+Der Gewinn steht in `Connectors`: Vier Methoden hatten je zwei Zweige, einen
+für jede Bauform. Jetzt ist jede eine Zeile. Dieselbe Halbierung zieht sich
+durch `FactoryGraph` (der Block war ein eigener Gerätefall), durch Jade (zwei
+Anmeldungen statt vier) und durch den Client (der Farbhandler für sein
+Lämpchen entfällt ersatzlos — das Teil am Kabel färbt der Renderer).
+
+**Der Umzug der Prüfläufe war der eigentliche Aufwand, und er ging in zwei
+Phasen.** Erst zogen vierzig Teststellen auf Kabel mit Anschluss um, während
+der Block noch stand: So ließ sich der Umzug für sich prüfen. Erst danach fiel
+der Block, und dieser Schritt war eine reine Löschung mit grünem Prüflauf.
+
+Der Trick, der das billig machte: **Der Ersatz steht an derselben Stelle mit
+derselben Blickrichtung.** Ein Connectorblock bei (2,1,0) mit Blick nach
+Norden wird ein Kabel bei (2,1,0) mit einem Anschluss an der Nordfläche. Keine
+Kiste zieht um, kein Positionsausdruck ändert sich, und `graph.connectors()`
+liefert dieselbe Position wie vorher — nur mit einer Seite dazu.
+
+Vier von 309 Prüfläufen fielen trotzdem, und alle vier aus demselben Grund:
+**Die Ersatzstelle ist ein Kabel und leitet weiter.** Ein Connector war eine
+Sackgasse. Daran hingen die Farbtrennung (ein farbloses Kabel verband Grün und
+Rot), die Kanalkapazität (ein dünnes Kabel deckelte eine dichte Strecke auf
+sechzehn) und ein Anbau-Prüflauf, dessen Kabelarm quer durch den Grundaufbau
+lief. Alle drei waren keine Testfehler, sondern Stellen, an denen der Prüflauf
+etwas anderes geprüft hätte, als er behauptet.

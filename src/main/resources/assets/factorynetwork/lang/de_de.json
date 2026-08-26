@@ -5,7 +5,7 @@
   "block.factorynetwork.gateway": "Gateway",
   "block.factorynetwork.controller": "Controller",
   "block.factorynetwork.cable": "Kabel",
-  "block.factorynetwork.connector": "Connector",
+  "item.factorynetwork.connector": "Connector",
   "block.factorynetwork.terminal": "Terminal",
   "message.factorynetwork.connector.no_room": "Dort ist kein Platz für einen Anschluss.",
   "message.factorynetwork.connector.unnamed": "Dieser Connector hat noch keinen Namen.",

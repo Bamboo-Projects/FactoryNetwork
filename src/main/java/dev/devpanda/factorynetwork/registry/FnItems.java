@@ -79,7 +79,16 @@ public final class FnItems {
     /** Kreuzung für dicke Kabel. */
     public static final DeferredItem<BlockItem> ROUTER = ITEMS.registerSimpleBlockItem(FnBlocks.ROUTER);
 
-    public static final DeferredItem<BlockItem> CONNECTOR = ITEMS.registerSimpleBlockItem(FnBlocks.CONNECTOR);
+    /**
+     * Der Anschluss — ein Gegenstand ohne eigenen Block.
+     *
+     * <p>Er wird an eine Fläche eines Kabels gesetzt und nicht daneben; was
+     * dabei entsteht, ist ein Teil in der BlockEntity des Kabels. Bis zum
+     * 26.08. gab es dazu einen eigenen Block, der dasselbe konnte und einen
+     * Platz mehr brauchte.
+     */
+    public static final DeferredItem<Item> CONNECTOR = ITEMS.register("connector",
+            () -> new Item(new Item.Properties()));
     public static final DeferredItem<BlockItem> TERMINAL = ITEMS.registerSimpleBlockItem(FnBlocks.TERMINAL);
     public static final DeferredItem<BlockItem> DISPLAY = ITEMS.registerSimpleBlockItem(FnBlocks.DISPLAY);
 

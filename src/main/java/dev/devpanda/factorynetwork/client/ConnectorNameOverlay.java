@@ -2,7 +2,6 @@ package dev.devpanda.factorynetwork.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.devpanda.factorynetwork.FactoryNetwork;
-import dev.devpanda.factorynetwork.block.entity.ConnectorBlockEntity;
 import dev.devpanda.factorynetwork.item.LabelGunItem;
 import dev.devpanda.factorynetwork.registry.FnItems;
 import net.minecraft.client.Camera;
@@ -168,10 +167,8 @@ public final class ConnectorNameOverlay {
                     if (entity.getBlockPos().distSqr(center) > RANGE * RANGE) {
                         continue;
                     }
-                    if (entity instanceof ConnectorBlockEntity connector) {
-                        found.put(connector.getBlockPos(), List.of(connector.part()));
-                    } else if (entity instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus
-                            && bus.hasParts()) {
+                    if (entity instanceof dev.devpanda.factorynetwork.block.entity
+                            .CableBusBlockEntity bus && bus.hasParts()) {
                         // Nach Flächen geordnet, weil die Karte eine EnumMap
                         // ist: Dieselben sechs Namen stehen immer in
                         // derselben Reihenfolge übereinander.

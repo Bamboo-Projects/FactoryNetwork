@@ -7,7 +7,6 @@ import dev.devpanda.factorynetwork.block.DriveBlock;
 import dev.devpanda.factorynetwork.block.PressBlock;
 import dev.devpanda.factorynetwork.block.RackBlock;
 import dev.devpanda.factorynetwork.block.RouterBlock;
-import dev.devpanda.factorynetwork.block.ConnectorBlock;
 import dev.devpanda.factorynetwork.block.BurnerBlock;
 import dev.devpanda.factorynetwork.block.CreativeSourceBlock;
 import dev.devpanda.factorynetwork.block.ControllerBlock;
@@ -151,10 +150,6 @@ public final class FnBlocks {
     /** Nimmt Speicherzellen auf — der Lagerraum des Netzes. */
     public static final DeferredBlock<Block> DRIVE = BLOCKS.register("drive",
             () -> new DriveBlock(machineProperties()));
-
-    /** Gibt einer angrenzenden Maschine einen Namen im Netzwerk. */
-    public static final DeferredBlock<Block> CONNECTOR = BLOCKS.register("connector",
-            () -> new ConnectorBlock(machineProperties()));
 
     /** Zeigt an der Wand, was im Netz vorgeht. */
     public static final DeferredBlock<Block> DISPLAY = BLOCKS.register("display",

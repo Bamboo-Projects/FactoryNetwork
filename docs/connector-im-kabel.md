@@ -298,3 +298,36 @@ passt, und die drei Antworten sind verschieden:
   (`btwopartsAreOnePointInThePicture`).
 
 Damit ist Weg B vollständig.
+
+---
+
+## 9. Der eigene Block ist weg (26.08.)
+
+Nach der ersten Runde Spielen: **„entfern den vollständigen Block. Es gibt nur
+den kleine version davon die an das Kabel geht."**
+
+Der Connectorblock konnte dasselbe wie das Teil und brauchte einen Platz mehr.
+Solange beide Bauformen nebeneinander standen, kostete das an jeder Stelle
+eine Fallunterscheidung — und an jeder Stelle die Frage, welche der beiden
+gemeint ist.
+
+**Was mit ihm verschwindet:** `ConnectorBlock`, `ConnectorBlockEntity`, sein
+Blockzustand, sein Modell, seine Loot-Table, sein Eintrag im
+Spitzhacken-Tag, der Farbhandler für sein Lämpchen und zwei Jade-Anmeldungen.
+`Connectors` kennt nur noch eine Bauform: vier Methoden, die vorher je zwei
+Zweige hatten, sind jetzt je eine Zeile. Der Gegenstand heißt weiter
+`factorynetwork:connector` und ist jetzt ein gewöhnlicher `Item`.
+
+**Was bleibt:** {@code Connectors.at(level, pos)} ohne Seite. Es war als
+Übergang gedacht und ist keiner: Wer nur einen Punkt im Raum hat — der
+Analysator, die Beschriftungspistole, das Namensfenster —, bekommt den
+Anschluss, wenn dort genau einer sitzt.
+
+**Der Umzug der Prüfläufe** lief in einer eigenen Vorstufe (Commit davor):
+Vierzig Stellen setzen statt eines Connectorblocks ein Kabel mit einem
+Anschluss, an derselben Stelle und mit derselben Blickrichtung — deshalb blieb
+jede Kiste liegen, wo sie lag. Vier Prüfläufe hingen daran, dass ein Connector
+eine Sackgasse ist; sie stehen in ihrem Commit einzeln beschrieben.
+
+**Bestehende Welten verlieren ihre Connectorblöcke samt Namen.** Das war beim
+Wechsel auf Weg B schon so angekündigt und ist mit dem Ausbau endgültig.

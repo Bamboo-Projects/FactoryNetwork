@@ -1,7 +1,6 @@
 package dev.devpanda.factorynetwork.registry;
 
 import dev.devpanda.factorynetwork.FactoryNetwork;
-import dev.devpanda.factorynetwork.block.entity.ConnectorBlockEntity;
 import dev.devpanda.factorynetwork.block.entity.ControllerBlockEntity;
 import dev.devpanda.factorynetwork.block.entity.DisplayBlockEntity;
 import dev.devpanda.factorynetwork.block.entity.DriveBlockEntity;
@@ -44,11 +43,6 @@ public final class FnBlockEntities {
                     .of(dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity::new,
                             dev.devpanda.factorynetwork.registry.FnBlocks.CABLE.get(),
                             dev.devpanda.factorynetwork.registry.FnBlocks.DENSE_CABLE.get())
-                    .build(null));
-
-    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<ConnectorBlockEntity>> CONNECTOR =
-            BLOCK_ENTITIES.register("connector", () -> BlockEntityType.Builder
-                    .of(ConnectorBlockEntity::new, FnBlocks.CONNECTOR.get())
                     .build(null));
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<PressBlockEntity>> PRESS =

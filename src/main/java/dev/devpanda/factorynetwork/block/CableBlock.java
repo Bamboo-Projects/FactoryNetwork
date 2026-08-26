@@ -241,8 +241,7 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
         // Alles, was zum Netz gehört, bekommt einen Arm. Laufwerk und
         // Serverschrank fehlten hier: Die Suche findet sie über die
         // Nachbarschaft, aber im Bild hing das Kabel daneben in der Luft.
-        return neighbour.getBlock() instanceof ConnectorBlock
-                || neighbour.getBlock() instanceof RouterBlock
+        return neighbour.getBlock() instanceof RouterBlock
                 || neighbour.getBlock() instanceof ControllerBlock
                 || neighbour.getBlock() instanceof TerminalBlock
                 || neighbour.getBlock() instanceof DisplayBlock
@@ -346,7 +345,7 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
     protected net.minecraft.world.ItemInteractionResult useItemOn(
             ItemStack stack, BlockState state, Level level, BlockPos pos, Player player,
             net.minecraft.world.InteractionHand hand, BlockHitResult hit) {
-        if (!stack.is(dev.devpanda.factorynetwork.registry.FnBlocks.CONNECTOR.get().asItem())
+        if (!stack.is(dev.devpanda.factorynetwork.registry.FnItems.CONNECTOR.get())
                 || !(level.getBlockEntity(pos) instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus)) {
             return net.minecraft.world.ItemInteractionResult
                     .PASS_TO_DEFAULT_BLOCK_INTERACTION;
@@ -385,7 +384,8 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
             return;
         }
         if (!player.getAbilities().instabuild) {
-            popResource(level, pos, new ItemStack(dev.devpanda.factorynetwork.registry.FnBlocks.CONNECTOR.get()));
+            popResource(level, pos,
+                        new ItemStack(dev.devpanda.factorynetwork.registry.FnItems.CONNECTOR.get()));
         }
         // Die Fläche ist wieder frei: Vielleicht will das Kabel dorthin
         // jetzt einen Arm.
@@ -408,7 +408,8 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
         if (!state.is(newState.getBlock())) {
             int found = partsOf(level, pos).size();
             for (int i = 0; i < found; i++) {
-                popResource(level, pos, new ItemStack(dev.devpanda.factorynetwork.registry.FnBlocks.CONNECTOR.get()));
+                popResource(level, pos,
+                        new ItemStack(dev.devpanda.factorynetwork.registry.FnItems.CONNECTOR.get()));
             }
         }
         super.onRemove(state, level, pos, newState, movedByPiston);

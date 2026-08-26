@@ -5,7 +5,6 @@
     "factorynetwork:fabricator",
     "factorynetwork:cable",
     "factorynetwork:dense_cable",
-    "factorynetwork:connector",
     "factorynetwork:terminal",
     "factorynetwork:display",
     "factorynetwork:drive",

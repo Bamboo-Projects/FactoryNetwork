@@ -83,28 +83,26 @@ sich mit allem. So gehen mehrere Netze durch dieselbe Wand.
 
 ## Connector
 
-Er gibt der Maschine dahinter einen Namen im Netz. Seine Vorderseite zeigt
-dorthin, wo du beim Setzen hingeklickt hast — und **an genau dieser Seite**
-muss die Maschine annehmen, was du ihr schicken willst.
+**Der Connector ist kein Block, sondern ein Teil am Kabel.** Rechtsklick mit
+ihm in der Hand auf eine Kabelfläche setzt ihn dorthin; er gibt dann der
+Maschine an genau dieser Fläche einen Namen im Netz — und **an genau dieser
+Seite** muss sie annehmen, was du ihr schickst.
 
-### Zwei Bauformen
+Ein Kabelblock trägt bis zu sechs davon, einen je Fläche. Eine Maschinenwand
+kostet damit **einen** Block. Jeder Anschluss hat seinen eigenen Namen, seinen
+eigenen Kanal und seine eigene Maschine.
 
-Du kannst ihn **als eigenen Block** neben das Kabel setzen — oder **an eine
-Fläche des Kabels selbst**. Rechtsklick mit dem Connector in der Hand auf ein
-Kabel setzt ihn an die getroffene Fläche.
-
-Der Unterschied ist Platz: Ein Kabelblock trägt bis zu sechs Anschlüsse, einen
-je Fläche. Eine Maschinenwand kostet damit **einen** Block, wo sonst sechs
-stehen. Jeder Anschluss hat seinen eigenen Namen, seinen eigenen Kanal und
-seine eigene Maschine.
+Das Kabel wächst einen Arm zu jedem seiner Anschlüsse — an einer Leitung
+entsteht so eine sichtbare Kreuzung, und man sieht auf einen Blick, wo etwas
+angeschlossen ist.
 
 **Solange du den Connector in der Hand hast, zeichnet ein Umriss die Fläche,
 an die er ginge** — weiß, wenn dort Platz ist, rot, wenn nicht. Ein Kabel ist
 schmal, und ohne die Vorschau zielt man leicht auf die Fläche daneben.
 
 Auf eine Fläche, an der das Kabel weiterläuft, geht keiner: Dort ist kein
-Platz. Willst du an dieser Stelle trotzdem den eigenen Block setzen, klicke
-**schleichend** — dann geht der Connector wie gewohnt in die Lücke daneben.
+Platz. Führe die Leitung dann außen herum oder setze den Anschluss an eine
+andere Fläche.
 
 Wieder abnehmen: **schleichend mit leerer Hand** auf den Anschluss klicken.
 Er fällt heraus. Beim Abbauen des Kabels fallen alle seine Anschlüsse mit.

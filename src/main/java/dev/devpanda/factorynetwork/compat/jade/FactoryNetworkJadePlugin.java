@@ -69,8 +69,6 @@ public class FactoryNetworkJadePlugin implements IWailaPlugin {
         // Dieselbe Falle wie beim Kabel eine Handvoll Zeilen weiter oben.
         // Wer hier einen Anbieter hinzufügt, muss <b>beide</b> Seiten
         // anmelden: register für die Daten, registerClient für die Zeilen.
-        registration.registerBlockDataProvider(ConnectorInfo.INSTANCE,
-                dev.devpanda.factorynetwork.block.ConnectorBlock.class);
         registration.registerBlockDataProvider(ConnectorInfo.INSTANCE, CableBlock.class);
     }
 
@@ -87,10 +85,6 @@ public class FactoryNetworkJadePlugin implements IWailaPlugin {
                 dev.devpanda.factorynetwork.block.RackBlock.class);
         registration.registerBlockComponent(BurnerInfo.INSTANCE,
                 dev.devpanda.factorynetwork.block.BurnerBlock.class);
-        registration.registerBlockComponent(ConnectorInfo.INSTANCE,
-                dev.devpanda.factorynetwork.block.ConnectorBlock.class);
-        // Auch am Kabel: Dort sitzen die Anschlüsse seit dem Kabelbus, und
-        // ohne diese Zeile sagte Jade über sie kein Wort.
         registration.registerBlockComponent(ConnectorInfo.INSTANCE, CableBlock.class);
         registration.registerBlockComponent(ControllerInfo.INSTANCE,
                 dev.devpanda.factorynetwork.block.ControllerBlock.class);

@@ -15,14 +15,14 @@ import org.jetbrains.annotations.Nullable;
  * Kabelblock bis zu sechs trägt, ist es die falsche Frage: Sie hat keine
  * Antwort ohne eine Seite.
  *
- * <p>Diese Klasse ist die richtige Frage, und sie beantwortet daneben die
- * alte, solange sie noch gestellt wird: {@link #at(BlockGetter, BlockPos)}
- * gibt den Anschluss, wenn es genau einen gibt.
+ * <p><b>Es gibt nur noch eine Bauform</b> (26.08.): den Anschluss an einer
+ * Fläche eines Kabels. Der eigene Connectorblock ist weg — er konnte
+ * dasselbe und brauchte einen Platz mehr.
  *
- * <p>Beide Bauformen stehen nebeneinander — der Connectorblock mit einem
- * Anschluss und der Kabelblock mit bis zu sechs. Das ist keine Unentschiedenheit,
- * sondern der Weg: Jeder Schnitt bleibt grün, und die alten Welten verlieren
- * ihre Connectoren erst, wenn der alte Block wirklich verschwindet.
+ * <p>{@link #at(BlockGetter, BlockPos)} ohne Seite bleibt trotzdem: Wer nur
+ * einen Punkt im Raum hat — der Analysator, die Beschriftungspistole, das
+ * Namensfenster —, bekommt den Anschluss, wenn dort genau einer sitzt.
+ * Sitzen zwei, gibt es keine Antwort; geraten wird nicht.
  */
 public final class Connectors {
 
@@ -36,14 +36,8 @@ public final class Connectors {
      * eine Blickrichtung und keine sechs.
      */
     public static @Nullable ConnectorPart at(BlockGetter level, BlockPos pos, Direction side) {
-        var entity = level.getBlockEntity(pos);
-        if (entity instanceof CableBusBlockEntity bus) {
-            return bus.partAt(side);
-        }
-        if (entity instanceof ConnectorBlockEntity single) {
-            return single.part().facing() == side ? single.part() : null;
-        }
-        return null;
+        return level.getBlockEntity(pos) instanceof CableBusBlockEntity bus
+                ? bus.partAt(side) : null;
     }
 
     /**
@@ -54,29 +48,20 @@ public final class Connectors {
      * und die Stelle gehört auf Ort und Seite umgestellt.
      */
     public static @Nullable ConnectorPart at(BlockGetter level, BlockPos pos) {
-        var entity = level.getBlockEntity(pos);
-        if (entity instanceof ConnectorBlockEntity single) {
-            return single.part();
-        }
-        if (entity instanceof CableBusBlockEntity bus && bus.parts().size() == 1) {
-            return bus.parts().values().iterator().next();
-        }
-        return null;
+        return level.getBlockEntity(pos) instanceof CableBusBlockEntity bus
+                && bus.parts().size() == 1
+                ? bus.parts().values().iterator().next() : null;
     }
 
     /** Ob an dieser Stelle überhaupt ein Anschluss sitzt. */
     public static boolean any(BlockGetter level, BlockPos pos) {
-        var entity = level.getBlockEntity(pos);
-        return entity instanceof ConnectorBlockEntity
-                || (entity instanceof CableBusBlockEntity bus && bus.hasParts());
+        return level.getBlockEntity(pos) instanceof CableBusBlockEntity bus
+                && bus.hasParts();
     }
 
     /** Wie viele Anschlüsse an dieser Stelle sitzen. */
     public static int count(BlockGetter level, BlockPos pos) {
-        var entity = level.getBlockEntity(pos);
-        if (entity instanceof ConnectorBlockEntity) {
-            return 1;
-        }
-        return entity instanceof CableBusBlockEntity bus ? bus.parts().size() : 0;
+        return level.getBlockEntity(pos) instanceof CableBusBlockEntity bus
+                ? bus.parts().size() : 0;
     }
 }

@@ -1,6 +1,5 @@
 package dev.devpanda.factorynetwork.block.entity;
 
-import dev.devpanda.factorynetwork.block.ConnectorBlock;
 import dev.devpanda.factorynetwork.lang.DeviceProfile;
 import dev.devpanda.factorynetwork.lang.Side;
 import net.minecraft.core.BlockPos;

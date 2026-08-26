@@ -3,7 +3,7 @@ package dev.devpanda.factorynetwork.client.render;
 import dev.devpanda.factorynetwork.FactoryNetwork;
 import dev.devpanda.factorynetwork.block.CableBlock;
 import dev.devpanda.factorynetwork.block.CableShapes;
-import dev.devpanda.factorynetwork.registry.FnBlocks;
+import dev.devpanda.factorynetwork.registry.FnItems;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.RenderType;
@@ -74,7 +74,7 @@ public final class PartPlacementPreview {
      * entscheidet Minecraft und nicht wir.
      */
     private static boolean holdsConnector(Player player) {
-        var connector = FnBlocks.CONNECTOR.get().asItem();
+        var connector = FnItems.CONNECTOR.get();
         return player.getMainHandItem().is(connector)
                 || player.getOffhandItem().is(connector);
     }
