@@ -154,11 +154,44 @@ Block je Maschine.
 
 ---
 
-## 7. Was zu entscheiden ist
+## 7. Entschieden: B (26.08.)
 
-**A oder B.** A ist die kleine, sichere Antwort auf die gestellte Frage; B ist
-AE2s Modell in ganz, kostet die 106 Stellen und ist **jetzt billiger als je
-wieder**.
+**Wie bei AE2**, auf Wunsch des Projektinhabers. Die Empfehlung war A; die
+Entscheidung ist B, und das Argument dafür steht in Abschnitt 4: Bestehende
+Welten brechen so oder so, und heute ist das billig.
 
-Wer sich nicht entscheiden will, baut A und schaut. Das ist keine Ausflucht:
-A ist auf dem Weg zu B und nicht daneben.
+Damit gilt der Abschnitt 6 nicht — er beschrieb A. Wie B zerfällt, steht
+hier.
+
+---
+
+## 8. Wie B in Schnitte zerfällt
+
+Die Messung in Abschnitt 3 sagt, wo der Preis liegt: an den Stellen, die
+{@code getBlockEntity(pos)} fragen und genau einen Connector erwarten. Es sind
+**einunddreißig** echte Zugriffe, zweiundzwanzig weitere Nennungen stehen in
+den Prüfläufen. Die Schnitte sind danach geordnet, wie viele davon sie
+anfassen.
+
+1. ~~**Das Teil vom Block trennen.**~~ **Gebaut** (26.08.).
+   `ConnectorPart` ist alles, was ein Connector ist — Name, Kanalbedarf,
+   Redstone, der Griff auf die Maschine —, ohne alles, was ein Block ist. Wer
+   es hält, steht in `ConnectorPart.Host`; heute ist das die
+   `ConnectorBlockEntity` mit genau einem. **Keine der einunddreißig Stellen
+   angefasst**, kein Verhalten geändert; belegt durch den unveränderten
+   Prüflauf.
+2. **Der Kabelblock trägt Teile.** Eine `CableBusBlockEntity` mit bis zu sechs
+   `ConnectorPart`, dazu `Connectors.at(level, pos, seite)` als der eine Weg,
+   einen Anschluss zu finden. Die einunddreißig Stellen ziehen um — die
+   meisten mechanisch, weil sie den Anschluss ohnehin über den Graphen
+   bekommen.
+3. **Ein Gerät ist Ort und Seite.** Der Graph merkt sich `(pos, seite)` statt
+   `pos`. Danach sind zwei Anschlüsse an einem Block unterscheidbar, und die
+   drei schweren Stellen aus Abschnitt 3 — Redstone, Benennen,
+   `machineSide(state)` — sind zu lösen.
+4. **Setzen, Treffen, Aussehen.** Ein Connector wird an eine Kabelfläche
+   gesetzt statt daneben; Form und Modell setzen sich aus Kabel und Teilen
+   zusammen. `CableLayoutTest` hält beides zusammen.
+
+Nach Schnitt 2 gibt es Anschlüsse im Kabelblock; nach Schnitt 3 mehrere je
+Block; nach Schnitt 4 sieht man es und trifft es.

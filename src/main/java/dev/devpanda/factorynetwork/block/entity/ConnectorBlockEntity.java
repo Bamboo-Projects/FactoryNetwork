@@ -6,64 +6,64 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.items.IItemHandler;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Merkt sich den Namen, den die Label-Gun vergeben hat, und findet das
- * Inventar der Maschine dahinter.
+ * Ein Block, der genau einen Anschluss trägt.
+ *
+ * <p><b>Was ein Connector ist, steht in {@link ConnectorPart}</b> — Name,
+ * Kanalbedarf, Redstone und der Griff auf die Maschine dahinter. Hier steht
+ * nur, was ein <i>Block</i> ist: speichern, laden, dem Client Bescheid geben.
+ *
+ * <p>Die Trennung ist der erste Schritt zum Kabelblock mit sechs Anschlüssen
+ * ({@code connector-im-kabel.md}, Weg B). Solange sie hier steht, ändert sie
+ * nichts: Dieser Block hält ein Teil, es zeigt dorthin, wohin sein
+ * {@code FACING} zeigt, und jede Frage von außen wird durchgereicht.
  */
-public class ConnectorBlockEntity extends BlockEntity {
+public class ConnectorBlockEntity extends BlockEntity implements ConnectorPart.Host {
 
-    private static final String KEY_LABEL = "Label";
-    private static final String KEY_COST = "ChannelCost";
-    private static final String KEY_REDSTONE = "Redstone";
-
-    private String label = "";
-
-    /**
-     * Wie viele Kanäle dieses Gerät braucht.
-     *
-     * <p>Heute immer einer. Als Feld statt als feste Eins, damit ein Gerät
-     * mit höherem Bedarf später keine Wanderung durch den Pfadcode nach sich
-     * zieht — das kostet jetzt nichts und spart sie dann.
-     */
-    private int channelCost = 1;
-
-    /**
-     * Was dieser Connector an Redstone ausgibt.
-     *
-     * <p>Null heißt: gibt nichts aus. Das ist etwas anderes als „gibt Null
-     * aus" — ein Connector ohne Programm soll das Redstone daneben nicht
-     * überschreiben.
-     */
-    private int emittedRedstone;
+    private final ConnectorPart part = new ConnectorPart(this);
 
     public ConnectorBlockEntity(BlockPos pos, BlockState state) {
         super(FnBlockEntities.CONNECTOR.get(), pos, state);
     }
 
-    public String label() {
-        return label;
+    /** Der Anschluss, den dieser Block trägt. */
+    public ConnectorPart part() {
+        return part;
     }
 
-    public int channelCost() {
-        return channelCost;
+    // ---- Was der Anschluss von seinem Block braucht ------------------------
+
+    @Override
+    public @Nullable Level level() {
+        return level;
     }
 
-    public int emittedRedstone() {
-        return emittedRedstone;
+    @Override
+    public BlockPos pos() {
+        return worldPosition;
     }
 
-    public void setEmittedRedstone(int strength) {
-        int clamped = Math.max(0, Math.min(15, strength));
-        if (clamped == emittedRedstone) {
-            return;
+    @Override
+    public Direction facing() {
+        return ConnectorBlock.machineSide(getBlockState());
+    }
+
+    @Override
+    public void partChanged() {
+        setChanged();
+        if (level != null) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
         }
-        emittedRedstone = clamped;
+    }
+
+    @Override
+    public void redstoneChanged() {
         setChanged();
         if (level != null) {
             // Nachbarn anstoßen, sonst merkt niemand die Änderung.
@@ -72,126 +72,70 @@ public class ConnectorBlockEntity extends BlockEntity {
         }
     }
 
-    public void setChannelCost(int cost) {
-        this.channelCost = Math.max(1, cost);
-        setChanged();
+    // ---- Durchgereicht -----------------------------------------------------
+
+    public String label() {
+        return part.label();
     }
 
     public void setLabel(String label) {
-        this.label = label == null ? "" : label.trim();
-        setChanged();
-        if (level != null) {
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
-        }
+        part.setLabel(label);
     }
 
-    /** Das Inventar der Maschine, auf die der Connector zeigt. */
-    /**
-     * Das <b>ganze</b> Inventar der Maschine, ohne Rücksicht auf Seiten.
-     *
-     * <p>Gebraucht für {@code slots(…)}: Ein Anschluss je Maschine soll
-     * reichen, und welches Fach gemeint ist, entscheidet der Code. Die
-     * seitenbezogene Fassung darüber bleibt die Vorgabe für alles andere —
-     * dort hält die Maschine ihre eigenen Regeln.
-     */
+    public int channelCost() {
+        return part.channelCost();
+    }
+
+    public void setChannelCost(int cost) {
+        part.setChannelCost(cost);
+    }
+
+    public int emittedRedstone() {
+        return part.emittedRedstone();
+    }
+
+    public void setEmittedRedstone(int strength) {
+        part.setEmittedRedstone(strength);
+    }
+
     public @Nullable IItemHandler machineInventoryAll() {
-        if (level == null) {
-            return null;
-        }
-        Direction facing = ConnectorBlock.machineSide(getBlockState());
-        BlockPos target = worldPosition.relative(facing);
-        if (!level.isLoaded(target)) {
-            return null;
-        }
-        return level.getCapability(Capabilities.ItemHandler.BLOCK, target, null);
-    }
-
-    /**
-     * Die BlockEntity der Maschine, oder {@code null}.
-     *
-     * <p>Gebraucht, um eine Maschine an ihrer <b>Art</b> zu erkennen und
-     * nicht an ihrem Namen: Ein Ofen heißt auf einem englischen Server anders
-     * als im deutschen Client, aber er ist überall dieselbe Klasse.
-     */
-    public @Nullable net.minecraft.world.level.block.entity.BlockEntity machineBlockEntity() {
-        if (level == null) {
-            return null;
-        }
-        Direction facing = ConnectorBlock.machineSide(getBlockState());
-        BlockPos target = worldPosition.relative(facing);
-        return level.isLoaded(target) ? level.getBlockEntity(target) : null;
+        return part.machineInventoryAll();
     }
 
     public @Nullable IItemHandler machineInventory() {
-        if (level == null) {
-            return null;
-        }
-        Direction facing = ConnectorBlock.machineSide(getBlockState());
-        BlockPos target = worldPosition.relative(facing);
-        if (!level.isLoaded(target)) {
-            return null;
-        }
-        return level.getCapability(Capabilities.ItemHandler.BLOCK, target, facing.getOpposite());
+        return part.machineInventory();
     }
 
-    /**
-     * Der Tank der Maschine, auf die der Connector zeigt.
-     *
-     * <p>Derselbe Nachbar, dieselbe Seite — nur eine andere Fähigkeit. Eine
-     * Maschine kann beides haben; welches gemeint ist, entscheidet die
-     * Auswahl im Programm, nicht der Connector.
-     */
     public @Nullable net.neoforged.neoforge.fluids.capability.IFluidHandler machineTank() {
-        if (level == null) {
-            return null;
-        }
-        Direction facing = ConnectorBlock.machineSide(getBlockState());
-        BlockPos target = worldPosition.relative(facing);
-        if (!level.isLoaded(target)) {
-            return null;
-        }
-        return level.getCapability(Capabilities.FluidHandler.BLOCK, target, facing.getOpposite());
+        return part.machineTank();
     }
 
-    /**
-     * Der Stromspeicher der Maschine, auf die der Connector zeigt.
-     *
-     * <p>Derselbe Nachbar, dieselbe Seite — dritte Fähigkeit. Gelesen wird er
-     * heute nur für das Zeigen im Editor; verteilt wird noch kein Strom.
-     */
     public @Nullable net.neoforged.neoforge.energy.IEnergyStorage machineEnergy() {
-        if (level == null) {
-            return null;
-        }
-        Direction facing = ConnectorBlock.machineSide(getBlockState());
-        BlockPos target = worldPosition.relative(facing);
-        if (!level.isLoaded(target)) {
-            return null;
-        }
-        return level.getCapability(Capabilities.EnergyStorage.BLOCK, target,
-                facing.getOpposite());
+        return part.machineEnergy();
     }
+
+    public @Nullable BlockEntity machineBlockEntity() {
+        return part.machineBlockEntity();
+    }
+
+    // ---- Speichern ---------------------------------------------------------
 
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-        label = tag.getString(KEY_LABEL);
-        channelCost = Math.max(1, tag.getInt(KEY_COST));
-        emittedRedstone = tag.getInt(KEY_REDSTONE);
+        part.load(tag);
     }
 
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
-        tag.putString(KEY_LABEL, label);
-        tag.putInt(KEY_COST, channelCost);
-        tag.putInt(KEY_REDSTONE, emittedRedstone);
+        part.save(tag);
     }
 
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         CompoundTag tag = super.getUpdateTag(registries);
-        tag.putString(KEY_LABEL, label);
+        tag.putString(ConnectorPart.KEY_LABEL, part.label());
         return tag;
     }
 
