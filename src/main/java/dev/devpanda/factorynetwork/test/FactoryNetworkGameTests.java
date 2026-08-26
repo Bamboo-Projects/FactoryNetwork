@@ -8842,6 +8842,50 @@ public final class FactoryNetworkGameTests {
                 .thenSucceed();
     }
 
+    /**
+     * Der Rückweg der Brücke: Was das Spiel weiß, steht neben den Dateien.
+     *
+     * <p>Hin funktioniert sie längst — wer in VS Code speichert, dessen
+     * Programm übernimmt der Controller. Zurück kam bisher nichts: Ein Fehler
+     * stand im Terminal, und wer nicht im Spiel war, sah eine Datei, die
+     * stumm nicht lief.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void thegameWritesWhatItKnowsNextToThefiles(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        // Ein Programm mit einem Gerätenamen, den es nicht gibt: Der
+        // Übersetzer warnt, und genau das soll draußen ankommen.
+        helper.assertTrue(entity.deploy("""
+                fn holen() {
+                    move 64 item:iron_ore from kist to depot
+                }"""), "Eine Warnung hält das Programm nicht auf");
+
+        helper.startSequence()
+                // Der Ordner entsteht erst beim ersten Blick, und der kommt
+                // im Sekundentakt.
+                .thenIdle(45)
+                .thenExecute(() -> {
+                    java.nio.file.Path folder = entity.programFilePath();
+                    helper.assertTrue(folder != null, "Der Ordner neben der Welt fehlt");
+
+                    var status = dev.devpanda.factorynetwork.lang.ProgramStatus.read(folder);
+                    helper.assertTrue(status.connectors().contains("quarry_output"),
+                            "Die Gerätenamen fehlen: " + status.connectors());
+
+                    var inMain = status.diagnostics().get("main.mf");
+                    helper.assertTrue(inMain != null && !inMain.isEmpty(),
+                            "Die Warnung fehlt: " + status.diagnostics());
+                    helper.assertTrue(inMain.get(0).message().contains("kist"),
+                            "und nennt nicht, worum es geht: " + inMain.get(0).message());
+                    helper.assertTrue(inMain.get(0).line() > 0,
+                            "ohne Zeile kann kein Editor sie anzeigen");
+                })
+                .thenSucceed();
+    }
+
     // ---- Der Anbau am Controller -------------------------------------------
 
     /**

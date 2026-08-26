@@ -209,7 +209,7 @@ Vorentscheidungen)
 
 | # | Was | Status | Wo | Größe | Blockiert durch |
 |---|---|---|---|---|---|
-| 4.1 | Sprachserver — Fehlerprüfung und Gerätenamen außerhalb des Spiels | E/F | `umsetzung.md:493` | groß | 4.2, dazu Umfang und Technik |
+| 4.1 | **Zum Teil gebaut** (26.08.): Der Controller schreibt `.fn-status.json` neben die Programmdateien — Fehler mit Datei, Zeile und Spalte, dazu die Namen der Connectoren und Anzeigen. VS Code trägt sie ein. Kein Port, kein neuer Zugang, keine neue Erlaubnis: Wer die Programmdateien sieht, sieht auch diese. **Offen bleibt der Serverfall** — dort kommt niemand an die Dateien, und dafür steht die Schnittstelle mit zwei Erlaubnisstufen weiter aus | E/F | `ProgramStatus`, `extension.js` | mittel | Umfang und Technik der Schnittstelle |
 | 4.2 | **Serverteil gebaut** (25.08.): `config/factorynetwork-server.toml` mit den Grenzen für Nutzercode. Ein Clientteil kommt mit der Brücke zu VS Code — leere Abschnitte auf Vorrat wären Fragen an den Betreiber, die niemand beantworten kann | F | `FnConfig` | klein | 4.1 |
 | 4.3 | ~~Projektweite Symbole~~ — **fertig**, in VS Code **und** im Spiel | | | | |
 | 4.4 | Die Logik steht zweimal da, gehalten durch `check.js` und den Export-Test | Z | `entscheidungen.md:2114` | — | bewusst |
@@ -288,7 +288,8 @@ andere schreibt der Spieler ein `recipe` ins Programm.
 auf, bewegt sich, wird gezählt und lagert in Chemikalienzellen. Ohne Mekanism
 läuft alles wie vorher.
 
-**Was jetzt oben steht:** die Handbuchseiten (6.1) und der Sprachserver (4.1).
+**Was jetzt oben steht:** die Handbuchseiten (6.1) und der Serverfall von 4.1
+— der Einzelspielerfall ist am 26.08. gebaut worden.
 Dazu drei benannte Schnitte aus dieser Nacht — Flüssigkeiten und Strom in
 einem `recipe`, Chemikalien in einem `recipe`, und ein Worker mit
 `filter chemical:…`. Und eine Frage, die seit dem 24.08. nur in

@@ -165,9 +165,10 @@ nützlich, wenn ein Name im Editor nicht auftaucht.
 | Netzwerk | Graph über Kabel, Speicher schlüsselbasiert, Kanäle je Strang |
 | Editor | Syntaxfarben, Fehler beim Tippen, Vervollständigung nach Stelle |
 | | Projekt aus mehreren Dateien, Ordner im Namen: `erz/brecher.mf` |
+| | VS Code zeigt die Fehler des Spiels und kennt die Gerätenamen |
 | | Anzeigenwand mit `scale`: große Schrift statt vieler Zeilen |
 | Anzeigen | Am Block und im Terminal, Knöpfe starten Abläufe |
-| Prüfung | 424 Einheitstests, 263 GameTests |
+| Prüfung | 429 Einheitstests, 264 GameTests |
 
 ## 3. Was noch nicht läuft
 
@@ -552,6 +553,30 @@ und Ziffern, also stehen die Dateien eines Ordners von selbst beieinander. Ein
 Klappbaum bräuchte einen Griff mehr für dieselbe Auskunft. Was nicht in die
 Spalte passt, wird vorn gekürzt — `…/schmelzen.mf` —, denn von rechts gekürzt
 sähen zwei Dateien desselben Ordners gleich aus.
+
+### Fehler und Gerätenamen in VS Code (seit dem 26.08.)
+
+Der Einzelspieler-Schnitt von Punkt 4.1. Der Controller schreibt
+`.fn-status.json` neben die Programmdateien: Fehler mit Datei, Zeile und
+Spalte, dazu die Namen der Connectoren und Anzeigen. Die Erweiterung liest sie
+und trägt beides ein.
+
+**Kein neuer Zugang.** Wer die Programmdateien sieht, sieht auch diese — die
+Schnittstelle mit zwei Erlaubnisstufen vom 24.08. galt einem Port, und es gibt
+keinen. Sie bleibt offen für den Serverfall, wo niemand an die Dateien kommt.
+
+**Kein zweiter Übersetzer.** Die Prüfung in JavaScript nachzubauen wäre
+dieselbe Falle wie bei der Formtabelle — zwei Fassungen derselben Regeln
+laufen auseinander. Nur rechnet dort ein Test die Tabelle nach; für einen
+Übersetzer gäbe es nichts Vergleichbares. Also rechnet der, der es ohnehin
+tut, und die Erweiterung übersetzt nur Zahlen: ab eins gegen ab null.
+
+**Gerade der gescheiterte Fall zählt.** Vorher stand bei einem Fehler im
+Ordner nur eine Zeile im Spiel-Log; wer in VS Code arbeitete, sah gar nichts.
+
+**Ein Merker statt eines Takts.** Geschrieben wird beim Übernehmen, beim
+gescheiterten Übernehmen und beim Neuaufbau des Netzes — sonst baute der
+Controller die Datei je Sekunde neu, um sie mit sich selbst zu vergleichen.
 
 ### Chemikalien aus Mekanism (seit dem 26.08.)
 

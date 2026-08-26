@@ -178,6 +178,17 @@ public class ControllerBlockEntity extends BlockEntity {
     private dev.devpanda.factorynetwork.lang.ProgramFolder programFolder;
     private long lastFileCheck = -dev.devpanda.factorynetwork.lang.ProgramFolder.CHECK_INTERVAL;
 
+    /**
+     * Ob sich seit dem letzten Schreiben etwas geändert hat, das nach draußen
+     * gehört: Fehler oder Gerätenamen.
+     *
+     * <p>Ein Merker und kein Schreiben je Tick. {@code ProgramStatus} schreibt
+     * zwar nur, wenn sich der Inhalt unterscheidet — aber die Datei jedesmal
+     * zu bauen und zu vergleichen wäre Arbeit für nichts, und zwar je
+     * Controller und Sekunde.
+     */
+    private boolean statusStale = true;
+
     /** Letzte gesehene Redstone-Stärke je Connector, für das Ereignis. */
     private final Map<String, Integer> lastRedstone = new HashMap<>();
     /**
@@ -265,6 +276,8 @@ public class ControllerBlockEntity extends BlockEntity {
         Parser.ParseResult result = newProject.parse(networkView());
         this.project = newProject;
         this.diagnostics = new ArrayList<>(result.diagnostics());
+        // Was der Übersetzer sagt, gehört auch nach draußen.
+        statusStale = true;
         // Übernommen heißt: Entwurf und laufender Stand sind dasselbe.
         this.draft = newProject;
         writeProgramFile();
@@ -506,6 +519,9 @@ public class ControllerBlockEntity extends BlockEntity {
             return;
         }
         Set<String> before = networkKnown ? Set.copyOf(graph.connectorNames()) : null;
+        // Die Gerätenamen ändern sich hier, und sie stehen in keiner Datei —
+        // ein Editor daneben erfährt sie nur von uns.
+        statusStale = true;
         graph = FactoryGraph.build(level, worldPosition);
         lastRebuild = level.getGameTime();
         networkKnown = true;
@@ -1221,6 +1237,7 @@ public class ControllerBlockEntity extends BlockEntity {
             return;
         }
         lastFileCheck = level.getGameTime();
+        writeStatus();
         if (programFolder == null) {
             programFolder = dev.devpanda.factorynetwork.lang.ProgramFolder.of(
                     server, worldPosition);
@@ -1232,6 +1249,7 @@ public class ControllerBlockEntity extends BlockEntity {
             // jemand es angelegt oder bei ausgeschaltetem Server
             // bearbeitet, und beides ist eine Absicht.
             programFolder.write(project);
+            statusStale = true;
         }
         dev.devpanda.factorynetwork.lang.Project incoming = programFolder.poll(project);
         if (incoming == null) {
@@ -1247,7 +1265,34 @@ public class ControllerBlockEntity extends BlockEntity {
             note(dev.devpanda.factorynetwork.runtime.LogLevel.ERROR, name,
                     "Fehler beim Übernehmen — das laufende Programm läuft weiter.");
         }
+        // In beiden Fällen, und im zweiten erst recht: Wer in VS Code
+        // arbeitet, sieht sonst gar nichts — sein Programm läuft still nicht.
+        statusStale = true;
     }
+
+    /**
+     * Schreibt neben die Programmdateien, was das Spiel über sie weiß.
+     *
+     * <p>Fehler mit Datei und Zeile, dazu die Namen aus der Welt. Damit
+     * bekommt ein Editor daneben beides, was er allein nicht haben kann — und
+     * zwar vom Übersetzer, der ohnehin läuft, statt von einer zweiten Fassung
+     * derselben Regeln.
+     *
+     * <p>Gerufen, wenn sich etwas ändert: nach einem Übernehmen, nach einem
+     * gescheiterten Übernehmen und nach einem Neuaufbau des Netzes — dort
+     * ändern sich die Gerätenamen. Nicht je Tick: {@code ProgramStatus}
+     * schreibt zwar nur bei Änderung, aber die Datei jedesmal zu bauen und zu
+     * vergleichen wäre Arbeit für nichts.
+     */
+    private void writeStatus() {
+        if (programFolder == null || !statusStale) {
+            return;
+        }
+        statusStale = false;
+        dev.devpanda.factorynetwork.lang.ProgramStatus.write(programFolder.path(),
+                diagnostics, List.copyOf(graph.connectorNames()), displayNames());
+    }
+
 
     /**
      * Wo das Projekt als Ordner liegt, oder {@code null}, solange noch

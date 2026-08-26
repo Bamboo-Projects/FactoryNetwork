@@ -3554,3 +3554,67 @@ Flüssigkeiten und dort geprüft.
 
 Das ist eine benannte Lücke und kein Versehen: Der Weg von einem echten
 Mekanism-Block zum Netz läuft erst, wenn jemand ihn im Spiel hinstellt.
+
+---
+
+## Der Rückweg der Brücke läuft über den Ordner (2026-08-26)
+
+Punkt 4.1 verlangt Fehlerprüfung und Gerätenamen in VS Code. Beides kann die
+Erweiterung nicht allein: Fehler kennt nur der Übersetzer, und der ist in
+Java; Gerätenamen kennt nur die Welt, und die läuft im Spiel.
+
+Die Entscheidung vom 24.08. sah dafür eine **Schnittstelle mit zwei
+Erlaubnisstufen** vor — ein Port im Client, den der Server erlauben und der
+Spieler einschalten muss. Sie steht weiter, und sie ist weiter offen: Was sie
+darf und wie sie technisch aussieht, ist nicht entschieden.
+
+**Gebaut ist etwas anderes, das keine dieser Fragen aufwirft.**
+
+### Der Kanal, den es schon gibt
+
+Die Brücke funktioniert in eine Richtung längst: Wer in VS Code speichert,
+dessen Programm übernimmt der Controller im Sekundentakt. Zurück kam nichts —
+ein Fehler stand im Terminal, und wer nicht im Spiel war, sah eine Datei, die
+stumm nicht lief.
+
+Der Controller schreibt jetzt `.fn-status.json` neben die Programmdateien:
+die Fehler mit Datei, Zeile und Spalte, dazu die Namen der Connectoren und
+Anzeigen. Die Erweiterung liest sie und trägt beides ein.
+
+**Kein neuer Zugang.** Wer die Programmdateien sieht, sieht auch diese — mehr
+gibt sie nicht preis. Damit berührt sie die Zwei-Stufen-Entscheidung nicht:
+Die galt einem Port, und es gibt keinen.
+
+**Der Preis, offen benannt:** Das gilt nur, wo jemand an die Dateien kommt —
+im Einzelspieler und auf einem Server, zu dem man Dateizugriff hat. Genau die
+Lücke, die die Schnittstelle einmal schließen soll. 4.1 ist damit **zum Teil
+gebaut** und nicht erledigt.
+
+### Kein zweiter Übersetzer
+
+Der naheliegende andere Weg wäre gewesen, die Prüfung in JavaScript
+nachzubauen. Das ist dieselbe Falle wie bei der Formtabelle: Zwei Fassungen
+derselben Regeln laufen auseinander, sobald niemand nachmisst. Dort hilft ein
+Test, der `signatures.json` aus `Signatures.java` erzeugt; hier gäbe es nichts
+Vergleichbares — ein Übersetzer ist keine Tabelle.
+
+Also rechnet der, der es ohnehin tut. Die Erweiterung übersetzt nur noch
+Zahlen: Zeile und Spalte zählen im Spiel ab eins, in VS Code ab null.
+
+### Geschrieben wird bei Änderung, nicht im Takt
+
+Ein Merker am Controller — gesetzt beim Übernehmen, beim gescheiterten
+Übernehmen und beim Neuaufbau des Netzes. Ohne ihn baute der Controller die
+Datei je Sekunde neu, um sie mit sich selbst zu vergleichen. Und
+`ProgramStatus` schreibt zusätzlich nur, wenn sich der Inhalt unterscheidet:
+Ein Dateiwächter in VS Code würde sonst jede Sekunde geweckt.
+
+**Gerade der gescheiterte Fall zählt.** Vorher stand dort nur eine Zeile im
+Spiel-Log; wer in VS Code arbeitete, sah gar nichts.
+
+### Von Hand geschrieben, ohne JSON-Bibliothek
+
+Die Mod hat keine im Übersetzungspfad, und der Inhalt ist flach: zwei Listen
+und eine Karte. Ein Schreiber von vierzig Zeilen ist billiger als eine
+Abhängigkeit — und was ihn lesen muss, ist ohnehin JavaScript. Der Leser auf
+der Java-Seite existiert nur, damit sich das Format nachmessen lässt.

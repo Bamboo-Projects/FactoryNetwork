@@ -103,10 +103,34 @@ Module._load = function (request) {
                 this.label = label; this.documentation = doc; this.parameters = [];
             },
             ParameterInformation: function (range) { this.range = range; },
+            Range: function (line, from, endLine, to) {
+                this.line = line;
+                this.from = from;
+                this.endLine = endLine;
+                this.to = to;
+            },
+            Diagnostic: function (range, message, severity) {
+                this.range = range;
+                this.message = message;
+                this.severity = severity;
+            },
+            DiagnosticSeverity: { Error: 0, Warning: 1 },
             languages: {
                 registerCompletionItemProvider: (...a) => providers.completion = a[1],
                 registerHoverProvider: (...a) => providers.hover = a[1],
                 registerSignatureHelpProvider: (...a) => providers.signature = a[1],
+                // Festgehalten wie die Provider: Damit laesst sich pruefen,
+                // was die Erweiterung wirklich eintraegt.
+                createDiagnosticCollection: () => {
+                    providers.diagnostics = {
+                        entries: new Map(),
+                        set(uri, list) {
+                            this.entries.set(uri.fsPath, list);
+                        },
+                        dispose() { },
+                    };
+                    return providers.diagnostics;
+                },
             },
             workspace: {
                 // Festgehalten statt weggeworfen: Damit lässt sich prüfen,
@@ -116,6 +140,11 @@ Module._load = function (request) {
                     providers.saved = handler;
                     return { dispose: () => { } };
                 },
+                onDidOpenTextDocument: (handler) => {
+                    providers.opened = handler;
+                    return { dispose: () => { } };
+                },
+                textDocuments: [],
             },
         };
     }
@@ -139,6 +168,8 @@ extension.activate({ extensionPath, subscriptions });
 function doc(lines, file) {
     return {
         uri: file ? { scheme: 'file', fsPath: path.join(PROJECT, file) } : undefined,
+        // Die Erweiterung traegt Fehler nur in Manifold-Dateien ein.
+        languageId: 'manifold',
         lineAt: (i) => ({ text: lines[i] }),
         // Mit Bereich fragt nur die Erklärung beim Zeigen, und die bekommt
         // hier nichts zu lesen; ohne Bereich ist der ganze Puffer gemeint.
@@ -363,6 +394,38 @@ contains('Die eigene Datei kommt aus dem Puffer',
 
 // Der Zwischenspeicher hält einen Ordner nur bis zum nächsten Speichern.
 project({ 'werte.mf': 'fn heizen() {\n}\n' });
+// Der Rueckweg der Bruecke: Was das Spiel neben die Dateien schreibt, traegt
+// die Erweiterung ein. Kein zweiter Uebersetzer in JavaScript — es rechnet
+// der, der es ohnehin tut.
+project({
+    'main.mf': 'fn main() {\n}\n',
+    '.fn-status.json': JSON.stringify({
+        diagnostics: {
+            'main.mf': [{
+                line: 2, column: 5, length: 4, severity: 'warning',
+                message: 'Nichts im Netz heisst kist.', hint: 'Meintest du kiste?',
+            }],
+        },
+        connectors: ['kiste', 'brecher'],
+        displays: ['halle'],
+    }),
+});
+
+contains('Geraetenamen aus der Welt stehen bei to',
+    ['worker neu {', '    to '], 'brecher', true, 'main.mf');
+contains('Und bei from',
+    ['worker neu {', '    from '], 'kiste', true, 'main.mf');
+
+providers.opened(doc(['fn main() {', '}'], 'main.mf'));
+const eingetragen = providers.diagnostics.entries.get(
+    path.join(PROJECT, 'main.mf')) || [];
+check('Der Fehler aus dem Spiel steht im Editor', eingetragen.length, 1);
+check('Er steht in der richtigen Zeile', eingetragen[0] && eingetragen[0].range.line, 1);
+check('Und in der richtigen Spalte', eingetragen[0] && eingetragen[0].range.from, 4);
+check('Eine Warnung bleibt eine Warnung', eingetragen[0] && eingetragen[0].severity, 1);
+check('Der Hinweis steht dabei',
+    eingetragen[0] && eingetragen[0].message.includes('Meintest du'), true);
+
 // Ordner im Projekt: Alle Dateien teilen einen Namensraum, auch über Ebenen
 // hinweg. Wer nur den eigenen Ordner liest, schlägt in einem gegliederten
 // Projekt genau den Teil vor, den man gerade nicht braucht.

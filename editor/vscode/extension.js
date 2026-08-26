@@ -78,6 +78,48 @@ const folders = new Map();
 /** Und wo die Wurzel eines Projekts liegt, je Datei. */
 const roots = new Map();
 
+/** Was das Spiel zuletzt neben die Dateien geschrieben hat, je Wurzel. */
+const status = new Map();
+
+/** So heißt die Datei, die das Spiel schreibt. */
+const STATUS_FILE = '.fn-status.json';
+
+/**
+ * Was das laufende Spiel über dieses Projekt weiß.
+ *
+ * Zwei Dinge, die diese Erweiterung allein nicht haben kann: die Fehler, so
+ * wie der echte Übersetzer sie sieht, und die Gerätenamen aus der Welt. Sie
+ * stehen in keiner Programmdatei — sie kommen aus der Beschriftungspistole.
+ *
+ * Geliefert werden sie über den Ordner, den es ohnehin gibt. Kein Port, keine
+ * Verbindung, nichts einzuschalten: Wer die Dateien sieht, sieht auch das.
+ * Im Mehrspielerbetrieb liegt der Ordner beim Server, und dort gibt es das
+ * hier nicht — das ist der bekannte Schnitt.
+ */
+function statusOf(root) {
+    const cached = status.get(root);
+    if (cached && Date.now() - cached.stamp < FOLDER_MS) {
+        return cached.value;
+    }
+    let value = { diagnostics: {}, connectors: [], displays: [] };
+    try {
+        value = JSON.parse(fs.readFileSync(path.join(root, STATUS_FILE), 'utf8'));
+    } catch (error) {
+        // Kein Spiel, kein Status. Beim Tippen ist eine fehlende Auskunft die
+        // bessere Antwort als eine Fehlermeldung.
+    }
+    status.set(root, { value, stamp: Date.now() });
+    return value;
+}
+
+/** Die Gerätenamen aus der Welt, für die Datei, an der jemand arbeitet. */
+function connectorsFor(document) {
+    if (!document.uri || document.uri.scheme !== 'file') {
+        return [];
+    }
+    return statusOf(projectRootOf(document.uri.fsPath)).connectors || [];
+}
+
 function load(context) {
     const file = path.join(context.extensionPath, 'data', 'signatures.json');
     table = JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -422,7 +464,7 @@ function eventItems(symbols) {
         .concat(symbolItems(symbols, ['event'], vscode.CompletionItemKind.Event));
 }
 
-function completionsFor(where, symbols) {
+function completionsFor(where, symbols, devices) {
     const slot = where.slot;
     if (!slot) {
         return [];
@@ -450,6 +492,11 @@ function completionsFor(where, symbols) {
             const names = where.signature.keyword === 'from'
                 ? BUILTINS.concat(SOURCES) : BUILTINS;
             return names.map(name => item(name, vscode.CompletionItemKind.Variable))
+                // Die Geräte aus der Welt: Sie stehen in keiner Datei, und
+                // ohne sie schlägt die Erweiterung an genau der Stelle nichts
+                // vor, an der man am ehesten etwas braucht.
+                .concat(devices.map(name => item(name,
+                    vscode.CompletionItemKind.Variable, 'Gerät im Netz')))
                 .concat(symbolItems(symbols, ['group', 'multiblock'],
                     vscode.CompletionItemKind.Variable));
         }
@@ -498,7 +545,7 @@ function activate(context) {
             const symbols = projectSymbols(document);
             const where = whereAt(document, position);
             if (where) {
-                return completionsFor(where, symbols);
+                return completionsFor(where, symbols, connectorsFor(document));
             }
             const block = enclosingBlock(document, position.line);
             const indented = /^\s/.test(document.lineAt(position.line).text);
@@ -602,11 +649,77 @@ function activate(context) {
     //
     // Alle Ordner und nicht nur der eine: Welcher betroffen ist, wäre
     // auszurechnen, und es sind selten mehr als zwei.
+    // Die Fehler aus dem Spiel. Sie kommen ueber die Statusdatei, die der
+    // Controller neben die Programme schreibt — kein Port, keine Verbindung,
+    // nichts einzuschalten.
+    const problems = vscode.languages.createDiagnosticCollection('manifold');
+    context.subscriptions.push(problems);
+
+    const refreshAll = () => {
+        status.clear();
+        for (const open of vscode.workspace.textDocuments) {
+            refreshDiagnostics(problems, open);
+        }
+    };
+
     context.subscriptions.push(
         vscode.workspace.onDidSaveTextDocument(() => {
             folders.clear();
             roots.clear();
+            status.clear();
         }));
+    if (vscode.workspace.onDidOpenTextDocument) {
+        context.subscriptions.push(vscode.workspace.onDidOpenTextDocument(
+            open => refreshDiagnostics(problems, open)));
+    }
+    // Nachsehen im Sekundentakt, nicht ueberwachen: Ein Dateiwaechter braeuchte
+    // eine Entprellung gegen die Doppelereignisse und ein verlaessliches
+    // Aufraeumen. Dieselbe Ueberlegung wie auf der Spielseite, und dieselbe
+    // Frist.
+    if (typeof setInterval === 'function') {
+        const timer = setInterval(refreshAll, 1000);
+        // Ein laufender Takt haelt einen Node-Prozess am Leben. In VS Code
+        // faellt das nicht auf, im Pruefskript schon: Es kaeme nie zum Ende.
+        if (timer && typeof timer.unref === 'function') {
+            timer.unref();
+        }
+        context.subscriptions.push({ dispose: () => clearInterval(timer) });
+    }
+    refreshAll();
+}
+
+/**
+ * Traegt die Fehler des Spiels in den Editor ein.
+ *
+ * Nicht selbst gerechnet: Es gibt genau einen Uebersetzer fuer Manifold, und
+ * der laeuft im Spiel. Eine zweite Fassung derselben Regeln in JavaScript
+ * waere ein zweiter Ort, an dem sie auseinanderlaufen — dieselbe Ueberlegung
+ * wie bei der Formtabelle, die aus Signatures.java erzeugt wird.
+ *
+ * Was hier steht, ist Uebersetzung im Wortsinn: Zeile und Spalte zaehlen im
+ * Spiel ab eins, in VS Code ab null.
+ */
+function refreshDiagnostics(collection, document) {
+    if (!document || document.languageId !== 'manifold'
+            || !document.uri || document.uri.scheme !== 'file') {
+        return;
+    }
+    const root = projectRootOf(document.uri.fsPath);
+    const name = nameUnder(root, document.uri.fsPath);
+    const found = (statusOf(root).diagnostics || {})[name] || [];
+    collection.set(document.uri, found.map(problem => {
+        const line = Math.max(0, (problem.line || 1) - 1);
+        const from = Math.max(0, (problem.column || 1) - 1);
+        const range = new vscode.Range(line, from, line,
+            from + Math.max(1, problem.length || 1));
+        const entry = new vscode.Diagnostic(range,
+            problem.hint ? problem.message + ' ' + problem.hint : problem.message,
+            problem.severity === 'warning'
+                ? vscode.DiagnosticSeverity.Warning
+                : vscode.DiagnosticSeverity.Error);
+        entry.source = 'Factory Network';
+        return entry;
+    }));
 }
 
 function deactivate() {

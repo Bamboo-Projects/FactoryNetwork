@@ -27,6 +27,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class ProgramFolderTest {
 
+    /**
+     * Ein Wegwerfordner für die Tests, die keinen eigenen brauchen.
+     *
+     * <p>Als Feld und nicht als Parameter: Die Prüfungen der Statusdatei
+     * arbeiten alle im selben Ordner, und ein Parameter je Test wäre in jeder
+     * Signatur dasselbe Wort.
+     */
+    @TempDir
+    Path dir;
+
     @Test
     @DisplayName("Was geschrieben wurde, kommt genauso zurück")
     void whatWasWrittenComesBackTheSame(@TempDir Path dir) {
@@ -92,6 +102,84 @@ class ProgramFolderTest {
                 StandardCharsets.UTF_8);
 
         assertEquals(List.of("main.mf"), List.copyOf(ProgramFolder.at(dir).read().keySet()));
+    }
+
+    @Test
+    @DisplayName("Eine fremde Datei im Ordner überlebt das Schreiben")
+    void aforeignFileSurvivesAwrite() throws IOException {
+        // Der Ordner gehört nicht allein diesem Projekt: Daneben liegt die
+        // Statusdatei für VS Code, und jemand legt vielleicht Notizen ab.
+        // Geprüft war bisher nur, dass sie beim Lesen übergangen werden.
+        ProgramFolder folder = ProgramFolder.at(dir);
+        Files.writeString(dir.resolve("Notizen.txt"), "meins", StandardCharsets.UTF_8);
+        Files.writeString(dir.resolve(".fn-status.json"), "{}", StandardCharsets.UTF_8);
+
+        folder.write(new Project(Map.of("main.mf", "fn a() {}")));
+
+        assertTrue(Files.exists(dir.resolve("Notizen.txt")), "die Notiz muss bleiben");
+        assertTrue(Files.exists(dir.resolve(".fn-status.json")), "und die Statusdatei auch");
+    }
+
+    // ---- Der Zustand für VS Code -------------------------------------------
+
+    @Test
+    @DisplayName("Die Statusdatei trägt Fehler mit Datei, Zeile und Spalte")
+    void thestatusFileCarriesErrorsWithFileLineAndColumn() {
+        // Der Weg zurück: VS Code speichert, das Spiel übersetzt, und was der
+        // Übersetzer sagt, kommt hier an. Ohne das sieht ein Fehler nur, wer
+        // im Spiel ins Terminal schaut.
+        List<Diagnostic> problems = List.of(new Diagnostic(Diagnostic.Severity.ERROR,
+                new Span(10, 18, 3, 5), "Nichts im Netz heißt kist.",
+                "Meintest du kiste?", "erz/brecher.mf"));
+
+        ProgramStatus.write(dir, problems, List.of("kiste", "ofen"), List.of("halle"));
+
+        ProgramStatus back = ProgramStatus.read(dir);
+        assertEquals(List.of("kiste", "ofen"), back.connectors());
+        assertEquals(List.of("halle"), back.displays());
+        List<ProgramStatus.Problem> inFile = back.diagnostics().get("erz/brecher.mf");
+        assertEquals(1, inFile.size(), () -> back.diagnostics().toString());
+        assertEquals(3, inFile.get(0).line());
+        assertEquals(5, inFile.get(0).column());
+        assertEquals(8, inFile.get(0).length());
+        assertEquals("error", inFile.get(0).severity());
+        assertTrue(inFile.get(0).message().contains("kist"));
+    }
+
+    @Test
+    @DisplayName("Ohne Fehler steht eine leere Liste da, keine fehlende Datei")
+    void withoutErrorsAnemptyListStandsThere() {
+        // Sonst wüsste die Erweiterung nicht, ob alles stimmt oder ob nur
+        // niemand nachgesehen hat — und ließe alte Fehler stehen.
+        ProgramStatus.write(dir, List.of(), List.of(), List.of());
+
+        ProgramStatus back = ProgramStatus.read(dir);
+        assertTrue(back.diagnostics().isEmpty(), "keine Fehler");
+        assertTrue(back.connectors().isEmpty(), "und keine Geräte");
+    }
+
+    @Test
+    @DisplayName("Zweimal dasselbe schreibt die Datei nicht zweimal")
+    void twiceThesameDoesNotWriteTwice() throws IOException {
+        // Ein Datei-Wächter in VS Code weckt sonst jede Sekunde die
+        // Erweiterung, obwohl sich nichts geändert hat.
+        ProgramStatus.write(dir, List.of(), List.of("kiste"), List.of());
+        java.nio.file.attribute.FileTime first =
+                Files.getLastModifiedTime(dir.resolve(ProgramStatus.FILE));
+
+        ProgramStatus.write(dir, List.of(), List.of("kiste"), List.of());
+
+        assertEquals(first, Files.getLastModifiedTime(dir.resolve(ProgramStatus.FILE)),
+                "dieselbe Auskunft, dieselbe Datei");
+    }
+
+    @Test
+    @DisplayName("Eine Statusdatei, die es nicht gibt, ist leer und kein Fehler")
+    void amissingStatusFileIsEmpty() {
+        ProgramStatus back = ProgramStatus.read(dir);
+
+        assertTrue(back.diagnostics().isEmpty());
+        assertTrue(back.connectors().isEmpty());
     }
 
     @Test
