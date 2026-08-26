@@ -1,6 +1,6 @@
 package dev.devpanda.factorynetwork.compat.mekanism;
 
-import dev.devpanda.factorynetwork.network.ChemicalStore;
+import dev.devpanda.factorynetwork.network.ResourceStore;
 import dev.devpanda.factorynetwork.storage.CellView;
 import net.minecraft.world.item.ItemStack;
 
@@ -31,8 +31,8 @@ public final class ChemicalStores {
      * Chemikalien, und ein Speicher, der so tut, wäre eine Lüge mit
      * Nebenwirkungen.
      */
-    public static ChemicalStore create() {
-        return FnMekanism.installed() ? new MekChemicalStore() : ChemicalStore.NONE;
+    public static ResourceStore create() {
+        return FnMekanism.installed() ? new MekChemicalStore() : ResourceStore.NONE;
     }
 
     /**
@@ -90,7 +90,7 @@ public final class ChemicalStores {
     public static long drainInto(net.minecraft.world.level.Level level,
             net.minecraft.core.BlockPos pos, net.minecraft.core.Direction side,
             java.util.Collection<String> ids,
-            dev.devpanda.factorynetwork.network.ChemicalStore store, long limit) {
+            ResourceStore store, long limit) {
         if (!FnMekanism.installed() || limit <= 0) {
             return 0;
         }
@@ -111,7 +111,7 @@ public final class ChemicalStores {
      */
     public static long drainIntoHandler(mekanism.api.chemical.IChemicalHandler handler,
             java.util.Collection<String> ids,
-            dev.devpanda.factorynetwork.network.ChemicalStore store, long limit) {
+            ResourceStore store, long limit) {
         long moved = 0;
         // Höchstens acht Sorten je Zug: Ein Behälter mit mehr wird über
         // mehrere Aufrufe geleert, und die Schleife kann nicht ins Endlose
@@ -150,7 +150,7 @@ public final class ChemicalStores {
      *
      * @return wie viel angekommen ist
      */
-    public static long fillFrom(dev.devpanda.factorynetwork.network.ChemicalStore store,
+    public static long fillFrom(ResourceStore store,
             net.minecraft.world.level.Level level, net.minecraft.core.BlockPos pos,
             net.minecraft.core.Direction side, java.util.Collection<String> ids, long limit) {
         if (!FnMekanism.installed() || limit <= 0) {
@@ -162,11 +162,16 @@ public final class ChemicalStores {
 
     /** Dasselbe, aber mit einem Behälter statt einer Stelle in der Welt. */
     public static long fillIntoHandler(
-            dev.devpanda.factorynetwork.network.ChemicalStore store,
+            ResourceStore store,
             mekanism.api.chemical.IChemicalHandler handler,
             java.util.Collection<String> ids, long limit) {
         long moved = 0;
-        for (String id : ids.isEmpty() ? store.contents().keySet() : ids) {
+        // Ohne Angabe alles, was im Netz liegt. Der Bestand kommt mit den
+        // Schlüsseln der Art heraus — hier sind es Kennungen, und der Weg
+        // dorthin lässt keine anderen zu.
+        java.util.Collection<?> wanted = ids.isEmpty() ? store.contents().keySet() : ids;
+        for (Object key : wanted) {
+            String id = String.valueOf(key);
             if (moved >= limit) {
                 break;
             }

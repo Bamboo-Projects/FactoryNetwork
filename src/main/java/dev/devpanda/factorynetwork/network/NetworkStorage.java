@@ -28,7 +28,7 @@ import java.util.Map;
  * ihnen. Ein eigener Vorrat daneben wäre eine zweite Wahrheit, die
  * auseinanderläuft, sobald jemand eine Zelle herauszieht.
  */
-public final class NetworkStorage {
+public final class NetworkStorage implements ResourceStore {
 
     private final List<DriveBlockEntity> drives = new ArrayList<>();
 
@@ -51,6 +51,7 @@ public final class NetworkStorage {
     /** Wird bei jeder Änderung gerufen — der Controller schickt dann gebündelt. */
     private Runnable onChange = () -> { };
 
+    @Override
     public void setChangeListener(Runnable listener) {
         this.onChange = listener == null ? () -> { } : listener;
     }
@@ -61,6 +62,7 @@ public final class NetworkStorage {
      * <p>Setzt der Controller bei jedem Neuaufbau. Steht hier nichts, gibt es
      * keinen Platz — ein Netz ohne Laufwerk lagert nichts.
      */
+    @Override
     public void setDrives(List<DriveBlockEntity> found) {
         drives.clear();
         drives.addAll(found);
@@ -161,8 +163,56 @@ public final class NetworkStorage {
      * <p>Ein Bus zählt mit: Ein Netz ohne Laufwerk, aber mit einer Kiste am
      * {@code store}, lagert sehr wohl etwas — nur eben dort.
      */
+    @Override
     public boolean hasDrives() {
         return !drives.isEmpty() || !buses.isEmpty();
+    }
+
+    // ---- Die Schnittstelle -----------------------------------------------
+    //
+    // Der Umweg über den gemeinsamen Nenner. Die Umwandlung muss dastehen:
+    // Ohne sie riefe jede dieser Zeilen sich selbst auf, weil Object auf
+    // Object passt und Item nicht enger ist als Object — ein Überlauf, der
+    // erst dann auffällt, wenn jemand den allgemeinen Weg nimmt.
+
+    @Override
+    public long count(Object key) {
+        return count((Item) key);
+    }
+
+    @Override
+    public long insert(Object key, long amount) {
+        return insert((Item) key, amount);
+    }
+
+    @Override
+    public long extract(Object key, long amount) {
+        return extract((Item) key, amount);
+    }
+
+    /**
+     * Wie viele davon noch hineingingen.
+     *
+     * <p><b>Nur die Zellen, nicht die fremden Inventare.</b> Eine Kiste
+     * beantwortet die Frage nicht, ohne dass man es versucht — sie hat kein
+     * Probieren, nur ein Ablegen. Das ist hier kein Verlust: Die Frage gibt
+     * es, weil ein Gas nicht zurückgelegt werden kann; ein Gegenstand kann
+     * es, und deshalb fragt für ihn niemand. Wer sie doch stellt, bekommt
+     * eine Antwort, die zu niedrig ist und nie zu hoch.
+     */
+    @Override
+    public long room(Object key, long wanted) {
+        if (wanted <= 0 || !(key instanceof Item item)) {
+            return 0;
+        }
+        long free = 0;
+        for (CellInventory<Item> cell : cells()) {
+            free += cell.room(item);
+            if (free >= wanted) {
+                return wanted;
+            }
+        }
+        return free;
     }
 
     /** Alle Zellen aller Laufwerke, frisch gelesen. */
@@ -277,6 +327,7 @@ public final class NetworkStorage {
      * ConcurrentModificationException an einer Stelle, die mit dem Verschieben
      * nichts zu tun hat.
      */
+    @Override
     public Map<Item, Long> contents() {
         return new LinkedHashMap<>(index());
     }

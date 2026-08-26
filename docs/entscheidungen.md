@@ -3819,3 +3819,67 @@ drei Stellen nach der Art dorthin. Das ist Schnitt 2 und steht so im Entwurf.
 weder beantwortet noch vorweggenommen. `ResourceKind` ist ein
 Aufzählungswert. Wird die Frage mit Nein beantwortet, bleibt er einer — und
 der Code ist trotzdem kleiner.
+
+## Die drei Speicher bekommen eine Schnittstelle (2026-08-26)
+
+Schnitt 2 aus `ressourcenarten.md`. `NetworkStorage`, `NetworkFluids` und der
+Chemikalienspeicher beantworten dieselben Fragen; jetzt steht die Frage
+einmal (`ResourceStore`) und die Antwort dreimal. `NetworkStores` hält sie
+nach `ResourceKind`.
+
+### Die Schnittstelle war schon da
+
+`ChemicalStore` gab es seit dem 26.08., und zwar aus einem Grund, der mit
+Aufräumen nichts zu tun hatte: Der Chemikalienspeicher fasst Mekanism-Typen
+an, und ein Feld mit einem solchen Typ ließe den Controller in einem Pack ohne
+die Mod nicht mehr laden. Diese Not hatte bereits die richtige Form
+hervorgebracht. Sie zu verallgemeinern war weniger Arbeit, als eine neue zu
+entwerfen — und ihre Begründung steht weiter dort, wo sie noch gilt.
+
+### Der Schlüssel ist ein `Object`, wie im Wertemodell
+
+Dieselbe Entscheidung und dieselbe Begründung wie einen Commit vorher: Einen
+gemeinsamen Obertyp über `Item`, `Fluid` und `String` gibt es nicht, und ein
+eigener Umschlagtyp wäre eine Klasse, die nur die Frage verschiebt. Anders als
+beim Wert gibt es hier keinen Konstruktor, der die Form prüft — ein falscher
+Schlüssel fällt als `ClassCastException` auf. Das ist gewollt: Eine stille
+Null wäre ein Bestand, der ohne Meldung nicht gefunden wird.
+
+### `room` gibt es jetzt auch für Gegenstände
+
+Es fehlte, und das war kein Versehen: Die Frage „wie viel ginge noch hinein"
+wird gestellt, **bevor** ein Behälter geleert wird, und sie wird nur gebraucht,
+wo sich nichts zurücklegen lässt. Ein Gegenstand lässt sich zurücklegen, ein
+Gas nicht.
+
+Die Schnittstelle verlangt sie trotzdem — eine vierte Art wäre eher ein Gas
+als ein Gegenstand. Für Gegenstände zählt sie **die Zellen und nicht die
+Speicherbusse**: Eine fremde Kiste hat kein Probieren, nur ein Ablegen. Die
+Antwort ist damit zu niedrig und nie zu hoch, und das ist die Richtung, in der
+sie falsch sein darf.
+
+### `NetworkStores` steht im Netzpaket und kennt `ResourceKind`
+
+Damit zeigt `network` auf `runtime`, das ohnehin auf `network` zeigt. Der
+Preis ist ein Ring zwischen zwei Paketen; die Gegenrechnung wäre ein zweiter
+Aufzählungswert im Netzpaket — also genau der Zwilling, den diese beiden
+Schnitte abschaffen. Der Bestand gehört dem Netz, und deshalb steht er dort.
+
+### Was ausdrücklich nicht angefasst wurde
+
+**Die Maschinenseite.** `IItemHandler`, `IFluidHandler` und Mekanisms
+`IChemicalHandler` gehören verschiedenen Mods und heißen an jeder Methode
+anders. Sie sind die zweite Achse, und eine Registry braucht beide — hier
+steht nur die erste.
+
+**Die gemeinsame Index-Mechanik.** Die drei Speicher tun innen fast dasselbe,
+und man könnte es einmal hinschreiben. Dagegen spricht der Stand: Die Commits
+dieses Tages sind test-grün und ungespielt, und der Speicher ist die Stelle,
+an der ein Fehler einen Bestand kostet statt einer Meldung. Der Schnitt ist
+benannt und gemessen; er wartet, bis jemand gespielt hat.
+
+**Die drei Auflöser in `WorldHost`.** `itemsOf`, `fluidsOf` und `chemicalsOf`
+sehen aus wie Zwillinge, sagen aber Verschiedenes, wenn nichts getroffen wird.
+Sie stehen hinter einem `keysOf`, das nach der Art aussucht; zusammengelegt
+werden sie erst, wenn jemand die Meldungen gleichmachen will — und das wäre
+eine Verschlechterung.

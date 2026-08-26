@@ -37,19 +37,15 @@ public final class WorldHost implements Interpreter.Host {
     private final NetworkFluids fluidStorage;
 
     /**
-     * Der Chemikalienspeicher; setzt der Controller.
+     * Alle Bestände des Netzes, nach Art.
      *
-     * <p>Nicht im Konstruktor, sondern nachgereicht — wie der Stromvorrat
-     * beim Worker. Ohne ihn steht hier der Speicher, der nichts kann, und
-     * jeder Zugriff auf Chemikalien ist einfach leer.
+     * <p>Die drei benannten Felder darüber zeigen hinein. Gefragt wird hier,
+     * wo die Art erst zur Laufzeit feststeht — bei {@code count} etwa, das
+     * für Gegenstände, Flüssigkeiten und Chemikalien dieselbe Frage ist.
      */
-    private dev.devpanda.factorynetwork.network.ChemicalStore chemicals =
-            dev.devpanda.factorynetwork.network.ChemicalStore.NONE;
+    private final dev.devpanda.factorynetwork.network.NetworkStores stores;
 
-    public void setChemicals(dev.devpanda.factorynetwork.network.ChemicalStore store) {
-        this.chemicals = store == null
-                ? dev.devpanda.factorynetwork.network.ChemicalStore.NONE : store;
-    }
+    private final dev.devpanda.factorynetwork.network.ResourceStore chemicals;
 
     /**
      * Der Stromvorrat des Netzes; setzt der Controller.
@@ -205,25 +201,23 @@ public final class WorldHost implements Interpreter.Host {
         this.crafting = accept;
     }
 
-    public WorldHost(Level level, FactoryGraph graph, NetworkStorage storage,
-            NetworkFluids fluidStorage, java.util.Map<String, Value> globals,
-            Runnable onGlobalChanged) {
+    public WorldHost(Level level, FactoryGraph graph,
+            dev.devpanda.factorynetwork.network.NetworkStores stores,
+            java.util.Map<String, Value> globals, Runnable onGlobalChanged) {
         this.level = level;
         this.graph = graph;
-        this.storage = storage;
-        this.fluidStorage = fluidStorage == null ? new NetworkFluids() : fluidStorage;
+        this.stores = stores == null
+                ? new dev.devpanda.factorynetwork.network.NetworkStores() : stores;
+        this.storage = this.stores.items();
+        this.fluidStorage = this.stores.fluids();
+        this.chemicals = this.stores.chemicals();
         this.globals = globals;
         this.onGlobalChanged = onGlobalChanged;
     }
 
-    public WorldHost(Level level, FactoryGraph graph, NetworkStorage storage,
-            NetworkFluids fluidStorage) {
-        this(level, graph, storage, fluidStorage, null, null);
-    }
-
-    /** Ohne Flüssigkeitsspeicher — für Aufrufe, die keine brauchen. */
-    public WorldHost(Level level, FactoryGraph graph, NetworkStorage storage) {
-        this(level, graph, storage, null, null, null);
+    public WorldHost(Level level, FactoryGraph graph,
+            dev.devpanda.factorynetwork.network.NetworkStores stores) {
+        this(level, graph, stores, null, null);
     }
 
     @Override
@@ -834,14 +828,13 @@ public final class WorldHost implements Interpreter.Host {
 
     @Override
     public long count(Value what) {
-        ResourceKind kind = ResourceKind.of(what);
-        if (kind == ResourceKind.FLUID) {
-            return fluidsOf(what).stream().mapToLong(fluidStorage::count).sum();
-        }
-        if (kind == ResourceKind.CHEMICAL) {
-            return chemicalsOf(what).stream().mapToLong(chemicals::count).sum();
-        }
-        return itemsOf(what).stream().mapToLong(storage::count).sum();
+        // Dieselbe Frage für alle drei Arten, seit sie hinter einer
+        // Schnittstelle stehen: Was noch je Art verschieden ist, ist allein
+        // die Auflösung der Auswahl.
+        ResourceKind found = ResourceKind.of(what);
+        ResourceKind kind = found == null ? ResourceKind.ITEM : found;
+        var store = stores.of(kind);
+        return keysOf(kind, what).stream().mapToLong(store::count).sum();
     }
 
     @Override
@@ -1046,6 +1039,23 @@ public final class WorldHost implements Interpreter.Host {
             throw new ScriptError("An " + device.name() + " hängt keine Maschine mit Inventar.");
         }
         return NotifyingHandlers.items(handler, noticeFor(device.name()));
+    }
+
+    /**
+     * Die Ressourcen hinter einer Auswahl, in der Form ihrer Art.
+     *
+     * <p>Die drei Auflöser bleiben getrennt, und zwar mit Grund: Sie sagen
+     * Verschiedenes, wenn nichts getroffen wird. Ein Gegenstand fehlt im
+     * Pack, fließendes Wasser zählt nicht als Flüssigkeit, und eine
+     * Chemikalie fehlt vielleicht nur, weil Mekanism fehlt. Was hier
+     * zusammenkommt, ist allein die Frage, welchen davon eine Stelle braucht.
+     */
+    private List<?> keysOf(ResourceKind kind, Value value) {
+        return switch (kind) {
+            case ITEM -> itemsOf(value);
+            case FLUID -> fluidsOf(value);
+            case CHEMICAL -> chemicalsOf(value);
+        };
     }
 
     private static boolean isStorage(Value value) {

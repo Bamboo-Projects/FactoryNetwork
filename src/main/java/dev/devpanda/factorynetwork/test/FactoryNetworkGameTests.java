@@ -10274,4 +10274,75 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    /**
+     * Die drei Speicher beantworten dieselben Fragen auf dieselbe Weise.
+     *
+     * <p>Schnitt 2 aus `ressourcenarten.md`: Gegenstände, Flüssigkeiten und
+     * Chemikalien liegen alle in Zellen in Laufwerken, und die Sicht des
+     * Netzes darauf war dreimal dieselbe Klasse mit anderen Typen. Jetzt ist
+     * es eine Schnittstelle, und hier steht ihr Vertrag — einmal
+     * hingeschrieben und dreimal durchlaufen.
+     *
+     * <p><b>Über eine Referenz vom Typ der Schnittstelle.</b> Wer die
+     * konkreten Klassen anspräche, prüfte drei Wege statt einen und merkte
+     * nicht, wenn einer davon abdriftet. Genau das war in Schnitt 1 passiert.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void thethreeStoresKeepTheSameContract(GameTestHelper helper) {
+        BlockPos controller = bareSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+
+        BlockPos drive = controller.above();
+        helper.setBlock(drive, FnBlocks.DRIVE.get());
+        if (helper.getBlockEntity(drive)
+                instanceof dev.devpanda.factorynetwork.block.entity.DriveBlockEntity bay) {
+            bay.setCell(0, new ItemStack(dev.devpanda.factorynetwork.registry.FnItems.CELLS
+                    .get(dev.devpanda.factorynetwork.storage.CellTier.K64).get()));
+            bay.setCell(1, new ItemStack(dev.devpanda.factorynetwork.registry.FnItems.FLUID_CELLS
+                    .get(dev.devpanda.factorynetwork.storage.FluidCellTier.B256).get()));
+            bay.setCell(2, new ItemStack(dev.devpanda.factorynetwork.registry.FnItems
+                    .CHEMICAL_CELLS.get(
+                            dev.devpanda.factorynetwork.storage.ChemicalCellTier.K256).get()));
+        } else {
+            helper.fail("Am Laufwerk hängt keine BlockEntity", drive);
+        }
+        entity.rebuildNetwork();
+
+        keepsTheContract(helper, entity.store(
+                dev.devpanda.factorynetwork.runtime.ResourceKind.ITEM),
+                Items.IRON_INGOT, 64, "Gegenstände");
+        keepsTheContract(helper, entity.store(
+                dev.devpanda.factorynetwork.runtime.ResourceKind.FLUID),
+                net.minecraft.world.level.material.Fluids.WATER, 1000, "Flüssigkeiten");
+        keepsTheContract(helper, entity.store(
+                dev.devpanda.factorynetwork.runtime.ResourceKind.CHEMICAL),
+                "mekanism:hydrogen", 500, "Chemikalien");
+        helper.succeed();
+    }
+
+    /**
+     * Hinein, nachsehen, wieder heraus.
+     *
+     * <p>Die vier Fragen, die jeder Speicher beantworten muss, dazu die
+     * fünfte, die es nur gibt, weil manches nicht zurückgelegt werden kann:
+     * {@code room} wird gefragt, <b>bevor</b> ein Behälter geleert wird.
+     */
+    private static void keepsTheContract(GameTestHelper helper,
+            dev.devpanda.factorynetwork.network.ResourceStore store,
+            Object key, long amount, String what) {
+        helper.assertTrue(store.hasDrives(), what + ": ein Laufwerk hängt am Netz");
+        helper.assertValueEqual(store.room(key, amount), amount,
+                what + ": so viel ginge hinein");
+        helper.assertValueEqual(store.insert(key, amount), 0L,
+                what + ": und geht auch wirklich hinein");
+        helper.assertValueEqual(store.count(key), amount,
+                what + ": danach liegt es da");
+        helper.assertValueEqual(store.contents().get(key), amount,
+                what + ": und steht im Bestand");
+        helper.assertValueEqual(store.extract(key, amount), amount,
+                what + ": und kommt wieder heraus");
+        helper.assertValueEqual(store.count(key), 0L,
+                what + ": danach liegt nichts mehr da");
+    }
+
 }

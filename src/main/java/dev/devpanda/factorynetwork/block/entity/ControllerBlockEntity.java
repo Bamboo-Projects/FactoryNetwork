@@ -111,8 +111,19 @@ public class ControllerBlockEntity extends BlockEntity {
 
     private List<Diagnostic> diagnostics = new ArrayList<>();
     private FactoryGraph graph = FactoryGraph.empty();
-    private final NetworkStorage storage = new NetworkStorage();
-    private final NetworkFluids fluidStorage = new NetworkFluids();
+    /**
+     * Alle Bestände des Netzes, nach Ressourcenart.
+     *
+     * <p>Die drei benannten Felder darunter zeigen hinein und ersparen den
+     * Umweg an den vielen Stellen, die eine bestimmte Art meinen. Der Besitz
+     * liegt bei {@code stores}: Ein vierter Speicher kommt dort an und
+     * nirgends sonst.
+     */
+    private final dev.devpanda.factorynetwork.network.NetworkStores stores =
+            new dev.devpanda.factorynetwork.network.NetworkStores();
+
+    private final NetworkStorage storage = stores.items();
+    private final NetworkFluids fluidStorage = stores.fluids();
 
     /**
      * Der Chemikalienspeicher.
@@ -123,8 +134,8 @@ public class ControllerBlockEntity extends BlockEntity {
      * Speicher, der nichts kann — und das ist die Wahrheit über ein solches
      * Pack, keine Notlösung.
      */
-    private final dev.devpanda.factorynetwork.network.ChemicalStore chemicalStorage =
-            dev.devpanda.factorynetwork.compat.mekanism.ChemicalStores.create();
+    private final dev.devpanda.factorynetwork.network.ResourceStore chemicalStorage =
+            stores.chemicals();
     private final WorkerRuntime runtime = new WorkerRuntime();
 
     /**
@@ -485,12 +496,25 @@ public class ControllerBlockEntity extends BlockEntity {
         return storage;
     }
 
+    /**
+     * Wo eine Ressourcenart lagert.
+     *
+     * <p>Die eine Stelle, an der das Netz nach einem Bestand gefragt wird,
+     * ohne vorher zu wissen, um welche Art es geht. Die benannten Zugänge
+     * daneben bleiben: Gegenstände haben Speicherbusse, Flüssigkeiten
+     * Sortenplätze, und danach fragt man nur, wenn man die Art meint.
+     */
+    public dev.devpanda.factorynetwork.network.ResourceStore store(
+            dev.devpanda.factorynetwork.runtime.ResourceKind kind) {
+        return stores.of(kind);
+    }
+
     public NetworkFluids fluids() {
         return fluidStorage;
     }
 
     /** Der Chemikalienspeicher; ohne Mekanism einer, der nichts kann. */
-    public dev.devpanda.factorynetwork.network.ChemicalStore chemicals() {
+    public dev.devpanda.factorynetwork.network.ResourceStore chemicals() {
         return chemicalStorage;
     }
 
@@ -537,13 +561,10 @@ public class ControllerBlockEntity extends BlockEntity {
         }
         drives.clear();
         drives.addAll(found);
-        storage.setDrives(found);
-        // Dieselben Laufwerke tragen die Flüssigkeitszellen. Ein zweites
-        // Laufwerk nur dafür wäre ein Block mehr für dieselbe Handlung.
-        fluidStorage.setDrives(found);
-        // Und dieselben tragen die Chemikalienzellen — ohne Mekanism nimmt
-        // dieser Speicher die Liste entgegen und tut nichts damit.
-        chemicalStorage.setDrives(found);
+        // Dieselben Laufwerke tragen die Zellen aller Arten: Ein zweites
+        // Laufwerk nur für Flüssigkeiten wäre ein Block mehr für dieselbe
+        // Handlung. Welche Zellen ein Speicher lesen kann, weiß er selbst.
+        stores.setDrives(found);
         // Und dieselben tragen die Energiezellen. Ohne diese Zeile ist der
         // Vorrat der Puffer im Controller, egal wie viele Akkus im Regal
         // stecken.
@@ -625,8 +646,7 @@ public class ControllerBlockEntity extends BlockEntity {
                             ? connector : null);
             runtime.setPower(power);
             runtime.setCrafting(craftingForWorkers);
-            runtime.setChemicals(chemicalStorage);
-            runtime.tick(level, program, graph, storage, fluidStorage,
+            runtime.tick(level, program, graph, stores,
                     newHost());
             // Was die Worker zu melden hatten, gehört ins Protokoll. Bisher
             // sammelte die Laufzeit diese Hinweise und niemand las sie.
@@ -2427,10 +2447,9 @@ public class ControllerBlockEntity extends BlockEntity {
      * wurde vergessen, und die Meldungen der Abläufe kamen nirgends an.
      */
     private WorldHost newHost() {
-        WorldHost host = new WorldHost(level, graph, storage, fluidStorage, globals,
+        WorldHost host = new WorldHost(level, graph, stores, globals,
                 this::setChanged);
         host.setLogSink(this::add);
-        host.setChemicals(chemicalStorage);
         host.setPower(power);
         host.setDeviceFilled(this::noteFilled);
         // Dieselben Gruppen wie die Worker, samt ihrem Zeiger für round_robin.

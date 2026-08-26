@@ -131,9 +131,10 @@ Der Umbau muss nicht am Stück geschehen, und er sollte es nicht.
    wurden zwei: `Value.Resource(kind, key)` und
    `Value.Selection(kind, keys, amount)`, dazu `ResourceKind` für das, was je
    Art verschieden ist. Nachgemessen steht darunter in Abschnitt 5a.
-2. **Die Speicher hinter eine Schnittstelle.** `NetworkStorage`,
-   `NetworkFluids` und `ChemicalStore` erfüllen dieselben vier Methoden
-   dreimal. Danach ist ein vierter Speicher ein Eintrag und keine Klasse.
+2. ~~**Die Speicher hinter eine Schnittstelle.**~~ **Gebaut** (26.08.).
+   `ResourceStore` heißt sie, `NetworkStores` hält sie nach Art. Der Satz
+   „danach ist ein vierter Speicher ein Eintrag und keine Klasse" war zu
+   stark — nachgemessen in Abschnitt 5b.
 3. **Die Registry selbst.** Erst jetzt, und dann ist sie klein: Was die
    Einträge können müssen, steht nach Schritt 1 und 2 fest.
 4. **Ein Fremdeintrag als Beweis.** Ars Nouveau Source, in `compat/ars` —
@@ -196,6 +197,78 @@ Die Sprachfläche: `item:iron_ore`, `it.item`, `signatures.json`, die
 Referenzseite, beide Editoren. Und die Haltungsfrage aus Abschnitt 6 — sie ist
 weder beantwortet noch vorweggenommen. `ResourceKind` ist ein
 Aufzählungswert und darf einer bleiben.
+
+---
+
+## 5b. Was Schritt 2 wirklich gekostet und gebracht hat
+
+Gebaut am 26.08., unmittelbar nach Schritt 1.
+
+`ResourceStore` ist die Schnittstelle: `count`, `room`, `insert`, `extract`,
+`contents`, dazu `setDrives`, `hasDrives` und der Änderungsmelder. Sie ist
+nicht neu erfunden — `ChemicalStore` war schon genau das, nur für eine Art.
+Übrig geblieben ist sie, umbenannt und mit `Object` als Schlüssel, wie im
+Wertemodell. `NetworkStores` hält die drei nach `ResourceKind`.
+
+### Der Satz aus Abschnitt 5 war zu stark
+
+Dort stand: „Danach ist ein vierter Speicher ein Eintrag und keine Klasse."
+**Die Klasse bleibt.** Was ein Speicher tut, ist eine Index-Mechanik von rund
+sechzig Zeilen — Bestand über alle Zellen, Vergleich der Laufwerksstände,
+zwei Durchläufe beim Ablegen —, und eine Schnittstelle nimmt sie niemandem ab.
+Sie steht heute dreimal fast gleich da.
+
+Was tatsächlich zu einem Eintrag geworden ist, ist **alles um sie herum**:
+
+| Ein vierter Speicher kostete… | vorher | jetzt |
+|---|---|---|
+| die Klasse selbst | eine | eine |
+| Feld und Zugang im Controller | ein Feld, ein Zugang | ein Eintrag in `NetworkStores` |
+| `setDrives` beim Neuaufbau | eine Zeile mehr | keine |
+| `WorldHost` | Feld, Setter, Aufruf | keine |
+| `WorkerRuntime` | Feld, Setter, Aufruf | keine |
+| `count` im Netz | ein Zweig | keiner |
+
+Vorher waren das fünf Stellen in vier Dateien, und drei davon waren
+Setter, die jemand einzeln aufrufen musste — einer davon wurde beim
+Chemikalienpfad tatsächlich einmal vergessen. Jetzt ist es ein Eintrag.
+
+### Was noch je Art dasteht, und warum
+
+**Die Maschinenseite.** `IItemHandler`, `IFluidHandler` und Mekanisms
+`IChemicalHandler` haben nichts miteinander zu tun; sie gehören verschiedenen
+Mods und heißen an jeder Methode anders. `move`, `countIn` und die Zutat aus
+einem `recipe` verzweigen deshalb weiter nach der Art. **Das ist die zweite
+Achse**, und eine Registry braucht sie: Ein Eintrag muss sagen können, wie er
+lagert *und* wie er an einer Maschine gelesen und geschrieben wird. Schritt 2
+liefert nur das erste.
+
+**Die Auflösung einer Auswahl.** `itemsOf`, `fluidsOf` und `chemicalsOf` in
+`WorldHost` sehen aus wie Zwillinge, sind aber keine: Sie sagen
+Verschiedenes, wenn nichts getroffen wird — ein Gegenstand fehlt im Pack,
+fließendes Wasser zählt nicht als Flüssigkeit, und eine Chemikalie fehlt
+vielleicht nur, weil Mekanism fehlt. Sie stehen jetzt hinter einem `keysOf`,
+das nach der Art aussucht; zusammengelegt werden sie nicht, solange die
+Meldungen verschieden sein sollen.
+
+**Die gemeinsame Index-Mechanik**, siehe oben. Sie wäre der nächste Schnitt
+und ist bewusst nicht Teil dieses: Die vierzehn Commits vom 26.08. sind
+test-grün und ungespielt, und der Speicher ist die Stelle, an der ein Fehler
+einen Bestand kostet statt einer Meldung.
+
+### Abgedriftet war hier nichts
+
+In Schritt 1 hatte der Umbau einen Fehler zutage gefördert. Hier wurde
+danach gesucht — drei Verdachtsstellen, an denen die Kopien hätten
+auseinanderlaufen können: der zweite Durchlauf beim Ablegen, die Meldung an
+das Laufwerk (ohne sie ginge ein Bestand in einem fremden Klotz beim Neustart
+verloren) und der Vergleich der Laufwerksstände. **Alle drei stimmen in allen
+drei Speichern überein.** Der einzige Unterschied war ein fehlendes `room`
+beim Gegenstandsspeicher, und das hatte einen Grund: Ein Gegenstand lässt sich
+zurücklegen, ein Gas nicht. Es steht jetzt trotzdem da — die Schnittstelle
+verlangt es —, und zwar über die Zellen und ohne die Speicherbusse: Eine
+fremde Kiste beantwortet die Frage nicht, ohne dass man es versucht. Die
+Antwort ist damit zu niedrig und nie zu hoch.
 
 ---
 

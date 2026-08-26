@@ -1,7 +1,7 @@
 package dev.devpanda.factorynetwork.compat.mekanism;
 
 import dev.devpanda.factorynetwork.block.entity.DriveBlockEntity;
-import dev.devpanda.factorynetwork.network.ChemicalStore;
+import dev.devpanda.factorynetwork.network.ResourceStore;
 import dev.devpanda.factorynetwork.storage.CellInventory;
 import dev.devpanda.factorynetwork.storage.CellView;
 import mekanism.api.chemical.Chemical;
@@ -20,13 +20,13 @@ import java.util.Map;
  * Index davor beantwortet die Fragen, die oft kommen. Neu gezählt wird nur,
  * wenn jemand anders etwas getan hat — das meldet der Zählstand des Laufwerks.
  *
- * <p><b>Nach außen in Texten.</b> Die Schnittstelle {@link ChemicalStore}
+ * <p><b>Nach außen in Texten.</b> Die Schnittstelle {@link ResourceStore}
  * spricht über {@code "mekanism:hydrogen"}, nicht über {@code Chemical}. Das
  * ist der Preis dafür, dass der Controller sie halten kann, ohne Mekanism zu
  * kennen — und er ist klein: Zwischen Kennung und Chemikalie liegt eine
  * Registry-Suche, und die geschieht einmal je Frage, nicht je Zelle.
  */
-final class MekChemicalStore implements ChemicalStore {
+final class MekChemicalStore implements ResourceStore {
 
     private final List<DriveBlockEntity> drives = new ArrayList<>();
     private Runnable onChange = () -> { };
@@ -97,13 +97,21 @@ final class MekChemicalStore implements ChemicalStore {
         indexValid = true;
     }
 
-    private Chemical chemical(String id) {
-        return MekCells.chemical(id);
+    /**
+     * Die Chemikalie hinter einer Kennung, oder {@code null}.
+     *
+     * <p>Der Schlüssel kommt als {@code Object} herein, weil die
+     * Schnittstelle drei Arten bedient. Etwas anderes als ein Text kann hier
+     * nicht ankommen — der Weg dorthin geht über {@code ResourceKind}, und
+     * das Wertemodell prüft die Form schon beim Anlegen.
+     */
+    private Chemical chemical(Object key) {
+        return key instanceof String id ? MekCells.chemical(id) : null;
     }
 
     @Override
-    public long count(String id) {
-        Chemical chemical = chemical(id);
+    public long count(Object key) {
+        Chemical chemical = chemical(key);
         return chemical == null ? 0 : index().getOrDefault(chemical, 0L);
     }
 
@@ -119,8 +127,8 @@ final class MekChemicalStore implements ChemicalStore {
     }
 
     @Override
-    public long room(String id, long wanted) {
-        Chemical chemical = chemical(id);
+    public long room(Object key, long wanted) {
+        Chemical chemical = chemical(key);
         if (chemical == null || wanted <= 0) {
             return 0;
         }
@@ -141,8 +149,8 @@ final class MekChemicalStore implements ChemicalStore {
      * Bestand über alle Zellen und belegt überall einen Sortenplatz.
      */
     @Override
-    public long insert(String id, long amount) {
-        Chemical chemical = chemical(id);
+    public long insert(Object key, long amount) {
+        Chemical chemical = chemical(key);
         if (chemical == null || amount <= 0) {
             return amount;
         }
@@ -171,8 +179,8 @@ final class MekChemicalStore implements ChemicalStore {
     }
 
     @Override
-    public long extract(String id, long amount) {
-        Chemical chemical = chemical(id);
+    public long extract(Object key, long amount) {
+        Chemical chemical = chemical(key);
         if (chemical == null || amount <= 0) {
             return 0;
         }

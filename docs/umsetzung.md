@@ -965,6 +965,48 @@ kostet eine neue Art jetzt einen Aufzählungswert, und der Übersetzer fragt
 dazu vier Dinge in einer Datei ab. Was daneben bleibt, ist die Anbindung an
 den Speicher — drei Verzweigungen in `WorldHost` —, und das ist Schnitt 2.
 
+### Die drei Speicher hinter einer Schnittstelle (seit dem 26.08.)
+
+Schnitt 2 aus `ressourcenarten.md`, unmittelbar nach Schnitt 1. `ResourceStore`
+ist die Frage, `NetworkStores` hält die Antworten nach Art.
+
+**Neu erfunden wurde nichts.** `ChemicalStore` war bereits genau diese
+Schnittstelle — sie war nur für eine Art geschrieben, weil der Controller sie
+halten musste, ohne Mekanism zu kennen. Sie ist geblieben, umbenannt, mit
+`Object` als Schlüssel wie im Wertemodell. Die drei Speicher erfüllen sie
+jetzt alle.
+
+**Zwei Java-Fallen, die dieser Umbau aufstellt.** `Map<Item, Long>` überdeckt
+`Map<Object, Long>` nicht; in der Schnittstelle steht deshalb
+`Map<?, Long> contents()`, und die typisierten Rückgaben sind dann gültige
+Überdeckungen. Und die Brückenmethoden **müssen** umwandeln:
+`count(Object key) { return count((Item) key); }` ohne die Klammern ruft sich
+selbst auf, endlos, und das fällt erst auf, wenn jemand den allgemeinen Weg
+nimmt.
+
+**Gesucht wurde nach Abdrift, gefunden wurde keine.** Nach Schnitt 1 lag der
+Verdacht nahe, dass auch hier eine Kopie stehengeblieben ist: der zweite
+Durchlauf beim Ablegen, die Meldung an das Laufwerk, der Vergleich der
+Laufwerksstände. Alle drei stimmen in allen drei Speichern überein. Das steht
+so in `ressourcenarten.md` §5b — ein Befund ohne Fehler ist auch einer.
+
+Was fehlte, war ein `room` beim Gegenstandsspeicher, und das mit Grund: Die
+Frage gibt es, weil ein Gas nicht zurückgelegt werden kann. Es steht jetzt da,
+über die Zellen und ohne die Speicherbusse — eine fremde Kiste beantwortet
+„wie viel ginge hinein" nicht, ohne dass man es versucht.
+
+**Der Vertrag steht als Prüflauf.** `thethreeStoresKeepTheSameContract` legt
+in ein Laufwerk drei Zellen, eine je Art, und läuft dann dreimal denselben Weg
+— fragen, ablegen, nachsehen, herausholen —, jedes Mal **über eine Referenz
+vom Typ der Schnittstelle**. Über die konkreten Klassen wären es drei Wege
+statt einer, und dann merkt wieder niemand, wenn einer davon abdriftet.
+
+**Was ausdrücklich stehenbleibt:** die Maschinenseite. `IItemHandler`,
+`IFluidHandler` und Mekanisms `IChemicalHandler` gehören verschiedenen Mods
+und heißen an jeder Methode anders; `move`, `countIn` und die Zutat aus einem
+`recipe` verzweigen weiter nach der Art. Das ist die zweite Achse, und eine
+Registry braucht beide.
+
 ### Der Vorrat des Netzes als Wert (seit dem 26.08.)
 
 ```

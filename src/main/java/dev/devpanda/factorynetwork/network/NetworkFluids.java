@@ -29,7 +29,7 @@ import java.util.Map;
  * 1000. Die Sprache schreibt {@code 1000 fluid:water}, und damit steht dieselbe
  * Zahl im Programm wie in jeder anderen Mod.
  */
-public final class NetworkFluids {
+public final class NetworkFluids implements ResourceStore {
 
     private final List<DriveBlockEntity> drives = new ArrayList<>();
     private Runnable onChange = () -> { };
@@ -39,19 +39,46 @@ public final class NetworkFluids {
     private boolean indexValid;
     private long[] seenRevisions = new long[0];
 
+    @Override
     public void setChangeListener(Runnable listener) {
         this.onChange = listener == null ? () -> { } : listener;
     }
 
     /** Welche Laufwerke im Netz hängen. Setzt der Controller beim Neuaufbau. */
+    @Override
     public void setDrives(List<DriveBlockEntity> found) {
         drives.clear();
         drives.addAll(found);
         indexValid = false;
     }
 
+    @Override
     public boolean hasDrives() {
         return !drives.isEmpty();
+    }
+
+    // ---- Die Schnittstelle -----------------------------------------------
+    // Siehe NetworkStorage: Die Umwandlung muss dastehen, sonst ruft sich
+    // jede dieser Zeilen selbst auf.
+
+    @Override
+    public long count(Object key) {
+        return count((Fluid) key);
+    }
+
+    @Override
+    public long room(Object key, long wanted) {
+        return room((Fluid) key, wanted);
+    }
+
+    @Override
+    public long insert(Object key, long amount) {
+        return insert((Fluid) key, amount);
+    }
+
+    @Override
+    public long extract(Object key, long amount) {
+        return extract((Fluid) key, amount);
     }
 
     private List<CellInventory<Fluid>> cells() {
@@ -179,6 +206,7 @@ public final class NetworkFluids {
     }
 
     /** Der gesamte Bestand. Eine Kopie — siehe {@link NetworkStorage#contents}. */
+    @Override
     public Map<Fluid, Long> contents() {
         return new LinkedHashMap<>(index());
     }

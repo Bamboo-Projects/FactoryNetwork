@@ -150,9 +150,9 @@ public final class WorkerRuntime {
     }
 
     /** Ein Tick: läuft über alle Worker und bewegt, was ansteht. */
-    public void tick(Level level, Program program, FactoryGraph graph, NetworkStorage storage,
-            NetworkFluids fluids) {
-        tick(level, program, graph, storage, fluids, null);
+    public void tick(Level level, Program program, FactoryGraph graph,
+            dev.devpanda.factorynetwork.network.NetworkStores stores) {
+        tick(level, program, graph, stores, null);
     }
 
     /**
@@ -166,11 +166,18 @@ public final class WorkerRuntime {
      * auswertbar"), nur eben in einer Zeile, die niemand liest, während er
      * weiterarbeitete.
      */
-    public void tick(Level level, Program program, FactoryGraph graph, NetworkStorage storage,
-            NetworkFluids fluids, Interpreter.Host host) {
+    public void tick(Level level, Program program, FactoryGraph graph,
+            dev.devpanda.factorynetwork.network.NetworkStores stores, Interpreter.Host host) {
         this.conditionHost = host;
         this.conditionProgram = program;
-        this.fluids = fluids == null ? new NetworkFluids() : fluids;
+        // Alle Bestände in einem Griff. Vorher standen hier zwei Parameter
+        // und ein Setter daneben, und der Setter wurde beim Chemikalienpfad
+        // einmal vergessen.
+        var found = stores == null
+                ? new dev.devpanda.factorynetwork.network.NetworkStores() : stores;
+        this.fluids = found.fluids();
+        this.chemicals = found.chemicals();
+        NetworkStorage storage = found.items();
         long now = level.getGameTime();
         currentStorage = storage;
         lastGraph = graph;
@@ -1223,14 +1230,9 @@ public final class WorkerRuntime {
      */
     // ---- Chemikalien -------------------------------------------------------
 
-    /** Der Chemikalienspeicher des Netzes; setzt der Controller. */
-    private dev.devpanda.factorynetwork.network.ChemicalStore chemicals =
-            dev.devpanda.factorynetwork.network.ChemicalStore.NONE;
-
-    public void setChemicals(dev.devpanda.factorynetwork.network.ChemicalStore store) {
-        this.chemicals = store == null
-                ? dev.devpanda.factorynetwork.network.ChemicalStore.NONE : store;
-    }
+    /** Der Chemikalienspeicher des Netzes; kommt mit dem Tick. */
+    private dev.devpanda.factorynetwork.network.ResourceStore chemicals =
+            dev.devpanda.factorynetwork.network.ResourceStore.NONE;
 
     /**
      * Ein Worker, der Chemikalien bewegt.

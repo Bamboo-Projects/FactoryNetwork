@@ -172,7 +172,7 @@ Vorentscheidungen)
 | 1.6 | Request/Response als eigene Form | Z | `sprache.md:992` | mittel | mit `emit`/`on`/`await` nachbaubar |
 | 1.7 | ~~Rechte im Mehrspielerbetrieb~~ — **gebaut** (25.08.). `protection.programs` in der Serverkonfiguration: `OFF` (Vorgabe, wie bisher), `OWNER`, `OPS`. Geschützt sind Übernehmen und Entwurf speichern; die Beschriftungspistole nicht — sie ändert die Welt, und dafür gibt es Schutzmods | | `FnProtection` | | |
 | 1.8 | **Zum Teil gebaut** (26.08.): `Chemical` steht im Wertemodell — eine Chemikalie ist ein Wert wie eine Gegenstandsart, trägt eine Menge, steht in einer Schleife und ist an einem Posten mit `it.chemical` abzulesen. Im Kern als Kennung und nie als Mekanism-Typ. **Offen mit Begründung:** `Job` — `craft` liefert eine Nummer, und mehr will bisher niemand ablesen; dafür gibt es `crafting_finished` und den Reiter. `Set<T>` — der Fall, der ihn braucht, fehlt weiter | F | `Value.ChemicalValue`, `sprache.md` §5 | klein | — |
-| 1.19 | **Die Ressourcenart als offene Registry** statt eines festen Aufzählungswerts. **Schnitt 1 ist gebaut** (26.08.): Aus sechs Records im Wertemodell wurden zwei mit einem Art-Feld, dazu `ResourceKind`. Von den zehn gemessenen Stellen bleiben drei, und alle drei sind Sprachfläche; nachgemessen in `ressourcenarten.md` §5a. Dabei fiel ein Fehler auf, nach dem niemand gesucht hatte: Die Artfrage in `move` stand zweimal da, und die für Chemikalien kannte die aufgelöste Auswahl nicht — eine Chemikalie aus einer Schleife räumte die Kiste leer. **Offen:** Schnitt 2 (die drei Speicher hinter eine Schnittstelle, ebenfalls entscheidungsfrei), danach die Haltungsfrage — ob fremde Mods die Sprache erweitern dürfen | E/F | `ressourcenarten.md` | groß | Haltungsfrage (erst ab Schnitt 3) |
+| 1.19 | **Die Ressourcenart als offene Registry** statt eines festen Aufzählungswerts. **Schnitt 1 und 2 sind gebaut** (26.08.). Schnitt 1: Aus sechs Records im Wertemodell wurden zwei mit einem Art-Feld, dazu `ResourceKind`; von zehn gemessenen Stellen bleiben drei, und alle drei sind Sprachfläche (§5a). Dabei fiel ein Fehler auf, nach dem niemand gesucht hatte — die Artfrage in `move` stand zweimal da, und die für Chemikalien kannte die aufgelöste Auswahl nicht: Eine Chemikalie aus einer Schleife räumte die Kiste leer. Schnitt 2: `ResourceStore` und `NetworkStores`; die Verdrahtung eines vierten Speichers ist jetzt ein Eintrag, die Klasse dahinter bleibt eine (§5b — der Entwurf hatte an dieser Stelle zu viel versprochen). **Offen:** Schnitt 3, die Registry selbst, und der wartet auf die Haltungsfrage — ob fremde Mods die Sprache erweitern dürfen | E | `ressourcenarten.md` | groß | Haltungsfrage |
 | 1.20 | ~~Ein Connector, der klickt~~ — **gebaut** (26.08.), am selben Tag gewünscht. `altar.click()` an dem Connector, der ohnehin dranhängt, und kein zweiter Block: Ein- und Ausgang trennt hier schon der Code und nicht die Bauform. Läuft über den vollen Vanilla-Weg, damit Schutzmods ihre Ereignisse bekommen. Ein Fenster geht nicht auf — für einen Spieler, den es nicht gibt, ist das folgenlos | | `WorldHost.clickAt`, `Signatures.MEMBERS` | | |
 | 1.9 | Echter Typprüfer über Ausdrücke — **zurückgestellt.** Literal gegen Literal bleibt; alles andere fällt zur Laufzeit auf, mit Meldungen, die wissen, was erwartet war | Z | `globale-werte.md:195` | groß | eigenes Vorhaben über die ganze Sprache |
 | 1.10 | ~~Konstanten~~ — **fertig.** `const stapel = 64` wird gelesen wie ein globaler Wert und nie geschrieben; der Versuch ist ein Fehler beim Übernehmen. Nicht gespeichert, weil ein Wert aus dem Programm aus dem Programm wiederkommt | | `Decl.Const`, `GlobalCheck` | | |
@@ -314,12 +314,19 @@ bleiben drei, und alle drei sind Sprachfläche. Die Absicherungen zuerst — die
 Namen auf der Platte und die Texte aus `describe()` —, weil beides ein
 Übersetzer nie meldet und erst in einer alten Welt oder im Protokoll auffällt.
 
-**Als Nächstes: Schnitt 2, die drei Speicher hinter eine Schnittstelle.**
-`NetworkStorage`, `NetworkFluids` und `ChemicalStore` erfüllen dieselben vier
-Methoden dreimal, und `WorldHost` verzweigt an drei Stellen nach der Art
-dorthin. Danach ist ein vierter Speicher ein Eintrag und keine Klasse. Auch
-dieser Schnitt ist von der Haltungsfrage in Abschnitt 6 unabhängig — erst
-Schnitt 3 braucht die Antwort.
+~~**Schnitt 2, die drei Speicher hinter eine Schnittstelle.**~~ **Gebaut am
+26.08.** `ResourceStore` und `NetworkStores`; nachgemessen in §5b. Abgedriftet
+war hier nichts — gesucht wurde danach, und dass nichts gefunden wurde, steht
+ebenfalls dort. Ausdrücklich stehengeblieben sind die Maschinenseite (die
+zweite Achse, die eine Registry ebenfalls braucht) und die gemeinsame
+Index-Mechanik der drei Speicher: Die Commits dieses Tages sind ungespielt,
+und der Speicher ist die Stelle, an der ein Fehler einen Bestand kostet statt
+einer Meldung.
+
+**Damit ist die Reihe der entscheidungsfreien Schnitte leer.** Schnitt 3 ist
+die Registry selbst und braucht die Antwort auf die Haltungsfrage in
+Abschnitt 6 von `ressourcenarten.md`. Als Nächstes steht deshalb wieder die
+Liste an — die Handbuchseiten (6.1) sind das, was am meisten bringt.
 
 **Was jetzt oben steht:** die drei Mods (7.5 bis 7.7). Die anderen Wünsche vom
 26.08. sind am selben Tag gebaut worden — der Connector, der klickt (1.20),
