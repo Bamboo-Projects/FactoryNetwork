@@ -43,12 +43,17 @@ public final class SelectionSummary {
             return lines;
         }
         if (selector.kind() == Expr.Selector.Kind.CHEMICAL) {
-            // Ohne Punkt am Ende: Im Kasten des Editors steht eine Auskunft
-            // und kein Satz.
-            String reason = dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.reason();
-            lines.add(reason.endsWith(".")
-                    ? reason.substring(0, reason.length() - 1) : reason);
-            return lines;
+            if (!dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.installed()) {
+                // Ohne Punkt am Ende: Im Kasten des Editors steht eine
+                // Auskunft und kein Satz.
+                lines.add("Chemikalien brauchen Mekanism");
+                return lines;
+            }
+            List<String> ids = dev.devpanda.factorynetwork.compat.mekanism.Chemicals
+                    .resolve(selector);
+            return summarise(lines, ids.stream()
+                    .map(dev.devpanda.factorynetwork.compat.mekanism.Chemicals::nameOf)
+                    .toList());
         }
         boolean fluids = selector.kind() == Expr.Selector.Kind.FLUID
                 || selector.kind() == Expr.Selector.Kind.FLUIDTAG;
@@ -62,6 +67,17 @@ public final class SelectionSummary {
                 names.add(item.getDescription().getString());
             }
         }
+        return summarise(lines, names);
+    }
+
+    /**
+     * Die Zahl und die ersten Namen.
+     *
+     * <p>An einer Stelle, weil es inzwischen drei Arten von Auswahl gibt und
+     * alle dieselbe Auskunft geben sollen — eine Zahl, ein paar Namen, und
+     * gezählt statt abgeschnitten.
+     */
+    private static List<String> summarise(List<String> lines, List<String> names) {
         if (names.isEmpty()) {
             lines.add("trifft nichts");
             return lines;

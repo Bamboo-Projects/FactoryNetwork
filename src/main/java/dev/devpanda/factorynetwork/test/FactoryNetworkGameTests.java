@@ -7814,12 +7814,52 @@ public final class FactoryNetworkGameTests {
                     "und kein Hinweis auf die Modliste: " + expected.hint());
         }
 
-        // Und im Editor dieselbe Auskunft, aus derselben Quelle.
+        // Der Editor zeigt inzwischen die Auflösung statt einer Absage — das
+        // prüft theeditorShowsWhatAchemicalResolvesTo.
+        helper.succeed();
+    }
+
+    /**
+     * Eine Chemikalien-Auswahl löst sich auf.
+     *
+     * <p>Mekanism liegt im Prüflauf, also gibt es Wasserstoff. Ohne Mekanism
+     * ist die Liste leer und die Meldung sagt es — der Fall steht als
+     * Einheitstest da.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void achemicalSelectionResolves(GameTestHelper helper) {
+        var found = dev.devpanda.factorynetwork.compat.mekanism.Chemicals.resolve(
+                dev.devpanda.factorynetwork.lang.Selectors.parse(
+                        "chemical:mekanism/hydrogen"));
+
+        helper.assertValueEqual(found.size(), 1, "genau eine Chemikalie");
+        helper.assertValueEqual(found.get(0), "mekanism:hydrogen", "und zwar Wasserstoff");
+        helper.succeed();
+    }
+
+    /** Ein Muster trifft mehrere, und ein Name, den es nicht gibt, keine. */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void achemicalPatternHitsSeveral(GameTestHelper helper) {
+        var alle = dev.devpanda.factorynetwork.compat.mekanism.Chemicals.resolve(
+                dev.devpanda.factorynetwork.lang.Selectors.parse("chemical:mekanism/*"));
+        helper.assertTrue(alle.size() > 5,
+                "Mekanism bringt mehr als fünf Chemikalien mit, gefunden: " + alle.size());
+
+        var keine = dev.devpanda.factorynetwork.compat.mekanism.Chemicals.resolve(
+                dev.devpanda.factorynetwork.lang.Selectors.parse("chemical:mekanism/gibtsnicht"));
+        helper.assertValueEqual(keine.size(), 0, "einen erfundenen Namen gibt es nicht");
+        helper.succeed();
+    }
+
+    /** Und der Editor zeigt, worauf sie sich auflöst. */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void theeditorShowsWhatAchemicalResolvesTo(GameTestHelper helper) {
         var summary = dev.devpanda.factorynetwork.runtime.SelectionSummary.of(
                 dev.devpanda.factorynetwork.lang.Selectors.parse(
                         "chemical:mekanism/hydrogen"));
-        helper.assertTrue(summary.get(0).contains("angebunden"),
-                "auch im Kasten des Editors: " + summary);
+
+        helper.assertValueEqual(summary.get(0), "trifft 1 Art", "die Zahl");
+        helper.assertTrue(summary.size() > 1, "und der Name: " + summary);
         helper.succeed();
     }
 
