@@ -593,6 +593,11 @@
       "name": "fluid",
       "shape": "fluid fluid",
       "help": "Die Sorte dieses Postens, bei einer Flüssigkeitsliste."
+    },
+    {
+      "name": "chemical",
+      "shape": "chemical chemical",
+      "help": "Dieselbe Angabe für Chemikalien. Braucht Mekanism."
     }
   ],
   "freeFunctions": [

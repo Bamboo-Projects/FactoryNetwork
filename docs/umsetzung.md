@@ -832,6 +832,48 @@ Er hält nichts, hat keine BlockEntity und kostet keinen Kanal. Strom kostet er
 wie Laufwerk und Router: Ein Ausbau, der nichts kostet, ist keine
 Entscheidung.
 
+### Eine Chemikalie als Wert (seit dem 26.08.)
+
+`chemical:` ließ sich längst bewegen, zählen und filtern — aber ein Posten aus
+einer Bestandsliste konnte nur sagen, *wie viel* er ist, nicht *was*:
+`it.item` und `it.fluid` gab es, `it.chemical` nicht. Das ist der Teil von
+1.8, dessen Bedingung erfüllt war, seit Mekanism angebunden ist.
+
+**Die Regel, die den Umfang bestimmt hat:** Chemical bekommt einen Zwilling
+überall dort, wo Fluid schon steht — und nirgends sonst. Es gibt kein
+`storage.fluids()`, also erfindet Chemical auch keins. Ohne diese Regel wäre
+aus einem kleinen Punkt ein Umbau des Bestandsmodells geworden.
+
+**`Value` ist versiegelt**, und das hat sich ausgezahlt: Die zwei neuen
+Records anzulegen brachte den Übersetzer dazu, die eine Stelle zu nennen, die
+sonst vergessen worden wäre — den Codec für wartende Abläufe. Die anderen
+Zwillinge stehen in `instanceof`-Ketten und mussten von Hand gesucht werden;
+gefunden wurden sie über die Fluid-Fälle.
+
+**Kennungen und keine Mekanism-Typen.** `ChemicalValue(String id)`. Eine
+Signatur mit `Chemical` darin löst die Klasse beim Laden auf, und ohne die Mod
+bräche alles zusammen, was diesen Wert streift — dieselbe Regel wie im ganzen
+Kompatibilitätsmodul. `describe()` geht über `Chemicals.nameOf`: mit Mekanism
+steht „Wasserstoff" im Protokoll, ohne die Mod die Kennung. Erfunden wird
+nichts.
+
+**Der Codec prüft nicht gegen eine Registry**, anders als bei Gegenständen und
+Flüssigkeiten — die gehört Mekanism, und ohne die Mod gibt es sie nicht. Eine
+Kennung, die niemand mehr auflösen kann, ist immer noch die Wahrheit darüber,
+was der Ablauf gemeint hat; sie stillschweigend durch etwas anderes zu
+ersetzen wäre schlimmer als sie stehenzulassen.
+
+**Offen geblieben, mit Begründung:** `Job` und `Set<T>`. Beide standen mit
+1.8 auf derselben Zeile, aber ihre Bedingungen sind nicht erfüllt — `craft`
+liefert eine Nummer, und mehr will bisher niemand ablesen; für `Set<T>` fehlt
+weiter der Fall, der ihn braucht. Sie zu bauen hieße, Typen auf Vorrat
+anzulegen.
+
+Nebenbei aufgefallen: VS Code kennt `it.` überhaupt nicht — weder `it.item`
+noch `it.fluid`. `signatures.json` trägt die Liste, aber der Zweig, der sie
+hinter dem Punkt zeigt, fehlt. Steht jetzt als Vermerk in `check.js`, damit es
+niemand für Absicht hält.
+
 ### Der Vorrat des Netzes als Wert (seit dem 26.08.)
 
 ```

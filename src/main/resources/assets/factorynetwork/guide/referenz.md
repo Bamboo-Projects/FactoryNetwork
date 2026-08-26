@@ -167,6 +167,7 @@ Ein Posten ist ein Eintrag einer Bestandsliste — das, was `it` in einem
 | `amount int` | Die Menge dieses Postens. |
 | `item item` | Die Art dieses Postens — nur, wenn er genau eine meint. |
 | `fluid fluid` | Die Sorte dieses Postens, bei einer Flüssigkeitsliste. |
+| `chemical chemical` | Dieselbe Angabe für Chemikalien. Braucht Mekanism. |
 
 ## Verteilstrategien
 

@@ -441,6 +441,17 @@ class CompletionsTest {
     }
 
     @Test
+    @DisplayName("An einem Posten steht auch die Chemikalie")
+    void apostAlsoHasAchemical() {
+        // Der Editor kennt keine Typen und weiß nicht, ob ein Posten
+        // Gegenstände, Flüssigkeiten oder Chemikalien meint. Er bietet alle
+        // drei an und sagt in der Form, wofür es gilt.
+        withNetwork("crusher_1", () -> assertTrue(
+                at("fn test() {", "    log(it.").contains("chemical"),
+                "it.chemical gehört zu it.item und it.fluid"));
+    }
+
+    @Test
     @DisplayName("Nach network. steht, was am Netz abzulesen ist")
     void afterNetworkDotTheNetworkMembersAreOffered() {
         // network ist ein Punktzugriff wie an einem Gerät und doch keiner:

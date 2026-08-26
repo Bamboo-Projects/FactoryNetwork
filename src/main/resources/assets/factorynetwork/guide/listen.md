@@ -37,6 +37,7 @@ storage.items().sort(it.amount)               der kleinste zuerst
 | `it.amount` | die Menge |
 | `it.item` | die Art — nur, wenn der Posten genau eine meint |
 | `it.fluid` | dasselbe bei Flüssigkeiten |
+| `it.chemical` | dasselbe bei Chemikalien (braucht Mekanism) |
 
 Die Aufrufe lassen sich aneinanderhängen. Was in der Kiste am meisten stört:
 

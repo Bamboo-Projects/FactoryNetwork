@@ -7918,6 +7918,69 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
+     * Eine Chemikalie ist ein Wert und nicht nur eine Auswahl.
+     *
+     * <p>Was hier zählt, ist die <b>Auflösung gegen die Registry</b>: Sie
+     * gehört Mekanism, und ohne die Mod gibt es sie nicht — deshalb steht
+     * dieser Fall im Prüflauf und nicht im Einheitstest. Was danach kommt,
+     * die Sorte an einem Posten abzulesen, steht dort.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void achemicalIsAvalueOfItsOwn(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(
+                dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.installed(),
+                "Der Prüflauf soll Mekanism kennen");
+        helper.assertTrue(entity.deploy("""
+                fn zeigen() {
+                    for gas in chemical:mekanism/hydrogen {
+                        log(gas)
+                    }
+                }"""), "Das Programm wurde nicht übernommen");
+
+        entity.callFunction("zeigen", List.of());
+
+        helper.assertTrue(entity.log().stream().anyMatch(zeile ->
+                        zeile.text().toLowerCase().contains("hydrogen")
+                                || zeile.text().toLowerCase().contains("wasserstoff")),
+                "Eine Chemikalie muss als Wert im Protokoll stehen: " + entity.log());
+        helper.succeed();
+    }
+
+    /**
+     * Und ein Ausschluss darüber liefert eine Chemikalie, keine Zahl.
+     *
+     * <p>{@code except} ist der Weg, auf dem eine Chemikalienauswahl schon
+     * vor dem Bewegen aufgelöst wird. Bleibt genau eine Sorte übrig, steht
+     * sie mit {@code .chemical} da — dieselbe Regel wie bei
+     * {@code it.item} und {@code it.fluid}.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void achemicalExceptKeepsTheKind(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                fn zeigen() {
+                    let rest = chemical:mekanism/hydrogen except chemical:mekanism/oxygen
+                    return rest.chemical
+                }"""), "Das Programm wurde nicht übernommen");
+
+        var flow = entity.startFlow("zeigen", java.util.List.of());
+
+        helper.assertValueEqual(flow.status().name(), "DONE",
+                "Der Ablauf muss durchlaufen: " + flow.detail());
+        helper.assertTrue(flow.result() instanceof
+                        dev.devpanda.factorynetwork.runtime.Value.ChemicalValue,
+                "und eine Chemikalie liefern: " + flow.result().describe());
+        helper.succeed();
+    }
+
+    /**
      * Chemikalien gehen aus dem Netz in einen Behälter und wieder zurück.
      *
      * <p><b>Der Behälter ist keiner in der Welt, sondern einer aus Mekanisms

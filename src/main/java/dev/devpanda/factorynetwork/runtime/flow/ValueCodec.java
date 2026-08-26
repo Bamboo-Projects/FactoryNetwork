@@ -86,6 +86,21 @@ public final class ValueCodec {
                 tag.put(KEY_ITEMS, fluids);
                 tag.putLong(KEY_AMOUNT, selection.amount());
             }
+            // Eine Chemikalie trägt ihre Kennung, sonst nichts: Der Codec
+            // kennt keine Mekanism-Typen, und beim Lesen steht dieselbe
+            // Kennung wieder da — auch dann, wenn die Mod inzwischen fehlt.
+            case Value.ChemicalValue sort -> {
+                tag.putString(KEY_TYPE, "chem");
+                tag.putString(KEY_VALUE, sort.id());
+            }
+            case Value.ChemicalSelection selection -> {
+                tag.putString(KEY_TYPE, "chemsel");
+                ListTag ids = new ListTag();
+                selection.ids().forEach(id -> ids.add(
+                        net.minecraft.nbt.StringTag.valueOf(id)));
+                tag.put(KEY_ITEMS, ids);
+                tag.putLong(KEY_AMOUNT, selection.amount());
+            }
             case Value.Device device -> {
                 tag.putString(KEY_TYPE, "dev");
                 tag.putString(KEY_VALUE, device.name());
@@ -131,6 +146,8 @@ public final class ValueCodec {
             case "sel" -> readSelection(tag);
             case "fluid" -> new Value.FluidValue(fluid(tag.getString(KEY_VALUE)));
             case "fluidsel" -> readFluidSelection(tag);
+            case "chem" -> new Value.ChemicalValue(tag.getString(KEY_VALUE));
+            case "chemsel" -> readChemicalSelection(tag);
             case "dev" -> new Value.Device(tag.getString(KEY_VALUE));
             case "grp" -> new Value.Group(tag.getString(KEY_VALUE));
             case "slots" -> new Value.DeviceSlots(tag.getString(KEY_VALUE),
@@ -149,6 +166,24 @@ public final class ValueCodec {
             resolved.add(item(items.getString(i)));
         }
         return new Value.Selection(List.copyOf(resolved), tag.getLong(KEY_AMOUNT));
+    }
+
+    /**
+     * Chemikalien kommen zurück, wie sie hineingingen.
+     *
+     * <p>Ohne Prüfung gegen eine Registry, anders als bei Gegenständen und
+     * Flüssigkeiten: Die Registry gehört Mekanism, und ohne die Mod gibt es
+     * sie nicht. Eine Kennung, die niemand mehr auflösen kann, ist immer noch
+     * die Wahrheit darüber, was der Ablauf gemeint hat — sie stillschweigend
+     * durch Wasser zu ersetzen wäre schlimmer.
+     */
+    private static Value readChemicalSelection(CompoundTag tag) {
+        ListTag entries = tag.getList(KEY_ITEMS, Tag.TAG_STRING);
+        List<String> ids = new ArrayList<>(entries.size());
+        for (int i = 0; i < entries.size(); i++) {
+            ids.add(entries.getString(i));
+        }
+        return new Value.ChemicalSelection(List.copyOf(ids), tag.getLong(KEY_AMOUNT));
     }
 
     private static Value readFluidSelection(CompoundTag tag) {

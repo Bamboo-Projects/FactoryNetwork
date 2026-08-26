@@ -459,6 +459,10 @@ public final class Interpreter {
                 return FluidSelection.resolve(iterable).stream()
                         .map(fluid -> (Value) new Value.FluidValue(fluid)).toList();
             }
+            if (request.kind() == Value.Request.Kind.CHEMICAL) {
+                return dev.devpanda.factorynetwork.compat.mekanism.Chemicals.resolve(iterable).stream()
+                        .map(id -> (Value) new Value.ChemicalValue(id)).toList();
+            }
             return ItemSelection.resolve(iterable).stream()
                     .map(item -> (Value) new Value.ItemValue(item)).toList();
         }
@@ -470,6 +474,8 @@ public final class Interpreter {
             case Value.ValueList list -> list.entries();
             case Value.FluidSelection selection -> selection.fluids().stream()
                     .map(fluid -> (Value) new Value.FluidValue(fluid)).toList();
+            case Value.ChemicalSelection selection -> selection.ids().stream()
+                    .map(id -> (Value) new Value.ChemicalValue(id)).toList();
             case Value.Selection selection -> selection.items().stream()
                     .map(item -> (Value) new Value.ItemValue(item)).toList();
             default -> throw new ScriptError(
@@ -824,6 +830,10 @@ public final class Interpreter {
             case Value.FluidValue fluid -> new Value.FluidSelection(List.of(fluid.fluid()), count);
             case Value.FluidSelection choice ->
                     new Value.FluidSelection(choice.fluids(), count);
+            case Value.ChemicalValue sort ->
+                    new Value.ChemicalSelection(List.of(sort.id()), count);
+            case Value.ChemicalSelection choice ->
+                    new Value.ChemicalSelection(choice.ids(), count);
             default -> selection;
         };
     }
@@ -873,6 +883,21 @@ public final class Interpreter {
                 throw nothingSelected();
             }
             return new Value.FluidSelection(fluids, amount);
+        }
+        if (dev.devpanda.factorynetwork.lang.WorkerKind.resource(
+                dev.devpanda.factorynetwork.lang.WorkerKind.selectorKind(expr))
+                == Expr.Selector.Kind.CHEMICAL) {
+            List<String> ids = dev.devpanda.factorynetwork.compat.mekanism.Chemicals.resolve(expr);
+            if (ids.isEmpty()) {
+                // Ohne Mekanism trifft eine Chemikalienauswahl nichts, und
+                // die Meldung muss sagen, woran es liegt — nicht so tun, als
+                // sei das Pack schuld.
+                throw dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.installed()
+                        ? nothingSelected()
+                        : new ScriptError("Dafür fehlt Mekanism.",
+                                dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.hint());
+            }
+            return new Value.ChemicalSelection(ids, amount);
         }
         List<net.minecraft.world.item.Item> items = ItemSelection.resolve(expr);
         if (items.isEmpty()) {
@@ -1138,6 +1163,15 @@ public final class Interpreter {
                 default -> null;
             };
         }
+        if (target instanceof Value.ChemicalSelection selection) {
+            return switch (name) {
+                case "amount" -> new Value.Int(selection.amount());
+                case "chemical" -> selection.ids().size() == 1
+                        ? new Value.ChemicalValue(selection.ids().get(0))
+                        : throwNoSingleKind(selection.ids().size());
+                default -> null;
+            };
+        }
         return null;
     }
 
@@ -1308,6 +1342,9 @@ public final class Interpreter {
             return (double) selection.amount();
         }
         if (entry instanceof Value.FluidSelection selection) {
+            return (double) selection.amount();
+        }
+        if (entry instanceof Value.ChemicalSelection selection) {
             return (double) selection.amount();
         }
         return null;

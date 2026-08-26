@@ -11,6 +11,11 @@
 // jedem Namen an — dort ist ein zu großzügiger Vorschlag besser als gar
 // keiner. Der Fall „unbekannter Name" steht deshalb nur im Java-Test.
 //
+// Eine zweite Abweichung, und die ist eine Lücke: Was an einem Posten
+// steht — it.item, it.fluid, it.chemical —, bietet nur der Editor im Spiel
+// an. signatures.json trägt die Liste bereits; hier fehlt der Zweig, der
+// sie hinter „it." zeigt. Nicht schlimm, aber auch kein Vorsatz.
+//
 // Ohne Abhängigkeiten: node check.js. Das Modul "vscode" gibt es außerhalb
 // von VS Code nicht, also steht hier eine Attrappe.
 const Module = require('module');

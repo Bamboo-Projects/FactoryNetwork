@@ -464,12 +464,18 @@ Job      Worker   Event
 List<T>  Set<T>
 ```
 
-> **Noch nicht gebaut:** `Set<T>`, `Job` und `Chemical` gibt es im Wertemodell
-> nicht (`offene-punkte.md` 1.8). Das Autocrafting steht inzwischen, `craft`
-> liefert aber eine Kennung als Zahl — ein eigener Typ käme erst, wenn jemand
-> mehr am Auftrag ablesen will als seine Nummer. `Chemical` wartet auf die
-> Anbindung an Mekanism, und für `Set<T>` fehlt bisher der Fall, der ihn
-> braucht.
+`Chemical` gibt es seit dem 26.08.: Eine Chemikalie ist ein Wert wie eine
+Gegenstands- oder Flüssigkeitsart — sie steht in einer Schleife, trägt eine
+Menge und ist an einem Posten mit `it.chemical` abzulesen. Im Kern steht sie
+als **Kennung** da und nicht als Mekanism-Typ; eine Signatur mit dem Typ darin
+würde die Klasse beim Laden auflösen, und ohne die Mod bräche alles zusammen,
+was diesen Wert auch nur streift.
+
+> **Noch nicht gebaut:** `Set<T>` und `Job` (`offene-punkte.md` 1.8). Das
+> Autocrafting steht inzwischen, `craft` liefert aber eine Kennung als Zahl —
+> ein eigener Typ käme erst, wenn jemand mehr am Auftrag ablesen will als
+> seine Nummer, und dafür gibt es `crafting_finished` und den Reiter. Für
+> `Set<T>` fehlt weiterhin der Fall, der ihn braucht.
 
 Die Namen sind englisch, aus demselben Grund wie die Schlüsselwörter.
 `Duration` ist der Typ der Zeitangaben aus Abschnitt 13 und bewusst von `Int`
@@ -1343,6 +1349,7 @@ An einem Posten stehen:
 | `it.amount` | die Menge | **gebaut** |
 | `it.item` | die Art — nur, wenn der Posten genau eine meint | **gebaut** |
 | `it.fluid` | dasselbe an einer Flüssigkeitsliste | **gebaut** |
+| `it.chemical` | dasselbe für Chemikalien; braucht Mekanism | **gebaut** |
 
 `it.item` an einer Auswahl über mehrere Arten — einer Filter-Vorlage etwa —
 ist ein Fehler und keine Vermutung: Welche der Arten gemeint wäre, ließe sich

@@ -81,6 +81,19 @@ public sealed interface Value {
     record FluidSelection(List<net.minecraft.world.level.material.Fluid> fluids, long amount)
             implements Value {}
 
+    /**
+     * Eine Chemikalienart, über ihre Kennung.
+     *
+     * <p><b>Ein Text und kein Mekanism-Typ.</b> Eine Signatur mit
+     * {@code Chemical} darin würde die Klasse beim Laden auflösen — und dann
+     * bräche ohne die Mod alles zusammen, was diesen Wert auch nur streift.
+     * Mekanism-Typen stehen ausschließlich unter {@code compat/mekanism}.
+     */
+    record ChemicalValue(String id) implements Value {}
+
+    /** Eine Auswahl von Chemikalien, schon aufgelöst. Mengen in Millibucket. */
+    record ChemicalSelection(List<String> ids, long amount) implements Value {}
+
     /** Eine Auswahl von Gegenstandsarten, schon aufgelöst. */
     record Selection(List<Item> items, long amount) implements Value {}
 
@@ -137,6 +150,12 @@ public sealed interface Value {
             case FluidSelection value -> value.fluids().size() + " Flüssigkeiten";
             case FluidValue value -> net.minecraft.core.registries.BuiltInRegistries.FLUID
                     .getKey(value.fluid()).toString();
+            // Über nameOf, damit im Protokoll „Wasserstoff" steht und nicht
+            // die Kennung. Ohne Mekanism gibt es keinen Namen, und dann steht
+            // die Kennung da — erfunden wird nichts.
+            case ChemicalValue value -> dev.devpanda.factorynetwork.compat.mekanism.Chemicals
+                    .nameOf(value.id());
+            case ChemicalSelection value -> value.ids().size() + " Chemikalien";
             case Device value -> value.name();
             case Group value -> value.name();
             case DeviceSlots value -> value.device() + " Fach "
