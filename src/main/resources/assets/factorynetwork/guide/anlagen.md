@@ -59,6 +59,49 @@ gehört das Gerät zu keiner Anlage. Unter beiden steht, was am Ende
 herauskommt — bei einer Anlage ist das etwas anderes als das, was du gerade
 tippst.
 
+## Oder: ein Gateway hinstellen
+
+Bei zwölf Geräten wird das Wiederholen lästig, und beim Umbenennen gehst du
+sie alle noch einmal ab. Dafür gibt es den **Gateway**: ein Kabelstück mit
+einem Namensschild.
+
+```
+Controller ── Kabel ── [Gateway "werk_1"] ── Kabel ── Connector "eingang"
+                                              └────── Connector "ausgang"
+```
+
+Rechtsklick auf den Gateway, Namen eintragen — **alles, was dahinter am Kabel
+hängt, gehört zu dieser Anlage.** An den Connectoren steht weiterhin nur
+`eingang` und `ausgang`; das Netz kennt sie als `werk_1/eingang` und
+`werk_1/ausgang`. Im Code ändert sich dadurch nichts.
+
+Umbenennen ist damit **ein Block statt zwölf**.
+
+### Drei Regeln, die du kennen solltest
+
+- **Die Beschriftung gewinnt.** Steht am Connector schon ein Schrägstrich, ist
+  die Anlage gesagt, und der Gateway lässt sie in Ruhe. Ein hingestellter
+  Block darf nicht still verschieben, was dein Programm über ein Gerät sagt.
+- **Ein zweiter Gateway ist die Grenze.** Zwei Anlagen nebeneinander sind zwei
+  Gateways, und dazwischen hört jede auf. Der Controller ist auch eine
+  Grenze — sonst zöge sich eine Anlage über ihn hinweg in jeden anderen
+  Strang.
+- **Erreicht ein Gerät zwei Gateways, gehört es zu keinem.** Welcher gewönne,
+  hinge daran, wo die Suche anfängt. Geraten wird nicht.
+
+**Kanäle vermehrt er nicht.** Er trägt so viel wie ein dichtes Kabel —
+vierundsechzig — und keinen mehr. Dieselbe Regel wie beim Controller-Anbau:
+Ein Kanalvermehrer zum Hinstellen machte die Kanalgrenze bedeutungslos.
+
+### Wann welcher Weg
+
+| | |
+|---|---|
+| **Beschriftung** | Geräte quer durchs Gebäude verteilt, wenige je Anlage |
+| **Gateway** | Eine Anlage steht beieinander, viele Geräte, häufiges Umbauen |
+
+Beides geht nebeneinander, auch im selben Netz.
+
 **Der Name der Vorlage steht nirgends in der Beschriftung.** Zu welcher Vorlage
 eine Anlage gehört, wird aus ihren Rollen erschlossen. Die Alternative hätte
 jeden Namen länger gemacht und wäre bei jedem Umbenennen einer Vorlage

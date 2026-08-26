@@ -31,6 +31,9 @@ public final class FnItems {
     /** Der Anbau: Seiten für Kabel, sonst nichts. */
     public static final DeferredItem<BlockItem> CONTROLLER_EXTENSION =
             ITEMS.registerSimpleBlockItem(FnBlocks.CONTROLLER_EXTENSION);
+
+    public static final DeferredItem<BlockItem> GATEWAY =
+            ITEMS.registerSimpleBlockItem(FnBlocks.GATEWAY);
     /**
      * Ein Kabelgegenstand je Farbe.
      *

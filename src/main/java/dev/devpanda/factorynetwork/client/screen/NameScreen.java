@@ -58,6 +58,10 @@ public class NameScreen extends AbstractContainerScreen<NameMenu> {
         // Rand, Titel, Anlage, Titel, Feld, Hinweiszeile, Knöpfe, Rand.
         this.imageHeight = PAD + LINE + 4 + FIELD + 4
                 + LINE + 4 + FIELD + 3 + LINE + 4 + BUTTON + PAD;
+        // Am Gateway fehlt das obere Feld samt Beschriftung.
+        if (isGateway()) {
+            this.imageHeight -= LINE + 4 + FIELD + 4;
+        }
     }
 
     /** Der Teil vor dem Schrägstrich, oder leer. */
@@ -74,8 +78,11 @@ public class NameScreen extends AbstractContainerScreen<NameMenu> {
 
     /** Was am Ende hinausgeht. */
     private String composed() {
-        String anlage = ConnectorNaming.normalize(instance.getValue());
         String rolle = ConnectorNaming.normalize(input.getValue());
+        if (instance == null) {
+            return rolle;
+        }
+        String anlage = ConnectorNaming.normalize(instance.getValue());
         return anlage.isEmpty() ? rolle : anlage + SEPARATOR + rolle;
     }
 
@@ -92,7 +99,23 @@ public class NameScreen extends AbstractContainerScreen<NameMenu> {
         if (entity instanceof ConnectorBlockEntity connector) {
             return connector.label();
         }
+        if (entity instanceof dev.devpanda.factorynetwork.block.entity
+                .GatewayBlockEntity gateway) {
+            return gateway.instance();
+        }
         return "";
+    }
+
+    /**
+     * Ob am anderen Ende ein Gateway hängt.
+     *
+     * <p>Dann steht dort <b>nur</b> die Anlage: Ein Gateway hat keine Rolle,
+     * und ein zweites Feld dafür wäre eine Frage ohne Antwort.
+     */
+    private boolean isGateway() {
+        var level = minecraft == null ? null : minecraft.level;
+        return level != null && level.getBlockEntity(menu.position())
+                instanceof dev.devpanda.factorynetwork.block.entity.GatewayBlockEntity;
     }
 
     /** Ob am anderen Ende eine Anzeige hängt — nur für die Überschrift. */
@@ -110,18 +133,22 @@ public class NameScreen extends AbstractContainerScreen<NameMenu> {
         int top = topPos + PAD + LINE + 4;
         String label = currentName();
 
-        instance = new EditBox(font, left, top, width, FIELD,
-                Component.translatable("screen.factorynetwork.name.instance"));
-        instance.setMaxLength(64);
-        instance.setValue(instancePart(label));
-        instance.setResponder(text -> onTyped(input == null ? "" : input.getValue()));
-        addRenderableWidget(instance);
+        // Am Gateway gibt es nur die Anlage: Es hat keine Rolle, und ein
+        // leeres zweites Feld wäre eine Frage, auf die es keine Antwort gibt.
+        if (!isGateway()) {
+            instance = new EditBox(font, left, top, width, FIELD,
+                    Component.translatable("screen.factorynetwork.name.instance"));
+            instance.setMaxLength(64);
+            instance.setValue(instancePart(label));
+            instance.setResponder(text -> onTyped(input == null ? "" : input.getValue()));
+            addRenderableWidget(instance);
+        }
 
-        int y = top + FIELD + 4 + LINE + 4;
+        int y = isGateway() ? top : top + FIELD + 4 + LINE + 4;
         input = new EditBox(font, left, y, width, FIELD,
                 Component.translatable("screen.factorynetwork.name.field"));
         input.setMaxLength(64);
-        input.setValue(rolePart(label));
+        input.setValue(isGateway() ? label : rolePart(label));
         input.setResponder(this::onTyped);
         addRenderableWidget(input);
         setInitialFocus(input);
@@ -196,8 +223,9 @@ public class NameScreen extends AbstractContainerScreen<NameMenu> {
         // erst das Feld fragen, dann canConsumeInput, und nur wenn beides
         // verneint, geht die Taste weiter.
         if (input.keyPressed(key, scanCode, modifiers) || input.canConsumeInput()
-                || instance.keyPressed(key, scanCode, modifiers)
-                || instance.canConsumeInput()) {
+                || (instance != null
+                        && (instance.keyPressed(key, scanCode, modifiers)
+                                || instance.canConsumeInput()))) {
             return true;
         }
         return super.keyPressed(key, scanCode, modifiers);
@@ -212,20 +240,26 @@ public class NameScreen extends AbstractContainerScreen<NameMenu> {
         int first = topPos + PAD + LINE + 3;
         graphics.fill(leftPos + PAD - 1, first,
                 leftPos + imageWidth - PAD + 1, first + FIELD + 1, 0xFF080A09);
-        int second = first + FIELD + 4 + LINE + 4;
-        graphics.fill(leftPos + PAD - 1, second,
-                leftPos + imageWidth - PAD + 1, second + FIELD + 1, 0xFF080A09);
+        if (instance != null) {
+            int second = first + FIELD + 4 + LINE + 4;
+            graphics.fill(leftPos + PAD - 1, second,
+                    leftPos + imageWidth - PAD + 1, second + FIELD + 1, 0xFF080A09);
+        }
     }
 
     @Override
     protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
+        int second = PAD;
+        if (instance != null) {
+            graphics.drawString(font, FnFonts.mono(Component.translatable(
+                            "screen.factorynetwork.name.instance")),
+                    PAD, PAD, TerminalScreen.TEXT_DIM, false);
+            second = PAD + LINE + 4 + FIELD + 4;
+        }
         graphics.drawString(font, FnFonts.mono(Component.translatable(
-                        "screen.factorynetwork.name.instance")),
-                PAD, PAD, TerminalScreen.TEXT_DIM, false);
-        int second = PAD + LINE + 4 + FIELD + 4;
-        graphics.drawString(font, FnFonts.mono(Component.translatable(isDisplay()
-                        ? "screen.factorynetwork.name.title.display"
-                        : "screen.factorynetwork.name.title.connector")),
+                        isGateway() ? "screen.factorynetwork.name.title.gateway"
+                                : isDisplay() ? "screen.factorynetwork.name.title.display"
+                                        : "screen.factorynetwork.name.title.connector")),
                 PAD, second, TerminalScreen.TEXT, false);
         graphics.drawString(font, note, PAD, second + LINE + 4 + FIELD + 3,
                 noteColour, false);

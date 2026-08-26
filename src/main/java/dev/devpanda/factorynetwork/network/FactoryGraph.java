@@ -23,6 +23,7 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -75,6 +76,14 @@ public final class FactoryGraph {
     private final Set<BlockPos> cables;
     /** Router am Netz. Sie leiten weiter und kosten selbst keinen Kanal. */
     private final Set<BlockPos> routers;
+
+    /**
+     * Geräte, die zwei Gateways beanspruchen — sie gehören zu keiner Anlage.
+     *
+     * <p>Welches gewönne, hinge an der Suchreihenfolge. Geraten wird nicht;
+     * gemeldet schon.
+     */
+    private final Set<BlockPos> contested;
     /** Laufwerke am Netz. Sie tragen den Speicher, den das Netz benutzt. */
     private final List<BlockPos> drives;
     /** Serverschränke am Netz. Sie tragen die Rechenleistung. */
@@ -109,7 +118,9 @@ public final class FactoryGraph {
                          List<BlockPos> starved, List<BlockPos> displays, Set<BlockPos> cables,
                          Set<BlockPos> routers, Map<Node, Integer> channelLoad, List<Edge> edges,
                          List<BlockPos> drives, List<BlockPos> racks, List<BlockPos> extensions,
-                         List<BlockPos> fabricators, boolean truncated) {
+                         List<BlockPos> fabricators, Set<BlockPos> contested,
+                         boolean truncated) {
+        this.contested = contested;
         this.fabricators = fabricators;
         this.extensions = extensions;
         this.routers = routers;
@@ -128,7 +139,7 @@ public final class FactoryGraph {
     public static FactoryGraph empty() {
         return new FactoryGraph(Map.of(), List.of(), List.of(), List.of(),
                 Set.of(), Set.of(), Map.of(), List.of(), List.of(), List.of(),
-                List.of(), List.of(), false);
+                List.of(), List.of(), Set.of(), false);
     }
 
     /** Die Fabricators am Netz. */
@@ -209,6 +220,7 @@ public final class FactoryGraph {
         List<BlockPos> displays = new ArrayList<>();
         Set<BlockPos> cables = new HashSet<>();
         Set<BlockPos> routers = new HashSet<>();
+        Set<BlockPos> gateways = new LinkedHashSet<>();
         List<BlockPos> drives = new ArrayList<>();
         List<BlockPos> racks = new ArrayList<>();
         List<BlockPos> fabricators = new ArrayList<>();
@@ -259,6 +271,16 @@ public final class FactoryGraph {
                 BlockState state = level.getBlockState(next);
                 if (state.getBlock() instanceof CableBlock) {
                     visitCable(level, next, current, parents, queue, cables);
+                } else if (state.getBlock()
+                        instanceof dev.devpanda.factorynetwork.block.GatewayBlock) {
+                    // Er reicht den Strang durch wie ein Kabel und vermehrt
+                    // dabei nichts: Seine Kanalgrenze steht in capacityAt.
+                    // Was er zusätzlich tut — der Umgebung einen
+                    // Anlagennamen geben —, entscheidet die Nachbarschaft am
+                    // Kabel und nicht der Weg zum Controller; deshalb steht
+                    // es in GatewayRegions und nicht hier.
+                    visitCable(level, next, current, parents, queue, cables);
+                    gateways.add(next.immutable());
                 } else if (state.getBlock() instanceof RouterBlock) {
                     visitRouter(level, next, direction, current, parents, queue, routers);
                 } else {
@@ -287,8 +309,13 @@ public final class FactoryGraph {
             }
         }
 
+        // Erst jetzt, weil erst jetzt feststeht, welche Gateways im Netz
+        // hängen. Ein Gateway ohne Kabel zum Controller gehört nicht dazu
+        // und benennt deshalb auch nichts.
+        GatewayRegions regions = gateways.isEmpty()
+                ? GatewayRegions.EMPTY : GatewayRegions.of(level, gateways, maxNodes());
         assignChannels(level, reachable, kinds, parents, load, connectors, unnamed,
-                starved, displays, drives, racks, fabricators);
+                starved, displays, drives, racks, fabricators, regions);
 
         Map<String, List<BlockPos>> frozen = new LinkedHashMap<>();
         connectors.forEach((label, positions) -> frozen.put(label, List.copyOf(positions)));
@@ -302,7 +329,7 @@ public final class FactoryGraph {
                 List.copyOf(starved), List.copyOf(displays), Set.copyOf(cables),
                 Set.copyOf(routers), Map.copyOf(load), List.copyOf(edges),
                 List.copyOf(drives), List.copyOf(racks), List.copyOf(extensions),
-                List.copyOf(fabricators), truncated);
+                List.copyOf(fabricators), Set.copyOf(regions.contested()), truncated);
     }
 
     /**
@@ -485,7 +512,8 @@ public final class FactoryGraph {
                                        Map<String, List<BlockPos>> connectors,
                                        List<BlockPos> unnamed, List<BlockPos> starved,
                                        List<BlockPos> displays, List<BlockPos> drives,
-                                       List<BlockPos> racks, List<BlockPos> fabricators) {
+                                       List<BlockPos> racks, List<BlockPos> fabricators,
+                                       GatewayRegions regions) {
         for (Map.Entry<BlockPos, List<Node>> entry : reachable.entrySet()) {
             BlockPos pos = entry.getKey();
             Consumer kind = kinds.get(pos);
@@ -528,7 +556,7 @@ public final class FactoryGraph {
                 case FABRICATOR -> fabricators.add(pos);
                 case DISPLAY -> displays.add(pos);
                 case CONNECTOR -> {
-                    String label = connector.label();
+                    String label = effectiveLabel(connector.label(), regions.instanceAt(pos));
                     if (label == null || label.isBlank()) {
                         unnamed.add(pos);
                     } else {
@@ -542,6 +570,30 @@ public final class FactoryGraph {
         }
     }
 
+    /**
+     * Der Name, unter dem ein Gerät im Netz steht.
+     *
+     * <p><b>Die Beschriftung gewinnt.</b> Steht ein Schrägstrich darin, ist
+     * die Anlage schon gesagt, und ein Gateway ändert daran nichts — sonst
+     * hätte ein hingestellter Block still verschoben, was ein Programm über
+     * ein Gerät sagt.
+     *
+     * <p>Sonst setzt das Gateway seinen Namen davor. Für alles dahinter ist
+     * das Gerät damit {@code werk_1/eingang}, ohne dass es an einem einzigen
+     * Connector dasteht: Der Interpreter, die Anlagenerkennung und beide
+     * Editoren sehen denselben Namen wie vorher.
+     */
+    static String effectiveLabel(String label, String instance) {
+        if (label == null || label.isBlank() || instance == null || instance.isBlank()) {
+            return label;
+        }
+        return label.indexOf(dev.devpanda.factorynetwork.runtime
+                .MultiblockInstances.SEPARATOR) >= 0
+                ? label
+                : instance + dev.devpanda.factorynetwork.runtime
+                        .MultiblockInstances.SEPARATOR + label;
+    }
+
     /** Der Weg eines Geräts zum Controller, als Liste seiner Kabelstränge. */
     private static List<Node> pathOf(Level level, Node from, Map<Node, Node> parents) {
         List<Node> path = new ArrayList<>();
@@ -550,7 +602,8 @@ public final class FactoryGraph {
             // man ihn hier aus, wäre eine Kreuzung unbegrenzt, und ein Netz
             // hinter einem Router hätte plötzlich keine Grenze mehr.
             var block = level.getBlockState(node.pos()).getBlock();
-            if (block instanceof CableBlock || block instanceof RouterBlock) {
+            if (block instanceof CableBlock || block instanceof RouterBlock
+                    || block instanceof dev.devpanda.factorynetwork.block.GatewayBlock) {
                 path.add(node);
             }
         }
@@ -578,6 +631,16 @@ public final class FactoryGraph {
         return channelLoad.getOrDefault(new Node(pos, CableColour.NONE, lane), 0);
     }
 
+    /**
+     * Geräte, die von zwei Gateways beansprucht werden.
+     *
+     * <p>Sie gehören zu keiner Anlage. Der Reiter <i>Netz</i> nennt sie,
+     * statt still eines der beiden zu wählen.
+     */
+    public Set<BlockPos> contested() {
+        return contested;
+    }
+
     /** Die Router am Netz. */
     public Set<BlockPos> routers() {
         return routers;
@@ -594,6 +657,12 @@ public final class FactoryGraph {
         if (state.getBlock() instanceof RouterBlock) {
             // Der Router gehört zum dicken Kabel, also trägt jede seiner
             // Bahnen so viel wie ein dickes Kabel.
+            return CableBlock.CHANNELS_DENSE;
+        }
+        if (state.getBlock() instanceof dev.devpanda.factorynetwork.block.GatewayBlock) {
+            // Er gehört zum dichten Kabel und trägt so viel wie eines. Ein
+            // Kanalvermehrer zum Hinstellen machte die Kanalgrenze
+            // bedeutungslos — dieselbe Regel wie beim Controller-Anbau.
             return CableBlock.CHANNELS_DENSE;
         }
         int channels = CableBlock.channelsAt(state);

@@ -50,6 +50,15 @@ public final class FnBlocks {
     public static final DeferredBlock<Block> FABRICATOR = BLOCKS.register("fabricator",
             () -> new dev.devpanda.factorynetwork.block.FabricatorBlock(machineProperties()));
 
+    /**
+     * Gibt seiner Umgebung einen Anlagennamen.
+     *
+     * <p>Ein Kabelstück mit Namensschild: Was hinter ihm am Kabel hängt,
+     * gehört zu seiner Anlage. Kanäle vermehrt er nicht.
+     */
+    public static final DeferredBlock<Block> GATEWAY = BLOCKS.register("gateway",
+            () -> new dev.devpanda.factorynetwork.block.GatewayBlock(machineProperties()));
+
     /** Verbindet Blöcke zu einem Netzwerk. */
     public static final DeferredBlock<Block> CABLE = BLOCKS.register("cable",
             () -> new CableBlock(BlockBehaviour.Properties.of()

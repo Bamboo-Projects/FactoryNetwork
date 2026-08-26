@@ -3971,3 +3971,54 @@ Das ist keine Nachlässigkeit, sondern die Grenze dieses Schnitts, und sie
 steht hier, damit der Beweis aus §5 Schritt 4 richtig gelesen wird: Wenn Ars
 Nouveau später an dieser Achse hängenbleibt, ist das keine unfertige Registry,
 sondern die zweite Achse, die es noch nicht gibt.
+
+## Eine Anlage darf auch ein Block sein (2026-08-26)
+
+Bisher entstand eine Anlage allein über die Beschriftung: `werk_1/eingang`,
+`werk_1/ausgang`. `anlagen.md` nannte das ausdrücklich einen Vorteil — „keinen
+weiteren Block, keinen Bereich, den man abstecken müsste".
+
+**Auf Wunsch des Projektinhabers gibt es jetzt beides.** Der Satz oben stimmt
+weiter für den, der ihn nutzen will; er ist nur nicht mehr die einzige
+Antwort.
+
+### Was den Ausschlag gab
+
+**Eine Anlage ist etwas Zusammenhängendes.** Das ist die Beobachtung, aus der
+der Wunsch kam, und sie ist richtig: Zwölf Maschinen, die eine Sache tun,
+stehen im Spiel beieinander. Der Namensweg verlangt, dass man den
+Anlagennamen zwölfmal wiederholt — und beim Umbenennen zwölfmal hingeht.
+
+Der Gateway macht daraus einen Block. Was hinter ihm am Kabel hängt, gehört zu
+seiner Anlage.
+
+### Die Beschriftung gewinnt
+
+Trägt ein Gerät selbst einen Schrägstrich, gilt der, und der Gateway rührt ihn
+nicht an. Das ist die wichtigste der drei Regeln: Ein hingestellter Block darf
+nicht still verschieben, was ein Programm über ein Gerät sagt. Wer die
+Reihenfolge umdrehte, bekäme einen Fehler, den man nur findet, indem man den
+Block wieder abbaut.
+
+### Zwei Gateways auf einem Gerät heben sich auf
+
+Dann steht nicht fest, welche Anlage gemeint ist. Das erste zu nehmen hinge an
+der Suchreihenfolge, und die ist keine Erklärung, die ein Spieler lesen kann.
+Das Gerät gehört dann zu keiner Anlage — so, als stünde kein Gateway da.
+
+### Er vermehrt keine Kanäle
+
+Dieselbe Regel, an der schon der Controller-Anbau hängt: Ein Kanalvermehrer
+zum Hinstellen machte die Kanalgrenze bedeutungslos, und die Kanalgrenze ist
+der Ausgleich dieser Mod. Der Gateway trägt so viel wie ein dichtes Kabel.
+
+### Wo der Name entsteht
+
+Im **Graphen**, beim Aufbau — nicht im Wertemodell und nicht in der Sprache.
+Für alles dahinter heißt das Gerät `werk_1/eingang`, genau wie beim
+geschriebenen Namen: Der Interpreter, die Anlagenerkennung und beide Editoren
+sehen keinen Unterschied und mussten nicht angefasst werden.
+
+Das ist der Grund, warum dieser Block klein bleiben konnte. Ein zweiter
+Begriff für dieselbe Sache — „Anlage aus dem Namen" gegen „Anlage aus der
+Welt" — hätte jede Stelle verdoppelt, die heute mit Anlagen umgeht.

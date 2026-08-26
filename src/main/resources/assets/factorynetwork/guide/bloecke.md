@@ -137,6 +137,19 @@ trägt nichts — nicht anteilig, gar nichts. Er steht dann gelb an der Front.
 Ohne einen einzigen laufenden Server nimmt das Netz kein Programm an, und
 kein Worker rührt sich.
 
+## Gateway
+
+Ein Kabelstück mit einem Namensschild. Was hinter ihm am Kabel hängt, gehört
+zu der Anlage, deren Namen er trägt — ohne dass an einem einzigen Gerät etwas
+dasteht. Rechtsklick benennt ihn.
+
+*Kostet: keinen Kanal, keinen Strom.*
+
+**Er vermehrt keine Kanäle.** Er trägt so viel wie ein dichtes Kabel und
+keinen mehr. Was er zusätzlich kann, ist ein Name und keine Leitung.
+
+Ausführlich unter *Anlagen*.
+
 ## Router
 
 Die Kreuzung für dichte Kabel. Er hat **vier Bahnen**, und jede seiner sechs

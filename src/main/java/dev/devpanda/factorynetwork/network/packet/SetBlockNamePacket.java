@@ -58,6 +58,11 @@ public record SetBlockNamePacket(BlockPos position, String name)
             }
             String wanted = ConnectorNaming.normalize(packet.name());
             var entity = player.level().getBlockEntity(pos);
+            if (entity instanceof dev.devpanda.factorynetwork.block.entity
+                    .GatewayBlockEntity gateway) {
+                nameGateway(gateway, wanted, player);
+                return;
+            }
             if (entity instanceof DisplayBlockEntity display) {
                 nameWall(display, wanted, player);
             } else if (entity instanceof ConnectorBlockEntity connector) {
@@ -124,6 +129,30 @@ public record SetBlockNamePacket(BlockPos position, String name)
         }
         connector.setLabel(wanted);
         say(player, "message.factorynetwork.connector.named", wanted);
+    }
+
+    /**
+     * Ein Gateway trägt einen Anlagennamen und keine Rolle.
+     *
+     * <p>Deshalb ohne Schrägstrich und ohne die Frage, ob der Name schon
+     * vergeben ist: Zwei Gateways mit demselben Namen sind kein Fehler,
+     * sondern zwei Teile derselben Anlage. Erst wenn beide dasselbe Gerät
+     * beanspruchen, gehört es zu keiner — und das meldet der Reiter
+     * <i>Netz</i>.
+     */
+    private static void nameGateway(dev.devpanda.factorynetwork.block.entity
+            .GatewayBlockEntity gateway, String wanted, ServerPlayer player) {
+        if (wanted.isEmpty()) {
+            gateway.setInstance("");
+            say(player, "message.factorynetwork.gateway.unnamed");
+            return;
+        }
+        if (!ConnectorNaming.isValidIdentifier(wanted)) {
+            say(player, "message.factorynetwork.label_gun.invalid", wanted);
+            return;
+        }
+        gateway.setInstance(wanted);
+        say(player, "message.factorynetwork.gateway.named", wanted);
     }
 
     private static void say(ServerPlayer player, String key, Object... arguments) {

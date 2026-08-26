@@ -10550,4 +10550,118 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    /**
+     * Ein Gateway gibt seiner Umgebung den Anlagennamen.
+     *
+     * <p>Eine Anlage entsteht bisher allein über die Beschriftung —
+     * {@code werk_1/eingang} an jedem einzelnen Gerät. Das bleibt, aber es
+     * verlangt, dass man den Namen zwölfmal wiederholt und beim Umbenennen
+     * zwölfmal hingeht.
+     *
+     * <p>Das Gateway ist die andere Antwort und geht von dem aus, was eine
+     * Anlage im Spiel wirklich ist: <b>etwas Zusammenhängendes</b>. Was
+     * hinter ihm am Kabel hängt, gehört dazu — ohne dass an einem einzigen
+     * Connector der Name steht.
+     *
+     * <p>Geprüft wird der Name, den das <b>Netz</b> kennt, und nicht der am
+     * Block: Genau darauf schauen der Interpreter, die Anlagenerkennung und
+     * beide Editoren.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void agatewayNamesWhatHangsBehindIt(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 1, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        rackWithServer(helper, controller.west());
+
+        // Controller — Kabel — Gateway — Kabel — Connector.
+        BlockPos cable = controller.east();
+        BlockPos gateway = cable.east();
+        BlockPos beyond = gateway.east();
+        helper.setBlock(cable, FnBlocks.CABLE.get());
+        helper.setBlock(gateway, FnBlocks.GATEWAY.get());
+        helper.setBlock(beyond, FnBlocks.CABLE.get());
+
+        BlockPos connector = beyond.north();
+        helper.setBlock(connector, FnBlocks.CONNECTOR.get().defaultBlockState()
+                .setValue(ConnectorBlock.FACING, Direction.NORTH));
+        helper.setBlock(connector.north(), Blocks.CHEST);
+        name(helper, connector, "eingang");
+
+        if (helper.getBlockEntity(gateway)
+                instanceof dev.devpanda.factorynetwork.block.entity.GatewayBlockEntity entity) {
+            entity.setInstance("werk_1");
+        } else {
+            helper.fail("Am Gateway hängt keine BlockEntity", gateway);
+        }
+
+        ControllerBlockEntity net = controllerAt(helper, controller);
+        net.rebuildNetwork();
+
+        helper.assertTrue(net.graph().connectorNames().contains("werk_1/eingang"),
+                "Das Netz muss das Gerät als werk_1/eingang kennen: "
+                        + net.graph().connectorNames());
+        helper.assertTrue(!net.graph().connectorNames().contains("eingang"),
+                "und nicht daneben noch einmal ohne Anlage");
+        helper.succeed();
+    }
+
+    /**
+     * Die Beschriftung gewinnt gegen das Gateway.
+     *
+     * <p>Steht der Schrägstrich schon im Namen, ist die Anlage gesagt. Ein
+     * hingestellter Block darf daran nichts still verschieben — das ist die
+     * Sorte Überraschung, die man am längsten sucht.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void thelabelWinsAgainstTheGateway(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 1, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        rackWithServer(helper, controller.west());
+
+        BlockPos gateway = controller.east();
+        helper.setBlock(gateway, FnBlocks.GATEWAY.get());
+        BlockPos cable = gateway.east();
+        helper.setBlock(cable, FnBlocks.CABLE.get());
+
+        BlockPos connector = cable.north();
+        helper.setBlock(connector, FnBlocks.CONNECTOR.get().defaultBlockState()
+                .setValue(ConnectorBlock.FACING, Direction.NORTH));
+        helper.setBlock(connector.north(), Blocks.CHEST);
+        name(helper, connector, "werk_2/ausgang");
+
+        if (helper.getBlockEntity(gateway)
+                instanceof dev.devpanda.factorynetwork.block.entity.GatewayBlockEntity entity) {
+            entity.setInstance("werk_1");
+        }
+
+        ControllerBlockEntity net = controllerAt(helper, controller);
+        net.rebuildNetwork();
+
+        helper.assertTrue(net.graph().connectorNames().contains("werk_2/ausgang"),
+                "Der geschriebene Name bleibt: " + net.graph().connectorNames());
+        helper.assertTrue(!net.graph().connectorNames().contains("werk_1/werk_2/ausgang"),
+                "und wird nicht noch einmal vorangestellt");
+        helper.succeed();
+    }
+
+    /**
+     * Ein Gateway vermehrt keine Kanäle.
+     *
+     * <p>Dieselbe Regel wie beim Controller-Anbau: Ein Kanalvermehrer zum
+     * Hinstellen machte die Kanalgrenze bedeutungslos. Das Gateway trägt so
+     * viel wie ein dichtes Kabel und keinen Kanal mehr.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void agatewayDoesNotMultiplyChannels(GameTestHelper helper) {
+        BlockPos gateway = new BlockPos(2, 1, 1);
+        helper.setBlock(gateway, FnBlocks.GATEWAY.get());
+
+        helper.assertValueEqual(
+                dev.devpanda.factorynetwork.network.FactoryGraph.capacityAt(
+                        helper.getLevel(), helper.absolutePos(gateway)),
+                dev.devpanda.factorynetwork.block.CableBlock.CHANNELS_DENSE,
+                "so viel wie ein dichtes Kabel, und keinen mehr");
+        helper.succeed();
+    }
+
 }
