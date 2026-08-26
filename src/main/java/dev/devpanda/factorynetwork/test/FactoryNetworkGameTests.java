@@ -8600,6 +8600,98 @@ public final class FactoryNetworkGameTests {
                 .thenSucceed();
     }
 
+    /**
+     * Fehlt die Flüssigkeit eines Rezepts, wartet der Auftrag und rührt nichts an.
+     *
+     * <p>Der Schnitt, um den es geht: Ein Rezept darf {@code in 1000
+     * fluid:water} sagen. Der Planner rechnet damit nicht — Flüssigkeiten
+     * werden nicht beschafft —, aber der Ausführende muss sie beim Anfangen
+     * einfüllen. Und wenn er das nicht kann, darf er die Gegenstände nicht
+     * schon einmal hineinlegen: Eine Maschine mit vier Erzen und ohne Wasser
+     * fängt nie an, und das Erz wäre aus dem Netz verschwunden.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void arecipeWaitsForItsFluid(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        helper.setBlock(controller.east().above(), FnBlocks.FABRICATOR.get());
+        entity.rebuildNetwork();
+        entity.storage().insert(Items.IRON_ORE, 4);
+
+        helper.assertTrue(entity.deploy("""
+                recipe erz_waschen at quarry_output {
+                    in 1 item:iron_ore
+                    in 1000 fluid:water
+                    out 2 item:iron_nugget
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+        entity.requestCraft(Items.IRON_NUGGET, 2);
+
+        helper.startSequence()
+                .thenIdle(60)
+                .thenExecute(() -> {
+                    var job = entity.craftingJobs().get(0);
+                    helper.assertValueEqual(job.status().name(), "WAITING",
+                            "der Auftrag muss warten: " + job.detail());
+                    // Auf Deutsch heißt sie Wasser, im Prüflauf ohne
+                    // Sprachdateien Water — geprüft wird beides, wie beim Ofen.
+                    helper.assertTrue(job.detail().toLowerCase().contains("wasser")
+                                    || job.detail().toLowerCase().contains("water"),
+                            "und sagen, welche Sorte fehlt: " + job.detail());
+                    helper.assertTrue(job.detail().contains("1000"),
+                            "und wie viel: " + job.detail());
+                    helper.assertValueEqual(entity.storage().count(Items.IRON_ORE), 4L,
+                            "und das Erz nicht angefasst haben");
+                })
+                .thenSucceed();
+    }
+
+    /**
+     * Und ebenso, wenn die Maschine die Flüssigkeit gar nicht nimmt.
+     *
+     * <p>Geprüft an einer Kiste: Sie nimmt Gegenstände an und hat keinen
+     * Tank — der Fall, in dem jemand {@code fluid:} an ein Gerät schreibt,
+     * das damit nichts anfangen kann. Auch dann bleibt beides liegen, wo es
+     * liegt, und die Meldung nennt die Sorte statt nur „geht nicht".
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void arecipeWaitsIfTheMachineTakesNofluid(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        helper.setBlock(controller.east().above(), FnBlocks.FABRICATOR.get());
+        driveWithFluidCell(helper, controller.east().east(),
+                dev.devpanda.factorynetwork.storage.FluidCellTier.B64);
+        entity.rebuildNetwork();
+        entity.storage().insert(Items.IRON_ORE, 4);
+        entity.fluids().insert(net.minecraft.world.level.material.Fluids.WATER, 4000);
+
+        helper.assertTrue(entity.deploy("""
+                recipe erz_waschen at quarry_output {
+                    in 1 item:iron_ore
+                    in 1000 fluid:water
+                    out 2 item:iron_nugget
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+        entity.requestCraft(Items.IRON_NUGGET, 2);
+
+        helper.startSequence()
+                .thenIdle(60)
+                .thenExecute(() -> {
+                    var job = entity.craftingJobs().get(0);
+                    helper.assertValueEqual(job.status().name(), "WAITING",
+                            "der Auftrag muss warten: " + job.detail());
+                    helper.assertTrue(job.detail().toLowerCase().contains("wasser")
+                                    || job.detail().toLowerCase().contains("water"),
+                            "und sagen, woran es liegt: " + job.detail());
+                    helper.assertValueEqual(entity.storage().count(Items.IRON_ORE), 4L,
+                            "das Erz bleibt im Netz");
+                    helper.assertValueEqual(entity.fluids().count(
+                                    net.minecraft.world.level.material.Fluids.WATER), 4000L,
+                            "und kein Tropfen ist weg");
+                })
+                .thenSucceed();
+    }
+
     /** Ein Rezept an einem Gerät, das es nicht gibt, meldet sich beim Übernehmen. */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void arecipeAtAnunknownDeviceIsReported(GameTestHelper helper) {

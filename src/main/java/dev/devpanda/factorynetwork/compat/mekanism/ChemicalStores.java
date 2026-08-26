@@ -60,6 +60,24 @@ public final class ChemicalStores {
     }
 
     /**
+     * Wie viel von dieser Sorte gerade in die Maschine passt.
+     *
+     * <p>Die Probe vor dem Einfüllen: Ein Rezept, dessen Gas nicht ganz
+     * hineingeht, soll gar nicht erst anfangen — sonst stünde die Maschine
+     * mit halber Rechnung da. Nach außen sind das nur Kennungen und Zahlen;
+     * der Behälter bleibt in diesem Paket.
+     */
+    public static long roomFor(net.minecraft.world.level.Level level,
+            net.minecraft.core.BlockPos pos, net.minecraft.core.Direction side,
+            String id, long amount) {
+        if (!FnMekanism.installed() || amount <= 0) {
+            return 0;
+        }
+        var handler = MekTanks.at(level, pos, side);
+        return handler == null ? 0 : MekTanks.fill(handler, id, amount, true);
+    }
+
+    /**
      * Zieht aus einer Maschine in den Netzspeicher.
      *
      * <p><b>Erst fragen, dann ziehen.</b> Was der Speicher nicht nimmt, darf

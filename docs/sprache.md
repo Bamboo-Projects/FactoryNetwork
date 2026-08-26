@@ -202,8 +202,9 @@ worker wasserstoff {
 }
 ```
 
-> **Ein Schnitt, der bleibt:** Chemikalien in einem `recipe`-Block werden beim
-> Auflösen übergangen — der Planner rechnet mit Gegenständen.
+Chemikalien dürfen auch in einem `recipe`-Block stehen. Sie werden dort
+**eingefüllt, nicht geplant**: Der Auftrag holt sie beim Anfangen aus dem
+Netzspeicher in die Maschine, beschafft sie aber nicht selbst. Siehe §11a.
 
 ### Mengen
 
@@ -1249,10 +1250,39 @@ sie selbst; das Netz legt ein, wo sie annimmt, und holt heraus, wo sie
 herausgibt. Bei der Ofenfamilie kennt diese Mod die Fächer und benutzt sie
 direkt — dort ist es kein Raten.
 
-> **Noch nicht gebaut:** Flüssigkeiten und Strom im Rezept. `in 1000
-> fluid:water` parst, wird aber beim Auflösen übergangen: Der Planner rechnet
-> heute nur mit Gegenständen. Wer eine Maschine mit Wasserbedarf hat, versorgt
-> sie mit einem Worker daneben.
+### Flüssigkeiten und Chemikalien als Zutat
+
+```
+recipe erz_waschen at washer {
+    in 1 item:iron_ore
+    in 1000 fluid:water
+    out 2 item:iron_nugget
+}
+```
+
+**Sie werden eingefüllt, nicht geplant.** Der Auftrag holt sie beim Anfangen
+aus dem Netzspeicher und füllt sie in die Maschine — genau wie die Gegenstände
+daneben. Was er *nicht* tut: sie beschaffen. Der Planner kennt keine Rezepte
+über Flüssigkeiten, und ihm welche beizubringen hieße, eine Ressourcenart zu
+brauchen, die offen ist statt fest; das ist eine eigene Entscheidung und steht
+in `offene-punkte.md`.
+
+Daraus folgt die Regel, nach der es sich anfühlt: **Was im Rezept steht, muss
+im Netz liegen, wenn der Schritt anfängt.** Ist zu wenig da, wartet der Auftrag
+und sagt, welche Sorte fehlt und wie viel — und rührt die Gegenstände nicht an.
+Eine Maschine mit vier Erzen und ohne Wasser fängt nie an, und das Erz wäre aus
+dem Netz verschwunden.
+
+**Die Menge wächst mit den Durchgängen.** Vier Nuggets bestellt heißt zwei
+Durchgänge heißt 2000 mB. Die Gegenstände gehen für alle Durchgänge auf einmal
+hinein; das Wasser hält mit.
+
+**Eine Sorte je Zutat.** Trifft die Auswahl mehrere — `fluidtag:c/water` —,
+wird die genommen, von der genug da ist. Ein Tank hält meist genau eine, und
+zwei hineinzumischen wäre kein Rezept, sondern ein Unfall.
+
+> **Noch nicht gebaut:** Strom im Rezept. Wer eine Maschine mit Strombedarf
+> hat, versorgt sie wie bisher selbst.
 
 ---
 

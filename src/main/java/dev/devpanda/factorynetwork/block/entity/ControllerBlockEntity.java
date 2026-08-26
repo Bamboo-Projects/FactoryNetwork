@@ -1007,6 +1007,21 @@ public class ControllerBlockEntity extends BlockEntity {
                 return false;
             }
         }
+        // Und dasselbe für das, was kein Gegenstand ist. Die Probe steht vor
+        // jeder Bewegung, sonst läge das Erz schon in der Maschine, während
+        // das Wasser fehlt.
+        String missing = fillExtras(step, device, true);
+        if (missing != null) {
+            job.note(dev.devpanda.factorynetwork.crafting.CraftingJob.Status.WAITING, missing);
+            return false;
+        }
+        String failed = fillExtras(step, device, false);
+        if (failed != null) {
+            // Zwischen Probe und Zug hat sich etwas geändert. Selten, aber
+            // dann ehrlich gemeldet statt stillschweigend halb ausgeführt.
+            job.note(dev.devpanda.factorynetwork.crafting.CraftingJob.Status.WAITING, failed);
+            return false;
+        }
         for (var entry : step.consumed().entrySet()) {
             long got = storage.extract(entry.getKey(), entry.getValue());
             net.minecraft.world.item.ItemStack rest = insertAll(handler,
@@ -1020,6 +1035,164 @@ public class ControllerBlockEntity extends BlockEntity {
         job.note(dev.devpanda.factorynetwork.crafting.CraftingJob.Status.RUNNING,
                 "läuft in " + device);
         return true;
+    }
+
+    /**
+     * Füllt die Zutaten ein, die keine Gegenstände sind.
+     *
+     * <p><b>Aus dem Netzspeicher in die Maschine</b>, genau wie die
+     * Gegenstände daneben. Der Planner beschafft Flüssigkeiten nicht — dazu
+     * bräuchte es eine Ressourcenart, die offen ist statt fest —, aber
+     * bewegen muss der Auftrag sie: Sonst behauptet die Zeile {@code in 1000
+     * fluid:water} etwas, das nie geschieht, und wer den Tank per Worker
+     * füllt, käme mit dem Netzbestand durcheinander.
+     *
+     * <p>Die Menge wächst mit den Durchgängen: Die Gegenstände gehen für alle
+     * auf einmal hinein, das Wasser muss mithalten.
+     *
+     * @param probe ob nur gefragt und noch nichts bewegt wird
+     * @return was fehlt, oder {@code null}, wenn alles da ist
+     */
+    private String fillExtras(dev.devpanda.factorynetwork.crafting.CraftingPlanner.Step<
+            net.minecraft.world.item.Item> step, String device, boolean probe) {
+        if (declaredCache == null) {
+            return null;
+        }
+        for (var extra : declaredCache.extrasOf(step.station())) {
+            long need = extra.needFor(step.runs());
+            if (need <= 0) {
+                continue;
+            }
+            String missing = extra.fluid()
+                    ? fillFluid(device, extra, need, probe)
+                    : fillChemical(device, extra, need, probe);
+            if (missing != null) {
+                return missing;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Eine Flüssigkeit aus dem Netz in den Tank der Maschine.
+     *
+     * <p><b>Eine Sorte je Zutat.</b> Trifft die Auswahl mehrere — {@code
+     * fluidtag:c/water} —, wird die genommen, von der genug da ist. Ein Tank
+     * hält meist genau eine, und zwei Sorten hineinzumischen wäre kein
+     * Rezept, sondern ein Unfall.
+     */
+    private String fillFluid(String device,
+            dev.devpanda.factorynetwork.crafting.DeclaredRecipes.Extra extra, long need,
+            boolean probe) {
+        var options = dev.devpanda.factorynetwork.runtime.FluidSelection
+                .resolve(extra.selection());
+        if (options.isEmpty()) {
+            return "diese Auswahl trifft keine Flüssigkeit";
+        }
+        net.minecraft.world.level.material.Fluid chosen = null;
+        for (var fluid : options) {
+            if (fluidStorage.count(fluid) >= need) {
+                chosen = fluid;
+                break;
+            }
+        }
+        if (chosen == null) {
+            var first = options.get(0);
+            return "es fehlen " + (need - fluidStorage.count(first)) + " mB "
+                    + fluidName(first);
+        }
+        var tank = machineTank(device);
+        if (tank == null) {
+            return device + " hat keinen Tank für " + fluidName(chosen);
+        }
+        int wanted = (int) Math.min(need, Integer.MAX_VALUE);
+        var stack = new net.neoforged.neoforge.fluids.FluidStack(chosen, wanted);
+        if (tank.fill(stack, net.neoforged.neoforge.fluids.capability.IFluidHandler
+                .FluidAction.SIMULATE) < wanted) {
+            return device + " nimmt gerade nicht genug " + fluidName(chosen) + " an";
+        }
+        if (probe) {
+            return null;
+        }
+        long got = fluidStorage.extract(chosen, wanted);
+        int placed = tank.fill(new net.neoforged.neoforge.fluids.FluidStack(chosen, (int) got),
+                net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+        if (placed < got) {
+            // Zurück, was doch nicht hineinging — dasselbe Muster wie überall,
+            // wo diese Mod etwas anbietet.
+            fluidStorage.insert(chosen, got - placed);
+        }
+        return null;
+    }
+
+    /**
+     * Dasselbe für eine Chemikalie.
+     *
+     * <p>Ohne Mekanism gibt es keine, und dann fehlt sie — die Meldung sagt
+     * das, statt so zu tun, als sei die Maschine schuld.
+     *
+     * <p><b>Ungeprüft im Spiel.</b> Ein Mekanism-Tank, der per {@code
+     * setBlock} in einen Prüflauf gestellt wird, hat keine
+     * Seitenkonfiguration und nimmt nichts an — nachgemessen, dieselbe Lücke
+     * wie beim Chemikalien-Worker. Was hier steht, ist derselbe Weg wie bei
+     * Flüssigkeiten, mit demselben Erst-fragen-dann-ziehen.
+     */
+    private String fillChemical(String device,
+            dev.devpanda.factorynetwork.crafting.DeclaredRecipes.Extra extra, long need,
+            boolean probe) {
+        var ids = dev.devpanda.factorynetwork.compat.mekanism.Chemicals
+                .resolve(extra.selection());
+        if (ids.isEmpty()) {
+            return dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.installed()
+                    ? "diese Auswahl trifft keine Chemikalie"
+                    : "dafür fehlt Mekanism";
+        }
+        String chosen = null;
+        for (String id : ids) {
+            if (chemicalStorage.count(id) >= need) {
+                chosen = id;
+                break;
+            }
+        }
+        if (chosen == null) {
+            String first = ids.get(0);
+            return "es fehlen " + (need - chemicalStorage.count(first)) + " mB "
+                    + dev.devpanda.factorynetwork.compat.mekanism.Chemicals.nameOf(first);
+        }
+        var position = graph.connector(device).orElse(null);
+        if (position == null || !(level.getBlockEntity(position)
+                instanceof ConnectorBlockEntity connector)) {
+            return "an " + device + " hängt keine Maschine";
+        }
+        var facing = dev.devpanda.factorynetwork.block.ConnectorBlock
+                .machineSide(connector.getBlockState());
+        var target = position.relative(facing);
+        String name = dev.devpanda.factorynetwork.compat.mekanism.Chemicals.nameOf(chosen);
+        if (dev.devpanda.factorynetwork.compat.mekanism.ChemicalStores.roomFor(
+                level, target, facing.getOpposite(), chosen, need) < need) {
+            return device + " nimmt gerade nicht genug " + name + " an";
+        }
+        if (probe) {
+            return null;
+        }
+        dev.devpanda.factorynetwork.compat.mekanism.ChemicalStores.fillFrom(chemicalStorage,
+                level, target, facing.getOpposite(), java.util.List.of(chosen), need);
+        return null;
+    }
+
+    /** Wie eine Flüssigkeit im Klartext heißt. */
+    private static String fluidName(net.minecraft.world.level.material.Fluid fluid) {
+        return fluid.getFluidType().getDescription().getString();
+    }
+
+    /** Der Tank der Maschine hinter einem Gerätenamen. */
+    private net.neoforged.neoforge.fluids.capability.IFluidHandler machineTank(String device) {
+        var position = graph.connector(device).orElse(null);
+        if (position == null || !level.isLoaded(position)
+                || !(level.getBlockEntity(position) instanceof ConnectorBlockEntity connector)) {
+            return null;
+        }
+        return connector.machineTank();
     }
 
     /**

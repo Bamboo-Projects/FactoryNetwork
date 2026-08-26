@@ -645,9 +645,57 @@ geschluckt und den Auftrag mit einem halben Rezept stehenlassen.
 nur beim Übernehmen — im Gegensatz zu den Rezepten des Servers, die ein
 `/reload` austauschen kann.
 
-Offen als dokumentierter Schnitt: Flüssigkeiten und Strom als Zutat. Sie
-parsen, werden beim Auflösen aber übergangen — der Planner rechnet mit
-Gegenständen.
+Offen als dokumentierter Schnitt: Strom als Zutat.
+
+### Flüssigkeiten und Chemikalien im Rezept (seit dem 26.08.)
+
+```
+recipe erz_waschen at washer {
+    in 1 item:iron_ore
+    in 1000 fluid:water
+    out 2 item:iron_nugget
+}
+```
+
+**Eingefüllt, nicht geplant** — die Entscheidung, an der alles andere hängt.
+Der Planner rechnet mit Gegenständen; ihm Flüssigkeiten beizubringen hieße,
+eine Ressourcenart zu brauchen, die offen ist statt fest, und das ist eine
+eigene Entscheidung (steht in `offene-punkte.md`). Der *Ausführende* dagegen
+muss sie bewegen, aus zwei Gründen: Sonst behauptet die Zeile etwas, das nie
+geschieht, und wer den Tank per Worker füllt, käme mit dem Netzbestand
+durcheinander — der Auftrag sähe den vollen Tank nicht und wartete ewig auf
+Wasser, das längst dort ist.
+
+Der erste Entwurf prüfte deshalb nur den Bestand und ließ das Füllen dem
+Spieler. Das wäre ein Selbstwiderspruch im selben Commit gewesen: derselbe
+Weg, auf dem die Gegenstände eingelegt werden, hätte die Flüssigkeit daneben
+liegen gelassen.
+
+**Die Menge wächst mit den Durchgängen.** Die Gegenstände gehen für alle
+Durchgänge auf einmal in die Maschine (`step.consumed()` ist schon
+hochgerechnet), die Nebenzutat aber steht je Durchgang im Rezept. Ohne
+`needFor(runs)` stünde dort eine Maschine mit vier Erzen und einem Eimer. Das
+ist der eine Fehler, den ein Einheitstest ohne Welt fassen kann — deshalb
+liegt er dort.
+
+**Die Station trägt den Rezeptnamen mit**, `at:brecher#erz_mahlen`. Zwei
+Rezepte am selben Gerät mit derselben Ausgabe ließen sich sonst nicht
+unterscheiden, und dann bekäme die Maschine das Wasser des anderen. Eine
+gespeicherte Station aus einer älteren Welt hat kein Doppelkreuz; sie liefert
+weiterhin ihr Gerät und eine leere Zutatenliste, und der Auftrag läuft weiter.
+
+**Die Probe steht vor jeder Bewegung** — jetzt auch für das, was kein
+Gegenstand ist. Fehlt das Wasser, bleibt das Erz liegen: Eine Maschine mit
+halber Rechnung fängt nie an, und das Erz wäre aus dem Netz verschwunden.
+
+**Eine Sorte je Zutat.** Trifft die Auswahl mehrere, wird die genommen, von
+der genug da ist — ein Tank hält meist genau eine.
+
+Ungeprüft im Spiel bleiben die Chemikalien, dieselbe Lücke wie beim
+Chemikalien-Worker: Ein Mekanism-Tank, der per `setBlock` in einen Prüflauf
+gestellt wird, hat keine Seitenkonfiguration und nimmt nichts an — nachgemessen.
+Der Weg ist derselbe wie bei Flüssigkeiten, und die Rechnung darüber ist
+geprüft.
 
 ### Maschinen im Autocrafting (seit dem 26.08.)
 

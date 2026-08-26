@@ -150,8 +150,32 @@ Schreibst du ein Gerät hin, das es nicht gibt, sagt es das Terminal beim
 Übernehmen — das ist der Vorteil davon, dass ein Rezept im Programm steht und
 nicht auf einem Zettel.
 
-Was noch nicht geht: Flüssigkeiten und Strom als Zutat. Wer eine Maschine mit
-Wasserbedarf hat, versorgt sie mit einem Worker daneben.
+## Wenn die Maschine Wasser braucht
+
+Manche Maschinen wollen mehr als Gegenstände. Schreib es dazu:
+
+```
+recipe erz_waschen at washer {
+    in 1 item:iron_ore
+    in 1000 fluid:water
+    out 2 item:iron_nugget
+}
+```
+
+Das Netz füllt das Wasser beim Anfangen selbst ein — aus deinem Speicher, so
+wie es auch das Erz einlegt. Chemikalien gehen genauso, wenn Mekanism dabei
+ist.
+
+Ein Unterschied bleibt, und der ist wichtig: **Wasser wird nicht beschafft.**
+Fehlt ein Erz, baut das Netz es nach; fehlt das Wasser, wartet der Auftrag und
+sagt dir, wie viel fehlt. Sorg also dafür, dass genug im Netz liegt — mit einem
+Worker, der aus einem Tank zieht, oder von Hand mit einem Eimer.
+
+Und er wartet, ohne etwas anzufassen. Ohne Wasser bleibt auch das Erz liegen:
+Eine Maschine mit halber Rechnung fängt nie an, und dein Erz wäre weg.
+
+Was noch nicht geht: Strom als Zutat. Eine Maschine, die Strom braucht,
+versorgst du wie bisher selbst.
 
 ## Nachschub, der sich selbst bestellt
 
