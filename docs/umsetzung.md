@@ -1661,3 +1661,36 @@ direkt auf `IItemHandler`. Ein ME-Netz als Quelle für `item:` verlangt deshalb
 zuerst den Schnitt, der die eingebauten drei nachziehen lässt. Der Umweg —
 eine Sonderabfrage für AE2 mitten im Gegenstandsweg — wäre genau die Kopie,
 gegen die diese Sitzung dreimal angetreten ist.
+
+### Körnung ist hochfrequent (seit dem 27.08.)
+
+Zwei eigene Texturen fielen aus der Familie: `status_light` war ein weißes
+Rechteck, und `gateway` hatte den Rahmen der Familie, aber ein **Karo** als
+Grund — und ein Schachbrett heißt in Minecraft „hier fehlt eine Textur".
+
+Beim Nachbauen kam ein Befund heraus, der für jede weitere Textur gilt.
+
+**Erster Versuch:** Ich habe die Streuung des dunklen Grundes gemessen — 15 —
+und mit dieser Streuung gewürfelt. Das Ergebnis sah aus wie Bildrauschen.
+**Zweiter Versuch:** grob gewürfelt und weich vergrößert, damit es Flecken
+gibt statt Punkte. Das Ergebnis sah aus wie Tarnfarbe.
+
+Beide Male stimmte die Zahl und die Frequenz nicht. Die richtige Messung ist
+eine andere: **Textur minus ihre weichgezeichnete Fassung** — was übrig
+bleibt, ist das reine Korn, ohne die Struktur, die es überlagert. Für
+`controller_extension` sind das 11, für `connector_side` 5, für `machine_top`
+8,5. Und es ist hochfrequent: Pixel für Pixel, keine Flecken.
+
+Die 15 aus dem ersten Versuch waren nicht das Korn, sondern Korn **plus**
+Fasen, Zellränder und Schattierung. Wer die Streuung einer strukturierten
+Fläche misst, misst ihre Struktur mit.
+
+**Und ein Modellfehler nebenbei:** Der Gegenstand des Anschlusses erbte sein
+Modell vom Teil für die Nordfläche. Dessen Platte klebt am Rand des Würfels,
+weil sie dort an einem Kabel sitzt — in der Hand hing sie deshalb schief am
+Rand statt in der Mitte, mitsamt einem Lämpchen, das im Inventar niemand
+einfärbt. Ein Gerät ohne Netz hat auch keinen Zustand zu zeigen.
+
+Dabei fiel auf, dass `assets.py` weiterhin das Blockmodell des Connectors
+erzeugte — für einen Block, den es seit dem 26.08. nicht mehr gibt. Die Datei
+kam nach jedem Lauf zurück.

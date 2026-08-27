@@ -546,29 +546,9 @@ def models():
     cable_models()
     connector_part_models()
 
-    write(A + "/models/block/connector.json", {
-        "parent": "minecraft:block/block",
-        "textures": {
-            "particle": texture("connector_side"),
-            "top": texture("machine_top"),
-            "front": texture("connector_front"),
-            "back": texture("connector_back"),
-            "side": texture("connector_side"),
-            "status": texture("status_light"),
-        },
-        "elements": [{
-            "from": [0, 0, 0],
-            "to": [16, 16, 16],
-            "faces": {
-                "down": {"texture": "#top", "cullface": "down"},
-                "up": {"texture": "#top", "cullface": "up"},
-                "north": {"texture": "#front", "cullface": "north"},
-                "south": {"texture": "#back", "cullface": "south"},
-                "west": {"texture": "#side", "cullface": "west"},
-                "east": {"texture": "#side", "cullface": "east"},
-            },
-        }] + [status_pad(face) for face in ("up", "down", "east", "west")],
-    })
+    # Das Blockmodell des Connectors ist am 26.08. mit seinem Block
+    # verschwunden. Diese Erzeugung stand noch hier und legte die Datei bei
+    # jedem Lauf wieder an — ein Modell für einen Block, den es nicht gibt.
 
     # Zwei Pixel tief an der Wand. Ein eigenes Modell statt orientable,
     # weil es kein Würfel ist.
@@ -650,9 +630,37 @@ def models():
     for name in ("controller", "controller_extension", "fabricator",
                  "terminal", "drive", "press"):
         write(A + "/models/item/" + name + ".json", {"parent": block(name)})
-    # Der Anschluss hat keinen eigenen Block mehr. In der Hand zeigt er das
-    # Teil, das er wird — die Platte, die an eine Kabelfläche geht.
-    write(A + "/models/item/connector.json", {"parent": block("connector_part_north")})
+    # Der Anschluss hat keinen eigenen Block mehr. In der Hand zeigt er die
+    # Platte, die er wird — aber <b>mittig</b> und ohne das Lämpchen.
+    #
+    # Vorher erbte er vom Teilmodell für die Nordfläche. Dessen Platte klebt
+    # am Rand des Würfels, weil sie dort an einem Kabel sitzt; in der Hand und
+    # im Rucksack hing sie deshalb schief am Rand statt in der Mitte. Und das
+    # Lämpchen wäre dort weiß: Es trägt einen tintindex, den im Inventar
+    # niemand einfärbt — ein Gerät, das ohne Netz in der Hand liegt, hat auch
+    # keinen Zustand zu zeigen.
+    wide = (16 - PART_WIDTH) // 2
+    write(A + "/models/item/connector.json", {
+        "parent": "minecraft:block/block",
+        "textures": {
+            "particle": texture("connector_side"),
+            "front": texture("connector_front"),
+            "back": texture("connector_back"),
+            "side": texture("connector_side"),
+        },
+        "elements": [{
+            "from": [wide, wide, 8 - PART_DEPTH / 2],
+            "to": [16 - wide, 16 - wide, 8 + PART_DEPTH / 2],
+            "faces": {
+                "north": {"texture": "#front"},
+                "south": {"texture": "#back"},
+                "east": {"texture": "#side"},
+                "west": {"texture": "#side"},
+                "up": {"texture": "#side"},
+                "down": {"texture": "#side"},
+            },
+        }],
+    })
     write(A + "/models/item/label_gun.json", {
         "parent": "minecraft:item/handheld",
         "textures": {"layer0": MOD + ":item/label_gun"},
