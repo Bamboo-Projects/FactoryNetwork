@@ -28,7 +28,7 @@ ASSETS = os.path.join(HERE, "..", "src", "main", "resources", "assets",
 SHADE = {"up": 1.0, "down": 0.5, "north": 0.8, "south": 0.8,
          "east": 0.6, "west": 0.6}
 
-# Aus dieser Ecke sieht man genau diese drei Seiten. Norden statt Sueden,
+# Aus dieser Ecke sieht man genau diese drei Seiten. Norden statt Süden,
 # weil die Vorderseite eines Blocks dorthin zeigt — sonst betrachtet man
 # jede Maschine von hinten.
 VISIBLE = ("up", "north", "east")
@@ -51,8 +51,8 @@ def texture(name):
     return image
 
 
-# Die Vanilla-Eltern, die unsere Bloecke benutzen. Sie liegen im Spiel-Jar
-# und nicht bei uns; ihre Kaesten stehen deshalb hier.
+# Die Vanilla-Eltern, die unsere Blöcke benutzen. Sie liegen im Spiel-Jar
+# und nicht bei uns; ihre Kästen stehen deshalb hier.
 def _cube(faces):
     return [{"from": [0, 0, 0], "to": [16, 16, 16],
              "faces": {side: {"texture": tex} for side, tex in faces.items()}}]
@@ -118,7 +118,7 @@ def default_uv(side, box):
     }[side]
 
 
-# Je Flaeche die vier Ecken, beginnend oben links im Bild und im Uhrzeigersinn
+# Je Fläche die vier Ecken, beginnend oben links im Bild und im Uhrzeigersinn
 # — dieselbe Reihenfolge, in der die Textur gelesen wird.
 CORNERS = {
     "up": lambda a, b: [(a[0], b[1], b[2]), (b[0], b[1], b[2]),
@@ -177,9 +177,17 @@ def render(models, size=520, scale=None, background=(26, 27, 31)):
     # Von hinten nach vorn: Die Isometrie hat keine Tiefenprüfung.
     def depth(entry):
         box = entry[0]
-        # Weit hinten heisst: grosses z, kleines x, kleines y.
-        return ((box[0][2] + box[1][2]) - (box[0][0] + box[1][0])
-                - (box[0][1] + box[1][1]))
+        # Die Kamera steht bei großem x, kleinem z und großem y — sie sieht
+        # ja oben, Norden und Osten. Weit weg ist also kleines x, kleines y
+        # und großes z, und weil aufsteigend sortiert und in dieser Folge
+        # gemalt wird, muss weit weg den kleinen Wert bekommen.
+        #
+        # <b>Die erste Fassung hatte genau dieses Vorzeichen verdreht.</b> An
+        # einem Würfel fällt das nicht auf: Dort verdeckt keine Fläche eine
+        # zweite. Beim ersten Modell mit Kästen im Inneren stand die hintere
+        # Ecksäule vor der Säule in der Mitte — und die Säule war weg.
+        return ((box[0][0] + box[1][0]) + (box[0][1] + box[1][1])
+                - (box[0][2] + box[1][2]))
 
     for box, side, face, textures in sorted(faces, key=depth):
         image = texture(resolve(textures, face.get("texture", "")))

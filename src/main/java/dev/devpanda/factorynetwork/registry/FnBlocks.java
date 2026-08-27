@@ -56,7 +56,11 @@ public final class FnBlocks {
      * gehört zu seiner Anlage. Kanäle vermehrt er nicht.
      */
     public static final DeferredBlock<Block> GATEWAY = BLOCKS.register("gateway",
-            () -> new dev.devpanda.factorynetwork.block.GatewayBlock(machineProperties()));
+            // noOcclusion, weil der Torbogen kein voller Würfel mehr ist:
+            // Sonst lässt Minecraft die Flächen der Nachbarn weg, die man
+            // durch die Öffnungen sieht, und im Tor steht ein schwarzes Loch.
+            () -> new dev.devpanda.factorynetwork.block.GatewayBlock(
+                    machineProperties().noOcclusion()));
 
     /** Verbindet Blöcke zu einem Netzwerk. */
     public static final DeferredBlock<Block> CABLE = BLOCKS.register("cable",

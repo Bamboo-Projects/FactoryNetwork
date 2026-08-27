@@ -11,6 +11,11 @@ import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.phys.shapes.BooleanOp;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -38,8 +43,34 @@ import org.jetbrains.annotations.Nullable;
  */
 public class GatewayBlock extends Block implements EntityBlock {
 
+    /**
+     * Der Torbogen als Trefferfläche — dieselben Kästen wie im Modell.
+     *
+     * <p>Ohne sie greift man in die Öffnungen und trifft trotzdem den ganzen
+     * Würfel. Das fällt beim Abbauen kaum auf und beim Zielen sofort:
+     * Der Rahmen steht sichtbar da, und die Hand hält einen Blockpixel
+     * daneben.
+     */
+    private static final VoxelShape SHAPE = buildShape();
+
+    private static VoxelShape buildShape() {
+        VoxelShape shape = Shapes.empty();
+        for (int[] box : GatewayLayout.boxes()) {
+            shape = Shapes.join(shape, Shapes.box(
+                    box[0] / 16.0, box[1] / 16.0, box[2] / 16.0,
+                    box[3] / 16.0, box[4] / 16.0, box[5] / 16.0), BooleanOp.OR);
+        }
+        return shape.optimize();
+    }
+
     public GatewayBlock(Properties properties) {
         super(properties);
+    }
+
+    @Override
+    protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos,
+                                  CollisionContext context) {
+        return SHAPE;
     }
 
     @Override

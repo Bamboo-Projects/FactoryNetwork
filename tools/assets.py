@@ -517,6 +517,184 @@ PART_CORE = {"cpu": "core_logic", "ram": "core_memory", "disk": "core_memory"}
 EDGE_UP, EDGE_DOWN, EDGE_LEFT, EDGE_RIGHT = 1, 2, 4, 8
 
 
+# Der Torbogen des Gateways in Blockpixeln.
+#
+# Kein Würfel mehr, sondern ein Rahmen, durch den man wirklich hindurchsieht:
+# Sockel und Sturz über die volle Fläche, dazwischen vier Ecksäulen und über
+# jeder Öffnung zwei Schultern, die den Durchgang nach oben verengen. Zwei
+# Leuchtstreifen fassen ihn oben und unten — daran erkennt man den Block von
+# weitem, und sie nehmen dem Durchgang nichts weg.
+#
+# <b>Eine Säule in der Mitte war der erste Versuch.</b> Sie war vier
+# Blockpixel stark und stand damit genau hinter der Ecksäule, die vier
+# Blockpixel breit davor steht — aus der Richtung, aus der man einen Block
+# zuerst sieht, war sie nie zu sehen. Breiter ginge nur auf Kosten des
+# Durchgangs, und der ist der Sinn des Blocks.
+#
+# <b>Offen in beide waagerechten Achsen</b>, nicht in eine: Der Block hat
+# keine Vorderseite, und ein Bogen, der nur in eine Richtung zeigt, bräuchte
+# einen Blockzustand für eine Auskunft, die niemand braucht.
+#
+# Dieselben Zahlen stehen in GatewayLayout.java; GatewayLayoutTest hält beide
+# zusammen.
+GATEWAY_FOOT = 3       # bis hierhin reicht der Sockel
+GATEWAY_HEAD = 13      # ab hier der Sturz
+GATEWAY_POST = 4       # Kantenlänge einer Ecksäule
+GATEWAY_SHOULDER = 10  # ab dieser Höhe verengen die Schultern die Öffnung
+GATEWAY_REACH = 6      # bis hierhin reicht eine Schulter in die Öffnung
+GATEWAY_GLOW = 4       # wo die Leuchtstreifen anfangen; sie enden spiegelbildlich
+GATEWAY_GLOW_HIGH = 1  # und sind einen Blockpixel stark
+
+
+def box_uv(start, end, face):
+    """Die UV-Fläche, die Minecraft einem Kasten ohne eigene UV-Angabe gäbe.
+
+    Der Kasten schneidet die Textur so, als läge sie über dem ganzen Würfel —
+    dieselbe Projektion, mit der ein Würfelmodell arbeitet. Deshalb sitzen
+    Nieten, Rahmenkante und Fase danach genau dort, wo sie im Würfel saßen,
+    auch wenn aus dem Würfel ein Rahmen geworden ist. Eine eigene Textur
+    braucht es dafür nicht.
+    """
+    x0, y0, z0 = start
+    x1, y1, z1 = end
+    if face == "north":
+        return [16 - x1, 16 - y1, 16 - x0, 16 - y0]
+    if face == "south":
+        return [x0, 16 - y1, x1, 16 - y0]
+    if face == "west":
+        return [z0, 16 - y1, z1, 16 - y0]
+    if face == "east":
+        return [16 - z1, 16 - y1, 16 - z0, 16 - y0]
+    if face == "up":
+        return [x0, z0, x1, z1]
+    return [x0, 16 - z1, x1, 16 - z0]
+
+
+def on_hull(start, end, face):
+    """Liegt diese Fläche in der Blockhülle?
+
+    Nur dort darf <b>cullface</b> stehen: Minecraft lässt die Fläche dann
+    weg, sobald nebenan ein voller Block steht. Auf einer Fläche im Inneren
+    wäre dieselbe Angabe ein Loch, das je nach Nachbarn aufgeht.
+    """
+    if face == "north":
+        return start[2] == 0
+    if face == "south":
+        return end[2] == 16
+    if face == "west":
+        return start[0] == 0
+    if face == "east":
+        return end[0] == 16
+    if face == "down":
+        return start[1] == 0
+    return end[1] == 16
+
+
+def gateway_boxes():
+    """Die Kästen des Torbogens, jeder mit den Flächen, die man sieht.
+
+    <b>Was fehlt, fehlt mit Absicht:</b> Die Unterseite einer Ecksäule steht
+    auf dem Sockel, ihre Oberseite unter dem Sturz, und die eine Seite einer
+    Schulter stößt an die Säule, aus der sie wächst. Solche Flächen zeichnet
+    Minecraft mit, wenn man sie hinschreibt — zu sehen sind sie nie.
+    """
+    foot, head = GATEWAY_FOOT, GATEWAY_HEAD
+    post, shoulder, reach = GATEWAY_POST, GATEWAY_SHOULDER, GATEWAY_REACH
+    glow, high = GATEWAY_GLOW, GATEWAY_GLOW_HIGH
+    boxes = [
+        # Sockel und Sturz: die volle Grundfläche. Nach oben und unten bleibt
+        # der Block geschlossen — ein Tor, kein Schacht.
+        ([0, 0, 0], [16, foot, 16],
+         {"down": "outer", "north": "outer", "south": "outer",
+          "east": "outer", "west": "outer", "up": "inner"}),
+        ([0, head, 0], [16, 16, 16],
+         {"up": "outer", "north": "outer", "south": "outer",
+          "east": "outer", "west": "outer", "down": "inner"}),
+        # Die beiden Leuchtstreifen, die das Tor fassen: einer liegt auf dem
+        # Sockel, einer unter dem Sturz. Zu sehen sind ihre vier Schmalseiten
+        # — die Deckflächen liegen an Sockel und Sturz an.
+        ([glow, foot, glow], [16 - glow, foot + high, 16 - glow],
+         {"north": "glow", "south": "glow", "east": "glow", "west": "glow"}),
+        ([glow, head - high, glow], [16 - glow, head, 16 - glow],
+         {"north": "glow", "south": "glow", "east": "glow", "west": "glow"}),
+    ]
+
+    # Die vier Ecksäulen. Zwei ihrer Seiten liegen in der Blockhülle und
+    # tragen die Textur samt ihren Nieten; die beiden anderen zeigen in den
+    # Durchgang.
+    for x in (0, 16 - post):
+        for z in (0, 16 - post):
+            outer_x = "west" if x == 0 else "east"
+            outer_z = "north" if z == 0 else "south"
+            boxes.append(([x, foot, z], [x + post, head, z + post], {
+                outer_x: "outer",
+                outer_z: "outer",
+                OPPOSITE[outer_x]: "inner",
+                OPPOSITE[outer_z]: "inner",
+            }))
+
+    # Über jeder Öffnung zwei Schultern: die Stufe, aus der in sechzehn
+    # Pixeln ein Bogen wird. Ein runder wäre ein Dutzend Kästen mehr für eine
+    # Rundung, die bei dieser Auflösung ohnehin eckig ankommt.
+    #
+    # <b>inward</b> ist die Fläche, die zur Mitte des Durchgangs zeigt — die
+    # gegenüberliegende steckt in der Ecksäule.
+    shoulders = []
+    for lo, inward in ((post, "east"), (16 - reach, "west")):
+        hi = lo + reach - post
+        shoulders.append(([lo, shoulder, 0], [hi, head, post], "north", inward))
+        shoulders.append(([lo, shoulder, 16 - post], [hi, head, 16], "south", inward))
+    for lo, inward in ((post, "south"), (16 - reach, "north")):
+        hi = lo + reach - post
+        shoulders.append(([0, shoulder, lo], [post, head, hi], "west", inward))
+        shoulders.append(([16 - post, shoulder, lo], [16, head, hi], "east", inward))
+
+    for start, end, outer, inward in shoulders:
+        boxes.append((start, end, {
+            outer: "outer",
+            OPPOSITE[outer]: "inner",
+            inward: "inner",
+            "down": "inner",
+        }))
+
+    return boxes
+
+
+def gateway_model():
+    """Das Gateway als Torbogen statt als Würfel.
+
+    Die Außenflächen nehmen ihre Textur aus derselben {@code gateway.png} wie
+    zuvor und an denselben Stellen — nur ist jetzt Luft, wo vorher der
+    gemalte Bogen lag. Die Laibung bekommt das Maschinengehäuse: Sie war
+    vorher nie zu sehen und hat deshalb keine eigene Textur.
+    """
+    elements = []
+    for start, end, faces in gateway_boxes():
+        entry = {"from": list(start), "to": list(end), "faces": {}}
+        for face, which in faces.items():
+            quad = {"texture": "#" + which, "uv": box_uv(start, end, face)}
+            if on_hull(start, end, face):
+                quad["cullface"] = face
+            entry["faces"][face] = quad
+        elements.append(entry)
+
+    write(A + "/models/block/gateway.json", {
+        # Ohne den Vanilla-Vorfahren fehlen die Ansichten für Hand und
+        # Inventar — die gaben cube_all und seinesgleichen bisher gratis.
+        "parent": "minecraft:block/block",
+        "textures": {
+            "particle": texture("gateway"),
+            "outer": texture("gateway"),
+            "inner": texture("machine_top"),
+            "glow": texture("gateway_glow"),
+        },
+        "elements": elements,
+    })
+    write(A + "/blockstates/gateway.json",
+          {"variants": {"": {"model": block("gateway")}}})
+    write(A + "/models/item/gateway.json", {"parent": block("gateway")})
+
+
 def models():
     write(A + "/models/block/controller.json", {
         "parent": "minecraft:block/cube_bottom_top",
@@ -545,6 +723,7 @@ def models():
 
     cable_models()
     connector_part_models()
+    gateway_model()
 
     # Das Blockmodell des Connectors ist am 26.08. mit seinem Block
     # verschwunden. Diese Erzeugung stand noch hier und legte die Datei bei

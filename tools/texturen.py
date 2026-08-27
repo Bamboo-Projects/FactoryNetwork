@@ -14,8 +14,12 @@ Familie, und wer die Familie ändert, misst hier nach.
 ohne Fase, ohne einen Ton der Familie. Es sitzt an jedem Anschluss.
 
 `gateway` hatte zwar den Rahmen der Familie, aber ein Karo als Grund. Ein
-Schachbrett heißt in Minecraft „hier fehlt eine Textur", und der Torbogen lag
-flach darauf statt darin.
+Schachbrett heißt in Minecraft „hier fehlt eine Textur".
+
+Der Torbogen lag damals flach auf dem Grund. Seit dem 27.08. ist er Geometrie —
+vier Ecksäulen, Sockel, Sturz und die Schultern darüber —, und deshalb malt
+dieses Skript ihn nicht mehr: Was zweimal dasteht, sitzt beim zweiten Mal quer.
+Dazu kommt `gateway_glow`, der Streifen, der das Tor oben und unten fasst.
 
 Beides wird hier aus dem gebaut, was schon da ist: Rahmen, Nieten, Körnung und
 Grüntöne stammen aus `controller_extension`.
@@ -52,6 +56,11 @@ GREEN = (58, 104, 68)
 GREEN_LIT = (126, 157, 133)
 GREEN_DIM = (34, 62, 41)
 HOLLOW = (6, 8, 7)
+
+# Der Leuchtton der Familie, gemessen am Punkt oben auf dem Controller:
+# Er ist der häufigste Farbwert dieser Textur und damit kein neuer Ton,
+# sondern der, den die Familie für „hier fließt etwas" schon führt.
+GLOW = (120, 220, 140)
 
 
 def mottle(width, height, spread, seed, coarseness=2):
@@ -97,57 +106,40 @@ def draw_gateway():
         for x in range(PANEL_FROM, PANEL_TO):
             pixels[x, y] = shaded(GROUND, x, y)
 
-    # ---- Der Torbogen ---------------------------------------------------
-    # Etwas kleiner als das Feld: Die Familie lässt ihren Motiven Luft.
-    centre = 32
-    spring = 30
-    foot = 44
-    inner = 8
-    band = 4
-
-    def reach(x, y):
-        dx = abs(x - centre)
-        return dx if y >= spring else math.hypot(dx, spring - y)
-
-    for y in range(PANEL_FROM, PANEL_TO):
-        for x in range(PANEL_FROM, PANEL_TO):
-            if y > foot:
-                continue
-            distance = reach(x, y)
-            if distance < inner:
-                # Die Öffnung: eine Aussparung, kein Aufkleber.
-                pixels[x, y] = shaded(HOLLOW, x, y, 0.25)
-            elif distance < inner + band:
-                # Die Laibung. Oben und links nimmt sie das Licht.
-                if distance > inner + band - 1.2:
-                    tone = GREEN_DIM
-                elif (x - centre) < -2 or y < spring - 4:
-                    tone = GREEN_LIT
-                else:
-                    tone = GREEN
-                pixels[x, y] = shaded(tone, x, y, 0.35)
-
-    # ---- Die Schwelle ---------------------------------------------------
-    for y in range(foot + 1, foot + 3):
-        for x in range(centre - inner - band, centre + inner + band + 1):
-            if PANEL_FROM <= x < PANEL_TO and y < PANEL_TO:
-                tone = GREEN if y == foot + 1 else GREEN_DIM
-                pixels[x, y] = shaded(tone, x, y, 0.35)
-
-    # ---- Ein Hauch Streulicht unter dem Bogen ---------------------------
-    for y in range(foot + 3, min(foot + 6, PANEL_TO)):
-        for x in range(centre - inner, centre + inner + 1):
-            if PANEL_FROM <= x < PANEL_TO:
-                fade = (foot + 6 - y) / 4.0
-                base = pixels[x, y]
-                pixels[x, y] = (
-                    int(base[0] + (GREEN_DIM[0] - base[0]) * fade * 0.5),
-                    int(base[1] + (GREEN_DIM[1] - base[1]) * fade * 0.5),
-                    int(base[2] + (GREEN_DIM[2] - base[2]) * fade * 0.5),
-                    255)
+    # Mehr braucht die Fläche nicht. Der Bogen, der hier einmal aufgemalt
+    # war, steht jetzt als Kästen im Modell; die Textur zeigt nur noch,
+    # woraus der Rahmen gemacht ist.
     _ = fine
     out.save(BASE + "gateway.png")
     print("gateway.png")
+
+
+
+def draw_gateway_glow():
+    """Der Streifen, der das Tor fasst — oben und unten derselbe.
+
+    <b>Gleichmäßig, ohne Motiv.</b> Der Streifen ist einen Blockpixel stark
+    und acht lang, und Minecraft schneidet die UV-Fläche jeder seiner vier
+    Seiten aus der Lage des Kastens: quer aus wechselnden Spalten, längs aus
+    einer einzigen Zeile. Was darin ein Motiv hätte, käme an jeder Seite
+    anders heraus. Dasselbe Argument wie beim Statuslicht.
+
+    Der Ton ist der Leuchtton der Familie und kein neuer: Der gemalte Bogen
+    führte ihn vorher als Laibung, jetzt führt ihn der Streifen.
+    """
+    size = 64
+    out = Image.new("RGBA", (size, size))
+    pixels = out.load()
+    grain = mottle(size, size, GRAIN, 20260828)
+
+    for y in range(size):
+        for x in range(size):
+            off = (grain[x, y] - 128) * 0.25
+            pixels[x, y] = tuple(
+                max(0, min(255, int(c + off))) for c in GLOW) + (255,)
+
+    out.save(BASE + "gateway_glow.png")
+    print("gateway_glow.png")
 
 
 def draw_status_light():
@@ -181,4 +173,5 @@ def draw_status_light():
 
 
 draw_gateway()
+draw_gateway_glow()
 draw_status_light()
