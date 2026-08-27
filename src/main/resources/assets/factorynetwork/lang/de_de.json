@@ -53,6 +53,7 @@
   "message.factorynetwork.remote.no_network": "An keinem Netz angemeldet — Rechtsklick auf einen Sendemast",
   "message.factorynetwork.remote.mast_gone": "Der Sendemast steht nicht mehr",
   "message.factorynetwork.remote.no_controller": "Der Sendemast gehört zu keinem Netz",
+  "message.factorynetwork.remote.empty": "Der Akku ist leer",
   "message.factorynetwork.remote.out_of_range": "Außer Reichweite",
   "message.factorynetwork.remote.bound": "Angemeldet am Mast bei %s, %s, %s",
   "message.factorynetwork.remote.unbound": "Abgemeldet",

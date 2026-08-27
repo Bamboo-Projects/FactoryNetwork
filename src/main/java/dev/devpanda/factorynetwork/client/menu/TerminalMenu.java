@@ -192,6 +192,43 @@ public class TerminalMenu extends AbstractContainerMenu {
     }
 
     /**
+     * Nimmt Strom aus dem Akku des Geräts.
+     *
+     * <p>Am Block kostet nichts — dort hängt das Terminal am Netz, und was
+     * das Netz zieht, rechnet der Controller ab.
+     *
+     * @return ob genug da war
+     */
+    public boolean charge(Player player, int amount) {
+        if (device == null) {
+            return true;
+        }
+        var battery = player.getInventory().getItem(deviceSlot)
+                .getCapability(net.neoforged.neoforge.capabilities.Capabilities
+                        .EnergyStorage.ITEM);
+        return battery != null && battery.extractEnergy(amount, false) >= amount;
+    }
+
+    /**
+     * Zieht ab, was ein offenes Fenster je Tick kostet.
+     *
+     * <p><b>Hier und nicht in einem eigenen Ticker:</b> Vanilla ruft das je
+     * Tick für jedes offene Fenster, und ein zweiter Weg dafür wäre ein
+     * zweiter Weg, ihn zu vergessen.
+     *
+     * <p>Geschlossen wird hier nicht. Das erledigt {@link #stillValid} beim
+     * nächsten Durchgang — ein Fenster mitten im Verteilen der Änderungen zu
+     * schließen, hieße die Liste zu ändern, über die gerade gelaufen wird.
+     */
+    @Override
+    public void broadcastChanges() {
+        super.broadcastChanges();
+        if (device != null) {
+            charge(owner, dev.devpanda.factorynetwork.network.Power.REMOTE_TICK);
+        }
+    }
+
+    /**
      * Am Block: Steht er noch da und ist der Spieler nah genug?
      *
      * <p>Aus der Ferne sind es andere Fragen, und sie stehen in
@@ -201,7 +238,11 @@ public class TerminalMenu extends AbstractContainerMenu {
     @Override
     public boolean stillValid(Player player) {
         if (device != null) {
-            return RemoteAccess.allowed(player, deviceSlot, position);
+            // Leerer Akku heißt zu. Der Ladestand wird in broadcastChanges
+            // abgezogen; hier fällt auf, dass nichts mehr da ist.
+            return RemoteAccess.allowed(player, deviceSlot, position)
+                    && dev.devpanda.factorynetwork.item.RemoteDeviceItem.energyOf(
+                            player.getInventory().getItem(deviceSlot)) > 0;
         }
         return stillValid(access, player, FnBlocks.TERMINAL.get());
     }

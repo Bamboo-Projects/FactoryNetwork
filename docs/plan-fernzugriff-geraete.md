@@ -335,7 +335,7 @@ andere Frage als „darf dieses Fenster das", und beide gelten weiter.
 
 ---
 
-## Aufgabe 3: Der Verbrauch
+## Aufgabe 3: Der Verbrauch — erledigt am 28.08.
 
 **Wenig je Tick, solange ein Fenster offen ist, mehr je Handlung** — ein
 Stapel bewegt, ein Programm gespeichert. Leerer Akku heißt: Das Fenster geht
@@ -344,9 +344,19 @@ nicht auf, mit einer Meldung statt eines schwarzen Bildschirms.
 Die Zahlen gehören zu den anderen in `network/Power.java`, nicht an den
 Gegenstand.
 
-- [ ] Test zuerst: Ein Gerät ohne Ladung öffnet nicht. Eines mit Ladung
+- [x] Test zuerst: Ein Gerät ohne Ladung öffnet nicht. Eines mit Ladung
       öffnet und verliert sie über die Zeit.
-- [ ] Committen
+- [x] Committen
+
+Die Zahlen stehen in `Power`: `REMOTE_TICK` 5, `REMOTE_OPEN` 400,
+`REMOTE_ACTION` 120. Abgezogen wird in `TerminalMenu.broadcastChanges` — dort
+ruft Vanilla je Tick für jedes offene Fenster, und ein eigener Ticker wäre ein
+zweiter Weg, es zu vergessen. Vier Handlungen zahlen: Lager, Fertigung,
+Übernehmen, Entwurf.
+
+`RemoteCostTest` hält die Zahlen gegeneinander fest — dass eine Sitzung
+durchhält, dass Öffnen mehr kostet als eine Sekunde Offenhalten, und dass
+hundert Handlungen keinen Akku leeren.
 
 ---
 

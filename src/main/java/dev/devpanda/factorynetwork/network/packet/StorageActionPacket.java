@@ -54,6 +54,11 @@ public record StorageActionPacket(Kind kind, Item item, int amount) implements C
                     || !(player.containerMenu instanceof TerminalMenu menu)) {
                 return;
             }
+            // Aus der Ferne kostet jeder Griff ins Lager. Am Block gibt
+            // charge() immer true zurück — dort zahlt das Netz.
+            if (!menu.charge(player, dev.devpanda.factorynetwork.network.Power.REMOTE_ACTION)) {
+                return;
+            }
             menu.controller(player).ifPresent(controller -> apply(packet, player, controller, menu));
         });
     }

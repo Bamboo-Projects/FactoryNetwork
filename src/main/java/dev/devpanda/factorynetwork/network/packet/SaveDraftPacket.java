@@ -73,6 +73,9 @@ public record SaveDraftPacket(BlockPos controller, Map<String, String> files)
                     || !menu.allows(dev.devpanda.factorynetwork.terminal.TerminalTab.CODE)) {
                 return;
             }
+            if (!menu.charge(player, dev.devpanda.factorynetwork.network.Power.REMOTE_ACTION)) {
+                return;
+            }
             if (menu.controller(player).orElse(null)
                     instanceof ControllerBlockEntity controller) {
                 // Derselbe Schutz wie beim Übernehmen: Ein überschriebener

@@ -41,6 +41,9 @@ public record CraftingActionPacket(long id) implements CustomPacketPayload {
                     || !(player.containerMenu instanceof TerminalMenu menu)) {
                 return;
             }
+            if (!menu.charge(player, dev.devpanda.factorynetwork.network.Power.REMOTE_ACTION)) {
+                return;
+            }
             menu.controller(player).ifPresent(controller -> {
                 // Derselbe Schutz wie beim Programm: Einen fremden Auftrag
                 // abzubrechen ändert, was die Anlage tut — und das ist

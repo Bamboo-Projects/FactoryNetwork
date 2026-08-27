@@ -85,6 +85,9 @@ public record DeployProgramPacket(BlockPos terminal, Map<String, String> files)
                     || !menu.allows(dev.devpanda.factorynetwork.terminal.TerminalTab.CODE)) {
                 return;
             }
+            if (!menu.charge(player, dev.devpanda.factorynetwork.network.Power.REMOTE_ACTION)) {
+                return;
+            }
             menu.controller(player).ifPresentOrElse(controller -> {
                 // Erst die Erlaubnis, dann der Übersetzer: Wer nicht darf,
                 // soll das erfahren und nicht erst seine Tippfehler.

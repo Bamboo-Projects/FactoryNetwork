@@ -102,6 +102,37 @@ public final class Power {
                 dev.devpanda.factorynetwork.upgrade.Card.RANGE) * MAST_PER_CARD;
     }
 
+    /**
+     * Was ein offenes Fenster aus der Ferne je Tick aus dem Akku zieht.
+     *
+     * <p>Klein gehalten, und das mit Absicht: Ein Wireless Terminal hält
+     * damit über eine halbe Stunde offen durch. Ein Akku, der mitten in der
+     * Arbeit leer ist, macht aus einem Werkzeug eine Pflicht — und wer das
+     * Fenster offen lässt, statt es alle zehn Sekunden neu aufzumachen, soll
+     * dafür nicht bestraft werden.
+     */
+    public static final int REMOTE_TICK = 5;
+
+    /**
+     * Was das Öffnen einmalig kostet.
+     *
+     * <p>Mehr als eine Sekunde Offenhalten. Sonst lohnte es sich, das
+     * Fenster ständig auf- und zuzuklappen, und niemand soll fürs Klicken
+     * belohnt werden.
+     */
+    public static final int REMOTE_OPEN = 400;
+
+    /**
+     * Und was eine einzelne Handlung kostet — ein Stapel bewegt, ein
+     * Programm übernommen.
+     *
+     * <p>Hundert davon fressen weniger als ein Viertel des kleinen Akkus.
+     * Wer aus der Ferne aufräumt, bewegt viele Stapel; ginge dabei der Akku
+     * leer, wäre der Fernzugriff für genau das unbrauchbar, wofür man ihn
+     * baut.
+     */
+    public static final int REMOTE_ACTION = 120;
+
     public static final int CABLE = 0;
 
     /**

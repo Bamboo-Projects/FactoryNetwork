@@ -6256,6 +6256,65 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
+     * Ein leerer Akku hält kein Fenster offen — und ein voller kostet.
+     *
+     * <p>Ohne diesen Lauf wäre der Ladestand eine Zahl im Tooltip. Er hält
+     * beides fest: dass Strom wirklich abgezogen wird, und dass ein Gerät
+     * ohne Ladung das Fenster nicht offen hält.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 100)
+    public static void anEmptyBatteryClosesTheWindow(GameTestHelper helper) {
+        BlockPos mast = helper.absolutePos(new BlockPos(1, 2, 1));
+        helper.getLevel().setBlockAndUpdate(mast, FnBlocks.MAST.get().defaultBlockState());
+
+        var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+        player.setPos(mast.getX() + 0.5, mast.getY() + 1.0, mast.getZ() + 0.5);
+
+        ItemStack device = new ItemStack(
+                dev.devpanda.factorynetwork.registry.FnItems.WIRELESS_TERMINAL.get());
+        dev.devpanda.factorynetwork.item.RemoteDeviceItem.couple(device, mast);
+        player.getInventory().setItem(0, device);
+
+        var menu = new dev.devpanda.factorynetwork.client.menu.TerminalMenu(
+                1, player.getInventory(), mast,
+                dev.devpanda.factorynetwork.upgrade.RemoteDevice.TERMINAL, 0);
+
+        // Leer: Es lässt sich nichts abbuchen, und das Fenster darf nicht
+        // offen bleiben.
+        helper.assertTrue(
+                !menu.charge(player, dev.devpanda.factorynetwork.network.Power.REMOTE_ACTION),
+                "aus einem leeren Akku ließ sich Strom nehmen");
+        helper.assertTrue(!menu.stillValid(player),
+                "das Fenster bleibt mit leerem Akku offen");
+
+        // Geladen: Es geht, und der Stand sinkt um genau den Betrag.
+        var battery = device.getCapability(
+                net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM);
+        battery.receiveEnergy(10_000, false);
+        int before = dev.devpanda.factorynetwork.item.RemoteDeviceItem.energyOf(device);
+        helper.assertTrue(before > 0, "der Akku hat die Ladung nicht angenommen");
+        helper.assertTrue(menu.stillValid(player),
+                "mit vollem Akku bleibt das Fenster trotzdem zu");
+
+        helper.assertTrue(
+                menu.charge(player, dev.devpanda.factorynetwork.network.Power.REMOTE_ACTION),
+                "die Handlung wurde trotz Ladung abgelehnt");
+        int after = dev.devpanda.factorynetwork.item.RemoteDeviceItem.energyOf(
+                player.getInventory().getItem(0));
+        helper.assertTrue(
+                after == before - dev.devpanda.factorynetwork.network.Power.REMOTE_ACTION,
+                "abgezogen wurden " + (before - after) + " statt "
+                        + dev.devpanda.factorynetwork.network.Power.REMOTE_ACTION);
+
+        // Am Block kostet dasselbe nichts: Dort zahlt das Netz.
+        var fixed = new dev.devpanda.factorynetwork.client.menu.TerminalMenu(
+                2, player.getInventory(), mast);
+        helper.assertTrue(fixed.charge(player, 1_000_000),
+                "am Block wird der Akku belastet");
+        helper.succeed();
+    }
+
+    /**
      * Aus der Ferne fehlt dem Terminal der Code-Reiter, dem Laptop nicht.
      *
      * <p>Das ist die ganze Trennung. Fiele sie weg, wäre der Laptop ein
