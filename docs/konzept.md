@@ -1164,19 +1164,30 @@ plan
 
 ---
 
-# 29. Wireless Terminal
+# 29. Fernzugriff
 
-Das Wireless Terminal verwendet grundsätzlich dieselben Funktionen wie das normale Terminal:
+> **Überholt seit dem 27.08.** Hier stand, das Wireless Terminal habe
+> dieselben fünf Bereiche wie das Terminal, Code eingeschlossen. Aus einem
+> Gerät sind zwei geworden, und der Code gehört nur noch dem zweiten. Der
+> Entwurf steht in [fernzugriff.md](fernzugriff.md).
+
+Das **Wireless Terminal** kann, was man unterwegs am Lager braucht:
 
 ```text
 Storage
 Crafting
-Code
 Network
 Dashboards
 ```
 
-Reichweite und dimensionsübergreifender Zugriff werden über Netzwerkhardware gelöst.
+Der **Laptop** kann dieselben vier Bereiche und dazu:
+
+```text
+Code
+```
+
+Reichweite und dimensionsübergreifender Zugriff laufen über einen Sendemast
+im Netz, ausbaubar mit Karten.
 
 ---
 

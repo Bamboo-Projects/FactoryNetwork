@@ -4022,3 +4022,61 @@ sehen keinen Unterschied und mussten nicht angefasst werden.
 Das ist der Grund, warum dieser Block klein bleiben konnte. Ein zweiter
 Begriff für dieselbe Sache — „Anlage aus dem Namen" gegen „Anlage aus der
 Welt" — hätte jede Stelle verdoppelt, die heute mit Anlagen umgeht.
+
+---
+
+## Fernzugriff
+
+Entschieden am 27.08. Der Entwurf steht in [fernzugriff.md](fernzugriff.md);
+hier nur, was gegen etwas anderes entschieden wurde.
+
+### Unterwegs kein Code
+
+**Das Wireless Terminal kann Storage, Crafting, Network und Dashboards — den
+Code nur der Laptop.** `konzept.md` §29 sagte bis eben, beide Geräte hätten
+dieselben fünf Bereiche. Der Terminal-Block bleibt davon unberührt und behält
+alle fünf.
+
+Der Laptop kann alles, was das Wireless Terminal kann, und kostet mehr. Zwei
+gleich starke Geräte für getrennte Aufgaben wären zwei Dinge zum Mitschleppen;
+so ist das Terminal der frühe Zugang und der Laptop das Ziel.
+
+### Modul und Karte
+
+**Ein Modul gibt eine Fähigkeit, die vorher nicht da war. Eine Karte hebt
+einen Wert an einer Fähigkeit, die schon da ist.** Zwei Wörter, zwei
+Bedeutungen, und beide belegen denselben Steckplatz.
+
+Daran hängt, warum die Infinity-Karte eine Karte ist: Sie schafft nichts
+Neues, sie hebt eine Grenze auf.
+
+**Gleiche Karten addieren sich, statt in Stufen aufzurüsten.** Ein
+Stufensystem — Reichweite I, II, III — macht die alte Karte wertlos, sobald
+die neue da ist. Vier gleiche Karten in vier Plätzen halten den Wert an der
+Zahl der Plätze fest, und die ist die eigentliche Entscheidung.
+
+### Der Sendemast sendet, nicht der Controller
+
+**Ein eigener Block am Kabel**, und die Reichweite zählt auf beiden Seiten:
+Mast plus Gerät. Sendete der Controller, gäbe es nur eine Stelle zum
+Ausbauen, und jedes Netz hätte Funk, ob gewollt oder nicht.
+
+**Die Infinity-Karte steckt im Mast** und gilt für alle Geräte des Netzes.
+Steckte sie im Gerät, bräuchte sie auf einem Server jeder Spieler einzeln.
+
+### Akku statt Netzstrom
+
+**Die Geräte haben einen eigenen Akku**, angeboten als `IEnergyStorage` am
+ItemStack. Damit laden Powah, Flux Networks und alles andere, was Gegenstände
+im Inventar lädt, sie von selbst — dasselbe Prinzip wie bei den Connectoren.
+
+Der Strom direkt aus dem bedienten Netz wäre einfacher gewesen und war der
+erste Vorschlag. Dagegen sprach, dass es die Ladefunktionen anderer Mods
+ungenutzt ließe, die es an dieser Stelle ohnehin gibt.
+
+### Der Serverschrank bleibt außen vor
+
+**Sein Steckplatzbehälter wird nicht zum Ausbausystem umgebaut.** Er hat feste
+Rollen — CPU, RAM, Platte —, das neue System freie Plätze. Zwei
+Steckplatzsysteme nebeneinander sind der Preis dafür, dass beide bleiben, was
+sie sind.
