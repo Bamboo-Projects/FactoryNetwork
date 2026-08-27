@@ -180,12 +180,14 @@ public class RemoteDeviceItem extends Item {
         if (slot < 0 || !RemoteAccess.allowed(player, slot, mast)) {
             return refuse(player, held, "message.factorynetwork.remote.out_of_range");
         }
+        // Erst fragen, dann nehmen: Ein halb geladenes Gerät soll seinen
+        // Rest behalten, wenn es das Fenster ohnehin nicht öffnen kann.
+        int opening = dev.devpanda.factorynetwork.network.Power.REMOTE_OPEN;
         var battery = held.getCapability(Capabilities.EnergyStorage.ITEM);
-        if (battery == null
-                || battery.extractEnergy(dev.devpanda.factorynetwork.network.Power.REMOTE_OPEN,
-                        false) < dev.devpanda.factorynetwork.network.Power.REMOTE_OPEN) {
+        if (battery == null || battery.extractEnergy(opening, true) < opening) {
             return refuse(player, held, "message.factorynetwork.remote.empty");
         }
+        battery.extractEnergy(opening, false);
         if (player instanceof ServerPlayer serverPlayer) {
             // Erst den Zustand schicken, dann öffnen — wie am Block: Der
             // Editor soll seine Daten schon haben, wenn er zeichnet.

@@ -6306,6 +6306,28 @@ public final class FactoryNetworkGameTests {
                 "abgezogen wurden " + (before - after) + " statt "
                         + dev.devpanda.factorynetwork.network.Power.REMOTE_ACTION);
 
+        // Und der Fall dazwischen: zu wenig für eine Handlung, aber nicht
+        // leer. Ein Abzug, der die Ablehnung nicht überlebt, wäre schlimmer
+        // als gar keiner — der Spieler verlöre den Rest und bekäme nichts.
+        var drained = new ItemStack(
+                dev.devpanda.factorynetwork.registry.FnItems.WIRELESS_TERMINAL.get());
+        dev.devpanda.factorynetwork.item.RemoteDeviceItem.couple(drained, mast);
+        int tooLittle = dev.devpanda.factorynetwork.network.Power.REMOTE_ACTION - 20;
+        drained.getCapability(net.neoforged.neoforge.capabilities.Capabilities
+                .EnergyStorage.ITEM).receiveEnergy(tooLittle, false);
+        player.getInventory().setItem(1, drained);
+
+        var thin = new dev.devpanda.factorynetwork.client.menu.TerminalMenu(
+                3, player.getInventory(), mast,
+                dev.devpanda.factorynetwork.upgrade.RemoteDevice.TERMINAL, 1);
+        helper.assertTrue(
+                !thin.charge(player, dev.devpanda.factorynetwork.network.Power.REMOTE_ACTION),
+                "eine Handlung ging trotz zu wenig Ladung durch");
+        helper.assertTrue(
+                dev.devpanda.factorynetwork.item.RemoteDeviceItem.energyOf(
+                        player.getInventory().getItem(1)) == tooLittle,
+                "der abgelehnte Griff hat trotzdem Strom gekostet");
+
         // Am Block kostet dasselbe nichts: Dort zahlt das Netz.
         var fixed = new dev.devpanda.factorynetwork.client.menu.TerminalMenu(
                 2, player.getInventory(), mast);

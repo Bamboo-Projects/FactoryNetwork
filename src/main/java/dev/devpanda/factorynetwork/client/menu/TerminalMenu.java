@@ -151,6 +151,12 @@ public class TerminalMenu extends AbstractContainerMenu {
         if (!slot.hasItem()) {
             return ItemStack.EMPTY;
         }
+        // Auch dieser Weg legt ins Netz ab, geht aber über Vanillas Klick
+        // und nicht über StorageActionPacket. Ohne diese Zeile wäre
+        // "ein Stapel bewegt kostet Strom" nur in einer Richtung wahr.
+        if (!charge(player, dev.devpanda.factorynetwork.network.Power.REMOTE_ACTION)) {
+            return ItemStack.EMPTY;
+        }
         Optional<ControllerBlockEntity> controller = controller(player);
         if (controller.isEmpty()) {
             return ItemStack.EMPTY;
@@ -197,6 +203,11 @@ public class TerminalMenu extends AbstractContainerMenu {
      * <p>Am Block kostet nichts — dort hängt das Terminal am Netz, und was
      * das Netz zieht, rechnet der Controller ab.
      *
+     * <p><b>Erst fragen, dann nehmen.</b> Ein Abzug, der die Ablehnung nicht
+     * überlebt, wäre schlimmer als gar keiner: Wer hundert FE hat und eine
+     * Handlung für hundertzwanzig versucht, verlöre die hundert und bekäme
+     * nichts dafür — und beim nächsten Versuch wieder.
+     *
      * @return ob genug da war
      */
     public boolean charge(Player player, int amount) {
@@ -206,7 +217,11 @@ public class TerminalMenu extends AbstractContainerMenu {
         var battery = player.getInventory().getItem(deviceSlot)
                 .getCapability(net.neoforged.neoforge.capabilities.Capabilities
                         .EnergyStorage.ITEM);
-        return battery != null && battery.extractEnergy(amount, false) >= amount;
+        if (battery == null || battery.extractEnergy(amount, true) < amount) {
+            return false;
+        }
+        battery.extractEnergy(amount, false);
+        return true;
     }
 
     /**
