@@ -4080,3 +4080,40 @@ ungenutzt ließe, die es an dieser Stelle ohnehin gibt.
 Rollen — CPU, RAM, Platte —, das neue System freie Plätze. Zwei
 Steckplatzsysteme nebeneinander sind der Preis dafür, dass beide bleiben, was
 sie sind.
+
+
+---
+
+## Der Anschluss ohne Kabel
+
+Entschieden am 28.08., nach einem Blick in AE2 1.21.1 (geklont, nicht aus
+einer Jar).
+
+**Ein Anschluss kann gesetzt werden, bevor ein Kabel da ist.** Was dabei
+entsteht, ist ein Kabelblock ohne Strang — ein Block, in dem nur der Anschluss
+sitzt. Wer später ein Kabel darauf setzt, hat den Strang, und der Anschluss
+hängt am Netz, ohne dass man ihn neu setzen müsste.
+
+**Das Kabel kommt wirklich erst, wenn man es setzt.** Kein Automatismus, der
+einen Strang mitliefert: Der Block ist ein Halter, und was in ihm steckt,
+entscheidet der Spieler.
+
+So macht es AE2, und der Grund ist derselbe: Dort ist der Block der
+*Kabelbus*, das Kabel nur eines der Teile darin. `CableBusContainer.canAddPart`
+lässt ein Teil an jede freie Seite, „if any" Kabel — und `cleanup()` am leeren
+Bus ruft `removeBlock`, er räumt sich also selbst weg.
+
+Bei uns ist der Kabelblock heute das Kabel. Die Umsetzung muss ihm beibringen,
+ohne Strang zu bestehen und zu verschwinden, wenn nichts mehr an ihm hängt.
+
+### Der Schraubenschlüssel
+
+**Wir hören auf `c:tools/wrench`**, das Tag der NeoForge-Konvention, und
+tragen unser eigenes Werkzeug dort ein. AE2 macht es genauso und nimmt
+zusätzlich Immersive Engineerings Hammer als optionalen Eintrag mit. Wer einen
+Konfigurator von Mekanism oder einen Schlüssel von Thermal dabeihat, kann
+damit arbeiten, ohne dass wir diese Mods kennen.
+
+**Die Geste ist Schleichen plus Rechtsklick**, wie bei AE2. Ohne Schleichen
+tut der Schlüssel dort etwas anderes — er dreht —, und eine Geste, die je nach
+Mod etwas anderes bedeutet, ist schlimmer als eine, die man einmal lernt.
