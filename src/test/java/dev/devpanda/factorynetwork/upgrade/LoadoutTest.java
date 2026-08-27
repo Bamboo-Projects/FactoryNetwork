@@ -63,6 +63,25 @@ class LoadoutTest {
     }
 
     @Test
+    @DisplayName("Ein Stapel auf einem Platz zählt Stück für Stück")
+    void aStackCountsEveryPiece() {
+        // Drei Reichweitenkarten auf einem Steckplatz wirken wie drei Karten.
+        // Das ist die Folge daraus, dass gleiche Karten sich addieren — und
+        // die einzige Regel des Behälters, die sich prüfen lässt, ohne
+        // Minecraft hochzufahren.
+        Loadout stacked = Loadout.ofCounts(java.util.Map.of(Card.RANGE, 3));
+        assertEquals(24, stacked.value(Stat.RANGE));
+        assertEquals(3, stacked.installed().size());
+    }
+
+    @Test
+    @DisplayName("Ein leerer Stapel trägt nichts bei")
+    void anEmptyStackAddsNothing() {
+        assertEquals(0, Loadout.ofCounts(java.util.Map.of(Card.RANGE, 0))
+                .value(Stat.RANGE));
+    }
+
+    @Test
     @DisplayName("Module und Karten teilen sich die Steckplätze")
     void bothKindsShareTheSlots() {
         Loadout mixed = Loadout.of(List.of(Ability.WIRELESS, Card.RANGE, Card.RANGE));

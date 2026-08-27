@@ -2,6 +2,7 @@ package dev.devpanda.factorynetwork.upgrade;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Was eine Bestückung kann, und wie hoch ihre Werte sind.
@@ -21,6 +22,25 @@ public record Loadout(List<Upgrade> installed) {
         // Untertypen bleibt eine Liste von Untertypen, und der Record will
         // eine von Upgrade.
         return new Loadout(new ArrayList<Upgrade>(installed));
+    }
+
+    /**
+     * Dieselbe Rechnung aus Stückzahlen statt aus einer Liste.
+     *
+     * <p><b>Wozu.</b> Ein Steckplatz hält einen Stapel, und jedes Stück darin
+     * zählt: Drei Reichweitenkarten auf einem Platz wirken wie drei Karten.
+     * Diese Regel gehört geprüft, und sie soll dafür nicht in einem Behälter
+     * stecken, den kein gewöhnlicher Test anfassen kann — {@code ItemStack}
+     * verlangt ein hochgefahrenes Minecraft.
+     */
+    public static Loadout ofCounts(Map<? extends Upgrade, Integer> counts) {
+        List<Upgrade> found = new ArrayList<>();
+        counts.forEach((upgrade, count) -> {
+            for (int i = 0; i < count; i++) {
+                found.add(upgrade);
+            }
+        });
+        return new Loadout(found);
     }
 
     /** Steckt ein Modul dieser Art darin? */

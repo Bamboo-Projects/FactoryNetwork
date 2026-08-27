@@ -792,6 +792,23 @@ class UpgradeSlotsTest {
 }
 ```
 
+> **Beim Ausführen entschieden (27.08.):** Der Behälter ist in einem
+> gewöhnlichen Test überhaupt nicht anzufassen. Er hält `ItemStack`, und
+> deren Klasseninitialisierung verlangt die Registrierungen —
+> `Bootstrap.bootStrap()` in einer `@BeforeAll` half auch nicht, es scheitert
+> davor. Kein anderer Test im Projekt benutzt `ItemStack`; die Linie ist also
+> alt und nicht zufällig.
+>
+> Statt die Probe in einen GameTest zu schieben, ist die eine Regel, die es zu
+> schützen gilt, aus dem Behälter herausgezogen: `Loadout.ofCounts` nimmt
+> Stückzahlen und zählt Stück für Stück. Sie wird im `LoadoutTest` geprüft,
+> der Behälter sammelt nur noch, was in den Plätzen liegt. `UpgradeSlotsTest`
+> gibt es nicht.
+>
+> Was damit ungeprüft bleibt: `accepts`, `get`, `set` und das Speichern. Das
+> ist Verwaltung von je einer Zeile, und der erste Block mit Steckplätzen in
+> Teil 2 fasst sie im GameTest ohnehin an.
+
 **Hinweis für den Ausführenden:** Dieser Test lädt Minecraft-Klassen
 (`ItemStack`, `Items`). Läuft er in dieser Umgebung nicht an, weil die
 Registrierungen fehlen, dann nimm die beiden Fälle mit `ItemStack` heraus und
