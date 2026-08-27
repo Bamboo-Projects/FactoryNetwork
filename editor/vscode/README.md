@@ -30,23 +30,28 @@ alle Dateien, mehrere Cursor und Git.
 
 ## Einbauen
 
-Ohne Marktplatz und ohne Bauschritt: Die Erweiterung ist reines JavaScript,
-kein `npm install`, kein Übersetzer. Kopieren reicht.
-
-**Windows**
+Ein Paket bauen und installieren — zwei Zeilen, von überall aus:
 
 ```
-xcopy /E /I editor\vscode %USERPROFILE%\.vscode\extensions\devpanda.manifold-1.0.0
-```
-
-**Linux und macOS**
-
-```
-cp -r editor/vscode ~/.vscode/extensions/devpanda.manifold-1.0.0
+cd editor/vscode
+npx --yes @vscode/vsce package --allow-missing-repository --skip-license
+code --install-extension manifold-1.0.0.vsix --force
 ```
 
 Danach VS Code neu starten. Eine `.mf`-Datei sollte farbig sein; unten rechts
 steht „Manifold".
+
+> **Den Ordner einfach zu kopieren reicht nicht mehr.** Bis VS Code 1.7x hat
+> das funktioniert: Wer `editor/vscode` nach
+> `%USERPROFILE%\.vscode\extensions\…` legte, hatte sie installiert.
+> Heutige Fassungen führen daneben ein Verzeichnis (`extensions.json`) und
+> laden nur, was darin steht — ein hingelegter Ordner bleibt unsichtbar, ohne
+> dass irgendwo eine Meldung erscheint. Der Weg über das Paket trägt sich dort
+> selbst ein.
+
+Die Erweiterung selbst bleibt reines JavaScript: kein `npm install`, kein
+Übersetzer, keine Abhängigkeit. `vsce` packt nur — gebraucht wird es für die
+Registrierung, nicht für den Code.
 
 ## Was sie kann
 

@@ -25,6 +25,11 @@ erwartet.
 
 - Der Prüflauf `check.js` läuft mit `./gradlew test` mit. Vorher musste ihn
   jemand von Hand starten, und niemand tat es zuverlässig.
+- **Der Einbau geht über ein Paket.** Den Ordner nach
+  `.vscode/extensions/` zu kopieren hat bis VS Code 1.7x funktioniert und tut
+  es heute nicht mehr: Neuere Fassungen laden nur, was in ihrem Verzeichnis
+  `extensions.json` steht, und ein hingelegter Ordner bleibt stumm
+  unsichtbar.
 
 ## 0.2.0
 
