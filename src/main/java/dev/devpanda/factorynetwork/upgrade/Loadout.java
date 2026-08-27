@@ -43,6 +43,23 @@ public record Loadout(List<Upgrade> installed) {
         return new Loadout(found);
     }
 
+    /**
+     * Wie oft dieser Ausbau steckt.
+     *
+     * <p>Wer Stückzahlen braucht — die Stromrechnung tut das —, soll sie
+     * nicht aus einem Wert zurückrechnen müssen. Das ginge nur, solange es
+     * je Wert genau eine Kartenart gibt.
+     */
+    public int count(Upgrade upgrade) {
+        int found = 0;
+        for (Upgrade one : installed) {
+            if (one == upgrade) {
+                found++;
+            }
+        }
+        return found;
+    }
+
     /** Steckt ein Modul dieser Art darin? */
     public boolean has(Ability ability) {
         return installed.contains(ability);

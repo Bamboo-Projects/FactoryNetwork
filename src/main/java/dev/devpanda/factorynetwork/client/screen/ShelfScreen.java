@@ -33,6 +33,8 @@ public class ShelfScreen extends AbstractContainerScreen<ShelfMenu> {
             FactoryNetwork.MOD_ID, "textures/gui/drive.png");
     private static final ResourceLocation RACK = ResourceLocation.fromNamespaceAndPath(
             FactoryNetwork.MOD_ID, "textures/gui/rack.png");
+    private static final ResourceLocation MAST = ResourceLocation.fromNamespaceAndPath(
+            FactoryNetwork.MOD_ID, "textures/gui/mast.png");
 
     /** Das Bild liegt auf einem 512er Blatt, wie alle Oberflächen der Mod. */
     private static final int SHEET = 512;
@@ -90,9 +92,17 @@ public class ShelfScreen extends AbstractContainerScreen<ShelfMenu> {
         return menu.layout().rowY(bay / 2) + 6;
     }
 
+    /** Die Fläche zu diesem Zuschnitt. */
+    private ResourceLocation background() {
+        if (menu.layout() == ShelfMenu.RACK) {
+            return RACK;
+        }
+        return menu.layout() == ShelfMenu.MAST ? MAST : DRIVE;
+    }
+
     @Override
     protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
-        graphics.blit(isRack() ? RACK : DRIVE,
+        graphics.blit(background(),
                 leftPos, topPos, 0, 0, imageWidth, imageHeight, SHEET, SHEET);
         if (!isRack()) {
             return;

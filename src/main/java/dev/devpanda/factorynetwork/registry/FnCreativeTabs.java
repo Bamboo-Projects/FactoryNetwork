@@ -30,11 +30,18 @@ public final class FnCreativeTabs {
                         FnItems.DENSE_CABLES.values()
                                 .forEach(cable -> output.accept(cable.get()));
                         output.accept(FnItems.ROUTER.get());
+                        output.accept(FnItems.MAST.get());
                         output.accept(FnItems.CONNECTOR.get());
                         output.accept(FnItems.TERMINAL.get());
                         output.accept(FnItems.DISPLAY.get());
                         output.accept(FnItems.LABEL_GUN.get());
                         output.accept(FnItems.ANALYSER.get());
+                        // Die Ausbauten: erst das Modul, dann die Karten von
+                        // klein nach groß — dieselbe Reihenfolge wie im
+                        // Rezeptbaum.
+                        output.accept(FnItems.WIRELESS_MODULE.get());
+                        output.accept(FnItems.RANGE_CARD.get());
+                        output.accept(FnItems.INFINITY_CARD.get());
                         output.accept(FnItems.DRIVE.get());
                         output.accept(FnItems.RACK.get());
                         output.accept(FnItems.SERVER_CHASSIS.get());

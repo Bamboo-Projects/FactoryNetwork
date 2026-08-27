@@ -4643,7 +4643,7 @@ public final class FactoryNetworkGameTests {
             return;
         }
         var menu = dev.devpanda.factorynetwork.client.menu.ShelfMenu
-                .of(1, player.getInventory(), shelf);
+                .of(1, player.getInventory(), shelf, shelf.layout());
         for (int index = shelf.getContainerSize(); index < menu.slots.size(); index++) {
             if (menu.slots.get(index).hasItem()) {
                 menu.quickMoveStack(player, index);
@@ -4667,7 +4667,7 @@ public final class FactoryNetworkGameTests {
             return;
         }
         dev.devpanda.factorynetwork.client.menu.ShelfMenu
-                .of(1, player.getInventory(), shelf)
+                .of(1, player.getInventory(), shelf, shelf.layout())
                 .quickMoveStack(player, slot);
     }
 
@@ -5663,7 +5663,7 @@ public final class FactoryNetworkGameTests {
         var rack = (dev.devpanda.factorynetwork.block.entity.RackBlockEntity)
                 helper.getBlockEntity(rackPos);
         var menu = dev.devpanda.factorynetwork.client.menu.ShelfMenu
-                .of(1, player.getInventory(), rack);
+                .of(1, player.getInventory(), rack, rack.layout());
         for (int index = rack.getContainerSize(); index < menu.slots.size(); index++) {
             if (menu.slots.get(index).hasItem()) {
                 menu.quickMoveStack(player, index);
@@ -6252,6 +6252,47 @@ public final class FactoryNetworkGameTests {
                             .isEmpty(stack));
             helper.assertTrue(packed,
                     "Das Gehäuse fällt heraus, aber ohne seine Bauteile");
+        });
+    }
+
+    /**
+     * Ein bestückter Mast gibt seine Karten zurück.
+     *
+     * <p>Die Loot-Tabelle sieht sie nicht — sie kennt nur den Block. Ohne
+     * {@code onRemove} wären vier Karten weg, und eine davon kann die
+     * teuerste im Spiel sein.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void breakingAMastReturnsItsCards(GameTestHelper helper) {
+        BlockPos pos = new BlockPos(1, 2, 1);
+        helper.setBlock(pos, FnBlocks.MAST.get());
+        if (!(helper.getBlockEntity(pos)
+                instanceof dev.devpanda.factorynetwork.block.entity.MastBlockEntity mast)) {
+            helper.fail("keine BlockEntity am Sendemast");
+            return;
+        }
+        mast.setItem(0, new net.minecraft.world.item.ItemStack(
+                dev.devpanda.factorynetwork.registry.FnItems.RANGE_CARD.get(), 2));
+        mast.setItem(1, new net.minecraft.world.item.ItemStack(
+                dev.devpanda.factorynetwork.registry.FnItems.INFINITY_CARD.get()));
+
+        // Und was drinsteckt, rechnet er auch aus: zwei Karten und die
+        // Grenzenlos-Karte heißt unbegrenzt.
+        helper.assertTrue(mast.loadout().unlimited(
+                        dev.devpanda.factorynetwork.upgrade.Stat.RANGE),
+                "der Mast merkt die Grenzenlos-Karte nicht");
+        helper.assertTrue(mast.loadout().count(
+                        dev.devpanda.factorynetwork.upgrade.Card.RANGE) == 2,
+                "der Mast zählt den Stapel nicht Stück für Stück");
+
+        helper.destroyBlock(pos);
+        helper.succeedWhen(() -> {
+            helper.assertItemEntityPresent(
+                    dev.devpanda.factorynetwork.registry.FnItems.RANGE_CARD.get(),
+                    pos, 2.0);
+            helper.assertItemEntityPresent(
+                    dev.devpanda.factorynetwork.registry.FnItems.INFINITY_CARD.get(),
+                    pos, 2.0);
         });
     }
 

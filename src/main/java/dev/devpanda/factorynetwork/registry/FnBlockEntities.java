@@ -24,6 +24,14 @@ public final class FnBlockEntities {
                     .of(ControllerBlockEntity::new, FnBlocks.CONTROLLER.get())
                     .build(null));
 
+    /** Der Sendemast hält vier Steckplätze und sonst nichts. */
+    public static final DeferredHolder<BlockEntityType<?>,
+            BlockEntityType<dev.devpanda.factorynetwork.block.entity.MastBlockEntity>>
+            MAST = BLOCK_ENTITIES.register("mast", () -> BlockEntityType.Builder
+                    .of(dev.devpanda.factorynetwork.block.entity.MastBlockEntity::new,
+                            dev.devpanda.factorynetwork.registry.FnBlocks.MAST.get())
+                    .build(null));
+
     public static final DeferredHolder<BlockEntityType<?>,
             BlockEntityType<dev.devpanda.factorynetwork.block.entity.GatewayBlockEntity>>
             GATEWAY = BLOCK_ENTITIES.register("gateway", () -> BlockEntityType.Builder

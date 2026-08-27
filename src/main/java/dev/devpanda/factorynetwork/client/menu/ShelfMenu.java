@@ -1,6 +1,5 @@
 package dev.devpanda.factorynetwork.client.menu;
 
-import dev.devpanda.factorynetwork.block.entity.ShelfBlockEntity;
 import dev.devpanda.factorynetwork.registry.FnMenus;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.Container;
@@ -82,21 +81,38 @@ public class ShelfMenu extends AbstractContainerMenu {
     public static final Layout RACK =
             new Layout(192, 222, 8, 6, 12, 18, 139, 197, 4, 12, 0, 4);
 
+    /**
+     * Der Sendemast: vier Steckplätze in einer Reihe.
+     *
+     * <p>Keine Gruppen, keine Lämpchen — vier Plätze sind vier Plätze. Die
+     * Zahlen kommen aus {@code tools/gui.py}, das die Fläche malt und sie
+     * beim Lauf ausgibt.
+     */
+    public static final Layout MAST = new Layout(176, 132, 4, 1, 52, 18, 49, 107);
+
     private static final int SLOT = 18;
+
+    /**
+     * Die Zuschnitte in der Reihenfolge, in der sie über die Leitung gehen.
+     *
+     * <p><b>Ein Byte und kein Ja-Nein.</b> Solange es zwei Regale gab, reichte
+     * ein Bit; mit dem Sendemast sind es drei, und der nächste wäre der
+     * vierte. Wer hier einen Zuschnitt ergänzt, hängt ihn hinten an — die
+     * Zahl steht sonst nirgends.
+     */
+    private static final Layout[] KINDS = {DRIVE, RACK, MAST};
 
     private final Container container;
     private final Layout layout;
-    private final boolean drive;
 
     public ShelfMenu(int id, Inventory inventory, RegistryFriendlyByteBuf buffer) {
-        this(id, inventory, buffer.readBoolean(), null);
+        this(id, inventory, KINDS[buffer.readByte()], null);
     }
 
-    private ShelfMenu(int id, Inventory inventory, boolean drive, Container shelf) {
+    private ShelfMenu(int id, Inventory inventory, Layout layout, Container shelf) {
         super(FnMenus.SHELF.get(), id);
-        this.drive = drive;
-        this.layout = drive ? DRIVE : RACK;
-        this.container = shelf != null ? shelf : placeholder(drive, layout.slots());
+        this.layout = layout;
+        this.container = shelf != null ? shelf : placeholder(layout, layout.slots());
 
         for (int row = 0; row < layout.rows(); row++) {
             for (int column = 0; column < layout.columns(); column++) {
@@ -120,9 +136,20 @@ public class ShelfMenu extends AbstractContainerMenu {
      * sonst zeigt der Client ein Rechenwerk auf dem Datenträgerplatz, bis
      * der Server widerspricht, und das sieht aus wie ein Fehler.
      */
-    private static Container placeholder(boolean drive, int slots) {
-        if (drive) {
+    private static Container placeholder(Layout layout, int slots) {
+        if (layout == DRIVE) {
             return new SimpleContainer(slots);
+        }
+        if (layout == MAST) {
+            // Am Mast gilt dieselbe Regel wie überall im Ausbausystem: Was
+            // kein Modul und keine Karte ist, kommt nicht hinein.
+            return new SimpleContainer(slots) {
+                @Override
+                public boolean canPlaceItem(int slot, ItemStack stack) {
+                    return dev.devpanda.factorynetwork.item.UpgradeItem
+                            .upgradeOf(stack) != null;
+                }
+            };
         }
         return new SimpleContainer(slots) {
             @Override
@@ -143,9 +170,26 @@ public class ShelfMenu extends AbstractContainerMenu {
         };
     }
 
-    /** Für den Server: das Regal selbst statt einer leeren Kiste. */
-    public static ShelfMenu of(int id, Inventory inventory, ShelfBlockEntity shelf) {
-        return new ShelfMenu(id, inventory, shelf.layout() == DRIVE, shelf);
+    /**
+     * Für den Server: der Behälter selbst statt einer leeren Kiste.
+     *
+     * <p>Nimmt einen {@link Container} und keinen {@code ShelfBlockEntity}:
+     * Der Sendemast ist keines der beiden Regale, hält seine Plätze aber
+     * genauso.
+     */
+    public static ShelfMenu of(int id, Inventory inventory, Container container,
+                               Layout layout) {
+        return new ShelfMenu(id, inventory, layout, container);
+    }
+
+    /** Welchen Zuschnitt dieses Fenster hat, als Zahl für die Leitung. */
+    public static int kindOf(Layout layout) {
+        for (int index = 0; index < KINDS.length; index++) {
+            if (KINDS[index] == layout) {
+                return index;
+            }
+        }
+        throw new IllegalArgumentException("unbekannter Zuschnitt");
     }
 
     public Layout layout() {

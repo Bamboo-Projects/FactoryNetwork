@@ -168,8 +168,9 @@ public class RackBlock extends HorizontalDirectionalBlock implements EntityBlock
         if (!(level.getBlockEntity(baseOf(state, pos)) instanceof ShelfBlockEntity shelf)) {
             return InteractionResult.PASS;
         }
-        player.openMenu(shelf, buffer -> buffer.writeBoolean(shelf.layout()
-                == dev.devpanda.factorynetwork.client.menu.ShelfMenu.DRIVE));
+        player.openMenu(shelf, buffer -> buffer.writeByte(
+                dev.devpanda.factorynetwork.client.menu.ShelfMenu
+                        .kindOf(shelf.layout())));
         return InteractionResult.CONSUME;
     }
 

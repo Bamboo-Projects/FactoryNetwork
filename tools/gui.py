@@ -456,7 +456,10 @@ def main():
     save(router_background(), "router")
     for name, breite, columns, rows, group, gap, inner_after, inner_gap, lamps in (
             ("drive", 176, 2, 5, 0, 0, 0, 0, False),
-            ("rack", 192, 8, 6, 4, 12, 0, 4, True)):
+            ("rack", 192, 8, 6, 4, 12, 0, 4, True),
+            # Der Sendemast: vier Steckplätze in einer Reihe. Keine Gruppen,
+            # keine Lämpchen — vier Plätze sind vier Plätze.
+            ("mast", 176, 4, 1, 0, 0, 0, 0, False)):
         bild, links, oben, inventar, schnell, hoehe, fenster = shelf_background(
             breite, columns, rows, group, gap, inner_after, inner_gap, lamps)
         save(bild, name)

@@ -86,8 +86,9 @@ public class DriveBlock extends HorizontalDirectionalBlock implements EntityBloc
                 instanceof dev.devpanda.factorynetwork.block.entity.ShelfBlockEntity shelf)) {
             return InteractionResult.PASS;
         }
-        player.openMenu(shelf, buffer -> buffer.writeBoolean(shelf.layout()
-                == dev.devpanda.factorynetwork.client.menu.ShelfMenu.DRIVE));
+        player.openMenu(shelf, buffer -> buffer.writeByte(
+                dev.devpanda.factorynetwork.client.menu.ShelfMenu
+                        .kindOf(shelf.layout())));
         return InteractionResult.CONSUME;
     }
 

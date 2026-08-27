@@ -64,7 +64,8 @@ public abstract class ShelfBlockEntity extends BlockEntity
     @Override
     public net.minecraft.world.inventory.AbstractContainerMenu createMenu(
             int id, net.minecraft.world.entity.player.Inventory inventory, Player player) {
-        return dev.devpanda.factorynetwork.client.menu.ShelfMenu.of(id, inventory, this);
+        return dev.devpanda.factorynetwork.client.menu.ShelfMenu.of(
+                id, inventory, this, layout());
     }
 
     /**
