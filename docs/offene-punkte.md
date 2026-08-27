@@ -55,7 +55,23 @@ Handbucharbeit)
 >   einigen Blöcken Abstand — die fünf möglichen Anschlussfarben enthalten
 >   kein Pink, und aus der Nahaufnahme werde ich nicht schlau.
 >
-> 318 GameTests, alle Prüfläufe grün.
+> **Und der zweite Wunsch vom Client-Lauf ist auch drin.** Ein Anschluss darf
+> jetzt vor dem Kabel dastehen — Rechtsklick mit dem Connector auf eine
+> Blockfläche setzt ihn davor, zeigend auf das Gerät, das du angeklickt hast.
+> Ein Kabel darauf legt das Kabel hinein, statt einen zweiten Block daneben zu
+> setzen. Geht der letzte Anschluss ab, verschwindet der Halter.
+>
+> Ich hatte das als „nicht ohne dich" eingestuft, bevor du auf meine
+> Kernfrage geantwortet hast. Danach war es entschieden, und `entscheidungen.md`
+> hält es seit b43c910 fest. Es liegt in einem eigenen Commit (e91534c), falls
+> du es anders willst.
+>
+> **Was daran im Spiel zu prüfen ist:** Ein Halter ist dünn — er besteht aus
+> der Platte an der Wand und sonst nichts. Ob er sich gut treffen und abbauen
+> lässt, sagt kein Prüflauf. Und ob die Geste stimmt: Du klickst auf die
+> Maschine, der Anschluss entsteht davor.
+>
+> 321 GameTests, alle Prüfläufe grün.
 
 > **Nacht auf den 25.08., zweiter Durchgang:** 1.2 (`where` und `sort` stehen
 > jetzt vollständig), dazu vier Dinge, die vorher niemand auf der Liste
