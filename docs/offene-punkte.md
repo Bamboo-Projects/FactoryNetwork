@@ -486,7 +486,11 @@ Blöcke gesehen. Was dort zu prüfen ist:
    Router-Buchse, im Hohlraum der Presse, in den Fugen
 2. Der Stempel der Presse: Fährt er, und trifft er den Amboss statt die Luft
    oder das Blech darunter
-3. Die siebenunddreißig Gegenstände in Hand, Inventar und am Boden
+3. Die siebenunddreißig Gegenstände in Hand, Inventar und am Boden — dazu
+   die drei Ausbauten, und beim Funk-Modul besonders: Sein Kasten reicht bis
+   an die Antenne hinauf, und um sie herum ist die Textur durchsichtig. Wenn
+   das im Spiel als Klotz erscheint statt als Antenne, ist der Umriss die
+   falsche Antwort und die Extrusion die richtige.
 4. Umgebungsverdeckung und Licht auf den versenkten Flächen
 5. Die Anschlussplatten der Kabel gegen die neuen Fronten
 6. Die Laufwerkszellen sitzen im Schacht statt davor
