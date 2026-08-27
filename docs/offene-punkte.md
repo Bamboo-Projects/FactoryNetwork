@@ -71,7 +71,19 @@ Handbucharbeit)
 > lässt, sagt kein Prüflauf. Und ob die Geste stimmt: Du klickst auf die
 > Maschine, der Anschluss entsteht davor.
 >
-> 321 GameTests, alle Prüfläufe grün.
+> **Ein viertes Loch, gefunden beim Nachschauen:** Vanillas Nachbarrunde
+> läuft über `updateShape`, nicht über die Rechnung, die ich abgesichert
+> hatte. Ein Halter neben einem Kabel bekam dort ein Verbindungsbit — im Bild
+> unsichtbar, aber `hasRoomForPart` liest es, und er hätte auf dieser Fläche
+> keinen zweiten Anschluss mehr angenommen. Der alte Prüflauf sah es nicht,
+> weil er die Rechnung direkt rief statt den Zustand aus der Welt zu lesen.
+> Beides behoben.
+>
+> **Benennen am Halter geht** — die zweite Hälfte deines Wunsches. Die
+> Namensprüfung vergleicht mit den Namen im Netz, und ein Halter hat keines;
+> sie kommt mit dem leeren Fall zurecht. Ein Prüflauf hält das fest.
+>
+> 322 GameTests, alle Prüfläufe grün.
 
 > **Nacht auf den 25.08., zweiter Durchgang:** 1.2 (`where` und `sort` stehen
 > jetzt vollständig), dazu vier Dinge, die vorher niemand auf der Liste

@@ -91,6 +91,24 @@ einzeln.
 
 ---
 
+## Stand am 28.08.
+
+**Teile 1 bis 4 stehen.** Das Ausbausystem, der Sendemast, die beiden Geräte
+und ihr Fenster sind gebaut; der Weg dahin steht in `plan-ausbausystem.md`,
+`plan-sendemast.md` und `plan-fernzugriff-geraete.md`.
+
+**Zwei Abweichungen von diesem Entwurf**, beide begründet in
+`entscheidungen.md`:
+
+- Das Wireless Terminal zeigt **fünf** Reiter, nicht vier. Abschnitt 4 unten
+  zählt das Protokoll nicht mit; die Regel ist aber „alles außer Code", und
+  das Protokoll ist Diagnose wie die Netzübersicht.
+- Wer aus der Ferne Code anfassen darf, entscheidet **das offene Fenster** und
+  nicht mehr ein Abstand zu einem Block. Mit dem Laptop steht man vor keinem.
+
+**Offen ist Teil 5**, die Anzeigetafel mit Funk-Modul — und das Aussehen der
+beiden Geräte: Sie haben Texturen, aber noch keinen eigenen Körper.
+
 ## 4. Die Geräte
 
 **Gekoppelt wird per Rechtsklick auf den Sendemast.** Das Gerät merkt sich das

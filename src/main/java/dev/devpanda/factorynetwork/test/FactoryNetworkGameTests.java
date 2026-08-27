@@ -6366,12 +6366,70 @@ public final class FactoryNetworkGameTests {
                         .contains(Direction.WEST),
                 "ein Kabel wächst einen Arm zum Halter, in dem gar nichts liegt");
 
-        // Und der Halter selbst hat nach keiner Seite einen.
-        var holder = dev.devpanda.factorynetwork.block.CableBlock.withConnections(
-                state, helper.getLevel(), world);
+        // Und der Halter selbst hat nach keiner Seite einen — gelesen aus
+        // der Welt und nicht frisch gerechnet.
+        //
+        // <b>Der Unterschied ist der Punkt dieser Probe.</b> withConnections
+        // ruft nur, wer selbst rechnet; Vanillas Nachbarrunde geht über
+        // updateShape. Ein Test, der die erste Fassung ruft, prüft den Weg,
+        // den das Spiel nicht nimmt.
+        var fromWorld = helper.getLevel().getBlockState(world);
         helper.assertTrue(
-                dev.devpanda.factorynetwork.block.CableBlock.connectionsOf(holder).isEmpty(),
+                dev.devpanda.factorynetwork.block.CableBlock.connectionsOf(fromWorld).isEmpty(),
                 "der Halter hat Arme, obwohl kein Kabel in ihm liegt");
+
+        // Und darum geht es wirklich: Ein Halter neben einem Kabel muss auf
+        // dieser Fläche noch einen Anschluss nehmen können. Stünde dort ein
+        // Verbindungsbit, verweigerte er ihn.
+        if (helper.getLevel().getBlockEntity(world)
+                instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity holder) {
+            helper.assertTrue(
+                    dev.devpanda.factorynetwork.block.CableBlock.hasRoomForPart(
+                            fromWorld, helper.getLevel(), world, Direction.EAST),
+                    "der Halter nimmt neben einem Kabel keinen Anschluss mehr an");
+            holder.addPart(Direction.EAST);
+            helper.assertTrue(holder.partAt(Direction.EAST) != null,
+                    "der Anschluss zum Kabel hin ging nicht hinein");
+        }
+        helper.succeed();
+    }
+
+    /**
+     * Ein Anschluss im Halter lässt sich benennen, bevor ein Kabel da ist.
+     *
+     * <p>Das war die zweite Hälfte des Wunsches: setzen <b>und benennen</b>,
+     * bevor er angeschlossen ist. Der Name wird gegen die Namen im Netz
+     * geprüft — und ein Halter hat keines. Ginge die Prüfung daran kaputt,
+     * schlüge genau das fehl, wofür der Halter da ist.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 100)
+    public static void aHolderPartTakesAName(GameTestHelper helper) {
+        BlockPos world = helper.absolutePos(new BlockPos(1, 2, 1));
+        helper.getLevel().setBlockAndUpdate(world,
+                FnBlocks.CABLE.get().defaultBlockState()
+                        .setValue(dev.devpanda.factorynetwork.block.CableBlock.CABLE, false));
+        if (!(helper.getLevel().getBlockEntity(world)
+                instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus)) {
+            helper.fail("kein Kabelbus im Halter");
+            return;
+        }
+        var part = bus.addPart(Direction.NORTH);
+
+        // Ohne Netz gibt es keinen Graphen — genau der Fall am Halter.
+        var warning = dev.devpanda.factorynetwork.item.ConnectorNaming.check(
+                "ofen_1", null);
+        helper.assertTrue(warning.isFine(),
+                "ein gültiger Name wird ohne Netz abgelehnt: " + warning.kind());
+
+        part.setLabel("ofen_1");
+        helper.assertTrue("ofen_1".equals(part.label()),
+                "der Name ist nicht am Anschluss angekommen");
+
+        // Und ein untauglicher Name bleibt untauglich, auch ohne Netz.
+        helper.assertTrue(
+                !dev.devpanda.factorynetwork.item.ConnectorNaming.check(
+                        "1 ofen", null).isFine(),
+                "ein unmöglicher Name geht ohne Netz durch");
         helper.succeed();
     }
 

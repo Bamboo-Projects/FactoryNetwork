@@ -209,6 +209,16 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
     protected BlockState updateShape(BlockState state, Direction direction, BlockState neighbour,
                                      LevelAccessor level, BlockPos pos, BlockPos neighbourPos) {
         BooleanProperty property = CONNECTIONS.get(direction);
+        if (!carries(state)) {
+            // Ein Halter bekommt auch hier keine Arme.
+            //
+            // Nicht nur eine Frage des Bildes: Die Bits landen im
+            // gespeicherten Zustand, und hasRoomForPart liest sie. Ein Halter
+            // neben einem Kabel verweigerte sonst auf dieser Fläche einen
+            // zweiten Anschluss, den er nehmen müsste — und die Farbe eines
+            // Halters ist neutral, also gilt das neben jedem Kabel.
+            return state.setValue(property, false);
+        }
         return state.setValue(property, connectsOrCarries(level, pos, direction,
                 state.getValue(COLOUR), neighbour));
     }
