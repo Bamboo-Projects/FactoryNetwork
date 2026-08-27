@@ -153,7 +153,10 @@ public final class FnBlocks {
 
     /** Nimmt Speicherzellen auf — der Lagerraum des Netzes. */
     public static final DeferredBlock<Block> DRIVE = BLOCKS.register("drive",
-            () -> new DriveBlock(machineProperties()));
+            // noOcclusion, weil das Gehäuse auf Füßen steht und die Blende
+            // seitlich darüber hinausragt: Ohne die Angabe lässt Minecraft
+            // die Flächen der Nachbarn weg, die man dazwischen sieht.
+            () -> new DriveBlock(machineProperties().noOcclusion()));
 
     /** Zeigt an der Wand, was im Netz vorgeht. */
     public static final DeferredBlock<Block> DISPLAY = BLOCKS.register("display",

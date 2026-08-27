@@ -326,15 +326,8 @@ def blockstates():
         })
         write(A + "/models/item/%s.json" % ore, {"parent": block(ore)})
 
-    # Laufwerk: Front mit Schächten, sonst Maschinengehäuse.
-    write(A + "/models/block/drive.json", {
-        "parent": "minecraft:block/orientable",
-        "textures": {
-            "front": MOD + ":block/drive_front",
-            "side": MOD + ":block/machine_top",
-            "top": MOD + ":block/machine_top",
-        },
-    })
+    # Laufwerk: ein Gehaeuse auf Fuessen, davor die Blende. Das Modell baut
+    # drive_model(); hier stehen nur noch die vier Drehungen.
     drive_variants = {}
     for direction, rotation in (("north", {}), ("east", {"y": 90}),
                                 ("south", {"y": 180}), ("west", {"y": 270})):
@@ -597,35 +590,102 @@ def on_hull(start, end, face):
     return end[1] == 16
 
 
-def gateway_boxes():
-    """Die Kästen des Torbogens, jeder mit den Flächen, die man sieht.
+def face_plane(start, end, face):
+    """Die Ebene, in der eine Fläche liegt, und ihr Rechteck darin.
 
-    <b>Was fehlt, fehlt mit Absicht:</b> Die Unterseite einer Ecksäule steht
-    auf dem Sockel, ihre Oberseite unter dem Sturz, und die eine Seite einer
-    Schulter stößt an die Säule, aus der sie wächst. Solche Flächen zeichnet
-    Minecraft mit, wenn man sie hinschreibt — zu sehen sind sie nie.
+    Zurück kommt (Achse, Lage, Rechteck) — zwei Flächen können sich nur
+    verdecken, wenn Achse und Lage übereinstimmen.
+    """
+    x0, y0, z0 = start
+    x1, y1, z1 = end
+    if face == "north":
+        return "z", z0, (x0, y0, x1, y1)
+    if face == "south":
+        return "z", z1, (x0, y0, x1, y1)
+    if face == "west":
+        return "x", x0, (z0, y0, z1, y1)
+    if face == "east":
+        return "x", x1, (z0, y0, z1, y1)
+    if face == "down":
+        return "y", y0, (x0, z0, x1, z1)
+    return "y", y1, (x0, z0, x1, z1)
+
+
+def hidden(boxes, index, face):
+    """Deckt ein anderer Kasten diese Fläche vollständig zu?
+
+    <b>Wozu.</b> Ein Modell aus einem Dutzend Kästen hat leicht ein Drittel
+    Flächen, die niemand je sieht: die Unterseite einer Säule, die auf dem
+    Sockel steht, die Seite einer Schulter, die an der Säule klebt. Minecraft
+    zeichnet sie, wenn sie dastehen. Von Hand abzuzählen, welche das sind, ist
+    genau die Arbeit, bei der man eine übersieht — und die übersehene ist
+    dann die eine, die im Spiel flimmert, weil zwei Flächen in derselben
+    Ebene liegen.
+
+    Verdeckt ist eine Fläche nur, wenn ein einzelner anderer Kasten sie ganz
+    zudeckt. Zwei Kästen, die sich die Arbeit teilen, zählen nicht — das
+    wäre richtig, aber es zu prüfen kostet mehr als die zwei Quads, um die es
+    geht.
+    """
+    axis, coord, rect = face_plane(*boxes[index][:2], face)
+    for other, box in enumerate(boxes):
+        if other == index:
+            continue
+        their_axis, their_coord, their_rect = face_plane(
+            box[0], box[1], OPPOSITE[face])
+        if their_axis != axis or their_coord != coord:
+            continue
+        if (their_rect[0] <= rect[0] and their_rect[1] <= rect[1]
+                and their_rect[2] >= rect[2] and their_rect[3] >= rect[3]):
+            return True
+    return False
+
+
+def machine_elements(boxes):
+    """Aus Kästen die Elemente eines Blockmodells.
+
+    Jeder Kasten ist (Anfang, Ende, Texturen). In den Texturen steht je
+    Fläche ein Name; {@code "*"} gilt für alle, die nicht einzeln genannt
+    sind. Welche Flächen wegfallen, rechnet {@link hidden}; welchen
+    Ausschnitt der Textur eine Fläche bekommt, {@link box_uv}; und
+    {@code cullface} setzt {@link on_hull}, wo es hingehört.
+    """
+    elements = []
+    for index, (start, end, faces) in enumerate(boxes):
+        entry = {"from": list(start), "to": list(end), "faces": {}}
+        for face in FACES:
+            if hidden(boxes, index, face):
+                continue
+            which = faces.get(face, faces.get("*", "side"))
+            quad = {"texture": "#" + which, "uv": box_uv(start, end, face)}
+            if on_hull(start, end, face):
+                quad["cullface"] = face
+            entry["faces"][face] = quad
+        elements.append(entry)
+    return elements
+
+
+def gateway_boxes():
+    """Die Kästen des Torbogens, jeder mit seinen Texturen.
+
+    Welche Flächen davon überhaupt gezeichnet werden, rechnet
+    {@link machine_elements}: Die Unterseite einer Ecksäule steht auf dem
+    Sockel, ihre Oberseite unter dem Sturz, und die eine Seite einer Schulter
+    stößt an die Säule, aus der sie wächst.
     """
     foot, head = GATEWAY_FOOT, GATEWAY_HEAD
     post, shoulder, reach = GATEWAY_POST, GATEWAY_SHOULDER, GATEWAY_REACH
     glow = GATEWAY_GLOW
     boxes = [
         # Sockel und Sturz: die volle Grundfläche. Nach oben und unten bleibt
-        # der Block geschlossen — ein Tor, kein Schacht. Ihre Deckflächen zum
-        # Durchgang hin liegen unter den Leuchtbändern und fehlen deshalb.
-        ([0, 0, 0], [16, foot - glow, 16],
-         {"down": "outer", "north": "outer", "south": "outer",
-          "east": "outer", "west": "outer"}),
-        ([0, head + glow, 0], [16, 16, 16],
-         {"up": "outer", "north": "outer", "south": "outer",
-          "east": "outer", "west": "outer"}),
+        # der Block geschlossen — ein Tor, kein Schacht.
+        ([0, 0, 0], [16, foot - glow, 16], {"*": "outer"}),
         # Die beiden Leuchtbänder. Sie liegen in der Blockhülle und laufen
         # außen um den ganzen Block: oben auf dem Sockel, unten am Sturz.
-        ([0, foot - glow, 0], [16, foot, 16],
-         {"north": "glow", "south": "glow", "east": "glow", "west": "glow",
-          "up": "inner"}),
-        ([0, head, 0], [16, head + glow, 16],
-         {"north": "glow", "south": "glow", "east": "glow", "west": "glow",
-          "down": "inner"}),
+        # Was von ihnen in den Durchgang zeigt, ist Gehäuse und kein Licht.
+        ([0, foot - glow, 0], [16, foot, 16], {"*": "glow", "up": "inner"}),
+        ([0, head, 0], [16, head + glow, 16], {"*": "glow", "down": "inner"}),
+        ([0, head + glow, 0], [16, 16, 16], {"*": "outer"}),
     ]
 
     # Die vier Ecksäulen. Zwei ihrer Seiten liegen in der Blockhülle und
@@ -638,35 +698,97 @@ def gateway_boxes():
             boxes.append(([x, foot, z], [x + post, head, z + post], {
                 outer_x: "outer",
                 outer_z: "outer",
-                OPPOSITE[outer_x]: "inner",
-                OPPOSITE[outer_z]: "inner",
+                "*": "inner",
             }))
 
     # Über jeder Öffnung zwei Schultern: die Stufe, aus der in sechzehn
     # Pixeln ein Bogen wird. Ein runder wäre ein Dutzend Kästen mehr für eine
     # Rundung, die bei dieser Auflösung ohnehin eckig ankommt.
-    #
-    # <b>inward</b> ist die Fläche, die zur Mitte des Durchgangs zeigt — die
-    # gegenüberliegende steckt in der Ecksäule.
     shoulders = []
-    for lo, inward in ((post, "east"), (16 - reach, "west")):
+    for lo in (post, 16 - reach):
         hi = lo + reach - post
-        shoulders.append(([lo, shoulder, 0], [hi, head, post], "north", inward))
-        shoulders.append(([lo, shoulder, 16 - post], [hi, head, 16], "south", inward))
-    for lo, inward in ((post, "south"), (16 - reach, "north")):
-        hi = lo + reach - post
-        shoulders.append(([0, shoulder, lo], [post, head, hi], "west", inward))
-        shoulders.append(([16 - post, shoulder, lo], [16, head, hi], "east", inward))
+        shoulders.append(([lo, shoulder, 0], [hi, head, post], "north"))
+        shoulders.append(([lo, shoulder, 16 - post], [hi, head, 16], "south"))
+        shoulders.append(([0, shoulder, lo], [post, head, hi], "west"))
+        shoulders.append(([16 - post, shoulder, lo], [16, head, hi], "east"))
 
-    for start, end, outer, inward in shoulders:
-        boxes.append((start, end, {
-            outer: "outer",
-            OPPOSITE[outer]: "inner",
-            inward: "inner",
-            "down": "inner",
-        }))
+    for start, end, outer in shoulders:
+        boxes.append((start, end, {outer: "outer", "*": "inner"}))
 
     return boxes
+
+
+# Das Laufwerk in Blockpixeln, Vorderseite nach Norden.
+#
+# Ein Gehäuse auf vier Füßen, davor eine Blende, und in der Blende liegt das
+# Schachtfeld versenkt. Die Blende ist seitlich einen Blockpixel breiter als
+# das Gehäuse — von der Seite steht sie also vor, und in einer Reihe stoßen
+# die Blenden aneinander, während zwischen den Gehäusen eine Fuge bleibt.
+# Genau so sieht eine Reihe Geräte aus und nicht wie eine Wand.
+#
+# Dieselben Zahlen stehen in DriveLayout.java; DriveLayoutTest hält beide
+# zusammen.
+DRIVE_FOOT = 2        # Höhe der Füße
+DRIVE_FOOT_WIDE = 3   # Grundfläche eines Fußes
+DRIVE_FRONT = 2       # wie weit die Blende vor dem Gehäuse steht
+DRIVE_INSET = 1       # wie weit das Gehäuse hinter der Blende zurückspringt
+DRIVE_BEZEL = 1       # Breite der Fassung um das Schachtfeld
+DRIVE_RECESS = 1      # wie tief das Feld in der Blende liegt
+
+
+def drive_boxes():
+    """Die Kästen des Laufwerks, jeder mit seinen Texturen.
+
+    Alles, was nach vorn zeigt, trägt {@code drive_front} — und zwar mit dem
+    Ausschnitt, den ein Würfelmodell an dieser Stelle genommen hätte. Der
+    erhabene Rahmen der Textur liegt dadurch auf der Fassung und die
+    Schächte im versenkten Feld: Was gemalt ist, sitzt jetzt dort, wo die
+    Form es hinstellt.
+    """
+    foot, wide = DRIVE_FOOT, DRIVE_FOOT_WIDE
+    front, inset = DRIVE_FRONT, DRIVE_INSET
+    bezel, recess = DRIVE_BEZEL, DRIVE_RECESS
+
+    boxes = [
+        # Das Gehäuse: hinten bündig, seitlich schmaler als die Blende, und
+        # es fängt erst über den Füßen an.
+        ([inset, foot, front], [16 - inset, 16, 16], {"*": "side"}),
+
+        # Die Fassung — vier Kästen um das Feld herum, in der Blockhülle.
+        ([0, 16 - bezel, 0], [16, 16, front], {"north": "front", "*": "side"}),
+        ([0, foot, 0], [16, foot + bezel, front], {"north": "front", "*": "side"}),
+        ([0, foot + bezel, 0], [bezel, 16 - bezel, front],
+         {"north": "front", "*": "side"}),
+        ([16 - bezel, foot + bezel, 0], [16, 16 - bezel, front],
+         {"north": "front", "*": "side"}),
+
+        # Das Schachtfeld, einen Blockpixel hinter der Fassung. Dass es
+        # zurückliegt, ist der ganze Punkt: In der Textur war die Vertiefung
+        # gemalt, jetzt ist sie da.
+        ([bezel, foot + bezel, recess], [16 - bezel, 16 - bezel, front],
+         {"north": "front", "*": "side"}),
+    ]
+
+    # Vier Füße an den Ecken. Dazwischen sieht man unter das Gerät — daran
+    # erkennt man von weitem, dass es steht und nicht in der Wand klebt.
+    for x in (0, 16 - wide):
+        for z in (0, 16 - wide):
+            boxes.append(([x, 0, z], [x + wide, foot, z + wide], {"*": "side"}))
+
+    return boxes
+
+
+def drive_model():
+    """Das Laufwerk als Gerät statt als Würfel."""
+    write(A + "/models/block/drive.json", {
+        "parent": "minecraft:block/block",
+        "textures": {
+            "particle": texture("machine_top"),
+            "front": texture("drive_front"),
+            "side": texture("machine_top"),
+        },
+        "elements": machine_elements(drive_boxes()),
+    })
 
 
 def gateway_model():
@@ -677,16 +799,6 @@ def gateway_model():
     gemalte Bogen lag. Die Laibung bekommt das Maschinengehäuse: Sie war
     vorher nie zu sehen und hat deshalb keine eigene Textur.
     """
-    elements = []
-    for start, end, faces in gateway_boxes():
-        entry = {"from": list(start), "to": list(end), "faces": {}}
-        for face, which in faces.items():
-            quad = {"texture": "#" + which, "uv": box_uv(start, end, face)}
-            if on_hull(start, end, face):
-                quad["cullface"] = face
-            entry["faces"][face] = quad
-        elements.append(entry)
-
     write(A + "/models/block/gateway.json", {
         # Ohne den Vanilla-Vorfahren fehlen die Ansichten für Hand und
         # Inventar — die gaben cube_all und seinesgleichen bisher gratis.
@@ -697,7 +809,7 @@ def gateway_model():
             "inner": texture("machine_top"),
             "glow": texture("gateway_glow"),
         },
-        "elements": elements,
+        "elements": machine_elements(gateway_boxes()),
     })
     write(A + "/blockstates/gateway.json",
           {"variants": {"": {"model": block("gateway")}}})
@@ -733,6 +845,7 @@ def models():
     cable_models()
     connector_part_models()
     gateway_model()
+    drive_model()
 
     # Das Blockmodell des Connectors ist am 26.08. mit seinem Block
     # verschwunden. Diese Erzeugung stand noch hier und legte die Datei bei

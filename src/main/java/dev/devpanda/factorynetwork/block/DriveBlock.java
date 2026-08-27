@@ -12,6 +12,10 @@ import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import org.jetbrains.annotations.Nullable;
@@ -24,6 +28,15 @@ import org.jetbrains.annotations.Nullable;
  * unbegrenzt lagerte: Lagerraum ist jetzt etwas, das man baut.
  */
 public class DriveBlock extends HorizontalDirectionalBlock implements EntityBlock {
+
+    /**
+     * Die Trefferfläche, für jede der vier Richtungen einmal.
+     *
+     * <p>Das Modell dreht der Blockzustand, die Trefferfläche niemand — also
+     * dreht sie {@link FacingShapes} hier, aus denselben Kästen.
+     */
+    private static final java.util.Map<net.minecraft.core.Direction, VoxelShape> SHAPES =
+            FacingShapes.horizontal(DriveLayout.boxes());
 
     public static final MapCodec<DriveBlock> CODEC = simpleCodec(DriveBlock::new);
 
@@ -98,5 +111,11 @@ public class DriveBlock extends HorizontalDirectionalBlock implements EntityBloc
             }
         }
         super.onRemove(state, level, pos, newState, moved);
+    }
+
+    @Override
+    protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos,
+                                  CollisionContext context) {
+        return SHAPES.getOrDefault(state.getValue(FACING), Shapes.block());
     }
 }
