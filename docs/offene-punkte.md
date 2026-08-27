@@ -385,7 +385,7 @@ freistehen und etwas darstellen** — Controller, Terminal, Gateway. Beim
 Gateway ist die Öffnung ohnehin schon in der Textur; ein Bogen, durch den man
 wirklich hindurchsieht, wäre der Block, der die Anlage markiert.
 
-#### Stand am Abend des 27.08.: elf Blöcke haben eine Form
+#### Stand am Abend des 27.08.: zehn Blöcke haben eine Form
 
 **Weg 2 für alle**, nicht nur für die freistehenden — Weg 1, das Relief im
 vollen Würfel, ist an keiner Stelle nötig gewesen.
