@@ -65,13 +65,15 @@ public record SaveDraftPacket(BlockPos controller, Map<String, String> files)
             if (!(context.player() instanceof ServerPlayer player)) {
                 return;
             }
-            // Nur, wer den Block auch erreichen kann. Ein Paket ist eine
-            // Behauptung des Clients, keine Erlaubnis.
-            if (!player.level().isLoaded(packet.controller())
-                    || player.distanceToSqr(packet.controller().getCenter()) > 64 * 64) {
+            // Dasselbe wie beim Übernehmen: Das offene Fenster ist die
+            // Erlaubnis, nicht die Koordinate im Paket. Ein Entwurf ist Code,
+            // und Code kann das Wireless Terminal nicht.
+            if (!(player.containerMenu instanceof dev.devpanda.factorynetwork.client.menu
+                    .TerminalMenu menu)
+                    || !menu.allows(dev.devpanda.factorynetwork.terminal.TerminalTab.CODE)) {
                 return;
             }
-            if (player.level().getBlockEntity(packet.controller())
+            if (menu.controller(player).orElse(null)
                     instanceof ControllerBlockEntity controller) {
                 // Derselbe Schutz wie beim Übernehmen: Ein überschriebener
                 // Entwurf ist verlorene Arbeit, auch wenn er nie lief.

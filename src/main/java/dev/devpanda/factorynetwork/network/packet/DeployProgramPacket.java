@@ -2,7 +2,6 @@ package dev.devpanda.factorynetwork.network.packet;
 
 import dev.devpanda.factorynetwork.FactoryNetwork;
 import dev.devpanda.factorynetwork.block.entity.ControllerBlockEntity;
-import dev.devpanda.factorynetwork.block.entity.TerminalBlockEntity;
 import net.minecraft.core.BlockPos;
 
 import java.util.Map;
@@ -71,16 +70,22 @@ public record DeployProgramPacket(BlockPos terminal, Map<String, String> files)
             if (!(context.player() instanceof ServerPlayer player)) {
                 return;
             }
-            // Nur wer nah genug dransteht, darf übernehmen.
-            if (!player.level().isLoaded(packet.terminal())
-                    || player.distanceToSqr(packet.terminal().getCenter()) > 64) {
+            // Nur wer ein Terminalfenster offen hat, darf übernehmen —
+            // und nur, wenn es den Code überhaupt zeigt.
+            //
+            // Früher stand hier ein Abstand zu der Position, die im Paket
+            // stand. Das trug, solange man dafür vor einem Block stehen
+            // musste. Mit dem Laptop steht man nirgends mehr davor, und die
+            // Koordinate im Paket ist eine Behauptung des Clients. Das
+            // offene Fenster dagegen tickt der Server selbst: Läuft der
+            // Spieler aus der Reichweite, geht es zu, und hier kommt nichts
+            // mehr an.
+            if (!(player.containerMenu instanceof dev.devpanda.factorynetwork.client.menu
+                    .TerminalMenu menu)
+                    || !menu.allows(dev.devpanda.factorynetwork.terminal.TerminalTab.CODE)) {
                 return;
             }
-            if (!(player.level().getBlockEntity(packet.terminal())
-                    instanceof TerminalBlockEntity terminal)) {
-                return;
-            }
-            terminal.controller().ifPresentOrElse(controller -> {
+            menu.controller(player).ifPresentOrElse(controller -> {
                 // Erst die Erlaubnis, dann der Übersetzer: Wer nicht darf,
                 // soll das erfahren und nicht erst seine Tippfehler.
                 if (!mayEdit(player, controller)) {

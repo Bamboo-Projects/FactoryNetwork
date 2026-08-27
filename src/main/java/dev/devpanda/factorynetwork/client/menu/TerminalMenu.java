@@ -4,6 +4,9 @@ import dev.devpanda.factorynetwork.block.entity.ControllerBlockEntity;
 import dev.devpanda.factorynetwork.block.entity.TerminalBlockEntity;
 import dev.devpanda.factorynetwork.registry.FnBlocks;
 import dev.devpanda.factorynetwork.registry.FnMenus;
+import dev.devpanda.factorynetwork.terminal.RemoteAccess;
+import dev.devpanda.factorynetwork.terminal.TerminalTab;
+import dev.devpanda.factorynetwork.upgrade.RemoteDevice;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
@@ -41,13 +44,40 @@ public class TerminalMenu extends AbstractContainerMenu {
     private final BlockPos position;
     private final Player owner;
 
+    /**
+     * Womit dieses Fenster geöffnet wurde, oder {@code null} am Block.
+     *
+     * <p>Es geht über die Leitung mit, damit der Client dieselben Reiter
+     * zeichnet, die der Server erlaubt. Ein Reiter, der sich öffnen lässt und
+     * dann nichts tut, ist schlimmer als einer, der gar nicht da ist.
+     */
+    private final RemoteDevice device;
+
+    /**
+     * Der Platz im Inventar, an dem das Gerät beim Öffnen lag.
+     *
+     * <p>Gemerkt und nicht jedes Mal gesucht: Ein Gerät, das während des
+     * Betriebs in eine Kiste wandert, soll das Fenster schließen — und das
+     * merkt nur, wer weiß, wo es lag.
+     */
+    private final int deviceSlot;
+
     public TerminalMenu(int id, Inventory inventory, RegistryFriendlyByteBuf buffer) {
-        this(id, inventory, buffer.readBlockPos());
+        this(id, inventory, buffer.readBlockPos(),
+                buffer.readBoolean() ? buffer.readEnum(RemoteDevice.class) : null,
+                buffer.readVarInt());
     }
 
     public TerminalMenu(int id, Inventory inventory, BlockPos position) {
+        this(id, inventory, position, null, -1);
+    }
+
+    public TerminalMenu(int id, Inventory inventory, BlockPos position,
+                        RemoteDevice device, int deviceSlot) {
         super(FnMenus.TERMINAL.get(), id);
         this.position = position;
+        this.device = device;
+        this.deviceSlot = deviceSlot;
         this.owner = inventory.player;
         this.access = ContainerLevelAccess.create(inventory.player.level(), position);
 
@@ -75,12 +105,37 @@ public class TerminalMenu extends AbstractContainerMenu {
         return position;
     }
 
-    /** Der Controller, auf dessen Daten dieses Terminal arbeitet. */
+    /**
+     * Der Controller, auf dessen Daten dieses Fenster arbeitet.
+     *
+     * <p>Am Block steht ein Terminal an der Position und weiß, zu welchem
+     * Netz es gehört. Aus der Ferne steht dort ein Sendemast — und den fragt
+     * man wie jeden anderen Block danach, in welchem Netz er liegt.
+     */
     public Optional<ControllerBlockEntity> controller(Player player) {
         if (player.level().getBlockEntity(position) instanceof TerminalBlockEntity terminal) {
             return terminal.controller();
         }
+        if (device != null) {
+            return dev.devpanda.factorynetwork.network.ControllerRegistry
+                    .owning(player.level(), position);
+        }
         return Optional.empty();
+    }
+
+    /** Womit dieses Fenster geöffnet wurde, oder {@code null} am Block. */
+    public RemoteDevice device() {
+        return device;
+    }
+
+    /**
+     * Darf dieser Reiter gezeigt werden?
+     *
+     * <p>Am Block alle. Aus der Ferne alles außer Code, es sei denn, es ist
+     * ein Laptop.
+     */
+    public boolean allows(TerminalTab tab) {
+        return device == null || device.allows(tab);
     }
 
     /**
@@ -136,8 +191,18 @@ public class TerminalMenu extends AbstractContainerMenu {
         }
     }
 
+    /**
+     * Am Block: Steht er noch da und ist der Spieler nah genug?
+     *
+     * <p>Aus der Ferne sind es andere Fragen, und sie stehen in
+     * {@link RemoteAccess} — dort kann ein Prüflauf sie stellen, ohne auf
+     * das Zugehen eines Fensters zu warten.
+     */
     @Override
     public boolean stillValid(Player player) {
+        if (device != null) {
+            return RemoteAccess.allowed(player, deviceSlot, position);
+        }
         return stillValid(access, player, FnBlocks.TERMINAL.get());
     }
 }

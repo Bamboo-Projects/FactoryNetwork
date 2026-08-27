@@ -63,7 +63,15 @@ public class TerminalBlock extends HorizontalDirectionalBlock implements EntityB
             // Erst den Zustand schicken, dann öffnen: Der Editor soll die
             // Connectorliste schon haben, wenn er das erste Mal zeichnet.
             terminal.sendStateTo(serverPlayer);
-            serverPlayer.openMenu(terminal, pos);
+            // Dieselben drei Felder wie beim Fernzugriff: Position, ob ein
+            // Gerät im Spiel ist, und wo es liegt. Der Menü-Konstruktor liest
+            // sie in dieser Reihenfolge, und ein fehlendes Feld verschiebt
+            // alle folgenden.
+            serverPlayer.openMenu(terminal, buffer -> {
+                buffer.writeBlockPos(pos);
+                buffer.writeBoolean(false);
+                buffer.writeVarInt(-1);
+            });
         }
         return InteractionResult.CONSUME;
     }

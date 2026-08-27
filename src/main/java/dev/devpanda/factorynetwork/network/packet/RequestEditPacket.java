@@ -47,6 +47,13 @@ public record RequestEditPacket(String file) implements CustomPacketPayload {
                     || !(asking.containerMenu instanceof TerminalMenu menu)) {
                 return;
             }
+            // Wer den Code-Reiter nicht hat, fragt auch nicht nach fremdem
+            // Quelltext. Der Reiter fehlt am Wireless Terminal nur in der
+            // Anzeige — hier steht die Regel, die auch ein veränderter
+            // Client nicht umgeht.
+            if (!menu.allows(dev.devpanda.factorynetwork.terminal.TerminalTab.CODE)) {
+                return;
+            }
             ControllerBlockEntity controller = menu.controller(asking).orElse(null);
             if (controller == null || controller.getLevel() == null) {
                 return;

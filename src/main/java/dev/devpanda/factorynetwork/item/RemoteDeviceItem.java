@@ -1,6 +1,7 @@
 package dev.devpanda.factorynetwork.item;
 
 import dev.devpanda.factorynetwork.registry.FnComponents;
+import dev.devpanda.factorynetwork.terminal.RemoteAccess;
 import dev.devpanda.factorynetwork.upgrade.Loadout;
 import dev.devpanda.factorynetwork.upgrade.RemoteDevice;
 import dev.devpanda.factorynetwork.upgrade.UpgradeSlots;
@@ -8,10 +9,16 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.SimpleMenuProvider;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.ItemContainerContents;
+import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.energy.IEnergyStorage;
 
@@ -139,6 +146,62 @@ public class RemoteDeviceItem extends Item {
     public static int energyOf(ItemStack stack) {
         IEnergyStorage battery = stack.getCapability(Capabilities.EnergyStorage.ITEM);
         return battery == null ? 0 : battery.getEnergyStored();
+    }
+
+    /**
+     * Rechtsklick in die Luft öffnet das Terminal aus der Ferne.
+     *
+     * <p>Vier Gründe, es nicht zu tun, und für jeden eine eigene Meldung:
+     * kein Netz angemeldet, der Mast steht nicht mehr, er gehört zu keinem
+     * Netz, oder er ist zu weit weg. Eine gemeinsame Meldung „geht nicht"
+     * ließe den Spieler raten, welcher der vier Fälle vorliegt.
+     */
+    @Override
+    public InteractionResultHolder<ItemStack> use(Level level, Player player,
+                                                  InteractionHand hand) {
+        ItemStack held = player.getItemInHand(hand);
+        if (level.isClientSide) {
+            return InteractionResultHolder.success(held);
+        }
+        BlockPos mast = mastOf(held);
+        if (mast == null) {
+            return refuse(player, held, "message.factorynetwork.remote.no_network");
+        }
+        if (!(level.getBlockEntity(mast)
+                instanceof dev.devpanda.factorynetwork.block.entity.MastBlockEntity standing)) {
+            return refuse(player, held, "message.factorynetwork.remote.mast_gone");
+        }
+        var controller = dev.devpanda.factorynetwork.network.ControllerRegistry
+                .owning(level, mast);
+        if (controller.isEmpty()) {
+            return refuse(player, held, "message.factorynetwork.remote.no_controller");
+        }
+        int slot = RemoteAccess.slotOf(player, held);
+        if (slot < 0 || !RemoteAccess.allowed(player, slot, mast)) {
+            return refuse(player, held, "message.factorynetwork.remote.out_of_range");
+        }
+        if (player instanceof ServerPlayer serverPlayer) {
+            // Erst den Zustand schicken, dann öffnen — wie am Block: Der
+            // Editor soll seine Daten schon haben, wenn er zeichnet.
+            controller.get().watchTerminal(serverPlayer);
+            serverPlayer.openMenu(new SimpleMenuProvider(
+                    (id, inventory, owner) -> new dev.devpanda.factorynetwork.client.menu
+                            .TerminalMenu(id, inventory, mast, device, slot),
+                    Component.translatable(getDescriptionId())), buffer -> {
+                buffer.writeBlockPos(mast);
+                buffer.writeBoolean(true);
+                buffer.writeEnum(device);
+                buffer.writeVarInt(slot);
+            });
+        }
+        return InteractionResultHolder.consume(held);
+    }
+
+    /** Eine Absage mit Grund. */
+    private static InteractionResultHolder<ItemStack> refuse(Player player, ItemStack held,
+                                                             String message) {
+        player.displayClientMessage(Component.translatable(message), true);
+        return InteractionResultHolder.fail(held);
     }
 
     @Override

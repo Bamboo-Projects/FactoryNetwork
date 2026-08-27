@@ -6256,6 +6256,116 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
+     * Aus der Ferne fehlt dem Terminal der Code-Reiter, dem Laptop nicht.
+     *
+     * <p>Das ist die ganze Trennung. Fiele sie weg, wäre der Laptop ein
+     * teureres Terminal und der Grund, ihn zu bauen, verschwunden.
+     *
+     * <p><b>Am Block gilt sie nicht:</b> Wer vor dem Terminal steht, kommt
+     * an alles. Der Fernzugriff nimmt etwas weg, er gibt nichts dazu.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 100)
+    public static void onlyTheLaptopCarriesCode(GameTestHelper helper) {
+        var terminal = dev.devpanda.factorynetwork.upgrade.RemoteDevice.TERMINAL;
+        var laptop = dev.devpanda.factorynetwork.upgrade.RemoteDevice.LAPTOP;
+        var inventory = helper.makeMockPlayer(
+                net.minecraft.world.level.GameType.SURVIVAL).getInventory();
+        BlockPos anywhere = helper.absolutePos(new BlockPos(1, 2, 1));
+
+        var remote = new dev.devpanda.factorynetwork.client.menu.TerminalMenu(
+                1, inventory, anywhere, terminal, 0);
+        helper.assertTrue(
+                !remote.allows(dev.devpanda.factorynetwork.terminal.TerminalTab.CODE),
+                "das Wireless Terminal zeigt den Code-Reiter");
+        helper.assertTrue(
+                remote.allows(dev.devpanda.factorynetwork.terminal.TerminalTab.STORAGE),
+                "das Wireless Terminal zeigt den Speicher nicht");
+        helper.assertTrue(
+                remote.allows(dev.devpanda.factorynetwork.terminal.TerminalTab.LOG),
+                "das Protokoll fehlt — es ist Diagnose und gehört dazu");
+
+        var portable = new dev.devpanda.factorynetwork.client.menu.TerminalMenu(
+                2, inventory, anywhere, laptop, 0);
+        for (var tab : dev.devpanda.factorynetwork.terminal.TerminalTab.values()) {
+            helper.assertTrue(portable.allows(tab), tab + " fehlt am Laptop");
+        }
+
+        // Und am Block ist alles offen.
+        var fixed = new dev.devpanda.factorynetwork.client.menu.TerminalMenu(
+                3, inventory, anywhere);
+        for (var tab : dev.devpanda.factorynetwork.terminal.TerminalTab.values()) {
+            helper.assertTrue(fixed.allows(tab), tab + " fehlt am Terminal-Block");
+        }
+        helper.succeed();
+    }
+
+    /**
+     * Das Fenster geht zu, wenn das Gerät nicht mehr da ist, wo es war.
+     *
+     * <p>Vier Wege, es zu verlieren, und jeder muss zählen: weglegen, gegen
+     * ein Gerät an einem anderen Mast tauschen, den Mast abbauen, aus der
+     * Reichweite laufen. <b>Geprüft wird die Regel direkt</b> und nicht das
+     * Zugehen eines Fensters — sonst prüfte der Lauf den Ticker.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 100)
+    public static void aRemoteWindowClosesWhenItShould(GameTestHelper helper) {
+        BlockPos mast = helper.absolutePos(new BlockPos(1, 2, 1));
+        helper.getLevel().setBlockAndUpdate(mast, FnBlocks.MAST.get().defaultBlockState());
+
+        var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+        player.setPos(mast.getX() + 0.5, mast.getY() + 1.0, mast.getZ() + 0.5);
+
+        ItemStack device = new ItemStack(
+                dev.devpanda.factorynetwork.registry.FnItems.WIRELESS_TERMINAL.get());
+        dev.devpanda.factorynetwork.item.RemoteDeviceItem.couple(device, mast);
+        player.getInventory().setItem(0, device);
+
+        helper.assertTrue(
+                dev.devpanda.factorynetwork.terminal.RemoteAccess.allowed(player, 0, mast),
+                "direkt am Mast ist der Zugriff verwehrt");
+
+        // Weggelegt.
+        player.getInventory().setItem(0, ItemStack.EMPTY);
+        helper.assertTrue(
+                !dev.devpanda.factorynetwork.terminal.RemoteAccess.allowed(player, 0, mast),
+                "das Fenster bleibt offen, obwohl das Gerät weg ist");
+
+        // Ein anderes Gerät an einem anderen Mast im selben Platz: Das
+        // Fenster hängt am alten Netz und muss trotzdem zugehen.
+        ItemStack other = new ItemStack(
+                dev.devpanda.factorynetwork.registry.FnItems.LAPTOP.get());
+        dev.devpanda.factorynetwork.item.RemoteDeviceItem.couple(other, mast.above(5));
+        player.getInventory().setItem(0, other);
+        helper.assertTrue(
+                !dev.devpanda.factorynetwork.terminal.RemoteAccess.allowed(player, 0, mast),
+                "ein getauschtes Gerät hält das Fenster am alten Netz offen");
+
+        // Zurück zum richtigen Gerät, aber zu weit weg.
+        player.getInventory().setItem(0, device);
+        int reach = dev.devpanda.factorynetwork.upgrade.Range.reach(
+                dev.devpanda.factorynetwork.upgrade.Loadout.of(java.util.List.of()),
+                dev.devpanda.factorynetwork.upgrade.Loadout.of(java.util.List.of()));
+        player.setPos(mast.getX() + reach + 10.0, mast.getY(), mast.getZ() + 0.5);
+        helper.assertTrue(
+                !dev.devpanda.factorynetwork.terminal.RemoteAccess.allowed(player, 0, mast),
+                "die Reichweite hält nicht — " + reach + " Blöcke sollten sie sein");
+
+        // Und wieder heran: Es liegt am Abstand und nicht daran, dass etwas
+        // kaputtgegangen ist.
+        player.setPos(mast.getX() + 0.5, mast.getY() + 1.0, mast.getZ() + 0.5);
+        helper.assertTrue(
+                dev.devpanda.factorynetwork.terminal.RemoteAccess.allowed(player, 0, mast),
+                "aus der Nähe geht es auch nicht mehr");
+
+        // Der Mast weg: dasselbe.
+        helper.getLevel().removeBlock(mast, false);
+        helper.assertTrue(
+                !dev.devpanda.factorynetwork.terminal.RemoteAccess.allowed(player, 0, mast),
+                "ohne Mast bleibt der Zugriff offen");
+        helper.succeed();
+    }
+
+    /**
      * Ein Gerät meldet sich am Mast an — und beim zweiten Klick wieder ab.
      *
      * <p>Der Rückweg ist der Punkt. Ohne ihn wäre ein Gerät, das einmal am

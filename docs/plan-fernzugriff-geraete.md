@@ -53,7 +53,7 @@ den Code.
 
 ---
 
-## Aufgabe 1: Die beiden Geräte
+## Aufgabe 1: Die beiden Geräte — erledigt am 28.08.
 
 Zwei Gegenstände mit Steckplätzen, Akku und einem gemerkten Netz. Noch ohne
 Fenster — sie liegen erst einmal nur im Inventar herum und wissen, wohin sie
@@ -73,7 +73,7 @@ gehören.
   `RemoteDeviceItem.deviceOf(ItemStack)`, `RemoteDeviceItem.mastOf(ItemStack)`,
   `RemoteDeviceItem.bind(ItemStack, BlockPos)`.
 
-- [ ] **Schritt 1: Der fehlschlagende Test**
+- [x] **Schritt 1: Der fehlschlagende Test**
 
 ```java
 package dev.devpanda.factorynetwork.upgrade;
@@ -141,11 +141,11 @@ festschreibt. Der Bildschirm importiert sie dann von dort.
 Es ist eine reine Aufzählung ohne clientseitige Bezüge; der Umzug ist ein
 Suchen-und-Ersetzen über die Importe.
 
-- [ ] **Schritt 2: Test laufen lassen, Fehlschlag sehen**
+- [x] **Schritt 2: Test laufen lassen, Fehlschlag sehen**
 
 `./gradlew test --tests "*RemoteDeviceTest*"` — `RemoteDevice` gibt es nicht.
 
-- [ ] **Schritt 3: Die Aufzählung**
+- [x] **Schritt 3: Die Aufzählung**
 
 ```java
 package dev.devpanda.factorynetwork.upgrade;
@@ -195,7 +195,7 @@ public enum RemoteDevice {
 }
 ```
 
-- [ ] **Schritt 4: Der Gegenstand**
+- [x] **Schritt 4: Der Gegenstand**
 
 `RemoteDeviceItem` hält drei Dinge am ItemStack, alle über Datenkomponenten:
 
@@ -212,7 +212,7 @@ und ist das nächstliegende Muster im Projekt.
 Der Tooltip nennt das gekoppelte Netz und den Ladestand. Ein Gerät, das
 aussieht wie jedes andere, ist im Inventar nicht zu unterscheiden.
 
-- [ ] **Schritt 5: Der Akku als Capability**
+- [x] **Schritt 5: Der Akku als Capability**
 
 ```java
 // In FnCapabilities, bei den anderen Anmeldungen:
@@ -230,13 +230,13 @@ die Klasse in 21.1 anders heißt, such im NeoForge-Jar nach
 **Prüfen lässt sich das nur mit einer Fremdmod im Testaufbau.** Ohne die ist
 es behauptet, nicht gezeigt — so steht es auch in `fernzugriff.md` §8.
 
-- [ ] **Schritt 6: Kopplung per Rechtsklick auf den Mast**
+- [x] **Schritt 6: Kopplung per Rechtsklick auf den Mast**
 
 In `MastBlock.useItemOn`: Hält der Spieler ein `RemoteDeviceItem`, merkt sich
 der Stack die Position des Masts, und der Spieler bekommt eine Meldung mit dem
 Netznamen. Kein Fenster, kein Menü — ein Klick, eine Zeile Text.
 
-- [ ] **Schritt 7: Rezept, Namen, Reiter, Prüfläufe — und ein Platzhalter**
+- [x] **Schritt 7: Rezept, Namen, Reiter, Prüfläufe — und ein Platzhalter**
 
 Rezepte: Das Terminal aus einer Platte, einem Netzkern und Glas; der Laptop
 zusätzlich mit einem Rechenkern.
@@ -253,11 +253,11 @@ befriedigt beide und schreibt nichts fest.
 
 Der Körper kommt in Aufgabe 4 — nach dem Blick des Users.
 
-- [ ] **Schritt 8: Committen**
+- [x] **Schritt 8: Committen**
 
 ---
 
-## Aufgabe 2: Das Fenster aus der Ferne
+## Aufgabe 2: Das Fenster aus der Ferne — erledigt am 28.08.
 
 **Dateien:**
 - Ändern: `client/menu/TerminalMenu.java`
@@ -269,14 +269,14 @@ findet darüber seinen Controller. Beim Fernzugriff ist das die Position des
 Masts — sonst ändert sich nichts. Was sich ändert, sind zwei Fragen: welche
 Reiter gezeigt werden und ob das Fenster offen bleiben darf.
 
-- [ ] **Schritt 1: Das Menü lernt, wer es geöffnet hat**
+- [x] **Schritt 1: Das Menü lernt, wer es geöffnet hat**
 
 Ein zweites Feld: das `RemoteDevice` oder `null` für den Block. Es geht über
 die Leitung mit, damit der Client dieselben Reiter zeigt wie der Server
 erlaubt. Ein Client, der den Code-Reiter zeichnet, den der Server ablehnt,
 ist schlimmer als einer, der ihn gar nicht hat.
 
-- [ ] **Schritt 2: `stillValid` fragt die Reichweite statt die Nähe**
+- [x] **Schritt 2: `stillValid` fragt die Reichweite statt die Nähe**
 
 Am Block gilt weiter der Abstand zum Block. Aus der Ferne gilt
 `Range.covers(mastLoadout, deviceLoadout, distance)` — und wer aus der
@@ -299,18 +299,39 @@ nicht wie ein echter. Ruf `stillValid` dann direkt auf, statt darauf zu warten,
 dass sich das Fenster von selbst schließt — sonst prüfst du den Ticker und
 nicht die Regel.
 
-- [ ] **Schritt 3: Der Bildschirm zeigt nur erlaubte Reiter**
+- [x] **Schritt 3: Der Bildschirm zeigt nur erlaubte Reiter**
 
 `TerminalScreen` fragt `device.allows(tab)`, bevor es einen Reiter zeichnet.
 Beim Block ist `device` null und alles ist erlaubt.
 
-- [ ] **Schritt 4: GameTest**
+- [x] **Schritt 4: GameTest**
 
 Mast setzen, Gerät koppeln, Fenster öffnen, prüfen: Das Terminal hat keinen
 Code-Reiter, der Laptop hat einen. Dann den Spieler aus der Reichweite
 setzen und prüfen, dass das Fenster zugeht.
 
-- [ ] **Schritt 5: Committen**
+- [x] **Schritt 5: Committen**
+
+### Was beim Bauen dazukam
+
+**Drei Pakete autorisieren jetzt über das offene Fenster statt über
+Koordinaten.** `DeployProgramPacket` verlangte einen Terminal-Block an der
+gemeldeten Position und höchstens acht Blöcke Abstand; `SaveDraftPacket`
+verlangte einen Controller und 64. Beides trug, solange man vor einem Block
+stehen musste — **mit dem Laptop steht man vor keinem mehr**, und der Code
+wäre für ihn unerreichbar geblieben.
+
+Sie fragen jetzt `player.containerMenu`, wie es `StorageActionPacket`,
+`CraftingActionPacket` und `RequestEditPacket` schon vorher taten. Das ist
+zugleich strenger: Eine Koordinate im Paket ist eine Behauptung des Clients,
+das offene Fenster dagegen tickt der Server selbst.
+
+`RequestEditPacket` kam als drittes dazu. Es ging schon über das Menü, prüfte
+aber den Code-Reiter nicht — ein veränderter Client hätte sich mit einem
+Wireless Terminal fremden Quelltext geben lassen können.
+
+**Der Besitzschutz aus `FnProtection` ist unberührt.** Er beantwortet eine
+andere Frage als „darf dieses Fenster das", und beide gelten weiter.
 
 ---
 

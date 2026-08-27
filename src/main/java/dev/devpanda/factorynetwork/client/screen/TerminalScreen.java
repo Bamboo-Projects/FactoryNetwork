@@ -123,8 +123,22 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         PacketDistributor.sendToServer(new StorageTabPacket(tab == TerminalTab.STORAGE));
     }
 
+    /**
+     * Die Reiter, die dieses Fenster zeigt.
+     *
+     * <p>Am Block alle. Aus der Ferne alles außer Code — es sei denn, es ist
+     * ein Laptop. <b>Die Entscheidung fällt der Server</b>; hier wird sie nur
+     * noch einmal gestellt, damit nichts gezeichnet wird, das drüben
+     * abgelehnt würde.
+     */
+    private java.util.List<TerminalTab> tabs() {
+        return java.util.Arrays.stream(TerminalTab.values())
+                .filter(menu::allows)
+                .toList();
+    }
+
     private void switchTo(TerminalTab next) {
-        if (next == tab || !next.isReady()) {
+        if (next == tab || !next.isReady() || !menu.allows(next)) {
             return;
         }
         tab = next;
@@ -191,11 +205,13 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
      */
     private int tabGap() {
         int labels = 0;
-        for (TerminalTab candidate : TerminalTab.values()) {
+        for (TerminalTab candidate : tabs()) {
             labels += tabWidth(candidate);
         }
         int room = SCREEN_X1 - (SCREEN_X0 + 6) - labels;
-        int gaps = Math.max(1, TerminalTab.values().length - 1);
+        // Weniger Reiter, weitere Abstände: Fünf Beschriftungen sollen die
+        // Leiste füllen und nicht links zusammenkleben.
+        int gaps = Math.max(1, tabs().size() - 1);
         return Math.max(3, Math.min(TAB_GAP, room / gaps));
     }
 
@@ -203,7 +219,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
     private int tabX(TerminalTab wanted) {
         int x = SCREEN_X0 + 6;
         int gap = tabGap();
-        for (TerminalTab candidate : TerminalTab.values()) {
+        for (TerminalTab candidate : tabs()) {
             if (candidate == wanted) {
                 return x;
             }
@@ -224,7 +240,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
      * jedem Editor.
      */
     private void drawTabs(GuiGraphics graphics, int mouseX, int mouseY) {
-        for (TerminalTab candidate : TerminalTab.values()) {
+        for (TerminalTab candidate : tabs()) {
             int x = leftPos + tabX(candidate);
             int y = topPos + tabY();
             boolean active = candidate == tab;
@@ -321,7 +337,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
     }
 
     private void renderTabTooltips(GuiGraphics graphics, int mouseX, int mouseY) {
-        for (TerminalTab candidate : TerminalTab.values()) {
+        for (TerminalTab candidate : tabs()) {
             if (!candidate.isReady() && overTab(candidate, mouseX, mouseY)) {
                 graphics.renderTooltip(font, candidate.notReadyHint(), mouseX, mouseY);
             }
@@ -366,7 +382,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         // Reiterleiste zuerst
-        for (TerminalTab candidate : TerminalTab.values()) {
+        for (TerminalTab candidate : tabs()) {
             if (overTab(candidate, mouseX, mouseY)) {
                 switchTo(candidate);
                 return true;
