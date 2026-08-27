@@ -5,6 +5,58 @@ Alles, was in `docs/` und im Code als unfertig steht, an einer Stelle.
 Stand: 2026-08-26 (nach den beiden Schnitten am Wertemodell und der
 Handbucharbeit)
 
+> **Nacht auf den 28.08.:** Der Fernzugriff steht, bis auf das Aussehen.
+> Punkt 1 des Auftrags (Schraubenschlüssel) war schon vor Mitternacht fertig;
+> Punkt 2 sind sieben Commits.
+>
+> **Was jetzt geht.** Ein Wireless Terminal und ein Laptop, beide mit
+> Steckplätzen und Akku. Rechtsklick auf einen Sendemast meldet sie an,
+> derselbe Mast noch einmal meldet ab. Rechtsklick in die Luft öffnet das
+> Terminalfenster — dasselbe wie am Block, nur mit der Position des Masts.
+> Das Terminal zeigt alles außer Code, der Laptop alles. Läuft man aus der
+> Reichweite, legt das Gerät weg oder fällt der Mast, geht das Fenster zu.
+> Strom kostet es auch: fünf FE je Tick, vierhundert fürs Öffnen,
+> hundertzwanzig je Handlung.
+>
+> **Drei Dinge, die ich beim Bauen gefunden habe und die nichts mit dem
+> Fernzugriff zu tun hatten:**
+>
+> 1. `extractEnergy(..., false)` nimmt, was da ist, und meldet erst danach,
+>    dass es zu wenig war. Ein Gerät mit hundert FE verlor sie an eine
+>    Handlung für hundertzwanzig und bekam nichts dafür. Behoben, mit einer
+>    Probe, die ohne den Fix nachweislich anschlägt.
+> 2. Umschalt-Klick legt ins Netz ab, läuft aber über Vanillas Klickweg und
+>    nicht über `StorageActionPacket` — er war aus der Ferne gratis.
+> 3. `sendStateTo` saß am Terminal-Block. Aus der Ferne wäre der
+>    Netzwerk-Reiter leer geblieben, bis das nächste regelmäßige Schicken
+>    auftut. Die Rechnung liest ohnehin nur Controller-Listen und steht jetzt
+>    dort.
+>
+> **Eine Entscheidung zum Abnicken.** Der Entwurf zählte vier Bereiche für
+> das Wireless Terminal auf und übersprang das Protokoll. Ich habe es
+> mitgenommen: Die Regel „alles außer Code" merkt man sich, „vier von sechs"
+> nicht, und das Protokoll ist Diagnose wie die Netzübersicht. Wenn du das
+> anders willst, ist es eine Zeile in `RemoteDevice`.
+>
+> **Was ich bewusst offen gelassen habe.** Modell und Textur der beiden
+> Geräte sind flache Sprites. Die Texturen sind gezeichnet und stehen im Git
+> — Handgerät hochkant mit Antenne, Laptop aufgeklappt —, aber sie haben
+> keinen Körper wie die anderen Gegenstände. Sobald einer in `ITEM_BODIES`
+> steht, steht er fest, und ihn zurückzunehmen kostet mehr, als ihn zu
+> schreiben. Schau sie dir an, dann baue ich die Körper.
+>
+> **Drei Dinge, die nur ein Client-Lauf zeigt:**
+>
+> - Ob das Fenster beim Fernöffnen sofort vollständig dasteht.
+> - Fernzugriff über große Entfernung: `stillValid` liest die BlockEntity des
+>   Masts, und der kann außerhalb der geladenen Bereiche liegen. Ein Mast
+>   jenseits der Sichtweite ist der Fall, den kein Prüflauf stellt.
+> - Der Texturbug vom letzten Lauf. Dafür brauche ich weiterhin ein Bild aus
+>   einigen Blöcken Abstand — die fünf möglichen Anschlussfarben enthalten
+>   kein Pink, und aus der Nahaufnahme werde ich nicht schlau.
+>
+> 318 GameTests, alle Prüfläufe grün.
+
 > **Nacht auf den 25.08., zweiter Durchgang:** 1.2 (`where` und `sort` stehen
 > jetzt vollständig), dazu vier Dinge, die vorher niemand auf der Liste
 > hatte, weil sie niemandem aufgefallen waren: ein Display, das jede Rechnung
