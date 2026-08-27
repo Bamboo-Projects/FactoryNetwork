@@ -791,6 +791,113 @@ def drive_model():
     })
 
 
+# Der Controller in Blockpixeln.
+#
+# Deckplatten oben und unten über die volle Fläche, dazwischen ein Körper, der
+# ringsum einen Blockpixel zurückspringt — und an den vier senkrechten Kanten
+# vier Säulen, die bis an die Blockkante reichen. Von weitem ist es ein Block
+# mit Kanten und einem Schatten dazwischen, und nicht mehr ein Würfel mit
+# aufgemalten Rillen.
+#
+# <b>Richtungslos wie zuvor.</b> Der Controller hat keine Vorderseite, und
+# diese Form braucht auch keine: Sie sieht von allen vier Seiten gleich aus.
+#
+# Dieselben Zahlen stehen in ControllerLayout.java.
+CONTROLLER_PLATE = 1   # Höhe der Deckplatten
+CONTROLLER_INSET = 1   # wie weit der Körper zurückspringt
+CONTROLLER_EDGE = 3    # Breite einer Kantensäule
+
+
+def controller_boxes():
+    """Die Kästen des Controllers, jeder mit seinen Texturen."""
+    plate, inset, edge = CONTROLLER_PLATE, CONTROLLER_INSET, CONTROLLER_EDGE
+    boxes = [
+        # Die beiden Deckplatten. Nur ihre Außenseiten tragen die Deckeltextur
+        # mit dem Punkt darin; ringsherum ist es Gehäuse wie überall.
+        ([0, 0, 0], [16, plate, 16], {"down": "bottom", "*": "side"}),
+        ([0, 16 - plate, 0], [16, 16, 16], {"up": "top", "*": "side"}),
+        # Der zurückspringende Körper.
+        ([inset, plate, inset], [16 - inset, 16 - plate, 16 - inset],
+         {"*": "side"}),
+    ]
+    # Die vier Kantensäulen, bündig mit der Blockkante.
+    for x in (0, 16 - edge):
+        for z in (0, 16 - edge):
+            boxes.append(([x, plate, z], [x + edge, 16 - plate, z + edge],
+                          {"*": "side"}))
+    return boxes
+
+
+def controller_model():
+    """Der Controller als Gerät statt als Würfel."""
+    write(A + "/models/block/controller.json", {
+        "parent": "minecraft:block/block",
+        "textures": {
+            "particle": texture("controller_side"),
+            "top": texture("controller_top"),
+            "bottom": texture("controller_top"),
+            "side": texture("controller_side"),
+        },
+        "elements": machine_elements(controller_boxes()),
+    })
+
+
+# Das Terminal in Blockpixeln, Vorderseite nach Norden.
+#
+# Ein Gehäuse, davor ein Rahmen, darin der Bildschirm versenkt — und unten
+# eine Konsole, die noch einen Blockpixel weiter vorsteht als der Rahmen. Wo
+# in der Textur die Knöpfe sitzen, ist jetzt eine Ablage, auf die man sie
+# legen würde.
+#
+# Dieselben Zahlen stehen in TerminalLayout.java; TerminalLayoutTest hält
+# beide zusammen.
+TERMINAL_DESK = 2      # wie weit die Konsole vorsteht
+TERMINAL_DESK_HIGH = 4  # und wie hoch sie ist
+TERMINAL_BEZEL = 1     # Breite des Rahmens um den Bildschirm
+TERMINAL_INSET = 1     # wie weit das Gehäuse seitlich zurückspringt
+
+
+def terminal_boxes():
+    """Die Kästen des Terminals, jeder mit seinen Texturen."""
+    desk, high = TERMINAL_DESK, TERMINAL_DESK_HIGH
+    bezel, inset = TERMINAL_BEZEL, TERMINAL_INSET
+    frame = desk - 1     # der Rahmen liegt einen Blockpixel hinter der Konsole
+    screen = desk        # und der Bildschirm noch einen dahinter
+
+    return [
+        # Die Konsole: der unterste Teil der Front, und der einzige, der bis
+        # an die Blockkante vorsteht.
+        ([0, 0, 0], [16, high, desk], {"north": "front", "*": "side"}),
+
+        # Der Rahmen um den Bildschirm — oben und an beiden Seiten.
+        ([0, 16 - bezel, frame], [16, 16, desk], {"north": "front", "*": "side"}),
+        ([0, high, frame], [bezel, 16 - bezel, desk],
+         {"north": "front", "*": "side"}),
+        ([16 - bezel, high, frame], [16, 16 - bezel, desk],
+         {"north": "front", "*": "side"}),
+
+        # Der Bildschirm, hinter dem Rahmen.
+        ([bezel, high, screen], [16 - bezel, 16 - bezel, screen + 1],
+         {"north": "front", "*": "side"}),
+
+        # Das Gehäuse dahinter, seitlich schmaler als die Front.
+        ([inset, 0, screen + 1], [16 - inset, 16, 16], {"*": "side"}),
+    ]
+
+
+def terminal_model():
+    """Das Terminal als Gerät statt als Würfel."""
+    write(A + "/models/block/terminal.json", {
+        "parent": "minecraft:block/block",
+        "textures": {
+            "particle": texture("terminal_side"),
+            "front": texture("terminal_front"),
+            "side": texture("terminal_side"),
+        },
+        "elements": machine_elements(terminal_boxes()),
+    })
+
+
 def gateway_model():
     """Das Gateway als Torbogen statt als Würfel.
 
@@ -817,15 +924,6 @@ def gateway_model():
 
 
 def models():
-    write(A + "/models/block/controller.json", {
-        "parent": "minecraft:block/cube_bottom_top",
-        "textures": {
-            "top": texture("controller_top"),
-            "bottom": texture("controller_top"),
-            "side": texture("controller_side"),
-        },
-    })
-
     # Der Anbau zeigt auf allen sechs Seiten dasselbe: Er hat keine
     # Vorderseite, weil jede seiner Seiten dieselbe Aufgabe hat.
     write(A + "/models/block/controller_extension.json", {
@@ -846,6 +944,8 @@ def models():
     connector_part_models()
     gateway_model()
     drive_model()
+    controller_model()
+    terminal_model()
 
     # Das Blockmodell des Connectors ist am 26.08. mit seinem Block
     # verschwunden. Diese Erzeugung stand noch hier und legte die Datei bei
@@ -876,15 +976,6 @@ def models():
         })
     # In der Hand die freistehende Tafel: Sie ist das, was man setzt.
     write(A + "/models/item/display.json", {"parent": block("display_0")})
-
-    write(A + "/models/block/terminal.json", {
-        "parent": "minecraft:block/orientable",
-        "textures": {
-            "top": texture("machine_top"),
-            "front": texture("terminal_front"),
-            "side": texture("terminal_side"),
-        },
-    })
 
     # Das Erz gibt Rohkristalle, mit Glueck mehr — wie jedes Vanilla-Erz.
     for ore in ("crystal_ore", "deepslate_crystal_ore"):

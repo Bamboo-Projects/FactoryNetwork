@@ -21,6 +21,10 @@ import org.jetbrains.annotations.Nullable;
 /** Zugang zum Code-Editor. */
 public class TerminalBlock extends HorizontalDirectionalBlock implements EntityBlock {
 
+    /** Die Trefferfläche, für jede der vier Richtungen einmal. */
+    private static final java.util.Map<Direction, net.minecraft.world.phys.shapes.VoxelShape>
+            SHAPES = FacingShapes.horizontal(TerminalLayout.boxes());
+
     public static final MapCodec<TerminalBlock> CODEC = simpleCodec(TerminalBlock::new);
 
     public TerminalBlock(Properties properties) {
@@ -62,5 +66,13 @@ public class TerminalBlock extends HorizontalDirectionalBlock implements EntityB
             serverPlayer.openMenu(terminal, pos);
         }
         return InteractionResult.CONSUME;
+    }
+
+    @Override
+    protected net.minecraft.world.phys.shapes.VoxelShape getShape(
+            BlockState state, net.minecraft.world.level.BlockGetter level,
+            BlockPos pos, net.minecraft.world.phys.shapes.CollisionContext context) {
+        return SHAPES.getOrDefault(state.getValue(FACING),
+                net.minecraft.world.phys.shapes.Shapes.block());
     }
 }

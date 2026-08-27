@@ -27,6 +27,23 @@ import java.util.Map;
 public final class FacingShapes {
 
     /**
+     * Die Trefferfläche zu einem Satz Kästen, ungedreht.
+     *
+     * <p>Für die Blöcke, die keine Vorderseite haben — Gateway und
+     * Controller. Sie brauchen die Drehung nicht, aber dieselbe Vereinigung
+     * von Kästen, und die soll nicht dreimal im Projekt stehen.
+     */
+    public static VoxelShape whole(List<int[]> boxes) {
+        VoxelShape shape = Shapes.empty();
+        for (int[] box : boxes) {
+            shape = Shapes.join(shape, Shapes.box(
+                    box[0] / 16.0, box[1] / 16.0, box[2] / 16.0,
+                    box[3] / 16.0, box[4] / 16.0, box[5] / 16.0), BooleanOp.OR);
+        }
+        return shape.optimize();
+    }
+
+    /**
      * Die vier Trefferflächen zu einem Satz Kästen, der nach Norden zeigt.
      */
     public static Map<Direction, VoxelShape> horizontal(List<int[]> boxes) {

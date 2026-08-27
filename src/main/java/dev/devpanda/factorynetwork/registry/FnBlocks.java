@@ -27,7 +27,10 @@ public final class FnBlocks {
 
     /** Wurzel eines Netzwerks: hält Programm, Speicher und die Laufzeit. */
     public static final DeferredBlock<Block> CONTROLLER = BLOCKS.register("controller",
-            () -> new ControllerBlock(machineProperties()));
+            // noOcclusion, weil der Körper zwischen den Deckplatten
+            // zurückspringt: Ohne die Angabe fehlt den Nachbarn die Fläche,
+            // die man in der Fuge sieht.
+            () -> new ControllerBlock(machineProperties().noOcclusion()));
 
     /**
      * Mehr Außenflächen für Kabel, und sonst nichts.
@@ -169,7 +172,9 @@ public final class FnBlocks {
 
     /** Zugang zum Code-Editor. */
     public static final DeferredBlock<Block> TERMINAL = BLOCKS.register("terminal",
-            () -> new TerminalBlock(machineProperties()));
+            // noOcclusion, weil Konsole und Rahmen vorstehen und das Gehäuse
+            // seitlich schmaler ist.
+            () -> new TerminalBlock(machineProperties().noOcclusion()));
 
     private static BlockBehaviour.Properties machineProperties() {
         return BlockBehaviour.Properties.of()

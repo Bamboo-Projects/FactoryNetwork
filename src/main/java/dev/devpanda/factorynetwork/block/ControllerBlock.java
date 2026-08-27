@@ -26,6 +26,10 @@ import org.jetbrains.annotations.Nullable;
  */
 public class ControllerBlock extends Block implements EntityBlock {
 
+    /** Der Umriss aus Deckplatten, Kantensäulen und dem Körper dazwischen. */
+    private static final net.minecraft.world.phys.shapes.VoxelShape SHAPE =
+            FacingShapes.whole(ControllerLayout.boxes());
+
     public static final MapCodec<ControllerBlock> CODEC = simpleCodec(ControllerBlock::new);
 
     public ControllerBlock(Properties properties) {
@@ -90,5 +94,12 @@ public class ControllerBlock extends Block implements EntityBlock {
             }
         }
         return InteractionResult.CONSUME;
+    }
+
+    @Override
+    protected net.minecraft.world.phys.shapes.VoxelShape getShape(
+            BlockState state, net.minecraft.world.level.BlockGetter level,
+            BlockPos pos, net.minecraft.world.phys.shapes.CollisionContext context) {
+        return SHAPE;
     }
 }
