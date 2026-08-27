@@ -704,6 +704,97 @@ def label_gun():
     return img
 
 
+def wireless_terminal():
+    """Ein Handgerät: Bildschirm, Tastenfeld, kurze Antenne.
+
+    <b>Warum hochkant und nicht quer.</b> Der Laptop steht daneben und ist
+    breit. Zwei Geräte, die dasselbe tun, müssen sich in der Silhouette
+    unterscheiden — im Inventar sieht man nichts anderes.
+    """
+    img = Image.new("RGBA", (N, N), (0, 0, 0, 0))
+
+    body = (14, 8, 49, 58)
+    mask = Image.new("L", (N, N), 0)
+    ImageDraw.Draw(mask).rounded_rectangle(body, radius=5, fill=255)
+    img.alpha_composite(masked_surface(mask, BODY_TOP, BODY_BOT, seed=311))
+
+    d = ImageDraw.Draw(img)
+    d.rounded_rectangle(body, radius=5, outline=EDGE + (255,))
+
+    # Der Bildschirm sitzt oben und ist der einzige helle Fleck.
+    screen = (19, 13, 44, 33)
+    d.rounded_rectangle(screen, radius=2, fill=ACCENT_DIM + (255,),
+                        outline=EDGE + (255,))
+    glow(img, screen, ACCENT, radius=5, strength=120)
+    d = ImageDraw.Draw(img)
+    # Drei Zeilen: das Gerät zeigt Bestände, keine Bilder.
+    for i, y in enumerate((18, 23, 28)):
+        d.line([(22, y), (22 + [16, 12, 18][i], y)], fill=ACCENT + (210,))
+
+    # Tastenfeld: drei Reihen zu drei Tasten.
+    for row in range(3):
+        for col in range(3):
+            x = 20 + col * 8
+            y = 38 + row * 6
+            d.rectangle((x, y, x + 5, y + 3), fill=LIGHT + (255,),
+                        outline=EDGE + (255,))
+
+    # Die Antenne macht klar, dass es ohne Kabel geht.
+    d.line([(41, 8), (46, 2)], fill=PLATE_BOT + (255,), width=2)
+    d.ellipse((44, 0, 49, 5), fill=ACCENT + (255,), outline=EDGE + (255,))
+
+    bevel(d, body, width=2)
+    grain(img, amount=6, seed=312)
+    return img
+
+
+def laptop():
+    """Aufgeklappt: Bildschirm hinten, Tastatur vorn.
+
+    Die Silhouette ist die eines aufgeschlagenen Buchs — von der des
+    Handgeräts auf einen Blick zu unterscheiden, auch bei 16 Pixeln.
+    """
+    img = Image.new("RGBA", (N, N), (0, 0, 0, 0))
+
+    # Der Deckel steht leicht nach hinten geneigt.
+    lid = [(9, 30), (15, 4), (55, 4), (55, 30)]
+    lid_mask = Image.new("L", (N, N), 0)
+    ImageDraw.Draw(lid_mask).polygon(lid, fill=255)
+    img.alpha_composite(masked_surface(lid_mask, BODY_TOP, BODY_MID, seed=321))
+
+    d = ImageDraw.Draw(img)
+    d.polygon(lid, outline=EDGE + (255,))
+
+    screen = (17, 8, 51, 27)
+    d.rectangle(screen, fill=ACCENT_DIM + (255,), outline=EDGE + (255,))
+    glow(img, screen, ACCENT, radius=6, strength=135)
+    d = ImageDraw.Draw(img)
+    # Auf dem Laptop steht Code: eingerückte Zeilen, keine Balken.
+    for y, x0, x1 in ((12, 20, 40), (16, 24, 46), (20, 24, 36), (24, 20, 43)):
+        d.line([(x0, y), (x1, y)], fill=ACCENT + (200,))
+
+    # Die Grundplatte liegt flach davor.
+    base = [(4, 32), (60, 32), (54, 46), (10, 46)]
+    base_mask = Image.new("L", (N, N), 0)
+    ImageDraw.Draw(base_mask).polygon(base, fill=255)
+    img.alpha_composite(masked_surface(base_mask, LIGHT, BODY_MID, seed=322))
+    d = ImageDraw.Draw(img)
+    d.polygon(base, outline=EDGE + (255,))
+
+    # Tastatur: die Reihen verjüngen sich nach vorn, das gibt die Neigung.
+    for row, (y, inset) in enumerate(((35, 9), (39, 11), (43, 13))):
+        for col in range(6):
+            step = (62 - 2 * inset) / 6.0
+            x = inset + col * step
+            d.rectangle((x + 1, y, x + step - 2, y + 2),
+                        fill=BODY_BOT + (255,))
+
+    # Ein Streifen Glanz auf der Vorderkante, sonst wirkt die Platte flach.
+    d.line([(11, 45), (53, 45)], fill=SHINE + (150,))
+    grain(img, amount=5, seed=323)
+    return img
+
+
 def network_analyser():
     """Messgerät mit breitem Fenster und kurzer Sonde."""
     img = Image.new("RGBA", (N, N), (0, 0, 0, 0))
@@ -1957,6 +2048,8 @@ def main():
     for label in ("64k", "256k", "1024k", "4096k"):
         save(energy_cell(label), "item", "energy_cell_" + label)
     save(server_chassis(), "item", "server_chassis")
+    save(wireless_terminal(), "item", "wireless_terminal")
+    save(laptop(), "item", "laptop")
     for tier, wert in enumerate((2, 8, 32, 128)):
         save(cpu_item(tier), "item", "cpu_%d" % wert)
     for tier, wert in enumerate((8, 32, 128, 512)):

@@ -337,6 +337,27 @@ public final class FnItems {
             ITEMS.registerSimpleBlockItem(FnBlocks.CREATIVE_SOURCE);
 
     /** Zeigt das Netz als Gerüst in der Welt — auch durch Wände. */
+    /**
+     * Das Wireless Terminal: das Lager aus der Ferne, aber ohne Code.
+     *
+     * <p>Der Akku ist kleiner als der des Laptops — er hat weniger zu tun,
+     * und die beiden sollen sich auch darin unterscheiden.
+     */
+    public static final DeferredItem<Item> WIRELESS_TERMINAL =
+            ITEMS.register("wireless_terminal",
+                    () -> new dev.devpanda.factorynetwork.item.RemoteDeviceItem(
+                            new Item.Properties(),
+                            dev.devpanda.factorynetwork.upgrade.RemoteDevice.TERMINAL,
+                            200_000));
+
+    /** Der Laptop: dasselbe und dazu der Code. */
+    public static final DeferredItem<Item> LAPTOP =
+            ITEMS.register("laptop",
+                    () -> new dev.devpanda.factorynetwork.item.RemoteDeviceItem(
+                            new Item.Properties(),
+                            dev.devpanda.factorynetwork.upgrade.RemoteDevice.LAPTOP,
+                            600_000));
+
     public static final DeferredItem<Item> ANALYSER = ITEMS.register("network_analyser",
             () -> new NetworkAnalyserItem(new Item.Properties().stacksTo(1)));
 

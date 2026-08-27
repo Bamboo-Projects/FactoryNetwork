@@ -6256,6 +6256,126 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
+     * Ein Gerät meldet sich am Mast an — und beim zweiten Klick wieder ab.
+     *
+     * <p>Der Rückweg ist der Punkt. Ohne ihn wäre ein Gerät, das einmal am
+     * falschen Mast hängt, für immer daran gebunden, und der einzige Ausweg
+     * hieße: wegwerfen und neu bauen.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 100)
+    public static void aDeviceBindsToAMastAndBackAgain(GameTestHelper helper) {
+        ItemStack device = new ItemStack(
+                dev.devpanda.factorynetwork.registry.FnItems.WIRELESS_TERMINAL.get());
+        helper.assertTrue(
+                dev.devpanda.factorynetwork.item.RemoteDeviceItem.mastOf(device) == null,
+                "ein frisches Gerät hängt schon an einem Mast");
+
+        BlockPos mast = helper.absolutePos(new BlockPos(1, 2, 1));
+        helper.assertTrue(
+                dev.devpanda.factorynetwork.item.RemoteDeviceItem.couple(device, mast),
+                "die Anmeldung ist nicht zustandegekommen");
+        helper.assertTrue(
+                mast.equals(dev.devpanda.factorynetwork.item.RemoteDeviceItem.mastOf(device)),
+                "der Mast steht nicht am Gerät");
+        helper.assertTrue(
+                dev.devpanda.factorynetwork.item.RemoteDeviceItem.networkOf(device) != null,
+                "ohne Namen zeigt der Tooltip nichts an");
+
+        // Derselbe Mast noch einmal: das ist der Rückweg.
+        helper.assertTrue(
+                !dev.devpanda.factorynetwork.item.RemoteDeviceItem.couple(device, mast),
+                "der zweite Klick hat nicht abgemeldet");
+        helper.assertTrue(
+                dev.devpanda.factorynetwork.item.RemoteDeviceItem.mastOf(device) == null,
+                "das Gerät hängt nach dem Abmelden noch am Mast");
+
+        // Ein anderer Mast dagegen meldet um, statt abzumelden.
+        helper.assertTrue(
+                dev.devpanda.factorynetwork.item.RemoteDeviceItem.couple(device, mast),
+                "die zweite Anmeldung ging nicht");
+        BlockPos other = mast.above(3);
+        helper.assertTrue(
+                dev.devpanda.factorynetwork.item.RemoteDeviceItem.couple(device, other),
+                "ein anderer Mast hat abgemeldet statt umgemeldet");
+        helper.assertTrue(
+                other.equals(dev.devpanda.factorynetwork.item.RemoteDeviceItem.mastOf(device)),
+                "die Ummeldung ist nicht angekommen");
+        helper.succeed();
+    }
+
+    /**
+     * Beide Geräte haben einen Akku, den Fremdmods füllen können.
+     *
+     * <p><b>Das ist die Stelle, an der Powah und Flux Networks andocken.</b>
+     * Sie fragen {@code IEnergyStorage} am ItemStack — findet die Anmeldung
+     * in {@code FnCapabilities} nicht statt, ist der Ladestand eine Zahl, die
+     * niemand füllen kann, und im Spiel merkt man es erst, wenn man mit einem
+     * geladenen Gerät dasteht, das leer bleibt.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 100)
+    public static void bothDevicesTakeChargeFromOutside(GameTestHelper helper) {
+        for (var held : java.util.List.of(
+                dev.devpanda.factorynetwork.registry.FnItems.WIRELESS_TERMINAL,
+                dev.devpanda.factorynetwork.registry.FnItems.LAPTOP)) {
+            ItemStack device = new ItemStack(held.get());
+            var battery = device.getCapability(
+                    net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM);
+            helper.assertTrue(battery != null,
+                    held.getId() + " hat keinen Akku, an dem eine Fremdmod andocken kann");
+            helper.assertTrue(battery.getMaxEnergyStored() > 0,
+                    held.getId() + ": in den Akku passt nichts hinein");
+            helper.assertTrue(battery.canReceive(),
+                    held.getId() + ": der Akku nimmt nichts an");
+
+            int taken = battery.receiveEnergy(5_000, false);
+            helper.assertTrue(taken > 0, held.getId() + ": nichts angenommen");
+            helper.assertTrue(
+                    device.getCapability(net.neoforged.neoforge.capabilities.Capabilities
+                            .EnergyStorage.ITEM).getEnergyStored() == taken,
+                    held.getId() + ": der Ladestand hat den Stapel nicht erreicht");
+        }
+        helper.succeed();
+    }
+
+    /**
+     * Der Laptop fasst mehr Ausbauten als das Terminal — und was drinliegt,
+     * überlebt den Weg durch den Stapel.
+     *
+     * <p>Die Steckplätze wohnen in einer Datenkomponente. Ginge das Speichern
+     * schief, wären die Karten beim ersten Blick ins Inventar weg — und mit
+     * ihnen die Reichweite, für die man sie gebaut hat.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 100)
+    public static void upgradesSurviveTheItemStack(GameTestHelper helper) {
+        ItemStack device = new ItemStack(
+                dev.devpanda.factorynetwork.registry.FnItems.LAPTOP.get());
+        var slots = dev.devpanda.factorynetwork.item.RemoteDeviceItem.slotsOf(device);
+        helper.assertTrue(slots.size() == 4,
+                "der Laptop hat " + slots.size() + " Plätze statt vier");
+
+        slots.set(0, new ItemStack(
+                dev.devpanda.factorynetwork.registry.FnItems.RANGE_CARD.get(), 2));
+        dev.devpanda.factorynetwork.item.RemoteDeviceItem.saveSlots(device, slots);
+
+        var read = dev.devpanda.factorynetwork.item.RemoteDeviceItem.slotsOf(device);
+        helper.assertTrue(read.get(0).getCount() == 2,
+                "die Karten sind auf dem Weg durch den Stapel verlorengegangen");
+        helper.assertTrue(
+                dev.devpanda.factorynetwork.item.RemoteDeviceItem.loadoutOf(device)
+                        .count(dev.devpanda.factorynetwork.upgrade.Card.RANGE) == 2,
+                "die Bestückung zählt die Karten nicht");
+
+        // Und das Terminal hat weniger Platz — das ist der zweite Grund für
+        // den Laptop, neben dem Code.
+        ItemStack small = new ItemStack(
+                dev.devpanda.factorynetwork.registry.FnItems.WIRELESS_TERMINAL.get());
+        helper.assertTrue(
+                dev.devpanda.factorynetwork.item.RemoteDeviceItem.slotsOf(small).size() == 2,
+                "das Terminal hat nicht zwei Plätze");
+        helper.succeed();
+    }
+
+    /**
      * Der Schraubenschlüssel nimmt einen Anschluss ab und lässt das Kabel
      * stehen.
      *

@@ -38,6 +38,7 @@ public final class FactoryNetwork {
         });
         FnBlocks.BLOCKS.register(modBus);
         FnItems.ITEMS.register(modBus);
+        dev.devpanda.factorynetwork.registry.FnComponents.COMPONENTS.register(modBus);
         FnBlockEntities.BLOCK_ENTITIES.register(modBus);
         FnMenus.MENUS.register(modBus);
         FnCreativeTabs.TABS.register(modBus);

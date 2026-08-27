@@ -22,6 +22,14 @@ import org.jetbrains.annotations.Nullable;
  * <p>Er hat keine Vorderseite — ein Mast steht, und wohin seine Ausleger
  * zeigen, ändert nichts an dem, was er tut.
  */
+import dev.devpanda.factorynetwork.item.RemoteDeviceItem;
+import net.minecraft.network.chat.Component;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.item.ItemStack;
+
 public class MastBlock extends Block implements EntityBlock {
 
     private static final VoxelShape SHAPE = FacingShapes.whole(MastLayout.boxes());
@@ -41,7 +49,40 @@ public class MastBlock extends Block implements EntityBlock {
         return new MastBlockEntity(pos, state);
     }
 
-    /** Rechtsklick öffnet die vier Steckplätze. */
+    /**
+     * Mit einem Ferngerät in der Hand: anmelden statt öffnen.
+     *
+     * <p><b>Ein Klick und eine Zeile Text, kein Fenster.</b> Die Anmeldung
+     * ist eine einzige Angabe — welcher Mast. Ein Fenster dafür wäre ein
+     * Fenster mit einem Knopf.
+     *
+     * <p>Wer schon angemeldet ist und noch einmal klickt, meldet sich ab.
+     * Sonst gäbe es keinen Weg zurück außer dem, das Gerät wegzuwerfen.
+     */
+    @Override
+    protected ItemInteractionResult useItemOn(ItemStack held, BlockState state, Level level,
+                                             BlockPos pos, Player player, InteractionHand hand,
+                                             BlockHitResult hit) {
+        if (RemoteDeviceItem.deviceOf(held) == null) {
+            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        }
+        if (level.isClientSide) {
+            return ItemInteractionResult.SUCCESS;
+        }
+        if (!RemoteDeviceItem.couple(held, pos)) {
+            player.displayClientMessage(
+                    Component.translatable("message.factorynetwork.remote.unbound"), true);
+            return ItemInteractionResult.CONSUME;
+        }
+        player.displayClientMessage(
+                Component.translatable("message.factorynetwork.remote.bound",
+                        pos.getX(), pos.getY(), pos.getZ()), true);
+        level.playSound(null, pos, SoundEvents.AMETHYST_BLOCK_CHIME,
+                SoundSource.BLOCKS, 0.6F, 1.4F);
+        return ItemInteractionResult.CONSUME;
+    }
+
+    /** Rechtsklick ohne Gerät öffnet die vier Steckplätze. */
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
                                                Player player, BlockHitResult hit) {

@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "PGP",
+    "PNP",
+    "PCP"
+  ],
+  "key": {
+    "P": {
+      "item": "factorynetwork:plate"
+    },
+    "G": {
+      "item": "minecraft:glass_pane"
+    },
+    "N": {
+      "item": "factorynetwork:core_network"
+    },
+    "C": {
+      "item": "factorynetwork:crystal"
+    }
+  },
+  "result": {
+    "id": "factorynetwork:wireless_terminal",
+    "count": 1
+  }
+}

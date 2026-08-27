@@ -1560,6 +1560,11 @@ def models():
                                       "scale": [0.28, 0.28, 0.28]},
         }))
     item_model("server_chassis")
+    # Vorerst flach. Ein eigener Körper steht in ITEM_BODIES und damit im
+    # Git — und etwas zurückzunehmen, das schon dasteht, kostet mehr, als es
+    # zu schreiben. Der Körper kommt, wenn die Form abgenommen ist.
+    item_model("wireless_terminal")
+    item_model("laptop")
     for kind, tiers in SERVER_PARTS.items():
         for value in tiers:
             name = "%s_%d" % (kind, value)
@@ -2128,6 +2133,37 @@ def loot_and_recipes():
 
     # Der Analysator: Redstone für das Messen, Quarz für die Anzeige, Eisen
     # für das Gehäuse. Nicht teuer — wer ihn braucht, hat schon ein Problem.
+    # Das Wireless Terminal: ein Netzkern hinter Glas, in einem Rahmen aus
+    # Platten. Kein Rechenkern — es kann keinen Code, und das soll man dem
+    # Rezept ansehen.
+    write(D + "/recipe/wireless_terminal.json", {
+        "type": "minecraft:crafting_shaped",
+        "category": "equipment",
+        "pattern": ["PGP", "PNP", "PCP"],
+        "key": {
+            "P": {"item": MOD + ":plate"},
+            "G": {"item": "minecraft:glass_pane"},
+            "N": {"item": MOD + ":core_network"},
+            "C": {"item": MOD + ":crystal"},
+        },
+        "result": {"id": MOD + ":wireless_terminal", "count": 1},
+    })
+
+    # Der Laptop: dasselbe und ein Rechenkern dazu — der ist der Unterschied
+    # zwischen „ans Lager kommen" und „am Code arbeiten".
+    write(D + "/recipe/laptop.json", {
+        "type": "minecraft:crafting_shaped",
+        "category": "equipment",
+        "pattern": ["GGG", "PLP", "PWP"],
+        "key": {
+            "G": {"item": "minecraft:glass_pane"},
+            "P": {"item": MOD + ":plate"},
+            "L": {"item": MOD + ":core_logic"},
+            "W": {"item": MOD + ":wireless_terminal"},
+        },
+        "result": {"id": MOD + ":laptop", "count": 1},
+    })
+
     write(D + "/recipe/network_analyser.json", {
         "type": "minecraft:crafting_shaped",
         "category": "equipment",
