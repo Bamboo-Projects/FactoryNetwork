@@ -179,6 +179,12 @@ tasks.register('editorCheck', Exec) {
 }
 
 tasks.named('test') {
+    // GrammarKeywordTest liest die Grammatik der Erweiterung, und die liegt
+    // ausserhalb der Quellordner. Ohne diese Zeile merkt Gradle eine Aenderung
+    // daran nicht: Der Prueflauf gilt als aktuell, laeuft gar nicht erst, und
+    // der Waechter schlaeft. Genau so ist er am 27.08. beim ersten Versuch
+    // durchgerutscht — die Gegenprobe bestand, weil nichts lief.
+    inputs.dir('editor/vscode').withPropertyName('editorSources')
     finalizedBy 'editorCheck'
 }
 

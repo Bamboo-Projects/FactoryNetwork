@@ -86,6 +86,20 @@ public enum TokenType {
             Map.entry("world", WORLD), Map.entry("network", NETWORK),
             Map.entry("workers", WORKERS), Map.entry("multiblocks", MULTIBLOCKS));
 
+    /**
+     * Jedes Wort, das der Sprache gehört.
+     *
+     * <p>Gebraucht von {@code GrammarKeywordTest}: Die Hervorhebung in VS Code
+     * führt dieselbe Liste ein zweites Mal, in einer TextMate-Grammatik. Sie
+     * ist am 27.08. schon einmal fünf Wörter hinterhergehinkt — {@code store},
+     * {@code recipe}, {@code scale}, {@code at} und {@code out} standen nicht
+     * darin, und im Editor blieben sie farblos. Das fällt niemandem auf, der
+     * die Sprache kennt, und verwirrt jeden, der sie lernt.
+     */
+    public static java.util.Set<String> keywords() {
+        return KEYWORDS.keySet();
+    }
+
     /** Liefert die Schlüsselwortart zu einem Bezeichner, oder {@code null}. */
     public static TokenType keyword(String text) {
         return KEYWORDS.get(text);

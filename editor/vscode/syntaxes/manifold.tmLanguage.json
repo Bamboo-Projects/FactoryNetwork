@@ -3,21 +3,54 @@
   "name": "Manifold",
   "scopeName": "source.manifold",
   "patterns": [
-    { "include": "#comment" },
-    { "include": "#string" },
-    { "include": "#escaped-name" },
-    { "include": "#selector" },
-    { "include": "#duration" },
-    { "include": "#number" },
-    { "include": "#declaration" },
-    { "include": "#control" },
-    { "include": "#worker" },
-    { "include": "#display" },
-    { "include": "#source" },
-    { "include": "#constant" },
-    { "include": "#name-pattern" },
-    { "include": "#call" },
-    { "include": "#operator" }
+    {
+      "include": "#comment"
+    },
+    {
+      "include": "#string"
+    },
+    {
+      "include": "#escaped-name"
+    },
+    {
+      "include": "#selector"
+    },
+    {
+      "include": "#duration"
+    },
+    {
+      "include": "#number"
+    },
+    {
+      "include": "#declaration"
+    },
+    {
+      "include": "#control"
+    },
+    {
+      "include": "#worker"
+    },
+    {
+      "include": "#display"
+    },
+    {
+      "include": "#recipe-key"
+    },
+    {
+      "include": "#source"
+    },
+    {
+      "include": "#constant"
+    },
+    {
+      "include": "#name-pattern"
+    },
+    {
+      "include": "#call"
+    },
+    {
+      "include": "#operator"
+    }
   ],
   "repository": {
     "comment": {
@@ -52,7 +85,7 @@
     "declaration": {
       "comment": "Was auf oberster Ebene stehen darf",
       "name": "keyword.declaration.manifold",
-      "match": "\\b(fn|worker|group|filter|multiblock|event|display|on|import|global|const)\\b"
+      "match": "\\b(fn|worker|group|filter|multiblock|event|display|store|recipe|on|import|global|const)\\b"
     },
     "control": {
       "name": "keyword.control.manifold",
@@ -66,7 +99,7 @@
     "display": {
       "comment": "Die Zeilenarten einer Anzeige",
       "name": "entity.name.tag.display.manifold",
-      "match": "\\b(title|row|text|progress|indicator|list|button)\\b"
+      "match": "\\b(title|row|text|progress|indicator|list|button|scale)\\b"
     },
     "source": {
       "comment": "Woher ein Wert kommt — storage.count, network.energy",
@@ -89,6 +122,10 @@
     "operator": {
       "name": "keyword.operator.manifold",
       "match": "(==|!=|<=|>=|&&|\\|\\||[+\\-*/%<>=!])"
+    },
+    "recipe-key": {
+      "match": "\\b(at|out)\\b",
+      "name": "keyword.other.recipe.manifold"
     }
   }
 }
