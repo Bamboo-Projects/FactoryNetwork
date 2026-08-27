@@ -705,7 +705,7 @@ DRIVE_FOOT = 2        # Höhe der Füße
 DRIVE_FOOT_WIDE = 3   # Grundfläche eines Fußes
 DRIVE_FRONT = 2       # wie weit die Blende vor dem Gehäuse steht
 DRIVE_INSET = 1       # wie weit das Gehäuse hinter der Blende zurückspringt
-DRIVE_BEZEL = 1       # Breite der Fassung um das Schachtfeld
+DRIVE_BEZEL = 2       # Breite der Fassung um das Schachtfeld
 DRIVE_RECESS = 1      # wie tief das Feld in der Blende liegt
 
 
@@ -728,17 +728,22 @@ def drive_boxes():
         ([inset, foot, front], [16 - inset, 16, 16], {"*": "side"}),
 
         # Die Fassung — vier Kästen um das Feld herum, in der Blockhülle.
+        #
+        # <b>Über die volle Höhe, nicht erst über den Füßen.</b> Die beiden
+        # unteren Nieten der Textur sitzen unterhalb von zwei Blockpixeln;
+        # solange die Blende dort anfing, gab es sie im Modell nicht, und
+        # oben standen zwei, unten keine.
         ([0, 16 - bezel, 0], [16, 16, front], {"north": "front", "*": "side"}),
-        ([0, foot, 0], [16, foot + bezel, front], {"north": "front", "*": "side"}),
-        ([0, foot + bezel, 0], [bezel, 16 - bezel, front],
+        ([0, 0, 0], [16, bezel, front], {"north": "front", "*": "side"}),
+        ([0, bezel, 0], [bezel, 16 - bezel, front],
          {"north": "front", "*": "side"}),
-        ([16 - bezel, foot + bezel, 0], [16, 16 - bezel, front],
+        ([16 - bezel, bezel, 0], [16, 16 - bezel, front],
          {"north": "front", "*": "side"}),
 
         # Das Schachtfeld, einen Blockpixel hinter der Fassung. Dass es
         # zurückliegt, ist der ganze Punkt: In der Textur war die Vertiefung
         # gemalt, jetzt ist sie da.
-        ([bezel, foot + bezel, recess], [16 - bezel, 16 - bezel, front],
+        ([bezel, bezel, recess], [16 - bezel, 16 - bezel, front],
          {"north": "front", "*": "side"}),
     ]
 
@@ -751,7 +756,7 @@ def drive_boxes():
     # schräg sah das nicht nach Fuß aus, sondern nach abgebrochen. Vorn
     # reichen sie bis an die Blockkante, sonst trüge die Blende sich selbst.
     for x in (inset, 16 - inset - wide):
-        for z in (0, 16 - wide):
+        for z in (front, 16 - wide):
             boxes.append(([x, 0, z], [x + wide, foot, z + wide], {"*": "side"}))
 
     return boxes
@@ -831,7 +836,7 @@ def controller_model():
 # Dieselben Zahlen stehen in TerminalLayout.java; TerminalLayoutTest hält
 # beide zusammen.
 TERMINAL_DESK = 2      # wie weit die Konsole vorsteht
-TERMINAL_DESK_HIGH = 4  # und wie hoch sie ist
+TERMINAL_DESK_HIGH = 5  # und wie hoch sie ist
 TERMINAL_BEZEL = 2     # Breite des Rahmens um den Bildschirm
 
 
@@ -1114,25 +1119,30 @@ def source_model():
 # und ein dickes Kabel, das die mittleren zehn Blockpixel einnimmt, steckt
 # darin statt davorzukleben.
 #
-# <b>Die vier Blockpixel sind nicht frei gewählt.</b> Der Renderer malt die
-# Bahnkennung über die volle Fläche jeder Seite; ihr Ring liegt in der Textur
-# zwischen Blockpixel 1 und 14,75, die Mitte ist durchsichtig. Solange die
-# äußeren vier Blockpixel bündig bleiben, liegt jeder sichtbare Teil des Rings
-# auf Material. Wer die Leisten dünner macht, lässt ihn schweben.
-ROUTER_EDGE = 4     # Stärke einer Kantenleiste
+# <b>Die drei Blockpixel sind gemessen und nicht gewählt.</b> Der Renderer
+# malt die Bahnkennung über die volle Fläche jeder Seite; ihr Ring läuft in
+# der Textur von Blockpixel 1 bis 3 und von 12,75 bis 14,75, dazwischen ist
+# sie durchsichtig. Drei Blockpixel Leiste decken den inneren Rand also genau
+# ab. Dünner, und der Ring schwebt; dicker, und die Leiste verdeckt aus
+# schrägem Blick die vier Kontakte in der Mitte — bei vier sah man nur noch
+# einen.
+ROUTER_EDGE = 3     # Stärke einer Kantenleiste
 ROUTER_INSET = 1    # wie weit der Kern zurückspringt
-ROUTER_PLATE = 6    # wo die Kontaktplatte in der Mitte anfängt
 
 
 def router_boxes():
     """Die Kästen des Routers: Kern, zwölf Kanten und sechs Kontaktplatten.
 
-    <b>Der erste Versuch sprang zwei Blockpixel zurück</b> und hatte in jeder
-    Seite ein Loch, das aussah wie ein Loch. Einer reicht: Die Kanten geben
-    die Form, und in der Mitte sitzt wieder Material — dort, wo die Textur
-    die vier Kontakte malt.
+    <b>Zwei Versuche liegen dahinter.</b> Der erste sprang zwei Blockpixel
+    zurück und hatte in jeder Seite ein Loch, das aussah wie ein Loch. Der
+    zweite setzte eine Platte in die Mitte, damit dort wieder Material sitzt
+    — und zeigte damit den Kragen der Textur ein zweites Mal, um einen
+    Blockpixel versetzt gegen den, der schon auf dem Kern lag.
+
+    Ein Blockpixel Vertiefung reicht. Jede Fläche zeigt die Textur dann genau
+    einmal und an der Stelle, an der sie gemalt ist.
     """
-    edge, inset, plate = ROUTER_EDGE, ROUTER_INSET, ROUTER_PLATE
+    edge, inset = ROUTER_EDGE, ROUTER_INSET
     far = 16 - edge
     boxes = [([inset, inset, inset], [16 - inset, 16 - inset, 16 - inset],
               {"*": "all"})]
@@ -1145,17 +1155,6 @@ def router_boxes():
         for x in (0, far):
             boxes.append(([x, y, edge], [x + edge, y + edge, far], {"*": "all"}))
 
-    # Die sechs Kontaktplatten: dort, wo die Textur die vier Kontakte malt,
-    # sitzt wieder Material bis an die Blockkante. Der Ring der Bahnkennung
-    # bleibt unberührt — er endet innen bei drei Blockpixeln, die Platte
-    # fängt bei sechs an, und dazwischen liegt die Vertiefung.
-    for axis in range(3):
-        for side in (0, 16 - inset):
-            start = [plate, plate, plate]
-            end = [16 - plate, 16 - plate, 16 - plate]
-            start[axis] = side
-            end[axis] = side + inset
-            boxes.append((start, end, {"*": "all"}))
     return boxes
 
 

@@ -17,8 +17,15 @@ public final class TerminalLayout {
     /** Wie weit die Konsole vorsteht. */
     public static final int DESK = 2;
 
-    /** Und wie hoch sie ist. */
-    public static final int DESK_HIGH = 4;
+    /**
+     * Und wie hoch sie ist.
+     *
+     * <p>Fünf und nicht vier: Der versenkte Rahmen der Textur läuft von
+     * Texturpixel 6 bis 44, also von Blockpixel 5 bis 14,5 über dem Boden.
+     * Bei vier schnitt die Kante der Konsole einen Blockpixel darunter durch
+     * und lief quer durch das gemalte Bild.
+     */
+    public static final int DESK_HIGH = 5;
 
     /** Breite des Rahmens um den Bildschirm. */
     public static final int BEZEL = 2;

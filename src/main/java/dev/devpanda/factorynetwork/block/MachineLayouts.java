@@ -120,30 +120,18 @@ public final class MachineLayouts {
     /**
      * Der Router: derselbe Käfig, nur mit dicken Leisten und tieferem Kern.
      *
-     * <p><b>Die vier Blockpixel Leistenstärke sind nicht frei gewählt.</b>
-     * Der {@code RouterRenderer} malt die Bahnkennung über die volle Fläche
-     * jeder Seite; ihr Ring liegt zwischen Blockpixel 1 und 14,75, die Mitte
-     * ist durchsichtig. Solange die äußeren vier bündig bleiben, liegt jeder
-     * sichtbare Teil des Rings auf Material. Wer die Leisten dünner macht,
-     * lässt ihn schweben.
+     * <p><b>Die drei Blockpixel Leistenstärke sind gemessen.</b> Der
+     * {@code RouterRenderer} malt die Bahnkennung über die volle Fläche jeder
+     * Seite; ihr Ring läuft von Blockpixel 1 bis 3 und von 12,75 bis 14,75,
+     * dazwischen ist er durchsichtig. Drei decken den inneren Rand genau ab.
+     * Dünner, und der Ring schwebt; dicker, und die Leiste verdeckt aus
+     * schrägem Blick die vier Kontakte in der Mitte.
      */
     public static List<int[]> router() {
-        int inset = 1;
-        int plate = 6;
-        List<int[]> boxes = cage(4, inset);
-        // Die sechs Kontaktplatten: dort, wo die Textur die vier Kontakte
-        // malt, sitzt wieder Material bis an die Blockkante. Ohne sie war in
-        // jeder Seite ein Loch, das aussah wie ein Loch.
-        for (int axis = 0; axis < 3; axis++) {
-            for (int side : new int[] {0, 16 - inset}) {
-                int[] box = {plate, plate, plate,
-                        16 - plate, 16 - plate, 16 - plate};
-                box[axis] = side;
-                box[axis + 3] = side + inset;
-                boxes.add(box);
-            }
-        }
-        return boxes;
+        // Ein Blockpixel Vertiefung. Zwei ließen in jeder Seite ein Loch,
+        // das aussah wie ein Loch; eine Platte in der Mitte, die das
+        // ausglich, zeigte den Kragen der Textur ein zweites Mal.
+        return cage(3, 1);
     }
 
     /** Die Kreativquelle: ein zurückspringender Kern und acht Eckklötze. */

@@ -32,8 +32,15 @@ public final class DriveLayout {
     /** Wie weit das Gehäuse hinter der Blende zurückspringt. */
     public static final int INSET = 1;
 
-    /** Breite der Fassung um das Schachtfeld. */
-    public static final int BEZEL = 1;
+    /**
+     * Breite der Fassung um das Schachtfeld.
+     *
+     * <p>Zwei und nicht eins, weil die vier Nieten der Textur um die
+     * Texturpixel 4 und 59 sitzen und mit Radius 2 gezeichnet werden — in
+     * Blockpixeln also von 0,5 bis 1,5 und von 14,25 bis 15,25. Eine Fassung
+     * von einem Blockpixel schnitt jede von ihnen in der Mitte durch.
+     */
+    public static final int BEZEL = 2;
 
     /** Wie tief das Feld in der Blende liegt. */
     public static final int RECESS = 1;
@@ -45,21 +52,22 @@ public final class DriveLayout {
         // Das Gehäuse.
         boxes.add(new int[] {INSET, FOOT, FRONT, 16 - INSET, 16, 16});
 
-        // Die Fassung der Blende.
+        // Die Fassung der Blende, über die volle Höhe: Die beiden unteren
+        // Nieten der Textur sitzen unterhalb von zwei Blockpixeln.
         boxes.add(new int[] {0, 16 - BEZEL, 0, 16, 16, FRONT});
-        boxes.add(new int[] {0, FOOT, 0, 16, FOOT + BEZEL, FRONT});
-        boxes.add(new int[] {0, FOOT + BEZEL, 0, BEZEL, 16 - BEZEL, FRONT});
-        boxes.add(new int[] {16 - BEZEL, FOOT + BEZEL, 0, 16, 16 - BEZEL, FRONT});
+        boxes.add(new int[] {0, 0, 0, 16, BEZEL, FRONT});
+        boxes.add(new int[] {0, BEZEL, 0, BEZEL, 16 - BEZEL, FRONT});
+        boxes.add(new int[] {16 - BEZEL, BEZEL, 0, 16, 16 - BEZEL, FRONT});
 
         // Das versenkte Schachtfeld.
-        boxes.add(new int[] {BEZEL, FOOT + BEZEL, RECESS,
+        boxes.add(new int[] {BEZEL, BEZEL, RECESS,
                 16 - BEZEL, 16 - BEZEL, FRONT});
 
         // Vier Füße, unter dem Gehäuse und nicht an den Blockecken: Dort
         // ragte jeder genau den Blockpixel heraus, um den das Gehäuse
         // schmaler ist als die Blende.
         for (int x : new int[] {INSET, 16 - INSET - FOOT_WIDE}) {
-            for (int z : new int[] {0, 16 - FOOT_WIDE}) {
+            for (int z : new int[] {FRONT, 16 - FOOT_WIDE}) {
                 boxes.add(new int[] {x, 0, z, x + FOOT_WIDE, FOOT, z + FOOT_WIDE});
             }
         }
