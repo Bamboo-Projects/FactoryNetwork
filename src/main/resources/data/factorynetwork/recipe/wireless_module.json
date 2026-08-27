@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " P ",
+    "PRP",
+    " P "
+  ],
+  "key": {
+    "P": {
+      "item": "factorynetwork:plate"
+    },
+    "R": {
+      "item": "factorynetwork:range_card"
+    }
+  },
+  "result": {
+    "id": "factorynetwork:wireless_module",
+    "count": 1
+  }
+}

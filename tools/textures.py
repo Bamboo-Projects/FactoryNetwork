@@ -1747,6 +1747,87 @@ def burner_front(lit=False):
     return img
 
 
+def upgrade_card(ton, zeichen):
+    """Eine Karte: Platine mit Kontaktleiste und einem Zeichen darauf.
+
+    <b>Alle Karten teilen sich die Form</b> — was eine tut, sagt allein das
+    Zeichen. Wer drei verschiedene Formen malt, macht aus einem Ausbausystem
+    drei Einzelstücke, und der Spieler muss jede einzeln lernen.
+    """
+    img = Image.new("RGBA", (N, N), (0, 0, 0, 0))
+    mask = Image.new("L", (N, N), 0)
+    ImageDraw.Draw(mask).rectangle([12, 16, 51, 47], fill=255)
+    img.alpha_composite(masked_surface(mask, blend(ton, LIGHT, 0.25),
+                                       blend(ton, EDGE, 0.45), seed=700))
+    d = ImageDraw.Draw(img)
+    d.rectangle([12, 16, 51, 47], outline=EDGE + (255,))
+    raised(img, (12, 16, 51, 47), hoehe=2)
+
+    # Die Kontaktleiste unten: daran erkennt man auf einen Blick, dass es
+    # etwas zum Hineinstecken ist.
+    for x in range(16, 48, 6):
+        d.rectangle([x, 44, x + 3, 47], fill=BRASS + (255,))
+        d.point((x, 44), fill=BRASS_HI + (255,))
+
+    d.rectangle([18, 21, 45, 40], fill=blend(BODY_MID, EDGE, 0.4) + (255,))
+    recess(img, (18, 21, 45, 40), tiefe=2)
+    zeichen(d)
+    scratches(img, seed=701)
+    return img
+
+
+def range_card():
+    """Drei Bögen: ein Signal, das nach außen läuft."""
+    def zeichen(d):
+        for i, weite in enumerate((5, 10, 15)):
+            farbe = blend(ACCENT, SCREEN, 0.15 + i * 0.25) + (255,)
+            d.arc([31 - weite, 36 - weite, 31 + weite, 36 + weite],
+                  start=200, end=340, fill=farbe, width=2)
+        d.rectangle([30, 35, 32, 37], fill=ACCENT + (255,))
+    return upgrade_card(BODY_TOP, zeichen)
+
+
+def infinity_card():
+    """Die liegende Acht — die Grenze, die es nicht mehr gibt."""
+    def zeichen(d):
+        farbe = blend(ACCENT, LIGHT, 0.35) + (255,)
+        d.ellipse([21, 25, 31, 36], outline=farbe, width=2)
+        d.ellipse([32, 25, 42, 36], outline=farbe, width=2)
+        d.point((31, 30), fill=ACCENT_HI + (255,))
+        d.point((31, 31), fill=ACCENT_HI + (255,))
+    return upgrade_card(blend(BODY_TOP, ACCENT, 0.12), zeichen)
+
+
+def wireless_module():
+    """Ein Modul: kürzer als eine Karte, mit Antenne statt Zeichen.
+
+    <b>Es sieht absichtlich anders aus als eine Karte.</b> Wer im Inventar
+    steht, soll ohne Tooltip sehen, ob er eine Fähigkeit oder einen Wert in
+    der Hand hat.
+    """
+    img = Image.new("RGBA", (N, N), (0, 0, 0, 0))
+    mask = Image.new("L", (N, N), 0)
+    ImageDraw.Draw(mask).rectangle([14, 28, 49, 47], fill=255)
+    img.alpha_composite(masked_surface(mask, blend(BODY_TOP, LIGHT, 0.25),
+                                       blend(BODY_MID, EDGE, 0.45), seed=702))
+    d = ImageDraw.Draw(img)
+    d.rectangle([14, 28, 49, 47], outline=EDGE + (255,))
+    raised(img, (14, 28, 49, 47), hoehe=2)
+    for x in range(18, 48, 6):
+        d.rectangle([x, 44, x + 3, 47], fill=BRASS + (255,))
+
+    # Die Antenne steht über dem Korpus: die Fähigkeit, die das Modul gibt.
+    d.rectangle([30, 14, 32, 30], fill=blend(BODY_TOP, LIGHT, 0.4) + (255,))
+    d.rectangle([28, 30, 34, 33], fill=blend(BODY_MID, EDGE, 0.3) + (255,))
+    for i, weite in enumerate((5, 9)):
+        farbe = blend(ACCENT, LIGHT, 0.1 + i * 0.3) + (255,)
+        d.arc([31 - weite, 15 - weite, 31 + weite, 15 + weite],
+              start=200, end=340, fill=farbe, width=2)
+    d.rectangle([30, 13, 32, 15], fill=ACCENT_HI + (255,))
+    scratches(img, seed=703)
+    return img
+
+
 def main():
     print("Blocktexturen (64x64):")
     save(controller_top(), "block", "controller_top")
@@ -1781,6 +1862,9 @@ def main():
     save(crystal_ore(True), "block", "deepslate_crystal_ore")
     print("Gegenstandstexturen:")
     save(label_gun(), "item", "label_gun")
+    save(range_card(), "item", "range_card")
+    save(infinity_card(), "item", "infinity_card")
+    save(wireless_module(), "item", "wireless_module")
     save(controller_extension(), "block", "controller_extension")
     save(fabricator_top(), "block", "fabricator_top")
     save(fabricator_side(), "block", "fabricator_side")

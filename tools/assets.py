@@ -1252,6 +1252,16 @@ ITEM_BODIES = {
     "core_memory": (2, 3, 15, 13, 2),
     "core_network": (2, 3, 15, 13, 2),
 
+    # Die Ausbauten. Eine Karte ist einen Blockpixel dick, ein Modul zwei:
+    # Es ist ein Gerät, sie ist eine Platine.
+    #
+    # Der Umriss des Moduls reicht bis Blockpixel 1 hinauf, weil die Antenne
+    # dort steht. Was um sie herum durchsichtig ist, fällt an den Kanten von
+    # selbst weg — sie schneiden ihren Streifen aus demselben Rand.
+    "range_card": (3, 4, 13, 12, 1),
+    "infinity_card": (3, 4, 13, 12, 1),
+    "wireless_module": (3, 1, 13, 12, 2),
+
     # Der Rest: Blech ist dünn, ein Stempel ist ein Werkzeug.
     "plate": (3, 4, 14, 12, 1),
     "server_chassis": (1, 4, 15, 12, 3),
@@ -1520,6 +1530,8 @@ def models():
         item_model(name)
     write(A + "/models/item/press.json", {"parent": block("press")})
     item_model("raw_crystal")
+    for name in ("range_card", "infinity_card", "wireless_module"):
+        item_model(name)
 
 
 def worldgen():
@@ -1657,6 +1669,45 @@ def loot_and_recipes():
             "N": {"item": MOD + ":core_network"},
         },
         "result": {"id": MOD + ":cable", "count": 12},
+    })
+
+    # Die Reichweitenkarte: Kupfer außen, ein Kristall in der Mitte, Platten
+    # als Boden. Zwei je Handgriff — man braucht selten nur eine.
+    write(D + "/recipe/range_card.json", {
+        "type": "minecraft:crafting_shaped",
+        "category": "misc",
+        "pattern": ["CCC", "CKC", "PPP"],
+        "key": {
+            "C": {"item": "minecraft:copper_ingot"},
+            "K": {"item": MOD + ":crystal"},
+            "P": {"item": MOD + ":plate"},
+        },
+        "result": {"id": MOD + ":range_card", "count": 2},
+    })
+
+    # Die Grenzenlos-Karte: vier Reichweitenkarten um einen Netzkern.
+    write(D + "/recipe/infinity_card.json", {
+        "type": "minecraft:crafting_shaped",
+        "category": "misc",
+        "pattern": ["RKR", "KNK", "RKR"],
+        "key": {
+            "R": {"item": MOD + ":range_card"},
+            "K": {"item": MOD + ":crystal"},
+            "N": {"item": MOD + ":core_network"},
+        },
+        "result": {"id": MOD + ":infinity_card", "count": 1},
+    })
+
+    # Das Funk-Modul: eine Reichweitenkarte in einem Gehäuse aus Platten.
+    write(D + "/recipe/wireless_module.json", {
+        "type": "minecraft:crafting_shaped",
+        "category": "misc",
+        "pattern": [" P ", "PRP", " P "],
+        "key": {
+            "P": {"item": MOD + ":plate"},
+            "R": {"item": MOD + ":range_card"},
+        },
+        "result": {"id": MOD + ":wireless_module", "count": 1},
     })
 
     write(D + "/recipe/connector.json", {

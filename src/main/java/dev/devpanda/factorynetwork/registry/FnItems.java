@@ -92,6 +92,30 @@ public final class FnItems {
     public static final DeferredItem<BlockItem> TERMINAL = ITEMS.registerSimpleBlockItem(FnBlocks.TERMINAL);
     public static final DeferredItem<BlockItem> DISPLAY = ITEMS.registerSimpleBlockItem(FnBlocks.DISPLAY);
 
+    /**
+     * Die Ausbauten: ein Modul und zwei Karten.
+     *
+     * <p>Sie stapeln sich, weil zwei gleiche Karten dasselbe tun — und weil
+     * gleiche Karten sich addieren, hat man selten nur eine.
+     */
+    public static final DeferredItem<Item> WIRELESS_MODULE = ITEMS.register(
+            dev.devpanda.factorynetwork.upgrade.Ability.WIRELESS.id(),
+            () -> new dev.devpanda.factorynetwork.item.UpgradeItem(
+                    new Item.Properties(),
+                    dev.devpanda.factorynetwork.upgrade.Ability.WIRELESS));
+
+    public static final DeferredItem<Item> RANGE_CARD = ITEMS.register(
+            dev.devpanda.factorynetwork.upgrade.Card.RANGE.id(),
+            () -> new dev.devpanda.factorynetwork.item.UpgradeItem(
+                    new Item.Properties(),
+                    dev.devpanda.factorynetwork.upgrade.Card.RANGE));
+
+    public static final DeferredItem<Item> INFINITY_CARD = ITEMS.register(
+            dev.devpanda.factorynetwork.upgrade.Card.INFINITY.id(),
+            () -> new dev.devpanda.factorynetwork.item.UpgradeItem(
+                    new Item.Properties(),
+                    dev.devpanda.factorynetwork.upgrade.Card.INFINITY));
+
     /** Vergibt einem Connector seinen Namen. */
     public static final DeferredItem<Item> LABEL_GUN = ITEMS.register("label_gun",
             () -> new LabelGunItem(new Item.Properties().stacksTo(1)));

@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "CCC",
+    "CKC",
+    "PPP"
+  ],
+  "key": {
+    "C": {
+      "item": "minecraft:copper_ingot"
+    },
+    "K": {
+      "item": "factorynetwork:crystal"
+    },
+    "P": {
+      "item": "factorynetwork:plate"
+    }
+  },
+  "result": {
+    "id": "factorynetwork:range_card",
+    "count": 2
+  }
+}

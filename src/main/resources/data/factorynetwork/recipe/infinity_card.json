@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "RKR",
+    "KNK",
+    "RKR"
+  ],
+  "key": {
+    "R": {
+      "item": "factorynetwork:range_card"
+    },
+    "K": {
+      "item": "factorynetwork:crystal"
+    },
+    "N": {
+      "item": "factorynetwork:core_network"
+    }
+  },
+  "result": {
+    "id": "factorynetwork:infinity_card",
+    "count": 1
+  }
+}
