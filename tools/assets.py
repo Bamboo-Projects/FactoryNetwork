@@ -904,8 +904,13 @@ def terminal_model():
 # steht im Spiel rechts. Bei den Teilen der Presse fällt das nicht auf, weil
 # alle mittig sitzen; beim Griff der Brennkammer schon.
 PRESS_FRAME = 3      # Breite des Rahmens ringsum
-PRESS_DEPTH = 3      # wie tief der Rahmen ist
+PRESS_DEPTH = 2      # wie tief der Rahmen ist
 PRESS_ROOM = 1       # wie weit der Arbeitsraum dahinter zurückliegt
+
+# <b>Drei waren zu tief.</b> Stempelkopf und Amboss standen damit drei
+# Blockpixel vor dem Arbeitsraum und ragten heraus wie Regalbretter. Bei zwei
+# liegen sie bündig mit dem Rahmen, und der Arbeitsraum einen dahinter — so
+# weit, wie die Textur ihn ohnehin schon versenkt malt.
 
 
 def press_boxes():

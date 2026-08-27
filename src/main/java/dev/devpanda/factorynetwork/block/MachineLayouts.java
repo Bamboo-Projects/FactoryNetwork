@@ -20,18 +20,32 @@ public final class MachineLayouts {
     /** Breite des Rahmens an Presse und Brennkammer. */
     private static final int FRAME = 3;
 
-    /** Und wie tief er ist. */
-    private static final int DEPTH = 3;
+    /**
+     * Wie tief der Rahmen der Presse ist.
+     *
+     * <p>Zwei und nicht drei: Bei drei standen Stempelkopf und Amboss drei
+     * Blockpixel vor dem Arbeitsraum und ragten heraus wie Regalbretter.
+     */
+    private static final int PRESS_DEPTH = 2;
+
+    /**
+     * Wie tief der Rahmen der Brennkammer ist.
+     *
+     * <p>Drei, weil hier drei Ebenen übereinander liegen: der Rahmen, die
+     * Klappe dahinter und das Sichtfenster darin. Bei zwei bliebe für die
+     * Klappe kein Blockpixel übrig.
+     */
+    private static final int BURNER_DEPTH = 3;
 
     /**
      * Die Presse: Rahmen, versenkter Arbeitsraum, darin Führungssäulen,
      * Stempelkopf und Amboss.
      */
     public static List<int[]> press() {
-        int inner = DEPTH - 1;
-        List<int[]> boxes = new ArrayList<>(frontFrame());
-        boxes.add(new int[] {1, 0, DEPTH, 15, 16, 16});
-        boxes.add(new int[] {FRAME, FRAME, inner, 16 - FRAME, 16 - FRAME, DEPTH});
+        int inner = PRESS_DEPTH - 1;
+        List<int[]> boxes = new ArrayList<>(frontFrame(PRESS_DEPTH));
+        boxes.add(new int[] {1, 0, PRESS_DEPTH, 15, 16, 16});
+        boxes.add(new int[] {FRAME, FRAME, inner, 16 - FRAME, 16 - FRAME, PRESS_DEPTH});
         boxes.add(new int[] {FRAME, FRAME, inner - 1, FRAME + 1, 16 - FRAME, inner});
         boxes.add(new int[] {16 - FRAME - 1, FRAME, inner - 1, 16 - FRAME, 16 - FRAME, inner});
         boxes.add(new int[] {5, 9, 0, 11, 13, inner});
@@ -44,21 +58,21 @@ public final class MachineLayouts {
      * einziger vor der Klappe steht.
      */
     public static List<int[]> burner() {
-        List<int[]> boxes = new ArrayList<>(frontFrame());
-        boxes.add(new int[] {0, 0, DEPTH, 16, 16, 16});
-        boxes.add(new int[] {FRAME, FRAME, 1, 16 - FRAME, 16 - FRAME, DEPTH - 1});
-        boxes.add(new int[] {5, 5, DEPTH - 1, 11, 11, DEPTH});
+        List<int[]> boxes = new ArrayList<>(frontFrame(BURNER_DEPTH));
+        boxes.add(new int[] {0, 0, BURNER_DEPTH, 16, 16, 16});
+        boxes.add(new int[] {FRAME, FRAME, 1, 16 - FRAME, 16 - FRAME, BURNER_DEPTH - 1});
+        boxes.add(new int[] {5, 5, BURNER_DEPTH - 1, 11, 11, BURNER_DEPTH});
         boxes.add(new int[] {FRAME, 7, 0, FRAME + 1, 9, 1});
         return boxes;
     }
 
     /** Der Rahmen ringsum, den sich Presse und Brennkammer teilen. */
-    private static List<int[]> frontFrame() {
+    private static List<int[]> frontFrame(int deep) {
         return List.of(
-                new int[] {0, 0, 0, 16, FRAME, DEPTH},
-                new int[] {0, 16 - FRAME, 0, 16, 16, DEPTH},
-                new int[] {0, FRAME, 0, FRAME, 16 - FRAME, DEPTH},
-                new int[] {16 - FRAME, FRAME, 0, 16, 16 - FRAME, DEPTH});
+                new int[] {0, 0, 0, 16, FRAME, deep},
+                new int[] {0, 16 - FRAME, 0, 16, 16, deep},
+                new int[] {0, FRAME, 0, FRAME, 16 - FRAME, deep},
+                new int[] {16 - FRAME, FRAME, 0, 16, 16 - FRAME, deep});
     }
 
     /** Der Fabricator: Sockel, zurückspringender Körper, Deckel, Aufbau. */
