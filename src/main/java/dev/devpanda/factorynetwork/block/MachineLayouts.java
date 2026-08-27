@@ -17,16 +17,8 @@ import java.util.List;
  */
 public final class MachineLayouts {
 
-    /** Breite des Rahmens an Presse und Brennkammer. */
+    /** Breite des Rahmens der Brennkammer. */
     private static final int FRAME = 3;
-
-    /**
-     * Wie tief der Rahmen der Presse ist.
-     *
-     * <p>Zwei und nicht drei: Bei drei standen Stempelkopf und Amboss drei
-     * Blockpixel vor dem Arbeitsraum und ragten heraus wie Regalbretter.
-     */
-    private static final int PRESS_DEPTH = 2;
 
     /**
      * Wie tief der Rahmen der Brennkammer ist.
@@ -37,20 +29,55 @@ public final class MachineLayouts {
      */
     private static final int BURNER_DEPTH = 3;
 
+    /** Stärke der Wände der Presse. */
+    private static final int WALL = 3;
+
+    /** Stärke ihrer Rückwand. */
+    private static final int BACK = 4;
+
+    /** Höhe des Ambosses. */
+    private static final int ANVIL = 2;
+
+    /** Wie weit Amboss und Stempel hinter der Blockkante liegen. */
+    private static final int TOOL_IN = 1;
+
+    /** Und wie weit sie schmaler sind als der Hohlraum. */
+    private static final int TOOL_SIDE = 1;
+
     /**
-     * Die Presse: Rahmen, versenkter Arbeitsraum, darin Führungssäulen,
-     * Stempelkopf und Amboss.
+     * Die Presse: ein Gehäuse mit einem Loch darin.
+     *
+     * <p>Zwei Seitenwände, Boden, Decke und eine Rückwand — dazwischen ist
+     * nichts. Vorn ist der Block offen, und was man durch die Öffnung sieht,
+     * ist der Amboss unten und der Stempel darüber.
+     *
+     * <p><b>Der Stempel steht nicht in dieser Liste.</b> Er bewegt sich und
+     * ist deshalb ein eigenes Modell, das der {@code PressRenderer}
+     * zeichnet. Für die Trefferfläche zählt er nicht: Man greift nach dem
+     * Gehäuse, nicht nach einem Teil, das gerade woanders steht.
      */
     public static List<int[]> press() {
-        int inner = PRESS_DEPTH - 1;
-        List<int[]> boxes = new ArrayList<>(frontFrame(PRESS_DEPTH));
-        boxes.add(new int[] {1, 0, PRESS_DEPTH, 15, 16, 16});
-        boxes.add(new int[] {FRAME, FRAME, inner, 16 - FRAME, 16 - FRAME, PRESS_DEPTH});
-        boxes.add(new int[] {FRAME, FRAME, inner - 1, FRAME + 1, 16 - FRAME, inner});
-        boxes.add(new int[] {16 - FRAME - 1, FRAME, inner - 1, 16 - FRAME, 16 - FRAME, inner});
-        boxes.add(new int[] {5, 9, 0, 11, 13, inner});
-        boxes.add(new int[] {5, FRAME, 0, 11, 6, inner});
-        return boxes;
+        return List.of(
+                new int[] {0, 0, 0, WALL, 16, 16},
+                new int[] {16 - WALL, 0, 0, 16, 16, 16},
+                new int[] {WALL, 0, 0, 16 - WALL, WALL, 16},
+                new int[] {WALL, 16 - WALL, 0, 16 - WALL, 16, 16},
+                // Die Rückwand schließt den Hohlraum. Ohne sie sähe man durch
+                // den Block hindurch und griffe beim Zielen daneben.
+                new int[] {WALL, WALL, 16 - BACK, 16 - WALL, 16 - WALL, 16},
+                new int[] {WALL + TOOL_SIDE, WALL, TOOL_IN,
+                        16 - WALL - TOOL_SIDE, WALL + ANVIL, 16 - BACK});
+    }
+
+    /**
+     * Wie weit der Stempel fährt, in Blockpixeln.
+     *
+     * <p>Von seiner Ruhelage unter der Decke bis auf den Amboss. Der
+     * Renderer rechnet daraus die Bewegung; steht die Zahl hier, ändert sich
+     * beides gemeinsam.
+     */
+    public static int pressStroke() {
+        return (16 - WALL - ANVIL) - (WALL + ANVIL);
     }
 
     /**
@@ -66,7 +93,7 @@ public final class MachineLayouts {
         return boxes;
     }
 
-    /** Der Rahmen ringsum, den sich Presse und Brennkammer teilen. */
+    /** Der Rahmen ringsum die Klappe der Brennkammer. */
     private static List<int[]> frontFrame(int deep) {
         return List.of(
                 new int[] {0, 0, 0, 16, FRAME, deep},

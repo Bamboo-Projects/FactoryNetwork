@@ -895,63 +895,81 @@ def terminal_model():
 
 # Die Presse in Blockpixeln, Vorderseite nach Norden.
 #
-# Ein Rahmen, dahinter der versenkte Arbeitsraum, und darin steht, was die
-# Textur bisher gemalt hat: zwei Führungssäulen, der Stempelkopf oben, der
-# Amboss unten. Die Zahlen sind aus `tools/textures.py` übernommen und nicht
-# geschätzt — dort steht, wo press_front ihre Teile hinmalt.
+# <b>Ein Gehäuse mit einem Loch darin.</b> Zwei Seitenwände, Boden, Decke und
+# eine Rückwand — dazwischen ist nichts. Vorn ist der Block offen, und was man
+# durch die Öffnung sieht, ist der Amboss unten und der Stempel darüber.
 #
-# <b>Achtung bei der Seite:</b> Auf einer Nordfläche läuft die Textur von
-# rechts nach links, u ist also 16 minus x. Was in der Textur links liegt,
-# steht im Spiel rechts. Bei den Teilen der Presse fällt das nicht auf, weil
-# alle mittig sitzen; beim Griff der Brennkammer schon.
-PRESS_FRAME = 3      # Breite des Rahmens ringsum
-PRESS_DEPTH = 2      # wie tief der Rahmen ist
-PRESS_ROOM = 1       # wie weit der Arbeitsraum dahinter zurückliegt
-
-# <b>Drei waren zu tief.</b> Stempelkopf und Amboss standen damit drei
-# Blockpixel vor dem Arbeitsraum und ragten heraus wie Regalbretter. Bei zwei
-# liegen sie bündig mit dem Rahmen, und der Arbeitsraum einen dahinter — so
-# weit, wie die Textur ihn ohnehin schon versenkt malt.
+# <b>Der Stempel steht nicht in diesem Modell.</b> Er bewegt sich: Solange die
+# Presse arbeitet, fährt er herunter und wieder hoch. Ein Blockmodell kann das
+# nicht, ein Blockzustand für jede Zwischenstellung wären dreißig Zustände für
+# eine Bewegung. Er ist deshalb ein eigenes Modell, das der PressRenderer
+# zeichnet — dasselbe Verfahren wie bei den Anschlüssen am Kabel.
+#
+# Die Zahlen der Front stammen aus `tools/textures.py`: Dort liegt der
+# Arbeitsraum zwischen Texturpixel 10 und 54, also zwischen Blockpixel 2,5 und
+# 13,5. Drei Blockpixel Wand fangen das.
+PRESS_WALL = 3        # Stärke der Wände ringsum
+PRESS_BACK = 4        # Stärke der Rückwand
+PRESS_ANVIL = 2       # Höhe des Ambosses
+PRESS_TOOL_IN = 1     # wie weit Amboss und Stempel hinter der Blockkante liegen
+PRESS_TOOL_SIDE = 1   # und wie weit sie schmaler sind als der Hohlraum
 
 
 def press_boxes():
-    """Die Kästen der Presse."""
-    frame, deep, room = PRESS_FRAME, PRESS_DEPTH, PRESS_ROOM
-    inner = deep - room  # so weit steht alles im Arbeitsraum vor
-    front = {"north": "front", "*": "side"}
+    """Die Kästen der Presse — das Gehäuse, ohne den beweglichen Stempel."""
+    wall, back = PRESS_WALL, PRESS_BACK
+    anvil, inset = PRESS_ANVIL, PRESS_TOOL_IN
+    outer = {"north": "front", "*": "side"}
     return [
-        # Das Gehäuse hinter der Front.
-        ([1, 0, deep], [15, 16, 16], {"*": "side"}),
+        # Die beiden Seitenwände, über die volle Tiefe.
+        ([0, 0, 0], [wall, 16, 16], outer),
+        ([16 - wall, 0, 0], [16, 16, 16], outer),
+        # Boden und Decke dazwischen.
+        ([wall, 0, 0], [16 - wall, wall, 16], outer),
+        ([wall, 16 - wall, 0], [16 - wall, 16, 16], outer),
+        # Die Rückwand schließt den Hohlraum. Ohne sie sähe man durch den
+        # Block hindurch — und griffe beim Zielen daneben.
+        ([wall, wall, 16 - back], [16 - wall, 16 - wall, 16], {"*": "side"}),
+        # Der Amboss: fest, auf dem Boden, einen Blockpixel hinter der Kante.
+        ([wall + PRESS_TOOL_SIDE, wall, inset],
+         [16 - wall - PRESS_TOOL_SIDE, wall + anvil, 16 - back],
+         {"north": "front", "*": "side"}),
+    ]
 
-        # Der Rahmen ringsum.
-        ([0, 0, 0], [16, frame, deep], front),
-        ([0, 16 - frame, 0], [16, 16, deep], front),
-        ([0, frame, 0], [frame, 16 - frame, deep], front),
-        ([16 - frame, frame, 0], [16, 16 - frame, deep], front),
 
-        # Der Arbeitsraum, hinter dem Rahmen.
-        ([frame, frame, inner], [16 - frame, 16 - frame, deep], front),
+def press_ram_boxes():
+    """Der Stempel — das eine Teil, das sich bewegt.
 
-        # Die beiden Führungssäulen, an den Rändern des Arbeitsraums.
-        ([frame, frame, inner - 1], [frame + 1, 16 - frame, inner], front),
-        ([16 - frame - 1, frame, inner - 1], [16 - frame, 16 - frame, inner], front),
-
-        # Stempelkopf oben, Amboss unten — beide bündig mit dem Rahmen.
-        ([5, 9, 0], [11, 13, inner], front),
-        ([5, frame, 0], [11, 6, inner], front),
+    Er hängt in Ruhe unter der Decke. Der Renderer schiebt ihn nach unten,
+    solange die Presse arbeitet, und bis auf den Amboss, wenn sie fertig ist.
+    """
+    wall, inset = PRESS_WALL, PRESS_TOOL_IN
+    return [
+        ([wall + PRESS_TOOL_SIDE, 16 - wall - PRESS_ANVIL, inset],
+         [16 - wall - PRESS_TOOL_SIDE, 16 - wall, 16 - PRESS_BACK],
+         {"north": "front", "*": "side"}),
     ]
 
 
 def press_model():
-    """Die Presse als Gerät statt als Würfel."""
+    """Die Presse als Gehäuse mit Hohlraum, und der Stempel dazu."""
+    textures = {
+        "particle": texture("machine_top"),
+        "front": texture("press_front"),
+        "side": texture("machine_top"),
+    }
     write(A + "/models/block/press.json", {
         "parent": "minecraft:block/block",
-        "textures": {
-            "particle": texture("machine_top"),
-            "front": texture("press_front"),
-            "side": texture("machine_top"),
-        },
+        "textures": textures,
         "elements": machine_elements(press_boxes()),
+    })
+    # Der Stempel steht allein, ohne Blockzustand: Er gehört keinem Zustand,
+    # sondern dem Fortschritt in der BlockEntity. Deshalb meldet ihn
+    # FnClient eigens an.
+    write(A + "/models/block/press_ram.json", {
+        "parent": "minecraft:block/block",
+        "textures": textures,
+        "elements": machine_elements(press_ram_boxes()),
     })
 
 

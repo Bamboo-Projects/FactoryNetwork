@@ -72,6 +72,9 @@ public final class FnClient {
         event.registerBlockEntityRenderer(
                 dev.devpanda.factorynetwork.registry.FnBlockEntities.CABLE_BUS.get(),
                 dev.devpanda.factorynetwork.client.render.CableBusRenderer::new);
+        event.registerBlockEntityRenderer(
+                dev.devpanda.factorynetwork.registry.FnBlockEntities.PRESS.get(),
+                dev.devpanda.factorynetwork.client.render.PressRenderer::new);
     }
 
     /**
@@ -86,6 +89,9 @@ public final class FnClient {
     public static void registerPartModels(
             net.neoforged.neoforge.client.event.ModelEvent.RegisterAdditional event) {
         dev.devpanda.factorynetwork.client.render.ConnectorPartModels.all(event::register);
+        // Der Stempel der Presse gehört ebenfalls keinem Blockzustand: Wo er
+        // gerade steht, hängt am Fortschritt in der BlockEntity.
+        event.register(dev.devpanda.factorynetwork.client.render.PressRenderer.RAM);
     }
 
     @SubscribeEvent

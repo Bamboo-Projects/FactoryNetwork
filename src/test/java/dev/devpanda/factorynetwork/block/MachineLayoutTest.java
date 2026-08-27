@@ -107,6 +107,31 @@ class MachineLayoutTest {
     }
 
     @Test
+    @DisplayName("Der Stempel der Presse fährt genau bis auf den Amboss")
+    void theRamMeetsTheAnvil() throws IOException {
+        // Der Stempel steht in einem eigenen Modell, weil er sich bewegt.
+        // Wie weit er fährt, rechnet MachineLayouts, und der PressRenderer
+        // nimmt die Zahl von dort. Läuft eines der beiden davon weg, schlägt
+        // er entweder in die Luft oder durch den Amboss hindurch.
+        String json = model("press_ram");
+        assertTrue(json.contains("\"elements\":["), "press_ram.json hat keine Kästen");
+
+        int rest = 16 - 3 - 2;          // Ruhelage: unter der Decke
+        int anvil = 3 + 2;              // Oberkante des Ambosses
+        assertEquals(rest - anvil, MachineLayouts.pressStroke(),
+                "der Weg des Stempels passt nicht zu Decke und Amboss");
+        assertTrue(json.contains("\"from\":[4," + rest + ",1]"),
+                "der Stempel hängt nicht unter der Decke");
+
+        String body = model("press");
+        assertTrue(body.contains("\"to\":[12," + anvil + ",12]"),
+                "der Amboss steht nicht dort, wo der Stempel ihn trifft");
+        assertFalse(body.contains("\"from\":[4," + rest + ",1]"),
+                "der Stempel steht auch im Gehäusemodell — dann steht er still"
+                        + " und bewegt sich gleichzeitig");
+    }
+
+    @Test
     @DisplayName("Jeder umgebaute Block hat mehr als einen Kasten")
     void everyMachineHasShape() {
         // Ein Layout mit einem einzigen Kasten wäre ein Würfel mit Umweg.
