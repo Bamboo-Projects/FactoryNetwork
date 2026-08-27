@@ -7,6 +7,7 @@ import dev.devpanda.factorynetwork.client.ClientStorageView;
 import dev.devpanda.factorynetwork.client.menu.TerminalMenu;
 import dev.devpanda.factorynetwork.network.packet.DeployProgramPacket;
 import dev.devpanda.factorynetwork.network.packet.StorageTabPacket;
+import dev.devpanda.factorynetwork.terminal.TerminalTab;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;

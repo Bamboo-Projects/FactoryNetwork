@@ -1,9 +1,14 @@
-package dev.devpanda.factorynetwork.client.screen;
+package dev.devpanda.factorynetwork.terminal;
 
 import net.minecraft.network.chat.Component;
 
 /**
  * Die Reiter des Terminals.
+
+ * <p><b>Warum nicht bei den Bildschirmen?</b> Weil ab dem Fernzugriff der
+ * Server entscheidet, welche Reiter ein Gerät zeigen darf — das Wireless
+ * Terminal hat keinen Code. Servercode, der aus {@code client.*} importiert,
+ * läuft hier durch und fällt erst auf einem echten Server auf.
  *
  * <p>Alle sechs tun inzwischen etwas. Die Fertigung stand lange ausgegraut in
  * der Leiste — sichtbar, damit man sah, wohin es geht, statt sie zu
