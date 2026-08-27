@@ -87,21 +87,26 @@ class GatewayLayoutTest {
                 "die Schultern ragen nicht über die Ecksäulen hinaus");
         assertTrue(2 * GatewayLayout.REACH < 16,
                 "die Schultern zweier Seiten treffen sich in der Mitte");
-        assertTrue(GatewayLayout.FOOT + GatewayLayout.GLOW_HIGH
-                        < GatewayLayout.HEAD - GatewayLayout.GLOW_HIGH,
-                "die beiden Leuchtstreifen liegen aufeinander");
+        assertTrue(GatewayLayout.FOOT < GatewayLayout.HEAD,
+                "Sockel und Sturz stoßen aneinander");
+        assertTrue(GatewayLayout.GLOW < GatewayLayout.FOOT,
+                "das Leuchtband ist dicker als der Sockel, der es trägt");
     }
 
     @Test
-    @DisplayName("Die Leuchtstreifen reichen weiter nach außen als die Ecksäulen")
-    void theGlowReachesPastThePosts() {
-        // Genau daran ist der erste Entwurf gescheitert: Eine Säule in der
-        // Mitte war so breit wie die Ecksäule davor und deshalb aus der
-        // Richtung, aus der man einen Block zuerst sieht, nie zu sehen.
+    @DisplayName("Die Leuchtbänder liegen außen und nicht im Durchgang")
+    void theGlowSitsOnTheHull() {
+        // Daran sind zwei Entwürfe gescheitert: eine Säule in der Mitte, so
+        // breit wie die Ecksäule davor, und ein Streifen auf dem Sockel, der
+        // gerade einen Blockpixel darüber hinausragte. Beide waren aus der
+        // Richtung, aus der man einen Block zuerst sieht, nicht zu sehen.
+        // Was außen liegt, sieht man immer — und außen heißt: von 0 bis 16.
         List<int[]> boxes = GatewayLayout.boxes();
         assertFalse(boxes.isEmpty());
-        int span = (16 - GatewayLayout.GLOW) - GatewayLayout.GLOW;
-        assertTrue(span > GatewayLayout.POST,
-                "der Leuchtstreifen verschwindet hinter der Ecksäule");
+        int[] lower = boxes.get(1);
+        assertEquals(0, lower[0], "das untere Leuchtband fängt nicht an der Blockkante an");
+        assertEquals(0, lower[2], "das untere Leuchtband fängt nicht an der Blockkante an");
+        assertEquals(16, lower[3], "das untere Leuchtband reicht nicht bis zur Blockkante");
+        assertEquals(16, lower[5], "das untere Leuchtband reicht nicht bis zur Blockkante");
     }
 }

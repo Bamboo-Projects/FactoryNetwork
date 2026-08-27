@@ -522,14 +522,22 @@ EDGE_UP, EDGE_DOWN, EDGE_LEFT, EDGE_RIGHT = 1, 2, 4, 8
 # Kein Würfel mehr, sondern ein Rahmen, durch den man wirklich hindurchsieht:
 # Sockel und Sturz über die volle Fläche, dazwischen vier Ecksäulen und über
 # jeder Öffnung zwei Schultern, die den Durchgang nach oben verengen. Zwei
-# Leuchtstreifen fassen ihn oben und unten — daran erkennt man den Block von
-# weitem, und sie nehmen dem Durchgang nichts weg.
+# Zwei Leuchtbänder laufen außen um ihn herum, oben am Sockel und unten am
+# Sturz — daran erkennt man den Block von weitem. Dieselbe Sprache spricht der
+# Controller mit seinem Band schon.
 #
-# <b>Eine Säule in der Mitte war der erste Versuch.</b> Sie war vier
-# Blockpixel stark und stand damit genau hinter der Ecksäule, die vier
-# Blockpixel breit davor steht — aus der Richtung, aus der man einen Block
-# zuerst sieht, war sie nie zu sehen. Breiter ginge nur auf Kosten des
-# Durchgangs, und der ist der Sinn des Blocks.
+# <b>Der erste Wurf war zu hohl.</b> Sockel und Sturz drei Blockpixel, die
+# Ecksäulen vier: Von vorn sah man mehr Luft als Block, und der Rahmen wirkte
+# wie ein Gerüst statt wie ein Tor. Jetzt sind es vier und fünf — aus 61
+# Hundertsteln Material werden 76, und der Durchgang bleibt sechs Blockpixel
+# breit und acht hoch.
+#
+# <b>Zweimal lag das Licht vorher innen und war nicht zu sehen.</b> Erst als
+# Säule mitten im Tor — die stand genau hinter der Ecksäule, die davor steht.
+# Dann als Streifen auf dem Sockel: Der ragte über die Ecksäule hinaus, aber
+# nur um einen Blockpixel, und das ist aus keiner Richtung ein Bild. Was in
+# einem Durchgang liegt, sieht man nur, wenn man hindurchschaut. Außen sieht
+# man es immer.
 #
 # <b>Offen in beide waagerechten Achsen</b>, nicht in eine: Der Block hat
 # keine Vorderseite, und ein Bogen, der nur in eine Richtung zeigt, bräuchte
@@ -537,13 +545,12 @@ EDGE_UP, EDGE_DOWN, EDGE_LEFT, EDGE_RIGHT = 1, 2, 4, 8
 #
 # Dieselben Zahlen stehen in GatewayLayout.java; GatewayLayoutTest hält beide
 # zusammen.
-GATEWAY_FOOT = 3       # bis hierhin reicht der Sockel
-GATEWAY_HEAD = 13      # ab hier der Sturz
-GATEWAY_POST = 4       # Kantenlänge einer Ecksäule
-GATEWAY_SHOULDER = 10  # ab dieser Höhe verengen die Schultern die Öffnung
+GATEWAY_FOOT = 4       # bis hierhin reicht der Sockel
+GATEWAY_HEAD = 12      # ab hier der Sturz
+GATEWAY_POST = 5       # Kantenlänge einer Ecksäule
+GATEWAY_SHOULDER = 9  # ab dieser Höhe verengen die Schultern die Öffnung
 GATEWAY_REACH = 6      # bis hierhin reicht eine Schulter in die Öffnung
-GATEWAY_GLOW = 4       # wo die Leuchtstreifen anfangen; sie enden spiegelbildlich
-GATEWAY_GLOW_HIGH = 1  # und sind einen Blockpixel stark
+GATEWAY_GLOW = 1       # so stark sind die beiden Leuchtbänder
 
 
 def box_uv(start, end, face):
@@ -600,23 +607,25 @@ def gateway_boxes():
     """
     foot, head = GATEWAY_FOOT, GATEWAY_HEAD
     post, shoulder, reach = GATEWAY_POST, GATEWAY_SHOULDER, GATEWAY_REACH
-    glow, high = GATEWAY_GLOW, GATEWAY_GLOW_HIGH
+    glow = GATEWAY_GLOW
     boxes = [
         # Sockel und Sturz: die volle Grundfläche. Nach oben und unten bleibt
-        # der Block geschlossen — ein Tor, kein Schacht.
-        ([0, 0, 0], [16, foot, 16],
+        # der Block geschlossen — ein Tor, kein Schacht. Ihre Deckflächen zum
+        # Durchgang hin liegen unter den Leuchtbändern und fehlen deshalb.
+        ([0, 0, 0], [16, foot - glow, 16],
          {"down": "outer", "north": "outer", "south": "outer",
-          "east": "outer", "west": "outer", "up": "inner"}),
-        ([0, head, 0], [16, 16, 16],
+          "east": "outer", "west": "outer"}),
+        ([0, head + glow, 0], [16, 16, 16],
          {"up": "outer", "north": "outer", "south": "outer",
-          "east": "outer", "west": "outer", "down": "inner"}),
-        # Die beiden Leuchtstreifen, die das Tor fassen: einer liegt auf dem
-        # Sockel, einer unter dem Sturz. Zu sehen sind ihre vier Schmalseiten
-        # — die Deckflächen liegen an Sockel und Sturz an.
-        ([glow, foot, glow], [16 - glow, foot + high, 16 - glow],
-         {"north": "glow", "south": "glow", "east": "glow", "west": "glow"}),
-        ([glow, head - high, glow], [16 - glow, head, 16 - glow],
-         {"north": "glow", "south": "glow", "east": "glow", "west": "glow"}),
+          "east": "outer", "west": "outer"}),
+        # Die beiden Leuchtbänder. Sie liegen in der Blockhülle und laufen
+        # außen um den ganzen Block: oben auf dem Sockel, unten am Sturz.
+        ([0, foot - glow, 0], [16, foot, 16],
+         {"north": "glow", "south": "glow", "east": "glow", "west": "glow",
+          "up": "inner"}),
+        ([0, head, 0], [16, head + glow, 16],
+         {"north": "glow", "south": "glow", "east": "glow", "west": "glow",
+          "down": "inner"}),
     ]
 
     # Die vier Ecksäulen. Zwei ihrer Seiten liegen in der Blockhülle und

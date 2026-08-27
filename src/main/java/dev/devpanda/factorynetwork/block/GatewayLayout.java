@@ -18,42 +18,40 @@ import java.util.List;
 public final class GatewayLayout {
 
     /** Bis hierhin reicht der Sockel. */
-    public static final int FOOT = 3;
+    public static final int FOOT = 4;
 
     /** Ab hier der Sturz. */
-    public static final int HEAD = 13;
+    public static final int HEAD = 12;
 
     /** Kantenlänge einer Ecksäule. */
-    public static final int POST = 4;
+    public static final int POST = 5;
 
     /** Ab dieser Höhe verengen die Schultern den Durchgang. */
-    public static final int SHOULDER = 10;
+    public static final int SHOULDER = 9;
 
     /** Bis hierhin reicht eine Schulter in den Durchgang. */
     public static final int REACH = 6;
 
-    /** Wo die Leuchtstreifen anfangen; sie enden spiegelbildlich. */
-    public static final int GLOW = 4;
-
-    /** Wie stark ein Leuchtstreifen ist. */
-    public static final int GLOW_HIGH = 1;
+    /** Wie stark die beiden Leuchtbänder sind. */
+    public static final int GLOW = 1;
 
     /**
      * Alle Kästen des Modells, jeder als {@code x0 y0 z0 x1 y1 z1}.
      *
-     * <p>Auch die beiden Leuchtstreifen stehen darin. Sie ragen einen
-     * Blockpixel in den Durchgang, und was man sieht, soll man auch treffen.
+     * <p>Die beiden Leuchtbänder liegen in der Blockhülle und teilen sich die
+     * Kanten mit Sockel und Sturz — für die Trefferfläche sind sie deshalb
+     * keine eigenen Kästen, sondern gehören zu ihnen.
      */
     public static List<int[]> boxes() {
         List<int[]> boxes = new ArrayList<>();
 
-        // Sockel und Sturz über die volle Grundfläche.
-        boxes.add(new int[] {0, 0, 0, 16, FOOT, 16});
-        boxes.add(new int[] {0, HEAD, 0, 16, 16, 16});
-
-        // Die beiden Streifen, die das Tor fassen.
-        boxes.add(new int[] {GLOW, FOOT, GLOW, 16 - GLOW, FOOT + GLOW_HIGH, 16 - GLOW});
-        boxes.add(new int[] {GLOW, HEAD - GLOW_HIGH, GLOW, 16 - GLOW, HEAD, 16 - GLOW});
+        // Sockel und Sturz über die volle Grundfläche, jeweils in zwei
+        // Kästen: der Block selbst und das Leuchtband darauf. Im Modell sind
+        // es zwei, weil sie verschiedene Texturen tragen.
+        boxes.add(new int[] {0, 0, 0, 16, FOOT - GLOW, 16});
+        boxes.add(new int[] {0, FOOT - GLOW, 0, 16, FOOT, 16});
+        boxes.add(new int[] {0, HEAD, 0, 16, HEAD + GLOW, 16});
+        boxes.add(new int[] {0, HEAD + GLOW, 0, 16, 16, 16});
 
         // Die vier Ecksäulen.
         for (int x : new int[] {0, 16 - POST}) {
