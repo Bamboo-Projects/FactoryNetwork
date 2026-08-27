@@ -74,6 +74,34 @@ public final class Power {
      * bestimmte die Länge der Leitung den Verbrauch und nicht das, was daran
      * hängt.
      */
+    /** Was ein Mast ohne Karten zieht. */
+    public static final int MAST_BASE = 4;
+
+    /** Und was jede Reichweitenkarte darin dazu kostet. */
+    public static final int MAST_PER_CARD = 6;
+
+    /**
+     * Was die Grenzenlos-Karte kostet.
+     *
+     * <p>Mehr als vier gewöhnliche zusammen: Sonst nimmt sie jeder, sobald
+     * er sie hat, und die Reichweite ist keine Entscheidung mehr.
+     */
+    public static final int MAST_UNLIMITED = 40;
+
+    /**
+     * Was dieser Mast zieht, je Tick.
+     *
+     * <p>Module kosten nichts. Sie heben keinen Wert, also treiben sie auch
+     * keinen Verbrauch — was hier Strom kostet, ist Reichweite.
+     */
+    public static int mast(dev.devpanda.factorynetwork.upgrade.Loadout loadout) {
+        if (loadout.unlimited(dev.devpanda.factorynetwork.upgrade.Stat.RANGE)) {
+            return MAST_BASE + MAST_UNLIMITED;
+        }
+        return MAST_BASE + loadout.count(
+                dev.devpanda.factorynetwork.upgrade.Card.RANGE) * MAST_PER_CARD;
+    }
+
     public static final int CABLE = 0;
 
     /**

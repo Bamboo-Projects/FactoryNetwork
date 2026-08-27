@@ -40,6 +40,9 @@ public final class Channels {
     /** Ein Router. Er leitet weiter, wie ein Kabel — und Kabel kosten nichts. */
     public static final int ROUTER = 0;
 
+    /** Ein Mast kostet einen Kanal — er ist ein Gerät wie jedes andere. */
+    public static final int MAST = 1;
+
     private Channels() {
     }
 }

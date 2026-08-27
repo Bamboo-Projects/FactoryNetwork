@@ -111,6 +111,7 @@ public final class FactoryGraph {
      * von Punkten.
      */
     private final List<Edge> edges;
+    private final List<BlockPos> masts;
     private final boolean truncated;
 
     /** Eine Verbindung zwischen zwei Knoten des Netzes. */
@@ -122,7 +123,8 @@ public final class FactoryGraph {
                          Set<BlockPos> routers, Map<Node, Integer> channelLoad, List<Edge> edges,
                          List<BlockPos> drives, List<BlockPos> racks, List<BlockPos> extensions,
                          List<BlockPos> fabricators, Set<BlockPos> contested,
-                         boolean truncated) {
+                         List<BlockPos> masts, boolean truncated) {
+        this.masts = masts;
         this.contested = contested;
         this.fabricators = fabricators;
         this.extensions = extensions;
@@ -142,12 +144,22 @@ public final class FactoryGraph {
     public static FactoryGraph empty() {
         return new FactoryGraph(Map.of(), List.of(), List.of(), List.of(),
                 Set.of(), Set.of(), Map.of(), List.of(), List.of(), List.of(),
-                List.of(), List.of(), Set.of(), false);
+                List.of(), List.of(), Set.of(), List.of(), false);
     }
 
     /** Die Fabricators am Netz. */
     public List<BlockPos> fabricators() {
         return fabricators;
+    }
+
+    /**
+     * Die Sendemasten am Netz.
+     *
+     * <p>Der Controller braucht sie für die Stromrechnung: Was ein Mast
+     * zieht, hängt daran, was in ihm steckt.
+     */
+    public List<BlockPos> masts() {
+        return masts;
     }
 
     /** Die Anbauten am Controller. */
@@ -223,6 +235,7 @@ public final class FactoryGraph {
         List<BlockPos> displays = new ArrayList<>();
         Set<BlockPos> cables = new HashSet<>();
         Set<BlockPos> routers = new HashSet<>();
+        List<BlockPos> masts = new ArrayList<>();
         Set<BlockPos> gateways = new LinkedHashSet<>();
         List<BlockPos> drives = new ArrayList<>();
         List<BlockPos> racks = new ArrayList<>();
@@ -331,7 +344,7 @@ public final class FactoryGraph {
         GatewayRegions regions = gateways.isEmpty()
                 ? GatewayRegions.EMPTY : GatewayRegions.of(level, gateways, maxNodes());
         assignChannels(level, reachable, kinds, parents, load, connectors, unnamed,
-                starved, displays, drives, racks, fabricators, regions);
+                starved, displays, drives, racks, fabricators, masts, regions);
 
         Map<String, List<DevicePos>> frozen = new LinkedHashMap<>();
         connectors.forEach((label, positions) -> frozen.put(label, List.copyOf(positions)));
@@ -345,7 +358,8 @@ public final class FactoryGraph {
                 List.copyOf(starved), List.copyOf(displays), Set.copyOf(cables),
                 Set.copyOf(routers), Map.copyOf(load), List.copyOf(edges),
                 List.copyOf(drives), List.copyOf(racks), List.copyOf(extensions),
-                List.copyOf(fabricators), Set.copyOf(regions.contested()), truncated);
+                List.copyOf(fabricators), Set.copyOf(regions.contested()),
+                List.copyOf(masts), truncated);
     }
 
     /**
@@ -395,7 +409,8 @@ public final class FactoryGraph {
         DRIVE(Channels.DRIVE),
         RACK(Channels.RACK),
         FABRICATOR(Channels.FABRICATOR),
-        DISPLAY(Channels.DISPLAY);
+        DISPLAY(Channels.DISPLAY),
+        MAST(Channels.MAST);
 
         private final int cost;
 
@@ -447,6 +462,9 @@ public final class FactoryGraph {
         }
         if (state.getBlock() instanceof FabricatorBlock) {
             return Consumer.FABRICATOR;
+        }
+        if (state.getBlock() instanceof dev.devpanda.factorynetwork.block.MastBlock) {
+            return Consumer.MAST;
         }
         if (state.getBlock() instanceof DisplayBlock) {
             return Consumer.DISPLAY;
@@ -546,7 +564,7 @@ public final class FactoryGraph {
                                        List<DevicePos> unnamed, List<DevicePos> starved,
                                        List<BlockPos> displays, List<BlockPos> drives,
                                        List<BlockPos> racks, List<BlockPos> fabricators,
-                                       GatewayRegions regions) {
+                                       List<BlockPos> masts, GatewayRegions regions) {
         for (Map.Entry<DevicePos, List<Node>> entry : reachable.entrySet()) {
             DevicePos device = entry.getKey();
             BlockPos pos = device.pos();
@@ -594,6 +612,7 @@ public final class FactoryGraph {
                 case RACK -> racks.add(pos);
                 case FABRICATOR -> fabricators.add(pos);
                 case DISPLAY -> displays.add(pos);
+                case MAST -> masts.add(pos);
                 case CONNECTOR -> {
                     // Die Anlage steht am Ort und nicht an der Fläche: Ein
                     // Gateway benennt, was um es herum hängt, und ein

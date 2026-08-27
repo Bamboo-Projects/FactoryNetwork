@@ -416,6 +416,14 @@ public class ControllerBlockEntity extends BlockEntity {
         total += graph.extensions().size() * dev.devpanda.factorynetwork.network.Power.EXTENSION;
         total += graph.fabricators().size()
                 * dev.devpanda.factorynetwork.network.Power.FABRICATOR;
+        // Ein Mast kostet nach Ausbau: Was er zieht, hängt an seinen Karten.
+        // Deshalb steht hier eine Schleife und keine Multiplikation.
+        for (net.minecraft.core.BlockPos pos : graph.masts()) {
+            if (level != null && level.getBlockEntity(pos)
+                    instanceof MastBlockEntity mast) {
+                total += dev.devpanda.factorynetwork.network.Power.mast(mast.loadout());
+            }
+        }
         for (DriveBlockEntity drive : drives) {
             total += dev.devpanda.factorynetwork.network.Power.DRIVE
                     + drive.usedSlots() * dev.devpanda.factorynetwork.network.Power.PER_CELL;
