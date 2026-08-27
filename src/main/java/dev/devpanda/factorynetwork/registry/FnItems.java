@@ -120,6 +120,17 @@ public final class FnItems {
                     new Item.Properties(),
                     dev.devpanda.factorynetwork.upgrade.Card.INFINITY));
 
+    /**
+     * Nimmt einen Anschluss ab, ohne das Kabel anzufassen.
+     *
+     * <p>Er steht im Tag {@code c:tools/wrench} und ist damit nicht der
+     * einzige, der das kann — wer einen Schlüssel von Mekanism oder Thermal
+     * dabeihat, braucht diesen hier nicht. Er ist für alle, die ohne
+     * Fremdmod spielen.
+     */
+    public static final DeferredItem<Item> WRENCH = ITEMS.register("wrench",
+            () -> new Item(new Item.Properties().stacksTo(1)));
+
     /** Vergibt einem Connector seinen Namen. */
     public static final DeferredItem<Item> LABEL_GUN = ITEMS.register("label_gun",
             () -> new LabelGunItem(new Item.Properties().stacksTo(1)));

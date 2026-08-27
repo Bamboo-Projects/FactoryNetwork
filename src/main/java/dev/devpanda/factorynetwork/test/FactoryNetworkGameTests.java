@@ -6256,6 +6256,86 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
+     * Der Schraubenschlüssel nimmt einen Anschluss ab und lässt das Kabel
+     * stehen.
+     *
+     * <p>Das ist das ganze Versprechen dieses Werkzeugs. Ohne es müsste man
+     * den Kabelblock abbauen — und damit den Strang, der durch ihn läuft,
+     * und die anderen fünf Anschlüsse gleich mit.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void aWrenchTakesOnlyThePart(GameTestHelper helper) {
+        BlockPos pos = new BlockPos(1, 2, 1);
+        placeCable(helper, pos, dev.devpanda.factorynetwork.block.CableColour.NONE);
+        if (!(helper.getBlockEntity(pos)
+                instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus)) {
+            helper.fail("kein Kabelbus");
+            return;
+        }
+        bus.addPart(Direction.NORTH);
+        bus.addPart(Direction.SOUTH);
+        helper.assertTrue(bus.partAt(Direction.NORTH) != null, "der Anschluss sitzt nicht");
+
+        // Derselbe Weg, den der Ereignisbehandler nimmt — mit einem Treffer
+        // auf der Nordfläche.
+        BlockPos world = helper.absolutePos(pos);
+        var hit = new net.minecraft.world.phys.BlockHitResult(
+                net.minecraft.world.phys.Vec3.atCenterOf(world)
+                        .add(0, 0, -0.5), Direction.NORTH, world, false);
+        helper.assertTrue(
+                dev.devpanda.factorynetwork.item.Wrenches.takePart(
+                        helper.getLevel(), world, hit),
+                "der Schraubenschlüssel hat nichts abgenommen");
+
+        helper.assertTrue(bus.partAt(Direction.NORTH) == null,
+                "der Anschluss ist noch da");
+        helper.assertTrue(bus.partAt(Direction.SOUTH) != null,
+                "der zweite Anschluss ist mit abgegangen");
+        helper.assertBlockPresent(FnBlocks.CABLE.get(), pos);
+
+        // Und er kommt zurück: Der Schlüssel zerlegt, er zerstört nicht.
+        helper.succeedWhen(() -> helper.assertItemEntityPresent(
+                dev.devpanda.factorynetwork.registry.FnItems.CONNECTOR.get(),
+                pos, 2.0));
+    }
+
+    /**
+     * Und jeder fremde Schlüssel tut es auch.
+     *
+     * <p>Die Regel steht in einem Tag der Konvention und nicht in einer
+     * Klasse. Bräche das weg, funktionierte nur noch unser eigener — und
+     * niemand würde es merken, bis jemand mit einem Werkzeug von Mekanism
+     * davorsteht.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 100)
+    public static void ourWrenchIsInTheConventionTag(GameTestHelper helper) {
+        ItemStack ours = new ItemStack(
+                dev.devpanda.factorynetwork.registry.FnItems.WRENCH.get());
+        helper.assertTrue(
+                dev.devpanda.factorynetwork.item.Wrenches.is(ours),
+                "unser Schraubenschlüssel steht nicht in c:tools/wrench");
+        helper.assertTrue(
+                !dev.devpanda.factorynetwork.item.Wrenches.is(
+                        new ItemStack(net.minecraft.world.item.Items.STICK)),
+                "ein Stock gilt als Schraubenschlüssel");
+
+        // Und ohne Schleichen zerlegt er nicht. Ohne diese Probe könnte die
+        // Bedingung wegfallen, und ein Rechtsklick auf einen Anschluss
+        // nähme ihn ab, statt sein Fenster zu öffnen.
+        var player = helper.makeMockPlayer(
+                net.minecraft.world.level.GameType.SURVIVAL);
+        player.setShiftKeyDown(false);
+        helper.assertTrue(
+                !dev.devpanda.factorynetwork.item.Wrenches.disassembling(player, ours),
+                "der Schlüssel zerlegt auch ohne Schleichen");
+        player.setShiftKeyDown(true);
+        helper.assertTrue(
+                dev.devpanda.factorynetwork.item.Wrenches.disassembling(player, ours),
+                "der Schlüssel zerlegt nicht, obwohl geschlichen wird");
+        helper.succeed();
+    }
+
+    /**
      * Ein bestückter Mast gibt seine Karten zurück.
      *
      * <p>Die Loot-Tabelle sieht sie nicht — sie kennt nur den Block. Ohne

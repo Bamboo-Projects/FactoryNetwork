@@ -1857,6 +1857,49 @@ def mast_side():
 
 
 
+def wrench():
+    """Ein Schraubenschlüssel: Maul, Schaft, Griff.
+
+    <b>Er sieht aus wie Werkzeug und nicht wie Bauteil.</b> Die Gegenstände
+    dieser Mod sind sonst Platinen und Gehäuse — flach, rechteckig, mit
+    Kontaktleisten. Ein Werkzeug muss man in der Hotbar davon unterscheiden
+    können, ohne den Namen zu lesen.
+    """
+    img = Image.new("RGBA", (N, N), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+
+    # Der Schaft, schräg von unten links nach oben rechts.
+    schaft = Image.new("L", (N, N), 0)
+    ImageDraw.Draw(schaft).polygon(
+        [(18, 46), (24, 52), (46, 24), (40, 18)], fill=255)
+    img.alpha_composite(masked_surface(schaft, blend(BODY_TOP, LIGHT, 0.3),
+                                       blend(BODY_MID, EDGE, 0.35), seed=801))
+
+    # Das Maul oben: ein offenes Sechseck, aus dem ein Keil fehlt.
+    maul = Image.new("L", (N, N), 0)
+    md = ImageDraw.Draw(maul)
+    md.ellipse([36, 12, 54, 30], fill=255)
+    md.ellipse([41, 17, 49, 25], fill=0)
+    md.polygon([(45, 10), (56, 16), (56, 10)], fill=0)
+    img.alpha_composite(masked_surface(maul, blend(BODY_TOP, LIGHT, 0.35),
+                                       blend(BODY_MID, EDGE, 0.3), seed=802))
+
+    # Der Griff unten, umwickelt: zwei Töne im Wechsel, damit man sieht,
+    # wo man ihn anfasst.
+    griff = Image.new("L", (N, N), 0)
+    ImageDraw.Draw(griff).polygon(
+        [(10, 54), (16, 60), (28, 48), (22, 42)], fill=255)
+    img.alpha_composite(masked_surface(griff, blend(BRASS, LIGHT, 0.2),
+                                       blend(BRASS, EDGE, 0.4), seed=803))
+    for i in range(4):
+        d.line([(13 + i * 4, 57 - i * 4), (19 + i * 4, 51 - i * 4)],
+               fill=blend(BRASS, EDGE, 0.55) + (255,))
+
+    scratches(img, seed=804)
+    return img
+
+
+
 def main():
     print("Blocktexturen (64x64):")
     save(controller_top(), "block", "controller_top")
@@ -1892,6 +1935,7 @@ def main():
     print("Gegenstandstexturen:")
     save(label_gun(), "item", "label_gun")
     save(mast_side(), "block", "mast_side")
+    save(wrench(), "item", "wrench")
     save(range_card(), "item", "range_card")
     save(infinity_card(), "item", "infinity_card")
     save(wireless_module(), "item", "wireless_module")

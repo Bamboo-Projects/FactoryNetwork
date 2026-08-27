@@ -1527,7 +1527,8 @@ def models():
             },
         }],
     })
-    # Die beiden Werkzeuge bleiben flach: Ihre Silhouette trifft kein Kasten.
+    # Die Werkzeuge bleiben flach: Ihre Silhouette trifft kein Kasten.
+    item_model("wrench", "minecraft:item/handheld")
     item_model("label_gun", "minecraft:item/handheld")
     item_model("network_analyser", "minecraft:item/handheld")
     for tier in ("k1", "k4", "k16", "k64"):
@@ -1760,6 +1761,26 @@ def loot_and_recipes():
             "N": {"item": MOD + ":core_network"},
         },
         "result": {"id": MOD + ":mast", "count": 1},
+    })
+
+    # Der Schraubenschlüssel: ein Barren im Winkel, Griff aus Kupfer.
+    write(D + "/recipe/wrench.json", {
+        "type": "minecraft:crafting_shaped",
+        "category": "equipment",
+        "pattern": ["I I", " P ", " C "],
+        "key": {
+            "I": {"item": "minecraft:iron_ingot"},
+            "P": {"item": MOD + ":plate"},
+            "C": {"item": "minecraft:copper_ingot"},
+        },
+        "result": {"id": MOD + ":wrench", "count": 1},
+    })
+
+    # Und er trägt sich in das Tag der Konvention ein. Wer einen Schlüssel
+    # von Mekanism, Create oder Thermal dabeihat, arbeitet damit genauso —
+    # ohne dass diese Mod eine davon kennt.
+    write("data/c/tags/item/tools/wrench.json", {
+        "values": [MOD + ":wrench"],
     })
 
     write(D + "/recipe/connector.json", {

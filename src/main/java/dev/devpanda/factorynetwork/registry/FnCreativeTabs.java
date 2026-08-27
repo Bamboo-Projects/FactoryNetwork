@@ -34,6 +34,7 @@ public final class FnCreativeTabs {
                         output.accept(FnItems.CONNECTOR.get());
                         output.accept(FnItems.TERMINAL.get());
                         output.accept(FnItems.DISPLAY.get());
+                        output.accept(FnItems.WRENCH.get());
                         output.accept(FnItems.LABEL_GUN.get());
                         output.accept(FnItems.ANALYSER.get());
                         // Die Ausbauten: erst das Modul, dann die Karten von
