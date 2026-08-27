@@ -191,6 +191,12 @@ public class RemoteDeviceItem extends Item {
         if (player instanceof ServerPlayer serverPlayer) {
             // Erst den Zustand schicken, dann öffnen — wie am Block: Der
             // Editor soll seine Daten schon haben, wenn er zeichnet.
+            //
+            // watchTerminal allein reicht nicht. Es schickt Projekt, Abläufe
+            // und Anzeigen, aber nicht die Netzübersicht — die käme sonst
+            // erst beim nächsten regelmäßigen Schicken, und der Reiter stünde
+            // bis dahin leer da.
+            controller.get().sendNetworkStateTo(serverPlayer);
             controller.get().watchTerminal(serverPlayer);
             serverPlayer.openMenu(new SimpleMenuProvider(
                     (id, inventory, owner) -> new dev.devpanda.factorynetwork.client.menu

@@ -53,20 +53,14 @@ public class TerminalBlockEntity extends BlockEntity implements MenuProvider {
     public void sendStateTo(ServerPlayer player) {
         Optional<ControllerBlockEntity> controller = controller();
         if (controller.isEmpty()) {
+            // Ein Terminal ohne Netz schickt Leere und nicht nichts: Der
+            // Client soll seine alten Listen loswerden.
             PacketDistributor.sendToPlayer(player,
                     new NetworkStatePacket(List.of(), List.of(), List.of(), List.of(),
                             List.of(), List.of()));
             return;
         }
-        ControllerBlockEntity entity = controller.get();
-        entity.rebuildNetwork();
-        List<String> workers = entity.runtime().states().entrySet().stream()
-                .map(state -> state.getKey() + ": " + state.getValue().status)
-                .toList();
-        PacketDistributor.sendToPlayer(player,
-                new NetworkStatePacket(entity.connectorPlaces(), entity.displayPlaces(),
-                        workers, entity.plants(), entity.fluidLines(),
-                        entity.connectorProfiles()));
+        controller.get().sendNetworkStateTo(player);
     }
 
 

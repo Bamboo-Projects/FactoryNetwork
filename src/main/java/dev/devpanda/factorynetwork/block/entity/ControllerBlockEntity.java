@@ -1569,6 +1569,26 @@ public class ControllerBlockEntity extends BlockEntity {
      */
     private static final int STORAGE_PUSH_INTERVAL = 10;
 
+    /**
+     * Schickt den Netzzustand an einen Spieler, der gerade ein Fenster
+     * aufmacht.
+     *
+     * <p><b>Steht hier und nicht am Terminal-Block</b>, seit es zwei Wege ins
+     * Fenster gibt. Der zweite führt über einen Sendemast, und dort steht
+     * kein Terminal, das die Frage beantworten könnte — ohne diesen Umzug
+     * bliebe der Netzwerk-Reiter aus der Ferne leer.
+     */
+    public void sendNetworkStateTo(ServerPlayer player) {
+        rebuildNetwork();
+        java.util.List<String> workers = runtime().states().entrySet().stream()
+                .map(state -> state.getKey() + ": " + state.getValue().status)
+                .toList();
+        net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,
+                new dev.devpanda.factorynetwork.network.packet.NetworkStatePacket(
+                        connectorPlaces(), displayPlaces(), workers, plants(),
+                        fluidLines(), connectorProfiles()));
+    }
+
     /** Das Terminal ist auf, egal welcher Reiter. */
     public void watchTerminal(ServerPlayer player) {
         terminalWatchers.add(player);
