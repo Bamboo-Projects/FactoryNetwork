@@ -18,19 +18,19 @@ import java.util.List;
 public final class GatewayLayout {
 
     /** Bis hierhin reicht der Sockel. */
-    public static final int FOOT = 4;
+    public static final int FOOT = 5;
 
     /** Ab hier der Sturz. */
-    public static final int HEAD = 12;
+    public static final int HEAD = 11;
 
     /** Kantenlänge einer Ecksäule. */
-    public static final int POST = 5;
+    public static final int POST = 6;
 
     /** Ab dieser Höhe verengen die Schultern den Durchgang. */
     public static final int SHOULDER = 9;
 
     /** Bis hierhin reicht eine Schulter in den Durchgang. */
-    public static final int REACH = 6;
+    public static final int REACH = 7;
 
     /** Wie stark die beiden Leuchtbänder sind. */
     public static final int GLOW = 1;

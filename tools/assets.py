@@ -492,11 +492,12 @@ EDGE_UP, EDGE_DOWN, EDGE_LEFT, EDGE_RIGHT = 1, 2, 4, 8
 # Sturz — daran erkennt man den Block von weitem. Dieselbe Sprache spricht der
 # Controller mit seinem Band schon.
 #
-# <b>Der erste Wurf war zu hohl.</b> Sockel und Sturz drei Blockpixel, die
-# Ecksäulen vier: Von vorn sah man mehr Luft als Block, und der Rahmen wirkte
-# wie ein Gerüst statt wie ein Tor. Jetzt sind es vier und fünf — aus 61
-# Hundertsteln Material werden 76, und der Durchgang bleibt sechs Blockpixel
-# breit und acht hoch.
+# <b>Zweimal war er zu hohl.</b> Der erste Wurf hatte Sockel und Sturz von
+# drei Blockpixeln und Ecksäulen von vier — 61 Hundertstel Material, und von
+# vorn sah man mehr Luft als Block. Vier und fünf brachten 76 und waren
+# immer noch ein Gerüst. Jetzt sind es fünf und sechs: 84 Hundertstel, und der
+# Durchgang ist vier Blockpixel breit und sechs hoch. Ein Tor, durch das man
+# sieht, aber keines, durch das man ginge.
 #
 # <b>Zweimal lag das Licht vorher innen und war nicht zu sehen.</b> Erst als
 # Säule mitten im Tor — die stand genau hinter der Ecksäule, die davor steht.
@@ -511,11 +512,11 @@ EDGE_UP, EDGE_DOWN, EDGE_LEFT, EDGE_RIGHT = 1, 2, 4, 8
 #
 # Dieselben Zahlen stehen in GatewayLayout.java; GatewayLayoutTest hält beide
 # zusammen.
-GATEWAY_FOOT = 4       # bis hierhin reicht der Sockel
-GATEWAY_HEAD = 12      # ab hier der Sturz
-GATEWAY_POST = 5       # Kantenlänge einer Ecksäule
+GATEWAY_FOOT = 5       # bis hierhin reicht der Sockel
+GATEWAY_HEAD = 11      # ab hier der Sturz
+GATEWAY_POST = 6       # Kantenlänge einer Ecksäule
 GATEWAY_SHOULDER = 9  # ab dieser Höhe verengen die Schultern die Öffnung
-GATEWAY_REACH = 6      # bis hierhin reicht eine Schulter in die Öffnung
+GATEWAY_REACH = 7      # bis hierhin reicht eine Schulter in die Öffnung
 GATEWAY_GLOW = 1       # so stark sind die beiden Leuchtbänder
 
 
