@@ -268,15 +268,11 @@ def blockstates():
         press_variants["facing=" + direction] = entry
     write(A + "/blockstates/press.json", {"variants": press_variants})
 
-    # Router: ein voller Würfel, auf allen Seiten gleich. Welche Bahn eine
-    # Seite führt, malt der Renderer darüber — als Blockzustand wären es
-    # 15625 Kombinationen für dieselbe Auskunft.
+    # Router: auf allen Seiten gleich. Welche Bahn eine Seite führt, malt der
+    # Renderer darüber — als Blockzustand wären es 15625 Kombinationen für
+    # dieselbe Auskunft. Das Modell baut router_model().
     write(A + "/blockstates/router.json",
           {"variants": {"": {"model": block("router")}}})
-    write(A + "/models/block/router.json", {
-        "parent": "minecraft:block/cube_all",
-        "textures": {"all": MOD + ":block/router_side"},
-    })
 
     burner_variants = {}
     for lit, model in ((False, "burner"), (True, "burner_on")):
@@ -1095,6 +1091,51 @@ def source_model():
     })
 
 
+# Der Router in Blockpixeln.
+#
+# Ein Käfig aus zwölf Leisten, vier Blockpixel stark, und dazwischen ein Kern,
+# der zwei zurückspringt. Aus der aufgemalten Buchse wird damit eine echte —
+# und ein dickes Kabel, das die mittleren zehn Blockpixel einnimmt, steckt
+# darin statt davorzukleben.
+#
+# <b>Die vier Blockpixel sind nicht frei gewählt.</b> Der Renderer malt die
+# Bahnkennung über die volle Fläche jeder Seite; ihr Ring liegt in der Textur
+# zwischen Blockpixel 1 und 14,75, die Mitte ist durchsichtig. Solange die
+# äußeren vier Blockpixel bündig bleiben, liegt jeder sichtbare Teil des Rings
+# auf Material. Wer die Leisten dünner macht, lässt ihn schweben.
+ROUTER_EDGE = 4     # Stärke einer Kantenleiste
+ROUTER_INSET = 2    # wie weit der Kern zurückspringt
+
+
+def router_boxes():
+    """Die Kästen des Routers: der Kern und die zwölf Kanten."""
+    edge, inset = ROUTER_EDGE, ROUTER_INSET
+    far = 16 - edge
+    boxes = [([inset, inset, inset], [16 - inset, 16 - inset, 16 - inset],
+              {"*": "all"})]
+    for x in (0, far):
+        for z in (0, far):
+            boxes.append(([x, 0, z], [x + edge, 16, z + edge], {"*": "all"}))
+    for y in (0, far):
+        for z in (0, far):
+            boxes.append(([edge, y, z], [far, y + edge, z + edge], {"*": "all"}))
+        for x in (0, far):
+            boxes.append(([x, y, edge], [x + edge, y + edge, far], {"*": "all"}))
+    return boxes
+
+
+def router_model():
+    """Der Router als Käfig statt als Würfel."""
+    write(A + "/models/block/router.json", {
+        "parent": "minecraft:block/block",
+        "textures": {
+            "particle": texture("router_side"),
+            "all": texture("router_side"),
+        },
+        "elements": machine_elements(router_boxes()),
+    })
+
+
 def gateway_model():
     """Das Gateway als Torbogen statt als Würfel.
 
@@ -1132,6 +1173,7 @@ def models():
     fabricator_model()
     extension_model()
     source_model()
+    router_model()
 
     # Das Blockmodell des Connectors ist am 26.08. mit seinem Block
     # verschwunden. Diese Erzeugung stand noch hier und legte die Datei bei

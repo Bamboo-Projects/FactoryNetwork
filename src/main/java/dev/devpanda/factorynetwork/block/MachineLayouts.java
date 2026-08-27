@@ -83,10 +83,24 @@ public final class MachineLayouts {
      * flimmern im Spiel, und zwar nur aus manchen Winkeln.
      */
     public static List<int[]> extension() {
-        int edge = 1;
+        return cage(1, 1);
+    }
+
+    /**
+     * Ein Käfig: zwölf Leisten auf den Blockkanten, dazwischen ein Kern.
+     *
+     * <p>Die senkrechten Leisten stehen in den Ecken, die waagerechten fangen
+     * dahinter an — keine zwei überlappen. Zwei Flächen in derselben Ebene
+     * flimmern im Spiel, und zwar nur aus manchen Winkeln.
+     *
+     * @param edge  Stärke einer Leiste
+     * @param inset wie weit der Kern zurückspringt
+     */
+    private static List<int[]> cage(int edge, int inset) {
         int far = 16 - edge;
         List<int[]> boxes = new ArrayList<>();
-        boxes.add(new int[] {edge, edge, edge, far, far, far});
+        boxes.add(new int[] {inset, inset, inset,
+                16 - inset, 16 - inset, 16 - inset});
         for (int x : new int[] {0, far}) {
             for (int z : new int[] {0, far}) {
                 boxes.add(new int[] {x, 0, z, x + edge, 16, z + edge});
@@ -101,6 +115,20 @@ public final class MachineLayouts {
             }
         }
         return boxes;
+    }
+
+    /**
+     * Der Router: derselbe Käfig, nur mit dicken Leisten und tieferem Kern.
+     *
+     * <p><b>Die vier Blockpixel Leistenstärke sind nicht frei gewählt.</b>
+     * Der {@code RouterRenderer} malt die Bahnkennung über die volle Fläche
+     * jeder Seite; ihr Ring liegt zwischen Blockpixel 1 und 14,75, die Mitte
+     * ist durchsichtig. Solange die äußeren vier bündig bleiben, liegt jeder
+     * sichtbare Teil des Rings auf Material. Wer die Leisten dünner macht,
+     * lässt ihn schweben.
+     */
+    public static List<int[]> router() {
+        return cage(4, 2);
     }
 
     /** Die Kreativquelle: ein zurückspringender Kern und acht Eckklötze. */

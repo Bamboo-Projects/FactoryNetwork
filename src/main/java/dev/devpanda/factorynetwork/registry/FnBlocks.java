@@ -28,8 +28,7 @@ public final class FnBlocks {
     // Fast jeder Block hier trägt noOcclusion. Der Grund ist derselbe wie
     // beim ersten: Sobald ein Modell nicht mehr den ganzen Würfel füllt,
     // lässt Minecraft die Flächen der Nachbarn weg, die man durch die Lücken
-    // sieht — und in der Lücke steht dann ein schwarzes Loch. Nur der Router
-    // ist noch ein voller Würfel und braucht es nicht.
+    // sieht — und in der Lücke steht dann ein schwarzes Loch.
 
     /** Wurzel eines Netzwerks: hält Programm, Speicher und die Laufzeit. */
     public static final DeferredBlock<Block> CONTROLLER = BLOCKS.register("controller",
@@ -98,7 +97,8 @@ public final class FnBlocks {
             () -> new RouterBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_GRAY)
                     .strength(1.2F)
-                    .sound(SoundType.METAL)));
+                    .sound(SoundType.METAL)
+                    .noOcclusion()));
 
     /**
      * Das Erz, aus dem alles wird.

@@ -37,6 +37,10 @@ import org.jetbrains.annotations.Nullable;
  */
 public class RouterBlock extends Block implements EntityBlock {
 
+    /** Der Umriss aus den Kästen des Modells. */
+    private static final net.minecraft.world.phys.shapes.VoxelShape SHAPE =
+            FacingShapes.whole(MachineLayouts.router());
+
     public static final MapCodec<RouterBlock> CODEC = simpleCodec(RouterBlock::new);
 
     public RouterBlock(Properties properties) {
@@ -117,5 +121,11 @@ public class RouterBlock extends Block implements EntityBlock {
         if (!oldState.is(this)) {
             ControllerRegistry.refreshAround(level, pos);
         }
+    }
+    @Override
+    protected net.minecraft.world.phys.shapes.VoxelShape getShape(
+            BlockState state, net.minecraft.world.level.BlockGetter level,
+            net.minecraft.core.BlockPos pos, net.minecraft.world.phys.shapes.CollisionContext context) {
+        return SHAPE;
     }
 }

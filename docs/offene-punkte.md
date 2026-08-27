@@ -385,7 +385,7 @@ freistehen und etwas darstellen** — Controller, Terminal, Gateway. Beim
 Gateway ist die Öffnung ohnehin schon in der Textur; ein Bogen, durch den man
 wirklich hindurchsieht, wäre der Block, der die Anlage markiert.
 
-#### Stand am Abend des 27.08.: zehn Blöcke haben eine Form
+#### Stand am Abend des 27.08.: elf Blöcke haben eine Form
 
 **Weg 2 für alle**, nicht nur für die freistehenden — Weg 1, das Relief im
 vollen Würfel, ist an keiner Stelle nötig gewesen.
@@ -401,6 +401,7 @@ vollen Würfel, ist an keiner Stelle nötig gewesen.
 | Fabricator | Sockel, zurückspringender Körper, Deckel, abgesetzter Aufbau |
 | Controller-Anbau | Käfig aus zwölf Kantenleisten um einen zurückspringenden Kern |
 | Kreativquelle | acht Eckklötze um denselben Kern |
+| Router | derselbe Käfig, dickere Leisten, die Buchse als echte Vertiefung |
 
 **Keine einzige neue Textur.** Jeder Kasten schneidet aus der vorhandenen
 Textur den Ausschnitt, den ein Würfelmodell an dieser Stelle genommen hätte.
@@ -426,12 +427,17 @@ Brennkammer nach dem Muster von Laufwerk und Terminal, der Fabricator mit
 Sockel, zurückspringendem Körper, Deckel und Aufbau, der Controller-Anbau als
 Käfig aus zwölf Kantenleisten und die Kreativquelle mit acht Eckklötzen.
 
-**Der Router bleibt ein Würfel, und das ist kein Rest.** Sein Renderer malt
-die Bahnkennung über die volle Fläche jeder der sechs Seiten. Jede Form, die
-irgendwo zurückspringt, ließe den Ring dort über Luft schweben. Ihn kleiner zu
-malen hieße, die Auskunft schlechter lesbar zu machen, damit der Block besser
-aussieht — falsch herum. Wer den Router doch umbauen will, muss zuerst
-entscheiden, wo die Bahnkennung dann sitzt.
+**Auch der Router, und der war zuerst abgeschrieben.** Sein Renderer malt die
+Bahnkennung über die volle Fläche jeder der sechs Seiten — das las sich wie
+„jede Form lässt den Ring irgendwo über Luft schweben". Ein Blick in
+`router_lanes()` sagt etwas anderes: Der Ring liegt zwischen Blockpixel 1 und
+14,75, seine Mitte ist durchsichtig, und das mit Absicht — dort steckt das
+dicke Kabel. Solange die äußeren vier Blockpixel bündig bleiben, liegt jeder
+sichtbare Teil auf Material. Genau so ist der Käfig gebaut, und die Buchse in
+der Mitte ist jetzt eine echte Vertiefung, in der das Kabel steckt.
+
+Die Zahl vier steht deshalb im Javadoc von `MachineLayouts.router()`: Wer die
+Leisten dünner macht, lässt den Ring schweben.
 
 **Was ein Umbau sonst noch anfassen muss:** Jeder Block mit einem
 BlockEntityRenderer malt auf seine Front, und zwar in Blockkoordinaten. Wird

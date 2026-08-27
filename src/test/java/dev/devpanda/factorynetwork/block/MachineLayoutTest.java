@@ -45,7 +45,8 @@ class MachineLayoutTest {
             new Machine("burner_on", MachineLayouts::burner, "orientable"),
             new Machine("fabricator", MachineLayouts::fabricator, "cube_bottom_top"),
             new Machine("controller_extension", MachineLayouts::extension, "cube_all"),
-            new Machine("creative_source", MachineLayouts::source, "cube_all"));
+            new Machine("creative_source", MachineLayouts::source, "cube_all"),
+            new Machine("router", MachineLayouts::router, "cube_all"));
 
     private static String model(String name) throws IOException {
         Path file = Path.of("src/main/resources/assets/factorynetwork/models/block",
