@@ -4117,3 +4117,36 @@ damit arbeiten, ohne dass wir diese Mods kennen.
 **Die Geste ist Schleichen plus Rechtsklick**, wie bei AE2. Ohne Schleichen
 tut der Schlüssel dort etwas anderes — er dreht —, und eine Geste, die je nach
 Mod etwas anderes bedeutet, ist schlimmer als eine, die man einmal lernt.
+
+### Was das Wireless Terminal darf
+
+**Alles außer Code.** Der Entwurf in `fernzugriff.md` zählte vier Bereiche auf
+und übersprang das Protokoll — es stammt aus `konzept.md` §29, das den Reiter
+noch nicht kannte. Die Regel, die ein Spieler sich merken kann, ist aber nicht
+„vier von sechs", sondern eine einzige Trennung: **Unterwegs kommt man ans
+Lager, aber nicht an den Code.** Das Protokoll ist Diagnose wie die
+Netzübersicht und gehört auf dieselbe Seite.
+
+**Der Laptop darf alles.** Er ist der Grund, weiterzubauen, und hätte sonst
+nur mehr Steckplätze zu bieten.
+
+### Wer aus der Ferne Code anfassen darf
+
+**Das offene Fenster ist die Erlaubnis, nicht die Koordinate im Paket.**
+
+`DeployProgramPacket` verlangte bis zum 28.08. einen Terminal-Block an der
+Position, die der Client mitschickte, und höchstens acht Blöcke Abstand;
+`SaveDraftPacket` verlangte einen Controller und 64. Das trug, solange man vor
+einem Block stehen musste. Mit dem Laptop steht man vor keinem mehr.
+
+Beide fragen jetzt `player.containerMenu`, wie `StorageActionPacket`,
+`CraftingActionPacket` und `RequestEditPacket` es schon vorher taten. Das ist
+zugleich strenger: Eine Koordinate im Paket ist eine Behauptung des Clients;
+das offene Fenster dagegen tickt der Server selbst, und wer aus der Reichweite
+läuft, bei dem geht es zu.
+
+**Am Block ändert sich nichts.** Dessen `stillValid` hält weiter den Abstand
+von acht Blöcken. Der Fernzugriff nimmt etwas weg, er gibt nichts dazu.
+
+Der Besitzschutz aus `FnProtection` beantwortet eine andere Frage und gilt
+unverändert weiter.
