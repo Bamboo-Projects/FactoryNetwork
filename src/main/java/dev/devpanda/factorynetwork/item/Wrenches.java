@@ -74,6 +74,16 @@ public final class Wrenches {
         // Zerstörwerkzeug und kein Schraubenschlüssel.
         net.minecraft.world.level.block.Block.popResource(level, pos, new ItemStack(
                 dev.devpanda.factorynetwork.registry.FnItems.CONNECTOR.get()));
+        // War es ein Halter und war das sein letzter Anschluss, bleibt
+        // nichts übrig, das noch etwas hielte — dann geht der Block mit.
+        if (!dev.devpanda.factorynetwork.block.CableBlock.carries(level.getBlockState(pos))
+                && bus.parts().isEmpty()) {
+            level.removeBlock(pos, false);
+            dev.devpanda.factorynetwork.network.ControllerRegistry.refreshAround(level, pos);
+            level.playSound(null, pos, net.minecraft.sounds.SoundEvents.ITEM_FRAME_REMOVE_ITEM,
+                    net.minecraft.sounds.SoundSource.BLOCKS, 0.7F, 1.0F);
+            return true;
+        }
         // Der Arm zum Anschluss steht im Blockzustand: Ohne diese Zeile
         // bliebe er stehen und zeigte ins Leere.
         level.setBlock(pos, dev.devpanda.factorynetwork.block.CableBlock.withConnections(

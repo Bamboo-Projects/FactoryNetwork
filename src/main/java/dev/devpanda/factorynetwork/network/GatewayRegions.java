@@ -125,7 +125,8 @@ public final class GatewayRegions {
                     continue;
                 }
                 BlockState state = level.getBlockState(next);
-                if (state.getBlock() instanceof CableBlock) {
+                if (state.getBlock() instanceof CableBlock
+                        && dev.devpanda.factorynetwork.block.CableBlock.carries(state)) {
                     queue.add(next);
                     // Ein Kabel leitet weiter und trägt zugleich Anschlüsse an
                     // seinen Flächen. Beides gilt: Der Strang läuft durch, und

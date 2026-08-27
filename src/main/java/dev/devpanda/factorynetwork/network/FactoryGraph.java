@@ -288,7 +288,11 @@ public final class FactoryGraph {
                     continue;
                 }
                 BlockState state = level.getBlockState(next);
-                if (state.getBlock() instanceof CableBlock) {
+                // Ein Halter ohne Kabel leitet nicht. Sein Anschluss sitzt
+                // darin und wartet auf ein Kabel — bis dahin gehört er zu
+                // keinem Netz.
+                if (state.getBlock() instanceof CableBlock
+                        && dev.devpanda.factorynetwork.block.CableBlock.carries(state)) {
                     Node node = visitCable(level, next, current, parents, queue, cables);
                     // Jeder Anschluss an einer Fläche dieses Kabels ist ein
                     // eigenes Gerät — und sein Weg zum Controller führt über
@@ -662,8 +666,11 @@ public final class FactoryGraph {
             // Ein Router trägt Kanäle wie ein Kabel — je Bahn eigene. Ließe
             // man ihn hier aus, wäre eine Kreuzung unbegrenzt, und ein Netz
             // hinter einem Router hätte plötzlich keine Grenze mehr.
-            var block = level.getBlockState(node.pos()).getBlock();
-            if (block instanceof CableBlock || block instanceof RouterBlock
+            var state = level.getBlockState(node.pos());
+            var block = state.getBlock();
+            if ((block instanceof CableBlock
+                    && dev.devpanda.factorynetwork.block.CableBlock.carries(state))
+                    || block instanceof RouterBlock
                     || block instanceof dev.devpanda.factorynetwork.block.GatewayBlock) {
                 path.add(node);
             }

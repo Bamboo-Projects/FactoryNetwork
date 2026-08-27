@@ -6337,6 +6337,143 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
+     * Ein Anschluss darf vor dem Kabel dasein — und leitet dann nichts.
+     *
+     * <p>Der Halter ist ein Kabelblock ohne Strang. Er sieht aus wie ein
+     * Anschluss an einer Wand, gehört zu keinem Netz und wartet auf ein
+     * Kabel. <b>Ohne die zweite Hälfte wäre die erste gefährlich:</b> Ein
+     * Halter, der leitete, verbände zwei Netze, zwischen denen nichts liegt.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 100)
+    public static void aHolderCarriesNothing(GameTestHelper helper) {
+        BlockPos world = helper.absolutePos(new BlockPos(1, 2, 1));
+        helper.getLevel().setBlockAndUpdate(world,
+                FnBlocks.CABLE.get().defaultBlockState()
+                        .setValue(dev.devpanda.factorynetwork.block.CableBlock.CABLE, false));
+
+        var state = helper.getLevel().getBlockState(world);
+        helper.assertTrue(
+                !dev.devpanda.factorynetwork.block.CableBlock.carries(state),
+                "der Halter hält sich für ein Kabel");
+
+        // Ein Kabel daneben greift nicht nach ihm.
+        BlockPos next = world.east();
+        helper.getLevel().setBlockAndUpdate(next, FnBlocks.CABLE.get().defaultBlockState());
+        var neighbour = dev.devpanda.factorynetwork.block.CableBlock.withConnections(
+                helper.getLevel().getBlockState(next), helper.getLevel(), next);
+        helper.assertTrue(
+                !dev.devpanda.factorynetwork.block.CableBlock.connectionsOf(neighbour)
+                        .contains(Direction.WEST),
+                "ein Kabel wächst einen Arm zum Halter, in dem gar nichts liegt");
+
+        // Und der Halter selbst hat nach keiner Seite einen.
+        var holder = dev.devpanda.factorynetwork.block.CableBlock.withConnections(
+                state, helper.getLevel(), world);
+        helper.assertTrue(
+                dev.devpanda.factorynetwork.block.CableBlock.connectionsOf(holder).isEmpty(),
+                "der Halter hat Arme, obwohl kein Kabel in ihm liegt");
+        helper.succeed();
+    }
+
+    /**
+     * Ein Kabel auf einen Halter macht daraus eine Leitung.
+     *
+     * <p>Das ist der Sinn des Halters: Der Anschluss bleibt sitzen, wo er
+     * sitzt. Setzte das Kabel stattdessen einen zweiten Block daneben, müsste
+     * man den Anschluss abnehmen und neu setzen — und dann hätte man ihn auch
+     * gleich später setzen können.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 100)
+    public static void aCableTurnsAHolderIntoALine(GameTestHelper helper) {
+        BlockPos world = helper.absolutePos(new BlockPos(1, 2, 1));
+        helper.getLevel().setBlockAndUpdate(world,
+                FnBlocks.CABLE.get().defaultBlockState()
+                        .setValue(dev.devpanda.factorynetwork.block.CableBlock.CABLE, false));
+        if (!(helper.getLevel().getBlockEntity(world)
+                instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus)) {
+            helper.fail("kein Kabelbus im Halter");
+            return;
+        }
+        bus.addPart(Direction.NORTH);
+
+        var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+        ItemStack cable = new ItemStack(
+                dev.devpanda.factorynetwork.registry.FnItems.CABLES
+                        .get(dev.devpanda.factorynetwork.block.CableColour.RED).get());
+        player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, cable);
+
+        var hit = new net.minecraft.world.phys.BlockHitResult(
+                net.minecraft.world.phys.Vec3.atCenterOf(world), Direction.UP, world, false);
+        helper.getLevel().getBlockState(world).useItemOn(
+                cable, helper.getLevel(), player,
+                net.minecraft.world.InteractionHand.MAIN_HAND, hit);
+
+        var after = helper.getLevel().getBlockState(world);
+        helper.assertTrue(dev.devpanda.factorynetwork.block.CableBlock.carries(after),
+                "aus dem Halter ist keine Leitung geworden");
+        helper.assertTrue(
+                after.getValue(dev.devpanda.factorynetwork.block.CableBlock.COLOUR)
+                        == dev.devpanda.factorynetwork.block.CableColour.RED,
+                "das Kabel hat seine Farbe nicht mitgebracht");
+        helper.assertTrue(bus.partAt(Direction.NORTH) != null,
+                "der Anschluss ist beim Einlegen des Kabels verschwunden");
+        helper.succeed();
+    }
+
+    /**
+     * Ein Halter ohne Anschlüsse verschwindet von selbst.
+     *
+     * <p>Sonst bliebe ein Block stehen, in dem nichts ist: unsichtbar, weil
+     * er weder Kern noch Arme zeichnet, und nicht anzuklicken, weil seine
+     * Trefferfläche aus den Platten besteht, die es nicht mehr gibt.
+     *
+     * <p>AE2 macht dasselbe in {@code CableBusContainer.cleanup()}.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 100)
+    public static void anEmptyHolderRemovesItself(GameTestHelper helper) {
+        BlockPos pos = new BlockPos(1, 2, 1);
+        BlockPos world = helper.absolutePos(pos);
+        helper.getLevel().setBlockAndUpdate(world,
+                FnBlocks.CABLE.get().defaultBlockState()
+                        .setValue(dev.devpanda.factorynetwork.block.CableBlock.CABLE, false));
+        if (!(helper.getLevel().getBlockEntity(world)
+                instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus)) {
+            helper.fail("kein Kabelbus im Halter");
+            return;
+        }
+        bus.addPart(Direction.NORTH);
+        bus.addPart(Direction.SOUTH);
+
+        var hit = new net.minecraft.world.phys.BlockHitResult(
+                net.minecraft.world.phys.Vec3.atCenterOf(world).add(0, 0, -0.5),
+                Direction.NORTH, world, false);
+        dev.devpanda.factorynetwork.item.Wrenches.takePart(helper.getLevel(), world, hit);
+        helper.assertBlockPresent(FnBlocks.CABLE.get(), pos);
+
+        // Der zweite und letzte: Jetzt hält der Block nichts mehr.
+        var second = new net.minecraft.world.phys.BlockHitResult(
+                net.minecraft.world.phys.Vec3.atCenterOf(world).add(0, 0, 0.5),
+                Direction.SOUTH, world, false);
+        dev.devpanda.factorynetwork.item.Wrenches.takePart(helper.getLevel(), world, second);
+        helper.assertBlockNotPresent(FnBlocks.CABLE.get(), pos);
+
+        // Ein Kabel dagegen bleibt stehen, auch wenn sein letzter Anschluss
+        // abgeht — es ist eine Leitung, und die hält von selbst.
+        BlockPos line = helper.absolutePos(new BlockPos(2, 2, 1));
+        helper.getLevel().setBlockAndUpdate(line, FnBlocks.CABLE.get().defaultBlockState());
+        if (helper.getLevel().getBlockEntity(line)
+                instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity real) {
+            real.addPart(Direction.NORTH);
+            var onLine = new net.minecraft.world.phys.BlockHitResult(
+                    net.minecraft.world.phys.Vec3.atCenterOf(line).add(0, 0, -0.5),
+                    Direction.NORTH, line, false);
+            dev.devpanda.factorynetwork.item.Wrenches.takePart(helper.getLevel(), line, onLine);
+        }
+        helper.assertBlockPresent(FnBlocks.CABLE.get(), new BlockPos(2, 2, 1));
+        helper.succeed();
+    }
+
+    /**
      * Aus der Ferne fehlt dem Terminal der Code-Reiter, dem Laptop nicht.
      *
      * <p>Das ist die ganze Trennung. Fiele sie weg, wäre der Laptop ein

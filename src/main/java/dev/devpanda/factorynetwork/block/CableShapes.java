@@ -82,6 +82,21 @@ public final class CableShapes {
     }
 
     /**
+     * Ein Halter ohne Kabel: nur die Platten seiner Anschlüsse.
+     *
+     * <p>Kein Kern, keine Arme — in ihm liegt kein Kabel. Was bleibt, ist
+     * dünn und schwer zu treffen, und das ist ehrlich: Da hängt eine Platte
+     * an einer Wand und sonst nichts.
+     */
+    public static VoxelShape holder(int size, Collection<Direction> parts) {
+        VoxelShape shape = Shapes.empty();
+        for (Direction direction : parts) {
+            shape = Shapes.join(shape, part(size, direction), BooleanOp.OR);
+        }
+        return shape;
+    }
+
+    /**
      * Die Platte eines Anschlusses an dieser Fläche.
      *
      * <p>Nur die Platte: Die Strecke zum Kern deckt der Arm ab, den das Kabel

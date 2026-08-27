@@ -92,7 +92,7 @@ public final class FnItems {
      * Platz mehr brauchte.
      */
     public static final DeferredItem<Item> CONNECTOR = ITEMS.register("connector",
-            () -> new Item(new Item.Properties()));
+            () -> new dev.devpanda.factorynetwork.item.ConnectorItem(new Item.Properties()));
     public static final DeferredItem<BlockItem> TERMINAL = ITEMS.registerSimpleBlockItem(FnBlocks.TERMINAL);
     public static final DeferredItem<BlockItem> DISPLAY = ITEMS.registerSimpleBlockItem(FnBlocks.DISPLAY);
 

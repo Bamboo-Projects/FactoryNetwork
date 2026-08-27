@@ -54,6 +54,29 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
     public static final EnumProperty<CableColour> COLOUR =
             EnumProperty.create("colour", CableColour.class);
 
+    /**
+     * Liegt in diesem Block ein Kabel?
+     *
+     * <p><b>Nein heißt: Er ist ein bloßer Halter.</b> Ein Anschluss sitzt
+     * darin, aber er hängt an nichts — kein Strang, keine Leitung, keine
+     * Verbindung zum Netz. Das Kabel kommt später und macht daraus eine
+     * Leitung, ohne dass der Anschluss neu gesetzt werden müsste.
+     *
+     * <p>Die Vorgabe ist {@code true}. Jeder Block, der heute steht, bleibt
+     * damit, was er ist.
+     *
+     * <p>So macht es AE2: Dort ist der Block der Kabelbus und das Kabel nur
+     * eines der Teile darin. {@code CableBusContainer.canAddPart} lässt ein
+     * Teil an jede freie Seite, „if any" Kabel — und ein leerer Bus räumt
+     * sich in {@code cleanup()} selbst weg.
+     */
+    public static final BooleanProperty CABLE = BooleanProperty.create("cable");
+
+    /** Trägt dieser Block ein Kabel, oder ist er nur ein Halter? */
+    public static boolean carries(BlockState state) {
+        return !(state.getBlock() instanceof CableBlock) || state.getValue(CABLE);
+    }
+
     private static final Map<Direction, BooleanProperty> CONNECTIONS =
             new EnumMap<>(Map.of(
                     Direction.NORTH, BooleanProperty.create("north"),
@@ -147,6 +170,11 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
     @Override
     public ItemStack getCloneItemStack(net.minecraft.world.level.LevelReader level,
                                        BlockPos pos, BlockState state) {
+        if (!carries(state)) {
+            // Ein Halter ist kein Kabel. Der Mittelklick soll das geben, was
+            // dort tatsächlich sitzt.
+            return new ItemStack(dev.devpanda.factorynetwork.registry.FnItems.CONNECTOR.get());
+        }
         var entry = items().get(colourOf(state));
         return entry == null ? super.getCloneItemStack(level, pos, state)
                 : new ItemStack(entry.get());
@@ -168,6 +196,7 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(COLOUR);
+        builder.add(CABLE);
         CONNECTIONS.values().forEach(builder::add);
     }
 
@@ -191,6 +220,14 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
      * erst die Farbe und muss danach neu rechnen lassen.
      */
     public static BlockState withConnections(BlockState state, LevelReader level, BlockPos pos) {
+        if (!carries(state)) {
+            // Ein Halter hat keine Arme. Er hält einen Anschluss und sonst
+            // nichts — der wird gesondert gezeichnet.
+            for (BooleanProperty property : CONNECTIONS.values()) {
+                state = state.setValue(property, false);
+            }
+            return state;
+        }
         CableColour colour = colourOf(state);
         for (Map.Entry<Direction, BooleanProperty> entry : CONNECTIONS.entrySet()) {
             BlockState neighbour = level.getBlockState(pos.relative(entry.getKey()));
@@ -236,7 +273,9 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
      */
     private static boolean connects(CableColour colour, BlockState neighbour) {
         if (neighbour.getBlock() instanceof CableBlock) {
-            return colour.connectsTo(colourOf(neighbour));
+            // An einen Halter dockt niemand an: In ihm liegt kein Kabel, und
+            // ein Arm, der auf ihn zeigte, zeigte auf nichts.
+            return carries(neighbour) && colour.connectsTo(colourOf(neighbour));
         }
         // Alles, was zum Netz gehört, bekommt einen Arm. Laufwerk und
         // Serverschrank fehlten hier: Die Suche findet sie über die
@@ -263,6 +302,9 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos,
                                   CollisionContext context) {
+        if (!carries(state)) {
+            return CableShapes.holder(size, partsOf(level, pos));
+        }
         return CableShapes.whole(size, connectionsOf(state), partsOf(level, pos));
     }
 
@@ -347,6 +389,26 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
     protected net.minecraft.world.ItemInteractionResult useItemOn(
             ItemStack stack, BlockState state, Level level, BlockPos pos, Player player,
             net.minecraft.world.InteractionHand hand, BlockHitResult hit) {
+        // Ein Kabel auf einen Halter legt das Kabel hinein, statt einen
+        // zweiten Block danebenzusetzen. Genau dafür ist der Halter da: Der
+        // Anschluss sitzt schon, und das Kabel kommt nach.
+        if (!carries(state)
+                && stack.getItem() instanceof dev.devpanda.factorynetwork.item.ColouredCableItem cable) {
+            if (!level.isClientSide) {
+                level.setBlock(pos, withConnections(state
+                                .setValue(CABLE, true)
+                                .setValue(COLOUR, cable.colour()),
+                        level, pos), UPDATE_ALL);
+                if (!player.getAbilities().instabuild) {
+                    stack.shrink(1);
+                }
+                level.playSound(null, pos,
+                        net.minecraft.sounds.SoundEvents.NETHERITE_BLOCK_PLACE,
+                        net.minecraft.sounds.SoundSource.BLOCKS, 0.9F, 1.0F);
+                dev.devpanda.factorynetwork.network.ControllerRegistry.refreshAround(level, pos);
+            }
+            return net.minecraft.world.ItemInteractionResult.sidedSuccess(level.isClientSide);
+        }
         if (!stack.is(dev.devpanda.factorynetwork.registry.FnItems.CONNECTOR.get())
                 || !(level.getBlockEntity(pos) instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus)) {
             return net.minecraft.world.ItemInteractionResult
@@ -388,6 +450,17 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
         if (!player.getAbilities().instabuild) {
             popResource(level, pos,
                         new ItemStack(dev.devpanda.factorynetwork.registry.FnItems.CONNECTOR.get()));
+        }
+        // Ein Halter ohne Anschlüsse ist nichts mehr: kein Kabel darin,
+        // kein Teil daran. Er verschwindet, statt als unsichtbarer Block
+        // stehenzubleiben, den niemand mehr trifft.
+        //
+        // AE2 macht dasselbe in CableBusContainer.cleanup(): Ein leerer Bus
+        // ruft removeBlock auf sich selbst.
+        if (!carries(level.getBlockState(pos)) && bus.parts().isEmpty()) {
+            level.removeBlock(pos, false);
+            dev.devpanda.factorynetwork.network.ControllerRegistry.refreshAround(level, pos);
+            return;
         }
         // Die Fläche ist wieder frei: Vielleicht will das Kabel dorthin
         // jetzt einen Arm.

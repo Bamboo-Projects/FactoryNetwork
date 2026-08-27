@@ -258,6 +258,15 @@ def blockstates():
             apply = {"model": block(name + "_arm")}
             apply.update(rotation)
             parts.append({"when": {direction: "true"}, "apply": apply})
+        # Ohne Kabel ist der Block ein bloßer Halter: kein Kern, keine
+        # Arme. Der Anschluss darin wird ohnehin gesondert gezeichnet, also
+        # bleibt genau er übrig — und es braucht kein neues Modell dafür.
+        for part in parts:
+            bedingung = part.setdefault("when", {})
+            if "OR" in bedingung:
+                bedingung["OR"] = [dict(fall, cable="true") for fall in bedingung["OR"]]
+            else:
+                bedingung["cable"] = "true"
         write(A + "/blockstates/%s.json" % name, {"multipart": parts})
 
     press_variants = {}
@@ -1687,7 +1696,17 @@ def loot_and_recipes():
                 "rolls": 1,
                 "bonus_rolls": 0,
                 "entries": [{"type": "minecraft:alternatives", "children": kinder}],
-                "conditions": [{"condition": "minecraft:survives_explosion"}],
+                # Ohne die zweite Bedingung gäbe ein Halter beim Abbauen ein
+                # Kabel her, das nie in ihm lag: Wer einen Anschluss setzt
+                # und ihn wieder abbaut, bekäme ein Kabel geschenkt.
+                "conditions": [
+                    {"condition": "minecraft:survives_explosion"},
+                    {
+                        "condition": "minecraft:block_state_property",
+                        "block": "%s:%s" % (MOD, sorte),
+                        "properties": {"cable": "true"},
+                    },
+                ],
             }],
         })
 

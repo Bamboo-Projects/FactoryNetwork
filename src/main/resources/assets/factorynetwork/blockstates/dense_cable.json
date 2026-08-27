@@ -3,11 +3,15 @@
     {
       "apply": {
         "model": "factorynetwork:block/dense_cable_core"
+      },
+      "when": {
+        "cable": "true"
       }
     },
     {
       "when": {
-        "north": "true"
+        "north": "true",
+        "cable": "true"
       },
       "apply": {
         "model": "factorynetwork:block/dense_cable_arm"
@@ -15,7 +19,8 @@
     },
     {
       "when": {
-        "south": "true"
+        "south": "true",
+        "cable": "true"
       },
       "apply": {
         "model": "factorynetwork:block/dense_cable_arm",
@@ -24,7 +29,8 @@
     },
     {
       "when": {
-        "east": "true"
+        "east": "true",
+        "cable": "true"
       },
       "apply": {
         "model": "factorynetwork:block/dense_cable_arm",
@@ -33,7 +39,8 @@
     },
     {
       "when": {
-        "west": "true"
+        "west": "true",
+        "cable": "true"
       },
       "apply": {
         "model": "factorynetwork:block/dense_cable_arm",
@@ -42,7 +49,8 @@
     },
     {
       "when": {
-        "up": "true"
+        "up": "true",
+        "cable": "true"
       },
       "apply": {
         "model": "factorynetwork:block/dense_cable_arm",
@@ -51,7 +59,8 @@
     },
     {
       "when": {
-        "down": "true"
+        "down": "true",
+        "cable": "true"
       },
       "apply": {
         "model": "factorynetwork:block/dense_cable_arm",
