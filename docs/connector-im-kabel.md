@@ -331,3 +331,21 @@ eine Sackgasse ist; sie stehen in ihrem Commit einzeln beschrieben.
 
 **Bestehende Welten verlieren ihre Connectorblöcke samt Namen.** Das war beim
 Wechsel auf Weg B schon so angekündigt und ist mit dem Ausbau endgültig.
+
+---
+
+## Nachtrag, 28.08.: die letzte Hälfte
+
+Dieses Dokument endete beim Kabelbus. Was danach fehlte, war die andere
+Richtung: **einen Anschluss setzen, wo noch kein Kabel liegt.**
+
+Der Kabelblock hat seit dem 28.08. ein Zustandsfeld `cable`. Steht es auf
+falsch, ist er ein bloßer Halter — er leitet nicht, zeichnet keinen Strang und
+verschwindet, sobald der letzte Anschluss abgeht. Ein Kabel darauf macht
+daraus eine Leitung, ohne dass der Anschluss neu gesetzt werden müsste.
+
+Damit ist die Bauform vollständig dieselbe wie bei AE2: Der Block ist der Bus,
+das Kabel eines der Teile darin, und ein leerer Bus räumt sich selbst weg.
+
+Der Weg dahin steht in `plan-anschluss-ohne-kabel.md`, die Entscheidung in
+`entscheidungen.md`.
