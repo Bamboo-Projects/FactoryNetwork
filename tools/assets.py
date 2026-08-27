@@ -1170,6 +1170,146 @@ def router_model():
     })
 
 
+# Die Gegenstände als Körper statt als Blatt Papier.
+#
+# <b>Was Minecraft von allein macht.</b> Ein Modell mit dem Vorfahren
+# {@code item/generated} zieht die Textur einen Blockpixel in die Tiefe und
+# schneidet die Silhouette aus dem Alphakanal. Das ist für einen Schlüssel
+# oder eine Feder genau richtig — für eine Speicherzelle, die ein Gehäuse aus
+# Blech ist, sieht es aus wie ein Aufkleber.
+#
+# <b>Was hier stattdessen steht.</b> Jeder Gegenstand ist ein Quader in der
+# Größe seines Umrisses. Vorder- und Rückseite tragen die Textur an ihrem
+# Platz, die vier Kanten je einen Blockpixel vom Rand der Textur — dort ist
+# bei allen das Gehäuse, und ein Streifen davon liest sich als Blech. Eine
+# Seitenansicht malt keine dieser Texturen, und eine zu erfinden hieße, für
+# vierzig Gegenstände eine zweite Textur zu pflegen.
+#
+# <b>Wer hier fehlt, fehlt mit Grund.</b> Kristall und Rohkristall sind keine
+# Quader, und die Beschriftungspistole und der Analysator sind Werkzeuge mit
+# einer Silhouette, die ein Kasten nicht trifft. Für die vier bleibt die
+# Extrusion die bessere Antwort.
+#
+# Die Umrisse sind aus dem Alphakanal der Texturen gemessen, auf ganze
+# Blockpixel nach außen gerundet.
+ITEM_BODIES = {
+    # Speicherzellen: ein Gehäuse, und das darf man sehen.
+    "cell_k1": (3, 2, 13, 14, 4),
+    "cell_k4": (3, 2, 13, 14, 4),
+    "cell_k16": (3, 2, 13, 14, 4),
+    "cell_k64": (3, 2, 13, 14, 4),
+    "fluid_cell_64": (3, 2, 13, 14, 4),
+    "fluid_cell_256": (3, 2, 13, 14, 4),
+    "fluid_cell_1024": (3, 2, 13, 14, 4),
+    "fluid_cell_4096": (3, 2, 13, 14, 4),
+    "chemical_cell_64k": (3, 2, 13, 14, 4),
+    "chemical_cell_256k": (3, 2, 13, 14, 4),
+    "chemical_cell_1024k": (3, 2, 13, 14, 4),
+    "chemical_cell_4096k": (3, 2, 13, 14, 4),
+    "energy_cell_64k": (3, 2, 13, 14, 4),
+    "energy_cell_256k": (3, 2, 13, 14, 4),
+    "energy_cell_1024k": (3, 2, 13, 14, 4),
+    "energy_cell_4096k": (3, 2, 13, 14, 4),
+
+    # Bauteile: flacher, sie sind Platinen und keine Gehäuse.
+    "cpu_2": (2, 2, 14, 14, 2),
+    "cpu_8": (2, 2, 14, 14, 2),
+    "cpu_32": (2, 2, 14, 14, 2),
+    "cpu_128": (2, 2, 14, 14, 2),
+    "ram_8": (0, 3, 16, 13, 2),
+    "ram_32": (0, 3, 15, 13, 2),
+    "ram_128": (0, 3, 16, 13, 2),
+    "ram_512": (0, 3, 15, 12, 2),
+    "disk_64": (2, 3, 14, 13, 2),
+    "disk_256": (2, 3, 14, 13, 2),
+    "disk_1024": (2, 3, 14, 13, 2),
+    "disk_4096": (2, 3, 14, 13, 2),
+    "core_logic": (2, 3, 15, 13, 2),
+    "core_memory": (2, 3, 15, 13, 2),
+    "core_network": (2, 3, 15, 13, 2),
+
+    # Der Rest: Blech ist dünn, ein Stempel ist ein Werkzeug.
+    "plate": (3, 4, 14, 12, 1),
+    "server_chassis": (1, 4, 15, 12, 3),
+    "stamp_plate": (3, 2, 13, 12, 4),
+    "stamp_logic": (3, 2, 13, 12, 4),
+    "stamp_memory": (3, 2, 13, 12, 4),
+    "stamp_network": (3, 2, 13, 12, 4),
+}
+
+
+# Die Ansichten, die minecraft:item/generated mitbringt — Wort für Wort
+# dieselben Zahlen.
+#
+# <b>Warum abgeschrieben und nicht geerbt.</b> Wer item/generated als
+# Vorfahren nimmt, bekommt nicht nur die Ansichten, sondern auch dessen
+# Bauart: Minecraft erkennt den Vorfahren builtin/generated und baut die
+# Quads aus layer0. Ein Kind mit eigenen Kästen und ohne layer0 hätte danach
+# gar keine Flächen mehr und wäre in der Hand unsichtbar. Der Serverschrank
+# macht es seit jeher so — kein Vorfahre, eigene Ansichten.
+ITEM_DISPLAY = {
+    "ground": {"rotation": [0, 0, 0], "translation": [0, 2, 0],
+               "scale": [0.5, 0.5, 0.5]},
+    "head": {"rotation": [0, 180, 0], "translation": [0, 13, 7],
+             "scale": [1, 1, 1]},
+    "thirdperson_righthand": {"rotation": [0, 0, 0], "translation": [0, 3, 1],
+                              "scale": [0.55, 0.55, 0.55]},
+    "thirdperson_lefthand": {"rotation": [0, 0, 0], "translation": [0, 3, 1],
+                             "scale": [0.55, 0.55, 0.55]},
+    "firstperson_righthand": {"rotation": [0, -90, 25],
+                              "translation": [1.13, 3.2, 1.13],
+                              "scale": [0.68, 0.68, 0.68]},
+    "firstperson_lefthand": {"rotation": [0, 90, -25],
+                             "translation": [1.13, 3.2, 1.13],
+                             "scale": [0.68, 0.68, 0.68]},
+    "fixed": {"rotation": [0, 180, 0], "translation": [0, 0, 0],
+              "scale": [1, 1, 1]},
+}
+
+
+def item_model(name, parent="minecraft:item/generated"):
+    """Das Modell eines Gegenstands.
+
+    Steht er in ITEM_BODIES, wird er ein Quader; sonst bleibt es bei der
+    Extrusion, die Minecraft aus dem Alphakanal rechnet.
+    """
+    if name not in ITEM_BODIES:
+        write(A + "/models/item/%s.json" % name, {
+            "parent": parent,
+            "textures": {"layer0": MOD + ":item/" + name},
+        })
+        return
+
+    x0, y0, x1, y1, deep = ITEM_BODIES[name]
+    near = (16 - deep) // 2
+    far = near + deep
+
+    def face(u0, v0, u1, v1):
+        return {"texture": "#face", "uv": [u0, v0, u1, v1]}
+
+    write(A + "/models/item/%s.json" % name, {
+        "display": ITEM_DISPLAY,
+        "textures": {
+            "face": MOD + ":item/" + name,
+            "particle": MOD + ":item/" + name,
+        },
+        "elements": [{
+            # Die y-Achse zählt im Modell von unten, in der Textur von oben —
+            # deshalb der Tausch.
+            "from": [x0, 16 - y1, near],
+            "to": [x1, 16 - y0, far],
+            "faces": {
+                "south": face(x0, y0, x1, y1),
+                "north": face(16 - x1, y0, 16 - x0, y1),
+                "west": face(x0, y0, x0 + 1, y1),
+                "east": face(x1 - 1, y0, x1, y1),
+                "up": face(x0, y0, x1, y0 + 1),
+                "down": face(x0, y1 - 1, x1, y1),
+            },
+        }],
+    })
+
+
 def gateway_model():
     """Das Gateway als Torbogen statt als Würfel.
 
@@ -1315,29 +1455,17 @@ def models():
             },
         }],
     })
-    write(A + "/models/item/label_gun.json", {
-        "parent": "minecraft:item/handheld",
-        "textures": {"layer0": MOD + ":item/label_gun"},
-    })
-    write(A + "/models/item/network_analyser.json", {
-        "parent": "minecraft:item/handheld",
-        "textures": {"layer0": MOD + ":item/network_analyser"},
-    })
+    # Die beiden Werkzeuge bleiben flach: Ihre Silhouette trifft kein Kasten.
+    item_model("label_gun", "minecraft:item/handheld")
+    item_model("network_analyser", "minecraft:item/handheld")
     for tier in ("k1", "k4", "k16", "k64"):
-        write(A + "/models/item/cell_%s.json" % tier, {
-            "parent": "minecraft:item/generated",
-            "textures": {"layer0": MOD + ":item/cell_" + tier},
-        })
+        item_model("cell_" + tier)
     for tier in ("64", "256", "1024", "4096"):
-        write(A + "/models/item/fluid_cell_%s.json" % tier, {
-            "parent": "minecraft:item/generated",
-            "textures": {"layer0": MOD + ":item/fluid_cell_" + tier},
-        })
+        item_model("fluid_cell_" + tier)
     for tier in ("64k", "256k", "1024k", "4096k"):
-        write(A + "/models/item/energy_cell_%s.json" % tier, {
-            "parent": "minecraft:item/generated",
-            "textures": {"layer0": MOD + ":item/energy_cell_" + tier},
-        })
+        item_model("energy_cell_" + tier)
+    for tier in ("64k", "256k", "1024k", "4096k"):
+        item_model("chemical_cell_" + tier)
     write(A + "/models/item/drive.json", {"parent": block("drive")})
     write(A + "/models/item/router.json", {"parent": block("router")})
     # Der Schrank in der Hand: beide Hälften übereinander in einem Modell,
@@ -1358,28 +1486,16 @@ def models():
                                       "translation": [0, 0, 0],
                                       "scale": [0.28, 0.28, 0.28]},
         }))
-    write(A + "/models/item/server_chassis.json", {
-        "parent": "minecraft:item/generated",
-        "textures": {"layer0": MOD + ":item/server_chassis"},
-    })
+    item_model("server_chassis")
     for kind, tiers in SERVER_PARTS.items():
         for value in tiers:
             name = "%s_%d" % (kind, value)
-            write(A + "/models/item/%s.json" % name, {
-                "parent": "minecraft:item/generated",
-                "textures": {"layer0": MOD + ":item/" + name},
-            })
+            item_model(name)
     for name in ("crystal", "plate", "stamp_plate", "stamp_logic", "stamp_memory",
                  "stamp_network", "core_logic", "core_memory", "core_network"):
-        write(A + "/models/item/%s.json" % name, {
-            "parent": "minecraft:item/generated",
-            "textures": {"layer0": MOD + ":item/" + name},
-        })
+        item_model(name)
     write(A + "/models/item/press.json", {"parent": block("press")})
-    write(A + "/models/item/raw_crystal.json", {
-        "parent": "minecraft:item/generated",
-        "textures": {"layer0": MOD + ":item/raw_crystal"},
-    })
+    item_model("raw_crystal")
 
 
 def worldgen():
