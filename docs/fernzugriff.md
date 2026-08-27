@@ -70,6 +70,12 @@ seiner Zahl freier Plätze:
 Das ist kein Nebeneffekt, sondern der zweite Grund für den Laptop: Er reicht
 weiter, weil er mehr Plätze hat.
 
+**Dieselbe Karte, zwei Wirkungen — und warum das keine sind.** Eine
+Reichweitenkarte hebt ihren Wert um acht, überall. Dass sie im Mast sechzehn
+bringt, liegt am Mast: Er verdoppelt, was in ihm steckt. Das Verstärken ist
+eine Eigenschaft des Orts und nicht der Karte — sonst hätte dieselbe Karte
+zwei Werte, und die Regel aus §2 wäre hin.
+
 Warum nicht nur eine Seite: Sonst gäbe es genau eine sinnvolle Stelle zum
 Ausbauen. So kann ein gut ausgerüsteter Spieler in einer schwachen Basis
 arbeiten und umgekehrt — und wer sich ein zweites Gerät baut, muss es nicht
