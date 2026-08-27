@@ -82,6 +82,15 @@ class LoadoutTest {
     }
 
     @Test
+    @DisplayName("Und man kann zählen, wie oft einer steckt")
+    void countingIsPossible() {
+        Loadout mixed = Loadout.of(List.of(Card.RANGE, Card.RANGE, Ability.WIRELESS));
+        assertEquals(2, mixed.count(Card.RANGE));
+        assertEquals(1, mixed.count(Ability.WIRELESS));
+        assertEquals(0, mixed.count(Card.INFINITY));
+    }
+
+    @Test
     @DisplayName("Module und Karten teilen sich die Steckplätze")
     void bothKindsShareTheSlots() {
         Loadout mixed = Loadout.of(List.of(Ability.WIRELESS, Card.RANGE, Card.RANGE));
