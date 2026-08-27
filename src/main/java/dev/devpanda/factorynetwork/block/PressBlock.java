@@ -25,6 +25,10 @@ import org.jetbrains.annotations.Nullable;
  */
 public class PressBlock extends HorizontalDirectionalBlock implements EntityBlock {
 
+    /** Die Trefferfläche, für jede der vier Richtungen einmal. */
+    private static final java.util.Map<net.minecraft.core.Direction, net.minecraft.world.phys.shapes.VoxelShape>
+            SHAPES = FacingShapes.horizontal(MachineLayouts.press());
+
     public static final MapCodec<PressBlock> CODEC = simpleCodec(PressBlock::new);
 
     public PressBlock(Properties properties) {
@@ -96,5 +100,12 @@ public class PressBlock extends HorizontalDirectionalBlock implements EntityBloc
             }
         }
         super.onRemove(state, level, pos, newState, moved);
+    }
+
+    @Override
+    protected net.minecraft.world.phys.shapes.VoxelShape getShape(
+            BlockState state, net.minecraft.world.level.BlockGetter level,
+            net.minecraft.core.BlockPos pos, net.minecraft.world.phys.shapes.CollisionContext context) {
+        return SHAPES.getOrDefault(state.getValue(FACING), net.minecraft.world.phys.shapes.Shapes.block());
     }
 }

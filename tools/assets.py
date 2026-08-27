@@ -260,15 +260,6 @@ def blockstates():
             parts.append({"when": {direction: "true"}, "apply": apply})
         write(A + "/blockstates/%s.json" % name, {"multipart": parts})
 
-    # Presse: Front mit Stempel und Amboss, sonst Maschinengehäuse.
-    write(A + "/models/block/press.json", {
-        "parent": "minecraft:block/orientable",
-        "textures": {
-            "front": MOD + ":block/press_front",
-            "side": MOD + ":block/machine_top",
-            "top": MOD + ":block/machine_top",
-        },
-    })
     press_variants = {}
     for direction, rotation in (("north", {}), ("east", {"y": 90}),
                                 ("south", {"y": 180}), ("west", {"y": 270})):
@@ -287,16 +278,6 @@ def blockstates():
         "textures": {"all": MOD + ":block/router_side"},
     })
 
-    # Brennkammer: Front mit Klappe, brennend eine zweite Textur.
-    for name, front in (("burner", "burner_front"), ("burner_on", "burner_front_on")):
-        write(A + "/models/block/%s.json" % name, {
-            "parent": "minecraft:block/orientable",
-            "textures": {
-                "front": MOD + ":block/" + front,
-                "side": MOD + ":block/machine_top",
-                "top": MOD + ":block/machine_top",
-            },
-        })
     burner_variants = {}
     for lit, model in ((False, "burner"), (True, "burner_on")):
         for direction, rotation in (("north", {}), ("east", {"y": 90}),
@@ -309,10 +290,6 @@ def blockstates():
     # Kreativ-Stromquelle: ein schlichter Würfel in der Maschinenfarbe.
     write(A + "/blockstates/creative_source.json",
           {"variants": {"": {"model": block("creative_source")}}})
-    write(A + "/models/block/creative_source.json", {
-        "parent": "minecraft:block/cube_all",
-        "textures": {"all": MOD + ":block/creative_source"},
-    })
     write(A + "/models/item/creative_source.json", {"parent": block("creative_source")})
     write(A + "/models/item/burner.json", {"parent": block("burner")})
 
@@ -898,6 +875,226 @@ def terminal_model():
     })
 
 
+# Die Presse in Blockpixeln, Vorderseite nach Norden.
+#
+# Ein Rahmen, dahinter der versenkte Arbeitsraum, und darin steht, was die
+# Textur bisher gemalt hat: zwei Führungssäulen, der Stempelkopf oben, der
+# Amboss unten. Die Zahlen sind aus `tools/textures.py` übernommen und nicht
+# geschätzt — dort steht, wo press_front ihre Teile hinmalt.
+#
+# <b>Achtung bei der Seite:</b> Auf einer Nordfläche läuft die Textur von
+# rechts nach links, u ist also 16 minus x. Was in der Textur links liegt,
+# steht im Spiel rechts. Bei den Teilen der Presse fällt das nicht auf, weil
+# alle mittig sitzen; beim Griff der Brennkammer schon.
+PRESS_FRAME = 3      # Breite des Rahmens ringsum
+PRESS_DEPTH = 3      # wie tief der Rahmen ist
+PRESS_ROOM = 1       # wie weit der Arbeitsraum dahinter zurückliegt
+
+
+def press_boxes():
+    """Die Kästen der Presse."""
+    frame, deep, room = PRESS_FRAME, PRESS_DEPTH, PRESS_ROOM
+    inner = deep - room  # so weit steht alles im Arbeitsraum vor
+    front = {"north": "front", "*": "side"}
+    return [
+        # Das Gehäuse hinter der Front.
+        ([1, 0, deep], [15, 16, 16], {"*": "side"}),
+
+        # Der Rahmen ringsum.
+        ([0, 0, 0], [16, frame, deep], front),
+        ([0, 16 - frame, 0], [16, 16, deep], front),
+        ([0, frame, 0], [frame, 16 - frame, deep], front),
+        ([16 - frame, frame, 0], [16, 16 - frame, deep], front),
+
+        # Der Arbeitsraum, hinter dem Rahmen.
+        ([frame, frame, inner], [16 - frame, 16 - frame, deep], front),
+
+        # Die beiden Führungssäulen, an den Rändern des Arbeitsraums.
+        ([frame, frame, inner - 1], [frame + 1, 16 - frame, inner], front),
+        ([16 - frame - 1, frame, inner - 1], [16 - frame, 16 - frame, inner], front),
+
+        # Stempelkopf oben, Amboss unten — beide bündig mit dem Rahmen.
+        ([5, 9, 0], [11, 13, inner], front),
+        ([5, frame, 0], [11, 6, inner], front),
+    ]
+
+
+def press_model():
+    """Die Presse als Gerät statt als Würfel."""
+    write(A + "/models/block/press.json", {
+        "parent": "minecraft:block/block",
+        "textures": {
+            "particle": texture("machine_top"),
+            "front": texture("press_front"),
+            "side": texture("machine_top"),
+        },
+        "elements": machine_elements(press_boxes()),
+    })
+
+
+# Die Brennkammer in Blockpixeln, Vorderseite nach Norden.
+#
+# Ein Rahmen, dahinter die Klappe, dahinter das Sichtfenster — und der Griff
+# steht als einziger vor der Klappe. Er sitzt links, obwohl die Textur ihn
+# rechts malt: Auf einer Nordfläche läuft die Textur andersherum.
+BURNER_FRAME = 3     # Breite des Rahmens ringsum
+BURNER_DEPTH = 3     # wie tief der Rahmen ist
+
+
+def burner_boxes():
+    """Die Kästen der Brennkammer."""
+    frame, deep = BURNER_FRAME, BURNER_DEPTH
+    front = {"north": "front", "*": "side"}
+    return [
+        # Das Gehäuse. Über die volle Breite — eine Brennkammer steht in der
+        # Wand und nicht frei.
+        ([0, 0, deep], [16, 16, 16], {"*": "side"}),
+
+        # Der Rahmen ringsum.
+        ([0, 0, 0], [16, frame, deep], front),
+        ([0, 16 - frame, 0], [16, 16, deep], front),
+        ([0, frame, 0], [frame, 16 - frame, deep], front),
+        ([16 - frame, frame, 0], [16, 16 - frame, deep], front),
+
+        # Die Klappe, einen Blockpixel hinter dem Rahmen.
+        ([frame, frame, 1], [16 - frame, 16 - frame, deep - 1], front),
+
+        # Das Sichtfenster, noch einen dahinter.
+        ([5, 5, deep - 1], [11, 11, deep], front),
+
+        # Der Griff, als einziger vor der Klappe.
+        ([frame, 7, 0], [frame + 1, 9, 1], front),
+    ]
+
+
+def burner_model():
+    """Die Brennkammer, kalt und brennend — dieselbe Form, zwei Texturen."""
+    for name, front in (("burner", "burner_front"),
+                        ("burner_on", "burner_front_on")):
+        write(A + "/models/block/%s.json" % name, {
+            "parent": "minecraft:block/block",
+            "textures": {
+                "particle": texture("machine_top"),
+                "front": texture(front),
+                "side": texture("machine_top"),
+            },
+            "elements": machine_elements(burner_boxes()),
+        })
+
+
+# Der Fabricator in Blockpixeln.
+#
+# Ein Deckel über die volle Fläche, darauf ein abgesetzter Aufbau, darunter
+# ein Körper, der ringsum zurückspringt, und ein Sockel. Anders als beim
+# Controller gibt es keine Kantensäulen — sonst sähen beide gleich aus, und
+# sie tun Verschiedenes.
+FABRICATOR_BASE = 2   # Höhe des Sockels
+FABRICATOR_LID = 3    # Höhe des Deckels samt Aufbau
+FABRICATOR_INSET = 1  # wie weit der Körper zurückspringt
+FABRICATOR_TOP = 2    # wie weit der Aufbau schmaler ist als der Deckel
+
+
+def fabricator_boxes():
+    """Die Kästen des Fabricators."""
+    base, lid = FABRICATOR_BASE, FABRICATOR_LID
+    inset, top = FABRICATOR_INSET, FABRICATOR_TOP
+    return [
+        ([0, 0, 0], [16, base, 16], {"down": "bottom", "*": "side"}),
+        ([inset, base, inset], [16 - inset, 16 - lid, 16 - inset], {"*": "side"}),
+        ([0, 16 - lid, 0], [16, 16 - 1, 16], {"*": "side"}),
+        ([top, 16 - 1, top], [16 - top, 16, 16 - top], {"up": "top", "*": "side"}),
+    ]
+
+
+def fabricator_model():
+    """Der Fabricator als Gerät statt als Würfel."""
+    write(A + "/models/block/fabricator.json", {
+        "parent": "minecraft:block/block",
+        "textures": {
+            "particle": texture("fabricator_side"),
+            "top": texture("fabricator_top"),
+            "bottom": texture("controller_extension"),
+            "side": texture("fabricator_side"),
+        },
+        "elements": machine_elements(fabricator_boxes()),
+    })
+
+
+# Der Controller-Anbau in Blockpixeln.
+#
+# Ein Käfig: zwölf Leisten auf den Blockkanten, dazwischen ein Kern, der
+# ringsum einen Blockpixel zurückspringt. Auf allen sechs Seiten dasselbe —
+# er hat keine Vorderseite, und diese Form braucht auch keine.
+EXTENSION_EDGE = 1    # Stärke einer Kantenleiste
+
+
+def extension_boxes():
+    """Die Kästen des Anbaus: der Kern und die zwölf Kanten."""
+    edge = EXTENSION_EDGE
+    far = 16 - edge
+    boxes = [([edge, edge, edge], [far, far, far], {"*": "all"})]
+
+    # Die vier senkrechten Leisten stehen in den Ecken; die waagerechten
+    # fangen dahinter an, damit sich keine zwei überlappen. Zwei Flächen in
+    # derselben Ebene flimmern im Spiel, und zwar nur aus manchen Winkeln.
+    for x in (0, far):
+        for z in (0, far):
+            boxes.append(([x, 0, z], [x + edge, 16, z + edge], {"*": "all"}))
+    for y in (0, far):
+        for z in (0, far):
+            boxes.append(([edge, y, z], [far, y + edge, z + edge], {"*": "all"}))
+        for x in (0, far):
+            boxes.append(([x, y, edge], [x + edge, y + edge, far], {"*": "all"}))
+    return boxes
+
+
+def extension_model():
+    """Der Anbau als Käfig statt als Würfel."""
+    write(A + "/models/block/controller_extension.json", {
+        "parent": "minecraft:block/block",
+        "textures": {
+            "particle": texture("controller_extension"),
+            "all": texture("controller_extension"),
+        },
+        "elements": machine_elements(extension_boxes()),
+    })
+
+
+# Die Kreativquelle in Blockpixeln.
+#
+# Ein Kern, der ringsum zurückspringt, und acht Eckklötze, die bis an die
+# Blockkante reichen. Von weitem ein Behälter mit verstärkten Ecken — und
+# damit ohne Verwechslung mit dem Anbau, der seine Kanten führt statt seiner
+# Ecken.
+SOURCE_CORNER = 3   # Kantenlänge eines Eckklotzes
+SOURCE_INSET = 1    # wie weit der Kern zurückspringt
+
+
+def source_boxes():
+    """Die Kästen der Kreativquelle."""
+    corner, inset = SOURCE_CORNER, SOURCE_INSET
+    boxes = [([inset, inset, inset], [16 - inset, 16 - inset, 16 - inset],
+              {"*": "all"})]
+    for x in (0, 16 - corner):
+        for y in (0, 16 - corner):
+            for z in (0, 16 - corner):
+                boxes.append(([x, y, z], [x + corner, y + corner, z + corner],
+                              {"*": "all"}))
+    return boxes
+
+
+def source_model():
+    """Die Kreativquelle als Behälter statt als Würfel."""
+    write(A + "/models/block/creative_source.json", {
+        "parent": "minecraft:block/block",
+        "textures": {
+            "particle": texture("creative_source"),
+            "all": texture("creative_source"),
+        },
+        "elements": machine_elements(source_boxes()),
+    })
+
+
 def gateway_model():
     """Das Gateway als Torbogen statt als Würfel.
 
@@ -924,28 +1121,17 @@ def gateway_model():
 
 
 def models():
-    # Der Anbau zeigt auf allen sechs Seiten dasselbe: Er hat keine
-    # Vorderseite, weil jede seiner Seiten dieselbe Aufgabe hat.
-    write(A + "/models/block/controller_extension.json", {
-        "parent": "minecraft:block/cube_all",
-        "textures": {"all": texture("controller_extension")},
-    })
-
-    write(A + "/models/block/fabricator.json", {
-        "parent": "minecraft:block/cube_bottom_top",
-        "textures": {
-            "top": texture("fabricator_top"),
-            "bottom": texture("controller_extension"),
-            "side": texture("fabricator_side"),
-        },
-    })
-
     cable_models()
     connector_part_models()
     gateway_model()
     drive_model()
     controller_model()
     terminal_model()
+    press_model()
+    burner_model()
+    fabricator_model()
+    extension_model()
+    source_model()
 
     # Das Blockmodell des Connectors ist am 26.08. mit seinem Block
     # verschwunden. Diese Erzeugung stand noch hier und legte die Datei bei

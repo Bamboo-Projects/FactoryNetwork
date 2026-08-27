@@ -1,6 +1,7 @@
 package dev.devpanda.factorynetwork.block;
 
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
 
 /**
  * Ein Anbau am Controller: mehr Außenflächen für Kabel, sonst nichts.
@@ -26,7 +27,17 @@ import net.minecraft.world.level.block.Block;
  */
 public class ControllerExtensionBlock extends Block {
 
+    /** Der Umriss aus den Kästen des Modells. */
+    private static final net.minecraft.world.phys.shapes.VoxelShape SHAPE =
+            FacingShapes.whole(MachineLayouts.extension());
+
     public ControllerExtensionBlock(Properties properties) {
         super(properties);
+    }
+    @Override
+    protected net.minecraft.world.phys.shapes.VoxelShape getShape(
+            BlockState state, net.minecraft.world.level.BlockGetter level,
+            net.minecraft.core.BlockPos pos, net.minecraft.world.phys.shapes.CollisionContext context) {
+        return SHAPE;
     }
 }

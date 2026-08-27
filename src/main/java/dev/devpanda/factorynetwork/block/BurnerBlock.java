@@ -34,6 +34,10 @@ import org.jetbrains.annotations.Nullable;
  */
 public class BurnerBlock extends HorizontalDirectionalBlock implements EntityBlock {
 
+    /** Die Trefferfläche, für jede der vier Richtungen einmal. */
+    private static final java.util.Map<net.minecraft.core.Direction, net.minecraft.world.phys.shapes.VoxelShape>
+            SHAPES = FacingShapes.horizontal(MachineLayouts.burner());
+
     public static final MapCodec<BurnerBlock> CODEC = simpleCodec(BurnerBlock::new);
 
     /** Brennt sie gerade? Daran hängen Textur und Licht. */
@@ -101,5 +105,12 @@ public class BurnerBlock extends HorizontalDirectionalBlock implements EntityBlo
             net.minecraft.world.Containers.dropContents(level, pos, burner);
         }
         super.onRemove(state, level, pos, newState, moved);
+    }
+
+    @Override
+    protected net.minecraft.world.phys.shapes.VoxelShape getShape(
+            BlockState state, net.minecraft.world.level.BlockGetter level,
+            net.minecraft.core.BlockPos pos, net.minecraft.world.phys.shapes.CollisionContext context) {
+        return SHAPES.getOrDefault(state.getValue(FACING), net.minecraft.world.phys.shapes.Shapes.block());
     }
 }

@@ -39,7 +39,13 @@ class MachineLayoutTest {
             new Machine("gateway", GatewayLayout::boxes, "cube_all"),
             new Machine("drive", DriveLayout::boxes, "orientable"),
             new Machine("controller", ControllerLayout::boxes, "cube_bottom_top"),
-            new Machine("terminal", TerminalLayout::boxes, "orientable"));
+            new Machine("terminal", TerminalLayout::boxes, "orientable"),
+            new Machine("press", MachineLayouts::press, "orientable"),
+            new Machine("burner", MachineLayouts::burner, "orientable"),
+            new Machine("burner_on", MachineLayouts::burner, "orientable"),
+            new Machine("fabricator", MachineLayouts::fabricator, "cube_bottom_top"),
+            new Machine("controller_extension", MachineLayouts::extension, "cube_all"),
+            new Machine("creative_source", MachineLayouts::source, "cube_all"));
 
     private static String model(String name) throws IOException {
         Path file = Path.of("src/main/resources/assets/factorynetwork/models/block",

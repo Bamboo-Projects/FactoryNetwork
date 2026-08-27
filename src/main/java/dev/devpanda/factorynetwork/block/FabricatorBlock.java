@@ -22,6 +22,10 @@ import net.minecraft.world.level.block.state.BlockState;
  */
 public class FabricatorBlock extends Block {
 
+    /** Der Umriss aus den Kästen des Modells. */
+    private static final net.minecraft.world.phys.shapes.VoxelShape SHAPE =
+            FacingShapes.whole(MachineLayouts.fabricator());
+
     public static final MapCodec<FabricatorBlock> CODEC = simpleCodec(FabricatorBlock::new);
 
     public FabricatorBlock(Properties properties) {
@@ -31,5 +35,12 @@ public class FabricatorBlock extends Block {
     @Override
     protected MapCodec<? extends Block> codec() {
         return CODEC;
+    }
+
+    @Override
+    protected net.minecraft.world.phys.shapes.VoxelShape getShape(
+            BlockState state, net.minecraft.world.level.BlockGetter level,
+            net.minecraft.core.BlockPos pos, net.minecraft.world.phys.shapes.CollisionContext context) {
+        return SHAPE;
     }
 }

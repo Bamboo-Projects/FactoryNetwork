@@ -24,6 +24,10 @@ import net.neoforged.neoforge.energy.IEnergyStorage;
  */
 public class CreativeSourceBlock extends Block {
 
+    /** Der Umriss aus den Kästen des Modells. */
+    private static final net.minecraft.world.phys.shapes.VoxelShape SHAPE =
+            FacingShapes.whole(MachineLayouts.source());
+
     public static final MapCodec<CreativeSourceBlock> CODEC =
             simpleCodec(CreativeSourceBlock::new);
 
@@ -106,5 +110,11 @@ public class CreativeSourceBlock extends Block {
             }
         }
         level.scheduleTick(pos, this, 1);
+    }
+    @Override
+    protected net.minecraft.world.phys.shapes.VoxelShape getShape(
+            BlockState state, net.minecraft.world.level.BlockGetter level,
+            net.minecraft.core.BlockPos pos, net.minecraft.world.phys.shapes.CollisionContext context) {
+        return SHAPE;
     }
 }

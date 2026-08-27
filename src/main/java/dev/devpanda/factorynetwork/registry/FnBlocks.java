@@ -25,6 +25,12 @@ public final class FnBlocks {
     public static final DeferredRegister.Blocks BLOCKS =
             DeferredRegister.createBlocks(FactoryNetwork.MOD_ID);
 
+    // Fast jeder Block hier trägt noOcclusion. Der Grund ist derselbe wie
+    // beim ersten: Sobald ein Modell nicht mehr den ganzen Würfel füllt,
+    // lässt Minecraft die Flächen der Nachbarn weg, die man durch die Lücken
+    // sieht — und in der Lücke steht dann ein schwarzes Loch. Nur der Router
+    // ist noch ein voller Würfel und braucht es nicht.
+
     /** Wurzel eines Netzwerks: hält Programm, Speicher und die Laufzeit. */
     public static final DeferredBlock<Block> CONTROLLER = BLOCKS.register("controller",
             // noOcclusion, weil der Körper zwischen den Deckplatten
@@ -42,7 +48,7 @@ public final class FnBlocks {
     public static final DeferredBlock<Block> CONTROLLER_EXTENSION =
             BLOCKS.register("controller_extension",
                     () -> new dev.devpanda.factorynetwork.block.ControllerExtensionBlock(
-                            machineProperties()));
+                            machineProperties().noOcclusion()));
 
     /**
      * Baut, was das Netz bestellt.
@@ -50,7 +56,8 @@ public final class FnBlocks {
      * <p>Ohne Muster-Items: Jedes Werkbank-Rezept steht schon im Server.
      */
     public static final DeferredBlock<Block> FABRICATOR = BLOCKS.register("fabricator",
-            () -> new dev.devpanda.factorynetwork.block.FabricatorBlock(machineProperties()));
+            () -> new dev.devpanda.factorynetwork.block.FabricatorBlock(
+                            machineProperties().noOcclusion()));
 
     /**
      * Gibt seiner Umgebung einen Anlagennamen.
@@ -130,11 +137,12 @@ public final class FnBlocks {
                     .strength(2.0F, 6.0F)
                     .sound(SoundType.METAL)
                     .requiresCorrectToolForDrops()
-                    .lightLevel(state -> state.getValue(BurnerBlock.LIT) ? 13 : 0)));
+                    .lightLevel(state -> state.getValue(BurnerBlock.LIT) ? 13 : 0)
+                    .noOcclusion()));
 
     /** Presst Bauteile — der Einstieg in die Fertigungskette. */
     public static final DeferredBlock<Block> PRESS = BLOCKS.register("press",
-            () -> new PressBlock(machineProperties()));
+            () -> new PressBlock(machineProperties().noOcclusion()));
 
     /**
      * Strom ohne Brennstoff — nur zum Ausprobieren.
@@ -148,7 +156,8 @@ public final class FnBlocks {
                             .mapColor(MapColor.COLOR_LIGHT_BLUE)
                             .strength(-1.0F, 3600000.0F)
                             .sound(SoundType.METAL)
-                            .lightLevel(state -> 10)));
+                            .lightLevel(state -> 10)
+                            .noOcclusion()));
 
     /** Nimmt zwölf Server auf — ohne ihn rechnet das Netz nicht. */
     public static final DeferredBlock<Block> RACK = BLOCKS.register("server_rack",

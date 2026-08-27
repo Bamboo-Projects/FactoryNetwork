@@ -45,6 +45,17 @@ public class DriveRenderer implements BlockEntityRenderer<DriveBlockEntity> {
 
     /** Die Schächte liegen so, wie sie {@code textures.py} malt. */
     private static final float TEXTURE = 64.0F;
+    /**
+     * So weit liegt das Schachtfeld hinter der Fassung — dieselbe Zahl wie im
+     * Modell.
+     *
+     * <p>Solange die Front ein flacher Würfel war, gab es sie nicht. Seit dem
+     * Umbau liegt das Feld einen Blockpixel tiefer, und ohne diesen Abstand
+     * schwebten die Zellen davor.
+     */
+    private static final float DEPTH =
+            dev.devpanda.factorynetwork.block.DriveLayout.RECESS / 16.0F;
+
     private static final int BAY_X = 10;
     private static final int BAY_Y = 12;
     private static final int BAY_W = 20;
@@ -78,7 +89,7 @@ public class DriveRenderer implements BlockEntityRenderer<DriveBlockEntity> {
                         x / TEXTURE, y / TEXTURE,
                         (x + BAY_W) / TEXTURE, (y + BAY_H) / TEXTURE,
                         kind / TILES, (kind + 1) / TILES,
-                        kind == 0 ? dark : LightTexture.FULL_BRIGHT);
+                        kind == 0 ? dark : LightTexture.FULL_BRIGHT, DEPTH);
             }
         }
         poses.popPose();
