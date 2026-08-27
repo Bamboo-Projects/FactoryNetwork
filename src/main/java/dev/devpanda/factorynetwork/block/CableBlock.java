@@ -332,14 +332,16 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
      * Bauform geht — ein Block bedient bis zu sechs Nachbarn, wo bisher sechs
      * Blöcke standen.
      *
-     * <p><b>Warum ein Fehlschlag hier trotzdem „erledigt" meldet:</b> Ein
-     * {@code FAIL} fällt durch auf den Gegenstand, und der setzt dann einen
-     * Connectorblock in die Lücke daneben. Wer auf eine besetzte Fläche
-     * klickt, bekommt deshalb einen Satz statt eines Blocks an falscher
-     * Stelle.
+     * <p><b>Warum ein Fehlschlag hier trotzdem „erledigt" meldet:</b> Damit
+     * der Spieler erfährt, woran es lag. Ein {@code FAIL} fällt durch auf den
+     * Gegenstand — und der ist seit dem 26.08. ein schlichter Gegenstand ohne
+     * eigenes Verhalten, also passiert danach nichts, was den Klick erklären
+     * würde.
      *
-     * <p><b>Die Fluchtluke:</b> Wer schleichend klickt, umgeht diesen Weg
-     * ganz — dann wird der Connectorblock gesetzt wie eh und je.
+     * <p><b>Und schleichend klicken führt ins Leere.</b> Minecraft überspringt
+     * diesen Weg dann und ruft den Gegenstand — der nichts tut. Solange es
+     * den Connector als eigenen Block gab, war das die Fluchtluke, um ihn
+     * doch danebenzusetzen; heute ist es ein Klick ohne Wirkung.
      */
     @Override
     protected net.minecraft.world.ItemInteractionResult useItemOn(
