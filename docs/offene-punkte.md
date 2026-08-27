@@ -385,10 +385,10 @@ freistehen und etwas darstellen** — Controller, Terminal, Gateway. Beim
 Gateway ist die Öffnung ohnehin schon in der Textur; ein Bogen, durch den man
 wirklich hindurchsieht, wäre der Block, der die Anlage markiert.
 
-#### Stand am Abend des 27.08.: vier Blöcke haben eine Form
+#### Stand am Abend des 27.08.: zehn Blöcke haben eine Form
 
-**Weg 2 für alle vier**, nicht nur für die freistehenden — Weg 1 ist bisher
-nirgends nötig gewesen.
+**Weg 2 für alle**, nicht nur für die freistehenden — Weg 1, das Relief im
+vollen Würfel, ist an keiner Stelle nötig gewesen.
 
 | Block | was er jetzt ist |
 |---|---|
@@ -396,6 +396,11 @@ nirgends nötig gewesen.
 | Laufwerk | Gehäuse auf vier Füßen, davor die Blende, darin das Schachtfeld versenkt |
 | Controller | Deckplatten oben und unten, dazwischen ein zurückspringender Körper mit vier Kantensäulen |
 | Terminal | Gehäuse, Rahmen, versenkter Bildschirm, darunter eine vorstehende Konsole |
+| Presse | Rahmen, versenkter Arbeitsraum, darin Führungssäulen, Stempelkopf und Amboss |
+| Brennkammer | Rahmen, Klappe, versenktes Sichtfenster, davor der Griff |
+| Fabricator | Sockel, zurückspringender Körper, Deckel, abgesetzter Aufbau |
+| Controller-Anbau | Käfig aus zwölf Kantenleisten um einen zurückspringenden Kern |
+| Kreativquelle | acht Eckklötze um denselben Kern |
 
 **Keine einzige neue Textur.** Jeder Kasten schneidet aus der vorhandenen
 Textur den Ausschnitt, den ein Würfelmodell an dieser Stelle genommen hätte.
@@ -416,10 +421,31 @@ Torbogen war aufgemalt und ist jetzt Geometrie.
 4. Der Betrachter hatte seine Tiefensortierung verdreht — an Würfeln
    unsichtbar, ab dem ersten Kasten im Inneren falsch.
 
-**Was noch ein Würfel ist:** Router, Presse, Brennkammer, Fabricator,
-Controller-Anbau, Kreativquelle. Und keiner davon ist im Client gelaufen:
-Umgebungsverdeckung, Beleuchtung, die Ansicht in Hand und Inventar und ob
-`noOcclusion` wirklich greift, zeigt der Betrachter grundsätzlich nicht.
+Später am selben Tag sind die übrigen fünf dazugekommen: Presse und
+Brennkammer nach dem Muster von Laufwerk und Terminal, der Fabricator mit
+Sockel, zurückspringendem Körper, Deckel und Aufbau, der Controller-Anbau als
+Käfig aus zwölf Kantenleisten und die Kreativquelle mit acht Eckklötzen.
+
+**Der Router bleibt ein Würfel, und das ist kein Rest.** Sein Renderer malt
+die Bahnkennung über die volle Fläche jeder der sechs Seiten. Jede Form, die
+irgendwo zurückspringt, ließe den Ring dort über Luft schweben. Ihn kleiner zu
+malen hieße, die Auskunft schlechter lesbar zu machen, damit der Block besser
+aussieht — falsch herum. Wer den Router doch umbauen will, muss zuerst
+entscheiden, wo die Bahnkennung dann sitzt.
+
+**Was ein Umbau sonst noch anfassen muss:** Jeder Block mit einem
+BlockEntityRenderer malt auf seine Front, und zwar in Blockkoordinaten. Wird
+die Front versenkt, muss der Renderer denselben Abstand kennen — beim Laufwerk
+ist genau das zunächst untergegangen, und die Zellen schwebten einen
+Blockpixel vor dem Schacht. `FaceOverlay.tile` nimmt dafür einen letzten
+Parameter, und die Zahl kommt aus dem Layout, nicht aus einer zweiten
+Konstante. Betroffen sind Laufwerk, Serverschrank, Router und die
+Anzeigetafel.
+
+**Was der Betrachter grundsätzlich nicht zeigt:** Umgebungsverdeckung,
+Beleuchtung, die Ansicht in Hand und Inventar und ob `noOcclusion` wirklich
+greift. Dafür braucht es einen Client-Lauf, und den hat noch keiner der zehn
+Blöcke gesehen.
 
 ### Stand nach der Nacht auf den 27.08.
 
