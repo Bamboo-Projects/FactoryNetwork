@@ -336,6 +336,55 @@ Zustand wirklich ändert. Betrieb und Füllstand bleiben draußen; die Rechnung
 dazu steht in `statusanzeige.md` §3. Nebenbei liest Jade jetzt denselben
 Stempel, statt dieselbe Frage ein zweites Mal zu rechnen.
 
+### Womit die nächste Sitzung anfängt: echte Blockmodelle
+
+**Gewünscht am 27.08.**, mit zwei Vorbildern aus fremden Mods: ein Podest aus
+Ars Nouveau (breite Deckplatte, schmale Säule, breiter Sockel) und zwei
+Rechner-Blöcke in Blockbench (Bildschirm, Tastatur, Turm mit Schächten — je
+ein Dutzend Kästen). Der Satz dazu: *„sowas meine ich mit 3d models"*.
+
+**Der Befund ist eindeutig.** Bis auf den Serverschrank und die Anschlüsse am
+Kabel ist **jeder** Maschinenblock ein texturierter Würfel:
+
+| Block | heute |
+|---|---|
+| Controller, Fabricator | voller Würfel (`cube_bottom_top`) |
+| Gateway, Router, Controller-Anbau, Kreativquelle | voller Würfel (`cube_all`) |
+| Terminal, Laufwerk, Presse, Brennkammer | voller Würfel (`orientable`) |
+| Serverschrank | 4 Kästen — der einzige mit Form |
+| Anschluss am Kabel | 2 Kästen (Platte und Ring) |
+
+**Das Werkzeug dafür steht schon:** `tools/modellblick.py` zeichnet ein Modell
+isometrisch mit seinen echten Texturen, in einer Sekunde statt eines
+Client-Starts.
+
+```
+python tools/modellblick.py block/controller block/terminal block/drive
+```
+
+Es kennt die Vanilla-Eltern (`cube_all`, `orientable`, …), legt mehrere
+Modelle übereinander (`--single`) und zeigt die **Vorderseiten**, nicht die
+Rückseiten. Beleuchtung, Umgebungsverdeckung und alles Durchsichtige fehlen —
+für die Frage „stimmt die Form" reicht es.
+
+**Die Entscheidung, die vor dem ersten Kasten fällt:** Ein Modell, das nicht
+mehr den ganzen Würfel füllt, braucht `noOcclusion()` am Block und eine eigene
+`VoxelShape` — sonst sieht man durch die Aussparungen hindurch, und man greift
+neben das, was man sieht. Zwei Wege:
+
+1. **Relief im Würfel bleiben.** Ein voller Kern von 0 bis 16, darauf erhabene
+   Rahmen, Blenden, Lüftungsgitter, Füße. Sieht dreidimensional aus, ändert
+   weder Verdeckung noch Trefferfläche, kostet **keine Zeile Java**.
+2. **Echte Silhouette** wie das Podest im Vorbild. Kostet je Block
+   `noOcclusion`, eine `VoxelShape` und einen Prüflauf, der beide zusammenhält
+   — so wie `CableLayoutTest` es für das Kabel tut.
+
+Der Vorschlag: **Weg 1 für die Maschinen, die in einer Wand stehen**
+(Laufwerk, Serverschrank, Presse, Brennkammer), **Weg 2 für die, die
+freistehen und etwas darstellen** — Controller, Terminal, Gateway. Beim
+Gateway ist die Öffnung ohnehin schon in der Textur; ein Bogen, durch den man
+wirklich hindurchsieht, wäre der Block, der die Anlage markiert.
+
 ### Stand nach der Nacht auf den 27.08.
 
 Fünf Punkte durchgezogen: die VS-Code-Erweiterung auf 1.0, Source aus Ars
