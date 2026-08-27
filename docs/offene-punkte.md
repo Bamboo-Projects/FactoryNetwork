@@ -452,10 +452,44 @@ Parameter, und die Zahl kommt aus dem Layout, nicht aus einer zweiten
 Konstante. Betroffen sind Laufwerk, Serverschrank, Router und die
 Anzeigetafel.
 
+#### Später am 27.08.: die Gegenstände, und zwei Blöcke nachgebessert
+
+**Siebenunddreißig Gegenstände haben einen Körper.** Statt der Extrusion, die
+`item/generated` aus dem Alphakanal rechnet, ist jeder ein Quader in der Größe
+seines Umrisses — vier Blockpixel dick bei Speicherzellen und Stempeln, zwei
+bei Platinen, einer bei einem Blech. Kristall, Rohkristall,
+Beschriftungspistole und Analysator bleiben flach: Ihre Silhouette trifft kein
+Kasten.
+
+Dabei eine Falle, die `ItemModelTest` jetzt bewacht: Wer eigene Kästen
+mitbringt, darf nicht von `item/generated` erben. Minecraft erkennt an der
+Ahnenreihe `builtin/generated`, dass es die Flächen aus `layer0` bauen soll —
+ein Kind ohne `layer0` hätte danach gar keine mehr und wäre in der Hand
+unsichtbar.
+
+**Das Gateway war zum zweiten Mal zu hohl** und steht jetzt bei 86 statt 76
+Hundertsteln Material.
+
+**Die Presse hat einen echten Hohlraum** und einen Stempel, der sich bewegt.
+Er steht in einem eigenen Modell, das der `PressRenderer` zeichnet und
+verschiebt — dasselbe Verfahren wie bei den Kabelanschlüssen. Die Bewegung
+rechnet der Client aus der Spielzeit und nicht aus dem Fortschritt: Der
+erreicht den Client nur mit einem Blockupdate, und jeden Tick eines zu
+schicken wäre Netzlast für eine Animation.
+
 **Was der Betrachter grundsätzlich nicht zeigt:** Umgebungsverdeckung,
 Beleuchtung, die Ansicht in Hand und Inventar und ob `noOcclusion` wirklich
 greift. Dafür braucht es einen Client-Lauf, und den hat noch keiner der zehn
-Blöcke gesehen.
+Blöcke gesehen. Was dort zu prüfen ist:
+
+1. Greift `noOcclusion` überall — kein schwarzes Loch im Torbogen, in der
+   Router-Buchse, im Hohlraum der Presse, in den Fugen
+2. Der Stempel der Presse: Fährt er, und trifft er den Amboss statt die Luft
+   oder das Blech darunter
+3. Die siebenunddreißig Gegenstände in Hand, Inventar und am Boden
+4. Umgebungsverdeckung und Licht auf den versenkten Flächen
+5. Die Anschlussplatten der Kabel gegen die neuen Fronten
+6. Die Laufwerkszellen sitzen im Schacht statt davor
 
 ### Stand nach der Nacht auf den 27.08.
 
