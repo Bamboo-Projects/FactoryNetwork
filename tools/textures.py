@@ -1828,6 +1828,35 @@ def wireless_module():
     return img
 
 
+def mast_side():
+    """Der Mast: Blech mit einer senkrechten Naht und Nieten.
+
+    Die Naht läuft längs, weil der Block hoch ist und nicht breit — dieselbe
+    Textur liegt auf Sockel, Schaft und Auslegern, und was dort quer liefe,
+    sähe an jedem der drei anders aus.
+    """
+    img = surface(seed=81)
+    d = ImageDraw.Draw(img)
+    raised(img, (1, 1, N - 2, N - 2), hoehe=3)
+
+    # Die Naht in der Mitte, längs — und ohne Nieten darin.
+    #
+    # <b>Der erste Wurf hatte alle neun Texturpixel eine.</b> Der Mast
+    # besteht aus sieben kleinen Kästen, und jeder schneidet seinen Ausschnitt
+    # an seiner Weltposition: Auf einem Schaft von sechs Blockpixeln erwischte
+    # fast jede Fläche eine Niete, und das Ganze sah aus wie ein Nietenteppich.
+    # Die vier an den Ecken der Textur reichen — die trifft nur, wer die
+    # Blockkante trifft.
+    d.rectangle([28, 6, 35, 57], fill=blend(BODY_MID, EDGE, 0.35) + (255,))
+    recess(img, (28, 6, 35, 57), tiefe=2)
+
+    for x, y in ((5, 5), (58, 5), (5, 58), (58, 58)):
+        rivet(img, x, y, r=2)
+    scratches(img, seed=82)
+    return img
+
+
+
 def main():
     print("Blocktexturen (64x64):")
     save(controller_top(), "block", "controller_top")
@@ -1862,6 +1891,7 @@ def main():
     save(crystal_ore(True), "block", "deepslate_crystal_ore")
     print("Gegenstandstexturen:")
     save(label_gun(), "item", "label_gun")
+    save(mast_side(), "block", "mast_side")
     save(range_card(), "item", "range_card")
     save(infinity_card(), "item", "infinity_card")
     save(wireless_module(), "item", "wireless_module")

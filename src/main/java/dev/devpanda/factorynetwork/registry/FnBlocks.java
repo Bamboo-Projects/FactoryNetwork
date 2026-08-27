@@ -179,6 +179,16 @@ public final class FnBlocks {
                     .noOcclusion()
                     .lightLevel(state -> 5)));
 
+    /**
+     * Von hier aus funkt das Netz.
+     *
+     * <p>Zwischen Sockel und Auslegern ist Luft — deshalb noOcclusion, wie
+     * bei jedem Block hier, der kein voller Würfel ist.
+     */
+    public static final DeferredBlock<Block> MAST = BLOCKS.register("mast",
+            () -> new dev.devpanda.factorynetwork.block.MastBlock(
+                    machineProperties().noOcclusion()));
+
     /** Zugang zum Code-Editor. */
     public static final DeferredBlock<Block> TERMINAL = BLOCKS.register("terminal",
             // noOcclusion, weil Konsole und Rahmen vorstehen und das Gehäuse

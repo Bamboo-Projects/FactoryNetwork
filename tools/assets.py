@@ -1344,6 +1344,43 @@ def item_model(name, parent="minecraft:item/generated"):
     })
 
 
+# Der Sendemast in Blockpixeln. Dieselben Zahlen stehen in MastLayout.java;
+# MachineLayoutTest hält beide zusammen.
+MAST_BASE = 3      # Höhe des Sockels
+MAST_SHAFT = 3     # halbe Breite des Schafts
+MAST_ARMS = 11     # ab hier die Ausleger
+MAST_ARM_OUT = 2   # und so weit stehen sie ab
+
+
+def mast_boxes():
+    """Die Kästen des Sendemasts — dieselben Zahlen wie in MastLayout."""
+    base, shaft, arms, out = MAST_BASE, MAST_SHAFT, MAST_ARMS, MAST_ARM_OUT
+    near, far = 8 - shaft, 8 + shaft
+    side = {"*": "side"}
+    return [
+        ([0, 0, 0], [16, base, 16], side),
+        ([near, base, near], [far, arms, far], side),
+        ([near, arms, near - out], [far, arms + 2, near], side),
+        ([near, arms, far], [far, arms + 2, far + out], side),
+        ([near - out, arms, near], [near, arms + 2, far], side),
+        ([far, arms, near], [far + out, arms + 2, far], side),
+        ([7, arms + 2, 7], [9, 16, 9], side),
+    ]
+
+
+def mast_model():
+    """Der Sendemast: Sockel, Schaft, vier Ausleger, Spitze."""
+    write(A + "/models/block/mast.json", {
+        "parent": "minecraft:block/block",
+        "textures": {
+            "particle": texture("mast_side"),
+            "side": texture("mast_side"),
+        },
+        "elements": machine_elements(mast_boxes()),
+    })
+    write(A + "/blockstates/mast.json", {"variants": {"": {"model": block("mast")}}})
+    write(A + "/models/item/mast.json", {"parent": block("mast")})
+
 def gateway_model():
     """Das Gateway als Torbogen statt als Würfel.
 
@@ -1382,6 +1419,7 @@ def models():
     extension_model()
     source_model()
     router_model()
+    mast_model()
 
     # Das Blockmodell des Connectors ist am 26.08. mit seinem Block
     # verschwunden. Diese Erzeugung stand noch hier und legte die Datei bei
@@ -1606,7 +1644,8 @@ def loot_and_recipes():
         }],
     })
     for name in ("controller", "controller_extension", "fabricator",
-                 "terminal", "display", "drive", "press", "router", "burner"):
+                 "terminal", "display", "drive", "press", "router", "burner",
+                 "mast"):
         write(D + "/loot_table/blocks/" + name + ".json", {
             "type": "minecraft:block",
             "pools": [{
@@ -1708,6 +1747,19 @@ def loot_and_recipes():
             "R": {"item": MOD + ":range_card"},
         },
         "result": {"id": MOD + ":wireless_module", "count": 1},
+    })
+
+    # Der Sendemast: ein Netzkern auf einem Gerüst aus Platten und Eisen.
+    write(D + "/recipe/mast.json", {
+        "type": "minecraft:crafting_shaped",
+        "category": "misc",
+        "pattern": [" I ", "PNP", "PPP"],
+        "key": {
+            "I": {"item": "minecraft:iron_ingot"},
+            "P": {"item": MOD + ":plate"},
+            "N": {"item": MOD + ":core_network"},
+        },
+        "result": {"id": MOD + ":mast", "count": 1},
     })
 
     write(D + "/recipe/connector.json", {

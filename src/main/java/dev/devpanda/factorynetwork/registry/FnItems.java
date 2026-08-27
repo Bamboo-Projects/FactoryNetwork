@@ -32,6 +32,10 @@ public final class FnItems {
     public static final DeferredItem<BlockItem> CONTROLLER_EXTENSION =
             ITEMS.registerSimpleBlockItem(FnBlocks.CONTROLLER_EXTENSION);
 
+    /** Der Sendemast, den man hinstellt. */
+    public static final DeferredItem<BlockItem> MAST =
+            ITEMS.registerSimpleBlockItem(FnBlocks.MAST);
+
     public static final DeferredItem<BlockItem> GATEWAY =
             ITEMS.registerSimpleBlockItem(FnBlocks.GATEWAY);
     /**
