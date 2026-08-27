@@ -385,6 +385,42 @@ freistehen und etwas darstellen** — Controller, Terminal, Gateway. Beim
 Gateway ist die Öffnung ohnehin schon in der Textur; ein Bogen, durch den man
 wirklich hindurchsieht, wäre der Block, der die Anlage markiert.
 
+#### Stand am Abend des 27.08.: vier Blöcke haben eine Form
+
+**Weg 2 für alle vier**, nicht nur für die freistehenden — Weg 1 ist bisher
+nirgends nötig gewesen.
+
+| Block | was er jetzt ist |
+|---|---|
+| Gateway | Torbogen: Sockel, Sturz, vier Ecksäulen, acht Schultern, zwei Leuchtbänder außen |
+| Laufwerk | Gehäuse auf vier Füßen, davor die Blende, darin das Schachtfeld versenkt |
+| Controller | Deckplatten oben und unten, dazwischen ein zurückspringender Körper mit vier Kantensäulen |
+| Terminal | Gehäuse, Rahmen, versenkter Bildschirm, darunter eine vorstehende Konsole |
+
+**Keine einzige neue Textur.** Jeder Kasten schneidet aus der vorhandenen
+Textur den Ausschnitt, den ein Würfelmodell an dieser Stelle genommen hätte.
+Nieten, Rahmenkanten und Fasen sitzen dadurch weiter dort, wo sie saßen — und
+was die Textur vorher als Vertiefung malte, ist jetzt eine. Nur beim Gateway
+ist eine dazugekommen (`gateway_glow`) und eine Malerei verschwunden: Der
+Torbogen war aufgemalt und ist jetzt Geometrie.
+
+**Was dabei herauskam und für den Rest gilt:**
+
+1. `tools/assets.py` rechnet selbst aus, welche Flächen kein Mensch sieht.
+   Von Hand abgezählt hatte ich sie beim Gateway; der Helfer kommt Fläche für
+   Fläche auf dasselbe Ergebnis.
+2. `FacingShapes` dreht die Trefferfläche mit. Ohne das hätte ein Laufwerk
+   nach Osten die Trefferfläche eines nach Norden.
+3. `MachineLayoutTest` fährt die vier Grundproben für alle umgebauten Blöcke.
+   Wer den nächsten umbaut, trägt ihn in die Liste ein.
+4. Der Betrachter hatte seine Tiefensortierung verdreht — an Würfeln
+   unsichtbar, ab dem ersten Kasten im Inneren falsch.
+
+**Was noch ein Würfel ist:** Router, Presse, Brennkammer, Fabricator,
+Controller-Anbau, Kreativquelle. Und keiner davon ist im Client gelaufen:
+Umgebungsverdeckung, Beleuchtung, die Ansicht in Hand und Inventar und ob
+`noOcclusion` wirklich greift, zeigt der Betrachter grundsätzlich nicht.
+
 ### Stand nach der Nacht auf den 27.08.
 
 Fünf Punkte durchgezogen: die VS-Code-Erweiterung auf 1.0, Source aus Ars
