@@ -128,7 +128,22 @@ public final class MachineLayouts {
      * lässt ihn schweben.
      */
     public static List<int[]> router() {
-        return cage(4, 2);
+        int inset = 1;
+        int plate = 6;
+        List<int[]> boxes = cage(4, inset);
+        // Die sechs Kontaktplatten: dort, wo die Textur die vier Kontakte
+        // malt, sitzt wieder Material bis an die Blockkante. Ohne sie war in
+        // jeder Seite ein Loch, das aussah wie ein Loch.
+        for (int axis = 0; axis < 3; axis++) {
+            for (int side : new int[] {0, 16 - inset}) {
+                int[] box = {plate, plate, plate,
+                        16 - plate, 16 - plate, 16 - plate};
+                box[axis] = side;
+                box[axis + 3] = side + inset;
+                boxes.add(box);
+            }
+        }
+        return boxes;
     }
 
     /** Die Kreativquelle: ein zurückspringender Kern und acht Eckklötze. */

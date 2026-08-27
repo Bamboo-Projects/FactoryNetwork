@@ -55,8 +55,10 @@ public final class DriveLayout {
         boxes.add(new int[] {BEZEL, FOOT + BEZEL, RECESS,
                 16 - BEZEL, 16 - BEZEL, FRONT});
 
-        // Vier Füße an den Ecken.
-        for (int x : new int[] {0, 16 - FOOT_WIDE}) {
+        // Vier Füße, unter dem Gehäuse und nicht an den Blockecken: Dort
+        // ragte jeder genau den Blockpixel heraus, um den das Gehäuse
+        // schmaler ist als die Blende.
+        for (int x : new int[] {INSET, 16 - INSET - FOOT_WIDE}) {
             for (int z : new int[] {0, 16 - FOOT_WIDE}) {
                 boxes.add(new int[] {x, 0, z, x + FOOT_WIDE, FOOT, z + FOOT_WIDE});
             }

@@ -742,9 +742,15 @@ def drive_boxes():
          {"north": "front", "*": "side"}),
     ]
 
-    # Vier Füße an den Ecken. Dazwischen sieht man unter das Gerät — daran
-    # erkennt man von weitem, dass es steht und nicht in der Wand klebt.
-    for x in (0, 16 - wide):
+    # Vier Füße. Dazwischen sieht man unter das Gerät — daran erkennt man von
+    # weitem, dass es steht und nicht in der Wand klebt.
+    #
+    # <b>Sie stehen unter dem Gehäuse und nicht an den Blockecken.</b> Zuerst
+    # taten sie das, und weil das Gehäuse seitlich einen Blockpixel schmaler
+    # ist als die Blende, ragte jeder Fuß genau diesen Blockpixel heraus. Von
+    # schräg sah das nicht nach Fuß aus, sondern nach abgebrochen. Vorn
+    # reichen sie bis an die Blockkante, sonst trüge die Blende sich selbst.
+    for x in (inset, 16 - inset - wide):
         for z in (0, 16 - wide):
             boxes.append(([x, 0, z], [x + wide, foot, z + wide], {"*": "side"}))
 
@@ -826,35 +832,45 @@ def controller_model():
 # beide zusammen.
 TERMINAL_DESK = 2      # wie weit die Konsole vorsteht
 TERMINAL_DESK_HIGH = 4  # und wie hoch sie ist
-TERMINAL_BEZEL = 1     # Breite des Rahmens um den Bildschirm
-TERMINAL_INSET = 1     # wie weit das Gehäuse seitlich zurückspringt
+TERMINAL_BEZEL = 2     # Breite des Rahmens um den Bildschirm
 
 
 def terminal_boxes():
     """Die Kästen des Terminals, jeder mit seinen Texturen."""
     desk, high = TERMINAL_DESK, TERMINAL_DESK_HIGH
-    bezel, inset = TERMINAL_BEZEL, TERMINAL_INSET
+    bezel = TERMINAL_BEZEL
     frame = desk - 1     # der Rahmen liegt einen Blockpixel hinter der Konsole
     screen = desk        # und der Bildschirm noch einen dahinter
 
+    back = screen + 1  # dort fängt das Gehäuse an
+
+    # <b>Jedes Frontteil reicht bis ans Gehäuse.</b> Zuerst endeten sie an
+    # ihrer eigenen Tiefe, und hinter dem oberen Rahmen und der Konsole
+    # klaffte über die volle Breite ein Schlitz — im Spiel ein schwarzer
+    # Streifen, durch den man in den Block sieht.
     return [
         # Die Konsole: der unterste Teil der Front, und der einzige, der bis
         # an die Blockkante vorsteht.
-        ([0, 0, 0], [16, high, desk], {"north": "front", "*": "side"}),
+        ([0, 0, 0], [16, high, back], {"north": "front", "*": "side"}),
 
         # Der Rahmen um den Bildschirm — oben und an beiden Seiten.
-        ([0, 16 - bezel, frame], [16, 16, desk], {"north": "front", "*": "side"}),
-        ([0, high, frame], [bezel, 16 - bezel, desk],
+        ([0, 16 - bezel, frame], [16, 16, back], {"north": "front", "*": "side"}),
+        ([0, high, frame], [bezel, 16 - bezel, back],
          {"north": "front", "*": "side"}),
-        ([16 - bezel, high, frame], [16, 16 - bezel, desk],
+        ([16 - bezel, high, frame], [16, 16 - bezel, back],
          {"north": "front", "*": "side"}),
 
         # Der Bildschirm, hinter dem Rahmen.
-        ([bezel, high, screen], [16 - bezel, 16 - bezel, screen + 1],
+        ([bezel, high, screen], [16 - bezel, 16 - bezel, back],
          {"north": "front", "*": "side"}),
 
-        # Das Gehäuse dahinter, seitlich schmaler als die Front.
-        ([inset, 0, screen + 1], [16 - inset, 16, 16], {"*": "side"}),
+        # Das Gehäuse dahinter, über die volle Breite.
+        #
+        # <b>Zuerst war es seitlich einen Blockpixel schmaler.</b> Dann hing
+        # die Konsole an beiden Seiten über, und über dem Bildschirm klaffte
+        # ein Schlitz. Ein Gerät, das an der Wand steht, hat hinten keine
+        # Fuge — die Form kommt von vorn, aus Konsole und Rahmen.
+        ([0, 0, screen + 1], [16, 16, 16], {"*": "side"}),
     ]
 
 
@@ -1104,12 +1120,19 @@ def source_model():
 # äußeren vier Blockpixel bündig bleiben, liegt jeder sichtbare Teil des Rings
 # auf Material. Wer die Leisten dünner macht, lässt ihn schweben.
 ROUTER_EDGE = 4     # Stärke einer Kantenleiste
-ROUTER_INSET = 2    # wie weit der Kern zurückspringt
+ROUTER_INSET = 1    # wie weit der Kern zurückspringt
+ROUTER_PLATE = 6    # wo die Kontaktplatte in der Mitte anfängt
 
 
 def router_boxes():
-    """Die Kästen des Routers: der Kern und die zwölf Kanten."""
-    edge, inset = ROUTER_EDGE, ROUTER_INSET
+    """Die Kästen des Routers: Kern, zwölf Kanten und sechs Kontaktplatten.
+
+    <b>Der erste Versuch sprang zwei Blockpixel zurück</b> und hatte in jeder
+    Seite ein Loch, das aussah wie ein Loch. Einer reicht: Die Kanten geben
+    die Form, und in der Mitte sitzt wieder Material — dort, wo die Textur
+    die vier Kontakte malt.
+    """
+    edge, inset, plate = ROUTER_EDGE, ROUTER_INSET, ROUTER_PLATE
     far = 16 - edge
     boxes = [([inset, inset, inset], [16 - inset, 16 - inset, 16 - inset],
               {"*": "all"})]
@@ -1121,6 +1144,18 @@ def router_boxes():
             boxes.append(([edge, y, z], [far, y + edge, z + edge], {"*": "all"}))
         for x in (0, far):
             boxes.append(([x, y, edge], [x + edge, y + edge, far], {"*": "all"}))
+
+    # Die sechs Kontaktplatten: dort, wo die Textur die vier Kontakte malt,
+    # sitzt wieder Material bis an die Blockkante. Der Ring der Bahnkennung
+    # bleibt unberührt — er endet innen bei drei Blockpixeln, die Platte
+    # fängt bei sechs an, und dazwischen liegt die Vertiefung.
+    for axis in range(3):
+        for side in (0, 16 - inset):
+            start = [plate, plate, plate]
+            end = [16 - plate, 16 - plate, 16 - plate]
+            start[axis] = side
+            end[axis] = side + inset
+            boxes.append((start, end, {"*": "all"}))
     return boxes
 
 
