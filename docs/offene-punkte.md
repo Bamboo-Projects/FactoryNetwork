@@ -419,8 +419,12 @@ Torbogen war aufgemalt und ist jetzt Geometrie.
    nach Osten die Trefferfläche eines nach Norden.
 3. `MachineLayoutTest` fährt die vier Grundproben für alle umgebauten Blöcke.
    Wer den nächsten umbaut, trägt ihn in die Liste ein.
-4. Der Betrachter hatte seine Tiefensortierung verdreht — an Würfeln
-   unsichtbar, ab dem ersten Kasten im Inneren falsch.
+4. Der Betrachter hatte zwei Fehler, und beide waren an Würfeln unsichtbar:
+   die Tiefensortierung verdreht, und die Oberseite in z gespiegelt. Der
+   zweite hat vier Anläufe gekostet, das Modell zu „reparieren", das gar
+   nicht kaputt war — erst ein Blick in Blockbench hat es entschieden.
+   **Wenn ein Detail im Betrachter nicht stimmt, ist Blockbench die
+   Referenz und nicht das Modell.**
 
 Später am selben Tag sind die übrigen fünf dazugekommen: Presse und
 Brennkammer nach dem Muster von Laufwerk und Terminal, der Fabricator mit

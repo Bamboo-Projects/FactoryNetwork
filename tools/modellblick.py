@@ -121,8 +121,14 @@ def default_uv(side, box):
 # Je Fläche die vier Ecken, beginnend oben links im Bild und im Uhrzeigersinn
 # — dieselbe Reihenfolge, in der die Textur gelesen wird.
 CORNERS = {
-    "up": lambda a, b: [(a[0], b[1], b[2]), (b[0], b[1], b[2]),
-                        (b[0], b[1], a[2]), (a[0], b[1], a[2])],
+    # Oben liest die Textur u aus x und v aus z: Der Ursprung ist die Ecke
+    # mit kleinem x und kleinem z, also vorn links. Die erste Fassung fing
+    # hinten an und spiegelte damit die ganze Oberseite in z — an einem
+    # Wuerfel faellt das nicht auf, weil dort die volle Textur liegt. Beim
+    # ersten Rahmen aus vier Leisten sahen Nord- und Suedleiste vertauscht
+    # aus, und zwar nur im Betrachter: In Blockbench stand das Modell richtig.
+    "up": lambda a, b: [(a[0], b[1], a[2]), (b[0], b[1], a[2]),
+                        (b[0], b[1], b[2]), (a[0], b[1], b[2])],
     "north": lambda a, b: [(b[0], b[1], a[2]), (a[0], b[1], a[2]),
                            (a[0], a[1], a[2]), (b[0], a[1], a[2])],
     "east": lambda a, b: [(b[0], b[1], b[2]), (b[0], b[1], a[2]),
