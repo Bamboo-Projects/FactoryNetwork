@@ -58,7 +58,17 @@ dazu, dass die alte Karte wertlos wird, sobald die neue da ist.
         [Laptop]     Grund 0, je Karte +8, voll 32
 ```
 
-**Beide Seiten addieren sich**, zusammen also bis 112 Blöcke.
+**Beide Seiten addieren sich.** Wie weit ein Gerät kommt, hängt damit an
+seiner Zahl freier Plätze:
+
+| Gerät | Plätze | davon für Reichweite | zusammen mit vollem Mast |
+|---|---|---|---|
+| Laptop | 4 | 4 | 80 + 32 = **112** |
+| Wireless Terminal | 2 | 2 | 80 + 16 = **96** |
+| Anzeigetafel | 2 | 1 (einer trägt das Modul) | 80 + 8 = **88** |
+
+Das ist kein Nebeneffekt, sondern der zweite Grund für den Laptop: Er reicht
+weiter, weil er mehr Plätze hat.
 
 Warum nicht nur eine Seite: Sonst gäbe es genau eine sinnvolle Stelle zum
 Ausbauen. So kann ein gut ausgerüsteter Spieler in einer schwachen Basis
@@ -123,7 +133,24 @@ liegen, bis der Fernzugriff selbst steht.
 
 ---
 
-## 7. Was beim Bauen zu prüfen ist
+## 7. In welcher Reihenfolge
+
+Drei Teile, und der erste trägt die anderen:
+
+1. **Das Ausbausystem** — Steckplätze, Modul, Karte, und die Regel, dass ein
+   Modul eine Fähigkeit gibt und eine Karte einen Wert hebt. Ohne Funk, ohne
+   Gerät: nur der Behälter und die zwei Abfragen darauf.
+2. **Der Fernzugriff** — Sendemast, Wireless Terminal, Laptop, Reichweiten-
+   und Infinity-Karte.
+3. **Die Anzeigetafel** — das Funk-Modul und was es an ihr ändert.
+
+Jeder Teil bekommt seinen eigenen Plan. Zusammen entworfen sind sie, weil die
+Regel aus Teil 1 sich nicht sinnvoll festlegen lässt, ohne zu wissen, was
+Teil 2 und 3 von ihr brauchen.
+
+---
+
+## 8. Was beim Bauen zu prüfen ist
 
 1. Ein Gerät ohne Netz, ohne Akku und außerhalb der Reichweite muss dreimal
    verschieden reagieren — jedes Mal mit einer Meldung, die den Grund nennt.
