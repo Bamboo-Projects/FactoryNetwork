@@ -3,6 +3,10 @@
 build/
 !gradle/wrapper/gradle-wrapper.jar
 
+# Was der Client beim Spielen hinterlässt. Die Logs unter run/ sind schon
+# draußen; diese hier landen daneben im Wurzelverzeichnis.
+logs/
+
 # IDE
 .idea/
 *.iml
