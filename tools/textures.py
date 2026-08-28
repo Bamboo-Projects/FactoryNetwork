@@ -795,6 +795,38 @@ def laptop():
     return img
 
 
+def entanglement():
+    """Zwei Hälften, die einander halten.
+
+    <b>Zwei Bögen, die sich nicht berühren.</b> Das ist der ganze Gedanke:
+    Was zusammengehört, muss nicht aneinanderliegen. Der Spalt dazwischen
+    leuchtet, weil dort die Verbindung sitzt und nicht im Material.
+    """
+    img = Image.new("RGBA", (N, N), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+
+    # Die beiden Hälften: gespiegelte Sicheln um die Mitte.
+    links = [(16, 12), (30, 22), (30, 42), (16, 52), (10, 42), (10, 22)]
+    rechts = [(48, 12), (34, 22), (34, 42), (48, 52), (54, 42), (54, 22)]
+    for form, seed in ((links, 401), (rechts, 402)):
+        mask = Image.new("L", (N, N), 0)
+        ImageDraw.Draw(mask).polygon(form, fill=255)
+        img.alpha_composite(masked_surface(mask, CRYSTAL_HI, CRYSTAL, seed=seed))
+        ImageDraw.Draw(img).polygon(form, outline=EDGE + (255,))
+
+    # Der Spalt in der Mitte trägt das Leuchten.
+    glow(img, (30, 20, 34, 44), CRYSTAL_HI, radius=9, strength=190)
+    d = ImageDraw.Draw(img)
+    for y in range(22, 43, 5):
+        d.line([(30, y), (34, y + 2)], fill=ACCENT_HI + (220,))
+
+    # Zwei Glanzkanten, damit die Sicheln rund wirken.
+    d.line([(14, 20), (12, 40)], fill=CRYSTAL_HI + (255,))
+    d.line([(50, 20), (52, 40)], fill=CRYSTAL_HI + (255,))
+    grain(img, amount=5, seed=403)
+    return img
+
+
 def network_analyser():
     """Messgerät mit breitem Fenster und kurzer Sonde."""
     img = Image.new("RGBA", (N, N), (0, 0, 0, 0))
@@ -2048,6 +2080,7 @@ def main():
     for label in ("64k", "256k", "1024k", "4096k"):
         save(energy_cell(label), "item", "energy_cell_" + label)
     save(server_chassis(), "item", "server_chassis")
+    save(entanglement(), "item", "entanglement")
     save(wireless_terminal(), "item", "wireless_terminal")
     save(laptop(), "item", "laptop")
     for tier, wert in enumerate((2, 8, 32, 128)):

@@ -1569,6 +1569,7 @@ def models():
                                       "scale": [0.28, 0.28, 0.28]},
         }))
     item_model("server_chassis")
+    item_model("entanglement")
     # Vorerst flach. Ein eigener Körper steht in ITEM_BODIES und damit im
     # Git — und etwas zurückzunehmen, das schon dasteht, kostet mehr, als es
     # zu schreiben. Der Körper kommt, wenn die Form abgenommen ist.
@@ -2181,6 +2182,13 @@ def loot_and_recipes():
             "W": {"item": MOD + ":wireless_terminal"},
         },
         "result": {"id": MOD + ":laptop", "count": 1},
+    })
+
+    # Zwei Hälften auf einmal, mit gemeinsamer Nummer — deshalb ein
+    # eigener Rezepttyp und keine Zutatenliste hier.
+    write(D + "/recipe/entanglement.json", {
+        "type": MOD + ":entanglement",
+        "category": "misc",
     })
 
     write(D + "/recipe/network_analyser.json", {

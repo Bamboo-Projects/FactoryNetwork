@@ -358,6 +358,12 @@ public final class FnItems {
                             dev.devpanda.factorynetwork.upgrade.RemoteDevice.LAPTOP,
                             600_000));
 
+    /** Eine Hälfte einer Verschränkung — sie gehört in eine Quantum-Brücke. */
+    public static final DeferredItem<Item> ENTANGLEMENT =
+            ITEMS.register("entanglement",
+                    () -> new dev.devpanda.factorynetwork.item.EntanglementItem(
+                            new Item.Properties()));
+
     public static final DeferredItem<Item> ANALYSER = ITEMS.register("network_analyser",
             () -> new NetworkAnalyserItem(new Item.Properties().stacksTo(1)));
 

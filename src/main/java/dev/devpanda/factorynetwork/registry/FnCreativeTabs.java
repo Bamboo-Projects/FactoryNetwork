@@ -35,6 +35,7 @@ public final class FnCreativeTabs {
                         output.accept(FnItems.TERMINAL.get());
                         output.accept(FnItems.WIRELESS_TERMINAL.get());
                         output.accept(FnItems.LAPTOP.get());
+                        output.accept(FnItems.ENTANGLEMENT.get());
                         output.accept(FnItems.DISPLAY.get());
                         output.accept(FnItems.WRENCH.get());
                         output.accept(FnItems.LABEL_GUN.get());

@@ -64,6 +64,7 @@
   "item.factorynetwork.remote.unbound": "An keinem Netz angemeldet",
   "item.factorynetwork.remote.bound": "Netz: %s",
   "item.factorynetwork.remote.charge": "Akku: %s / %s FE",
+  "item.factorynetwork.entanglement": "Verschränkung",
   "item.factorynetwork.network_analyser": "Netzanalysator",
   "message.factorynetwork.analyser.watching": "Netz wird beobachtet — das Werkzeug in der Hand behalten",
   "message.factorynetwork.analyser.no_network": "Hier hängt kein Netz",

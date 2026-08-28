@@ -6486,6 +6486,104 @@ public final class FactoryNetworkGameTests {
 
 
     /**
+     * Ein Bau liefert beide Hälften, und sie gehören zusammen.
+     *
+     * <p><b>Die Stelle, an der es leicht schiefgeht.</b> Ein Rezept hat ein
+     * Ausgabefeld; die zweite Hälfte kommt über {@code getRemainingItems}
+     * zurück. Beide müssen dieselbe Nummer tragen — würde die zweite ihre
+     * eigene bekommen, fänden die Brücken einander nie, und niemand könnte
+     * sagen warum.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 100)
+    public static void oneCraftMakesOnePair(GameTestHelper helper) {
+        var recipe = new dev.devpanda.factorynetwork.crafting.EntanglementRecipe(
+                net.minecraft.world.item.crafting.CraftingBookCategory.MISC);
+        var input = net.minecraft.world.item.crafting.CraftingInput.of(3, 1,
+                java.util.List.of(
+                        new ItemStack(dev.devpanda.factorynetwork.registry.FnItems
+                                .CORE_NETWORK.get()),
+                        new ItemStack(dev.devpanda.factorynetwork.registry.FnItems
+                                .CRYSTAL.get()),
+                        new ItemStack(dev.devpanda.factorynetwork.registry.FnItems
+                                .CORE_NETWORK.get())));
+
+        helper.assertTrue(recipe.matches(input, helper.getLevel()),
+                "zwei Netzkerne und ein Kristall ergeben keine Verschränkung");
+
+        ItemStack first = recipe.assemble(input, helper.getLevel().registryAccess());
+        var rest = recipe.getRemainingItems(input);
+        ItemStack second = rest.stream()
+                .filter(stack -> !stack.isEmpty())
+                .findFirst()
+                .orElse(ItemStack.EMPTY);
+
+        helper.assertTrue(!second.isEmpty(), "die zweite Hälfte fehlt");
+        helper.assertTrue(
+                dev.devpanda.factorynetwork.item.EntanglementItem.matched(first, second),
+                "die beiden Hälften aus einem Bau kennen einander nicht");
+
+        // Und ein zweiter Bau ergibt ein anderes Paar.
+        ItemStack later = recipe.assemble(input, helper.getLevel().registryAccess());
+        helper.assertTrue(
+                !dev.devpanda.factorynetwork.item.EntanglementItem.matched(first, later),
+                "zwei Bauten liefern dasselbe Paar");
+
+        // Was nicht hineingehört, ergibt auch nichts.
+        var falsch = net.minecraft.world.item.crafting.CraftingInput.of(3, 1,
+                java.util.List.of(
+                        new ItemStack(dev.devpanda.factorynetwork.registry.FnItems
+                                .CORE_NETWORK.get()),
+                        new ItemStack(Items.DIRT),
+                        new ItemStack(dev.devpanda.factorynetwork.registry.FnItems
+                                .CORE_NETWORK.get())));
+        helper.assertTrue(!recipe.matches(falsch, helper.getLevel()),
+                "Dreck geht als Kristall durch");
+        helper.succeed();
+    }
+
+    /**
+     * Zwei Hälften einer Verschränkung gehören zusammen — und nur die.
+     *
+     * <p><b>Das Paar entsteht beim Bauen, nicht beim Anklicken.</b> Wer zwei
+     * Brücken erst hinstellt und dann verbindet, muss sich merken, welche
+     * wohin gehört; wer zwei Hälften desselben Gegenstands einsetzt, muss
+     * gar nichts merken.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 100)
+    public static void twoHalvesKnowEachOther(GameTestHelper helper) {
+        var paar = dev.devpanda.factorynetwork.item.EntanglementItem.newPair();
+        ItemStack links = paar.getFirst();
+        ItemStack rechts = paar.getSecond();
+
+        helper.assertTrue(
+                dev.devpanda.factorynetwork.item.EntanglementItem.matched(links, rechts),
+                "die beiden Hälften aus einem Bau kennen sich nicht");
+        helper.assertTrue(
+                dev.devpanda.factorynetwork.item.EntanglementItem.idOf(links) != null,
+                "eine frische Hälfte hat keine Kennnummer");
+
+        // Zwei aus verschiedenen Bauten gehören nicht zusammen. Ohne diese
+        // Probe könnte jede Hälfte zu jeder passen, und zwei Brücken in
+        // derselben Welt verbänden sich zufällig.
+        var anderes = dev.devpanda.factorynetwork.item.EntanglementItem.newPair();
+        helper.assertTrue(
+                !dev.devpanda.factorynetwork.item.EntanglementItem.matched(
+                        links, anderes.getFirst()),
+                "Hälften aus verschiedenen Bauten gelten als Paar");
+
+        // Und eine Hälfte ist nicht ihr eigener Partner: Sonst könnte eine
+        // Brücke sich selbst verbinden.
+        helper.assertTrue(
+                !dev.devpanda.factorynetwork.item.EntanglementItem.matched(links, links),
+                "eine Hälfte ist ihr eigener Partner");
+        helper.assertTrue(
+                !dev.devpanda.factorynetwork.item.EntanglementItem.matched(
+                        rechts, rechts.copy()),
+                "eine Kopie derselben Hälfte gilt als Partner");
+        helper.succeed();
+    }
+
+    /**
      * Und zurück: Was aus dem Lager kommt, trägt seine Daten noch.
      *
      * <p><b>Der fehlende Halbkreis.</b> Dass ein benanntes Werkzeug ins Lager

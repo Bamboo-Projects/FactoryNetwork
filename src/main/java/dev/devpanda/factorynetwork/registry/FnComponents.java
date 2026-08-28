@@ -72,6 +72,23 @@ public final class FnComponents {
                     .networkSynchronized(ByteBufCodecs.STRING_UTF8)
                     .build());
 
+    /**
+     * Welche Verschränkung eine Hälfte trägt.
+     *
+     * <p>Zwei Hälften mit derselben Nummer gehören zusammen — daran hängt,
+     * welche Quantum-Brücke welche findet.
+     */
+    public static final DeferredHolder<DataComponentType<?>,
+            DataComponentType<dev.devpanda.factorynetwork.item.EntanglementItem.Entanglement>>
+            ENTANGLEMENT = COMPONENTS.register("entanglement",
+                    () -> DataComponentType.<dev.devpanda.factorynetwork.item
+                            .EntanglementItem.Entanglement>builder()
+                            .persistent(dev.devpanda.factorynetwork.item.EntanglementItem
+                                    .Entanglement.CODEC)
+                            .networkSynchronized(dev.devpanda.factorynetwork.item
+                                    .EntanglementItem.Entanglement.STREAM_CODEC)
+                            .build());
+
     private FnComponents() {
     }
 }

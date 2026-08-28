@@ -25,6 +25,19 @@ public final class FnRecipes {
                 }
             });
 
+    /**
+     * Zwei verschränkte Hälften mit gemeinsamer Nummer.
+     *
+     * <p>Ein eigenes Rezept, weil das Ergebnis bei jedem Bau ein anderes ist:
+     * Zwei Paare dürfen sich nicht kennen.
+     */
+    public static final DeferredHolder<RecipeSerializer<?>,
+            net.minecraft.world.item.crafting.SimpleCraftingRecipeSerializer<
+                    dev.devpanda.factorynetwork.crafting.EntanglementRecipe>>
+            ENTANGLEMENT = SERIALIZERS.register("entanglement",
+                    () -> new net.minecraft.world.item.crafting.SimpleCraftingRecipeSerializer<>(
+                            dev.devpanda.factorynetwork.crafting.EntanglementRecipe::new));
+
     public static final DeferredHolder<RecipeSerializer<?>, PressRecipe.Serializer>
             PRESS_SERIALIZER = SERIALIZERS.register("press", PressRecipe.Serializer::new);
 
