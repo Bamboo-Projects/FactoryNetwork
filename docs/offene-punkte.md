@@ -5,6 +5,53 @@ Alles, was in `docs/` und im Code als unfertig steht, an einer Stelle.
 Stand: 2026-08-26 (nach den beiden Schnitten am Wertemodell und der
 Handbucharbeit)
 
+## Morgens zuerst
+
+Sieben Dinge im Spiel, in dieser Reihenfolge — die Nacht hat viel angefasst,
+und was davon trägt, sieht man nur dort.
+
+1. **Client neu starten.** Er kennt nichts von alledem.
+2. **Ein verzaubertes Buch einlagern**, im Terminal suchen, wieder
+   herausnehmen. Das ist der Kern des Lagerumbaus.
+3. **In eine volle Zelle aus deiner alten Welt schauen.** Dass alte Zellen
+   sich lesen, steht im Prüflauf — deine Welt ist die echte Probe.
+4. **Ein Brückenpaar bauen und benutzen.** Verschränkung bauen (zwei
+   Netzkerne, ein Kristall, formlos), je eine Hälfte in eine Brücke, ein
+   Laufwerk hinter die zweite hängen.
+5. **Welt speichern und mit dem gekoppelten Paar neu laden.** Der einzige
+   Punkt der ganzen Nacht, an dem ich einen Absturz für möglich halte: Die
+   Brücke trägt ihren Zustand beim Laden ins Blockbild, und dort ist
+   Minecraft empfindlich. Lädt es sauber und leuchten beide, ist es gut.
+6. **Eine AE2-Zelle auf ein Laufwerk klicken.** Am besten eine mit etwas
+   Verzaubertem darin.
+7. **Die Sprites von Wireless Terminal und Laptop ansehen.** Die älteste
+   offene Entscheidung — seit gestern früh warte ich darauf, bevor ich ihnen
+   einen Körper baue.
+
+### Drei Fragen, die nur du beantworten kannst
+
+- **Brücke, leere Hand:** Rechtsklick zieht die Hälfte heraus und tötet die
+  Verbindung. Beim Anschluss haben wir dafür den Schraubenschlüssel — hier
+  auch?
+- **Multiblock:** `controller-multiblock.md` legt drei Wege vor. Die Frage
+  dahinter ist, ob dir der Moment „jetzt ist es fertig" wichtig ist.
+- **Das Verschränkungs-Rezept steht nicht in JEI.** Ein Rezept mit
+  wechselndem Ergebnis hat keine Zutatenliste im JSON. Soll es ins Handbuch?
+
+### Wie die Nacht gelaufen ist
+
+**Was am besten funktioniert hat:** Jeder Beweislauf hat einmal absichtlich
+rot gesehen, bevor er als Beweis zählte — der gekreuzte Verschränkungs-Bau,
+der Datenverlust auf dem Rückweg aus dem Lager, das verschobene Wire-Format,
+die Frage, ob der AE2-Lauf sich selbst überspringt. Ein grüner Lauf, der nie
+rot war, beweist nichts.
+
+**Was ich falsch gemacht habe:** Der Plan zum Lagerumbau sah Adapter vor,
+damit der Baum nach jedem Schritt grün bleibt. Beim Bauen habe ich das
+übersprungen und alles auf einmal umgestellt — der Baum war eine Stunde rot,
+und in der Zeit hättest du nicht neu starten können. Dass es gutging, lag
+daran, dass du geschlafen hast, nicht am Vorgehen.
+
 > **Und zuletzt: AE2-Zellen ziehen um.**
 >
 > Rechtsklick mit einer AE2-Speicherzelle auf ein Laufwerk schüttet sie ins
