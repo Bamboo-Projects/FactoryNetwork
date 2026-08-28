@@ -859,6 +859,14 @@ public final class FactoryGraph {
                 || drives.contains(pos)
                 || routers.contains(pos)
                 || displays.contains(pos)
+                // Was der Graph als Verbraucher einsammelt, gehört auch dazu.
+                // Fehlte hier eines, wäre es zwar im Netz, aber niemand fände
+                // es: ControllerRegistry.owning geht über diese Frage, und
+                // daran hängen das Anmelden eines Ferngeräts, das Öffnen des
+                // Fensters und jede Anzeige. Im Spiel sah der Mast deshalb
+                // aus, als hinge er an gar nichts.
+                || masts.contains(pos)
+                || fabricators.contains(pos)
                 // Bei den Anschlüssen zählt allein der Ort: Gefragt wird, ob
                 // dieser Block zum Netz gehört, nicht welche seiner Flächen.
                 || atPos(unnamed, pos)

@@ -6337,6 +6337,56 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
+     * Ein Mast am Kabel gehört zum Netz — und man findet ihn auch dort.
+     *
+     * <p><b>Zwei Fragen, die auseinanderfielen.</b> Der Graph sammelte den
+     * Mast als Verbraucher ein und zog Strom für ihn, aber
+     * {@code contains()} zählte ihn nicht auf. Alles, was über
+     * {@link dev.devpanda.factorynetwork.network.ControllerRegistry#owning}
+     * geht, fand ihn deshalb nicht: das Anmelden eines Geräts, das Öffnen
+     * des Fensters aus der Ferne, jede Anzeige.
+     *
+     * <p>Im Spiel sah das aus, als hinge der Mast an gar nichts.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void aMastAtTheCableBelongsToTheNetwork(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+
+        // Ein Mast direkt an einem Kabel des Netzes.
+        BlockPos mast = controller.above();
+        placeCable(helper, mast, dev.devpanda.factorynetwork.block.CableColour.NONE);
+        BlockPos onTop = mast.above();
+        helper.setBlock(onTop, FnBlocks.MAST.get().defaultBlockState());
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.graph().masts().contains(helper.absolutePos(onTop)),
+                "der Graph hat den Mast nicht eingesammelt");
+        helper.assertTrue(entity.graph().contains(helper.absolutePos(onTop)),
+                "der Graph sammelt den Mast ein, zählt ihn aber nicht zum Netz");
+
+        // Und das ist die Frage, die im Spiel wirklich gestellt wird.
+        // Anmelden von Hand: Im Spiel erledigt das onLoad, aber setBlock im
+        // Prüflauf ruft es erst im nächsten Tick — und geprüft werden soll
+        // nicht die Anmeldung, sondern was owning damit anfängt.
+        dev.devpanda.factorynetwork.network.ControllerRegistry.add(
+                helper.getLevel(), helper.absolutePos(controller));
+        helper.assertTrue(
+                dev.devpanda.factorynetwork.network.ControllerRegistry.owning(
+                        helper.getLevel(), helper.absolutePos(onTop)).isPresent(),
+                "kein Controller für den Mast — ein Gerät könnte sich nicht anmelden");
+
+        // Ein Mast ohne Kabel dagegen gehört zu keinem: Sonst wäre die
+        // Prüfung wertlos, weil sie immer wahr sagte.
+        BlockPos lonely = new BlockPos(5, 1, 5);
+        helper.setBlock(lonely, FnBlocks.MAST.get().defaultBlockState());
+        entity.rebuildNetwork();
+        helper.assertTrue(!entity.graph().contains(helper.absolutePos(lonely)),
+                "ein Mast ohne Kabel gilt als Teil des Netzes");
+        helper.succeed();
+    }
+
+    /**
      * Ein Anschluss darf vor dem Kabel dasein — und leitet dann nichts.
      *
      * <p>Der Halter ist ein Kabelblock ohne Strang. Er sieht aus wie ein
