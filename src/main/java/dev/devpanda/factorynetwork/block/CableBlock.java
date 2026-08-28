@@ -287,15 +287,27 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
             // ein Arm, der auf ihn zeigte, zeigte auf nichts.
             return carries(neighbour) && colour.connectsTo(colourOf(neighbour));
         }
-        // Alles, was zum Netz gehört, bekommt einen Arm. Laufwerk und
-        // Serverschrank fehlten hier: Die Suche findet sie über die
-        // Nachbarschaft, aber im Bild hing das Kabel daneben in der Luft.
+        // Alles, was zum Netz gehört, bekommt einen Arm.
+        //
+        // <b>Diese Liste ist dreimal falsch gewesen.</b> Erst fehlten
+        // Laufwerk und Serverschrank, dann Fabricator, Sendemast, Gateway und
+        // Anbau. Der Grund ist immer derselbe: Dieselbe Frage — was gehört
+        // zum Netz — steht an drei Stellen, und wer einen Block einträgt,
+        // findet die anderen zwei nicht. Die beiden anderen sind
+        // FactoryGraph.consumerAt und FactoryGraph.contains.
+        //
+        // Ein Prüflauf hält die drei jetzt gegeneinander, damit der nächste
+        // Block auffällt, bevor er im Spiel neben dem Kabel in der Luft hängt.
         return neighbour.getBlock() instanceof RouterBlock
                 || neighbour.getBlock() instanceof ControllerBlock
                 || neighbour.getBlock() instanceof TerminalBlock
                 || neighbour.getBlock() instanceof DisplayBlock
                 || neighbour.getBlock() instanceof DriveBlock
-                || neighbour.getBlock() instanceof RackBlock;
+                || neighbour.getBlock() instanceof RackBlock
+                || neighbour.getBlock() instanceof FabricatorBlock
+                || neighbour.getBlock() instanceof MastBlock
+                || neighbour.getBlock() instanceof GatewayBlock
+                || neighbour.getBlock() instanceof ControllerExtensionBlock;
     }
 
     /** Welche Richtungen dieser Block verbindet. */

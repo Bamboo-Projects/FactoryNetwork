@@ -6337,6 +6337,65 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
+     * Jeder Block, der zum Netz gehört, bekommt auch einen Arm vom Kabel.
+     *
+     * <p><b>Dieselbe Wahrheit stand an drei Stellen</b>, und jede kannte eine
+     * andere Teilmenge: {@code consumerAt} sammelt Verbraucher ein,
+     * {@code contains} zählt auf, wer zum Netz gehört, und {@code connects}
+     * entscheidet, wohin ein Arm wächst. Der Sendemast stand in der ersten
+     * und fehlte in den beiden anderen — er hing am Netz und sah aus, als
+     * hinge er an nichts.
+     *
+     * <p>Vor ihm passierte dasselbe mit Laufwerk und Serverschrank. Dieser
+     * Lauf hält alle drei Listen gegeneinander, damit es beim nächsten Block
+     * auffällt und nicht erst im Spiel.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void everyNetworkBlockGetsAnArm(GameTestHelper helper) {
+        record Case(String name, net.minecraft.world.level.block.Block block) { }
+        var cases = java.util.List.of(
+                new Case("Controller", FnBlocks.CONTROLLER.get()),
+                new Case("Terminal", FnBlocks.TERMINAL.get()),
+                new Case("Laufwerk", FnBlocks.DRIVE.get()),
+                new Case("Serverschrank", FnBlocks.RACK.get()),
+                new Case("Anzeige", FnBlocks.DISPLAY.get()),
+                new Case("Router", FnBlocks.ROUTER.get()),
+                new Case("Fabricator", FnBlocks.FABRICATOR.get()),
+                new Case("Sendemast", FnBlocks.MAST.get()),
+                new Case("Gateway", FnBlocks.GATEWAY.get()),
+                new Case("Anbau", FnBlocks.CONTROLLER_EXTENSION.get()));
+
+        StringBuilder fehlend = new StringBuilder();
+        for (Case one : cases) {
+            BlockPos cable = new BlockPos(1, 2, 1);
+            BlockPos beside = cable.east();
+            helper.setBlock(beside, one.block().defaultBlockState());
+            placeCable(helper, cable, dev.devpanda.factorynetwork.block.CableColour.NONE);
+
+            var state = helper.getBlockState(cable);
+            if (!dev.devpanda.factorynetwork.block.CableBlock.connectionsOf(state)
+                    .contains(Direction.EAST)) {
+                fehlend.append(one.name()).append(", ");
+            }
+            helper.setBlock(cable, net.minecraft.world.level.block.Blocks.AIR);
+            helper.setBlock(beside, net.minecraft.world.level.block.Blocks.AIR);
+        }
+        helper.assertTrue(fehlend.isEmpty(),
+                "kein Arm vom Kabel zu: " + fehlend);
+
+        // Die Gegenprobe: Zu einer Kiste wächst keiner. Ohne sie könnte
+        // connects() einfach immer wahr sagen und der Lauf bliebe grün.
+        BlockPos cable = new BlockPos(1, 2, 1);
+        helper.setBlock(cable.east(), net.minecraft.world.level.block.Blocks.CHEST);
+        placeCable(helper, cable, dev.devpanda.factorynetwork.block.CableColour.NONE);
+        helper.assertTrue(
+                !dev.devpanda.factorynetwork.block.CableBlock.connectionsOf(
+                        helper.getBlockState(cable)).contains(Direction.EAST),
+                "das Kabel wächst einen Arm zu einer Kiste");
+        helper.succeed();
+    }
+
+    /**
      * Ein Mast am Kabel gehört zum Netz — und man findet ihn auch dort.
      *
      * <p><b>Zwei Fragen, die auseinanderfielen.</b> Der Graph sammelte den
