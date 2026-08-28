@@ -380,17 +380,24 @@ public final class WorldHost implements Interpreter.Host {
                 }
             }
             long moved = 0;
-            for (Item item : items) {
+            // Über die Posten und nicht über die Arten: Was hier gewählt
+            // wird, geht als Stapel in die Maschine. Stünde hier nur die
+            // Kennung, käme eine benannte Hacke als nackte an.
+            for (var key : List.copyOf(storage.contents().keySet())) {
                 if (moved >= limit) {
                     break;
                 }
-                long available = Math.min(limit - moved, storage.count(item));
+                if (!items.isEmpty() && !items.contains(key.item())) {
+                    continue;
+                }
+                long available = Math.min(
+                        Math.min(limit - moved, key.maxStackSize()), storage.count(key));
                 if (available <= 0) {
                     continue;
                 }
-                ItemStack rest = insert(target, new ItemStack(item, (int) available));
+                ItemStack rest = insert(target, key.toStack((int) available));
                 long accepted = available - rest.getCount();
-                storage.extract(item, accepted);
+                storage.extract(key, accepted);
                 moved += accepted;
             }
             return moved;

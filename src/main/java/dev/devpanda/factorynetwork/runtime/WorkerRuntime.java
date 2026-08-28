@@ -410,13 +410,16 @@ public final class WorkerRuntime {
         if (handler == null) {
             return 0;
         }
-        // Ohne Filter wird die erste Art genommen, die im Speicher liegt.
-        Item item = filter.stream()
-                .filter(candidate -> storage.count(candidate) > 0)
+        // Ohne Filter wird der erste Posten genommen, der im Speicher
+        // liegt. <b>Ein Posten und keine Art:</b> Was hier gewählt wird,
+        // geht danach als Stapel in die Maschine — und eine benannte Hacke
+        // käme als nackte an, wenn hier nur die Kennung stünde.
+        dev.devpanda.factorynetwork.storage.ItemKey item = storage.contents().keySet()
+                .stream()
+                .filter(key -> filter.isEmpty() || filter.contains(key.item()))
+                .filter(key -> storage.count(key) > 0)
                 .findFirst()
-                .orElseGet(() -> filter.isEmpty()
-                        ? storage.byItem().keySet().stream().findFirst().orElse(null)
-                        : null);
+                .orElse(null);
         if (item == null) {
             return 0;
         }
@@ -424,8 +427,8 @@ public final class WorkerRuntime {
         if (available <= 0) {
             return 0;
         }
-        int wanted = (int) Math.min(batch, available);
-        ItemStack offered = new ItemStack(item, wanted);
+        int wanted = (int) Math.min(batch, Math.min(available, item.maxStackSize()));
+        ItemStack offered = item.toStack(wanted);
         ItemStack rest = insertInto(handler, offered);
         int accepted = wanted - rest.getCount();
         if (accepted <= 0) {

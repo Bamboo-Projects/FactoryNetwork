@@ -265,9 +265,11 @@ public class TerminalMenu extends AbstractContainerMenu {
             return ItemStack.EMPTY;
         }
         ItemStack stack = slot.getItem();
-        // Der ganze Stapel, samt allem, was er trägt.
-        controller.get().storage().insert(stack);
-        slot.set(ItemStack.EMPTY);
+        // Der ganze Stapel, samt allem, was er trägt — und was nicht
+        // hineinpasst, bleibt liegen. Ein Netz kann voll sein, seit es
+        // Zellen gibt; ohne diese Zeile verschwände der Rest.
+        long left = controller.get().storage().insert(stack);
+        slot.set(left <= 0 ? ItemStack.EMPTY : stack.copyWithCount((int) left));
         controller.get().pushStorageTo(serverPlayer, true);
         return ItemStack.EMPTY;
     }

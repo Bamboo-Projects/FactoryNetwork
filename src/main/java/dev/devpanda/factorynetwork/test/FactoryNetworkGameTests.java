@@ -6486,6 +6486,56 @@ public final class FactoryNetworkGameTests {
 
 
     /**
+     * Und zurück: Was aus dem Lager kommt, trägt seine Daten noch.
+     *
+     * <p><b>Der fehlende Halbkreis.</b> Dass ein benanntes Werkzeug ins Lager
+     * geht, hält {@code aWorkerCarriesDataIntoStorage} fest. Der Weg heraus
+     * ist eine eigene Stelle — dort wurde der Stapel aus einer Kennung neu
+     * gebaut, und der Name blieb im Lager zurück.
+     *
+     * <p>Zwei Posten derselben Kennung machen die Probe scharf: Ein Worker,
+     * der die nackten zuerst nimmt, hätte die benannte nie angefasst und der
+     * Lauf bliebe grün, ohne etwas zu zeigen. Deshalb liegt nur die benannte
+     * da.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void whatLeavesStorageKeepsItsData(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        driveWithCell(helper, controller.above(),
+                dev.devpanda.factorynetwork.storage.CellTier.K4);
+        entity.rebuildNetwork();
+
+        ItemStack named = new ItemStack(Items.DIAMOND_PICKAXE);
+        named.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME,
+                net.minecraft.network.chat.Component.literal("Lieblingshacke"));
+        entity.storage().insert(named);
+
+        helper.assertTrue(entity.deploy("""
+                worker back {
+                    from storage
+                    to depot
+                    rate 64 per 1t
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+
+        BlockPos target = controller.east().south().south();
+        helper.runAfterDelay(30, () -> {
+            if (!(helper.getBlockEntity(target) instanceof ChestBlockEntity container)) {
+                helper.fail("keine Zielkiste", target);
+                return;
+            }
+            ItemStack got = container.getItem(0);
+            helper.assertTrue(got.getItem() == Items.DIAMOND_PICKAXE,
+                    "in der Kiste liegt keine Hacke, sondern " + got);
+            helper.assertTrue(
+                    got.get(net.minecraft.core.component.DataComponents.CUSTOM_NAME) != null,
+                    "die Hacke kam ohne ihren Namen aus dem Lager");
+            helper.succeed();
+        });
+    }
+
+    /**
      * Eine Zelle aus der Zeit vor dem Umbau liest sich weiter.
      *
      * <p><b>Sonst wäre der Umbau ein Datenverlust mit anderem Vorzeichen.</b>
