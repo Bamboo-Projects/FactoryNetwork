@@ -74,6 +74,19 @@ public final class Power {
      * bestimmte die Länge der Leitung den Verbrauch und nicht das, was daran
      * hängt.
      */
+    /**
+     * Was ein Ende einer Quantum-Brücke zieht.
+     *
+     * <p>Beide Enden zahlen, also das Doppelte für eine Verbindung. Eine
+     * Brücke, die nichts kostet, ersetzte jedes Kabel — und ein Netz, das
+     * überall gleich billig ist, hat keine Form mehr, über die man
+     * nachdenken müsste.
+     *
+     * <p>Deutlich über einem Kabel und unter einer Maschine: Sie leitet, sie
+     * arbeitet nicht.
+     */
+    public static final int BRIDGE = 6;
+
     /** Was ein Mast ohne Karten zieht. */
     public static final int MAST_BASE = 4;
 

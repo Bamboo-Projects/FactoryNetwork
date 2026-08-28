@@ -6536,6 +6536,64 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
+     * Das Netz reicht durch die Brücke — und nur durch eine gekoppelte.
+     *
+     * <p><b>Der Beweis, dass die Brücke etwas tut.</b> Zwei Kabelstränge, die
+     * einander nicht berühren; nur die beiden Brücken dazwischen verbinden
+     * sie. Ohne den Sprung im Graphen endet das Netz am ersten Strang, und
+     * der zweite gehört zu niemandem.
+     *
+     * <p>Die Gegenprobe steckt im Aufbau: Erst ohne Hälften prüfen, dann mit.
+     * Ein Lauf, der nur den fertigen Zustand ansieht, verwechselte eine
+     * wirkende Brücke mit zwei Strängen, die sich zufällig doch berühren.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void theNetworkReachesThroughTheBridge(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 1, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+
+        // Erster Strang: Controller, Kabel, Brücke.
+        BlockPos hier = controller.east();
+        placeCable(helper, hier, dev.devpanda.factorynetwork.block.CableColour.NONE);
+        BlockPos brueckeHier = hier.east();
+        helper.setBlock(brueckeHier, FnBlocks.BRIDGE.get());
+
+        // Zweiter Strang, weit weg und ohne Berührung: Brücke, Kabel,
+        // Laufwerk. Über das Laufwerk sieht man, ob das Netz dort ankommt.
+        BlockPos brueckeDort = new BlockPos(1, 4, 5);
+        helper.setBlock(brueckeDort, FnBlocks.BRIDGE.get());
+        BlockPos dortKabel = brueckeDort.east();
+        placeCable(helper, dortKabel, dev.devpanda.factorynetwork.block.CableColour.NONE);
+        BlockPos drivePos = dortKabel.east();
+        driveWithCell(helper, drivePos, dev.devpanda.factorynetwork.storage.CellTier.K1);
+
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        helper.assertTrue(!entity.graph().contains(helper.absolutePos(drivePos)),
+                "das Laufwerk hängt am Netz, obwohl keine Hälften eingesetzt sind");
+
+        // Jetzt die beiden Hälften hinein.
+        ItemStack paar = dev.devpanda.factorynetwork.item.EntanglementItem.newPair();
+        if (helper.getBlockEntity(brueckeHier)
+                instanceof dev.devpanda.factorynetwork.block.entity.BridgeBlockEntity eine) {
+            eine.setItem(0, paar.split(1));
+        }
+        if (helper.getBlockEntity(brueckeDort)
+                instanceof dev.devpanda.factorynetwork.block.entity.BridgeBlockEntity zwei) {
+            zwei.setItem(0, paar);
+        }
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.graph().bridges().size() == 2,
+                "der Graph kennt " + entity.graph().bridges().size() + " Brücken statt zwei");
+        helper.assertTrue(entity.graph().contains(helper.absolutePos(drivePos)),
+                "das Laufwerk jenseits der Brücke gehört nicht zum Netz");
+        helper.assertTrue(entity.graph().contains(helper.absolutePos(dortKabel)),
+                "das Kabel jenseits der Brücke gehört nicht zum Netz");
+        helper.succeed();
+    }
+
+    /**
      * Zwei Brücken mit derselben Nummer finden einander — und nur die.
      *
      * <p><b>Gesucht wird nicht, angemeldet wird.</b> Eine Brücke, die ihren
@@ -7127,7 +7185,8 @@ public final class FactoryNetworkGameTests {
                 new Case("Fabricator", FnBlocks.FABRICATOR.get()),
                 new Case("Sendemast", FnBlocks.MAST.get()),
                 new Case("Gateway", FnBlocks.GATEWAY.get()),
-                new Case("Anbau", FnBlocks.CONTROLLER_EXTENSION.get()));
+                new Case("Anbau", FnBlocks.CONTROLLER_EXTENSION.get()),
+                new Case("Quantum-Brücke", FnBlocks.BRIDGE.get()));
 
         StringBuilder fehlend = new StringBuilder();
         for (Case one : cases) {

@@ -414,6 +414,8 @@ public class ControllerBlockEntity extends BlockEntity {
         total += graph.displays().size() * dev.devpanda.factorynetwork.network.Power.DISPLAY;
         total += graph.routers().size() * dev.devpanda.factorynetwork.network.Power.ROUTER;
         total += graph.extensions().size() * dev.devpanda.factorynetwork.network.Power.EXTENSION;
+        // Beide Enden zahlen; im Graphen stehen beide, wenn beide geladen sind.
+        total += graph.bridges().size() * dev.devpanda.factorynetwork.network.Power.BRIDGE;
         total += graph.fabricators().size()
                 * dev.devpanda.factorynetwork.network.Power.FABRICATOR;
         // Ein Mast kostet nach Ausbau: Was er zieht, hängt an seinen Karten.

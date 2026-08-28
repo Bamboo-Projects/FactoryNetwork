@@ -1,4 +1,4 @@
-# Die Quantum-Bridge — Umsetzungsplan
+# Die Quantum-Bridge — Aufgaben 1 bis 4 erledigt am 29.08.
 
 **Auftrag:** „wie bringen wir channel an andere punkte in den welten? AE2 hat
 dafür die quantum bridges" (28.08.), gefolgt von „okay Quantum bridge dann
@@ -77,17 +77,17 @@ Entscheidung.
 
 ## Die Aufgaben
 
-- [ ] **1. Die Verschränkung.** Ein Gegenstand mit Kennnummer, im Rezept
+- [x] **1. Die Verschränkung.** Ein Gegenstand mit Kennnummer, im Rezept
       immer zu zweit. Reiner Prüflauf: Zwei aus demselben Bau gehören
       zusammen, zwei aus verschiedenen nicht.
-- [ ] **2. Der Block und sein Platz.** Ein Steckplatz für die Hälfte, ein
+- [x] **2. Der Block und sein Platz.** Ein Steckplatz für die Hälfte, ein
       Zustand „gekoppelt", die Verbindung als `GlobalPos` — die Arbeit vom
       Sendemast trägt hier weiter.
-- [ ] **3. Der Graph springt.** `visitBridge` setzt den Suchlauf an der
+- [x] **3. Der Graph springt.** `visitBridge` setzt den Suchlauf an der
       Gegenseite fort, mit der Kanalgrenze eines dichten Kabels. **Die
       Stelle, an der es scharf wird:** Zwei Controller an beiden Enden dürfen
       nicht zu einem Netz verschmelzen, das sich selbst zählt.
-- [ ] **4. Strom und Kanäle.** Wie oben, in `Power` und `capacityAt`.
+- [x] **4. Strom und Kanäle.** Wie oben, in `Power` und `capacityAt`.
 - [ ] **5. Was man im Spiel sieht.** Der Block zeigt, ob er gekoppelt ist und
       ob die Gegenseite antwortet — sonst sucht man den Fehler im Kabel.
 

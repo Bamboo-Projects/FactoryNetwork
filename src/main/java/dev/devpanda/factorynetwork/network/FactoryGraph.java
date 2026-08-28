@@ -112,6 +112,7 @@ public final class FactoryGraph {
      */
     private final List<Edge> edges;
     private final List<BlockPos> masts;
+    private final Set<BlockPos> bridges;
     private final boolean truncated;
 
     /** Eine Verbindung zwischen zwei Knoten des Netzes. */
@@ -123,8 +124,10 @@ public final class FactoryGraph {
                          Set<BlockPos> routers, Map<Node, Integer> channelLoad, List<Edge> edges,
                          List<BlockPos> drives, List<BlockPos> racks, List<BlockPos> extensions,
                          List<BlockPos> fabricators, Set<BlockPos> contested,
-                         List<BlockPos> masts, boolean truncated) {
+                         List<BlockPos> masts, Set<BlockPos> bridges,
+                         boolean truncated) {
         this.masts = masts;
+        this.bridges = bridges;
         this.contested = contested;
         this.fabricators = fabricators;
         this.extensions = extensions;
@@ -144,7 +147,7 @@ public final class FactoryGraph {
     public static FactoryGraph empty() {
         return new FactoryGraph(Map.of(), List.of(), List.of(), List.of(),
                 Set.of(), Set.of(), Map.of(), List.of(), List.of(), List.of(),
-                List.of(), List.of(), Set.of(), List.of(), false);
+                List.of(), List.of(), Set.of(), List.of(), Set.of(), false);
     }
 
     /** Die Fabricators am Netz. */
@@ -160,6 +163,16 @@ public final class FactoryGraph {
      */
     public List<BlockPos> masts() {
         return masts;
+    }
+
+    /**
+     * Die Quantum-Brücken am Netz.
+     *
+     * <p>Immer paarweise, wenn beide Enden geladen sind — sonst steht nur
+     * das diesseitige darin, und der Weg endet dort.
+     */
+    public Set<BlockPos> bridges() {
+        return bridges;
     }
 
     /** Die Anbauten am Controller. */
@@ -236,6 +249,7 @@ public final class FactoryGraph {
         Set<BlockPos> cables = new HashSet<>();
         Set<BlockPos> routers = new HashSet<>();
         List<BlockPos> masts = new ArrayList<>();
+        Set<BlockPos> bridges = new HashSet<>();
         Set<BlockPos> gateways = new LinkedHashSet<>();
         List<BlockPos> drives = new ArrayList<>();
         List<BlockPos> racks = new ArrayList<>();
@@ -315,6 +329,9 @@ public final class FactoryGraph {
                     // es in GatewayRegions und nicht hier.
                     visitCable(level, next, current, parents, queue, cables);
                     gateways.add(next.immutable());
+                } else if (state.getBlock()
+                        instanceof dev.devpanda.factorynetwork.block.BridgeBlock) {
+                    visitBridge(level, next, current, parents, queue, bridges);
                 } else if (state.getBlock() instanceof RouterBlock) {
                     visitRouter(level, next, direction, current, parents, queue, routers);
                 } else {
@@ -363,7 +380,7 @@ public final class FactoryGraph {
                 Set.copyOf(routers), Map.copyOf(load), List.copyOf(edges),
                 List.copyOf(drives), List.copyOf(racks), List.copyOf(extensions),
                 List.copyOf(fabricators), Set.copyOf(regions.contested()),
-                List.copyOf(masts), truncated);
+                List.copyOf(masts), Set.copyOf(bridges), truncated);
     }
 
     /**
@@ -496,6 +513,41 @@ public final class FactoryGraph {
         // Auch ein schon besuchtes Kabel darf seine Teile beisteuern: Der
         // Knoten ist derselbe, und über ihn läuft ihr Weg zum Controller.
         return node;
+    }
+
+    /**
+     * Springt durch eine Quantum-Brücke zu ihrer Gegenstelle.
+     *
+     * <p>Die Brücke ist ein Stück Leitung, das an zwei Orten liegt. Wer sie
+     * betritt, steht danach am anderen Ende — mit der Farbe, mit der er sie
+     * erreicht hat, denn eine Leitung ändert ihre Farbe nicht unterwegs.
+     *
+     * <p><b>Ist die Gegenstelle nicht geladen, endet der Weg hier.</b>
+     * Dieselbe Regel wie beim Sendemast: {@code getBlockEntity} lüde sonst
+     * nach, und diese Frage fällt bei jedem Neuaufbau des Netzes.
+     *
+     * <p>Das Ping-Pong zwischen den beiden Enden fängt {@code parents}: Ein
+     * Knoten, der schon einen Weg hat, bekommt keinen zweiten.
+     */
+    private static void visitBridge(Level level, BlockPos pos, Node from,
+                                    Map<Node, Node> parents, Deque<Node> queue,
+                                    Set<BlockPos> bridges) {
+        Node here = new Node(pos.immutable(), from.colour());
+        if (!parents.containsKey(here)) {
+            parents.put(here, from);
+            bridges.add(pos.immutable());
+        }
+        BlockPos partner = dev.devpanda.factorynetwork.network.BridgeRegistry
+                .partnerOf(level, pos);
+        if (partner == null || !level.isLoaded(partner)) {
+            return;
+        }
+        Node there = new Node(partner.immutable(), from.colour());
+        if (!parents.containsKey(there)) {
+            parents.put(there, here);
+            queue.add(there);
+            bridges.add(partner.immutable());
+        }
     }
 
     /**
@@ -727,6 +779,11 @@ public final class FactoryGraph {
             // Bahnen so viel wie ein dickes Kabel.
             return CableBlock.CHANNELS_DENSE;
         }
+        if (state.getBlock() instanceof dev.devpanda.factorynetwork.block.BridgeBlock) {
+            // Sie ist eine Leitung und kein Vermehrer — dieselbe Regel wie
+            // beim Gateway und beim Router.
+            return CableBlock.CHANNELS_DENSE;
+        }
         if (state.getBlock() instanceof dev.devpanda.factorynetwork.block.GatewayBlock) {
             // Er gehört zum dichten Kabel und trägt so viel wie eines. Ein
             // Kanalvermehrer zum Hinstellen machte die Kanalgrenze
@@ -867,6 +924,7 @@ public final class FactoryGraph {
                 // aus, als hinge er an gar nichts.
                 || masts.contains(pos)
                 || fabricators.contains(pos)
+                || bridges.contains(pos)
                 // Bei den Anschlüssen zählt allein der Ort: Gefragt wird, ob
                 // dieser Block zum Netz gehört, nicht welche seiner Flächen.
                 || atPos(unnamed, pos)
