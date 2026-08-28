@@ -6338,6 +6338,58 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
+     * Was ein Öffner schreibt, liest das Fenster genau auf.
+     *
+     * <p><b>Das ist der Lauf, der gefehlt hat.</b> Beim Umbau auf Welten
+     * schrieb das Gerät ein Feld weniger, als der Konstruktor las: Der Enum
+     * wurde als Boolean gelesen, danach war jedes weitere Feld verschoben,
+     * und der Client flog beim Öffnen mit einer
+     * ArrayIndexOutOfBoundsException aus der Welt. Kein Prüflauf konnte das
+     * sehen — alle riefen den Konstruktor mit Werten statt mit einem Puffer.
+     *
+     * <p>Geprüft wird deshalb der Weg über die Leitung, und am Ende die
+     * Frage, auf die es ankommt: <b>Ist der Puffer leer?</b> Bleibt etwas
+     * übrig, hat der Leser zu wenig genommen; fehlt etwas, zu viel.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 100)
+    public static void theWindowReadsExactlyWhatTheOpenerWrote(GameTestHelper helper) {
+        var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+        BlockPos where = helper.absolutePos(new BlockPos(1, 2, 1));
+
+        // Der Weg am Block: nur ein Ort.
+        var atBlock = new net.minecraft.network.RegistryFriendlyByteBuf(
+                io.netty.buffer.Unpooled.buffer(), helper.getLevel().registryAccess());
+        dev.devpanda.factorynetwork.client.menu.TerminalMenu.writeBlock(atBlock, where);
+        var fixed = new dev.devpanda.factorynetwork.client.menu.TerminalMenu(
+                1, player.getInventory(), atBlock);
+        helper.assertTrue(atBlock.readableBytes() == 0,
+                "am Block blieben " + atBlock.readableBytes() + " Bytes ungelesen");
+        helper.assertTrue(fixed.device() == null,
+                "der Block meldet ein Ferngerät");
+        helper.assertTrue(where.equals(fixed.position()),
+                "der Ort ist auf dem Weg verlorengegangen");
+
+        // Und der Weg aus der Ferne: Ort, Welt, Art, Platz.
+        for (var kind : dev.devpanda.factorynetwork.upgrade.RemoteDevice.values()) {
+            var remote = new net.minecraft.network.RegistryFriendlyByteBuf(
+                    io.netty.buffer.Unpooled.buffer(), helper.getLevel().registryAccess());
+            var mast = net.minecraft.core.GlobalPos.of(
+                    net.minecraft.world.level.Level.NETHER, where);
+            dev.devpanda.factorynetwork.client.menu.TerminalMenu.writeRemote(
+                    remote, mast, kind, 7);
+            var window = new dev.devpanda.factorynetwork.client.menu.TerminalMenu(
+                    2, player.getInventory(), remote);
+            helper.assertTrue(remote.readableBytes() == 0,
+                    kind + ": " + remote.readableBytes() + " Bytes ungelesen");
+            helper.assertTrue(window.device() == kind,
+                    kind + " kam als " + window.device() + " an");
+            helper.assertTrue(where.equals(window.position()),
+                    kind + ": der Ort stimmt nicht");
+        }
+        helper.succeed();
+    }
+
+    /**
      * Über eine Dimensionsgrenze reicht nur die Grenzenlos-Karte.
      *
      * <p>Geprüft wird die <b>Auflösung</b> und nicht die Reise: Ein

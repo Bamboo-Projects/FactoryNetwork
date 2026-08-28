@@ -67,16 +67,9 @@ public class TerminalBlock extends HorizontalDirectionalBlock implements EntityB
             // Gerät im Spiel ist, und wo es liegt. Der Menü-Konstruktor liest
             // sie in dieser Reihenfolge, und ein fehlendes Feld verschiebt
             // alle folgenden.
-            serverPlayer.openMenu(terminal, buffer -> {
-                buffer.writeBlockPos(pos);
-                // Keine fremde Welt und kein Gerät: Der Block steht dort, wo
-                // der Spieler steht. Die Felder müssen trotzdem geschrieben
-                // werden — der Menü-Konstruktor liest sie in dieser
-                // Reihenfolge, und ein fehlendes verschiebt alle folgenden.
-                buffer.writeBoolean(false);
-                buffer.writeBoolean(false);
-                buffer.writeVarInt(-1);
-            });
+            serverPlayer.openMenu(terminal, buffer ->
+                    dev.devpanda.factorynetwork.client.menu.TerminalMenu
+                            .writeBlock(buffer, pos));
         }
         return InteractionResult.CONSUME;
     }

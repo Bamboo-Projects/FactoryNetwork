@@ -8,6 +8,7 @@ import dev.devpanda.factorynetwork.terminal.RemoteAccess;
 import dev.devpanda.factorynetwork.terminal.TerminalTab;
 import dev.devpanda.factorynetwork.upgrade.RemoteDevice;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.GlobalPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
@@ -75,16 +76,51 @@ public class TerminalMenu extends AbstractContainerMenu {
      */
     private final ResourceKey<Level> home;
 
+    /**
+     * Schreibt, was ein Terminal-Block zu melden hat: nichts als seinen Ort.
+     *
+     * <p><b>Steht hier, direkt neben dem Konstruktor, der es liest.</b> Als
+     * die beiden Seiten in verschiedenen Dateien standen, ging genau das
+     * schief, was hier nicht mehr schiefgehen soll: Der Schreiber setzte ein
+     * Feld weniger als der Leser erwartete, und der Client warf beim Öffnen
+     * eine ArrayIndexOutOfBoundsException.
+     */
+    public static void writeBlock(RegistryFriendlyByteBuf buffer, BlockPos position) {
+        buffer.writeBlockPos(position);
+        buffer.writeBoolean(false);
+    }
+
+    /** Und was ein Ferngerät zu melden hat: Welt, Art und Platz im Inventar. */
+    public static void writeRemote(RegistryFriendlyByteBuf buffer, GlobalPos mast,
+                                   RemoteDevice device, int slot) {
+        buffer.writeBlockPos(mast.pos());
+        buffer.writeBoolean(true);
+        // Die Welt muss mit: Das Menü löst seinen Controller sonst über die
+        // Welt des Spielers auf, und der steht woanders.
+        buffer.writeResourceKey(mast.dimension());
+        buffer.writeEnum(device);
+        buffer.writeVarInt(slot);
+    }
+
+    /**
+     * Liest, was der Öffner geschrieben hat.
+     *
+     * <p><b>Ein Flag für alles Ferne, nicht drei.</b> Aus der Ferne gibt es
+     * immer eine Welt, ein Gerät und einen Platz im Inventar; am Block keins
+     * davon. Zwei Flags waren ein Feld, das man beim Schreiben vergessen
+     * konnte — und genau das ist passiert: Der Enum wurde als Boolean
+     * gelesen, und danach war jedes weitere Feld verschoben.
+     */
     public TerminalMenu(int id, Inventory inventory, RegistryFriendlyByteBuf buffer) {
-        this(id, inventory, buffer.readBlockPos(), buffer);
+        this(id, inventory, buffer.readBlockPos(), buffer, buffer.readBoolean());
     }
 
     private TerminalMenu(int id, Inventory inventory, BlockPos position,
-                         RegistryFriendlyByteBuf buffer) {
+                         RegistryFriendlyByteBuf buffer, boolean remote) {
         this(id, inventory, position,
-                buffer.readBoolean() ? buffer.readResourceKey(Registries.DIMENSION) : null,
-                buffer.readBoolean() ? buffer.readEnum(RemoteDevice.class) : null,
-                buffer.readVarInt());
+                remote ? buffer.readResourceKey(Registries.DIMENSION) : null,
+                remote ? buffer.readEnum(RemoteDevice.class) : null,
+                remote ? buffer.readVarInt() : -1);
     }
 
     public TerminalMenu(int id, Inventory inventory, BlockPos position) {

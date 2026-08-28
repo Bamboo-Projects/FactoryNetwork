@@ -233,15 +233,9 @@ public class RemoteDeviceItem extends Item {
                     (id, inventory, owner) -> new dev.devpanda.factorynetwork.client.menu
                             .TerminalMenu(id, inventory, mast.pos(), mast.dimension(),
                                     device, slot),
-                    Component.translatable(getDescriptionId())), buffer -> {
-                buffer.writeBlockPos(mast.pos());
-                buffer.writeBoolean(true);
-                // Die Welt muss mit: Das Menü löst seinen Controller sonst
-                // über die Welt des Spielers auf, und der steht woanders.
-                buffer.writeResourceKey(mast.dimension());
-                buffer.writeEnum(device);
-                buffer.writeVarInt(slot);
-            });
+                    Component.translatable(getDescriptionId())), buffer ->
+                    dev.devpanda.factorynetwork.client.menu.TerminalMenu
+                            .writeRemote(buffer, mast, device, slot));
         }
         return InteractionResultHolder.consume(held);
     }
