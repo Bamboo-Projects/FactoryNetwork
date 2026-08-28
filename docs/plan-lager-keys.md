@@ -1,4 +1,4 @@
-# Das Lager merkt sich Gegenstände statt Kennungen — Umsetzungsplan
+# Das Lager merkt sich Gegenstände statt Kennungen — erledigt am 28.08.
 
 **Ziel:** Ein verzaubertes Buch, ein benanntes Werkzeug, eine angeschlagene
 Spitzhacke gehen ins Netzlager und kommen unverändert zurück.
@@ -74,26 +74,26 @@ Dafür bekommen `NetworkStorage` und `CellInventory` Übergangs-Überladungen:
 bestehenden Prüfläufe laufen unverändert weiter, während die Schichten
 darunter umziehen. Am Ende fallen die Überladungen.
 
-- [ ] **1. Der Schlüssel.** `storage/ItemKey.java` plus reiner JUnit-Test:
+- [x] **1. Der Schlüssel.** `storage/ItemKey.java` plus reiner JUnit-Test:
       Gleichheit, Hash, Codec hin und zurück — je einmal mit und ohne
       Komponenten. Dazu die Falle aus Punkt 1 oben als eigene Probe: Ein
       Stapel, der nach `of()` verändert wird, darf den Key nicht ändern.
-- [ ] **2. Der Netzindex.** `NetworkStorage` intern auf `ItemKey`, mit
+- [x] **2. Der Netzindex.** `NetworkStorage` intern auf `ItemKey`, mit
       Überladungen. Prüflauf: unverändert grün.
-- [ ] **3. Die Zellen.** `CellFormat`/`CellContents`/`CellInventory` auf
+- [x] **3. Die Zellen.** `CellFormat`/`CellContents`/`CellInventory` auf
       `ItemKey` — mit dem optionalen `components`-Feld. **Achtung:**
       `DataComponentPatch.CODEC` braucht `RegistryOps`; die Signaturen
       brauchen einen `HolderLookup.Provider`, durchgereicht von der
       BlockEntity (`level.registryAccess()`). Prüflauf: eine alte Zelle
       (ohne das Feld) liest sich weiterhin.
-- [ ] **4. Die Leitung.** `StorageSnapshotPacket` und `StorageActionPacket`
+- [x] **4. Die Leitung.** `StorageSnapshotPacket` und `StorageActionPacket`
       tragen den Key statt der Kennung. Der Wächter aus dem Terminalfenster
       gilt hier genauso: schreiben und lesen zusammen prüfen.
-- [ ] **5. Die Anzeige.** Der Speicher-Reiter zeigt je Key eine Zeile, mit
+- [x] **5. Die Anzeige.** Der Speicher-Reiter zeigt je Key eine Zeile, mit
       dem echten Stapel — Verzauberungen und Namen werden sichtbar.
-- [ ] **6. Die Sprache.** Selektoren und Bedingungen rechnen weiter je
+- [x] **6. Die Sprache.** Selektoren und Bedingungen rechnen weiter je
       Kennung; ein Aggregat über alle Varianten bleibt.
-- [ ] **7. Die Notbremse fällt.** `StorageKeys.storable` verschwindet, und
+- [x] **7. Die Notbremse fällt.** `StorageKeys.storable` verschwindet, und
       `aWorkerLeavesItemsWithDataAlone` dreht sich um: Die benannte Hacke
       wandert jetzt samt Namen ins Lager und kommt samt Namen zurück. **Das
       ist der Beweis-Commit des ganzen Umbaus** — nicht früher lösen, sonst
@@ -105,3 +105,34 @@ darunter umziehen. Am Ende fallen die Überladungen.
 `DataComponentPatch`. Ein `compat/ae2`-Leser kann eine fremde Zelle in unser
 Lager schütten, ohne dabei etwas zu zerstören. Vorher wäre genau das
 unmöglich gewesen.
+
+---
+
+## Erledigt am 28.08.
+
+Alle sieben Aufgaben sind umgesetzt, 331 Prüfläufe grün. Die Notbremse ist
+gefallen, und `aWorkerCarriesDataIntoStorage` steht genau umgekehrt zu dem,
+was es am Nachmittag noch festhielt: Die benannte Hacke wandert jetzt samt
+Namen ins Lager.
+
+**Drei Dinge, die der Plan nicht vorhergesehen hatte:**
+
+**Der Mengenschlüssel gehört zum Format.** Eine Flüssigkeitszelle schreibt
+seit jeher `Amount`, eine Gegenstandszelle `Count`. Beim Zusammenführen der
+Lese- und Schreibwege wäre das fast vereinheitlicht worden — und hätte jeden
+bestehenden Flüssigkeitsbestand unlesbar gemacht.
+
+**`Map.getOrDefault` nimmt `Object`.** Vier Prüfläufe fragten mit einer
+Kennung in eine Schlüssel-Map und bekamen stillschweigend den Standardwert.
+Der Compiler sagte nichts; die Läufe fielen erst im Spiel auf. Wer eine Map
+umstellt, muss ihre Leser einzeln durchgehen — der Typ allein schützt nicht.
+
+**Der Balken am Gegenstand braucht keine Schlüssel.** Er läuft beim Zeichnen
+jedes Inventarplatzes und hat dort keine Registrierungen zur Hand. `summarize`
+zählt Posten und Mengen aus dem rohen NBT, ohne etwas zu deuten.
+
+**Was ohne Beweis blieb:** dass alte Zellen sich lesen. Das Format ist so
+gebaut, dass es muss — ein Posten ohne `components` ist ein nackter
+Gegenstand —, aber eine Zelle aus der Zeit davor liegt in keinem Prüflauf.
+Wer eine Welt von vor dem 28.08. hat, sollte einmal in eine volle Zelle
+schauen.

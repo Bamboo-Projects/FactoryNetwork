@@ -265,15 +265,8 @@ public class TerminalMenu extends AbstractContainerMenu {
             return ItemStack.EMPTY;
         }
         ItemStack stack = slot.getItem();
-        if (!dev.devpanda.factorynetwork.storage.StorageKeys.storable(stack)) {
-            // Das Lager führt nur Kennung und Menge. Ein Stapel mit eigenen
-            // Daten ginge nackt hinein und käme nackt zurück — lieber im
-            // Rucksack behalten als still verlieren.
-            serverPlayer.displayClientMessage(net.minecraft.network.chat.Component
-                    .translatable("message.factorynetwork.storage.keeps_data"), true);
-            return ItemStack.EMPTY;
-        }
-        controller.get().storage().insert(stack.getItem(), stack.getCount());
+        // Der ganze Stapel, samt allem, was er trägt.
+        controller.get().storage().insert(stack);
         slot.set(ItemStack.EMPTY);
         controller.get().pushStorageTo(serverPlayer, true);
         return ItemStack.EMPTY;

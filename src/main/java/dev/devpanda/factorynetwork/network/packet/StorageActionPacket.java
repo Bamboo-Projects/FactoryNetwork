@@ -102,13 +102,6 @@ public record StorageActionPacket(Kind kind, dev.devpanda.factorynetwork.storage
                 if (carried.isEmpty() || !packet.key().equals(dev.devpanda.factorynetwork.storage.ItemKey.of(carried))) {
                     return;
                 }
-                if (!dev.devpanda.factorynetwork.storage.StorageKeys.storable(carried)) {
-                    // Siehe TerminalMenu.quickMoveStack: Was Daten trägt,
-                    // bleibt draußen, bis das Lager sie halten kann.
-                    player.displayClientMessage(net.minecraft.network.chat.Component
-                            .translatable("message.factorynetwork.storage.keeps_data"), true);
-                    return;
-                }
                 int amount = Math.min(packet.amount(), carried.getCount());
                 controller.storage().insert(packet.key(), amount);
                 carried.shrink(amount);

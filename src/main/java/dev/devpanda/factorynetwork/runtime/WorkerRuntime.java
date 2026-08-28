@@ -378,12 +378,6 @@ public final class WorkerRuntime {
             if (stack.isEmpty() || (!filter.isEmpty() && !filter.contains(stack.getItem()))) {
                 continue;
             }
-            if (!dev.devpanda.factorynetwork.storage.StorageKeys.storable(stack)) {
-                // Ein verzaubertes Werkzeug bliebe im Lager als "ein Stück
-                // davon" liegen. Es bleibt lieber in der Kiste — geprüft
-                // wird vor dem Herausnehmen, sonst wäre es schon draußen.
-                continue;
-            }
             int wanted = (int) Math.min(batch - moved, stack.getCount());
             ItemStack taken = handler.extractItem(slot, wanted, false);
             if (taken.isEmpty()) {
@@ -392,10 +386,10 @@ public final class WorkerRuntime {
             // Was der Speicher nicht nimmt, geht zurück ins Gerät. Seit es
             // Zellen gibt, kann er voll sein — und dann wären die Gegenstände
             // sonst weg, ohne dass es jemand merkt.
-            long rest = storage.insert(taken.getItem(), taken.getCount());
+            long rest = storage.insert(taken);
             if (rest > 0) {
                 ItemStack zurueck = insertInto(handler,
-                        new ItemStack(taken.getItem(), (int) rest));
+                        taken.copyWithCount((int) rest));
                 if (!zurueck.isEmpty()) {
                     // Das Gerät nimmt nicht einmal zurück, was gerade drin
                     // lag. Dann fällt es lieber auf den Boden als zu

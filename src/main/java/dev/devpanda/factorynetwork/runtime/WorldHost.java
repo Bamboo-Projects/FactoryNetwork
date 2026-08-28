@@ -721,19 +721,13 @@ public final class WorldHost implements Interpreter.Host {
             if (stack.isEmpty() || (!items.isEmpty() && !items.contains(stack.getItem()))) {
                 continue;
             }
-            if (!dev.devpanda.factorynetwork.storage.StorageKeys.storable(stack)) {
-                // Derselbe Fall wie beim Worker: Was Daten trägt, bleibt
-                // liegen, statt sie im Lager zu verlieren.
-                continue;
-            }
             int wanted = (int) Math.min(limit - moved, stack.getCount());
             ItemStack taken = source.extractItem(slot, wanted, false);
             // Derselbe Fall wie beim Worker: Der Speicher kann voll sein, seit
             // er an Zellen hängt. Was er nicht nimmt, geht zurück.
-            long rest = storage.insert(taken.getItem(), taken.getCount());
+            long rest = storage.insert(taken);
             if (rest > 0) {
-                ItemStack zurueck = insert(source,
-                        new ItemStack(taken.getItem(), (int) rest));
+                ItemStack zurueck = insert(source, taken.copyWithCount((int) rest));
                 if (!zurueck.isEmpty()) {
                     throw new ScriptError("Der Speicher ist voll.",
                             "Ein Laufwerk mit freier Zelle schafft Platz.");

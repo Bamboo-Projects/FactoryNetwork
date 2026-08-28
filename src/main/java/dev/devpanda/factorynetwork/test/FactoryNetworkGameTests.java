@@ -6435,18 +6435,18 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ein Worker lässt liegen, was seine Daten im Lager verlöre.
+     * Ein Worker nimmt jetzt auch mit, was Daten trägt.
      *
-     * <p><b>Der gefährlichste der vier Wege ins Lager.</b> Beim Umschalt-Klick
-     * sieht man, was passiert; ein Worker räumt eine Kiste im Hintergrund
-     * leer, und ein verzaubertes Werkzeug darin wäre zu "ein Stück davon"
-     * geworden, ohne dass jemand dabei zusieht.
+     * <p><b>Dieser Lauf stand bis zum 28.08. auf dem Kopf:</b> Er hielt fest,
+     * dass eine benannte Hacke in der Kiste <i>liegen bleibt</i>. Das war die
+     * Notbremse, solange das Lager sie nur entkernt hätte aufnehmen können.
      *
-     * <p>Geprüft wird vor dem Herausnehmen. Danach wäre der Gegenstand schon
-     * aus der Kiste, und das Zurücklegen baute ihn nackt neu.
+     * <p>Jetzt wandert sie — samt Namen. Ein Worker räumt eine Kiste im
+     * Hintergrund leer, und niemand sieht dabei zu; genau deshalb ist das
+     * der Lauf, an dem der Umbau sich beweist.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
-    public static void aWorkerLeavesItemsWithDataAlone(GameTestHelper helper) {
+    public static void aWorkerCarriesDataIntoStorage(GameTestHelper helper) {
         BlockPos controller = buildSetup(helper);
         ControllerBlockEntity entity = controllerAt(helper, controller);
 
@@ -6456,8 +6456,6 @@ public final class FactoryNetworkGameTests {
                 net.minecraft.network.chat.Component.literal("Lieblingshacke"));
         if (helper.getBlockEntity(source) instanceof ChestBlockEntity container) {
             container.setItem(0, named);
-            // Daneben etwas Nacktes: Der Worker soll weiterarbeiten und nicht
-            // an der Hacke hängenbleiben.
             container.setItem(1, new ItemStack(Items.COBBLESTONE, 64));
         }
 
@@ -6469,79 +6467,122 @@ public final class FactoryNetworkGameTests {
                 }"""), "Das Programm wurde nicht übernommen");
         entity.rebuildNetwork();
 
+        var key = dev.devpanda.factorynetwork.storage.ItemKey.of(named);
         helper.runAfterDelay(30, () -> {
             if (!(helper.getBlockEntity(source) instanceof ChestBlockEntity container)) {
                 helper.fail("keine Kiste mehr da", source);
                 return;
             }
-            ItemStack left = container.getItem(0);
-            helper.assertTrue(left.getItem() == Items.DIAMOND_PICKAXE,
-                    "die benannte Hacke ist aus der Kiste verschwunden");
-            helper.assertTrue(
-                    left.get(net.minecraft.core.component.DataComponents.CUSTOM_NAME) != null,
-                    "die Hacke liegt noch da, aber ohne ihren Namen");
-
-            // Und der Rest ist trotzdem gewandert: Ein Stapel mit Daten hält
-            // den Worker auf, aber nicht an.
-            helper.assertTrue(container.getItem(1).isEmpty(),
-                    "der Worker hat wegen der Hacke gar nichts mehr bewegt");
+            helper.assertTrue(container.getItem(0).isEmpty(),
+                    "die Hacke liegt noch in der Kiste");
+            helper.assertValueEqual(entity.storage().count(key), 1L,
+                    "die Hacke ist nicht mit ihrem Namen im Lager angekommen");
             helper.assertTrue(entity.storage().count(Items.COBBLESTONE) > 0,
                     "im Lager liegt kein Bruchstein");
             helper.succeed();
         });
     }
 
+
+
     /**
-     * Was Daten trägt, bleibt draußen — statt sie beim Einlagern zu verlieren.
+     * Was Daten trägt, geht ins Lager und kommt unverändert zurück.
      *
-     * <p><b>Das Lager führt heute nur die Kennung und eine Menge.</b> Ein
-     * verzaubertes Buch, ein benanntes Werkzeug, ein halb geladenes Gerät:
-     * Alle drei gingen als „ein Stück davon" hinein und kamen nackt zurück.
-     * Nichts warnte, nichts fiel auf — bis jemand sein Werkzeug wiederholte.
+     * <p><b>Der Beweislauf des ganzen Umbaus.</b> Bis zum 28.08. führte das
+     * Lager nur Kennung und Menge: Ein verzaubertes Buch, ein benanntes
+     * Werkzeug, ein halb geladenes Gerät gingen als „ein Stück davon" hinein
+     * und kamen nackt zurück. Nichts warnte, nichts fiel auf — bis jemand
+     * sein Werkzeug wiederholte.
      *
-     * <p>Das ist eine <b>Notbremse, keine Lösung</b>. Die Lösung ist ein
-     * Speicher, der Gegenstände statt Kennungen führt; sie steht in
-     * {@code docs/item-daten-im-lager.md} und ist ein eigenes Stück Arbeit.
-     * Bis dahin gilt: lieber im Rucksack behalten als still verlieren.
+     * <p>Geprüft wird der ganze Kreis: hinein, im Bestand nachsehen, wieder
+     * heraus. An jeder dieser drei Stellen ging es vorher verloren.
      */
-    @GameTest(template = EMPTY, timeoutTicks = 100)
-    public static void itemsWithDataStayOutOfStorage(GameTestHelper helper) {
-        // Ein Schwert mit einem Namen: Der Name ist eine Datenkomponente,
-        // also trägt der Stapel mehr als seine Kennung.
-        ItemStack named = new ItemStack(net.minecraft.world.item.Items.IRON_SWORD);
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void itemsWithDataSurviveStorage(GameTestHelper helper) {
+        BlockPos controller = bareSetup(helper);
+        driveWithCell(helper, controller.above(),
+                dev.devpanda.factorynetwork.storage.CellTier.K4);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        ItemStack named = new ItemStack(Items.DIAMOND_PICKAXE);
         named.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME,
-                net.minecraft.network.chat.Component.literal("Brotmesser"));
-        helper.assertTrue(!named.isComponentsPatchEmpty(),
-                "das benannte Schwert trägt gar keine Daten");
-        helper.assertTrue(
-                !dev.devpanda.factorynetwork.storage.StorageKeys.storable(named),
-                "ein benanntes Schwert gilt als lagerbar");
+                net.minecraft.network.chat.Component.literal("Lieblingshacke"));
 
-        // Ein nacktes Schwert dagegen geht hinein wie eh und je.
-        ItemStack plain = new ItemStack(net.minecraft.world.item.Items.IRON_SWORD);
-        helper.assertTrue(plain.isComponentsPatchEmpty(),
-                "ein frisches Schwert trägt schon Daten");
-        helper.assertTrue(
-                dev.devpanda.factorynetwork.storage.StorageKeys.storable(plain),
-                "ein nacktes Schwert wird abgelehnt");
+        helper.assertValueEqual(entity.storage().insert(named), 0L,
+                "die benannte Hacke ging nicht ins Lager");
 
-        // Und ein beschädigtes: Die Haltbarkeit ist eine Komponente, und ein
-        // Lager, das sie vergisst, repariert oder zerstört Werkzeug.
-        ItemStack worn = new ItemStack(net.minecraft.world.item.Items.IRON_PICKAXE);
-        worn.setDamageValue(100);
-        helper.assertTrue(
-                !dev.devpanda.factorynetwork.storage.StorageKeys.storable(worn),
-                "eine angeschlagene Spitzhacke gilt als lagerbar");
+        // Im Bestand steht sie als eigener Posten — neben einer nackten.
+        entity.storage().insert(new ItemStack(Items.DIAMOND_PICKAXE, 3));
+        var key = dev.devpanda.factorynetwork.storage.ItemKey.of(named);
+        helper.assertValueEqual(entity.storage().count(key), 1L,
+                "die benannte Hacke steht nicht als eigener Posten im Bestand");
+        helper.assertValueEqual(entity.storage().count(
+                        dev.devpanda.factorynetwork.storage.ItemKey
+                                .bare(Items.DIAMOND_PICKAXE)), 3L,
+                "die nackten Hacken sind mit der benannten verschmolzen");
 
-        // Ein gekoppeltes Ferngerät ebenso — es trägt seinen Mast bei sich.
-        ItemStack device = new ItemStack(
-                dev.devpanda.factorynetwork.registry.FnItems.WIRELESS_TERMINAL.get());
-        dev.devpanda.factorynetwork.item.RemoteDeviceItem.couple(device,
-                net.minecraft.core.GlobalPos.of(helper.getLevel().dimension(),
-                        helper.absolutePos(new BlockPos(1, 2, 1))));
+        // Und je Kennung zusammen: Das ist, was ein Programm sieht.
+        helper.assertValueEqual(entity.storage().count(Items.DIAMOND_PICKAXE), 4L,
+                "je Kennung zählen nicht alle Ausführungen zusammen");
+
+        // Wieder heraus, und der Name ist noch da.
+        helper.assertValueEqual(entity.storage().extract(key, 1), 1L,
+                "die benannte Hacke kam nicht wieder heraus");
+        helper.assertValueEqual(entity.storage().count(key), 0L,
+                "sie liegt danach immer noch im Lager");
+        ItemStack back = key.toStack(1);
         helper.assertTrue(
-                !dev.devpanda.factorynetwork.storage.StorageKeys.storable(device),
-                "ein gekoppeltes Gerät verlöre sein Netz im Lager");
+                back.get(net.minecraft.core.component.DataComponents.CUSTOM_NAME) != null,
+                "sie kam ohne ihren Namen zurück");
+
+        // Und die nackten sind unangetastet: Wer eine bestimmte Ausführung
+        // nimmt, nimmt nicht irgendeine.
+        helper.assertValueEqual(entity.storage().count(
+                        dev.devpanda.factorynetwork.storage.ItemKey
+                                .bare(Items.DIAMOND_PICKAXE)), 3L,
+                "das Entnehmen hat die nackten Hacken angefasst");
+        helper.succeed();
+    }
+
+    /**
+     * Und dasselbe über eine Zelle hinweg, samt Sichern und Laden.
+     *
+     * <p>Der Bestand lebt im Gegenstand, nicht im Laufwerk. Was hier
+     * schiefginge, fiele erst nach einem Neustart der Welt auf — und dann
+     * ist es weg.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void dataInACellSurvivesSaving(GameTestHelper helper) {
+        BlockPos controller = bareSetup(helper);
+        BlockPos drivePos = controller.above();
+        driveWithCell(helper, drivePos, dev.devpanda.factorynetwork.storage.CellTier.K4);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        ItemStack named = new ItemStack(Items.DIAMOND_PICKAXE);
+        named.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME,
+                net.minecraft.network.chat.Component.literal("Lieblingshacke"));
+        entity.storage().insert(named);
+
+        var drive = (dev.devpanda.factorynetwork.block.entity.DriveBlockEntity)
+                helper.getBlockEntity(drivePos);
+        drive.flushCells();
+
+        // Aus dem Gegenstand zurücklesen — das ist der Weg über die Platte.
+        var inhalt = dev.devpanda.factorynetwork.storage.CellContents.read(
+                drive.cell(0), helper.getLevel().registryAccess());
+        var key = dev.devpanda.factorynetwork.storage.ItemKey.of(named);
+        helper.assertValueEqual(inhalt.getOrDefault(key, 0L), 1L,
+                "die Zelle hat den Namen beim Schreiben verloren");
+
+        // Und eine nackte Hacke bleibt ein zweiter Posten.
+        entity.storage().insert(new ItemStack(Items.DIAMOND_PICKAXE));
+        drive.flushCells();
+        var wieder = dev.devpanda.factorynetwork.storage.CellContents.read(
+                drive.cell(0), helper.getLevel().registryAccess());
+        helper.assertValueEqual(wieder.size(), 2,
+                "benannte und nackte Hacke liegen in einem Posten");
         helper.succeed();
     }
 
