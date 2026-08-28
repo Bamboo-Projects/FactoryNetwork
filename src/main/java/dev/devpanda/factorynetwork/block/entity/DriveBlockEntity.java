@@ -31,7 +31,8 @@ public class DriveBlockEntity extends ShelfBlockEntity {
     public static final int SLOTS = 10;
 
     /** Die offenen Gegenstandszellen, nach Platznummer. */
-    private final java.util.Map<Integer, CellInventory<net.minecraft.world.item.Item>>
+    private final java.util.Map<Integer,
+            CellInventory<dev.devpanda.factorynetwork.storage.ItemKey>>
             openItems = new java.util.HashMap<>();
 
     /**
@@ -129,13 +130,27 @@ public class DriveBlockEntity extends ShelfBlockEntity {
      * Wer eine Zelle herauszieht und eine andere hineinsteckt, bekommt eine
      * neue Sicht, auch wenn der Platz derselbe ist.
      */
-    public List<CellInventory<net.minecraft.world.item.Item>> inventories() {
-        return live(openItems, StorageCellItem.class, CellInventory::ofItems);
+    public List<CellInventory<dev.devpanda.factorynetwork.storage.ItemKey>> inventories() {
+        return live(openItems, StorageCellItem.class,
+                cell -> CellInventory.ofItems(cell, registries()));
     }
 
     /** Dieselbe Sicht auf die Flüssigkeitszellen. */
     public List<CellInventory<net.minecraft.world.level.material.Fluid>> fluidInventories() {
-        return live(openFluids, FluidCellItem.class, CellInventory::ofFluids);
+        return live(openFluids, FluidCellItem.class,
+                cell -> CellInventory.ofFluids(cell, registries()));
+    }
+
+    /**
+     * Woher die Registrierungen kommen.
+     *
+     * <p>Was ein Gegenstand über seine Kennung hinaus trägt, lässt sich ohne
+     * sie nicht lesen. Ein Laufwerk ohne Welt gibt es nur zwischen dem Bauen
+     * und dem Setzen — dort steht noch keine Zelle drin.
+     */
+    private net.minecraft.core.HolderLookup.Provider registries() {
+        return level == null
+                ? net.minecraft.core.RegistryAccess.EMPTY : level.registryAccess();
     }
 
     /**
@@ -165,7 +180,7 @@ public class DriveBlockEntity extends ShelfBlockEntity {
 
     private <V extends CellView> List<V> live(
             java.util.Map<Integer, V> cache, Class<?> kind,
-            java.util.function.Function<ItemStack, V> open) {
+            java.util.function.Function<ItemStack, ? extends V> open) {
         List<V> found = new ArrayList<>(SLOTS);
         for (int slot = 0; slot < SLOTS; slot++) {
             ItemStack stack = getItem(slot);

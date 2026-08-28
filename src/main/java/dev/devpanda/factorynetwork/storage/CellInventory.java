@@ -1,6 +1,7 @@
 package dev.devpanda.factorynetwork.storage;
 
 import net.minecraft.world.item.Item;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.Collections;
@@ -29,11 +30,23 @@ public final class CellInventory<T> implements CellView {
     private final CellFormat<T> format;
     private final Map<T, Long> contents;
 
-    private CellInventory(ItemStack cell, CellSize size, CellFormat<T> format) {
+    /**
+     * Woher die Registrierungen kommen.
+     *
+     * <p><b>Gemerkt und nicht bei jedem Zugriff neu gefragt.</b> Was ein
+     * Gegenstand über seine Kennung hinaus trägt, lässt sich ohne sie weder
+     * lesen noch schreiben — und eine Zelle wird zwischen Öffnen und
+     * Zurückschreiben mehrmals angefasst.
+     */
+    private final HolderLookup.Provider registries;
+
+    private CellInventory(ItemStack cell, CellSize size, CellFormat<T> format,
+                          HolderLookup.Provider registries) {
         this.cell = cell;
         this.size = size;
         this.format = format;
-        this.contents = new LinkedHashMap<>(format.read(cell));
+        this.registries = registries;
+        this.contents = new LinkedHashMap<>(format.read(cell, registries));
     }
 
     /**
@@ -44,19 +57,23 @@ public final class CellInventory<T> implements CellView {
      * Format selbst mit — die Rechnung mit Sorten und Mengen bleibt dieselbe.
      */
     public static <T> CellInventory<T> of(ItemStack cell, CellSize size,
-                                          CellFormat<T> format) {
-        return new CellInventory<>(cell, size, format);
+                                          CellFormat<T> format,
+                                          HolderLookup.Provider registries) {
+        return new CellInventory<>(cell, size, format, registries);
     }
 
     /** Eine Gegenstandszelle. Ungültig, wenn dort keine steckt. */
-    public static CellInventory<Item> ofItems(ItemStack cell) {
-        return new CellInventory<>(cell, StorageCellItem.tierOf(cell), CellFormat.ITEMS);
+    public static CellInventory<ItemKey> ofItems(ItemStack cell,
+                                                 HolderLookup.Provider registries) {
+        return new CellInventory<>(cell, StorageCellItem.tierOf(cell), CellFormat.ITEMS,
+                registries);
     }
 
     /** Eine Flüssigkeitszelle. Ungültig, wenn dort keine steckt. */
     public static CellInventory<net.minecraft.world.level.material.Fluid> ofFluids(
-            ItemStack cell) {
-        return new CellInventory<>(cell, FluidCellItem.tierOf(cell), CellFormat.FLUIDS);
+            ItemStack cell, HolderLookup.Provider registries) {
+        return new CellInventory<>(cell, FluidCellItem.tierOf(cell), CellFormat.FLUIDS,
+                registries);
     }
 
     /** Der Gegenstand, zu dem diese Sicht gehört. */
@@ -146,6 +163,6 @@ public final class CellInventory<T> implements CellView {
 
     /** Schreibt zurück in den Gegenstand. Ohne das war alles nur gedacht. */
     public void flush() {
-        format.write(cell, contents);
+        format.write(cell, contents, registries);
     }
 }

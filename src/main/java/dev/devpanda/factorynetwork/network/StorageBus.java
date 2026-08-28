@@ -3,6 +3,7 @@ package dev.devpanda.factorynetwork.network;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Supplier;
+import dev.devpanda.factorynetwork.storage.ItemKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.items.IItemHandler;
@@ -44,12 +45,12 @@ public final class StorageBus {
      * zu bekommen. Der Controller löst sie beim Neuaufbau auf — dann, wenn
      * sich das Programm ohnehin geändert haben kann.
      */
-    private final java.util.Set<Item> allowed;
+    private final java.util.Set<ItemKey> allowed;
 
     /** Was beim letzten Lesen darin lag. */
-    private final Map<Item, Long> contents = new LinkedHashMap<>();
+    private final Map<ItemKey, Long> contents = new LinkedHashMap<>();
 
-    public StorageBus(String device, long priority, java.util.Collection<Item> allowed,
+    public StorageBus(String device, long priority, java.util.Collection<ItemKey> allowed,
                       Supplier<IItemHandler> access) {
         this.device = device;
         this.priority = priority;
@@ -66,7 +67,7 @@ public final class StorageBus {
      * etwas, das jeder sehen kann, und ein Bestand, aus dem man nichts holen
      * kann, wäre die schlimmere Hälfte davon.
      */
-    public boolean accepts(Item item) {
+    public boolean accepts(ItemKey item) {
         return allowed.isEmpty() || allowed.contains(item);
     }
 
@@ -85,7 +86,7 @@ public final class StorageBus {
     }
 
     /** Was beim letzten Lesen darin lag. */
-    public Map<Item, Long> contents() {
+    public Map<ItemKey, Long> contents() {
         return contents;
     }
 
@@ -99,12 +100,16 @@ public final class StorageBus {
      * <p>Der gemerkte Inhalt wird mitgeführt und nicht neu gelesen. Ein Lesen
      * je Ablage wäre genau das, was das Lesen je Tick einspart.
      */
-    public long insert(Item item, long count) {
+    public long insert(ItemKey item, long count) {
         IItemHandler handler = access.get();
         if (handler == null || count <= 0 || !accepts(item)) {
             return count;
         }
-        ItemStack rest = new ItemStack(item, (int) Math.min(count, Integer.MAX_VALUE));
+        // Der Stapel wird aus dem Schlüssel gebaut und trägt damit, was der
+        // Gegenstand ausmacht. Vorher entstand hier ein nackter — ein
+        // verzaubertes Buch kam in der Kiste ohne Verzauberung an.
+        ItemStack rest = item.toStack(
+                (int) Math.min(count, item.maxStackSize()));
         for (int slot = 0; slot < handler.getSlots() && !rest.isEmpty(); slot++) {
             rest = handler.insertItem(slot, rest, false);
         }
@@ -122,14 +127,17 @@ public final class StorageBus {
      * Maschine hergibt. Ein Eingangsfach, das nichts herausrückt, ist keine
      * Fehlermeldung, sondern eine Maschine, die ihre Regeln behält.
      */
-    public long extract(Item item, long count) {
+    public long extract(ItemKey item, long count) {
         IItemHandler handler = access.get();
         if (handler == null || count <= 0) {
             return 0;
         }
         long taken = 0;
         for (int slot = 0; slot < handler.getSlots() && taken < count; slot++) {
-            if (handler.getStackInSlot(slot).getItem() != item) {
+            // Ganze Gegenstände vergleichen, nicht nur die Kennung: Sonst
+            // holte eine Anforderung nach einer nackten Spitzhacke die
+            // verzauberte aus der Kiste.
+            if (!item.equals(ItemKey.of(handler.getStackInSlot(slot)))) {
                 continue;
             }
             taken += handler.extractItem(slot, (int) (count - taken), false).getCount();
@@ -152,12 +160,12 @@ public final class StorageBus {
      */
     public boolean refresh() {
         IItemHandler handler = access.get();
-        Map<Item, Long> found = new LinkedHashMap<>();
+        Map<ItemKey, Long> found = new LinkedHashMap<>();
         if (handler != null) {
             for (int slot = 0; slot < handler.getSlots(); slot++) {
                 ItemStack stack = handler.getStackInSlot(slot);
                 if (!stack.isEmpty()) {
-                    found.merge(stack.getItem(), (long) stack.getCount(), Long::sum);
+                    found.merge(ItemKey.of(stack), (long) stack.getCount(), Long::sum);
                 }
             }
         }

@@ -694,10 +694,11 @@ public final class FactoryNetworkGameTests {
                     tag.put("Cell", entries);
                 });
 
-        var inhalt = dev.devpanda.factorynetwork.storage.CellContents.read(cell);
+        var inhalt = dev.devpanda.factorynetwork.storage.CellContents.read(cell,
+                helper.getLevel().registryAccess());
         helper.assertValueEqual(inhalt.size(), 1,
                 "nur der bekannte Gegenstand darf überleben");
-        helper.assertValueEqual(inhalt.getOrDefault(Items.IRON_INGOT, 0L), 5L, "Bestand");
+        helper.assertValueEqual(inhalt.getOrDefault(dev.devpanda.factorynetwork.storage.ItemKey.bare(Items.IRON_INGOT), 0L), 5L, "Bestand");
         helper.succeed();
     }
 
@@ -1583,7 +1584,7 @@ public final class FactoryNetworkGameTests {
 
         helper.assertValueEqual(entity.storage().count(Items.IRON_ORE), 12L,
                 "danach zählt ihr Inhalt zum Netz");
-        helper.assertTrue(entity.storage().contents().containsKey(Items.IRON_ORE),
+        helper.assertTrue(entity.storage().byItem().containsKey(Items.IRON_ORE),
                 "und steht im Bestand, den das Terminal zeigt");
         helper.succeed();
     }
@@ -2715,7 +2716,7 @@ public final class FactoryNetworkGameTests {
                         drive.saveWithFullMetadata(registries), registries);
         helper.assertTrue(geladen != null, "Das Laufwerk kam nicht zurück");
         var inhalt = dev.devpanda.factorynetwork.storage.CellFormat.FLUIDS
-                .read(geladen.cell(0));
+                .read(geladen.cell(0), helper.getLevel().registryAccess());
         helper.assertValueEqual(inhalt.getOrDefault(
                 net.minecraft.world.level.material.Fluids.WATER, 0L), 1000L,
                 "Ein Bestand, der einen Neustart nicht übersteht, ist keiner");
@@ -4772,8 +4773,9 @@ public final class FactoryNetworkGameTests {
         // Gegenstand. Wer ihn vorher liest, sieht den Stand von vorhin.
         drive.flushCells();
         ItemStack cell = drive.cell(0);
-        var inhalt = dev.devpanda.factorynetwork.storage.CellContents.read(cell);
-        helper.assertValueEqual(inhalt.getOrDefault(Items.DIAMOND, 0L), 12L,
+        var inhalt = dev.devpanda.factorynetwork.storage.CellContents.read(cell,
+                helper.getLevel().registryAccess());
+        helper.assertValueEqual(inhalt.getOrDefault(dev.devpanda.factorynetwork.storage.ItemKey.bare(Items.DIAMOND), 0L), 12L,
                 "Die Zelle trägt ihren Inhalt selbst");
 
         // Zelle heraus: Das Netz hat nichts mehr.
@@ -4962,8 +4964,8 @@ public final class FactoryNetworkGameTests {
                         helper.absolutePos(drivePos), helper.getBlockState(drivePos),
                         tag, registries);
         helper.assertTrue(geladen != null, "Das Laufwerk kam nicht zurück");
-        var inhalt = dev.devpanda.factorynetwork.storage.CellContents.read(geladen.cell(0));
-        helper.assertValueEqual(inhalt.getOrDefault(Items.DIAMOND, 0L), 42L,
+        var inhalt = dev.devpanda.factorynetwork.storage.CellContents.read(geladen.cell(0), helper.getLevel().registryAccess());
+        helper.assertValueEqual(inhalt.getOrDefault(dev.devpanda.factorynetwork.storage.ItemKey.bare(Items.DIAMOND), 0L), 42L,
                 "Der Bestand muss das Sichern überstehen");
         helper.succeed();
     }
@@ -5253,8 +5255,10 @@ public final class FactoryNetworkGameTests {
         var drive = (dev.devpanda.factorynetwork.block.entity.DriveBlockEntity)
                 helper.getBlockEntity(drivePos);
         for (var cell : drive.inventories()) {
-            eisen += cell.count(Items.IRON_INGOT);
-            gold += cell.count(Items.GOLD_INGOT);
+            eisen += cell.count(dev.devpanda.factorynetwork.storage.ItemKey
+                    .bare(Items.IRON_INGOT));
+            gold += cell.count(dev.devpanda.factorynetwork.storage.ItemKey
+                    .bare(Items.GOLD_INGOT));
         }
         helper.assertValueEqual(storage.count(Items.IRON_INGOT), eisen,
                 "Eisen im Index gegen Eisen in der Zelle");
@@ -5393,8 +5397,8 @@ public final class FactoryNetworkGameTests {
             }
         }
         helper.assertTrue(!pulled.isEmpty(), "die Zelle muss im Rucksack liegen");
-        var inhalt = dev.devpanda.factorynetwork.storage.CellContents.read(pulled);
-        helper.assertValueEqual(inhalt.getOrDefault(Items.DIAMOND, 0L), 7L,
+        var inhalt = dev.devpanda.factorynetwork.storage.CellContents.read(pulled, helper.getLevel().registryAccess());
+        helper.assertValueEqual(inhalt.getOrDefault(dev.devpanda.factorynetwork.storage.ItemKey.bare(Items.DIAMOND), 0L), 7L,
                 "Bestand in der herausgenommenen Zelle");
         helper.assertValueEqual(entity.storage().count(Items.DIAMOND), 0L,
                 "im Netz darf nichts zurückbleiben");
@@ -5491,7 +5495,7 @@ public final class FactoryNetworkGameTests {
             }
         }
         helper.assertTrue(!pulled.isEmpty(), "die Zelle muss im Rucksack liegen");
-        var inhalt = dev.devpanda.factorynetwork.storage.CellFormat.FLUIDS.read(pulled);
+        var inhalt = dev.devpanda.factorynetwork.storage.CellFormat.FLUIDS.read(pulled, helper.getLevel().registryAccess());
         helper.assertValueEqual(inhalt.getOrDefault(
                 net.minecraft.world.level.material.Fluids.WATER, 0L), 3000L,
                 "Bestand in der herausgenommenen Zelle");
@@ -9747,7 +9751,7 @@ public final class FactoryNetworkGameTests {
                 helper.getBlockEntity(drivePos);
         drive.flushCells();
         var inhalt = dev.devpanda.factorynetwork.compat.mekanism.ChemicalStores
-                .read(drive.cell(0));
+                .read(drive.cell(0), helper.getLevel().registryAccess());
         helper.assertValueEqual(inhalt.getOrDefault("mekanism:hydrogen", 0L), 2500L,
                 "Die Zelle trägt ihren Inhalt selbst");
 
@@ -11456,7 +11460,8 @@ public final class FactoryNetworkGameTests {
 
         keepsTheContract(helper, entity.store(
                 dev.devpanda.factorynetwork.runtime.ResourceKinds.ITEM),
-                Items.IRON_INGOT, 64, "Gegenstände");
+                dev.devpanda.factorynetwork.storage.ItemKey.bare(Items.IRON_INGOT),
+                64, "Gegenstände");
         keepsTheContract(helper, entity.store(
                 dev.devpanda.factorynetwork.runtime.ResourceKinds.FLUID),
                 net.minecraft.world.level.material.Fluids.WATER, 1000, "Flüssigkeiten");

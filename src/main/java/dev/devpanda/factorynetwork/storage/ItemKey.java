@@ -105,6 +105,11 @@ public final class ItemKey {
         return maxStackSize;
     }
 
+    /** Was diesen Gegenstand von einem frisch gebauten unterscheidet. */
+    public net.minecraft.core.component.DataComponentPatch components() {
+        return stack.getComponentsPatch();
+    }
+
     /** Trägt dieser Gegenstand überhaupt eigene Daten? */
     public boolean isBare() {
         return stack.isComponentsPatchEmpty();

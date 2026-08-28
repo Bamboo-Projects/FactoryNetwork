@@ -2,6 +2,7 @@ package dev.devpanda.factorynetwork.network;
 
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import dev.devpanda.factorynetwork.storage.ItemKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
@@ -44,7 +45,7 @@ public final class NetworkStorage implements ResourceStore {
      * Neu gezählt wird nur, wenn jemand anders etwas getan hat — eine Zelle
      * herausgezogen etwa. Das meldet der Zählstand des Laufwerks.
      */
-    private final Map<Item, Long> index = new LinkedHashMap<>();
+    private final Map<ItemKey, Long> index = new LinkedHashMap<>();
     private boolean indexValid;
     /** Stand der Laufwerke, als der Index gebaut wurde. */
     private long[] seenRevisions = new long[0];
@@ -115,7 +116,7 @@ public final class NetworkStorage implements ResourceStore {
     }
 
     /** Der Bestand, frisch genug. */
-    private Map<Item, Long> index() {
+    private Map<ItemKey, Long> index() {
         if (!indexValid || drivesChanged()) {
             rebuildIndex();
         }
@@ -142,7 +143,7 @@ public final class NetworkStorage implements ResourceStore {
 
     private void rebuildIndex() {
         index.clear();
-        for (CellInventory<Item> cell : cells()) {
+        for (CellInventory<ItemKey> cell : cells()) {
             cell.contentsView().forEach((item, count) -> index.merge(item, count, Long::sum));
         }
         // Und was in den fremden Inventaren liegt. Gelesen wird hier nicht —
@@ -175,19 +176,37 @@ public final class NetworkStorage implements ResourceStore {
     // Object passt und Item nicht enger ist als Object — ein Überlauf, der
     // erst dann auffällt, wenn jemand den allgemeinen Weg nimmt.
 
+    /**
+     * Der allgemeine Weg nimmt beides an: einen Gegenstand oder eine Kennung.
+     *
+     * <p><b>Weil beide Fragen vorkommen.</b> Die Sprache fragt nach
+     * {@code eisenbarren} und meint jede Ausführung; das Terminal fragt nach
+     * genau dem Stapel, den jemand angeklickt hat. Ein einziger Typ hier
+     * hieße, dass eine der beiden Seiten übersetzen muss — und die
+     * Übersetzung gehört an den Bestand, nicht an ihre Ränder.
+     */
     @Override
     public long count(Object key) {
-        return count((Item) key);
+        if (key instanceof ItemKey found) {
+            return count(found);
+        }
+        return key instanceof Item item ? count(item) : 0;
     }
 
     @Override
     public long insert(Object key, long amount) {
-        return insert((Item) key, amount);
+        if (key instanceof ItemKey found) {
+            return insert(found, amount);
+        }
+        return key instanceof Item item ? insert(item, amount) : amount;
     }
 
     @Override
     public long extract(Object key, long amount) {
-        return extract((Item) key, amount);
+        if (key instanceof ItemKey found) {
+            return extract(found, amount);
+        }
+        return key instanceof Item item ? extract(item, amount) : 0;
     }
 
     /**
@@ -202,11 +221,18 @@ public final class NetworkStorage implements ResourceStore {
      */
     @Override
     public long room(Object key, long wanted) {
-        if (wanted <= 0 || !(key instanceof Item item)) {
+        if (wanted <= 0) {
+            return 0;
+        }
+        // Wie bei count und insert: Beide Fragen kommen vor. Eine Kennung
+        // ohne eigene Daten ist der nackte Gegenstand.
+        ItemKey item = key instanceof ItemKey found ? found
+                : key instanceof Item plain ? ItemKey.bare(plain) : null;
+        if (item == null) {
             return 0;
         }
         long free = 0;
-        for (CellInventory<Item> cell : cells()) {
+        for (CellInventory<ItemKey> cell : cells()) {
             free += cell.room(item);
             if (free >= wanted) {
                 return wanted;
@@ -216,8 +242,8 @@ public final class NetworkStorage implements ResourceStore {
     }
 
     /** Alle Zellen aller Laufwerke, frisch gelesen. */
-    private List<CellInventory<Item>> cells() {
-        List<CellInventory<Item>> all = new ArrayList<>();
+    private List<CellInventory<ItemKey>> cells() {
+        List<CellInventory<ItemKey>> all = new ArrayList<>();
         for (DriveBlockEntity drive : drives) {
             all.addAll(drive.inventories());
         }
@@ -230,13 +256,13 @@ public final class NetworkStorage implements ResourceStore {
      * <p>Erst in Zellen, die diese Art schon führen — sonst zersplittert ein
      * Bestand über alle Zellen und belegt überall einen Artenplatz.
      */
-    public long insert(Item item, long count) {
+    public long insert(ItemKey item, long count) {
         if (count <= 0) {
             return 0;
         }
         // Erst den Index auf Stand bringen, dann rechnen: Danach ist die
         // eigene Ablage die einzige Änderung, und die ist bekannt.
-        Map<Item, Long> stock = index();
+        Map<ItemKey, Long> stock = index();
         long left = count;
         // Wer sich vorgedrängt hat, kommt vor die Zellen.
         for (StorageBus bus : buses) {
@@ -245,8 +271,8 @@ public final class NetworkStorage implements ResourceStore {
             }
             left = bus.insert(item, left);
         }
-        List<CellInventory<Item>> cells = cells();
-        for (CellInventory<Item> cell : cells) {
+        List<CellInventory<ItemKey>> cells = cells();
+        for (CellInventory<ItemKey> cell : cells) {
             if (left <= 0) {
                 break;
             }
@@ -254,7 +280,7 @@ public final class NetworkStorage implements ResourceStore {
                 left -= cell.insert(item, left);
             }
         }
-        for (CellInventory<Item> cell : cells) {
+        for (CellInventory<ItemKey> cell : cells) {
             if (left <= 0) {
                 break;
             }
@@ -277,17 +303,17 @@ public final class NetworkStorage implements ResourceStore {
     }
 
     public long insert(ItemStack stack) {
-        return stack.isEmpty() ? 0 : insert(stack.getItem(), stack.getCount());
+        return stack.isEmpty() ? 0 : insert(ItemKey.of(stack), stack.getCount());
     }
 
     /** Nimmt heraus und liefert, wie viel es wurde. */
-    public long extract(Item item, long count) {
+    public long extract(ItemKey item, long count) {
         if (count <= 0) {
             return 0;
         }
-        Map<Item, Long> stock = index();
+        Map<ItemKey, Long> stock = index();
         long taken = 0;
-        for (CellInventory<Item> cell : cells()) {
+        for (CellInventory<ItemKey> cell : cells()) {
             if (taken >= count) {
                 break;
             }
@@ -315,7 +341,71 @@ public final class NetworkStorage implements ResourceStore {
         return taken;
     }
 
+    /**
+     * Wie viel von dieser Kennung im Netz liegt, über alle Ausführungen.
+     *
+     * <p><b>Hier trifft die Sprache auf das Lager.</b> Ein Programm sagt
+     * {@code eisenbarren} und meint alles, was so heißt — nicht eine
+     * bestimmte Ausführung. Das Lager dagegen führt Gegenstände: Eine
+     * benannte Spitzhacke und eine nackte sind zwei Posten.
+     *
+     * <p>Die Übersetzung steht deshalb hier und nicht in der Sprache: Sie ist
+     * eine Frage an den Bestand, keine Frage der Grammatik.
+     */
     public long count(Item item) {
+        long found = 0;
+        for (Map.Entry<ItemKey, Long> entry : index().entrySet()) {
+            if (entry.getKey().item() == item) {
+                found += entry.getValue();
+            }
+        }
+        return found;
+    }
+
+    /**
+     * Der Bestand je Kennung, über alle Ausführungen zusammengezählt.
+     *
+     * <p>Was die Sprache und die Anzeigetafeln brauchen: Dort ist
+     * {@code eisenbarren} eine Zahl und kein Dutzend Posten. Wer die
+     * einzelnen Gegenstände braucht — das Terminal —, fragt
+     * {@link #contents()}.
+     */
+    public Map<Item, Long> byItem() {
+        Map<Item, Long> found = new LinkedHashMap<>();
+        index().forEach((key, count) -> found.merge(key.item(), count, Long::sum));
+        return found;
+    }
+
+    /** Legt ab, als hätte der Gegenstand keine eigenen Daten. */
+    public long insert(Item item, long count) {
+        return insert(ItemKey.bare(item), count);
+    }
+
+    /**
+     * Nimmt von dieser Kennung, egal in welcher Ausführung.
+     *
+     * <p>Nackte zuerst: Wer {@code move 64 eisenbarren} schreibt, meint den
+     * Vorrat und nicht die benannte Spitzhacke, die zufällig dieselbe
+     * Kennung trägt. Erst wenn nichts Nacktes mehr da ist, kommen die
+     * anderen an die Reihe — und dann in der Reihenfolge des Bestands.
+     */
+    public long extract(Item item, long count) {
+        long taken = extract(ItemKey.bare(item), count);
+        if (taken >= count) {
+            return taken;
+        }
+        for (ItemKey key : List.copyOf(index().keySet())) {
+            if (taken >= count) {
+                break;
+            }
+            if (key.item() == item && !key.isBare()) {
+                taken += extract(key, count - taken);
+            }
+        }
+        return taken;
+    }
+
+    public long count(ItemKey item) {
         return index().getOrDefault(item, 0L);
     }
 
@@ -328,7 +418,7 @@ public final class NetworkStorage implements ResourceStore {
      * nichts zu tun hat.
      */
     @Override
-    public Map<Item, Long> contents() {
+    public Map<ItemKey, Long> contents() {
         return new LinkedHashMap<>(index());
     }
 
@@ -339,15 +429,15 @@ public final class NetworkStorage implements ResourceStore {
     /** Wie viele Artenplätze insgesamt frei sind — für die Anzeige. */
     public int freeTypes() {
         int free = 0;
-        for (CellInventory<Item> cell : cells()) {
+        for (CellInventory<ItemKey> cell : cells()) {
             free += cell.freeTypes();
         }
         return free;
     }
 
     public void clear() {
-        Map<Item, Long> stock = index();
-        for (CellInventory<Item> cell : cells()) {
+        Map<ItemKey, Long> stock = index();
+        for (CellInventory<ItemKey> cell : cells()) {
             cell.clear();
         }
         stock.clear();

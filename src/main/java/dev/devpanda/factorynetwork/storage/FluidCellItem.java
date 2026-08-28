@@ -37,7 +37,7 @@ public class FluidCellItem extends Item {
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> lines,
                                 TooltipFlag flag) {
-        Map<Fluid, Long> contents = CellFormat.FLUIDS.read(stack);
+        Map<Fluid, Long> contents = CellFormat.FLUIDS.read(stack, context.registries());
         long total = CellFormat.total(contents);
         // Beide Grenzen nennen: Voll ist eine Zelle meist an den Sorten, nicht
         // an der Menge — wer nur die Menge sieht, sucht den Fehler woanders.
@@ -53,15 +53,15 @@ public class FluidCellItem extends Item {
 
     @Override
     public boolean isBarVisible(ItemStack stack) {
-        return !CellFormat.FLUIDS.read(stack).isEmpty();
+        return CellFormat.FLUIDS.summarize(stack).types() > 0;
     }
 
     /** Der Balken zeigt die knappere der beiden Grenzen. */
     @Override
     public int getBarWidth(ItemStack stack) {
-        Map<Fluid, Long> contents = CellFormat.FLUIDS.read(stack);
-        double byTypes = contents.size() / (double) tier.types();
-        double byAmount = CellFormat.total(contents) / (double) tier.amount();
+        CellFormat.Summary summary = CellFormat.FLUIDS.summarize(stack);
+        double byTypes = summary.types() / (double) tier.types();
+        double byAmount = summary.amount() / (double) tier.amount();
         return (int) Math.round(Math.min(1.0, Math.max(byTypes, byAmount)) * 13);
     }
 

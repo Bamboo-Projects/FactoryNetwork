@@ -56,7 +56,10 @@ final class MekChemicalStore implements ResourceStore {
     private List<CellInventory<Chemical>> cells() {
         List<CellInventory<Chemical>> all = new ArrayList<>();
         for (DriveBlockEntity drive : drives) {
-            for (CellView view : drive.chemicalCells(MekCells::open)) {
+            for (CellView view : drive.chemicalCells(cell -> MekCells.open(cell,
+                    drive.getLevel() == null
+                            ? net.minecraft.core.RegistryAccess.EMPTY
+                            : drive.getLevel().registryAccess()))) {
                 // Die Fabrik oben baut nur Chemikalienzellen; was sie liefert,
                 // ist per Bau eine — der Kern kann das nur nicht ausdrücken.
                 all.add((CellInventory<Chemical>) view);

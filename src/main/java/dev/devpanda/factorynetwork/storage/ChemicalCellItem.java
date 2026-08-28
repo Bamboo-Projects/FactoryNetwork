@@ -45,7 +45,8 @@ public class ChemicalCellItem extends Item {
 
     /** Was in dieser Zelle liegt: Kennung auf Menge. Ohne Mekanism leer. */
     private static Map<String, Long> contents(ItemStack stack) {
-        return dev.devpanda.factorynetwork.compat.mekanism.ChemicalStores.read(stack);
+        return dev.devpanda.factorynetwork.compat.mekanism.ChemicalStores.read(stack,
+                net.minecraft.core.RegistryAccess.EMPTY);
     }
 
     @Override

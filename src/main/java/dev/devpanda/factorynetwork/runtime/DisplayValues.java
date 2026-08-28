@@ -162,7 +162,7 @@ public final class DisplayValues {
         }
         if (member.target() instanceof Expr.Builtin builtin
                 && builtin.kind() == Expr.Builtin.Kind.STORAGE) {
-            return named(storage.contents(), item -> item.getDescription().getString());
+            return named(storage.byItem(), item -> item.getDescription().getString());
         }
         if (!(member.target() instanceof Expr.Name device) || level == null) {
             return null;

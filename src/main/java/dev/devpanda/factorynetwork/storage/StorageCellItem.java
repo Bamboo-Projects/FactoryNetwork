@@ -35,8 +35,8 @@ public class StorageCellItem extends Item {
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> lines,
                                 TooltipFlag flag) {
-        Map<net.minecraft.world.item.Item, Long> contents = CellContents.read(stack);
-        long total = CellContents.total(contents);
+        Map<ItemKey, Long> contents = CellContents.read(stack, context.registries());
+        long total = dev.devpanda.factorynetwork.storage.CellFormat.total(contents);
         // Beide Grenzen nennen: Voll ist eine Zelle meist an den Arten, nicht
         // an der Menge — wer nur die Menge sieht, sucht den Fehler woanders.
         lines.add(Component.translatable("item.factorynetwork.cell.types",
@@ -51,7 +51,7 @@ public class StorageCellItem extends Item {
 
     @Override
     public boolean isBarVisible(ItemStack stack) {
-        return !CellContents.read(stack).isEmpty();
+        return CellFormat.ITEMS.summarize(stack).types() > 0;
     }
 
     /**
@@ -62,9 +62,9 @@ public class StorageCellItem extends Item {
      */
     @Override
     public int getBarWidth(ItemStack stack) {
-        Map<net.minecraft.world.item.Item, Long> contents = CellContents.read(stack);
-        double byTypes = contents.size() / (double) tier.types();
-        double byAmount = CellContents.total(contents) / (double) tier.amount();
+        CellFormat.Summary summary = CellFormat.ITEMS.summarize(stack);
+        double byTypes = summary.types() / (double) tier.types();
+        double byAmount = summary.amount() / (double) tier.amount();
         return (int) Math.round(Math.min(1.0, Math.max(byTypes, byAmount)) * 13);
     }
 

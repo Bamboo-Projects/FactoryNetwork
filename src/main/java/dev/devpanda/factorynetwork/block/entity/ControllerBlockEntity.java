@@ -1295,7 +1295,14 @@ public class ControllerBlockEntity extends BlockEntity {
                     .<net.minecraft.world.item.Item>of()
                     : dev.devpanda.factorynetwork.runtime.ItemSelection.resolve(store.filter());
             found.add(new dev.devpanda.factorynetwork.network.StorageBus(
-                    device, store.priority(), erlaubt, () -> machineSide(device)));
+                    device, store.priority(),
+                    // Ein Filter nennt Kennungen, und jede Ausführung davon
+                    // ist gemeint: Wer "eisenbarren" schreibt, meint auch die
+                    // aus einer anderen Mod umbenannten.
+                    erlaubt.stream()
+                            .map(dev.devpanda.factorynetwork.storage.ItemKey::bare)
+                            .toList(),
+                    () -> machineSide(device)));
         }
         found.sort(java.util.Comparator.comparingLong(
                 dev.devpanda.factorynetwork.network.StorageBus::priority).reversed());
@@ -1928,7 +1935,9 @@ public class ControllerBlockEntity extends BlockEntity {
 
     /** Schickt den Bestand an einen Spieler. */
     public void pushStorageTo(ServerPlayer player, boolean replace) {
-        Map<Item, Long> contents = storage.contents();
+        // Noch je Kennung: Das Paket trägt bis zur nächsten Stufe keine
+        // Gegenstände, sondern Kennungen. Siehe plan-lager-keys.md, Aufgabe 4.
+        Map<Item, Long> contents = storage.byItem();
         List<StorageSnapshotPacket.Entry> entries = contents.entrySet().stream()
                 .sorted(Map.Entry.<Item, Long>comparingByValue().reversed())
                 .limit(StorageSnapshotPacket.MAX_ENTRIES)

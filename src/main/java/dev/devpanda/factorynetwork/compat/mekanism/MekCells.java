@@ -34,24 +34,42 @@ final class MekCells {
      * Format läse Wasser als Wasserstoff.
      */
     static final CellFormat<Chemical> CHEMICALS = new CellFormat<>(
-            mekanism.api.MekanismAPI.CHEMICAL_REGISTRY,
-            "ChemicalCell", "Chemical", "Amount");
+            "ChemicalCell", "Amount", new CellFormat.Entry<>() {
+
+                @Override
+                public Chemical read(net.minecraft.nbt.CompoundTag tag,
+                                     net.minecraft.core.HolderLookup.Provider registries) {
+                    ResourceLocation id = ResourceLocation.tryParse(tag.getString("Chemical"));
+                    return id == null
+                            || !mekanism.api.MekanismAPI.CHEMICAL_REGISTRY.containsKey(id)
+                            ? null : mekanism.api.MekanismAPI.CHEMICAL_REGISTRY.get(id);
+                }
+
+                @Override
+                public void write(net.minecraft.nbt.CompoundTag tag, Chemical key,
+                                  net.minecraft.core.HolderLookup.Provider registries) {
+                    tag.putString("Chemical",
+                            mekanism.api.MekanismAPI.CHEMICAL_REGISTRY.getKey(key).toString());
+                }
+            });
 
     private MekCells() {
     }
 
     /** Eine geöffnete Zelle, oder {@code null}, wenn dort keine steckt. */
-    static CellView open(ItemStack cell) {
+    static CellView open(ItemStack cell,
+                         net.minecraft.core.HolderLookup.Provider registries) {
         if (ChemicalCellItem.tierOf(cell) == null) {
             return null;
         }
-        return CellInventory.of(cell, ChemicalCellItem.tierOf(cell), CHEMICALS);
+        return CellInventory.of(cell, ChemicalCellItem.tierOf(cell), CHEMICALS, registries);
     }
 
     /** Was in der Zelle steht, als Kennung auf Menge. */
-    static Map<String, Long> read(ItemStack cell) {
+    static Map<String, Long> read(ItemStack cell,
+                                  net.minecraft.core.HolderLookup.Provider registries) {
         Map<String, Long> found = new LinkedHashMap<>();
-        CHEMICALS.read(cell).forEach((chemical, amount) -> {
+        CHEMICALS.read(cell, registries).forEach((chemical, amount) -> {
             ResourceLocation id = mekanism.api.MekanismAPI.CHEMICAL_REGISTRY.getKey(chemical);
             if (id != null && amount > 0) {
                 found.put(id.toString(), amount);

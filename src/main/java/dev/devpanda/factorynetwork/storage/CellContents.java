@@ -25,12 +25,14 @@ public final class CellContents {
     private CellContents() {
     }
 
-    public static Map<Item, Long> read(ItemStack cell) {
-        return CellFormat.ITEMS.read(cell);
+    public static Map<ItemKey, Long> read(ItemStack cell,
+                                          net.minecraft.core.HolderLookup.Provider registries) {
+        return CellFormat.ITEMS.read(cell, registries);
     }
 
-    public static void write(ItemStack cell, Map<Item, Long> contents) {
-        CellFormat.ITEMS.write(cell, contents);
+    public static void write(ItemStack cell, Map<ItemKey, Long> contents,
+                             net.minecraft.core.HolderLookup.Provider registries) {
+        CellFormat.ITEMS.write(cell, contents, registries);
     }
 
     /** Wie viel insgesamt darin liegt. */

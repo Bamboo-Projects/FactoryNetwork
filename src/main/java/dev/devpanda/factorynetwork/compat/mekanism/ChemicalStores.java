@@ -40,8 +40,9 @@ public final class ChemicalStores {
      *
      * <p>Die Fabrik, die {@code DriveBlockEntity} von außen bekommt.
      */
-    public static CellView open(ItemStack cell) {
-        return FnMekanism.installed() ? MekCells.open(cell) : null;
+    public static CellView open(ItemStack cell,
+                               net.minecraft.core.HolderLookup.Provider registries) {
+        return FnMekanism.installed() ? MekCells.open(cell, registries) : null;
     }
 
     /**
@@ -205,7 +206,9 @@ public final class ChemicalStores {
      * <p>Für den Tooltip: Der Gegenstand gibt es immer, auch ohne Mekanism —
      * dann ist die Antwort leer, und der Tooltip sagt, woran es liegt.
      */
-    public static Map<String, Long> read(ItemStack cell) {
-        return FnMekanism.installed() ? MekCells.read(cell) : new LinkedHashMap<>();
+    public static Map<String, Long> read(ItemStack cell,
+                                        net.minecraft.core.HolderLookup.Provider registries) {
+        return FnMekanism.installed()
+                ? MekCells.read(cell, registries) : new LinkedHashMap<>();
     }
 }

@@ -421,7 +421,7 @@ public final class WorkerRuntime {
                 .filter(candidate -> storage.count(candidate) > 0)
                 .findFirst()
                 .orElseGet(() -> filter.isEmpty()
-                        ? storage.contents().keySet().stream().findFirst().orElse(null)
+                        ? storage.byItem().keySet().stream().findFirst().orElse(null)
                         : null);
         if (item == null) {
             return 0;

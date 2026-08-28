@@ -265,7 +265,7 @@ public final class WorldHost implements Interpreter.Host {
     @Override
     public List<Value> storedItems() {
         List<Value> found = new ArrayList<>();
-        storage.contents().forEach((item, count) ->
+        storage.byItem().forEach((item, count) ->
                 found.add(Value.Selection.ofItems(List.of(item), count)));
         return found;
     }
@@ -372,7 +372,7 @@ public final class WorldHost implements Interpreter.Host {
                 // Ohne diesen Zweig stünde die Meldung darunter vor einem
                 // Programm, in dem die Auswahl ausdrücklich dasteht.
                 if (isEverything(amount)) {
-                    items = List.copyOf(storage.contents().keySet());
+                    items = List.copyOf(storage.byItem().keySet());
                 } else {
                     throw new ScriptError("Aus dem Speicher muss stehen, was bewegt wird.",
                             "Zum Beispiel: move 64 item:iron_ore from storage to crusher_1 "
