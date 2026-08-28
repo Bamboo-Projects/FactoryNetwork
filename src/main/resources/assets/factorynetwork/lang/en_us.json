@@ -57,6 +57,7 @@
   "message.factorynetwork.remote.no_controller": "The mast is not part of a network",
   "message.factorynetwork.remote.empty": "The battery is empty",
   "message.factorynetwork.remote.out_of_range": "Out of range",
+  "message.factorynetwork.storage.keeps_data": "Keeps its data - storage cannot hold it yet",
   "message.factorynetwork.remote.bound": "Bound to the mast at %s",
   "message.factorynetwork.remote.unbound": "Unbound",
   "item.factorynetwork.wireless_terminal": "Wireless Terminal",

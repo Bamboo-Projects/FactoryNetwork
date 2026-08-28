@@ -6338,6 +6338,60 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
+     * Was Daten trägt, bleibt draußen — statt sie beim Einlagern zu verlieren.
+     *
+     * <p><b>Das Lager führt heute nur die Kennung und eine Menge.</b> Ein
+     * verzaubertes Buch, ein benanntes Werkzeug, ein halb geladenes Gerät:
+     * Alle drei gingen als „ein Stück davon" hinein und kamen nackt zurück.
+     * Nichts warnte, nichts fiel auf — bis jemand sein Werkzeug wiederholte.
+     *
+     * <p>Das ist eine <b>Notbremse, keine Lösung</b>. Die Lösung ist ein
+     * Speicher, der Gegenstände statt Kennungen führt; sie steht in
+     * {@code docs/item-daten-im-lager.md} und ist ein eigenes Stück Arbeit.
+     * Bis dahin gilt: lieber im Rucksack behalten als still verlieren.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 100)
+    public static void itemsWithDataStayOutOfStorage(GameTestHelper helper) {
+        // Ein Schwert mit einem Namen: Der Name ist eine Datenkomponente,
+        // also trägt der Stapel mehr als seine Kennung.
+        ItemStack named = new ItemStack(net.minecraft.world.item.Items.IRON_SWORD);
+        named.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME,
+                net.minecraft.network.chat.Component.literal("Brotmesser"));
+        helper.assertTrue(!named.isComponentsPatchEmpty(),
+                "das benannte Schwert trägt gar keine Daten");
+        helper.assertTrue(
+                !dev.devpanda.factorynetwork.storage.StorageKeys.storable(named),
+                "ein benanntes Schwert gilt als lagerbar");
+
+        // Ein nacktes Schwert dagegen geht hinein wie eh und je.
+        ItemStack plain = new ItemStack(net.minecraft.world.item.Items.IRON_SWORD);
+        helper.assertTrue(plain.isComponentsPatchEmpty(),
+                "ein frisches Schwert trägt schon Daten");
+        helper.assertTrue(
+                dev.devpanda.factorynetwork.storage.StorageKeys.storable(plain),
+                "ein nacktes Schwert wird abgelehnt");
+
+        // Und ein beschädigtes: Die Haltbarkeit ist eine Komponente, und ein
+        // Lager, das sie vergisst, repariert oder zerstört Werkzeug.
+        ItemStack worn = new ItemStack(net.minecraft.world.item.Items.IRON_PICKAXE);
+        worn.setDamageValue(100);
+        helper.assertTrue(
+                !dev.devpanda.factorynetwork.storage.StorageKeys.storable(worn),
+                "eine angeschlagene Spitzhacke gilt als lagerbar");
+
+        // Ein gekoppeltes Ferngerät ebenso — es trägt seinen Mast bei sich.
+        ItemStack device = new ItemStack(
+                dev.devpanda.factorynetwork.registry.FnItems.WIRELESS_TERMINAL.get());
+        dev.devpanda.factorynetwork.item.RemoteDeviceItem.couple(device,
+                net.minecraft.core.GlobalPos.of(helper.getLevel().dimension(),
+                        helper.absolutePos(new BlockPos(1, 2, 1))));
+        helper.assertTrue(
+                !dev.devpanda.factorynetwork.storage.StorageKeys.storable(device),
+                "ein gekoppeltes Gerät verlöre sein Netz im Lager");
+        helper.succeed();
+    }
+
+    /**
      * Das offene Gerät lässt sich nicht wegräumen.
      *
      * <p><b>Sonst zieht man die Leiter hinter sich hoch.</b> Wer sein

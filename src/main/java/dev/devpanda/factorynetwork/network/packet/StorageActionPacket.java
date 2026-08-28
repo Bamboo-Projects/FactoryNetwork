@@ -97,6 +97,13 @@ public record StorageActionPacket(Kind kind, Item item, int amount) implements C
                 if (carried.isEmpty() || carried.getItem() != packet.item()) {
                     return;
                 }
+                if (!dev.devpanda.factorynetwork.storage.StorageKeys.storable(carried)) {
+                    // Siehe TerminalMenu.quickMoveStack: Was Daten trägt,
+                    // bleibt draußen, bis das Lager sie halten kann.
+                    player.displayClientMessage(net.minecraft.network.chat.Component
+                            .translatable("message.factorynetwork.storage.keeps_data"), true);
+                    return;
+                }
                 int amount = Math.min(packet.amount(), carried.getCount());
                 controller.storage().insert(packet.item(), amount);
                 carried.shrink(amount);
