@@ -5,6 +5,51 @@ Alles, was in `docs/` und im Code als unfertig steht, an einer Stelle.
 Stand: 2026-08-26 (nach den beiden Schnitten am Wertemodell und der
 Handbucharbeit)
 
+> **Abend und Nacht auf den 29.08.: Das Lager hält jetzt, was es bekommt.**
+>
+> Ein verzaubertes Buch, ein benanntes Werkzeug, eine angeschlagene
+> Spitzhacke gehen ins Netz und kommen unverändert zurück. Neun Commits, 333
+> Prüfläufe grün, der Weg abgeschaut bei AE2s `AEItemKey`.
+>
+> **Was das heißt.** Das Lager führte bisher eine Registry-Kennung und eine
+> Zahl. Alles, was ein Stapel darüber hinaus trug, fiel beim Einlagern weg —
+> still, ohne Warnung, in beide Richtungen. Jetzt führt es Gegenstände: Eine
+> benannte Hacke und eine nackte sind zwei Posten, im Terminal zwei Zeilen,
+> und wer eine bestimmte anklickt, bekommt genau die.
+>
+> **Was ich nicht reparieren kann:** Was vor heute Abend im Lager lag und
+> Daten trug, ist nackt und bleibt es. Der Umbau wirkt nach vorn, nicht
+> zurück.
+>
+> **Was sich für deine Programme ändert: nichts.** `move 64 eisenbarren`
+> meint weiter alle Ausführungen der Kennung, und beim Entnehmen kommen die
+> nackten zuerst — wer den Vorrat meint, bekommt den Vorrat und nicht die
+> benannte Hacke, die zufällig dieselbe Kennung trägt.
+>
+> **Alte Zellen bleiben lesbar, ohne Migrationslauf.** Das Format behält
+> seinen Namen und bekommt je Posten ein optionales Feld; ein Posten ohne
+> dieses Feld ist ein Gegenstand ohne eigene Daten. Ein Prüflauf baut eine
+> Zelle im alten Format von Hand und liest sie — und hält fest, dass ein
+> unveränderter Bestand auch wieder im alten Format geschrieben wird. Der Weg
+> zurück auf eine ältere Fassung der Mod bleibt offen.
+>
+> **Drei Dinge, die dabei auffielen und nichts mit dem Auftrag zu tun hatten:**
+>
+> 1. `Map.getOrDefault` nimmt `Object`. Vier Prüfläufe fragten mit einer
+>    Kennung in eine Schlüssel-Map und bekamen stillschweigend den
+>    Standardwert — der Compiler sagte nichts.
+> 2. Der Umschalt-Klick ins Netz verschluckte den Rest, wenn das Netz voll
+>    war.
+> 3. Der Weg *aus* dem Lager baute den Stapel neu und ließ die Daten
+>    zurück — dieselbe Lücke wie hinein, nur flussabwärts.
+>
+> **Zum Prüfen im Spiel:** Ein verzaubertes Buch einlagern, im Terminal
+> suchen, wieder herausnehmen. Und einmal in eine volle Zelle aus deiner
+> alten Welt schauen — dass alte Zellen lesen, steht im Prüflauf, aber deine
+> Welt ist die echte Probe.
+>
+> Der Client muss neu starten.
+
 > **Nacht auf den 28.08.:** Der Fernzugriff steht, bis auf das Aussehen.
 > Punkt 1 des Auftrags (Schraubenschlüssel) war schon vor Mitternacht fertig;
 > Punkt 2 sind sieben Commits.
