@@ -378,6 +378,12 @@ public final class WorkerRuntime {
             if (stack.isEmpty() || (!filter.isEmpty() && !filter.contains(stack.getItem()))) {
                 continue;
             }
+            if (!dev.devpanda.factorynetwork.storage.StorageKeys.storable(stack)) {
+                // Ein verzaubertes Werkzeug bliebe im Lager als "ein Stück
+                // davon" liegen. Es bleibt lieber in der Kiste — geprüft
+                // wird vor dem Herausnehmen, sonst wäre es schon draußen.
+                continue;
+            }
             int wanted = (int) Math.min(batch - moved, stack.getCount());
             ItemStack taken = handler.extractItem(slot, wanted, false);
             if (taken.isEmpty()) {

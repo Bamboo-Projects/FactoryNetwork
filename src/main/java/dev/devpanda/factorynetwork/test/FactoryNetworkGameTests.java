@@ -6338,6 +6338,63 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
+     * Ein Worker lässt liegen, was seine Daten im Lager verlöre.
+     *
+     * <p><b>Der gefährlichste der vier Wege ins Lager.</b> Beim Umschalt-Klick
+     * sieht man, was passiert; ein Worker räumt eine Kiste im Hintergrund
+     * leer, und ein verzaubertes Werkzeug darin wäre zu "ein Stück davon"
+     * geworden, ohne dass jemand dabei zusieht.
+     *
+     * <p>Geprüft wird vor dem Herausnehmen. Danach wäre der Gegenstand schon
+     * aus der Kiste, und das Zurücklegen baute ihn nackt neu.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void aWorkerLeavesItemsWithDataAlone(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+
+        BlockPos source = controller.east().north().north();
+        ItemStack named = new ItemStack(Items.DIAMOND_PICKAXE);
+        named.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME,
+                net.minecraft.network.chat.Component.literal("Lieblingshacke"));
+        if (helper.getBlockEntity(source) instanceof ChestBlockEntity container) {
+            container.setItem(0, named);
+            // Daneben etwas Nacktes: Der Worker soll weiterarbeiten und nicht
+            // an der Hacke hängenbleiben.
+            container.setItem(1, new ItemStack(Items.COBBLESTONE, 64));
+        }
+
+        helper.assertTrue(entity.deploy("""
+                worker haul {
+                    from quarry_output
+                    to storage
+                    rate 64 per 1t
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+
+        helper.runAfterDelay(30, () -> {
+            if (!(helper.getBlockEntity(source) instanceof ChestBlockEntity container)) {
+                helper.fail("keine Kiste mehr da", source);
+                return;
+            }
+            ItemStack left = container.getItem(0);
+            helper.assertTrue(left.getItem() == Items.DIAMOND_PICKAXE,
+                    "die benannte Hacke ist aus der Kiste verschwunden");
+            helper.assertTrue(
+                    left.get(net.minecraft.core.component.DataComponents.CUSTOM_NAME) != null,
+                    "die Hacke liegt noch da, aber ohne ihren Namen");
+
+            // Und der Rest ist trotzdem gewandert: Ein Stapel mit Daten hält
+            // den Worker auf, aber nicht an.
+            helper.assertTrue(container.getItem(1).isEmpty(),
+                    "der Worker hat wegen der Hacke gar nichts mehr bewegt");
+            helper.assertTrue(entity.storage().count(Items.COBBLESTONE) > 0,
+                    "im Lager liegt kein Bruchstein");
+            helper.succeed();
+        });
+    }
+
+    /**
      * Was Daten trägt, bleibt draußen — statt sie beim Einlagern zu verlieren.
      *
      * <p><b>Das Lager führt heute nur die Kennung und eine Menge.</b> Ein

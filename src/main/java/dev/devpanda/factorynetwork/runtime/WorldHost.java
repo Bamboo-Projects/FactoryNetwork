@@ -721,6 +721,11 @@ public final class WorldHost implements Interpreter.Host {
             if (stack.isEmpty() || (!items.isEmpty() && !items.contains(stack.getItem()))) {
                 continue;
             }
+            if (!dev.devpanda.factorynetwork.storage.StorageKeys.storable(stack)) {
+                // Derselbe Fall wie beim Worker: Was Daten trägt, bleibt
+                // liegen, statt sie im Lager zu verlieren.
+                continue;
+            }
             int wanted = (int) Math.min(limit - moved, stack.getCount());
             ItemStack taken = source.extractItem(slot, wanted, false);
             // Derselbe Fall wie beim Worker: Der Speicher kann voll sein, seit
