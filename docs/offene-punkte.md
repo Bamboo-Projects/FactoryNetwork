@@ -39,6 +39,25 @@ Handbucharbeit)
 > eigentliche Frage ist, ob sich das anfühlt wie ein Bauwerk. Drei Wege
 > stehen darin, mit einer Empfehlung; die Entscheidung ist deine.
 >
+> **Drei Dinge zur Brücke, die du wissen solltest:**
+>
+> 1. **Das Rezept der Verschränkung steht nicht in JEI und nicht im
+>    Rezeptbuch.** Ein Rezept mit wechselndem Ergebnis hat keine Zutatenliste
+>    im JSON, und dort suchen beide. Es ist formlos: zwei Netzkerne und ein
+>    Kristall, irgendwie angeordnet. Ob es ins Handbuch soll, entscheidest du.
+> 2. **Der Analysator kennt die Brücken noch nicht.** Er listet Router,
+>    Anbauten und unversorgte Geräte — Brücken fehlen. Dafür braucht es eine
+>    eigene Farbe im Netzwerk-Reiter, und die ist Ansichtssache.
+> 3. **Rechtsklick mit leerer Hand zieht die Hälfte wieder heraus** und tötet
+>    die Verbindung. Ohne Schleichen, ohne Werkzeug. Beim Anschluss haben wir
+>    dafür den Schraubenschlüssel — soll es hier auch so sein?
+>
+> **Und ein Prüfpunkt, den kein Prüflauf stellen kann:** Speichere eine Welt
+> mit einem gekoppelten Paar und lade sie neu. Die Brücke trägt ihren Zustand
+> ins Blockbild, und das geschieht beim Laden des Blocks — eine Stelle, an
+> der Minecraft empfindlich ist. Lädt die Welt sauber und leuchten beide, ist
+> es gut; knallt es, weiß ich, wo ich ansetzen muss.
+>
 > 339 Prüfläufe grün.
 
 > **Abend und Nacht auf den 29.08.: Das Lager hält jetzt, was es bekommt.**
