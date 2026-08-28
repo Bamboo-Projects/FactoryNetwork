@@ -6338,6 +6338,97 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
+     * Der Schlüssel, unter dem ein Gegenstand im Lager liegt.
+     *
+     * <p><b>Eine Kennung sagt, was etwas ist, aber nicht, welches.</b> Zwei
+     * Spitzhacken sind dasselbe Item und trotzdem verschiedene Dinge, sobald
+     * eine davon einen Namen trägt oder halb verbraucht ist.
+     *
+     * <p>Steht hier und nicht in einem reinen Prüflauf: {@code ItemStack}
+     * braucht die Registrierungen, und {@code Bootstrap.bootStrap()}
+     * scheitert außerhalb des Spiels an den Mod-Dateien.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 100)
+    public static void anItemKeyKnowsWhichOneItIs(GameTestHelper helper) {
+        // Gleiche Kennung, gleiche Daten: derselbe Schlüssel.
+        helper.assertTrue(
+                key("Kurt").equals(key("Kurt")),
+                "zwei gleich benannte Hacken sind verschiedene Schlüssel");
+        helper.assertTrue(key("Kurt").hashCode() == key("Kurt").hashCode(),
+                "gleiche Schlüssel, verschiedene Hashes");
+
+        // Ein Name macht daraus einen anderen Gegenstand. Genau das war der
+        // Fehler: Beide lagen als "Diamantspitzhacke" im Lager.
+        helper.assertTrue(!key("Kurt").equals(key("Erna")),
+                "Kurt und Erna gelten als derselbe Gegenstand");
+        helper.assertTrue(
+                !key("Kurt").equals(dev.devpanda.factorynetwork.storage.ItemKey.bare(
+                        net.minecraft.world.item.Items.DIAMOND_PICKAXE)),
+                "eine benannte Hacke gilt wie eine nackte");
+
+        // Die Menge zählt nicht mit — sonst wären drei Eisen und fünf Eisen
+        // zwei Einträge.
+        helper.assertTrue(
+                dev.devpanda.factorynetwork.storage.ItemKey.of(
+                        new ItemStack(Items.IRON_INGOT, 3)).equals(
+                        dev.devpanda.factorynetwork.storage.ItemKey.of(
+                                new ItemStack(Items.IRON_INGOT, 64))),
+                "die Menge steckt im Schlüssel");
+
+        // <b>Die gefährlichste Falle des Umbaus.</b> Ein Schlüssel, dessen
+        // Hash sich ändert, während er in einer Map liegt, macht seinen
+        // Bestand unauffindbar: Er ist da und wird nie wieder gefunden.
+        ItemStack stack = named("Kurt");
+        var stable = dev.devpanda.factorynetwork.storage.ItemKey.of(stack);
+        int before = stable.hashCode();
+        stack.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME,
+                net.minecraft.network.chat.Component.literal("Erna"));
+        stack.setCount(17);
+        helper.assertTrue(stable.hashCode() == before,
+                "der Schlüssel folgt dem Stapel, aus dem er gemacht wurde");
+        helper.assertTrue(stable.equals(key("Kurt")),
+                "der Schlüssel hat sich hinterher verändert");
+
+        // Und was er herausgibt, ist eine Kopie.
+        ItemStack out = stable.toStack(5);
+        helper.assertTrue(out.getCount() == 5, "die Menge stimmt nicht");
+        out.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME,
+                net.minecraft.network.chat.Component.literal("Erna"));
+        helper.assertTrue(stable.equals(key("Kurt")),
+                "wer den herausgegebenen Stapel ändert, ändert den Schlüssel");
+
+        helper.assertTrue(
+                dev.devpanda.factorynetwork.storage.ItemKey.of(ItemStack.EMPTY) == null,
+                "Leeres bekommt einen Schlüssel");
+
+        // Die Stapelgrenze kommt vom Gegenstand: Die Komponente kann sie
+        // ändern, und das Entnehmen im Terminal rechnet damit.
+        ItemStack limited = new ItemStack(Items.IRON_INGOT);
+        limited.set(net.minecraft.core.component.DataComponents.MAX_STACK_SIZE, 8);
+        helper.assertTrue(
+                dev.devpanda.factorynetwork.storage.ItemKey.of(limited).maxStackSize() == 8,
+                "die eigene Stapelgrenze wird übergangen");
+        helper.assertTrue(
+                dev.devpanda.factorynetwork.storage.ItemKey.bare(Items.IRON_INGOT)
+                        .maxStackSize() == 64,
+                "die gewöhnliche Stapelgrenze stimmt nicht");
+        helper.succeed();
+    }
+
+    /** Eine Diamantspitzhacke mit Namen. */
+    private static ItemStack named(String name) {
+        ItemStack stack = new ItemStack(net.minecraft.world.item.Items.DIAMOND_PICKAXE);
+        stack.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME,
+                net.minecraft.network.chat.Component.literal(name));
+        return stack;
+    }
+
+    /** Ihr Schlüssel. */
+    private static dev.devpanda.factorynetwork.storage.ItemKey key(String name) {
+        return dev.devpanda.factorynetwork.storage.ItemKey.of(named(name));
+    }
+
+    /**
      * Ein Worker lässt liegen, was seine Daten im Lager verlöre.
      *
      * <p><b>Der gefährlichste der vier Wege ins Lager.</b> Beim Umschalt-Klick
