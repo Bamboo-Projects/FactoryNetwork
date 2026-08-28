@@ -23,7 +23,8 @@ import java.util.Map;
  */
 public final class ClientStorageView {
 
-    private static final Map<Item, Long> amounts = new LinkedHashMap<>();
+    private static final Map<dev.devpanda.factorynetwork.storage.ItemKey, Long> amounts =
+            new LinkedHashMap<>();
     private static int totalTypes;
     private static int freeTypes;
     private static int freeFluidTypes;
@@ -82,9 +83,9 @@ public final class ClientStorageView {
         }
         for (StorageSnapshotPacket.Entry entry : packet.entries()) {
             if (entry.amount() <= 0) {
-                amounts.remove(entry.item());
+                amounts.remove(entry.key());
             } else {
-                amounts.put(entry.item(), entry.amount());
+                amounts.put(entry.key(), entry.amount());
             }
         }
         if (packet.replace()) {
@@ -155,11 +156,14 @@ public final class ClientStorageView {
 
     private static void refilter() {
         List<Row> rows = new ArrayList<>(amounts.size());
-        amounts.forEach((item, amount) -> {
-            ItemStack stack = new ItemStack(item);
+        amounts.forEach((key, amount) -> {
+            // Der echte Gegenstand und kein frisch gebauter: Ein benanntes
+            // Werkzeug soll im Terminal seinen Namen tragen, und danach
+            // soll man auch suchen können.
+            ItemStack stack = key.toStack(1);
             String name = stack.getHoverName().getString().toLowerCase(Locale.ROOT);
             String mod = net.minecraft.core.registries.BuiltInRegistries.ITEM
-                    .getKey(item).getNamespace();
+                    .getKey(key.item()).getNamespace();
             // Ein Kürzel wie "@mek" sucht nach der Mod statt nach dem Namen —
             // in einem großen Pack ist das die häufigere Frage.
             boolean matches = query.isEmpty()

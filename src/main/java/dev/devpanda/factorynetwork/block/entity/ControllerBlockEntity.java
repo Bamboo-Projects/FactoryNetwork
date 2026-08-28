@@ -1935,11 +1935,12 @@ public class ControllerBlockEntity extends BlockEntity {
 
     /** Schickt den Bestand an einen Spieler. */
     public void pushStorageTo(ServerPlayer player, boolean replace) {
-        // Noch je Kennung: Das Paket trägt bis zur nächsten Stufe keine
-        // Gegenstände, sondern Kennungen. Siehe plan-lager-keys.md, Aufgabe 4.
-        Map<Item, Long> contents = storage.byItem();
+        // Die Gegenstände selbst und nicht ihre Kennungen: Sonst stünden
+        // ein verzaubertes Buch und ein leeres in derselben Zeile.
+        var contents = storage.contents();
         List<StorageSnapshotPacket.Entry> entries = contents.entrySet().stream()
-                .sorted(Map.Entry.<Item, Long>comparingByValue().reversed())
+                .sorted(Map.Entry.<dev.devpanda.factorynetwork.storage.ItemKey, Long>
+                        comparingByValue().reversed())
                 .limit(StorageSnapshotPacket.MAX_ENTRIES)
                 .map(entry -> new StorageSnapshotPacket.Entry(entry.getKey(), entry.getValue()))
                 .toList();

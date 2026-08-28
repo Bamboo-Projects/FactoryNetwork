@@ -2886,7 +2886,9 @@ public final class FactoryNetworkGameTests {
 
         var bestand = new dev.devpanda.factorynetwork.network.packet.StorageSnapshotPacket(
                 java.util.List.of(new dev.devpanda.factorynetwork.network.packet
-                        .StorageSnapshotPacket.Entry(Items.IRON_ORE, 320)),
+                        .StorageSnapshotPacket.Entry(
+                        dev.devpanda.factorynetwork.storage.ItemKey
+                                .bare(Items.IRON_ORE), 320)),
                 java.util.List.of(new dev.devpanda.factorynetwork.network.packet
                         .StorageSnapshotPacket.FluidEntry(
                         net.minecraft.world.level.material.Fluids.WATER, 3000)),

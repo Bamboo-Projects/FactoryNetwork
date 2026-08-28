@@ -37,7 +37,14 @@ public record StorageSnapshotPacket(List<Entry> entries, List<FluidEntry> fluids
     /** So viele Arten gehen höchstens über die Leitung. */
     public static final int MAX_ENTRIES = 4096;
 
-    public record Entry(Item item, long amount) {
+    /**
+     * Ein Posten des Bestands.
+     *
+     * <p><b>Ein Gegenstand und keine Kennung.</b> Sonst stünden ein
+     * verzaubertes Buch und ein leeres in derselben Zeile, und wer eines
+     * herausnähme, bekäme irgendeines.
+     */
+    public record Entry(dev.devpanda.factorynetwork.storage.ItemKey key, long amount) {
     }
 
     /** Eine Flüssigkeit mit ihrer Menge in Millibucket. */
@@ -49,8 +56,8 @@ public record StorageSnapshotPacket(List<Entry> entries, List<FluidEntry> fluids
 
     private static final StreamCodec<RegistryFriendlyByteBuf, Entry> ENTRY_CODEC =
             StreamCodec.composite(
-                    ByteBufCodecs.registry(net.minecraft.core.registries.Registries.ITEM),
-                    Entry::item,
+                    dev.devpanda.factorynetwork.storage.ItemKey.STREAM_CODEC,
+                    Entry::key,
                     ByteBufCodecs.VAR_LONG, Entry::amount,
                     Entry::new);
 
