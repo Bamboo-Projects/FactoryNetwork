@@ -5,6 +5,27 @@ Alles, was in `docs/` und im Code als unfertig steht, an einer Stelle.
 Stand: 2026-08-26 (nach den beiden Schnitten am Wertemodell und der
 Handbucharbeit)
 
+> **Und zuletzt: AE2-Zellen ziehen um.**
+>
+> Rechtsklick mit einer AE2-Speicherzelle auf ein Laufwerk schüttet sie ins
+> Netz. Gelesen wird über AE2s eigene API — dieselbe, die deren IO-Port
+> benutzt; kein geratenes NBT.
+>
+> **Das war der Folgenutzen des Lagerumbaus, und er ist eingelöst.** AE2
+> speichert Gegenstände samt allem, was sie tragen. Gestern hätte der Import
+> aus jedem verzauberten Buch ein leeres gemacht. Der Prüflauf baut eine
+> echte AE2-Zelle, legt eine benannte Hacke und hundert Eisen hinein und
+> prüft, dass beides ankommt — die Hacke mit ihrem Namen.
+>
+> Eine Einbahnstraße: aus der Zelle heraus, ins Netz hinein. Was das Netz
+> nicht nimmt, bleibt in der Zelle.
+>
+> **Damit sind alle vier Dinge erledigt, die du gestern Abend genannt hast:**
+> das Lager, die Quantum-Brücke, der AE2-Umzug — und der Multiblock liegt als
+> Vorlage bereit, weil dort eine Formfrage steckt, die du entscheidest.
+>
+> 340 Prüfläufe grün.
+
 > **Und die Nacht danach: die Quantum-Brücke steht.**
 >
 > Zwei Blöcke, die ein Netz über jede Entfernung verbinden, ohne Kabel
