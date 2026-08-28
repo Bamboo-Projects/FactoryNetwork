@@ -6272,11 +6272,12 @@ public final class FactoryNetworkGameTests {
 
         ItemStack device = new ItemStack(
                 dev.devpanda.factorynetwork.registry.FnItems.WIRELESS_TERMINAL.get());
-        dev.devpanda.factorynetwork.item.RemoteDeviceItem.couple(device, mast);
+        var where = net.minecraft.core.GlobalPos.of(helper.getLevel().dimension(), mast);
+        dev.devpanda.factorynetwork.item.RemoteDeviceItem.couple(device, where);
         player.getInventory().setItem(0, device);
 
         var menu = new dev.devpanda.factorynetwork.client.menu.TerminalMenu(
-                1, player.getInventory(), mast,
+                1, player.getInventory(), mast, helper.getLevel().dimension(),
                 dev.devpanda.factorynetwork.upgrade.RemoteDevice.TERMINAL, 0);
 
         // Leer: Es lässt sich nichts abbuchen, und das Fenster darf nicht
@@ -6311,14 +6312,14 @@ public final class FactoryNetworkGameTests {
         // als gar keiner — der Spieler verlöre den Rest und bekäme nichts.
         var drained = new ItemStack(
                 dev.devpanda.factorynetwork.registry.FnItems.WIRELESS_TERMINAL.get());
-        dev.devpanda.factorynetwork.item.RemoteDeviceItem.couple(drained, mast);
+        dev.devpanda.factorynetwork.item.RemoteDeviceItem.couple(drained, where);
         int tooLittle = dev.devpanda.factorynetwork.network.Power.REMOTE_ACTION - 20;
         drained.getCapability(net.neoforged.neoforge.capabilities.Capabilities
                 .EnergyStorage.ITEM).receiveEnergy(tooLittle, false);
         player.getInventory().setItem(1, drained);
 
         var thin = new dev.devpanda.factorynetwork.client.menu.TerminalMenu(
-                3, player.getInventory(), mast,
+                3, player.getInventory(), mast, helper.getLevel().dimension(),
                 dev.devpanda.factorynetwork.upgrade.RemoteDevice.TERMINAL, 1);
         helper.assertTrue(
                 !thin.charge(player, dev.devpanda.factorynetwork.network.Power.REMOTE_ACTION),
@@ -6333,6 +6334,82 @@ public final class FactoryNetworkGameTests {
                 2, player.getInventory(), mast);
         helper.assertTrue(fixed.charge(player, 1_000_000),
                 "am Block wird der Akku belastet");
+        helper.succeed();
+    }
+
+    /**
+     * Über eine Dimensionsgrenze reicht nur die Grenzenlos-Karte.
+     *
+     * <p>Geprüft wird die <b>Auflösung</b> und nicht die Reise: Ein
+     * Mock-Spieler wechselt die Dimension nicht sauber, also bleibt er in der
+     * Oberwelt und der Mast steht im Nether. Genau das ist der Fall, um den
+     * es geht — jemand steht woanders als sein Netz.
+     *
+     * <p><b>Zwei Dinge fallen hier auf, die kein anderer Lauf sieht:</b> ob
+     * der Mast in seiner eigenen Welt gefunden wird statt in der des
+     * Spielers, und ob eine Koordinate allein reicht. Sie reicht nicht —
+     * dieselbe Zahl gibt es in jeder Dimension.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void onlyTheInfinityCardCrossesWorlds(GameTestHelper helper) {
+        var server = helper.getLevel().getServer();
+        var nether = server.getLevel(net.minecraft.world.level.Level.NETHER);
+        if (nether == null) {
+            helper.fail("kein Nether im Prüfserver");
+            return;
+        }
+
+        // Der Mast steht im Nether. setBlockAndUpdate lädt das Stück Welt,
+        // also ist er auch erreichbar.
+        BlockPos far = new BlockPos(64, 70, 64);
+        nether.setBlockAndUpdate(far, FnBlocks.MAST.get().defaultBlockState());
+        if (!(nether.getBlockEntity(far)
+                instanceof dev.devpanda.factorynetwork.block.entity.MastBlockEntity mast)) {
+            helper.fail("kein Mast im Nether");
+            return;
+        }
+        var where = net.minecraft.core.GlobalPos.of(
+                net.minecraft.world.level.Level.NETHER, far);
+
+        // Der Spieler bleibt in der Oberwelt.
+        var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+        ItemStack device = new ItemStack(
+                dev.devpanda.factorynetwork.registry.FnItems.LAPTOP.get());
+        dev.devpanda.factorynetwork.item.RemoteDeviceItem.couple(device, where);
+        player.getInventory().setItem(0, device);
+
+        helper.assertTrue(
+                dev.devpanda.factorynetwork.terminal.RemoteAccess.mastAt(player, where) != null,
+                "der Mast im Nether wird nicht gefunden");
+        helper.assertTrue(
+                !dev.devpanda.factorynetwork.terminal.RemoteAccess.allowed(player, 0, where),
+                "ohne Grenzenlos-Karte geht der Zugriff über die Dimensionsgrenze");
+
+        // Vier Reichweitenkarten ändern daran nichts: Eine Dimensionsgrenze
+        // ist keine Strecke.
+        mast.setItem(0, new ItemStack(
+                dev.devpanda.factorynetwork.registry.FnItems.RANGE_CARD.get(), 4));
+        helper.assertTrue(
+                !dev.devpanda.factorynetwork.terminal.RemoteAccess.allowed(player, 0, where),
+                "vier Reichweitenkarten überbrücken die Dimensionsgrenze");
+
+        // Die Grenzenlos-Karte schon.
+        mast.setItem(0, new ItemStack(
+                dev.devpanda.factorynetwork.registry.FnItems.INFINITY_CARD.get()));
+        helper.assertTrue(
+                dev.devpanda.factorynetwork.terminal.RemoteAccess.allowed(player, 0, where),
+                "die Grenzenlos-Karte reicht nicht über die Dimensionsgrenze");
+
+        // Und eine Koordinate allein reicht nicht: Derselbe Ort in der
+        // Oberwelt ist ein anderer Mast — oder gar keiner.
+        var samePlaceHere = net.minecraft.core.GlobalPos.of(
+                net.minecraft.world.level.Level.OVERWORLD, far);
+        helper.assertTrue(
+                !dev.devpanda.factorynetwork.terminal.RemoteAccess.allowed(
+                        player, 0, samePlaceHere),
+                "dieselbe Koordinate in einer anderen Welt gilt als derselbe Mast");
+
+        nether.removeBlock(far, false);
         helper.succeed();
     }
 
@@ -6658,7 +6735,8 @@ public final class FactoryNetworkGameTests {
         BlockPos anywhere = helper.absolutePos(new BlockPos(1, 2, 1));
 
         var remote = new dev.devpanda.factorynetwork.client.menu.TerminalMenu(
-                1, inventory, anywhere, terminal, 0);
+                1, inventory, anywhere, helper.getLevel().dimension(),
+                terminal, 0);
         helper.assertTrue(
                 !remote.allows(dev.devpanda.factorynetwork.terminal.TerminalTab.CODE),
                 "das Wireless Terminal zeigt den Code-Reiter");
@@ -6670,7 +6748,8 @@ public final class FactoryNetworkGameTests {
                 "das Protokoll fehlt — es ist Diagnose und gehört dazu");
 
         var portable = new dev.devpanda.factorynetwork.client.menu.TerminalMenu(
-                2, inventory, anywhere, laptop, 0);
+                2, inventory, anywhere, helper.getLevel().dimension(),
+                laptop, 0);
         for (var tab : dev.devpanda.factorynetwork.terminal.TerminalTab.values()) {
             helper.assertTrue(portable.allows(tab), tab + " fehlt am Laptop");
         }
@@ -6702,27 +6781,29 @@ public final class FactoryNetworkGameTests {
 
         ItemStack device = new ItemStack(
                 dev.devpanda.factorynetwork.registry.FnItems.WIRELESS_TERMINAL.get());
-        dev.devpanda.factorynetwork.item.RemoteDeviceItem.couple(device, mast);
+        var where = net.minecraft.core.GlobalPos.of(helper.getLevel().dimension(), mast);
+        dev.devpanda.factorynetwork.item.RemoteDeviceItem.couple(device, where);
         player.getInventory().setItem(0, device);
 
         helper.assertTrue(
-                dev.devpanda.factorynetwork.terminal.RemoteAccess.allowed(player, 0, mast),
+                dev.devpanda.factorynetwork.terminal.RemoteAccess.allowed(player, 0, where),
                 "direkt am Mast ist der Zugriff verwehrt");
 
         // Weggelegt.
         player.getInventory().setItem(0, ItemStack.EMPTY);
         helper.assertTrue(
-                !dev.devpanda.factorynetwork.terminal.RemoteAccess.allowed(player, 0, mast),
+                !dev.devpanda.factorynetwork.terminal.RemoteAccess.allowed(player, 0, where),
                 "das Fenster bleibt offen, obwohl das Gerät weg ist");
 
         // Ein anderes Gerät an einem anderen Mast im selben Platz: Das
         // Fenster hängt am alten Netz und muss trotzdem zugehen.
         ItemStack other = new ItemStack(
                 dev.devpanda.factorynetwork.registry.FnItems.LAPTOP.get());
-        dev.devpanda.factorynetwork.item.RemoteDeviceItem.couple(other, mast.above(5));
+        dev.devpanda.factorynetwork.item.RemoteDeviceItem.couple(other,
+                net.minecraft.core.GlobalPos.of(helper.getLevel().dimension(), mast.above(5)));
         player.getInventory().setItem(0, other);
         helper.assertTrue(
-                !dev.devpanda.factorynetwork.terminal.RemoteAccess.allowed(player, 0, mast),
+                !dev.devpanda.factorynetwork.terminal.RemoteAccess.allowed(player, 0, where),
                 "ein getauschtes Gerät hält das Fenster am alten Netz offen");
 
         // Zurück zum richtigen Gerät, aber zu weit weg.
@@ -6732,20 +6813,20 @@ public final class FactoryNetworkGameTests {
                 dev.devpanda.factorynetwork.upgrade.Loadout.of(java.util.List.of()));
         player.setPos(mast.getX() + reach + 10.0, mast.getY(), mast.getZ() + 0.5);
         helper.assertTrue(
-                !dev.devpanda.factorynetwork.terminal.RemoteAccess.allowed(player, 0, mast),
+                !dev.devpanda.factorynetwork.terminal.RemoteAccess.allowed(player, 0, where),
                 "die Reichweite hält nicht — " + reach + " Blöcke sollten sie sein");
 
         // Und wieder heran: Es liegt am Abstand und nicht daran, dass etwas
         // kaputtgegangen ist.
         player.setPos(mast.getX() + 0.5, mast.getY() + 1.0, mast.getZ() + 0.5);
         helper.assertTrue(
-                dev.devpanda.factorynetwork.terminal.RemoteAccess.allowed(player, 0, mast),
+                dev.devpanda.factorynetwork.terminal.RemoteAccess.allowed(player, 0, where),
                 "aus der Nähe geht es auch nicht mehr");
 
         // Der Mast weg: dasselbe.
         helper.getLevel().removeBlock(mast, false);
         helper.assertTrue(
-                !dev.devpanda.factorynetwork.terminal.RemoteAccess.allowed(player, 0, mast),
+                !dev.devpanda.factorynetwork.terminal.RemoteAccess.allowed(player, 0, where),
                 "ohne Mast bleibt der Zugriff offen");
         helper.succeed();
     }
@@ -6765,7 +6846,8 @@ public final class FactoryNetworkGameTests {
                 dev.devpanda.factorynetwork.item.RemoteDeviceItem.mastOf(device) == null,
                 "ein frisches Gerät hängt schon an einem Mast");
 
-        BlockPos mast = helper.absolutePos(new BlockPos(1, 2, 1));
+        net.minecraft.core.GlobalPos mast = net.minecraft.core.GlobalPos.of(
+                helper.getLevel().dimension(), helper.absolutePos(new BlockPos(1, 2, 1)));
         helper.assertTrue(
                 dev.devpanda.factorynetwork.item.RemoteDeviceItem.couple(device, mast),
                 "die Anmeldung ist nicht zustandegekommen");
@@ -6788,7 +6870,8 @@ public final class FactoryNetworkGameTests {
         helper.assertTrue(
                 dev.devpanda.factorynetwork.item.RemoteDeviceItem.couple(device, mast),
                 "die zweite Anmeldung ging nicht");
-        BlockPos other = mast.above(3);
+        net.minecraft.core.GlobalPos other = net.minecraft.core.GlobalPos.of(
+                mast.dimension(), mast.pos().above(3));
         helper.assertTrue(
                 dev.devpanda.factorynetwork.item.RemoteDeviceItem.couple(device, other),
                 "ein anderer Mast hat abgemeldet statt umgemeldet");

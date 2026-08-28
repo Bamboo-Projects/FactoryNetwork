@@ -4150,3 +4150,28 @@ von acht Blöcken. Der Fernzugriff nimmt etwas weg, er gibt nichts dazu.
 
 Der Besitzschutz aus `FnProtection` beantwortet eine andere Frage und gilt
 unverändert weiter.
+
+### Die Grenzenlos-Karte hebt auch die Dimensionsgrenze auf
+
+So stand es im Entwurf (`fernzugriff.md`, Abschnitt 1), und so ist es seit dem
+28.08. auch gebaut. **Über eine Dimensionsgrenze reicht nur sie** — vier
+Reichweitenkarten helfen dort nicht.
+
+**Der Grund ist keine Zahl, sondern eine Art:** Zwischen zwei Dimensionen gibt
+es keinen Abstand, den man messen könnte. Der Nether liegt nicht hundert
+Blöcke von der Oberwelt entfernt, er liegt daneben und zugleich nirgends. Eine
+Rechnung mit Koordinaten aus zwei Welten ergäbe eine Zahl ohne Bedeutung.
+Reichweite ist eine Strecke; eine Dimensionsgrenze ist keine.
+
+**Ein Gerät merkt sich seitdem die Welt und nicht nur den Ort.** Das ist auch
+ohne die Karte nötig: Koordinaten wiederholen sich in jeder Dimension, und ein
+Gerät, das nur `120, 64, -30` kannte, verband sich im Nether mit einem fremden
+Mast, der zufällig dort stand. Vanilla hält es beim Lodestone-Kompass genauso —
+`GlobalPos` statt `BlockPos`.
+
+**Ein Mast in ungeladenem Land gilt als nicht erreichbar** und bekommt eine
+eigene Meldung. Nicht dasselbe wie abgebaut: Wer „Der Sendemast steht nicht
+mehr" liest, baut einen neuen — und der alte steht noch, nur schaut dort
+gerade niemand hin. Ihn nachzuladen kam nicht in Frage: Die Frage wird für
+jedes offene Fenster in jedem Tick gestellt, und ein Netz am anderen Ende der
+Welt hielte damit dauerhaft Land offen, das niemand betritt.

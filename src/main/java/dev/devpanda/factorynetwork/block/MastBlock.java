@@ -69,14 +69,16 @@ public class MastBlock extends Block implements EntityBlock {
         if (level.isClientSide) {
             return ItemInteractionResult.SUCCESS;
         }
-        if (!RemoteDeviceItem.couple(held, pos)) {
+        net.minecraft.core.GlobalPos where =
+                net.minecraft.core.GlobalPos.of(level.dimension(), pos);
+        if (!RemoteDeviceItem.couple(held, where)) {
             player.displayClientMessage(
                     Component.translatable("message.factorynetwork.remote.unbound"), true);
             return ItemInteractionResult.CONSUME;
         }
         player.displayClientMessage(
                 Component.translatable("message.factorynetwork.remote.bound",
-                        pos.getX(), pos.getY(), pos.getZ()), true);
+                        RemoteDeviceItem.describe(where)), true);
         level.playSound(null, pos, SoundEvents.AMETHYST_BLOCK_CHIME,
                 SoundSource.BLOCKS, 0.6F, 1.4F);
         return ItemInteractionResult.CONSUME;

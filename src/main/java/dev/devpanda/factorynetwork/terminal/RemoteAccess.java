@@ -4,7 +4,7 @@ import dev.devpanda.factorynetwork.block.entity.MastBlockEntity;
 import dev.devpanda.factorynetwork.item.RemoteDeviceItem;
 import dev.devpanda.factorynetwork.upgrade.Range;
 import dev.devpanda.factorynetwork.upgrade.RemoteDevice;
-import net.minecraft.core.BlockPos;
+import net.minecraft.core.GlobalPos;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -36,17 +36,18 @@ public final class RemoteAccess {
      *       Platz tauscht, das an einem anderen Mast hängt, hielte sonst ein
      *       Fenster auf ein Netz offen, zu dem das Gerät in seiner Hand gar
      *       nicht gehört.</li>
-     *   <li><b>Der Mast steht noch.</b> Er kann abgebaut worden sein,
-     *       während das Fenster offen war.</li>
+     *   <li><b>Der Mast steht noch — und sein Stück Welt ist geladen.</b>
+     *       Er kann abgebaut worden sein, während das Fenster offen war.</li>
      *   <li><b>Der Spieler ist in Reichweite.</b> Sie kommt aus den Karten in
      *       Mast und Gerät — das ist die Stelle, an der die Reichweite
-     *       überhaupt etwas tut.</li>
+     *       überhaupt etwas tut. Steht er in einer anderen Welt, reicht nur
+     *       die Grenzenlos-Karte.</li>
      * </ol>
      *
      * @param slot der Platz im Inventar, an dem das Gerät beim Öffnen lag
      * @param expected der Mast, an dem dieses Fenster hängt
      */
-    public static boolean allowed(Player player, int slot, BlockPos expected) {
+    public static boolean allowed(Player player, int slot, GlobalPos expected) {
         if (slot < 0 || slot >= player.getInventory().getContainerSize()) {
             return false;
         }
@@ -55,20 +56,52 @@ public final class RemoteAccess {
         if (kind == null) {
             return false;
         }
-        BlockPos mast = RemoteDeviceItem.mastOf(device);
+        GlobalPos mast = RemoteDeviceItem.mastOf(device);
         if (mast == null || !mast.equals(expected)) {
             return false;
         }
-        Level level = player.level();
-        if (!(level.getBlockEntity(mast) instanceof MastBlockEntity standing)) {
+        MastBlockEntity standing = mastAt(player, mast);
+        if (standing == null) {
             return false;
         }
+        boolean sameLevel = player.level().dimension().equals(mast.dimension());
         // Der Abstand zählt vom Mast, nicht vom Controller: Wer einen
         // zweiten Mast aufstellt, verlängert damit seine Reichweite, und
-        // genau dafür baut man ihn.
+        // genau dafür baut man ihn. In einer anderen Welt gibt es keinen
+        // Abstand — dort entscheidet allein die Karte.
+        double distance = sameLevel
+                ? Math.sqrt(player.distanceToSqr(mast.pos().getX() + 0.5,
+                        mast.pos().getY() + 0.5, mast.pos().getZ() + 0.5))
+                : 0;
         return Range.covers(standing.loadout(), RemoteDeviceItem.loadoutOf(device),
-                Math.sqrt(player.distanceToSqr(mast.getX() + 0.5, mast.getY() + 0.5,
-                        mast.getZ() + 0.5)));
+                sameLevel, distance);
+    }
+
+    /**
+     * Der Mast an dieser Stelle — auch in einer anderen Welt.
+     *
+     * <p><b>Erst fragen, ob das Stück Welt geladen ist.</b>
+     * {@code getBlockEntity} lädt es sonst nach, und diese Frage wird für
+     * jedes offene Fenster in jedem Tick gestellt — ein Netz am anderen Ende
+     * der Welt hielte damit dauerhaft Land offen, das niemand betritt.
+     *
+     * <p>Ein nicht geladener Mast gilt als nicht erreichbar. Das ist ehrlich:
+     * Was dort geschieht, rechnet niemand aus, solange kein Spieler in der
+     * Nähe ist.
+     */
+    public static MastBlockEntity mastAt(Player player, GlobalPos mast) {
+        Level level = player.level();
+        if (!level.dimension().equals(mast.dimension())) {
+            if (player.getServer() == null) {
+                return null;
+            }
+            level = player.getServer().getLevel(mast.dimension());
+        }
+        if (level == null || !level.isLoaded(mast.pos())) {
+            return null;
+        }
+        return level.getBlockEntity(mast.pos()) instanceof MastBlockEntity standing
+                ? standing : null;
     }
 
     /**

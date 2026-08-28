@@ -2,7 +2,7 @@ package dev.devpanda.factorynetwork.registry;
 
 import com.mojang.serialization.Codec;
 import dev.devpanda.factorynetwork.FactoryNetwork;
-import net.minecraft.core.BlockPos;
+import net.minecraft.core.GlobalPos;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -42,16 +42,22 @@ public final class FnComponents {
                     .build());
 
     /**
-     * Der Sendemast, an dem ein Gerät angemeldet ist.
+     * Der Sendemast, an dem ein Gerät angemeldet ist — mit seiner Welt.
      *
      * <p><b>Der Mast und nicht der Controller:</b> Ein Netz kann mehrere
      * Masten haben, und welcher davon reicht, hängt an seinen Karten. Wer den
      * Controller merkte, verlöre die Frage nach der Reichweite.
+     *
+     * <p><b>Und die Welt gehört dazu, nicht nur der Ort.</b> Koordinaten
+     * wiederholen sich in jeder Dimension: Ein Gerät, das sich nur
+     * {@code 120, 64, -30} merkt, verbände sich im Nether mit einem
+     * fremden Mast, der zufällig dort steht. Vanilla hält es beim
+     * Lodestone-Kompass genauso.
      */
-    public static final DeferredHolder<DataComponentType<?>, DataComponentType<BlockPos>> MAST =
-            COMPONENTS.register("mast", () -> DataComponentType.<BlockPos>builder()
-                    .persistent(BlockPos.CODEC)
-                    .networkSynchronized(BlockPos.STREAM_CODEC)
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<GlobalPos>> MAST =
+            COMPONENTS.register("mast", () -> DataComponentType.<GlobalPos>builder()
+                    .persistent(GlobalPos.CODEC)
+                    .networkSynchronized(GlobalPos.STREAM_CODEC)
                     .build());
 
     /**

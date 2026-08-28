@@ -8,6 +8,9 @@ import dev.devpanda.factorynetwork.terminal.RemoteAccess;
 import dev.devpanda.factorynetwork.terminal.TerminalTab;
 import dev.devpanda.factorynetwork.upgrade.RemoteDevice;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.level.Level;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
@@ -62,20 +65,37 @@ public class TerminalMenu extends AbstractContainerMenu {
      */
     private final int deviceSlot;
 
+    /**
+     * In welcher Welt der Mast steht, oder {@code null} am Block.
+     *
+     * <p><b>Ohne sie liefe das Fenster leer.</b> Der Controller wird über ein
+     * Level aufgelöst, und wer im Nether steht und auf ein Netz in der
+     * Oberwelt schaut, bekäme dort nichts — das Fenster ginge auf und jede
+     * Handlung verpuffte.
+     */
+    private final ResourceKey<Level> home;
+
     public TerminalMenu(int id, Inventory inventory, RegistryFriendlyByteBuf buffer) {
-        this(id, inventory, buffer.readBlockPos(),
+        this(id, inventory, buffer.readBlockPos(), buffer);
+    }
+
+    private TerminalMenu(int id, Inventory inventory, BlockPos position,
+                         RegistryFriendlyByteBuf buffer) {
+        this(id, inventory, position,
+                buffer.readBoolean() ? buffer.readResourceKey(Registries.DIMENSION) : null,
                 buffer.readBoolean() ? buffer.readEnum(RemoteDevice.class) : null,
                 buffer.readVarInt());
     }
 
     public TerminalMenu(int id, Inventory inventory, BlockPos position) {
-        this(id, inventory, position, null, -1);
+        this(id, inventory, position, null, null, -1);
     }
 
     public TerminalMenu(int id, Inventory inventory, BlockPos position,
-                        RemoteDevice device, int deviceSlot) {
+                        ResourceKey<Level> home, RemoteDevice device, int deviceSlot) {
         super(FnMenus.TERMINAL.get(), id);
         this.position = position;
+        this.home = home;
         this.device = device;
         this.deviceSlot = deviceSlot;
         this.owner = inventory.player;
@@ -116,11 +136,24 @@ public class TerminalMenu extends AbstractContainerMenu {
         if (player.level().getBlockEntity(position) instanceof TerminalBlockEntity terminal) {
             return terminal.controller();
         }
-        if (device != null) {
-            return dev.devpanda.factorynetwork.network.ControllerRegistry
-                    .owning(player.level(), position);
+        if (device == null) {
+            return Optional.empty();
         }
-        return Optional.empty();
+        // In der Welt des Masts nachsehen, nicht in der des Spielers: Mit
+        // einer Grenzenlos-Karte sitzt er in einer anderen.
+        net.minecraft.world.level.Level level = levelOfMast(player);
+        return level == null || !level.isLoaded(position)
+                ? Optional.empty()
+                : dev.devpanda.factorynetwork.network.ControllerRegistry
+                        .owning(level, position);
+    }
+
+    /** Die Welt, in der der Mast steht — auch wenn es nicht die des Spielers ist. */
+    private net.minecraft.world.level.Level levelOfMast(Player player) {
+        if (home == null || player.level().dimension().equals(home)) {
+            return player.level();
+        }
+        return player.getServer() == null ? null : player.getServer().getLevel(home);
     }
 
     /** Womit dieses Fenster geöffnet wurde, oder {@code null} am Block. */
@@ -255,7 +288,8 @@ public class TerminalMenu extends AbstractContainerMenu {
         if (device != null) {
             // Leerer Akku heißt zu. Der Ladestand wird in broadcastChanges
             // abgezogen; hier fällt auf, dass nichts mehr da ist.
-            return RemoteAccess.allowed(player, deviceSlot, position)
+            return RemoteAccess.allowed(player, deviceSlot,
+                            net.minecraft.core.GlobalPos.of(home, position))
                     && dev.devpanda.factorynetwork.item.RemoteDeviceItem.energyOf(
                             player.getInventory().getItem(deviceSlot)) > 0;
         }

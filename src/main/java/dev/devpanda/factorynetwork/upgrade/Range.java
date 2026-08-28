@@ -45,7 +45,32 @@ public final class Range {
      * <p>Die Grenze zählt noch dazu: Wer genau auf ihr steht, ist drin.
      */
     public static boolean covers(Loadout mast, Loadout device, double distance) {
+        return covers(mast, device, true, distance);
+    }
+
+    /**
+     * Reicht es bis dorthin — auch wenn das in einer anderen Welt liegt?
+     *
+     * <p><b>Über eine Dimensionsgrenze reicht nur die Grenzenlos-Karte</b>,
+     * und dann ohne jede Rechnung. Zwischen zwei Dimensionen gibt es keinen
+     * Abstand, den man messen könnte: Der Nether liegt nicht hundert Blöcke
+     * von der Oberwelt entfernt, er liegt daneben und zugleich nirgends. Eine
+     * Rechnung mit Koordinaten aus zwei Welten ergäbe eine Zahl ohne
+     * Bedeutung.
+     *
+     * <p>Auch vier Reichweitenkarten helfen dort nicht. Reichweite ist eine
+     * Strecke, und eine Dimensionsgrenze ist keine — das ist der Grund, die
+     * Karte überhaupt zu bauen.
+     *
+     * @param sameLevel ob Mast und Gerät in derselben Dimension sind
+     * @param distance der Abstand; bedeutungslos, wenn sie es nicht sind
+     */
+    public static boolean covers(Loadout mast, Loadout device, boolean sameLevel,
+                                 double distance) {
         int found = reach(mast, device);
+        if (!sameLevel) {
+            return found == UNLIMITED;
+        }
         return found == UNLIMITED || distance <= found;
     }
 

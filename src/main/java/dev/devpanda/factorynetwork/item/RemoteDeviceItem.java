@@ -7,6 +7,7 @@ import dev.devpanda.factorynetwork.upgrade.RemoteDevice;
 import dev.devpanda.factorynetwork.upgrade.UpgradeSlots;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.GlobalPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -61,8 +62,8 @@ public class RemoteDeviceItem extends Item {
         return stack.getItem() instanceof RemoteDeviceItem item ? item.device() : null;
     }
 
-    /** An welchem Mast das Gerät hängt, oder {@code null}. */
-    public static BlockPos mastOf(ItemStack stack) {
+    /** An welchem Mast das Gerät hängt, samt Welt — oder {@code null}. */
+    public static GlobalPos mastOf(ItemStack stack) {
         return stack.get(FnComponents.MAST.get());
     }
 
@@ -77,7 +78,7 @@ public class RemoteDeviceItem extends Item {
      * <p>Der Netzname kommt mit, damit der Tooltip ihn zeigen kann, ohne die
      * Welt zu befragen — im Inventar hat der Client sie nicht.
      */
-    public static void bind(ItemStack stack, BlockPos mast, String network) {
+    public static void bind(ItemStack stack, GlobalPos mast, String network) {
         stack.set(FnComponents.MAST.get(), mast);
         stack.set(FnComponents.NETWORK_NAME.get(), network);
     }
@@ -95,15 +96,32 @@ public class RemoteDeviceItem extends Item {
      * @return {@code true}, wenn danach eine Anmeldung besteht;
      *         {@code false} nach dem Abmelden
      */
-    public static boolean couple(ItemStack stack, BlockPos mast) {
+    public static boolean couple(ItemStack stack, GlobalPos mast) {
         if (mast.equals(mastOf(stack))) {
             unbind(stack);
             return false;
         }
-        // Der Name ist die Position: Es gibt keine Netznamen, und eine
-        // erfundene Nummer wäre im Spiel nicht wiederzufinden.
-        bind(stack, mast, mast.getX() + ", " + mast.getY() + ", " + mast.getZ());
+        bind(stack, mast, describe(mast));
         return true;
+    }
+
+    /**
+     * Wie ein Mast im Tooltip heißt.
+     *
+     * <p>Der Name ist die Position: Es gibt keine Netznamen, und eine
+     * erfundene Nummer wäre im Spiel nicht wiederzufinden.
+     *
+     * <p>Die Welt steht nur dabei, wenn es nicht die Oberwelt ist. Sie
+     * überall zu nennen machte die Zeile länger, ohne etwas zu sagen — die
+     * meisten Netze stehen ohnehin dort.
+     */
+    public static String describe(GlobalPos mast) {
+        BlockPos pos = mast.pos();
+        String place = pos.getX() + ", " + pos.getY() + ", " + pos.getZ();
+        if (mast.dimension().equals(Level.OVERWORLD)) {
+            return place;
+        }
+        return place + " (" + mast.dimension().location().getPath() + ")";
     }
 
     /** Nimmt die Anmeldung zurück. */
@@ -163,22 +181,35 @@ public class RemoteDeviceItem extends Item {
         if (level.isClientSide) {
             return InteractionResultHolder.success(held);
         }
-        BlockPos mast = mastOf(held);
+        GlobalPos mast = mastOf(held);
         if (mast == null) {
             return refuse(player, held, "message.factorynetwork.remote.no_network");
         }
-        if (!(level.getBlockEntity(mast)
+        Level home = level.dimension().equals(mast.dimension()) || player.getServer() == null
+                ? level : player.getServer().getLevel(mast.dimension());
+        if (home == null || !home.isLoaded(mast.pos())) {
+            // Nicht dasselbe wie abgebaut, und deshalb eine eigene Meldung:
+            // Wer "Der Sendemast steht nicht mehr" liest, baut einen neuen —
+            // und der alte steht noch, nur schaut dort gerade niemand hin.
+            return refuse(player, held, "message.factorynetwork.remote.not_loaded");
+        }
+        if (!(home.getBlockEntity(mast.pos())
                 instanceof dev.devpanda.factorynetwork.block.entity.MastBlockEntity standing)) {
             return refuse(player, held, "message.factorynetwork.remote.mast_gone");
         }
         var controller = dev.devpanda.factorynetwork.network.ControllerRegistry
-                .owning(level, mast);
+                .owning(home, mast.pos());
         if (controller.isEmpty()) {
             return refuse(player, held, "message.factorynetwork.remote.no_controller");
         }
         int slot = RemoteAccess.slotOf(player, held);
         if (slot < 0 || !RemoteAccess.allowed(player, slot, mast)) {
-            return refuse(player, held, "message.factorynetwork.remote.out_of_range");
+            // Zwei Gründe, eine Meldung wäre zu wenig: Wer in einer anderen
+            // Welt steht, läuft nicht näher heran — er braucht eine Karte.
+            return refuse(player, held,
+                    level.dimension().equals(mast.dimension())
+                            ? "message.factorynetwork.remote.out_of_range"
+                            : "message.factorynetwork.remote.other_world");
         }
         // Erst fragen, dann nehmen: Ein halb geladenes Gerät soll seinen
         // Rest behalten, wenn es das Fenster ohnehin nicht öffnen kann.
@@ -200,10 +231,14 @@ public class RemoteDeviceItem extends Item {
             controller.get().watchTerminal(serverPlayer);
             serverPlayer.openMenu(new SimpleMenuProvider(
                     (id, inventory, owner) -> new dev.devpanda.factorynetwork.client.menu
-                            .TerminalMenu(id, inventory, mast, device, slot),
+                            .TerminalMenu(id, inventory, mast.pos(), mast.dimension(),
+                                    device, slot),
                     Component.translatable(getDescriptionId())), buffer -> {
-                buffer.writeBlockPos(mast);
+                buffer.writeBlockPos(mast.pos());
                 buffer.writeBoolean(true);
+                // Die Welt muss mit: Das Menü löst seinen Controller sonst
+                // über die Welt des Spielers auf, und der steht woanders.
+                buffer.writeResourceKey(mast.dimension());
                 buffer.writeEnum(device);
                 buffer.writeVarInt(slot);
             });

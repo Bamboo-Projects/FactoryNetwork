@@ -106,6 +106,11 @@ und ihr Fenster sind gebaut; der Weg dahin steht in `plan-ausbausystem.md`,
 - Wer aus der Ferne Code anfassen darf, entscheidet **das offene Fenster** und
   nicht mehr ein Abstand zu einem Block. Mit dem Laptop steht man vor keinem.
 
+**Die Dimensionsgrenze fiel am 28.08. nach.** Sie stand von Anfang an in
+Abschnitt 1, war beim ersten Bauen aber übersprungen worden: Nur die
+Entfernung war umgesetzt. Seitdem merkt sich ein Gerät die Welt und nicht nur
+den Ort, und die Grenzenlos-Karte hebt beides auf.
+
 **Offen ist Teil 5**, die Anzeigetafel mit Funk-Modul — und das Aussehen der
 beiden Geräte: Sie haben Texturen, aber noch keinen eigenen Körper.
 
