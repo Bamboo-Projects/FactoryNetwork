@@ -140,13 +140,13 @@ public class TerminalMenu extends AbstractContainerMenu {
         // Drei Reihen Inventar
         for (int row = 0; row < 3; row++) {
             for (int column = 0; column < 9; column++) {
-                addSlot(new Slot(inventory, column + row * 9 + 9,
+                addSlot(slotFor(inventory, column + row * 9 + 9,
                         INV_X + column * SLOT_SIZE, INV_Y + row * SLOT_SIZE));
             }
         }
         // Schnellzugriff
         for (int column = 0; column < 9; column++) {
-            addSlot(new Slot(inventory, column, INV_X + column * SLOT_SIZE, HOTBAR_Y));
+            addSlot(slotFor(inventory, column, INV_X + column * SLOT_SIZE, HOTBAR_Y));
         }
 
         // Ab jetzt bekommt der Spieler den Netzzustand — die Statuszeile
@@ -155,6 +155,38 @@ public class TerminalMenu extends AbstractContainerMenu {
             controller(serverPlayer).ifPresent(
                     controller -> controller.watchTerminal(serverPlayer));
         }
+    }
+
+    /**
+     * Ein gewöhnlicher Platz — außer für das Gerät, mit dem dieses Fenster
+     * offen ist.
+     *
+     * <p><b>Sonst zieht man die Leiter hinter sich hoch.</b> Wer sein
+     * Wireless Terminal aus dem Terminal heraus ins Lager legt, hat es im
+     * Netz und kommt ohne ein zweites Gerät nicht mehr daran. Das Fenster
+     * ginge im selben Moment zu, und das Netz behielte den Schlüssel zu sich
+     * selbst.
+     *
+     * <p>Am Block ist nichts gesperrt: Dort gibt es kein Gerät, das man sich
+     * wegnehmen könnte.
+     */
+    private Slot slotFor(Inventory inventory, int index, int x, int y) {
+        if (device == null || index != deviceSlot) {
+            return new Slot(inventory, index, x, y);
+        }
+        return new Slot(inventory, index, x, y) {
+            @Override
+            public boolean mayPickup(Player player) {
+                return false;
+            }
+        };
+    }
+
+    /** Liegt an diesem Platz im Fenster das Gerät, mit dem es offen ist? */
+    private boolean holdsOpenDevice(int index) {
+        return device != null && index >= 0 && index < slots.size()
+                && slots.get(index) instanceof Slot slot
+                && !slot.mayPickup(owner);
     }
 
     public BlockPos position() {
@@ -217,7 +249,9 @@ public class TerminalMenu extends AbstractContainerMenu {
             return ItemStack.EMPTY;
         }
         Slot slot = slots.get(index);
-        if (!slot.hasItem()) {
+        if (!slot.hasItem() || holdsOpenDevice(index)) {
+            // Das Gerät, mit dem dieses Fenster offen ist, bleibt liegen —
+            // siehe slotFor.
             return ItemStack.EMPTY;
         }
         // Auch dieser Weg legt ins Netz ab, geht aber über Vanillas Klick

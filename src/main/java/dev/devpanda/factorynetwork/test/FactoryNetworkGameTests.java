@@ -6338,6 +6338,63 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
+     * Das offene Gerät lässt sich nicht wegräumen.
+     *
+     * <p><b>Sonst zieht man die Leiter hinter sich hoch.</b> Wer sein
+     * Wireless Terminal aus dem Terminal heraus ins Lager legt, hat es im
+     * Netz — und kommt ohne ein zweites Gerät oder einen Weg zum
+     * Terminal-Block nicht mehr daran. Das Fenster ginge im selben Moment zu,
+     * und das Netz behielte den Schlüssel zu sich selbst.
+     *
+     * <p>Der Platz ist deshalb gesperrt, solange sein Fenster offen ist —
+     * gegen den Umschalt-Klick und gegen das Aufnehmen mit der Maus.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 100)
+    public static void theOpenDeviceCannotBeStoredAway(GameTestHelper helper) {
+        var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+        BlockPos mast = helper.absolutePos(new BlockPos(1, 2, 1));
+        var where = net.minecraft.core.GlobalPos.of(helper.getLevel().dimension(), mast);
+
+        ItemStack device = new ItemStack(
+                dev.devpanda.factorynetwork.registry.FnItems.WIRELESS_TERMINAL.get());
+        dev.devpanda.factorynetwork.item.RemoteDeviceItem.couple(device, where);
+        // Platz 0 im Inventar ist der erste der Schnellzugriffsleiste.
+        player.getInventory().setItem(0, device);
+
+        var menu = new dev.devpanda.factorynetwork.client.menu.TerminalMenu(
+                1, player.getInventory(), mast, helper.getLevel().dimension(),
+                dev.devpanda.factorynetwork.upgrade.RemoteDevice.TERMINAL, 0);
+
+        // Drei Reihen Inventar, dann die Schnellzugriffsleiste: Platz 0
+        // liegt im Fenster an Stelle 27.
+        var slot = menu.getSlot(27);
+        helper.assertTrue(slot.getItem() == device,
+                "an Stelle 27 liegt nicht das Gerät, sondern " + slot.getItem());
+        helper.assertTrue(!slot.mayPickup(player),
+                "das offene Gerät lässt sich mit der Maus aufnehmen");
+
+        // Und der Umschalt-Klick nimmt es auch nicht.
+        menu.quickMoveStack(player, 27);
+        helper.assertTrue(player.getInventory().getItem(0) == device,
+                "der Umschalt-Klick hat das offene Gerät weggeräumt");
+
+        // Die Gegenprobe: Jeder andere Platz bleibt frei bedienbar. Ohne sie
+        // könnte die Sperre auf das ganze Inventar greifen.
+        player.getInventory().setItem(1, new ItemStack(
+                dev.devpanda.factorynetwork.registry.FnItems.WRENCH.get()));
+        helper.assertTrue(menu.getSlot(28).mayPickup(player),
+                "auch der Nachbarplatz ist gesperrt");
+
+        // Und am Block ist gar nichts gesperrt: Dort gibt es kein Gerät,
+        // das man sich wegnehmen könnte.
+        var fixed = new dev.devpanda.factorynetwork.client.menu.TerminalMenu(
+                2, player.getInventory(), mast);
+        helper.assertTrue(fixed.getSlot(27).mayPickup(player),
+                "am Terminal-Block ist ein Platz gesperrt");
+        helper.succeed();
+    }
+
+    /**
      * Was ein Öffner schreibt, liest das Fenster genau auf.
      *
      * <p><b>Das ist der Lauf, der gefehlt hat.</b> Beim Umbau auf Welten
