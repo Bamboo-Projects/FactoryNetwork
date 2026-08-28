@@ -5,6 +5,42 @@ Alles, was in `docs/` und im Code als unfertig steht, an einer Stelle.
 Stand: 2026-08-26 (nach den beiden Schnitten am Wertemodell und der
 Handbucharbeit)
 
+> **Und die Nacht danach: die Quantum-Brücke steht.**
+>
+> Zwei Blöcke, die ein Netz über jede Entfernung verbinden, ohne Kabel
+> dazwischen. Gebaut wird eine **Verschränkung** — ein Rezept aus zwei
+> Netzkernen und einem Kristall, das einen Stapel zu zweit liefert. Je eine
+> Hälfte in eine Brücke, und die beiden kennen einander.
+>
+> **Was hindurchgeht:** vierundsechzig Kanäle, so viel wie ein dichtes Kabel.
+> Sie ist eine Leitung und kein Vermehrer. Beide Enden ziehen Strom, sonst
+> ersetzte sie jedes Kabel.
+>
+> **Was du siehst:** Die Fassung leuchtet nur bei stehender Verbindung — an
+> beiden Enden. Ohne das sucht man den Fehler im Kabel.
+>
+> **Die Grenze, die ich bewusst gezogen habe: v1 bleibt in einer Dimension.**
+> `FactoryGraph` kennt genau eine Welt; alle seine neun Listen sind
+> Koordinaten ohne Dimension. Eine Brücke in den Nether hieße, dieses
+> Fundament umzubauen — nachdem ich in derselben Nacht schon zwanzig Dateien
+> Speicher umgebaut hatte, war das eine Baustelle zu viel. Was es kostet,
+> steht gemessen in `plan-quantum-bridge.md`.
+>
+> **Zwei Fehler, die die Prüfläufe gefunden haben, bevor du sie gesehen
+> hättest:** Das Rezept merkte sich zwischen dem Zusammenbauen und dem
+> Herausnehmen die zweite Hälfte — ein Rezept gibt es aber einmal, nicht
+> einmal je Werkbank, und zwei Spieler hätten sich die Paare gekreuzt. Und
+> beim Abbauen erfuhr die Gegenstelle nichts und leuchtete weiter.
+>
+> **Zum Multiblock liegt eine Vorlage bereit** (`controller-multiblock.md`).
+> Der Befund verschiebt deine Frage: Den Multiblock gibt es schon, er heißt
+> nur nicht so. Der Anbau wächst vom Controller aus über die Nachbarschaft
+> und bietet bis zu fünf Kabelseiten je Block — bis zu 320 Kanäle. Die
+> eigentliche Frage ist, ob sich das anfühlt wie ein Bauwerk. Drei Wege
+> stehen darin, mit einer Empfehlung; die Entscheidung ist deine.
+>
+> 339 Prüfläufe grün.
+
 > **Abend und Nacht auf den 29.08.: Das Lager hält jetzt, was es bekommt.**
 >
 > Ein verzaubertes Buch, ein benanntes Werkzeug, eine angeschlagene
