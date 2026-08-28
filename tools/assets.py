@@ -1402,7 +1402,21 @@ def bridge_model():
         },
         "elements": machine_elements(bridge_boxes()),
     })
-    write(A + "/blockstates/bridge.json", {"variants": {"": {"model": block("bridge")}}})
+    # Zwei Fassungen: dunkel und leuchtend. Ohne das sieht eine Brücke,
+    # deren Partner fehlt, aus wie eine, die arbeitet.
+    write(A + "/models/block/bridge_linked.json", {
+        "parent": "minecraft:block/block",
+        "textures": {
+            "particle": texture("bridge_side"),
+            "side": texture("bridge_side"),
+            "socket": texture("bridge_socket_on"),
+        },
+        "elements": machine_elements(bridge_boxes()),
+    })
+    write(A + "/blockstates/bridge.json", {"variants": {
+        "linked=false": {"model": block("bridge")},
+        "linked=true": {"model": block("bridge_linked")},
+    }})
     write(A + "/models/item/bridge.json", {"parent": block("bridge")})
 
 

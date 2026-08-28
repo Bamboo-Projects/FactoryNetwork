@@ -1,4 +1,4 @@
-# Die Quantum-Bridge — Aufgaben 1 bis 4 erledigt am 29.08.
+# Die Quantum-Bridge — v1 fertig am 29.08.
 
 **Auftrag:** „wie bringen wir channel an andere punkte in den welten? AE2 hat
 dafür die quantum bridges" (28.08.), gefolgt von „okay Quantum bridge dann
@@ -88,7 +88,7 @@ Entscheidung.
       Stelle, an der es scharf wird:** Zwei Controller an beiden Enden dürfen
       nicht zu einem Netz verschmelzen, das sich selbst zählt.
 - [x] **4. Strom und Kanäle.** Wie oben, in `Power` und `capacityAt`.
-- [ ] **5. Was man im Spiel sieht.** Der Block zeigt, ob er gekoppelt ist und
+- [x] **5. Was man im Spiel sieht.** Der Block zeigt, ob er gekoppelt ist und
       ob die Gegenseite antwortet — sonst sucht man den Fehler im Kabel.
 
 ## Cross-Dimension: was es kosten würde

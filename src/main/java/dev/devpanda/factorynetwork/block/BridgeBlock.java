@@ -31,8 +31,27 @@ public class BridgeBlock extends Block implements EntityBlock {
     private static final net.minecraft.world.phys.shapes.VoxelShape SHAPE =
             FacingShapes.whole(BridgeLayout.boxes());
 
+    /**
+     * Antwortet die Gegenstelle?
+     *
+     * <p><b>Ohne diese Anzeige sucht man den Fehler im Kabel.</b> Eine
+     * Brücke, deren Partner abgebaut oder nicht geladen ist, sieht sonst aus
+     * wie eine, die arbeitet — und das Netz endet ohne sichtbaren Grund.
+     */
+    public static final net.minecraft.world.level.block.state.properties.BooleanProperty
+            LINKED = net.minecraft.world.level.block.state.properties.BooleanProperty
+                    .create("linked");
+
     public BridgeBlock(Properties properties) {
         super(properties);
+        registerDefaultState(defaultBlockState().setValue(LINKED, false));
+    }
+
+    @Override
+    protected void createBlockStateDefinition(
+            net.minecraft.world.level.block.state.StateDefinition.Builder<
+                    net.minecraft.world.level.block.Block, BlockState> builder) {
+        builder.add(LINKED);
     }
 
     @Override

@@ -1,7 +1,10 @@
 {
   "variants": {
-    "": {
+    "linked=false": {
       "model": "factorynetwork:block/bridge"
+    },
+    "linked=true": {
+      "model": "factorynetwork:block/bridge_linked"
     }
   }
 }

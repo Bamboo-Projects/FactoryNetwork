@@ -6536,6 +6536,45 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
+     * Beide Brücken zeigen, ob die Verbindung steht.
+     *
+     * <p><b>Ohne diese Anzeige sucht man den Fehler im Kabel.</b> Eine
+     * Brücke, deren Partner abgebaut wurde, sieht sonst aus wie eine, die
+     * arbeitet — und das Netz endet ohne sichtbaren Grund.
+     *
+     * <p><b>Und die Gegenstelle muss es auch erfahren.</b> Sie wird beim
+     * Abbau nicht angefasst; wer nur die eigene Seite umschaltet, lässt
+     * drüben ein Licht brennen, hinter dem nichts mehr ist.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 100)
+    public static void bothEndsShowTheLink(GameTestHelper helper) {
+        BlockPos hier = helper.absolutePos(new BlockPos(1, 2, 1));
+        BlockPos dort = helper.absolutePos(new BlockPos(4, 2, 4));
+        ItemStack paar = dev.devpanda.factorynetwork.item.EntanglementItem.newPair();
+
+        placeBridge(helper, hier, paar.split(1));
+        helper.assertTrue(!linked(helper, hier),
+                "eine Brücke ohne Partner leuchtet schon");
+
+        placeBridge(helper, dort, paar);
+        helper.assertTrue(linked(helper, hier), "die erste Brücke zeigt nichts an");
+        helper.assertTrue(linked(helper, dort), "die zweite Brücke zeigt nichts an");
+
+        // Die Gegenstelle abbauen: Hier muss das Licht ausgehen.
+        helper.getLevel().removeBlock(dort, false);
+        helper.assertTrue(!linked(helper, hier),
+                "die verbliebene Brücke leuchtet weiter, obwohl drüben nichts mehr ist");
+        helper.succeed();
+    }
+
+    /** Zeigt diese Brücke eine stehende Verbindung? */
+    private static boolean linked(GameTestHelper helper, BlockPos where) {
+        var state = helper.getLevel().getBlockState(where);
+        return state.getBlock() instanceof dev.devpanda.factorynetwork.block.BridgeBlock
+                && state.getValue(dev.devpanda.factorynetwork.block.BridgeBlock.LINKED);
+    }
+
+    /**
      * Das Netz reicht durch die Brücke — und nur durch eine gekoppelte.
      *
      * <p><b>Der Beweis, dass die Brücke etwas tut.</b> Zwei Kabelstränge, die

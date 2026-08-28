@@ -86,6 +86,38 @@ public class BridgeBlockEntity extends BlockEntity implements Container {
         }
         // Das Netz sieht anders aus, sobald eine Brücke auf- oder zugeht.
         ControllerRegistry.refreshAround(level, worldPosition);
+        showLink();
+    }
+
+    /**
+     * Trägt den Zustand ins Blockbild.
+     *
+     * <p>Auch an der Gegenstelle: Sie erfährt sonst nie, dass sie einen
+     * Partner bekommen hat — sie wird ja nicht angefasst.
+     */
+    private void showLink() {
+        if (level == null || level.isClientSide) {
+            return;
+        }
+        BlockPos partner = partner();
+        setLinked(worldPosition, partner != null);
+        if (partner != null && level.isLoaded(partner)) {
+            setLinked(partner, true);
+        }
+    }
+
+    private void setLinked(BlockPos pos, boolean linked) {
+        if (level == null) {
+            return;
+        }
+        net.minecraft.world.level.block.state.BlockState state = level.getBlockState(pos);
+        if (state.getBlock() instanceof dev.devpanda.factorynetwork.block.BridgeBlock
+                && state.getValue(dev.devpanda.factorynetwork.block.BridgeBlock.LINKED)
+                        != linked) {
+            level.setBlock(pos, state.setValue(
+                    dev.devpanda.factorynetwork.block.BridgeBlock.LINKED, linked),
+                    net.minecraft.world.level.block.Block.UPDATE_ALL);
+        }
     }
 
     @Override
@@ -97,8 +129,17 @@ public class BridgeBlockEntity extends BlockEntity implements Container {
     @Override
     public void setRemoved() {
         if (level != null && !level.isClientSide && registered != null) {
+            // Die Gegenstelle merken, bevor die Abmeldung sie unauffindbar
+            // macht: Sie wird beim Abbau nicht angefasst und erführe sonst
+            // nie, dass sie allein ist — ein Licht, hinter dem nichts mehr
+            // steht.
+            BlockPos partner = partner();
             BridgeRegistry.remove(level, registered, worldPosition);
             registered = null;
+            if (partner != null && level.isLoaded(partner)) {
+                setLinked(partner, false);
+            }
+            ControllerRegistry.refreshAround(level, worldPosition);
         }
         super.setRemoved();
     }

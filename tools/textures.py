@@ -846,18 +846,24 @@ def bridge_side():
     return img
 
 
-def bridge_socket():
-    """Die Fassung: ein Ring, in dem etwas sitzt, das man nicht ganz sieht."""
+def bridge_socket(on=False):
+    """Die Fassung: ein Ring, in dem etwas sitzt, das man nicht ganz sieht.
+
+    Leuchtet, sobald die Gegenstelle antwortet.
+    """
     img = surface(top=BODY_MID, bottom=BODY_BOT, seed=424)
     d = ImageDraw.Draw(img)
 
     # Ein tiefer Ring, innen leuchtend.
     d.ellipse((10, 10, 53, 53), outline=EDGE + (255,), width=3)
     recess(img, (16, 16, 47, 47), tiefe=4)
-    glow(img, (20, 20, 43, 43), CRYSTAL_HI, radius=10, strength=200)
+    glow(img, (20, 20, 43, 43), CRYSTAL_HI, radius=10,
+         strength=240 if on else 120)
 
     d = ImageDraw.Draw(img)
-    d.ellipse((22, 22, 41, 41), fill=CRYSTAL + (230,), outline=EDGE + (255,))
+    d.ellipse((22, 22, 41, 41),
+              fill=(CRYSTAL_HI if on else CRYSTAL) + (230,),
+              outline=EDGE + (255,))
     # Zwei Bögen darin: dieselbe Form wie auf der Verschränkung selbst.
     d.arc((24, 24, 39, 39), start=110, end=250, fill=CRYSTAL_HI + (255,), width=2)
     d.arc((24, 24, 39, 39), start=290, end=70, fill=CRYSTAL_HI + (255,), width=2)
@@ -2123,6 +2129,7 @@ def main():
     save(entanglement(), "item", "entanglement")
     save(bridge_side(), "block", "bridge_side")
     save(bridge_socket(), "block", "bridge_socket")
+    save(bridge_socket(on=True), "block", "bridge_socket_on")
     save(wireless_terminal(), "item", "wireless_terminal")
     save(laptop(), "item", "laptop")
     for tier, wert in enumerate((2, 8, 32, 128)):
