@@ -6536,6 +6536,69 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
+     * Eine AE2-Zelle zieht in unser Netz um — samt allem, was drinsteht.
+     *
+     * <p><b>Der Folgenutzen des Lagerumbaus, eingelöst.</b> AE2 speichert
+     * Gegenstände samt allem, was sie tragen. Bis zum 28.08. führte unser
+     * Lager nur die Kennung — ein verzaubertes Buch aus einer AE2-Zelle wäre
+     * beim Einlesen zu einem leeren geworden. Genau das prüft dieser Lauf.
+     *
+     * <p>Er läuft nur, wenn AE2 im Pack liegt. Im Entwicklungsaufbau tut es
+     * das; ein Pack ohne AE2 überspringt ihn, statt ihn fehlschlagen zu
+     * lassen — eine fehlende Mod ist kein Fehler dieser Mod.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void anAe2CellMovesIn(GameTestHelper helper) {
+        if (!dev.devpanda.factorynetwork.compat.ae2.FnAe2.installed()) {
+            helper.succeed();
+            return;
+        }
+
+        BlockPos controller = bareSetup(helper);
+        driveWithCell(helper, controller.above(),
+                dev.devpanda.factorynetwork.storage.CellTier.K4);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        // Eine echte AE2-Zelle, über AE2s eigene API befüllt.
+        ItemStack cell = new ItemStack(appeng.core.definitions.AEItems.ITEM_CELL_64K.asItem());
+        helper.assertTrue(
+                dev.devpanda.factorynetwork.compat.ae2.Ae2Cells.isCell(cell),
+                "AE2 erkennt seine eigene Zelle nicht");
+
+        var inventory = appeng.api.storage.StorageCells.getCellInventory(cell, null);
+        helper.assertTrue(inventory != null, "die Zelle lässt sich nicht öffnen");
+
+        ItemStack enchanted = new ItemStack(Items.DIAMOND_PICKAXE);
+        enchanted.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME,
+                net.minecraft.network.chat.Component.literal("Erbstück"));
+        var source = appeng.api.networking.security.IActionSource.empty();
+        inventory.insert(appeng.api.stacks.AEItemKey.of(enchanted), 1,
+                appeng.api.config.Actionable.MODULATE, source);
+        inventory.insert(appeng.api.stacks.AEItemKey.of(new ItemStack(Items.IRON_INGOT)), 100,
+                appeng.api.config.Actionable.MODULATE, source);
+        inventory.persist();
+
+        long moved = dev.devpanda.factorynetwork.compat.ae2.Ae2Cells.drainInto(
+                cell, entity.storage());
+        helper.assertValueEqual(moved, 101L, "aus der Zelle kam nicht alles");
+
+        var key = dev.devpanda.factorynetwork.storage.ItemKey.of(enchanted);
+        helper.assertValueEqual(entity.storage().count(key), 1L,
+                "die benannte Hacke ist nicht mit ihrem Namen angekommen");
+        helper.assertValueEqual(entity.storage().count(
+                        dev.devpanda.factorynetwork.storage.ItemKey.bare(Items.IRON_INGOT)),
+                100L, "das Eisen fehlt");
+
+        // Und die Zelle ist danach leer: Es ist ein Umzug, keine Kopie.
+        helper.assertTrue(
+                appeng.api.storage.StorageCells.getCellInventory(cell, null)
+                        .getAvailableStacks().isEmpty(),
+                "die AE2-Zelle hat ihren Inhalt behalten — das wäre eine Kopie");
+        helper.succeed();
+    }
+
+    /**
      * Beide Brücken zeigen, ob die Verbindung steht.
      *
      * <p><b>Ohne diese Anzeige sucht man den Fehler im Kabel.</b> Eine

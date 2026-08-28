@@ -5,6 +5,7 @@ import dev.devpanda.factorynetwork.block.entity.DriveBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.level.block.Block;
@@ -90,6 +91,46 @@ public class DriveBlock extends HorizontalDirectionalBlock implements EntityBloc
                 dev.devpanda.factorynetwork.client.menu.ShelfMenu
                         .kindOf(shelf.layout())));
         return InteractionResult.CONSUME;
+    }
+
+    /**
+     * Rechtsklick mit einer AE2-Zelle schüttet sie ins Netz.
+     *
+     * <p><b>Für den Umzug.</b> Wer ein AE2-Netz stehen hat und hierher
+     * wechselt, soll seine Sachen mitnehmen können, ohne sie erst in tausend
+     * Kisten zu leeren.
+     *
+     * <p>Eine Einbahnstraße, und was das Netz nicht nimmt, bleibt in der
+     * Zelle: Ein Umzug, der dabei etwas verliert, ist kein Umzug.
+     */
+    @Override
+    protected net.minecraft.world.ItemInteractionResult useItemOn(
+            ItemStack held, BlockState state, Level level, BlockPos pos, Player player,
+            net.minecraft.world.InteractionHand hand, BlockHitResult hit) {
+        if (!dev.devpanda.factorynetwork.compat.ae2.Ae2Cells.isCell(held)) {
+            return net.minecraft.world.ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        }
+        if (level.isClientSide) {
+            return net.minecraft.world.ItemInteractionResult.SUCCESS;
+        }
+        var controller = dev.devpanda.factorynetwork.network.ControllerRegistry
+                .owning(level, pos);
+        if (controller.isEmpty()) {
+            player.displayClientMessage(net.minecraft.network.chat.Component
+                    .translatable("message.factorynetwork.import.no_network"), true);
+            return net.minecraft.world.ItemInteractionResult.CONSUME;
+        }
+        long moved = dev.devpanda.factorynetwork.compat.ae2.Ae2Cells.drainInto(
+                held, controller.get().storage());
+        controller.get().setChanged();
+        player.displayClientMessage(net.minecraft.network.chat.Component.translatable(
+                moved > 0 ? "message.factorynetwork.import.moved"
+                          : "message.factorynetwork.import.nothing", moved), true);
+        if (moved > 0) {
+            level.playSound(null, pos, net.minecraft.sounds.SoundEvents.BEACON_POWER_SELECT,
+                    net.minecraft.sounds.SoundSource.BLOCKS, 0.6F, 1.4F);
+        }
+        return net.minecraft.world.ItemInteractionResult.CONSUME;
     }
 
     /**
