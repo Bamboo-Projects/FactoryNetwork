@@ -6486,6 +6486,68 @@ public final class FactoryNetworkGameTests {
 
 
     /**
+     * Eine Zelle aus der Zeit vor dem Umbau liest sich weiter.
+     *
+     * <p><b>Sonst wäre der Umbau ein Datenverlust mit anderem Vorzeichen.</b>
+     * Jede Zelle, die heute im Boden liegt, schreibt Kennung und Menge und
+     * kein {@code components}-Feld. Ein Posten ohne dieses Feld muss ein
+     * Gegenstand ohne eigene Daten sein — sonst verschwände beim ersten
+     * Laden ein ganzes Lager.
+     *
+     * <p>Das Alt-Format wird hier von Hand gebaut, nicht über den heutigen
+     * Schreibweg: Der schriebe ja das neue. Nur so ist die Probe eine über
+     * das Format und nicht eine über sich selbst.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 100)
+    public static void anOldCellStillReads(GameTestHelper helper) {
+        ItemStack cell = new ItemStack(
+                dev.devpanda.factorynetwork.registry.FnItems.CELLS
+                        .get(dev.devpanda.factorynetwork.storage.CellTier.K4).get());
+
+        // Genau das, was vor dem 28.08. in einer Zelle stand.
+        net.minecraft.nbt.ListTag posten = new net.minecraft.nbt.ListTag();
+        net.minecraft.nbt.CompoundTag eisen = new net.minecraft.nbt.CompoundTag();
+        eisen.putString("Item", "minecraft:iron_ingot");
+        eisen.putLong("Count", 128);
+        posten.add(eisen);
+        net.minecraft.nbt.CompoundTag hacke = new net.minecraft.nbt.CompoundTag();
+        hacke.putString("Item", "minecraft:diamond_pickaxe");
+        hacke.putLong("Count", 2);
+        posten.add(hacke);
+        net.minecraft.world.item.component.CustomData.update(
+                net.minecraft.core.component.DataComponents.CUSTOM_DATA, cell,
+                tag -> tag.put("Cell", posten));
+
+        var inhalt = dev.devpanda.factorynetwork.storage.CellContents.read(
+                cell, helper.getLevel().registryAccess());
+        helper.assertValueEqual(inhalt.size(), 2, "die alte Zelle hat Posten verloren");
+        helper.assertValueEqual(inhalt.getOrDefault(
+                        dev.devpanda.factorynetwork.storage.ItemKey
+                                .bare(Items.IRON_INGOT), 0L), 128L,
+                "das Eisen aus der alten Zelle fehlt");
+        helper.assertValueEqual(inhalt.getOrDefault(
+                        dev.devpanda.factorynetwork.storage.ItemKey
+                                .bare(Items.DIAMOND_PICKAXE), 0L), 2L,
+                "die Hacken aus der alten Zelle fehlen");
+
+        // Und wer sie neu schreibt, ohne etwas zu ändern, schreibt wieder
+        // dasselbe: kein components-Feld an einem nackten Gegenstand. Der Weg
+        // zurück auf eine ältere Fassung bleibt damit offen.
+        dev.devpanda.factorynetwork.storage.CellContents.write(cell, inhalt,
+                helper.getLevel().registryAccess());
+        var geschrieben = cell.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA)
+                .copyTag().getList("Cell", net.minecraft.nbt.Tag.TAG_COMPOUND);
+        helper.assertValueEqual(geschrieben.size(), 2, "beim Schreiben ging ein Posten verloren");
+        for (int i = 0; i < geschrieben.size(); i++) {
+            helper.assertTrue(!geschrieben.getCompound(i).contains("components"),
+                    "ein nackter Gegenstand bekam ein components-Feld");
+            helper.assertTrue(geschrieben.getCompound(i).contains("Count"),
+                    "die Menge steht nicht mehr unter Count");
+        }
+        helper.succeed();
+    }
+
+    /**
      * Was Daten trägt, geht ins Lager und kommt unverändert zurück.
      *
      * <p><b>Der Beweislauf des ganzen Umbaus.</b> Bis zum 28.08. führte das
