@@ -31,6 +31,7 @@ public final class FnCreativeTabs {
                                 .forEach(cable -> output.accept(cable.get()));
                         output.accept(FnItems.ROUTER.get());
                         output.accept(FnItems.MAST.get());
+                        output.accept(FnItems.BRIDGE.get());
                         output.accept(FnItems.CONNECTOR.get());
                         output.accept(FnItems.TERMINAL.get());
                         output.accept(FnItems.WIRELESS_TERMINAL.get());

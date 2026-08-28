@@ -6536,6 +6536,86 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
+     * Zwei Brücken mit derselben Nummer finden einander — und nur die.
+     *
+     * <p><b>Gesucht wird nicht, angemeldet wird.</b> Eine Brücke, die ihren
+     * Partner über die Welt suchen müsste, durchsuchte bei jeder Frage
+     * Millionen Blöcke. Sie trägt sich stattdessen beim Laden in ein
+     * Verzeichnis ein — dasselbe Vorgehen wie beim Controller.
+     *
+     * <p>Drei Regeln, und jede fängt einen Fall, den es im Spiel gibt:
+     * <ol>
+     *   <li>Eine Brücke ohne Hälfte gehört zu niemandem.</li>
+     *   <li>Eine Brücke ist nie ihr eigener Partner — sonst zeigte ein Netz
+     *       durch sich hindurch auf sich selbst.</li>
+     *   <li>Drei Brücken mit derselben Nummer verbinden gar nichts. Im
+     *       Kreativmodus lässt sich eine Hälfte vervielfachen, und „zwei von
+     *       dreien, aber welche" ist keine Regel, die jemand erraten kann.</li>
+     * </ol>
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 100)
+    public static void bridgesFindTheirPartner(GameTestHelper helper) {
+        var level = helper.getLevel();
+        BlockPos hier = helper.absolutePos(new BlockPos(1, 2, 1));
+        BlockPos dort = helper.absolutePos(new BlockPos(4, 2, 4));
+
+        ItemStack paar = dev.devpanda.factorynetwork.item.EntanglementItem.newPair();
+        ItemStack eine = paar.split(1);
+
+        placeBridge(helper, hier, eine);
+        helper.assertTrue(
+                dev.devpanda.factorynetwork.network.BridgeRegistry.partnerOf(level, hier)
+                        == null,
+                "eine Brücke allein hat schon einen Partner");
+
+        placeBridge(helper, dort, paar);
+        helper.assertTrue(
+                dort.equals(dev.devpanda.factorynetwork.network.BridgeRegistry
+                        .partnerOf(level, hier)),
+                "die beiden Brücken finden einander nicht");
+        helper.assertTrue(
+                hier.equals(dev.devpanda.factorynetwork.network.BridgeRegistry
+                        .partnerOf(level, dort)),
+                "die Verbindung gilt nur in eine Richtung");
+
+        // Eine dritte mit derselben Nummer: Jetzt ist nichts mehr eindeutig.
+        BlockPos dritte = helper.absolutePos(new BlockPos(7, 2, 1));
+        ItemStack kopie = eine.copy();
+        placeBridge(helper, dritte, kopie);
+        helper.assertTrue(
+                dev.devpanda.factorynetwork.network.BridgeRegistry.partnerOf(level, hier)
+                        == null,
+                "drei Brücken mit einer Nummer verbinden trotzdem");
+
+        // Die dritte weg, und die beiden finden sich wieder.
+        level.removeBlock(dritte, false);
+        helper.assertTrue(
+                dort.equals(dev.devpanda.factorynetwork.network.BridgeRegistry
+                        .partnerOf(level, hier)),
+                "nach dem Abbau der dritten bleibt die Verbindung tot");
+
+        // Und eine fremde Nummer verbindet nichts.
+        BlockPos fremd = helper.absolutePos(new BlockPos(7, 2, 4));
+        placeBridge(helper, fremd,
+                dev.devpanda.factorynetwork.item.EntanglementItem.newPair());
+        helper.assertTrue(
+                dev.devpanda.factorynetwork.network.BridgeRegistry.partnerOf(level, fremd)
+                        == null,
+                "eine fremde Nummer hat einen Partner gefunden");
+        helper.succeed();
+    }
+
+    /** Stellt eine Brücke hin und legt eine Hälfte hinein. */
+    private static void placeBridge(GameTestHelper helper, BlockPos where, ItemStack half) {
+        helper.getLevel().setBlockAndUpdate(where,
+                FnBlocks.BRIDGE.get().defaultBlockState());
+        if (helper.getLevel().getBlockEntity(where)
+                instanceof dev.devpanda.factorynetwork.block.entity.BridgeBlockEntity bridge) {
+            bridge.setItem(0, half);
+        }
+    }
+
+    /**
      * Ein Bau liefert beide Hälften, und sie gehören zusammen.
      *
      * <p>Als ein Stapel zu zweit: Ein Rezept hat ein Ausgabefeld, und alles,

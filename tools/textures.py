@@ -827,6 +827,46 @@ def entanglement():
     return img
 
 
+def bridge_side():
+    """Der Körper: schwere Platte mit einer waagerechten Fuge und Nieten."""
+    img = surface(seed=421)
+    brushed(img, count=20, seed=422)
+    d = ImageDraw.Draw(img)
+
+    # Eine breite Fuge auf halber Höhe — sie trennt Sockel von Körper, auch
+    # wenn beide dieselbe Textur tragen.
+    recess(img, (0, 28, 63, 35), tiefe=3)
+    d = ImageDraw.Draw(img)
+    d.line([(0, 31), (63, 31)], fill=ACCENT_DIM + (255,))
+
+    for x, y in ((8, 12), (55, 12), (8, 51), (55, 51)):
+        rivet(img, x, y, r=3)
+    bevel(ImageDraw.Draw(img), width=3)
+    grain(img, amount=7, seed=423)
+    return img
+
+
+def bridge_socket():
+    """Die Fassung: ein Ring, in dem etwas sitzt, das man nicht ganz sieht."""
+    img = surface(top=BODY_MID, bottom=BODY_BOT, seed=424)
+    d = ImageDraw.Draw(img)
+
+    # Ein tiefer Ring, innen leuchtend.
+    d.ellipse((10, 10, 53, 53), outline=EDGE + (255,), width=3)
+    recess(img, (16, 16, 47, 47), tiefe=4)
+    glow(img, (20, 20, 43, 43), CRYSTAL_HI, radius=10, strength=200)
+
+    d = ImageDraw.Draw(img)
+    d.ellipse((22, 22, 41, 41), fill=CRYSTAL + (230,), outline=EDGE + (255,))
+    # Zwei Bögen darin: dieselbe Form wie auf der Verschränkung selbst.
+    d.arc((24, 24, 39, 39), start=110, end=250, fill=CRYSTAL_HI + (255,), width=2)
+    d.arc((24, 24, 39, 39), start=290, end=70, fill=CRYSTAL_HI + (255,), width=2)
+
+    bevel(ImageDraw.Draw(img), width=3)
+    grain(img, amount=5, seed=425)
+    return img
+
+
 def network_analyser():
     """Messgerät mit breitem Fenster und kurzer Sonde."""
     img = Image.new("RGBA", (N, N), (0, 0, 0, 0))
@@ -2081,6 +2121,8 @@ def main():
         save(energy_cell(label), "item", "energy_cell_" + label)
     save(server_chassis(), "item", "server_chassis")
     save(entanglement(), "item", "entanglement")
+    save(bridge_side(), "block", "bridge_side")
+    save(bridge_socket(), "block", "bridge_socket")
     save(wireless_terminal(), "item", "wireless_terminal")
     save(laptop(), "item", "laptop")
     for tier, wert in enumerate((2, 8, 32, 128)):

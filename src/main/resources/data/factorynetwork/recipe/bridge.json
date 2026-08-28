@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "PCP",
+    "PNP",
+    "PPP"
+  ],
+  "key": {
+    "P": {
+      "item": "factorynetwork:plate"
+    },
+    "C": {
+      "item": "factorynetwork:crystal"
+    },
+    "N": {
+      "item": "factorynetwork:core_network"
+    }
+  },
+  "result": {
+    "id": "factorynetwork:bridge",
+    "count": 1
+  }
+}

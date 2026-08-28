@@ -66,6 +66,7 @@
   "item.factorynetwork.remote.charge": "Akku: %s / %s FE",
   "item.factorynetwork.entanglement.pair": "Paar %s",
   "item.factorynetwork.entanglement.loose": "Unverschränkt — im Rezept entsteht ein Paar",
+  "block.factorynetwork.bridge": "Quantum-Brücke",
   "item.factorynetwork.entanglement": "Verschränkung",
   "item.factorynetwork.network_analyser": "Netzanalysator",
   "message.factorynetwork.analyser.watching": "Netz wird beobachtet — das Werkzeug in der Hand behalten",

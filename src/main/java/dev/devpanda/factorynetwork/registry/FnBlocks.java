@@ -189,6 +189,11 @@ public final class FnBlocks {
             () -> new dev.devpanda.factorynetwork.block.MastBlock(
                     machineProperties().noOcclusion()));
 
+    /** Ein Ende einer Leitung ohne Kabel dazwischen. */
+    public static final DeferredBlock<Block> BRIDGE = BLOCKS.register("bridge",
+            () -> new dev.devpanda.factorynetwork.block.BridgeBlock(
+                    machineProperties().noOcclusion()));
+
     /** Zugang zum Code-Editor. */
     public static final DeferredBlock<Block> TERMINAL = BLOCKS.register("terminal",
             // noOcclusion, weil Konsole und Rahmen vorstehen und das Gehäuse

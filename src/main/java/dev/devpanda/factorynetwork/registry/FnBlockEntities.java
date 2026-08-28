@@ -33,6 +33,13 @@ public final class FnBlockEntities {
                     .build(null));
 
     public static final DeferredHolder<BlockEntityType<?>,
+            BlockEntityType<dev.devpanda.factorynetwork.block.entity.BridgeBlockEntity>>
+            BRIDGE = BLOCK_ENTITIES.register("bridge", () -> BlockEntityType.Builder
+                    .of(dev.devpanda.factorynetwork.block.entity.BridgeBlockEntity::new,
+                            dev.devpanda.factorynetwork.registry.FnBlocks.BRIDGE.get())
+                    .build(null));
+
+    public static final DeferredHolder<BlockEntityType<?>,
             BlockEntityType<dev.devpanda.factorynetwork.block.entity.GatewayBlockEntity>>
             GATEWAY = BLOCK_ENTITIES.register("gateway", () -> BlockEntityType.Builder
                     .of(dev.devpanda.factorynetwork.block.entity.GatewayBlockEntity::new,

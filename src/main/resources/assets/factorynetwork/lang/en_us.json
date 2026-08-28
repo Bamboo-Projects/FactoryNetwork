@@ -66,6 +66,7 @@
   "item.factorynetwork.remote.charge": "Battery: %s / %s FE",
   "item.factorynetwork.entanglement.pair": "Pair %s",
   "item.factorynetwork.entanglement.loose": "Not entangled - the recipe makes a pair",
+  "block.factorynetwork.bridge": "Quantum Bridge",
   "item.factorynetwork.entanglement": "Entanglement",
   "item.factorynetwork.network_analyser": "Network Analyser",
   "message.factorynetwork.analyser.watching": "Watching the network — keep the tool in hand",

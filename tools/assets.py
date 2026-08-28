@@ -1377,6 +1377,35 @@ def mast_boxes():
     ]
 
 
+def bridge_boxes():
+    """Die Kästen der Brücke — dieselben Zahlen wie in BridgeLayout."""
+    side = {"*": "side"}
+    return [
+        ([0, 0, 0], [16, 5, 16], side),
+        ([2, 5, 2], [14, 12, 14], side),
+        ([5, 12, 5], [11, 16, 11], {"*": "socket"}),
+    ]
+
+
+def bridge_model():
+    """Sockel, Körper, Fassung.
+
+    Massiv und nicht hohl: Was durch die Brücke geht, sieht man nicht — also
+    zeigt sie es als Fassung mit etwas darin und nicht als Loch.
+    """
+    write(A + "/models/block/bridge.json", {
+        "parent": "minecraft:block/block",
+        "textures": {
+            "particle": texture("bridge_side"),
+            "side": texture("bridge_side"),
+            "socket": texture("bridge_socket"),
+        },
+        "elements": machine_elements(bridge_boxes()),
+    })
+    write(A + "/blockstates/bridge.json", {"variants": {"": {"model": block("bridge")}}})
+    write(A + "/models/item/bridge.json", {"parent": block("bridge")})
+
+
 def mast_model():
     """Der Sendemast: Sockel, Schaft, vier Ausleger, Spitze."""
     write(A + "/models/block/mast.json", {
@@ -1429,6 +1458,7 @@ def models():
     source_model()
     router_model()
     mast_model()
+    bridge_model()
 
     # Das Blockmodell des Connectors ist am 26.08. mit seinem Block
     # verschwunden. Diese Erzeugung stand noch hier und legte die Datei bei
@@ -1661,7 +1691,7 @@ def loot_and_recipes():
     })
     for name in ("controller", "controller_extension", "fabricator",
                  "terminal", "display", "drive", "press", "router", "burner",
-                 "mast"):
+                 "mast", "bridge"):
         write(D + "/loot_table/blocks/" + name + ".json", {
             "type": "minecraft:block",
             "pools": [{
@@ -2186,6 +2216,20 @@ def loot_and_recipes():
 
     # Zwei Hälften auf einmal, mit gemeinsamer Nummer — deshalb ein
     # eigener Rezepttyp und keine Zutatenliste hier.
+    # Die Brücke: ein schwerer Sockel um einen Netzkern, dazu Kristall für
+    # die Fassung.
+    write(D + "/recipe/bridge.json", {
+        "type": "minecraft:crafting_shaped",
+        "category": "misc",
+        "pattern": ["PCP", "PNP", "PPP"],
+        "key": {
+            "P": {"item": MOD + ":plate"},
+            "C": {"item": MOD + ":crystal"},
+            "N": {"item": MOD + ":core_network"},
+        },
+        "result": {"id": MOD + ":bridge", "count": 1},
+    })
+
     write(D + "/recipe/entanglement.json", {
         "type": MOD + ":entanglement",
         "category": "misc",
