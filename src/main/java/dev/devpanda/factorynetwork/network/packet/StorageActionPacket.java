@@ -23,7 +23,8 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
  * gegen den echten Bestand geprüft. Ohne diese Regel entstehen genau die
  * Fehler, an denen sich vergleichbare Mods lange abgearbeitet haben.
  */
-public record StorageActionPacket(Kind kind, Item item, int amount) implements CustomPacketPayload {
+public record StorageActionPacket(Kind kind, dev.devpanda.factorynetwork.storage.ItemKey key, int amount)
+        implements CustomPacketPayload {
 
     public enum Kind {
         /** Aus dem Netz auf den Mauszeiger. */
@@ -39,7 +40,7 @@ public record StorageActionPacket(Kind kind, Item item, int amount) implements C
             StreamCodec.composite(
                     ByteBufCodecs.idMapper(index -> Kind.values()[index], Kind::ordinal),
                     StorageActionPacket::kind,
-                    ByteBufCodecs.registry(Registries.ITEM), StorageActionPacket::item,
+                    dev.devpanda.factorynetwork.storage.ItemKey.STREAM_CODEC, StorageActionPacket::key,
                     ByteBufCodecs.VAR_INT, StorageActionPacket::amount,
                     StorageActionPacket::new);
 
@@ -67,13 +68,15 @@ public record StorageActionPacket(Kind kind, Item item, int amount) implements C
                               ControllerBlockEntity controller, TerminalMenu menu) {
         switch (packet.kind()) {
             case EXTRACT -> {
-                int wanted = Math.min(packet.amount(), packet.item().getDefaultMaxStackSize());
+                // Die Stapelgrenze des Gegenstands, nicht die seiner
+                // Kennung: Eine Komponente kann sie verändern.
+                int wanted = Math.min(packet.amount(), packet.key().maxStackSize());
                 // Nachrechnen: Der Bestand kann sich geändert haben.
-                long taken = controller.storage().extract(packet.item(), wanted);
+                long taken = controller.storage().extract(packet.key(), wanted);
                 if (taken <= 0) {
                     return;
                 }
-                ItemStack stack = new ItemStack(packet.item(), (int) taken);
+                ItemStack stack = packet.key().toStack((int) taken);
                 if (menu.getCarried().isEmpty()) {
                     menu.setCarried(stack);
                 } else if (ItemStack.isSameItemSameComponents(menu.getCarried(), stack)) {
@@ -83,18 +86,20 @@ public record StorageActionPacket(Kind kind, Item item, int amount) implements C
                     carried.grow(added);
                     // Was nicht auf den Zeiger passt, geht zurück ins Netz.
                     if (added < stack.getCount()) {
-                        controller.storage().insert(packet.item(), stack.getCount() - added);
+                        controller.storage().insert(packet.key(), stack.getCount() - added);
                     }
                 } else {
                     // Zeiger ist belegt: nichts entnehmen, alles zurücklegen.
-                    controller.storage().insert(packet.item(), taken);
+                    controller.storage().insert(packet.key(), taken);
                     return;
                 }
                 controller.setChanged();
             }
             case INSERT -> {
                 ItemStack carried = menu.getCarried();
-                if (carried.isEmpty() || carried.getItem() != packet.item()) {
+                // Ganz vergleichen: Wer ein verzaubertes Buch auf dem
+                // Zeiger hat, legt nicht das leere ab.
+                if (carried.isEmpty() || !packet.key().equals(dev.devpanda.factorynetwork.storage.ItemKey.of(carried))) {
                     return;
                 }
                 if (!dev.devpanda.factorynetwork.storage.StorageKeys.storable(carried)) {
@@ -105,7 +110,7 @@ public record StorageActionPacket(Kind kind, Item item, int amount) implements C
                     return;
                 }
                 int amount = Math.min(packet.amount(), carried.getCount());
-                controller.storage().insert(packet.item(), amount);
+                controller.storage().insert(packet.key(), amount);
                 carried.shrink(amount);
                 menu.setCarried(carried.isEmpty() ? ItemStack.EMPTY : carried);
                 controller.setChanged();

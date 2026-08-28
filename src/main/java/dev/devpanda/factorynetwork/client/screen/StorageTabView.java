@@ -244,7 +244,7 @@ public class StorageTabView {
             // Voller Zeiger legt ab — rechts nur eines, wie im Inventar.
             int amount = button == 1 ? 1 : carried.getCount();
             PacketDistributor.sendToServer(new StorageActionPacket(
-                    StorageActionPacket.Kind.INSERT, carried.getItem(), amount));
+                    StorageActionPacket.Kind.INSERT, dev.devpanda.factorynetwork.storage.ItemKey.of(carried), amount));
             return true;
         }
         if (index >= rows.size()) {
@@ -264,7 +264,7 @@ public class StorageTabView {
             wanted = stack;
         }
         PacketDistributor.sendToServer(new StorageActionPacket(
-                StorageActionPacket.Kind.EXTRACT, entry.stack().getItem(), wanted));
+                StorageActionPacket.Kind.EXTRACT, dev.devpanda.factorynetwork.storage.ItemKey.of(entry.stack()), wanted));
         return true;
     }
 
