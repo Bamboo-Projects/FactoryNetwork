@@ -64,6 +64,8 @@
   "item.factorynetwork.remote.unbound": "An keinem Netz angemeldet",
   "item.factorynetwork.remote.bound": "Netz: %s",
   "item.factorynetwork.remote.charge": "Akku: %s / %s FE",
+  "item.factorynetwork.entanglement.pair": "Paar %s",
+  "item.factorynetwork.entanglement.loose": "Unverschränkt — im Rezept entsteht ein Paar",
   "item.factorynetwork.entanglement": "Verschränkung",
   "item.factorynetwork.network_analyser": "Netzanalysator",
   "message.factorynetwork.analyser.watching": "Netz wird beobachtet — das Werkzeug in der Hand behalten",

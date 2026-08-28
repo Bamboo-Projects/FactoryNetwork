@@ -79,14 +79,11 @@ public final class FnComponents {
      * welche Quantum-Brücke welche findet.
      */
     public static final DeferredHolder<DataComponentType<?>,
-            DataComponentType<dev.devpanda.factorynetwork.item.EntanglementItem.Entanglement>>
-            ENTANGLEMENT = COMPONENTS.register("entanglement",
-                    () -> DataComponentType.<dev.devpanda.factorynetwork.item
-                            .EntanglementItem.Entanglement>builder()
-                            .persistent(dev.devpanda.factorynetwork.item.EntanglementItem
-                                    .Entanglement.CODEC)
-                            .networkSynchronized(dev.devpanda.factorynetwork.item
-                                    .EntanglementItem.Entanglement.STREAM_CODEC)
+            DataComponentType<java.util.UUID>> ENTANGLEMENT =
+            COMPONENTS.register("entanglement",
+                    () -> DataComponentType.<java.util.UUID>builder()
+                            .persistent(net.minecraft.core.UUIDUtil.CODEC)
+                            .networkSynchronized(net.minecraft.core.UUIDUtil.STREAM_CODEC)
                             .build());
 
     private FnComponents() {

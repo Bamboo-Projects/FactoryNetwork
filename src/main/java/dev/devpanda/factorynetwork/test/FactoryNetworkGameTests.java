@@ -6486,19 +6486,46 @@ public final class FactoryNetworkGameTests {
 
 
     /**
-     * Ein Bau liefert beide Hälften, und sie gehören zusammen.
+     * Zwei Bauten an zwei Werkbänken kreuzen sich nicht.
      *
-     * <p><b>Die Stelle, an der es leicht schiefgeht.</b> Ein Rezept hat ein
-     * Ausgabefeld; die zweite Hälfte kommt über {@code getRemainingItems}
-     * zurück. Beide müssen dieselbe Nummer tragen — würde die zweite ihre
-     * eigene bekommen, fänden die Brücken einander nie, und niemand könnte
-     * sagen warum.
+     * <p><b>Ein Rezept gibt es einmal, nicht einmal je Werkbank.</b> Der
+     * {@code RecipeManager} hält je JSON genau ein Objekt, geteilt über alle
+     * Spieler und jeden Crafter-Block. Wer sich darin etwas merkt, merkt es
+     * für alle.
+     *
+     * <p>Der Fall, der dabei kaputtgeht: Spieler eins legt fertig, Spieler
+     * zwei legt fertig, Spieler eins nimmt heraus — und bekommt die Hälfte
+     * von Spieler zwei. Beide halten dann eine Hälfte, deren Partner
+     * woanders liegt, und niemand kann sagen warum.
      */
     @GameTest(template = EMPTY, timeoutTicks = 100)
-    public static void oneCraftMakesOnePair(GameTestHelper helper) {
+    public static void twoCraftsAtOnceDoNotCross(GameTestHelper helper) {
         var recipe = new dev.devpanda.factorynetwork.crafting.EntanglementRecipe(
                 net.minecraft.world.item.crafting.CraftingBookCategory.MISC);
-        var input = net.minecraft.world.item.crafting.CraftingInput.of(3, 1,
+        var registries = helper.getLevel().registryAccess();
+
+        // Zwei Bauten ineinander verschränkt, wie an zwei Werkbänken.
+        ItemStack ersterBau = recipe.assemble(entanglementInput(), registries);
+        ItemStack zweiterBau = recipe.assemble(entanglementInput(), registries);
+
+        helper.assertTrue(
+                !dev.devpanda.factorynetwork.item.EntanglementItem.matched(
+                        ersterBau, zweiterBau),
+                "zwei Bauten ergaben dasselbe Paar");
+        helper.assertTrue(ersterBau.getCount() == 2 && zweiterBau.getCount() == 2,
+                "ein Bau liefert nicht beide Hälften auf einmal");
+
+        // Und jeder Bau trägt seine beiden Hälften selbst — kein Rest, der
+        // sich zwischendurch überschreiben ließe.
+        var rest = recipe.getRemainingItems(entanglementInput());
+        helper.assertTrue(rest.stream().allMatch(ItemStack::isEmpty),
+                "das Rezept legt noch etwas beiseite");
+        helper.succeed();
+    }
+
+    /** Zwei Netzkerne und ein Kristall, wie sie in der Werkbank liegen. */
+    private static net.minecraft.world.item.crafting.CraftingInput entanglementInput() {
+        return net.minecraft.world.item.crafting.CraftingInput.of(3, 1,
                 java.util.List.of(
                         new ItemStack(dev.devpanda.factorynetwork.registry.FnItems
                                 .CORE_NETWORK.get()),
@@ -6506,27 +6533,32 @@ public final class FactoryNetworkGameTests {
                                 .CRYSTAL.get()),
                         new ItemStack(dev.devpanda.factorynetwork.registry.FnItems
                                 .CORE_NETWORK.get())));
+    }
 
-        helper.assertTrue(recipe.matches(input, helper.getLevel()),
+    /**
+     * Ein Bau liefert beide Hälften, und sie gehören zusammen.
+     *
+     * <p>Als ein Stapel zu zweit: Ein Rezept hat ein Ausgabefeld, und alles,
+     * was daneben aufgehoben werden müsste, gehörte allen Werkbänken
+     * gleichzeitig — siehe {@code twoCraftsAtOnceDoNotCross}.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 100)
+    public static void oneCraftMakesOnePair(GameTestHelper helper) {
+        var recipe = new dev.devpanda.factorynetwork.crafting.EntanglementRecipe(
+                net.minecraft.world.item.crafting.CraftingBookCategory.MISC);
+
+        helper.assertTrue(recipe.matches(entanglementInput(), helper.getLevel()),
                 "zwei Netzkerne und ein Kristall ergeben keine Verschränkung");
 
-        ItemStack first = recipe.assemble(input, helper.getLevel().registryAccess());
-        var rest = recipe.getRemainingItems(input);
-        ItemStack second = rest.stream()
-                .filter(stack -> !stack.isEmpty())
-                .findFirst()
-                .orElse(ItemStack.EMPTY);
-
-        helper.assertTrue(!second.isEmpty(), "die zweite Hälfte fehlt");
+        ItemStack paar = recipe.assemble(entanglementInput(),
+                helper.getLevel().registryAccess());
+        helper.assertTrue(paar.getCount() == 2,
+                "der Bau liefert " + paar.getCount() + " statt zwei Hälften");
+        ItemStack eine = paar.copy();
+        eine.setCount(1);
         helper.assertTrue(
-                dev.devpanda.factorynetwork.item.EntanglementItem.matched(first, second),
-                "die beiden Hälften aus einem Bau kennen einander nicht");
-
-        // Und ein zweiter Bau ergibt ein anderes Paar.
-        ItemStack later = recipe.assemble(input, helper.getLevel().registryAccess());
-        helper.assertTrue(
-                !dev.devpanda.factorynetwork.item.EntanglementItem.matched(first, later),
-                "zwei Bauten liefern dasselbe Paar");
+                dev.devpanda.factorynetwork.item.EntanglementItem.matched(eine, paar),
+                "die Hälften eines Stapels kennen einander nicht");
 
         // Was nicht hineingehört, ergibt auch nichts.
         var falsch = net.minecraft.world.item.crafting.CraftingInput.of(3, 1,
@@ -6544,42 +6576,49 @@ public final class FactoryNetworkGameTests {
     /**
      * Zwei Hälften einer Verschränkung gehören zusammen — und nur die.
      *
-     * <p><b>Das Paar entsteht beim Bauen, nicht beim Anklicken.</b> Wer zwei
+     * <p>Das Paar entsteht beim Bauen, nicht beim Anklicken: Wer zwei
      * Brücken erst hinstellt und dann verbindet, muss sich merken, welche
-     * wohin gehört; wer zwei Hälften desselben Gegenstands einsetzt, muss
-     * gar nichts merken.
+     * wohin gehört; wer zwei Hälften desselben Stapels einsetzt, muss gar
+     * nichts merken.
+     *
+     * <p><b>Ob eine Brücke sich selbst verbindet, steht hier nicht.</b> Das
+     * entscheidet der Block über die Position — zwei Orte, dieselbe Nummer.
+     * Eine Regel am Gegenstand wäre eine zweite Wahrheit darüber.
      */
     @GameTest(template = EMPTY, timeoutTicks = 100)
     public static void twoHalvesKnowEachOther(GameTestHelper helper) {
-        var paar = dev.devpanda.factorynetwork.item.EntanglementItem.newPair();
-        ItemStack links = paar.getFirst();
-        ItemStack rechts = paar.getSecond();
-
+        ItemStack paar = dev.devpanda.factorynetwork.item.EntanglementItem.newPair();
+        helper.assertTrue(paar.getCount() == 2,
+                "ein Bau liefert " + paar.getCount() + " statt zwei Hälften");
         helper.assertTrue(
-                dev.devpanda.factorynetwork.item.EntanglementItem.matched(links, rechts),
-                "die beiden Hälften aus einem Bau kennen sich nicht");
-        helper.assertTrue(
-                dev.devpanda.factorynetwork.item.EntanglementItem.idOf(links) != null,
+                dev.devpanda.factorynetwork.item.EntanglementItem.idOf(paar) != null,
                 "eine frische Hälfte hat keine Kennnummer");
+
+        // Geteilt bleiben beide dasselbe Paar — so kommen sie in zwei
+        // Brücken.
+        ItemStack eine = paar.split(1);
+        helper.assertTrue(
+                dev.devpanda.factorynetwork.item.EntanglementItem.matched(eine, paar),
+                "die beiden Hälften kennen sich nach dem Teilen nicht mehr");
 
         // Zwei aus verschiedenen Bauten gehören nicht zusammen. Ohne diese
         // Probe könnte jede Hälfte zu jeder passen, und zwei Brücken in
         // derselben Welt verbänden sich zufällig.
-        var anderes = dev.devpanda.factorynetwork.item.EntanglementItem.newPair();
+        ItemStack anderes = dev.devpanda.factorynetwork.item.EntanglementItem.newPair();
         helper.assertTrue(
-                !dev.devpanda.factorynetwork.item.EntanglementItem.matched(
-                        links, anderes.getFirst()),
+                !dev.devpanda.factorynetwork.item.EntanglementItem.matched(eine, anderes),
                 "Hälften aus verschiedenen Bauten gelten als Paar");
 
-        // Und eine Hälfte ist nicht ihr eigener Partner: Sonst könnte eine
-        // Brücke sich selbst verbinden.
+        // Und ein Gegenstand ohne Nummer passt zu nichts, auch nicht zu
+        // einem zweiten ohne Nummer.
+        ItemStack roh = new ItemStack(
+                dev.devpanda.factorynetwork.registry.FnItems.ENTANGLEMENT.get());
         helper.assertTrue(
-                !dev.devpanda.factorynetwork.item.EntanglementItem.matched(links, links),
-                "eine Hälfte ist ihr eigener Partner");
+                !dev.devpanda.factorynetwork.item.EntanglementItem.matched(roh, eine),
+                "eine unverschränkte Hälfte passt zu einer verschränkten");
         helper.assertTrue(
-                !dev.devpanda.factorynetwork.item.EntanglementItem.matched(
-                        rechts, rechts.copy()),
-                "eine Kopie derselben Hälfte gilt als Partner");
+                !dev.devpanda.factorynetwork.item.EntanglementItem.matched(roh, roh.copy()),
+                "zwei unverschränkte Hälften gelten als Paar");
         helper.succeed();
     }
 

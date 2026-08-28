@@ -64,6 +64,8 @@
   "item.factorynetwork.remote.unbound": "Not bound to a network",
   "item.factorynetwork.remote.bound": "Network: %s",
   "item.factorynetwork.remote.charge": "Battery: %s / %s FE",
+  "item.factorynetwork.entanglement.pair": "Pair %s",
+  "item.factorynetwork.entanglement.loose": "Not entangled - the recipe makes a pair",
   "item.factorynetwork.entanglement": "Entanglement",
   "item.factorynetwork.network_analyser": "Network Analyser",
   "message.factorynetwork.analyser.watching": "Watching the network — keep the tool in hand",

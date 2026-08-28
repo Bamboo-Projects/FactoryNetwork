@@ -58,40 +58,19 @@ public class EntanglementRecipe extends CustomRecipe {
         return cores == 2 && crystals == 1;
     }
 
+    /**
+     * Beide Hälften auf einmal, als ein Stapel zu zweit.
+     *
+     * <p><b>Und nichts gemerkt.</b> Ein Rezept gibt es einmal, nicht einmal
+     * je Werkbank — der {@code RecipeManager} hält je JSON genau ein Objekt,
+     * geteilt über alle Spieler und jeden Crafter-Block. Ein Feld darin, das
+     * zwischen dem Zusammenbauen und dem Herausnehmen etwas aufhebt, gehört
+     * allen gleichzeitig: Zwei Bauten kreuzten sich, und jeder Spieler
+     * hielte eine Hälfte, deren Partner woanders liegt.
+     */
     @Override
     public ItemStack assemble(CraftingInput input, HolderLookup.Provider registries) {
-        // Die erste Hälfte; die zweite wartet in getRemainingItems auf
-        // denselben Bau. Beide teilen sich die Nummer, die hier entsteht.
-        var pair = EntanglementItem.newPair();
-        pending = pair.getSecond();
-        return pair.getFirst();
-    }
-
-    /**
-     * Die zweite Hälfte des zuletzt gebauten Paares.
-     *
-     * <p><b>Ein Feld und keine Rechnung:</b> Vanilla ruft {@code assemble}
-     * und {@code getRemainingItems} nacheinander für denselben Bau. Eine
-     * zweite Nummer hier wäre eine zweite Verschränkung — und die Hälften
-     * fänden einander nie.
-     */
-    private ItemStack pending = ItemStack.EMPTY;
-
-    @Override
-    public NonNullList<ItemStack> getRemainingItems(CraftingInput input) {
-        NonNullList<ItemStack> rest = NonNullList.withSize(input.size(), ItemStack.EMPTY);
-        if (pending.isEmpty()) {
-            return rest;
-        }
-        // In den Platz des Kristalls: Er ist verbraucht, dort ist Raum.
-        for (int slot = 0; slot < input.size(); slot++) {
-            if (input.getItem(slot).is(FnItems.CRYSTAL.get())) {
-                rest.set(slot, pending);
-                break;
-            }
-        }
-        pending = ItemStack.EMPTY;
-        return rest;
+        return EntanglementItem.newPair();
     }
 
     @Override

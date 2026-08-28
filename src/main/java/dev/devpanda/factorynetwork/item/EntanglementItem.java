@@ -28,71 +28,75 @@ import java.util.UUID;
  */
 public class EntanglementItem extends Item {
 
-    /**
-     * Welche Verschränkung, und welche ihrer beiden Hälften.
-     *
-     * <p><b>Die Seite gehört dazu.</b> Ohne sie wäre eine Hälfte ihr eigener
-     * Partner, und eine Brücke könnte sich mit sich selbst verbinden — ein
-     * Netz, das durch sich hindurch auf sich selbst zeigt.
-     */
-    public record Entanglement(UUID id, boolean second) {
-
-        public static final Codec<Entanglement> CODEC = RecordCodecBuilder.create(
-                builder -> builder.group(
-                        UUIDUtil.CODEC.fieldOf("id").forGetter(Entanglement::id),
-                        Codec.BOOL.fieldOf("second").forGetter(Entanglement::second))
-                        .apply(builder, Entanglement::new));
-
-        public static final StreamCodec<RegistryFriendlyByteBuf, Entanglement> STREAM_CODEC =
-                StreamCodec.composite(
-                        UUIDUtil.STREAM_CODEC, Entanglement::id,
-                        ByteBufCodecs.BOOL, Entanglement::second,
-                        Entanglement::new);
-
-        /** Die andere Hälfte derselben Verschränkung. */
-        public boolean partnerOf(Entanglement other) {
-            return id.equals(other.id) && second != other.second;
-        }
-    }
-
     public EntanglementItem(Properties properties) {
-        super(properties.stacksTo(1));
+        super(properties.stacksTo(2));
     }
 
     /**
-     * Ein frisches Paar.
+     * Ein frisches Paar — ein Stapel zu zweit.
      *
-     * <p>Beide Hälften tragen dieselbe Nummer und verschiedene Seiten. Die
-     * Nummer ist zufällig: Zwei Paare aus demselben Rezept dürfen sich nicht
-     * kennen, sonst verbänden sich zwei Brücken in derselben Welt zufällig.
+     * <p><b>Ein Stapel und keine zwei Gegenstände.</b> Ein Rezept gibt es
+     * einmal, nicht einmal je Werkbank; wer sich zwischen dem Zusammenbauen
+     * und dem Herausnehmen etwas merkt, merkt es für alle Spieler
+     * gleichzeitig. Zwei Bauten kreuzten sich dann, und jeder hielte eine
+     * Hälfte, deren Partner woanders liegt.
+     *
+     * <p>Ein Stapel entsteht in einem Zug und trägt seine Nummer selbst.
+     *
+     * <p>Die Nummer ist zufällig. Zwei Paare aus demselben Rezept dürfen
+     * sich nicht kennen, sonst verbänden sich zwei Brücken in derselben Welt
+     * zufällig.
      */
-    public static Pair<ItemStack, ItemStack> newPair() {
-        UUID id = UUID.randomUUID();
-        return Pair.of(half(id, false), half(id, true));
-    }
-
-    private static ItemStack half(UUID id, boolean second) {
+    public static ItemStack newPair() {
         ItemStack stack = new ItemStack(
-                dev.devpanda.factorynetwork.registry.FnItems.ENTANGLEMENT.get());
-        stack.set(FnComponents.ENTANGLEMENT.get(), new Entanglement(id, second));
+                dev.devpanda.factorynetwork.registry.FnItems.ENTANGLEMENT.get(), 2);
+        stack.set(FnComponents.ENTANGLEMENT.get(), UUID.randomUUID());
         return stack;
     }
 
-    /** Welche Verschränkung dieser Stapel trägt, oder {@code null}. */
-    public static @Nullable Entanglement of(ItemStack stack) {
+    /**
+     * Welche Verschränkung dieser Stapel trägt, oder {@code null}.
+     *
+     * <p><b>Nur die Nummer, keine Seite.</b> Welche der beiden Hälften eine
+     * ist, muss niemand wissen: Was ein Paar ausmacht, ist dieselbe Nummer
+     * an <b>zwei verschiedenen Orten</b> — und das entscheidet der Block,
+     * nicht der Gegenstand. Eine Brücke kann sich damit nicht mit sich
+     * selbst verbinden, ohne dass es dafür eine Regel bräuchte.
+     */
+    public static @Nullable UUID idOf(ItemStack stack) {
         return stack.get(FnComponents.ENTANGLEMENT.get());
     }
 
-    /** Die Nummer allein — zwei Brücken mit derselben gehören zusammen. */
-    public static @Nullable UUID idOf(ItemStack stack) {
-        Entanglement found = of(stack);
-        return found == null ? null : found.id();
+    /**
+     * Im Inventar sieht eine Hälfte aus wie jede andere.
+     *
+     * <p>Über fünftausend Blöcke will man vor dem Loslaufen wissen, welche
+     * man trägt — dieselbe Überlegung wie beim Ferngerät, das sein Netz im
+     * Tooltip nennt. Acht Zeichen der Nummer reichen, um zwei Paare
+     * auseinanderzuhalten.
+     */
+    @Override
+    public void appendHoverText(ItemStack stack, TooltipContext context,
+                                java.util.List<net.minecraft.network.chat.Component> lines,
+                                net.minecraft.world.item.TooltipFlag flag) {
+        UUID id = idOf(stack);
+        if (id == null) {
+            // Die Hälfte aus dem Kreativ-Reiter hat keine Nummer. Ohne diese
+            // Zeile wirkt sie kaputt statt unfertig.
+            lines.add(net.minecraft.network.chat.Component
+                    .translatable("item.factorynetwork.entanglement.loose")
+                    .withStyle(net.minecraft.ChatFormatting.GRAY));
+            return;
+        }
+        lines.add(net.minecraft.network.chat.Component.translatable(
+                        "item.factorynetwork.entanglement.pair",
+                        id.toString().substring(0, 8))
+                .withStyle(net.minecraft.ChatFormatting.AQUA));
     }
 
-    /** Sind das die beiden Hälften derselben Verschränkung? */
+    /** Tragen diese beiden Stapel dieselbe Verschränkung? */
     public static boolean matched(ItemStack one, ItemStack other) {
-        Entanglement first = of(one);
-        Entanglement second = of(other);
-        return first != null && second != null && first.partnerOf(second);
+        UUID first = idOf(one);
+        return first != null && first.equals(idOf(other));
     }
 }
