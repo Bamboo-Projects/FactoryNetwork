@@ -16,10 +16,15 @@ OUT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                    "src", "main", "resources", "assets", "factorynetwork", "textures", "gui")
 
 # Vanillas Grautöne, abgelesen aus den Container-Texturen.
-PANEL      = (198, 198, 198)
-PANEL_HI   = (255, 255, 255)
-PANEL_LO   = (85, 85, 85)
-PANEL_DARK = (139, 139, 139)
+# <b>Dieselbe Sprache wie das Terminal.</b> Vanillas Hellgrau stammt aus
+# einer Zeit, in der jedes Fenster wie eine Werkbank aussah — neben einem
+# Terminal mit schwarzer Scheibe wirken Presse, Brennkammer, Router und
+# Serverschrank darin wie Fremdkörper. Und dunkle Slots in einem hellen
+# Gehäuse sehen aus wie Löcher.
+PANEL      = (38, 46, 42)
+PANEL_HI   = (62, 74, 67)
+PANEL_LO   = (16, 20, 18)
+PANEL_DARK = (26, 32, 29)
 # <b>Die Slots sind dunkel statt grau.</b> Vanillas Hellgrau stammt aus
 # einer Zeit, in der jedes Fenster wie eine Werkbank aussah — neben einem
 # Terminal mit schwarzer Scheibe wirkt es wie ein Fremdkörper. Dunkle Slots
@@ -28,7 +33,9 @@ PANEL_DARK = (139, 139, 139)
 SLOT_BG    = (30, 36, 33)
 SLOT_HI    = (58, 68, 62)
 SLOT_LO    = (14, 18, 16)
-TEXT       = (64, 64, 64)
+# Heller Text auf dunklem Gehäuse — die Umkehr von Vanilla, und dieselbe
+# Farbe, die das Terminal für seine Beschriftungen nimmt.
+TEXT       = (168, 178, 172)
 SCREEN     = (22, 26, 24)
 SCREEN_EDGE = (10, 13, 11)
 
@@ -51,16 +58,15 @@ WELL_EDGE  = (8, 10, 9)
 
 
 def panel(draw, box):
-    """Erhabene Fläche: oben und links hell, unten und rechts dunkel."""
+    """Das Gehäuse eines Fensters: eine Kante statt einer Fase.
+
+    Wie beim Terminal: eine helle Linie außen, eine dunkle innen. Das Auge
+    sieht dieselbe Erhebung, und die Fläche bleibt ruhig.
+    """
     x0, y0, x1, y1 = box
     draw.rectangle(box, fill=PANEL + (255,))
-    draw.line([(x0, y0), (x1 - 1, y0)], fill=PANEL_HI + (255,))
-    draw.line([(x0, y0), (x0, y1 - 1)], fill=PANEL_HI + (255,))
-    draw.line([(x0 + 1, y1), (x1, y1)], fill=PANEL_LO + (255,))
-    draw.line([(x1, y0 + 1), (x1, y1)], fill=PANEL_LO + (255,))
-    # Vanilla setzt in die Ecken je einen Übergangston
-    draw.point((x1, y0), fill=PANEL_DARK + (255,))
-    draw.point((x0, y1), fill=PANEL_DARK + (255,))
+    draw.rectangle(box, outline=PANEL_HI + (255,))
+    draw.rectangle((x0 + 1, y0 + 1, x1 - 1, y1 - 1), outline=PANEL_LO + (255,))
 
 
 def sunken(draw, box, fill=SLOT_BG, light=SLOT_HI, shadow=SLOT_LO):
@@ -449,7 +455,7 @@ def shelf_background(width, columns, rows, group=0, gap=0,
             # Der erste Platz eines Blocks ist der Gehäuseplatz: eine Spur
             # dunkler, damit man sieht, dass er zuerst dran ist.
             if group and inner_gap and column % group == 0:
-                sunken(d, (x, y, x + 17, y + 17), fill=(118, 118, 118))
+                sunken(d, (x, y, x + 17, y + 17), fill=SLOT_HI)
             else:
                 slot(d, x, y)
         if not lamps:
@@ -457,7 +463,7 @@ def shelf_background(width, columns, rows, group=0, gap=0,
         for b in range(bloecke):
             x = links + spalte_rel(b * group + group - 1) + 18 + LAMP_PAD
             y = grid_top + row * 18 + 6
-            sunken(d, (x, y, x + LAMP - 1, y + LAMP - 1), fill=(70, 70, 70))
+            sunken(d, (x, y, x + LAMP - 1, y + LAMP - 1), fill=PANEL_DARK)
 
     for row in range(3):
         for column in range(9):

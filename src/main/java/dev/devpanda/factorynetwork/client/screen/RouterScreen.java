@@ -96,7 +96,7 @@ public class RouterScreen extends AbstractContainerScreen<RouterMenu> {
             int y = topPos + ROW_TOP + side.ordinal() * ROW_HEIGHT;
             graphics.drawString(font, Component.translatable(
                             "side.factorynetwork." + side.getSerializedName()),
-                    leftPos + 9, y + 4, 0x404040, false);
+                    leftPos + 9, y + 4, 0xA8B2AC, false);
 
             int aktiv = menu.lane(side);
             int x = leftPos + BUTTON_LEFT;
@@ -108,7 +108,7 @@ public class RouterScreen extends AbstractContainerScreen<RouterMenu> {
             // nicht mehr zu unterscheiden — Hellblau und Cyan liegen zwei
             // Pixel auseinander.
             graphics.drawString(font, labelOf(aktiv),
-                    x + BUTTON_SIZE + 6, y + 4, 0x404040, false);
+                    x + BUTTON_SIZE + 6, y + 4, 0xA8B2AC, false);
         }
     }
 

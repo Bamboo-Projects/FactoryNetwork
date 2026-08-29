@@ -95,11 +95,19 @@ public class NetworkTabView {
         }
     }
 
-    /** Wie hoch der Kopf ist: eine Zeile Zahlen plus Luft. */
-    private static final int HEAD_HEIGHT = 16;
+    /**
+     * Wie hoch der Kopf ist: eine Zeile Zahlen und darunter die Kurve.
+     *
+     * <p>Sie war erst elf Pixel hoch und stand neben den Zahlen — bei sechzig
+     * Pixeln Breite sah das nach einem Balken aus, nicht nach einem
+     * Diagramm. Jetzt bekommt sie eine eigene Zeile über die ganze Breite:
+     * Fünf Minuten Verlauf sind fünf Minuten, und die sieht man nur, wenn
+     * sie Platz haben.
+     */
+    private static final int HEAD_HEIGHT = 40;
 
-    /** Wie breit die Minikurve im Kopf ist. */
-    private static final int SPARK_WIDTH = 60;
+    /** Wie hoch die Kurve selbst ist. */
+    private static final int SPARK_HEIGHT = 24;
 
     private void renderContent(GuiGraphics graphics, int mouseX, int mouseY) {
         int top = y + 3 - scroll * LINE;
@@ -151,32 +159,42 @@ public class NetworkTabView {
                         ? TerminalScreen.BAD : TerminalScreen.TEXT;
         graphics.drawString(font, power, x + 3, line + 3, powerColour, false);
 
-        // Die Kurve rechts, davor der aktuelle Durchsatz.
+        // Die Zahlen rechts in der Kopfzeile: jetzt und insgesamt.
         List<Integer> verlauf = ClientTraffic.perSecond();
         int peak = ClientTraffic.peak();
-        int sparkLeft = right - SPARK_WIDTH;
-        int sparkTop = line + 2;
-        int sparkBottom = line + HEAD_HEIGHT - 3;
+        int jetzt = verlauf.isEmpty() ? 0 : verlauf.get(verlauf.size() - 1);
+        String rate = Bandwidth.perSecond(jetzt / Bandwidth.TICKS_PER_SECOND);
+        graphics.drawString(font, rate, right - font.width(rate), line + 3,
+                TerminalScreen.TEXT, false);
+        String gesamt = Bandwidth.total(ClientTraffic.total());
+        graphics.drawString(font, gesamt,
+                right - 8 - font.width(rate) - font.width(gesamt), line + 3,
+                TerminalScreen.TEXT_DIM, false);
+
+        // Und darunter die Kurve über die ganze Breite.
+        int sparkLeft = x + 3;
+        int sparkTop = line + LINE + 3;
+        int sparkBottom = sparkTop + SPARK_HEIGHT;
         graphics.fill(sparkLeft, sparkTop, right, sparkBottom, 0x22000000);
-        for (int i = 0; i < Math.min(verlauf.size(), SPARK_WIDTH); i++) {
+
+        // Eine feine Linie auf halber Höhe: Ohne sie ist nicht zu sehen, ob
+        // eine Säule ein Viertel oder die Hälfte der Spitze erreicht.
+        int mitte = (sparkTop + sparkBottom) / 2;
+        graphics.fill(sparkLeft, mitte, right, mitte + 1, 0x18FFFFFF);
+
+        int columns = Math.min(verlauf.size(), right - sparkLeft);
+        for (int i = 0; i < columns; i++) {
             int wert = verlauf.get(verlauf.size() - 1 - i);
-            int hoehe = Math.max(wert > 0 ? 1 : 0,
-                    wert * (sparkBottom - sparkTop) / peak);
+            int hoehe = Math.max(wert > 0 ? 1 : 0, wert * SPARK_HEIGHT / peak);
             int cx = right - 1 - i;
             graphics.fill(cx, sparkBottom - hoehe, cx + 1, sparkBottom, 0xFF57C97A);
         }
 
-        // Der jüngste Wert als Zahl: Eine Kurve ohne Maßstab ist Zierde.
-        int jetzt = verlauf.isEmpty() ? 0 : verlauf.get(verlauf.size() - 1);
-        String rate = Bandwidth.perSecond(jetzt / Bandwidth.TICKS_PER_SECOND);
-        graphics.drawString(font, rate, sparkLeft - 6 - font.width(rate), line + 3,
-                TerminalScreen.TEXT, false);
-
-        // Und die Gesamtmenge, klein, in der Mitte.
-        String gesamt = Bandwidth.total(ClientTraffic.total());
-        graphics.drawString(font, gesamt,
-                sparkLeft - 12 - font.width(rate) - font.width(gesamt), line + 3,
-                TerminalScreen.TEXT_DIM, false);
+        // Die Spitze am linken Rand der Kurve: der Maßstab, ohne den eine
+        // Säule keine Höhe hat.
+        String spitze = Bandwidth.perSecond(peak / Bandwidth.TICKS_PER_SECOND);
+        graphics.drawString(font, spitze, sparkLeft + 2, sparkTop + 1,
+                TerminalScreen.TEXT_FAINT, false);
 
         // Eine Linie darunter trennt den Kopf vom Inhalt.
         graphics.fill(x + 3, line + HEAD_HEIGHT, x + width - 3, line + HEAD_HEIGHT + 1,
