@@ -77,14 +77,14 @@ Genau die Geräte, die heute schon null oder wenig Kanäle kosten.
 
 ## Die Aufgaben
 
-- [ ] **1. Der Durchsatz am Kabel.** `Throughput.java` löst `Channels.java`
+- [x] **1. Der Durchsatz am Kabel.** `Throughput.java` löst `Channels.java`
       ab: eine Zahl je Kabelart, gelesen wie `capacityAt`. Prüflauf: Ein
       dichtes trägt mehr als ein gewöhnliches.
-- [ ] **2. Die Zuteilung wird zur Wegewahl.** `assignChannels` verliert seine
+- [x] **2. Die Zuteilung wird zur Wegewahl.** `assignChannels` verliert seine
       Kapazitätsprüfung und heißt `assignPaths`. Jedes erreichbare Gerät
       bekommt einen Weg. **`starved` fällt hier** — und mit ihm der einzige
       Grund, aus dem ein Gerät heute stumm bleibt.
-- [ ] **3. Der Weg begrenzt den Takt.** Ein Worker fragt vor dem Bewegen, wie
+- [x] **3. Der Weg begrenzt den Takt.** Ein Worker fragt vor dem Bewegen, wie
       viel sein Weg noch hergibt, und nimmt das Kleinere von beidem. Die
       Belegung läuft je Tick und wird am Tickende zurückgesetzt.
 - [ ] **4. Die Anzeige.** Analysator und Jade zeigen Auslastung statt

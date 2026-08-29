@@ -165,8 +165,25 @@ public final class WorkerRuntime {
      * auswertbar"), nur eben in einer Zeile, die niemand liest, während er
      * weiterarbeitete.
      */
+    /**
+     * Was in diesem Tick schon über die Kabel ging.
+     *
+     * <p>Hier und nicht am Graphen: Der Graph wird neu gebaut, wenn sich die
+     * Welt ändert — das Budget läuft je Tick ab, unabhängig davon.
+     */
+    private final dev.devpanda.factorynetwork.network.TickBudget budget =
+            dev.devpanda.factorynetwork.network.TickBudget.create();
+
+    /** Das Budget dieses Ticks — für die Anzeige. */
+    public dev.devpanda.factorynetwork.network.TickBudget budget() {
+        return budget;
+    }
+
     public void tick(Level level, Program program, FactoryGraph graph,
             dev.devpanda.factorynetwork.network.NetworkStores stores, Interpreter.Host host) {
+        // Ein neuer Tick fängt bei null an: Was gestern durchging, begrenzt
+        // heute nichts.
+        budget.reset();
         this.conditionHost = host;
         this.conditionProgram = program;
         // Alle Bestände in einem Griff. Vorher standen hier zwei Parameter
@@ -193,7 +210,7 @@ public final class WorkerRuntime {
                 continue;
             }
             state.lastRun = now;
-            runWorker(worker, state, graph, storage);
+            runWorker(level, worker, state, graph, storage);
         }
     }
 
@@ -249,7 +266,7 @@ public final class WorkerRuntime {
         }
     }
 
-    private void runWorker(Decl.Worker worker, WorkerState state,
+    private void runWorker(Level level, Decl.Worker worker, WorkerState state,
                            FactoryGraph graph, NetworkStorage storage) {
         Decl.Worker.Entry from = worker.entry(Decl.Worker.Entry.Kind.FROM);
         Decl.Worker.Entry to = worker.entry(Decl.Worker.Entry.Kind.TO);
@@ -329,6 +346,27 @@ public final class WorkerRuntime {
             batch = (int) Math.min(batch, largestGap);
         }
 
+        // <b>Hier wirkt der Durchsatz.</b> Der Weg zum Gerät sagt, wie
+        // viel in diesem Tick noch hindurchgeht; der Worker nimmt das
+        // Kleinere von beidem.
+        //
+        // Und er fällt nicht aus, wenn nichts mehr frei ist — er bewegt
+        // nichts und versucht es im nächsten Tick wieder. Das ist der
+        // Unterschied zu den Kanälen: eng, nicht tot.
+        List<FactoryGraph.Node> path = pathFor(from.value(), to.value(),
+                fromStorage, toStorage, graph);
+        int free = path.isEmpty()
+                ? dev.devpanda.factorynetwork.network.Throughput.UNLIMITED
+                : budget.free(level, path);
+        if (free <= 0) {
+            // Dieselbe Art zu warten wie bei einem vollen Ziel: Es liegt
+            // nicht am Programm, sondern an der Leitung davor.
+            state.status = Status.WAITING_TARGET;
+            state.detail = "Das Kabel ist in diesem Tick voll";
+            return;
+        }
+        batch = Math.min(batch, free);
+
         long moved;
         if (fromStorage) {
             moved = storageToDevice(to.value(), graph, storage, filter, batch, state);
@@ -337,6 +375,9 @@ public final class WorkerRuntime {
         } else {
             moved = deviceToDevice(from.value(), to.value(), graph, filter, batch, state);
         }
+        // Mit der wirklichen Menge, nicht der geplanten: Wer 64 wollte und
+        // 3 bekam, hat das Kabel nicht mit 64 belegt.
+        budget.spend(path, (int) moved);
 
         // Ist das Ziel voll und ein Ausweichziel angegeben, geht es dorthin.
         // Ohne das steht ein Worker bei vollem Lager still, statt den
@@ -438,6 +479,42 @@ public final class WorkerRuntime {
         }
         storage.extract(item, accepted);
         return accepted;
+    }
+
+    /**
+     * Der Weg, über den dieser Griff läuft.
+     *
+     * <p><b>Das belastete Gerät ist das, das nicht der Speicher ist.</b>
+     * Zwischen zwei Geräten zählt der längere der beiden Wege — die Ware muss
+     * über beide, und ein Kabel, das nur auf einer Seite eng ist, ist trotzdem
+     * eng.
+     *
+     * <p>Ein leerer Weg heißt: Wir wissen es nicht. Dann begrenzt nichts —
+     * lieber zu großzügig als ein Worker, der aus einem Missverständnis
+     * stillsteht.
+     */
+    private List<FactoryGraph.Node> pathFor(Expr from, Expr to, boolean fromStorage,
+                                            boolean toStorage, FactoryGraph graph) {
+        if (fromStorage) {
+            return pathOfDevice(to, graph);
+        }
+        if (toStorage) {
+            return pathOfDevice(from, graph);
+        }
+        List<FactoryGraph.Node> quelle = pathOfDevice(from, graph);
+        List<FactoryGraph.Node> ziel = pathOfDevice(to, graph);
+        List<FactoryGraph.Node> beide = new ArrayList<>(quelle);
+        beide.addAll(ziel);
+        return beide;
+    }
+
+    /** Der Weg eines benannten Geräts, oder leer. */
+    private List<FactoryGraph.Node> pathOfDevice(Expr device, FactoryGraph graph) {
+        if (!(device instanceof Expr.Name name)) {
+            return List.of();
+        }
+        var stellen = graph.positionsOf(name.value());
+        return stellen.isEmpty() ? List.of() : graph.pathTo(stellen.get(0));
     }
 
     private long deviceToDevice(Expr source, Expr target, FactoryGraph graph,

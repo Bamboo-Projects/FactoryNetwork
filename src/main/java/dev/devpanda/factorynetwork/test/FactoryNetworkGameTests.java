@@ -6184,6 +6184,70 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
+     * Das Kabel begrenzt, was je Tick hindurchgeht.
+     *
+     * <p><b>Der Lauf, an dem der ganze Wechsel hängt.</b> Ohne ihn wären die
+     * Zahlen in {@code Throughput} Dekoration: Ein Worker könnte beliebig
+     * viel durch ein dünnes Kabel schieben, und die Grenze stünde nur im
+     * Kommentar.
+     *
+     * <p>Geprüft wird direkt am Budget, nicht am Ergebnis eines Programms:
+     * Was ein Worker in einem Tick bewegt, hängt an einem Dutzend Dinge —
+     * hier soll genau eines davon zählen.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 100)
+    public static void theCableLimitsWhatPassesPerTick(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var budget = dev.devpanda.factorynetwork.network.TickBudget.create();
+
+        BlockPos thin = helper.absolutePos(new BlockPos(1, 2, 1));
+        level.setBlockAndUpdate(thin, FnBlocks.CABLE.get().defaultBlockState());
+        var node = new dev.devpanda.factorynetwork.network.FactoryGraph.Node(
+                thin, dev.devpanda.factorynetwork.block.CableColour.NONE);
+        var path = java.util.List.of(node);
+
+        // Frisch: Das ganze Kabel steht zur Verfügung.
+        helper.assertValueEqual(budget.free(level, path),
+                dev.devpanda.factorynetwork.network.Throughput.THIN,
+                "ein leeres Kabel gibt nicht seinen vollen Durchsatz her");
+
+        // Die Hälfte verbraucht: die Hälfte bleibt.
+        budget.spend(path, dev.devpanda.factorynetwork.network.Throughput.THIN / 2);
+        helper.assertValueEqual(budget.free(level, path),
+                dev.devpanda.factorynetwork.network.Throughput.THIN / 2,
+                "der Verbrauch wird nicht abgezogen");
+
+        // Voll: nichts mehr frei — aber nicht negativ.
+        budget.spend(path, dev.devpanda.factorynetwork.network.Throughput.THIN);
+        helper.assertValueEqual(budget.free(level, path), 0,
+                "ein überfülltes Kabel meldet keine Null");
+
+        // Der neue Tick fängt bei null an.
+        budget.reset();
+        helper.assertValueEqual(budget.free(level, path),
+                dev.devpanda.factorynetwork.network.Throughput.THIN,
+                "der Verbrauch überlebt den Tickwechsel");
+
+        // Und die Engstelle entscheidet: dicht plus dünn ist dünn.
+        BlockPos dense = helper.absolutePos(new BlockPos(3, 2, 1));
+        level.setBlockAndUpdate(dense, FnBlocks.DENSE_CABLE.get().defaultBlockState());
+        var gemischt = java.util.List.of(
+                new dev.devpanda.factorynetwork.network.FactoryGraph.Node(
+                        dense, dev.devpanda.factorynetwork.block.CableColour.NONE),
+                node);
+        helper.assertValueEqual(budget.free(level, gemischt),
+                dev.devpanda.factorynetwork.network.Throughput.THIN,
+                "die Engstelle auf dem Weg wird übergangen");
+
+        // Was über den gemischten Weg geht, belastet beide Stücke.
+        budget.spend(gemischt, 10);
+        helper.assertValueEqual(budget.free(level, path),
+                dev.devpanda.factorynetwork.network.Throughput.THIN - 10,
+                "das dünne Stück wurde nicht belastet");
+        helper.succeed();
+    }
+
+    /**
      * Jedes erreichbare Gerät hängt am Netz — ohne Ausnahme.
      *
      * <p><b>Das ist der Kern des Wechsels vom 29.08.</b> Vorher konnte ein
