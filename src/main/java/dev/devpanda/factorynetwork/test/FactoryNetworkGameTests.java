@@ -7485,6 +7485,91 @@ public final class FactoryNetworkGameTests {
      * <p>Jetzt wird vorher gefragt. Wer nichts unterbringen kann, nimmt
      * nichts heraus.
      */
+    /**
+     * Verwahrtes übersteht das Speichern.
+     *
+     * <p><b>Sonst käme der Verlust durch die Hintertür zurück:</b> Ein Chunk,
+     * der entlädt, nähme mit, was der Controller gerade festhält — und das
+     * wäre genau derselbe stille Verlust, gegen den die Verwahrung gebaut
+     * ist, nur später.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void heldBackSurvivesSaving(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.holdBack(new ItemStack(Items.DIAMOND, 17));
+
+        var registries = helper.getLevel().registryAccess();
+        var tag = entity.saveWithFullMetadata(registries);
+        BlockPos absolut = helper.absolutePos(controller);
+        var geladen = net.minecraft.world.level.block.entity.BlockEntity.loadStatic(
+                absolut, helper.getLevel().getBlockState(absolut), tag, registries);
+
+        if (!(geladen instanceof ControllerBlockEntity wieder)) {
+            helper.fail("der gespeicherte Controller kam nicht zurück", controller);
+            return;
+        }
+        long verwahrt = wieder.held().stream()
+                .filter(stack -> stack.is(Items.DIAMOND))
+                .mapToLong(ItemStack::getCount).sum();
+        helper.assertValueEqual(verwahrt, 17L,
+                "das Verwahrte hat das Speichern nicht überstanden");
+        helper.succeed();
+    }
+
+    /**
+     * Was nirgends unterkommt, wird verwahrt — nicht geworfen.
+     *
+     * <p><b>Der letzte Weg in die Welt.</b> Seit ein Worker vor dem Griff
+     * fragt, sollte nie etwas hier landen. Sollte. Eine Maschine, die auf
+     * {@code simulate} anders antwortet als auf den Griff, gibt es — und
+     * dann entscheidet dieser Weg, ob die Ware wiederkommt oder nach fünf
+     * Minuten weg ist.
+     *
+     * <p>Geprüft wird beides: dass nichts in der Welt landet, und dass das
+     * Verwahrte von selbst ins Lager geht, sobald Platz da ist.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void heldBackGoesInLaterInsteadOfOntoTheGround(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+
+        // Ein volles Laufwerk: Was jetzt kommt, kommt nirgends unter.
+        driveWithCell(helper, controller.above(),
+                dev.devpanda.factorynetwork.storage.CellTier.K1);
+        entity.rebuildNetwork();
+        entity.storage().insert(new ItemStack(Items.COBBLESTONE, 64));
+        while (entity.storage().insert(new ItemStack(Items.DIRT, 64)) == 0) {
+            // Weiter, solange alles hineingeht.
+        }
+
+        entity.holdBack(new ItemStack(Items.DIAMOND, 64));
+
+        helper.runAfterDelay(10, () -> {
+            // Nichts in der Welt, alles noch in Verwahrung.
+            helper.assertItemEntityNotPresent(Items.DIAMOND);
+            long verwahrt = entity.held().stream()
+                    .filter(stack -> stack.is(Items.DIAMOND))
+                    .mapToLong(ItemStack::getCount).sum();
+            helper.assertValueEqual(verwahrt, 64L,
+                    "die Diamanten liegen nicht mehr in Verwahrung");
+
+            // Jetzt kommt Platz dazu — ein zweites Laufwerk mit leerer Zelle.
+            driveWithCell(helper, controller.below(),
+                    dev.devpanda.factorynetwork.storage.CellTier.K64);
+            entity.rebuildNetwork();
+
+            helper.runAfterDelay(10, () -> {
+                helper.assertItemEntityNotPresent(Items.DIAMOND);
+                helper.assertValueEqual(entity.storage().count(Items.DIAMOND), 64L,
+                        "das Verwahrte ging nicht ins Lager, als Platz da war");
+                helper.assertTrue(entity.held().isEmpty(),
+                        "die Verwahrung wurde nicht geräumt");
+                helper.succeed();
+            });
+        });
+    }
+
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void afullStorageDropsNothing(GameTestHelper helper) {
         BlockPos controller = buildSetup(helper);

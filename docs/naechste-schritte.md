@@ -10,20 +10,12 @@ gebaut wird.
 
 **In dieser Reihenfolge**, und der Grund für die Reihenfolge steht dabei.
 
-### 1. Kein Itemverlust bei vollem Lager
+### 1. Kein Itemverlust bei vollem Lager — erledigt am 30.08.
 
 **Plan:** `plan-kein-itemverlust.md`
 
-**Warum zuerst:** Es ist der einzige Punkt auf der Liste, bei dem heute etwas
-kaputtgeht. Alles andere ist Ausbau.
-
-**Der Befund in einem Satz:** `WorkerRuntime:446` nimmt aus der Kiste, bevor
-es fragt, ob das Netz es nimmt — und `NetworkStorage.room()` gibt es schon
-und wird nicht gerufen.
-
-**Ein Haken kam beim Lesen dazu:** `room()` zählt nur die Zellen, nicht die
-Speicherbusse. Sie muss erst fertig gebaut werden, sonst steht ein Netz still,
-dessen Busse noch Platz haben. Steht im Plan.
+Ein Worker fragt jetzt vor dem Griff, und was trotzdem nirgends unterkommt,
+verwahrt der Controller, statt es zu werfen. Drei Prüfläufe halten es fest.
 
 ### 2. Der Controller wird das schwächste Glied
 
@@ -99,4 +91,4 @@ Aus den letzten Runden, ungeprüft:
 
 ## Stand der Prüfläufe
 
-334 GameTests grün, zuletzt am 30.08. um 01:25.
+336 GameTests grün, zuletzt am 30.08. um 01:57.

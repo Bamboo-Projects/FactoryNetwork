@@ -32,6 +32,7 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.minecraft.world.level.block.state.BlockState;
@@ -61,6 +62,7 @@ public class ControllerBlockEntity extends BlockEntity {
     private static final String KEY_POWER = "Power";
     private static final String KEY_GLOBALS = "Globals";
     private static final String KEY_LOG = "Log";
+    private static final String KEY_HELD_BACK = "HeldBack";
 
     /**
      * So viele Zeilen hält das Protokoll.
@@ -213,6 +215,21 @@ public class ControllerBlockEntity extends BlockEntity {
      * Server zwischendurch neu startete.
      */
     private final List<dev.devpanda.factorynetwork.runtime.LogEntry> log = new ArrayList<>();
+
+    /**
+     * Was nirgends unterkam — behalten statt geworfen.
+     *
+     * <p><b>Der Boden ist kein Lager.</b> Ein Gegenstand dort verschwindet
+     * nach fünf Minuten, und der Fall trifft genau dann, wenn niemand
+     * zusieht. Der Controller hält ihn stattdessen fest und bietet ihn jeden
+     * Tick erneut an — der Grund kann jederzeit wegfallen: ein Laufwerk
+     * mehr, eine getauschte Zelle, eine geleerte Kiste.
+     *
+     * <p>Seit ein Worker vor dem Griff fragt, sollte hier nie etwas landen.
+     * Diese Liste ist das Netz darunter, für Maschinen, die auf
+     * {@code simulate} anders antworten als auf den Griff.
+     */
+    private final List<ItemStack> heldBack = new ArrayList<>();
 
     /**
      * Wer gerade die Speicheransicht offen hat.
@@ -665,13 +682,13 @@ public class ControllerBlockEntity extends BlockEntity {
             // Was die Worker zu melden hatten, gehört ins Protokoll. Bisher
             // sammelte die Laufzeit diese Hinweise und niemand las sie.
             runtime.drainNotes().forEach(this::add);
-            // Was weder Speicher noch Gerät annahm, fällt auf den Boden.
-            // Hässlich, aber die einzige Antwort, die nichts verschwinden
-            // lässt.
-            for (net.minecraft.world.item.ItemStack stack : runtime.takeDropped()) {
-                net.minecraft.world.level.block.Block.popResource(level, worldPosition, stack);
-            }
+            // Was weder Speicher noch Gerät annahm, behält der Controller.
+            runtime.takeDropped().forEach(this::holdBack);
         }
+        // Außerhalb des Worker-Blocks, und das mit Absicht: Verwahrtes gehört
+        // zurück, sobald Platz da ist — auch in einem Netz, dessen Programm
+        // gerade keinen Worker hat.
+        retryHeldBack();
         tickFlows();
         tickCrafting();
         fireRedstoneEvents();
@@ -933,10 +950,10 @@ public class ControllerBlockEntity extends BlockEntity {
         step.consumed().forEach(storage::extract);
         long left = storage.insert(step.result(), step.yield());
         if (left > 0) {
-            // Der Speicher ist voll. Was nicht hineinpasst, fällt zu Boden —
-            // dieselbe Antwort wie bei einem Worker, dessen Ziel voll ist.
-            net.minecraft.world.level.block.Block.popResource(level, worldPosition,
-                    new net.minecraft.world.item.ItemStack(step.result(), (int) left));
+            // Der Speicher ist voll. Das Ergebnis wird verwahrt, nicht
+            // geworfen — es ist neu erzeugte Ware, und die soll niemand auf
+            // dem Boden suchen müssen.
+            holdBack(new ItemStack(step.result(), (int) left));
         }
         if (step.result() == job.target()) {
             job.produced((int) step.yield());
@@ -1351,8 +1368,8 @@ public class ControllerBlockEntity extends BlockEntity {
         }
         long rest = storage.insert(running.result(), got);
         if (rest > 0) {
-            net.minecraft.world.level.block.Block.popResource(level, worldPosition,
-                    new net.minecraft.world.item.ItemStack(running.result(), (int) rest));
+            // Dasselbe wie beim Schritt darüber: verwahren statt werfen.
+            holdBack(new ItemStack(running.result(), (int) rest));
         }
         long done = running.done() + got;
         if (done < running.expected()) {
@@ -2622,6 +2639,53 @@ public class ControllerBlockEntity extends BlockEntity {
                 level, System.currentTimeMillis(), source, message));
     }
 
+    /**
+     * Nimmt in Verwahrung, was nirgends unterkam.
+     *
+     * <p>Und sagt es im Protokoll. Ein stiller Puffer wäre nur die
+     * freundlichere Art zu verschwinden — wer nachsieht, warum eine Kiste
+     * leer bleibt, soll es hier lesen.
+     */
+    public void holdBack(ItemStack stack) {
+        if (stack.isEmpty()) {
+            return;
+        }
+        heldBack.add(stack);
+        add(new dev.devpanda.factorynetwork.runtime.LogEntry(
+                dev.devpanda.factorynetwork.runtime.LogLevel.WARN,
+                System.currentTimeMillis(), "Speicher",
+                stack.getCount() + "x " + stack.getHoverName().getString()
+                        + " wird zurückgehalten: nichts nimmt es gerade an."));
+    }
+
+    /** Was gerade in Verwahrung liegt. */
+    public List<ItemStack> held() {
+        return List.copyOf(heldBack);
+    }
+
+    /**
+     * Bietet Zurückgehaltenes erneut an.
+     *
+     * <p>Jeden Tick, weil der Grund jederzeit wegfallen kann. Was hineingeht,
+     * geht hinein; der Rest bleibt liegen und wird beim nächsten Mal wieder
+     * gefragt.
+     */
+    private void retryHeldBack() {
+        if (heldBack.isEmpty()) {
+            return;
+        }
+        heldBack.removeIf(stack -> {
+            long rest = storage.insert(stack);
+            if (rest <= 0) {
+                return true;
+            }
+            // Teilweise untergekommen: Nur der Rest bleibt liegen.
+            stack.setCount((int) rest);
+            return false;
+        });
+        setChanged();
+    }
+
     private void add(dev.devpanda.factorynetwork.runtime.LogEntry entry) {
         log.add(entry);
         while (log.size() > LOG_LIMIT) {
@@ -2675,6 +2739,12 @@ public class ControllerBlockEntity extends BlockEntity {
             draft = new dev.devpanda.factorynetwork.lang.Project(sources);
         } else {
             draft = project;
+        }
+        heldBack.clear();
+        net.minecraft.nbt.ListTag heldTag = tag.getList(KEY_HELD_BACK,
+                net.minecraft.nbt.Tag.TAG_COMPOUND);
+        for (int i = 0; i < heldTag.size(); i++) {
+            ItemStack.parse(registries, heldTag.getCompound(i)).ifPresent(heldBack::add);
         }
         storage.load(tag.getCompound(KEY_STORAGE), registries);
         fluidStorage.load(tag.getCompound(KEY_FLUIDS), registries);
@@ -2735,6 +2805,13 @@ public class ControllerBlockEntity extends BlockEntity {
         net.minecraft.nbt.ListTag logTag = new net.minecraft.nbt.ListTag();
         log.forEach(entry -> logTag.add(entry.write()));
         tag.put(KEY_LOG, logTag);
+        if (!heldBack.isEmpty()) {
+            // Ohne das käme der Verlust durch die Hintertür zurück: Ein Chunk,
+            // der entlädt, nähme das Zurückgehaltene mit.
+            net.minecraft.nbt.ListTag heldTag = new net.minecraft.nbt.ListTag();
+            heldBack.forEach(stack -> heldTag.add(stack.save(registries)));
+            tag.put(KEY_HELD_BACK, heldTag);
+        }
         if (flows != null) {
             tag.put(KEY_FLOWS, FlowCodec.write(flows));
         } else if (pendingFlows != null) {
