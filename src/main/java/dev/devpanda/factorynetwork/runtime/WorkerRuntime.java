@@ -443,13 +443,25 @@ public final class WorkerRuntime {
                 continue;
             }
             int wanted = (int) Math.min(batch - moved, stack.getCount());
-            ItemStack taken = handler.extractItem(slot, wanted, false);
+            // <b>Erst fragen, dann nehmen.</b> Andersherum hängt alles am
+            // Rückweg — und den gibt es nicht immer: Ein Ofen rückt seinen
+            // Brennstoffplatz heraus und nimmt ihn nicht wieder an. Was
+            // dazwischen liegt, ist verloren.
+            long fits = storage.room(
+                    dev.devpanda.factorynetwork.storage.ItemKey.of(stack), wanted);
+            if (fits <= 0) {
+                // Die nächste Art kann trotzdem Platz finden: Eine Zelle, die
+                // sie schon führt, braucht keinen neuen Artenplatz.
+                state.status = Status.WAITING_TARGET;
+                state.detail = "Der Netzspeicher ist voll";
+                continue;
+            }
+            ItemStack taken = handler.extractItem(slot, (int) Math.min(wanted, fits), false);
             if (taken.isEmpty()) {
                 continue;
             }
-            // Was der Speicher nicht nimmt, geht zurück ins Gerät. Seit es
-            // Zellen gibt, kann er voll sein — und dann wären die Gegenstände
-            // sonst weg, ohne dass es jemand merkt.
+            // Der Rückweg bleibt als Netz darunter: Eine Maschine, die auf
+            // simulate anders antwortet als auf den Griff, gibt es.
             long rest = storage.insert(taken);
             if (rest > 0) {
                 ItemStack zurueck = insertInto(handler,

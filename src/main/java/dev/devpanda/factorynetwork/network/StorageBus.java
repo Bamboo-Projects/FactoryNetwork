@@ -121,6 +121,31 @@ public final class StorageBus {
     }
 
     /**
+     * Wie viel davon hineinginge, ohne etwas abzulegen.
+     *
+     * <p><b>Eine Maschine kann sehr wohl probieren.</b> {@code insertItem}
+     * mit {@code simulate} ist genau das: dieselbe Frage an dieselben Fächer,
+     * nur ohne Folgen. Deshalb kann ein Speicherbus mitzählen, wenn das Netz
+     * gefragt wird, wie viel noch hineinpasst.
+     *
+     * <p>Höchstens ein Stapel, genau wie beim Ablegen — sonst verspräche die
+     * Antwort mehr, als ein Aufruf einlöst.
+     */
+    public long room(ItemKey item, long wanted) {
+        IItemHandler handler = access.get();
+        if (handler == null || wanted <= 0 || !accepts(item)) {
+            return 0;
+        }
+        ItemStack rest = item.toStack(
+                (int) Math.min(wanted, item.maxStackSize()));
+        int angeboten = rest.getCount();
+        for (int slot = 0; slot < handler.getSlots() && !rest.isEmpty(); slot++) {
+            rest = handler.insertItem(slot, rest, true);
+        }
+        return angeboten - rest.getCount();
+    }
+
+    /**
      * Holt heraus und liefert, wie viel es wurde.
      *
      * <p>Nur aus Fächern, die diese Art führen — und nur so viel, wie die

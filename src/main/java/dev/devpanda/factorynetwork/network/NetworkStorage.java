@@ -212,12 +212,17 @@ public final class NetworkStorage implements ResourceStore {
     /**
      * Wie viele davon noch hineingingen.
      *
-     * <p><b>Nur die Zellen, nicht die fremden Inventare.</b> Eine Kiste
-     * beantwortet die Frage nicht, ohne dass man es versucht — sie hat kein
-     * Probieren, nur ein Ablegen. Das ist hier kein Verlust: Die Frage gibt
-     * es, weil ein Gas nicht zurückgelegt werden kann; ein Gegenstand kann
-     * es, und deshalb fragt für ihn niemand. Wer sie doch stellt, bekommt
-     * eine Antwort, die zu niedrig ist und nie zu hoch.
+     * <p><b>Zellen und Speicherbusse.</b> Ein Bus antwortet über
+     * {@code insertItem} mit {@code simulate} — dasselbe Ablegen, nur ohne
+     * Folgen.
+     *
+     * <p>Früher zählten hier nur die Zellen, mit der Begründung, eine Kiste
+     * habe kein Probieren. Das stimmt nicht, und es wäre teuer geworden:
+     * Seit ein Worker vor dem Griff fragt, hielte eine zu niedrige Antwort
+     * ein Netz an, dessen Busse noch Platz haben.
+     *
+     * <p>Die Reihenfolge ist eine andere als beim Ablegen, und das ist ohne
+     * Belang: Gefragt wird nach der Summe, nicht danach, wo es landet.
      */
     @Override
     public long room(Object key, long wanted) {
@@ -234,6 +239,12 @@ public final class NetworkStorage implements ResourceStore {
         long free = 0;
         for (CellInventory<ItemKey> cell : cells()) {
             free += cell.room(item);
+            if (free >= wanted) {
+                return wanted;
+            }
+        }
+        for (StorageBus bus : buses) {
+            free += bus.room(item, wanted - free);
             if (free >= wanted) {
                 return wanted;
             }

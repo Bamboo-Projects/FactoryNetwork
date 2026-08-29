@@ -7490,20 +7490,32 @@ public final class FactoryNetworkGameTests {
         BlockPos controller = buildSetup(helper);
         ControllerBlockEntity entity = controllerAt(helper, controller);
 
-        // Ein Laufwerk mit der kleinsten Zelle, randvoll mit einer Art.
-        BlockPos drivePos = controller.above();
-        driveWithCell(helper, drivePos, dev.devpanda.factorynetwork.storage.CellTier.K1);
+        // Ein Laufwerk mit der kleinsten Zelle, randvoll gefahren.
+        driveWithCell(helper, controller.above(),
+                dev.devpanda.factorynetwork.storage.CellTier.K1);
         entity.rebuildNetwork();
         entity.storage().insert(new ItemStack(Items.COBBLESTONE, 64));
-        // Bis nichts mehr hineingeht.
         while (entity.storage().insert(new ItemStack(Items.DIRT, 64)) == 0) {
-            entity.storage().insert(new ItemStack(Items.DIRT, 64));
+            // Weiter, solange alles hineingeht. Bleibt ein Rest, ist Schluss.
         }
+        // Und voll heißt voll. Diese Zeile ist kein Beiwerk: Ohne sie misst
+        // der Prüflauf das Falsche, sobald die Zelle doch noch Platz hat.
+        helper.assertValueEqual(entity.storage().insert(new ItemStack(Items.DIAMOND, 1)),
+                1L, "die Zelle ist nicht voll — der Prüflauf misst das Falsche");
 
+        // <b>Ein Ofen als Quelle, keine Kiste.</b> Darin liegt der ganze
+        // Prüflauf: Von der Seite zeigt ein Ofen nur den Brennstoffplatz,
+        // und Diamanten nimmt er dort nicht an. Der Rückweg, der eine Kiste
+        // rettet, steht damit nicht zur Verfügung — übrig bleibt die Frage,
+        // ob vorher gefragt wurde.
         BlockPos source = controller.east().north().north();
-        if (helper.getBlockEntity(source) instanceof ChestBlockEntity container) {
-            container.setItem(0, new ItemStack(Items.DIAMOND, 64));
+        helper.setBlock(source, Blocks.FURNACE);
+        if (!(helper.getBlockEntity(source)
+                instanceof net.minecraft.world.level.block.entity.FurnaceBlockEntity ofen)) {
+            helper.fail("kein Ofen an der Quelle", source);
+            return;
         }
+        ofen.setItem(1, new ItemStack(Items.DIAMOND, 64));
 
         helper.assertTrue(entity.deploy("""
                 worker haul {
@@ -7515,22 +7527,24 @@ public final class FactoryNetworkGameTests {
 
         helper.runAfterDelay(40, () -> {
             // <b>Nichts liegt auf dem Boden.</b> Das ist die eigentliche
-            // Zusicherung: Wo das Lager voll ist, bleibt die Ware in der
-            // Kiste.
+            // Zusicherung: Wo das Lager voll ist, bleibt die Ware liegen.
             helper.assertItemEntityNotPresent(Items.DIAMOND);
 
-            if (!(helper.getBlockEntity(source) instanceof ChestBlockEntity container)) {
-                helper.fail("keine Kiste mehr da", source);
+            if (!(helper.getBlockEntity(source)
+                    instanceof net.minecraft.world.level.block.entity.FurnaceBlockEntity da)) {
+                helper.fail("kein Ofen mehr da", source);
                 return;
             }
-            long inDerKiste = 0;
-            for (int slot = 0; slot < container.getContainerSize(); slot++) {
-                if (container.getItem(slot).is(Items.DIAMOND)) {
-                    inDerKiste += container.getItem(slot).getCount();
+            long imOfen = 0;
+            for (int slot = 0; slot < da.getContainerSize(); slot++) {
+                if (da.getItem(slot).is(Items.DIAMOND)) {
+                    imOfen += da.getItem(slot).getCount();
                 }
             }
             long imLager = entity.storage().count(Items.DIAMOND);
-            helper.assertValueEqual(inDerKiste + imLager, 64L,
+            // Die Summe, nicht der Boden: Ein Gegenstand kann auch
+            // verschwinden, ohne je als Entity aufzutauchen.
+            helper.assertValueEqual(imOfen + imLager, 64L,
                     "von vierundsechzig Diamanten sind welche verschwunden");
             helper.succeed();
         });

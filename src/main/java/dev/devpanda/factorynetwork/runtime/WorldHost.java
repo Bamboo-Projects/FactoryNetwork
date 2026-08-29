@@ -729,9 +729,17 @@ public final class WorldHost implements Interpreter.Host {
                 continue;
             }
             int wanted = (int) Math.min(limit - moved, stack.getCount());
-            ItemStack taken = source.extractItem(slot, wanted, false);
-            // Derselbe Fall wie beim Worker: Der Speicher kann voll sein, seit
-            // er an Zellen hängt. Was er nicht nimmt, geht zurück.
+            // Derselbe Fall wie beim Worker, und dieselbe Reihenfolge: Erst
+            // fragen, wie viel hineingeht, dann so viel herausnehmen. Was
+            // eine Maschine hergibt und nicht zurücknimmt, wäre sonst weg,
+            // noch bevor der Fehler unten geworfen wird.
+            long fits = storage.room(
+                    dev.devpanda.factorynetwork.storage.ItemKey.of(stack), wanted);
+            if (fits <= 0) {
+                throw new ScriptError("Der Speicher ist voll.",
+                        "Ein Laufwerk mit freier Zelle schafft Platz.");
+            }
+            ItemStack taken = source.extractItem(slot, (int) Math.min(wanted, fits), false);
             long rest = storage.insert(taken);
             if (rest > 0) {
                 ItemStack zurueck = insert(source, taken.copyWithCount((int) rest));
