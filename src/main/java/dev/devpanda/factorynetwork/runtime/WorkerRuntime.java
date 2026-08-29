@@ -369,9 +369,12 @@ public final class WorkerRuntime {
         // Unterschied zu den Kanälen: eng, nicht tot.
         List<FactoryGraph.Node> path = pathFor(from.value(), to.value(),
                 fromStorage, toStorage, graph);
-        int free = path.isEmpty()
+        // Das Budget zählt Byte, der Worker Gegenstände — ein Gegenstand
+        // wiegt ein Kilobyte.
+        int freieBytes = path.isEmpty()
                 ? dev.devpanda.factorynetwork.network.Bandwidth.UNLIMITED
                 : budget.free(level, path);
+        int free = freieBytes / dev.devpanda.factorynetwork.network.Bandwidth.PER_ITEM;
         if (free <= 0) {
             // Dieselbe Art zu warten wie bei einem vollen Ziel: Es liegt
             // nicht am Programm, sondern an der Leitung davor.
@@ -391,11 +394,13 @@ public final class WorkerRuntime {
         }
         // Mit der wirklichen Menge, nicht der geplanten: Wer 64 wollte und
         // 3 bekam, hat das Kabel nicht mit 64 belegt.
-        budget.spend(path, (int) moved);
+        budget.spend(path,
+                (int) moved * dev.devpanda.factorynetwork.network.Bandwidth.PER_ITEM);
         // Und derselbe Betrag in den Verlauf, unter dem Namen des Workers.
         // Nicht unter dem des Geräts: Ein Worker kann von mehreren nehmen,
         // und die Frage lautet „welches Programm frisst am meisten".
-        history.record(worker.name(), (int) moved);
+        history.record(worker.name(),
+                (int) moved * dev.devpanda.factorynetwork.network.Bandwidth.PER_ITEM);
 
         // Ist das Ziel voll und ein Ausweichziel angegeben, geht es dorthin.
         // Ohne das steht ein Worker bei vollem Lager still, statt den

@@ -9,8 +9,15 @@ import java.util.Locale;
 /**
  * Was ein Kabel trägt — in Byte je Sekunde.
  *
- * <p><b>Ein Gegenstand ist ein Byte.</b> Nicht weil ein Eisenbarren ein Byte
- * wäre, sondern weil es die einzige Zuordnung ist, die man sich merken kann.
+ * <p><b>Ein Gegenstand ist ein Kilobyte.</b> Nicht weil ein Eisenbarren ein
+ * Kilobyte wäre, sondern weil die Zahlen dann stimmen: Ein gewöhnliches Kabel
+ * trägt 2,5 MB/s, ein dichtes 25 — Größenordnungen, die nach Netzwerk klingen
+ * und trotzdem spürbar sind.
+ *
+ * <p><b>Warum nicht die echten Zahlen.</b> Glasfaser trägt 10 Gbit/s, also
+ * 62,5 Millionen Byte je Tick. Ein sehr großes Netz bewegt sechstausend
+ * Gegenstände je Tick. Mit echten Zahlen wäre die Grenze nie erreichbar —
+ * eine Grenze, die niemand spürt, ist Dekoration.
  *
  * <p><b>Warum eine echte Einheit besser ist als eine Zahl.</b> „64 je Tick"
  * ist eine Zahl ohne Anker: Ist das viel? Wofür reicht es? Man lernt es durch
@@ -27,21 +34,24 @@ public final class Bandwidth {
     /** Zwanzig Ticks sind eine Sekunde — die eine Stelle, an der das steht. */
     public static final int TICKS_PER_SECOND = 20;
 
-    /**
-     * Ein gewöhnliches Kabel: ein Kilobyte je Sekunde.
-     *
-     * <p>Knapp ein Stapel je Tick — genug für jede einzelne Leitung, zu wenig
-     * für eine Hauptader, an der zehn Worker ziehen.
-     */
-    public static final int THIN = 1000 / TICKS_PER_SECOND;
+    /** Was ein Gegenstand wiegt: ein Kilobyte. */
+    public static final int PER_ITEM = 1000;
 
     /**
-     * Ein dichtes: zehn Kilobyte.
+     * Ein gewöhnliches Kabel: 128 Gegenstände je Tick, also 2,56 MB/s.
+     *
+     * <p>Zwei Stapel je Tick — genug für ein paar Leitungen, zu wenig für
+     * eine Hauptader, an der zehn Worker ziehen.
+     */
+    public static final int THIN = 128 * PER_ITEM;
+
+    /**
+     * Ein dichtes: zehnmal so viel, 25,6 MB/s.
      *
      * <p>Der Unterschied, für den man es baut. Wäre er klein, wäre das dichte
      * Kabel ein teureres Kabel, das dicker aussieht.
      */
-    public static final int DENSE = 10_000 / TICKS_PER_SECOND;
+    public static final int DENSE = 10 * THIN;
 
     /**
      * Was nicht leitet, begrenzt auch nichts.
@@ -85,13 +95,19 @@ public final class Bandwidth {
      */
     public static String perSecond(int perTick) {
         long bytes = (long) perTick * TICKS_PER_SECOND;
-        if (bytes < 1000) {
-            return bytes + " B/s";
+        double wert = bytes;
+        int stufe = 0;
+        while (wert >= 1000 && stufe < UNITS.length - 1) {
+            wert /= 1000;
+            stufe++;
         }
-        if (bytes % 1000 == 0) {
-            return bytes / 1000 + " KB/s";
+        if (stufe == 0) {
+            return (long) wert + " B/s";
         }
-        return String.format(Locale.GERMANY, "%.1f KB/s", bytes / 1000.0);
+        if (wert == Math.floor(wert)) {
+            return (long) wert + " " + UNITS[stufe] + "/s";
+        }
+        return String.format(Locale.GERMANY, "%.1f %s/s", wert, UNITS[stufe]);
     }
 
     /** Was von einer Kapazität schon verbraucht ist: „0,4 von 1 KB/s". */

@@ -6310,9 +6310,10 @@ public final class FactoryNetworkGameTests {
                 "ein frisches Budget meldet Verkehr");
 
         // Etwas hindurchgeschickt.
-        // Zwanzig von fünfzig Byte je Tick: knapp die Hälfte.
-        entity.runtime().budget().spend(java.util.List.of(node), 20);
-        helper.assertValueEqual(entity.runtime().budget().usedAt(node), 20,
+        // Knapp die Hälfte der Kabelbreite.
+        int haelfte = dev.devpanda.factorynetwork.network.Bandwidth.THIN / 2;
+        entity.runtime().budget().spend(java.util.List.of(node), haelfte);
+        helper.assertValueEqual(entity.runtime().budget().usedAt(node), haelfte,
                 "der Verkehr steht nicht im Budget");
 
         var daten = dev.devpanda.factorynetwork.analyser.AnalyserScan.of(entity);
@@ -6320,28 +6321,29 @@ public final class FactoryNetworkGameTests {
                 .filter(link -> link.to().equals(helper.absolutePos(cable)))
                 .findFirst().orElse(null);
         helper.assertTrue(strecke != null, "der Analysator kennt die Strecke nicht");
-        helper.assertValueEqual(strecke.load(), 20,
+        helper.assertValueEqual(strecke.load(), haelfte,
                 "der Analysator zeigt nicht, was floss");
         helper.assertValueEqual(strecke.capacity(),
                 dev.devpanda.factorynetwork.network.Bandwidth.THIN,
                 "der Analysator nennt die falsche Kapazität");
         helper.assertValueEqual(strecke.state(),
                 dev.devpanda.factorynetwork.analyser.AnalyserData.LinkState.FREE,
-                "zwanzig von fünfzig Byte sind noch nicht eng");
+                "die halbe Kabelbreite ist noch nicht eng");
 
         // Und voll ist voll.
-        entity.runtime().budget().spend(java.util.List.of(node), 40);
+        entity.runtime().budget().spend(java.util.List.of(node),
+                dev.devpanda.factorynetwork.network.Bandwidth.THIN);
         var voll = dev.devpanda.factorynetwork.analyser.AnalyserScan.of(entity).links().stream()
                 .filter(link -> link.to().equals(helper.absolutePos(cable)))
                 .findFirst().orElseThrow();
         helper.assertValueEqual(voll.state(),
                 dev.devpanda.factorynetwork.analyser.AnalyserData.LinkState.FULL,
-                "sechzig von fünfzig Byte gelten nicht als voll");
+                "anderthalb Kabelbreiten gelten nicht als voll");
 
         // Und die Anzeige spricht Kilobyte: Das ist der Sinn der Einheit.
         helper.assertValueEqual(
                 dev.devpanda.factorynetwork.network.Bandwidth.perSecond(strecke.capacity()),
-                "1 KB/s", "die Kapazität liest sich nicht als Kilobyte");
+                "2,6 MB/s", "die Kapazität liest sich nicht als Megabyte");
         helper.succeed();
     }
 
@@ -7465,6 +7467,132 @@ public final class FactoryNetworkGameTests {
                 !dev.devpanda.factorynetwork.item.ConnectorNaming.check(
                         "1 ofen", null).isFine(),
                 "ein unmöglicher Name geht ohne Netz durch");
+        helper.succeed();
+    }
+
+    /**
+     * Ist der Speicher voll, bleibt alles liegen — nichts fällt auf den Boden.
+     *
+     * <p><b>Die schlimmste Art zu scheitern.</b> Ein Worker nahm bisher erst
+     * aus der Kiste und fragte danach, ob das Netz es nimmt. Passte es nicht
+     * und war die Kiste inzwischen voll, fiel es auf den Boden — und ein
+     * Gegenstand auf dem Boden verschwindet nach fünf Minuten.
+     *
+     * <p>Der Fall ist selten und deshalb gefährlich: Er trifft genau dann,
+     * wenn niemand zusieht — nachts, bei vollem Lager, an einer Kiste, die
+     * ein anderer Worker gerade auffüllt.
+     *
+     * <p>Jetzt wird vorher gefragt. Wer nichts unterbringen kann, nimmt
+     * nichts heraus.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void afullStorageDropsNothing(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+
+        // Ein Laufwerk mit der kleinsten Zelle, randvoll mit einer Art.
+        BlockPos drivePos = controller.above();
+        driveWithCell(helper, drivePos, dev.devpanda.factorynetwork.storage.CellTier.K1);
+        entity.rebuildNetwork();
+        entity.storage().insert(new ItemStack(Items.COBBLESTONE, 64));
+        // Bis nichts mehr hineingeht.
+        while (entity.storage().insert(new ItemStack(Items.DIRT, 64)) == 0) {
+            entity.storage().insert(new ItemStack(Items.DIRT, 64));
+        }
+
+        BlockPos source = controller.east().north().north();
+        if (helper.getBlockEntity(source) instanceof ChestBlockEntity container) {
+            container.setItem(0, new ItemStack(Items.DIAMOND, 64));
+        }
+
+        helper.assertTrue(entity.deploy("""
+                worker haul {
+                    from quarry_output
+                    to storage
+                    rate 64 per 1t
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+
+        helper.runAfterDelay(40, () -> {
+            // <b>Nichts liegt auf dem Boden.</b> Das ist die eigentliche
+            // Zusicherung: Wo das Lager voll ist, bleibt die Ware in der
+            // Kiste.
+            helper.assertItemEntityNotPresent(Items.DIAMOND);
+
+            if (!(helper.getBlockEntity(source) instanceof ChestBlockEntity container)) {
+                helper.fail("keine Kiste mehr da", source);
+                return;
+            }
+            long inDerKiste = 0;
+            for (int slot = 0; slot < container.getContainerSize(); slot++) {
+                if (container.getItem(slot).is(Items.DIAMOND)) {
+                    inDerKiste += container.getItem(slot).getCount();
+                }
+            }
+            long imLager = entity.storage().count(Items.DIAMOND);
+            helper.assertValueEqual(inDerKiste + imLager, 64L,
+                    "von vierundsechzig Diamanten sind welche verschwunden");
+            helper.succeed();
+        });
+    }
+
+    /**
+     * Auf einen Halter lässt sich ein Kabel setzen — über den Spielweg.
+     *
+     * <p><b>Der bestehende Lauf ruft {@code useItemOn} direkt.</b> Damit
+     * prüft er die Regel, aber nicht den Weg dorthin: Ein Spieler klickt auf
+     * einen Block, und Minecraft entscheidet erst danach, ob der Block oder
+     * der Gegenstand gefragt wird. Genau dort ging es im Spiel schief.
+     *
+     * <p>Hier läuft der ganze Weg: {@code useItemOn} am Gegenstand, mit
+     * einem Treffer auf der Platte des Anschlusses — der Stelle, die man
+     * beim Hinsehen trifft.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 100)
+    public static void aCableGoesOntoAHolderTheWayAPlayerClicks(GameTestHelper helper) {
+        BlockPos pos = new BlockPos(1, 2, 1);
+        BlockPos world = helper.absolutePos(pos);
+        helper.getLevel().setBlockAndUpdate(world,
+                FnBlocks.CABLE.get().defaultBlockState()
+                        .setValue(dev.devpanda.factorynetwork.block.CableBlock.CABLE, false));
+        if (!(helper.getLevel().getBlockEntity(world)
+                instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus)) {
+            helper.fail("kein Kabelbus im Halter");
+            return;
+        }
+        bus.addPart(Direction.NORTH);
+
+        var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+        ItemStack cable = new ItemStack(
+                dev.devpanda.factorynetwork.registry.FnItems.CABLES
+                        .get(dev.devpanda.factorynetwork.block.CableColour.RED).get());
+        player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, cable);
+
+        // Der Treffer sitzt auf der Nordplatte — dort, wo der Anschluss ist
+        // und wohin man zielt.
+        var hit = new net.minecraft.world.phys.BlockHitResult(
+                net.minecraft.world.phys.Vec3.atCenterOf(world).add(0, 0, -0.5),
+                Direction.NORTH, world, false);
+
+        // Und über den Gegenstand, nicht über den Block: Das ist der Weg,
+        // den Minecraft nimmt, wenn jemand mit etwas in der Hand klickt.
+        cable.useOn(new net.minecraft.world.item.context.UseOnContext(
+                helper.getLevel(), player, net.minecraft.world.InteractionHand.MAIN_HAND,
+                cable, hit));
+
+        var after = helper.getLevel().getBlockState(world);
+        helper.assertTrue(dev.devpanda.factorynetwork.block.CableBlock.carries(after),
+                "der Klick auf die Anschlussplatte hat kein Kabel eingelegt");
+        helper.assertTrue(
+                after.getValue(dev.devpanda.factorynetwork.block.CableBlock.COLOUR)
+                        == dev.devpanda.factorynetwork.block.CableColour.RED,
+                "das Kabel hat seine Farbe nicht mitgebracht");
+        helper.assertTrue(bus.partAt(Direction.NORTH) != null,
+                "der Anschluss ist beim Einlegen verschwunden");
+
+        // Und daneben ist kein zweiter Block entstanden: Genau das soll der
+        // Halter verhindern.
+        helper.assertBlockNotPresent(FnBlocks.CABLE.get(), pos.north());
         helper.succeed();
     }
 

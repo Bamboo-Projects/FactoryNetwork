@@ -19,25 +19,38 @@ class BandwidthTest {
     private static final int TICKS = 20;
 
     @Test
-    @DisplayName("Ein gewöhnliches Kabel trägt ein Kilobyte je Sekunde")
-    void aPlainCableCarriesOneKilobyte() {
-        assertEquals(1000, Bandwidth.THIN * TICKS,
-                "ein gewöhnliches Kabel trägt " + Bandwidth.THIN * TICKS + " B/s");
+    @DisplayName("Ein gewöhnliches Kabel trägt zwei Stapel je Tick")
+    void aPlainCableCarriesTwoStacks() {
+        // In Gegenständen gerechnet, denn das ist, was ein Worker bewegt:
+        // 128 je Tick, also zwei Stapel.
+        assertEquals(128, Bandwidth.THIN / Bandwidth.PER_ITEM);
     }
 
     @Test
-    @DisplayName("Ein dichtes zehn")
-    void aDenseCableCarriesTen() {
-        assertEquals(10_000, Bandwidth.DENSE * TICKS);
+    @DisplayName("Ein dichtes zehnmal so viel")
+    void aDenseCableCarriesTenTimes() {
+        assertEquals(10 * Bandwidth.THIN, Bandwidth.DENSE);
+        assertEquals(1280, Bandwidth.DENSE / Bandwidth.PER_ITEM);
     }
 
     @Test
-    @DisplayName("Und die Anzeige sagt es in ganzen Kilobyte")
-    void theLabelReadsAsKilobytes() {
-        // Wer „500 B je Tick" liest, muss rechnen. Wer „10 KB/s" liest,
-        // nicht — und genau dafür gibt es die Einheit.
-        assertEquals("1 KB/s", Bandwidth.perSecond(Bandwidth.THIN));
-        assertEquals("10 KB/s", Bandwidth.perSecond(Bandwidth.DENSE));
+    @DisplayName("Und die Anzeige sagt es in Megabyte")
+    void theLabelReadsAsMegabytes() {
+        // „2560000 B/s" ist keine Auskunft, „2,6 MB/s" schon — und die
+        // Größenordnung klingt nach Netzwerk, weil sie eine ist.
+        assertEquals("2,6 MB/s", Bandwidth.perSecond(Bandwidth.THIN));
+        assertEquals("25,6 MB/s", Bandwidth.perSecond(Bandwidth.DENSE));
+    }
+
+    @Test
+    @DisplayName("Ein Gegenstand wiegt ein Kilobyte")
+    void anItemWeighsAKilobyte() {
+        // <b>Nicht ein Byte.</b> Mit einem Byte je Gegenstand trüge ein
+        // Kabel 1 KB/s — eine Zahl, die neben „Glasfaser" lächerlich wirkt.
+        // Mit echten Glasfaserzahlen wiederum wäre die Grenze nie
+        // erreichbar: Ein sehr großes Netz bewegt sechstausend Gegenstände
+        // je Tick, echte Glasfaser trüge zweiundsechzig Millionen.
+        assertEquals(1000, Bandwidth.PER_ITEM);
     }
 
     @Test
