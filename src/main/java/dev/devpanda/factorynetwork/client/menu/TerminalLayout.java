@@ -18,7 +18,20 @@ package dev.devpanda.factorynetwork.client.menu;
  */
 public final class TerminalLayout {
 
-    public static final int WIDTH = 288;
+    /**
+     * Breiter als Vanillas 176.
+     *
+     * <p>Der Netzwerk-Reiter trägt zwei Spalten, und der Code-Editor
+     * lebt von jeder Zeile, die er ganz zeigen kann. 352 bleibt bei
+     * Skalierung 3 unter 1100 Pixeln — das trägt jeder Bildschirm, auf
+     * dem man Minecraft spielt, und Minecraft skaliert notfalls selbst
+     * herunter.
+     *
+     * <p>Dieselbe Zahl steht in {@code tools/gui.py}: Das Malskript
+     * läuft nicht zur Laufzeit, und laufen die beiden auseinander,
+     * zeichnet der Rahmen woanders als der Inhalt.
+     */
+    public static final int WIDTH = 352;
 
     /** Die Scheibe im Blech. */
     public static final int SCREEN_X0 = 6;
@@ -34,7 +47,13 @@ public final class TerminalLayout {
 
     /** Das Bestandsraster. */
     public static final int GRID_COLUMNS = 14;
-    public static final int GRID_ROWS = 6;
+    /**
+     * Wie viele Reihen hoch die Arbeitsfläche ist.
+     *
+     * <p>Drei mehr als vorher: Der Netzwerk-Reiter zeigt zwei Spalten,
+     * und der Code-Editor lebt von jeder Zeile, die er ganz zeigt.
+     */
+    public static final int GRID_ROWS = 9;
     public static final int SLOT = 18;
 
     /** Die Statuszeile am unteren Rand der Scheibe. */

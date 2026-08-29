@@ -20,9 +20,14 @@ PANEL      = (198, 198, 198)
 PANEL_HI   = (255, 255, 255)
 PANEL_LO   = (85, 85, 85)
 PANEL_DARK = (139, 139, 139)
-SLOT_BG    = (139, 139, 139)
-SLOT_HI    = (255, 255, 255)
-SLOT_LO    = (55, 55, 55)
+# <b>Die Slots sind dunkel statt grau.</b> Vanillas Hellgrau stammt aus
+# einer Zeit, in der jedes Fenster wie eine Werkbank aussah — neben einem
+# Terminal mit schwarzer Scheibe wirkt es wie ein Fremdkörper. Dunkle Slots
+# mit einer feinen Kante lassen den Gegenstand darin leuchten, statt mit ihm
+# um Aufmerksamkeit zu ringen.
+SLOT_BG    = (30, 36, 33)
+SLOT_HI    = (58, 68, 62)
+SLOT_LO    = (14, 18, 16)
 TEXT       = (64, 64, 64)
 SCREEN     = (22, 26, 24)
 SCREEN_EDGE = (10, 13, 11)
@@ -33,9 +38,11 @@ SCREEN_EDGE = (10, 13, 11)
 # sein Grund und hat unten rechts eine helle Kante.</b> Blech, Scheibe, Mulde.
 # Andersherum — die Mulde heller als der Grund — liest man sie nicht als
 # Mulde, sondern als Fleck.
-CASE       = (35, 43, 39)
-CASE_HI    = (57, 68, 61)
-CASE_LO    = (13, 17, 15)
+# Das Gehäuse: eine Spur heller als die Scheibe, damit die Kante trägt,
+# ohne dass eine Fase sie zeichnen muss.
+CASE       = (38, 46, 42)
+CASE_HI    = (62, 74, 67)
+CASE_LO    = (16, 20, 18)
 CASE_TEXT  = (168, 178, 172)
 GLASS      = (24, 30, 27)
 GLASS_RIM  = (52, 62, 56)
@@ -78,7 +85,11 @@ def slot(draw, x, y):
 # Buchstaben abgeschnitten. Das Spielerinventar bleibt neun Slots breit und
 # sitzt mittig darunter — es soll aussehen wie überall, nur eben in einem
 # größeren Gehäuse.
-WIDTH = 288
+# Breiter als Vanillas 176: Der Netzwerk-Reiter trägt zwei Spalten,
+# und der Code-Editor lebt von jeder Zeile, die er ganz zeigen kann.
+# 352 bleibt bei Skalierung 3 unter 1100 Pixeln — das trägt jeder
+# Bildschirm, auf dem man Minecraft spielt.
+WIDTH = 352
 ATLAS = 512
 
 # Die Höhe fällt aus der Rechnung heraus und wird nicht gesetzt: Scheibe,
@@ -89,7 +100,8 @@ SCREEN_TOP = 6
 SCREEN_PAD = 3
 TAB_ROW = 14
 SEARCH_ROW = 13
-GRID_ROWS = 6
+GRID_ROWS = 9   # drei Reihen mehr: Der Netzwerk-Reiter zeigt zwei
+                # Spalten, und der Editor lebt von sichtbaren Zeilen.
 GRID_COLUMNS = 14
 STATUS_ROW = 11
 
@@ -149,15 +161,22 @@ def background():
     img = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
 
-    raised_dark(d, (0, 0, WIDTH - 1, HEIGHT - 1))
+    # <b>Eine Kante statt einer Fase.</b> Der alte Rahmen malte oben hell
+    # und unten dunkel — die Plastik-Optik von 2011. Eine einzige helle
+    # Linie außen und eine dunkle innen genügen: Das Auge sieht dieselbe
+    # Erhebung, und die Fläche bleibt ruhig.
+    d.rectangle((0, 0, WIDTH - 1, HEIGHT - 1), fill=CASE + (255,))
+    d.rectangle((0, 0, WIDTH - 1, HEIGHT - 1), outline=CASE_HI + (255,))
+    d.rectangle((1, 1, WIDTH - 2, HEIGHT - 2), outline=CASE_LO + (255,))
 
     # Die Scheibe sitzt in einer dunklen Fuge im Blech.
     d.rectangle((SCREEN_X0 - 1, SCREEN_TOP - 1, SCREEN_X1 + 1, SCREEN_BOTTOM + 1),
                 fill=WELL_EDGE + (255,))
     d.rectangle((SCREEN_X0, SCREEN_TOP, SCREEN_X1, SCREEN_BOTTOM), fill=GLASS + (255,))
-    d.line([(SCREEN_X0, SCREEN_BOTTOM), (SCREEN_X1, SCREEN_BOTTOM)],
-           fill=GLASS_RIM + (255,))
-    d.line([(SCREEN_X1, SCREEN_TOP), (SCREEN_X1, SCREEN_BOTTOM)], fill=GLASS_RIM + (255,))
+    # Ein feiner Rand rundum statt zweier Glanzkanten: Die Scheibe sitzt in
+    # der Fuge, sie steht nicht darauf.
+    d.rectangle((SCREEN_X0, SCREEN_TOP, SCREEN_X1, SCREEN_BOTTOM),
+                outline=GLASS_RIM + (255,))
 
     # Die Statuszeile liegt noch tiefer als die Scheibe.
     status_y = SCREEN_BOTTOM - STATUS_ROW + 1

@@ -330,6 +330,7 @@
   "item.factorynetwork.green_dense_cable": "Green Dense Cable",
   "item.factorynetwork.red_dense_cable": "Red Dense Cable",
   "item.factorynetwork.black_dense_cable": "Black Dense Cable",
+  "screen.factorynetwork.terminal.network.power_short": "%s/%s FE · -%s/t",
   "screen.factorynetwork.terminal.network.power": "Power: %s FE/t · out %s · %s of %s",
   "screen.factorynetwork.terminal.network.power_booting": "Booting — %s FE/t · %s of %s",
   "screen.factorynetwork.terminal.network.power_off": "No power — the network is down (%s FE/t needed)",

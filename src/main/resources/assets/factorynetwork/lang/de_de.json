@@ -330,6 +330,7 @@
   "item.factorynetwork.green_dense_cable": "Grünes dichtes Kabel",
   "item.factorynetwork.red_dense_cable": "Rotes dichtes Kabel",
   "item.factorynetwork.black_dense_cable": "Schwarzes dichtes Kabel",
+  "screen.factorynetwork.terminal.network.power_short": "%s/%s FE · −%s/t",
   "screen.factorynetwork.terminal.network.power": "Strom: %s FE/t · Abgabe %s · %s von %s",
   "screen.factorynetwork.terminal.network.power_booting": "Fährt hoch — %s FE/t · %s von %s",
   "screen.factorynetwork.terminal.network.power_off": "Kein Strom — das Netz steht (%s FE/t nötig)",

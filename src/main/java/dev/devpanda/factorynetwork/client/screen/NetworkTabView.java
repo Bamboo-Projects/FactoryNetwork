@@ -95,137 +95,298 @@ public class NetworkTabView {
         }
     }
 
+    /** Wie hoch der Kopf ist: eine Zeile Zahlen plus Luft. */
+    private static final int HEAD_HEIGHT = 16;
+
+    /** Wie breit die Minikurve im Kopf ist. */
+    private static final int SPARK_WIDTH = 60;
+
     private void renderContent(GuiGraphics graphics, int mouseX, int mouseY) {
-        int line = y + 3 - scroll * LINE;
+        int top = y + 3 - scroll * LINE;
 
-        // Der Verkehr zuerst: „Was frisst wie viel" ist die Frage, mit der
-        // man diesen Reiter aufmacht. Die Namensliste steht darunter — sie
-        // beantwortet „was gibt es", und das weiß man meistens schon.
-        line = section(graphics, line, "screen.factorynetwork.terminal.network.traffic");
-        line = traffic(graphics, line);
-        line += 2;
-        line = section(graphics, line, "screen.factorynetwork.terminal.network.connectors");
-        List<String> connectors = ClientNetworkState.connectors();
-        if (connectors.isEmpty()) {
-            line = text(graphics, line, Component.translatable(
-                    "screen.factorynetwork.terminal.no_connectors").getString(), 0x8B8B8B);
-        } else {
-            // In zwei Spalten, sonst ist die Liste nach sechs Namen am Ende.
-            for (int i = 0; i < connectors.size() && line < y + height - 40; i += 2) {
-                String left = connectors.get(i);
-                String right = i + 1 < connectors.size() ? connectors.get(i + 1) : "";
-                graphics.drawString(font, font.plainSubstrByWidth(left, width / 2 - 4),
-                        x + 3, line, TerminalScreen.TEXT, false);
-                if (!right.isEmpty()) {
-                    graphics.drawString(font, font.plainSubstrByWidth(right, width / 2 - 4),
-                            x + width / 2, line, TerminalScreen.TEXT, false);
-                }
-                line += LINE;
-            }
+        // <b>Der Kopf trägt, was immer gilt.</b> Strom und Durchsatz stehen
+        // an derselben Stelle, egal wie das Netz aussieht — wer hinsieht,
+        // muss nicht erst suchen.
+        int line = head(graphics, top);
+
+        // <b>Links, was arbeitet. Rechts, was da ist.</b> Zwei Fragen, zwei
+        // Spalten: „läuft es" und „was hängt dran". Vorher standen acht
+        // Abschnitte untereinander, alle gleich gewichtet.
+        int gap = 8;
+        int columnWidth = (width - 6 - gap) / 2;
+        int leftX = x + 3;
+        int rightX = leftX + columnWidth + gap;
+
+        int leftEnd = working(graphics, leftX, line, columnWidth);
+        int rightEnd = present(graphics, rightX, line, columnWidth);
+
+        // <b>Und unten, was klemmt.</b> Warnungen gehören zusammen und ans
+        // Ende: Wer sie oben zwischen die Listen streut, muss den ganzen
+        // Reiter lesen, um zu wissen, ob etwas fehlt.
+        remember(warnings(graphics, Math.max(leftEnd, rightEnd) + 4));
+    }
+
+    /**
+     * Der Kopf: Strom, Durchsatz mit Minikurve, Gesamtmenge.
+     *
+     * <p><b>Die große Kurve ist dafür gefallen.</b> Sie nahm ein Drittel der
+     * Fläche und zeigte bei einem ruhigen Netz eine leere Box. Sechzig Pixel
+     * reichen, um eine Spitze zu sehen — und wer die Zahlen will, liest sie
+     * daneben.
+     */
+    private int head(GuiGraphics graphics, int line) {
+        int right = x + width - 3;
+
+        // Strom links: Wer sieht, dass nichts läuft, fragt zuerst danach.
+        var supply = ClientFlowState.supply();
+        String power = Component.translatable(
+                        "screen.factorynetwork.terminal.network.power_short",
+                        supply.stored(), supply.capacity(), supply.draw())
+                .getString();
+        // Rot, wenn der Vorrat unter ein Zehntel fällt: Das ist der Moment,
+        // in dem gleich Geräte ausfallen — und der einzige Zustand am Strom,
+        // den man sofort sehen muss.
+        int powerColour = supply.capacity() > 0
+                && supply.stored() * 10 < supply.capacity()
+                        ? TerminalScreen.BAD : TerminalScreen.TEXT;
+        graphics.drawString(font, power, x + 3, line + 3, powerColour, false);
+
+        // Die Kurve rechts, davor der aktuelle Durchsatz.
+        List<Integer> verlauf = ClientTraffic.perSecond();
+        int peak = ClientTraffic.peak();
+        int sparkLeft = right - SPARK_WIDTH;
+        int sparkTop = line + 2;
+        int sparkBottom = line + HEAD_HEIGHT - 3;
+        graphics.fill(sparkLeft, sparkTop, right, sparkBottom, 0x22000000);
+        for (int i = 0; i < Math.min(verlauf.size(), SPARK_WIDTH); i++) {
+            int wert = verlauf.get(verlauf.size() - 1 - i);
+            int hoehe = Math.max(wert > 0 ? 1 : 0,
+                    wert * (sparkBottom - sparkTop) / peak);
+            int cx = right - 1 - i;
+            graphics.fill(cx, sparkBottom - hoehe, cx + 1, sparkBottom, 0xFF57C97A);
         }
 
-        // Die Anzeigewände: benannt, im Netz, und bis eben nirgends zu sehen.
-        // Wer eine Wand beschriftet hatte, fand den Namen in keiner Liste
-        // wieder und musste ihn sich merken.
-        List<String> displays = ClientNetworkState.displays();
-        if (!displays.isEmpty()) {
-            line += 3;
-            line = section(graphics, line, "screen.factorynetwork.terminal.network.displays");
-            for (String display : displays) {
-                if (line >= y + height - 40) {
-                    break;
-                }
-                line = text(graphics, line, display, TerminalScreen.TEXT);
-            }
-        }
+        // Der jüngste Wert als Zahl: Eine Kurve ohne Maßstab ist Zierde.
+        int jetzt = verlauf.isEmpty() ? 0 : verlauf.get(verlauf.size() - 1);
+        String rate = Bandwidth.perSecond(jetzt / Bandwidth.TICKS_PER_SECOND);
+        graphics.drawString(font, rate, sparkLeft - 6 - font.width(rate), line + 3,
+                TerminalScreen.TEXT, false);
 
-        line += 3;
-        line = section(graphics, line, "screen.factorynetwork.terminal.network.workers");
+        // Und die Gesamtmenge, klein, in der Mitte.
+        String gesamt = Bandwidth.total(ClientTraffic.total());
+        graphics.drawString(font, gesamt,
+                sparkLeft - 12 - font.width(rate) - font.width(gesamt), line + 3,
+                TerminalScreen.TEXT_DIM, false);
+
+        // Eine Linie darunter trennt den Kopf vom Inhalt.
+        graphics.fill(x + 3, line + HEAD_HEIGHT, x + width - 3, line + HEAD_HEIGHT + 1,
+                0x33FFFFFF);
+        return line + HEAD_HEIGHT + 5;
+    }
+
+    /**
+     * Die linke Spalte: was arbeitet.
+     *
+     * <p>Worker mit ihrem Verbrauch, darunter die Abläufe. Beides beantwortet
+     * dieselbe Frage — läuft es, und wenn nicht, woran hängt es.
+     */
+    private int working(GuiGraphics graphics, int cx, int line, int cw) {
         List<String> workers = ClientNetworkState.workers();
+        line = columnHead(graphics, cx, line, cw,
+                "screen.factorynetwork.terminal.network.workers", workers.size());
+
         if (workers.isEmpty()) {
-            // Die Höhe muss zurück in die Zeile: Sonst zeichnet die nächste
-            // Überschrift über diesen Text, und aus zwei Wörtern wird eines,
-            // das es nicht gibt.
-            line = text(graphics, line, Component.translatable(
-                    "screen.factorynetwork.terminal.network.no_workers").getString(), 0x8B8B8B);
+            line = dim(graphics, cx, line, "—");
         } else {
+            // Der Verbrauch je Worker steht neben dem Worker: Eine eigene
+            // Rangliste hätte dieselben Namen ein zweites Mal genannt.
+            var verbrauch = new java.util.HashMap<String, Long>();
+            for (TrafficPacket.Consumer one : ClientTraffic.top()) {
+                verbrauch.put(one.name(), one.bytes());
+            }
             for (String worker : workers) {
                 if (line > y + height - LINE) {
                     break;
                 }
-                // Der Zustand steht hinter dem Doppelpunkt und färbt die Zeile.
                 int colour = worker.contains("HALTED") ? TerminalScreen.BAD
                         : worker.contains("WAITING") ? TerminalScreen.WARN
                         : worker.contains("RUNNING") ? TerminalScreen.GOOD
                         : TerminalScreen.TEXT_DIM;
-                graphics.drawString(font, font.plainSubstrByWidth(worker, width - 6),
-                        x + 3, line, colour, false);
+                // Der Name steht vor dem Doppelpunkt; danach kommt der
+                // Zustand, den die Farbe schon zeigt.
+                String name = worker.contains(":")
+                        ? worker.substring(0, worker.indexOf(':')) : worker;
+                String menge = verbrauch.containsKey(name)
+                        ? Bandwidth.total(verbrauch.get(name)) : "";
+                int platz = cw - 6 - font.width(menge);
+                graphics.drawString(font, font.plainSubstrByWidth(worker, platz),
+                        cx, line, colour, false);
+                if (!menge.isEmpty()) {
+                    graphics.drawString(font, menge, cx + cw - font.width(menge), line,
+                            TerminalScreen.TEXT_DIM, false);
+                }
                 line += LINE;
             }
+        }
+
+        List<FlowStatePacket.Line> flows = ClientFlowState.flows();
+        line += 5;
+        line = columnHead(graphics, cx, line, cw,
+                "screen.factorynetwork.terminal.network.flows", flows.size());
+        line = flows(graphics, cx, line, cw);
+
+        // Die globalen Werte gehören zum Programm wie die Abläufe — und nur
+        // hierhin, wenn es welche gibt.
+        List<String> werte = ClientFlowState.globals();
+        if (!werte.isEmpty()) {
+            line += 5;
+            line = columnHead(graphics, cx, line, cw,
+                    "screen.factorynetwork.terminal.network.globals", werte.size());
+            for (String wert : werte) {
+                if (line > y + height - LINE) {
+                    break;
+                }
+                graphics.drawString(font, font.plainSubstrByWidth(wert, cw),
+                        cx, line, TerminalScreen.TEXT_DIM, false);
+                line += LINE;
+            }
+        }
+        return line;
+    }
+
+    /**
+     * Die rechte Spalte: was da ist.
+     *
+     * <p>Anschlüsse und Anzeigen, dazu Flüssigkeiten und Anlagen — aber nur,
+     * wenn es sie gibt. Eine Überschrift mit „keine" darunter kostet zwei
+     * Zeilen und sagt nichts.
+     */
+    private int present(GuiGraphics graphics, int cx, int line, int cw) {
+        List<String> connectors = ClientNetworkState.connectors();
+        line = columnHead(graphics, cx, line, cw,
+                "screen.factorynetwork.terminal.network.connectors", connectors.size());
+        line = names(graphics, cx, line, cw, connectors);
+
+        List<String> displays = ClientNetworkState.displays();
+        if (!displays.isEmpty()) {
+            line += 5;
+            line = columnHead(graphics, cx, line, cw,
+                    "screen.factorynetwork.terminal.network.displays", displays.size());
+            line = names(graphics, cx, line, cw, displays);
         }
 
         List<String> fluids = ClientNetworkState.fluids();
         if (!fluids.isEmpty()) {
-            line += 3;
-            line = section(graphics, line, "screen.factorynetwork.terminal.network.fluids");
-            for (String fluid : fluids) {
-                if (line > y + height - LINE) {
-                    break;
-                }
-                graphics.drawString(font, font.plainSubstrByWidth(fluid, width - 6),
-                        x + 3, line, TerminalScreen.TEXT_DIM, false);
-                line += LINE;
-            }
+            line += 5;
+            line = columnHead(graphics, cx, line, cw,
+                    "screen.factorynetwork.terminal.network.fluids", fluids.size());
+            line = names(graphics, cx, line, cw, fluids);
         }
 
         List<String> plants = ClientNetworkState.plants();
         if (!plants.isEmpty()) {
-            line += 3;
-            line = section(graphics, line, "screen.factorynetwork.terminal.network.plants");
+            line += 5;
+            line = columnHead(graphics, cx, line, cw,
+                    "screen.factorynetwork.terminal.network.plants", plants.size());
             for (String plant : plants) {
                 if (line > y + height - LINE) {
                     break;
                 }
                 // Was fehlt oder mehrdeutig ist, sticht heraus — danach sucht
                 // man, wenn eine Anlage nichts tut.
-                int colour = plant.contains("fehlt") || plant.contains("mehrere")
-                        ? TerminalScreen.WARN : TerminalScreen.TEXT_DIM;
-                graphics.drawString(font, font.plainSubstrByWidth(plant, width - 6),
-                        x + 3, line, colour, false);
+                int colour = plant.contains("?") || plant.contains("!")
+                        ? TerminalScreen.WARN : TerminalScreen.TEXT;
+                graphics.drawString(font, font.plainSubstrByWidth(plant, cw),
+                        cx, line, colour, false);
                 line += LINE;
             }
         }
 
-        line += 3;
-        line = section(graphics, line, "screen.factorynetwork.terminal.network.flows");
-        // Erst der Strom, dann die Rechenleistung, dann die Abläufe. Wer
-        // sieht, dass nichts läuft, fragt zuerst nach dem Strom.
-        line = supply(graphics, line);
-        // Wer sieht, dass drei anstehen, will als Nächstes wissen, wie viele
-        // Plätze es gibt.
-        line = text(graphics, line, Component.translatable(
-                        dev.devpanda.factorynetwork.client.ClientFlowState.threads() == 0
-                                ? "screen.factorynetwork.terminal.network.no_server"
-                                : "screen.factorynetwork.terminal.network.threads",
-                        dev.devpanda.factorynetwork.client.ClientFlowState.occupied(),
-                        dev.devpanda.factorynetwork.client.ClientFlowState.threads(),
-                        dev.devpanda.factorynetwork.client.ClientFlowState.queued())
-                        .getString(),
-                dev.devpanda.factorynetwork.client.ClientFlowState.threads() == 0
-                        ? TerminalScreen.BAD
-                        : dev.devpanda.factorynetwork.client.ClientFlowState.queued() > 0
-                        ? TerminalScreen.WARN : TerminalScreen.TEXT_DIM);
-        line = capacity(graphics, line);
-        line = globals(graphics, line);
-        remember(flows(graphics, line));
+        // Speicher und Datenträger: Sie sagen, was das Netz halten kann —
+        // dieselbe Frage wie die Listen darüber.
+        line = capacity(graphics, cx, line, cw);
+        return line;
     }
 
     /**
-     * Die globalen Werte des Programms.
+     * Eine Überschrift mit Zahl.
      *
-     * <p>Nur, wenn es welche gibt — ein leerer Abschnitt mit Überschrift
-     * sagt nichts und kostet zwei Zeilen, die die Abläufe darunter brauchen.
+     * <p>„WORKER 3" sagt in einem Zeichen, was drei Zeilen Liste sagen
+     * würden — und man sieht es, ohne die Liste zu lesen.
      */
+    private int columnHead(GuiGraphics graphics, int cx, int line, int cw,
+                           String key, int count) {
+        graphics.drawString(font, Component.translatable(key), cx, line,
+                TerminalScreen.TEXT_DIM, false);
+        String zahl = String.valueOf(count);
+        graphics.drawString(font, zahl, cx + cw - font.width(zahl), line,
+                TerminalScreen.TEXT_DIM, false);
+        // Eine feine Linie darunter fasst die Spalte zusammen.
+        graphics.fill(cx, line + LINE, cx + cw, line + LINE + 1, 0x22FFFFFF);
+        return line + LINE + 3;
+    }
+
+    /** Eine Namensliste, einspaltig — die Spalte ist schon eine Spalte. */
+    private int names(GuiGraphics graphics, int cx, int line, int cw, List<String> items) {
+        if (items.isEmpty()) {
+            return dim(graphics, cx, line, "—");
+        }
+        for (String item : items) {
+            if (line > y + height - LINE) {
+                break;
+            }
+            graphics.drawString(font, font.plainSubstrByWidth(item, cw),
+                    cx, line, TerminalScreen.TEXT, false);
+            line += LINE;
+        }
+        return line;
+    }
+
+    /** Eine Zeile in einer Spalte, auf ihre Breite gekürzt. */
+    private int columnLine(GuiGraphics graphics, int cx, int line, int cw,
+                           String content, int colour) {
+        graphics.drawString(font, font.plainSubstrByWidth(content, cw),
+                cx, line, colour, false);
+        return line + LINE;
+    }
+
+    private int dim(GuiGraphics graphics, int cx, int line, String content) {
+        graphics.drawString(font, content, cx, line, 0x8B8B8B, false);
+        return line + LINE;
+    }
+
+    /**
+     * Der Fuß: was klemmt.
+     *
+     * <p>Gesammelt und nur, wenn es etwas gibt. Vorher stand „Kein
+     * Serverschrank" — der Grund, warum gar nichts läuft — in derselben
+     * Schrift wie eine Liste von Anlagennamen.
+     */
+    private int warnings(GuiGraphics graphics, int line) {
+        List<Component> found = new ArrayList<>();
+        if (ClientFlowState.threads() == 0) {
+            found.add(Component.translatable(
+                    "screen.factorynetwork.terminal.network.no_server"));
+        } else if (ClientFlowState.queued() > 0) {
+            found.add(Component.translatable(
+                    "screen.factorynetwork.terminal.network.threads",
+                    ClientFlowState.occupied(), ClientFlowState.threads(),
+                    ClientFlowState.queued()));
+        }
+        if (found.isEmpty()) {
+            return line;
+        }
+        graphics.fill(x + 3, line, x + width - 3, line + 1, 0x33FFFFFF);
+        line += 4;
+        for (Component one : found) {
+            graphics.drawString(font, one, x + 3, line,
+                    ClientFlowState.threads() == 0 ? TerminalScreen.BAD
+                            : TerminalScreen.WARN, false);
+            line += LINE;
+        }
+        return line;
+    }
+
     private int globals(GuiGraphics graphics, int line) {
         List<String> werte = dev.devpanda.factorynetwork.client.ClientFlowState.globals();
         if (werte.isEmpty()) {
@@ -259,16 +420,17 @@ public class NetworkTabView {
      * Grenze ist, die man beim Schreiben überschreitet, ohne es zu merken:
      * Wer eine Funktion ergänzt, zählt keine Anweisungen mit.
      */
-    private int capacity(GuiGraphics graphics, int line) {
+    private int capacity(GuiGraphics graphics, int cx, int line, int cw) {
         var rechen = dev.devpanda.factorynetwork.client.ClientFlowState.compute();
         if (rechen.threads() == 0) {
             return line;
         }
-        line = text(graphics, line, Component.translatable(
+        line += 5;
+        line = columnLine(graphics, cx, line, cw, Component.translatable(
                 "screen.factorynetwork.terminal.network.memory",
                 rechen.occupied() + rechen.queued(), rechen.memory()).getString(),
                 TerminalScreen.TEXT_DIM);
-        return text(graphics, line, Component.translatable(
+        return columnLine(graphics, cx, line, cw, Component.translatable(
                 "screen.factorynetwork.terminal.network.disk",
                 rechen.program(), rechen.disk()).getString(),
                 rechen.program() > rechen.disk() ? TerminalScreen.BAD : TerminalScreen.TEXT_DIM);
@@ -320,12 +482,11 @@ public class NetworkTabView {
      * sie muss dort stehen, wo der Spieler den Zustand sieht — nicht in einem
      * Befehl, den er erst nachschlagen muss.
      */
-    private int flows(GuiGraphics graphics, int line) {
+    private int flows(GuiGraphics graphics, int cx, int line, int cw) {
         buttons.clear();
         List<FlowStatePacket.Line> flows = ClientFlowState.flows();
         if (flows.isEmpty()) {
-            return text(graphics, line, Component.translatable(
-                    "screen.factorynetwork.terminal.network.no_flows").getString(), 0x8B8B8B);
+            return dim(graphics, cx, line, "—");
         }
         for (FlowStatePacket.Line flow : flows) {
             if (line > y + height - LINE) {
@@ -338,11 +499,11 @@ public class NetworkTabView {
                     : "RUNNING".equals(flow.status()) ? TerminalScreen.GOOD
                     : TerminalScreen.TEXT_DIM;
             String label = flow.entry() + " — " + describe(flow);
-            int room = stale ? width - 6 - 2 * BUTTON - 6 : width - 6;
-            graphics.drawString(font, font.plainSubstrByWidth(label, room), x + 3, line,
+            int room = stale ? cw - 2 * BUTTON - 6 : cw;
+            graphics.drawString(font, font.plainSubstrByWidth(label, room), cx, line,
                     colour, false);
             if (stale) {
-                int right = x + width - 3;
+                int right = cx + cw;
                 button(graphics, right - BUTTON, line, "keep", flow.id(), true);
                 button(graphics, right - 2 * BUTTON - 3, line, "abort", flow.id(), false);
             }
@@ -385,71 +546,6 @@ public class NetworkTabView {
             }
         }
         return false;
-    }
-
-    /** Wie hoch das Diagramm ist. */
-    private static final int CHART_HEIGHT = 34;
-
-    /**
-     * Zeichnet den Verkehr: eine Kurve und darunter, wer sie verursacht.
-     *
-     * <p><b>Die Kurve zeigt Sekunden, nicht Ticks.</b> Fünf Minuten Verlauf
-     * auf der Breite des Fensters — wer wissen will, was gerade passiert,
-     * sieht rechts hin; wer wissen will, was vorhin war, links.
-     *
-     * <p><b>Der Maßstab wächst mit.</b> Ein fester Maßstab wäre bei einem
-     * ruhigen Netz eine flache Linie am Boden und bei einem vollen eine
-     * Wand. Die Spitze steht als Zahl darüber, sonst wüsste niemand, wie
-     * hoch hoch ist.
-     */
-    private int traffic(GuiGraphics graphics, int line) {
-        List<Integer> verlauf = ClientTraffic.perSecond();
-        int peak = ClientTraffic.peak();
-
-        // Die Spitze und die Gesamtmenge als Überschrift: Ohne Zahlen ist
-        // eine Kurve eine Verzierung.
-        graphics.drawString(font, Component.translatable(
-                        "screen.factorynetwork.terminal.network.traffic.scale",
-                        Bandwidth.perSecond(peak / Bandwidth.TICKS_PER_SECOND),
-                        Bandwidth.total(ClientTraffic.total())),
-                x + 3, line, TerminalScreen.TEXT_DIM, false);
-        line += LINE + 2;
-
-        int left = x + 3;
-        int right = x + width - 3;
-        int bottom = line + CHART_HEIGHT;
-        graphics.fill(left, line, right, bottom, 0x22000000);
-
-        // Eine Säule je Sekunde, von rechts nach links: Der jüngste Wert
-        // steht am Rand, wo das Auge zuerst hinsieht.
-        int columns = Math.min(verlauf.size(), right - left);
-        for (int i = 0; i < columns; i++) {
-            int wert = verlauf.get(verlauf.size() - 1 - i);
-            int hoehe = Math.max(wert > 0 ? 1 : 0, wert * CHART_HEIGHT / peak);
-            int cx = right - 1 - i;
-            graphics.fill(cx, bottom - hoehe, cx + 1, bottom, 0xFF57C97A);
-        }
-        line = bottom + LINE;
-
-        // Und darunter: wer die Kurve verursacht.
-        List<TrafficPacket.Consumer> top = ClientTraffic.top();
-        if (top.isEmpty()) {
-            return text(graphics, line, Component.translatable(
-                    "screen.factorynetwork.terminal.network.traffic.quiet").getString(),
-                    0x8B8B8B);
-        }
-        for (TrafficPacket.Consumer one : top) {
-            if (line >= y + height - LINE) {
-                break;
-            }
-            graphics.drawString(font, font.plainSubstrByWidth(one.name(), width - 70),
-                    x + 3, line, TerminalScreen.TEXT, false);
-            String menge = Bandwidth.total(one.bytes());
-            graphics.drawString(font, menge, x + width - 3 - font.width(menge), line,
-                    TerminalScreen.TEXT_DIM, false);
-            line += LINE;
-        }
-        return line;
     }
 
     private int section(GuiGraphics graphics, int line, String key) {
