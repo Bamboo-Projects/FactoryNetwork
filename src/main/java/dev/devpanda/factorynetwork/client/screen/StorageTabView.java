@@ -31,7 +31,8 @@ public class StorageTabView {
             FactoryNetwork.MOD_ID, "textures/gui/widgets.png");
 
     private static final int SLOT = 18;
-    private static final int COLUMNS = 14;
+    private static final int COLUMNS = dev.devpanda.factorynetwork.client.menu
+            .TerminalLayout.GRID_COLUMNS;
     /**
      * Sechs Reihen, seit die Fußzeile in die Statuszeile gewandert ist.
      *

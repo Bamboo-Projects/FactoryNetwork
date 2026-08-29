@@ -102,7 +102,10 @@ TAB_ROW = 14
 SEARCH_ROW = 13
 GRID_ROWS = 9   # drei Reihen mehr: Der Netzwerk-Reiter zeigt zwei
                 # Spalten, und der Editor lebt von sichtbaren Zeilen.
-GRID_COLUMNS = 14
+# So viele Spalten, wie zwischen Rand und Rollbalken passen. Bei 352
+# Bildpunkten Fensterbreite sind das siebzehn — vorher vierzehn, und
+# die drei fehlenden ließen rechts eine Lücke.
+GRID_COLUMNS = 17
 STATUS_ROW = 11
 
 SCREEN_INNER = (SCREEN_PAD + TAB_ROW + 1 + SEARCH_ROW + 2

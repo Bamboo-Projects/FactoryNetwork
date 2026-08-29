@@ -46,7 +46,18 @@ public final class TerminalLayout {
     public static final int SEARCH_ROW = 13;
 
     /** Das Bestandsraster. */
-    public static final int GRID_COLUMNS = 14;
+    /**
+     * Wie viele Spalten das Gitter der Speicheransicht hat.
+     *
+     * <p>So viele, wie zwischen Rand und Rollbalken passen — bei 352
+     * Bildpunkten Fensterbreite siebzehn. Vorher vierzehn, und die drei
+     * fehlenden ließen rechts eine Lücke.
+     *
+     * <p><b>Dieselbe Zahl steht in {@code tools/gui.py}</b>: Das Malskript
+     * zeichnet die Kacheln, und laufen die beiden auseinander, endet das
+     * Bild vor oder hinter den Slots.
+     */
+    public static final int GRID_COLUMNS = 17;
     /**
      * Wie viele Reihen hoch die Arbeitsfläche ist.
      *
@@ -54,6 +65,7 @@ public final class TerminalLayout {
      * und der Code-Editor lebt von jeder Zeile, die er ganz zeigt.
      */
     public static final int GRID_ROWS = 9;
+
     public static final int SLOT = 18;
 
     /** Die Statuszeile am unteren Rand der Scheibe. */
