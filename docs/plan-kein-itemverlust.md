@@ -43,9 +43,19 @@ bisher niemand.
 heraus. Ein Worker an einem vollen Lager steht still und meldet das — er
 verliert nichts.
 
-**`room` ist bewusst zu niedrig, nie zu hoch.** Sie zählt nur die Zellen, nicht
-die fremden Inventare hinter einem Speicherbus. Das ist hier genau richtig:
-Wer weniger nimmt, als hineinpasst, verliert nichts; wer mehr nimmt, schon.
+**`room` zählt heute nur die Zellen** — nicht die fremden Inventare hinter
+einem Speicherbus. Als Vorsicht war das gedacht, als Vorprüfung ist es ein
+Fehler: Sind die Zellen voll und hat nur noch ein Bus Platz, antwortet `room`
+mit null, und der Worker nähme nichts mehr. Das Netz stünde still, obwohl es
+Platz hat.
+
+**Also wird `room` erst fertig gebaut.** Ein Speicherbus kann sehr wohl
+antworten, ohne etwas zu tun: `insertItem(slot, stack, true)` ist genau das
+Probieren, das der Kommentar dort für unmöglich hält. Der Bus bekommt ein
+`room`, das simuliert, was sein `insert` täte.
+
+> **Nachgetragen am 30.08.:** Der ursprüngliche Plan wollte `room` nur rufen.
+> Dass sie unvollständig ist, fiel erst beim Lesen auf.
 
 ## Die Aufgaben
 
@@ -54,13 +64,15 @@ Wer weniger nimmt, als hineinpasst, verliert nichts; wer mehr nimmt, schon.
       Kiste plus Lager ergeben zusammen wieder vierundsechzig.
       **Die Summe ist die eigentliche Zusicherung** — „nichts gedroppt" allein
       übersieht ein Item, das im Nirgendwo verschwindet.
-- [ ] **2. Der Worker fragt vorher.** `deviceToStorage` begrenzt seinen Griff
+- [ ] **2. `room` kennt auch die Busse.** `StorageBus.room` simuliert sein
+      eigenes `insert`; `NetworkStorage.room` zählt es dazu.
+- [ ] **3. Der Worker fragt vorher.** `deviceToStorage` begrenzt seinen Griff
       auf `storage.room(...)`.
-- [ ] **3. Der `move`-Befehl auch.** Dieselbe Änderung in `WorldHost`.
-- [ ] **4. `dropped` fällt.** Wenn nichts mehr fallen kann, braucht es keinen
+- [ ] **4. Der `move`-Befehl auch.** Dieselbe Änderung in `WorldHost`.
+- [ ] **5. `dropped` fällt.** Wenn nichts mehr fallen kann, braucht es keinen
       Auffangkorb. **Erst zuletzt** — solange ein Weg noch fallen lassen
       könnte, ist er die bessere Hälfte des Übels.
-- [ ] **5. Die Meldung.** „Der Netzspeicher ist voll" steht schon da. Sie
+- [ ] **6. Die Meldung.** „Der Netzspeicher ist voll" steht schon da. Sie
       gehört auch ins Protokoll, nicht nur in die Statuszeile eines Workers,
       den gerade niemand ansieht.
 
