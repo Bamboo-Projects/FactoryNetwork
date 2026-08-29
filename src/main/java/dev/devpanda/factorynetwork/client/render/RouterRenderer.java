@@ -34,7 +34,8 @@ public class RouterRenderer implements BlockEntityRenderer<RouterBlockEntity> {
     /** Ein Streifen aus fünf Kacheln: aus, dann Bahn eins bis vier. */
     private static final ResourceLocation LANES = ResourceLocation.fromNamespaceAndPath(
             FactoryNetwork.MOD_ID, "textures/misc/router_lanes.png");
-    private static final float TILES = RouterBlockEntity.LANES + 1;
+    /** Zwei Kacheln: abgeklemmt und offen. Die Farbe kommt beim Zeichnen. */
+    private static final float TILES = 2;
 
     /** Weiter als das ist ein Ring von zwei Blockpixeln nicht mehr zu lesen. */
     private static final double MAX_DISTANCE = 24.0;
@@ -55,14 +56,20 @@ public class RouterRenderer implements BlockEntityRenderer<RouterBlockEntity> {
         Matrix4f matrix = poses.last().pose();
         for (Direction side : Direction.values()) {
             int lane = router.lane(side);
-            // Eine geführte Bahn leuchtet, eine abgeklemmte nicht. Die
+            // Eine offene Seite leuchtet, eine abgeklemmte nicht. Die
             // Beleuchtung dafür kommt von der Nachbarstelle: Im Block selbst
             // ist es dunkel, dort steht ja der Block.
             int faceLight = lane == RouterBlockEntity.OFF
                     ? LevelRenderer.getLightColor(router.getLevel(),
                             router.getBlockPos().relative(side))
                     : LightTexture.FULL_BRIGHT;
-            quad(buffer, matrix, side, lane, faceLight);
+            // <b>Zwei Kacheln, gefärbt.</b> Seit der Router Farben führt
+            // statt vier Bahnen, gäbe es achtzehn Zustände — ein Streifen
+            // mit achtzehn Kacheln wäre eine Textur, die niemand mehr
+            // nachzeichnen kann. Der Ring ist grau und bekommt die Farbe
+            // beim Zeichnen, wie beim Kabel auch.
+            quad(buffer, matrix, side, lane == RouterBlockEntity.OFF ? 0 : 1,
+                    colourOf(side, router), faceLight);
         }
         poses.popPose();
     }
@@ -75,8 +82,22 @@ public class RouterRenderer implements BlockEntityRenderer<RouterBlockEntity> {
      * Rolle, welche der beiden Achsen oben liegt — und eine Rechnung, die
      * nichts dreht, kann sich auch nicht verdrehen.
      */
+    /**
+     * Welche Farbe die Kennung dieser Seite trägt.
+     *
+     * <p>Grau für „alles" und für „aus" — beides ist keine Farbe, und ein
+     * Farbton dafür wäre eine Farbe zu viel im Bild.
+     */
+    private static int colourOf(Direction side, RouterBlockEntity router) {
+        var filter = router.filter(side);
+        if (filter == null || filter.dye() == null) {
+            return 0xFFFFFFFF;
+        }
+        return 0xFF000000 | filter.dye().getTextureDiffuseColor();
+    }
+
     private static void quad(VertexConsumer buffer, Matrix4f matrix, Direction side,
-                             int lane, int light) {
+                             int lane, int colour, int light) {
         float nx = side.getStepX();
         float ny = side.getStepY();
         float nz = side.getStepZ();
@@ -91,21 +112,21 @@ public class RouterRenderer implements BlockEntityRenderer<RouterBlockEntity> {
         float u0 = lane / TILES;
         float u1 = (lane + 1) / TILES;
 
-        corner(buffer, matrix, nx, ny, nz, -1, -1, ux, uz, vy, vz, u0, 1, light);
-        corner(buffer, matrix, nx, ny, nz, 1, -1, ux, uz, vy, vz, u1, 1, light);
-        corner(buffer, matrix, nx, ny, nz, 1, 1, ux, uz, vy, vz, u1, 0, light);
-        corner(buffer, matrix, nx, ny, nz, -1, 1, ux, uz, vy, vz, u0, 0, light);
+        corner(buffer, matrix, nx, ny, nz, -1, -1, ux, uz, vy, vz, u0, 1, colour, light);
+        corner(buffer, matrix, nx, ny, nz, 1, -1, ux, uz, vy, vz, u1, 1, colour, light);
+        corner(buffer, matrix, nx, ny, nz, 1, 1, ux, uz, vy, vz, u1, 0, colour, light);
+        corner(buffer, matrix, nx, ny, nz, -1, 1, ux, uz, vy, vz, u0, 0, colour, light);
     }
 
     private static void corner(VertexConsumer buffer, Matrix4f matrix,
                                float nx, float ny, float nz, float su, float sv,
                                float ux, float uz, float vy, float vz,
-                               float u, float v, int light) {
+                               float u, float v, int colour, int light) {
         float x = nx * OFFSET + su * ux * HALF;
         float y = ny * OFFSET + sv * vy * HALF;
         float z = nz * OFFSET + su * uz * HALF + sv * vz * HALF;
         buffer.addVertex(matrix, x, y, z)
-                .setColor(0xFFFFFFFF)
+                .setColor(colour)
                 .setUv(u, v)
                 .setOverlay(OverlayTexture.NO_OVERLAY)
                 .setLight(light)

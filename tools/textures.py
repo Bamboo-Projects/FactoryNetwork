@@ -1448,26 +1448,22 @@ def router_side():
 
 # Die vier Bahnen und „aus". Farbe und Anzahl heller Ecken sagen dasselbe —
 # wer Farben schlecht unterscheidet, zählt die Ecken.
-LANE_COLOURS = [
-    ((52, 56, 60), (86, 90, 94)),
-    ((236, 168, 48), (255, 226, 150)),
-    ((64, 196, 224), (176, 244, 255)),
-    ((214, 92, 196), (250, 186, 240)),
-    ((132, 216, 72), (208, 255, 168)),
-]
-
-
 def router_lanes():
-    """Ein Streifen aus fünf Kacheln: aus, Bahn 1 bis 4.
+    """Zwei Kacheln: abgeklemmt und offen.
+
+    <b>Grau, weil die Farbe beim Zeichnen kommt.</b> Seit der Router Farben
+    führt statt vier Bahnen, gäbe es achtzehn Zustände — ein Streifen mit
+    achtzehn Kacheln wäre eine Textur, die niemand mehr nachzeichnen kann.
+    Der Ring ist grau und wird eingefärbt, wie das Kabel auch.
 
     <b>Der Ring liegt am Rand, nicht in der Mitte.</b> Ein dickes Kabel deckt
     die mittleren zehn Blockpixel ab — eine Kennung dort wäre genau dann
     verdeckt, wenn die Seite angeschlossen ist, also immer dann, wenn man sie
     lesen will.
     """
-    tiles = len(LANE_COLOURS)
-    strip = Image.new("RGBA", (N * tiles, N), (0, 0, 0, 0))
-    for lane, (base, bright) in enumerate(LANE_COLOURS):
+    base = (208, 212, 216)
+    strip = Image.new("RGBA", (N * 2, N), (0, 0, 0, 0))
+    for offen in (0, 1):
         tile = Image.new("RGBA", (N, N), (0, 0, 0, 0))
         d = ImageDraw.Draw(tile)
         # Ring: außen bei 4, innen bei 12 — bleibt vor dem Kabel sichtbar.
@@ -1476,24 +1472,17 @@ def router_lanes():
         # Dunkle Fase innen und außen, damit der Ring Tiefe bekommt.
         d.rectangle([4, 4, 59, 59], outline=_dunkler(base + (255,), 0.45))
         d.rectangle([12, 12, 51, 51], outline=_dunkler(base + (255,), 0.55))
-        # Tiefe: der Rahmen liegt erhaben auf, das Loch in der Mitte
-        # geht hinunter. Ohne die Umkehr wirkt der Ring aufgemalt.
+        # Tiefe: der Rahmen liegt erhaben auf, das Loch in der Mitte geht
+        # hinunter. Ohne die Umkehr wirkt der Ring aufgemalt.
         raised(tile, (4, 4, 59, 59), hoehe=2)
         recess(tile, (11, 11, 52, 52), tiefe=2)
-        # So viele Ecken hell, wie die Bahn zählt.
-        corners = [(4, 4), (48, 4), (48, 48), (4, 48)]
-        for i in range(lane):
-            x, y = corners[i]
-            d.rectangle([x, y, x + 11, y + 11], fill=bright + (255,))
-            raised(tile, (x, y, x + 11, y + 11), hoehe=1)
-            ao(tile, (x, y, x + 11, y + 11), depth=2, strength=0.30)
-        if lane == 0:
+        if not offen:
             # „Aus" bekommt Lücken in der Mitte jeder Kante: gebrochen statt
             # nur dunkel — das liest man auch aus der Entfernung.
             for box in ([26, 2, 37, 13], [26, 50, 37, 61],
                         [2, 26, 13, 37], [50, 26, 61, 37]):
                 d.rectangle(box, fill=(0, 0, 0, 0))
-        strip.paste(tile, (lane * N, 0))
+        strip.paste(tile, (offen * N, 0))
     return strip
 
 

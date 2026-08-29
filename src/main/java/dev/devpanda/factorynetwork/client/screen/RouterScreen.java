@@ -25,21 +25,59 @@ public class RouterScreen extends AbstractContainerScreen<RouterMenu> {
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
             FactoryNetwork.MOD_ID, "textures/gui/router.png");
 
+    /** Abgeklemmt: dasselbe Dunkelgrau wie am Block. */
+    private static final int OFF_COLOUR = 0xFF34383C;
+
+    /** Alles durch: ein neutrales Hellgrau, kein Farbton. */
+    private static final int ALL_COLOUR = 0xFFB0B4B8;
+
     /**
-     * Die Farben der Bahnen, dieselben wie in {@code textures.py}.
+     * Die Farbe eines Knopfes.
      *
-     * <p>Doppelt aufgeschrieben, weil das Malskript nicht zur Laufzeit läuft.
-     * Laufen sie auseinander, zeigt der Block eine andere Farbe als das
-     * Fenster — die Sorte Fehler, die man sieht und nicht benennen kann.
+     * <p><b>Aus dem Farbstoff und nicht aus einer Liste.</b> Vorher standen
+     * hier fünf Zahlen, doppelt aufgeschrieben — einmal hier, einmal im
+     * Malskript. Seit der Router Farben führt statt Bahnen, sind es
+     * siebzehn, und siebzehn doppelt gepflegte Zahlen laufen auseinander.
      */
-    private static final int[] LANE_COLOURS = {
-            0xFF34383C, 0xFFECA830, 0xFF40C4E0, 0xFFD65CC4, 0xFF84D848};
+    private static int colourOf(int wert) {
+        if (wert == RouterBlockEntity.OFF) {
+            return OFF_COLOUR;
+        }
+        if (wert == RouterBlockEntity.ALL) {
+            return ALL_COLOUR;
+        }
+        var farben = dev.devpanda.factorynetwork.block.CableColour.values();
+        var farbe = farben[Math.min(wert - 2, farben.length - 1)];
+        return farbe.dye() == null ? ALL_COLOUR
+                : 0xFF000000 | farbe.dye().getTextureDiffuseColor();
+    }
 
     private static final int ROW_TOP = 32;
     private static final int ROW_HEIGHT = 18;
     private static final int BUTTON_LEFT = 62;
+
+    /**
+     * Ein Knopf je Seite, nicht einer je Einstellung.
+     *
+     * <p>Achtzehn Einstellungen mal sechs Seiten wären hundertacht Knöpfe.
+     * Stattdessen zeigt jede Zeile <b>ihren</b> Wert, und ein Klick schaltet
+     * weiter — dieselbe Geste wie am Block.
+     */
     private static final int BUTTON_SIZE = 16;
     private static final int BUTTON_STEP = 20;
+
+    /** Wie eine Einstellung heißt: aus, alles, oder eine Farbe. */
+    private static Component labelOf(int wert) {
+        if (wert == RouterBlockEntity.OFF) {
+            return Component.translatable("screen.factorynetwork.router.off");
+        }
+        if (wert == RouterBlockEntity.ALL) {
+            return Component.translatable("screen.factorynetwork.router.all");
+        }
+        var farben = dev.devpanda.factorynetwork.block.CableColour.values();
+        var farbe = farben[Math.min(wert - 2, farben.length - 1)];
+        return Component.translatable("colour.factorynetwork." + farbe.getSerializedName());
+    }
 
     public RouterScreen(RouterMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
@@ -61,22 +99,16 @@ public class RouterScreen extends AbstractContainerScreen<RouterMenu> {
                     leftPos + 9, y + 4, 0x404040, false);
 
             int aktiv = menu.lane(side);
-            for (int lane = 0; lane <= RouterBlockEntity.LANES; lane++) {
-                int x = leftPos + BUTTON_LEFT + lane * BUTTON_STEP;
-                boolean gewaehlt = lane == aktiv;
-                // Der gewählte Knopf steht hell umrandet da; die anderen
-                // liegen matt, damit die Zeile auf einen Blick zu lesen ist.
-                graphics.fill(x, y, x + BUTTON_SIZE, y + BUTTON_SIZE,
-                        gewaehlt ? 0xFFFFFFFF : 0xFF555555);
-                int inner = gewaehlt ? 1 : 2;
-                graphics.fill(x + inner, y + inner, x + BUTTON_SIZE - inner,
-                        y + BUTTON_SIZE - inner, LANE_COLOURS[lane]);
-                if (lane > 0) {
-                    String zahl = String.valueOf(lane);
-                    graphics.drawString(font, zahl,
-                            x + (BUTTON_SIZE - font.width(zahl)) / 2, y + 4, 0x201810, false);
-                }
-            }
+            int x = leftPos + BUTTON_LEFT;
+            graphics.fill(x, y, x + BUTTON_SIZE, y + BUTTON_SIZE, 0xFFFFFFFF);
+            graphics.fill(x + 1, y + 1, x + BUTTON_SIZE - 1, y + BUTTON_SIZE - 1,
+                    colourOf(aktiv));
+
+            // Daneben der Name: Ein Farbfeld allein ist bei siebzehn Farben
+            // nicht mehr zu unterscheiden — Hellblau und Cyan liegen zwei
+            // Pixel auseinander.
+            graphics.drawString(font, labelOf(aktiv),
+                    x + BUTTON_SIZE + 6, y + 4, 0x404040, false);
         }
     }
 
@@ -91,7 +123,7 @@ public class RouterScreen extends AbstractContainerScreen<RouterMenu> {
         int lane = laneAt(mouseX, mouseY);
         if (lane > 0) {
             graphics.renderTooltip(font, List.of(
-                            Component.translatable("screen.factorynetwork.router.lane", lane),
+                            labelOf(lane),
                             Component.translatable("screen.factorynetwork.router.load",
                                     menu.formatLoad(lane))),
                     java.util.Optional.empty(), mouseX, mouseY);
@@ -101,42 +133,44 @@ public class RouterScreen extends AbstractContainerScreen<RouterMenu> {
         }
     }
 
-    /** Über welchem Knopf der Zeiger steht, oder -1. */
+    /** Welche Einstellung unter dem Zeiger steht, oder -1. */
     private int laneAt(int mouseX, int mouseY) {
+        Direction side = sideAt(mouseX, mouseY);
+        return side == null ? -1 : menu.lane(side);
+    }
+
+    /** Über welcher Zeile der Zeiger steht, oder {@code null}. */
+    private Direction sideAt(double mouseX, double mouseY) {
+        int x = leftPos + BUTTON_LEFT;
+        if (mouseX < x || mouseX >= x + BUTTON_SIZE) {
+            return null;
+        }
         for (Direction side : Direction.values()) {
             int y = topPos + ROW_TOP + side.ordinal() * ROW_HEIGHT;
-            if (mouseY < y || mouseY >= y + BUTTON_SIZE) {
-                continue;
-            }
-            for (int lane = 0; lane <= RouterBlockEntity.LANES; lane++) {
-                int x = leftPos + BUTTON_LEFT + lane * BUTTON_STEP;
-                if (mouseX >= x && mouseX < x + BUTTON_SIZE) {
-                    return lane;
-                }
+            if (mouseY >= y && mouseY < y + BUTTON_SIZE) {
+                return side;
             }
         }
-        return -1;
+        return null;
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        for (Direction side : Direction.values()) {
-            int y = topPos + ROW_TOP + side.ordinal() * ROW_HEIGHT;
-            if (mouseY < y || mouseY >= y + BUTTON_SIZE) {
-                continue;
-            }
-            for (int lane = 0; lane <= RouterBlockEntity.LANES; lane++) {
-                int x = leftPos + BUTTON_LEFT + lane * BUTTON_STEP;
-                if (mouseX >= x && mouseX < x + BUTTON_SIZE) {
-                    Minecraft minecraft = Minecraft.getInstance();
-                    minecraft.gameMode.handleInventoryButtonClick(menu.containerId,
-                            RouterMenu.buttonFor(side, lane));
-                    minecraft.getSoundManager().play(
-                            net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
-                                    net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK, 1.0F));
-                    return true;
-                }
-            }
+        Direction side = sideAt(mouseX, mouseY);
+        if (side != null) {
+            // Ein Klick schaltet weiter, statt einen von achtzehn Knöpfen zu
+            // treffen — dieselbe Geste wie am Block. Rechtsklick geht
+            // zurück: Wer eine Farbe verpasst, wartet sonst siebzehn Klicks.
+            int naechste = button == 1
+                    ? (menu.lane(side) + RouterBlockEntity.LANES) % (RouterBlockEntity.LANES + 1)
+                    : (menu.lane(side) + 1) % (RouterBlockEntity.LANES + 1);
+            Minecraft minecraft = Minecraft.getInstance();
+            minecraft.gameMode.handleInventoryButtonClick(menu.containerId,
+                    RouterMenu.buttonFor(side, naechste));
+            minecraft.getSoundManager().play(
+                    net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
+                            net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK, 1.0F));
+            return true;
         }
         return super.mouseClicked(mouseX, mouseY, button);
     }

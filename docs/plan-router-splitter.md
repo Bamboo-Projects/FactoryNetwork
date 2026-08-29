@@ -1,4 +1,4 @@
-# Der Router als Splitter — Aufgaben 1 und 2 erledigt am 29.08.
+# Der Router als Splitter — erledigt am 29.08.
 
 **Auftrag:** „ich will ein kabel wo alle farben durch gehen aber man kann
 durch den Routerblock einzelne farben aus dem hauptstrang abgreifen. also wie
@@ -74,8 +74,8 @@ kein zusätzlicher Code.
       weiter, mit der es ankam — außer die Seite filtert, dann nur diese.
       **Die Stelle, an der es scharf wird:** Ein Router darf zwei Farben nicht
       verschmelzen, sonst ist er wieder ein Mischer.
-- [ ] **3. Das Fenster.** Statt Bahnnummern eine Farbwahl je Seite.
-- [ ] **4. Was man von außen sieht.** Die Seiten färben sich nach ihrer
+- [x] **3. Das Fenster.** Statt Bahnnummern eine Farbwahl je Seite.
+- [x] **4. Was man von außen sieht.** Die Seiten färben sich nach ihrer
       Einstellung — sonst muss man das Fenster öffnen, um zu sehen, was
       wohin geht.
 
@@ -111,3 +111,13 @@ Fassung prüfte nur, ob der kürzeste Weg durch das andere Kabel führt — der 
 es nie, egal ob der Filter wirkt. Sie blieb grün, während der Filter
 abgeschaltet war. Die scharfe Fassung hängt ein Gerät hinter einen falsch
 gefilterten Ausgang: Das ist der Fall, der ohne Filter durchkommt.
+
+**Und beim Fenster kam noch etwas dazu:** Achtzehn Einstellungen mal sechs
+Seiten wären hundertacht Knöpfe gewesen. Stattdessen zeigt jede Zeile ihren
+Wert, ein Klick schaltet weiter, ein Rechtsklick zurück — dieselbe Geste wie
+am Block. Der Name steht daneben, weil ein Farbfeld allein bei siebzehn
+Farben nichts mehr aussagt: Hellblau und Cyan liegen zwei Pixel auseinander.
+
+Am Block dasselbe Problem, andere Lösung: Der Ring ist jetzt grau und wird
+beim Zeichnen eingefärbt, wie das Kabel auch. Zwei Kacheln statt achtzehn —
+eine Textur mit achtzehn Kacheln könnte niemand mehr nachzeichnen.
