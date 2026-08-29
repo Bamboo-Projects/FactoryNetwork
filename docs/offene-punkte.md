@@ -5,6 +5,54 @@ Alles, was in `docs/` und im Code als unfertig steht, an einer Stelle.
 Stand: 2026-08-26 (nach den beiden Schnitten am Wertemodell und der
 Handbucharbeit)
 
+## Die Kanäle sind weg (29.08.)
+
+Auf „ich will auch nicht AE2 nachmachen" hin: **Durchsatz statt Kanäle.** Die
+Grenze am Kabel zählt jetzt, *wie viel je Tick hindurchgeht*, nicht, *wie
+viele Geräte dahinter hängen*.
+
+**Dein Argument hat die Entscheidung gedreht.** Ich hatte vorher einen
+Schalter vorgeschlagen (AE2 hat einen). Der wäre AE2s Antwort auf AE2s
+Zwiespalt gewesen — und in `entscheidungen.md` stand wörtlich „Das Vorbild ist
+Applied Energistics". Die Kanäle waren ein Zitat, und ein Schalter hätte es
+stehengelassen.
+
+**Der Grund, der trägt, ist aber die Passung:** Bei AE2 ist die Form des
+Netzes das Spiel. Hier ist es der Code. Ein Programm sieht nie, welchen Weg
+ein Kanal nimmt — es sieht nur, ob `move 64 per 1t` durchkommt.
+
+### Was sich für dich ändert
+
+- **Ein gewöhnliches Kabel trägt 64 je Tick, ein dichtes 512.** Router,
+  Gateway und Brücke wie dicht.
+- **Nichts schaltet mehr ab.** Wer erreichbar ist, arbeitet — bei vollem
+  Kabel langsamer, nicht gar nicht. Der Zustand „ohne Kanal" existiert nicht
+  mehr.
+- **Der Analysator zeigt Auslastung** statt Kanalzahl, aus echten Zahlen des
+  letzten Ticks.
+- **In deiner bestehenden Welt werden Geräte anlaufen**, die mangels Kanal
+  stumm waren. Das ist die gewollte Richtung, sieht aber im ersten Moment aus
+  wie ein Fehler.
+
+### Was offen bleibt und dir gehört
+
+- **Der Anbau hat seinen Zweck verloren.** Er bot Kabelseiten, und die sind
+  nicht mehr knapp. Er kostet weiter Strom und tut nichts — das gehört in
+  dieselbe Entscheidung wie der Multiblock (`controller-multiblock.md`).
+- **Die Zahlen sind ein Vorschlag**, keine Messung. Ob 64 je Tick eng oder
+  großzügig ist, weiß man nach einer Stunde Spielen; sie stehen als zwei
+  Konstanten in `Throughput.java`.
+- **Das dichte Kabel ist jetzt achtmal so gut wie das dünne** (vorher
+  viermal). Falls dir das zu viel ist, ist es dieselbe Zeile.
+
+### Zum Prüfen
+
+Bau eine Leitung mit zehn Anschlüssen an einem *dünnen* Kabel. Früher wären
+ab dem siebzehnten Gerät welche leer ausgegangen; jetzt laufen alle. Dann
+schau mit dem Analysator auf die Strecke: Dort steht, wie voll sie ist.
+
+**331 Prüfläufe grün. Der Client muss neu starten.**
+
 ## Morgens zuerst
 
 Sieben Dinge im Spiel, in dieser Reihenfolge — die Nacht hat viel angefasst,
