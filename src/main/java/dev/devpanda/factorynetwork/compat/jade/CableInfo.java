@@ -48,7 +48,9 @@ public enum CableInfo implements IBlockComponentProvider, IServerDataProvider<Bl
         // Der Durchsatz je Tick, nicht die Kanallast: Seit dem 29.08.
         // begrenzt, wie viel hindurchgeht, und nicht, wie viele Geräte
         // dahinter hängen.
-        String load = String.valueOf(
+        // In Byte je Sekunde, nicht als rohe Zahl je Tick: "500" ist keine
+        // Auskunft, "10 KB/s" schon.
+        String load = dev.devpanda.factorynetwork.network.Bandwidth.perSecond(
                 dev.devpanda.factorynetwork.network.Bandwidth.at(level, pos));
         lines.add(StringTag.valueOf(colour.getSerializedName() + " " + load));
         data.put(KEY_STRANDS, lines);

@@ -63,10 +63,11 @@ public enum RouterInfo implements IBlockComponentProvider, IServerDataProvider<B
             // Bahn ohne Netz trägt nichts, das ist nicht dasselbe wie null.
             // Was eine Bahn trägt, ist ihr Durchsatz je Tick — nicht,
             // wie viele Geräte dahinter hängen.
-            String load = String.valueOf(
-                    dev.devpanda.factorynetwork.network.Bandwidth.DENSE);
-            lines.add(StringTag.valueOf(lane + SEPARATOR + load + SEPARATOR
-                    + dev.devpanda.factorynetwork.network.Bandwidth.DENSE
+            // Roh über die Leitung, formatiert beim Anzeigen: Die
+            // Sprachdatei des Betrachters entscheidet, wie eine Zahl
+            // aussieht, nicht die des Servers.
+            int durchsatzProTick = dev.devpanda.factorynetwork.network.Bandwidth.DENSE;
+            lines.add(StringTag.valueOf(lane + SEPARATOR + durchsatzProTick
                     + SEPARATOR + String.join(",", sides)));
             // Die Kapazität steht als ganze Zahl da: Ein Router trägt immer
         }
@@ -93,23 +94,36 @@ public enum RouterInfo implements IBlockComponentProvider, IServerDataProvider<B
         ListTag lines = accessor.getServerData().getList(KEY_LANES, Tag.TAG_STRING);
         for (int i = 0; i < lines.size(); i++) {
             String[] parts = lines.getString(i).split(SEPARATOR, -1);
-            if (parts.length < 4) {
+            if (parts.length < 3) {
                 continue;
             }
-            MutableComponent sides = sideList(parts[3]);
+            MutableComponent sides = sideList(parts[2]);
             if ("0".equals(parts[0])) {
                 tooltip.add(Component.translatable("jade.factorynetwork.router.off", sides)
                         .withStyle(ChatFormatting.DARK_GRAY));
                 continue;
             }
-            // Der Durchsatz dieser Seite, in Byte je Sekunde.
-            int durchsatz = Integer.parseInt(parts[2]);
+            // Was diese Seite durchlässt, als Name — eine Nummer sagt
+            // seit dem 29.08. nichts mehr: Der Router führt Farben.
+            int wert = Integer.parseInt(parts[0]);
+            Component filter = wert == dev.devpanda.factorynetwork.block.entity
+                    .RouterBlockEntity.ALL
+                    ? Component.translatable("screen.factorynetwork.router.all")
+                    : colourName(wert);
+            int durchsatz = Integer.parseInt(parts[1]);
             tooltip.add(Component.translatable("jade.factorynetwork.router.lane",
-                            parts[0],
+                            filter,
                             dev.devpanda.factorynetwork.network.Bandwidth.perSecond(durchsatz),
                             sides)
                     .withStyle(ChatFormatting.GRAY));
         }
+    }
+
+    /** Wie die Farbe hinter einer Einstellungsnummer heißt. */
+    private static Component colourName(int wert) {
+        var farben = dev.devpanda.factorynetwork.block.CableColour.values();
+        var farbe = farben[Math.max(0, Math.min(wert - 2, farben.length - 1))];
+        return Component.translatable("colour.factorynetwork." + farbe.getSerializedName());
     }
 
     private static MutableComponent sideList(String joined) {
