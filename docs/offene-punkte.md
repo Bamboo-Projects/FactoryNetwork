@@ -5,6 +5,70 @@ Alles, was in `docs/` und im Code als unfertig steht, an einer Stelle.
 Stand: 2026-08-26 (nach den beiden Schnitten am Wertemodell und der
 Handbucharbeit)
 
+## Bandbreite und der Router als Splitter (29.08., nachmittags)
+
+### Byte statt Zahlen
+
+Ein Gegenstand ist ein Byte. Ein gewöhnliches Kabel trägt **1 KB/s**, ein
+dichtes **10 KB/s**. Angezeigt wird je Sekunde, gerechnet je Tick.
+
+**Damit sind die Kanäle restlos weg** — `CHANNELS_THIN`, `CHANNELS_DENSE`,
+`channelsAt`, `capacityAt`, `CHANNELS_PER_STRAND`. Das Kabel kennt seine
+Bandbreite selbst.
+
+Die Anzeige hat drei Stufen: unter einem Kilobyte in Byte (sonst wäre „0 KB/s"
+für einen arbeitenden Worker eine Lüge durch Rundung), krumme mit einer
+Nachkommastelle, glatte ohne.
+
+### Der Router ist jetzt ein Splitter
+
+Dein Glasfaser-Bild: **Eine Leitung trägt alle Farben, der Router zieht
+einzelne heraus.** Je Seite ein Filter — ohne Filter geht alles durch, mit
+Farbe nur diese.
+
+**Er war vorher das Gegenteil.** Im Code stand wörtlich „Farbneutral: Was auf
+einer Bahn zusammenkommt, ist verbunden, egal in welcher Farbe es ankam" — ein
+Mischer. Zwei getrennte Teilnetze wuchsen über ihn zusammen.
+
+Die alte Aufgabe kann er weiter: Zwei Seiten auf dieselbe Farbe sind
+verbunden, verschiedene kreuzen sich berührungslos. **Kreuzen ist jetzt ein
+Sonderfall des Filterns.**
+
+**Alte Router behalten ihre Trennung.** Die gespeicherten Zahlen bedeuten
+Farben statt Bahnen, kein Migrationslauf.
+
+### Bedienung
+
+Im Fenster: ein Feld je Seite, Linksklick schaltet weiter, **Rechtsklick
+zurück**. Der Farbname steht daneben — bei siebzehn Farben sagt ein Farbfeld
+allein nichts mehr aus.
+
+Am Block: Der Ring färbt sich nach seiner Einstellung. Grau heißt „alles",
+gebrochen heißt „aus".
+
+### Zum Prüfen im Spiel
+
+1. **Ein neutrales Kabel als Hauptstrang**, daran ein Router.
+2. **Am Router eine Seite auf Rot stellen**, dort ein rotes Kabel anschließen.
+3. **Eine zweite Seite auf Blau**, dort ein blaues.
+4. Beide Teilnetze hängen am Netz — **und sind nicht miteinander verbunden**.
+
+**Wichtig:** Ein roter Ausgang führt in ein *rotes* Kabel. Liegt dort ein
+neutrales, geht nichts hindurch — sonst wäre der Filter wirkungslos, denn
+neutral verbindet sich mit allem.
+
+### Zu IPv4 und VLANs
+
+**Ein VLAN gibt es schon** — die Kabelfarben trennen Netze auf derselben
+Leitung, genau das tut ein VLAN. Es fehlt nur der Name, und den könnte der
+Analysator tragen.
+
+**Adressen würde ich nicht bauen.** `move 64 to ofen_1` liest sich;
+`move 64 to 192.168.1.7` nicht. Subnetze und Routing-Tabellen wären Ebenen für
+ein Problem, das diese Mod nicht hat.
+
+**332 Prüfläufe grün.**
+
 ## Die Kanäle sind weg (29.08.)
 
 Auf „ich will auch nicht AE2 nachmachen" hin: **Durchsatz statt Kanäle.** Die
