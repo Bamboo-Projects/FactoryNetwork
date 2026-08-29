@@ -678,6 +678,7 @@ public class ControllerBlockEntity extends BlockEntity {
         fireInventoryEvents();
         pushStorageIfDue();
         pushFlowsIfDue();
+        pushTraffic();
         setChanged();
     }
 
@@ -1608,6 +1609,38 @@ public class ControllerBlockEntity extends BlockEntity {
         // regelmäßigen Schickens auftut — und wer ihn gezielt aufmacht,
         // hätte den Eindruck, es sei nichts passiert.
         pushLogTo(player);
+        pushTrafficTo(player);
+    }
+
+    /**
+     * Schickt den Verkehrsverlauf an einen Zuschauer.
+     *
+     * <p>Nur an die, die das Terminal offen haben: Der Verlauf ändert sich
+     * jede Sekunde, und ein Netz mit zehn Spielern schickte ihn sonst
+     * zehnmal an niemanden.
+     */
+    private void pushTrafficTo(ServerPlayer player) {
+        net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,
+                dev.devpanda.factorynetwork.network.packet.TrafficPacket.of(
+                        runtime.history()));
+    }
+
+    /**
+     * Und einmal je Sekunde an alle Zuschauer.
+     *
+     * <p>Je Sekunde, weil der Verlauf einen Punkt je Sekunde hat — häufiger
+     * zu schicken hieße, dieselbe Kurve mehrmals zu übertragen.
+     */
+    private void pushTraffic() {
+        if (level == null || terminalWatchers.isEmpty()
+                || level.getGameTime() % dev.devpanda.factorynetwork.network.Bandwidth
+                        .TICKS_PER_SECOND != 0) {
+            return;
+        }
+        var paket = dev.devpanda.factorynetwork.network.packet.TrafficPacket.of(
+                runtime.history());
+        terminalWatchers.forEach(watcher ->
+                net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(watcher, paket));
     }
 
     /**

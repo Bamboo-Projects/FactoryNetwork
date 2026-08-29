@@ -179,11 +179,25 @@ public final class WorkerRuntime {
         return budget;
     }
 
+    /**
+     * Was das Netz über die Zeit bewegt hat.
+     *
+     * <p>Neben dem Budget und nicht darin: Das Budget läuft je Tick ab, der
+     * Verlauf läuft weiter.
+     */
+    private final dev.devpanda.factorynetwork.network.TrafficHistory history =
+            new dev.devpanda.factorynetwork.network.TrafficHistory();
+
+    public dev.devpanda.factorynetwork.network.TrafficHistory history() {
+        return history;
+    }
+
     public void tick(Level level, Program program, FactoryGraph graph,
             dev.devpanda.factorynetwork.network.NetworkStores stores, Interpreter.Host host) {
         // Ein neuer Tick fängt bei null an: Was gestern durchging, begrenzt
         // heute nichts.
         budget.reset();
+        history.tick();
         this.conditionHost = host;
         this.conditionProgram = program;
         // Alle Bestände in einem Griff. Vorher standen hier zwei Parameter
@@ -378,6 +392,10 @@ public final class WorkerRuntime {
         // Mit der wirklichen Menge, nicht der geplanten: Wer 64 wollte und
         // 3 bekam, hat das Kabel nicht mit 64 belegt.
         budget.spend(path, (int) moved);
+        // Und derselbe Betrag in den Verlauf, unter dem Namen des Workers.
+        // Nicht unter dem des Geräts: Ein Worker kann von mehreren nehmen,
+        // und die Frage lautet „welches Programm frisst am meisten".
+        history.record(worker.name(), (int) moved);
 
         // Ist das Ziel voll und ein Ausweichziel angegeben, geht es dorthin.
         // Ohne das steht ein Worker bei vollem Lager still, statt den

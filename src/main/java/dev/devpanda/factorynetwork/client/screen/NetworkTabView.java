@@ -20,6 +20,10 @@ import java.util.List;
  * werden. Der Wert liegt darin, dass ein stehender Worker sichtbar wird — bis
  * jetzt erfuhr man davon nur, wenn eine Maschine nichts mehr bekam.
  */
+import dev.devpanda.factorynetwork.client.ClientTraffic;
+import dev.devpanda.factorynetwork.network.Bandwidth;
+import dev.devpanda.factorynetwork.network.packet.TrafficPacket;
+
 public class NetworkTabView {
 
     private static final int LINE = 10;
@@ -46,6 +50,12 @@ public class NetworkTabView {
     public void render(GuiGraphics graphics, int mouseX, int mouseY) {
         int line = y + 3;
 
+        // Der Verkehr zuerst: „Was frisst wie viel" ist die Frage, mit der
+        // man diesen Reiter aufmacht. Die Namensliste steht darunter — sie
+        // beantwortet „was gibt es", und das weiß man meistens schon.
+        line = section(graphics, line, "screen.factorynetwork.terminal.network.traffic");
+        line = traffic(graphics, line);
+        line += 2;
         line = section(graphics, line, "screen.factorynetwork.terminal.network.connectors");
         List<String> connectors = ClientNetworkState.connectors();
         if (connectors.isEmpty()) {
@@ -317,6 +327,71 @@ public class NetworkTabView {
             }
         }
         return false;
+    }
+
+    /** Wie hoch das Diagramm ist. */
+    private static final int CHART_HEIGHT = 34;
+
+    /**
+     * Zeichnet den Verkehr: eine Kurve und darunter, wer sie verursacht.
+     *
+     * <p><b>Die Kurve zeigt Sekunden, nicht Ticks.</b> Fünf Minuten Verlauf
+     * auf der Breite des Fensters — wer wissen will, was gerade passiert,
+     * sieht rechts hin; wer wissen will, was vorhin war, links.
+     *
+     * <p><b>Der Maßstab wächst mit.</b> Ein fester Maßstab wäre bei einem
+     * ruhigen Netz eine flache Linie am Boden und bei einem vollen eine
+     * Wand. Die Spitze steht als Zahl darüber, sonst wüsste niemand, wie
+     * hoch hoch ist.
+     */
+    private int traffic(GuiGraphics graphics, int line) {
+        List<Integer> verlauf = ClientTraffic.perSecond();
+        int peak = ClientTraffic.peak();
+
+        // Die Spitze und die Gesamtmenge als Überschrift: Ohne Zahlen ist
+        // eine Kurve eine Verzierung.
+        graphics.drawString(font, Component.translatable(
+                        "screen.factorynetwork.terminal.network.traffic.scale",
+                        Bandwidth.perSecond(peak / Bandwidth.TICKS_PER_SECOND),
+                        Bandwidth.total(ClientTraffic.total())),
+                x + 3, line, TerminalScreen.TEXT_DIM, false);
+        line += LINE + 2;
+
+        int left = x + 3;
+        int right = x + width - 3;
+        int bottom = line + CHART_HEIGHT;
+        graphics.fill(left, line, right, bottom, 0x22000000);
+
+        // Eine Säule je Sekunde, von rechts nach links: Der jüngste Wert
+        // steht am Rand, wo das Auge zuerst hinsieht.
+        int columns = Math.min(verlauf.size(), right - left);
+        for (int i = 0; i < columns; i++) {
+            int wert = verlauf.get(verlauf.size() - 1 - i);
+            int hoehe = Math.max(wert > 0 ? 1 : 0, wert * CHART_HEIGHT / peak);
+            int cx = right - 1 - i;
+            graphics.fill(cx, bottom - hoehe, cx + 1, bottom, 0xFF57C97A);
+        }
+        line = bottom + LINE;
+
+        // Und darunter: wer die Kurve verursacht.
+        List<TrafficPacket.Consumer> top = ClientTraffic.top();
+        if (top.isEmpty()) {
+            return text(graphics, line, Component.translatable(
+                    "screen.factorynetwork.terminal.network.traffic.quiet").getString(),
+                    0x8B8B8B);
+        }
+        for (TrafficPacket.Consumer one : top) {
+            if (line >= y + height - LINE) {
+                break;
+            }
+            graphics.drawString(font, font.plainSubstrByWidth(one.name(), width - 70),
+                    x + 3, line, TerminalScreen.TEXT, false);
+            String menge = Bandwidth.total(one.bytes());
+            graphics.drawString(font, menge, x + width - 3 - font.width(menge), line,
+                    TerminalScreen.TEXT_DIM, false);
+            line += LINE;
+        }
+        return line;
     }
 
     private int section(GuiGraphics graphics, int line, String key) {

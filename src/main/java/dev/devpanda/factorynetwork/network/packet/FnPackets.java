@@ -24,6 +24,8 @@ public final class FnPackets {
                 SaveDraftPacket::handle);
         registrar.playToClient(NetworkStatePacket.TYPE, NetworkStatePacket.STREAM_CODEC,
                 NetworkStatePacket::handle);
+        registrar.playToClient(TrafficPacket.TYPE, TrafficPacket.STREAM_CODEC,
+                TrafficPacket::handle);
         registrar.playToClient(StorageSnapshotPacket.TYPE, StorageSnapshotPacket.STREAM_CODEC,
                 StorageSnapshotPacket::handle);
         registrar.playToServer(StorageActionPacket.TYPE, StorageActionPacket.STREAM_CODEC,

@@ -58,6 +58,33 @@ class BandwidthTest {
     }
 
     @Test
+    @DisplayName("Eine Gesamtmenge steigt durch die Einheiten")
+    void totalsClimbThroughTheUnits() {
+        // Ein Netz, das eine Woche läuft, bewegt Gigabyte — und
+        // "14603219 B" ist keine Auskunft, sondern eine Zahlenreihe.
+        assertEquals("340 B", Bandwidth.total(340));
+        assertEquals("12,4 KB", Bandwidth.total(12_400));
+        assertEquals("3,1 MB", Bandwidth.total(3_140_000));
+        assertEquals("2,0 GB", Bandwidth.total(2_000_000_000L));
+        assertEquals("1,5 TB", Bandwidth.total(1_500_000_000_000L));
+    }
+
+    @Test
+    @DisplayName("Und hört bei Terabyte auf")
+    void itStopsAtTerabytes() {
+        // Petabyte wäre eine Einheit für eine Zahl, die niemand erreicht —
+        // und eine Stufe, die niemand je gesehen hat, verwirrt mehr, als
+        // eine große Zahl es täte.
+        assertTrue(Bandwidth.total(9_000_000_000_000_000L).endsWith("TB"));
+    }
+
+    @Test
+    @DisplayName("Null ist null, nicht 0,0 B")
+    void zeroIsZero() {
+        assertEquals("0 B", Bandwidth.total(0));
+    }
+
+    @Test
     @DisplayName("Was nicht leitet, begrenzt auch nichts")
     void whatDoesNotCarryDoesNotLimit() {
         assertEquals(Integer.MAX_VALUE, Bandwidth.UNLIMITED);

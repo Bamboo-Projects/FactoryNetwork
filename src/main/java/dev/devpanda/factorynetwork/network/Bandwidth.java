@@ -95,6 +95,35 @@ public final class Bandwidth {
     }
 
     /** Was von einer Kapazität schon verbraucht ist: „0,4 von 1 KB/s". */
+    /** Die Stufen, in denen eine Gesamtmenge gelesen wird. */
+    private static final String[] UNITS = {"B", "KB", "MB", "GB", "TB"};
+
+    /**
+     * Eine Gesamtmenge, lesbar: 340 B, 12,4 KB, 3,1 MB.
+     *
+     * <p><b>Nicht je Sekunde, sondern insgesamt.</b> Ein Netz, das eine Woche
+     * läuft, bewegt Gigabyte — und "14603219 B" ist keine Auskunft, sondern
+     * eine Zahlenreihe.
+     *
+     * <p>Tausend und nicht 1024: Wir sind bei Byte je Sekunde, und dort
+     * rechnet die Welt dezimal. Ein KB/s ist tausend Byte, sonst wäre schon
+     * die Umrechnung aus dem Tick krumm.
+     */
+    public static String total(long bytes) {
+        double wert = bytes;
+        int stufe = 0;
+        while (wert >= 1000 && stufe < UNITS.length - 1) {
+            wert /= 1000;
+            stufe++;
+        }
+        if (stufe == 0) {
+            return (long) wert + " " + UNITS[0];
+        }
+        // Eine Nachkommastelle: "12,4 MB" sagt genug, "12,437 MB" ist
+        // Rauschen an einer Zahl, die ohnehin weiterläuft.
+        return String.format(Locale.GERMANY, "%.1f %s", wert, UNITS[stufe]);
+    }
+
     public static String usage(int usedPerTick, int capacityPerTick) {
         if (capacityPerTick >= UNLIMITED) {
             return perSecond(usedPerTick);
