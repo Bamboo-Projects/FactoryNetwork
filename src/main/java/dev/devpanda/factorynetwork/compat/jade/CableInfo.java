@@ -45,10 +45,11 @@ public enum CableInfo implements IBlockComponentProvider, IServerDataProvider<Bl
         // Die Kapazität steht am Kabel, nicht an der Mod: ein dickes trägt
         // vierundsechzig, ein gewöhnliches sechzehn. Mit der festen Zahl
         // meldete ein dichtes Kabel ab dem sechzehnten Kanal „voll".
-        String load = controller
-                .map(entity -> String.valueOf(entity.graph().channelLoad(pos, colour)) + "/"
-                        + String.valueOf(FactoryGraph.capacityAt(level, pos)))
-                .orElse("—");
+        // Der Durchsatz je Tick, nicht die Kanallast: Seit dem 29.08.
+        // begrenzt, wie viel hindurchgeht, und nicht, wie viele Geräte
+        // dahinter hängen.
+        String load = String.valueOf(
+                dev.devpanda.factorynetwork.network.Throughput.at(level, pos));
         lines.add(StringTag.valueOf(colour.getSerializedName() + " " + load));
         data.put(KEY_STRANDS, lines);
     }

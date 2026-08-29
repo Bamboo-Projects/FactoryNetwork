@@ -29,7 +29,6 @@ public final class AnalyserScan {
         // Gezeichnet wird an Blöcken: Zwei Anschlüsse an einem Kabelblock
         // stehen an derselben Stelle im Raum, und der Punkt dort gilt für
         // beide.
-        Set<BlockPos> starved = places(graph.starvedConnectors());
         Set<BlockPos> unnamed = places(graph.unnamedConnectors());
 
         // Doppelt vergebene Namen: Alle Stellen dazu sind unbrauchbar, nicht
@@ -53,7 +52,6 @@ public final class AnalyserScan {
             BlockPos pos = entry.getKey();
             AnalyserData.NodeState state = duplicates.contains(pos)
                     ? AnalyserData.NodeState.DUPLICATE
-                    : starved.contains(pos) ? AnalyserData.NodeState.STARVED
                     : AnalyserData.NodeState.DEVICE;
             nodes.add(new AnalyserData.Node(pos, state, String.join(", ", entry.getValue())));
         }
@@ -82,40 +80,27 @@ public final class AnalyserScan {
             nodes.add(new AnalyserData.Node(pos, AnalyserData.NodeState.EXTENSION, ""));
         }
         // Geräte ohne Kanal stehen nicht in der Namensliste, wenn sie gar
-        // nicht erst aufgenommen wurden. Sie fehlen sonst genau dort, wo man
-        // sie sucht.
-        for (BlockPos pos : starved) {
-            if (nodes.stream().noneMatch(node -> node.pos().equals(pos))) {
-                nodes.add(new AnalyserData.Node(pos, AnalyserData.NodeState.STARVED, ""));
-            }
-        }
 
         int tight = 0;
         int full = 0;
         List<AnalyserData.Link> links = new ArrayList<>();
         for (FactoryGraph.Edge edge : graph.edges()) {
-            int load = graph.channelLoad(edge.to());
-            // Die Kapazität steht an der Stelle, nicht an der Mod: ein dickes
-            // Kabel und eine Bahn im Router tragen vierundsechzig, ein
-            // gewöhnliches sechzehn. Mit der festen Zahl meldete der
-            // Analysator jede dichte Strecke ab dem sechzehnten Kanal als
-            // voll — und wies damit auf eine Enge hin, die es nicht gab.
-            int capacity = FactoryGraph.capacityAt(controller.getLevel(), edge.to().pos());
-            AnalyserData.LinkState state = load >= capacity ? AnalyserData.LinkState.FULL
-                    : load * 4 >= capacity * 3 ? AnalyserData.LinkState.TIGHT
-                    : AnalyserData.LinkState.FREE;
-            if (state == AnalyserData.LinkState.FULL) {
-                full++;
-            } else if (state == AnalyserData.LinkState.TIGHT) {
-                tight++;
-            }
+            // <b>Was hier steht, ist noch keine Auslastung.</b> Seit dem
+            // 29.08. begrenzt Durchsatz statt Kanälen, und wie viel
+            // tatsächlich fließt, weiß erst die Laufzeit — Aufgabe 3 in
+            // plan-durchsatz-statt-kanaele.md.
+            //
+            // Bis dahin nennt der Analysator die Kapazität und behauptet
+            // keine Enge: Eine erfundene Zahl wäre schlimmer als keine.
+            int capacity = dev.devpanda.factorynetwork.network.Throughput.at(
+                    controller.getLevel(), edge.to().pos());
             links.add(new AnalyserData.Link(edge.from().pos(), edge.to().pos(),
-                    state, load, capacity));
+                    AnalyserData.LinkState.FREE, 0, capacity));
         }
 
         AnalyserData.Summary summary = new AnalyserData.Summary(
                 graph.connectorNames().size(), graph.cableCount(),
-                starved.size(), unnamed.size(), duplicates.size(), tight, full);
+                0, unnamed.size(), duplicates.size(), tight, full);
         return new AnalyserData(List.copyOf(nodes), List.copyOf(links), summary);
     }
 

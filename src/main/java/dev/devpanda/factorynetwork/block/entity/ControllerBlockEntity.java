@@ -1778,7 +1778,7 @@ public class ControllerBlockEntity extends BlockEntity {
         for (DevicePos where : graph.unnamedConnectors()) {
             found.put(where, DeviceState.UNNAMED);
         }
-        for (DevicePos where : graph.starvedConnectors()) {
+        for (DevicePos where : java.util.List.<DevicePos>of()) {
             // Ohne Kanal bleiben auch Laufwerke und Schränke; die tragen
             // keinen Zustand, und ihre Stelle hat keine Fläche.
             if (where.side() != null) {

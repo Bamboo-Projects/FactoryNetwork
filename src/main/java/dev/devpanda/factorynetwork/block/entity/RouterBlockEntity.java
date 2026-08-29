@@ -116,10 +116,10 @@ public class RouterBlockEntity extends BlockEntity {
         if (level == null) {
             return 0;
         }
-        return dev.devpanda.factorynetwork.network.ControllerRegistry
-                .owning(level, worldPosition)
-                .map(controller -> controller.graph().laneLoad(worldPosition, lane))
-                .orElse(0);
+        // Seit dem 29.08. gibt es keine Kanallast mehr — was eine Bahn
+        // trägt, ist ihr Durchsatz, und der hängt nicht davon ab, wie viele
+        // Geräte dahinter liegen.
+        return dev.devpanda.factorynetwork.network.Throughput.DENSE;
     }
 
     private int laneCapacity() {

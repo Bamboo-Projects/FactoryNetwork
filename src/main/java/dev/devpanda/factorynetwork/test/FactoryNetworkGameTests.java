@@ -796,69 +796,7 @@ public final class FactoryNetworkGameTests {
         }
     }
 
-    @GameTest(template = EMPTY, timeoutTicks = 300)
-    public static void aCableCarriesSixteenChannels(GameTestHelper helper) {
-        BlockPos controller = new BlockPos(1, 2, 1);
-        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
-        rackWithServer(helper, controller.west());
 
-        // Eine Kabelreihe nach Osten, darüber und darunter je vier Connectoren
-        line(helper, controller.east(), 5);
-        int placed = 0;
-        for (int i = 0; i < 5 && placed < 9; i++) {
-            for (BlockPos side : new BlockPos[]{
-                    controller.east(i + 1).above(), controller.east(i + 1).below()}) {
-                if (placed >= 9) {
-                    break;
-                }
-                connector(helper, side, Direction.NORTH);
-                name(helper, side, "gerät_" + placed);
-                // Zwei Kanäle je Gerät: Neun Geräte wollen achtzehn, das
-                // Kabel trägt sechzehn. Das neunte geht leer aus.
-                partAt(helper, side).setChannelCost(2);
-                placed++;
-            }
-        }
-        helper.assertValueEqual(placed, 9, "aufgestellte Geräte");
-
-        ControllerBlockEntity entity = controllerAt(helper, controller);
-        entity.rebuildNetwork();
-
-        helper.assertValueEqual(entity.graph().starvedConnectors().size(), 1,
-                "Geräte ohne Kanal");
-        helper.assertValueEqual(entity.graph().connectorNames().size(), 8,
-                "Geräte mit Kanal");
-        helper.succeed();
-    }
-
-    @GameTest(template = EMPTY, timeoutTicks = 300)
-    public static void loadIsCountedPerStrand(GameTestHelper helper) {
-        BlockPos controller = new BlockPos(1, 2, 1);
-        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
-        rackWithServer(helper, controller.west());
-        line(helper, controller.east(), 3);
-
-        // Zwei Geräte am Ende der Reihe — über und unter dem letzten Kabel,
-        // nicht auf ihm: Ein Connector an dessen Stelle nähme ihm den Platz.
-        BlockPos last = controller.east(3);
-        connector(helper, last.above(), Direction.NORTH);
-        name(helper, last.above(), "ende_0");
-        connector(helper, last.below(), Direction.NORTH);
-        name(helper, last.below(), "ende_1");
-
-        ControllerBlockEntity entity = controllerAt(helper, controller);
-        entity.rebuildNetwork();
-
-        // Beide Wege laufen über das erste Kabel: dort zwei Kanäle belegt.
-        int atStart = entity.graph().channelLoad(
-                helper.absolutePos(controller.east(1)), CableColour.NONE);
-        helper.assertValueEqual(atStart, 2, "Kanäle auf dem ersten Kabel");
-        helper.assertValueEqual(entity.graph().channelsFree(helper.getLevel(),
-                helper.absolutePos(controller.east(1)), CableColour.NONE),
-                dev.devpanda.factorynetwork.block.CableBlock.CHANNELS_THIN - 2,
-                "freie Kanäle dort");
-        helper.succeed();
-    }
 
     /** Baut Controller, Kabelreihe und drei benannte Kisten. */
     private static ControllerBlockEntity threeChests(GameTestHelper helper, BlockPos controller) {
@@ -4398,158 +4336,9 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY, timeoutTicks = 300)
-    public static void theAnalyserMarksDevicesWithoutAChannel(GameTestHelper helper) {
-        BlockPos controller = new BlockPos(1, 2, 1);
-        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
-        rackWithServer(helper, controller.west());
-        line(helper, controller.east(), 5);
 
-        // Mehr Geräte als Kanäle: Die überzähligen müssen auffallen.
-        int placed = 0;
-        for (int i = 0; i < 5 && placed < 9; i++) {
-            for (BlockPos side : new BlockPos[]{
-                    controller.east(i + 1).above(), controller.east(i + 1).below()}) {
-                if (placed >= 9) {
-                    break;
-                }
-                connector(helper, side, Direction.NORTH);
-                name(helper, side, "gerät_" + placed);
-                partAt(helper, side).setChannelCost(2);
-                placed++;
-            }
-        }
-        ControllerBlockEntity entity = controllerAt(helper, controller);
-        entity.rebuildNetwork();
 
-        var data = dev.devpanda.factorynetwork.analyser.AnalyserScan.of(entity);
-        helper.assertValueEqual(data.summary().starved(), 1, "Ein Gerät geht leer aus");
-        helper.assertTrue(!data.summary().isHealthy(),
-                "Ein Netz mit einem hungrigen Gerät ist nicht in Ordnung");
-        helper.assertTrue(data.nodes().stream().anyMatch(node ->
-                        node.state().name().equals("STARVED")),
-                "Das hungrige Gerät muss als solches erscheinen");
-        helper.succeed();
-    }
 
-    @GameTest(template = EMPTY, timeoutTicks = 300)
-    public static void theAnalyserMarksFullCables(GameTestHelper helper) {
-        BlockPos controller = new BlockPos(1, 2, 1);
-        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
-        rackWithServer(helper, controller.west());
-        line(helper, controller.east(), 5);
-        for (int i = 0; i < 8; i++) {
-            BlockPos side = i < 4 ? controller.east(i + 1).above()
-                    : controller.east(i - 3).below();
-            connector(helper, side, Direction.NORTH);
-            name(helper, side, "gerät_" + i);
-            partAt(helper, side).setChannelCost(2);
-        }
-        ControllerBlockEntity entity = controllerAt(helper, controller);
-        entity.rebuildNetwork();
-
-        var data = dev.devpanda.factorynetwork.analyser.AnalyserScan.of(entity);
-        // Acht Geräte zu je zwei Kanälen füllen ein gewöhnliches Kabel genau
-        // aus: sechzehn von sechzehn.
-        //
-        // <b>Vorher stand hier ein ODER über voll und eng</b>, und damit
-        // bestand der Test auch, wenn die Strecke nur als „eng" durchging —
-        // also genau dann, wenn die Erkennung nicht mehr stimmt. Geprüft wird
-        // deshalb die eine Antwort, die richtig ist, und dazu der Gegenfall
-        // mit halber Last.
-        helper.assertValueEqual(data.summary().fullLinks() > 0, true,
-                "Sechzehn von sechzehn Kanälen sind ein volles Kabel");
-        helper.assertValueEqual(data.summary().isHealthy(), false,
-                "Ein volles Kabel ist kein Netz in Ordnung — es hat keine Reserve");
-
-        // Dieselbe Anlage mit vier Geräten: acht von sechzehn, und nichts ist
-        // voll. Ohne diesen Gegenfall bestünde der Test auch, wenn jede
-        // Strecke als voll gälte.
-        for (int i = 4; i < 8; i++) {
-            BlockPos side = controller.east(i - 3).below();
-            helper.setBlock(side, Blocks.AIR);
-        }
-        entity.rebuildNetwork();
-        var halb = dev.devpanda.factorynetwork.analyser.AnalyserScan.of(entity);
-        helper.assertValueEqual(halb.summary().fullLinks(), 0,
-                "Acht von sechzehn Kanälen sind kein volles Kabel");
-        helper.succeed();
-    }
-
-    @GameTest(template = EMPTY, timeoutTicks = 300)
-    public static void aDenseCableCarriesFourTimesAsMuch(GameTestHelper helper) {
-        BlockPos controller = new BlockPos(1, 2, 1);
-        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
-        rackWithServer(helper, controller.west());
-        for (int i = 0; i < 5; i++) {
-            helper.setBlock(controller.east(i + 1), FnBlocks.DENSE_CABLE.get());
-        }
-
-        // Dieselben neun Geräte zu je zwei Kanälen wie am dünnen Kabel — dort
-        // ging eines leer aus, hier trägt das dichte alle mit Leichtigkeit.
-        int placed = 0;
-        for (int i = 0; i < 5 && placed < 9; i++) {
-            for (BlockPos side : new BlockPos[]{
-                    controller.east(i + 1).above(), controller.east(i + 1).below()}) {
-                if (placed >= 9) {
-                    break;
-                }
-                connector(helper, side, Direction.NORTH);
-                name(helper, side, "gerät_" + placed);
-                partAt(helper, side).setChannelCost(2);
-                placed++;
-            }
-        }
-        ControllerBlockEntity entity = controllerAt(helper, controller);
-        entity.rebuildNetwork();
-
-        helper.assertValueEqual(entity.graph().starvedConnectors().size(), 0,
-                "Am dichten Kabel darf keines leer ausgehen");
-        helper.assertValueEqual(entity.graph().connectorNames().size(), 9, "Geräte mit Kanal");
-        helper.assertValueEqual(entity.graph().channelsFree(helper.getLevel(),
-                        helper.absolutePos(controller.east(1)), CableColour.NONE),
-                dev.devpanda.factorynetwork.block.CableBlock.CHANNELS_DENSE - 18,
-                "Von vierundsechzig sind achtzehn belegt");
-        helper.succeed();
-    }
-
-    @GameTest(template = EMPTY, timeoutTicks = 300)
-    public static void theWeakestCableOnThePathDecides(GameTestHelper helper) {
-        BlockPos controller = new BlockPos(1, 2, 1);
-        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
-        rackWithServer(helper, controller.west());
-
-        // Dicht, dann ein gewöhnliches Stück, dann wieder dicht: Der Engpass
-        // in der Mitte begrenzt, auch wenn davor und dahinter Platz wäre.
-        helper.setBlock(controller.east(1), FnBlocks.DENSE_CABLE.get());
-        helper.setBlock(controller.east(2), FnBlocks.CABLE.get());
-        for (int i = 3; i <= 5; i++) {
-            helper.setBlock(controller.east(i), FnBlocks.DENSE_CABLE.get());
-        }
-
-        // Sechs Geräte zu je drei Kanälen wollen achtzehn — alle hinter dem
-        // dünnen Stück, das nur sechzehn trägt.
-        int placed = 0;
-        for (int i = 3; i <= 5 && placed < 6; i++) {
-            for (BlockPos side : new BlockPos[]{
-                    controller.east(i).above(), controller.east(i).below()}) {
-                if (placed >= 6) {
-                    break;
-                }
-                connector(helper, side, Direction.NORTH);
-                name(helper, side, "gerät_" + placed);
-                partAt(helper, side).setChannelCost(3);
-                placed++;
-            }
-        }
-        helper.assertValueEqual(placed, 6, "aufgestellte Geräte");
-        ControllerBlockEntity entity = controllerAt(helper, controller);
-        entity.rebuildNetwork();
-
-        helper.assertTrue(entity.graph().starvedConnectors().size() >= 1,
-                "Das schwächste Stück muss begrenzen — leer ausgegangen ist aber keines");
-        helper.succeed();
-    }
 
     /**
      * Setzt einen Serverschrank mit einem bestückten Einschub daneben.
@@ -5003,64 +4792,6 @@ public final class FactoryNetworkGameTests {
         }
     }
 
-    /**
-     * Der Router verbindet nur, was auf derselben Bahn liegt.
-     *
-     * <p>Das ist der ganze Block in einem Test: gleiche Bahn verbunden,
-     * andere Bahn nicht, abgeklemmt gar nicht. <b>Und die Bahn gilt auch für
-     * Geräte</b>, nicht nur für weiterführende Kabel — genau das ist die
-     * Stelle, an der eine zu früh gesetzte Abkürzung falsch läge.
-     */
-    @GameTest(template = EMPTY, timeoutTicks = 300)
-    public static void routerJoinsOnlyWhatSharesALane(GameTestHelper helper) {
-        BlockPos controller = new BlockPos(1, 2, 1);
-        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
-        rackWithServer(helper, controller.west());
-        helper.setBlock(controller.east(), FnBlocks.DENSE_CABLE.get());
-
-        BlockPos router = controller.east(2);
-        helper.setBlock(router, FnBlocks.ROUTER.get());
-
-        BlockPos north = router.north();
-        connector(helper, north, Direction.NORTH);
-        name(helper, north, "nord");
-        BlockPos above = router.above();
-        connector(helper, above, Direction.NORTH);
-        name(helper, above, "oben");
-
-        ControllerBlockEntity entity = controllerAt(helper, controller);
-        entity.rebuildNetwork();
-
-        // Frisch gesetzt liegt alles auf Bahn eins: Beide hängen am Netz.
-        helper.assertTrue(entity.graph().connector("nord").isPresent(),
-                "nord muss auf derselben Bahn erreichbar sein");
-        helper.assertTrue(entity.graph().connector("oben").isPresent(),
-                "oben muss auf derselben Bahn erreichbar sein");
-        helper.assertValueEqual(entity.graph().laneLoad(helper.absolutePos(router), 1),
-                2, "Kanäle auf Bahn eins");
-
-        // Andere Bahn: Der Weg kreuzt sich berührungslos.
-        lane(helper, router, north, 2);
-        entity.rebuildNetwork();
-        helper.assertTrue(entity.graph().connector("nord").isEmpty(),
-                "nord liegt auf einer anderen Bahn und darf nicht dazugehören");
-        helper.assertTrue(entity.graph().connector("oben").isPresent(),
-                "oben liegt weiter auf Bahn eins");
-        helper.assertValueEqual(entity.graph().laneLoad(helper.absolutePos(router), 1),
-                1, "Kanäle auf Bahn eins, nachdem nord ausgeschert ist");
-        helper.assertValueEqual(entity.graph().laneLoad(helper.absolutePos(router), 2), 0,
-                "Bahn zwei führt zu keinem Controller und trägt nichts");
-
-        // Abgeklemmt: gar nichts mehr.
-        lane(helper, router, above, dev.devpanda.factorynetwork.block.entity
-                .RouterBlockEntity.OFF);
-        entity.rebuildNetwork();
-        helper.assertTrue(entity.graph().connector("oben").isEmpty(),
-                "eine abgeklemmte Seite darf nichts durchlassen");
-        helper.assertValueEqual(entity.graph().connectorCount(), 0,
-                "Geräte am Netz");
-        helper.succeed();
-    }
 
     /**
      * Eine abgeklemmte Seite trennt auch den Weg dahinter.
@@ -5099,90 +4830,7 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
-    /**
-     * Eine Bahn des Routers trägt so viel wie ein dickes Kabel.
-     *
-     * <p>Nicht unbegrenzt: Ließe man den Router aus der Wegrechnung heraus,
-     * wäre eine Kreuzung die Stelle, an der die Kanalgrenze aufhört zu
-     * gelten — und damit die Stelle, an der man sie umgeht.
-     */
-    @GameTest(template = EMPTY, timeoutTicks = 400)
-    public static void aRouterLaneCarriesSixtyFourChannels(GameTestHelper helper) {
-        BlockPos controller = new BlockPos(1, 2, 1);
-        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
-        rackWithServer(helper, controller.west());
-        helper.setBlock(controller.east(), FnBlocks.DENSE_CABLE.get());
-        BlockPos router = controller.east(2);
-        helper.setBlock(router, FnBlocks.ROUTER.get());
 
-        // Ein einziges Gerät, das die ganze Bahn füllt, und eins mehr.
-        BlockPos first = router.north();
-        denseConnector(helper, first, Direction.NORTH);
-        name(helper, first, "gross");
-        partAt(helper, first).setChannelCost(
-                dev.devpanda.factorynetwork.block.CableBlock.CHANNELS_DENSE);
-
-        ControllerBlockEntity entity = controllerAt(helper, controller);
-        entity.rebuildNetwork();
-
-        // Allein passt es genau: Die Bahn trägt so viel, wie das Gerät zieht.
-        // Stünde der Router nicht im Weg, bliebe die Bahn hier auf null —
-        // dann zählte die Kreuzung nichts und wäre unbegrenzt.
-        helper.assertValueEqual(entity.graph().laneLoad(helper.absolutePos(router), 1),
-                dev.devpanda.factorynetwork.block.CableBlock.CHANNELS_DENSE,
-                "Kanäle auf der Bahn");
-        helper.assertTrue(entity.graph().starvedConnectors().isEmpty(),
-                "allein bekommt das Gerät seinen Platz");
-
-        // Eins mehr passt nicht. Welches der beiden leer ausgeht, entscheidet
-        // die Suchreihenfolge — dass eines leer ausgeht, entscheidet die
-        // Grenze.
-        BlockPos second = router.above();
-        denseConnector(helper, second, Direction.NORTH);
-        name(helper, second, "klein");
-        entity.rebuildNetwork();
-        helper.assertValueEqual(entity.graph().starvedConnectors().size(), 1,
-                "Geräte ohne Kanal");
-        helper.succeed();
-    }
-
-    /**
-     * Der Analysator liest die Kapazität an der Stelle, nicht aus einer
-     * festen Zahl.
-     *
-     * <p>Vorher stand dort die des gewöhnlichen Kabels. Eine dichte Strecke
-     * meldete damit ab dem sechzehnten Kanal „voll" und wies auf eine Enge
-     * hin, die es nicht gab — die schlimmste Sorte Anzeige, weil man ihr
-     * hinterherbaut.
-     */
-    @GameTest(template = EMPTY, timeoutTicks = 300)
-    public static void theAnalyserReadsTheCapacityFromTheCable(GameTestHelper helper) {
-        BlockPos controller = new BlockPos(1, 2, 1);
-        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
-        rackWithServer(helper, controller.west());
-        for (int i = 1; i <= 3; i++) {
-            helper.setBlock(controller.east(i), FnBlocks.DENSE_CABLE.get());
-        }
-        BlockPos device = controller.east(3).above();
-        denseConnector(helper, device, Direction.NORTH);
-        name(helper, device, "ziel");
-
-        ControllerBlockEntity entity = controllerAt(helper, controller);
-        entity.rebuildNetwork();
-
-        var data = dev.devpanda.factorynetwork.analyser.AnalyserScan.of(entity);
-        helper.assertTrue(!data.links().isEmpty(), "der Analysator muss Strecken finden");
-        for (var link : data.links()) {
-            helper.assertValueEqual(link.capacity(),
-                    dev.devpanda.factorynetwork.block.CableBlock.CHANNELS_DENSE,
-                    "Kapazität einer dichten Strecke");
-            helper.assertTrue(
-                    link.state() != dev.devpanda.factorynetwork.analyser
-                            .AnalyserData.LinkState.FULL,
-                    "ein Gerät an einem dichten Kabel füllt es nicht");
-        }
-        helper.succeed();
-    }
 
     /**
      * Der Bestand folgt, wenn jemand eine Zelle herauszieht.
@@ -6533,6 +6181,133 @@ public final class FactoryNetworkGameTests {
                                 .CRYSTAL.get()),
                         new ItemStack(dev.devpanda.factorynetwork.registry.FnItems
                                 .CORE_NETWORK.get())));
+    }
+
+    /**
+     * Jedes erreichbare Gerät hängt am Netz — ohne Ausnahme.
+     *
+     * <p><b>Das ist der Kern des Wechsels vom 29.08.</b> Vorher konnte ein
+     * Gerät erreichbar sein und trotzdem stumm bleiben: kein Kanal mehr frei.
+     * Diesen Zustand gibt es nicht mehr. Was am Kabel hängt, arbeitet — nur
+     * womöglich langsamer, wenn viele am selben Strang ziehen.
+     *
+     * <p>Zwanzig Anschlüsse an einem gewöhnlichen Kabel: Unter der alten
+     * Regel wären vier davon leer ausgegangen (sechzehn Kanäle). Jetzt sind
+     * alle zwanzig da.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void everyReachableDeviceIsOnTheNetwork(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 1, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+
+        // Eine Reihe gewöhnlicher Kabel, an jedem zwei Anschlüsse.
+        int gesetzt = 0;
+        for (int schritt = 1; schritt <= 10; schritt++) {
+            BlockPos cable = controller.east(schritt);
+            placeCable(helper, cable, dev.devpanda.factorynetwork.block.CableColour.NONE);
+            if (helper.getBlockEntity(cable)
+                    instanceof dev.devpanda.factorynetwork.block.entity
+                            .CableBusBlockEntity bus) {
+                for (Direction side : java.util.List.of(Direction.NORTH, Direction.SOUTH)) {
+                    var part = bus.addPart(side);
+                    part.setLabel("gerat_" + gesetzt);
+                    gesetzt++;
+                }
+            }
+        }
+        helper.assertValueEqual(gesetzt, 20, "es wurden nicht zwanzig Anschlüsse gesetzt");
+
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        // Alle zwanzig, obwohl ein gewöhnliches Kabel früher sechzehn trug.
+        for (int i = 0; i < gesetzt; i++) {
+            helper.assertTrue(entity.graph().connectorNames().contains("gerat_" + i),
+                    "gerat_" + i + " hängt nicht am Netz");
+        }
+        helper.succeed();
+    }
+
+    /**
+     * Der schwächste Punkt auf dem Weg entscheidet über den Durchsatz.
+     *
+     * <p>Ein dichtes Kabel hinter einem gewöhnlichen bringt nichts — die
+     * Ware muss durch beide. Das ist dieselbe Regel, die vorher für die
+     * Kanäle galt, nur zählt sie jetzt Stapel statt Geräte.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void theWeakestCableDecidesTheThroughput(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 1, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+
+        // Dicht, dann gewöhnlich, dann wieder dicht.
+        BlockPos erst = controller.east();
+        helper.setBlock(erst, FnBlocks.DENSE_CABLE.get());
+        BlockPos eng = erst.east();
+        placeCable(helper, eng, dev.devpanda.factorynetwork.block.CableColour.NONE);
+        BlockPos dann = eng.east();
+        helper.setBlock(dann, FnBlocks.DENSE_CABLE.get());
+
+        var level = helper.getLevel();
+        helper.assertValueEqual(
+                dev.devpanda.factorynetwork.network.Throughput.at(level,
+                        helper.absolutePos(erst)),
+                dev.devpanda.factorynetwork.network.Throughput.DENSE,
+                "das dichte Kabel trägt nicht den dichten Durchsatz");
+        helper.assertValueEqual(
+                dev.devpanda.factorynetwork.network.Throughput.at(level,
+                        helper.absolutePos(eng)),
+                dev.devpanda.factorynetwork.network.Throughput.THIN,
+                "das gewöhnliche Kabel trägt nicht den gewöhnlichen Durchsatz");
+
+        // Ein Gerät hinter der Engstelle: Sein Weg ist so gut wie das
+        // schwächste Stück darauf.
+        if (helper.getBlockEntity(dann)
+                instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus) {
+            bus.addPart(Direction.NORTH).setLabel("dahinter");
+        }
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        var device = entity.graph().positionsOf("dahinter").stream().findFirst().orElse(null);
+        helper.assertTrue(device != null, "dahinter hängt nicht am Netz");
+        helper.assertValueEqual(entity.graph().throughputTo(level, device),
+                dev.devpanda.factorynetwork.network.Throughput.THIN,
+                "die Engstelle auf dem Weg wird übergangen");
+        helper.succeed();
+    }
+
+    /**
+     * Router, Gateway und Brücke tragen so viel wie ein dichtes Kabel.
+     *
+     * <p>Sie sind Leitung und kein Vermehrer. Trüge eines davon mehr, wäre
+     * es die Stelle, an der man die Grenze umgeht — und dann gäbe es keine.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 100)
+    public static void junctionsCarryLikeADenseCable(GameTestHelper helper) {
+        var level = helper.getLevel();
+        record Case(String name, net.minecraft.world.level.block.Block block) { }
+        for (Case one : java.util.List.of(
+                new Case("Router", FnBlocks.ROUTER.get()),
+                new Case("Gateway", FnBlocks.GATEWAY.get()),
+                new Case("Quantum-Brücke", FnBlocks.BRIDGE.get()))) {
+            BlockPos where = helper.absolutePos(new BlockPos(1, 2, 1));
+            level.setBlockAndUpdate(where, one.block().defaultBlockState());
+            helper.assertValueEqual(
+                    dev.devpanda.factorynetwork.network.Throughput.at(level, where),
+                    dev.devpanda.factorynetwork.network.Throughput.DENSE,
+                    one.name() + " trägt nicht so viel wie ein dichtes Kabel");
+            level.removeBlock(where, false);
+        }
+
+        // Und der Controller begrenzt gar nichts: Er ist Ziel, nicht Strecke.
+        BlockPos controller = helper.absolutePos(new BlockPos(1, 2, 1));
+        level.setBlockAndUpdate(controller, FnBlocks.CONTROLLER.get().defaultBlockState());
+        helper.assertValueEqual(
+                dev.devpanda.factorynetwork.network.Throughput.at(level, controller),
+                dev.devpanda.factorynetwork.network.Throughput.UNLIMITED,
+                "der Controller begrenzt den Durchsatz");
+        helper.succeed();
     }
 
     /**
@@ -8193,105 +7968,8 @@ public final class FactoryNetworkGameTests {
 
     // ---- Wer einen Kanal kostet -------------------------------------------
 
-    /**
-     * Jedes Gerät am Netz kostet einen Kanal, eine Anzeige ein Viertel.
-     *
-     * <p>Die Regel in einem Satz: Was am Netz etwas tut, kostet einen Kanal.
-     * Vorher zahlten nur Connectoren — Laufwerk und Serverschrank hingen
-     * gratis daran, und ein Netz aus zwanzig Laufwerken kam mit einem
-     * einzigen Kanal aus.
-     */
-    @GameTest(template = EMPTY, timeoutTicks = 300)
-    public static void everyDeviceOnTheNetworkCostsAChannel(GameTestHelper helper) {
-        BlockPos controller = new BlockPos(1, 3, 1);
-        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
-        BlockPos cable = controller.east();
-        helper.setBlock(cable, FnBlocks.CABLE.get());
 
-        connector(helper, cable.north(), Direction.NORTH);
-        name(helper, cable.north(), "geraet");
-        helper.setBlock(cable.south(), FnBlocks.DRIVE.get());
-        helper.setBlock(cable.above(), FnBlocks.RACK.get());
-        helper.setBlock(cable.below(), FnBlocks.DISPLAY.get());
 
-        ControllerBlockEntity entity = controllerAt(helper, controller);
-        entity.rebuildNetwork();
-
-        // Connector, Laufwerk und Schrank je einen Kanal — die Anzeige
-        // keinen, denn sie liest nur mit.
-        int erwartet = dev.devpanda.factorynetwork.network.Channels.CONNECTOR
-                + dev.devpanda.factorynetwork.network.Channels.DRIVE
-                + dev.devpanda.factorynetwork.network.Channels.RACK
-                + dev.devpanda.factorynetwork.network.Channels.DISPLAY;
-        helper.assertValueEqual(erwartet, 3, "drei Geräte, eine Anzeige umsonst");
-        helper.assertValueEqual(entity.graph().channelLoad(
-                        helper.absolutePos(cable), CableColour.NONE), erwartet,
-                "Kanäle auf dem Kabel");
-        helper.succeed();
-    }
-
-    /**
-     * Anzeigen kosten keinen Kanal.
-     *
-     * <p>Eine Anzeige liest nur mit und schiebt nichts — dieselbe Begründung
-     * wie beim Router. Vorher kostete sie ein Viertel, damit vier sich einen
-     * teilen; einen Viertelkanal versteht aber niemand, und ein Netz sollte
-     * nicht in Brüchen rechnen.
-     */
-    @GameTest(template = EMPTY, timeoutTicks = 300)
-    public static void displaysCostNoChannel(GameTestHelper helper) {
-        BlockPos controller = new BlockPos(1, 3, 1);
-        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
-        BlockPos cable = controller.east();
-        helper.setBlock(cable, FnBlocks.CABLE.get());
-        for (BlockPos at : java.util.List.of(cable.north(), cable.south(),
-                cable.above(), cable.below())) {
-            helper.setBlock(at, FnBlocks.DISPLAY.get());
-        }
-
-        ControllerBlockEntity entity = controllerAt(helper, controller);
-        entity.rebuildNetwork();
-        helper.assertValueEqual(entity.graph().displays().size(), 4, "Anzeigen am Netz");
-        helper.assertValueEqual(entity.graph().channelLoad(
-                        helper.absolutePos(cable), CableColour.NONE),
-                0,
-                "und das Kabel trägt trotzdem nichts");
-        helper.succeed();
-    }
-
-    /**
-     * Eine Wand aus Anzeigen braucht ein Kabel und nicht sechs.
-     *
-     * <p>Anzeigen leiten weiter: Wer eine Tafel ans Kabel hängt, kann die
-     * nächste daneben setzen. Hinter jede ein Kabel zu legen wäre Arbeit
-     * ohne Entscheidung — und eine Wand, deren Ecken dunkel bleiben, sieht
-     * aus wie ein Fehler.
-     */
-    @GameTest(template = EMPTY, timeoutTicks = 300)
-    public static void awallOfDisplaysNeedsOneCable(GameTestHelper helper) {
-        BlockPos controller = new BlockPos(1, 2, 1);
-        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
-        BlockPos cable = controller.east();
-        helper.setBlock(cable, FnBlocks.CABLE.get());
-
-        // Eine Reihe von drei, davon berührt nur die erste das Kabel, und
-        // eine vierte darüber — die hängt an der zweiten.
-        BlockPos erste = cable.north();
-        helper.setBlock(erste, FnBlocks.DISPLAY.get());
-        helper.setBlock(erste.north(), FnBlocks.DISPLAY.get());
-        helper.setBlock(erste.north().north(), FnBlocks.DISPLAY.get());
-        helper.setBlock(erste.north().above(), FnBlocks.DISPLAY.get());
-
-        ControllerBlockEntity entity = controllerAt(helper, controller);
-        entity.rebuildNetwork();
-        helper.assertValueEqual(entity.graph().displays().size(), 4,
-                "alle vier Tafeln gehören zum Netz");
-        helper.assertValueEqual(entity.graph().channelLoad(
-                        helper.absolutePos(cable), CableColour.NONE),
-                0,
-                "und kosten dabei keinen Kanal");
-        helper.succeed();
-    }
 
     /**
      * Eine Wand aus Tafeln schreibt einmal, nicht sechsmal.
@@ -8452,40 +8130,6 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
-    /**
-     * Ein Laufwerk ohne Kanal lagert nichts.
-     *
-     * <p>Das ist die Folge daraus, dass es einen kostet: Wer den Strang voll
-     * macht, hängt zwar noch ein Laufwerk daran, aber es gehört nicht mehr
-     * zum Netz. Sonst wäre die Kanalgrenze für Lagerraum eine Anzeige ohne
-     * Wirkung.
-     */
-    @GameTest(template = EMPTY, timeoutTicks = 300)
-    public static void adriveWithoutAChannelStoresNothing(GameTestHelper helper) {
-        BlockPos controller = new BlockPos(1, 3, 1);
-        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
-        BlockPos cable = controller.east();
-        helper.setBlock(cable, FnBlocks.CABLE.get());
-
-        // Ein Gerät, das den dünnen Strang allein füllt.
-        connector(helper, cable.north(), Direction.NORTH);
-        name(helper, cable.north(), "vielfrass");
-        partAt(helper, cable.north()).setChannelCost(
-                dev.devpanda.factorynetwork.block.CableBlock.CHANNELS_THIN);
-        driveWithCell(helper, cable.south(),
-                dev.devpanda.factorynetwork.storage.CellTier.K64);
-
-        ControllerBlockEntity entity = controllerAt(helper, controller);
-        entity.rebuildNetwork();
-
-        helper.assertValueEqual(entity.graph().drives().size(), 0,
-                "das Laufwerk bekommt keinen Kanal mehr");
-        helper.assertTrue(entity.graph().isStarved(helper.absolutePos(cable.south())),
-                "und steht als leer ausgegangen im Bild");
-        helper.assertValueEqual(entity.storage().insert(Items.IRON_INGOT, 5), 5L,
-                "ohne Kanal nimmt es nichts an");
-        helper.succeed();
-    }
 
     // ---- Strom -------------------------------------------------------------
 
@@ -12347,25 +11991,6 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
-    /**
-     * Ein Gateway vermehrt keine Kanäle.
-     *
-     * <p>Dieselbe Regel wie beim Controller-Anbau: Ein Kanalvermehrer zum
-     * Hinstellen machte die Kanalgrenze bedeutungslos. Das Gateway trägt so
-     * viel wie ein dichtes Kabel und keinen Kanal mehr.
-     */
-    @GameTest(template = EMPTY, timeoutTicks = 200)
-    public static void agatewayDoesNotMultiplyChannels(GameTestHelper helper) {
-        BlockPos gateway = new BlockPos(2, 1, 1);
-        helper.setBlock(gateway, FnBlocks.GATEWAY.get());
-
-        helper.assertValueEqual(
-                dev.devpanda.factorynetwork.network.FactoryGraph.capacityAt(
-                        helper.getLevel(), helper.absolutePos(gateway)),
-                dev.devpanda.factorynetwork.block.CableBlock.CHANNELS_DENSE,
-                "so viel wie ein dichtes Kabel, und keinen mehr");
-        helper.succeed();
-    }
 
     /**
      * Ein Anschluss am Kabelblock zählt zum Netz.
@@ -12947,11 +12572,15 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ohne Kanal und ohne Netz sind zwei verschiedene Dinge.
+     * Am Netz und nicht am Netz sind zwei verschiedene Dinge.
      *
-     * <p>Beide bedeuten „nicht ansprechbar", und beide sehen am Block gleich
-     * aus. Der Unterschied entscheidet aber, wo man sucht: einmal an der
-     * Kanalgrenze, einmal an der Leitung.
+     * <p><b>Bis zum 29.08. waren es drei.</b> Dazwischen lag „im Netz, aber
+     * ohne freien Kanal" — ein Gerät, das erreichbar war und trotzdem stumm
+     * blieb. Mit dem Durchsatz gibt es diesen Fall nicht mehr: Wer
+     * erreichbar ist, arbeitet.
+     *
+     * <p>Was bleibt, ist der Unterschied, der wirklich zählt: angeschlossen
+     * oder nicht.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void bstatusTellsCutOffFromWithoutAnetwork(GameTestHelper helper) {
@@ -12965,11 +12594,8 @@ public final class FactoryNetworkGameTests {
         if (bus == null) {
             return;
         }
-        // Einer frisst den ganzen dünnen Strang, der zweite geht leer aus.
-        var vielfrass = bus.addPart(Direction.NORTH);
-        vielfrass.setLabel("vielfrass");
-        vielfrass.setChannelCost(dev.devpanda.factorynetwork.block.CableBlock.CHANNELS_THIN);
-        bus.addPart(Direction.SOUTH).setLabel("zu_spaet");
+        bus.addPart(Direction.NORTH).setLabel("dabei");
+        bus.addPart(Direction.SOUTH).setLabel("auch_dabei");
 
         // Und einer, der mit dem Netz nichts zu tun hat.
         BlockPos allein = new BlockPos(1, 1, 1);
@@ -12983,9 +12609,14 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
 
+        // Beide am selben dünnen Kabel — und beide online. Früher wäre der
+        // zweite leer ausgegangen, sobald der erste den Strang füllte.
+        helper.assertValueEqual(bus.partAt(Direction.NORTH).state(),
+                dev.devpanda.factorynetwork.network.DeviceState.ONLINE,
+                "der erste hängt nicht am Netz");
         helper.assertValueEqual(bus.partAt(Direction.SOUTH).state(),
-                dev.devpanda.factorynetwork.network.DeviceState.STARVED,
-                "im Netz, aber ohne freien Kanal");
+                dev.devpanda.factorynetwork.network.DeviceState.ONLINE,
+                "der zweite am selben Kabel hängt nicht am Netz");
         helper.assertValueEqual(fern.partAt(Direction.NORTH).state(),
                 dev.devpanda.factorynetwork.network.DeviceState.OFFLINE,
                 "gar nicht am Netz");

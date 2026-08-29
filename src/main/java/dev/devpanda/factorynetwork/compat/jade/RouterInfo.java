@@ -61,11 +61,13 @@ public enum RouterInfo implements IBlockComponentProvider, IServerDataProvider<B
             final int current = lane;
             // Ohne Controller in Reichweite gibt es keine Kanalzahlen: Eine
             // Bahn ohne Netz trägt nichts, das ist nicht dasselbe wie null.
-            String load = controller
-                    .map(entity -> String.valueOf(entity.graph().laneLoad(pos, current)))
-                    .orElse("—");
+            // Was eine Bahn trägt, ist ihr Durchsatz je Tick — nicht,
+            // wie viele Geräte dahinter hängen.
+            String load = String.valueOf(
+                    dev.devpanda.factorynetwork.network.Throughput.DENSE);
             lines.add(StringTag.valueOf(lane + SEPARATOR + load + SEPARATOR
-                    + CableBlock.CHANNELS_DENSE + SEPARATOR + String.join(",", sides)));
+                    + dev.devpanda.factorynetwork.network.Throughput.DENSE
+                    + SEPARATOR + String.join(",", sides)));
             // Die Kapazität steht als ganze Zahl da: Ein Router trägt immer
         }
         List<String> off = sidesOn(router, RouterBlockEntity.OFF);

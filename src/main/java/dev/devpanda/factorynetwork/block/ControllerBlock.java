@@ -87,11 +87,6 @@ public class ControllerBlock extends Block implements EntityBlock {
                     controller.graph().connectorCount(),
                     controller.graph().unnamedConnectors().size(),
                     controller.graph().cableCount()), false);
-            if (!controller.graph().starvedConnectors().isEmpty()) {
-                player.displayClientMessage(Component.translatable(
-                        "message.factorynetwork.controller.starved",
-                        controller.graph().starvedConnectors().size()), false);
-            }
         }
         return InteractionResult.CONSUME;
     }

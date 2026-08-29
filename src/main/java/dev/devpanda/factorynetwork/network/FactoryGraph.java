@@ -72,7 +72,15 @@ public final class FactoryGraph {
      */
     private final List<DevicePos> unnamed;
     /** Geräte, die im Netz hängen, aber keinen freien Kanal bekommen haben. */
-    private final List<DevicePos> starved;
+    /**
+     * Über welche Kabel ein Gerät arbeitet.
+     *
+     * <p>Bis zum 29.08. stand hier {@code starved}: Geräte, für die kein
+     * Kanal mehr frei war. Es gibt sie nicht mehr — wer erreichbar ist, hängt
+     * am Netz. Was knapp werden kann, ist der Durchsatz, und der steht am
+     * Weg.
+     */
+    private final Map<DevicePos, List<Node>> paths;
     /** Displays am Netz. Sie zeigen nur an und brauchen keinen Kanal. */
     private final List<BlockPos> displays;
     private final Set<BlockPos> cables;
@@ -101,7 +109,7 @@ public final class FactoryGraph {
      */
     private final List<BlockPos> extensions;
     /** Wie viele Kanäle jeder Kabelstrang trägt. */
-    private final Map<Node, Integer> channelLoad;
+
     /**
      * Wer mit wem verbunden ist.
      *
@@ -120,8 +128,9 @@ public final class FactoryGraph {
 
     private FactoryGraph(Map<String, List<DevicePos>> connectorsByName,
                          List<DevicePos> unnamed,
-                         List<DevicePos> starved, List<BlockPos> displays, Set<BlockPos> cables,
-                         Set<BlockPos> routers, Map<Node, Integer> channelLoad, List<Edge> edges,
+                         Map<DevicePos, List<Node>> paths, List<BlockPos> displays,
+                         Set<BlockPos> cables,
+                         Set<BlockPos> routers, List<Edge> edges,
                          List<BlockPos> drives, List<BlockPos> racks, List<BlockPos> extensions,
                          List<BlockPos> fabricators, Set<BlockPos> contested,
                          List<BlockPos> masts, Set<BlockPos> bridges,
@@ -137,16 +146,16 @@ public final class FactoryGraph {
         this.displays = displays;
         this.connectorsByName = connectorsByName;
         this.unnamed = unnamed;
-        this.starved = starved;
-        this.channelLoad = channelLoad;
+        this.paths = paths;
+
         this.cables = cables;
         this.edges = edges;
         this.truncated = truncated;
     }
 
     public static FactoryGraph empty() {
-        return new FactoryGraph(Map.of(), List.of(), List.of(), List.of(),
-                Set.of(), Set.of(), Map.of(), List.of(), List.of(), List.of(),
+        return new FactoryGraph(Map.of(), List.of(), Map.of(), List.of(),
+                Set.of(), Set.of(), List.of(), List.of(), List.of(),
                 List.of(), List.of(), Set.of(), List.of(), Set.of(), false);
     }
 
@@ -244,7 +253,10 @@ public final class FactoryGraph {
     public static FactoryGraph build(Level level, BlockPos controller) {
         Map<String, List<DevicePos>> connectors = new LinkedHashMap<>();
         List<DevicePos> unnamed = new ArrayList<>();
-        List<DevicePos> starved = new ArrayList<>();
+        // Der Weg jedes Geräts zum Controller. Er begrenzt nicht mehr,
+        // wer angeschlossen ist — er sagt, über welche Kabel ein Gerät
+        // arbeitet, und daran hängt der Durchsatz.
+        Map<DevicePos, List<Node>> paths = new java.util.LinkedHashMap<>();
         List<BlockPos> displays = new ArrayList<>();
         Set<BlockPos> cables = new HashSet<>();
         Set<BlockPos> routers = new HashSet<>();
@@ -254,7 +266,7 @@ public final class FactoryGraph {
         List<BlockPos> drives = new ArrayList<>();
         List<BlockPos> racks = new ArrayList<>();
         List<BlockPos> fabricators = new ArrayList<>();
-        Map<Node, Integer> load = new HashMap<>();
+
         Map<Node, Node> parents = new HashMap<>();
         // Gerät auf die Kabelstränge, über die es erreichbar ist — in der
         // Reihenfolge, in der die Suche sie gefunden hat.
@@ -364,8 +376,8 @@ public final class FactoryGraph {
         // und benennt deshalb auch nichts.
         GatewayRegions regions = gateways.isEmpty()
                 ? GatewayRegions.EMPTY : GatewayRegions.of(level, gateways, maxNodes());
-        assignChannels(level, reachable, kinds, parents, load, connectors, unnamed,
-                starved, displays, drives, racks, fabricators, masts, regions);
+        assignPaths(level, reachable, kinds, parents, connectors, unnamed,
+                paths, displays, drives, racks, fabricators, masts, regions);
 
         Map<String, List<DevicePos>> frozen = new LinkedHashMap<>();
         connectors.forEach((label, positions) -> frozen.put(label, List.copyOf(positions)));
@@ -376,8 +388,8 @@ public final class FactoryGraph {
             }
         });
         return new FactoryGraph(Map.copyOf(frozen), List.copyOf(unnamed),
-                List.copyOf(starved), List.copyOf(displays), Set.copyOf(cables),
-                Set.copyOf(routers), Map.copyOf(load), List.copyOf(edges),
+                Map.copyOf(paths), List.copyOf(displays), Set.copyOf(cables),
+                Set.copyOf(routers), List.copyOf(edges),
                 List.copyOf(drives), List.copyOf(racks), List.copyOf(extensions),
                 List.copyOf(fabricators), Set.copyOf(regions.contested()),
                 List.copyOf(masts), Set.copyOf(bridges), truncated);
@@ -613,11 +625,12 @@ public final class FactoryGraph {
      * <p>Die Reihenfolge ist die der Suche, also nach Entfernung: Bei knappen
      * Kanälen gewinnt das nähere Gerät.
      */
-    private static void assignChannels(Level level, Map<DevicePos, List<Node>> reachable,
+    private static void assignPaths(Level level, Map<DevicePos, List<Node>> reachable,
                                        Map<DevicePos, Consumer> kinds,
-                                       Map<Node, Node> parents, Map<Node, Integer> load,
+                                    Map<Node, Node> parents,
                                        Map<String, List<DevicePos>> connectors,
-                                       List<DevicePos> unnamed, List<DevicePos> starved,
+                                       List<DevicePos> unnamed,
+                                       Map<DevicePos, List<Node>> paths,
                                        List<BlockPos> displays, List<BlockPos> drives,
                                        List<BlockPos> racks, List<BlockPos> fabricators,
                                        List<BlockPos> masts, GatewayRegions regions) {
@@ -636,32 +649,20 @@ public final class FactoryGraph {
             if (kind == null || (kind == Consumer.CONNECTOR && connector == null)) {
                 continue;
             }
-            // Der Connector nennt seinen Bedarf selbst — ein Gerät mit
-            // höherem Bedarf soll später keine Wanderung durch diesen Code
-            // nach sich ziehen.
-            int cost = kind == Consumer.CONNECTOR
-                    ? connector.channelCost() : kind.cost;
-
-            List<Node> chosen = null;
-            for (Node entryPoint : entry.getValue()) {
-                List<Node> path = pathOf(level, entryPoint, parents);
-                // Die Kapazität steht am Kabel: Ein dichtes trägt vierundsechzig,
-                // ein gewöhnliches sechzehn. Auf einem gemischten Weg zählt
-                // jede Stelle für sich — das schwächste Stück begrenzt.
-                boolean room = path.stream().allMatch(node ->
-                        load.getOrDefault(node, 0) + cost <= capacityAt(level, node.pos()));
-                if (room) {
-                    chosen = path;
-                    break;
-                }
-            }
+            // <b>Der kürzeste Weg, ohne Kapazitätsfrage.</b> Bis zum
+            // 29.08. stand hier eine Prüfung: Passt dieses Gerät noch auf
+            // diesen Strang, oder muss es ausweichen? Sie ist mit den
+            // Kanälen gefallen.
+            //
+            // Was bleibt, ist die Wegewahl selbst — ohne Weg gibt es kein
+            // "hängt am Netz". Der erste gefundene ist der kürzeste: Die
+            // Suche läuft in die Breite.
+            List<Node> chosen = entry.getValue().isEmpty() ? null
+                    : pathOf(level, entry.getValue().get(0), parents);
             if (chosen == null) {
-                starved.add(device);
                 continue;
             }
-            for (Node node : chosen) {
-                load.merge(node, cost, Integer::sum);
-            }
+            paths.put(device, chosen);
 
             switch (kind) {
                 case DRIVE -> drives.add(pos);
@@ -731,27 +732,6 @@ public final class FactoryGraph {
     }
 
     /**
-     * Wie viele Kanäle ein Strang an dieser Stelle trägt.
-     *
-     * <p>Die Zahlen gehören dem Graphen, nicht den Blöcken. Ein Kabel kann zu
-     * zwei Netzen gehören — schriebe jeder Controller seine Zahlen in die
-     * BlockEntity, überschriebe einer den anderen.
-     */
-    public int channelLoad(BlockPos pos, CableColour colour) {
-        return channelLoad.getOrDefault(new Node(pos, colour), 0);
-    }
-
-    /** Wie viele Kanäle ein Knoten trägt — für Kabel wie für Router. */
-    public int channelLoad(Node node) {
-        return channelLoad.getOrDefault(node, 0);
-    }
-
-    /** Wie viele Kanäle eine Bahn eines Routers trägt. */
-    public int laneLoad(BlockPos pos, int lane) {
-        return channelLoad.getOrDefault(new Node(pos, CableColour.NONE, lane), 0);
-    }
-
-    /**
      * Geräte, die von zwei Gateways beansprucht werden.
      *
      * <p>Sie gehören zu keiner Anlage. Der Reiter <i>Netz</i> nennt sie,
@@ -801,25 +781,32 @@ public final class FactoryGraph {
      * nur die Annahme, es sei ein gewöhnliches — was bei einem dichten um das
      * Vierfache danebenläge.
      */
-    public int channelsFree(Level level, BlockPos pos, CableColour colour) {
-        return capacityAt(level, pos) - channelLoad(pos, colour);
-    }
-
-    /** Geräte ohne freien Kanal — im Netz sichtbar, aber nicht ansprechbar. */
-    public List<DevicePos> starvedConnectors() {
-        return starved;
+    public int throughputAt(Level level, BlockPos pos) {
+        return Throughput.at(level, pos);
     }
 
     /**
-     * Hungert an dieser Stelle ein Gerät?
+     * Über welche Kabel dieses Gerät arbeitet.
      *
-     * <p>Nach dem Ort gefragt und nicht nach der Fläche: Wer davorsteht,
-     * sieht einen Block, und Jade schreibt an einen Block. Sitzen sechs
-     * Anschlüsse daran und geht einer leer aus, ist der Block der richtige
-     * Ort für den Hinweis.
+     * <p>Der Weg zum Controller, Stelle für Stelle. Daran hängt der
+     * Durchsatz: Was ein Worker bewegt, belegt jedes Stück des Weges.
      */
-    public boolean isStarved(BlockPos pos) {
-        return atPos(starved, pos);
+    public List<Node> pathTo(DevicePos device) {
+        return paths.getOrDefault(device, List.of());
+    }
+
+    /**
+     * Der schwächste Punkt auf dem Weg dieses Geräts, je Tick.
+     *
+     * <p>Ein Weg ist so gut wie sein engstes Stück: Ein dichtes Kabel hinter
+     * einem gewöhnlichen bringt nichts.
+     */
+    public int throughputTo(Level level, DevicePos device) {
+        int least = Throughput.UNLIMITED;
+        for (Node node : pathTo(device)) {
+            least = Math.min(least, Throughput.at(level, node.pos()));
+        }
+        return least;
     }
 
     /**
@@ -898,7 +885,7 @@ public final class FactoryGraph {
      */
     public int deviceCount() {
         return connectorCount() + drives.size() + racks.size() + displays.size()
-                + routers.size() + starved.size();
+                + routers.size();
     }
 
     /** Displays am Netz. */
@@ -928,7 +915,6 @@ public final class FactoryGraph {
                 // Bei den Anschlüssen zählt allein der Ort: Gefragt wird, ob
                 // dieser Block zum Netz gehört, nicht welche seiner Flächen.
                 || atPos(unnamed, pos)
-                || atPos(starved, pos)
                 || connectorsByName.values().stream()
                         .anyMatch(found -> atPos(found, pos));
     }

@@ -41,7 +41,10 @@ public enum ControllerInfo implements IBlockComponentProvider, IServerDataProvid
         data.putInt(KEY_DEVICES, graph.deviceCount());
         data.putInt(KEY_CONNECTORS, graph.connectorCount());
         data.putInt(KEY_UNNAMED, graph.unnamedConnectors().size());
-        data.putInt(KEY_STARVED, graph.starvedConnectors().size());
+        // Seit dem 29.08. gibt es keine Geräte ohne Kanal mehr. Der
+        // Schlüssel bleibt, damit ein alter Client nicht danach sucht
+        // und nichts findet.
+        data.putInt(KEY_STARVED, 0);
         data.putInt(KEY_CABLES, graph.cableCount());
         data.putInt(KEY_WORKERS, controller.program().workers().size());
         data.putInt(KEY_POWER_STATE, controller.power().state().ordinal());
