@@ -57,7 +57,12 @@ verschiedene Antworten auf dieselbe Frage („was, wenn es eng wird") wären ein
 Regel zu viel. Und **B hat ein Gerechtigkeitsproblem**, das man nicht erklären
 kann: Warum steht *dieser* Worker still und nicht der andere?
 
-**Das ist deine Entscheidung**, und sie ist die einzige echte in diesem Plan.
+> **Entschieden am 30.08.: A.** „okay mach A" — alles wird langsamer, und
+> der Anbau bleibt der Weg, die Grenze zu heben.
+
+**Damit steht auch die zweite Frage:** Ja, der Controller ist über den Anbau
+erweiterbar. Kein Upgrade-Item, kein Steckplatz — der Anbau ist das Upgrade,
+und man sieht einem großen Netz an, dass es groß ist.
 
 ## Die Aufgaben
 
