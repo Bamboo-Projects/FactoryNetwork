@@ -64,9 +64,9 @@ public enum RouterInfo implements IBlockComponentProvider, IServerDataProvider<B
             // Was eine Bahn trägt, ist ihr Durchsatz je Tick — nicht,
             // wie viele Geräte dahinter hängen.
             String load = String.valueOf(
-                    dev.devpanda.factorynetwork.network.Throughput.DENSE);
+                    dev.devpanda.factorynetwork.network.Bandwidth.DENSE);
             lines.add(StringTag.valueOf(lane + SEPARATOR + load + SEPARATOR
-                    + dev.devpanda.factorynetwork.network.Throughput.DENSE
+                    + dev.devpanda.factorynetwork.network.Bandwidth.DENSE
                     + SEPARATOR + String.join(",", sides)));
             // Die Kapazität steht als ganze Zahl da: Ein Router trägt immer
         }

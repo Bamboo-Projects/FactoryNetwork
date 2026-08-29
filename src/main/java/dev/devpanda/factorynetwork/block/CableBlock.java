@@ -47,7 +47,14 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
      * der anderen fehlt.
      */
     private final int size;
-    private final int channels;
+
+    /**
+     * Was dieses Kabel je Tick trägt, in Byte.
+     *
+     * <p>Bis zum 29.08. stand hier eine Kanalzahl — wie viele Geräte
+     * dahinter hängen durften. Jetzt zählt, wie viel hindurchgeht.
+     */
+    private final int bandwidth;
 
     /** Die Farbe steckt im Blockzustand, nicht in einer BlockEntity —
      *  sie ändert sich nie und muss beim Zeichnen sofort verfügbar sein. */
@@ -98,13 +105,14 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
             Direction.UP, Block.box(MIN, MAX, MIN, MAX, 16.0D, MAX)));
 
     public CableBlock(Properties properties) {
-        this(properties, CableLayout.THIN, CHANNELS_THIN);
+        this(properties, CableLayout.THIN,
+                dev.devpanda.factorynetwork.network.Bandwidth.THIN);
     }
 
-    protected CableBlock(Properties properties, int size, int channels) {
+    protected CableBlock(Properties properties, int size, int bandwidth) {
         super(properties);
         this.size = size;
-        this.channels = channels;
+        this.bandwidth = bandwidth;
         BlockState state = stateDefinition.any()
                 .setValue(COLOUR, CableColour.NONE);
         for (BooleanProperty property : CONNECTIONS.values()) {
@@ -132,27 +140,13 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
         return new dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity(pos, state);
     }
 
-    public static final int CHANNELS_THIN = 16;
-
-    /** Das dichte vierundsechzig — viermal so viel, wie bei AE2 auch. */
-    public static final int CHANNELS_DENSE = 64;
-
     public int size() {
         return size;
     }
 
-    public int channels() {
-        return channels;
-    }
-
-    /**
-     * Wie viele Kanäle das Kabel an dieser Stelle trägt.
-     *
-     * <p>Null, wenn dort gar kein Kabel liegt — der Aufrufer entscheidet, was
-     * das heißt.
-     */
-    public static int channelsAt(BlockState state) {
-        return state.getBlock() instanceof CableBlock cable ? cable.channels() : 0;
+    /** Was dieses Kabel je Tick trägt, in Byte. */
+    public int bandwidth() {
+        return bandwidth;
     }
 
     /**

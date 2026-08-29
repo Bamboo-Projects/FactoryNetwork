@@ -225,20 +225,6 @@ public final class FactoryGraph {
         }
     }
 
-    /**
-     * Wie viele Kanäle ein Kabelstrang trägt.
-     *
-     * <p>Jedes Gerät zieht auf seinem ganzen Weg zum Controller einen Kanal
-     * ab — weiter hinten fehlt er dann. Wie viele ein Kabel trägt, steht am
-     * Kabel selbst: sechzehn beim gewöhnlichen, vierundsechzig beim dichten.
-     * Das Vorbild ist Applied Energistics mit acht und zweiunddreißig; bei
-     * uns ist es das Doppelte, weil das System ein moderneres sein soll.
-     *
-     * <p>Diese Zahl hier ist nur der Rückfall für Stellen, an denen kein
-     * Kabel liegt — etwa der Controller selbst. Gerechnet wird stets mit
-     * {@link #capacityAt}.
-     */
-    public static final int CHANNELS_PER_STRAND = CableBlock.CHANNELS_THIN;
 
     /**
      * Baut den Graphen ausgehend vom Controller auf.
@@ -741,33 +727,6 @@ public final class FactoryGraph {
         return routers;
     }
 
-    /**
-     * Wie viele Kanäle das Kabel an dieser Stelle trägt.
-     *
-     * <p>Der Controller selbst und alles, was kein Kabel ist, gilt als
-     * unbegrenzt: Dort wird nichts durchgeleitet, was zu begrenzen wäre.
-     */
-    public static int capacityAt(Level level, BlockPos pos) {
-        BlockState state = level.getBlockState(pos);
-        if (state.getBlock() instanceof RouterBlock) {
-            // Der Router gehört zum dicken Kabel, also trägt jede seiner
-            // Bahnen so viel wie ein dickes Kabel.
-            return CableBlock.CHANNELS_DENSE;
-        }
-        if (state.getBlock() instanceof dev.devpanda.factorynetwork.block.BridgeBlock) {
-            // Sie ist eine Leitung und kein Vermehrer — dieselbe Regel wie
-            // beim Gateway und beim Router.
-            return CableBlock.CHANNELS_DENSE;
-        }
-        if (state.getBlock() instanceof dev.devpanda.factorynetwork.block.GatewayBlock) {
-            // Er gehört zum dichten Kabel und trägt so viel wie eines. Ein
-            // Kanalvermehrer zum Hinstellen machte die Kanalgrenze
-            // bedeutungslos — dieselbe Regel wie beim Controller-Anbau.
-            return CableBlock.CHANNELS_DENSE;
-        }
-        int channels = CableBlock.channelsAt(state);
-        return channels > 0 ? channels : Integer.MAX_VALUE;
-    }
 
     /**
      * Wie viel an dieser Stelle noch frei ist.
@@ -777,7 +736,7 @@ public final class FactoryGraph {
      * Vierfache danebenläge.
      */
     public int throughputAt(Level level, BlockPos pos) {
-        return Throughput.at(level, pos);
+        return Bandwidth.at(level, pos);
     }
 
     /**
@@ -797,9 +756,9 @@ public final class FactoryGraph {
      * einem gewöhnlichen bringt nichts.
      */
     public int throughputTo(Level level, DevicePos device) {
-        int least = Throughput.UNLIMITED;
+        int least = Bandwidth.UNLIMITED;
         for (Node node : pathTo(device)) {
-            least = Math.min(least, Throughput.at(level, node.pos()));
+            least = Math.min(least, Bandwidth.at(level, node.pos()));
         }
         return least;
     }

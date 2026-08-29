@@ -6209,8 +6209,9 @@ public final class FactoryNetworkGameTests {
                 "ein frisches Budget meldet Verkehr");
 
         // Etwas hindurchgeschickt.
-        entity.runtime().budget().spend(java.util.List.of(node), 40);
-        helper.assertValueEqual(entity.runtime().budget().usedAt(node), 40,
+        // Zwanzig von fünfzig Byte je Tick: knapp die Hälfte.
+        entity.runtime().budget().spend(java.util.List.of(node), 20);
+        helper.assertValueEqual(entity.runtime().budget().usedAt(node), 20,
                 "der Verkehr steht nicht im Budget");
 
         var daten = dev.devpanda.factorynetwork.analyser.AnalyserScan.of(entity);
@@ -6218,23 +6219,28 @@ public final class FactoryNetworkGameTests {
                 .filter(link -> link.to().equals(helper.absolutePos(cable)))
                 .findFirst().orElse(null);
         helper.assertTrue(strecke != null, "der Analysator kennt die Strecke nicht");
-        helper.assertValueEqual(strecke.load(), 40,
+        helper.assertValueEqual(strecke.load(), 20,
                 "der Analysator zeigt nicht, was floss");
         helper.assertValueEqual(strecke.capacity(),
-                dev.devpanda.factorynetwork.network.Throughput.THIN,
+                dev.devpanda.factorynetwork.network.Bandwidth.THIN,
                 "der Analysator nennt die falsche Kapazität");
         helper.assertValueEqual(strecke.state(),
                 dev.devpanda.factorynetwork.analyser.AnalyserData.LinkState.FREE,
-                "vierzig von vierundsechzig sind noch nicht eng");
+                "zwanzig von fünfzig Byte sind noch nicht eng");
 
         // Und voll ist voll.
-        entity.runtime().budget().spend(java.util.List.of(node), 30);
+        entity.runtime().budget().spend(java.util.List.of(node), 40);
         var voll = dev.devpanda.factorynetwork.analyser.AnalyserScan.of(entity).links().stream()
                 .filter(link -> link.to().equals(helper.absolutePos(cable)))
                 .findFirst().orElseThrow();
         helper.assertValueEqual(voll.state(),
                 dev.devpanda.factorynetwork.analyser.AnalyserData.LinkState.FULL,
-                "siebzig von vierundsechzig gelten nicht als voll");
+                "sechzig von fünfzig Byte gelten nicht als voll");
+
+        // Und die Anzeige spricht Kilobyte: Das ist der Sinn der Einheit.
+        helper.assertValueEqual(
+                dev.devpanda.factorynetwork.network.Bandwidth.perSecond(strecke.capacity()),
+                "1 KB/s", "die Kapazität liest sich nicht als Kilobyte");
         helper.succeed();
     }
 
@@ -6263,24 +6269,24 @@ public final class FactoryNetworkGameTests {
 
         // Frisch: Das ganze Kabel steht zur Verfügung.
         helper.assertValueEqual(budget.free(level, path),
-                dev.devpanda.factorynetwork.network.Throughput.THIN,
+                dev.devpanda.factorynetwork.network.Bandwidth.THIN,
                 "ein leeres Kabel gibt nicht seinen vollen Durchsatz her");
 
         // Die Hälfte verbraucht: die Hälfte bleibt.
-        budget.spend(path, dev.devpanda.factorynetwork.network.Throughput.THIN / 2);
+        budget.spend(path, dev.devpanda.factorynetwork.network.Bandwidth.THIN / 2);
         helper.assertValueEqual(budget.free(level, path),
-                dev.devpanda.factorynetwork.network.Throughput.THIN / 2,
+                dev.devpanda.factorynetwork.network.Bandwidth.THIN / 2,
                 "der Verbrauch wird nicht abgezogen");
 
         // Voll: nichts mehr frei — aber nicht negativ.
-        budget.spend(path, dev.devpanda.factorynetwork.network.Throughput.THIN);
+        budget.spend(path, dev.devpanda.factorynetwork.network.Bandwidth.THIN);
         helper.assertValueEqual(budget.free(level, path), 0,
                 "ein überfülltes Kabel meldet keine Null");
 
         // Der neue Tick fängt bei null an.
         budget.reset();
         helper.assertValueEqual(budget.free(level, path),
-                dev.devpanda.factorynetwork.network.Throughput.THIN,
+                dev.devpanda.factorynetwork.network.Bandwidth.THIN,
                 "der Verbrauch überlebt den Tickwechsel");
 
         // Und die Engstelle entscheidet: dicht plus dünn ist dünn.
@@ -6291,13 +6297,13 @@ public final class FactoryNetworkGameTests {
                         dense, dev.devpanda.factorynetwork.block.CableColour.NONE),
                 node);
         helper.assertValueEqual(budget.free(level, gemischt),
-                dev.devpanda.factorynetwork.network.Throughput.THIN,
+                dev.devpanda.factorynetwork.network.Bandwidth.THIN,
                 "die Engstelle auf dem Weg wird übergangen");
 
         // Was über den gemischten Weg geht, belastet beide Stücke.
         budget.spend(gemischt, 10);
         helper.assertValueEqual(budget.free(level, path),
-                dev.devpanda.factorynetwork.network.Throughput.THIN - 10,
+                dev.devpanda.factorynetwork.network.Bandwidth.THIN - 10,
                 "das dünne Stück wurde nicht belastet");
         helper.succeed();
     }
@@ -6369,14 +6375,14 @@ public final class FactoryNetworkGameTests {
 
         var level = helper.getLevel();
         helper.assertValueEqual(
-                dev.devpanda.factorynetwork.network.Throughput.at(level,
+                dev.devpanda.factorynetwork.network.Bandwidth.at(level,
                         helper.absolutePos(erst)),
-                dev.devpanda.factorynetwork.network.Throughput.DENSE,
+                dev.devpanda.factorynetwork.network.Bandwidth.DENSE,
                 "das dichte Kabel trägt nicht den dichten Durchsatz");
         helper.assertValueEqual(
-                dev.devpanda.factorynetwork.network.Throughput.at(level,
+                dev.devpanda.factorynetwork.network.Bandwidth.at(level,
                         helper.absolutePos(eng)),
-                dev.devpanda.factorynetwork.network.Throughput.THIN,
+                dev.devpanda.factorynetwork.network.Bandwidth.THIN,
                 "das gewöhnliche Kabel trägt nicht den gewöhnlichen Durchsatz");
 
         // Ein Gerät hinter der Engstelle: Sein Weg ist so gut wie das
@@ -6391,7 +6397,7 @@ public final class FactoryNetworkGameTests {
         var device = entity.graph().positionsOf("dahinter").stream().findFirst().orElse(null);
         helper.assertTrue(device != null, "dahinter hängt nicht am Netz");
         helper.assertValueEqual(entity.graph().throughputTo(level, device),
-                dev.devpanda.factorynetwork.network.Throughput.THIN,
+                dev.devpanda.factorynetwork.network.Bandwidth.THIN,
                 "die Engstelle auf dem Weg wird übergangen");
         helper.succeed();
     }
@@ -6413,8 +6419,8 @@ public final class FactoryNetworkGameTests {
             BlockPos where = helper.absolutePos(new BlockPos(1, 2, 1));
             level.setBlockAndUpdate(where, one.block().defaultBlockState());
             helper.assertValueEqual(
-                    dev.devpanda.factorynetwork.network.Throughput.at(level, where),
-                    dev.devpanda.factorynetwork.network.Throughput.DENSE,
+                    dev.devpanda.factorynetwork.network.Bandwidth.at(level, where),
+                    dev.devpanda.factorynetwork.network.Bandwidth.DENSE,
                     one.name() + " trägt nicht so viel wie ein dichtes Kabel");
             level.removeBlock(where, false);
         }
@@ -6423,8 +6429,8 @@ public final class FactoryNetworkGameTests {
         BlockPos controller = helper.absolutePos(new BlockPos(1, 2, 1));
         level.setBlockAndUpdate(controller, FnBlocks.CONTROLLER.get().defaultBlockState());
         helper.assertValueEqual(
-                dev.devpanda.factorynetwork.network.Throughput.at(level, controller),
-                dev.devpanda.factorynetwork.network.Throughput.UNLIMITED,
+                dev.devpanda.factorynetwork.network.Bandwidth.at(level, controller),
+                dev.devpanda.factorynetwork.network.Bandwidth.UNLIMITED,
                 "der Controller begrenzt den Durchsatz");
         helper.succeed();
     }

@@ -19,7 +19,8 @@ public class DenseCableBlock extends CableBlock {
     public static final MapCodec<DenseCableBlock> CODEC = simpleCodec(DenseCableBlock::new);
 
     public DenseCableBlock(Properties properties) {
-        super(properties, CableLayout.DENSE, CHANNELS_DENSE);
+        super(properties, CableLayout.DENSE,
+                dev.devpanda.factorynetwork.network.Bandwidth.DENSE);
     }
 
     @Override

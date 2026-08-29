@@ -356,7 +356,7 @@ public final class WorkerRuntime {
         List<FactoryGraph.Node> path = pathFor(from.value(), to.value(),
                 fromStorage, toStorage, graph);
         int free = path.isEmpty()
-                ? dev.devpanda.factorynetwork.network.Throughput.UNLIMITED
+                ? dev.devpanda.factorynetwork.network.Bandwidth.UNLIMITED
                 : budget.free(level, path);
         if (free <= 0) {
             // Dieselbe Art zu warten wie bei einem vollen Ziel: Es liegt

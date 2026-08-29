@@ -92,7 +92,7 @@ public final class AnalyserScan {
             // Ein Bild aus einem Tick, kein Mittelwert: Wer sehen will, ob
             // eine Ader eng ist, schaut mehrmals hin. Ein geglätteter Wert
             // versteckte genau die Spitzen, die man sucht.
-            int capacity = dev.devpanda.factorynetwork.network.Throughput.at(
+            int capacity = dev.devpanda.factorynetwork.network.Bandwidth.at(
                     controller.getLevel(), edge.to().pos());
             int load = controller.runtime().budget().usedAt(edge.to());
             AnalyserData.LinkState state = load >= capacity ? AnalyserData.LinkState.FULL

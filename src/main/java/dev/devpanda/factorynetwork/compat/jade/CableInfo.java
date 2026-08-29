@@ -49,7 +49,7 @@ public enum CableInfo implements IBlockComponentProvider, IServerDataProvider<Bl
         // begrenzt, wie viel hindurchgeht, und nicht, wie viele Geräte
         // dahinter hängen.
         String load = String.valueOf(
-                dev.devpanda.factorynetwork.network.Throughput.at(level, pos));
+                dev.devpanda.factorynetwork.network.Bandwidth.at(level, pos));
         lines.add(StringTag.valueOf(colour.getSerializedName() + " " + load));
         data.put(KEY_STRANDS, lines);
     }

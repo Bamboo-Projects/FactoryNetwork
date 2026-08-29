@@ -33,9 +33,9 @@ public final class TickBudget {
      * gewöhnlichen bringt nichts, denn die Ware muss durch beide.
      */
     public int free(net.minecraft.world.level.Level level, List<Node> path) {
-        int least = Throughput.UNLIMITED;
+        int least = Bandwidth.UNLIMITED;
         for (Node node : path) {
-            int here = Throughput.at(level, node.pos()) - used.getOrDefault(node, 0);
+            int here = Bandwidth.at(level, node.pos()) - used.getOrDefault(node, 0);
             least = Math.min(least, Math.max(0, here));
         }
         return least;
