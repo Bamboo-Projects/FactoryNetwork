@@ -47,8 +47,56 @@ public class NetworkTabView {
         this.height = height;
     }
 
+    /**
+     * Um wie viele Zeilen der Inhalt nach oben geschoben ist.
+     *
+     * <p><b>Der Reiter war schon zu lang, bevor das Diagramm dazukam.</b>
+     * Anschlüsse, Anzeigen, Worker, Flüssigkeiten, Anlagen, Abläufe, globale
+     * Werte, Speicher — bei einem gewachsenen Netz reicht das Fenster für
+     * die Hälfte. Vorher hörte die Liste einfach auf; jetzt kann man
+     * weiterrollen.
+     */
+    private int scroll;
+
+    /**
+     * Wie weit der Inhalt beim letzten Zeichnen reichte.
+     *
+     * <p>Gemessen statt gerechnet: Wie hoch dieser Reiter wird, hängt an
+     * acht Listen und einem Diagramm — eine Formel dafür wäre eine zweite
+     * Wahrheit neben dem Zeichencode und liefe bei der nächsten Zeile
+     * auseinander.
+     */
+    private int contentHeight;
+
+    /**
+     * Rollt, wenn es etwas zu rollen gibt.
+     *
+     * <p>Die Grenze kommt aus der zuletzt gezeichneten Höhe. Beim ersten
+     * Bild ist sie null, also rollt nichts — dann steht ohnehin alles im
+     * Fenster.
+     */
+    public boolean mouseScrolled(double delta) {
+        int ueberhang = Math.max(0, contentHeight - height + LINE);
+        int max = (ueberhang + LINE - 1) / LINE;
+        scroll = Math.max(0, Math.min(max, scroll - (int) Math.signum(delta)));
+        return true;
+    }
+
     public void render(GuiGraphics graphics, int mouseX, int mouseY) {
-        int line = y + 3;
+        // Beschnitt, sonst zeichnet der gerollte Inhalt über die
+        // Reiterleiste und die Statuszeile darunter.
+        graphics.enableScissor(x, y, x + width, y + height);
+        try {
+            renderContent(graphics, mouseX, mouseY);
+        } finally {
+            // Auch bei einem Fehler: Ein offener Beschnitt macht den ganzen
+            // Bildschirm unsichtbar, nicht nur diesen Reiter.
+            graphics.disableScissor();
+        }
+    }
+
+    private void renderContent(GuiGraphics graphics, int mouseX, int mouseY) {
+        int line = y + 3 - scroll * LINE;
 
         // Der Verkehr zuerst: „Was frisst wie viel" ist die Frage, mit der
         // man diesen Reiter aufmacht. Die Namensliste steht darunter — sie
@@ -169,7 +217,7 @@ public class NetworkTabView {
                         ? TerminalScreen.WARN : TerminalScreen.TEXT_DIM);
         line = capacity(graphics, line);
         line = globals(graphics, line);
-        flows(graphics, line);
+        remember(flows(graphics, line));
     }
 
     /**
@@ -189,6 +237,16 @@ public class NetworkTabView {
             line = text(graphics, line, wert, TerminalScreen.TEXT_DIM);
         }
         return line;
+    }
+
+    /**
+     * Merkt sich, wie weit der Inhalt reichte.
+     *
+     * <p>Ohne den Versatz gerechnet: Wie viel Platz der Inhalt braucht,
+     * ändert sich nicht dadurch, dass man ihn verschiebt.
+     */
+    private void remember(int line) {
+        contentHeight = line - (y + 3 - scroll * LINE);
     }
 
     /**

@@ -421,6 +421,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
             case STORAGE -> storageView.mouseScrolled(mouseX, mouseY, deltaY);
             case CODE -> codeView.mouseScrolled(mouseX, mouseY, deltaY);
             case LOG -> logView.mouseScrolled(deltaY);
+            case NETWORK -> networkView.mouseScrolled(deltaY);
             default -> false;
         };
         return handled || super.mouseScrolled(mouseX, mouseY, deltaX, deltaY);
