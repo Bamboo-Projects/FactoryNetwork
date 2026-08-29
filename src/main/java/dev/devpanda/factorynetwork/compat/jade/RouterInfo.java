@@ -102,10 +102,13 @@ public enum RouterInfo implements IBlockComponentProvider, IServerDataProvider<B
                         .withStyle(ChatFormatting.DARK_GRAY));
                 continue;
             }
-            boolean full = parts[2].equals(parts[1]);
+            // Der Durchsatz dieser Seite, in Byte je Sekunde.
+            int durchsatz = Integer.parseInt(parts[2]);
             tooltip.add(Component.translatable("jade.factorynetwork.router.lane",
-                            parts[0], parts[1], parts[2], sides)
-                    .withStyle(full ? ChatFormatting.RED : ChatFormatting.GRAY));
+                            parts[0],
+                            dev.devpanda.factorynetwork.network.Bandwidth.perSecond(durchsatz),
+                            sides)
+                    .withStyle(ChatFormatting.GRAY));
         }
     }
 

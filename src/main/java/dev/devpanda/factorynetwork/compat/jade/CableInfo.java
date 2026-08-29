@@ -65,11 +65,10 @@ public enum CableInfo implements IBlockComponentProvider, IServerDataProvider<Bl
             Component name = Component.translatable(
                     "jade.factorynetwork.colour." + parts[0]);
             String load = parts.length > 1 ? parts[1] : "";
-            // Ohne Controller in Reichweite steht ein Strich statt einer Zahl;
-            // ein Kabel ohne Netz hat keine Kanäle, nicht null.
-            ChatFormatting colour = load.startsWith("—") ? ChatFormatting.DARK_GRAY
-                    : isFull(load) ? ChatFormatting.RED
-                    : ChatFormatting.GRAY;
+            // Ohne Controller in Reichweite steht ein Strich statt einer
+            // Zahl; ein Kabel ohne Netz hat keinen Durchsatz, nicht null.
+            ChatFormatting colour = load.startsWith("—")
+                    ? ChatFormatting.DARK_GRAY : ChatFormatting.GRAY;
             tooltip.add(Component.translatable("jade.factorynetwork.cable.colour", name, load)
                     .withStyle(colour));
         }

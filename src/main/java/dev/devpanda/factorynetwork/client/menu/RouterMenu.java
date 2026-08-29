@@ -67,7 +67,9 @@ public class RouterMenu extends AbstractContainerMenu {
     }
 
     public String formatLoad(int lane) {
-        return String.valueOf(load(lane)) + "/" + String.valueOf(capacity());
+        // In Byte je Sekunde, wie überall: "0,4 von 1 KB/s" statt "12/16".
+        return dev.devpanda.factorynetwork.network.Bandwidth.usage(
+                load(lane), capacity());
     }
 
     /** Die Knopfnummer für eine Seite und eine Bahn. */

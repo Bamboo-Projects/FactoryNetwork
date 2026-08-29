@@ -61,19 +61,17 @@ public enum ConnectorInfo implements IBlockComponentProvider, IServerDataProvide
             case DUPLICATE -> tooltip.add(Component.translatable(
                     "jade.factorynetwork.connector.duplicate", label)
                     .withStyle(ChatFormatting.RED));
+            // Nur noch aus alten Welten: Seit dem 29.08. wird dieser
+            // Zustand nicht mehr vergeben, und beim ersten Netzaufbau
+            // bekommt das Gerät seinen richtigen.
             case STARVED -> tooltip.add(Component.translatable(
-                    "jade.factorynetwork.connector.no_channel")
-                    .withStyle(ChatFormatting.RED));
+                    "jade.factorynetwork.connector.saturated")
+                    .withStyle(ChatFormatting.GOLD));
             case OFFLINE -> tooltip.add(Component.translatable(
                     "jade.factorynetwork.connector.no_network")
                     .withStyle(ChatFormatting.DARK_GRAY));
         }
 
-        int cost = data.getInt(KEY_COST);
-        if (cost > 1) {
-            tooltip.add(Component.translatable("jade.factorynetwork.connector.cost", cost)
-                    .withStyle(ChatFormatting.DARK_GRAY));
-        }
     }
 
     /**

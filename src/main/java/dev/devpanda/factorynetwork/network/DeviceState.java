@@ -23,7 +23,18 @@ public enum DeviceState {
     UNNAMED,
     /** Der Name ist mehrfach vergeben; alle davon sind unbrauchbar. */
     DUPLICATE,
-    /** Am Netz, aber ohne freien Kanal auf dem Weg zum Controller. */
+    /**
+     * Am Netz, aber die Leitung dorthin ist ausgelastet.
+     *
+     * <p><b>Wird seit dem 29.08. nicht mehr vergeben.</b> Damals hieß der
+     * Zustand „ohne freien Kanal" und bedeutete: stumm. Kanäle gibt es nicht
+     * mehr; ein Gerät an einer vollen Leitung arbeitet langsamer, nicht gar
+     * nicht — und das ist kein eigener Zustand, sondern eine Zahl.
+     *
+     * <p>Der Wert bleibt, weil er in jeder bestehenden Welt gespeichert
+     * steht. Ein Gerät, das ihn beim Laden mitbringt, bekommt beim ersten
+     * Netzaufbau seinen richtigen.
+     */
     STARVED;
 
     /**
