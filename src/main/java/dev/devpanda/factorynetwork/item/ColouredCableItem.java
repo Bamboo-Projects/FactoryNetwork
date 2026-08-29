@@ -40,6 +40,44 @@ public class ColouredCableItem extends BlockItem {
     }
 
     /**
+     * Erst den Block fragen, dann daneben setzen.
+     *
+     * <p><b>Ein {@link BlockItem} fragt sonst gar nicht.</b> Es sucht sich
+     * eine freie Stelle und setzt dorthin — und ein Halter, in dem schon ein
+     * Anschluss sitzt, gilt als besetzt. Der Klick landete daneben, statt
+     * das Kabel in den Halter zu legen.
+     *
+     * <p>Dieselbe Reihenfolge, die der Connector nimmt: Der Block bekommt
+     * die erste Gelegenheit, und nur wenn er ablehnt, wird gesetzt.
+     *
+     * <p><b>Außer beim Schleichen.</b> Wer schleichend klickt, will
+     * daneben bauen — das ist die Geste, die in Minecraft überall
+     * „ignoriere den Block" bedeutet.
+     */
+    @Override
+    public net.minecraft.world.InteractionResult useOn(
+            net.minecraft.world.item.context.UseOnContext context) {
+        var player = context.getPlayer();
+        if (player != null && !player.isSecondaryUseActive()) {
+            var level = context.getLevel();
+            var pos = context.getClickedPos();
+            var state = level.getBlockState(pos);
+            if (state.getBlock() instanceof CableBlock && !CableBlock.carries(state)) {
+                // Den Treffer selbst bauen: UseOnContext hält ihn, gibt ihn
+                // aber nicht heraus. Die drei Angaben, die zählen, hat er.
+                var hit = new net.minecraft.world.phys.BlockHitResult(
+                        context.getClickLocation(), context.getClickedFace(), pos, false);
+                var result = state.useItemOn(context.getItemInHand(), level, player,
+                        context.getHand(), hit);
+                if (result.consumesAction()) {
+                    return result.result();
+                }
+            }
+        }
+        return super.useOn(context);
+    }
+
+    /**
      * Beim Setzen bekommt der Block die Farbe des Gegenstands.
      *
      * <p>Ohne das stünde überall das neutrale Kabel: Der Zustand kommt vom
