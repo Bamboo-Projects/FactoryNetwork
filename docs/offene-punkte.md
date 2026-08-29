@@ -5,6 +5,34 @@ Alles, was in `docs/` und im Code als unfertig steht, an einer Stelle.
 Stand: 2026-08-26 (nach den beiden Schnitten am Wertemodell und der
 Handbucharbeit)
 
+## Durchsatz sichtbar gemacht (29.08., abends)
+
+**Am Kabel stand noch „Kanäle".** Neun Sprachtexte redeten weiter davon,
+obwohl die Rechnung längst Byte zählte. Kein Prüflauf sah das — sie prüfen
+Verhalten, und ein falscher Name ist kein Verhalten. **Jetzt steht ein
+Wächter da**, der jede Sprachdatei nach dem Wort durchsucht.
+
+**Und im Terminal gibt es ein Verkehrsdiagramm.** Netzwerk-Reiter, ganz oben:
+eine Kurve über fünf Minuten, darunter die größten Verbraucher je Worker.
+Einheiten von Byte bis Terabyte — „340 B", „12,4 KB", „3,1 MB".
+
+Gemessen wird auf dem Server: Ein Verlauf, den der Client mitschreibt, hat
+Lücken, sobald das Fenster zu ist — und genau dann fragt man sich später,
+warum nachts nichts lief.
+
+### Zum Prüfen
+
+Terminal öffnen, Netzwerk-Reiter. Bei einem laufenden Worker wächst die Kurve
+von rechts; sein Name steht darunter mit seiner Menge. Bei einem stillen Netz
+steht „Nichts bewegt sich".
+
+**Eine Zahl, die dir auffallen wird:** Ein gewöhnliches Kabel trägt 1 KB/s.
+Ein Worker mit `rate 64 per 1t` will 64 Byte je Tick, also **1,28 KB/s** — er
+läuft damit dauerhaft an der Grenze. Ob das zu eng ist, weißt du nach einer
+Stunde; es sind zwei Konstanten in `Bandwidth.java`.
+
+**332 Prüfläufe grün.**
+
 ## Bandbreite und der Router als Splitter (29.08., nachmittags)
 
 ### Byte statt Zahlen
