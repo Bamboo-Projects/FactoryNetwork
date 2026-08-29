@@ -431,25 +431,20 @@ public final class FactoryGraph {
     }
 
     /**
-     * Was am Netz einen Kanal kostet.
+     * Was am Netz ein Gerät ist.
      *
-     * <p>Die Regel in einem Satz: Was etwas tut, kostet einen Kanal. Eine
-     * Anzeige tut weniger — sie liest nur mit — und kostet keinen. Ein Router
-     * ist Kabel und kein Gerät.
+     * <p><b>Ohne Kosten seit dem 29.08.</b> Jede dieser Arten kostete
+     * einen Kanal oder keinen; Kanäle gibt es nicht mehr. Was bleibt, ist
+     * die Art selbst — der Suchlauf muss wissen, in welche Liste ein Fund
+     * gehört.
      */
     private enum Consumer {
-        CONNECTOR(Channels.CONNECTOR),
-        DRIVE(Channels.DRIVE),
-        RACK(Channels.RACK),
-        FABRICATOR(Channels.FABRICATOR),
-        DISPLAY(Channels.DISPLAY),
-        MAST(Channels.MAST);
-
-        private final int cost;
-
-        Consumer(int cost) {
-            this.cost = cost;
-        }
+        CONNECTOR,
+        DRIVE,
+        RACK,
+        FABRICATOR,
+        DISPLAY,
+        MAST
     }
 
     /**

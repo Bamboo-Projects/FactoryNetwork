@@ -936,7 +936,67 @@ Absatz blieb stehen, obwohl die Antwort zwölf Zeilen weiter steht.
 
 ---
 
+## Durchsatz statt Kanäle (2026-08-29)
+
+**Die Kanäle sind weg.** An ihre Stelle tritt eine Grenze, die zählt, *wie
+viel je Tick über ein Kabel geht* — nicht, *wie viele Geräte dahinter hängen*.
+
+**Der Anlass war eine Frage des Users:** „ich will auch nicht AE2 nachmachen."
+Und der Abschnitt darunter gab ihm recht — dort stand wörtlich „Das Vorbild
+ist Applied Energistics". Die Kanäle waren ein bewusstes Zitat.
+
+**Der tragende Grund ist aber die Passung, nicht das Zitat.** Bei AE2 ist die
+*Form des Netzes* das Spiel: wo das dicke Kabel liegt, wo man teilt, wo ein
+P2P-Tunnel hilft. **Hier ist der Code das Spiel.** Ein Programm sieht nie,
+welchen Weg ein Kanal nimmt; es sieht nur, ob `move 64 per 1t` durchkommt.
+Eine Grenze, die das Programm nicht spürt, ist eine Grenze am falschen Ort.
+
+Durchsatz spürt es: `rate 64 per 1t` gegen ein Kabel, das 64 trägt, ist eine
+Zahl im Code gegen eine Zahl in der Welt.
+
+### Eng statt tot
+
+**Das ist der Unterschied, der im Spiel zählt.** Kein Kanal hieß: Das Gerät
+ist aus. Zu wenig Durchsatz heißt: Es arbeitet langsamer. Ein Netz an der
+Grenze läuft weiter, nur zäher.
+
+Damit fällt der Zustand `STARVED` — und mit ihm die häufigste Frage an das
+alte System: „Warum tut dieses Gerät nichts?" Wer erreichbar ist, arbeitet.
+
+### Was die Zahlen sind
+
+Ein gewöhnliches Kabel trägt **64** je Tick, ein dichtes **512**. Router,
+Gateway und Quantum-Brücke tragen so viel wie ein dichtes — sie sind Leitung
+und kein Vermehrer, dieselbe Regel wie vorher bei den Kanälen.
+
+Ein gewöhnliches Kabel schafft damit einen Stapel je Tick: genug für jede
+einzelne Leitung, zu wenig für eine Hauptader, an der zehn Worker ziehen. Das
+dichte schafft acht — der Unterschied, für den man es baut.
+
+### Was das dichte Kabel und der Anbau jetzt sind
+
+**Das dichte Kabel behält seinen Zweck**, nur einen anderen: Es trägt mehr
+Ware statt mehr Geräte.
+
+**Der Anbau hat seinen verloren.** Er existierte, um mehr Kabelseiten zu
+bieten, und Kabelseiten sind nicht mehr knapp. Das ist offen und gehört zur
+Entscheidung über den Controller-Multiblock (`controller-multiblock.md`).
+
+### Was bleibt, obwohl es nichts mehr tut
+
+`ConnectorPart.channelCost` wird weiter gelesen und geschrieben. Es steht im
+Speicherformat jeder bestehenden Welt, und ein Wegfall hieße, jede davon beim
+ersten Laden anzufassen. **Ein totes Feld ist billiger als eine Migration für
+nichts.**
+
+---
+
 ## Kanäle (2026-08-20)
+
+> **Überholt am 2026-08-29.** Was hier steht, gilt nicht mehr — siehe
+> „Durchsatz statt Kanäle" darüber. Der Abschnitt bleibt stehen, weil er
+> erklärt, wogegen entschieden wurde.
+
 
 **Je Strang, nicht je Bündel.** Ein Strang ist ein Bündel von Drähten; jedes
 Gerät zieht auf seinem ganzen Weg zum Controller einen davon ab, und weiter

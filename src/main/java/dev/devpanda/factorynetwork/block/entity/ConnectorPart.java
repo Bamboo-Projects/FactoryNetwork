@@ -73,6 +73,18 @@ public final class ConnectorPart {
      * mit höherem Bedarf später keine Wanderung durch den Pfadcode nach sich
      * zieht — das kostet jetzt nichts und spart sie dann.
      */
+    /**
+     * Was dieser Anschluss früher an Kanälen kostete.
+     *
+     * <p><b>Ohne Wirkung seit dem 29.08.</b> Kanäle gibt es nicht mehr; die
+     * Grenze am Kabel ist der Durchsatz je Tick, und der hängt nicht davon
+     * ab, wie viele Geräte dahinter liegen.
+     *
+     * <p>Gelesen und geschrieben wird das Feld weiter: Es steht im
+     * Speicherformat jeder bestehenden Welt, und ein Wegfall hier hieße, jede
+     * davon beim ersten Laden anzufassen. Ein totes Feld ist billiger als
+     * eine Migration für nichts.
+     */
     private int channelCost = 1;
 
     /**

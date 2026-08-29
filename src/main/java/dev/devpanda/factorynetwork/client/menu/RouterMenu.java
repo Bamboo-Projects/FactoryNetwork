@@ -1,7 +1,6 @@
 package dev.devpanda.factorynetwork.client.menu;
 
 import dev.devpanda.factorynetwork.block.entity.RouterBlockEntity;
-import dev.devpanda.factorynetwork.network.Channels;
 import dev.devpanda.factorynetwork.network.ControllerRegistry;
 import dev.devpanda.factorynetwork.registry.FnBlocks;
 import dev.devpanda.factorynetwork.registry.FnMenus;

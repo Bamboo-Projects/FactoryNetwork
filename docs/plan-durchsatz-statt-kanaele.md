@@ -90,7 +90,7 @@ Genau die Geräte, die heute schon null oder wenig Kanäle kosten.
 - [ ] **4. Die Anzeige.** Analysator und Jade zeigen Auslastung statt
       Kanalzahl: „340 von 512 je Tick". Der Zustand `STARVED` wird zu
       `CONGESTED` — nicht tot, sondern eng.
-- [ ] **5. Aufräumen.** `Channels.java` weg, `channelCost` am Connector weg,
+- [x] **5. Aufräumen.** `Channels.java` weg, `channelCost` am Connector weg,
       die Doku nachziehen. **Und `entscheidungen.md` bekommt den Grund**,
       warum das Zitat gefallen ist.
 
