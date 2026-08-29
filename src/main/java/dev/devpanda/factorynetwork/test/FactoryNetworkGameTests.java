@@ -6184,6 +6184,107 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
+     * Der Router greift einzelne Farben aus dem Hauptstrang ab.
+     *
+     * <p><b>Das Glasfaser-Bild.</b> Eine Leitung trägt alle Farben; der
+     * Router zieht eine davon heraus und lässt den Rest weiterlaufen.
+     *
+     * <p>Vorher war er das Gegenteil: farbneutral, ein Mischer. Was auf
+     * einer Bahn zusammenkam, galt als verbunden — zwei getrennte Teilnetze
+     * wuchsen darüber zusammen.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void aRouterTapsOneColourOffTheTrunk(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 1, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+
+        // Der Hauptstrang: neutral, also alle Farben.
+        BlockPos trunk = controller.east();
+        placeCable(helper, trunk, dev.devpanda.factorynetwork.block.CableColour.NONE);
+
+        // Der Router daran.
+        BlockPos router = trunk.east();
+        helper.setBlock(router, FnBlocks.ROUTER.get());
+        if (!(helper.getBlockEntity(router)
+                instanceof dev.devpanda.factorynetwork.block.entity.RouterBlockEntity box)) {
+            helper.fail("kein Router", router);
+            return;
+        }
+        // Zum Hauptstrang hin: alles. Nach Norden: nur Rot.
+        box.setFilter(Direction.WEST, null);
+        box.setFilter(Direction.NORTH, dev.devpanda.factorynetwork.block.CableColour.RED);
+        box.setFilter(Direction.SOUTH, dev.devpanda.factorynetwork.block.CableColour.BLUE);
+
+        helper.assertTrue(box.filter(Direction.WEST) == null,
+                "die Seite zum Hauptstrang filtert");
+        helper.assertValueEqual(box.filter(Direction.NORTH),
+                dev.devpanda.factorynetwork.block.CableColour.RED,
+                "die Nordseite führt nicht Rot");
+        // Eine unberührte Seite lässt alles durch. Das ist die
+        // verträgliche Vorgabe: Ein frisch gesetzter Router verbindet, statt
+        // stillzustehen, bis jemand ihn einstellt.
+        helper.assertTrue(!box.isOff(Direction.EAST),
+                "eine frische Seite ist abgeklemmt");
+        helper.assertTrue(box.filter(Direction.EAST) == null,
+                "eine frische Seite filtert schon");
+        box.turnOff(Direction.EAST);
+        helper.assertTrue(box.isOff(Direction.EAST),
+                "turnOff klemmt die Seite nicht ab");
+
+        // Ein rotes Kabel nach Norden, ein blaues nach Süden.
+        BlockPos rot = router.north();
+        placeCable(helper, rot, dev.devpanda.factorynetwork.block.CableColour.RED);
+        if (helper.getBlockEntity(rot)
+                instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus) {
+            bus.addPart(Direction.NORTH).setLabel("am_roten");
+        }
+        BlockPos blau = router.south();
+        placeCable(helper, blau, dev.devpanda.factorynetwork.block.CableColour.BLUE);
+        if (helper.getBlockEntity(blau)
+                instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus) {
+            bus.addPart(Direction.SOUTH).setLabel("am_blauen");
+        }
+
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        // Beide hängen am Netz — der Hauptstrang trägt beide Farben.
+        helper.assertTrue(entity.graph().connectorNames().contains("am_roten"),
+                "das rote Teilnetz hängt nicht am Hauptstrang");
+        helper.assertTrue(entity.graph().connectorNames().contains("am_blauen"),
+                "das blaue Teilnetz hängt nicht am Hauptstrang");
+
+        // <b>Und der Filter sperrt wirklich.</b> Das ist die Probe, auf
+        // die es ankommt: Ein blaues Kabel an einem Ausgang, der nur Rot
+        // durchlässt, darf nicht erreichbar sein. Ohne sie könnte der Filter
+        // fehlen und der Lauf bliebe grün — der Hauptstrang ist neutral und
+        // verbindet sich ohnehin mit allem.
+        BlockPos falsch = router.west().north();
+        placeCable(helper, falsch, dev.devpanda.factorynetwork.block.CableColour.BLUE);
+        BlockPos amFalschen = router.east();
+        helper.setBlock(amFalschen, FnBlocks.CABLE.get());
+        if (helper.getBlockEntity(amFalschen)
+                instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus) {
+            bus.addPart(Direction.EAST).setLabel("hinter_rot");
+        }
+        // Der Ostausgang lässt nur Rot durch; dort hängt ein neutrales Kabel
+        // mit einem Gerät. Neutral verbindet sich mit allem — außer der
+        // Router lässt es nicht hinaus.
+        box.setFilter(Direction.EAST, dev.devpanda.factorynetwork.block.CableColour.GREEN);
+        entity.rebuildNetwork();
+        helper.assertTrue(!entity.graph().connectorNames().contains("hinter_rot"),
+                "hinter einem grünen Ausgang hängt ein Gerät am neutralen Kabel");
+
+        // Und mit passendem Filter kommt es durch: Es liegt am Filter, nicht
+        // an der Leitung.
+        box.setFilter(Direction.EAST, null);
+        entity.rebuildNetwork();
+        helper.assertTrue(entity.graph().connectorNames().contains("hinter_rot"),
+                "ohne Filter kommt das Gerät immer noch nicht durch");
+        helper.succeed();
+    }
+
+    /**
      * Der Analysator zeigt, was wirklich floss — nicht, was fließen könnte.
      *
      * <p><b>Die Zahl kommt aus dem Budget, nicht aus einer Schätzung.</b> Ein

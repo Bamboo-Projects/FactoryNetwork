@@ -288,10 +288,17 @@ public final class FactoryGraph {
             // Der Filter muss vor allem anderen stehen, nicht nur vor dem
             // Kabelzweig: Auch ein Gerät an einer fremden Bahn gehört nicht
             // dazu.
-            boolean atRouter = current.lane() != RouterBlockEntity.OFF;
+            // Am Block gefragt und nicht am Knoten: Der Knoten trug früher
+            // die Bahnnummer, und die gibt es nicht mehr — ein Router ist
+            // jetzt ein Knoten, nicht vier.
+            boolean atRouter = level.getBlockState(current.pos()).getBlock()
+                    instanceof RouterBlock;
             for (Direction direction : Direction.values()) {
-                if (atRouter && RouterBlockEntity.laneAt(level, current.pos(), direction)
-                        != current.lane()) {
+                // Aus einem Router hinaus nur, wo die Seite es zulässt.
+                // Vorher stand hier ein Bahnvergleich; jetzt entscheidet der
+                // Filter der Austrittsseite — siehe mayLeaveRouter.
+                if (atRouter && !mayLeaveRouter(level, current.pos(), direction,
+                        current.colour())) {
                     continue;
                 }
                 BlockPos next = current.pos().relative(direction);
@@ -576,21 +583,68 @@ public final class FactoryGraph {
     private static void visitRouter(Level level, BlockPos pos, Direction direction, Node from,
                                     Map<Node, Node> parents, Deque<Node> queue,
                                     Set<BlockPos> routers) {
-        int lane = RouterBlockEntity.laneAt(level, pos, direction.getOpposite());
+        Direction eintritt = direction.getOpposite();
+        int lane = RouterBlockEntity.laneAt(level, pos, eintritt);
         if (lane == RouterBlockEntity.OFF) {
             return;
         }
-        // Farbneutral: Was auf einer Bahn zusammenkommt, ist verbunden, egal
-        // in welcher Farbe es ankam. Wer das nicht will, legt zwei Bahnen.
-        Node node = new Node(pos.immutable(), CableColour.NONE, lane);
-        // Der Router selbst gehört zum Netz, auch wenn diese Bahn schon
-        // besucht ist — sonst fehlte er im Analysator, sobald zwei Wege auf
-        // dieselbe Bahn führen.
+        // <b>Der Router filtert, er mischt nicht.</b> Bis zum 29.08. war der
+        // Knoten farbneutral: Was auf einer Bahn zusammenkam, galt als
+        // verbunden — zwei getrennte Teilnetze wuchsen darüber zusammen.
+        //
+        // Jetzt trägt der Knoten eine Farbe. Eine Seite ohne Filter reicht
+        // die Farbe durch, mit der es ankam; eine mit Filter lässt nur diese
+        // eine durch. Damit treffen sich zwei Farben im selben Block, ohne
+        // einander zu berühren — das Glasfaser-Bild.
+        CableColour filter = RouterBlockEntity.filterAt(level, pos, eintritt);
+        if (filter != null && !filter.connectsTo(from.colour())) {
+            return;
+        }
+        // <b>Ein Router ist ein Knoten, nicht vier.</b> Vorher trug der
+        // Knoten die Bahnnummer der Eintrittsseite — und reichte damit nie
+        // zu einer Seite mit anderer Nummer hinaus. Vier Bahnen waren vier
+        // Router im selben Block.
+        //
+        // Jetzt ist er ein Durchgang, und die Filter sitzen an seinen
+        // Seiten: Was hereindarf, entscheidet der Eintritt; was hinausdarf,
+        // der Austritt. Ein roter Ausgang lässt nur Rotes hinaus.
+        //
+        // Die Farbe des Knotens ist die, mit der es ankam — der Filter
+        // entscheidet, ob etwas hindurchdarf, nicht, was es danach ist.
+        Node node = new Node(pos.immutable(), from.colour());
         routers.add(pos.immutable());
         if (!parents.containsKey(node)) {
             parents.put(node, from);
             queue.add(node);
         }
+    }
+
+    /**
+     * Darf diese Farbe hier hinaus?
+     *
+     * <p>Die Gegenprobe zum Eintritt: Der Router hat je Seite einen Filter,
+     * und beide Richtungen zählen. Ohne diese Frage wäre ein roter Ausgang
+     * eine Beschriftung ohne Wirkung — es käme heraus, was hereinkam.
+     */
+    private static boolean mayLeaveRouter(Level level, BlockPos pos, Direction side,
+                                          CableColour colour) {
+        if (RouterBlockEntity.laneAt(level, pos, side) == RouterBlockEntity.OFF) {
+            return false;
+        }
+        CableColour filter = RouterBlockEntity.filterAt(level, pos, side);
+        if (filter == null) {
+            return true;
+        }
+        // <b>Die Farbe des Kabels dahinter entscheidet, nicht die des
+        // Strangs davor.</b> Ein roter Ausgang führt in ein rotes Kabel;
+        // liegt dort ein blaues, geht nichts hinaus.
+        //
+        // connectsTo allein reichte nicht: Neutral verbindet sich mit allem,
+        // und ein neutrales Kabel käme durch jeden Filter — ein Filter, den
+        // alles passiert, ist keiner.
+        CableColour dahinter = CableBlock.colourOf(
+                level.getBlockState(pos.relative(side)));
+        return filter == dahinter;
     }
 
     /**

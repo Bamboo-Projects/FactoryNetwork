@@ -14,12 +14,21 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Die Bahnzuordnung eines Routers: je Seite eine Zahl.
+ * Was ein Router je Seite durchlässt.
  *
- * <p>Gleiche Bahn heißt verbunden, verschiedene Bahnen kreuzen sich
- * berührungslos, {@link #OFF} heißt abgeklemmt. Damit ersetzt ein einziger
- * Block, was beim dünnen Kabel das Bündeln wäre — beim dicken ist im Block
- * kein Platz für vier Stränge nebeneinander.
+ * <p><b>Das Glasfaser-Bild.</b> Eine Leitung trägt alle Farben; der Router
+ * zieht einzelne heraus. Eine Seite ohne Filter ist der Anschluss an den
+ * Hauptstrang — dort geht alles durch. Eine Seite mit Farbe greift genau
+ * diese ab.
+ *
+ * <p><b>Bis zum 29.08. war es umgekehrt.</b> Der Router trug Bahnnummern und
+ * war farbneutral: Was auf einer Bahn zusammenkam, galt als verbunden. Er war
+ * ein Mischer, kein Splitter — zwei getrennte Teilnetze wuchsen über ihn
+ * zusammen.
+ *
+ * <p>Die alte Aufgabe kann er weiterhin: Zwei Seiten auf dieselbe Farbe
+ * gestellt sind verbunden, verschiedene kreuzen sich berührungslos. Das
+ * Kreuzen ist damit ein Sonderfall des Filterns.
  *
  * <p>Die Zuordnung steht in der BlockEntity und nicht im Blockzustand: Sechs
  * Seiten mit je fünf Werten wären 15625 Zustände, und die legt Minecraft
@@ -37,7 +46,18 @@ public class RouterBlockEntity extends BlockEntity {
      * bei sechs Seiten und sechs Bahnen wäre fast jede Seite für sich, und
      * dafür braucht es keinen Block.
      */
-    public static final int LANES = 4;
+    /**
+     * Diese Seite lässt alles durch — der Anschluss an den Hauptstrang.
+     *
+     * <p>Der Wert ist die alte Bahn 1: Ein Router aus einer älteren Welt hat
+     * danach eine Seite, die alles durchlässt, statt einer auf Bahn 1. Das
+     * ist die verträglichere Vorgabe — er verbindet weiter, was er verband.
+     */
+    public static final int ALL = 1;
+
+    /** So viele Einstellungen gibt es je Seite: aus, alles, und je Farbe eine. */
+    public static final int LANES = ALL
+            + dev.devpanda.factorynetwork.block.CableColour.values().length;
 
     private static final String KEY_LANES = "Lanes";
 
@@ -55,12 +75,66 @@ public class RouterBlockEntity extends BlockEntity {
         java.util.Arrays.fill(lanes, (byte) 1);
     }
 
+    /**
+     * Was diese Seite durchlässt.
+     *
+     * <p>{@code null} heißt <b>alles</b> — die Seite zum Hauptstrang. Eine
+     * Farbe heißt: nur diese. Ob die Seite überhaupt an ist, fragt
+     * {@link #isOff}.
+     */
+    public dev.devpanda.factorynetwork.block.CableColour filter(Direction side) {
+        int wert = lanes[side.ordinal()];
+        if (wert == OFF || wert == ALL) {
+            return null;
+        }
+        // Die Farbwerte fangen bei zwei an, weil eins schon „alles"
+        // heißt. Ein Router aus einer Welt von vor dem 29.08. hat danach
+        // Farben statt Bahnen — die Trennung bleibt dieselbe, nur heißt sie
+        // anders.
+        var farben = dev.devpanda.factorynetwork.block.CableColour.values();
+        return farben[Math.min(wert - 2, farben.length - 1)];
+    }
+
+    /**
+     * Die rohe Einstellung dieser Seite.
+     *
+     * <p>Für Anzeige und Speicherung: aus, alles, oder eine Farbe als Zahl.
+     * Wer wissen will, <i>was</i> durchgeht, fragt {@link #filter}.
+     */
     public int lane(Direction side) {
         return lanes[side.ordinal()];
     }
 
+    /** Ist diese Seite abgeklemmt? */
+    public boolean isOff(Direction side) {
+        return lanes[side.ordinal()] == OFF;
+    }
+
+    /** Setzt den Filter: {@code null} für alles. */
+    public void setFilter(Direction side,
+                          dev.devpanda.factorynetwork.block.CableColour colour) {
+        lanes[side.ordinal()] = (byte) (colour == null ? ALL : colour.ordinal() + 2);
+        update();
+    }
+
+    /**
+     * Setzt die rohe Einstellung.
+     *
+     * <p>Für das Fenster, das sich durch die Werte klickt, und für die
+     * Speicherung. Wer eine Farbe meint, nimmt {@link #setFilter}.
+     */
     public void setLane(Direction side, int lane) {
         lanes[side.ordinal()] = (byte) Math.max(OFF, Math.min(LANES, lane));
+        update();
+    }
+
+    /** Klemmt diese Seite ab. */
+    public void turnOff(Direction side) {
+        lanes[side.ordinal()] = (byte) OFF;
+        update();
+    }
+
+    private void update() {
         setChanged();
         if (level != null) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
@@ -75,11 +149,12 @@ public class RouterBlockEntity extends BlockEntity {
      * belegt, und fünf Klicks bis zurück sind auszuhalten.
      */
     public int cycle(Direction side) {
-        int next = lane(side) + 1;
+        int next = lanes[side.ordinal()] + 1;
         if (next > LANES) {
             next = OFF;
         }
-        setLane(side, next);
+        lanes[side.ordinal()] = (byte) next;
+        update();
         return next;
     }
 
@@ -92,7 +167,20 @@ public class RouterBlockEntity extends BlockEntity {
      */
     public static int laneAt(BlockGetter level, BlockPos pos, Direction side) {
         return level.getBlockEntity(pos) instanceof RouterBlockEntity router
-                ? router.lane(side) : OFF;
+                ? router.lanes[side.ordinal()] : OFF;
+    }
+
+    /**
+     * Was diese Seite durchlässt — für den Graphen, der über die Welt läuft.
+     *
+     * <p>Gibt {@code null} zurück, wenn alles durchgeht <b>oder</b> wenn dort
+     * kein Router steht. Ob die Seite überhaupt offen ist, fragt der Graph
+     * mit {@link #laneAt} — zwei Fragen, zwei Antworten.
+     */
+    public static dev.devpanda.factorynetwork.block.CableColour filterAt(
+            BlockGetter level, BlockPos pos, Direction side) {
+        return level.getBlockEntity(pos) instanceof RouterBlockEntity router
+                ? router.filter(side) : null;
     }
 
     /**
