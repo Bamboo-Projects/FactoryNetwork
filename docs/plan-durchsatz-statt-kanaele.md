@@ -1,4 +1,4 @@
-# Durchsatz statt Kanäle — Umsetzungsplan
+# Durchsatz statt Kanäle — erledigt am 29.08.
 
 **Auftrag:** „ich überlege die ganze Channel sache weg zu lassen … ich will
 auch nicht AE2 nachmachen" (29.08.), gefolgt von „okay go".
@@ -87,7 +87,7 @@ Genau die Geräte, die heute schon null oder wenig Kanäle kosten.
 - [x] **3. Der Weg begrenzt den Takt.** Ein Worker fragt vor dem Bewegen, wie
       viel sein Weg noch hergibt, und nimmt das Kleinere von beidem. Die
       Belegung läuft je Tick und wird am Tickende zurückgesetzt.
-- [ ] **4. Die Anzeige.** Analysator und Jade zeigen Auslastung statt
+- [x] **4. Die Anzeige.** Analysator und Jade zeigen Auslastung statt
       Kanalzahl: „340 von 512 je Tick". Der Zustand `STARVED` wird zu
       `CONGESTED` — nicht tot, sondern eng.
 - [x] **5. Aufräumen.** `Channels.java` weg, `channelCost` am Connector weg,
@@ -112,3 +112,29 @@ den User.
 **Der Anbau verliert seinen Zweck**, wenn Kabelseiten nicht mehr knapp sind.
 Er hat noch keinen neuen — das gehört in dieselbe Entscheidung wie der
 Multiblock (`controller-multiblock.md`) und wird hier nicht mitentschieden.
+
+---
+
+## Erledigt am 29.08.
+
+Alle fünf Aufgaben, 331 Prüfläufe grün.
+
+**Was der Plan unterschätzt hat:** Er sprach von zwölf Dateien und drei
+Kernstellen. Es waren am Ende **vierzehn Prüfläufe**, die mit den Kanälen
+fielen — mehr als der Code selbst. Das ist kein Fehler des Plans, sondern
+sein Preis: Ein System, das gut geprüft ist, ist teurer zu entfernen als
+eines, das es nicht ist.
+
+**Was leichter ging als gedacht:** Die Wegewahl. `assignChannels` tat zwei
+Dinge, und die Trennung war sauber — die Kapazitätsprüfung ließ sich
+herausschneiden, ohne dass die Suche etwas merkte.
+
+**Was der Plan nicht vorhergesehen hat:** `channelCost` steht im
+Speicherformat jeder Welt. Es zu entfernen hieße, jede davon beim ersten
+Laden anzufassen. Es bleibt als totes Feld mit einem Kommentar — billiger als
+eine Migration für nichts.
+
+**Und eine Reihenfolge, die sich als richtig erwies:** Aufgabe 4 (die
+Anzeige) kam nach Aufgabe 3 (der Messung). Dazwischen nannte der Analysator
+nur Kapazitäten und behauptete keine Auslastung. Eine erfundene Zahl wäre
+schlimmer gewesen als keine — man sucht dann an der Stelle, die sie anzeigt.

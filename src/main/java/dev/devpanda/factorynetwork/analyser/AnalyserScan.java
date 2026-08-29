@@ -85,17 +85,26 @@ public final class AnalyserScan {
         int full = 0;
         List<AnalyserData.Link> links = new ArrayList<>();
         for (FactoryGraph.Edge edge : graph.edges()) {
-            // <b>Was hier steht, ist noch keine Auslastung.</b> Seit dem
-            // 29.08. begrenzt Durchsatz statt Kanälen, und wie viel
-            // tatsächlich fließt, weiß erst die Laufzeit — Aufgabe 3 in
-            // plan-durchsatz-statt-kanaele.md.
+            // <b>Was im letzten Tick über diese Stelle ging.</b> Nicht
+            // wie viele Geräte dahinter hängen — seit dem 29.08. zählt der
+            // Durchsatz, und den weiß nur die Laufzeit.
             //
-            // Bis dahin nennt der Analysator die Kapazität und behauptet
-            // keine Enge: Eine erfundene Zahl wäre schlimmer als keine.
+            // Ein Bild aus einem Tick, kein Mittelwert: Wer sehen will, ob
+            // eine Ader eng ist, schaut mehrmals hin. Ein geglätteter Wert
+            // versteckte genau die Spitzen, die man sucht.
             int capacity = dev.devpanda.factorynetwork.network.Throughput.at(
                     controller.getLevel(), edge.to().pos());
+            int load = controller.runtime().budget().usedAt(edge.to());
+            AnalyserData.LinkState state = load >= capacity ? AnalyserData.LinkState.FULL
+                    : load * 4 >= capacity * 3 ? AnalyserData.LinkState.TIGHT
+                    : AnalyserData.LinkState.FREE;
+            if (state == AnalyserData.LinkState.FULL) {
+                full++;
+            } else if (state == AnalyserData.LinkState.TIGHT) {
+                tight++;
+            }
             links.add(new AnalyserData.Link(edge.from().pos(), edge.to().pos(),
-                    AnalyserData.LinkState.FREE, 0, capacity));
+                    state, load, capacity));
         }
 
         AnalyserData.Summary summary = new AnalyserData.Summary(

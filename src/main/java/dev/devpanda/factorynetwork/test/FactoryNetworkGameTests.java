@@ -2876,7 +2876,7 @@ public final class FactoryNetworkGameTests {
         var netz = new dev.devpanda.factorynetwork.network.packet.AnalyserDataPacket(
                 java.util.List.of(new dev.devpanda.factorynetwork.analyser.AnalyserData.Node(
                         BlockPos.ZERO,
-                        dev.devpanda.factorynetwork.analyser.AnalyserData.NodeState.STARVED,
+                        dev.devpanda.factorynetwork.analyser.AnalyserData.NodeState.CONGESTED,
                         "brecher")),
                 java.util.List.of(new dev.devpanda.factorynetwork.analyser.AnalyserData.Link(
                         BlockPos.ZERO, BlockPos.ZERO.above(),
@@ -6181,6 +6181,61 @@ public final class FactoryNetworkGameTests {
                                 .CRYSTAL.get()),
                         new ItemStack(dev.devpanda.factorynetwork.registry.FnItems
                                 .CORE_NETWORK.get())));
+    }
+
+    /**
+     * Der Analysator zeigt, was wirklich floss — nicht, was fließen könnte.
+     *
+     * <p><b>Die Zahl kommt aus dem Budget, nicht aus einer Schätzung.</b> Ein
+     * Analysator, der Kapazitäten nennt und Auslastung behauptet, wäre
+     * schlimmer als einer, der schweigt: Man sucht dann an der Stelle, die er
+     * anzeigt, statt an der, die eng ist.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void theAnalyserShowsWhatActuallyFlowed(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 1, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        BlockPos cable = controller.east();
+        placeCable(helper, cable, dev.devpanda.factorynetwork.block.CableColour.NONE);
+
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        var node = new dev.devpanda.factorynetwork.network.FactoryGraph.Node(
+                helper.absolutePos(cable), dev.devpanda.factorynetwork.block.CableColour.NONE);
+
+        // Frisch: nichts geflossen.
+        helper.assertValueEqual(entity.runtime().budget().usedAt(node), 0,
+                "ein frisches Budget meldet Verkehr");
+
+        // Etwas hindurchgeschickt.
+        entity.runtime().budget().spend(java.util.List.of(node), 40);
+        helper.assertValueEqual(entity.runtime().budget().usedAt(node), 40,
+                "der Verkehr steht nicht im Budget");
+
+        var daten = dev.devpanda.factorynetwork.analyser.AnalyserScan.of(entity);
+        var strecke = daten.links().stream()
+                .filter(link -> link.to().equals(helper.absolutePos(cable)))
+                .findFirst().orElse(null);
+        helper.assertTrue(strecke != null, "der Analysator kennt die Strecke nicht");
+        helper.assertValueEqual(strecke.load(), 40,
+                "der Analysator zeigt nicht, was floss");
+        helper.assertValueEqual(strecke.capacity(),
+                dev.devpanda.factorynetwork.network.Throughput.THIN,
+                "der Analysator nennt die falsche Kapazität");
+        helper.assertValueEqual(strecke.state(),
+                dev.devpanda.factorynetwork.analyser.AnalyserData.LinkState.FREE,
+                "vierzig von vierundsechzig sind noch nicht eng");
+
+        // Und voll ist voll.
+        entity.runtime().budget().spend(java.util.List.of(node), 30);
+        var voll = dev.devpanda.factorynetwork.analyser.AnalyserScan.of(entity).links().stream()
+                .filter(link -> link.to().equals(helper.absolutePos(cable)))
+                .findFirst().orElseThrow();
+        helper.assertValueEqual(voll.state(),
+                dev.devpanda.factorynetwork.analyser.AnalyserData.LinkState.FULL,
+                "siebzig von vierundsechzig gelten nicht als voll");
+        helper.succeed();
     }
 
     /**

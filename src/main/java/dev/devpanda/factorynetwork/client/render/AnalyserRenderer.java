@@ -119,7 +119,9 @@ public final class AnalyserRenderer {
             case DISPLAY -> new float[] {0.60f, 0.60f, 0.75f, 0.70f};
             case UNNAMED -> new float[] {0.95f, 0.75f, 0.20f, 0.90f};
             case DUPLICATE -> new float[] {0.95f, 0.40f, 0.85f, 0.95f};
-            case STARVED -> new float[] {0.95f, 0.25f, 0.20f, 0.95f};
+            // Eng, nicht tot: dasselbe Rot, aber es bedeutet jetzt
+            // langsamer statt stumm.
+            case CONGESTED -> new float[] {0.95f, 0.25f, 0.20f, 0.95f};
             case DRIVE -> new float[] {0.45f, 0.85f, 0.60f, 0.75f};
             case RACK -> new float[] {0.85f, 0.65f, 0.35f, 0.75f};
             case ROUTER -> new float[] {0.70f, 0.75f, 0.85f, 0.60f};

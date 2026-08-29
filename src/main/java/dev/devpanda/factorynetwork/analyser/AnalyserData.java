@@ -35,7 +35,14 @@ public record AnalyserData(List<Node> nodes, List<Link> links, Summary summary) 
         /** Der Name ist mehrfach vergeben — alle davon sind unbrauchbar. */
         DUPLICATE,
         /** Am Netz, aber ohne freien Kanal auf dem Weg zum Controller. */
-        STARVED,
+        /**
+         * Ein Gerät, dessen Weg eng ist.
+         *
+         * <p>Hieß bis zum 29.08. {@code STARVED} und bedeutete: ohne Kanal,
+         * also stumm. Diesen Zustand gibt es nicht mehr — was eng ist,
+         * arbeitet langsamer, nicht gar nicht.
+         */
+        CONGESTED,
         /** Ein Laufwerk. Es stellt Platz bereit, statt welchen zu brauchen. */
         DRIVE,
         /** Ein Serverschrank. Ohne ihn rechnet das Netz nicht. */
