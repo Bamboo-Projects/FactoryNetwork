@@ -1673,6 +1673,160 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    /**
+     * Ein Anschluss von unten an einen Ofen, mit Kohle im Brennstofffach.
+     *
+     * <p>Von unten zeigt ein Ofen sein Ausgabe- und sein Brennstofffach.
+     * Zeigen ist aber nicht hergeben: Den Brennstoff behält er von unten für
+     * sich — {@code canTakeItemThroughFace} sagt genau das, und die Kommentare
+     * am Speicherbus nennen es ausdrücklich keine Fehlermeldung, sondern eine
+     * Maschine, die ihre Regeln behält.
+     *
+     * <p>Damit gibt es einen Bestand, den das Netz sieht und nicht anfassen
+     * kann. Genau das braucht jede Prüfung, die wissen will, ob eine Stelle
+     * das Ergebnis von {@code extract} liest oder nur hofft.
+     */
+    private static void furnaceStore(GameTestHelper helper, BlockPos controller) {
+        BlockPos below = controller.east().above();
+        connector(helper, below, Direction.UP);
+        helper.setBlock(below.above(), Blocks.FURNACE);
+        name(helper, below, "ofen");
+        if (helper.getBlockEntity(below.above())
+                instanceof net.minecraft.world.level.block.entity.FurnaceBlockEntity furnace) {
+            furnace.setItem(1, new ItemStack(Items.COAL, 64));
+        } else {
+            helper.fail("kein Ofen am Anschluss", below.above());
+        }
+    }
+
+    /** Alle Kohle der Prüfwelt: die im Ofen und die im Ziel. */
+    private static long coalInWorld(GameTestHelper helper, BlockPos controller) {
+        long found = 0;
+        if (helper.getBlockEntity(controller.east().above().above())
+                instanceof net.minecraft.world.level.block.entity.FurnaceBlockEntity furnace) {
+            for (int slot = 0; slot < furnace.getContainerSize(); slot++) {
+                if (furnace.getItem(slot).is(Items.COAL)) {
+                    found += furnace.getItem(slot).getCount();
+                }
+            }
+        }
+        if (helper.getBlockEntity(controller.east().south().south())
+                instanceof ChestBlockEntity depot) {
+            for (int slot = 0; slot < depot.getContainerSize(); slot++) {
+                if (depot.getItem(slot).is(Items.COAL)) {
+                    found += depot.getItem(slot).getCount();
+                }
+            }
+        }
+        return found;
+    }
+
+    /**
+     * <b>Was der Speicher nicht hergibt, darf im Ziel nicht ankommen.</b>
+     *
+     * <p>Der Gegenfall zum Itemverlust, und der teurere von beiden: Erst legt
+     * {@code move} in die Kiste, dann holt es dieselbe Menge aus dem Speicher.
+     * Ein Speicherbus auf einem Ofen zeigt seine Kohle und rückt sie nicht
+     * heraus — dann liegt sie hinterher zweimal da, im Ofen und in der Kiste.
+     *
+     * <p>Und nicht einmal: Der Bestand zieht nicht nach, weil nichts
+     * herauskam. Beim nächsten Aufruf steht dieselbe Kohle wieder bereit.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void moveTakesOnlyWhatTheStorageGives(GameTestHelper helper) {
+        BlockPos controller = bareSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        furnaceStore(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                store ofen {
+                }
+
+                fn holt() {
+                    move 64 item:coal from storage to depot
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+
+        helper.startSequence()
+                .thenIdle(5)
+                // Diese Zeile ist kein Beiwerk: Sieht der Bestand die Kohle
+                // gar nicht, prüft der Rest nichts.
+                .thenExecute(() -> helper.assertValueEqual(
+                        entity.storage().count(Items.COAL), 64L,
+                        "der Bestand muss die Kohle des Ofens zeigen"))
+                .thenExecute(() -> entity.startFlow("holt", List.of()))
+                .thenIdle(20)
+                .thenExecute(() -> helper.assertValueEqual(
+                        coalInWorld(helper, controller), 64L,
+                        "aus vierundsechzig Kohle sind mehr geworden"))
+                .thenSucceed();
+    }
+
+    /** Und der Worker geht denselben Weg auf eigener Strecke. */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void workerTakesOnlyWhatTheStorageGives(GameTestHelper helper) {
+        BlockPos controller = bareSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        furnaceStore(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                store ofen {
+                }
+
+                worker holt {
+                    from storage
+                    to depot
+                    filter item:coal
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+
+        helper.runAfterDelay(40, () -> {
+            helper.assertValueEqual(coalInWorld(helper, controller), 64L,
+                    "aus vierundsechzig Kohle sind mehr geworden");
+            helper.succeed();
+        });
+    }
+
+    /**
+     * Der Rückweg selbst, an beiden Enden.
+     *
+     * <p>{@code pullBack} ist die eine Stelle, die der Reihenfolge „erst
+     * einlegen, dann entnehmen" ihren Preis abnimmt. Sie muss zweierlei
+     * können: aus einer Kiste wirklich alles zurückholen, und bei einem
+     * Fach, das nichts herausrückt, <b>sagen, dass sie es nicht konnte</b>.
+     * Der zweite Teil ist der wichtigere — er ist die Zahl, die der Aufrufer
+     * nicht als bewegt zählen darf.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void pullBackSaysWhatStaysInside(GameTestHelper helper) {
+        BlockPos controller = bareSetup(helper);
+        controllerAt(helper, controller);
+        furnaceStore(helper, controller);
+
+        var key = dev.devpanda.factorynetwork.storage.ItemKey.of(new ItemStack(Items.COAL));
+
+        // Aus der Kiste kommt alles zurück.
+        BlockPos depot = controller.east().south();
+        IItemHandler chest = partAt(helper, depot).machineInventory();
+        dev.devpanda.factorynetwork.runtime.Handoffs.insertInto(chest,
+                new ItemStack(Items.COAL, 32));
+        helper.assertValueEqual(
+                dev.devpanda.factorynetwork.runtime.Handoffs.pullBack(chest, key, 32), 0L,
+                "aus einer Kiste muss alles zurückkommen");
+        helper.assertValueEqual(countIn(helper, depot.south()), 0,
+                "und die Kiste danach leer sein");
+
+        // Aus dem Brennstofffach von unten kommt nichts zurück, und genau
+        // diese Zahl ist die Antwort.
+        IItemHandler furnace = partAt(helper, controller.east().above()).machineInventory();
+        helper.assertValueEqual(
+                dev.devpanda.factorynetwork.runtime.Handoffs.pullBack(furnace, key, 64), 64L,
+                "der Ofen rückt von unten nichts heraus — das muss dastehen");
+        helper.succeed();
+    }
+
     /** Ein Programm mit await in if in while — die Vorlage der Ablauf-Tests. */
     private static final String COUNTING_PROGRAM = """
             event Takt(nummer: Int)

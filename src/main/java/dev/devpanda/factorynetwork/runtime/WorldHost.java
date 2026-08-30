@@ -410,8 +410,15 @@ public final class WorldHost implements Interpreter.Host {
                 }
                 ItemStack rest = insert(target, key.toStack((int) available));
                 long accepted = available - rest.getCount();
-                storage.extract(key, accepted);
-                moved += accepted;
+                // Derselbe Fall wie beim Worker: Der Bestand zeigt, was ein
+                // Speicherbus sieht, und ein fremdes Inventar darf seinen
+                // Inhalt behalten. Was nicht wirklich herauskam, liegt schon
+                // im Ziel und muss dort wieder heraus.
+                long taken = storage.extract(key, accepted);
+                if (taken < accepted) {
+                    Handoffs.pullBack(target, key, accepted - taken);
+                }
+                moved += taken;
             }
             return moved;
         }

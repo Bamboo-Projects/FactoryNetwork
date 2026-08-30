@@ -562,8 +562,20 @@ public final class WorkerRuntime {
             state.detail = "Ziel ist voll";
             return 0;
         }
-        storage.extract(item, accepted);
-        return accepted;
+        // Was der Speicher wirklich hergibt, und nicht, was er anzeigt. Ein
+        // Speicherbus zählt fremde Inventare mit, und die dürfen ihren Inhalt
+        // behalten — ein Ofen tut das mit seinem Brennstoff. Ohne diese Zeile
+        // läge er hinterher zweimal da, und weil der Bestand dabei nicht
+        // nachzieht, jeden Tick ein weiteres Mal.
+        long taken = storage.extract(item, accepted);
+        if (taken < accepted) {
+            long stuck = Handoffs.pullBack(handler, item, accepted - taken);
+            state.status = Status.IDLE;
+            state.detail = stuck > 0
+                    ? "Der Speicher gibt nichts her — " + stuck + " blieben im Ziel"
+                    : "Der Speicher gibt nichts her";
+        }
+        return taken;
     }
 
     /**
