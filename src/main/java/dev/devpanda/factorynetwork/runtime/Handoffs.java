@@ -22,6 +22,90 @@ public final class Handoffs {
     private Handoffs() {
     }
 
+    /**
+     * Was ein Griff bewegt hat und was dabei aufgefallen ist.
+     *
+     * @param moved     wie viel wirklich von der Quelle ins Ziel ging
+     * @param targetFull ob das Ziel nichts mehr annahm
+     * @param stranded  wie viel im Ziel liegt, ohne je aus der Quelle gekommen
+     *                  zu sein — siehe {@link #pullBack}
+     */
+    public record Handoff(long moved, boolean targetFull, long stranded) {
+    }
+
+    /**
+     * Von einem Gerät ins andere, so viel wie das Ziel nimmt.
+     *
+     * <p>Die Reihenfolge ist die des ganzen Hauses: erst einlegen, dann
+     * entnehmen. Was die Quelle beim echten Griff weniger hergibt als beim
+     * Probelauf, holt {@link #pullBack} wieder aus dem Ziel.
+     */
+    public static Handoff items(IItemHandler in, IItemHandler out,
+                                java.util.List<net.minecraft.world.item.Item> filter,
+                                long limit) {
+        long moved = 0;
+        long stranded = 0;
+        for (int slot = 0; slot < in.getSlots() && moved < limit; slot++) {
+            ItemStack stack = in.getStackInSlot(slot);
+            if (stack.isEmpty() || (!filter.isEmpty() && !filter.contains(stack.getItem()))) {
+                continue;
+            }
+            int wanted = (int) Math.min(limit - moved, stack.getCount());
+            ItemStack simulated = in.extractItem(slot, wanted, true);
+            ItemStack rest = insertInto(out, simulated);
+            int accepted = simulated.getCount() - rest.getCount();
+            if (accepted <= 0) {
+                return new Handoff(moved, true, stranded);
+            }
+            // Was der Griff wirklich hergibt, und nicht, was der Probelauf
+            // versprochen hat. Der Unterschied liegt schon im Ziel und ist aus
+            // dem Nichts entstanden.
+            int taken = in.extractItem(slot, accepted, false).getCount();
+            if (taken < accepted) {
+                stranded += pullBack(out, ItemKey.of(simulated), accepted - taken);
+            }
+            moved += taken;
+        }
+        return new Handoff(moved, false, stranded);
+    }
+
+    /**
+     * Ein Griff aus einem Tank in einen anderen.
+     *
+     * <p>Nur ein Griff und keine Schleife: Was ein leerer oder unwilliger Tank
+     * bedeutet, entscheiden die beiden Aufrufer verschieden — der Worker hört
+     * auf, der Interpreter geht zur nächsten Sorte weiter. Diese Entscheidung
+     * gehört ihnen und nicht hierher.
+     *
+     * <p>Der Rückweg ist hier enger als bei Gegenständen: Eine gezogene
+     * Flüssigkeit lässt sich nicht in die Quelle zurücklegen, weil ein Tank
+     * sie nicht wieder annehmen muss. Was zu viel im Ziel liegt, wird deshalb
+     * dort abgezogen und ist danach weg — es hat nie existiert.
+     */
+    public static Handoff fluid(net.neoforged.neoforge.fluids.capability.IFluidHandler in,
+                                net.neoforged.neoforge.fluids.capability.IFluidHandler out,
+                                net.neoforged.neoforge.fluids.FluidStack wanted) {
+        var action = net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE;
+        var probe = net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.SIMULATE;
+        net.neoforged.neoforge.fluids.FluidStack simulated = in.drain(wanted, probe);
+        if (simulated.isEmpty()) {
+            return new Handoff(0, false, 0);
+        }
+        int accepted = out.fill(simulated, action);
+        if (accepted <= 0) {
+            return new Handoff(0, true, 0);
+        }
+        // Was der Griff wirklich hergibt, und nicht, was der Probelauf
+        // versprochen hat.
+        int taken = in.drain(simulated.copyWithAmount(accepted), action).getAmount();
+        if (taken >= accepted) {
+            return new Handoff(taken, false, 0);
+        }
+        int surplus = accepted - taken;
+        int pulled = out.drain(simulated.copyWithAmount(surplus), action).getAmount();
+        return new Handoff(taken, false, surplus - pulled);
+    }
+
     /** Legt über alle Fächer ein und liefert, was nicht hineinpasste. */
     public static ItemStack insertInto(IItemHandler handler, ItemStack stack) {
         ItemStack rest = stack.copy();

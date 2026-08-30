@@ -1827,6 +1827,293 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    /**
+     * Ein Inventar, das mehr verspricht, als es hergibt.
+     *
+     * <p>Der Probelauf sagt vierundsechzig, der Griff liefert zweiunddreißig.
+     * Dass es so etwas gibt, steht schon länger im Quelltext — der Rückweg am
+     * Netzspeicher ist ausdrücklich dafür da. Zwischen zwei Geräten fehlte er,
+     * und dort ist der Fehler die teurere Richtung: Was das Ziel schon hat und
+     * die Quelle behält, gibt es hinterher zweimal.
+     */
+    private record Boasting(IItemHandler inner) implements IItemHandler {
+
+        @Override
+        public int getSlots() {
+            return inner.getSlots();
+        }
+
+        @Override
+        public ItemStack getStackInSlot(int slot) {
+            return inner.getStackInSlot(slot);
+        }
+
+        @Override
+        public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
+            return inner.insertItem(slot, stack, simulate);
+        }
+
+        @Override
+        public ItemStack extractItem(int slot, int amount, boolean simulate) {
+            return simulate
+                    ? inner.extractItem(slot, amount, true)
+                    : inner.extractItem(slot, amount / 2, false);
+        }
+
+        @Override
+        public int getSlotLimit(int slot) {
+            return inner.getSlotLimit(slot);
+        }
+
+        @Override
+        public boolean isItemValid(int slot, ItemStack stack) {
+            return inner.isItemValid(slot, stack);
+        }
+    }
+
+    /** Ein Inventar, das annimmt und nichts wieder herausgibt — wie ein Eingangsfach. */
+    private record Keeping(IItemHandler inner) implements IItemHandler {
+
+        @Override
+        public int getSlots() {
+            return inner.getSlots();
+        }
+
+        @Override
+        public ItemStack getStackInSlot(int slot) {
+            return inner.getStackInSlot(slot);
+        }
+
+        @Override
+        public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
+            return inner.insertItem(slot, stack, simulate);
+        }
+
+        @Override
+        public ItemStack extractItem(int slot, int amount, boolean simulate) {
+            return ItemStack.EMPTY;
+        }
+
+        @Override
+        public int getSlotLimit(int slot) {
+            return inner.getSlotLimit(slot);
+        }
+
+        @Override
+        public boolean isItemValid(int slot, ItemStack stack) {
+            return inner.isItemValid(slot, stack);
+        }
+    }
+
+    private static long countIn(IItemHandler handler) {
+        long found = 0;
+        for (int slot = 0; slot < handler.getSlots(); slot++) {
+            found += handler.getStackInSlot(slot).getCount();
+        }
+        return found;
+    }
+
+    /**
+     * <b>Zwischen zwei Geräten darf nichts entstehen.</b>
+     *
+     * <p>Der Griff legt erst ein und entnimmt danach — die Reihenfolge, die
+     * gegen den Verlust gebaut ist. Gibt die Quelle beim echten Griff weniger
+     * her als beim Probelauf, liegt der Unterschied schon im Ziel und ist aus
+     * dem Nichts entstanden.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void nothingIsBornBetweenTwoDevices(GameTestHelper helper) {
+        var inner = new net.neoforged.neoforge.items.ItemStackHandler(1);
+        inner.setStackInSlot(0, new ItemStack(Items.COAL, 64));
+        IItemHandler source = new Boasting(inner);
+        IItemHandler target = new net.neoforged.neoforge.items.ItemStackHandler(1);
+
+        var done = dev.devpanda.factorynetwork.runtime.Handoffs.items(
+                source, target, List.of(), 64);
+
+        helper.assertValueEqual(countIn(source) + countIn(target), 64L,
+                "aus vierundsechzig Kohle sind mehr geworden");
+        helper.assertValueEqual(done.moved(), 32L,
+                "bewegt ist nur, was die Quelle wirklich hergegeben hat");
+        helper.succeed();
+    }
+
+    /**
+     * Und wenn auch der Rückweg zu ist, steht es wenigstens da.
+     *
+     * <p>Ein Eingangsfach gibt nichts heraus. Dann bleibt der Unterschied im
+     * Ziel liegen — die Lücke lässt sich hier nicht schließen, nur melden.
+     * Gemeldet muss sie werden: Als bewegt gezählt wäre sie eine Zahl, auf die
+     * jeder Auftrag baut und die es nicht gibt.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void whatCannotComeBackIsSaidOutLoud(GameTestHelper helper) {
+        var inner = new net.neoforged.neoforge.items.ItemStackHandler(1);
+        inner.setStackInSlot(0, new ItemStack(Items.COAL, 64));
+        IItemHandler source = new Boasting(inner);
+        IItemHandler target = new Keeping(
+                new net.neoforged.neoforge.items.ItemStackHandler(1));
+
+        var done = dev.devpanda.factorynetwork.runtime.Handoffs.items(
+                source, target, List.of(), 64);
+
+        helper.assertValueEqual(done.moved(), 32L,
+                "bewegt ist nur, was die Quelle wirklich hergegeben hat");
+        helper.assertValueEqual(done.stranded(), 32L,
+                "und was nicht zurückkam, muss dastehen");
+        helper.succeed();
+    }
+
+    /**
+     * Ein Tank, der mehr verspricht, als er hergibt.
+     *
+     * <p>Dasselbe wie {@link Boasting}, nur flüssig — und hier ist der Rückweg
+     * enger: In die Quelle zurück geht nichts, weil ein Tank nicht wieder
+     * annehmen muss.
+     */
+    private record BoastingTank(
+            net.neoforged.neoforge.fluids.capability.IFluidHandler inner)
+            implements net.neoforged.neoforge.fluids.capability.IFluidHandler {
+
+        @Override
+        public int getTanks() {
+            return inner.getTanks();
+        }
+
+        @Override
+        public net.neoforged.neoforge.fluids.FluidStack getFluidInTank(int tank) {
+            return inner.getFluidInTank(tank);
+        }
+
+        @Override
+        public int getTankCapacity(int tank) {
+            return inner.getTankCapacity(tank);
+        }
+
+        @Override
+        public boolean isFluidValid(int tank, net.neoforged.neoforge.fluids.FluidStack stack) {
+            return inner.isFluidValid(tank, stack);
+        }
+
+        @Override
+        public int fill(net.neoforged.neoforge.fluids.FluidStack resource, FluidAction action) {
+            return inner.fill(resource, action);
+        }
+
+        @Override
+        public net.neoforged.neoforge.fluids.FluidStack drain(
+                net.neoforged.neoforge.fluids.FluidStack resource, FluidAction action) {
+            return action.simulate()
+                    ? inner.drain(resource, action)
+                    : inner.drain(resource.copyWithAmount(resource.getAmount() / 2), action);
+        }
+
+        @Override
+        public net.neoforged.neoforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
+            return inner.drain(action.simulate() ? maxDrain : maxDrain / 2, action);
+        }
+    }
+
+    /** Ein Tank, der annimmt und nichts wieder hergibt. */
+    private record KeepingTank(
+            net.neoforged.neoforge.fluids.capability.IFluidHandler inner)
+            implements net.neoforged.neoforge.fluids.capability.IFluidHandler {
+
+        @Override
+        public int getTanks() {
+            return inner.getTanks();
+        }
+
+        @Override
+        public net.neoforged.neoforge.fluids.FluidStack getFluidInTank(int tank) {
+            return inner.getFluidInTank(tank);
+        }
+
+        @Override
+        public int getTankCapacity(int tank) {
+            return inner.getTankCapacity(tank);
+        }
+
+        @Override
+        public boolean isFluidValid(int tank, net.neoforged.neoforge.fluids.FluidStack stack) {
+            return inner.isFluidValid(tank, stack);
+        }
+
+        @Override
+        public int fill(net.neoforged.neoforge.fluids.FluidStack resource, FluidAction action) {
+            return inner.fill(resource, action);
+        }
+
+        @Override
+        public net.neoforged.neoforge.fluids.FluidStack drain(
+                net.neoforged.neoforge.fluids.FluidStack resource, FluidAction action) {
+            return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+        }
+
+        @Override
+        public net.neoforged.neoforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
+            return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+        }
+    }
+
+    private static long millibucketsIn(
+            net.neoforged.neoforge.fluids.capability.IFluidHandler handler) {
+        long found = 0;
+        for (int tank = 0; tank < handler.getTanks(); tank++) {
+            found += handler.getFluidInTank(tank).getAmount();
+        }
+        return found;
+    }
+
+    /**
+     * <b>Zwischen zwei Tanks darf nichts entstehen.</b>
+     *
+     * <p>Derselbe Griff wie bei den Gegenständen und derselbe Preis für seine
+     * Reihenfolge: Erst füllt das Ziel, dann zieht die Quelle ab. Gibt sie
+     * weniger her als beim Probelauf, steht der Unterschied schon im Ziel.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void nothingIsBornBetweenTwoTanks(GameTestHelper helper) {
+        var inner = new net.neoforged.neoforge.fluids.capability.templates.FluidTank(2000);
+        inner.fill(new net.neoforged.neoforge.fluids.FluidStack(
+                        net.minecraft.world.level.material.Fluids.WATER, 1000),
+                net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+        net.neoforged.neoforge.fluids.capability.IFluidHandler source = new BoastingTank(inner);
+        var target = new net.neoforged.neoforge.fluids.capability.templates.FluidTank(2000);
+
+        var done = dev.devpanda.factorynetwork.runtime.Handoffs.fluid(source, target,
+                new net.neoforged.neoforge.fluids.FluidStack(
+                        net.minecraft.world.level.material.Fluids.WATER, 1000));
+
+        helper.assertValueEqual(millibucketsIn(source) + millibucketsIn(target), 1000L,
+                "aus einem Eimer Wasser sind mehr geworden");
+        helper.assertValueEqual(done.moved(), 500L,
+                "bewegt ist nur, was die Quelle wirklich hergegeben hat");
+        helper.succeed();
+    }
+
+    /** Und ein Ziel, das nichts zurückgibt, hinterlässt eine Zahl. */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void whatCannotFlowBackIsSaidOutLoud(GameTestHelper helper) {
+        var inner = new net.neoforged.neoforge.fluids.capability.templates.FluidTank(2000);
+        inner.fill(new net.neoforged.neoforge.fluids.FluidStack(
+                        net.minecraft.world.level.material.Fluids.WATER, 1000),
+                net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+        net.neoforged.neoforge.fluids.capability.IFluidHandler source = new BoastingTank(inner);
+        net.neoforged.neoforge.fluids.capability.IFluidHandler target = new KeepingTank(
+                new net.neoforged.neoforge.fluids.capability.templates.FluidTank(2000));
+
+        var done = dev.devpanda.factorynetwork.runtime.Handoffs.fluid(source, target,
+                new net.neoforged.neoforge.fluids.FluidStack(
+                        net.minecraft.world.level.material.Fluids.WATER, 1000));
+
+        helper.assertValueEqual(done.moved(), 500L,
+                "bewegt ist nur, was die Quelle wirklich hergegeben hat");
+        helper.assertValueEqual(done.stranded(), 500L,
+                "und was nicht zurückkam, muss dastehen");
+        helper.succeed();
+    }
+
     /** Ein Programm mit await in if in while — die Vorlage der Ablauf-Tests. */
     private static final String COUNTING_PROGRAM = """
             event Takt(nummer: Int)

@@ -514,7 +514,7 @@ public final class WorkerRuntime {
             // simulate anders antwortet als auf den Griff, gibt es.
             long rest = storage.insert(taken);
             if (rest > 0) {
-                ItemStack zurueck = insertInto(handler,
+                ItemStack zurueck = Handoffs.insertInto(handler,
                         taken.copyWithCount((int) rest));
                 if (!zurueck.isEmpty()) {
                     // Das Gerät nimmt nicht einmal zurück, was gerade drin
@@ -555,7 +555,7 @@ public final class WorkerRuntime {
         }
         int wanted = (int) Math.min(batch, Math.min(available, item.maxStackSize()));
         ItemStack offered = item.toStack(wanted);
-        ItemStack rest = insertInto(handler, offered);
+        ItemStack rest = Handoffs.insertInto(handler, offered);
         int accepted = wanted - rest.getCount();
         if (accepted <= 0) {
             state.status = Status.WAITING_TARGET;
@@ -621,36 +621,23 @@ public final class WorkerRuntime {
         if (in == null || out == null) {
             return 0;
         }
-        long moved = 0;
-        for (int slot = 0; slot < in.getSlots() && moved < batch; slot++) {
-            ItemStack stack = in.getStackInSlot(slot);
-            if (stack.isEmpty() || (!filter.isEmpty() && !filter.contains(stack.getItem()))) {
-                continue;
-            }
-            int wanted = (int) Math.min(batch - moved, stack.getCount());
-            ItemStack simulated = in.extractItem(slot, wanted, true);
-            ItemStack rest = insertInto(out, simulated);
-            int accepted = simulated.getCount() - rest.getCount();
-            if (accepted <= 0) {
-                state.status = Status.WAITING_TARGET;
-                state.detail = "Ziel ist voll";
-                break;
-            }
-            in.extractItem(slot, accepted, false);
-            moved += accepted;
+        Handoffs.Handoff done = Handoffs.items(in, out, filter, batch);
+        if (done.targetFull()) {
+            state.status = Status.WAITING_TARGET;
+            state.detail = "Ziel ist voll";
         }
-        return moved;
+        if (done.stranded() > 0) {
+            // Die Quelle hat weniger hergegeben als versprochen, und das Ziel
+            // nimmt es nicht zurück. Stumm bliebe eine Menge im Gerät, die
+            // niemand erklären kann.
+            state.status = Status.HALTED;
+            state.detail = "Die Quelle gibt weniger her als sie zeigt — "
+                    + done.stranded() + " blieben im Ziel";
+        }
+        return done.moved();
     }
 
     // ---- Hilfen -----------------------------------------------------------
-
-    private static ItemStack insertInto(IItemHandler handler, ItemStack stack) {
-        ItemStack rest = stack.copy();
-        for (int slot = 0; slot < handler.getSlots() && !rest.isEmpty(); slot++) {
-            rest = handler.insertItem(slot, rest, false);
-        }
-        return rest;
-    }
 
     /**
      * Das Inventar hinter einem Ziel.
@@ -1338,21 +1325,20 @@ public final class WorkerRuntime {
             }
             FluidStack wanted = new FluidStack(inside.getFluid(),
                     (int) Math.min(batch - moved, inside.getAmount()));
-            FluidStack simulated = in.drain(wanted, IFluidHandler.FluidAction.SIMULATE);
-            if (simulated.isEmpty()) {
-                continue;
-            }
-            int accepted = out.fill(simulated, IFluidHandler.FluidAction.EXECUTE);
-            if (accepted <= 0) {
+            Handoffs.Handoff done = Handoffs.fluid(in, out, wanted);
+            if (done.targetFull()) {
                 if (moved == 0) {
                     state.status = Status.WAITING_TARGET;
                     state.detail = "Das Ziel nimmt nichts mehr";
                 }
                 break;
             }
-            in.drain(new FluidStack(simulated.getFluid(), accepted),
-                    IFluidHandler.FluidAction.EXECUTE);
-            moved += accepted;
+            if (done.stranded() > 0) {
+                state.status = Status.HALTED;
+                state.detail = "Die Quelle gibt weniger her als sie zeigt — "
+                        + done.stranded() + " mB blieben im Ziel";
+            }
+            moved += done.moved();
         }
         return moved;
     }

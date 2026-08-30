@@ -408,7 +408,7 @@ public final class WorldHost implements Interpreter.Host {
                 if (available <= 0) {
                     continue;
                 }
-                ItemStack rest = insert(target, key.toStack((int) available));
+                ItemStack rest = Handoffs.insertInto(target, key.toStack((int) available));
                 long accepted = available - rest.getCount();
                 // Derselbe Fall wie beim Worker: Der Bestand zeigt, was ein
                 // Speicherbus sieht, und ein fremdes Inventar darf seinen
@@ -675,17 +675,7 @@ public final class WorldHost implements Interpreter.Host {
             }
             FluidStack wanted = new FluidStack(inside.getFluid(),
                     (int) Math.min(limit - moved, inside.getAmount()));
-            FluidStack simulated = source.drain(wanted, IFluidHandler.FluidAction.SIMULATE);
-            if (simulated.isEmpty()) {
-                continue;
-            }
-            int accepted = target.fill(simulated, IFluidHandler.FluidAction.EXECUTE);
-            if (accepted <= 0) {
-                continue;
-            }
-            source.drain(new FluidStack(simulated.getFluid(), accepted),
-                    IFluidHandler.FluidAction.EXECUTE);
-            moved += accepted;
+            moved += Handoffs.fluid(source, target, wanted).moved();
         }
         return moved;
     }
@@ -762,7 +752,7 @@ public final class WorldHost implements Interpreter.Host {
             ItemStack taken = source.extractItem(slot, (int) Math.min(wanted, fits), false);
             long rest = storage.insert(taken);
             if (rest > 0) {
-                ItemStack zurueck = insert(source, taken.copyWithCount((int) rest));
+                ItemStack zurueck = Handoffs.insertInto(source, taken.copyWithCount((int) rest));
                 if (!zurueck.isEmpty()) {
                     // Erst in Verwahrung geben, dann werfen. Andersherum
                     // nähme der Fehler die Ware mit — genau der stille
@@ -784,31 +774,7 @@ public final class WorldHost implements Interpreter.Host {
         if (source == null) {
             throw new ScriptError("Bei move fehlt die Quelle.");
         }
-        long moved = 0;
-        for (int slot = 0; slot < source.getSlots() && moved < limit; slot++) {
-            ItemStack stack = source.getStackInSlot(slot);
-            if (stack.isEmpty() || (!items.isEmpty() && !items.contains(stack.getItem()))) {
-                continue;
-            }
-            int wanted = (int) Math.min(limit - moved, stack.getCount());
-            ItemStack simulated = source.extractItem(slot, wanted, true);
-            ItemStack rest = insert(target, simulated);
-            int accepted = simulated.getCount() - rest.getCount();
-            if (accepted <= 0) {
-                break;
-            }
-            source.extractItem(slot, accepted, false);
-            moved += accepted;
-        }
-        return moved;
-    }
-
-    private static ItemStack insert(IItemHandler handler, ItemStack stack) {
-        ItemStack rest = stack.copy();
-        for (int slot = 0; slot < handler.getSlots() && !rest.isEmpty(); slot++) {
-            rest = handler.insertItem(slot, rest, false);
-        }
-        return rest;
+        return Handoffs.items(source, target, items, limit).moved();
     }
 
     /**
