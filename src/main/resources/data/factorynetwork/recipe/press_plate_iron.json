@@ -3,9 +3,12 @@
   "stamp": {
     "item": "factorynetwork:stamp_plate"
   },
-  "material": {
-    "item": "minecraft:iron_ingot"
-  },
+  "materials": [
+    {
+      "item": "minecraft:iron_ingot",
+      "count": 1
+    }
+  ],
   "result": {
     "id": "factorynetwork:plate",
     "count": 1

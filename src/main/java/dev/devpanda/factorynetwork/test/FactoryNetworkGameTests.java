@@ -2383,6 +2383,169 @@ public final class FactoryNetworkGameTests {
         });
     }
 
+    /** Die Presse an dieser Stelle, mit Strom und einem Stempel. */
+    private static dev.devpanda.factorynetwork.block.entity.PressBlockEntity press(
+            GameTestHelper helper, BlockPos at, net.minecraft.world.item.Item stamp) {
+        helper.setBlock(at, FnBlocks.PRESS.get());
+        if (!(helper.getBlockEntity(at)
+                instanceof dev.devpanda.factorynetwork.block.entity.PressBlockEntity presse)) {
+            helper.fail("Da steht keine Presse", at);
+            throw new IllegalStateException();
+        }
+        // <b>In Portionen füllen.</b> Der Puffer nimmt höchstens zweitausend
+        // je Aufruf — das ist die Drossel, die verhindert, dass eine Presse
+        // ihre Arbeit in einem Tick bezahlt. Wer sie in einem Zug füllen will,
+        // füllt sie in Wahrheit auf zweitausend, und dann steht sie bei jedem
+        // Rezept, das mehr kostet.
+        for (int i = 0; i < 30; i++) {
+            presse.energy().receiveEnergy(
+                    dev.devpanda.factorynetwork.block.entity.PressBlockEntity.CAPACITY, false);
+        }
+        presse.setItem(dev.devpanda.factorynetwork.block.entity.PressBlockEntity.SLOT_STAMP,
+                new ItemStack(stamp));
+        return presse;
+    }
+
+    /** Was im Ausgabeplatz liegt. */
+    private static ItemStack pressResult(
+            dev.devpanda.factorynetwork.block.entity.PressBlockEntity presse) {
+        return presse.item(
+                dev.devpanda.factorynetwork.block.entity.PressBlockEntity.SLOT_RESULT);
+    }
+
+    /**
+     * <b>Ein Rezept mit drei Zutaten, in beliebiger Reihenfolge eingelegt.</b>
+     *
+     * <p>Der Logikkern braucht seit dem 30.08. eine Platte, vier Redstone und
+     * ein Kupfer. Welche Zutat in welchem Platz liegt, darf gleichgültig
+     * sein: Wer vor einer Maschine steht, sortiert nicht nach einer Ordnung,
+     * die nirgends steht.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void thepressTakesThreeIngredientsInAnyOrder(GameTestHelper helper) {
+        BlockPos at = new BlockPos(1, 1, 1);
+        var presse = press(helper, at, FnItems.STAMP_LOGIC.get());
+        int first = dev.devpanda.factorynetwork.block.entity.PressBlockEntity.SLOT_MATERIAL;
+        // Absichtlich verkehrt herum: Kupfer, Platte, Redstone.
+        presse.setItem(first, new ItemStack(Items.COPPER_INGOT, 1));
+        presse.setItem(first + 1, new ItemStack(FnItems.PLATE.get(), 1));
+        presse.setItem(first + 2, new ItemStack(Items.REDSTONE, 4));
+
+        helper.runAfterDelay(200, () -> {
+            helper.assertTrue(pressResult(presse).is(FnItems.CORE_LOGIC.get()),
+                    "kein Logikkern entstanden — die Reihenfolge darf nicht zählen");
+            helper.assertTrue(presse.item(first).isEmpty()
+                            && presse.item(first + 1).isEmpty()
+                            && presse.item(first + 2).isEmpty(),
+                    "jede Zutat muss aus ihrem eigenen Platz verbraucht sein");
+            helper.succeed();
+        });
+    }
+
+    /**
+     * Fehlt eine Zutat, passiert nichts — und die anderen bleiben liegen.
+     *
+     * <p>Die Gegenprobe zum Test darüber. Ohne sie wäre nicht gesagt, ob die
+     * Presse wirklich alle drei fordert oder nur zufällig etwas herstellt.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void thepressWaitsForEveryIngredient(GameTestHelper helper) {
+        BlockPos at = new BlockPos(1, 1, 1);
+        var presse = press(helper, at, FnItems.STAMP_LOGIC.get());
+        int first = dev.devpanda.factorynetwork.block.entity.PressBlockEntity.SLOT_MATERIAL;
+        presse.setItem(first, new ItemStack(FnItems.PLATE.get(), 1));
+        presse.setItem(first + 1, new ItemStack(Items.REDSTONE, 4));
+        // Das Kupfer fehlt.
+
+        helper.runAfterDelay(200, () -> {
+            helper.assertTrue(pressResult(presse).isEmpty(),
+                    "ohne Kupfer darf kein Kern entstehen");
+            helper.assertValueEqual(presse.item(first).getCount(), 1,
+                    "und die Platte muss unangetastet liegen bleiben");
+            helper.succeed();
+        });
+    }
+
+    /**
+     * Zu wenig von einer Zutat ist wie gar keine.
+     *
+     * <p>Vier Redstone fordert das Rezept. Bei dreien darf die Presse nicht
+     * anfangen — sonst stünde sie mit halb verbrauchtem Material da.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void thepressCountsTheAmount(GameTestHelper helper) {
+        BlockPos at = new BlockPos(1, 1, 1);
+        var presse = press(helper, at, FnItems.STAMP_LOGIC.get());
+        int first = dev.devpanda.factorynetwork.block.entity.PressBlockEntity.SLOT_MATERIAL;
+        presse.setItem(first, new ItemStack(FnItems.PLATE.get(), 1));
+        presse.setItem(first + 1, new ItemStack(Items.REDSTONE, 3));
+        presse.setItem(first + 2, new ItemStack(Items.COPPER_INGOT, 1));
+
+        helper.runAfterDelay(200, () -> {
+            helper.assertTrue(pressResult(presse).isEmpty(),
+                    "drei Redstone sind nicht vier");
+            helper.assertValueEqual(presse.item(first + 1).getCount(), 3,
+                    "und angerührt wurden sie auch nicht");
+            helper.succeed();
+        });
+    }
+
+    /**
+     * <b>Die Stapelkarte macht drei Kristalle statt einem.</b>
+     *
+     * <p>Und sie verbraucht dreifach. Das ist der ganze Handel: keine Zeit
+     * gespart, sondern die Durchläufe, die sonst nacheinander liefen.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void abatchCardMakesThreeAtOnce(GameTestHelper helper) {
+        BlockPos at = new BlockPos(1, 1, 1);
+        var presse = press(helper, at, FnItems.STAMP_PLATE.get());
+        // Genau drei: So kann höchstens ein Durchlauf laufen, und die Zahl am
+        // Ende ist die eines Durchlaufs und nicht die des Wartens.
+        presse.setItem(dev.devpanda.factorynetwork.block.entity.PressBlockEntity.SLOT_MATERIAL,
+                new ItemStack(FnItems.RAW_CRYSTAL.get(), 3));
+        presse.setItem(dev.devpanda.factorynetwork.block.entity.PressBlockEntity.SLOT_UPGRADE,
+                new ItemStack(FnItems.BATCH_CARD.get(), 2));
+
+        helper.runAfterDelay(200, () -> {
+            helper.assertValueEqual(pressResult(presse).getCount(), 3,
+                    "zwei Stapelkarten machen drei Kristalle je Durchlauf");
+            helper.assertTrue(presse.item(
+                            dev.devpanda.factorynetwork.block.entity
+                                    .PressBlockEntity.SLOT_MATERIAL).isEmpty(),
+                    "und verbrauchen alle drei Rohkristalle dafür");
+            helper.succeed();
+        });
+    }
+
+    /**
+     * Die Beschleunigungskarte kommt früher an.
+     *
+     * <p>Gemessen wird nicht die Zeit, sondern der Vorsprung: Nach derselben
+     * Zahl Ticks ist die bestückte Presse fertig und die nackte noch nicht.
+     * Eine Messung in Ticks wäre eine über die Rechnung, und die steht
+     * anderswo.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void anaccelerationCardArrivesFirst(GameTestHelper helper) {
+        var schnell = press(helper, new BlockPos(1, 1, 1), FnItems.STAMP_PLATE.get());
+        var normal = press(helper, new BlockPos(3, 1, 1), FnItems.STAMP_PLATE.get());
+        int material = dev.devpanda.factorynetwork.block.entity.PressBlockEntity.SLOT_MATERIAL;
+        schnell.setItem(material, new ItemStack(Items.IRON_INGOT, 1));
+        normal.setItem(material, new ItemStack(Items.IRON_INGOT, 1));
+        schnell.setItem(dev.devpanda.factorynetwork.block.entity.PressBlockEntity.SLOT_UPGRADE,
+                new ItemStack(FnItems.ACCELERATION_CARD.get(), 4));
+
+        // Das nackte Rezept braucht 60 Ticks, das beschleunigte 41.
+        helper.runAfterDelay(50, () -> {
+            helper.assertTrue(pressResult(schnell).is(FnItems.PLATE.get()),
+                    "die bestückte Presse muss nach 50 Ticks fertig sein");
+            helper.assertTrue(pressResult(normal).isEmpty(),
+                    "die nackte darf es nicht sein — sonst misst dieser Lauf nichts");
+            helper.succeed();
+        });
+    }
+
     /** Ein Programm mit await in if in while — die Vorlage der Ablauf-Tests. */
     private static final String COUNTING_PROGRAM = """
             event Takt(nummer: Int)

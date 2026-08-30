@@ -399,5 +399,6 @@
   "gui.factorynetwork.jei.press.energy": "%s FE",
   "gui.factorynetwork.jei.press.time": "%s s",
   "item.factorynetwork.acceleration_card": "Beschleunigungskarte",
-  "item.factorynetwork.batch_card": "Stapelkarte"
+  "item.factorynetwork.batch_card": "Stapelkarte",
+  "gui.factorynetwork.jei.press.count": "Menge: %s"
 }

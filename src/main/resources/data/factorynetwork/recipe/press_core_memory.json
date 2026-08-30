@@ -3,9 +3,20 @@
   "stamp": {
     "item": "factorynetwork:stamp_memory"
   },
-  "material": {
-    "item": "factorynetwork:plate"
-  },
+  "materials": [
+    {
+      "item": "factorynetwork:plate",
+      "count": 1
+    },
+    {
+      "item": "minecraft:redstone",
+      "count": 2
+    },
+    {
+      "item": "minecraft:quartz",
+      "count": 2
+    }
+  ],
   "result": {
     "id": "factorynetwork:core_memory",
     "count": 1

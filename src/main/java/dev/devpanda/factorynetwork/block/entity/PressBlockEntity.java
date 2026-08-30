@@ -32,9 +32,31 @@ public class PressBlockEntity extends BlockEntity
         implements net.minecraft.world.MenuProvider {
 
     public static final int SLOT_STAMP = 0;
+
+    /**
+     * Die Materialplätze.
+     *
+     * <p>Drei, weil ein Rezept höchstens drei Zutaten fordern darf: Ein
+     * Prozessor braucht Redstone, Kupfer und einen Träger, und das ist die
+     * dickste Rechnung, die eine Presse führen soll. Wer mehr braucht,
+     * braucht keine Presse, sondern eine Fertigungsstraße.
+     */
     public static final int SLOT_MATERIAL = 1;
-    public static final int SLOT_RESULT = 2;
-    public static final int SLOTS = 3;
+    public static final int MATERIAL_SLOTS = PressRecipe.MOST_MATERIALS;
+
+    public static final int SLOT_RESULT = SLOT_MATERIAL + MATERIAL_SLOTS;
+
+    /**
+     * Die Steckplätze für Ausbauten.
+     *
+     * <p>Fünf, und sie zählen stapelweise: Was sie ausmachen, rechnet
+     * {@link dev.devpanda.factorynetwork.upgrade.Tuning}, und die deckelt bei
+     * acht Karten je Art.
+     */
+    public static final int SLOT_UPGRADE = SLOT_RESULT + 1;
+    public static final int UPGRADE_SLOTS = 5;
+
+    public static final int SLOTS = SLOT_UPGRADE + UPGRADE_SLOTS;
 
     /** Fasst so viel, dass ein Vorgang durchläuft, ohne am Tropf zu hängen. */
     public static final int CAPACITY = 40_000;
@@ -128,8 +150,9 @@ public class PressBlockEntity extends BlockEntity
             return;
         }
         PressRecipe found = recipe.get();
-        required = Math.max(1, found.ticks());
-        int perTick = Math.max(1, found.energy() / required);
+        var tuned = tuned(found);
+        required = Math.max(1, tuned.ticks());
+        int perTick = Math.max(1, tuned.energy() / required);
         if (!energy.has(perTick)) {
             return;
         }
@@ -141,37 +164,101 @@ public class PressBlockEntity extends BlockEntity
         setChanged();
     }
 
+    /** Was in den Materialplätzen liegt, in ihrer Reihenfolge. */
+    private PressInput input() {
+        java.util.List<ItemStack> materials = new java.util.ArrayList<>(MATERIAL_SLOTS);
+        for (int i = 0; i < MATERIAL_SLOTS; i++) {
+            materials.add(item(SLOT_MATERIAL + i));
+        }
+        return new PressInput(item(SLOT_STAMP), materials);
+    }
+
     private Optional<PressRecipe> recipeFor() {
-        if (level == null || item(SLOT_STAMP).isEmpty() || item(SLOT_MATERIAL).isEmpty()) {
+        if (level == null || item(SLOT_STAMP).isEmpty()) {
             return Optional.empty();
         }
-        PressInput input = new PressInput(item(SLOT_STAMP), item(SLOT_MATERIAL));
         return level.getRecipeManager()
-                .getRecipeFor(FnRecipes.PRESS.get(), input, level)
+                .getRecipeFor(FnRecipes.PRESS.get(), input(), level)
                 .map(holder -> holder.value());
     }
 
-    /** Passt das Ergebnis in den Ausgabeplatz? */
+    /**
+     * Was in den Steckplätzen steckt.
+     *
+     * <p>Jedes Stück eines Stapels zählt — dieselbe Regel wie bei den
+     * Reichweitenkarten, und dieselbe Klasse rechnet sie.
+     */
+    private dev.devpanda.factorynetwork.upgrade.Loadout loadout() {
+        java.util.Map<dev.devpanda.factorynetwork.upgrade.Upgrade, Integer> counts =
+                new java.util.LinkedHashMap<>();
+        for (int i = 0; i < UPGRADE_SLOTS; i++) {
+            ItemStack stack = item(SLOT_UPGRADE + i);
+            var upgrade = dev.devpanda.factorynetwork.item.UpgradeItem.upgradeOf(stack);
+            if (upgrade != null) {
+                counts.merge(upgrade, stack.getCount(), Integer::sum);
+            }
+        }
+        return dev.devpanda.factorynetwork.upgrade.Loadout.ofCounts(counts);
+    }
+
+    /** Das Rezept, wie diese Presse mit ihren Karten es ausführt. */
+    public dev.devpanda.factorynetwork.upgrade.Tuned tuned(PressRecipe recipe) {
+        return dev.devpanda.factorynetwork.upgrade.Tuning.of(
+                loadout(), recipe.ticks(), recipe.energy());
+    }
+
+    /**
+     * Reicht das Material, und passt das Ergebnis in den Ausgabeplatz?
+     *
+     * <p>Beides gegen die Stückzahl gerechnet: Eine Presse mit Stapelkarten
+     * verbraucht das Mehrfache und legt das Mehrfache ab. Wer nur das Rezept
+     * prüft, fängt einen Durchlauf an, den er nicht zu Ende bringt.
+     */
     private boolean fits(PressRecipe recipe) {
+        int batch = tuned(recipe).batch();
+        int[] from = recipe.slotsFor(input());
+        if (from == null) {
+            return false;
+        }
+        for (int i = 0; i < from.length; i++) {
+            int needed = recipe.materials().get(i).count() * batch;
+            if (item(SLOT_MATERIAL + from[i]).getCount() < needed) {
+                return false;
+            }
+        }
         ItemStack result = recipe.getResultItem(level.registryAccess());
         ItemStack current = item(SLOT_RESULT);
+        int made = result.getCount() * batch;
         if (current.isEmpty()) {
-            return true;
+            return made <= result.getMaxStackSize();
         }
         return ItemStack.isSameItemSameComponents(current, result)
-                && current.getCount() + result.getCount() <= current.getMaxStackSize();
+                && current.getCount() + made <= current.getMaxStackSize();
     }
 
     private void finish(PressRecipe recipe) {
+        int batch = tuned(recipe).batch();
+        int[] from = recipe.slotsFor(input());
+        if (from == null) {
+            // Zwischen Prüfung und Abschluss hat jemand ausgeräumt.
+            progress = 0;
+            return;
+        }
         ItemStack result = recipe.getResultItem(level.registryAccess()).copy();
+        result.setCount(result.getCount() * batch);
         ItemStack current = item(SLOT_RESULT);
         if (current.isEmpty()) {
             items.set(SLOT_RESULT, result);
         } else {
             current.grow(result.getCount());
         }
+        // Jede Zutat aus dem Platz, der sie erfüllt hat — nicht der Reihe
+        // nach: Die Reihenfolge in der Presse ist eine andere als im Rezept.
+        for (int i = 0; i < from.length; i++) {
+            item(SLOT_MATERIAL + from[i])
+                    .shrink(recipe.materials().get(i).count() * batch);
+        }
         // Der Stempel bleibt — er ist Werkzeug, nicht Zutat.
-        item(SLOT_MATERIAL).shrink(1);
         progress = 0;
     }
 
@@ -297,16 +384,22 @@ public class PressBlockEntity extends BlockEntity
 
                 @Override
                 public boolean isItemValid(int slot, ItemStack stack) {
-                    return switch (slot) {
+                    if (slot == SLOT_STAMP) {
                         // Ein Stempel und sonst nichts.
-                        case SLOT_STAMP -> stack.is(STAMPS);
+                        return stack.is(STAMPS);
+                    }
+                    if (slot >= SLOT_MATERIAL && slot < SLOT_MATERIAL + MATERIAL_SLOTS) {
                         // Alles, was kein Stempel ist: Welche Rezepte es gibt,
-                        // entscheidet ein Datenpaket, und diese Frage hier
-                        // gegen den Rezeptbestand zu stellen hieße, sie bei
-                        // jedem Einlegeversuch neu zu stellen.
-                        case SLOT_MATERIAL -> !stack.is(STAMPS);
-                        default -> false;
-                    };
+                        // entscheidet ein Datenpaket, und diese Frage gegen den
+                        // Rezeptbestand zu stellen hieße, sie bei jedem
+                        // Einlegeversuch neu zu stellen.
+                        return !stack.is(STAMPS);
+                    }
+                    // <b>Die Steckplätze sind von außen zu.</b> Sie sind eine
+                    // Einstellung und kein Durchlauf: Eine Sortiermaschine,
+                    // die Karten hineinschiebt, änderte im Vorbeigehen, wie
+                    // schnell die Presse läuft.
+                    return false;
                 }
             };
 

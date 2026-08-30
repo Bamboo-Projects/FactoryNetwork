@@ -281,40 +281,55 @@ def save(image, name):
 def press_background():
     """Das Fenster der Presse.
 
-    Ein gewöhnliches Vanilla-Inventar: Stempel oben, Material darunter, Ausgabe
-    rechts. Dazwischen zwei Anzeigen — der Pfeil für den Fortschritt und ein
-    Balken für den Strom.
+    <b>Drei Materialplätze statt eines, und fünf Steckplätze darunter.</b> Die
+    Presse nimmt seit dem 30.08. Rezepte mit mehreren Zutaten — ein Prozessor
+    braucht Redstone, Kupfer und einen Träger —, und die Karten, die sie
+    schneller machen, brauchen auch einen Ort.
+
+    <b>Die Reihen sind getrennt, und das ist keine Kosmetik:</b> Oben liegt,
+    was durchläuft, unten, was eingestellt bleibt. Eine Karte im Materialplatz
+    wäre ein Fehler, den niemand bemerkt, bis die Maschine sie presst.
 
     <b>Beide Anzeigen brauchen eine leere Fassung im Hintergrund.</b> Sonst
     kann der Bildschirm nicht zeigen, wie voll sie sind: Er blendet den vollen
-    Zustand nur teilweise darüber, und ohne den leeren dahinter stünde dort ein
-    Loch.
+    Zustand nur teilweise darüber, und ohne den leeren dahinter stünde dort
+    ein Loch.
     """
-    breite, hoehe = 176, 166
+    breite, hoehe = 176, 186
     img = Image.new("RGBA", (ATLAS, ATLAS), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
 
     panel(d, (0, 0, breite - 1, hoehe - 1))
 
-    # Die drei Plätze der Maschine
-    slot(d, 43, 16)   # Stempel
-    slot(d, 43, 52)   # Material
-    slot(d, 115, 34)  # Ausgabe, gross gerahmt
-    sunken(d, (110, 29, 137, 56), fill=PANEL_DARK)
-    slot(d, 115, 34)
+    # Der Stempel steht für sich: Er ist Werkzeug und kein Durchlauf.
+    slot(d, 25, 16)
+
+    # Die drei Materialplätze in einer Reihe darunter.
+    for i in range(3):
+        slot(d, 25 + i * 18, 38)
+
+    # Die Ausgabe, gross gerahmt.
+    sunken(d, (114, 33, 141, 60), fill=PANEL_DARK)
+    slot(d, 119, 38)
+
+    # Die Steckplätze, abgesetzt durch eine Fuge über ihnen.
+    d.line([(7, 61), (breite - 8, 61)], fill=PANEL_LO + (255,))
+    d.line([(7, 62), (breite - 8, 62)], fill=PANEL_HI + (255,))
+    for i in range(5):
+        slot(d, 25 + i * 18, 66)
 
     # Spielerinventar
     for row in range(3):
         for column in range(9):
-            slot(d, 7 + column * 18, 83 + row * 18)
+            slot(d, 7 + column * 18, 103 + row * 18)
     for column in range(9):
-        slot(d, 7 + column * 18, 141)
+        slot(d, 7 + column * 18, 161)
 
     # Fortschrittspfeil, leer: eine Rinne von links nach rechts
-    sunken(d, (69, 35, 100, 50), fill=PANEL_DARK)
+    sunken(d, (84, 39, 115, 54), fill=PANEL_DARK)
 
-    # Energiebalken, leer: schmaler senkrechter Schacht
-    sunken(d, (11, 16, 21, 72), fill=PANEL_DARK)
+    # Energiebalken, leer: ein schmaler senkrechter Schacht neben allem
+    sunken(d, (7, 16, 17, 84), fill=PANEL_DARK)
 
     # Die gefüllten Fassungen liegen rechts daneben im Atlas, damit der
     # Bildschirm sie von dort holen kann.
@@ -326,16 +341,15 @@ def press_background():
                fill=(160, 225, 150, 255))
     img.paste(arrow, (180, 0))
 
-    energie = Image.new("RGBA", (8, 54), (0, 0, 0, 0))
+    energie = Image.new("RGBA", (8, 66), (0, 0, 0, 0))
     ed = ImageDraw.Draw(energie)
-    for y in range(54):
-        anteil = y / 53.0
+    for y in range(66):
+        anteil = y / 65.0
         farbe = (int(220 - 60 * anteil), int(150 + 40 * anteil), 60, 255)
         ed.line([(0, y), (7, y)], fill=farbe)
-    ed.line([(0, 0), (0, 53)], fill=(255, 226, 150, 255))
+    ed.line([(0, 0), (0, 65)], fill=(255, 226, 150, 255))
     img.paste(energie, (180, 20))
     return img
-
 
 def burner_background():
     """Das Fenster der Brennkammer.

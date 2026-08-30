@@ -2270,25 +2270,47 @@ def loot_and_recipes():
         })
 
     # Und was die Presse daraus macht.
-    def press_recipe(name, stamp, material, result, count=1, energy=2000, ticks=100):
+    def press_recipe(name, stamp, materials, result, count=1, energy=2000, ticks=100):
+        """Ein Pressenrezept.
+
+        `materials` ist eine Liste aus (Zutat, Menge). Die Presse nimmt sie in
+        beliebiger Reihenfolge an — welcher Platz welche Zutat erfüllt, sucht
+        sie selbst.
+        """
         write(D + "/recipe/press_%s.json" % name, {
             "type": MOD + ":press",
             "stamp": {"item": MOD + ":stamp_" + stamp},
-            "material": material,
+            "materials": [dict(zutat, count=menge) for zutat, menge in materials],
             "result": {"id": result, "count": count},
             "energy": energy,
             "ticks": ticks,
         })
 
-    press_recipe("plate_iron", "plate", {"item": "minecraft:iron_ingot"},
+    # Die Halbzeuge: eine Zutat, ein Griff. Sie stehen am Anfang jeder Kette
+    # und sollen nicht schon eine Rechnung sein.
+    press_recipe("plate_iron", "plate", [({"item": "minecraft:iron_ingot"}, 1)],
                  MOD + ":plate", 1, 1200, 60)
-    press_recipe("crystal", "plate", {"item": MOD + ":raw_crystal"},
+    press_recipe("crystal", "plate", [({"item": MOD + ":raw_crystal"}, 1)],
                  MOD + ":crystal", 1, 1600, 80)
-    press_recipe("core_logic", "logic", {"item": MOD + ":plate"},
+
+    # <b>Die Kerne sind Prozessoren</b>, und ein Prozessor ist mehr als eine
+    # gepresste Platte. Jeder bekommt seine eigene zweite Zutat, und daran
+    # sieht man, was er tut: Redstone schaltet, Kupfer leitet, der Kristall
+    # trägt das Netz.
+    press_recipe("core_logic", "logic",
+                 [({"item": MOD + ":plate"}, 1),
+                  ({"item": "minecraft:redstone"}, 4),
+                  ({"item": "minecraft:copper_ingot"}, 1)],
                  MOD + ":core_logic", 1, 3000, 120)
-    press_recipe("core_memory", "memory", {"item": MOD + ":plate"},
+    press_recipe("core_memory", "memory",
+                 [({"item": MOD + ":plate"}, 1),
+                  ({"item": "minecraft:redstone"}, 2),
+                  ({"item": "minecraft:quartz"}, 2)],
                  MOD + ":core_memory", 1, 3000, 120)
-    press_recipe("core_network", "network", {"item": MOD + ":plate"},
+    press_recipe("core_network", "network",
+                 [({"item": MOD + ":plate"}, 1),
+                  ({"item": MOD + ":crystal"}, 1),
+                  ({"item": "minecraft:copper_ingot"}, 2)],
                  MOD + ":core_network", 1, 3000, 120)
 
     # Der Analysator: Redstone für das Messen, Quarz für die Anzeige, Eisen

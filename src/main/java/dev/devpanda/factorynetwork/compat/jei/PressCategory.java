@@ -90,8 +90,21 @@ public class PressCategory implements IRecipeCategory<RecipeHolder<PressRecipe>>
         PressRecipe recipe = holder.value();
         builder.addSlot(RecipeIngredientRole.CATALYST, 1, 5)
                 .addIngredients(recipe.stamp());
-        builder.addSlot(RecipeIngredientRole.INPUT, 1, 27)
-                .addIngredients(recipe.material());
+        // Die Zutaten nebeneinander, in der Reihenfolge des Rezepts. Dass die
+        // Presse sie in beliebigen Plätzen annimmt, muss hier niemand zeigen
+        // — wer drei Felder sieht, legt drei Dinge hinein.
+        var materials = recipe.materials();
+        for (int i = 0; i < materials.size(); i++) {
+            var sized = materials.get(i);
+            builder.addSlot(RecipeIngredientRole.INPUT, 1 + i * 19, 27)
+                    .addIngredients(sized.ingredient())
+                    .addRichTooltipCallback((view, tooltip) -> {
+                        if (sized.count() > 1) {
+                            tooltip.add(Component.translatable(
+                                    "gui.factorynetwork.jei.press.count", sized.count()));
+                        }
+                    });
+        }
         builder.addSlot(RecipeIngredientRole.OUTPUT, 109, 16)
                 .addItemStack(recipe.result());
     }

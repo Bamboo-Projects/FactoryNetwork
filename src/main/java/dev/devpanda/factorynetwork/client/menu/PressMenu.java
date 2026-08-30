@@ -35,8 +35,8 @@ public class PressMenu extends AbstractContainerMenu {
     private static final int DATA_SIZE = 4;
 
     private static final int INV_X = 8;
-    private static final int INV_Y = 84;
-    private static final int HOTBAR_Y = 142;
+    private static final int INV_Y = 104;
+    private static final int HOTBAR_Y = 162;
     private static final int SLOT = 18;
 
     private final Container container;
@@ -57,19 +57,43 @@ public class PressMenu extends AbstractContainerMenu {
 
         // Stempel: nimmt nur Stempel an. Ein falscher Gegenstand dort sieht
         // aus wie ein Fehler der Maschine, nicht wie einer des Spielers.
-        addSlot(new Slot(container, PressBlockEntity.SLOT_STAMP, 44, 17) {
+        addSlot(new Slot(container, PressBlockEntity.SLOT_STAMP, 26, 17) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return isStamp(stack);
             }
         });
-        addSlot(new Slot(container, PressBlockEntity.SLOT_MATERIAL, 44, 53));
-        addSlot(new Slot(container, PressBlockEntity.SLOT_RESULT, 116, 35) {
+        // Die Materialplätze in einer Reihe. Welcher Platz welche Zutat
+        // erfüllt, sucht das Rezept selbst — hier gibt es keine Ordnung, die
+        // der Spieler einhalten müsste.
+        for (int i = 0; i < PressBlockEntity.MATERIAL_SLOTS; i++) {
+            addSlot(new Slot(container, PressBlockEntity.SLOT_MATERIAL + i,
+                    26 + i * 18, 39) {
+                @Override
+                public boolean mayPlace(ItemStack stack) {
+                    return !isStamp(stack);
+                }
+            });
+        }
+        addSlot(new Slot(container, PressBlockEntity.SLOT_RESULT, 120, 39) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return false;
             }
         });
+
+        // Die Steckplätze, abgesetzt darunter: Was hier liegt, läuft nicht
+        // durch, es stellt ein.
+        for (int i = 0; i < PressBlockEntity.UPGRADE_SLOTS; i++) {
+            addSlot(new Slot(container, PressBlockEntity.SLOT_UPGRADE + i,
+                    26 + i * 18, 67) {
+                @Override
+                public boolean mayPlace(ItemStack stack) {
+                    return dev.devpanda.factorynetwork.item.UpgradeItem
+                            .upgradeOf(stack) != null;
+                }
+            });
+        }
 
         for (int row = 0; row < 3; row++) {
             for (int column = 0; column < 9; column++) {
@@ -83,12 +107,16 @@ public class PressMenu extends AbstractContainerMenu {
         addDataSlots(data);
     }
 
+    /**
+     * Ist das ein Stempel?
+     *
+     * <p>Über den Tag und nicht über vier feste Gegenstände: Ein Datenpaket
+     * darf ein Rezept mit eigenem Stempel mitbringen, und dann muss er sich
+     * auch einlegen lassen. Dieselbe Frage stellt der Handler, mit dem ein
+     * Anschluss die Presse beschickt.
+     */
     private static boolean isStamp(ItemStack stack) {
-        return stack.getItem() == dev.devpanda.factorynetwork.registry.FnItems.STAMP_PLATE.get()
-                || stack.getItem() == dev.devpanda.factorynetwork.registry.FnItems.STAMP_LOGIC.get()
-                || stack.getItem() == dev.devpanda.factorynetwork.registry.FnItems.STAMP_MEMORY.get()
-                || stack.getItem()
-                        == dev.devpanda.factorynetwork.registry.FnItems.STAMP_NETWORK.get();
+        return stack.is(PressBlockEntity.STAMPS);
     }
 
     public BlockPos position() {
@@ -138,8 +166,16 @@ public class PressMenu extends AbstractContainerMenu {
                     PressBlockEntity.SLOT_STAMP + 1, false)) {
                 return ItemStack.EMPTY;
             }
+        } else if (dev.devpanda.factorynetwork.item.UpgradeItem.upgradeOf(stack) != null) {
+            // Eine Karte gehört in die Steckplätze und nirgendwo sonst. Ohne
+            // diesen Zweig landete sie im Materialplatz und wäre dort etwas,
+            // das die Presse zu pressen versucht.
+            if (!moveItemStackTo(stack, PressBlockEntity.SLOT_UPGRADE,
+                    PressBlockEntity.SLOT_UPGRADE + PressBlockEntity.UPGRADE_SLOTS, false)) {
+                return ItemStack.EMPTY;
+            }
         } else if (!moveItemStackTo(stack, PressBlockEntity.SLOT_MATERIAL,
-                PressBlockEntity.SLOT_MATERIAL + 1, false)) {
+                PressBlockEntity.SLOT_MATERIAL + PressBlockEntity.MATERIAL_SLOTS, false)) {
             return ItemStack.EMPTY;
         }
 

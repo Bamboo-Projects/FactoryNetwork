@@ -3,9 +3,12 @@
   "stamp": {
     "item": "factorynetwork:stamp_plate"
   },
-  "material": {
-    "item": "factorynetwork:raw_crystal"
-  },
+  "materials": [
+    {
+      "item": "factorynetwork:raw_crystal",
+      "count": 1
+    }
+  ],
   "result": {
     "id": "factorynetwork:crystal",
     "count": 1

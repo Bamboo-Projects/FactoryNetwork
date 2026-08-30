@@ -172,13 +172,29 @@ public final class MachineRecipes implements CraftingPlanner.Recipes<Item> {
                 : level.getRecipeManager().getAllRecipesFor(
                         dev.devpanda.factorynetwork.press.FnRecipes.PRESS.get())) {
             ItemStack result = holder.value().getResultItem(registries);
-            List<Item> options = optionsOf(holder.value().material());
-            if (result.isEmpty() || options.isEmpty()) {
+            if (result.isEmpty()) {
+                continue;
+            }
+            // <b>Jede Zutat wird ein eigener Bedarf.</b> Seit ein Rezept
+            // mehrere fordern darf, wäre die erste allein eine Rechnung, die
+            // nie aufgeht: Der Auftrag bestellte Kupfer und stünde dann vor
+            // einer Maschine, der das Redstone fehlt.
+            List<CraftingPlanner.Need<Item>> needs = new ArrayList<>();
+            boolean complete = true;
+            for (var material : holder.value().materials()) {
+                List<Item> options = optionsOf(material.ingredient());
+                if (options.isEmpty()) {
+                    complete = false;
+                    break;
+                }
+                needs.add(new CraftingPlanner.Need<>(options, material.count()));
+            }
+            if (!complete || needs.isEmpty()) {
                 continue;
             }
             byResult.computeIfAbsent(result.getItem(), item -> new ArrayList<>())
                     .add(new CraftingPlanner.Recipe<>(result.getItem(), result.getCount(),
-                            List.of(new CraftingPlanner.Need<>(options, 1)), PRESSING));
+                            needs, PRESSING));
         }
     }
 

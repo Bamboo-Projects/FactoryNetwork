@@ -22,12 +22,46 @@ import net.minecraft.world.level.Level;
  * (an einen Stempel kommen) vom laufenden (Material besorgen), und genau diese
  * Trennung macht eine Fertigungskette interessant statt nur lang.
  */
-public record PressRecipe(Ingredient stamp, Ingredient material, ItemStack result,
-                          int energy, int ticks) implements Recipe<PressInput> {
+public record PressRecipe(Ingredient stamp,
+                          java.util.List<net.neoforged.neoforge.common.crafting.SizedIngredient>
+                                  materials,
+                          ItemStack result, int energy, int ticks)
+        implements Recipe<PressInput> {
+
+    /**
+     * Wie viele Zutaten ein Rezept höchstens fordern darf.
+     *
+     * <p>So viele Materialplätze hat die Presse. Ein Rezept mit mehr wäre
+     * eines, das nie zustande kommt — und ein Fehler, den man erst beim
+     * Spielen bemerkt statt beim Laden.
+     */
+    public static final int MOST_MATERIALS = 3;
 
     @Override
     public boolean matches(PressInput input, Level level) {
-        return stamp.test(input.stamp()) && material.test(input.material());
+        if (!stamp.test(input.stamp())) {
+            return false;
+        }
+        // Jede Zutat braucht ihren eigenen Platz, und die Reihenfolge ist
+        // gleichgültig: Wer Redstone links und Kupfer rechts einlegt, meint
+        // dasselbe wie andersherum.
+        return Assignment.fits(materials, input.materials(), PressRecipe::covers);
+    }
+
+    /** Erfüllt dieser Platz diese Zutat — Art und Menge? */
+    private static boolean covers(
+            net.neoforged.neoforge.common.crafting.SizedIngredient demand, ItemStack slot) {
+        return demand.test(slot) && slot.getCount() >= demand.count();
+    }
+
+    /**
+     * Aus welchem Platz jede Zutat kommt, oder {@code null}.
+     *
+     * <p>Für das Verbrauchen: Wer drei Zutaten abzieht, muss wissen, aus
+     * welchem Platz jede stammt — sonst zieht er zweimal aus demselben.
+     */
+    public int[] slotsFor(PressInput input) {
+        return Assignment.assign(materials, input.materials(), PressRecipe::covers);
     }
 
     @Override
@@ -62,8 +96,9 @@ public record PressRecipe(Ingredient stamp, Ingredient material, ItemStack resul
                 instance -> instance.group(
                         Ingredient.CODEC_NONEMPTY.fieldOf("stamp")
                                 .forGetter(PressRecipe::stamp),
-                        Ingredient.CODEC_NONEMPTY.fieldOf("material")
-                                .forGetter(PressRecipe::material),
+                        net.neoforged.neoforge.common.crafting.SizedIngredient.FLAT_CODEC
+                                .listOf(1, MOST_MATERIALS).fieldOf("materials")
+                                .forGetter(PressRecipe::materials),
                         ItemStack.CODEC.fieldOf("result").forGetter(PressRecipe::result),
                         com.mojang.serialization.Codec.INT.optionalFieldOf("energy", 2_000)
                                 .forGetter(PressRecipe::energy),
@@ -74,7 +109,8 @@ public record PressRecipe(Ingredient stamp, Ingredient material, ItemStack resul
         private static final StreamCodec<RegistryFriendlyByteBuf, PressRecipe> STREAM_CODEC =
                 StreamCodec.composite(
                         Ingredient.CONTENTS_STREAM_CODEC, PressRecipe::stamp,
-                        Ingredient.CONTENTS_STREAM_CODEC, PressRecipe::material,
+                        net.neoforged.neoforge.common.crafting.SizedIngredient.STREAM_CODEC
+                                .apply(ByteBufCodecs.list()), PressRecipe::materials,
                         ItemStack.STREAM_CODEC, PressRecipe::result,
                         ByteBufCodecs.VAR_INT, PressRecipe::energy,
                         ByteBufCodecs.VAR_INT, PressRecipe::ticks,

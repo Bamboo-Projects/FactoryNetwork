@@ -29,10 +29,13 @@ public class PressScreen extends AbstractContainerScreen<PressMenu> {
     private static final int ENERGY_U = 180;
     private static final int ENERGY_V = 20;
 
+    /** Wie hoch der Strombalken ist, in Bildpunkten. */
+    private static final int BAR = 66;
+
     public PressScreen(PressMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
         this.imageWidth = 176;
-        this.imageHeight = 166;
+        this.imageHeight = 186;
         this.inventoryLabelY = this.imageHeight - 94;
     }
 
@@ -44,15 +47,15 @@ public class PressScreen extends AbstractContainerScreen<PressMenu> {
         int required = menu.required();
         if (required > 0 && menu.progress() > 0) {
             int breite = Math.min(30, menu.progress() * 30 / required);
-            graphics.blit(TEXTURE, leftPos + 70, topPos + 36, ARROW_U, ARROW_V,
+            graphics.blit(TEXTURE, leftPos + 85, topPos + 40, ARROW_U, ARROW_V,
                     breite, 14, 512, 512);
         }
 
         // Strom: der Balken wächst von unten nach oben, wie ein Tank.
-        int hoehe = (int) Math.min(54L, (long) menu.energy() * 54 / menu.capacity());
+        int hoehe = (int) Math.min(BAR, (long) menu.energy() * BAR / menu.capacity());
         if (hoehe > 0) {
-            graphics.blit(TEXTURE, leftPos + 12, topPos + 17 + (54 - hoehe),
-                    ENERGY_U, ENERGY_V + (54 - hoehe), 8, hoehe, 512, 512);
+            graphics.blit(TEXTURE, leftPos + 8, topPos + 17 + (BAR - hoehe),
+                    ENERGY_U, ENERGY_V + (BAR - hoehe), 8, hoehe, 512, 512);
         }
     }
 
@@ -72,9 +75,9 @@ public class PressScreen extends AbstractContainerScreen<PressMenu> {
      * haben.
      */
     private void renderEnergyTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
-        int x = leftPos + 12;
+        int x = leftPos + 8;
         int y = topPos + 17;
-        if (mouseX < x || mouseX >= x + 8 || mouseY < y || mouseY >= y + 54) {
+        if (mouseX < x || mouseX >= x + 8 || mouseY < y || mouseY >= y + BAR) {
             return;
         }
         graphics.renderComponentTooltip(font, List.of(

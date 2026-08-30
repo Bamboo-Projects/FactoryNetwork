@@ -3,9 +3,20 @@
   "stamp": {
     "item": "factorynetwork:stamp_logic"
   },
-  "material": {
-    "item": "factorynetwork:plate"
-  },
+  "materials": [
+    {
+      "item": "factorynetwork:plate",
+      "count": 1
+    },
+    {
+      "item": "minecraft:redstone",
+      "count": 4
+    },
+    {
+      "item": "minecraft:copper_ingot",
+      "count": 1
+    }
+  ],
   "result": {
     "id": "factorynetwork:core_logic",
     "count": 1
