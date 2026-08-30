@@ -11467,6 +11467,58 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
+     * Eine Brücke ist ein Stück Weg, kein Loch darin.
+     *
+     * <p><b>Dieselbe Falle wie beim Controller.</b> {@code Bandwidth.at}
+     * kennt die Brücke längst — aber wenn sie auf keinem Weg steht, sieht
+     * das Budget sie nie, und ihr Verkehr wird nirgends gebucht. Der
+     * Analysator verdeckt das: Seine Strecken kommen aus den Kanten, nicht
+     * aus dem Weg.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void abridgeIsAStretchOnTheWay(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 1, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        rackWithServer(helper, controller.west());
+
+        BlockPos near = controller.east();
+        placeCable(helper, near, dev.devpanda.factorynetwork.block.CableColour.NONE);
+        BlockPos bridgeNear = near.east();
+        helper.setBlock(bridgeNear, FnBlocks.BRIDGE.get());
+
+        BlockPos bridgeFar = new BlockPos(1, 4, 5);
+        helper.setBlock(bridgeFar, FnBlocks.BRIDGE.get());
+        BlockPos farCable = bridgeFar.east();
+        placeCable(helper, farCable, dev.devpanda.factorynetwork.block.CableColour.NONE);
+        BlockPos far = farCable.east();
+        connector(helper, far, Direction.EAST);
+        helper.setBlock(far.east(), Blocks.CHEST);
+        name(helper, far, "jenseits");
+
+        ItemStack pair = dev.devpanda.factorynetwork.item.EntanglementItem.newPair();
+        if (helper.getBlockEntity(bridgeNear)
+                instanceof dev.devpanda.factorynetwork.block.entity.BridgeBlockEntity one) {
+            one.setItem(0, pair.split(1));
+        }
+        if (helper.getBlockEntity(bridgeFar)
+                instanceof dev.devpanda.factorynetwork.block.entity.BridgeBlockEntity two) {
+            two.setItem(0, pair);
+        }
+
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        var device = entity.graph().connector("jenseits").orElse(null);
+        helper.assertTrue(device != null, "das Gerät jenseits der Brücke fehlt im Graphen");
+        var path = entity.graph().pathTo(device);
+        helper.assertTrue(path.stream().anyMatch(node ->
+                        node.pos().equals(helper.absolutePos(bridgeNear))
+                                || node.pos().equals(helper.absolutePos(bridgeFar))),
+                "keine Brücke liegt auf dem Weg — ihr Verkehr wird nirgends gebucht");
+        helper.succeed();
+    }
+
+    /**
      * Der Controller findet seine eigene Auslastung wieder.
      *
      * <p><b>Er baut seinen Knoten selbst nach</b>, um im Budget nachzusehen —

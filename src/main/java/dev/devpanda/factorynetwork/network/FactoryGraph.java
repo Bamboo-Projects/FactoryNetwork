@@ -765,6 +765,7 @@ public final class FactoryGraph {
                     && dev.devpanda.factorynetwork.block.CableBlock.carries(state))
                     || block instanceof RouterBlock
                     || block instanceof dev.devpanda.factorynetwork.block.ControllerBlock
+                    || block instanceof dev.devpanda.factorynetwork.block.BridgeBlock
                     || block instanceof dev.devpanda.factorynetwork.block.GatewayBlock) {
                 path.add(node);
             }
