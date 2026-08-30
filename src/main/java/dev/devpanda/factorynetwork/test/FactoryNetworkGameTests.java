@@ -6311,7 +6311,7 @@ public final class FactoryNetworkGameTests {
 
         // Etwas hindurchgeschickt.
         // Knapp die Hälfte der Kabelbreite.
-        int half = dev.devpanda.factorynetwork.network.Bandwidth.THIN / 2;
+        int half = dev.devpanda.factorynetwork.network.Bandwidth.CABLE / 2;
         entity.runtime().budget().spend(java.util.List.of(node), half);
         helper.assertValueEqual(entity.runtime().budget().usedAt(node), half,
                 "der Verkehr steht nicht im Budget");
@@ -6324,7 +6324,7 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(strecke.load(), half,
                 "der Analysator zeigt nicht, was floss");
         helper.assertValueEqual(strecke.capacity(),
-                dev.devpanda.factorynetwork.network.Bandwidth.THIN,
+                dev.devpanda.factorynetwork.network.Bandwidth.CABLE,
                 "der Analysator nennt die falsche Kapazität");
         helper.assertValueEqual(strecke.state(),
                 dev.devpanda.factorynetwork.analyser.AnalyserData.LinkState.FREE,
@@ -6332,7 +6332,7 @@ public final class FactoryNetworkGameTests {
 
         // Und voll ist voll.
         entity.runtime().budget().spend(java.util.List.of(node),
-                dev.devpanda.factorynetwork.network.Bandwidth.THIN);
+                dev.devpanda.factorynetwork.network.Bandwidth.CABLE);
         var voll = dev.devpanda.factorynetwork.analyser.AnalyserScan.of(entity).links().stream()
                 .filter(link -> link.to().equals(helper.absolutePos(cable)))
                 .findFirst().orElseThrow();
@@ -6343,7 +6343,7 @@ public final class FactoryNetworkGameTests {
         // Und die Anzeige spricht Kilobyte: Das ist der Sinn der Einheit.
         helper.assertValueEqual(
                 dev.devpanda.factorynetwork.network.Bandwidth.perSecond(strecke.capacity()),
-                "2,6 MB/s", "die Kapazität liest sich nicht als Megabyte");
+                "25,6 MB/s", "die Kapazität liest sich nicht als Megabyte");
         helper.succeed();
     }
 
@@ -6372,24 +6372,24 @@ public final class FactoryNetworkGameTests {
 
         // Frisch: Das ganze Kabel steht zur Verfügung.
         helper.assertValueEqual(budget.free(level, path),
-                dev.devpanda.factorynetwork.network.Bandwidth.THIN,
+                dev.devpanda.factorynetwork.network.Bandwidth.CABLE,
                 "ein leeres Kabel gibt nicht seinen vollen Durchsatz her");
 
         // Die Hälfte verbraucht: die Hälfte bleibt.
-        budget.spend(path, dev.devpanda.factorynetwork.network.Bandwidth.THIN / 2);
+        budget.spend(path, dev.devpanda.factorynetwork.network.Bandwidth.CABLE / 2);
         helper.assertValueEqual(budget.free(level, path),
-                dev.devpanda.factorynetwork.network.Bandwidth.THIN / 2,
+                dev.devpanda.factorynetwork.network.Bandwidth.CABLE / 2,
                 "der Verbrauch wird nicht abgezogen");
 
         // Voll: nichts mehr frei — aber nicht negativ.
-        budget.spend(path, dev.devpanda.factorynetwork.network.Bandwidth.THIN);
+        budget.spend(path, dev.devpanda.factorynetwork.network.Bandwidth.CABLE);
         helper.assertValueEqual(budget.free(level, path), 0,
                 "ein überfülltes Kabel meldet keine Null");
 
         // Der neue Tick fängt bei null an.
         budget.reset();
         helper.assertValueEqual(budget.free(level, path),
-                dev.devpanda.factorynetwork.network.Bandwidth.THIN,
+                dev.devpanda.factorynetwork.network.Bandwidth.CABLE,
                 "der Verbrauch überlebt den Tickwechsel");
 
         // Und die Engstelle entscheidet: dicht plus dünn ist dünn.
@@ -6400,13 +6400,13 @@ public final class FactoryNetworkGameTests {
                         dense, dev.devpanda.factorynetwork.block.CableColour.NONE),
                 node);
         helper.assertValueEqual(budget.free(level, gemischt),
-                dev.devpanda.factorynetwork.network.Bandwidth.THIN,
+                dev.devpanda.factorynetwork.network.Bandwidth.CABLE,
                 "die Engstelle auf dem Weg wird übergangen");
 
         // Was über den gemischten Weg geht, belastet beide Stücke.
         budget.spend(gemischt, 10);
         helper.assertValueEqual(budget.free(level, path),
-                dev.devpanda.factorynetwork.network.Bandwidth.THIN - 10,
+                dev.devpanda.factorynetwork.network.Bandwidth.CABLE - 10,
                 "das dünne Stück wurde nicht belastet");
         helper.succeed();
     }
@@ -6480,12 +6480,12 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(
                 dev.devpanda.factorynetwork.network.Bandwidth.at(level,
                         helper.absolutePos(erst)),
-                dev.devpanda.factorynetwork.network.Bandwidth.DENSE,
+                dev.devpanda.factorynetwork.network.Bandwidth.CABLE,
                 "das dichte Kabel trägt nicht den dichten Durchsatz");
         helper.assertValueEqual(
                 dev.devpanda.factorynetwork.network.Bandwidth.at(level,
                         helper.absolutePos(eng)),
-                dev.devpanda.factorynetwork.network.Bandwidth.THIN,
+                dev.devpanda.factorynetwork.network.Bandwidth.CABLE,
                 "das gewöhnliche Kabel trägt nicht den gewöhnlichen Durchsatz");
 
         // Ein Gerät hinter der Engstelle: Sein Weg ist so gut wie das
@@ -6500,7 +6500,7 @@ public final class FactoryNetworkGameTests {
         var device = entity.graph().positionsOf("dahinter").stream().findFirst().orElse(null);
         helper.assertTrue(device != null, "dahinter hängt nicht am Netz");
         helper.assertValueEqual(entity.graph().throughputTo(level, device),
-                dev.devpanda.factorynetwork.network.Bandwidth.THIN,
+                dev.devpanda.factorynetwork.network.Bandwidth.CABLE,
                 "die Engstelle auf dem Weg wird übergangen");
         helper.succeed();
     }
@@ -6523,7 +6523,7 @@ public final class FactoryNetworkGameTests {
             level.setBlockAndUpdate(where, one.block().defaultBlockState());
             helper.assertValueEqual(
                     dev.devpanda.factorynetwork.network.Bandwidth.at(level, where),
-                    dev.devpanda.factorynetwork.network.Bandwidth.DENSE,
+                    dev.devpanda.factorynetwork.network.Bandwidth.CABLE,
                     one.name() + " trägt nicht so viel wie ein dichtes Kabel");
             level.removeBlock(where, false);
         }
@@ -8420,6 +8420,13 @@ public final class FactoryNetworkGameTests {
      *
      * <p>Diese Prüfung ist bewusst allgemein. Sie fängt nicht diesen einen
      * Fall, sondern jeden künftigen derselben Art.
+     *
+     * <p><b>Eine Ausnahme gibt es, und sie steht hier namentlich:</b> die
+     * dichten Kabel. Sie sind seit dem 30.08. stillgelegt — kein Rezept, kein
+     * Platz im Reiter —, aber noch registriert, weil NeoForge 21.1 eine
+     * gelöschte Kennung in einer bestehenden Welt nicht umschreiben kann.
+     * Namentlich und nicht als Muster: Die nächste Stilllegung soll wieder
+     * auffallen.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void everyItemIsInTheCreativeTab(GameTestHelper helper) {
@@ -8435,8 +8442,12 @@ public final class FactoryNetworkGameTests {
                     .equals(dev.devpanda.factorynetwork.FactoryNetwork.MOD_ID)) {
                 continue;
             }
+            String path = eintrag.getKey().location().getPath();
+            if (path.endsWith("dense_cable")) {
+                continue;
+            }
             if (!gezeigt.contains(eintrag.getValue())) {
-                fehlend.add(eintrag.getKey().location().getPath());
+                fehlend.add(path);
             }
         }
         helper.assertTrue(fehlend.isEmpty(), "Nicht im Kreativ-Reiter: " + fehlend);
@@ -11463,6 +11474,38 @@ public final class FactoryNetworkGameTests {
         helper.assertTrue(path.stream()
                         .anyMatch(node -> node.pos().equals(helper.absolutePos(controller))),
                 "der Controller liegt nicht auf dem Weg des Geräts");
+        helper.succeed();
+    }
+
+    /**
+     * Beide Kabelsorten tragen dasselbe.
+     *
+     * <p><b>Das dichte Kabel ist seit dem 30.08. eine Altlast.</b> Es
+     * bündelte Kanäle, und Kanäle gibt es seit dem 29.08. nicht mehr — damit
+     * war es die Antwort auf eine Frage, die niemand mehr stellt. Aus dem
+     * Kreativmenü und den Rezepten ist es verschwunden.
+     *
+     * <p><b>Gelöscht ist es nicht</b>, und der Grund steht in NeoForge:
+     * 21.1 kennt keinen Weg, eine verschwundene Kennung in einer bestehenden
+     * Welt umzuschreiben. Wer eines im Boden hat, hätte danach Luft. Also
+     * bleibt der Block und trägt, was ein Kabel trägt.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 100)
+    public static void bothCableKindsCarryTheSame(GameTestHelper helper) {
+        var level = helper.getLevel();
+        BlockPos plain = helper.absolutePos(new BlockPos(1, 2, 1));
+        BlockPos dense = helper.absolutePos(new BlockPos(2, 2, 1));
+        level.setBlockAndUpdate(plain, FnBlocks.CABLE.get().defaultBlockState());
+        level.setBlockAndUpdate(dense, FnBlocks.DENSE_CABLE.get().defaultBlockState());
+
+        helper.assertValueEqual(
+                dev.devpanda.factorynetwork.network.Bandwidth.at(level, plain),
+                dev.devpanda.factorynetwork.network.Bandwidth.CABLE,
+                "das Kabel trägt nicht, was ein Kabel trägt");
+        helper.assertValueEqual(
+                dev.devpanda.factorynetwork.network.Bandwidth.at(level, dense),
+                dev.devpanda.factorynetwork.network.Bandwidth.at(level, plain),
+                "die beiden Kabelsorten tragen verschieden viel");
         helper.succeed();
     }
 

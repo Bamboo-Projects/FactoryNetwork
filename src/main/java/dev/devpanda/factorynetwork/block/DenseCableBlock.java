@@ -20,7 +20,7 @@ public class DenseCableBlock extends CableBlock {
 
     public DenseCableBlock(Properties properties) {
         super(properties, CableLayout.DENSE,
-                dev.devpanda.factorynetwork.network.Bandwidth.DENSE);
+                dev.devpanda.factorynetwork.network.Bandwidth.CABLE);
     }
 
     @Override

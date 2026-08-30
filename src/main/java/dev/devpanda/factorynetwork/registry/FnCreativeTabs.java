@@ -22,12 +22,16 @@ public final class FnCreativeTabs {
                         output.accept(FnItems.CONTROLLER_EXTENSION.get());
                         output.accept(FnItems.GATEWAY.get());
                         output.accept(FnItems.FABRICATOR.get());
-                        // Alle Kabelfarben, Standardfarbe zuerst — erst die
-                        // dünnen, dann die dichten, und der Router dahinter:
-                        // Er gehört zum dichten Kabel.
+                        // Alle Kabelfarben, Standardfarbe zuerst, und der
+                        // Router dahinter — er greift Farben daraus ab.
+                        //
+                        // <b>Das dichte Kabel fehlt hier seit dem 30.08.</b>
+                        // Es trägt dasselbe wie das gewöhnliche und ist damit
+                        // eine Sorte ohne Unterschied. Der Block bleibt
+                        // registriert, weil NeoForge 21.1 keinen Weg hat,
+                        // eine gelöschte Kennung in einer bestehenden Welt
+                        // umzuschreiben — dort stünde sonst Luft.
                         FnItems.CABLES.values()
-                                .forEach(cable -> output.accept(cable.get()));
-                        FnItems.DENSE_CABLES.values()
                                 .forEach(cable -> output.accept(cable.get()));
                         output.accept(FnItems.ROUTER.get());
                         output.accept(FnItems.MAST.get());

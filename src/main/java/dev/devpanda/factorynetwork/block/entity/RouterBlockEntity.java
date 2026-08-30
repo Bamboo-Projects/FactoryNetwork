@@ -207,12 +207,12 @@ public class RouterBlockEntity extends BlockEntity {
         // Seit dem 29.08. gibt es keine Kanallast mehr — was eine Bahn
         // trägt, ist ihr Durchsatz, und der hängt nicht davon ab, wie viele
         // Geräte dahinter liegen.
-        return dev.devpanda.factorynetwork.network.Bandwidth.DENSE;
+        return dev.devpanda.factorynetwork.network.Bandwidth.CABLE;
     }
 
     /** Was eine Bahn trägt: so viel wie ein dichtes Kabel. */
     private int laneCapacity() {
-        return dev.devpanda.factorynetwork.network.Bandwidth.DENSE;
+        return dev.devpanda.factorynetwork.network.Bandwidth.CABLE;
     }
 
     /** Wie viele Seiten überhaupt angeschlossen sind. */

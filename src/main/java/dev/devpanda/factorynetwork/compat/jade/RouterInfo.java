@@ -66,7 +66,7 @@ public enum RouterInfo implements IBlockComponentProvider, IServerDataProvider<B
             // Roh über die Leitung, formatiert beim Anzeigen: Die
             // Sprachdatei des Betrachters entscheidet, wie eine Zahl
             // aussieht, nicht die des Servers.
-            int durchsatzProTick = dev.devpanda.factorynetwork.network.Bandwidth.DENSE;
+            int durchsatzProTick = dev.devpanda.factorynetwork.network.Bandwidth.CABLE;
             lines.add(StringTag.valueOf(lane + SEPARATOR + durchsatzProTick
                     + SEPARATOR + String.join(",", sides)));
             // Die Kapazität steht als ganze Zahl da: Ein Router trägt immer

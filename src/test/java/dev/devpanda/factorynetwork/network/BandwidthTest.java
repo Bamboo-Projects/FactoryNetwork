@@ -19,27 +19,34 @@ class BandwidthTest {
     private static final int TICKS = 20;
 
     @Test
-    @DisplayName("Ein gewöhnliches Kabel trägt zwei Stapel je Tick")
-    void aPlainCableCarriesTwoStacks() {
+    @DisplayName("Ein Kabel trägt zwanzig Stapel je Tick")
+    void aCableCarriesTwentyStacks() {
         // In Gegenständen gerechnet, denn das ist, was ein Worker bewegt:
-        // 128 je Tick, also zwei Stapel.
-        assertEquals(128, Bandwidth.THIN / Bandwidth.PER_ITEM);
+        // 1280 je Tick. Bis zum 30.08. waren es 128, und daneben stand ein
+        // dichtes Kabel mit dem Zehnfachen. Geblieben ist die größere Zahl —
+        // es sind Glasfaserkabel.
+        assertEquals(1280, Bandwidth.CABLE / Bandwidth.PER_ITEM);
     }
 
     @Test
-    @DisplayName("Ein dichtes zehnmal so viel")
-    void aDenseCableCarriesTenTimes() {
-        assertEquals(10 * Bandwidth.THIN, Bandwidth.DENSE);
-        assertEquals(1280, Bandwidth.DENSE / Bandwidth.PER_ITEM);
+    @DisplayName("Der Controller trägt ein Kabel, der Anbau ein halbes")
+    void theControllerCarriesOneCable() {
+        // Die Grenze, die alles teilt: Sie steht nicht als eigene Zahl da,
+        // sondern leitet sich vom Kabel ab. Eine Zahl, die man an zwei
+        // Stellen pflegt, driftet.
+        assertEquals(Bandwidth.CABLE, Bandwidth.CONTROLLER);
+        assertEquals(Bandwidth.CABLE / 2, Bandwidth.EXTENSION);
+        assertEquals(Bandwidth.CONTROLLER + 2 * Bandwidth.EXTENSION,
+                Bandwidth.ofController(2));
     }
 
     @Test
     @DisplayName("Und die Anzeige sagt es in Megabyte")
     void theLabelReadsAsMegabytes() {
-        // „2560000 B/s" ist keine Auskunft, „2,6 MB/s" schon — und die
+        // „25600000 B/s" ist keine Auskunft, „25,6 MB/s" schon — und die
         // Größenordnung klingt nach Netzwerk, weil sie eine ist.
-        assertEquals("2,6 MB/s", Bandwidth.perSecond(Bandwidth.THIN));
-        assertEquals("25,6 MB/s", Bandwidth.perSecond(Bandwidth.DENSE));
+        assertEquals("25,6 MB/s", Bandwidth.perSecond(Bandwidth.CABLE));
+        assertEquals("12,8 MB/s", Bandwidth.perSecond(Bandwidth.EXTENSION));
     }
 
     @Test
@@ -101,7 +108,8 @@ class BandwidthTest {
     @DisplayName("Was nicht leitet, begrenzt auch nichts")
     void whatDoesNotCarryDoesNotLimit() {
         assertEquals(Integer.MAX_VALUE, Bandwidth.UNLIMITED);
-        assertTrue(Bandwidth.DENSE > Bandwidth.THIN,
-                "das dichte Kabel muss mehr tragen");
+        // Und die Deckelung greift, statt in den negativen Bereich zu laufen:
+        // Ohne sie wäre die größte Bandbreite der Welt eine Zahl unter null.
+        assertEquals(Bandwidth.UNLIMITED, Bandwidth.ofController(Integer.MAX_VALUE));
     }
 }

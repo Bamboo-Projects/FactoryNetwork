@@ -106,7 +106,7 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
 
     public CableBlock(Properties properties) {
         this(properties, CableLayout.THIN,
-                dev.devpanda.factorynetwork.network.Bandwidth.THIN);
+                dev.devpanda.factorynetwork.network.Bandwidth.CABLE);
     }
 
     protected CableBlock(Properties properties, int size, int bandwidth) {

@@ -76,18 +76,18 @@ sein Netz sauber trennt, zahlt dafür — genau wie in einem echten Netz.
 
 ## Die Aufgaben
 
-- [ ] **1. Latenz je Router.** `FactoryGraph.pathTo` liefert den Weg; die Zahl
+- [x] **1. Latenz je Router.** `FactoryGraph.pathTo` liefert den Weg; die Zahl
       der Router darauf ist die Verzögerung. Ein Worker beginnt seinen Griff
       um so viele Ticks später. **Prüflauf:** Ein Gerät hinter zwei Routern
       antwortet zwei Ticks später als eines am selben Kabel.
 - [ ] **2. Der Router zeigt seine Latenz.** Im Fenster und in Jade — sonst
       ist es eine Verzögerung ohne Ursache.
-- [ ] **3. Das Kabel wird schneller.** `Bandwidth.THIN` auf den Wert des
+- [x] **3. Das Kabel wird schneller.** `Bandwidth.THIN` auf den Wert des
       dichten. Eine Zeile.
-- [ ] **4. Das dichte Kabel fällt.** Block, Gegenstände, Modell, Rezept, Loot,
+- [x] **4. Das dichte Kabel fällt — stillgelegt, nicht gelöscht.** Block, Gegenstände, Modell, Rezept, Loot,
       Sprachtexte. **Bestehende Welten:** Ein dichtes Kabel im Boden wird zum
       gewöhnlichen — dieselbe Bandbreite, andere Textur. Kein Verlust.
-- [ ] **5. Die Begründungen nachziehen.** Der Router-Kommentar, `Bandwidth`,
+- [x] **5. Die Begründungen nachziehen.** Der Router-Kommentar, `Bandwidth`,
       `entscheidungen.md`.
 
 ## Was ich dabei nicht anfasse
@@ -97,3 +97,29 @@ sein Netz sauber trennt, zahlt dafür — genau wie in einem echten Netz.
 **Die Quantum-Brücke** trägt weiter, was ein Kabel trägt — sie ist eine
 Leitung, kein Vermehrer. Nur heißt das jetzt „wie ein Kabel" statt „wie ein
 dichtes".
+
+## Was dabei herauskam
+
+**Löschen ging nicht.** Der Plan sagte: „Ein dichtes Kabel im Boden wird zum
+gewöhnlichen — kein Verlust." Dafür bräuchte es einen Weg, eine verschwundene
+Kennung beim Laden umzuschreiben. **NeoForge 21.1 hat keinen:**
+`MissingMappingsEvent` gibt es dort nicht mehr; die Registry-Klassen führen
+ihn nicht. Nachgesehen, nicht geraten.
+
+**Also stillgelegt statt gelöscht.** Der Block bleibt registriert und trägt
+dasselbe wie ein Kabel. Weg sind achtzehn Rezepte und der Platz im
+Kreativmenü — im Spiel gibt es damit nur noch ein Kabel, und eine bestehende
+Welt behält, was in ihr steht.
+
+**Die Latenz kostet zwei Ticks je Brückenpaar, nicht einen.** Der Plan nannte
+einen; eine Brücke besteht aus zwei Blöcken, und beide liegen auf dem Weg.
+Eine Hälfte packt ein, die andere aus — zwei ist die ehrlichere Zahl und
+braucht keine Sonderregel.
+
+**Zwei Löcher fielen unterwegs auf**, beide von derselben Art wie beim
+Controller: Weder die Quantum-Brücke noch der Controller standen auf dem Weg,
+den das Budget kennt. `Bandwidth.at` kannte beide — gesehen hat das Budget
+sie nie.
+
+**Offen bleibt Aufgabe 2:** Der Router zeigt seine Latenz noch nicht. Jade
+kennt ihn (`compat/jade/RouterInfo`), dort und im Fenster fehlt die Zahl.

@@ -25,18 +25,15 @@ Er trägt so viel wie ein dichtes Kabel, jeder Anbau legt die Hälfte dazu.
 Zu sehen im Kopf des Netzwerk-Reiters (mit Grenzlinie in der Kurve) und im
 Analysator, wenn man den Controller anklickt.
 
-### 3. Latenz je Router und ein Kabel statt zwei
+### 3. Latenz je Router und ein Kabel statt zwei — fast fertig
 
 **Plan:** `plan-latenz-und-kabel.md`
 
-**Zwei Dinge in einem Plan, weil sie zusammenhängen:** Fällt das dichte Kabel,
-verliert der Router seine alte Begründung — und die Latenz gibt ihm eine neue.
+Latenz je Router steht (verzögert den Start, nicht den Takt), das Kabel trägt
+jetzt 25,6 MB/s, das dichte ist stillgelegt.
 
-**Was entschieden ist:**
-- Latenz je Router (1 Tick), nicht je Block — Entfernung kostet in
-  Wirklichkeit nichts
-- Das dichte Kabel fällt; das verbleibende bekommt seine Bandbreite
-- Die Farben bleiben, sie sind die VLANs
+**Offen: Der Router zeigt seine Latenz nicht.** Im Fenster und in Jade fehlt
+die Zahl — eine Verzögerung ohne sichtbare Ursache.
 
 ---
 
@@ -76,6 +73,9 @@ Beide widersprechen etwas, das schon funktioniert.
 
 Aus den letzten Runden, ungeprüft:
 
+- **Eine Welt mit gesetztem dichten Kabel** nach dem Update: Steht es noch da,
+  in seiner Farbe, mit seinen Verbindungen? Das ist der einzige Punkt hier,
+  der sich nicht als Prüflauf schreiben lässt.
 - **Das größere Terminal** (352 × 296) auf deinem Bildschirm — passt es bei
   deiner GUI-Skalierung?
 - **Crafting, Code, Displays, Log** in der neuen Größe. Sie tragen keine
@@ -86,4 +86,4 @@ Aus den letzten Runden, ungeprüft:
 
 ## Stand der Prüfläufe
 
-340 GameTests grün, zuletzt am 30.08. um 02:34.
+344 GameTests grün, zuletzt am 30.08. um 03:12.

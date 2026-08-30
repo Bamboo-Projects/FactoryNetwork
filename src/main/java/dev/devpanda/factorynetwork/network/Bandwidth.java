@@ -11,8 +11,8 @@ import java.util.Locale;
  *
  * <p><b>Ein Gegenstand ist ein Kilobyte.</b> Nicht weil ein Eisenbarren ein
  * Kilobyte wäre, sondern weil die Zahlen dann stimmen: Ein gewöhnliches Kabel
- * trägt 2,5 MB/s, ein dichtes 25 — Größenordnungen, die nach Netzwerk klingen
- * und trotzdem spürbar sind.
+ * trägt 25,6 MB/s — eine Größenordnung, die nach Glasfaser klingt und
+ * trotzdem spürbar ist.
  *
  * <p><b>Warum nicht die echten Zahlen.</b> Glasfaser trägt 10 Gbit/s, also
  * 62,5 Millionen Byte je Tick. Ein sehr großes Netz bewegt sechstausend
@@ -38,20 +38,17 @@ public final class Bandwidth {
     public static final int PER_ITEM = 1000;
 
     /**
-     * Ein gewöhnliches Kabel: 128 Gegenstände je Tick, also 2,56 MB/s.
+     * Was ein Kabel trägt: 1280 Gegenstände je Tick, also 25,6 MB/s.
      *
-     * <p>Zwei Stapel je Tick — genug für ein paar Leitungen, zu wenig für
-     * eine Hauptader, an der zehn Worker ziehen.
-     */
-    public static final int THIN = 128 * PER_ITEM;
-
-    /**
-     * Ein dichtes: zehnmal so viel, 25,6 MB/s.
+     * <p><b>Eine Sorte, eine Zahl.</b> Bis zum 30.08. gab es zwei Kabel:
+     * ein gewöhnliches mit 2,56 MB/s und ein dichtes mit dem Zehnfachen. Das
+     * dichte war die Antwort auf eine Frage, die es nicht mehr gibt — es
+     * bündelte Kanäle, und Kanäle gibt es seit dem 29.08. nicht mehr.
      *
-     * <p>Der Unterschied, für den man es baut. Wäre er klein, wäre das dichte
-     * Kabel ein teureres Kabel, das dicker aussieht.
+     * <p>Geblieben ist die größere Zahl. Es sind Glasfaserkabel; eines, das
+     * zwei Stapel je Tick trägt, wäre keine.
      */
-    public static final int DENSE = 10 * THIN;
+    public static final int CABLE = 1280 * PER_ITEM;
 
     /**
      * Was nicht leitet, begrenzt auch nichts.
@@ -66,26 +63,26 @@ public final class Bandwidth {
     public static final int UNLIMITED = Integer.MAX_VALUE;
 
     /**
-     * Was ein Controller ohne Anbau trägt: so viel wie ein dichtes Kabel.
+     * Was ein Controller ohne Anbau trägt: so viel wie ein Kabel.
      *
      * <p><b>Er ist die Backplane.</b> In einem echten Netz kann jeder Port
      * Gigabit, aber der Switch trägt nur, was er trägt — wer mehr will,
      * kauft einen größeren oder steckt ein Modul dazu.
      *
-     * <p><b>Warum genau ein dichtes Kabel.</b> Ein Netz mit einer Hauptader
+     * <p><b>Warum genau ein Kabel.</b> Ein Netz mit einer Hauptader
      * läuft ohne Anbau vollständig. Wer verzweigt, merkt die Grenze — und das
      * ist der Moment, in dem man dazubaut. Eine Grenze, die man vom ersten
      * Tag an spürt, ist Schikane; eine, die man nie spürt, ist Dekoration.
      */
-    public static final int CONTROLLER = DENSE;
+    public static final int CONTROLLER = CABLE;
 
     /**
-     * Was ein Anbau dazulegt: ein halbes dichtes Kabel.
+     * Was ein Anbau dazulegt: ein halbes Kabel.
      *
      * <p>Weniger als ein ganzes, damit der zweite Anbau sich noch lohnt und
      * der sechste nicht albern wird.
      */
-    public static final int EXTENSION = DENSE / 2;
+    public static final int EXTENSION = CABLE / 2;
 
     /**
      * Was ein Controller mit so vielen Anbauten trägt.
@@ -102,8 +99,8 @@ public final class Bandwidth {
     /**
      * Was an dieser Stelle je Tick hindurchgeht.
      *
-     * <p>Router, Gateway und Quantum-Brücke gehören zum dichten Kabel und
-     * tragen so viel wie eines: Sie sind Leitung und kein Vermehrer.
+     * <p>Router, Gateway und Quantum-Brücke tragen so viel wie ein Kabel:
+     * Sie sind Leitung und kein Vermehrer.
      */
     public static int at(Level level, BlockPos pos) {
         BlockState state = level.getBlockState(pos);
@@ -118,7 +115,7 @@ public final class Bandwidth {
         if (state.getBlock() instanceof dev.devpanda.factorynetwork.block.RouterBlock
                 || state.getBlock() instanceof dev.devpanda.factorynetwork.block.GatewayBlock
                 || state.getBlock() instanceof dev.devpanda.factorynetwork.block.BridgeBlock) {
-            return DENSE;
+            return CABLE;
         }
         if (state.getBlock() instanceof dev.devpanda.factorynetwork.block.CableBlock cable) {
             return cable.bandwidth();
