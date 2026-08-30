@@ -751,14 +751,20 @@ public final class FactoryGraph {
     private static List<Node> pathOf(Level level, Node from, Map<Node, Node> parents) {
         List<Node> path = new ArrayList<>();
         for (Node node = from; node != null; node = parents.get(node)) {
-            // Ein Router trägt Kanäle wie ein Kabel — je Bahn eigene. Ließe
-            // man ihn hier aus, wäre eine Kreuzung unbegrenzt, und ein Netz
-            // hinter einem Router hätte plötzlich keine Grenze mehr.
+            // Was auf dem Weg Bandbreite kostet, gehört hier hinein. Ließe
+            // man den Router aus, wäre eine Kreuzung unbegrenzt, und ein Netz
+            // dahinter hätte plötzlich keine Grenze mehr.
+            //
+            // <b>Der Controller steht seit dem 30.08. mit darin</b>, und er
+            // ist der wichtigste Eintrag: Er liegt auf jedem Weg, also teilen
+            // sich alle Worker seine Bandbreite. Genau das ist gemeint mit
+            // „das Netz ist nur so gut wie sein schwächstes Glied".
             var state = level.getBlockState(node.pos());
             var block = state.getBlock();
             if ((block instanceof CableBlock
                     && dev.devpanda.factorynetwork.block.CableBlock.carries(state))
                     || block instanceof RouterBlock
+                    || block instanceof dev.devpanda.factorynetwork.block.ControllerBlock
                     || block instanceof dev.devpanda.factorynetwork.block.GatewayBlock) {
                 path.add(node);
             }

@@ -56,10 +56,48 @@ public final class Bandwidth {
     /**
      * Was nicht leitet, begrenzt auch nichts.
      *
-     * <p>Der Controller, ein Laufwerk, ein Schrank: Sie sind Ziel und nicht
+     * <p>Ein Laufwerk, ein Schrank, ein Mast: Sie sind Ziel und nicht
      * Strecke. Eine Grenze dort wäre eine zweite Grenze am selben Weg.
+     *
+     * <p><b>Der Controller stand bis zum 30.08. in dieser Liste.</b> Er
+     * gehört nicht hinein: Alles im Netz geht durch ihn, und damit ist er
+     * Strecke — die eine, die jeder Weg gemeinsam hat.
      */
     public static final int UNLIMITED = Integer.MAX_VALUE;
+
+    /**
+     * Was ein Controller ohne Anbau trägt: so viel wie ein dichtes Kabel.
+     *
+     * <p><b>Er ist die Backplane.</b> In einem echten Netz kann jeder Port
+     * Gigabit, aber der Switch trägt nur, was er trägt — wer mehr will,
+     * kauft einen größeren oder steckt ein Modul dazu.
+     *
+     * <p><b>Warum genau ein dichtes Kabel.</b> Ein Netz mit einer Hauptader
+     * läuft ohne Anbau vollständig. Wer verzweigt, merkt die Grenze — und das
+     * ist der Moment, in dem man dazubaut. Eine Grenze, die man vom ersten
+     * Tag an spürt, ist Schikane; eine, die man nie spürt, ist Dekoration.
+     */
+    public static final int CONTROLLER = DENSE;
+
+    /**
+     * Was ein Anbau dazulegt: ein halbes dichtes Kabel.
+     *
+     * <p>Weniger als ein ganzes, damit der zweite Anbau sich noch lohnt und
+     * der sechste nicht albern wird.
+     */
+    public static final int EXTENSION = DENSE / 2;
+
+    /**
+     * Was ein Controller mit so vielen Anbauten trägt.
+     *
+     * <p>Die Deckelung ist keine Spielregel, sondern Arithmetik: Sehr viele
+     * Anbauten liefen sonst über den Zahlenbereich, und aus der größten
+     * Bandbreite der Welt würde eine negative.
+     */
+    public static int ofController(int extensions) {
+        long total = (long) CONTROLLER + (long) EXTENSION * Math.max(0, extensions);
+        return (int) Math.min(total, UNLIMITED);
+    }
 
     /**
      * Was an dieser Stelle je Tick hindurchgeht.
@@ -69,6 +107,14 @@ public final class Bandwidth {
      */
     public static int at(Level level, BlockPos pos) {
         BlockState state = level.getBlockState(pos);
+        if (state.getBlock() instanceof dev.devpanda.factorynetwork.block.ControllerBlock) {
+            // Die Zahl steht in der BlockEntity, weil sie von den Anbauten
+            // abhängt — und die zählt der Graph beim Neuaufbau, nicht dieser
+            // Aufruf: Er läuft je Fach je Worker je Tick.
+            return level.getBlockEntity(pos)
+                    instanceof dev.devpanda.factorynetwork.block.entity.ControllerBlockEntity controller
+                    ? controller.bandwidth() : CONTROLLER;
+        }
         if (state.getBlock() instanceof dev.devpanda.factorynetwork.block.RouterBlock
                 || state.getBlock() instanceof dev.devpanda.factorynetwork.block.GatewayBlock
                 || state.getBlock() instanceof dev.devpanda.factorynetwork.block.BridgeBlock) {

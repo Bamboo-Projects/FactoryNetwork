@@ -6528,13 +6528,15 @@ public final class FactoryNetworkGameTests {
             level.removeBlock(where, false);
         }
 
-        // Und der Controller begrenzt gar nichts: Er ist Ziel, nicht Strecke.
+        // Und der Controller begrenzt sehr wohl — seit dem 30.08. Vorher
+        // stand hier UNLIMITED mit der Begründung „er ist Ziel, nicht
+        // Strecke". Er ist beides, und als Strecke liegt er auf jedem Weg.
         BlockPos controller = helper.absolutePos(new BlockPos(1, 2, 1));
         level.setBlockAndUpdate(controller, FnBlocks.CONTROLLER.get().defaultBlockState());
         helper.assertValueEqual(
                 dev.devpanda.factorynetwork.network.Bandwidth.at(level, controller),
-                dev.devpanda.factorynetwork.network.Bandwidth.UNLIMITED,
-                "der Controller begrenzt den Durchsatz");
+                dev.devpanda.factorynetwork.network.Bandwidth.CONTROLLER,
+                "der Controller ohne Anbau trägt nicht so viel wie ein dichtes Kabel");
         helper.succeed();
     }
 
@@ -11438,6 +11440,63 @@ public final class FactoryNetworkGameTests {
 
         helper.assertTrue(entity.graph().connectorNames().contains("am_zweiten"),
                 "Auch der zweite Anbau bringt Seiten mit");
+        helper.succeed();
+    }
+
+    /**
+     * Der Controller liegt auf jedem Weg — sonst begrenzt er nichts.
+     *
+     * <p><b>Das ist die Zusicherung, an der die ganze Grenze hängt.</b> Das
+     * Budget rechnet über die Knoten eines Weges; steht der Controller nicht
+     * darauf, sieht es ihn nie, und eine noch so schöne Zahl in
+     * {@code Bandwidth} täte gar nichts.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void everyPathRunsThroughTheController(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        var gerät = entity.graph().connector("quarry_output").orElse(null);
+        helper.assertTrue(gerät != null, "quarry_output fehlt im Graphen");
+        var weg = entity.graph().pathTo(gerät);
+        helper.assertTrue(weg.stream()
+                        .anyMatch(node -> node.pos().equals(helper.absolutePos(controller))),
+                "der Controller liegt nicht auf dem Weg des Geräts");
+        helper.succeed();
+    }
+
+    /**
+     * Ohne Anbau trägt der Controller ein dichtes Kabel, mit zweien mehr.
+     *
+     * <p><b>Der Anbau ist das Upgrade</b> — kein Steckplatz, keine Karte.
+     * Man sieht einem großen Netz an, dass es groß ist.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void extensionsRaiseTheControllerLimit(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertValueEqual(entity.bandwidth(),
+                dev.devpanda.factorynetwork.network.Bandwidth.CONTROLLER,
+                "ohne Anbau trägt der Controller nicht ein dichtes Kabel");
+
+        helper.setBlock(controller.north(), FnBlocks.CONTROLLER_EXTENSION.get());
+        helper.setBlock(controller.north().north(), FnBlocks.CONTROLLER_EXTENSION.get());
+        entity.rebuildNetwork();
+
+        helper.assertValueEqual(entity.bandwidth(),
+                dev.devpanda.factorynetwork.network.Bandwidth.CONTROLLER
+                        + 2 * dev.devpanda.factorynetwork.network.Bandwidth.EXTENSION,
+                "zwei Anbauten heben die Grenze nicht");
+
+        // Und die Zahl kommt auch dort an, wo das Budget sie liest.
+        helper.assertValueEqual(
+                dev.devpanda.factorynetwork.network.Bandwidth.at(
+                        helper.getLevel(), helper.absolutePos(controller)),
+                entity.bandwidth(),
+                "Bandwidth.at liest eine andere Zahl als der Controller selbst");
         helper.succeed();
     }
 

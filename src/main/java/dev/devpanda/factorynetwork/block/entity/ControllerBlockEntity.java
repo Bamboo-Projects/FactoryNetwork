@@ -577,6 +577,10 @@ public class ControllerBlockEntity extends BlockEntity {
         // ein Editor daneben erfährt sie nur von uns.
         statusStale = true;
         graph = FactoryGraph.build(level, worldPosition);
+        // Hier gezählt und nicht bei jeder Frage: Bandwidth.at trifft den
+        // Controller je Fach je Worker je Tick, und die Anbauten ändern sich
+        // nur, wenn jemand baut.
+        extensionCount = graph.extensions().size();
         lastRebuild = level.getGameTime();
         networkKnown = true;
         stampDeviceStates();
@@ -2688,6 +2692,26 @@ public class ControllerBlockEntity extends BlockEntity {
                 stack.getCount() + "x " + stack.getHoverName().getString()
                         + " wird zurückgehalten: nichts nimmt es gerade an."));
     }
+
+    /**
+     * Was der Controller je Tick durchlässt.
+     *
+     * <p><b>Er ist das schwächste Glied, und das mit Absicht.</b> Alles im
+     * Netz geht durch ihn — sechs dichte Kabel an sechs Seiten trugen bis
+     * zum 30.08. zusammen 153 MB/s, und er reichte alles durch. Jetzt trägt
+     * er so viel wie ein dichtes Kabel, und jeder Anbau legt die Hälfte
+     * dazu.
+     *
+     * <p>An der Grenze wird alles langsamer, nicht einzelnes tot — dieselbe
+     * Regel wie am Kabel. Zwei verschiedene Antworten auf dieselbe Frage
+     * wären eine zu viel.
+     */
+    public int bandwidth() {
+        return dev.devpanda.factorynetwork.network.Bandwidth.ofController(extensionCount);
+    }
+
+    /** Wie viele Anbauten am Controller hängen — beim Neuaufbau gezählt. */
+    private int extensionCount;
 
     /** Was gerade in Verwahrung liegt. */
     public List<ItemStack> held() {
