@@ -1124,21 +1124,38 @@ public class ControllerBlockEntity extends BlockEntity {
             job.note(dev.devpanda.factorynetwork.crafting.CraftingJob.Status.WAITING, missing);
             return false;
         }
+        // <b>Die Zutaten vor dem Wasser.</b> Ein Speicherbus kann zeigen, was
+        // er nicht hergibt; kommt das erst nach dem Einfüllen heraus, steht
+        // das Wasser in der Maschine und der Auftrag wartet auf ein Ergebnis,
+        // das ohne Zutat nie entsteht.
+        Map<Item, Long> paid = new LinkedHashMap<>();
+        for (var entry : step.consumed().entrySet()) {
+            long got = storage.extract(entry.getKey(), entry.getValue());
+            if (got > 0) {
+                paid.put(entry.getKey(), got);
+            }
+            if (got < entry.getValue()) {
+                refund(paid);
+                job.note(dev.devpanda.factorynetwork.crafting.CraftingJob.Status.WAITING,
+                        "der Speicher gibt nicht her, was er zeigt");
+                return false;
+            }
+        }
         String failed = fillExtras(step, device, false);
         if (failed != null) {
             // Zwischen Probe und Zug hat sich etwas geändert. Selten, aber
             // dann ehrlich gemeldet statt stillschweigend halb ausgeführt.
+            refund(paid);
             job.note(dev.devpanda.factorynetwork.crafting.CraftingJob.Status.WAITING, failed);
             return false;
         }
-        for (var entry : step.consumed().entrySet()) {
-            long got = storage.extract(entry.getKey(), entry.getValue());
+        paid.forEach((item, amount) -> {
             net.minecraft.world.item.ItemStack rest = insertAll(handler,
-                    new net.minecraft.world.item.ItemStack(entry.getKey(), (int) got), false);
+                    new net.minecraft.world.item.ItemStack(item, (int) (long) amount), false);
             if (!rest.isEmpty()) {
-                storage.insert(entry.getKey(), rest.getCount());
+                storage.insert(item, rest.getCount());
             }
-        }
+        });
         job.setRunning(new dev.devpanda.factorynetwork.crafting.CraftingJob.Running(
                 step.station(), device, step.result(), step.yield(), 0));
         job.note(dev.devpanda.factorynetwork.crafting.CraftingJob.Status.RUNNING,

@@ -2170,6 +2170,47 @@ public final class FactoryNetworkGameTests {
                 .thenSucceed();
     }
 
+    /**
+     * Und ein Rezept an einer Maschine fängt ohne Zutat gar nicht erst an.
+     *
+     * <p>Derselbe Speicher, der zeigt und nicht hergibt, an der anderen Hälfte
+     * der Fertigung. Hier entsteht nichts aus dem Nichts — das Ergebnis holt
+     * das Netz aus der Maschine, und eine Maschine ohne Zutat liefert keins.
+     * Der Schaden ist ein anderer: Der Auftrag stünde für immer auf „läuft"
+     * und wartete auf eine Lieferung, die nie kommen kann. Und das Wasser
+     * eines Rezepts wäre schon eingefüllt.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void arecipeWaitsWhenTheStorageOnlyShows(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        helper.setBlock(controller.east().above(), FnBlocks.FABRICATOR.get());
+        furnaceStoreAt(helper, controller.east().east());
+        entity.rebuildNetwork();
+
+        // Kohle zu Diamant: Vanilla kennt das nicht, also führt kein anderer
+        // Weg zum Ziel als dieses Rezept an dieser Maschine.
+        helper.assertTrue(entity.deploy("""
+                store ofen {
+                }
+
+                recipe kohle_pressen at quarry_output {
+                    in 9 item:coal
+                    out 1 item:diamond
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+        entity.requestCraft(Items.DIAMOND, 1);
+
+        helper.startSequence()
+                .thenIdle(60)
+                .thenExecute(() -> {
+                    var job = entity.craftingJobs().get(0);
+                    helper.assertTrue(job.running() == null,
+                            "ohne Zutat darf kein Schritt laufen: " + job.detail());
+                })
+                .thenSucceed();
+    }
+
     /** Ein Programm mit await in if in while — die Vorlage der Ablauf-Tests. */
     private static final String COUNTING_PROGRAM = """
             event Takt(nummer: Int)
