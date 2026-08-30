@@ -34,6 +34,42 @@ jetzt 25,6 MB/s, das dichte ist stillgelegt.
 
 Der Router nennt seine Verzögerung im Fenster und in Jade.
 
+### 4. Die Gegenrichtung: Ware, die entsteht — erledigt am 30.08.
+
+Der Itemverlust hatte eine Rückseite. Überall gilt „erst einlegen, dann
+entnehmen", damit nichts verschwindet; der Preis dieser Reihenfolge ist, dass
+eine Quelle, die beim echten Griff weniger hergibt als beim Probelauf, den
+Unterschied im Ziel stehen lässt. Er ist aus dem Nichts entstanden.
+
+**Erreichbar war das an einer Stelle ohne jedes Zutun einer fremden Mod:**
+Ein Speicherbus zählt fremde Inventare zum Bestand, und die dürfen ihren
+Inhalt behalten — ein Ofen zeigt von unten sein Brennstofffach und rückt es
+nicht heraus. Aus 64 Kohle wurden 128, und weil der Bestand mangels
+Entnahme nicht nachzog, im nächsten Tick 192. Betroffen waren der Worker und
+`move`, beide auf dem Weg aus dem Speicher in ein Gerät.
+
+Die anderen Stellen, je mit ihrem Befund:
+
+| Stelle | Befund |
+|---|---|
+| Speicher → Gerät (Worker, `move`) | **Erreichbar, behoben.** Speicherbus auf einem Ofen. |
+| Gerät → Gerät (Worker, `move`) | Nur über eine fremde Maschine, die auf `simulate` anders antwortet als auf den Griff. Dass es die gibt, stand schon im Quelltext — **abgesichert**. |
+| Tank → Tank (Worker, `move`) | Dasselbe, **abgesichert**. Der Rückweg ist enger: In die Quelle geht nichts zurück, also wird im Ziel abgezogen. |
+| Speicher → Tank (`fillFromNetwork`, `storageToTank`) | **Nicht erreichbar.** Der Flüssigkeitsspeicher kennt keine Busse; `count` und `extract` lesen dieselben revisionsgeprüften Zellen, und dazwischen läuft nichts. |
+| Tank → Speicher (`drainIntoNetwork`, `tankToStorage`) | **Nicht erreichbar.** Fragt `room()` vor dem Zug. |
+
+Was der Rückweg nicht kann, sagt er jetzt: Nimmt das Ziel nichts zurück —
+ein Eingangsfach tut das nicht —, bleibt der Rest liegen, wird nicht als
+bewegt gezählt und der Worker meldet ihn mit Zahl. Eine Menge, die einmal zu
+viel dasteht, statt einer, die jeden Tick nachwächst.
+
+**Offen geblieben, gemeldet statt gebaut:** Eine Flüssigkeit mit
+Datenkomponenten lässt sich zwischen zwei Tanks gar nicht bewegen. Der
+Probelauf fragt mit einer Sorte ohne Komponenten, und ein Tank, der genau
+vergleicht, antwortet darauf mit nichts — stumm, der Worker meldet „nichts zu
+tun". Zu beheben wäre es an zwei Zeilen; es ändert aber, was die Mod kann,
+und der Weg über den Netzspeicher würde die Komponenten weiterhin abstreifen.
+
 ---
 
 ## Offen, wartet auf dich
@@ -85,4 +121,4 @@ Aus den letzten Runden, ungeprüft:
 
 ## Stand der Prüfläufe
 
-345 GameTests grün, zuletzt am 30.08. um 03:25.
+352 GameTests grün, zuletzt am 30.08. um 12:55.
