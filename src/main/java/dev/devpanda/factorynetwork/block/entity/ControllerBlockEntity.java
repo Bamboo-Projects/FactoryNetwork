@@ -581,6 +581,8 @@ public class ControllerBlockEntity extends BlockEntity {
         // Controller je Fach je Worker je Tick, und die Anbauten ändern sich
         // nur, wenn jemand baut.
         extensionCount = graph.extensions().size();
+        // Der Weg kann ein anderer sein als eben — also auch seine Latenz.
+        runtime.remeasureLatency();
         lastRebuild = level.getGameTime();
         networkKnown = true;
         stampDeviceStates();

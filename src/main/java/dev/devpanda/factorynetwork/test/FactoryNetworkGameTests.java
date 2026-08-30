@@ -11467,6 +11467,108 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
+     * Ein Aufbau, bei dem zwei Router im Weg stehen.
+     *
+     * <p>Controller, Kabel, Router, Router, Kabel, Anschluss, Kiste — in
+     * einer Reihe nach Osten. Die Kiste heißt {@code quarry_output} wie
+     * überall sonst, damit dieselben Programme darauf passen.
+     */
+    private static BlockPos twoRoutersSetup(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 1, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        rackWithServer(helper, controller.west());
+        driveWithCell(helper, controller.above(),
+                dev.devpanda.factorynetwork.storage.CellTier.K64);
+
+        placeCable(helper, controller.east(), dev.devpanda.factorynetwork.block.CableColour.NONE);
+        helper.setBlock(controller.east(2), FnBlocks.ROUTER.get());
+        helper.setBlock(controller.east(3), FnBlocks.ROUTER.get());
+        placeCable(helper, controller.east(4), dev.devpanda.factorynetwork.block.CableColour.NONE);
+
+        BlockPos connector = controller.east(5);
+        connector(helper, connector, Direction.EAST);
+        helper.setBlock(connector.east(), Blocks.CHEST);
+        name(helper, connector, "quarry_output");
+        return controller;
+    }
+
+    /**
+     * Zwei Router auf dem Weg sind zwei Ticks Latenz.
+     *
+     * <p><b>Je Gerät, nicht je Block.</b> Licht braucht für zwanzig Blöcke
+     * sechzig Nanosekunden — gegen einen Tick von fünfzig Millisekunden ist
+     * das nichts. Was in einem echten Netz Zeit kostet, ist das Auspacken an
+     * jedem Knoten.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void eachRouterOnTheWayCostsATick(GameTestHelper helper) {
+        BlockPos controller = twoRoutersSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        var device = entity.graph().connector("quarry_output").orElse(null);
+        helper.assertTrue(device != null, "quarry_output fehlt im Graphen");
+        helper.assertValueEqual(
+                dev.devpanda.factorynetwork.network.Latency.of(
+                        helper.getLevel(), entity.graph().pathTo(device)),
+                2 * dev.devpanda.factorynetwork.network.Latency.PER_HOP,
+                "zwei Router auf dem Weg kosten nicht zwei Ticks");
+
+        // Und das Kabel dazwischen kostet nichts: Sonst wäre es Entfernung,
+        // die zählt, und genau das ist der Fehler, den diese Zahl vermeidet.
+        BlockPos far = new BlockPos(1, 1, 1);
+        helper.assertValueEqual(
+                dev.devpanda.factorynetwork.network.Latency.of(
+                        helper.getLevel(), java.util.List.of(
+                                new dev.devpanda.factorynetwork.network.FactoryGraph.Node(
+                                        helper.absolutePos(far.east()),
+                                        dev.devpanda.factorynetwork.block.CableColour.NONE))),
+                0, "ein Kabel kostet Latenz");
+        helper.succeed();
+    }
+
+    /**
+     * Die Latenz verzögert den Anfang, nicht den Takt.
+     *
+     * <p><b>Das ist die Zusicherung, an der der ganze Entwurf hängt.</b>
+     * Würde jeder Griff um die Latenz verzögert, liefe ein Worker hinter
+     * zwei Routern auf ein Drittel — die Latenz wäre eine Bandbreitenstrafe
+     * in Verkleidung, und wer sein Netz sauber trennt, würde dafür bestraft.
+     *
+     * <p>Gemessen wird deshalb die Dauerrate: Nach vierzig Ticks muss fast
+     * alles durch sein, was ein Worker mit {@code rate 64 per 1t} schafft.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void latencyDelaysTheStartNotTheRate(GameTestHelper helper) {
+        BlockPos controller = twoRoutersSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+
+        BlockPos source = controller.east(6);
+        if (helper.getBlockEntity(source) instanceof ChestBlockEntity chest) {
+            for (int slot = 0; slot < chest.getContainerSize(); slot++) {
+                chest.setItem(slot, new ItemStack(Items.COBBLESTONE, 64));
+            }
+        }
+        helper.assertTrue(entity.deploy("""
+                worker haul {
+                    from quarry_output
+                    to storage
+                    rate 64 per 1t
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+
+        helper.runAfterDelay(40, () -> {
+            long moved = entity.storage().count(Items.COBBLESTONE);
+            // Zwanzig volle Griffe in vierzig Ticks: Zwei gehen für die
+            // Latenz drauf, ein paar für den Anlauf. Bei einer Drossel je
+            // Griff wäre es ein Drittel davon.
+            helper.assertTrue(moved >= 20 * 64,
+                    "nur " + moved + " Steine in vierzig Ticks — die Latenz drosselt");
+            helper.succeed();
+        });
+    }
+
+    /**
      * Eine Brücke ist ein Stück Weg, kein Loch darin.
      *
      * <p><b>Dieselbe Falle wie beim Controller.</b> {@code Bandwidth.at}

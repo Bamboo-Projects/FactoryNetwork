@@ -106,6 +106,23 @@ public final class WorkerRuntime {
         public long lastRun;
         public long moved;
         public String detail = "";
+
+        /**
+         * Wie viele Ticks noch, bis der Weg steht.
+         *
+         * <p>Zählt herunter und bleibt dann null. Ein Worker im Dauerbetrieb
+         * fasst ihn nie wieder an — sonst wäre die Latenz eine Drossel.
+         */
+        public int warmup;
+
+        /**
+         * Der Weg ist neu und seine Latenz noch nicht gemessen.
+         *
+         * <p>Wahr bei einem frischen Worker und nach jedem Netzumbau: Wer ein
+         * Kabel umlegt, ändert den Weg — und dann gilt die alte Zahl nicht
+         * mehr.
+         */
+        public boolean warmupPending = true;
     }
 
     public enum Status {
@@ -123,6 +140,17 @@ public final class WorkerRuntime {
 
     public Map<String, WorkerState> states() {
         return states;
+    }
+
+    /**
+     * Nach einem Netzumbau ist jeder Weg neu zu messen.
+     *
+     * <p>Ein umgelegtes Kabel, ein Router mehr — und die Latenz von vorhin
+     * gilt nicht mehr. Gemessen wird beim nächsten Griff, nicht hier: Hier
+     * ist der Weg noch gar nicht bekannt.
+     */
+    public void remeasureLatency() {
+        states.values().forEach(state -> state.warmupPending = true);
     }
 
     /**
@@ -219,6 +247,15 @@ public final class WorkerRuntime {
         }
         for (Decl.Worker worker : byPriority(program.workers())) {
             WorkerState state = states.computeIfAbsent(worker.name(), name -> new WorkerState());
+            // <b>Die Latenz zählt hier herunter, vor der Rate.</b> Stünde sie
+            // dahinter, bräuchte ein Worker mit „per 20t" zwanzig Ticks für
+            // jeden Latenztick — aus zwei Ticks Verzögerung würden vierzig.
+            if (state.warmup > 0) {
+                state.warmup--;
+                state.status = Status.RUNNING;
+                state.detail = "Weg wird aufgebaut";
+                continue;
+            }
             int interval = intervalOf(worker);
             if (now - state.lastRun < interval) {
                 continue;
@@ -374,6 +411,19 @@ public final class WorkerRuntime {
         int freieBytes = path.isEmpty()
                 ? dev.devpanda.factorynetwork.network.Bandwidth.UNLIMITED
                 : budget.free(level, path);
+        // <b>Der erste Griff wartet auf den Weg, die folgenden nicht.</b> Was
+        // einmal unterwegs ist, kommt Schlag auf Schlag — wie bei echten
+        // Paketen. Eine Latenz, die jeden Griff verzögerte, wäre eine
+        // Bandbreitenstrafe in Verkleidung.
+        if (state.warmupPending) {
+            state.warmupPending = false;
+            state.warmup = dev.devpanda.factorynetwork.network.Latency.of(level, path);
+            if (state.warmup > 0) {
+                state.status = Status.RUNNING;
+                state.detail = "Weg wird aufgebaut";
+                return;
+            }
+        }
         int free = freieBytes / dev.devpanda.factorynetwork.network.Bandwidth.PER_ITEM;
         if (free <= 0) {
             // Dieselbe Art zu warten wie bei einem vollen Ziel: Es liegt
