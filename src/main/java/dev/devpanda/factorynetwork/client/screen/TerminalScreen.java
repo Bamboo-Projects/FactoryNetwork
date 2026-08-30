@@ -349,7 +349,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         // Der Fenstertitel steht in der Reiterleiste; nur das Inventar wird
         // beschriftet, so wie in jedem Vanilla-Fenster.
         graphics.drawString(font, playerInventoryTitle, (WIDTH - 9 * 18) / 2,
-                inventoryLabelY, TEXT_DIM, false);
+                inventoryLabelY, Widgets.CASE_TEXT, false);
     }
 
     /**

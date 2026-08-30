@@ -16,26 +16,28 @@ OUT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                    "src", "main", "resources", "assets", "factorynetwork", "textures", "gui")
 
 # Vanillas Grautöne, abgelesen aus den Container-Texturen.
-# <b>Dieselbe Sprache wie das Terminal.</b> Vanillas Hellgrau stammt aus
-# einer Zeit, in der jedes Fenster wie eine Werkbank aussah — neben einem
-# Terminal mit schwarzer Scheibe wirken Presse, Brennkammer, Router und
-# Serverschrank darin wie Fremdkörper. Und dunkle Slots in einem hellen
-# Gehäuse sehen aus wie Löcher.
-PANEL      = (38, 46, 42)
-PANEL_HI   = (62, 74, 67)
-PANEL_LO   = (16, 20, 18)
-PANEL_DARK = (26, 32, 29)
-# <b>Die Slots sind dunkel statt grau.</b> Vanillas Hellgrau stammt aus
-# einer Zeit, in der jedes Fenster wie eine Werkbank aussah — neben einem
-# Terminal mit schwarzer Scheibe wirkt es wie ein Fremdkörper. Dunkle Slots
-# mit einer feinen Kante lassen den Gegenstand darin leuchten, statt mit ihm
-# um Aufmerksamkeit zu ringen.
-SLOT_BG    = (30, 36, 33)
-SLOT_HI    = (58, 68, 62)
-SLOT_LO    = (14, 18, 16)
-# Heller Text auf dunklem Gehäuse — die Umkehr von Vanilla, und dieselbe
-# Farbe, die das Terminal für seine Beschriftungen nimmt.
-TEXT       = (168, 178, 172)
+#
+# <b>Das Gehäuse ist hell, der Bildschirm ist dunkel.</b> Das dunkle Gehäuse
+# davor war eine geschlossene Familie, aber ein Fenster, in dem man das
+# Slotraster nicht sieht: Grund und Slot lagen acht Helligkeitspunkte
+# auseinander, Vanilla hat sechzig. Wer ein Inventar öffnet, muss ohne
+# Hinsehen wissen, wo etwas hingehört.
+#
+# Die Scheibe des Terminals bleibt dunkel und ist kein Widerspruch dazu,
+# sondern der Grund, warum es aufgeht: Ein Monitor hat ein helles Gehäuse und
+# eine dunkle Scheibe. Was im Bildschirm liegt, bleibt dunkel; was auf dem
+# Blech liegt, wird hell.
+PANEL      = (198, 198, 198)
+PANEL_HI   = (255, 255, 255)
+PANEL_LO   = (85, 85, 85)
+PANEL_DARK = (170, 170, 170)
+SLOT_BG    = (139, 139, 139)
+SLOT_HI    = (255, 255, 255)
+SLOT_LO    = (55, 55, 55)
+# Dunkler Text auf hellem Gehäuse, wie in jedem Vanilla-Fenster. Der Wert
+# steht hier als Vorlage für die Bildschirmklassen — gezeichnet wird die
+# Beschriftung im Code, nicht in die Textur.
+TEXT       = (63, 63, 63)
 SCREEN     = (22, 26, 24)
 SCREEN_EDGE = (10, 13, 11)
 
@@ -47,10 +49,11 @@ SCREEN_EDGE = (10, 13, 11)
 # Mulde, sondern als Fleck.
 # Das Gehäuse: eine Spur heller als die Scheibe, damit die Kante trägt,
 # ohne dass eine Fase sie zeichnen muss.
-CASE       = (38, 46, 42)
-CASE_HI    = (62, 74, 67)
-CASE_LO    = (16, 20, 18)
-CASE_TEXT  = (168, 178, 172)
+CASE       = (198, 198, 198)
+CASE_HI    = (255, 255, 255)
+CASE_LO    = (85, 85, 85)
+CASE_TEXT  = (63, 63, 63)
+# Die Scheibe und alles darin bleibt dunkel: Das ist der Bildschirm.
 GLASS      = (24, 30, 27)
 GLASS_RIM  = (52, 62, 56)
 WELL       = (16, 20, 18)
@@ -193,13 +196,14 @@ def background():
                 fill=WELL_EDGE + (255,))
 
     # Das Spielerinventar: dieselben Stellen wie in jedem Minecraft-Fenster.
+    # <b>Slots und keine Mulden.</b> Das Spielerinventar liegt auf dem Blech
+    # und nicht im Bildschirm — es muss aussehen wie in jedem anderen
+    # Fenster, sonst sucht die Hand an einer Stelle, die es so nur hier gibt.
     for row in range(3):
         for column in range(9):
-            x, y = INV_X - 1 + column * 18, INV_Y - 1 + row * 18
-            well(d, (x, y, x + 17, y + 17))
+            slot(d, INV_X - 1 + column * 18, INV_Y - 1 + row * 18)
     for column in range(9):
-        x = INV_X - 1 + column * 18
-        well(d, (x, HOTBAR_Y - 1, x + 17, HOTBAR_Y + 16))
+        slot(d, INV_X - 1 + column * 18, HOTBAR_Y - 1)
     return img
 
 

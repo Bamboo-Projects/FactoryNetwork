@@ -136,7 +136,7 @@ public class ShelfScreen extends AbstractContainerScreen<ShelfMenu> {
         }
         Component summary = FnFonts.mono(summary());
         graphics.drawString(font, summary,
-                imageWidth - 8 - font.width(summary), titleLabelY, 0xA8B2AC, false);
+                imageWidth - 8 - font.width(summary), titleLabelY, Widgets.CASE_TEXT, false);
     }
 
     private String summary() {

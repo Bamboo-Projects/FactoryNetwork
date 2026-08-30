@@ -30,6 +30,23 @@ public final class Widgets {
     /** Das Blatt, auf dem die Kleinteile liegen. */
     private static final int SHEET = 512;
 
+    /**
+     * Beschriftung auf dem Blech.
+     *
+     * <p>Dieselbe Farbe, mit der Minecraft „Inventory" in jede Kiste
+     * schreibt. Sie steht hier und nicht dreimal als Zahl: Das Gehäuse ist
+     * hell, seit man das Slotraster darin sehen soll, und heller Text darauf
+     * wäre unlesbar gewesen. Wer die Palette in {@code tools/gui.py} wieder
+     * dreht, dreht diese eine Zeile mit.
+     *
+     * <p>Was <b>im</b> Bildschirm steht, gehört nicht hierher — die Scheibe
+     * bleibt dunkel, und ihre Schrift bleibt hell.
+     */
+    public static final int CASE_TEXT = 0x3F3F3F;
+
+    /** Dasselbe für eine Nebensache, die nicht zuerst gelesen werden soll. */
+    public static final int CASE_TEXT_DIM = 0x7F7F7F;
+
     private Widgets() {
     }
 

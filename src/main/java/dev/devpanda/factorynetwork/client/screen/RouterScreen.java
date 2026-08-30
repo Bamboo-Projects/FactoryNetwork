@@ -96,7 +96,7 @@ public class RouterScreen extends AbstractContainerScreen<RouterMenu> {
             int y = topPos + ROW_TOP + side.ordinal() * ROW_HEIGHT;
             graphics.drawString(font, Component.translatable(
                             "side.factorynetwork." + side.getSerializedName()),
-                    leftPos + 9, y + 4, 0xA8B2AC, false);
+                    leftPos + 9, y + 4, Widgets.CASE_TEXT, false);
 
             int aktiv = menu.lane(side);
             int x = leftPos + BUTTON_LEFT;
@@ -108,7 +108,7 @@ public class RouterScreen extends AbstractContainerScreen<RouterMenu> {
             // nicht mehr zu unterscheiden — Hellblau und Cyan liegen zwei
             // Pixel auseinander.
             graphics.drawString(font, labelOf(aktiv),
-                    x + BUTTON_SIZE + 6, y + 4, 0xA8B2AC, false);
+                    x + BUTTON_SIZE + 6, y + 4, Widgets.CASE_TEXT, false);
         }
 
         // Unter den Seiten, was der Router kostet: einen Tick. Ohne diese
@@ -118,7 +118,7 @@ public class RouterScreen extends AbstractContainerScreen<RouterMenu> {
                         "screen.factorynetwork.router.latency",
                         dev.devpanda.factorynetwork.network.Latency.PER_HOP),
                 leftPos + 9, topPos + ROW_TOP + Direction.values().length * ROW_HEIGHT + 4,
-                0x6E7A72, false);
+                Widgets.CASE_TEXT_DIM, false);
     }
 
     @Override
