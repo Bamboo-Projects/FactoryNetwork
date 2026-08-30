@@ -24,8 +24,11 @@ import java.util.List;
  * @param perSecond der Verlauf, ältester Punkt zuerst, in Byte je Sekunde
  * @param top       die größten Verbraucher, absteigend
  * @param total     was seit dem Start des Netzes insgesamt bewegt wurde
+ * @param capacity  was der Controller je Tick durchlässt — ohne diese Zahl
+ *                  ist der Durchsatz im Kopf eine Zahl ohne Maßstab
  */
-public record TrafficPacket(List<Integer> perSecond, List<Consumer> top, long total)
+public record TrafficPacket(List<Integer> perSecond, List<Consumer> top, long total,
+                            int capacity)
         implements CustomPacketPayload {
 
     /** Ein Verbraucher mit seiner Menge. */
@@ -53,6 +56,7 @@ public record TrafficPacket(List<Integer> perSecond, List<Consumer> top, long to
                     Consumer.STREAM_CODEC.apply(ByteBufCodecs.list(TOP)),
                     TrafficPacket::top,
                     ByteBufCodecs.VAR_LONG, TrafficPacket::total,
+                    ByteBufCodecs.VAR_INT, TrafficPacket::capacity,
                     TrafficPacket::new);
 
     @Override
@@ -68,10 +72,10 @@ public record TrafficPacket(List<Integer> perSecond, List<Consumer> top, long to
 
     /** Baut das Paket aus dem Verlauf eines Controllers. */
     public static TrafficPacket of(
-            dev.devpanda.factorynetwork.network.TrafficHistory history) {
+            dev.devpanda.factorynetwork.network.TrafficHistory history, int capacity) {
         List<Consumer> top = history.top(TOP).stream()
                 .map(one -> new Consumer(one.name(), one.bytes()))
                 .toList();
-        return new TrafficPacket(history.perSecond(), top, history.total());
+        return new TrafficPacket(history.perSecond(), top, history.total(), capacity);
     }
 }

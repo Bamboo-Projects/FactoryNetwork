@@ -90,6 +90,7 @@
   "screen.factorynetwork.router.all": "Alles",
   "item.factorynetwork.entanglement": "Verschränkung",
   "item.factorynetwork.network_analyser": "Netzanalysator",
+  "message.factorynetwork.analyser.controller": "Controller: %s · %s Anbauten",
   "message.factorynetwork.analyser.watching": "Netz wird beobachtet — das Werkzeug in der Hand behalten",
   "message.factorynetwork.analyser.no_network": "Hier hängt kein Netz",
   "message.factorynetwork.label_gun.linked": "Mit dem Netz verbunden — %s Connectoren, davon %s ohne Namen",

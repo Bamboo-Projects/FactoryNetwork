@@ -163,7 +163,12 @@ public class NetworkTabView {
         List<Integer> verlauf = ClientTraffic.perSecond();
         int peak = ClientTraffic.peak();
         int jetzt = verlauf.isEmpty() ? 0 : verlauf.get(verlauf.size() - 1);
-        String rate = Bandwidth.perSecond(jetzt / Bandwidth.TICKS_PER_SECOND);
+        // Nicht nur, was fließt, sondern wovon. Eine Zahl ohne Maßstab
+        // beantwortet die Frage nicht, die man im Kopf hat: Ist das viel?
+        int capacity = ClientTraffic.capacity();
+        String rate = capacity > 0
+                ? Bandwidth.usage(jetzt / Bandwidth.TICKS_PER_SECOND, capacity)
+                : Bandwidth.perSecond(jetzt / Bandwidth.TICKS_PER_SECOND);
         graphics.drawString(font, rate, right - font.width(rate), line + 3,
                 TerminalScreen.TEXT, false);
         String gesamt = Bandwidth.total(ClientTraffic.total());
@@ -179,8 +184,17 @@ public class NetworkTabView {
 
         // Eine feine Linie auf halber Höhe: Ohne sie ist nicht zu sehen, ob
         // eine Säule ein Viertel oder die Hälfte der Spitze erreicht.
-        int mitte = (sparkTop + sparkBottom) / 2;
-        graphics.fill(sparkLeft, mitte, right, mitte + 1, 0x18FFFFFF);
+        int middle = (sparkTop + sparkBottom) / 2;
+        graphics.fill(sparkLeft, middle, right, middle + 1, 0x18FFFFFF);
+
+        // Und die Grenze des Controllers als eigene Linie — aber nur, wenn
+        // sie ins Bild passt. Ein Netz, das ein Prozent seiner Grenze nutzt,
+        // bekäme sonst eine Linie am oberen Rand, die nichts erklärt.
+        int limit = capacity * Bandwidth.TICKS_PER_SECOND;
+        if (capacity > 0 && limit <= peak) {
+            int y = sparkBottom - Math.max(1, limit * SPARK_HEIGHT / peak);
+            graphics.fill(sparkLeft, y, right, y + 1, 0x66FF5555);
+        }
 
         int columns = Math.min(verlauf.size(), right - sparkLeft);
         for (int i = 0; i < columns; i++) {

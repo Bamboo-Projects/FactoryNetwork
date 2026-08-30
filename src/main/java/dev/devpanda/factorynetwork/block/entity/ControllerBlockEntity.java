@@ -1671,7 +1671,7 @@ public class ControllerBlockEntity extends BlockEntity {
     private void pushTrafficTo(ServerPlayer player) {
         net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,
                 dev.devpanda.factorynetwork.network.packet.TrafficPacket.of(
-                        runtime.history()));
+                        runtime.history(), bandwidth()));
     }
 
     /**
@@ -1687,7 +1687,7 @@ public class ControllerBlockEntity extends BlockEntity {
             return;
         }
         var paket = dev.devpanda.factorynetwork.network.packet.TrafficPacket.of(
-                runtime.history());
+                runtime.history(), bandwidth());
         terminalWatchers.forEach(watcher ->
                 net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(watcher, paket));
     }
@@ -2712,6 +2712,24 @@ public class ControllerBlockEntity extends BlockEntity {
 
     /** Wie viele Anbauten am Controller hängen — beim Neuaufbau gezählt. */
     private int extensionCount;
+
+    /**
+     * Was in diesem Tick schon durch den Controller ging.
+     *
+     * <p>Er ist sein eigener Knoten im Budget, und weil jeder Weg über ihn
+     * läuft, steht hier die Summe des ganzen Netzes.
+     */
+    public int bandwidthUsed() {
+        return runtime.budget().usedAt(
+                new dev.devpanda.factorynetwork.network.FactoryGraph.Node(
+                        worldPosition,
+                        dev.devpanda.factorynetwork.block.CableColour.NONE));
+    }
+
+    /** Wie viele Anbauten mitzählen — für die Auskunft des Analysators. */
+    public int extensionCount() {
+        return extensionCount;
+    }
 
     /** Was gerade in Verwahrung liegt. */
     public List<ItemStack> held() {

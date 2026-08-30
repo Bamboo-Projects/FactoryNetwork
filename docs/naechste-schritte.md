@@ -17,18 +17,13 @@ gebaut wird.
 Ein Worker fragt jetzt vor dem Griff, und was trotzdem nirgends unterkommt,
 verwahrt der Controller, statt es zu werfen. Drei Prüfläufe halten es fest.
 
-### 2. Der Controller wird das schwächste Glied
+### 2. Der Controller wird das schwächste Glied — erledigt am 30.08.
 
-**Plan:** `plan-controller-grenze.md` — **Variante A ist entschieden.**
+**Plan:** `plan-controller-grenze.md` — Variante A gebaut.
 
-**Warum vor der Kabelsache:** Der Ausbauweg muss am Controller stehen, *bevor*
-er am Kabel wegfällt. Umgekehrt gäbe es dazwischen einen Stand ohne jeden
-Ausbauweg.
-
-**Was entschieden ist:**
-- An der Grenze wird alles langsamer (nicht: wer zuerst kommt)
-- Der Anbau hebt die Grenze — kein Upgrade-Item, kein Steckplatz
-- Controller allein 25,6 MB/s, je Anbau +12,8
+Er trägt so viel wie ein dichtes Kabel, jeder Anbau legt die Hälfte dazu.
+Zu sehen im Kopf des Netzwerk-Reiters (mit Grenzlinie in der Kurve) und im
+Analysator, wenn man den Controller anklickt.
 
 ### 3. Latenz je Router und ein Kabel statt zwei
 
@@ -91,4 +86,4 @@ Aus den letzten Runden, ungeprüft:
 
 ## Stand der Prüfläufe
 
-337 GameTests grün, zuletzt am 30.08. um 02:12.
+340 GameTests grün, zuletzt am 30.08. um 02:34.

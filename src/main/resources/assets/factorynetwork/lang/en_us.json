@@ -90,6 +90,7 @@
   "screen.factorynetwork.router.all": "Everything",
   "item.factorynetwork.entanglement": "Entanglement",
   "item.factorynetwork.network_analyser": "Network Analyser",
+  "message.factorynetwork.analyser.controller": "Controller: %s · %s extensions",
   "message.factorynetwork.analyser.watching": "Watching the network — keep the tool in hand",
   "message.factorynetwork.analyser.no_network": "No network here",
   "message.factorynetwork.label_gun.linked": "Linked to the network — %s connectors, %s of them unnamed",

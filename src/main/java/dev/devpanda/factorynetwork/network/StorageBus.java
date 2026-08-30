@@ -138,11 +138,11 @@ public final class StorageBus {
         }
         ItemStack rest = item.toStack(
                 (int) Math.min(wanted, item.maxStackSize()));
-        int angeboten = rest.getCount();
+        int offered = rest.getCount();
         for (int slot = 0; slot < handler.getSlots() && !rest.isEmpty(); slot++) {
             rest = handler.insertItem(slot, rest, true);
         }
-        return angeboten - rest.getCount();
+        return offered - rest.getCount();
     }
 
     /**

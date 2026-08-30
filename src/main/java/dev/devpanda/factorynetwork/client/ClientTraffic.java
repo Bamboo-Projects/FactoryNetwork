@@ -17,11 +17,13 @@ public final class ClientTraffic {
     private static List<Integer> perSecond = new ArrayList<>();
     private static List<TrafficPacket.Consumer> top = new ArrayList<>();
     private static long total;
+    private static int capacity;
 
     public static void accept(TrafficPacket packet) {
         perSecond = List.copyOf(packet.perSecond());
         top = List.copyOf(packet.top());
         total = packet.total();
+        capacity = packet.capacity();
     }
 
     /** Der Verlauf, ältester Punkt zuerst, in Byte je Sekunde. */
@@ -37,6 +39,16 @@ public final class ClientTraffic {
     /** Was seit dem Start des Netzes insgesamt bewegt wurde. */
     public static long total() {
         return total;
+    }
+
+    /**
+     * Was der Controller je Tick durchlässt.
+     *
+     * <p>Null, solange kein Paket kam — dann zeigt der Kopf die nackte Zahl
+     * statt einer Auslastung von null.
+     */
+    public static int capacity() {
+        return capacity;
     }
 
     /**

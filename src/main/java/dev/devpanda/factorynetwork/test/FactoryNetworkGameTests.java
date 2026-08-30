@@ -6311,9 +6311,9 @@ public final class FactoryNetworkGameTests {
 
         // Etwas hindurchgeschickt.
         // Knapp die Hälfte der Kabelbreite.
-        int haelfte = dev.devpanda.factorynetwork.network.Bandwidth.THIN / 2;
-        entity.runtime().budget().spend(java.util.List.of(node), haelfte);
-        helper.assertValueEqual(entity.runtime().budget().usedAt(node), haelfte,
+        int half = dev.devpanda.factorynetwork.network.Bandwidth.THIN / 2;
+        entity.runtime().budget().spend(java.util.List.of(node), half);
+        helper.assertValueEqual(entity.runtime().budget().usedAt(node), half,
                 "der Verkehr steht nicht im Budget");
 
         var daten = dev.devpanda.factorynetwork.analyser.AnalyserScan.of(entity);
@@ -6321,7 +6321,7 @@ public final class FactoryNetworkGameTests {
                 .filter(link -> link.to().equals(helper.absolutePos(cable)))
                 .findFirst().orElse(null);
         helper.assertTrue(strecke != null, "der Analysator kennt die Strecke nicht");
-        helper.assertValueEqual(strecke.load(), haelfte,
+        helper.assertValueEqual(strecke.load(), half,
                 "der Analysator zeigt nicht, was floss");
         helper.assertValueEqual(strecke.capacity(),
                 dev.devpanda.factorynetwork.network.Bandwidth.THIN,
@@ -7511,9 +7511,9 @@ public final class FactoryNetworkGameTests {
         // eine davon: Nach der Entnahme bleiben Bretter übrig, der Artenplatz
         // bleibt belegt — die Kiste wäre die neunte Art und passt nicht.
         entity.storage().insert(new ItemStack(Items.OAK_PLANKS, 64));
-        for (Item art : List.of(Items.COBBLESTONE, Items.DIRT, Items.STONE,
+        for (Item kind : List.of(Items.COBBLESTONE, Items.DIRT, Items.STONE,
                 Items.SAND, Items.GRAVEL, Items.GLASS, Items.BRICK)) {
-            entity.storage().insert(new ItemStack(art, 8));
+            entity.storage().insert(new ItemStack(kind, 8));
         }
 
         entity.requestCraft(Items.CHEST, 1);
@@ -7556,14 +7556,14 @@ public final class FactoryNetworkGameTests {
         var geladen = net.minecraft.world.level.block.entity.BlockEntity.loadStatic(
                 absolut, helper.getLevel().getBlockState(absolut), tag, registries);
 
-        if (!(geladen instanceof ControllerBlockEntity wieder)) {
+        if (!(geladen instanceof ControllerBlockEntity reloaded)) {
             helper.fail("der gespeicherte Controller kam nicht zurück", controller);
             return;
         }
-        long verwahrt = wieder.held().stream()
+        long held = reloaded.held().stream()
                 .filter(stack -> stack.is(Items.DIAMOND))
                 .mapToLong(ItemStack::getCount).sum();
-        helper.assertValueEqual(verwahrt, 17L,
+        helper.assertValueEqual(held, 17L,
                 "das Verwahrte hat das Speichern nicht überstanden");
         helper.succeed();
     }
@@ -7599,10 +7599,10 @@ public final class FactoryNetworkGameTests {
         helper.runAfterDelay(10, () -> {
             // Nichts in der Welt, alles noch in Verwahrung.
             helper.assertItemEntityNotPresent(Items.DIAMOND);
-            long verwahrt = entity.held().stream()
+            long held = entity.held().stream()
                     .filter(stack -> stack.is(Items.DIAMOND))
                     .mapToLong(ItemStack::getCount).sum();
-            helper.assertValueEqual(verwahrt, 64L,
+            helper.assertValueEqual(held, 64L,
                     "die Diamanten liegen nicht mehr in Verwahrung");
 
             // Jetzt kommt Platz dazu — ein zweites Laufwerk mit leerer Zelle.
@@ -7647,11 +7647,11 @@ public final class FactoryNetworkGameTests {
         BlockPos source = controller.east().north().north();
         helper.setBlock(source, Blocks.FURNACE);
         if (!(helper.getBlockEntity(source)
-                instanceof net.minecraft.world.level.block.entity.FurnaceBlockEntity ofen)) {
+                instanceof net.minecraft.world.level.block.entity.FurnaceBlockEntity furnace)) {
             helper.fail("kein Ofen an der Quelle", source);
             return;
         }
-        ofen.setItem(1, new ItemStack(Items.DIAMOND, 64));
+        furnace.setItem(1, new ItemStack(Items.DIAMOND, 64));
 
         helper.assertTrue(entity.deploy("""
                 worker haul {
@@ -7667,20 +7667,20 @@ public final class FactoryNetworkGameTests {
             helper.assertItemEntityNotPresent(Items.DIAMOND);
 
             if (!(helper.getBlockEntity(source)
-                    instanceof net.minecraft.world.level.block.entity.FurnaceBlockEntity da)) {
+                    instanceof net.minecraft.world.level.block.entity.FurnaceBlockEntity found)) {
                 helper.fail("kein Ofen mehr da", source);
                 return;
             }
-            long imOfen = 0;
-            for (int slot = 0; slot < da.getContainerSize(); slot++) {
-                if (da.getItem(slot).is(Items.DIAMOND)) {
-                    imOfen += da.getItem(slot).getCount();
+            long inFurnace = 0;
+            for (int slot = 0; slot < found.getContainerSize(); slot++) {
+                if (found.getItem(slot).is(Items.DIAMOND)) {
+                    inFurnace += found.getItem(slot).getCount();
                 }
             }
-            long imLager = entity.storage().count(Items.DIAMOND);
+            long inStorage = entity.storage().count(Items.DIAMOND);
             // Die Summe, nicht der Boden: Ein Gegenstand kann auch
             // verschwinden, ohne je als Entity aufzutauchen.
-            helper.assertValueEqual(imOfen + imLager, 64L,
+            helper.assertValueEqual(inFurnace + inStorage, 64L,
                     "von vierundsechzig Diamanten sind welche verschwunden");
             helper.succeed();
         });
@@ -11457,12 +11457,37 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
 
-        var gerät = entity.graph().connector("quarry_output").orElse(null);
-        helper.assertTrue(gerät != null, "quarry_output fehlt im Graphen");
-        var weg = entity.graph().pathTo(gerät);
-        helper.assertTrue(weg.stream()
+        var device = entity.graph().connector("quarry_output").orElse(null);
+        helper.assertTrue(device != null, "quarry_output fehlt im Graphen");
+        var path = entity.graph().pathTo(device);
+        helper.assertTrue(path.stream()
                         .anyMatch(node -> node.pos().equals(helper.absolutePos(controller))),
                 "der Controller liegt nicht auf dem Weg des Geräts");
+        helper.succeed();
+    }
+
+    /**
+     * Der Controller findet seine eigene Auslastung wieder.
+     *
+     * <p><b>Er baut seinen Knoten selbst nach</b>, um im Budget nachzusehen —
+     * und ein Knoten, der nur fast derselbe ist, liefert stumm eine Null.
+     * Genau das prüft dieser Lauf: gebucht wird über den Weg, gelesen über
+     * den nachgebauten Knoten.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void theControllerFindsItsOwnLoad(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        var device = entity.graph().connector("quarry_output").orElse(null);
+        helper.assertTrue(device != null, "quarry_output fehlt im Graphen");
+        entity.runtime().budget().spend(entity.graph().pathTo(device),
+                dev.devpanda.factorynetwork.network.Bandwidth.PER_ITEM);
+
+        helper.assertValueEqual(entity.bandwidthUsed(),
+                dev.devpanda.factorynetwork.network.Bandwidth.PER_ITEM,
+                "der Controller findet seinen eigenen Knoten nicht wieder");
         helper.succeed();
     }
 

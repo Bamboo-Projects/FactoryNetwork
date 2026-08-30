@@ -66,16 +66,16 @@ und man sieht einem großen Netz an, dass es groß ist.
 
 ## Die Aufgaben
 
-- [ ] **1. Der Controller kennt seine Grenze.** `Bandwidth.at` gibt für ihn
+- [x] **1. Der Controller kennt seine Grenze.** `Bandwidth.at` gibt für ihn
       nicht mehr `UNLIMITED`, sondern eine Zahl, die aus der Zahl der Anbauten
       wächst.
-- [ ] **2. Der Weg zum Controller zählt.** `TickBudget` behandelt ihn wie
+- [x] **2. Der Weg zum Controller zählt.** `TickBudget` behandelt ihn wie
       jedes andere Wegstück — er *ist* eines, das war die Fiktion.
-- [ ] **3. Der Anbau hebt sie.** Prüflauf: Ein Netz mit zwei Anbauten trägt
+- [x] **3. Der Anbau hebt sie.** Prüflauf: Ein Netz mit zwei Anbauten trägt
       mehr als eines ohne.
-- [ ] **4. Man sieht es.** Der Kopf des Netzwerk-Reiters zeigt die Auslastung
+- [x] **4. Man sieht es.** Der Kopf des Netzwerk-Reiters zeigt die Auslastung
       des Controllers — dort, wo schon der Durchsatz steht.
-- [ ] **5. Der Analysator nennt den Engpass.** „Der Controller ist die
+- [x] **5. Der Analysator nennt den Engpass.** „Der Controller ist die
       Engstelle, nicht das Kabel" ist die Auskunft, die man beim Ausbauen
       braucht.
 
@@ -87,3 +87,21 @@ sieht einem großen Netz an, dass es groß ist.
 
 Ein Steckplatz am Controller wäre die dritte Ausbaumechanik neben Anbau und
 Ausbaukarten. **Zwei sind schon eine mehr, als man erklären möchte.**
+
+## Was dabei herauskam
+
+**Neue Mechanik brauchte es keine — aber der Controller fehlte im Weg.**
+`pathOf` sammelte nur Kabel, Router und Gateway; der Controller war die
+Wurzel und stand auf keinem Pfad. Ohne ihn dort hätte `Bandwidth.at` die
+schönste Zahl liefern können, und das Budget hätte sie nie gesehen.
+
+Seit er darauf steht, fällt Variante A von selbst heraus: Alle Wege teilen
+sich diesen einen Knoten, also wird an der Grenze alles langsamer.
+
+**Ein Prüflauf sicherte das Gegenteil zu.** „Der Controller begrenzt gar
+nichts: Er ist Ziel, nicht Strecke." Er ist beides.
+
+**Drei Prüfläufe halten es jetzt fest:** dass der Controller auf jedem Weg
+liegt, dass zwei Anbauten die Grenze heben, und dass er seinen eigenen
+Knoten im Budget wiederfindet — ein nachgebauter Knoten, der nur fast
+derselbe ist, liefert stumm eine Null.

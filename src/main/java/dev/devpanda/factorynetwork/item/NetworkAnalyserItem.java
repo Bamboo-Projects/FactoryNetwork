@@ -76,6 +76,17 @@ public class NetworkAnalyserItem extends Item {
      * wo man davorsteht.
      */
     private static Component deviceLine(Level level, BlockPos pos) {
+        // <b>Der Controller zuerst.</b> Seit dem 30.08. ist er die Stelle,
+        // durch die alles geht — und damit die erste, die eng wird. Das ist
+        // die Auskunft, die man beim Ausbauen braucht: Klemmt es am Kabel
+        // oder am Controller?
+        if (level.getBlockEntity(pos) instanceof ControllerBlockEntity here) {
+            return Component.translatable(
+                    "message.factorynetwork.analyser.controller",
+                    dev.devpanda.factorynetwork.network.Bandwidth.usage(
+                            here.bandwidthUsed(), here.bandwidth()),
+                    here.extensionCount());
+        }
         // Über Connectors und nicht über die BlockEntity: An dieser Stelle
         // kann ein Connectorblock stehen oder ein Kabel mit einem Anschluss.
         // Sitzen mehrere daran, gibt es hier keine Auskunft — welcher gemeint
