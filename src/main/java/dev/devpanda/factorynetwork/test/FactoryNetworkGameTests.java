@@ -2273,6 +2273,68 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    /**
+     * <b>Jeder Block überlebt sein eigenes Update-Paket.</b>
+     *
+     * <p>Wenn ein Block gesetzt wird, schickt der Server ein
+     * {@code ClientboundBlockEntityDataPacket} mit dem, was
+     * {@code getUpdateTag} hergibt, und der Client liest es mit
+     * {@code loadAdditional}. Passen die beiden nicht zusammen — schreibt das
+     * eine ein Feld nicht, das das andere bedingungslos liest —, wirft der
+     * Client beim Lesen und <b>fliegt aus der Welt</b>: „Network Protocol
+     * Error", mitten im Bauen.
+     *
+     * <p>Genau das tat die Presse. Ihr {@code getUpdateTag} ließ die Energie
+     * weg, ihr {@code loadAdditional} las sie ohne Nachfrage, und NeoForge
+     * antwortet auf ein fehlendes Tag mit einer Ausnahme.
+     *
+     * <p>Deshalb prüft dieser Lauf <b>alle</b> Blöcke der Mod und nicht die
+     * eine: Der Fehler ist nicht in der Presse zuhause, sondern in dem
+     * Abstand zwischen zwei Methoden, den jeder neue Block wieder aufmachen
+     * kann.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void everyBlockSurvivesItsOwnUpdateTag(GameTestHelper helper) {
+        var registries = helper.getLevel().registryAccess();
+        List<net.minecraft.world.level.block.Block> blocks = List.of(
+                FnBlocks.PRESS.get(), FnBlocks.BURNER.get(), FnBlocks.CABLE.get(),
+                FnBlocks.DENSE_CABLE.get(), FnBlocks.CONTROLLER.get(),
+                FnBlocks.CONTROLLER_EXTENSION.get(), FnBlocks.DISPLAY.get(),
+                FnBlocks.GATEWAY.get(), FnBlocks.MAST.get(), FnBlocks.ROUTER.get(),
+                FnBlocks.DRIVE.get(), FnBlocks.RACK.get(), FnBlocks.FABRICATOR.get(),
+                FnBlocks.BRIDGE.get(), FnBlocks.TERMINAL.get());
+        BlockPos at = new BlockPos(1, 1, 1);
+        int checked = 0;
+        for (var block : blocks) {
+            String name = net.minecraft.core.registries.BuiltInRegistries.BLOCK
+                    .getKey(block).getPath();
+            helper.setBlock(at, block);
+            // Über die Welt und nicht über helper.getBlockEntity: Das meldet
+            // einen Fehlschlag, wo hier ein Weiterspringen richtig ist.
+            var entity = helper.getLevel().getBlockEntity(helper.absolutePos(at));
+            if (entity == null) {
+                // Ein Block ohne BlockEntity verschickt auch keins.
+                continue;
+            }
+            try {
+                // Genau der Weg des Clients: das eigene Update-Paket lesen.
+                entity.handleUpdateTag(entity.getUpdateTag(registries), registries);
+                checked++;
+            } catch (RuntimeException broken) {
+                helper.fail(name + " überlebt sein eigenes Update-Paket nicht: "
+                        + broken, at);
+                return;
+            }
+            helper.setBlock(at, Blocks.AIR);
+        }
+        // Sonst wäre der Lauf grün, weil er fast nichts angefasst hat: Ein
+        // Block, den setBlock nicht mit seiner BlockEntity bestückt, fällt
+        // oben stillschweigend durch.
+        helper.assertTrue(checked >= 12,
+                "nur " + checked + " Blöcke geprüft — der Lauf misst zu wenig");
+        helper.succeed();
+    }
+
     /** Ein Programm mit await in if in while — die Vorlage der Ablauf-Tests. */
     private static final String COUNTING_PROGRAM = """
             event Takt(nummer: Int)

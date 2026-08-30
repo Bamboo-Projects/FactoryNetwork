@@ -264,7 +264,14 @@ public class PressBlockEntity extends BlockEntity
         super.loadAdditional(tag, registries);
         items.clear();
         ContainerHelper.loadAllItems(tag, items, registries);
-        energy.deserializeNBT(registries, tag.get("Energy"));
+        // Nur wenn es dasteht: Das Update-Paket an den Client trägt die
+        // Energie nicht mit — sie steht in der ContainerData des Menüs, und
+        // die Anzeige braucht sie im Blockzustand nicht. NeoForge antwortet
+        // auf ein fehlendes Tag aber mit einer Ausnahme, und die kostet den
+        // Spieler die Verbindung, sobald jemand eine Presse setzt.
+        if (tag.contains("Energy")) {
+            energy.deserializeNBT(registries, tag.get("Energy"));
+        }
         progress = tag.getInt("Progress");
         required = tag.getInt("Required");
     }
