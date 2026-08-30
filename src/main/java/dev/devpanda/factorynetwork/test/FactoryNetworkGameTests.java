@@ -2217,6 +2217,62 @@ public final class FactoryNetworkGameTests {
                 .thenSucceed();
     }
 
+    /**
+     * Eine Flüssigkeit mit Datenkomponenten kommt aus keinem Tank heraus.
+     *
+     * <p>Weder Dupe noch Verlust — es passiert schlicht nichts, und genau das
+     * ist das Unangenehme: Der Worker meldet „nichts zu tun" an einem vollen
+     * Tank, und niemand kann daran ablesen, woran es liegt.
+     *
+     * <p><b>Woran es liegt:</b> Der Aufrufer baut die Anfrage aus der Sorte neu
+     * — {@code new FluidStack(inside.getFluid(), n)} —, und dabei bleiben die
+     * Komponenten liegen. Ein Tank vergleicht mit
+     * {@code isSameFluidSameComponents} und antwortet auf eine Anfrage, die er
+     * nicht wiedererkennt, mit nichts.
+     *
+     * <p>Dieser Prüflauf hält den Ist-Zustand fest <b>und die Behebung
+     * daneben</b>: Dieselbe Anfrage mit {@code copyWithAmount} geht durch. Was
+     * dagegen spricht, sie einfach zu bauen, steht in
+     * {@code naechste-schritte.md} — der Netzspeicher ist nach Sorte
+     * verschlüsselt und kann Komponenten nicht halten, die Strecke ins Lager
+     * bliebe also zu. Beides zusammen ist eine Entscheidung und keine
+     * Fehlerbehebung.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void fluidWithComponentsStaysWhereItIs(GameTestHelper helper) {
+        var source = new net.neoforged.neoforge.fluids.capability.templates.FluidTank(2000);
+        var broth = new net.neoforged.neoforge.fluids.FluidStack(
+                net.minecraft.world.level.material.Fluids.WATER, 1000);
+        broth.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME,
+                net.minecraft.network.chat.Component.literal("Sud"));
+        source.fill(broth,
+                net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+        var target = new net.neoforged.neoforge.fluids.capability.templates.FluidTank(2000);
+
+        // Eine Kopie: getFluidInTank liefert bei FluidTank das Innenleben, und
+        // das ändert sich gleich unter der Hand.
+        var inside = source.getFluidInTank(0).copy();
+        helper.assertTrue(!inside.getComponentsPatch().isEmpty(),
+                "der Tank hält die Komponenten nicht — dann prüft das hier nichts");
+
+        // So fragt der Aufrufer heute.
+        var stripped = dev.devpanda.factorynetwork.runtime.Handoffs.fluid(source, target,
+                new net.neoforged.neoforge.fluids.FluidStack(inside.getFluid(), 1000));
+        helper.assertValueEqual(stripped.moved(), 0L,
+                "eine Anfrage ohne Komponenten darf den Tank nicht leeren");
+        helper.assertValueEqual(millibucketsIn(target), 0L, "und das Ziel bleibt leer");
+        helper.assertValueEqual(millibucketsIn(source), 1000L, "die Brühe steht noch da");
+
+        // Und so ginge es: mit dem, was wirklich drinsteht.
+        var faithful = dev.devpanda.factorynetwork.runtime.Handoffs.fluid(source, target,
+                inside.copyWithAmount(1000));
+        helper.assertValueEqual(faithful.moved(), 1000L,
+                "mit den Komponenten geht dieselbe Anfrage durch");
+        helper.assertTrue(!target.getFluidInTank(0).getComponentsPatch().isEmpty(),
+                "und kommt mit ihnen an");
+        helper.succeed();
+    }
+
     /** Ein Programm mit await in if in while — die Vorlage der Ablauf-Tests. */
     private static final String COUNTING_PROGRAM = """
             event Takt(nummer: Int)

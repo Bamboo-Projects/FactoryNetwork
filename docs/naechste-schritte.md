@@ -75,8 +75,22 @@ viel dasteht, statt einer, die jeden Tick nachwächst.
 Datenkomponenten lässt sich zwischen zwei Tanks gar nicht bewegen. Der
 Probelauf fragt mit einer Sorte ohne Komponenten, und ein Tank, der genau
 vergleicht, antwortet darauf mit nichts — stumm, der Worker meldet „nichts zu
-tun". Zu beheben wäre es an zwei Zeilen; es ändert aber, was die Mod kann,
-und der Weg über den Netzspeicher würde die Komponenten weiterhin abstreifen.
+tun". `fluidWithComponentsStaysWhereItIs` hält es fest und zeigt die Behebung
+daneben: `copyWithAmount` statt `new FluidStack(getFluid(), n)`, an vier
+Stellen (`WorkerRuntime:1275` und `:1332`, `WorldHost:657` und `:676`).
+
+**Warum es trotzdem nicht gebaut ist:** Nur die Strecke Tank → Tank ließe sich
+so schließen. `NetworkFluids` ist eine Map nach Sorte und kann Komponenten
+nicht halten — auf dem Weg ins Lager würde aus „passiert nichts" ein
+„Komponenten verschwinden still", und das ist schlechter. Das Ergebnis wäre
+eine Mod, in der solche Flüssigkeiten zwischen Tanks fließen, aber nicht ins
+Lager kommen. Eine Entscheidung, keine Fehlerbehebung.
+
+**Wie dringend:** Gemessen am 30.08. im laufenden Spiel — von 31 Items mit
+Flüssigkeits-Fähigkeit trägt keines Komponenten. Das ist ein Indikator und
+kein Beweis: Gemessen wurde der Auslieferungszustand der Items, und
+Komponenten können zur Laufzeit entstehen (ein Trank-Fluid etwa). Ohne eine
+Mod im Pack, die so etwas baut, ist der Punkt theoretisch.
 
 ---
 
@@ -129,4 +143,4 @@ Aus den letzten Runden, ungeprüft:
 
 ## Stand der Prüfläufe
 
-354 GameTests grün, zuletzt am 30.08. um 13:12.
+355 GameTests grün, zuletzt am 30.08. um 15:03.
