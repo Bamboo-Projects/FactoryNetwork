@@ -198,6 +198,19 @@ public final class WorldHost implements Interpreter.Host {
         this.crafting = accept;
     }
 
+    /**
+     * Wohin das geht, was nirgends unterkam. Setzt der Controller.
+     *
+     * <p><b>Ohne diesen Empfänger stirbt die Ware mit dem Fehler.</b> Wer
+     * aus einer Maschine nimmt, die nicht zurücknimmt, hält den Rest in der
+     * Hand — und ein geworfener {@link ScriptError} nimmt ihn mit.
+     */
+    public void setHoldBack(java.util.function.Consumer<ItemStack> sink) {
+        this.holdBack = sink;
+    }
+
+    private java.util.function.Consumer<ItemStack> holdBack;
+
     public WorldHost(Level level, FactoryGraph graph,
             dev.devpanda.factorynetwork.network.NetworkStores stores,
             java.util.Map<String, Value> globals, Runnable onGlobalChanged) {
@@ -744,6 +757,12 @@ public final class WorldHost implements Interpreter.Host {
             if (rest > 0) {
                 ItemStack zurueck = insert(source, taken.copyWithCount((int) rest));
                 if (!zurueck.isEmpty()) {
+                    // Erst in Verwahrung geben, dann werfen. Andersherum
+                    // nähme der Fehler die Ware mit — genau der stille
+                    // Verlust, gegen den die Verwahrung gebaut ist.
+                    if (holdBack != null) {
+                        holdBack.accept(zurueck);
+                    }
                     throw new ScriptError("Der Speicher ist voll.",
                             "Ein Laufwerk mit freier Zelle schafft Platz.");
                 }

@@ -7486,6 +7486,55 @@ public final class FactoryNetworkGameTests {
      * nichts heraus.
      */
     /**
+     * Bei vollem Lager wartet die Fertigung, statt die Verwahrung zu füllen.
+     *
+     * <p><b>Sonst wäre die Verwahrung schlimmer als der Boden.</b> Ein
+     * Auftrag, der bei vollem Lager weiterproduziert, füllt sie ohne Ende —
+     * jeder Stapel eine Zeile im Protokoll, alles im Spielstand. Der Boden
+     * hatte wenigstens eine Selbstbegrenzung: nach fünf Minuten war es weg.
+     *
+     * <p>Die richtige Antwort ist keine von beiden, sondern der Rückstau:
+     * Der Auftrag wartet, die Zutaten bleiben liegen.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void afullStorageStopsCraftingInsteadOfPilingUp(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        helper.setBlock(controller.east().above(), FnBlocks.FABRICATOR.get());
+        driveWithCell(helper, controller.above(),
+                dev.devpanda.factorynetwork.storage.CellTier.K1);
+        entity.rebuildNetwork();
+
+        // Acht Arten sind das Limit einer 1k-Zelle, und die Bretter sind
+        // eine davon: Nach der Entnahme bleiben Bretter übrig, der Artenplatz
+        // bleibt belegt — die Kiste wäre die neunte Art und passt nicht.
+        entity.storage().insert(new ItemStack(Items.OAK_PLANKS, 64));
+        for (Item art : List.of(Items.COBBLESTONE, Items.DIRT, Items.STONE,
+                Items.SAND, Items.GRAVEL, Items.GLASS, Items.BRICK)) {
+            entity.storage().insert(new ItemStack(art, 8));
+        }
+
+        entity.requestCraft(Items.CHEST, 1);
+
+        helper.startSequence()
+                .thenIdle(60)
+                .thenExecute(() -> {
+                    // Die eigentliche Zusicherung: Es wurde nichts angefangen.
+                    helper.assertValueEqual(entity.storage().count(Items.OAK_PLANKS), 64L,
+                            "die Zutaten sind weg, obwohl nichts entstehen konnte");
+                    helper.assertTrue(entity.held().isEmpty(),
+                            "die Fertigung hat die Verwahrung gefüllt");
+                    helper.assertValueEqual(entity.storage().count(Items.CHEST), 0L,
+                            "eine Kiste ist entstanden, obwohl kein Platz war");
+                    var jobs = entity.craftingJobs();
+                    helper.assertValueEqual(jobs.size(), 1, "ein Auftrag");
+                    helper.assertValueEqual(jobs.get(0).status().name(), "WAITING",
+                            "der Auftrag sagt nicht, dass er wartet");
+                })
+                .thenSucceed();
+    }
+
+    /**
      * Verwahrtes übersteht das Speichern.
      *
      * <p><b>Sonst käme der Verlust durch die Hintertür zurück:</b> Ein Chunk,

@@ -94,6 +94,17 @@ weil sie nur zurücklegt, was sie genommen hat. Falsch: Sie lagert
 `if (!program.workers().isEmpty())` — ein Netz ohne Worker hätte Verwahrtes
 nie zurückgegeben. Der Prüflauf hat es gefunden.
 
+**Zwei Löcher blieben nach dem ersten Durchgang offen** und sind jetzt zu:
+
+- **`move` warf die Ware mit dem Fehler weg.** Der Vorab-Check saß, aber
+  darunter stand unverändert: Rest zurück zur Quelle, nimmt sie nicht, dann
+  `ScriptError` — und der Rest starb in der Hand. Der WorldHost gibt jetzt
+  erst in Verwahrung, dann fliegt der Fehler.
+- **Die Fertigung füllte die Verwahrung ohne Ende.** Das war schlimmer als der
+  Boden: Der hatte wenigstens eine Selbstbegrenzung. Jetzt staut sie zurück —
+  der Auftrag wartet, die Zutaten bleiben liegen, und was in einer Maschine
+  fertig ist, bleibt darin, bis Platz da ist.
+
 ## Was ich dabei nicht angefasst habe
 
 **Die popResource-Aufrufe beim Blockabbau** (Kabel, Laufwerk, Presse,

@@ -950,10 +950,27 @@ public class ControllerBlockEntity extends BlockEntity {
         step.consumed().forEach(storage::extract);
         long left = storage.insert(step.result(), step.yield());
         if (left > 0) {
-            // Der Speicher ist voll. Das Ergebnis wird verwahrt, nicht
-            // geworfen — es ist neu erzeugte Ware, und die soll niemand auf
-            // dem Boden suchen müssen.
-            holdBack(new ItemStack(step.result(), (int) left));
+            // <b>Dann hat der Schritt nicht stattgefunden.</b> Das Ergebnis
+            // kommt wieder heraus, die Zutaten gehen zurück, und der Auftrag
+            // wartet. Verwahren wäre hier falsch: Eine Fertigung, die bei
+            // vollem Lager weiterläuft, füllt die Verwahrung ohne Ende.
+            //
+            // <b>Warum nicht vorher fragen?</b> Ein Rezept, das neun Steine
+            // zu einem Block presst, schafft sich beim Entnehmen den Platz
+            // für sein eigenes Ergebnis. Wer vorher fragt, hielte es bei
+            // vollem Lager für immer an.
+            storage.extract(step.result(), step.yield() - left);
+            step.consumed().forEach((item, amount) -> {
+                long rest = storage.insert(item, amount);
+                if (rest > 0) {
+                    // Kann eigentlich nicht sein — der Platz ist gerade erst
+                    // frei geworden. Wenn doch, dann verwahrt.
+                    holdBack(new ItemStack(item, (int) rest));
+                }
+            });
+            job.note(dev.devpanda.factorynetwork.crafting.CraftingJob.Status.WAITING,
+                    "der Speicher ist voll");
+            return false;
         }
         if (step.result() == job.target()) {
             job.produced((int) step.yield());
@@ -1356,9 +1373,19 @@ public class ControllerBlockEntity extends BlockEntity {
                     running.device() + " ist nicht erreichbar");
             return false;
         }
+        // Erst fragen, dann holen. Was nicht ins Lager passt, bleibt in der
+        // Maschine — das ist der natürliche Rückstau: Sie stockt, statt dass
+        // sich vor dem Controller ein Berg auftürmt.
+        long fits = storage.room(running.result(), running.left());
+        if (fits <= 0) {
+            job.note(dev.devpanda.factorynetwork.crafting.CraftingJob.Status.WAITING,
+                    "der Speicher ist voll");
+            return false;
+        }
+        long wanted = Math.min(running.left(), fits);
         long got = declared
-                ? extractAll(handler, running.result(), running.left())
-                : handler.extractItem(station.outputSlot(), (int) running.left(), false)
+                ? extractAll(handler, running.result(), wanted)
+                : handler.extractItem(station.outputSlot(), (int) wanted, false)
                         .getCount();
         if (got <= 0) {
             job.note(dev.devpanda.factorynetwork.crafting.CraftingJob.Status.WAITING,
@@ -1368,7 +1395,8 @@ public class ControllerBlockEntity extends BlockEntity {
         }
         long rest = storage.insert(running.result(), got);
         if (rest > 0) {
-            // Dasselbe wie beim Schritt darüber: verwahren statt werfen.
+            // Das Netz darunter: gefragt wurde vorher, aber eine Kiste hinter
+            // einem Speicherbus kann sich dazwischen geändert haben.
             holdBack(new ItemStack(running.result(), (int) rest));
         }
         long done = running.done() + got;
@@ -2619,6 +2647,9 @@ public class ControllerBlockEntity extends BlockEntity {
         host.setLogSink(this::add);
         host.setPower(power);
         host.setDeviceFilled(this::noteFilled);
+        // Damit ein move, das an einer bockigen Maschine scheitert, die Ware
+        // nicht mit dem Fehler mitnimmt.
+        host.setHoldBack(this::holdBack);
         // Dieselben Gruppen wie die Worker, samt ihrem Zeiger für round_robin.
         host.setGroups(runtime.groups());
         // Bestellungen gehen an dieselbe Liste, die auch der Reiter zeigt.
