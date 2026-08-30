@@ -117,17 +117,20 @@ class MachineLayoutTest {
         String json = model("press_ram");
         assertTrue(json.contains("\"elements\":["), "press_ram.json hat keine Kästen");
 
-        int rest = 16 - 3 - 2;          // Ruhelage: unter der Decke
-        int anvil = 3 + 2;              // Oberkante des Ambosses
+        // Die Zahlen stammen aus MachineLayouts: Deckel einen Blockpixel
+        // unter der Oberkante, darunter die Deckplatte, darunter hängt der
+        // Stempel. Der Amboss steht auf dem Sockel.
+        int rest = 16 - 1 - 2 - 4;      // Ruhelage: unter der Decke des Maules
+        int anvil = 2 + 2;              // Oberkante des Ambosses
         assertEquals(rest - anvil, MachineLayouts.pressStroke(),
                 "der Weg des Stempels passt nicht zu Decke und Amboss");
-        assertTrue(json.contains("\"from\":[4," + rest + ",1]"),
+        assertTrue(json.contains("\"from\":[4," + rest + ",2]"),
                 "der Stempel hängt nicht unter der Decke");
 
         String body = model("press");
         assertTrue(body.contains("\"to\":[12," + anvil + ",12]"),
                 "der Amboss steht nicht dort, wo der Stempel ihn trifft");
-        assertFalse(body.contains("\"from\":[4," + rest + ",1]"),
+        assertFalse(body.contains("\"from\":[4," + rest + ",2]"),
                 "der Stempel steht auch im Gehäusemodell — dann steht er still"
                         + " und bewegt sich gleichzeitig");
     }

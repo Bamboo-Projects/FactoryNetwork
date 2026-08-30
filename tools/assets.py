@@ -917,45 +917,109 @@ def terminal_model():
 # Die Zahlen der Front stammen aus `tools/textures.py`: Dort liegt der
 # Arbeitsraum zwischen Texturpixel 10 und 54, also zwischen Blockpixel 2,5 und
 # 13,5. Drei Blockpixel Wand fangen das.
-PRESS_WALL = 3        # Stärke der Wände ringsum
+# ---- Die Presse ----------------------------------------------------------
+#
+# <b>Ein Portalrahmen und kein Kasten mit Loch.</b> Vorher waren es sechs
+# Platten, deren Außenkontur exakt ein Würfel war: Die Form zeigte nach innen,
+# und aus fünf Blöcken Entfernung gewinnt immer die Außenkontur.
+#
+# Drei Dinge ändern das, und alle drei sind an fremden Maschinen abgemessen:
+#
+# 1. <b>Der Rahmen steht vor dem Gehäuse.</b> Zwei Pfeiler und ein Querträger
+#    bei z=0..2, das Gehäuse dahinter ab z=2. Von der Seite entsteht dadurch
+#    eine Stufe, von oben ein Maul statt einer glatten Fläche.
+#
+# 2. <b>Sockel und Deckel stehen über.</b> Der Gehäusekern ist einen Blockpixel
+#    schmaler als die Platten darüber und darunter. Das erzeugt rundum eine
+#    Schattenfuge — bei Create macht das ein um 0,95 Pixel eingerückter Kern,
+#    was hier nicht geht: Die Trefferfläche steht in Java als ganze Zahlen.
+#    Überstehende Platten erreichen dasselbe mit ganzen Zahlen.
+#
+# 3. <b>Es gibt Kleinteile.</b> Kühlrippen, Zylinder, ein Klemmkasten. Die
+#    Presse hatte davor sechs Kästen und keinen einzigen davon; Mekanisms
+#    Maschinen bestehen zu 56 bis 84 Prozent aus solchen Teilen. Ohne sie
+#    sieht auch eine gute Silhouette unfertig aus.
+PRESS_BASE = 2        # Höhe der Boden- und der Deckplatte
+PRESS_PORTAL = 2      # Tiefe des Rahmens, der vor dem Gehäuse steht
+PRESS_PILLAR = 4      # Breite seiner Pfeiler
+PRESS_INSET = 1       # wie weit der Kern hinter den Platten zurückbleibt
+PRESS_WALL = 3        # Stärke der Seitenwände
 PRESS_BACK = 4        # Stärke der Rückwand
-PRESS_ANVIL = 2       # Höhe des Ambosses
-PRESS_TOOL_IN = 1     # wie weit Amboss und Stempel hinter der Blockkante liegen
-PRESS_TOOL_SIDE = 1   # und wie weit sie schmaler sind als der Hohlraum
+PRESS_ANVIL = 2       # Höhe des Ambosses über der Bodenplatte
+PRESS_HEAD = 3        # Höhe des Querträgers über dem Maul
+PRESS_CAP = 1         # wie tief der Deckel liegt, damit die Zylinder
+                      # darauf Platz haben und im Block bleiben
+PRESS_RAM = 4         # Höhe des Stempels
 
 
 def press_boxes():
-    """Die Kästen der Presse — das Gehäuse, ohne den beweglichen Stempel."""
-    wall, back = PRESS_WALL, PRESS_BACK
-    anvil, inset = PRESS_ANVIL, PRESS_TOOL_IN
+    """Die Kästen der Presse — Rahmen, Gehäuse und Kleinteile.
+
+    Ohne den Stempel: Der bewegt sich und gehört dem Renderer.
+
+    <b>Dieselben Kästen stehen in {@code MachineLayouts.press()}</b>, und ein
+    Prüflauf hält beide zusammen. Auch die Kleinteile: Was man sieht, greift
+    man auch — sonst zielt der Spieler auf eine Kühlrippe und trifft Luft.
+
+    <b>Nichts ragt aus dem Block.</b> Die Zylinderköpfe säßen gern oben drauf,
+    aber Minecraft beleuchtet Geometrie außerhalb von 0..16 falsch. Also liegt
+    stattdessen der Deckel einen Blockpixel tiefer, und sie sitzen in der
+    Mulde, die dadurch entsteht.
+    """
+    base, portal = PRESS_BASE, PRESS_PORTAL
+    pillar, inset = PRESS_PILLAR, PRESS_INSET
+    back, anvil = PRESS_BACK, PRESS_ANVIL
+    lid = 16 - PRESS_CAP          # Oberkante des Deckels
+    deck = lid - base             # seine Unterkante, und die Decke des Maules
     outer = {"north": "front", "*": "side"}
     return [
-        # Die beiden Seitenwände, über die volle Tiefe.
-        ([0, 0, 0], [wall, 16, 16], outer),
-        ([16 - wall, 0, 0], [16, 16, 16], outer),
-        # Boden und Decke dazwischen.
-        ([wall, 0, 0], [16 - wall, wall, 16], outer),
-        ([wall, 16 - wall, 0], [16 - wall, 16, 16], outer),
-        # Die Rückwand schließt den Hohlraum. Ohne sie sähe man durch den
-        # Block hindurch — und griffe beim Zielen daneben.
-        ([wall, wall, 16 - back], [16 - wall, 16 - wall, 16], {"*": "side"}),
-        # Der Amboss: fest, auf dem Boden, einen Blockpixel hinter der Kante.
-        ([wall + PRESS_TOOL_SIDE, wall, inset],
-         [16 - wall - PRESS_TOOL_SIDE, wall + anvil, 16 - back],
-         {"north": "front", "*": "side"}),
+        # Sockel und Deckel, über die volle Breite. Ihr Überstand über den
+        # Kern ist die Schattenfuge.
+        ([0, 0, portal], [16, base, 16], outer),
+        ([0, deck, portal], [16, lid, 16], outer),
+        # Der Rahmen davor: zwei Pfeiler und ein Querträger. Unten bleibt er
+        # offen — dort schaut das Pressbett heraus.
+        ([0, 0, 0], [pillar, lid, portal], outer),
+        ([16 - pillar, 0, 0], [16, lid, portal], outer),
+        ([pillar, lid - PRESS_HEAD, 0], [16 - pillar, lid, portal], outer),
+        # Der Gehäusekern, einen Blockpixel schmaler als die Platten.
+        ([inset, base, portal], [inset + PRESS_WALL, deck, 16], {"*": "side"}),
+        ([16 - inset - PRESS_WALL, base, portal], [16 - inset, deck, 16],
+         {"*": "side"}),
+        ([inset + PRESS_WALL, base, 16 - back], [16 - inset - PRESS_WALL, deck, 16],
+         {"*": "side"}),
+        # Das Pressbett zieht bis unter den Rahmen vor.
+        ([pillar, base, 1], [16 - pillar, base + anvil, 16 - back], outer),
+        # Kühlrippen, je zwei links und rechts. Sie sitzen in der Fuge, die
+        # der Überstand der Platten offenlässt, und füllen sie halb.
+        ([0, 4, 4], [inset, 7, 14], {"*": "side"}),
+        ([0, 8, 4], [inset, 11, 14], {"*": "side"}),
+        ([16 - inset, 4, 4], [16, 7, 14], {"*": "side"}),
+        ([16 - inset, 8, 4], [16, 11, 14], {"*": "side"}),
+        # Der Klemmkasten hinten oben: Da kommt der Strom herein.
+        ([5, 8, 15], [11, 11, 16], {"*": "side"}),
+        # Zwei Zylinderköpfe in der Mulde über dem Deckel, dazwischen die
+        # Leitung.
+        ([5, lid, 6], [7, 16, 9], {"*": "side"}),
+        ([9, lid, 6], [11, 16, 9], {"*": "side"}),
+        ([7, lid, 7], [9, 16, 8], {"*": "side"}),
+        # Eine schmale Leiste unter dem Querträger.
+        ([pillar, lid - PRESS_HEAD - 1, 0], [16 - pillar, lid - PRESS_HEAD, portal],
+         {"*": "side"}),
     ]
 
 
 def press_ram_boxes():
     """Der Stempel — das eine Teil, das sich bewegt.
 
-    Er hängt in Ruhe unter der Decke. Der Renderer schiebt ihn nach unten,
-    solange die Presse arbeitet, und bis auf den Amboss, wenn sie fertig ist.
+    Er hängt in Ruhe unter der Decke des Maules und fährt bis auf das
+    Pressbett. Wie weit das ist, rechnet {@code MachineLayouts.pressStroke()};
+    hier steht nur, wo er anfängt.
     """
-    wall, inset = PRESS_WALL, PRESS_TOOL_IN
+    deck = 16 - PRESS_CAP - PRESS_BASE
     return [
-        ([wall + PRESS_TOOL_SIDE, 16 - wall - PRESS_ANVIL, inset],
-         [16 - wall - PRESS_TOOL_SIDE, 16 - wall, 16 - PRESS_BACK],
+        ([PRESS_PILLAR, deck - PRESS_RAM, PRESS_PORTAL],
+         [16 - PRESS_PILLAR, deck, 16 - PRESS_BACK],
          {"north": "front", "*": "side"}),
     ]
 

@@ -29,44 +29,96 @@ public final class MachineLayouts {
      */
     private static final int BURNER_DEPTH = 3;
 
-    /** Stärke der Wände der Presse. */
+    /** Höhe der Boden- und der Deckplatte der Presse. */
+    private static final int BASE = 2;
+
+    /** Tiefe des Rahmens, der vor ihrem Gehäuse steht. */
+    private static final int PORTAL = 2;
+
+    /** Breite seiner Pfeiler. */
+    private static final int PILLAR = 4;
+
+    /** Höhe seines Querträgers. */
+    private static final int HEAD = 3;
+
+    /**
+     * Wie tief der Deckel unter der Blockoberkante liegt.
+     *
+     * <p>Damit die Zylinderköpfe darauf Platz haben, ohne aus dem Block zu
+     * ragen. Geometrie außerhalb von 0 bis 16 beleuchtet Minecraft falsch —
+     * die Mulde ist der Weg, trotzdem etwas oben stehen zu haben.
+     */
+    private static final int CAP = 1;
+
+    /** Höhe des Stempels. */
+    private static final int RAM = 4;
+
+    /**
+     * Wie weit der Gehäusekern hinter den Platten zurückbleibt.
+     *
+     * <p><b>Das ist die Schattenfuge</b>, und sie ist der billigste Griff der
+     * ganzen Form: Ein Kern, der bündig mit Sockel und Deckel abschließt,
+     * liest sich als eine Fläche. Einen Blockpixel zurückgesetzt, liest er
+     * sich als Gehäuse zwischen zwei Platten.
+     */
+    private static final int INSET = 1;
+
+    /** Stärke der Seitenwände der Presse. */
     private static final int WALL = 3;
 
     /** Stärke ihrer Rückwand. */
     private static final int BACK = 4;
 
-    /** Höhe des Ambosses. */
+    /** Höhe des Ambosses über der Bodenplatte. */
     private static final int ANVIL = 2;
 
-    /** Wie weit Amboss und Stempel hinter der Blockkante liegen. */
-    private static final int TOOL_IN = 1;
-
-    /** Und wie weit sie schmaler sind als der Hohlraum. */
-    private static final int TOOL_SIDE = 1;
-
     /**
-     * Die Presse: ein Gehäuse mit einem Loch darin.
+     * Die Presse: ein Portalrahmen mit einem Gehäuse dahinter.
      *
-     * <p>Zwei Seitenwände, Boden, Decke und eine Rückwand — dazwischen ist
-     * nichts. Vorn ist der Block offen, und was man durch die Öffnung sieht,
-     * ist der Amboss unten und der Stempel darüber.
+     * <p>Vorn stehen zwei Pfeiler und ein Querträger, dahinter sitzt das
+     * Gehäuse zwischen Sockel und Deckel. Unten bleibt der Rahmen offen: Dort
+     * schaut das Pressbett heraus, und dort greift die Maschine.
      *
-     * <p><b>Der Stempel steht nicht in dieser Liste.</b> Er bewegt sich und
-     * ist deshalb ein eigenes Modell, das der {@code PressRenderer}
-     * zeichnet. Für die Trefferfläche zählt er nicht: Man greift nach dem
-     * Gehäuse, nicht nach einem Teil, das gerade woanders steht.
+     * <p><b>Die Kleinteile stehen mit in dieser Liste</b> — Kühlrippen,
+     * Zylinderköpfe, Klemmkasten. Sie kosten ein paar Kästen mehr in der
+     * Trefferfläche und ersparen dem Spieler, auf eine Rippe zu zielen und
+     * Luft zu treffen. Was man sieht, greift man auch.
+     *
+     * <p><b>Der Stempel steht nicht darin.</b> Er bewegt sich und ist deshalb
+     * ein eigenes Modell, das der {@code PressRenderer} zeichnet. Für die
+     * Trefferfläche zählt er nicht: Man greift nach dem Gehäuse, nicht nach
+     * einem Teil, das gerade woanders steht.
      */
     public static List<int[]> press() {
+        int lid = 16 - CAP;
+        int deck = lid - BASE;
         return List.of(
-                new int[] {0, 0, 0, WALL, 16, 16},
-                new int[] {16 - WALL, 0, 0, 16, 16, 16},
-                new int[] {WALL, 0, 0, 16 - WALL, WALL, 16},
-                new int[] {WALL, 16 - WALL, 0, 16 - WALL, 16, 16},
-                // Die Rückwand schließt den Hohlraum. Ohne sie sähe man durch
-                // den Block hindurch und griffe beim Zielen daneben.
-                new int[] {WALL, WALL, 16 - BACK, 16 - WALL, 16 - WALL, 16},
-                new int[] {WALL + TOOL_SIDE, WALL, TOOL_IN,
-                        16 - WALL - TOOL_SIDE, WALL + ANVIL, 16 - BACK});
+                // Sockel und Deckel, über die volle Breite.
+                new int[] {0, 0, PORTAL, 16, BASE, 16},
+                new int[] {0, deck, PORTAL, 16, lid, 16},
+                // Der Rahmen davor.
+                new int[] {0, 0, 0, PILLAR, lid, PORTAL},
+                new int[] {16 - PILLAR, 0, 0, 16, lid, PORTAL},
+                new int[] {PILLAR, lid - HEAD, 0, 16 - PILLAR, lid, PORTAL},
+                // Der Gehäusekern, zurückgesetzt hinter Sockel und Deckel.
+                new int[] {INSET, BASE, PORTAL, INSET + WALL, deck, 16},
+                new int[] {16 - INSET - WALL, BASE, PORTAL, 16 - INSET, deck, 16},
+                new int[] {INSET + WALL, BASE, 16 - BACK, 16 - INSET - WALL, deck, 16},
+                // Das Pressbett zieht bis unter den Rahmen vor.
+                new int[] {PILLAR, BASE, 1, 16 - PILLAR, BASE + ANVIL, 16 - BACK},
+                // Kühlrippen in der Fuge, je zwei links und rechts.
+                new int[] {0, 4, 4, INSET, 7, 14},
+                new int[] {0, 8, 4, INSET, 11, 14},
+                new int[] {16 - INSET, 4, 4, 16, 7, 14},
+                new int[] {16 - INSET, 8, 4, 16, 11, 14},
+                // Der Klemmkasten hinten oben.
+                new int[] {5, 8, 15, 11, 11, 16},
+                // Zwei Zylinderköpfe in der Mulde, dazwischen die Leitung.
+                new int[] {5, lid, 6, 7, 16, 9},
+                new int[] {9, lid, 6, 11, 16, 9},
+                new int[] {7, lid, 7, 9, 16, 8},
+                // Eine schmale Leiste unter dem Querträger.
+                new int[] {PILLAR, lid - HEAD - 1, 0, 16 - PILLAR, lid - HEAD, PORTAL});
     }
 
     /**
@@ -77,7 +129,7 @@ public final class MachineLayouts {
      * beides gemeinsam.
      */
     public static int pressStroke() {
-        return (16 - WALL - ANVIL) - (WALL + ANVIL);
+        return (16 - CAP - BASE - RAM) - (BASE + ANVIL);
     }
 
     /**
