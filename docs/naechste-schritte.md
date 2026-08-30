@@ -25,15 +25,14 @@ Er trägt so viel wie ein dichtes Kabel, jeder Anbau legt die Hälfte dazu.
 Zu sehen im Kopf des Netzwerk-Reiters (mit Grenzlinie in der Kurve) und im
 Analysator, wenn man den Controller anklickt.
 
-### 3. Latenz je Router und ein Kabel statt zwei — fast fertig
+### 3. Latenz je Router und ein Kabel statt zwei — erledigt am 30.08.
 
 **Plan:** `plan-latenz-und-kabel.md`
 
 Latenz je Router steht (verzögert den Start, nicht den Takt), das Kabel trägt
 jetzt 25,6 MB/s, das dichte ist stillgelegt.
 
-**Offen: Der Router zeigt seine Latenz nicht.** Im Fenster und in Jade fehlt
-die Zahl — eine Verzögerung ohne sichtbare Ursache.
+Der Router nennt seine Verzögerung im Fenster und in Jade.
 
 ---
 
@@ -86,4 +85,4 @@ Aus den letzten Runden, ungeprüft:
 
 ## Stand der Prüfläufe
 
-344 GameTests grün, zuletzt am 30.08. um 03:12.
+344 GameTests grün, zuletzt am 30.08. um 03:15.

@@ -80,7 +80,7 @@ sein Netz sauber trennt, zahlt dafür — genau wie in einem echten Netz.
       der Router darauf ist die Verzögerung. Ein Worker beginnt seinen Griff
       um so viele Ticks später. **Prüflauf:** Ein Gerät hinter zwei Routern
       antwortet zwei Ticks später als eines am selben Kabel.
-- [ ] **2. Der Router zeigt seine Latenz.** Im Fenster und in Jade — sonst
+- [x] **2. Der Router zeigt seine Latenz.** Im Fenster und in Jade — sonst
       ist es eine Verzögerung ohne Ursache.
 - [x] **3. Das Kabel wird schneller.** `Bandwidth.THIN` auf den Wert des
       dichten. Eine Zeile.
@@ -121,5 +121,5 @@ Controller: Weder die Quantum-Brücke noch der Controller standen auf dem Weg,
 den das Budget kennt. `Bandwidth.at` kannte beide — gesehen hat das Budget
 sie nie.
 
-**Offen bleibt Aufgabe 2:** Der Router zeigt seine Latenz noch nicht. Jade
-kennt ihn (`compat/jade/RouterInfo`), dort und im Fenster fehlt die Zahl.
+**Alle fünf Aufgaben sind erledigt.** Die Latenz steht im Routerfenster und
+in Jade — eine Verzögerung ohne sichtbare Ursache wäre nur eine Bremse.

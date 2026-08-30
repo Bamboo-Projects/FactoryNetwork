@@ -110,6 +110,15 @@ public class RouterScreen extends AbstractContainerScreen<RouterMenu> {
             graphics.drawString(font, labelOf(aktiv),
                     x + BUTTON_SIZE + 6, y + 4, 0xA8B2AC, false);
         }
+
+        // Unter den Seiten, was der Router kostet: einen Tick. Ohne diese
+        // Zeile wäre die Verzögerung eine Wirkung ohne sichtbare Ursache —
+        // und wer sein Netz sauber trennt, wüsste nicht, wofür er zahlt.
+        graphics.drawString(font, Component.translatable(
+                        "screen.factorynetwork.router.latency",
+                        dev.devpanda.factorynetwork.network.Latency.PER_HOP),
+                leftPos + 9, topPos + ROW_TOP + Direction.values().length * ROW_HEIGHT + 4,
+                0x6E7A72, false);
     }
 
     @Override

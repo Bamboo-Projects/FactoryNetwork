@@ -117,6 +117,13 @@ public enum RouterInfo implements IBlockComponentProvider, IServerDataProvider<B
                             sides)
                     .withStyle(ChatFormatting.GRAY));
         }
+        // Und was er kostet. Filtern braucht Zeit — hier steht die Ursache
+        // zu einer Verzögerung, die man sonst nur spürt.
+        if (!lines.isEmpty()) {
+            tooltip.add(Component.translatable("jade.factorynetwork.router.latency",
+                            dev.devpanda.factorynetwork.network.Latency.PER_HOP)
+                    .withStyle(ChatFormatting.DARK_GRAY));
+        }
     }
 
     /** Wie die Farbe hinter einer Einstellungsnummer heißt. */
