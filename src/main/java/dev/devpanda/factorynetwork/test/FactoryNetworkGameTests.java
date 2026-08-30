@@ -1687,7 +1687,11 @@ public final class FactoryNetworkGameTests {
      * das Ergebnis von {@code extract} liest oder nur hofft.
      */
     private static void furnaceStore(GameTestHelper helper, BlockPos controller) {
-        BlockPos below = controller.east().above();
+        furnaceStoreAt(helper, controller.east().above());
+    }
+
+    /** Derselbe Ofen, aber an einer gewählten Stelle des Kabels. */
+    private static void furnaceStoreAt(GameTestHelper helper, BlockPos below) {
         connector(helper, below, Direction.UP);
         helper.setBlock(below.above(), Blocks.FURNACE);
         name(helper, below, "ofen");
@@ -2112,6 +2116,58 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(done.stranded(), 500L,
                 "und was nicht zurückkam, muss dastehen");
         helper.succeed();
+    }
+
+    /**
+     * <b>Die Fertigung darf nicht bauen, was sie nicht bezahlt hat.</b>
+     *
+     * <p>Der Schritt prüft den Bestand, entnimmt und legt das Ergebnis ein.
+     * Zwei davon sind Anzeigen: Ein Speicherbus zählt fremde Inventare mit,
+     * und die dürfen ihren Inhalt behalten. Bleibt die Kohle im Ofen, während
+     * der Kohleblock entsteht, ist die Fertigung eine Quelle aus dem Nichts —
+     * und weil der Bestand nicht nachzieht, eine unversiegbare.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 600)
+    public static void craftingPaysForWhatItBuilds(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        helper.setBlock(controller.east().above(), FnBlocks.FABRICATOR.get());
+        furnaceStoreAt(helper, controller.east().east());
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                store ofen {
+                }
+
+                fn bestellen() {
+                    return craft(1 item:coal_block)
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+
+        helper.startSequence()
+                .thenIdle(5)
+                .thenExecute(() -> helper.assertValueEqual(
+                        entity.storage().count(Items.COAL), 64L,
+                        "der Bestand muss die Kohle des Ofens zeigen"))
+                .thenExecute(() -> entity.callFunction("bestellen", List.of()))
+                .thenIdle(120)
+                .thenExecute(() -> {
+                    long imOfen = 0;
+                    if (helper.getBlockEntity(controller.east().east().above())
+                            instanceof net.minecraft.world.level.block.entity
+                                    .FurnaceBlockEntity furnace) {
+                        for (int slot = 0; slot < furnace.getContainerSize(); slot++) {
+                            if (furnace.getItem(slot).is(Items.COAL)) {
+                                imOfen += furnace.getItem(slot).getCount();
+                            }
+                        }
+                    }
+                    // Neun Kohle je Block — die Rechnung des Rezepts, rückwärts.
+                    long gebaut = entity.storage().count(Items.COAL_BLOCK) * 9;
+                    helper.assertValueEqual(imOfen + gebaut, 64L,
+                            "aus vierundsechzig Kohle sind mehr geworden");
+                })
+                .thenSucceed();
     }
 
     /** Ein Programm mit await in if in while — die Vorlage der Ablauf-Tests. */

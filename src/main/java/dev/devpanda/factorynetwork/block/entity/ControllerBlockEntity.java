@@ -953,7 +953,25 @@ public class ControllerBlockEntity extends BlockEntity {
         if (!step.station().isEmpty()) {
             return startAtMachine(job, step);
         }
-        step.consumed().forEach(storage::extract);
+        // <b>Auch die Probe darüber ist nur eine Anzeige.</b> Ein Speicherbus
+        // zählt fremde Inventare zum Bestand, und die dürfen ihren Inhalt
+        // behalten — ein Ofen zeigt von unten sein Brennstofffach und rückt es
+        // nicht heraus. Was wirklich herauskam, entscheidet, ob der Schritt
+        // stattgefunden hat; sonst entstünde das Ergebnis unbezahlt, und weil
+        // der Bestand dabei nicht nachzieht, in jeder Runde erneut.
+        Map<Item, Long> paid = new LinkedHashMap<>();
+        for (var entry : step.consumed().entrySet()) {
+            long got = storage.extract(entry.getKey(), entry.getValue());
+            if (got > 0) {
+                paid.put(entry.getKey(), got);
+            }
+            if (got < entry.getValue()) {
+                refund(paid);
+                job.note(dev.devpanda.factorynetwork.crafting.CraftingJob.Status.WAITING,
+                        "der Speicher gibt nicht her, was er zeigt");
+                return false;
+            }
+        }
         long left = storage.insert(step.result(), step.yield());
         if (left > 0) {
             // <b>Dann hat der Schritt nicht stattgefunden.</b> Das Ergebnis
@@ -966,14 +984,7 @@ public class ControllerBlockEntity extends BlockEntity {
             // für sein eigenes Ergebnis. Wer vorher fragt, hielte es bei
             // vollem Lager für immer an.
             storage.extract(step.result(), step.yield() - left);
-            step.consumed().forEach((item, amount) -> {
-                long rest = storage.insert(item, amount);
-                if (rest > 0) {
-                    // Kann eigentlich nicht sein — der Platz ist gerade erst
-                    // frei geworden. Wenn doch, dann verwahrt.
-                    holdBack(new ItemStack(item, (int) rest));
-                }
-            });
+            refund(step.consumed());
             job.note(dev.devpanda.factorynetwork.crafting.CraftingJob.Status.WAITING,
                     "der Speicher ist voll");
             return false;
@@ -1000,6 +1011,24 @@ public class ControllerBlockEntity extends BlockEntity {
      *
      * @return ob wirklich etwas angefangen wurde
      */
+    /**
+     * Legt Zutaten zurück, aus denen nichts geworden ist.
+     *
+     * <p>Der Platz ist gerade erst frei geworden, es müsste also alles wieder
+     * hineingehen. Wenn doch nicht — ein Speicherbus mit Filter nimmt nicht
+     * jedes zurück, was er hergegeben hat —, dann verwahrt der Controller es.
+     * Auf den Boden werfen wäre hier falsch: Der Spieler hat den Auftrag
+     * gegeben, nicht die Zutaten aus der Hand gelegt.
+     */
+    private void refund(Map<Item, Long> items) {
+        items.forEach((item, amount) -> {
+            long rest = storage.insert(item, amount);
+            if (rest > 0) {
+                holdBack(new ItemStack(item, (int) rest));
+            }
+        });
+    }
+
     private boolean startAtMachine(dev.devpanda.factorynetwork.crafting.CraftingJob job,
             dev.devpanda.factorynetwork.crafting.CraftingPlanner.Step<
                     net.minecraft.world.item.Item> step) {
