@@ -1789,6 +1789,12 @@ public final class FactoryNetworkGameTests {
         helper.runAfterDelay(40, () -> {
             helper.assertValueEqual(coalInWorld(helper, controller), 64L,
                     "aus vierundsechzig Kohle sind mehr geworden");
+            // Und der Worker sagt, was los ist. „Nichts zu tun" wäre die
+            // falscheste aller Auskünfte: Er greift jeden Tick ins Leere.
+            var state = entity.runtime().states().get("holt");
+            helper.assertTrue(state != null, "Der Worker hat keinen Zustand");
+            helper.assertValueEqual(state.status.name(), "HALTED",
+                    "der Worker muss das melden, nicht schweigen");
             helper.succeed();
         });
     }

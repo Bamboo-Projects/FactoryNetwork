@@ -57,6 +57,14 @@ Die anderen Stellen, je mit ihrem Befund:
 | Tank → Tank (Worker, `move`) | Dasselbe, **abgesichert**. Der Rückweg ist enger: In die Quelle geht nichts zurück, also wird im Ziel abgezogen. |
 | Speicher → Tank (`fillFromNetwork`, `storageToTank`) | **Nicht erreichbar.** Der Flüssigkeitsspeicher kennt keine Busse; `count` und `extract` lesen dieselben revisionsgeprüften Zellen, und dazwischen läuft nichts. |
 | Tank → Speicher (`drainIntoNetwork`, `tankToStorage`) | **Nicht erreichbar.** Fragt `room()` vor dem Zug. |
+| Fertigung, Schritt ohne Station | **Erreichbar, behoben.** Derselbe Ofen: Der Kohleblock entstand, die neun Kohle blieben liegen. |
+| Fertigung, Rezept an einer Maschine | **Erreichbar, behoben.** Kein Dupe — das Ergebnis kommt aus der Maschine —, aber der Auftrag stand für immer auf „läuft", und das Wasser des Rezepts war schon eingefüllt. |
+| Chemikalien (`ChemicalStores`), Energie (`supply`, `drawIn`) | **Nicht erreichbar.** Beide nehmen zuerst und lesen die Rückgabe; was nicht ankommt, geht zurück. |
+
+Ein Worker an einer solchen Quelle meldet das jetzt als `HALTED` mit Grund.
+`IDLE` wäre vom Setter am Tickende mit „nichts zu tun" überschrieben worden —
+die falscheste aller Auskünfte über einen Worker, der jeden Tick ins Leere
+greift.
 
 Was der Rückweg nicht kann, sagt er jetzt: Nimmt das Ziel nichts zurück —
 ein Eingangsfach tut das nicht —, bleibt der Rest liegen, wird nicht als
@@ -121,4 +129,4 @@ Aus den letzten Runden, ungeprüft:
 
 ## Stand der Prüfläufe
 
-352 GameTests grün, zuletzt am 30.08. um 12:55.
+354 GameTests grün, zuletzt am 30.08. um 13:12.

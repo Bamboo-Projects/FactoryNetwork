@@ -570,10 +570,16 @@ public final class WorkerRuntime {
         long taken = storage.extract(item, accepted);
         if (taken < accepted) {
             long stuck = Handoffs.pullBack(handler, item, accepted - taken);
-            state.status = Status.IDLE;
+            // HALTED und nicht IDLE: Alles andere überschreibt der Setter am
+            // Ende des Ticks mit „nichts zu tun", und genau das ist es nicht.
+            // Ein Worker, der jeden Tick einlegt und wieder zurückholt,
+            // während im Terminal „nichts zu tun" steht, ist ein Rätsel, das
+            // niemand lösen kann.
+            state.status = Status.HALTED;
             state.detail = stuck > 0
-                    ? "Der Speicher gibt nichts her — " + stuck + " blieben im Ziel"
-                    : "Der Speicher gibt nichts her";
+                    ? "Der Speicher gibt nicht her, was er zeigt — "
+                            + stuck + " blieben im Ziel"
+                    : "Der Speicher gibt nicht her, was er zeigt";
         }
         return taken;
     }
