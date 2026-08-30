@@ -62,6 +62,13 @@ repositories {
         forRepository { maven { url = 'https://api.modrinth.com/maven' } }
         filter { includeGroup 'maven.modrinth' }
     }
+    // JEI liegt bei BlameJared und nicht auf Modrinth-Maven. Die API ist
+    // ein eigenes Artefakt — zum Übersetzen reicht sie, und sie zieht nicht
+    // die halbe Mod in den Klassenpfad.
+    maven {
+        url = 'https://maven.blamejared.com/'
+        content { includeGroup 'mezz.jei' }
+    }
     // Mekanism hat ein eigenes Maven. Der :api-Klassifikator trägt nur die
     // Schnittstellen — mehr braucht das Übersetzen nicht.
     exclusiveContent {
@@ -114,6 +121,14 @@ dependencies {
     // Ars Nouveau verlangt beide und bringt sie nicht mit.
     runtimeOnly "maven.modrinth:geckolib:${geckolib_version}"
     runtimeOnly "maven.modrinth:curios:${curios_version}"
+
+    // JEI zeigt die Rezepte der Presse. Ohne die Mod fehlt nur die Anzeige:
+    // Das Plugin wird von JEI selbst gefunden, und wer es nicht hat, lädt die
+    // Klassen nie. Deshalb compileOnly auf die API und runtimeOnly auf die
+    // ganze Mod — dieselbe Trennung wie bei Mekanism.
+    compileOnly "mezz.jei:jei-1.21.1-common-api:${jei_version}"
+    compileOnly "mezz.jei:jei-1.21.1-neoforge-api:${jei_version}"
+    runtimeOnly "mezz.jei:jei-1.21.1-neoforge:${jei_version}"
 
     testImplementation platform('org.junit:junit-bom:5.11.4')
     testImplementation 'org.junit.jupiter:junit-jupiter'

@@ -393,5 +393,9 @@
   "screen.factorynetwork.code.help.request": "Ask to edit",
   "message.factorynetwork.request_edit.asked": "%s would like the file %s.",
   "message.factorynetwork.request_edit.sent": "Asked %s.",
-  "message.factorynetwork.request_edit.free": "%s is free — you can edit it."
+  "message.factorynetwork.request_edit.free": "%s is free — you can edit it.",
+  "gui.factorynetwork.jei.press": "Press",
+  "gui.factorynetwork.jei.press.stamp": "Stamp stays",
+  "gui.factorynetwork.jei.press.energy": "%s FE",
+  "gui.factorynetwork.jei.press.time": "%s s"
 }

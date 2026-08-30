@@ -393,5 +393,9 @@
   "screen.factorynetwork.code.help.request": "Bearbeitung anfragen",
   "message.factorynetwork.request_edit.asked": "%s hätte gern die Datei %s.",
   "message.factorynetwork.request_edit.sent": "Angefragt bei %s.",
-  "message.factorynetwork.request_edit.free": "%s ist frei — du kannst sie bearbeiten."
+  "message.factorynetwork.request_edit.free": "%s ist frei — du kannst sie bearbeiten.",
+  "gui.factorynetwork.jei.press": "Presse",
+  "gui.factorynetwork.jei.press.stamp": "Stempel bleibt",
+  "gui.factorynetwork.jei.press.energy": "%s FE",
+  "gui.factorynetwork.jei.press.time": "%s s"
 }

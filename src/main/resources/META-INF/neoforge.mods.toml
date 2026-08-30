@@ -36,6 +36,15 @@ versionRange = "[15.0.0,)"
 ordering = "AFTER"
 side = "CLIENT"
 
+[[dependencies.${mod_id}]]
+# JEI zeigt die Rezepte der Presse. Freiwillig: Ohne JEI fehlt nur die
+# Anzeige — die Presse arbeitet genauso, man fände ihre Rezepte nur nicht.
+modId = "jei"
+type = "optional"
+versionRange = "[19.0.0,)"
+ordering = "AFTER"
+side = "CLIENT"
+
 # Mekanism trägt die Chemikalien. Freiwillig: Ohne Mekanism gibt es
 # chemical: nicht, und die Meldung sagt genau das — alles andere läuft
 # unverändert weiter.
