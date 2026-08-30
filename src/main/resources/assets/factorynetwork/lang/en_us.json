@@ -397,5 +397,7 @@
   "gui.factorynetwork.jei.press": "Press",
   "gui.factorynetwork.jei.press.stamp": "Stamp stays",
   "gui.factorynetwork.jei.press.energy": "%s FE",
-  "gui.factorynetwork.jei.press.time": "%s s"
+  "gui.factorynetwork.jei.press.time": "%s s",
+  "item.factorynetwork.acceleration_card": "Acceleration Card",
+  "item.factorynetwork.batch_card": "Batch Card"
 }

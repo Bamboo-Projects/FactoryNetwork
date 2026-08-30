@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "RRR",
+    "RLR",
+    "PPP"
+  ],
+  "key": {
+    "R": {
+      "item": "minecraft:redstone_block"
+    },
+    "L": {
+      "item": "factorynetwork:core_logic"
+    },
+    "P": {
+      "item": "factorynetwork:plate"
+    }
+  },
+  "result": {
+    "id": "factorynetwork:acceleration_card",
+    "count": 1
+  }
+}

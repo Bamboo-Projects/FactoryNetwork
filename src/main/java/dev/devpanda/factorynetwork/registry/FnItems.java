@@ -118,6 +118,25 @@ public final class FnItems {
                     new Item.Properties(),
                     dev.devpanda.factorynetwork.upgrade.Card.RANGE));
 
+    /**
+     * Die Karten für Maschinen.
+     *
+     * <p>Sie stecken in denselben Plätzen wie die Reichweitenkarten und
+     * rechnen doch anders: Ihr Schritt ist null, weil sie nichts addieren.
+     * Was sie tun, steht in {@link dev.devpanda.factorynetwork.upgrade.Tuning}.
+     */
+    public static final DeferredItem<Item> ACCELERATION_CARD = ITEMS.register(
+            dev.devpanda.factorynetwork.upgrade.Card.ACCELERATION.id(),
+            () -> new dev.devpanda.factorynetwork.item.UpgradeItem(
+                    new Item.Properties(),
+                    dev.devpanda.factorynetwork.upgrade.Card.ACCELERATION));
+
+    public static final DeferredItem<Item> BATCH_CARD = ITEMS.register(
+            dev.devpanda.factorynetwork.upgrade.Card.BATCH.id(),
+            () -> new dev.devpanda.factorynetwork.item.UpgradeItem(
+                    new Item.Properties(),
+                    dev.devpanda.factorynetwork.upgrade.Card.BATCH));
+
     public static final DeferredItem<Item> INFINITY_CARD = ITEMS.register(
             dev.devpanda.factorynetwork.upgrade.Card.INFINITY.id(),
             () -> new dev.devpanda.factorynetwork.item.UpgradeItem(

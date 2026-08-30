@@ -397,5 +397,7 @@
   "gui.factorynetwork.jei.press": "Presse",
   "gui.factorynetwork.jei.press.stamp": "Stempel bleibt",
   "gui.factorynetwork.jei.press.energy": "%s FE",
-  "gui.factorynetwork.jei.press.time": "%s s"
+  "gui.factorynetwork.jei.press.time": "%s s",
+  "item.factorynetwork.acceleration_card": "Beschleunigungskarte",
+  "item.factorynetwork.batch_card": "Stapelkarte"
 }

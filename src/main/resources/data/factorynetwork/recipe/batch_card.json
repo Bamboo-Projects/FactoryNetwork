@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "CCC",
+    "CMC",
+    "PPP"
+  ],
+  "key": {
+    "C": {
+      "item": "minecraft:chest"
+    },
+    "M": {
+      "item": "factorynetwork:core_memory"
+    },
+    "P": {
+      "item": "factorynetwork:plate"
+    }
+  },
+  "result": {
+    "id": "factorynetwork:batch_card",
+    "count": 1
+  }
+}

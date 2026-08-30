@@ -1333,6 +1333,8 @@ ITEM_BODIES = {
     # selbst weg — sie schneiden ihren Streifen aus demselben Rand.
     "range_card": (3, 4, 13, 12, 1),
     "infinity_card": (3, 4, 13, 12, 1),
+    "acceleration_card": (3, 4, 13, 12, 1),
+    "batch_card": (3, 4, 13, 12, 1),
     "wireless_module": (3, 1, 13, 12, 2),
 
     # Der Rest: Blech ist dünn, ein Stempel ist ein Werkzeug.
@@ -1692,7 +1694,8 @@ def models():
         item_model(name)
     write(A + "/models/item/press.json", {"parent": block("press")})
     item_model("raw_crystal")
-    for name in ("range_card", "infinity_card", "wireless_module"):
+    for name in ("range_card", "infinity_card", "wireless_module",
+                 "acceleration_card", "batch_card"):
         item_model(name)
 
 
@@ -1859,6 +1862,35 @@ def loot_and_recipes():
     })
 
     # Die Grenzenlos-Karte: vier Reichweitenkarten um einen Netzkern.
+    # Die Beschleunigungskarte: Redstone treibt sie, ein Logikkern steuert.
+    # Teurer als die Reichweitenkarte, und das mit Absicht — sie greift in
+    # jede Maschine ein, nicht nur in ein Terminal.
+    write(D + "/recipe/acceleration_card.json", {
+        "type": "minecraft:crafting_shaped",
+        "category": "misc",
+        "pattern": ["RRR", "RLR", "PPP"],
+        "key": {
+            "R": {"item": "minecraft:redstone_block"},
+            "L": {"item": MOD + ":core_logic"},
+            "P": {"item": MOD + ":plate"},
+        },
+        "result": {"id": MOD + ":acceleration_card", "count": 1},
+    })
+
+    # Die Stapelkarte: ein Speicherkern zwischen Kisten. Sie macht nicht
+    # schneller, sie macht breiter — und der Speicher ist das Bild dafür.
+    write(D + "/recipe/batch_card.json", {
+        "type": "minecraft:crafting_shaped",
+        "category": "misc",
+        "pattern": ["CCC", "CMC", "PPP"],
+        "key": {
+            "C": {"item": "minecraft:chest"},
+            "M": {"item": MOD + ":core_memory"},
+            "P": {"item": MOD + ":plate"},
+        },
+        "result": {"id": MOD + ":batch_card", "count": 1},
+    })
+
     write(D + "/recipe/infinity_card.json", {
         "type": "minecraft:crafting_shaped",
         "category": "misc",

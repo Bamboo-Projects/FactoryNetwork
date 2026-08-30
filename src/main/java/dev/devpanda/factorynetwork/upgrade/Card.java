@@ -20,7 +20,18 @@ public enum Card implements Upgrade {
      * Grenze auf. Ihr Zahlenwert ist null, weil ihn niemand liest — wer
      * {@code unlimited} fragt, fragt {@code value} nicht mehr.
      */
-    INFINITY("infinity_card", Stat.RANGE, 0, true);
+    INFINITY("infinity_card", Stat.RANGE, 0, true),
+
+    /**
+     * Nimmt einer Maschine ein Fünftel ihrer Zeit und legt Strom drauf.
+     *
+     * <p>Ihr Schritt ist null: Sie addiert nichts, sie multipliziert — und
+     * das rechnet {@link Tuning} aus der Stückzahl, nicht aus einer Summe.
+     */
+    ACCELERATION("acceleration_card", Stat.SPEED, 0, false),
+
+    /** Legt einer Maschine ein Werkstück je Durchlauf zu. */
+    BATCH("batch_card", Stat.BATCH, 0, false);
 
     private final String id;
     private final Stat stat;

@@ -51,6 +51,8 @@ public final class FnCreativeTabs {
                         output.accept(FnItems.WIRELESS_MODULE.get());
                         output.accept(FnItems.RANGE_CARD.get());
                         output.accept(FnItems.INFINITY_CARD.get());
+                        output.accept(FnItems.ACCELERATION_CARD.get());
+                        output.accept(FnItems.BATCH_CARD.get());
                         output.accept(FnItems.DRIVE.get());
                         output.accept(FnItems.RACK.get());
                         output.accept(FnItems.SERVER_CHASSIS.get());

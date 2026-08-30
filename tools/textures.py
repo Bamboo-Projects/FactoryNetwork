@@ -1956,6 +1956,30 @@ def infinity_card():
     return upgrade_card(blend(BODY_TOP, ACCENT, 0.12), zeichen)
 
 
+def acceleration_card():
+    """Ein Pfeil, der sich überholt — zwei Spitzen übereinander."""
+    def zeichen(d):
+        hell = blend(ACCENT, LIGHT, 0.2) + (255,)
+        # Zwei Winkel hintereinander, wie das Zeichen für schnellen Vorlauf.
+        for versatz in (-6, 4):
+            d.line([(26 + versatz, 24), (36 + versatz, 31)], fill=hell, width=3)
+            d.line([(26 + versatz, 38), (36 + versatz, 31)], fill=hell, width=3)
+        d.point((40, 31), fill=ACCENT_HI + (255,))
+    return upgrade_card(blend(BODY_TOP, BRASS, 0.10), zeichen)
+
+
+def batch_card():
+    """Drei Werkstücke nebeneinander: was in einen Durchlauf passt."""
+    def zeichen(d):
+        for i in range(3):
+            links = 20 + i * 8
+            farbe = blend(ACCENT, SCREEN, 0.1 + i * 0.2) + (255,)
+            d.rectangle([links, 26, links + 5, 36], fill=farbe)
+            d.rectangle([links, 26, links + 5, 36], outline=EDGE + (255,))
+        d.rectangle([20, 39, 41, 40], fill=blend(BODY_MID, EDGE, 0.4) + (255,))
+    return upgrade_card(blend(BODY_TOP, CRYSTAL, 0.10), zeichen)
+
+
 def wireless_module():
     """Ein Modul: kürzer als eine Karte, mit Antenne statt Zeichen.
 
@@ -2096,6 +2120,8 @@ def main():
     save(wrench(), "item", "wrench")
     save(range_card(), "item", "range_card")
     save(infinity_card(), "item", "infinity_card")
+    save(acceleration_card(), "item", "acceleration_card")
+    save(batch_card(), "item", "batch_card")
     save(wireless_module(), "item", "wireless_module")
     save(controller_extension(), "block", "controller_extension")
     save(fabricator_top(), "block", "fabricator_top")
