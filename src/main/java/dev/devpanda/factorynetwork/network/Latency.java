@@ -31,6 +31,9 @@ public final class Latency {
      * <p>Ein Brückenpaar kostet damit zwei — eine Hälfte packt ein, die
      * andere aus. Der Plan vom 30.08. nannte einen; zwei ist die ehrlichere
      * Zahl und braucht keine Sonderregel.
+     *
+     * <p><b>Wer diese Zahl anhebt, prüft die Sprachtexte:</b> Dort steht
+     * „%s Tick" im Singular, und bei zwei wäre das falsch.
      */
     public static final int PER_HOP = 1;
 

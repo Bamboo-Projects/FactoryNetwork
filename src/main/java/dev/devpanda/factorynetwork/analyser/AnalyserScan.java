@@ -84,6 +84,10 @@ public final class AnalyserScan {
         int tight = 0;
         int full = 0;
         List<AnalyserData.Link> links = new ArrayList<>();
+        // Einmal gelesen und nicht je Strecke: Der Controller ist für alle
+        // derselbe, und was er noch hergibt, gilt für jede von ihnen.
+        int controllerCapacity = controller.bandwidth();
+        int controllerLeft = controllerCapacity - controller.bandwidthUsed();
         for (FactoryGraph.Edge edge : graph.edges()) {
             // <b>Was im letzten Tick über diese Stelle ging.</b> Nicht
             // wie viele Geräte dahinter hängen — seit dem 29.08. zählt der
@@ -95,8 +99,18 @@ public final class AnalyserScan {
             int capacity = dev.devpanda.factorynetwork.network.Bandwidth.at(
                     controller.getLevel(), edge.to().pos());
             int load = controller.runtime().budget().usedAt(edge.to());
-            AnalyserData.LinkState state = load >= capacity ? AnalyserData.LinkState.FULL
-                    : load * 4 >= capacity * 3 ? AnalyserData.LinkState.TIGHT
+            // <b>Und der Weg davor zählt mit.</b> Eine Strecke, über die
+            // nichts mehr kommt, weil der Controller randvoll ist, ist eng —
+            // auch wenn ihr eigenes Kabel Luft hätte. Ohne das meldete der
+            // Analysator „frei" für jede Strecke, während nichts fließt, und
+            // man suchte den Engpass am falschen Ort.
+            //
+            // Die Kapazität bleibt die des Kabels: Das ist die Wahrheit über
+            // diese Strecke. Nur die Bewertung sieht weiter als sie selbst.
+            AnalyserData.LinkState state =
+                    load >= capacity || controllerLeft <= 0 ? AnalyserData.LinkState.FULL
+                    : load * 4 >= capacity * 3 || controllerLeft * 4 <= controllerCapacity
+                            ? AnalyserData.LinkState.TIGHT
                     : AnalyserData.LinkState.FREE;
             if (state == AnalyserData.LinkState.FULL) {
                 full++;

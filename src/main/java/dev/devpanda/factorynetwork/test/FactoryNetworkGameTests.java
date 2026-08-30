@@ -11478,6 +11478,45 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
+     * Ein voller Controller macht die Strecken dahinter voll.
+     *
+     * <p><b>Sonst sucht man den Engpass an der falschen Stelle.</b> Eine
+     * Kabelstrecke trägt so viel wie ein Kabel — aber alles, was über sie
+     * geht, kam durch den Controller. Ist der randvoll, ist die Strecke es
+     * auch, ganz gleich, was das Kabel könnte.
+     *
+     * <p>Ohne die Deckelung meldete der Analysator „frei" für jede Strecke,
+     * während nichts mehr fließt.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void afullControllerMakesTheStretchesFull(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        // Den Controller randvoll fahren — nur ihn, nicht die Kabel.
+        entity.runtime().budget().spend(java.util.List.of(
+                        new dev.devpanda.factorynetwork.network.FactoryGraph.Node(
+                                helper.absolutePos(controller),
+                                dev.devpanda.factorynetwork.block.CableColour.NONE)),
+                entity.bandwidth());
+
+        var data = dev.devpanda.factorynetwork.analyser.AnalyserScan.of(entity);
+        helper.assertTrue(!data.links().isEmpty(), "der Analysator kennt keine Strecke");
+        for (var link : data.links()) {
+            helper.assertValueEqual(link.state(),
+                    dev.devpanda.factorynetwork.analyser.AnalyserData.LinkState.FULL,
+                    "eine Strecke meldet frei, obwohl der Controller davor voll ist");
+            // Die Kapazität bleibt die des Kabels: Was diese Strecke könnte,
+            // ändert sich nicht dadurch, dass davor nichts durchkommt.
+            helper.assertValueEqual(link.capacity(),
+                    dev.devpanda.factorynetwork.network.Bandwidth.CABLE,
+                    "die Strecke gibt eine andere Kapazität an als das Kabel");
+        }
+        helper.succeed();
+    }
+
+    /**
      * Beide Kabelsorten tragen dasselbe.
      *
      * <p><b>Das dichte Kabel ist seit dem 30.08. eine Altlast.</b> Es
