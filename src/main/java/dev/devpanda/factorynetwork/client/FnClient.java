@@ -39,6 +39,21 @@ public final class FnClient {
         ClientProjectState.clear();
     }
 
+    /**
+     * Beim Verlassen des Spiels gibt die Web-Runtime frei, was sie hält.
+     *
+     * <p><b>Nur das Herunterfahren steht hier, nicht das Hochfahren.</b> Ein
+     * Browser entsteht erst, wenn jemand einen sehen will: MCEF fährt sich
+     * nebenher selbst hoch, und wer beim Start des Spiels fragt, bekommt ein
+     * „noch nicht" als „nein". Es gibt also nichts anzumelden — nur etwas
+     * aufzuräumen, falls doch einer entstanden ist.
+     */
+    @SubscribeEvent
+    public static void closeWebRuntime(
+            net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingOut event) {
+        dev.devpanda.factorynetwork.web.WebRuntime.shutdown();
+    }
+
     @SubscribeEvent
     public static void registerScreens(RegisterMenuScreensEvent event) {
         event.register(FnMenus.TERMINAL.get(), TerminalScreen::new);

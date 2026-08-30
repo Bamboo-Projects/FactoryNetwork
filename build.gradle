@@ -62,6 +62,14 @@ repositories {
         forRepository { maven { url = 'https://api.modrinth.com/maven' } }
         filter { includeGroup 'maven.modrinth' }
     }
+    // MCEF bringt Chromium ins Spiel. Es liegt auf dem Maven der CinemaMod
+    // Group; ein anderes gibt es nicht.
+    exclusiveContent {
+        forRepository {
+            maven { url = 'https://mcef-download.cinemamod.com/repositories/releases' }
+        }
+        filter { includeGroup 'com.cinemamod' }
+    }
     // JEI liegt bei BlameJared und nicht auf Modrinth-Maven. Die API ist
     // ein eigenes Artefakt — zum Übersetzen reicht sie, und sie zieht nicht
     // die halbe Mod in den Klassenpfad.
@@ -121,6 +129,18 @@ dependencies {
     // Ars Nouveau verlangt beide und bringt sie nicht mit.
     runtimeOnly "maven.modrinth:geckolib:${geckolib_version}"
     runtimeOnly "maven.modrinth:curios:${curios_version}"
+
+    // <b>MCEF wird nicht mitgeliefert und nicht eingepackt.</b> Es steht unter
+    // LGPL-2.1, diese Mod unter MIT — verträglich ist das nur, solange MCEF
+    // eine eigenständige Mod daneben bleibt und der Spieler sie austauschen
+    // kann. Also compileOnly gegen die API und runtimeOnly zum Ausprobieren,
+    // niemals implementation und niemals ein Shadow-Jar.
+    //
+    // Chromium selbst steckt auch nicht in diesem Jar: MCEF lädt es beim
+    // ersten Start von einem eigenen Spiegel nach. Ohne Netz gibt es keinen
+    // Browser — und der Client muss das überleben.
+    compileOnly "com.cinemamod:mcef:${mcef_version}"
+    runtimeOnly "com.cinemamod:mcef-neoforge:${mcef_version}"
 
     // JEI zeigt die Rezepte der Presse. Ohne die Mod fehlt nur die Anzeige:
     // Das Plugin wird von JEI selbst gefunden, und wer es nicht hat, lädt die
