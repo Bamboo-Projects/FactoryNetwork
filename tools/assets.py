@@ -2395,6 +2395,16 @@ def loot_and_recipes():
                       + [MOD + ":%s_%s" % (c, sort) for c in CABLE_COLOURS[1:]],
         })
 
+    # Was in den Stempelplatz der Presse darf.
+    #
+    # <b>Ein Tag und keine Liste im Java-Code:</b> Ein Datenpaket darf Rezepte
+    # hinzufügen, und wer eines mit einem eigenen Stempel schreibt, soll ihn
+    # auch einlegen können, ohne die Mod zu ändern.
+    write(D + "/tags/item/stamps.json", {
+        "values": [MOD + ":stamp_plate", MOD + ":stamp_logic",
+                   MOD + ":stamp_memory", MOD + ":stamp_network"],
+    })
+
     # Spitzhacke reicht zum Abbauen.
     write(D + "/tags/block/mineable/pickaxe.json", {
         "values": [MOD + ":controller", MOD + ":controller_extension",

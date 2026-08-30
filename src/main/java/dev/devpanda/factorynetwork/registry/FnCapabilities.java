@@ -34,6 +34,15 @@ public final class FnCapabilities {
                 FnBlockEntities.CONTROLLER.get(),
                 (ControllerBlockEntity controller, net.minecraft.core.Direction side)
                         -> controller.power().port());
+        // <b>Das Inventar der Presse.</b> Ohne diese Zeile nimmt sie Strom an
+        // und sonst nichts: Kein Anschluss findet ein Inventar, kein Worker
+        // kann sie beschicken, und eine Maschine, die man nicht beschicken
+        // kann, ist in dieser Mod keine.
+        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK,
+                FnBlockEntities.PRESS.get(),
+                (PressBlockEntity press, net.minecraft.core.Direction side)
+                        -> press.inventory());
+
         // Der Akku der Ferngeräte.
         //
         // Das ist die eine Zeile, die Powah, Flux Networks und jede andere

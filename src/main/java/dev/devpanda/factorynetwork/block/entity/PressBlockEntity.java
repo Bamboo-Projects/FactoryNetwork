@@ -42,6 +42,19 @@ public class PressBlockEntity extends BlockEntity
     /** Höchstens so viel je Tick — sonst wäre die Zeit im Rezept sinnlos. */
     private static final int MAX_INPUT = 2_000;
 
+    /**
+     * Was in den Stempelplatz darf.
+     *
+     * <p>Ein Tag und keine feste Liste: Ein Datenpaket darf Rezepte
+     * mitbringen, und ein eigener Stempel dazu soll sich einlegen lassen,
+     * ohne dass jemand die Mod anfasst.
+     */
+    public static final net.minecraft.tags.TagKey<net.minecraft.world.item.Item> STAMPS =
+            net.minecraft.tags.TagKey.create(
+                    net.minecraft.core.registries.Registries.ITEM,
+                    net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(
+                            dev.devpanda.factorynetwork.FactoryNetwork.MOD_ID, "stamps"));
+
     private final NonNullList<ItemStack> items = NonNullList.withSize(SLOTS, ItemStack.EMPTY);
 
     /**
@@ -198,6 +211,109 @@ public class PressBlockEntity extends BlockEntity
                     return 4;
                 }
             };
+
+    /**
+     * Das Inventar, das ein Anschluss sieht.
+     *
+     * <p><b>Ohne das ist die Presse keine Maschine, sondern ein Möbelstück.</b>
+     * Sie nahm Strom an, seit es sie gibt — aber kein Anschluss fand je ein
+     * Inventar an ihr, und damit konnte kein Worker und kein {@code move} ihr
+     * einen Eisenbarren geben. Bei einer Mod, deren Zweck Automatisierung
+     * ist, war das die Lücke unter allen anderen.
+     *
+     * <p><b>Die Plätze haben verschiedene Regeln</b>, und deshalb steht hier
+     * ein eigener Handler statt eines Wrappers um den Container: Der Stempel
+     * nimmt nur Stempel, das Material nimmt keinen Stempel, und aus dem
+     * Ergebnis wird nur genommen. Ein Wrapper ohne Regeln ließe eine
+     * Sortiermaschine ihren ganzen Inhalt in die Presse schieben.
+     */
+    private final net.neoforged.neoforge.items.IItemHandler handler =
+            new net.neoforged.neoforge.items.IItemHandler() {
+
+                @Override
+                public int getSlots() {
+                    return SLOTS;
+                }
+
+                @Override
+                public ItemStack getStackInSlot(int slot) {
+                    return item(slot);
+                }
+
+                @Override
+                public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
+                    if (stack.isEmpty() || !isItemValid(slot, stack)) {
+                        return stack;
+                    }
+                    ItemStack present = item(slot);
+                    int room = Math.min(stack.getMaxStackSize(), getSlotLimit(slot))
+                            - present.getCount();
+                    if (room <= 0) {
+                        return stack;
+                    }
+                    if (!present.isEmpty()
+                            && !ItemStack.isSameItemSameComponents(present, stack)) {
+                        return stack;
+                    }
+                    int fits = Math.min(room, stack.getCount());
+                    if (!simulate) {
+                        if (present.isEmpty()) {
+                            setItem(slot, stack.copyWithCount(fits));
+                        } else {
+                            present.grow(fits);
+                            setChanged();
+                        }
+                    }
+                    return fits >= stack.getCount()
+                            ? ItemStack.EMPTY : stack.copyWithCount(stack.getCount() - fits);
+                }
+
+                @Override
+                public ItemStack extractItem(int slot, int amount, boolean simulate) {
+                    // <b>Nur das Ergebnis geht heraus.</b> Wer den Stempel
+                    // abziehen dürfte, hätte eine Presse, die sich selbst
+                    // entwaffnet — und das Material gehört der Maschine,
+                    // sobald es drin liegt.
+                    if (slot != SLOT_RESULT || amount <= 0) {
+                        return ItemStack.EMPTY;
+                    }
+                    ItemStack present = item(slot);
+                    if (present.isEmpty()) {
+                        return ItemStack.EMPTY;
+                    }
+                    int taken = Math.min(amount, present.getCount());
+                    if (simulate) {
+                        return present.copyWithCount(taken);
+                    }
+                    ItemStack out = present.split(taken);
+                    setChanged();
+                    return out;
+                }
+
+                @Override
+                public int getSlotLimit(int slot) {
+                    return 64;
+                }
+
+                @Override
+                public boolean isItemValid(int slot, ItemStack stack) {
+                    return switch (slot) {
+                        // Ein Stempel und sonst nichts.
+                        case SLOT_STAMP -> stack.is(STAMPS);
+                        // Alles, was kein Stempel ist: Welche Rezepte es gibt,
+                        // entscheidet ein Datenpaket, und diese Frage hier
+                        // gegen den Rezeptbestand zu stellen hieße, sie bei
+                        // jedem Einlegeversuch neu zu stellen.
+                        case SLOT_MATERIAL -> !stack.is(STAMPS);
+                        default -> false;
+                    };
+                }
+            };
+
+    /** Das Inventar für die Anschlüsse ringsum. */
+    public net.neoforged.neoforge.items.IItemHandler inventory() {
+        return handler;
+    }
 
     /** Die Plätze als Container, damit das Fenster damit umgehen kann. */
     private final net.minecraft.world.Container container =

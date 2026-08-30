@@ -2335,6 +2335,54 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    /**
+     * <b>Eine Maschine, die man nicht beschicken kann, ist keine.</b>
+     *
+     * <p>Die Presse nimmt Strom an — das steht in FnCapabilities und ist
+     * geprüft. Ob sie auch Material annimmt, stand nirgends: Kein Prüflauf
+     * hat ihr je einen Eisenbarren geschickt. Und ohne Item-Fähigkeit findet
+     * ein Anschluss kein Inventar, egal wie gut das Fenster aussieht.
+     *
+     * <p>Das ist die Bedingung, unter der diese Mod überhaupt gebaut wird:
+     * Was eine Maschine kann, muss ein Programm auslösen können.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void aMachineTakesItsMaterialFromTheNetwork(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        BlockPos maschine = controller.east().north().north();
+        helper.setBlock(maschine, FnBlocks.PRESS.get());
+        entity.rebuildNetwork();
+        entity.storage().insert(Items.IRON_INGOT, 8);
+
+        helper.assertTrue(entity.deploy("""
+                worker beschickung {
+                    from storage
+                    to quarry_output
+                    filter item:iron_ingot
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+
+        helper.runAfterDelay(40, () -> {
+            if (!(helper.getBlockEntity(maschine)
+                    instanceof dev.devpanda.factorynetwork.block.entity.PressBlockEntity presse)) {
+                helper.fail("Da steht keine Presse", maschine);
+                return;
+            }
+            long drin = 0;
+            for (int slot = 0; slot < dev.devpanda.factorynetwork.block.entity
+                    .PressBlockEntity.SLOTS; slot++) {
+                if (presse.item(slot).is(Items.IRON_INGOT)) {
+                    drin += presse.item(slot).getCount();
+                }
+            }
+            helper.assertTrue(drin > 0,
+                    "Der Worker hat der Presse nichts geben können — sie hat kein "
+                            + "Inventar nach außen");
+            helper.succeed();
+        });
+    }
+
     /** Ein Programm mit await in if in while — die Vorlage der Ablauf-Tests. */
     private static final String COUNTING_PROGRAM = """
             event Takt(nummer: Int)
