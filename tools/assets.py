@@ -2325,44 +2325,39 @@ def loot_and_recipes():
         "result": {"id": MOD + ":network_analyser", "count": 1},
     })
 
-    # Das dichte Kabel: vier gewöhnliche, um einen Eisenblock gelegt. Der
-    # Preis soll die vierfache Kapazität spiegeln, ohne unerreichbar zu sein.
-    write(D + "/recipe/dense_cable.json", {
-        "type": "minecraft:crafting_shaped",
-        "category": "misc",
-        "pattern": [" C ", "CIC", " C "],
-        "key": {
-            "C": {"tag": "c:cables"},
-            "I": {"item": "minecraft:iron_block"},
-        },
-        "result": {"id": MOD + ":dense_cable", "count": 1},
-    })
-
     # Färben: ein Farbstoff auf ein beliebiges Kabel. Über das Tag statt über
     # siebzehn Gegenstände einzeln — sonst wären es je Sorte
     # zweihundertzweiundsiebzig Rezepte statt sechzehn.
-    for sort, tag in (("cable", "c:cables"), ("dense_cable", "c:dense_cables")):
-        for colour in CABLE_COLOURS[1:]:
-            write(D + "/recipe/%s_%s.json" % (colour, sort), {
-                "type": "minecraft:crafting_shapeless",
-                "category": "misc",
-                "group": "factorynetwork_" + sort,
-                "ingredients": [{"tag": tag}, {"item": "minecraft:%s_dye" % colour}],
-                "result": {"id": MOD + ":%s_%s" % (colour, sort), "count": 1},
-            })
-
-        # Entfärben mit einem Wassereimer, wie bei Applied Energistics. Ohne
-        # das wäre ein gefärbtes Kabel eine Sackgasse.
-        write(D + "/recipe/%s_uncolour.json" % sort, {
+    # <b>Nur für das gewöhnliche Kabel.</b> Das dichte ist seit dem 30.08.
+    # stillgelegt: Es trägt dasselbe und war damit eine Sorte ohne
+    # Unterschied. Der Block bleibt registriert, weil NeoForge 21.1 keine
+    # verschwundene Kennung in einer bestehenden Welt umschreiben kann — dort
+    # stünde sonst Luft. Aus den Rezepten ist er verschwunden, und diese
+    # Schleife ist die Stelle, an der er zurückgekommen wäre: Sie hat seine
+    # achtzehn Rezepte bei jedem Lauf neu geschrieben.
+    for colour in CABLE_COLOURS[1:]:
+        write(D + "/recipe/%s_cable.json" % colour, {
             "type": "minecraft:crafting_shapeless",
             "category": "misc",
-            "group": "factorynetwork_" + sort,
-            "ingredients": [{"tag": tag}, {"item": "minecraft:water_bucket"}],
-            "result": {"id": MOD + ":" + sort, "count": 1},
+            "group": "factorynetwork_cable",
+            "ingredients": [{"tag": "c:cables"},
+                            {"item": "minecraft:%s_dye" % colour}],
+            "result": {"id": MOD + ":%s_cable" % colour, "count": 1},
         })
 
-        # Alle Farben einer Sorte unter einem Tag, damit die Rezepte jede
-        # annehmen.
+    # Entfärben mit einem Wassereimer, wie bei Applied Energistics. Ohne das
+    # wäre ein gefärbtes Kabel eine Sackgasse.
+    write(D + "/recipe/cable_uncolour.json", {
+        "type": "minecraft:crafting_shapeless",
+        "category": "misc",
+        "group": "factorynetwork_cable",
+        "ingredients": [{"tag": "c:cables"}, {"item": "minecraft:water_bucket"}],
+        "result": {"id": MOD + ":cable", "count": 1},
+    })
+
+    # Die Tags bleiben für beide Sorten: Der dichte Strang steht weiter in
+    # Welten, und was ihn im Spiel anfasst, fragt danach.
+    for sort in ("cable", "dense_cable"):
         write("data/c/tags/item/%ss.json" % sort, {
             "values": [MOD + ":" + sort]
                       + [MOD + ":%s_%s" % (c, sort) for c in CABLE_COLOURS[1:]],
