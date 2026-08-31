@@ -1,6 +1,6 @@
-From eaa35f43f1124e3ab3a87b669fe28fc189a63b4e Mon Sep 17 00:00:00 2001
+From 6ccfbcecacf8ff3b8542699d113d00fd7b25eb5c Mon Sep 17 00:00:00 2001
 From: DevPanda <richter@kairosable.com>
-Date: Mon, 31 Aug 2026 22:16:24 +0200
+Date: Mon, 31 Aug 2026 23:05:07 +0200
 Subject: [PATCH] =?UTF-8?q?CefBrowser=5FN=20=C3=B6ffnen,=20damit=20ein=20e?=
  =?UTF-8?q?igener=20Browser=20davon=20erben=20kann?=
 MIME-Version: 1.0
@@ -33,7 +33,7 @@ anbietet, der ohne JOGL auskommt.
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/java/org/cef/browser/CefBrowser_N.java b/java/org/cef/browser/CefBrowser_N.java
-index 307bf80..d31168d 100644
+index c89e296..1462b96 100644
 --- a/java/org/cef/browser/CefBrowser_N.java
 +++ b/java/org/cef/browser/CefBrowser_N.java
 @@ -38,7 +38,7 @@ import javax.swing.SwingUtilities;

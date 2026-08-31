@@ -38,9 +38,11 @@ if (-not (Test-Path -LiteralPath $jar)) {
 }
 
 if (-not $Url) {
-    # Eine Seite, die dauernd etwas ändert: Ohne Änderung malt Chromium nicht
-    # neu, und der Takt wäre nicht der der Bildrate, sondern der der Langeweile.
-    $Url = 'file:///' + ((Join-Path $probeDir 'probe-takt.html') -replace '\\', '/')
+    # Zur Takt-Probe eine Seite, die sich dauernd ändert: Ohne Änderung malt
+    # Chromium nicht neu, und der gemessene Abstand wäre nicht der der Bildrate,
+    # sondern der der Langeweile. Zum Prüfstand die Seite, die mitschreibt.
+    $page = if ($Main -eq 'KeyProbe') { 'probe-keys.html' } else { 'probe-takt.html' }
+    $Url = 'file:///' + ((Join-Path $probeDir $page) -replace '\\', '/')
 }
 
 Write-Host ''

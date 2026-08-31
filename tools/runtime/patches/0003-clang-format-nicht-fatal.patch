@@ -1,6 +1,6 @@
-From 6a5c0b7c6bfd99ece41967d2564ece83d345a5e9 Mon Sep 17 00:00:00 2001
+From 507d3e14dcfb3fb4a13b6a3af056cb962bc0b8b9 Mon Sep 17 00:00:00 2001
 From: DevPanda <richter@kairosable.com>
-Date: Mon, 31 Aug 2026 22:08:16 +0200
+Date: Mon, 31 Aug 2026 23:05:08 +0200
 Subject: [PATCH] clang-format darf fehlen, ohne den Bau anzuhalten
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8

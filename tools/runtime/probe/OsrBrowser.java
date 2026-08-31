@@ -88,10 +88,24 @@ public class OsrBrowser extends CefBrowser_N implements CefRenderHandler {
         created = true;
     }
 
-    /** Kein Bauteil auf einer Oberfläche — es gibt keine. */
+    /**
+     * Ein Bauteil, das nie gezeigt wird.
+     *
+     * <p><b>Warum nicht null.</b> Es gibt keine Oberfläche, und null wäre die
+     * ehrliche Antwort. Sie ist aber nicht die tragfähige:
+     * {@code CefClient.onTakeFocus} ruft {@code getUIComponent().getParent()},
+     * ohne zu prüfen — beim ersten Tabulator im Editor endet das in einer
+     * NullPointerException. Gemessen, nicht vermutet: A4b hat sie ausgelöst.
+     *
+     * <p>Eine unmittelbare Unterklasse von {@link Component} zieht kein
+     * Toolkit heran und hat keinen Peer; ihr {@code getParent()} ist null, und
+     * die Fokuswanderung endet still, wie sie soll.
+     */
+    private static final Component NO_SURFACE = new Component() {};
+
     @Override
     public Component getUIComponent() {
-        return null;
+        return NO_SURFACE;
     }
 
     @Override

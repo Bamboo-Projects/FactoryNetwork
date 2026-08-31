@@ -58,6 +58,27 @@
     return true;
   };
 
+  // Das Protokoll als Zeilen mit Tabulatoren, nicht als JSON.
+  //
+  // Warum nicht JSON: Auf der anderen Seite steht Java ohne JSON-Bibliothek.
+  // Ein Parser dafür wäre mehr Code als der ganze Prüfstand — und er könnte
+  // scheitern, wo die Messung eindeutig sein soll. Sieben Felder je Zeile
+  // reichen, und ein Aufteilen am Tabulator ist kein Parser.
+  //
+  // Reihenfolge: art, key, code, keyCode, charCode, Modifikatoren, location
+  const TAB = String.fromCharCode(9);
+  const NL = String.fromCharCode(10);
+
+  window.bericht = () => window.protokoll.map(e => [
+    e.art,
+    e.key,
+    e.code || '',
+    e.keyCode === undefined ? '' : e.keyCode,
+    e.charCode === undefined ? '' : e.charCode,
+    (e.ctrl ? 'C' : '') + (e.shift ? 'S' : '') + (e.alt ? 'A' : '') + (e.meta ? 'M' : ''),
+    e.location === undefined ? '' : e.location
+  ].join(TAB)).join(NL);
+
   // Was wirklich im Feld steht — die zweite Wahrheit neben dem Protokoll.
   // Ein Zeichen kann als Ereignis ankommen und trotzdem nicht im Text landen,
   // und es kann doppelt im Text landen, ohne dass zwei Ereignisse kämen.

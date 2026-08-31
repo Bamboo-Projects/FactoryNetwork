@@ -1,6 +1,6 @@
-From 66509877b597f0992603b338efc44b55084644c5 Mon Sep 17 00:00:00 2001
+From afcba3acd74966175b801e415d5f3d7480181ad2 Mon Sep 17 00:00:00 2001
 From: DevPanda <richter@kairosable.com>
-Date: Mon, 31 Aug 2026 22:23:24 +0200
+Date: Mon, 31 Aug 2026 23:05:09 +0200
 Subject: [PATCH] CEF darf in dem Thread arbeiten, der es aufruft
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8

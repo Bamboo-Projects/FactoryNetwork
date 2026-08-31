@@ -9,7 +9,7 @@ halb gepatchten Code zu übersetzen.
 | Datei | Zeilen | Zweck |
 |---|---|---|
 | `0001-cefbrowser-n-public.patch` | 1 | `CefBrowser_N` öffentlich, damit ein eigener Browser davon erben kann |
-| `0002-send-key-event-raw.patch` | 174 | `sendKeyEventRaw`: Tastenereignisse aus Werten statt aus einem `KeyEvent` |
+| `0002-send-key-event-raw.patch` | 189 | `sendKeyEventRaw`: Tastenereignisse aus Werten statt aus einem `KeyEvent` |
 | `0003-clang-format-nicht-fatal.patch` | 6 | Der Bau bricht nicht mehr ab, wenn `clang-format` nicht geladen werden kann |
 | `0004-cef-im-eigenen-thread.patch` | 63 | `useCallingThread()`: CEF arbeitet im aufrufenden Thread statt in AWTs Ereignisthread |
 
@@ -127,6 +127,34 @@ public void onScheduleMessagePumpWork(long delay_ms) {
 Deshalb: Mit eigenem Thread ist `doMessageLoopWork(delay)` ein Nichtstun, und
 gepumpt wird über das neue `doMessageLoopWorkNow()`. Wer seinen Takt selbst
 hat, braucht CEFs Bitte nicht.
+
+---
+
+## Die eine Falle in Patch 0002, die kein Compiler meldet
+
+Eine neue JNI-Funktion braucht **zwei** Stellen im nativen Teil, nicht eine:
+die Definition in `CefBrowser_N.cpp` **und** die Deklaration in
+`CefBrowser_N.h`.
+
+Der Grund steht in Zeile 8 des Headers:
+
+```c
+extern "C" {
+```
+
+Nur was dort deklariert ist, bekommt C-Bindung. Eine Funktion, die allein in
+der `.cpp` steht, wird als C++ übersetzt und trägt einen verzierten Namen —
+der Bau läuft durch, die Bibliothek entsteht, und selbst ein `grep` nach dem
+Namen findet ihn, weil er als Teilzeichenkette in der Verzierung steckt.
+Erst zur Laufzeit sagt die JVM:
+
+```text
+java.lang.UnsatisfiedLinkError:
+'void org.cef.browser.CefBrowser_N.N_SendKeyEventRaw(int, int, char, int, boolean, int)'
+```
+
+Der Prüfstand aus A4b hat es beim ersten Lauf gefunden. Das ist genau der
+Grund, warum er vor den Übersetzungstabellen steht.
 
 ---
 
