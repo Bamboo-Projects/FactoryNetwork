@@ -67,8 +67,11 @@ public final class WebCommands {
                                             dev.devpanda.factorynetwork.web.screen
                                                     .BackdropScreen.Mode.LOW_5,
                                             0.5,
+                                            // BMP, wie der Bericht es
+                                            // empfiehlt: Die Kodierung kostet
+                                            // ein Zweihundertstel von PNG.
                                             dev.devpanda.factorynetwork.web.capture
-                                                    .WorldCapture.Format.PNG);
+                                                    .WorldCapture.Format.BMP);
                                 } catch (Exception broken) {
                                     say("Hintergrund ließ sich nicht öffnen: " + broken.getMessage());
                                 }
