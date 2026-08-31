@@ -34,9 +34,11 @@ Pipeline gebauten Artefakte.
 
 Die letzte Zeile ist die, die im Proof-of-Concept **acht** war.
 
-### A4b — Tastatur, 39 Fälle
+### A4b — Tastatur und Rad, 40 Fälle
 
-**38 grün, 1 rot — und der rote ist eine Gegenprobe, die scheitern soll.**
+**40 grün.** Einer davon ist eine Gegenprobe: Sie erwartet, dass ein Zeichen
+mit Strg+Alt *nicht* ankommt — käme es durch, wäre die Gegenmaßnahme in
+`AwtModifiers` überflüssig, und der Fall würde es sagen.
 
 ```text
 Pfeile         ArrowUp/Down/Left/Right     38 / 40 / 37 / 39
