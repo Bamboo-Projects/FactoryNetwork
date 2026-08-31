@@ -30,6 +30,20 @@ neoForge {
             if (project.hasProperty('debug')) {
                 jvmArgument '-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005'
             }
+            // Die Messung des Bildwegs, ebenfalls nur auf Anforderung:
+            //   ./gradlew runClient -Pbenchmark
+            //
+            // Sie öffnet nacheinander drei Browser und schreibt Zahlen ins
+            // Protokoll. Dauerhaft an wäre sie ein Kostenposten in jeder
+            // Sitzung statt eines Nachweises, den man abrufen kann.
+            if (project.hasProperty('benchmark')) {
+                systemProperty 'fn.benchmark', 'true'
+                // Direkt in eine Welt: Im Hauptmenü deckelt Minecraft die
+                // Bildrate auf sechzig, und die Bildzeit misst dann die
+                // Deckelung statt der Kosten.
+                programArgument '--quickPlaySingleplayer'
+                programArgument(project.hasProperty('world') ? world : 'New World')
+            }
         }
         server {
             server()

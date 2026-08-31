@@ -205,3 +205,13 @@ Zwei Fragen, die dabei zuerst zu beantworten sind:
   hält den Weg zum GPU-Pfad offen.
 
 Beides sind Entscheidungen für den nächsten Spike, keine Nebensachen.
+
+---
+
+## Nachtrag vom 31.08.
+
+Der Texturupload-Spike ist gelaufen und beantwortet die offenen Risiken 1 und 2
+aus der Liste oben mit Zahlen. Beide Fragen dieses Abschnitts sind entschieden:
+**eigener Renderpfad über `CefBrowserOsr`**, und **im Aufruf hochladen**. Was
+dabei herauskam — auch das vormultiplizierte Alpha und die feste Bildrate von
+CEF — steht in [stand-texturupload.md](stand-texturupload.md).

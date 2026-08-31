@@ -4,6 +4,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import dev.devpanda.factorynetwork.web.frame.BorrowedFrame;
 import dev.devpanda.factorynetwork.web.frame.BrowserFrame;
 import dev.devpanda.factorynetwork.web.frame.DirtyRegion;
+import dev.devpanda.factorynetwork.web.measure.DurationSamples;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 
@@ -47,8 +48,9 @@ public final class GlTextureBackend implements BrowserTextureBackend {
     /** Wie viele Bytes bisher hochgeladen wurden — für die Messung. */
     private long uploadedBytes;
     private long uploads;
-    private long uploadNanos;
-    private long slowestUploadNanos;
+    private long fullUploads;
+    private long regions;
+    private final DurationSamples uploadTimes = new DurationSamples();
 
     /**
      * Legt die Textur an.
@@ -94,6 +96,7 @@ public final class GlTextureBackend implements BrowserTextureBackend {
         boolean sizeChanged = frame.width() != width || frame.height() != height;
         if (sizeChanged || frame.full()) {
             uploadWhole(frame);
+            fullUploads++;
         } else {
             uploadRegions(frame);
         }
@@ -136,6 +139,7 @@ public final class GlTextureBackend implements BrowserTextureBackend {
                     region.x(), region.y(), region.width(), region.height(),
                     GL12.GL_BGRA, GL12.GL_UNSIGNED_INT_8_8_8_8_REV, pixels);
             uploadedBytes += region.pixels() * BYTES_PER_PIXEL;
+            regions++;
         }
 
         RenderSystem.pixelStore(GL11.GL_UNPACK_ROW_LENGTH, 0);
@@ -144,12 +148,8 @@ public final class GlTextureBackend implements BrowserTextureBackend {
     }
 
     private void note(long started) {
-        long took = System.nanoTime() - started;
         uploads++;
-        uploadNanos += took;
-        if (took > slowestUploadNanos) {
-            slowestUploadNanos = took;
-        }
+        uploadTimes.record(System.nanoTime() - started);
     }
 
     /**
@@ -190,20 +190,46 @@ public final class GlTextureBackend implements BrowserTextureBackend {
         return uploadedBytes;
     }
 
+    /**
+     * Wie oft das ganze Bild ging statt nur der geänderte Ausschnitt.
+     *
+     * <p>Die Zahl, an der sich zeigt, ob Ausschnitte überhaupt ankommen. Ist
+     * sie gleich {@link #uploads()}, arbeitet die Ersparnis nicht.
+     */
+    public long fullUploads() {
+        return fullUploads;
+    }
+
+    /** Wie viele Ausschnitte insgesamt hochgeladen wurden. */
+    public long regions() {
+        return regions;
+    }
+
     /** Durchschnittliche Dauer eines Uploads in Mikrosekunden. */
     public double averageUploadMicros() {
-        return uploads == 0 ? 0.0 : uploadNanos / (double) uploads / 1000.0;
+        return uploadTimes.average();
     }
 
     public double slowestUploadMicros() {
-        return slowestUploadNanos / 1000.0;
+        return uploadTimes.slowest();
+    }
+
+    /** Die Verteilung der Uploadzeiten — Median, p95 und Ausreißer. */
+    public DurationSamples uploadTimes() {
+        return uploadTimes;
+    }
+
+    /** Bytes je Bild, gemittelt — die Zahl, die Ausschnitte klein machen sollen. */
+    public double bytesPerUpload() {
+        return uploads == 0 ? 0.0 : uploadedBytes / (double) uploads;
     }
 
     public void resetStats() {
         uploads = 0;
         uploadedBytes = 0;
-        uploadNanos = 0;
-        slowestUploadNanos = 0;
+        fullUploads = 0;
+        regions = 0;
+        uploadTimes.reset();
     }
 
     @Override

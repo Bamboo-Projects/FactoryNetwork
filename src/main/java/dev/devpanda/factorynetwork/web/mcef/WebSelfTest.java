@@ -111,6 +111,17 @@ public final class WebSelfTest {
         }
     }
 
+    /**
+     * Ob der Selbsttest durch ist.
+     *
+     * <p>Die Messung fragt danach: Zwei Browser gleichzeitig messen einander
+     * mit, und der Selbsttest kommt zuerst — er entscheidet, ob überhaupt
+     * etwas zu messen ist.
+     */
+    public static boolean finished() {
+        return done;
+    }
+
     private static void start() {
         WebRuntimeStatus status = WebSupport.ensureStarted();
         if (!status.usable()) {

@@ -28,6 +28,20 @@ public final class FnClient {
         // Der Selbsttest des Bildwegs, einmal je Sitzung. Er braucht einen
         // Zeichenkontext und kann deshalb kein gewöhnlicher Prüflauf sein.
         dev.devpanda.factorynetwork.web.mcef.WebSelfTest.tick();
+        // Die Messung danach, und nur auf Ansage: -Dfn.benchmark=true
+        dev.devpanda.factorynetwork.web.mcef.WebBenchmark.tick();
+    }
+
+    /**
+     * Der Abstand zweier Bilder — die einzige Zahl, die ein Spieler merkt.
+     *
+     * <p>Am Bild und nicht am Takt: Der Takt läuft mit festen zwanzig je
+     * Sekunde und weiß nichts davon, ob das Zeichnen dazwischen stockt.
+     */
+    @SubscribeEvent
+    public static void measureFrame(
+            net.neoforged.neoforge.client.event.RenderFrameEvent.Post event) {
+        dev.devpanda.factorynetwork.web.mcef.WebBenchmark.frameRendered();
     }
 
     /**
