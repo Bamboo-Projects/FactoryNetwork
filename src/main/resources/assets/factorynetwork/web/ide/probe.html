@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Messfläche</title>
+<link rel="stylesheet" href="vs/editor/editor.main.css">
+<style>
+  /* Der Minecraft-Hintergrund, wie in der richtigen Oberfläche. */
+  #bg { position:fixed; inset:0; width:100%; height:100%; object-fit:cover; z-index:0 }
+  #bg:not([src]) { display:none }
+
+  /* Dieselbe Kopie, einmal weichgezeichnet. Ein filter — anders als ein
+     backdrop-filter — wird von Chromium zwischengespeichert, solange sich das
+     Element nicht ändert. Bei einem stehenden Hintergrund muss er also genau
+     einmal gerechnet werden statt bei jedem Neuzeichnen. */
+  #bgblur { position:fixed; inset:0; width:100%; height:100%; object-fit:cover;
+            z-index:0; filter:blur(18px) saturate(140%); display:none }
+  body.vorblur #bgblur { display:block; clip-path:inset(0) }
+
+  * { box-sizing:border-box }
+  html,body { margin:0; height:100%; overflow:hidden; background:#0a0b10;
+              color:#dfe3ee; font:13px/1.5 "Segoe UI",system-ui,sans-serif }
+
+  #wrap { position:relative; z-index:1; height:100% }
+
+  /* Nackte Varianten: die Fläche ganz ausfüllen, nichts drumherum. */
+  #plain { width:100%; height:100%; margin:0; padding:16px; border:0;
+           background:#12121c; color:#dfe3ee; resize:none; outline:none;
+           font:14px/1.5 Consolas,monospace }
+
+  /* Die volle Oberfläche, wie in Schritt F und G. */
+  body.shell #wrap { display:grid; grid-template-rows:34px 1fr 190px 24px }
+  #tabs,#explorer,#panel,#status { background:rgba(18,18,26,0.62) }
+  body.glas #tabs, body.glas #explorer,
+  body.glas #panel, body.glas #status { backdrop-filter:blur(20px) saturate(130%) }
+  #tabs { display:flex; align-items:center; padding:0 16px; gap:16px;
+          border-bottom:1px solid rgba(255,255,255,0.10) }
+  #mid { display:grid; grid-template-columns:220px 1fr; min-height:0; height:100% }
+  /* Ohne die Hülle füllt der Editor die Fläche allein. Fehlt diese Regel,
+     bekommt er die Höhe null — er lädt, zeigt aber nichts, nimmt keinen Fokus
+     an, und die Messung liefert siebenundzwanzig Bilder statt sechshundert.
+     Genau so ist die Variante „Monaco minimal" zweimal ausgefallen. */
+  body:not(.shell) #mid { grid-template-columns:1fr }
+  body:not(.shell) #editor { position:fixed; inset:0; z-index:1 }
+  #explorer { border-right:1px solid rgba(255,255,255,0.10); padding:12px 14px }
+  #editor { min-width:0; min-height:0 }
+  #panel { border-top:1px solid rgba(255,255,255,0.10); padding:10px 14px;
+           font:12px Consolas,monospace; color:#9aa1b4 }
+  #status { display:flex; align-items:center; padding:0 14px;
+            background:rgba(125,211,160,0.16);
+            border-top:1px solid rgba(255,255,255,0.10) }
+  .weg { display:none }
+</style>
+</head>
+<body>
+<img id="bg" alt=""><img id="bgblur" alt="">
+<div id="wrap">
+  <div id="tabs" class="weg">main.fn · sortierung.fn · ofen.fn</div>
+  <div id="mid">
+    <div id="explorer" class="weg">Projekt<br>main.fn<br>lager.fn<br>netz.fn</div>
+    <div id="editor"></div>
+  </div>
+  <div id="panel" class="weg">Keine Probleme gefunden.</div>
+  <div id="status" class="weg">Ln 1, Col 1</div>
+</div>
+<textarea id="plain" class="weg" spellcheck="false"></textarea>
+<div id="plainedit" class="weg" contenteditable="true"></div>
+
+<script src="vs/loader.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var bg = document.getElementById('bg');
+  var bgblur = document.getElementById('bgblur');
+  window.fnSetBackground = function (url) { bg.src = url; bgblur.src = url; };
+
+  /* ---------------------------------------------------------------
+     Die Messung. Alles innerhalb der Seite, mit einer Uhr — es
+     braucht keine gemeinsame Zeitbasis mit Java, weil nur Abstände
+     zählen.
+     --------------------------------------------------------------- */
+  function Reihe() { this.werte = []; }
+  Reihe.prototype.dazu = function (wert) { this.werte.push(wert); };
+  Reihe.prototype.leeren = function () { this.werte = []; };
+  Reihe.prototype.teil = function (anteil) {
+    if (!this.werte.length) { return 0; }
+    var s = this.werte.slice().sort(function (a, b) { return a - b; });
+    var i = Math.min(s.length - 1, Math.max(0, Math.ceil(anteil * s.length) - 1));
+    return s[i];
+  };
+  Reihe.prototype.zeile = function () {
+    return this.werte.length
+      ? this.teil(0.5).toFixed(1) + ' / ' + this.teil(0.95).toFixed(1)
+        + ' / ' + this.teil(1).toFixed(1)
+      : '—';
+  };
+
+  var bisInhalt = new Reihe();   // keydown → Inhalt geändert
+  var bisRaf1   = new Reihe();   // keydown → erster Bildaufruf
+  var bisRaf2   = new Reihe();   // keydown → zweiter, nach dem Übergeben
+  var offen = null;              // Zeitpunkt des letzten keydown
+
+  function anschlag() {
+    // Nur der erste Anschlag einer Folge zählt — wie auf der Java-Seite.
+    if (offen !== null) { return; }
+    offen = performance.now();
+    var start = offen;
+    requestAnimationFrame(function () {
+      bisRaf1.dazu(performance.now() - start);
+      // <b>Der zweite Aufruf ist der wichtige.</b> Der erste läuft noch
+      // vor Layout und Zeichnen; erst der zweite liegt hinter dem
+      // Übergeben des vorigen Bildes. Wer nur den ersten misst, misst
+      // den Ereignisweg und hält ihn für die Renderzeit.
+      requestAnimationFrame(function () {
+        bisRaf2.dazu(performance.now() - start);
+        offen = null;
+      });
+    });
+  }
+
+  function inhaltGeaendert() {
+    if (offen !== null) { bisInhalt.dazu(performance.now() - offen); }
+  }
+
+  window.fnProbe = {
+    bericht: function (name) {
+      console.log('PROBE ' + (name || '?')
+        + ' | keydown→Inhalt ' + bisInhalt.zeile()
+        + ' | keydown→rAF1 ' + bisRaf1.zeile()
+        + ' | keydown→rAF2 ' + bisRaf2.zeile()
+        + ' | n=' + bisRaf2.werte.length
+        + ' | aktiv=' + (document.activeElement && document.activeElement.tagName));
+    },
+    leeren: function () {
+      bisInhalt.leeren(); bisRaf1.leeren(); bisRaf2.leeren(); offen = null;
+    },
+    fokus: function () {
+      // Monaco zuerst: Sein verstecktes Eingabefeld ist selbst ein textarea,
+      // und wer blind das erste textarea nimmt, trifft im Zweifel das falsche.
+      if (window.fnEditor) { window.fnEditor.focus(); }
+      else {
+        var ziel = document.querySelector('#plain:not(.weg)')
+          || document.querySelector('#plainedit:not(.weg)');
+        if (ziel) { ziel.focus(); }
+      }
+      console.log('PROBE fokus auf ' + (document.activeElement
+        && document.activeElement.tagName));
+    },
+    frisch: function () {
+      if (window.fnEditor) { window.fnEditor.getModel().setValue(inhalt(120)); }
+      var t = document.getElementById('plain');
+      if (t) { t.value = ''; }
+      var c = document.getElementById('plainedit');
+      if (c) { c.textContent = ''; }
+      this.leeren();
+    }
+  };
+
+  /* ---------------------------------------------------------------
+     Inhalt, gleich für alle Varianten
+     --------------------------------------------------------------- */
+  var WORT = ['worker','storage','move','when','power','display','emit',
+              'const','let','if','else','every','ticks','from','to','at'];
+  function inhalt(zeilen) {
+    var aus = [];
+    for (var i = 0; i < zeilen; i++) {
+      aus.push('    ' + WORT[i % WORT.length] + ' ' + WORT[(i * 3) % WORT.length]
+        + ' = "' + WORT[(i * 7) % WORT.length] + '" // Zeile ' + (i + 1));
+    }
+    return aus.join('\n');
+  }
+
+  /* ---------------------------------------------------------------
+     Aufbau je Variante
+     --------------------------------------------------------------- */
+  var v = (location.href.match(/[?&]v=([a-z\-]+)/) || [])[1] || 'monaco-glas';
+  var body = document.body;
+
+  function zeige(id) { document.getElementById(id).classList.remove('weg'); }
+
+  if (v === 'huelle') {
+    // Nur die Oberfläche, ohne Editor — die Speicherstufe zwischen leerem
+    // Browser und geladenem Monaco.
+    body.classList.add('shell');
+    ['tabs','explorer','panel','status'].forEach(function (id) { zeige(id); });
+    console.log('PROBE bereit: huelle');
+  } else if (v === 'textarea' || v === 'contenteditable') {
+    // Keine Umbenennung mehr: Beim ersten Versuch bekamen zwei Elemente
+    // dieselbe Kennung, die Fokussuche fand das falsche, und die Variante
+    // tippte fünfundvierzig Sekunden ins Leere.
+    var feld = document.getElementById(v === 'textarea' ? 'plain' : 'plainedit');
+    feld.classList.remove('weg');
+    feld.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;'
+      + 'margin:0;padding:16px;border:0;background:#12121c;color:#dfe3ee;'
+      + 'outline:none;overflow:auto;white-space:pre;'
+      + 'font:14px/1.5 Consolas,monospace;z-index:2';
+    feld.addEventListener('keydown', anschlag);
+    feld.addEventListener('input', inhaltGeaendert);
+    feld.focus();
+    console.log('PROBE bereit: ' + v);
+  } else {
+    require.config({ paths: { vs: 'vs' } });
+    require(['vs/editor/editor.main'], function () {
+      var m = window.monaco;
+      m.languages.register({ id: 'manifold' });
+      m.languages.setMonarchTokensProvider('manifold', {
+        keywords: WORT,
+        tokenizer: { root: [
+          [/\/\/.*$/, 'comment'],
+          [/"([^"\\]|\\.)*"/, 'string'],
+          [/\b\d+\b/, 'number'],
+          [/[a-zA-Z_]\w*/, { cases: { '@keywords':'keyword', '@default':'identifier' } }]
+        ] }
+      });
+      m.editor.defineTheme('fn-dunkel', {
+        base:'vs-dark', inherit:true, rules:[],
+        colors:{ 'editor.background':'#12121c' }
+      });
+      m.editor.defineTheme('fn-glas', {
+        base:'vs-dark', inherit:true, rules:[],
+        colors:{ 'editor.background':'#12121ca0', 'minimap.background':'#00000040' }
+      });
+
+      var minimal = v === 'monaco-min';
+      if (!minimal) { body.classList.add('shell'); ['tabs','explorer','panel','status']
+        .forEach(function (id) { zeige(id); }); }
+      if (v === 'monaco-glas' || v === 'monaco-vorblur') { body.classList.add('glas'); }
+      if (v === 'monaco-vorblur') {
+        body.classList.remove('glas');      // kein backdrop-filter
+        body.classList.add('vorblur');      // stattdessen die geblurte Kopie
+      }
+
+      var editor = m.editor.create(document.getElementById('editor'), {
+        value: inhalt(120),
+        language: 'manifold',
+        theme: minimal ? 'fn-dunkel'
+          : (v === 'monaco-full' ? 'fn-dunkel' : 'fn-glas'),
+        automaticLayout: true,
+        fontSize: 14,
+        fontFamily: 'Consolas, monospace',
+        // Für „minimal" alles ab, was eine eigene Fläche zeichnet.
+        minimap: { enabled: !minimal },
+        stickyScroll: { enabled: !minimal },
+        folding: !minimal,
+        lineNumbers: minimal ? 'off' : 'on',
+        glyphMargin: !minimal,
+        overviewRulerLanes: minimal ? 0 : 3,
+        overviewRulerBorder: !minimal,
+        renderLineHighlight: minimal ? 'none' : 'line',
+        occurrencesHighlight: minimal ? 'off' : 'singleFile',
+        selectionHighlight: !minimal,
+        bracketPairColorization: { enabled: !minimal },
+        guides: { indentation: !minimal, bracketPairs: !minimal },
+        scrollbar: { verticalScrollbarSize: minimal ? 0 : 14 },
+        renderWhitespace: 'none',
+        smoothScrolling: false
+      });
+      window.fnEditor = editor;
+
+      editor.onKeyDown(anschlag);
+      editor.getModel().onDidChangeContent(inhaltGeaendert);
+      editor.focus();
+      console.log('PROBE bereit: ' + v);
+    });
+  }
+})();
+</script>
+</body>
+</html>

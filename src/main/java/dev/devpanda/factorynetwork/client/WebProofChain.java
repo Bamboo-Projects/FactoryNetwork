@@ -124,7 +124,13 @@ final class WebProofChain {
         }
         proofStarted = true;
         boolean opened;
-        if (Boolean.getBoolean("fn.typing")) {
+        if (Boolean.getBoolean("fn.probe")) {
+            // Die Marke für die erste Speicherstufe: Chromium läuft, aber
+            // dieser Bildschirm hat noch keinen Browser aufgemacht. Danach
+            // gibt es diesen Zustand in dieser Sitzung nicht wieder.
+            LOG.info("RAM:cef-ohne-browser — Marke gesetzt");
+            opened = dev.devpanda.factorynetwork.web.ide.ProbeBenchmark.open(client);
+        } else if (Boolean.getBoolean("fn.typing")) {
             opened = dev.devpanda.factorynetwork.web.ide.TypingBenchmark.open(client);
         } else if (Boolean.getBoolean("fn.idebench")) {
             opened = dev.devpanda.factorynetwork.web.ide.MonacoBenchmark.open(client);

@@ -60,6 +60,11 @@ neoForge {
                 if (project.hasProperty('typing')) {
                     systemProperty 'fn.typing', 'true'
                 }
+                // Die Zerlegung von A ueber Vergleichsseiten:
+                //   ./gradlew runClient -Pide -Pprobe -Pw=1920 -Ph=1080
+                if (project.hasProperty('probe')) {
+                    systemProperty 'fn.probe', 'true'
+                }
                 programArgument '--quickPlaySingleplayer'
                 programArgument(project.hasProperty('world') ? world : 'New World')
             }
