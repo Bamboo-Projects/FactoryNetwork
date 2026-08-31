@@ -111,10 +111,25 @@ final class WebProofChain {
     }
     /** Der kurze Weg: Welt abwarten, Oberfläche öffnen. */
     private static void tickIdeOnly() {
-        if (proofStarted) {
+        Minecraft client = Minecraft.getInstance();
+        // Der Lebenslauf-Ablauf öffnet und schließt selbst; er darf deshalb
+        // nicht auf die einmalige Eröffnung unten warten.
+        if (Boolean.getBoolean("fn.lifecycle")) {
+            if (client.level == null) {
+                return;
+            }
+            ticksWaiting++;
+            if (ticksWaiting < SETTLE_TICKS) {
+                return;
+            }
+            dev.devpanda.factorynetwork.web.ide.LifecycleBenchmark.start();
+            dev.devpanda.factorynetwork.web.ide.LifecycleBenchmark.tick(client);
             return;
         }
-        Minecraft client = Minecraft.getInstance();
+        if (proofStarted) {
+            reopenOnKey(client);
+            return;
+        }
         if (client.level == null) {
             return;
         }
@@ -141,4 +156,33 @@ final class WebProofChain {
             LOG.warn("Die Oberfläche ließ sich nicht öffnen");
         }
     }
+
+    /**
+     * Öffnet die Oberfläche auf F6 erneut.
+     *
+     * <p><b>Wozu.</b> Die Oberfläche geht beim Start einmal auf. Wer prüfen
+     * will, ob beim wiederholten Öffnen und Schließen Prozesse liegenbleiben,
+     * braucht aber genau das: wiederholtes Öffnen. Ohne einen Weg zurück ist
+     * die Frage nicht zu beantworten.
+     *
+     * <p>Nur im Messbetrieb, also wenn {@code fn.ide} gesetzt ist — im Spiel
+     * gehört eine Oberfläche an einen Block und nicht an eine Taste.
+     */
+    private static void reopenOnKey(Minecraft client) {
+        if (client.screen != null || client.level == null) {
+            return;
+        }
+        long window = client.getWindow().getWindow();
+        boolean down = org.lwjgl.glfw.GLFW.glfwGetKey(window,
+                org.lwjgl.glfw.GLFW.GLFW_KEY_F6) == org.lwjgl.glfw.GLFW.GLFW_PRESS;
+        // Nur die Flanke zählt: Gedrückt gehalten würde die Oberfläche sonst
+        // in jedem Takt neu aufgemacht.
+        if (down && !reopenKeyWasDown) {
+            LOG.info("F6 — Oberfläche wird erneut geöffnet");
+            dev.devpanda.factorynetwork.web.ide.IdeScreen.open(client);
+        }
+        reopenKeyWasDown = down;
+    }
+
+    private static boolean reopenKeyWasDown;
 }

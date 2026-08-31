@@ -65,6 +65,7 @@
 </div>
 <textarea id="plain" class="weg" spellcheck="false"></textarea>
 <div id="plainedit" class="weg" contenteditable="true"></div>
+<canvas id="leinwand" class="weg"></canvas>
 
 <script src="vs/loader.js"></script>
 <script>
@@ -132,6 +133,18 @@
         + ' | n=' + bisRaf2.werte.length
         + ' | aktiv=' + (document.activeElement && document.activeElement.tagName));
     },
+    // Dieselben Zahlen als Wert statt als Konsolenzeile. Die Konsole eines
+    // fremden Browsers liegt woanders als das Skript, das ihn steuert; wer
+    // von außen misst, braucht eine Antwort und keinen Eintrag im Protokoll.
+    zahlen: function () {
+      return {
+        inhalt: [bisInhalt.teil(0.5), bisInhalt.teil(0.95)],
+        raf1: [bisRaf1.teil(0.5), bisRaf1.teil(0.95)],
+        raf2: [bisRaf2.teil(0.5), bisRaf2.teil(0.95), bisRaf2.teil(1)],
+        n: bisRaf2.werte.length,
+        alle: bisRaf2.werte
+      };
+    },
     leeren: function () {
       bisInhalt.leeren(); bisRaf1.leeren(); bisRaf2.leeren(); offen = null;
     },
@@ -179,7 +192,64 @@
 
   function zeige(id) { document.getElementById(id).classList.remove('weg'); }
 
-  if (v === 'huelle') {
+  if (v === 'takt') {
+    // <b>Eine Seite, die nichts tut außer sich zu ändern.</b> Sie misst
+    // keine Latenz, sondern den Takt: Wie oft kommt ein fensterloser Browser
+    // überhaupt dazu, ein Bild abzuliefern? Dafür muss sich in jedem Bild
+    // etwas ändern — ein Browser, bei dem alles bleibt, wie es war, malt
+    // gar nicht und sähe unendlich langsam aus.
+    //
+    // <b>Und nur ein kleines Feld.</b> Die ganze Fläche zu ändern würde den
+    // Takt mit der Übertragungszeit vermischen; vierzig mal vierzig Punkte
+    // kosten nichts und genügen, damit Chromium ein Bild für nötig hält.
+    var feld = document.getElementById('leinwand');
+    feld.classList.remove('weg');
+    feld.style.cssText = 'position:fixed;left:0;top:0;z-index:2';
+    feld.width = 40;
+    feld.height = 40;
+    var pinsel = feld.getContext('2d');
+    var runde = 0;
+    (function male() {
+      pinsel.fillStyle = (runde++ % 2) ? '#6ee7a8' : '#2a2a3c';
+      pinsel.fillRect(0, 0, 40, 40);
+      requestAnimationFrame(male);
+    })();
+    console.log('PROBE bereit: takt');
+  } else if (v === 'leinwand') {
+    // <b>Der Kontrollfall.</b> Weniger Arbeit als hier kann eine Seite auf
+    // einen Tastendruck nicht leisten: kein Layout, kein Textsatz, keine
+    // Bildlaufrechnung, kein Neuaufbau einer Zeile — ein gefülltes Rechteck
+    // von zwanzig mal zwanzig Bildpunkten, und nichts sonst.
+    //
+    // <b>Warum das die eigentliche Frage entscheidet.</b> Bleibt die Strecke
+    // vom Tastendruck bis zum fertigen Bild hier genauso lang wie unter
+    // Monaco, dann misst sie überhaupt keine Arbeit. Dann misst sie
+    // Wartezeit, und keine Zeile Monaco-Optimierung könnte je etwas daran
+    // ändern. Wird sie hier deutlich kürzer, ist die Zeit tatsächlich in der
+    // Seite verbraucht worden und Monaco ist ein lohnendes Ziel.
+    var leinwand = document.getElementById('leinwand');
+    leinwand.classList.remove('weg');
+    leinwand.style.cssText = 'position:fixed;inset:0;z-index:2';
+    leinwand.width = window.innerWidth;
+    leinwand.height = window.innerHeight;
+    var stift = leinwand.getContext('2d');
+    stift.fillStyle = '#12121c';
+    stift.fillRect(0, 0, leinwand.width, leinwand.height);
+    var kachel = 0;
+    // Am Fenster horchen, nicht am Element: Eine Leinwand nimmt von sich aus
+    // keinen Fokus an, und ein tabindex hier wäre eine zweite Sache, die
+    // schiefgehen kann.
+    window.addEventListener('keydown', function () {
+      anschlag();
+      var x = (kachel % 40) * 24 + 20;
+      var y = (Math.floor(kachel / 40) % 20) * 24 + 20;
+      kachel++;
+      stift.fillStyle = (kachel % 2) ? '#6ee7a8' : '#2a2a3c';
+      stift.fillRect(x, y, 20, 20);
+      inhaltGeaendert();
+    });
+    console.log('PROBE bereit: leinwand');
+  } else if (v === 'huelle') {
     // Nur die Oberfläche, ohne Editor — die Speicherstufe zwischen leerem
     // Browser und geladenem Monaco.
     body.classList.add('shell');

@@ -11,27 +11,24 @@ import java.nio.file.Path;
 import java.util.Locale;
 
 /**
- * Zerlegt A — die Strecke zwischen Tastendruck und fertigem Bild von Chromium.
+ * Der Messablauf für Takt und Tipplatenz.
  *
- * <p><b>Die Frage.</b> Nach Schritt G steht fest, dass A rund zweiundvierzig
- * Millisekunden dauert und nicht an der Auflösung hängt. Offen ist, <i>was</i>
- * darin steckt. „Chromium und Monaco" ist keine Antwort, sondern eine
- * Zusammenfassung von mindestens fünf Dingen: JavaScript, Layout, Zeichnen,
- * Zusammensetzen, und der Rückweg des fertigen Bildes vom Grafikspeicher in
- * den Hauptspeicher, den der fensterlose Betrieb erzwingt.
+ * <p><b>Wozu er jetzt dient.</b> Alle bisherigen Zahlen dieses Projekts sind
+ * über eine Fernsitzung entstanden. Eine Fernsitzung kann in den Bildweg
+ * hineinregieren — Fensterverwaltung, Bildsynchronisation, Zeitplanung auf
+ * der Grafikkarte hängen daran. Dieser Ablauf prüft lokal nach, ob die
+ * Schlüsselzahlen bleiben, und wiederholt dabei ausdrücklich <i>nicht</i> die
+ * ganzen alten Reihen. Zwei Stufen genügen.
  *
- * <p><b>Der Weg dorthin führt über zwei Uhren, die nichts voneinander
- * wissen.</b> Die Seite misst mit ihrer eigenen, was zwischen Tastendruck und
- * fertig gezeichnetem Bild vergeht; Java misst, wann das Bild ankommt. Beide
- * Strecken beginnen am selben Ereignis. Was zwischen ihnen liegt, ist das,
- * wofür Chromium <i>nach</i> dem Zeichnen noch braucht — und genau das ist die
- * Zahl, die entscheidet, ob der nächste Hebel Monaco heißt oder der
- * Bildweg selbst.
+ * <p><b>Die erste Stufe misst den Takt, nicht die Dauer.</b> Eine Seite, die
+ * in jedem Bild ein kleines Feld umfärbt, zwingt Chromium zu liefern, sooft
+ * es kann. Der Abstand zweier Bilder ist dann der Takt selbst und sonst
+ * nichts — die Zahl, die nach Schritt I den ganzen Befund trägt und die nach
+ * dem Patch auf sechzig Bilder je Sekunde springen muss.
  *
- * <p><b>Und Vergleichsseiten, weil eine Zahl allein nichts sagt.</b> Ein
- * nacktes Textfeld ist die Untergrenze dessen, was Texteingabe in diesem
- * Aufbau überhaupt kosten kann. Liegt Monaco weit darüber, ist es Monaco.
- * Liegt schon das Textfeld hoch, ist es der Aufbau.
+ * <p><b>Die zweite Stufe misst, was das Produkt werden soll:</b> Monaco
+ * vollständig, mit dem vorgeblurten Hintergrund statt echtem Weichzeichner.
+ * Beides in einem Lauf, damit dieselbe Sitzung beide Zahlen liefert.
  */
 public final class ProbeBenchmark extends IdeScreen {
 
@@ -58,11 +55,13 @@ public final class ProbeBenchmark extends IdeScreen {
      * leeren Zustand in dieser Sitzung nicht zurück.
      */
     private enum Step {
-        // Nur noch die beiden Varianten, die im ersten Durchgang an der
-        // fehlenden Editorhöhe gescheitert sind. Alles andere ist gemessen
-        // und muss nicht wiederholt werden.
-        MONACO_MIN("C Monaco minimal", "monaco-min", TYPING_NANOS, true),
-        MONACO_FULL("D Monaco vollständig", "monaco-full", TYPING_NANOS, true),
+        // Der lokale Kontrolllauf, nachdem alle bisherigen Messungen über eine
+        // Fernsitzung liefen. Zwei Stufen, mehr braucht es nicht: einmal der
+        // nackte Takt, einmal die Konfiguration, die das Produkt werden soll.
+        // Alles dazwischen ist beantwortet und wird nicht wiederholt.
+        TAKT("A Takt (kontinuierlicher Paint)", "takt", 20_000_000_000L, false),
+        MONACO_VORBLUR("B Monaco + vorgeblurter Hintergrund", "monaco-vorblur",
+                TYPING_NANOS, true),
 
         DONE("fertig", null, 0, false);
 
@@ -82,7 +81,7 @@ public final class ProbeBenchmark extends IdeScreen {
     private static final String TIPPTEXT = "    let vorrat = storage.count(x)";
 
     private final String pageBase;
-    private Step step = Step.MONACO_MIN;
+    private Step step = Step.TAKT;
     private long stepStartedNanos;
     private long paintsAtStart;
     private int typedIndex;
@@ -125,7 +124,7 @@ public final class ProbeBenchmark extends IdeScreen {
             return false;
         }
         String base = probe.toUri().toString();
-        client.setScreen(new ProbeBenchmark(base + "?v=monaco-min", base));
+        client.setScreen(new ProbeBenchmark(base + "?v=takt", base));
         return true;
     }
 
@@ -141,7 +140,11 @@ public final class ProbeBenchmark extends IdeScreen {
     }
 
     private void advance() {
-        if (step == Step.DONE || !hasSession()) {
+        if (step == Step.DONE) {
+            finishIfDue();
+            return;
+        }
+        if (!hasSession()) {
             return;
         }
         if (!announced) {
@@ -162,7 +165,12 @@ public final class ProbeBenchmark extends IdeScreen {
                 texture().resetStats();
                 session().resetLatency();
                 frameTimes.reset();
-                runScript("window.fnProbe && fnProbe.leeren()");
+                // frisch() statt leeren(): Es setzt auch den Inhalt des
+                // Editors zurück. Ohne das tippen aufeinanderfolgende Stufen
+                // in dasselbe, immer länger werdende Dokument — in Schritt H
+                // hat genau das eine Stufe um acht Millisekunden langsamer
+                // aussehen lassen, als sie war.
+                runScript("window.fnProbe && fnProbe.frisch()");
                 if (step.typing) {
                     runScript("window.fnProbe && fnProbe.fokus()");
                     click(0.5, 0.4);
@@ -182,6 +190,22 @@ public final class ProbeBenchmark extends IdeScreen {
         frameInStep = 0;
         begin();
         if (step == Step.DONE) {
+            // <b>Nicht sofort schließen.</b> Der Bericht der Seite geht über
+            // die Konsole und braucht eine Handvoll Bilder, bis er ankommt.
+            // Beim letzten Lauf hat das Schließen ihn überholt, und für die
+            // letzte Stufe fehlte die Sicht der Seite ganz.
+            closingFrames = 30;
+        }
+    }
+
+    /** Wie viele Bilder noch zu warten sind, bis geschlossen werden darf. */
+    private int closingFrames = -1;
+
+    private void finishIfDue() {
+        if (closingFrames < 0) {
+            return;
+        }
+        if (closingFrames-- == 0) {
             LOG.info("Probemessung fertig.");
             finished = true;
             onClose();
@@ -232,13 +256,8 @@ public final class ProbeBenchmark extends IdeScreen {
 
     private void report() {
         double seconds = (System.nanoTime() - stepStartedNanos) / 1_000_000_000.0;
+        reportPace(seconds);
         if (!step.typing) {
-            // Für die Speicherstufen genügt die Marke; gemessen wird von
-            // außen. Sie steht am <b>Ende</b> der Stufe, nicht am Anfang —
-            // dann ist alles geladen und eingeschwungen.
-            LOG.info("{} — Marke gesetzt nach {} s, Browser {}x{}",
-                    step.label, String.format(Locale.GERMANY, "%.0f", seconds),
-                    session().width(), session().height());
             return;
         }
         long paints = paints() - paintsAtStart;
@@ -269,8 +288,45 @@ public final class ProbeBenchmark extends IdeScreen {
                 "%s: Minecrafts Bildzeit p50 %.1f ms, p95 %.1f ms",
                 step.label, frameTimes.percentile(50) / 1000.0,
                 frameTimes.percentile(95) / 1000.0));
+        // Die Form der Verteilung, nicht nur ihre Lage. Ein Takt von dreißig
+        // Bildern je Sekunde trägt seine Unterschrift sichtbar: Häufungen bei
+        // 33 ms und bei 67 ms, dazwischen fast nichts. Verteilte Rechenzeit
+        // sähe dagegen aus wie ein einzelner Hügel.
+        LOG.info("{}: Verteilung von A (Fächer zu 4 ms)\n{}",
+                step.label, toPaint.histogram(4.0, 25));
         // Und jetzt die Sicht der Seite auf dieselbe Strecke.
         runScript("window.fnProbe && fnProbe.bericht('" + step.label + "')");
+    }
+
+    /**
+     * Der Takt: wie weit zwei Bilder aus Chromium auseinanderliegen.
+     *
+     * <p><b>Die Zahl, auf die es bei diesem Lauf ankommt.</b> Nicht wie lange
+     * etwas dauert, sondern wie oft überhaupt jemand drankommt. Bei einer
+     * Seite, die in jedem Bild etwas ändert, ist der Abstand der Takt selbst
+     * und sonst nichts.
+     *
+     * <p>Ein Vorbehalt gehört ins Protokoll: Das Bild kommt im Render-Thread
+     * an, die Abstände liegen also auf Minecrafts eigenem Raster von rund
+     * achteinhalb Millisekunden. Dreiunddreißig von sechzehn zu
+     * unterscheiden reicht das mühelos; auf die Nachkommastelle ist es nicht
+     * zu lesen.
+     */
+    private void reportPace(double seconds) {
+        var gaps = session().paintGaps();
+        if (gaps.count() < 5) {
+            LOG.info("{}: zu wenige Bilder für einen Takt ({})", step.label, gaps.count());
+            return;
+        }
+        LOG.info("=== {} ===", step.label);
+        LOG.info(String.format(Locale.GERMANY,
+                "%s: Takt onPaint→onPaint p10 %.2f ms | p50 %.2f ms | p90 %.2f ms "
+                        + "= %.1f Bilder/s (%d Abstände in %.0f s)",
+                step.label, gaps.percentile(10) / 1000.0, gaps.percentile(50) / 1000.0,
+                gaps.percentile(90) / 1000.0, 1000.0 / (gaps.percentile(50) / 1000.0),
+                gaps.count(), seconds));
+        LOG.info("{}: Verteilung des Takts (Fächer zu 2 ms)\n{}",
+                step.label, gaps.histogram(2.0, 30));
     }
 
     @Override
