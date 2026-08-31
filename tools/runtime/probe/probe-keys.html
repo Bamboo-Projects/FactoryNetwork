@@ -1,0 +1,67 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Tastatur-Prüfstand</title>
+<!--
+  Die Seite schreibt mit, was Chromium von einem Tastendruck tatsächlich sieht.
+
+  Sie urteilt nicht. Was erwartet wird, steht in KeyProbe.java; hier steht nur,
+  was ankam. Beides getrennt zu halten ist der Sinn der Übung: Sonst prüft die
+  Messung ihre eigene Annahme.
+-->
+<style>
+  html, body { margin: 0; height: 100%; background: #101418; }
+  #feld {
+    position: fixed; inset: 0; width: 100%; height: 100%;
+    box-sizing: border-box; border: 0; padding: 16px; resize: none;
+    background: #101418; color: #cfd8dc;
+    font: 16px/1.5 ui-monospace, Consolas, monospace;
+  }
+</style>
+
+<textarea id="feld" autofocus spellcheck="false"></textarea>
+
+<script>
+  window.protokoll = [];
+
+  addEventListener('keydown', e => window.protokoll.push({
+    art: 'down',
+    key: e.key,
+    code: e.code,
+    keyCode: e.keyCode,
+    location: e.location,
+    repeat: e.repeat,
+    ctrl: e.ctrlKey,
+    shift: e.shiftKey,
+    alt: e.altKey,
+    meta: e.metaKey
+  }), true);
+
+  addEventListener('keypress', e => window.protokoll.push({
+    art: 'press',
+    key: e.key,
+    charCode: e.charCode
+  }), true);
+
+  addEventListener('keyup', e => window.protokoll.push({
+    art: 'up',
+    key: e.key,
+    code: e.code,
+    keyCode: e.keyCode,
+    location: e.location
+  }), true);
+
+  window.leeren = () => {
+    window.protokoll = [];
+    const feld = document.getElementById('feld');
+    feld.value = '';
+    feld.focus();
+    return true;
+  };
+
+  // Was wirklich im Feld steht — die zweite Wahrheit neben dem Protokoll.
+  // Ein Zeichen kann als Ereignis ankommen und trotzdem nicht im Text landen,
+  // und es kann doppelt im Text landen, ohne dass zwei Ereignisse kämen.
+  window.text = () => document.getElementById('feld').value;
+
+  document.getElementById('feld').focus();
+</script>
