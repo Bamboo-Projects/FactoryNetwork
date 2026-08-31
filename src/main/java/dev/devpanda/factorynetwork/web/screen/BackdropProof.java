@@ -105,19 +105,27 @@ public final class BackdropProof extends Screen {
               <div class="glass" id="e"></div>
               <div class="glass" id="f"></div>
               <div class="glass" id="g"></div>
-            </body></html>
+            <script>
+              window.fnSetBackground = function (url) {
+                document.getElementById('minecraft-background').src = url;
+              };
+            </script></body></html>
             """;
 
     private static boolean finished;
 
     private final BrowserCompositor compositor = new BrowserCompositor();
-    private final FrameStore store = new FrameStore();
+    private final FrameStore store = FrameSchemes.store();
     private BrowserSession session;
     private BrowserView view;
     private boolean checked;
     private int framesDrawn;
     private long openedNanos;
     private boolean schemeAccepted;
+
+    /** Ab wann die Probe auf den Zwischenspeicher zu lesen ist. */
+    private long cacheProbeAtNanos;
+    private boolean cacheProbeDone;
 
     public BackdropProof() {
         super(Component.literal("Hintergrundnachweis"));
@@ -147,7 +155,7 @@ public final class BackdropProof extends Screen {
             session.resize(view.browserWidth(), view.browserHeight());
             return;
         }
-        schemeAccepted = FrameSchemes.register(store);
+        schemeAccepted = FrameSchemes.register();
         if (!schemeAccepted) {
             LOG.warn("Hintergrundnachweis: Chromium hat das Schema nicht angenommen");
             finished = true;
@@ -241,6 +249,11 @@ public final class BackdropProof extends Screen {
         if (framesDrawn >= 3 && !checked) {
             checked = true;
             check();
+            return;
+        }
+        if (cacheProbeAtNanos != 0 && !cacheProbeDone
+                && System.nanoTime() >= cacheProbeAtNanos) {
+            checkCacheProbe();
         }
     }
 
@@ -283,6 +296,76 @@ public final class BackdropProof extends Screen {
         LOG.info("Hintergrundnachweis: {}", glass
                 ? "Chromium filtert Minecrafts Bild — echtes Glas über echtem Hintergrund"
                 : "es stimmt nicht alles, siehe oben");
+        startCacheProbe();
+    }
+
+    /**
+     * Stufe 3: Hält Chromium an einem Bild fest, das es schon kennt?
+     *
+     * <p><b>Die Messung allein beantwortet das nicht.</b> Dass die Zahl der
+     * Übertragungen gleich bleibt, kann auch daran liegen, dass die Seite aus
+     * anderen Gründen neu gezeichnet wird. Bewiesen ist es erst, wenn ein
+     * <b>anderes Bild</b> unter derselben Adresse ankommt und man es sieht.
+     *
+     * <p>Deshalb: ein einfarbiges Bild ablegen, die Adresse <b>ohne</b> Nummer
+     * setzen und nachsehen, welche Farbe an einer freien Stelle steht. Kommt
+     * die neue, genügt der Kopf {@code no-store}, und die Nummer ist eine
+     * Bequemlichkeit statt einer Notwendigkeit.
+     */
+    private void startCacheProbe() {
+        if (!putSolidMagenta(view.browserWidth(), view.browserHeight())) {
+            finished = true;
+            onClose();
+            return;
+        }
+        LOG.info("Hintergrundnachweis, Stufe 3 — hält Chromium am alten Bild fest? "
+                + "Neues Bild unter derselben Adresse, ohne Nummer.");
+        runScriptOnSession("window.fnSetBackground && window.fnSetBackground('"
+                + FrameSchemes.SCHEME_URL_WITHOUT_GENERATION + "');");
+        cacheProbeAtNanos = System.nanoTime() + 1_500_000_000L;
+    }
+
+    /** Ein Bild, das mit keiner Quadrantenfarbe zu verwechseln ist. */
+    private boolean putSolidMagenta(int imageWidth, int imageHeight) {
+        final int magenta = 0xFFFF00FF;         // ABGR: A=FF, B=FF, G=00, R=FF
+        try (NativeImage image = new NativeImage(imageWidth, imageHeight, false)) {
+            for (int y = 0; y < imageHeight; y++) {
+                for (int x = 0; x < imageWidth; x++) {
+                    image.setPixelRGBA(x, y, magenta);
+                }
+            }
+            store.put(image.asByteArray(), "image/png", imageWidth, imageHeight);
+            return true;
+        } catch (Exception broken) {
+            LOG.warn("Hintergrundnachweis: Probebild ließ sich nicht bauen", broken);
+            return false;
+        }
+    }
+
+    private void checkCacheProbe() {
+        cacheProbeDone = true;
+        int fbWidth = minecraft.getMainRenderTarget().width;
+        int fbHeight = minecraft.getMainRenderTarget().height;
+        ByteBuffer pixels = ByteBuffer.allocateDirect(4).order(ByteOrder.nativeOrder());
+        int[] found = read(pixels, fbWidth, fbHeight, 0.03, 0.03);
+
+        boolean fresh = found[0] > 200 && found[1] < 60 && found[2] > 200;
+        boolean stale = found[0] > 200 && found[1] < 60 && found[2] < 60;
+        if (fresh) {
+            LOG.info("Hintergrundnachweis: Der Zwischenspeicher steht nicht im Weg — "
+                    + "unter derselben Adresse kam das neue Bild an, rgb({}, {}, {}). "
+                    + "Der Kopf no-store genügt; die Nummer bleibt trotzdem, weil sie "
+                    + "nichts kostet und den Fall ohne Kopf mit abdeckt.",
+                    found[0], found[1], found[2]);
+        } else if (stale) {
+            LOG.warn("Hintergrundnachweis: Chromium hält am alten Bild fest — "
+                    + "rgb({}, {}, {}) ist noch das rote Feld. Die Nummer in der "
+                    + "Adresse ist damit nicht verhandelbar.", found[0], found[1], found[2]);
+        } else {
+            LOG.warn("Hintergrundnachweis: Zwischenspeicher-Probe nicht deutbar — "
+                    + "rgb({}, {}, {}) ist weder Magenta noch Rot.",
+                    found[0], found[1], found[2]);
+        }
         finished = true;
         onClose();
     }
@@ -354,6 +437,12 @@ public final class BackdropProof extends Screen {
         return ok;
     }
 
+    private void runScriptOnSession(String code) {
+        if (session != null) {
+            session.runScript(code);
+        }
+    }
+
     private int[] read(ByteBuffer pixels, int fbWidth, int fbHeight,
                        double across, double down) {
         int x = (int) (across * fbWidth);
@@ -385,7 +474,8 @@ public final class BackdropProof extends Screen {
             session.close();
             session = null;
         }
-        store.clear();
+        // Nicht geleert: Der Ablageort gehört der Sitzung, und die Messung
+        // danach braucht ihn.
         super.removed();
     }
 }

@@ -92,8 +92,11 @@ public class BackdropScreen extends BrowserScreen {
               html,body{margin:0;width:100%;height:100%;overflow:hidden;
                         background:#0a0b10;color:#e8eaf2;
                         font:15px/1.6 "Segoe UI",system-ui,sans-serif}
+              /* Ohne Quelle zeigt ein Bild sonst ein Bruchsymbol — sichtbar
+                 im Augenblick zwischen Laden und erster Aufnahme. */
               #minecraft-background{position:fixed;inset:0;width:100%;height:100%;
                                     object-fit:cover}
+              #minecraft-background:not([src]){display:none}
               .desktop{position:relative;height:100%;padding:48px;
                        display:grid;gap:24px;
                        grid-template-columns:repeat(2,minmax(0,1fr));
@@ -125,13 +128,27 @@ public class BackdropScreen extends BrowserScreen {
             <script>
               // Der einzige Zweck: die Adresse von außen setzbar machen, ohne
               // die Seite neu zu laden. Kein Nachfragen, keine Rückrichtung.
+              var bg = document.getElementById('minecraft-background');
+              // Ein Bild, das nicht lädt, sagt von sich aus nichts — Chromium
+              // schreibt dafür keine Zeile in seine Konsole. Ohne diese
+              // Meldung bleibt als einziger Hinweis ein Bruchsymbol in der
+              // Ecke, und danach sucht man lange.
+              bg.addEventListener('error', function () {
+                console.error('Hintergrund lud nicht: ' + bg.getAttribute('src'));
+              });
+              console.log('Seite bereit');
               window.fnSetBackground = function (url) {
-                document.getElementById('minecraft-background').src = url;
+                console.log('Hintergrund gesetzt: ' + url);
+                bg.src = url;
               };
             </script></body></html>
             """;
 
-    private final FrameStore store = new FrameStore();
+    /**
+     * Nicht selbst angelegt, sondern der eine, an dem Chromiums Anmeldung
+     * hängt. Ein eigener wäre nie gefragt worden.
+     */
+    private final FrameStore store = FrameSchemes.store();
     private final WorldCapture capture = new WorldCapture();
 
     private Mode mode;
@@ -164,7 +181,7 @@ public class BackdropScreen extends BrowserScreen {
     protected void init() {
         super.init();
         if (!schemeReady) {
-            schemeReady = FrameSchemes.register(store);
+            schemeReady = FrameSchemes.register();
             if (!schemeReady) {
                 LOG.warn("Chromium hat das Schema nicht angenommen — kein Hintergrund");
             }
@@ -185,6 +202,15 @@ public class BackdropScreen extends BrowserScreen {
     @Override
     protected void beforeDrawing() {
         if (!schemeReady || !hasSession()) {
+            return;
+        }
+        // <b>Nicht, solange die Seite lädt.</b> Der Austausch geht über einen
+        // Aufruf in das Dokument hinein, und vor dem Ende des Ladens gibt es
+        // dieses Dokument nicht. Der Aufruf verpuffte dann — ohne Fehler, ohne
+        // Spur —, und bei einem Standbild gäbe es keinen zweiten Versuch.
+        // Genau so ist es hier zuerst ausgegangen: ein leerer Rahmen und
+        // Glasflächen, die Schwarz filterten.
+        if (pageLoading()) {
             return;
         }
         long now = System.nanoTime();
@@ -270,6 +296,8 @@ public class BackdropScreen extends BrowserScreen {
     public void removed() {
         super.removed();
         capture.close();
-        store.clear();
+        // <b>Der Ablageort wird nicht geleert.</b> Er gehört der Sitzung und
+        // nicht diesem Bildschirm; ihn hier abzuräumen nähme dem nächsten sein
+        // Bild, ohne dass die Anmeldung davon wüsste.
     }
 }

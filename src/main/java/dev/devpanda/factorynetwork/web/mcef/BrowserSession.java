@@ -255,6 +255,22 @@ public final class BrowserSession implements AutoCloseable, FnBrowser.Events {
     }
 
     /**
+     * Ob die Seite noch lädt.
+     *
+     * <p>Wichtig für alles, was in die Seite hineinruft: Vor dem Ende des
+     * Ladens gibt es das Dokument noch nicht, und ein Aufruf verpufft — ohne
+     * Fehler, ohne Spur. Genau das ist hier zuerst passiert: Der Hintergrund
+     * wurde einmal gesetzt, zu früh, und blieb für immer leer.
+     */
+    public boolean loading() {
+        try {
+            return closed || browser.isLoading() || !browser.hasDocument();
+        } catch (Throwable notReady) {
+            return true;
+        }
+    }
+
+    /**
      * Führt eine Zeile JavaScript in der Seite aus.
      *
      * <p><b>Das ist keine Brücke.</b> Es geht nur in eine Richtung, die Seite
@@ -264,9 +280,17 @@ public final class BrowserSession implements AutoCloseable, FnBrowser.Events {
      * ohne alles zu verlieren, was jemand darauf getippt hat.
      */
     public void runScript(String code) {
-        if (!closed) {
-            browser.executeJavaScript(code, browser.getURL(), 0);
+        if (closed) {
+            return;
         }
+        // Über den Hauptrahmen und nicht über den Browser: Der Browser reicht
+        // den Aufruf an denselben Rahmen weiter, aber nur wenn er einen hat —
+        // und er hat keinen, solange nichts geladen ist.
+        org.cef.browser.CefFrame frame = browser.getMainFrame();
+        if (frame == null) {
+            return;
+        }
+        frame.executeJavaScript(code, "fn://runtime", 0);
     }
 
     /** Sagt Chromium, ob es die Tastatur hat. */

@@ -128,6 +128,7 @@ public final class BackdropBenchmark extends BackdropScreen {
                         font:15px/1.6 "Segoe UI",system-ui,sans-serif}
               #minecraft-background{position:fixed;inset:0;width:100%;height:100%;
                                     object-fit:cover}
+              #minecraft-background:not([src]){display:none}
               .desktop{position:relative;height:100%;padding:48px;
                        display:grid;gap:24px;box-sizing:border-box;
                        grid-template-columns:repeat(2,minmax(0,1fr));
@@ -150,8 +151,18 @@ public final class BackdropBenchmark extends BackdropScreen {
                 <section class="glass"><h2>ohne Filter</h2><p>zum Vergleich</p></section>
               </main>
             <script>
+              var bg = document.getElementById('minecraft-background');
+              // Ein Bild, das nicht lädt, sagt von sich aus nichts — Chromium
+              // schreibt dafür keine Zeile in seine Konsole. Ohne diese
+              // Meldung bleibt als einziger Hinweis ein Bruchsymbol in der
+              // Ecke, und danach sucht man lange.
+              bg.addEventListener('error', function () {
+                console.error('Hintergrund lud nicht: ' + bg.getAttribute('src'));
+              });
+              console.log('Seite bereit');
               window.fnSetBackground = function (url) {
-                document.getElementById('minecraft-background').src = url;
+                console.log('Hintergrund gesetzt: ' + url);
+                bg.src = url;
               };
             </script></body></html>
             """;
@@ -209,10 +220,37 @@ public final class BackdropBenchmark extends BackdropScreen {
         }
     }
 
+    /**
+     * Legt ein Bild des fertigen Schirms ab.
+     *
+     * <p><b>Weil manche Fragen keine Zahlen haben.</b> Ob eine viertelgroße
+     * Aufnahme hinter einem Weichzeichner auffällt, steht in keiner Messung —
+     * das muss jemand ansehen. Ein Bild je Stufe, unter sprechendem Namen,
+     * macht den Vergleich möglich, ohne dass jemand danebensitzen muss.
+     */
+    private void saveScreenshot(String label) {
+        try {
+            // Alles heraus, was in einem Dateinamen etwas anderes bedeutet.
+            // Der Schrägstrich in „10/s" wurde sonst zum Pfadtrenner, und die
+            // Ablage scheiterte an einem Verzeichnis, das es nicht gibt.
+            StringBuilder name = new StringBuilder("fn-");
+            for (char each : label.toCharArray()) {
+                name.append(Character.isLetterOrDigit(each) ? each : '_');
+            }
+            name.append(".png");
+            net.minecraft.client.Screenshot.grab(
+                    minecraft.gameDirectory, name.toString(),
+                    minecraft.getMainRenderTarget(), message -> { });
+        } catch (Throwable broken) {
+            LOG.warn("Bild ließ sich nicht ablegen", broken);
+        }
+    }
+
     private void report() {
         if (step == Step.SETTLE) {
             return;
         }
+        saveScreenshot(step.label);
         double seconds = (System.nanoTime() - stepStartedNanos) / 1_000_000_000.0;
         long taken = captures() - capturesAtStart;
         WorldCapture worldCapture = capture();

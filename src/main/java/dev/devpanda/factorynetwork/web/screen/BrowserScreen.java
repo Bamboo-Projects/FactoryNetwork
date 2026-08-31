@@ -446,6 +446,11 @@ public class BrowserScreen extends Screen {
         return session == null ? null : session.texture();
     }
 
+    /** Ob die Seite noch lädt — vorher verpufft jeder Aufruf in sie hinein. */
+    protected boolean pageLoading() {
+        return session == null || session.loading();
+    }
+
     /** Reicht eine Zeile JavaScript an die Seite durch. */
     protected void runScript(String code) {
         if (session != null) {

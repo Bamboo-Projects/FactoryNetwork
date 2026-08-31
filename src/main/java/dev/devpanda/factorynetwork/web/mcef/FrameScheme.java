@@ -34,8 +34,10 @@ public final class FrameScheme implements CefResourceHandler {
     /** Der Name des Schemas — {@code mc://frame/current}. */
     public static final String SCHEME = "mc";
 
-    /** Der Rechnername darin. Leer hieße: jeder. */
+    /** Der Rechnername in der Adresse — im Text, nicht in der Anmeldung. */
     public static final String DOMAIN = "frame";
+
+
 
     private final FrameStore store;
 
