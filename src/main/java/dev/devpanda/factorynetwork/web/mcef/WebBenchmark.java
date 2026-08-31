@@ -178,10 +178,11 @@ public final class WebBenchmark {
     }
 
     private static void warmup() {
-        // Der Selbsttest kommt zuerst und hat seinen eigenen Browser. Zwei
+        // Die Nachweise kommen zuerst und haben ihre eigenen Browser. Zwei
         // gleichzeitig teilten sich die Bildrate, und die Messung berichtete
         // die Hälfte als Grenze.
-        if (ticksInStage < WARMUP_TICKS || !WebSelfTest.finished()) {
+        if (ticksInStage < WARMUP_TICKS || !WebSelfTest.finished()
+                || !dev.devpanda.factorynetwork.web.screen.RenderProof.finished()) {
             return;
         }
         // <b>Nicht im Hauptmenü messen.</b> Ohne geladene Welt deckelt

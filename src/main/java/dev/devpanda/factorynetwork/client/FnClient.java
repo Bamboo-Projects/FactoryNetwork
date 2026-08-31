@@ -28,7 +28,11 @@ public final class FnClient {
         // Der Selbsttest des Bildwegs, einmal je Sitzung. Er braucht einen
         // Zeichenkontext und kann deshalb kein gewöhnlicher Prüflauf sein.
         dev.devpanda.factorynetwork.web.mcef.WebSelfTest.tick();
-        // Die Messung danach, und nur auf Ansage: -Dfn.benchmark=true
+        // Der Bildnachweis danach — er braucht einen Bildschirm und kann
+        // deshalb erst laufen, wenn der Textur-Selbsttest seinen Browser
+        // wieder abgeräumt hat.
+        WebProofChain.tick();
+        // Die Messung zuletzt, und nur auf Ansage: -Dfn.benchmark=true
         dev.devpanda.factorynetwork.web.mcef.WebBenchmark.tick();
     }
 

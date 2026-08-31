@@ -4,13 +4,17 @@ import com.cinemamod.mcef.MCEF;
 import dev.devpanda.factorynetwork.web.BrowserVisibility;
 import dev.devpanda.factorynetwork.web.FramePacer;
 import dev.devpanda.factorynetwork.web.frame.BorrowedFrame;
+import dev.devpanda.factorynetwork.web.input.ClickCounter;
+import dev.devpanda.factorynetwork.web.input.MouseButtons;
 import dev.devpanda.factorynetwork.web.texture.GlTextureBackend;
 
+import java.util.function.IntConsumer;
+
 /**
- * Ein Browser samt seiner Textur.
+ * Ein Browser samt seiner Texturen, seiner Eingabe und seines Zustands.
  *
- * <p>Der ganze Weg an einer Stelle: Chromium malt, wir laden hoch, Minecraft
- * zeichnet. Nichts dazwischen — <b>kein Postfach, keine Kopie</b>.
+ * <p>Der ganze Bildweg an einer Stelle: Chromium malt, wir laden hoch,
+ * Minecraft zeichnet. Nichts dazwischen — <b>kein Postfach, keine Kopie</b>.
  *
  * <p><b>Warum das hier richtig ist und nicht faul.</b> MCEF pumpt Chromiums
  * Nachrichtenschleife per Mixin in {@code GameRenderer.render}. Damit kommt
@@ -19,18 +23,45 @@ import dev.devpanda.factorynetwork.web.texture.GlTextureBackend;
  * eigenes Bild und ein Postfach dazwischen kosteten bei 1080p achteinhalb
  * Megabyte je Bild und lösten ein Problem, das es hier nicht gibt.
  *
- * <p>Der zweite Weg — Kopie, Postfach, entkoppelter Upload — bleibt gebaut
- * und geprüft. Er wird gebraucht, sobald Chromium einen eigenen Takt bekommt
- * oder der Aufruf woanders ankommt als die Textur. Was er kostet, messen wir
- * gegen diesen hier: Das ist die untere Grenze, unter die niemand kommt.
+ * <p><b>Alle Koordinaten hier sind Browser-Pixel.</b> Wo die Fläche auf dem
+ * Schirm liegt, weiß diese Klasse nicht und soll sie nicht wissen — das
+ * rechnet {@code BrowserView} um, und zwar für das Zeichnen und die Maus mit
+ * derselben Formel. Nur so kann später eine Fläche in der Welt dieselbe
+ * Sitzung mit ihren eigenen Koordinaten füttern.
  */
-public final class BrowserSession implements AutoCloseable {
+public final class BrowserSession implements AutoCloseable, FnBrowser.Events {
 
     private final FnBrowser browser;
     private final GlTextureBackend texture = new GlTextureBackend();
+
+    /**
+     * Die zweite Textur, für aufgeklappte Felder.
+     *
+     * <p><b>Und nicht ein Zurückkopieren in die erste.</b> MCEF hält den
+     * Inhalt eines Auswahlfeldes in einem eigenen Puffer und malt ihn bei
+     * jedem Bild der Hauptansicht erneut in deren Textur — weil Chromium den
+     * Popup-Inhalt zwischen zwei Aufrufen nicht aufbewahrt. Das kostet je Bild
+     * eine Kopie und eine zusätzliche Übertragung, solange das Feld offen ist.
+     *
+     * <p>Eine eigene Textur kostet nichts davon: Sie behält ihren Inhalt, bis
+     * ein neues Bild kommt, und wird beim Zeichnen einfach darübergelegt.
+     */
+    private final GlTextureBackend popupTexture = new GlTextureBackend();
+
     private final FramePacer pacer;
+    private final MouseButtons buttons = new MouseButtons();
+    private final ClickCounter clicks = new ClickCounter();
+
+    private boolean popupShown;
+    private int popupX;
+    private int popupY;
+    private int popupWidth;
+    private int popupHeight;
+
+    private IntConsumer cursorSink;
 
     private long paints;
+    private long popupPaints;
     private long firstPaintNanos;
     private final long createdNanos = System.nanoTime();
     private boolean closed;
@@ -38,8 +69,7 @@ public final class BrowserSession implements AutoCloseable {
     private BrowserSession(String url, boolean transparent, int width, int height,
                            BrowserVisibility visibility) {
         this.pacer = new FramePacer(visibility);
-        this.browser = new FnBrowser(MCEF.getClient().getHandle(), url, transparent,
-                this::onFrame);
+        this.browser = new FnBrowser(MCEF.getClient().getHandle(), url, transparent, this);
         // <b>Die Reihenfolge ist nicht beliebig.</b> Erst darf der Browser
         // geschlossen werden, dann entsteht er, und erst danach bekommt er
         // seine Größe. Andersherum geht die Größenmeldung an einen Browser,
@@ -63,13 +93,10 @@ public final class BrowserSession implements AutoCloseable {
         return new BrowserSession(url, transparent, width, height, visibility);
     }
 
-    /**
-     * Ein Bild ist da.
-     *
-     * <p>Läuft im Render-Thread. Der Puffer im Bild ist nach der Rückkehr
-     * ungültig; deshalb geht er direkt weiter und wird nirgends gemerkt.
-     */
-    private void onFrame(BorrowedFrame frame) {
+    // ---- Was der Browser meldet -------------------------------------------
+
+    @Override
+    public void frame(BorrowedFrame frame) {
         if (closed) {
             return;
         }
@@ -80,6 +107,167 @@ public final class BrowserSession implements AutoCloseable {
         texture.upload(frame);
         pacer.drawn(System.nanoTime());
     }
+
+    @Override
+    public void popupFrame(BorrowedFrame frame) {
+        if (closed) {
+            return;
+        }
+        popupPaints++;
+        popupTexture.upload(frame);
+    }
+
+    @Override
+    public void popupShown(boolean shown) {
+        popupShown = shown;
+        if (!shown) {
+            // Die verdeckte Fläche malt Chromium von selbst neu — es kommt als
+            // gewöhnliches Bild der Hauptansicht. Hier ist nichts
+            // wiederherzustellen, nur etwas zu verstecken.
+            popupWidth = 0;
+            popupHeight = 0;
+        }
+    }
+
+    @Override
+    public void popupPlaced(int x, int y, int width, int height) {
+        popupX = x;
+        popupY = y;
+        popupWidth = width;
+        popupHeight = height;
+    }
+
+    @Override
+    public void cursorChanged(int cefCursorType) {
+        IntConsumer sink = cursorSink;
+        if (sink != null) {
+            sink.accept(cefCursorType);
+        }
+    }
+
+    /** Wer die Zeigerwünsche bekommt — der Screen, solange er offen ist. */
+    public void onCursor(IntConsumer sink) {
+        this.cursorSink = sink;
+    }
+
+    // ---- Eingabe -----------------------------------------------------------
+
+    /**
+     * Der Zeiger bewegt sich, in Browser-Pixeln.
+     *
+     * <p>Gedrückte Maustasten gehen mit: Ohne sie sieht Chromium eine Bewegung
+     * mit losgelassener Taste, und jedes Markieren bricht nach dem ersten
+     * Pixel ab.
+     */
+    public void mouseMoved(int x, int y, int keyboardModifiers) {
+        if (!closed) {
+            browser.moveMouse(x, y, buttons.modifiersWith(keyboardModifiers), false);
+        }
+    }
+
+    /**
+     * Der Zeiger verlässt die Fläche.
+     *
+     * <p>Ohne diese Meldung bleibt der zuletzt berührte Knopf hell, und ein
+     * Schwebehinweis steht, bis jemand die Fläche wieder betritt.
+     */
+    public void mouseLeft(int x, int y) {
+        if (closed) {
+            return;
+        }
+        browser.moveMouse(x, y, buttons.modifiersWith(0), true);
+        clicks.forget();
+    }
+
+    public void mousePressed(int x, int y, int minecraftButton, int keyboardModifiers,
+                             long nowMillis) {
+        if (closed) {
+            return;
+        }
+        int cefButton = MouseButtons.toBrowserButton(minecraftButton);
+        if (cefButton < 0) {
+            return;
+        }
+        int count = clicks.pressed(minecraftButton, x, y, nowMillis);
+        buttons.press(minecraftButton);
+        browser.clickMouse(x, y, true, cefButton, count,
+                buttons.modifiersWith(keyboardModifiers));
+    }
+
+    public void mouseReleased(int x, int y, int minecraftButton, int keyboardModifiers) {
+        if (closed) {
+            return;
+        }
+        int cefButton = MouseButtons.toBrowserButton(minecraftButton);
+        if (cefButton < 0) {
+            return;
+        }
+        int count = clicks.released();
+        // Erst die Flagge löschen, dann melden: Beim Loslassen ist die Taste
+        // schon oben, und Chromium liest den Zustand danach.
+        buttons.release(minecraftButton);
+        browser.clickMouse(x, y, false, cefButton, count,
+                buttons.modifiersWith(keyboardModifiers));
+    }
+
+    /**
+     * Das Rad dreht sich.
+     *
+     * <p>Der Faktor drei und das Runden auf ganze Rasten sind von MCEF
+     * übernommen und dort erprobt: Minecraft meldet gebrochene Werte, und
+     * ungerundet fühlt sich das Scrollen zäh an. Unter macOS bleibt es
+     * ungerundet, weil Trackpads dort feine Werte liefern, die etwas bedeuten.
+     */
+    public void mouseScrolled(int x, int y, double amount, int keyboardModifiers) {
+        if (closed) {
+            return;
+        }
+        double scroll = amount < 0 ? Math.floor(amount) : Math.ceil(amount);
+        browser.scrollMouse(x, y, scroll * 3.0,
+                buttons.modifiersWith(keyboardModifiers));
+    }
+
+    /** Eine Taste geht herunter. Der Tastencode ist GLFWs, nicht Minecrafts. */
+    public void keyPressed(int glfwKeyCode, int scanCode, int modifiers) {
+        if (!closed) {
+            browser.sendKey(glfwKeyCode, scanCode, modifiers, true);
+        }
+    }
+
+    public void keyReleased(int glfwKeyCode, int scanCode, int modifiers) {
+        if (!closed) {
+            browser.sendKey(glfwKeyCode, scanCode, modifiers, false);
+        }
+    }
+
+    /**
+     * Ein Zeichen wurde getippt.
+     *
+     * <p>Das kommt aus Minecrafts eigenem Texteingabeweg und ist bereits das
+     * fertige Zeichen — mit Tastaturbelegung, Umschalttaste und allem, was das
+     * Betriebssystem dazu beiträgt. Es aus Tastencodes nachzubauen, hieße, die
+     * Tastaturbelegung des Spielers zu erraten.
+     */
+    public void charTyped(char typed, int modifiers) {
+        if (!closed) {
+            browser.sendChar(typed, modifiers);
+        }
+    }
+
+    /** Sagt Chromium, ob es die Tastatur hat. */
+    public void setFocused(boolean focused) {
+        if (closed) {
+            return;
+        }
+        browser.setFocus(focused);
+        if (!focused) {
+            // Was beim Fokusverlust gedrückt war, bleibt es sonst für immer.
+            buttons.forget();
+            clicks.forget();
+        }
+    }
+
+    // ---- Größe, Sichtbarkeit, Zustand -------------------------------------
 
     public void resize(int width, int height) {
         if (!closed) {
@@ -100,6 +288,30 @@ public final class BrowserSession implements AutoCloseable {
         return texture.textureId();
     }
 
+    public int popupTextureId() {
+        return popupTexture.textureId();
+    }
+
+    public boolean popupVisible() {
+        return popupShown && popupWidth > 0 && popupHeight > 0;
+    }
+
+    public int popupX() {
+        return popupX;
+    }
+
+    public int popupY() {
+        return popupY;
+    }
+
+    public int popupWidth() {
+        return popupWidth;
+    }
+
+    public int popupHeight() {
+        return popupHeight;
+    }
+
     public int width() {
         return browser.browserWidth();
     }
@@ -112,8 +324,16 @@ public final class BrowserSession implements AutoCloseable {
         return texture;
     }
 
+    public GlTextureBackend popupTexture() {
+        return popupTexture;
+    }
+
     public long paints() {
         return paints;
+    }
+
+    public long popupPaints() {
+        return popupPaints;
     }
 
     /** Was der Browser gerade geladen hat — für die Fehlersuche. */
@@ -137,12 +357,14 @@ public final class BrowserSession implements AutoCloseable {
             return;
         }
         closed = true;
+        cursorSink = null;
         try {
             browser.close(true);
         } catch (Throwable broken) {
             // Ein Browser, der beim Schließen zickt, darf den Rest nicht
-            // aufhalten — die Textur muss trotzdem weg.
+            // aufhalten — die Texturen müssen trotzdem weg.
         }
         texture.close();
+        popupTexture.close();
     }
 }
