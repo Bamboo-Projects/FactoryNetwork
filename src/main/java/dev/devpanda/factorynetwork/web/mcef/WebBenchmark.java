@@ -187,7 +187,8 @@ public final class WebBenchmark {
         // gleichzeitig teilten sich die Bildrate, und die Messung berichtete
         // die Hälfte als Grenze.
         if (ticksInStage < WARMUP_TICKS || !WebSelfTest.finished()
-                || !dev.devpanda.factorynetwork.web.screen.RenderProof.finished()) {
+                || !dev.devpanda.factorynetwork.web.screen.RenderProof.finished()
+                || !dev.devpanda.factorynetwork.web.screen.BackdropBenchmark.finished()) {
             return;
         }
         // <b>Nicht im Hauptmenü messen.</b> Ohne geladene Welt deckelt

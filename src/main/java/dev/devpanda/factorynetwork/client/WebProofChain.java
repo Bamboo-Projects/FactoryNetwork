@@ -2,6 +2,8 @@ package dev.devpanda.factorynetwork.client;
 
 import dev.devpanda.factorynetwork.web.mcef.WebBenchmark;
 import dev.devpanda.factorynetwork.web.mcef.WebSelfTest;
+import dev.devpanda.factorynetwork.web.screen.BackdropBenchmark;
+import dev.devpanda.factorynetwork.web.screen.BackdropProof;
 import dev.devpanda.factorynetwork.web.screen.InteractionBenchmark;
 import dev.devpanda.factorynetwork.web.screen.RenderProof;
 import net.minecraft.client.Minecraft;
@@ -37,6 +39,8 @@ final class WebProofChain {
     private static final Logger LOG = LoggerFactory.getLogger("FactoryNetwork/WebProofChain");
 
     private static boolean proofStarted;
+    private static boolean backdropStarted;
+    private static boolean backdropMeasured;
     private static boolean interactionStarted;
     private static int ticksWaiting;
 
@@ -63,9 +67,27 @@ final class WebProofChain {
             RenderProof.openIfPossible(client);
             return;
         }
+        if (!backdropStarted && RenderProof.finished()) {
+            backdropStarted = true;
+            ticksWaiting = 0;
+            BackdropProof.openIfPossible(client);
+            return;
+        }
+        // Die Hintergrundmessung direkt nach ihrem Nachweis: Sie braucht den
+        // Bildschirm für sich, und was danach kommt, braucht ihn ebenso.
+        if (!backdropMeasured && BackdropProof.finished()) {
+            backdropMeasured = true;
+            ticksWaiting = 0;
+            try {
+                BackdropBenchmark.open(client);
+            } catch (Exception broken) {
+                LOG.warn("Hintergrundmessung ließ sich nicht öffnen", broken);
+            }
+            return;
+        }
         // Die Interaktionsmessung ganz zuletzt: Sie hält den Bildschirm für
         // sich, und die Zahlenmessung davor braucht ihn frei.
-        if (!interactionStarted && RenderProof.finished() && WebBenchmark.finished()) {
+        if (!interactionStarted && BackdropBenchmark.finished() && WebBenchmark.finished()) {
             interactionStarted = true;
             try {
                 InteractionBenchmark.open(client);

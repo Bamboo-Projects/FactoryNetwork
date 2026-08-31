@@ -254,6 +254,21 @@ public final class BrowserSession implements AutoCloseable, FnBrowser.Events {
         }
     }
 
+    /**
+     * Führt eine Zeile JavaScript in der Seite aus.
+     *
+     * <p><b>Das ist keine Brücke.</b> Es geht nur in eine Richtung, die Seite
+     * kann nichts zurückgeben, und es gibt keine Schnittstelle, die sie
+     * anbieten müsste. Gebraucht wird es für genau eine Sache: die Adresse
+     * eines Bildes auszutauschen, ohne die Seite neu zu laden — und damit,
+     * ohne alles zu verlieren, was jemand darauf getippt hat.
+     */
+    public void runScript(String code) {
+        if (!closed) {
+            browser.executeJavaScript(code, browser.getURL(), 0);
+        }
+    }
+
     /** Sagt Chromium, ob es die Tastatur hat. */
     public void setFocused(boolean focused) {
         if (closed) {

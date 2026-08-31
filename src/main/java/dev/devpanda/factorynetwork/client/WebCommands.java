@@ -52,6 +52,41 @@ public final class WebCommands {
                                     later(() -> open(url, false));
                                     return 1;
                                 })))
+                .then(Commands.literal("hintergrund")
+                        .executes(context -> {
+                            later(() -> dev.devpanda.factorynetwork.web.screen
+                                    .BackdropProof.openIfPossible(Minecraft.getInstance()));
+                            return 1;
+                        }))
+                .then(Commands.literal("glas")
+                        .executes(context -> {
+                            later(() -> {
+                                try {
+                                    dev.devpanda.factorynetwork.web.screen.BackdropScreen.open(
+                                            Minecraft.getInstance(),
+                                            dev.devpanda.factorynetwork.web.screen
+                                                    .BackdropScreen.Mode.LOW_5,
+                                            0.5,
+                                            dev.devpanda.factorynetwork.web.capture
+                                                    .WorldCapture.Format.PNG);
+                                } catch (Exception broken) {
+                                    say("Hintergrund ließ sich nicht öffnen: " + broken.getMessage());
+                                }
+                            });
+                            return 1;
+                        }))
+                .then(Commands.literal("glasmessung")
+                        .executes(context -> {
+                            later(() -> {
+                                try {
+                                    dev.devpanda.factorynetwork.web.screen
+                                            .BackdropBenchmark.open(Minecraft.getInstance());
+                                } catch (Exception broken) {
+                                    say("Messung ließ sich nicht öffnen: " + broken.getMessage());
+                                }
+                            });
+                            return 1;
+                        }))
                 .then(Commands.literal("messung")
                         .executes(context -> {
                             later(() -> {

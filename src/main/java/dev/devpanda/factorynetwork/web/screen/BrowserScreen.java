@@ -132,8 +132,22 @@ public class BrowserScreen extends Screen {
         }
     }
 
+    /**
+     * Läuft, bevor irgendetwas gezeichnet wird.
+     *
+     * <p><b>Die einzige Stelle, an der Minecrafts eigenes Bild noch
+     * unberührt im Puffer steht.</b> Welt und Bedienoberfläche sind fertig,
+     * dieser Bildschirm hat noch keinen Strich getan. Wer das Bild
+     * aufnehmen will, muss es hier tun — eine Zeile später hat
+     * {@code renderBackground} es verdunkelt, und ein Bild später läge der
+     * Browser darin.
+     */
+    protected void beforeDrawing() {
+    }
+
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        beforeDrawing();
         renderBackground(graphics, mouseX, mouseY, partialTick);
         if (session == null || view == null) {
             graphics.drawCenteredString(font,
@@ -425,6 +439,18 @@ public class BrowserScreen extends Screen {
     /** Ob überhaupt ein Browser läuft. */
     protected boolean hasSession() {
         return session != null;
+    }
+
+    /** Die Messwerte des Bildwegs zurück nach Minecraft. */
+    protected dev.devpanda.factorynetwork.web.texture.GlTextureBackend texture() {
+        return session == null ? null : session.texture();
+    }
+
+    /** Reicht eine Zeile JavaScript an die Seite durch. */
+    protected void runScript(String code) {
+        if (session != null) {
+            session.runScript(code);
+        }
     }
 
     /**
