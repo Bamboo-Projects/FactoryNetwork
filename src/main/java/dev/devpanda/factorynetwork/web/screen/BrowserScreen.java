@@ -147,6 +147,9 @@ public class BrowserScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        if (session != null) {
+            session.noteScreenFrame();
+        }
         beforeDrawing();
         renderBackground(graphics, mouseX, mouseY, partialTick);
         if (session == null || view == null) {

@@ -123,10 +123,14 @@ final class WebProofChain {
             return;
         }
         proofStarted = true;
-        boolean measuring = Boolean.getBoolean("fn.idebench");
-        boolean opened = measuring
-                ? dev.devpanda.factorynetwork.web.ide.MonacoBenchmark.open(client)
-                : dev.devpanda.factorynetwork.web.ide.IdeScreen.open(client);
+        boolean opened;
+        if (Boolean.getBoolean("fn.typing")) {
+            opened = dev.devpanda.factorynetwork.web.ide.TypingBenchmark.open(client);
+        } else if (Boolean.getBoolean("fn.idebench")) {
+            opened = dev.devpanda.factorynetwork.web.ide.MonacoBenchmark.open(client);
+        } else {
+            opened = dev.devpanda.factorynetwork.web.ide.IdeScreen.open(client);
+        }
         if (!opened) {
             LOG.warn("Die Oberfläche ließ sich nicht öffnen");
         }

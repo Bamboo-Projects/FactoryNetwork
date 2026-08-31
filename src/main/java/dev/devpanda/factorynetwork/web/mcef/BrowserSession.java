@@ -74,7 +74,25 @@ public final class BrowserSession implements AutoCloseable, FnBrowser.Events {
      */
     private long pendingInputNanos;
 
-    private final dev.devpanda.factorynetwork.web.measure.DurationSamples inputLatency =
+    /**
+     * Die Eingabe, deren Bild schon hochgeladen ist und nur noch gezeichnet
+     * werden muss.
+     */
+    private long paintedForInputNanos;
+
+    /** Wann der letzte Upload fertig war. */
+    private long uploadEndNanos;
+
+    /** A: von der Eingabe bis Chromium ein Bild liefert. */
+    private final dev.devpanda.factorynetwork.web.measure.DurationSamples toPaint =
+            new dev.devpanda.factorynetwork.web.measure.DurationSamples();
+
+    /** C: vom Ende des Uploads bis Minecraft das nächste Mal zeichnet. */
+    private final dev.devpanda.factorynetwork.web.measure.DurationSamples toScreen =
+            new dev.devpanda.factorynetwork.web.measure.DurationSamples();
+
+    /** Die ganze Strecke, von der Eingabe bis zum gezeichneten Bild. */
+    private final dev.devpanda.factorynetwork.web.measure.DurationSamples totalLatency =
             new dev.devpanda.factorynetwork.web.measure.DurationSamples();
 
     private long paints;
@@ -123,11 +141,13 @@ public final class BrowserSession implements AutoCloseable, FnBrowser.Events {
         paints++;
         long pending = pendingInputNanos;
         if (pending != 0) {
-            inputLatency.record(System.nanoTime() - pending);
+            toPaint.record(System.nanoTime() - pending);
             pendingInputNanos = 0;
+            paintedForInputNanos = pending;
         }
         texture.upload(frame);
-        pacer.drawn(System.nanoTime());
+        uploadEndNanos = System.nanoTime();
+        pacer.drawn(uploadEndNanos);
     }
 
     @Override
@@ -333,9 +353,59 @@ public final class BrowserSession implements AutoCloseable, FnBrowser.Events {
         }
     }
 
-    /** Wie lange es von einer Eingabe bis zum Bild dauert. */
+    /**
+     * Meldet, dass Minecraft jetzt zeichnet.
+     *
+     * <p>Der letzte fehlende Abschnitt: Zwischen dem fertigen Upload und dem
+     * Bild, das der Spieler sieht, liegt die Wartezeit auf den nächsten
+     * Durchgang von Minecraft. Ohne diesen Aufruf endete jede Messung an der
+     * Grafikkarte statt am Auge.
+     *
+     * <p><b>Und eine Ehrlichkeit dazu:</b> Gemessen wird bis zum <i>Beginn</i>
+     * des Zeichnens, nicht bis das Bild auf dem Schirm steht. Was danach noch
+     * kommt — Zeichnen, Puffertausch, Bildwiederholung — ist hier nicht drin.
+     */
+    public void noteScreenFrame() {
+        if (uploadEndNanos == 0) {
+            return;
+        }
+        long now = System.nanoTime();
+        toScreen.record(now - uploadEndNanos);
+        if (paintedForInputNanos != 0) {
+            totalLatency.record(now - paintedForInputNanos);
+            paintedForInputNanos = 0;
+        }
+        uploadEndNanos = 0;
+    }
+
+    /** A — von der Eingabe bis Chromium ein Bild liefert. */
+    public dev.devpanda.factorynetwork.web.measure.DurationSamples toPaint() {
+        return toPaint;
+    }
+
+    /** C — vom Ende des Uploads bis Minecraft zeichnet. */
+    public dev.devpanda.factorynetwork.web.measure.DurationSamples toScreen() {
+        return toScreen;
+    }
+
+    /** Die ganze Strecke. Muss ungefähr A + B + C sein. */
+    public dev.devpanda.factorynetwork.web.measure.DurationSamples totalLatency() {
+        return totalLatency;
+    }
+
+    /** Wie lange es von einer Eingabe bis zum Bild dauert (A). */
     public dev.devpanda.factorynetwork.web.measure.DurationSamples inputLatency() {
-        return inputLatency;
+        return toPaint;
+    }
+
+    /** Setzt alle drei Abschnitte zurück. */
+    public void resetLatency() {
+        toPaint.reset();
+        toScreen.reset();
+        totalLatency.reset();
+        pendingInputNanos = 0;
+        paintedForInputNanos = 0;
+        uploadEndNanos = 0;
     }
 
     /** Sagt Chromium, ob es die Tastatur hat. */

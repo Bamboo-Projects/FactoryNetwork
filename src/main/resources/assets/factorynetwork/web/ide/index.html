@@ -175,6 +175,18 @@
      --------------------------------------------------------------- */
   require.config({ paths: { vs: 'vs' } });
 
+  // <b>Monaco lädt nicht immer sofort.</b> Steht „huelle" in der Adresse,
+  // bleibt der Editor zunächst weg — nur so lässt sich messen, wie viel
+  // Speicher die Oberfläche allein braucht und wie viel Monaco dazulegt.
+  // Nachgeladen wird dann über fnLadeMonaco().
+  var nurHuelle = location.href.indexOf('huelle') >= 0;
+
+  window.fnLadeMonaco = function () {
+    if (window.fnIde) { return; }
+    ladeMonaco();
+  };
+
+  function ladeMonaco() {
   require(['vs/editor/editor.main'], function () {
     var m = window.monaco;
 
@@ -316,7 +328,11 @@
       }
     });
 
-    var DATEIEN = [
+    // Mit „einmodell" in der Adresse nur eine Datei — die Stufe zwischen
+    // „Monaco geladen" und „acht Modelle, zehntausend Zeilen".
+    var NUR_EINS = location.href.indexOf('einmodell') >= 0;
+
+    var DATEIEN = NUR_EINS ? [{ name: 'main.fn', zeilen: 120 }] : [
       { name: 'main.fn',        zeilen: 120 },
       { name: 'sortierung.fn',  zeilen: 1000 },
       { name: 'grossanlage.fn', zeilen: 10000 },
@@ -425,6 +441,7 @@
           if (el) { el.style.backdropFilter = regel; }
         });
       },
+      dateien: function () { return Object.keys(modelle); },
       springe: function (zeile) {
         editor.revealLineInCenter(zeile);
         editor.setPosition({ lineNumber: zeile, column: 1 });
@@ -453,8 +470,16 @@
     // Diagnostische Meldung, einseitig: Java liest sie aus dem Protokoll und
     // weiß, ab wann die Oberfläche bedienbar ist.
     console.log('IDE bereit: ' + Object.keys(modelle).length + ' Modelle, '
-      + modelle['grossanlage.fn'].getLineCount() + ' Zeilen im größten');
+      + modelle[DATEIEN[DATEIEN.length - 1].name].getLineCount()
+      + ' Zeilen im größten');
   });
+  }
+
+  if (nurHuelle) {
+    console.log('Hülle bereit, ohne Monaco');
+  } else {
+    ladeMonaco();
+  }
 })();
 </script>
 </body>

@@ -38,11 +38,27 @@ neoForge {
             // Sitzung statt eines Nachweises, den man abrufen kann.
             // Nur die Entwicklungsumgebung, ohne die Nachweiskette davor:
             //   ./gradlew runClient -Pide
+            // Fenstergroesse fuer die Messung:
+            //   ./gradlew runClient -Pide -Pw=1920 -Ph=1080
+            // Minecraft nimmt die Groesse selbst entgegen; ein echtes Fenster
+            // ist der einzige Weg, eine Aufloesung wirklich zu messen statt
+            // sie hochzurechnen.
+            if (project.hasProperty('w') && project.hasProperty('h')) {
+                programArgument '--width'
+                programArgument w.toString()
+                programArgument '--height'
+                programArgument h.toString()
+            }
             if (project.hasProperty('ide')) {
                 systemProperty 'fn.ide', 'true'
                 // Mit -Pidebench laeuft statt der Oberflaeche die Messung.
                 if (project.hasProperty('idebench')) {
                     systemProperty 'fn.idebench', 'true'
+                }
+                // Nur die Tippmessung, mit langen Abschnitten:
+                //   ./gradlew runClient -Pide -Ptyping -Pw=1920 -Ph=1080
+                if (project.hasProperty('typing')) {
+                    systemProperty 'fn.typing', 'true'
                 }
                 programArgument '--quickPlaySingleplayer'
                 programArgument(project.hasProperty('world') ? world : 'New World')
