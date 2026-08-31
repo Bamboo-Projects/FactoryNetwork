@@ -56,8 +56,8 @@ public final class TypingBenchmark extends IdeScreen {
         TYPING_GLASS("Tippen, Glas an", TYPING_NANOS),
         TYPING_NO_GLASS("Tippen, Glas aus", TYPING_NANOS),
         TYPING_OPAQUE("Tippen, Glas aus und Editor deckend", TYPING_NANOS),
-        TYPING_FAST("Schnelles Tippen, Glas an", TYPING_NANOS),
         SCROLL("Schnell rollen", SHORT_NANOS),
+        TYPING_FAST("Schnelles Tippen, Glas an", TYPING_NANOS),
         REOPEN("Zweites Öffnen", SHORT_NANOS),
         DONE("fertig", 0);
 
@@ -183,7 +183,21 @@ public final class TypingBenchmark extends IdeScreen {
                     typeNext();
                 }
             }
-            case TYPING_FAST -> typeNext();
+            case TYPING_FAST -> {
+                // <b>Zwanzig Zeichen je Sekunde, nicht hundert.</b> Beim
+                // ersten Versuch kam bei jedem Bild ein Zeichen — gegen
+                // hundertfünfzehn Bilder in der Sekunde also schneller, als
+                // ein Mensch je tippt. Chromium kam bei voller Auflösung nicht
+                // mehr hinterher: zehn Bilder in fünfundvierzig Sekunden, ein
+                // Rückstau von fünfzehn Sekunden, und die beiden folgenden
+                // Abschnitte maßen nur noch dessen Abarbeitung.
+                //
+                // Zwanzig je Sekunde ist schnelles menschliches Tippen und
+                // damit die Zahl, die etwas bedeutet.
+                if (frameInStep % 6 == 0) {
+                    typeNext();
+                }
+            }
             case SCROLL -> mouseScrolled(width * 0.5, height * 0.45, 0.0, -3.0);
             default -> {
             }
