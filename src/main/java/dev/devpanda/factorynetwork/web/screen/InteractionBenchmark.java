@@ -33,11 +33,17 @@ public final class InteractionBenchmark extends BrowserScreen {
     private static final Logger LOG =
             LoggerFactory.getLogger("FactoryNetwork/InteractionBenchmark");
 
-    /** Wie lange ein Abschnitt dauert, in Bildern. Bei sechzig etwa vier Sekunden. */
-    private static final int SECTION_FRAMES = 240;
+    /**
+     * Wie lange ein Abschnitt dauert.
+     *
+     * <p>In Zeit und nicht in Bildern: Die Bildrate schwankt, und Abschnitte
+     * von verschiedener Länge ließen sich nicht vergleichen. Beim ersten
+     * Versuch lief „Maus bewegen" 2,2 Sekunden und „Rollen" vier.
+     */
+    private static final long SECTION_NANOS = 4_000_000_000L;
 
     /** Ruhe zu Beginn, damit die Seite fertig geladen ist. */
-    private static final int SETTLE_FRAMES = 90;
+    private static final long SETTLE_NANOS = 2_000_000_000L;
 
     /**
      * Eine Seite mit festen Plätzen.
@@ -58,7 +64,15 @@ public final class InteractionBenchmark extends BrowserScreen {
                        padding:8px}
               #rollen{position:fixed;left:5%;top:32%;width:85%;height:60%;
                       overflow-y:scroll;border:1px solid #3a3d4d}
-              #rollen div{padding:6px 10px;border-bottom:1px solid #24263200}
+              #rollen div{padding:6px 10px;border-bottom:1px solid #242632}
+              /* Ohne Hover kostet eine Mausbewegung nichts — Chromium malt
+                 nur, was sich ändert. Eine Messung ohne Hover misst damit
+                 nicht den Editor, sondern eine Postkarte. Jede Zeile, jedes
+                 Feld reagiert deshalb auf den Zeiger, wie es ein Editor tut:
+                 Zeilenhervorhebung, Feldrahmen, Knopfzustände. */
+              #rollen div:hover{background:#242632;color:#7dd3a0}
+              #schreiben:hover,#waehlen:hover{border-color:#7dd3a0}
+              #glas:hover{background:rgba(125,211,160,0.55)}
               #glas{position:fixed;right:2%;bottom:2%;width:20%;height:12%;
                     background:rgba(125,211,160,0.35);border:1px solid #7dd3a0}
             </style></head><body>
@@ -87,6 +101,7 @@ public final class InteractionBenchmark extends BrowserScreen {
         MOUSE("Maus bewegen"),
         SCROLL("Rollen"),
         TYPE("Tippen ins Textfeld"),
+        SPECIAL("Sondertasten"),
         PASTE("Einfügen aus der Zwischenablage"),
         SELECT("Auswahlfeld offen"),
         RESIZE("Größe ändern"),
@@ -102,6 +117,7 @@ public final class InteractionBenchmark extends BrowserScreen {
     private static final String TYPED = "Umlaute äöü ÄÖÜ ß, Zeichen € {} [] <> und Text. ";
 
     private Step step = Step.SETTLE;
+    private long stepStartedNanos;
     private int framesInStep;
     private int typedIndex;
 
@@ -128,18 +144,25 @@ public final class InteractionBenchmark extends BrowserScreen {
         if (step == Step.DONE || !hasSession()) {
             return;
         }
+        if (stepStartedNanos == 0) {
+            stepStartedNanos = System.nanoTime();
+        }
         framesInStep++;
         act();
-        int limit = step == Step.SETTLE ? SETTLE_FRAMES : SECTION_FRAMES;
-        if (framesInStep < limit) {
+        long limit = step == Step.SETTLE ? SETTLE_NANOS : SECTION_NANOS;
+        if (System.nanoTime() - stepStartedNanos < limit) {
             return;
         }
-        if (step != Step.SETTLE) {
-            report();
-        }
+        // <b>Auch nach dem Aufbau melden, obwohl nichts zu melden ist.</b> Der
+        // Aufruf setzt die Zähler zurück und merkt sich den Zeitpunkt; ohne ihn
+        // trägt der erste echte Abschnitt die Zahlen des Aufbaus und alle
+        // Beschriftungen sind um eins verschoben. Genau so ist es hier zuerst
+        // ausgegangen.
+        report();
         cleanUpStep();
         step = Step.values()[step.ordinal() + 1];
         framesInStep = 0;
+        stepStartedNanos = System.nanoTime();
         beginStep();
         if (step == Step.DONE) {
             LOG.info("Interaktionsmessung fertig.");
@@ -185,6 +208,24 @@ public final class InteractionBenchmark extends BrowserScreen {
                 // Ins Textfeld klicken, sonst landet der Text nirgends.
                 clickAt(0.25, 0.16);
             }
+            case SPECIAL -> {
+                // <b>Genau die Tasten, für die der Vertrag ungewöhnlich ist.</b>
+                // Bei Druck und Loslassen erwartet dieser JCEF-Fork in keyChar
+                // den GLFW-Tastencode, weil er ihn mit GLFW_KEY_LEFT und
+                // Verwandten vergleicht, um den richtigen Scancode zu wählen.
+                // Wäre dort ein Schriftzeichen, bekämen Pfeiltasten den
+                // Scancode irgendeines Buchstabens — und nichts geschähe.
+                // Geschieht doch etwas, ändert sich das Textfeld, und eine
+                // Änderung ist ein Bild.
+                clickAt(0.25, 0.16);
+                for (int key : new int[] {
+                        GLFW.GLFW_KEY_HOME, GLFW.GLFW_KEY_END,
+                        GLFW.GLFW_KEY_LEFT, GLFW.GLFW_KEY_RIGHT,
+                        GLFW.GLFW_KEY_BACKSPACE, GLFW.GLFW_KEY_BACKSPACE,
+                        GLFW.GLFW_KEY_BACKSPACE, GLFW.GLFW_KEY_DELETE}) {
+                    sendPlain(key);
+                }
+            }
             case PASTE -> {
                 // <b>Was hier geprüft werden kann und was nicht.</b> Ob der
                 // Text wirklich ankommt, wüsste nur die Seite selbst — und
@@ -192,8 +233,11 @@ public final class InteractionBenchmark extends BrowserScreen {
                 // überhaupt etwas geschieht: Ein Einfügen, das ankommt, ändert
                 // das Textfeld, und eine Änderung ist ein Bild. Bleibt es bei
                 // null Bildern, ist der Weg tot.
+                // Genug Text, dass ein Einfügen sich nicht mit einem
+                // blinkenden Cursor verwechseln lässt: Der ändert zwei
+                // Kilobyte, ein gefülltes Textfeld ein Vielfaches davon.
                 minecraft.keyboardHandler.setClipboard(
-                        "Aus der Zwischenablage: äöü ß € {}");
+                        ("Aus der Zwischenablage: äöü ÄÖÜ ß € {} [] <> ").repeat(6));
                 clickAt(0.25, 0.16);
                 sendCombination(GLFW.GLFW_KEY_A);        // alles markieren
                 sendCombination(GLFW.GLFW_KEY_V);        // und ersetzen
@@ -235,10 +279,27 @@ public final class InteractionBenchmark extends BrowserScreen {
      * von JCEF macht daraus {@code EVENTFLAG_CONTROL_DOWN}, und den Rest
      * erledigt Chromium selbst — es hat einen eigenen Weg zur Zwischenablage
      * des Betriebssystems. Nachzubauen wäre daran nichts.
+     *
+     * <p><b>Der Scancode ist auf Windows nicht optional.</b> Der native Teil
+     * baut den Windows-Tastencode mit {@code MapVirtualKey} <b>aus dem
+     * Scancode</b>; eine Null darin ergibt einen Tastencode von null, und
+     * Chromium sieht eine Taste, die es nicht gibt. Bei echter Eingabe liefert
+     * Minecraft den Scancode mit — hier muss er erfragt werden.
+     *
+     * <p>Das ist keine Kleinigkeit gewesen: Beim ersten Versuch kam Strg+A und
+     * Strg+V nirgends an, und die Messung zeigte nur den blinkenden Cursor.
      */
     private void sendCombination(int glfwKey) {
-        keyPressed(glfwKey, 0, GLFW.GLFW_MOD_CONTROL);
-        keyReleased(glfwKey, 0, GLFW.GLFW_MOD_CONTROL);
+        int scanCode = GLFW.glfwGetKeyScancode(glfwKey);
+        keyPressed(glfwKey, scanCode, GLFW.GLFW_MOD_CONTROL);
+        keyReleased(glfwKey, scanCode, GLFW.GLFW_MOD_CONTROL);
+    }
+
+    /** Eine Taste ohne Zusatz, ebenfalls mit echtem Scancode. */
+    private void sendPlain(int glfwKey) {
+        int scanCode = GLFW.glfwGetKeyScancode(glfwKey);
+        keyPressed(glfwKey, scanCode, 0);
+        keyReleased(glfwKey, scanCode, 0);
     }
 
     private void clickAt(double acrossFraction, double downFraction) {

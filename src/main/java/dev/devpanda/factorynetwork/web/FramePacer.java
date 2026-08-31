@@ -3,6 +3,17 @@ package dev.devpanda.factorynetwork.web;
 /**
  * Entscheidet, wann ein Browser wieder ein Bild malen darf.
  *
+ * <p><b>Eine Obergrenze, kein Antrieb.</b> Was hier steht, kann Chromium
+ * ausbremsen und niemals beschleunigen. Die Bildrate im fensterlosen Betrieb
+ * ist in dieser JCEF-Fassung überhaupt nicht einstellbar — es gibt weder
+ * {@code CefBrowserSettings} noch ein {@code windowless_frame_rate}, und das
+ * native {@code createBrowser} nimmt keine Browser-Einstellungen entgegen.
+ * Gemessen liefert Chromium <b>30,1 Bilder je Sekunde</b>, seine
+ * Voreinstellung.
+ *
+ * <p>Wer hier sechzig einträgt, bekommt dreißig. Wer fünf einträgt, bekommt
+ * fünf. Nur die zweite Richtung wirkt.
+ *
  * <p><b>Reine Zeitrechnung, ohne Minecraft und ohne Chromium</b> — und
  * deshalb prüfbar. Die Uhr kommt von außen, damit ein Prüflauf sie stellen
  * kann; im Spiel ist es {@code System.nanoTime}.

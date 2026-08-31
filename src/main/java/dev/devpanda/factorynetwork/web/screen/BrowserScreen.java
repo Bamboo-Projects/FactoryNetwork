@@ -8,7 +8,6 @@ import dev.devpanda.factorynetwork.web.mcef.BrowserSession;
 import dev.devpanda.factorynetwork.web.view.BrowserCompositor;
 import dev.devpanda.factorynetwork.web.view.BrowserCursor;
 import dev.devpanda.factorynetwork.web.view.BrowserView;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -86,6 +85,9 @@ public class BrowserScreen extends Screen {
     private volatile int wantedCursor = -1;
     private int appliedCursor = -1;
 
+    /** Welche Zeigerarten schon einmal gemeldet wurden — je Art eine Zeile. */
+    private final java.util.Set<Integer> seenCursors = new java.util.HashSet<>();
+
     private long openedMillis;
     private boolean insideLastFrame;
     private long measuringSinceNanos;
@@ -121,18 +123,13 @@ public class BrowserScreen extends Screen {
             session.onCursor(type -> wantedCursor = type);
             session.setFocused(true);
         } else {
-            // Beim erneuten Aufbau — Fenstergröße geändert, Ressourcen neu
-            // geladen — bleibt der Browser stehen und bekommt nur ein neues Maß.
+            // <b>Hier hängt die Größenänderung.</b> Minecraft ruft bei jeder
+            // Fenster- oder Skalierungsänderung {@code resize()}, und das ruft
+            // {@code init()} erneut. Eine eigene Überschreibung von
+            // {@code resize()} bräuchte es nur, um dasselbe noch einmal zu
+            // tun. Der Browser bleibt stehen und bekommt ein neues Maß.
             session.resize(view.browserWidth(), view.browserHeight());
         }
-    }
-
-    @Override
-    public void resize(Minecraft client, int newWidth, int newHeight) {
-        super.resize(client, newWidth, newHeight);
-        // super.resize ruft init() erneut, das die Ansicht schon neu setzt.
-        // Hier bleibt nur, was init() nicht kann: nichts. Der Aufruf steht
-        // trotzdem da, weil er ohne ihn beim nächsten Lesen fehlen würde.
     }
 
     @Override
@@ -172,6 +169,13 @@ public class BrowserScreen extends Screen {
         if (wanted != appliedCursor && focus == BrowserFocus.BROWSER) {
             cursor.apply(minecraft.getWindow().getWindow(), wanted);
             appliedCursor = wanted;
+            // Jede Art einmal ins Protokoll: Ob die Zeigerwechsel überhaupt
+            // ankommen, sieht man sonst nur, indem man hinsieht — und
+            // „hinsehen" ist die Antwort, die dieser ganze Spike vermeidet.
+            if (seenCursors.add(wanted)) {
+                LOG.info("Mauszeiger: Chromium wünscht {} ({})",
+                        org.cef.misc.CefCursorType.fromId(wanted), wanted);
+            }
         }
     }
 

@@ -199,7 +199,35 @@ Beim Schließen wird der gewohnte Zeiger zurückgesetzt — eine Schreibmarke, d
 
 ## 8. Zwischenablage
 
-<!-- CLIPBOARD -->
+**Nichts gebaut, und das ist die richtige Antwort.** Gesucht wurde im
+Quelltext von JCEF — weder im Java-Teil noch im nativen kommt das Wort
+`clipboard` vor. Chromium greift selbst auf die Zwischenablage des
+Betriebssystems zu, über seine eigene Plattformschicht.
+
+Nötig ist dafür nur, dass die Tastenereignisse richtig ankommen: Der
+GLFW-Modifikator wird nativ zu `EVENTFLAG_CONTROL_DOWN`, und den Rest erledigt
+Chromium.
+
+**Ein Fund am Rande, der teuer hätte werden können.** Beim ersten Versuch kam
+Strg+A und Strg+V nirgends an. Der Grund steht im nativen Teil: Auf Windows
+wird der Windows-Tastencode mit `MapVirtualKey` **aus dem Scancode** gebaut —
+
+```cpp
+scanCode = MapScanCodeGLFW(env, cls, key_char, scanCode);
+BYTE VkCode = LOBYTE(MapVirtualKey(scanCode, MAPVK_VSC_TO_VK));
+```
+
+Eine Null im Scancode ergibt einen Tastencode von null, und Chromium sieht eine
+Taste, die es nicht gibt. Bei echter Eingabe liefert Minecraft den Scancode
+mit; wer Tasten selbst erzeugt, muss ihn über `glfwGetKeyScancode` erfragen.
+Das gilt für jede spätere Stelle, die Tasten simuliert.
+
+**Was gemessen wurde und was nicht:** Dass ein Einfügen *etwas* bewirkt, ist an
+den geänderten Bildern ablesbar. Ob der Text *richtig* ankommt, wüsste nur die
+Seite selbst — dafür bräuchte es eine Brücke zu ihr, und die ist ausdrücklich
+noch nicht dran. Die vier Wege aus dem Auftrag (Browser→System,
+System→Browser, Minecraft→Browser, Browser→Minecraft) laufen alle über
+dieselbe Systemzwischenablage; geprüft ist der Weg System→Browser.
 
 ---
 
@@ -242,10 +270,156 @@ ist — eine offene Tür für den Fall, dass eine spätere Fassung die Sperre l�
 
 ## 10. Gemessene Interaktion
 
-<!-- MESSUNG -->
+Der Bildschirm bedient sich selbst: Mausbewegung im Kreis, Rollen, Tippen,
+Sondertasten, Einfügen, Auswahlfeld, Größenänderung — je vier Sekunden. Die
+Ereignisse gehen **durch den Bildschirm** und nicht an ihm vorbei, damit
+Umrechnung, Fokusprüfung und Klickzählung mitgemessen werden.
+
+Fenster 854 × 480, GUI-Skalierung 2, also **854 × 480 Browser-Pixel**. Ein
+Vollbild sind damit 1601 KB.
+
+| Abschnitt | Bilder/s | Vollbild-Uploads | Ausschnitte | KB je Bild | Anteil eines Vollbilds | MB/s | Uploadzeit p50 / p95 |
+|---|---:|---:|---:|---:|---:|---:|---|
+| **Ruhe** | 0,0 | 0 | 0 | 0,0 | 0 % | 0,00 | — |
+| **Maus bewegen** | 22,5 | 0 | 90 | 215,0 | 13,4 % | 4,72 | 481 / 759 µs |
+| **Rollen** | 15,2 | 0 | 61 | **810,8** | **50,6 %** | 12,06 | 1519 / 1966 µs |
+| **Tippen** | 8,5 | 0 | 34 | 13,6 | 0,85 % | 0,11 | 129 / 160 µs |
+| **Sondertasten** | 2,0 | 0 | 8 | 2,3 | 0,14 % | 0,00 | 130 / 193 µs |
+| **Einfügen** | 2,0 | 0 | 8 | 17,4 | 1,09 % | 0,03 | 144 / 546 µs |
+| **Auswahlfeld** | 0,2 | 0 | 1 | 279,1 | 17,4 % | 0,07 | 637 µs |
+| **Größe ändern** | 0,5 | 2 | 0 | 1191,8 | 152 % ¹ | 0,58 | 1416 / 2685 µs |
+
+¹ Über hundert Prozent, weil zwei Vollbilder in **verschiedenen** Größen
+anfielen — eines in der alten, eines in der neuen — und der Anteil sich auf die
+kleinere bezieht. 1601 + 784 = 2385 KB, verteilt auf zwei Uploads.
+
+### Die Antwort auf die eigentliche Frage
+
+**Ja, eine gewöhnliche Handlung erzeugt große Bereiche — genau eine: Rollen.**
+Mit **50,6 % eines Vollbilds je Bild** liegt es zwei Größenordnungen über dem
+Tippen. Der Grund ist einleuchtend, sobald man ihn sieht: Beim Rollen
+verschiebt sich alles, was im Rollbereich steht. Es gibt keinen kleinen
+Ausschnitt mehr, den man melden könnte.
+
+Hochgerechnet auf 1920 × 1080 — das sind 2 073 600 gegen 409 920 Bildpunkte,
+also **Faktor 5,06**:
+
+| Handlung | bei 854×480 | bei 1920×1080 |
+|---|---:|---:|
+| Tippen | 0,11 MB/s | ~0,6 MB/s |
+| Maus über Zeilen | 4,7 MB/s | ~24 MB/s |
+| Rollen | 12,1 MB/s | **~61 MB/s** |
+| vollflächige Animation | — | 240 MB/s |
+
+Rollen kostet also gut ein Viertel des schlimmsten Falls. Das ist viel, aber
+es dauert Sekunden und nicht Minuten — und es ist die Handlung, bei der ein
+Ruckler am wenigsten auffällt, weil ohnehin alles in Bewegung ist.
+
+**Alles andere ist billig.** Tippen kostet 0,85 % eines Vollbilds je Bild; ein
+Editor, in dem jemand schreibt, liegt bei einem Zehntel Megabyte je Sekunde.
+
+### Was die Zahlen sonst noch belegen
+
+- **Die Sondertasten kommen an.** Home, Ende, Pfeile, Rücktaste und Entfernen
+  erzeugten acht Bilder à 2,3 KB — die Größe eines wandernden Schreibcursors.
+  Das ist der Nachweis für den ungewöhnlichen Tastenvertrag: Stünde in
+  `keyChar` ein Schriftzeichen statt des GLFW-Tastencodes, bekäme jede dieser
+  Tasten einen falschen Scancode und es geschähe nichts.
+- **Das Einfügen kommt an.** 17,4 KB je Bild — vorher, mit Scancode null,
+  waren es 2,1 KB, und das war nur der blinkende Cursor.
+- **Das Auswahlfeld klappt auf, in eigener Textur.** Ein Popup-Bild, 119,1 KB,
+  ohne einen einzigen Vollbild-Upload der Hauptansicht. Genau das, was MCEFs
+  Rückkopieren vermeiden sollte.
+- **Der Mauszeiger wechselt.** Im Protokoll: `POINTER (0)` und `IBEAM (3)` —
+  Chromium meldet beide, und beide werden gesetzt.
+
+### Stören die dreißig Bilder je Sekunde beim Bedienen?
+
+**Nein — sie wurden beim Bedienen nie erreicht.**
+
+| Handlung | Bilder/s |
+|---|---:|
+| Maus bewegen | 22,5 |
+| Rollen | 15,2 |
+| Tippen | 8,5 |
+| Sondertasten, Einfügen | 2,0 |
+| Ruhe | 0,0 |
+
+Der höchste Wert liegt bei **22,5** und damit unter der Decke. Eine Seite malt
+nur, wenn sich etwas ändert; beim Bedienen ändert sich seltener etwas, als
+Chromium liefern dürfte. In die Decke läuft nur, was von sich aus dauernd
+animiert.
+
+**Die Einschränkung ist ehrlich zu nennen:** Gemessen wurde eine schlichte
+Seite. Ein Editor mit Syntaxhervorhebung, blinkender Einfügemarke und
+Vervollständigungsfenster kann öfter malen. Ob dreißig für *den* reichen, sagt
+diese Messung nicht — sie sagt, dass die Decke bei gewöhnlicher Bedienung
+keine Rolle spielt.
 
 ---
 
 ## 11. Bekannte Lücken
 
-<!-- LUECKEN -->
+| Lücke | Wie schlimm | Was zu tun wäre |
+|---|---|---|
+| **Zeichen jenseits von `U+FFFF`** — Emoji kämen als zwei Hälften an | gering für einen Programmtext | `charTyped` sammelt Ersatzpaare und schickt sie zusammen |
+| **IME und CJK** ungeprüft | offen, betrifft ganze Sprachräume | Minecraft reicht Kompositionsereignisse nicht durch; CEF hätte mit `ImeCommitText` einen eigenen Weg. Eine eigene Aufgabe. |
+| **Ein Popup, das über den Rand ragt**, wird vom Bildschirm beschnitten statt von der Fläche | gering, solange die Fläche der ganze Bildschirm ist | Beim Zeichnen auf die Fläche beschneiden — nötig, sobald der Browser nur einen Teil einnimmt |
+| **Verschachtelte Popups** (ein Menü im Menü) | unbekannt | CEF meldet nur ein Popup; ob Chromium so etwas überhaupt so schickt, ist ungeprüft |
+| **Ziehen von Inhalten** (HTML5 Drag & Drop) | nicht gebaut | MCEF hat dafür einen `MCEFDragContext`. Für einen Editor selten gebraucht; für einen Dateibaum später schon |
+| **Der Bildschirm ist der einzige Ort mit Fokus** | so gewollt für D | Der Fokuszustand liegt schon in einer eigenen Klasse; eine Fläche in der Welt braucht nur einen Halter dafür |
+| **Zwei Browser gleichzeitig** ungeprüft | offen | Chromiums Bildrate von 30 gilt je Browser oder insgesamt — das ist noch nicht gemessen |
+| **Ziehen und Doppelklick sind gebaut, aber nicht im Betrieb belegt** | mittel | Die Logik hat Prüfläufe (Klickzähler, Tastenflaggen), aber kein Messabschnitt zieht eine Markierung auf. Ein Abschnitt „Text markieren" würde es zeigen |
+| **Die Lage des Auswahlfeldes auf dem Schirm ist gerechnet, nicht zurückgelesen** | mittel | Sie geht durch dieselbe Umrechnung wie die Maus, was das Wichtigste ist. Ein Rücklesen wie beim Bildnachweis würde es beweisen |
+
+---
+
+---
+
+## 12. Eine Zahl aus Schritt C, die zu genau dastand
+
+Die Bildzeitdifferenz beim vollflächigen Fall wurde inzwischen dreimal
+gemessen: **+13,6 / +4,0 / +19,2 ms** im Median. Sie streut mit dem, was
+Minecraft nebenher lädt — die Baseline läuft kurz nach dem Betreten der Welt,
+und dort kommen noch Chunks. Der belastbare Wert ist die **Uploadzeit selbst**,
+und die liegt stabil bei **13 bis 15 ms**.
+
+In `stand-texturupload.md` steht die erste dieser drei Zahlen ohne diesen
+Vorbehalt. Sie ist nicht falsch, aber sie ist genauer, als die Messung es
+hergibt.
+
+---
+
+## 13. Ausblick, ohne begonnen zu haben
+
+Für `mc://frame` — Minecrafts Bild als Inhalt der Seite — gibt es in MCEF
+bereits ein Vorbild: `ModScheme` registriert ein eigenes Schema über einen
+`CefResourceHandler`. Der liefert allerdings **Bytes**, keine Textur. Ein
+Framebuffer müsste je Aktualisierung kodiert werden, und bei 1080p sind das
+achteinhalb Megabyte durch einen Kompressor. Das ist die Stelle, an der dieser
+Weg teuer wird — zu klären, bevor er gebaut wird.
+
+Mehr steht dazu hier nicht, weil die Entscheidung darüber noch nicht gefallen
+ist.
+
+---
+
+## 14. Zum Nachstellen
+
+```
+/fnweb probe        eine Prüfseite zum Anfassen
+/fnweb nachweis     die acht Stellen zurücklesen
+/fnweb messung      die Abschnitte selbsttätig durchspielen
+/fnweb seite <url>  irgendeine Adresse
+/fnweb zustand      ob die Runtime bereit ist
+```
+
+Im Bildschirm: **F10** gibt die Tastatur zurück, **F9** schließt einen
+Messabschnitt ab und schreibt ihn ins Protokoll.
+
+Der ganze Ablauf — Selbsttest, Bildnachweis, Zahlenmessung,
+Interaktionsmessung — läuft von selbst mit:
+
+```
+./gradlew runClient -Pbenchmark
+```
