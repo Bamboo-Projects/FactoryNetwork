@@ -82,6 +82,29 @@ In Version 1 verschwindet er ersatzlos — upstream hat `CefBrowserSettings`.
 Der Bau lief unter `C:\jcef` und nicht im Zwischenordner, weil dort der
 längste Pfad **264 Zeichen** erreichte, vier über Windows' Grenze von 260.
 
+**Die Patches selbst sind gesichert** und hängen nicht mehr an `C:\jcef`:
+
+```text
+tools/runtime/patches/0000-poc-60hz-cef116.patch
+tools/runtime/patches/0000-poc-clang-format-nicht-fatal.patch
+tools/runtime/patches/LIESMICH.md
+```
+
+`C:\jcef` ist damit nur noch Bequemlichkeit — dort liegt die fertig gebaute
+Bibliothek. Verschwindet der Ordner, kostet es einen Bau, keine Arbeit.
+
+## Zustand des Repositorys
+
+Alles aus dieser Sitzung ist committet, zuletzt `af4e42c`. Sechs Commits:
+Messgrundlagen, Messabläufe, Werkzeuge, Berichte, Pläne, Patches.
+
+**Offen im Baum sind nur `logs/debug.log` und `logs/latest.log`** — das
+Rohmaterial der Messungen. Bewusst weder committet noch verworfen: Die Zahlen
+stehen in den Berichten, die Protokolle sind ihre Herkunft.
+
+Ein `gradlew compileJava` lief zuletzt grün, und die gepatchte Bibliothek hat
+ihn überstanden (950 KB gepatcht, 917 KB Original liegen beide).
+
 ---
 
 ## Womit weitermachen
