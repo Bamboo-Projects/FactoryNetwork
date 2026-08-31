@@ -52,6 +52,7 @@
 
   window.leeren = () => {
     window.protokoll = [];
+    window.rad = [];
     const feld = document.getElementById('feld');
     feld.value = '';
     feld.focus();
@@ -78,6 +79,13 @@
     (e.ctrl ? 'C' : '') + (e.shift ? 'S' : '') + (e.alt ? 'A' : '') + (e.meta ? 'M' : ''),
     e.location === undefined ? '' : e.location
   ].join(TAB)).join(NL);
+
+  // Das Rad. Nicht raten, messen: GLFW meldet nach oben ein positives Delta,
+  // AWT nach oben ein negatives wheelRotation, und was Chromium daraus macht,
+  // steht in keiner der beiden Dokumentationen.
+  window.rad = [];
+  addEventListener('wheel', e => window.rad.push(e.deltaY), { capture: true, passive: true });
+  window.radBericht = () => window.rad.map(d => String(d)).join(TAB);
 
   // Was wirklich im Feld steht — die zweite Wahrheit neben dem Protokoll.
   // Ein Zeichen kann als Ereignis ankommen und trotzdem nicht im Text landen,

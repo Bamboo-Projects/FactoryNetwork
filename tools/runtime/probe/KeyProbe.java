@@ -220,6 +220,7 @@ public final class KeyProbe {
         checkLetters();
         checkSpecialText();
         checkAltGr();
+        checkWheel();
 
         System.out.println();
         System.out.println("{");
@@ -399,7 +400,74 @@ public final class KeyProbe {
                 "@".equals(stripped));
     }
 
+    /**
+     * Das Vorzeichen des Rades — gemessen, bevor eine Klasse es festschreibt.
+     *
+     * <p>Drei Zählweisen treffen hier aufeinander, und keine zwei stimmen
+     * überein: GLFW meldet nach oben ein <b>positives</b> Delta, AWT nach oben
+     * ein <b>negatives</b> {@code wheelRotation}, und Chromiums
+     * {@code WheelEvent.deltaY} ist nach oben ebenfalls negativ. Zwei
+     * Vorzeichenwechsel, die sich fast aufheben — fast.
+     *
+     * <p>Geprüft wird deshalb die ganze Strecke: ein AWT-Ereignis mit
+     * {@code wheelRotation = -1} hinein, das {@code deltaY} der Seite heraus.
+     * Was hier steht, entscheidet, ob {@code AwtMouseEvents} das Vorzeichen
+     * dreht oder nicht.
+     */
+    private static void checkWheel() {
+        clear();
+        // Minecraft meldet beim Drehen nach oben ein positives Delta. Wird es
+        // unverändert als wheelRotation weitergereicht, muss in der Seite ein
+        // negatives deltaY ankommen — so heißt „nach oben" im DOM.
+        double positiveRotation = wheelDelta(1);
+        double negativeRotation = wheelDelta(-1);
+
+        boolean ok = positiveRotation < 0 && negativeRotation > 0;
+        note("Rad: Vorzeichen geht unverändert durch",
+                "{\"wheelRotation +1\": \"deltaY negativ (hinauf)\","
+                        + " \"wheelRotation -1\": \"deltaY positiv (hinunter)\"}",
+                "{\"wheelRotation +1\": " + positiveRotation
+                        + ", \"wheelRotation -1\": " + negativeRotation + "}",
+                ok);
+    }
+
+    private static double wheelDelta(int wheelRotation) {
+        clear();
+        browser.wheel(new java.awt.event.MouseWheelEvent(SOURCE,
+                java.awt.event.MouseEvent.MOUSE_WHEEL, System.currentTimeMillis(), 0,
+                100, 100, 0, false,
+                java.awt.event.MouseWheelEvent.WHEEL_UNIT_SCROLL,
+                3,                 // Einheiten je Rastung, wie im Mod
+                wheelRotation));
+        pump(20);
+        CONSOLE.clear();
+        js("console.log('RAD\\n' + window.radBericht())");
+        if (!awaitConsole("RAD", 2000)) {
+            return 0;
+        }
+        String message = lastConsole("RAD");
+        int nl = message.indexOf('\n');
+        String body = nl < 0 ? "" : message.substring(nl + 1).trim();
+        if (body.isEmpty()) {
+            return 0;
+        }
+        try {
+            return Double.parseDouble(body.split("\t")[0]);
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
     // ---- Die Werkzeuge ------------------------------------------------------
+
+    /**
+     * Der Absender für Mausereignisse.
+     *
+     * <p>AWT wirft bei {@code null}. Eine unmittelbare Unterklasse von
+     * {@link java.awt.Component} zieht kein Toolkit heran und braucht keinen
+     * Peer — niemand zeichnet sie, sie ist nur ein Absender.
+     */
+    private static final java.awt.Component SOURCE = new java.awt.Component() {};
 
     private static void press(int scancode, boolean extended, int virtualKey, int modifiers) {
         browser.key(KeyEvent.KEY_PRESSED, modifiers, KeyEvent.CHAR_UNDEFINED, scancode, extended,
