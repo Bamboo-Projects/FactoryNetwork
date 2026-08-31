@@ -217,17 +217,26 @@ public final class TypingBenchmark extends IdeScreen {
 
     private void begin() {
         switch (step) {
+            // <b>Vor jedem Tippabschnitt ein frisches Dokument.</b> Sonst
+            // schreibt jede Phase in das, was die vorigen hinterlassen haben —
+            // nach drei Abschnitten sind das zweieinviertel Minuten Text, und
+            // die Messung zeigt das Wachsen des Dokuments statt des
+            // Unterschieds, um den es geht. Genau so ist der erste
+            // Glas-Vergleich zustande gekommen, und er war damit wertlos.
             case TYPING_GLASS, TYPING_FAST -> {
                 runScript("window.fnIde && fnIde.glas(true)");
                 runScript("window.fnIde && fnIde.thema('fn-glas')");
+                runScript("window.fnIde && fnIde.frisch()");
                 click(0.45, 0.30);
             }
             case TYPING_NO_GLASS -> {
                 runScript("window.fnIde && fnIde.glas(false)");
+                runScript("window.fnIde && fnIde.frisch()");
                 click(0.45, 0.30);
             }
             case TYPING_OPAQUE -> {
                 runScript("window.fnIde && fnIde.thema('fn-deckend')");
+                runScript("window.fnIde && fnIde.frisch()");
                 click(0.45, 0.30);
             }
             case SCROLL -> {

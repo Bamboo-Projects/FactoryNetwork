@@ -463,6 +463,16 @@
         editor.setSelection(new m.Selection(vonZeile, 1, bisZeile, 40));
       },
       leerraum: function () { editor.setSelections([new m.Selection(1, 1, 1, 1)]); },
+      // Setzt den Inhalt der aktuellen Datei zurück. Ohne das tippt jeder
+      // Messabschnitt in ein Dokument, in das die vorigen schon
+      // dreiviertelminutenweise geschrieben haben — und dann misst man das
+      // Wachsen des Dokuments statt dessen, was man messen wollte.
+      frisch: function (name) {
+        var ziel = name || 'main.fn';
+        modelle[ziel].setValue(programm(120));
+        waehle(ziel);
+        editor.setPosition({ lineNumber: 6, column: 1 });
+      },
       text: function () { return editor.getModel().getValue().length; },
       zeilen: function () { return editor.getModel().getLineCount(); }
     };
