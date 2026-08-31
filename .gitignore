@@ -7,6 +7,11 @@ build/
 # draußen; diese hier landen daneben im Wurzelverzeichnis.
 logs/
 
+# Chromiums eigenes Protokoll. Die Proben setzen log_file, aber die
+# Hilfsprozesse schreiben ihr debug.log ins aktuelle Verzeichnis — und das ist
+# beim Bauen die Wurzel des Repositorys.
+debug.log
+
 # IDE
 .idea/
 *.iml
