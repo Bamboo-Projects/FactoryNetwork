@@ -1,9 +1,9 @@
-# Block A ist gebaut und vermessen
+# Block A ist gebaut und vermessen, der Eingabe-Adapter steht
 
 Stand: 1. September 2026. Was in `plan-v1-blockA-und-input.md` als Plan steht,
-läuft jetzt: A1, A2, A3, A4a, B3a und A4b sind grün. Dieses Dokument ist der
-Bericht dazu — die Zahlen, die Abweichungen vom Plan und das, was daraus für
-Block B folgt.
+läuft jetzt: A1, A2, A3, A4a, B3a, A4b, B3b, B3c und B3d sind grün. Dieses
+Dokument ist der Bericht dazu — die Zahlen, die Abweichungen vom Plan und das,
+was daraus für B4 folgt.
 
 ---
 
@@ -211,18 +211,54 @@ Der Generator wird über `vswhere` bestimmt. Der Plan nennt „Visual Studio 17
 
 ---
 
-## Womit weitermachen
+## B3b, B3c und B3d sind auch schon da
 
-Die Stufengrenze aus dem Auftrag hält: **B3b, B3c und B3d dürfen jetzt**, weil
-A4b grün ist — und erst jetzt, weil die Tabellen aus den gemessenen Werten
-entstehen sollen und nicht aus einer Herleitung.
+Fünf Klassen unter `web/input`, dreizehn Prüfläufe, alle grün. Jede Erwartung
+darin stammt aus einer der beiden Messungen und nicht aus einer Ableitung.
 
 ```text
-B3b  GlfwKeys, GlfwScancodes    base/extended messbar belegt (siehe oben)
-B3c  AwtModifiers               inklusive der gemessenen AltGr-Gegenmaßnahme
-B3d  AwtMouseEvents, AwtEventSource
-B4   FnBrowser auf CefBrowser_N — Vorlage ist probe/OsrBrowser.java
-B3e  Testmatrix
+GlfwScancodes    base() und extended(), belegt durch ScanProbe
+GlfwKeys         Rechnung nur bei Buchstaben und Ziffern, sonst Tabelle
+AwtModifiers     forKey() vollständig, forCharacter() ohne Strg und Alt
+AwtMouseEvents   rechts = BUTTON3, kein eigenes MOUSE_CLICKED
+AwtEventSource   die eine peerlose Komponente
 ```
+
+**Das Rad-Vorzeichen ist gemessen, und es fällt anders aus als vermutet.** Der
+Plan rechnete mit einem Vorzeichenwechsel zwischen GLFW und AWT. Gemessen im
+Prüfstand:
+
+```text
+wheelRotation +1  →  deltaY -2,0   in der Seite: hinauf
+wheelRotation -1  →  deltaY +2,0   in der Seite: hinunter
+```
+
+Minecrafts Delta ist beim Drehen nach oben positiv. Es wandert deshalb
+**unverändert** in `wheelRotation` — zwei Vorzeichenwechsel, die sich
+aufheben. Ohne die Messung wäre hier ein Dreher eingebaut worden, und Scrollen
+liefe verkehrt herum.
+
+**Eine Annahme, die der Entscheidung des Lesers bedarf:** Der Ziffernblock ist
+auf die NumLock-an-Lesart festgelegt — Scancode 0x48 ohne Erweiterungs-Bit
+wird `VK_NUMPAD8`, nicht `VK_UP`. Ohne das hätte das Erweiterungs-Bit für diese
+Tasten keine Bedeutung mehr. GLFW liefert seit 3.3 aber `GLFW_MOD_NUM_LOCK` in
+den Modifikator-Bits; wer es genauer will, könnte je Zustand entscheiden. Für
+Version 1 bleibt es bei der einfachen Lesart.
+
+---
+
+## Womit weitermachen
+
+```text
+B4   FnBrowser auf CefBrowser_N umstellen — Vorlage: probe/OsrBrowser.java
+B3e  Testmatrix, automatisch und von Hand in Monaco
+```
+
+**B4 braucht vorher eine Entscheidung, die der Plan nicht trifft:** Wie kommt
+die gebaute Laufzeitumgebung auf den Klassenpfad des Mods? Heute liefert MCEF
+`jcef.jar` und die Bibliotheken. Drei Wege stehen offen — mitliefern, über das
+Manifest nachladen, oder MCEFs Ladeweg übernehmen und nur den Inhalt
+austauschen —, und sie unterscheiden sich in Auslieferungsgröße,
+Startverhalten und darin, wie schwer ein Rückweg ist.
 
 MCEF wird erst entfernt, wenn B4 und B3e grün sind.
