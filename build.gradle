@@ -36,6 +36,17 @@ neoForge {
             // Sie öffnet nacheinander drei Browser und schreibt Zahlen ins
             // Protokoll. Dauerhaft an wäre sie ein Kostenposten in jeder
             // Sitzung statt eines Nachweises, den man abrufen kann.
+            // Nur die Entwicklungsumgebung, ohne die Nachweiskette davor:
+            //   ./gradlew runClient -Pide
+            if (project.hasProperty('ide')) {
+                systemProperty 'fn.ide', 'true'
+                // Mit -Pidebench laeuft statt der Oberflaeche die Messung.
+                if (project.hasProperty('idebench')) {
+                    systemProperty 'fn.idebench', 'true'
+                }
+                programArgument '--quickPlaySingleplayer'
+                programArgument(project.hasProperty('world') ? world : 'New World')
+            }
             if (project.hasProperty('benchmark')) {
                 systemProperty 'fn.benchmark', 'true'
                 // Direkt in eine Welt: Im Hauptmenü deckelt Minecraft die

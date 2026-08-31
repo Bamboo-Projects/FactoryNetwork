@@ -60,6 +60,23 @@ public final class BrowserSession implements AutoCloseable, FnBrowser.Events {
 
     private IntConsumer cursorSink;
 
+    /**
+     * Wann zuletzt eine Eingabe hineinging, auf die noch kein Bild kam.
+     *
+     * <p><b>Die Zahl, die ein Editor entscheidet.</b> Bilder je Sekunde sagen
+     * wenig darüber, ob sich das Tippen unmittelbar anfühlt; was zählt, ist
+     * die Spanne zwischen einem Tastendruck und dem Bild, das ihn zeigt. Genau
+     * die wird hier gemessen — ohne Rückkanal aus der Seite, allein aus dem,
+     * was ohnehin durch diese Klasse geht.
+     *
+     * <p>Null heißt: Es steht keine Eingabe aus, das nächste Bild gehört zu
+     * nichts, was jemand getan hat.
+     */
+    private long pendingInputNanos;
+
+    private final dev.devpanda.factorynetwork.web.measure.DurationSamples inputLatency =
+            new dev.devpanda.factorynetwork.web.measure.DurationSamples();
+
     private long paints;
     private long popupPaints;
     private long firstPaintNanos;
@@ -104,6 +121,11 @@ public final class BrowserSession implements AutoCloseable, FnBrowser.Events {
             firstPaintNanos = System.nanoTime();
         }
         paints++;
+        long pending = pendingInputNanos;
+        if (pending != 0) {
+            inputLatency.record(System.nanoTime() - pending);
+            pendingInputNanos = 0;
+        }
         texture.upload(frame);
         pacer.drawn(System.nanoTime());
     }
@@ -161,6 +183,7 @@ public final class BrowserSession implements AutoCloseable, FnBrowser.Events {
      */
     public void mouseMoved(int x, int y, int keyboardModifiers) {
         if (!closed) {
+            noteInput();
             browser.moveMouse(x, y, buttons.modifiersWith(keyboardModifiers), false);
         }
     }
@@ -188,6 +211,7 @@ public final class BrowserSession implements AutoCloseable, FnBrowser.Events {
         if (cefButton < 0) {
             return;
         }
+        noteInput();
         int count = clicks.pressed(minecraftButton, x, y, nowMillis);
         buttons.press(minecraftButton);
         browser.clickMouse(x, y, true, cefButton, count,
@@ -222,6 +246,7 @@ public final class BrowserSession implements AutoCloseable, FnBrowser.Events {
         if (closed) {
             return;
         }
+        noteInput();
         double scroll = amount < 0 ? Math.floor(amount) : Math.ceil(amount);
         browser.scrollMouse(x, y, scroll * 3.0,
                 buttons.modifiersWith(keyboardModifiers));
@@ -230,6 +255,7 @@ public final class BrowserSession implements AutoCloseable, FnBrowser.Events {
     /** Eine Taste geht herunter. Der Tastencode ist GLFWs, nicht Minecrafts. */
     public void keyPressed(int glfwKeyCode, int scanCode, int modifiers) {
         if (!closed) {
+            noteInput();
             browser.sendKey(glfwKeyCode, scanCode, modifiers, true);
         }
     }
@@ -250,6 +276,7 @@ public final class BrowserSession implements AutoCloseable, FnBrowser.Events {
      */
     public void charTyped(char typed, int modifiers) {
         if (!closed) {
+            noteInput();
             browser.sendChar(typed, modifiers);
         }
     }
@@ -291,6 +318,24 @@ public final class BrowserSession implements AutoCloseable, FnBrowser.Events {
             return;
         }
         frame.executeJavaScript(code, "fn://runtime", 0);
+    }
+
+    /**
+     * Merkt sich, dass gerade etwas hineinging.
+     *
+     * <p>Nur der <b>erste</b> Anschlag einer Folge zählt: Wer zehnmal tippt,
+     * bevor ein Bild kommt, wartet einmal — und diese eine Wartezeit ist, was
+     * er merkt.
+     */
+    private void noteInput() {
+        if (pendingInputNanos == 0) {
+            pendingInputNanos = System.nanoTime();
+        }
+    }
+
+    /** Wie lange es von einer Eingabe bis zum Bild dauert. */
+    public dev.devpanda.factorynetwork.web.measure.DurationSamples inputLatency() {
+        return inputLatency;
     }
 
     /** Sagt Chromium, ob es die Tastatur hat. */

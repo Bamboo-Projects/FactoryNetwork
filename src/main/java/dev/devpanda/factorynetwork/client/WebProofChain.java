@@ -36,6 +36,15 @@ final class WebProofChain {
 
     private static final boolean ENABLED = Boolean.getBoolean("fn.benchmark");
 
+    /**
+     * Nur die Entwicklungsumgebung, ohne die Kette davor.
+     *
+     * <p>Die Nachweise aus A bis E brauchen zusammen über drei Minuten, bevor
+     * das erste Monaco-Bild erscheint. Für einen Spike, der mehrere Läufe
+     * braucht, ist das jedes Mal eine verlorene Viertelstunde.
+     */
+    private static final boolean IDE_ONLY = Boolean.getBoolean("fn.ide");
+
     private static final Logger LOG = LoggerFactory.getLogger("FactoryNetwork/WebProofChain");
 
     private static boolean proofStarted;
@@ -48,6 +57,10 @@ final class WebProofChain {
     }
 
     static void tick() {
+        if (IDE_ONLY) {
+            tickIdeOnly();
+            return;
+        }
         if (!ENABLED) {
             return;
         }
@@ -94,6 +107,28 @@ final class WebProofChain {
             } catch (Exception broken) {
                 LOG.warn("Interaktionsmessung ließ sich nicht öffnen", broken);
             }
+        }
+    }
+    /** Der kurze Weg: Welt abwarten, Oberfläche öffnen. */
+    private static void tickIdeOnly() {
+        if (proofStarted) {
+            return;
+        }
+        Minecraft client = Minecraft.getInstance();
+        if (client.level == null) {
+            return;
+        }
+        ticksWaiting++;
+        if (ticksWaiting < SETTLE_TICKS) {
+            return;
+        }
+        proofStarted = true;
+        boolean measuring = Boolean.getBoolean("fn.idebench");
+        boolean opened = measuring
+                ? dev.devpanda.factorynetwork.web.ide.MonacoBenchmark.open(client)
+                : dev.devpanda.factorynetwork.web.ide.IdeScreen.open(client);
+        if (!opened) {
+            LOG.warn("Die Oberfläche ließ sich nicht öffnen");
         }
     }
 }

@@ -58,6 +58,17 @@ public final class WebCommands {
                                     .BackdropProof.openIfPossible(Minecraft.getInstance()));
                             return 1;
                         }))
+                .then(Commands.literal("ide")
+                        .executes(context -> {
+                            later(() -> {
+                                if (!dev.devpanda.factorynetwork.web.ide.IdeScreen
+                                        .open(Minecraft.getInstance())) {
+                                    say("Die Oberfläche ließ sich nicht öffnen — "
+                                            + "ist tools/monaco.py gelaufen?");
+                                }
+                            });
+                            return 1;
+                        }))
                 .then(Commands.literal("glas")
                         .executes(context -> {
                             later(() -> {

@@ -320,7 +320,8 @@ public class BrowserScreen extends Screen {
         }
         boolean inside = view.contains(mouseX, mouseY);
         if (inside) {
-            session.mouseMoved(view.toBrowserX(mouseX), view.toBrowserY(mouseY), 0);
+            session.mouseMoved(view.toBrowserX(mouseX), view.toBrowserY(mouseY),
+                    heldModifiers());
         } else if (insideLastFrame) {
             // Genau einmal beim Verlassen, nicht bei jeder Bewegung außerhalb.
             session.mouseLeft(view.toBrowserX(mouseX), view.toBrowserY(mouseY));
@@ -337,7 +338,7 @@ public class BrowserScreen extends Screen {
         // nach dem Zurückgeben mit einer Taste wiederholen.
         setFocus(BrowserFocus.BROWSER);
         session.mousePressed(view.toBrowserX(mouseX), view.toBrowserY(mouseY),
-                button, 0, System.currentTimeMillis());
+                button, heldModifiers(), System.currentTimeMillis());
         return true;
     }
 
@@ -346,7 +347,8 @@ public class BrowserScreen extends Screen {
         if (session == null || view == null) {
             return super.mouseReleased(mouseX, mouseY, button);
         }
-        session.mouseReleased(view.toBrowserX(mouseX), view.toBrowserY(mouseY), button, 0);
+        session.mouseReleased(view.toBrowserX(mouseX), view.toBrowserY(mouseY),
+                button, heldModifiers());
         return true;
     }
 
@@ -363,7 +365,8 @@ public class BrowserScreen extends Screen {
         if (session == null || view == null) {
             return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
         }
-        session.mouseMoved(view.toBrowserX(mouseX), view.toBrowserY(mouseY), 0);
+        session.mouseMoved(view.toBrowserX(mouseX), view.toBrowserY(mouseY),
+                    heldModifiers());
         return true;
     }
 
@@ -373,7 +376,8 @@ public class BrowserScreen extends Screen {
         if (session == null || view == null || !view.contains(mouseX, mouseY)) {
             return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
         }
-        session.mouseScrolled(view.toBrowserX(mouseX), view.toBrowserY(mouseY), scrollY, 0);
+        session.mouseScrolled(view.toBrowserX(mouseX), view.toBrowserY(mouseY),
+                scrollY, heldModifiers());
         return true;
     }
 
@@ -441,9 +445,67 @@ public class BrowserScreen extends Screen {
         return session != null;
     }
 
+    /** Der laufende Browser, für alles, was mehr braucht als die Messwerte. */
+    protected dev.devpanda.factorynetwork.web.mcef.BrowserSession session() {
+        return session;
+    }
+
+    /** Wie viele Bilder der Browser bisher geliefert hat. */
+    protected long paints() {
+        return session == null ? 0L : session.paints();
+    }
+
+    /** Wie lange es von einer Eingabe bis zum Bild dauert. */
+    protected dev.devpanda.factorynetwork.web.measure.DurationSamples inputLatency() {
+        return session == null
+                ? new dev.devpanda.factorynetwork.web.measure.DurationSamples()
+                : session.inputLatency();
+    }
+
     /** Die Messwerte des Bildwegs zurück nach Minecraft. */
     protected dev.devpanda.factorynetwork.web.texture.GlTextureBackend texture() {
         return session == null ? null : session.texture();
+    }
+
+    /**
+     * Die gerade gedrückten Umschalttasten, als GLFW-Flaggen.
+     *
+     * <p><b>Ohne sie ist die halbe Maus tot.</b> Steuerung und Mausrad zoomen
+     * einen Editor, Umschalt und Klick erweitern eine Auswahl, Alt und Klick
+     * setzt einen zweiten Schreibcursor. Wer die Flaggen bei Mausereignissen
+     * auf null lässt, nimmt der Seite all das — und es sieht aus, als könne
+     * sie es nicht.
+     *
+     * <p>Bei Tastenereignissen liefert Minecraft die Flaggen mit; bei
+     * Mausereignissen nicht, dort sind sie zu erfragen.
+     */
+    protected static int heldModifiers() {
+        int modifiers = 0;
+        if (hasShiftDown()) {
+            modifiers |= GLFW.GLFW_MOD_SHIFT;
+        }
+        if (hasControlDown()) {
+            modifiers |= GLFW.GLFW_MOD_CONTROL;
+        }
+        if (hasAltDown()) {
+            modifiers |= GLFW.GLFW_MOD_ALT;
+        }
+        return modifiers;
+    }
+
+    /**
+     * Eine Taste samt Steuerung, wie sie von einer Tastatur käme.
+     *
+     * <p><b>Der Scancode ist auf Windows nicht optional.</b> Der native Teil
+     * baut den Windows-Tastencode mit {@code MapVirtualKey} <b>aus dem
+     * Scancode</b>; eine Null darin ergibt einen Tastencode von null, und
+     * Chromium sieht eine Taste, die es nicht gibt. Bei echter Eingabe liefert
+     * Minecraft ihn mit — wer Tasten selbst erzeugt, muss ihn erfragen.
+     */
+    protected void sendKeyCombination(int glfwKey, int modifiers) {
+        int scanCode = GLFW.glfwGetKeyScancode(glfwKey);
+        keyPressed(glfwKey, scanCode, modifiers);
+        keyReleased(glfwKey, scanCode, modifiers);
     }
 
     /** Ob die Seite noch lädt — vorher verpufft jeder Aufruf in sie hinein. */
