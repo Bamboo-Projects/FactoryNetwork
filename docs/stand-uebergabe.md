@@ -6,6 +6,11 @@ welchem Zustand die Maschine ist und womit weiterzumachen ist.
 
 ---
 
+> **Überholt seit dem 1. September 2026.** Block A ist gebaut und vermessen.
+> Der aktuelle Einstieg ist **`stand-runtime-blockA.md`**; dort stehen die
+> Zahlen, die vier Abweichungen vom Plan und der nächste Schritt (B3b).
+> Was unten steht, gilt weiterhin für den Proof-of-Concept und seine Messungen.
+
 ## In einem Satz
 
 Der Proof-of-Concept steht und ist vermessen; als Nächstes wird die eigene
