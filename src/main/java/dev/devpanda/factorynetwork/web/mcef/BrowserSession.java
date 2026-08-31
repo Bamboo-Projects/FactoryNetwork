@@ -95,6 +95,19 @@ public final class BrowserSession implements AutoCloseable, FnBrowser.Events {
     private final dev.devpanda.factorynetwork.web.measure.DurationSamples totalLatency =
             new dev.devpanda.factorynetwork.web.measure.DurationSamples();
 
+    /**
+     * Der Abstand zwischen zwei Bildern, die Chromium liefert.
+     *
+     * <p>Das ist der Takt des fensterlosen Betriebs, und er ist eine andere
+     * Größe als alles daneben: Die drei Abschnitte oben messen, wie lange
+     * etwas dauert. Dieser misst, wie oft überhaupt jemand drankommt. Wer
+     * beides verwechselt, hält Wartezeit für Rechenzeit.
+     */
+    private final dev.devpanda.factorynetwork.web.measure.DurationSamples paintGaps =
+            new dev.devpanda.factorynetwork.web.measure.DurationSamples();
+
+    private long lastPaintNanos;
+
     private long paints;
     private long popupPaints;
     private long firstPaintNanos;
@@ -138,6 +151,17 @@ public final class BrowserSession implements AutoCloseable, FnBrowser.Events {
         if (paints == 0) {
             firstPaintNanos = System.nanoTime();
         }
+        // Der Abstand zweier Bilder — die Zahl, die den Takt zeigt.
+        //
+        // <p><b>Warum sie hier steht und nicht im Bildschirm.</b> Was Minecraft
+        // zeichnet, hat mit dem, was Chromium liefert, nichts zu tun; der
+        // Bildschirm sieht nur, wann er selbst dran war. Der Takt des Browsers
+        // ist genau hier zu haben, an der Stelle, wo sein Bild ankommt.
+        long paintNow = System.nanoTime();
+        if (lastPaintNanos != 0) {
+            paintGaps.record(paintNow - lastPaintNanos);
+        }
+        lastPaintNanos = paintNow;
         paints++;
         long pending = pendingInputNanos;
         if (pending != 0) {
@@ -403,9 +427,16 @@ public final class BrowserSession implements AutoCloseable, FnBrowser.Events {
         toPaint.reset();
         toScreen.reset();
         totalLatency.reset();
+        paintGaps.reset();
+        lastPaintNanos = 0;
         pendingInputNanos = 0;
         paintedForInputNanos = 0;
         uploadEndNanos = 0;
+    }
+
+    /** Der Takt: Abstände zwischen zwei Bildern aus Chromium. */
+    public dev.devpanda.factorynetwork.web.measure.DurationSamples paintGaps() {
+        return paintGaps;
     }
 
     /** Sagt Chromium, ob es die Tastatur hat. */

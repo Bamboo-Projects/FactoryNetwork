@@ -65,6 +65,17 @@ neoForge {
                 if (project.hasProperty('probe')) {
                     systemProperty 'fn.probe', 'true'
                 }
+                // Chromiums Fernwartung auf 127.0.0.1:9222, nur fuer Messungen:
+                //   ./gradlew runClient -Pide -Pdevtools
+                if (project.hasProperty('devtools')) {
+                    systemProperty 'fn.devtools', 'true'
+                }
+                // Oberflaeche mehrfach oeffnen und schliessen, um zu sehen, ob
+                // Chromium seine Prozesse wieder abraeumt:
+                //   ./gradlew runClient -Pide -Plifecycle
+                if (project.hasProperty('lifecycle')) {
+                    systemProperty 'fn.lifecycle', 'true'
+                }
                 programArgument '--quickPlaySingleplayer'
                 programArgument(project.hasProperty('world') ? world : 'New World')
             }

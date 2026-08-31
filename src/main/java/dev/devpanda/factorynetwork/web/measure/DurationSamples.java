@@ -92,6 +92,51 @@ public final class DurationSamples {
         return sorted[index] / 1000.0;
     }
 
+    /**
+     * Die Verteilung als Textblock, in Fächern von je {@code bucketMillis}.
+     *
+     * <p><b>Wozu, wenn es schon Perzentile gibt.</b> Perzentile verraten die
+     * Lage, nicht die Form. Zwei Messreihen mit demselben Median sehen gleich
+     * aus, solange niemand hinsieht: die eine streut gleichmäßig über ihre
+     * Spanne, die andere hat zwei scharfe Häufungen und dazwischen fast
+     * nichts. Das ist der Unterschied zwischen „mal schneller, mal langsamer"
+     * und „wartet auf einen Takt" — und den entscheidet keine einzelne Zahl,
+     * sondern nur das Bild der ganzen Verteilung.
+     *
+     * <p>Was oberhalb des letzten Fachs liegt, fällt nicht unter den Tisch,
+     * sondern kommt in eine eigene Zeile. Ein Ausreißerfach, das man nicht
+     * sieht, verschiebt die Form still.
+     */
+    public String histogram(double bucketMillis, int buckets) {
+        if (filled == 0) {
+            return "  (keine Messungen)";
+        }
+        int[] counts = new int[buckets + 1];
+        for (int i = 0; i < filled; i++) {
+            double millis = window[i] / 1_000_000.0;
+            int slot = (int) (millis / bucketMillis);
+            counts[Math.min(slot, buckets)]++;
+        }
+        int highest = 0;
+        for (int count : counts) {
+            highest = Math.max(highest, count);
+        }
+        StringBuilder text = new StringBuilder();
+        for (int i = 0; i <= buckets; i++) {
+            if (counts[i] == 0) {
+                continue;
+            }
+            String range = i == buckets
+                    ? String.format(java.util.Locale.GERMANY, "  ab %5.1f ms", buckets * bucketMillis)
+                    : String.format(java.util.Locale.GERMANY, "%5.1f–%5.1f ms",
+                            i * bucketMillis, (i + 1) * bucketMillis);
+            int bar = highest == 0 ? 0 : (int) Math.round(counts[i] * 40.0 / highest);
+            text.append(String.format(java.util.Locale.GERMANY, "  %s | %-40s %4d (%4.1f %%)%n",
+                    range, "#".repeat(bar), counts[i], counts[i] * 100.0 / filled));
+        }
+        return text.toString();
+    }
+
     public void reset() {
         filled = 0;
         next = 0;

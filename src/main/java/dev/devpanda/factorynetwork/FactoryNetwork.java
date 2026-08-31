@@ -22,6 +22,16 @@ public final class FactoryNetwork {
     public static final String MOD_ID = "factorynetwork";
 
     public FactoryNetwork(IEventBus modBus, ModContainer container) {
+        // <b>Der früheste Java-Code, den diese Mod hat.</b> MCEF startet
+        // Chromium beim allerersten Bildschirmwechsel — und der kommt schon
+        // während des Ladens, also vor jedem Aufbau-Ereignis. Wer Chromiums
+        // Kommandozeile ergänzen will, muss es hier tun oder gar nicht.
+        //
+        // Tut nur etwas, wenn fn.devtools gesetzt ist; auf einem Server
+        // existiert die Klasse gar nicht erst.
+        if (net.neoforged.fml.loading.FMLEnvironment.dist.isClient()) {
+            dev.devpanda.factorynetwork.web.mcef.WebDebug.requestIfEnabled();
+        }
         // Die Grenzen für Nutzercode gehören dem Serverbetreiber, nicht dem
         // Quelltext. Ohne diese Zeile liegt die Datei nie neben der Welt.
         container.registerConfig(net.neoforged.fml.config.ModConfig.Type.SERVER,
