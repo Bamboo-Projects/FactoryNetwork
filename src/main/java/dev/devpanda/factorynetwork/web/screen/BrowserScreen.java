@@ -370,9 +370,20 @@ public class BrowserScreen extends Screen {
      * neu malt, kostet so viel wie eine Animation, und man sähe es nicht.
      */
     private void reportAndResetMeasurement() {
+        reportSection(null);
+    }
+
+    /**
+     * Wie {@link #reportAndResetMeasurement()}, aber mit Namen.
+     *
+     * <p>Für einen Ablauf, der die Abschnitte selbst kennt: „Rollen" sagt im
+     * Protokoll mehr als „Abschnitt 3".
+     */
+    protected void reportSection(String label) {
         if (session == null) {
             return;
         }
+        String name = label == null ? "Abschnitt " + measureSection : label;
         if (measuringSinceNanos != 0) {
             double seconds = (System.nanoTime() - measuringSinceNanos) / 1_000_000_000.0;
             long paints = session.paints() - paintsAtMeasureStart;
@@ -381,21 +392,21 @@ public class BrowserScreen extends Screen {
             var popup = session.popupTexture();
             double fullFrame = (double) session.width() * session.height() * 4;
             LOG.info(String.format(java.util.Locale.GERMANY,
-                    "Abschnitt %d über %.1f s: %d Bilder (%.1f/s), %d Uploads, "
+                    "%s über %.1f s: %d Bilder (%.1f/s), %d Uploads, "
                             + "davon %d Vollbild, %d Ausschnitte",
-                    measureSection, seconds, paints, paints / seconds,
+                    name, seconds, paints, paints / seconds,
                     main.uploads(), main.fullUploads(), main.regions()));
             LOG.info(String.format(java.util.Locale.GERMANY,
-                    "Abschnitt %d: %.1f KB je Bild (%.2f %% eines Vollbilds), "
+                    "%s: %.1f KB je Bild (%.2f %% eines Vollbilds), "
                             + "%.2f MB/s, Uploadzeit %s",
-                    measureSection, main.bytesPerUpload() / 1024.0,
+                    name, main.bytesPerUpload() / 1024.0,
                     main.bytesPerUpload() / fullFrame * 100.0,
                     main.uploadedBytes() / seconds / (1024.0 * 1024.0),
                     main.uploadTimes().summary()));
             if (popupPaints > 0) {
                 LOG.info(String.format(java.util.Locale.GERMANY,
-                        "Abschnitt %d: Popup %d Bilder, %d Uploads, %.1f KB gesamt",
-                        measureSection, popupPaints, popup.uploads(),
+                        "%s: Popup %d Bilder, %d Uploads, %.1f KB gesamt",
+                        name, popupPaints, popup.uploads(),
                         popup.uploadedBytes() / 1024.0));
             }
         }
@@ -405,7 +416,28 @@ public class BrowserScreen extends Screen {
         popupPaintsAtMeasureStart = session.popupPaints();
         session.texture().resetStats();
         session.popupTexture().resetStats();
-        LOG.info("Abschnitt {} beginnt.", measureSection);
+    }
+
+    /** Ob überhaupt ein Browser läuft. */
+    protected boolean hasSession() {
+        return session != null;
+    }
+
+    /**
+     * Verkleinert die Fläche auf einen Anteil der vollen Größe.
+     *
+     * <p>Für die Messung: Eine Größenänderung lässt Chromium die ganze Seite
+     * neu rechnen, und was das an Übertragung kostet, will gemessen sein.
+     */
+    protected void resizeTo(double factor) {
+        if (session == null) {
+            return;
+        }
+        view = new BrowserView(0, 0,
+                Math.max(1, (int) (width * factor)),
+                Math.max(1, (int) (height * factor)),
+                minecraft.getWindow().getGuiScale());
+        session.resize(view.browserWidth(), view.browserHeight());
     }
 
     // ---- Ende --------------------------------------------------------------

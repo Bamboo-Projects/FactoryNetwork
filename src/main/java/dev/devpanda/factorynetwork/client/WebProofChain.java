@@ -1,8 +1,12 @@
 package dev.devpanda.factorynetwork.client;
 
+import dev.devpanda.factorynetwork.web.mcef.WebBenchmark;
 import dev.devpanda.factorynetwork.web.mcef.WebSelfTest;
+import dev.devpanda.factorynetwork.web.screen.InteractionBenchmark;
 import dev.devpanda.factorynetwork.web.screen.RenderProof;
 import net.minecraft.client.Minecraft;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Bringt die Nachweise in eine Reihenfolge, die sich nicht selbst stört.
@@ -30,27 +34,44 @@ final class WebProofChain {
 
     private static final boolean ENABLED = Boolean.getBoolean("fn.benchmark");
 
-    private static boolean started;
-    private static int ticksSinceSelfTest;
+    private static final Logger LOG = LoggerFactory.getLogger("FactoryNetwork/WebProofChain");
+
+    private static boolean proofStarted;
+    private static boolean interactionStarted;
+    private static int ticksWaiting;
 
     private WebProofChain() {
     }
 
     static void tick() {
-        if (!ENABLED || started || !WebSelfTest.finished() || RenderProof.finished()) {
-            return;
-        }
-        ticksSinceSelfTest++;
-        if (ticksSinceSelfTest < SETTLE_TICKS) {
+        if (!ENABLED) {
             return;
         }
         Minecraft client = Minecraft.getInstance();
         // Ohne Welt gibt es keinen sinnvollen Hintergrund und die Bildrate ist
         // gedeckelt; die Messung wartet ohnehin darauf.
-        if (client.level == null) {
+        if (client.level == null || !WebSelfTest.finished()) {
             return;
         }
-        started = true;
-        RenderProof.openIfPossible(client);
+        ticksWaiting++;
+        if (ticksWaiting < SETTLE_TICKS) {
+            return;
+        }
+        if (!proofStarted) {
+            proofStarted = true;
+            ticksWaiting = 0;
+            RenderProof.openIfPossible(client);
+            return;
+        }
+        // Die Interaktionsmessung ganz zuletzt: Sie hält den Bildschirm für
+        // sich, und die Zahlenmessung davor braucht ihn frei.
+        if (!interactionStarted && RenderProof.finished() && WebBenchmark.finished()) {
+            interactionStarted = true;
+            try {
+                InteractionBenchmark.open(client);
+            } catch (Exception broken) {
+                LOG.warn("Interaktionsmessung ließ sich nicht öffnen", broken);
+            }
+        }
     }
 }

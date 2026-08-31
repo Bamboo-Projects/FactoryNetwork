@@ -52,6 +52,18 @@ public final class WebCommands {
                                     later(() -> open(url, false));
                                     return 1;
                                 })))
+                .then(Commands.literal("messung")
+                        .executes(context -> {
+                            later(() -> {
+                                try {
+                                    dev.devpanda.factorynetwork.web.screen
+                                            .InteractionBenchmark.open(Minecraft.getInstance());
+                                } catch (Exception broken) {
+                                    say("Messung ließ sich nicht öffnen: " + broken.getMessage());
+                                }
+                            });
+                            return 1;
+                        }))
                 .then(Commands.literal("zustand")
                         .executes(context -> {
                             WebRuntimeStatus status = BrowserScreen.availability();

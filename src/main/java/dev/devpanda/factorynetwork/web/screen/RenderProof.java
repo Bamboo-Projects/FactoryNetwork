@@ -68,15 +68,22 @@ public final class RenderProof extends Screen {
               html,body{margin:0;width:100%;height:100%;background:transparent;
                         overflow:hidden}
               div{position:absolute}
-              .tl{left:0;top:0;width:50%;height:50%;background:rgb(255,0,0)}
-              .tr{left:50%;top:0;width:50%;height:50%;background:rgb(0,255,0)}
-              .bl{left:0;top:50%;width:50%;height:50%;background:rgb(0,0,255)}
-              .br{left:50%;top:50%;width:50%;height:50%;background:rgb(255,255,0)}
-              .band{left:0;top:42%;width:100%;height:16%}
-              .b1{left:0;top:42%;width:25%;height:16%;background:rgba(255,255,255,0.5)}
-              .b2{left:25%;top:42%;width:25%;height:16%;background:rgba(255,0,0,0.5)}
-              .b3{left:50%;top:42%;width:25%;height:16%;background:rgba(0,0,0,0)}
-              .b4{left:75%;top:42%;width:25%;height:16%;background:rgb(255,255,255)}
+              /* Die Ecken bleiben in den Ecken. Sie über die ganze Fläche zu
+                 ziehen wäre bequemer und machte den Streifen darunter
+                 unbrauchbar: Er läge dann über Blau statt über dem Grund, den
+                 Minecraft malt — und die Mischung prüfte etwas anderes, als
+                 sie soll. Genau so ist es hier zuerst ausgegangen. */
+              .tl{left:0;top:0;width:30%;height:30%;background:rgb(255,0,0)}
+              .tr{right:0;top:0;width:30%;height:30%;background:rgb(0,255,0)}
+              .bl{left:0;bottom:0;width:30%;height:30%;background:rgb(0,0,255)}
+              .br{right:0;bottom:0;width:30%;height:30%;background:rgb(255,255,0)}
+              /* Der Streifen liegt über nichts — dort scheint der schwarze
+                 Grund durch, und nur über Schwarz trennen sich die richtige
+                 und die falsche Mischung weit genug. */
+              .b1{left:0;top:45%;width:25%;height:10%;background:rgba(255,255,255,0.5)}
+              .b2{left:25%;top:45%;width:25%;height:10%;background:rgba(255,0,0,0.5)}
+              .b3{left:50%;top:45%;width:25%;height:10%;background:rgba(0,0,0,0)}
+              .b4{left:75%;top:45%;width:25%;height:10%;background:rgb(255,255,255)}
             </style></head><body>
               <div class="tl"></div><div class="tr"></div>
               <div class="bl"></div><div class="br"></div>
@@ -181,10 +188,11 @@ public final class RenderProof extends Screen {
         ByteBuffer pixels = ByteBuffer.allocateDirect(4).order(ByteOrder.nativeOrder());
 
         boolean allWell = true;
-        allWell &= at(pixels, fbWidth, fbHeight, 0.25, 0.25, "oben links", 255, 0, 0);
-        allWell &= at(pixels, fbWidth, fbHeight, 0.75, 0.25, "oben rechts", 0, 255, 0);
-        allWell &= at(pixels, fbWidth, fbHeight, 0.25, 0.75, "unten links", 0, 0, 255);
-        allWell &= at(pixels, fbWidth, fbHeight, 0.75, 0.75, "unten rechts", 255, 255, 0);
+        // Mitten in den Eckfeldern, die je 30 Prozent messen.
+        allWell &= at(pixels, fbWidth, fbHeight, 0.15, 0.15, "oben links", 255, 0, 0);
+        allWell &= at(pixels, fbWidth, fbHeight, 0.85, 0.15, "oben rechts", 0, 255, 0);
+        allWell &= at(pixels, fbWidth, fbHeight, 0.15, 0.85, "unten links", 0, 0, 255);
+        allWell &= at(pixels, fbWidth, fbHeight, 0.85, 0.85, "unten rechts", 255, 255, 0);
 
         allWell &= at(pixels, fbWidth, fbHeight, 0.125, 0.50,
                 "Weiß zu 50 % über Schwarz", 128, 128, 128);

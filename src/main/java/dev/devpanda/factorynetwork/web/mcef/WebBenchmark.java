@@ -130,7 +130,7 @@ public final class WebBenchmark {
         WARMUP, BASELINE, STILL_PAGE, BLINKER_PAGE, FLOOD_PAGE, DONE
     }
 
-    private static boolean enabled = Boolean.getBoolean("fn.benchmark");
+    private static final boolean enabled = Boolean.getBoolean("fn.benchmark");
     private static Stage stage = Stage.WARMUP;
     private static int ticksInStage;
 
@@ -146,6 +146,11 @@ public final class WebBenchmark {
     private static long lastFrameNanos;
 
     private WebBenchmark() {
+    }
+
+    /** Ob die Messung durch ist — für alles, was danach kommen soll. */
+    public static boolean finished() {
+        return !enabled || stage == Stage.DONE;
     }
 
     /** Wird vom Bild des Clients gerufen — misst den Abstand zweier Bilder. */
