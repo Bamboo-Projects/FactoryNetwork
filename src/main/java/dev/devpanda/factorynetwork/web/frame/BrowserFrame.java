@@ -18,6 +18,12 @@ import java.util.List;
  * und der Sammler räumt sie spät oder nie ab. Bei achteinhalb Megabyte je Bild
  * ist „spät" dasselbe wie „nie".
  *
+ * <p><b>Dieser Typ bedeutet Besitz.</b> Was nur geliehen ist — der Puffer aus
+ * einem laufenden {@code onPaint} — heißt {@link BorrowedFrame} und ist
+ * absichtlich <i>nicht</i> mit diesem verwandt. Damit kann ein geliehener
+ * Puffer nirgends landen, wo er den Aufruf überleben müsste: Der Übersetzer
+ * weist es ab, und niemand muss sich an eine Regel erinnern.
+ *
  * <p>Was hier <b>nicht</b> steht, ist die Art der Bildpunkte. Kein
  * {@code ByteBuffer}, kein Texturname, kein Handle. Ein Bild ist Maß und
  * Änderung; woraus es besteht, weiß nur, wer es erzeugt hat und wer es

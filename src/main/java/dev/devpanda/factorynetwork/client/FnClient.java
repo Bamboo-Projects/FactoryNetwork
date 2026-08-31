@@ -25,6 +25,9 @@ public final class FnClient {
     @SubscribeEvent
     public static void tickDraft(net.neoforged.neoforge.client.event.ClientTickEvent.Post event) {
         ClientProjectState.tick();
+        // Der Selbsttest des Bildwegs, einmal je Sitzung. Er braucht einen
+        // Zeichenkontext und kann deshalb kein gewöhnlicher Prüflauf sein.
+        dev.devpanda.factorynetwork.web.mcef.WebSelfTest.tick();
     }
 
     /**
