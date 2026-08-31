@@ -40,6 +40,7 @@ public final class MonacoBenchmark extends IdeScreen {
         CURSOR("Schreibmarke blinkt"),
         TYPING("Normales Tippen"),
         TYPING_NO_GLASS("Normales Tippen, ohne Glas"),
+        TYPING_OPAQUE("Normales Tippen, deckender Editor"),
         FAST_TYPING("Schnelles Tippen"),
         UNICODE("Umlaute, ß, €, Emoji"),
         HOVER("Maus über Code"),
@@ -152,7 +153,7 @@ public final class MonacoBenchmark extends IdeScreen {
                     type(TIPPTEXT.charAt(typedIndex++ % TIPPTEXT.length()));
                 }
             }
-            case TYPING_NO_GLASS -> {
+            case TYPING_NO_GLASS, TYPING_OPAQUE -> {
                 if (frameInStep % 8 == 0) {
                     type(TIPPTEXT.charAt(typedIndex++ % TIPPTEXT.length()));
                 }
@@ -201,7 +202,16 @@ public final class MonacoBenchmark extends IdeScreen {
                 runScript("window.fnIde && fnIde.glas(false)");
                 click(0.45, 0.30);
             }
+            case TYPING_OPAQUE -> {
+                // Glas bleibt aus, aber jetzt ist auch der Editor selbst
+                // deckend. Bleibt die Fläche trotzdem bei neunzig Prozent,
+                // liegt es an Monaco; fällt sie, an der Durchsichtigkeit.
+                runScript("window.fnIde && fnIde.thema('fn-deckend')");
+                click(0.45, 0.30);
+            }
             case UNICODE -> {
+                runScript("window.fnIde && fnIde.thema('fn-glas')");
+                runScript("window.fnIde && fnIde.glas(true)");
                 click(0.45, 0.30);
                 // Alles bis U+FFFF geht als ein Zeichen. Das Emoji ist ein
                 // Ersatzpaar und kommt als zwei — genau das soll sich zeigen.

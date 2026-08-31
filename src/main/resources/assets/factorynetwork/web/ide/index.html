@@ -277,6 +277,27 @@
 
     // Ein eigenes Thema, das zum Glas passt: durchsichtiger Grund, damit
     // Minecraft dahinter sichtbar bleibt.
+    // Dasselbe Thema mit deckendem Grund. Der Unterschied zwischen beiden
+    // ist die Frage, warum eine getippte Zeile fast ein Vollbild kostet:
+    // Wenn der Editor durchscheint, muss Chromium bei jeder Änderung den
+    // Hintergrund darunter neu mischen — über die ganze Fläche.
+    m.editor.defineTheme('fn-deckend', {
+      base: 'vs-dark', inherit: true,
+      rules: [
+        { token: 'keyword',    foreground: '7dd3a0', fontStyle: 'bold' },
+        { token: 'string',     foreground: 'f9c07a' },
+        { token: 'number',     foreground: 'c4a7f0' },
+        { token: 'comment',    foreground: '6b7280', fontStyle: 'italic' },
+        { token: 'identifier', foreground: 'dfe3ee' }
+      ],
+      colors: {
+        'editor.background': '#12121c',
+        'editor.lineHighlightBackground': '#ffffff0c',
+        'editorLineNumber.foreground': '#5b6273',
+        'minimap.background': '#12121c'
+      }
+    });
+
     m.editor.defineTheme('fn-glas', {
       base: 'vs-dark', inherit: true,
       rules: [
