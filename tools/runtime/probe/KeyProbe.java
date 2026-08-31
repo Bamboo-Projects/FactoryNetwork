@@ -374,8 +374,13 @@ public final class KeyProbe {
         release(0x38, true, KeyEvent.VK_ALT, InputEvent.CTRL_DOWN_MASK);
         release(0x1D, false, KeyEvent.VK_CONTROL, 0);
 
+        // Gegenprobe: Hier ist der leere Text das erwartete Ergebnis. Chromium
+        // deutet ein Zeichen mit Strg als Steuerzeichen und trägt es nicht ein.
+        // Käme das @ hier durch, wäre die Gegenmaßnahme unten überflüssig — und
+        // dieser Fall würde es sagen.
         String got = text();
-        note("AltGr @ (Strg+rechtes Alt)", quote("@"), quote(got), "@".equals(got));
+        note("Gegenprobe: AltGr @ mit Modifikatoren am Zeichen", quote(""), quote(got),
+                got.isEmpty());
 
         // Dieselbe Folge, aber das Zeichen ohne Modifikatoren. Das ist die
         // Gegenmaßnahme, die der Plan für B3c vorsieht — hier wird gemessen,
