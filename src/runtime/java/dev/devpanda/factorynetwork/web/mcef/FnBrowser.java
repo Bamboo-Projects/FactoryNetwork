@@ -111,6 +111,40 @@ public class FnBrowser extends CefBrowser_N implements CefRenderHandler {
     private final Events events;
     private final boolean transparent;
 
+    /**
+     * Eine laufende Nummer je Browser.
+     *
+     * <p>Sie steht in jeder Spurzeile. Ohne sie lässt sich bei zwei
+     * gleichzeitig offenen Browsern nicht sagen, welcher gerade was tat — und
+     * genau das ist die Frage bei der Meldung, die ohne Stapel kommt.
+     */
+    private static final java.util.concurrent.atomic.AtomicInteger COUNTER =
+            new java.util.concurrent.atomic.AtomicInteger();
+
+    private final int id = COUNTER.incrementAndGet();
+
+    private boolean firstPaintSeen;
+
+    /**
+     * Schreibt einen Schritt im Leben dieses Browsers mit.
+     *
+     * <p><b>Wozu.</b> Im neuen Weg erscheint bei jeder Browsererzeugung ein
+     * bis sieben Mal {@code Exception in thread "Render thread"} — ohne
+     * Stapel, ohne Meldung, ohne dass einer unserer Rückrufe etwas meldet.
+     * Solange sich die Herkunft nicht fassen lässt, hilft nur, den Zeitpunkt
+     * einzugrenzen: Wenn die Kopfzeilen im Protokoll immer zwischen denselben
+     * beiden Schritten stehen, ist das die halbe Antwort.
+     *
+     * <p>Hinter {@code -Dfn.cef.trace=true}, weil es im Alltag Lärm wäre.
+     */
+    private void trace(String step) {
+        if (FnCefRuntime.TRACE) {
+            com.mojang.logging.LogUtils.getLogger().info(
+                    "Spur Browser {}: {} — Thread {}", id, step,
+                    Thread.currentThread().getName());
+        }
+    }
+
     // Umgeht CEF-Fehler 1437: Ein Rechteck der Größe null lässt Chromium gar
     // nicht erst anfangen zu malen.
     private final Rectangle viewRect = new Rectangle(0, 0, 1, 1);
@@ -144,6 +178,7 @@ public class FnBrowser extends CefBrowser_N implements CefRenderHandler {
 
     @Override
     public void createImmediately() {
+        trace("createImmediately");
         if (getNativeRef("CefBrowser") != 0) {
             return;
         }
@@ -151,6 +186,7 @@ public class FnBrowser extends CefBrowser_N implements CefRenderHandler {
         // wahr — daran und nur daran erkennt CEF, dass es die Bilder liefern
         // statt zeichnen soll.
         createBrowser(getClient(), 0, getUrl(), true, transparent, null, getRequestContext());
+        trace("createBrowser zurück");
     }
 
     @Override
@@ -198,6 +234,7 @@ public class FnBrowser extends CefBrowser_N implements CefRenderHandler {
         }
         viewRect.setBounds(0, 0, safeWidth, safeHeight);
         wasResized(safeWidth, safeHeight);
+        trace("resize auf " + safeWidth + "x" + safeHeight);
     }
 
     public int browserWidth() {
@@ -237,6 +274,10 @@ public class FnBrowser extends CefBrowser_N implements CefRenderHandler {
                         ByteBuffer buffer, int width, int height) {
         if (events == null || buffer == null || width <= 0 || height <= 0) {
             return;
+        }
+        if (!firstPaintSeen && !popup) {
+            firstPaintSeen = true;
+            trace("erstes onPaint " + width + "x" + height);
         }
         BorrowedFrame frame = new BorrowedFrame(buffer, width, height, regionsOf(dirtyRects));
         guarded("onPaint", () -> {
@@ -283,7 +324,14 @@ public class FnBrowser extends CefBrowser_N implements CefRenderHandler {
      * eigene Verweise frei und markiert den Browser als geschlossen.
      */
     @Override
+    public void setFocus(boolean enable) {
+        trace("setFocus " + enable);
+        super.setFocus(enable);
+    }
+
+    @Override
     public void onBeforeClose() {
+        trace("onBeforeClose");
         super.onBeforeClose();
         if (events != null) {
             try {

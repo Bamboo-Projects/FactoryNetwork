@@ -59,6 +59,11 @@ neoForge {
                 // Chromium-Rückruf kommt ohnehin nur als Kopfzeile an. Beides
                 // zusammen ergibt ein „Exception in thread" ohne jeden Hinweis.
                 jvmArgument '-XX:-OmitStackTraceInFastThrow'
+                // Die Spur um die Browsererzeugung, nur auf Ansage:
+                //   ./gradlew runClient -Pfnruntime -Ptrace
+                if (project.hasProperty('trace')) {
+                    systemProperty 'fn.cef.trace', 'true'
+                }
                 // Nur zur Fehlersuche, und nur auf Ansage:
                 //   ./gradlew runClient -Pfnruntime -Pjnicheck
                 // Die JVM prüft dann jeden Übergang nach C und zurück. Sie
