@@ -1,29 +1,24 @@
 package dev.devpanda.factorynetwork.client.panel;
 
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.logging.LogUtils;
-import dev.devpanda.factorynetwork.FactoryNetwork;
-import dev.devpanda.factorynetwork.web.BrowserVisibility;
-import dev.devpanda.factorynetwork.web.WebRuntime;
-import dev.devpanda.factorynetwork.web.WebSupport;
-import dev.devpanda.factorynetwork.web.runtime.BrowserSession;
-import dev.devpanda.factorynetwork.web.view.ManagedTexture;
-import net.minecraft.client.Minecraft;
+import com.mojang.math.Axis;
+import dev.devpanda.factorynetwork.web.WebPage;
+import dev.devpanda.factorynetwork.web.api.FnWeb;
+import dev.devpanda.factorynetwork.web.api.SurfaceSpec;
+import dev.devpanda.factorynetwork.web.api.WorldSurface;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.Direction;
+import org.joml.Vector3f;
 import org.slf4j.Logger;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Die Web-Flächen in der Welt: wer lebt, wer wartet, wer zumacht.
+ * Die Web-Flächen der Tafel-Blöcke: wer lebt, wer wartet, wer zumacht.
  *
  * <p><b>Drei gleichzeitig, und das ist gemessen.</b> Von den fünf
  * Hilfsprozessen eines Browsers hängen drei an Chromium und nicht an der
@@ -38,15 +33,16 @@ import java.util.Map;
  * gezeichnet wurde, macht zu. Eine Regel deckt damit ab, was sonst drei
  * Ereignisse bräuchte: Chunk entladen, Block abgebaut, Dimension gewechselt.
  *
+ * <p><b>Seit die Fläche über die API kommt</b> ({@link FnWeb#openInWorld}),
+ * hält diese Klasse nur noch das Wissen, das eine Browserlaufzeit nichts
+ * angeht: welche Blöcke Tafeln sind, wie viele leben dürfen, und wann eine
+ * zumacht. Das Zeichnen, die Textur und der Takt liegen in der
+ * {@link WorldSurface}. Der Renderer des Blocks zeichnet nichts mehr; er
+ * meldet nur, dass die Tafel im Bild ist.
+ *
  * <p>Alles hier gehört dem Renderthread. Von woanders gerufen zu werden wäre
  * ein Fehler, kein Nebeneffekt — Chromiums Sitzungen leben in genau diesem
  * Thread.
- *
- * <p><b>Und deshalb steht die Klasse hier und nicht unter {@code web}.</b> Sie
- * kennt Blockpositionen, den Texturverwalter und die Kennung dieser Mod — drei
- * Dinge, die eine Browserlaufzeit nichts angehen. Was sie von der Laufzeit
- * braucht, ist eine Sitzung und eine Texturkennung; die Grenze verläuft genau
- * dort.
  */
 public final class WebPanels {
 
@@ -72,111 +68,66 @@ public final class WebPanels {
     /** Nach so langer Blindheit macht eine Fläche zu. */
     private static final long IDLE_MILLIS = 5_000;
 
-    /** Ab dieser Entfernung genügt ein langsamerer Takt. */
-    private static final double NEARBY_RANGE = 12.0;
+    /**
+     * Wo die Vorderseite der Tafel liegt, von ihrer Blockmitte aus.
+     *
+     * <p>Die Tafel sitzt an der hinteren Kante ihres Blocks, zwei Pixel dick.
+     * Der Wert und die Rechnung dahinter standen im Renderer und sind mit ihm
+     * hierher gezogen — {@link #panelCenter} baut daraus den Mittelpunkt, den
+     * die {@link WorldSurface} braucht.
+     */
+    private static final float FRONT = 0.5F - 2.0F / 16.0F;
+    private static final float EPSILON = 0.001F;
 
     private static final Map<BlockPos, Panel> panels = new HashMap<>();
-    private static int nextId;
     private static String startPageUrl;
 
     private WebPanels() {
     }
 
-    /** Eine lebende Fläche: Sitzung, Textur, Adresse, Zeitstempel. */
     private static final class Panel {
-        final BrowserSession session;
-        final ResourceLocation texture;
-        String url;
+        final WorldSurface surface;
+        final String url;
         long seenAt;
 
-        Panel(BrowserSession session, ResourceLocation texture, String url) {
-            this.session = session;
-            this.texture = texture;
+        Panel(WorldSurface surface, String url) {
+            this.surface = surface;
             this.url = url;
             this.seenAt = System.currentTimeMillis();
         }
     }
 
     /**
-     * Die Textur für eine Fläche — und der Auftrag, sie am Leben zu halten.
+     * Der Renderer meldet: Diese Tafel ist im Bild.
      *
-     * <p>Öffnet bei Bedarf einen Browser, meldet in jedem Fall, dass diese
-     * Stelle gerade angesehen wird.
-     *
-     * @param distance Entfernung zum Betrachter, für den Takt
-     * @return wo die Textur liegt, oder {@code null}, wenn es (noch) keine
-     *         gibt — dann zeichnet der Renderer nichts
+     * <p>Öffnet die Fläche, wenn es sie noch nicht gibt und Platz ist; sonst
+     * frischt sie nur den Zeitstempel auf. Ein Wechsel der Adresse schließt
+     * die alte Fläche — die neue entsteht beim nächsten Bild.
      */
-    public static ResourceLocation textureFor(BlockPos pos, String url, double distance) {
-        return textureFor(pos, url, "", distance);
-    }
-
-    /** Dasselbe, mit dem Namen der Tafel für Protokoll und Werkzeugliste. */
-    public static ResourceLocation textureFor(BlockPos pos, String url, String name,
-                                              double distance) {
+    public static void seen(BlockPos pos, String url, String name, Direction facing) {
         Panel panel = panels.get(pos);
         if (panel != null) {
             panel.seenAt = System.currentTimeMillis();
             if (!java.util.Objects.equals(panel.url, url)) {
-                // Die Adresse hat sich geändert. Die Sitzung kennt kein
-                // Nachladen, also macht die Fläche zu und geht im nächsten
-                // Bild neu auf — bei einer Änderung, die ein Mensch auslöst,
-                // ist das billig genug.
                 close(pos, "andere Adresse");
-                return null;
             }
-            panel.session.setVisibility(distance <= NEARBY_RANGE
-                    ? BrowserVisibility.NEARBY : BrowserVisibility.DISTANT);
-            return panel.texture;
+            return;
         }
         if (panels.size() >= maxLive()) {
-            return null;
+            return;
         }
-        return open(pos, url, name);
+        open(pos, url, name, facing);
     }
 
-    /**
-     * Die mitgelieferte Startseite, ausgepackt neben dem Spiel.
-     *
-     * <p>Ausgepackt und nicht aus dem Jar geladen: Chromium liest keine
-     * Dateien aus einem Archiv, und ein eigenes Schema dafür wäre mehr Aufwand
-     * als eine Datei, die einmal je Sitzung entsteht.
-     */
     private static String startPage() {
         if (startPageUrl != null) {
             return startPageUrl;
         }
-        Path target = Minecraft.getInstance().gameDirectory.toPath()
-                .resolve("factorynetwork").resolve("web").resolve("panel-start.html");
-        try (InputStream stream = WebPanels.class.getClassLoader()
-                .getResourceAsStream("assets/factorynetwork/web/panel/start.html")) {
-            if (stream == null) {
-                LOG.warn("Die Startseite fehlt im Klassenpfad");
-                return null;
-            }
-            Files.createDirectories(target.getParent());
-            Files.copy(stream, target, StandardCopyOption.REPLACE_EXISTING);
-        } catch (IOException broken) {
-            LOG.warn("Die Startseite ließ sich nicht ablegen", broken);
-            return null;
-        }
-        startPageUrl = target.toUri().toString();
+        startPageUrl = WebPage.unpack("assets/factorynetwork/web/panel/start.html", "panel-start.html");
         return startPageUrl;
     }
 
-    /**
-     * Hängt die Blockposition als Fragment an die Adresse.
-     *
-     * <p><b>Damit man die Instanz wiederfindet.</b> In Chromiums Liste unter
-     * dem Fernwartungsport heißen sonst alle Flächen gleich — dieselbe Seite,
-     * derselbe Titel. Mit dem Fragment steht die Blockposition in der Liste,
-     * und man weiß, welche Werkzeuge zu welcher Tafel gehören.
-     *
-     * <p><b>Ein Fragment und keine Abfrage.</b> Ein {@code ?panel=…} ginge an
-     * den Server, machte je Tafel einen eigenen Eintrag im Zwischenspeicher
-     * und zerstörte bei einer echten Adresse deren eigene Abfrage. Ein
-     * Fragment sieht der Server nie und die Liste trotzdem.
-     */
+    /** Adresse mit der Kennung der Tafel dahinter — welche von fünf Seiten das ist. */
     private static String tagged(String url, BlockPos pos, String name) {
         String was = name == null || name.isBlank()
                 ? pos.getX() + "," + pos.getY() + "," + pos.getZ()
@@ -185,39 +136,48 @@ public final class WebPanels {
                 java.nio.charset.StandardCharsets.UTF_8);
     }
 
-    private static ResourceLocation open(BlockPos pos, String wanted, String name) {
-        if (!WebSupport.ensureStarted().usable()) {
-            return null;
+    /**
+     * Der Mittelpunkt der Tafelfläche in Weltkoordinaten.
+     *
+     * <p><b>Nicht neu hergeleitet, sondern nachgespielt.</b> Es ist genau die
+     * Kette, die der Renderer auf den Block legte: zur Blockmitte, um die
+     * Hochachse gegen die Ausrichtung, dann sechs Sechzehntel nach hinten.
+     * Der Ursprung durch diese Kette geschickt ergibt den Mittelpunkt — ohne
+     * dass jemand die Drehung von Hand ausrechnet, und damit ohne den Fehler,
+     * der das schon zweimal gekostet hat.
+     */
+    private static double[] panelCenter(BlockPos pos, Direction facing) {
+        PoseStack stack = new PoseStack();
+        stack.translate(0.5, 0.5, 0.5);
+        stack.mulPose(Axis.YP.rotationDegrees(-facing.toYRot()));
+        stack.translate(0, 0, -FRONT + EPSILON);
+        Vector3f center = stack.last().pose().transformPosition(new Vector3f(0, 0, 0));
+        return new double[] {pos.getX() + center.x, pos.getY() + center.y, pos.getZ() + center.z};
+    }
+
+    private static void open(BlockPos pos, String wanted, String name, Direction facing) {
+        if (!FnWeb.available()) {
+            return;
         }
         String url = wanted == null || wanted.isBlank() ? startPage() : wanted;
         if (url == null) {
-            return null;
+            return;
         }
-        try {
-            String label = name == null || name.isBlank()
-                    ? "Tafel " + pos.getX() + "," + pos.getY() + "," + pos.getZ()
-                    : name;
-            BrowserSession session = BrowserSession.open(tagged(url, pos, name), false,
-                    RESOLUTION, RESOLUTION, BrowserVisibility.NEARBY, label);
-            ResourceLocation location = ResourceLocation.fromNamespaceAndPath(
-                    FactoryNetwork.MOD_ID, "web_panel/" + nextId++);
-            Minecraft.getInstance().getTextureManager()
-                    .register(location, new ManagedTexture(session::textureId));
-            panels.put(pos.immutable(), new Panel(session, location, wanted));
-            LOG.info("Web-Fläche {} bei {} geöffnet: {} — offen: {}",
-                    label, pos, url, panels.size());
-            return location;
-        } catch (Throwable broken) {
-            LOG.warn("Die Web-Fläche bei {} kam nicht zustande", pos, broken);
-            return null;
+        String label = name == null || name.isBlank()
+                ? "Tafel " + pos.getX() + "," + pos.getY() + "," + pos.getZ()
+                : name;
+        double[] center = panelCenter(pos, facing);
+        SurfaceSpec spec = SurfaceSpec.of(tagged(url, pos, name), RESOLUTION, RESOLUTION)
+                .named(label);
+        WorldSurface surface = FnWeb.openInWorld(spec, center[0], center[1], center[2],
+                facing.toYRot(), 1.0f, 1.0f);
+        if (surface == null) {
+            return;
         }
+        panels.put(pos.immutable(), new Panel(surface, wanted));
+        LOG.info("Web-Fläche {} bei {} geöffnet: {} — offen: {}", label, pos, url, panels.size());
     }
 
-    /**
-     * Räumt auf, was niemand mehr ansieht.
-     *
-     * <p>Im Takt des Spiels zu rufen, aus dem Renderthread.
-     */
     public static void tick() {
         if (panels.isEmpty()) {
             return;
@@ -225,7 +185,7 @@ public final class WebPanels {
         long deadline = System.currentTimeMillis() - IDLE_MILLIS;
         List<BlockPos> gone = new ArrayList<>();
         for (Map.Entry<BlockPos, Panel> entry : panels.entrySet()) {
-            if (entry.getValue().seenAt < deadline) {
+            if (entry.getValue().seenAt < deadline || !entry.getValue().surface.alive()) {
                 gone.add(entry.getKey());
             }
         }
@@ -234,14 +194,12 @@ public final class WebPanels {
         }
     }
 
-    /** Macht alle zu — beim Verlassen einer Welt und beim Beenden. */
     public static void closeAll() {
         for (BlockPos pos : List.copyOf(panels.keySet())) {
             close(pos, "die Welt wird verlassen");
         }
     }
 
-    /** Wie viele gerade leben. */
     public static int count() {
         return panels.size();
     }
@@ -251,17 +209,7 @@ public final class WebPanels {
         if (panel == null) {
             return;
         }
-        // <b>Erst abmelden, dann schließen.</b> Andersherum bliebe eine
-        // Textur angemeldet, deren Kennung ins Leere zeigt — und der nächste
-        // Bindevorgang holte sich eine gelöschte.
-        Minecraft.getInstance().getTextureManager().release(panel.texture);
-        try {
-            panel.session.close();
-        } catch (Throwable broken) {
-            LOG.warn("Die Web-Fläche bei {} ließ sich nicht schließen", pos, broken);
-        }
-        LOG.info("Web-Fläche bei {} geschlossen ({}) — offen: {}, Browser gesamt: {}",
-                pos, why, panels.size(), WebRuntime.isAvailable()
-                        ? dev.devpanda.factorynetwork.web.BrowserManager.count() : 0);
+        panel.surface.close();
+        LOG.info("Web-Fläche bei {} geschlossen ({}) — offen: {}", pos, why, panels.size());
     }
 }
