@@ -237,6 +237,7 @@
   "screen.factorynetwork.terminal.sort.name": "Nach Name",
   "screen.factorynetwork.terminal.sort.mod": "Nach Mod",
   "block.factorynetwork.display": "Display",
+  "block.factorynetwork.web_panel": "Web-Tafel",
   "message.factorynetwork.display.named": "Display zeigt jetzt %s",
   "message.factorynetwork.display.unnamed": "Dieses Display hat noch keinen Namen.",
   "block.factorynetwork.router": "Router",

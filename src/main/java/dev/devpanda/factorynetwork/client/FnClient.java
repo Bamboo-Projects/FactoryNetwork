@@ -34,6 +34,10 @@ public final class FnClient {
         WebProofChain.tick();
         // Die Messung zuletzt, und nur auf Ansage: -Dfn.benchmark=true
         dev.devpanda.factorynetwork.web.runtime.WebBenchmark.tick();
+        // Und die Flächen in der Welt räumen auf, was niemand mehr ansieht.
+        // Hier und nicht im Renderer: Wer nicht gezeichnet wird, meldet sich
+        // auch nicht — genau das ist die Information.
+        dev.devpanda.factorynetwork.client.panel.WebPanels.tick();
     }
 
     /**
@@ -79,17 +83,38 @@ public final class FnClient {
     }
 
     /**
-     * Beim Verlassen des Spiels gibt die Web-Runtime frei, was sie hält.
+     * Beim Verlassen einer Welt gehen die Browser zu — Chromium bleibt.
      *
-     * <p><b>Nur das Herunterfahren steht hier, nicht das Hochfahren.</b> Ein
-     * Browser entsteht erst, wenn jemand einen sehen will, und Chromium fährt
-     * mit ihm hoch — im Renderthread, beim ersten Bedarf. Es gibt hier also
-     * nichts anzumelden, nur etwas aufzuräumen, falls doch einer entstanden
-     * ist.
+     * <p><b>Hier stand einmal ein vollständiges Herunterfahren, und das war
+     * ein Fehler.</b> CEF lässt sich in einem Prozess genau einmal starten;
+     * ein zweiter Versuch endet mit „Settings can only be passed to CEF before
+     * createClient is called the first time". Wer eine Welt verließ und eine
+     * andere betrat, hatte für den Rest der Sitzung keinen Browser mehr —
+     * weder eine Fläche in der Welt noch den Editor.
+     *
+     * <p>Was hierher gehört, sind die Browser: Sie zeigen auf Blöcke einer
+     * Welt, die es gleich nicht mehr gibt. Chromium selbst fährt erst beim
+     * Beenden des Spiels herunter, in {@link #shutDownWebRuntime}.
      */
     @SubscribeEvent
-    public static void closeWebRuntime(
+    public static void closeBrowsersOfThisWorld(
             net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingOut event) {
+        dev.devpanda.factorynetwork.client.panel.WebPanels.closeAll();
+        dev.devpanda.factorynetwork.web.BrowserManager.closeAll();
+    }
+
+    /**
+     * Beim Beenden des Spiels fährt Chromium herunter.
+     *
+     * <p>Und nur hier, weil es genau einmal geht. Die Reihenfolge steckt in
+     * {@code WebRuntime.shutdown()}: erst alle Browser bitten zuzugehen, dann
+     * auf ihre Bestätigung pumpen, dann abräumen. Wer sie umdreht, hinterlässt
+     * Hilfsprozesse.
+     */
+    @SubscribeEvent
+    public static void shutDownWebRuntime(
+            net.neoforged.neoforge.event.GameShuttingDownEvent event) {
+        dev.devpanda.factorynetwork.client.panel.WebPanels.closeAll();
         dev.devpanda.factorynetwork.web.WebRuntime.shutdown();
     }
 
@@ -114,6 +139,9 @@ public final class FnClient {
         event.registerBlockEntityRenderer(
                 dev.devpanda.factorynetwork.registry.FnBlockEntities.DISPLAY.get(),
                 dev.devpanda.factorynetwork.client.render.DisplayRenderer::new);
+        event.registerBlockEntityRenderer(
+                dev.devpanda.factorynetwork.registry.FnBlockEntities.WEB_PANEL.get(),
+                dev.devpanda.factorynetwork.client.render.WebPanelRenderer::new);
         event.registerBlockEntityRenderer(
                 dev.devpanda.factorynetwork.registry.FnBlockEntities.ROUTER.get(),
                 dev.devpanda.factorynetwork.client.render.RouterRenderer::new);

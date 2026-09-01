@@ -99,6 +99,8 @@ public final class FnItems {
             () -> new dev.devpanda.factorynetwork.item.ConnectorItem(new Item.Properties()));
     public static final DeferredItem<BlockItem> TERMINAL = ITEMS.registerSimpleBlockItem(FnBlocks.TERMINAL);
     public static final DeferredItem<BlockItem> DISPLAY = ITEMS.registerSimpleBlockItem(FnBlocks.DISPLAY);
+    public static final DeferredItem<BlockItem> WEB_PANEL =
+            ITEMS.registerSimpleBlockItem(FnBlocks.WEB_PANEL);
 
     /**
      * Die Ausbauten: ein Modul und zwei Karten.
