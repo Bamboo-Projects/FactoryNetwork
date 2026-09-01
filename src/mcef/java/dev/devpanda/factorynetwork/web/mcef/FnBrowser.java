@@ -73,6 +73,18 @@ public class FnBrowser extends CefBrowserOsr {
 
     private final Events events;
 
+    /**
+     * Öffnet einen Browser am Client dieser Fassung.
+     *
+     * <p>Die Fabrik steht hier und nicht beim Aufrufer, weil es diese Klasse
+     * zweimal gibt — einmal auf MCEF, einmal auf der eigenen
+     * Laufzeitumgebung. Woher der Client kommt, weiß nur die jeweilige
+     * Fassung; alles davor bleibt davon unberührt.
+     */
+    public static FnBrowser open(String url, boolean transparent, Events events) {
+        return new FnBrowser(CefHost.client(), url, transparent, events);
+    }
+
     public FnBrowser(CefClient client, String url, boolean transparent, Events events) {
         super(client, url, transparent, null);
         this.events = events;

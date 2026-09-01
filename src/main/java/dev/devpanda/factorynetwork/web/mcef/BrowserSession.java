@@ -1,6 +1,5 @@
 package dev.devpanda.factorynetwork.web.mcef;
 
-import com.cinemamod.mcef.MCEF;
 import dev.devpanda.factorynetwork.web.BrowserVisibility;
 import dev.devpanda.factorynetwork.web.FramePacer;
 import dev.devpanda.factorynetwork.web.frame.BorrowedFrame;
@@ -117,7 +116,7 @@ public final class BrowserSession implements AutoCloseable, FnBrowser.Events {
     private BrowserSession(String url, boolean transparent, int width, int height,
                            BrowserVisibility visibility) {
         this.pacer = new FramePacer(visibility);
-        this.browser = new FnBrowser(MCEF.getClient().getHandle(), url, transparent, this);
+        this.browser = FnBrowser.open(url, transparent, this);
         // <b>Die Reihenfolge ist nicht beliebig.</b> Erst darf der Browser
         // geschlossen werden, dann entsteht er, und erst danach bekommt er
         // seine Größe. Andersherum geht die Größenmeldung an einen Browser,

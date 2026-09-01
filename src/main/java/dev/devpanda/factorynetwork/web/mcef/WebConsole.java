@@ -1,6 +1,5 @@
 package dev.devpanda.factorynetwork.web.mcef;
 
-import com.cinemamod.mcef.MCEF;
 import org.cef.CefSettings;
 import org.cef.browser.CefBrowser;
 import org.cef.browser.CefFrame;
@@ -39,7 +38,7 @@ public final class WebConsole implements CefDisplayHandler {
             return;
         }
         try {
-            MCEF.getClient().addDisplayHandler(new WebConsole());
+            CefHost.client().addDisplayHandler(new WebConsole());
             attached = true;
         } catch (Throwable broken) {
             LOG.warn("Chromiums Konsole ließ sich nicht anzapfen", broken);

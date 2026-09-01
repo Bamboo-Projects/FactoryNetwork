@@ -36,6 +36,6 @@ public final class WebSupport {
         // Ein Lambda und kein Methodenverweis: Beide wären hier richtig, aber
         // der Rumpf macht sichtbar, dass die Klasse erst beim Aufruf geladen
         // wird — und genau darauf beruht, dass MCEF fehlen darf.
-        return () -> dev.devpanda.factorynetwork.web.mcef.McefBackend.create();
+        return () -> dev.devpanda.factorynetwork.web.mcef.CefHost.backend();
     }
 }

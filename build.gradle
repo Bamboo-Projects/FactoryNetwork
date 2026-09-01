@@ -6,6 +6,26 @@ plugins {
 version = mod_version
 group = mod_group_id
 
+// Der Prüflauf gegen die eigene Laufzeitumgebung:
+//   ./gradlew runClient -Pfnruntime
+//
+// <b>Warum ein Schalter und keine Verzweigung im Code.</b> MCEF und upstream
+// java-cef bringen beide das vollständige Paket org.cef mit — 170 Klassen,
+// gleiche Namen, anderer Inhalt. Sie können nicht nebeneinander im Klassenpfad
+// liegen. Damit ist jede Lösung innerhalb einer Übersetzungseinheit
+// ausgeschlossen; die Trennung muss vor den Compiler.
+//
+// Ohne den Schalter bleibt alles, wie es war: MCEF liefert Chromium, und der
+// Standardbau merkt von dieser Aufteilung nichts. Das ist Absicht — solange
+// der neue Weg nicht abgenommen ist, darf der alte nicht davon abhängen.
+def useOwnRuntime = project.hasProperty('fnruntime')
+
+// Die gebaute Laufzeitumgebung. Sie entsteht mit
+//   pwsh -File tools/runtime/build-jcef.ps1
+// und liegt bewusst außerhalb der Auslieferung: Dieser Schalter ist für den
+// Prüflauf da, nicht für das fertige Jar.
+def ownRuntimeDir = file('tools/runtime/build/out/windows-x86_64')
+
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
 neoForge {
@@ -142,6 +162,11 @@ repositories {
     }
 }
 
+// Der eine Ort, an dem sich die beiden Wege unterscheiden: ein Quellverzeichnis
+// und ein Lieferant für org.cef. Alles andere steht in src/main/java und weiß
+// von keinem der beiden.
+sourceSets.main.java.srcDir(useOwnRuntime ? 'src/runtime/java' : 'src/mcef/java')
+
 dependencies {
     // Jade nur zum Übersetzen und zum Ausprobieren — die Mod läuft ohne.
     // Die Anbindung ist so geschrieben, dass sie ohne Jade gar nicht erst
@@ -196,8 +221,19 @@ dependencies {
     // Chromium selbst steckt auch nicht in diesem Jar: MCEF lädt es beim
     // ersten Start von einem eigenen Spiegel nach. Ohne Netz gibt es keinen
     // Browser — und der Client muss das überleben.
-    compileOnly "com.cinemamod:mcef:${mcef_version}"
-    runtimeOnly "com.cinemamod:mcef-neoforge:${mcef_version}"
+    if (useOwnRuntime) {
+        // Der Prüflauf: org.cef kommt aus unserem Bau, MCEF bleibt draußen.
+        // Beides zugleich geht nicht — siehe oben.
+        if (!ownRuntimeDir.exists()) {
+            throw new GradleException("Keine Laufzeitumgebung unter ${ownRuntimeDir}. "
+                    + "Erst: pwsh -File tools/runtime/build-jcef.ps1")
+        }
+        compileOnly files(new File(ownRuntimeDir, 'jcef.jar'))
+        runtimeOnly files(new File(ownRuntimeDir, 'jcef.jar'))
+    } else {
+        compileOnly "com.cinemamod:mcef:${mcef_version}"
+        runtimeOnly "com.cinemamod:mcef-neoforge:${mcef_version}"
+    }
 
     // JEI zeigt die Rezepte der Presse. Ohne die Mod fehlt nur die Anzeige:
     // Das Plugin wird von JEI selbst gefunden, und wer es nicht hat, lädt die

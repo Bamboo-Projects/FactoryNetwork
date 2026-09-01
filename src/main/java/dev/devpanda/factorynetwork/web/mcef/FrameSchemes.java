@@ -1,6 +1,5 @@
 package dev.devpanda.factorynetwork.web.mcef;
 
-import com.cinemamod.mcef.MCEF;
 import dev.devpanda.factorynetwork.web.capture.FrameStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,7 +71,7 @@ public final class FrameSchemes {
             // Seite schiefgeht, soll nicht nur die Seite wissen — ohne diese
             // Zeile wäre der Fehler oben nie gefunden worden.
             WebConsole.attach();
-            boolean accepted = MCEF.getApp().getHandle().registerSchemeHandlerFactory(
+            boolean accepted = CefHost.app().registerSchemeHandlerFactory(
                     FrameScheme.SCHEME, FrameScheme.DOMAIN,
                     (browser, frame, url, request) -> new FrameScheme(STORE));
             registered = accepted;
