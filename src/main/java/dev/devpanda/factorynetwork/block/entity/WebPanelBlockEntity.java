@@ -44,13 +44,14 @@ public class WebPanelBlockEntity extends BlockEntity {
     /**
      * Wie diese Tafel heißt.
      *
-     * <p>Vergeben wird er wie bei einer Kiste oder einem Ofen: Wer den
-     * Gegenstand im Amboss benennt, benennt die Tafel. Das ist kein
-     * Notbehelf, sondern der Weg, den Minecraft für genau diese Frage kennt —
-     * eine eigene Oberfläche dafür wäre eine zweite Art, dasselbe zu tun.
+     * <p><b>Vergeben wird er im Programm, nicht am Gegenstand.</b> So wie ein
+     * Display über seinen Namen angesprochen wird, gehört auch eine Web-Fläche
+     * benannt, bevor ein Programm ihr etwas zu zeigen geben kann. Der Weg über
+     * einen Amboss stand hier einmal und war falsch: Er benennt einen
+     * Gegenstand, und wer die Tafel abbaut und neu setzt, verliert den Bezug.
      *
-     * <p>Der Name steht danach im Protokoll, in Chromiums Liste unter dem
-     * Fernwartungsport und über der Tafel, wenn man sie ansieht.
+     * <p>Der Name steht danach im Protokoll und in Chromiums Liste unter dem
+     * Fernwartungsport.
      */
     private String name = "";
 
@@ -66,7 +67,7 @@ public class WebPanelBlockEntity extends BlockEntity {
         return name;
     }
 
-    /** Beim Setzen aus einem benannten Gegenstand. */
+    /** Benennt die Tafel — gerufen aus dem Programm. */
     public void setName(String name) {
         this.name = name == null ? "" : name;
         setChanged();
