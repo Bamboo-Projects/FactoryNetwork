@@ -54,6 +54,58 @@ public final class AwtMouseEvents {
     }
 
     /**
+     * Die zusammengesetzte Maske aus Minecrafts Weg in AWTs Familie.
+     *
+     * <p>Was hereinkommt, trägt zweierlei in einer Zahl: GLFWs Umschalttasten
+     * in den unteren vier Bit und die gedrückten Maustasten in {@code 0x10},
+     * {@code 0x20} und {@code 0x40} — die Flaggen, die {@link MouseButtons}
+     * für Chromiums nativen Teil führt.
+     *
+     * <p><b>Die beiden Sätze überschneiden sich, und das ist kein Versehen,
+     * das man hier beheben könnte.</b> GLFW belegt {@code 0x10} mit
+     * Feststelltaste und {@code 0x20} mit Ziffernblocksperre — dieselben Bit
+     * wie linke und mittlere Maustaste. Getrennt bleiben sie nur, weil GLFW
+     * diese beiden Zustände ohne {@code GLFW_LOCK_KEY_MODS} gar nicht meldet.
+     * Deshalb werden hier ausdrücklich nur die unteren vier Bit als
+     * Umschalttasten gelesen: Was darüber liegt, gehört der Maus.
+     */
+    public static int toAwtModifiers(int combinedModifiers) {
+        int awt = AwtModifiers.forKey(combinedModifiers & 0x0F);
+        if ((combinedModifiers & MouseButtons.LEFT_MASK) != 0) {
+            awt |= InputEvent.BUTTON1_DOWN_MASK;
+        }
+        if ((combinedModifiers & MouseButtons.MIDDLE_MASK) != 0) {
+            awt |= InputEvent.BUTTON2_DOWN_MASK;
+        }
+        if ((combinedModifiers & MouseButtons.RIGHT_MASK) != 0) {
+            awt |= InputEvent.BUTTON3_DOWN_MASK;
+        }
+        return awt;
+    }
+
+    /** Ob in der zusammengesetzten Maske überhaupt eine Maustaste steckt. */
+    public static boolean anyButtonDown(int combinedModifiers) {
+        return (combinedModifiers
+                & (MouseButtons.LEFT_MASK | MouseButtons.MIDDLE_MASK | MouseButtons.RIGHT_MASK))
+                != 0;
+    }
+
+    /**
+     * Chromiums Tastennummer in AWTs Zählung.
+     *
+     * <p>Die Session hat bereits nach {@link MouseButtons#toBrowserButton}
+     * übersetzt; hier geht es nur noch eine Zählung weiter.
+     */
+    public static int browserButtonToAwt(int cefButton) {
+        return switch (cefButton) {
+            case 0 -> MouseEvent.BUTTON1;
+            case 1 -> MouseEvent.BUTTON2;
+            case 2 -> MouseEvent.BUTTON3;
+            default -> MouseEvent.NOBUTTON;
+        };
+    }
+
+    /**
      * Eine Bewegung.
      *
      * @param dragging ob dabei eine Taste unten ist — Chromium unterscheidet
@@ -86,10 +138,16 @@ public final class AwtMouseEvents {
      */
     public static MouseEvent button(int x, int y, boolean down, int minecraftButton,
             int clickCount, int awtModifiers) {
+        return awtButton(x, y, down, toAwtButton(minecraftButton), clickCount, awtModifiers);
+    }
+
+    /** Dasselbe, wenn die Tastennummer schon AWTs ist. */
+    public static MouseEvent awtButton(int x, int y, boolean down, int awtButton, int clickCount,
+            int awtModifiers) {
         return new MouseEvent(AwtEventSource.SOURCE,
                 down ? MouseEvent.MOUSE_PRESSED : MouseEvent.MOUSE_RELEASED,
                 System.currentTimeMillis(), awtModifiers, x, y, Math.max(1, clickCount), false,
-                toAwtButton(minecraftButton));
+                awtButton);
     }
 
     /**

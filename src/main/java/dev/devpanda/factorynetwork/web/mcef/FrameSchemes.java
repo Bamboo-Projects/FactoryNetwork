@@ -73,7 +73,7 @@ public final class FrameSchemes {
             WebConsole.attach();
             boolean accepted = CefHost.app().registerSchemeHandlerFactory(
                     FrameScheme.SCHEME, FrameScheme.DOMAIN,
-                    (browser, frame, url, request) -> new FrameScheme(STORE));
+                    (browser, frame, url, request) -> new FrameHandler(STORE));
             registered = accepted;
             LOG.info("Schema {}://{} angemeldet: {}",
                     FrameScheme.SCHEME, FrameScheme.DOMAIN, accepted);

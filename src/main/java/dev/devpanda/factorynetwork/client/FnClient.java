@@ -49,6 +49,23 @@ public final class FnClient {
     }
 
     /**
+     * Chromiums Nachrichtenschleife, einmal je Bild.
+     *
+     * <p><b>Vor dem Zeichnen und nicht danach.</b> Was Chromium in dieser
+     * Runde liefert, soll noch in die Textur, die dieses Bild benutzt — sonst
+     * hinkt die Seite um ein Bild hinterher.
+     *
+     * <p>Wer hier wirklich pumpt, hängt vom Unterbau ab und steht deshalb
+     * hinter {@code WebPump}: Auf MCEF tut es dessen eigener Mixin, und diese
+     * Zeile ist dann folgenlos.
+     */
+    @SubscribeEvent
+    public static void pumpWebRuntime(
+            net.neoforged.neoforge.client.event.RenderFrameEvent.Pre event) {
+        dev.devpanda.factorynetwork.web.mcef.WebPump.frame();
+    }
+
+    /**
      * Beim Verlassen einer Welt bleibt nichts stehen.
      *
      * <p>Sonst fände der nächste Controller den Entwurf des letzten vor —

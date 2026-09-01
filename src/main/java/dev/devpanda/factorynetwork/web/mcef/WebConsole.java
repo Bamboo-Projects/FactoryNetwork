@@ -74,6 +74,22 @@ public final class WebConsole implements CefDisplayHandler {
     public void onTitleChange(CefBrowser browser, String title) {
     }
 
+    /**
+     * Eine Seite will in den Vollbildmodus.
+     *
+     * <p><b>Ohne {@code @Override}, und das ist Absicht.</b> Upstream
+     * java-cef verlangt diese Methode, der CinemaMod-Fork kennt sie nicht.
+     * Ohne die Anmerkung erfüllt dieselbe Datei beide Schnittstellen: Dort
+     * setzt sie eine Methode außer Kraft, hier ist sie eine zusätzliche, die
+     * niemand ruft.
+     *
+     * <p>Zu tun gibt es nichts. Ein Vollbild innerhalb eines Bildschirms, der
+     * selbst schon die ganze Fläche einnimmt, ist keine Zustandsänderung, die
+     * uns betrifft.
+     */
+    public void onFullscreenModeChange(CefBrowser browser, boolean fullscreen) {
+    }
+
     @Override
     public boolean onTooltip(CefBrowser browser, String text) {
         return false;

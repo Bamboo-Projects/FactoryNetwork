@@ -1,6 +1,5 @@
 package dev.devpanda.factorynetwork.web.view;
 
-import org.cef.misc.CefCursorType;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.HashMap;
@@ -9,11 +8,10 @@ import java.util.Map;
 /**
  * Setzt den Mauszeiger, den die Seite gerade haben möchte.
  *
- * <p><b>Warum das hier steht und nicht bei MCEF geliehen wird.</b> MCEF hat
- * dieselbe Abbildung, aber die Methode dafür ist paketprivat — von außen nicht
- * erreichbar. Nachgebaut wird trotzdem fast nichts: Die eigentliche Arbeit,
- * nämlich welcher Chromium-Zeiger welchem GLFW-Zeiger entspricht, steht als
- * öffentliches Feld {@code glfwId} im Aufzählungstyp von JCEF selbst.
+ * <p><b>Warum das hier steht.</b> MCEF hat dieselbe Abbildung, aber die
+ * Methode dafür ist paketprivat — von außen nicht erreichbar. Die Tabelle
+ * dahinter stand im CinemaMod-Fork von JCEF; upstream hat sie nicht. Sie
+ * gehört deshalb uns und steht in {@link CursorType}.
  *
  * <p>Übrig bleibt das Aufbewahren: {@code glfwCreateStandardCursor} legt jedes
  * Mal einen neuen Zeiger an, und einer je Mausbewegung über einen Link wäre
@@ -45,8 +43,8 @@ public final class BrowserCursor {
             return;
         }
         shownType = cursorType;
-        CefCursorType wanted = CefCursorType.fromId(cursorType);
-        if (wanted == CefCursorType.NONE) {
+        CursorType wanted = CursorType.fromId(cursorType);
+        if (wanted == CursorType.NONE) {
             // Eine Seite, die den Zeiger versteckt, meint das ernst — etwa ein
             // Video im Vollbild oder ein eigener Zeiger im Dokument.
             GLFW.glfwSetInputMode(window, GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_HIDDEN);
@@ -59,7 +57,7 @@ public final class BrowserCursor {
         GLFW.glfwSetCursor(window, handle);
     }
 
-    private long handleFor(CefCursorType wanted) {
+    private long handleFor(CursorType wanted) {
         if (wanted.glfwId == 0) {
             return 0L;
         }

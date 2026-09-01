@@ -191,7 +191,7 @@ public class BrowserScreen extends Screen {
             // „hinsehen" ist die Antwort, die dieser ganze Spike vermeidet.
             if (seenCursors.add(wanted)) {
                 LOG.info("Mauszeiger: Chromium wünscht {} ({})",
-                        org.cef.misc.CefCursorType.fromId(wanted), wanted);
+                        dev.devpanda.factorynetwork.web.view.CursorType.fromId(wanted), wanted);
             }
         }
     }

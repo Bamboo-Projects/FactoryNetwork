@@ -40,6 +40,11 @@ neoForge {
         client {
             client()
             systemProperty 'neoforge.enabledGameTestNamespaces', mod_id
+            // Wo die eigene Laufzeitumgebung liegt. Nur gesetzt, wenn der
+            // Schalter an ist — ohne ihn läuft der Client wie bisher auf MCEF.
+            if (useOwnRuntime) {
+                systemProperty 'fn.runtime.dir', ownRuntimeDir.absolutePath
+            }
             // Debugger-Anschluss für HotSwap, nur auf Anforderung:
             //   ./gradlew runClient -Pdebug
             //

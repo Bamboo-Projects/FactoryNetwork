@@ -1,0 +1,421 @@
+package dev.devpanda.factorynetwork.web.mcef;
+
+import dev.devpanda.factorynetwork.web.frame.BorrowedFrame;
+import dev.devpanda.factorynetwork.web.frame.DirtyRegion;
+import dev.devpanda.factorynetwork.web.input.AwtModifiers;
+import dev.devpanda.factorynetwork.web.input.AwtMouseEvents;
+import dev.devpanda.factorynetwork.web.input.GlfwKeys;
+import dev.devpanda.factorynetwork.web.input.GlfwScancodes;
+import org.cef.CefBrowserSettings;
+import org.cef.CefClient;
+import org.cef.browser.CefBrowser;
+import org.cef.browser.CefBrowser_N;
+import org.cef.browser.CefPaintEvent;
+import org.cef.browser.CefRequestContext;
+import org.cef.callback.CefDragData;
+import org.cef.handler.CefRenderHandler;
+import org.cef.handler.CefScreenInfo;
+
+import java.awt.Component;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.event.KeyEvent;
+import java.awt.image.BufferedImage;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
+
+/**
+ * Ein Browser ohne Fenster, dessen Bilder und Ereignisse wir selbst annehmen.
+ *
+ * <p><b>Diese Fassung erbt von {@link CefBrowser_N} und nicht von
+ * {@code CefBrowserOsr}.</b> Upstreams {@code CefBrowserOsr} ist nicht die
+ * zusammengestrichene Klasse des CinemaMod-Forks: Ihr Konstruktor baut eine
+ * AWT-{@code GLCanvas} über JOGL auf, malt in deren GL-Kontext und hält das
+ * Rechteck der Ansicht privat. In einem Spiel, das seinen eigenen GL-Kontext
+ * führt und JOGL nicht mitliefert, ist davon nichts brauchbar.
+ *
+ * <p>Was bleibt, ist die Ebene darunter. {@code CefBrowser_N} bringt
+ * Erzeugung, Größenänderung und Eingabe mit; {@link CefRenderHandler} ist eine
+ * Schnittstelle, die jeder selbst erfüllen kann. Der Prüfstand
+ * {@code tools/runtime/probe/OsrBrowser.java} hat genau diese Bauform gemessen,
+ * bevor sie hier gelandet ist.
+ *
+ * <p><b>Die Eingabe muss hier stehen und kann nirgends sonst.</b>
+ * {@code sendKeyEventRaw}, {@code sendMouseEvent} und
+ * {@code sendMouseWheelEvent} sind auf {@code CefBrowser_N}
+ * {@code protected}. Nur wer erbt, kommt heran. Die Entscheidungen — welcher
+ * Klick der wievielte war, welche Taste an wen geht — stehen deshalb
+ * woanders, in Klassen ohne Chromium darin; hier steht nur die Übersetzung
+ * und die Weitergabe.
+ *
+ * <p><b>Der Puffer wird nur geliehen.</b> Was hinausgeht, ist ein
+ * {@link BorrowedFrame} — gültig, solange dieser Aufruf läuft, und mit dem
+ * besitzenden Bild absichtlich nicht verwandt.
+ */
+public class FnBrowser extends CefBrowser_N implements CefRenderHandler {
+
+    /**
+     * Was ein Browser meldet.
+     *
+     * <p>Alles hier kommt im Renderthread an, solange die Runtime Chromiums
+     * Nachrichtenschleife dort pumpt — außer {@link #cursorChanged(int)}, das
+     * auch von Chromiums eigenen Threads kommen kann.
+     */
+    public interface Events {
+
+        /** Ein neues Bild der Hauptansicht. Der Puffer gilt nur in diesem Aufruf. */
+        void frame(BorrowedFrame frame);
+
+        /**
+         * Ein neues Bild eines aufgeklappten Feldes.
+         *
+         * <p>Der Puffer ist so groß wie das Feld, nicht wie die Seite, und die
+         * geänderten Bereiche zählen von der Ecke des Feldes.
+         */
+        void popupFrame(BorrowedFrame frame);
+
+        /** Ein Feld klappt auf oder zu. */
+        void popupShown(boolean shown);
+
+        /** Wo das Feld liegt, in Browser-Pixeln der Hauptansicht. */
+        void popupPlaced(int x, int y, int width, int height);
+
+        /** Chromium hätte gern einen anderen Mauszeiger. */
+        void cursorChanged(int cefCursorType);
+    }
+
+    /**
+     * Ein Bauteil, das nie gezeigt wird.
+     *
+     * <p><b>Warum nicht null.</b> {@code CefClient.onTakeFocus} ruft darauf
+     * {@code getParent()}, ohne zu prüfen — mit null endet der erste Tabulator
+     * im Editor in einer {@code NullPointerException}. Gemessen im Prüfstand,
+     * nicht vermutet. Die peerlose Komponente aus dem Eingabe-Adapter tut es:
+     * Sie hat keinen Vater, und die Fokuswanderung endet still.
+     */
+    private static final Component NO_SURFACE =
+            dev.devpanda.factorynetwork.web.input.AwtEventSource.SOURCE;
+
+    private final Events events;
+    private final boolean transparent;
+
+    // Umgeht CEF-Fehler 1437: Ein Rechteck der Größe null lässt Chromium gar
+    // nicht erst anfangen zu malen.
+    private final Rectangle viewRect = new Rectangle(0, 0, 1, 1);
+
+    /**
+     * Öffnet einen Browser am Client dieser Fassung.
+     *
+     * <p>Die Fabrik steht hier und nicht beim Aufrufer, weil es diese Klasse
+     * zweimal gibt — einmal auf MCEF, einmal auf der eigenen
+     * Laufzeitumgebung. Woher der Client kommt, weiß nur die jeweilige
+     * Fassung; alles davor bleibt davon unberührt.
+     */
+    public static FnBrowser open(String url, boolean transparent, Events events) {
+        // Sechzig Bilder je Sekunde, gesetzt über CefBrowserSettings.
+        //
+        // Der Umgebungsvariablen-Behelf des Proof-of-Concept ist damit
+        // erledigt: Upstream kennt das Feld, der Fork kannte es nicht.
+        CefBrowserSettings settings = new CefBrowserSettings();
+        settings.windowless_frame_rate = 60;
+        return new FnBrowser(CefHost.client(), url, transparent, settings, events);
+    }
+
+    public FnBrowser(CefClient client, String url, boolean transparent,
+            CefBrowserSettings settings, Events events) {
+        super(client, url, null, null, null, settings);
+        this.transparent = transparent;
+        this.events = events;
+    }
+
+    // ---- Was CefBrowser_N von einer Unterklasse verlangt --------------------
+
+    @Override
+    public void createImmediately() {
+        if (getNativeRef("CefBrowser") != 0) {
+            return;
+        }
+        // Der Fensterhalter ist null, weil es kein Fenster gibt, und osr ist
+        // wahr — daran und nur daran erkennt CEF, dass es die Bilder liefern
+        // statt zeichnen soll.
+        createBrowser(getClient(), 0, getUrl(), true, transparent, null, getRequestContext());
+    }
+
+    @Override
+    public Component getUIComponent() {
+        return NO_SURFACE;
+    }
+
+    @Override
+    public CefRenderHandler getRenderHandler() {
+        return this;
+    }
+
+    /**
+     * Entwicklerwerkzeuge als eingebetteter Browser gibt es nicht.
+     *
+     * <p>Der Weg über den Debug-Port bleibt offen und ist der, den wir
+     * benutzen — er braucht diese Methode nicht.
+     */
+    @Override
+    protected CefBrowser_N createDevToolsBrowser(CefClient client, String url,
+            CefRequestContext context, CefBrowser_N parent, Point inspectAt) {
+        return null;
+    }
+
+    /** Ein Bildschirmfoto über den GL-Kontext gibt es nicht — es gibt keinen. */
+    @Override
+    public CompletableFuture<BufferedImage> createScreenshot(boolean nativeResolution) {
+        return CompletableFuture.completedFuture(null);
+    }
+
+    // ---- Größe --------------------------------------------------------------
+
+    /**
+     * Setzt die Größe des unsichtbaren Fensters.
+     *
+     * <p>Beides ist nötig: das Rechteck, das {@link #getViewRect} zurückgibt,
+     * und die Meldung an Chromium. Ohne das Rechteck malt es in der alten
+     * Größe weiter, ohne die Meldung malt es gar nicht neu.
+     */
+    public void resize(int width, int height) {
+        int safeWidth = Math.max(1, width);
+        int safeHeight = Math.max(1, height);
+        if (viewRect.width == safeWidth && viewRect.height == safeHeight) {
+            return;
+        }
+        viewRect.setBounds(0, 0, safeWidth, safeHeight);
+        wasResized(safeWidth, safeHeight);
+    }
+
+    public int browserWidth() {
+        return viewRect.width;
+    }
+
+    public int browserHeight() {
+        return viewRect.height;
+    }
+
+    // ---- Was hereinkommt ---------------------------------------------------
+
+    @Override
+    public Rectangle getViewRect(CefBrowser browser) {
+        return viewRect;
+    }
+
+    @Override
+    public Point getScreenPoint(CefBrowser browser, Point viewPoint) {
+        return new Point(viewPoint);
+    }
+
+    @Override
+    public boolean getScreenInfo(CefBrowser browser, CefScreenInfo screenInfo) {
+        screenInfo.Set(1.0, 32, 8, false, viewRect.getBounds(), viewRect.getBounds());
+        return true;
+    }
+
+    @Override
+    public void onPaint(CefBrowser browser, boolean popup, Rectangle[] dirtyRects,
+                        ByteBuffer buffer, int width, int height) {
+        if (events == null || buffer == null || width <= 0 || height <= 0) {
+            return;
+        }
+        BorrowedFrame frame = new BorrowedFrame(buffer, width, height, regionsOf(dirtyRects));
+        if (popup) {
+            events.popupFrame(frame);
+        } else {
+            events.frame(frame);
+        }
+    }
+
+    @Override
+    public void onPopupShow(CefBrowser browser, boolean show) {
+        if (events != null) {
+            events.popupShown(show);
+        }
+    }
+
+    /**
+     * Wo das aufgeklappte Feld hingehört.
+     *
+     * <p><b>Kann vor dem ersten Bild kommen und über den Rand hinausragen.</b>
+     * Chromium meldet die gewünschte Lage, nicht die zurechtgeschnittene.
+     * Beschnitten wird deshalb beim Zeichnen und nicht hier — was hier
+     * ankommt, ist die Wahrheit über das Feld und soll sie bleiben.
+     */
+    @Override
+    public void onPopupSize(CefBrowser browser, Rectangle size) {
+        if (events != null && size != null) {
+            events.popupPlaced(size.x, size.y, size.width, size.height);
+        }
+    }
+
+    @Override
+    public boolean onCursorChange(CefBrowser browser, int cursorType) {
+        if (events != null) {
+            events.cursorChanged(cursorType);
+        }
+        // Wahr heißt: Wir haben uns gekümmert. Chromium versucht sonst, selbst
+        // einen Zeiger zu setzen — auf ein Fenster, das es nicht gibt.
+        return true;
+    }
+
+    @Override
+    public boolean startDragging(CefBrowser browser, CefDragData dragData, int mask, int x, int y) {
+        return false;
+    }
+
+    @Override
+    public void updateDragCursor(CefBrowser browser, int operation) {
+    }
+
+    @Override
+    public void addOnPaintListener(Consumer<CefPaintEvent> listener) {
+    }
+
+    @Override
+    public void setOnPaintListener(Consumer<CefPaintEvent> listener) {
+    }
+
+    @Override
+    public void removeOnPaintListener(Consumer<CefPaintEvent> listener) {
+    }
+
+    private static List<DirtyRegion> regionsOf(Rectangle[] rectangles) {
+        if (rectangles == null || rectangles.length == 0) {
+            return List.of();
+        }
+        List<DirtyRegion> regions = new ArrayList<>(rectangles.length);
+        for (Rectangle rectangle : rectangles) {
+            if (rectangle.width > 0 && rectangle.height > 0) {
+                regions.add(new DirtyRegion(Math.max(0, rectangle.x),
+                        Math.max(0, rectangle.y), rectangle.width, rectangle.height));
+            }
+        }
+        return regions;
+    }
+
+    // ---- Was hinausgeht ----------------------------------------------------
+
+    /**
+     * Eine Mausbewegung.
+     *
+     * @param leaving wahr, wenn der Zeiger die Fläche verlässt — Chromium
+     *                braucht das, um Schwebezustände zurückzunehmen, sonst
+     *                bleibt der zuletzt berührte Knopf für immer hell
+     */
+    public void moveMouse(int x, int y, int modifiers, boolean leaving) {
+        int awt = AwtMouseEvents.toAwtModifiers(modifiers);
+        if (leaving) {
+            sendMouseEvent(AwtMouseEvents.exited(x, y, awt));
+        } else {
+            // Mit gedrückter Taste ist es ein Ziehen und keine Bewegung.
+            // Chromium unterscheidet beides, und eine Textauswahl entsteht
+            // nur beim Ziehen.
+            sendMouseEvent(AwtMouseEvents.moved(x, y, awt,
+                    AwtMouseEvents.anyButtonDown(modifiers)));
+        }
+    }
+
+    /**
+     * Eine Maustaste geht herunter oder herauf.
+     *
+     * <p><b>Kein eigenes {@code MOUSE_CLICKED}.</b> Chromium baut den Klick
+     * aus Herunter und Herauf; ein zusätzliches Ereignis wäre ein zweiter
+     * Klick und verfälschte Doppel- und Dreifachklicks.
+     *
+     * @param cefButton  Chromiums Zählung, nicht Minecrafts
+     * @param clickCount 1, 2 oder 3 — daran und nur daran erkennt Chromium
+     *                   einen Doppelklick
+     */
+    public void clickMouse(int x, int y, boolean down, int cefButton,
+                           int clickCount, int modifiers) {
+        if (cefButton < 0) {
+            return;
+        }
+        sendMouseEvent(AwtMouseEvents.awtButton(x, y, down,
+                AwtMouseEvents.browserButtonToAwt(cefButton), clickCount,
+                AwtMouseEvents.toAwtModifiers(modifiers)));
+    }
+
+    /**
+     * Das Rad dreht sich.
+     *
+     * <p>Der Aufrufer meldet die Strecke, schon mit dem Faktor drei je Rastung
+     * multipliziert. AWT trennt beides wieder: {@code wheelRotation} zählt die
+     * Rastungen, {@code scrollAmount} die Zeilen je Rastung, und der native
+     * Teil rechnet aus dem Produkt dasselbe Delta.
+     *
+     * <p><b>Das Vorzeichen geht unverändert durch</b> — gemessen, nicht
+     * geraten: {@code wheelRotation +1} erzeugt in der Seite
+     * {@code deltaY -2.0}, also hinauf, und Minecrafts Delta ist beim Drehen
+     * nach oben positiv.
+     */
+    public void scrollMouse(int x, int y, double amount, int modifiers) {
+        int notches = (int) Math.round(amount / UNITS_PER_NOTCH);
+        if (notches == 0) {
+            // Eine Bewegung, die zu klein für eine Rastung ist, darf trotzdem
+            // nicht verschwinden — sonst fühlt sich langsames Scrollen an, als
+            // reagierte die Seite nicht.
+            if (amount == 0) {
+                return;
+            }
+            notches = amount > 0 ? 1 : -1;
+        }
+        sendMouseWheelEvent(AwtMouseEvents.wheel(x, y, notches, UNITS_PER_NOTCH,
+                AwtMouseEvents.toAwtModifiers(modifiers)));
+    }
+
+    /** Zeilen je Rastung, von MCEF übernommen und dort erprobt. */
+    private static final int UNITS_PER_NOTCH = 3;
+
+    /**
+     * Eine Taste geht herunter oder herauf.
+     *
+     * <p><b>Warum {@code sendKeyEventRaw} und nicht {@code sendKeyEvent}.</b>
+     * Auf Windows liest der native Teil den Scancode aus dem Feld
+     * {@code java.awt.event.KeyEvent.scancode} — ein privates Feld, das nur
+     * der native AWT-Code füllt. Ein selbst gebautes Ereignis trägt dort null,
+     * und aus null macht {@code MapVirtualKey} für jede Taste den virtuellen
+     * Tastencode null: Chromium erkennt dann keine einzige Taste. Deshalb der
+     * Patch, der die Werte als Parameter nimmt.
+     *
+     * <p><b>Und warum der Scancode zerlegt wird.</b> GLFW führt „erweiterte
+     * Taste" als Bit 8, Windows erwartet es an anderer Stelle. Pfeiltasten und
+     * Ziffernblock teilen sich die unteren acht Bit; wer das Kennzeichen
+     * verliert, bekommt für Pfeil-hoch die Acht des Ziffernblocks.
+     */
+    public void sendKey(int glfwKeyCode, int scanCode, int modifiers, boolean down) {
+        sendKeyEventRaw(down ? KeyEvent.KEY_PRESSED : KeyEvent.KEY_RELEASED,
+                AwtModifiers.forKey(modifiers),
+                KeyEvent.CHAR_UNDEFINED,
+                GlfwScancodes.base(scanCode),
+                GlfwScancodes.extended(scanCode),
+                GlfwKeys.toAwtKeyCode(glfwKeyCode));
+    }
+
+    /**
+     * Ein getipptes Zeichen.
+     *
+     * <p><b>Nur aus {@code charTyped}, nie aus einem Tastencode abgeleitet.</b>
+     * Was auf einer deutschen Tastatur ein Umlaut ist, weiß das
+     * Betriebssystem. Wer zusätzlich aus dem Tastendruck ein Zeichen bauen
+     * wollte, bekäme jeden Buchstaben zweimal.
+     *
+     * <p><b>Ohne Strg und Alt.</b> Gemessen: Ein Zeichen mit Strg kommt gar
+     * nicht an — Chromium deutet es als Steuerzeichen. Windows meldet AltGr
+     * als Strg + rechtes Alt, und damit hinge auf einer deutschen Tastatur an
+     * jedem {@code @}, {@code €}, {@code \}, {@code |} und {@code ~} ein Strg.
+     *
+     * <p>Die Grenze: {@code char} ist sechzehn Bit breit. Alles bis
+     * {@code U+FFFF} geht; Zeichen darüber kämen als zwei Hälften an.
+     */
+    public void sendChar(char typed, int modifiers) {
+        sendKeyEventRaw(KeyEvent.KEY_TYPED,
+                AwtModifiers.forCharacter(modifiers),
+                typed, 0, false, 0);
+    }
+}

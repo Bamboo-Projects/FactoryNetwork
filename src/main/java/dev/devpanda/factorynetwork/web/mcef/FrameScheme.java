@@ -29,7 +29,15 @@ import org.cef.network.CefResponse;
  * eines allein sich schwer nachweisen lässt: eine Nummer in der Adresse und
  * ein {@code Cache-Control: no-store}.
  */
-public final class FrameScheme implements CefResourceHandler {
+public abstract class FrameScheme implements CefResourceHandler {
+
+    // <b>Abstrakt, obwohl hier alles steht.</b> Die Schnittstelle
+    // CefResourceHandler ist zwischen dem CinemaMod-Fork und upstream
+    // gewachsen: Upstream verlangt zusätzlich skip(long, LongRef,
+    // CefResourceSkipCallback), und beide Parametertypen gibt es im Fork
+    // nicht. Eine Datei kann das nicht für beide Wege erfüllen, also endet
+    // die gemeinsame Fassung eine Ableitung früher — der Rest steht je
+    // Quellverzeichnis in FrameHandler.
 
     /** Der Name des Schemas — {@code mc://frame/current}. */
     public static final String SCHEME = "mc";
