@@ -6,7 +6,7 @@ import dev.devpanda.factorynetwork.web.BrowserVisibility;
 import dev.devpanda.factorynetwork.web.WebRuntime;
 import dev.devpanda.factorynetwork.web.WebSupport;
 import dev.devpanda.factorynetwork.web.runtime.BrowserSession;
-import dev.devpanda.factorynetwork.client.render.SessionTexture;
+import dev.devpanda.factorynetwork.web.view.ManagedTexture;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
@@ -202,7 +202,7 @@ public final class WebPanels {
             ResourceLocation location = ResourceLocation.fromNamespaceAndPath(
                     FactoryNetwork.MOD_ID, "web_panel/" + nextId++);
             Minecraft.getInstance().getTextureManager()
-                    .register(location, new SessionTexture(session::textureId));
+                    .register(location, new ManagedTexture(session::textureId));
             panels.put(pos.immutable(), new Panel(session, location, wanted));
             LOG.info("Web-Fläche {} bei {} geöffnet: {} — offen: {}",
                     label, pos, url, panels.size());

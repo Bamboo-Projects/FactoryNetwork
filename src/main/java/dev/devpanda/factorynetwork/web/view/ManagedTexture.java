@@ -1,4 +1,4 @@
-package dev.devpanda.factorynetwork.client.render;
+package dev.devpanda.factorynetwork.web.view;
 
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -24,11 +24,11 @@ import java.util.function.IntSupplier;
  * eins bleibt, räumt Minecraft ohnehin nichts ab; die beiden leeren Methoden
  * stehen trotzdem hier, damit die Absicht nicht von einem Zufall abhängt.
  */
-public final class SessionTexture extends AbstractTexture {
+public final class ManagedTexture extends AbstractTexture {
 
     private final IntSupplier live;
 
-    public SessionTexture(IntSupplier live) {
+    public ManagedTexture(IntSupplier live) {
         this.live = live;
     }
 

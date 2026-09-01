@@ -120,12 +120,22 @@ class PackageBoundaryTest {
         // sonst wird aus einer Browserlaufzeit wieder eine Mod.
         List<String> forbidden = List.of(
                 "net.minecraft.world.", "net.minecraft.server.");
+        // <b>Eine Ausnahme, und sie ist keine Lücke.</b> ResourceManager liegt
+        // unter net.minecraft.server.packs, gehört aber zum Laden von
+        // Ressourcen und nicht zum Server — auch der Client hat einen. Die
+        // Runtime braucht ihn für die Signatur einer geerbten Methode, die
+        // nichts tut. Ausgeschrieben und nicht als Muster: Was hier steht,
+        // steht einzeln da und fällt beim nächsten Blick auf.
+        List<String> allowed = List.of("net.minecraft.server.packs.resources.ResourceManager");
         List<String> breaches = new ArrayList<>();
         for (Path source : sources()) {
             List<String> lines = Files.readAllLines(source, StandardCharsets.UTF_8);
             for (String line : lines) {
                 String stripped = line.strip();
                 if (!stripped.startsWith("import ")) {
+                    continue;
+                }
+                if (allowed.stream().anyMatch(stripped::contains)) {
                     continue;
                 }
                 for (String bad : forbidden) {
