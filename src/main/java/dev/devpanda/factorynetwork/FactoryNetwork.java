@@ -30,7 +30,7 @@ public final class FactoryNetwork {
         // Tut nur etwas, wenn fn.devtools gesetzt ist; auf einem Server
         // existiert die Klasse gar nicht erst.
         if (net.neoforged.fml.loading.FMLEnvironment.dist.isClient()) {
-            dev.devpanda.factorynetwork.web.mcef.WebDebug.requestIfEnabled();
+            dev.devpanda.factorynetwork.web.runtime.WebDebug.requestIfEnabled();
         }
         // Die Grenzen für Nutzercode gehören dem Serverbetreiber, nicht dem
         // Quelltext. Ohne diese Zeile liegt die Datei nie neben der Welt.

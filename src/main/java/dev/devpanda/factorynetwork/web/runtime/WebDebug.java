@@ -1,4 +1,4 @@
-package dev.devpanda.factorynetwork.web.mcef;
+package dev.devpanda.factorynetwork.web.runtime;
 
 import org.cef.CefApp;
 import org.cef.callback.CefCommandLine;

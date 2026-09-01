@@ -1,4 +1,4 @@
-package dev.devpanda.factorynetwork.web.mcef;
+package dev.devpanda.factorynetwork.web.runtime;
 
 import com.mojang.logging.LogUtils;
 import net.minecraft.client.Minecraft;

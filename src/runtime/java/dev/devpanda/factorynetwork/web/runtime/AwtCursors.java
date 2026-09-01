@@ -1,4 +1,4 @@
-package dev.devpanda.factorynetwork.web.mcef;
+package dev.devpanda.factorynetwork.web.runtime;
 
 import java.awt.Cursor;
 

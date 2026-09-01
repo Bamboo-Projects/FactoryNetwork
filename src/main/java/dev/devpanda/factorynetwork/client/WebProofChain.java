@@ -1,7 +1,7 @@
 package dev.devpanda.factorynetwork.client;
 
-import dev.devpanda.factorynetwork.web.mcef.WebBenchmark;
-import dev.devpanda.factorynetwork.web.mcef.WebSelfTest;
+import dev.devpanda.factorynetwork.web.runtime.WebBenchmark;
+import dev.devpanda.factorynetwork.web.runtime.WebSelfTest;
 import dev.devpanda.factorynetwork.web.screen.BackdropBenchmark;
 import dev.devpanda.factorynetwork.web.screen.BackdropProof;
 import dev.devpanda.factorynetwork.web.screen.InteractionBenchmark;

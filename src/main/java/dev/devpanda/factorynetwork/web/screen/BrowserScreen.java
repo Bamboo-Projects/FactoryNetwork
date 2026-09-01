@@ -4,7 +4,7 @@ import dev.devpanda.factorynetwork.web.BrowserVisibility;
 import dev.devpanda.factorynetwork.web.WebRuntimeStatus;
 import dev.devpanda.factorynetwork.web.WebSupport;
 import dev.devpanda.factorynetwork.web.input.BrowserFocus;
-import dev.devpanda.factorynetwork.web.mcef.BrowserSession;
+import dev.devpanda.factorynetwork.web.runtime.BrowserSession;
 import dev.devpanda.factorynetwork.web.view.BrowserCompositor;
 import dev.devpanda.factorynetwork.web.view.BrowserCursor;
 import dev.devpanda.factorynetwork.web.view.BrowserView;
@@ -495,7 +495,7 @@ public class BrowserScreen extends Screen {
     }
 
     /** Der laufende Browser, für alles, was mehr braucht als die Messwerte. */
-    protected dev.devpanda.factorynetwork.web.mcef.BrowserSession session() {
+    protected dev.devpanda.factorynetwork.web.runtime.BrowserSession session() {
         return session;
     }
 

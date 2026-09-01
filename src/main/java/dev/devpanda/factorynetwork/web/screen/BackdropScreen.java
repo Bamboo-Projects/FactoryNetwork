@@ -2,7 +2,7 @@ package dev.devpanda.factorynetwork.web.screen;
 
 import dev.devpanda.factorynetwork.web.capture.FrameStore;
 import dev.devpanda.factorynetwork.web.capture.WorldCapture;
-import dev.devpanda.factorynetwork.web.mcef.FrameSchemes;
+import dev.devpanda.factorynetwork.web.runtime.FrameSchemes;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import org.slf4j.Logger;

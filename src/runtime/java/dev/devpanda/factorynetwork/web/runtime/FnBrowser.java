@@ -1,4 +1,4 @@
-package dev.devpanda.factorynetwork.web.mcef;
+package dev.devpanda.factorynetwork.web.runtime;
 
 import dev.devpanda.factorynetwork.web.frame.BorrowedFrame;
 import dev.devpanda.factorynetwork.web.frame.DirtyRegion;

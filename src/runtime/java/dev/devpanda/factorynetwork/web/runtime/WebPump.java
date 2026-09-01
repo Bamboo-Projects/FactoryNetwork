@@ -1,4 +1,4 @@
-package dev.devpanda.factorynetwork.web.mcef;
+package dev.devpanda.factorynetwork.web.runtime;
 
 /**
  * Wer Chromiums Nachrichtenschleife dreht — in dieser Fassung: wir selbst.

@@ -1,4 +1,4 @@
-package dev.devpanda.factorynetwork.web.mcef;
+package dev.devpanda.factorynetwork.web.runtime;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import dev.devpanda.factorynetwork.web.BrowserVisibility;

@@ -154,7 +154,7 @@ public final class WebRuntime {
             BrowserManager.closeAll();
             if (BrowserManager.pending() > 0) {
                 BrowserManager.awaitClosed(CLOSE_TIMEOUT_MILLIS,
-                        dev.devpanda.factorynetwork.web.mcef.WebPump::frame);
+                        dev.devpanda.factorynetwork.web.runtime.WebPump::frame);
             }
         } catch (Throwable broken) {
             LOG.warn("Beim Schließen der Browser ging etwas schief", broken);

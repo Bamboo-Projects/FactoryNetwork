@@ -115,9 +115,6 @@ wartet auf ihn.
 ```text
 Runtime Distribution   der nächste Block: gebaute Laufzeitumgebung ausliefern,
                        statt sie von jedem bauen zu lassen
-Paket web.mcef         heißt noch nach einer Mod, die nicht mehr da ist.
-                       Umbenennen fasst Dutzende Dateien an — eigener Schritt,
-                       der Plan sieht web/runtime/ vor
 echter Launcher        ProcessGuard dort ungeprüft; der Protokolltext für den
                        Fall „schon in einem Job" steht bereit
 p95 in Stufe B         vier Millisekunden hinter MCEF, bei anderer Monitorlage
@@ -126,6 +123,29 @@ p95 in Stufe B         vier Millisekunden hinter MCEF, bei anderer Monitorlage
 logs/ im Repo          logs/debug.log und logs/latest.log sind eingecheckt und
                        ändern sich bei jedem Lauf. Sieht nach Versehen aus
 ```
+
+---
+
+## Nachgetragen am selben Tag
+
+Zwei Punkte aus der Liste oben sind noch erledigt worden:
+
+**Das Paket heißt jetzt `web.runtime`.** Es trug den Namen der Mod, die es
+gerade losgeworden war. Vierzehn Klassen sind umgezogen, fünfundzwanzig
+Dateien nennen den neuen Namen; der Bau und die Prüfläufe blieben grün.
+
+**Die Protokolle des Clients sind aus der Versionsverwaltung.**
+`logs/debug.log` und `logs/latest.log` waren verfolgt und änderten sich bei
+jedem Lauf. Die `.gitignore` kannte `logs/` längst — die beiden Dateien waren
+nur älter als der Eintrag.
+
+Was in den Kommentaren noch von MCEF spricht, ist bewusst stehengeblieben:
+Vieles davon erklärt, warum etwas so ist, wie es ist, und bleibt damit richtig.
+Einige Stellen reden allerdings im Präsens über einen Betrieb, den es nicht
+mehr gibt — das ist eine eigene Durchsicht wert und keine Nebensache eines
+Umbenennens.
+
+---
 
 Die Punkte der IDE stehen getrennt in [`ide-offene-punkte.md`](ide-offene-punkte.md)
 und zählen für die Laufzeitumgebung nicht — die Grenze steht in

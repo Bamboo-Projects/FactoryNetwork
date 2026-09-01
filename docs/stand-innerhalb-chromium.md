@@ -39,7 +39,7 @@ ohne Patch an MCEF.
 MCEF baut Chromiums Einstellungen selbst und setzt keinen Debug-Port; die
 Schalterliste ist fest verdrahtet. Änderbar ist das an genau einer Stelle:
 `CefAppHandlerAdapter.onBeforeCommandLineProcessing`. Dort hängt jetzt
-`web/mcef/WebDebug.java` und ergänzt `remote-debugging-port=9222` sowie
+`web/runtime/WebDebug.java` und ergänzt `remote-debugging-port=9222` sowie
 `remote-debugging-address=127.0.0.1`.
 
 Zwei Bedingungen, beide beim ersten Versuch verfehlt:

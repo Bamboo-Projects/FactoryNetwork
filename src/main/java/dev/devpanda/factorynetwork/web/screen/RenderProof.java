@@ -4,7 +4,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import dev.devpanda.factorynetwork.web.BrowserVisibility;
 import dev.devpanda.factorynetwork.web.WebRuntimeStatus;
 import dev.devpanda.factorynetwork.web.WebSupport;
-import dev.devpanda.factorynetwork.web.mcef.BrowserSession;
+import dev.devpanda.factorynetwork.web.runtime.BrowserSession;
 import dev.devpanda.factorynetwork.web.view.BrowserCompositor;
 import dev.devpanda.factorynetwork.web.view.BrowserView;
 import net.minecraft.client.Minecraft;

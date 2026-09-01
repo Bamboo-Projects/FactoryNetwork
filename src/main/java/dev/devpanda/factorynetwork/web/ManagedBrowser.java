@@ -5,7 +5,7 @@ package dev.devpanda.factorynetwork.web;
  *
  * <p><b>Eine Schnittstelle für genau eine Umsetzung</b> — das sieht nach
  * Vorrat aus und ist keiner. Sie steht hier, damit {@code BrowserManager} in
- * {@code web} liegen kann, ohne {@code web.mcef} zu kennen: Dort hängt
+ * {@code web} liegen kann, ohne {@code web.runtime} zu kennen: Dort hängt
  * Chromium dran, und wer den Verwalter lädt, soll es nicht mitladen müssen.
  */
 public interface ManagedBrowser {

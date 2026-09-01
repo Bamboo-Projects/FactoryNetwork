@@ -1,4 +1,4 @@
-package dev.devpanda.factorynetwork.web.mcef;
+package dev.devpanda.factorynetwork.web.runtime;
 
 import org.cef.CefSettings;
 import org.cef.browser.CefBrowser;

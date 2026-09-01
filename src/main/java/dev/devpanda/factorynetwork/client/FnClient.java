@@ -27,13 +27,13 @@ public final class FnClient {
         ClientProjectState.tick();
         // Der Selbsttest des Bildwegs, einmal je Sitzung. Er braucht einen
         // Zeichenkontext und kann deshalb kein gewöhnlicher Prüflauf sein.
-        dev.devpanda.factorynetwork.web.mcef.WebSelfTest.tick();
+        dev.devpanda.factorynetwork.web.runtime.WebSelfTest.tick();
         // Der Bildnachweis danach — er braucht einen Bildschirm und kann
         // deshalb erst laufen, wenn der Textur-Selbsttest seinen Browser
         // wieder abgeräumt hat.
         WebProofChain.tick();
         // Die Messung zuletzt, und nur auf Ansage: -Dfn.benchmark=true
-        dev.devpanda.factorynetwork.web.mcef.WebBenchmark.tick();
+        dev.devpanda.factorynetwork.web.runtime.WebBenchmark.tick();
     }
 
     /**
@@ -45,7 +45,7 @@ public final class FnClient {
     @SubscribeEvent
     public static void measureFrame(
             net.neoforged.neoforge.client.event.RenderFrameEvent.Post event) {
-        dev.devpanda.factorynetwork.web.mcef.WebBenchmark.frameRendered();
+        dev.devpanda.factorynetwork.web.runtime.WebBenchmark.frameRendered();
     }
 
     /**
@@ -62,7 +62,7 @@ public final class FnClient {
     @SubscribeEvent
     public static void pumpWebRuntime(
             net.neoforged.neoforge.client.event.RenderFrameEvent.Pre event) {
-        dev.devpanda.factorynetwork.web.mcef.WebPump.frame();
+        dev.devpanda.factorynetwork.web.runtime.WebPump.frame();
     }
 
     /**
