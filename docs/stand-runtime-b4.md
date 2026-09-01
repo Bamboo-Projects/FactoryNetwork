@@ -1,5 +1,9 @@
 # B4 und B3e: der Mod läuft auf der eigenen Laufzeitumgebung
 
+> **Weitergegangen.** B5, B6 und B7 stehen — Verwalter, Wächter, Reihenfolge.
+> Der aktuelle Bericht ist **`stand-runtime-b567.md`**; die Waise nach hartem
+> Abbruch ist dort behandelt.
+
 Stand: 1. September 2026. `FnBrowser` erbt jetzt von `CefBrowser_N` aus
 upstream java-cef, der Eingabeadapter hängt daran, und der Client läuft damit
 im Spiel. MCEF ist nicht entfernt — es steht weiterhin als Standardweg da und
