@@ -164,3 +164,6 @@ Umbenennens.
 Die Punkte der IDE stehen getrennt in [`ide-offene-punkte.md`](ide-offene-punkte.md)
 und zählen für die Laufzeitumgebung nicht — die Grenze steht in
 [`grenze-runtime-ide.md`](grenze-runtime-ide.md).
+
+Weiter geht es in [`stand-runtime-auslieferung.md`](stand-runtime-auslieferung.md):
+Bucket, Domain, Nachladen im Spiel und die Abnahme ohne Gradle.

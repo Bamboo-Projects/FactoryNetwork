@@ -37,3 +37,35 @@ Behandlung in der Seite: ein `auxclick` mit `button === 1` auf `.tab`.
 
 **Klein.** Ein paar Zeilen, sobald es die Registerkarten wirklich als Daten
 gibt und nicht als festes Gerüst — dieselbe Voraussetzung wie bei Punkt 1.
+
+---
+
+Gefunden bei der Abnahme des Nachladens am 1. September 2026
+([`stand-runtime-auslieferung.md`](stand-runtime-auslieferung.md)). Beides
+liegt auf der Seite der Oberfläche; die Laufzeitumgebung liefert die
+Auskünfte, die es dafür braucht.
+
+## 3. Während des Downloads: Fortschritt zeigen und von selbst öffnen
+
+**Beobachtet.** Beim ersten Start ohne Laufzeitumgebung zeigt die Oberfläche
+„Die Web-Runtime steht nicht bereit." und bleibt dabei — auch, wenn der
+Download zwei Sekunden später durch ist. Der Spieler muss die Oberfläche
+selbst erneut öffnen und weiß nicht, dass sich das lohnt.
+
+**Was dafür schon da ist.** Der Zustand `NOT_DOWNLOADED` sagt, dass geladen
+wird, `RuntimeInstall.downloading()` sagt, ob noch, und das Protokoll kennt
+den Fortschritt in Schritten von zwanzig Megabyte. Ein zweiter Griff über
+`WebSupport.retry()` geht durch, sobald der Ordner da ist.
+
+**Was es braucht.** Eine Anzeige „wird geladen, x von y MB" statt des
+Standsatzes, und ein Öffnen von selbst, wenn `downloading()` auf falsch fällt.
+
+## 4. Nach „Kein Browser zu haben" nicht weitermachen
+
+**Beobachtet.** Bekommt `BrowserScreen` beim Öffnen keine Sitzung, laufen die
+Schritte danach trotzdem — Schema anmelden, Konsole anzapfen, Hintergrund
+bauen — und jeder davon schreibt eine Warnung mit Stapel ins Protokoll. Drei
+Warnungen für einen Grund, der schon in der ersten Zeile stand.
+
+**Klein.** Nach dem ersten Nein aufhören; die drei Aufrufe hängen ohnehin an
+einer Sitzung, die es dann nicht gibt.
