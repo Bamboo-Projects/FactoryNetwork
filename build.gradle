@@ -6,24 +6,20 @@ plugins {
 version = mod_version
 group = mod_group_id
 
-// Der Prüflauf gegen die eigene Laufzeitumgebung:
-//   ./gradlew runClient -Pfnruntime
+// <b>Chromium kommt aus dem eigenen Bau, nicht mehr von MCEF.</b> Bis zur
+// bestandenen Handprüfung am 1. September 2026 lagen beide Wege nebeneinander
+// und ein Schalter entschied. Er ist weg: Was er einschaltete, ist jetzt der
+// einzige Weg.
 //
-// <b>Warum ein Schalter und keine Verzweigung im Code.</b> MCEF und upstream
-// java-cef bringen beide das vollständige Paket org.cef mit — 170 Klassen,
-// gleiche Namen, anderer Inhalt. Sie können nicht nebeneinander im Klassenpfad
-// liegen. Damit ist jede Lösung innerhalb einer Übersetzungseinheit
-// ausgeschlossen; die Trennung muss vor den Compiler.
+// Nebeneinander konnten sie ohnehin nie stehen — MCEF und upstream java-cef
+// bringen beide das vollständige Paket org.cef mit, 170 Klassen, gleiche
+// Namen, anderer Inhalt. Deshalb war es ein Schalter vor dem Compiler und
+// keine Verzweigung darin.
 //
-// Ohne den Schalter bleibt alles, wie es war: MCEF liefert Chromium, und der
-// Standardbau merkt von dieser Aufteilung nichts. Das ist Absicht — solange
-// der neue Weg nicht abgenommen ist, darf der alte nicht davon abhängen.
-def useOwnRuntime = project.hasProperty('fnruntime')
-
-// Die gebaute Laufzeitumgebung. Sie entsteht mit
+// Die Laufzeitumgebung entsteht mit
 //   pwsh -File tools/runtime/build-jcef.ps1
-// und liegt bewusst außerhalb der Auslieferung: Dieser Schalter ist für den
-// Prüflauf da, nicht für das fertige Jar.
+// und ist ab hier Voraussetzung für jeden Bau. Ohne sie bricht Gradle mit
+// einer Ansage ab, statt den Fehler in den Compiler zu tragen.
 def ownRuntimeDir = file('tools/runtime/build/out/windows-x86_64')
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
@@ -40,38 +36,35 @@ neoForge {
         client {
             client()
             systemProperty 'neoforge.enabledGameTestNamespaces', mod_id
-            // Wo die eigene Laufzeitumgebung liegt. Nur gesetzt, wenn der
-            // Schalter an ist — ohne ihn läuft der Client wie bisher auf MCEF.
-            if (useOwnRuntime) {
-                systemProperty 'fn.runtime.dir', ownRuntimeDir.absolutePath
-                // <b>Und der Ordner muss auf den PATH.</b> Nicht aus
-                // Bequemlichkeit: Native Methoden findet die JVM nur in
-                // Bibliotheken, die der Klassenlader der jeweiligen Klasse
-                // geladen hat. org.cef liegt hier im ModuleClassLoader, unser
-                // Code im TransformingClassLoader — ein System.load aus
-                // unserem Code bindet an den falschen. Über java.library.path
-                // lädt java-cef selbst, und dann stimmt der Lader. Auf Windows
-                // speist sich dieser Pfad aus dem PATH.
-                environment 'PATH', (ownRuntimeDir.absolutePath
-                        + File.pathSeparator + System.getenv('PATH'))
-                // Ohne das wirft die JVM wiederholte Ausnahmen an derselben
-                // Stelle irgendwann ohne Stapel — und eine Ausnahme aus einem
-                // Chromium-Rückruf kommt ohnehin nur als Kopfzeile an. Beides
-                // zusammen ergibt ein „Exception in thread" ohne jeden Hinweis.
-                jvmArgument '-XX:-OmitStackTraceInFastThrow'
-                // Die Spur um die Browsererzeugung, nur auf Ansage:
-                //   ./gradlew runClient -Pfnruntime -Ptrace
-                if (project.hasProperty('trace')) {
-                    systemProperty 'fn.cef.trace', 'true'
-                }
-                // Nur zur Fehlersuche, und nur auf Ansage:
-                //   ./gradlew runClient -Pfnruntime -Pjnicheck
-                // Die JVM prüft dann jeden Übergang nach C und zurück. Sie
-                // wird davon deutlich langsamer — für eine Messung taugt der
-                // Lauf nicht, für die Frage „wer wirft da eigentlich" schon.
-                if (project.hasProperty('jnicheck')) {
-                    jvmArgument '-Xcheck:jni'
-                }
+            // Wo die eigene Laufzeitumgebung liegt.
+            systemProperty 'fn.runtime.dir', ownRuntimeDir.absolutePath
+            // <b>Und der Ordner muss auf den PATH.</b> Nicht aus
+            // Bequemlichkeit: Native Methoden findet die JVM nur in
+            // Bibliotheken, die der Klassenlader der jeweiligen Klasse
+            // geladen hat. org.cef liegt hier im ModuleClassLoader, unser
+            // Code im TransformingClassLoader — ein System.load aus
+            // unserem Code bindet an den falschen. Über java.library.path
+            // lädt java-cef selbst, und dann stimmt der Lader. Auf Windows
+            // speist sich dieser Pfad aus dem PATH.
+            environment 'PATH', (ownRuntimeDir.absolutePath
+                    + File.pathSeparator + System.getenv('PATH'))
+            // Ohne das wirft die JVM wiederholte Ausnahmen an derselben
+            // Stelle irgendwann ohne Stapel — und eine Ausnahme aus einem
+            // Chromium-Rückruf kommt ohnehin nur als Kopfzeile an. Beides
+            // zusammen ergibt ein „Exception in thread" ohne jeden Hinweis.
+            jvmArgument '-XX:-OmitStackTraceInFastThrow'
+            // Die Spur um die Browsererzeugung, nur auf Ansage:
+            //   ./gradlew runClient -Ptrace
+            if (project.hasProperty('trace')) {
+                systemProperty 'fn.cef.trace', 'true'
+            }
+            // Nur zur Fehlersuche, und nur auf Ansage:
+            //   ./gradlew runClient -Pjnicheck
+            // Die JVM prüft dann jeden Übergang nach C und zurück. Sie
+            // wird davon deutlich langsamer — für eine Messung taugt der
+            // Lauf nicht, für die Frage „wer wirft da eigentlich" schon.
+            if (project.hasProperty('jnicheck')) {
+                jvmArgument '-Xcheck:jni'
             }
             // Debugger-Anschluss für HotSwap, nur auf Anforderung:
             //   ./gradlew runClient -Pdebug
@@ -195,20 +188,19 @@ repositories {
     }
 }
 
-// Der eine Ort, an dem sich die beiden Wege unterscheiden: ein Quellverzeichnis
-// und ein Lieferant für org.cef. Alles andere steht in src/main/java und weiß
-// von keinem der beiden.
-sourceSets.main.java.srcDir(useOwnRuntime ? 'src/runtime/java' : 'src/mcef/java')
+// Was org.cef berührt, steht hier und nirgends sonst: fünf Klassen gegen
+// upstream java-cef. Alles andere liegt in src/main/java und weiß von keiner
+// Chromium-Fassung. Die Trennung stammt aus der Zeit, als es zwei Wege gab —
+// sie bleibt, weil sie diese Grenze sichtbar hält.
+sourceSets.main.java.srcDir('src/runtime/java')
 
 // <b>Der Laufklassenpfad ist ein eigener.</b> Ein runtimeOnly auf eine Datei
 // landet zwar im runtimeClasspath, aber nicht in der Liste, die ModDevGradle
 // dem Client mitgibt — dort stehen nur aufgelöste Module. Für alles andere
 // gibt es je Lauf eine eigene Konfiguration, und genau die ist hier gemeint.
-if (useOwnRuntime) {
-    dependencies {
-        add(neoForge.runs.client.additionalRuntimeClasspathConfiguration.name,
-                files(new File(ownRuntimeDir, 'jcef.jar')))
-    }
+dependencies {
+    add(neoForge.runs.client.additionalRuntimeClasspathConfiguration.name,
+            files(new File(ownRuntimeDir, 'jcef.jar')))
 }
 
 dependencies {
@@ -256,28 +248,22 @@ dependencies {
     runtimeOnly "maven.modrinth:geckolib:${geckolib_version}"
     runtimeOnly "maven.modrinth:curios:${curios_version}"
 
-    // <b>MCEF wird nicht mitgeliefert und nicht eingepackt.</b> Es steht unter
-    // LGPL-2.1, diese Mod unter MIT — verträglich ist das nur, solange MCEF
-    // eine eigenständige Mod daneben bleibt und der Spieler sie austauschen
-    // kann. Also compileOnly gegen die API und runtimeOnly zum Ausprobieren,
-    // niemals implementation und niemals ein Shadow-Jar.
+    // <b>Chromium steckt nicht in diesem Jar und soll es nicht.</b> Die
+    // Laufzeitumgebung wird gebaut, nicht bezogen — sie liegt neben dem
+    // Quellbaum und wird getrennt ausgeliefert. Deshalb hier nur ein Verweis
+    // auf das gebaute jcef.jar, niemals implementation und niemals ein
+    // Shadow-Jar.
     //
-    // Chromium selbst steckt auch nicht in diesem Jar: MCEF lädt es beim
-    // ersten Start von einem eigenen Spiegel nach. Ohne Netz gibt es keinen
-    // Browser — und der Client muss das überleben.
-    if (useOwnRuntime) {
-        // Der Prüflauf: org.cef kommt aus unserem Bau, MCEF bleibt draußen.
-        // Beides zugleich geht nicht — siehe oben.
-        if (!ownRuntimeDir.exists()) {
-            throw new GradleException("Keine Laufzeitumgebung unter ${ownRuntimeDir}. "
-                    + "Erst: pwsh -File tools/runtime/build-jcef.ps1")
-        }
-        compileOnly files(new File(ownRuntimeDir, 'jcef.jar'))
-        runtimeOnly files(new File(ownRuntimeDir, 'jcef.jar'))
-    } else {
-        compileOnly "com.cinemamod:mcef:${mcef_version}"
-        runtimeOnly "com.cinemamod:mcef-neoforge:${mcef_version}"
+    // <b>Der Abbruch ist Absicht.</b> Ohne den Bau fehlt org.cef vollständig,
+    // und der Compiler meldete das als Dutzende fehlender Symbole. Eine Zeile,
+    // die den Weg nennt, ist die bessere Meldung — auch wenn sie jeden
+    // Gradle-Aufruf trifft, den clean eingeschlossen.
+    if (!ownRuntimeDir.exists()) {
+        throw new GradleException("Keine Laufzeitumgebung unter ${ownRuntimeDir}. "
+                + "Erst: pwsh -File tools/runtime/build-jcef.ps1")
     }
+    compileOnly files(new File(ownRuntimeDir, 'jcef.jar'))
+    runtimeOnly files(new File(ownRuntimeDir, 'jcef.jar'))
 
     // JEI zeigt die Rezepte der Presse. Ohne die Mod fehlt nur die Anzeige:
     // Das Plugin wird von JEI selbst gefunden, und wer es nicht hat, lädt die
