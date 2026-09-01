@@ -87,7 +87,12 @@ New-Item -ItemType Directory -Force -Path $distDir | Out-Null
 if (Test-Path -LiteralPath $archive) { Remove-Item -LiteralPath $archive -Force }
 # -C, damit im Archiv keine Wirtspfade stehen: Wer es auspackt, bekommt die
 # Dateien flach und nicht build/out/windows-x86_64/ darum herum.
-& tar -czf $archive -C $outDir .
+#
+# <b>Und ohne Zeitstempel im gzip-Kopf.</b> Ohne diese Option trägt jedes
+# Archiv die Uhrzeit seiner Entstehung, und zweimal Packen ergibt zweimal eine
+# andere Prüfsumme. Dann sagt eine geänderte Summe nichts mehr darüber aus, ob
+# sich der Inhalt geändert hat — und genau das soll sie sagen.
+& tar -czf $archive --options 'gzip:!timestamp' -C $outDir .
 if ($LASTEXITCODE -ne 0) { throw "tar fehlgeschlagen (Rückgabewert $LASTEXITCODE)" }
 $size = (Get-Item -LiteralPath $archive).Length
 Write-Host ("  {0}  {1:N0} Bytes" -f (Split-Path -Leaf $archive), $size) -ForegroundColor Green
@@ -110,6 +115,55 @@ try {
 finally {
     Remove-Item -LiteralPath $check -Recurse -Force -ErrorAction SilentlyContinue
 }
+
+Write-Step 'Prüfsumme'
+# <b>Die Prüfsumme entsteht hier und nicht beim Hochladen.</b> Sie soll das
+# Archiv beschreiben, das gerade geprüft wurde — wer sie später über eine
+# hochgeladene Datei bildet, prüft nur, dass die Übertragung heil war, und
+# nicht, dass die Datei die richtige ist.
+$hash = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+$hashFile = "$archive.sha256"
+# Format wie sha256sum: Prüfsumme, zwei Leerzeichen, Dateiname. Damit lässt
+# sich die Datei auch von Hand prüfen, ohne dieses Skript.
+Set-Content -LiteralPath $hashFile -Encoding ascii -NoNewline `
+    -Value "$hash  $(Split-Path -Leaf $archive)`n"
+Write-Host "  $hash" -ForegroundColor Green
+
+Write-Step 'dist.properties nachziehen'
+# <b>Nur den eigenen Plattform-Schlüssel ersetzen.</b> Die Datei trägt je
+# Plattform eigene Zeilen; wer sie neu schreibt, löscht mit dem Windows-Lauf
+# den Eintrag, den ein Linux-Lauf hinterlassen hat.
+$distProps = Join-Path $runtimeDir 'dist.properties'
+$lines = [System.Collections.Generic.List[string]](Get-Content -LiteralPath $distProps -Encoding utf8)
+$vorher = ($lines | Where-Object { $_ -like "runtime.$Platform.sha256=*" }) -replace '.*=', ''
+
+function Set-Key([System.Collections.Generic.List[string]]$lines, [string]$key, [string]$value) {
+    for ($i = 0; $i -lt $lines.Count; $i++) {
+        if ($lines[$i] -like "$key=*") { $lines[$i] = "$key=$value"; return }
+    }
+    $lines.Add("$key=$value")
+}
+
+Set-Key $lines 'runtime.version' $cefShort
+Set-Key $lines "runtime.$Platform.archive" (Split-Path -Leaf $archive)
+Set-Key $lines "runtime.$Platform.sha256" $hash
+Set-Content -LiteralPath $distProps -Encoding utf8 -Value $lines
+
+if ($vorher -and $vorher -ne $hash) {
+    Write-Host '  Die Prüfsumme hat sich geändert — dist.properties committen!' -ForegroundColor Yellow
+    Write-Host "  vorher  $vorher"
+    Write-Host "  jetzt   $hash"
+} else {
+    Write-Host '  unverändert' -ForegroundColor Green
+}
+
+Write-Step 'Was hochzuladen ist'
+Write-Host "  $(Split-Path -Leaf $archive)"
+Write-Host "  $(Split-Path -Leaf $hashFile)"
+Write-Host ''
+Write-Host '  Ziel: R2-Bucket factorynetwork, flach im Wurzelverzeichnis.'
+Write-Host '  Der Client holt beide unter derselben Adresse und prüft die'
+Write-Host '  Summe, bevor er auspackt.'
 
 Write-Host ''
 Write-Host "Archiv unter $archive" -ForegroundColor Green
