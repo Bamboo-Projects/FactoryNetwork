@@ -39,7 +39,9 @@ public final class FnClient {
         // auch nicht — genau das ist die Information.
         dev.devpanda.factorynetwork.client.panel.WebPanels.tick();
         dev.devpanda.factorynetwork.web.api.Overlays.tick();
+        dev.devpanda.factorynetwork.web.api.WorldSurfaces.tick();
         OverlayProof.tick();
+        WorldSurfaceDemo.tick();
     }
 
     /** Overlays über dem Bild — nach allem, was Minecraft dort malt. */
@@ -47,6 +49,27 @@ public final class FnClient {
     public static void drawOverlays(
             net.neoforged.neoforge.client.event.RenderGuiEvent.Post event) {
         dev.devpanda.factorynetwork.web.api.Overlays.draw(event.getGuiGraphics());
+    }
+
+    /**
+     * Flächen in der Welt — nach den durchscheinenden Blöcken, damit Wasser
+     * und Glas davor bleiben und die Fläche nicht durch sie hindurchleuchtet.
+     */
+    @SubscribeEvent
+    public static void drawWorldSurfaces(
+            net.neoforged.neoforge.client.event.RenderLevelStageEvent event) {
+        if (event.getStage()
+                != net.neoforged.neoforge.client.event.RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) {
+            return;
+        }
+        com.mojang.blaze3d.vertex.PoseStack pose = event.getPoseStack();
+        if (pose == null) {
+            return;
+        }
+        net.minecraft.world.phys.Vec3 camera = event.getCamera().getPosition();
+        var buffers = net.minecraft.client.Minecraft.getInstance().renderBuffers().bufferSource();
+        dev.devpanda.factorynetwork.web.api.WorldSurfaces.draw(pose, buffers,
+                camera.x, camera.y, camera.z);
     }
 
     /**
@@ -109,6 +132,7 @@ public final class FnClient {
     public static void closeBrowsersOfThisWorld(
             net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingOut event) {
         dev.devpanda.factorynetwork.web.api.Overlays.closeAll();
+        dev.devpanda.factorynetwork.web.api.WorldSurfaces.closeAll();
         dev.devpanda.factorynetwork.client.panel.WebPanels.closeAll();
         dev.devpanda.factorynetwork.web.BrowserManager.closeAll();
     }
@@ -124,6 +148,7 @@ public final class FnClient {
     @SubscribeEvent
     public static void shutDownWebRuntime(
             net.neoforged.neoforge.event.GameShuttingDownEvent event) {
+        dev.devpanda.factorynetwork.web.api.WorldSurfaces.closeAll();
         dev.devpanda.factorynetwork.client.panel.WebPanels.closeAll();
         dev.devpanda.factorynetwork.web.WebRuntime.shutdown();
     }

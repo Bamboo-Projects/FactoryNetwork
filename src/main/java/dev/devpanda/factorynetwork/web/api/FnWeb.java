@@ -108,6 +108,36 @@ public final class FnWeb {
         }
     }
 
+    /**
+     * Öffnet eine Fläche in der Welt.
+     *
+     * <p>Ort ist der Mittelpunkt in Weltkoordinaten, der Gierwinkel folgt
+     * Minecrafts Konvention (siehe {@link WorldSurface}), Breite und Höhe sind
+     * in Blöcken. Die Auflösung der Seite steht im {@code spec} in Pixeln und
+     * ist davon unabhängig.
+     *
+     * @return die Fläche, oder {@code null}, wenn es keinen Browser gibt
+     */
+    public static WorldSurface openInWorld(SurfaceSpec spec, double x, double y, double z,
+                                           float yaw, float widthBlocks, float heightBlocks) {
+        if (!available()) {
+            return null;
+        }
+        try {
+            BrowserSession session = BrowserSession.open(spec.url(), spec.transparent(),
+                    spec.width(), spec.height(), spec.visibility(), spec.name());
+            WorldSurfaceImpl surface = new WorldSurfaceImpl(
+                    new SessionSurface(session, spec.keys()),
+                    x, y, z, yaw, widthBlocks, heightBlocks);
+            WorldSurfaces.add(surface);
+            return surface;
+        } catch (Throwable broken) {
+            com.mojang.logging.LogUtils.getLogger()
+                    .warn("Die Weltfläche {} kam nicht zustande", spec.name(), broken);
+            return null;
+        }
+    }
+
     public static boolean available() {
         return WebSupport.ensureStarted().usable();
     }

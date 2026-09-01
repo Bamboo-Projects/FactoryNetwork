@@ -124,6 +124,16 @@ public final class WebCommands {
                             });
                             return 1;
                         }))
+                .then(Commands.literal("welt")
+                        .executes(context -> {
+                            later(() -> {
+                                var surface = WorldSurfaceDemo.toggle();
+                                say(surface == null
+                                        ? "Weltfläche geschlossen"
+                                        : "Weltfläche steht drei Blöcke vor dir");
+                            });
+                            return 1;
+                        }))
                 .then(Commands.literal("devtools")
                         .executes(context -> {
                             WebDevTools.show();
