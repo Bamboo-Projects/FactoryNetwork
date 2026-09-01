@@ -1,5 +1,9 @@
 # Block A ist gebaut und vermessen, der Eingabe-Adapter steht
 
+> **Weitergegangen seit dem 1. September 2026.** B4 und B3e stehen: Der Mod
+> läuft im Spiel auf der eigenen Laufzeitumgebung. Der aktuelle Bericht ist
+> **`stand-runtime-b4.md`**; hier stehen weiterhin Block A und der Adapter.
+
 Stand: 1. September 2026. Was in `plan-v1-blockA-und-input.md` als Plan steht,
 läuft jetzt: A1, A2, A3, A4a, B3a, A4b, B3b, B3c und B3d sind grün. Dieses
 Dokument ist der Bericht dazu — die Zahlen, die Abweichungen vom Plan und das,
