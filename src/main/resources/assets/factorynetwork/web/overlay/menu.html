@@ -1,0 +1,77 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Schnellmenü</title>
+<style>
+  html, body { margin: 0; height: 100%; background: transparent; overflow: hidden;
+               font: 15px/1.4 "Segoe UI", system-ui, sans-serif; color: #e6e9f2; }
+  .karte { position: absolute; inset: 0; margin: 6px; padding: 10px 12px;
+           background: rgba(14, 15, 22, .82); border: 1px solid rgba(255,255,255,.14);
+           border-radius: 10px; box-shadow: 0 6px 24px rgba(0,0,0,.45); }
+  h1 { margin: 0 0 8px; font-size: 13px; font-weight: 600; letter-spacing: .08em;
+       text-transform: uppercase; color: #8b93a7; }
+  ul { list-style: none; margin: 0; padding: 0; }
+  li { padding: 5px 8px; border-radius: 6px; }
+  li.aktiv { background: #7dd3a0; color: #0e0f16; font-weight: 600; }
+  .fuss { position: absolute; left: 12px; right: 12px; bottom: 8px; display: flex;
+          justify-content: space-between; font-size: 11px; color: #5d6478;
+          font-variant-numeric: tabular-nums; }
+  .wahl { color: #7dd3a0; }
+</style>
+<div class="karte">
+  <h1>Schnellmenü</h1>
+  <ul id="liste">
+    <li>Übersicht</li>
+    <li>Maschinen</li>
+    <li>Programme</li>
+    <li>Einstellungen</li>
+  </ul>
+  <div class="fuss">
+    <span>↑↓ wählen · Enter · Esc</span>
+    <span><span class="wahl" id="wahl">–</span> · <span id="takt">0</span></span>
+  </div>
+</div>
+<script>
+  // Jede Taste, die hier ankommt, steht danach im Protokoll des Spiels —
+  // das ist der Nachweis, dass der Filter tut, was er soll: Pfeile und
+  // Escape kommen an, W nicht.
+  const eintraege = [...document.querySelectorAll('#liste li')];
+  const wahlFeld = document.getElementById('wahl');
+  const taktFeld = document.getElementById('takt');
+  let wahl = 0;
+  let zaehler = 0;
+
+  function zeige() {
+    eintraege.forEach((e, i) => e.classList.toggle('aktiv', i === wahl));
+  }
+
+  addEventListener('keydown', e => {
+    console.log('overlay: Taste ' + e.key);
+    if (e.key === 'ArrowDown') {
+      wahl = (wahl + 1) % eintraege.length;
+    } else if (e.key === 'ArrowUp') {
+      wahl = (wahl + eintraege.length - 1) % eintraege.length;
+    } else if (e.key === 'Enter') {
+      wahlFeld.textContent = eintraege[wahl].textContent;
+      console.log('overlay: gewählt ' + eintraege[wahl].textContent);
+    } else if (e.key === 'Escape') {
+      console.log('overlay: Escape');
+    }
+    zeige();
+    e.preventDefault();
+  });
+
+  eintraege.forEach((e, i) => e.addEventListener('click', () => {
+    wahl = i;
+    wahlFeld.textContent = e.textContent;
+    console.log('overlay: geklickt ' + e.textContent);
+    zeige();
+  }));
+
+  function malen() {
+    taktFeld.textContent = ++zaehler;
+    requestAnimationFrame(malen);
+  }
+  requestAnimationFrame(malen);
+  zeige();
+  console.log('overlay: bereit');
+</script>

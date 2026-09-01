@@ -113,6 +113,17 @@ public final class WebCommands {
                             });
                             return 1;
                         }))
+                .then(Commands.literal("overlay")
+                        .executes(context -> {
+                            later(() -> {
+                                var overlay = OverlayDemo.toggle();
+                                say(overlay == null
+                                        ? "Overlay geschlossen"
+                                        : "Overlay offen: Pfeile, Enter und Escape gehen an die Seite, "
+                                                + "F10 gibt sie zurück");
+                            });
+                            return 1;
+                        }))
                 .then(Commands.literal("devtools")
                         .executes(context -> {
                             WebDevTools.show();

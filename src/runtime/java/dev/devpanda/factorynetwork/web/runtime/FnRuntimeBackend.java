@@ -48,6 +48,10 @@ public final class FnRuntimeBackend implements WebBackend {
             String reason = broken.getMessage() == null ? broken.toString() : broken.getMessage();
             throw new WebRuntimeUnavailable(WebRuntimeState.FAILED, reason);
         }
+        // Chromiums Konsole ins Protokoll — für jede Seite, nicht nur für die
+        // mit Hintergrund. Vorher hing das am Anmelden des Bildschemas, und
+        // Overlays und Tafeln liefen stumm.
+        WebConsole.attach();
         return new FnRuntimeBackend();
     }
 

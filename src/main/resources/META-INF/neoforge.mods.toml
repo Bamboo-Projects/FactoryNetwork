@@ -13,6 +13,9 @@ Connector und damit einen Namen; die gesamte Logistik wird in Manifold
 geschrieben, einer Sprache, die für Fabriken gemacht ist.
 '''
 
+[[mixins]]
+config = "factorynetwork.mixins.json"
+
 [[dependencies.${mod_id}]]
 modId = "neoforge"
 type = "required"

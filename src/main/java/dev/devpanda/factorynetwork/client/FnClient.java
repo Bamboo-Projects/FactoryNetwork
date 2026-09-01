@@ -38,6 +38,15 @@ public final class FnClient {
         // Hier und nicht im Renderer: Wer nicht gezeichnet wird, meldet sich
         // auch nicht — genau das ist die Information.
         dev.devpanda.factorynetwork.client.panel.WebPanels.tick();
+        dev.devpanda.factorynetwork.web.api.Overlays.tick();
+        OverlayProof.tick();
+    }
+
+    /** Overlays über dem Bild — nach allem, was Minecraft dort malt. */
+    @SubscribeEvent
+    public static void drawOverlays(
+            net.neoforged.neoforge.client.event.RenderGuiEvent.Post event) {
+        dev.devpanda.factorynetwork.web.api.Overlays.draw(event.getGuiGraphics());
     }
 
     /**
@@ -99,6 +108,7 @@ public final class FnClient {
     @SubscribeEvent
     public static void closeBrowsersOfThisWorld(
             net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingOut event) {
+        dev.devpanda.factorynetwork.web.api.Overlays.closeAll();
         dev.devpanda.factorynetwork.client.panel.WebPanels.closeAll();
         dev.devpanda.factorynetwork.web.BrowserManager.closeAll();
     }

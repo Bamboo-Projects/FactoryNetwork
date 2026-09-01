@@ -1,0 +1,70 @@
+package dev.devpanda.factorynetwork.client;
+
+import dev.devpanda.factorynetwork.web.api.WebOverlay;
+import net.minecraft.client.Minecraft;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Der maschinelle Nachweis für das Overlay: {@code -Dfn.overlay=true}.
+ *
+ * <p>Öffnet das Schnellmenü, sobald die Welt steht, und schreibt jede
+ * Sekunde, was von außen nicht zu sehen ist: ob ein Bildschirm offen ist
+ * (Escape darf keinen öffnen), welchen Fokus das Overlay hat, und wo der
+ * Spieler steht (W muss ihn bewegen). Die Tasten selbst kommen von außen —
+ * echte, über das Fenster, denn nur die gehen durch das Mixin.
+ */
+public final class OverlayProof {
+
+    private static final Logger LOG = LoggerFactory.getLogger("FactoryNetwork/OverlayProof");
+    /** {@code true}: Tastaturfokus. {@code mouse}: nach fünf Sekunden Mausfokus. */
+    private static final String MODE = System.getProperty("fn.overlay", "");
+    private static final boolean ENABLED = !MODE.isEmpty() && !MODE.equals("false");
+    private static final int SETTLE_TICKS = 60;
+    private static final int MOUSE_AFTER_TICKS = SETTLE_TICKS + 100;
+    private static final int REPORT_EVERY = 20;
+
+    private static int ticks;
+    private static boolean opened;
+    private static boolean mouseGiven;
+
+    private OverlayProof() {
+    }
+
+    public static void tick() {
+        if (!ENABLED) {
+            return;
+        }
+        Minecraft client = Minecraft.getInstance();
+        if (client.level == null || client.player == null) {
+            return;
+        }
+        ticks++;
+        if (!opened) {
+            if (ticks < SETTLE_TICKS) {
+                return;
+            }
+            opened = true;
+            WebOverlay overlay = OverlayDemo.open();
+            LOG.info("Overlay-Nachweis: {}", overlay == null ? "kein Overlay zu haben" : "offen, " + overlay);
+            return;
+        }
+        if (MODE.equals("mouse") && !mouseGiven && ticks >= MOUSE_AFTER_TICKS) {
+            mouseGiven = true;
+            WebOverlay overlay = OverlayDemo.current();
+            if (overlay != null) {
+                overlay.focus(dev.devpanda.factorynetwork.web.api.OverlayFocus.MOUSE);
+                LOG.info("Overlay-Nachweis: Mausfokus gegeben — {}", overlay);
+            }
+        }
+        if (ticks % REPORT_EVERY != 0) {
+            return;
+        }
+        WebOverlay overlay = OverlayDemo.current();
+        LOG.info("Overlay-Nachweis: Bildschirm={}, Fokus={}, Spieler={}",
+                client.screen == null ? "keiner" : client.screen.getClass().getSimpleName(),
+                overlay == null ? "weg" : overlay.focus(),
+                String.format(java.util.Locale.ROOT, "%.2f/%.2f",
+                        client.player.getX(), client.player.getZ()));
+    }
+}

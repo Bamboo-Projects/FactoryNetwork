@@ -74,6 +74,40 @@ public final class FnWeb {
      *
      * <p>Fährt die Laufzeitumgebung dabei hoch, wenn sie noch nicht läuft.
      */
+    /**
+     * Öffnet eine Fläche über dem Bild.
+     *
+     * <p>Breite und Höhe des Bauplans gelten hier als <b>Bildschirmpunkte</b>,
+     * nicht als Pixel — dieselbe Einheit wie {@code x} und {@code y}. Die
+     * Fläche rechnet mit der GUI-Skalierung in Browserpixel um und zieht bei
+     * einem Wechsel nach. Ohne Fokus ist sie ein Bild; siehe
+     * {@link WebOverlay#focus(OverlayFocus)}.
+     *
+     * @param x linker Rand in Bildschirmpunkten
+     * @param y oberer Rand in Bildschirmpunkten
+     * @return das Overlay, oder {@code null}, wenn es keinen Browser gibt
+     */
+    public static WebOverlay openOverlay(SurfaceSpec spec, int x, int y) {
+        if (!available()) {
+            return null;
+        }
+        try {
+            double guiScale = net.minecraft.client.Minecraft.getInstance().getWindow().getGuiScale();
+            dev.devpanda.factorynetwork.web.view.BrowserView view =
+                    new dev.devpanda.factorynetwork.web.view.BrowserView(
+                            x, y, spec.width(), spec.height(), guiScale);
+            BrowserSession session = BrowserSession.open(spec.url(), spec.transparent(),
+                    view.browserWidth(), view.browserHeight(), spec.visibility(), spec.name());
+            OverlayImpl overlay = new OverlayImpl(new SessionSurface(session, spec.keys()), view);
+            Overlays.add(overlay);
+            return overlay;
+        } catch (Throwable broken) {
+            com.mojang.logging.LogUtils.getLogger()
+                    .warn("Das Overlay {} kam nicht zustande", spec.name(), broken);
+            return null;
+        }
+    }
+
     public static boolean available() {
         return WebSupport.ensureStarted().usable();
     }
