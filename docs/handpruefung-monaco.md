@@ -1,7 +1,8 @@
 # Handprüfung Monaco
 
 **Status: gefahren am 1. September 2026 auf der eigenen Laufzeitumgebung.
-Ergebnis: drei Fehlschläge.**
+Drei Fehlschläge, alle drei mit Ursache belegt. Zwei sind behoben und vom
+Menschen nachgeprüft; beim dritten steht der Fix, die Nachprüfung fehlt.**
 
 Diese Liste kann kein Programm abhaken. Alles darin hängt an einem Menschen an
 einer echten Tastatur — an einem deutschen Layout, an dem Gefühl, ob Scrollen
@@ -31,7 +32,7 @@ bisher. **Wo sich beide unterscheiden, ist der interessante Fall.**
 | Nr. | Prüfung | Erwartung | eigene Laufzeit |
 |---|---|---|---|
 | 1 | Fließtext tippen | zeichengenau, keine Dopplungen | **ja** |
-| 1a | **Eingabetaste** | erzeugt einen Zeilenumbruch | **NEIN** — Befund 1 |
+| 1a | **Eingabetaste** | erzeugt einen Zeilenumbruch | **ja**, nach Befund 1 |
 | 2 | Deutsches Layout: `ä ö ü ß` | erscheinen korrekt | **ja** |
 | 3–5 | AltGr: `@ € \ ~ \|` | erscheinen, kein Kürzel geht auf | **ja** |
 | 6 | Strg+C und Strg+V | Zwischenablage in beide Richtungen | **ja** |
@@ -40,7 +41,7 @@ bisher. **Wo sich beide unterscheiden, ist der interessante Fall.**
 | 9 | Mehrfachcursor (`Alt+Klick`) | zweiter Cursor entsteht | **ja** |
 | 10 | IntelliSense | Liste öffnet, Pfeile navigieren, Eingabe übernimmt | **ja** |
 | 11 | Schweben über einem Bezeichner | Hinweisfenster erscheint | **ja**, Inhalt noch Platzhalter |
-| 12–13 | `Esc` | erst die Liste, dann der Bildschirm | **NEIN** — Befund 2 |
+| 12–13 | `Esc` | erst die Liste, dann der Bildschirm | **ja**, nach Befund 2 |
 | 14 | Umschalt+Pfeil | erweitert die Auswahl | **ja** |
 | 15 | Pos1 / Ende | springen an Zeilenanfang und -ende | **ja** |
 | 16 | Bild auf / Bild ab | blättern seitenweise | **ja** |
@@ -48,7 +49,7 @@ bisher. **Wo sich beide unterscheiden, ist der interessante Fall.**
 | 18 | Doppelklick auf ein Wort | wählt das Wort | **ja** |
 | 19 | Ziehen über Text | Auswahl entsteht | **ja** |
 | 20 | Rechtsklick | greift oder tut nichts, aber nichts Kaputtes | **ja** |
-| 21 | **Mauszeiger über der Navigation** | Pfeil oder Hand | **NEIN** — Befund 3 |
+| 21 | **Mauszeiger über der Dateiliste** | Hand | **offen** — Fix zu Befund 3 ungeprüft |
 
 ---
 
@@ -112,36 +113,62 @@ hintereinander ohne andere Taste dazwischen, schließt das zweite den
 Bildschirm. Rund zehn Zeilen, und Java muss nicht wissen, was Monaco gerade
 offen hat.
 
-### 3. Falscher Mauszeiger über der Navigation
+### 3. Falscher Mauszeiger über der Dateiliste
 
 ```text
-Eingabe:     Mauszeiger über die Dateiliste bewegen
-Erwartet:    Pfeil oder Hand
-Tatsächlich: ein Größenänderungs-Zeiger
+Eingabe:     Mauszeiger über die Dateien in der Seitenleiste
+Erwartet:    Hand — die Regel dort ist cursor:pointer
+Tatsächlich: Größenänderungszeiger nach Südwest
 ```
 
-**Was gemessen ist:** Chromium hat `SOUTH_WEST_RESIZE (12)` angefordert.
+**Die Ursache liegt in unserem Code, nicht in der Seite.** Upstream java-cef
+meldet keinen CEF-Zeiger. Sein nativer Teil übersetzt vorher:
 
-**Die Übersetzung ist damit nicht die Ursache.** Kennung 12 ist in CEF 146
-tatsächlich `CT_SOUTHWESTRESIZE` — nachgesehen in `cef_types.h` der
-Distribution —, und unsere Tabelle bildet sie auf den richtigen GLFW-Zeiger ab.
+```cpp
+// display_handler.cpp, GetCursorId — upstream java-cef
+case CT_HAND:   return JNI_STATIC(HAND_CURSOR);   // aus 2 wird 12
+case CT_IBEAM:  return JNI_STATIC(TEXT_CURSOR);   // aus 3 wird 2
+default:        return JNI_STATIC(DEFAULT_CURSOR);
+```
 
-Offen bleibt, ob die Seite ihn dort selbst anfordert oder ob das Zurücksetzen
-ausbleibt. Unser eigener Seitenstil setzt keinen Größenänderungs-Zeiger;
-Monacos mitgelieferter tut es an mehreren Stellen.
+Unsere Tabelle liest jedoch die Ordnungszahl von `cef_cursor_type_t` — sie
+stammt aus dem CinemaMod-Fork, und der reichte sie roh durch. Auf diesem Weg
+liest sie damit den falschen Wertevorrat.
 
-**Kleinster nächster Schritt — eine Messung, kein Fix:** dieselbe Stelle auf
-dem MCEF-Weg anfahren (`./gradlew runClient -Pide`). Zeigt sich dort derselbe
-Zeiger, gehört der Fehler in die Seite und nicht in die Laufzeitumgebung.
-Dazu hilft eine Protokollzeile je Zeigerwechsel statt nur je neuer Art — heute
-wird jede Art genau einmal geschrieben, und damit ist ein ausbleibendes
-Zurücksetzen unsichtbar.
+Die Zahlen liegen so ungünstig, dass nichts auffällt außer dem Zeiger selbst:
 
-**Unabhängig davon ein echter Fund:** Unsere Zeigertabelle stammt aus der
-CEF-116-Zeit und stimmt mit CEF 146 nur bis Kennung 42 überein. CEF 146 hat
-`CT_MIDDLE_PANNING_VERTICAL` und `CT_MIDDLE_PANNING_HORIZONTAL` **vor**
-`CT_CUSTOM` eingefügt; ab 43 zeigt unsere Tabelle auf die falschen Namen. Für
-den Fall hier ohne Bedeutung, für die Vollständigkeit nicht.
+| gemeldet | wir lasen | gemeint war | Stelle in der Seite |
+|---|---|---|---|
+| 0 | POINTER | DEFAULT — Pfeil | `.ordner`, ohne eigene Regel |
+| 2 | HAND | TEXT — Schreibmarke | über Text |
+| 12 | SOUTH_WEST_RESIZE | HAND | `.datei { cursor:pointer }` |
+
+**Was der Verdacht auf die Seite widerlegt hat:** Im Protokoll dieses Laufs
+steht die 12 **3,8 Sekunden am Stück** — das ist ein Verweilen über einer
+Datei, kein Streifen einer Kante. Eine 3 kommt nirgends vor, obwohl über
+Monacos Text eine Schreibmarke fällig wäre. Und unser Seitenstil setzt an
+keiner Stelle einen Größenänderungszeiger.
+
+**Behoben** durch `AwtCursors` auf dem Weg der eigenen Laufzeitumgebung: Die
+AWT-Kennung wird auf die Ordnungszahl von Chromium zurückgerechnet, bevor sie
+weitergereicht wird. Alles dahinter bleibt für beide Wege gleich, und die
+gemeinsame Tabelle wird nicht angefasst — auf dem MCEF-Weg stimmt sie ja.
+
+**Nachzuprüfen bleibt es im Spiel.** Der Beleg ist bisher der Quelltext, nicht
+ein Lauf.
+
+**Was dabei verlorengeht.** Der `switch` im nativen Teil kennt dreizehn Fälle
+und macht aus allem übrigen `DEFAULT_CURSOR`. Verbotsschild, Greifhand und
+Lupe kommen deshalb als Pfeil an. Für Greifhand und Lupe hat GLFW ohnehin
+keinen Zeiger; das Verbotsschild wäre nur mit einem weiteren Patch am nativen
+Teil zurückzuholen.
+
+**Und der zweite Fund bleibt bestehen:** Unsere Zeigertabelle stammt aus der
+CEF-116-Zeit und stimmt mit CEF 146 nur bis Kennung 42 überein — nachgesehen
+in `cef_types.h` der Distribution. CEF 146 hat `CT_MIDDLE_PANNING_VERTICAL`
+und `CT_MIDDLE_PANNING_HORIZONTAL` **vor** `CT_CUSTOM` eingefügt; ab 43 zeigt
+sie auf die falschen Namen. Für den Fall hier ohne Bedeutung, weil der native
+Teil so hohe Werte nie durchlässt.
 
 ---
 
@@ -155,6 +182,12 @@ dieser Prüfung.
 
 ## Bevor MCEF entfernt wird
 
-Die drei Befunde gehören behoben und nachgeprüft. Befund 1 und 2 liegen in
-unserem Code und sind klein; Befund 3 braucht zuerst die eine Vergleichsmessung
-auf dem MCEF-Weg, die sagt, wo er überhaupt hingehört.
+Befund 1 und 2 sind behoben und **von Hand nachgeprüft** — die Eingabetaste
+macht eine Zeile, das zweite Escape schließt den Bildschirm.
+
+Bei Befund 3 steht der Fix, aber **niemand hat ihn im Spiel gesehen**. Das
+gehört nachgeholt, bevor irgendetwas als bestanden gilt: Zeiger über eine
+Datei in der Seitenleiste halten, es muss die Hand sein.
+
+Die geplante Vergleichsmessung auf dem MCEF-Weg entfällt — die Ursache steht
+im Quelltext von java-cef, und sie liegt auf unserer Seite.

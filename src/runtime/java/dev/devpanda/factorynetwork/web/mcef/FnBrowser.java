@@ -393,10 +393,19 @@ public class FnBrowser extends CefBrowser_N implements CefRenderHandler {
         }
     }
 
+    /**
+     * Chromium hätte gern einen anderen Mauszeiger.
+     *
+     * <p><b>Was hier ankommt, ist eine AWT-Kennung und kein CEF-Zeiger.</b>
+     * Der native Teil dieser Fassung übersetzt bereits — siehe
+     * {@link AwtCursors}. Weitergereicht wird die Ordnungszahl von Chromium,
+     * damit alles dahinter für beide Wege gleich aussieht.
+     */
     @Override
     public boolean onCursorChange(CefBrowser browser, int cursorType) {
         if (events != null) {
-            guarded("onCursorChange", () -> events.cursorChanged(cursorType));
+            int cefType = AwtCursors.toCefCursorType(cursorType);
+            guarded("onCursorChange", () -> events.cursorChanged(cefType));
         }
         // Wahr heißt: Wir haben uns gekümmert. Chromium versucht sonst, selbst
         // einen Zeiger zu setzen — auf ein Fenster, das es nicht gibt.
