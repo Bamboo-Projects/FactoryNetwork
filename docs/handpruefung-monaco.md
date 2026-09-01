@@ -182,11 +182,15 @@ Teil so hohe Werte nie durchlässt.
 
 ---
 
-## Ein Wunsch, kein Fehler
+## Was aufgefallen ist und nicht hierher gehört
 
-Registerkarten oben mit der mittleren Maustaste schließen. Das gehört in die
-Oberfläche des Editors, nicht in die Laufzeitumgebung, und ist kein Teil
-dieser Prüfung.
+Zwei Punkte betreffen die Seite und nicht die Laufzeitumgebung: die fehlenden
+Ordner in der Seitenleiste und Registerkarten, die sich mit der mittleren
+Maustaste schließen lassen sollen.
+
+Beide stehen in [`ide-offene-punkte.md`](ide-offene-punkte.md) und sind **kein
+Teil dieser Prüfung** — die Grenze steht in
+[`grenze-runtime-ide.md`](grenze-runtime-ide.md).
 
 ---
 
