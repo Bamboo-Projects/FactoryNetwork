@@ -9,9 +9,9 @@ mehr hilft — den harten Abbruch.
 
 ## In einem Satz
 
-Ein normaler Ausgang lässt **null** Hilfsprozesse zurück, ein harter Abbruch
-mit Wächter ebenfalls, und der Verwalter zählt über einen ganzen Lebenslauf
-hinweg sauber auf null zurück.
+Ein normaler Ausgang lässt **null** Hilfsprozesse zurück, drei harte Abbrüche
+mit Wächter ebenfalls, der Verwalter zählt über einen ganzen Lebenslauf sauber
+auf null zurück — und die Meldung ohne Stapel ist gefunden und behoben.
 
 ---
 
@@ -154,39 +154,106 @@ Abbruch — der Client beendete sich mit Rückgabewert null.
 
 ---
 
-## Die Meldung ohne Stapel
+## Die Meldung ohne Stapel — gefunden und behoben
 
-Unverändert offen. Neu ist nur das Werkzeug: `-Ptrace` schreibt jetzt je
-Browser eine Spur mit Nummer und Threadnamen —
+**Sie war echt: ein `StackOverflowError` in einer Endlosschleife über den
+Fokus.** Gefunden hat sie die Spur aus diesem Schritt — erst mit einer
+Protokollzeile in `setFocus` kam auch der Stapel mit:
 
 ```text
-createImmediately · createBrowser zurück · resize · setFocus
-erstes onPaint · onBeforeClose
+FnBrowser.setFocus(true)
+  → CefBrowser_N.setFocus → N_SetFocus (nativ)
+      → CefClient.onGotFocus            (upstream, CefClient.java:461)
+          → browser.setFocus(true)      zurück auf Anfang
 ```
 
-— damit sich die Kopfzeilen dazwischen einordnen lassen. **Gelaufen ist diese
-Spur noch nicht:** Die Sitzung des Rechners verlor ihren Bildschirm
-(`glfwGetPrimaryMonitor failed`), und ohne Bildschirm startet der Client
-nicht. Drei Versuche, dreimal derselbe Abbruch.
+Die Schleife läuft, bis der Stapel überläuft; der native Teil schluckt den
+Fehler und macht weiter. Sichtbar war davon nur die Kopfzeile — ein bis sieben
+Mal je Browsererzeugung, je nachdem wie oft der Bildschirm den Fokus setzt.
 
-Was vorher bekannt war, gilt weiter: nur auf dem neuen Weg, ein- bis siebenmal
-je Browsererzeugung, kein eigener Rückruf meldet etwas, kein Stapel auch mit
-`-XX:-OmitStackTraceInFastThrow`, `-Xcheck:jni` bricht den Prozess vorher ab,
-keine messbare Folge.
+**Warum MCEF sie nie zeigte** — der fünfte Unterschied zwischen Fork und
+upstream, und der erste, der ein Fehler ist:
+
+```java
+// upstream                          // CinemaMod-Fork
+focusedBrowser_ = browser;           if (focusHandler_ != null)
+browser.setFocus(true);   ← Rückschlag    focusHandler_.onGotFocus(browser);
+if (focusHandler_ != null) …
+```
+
+Gebrochen wird der Kreis bei uns: eine Bremse in `FnBrowser.setFocus`, die
+Chromiums Rückmeldung auf den gerade gesetzten Fokus nicht ein zweites Mal
+weiterreicht. Die andere Hälfte gehört upstream, und ein Patch dagegen wäre
+einer gegen fremdes Fokusverhalten statt gegen eine fehlende Möglichkeit.
+
+**Gegenprobe im Spiel:** null Meldungen, `setFocus` dreimal statt dutzendfach,
+und die Spur liest sich sauber:
+
+```text
+Spur Browser 1: createImmediately
+Spur Browser 1: createBrowser zurück
+Spur Browser 1: resize auf 1920x1080
+Spur Browser 1: setFocus true
+Spur Browser 1: erstes onPaint 1920x1080
+```
+
+---
+
+## Die Nachprüfungen
+
+### Harter Abbruch mit Wächter — dreimal
+
+| Lauf | Helfer vorher | danach |
+|---|---|---|
+| 1 | 5 | **0** |
+| 2 | 5 | **0** |
+| 3 | 5 | **0** |
+
+### Start ohne Gradle
+
+Über das erzeugte `runClient.cmd` — das, was eine Entwicklungsumgebung im
+Kern auch tut:
+
+```text
+ProcessGuard: aktiv — Job Object mit KILL_ON_JOB_CLOSE (schon im Job: nein)
+```
+
+**Ungeprüft bleibt der echte Launcher.** Dort kann der Prozess bereits in
+einem Job liegen; `AssignProcessToJobObject` scheiterte dann mit Fehler 5, und
+der Protokolltext dafür steht bereit.
+
+### Messwerte nach dem Fix — und warum sie sich verschoben haben
+
+Der Rechner hat inzwischen **vier Monitore statt einem**. Absolute Zahlen sind
+deshalb nicht mit denen aus B4 vergleichbar. Was vergleichbar ist, ist
+dieselbe Messung auf beiden Wegen, unmittelbar nacheinander:
+
+| Größe | MCEF (CEF 116) | eigene Laufzeit (CEF 146) |
+|---|---|---|
+| Takt A p50 | 33,40 ms = **29,9/s** | **16,58 ms = 60,3/s** |
+| Eingabe→Bild p50 | 32,1 ms | **27,1 ms** |
+| Eingabe→Bild p95 | **55,4 ms** | 59,6 ms |
+| Upload p50 | **9,7 ms** | 13,9 ms |
+| Minecrafts Bildzeit p50 | 9,0 ms | 9,2 ms |
+
+**Der Takt ist der Punkt:** doppelt so viele Bilder, und MCEFs 29,9 zeigen die
+Deckelung, gegen die der ganze Umbau angetreten ist. Beim p95 liegt der neue
+Weg heute vier Millisekunden hinter MCEF — bei doppelter Bildzahl in Stufe A
+und auf einem Rechner, der zwischen den Messungen drei Monitore dazubekommen
+hat. Ein Rückschritt durch den Fokus-Fix ist ausgeschlossen: Er nimmt Arbeit
+weg, er fügt keine hinzu.
 
 ---
 
 ## Was noch offen ist
 
 ```text
-harter Abbruch mit Wächter    einmal gemessen, Wiederholungen blockiert
-Spur um die Ausnahme          gebaut, nicht gefahren
-Handprüfung in Monaco         Liste steht, nicht gefahren
+Handprüfung in Monaco     Liste steht, nicht gefahren — braucht einen Menschen
+echter Launcher           ungeprüft, Protokolltext steht bereit
+p95 in Stufe B            heute vier Millisekunden hinter MCEF, bei anderer
+                          Monitorlage als in B4 gemessen — nachmessen, wenn
+                          der Rechner wieder in einem festen Zustand ist
 ```
-
-Alle drei hängen an derselben Ursache: Der Client startet auf diesem Rechner
-gerade nicht, weil die Sitzung keinen Bildschirm mehr hat. Das ist eine
-Umgebungsfrage, kein Befund über den Code.
 
 Die Liste für die Handprüfung liegt als `handpruefung-monaco.md` bereit —
 zwanzig Zeilen, je eine Spalte für beide Wege.
@@ -198,10 +265,7 @@ zwanzig Zeilen, je eine Spalte für beide Wege.
 Nicht ausgeführt, nur vorgeschlagen:
 
 ```text
-1. die drei blockierten Läufe nachholen, sobald ein Bildschirm da ist
-   ./gradlew runClient -Pfnruntime -Pide -Ptrace     Spur zur Ausnahme
-   harter Abbruch, drei Wiederholungen               Wächter
-2. Handprüfung in Monaco fahren
+1. Handprüfung in Monaco fahren — nach docs/handpruefung-monaco.md
 danach erst
 B8  MCEF-Importe raus
 B9  MCEF entfernen
