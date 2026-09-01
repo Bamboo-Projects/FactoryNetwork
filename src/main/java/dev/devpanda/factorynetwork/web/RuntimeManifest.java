@@ -26,6 +26,18 @@ public final class RuntimeManifest {
 
     private static Properties values;
 
+    /**
+     * Nur für Prüfläufe: ein anderes Manifest unterschieben.
+     *
+     * <p>Seit im echten Manifest eine Adresse steht, würde ein Prüflauf über
+     * {@link RuntimeInstall#locate} sonst wirklich laden — hundertsiebzig
+     * Megabyte, bei jedem {@code gradle test}. {@code null} stellt das echte
+     * wieder her.
+     */
+    static synchronized void useForTests(Properties override) {
+        values = override;
+    }
+
     private RuntimeManifest() {
     }
 

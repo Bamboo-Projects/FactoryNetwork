@@ -13,6 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.util.HexFormat;
+import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -43,6 +44,24 @@ class RuntimeInstallTest {
             server = null;
         }
         System.clearProperty("fn.runtime.dir");
+        RuntimeManifest.useForTests(null);
+    }
+
+    /**
+     * Ein Manifest für den Prüflauf.
+     *
+     * <p>Das echte im Klassenpfad nennt seit der Auslieferung eine Adresse —
+     * wer damit {@code locate} ruft, lädt wirklich. Hier steht stattdessen,
+     * was der jeweilige Fall braucht: mit oder ohne Adresse, mit der Prüfsumme
+     * des Archivs, das der eigene Server ausliefert.
+     */
+    private static Properties manifest(String baseUrl, String sha256) {
+        Properties values = new Properties();
+        values.setProperty("runtime.version", "0.0-probe");
+        values.setProperty("runtime.base-url", baseUrl);
+        values.setProperty("runtime." + RuntimeManifest.platform() + ".archive", "probe.tar.gz");
+        values.setProperty("runtime." + RuntimeManifest.platform() + ".sha256", sha256);
+        return values;
     }
 
     // ---- Die Suchreihenfolge ------------------------------------------------
@@ -90,6 +109,7 @@ class RuntimeInstallTest {
         // Datei, an der die Suche einen fertigen Ordner erkennt, liegt schon
         // da — der Rest fehlt.
         Files.writeString(cache.resolve(".unvollstaendig"), "abgebrochen");
+        RuntimeManifest.useForTests(manifest("", "0".repeat(64)));
 
         assertFalse(RuntimeInstall.complete(cache.toFile()));
         assertThrows(WebRuntimeUnavailable.class, () -> RuntimeInstall.locate(game.toFile()));
@@ -107,6 +127,8 @@ class RuntimeInstallTest {
     @Test
     @DisplayName("Ohne hinterlegte Adresse wird nichts geladen")
     void withoutAnAddressNothingIsFetched(@TempDir Path game) {
+        RuntimeManifest.useForTests(manifest("", "0".repeat(64)));
+
         // So steht es heute im Manifest: base-url ist leer, solange keine
         // öffentliche Adresse existiert.
         WebRuntimeUnavailable thrown = assertThrows(WebRuntimeUnavailable.class,
@@ -117,6 +139,30 @@ class RuntimeInstallTest {
     }
 
     // ---- Laden, prüfen, auspacken -------------------------------------------
+
+    @Test
+    @DisplayName("Mit Adresse läuft der Download im Hintergrund, und der zweite Blick findet den Ordner")
+    void withAnAddressTheFetchRunsInTheBackground(@TempDir Path game) throws Exception {
+        byte[] archive = tarGzWith("jcef.jar", "inhalt");
+        String url = serve(archive);
+        // Die Adresse ohne den Dateinamen: locate hängt ihn selbst an.
+        RuntimeManifest.useForTests(manifest(url.substring(0, url.lastIndexOf('/')), sha256(archive)));
+
+        WebRuntimeUnavailable thrown = assertThrows(WebRuntimeUnavailable.class,
+                () -> RuntimeInstall.locate(game.toFile()));
+        assertEquals(WebRuntimeState.NOT_DOWNLOADED, thrown.status().state());
+
+        // Nicht auf Verdacht schlafen, sondern warten, bis der Thread fertig
+        // ist — mit einer Frist, damit ein hängender Download den Prüflauf
+        // nicht mitnimmt.
+        long deadline = System.currentTimeMillis() + 10_000;
+        while (RuntimeInstall.downloading() && System.currentTimeMillis() < deadline) {
+            Thread.sleep(20);
+        }
+        assertFalse(RuntimeInstall.downloading(), "der Download muss in zehn Sekunden durch sein");
+        assertEquals(RuntimeInstall.cacheDir(game.toFile()), RuntimeInstall.locate(game.toFile()),
+                "der zweite Blick findet, was der erste angestoßen hat");
+    }
 
     @Test
     @DisplayName("Ein Archiv wird geladen, geprüft und ausgepackt")

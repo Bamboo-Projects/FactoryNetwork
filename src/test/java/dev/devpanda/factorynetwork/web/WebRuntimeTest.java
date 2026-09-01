@@ -153,6 +153,28 @@ class WebRuntimeTest {
     }
 
     @Test
+    @DisplayName("Nach dem Herunterfahren ist Schluss — kein zweiter Start")
+    void afterShutdownNothingRestarts() {
+        // Der Unterbau meldet den Endzustand; die Runtime darf ihn nicht als
+        // Anlass für einen weiteren Versuch nehmen. Beim Beenden des Spiels
+        // kommt genau dieser Aufruf noch einmal aus dem Renderpfad.
+        AtomicInteger attempts = new AtomicInteger();
+
+        WebRuntime.start(() -> {
+            attempts.incrementAndGet();
+            throw new WebRuntimeUnavailable(WebRuntimeState.SHUT_DOWN, "Chromium ist unten");
+        });
+        WebRuntime.retry(() -> {
+            attempts.incrementAndGet();
+            return new FakeBackend();
+        });
+
+        assertEquals(1, attempts.get(), "CEF startet je Prozess nur einmal");
+        assertEquals(WebRuntimeState.SHUT_DOWN, WebRuntime.status().state());
+        assertFalse(WebRuntime.status().state().worthRetrying());
+    }
+
+    @Test
     @DisplayName("Nach einem Fehlschlag darf man es erneut versuchen")
     void afterAFailureRetryingWorks() {
         WebRuntime.start(() -> {

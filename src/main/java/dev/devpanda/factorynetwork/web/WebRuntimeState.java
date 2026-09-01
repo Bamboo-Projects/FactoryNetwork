@@ -3,7 +3,7 @@ package dev.devpanda.factorynetwork.web;
 /**
  * Warum es gerade einen Browser gibt — oder keinen.
  *
- * <p><b>Fünf Zustände und kein {@code boolean}.</b> „Web geht nicht" ist keine
+ * <p><b>Ein Zustand je Grund und kein {@code boolean}.</b> „Web geht nicht" ist keine
  * Auskunft: Wem die Laufzeitumgebung fehlt, der braucht einen anderen Satz als
  * wer hinter einem Firmen-Proxy sitzt, und beide einen anderen als jemand auf
  * einer Plattform, für die es keine Binärdateien gibt. Ein zusammengefasstes
@@ -24,9 +24,9 @@ public enum WebRuntimeState {
      * <p>Chromium wiegt 379 Megabyte und steckt deshalb nicht im Jar dieser
      * Mod. Wer es nachlädt, hat beim nächsten Start einen Browser.
      *
-     * <p><b>Wird heute noch von niemandem gesetzt.</b> Der Zustand wartet auf
-     * die Auslieferung der Laufzeitumgebung; bis dahin endet ein fehlender
-     * Ordner in {@link #FAILED} mit der Zeile, die den Bauweg nennt.
+     * <p>Gesetzt von {@link RuntimeInstall}, wenn ein über {@code fn.runtime.dir}
+     * genannter Ordner leer ist oder das Manifest keine Adresse zum Nachladen
+     * kennt.
      */
     RUNTIME_MISSING,
 
@@ -37,20 +37,18 @@ public enum WebRuntimeState {
      * fehlender Download, sonst sucht jemand stundenlang an der falschen
      * Stelle.
      *
-     * <p><b>Wird heute noch von niemandem gesetzt</b>, aus demselben Grund wie
-     * {@link #RUNTIME_MISSING}. Gebaut ist bisher nur {@code windows-x86_64}.
+     * <p>Gesetzt von {@link RuntimeInstall}, wenn das Manifest für diese
+     * Plattform keinen Eintrag hat. Gebaut ist bisher nur {@code windows-x86_64}.
      */
     UNSUPPORTED,
 
     /**
      * Chromium ist noch nicht auf der Platte.
      *
-     * <p>Vorgesehen für den Nachlademechanismus: Hinter einem Proxy, ohne Netz
-     * oder wenn die Ablage steht, bleibt es dabei — und das ist ein Zustand,
-     * der beim nächsten Versuch anders ausgehen kann.
-     *
-     * <p><b>Wird heute noch von niemandem gesetzt</b>, aus demselben Grund wie
-     * {@link #RUNTIME_MISSING}.
+     * <p>Gesetzt von {@link RuntimeInstall}, sobald der Download im Hintergrund
+     * angestoßen ist. Hinter einem Proxy, ohne Netz oder wenn die Ablage steht,
+     * bleibt es dabei — und das ist ein Zustand, der beim nächsten Versuch
+     * anders ausgehen kann.
      */
     NOT_DOWNLOADED,
 
@@ -62,6 +60,17 @@ public enum WebRuntimeState {
      * im {@link WebRuntimeStatus}.
      */
     FAILED,
+
+    /**
+     * Chromium war da und ist heruntergefahren.
+     *
+     * <p>Ein Endzustand: CEF lässt sich je Prozess nur einmal starten. Er
+     * entsteht beim Beenden des Spiels, wenn nach dem Herunterfahren noch ein
+     * Bild gemalt wird und jemand dabei einen Browser will — der bekommt diese
+     * Auskunft statt eines Neustartversuchs, der als Fehler mit Stapel im
+     * Protokoll endete.
+     */
+    SHUT_DOWN,
 
     /** Es läuft. */
     READY;

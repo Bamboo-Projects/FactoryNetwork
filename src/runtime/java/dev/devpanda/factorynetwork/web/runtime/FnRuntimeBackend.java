@@ -37,6 +37,13 @@ public final class FnRuntimeBackend implements WebBackend {
     public static WebBackend create() {
         try {
             FnCefRuntime.ensureStarted();
+        } catch (WebRuntimeUnavailable known) {
+            // <b>Unverändert weiter.</b> Der Griff nach der Laufzeitumgebung
+            // sagt, was fehlt — liegt nicht da, wird geladen, keine
+            // Binärdateien, schon heruntergefahren. In FAILED umgepackt käme
+            // davon nur der Text an, und der Zustand, an dem Oberfläche und
+            // Wiederholung hängen, wäre weg.
+            throw known;
         } catch (Throwable broken) {
             String reason = broken.getMessage() == null ? broken.toString() : broken.getMessage();
             throw new WebRuntimeUnavailable(WebRuntimeState.FAILED, reason);

@@ -48,6 +48,9 @@ public final class FnCefRuntime {
     private static Thread owner;
     private static boolean failed;
     private static String failure;
+    /** Ein vorhergesehener Grund, der sich nicht ändert — kommt beim nächsten Griff unverändert wieder. */
+    private static dev.devpanda.factorynetwork.web.WebRuntimeStatus knownFailure;
+    private static boolean shutDown;
 
     /**
      * Fährt hoch, falls nötig, und gibt den Thread zurück, dem CEF gehört.
@@ -58,6 +61,21 @@ public final class FnCefRuntime {
     public static synchronized void ensureStarted() {
         if (app != null) {
             return;
+        }
+        if (shutDown) {
+            // <b>Ein Endzustand, keine Wiederholung.</b> CEF lässt sich je
+            // Prozess nur einmal starten. Beim Beenden malt Minecraft nach dem
+            // Herunterfahren noch ein Bild, und wer dabei einen Browser will,
+            // bekommt diese Auskunft — kein zweiter Startversuch, der mit
+            // „Settings can only be passed to CEF before createClient" als
+            // Fehler mit Stapel im Protokoll endete.
+            throw new dev.devpanda.factorynetwork.web.WebRuntimeUnavailable(
+                    dev.devpanda.factorynetwork.web.WebRuntimeState.SHUT_DOWN,
+                    "Chromium ist heruntergefahren und startet in diesem Prozess nicht neu");
+        }
+        if (knownFailure != null) {
+            throw new dev.devpanda.factorynetwork.web.WebRuntimeUnavailable(
+                    knownFailure.state(), knownFailure.reason());
         }
         if (failed) {
             throw new IllegalStateException(failure);
@@ -72,10 +90,11 @@ public final class FnCefRuntime {
             //
             // Und er wird nicht gemerkt, wenn ein zweiter Versuch lohnt: Nach
             // einem Download soll derselbe Aufruf durchgehen und nicht an
-            // einem Merkposten scheitern.
+            // einem Merkposten scheitern. Gemerkt wird der Zustand selbst,
+            // nicht sein Text — sonst käme beim zweiten Griff ein FAILED mit
+            // dem Wortlaut eines anderen Grundes.
             if (!known.status().state().worthRetrying()) {
-                failed = true;
-                failure = known.getMessage();
+                knownFailure = known.status();
             }
             throw known;
         } catch (Throwable broken) {
@@ -205,6 +224,7 @@ public final class FnCefRuntime {
         CefApp closing = app;
         app = null;
         client = null;
+        shutDown = true;
         try {
             closing.dispose();
             for (int i = 0; i < 200 && CefApp.getState() != CefApp.CefAppState.TERMINATED; i++) {

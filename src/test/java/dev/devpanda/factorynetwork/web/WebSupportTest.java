@@ -5,6 +5,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.Properties;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -24,9 +27,24 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class WebSupportTest {
 
     @BeforeEach
-    @AfterEach
     void reset() {
         WebRuntime.shutdown();
+        // <b>Ein Manifest ohne Adresse.</b> Das echte im Klassenpfad nennt
+        // seit der Auslieferung eine — und der Griff nach der Laufzeitumgebung
+        // stieße damit aus dem Prüflauf heraus einen echten Download an, ins
+        // Arbeitsverzeichnis von Gradle. Ohne Adresse endet er im Zustand,
+        // den dieser Prüflauf sehen will.
+        Properties offline = new Properties();
+        offline.setProperty("runtime.version", "0.0-probe");
+        offline.setProperty("runtime." + RuntimeManifest.platform() + ".archive", "probe.tar.gz");
+        offline.setProperty("runtime." + RuntimeManifest.platform() + ".sha256", "0".repeat(64));
+        RuntimeManifest.useForTests(offline);
+    }
+
+    @AfterEach
+    void restore() {
+        WebRuntime.shutdown();
+        RuntimeManifest.useForTests(null);
     }
 
     @Test
@@ -38,13 +56,12 @@ class WebSupportTest {
         assertFalse(status.usable(), "ohne Laufzeitumgebung kann nichts nutzbar sein");
         assertFalse(WebRuntime.isAvailable());
 
-        // Welcher der beiden Gründe es wird, hängt daran, wie weit der Griff
-        // kommt: Wer den fehlenden Ordner sieht, meldet ihn; wer stattdessen
-        // eine Klasse aus org.cef anfasst, bekommt einen Error und keine
-        // Exception. Beide Wege sind vorgesehen, beide enden hier.
-        assertTrue(status.state() == WebRuntimeState.RUNTIME_MISSING
-                        || status.state() == WebRuntimeState.FAILED,
-                "unerwarteter Zustand: " + status);
+        // <b>Der Grund muss unverändert ankommen.</b> Der Griff nach der
+        // Laufzeitumgebung findet den Ordner nicht und sagt das als
+        // RUNTIME_MISSING; wer das unterwegs in FAILED umpackt, macht aus
+        // „liegt nicht da" ein „kaputt" — und aus „wird geladen" ebenso.
+        assertEquals(WebRuntimeState.RUNTIME_MISSING, status.state(),
+                "der Grund muss unverändert durchkommen: " + status);
     }
 
     @Test

@@ -34,3 +34,4 @@ Thumbs.db
 
 # Das Paket der VS-Code-Erweiterung: gebaut aus editor/vscode, kein Quelltext.
 *.vsix
+.wrangler/
