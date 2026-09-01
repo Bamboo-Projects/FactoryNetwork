@@ -189,7 +189,13 @@ public class BrowserScreen extends Screen {
             // Jede Art einmal ins Protokoll: Ob die Zeigerwechsel überhaupt
             // ankommen, sieht man sonst nur, indem man hinsieht — und
             // „hinsehen" ist die Antwort, die dieser ganze Spike vermeidet.
-            if (seenCursors.add(wanted)) {
+            //
+            // <b>Mit -Ptrace jeden Wechsel, nicht nur jede neue Art.</b> Ein
+            // Zeiger, der an der falschen Stelle steht, lässt sich sonst nicht
+            // von einem unterscheiden, der nur nicht zurückgesetzt wurde: Die
+            // zweite Anforderung derselben Art stünde nirgends.
+            boolean firstOfKind = seenCursors.add(wanted);
+            if (firstOfKind || Boolean.getBoolean("fn.cef.trace")) {
                 LOG.info("Mauszeiger: Chromium wünscht {} ({})",
                         dev.devpanda.factorynetwork.web.view.CursorType.fromId(wanted), wanted);
             }
