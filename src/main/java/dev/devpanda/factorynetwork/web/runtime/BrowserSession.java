@@ -126,8 +126,18 @@ public final class BrowserSession implements AutoCloseable, FnBrowser.Events,
 
     private final int id = COUNTER.incrementAndGet();
 
+    /**
+     * Wie diese Sitzung heißt.
+     *
+     * <p>Leer heißt: Sie hat keinen, dann steht ihre Nummer im Protokoll. Wer
+     * mehrere Browser gleichzeitig laufen lässt, will sie unterscheiden können
+     * — im Protokoll und in Chromiums Liste unter dem Fernwartungsport.
+     */
+    private final String name;
+
     private BrowserSession(String url, boolean transparent, int width, int height,
-                           BrowserVisibility visibility) {
+                           BrowserVisibility visibility, String name) {
+        this.name = name == null ? "" : name;
         this.pacer = new FramePacer(visibility);
         this.browser = FnBrowser.open(url, transparent, this);
         // <b>Die Reihenfolge ist nicht beliebig.</b> Erst darf der Browser
@@ -147,7 +157,13 @@ public final class BrowserSession implements AutoCloseable, FnBrowser.Events,
     /** Wie diese Sitzung im Protokoll heißt. */
     @Override
     public String describe() {
-        return "Sitzung " + id + " (" + width() + "x" + height() + ")";
+        String was = name.isEmpty() ? "Sitzung " + id : "\"" + name + "\" (Sitzung " + id + ")";
+        return was + " (" + width() + "x" + height() + ")";
+    }
+
+    /** Der vergebene Name, oder leer. */
+    public String name() {
+        return name;
     }
 
     /**
@@ -170,7 +186,20 @@ public final class BrowserSession implements AutoCloseable, FnBrowser.Events,
     public static BrowserSession open(String url, boolean transparent,
                                       int width, int height,
                                       BrowserVisibility visibility) {
-        return new BrowserSession(url, transparent, width, height, visibility);
+        return new BrowserSession(url, transparent, width, height, visibility, "");
+    }
+
+    /**
+     * Öffnet einen Browser unter einem Namen.
+     *
+     * <p>Der Name steht im Protokoll und in Chromiums Liste. Er ändert nichts
+     * am Verhalten — er beantwortet die Frage, welche von fünf Seiten die
+     * gemeinte ist.
+     */
+    public static BrowserSession open(String url, boolean transparent,
+                                      int width, int height,
+                                      BrowserVisibility visibility, String name) {
+        return new BrowserSession(url, transparent, width, height, visibility, name);
     }
 
     // ---- Was der Browser meldet -------------------------------------------

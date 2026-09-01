@@ -113,6 +113,11 @@ public final class WebCommands {
                             });
                             return 1;
                         }))
+                .then(Commands.literal("devtools")
+                        .executes(context -> {
+                            WebDevTools.show();
+                            return 1;
+                        }))
                 .then(Commands.literal("zustand")
                         .executes(context -> {
                             WebRuntimeStatus status = BrowserScreen.availability();

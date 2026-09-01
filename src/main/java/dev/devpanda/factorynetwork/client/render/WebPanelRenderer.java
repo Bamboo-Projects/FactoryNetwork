@@ -87,7 +87,7 @@ public class WebPanelRenderer implements BlockEntityRenderer<WebPanelBlockEntity
         }
 
         ResourceLocation texture =
-                WebPanels.textureFor(panel.getBlockPos(), panel.url(), distance);
+                WebPanels.textureFor(panel.getBlockPos(), panel.url(), panel.name(), distance);
         if (texture == null) {
             return;
         }

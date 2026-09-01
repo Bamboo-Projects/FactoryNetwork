@@ -4,7 +4,10 @@ import com.mojang.serialization.MapCodec;
 import dev.devpanda.factorynetwork.block.entity.WebPanelBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
@@ -81,6 +84,26 @@ public class WebPanelBlock extends HorizontalDirectionalBlock implements EntityB
     @Override
     protected BlockState mirror(BlockState state, Mirror mirror) {
         return state.rotate(mirror.getRotation(state.getValue(FACING)));
+    }
+
+    /**
+     * Ein benannter Gegenstand macht eine benannte Tafel.
+     *
+     * <p>Wie bei einer Kiste oder einem Ofen: Wer im Amboss einen Namen
+     * vergibt, findet ihn danach an der Tafel wieder — im Protokoll und in
+     * Chromiums Liste unter dem Fernwartungsport. Eine eigene Oberfläche dafür
+     * wäre eine zweite Art, dasselbe zu tun.
+     */
+    @Override
+    public void setPlacedBy(Level level, BlockPos pos, BlockState state,
+                            @Nullable LivingEntity placer, ItemStack stack) {
+        super.setPlacedBy(level, pos, state, placer, stack);
+        if (!stack.has(net.minecraft.core.component.DataComponents.CUSTOM_NAME)) {
+            return;
+        }
+        if (level.getBlockEntity(pos) instanceof WebPanelBlockEntity panel) {
+            panel.setName(stack.getHoverName().getString());
+        }
     }
 
     @Override

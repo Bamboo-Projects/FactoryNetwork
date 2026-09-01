@@ -27,6 +27,7 @@ import org.jetbrains.annotations.Nullable;
 public class WebPanelBlockEntity extends BlockEntity {
 
     private static final String KEY_URL = "Url";
+    private static final String KEY_NAME = "PanelName";
 
     /**
      * Womit eine frisch gesetzte Fläche anfängt.
@@ -40,12 +41,35 @@ public class WebPanelBlockEntity extends BlockEntity {
 
     private String url = DEFAULT_URL;
 
+    /**
+     * Wie diese Tafel heißt.
+     *
+     * <p>Vergeben wird er wie bei einer Kiste oder einem Ofen: Wer den
+     * Gegenstand im Amboss benennt, benennt die Tafel. Das ist kein
+     * Notbehelf, sondern der Weg, den Minecraft für genau diese Frage kennt —
+     * eine eigene Oberfläche dafür wäre eine zweite Art, dasselbe zu tun.
+     *
+     * <p>Der Name steht danach im Protokoll, in Chromiums Liste unter dem
+     * Fernwartungsport und über der Tafel, wenn man sie ansieht.
+     */
+    private String name = "";
+
     public WebPanelBlockEntity(BlockPos pos, BlockState state) {
         super(FnBlockEntities.WEB_PANEL.get(), pos, state);
     }
 
     public String url() {
         return url;
+    }
+
+    public String name() {
+        return name;
+    }
+
+    /** Beim Setzen aus einem benannten Gegenstand. */
+    public void setName(String name) {
+        this.name = name == null ? "" : name;
+        setChanged();
     }
 
     public void setUrl(String url) {
@@ -62,12 +86,14 @@ public class WebPanelBlockEntity extends BlockEntity {
         if (tag.contains(KEY_URL)) {
             url = tag.getString(KEY_URL);
         }
+        name = tag.getString(KEY_NAME);
     }
 
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
         tag.putString(KEY_URL, url);
+        tag.putString(KEY_NAME, name);
     }
 
     /**
@@ -80,6 +106,7 @@ public class WebPanelBlockEntity extends BlockEntity {
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         CompoundTag tag = super.getUpdateTag(registries);
         tag.putString(KEY_URL, url);
+        tag.putString(KEY_NAME, name);
         return tag;
     }
 

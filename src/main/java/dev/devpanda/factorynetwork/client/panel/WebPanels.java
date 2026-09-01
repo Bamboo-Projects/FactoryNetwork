@@ -108,6 +108,12 @@ public final class WebPanels {
      *         gibt — dann zeichnet der Renderer nichts
      */
     public static ResourceLocation textureFor(BlockPos pos, String url, double distance) {
+        return textureFor(pos, url, "", distance);
+    }
+
+    /** Dasselbe, mit dem Namen der Tafel für Protokoll und Werkzeugliste. */
+    public static ResourceLocation textureFor(BlockPos pos, String url, String name,
+                                              double distance) {
         Panel panel = panels.get(pos);
         if (panel != null) {
             panel.seenAt = System.currentTimeMillis();
@@ -126,7 +132,7 @@ public final class WebPanels {
         if (panels.size() >= maxLive()) {
             return null;
         }
-        return open(pos, url);
+        return open(pos, url, name);
     }
 
     /**
@@ -158,7 +164,28 @@ public final class WebPanels {
         return startPageUrl;
     }
 
-    private static ResourceLocation open(BlockPos pos, String wanted) {
+    /**
+     * Hängt die Blockposition als Fragment an die Adresse.
+     *
+     * <p><b>Damit man die Instanz wiederfindet.</b> In Chromiums Liste unter
+     * dem Fernwartungsport heißen sonst alle Flächen gleich — dieselbe Seite,
+     * derselbe Titel. Mit dem Fragment steht die Blockposition in der Liste,
+     * und man weiß, welche Werkzeuge zu welcher Tafel gehören.
+     *
+     * <p><b>Ein Fragment und keine Abfrage.</b> Ein {@code ?panel=…} ginge an
+     * den Server, machte je Tafel einen eigenen Eintrag im Zwischenspeicher
+     * und zerstörte bei einer echten Adresse deren eigene Abfrage. Ein
+     * Fragment sieht der Server nie und die Liste trotzdem.
+     */
+    private static String tagged(String url, BlockPos pos, String name) {
+        String was = name == null || name.isBlank()
+                ? pos.getX() + "," + pos.getY() + "," + pos.getZ()
+                : name;
+        return url + "#fn-panel=" + java.net.URLEncoder.encode(was,
+                java.nio.charset.StandardCharsets.UTF_8);
+    }
+
+    private static ResourceLocation open(BlockPos pos, String wanted, String name) {
         if (!WebSupport.ensureStarted().usable()) {
             return null;
         }
@@ -167,14 +194,18 @@ public final class WebPanels {
             return null;
         }
         try {
-            BrowserSession session = BrowserSession.open(url, false,
-                    RESOLUTION, RESOLUTION, BrowserVisibility.NEARBY);
+            String label = name == null || name.isBlank()
+                    ? "Tafel " + pos.getX() + "," + pos.getY() + "," + pos.getZ()
+                    : name;
+            BrowserSession session = BrowserSession.open(tagged(url, pos, name), false,
+                    RESOLUTION, RESOLUTION, BrowserVisibility.NEARBY, label);
             ResourceLocation location = ResourceLocation.fromNamespaceAndPath(
                     FactoryNetwork.MOD_ID, "web_panel/" + nextId++);
             Minecraft.getInstance().getTextureManager()
                     .register(location, new SessionTexture(session::textureId));
             panels.put(pos.immutable(), new Panel(session, location, wanted));
-            LOG.info("Web-Fläche bei {} geöffnet: {} — offen: {}", pos, url, panels.size());
+            LOG.info("Web-Fläche {} bei {} geöffnet: {} — offen: {}",
+                    label, pos, url, panels.size());
             return location;
         } catch (Throwable broken) {
             LOG.warn("Die Web-Fläche bei {} kam nicht zustande", pos, broken);

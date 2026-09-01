@@ -49,6 +49,16 @@ neoForge {
             // Chromium-Rückruf kommt ohnehin nur als Kopfzeile an. Beides
             // zusammen ergibt ein „Exception in thread" ohne jeden Hinweis.
             jvmArgument '-XX:-OmitStackTraceInFastThrow'
+            // Chromiums Fernwartung auf 127.0.0.1:9222:
+            //   ./gradlew runClient -Pdevtools
+            //
+            // <b>Nicht mehr am IDE-Schalter.</b> Der Port hing dort, weil er
+            // für die Messungen am Editor gedacht war. Gebraucht wird er
+            // überall, wo eine Seite läuft — die Flächen in der Welt kennen
+            // keinen Editor.
+            if (project.hasProperty('devtools')) {
+                systemProperty 'fn.devtools', 'true'
+            }
             // Die Spur um die Browsererzeugung, nur auf Ansage:
             //   ./gradlew runClient -Ptrace
             if (project.hasProperty('trace')) {
@@ -106,11 +116,6 @@ neoForge {
                 //   ./gradlew runClient -Pide -Pprobe -Pw=1920 -Ph=1080
                 if (project.hasProperty('probe')) {
                     systemProperty 'fn.probe', 'true'
-                }
-                // Chromiums Fernwartung auf 127.0.0.1:9222, nur fuer Messungen:
-                //   ./gradlew runClient -Pide -Pdevtools
-                if (project.hasProperty('devtools')) {
-                    systemProperty 'fn.devtools', 'true'
                 }
                 // Oberflaeche mehrfach oeffnen und schliessen, um zu sehen, ob
                 // Chromium seine Prozesse wieder abraeumt:
