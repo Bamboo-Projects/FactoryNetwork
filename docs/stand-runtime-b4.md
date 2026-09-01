@@ -163,14 +163,26 @@ Der neue Weg ist in jeder Stufe schneller, bei p95 deutlich.
 
 ### Lebenslauf und Waisen
 
+Drei Zyklen öffnen und schließen, Speicher der Chromium-Prozesse von außen
+mitgeschrieben (`tools/procwatch.ps1`):
+
+| | gemessen | alte Referenz |
+|---|---|---|
+| nach Zyklus 1 | 271 MB | 186 MB |
+| nach Zyklus 2 | **180 MB** | 190 MB |
+| nach Zyklus 3 | **177 MB** | 191 MB |
+| Spitze während des Laufs | 345 MB | — |
+
+Die Reihe fällt und steht dann — kein Wachstum über die Zyklen. Die alte
+Reihe stieg leicht; unsere geht nach der ersten Spitze zurück.
+
 ```text
-drei Zyklen öffnen/schließen        durchgelaufen, keine Auffälligkeit
 jcef_helper nach dispose            0
-jcef_helper nach hartem Abbruch     einmal 1, einmal 0
+jcef_helper nach hartem Abbruch     einmal 1, zweimal 0 (drei Messungen)
 ```
 
-Der Proof-of-Concept hatte acht. Die verbleibende Eins ist nicht
-reproduzierbar und gehört dem Wächter, den es noch nicht gibt (B6).
+Der Proof-of-Concept hatte acht. Die eine Waise ist nicht reproduzierbar und
+gehört dem Wächter, den es noch nicht gibt (B6).
 
 ---
 
@@ -225,7 +237,19 @@ Exception in thread "Render thread"
 - **Folgenlos, soweit messbar:** Selbsttest in allen vier Ecken korrekt,
   Alpha korrekt, Takt und Latenzen besser als vorher, Lebenslauf sauber.
 
-Als Nächstes hilft dort am ehesten ein Lauf mit `-Xcheck:jni`.
+**`-Xcheck:jni` ist als Weg zu:** Der Lauf bricht den Prozess hart ab
+(Rückgabewert 0xC0000409), bevor überhaupt ein Browser entsteht — die JVM
+findet vorher Verstöße in fremdem Code (JNA, Registry-Zugriffe) und beendet
+sich. Der Schalter bleibt als `-Pjnicheck` erhalten, taugt hier aber nicht.
+
+**Der Widerspruch, der die halbe Diagnose ist:** Der Mitschnitt der
+Standardfehlerausgabe blieb leer. Ginge die Meldung über
+`Throwable.printStackTrace` auf `System.err`, hätte er mindestens die
+Stapelzeilen gesehen. Dass er *nichts* sah, heißt: Die vollständige Meldung
+entsteht im nativen Teil auf dem rohen Dateizeiger 2, und die Ausnahme trägt
+keinen Stapel. Das passt zu einer Meldung aus dem Aufbau der JNI-Umgebung —
+nicht zu einer Ausnahme aus einem unserer Rückrufe, und es erklärt, warum
+keine unserer Absicherungen je gemeldet hat.
 
 ### Der Waisenprozess nach hartem Abbruch
 

@@ -59,6 +59,14 @@ neoForge {
                 // Chromium-Rückruf kommt ohnehin nur als Kopfzeile an. Beides
                 // zusammen ergibt ein „Exception in thread" ohne jeden Hinweis.
                 jvmArgument '-XX:-OmitStackTraceInFastThrow'
+                // Nur zur Fehlersuche, und nur auf Ansage:
+                //   ./gradlew runClient -Pfnruntime -Pjnicheck
+                // Die JVM prüft dann jeden Übergang nach C und zurück. Sie
+                // wird davon deutlich langsamer — für eine Messung taugt der
+                // Lauf nicht, für die Frage „wer wirft da eigentlich" schon.
+                if (project.hasProperty('jnicheck')) {
+                    jvmArgument '-Xcheck:jni'
+                }
             }
             // Debugger-Anschluss für HotSwap, nur auf Anforderung:
             //   ./gradlew runClient -Pdebug
