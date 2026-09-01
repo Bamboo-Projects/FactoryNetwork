@@ -50,9 +50,20 @@ eine Regel, wann eine Tafel die Tastatur bekommt und wann sie sie abgibt
 einen Weg zurück, der nicht Escape ist — das gehört im Spiel dem Menü
 ```
 
-**Der eigentliche Preis: jede Fläche ist ein eigener Chromium.** Gemessen für
-einen Browser: fünf Hilfsprozesse, und ein Upload von 1920×1080 kostet 9–14 ms
-auf dem Renderthread. Zwei Flächen in Vollauflösung fressen das Bildbudget.
+**Der Preis, und er ist kleiner als zuerst geschrieben.** Hier stand, jede
+Fläche sei ein eigener Chromium mit fünf Hilfsprozessen. Nachgemessen an einem
+laufenden Editor stimmt nur die Fünf, nicht die Zuordnung:
+
+```text
+1x gpu-process     hängt an Chromium, nicht an der Seite
+2x utility         desgleichen — Netzwerk und Speicher
+2x renderer        einer für die Seite, einer als Reserve
+```
+
+Drei der fünf entstehen einmal. **Drei Flächen kosten deshalb grob sieben
+Prozesse und nicht fünfzehn.** Was wirklich skaliert, ist der Renderer je
+Seite — und der Upload: 1920×1080 kostet 9–14 ms auf dem Renderthread, und
+zwei Flächen in Vollauflösung fressen das Bildbudget.
 
 Beherrschbar ist das über drei Regeln, und die gehören in den Entwurf:
 
@@ -69,16 +80,27 @@ gab.
 
 ---
 
-## Zwei Entscheidungen, bevor irgendetwas gebaut wird
+## Die Entscheidungen, getroffen am 1. September 2026
 
-**1. Wie viele Flächen sollen gleichzeitig laufen dürfen?** Die Antwort
-bestimmt alles andere. Eine einzige große Tafel je Basis ist ein anderes
-Programm als zwanzig kleine.
+**Drei Flächen gleichzeitig, je ein eigener Browser.** Die Frage war, ob sich
+mehrere Flächen einen Browser teilen müssten — nach der Messung oben nicht:
+Der teure Teil entsteht einmal. Eine gemeinsame Seite in Kacheln spart einen
+Renderer und kostet dafür alles andere: Alle Flächen teilten sich eine
+Auflösung, und eine hängende Seite nähme die übrigen mit. Bei Flächen, die
+Spieler anlegen, ist das die falsche Bauform.
 
-**2. Was zeigen die Flächen?** Eine Seite, die der Spieler selbst schreibt?
-Eine feste Statusansicht aus dem Netz? Beides sind Web-Flächen, aber nur das
-zweite braucht keine Adresszeile und keinen Fokus für die Tastatur — und wäre
-damit ein Bruchteil der Arbeit.
+**Was darauf steht, entscheidet der Spieler, der die Fläche anlegt.** Das ist
+keine Designfrage, sondern der Zweck der Sache. Die technische Frage darunter
+ist eine andere: **was die Fläche an Eingaben annimmt.** Drei Stufen, in
+dieser Reihenfolge:
+
+```text
+1. Anschauen    Textur auf der Blockfläche, sonst nichts        klein
+2. Klicken      Strahl auf Browser-Pixel, Zeiger, Hover         mittel
+3. Tippen       Fokusregel und ein Rückweg, der nicht Escape    der teure Teil
+```
+
+So steht die Fläche früh, und der teure Teil kommt, wenn der billige trägt.
 
 ---
 
@@ -101,6 +123,7 @@ ohnehin das Thema.
 Dieser Block hängt an nichts, was noch offen ist, und blockiert nichts. Er
 kann vor oder nach B8/B9 kommen.
 
-**Vorschlag:** danach. B8/B9 sind klein und geplant, und sie nehmen MCEF aus
-dem Weg — jede neue Fläche, die vorher entsteht, müsste sonst zweimal gebaut
-werden, einmal je Weg.
+**Erledigt:** B8/B9 sind durch, MCEF ist aus dem Weg. Vor diesem Block liegt
+nur noch die Auslieferung der Laufzeitumgebung — nicht als Abhängigkeit,
+sondern der Reihe nach: Solange ein Spieler die Runtime nicht bekommt, sieht
+er auch keine Fläche in der Welt.
