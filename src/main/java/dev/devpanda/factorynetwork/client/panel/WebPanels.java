@@ -55,11 +55,16 @@ public final class WebPanels {
     /**
      * Wie viele Flächen gleichzeitig leben dürfen.
      *
-     * <p>Wer als vierter angefragt wird, bekommt nichts zu sehen, bis eine
-     * andere zumacht. Das ist ehrlicher als eine vierte Fläche, die die
-     * Bildrate der drei ersten frisst.
+     * <p>Wer über der Grenze angefragt wird, bekommt nichts zu sehen, bis eine
+     * andere zumacht. Das ist ehrlicher als eine Fläche, die die Bildrate der
+     * übrigen frisst.
+     *
+     * <p>Die Zahl steht in der Konfiguration dieses Rechners und nicht hier:
+     * Was der eine an Bildrate übrig hat, hat der andere nicht.
      */
-    public static final int MAX_LIVE = 3;
+    private static int maxLive() {
+        return dev.devpanda.factorynetwork.FnClientConfig.webPanels();
+    }
 
     /** Die Auflösung je Fläche. Ein Block in der Welt ist kein Vollbild. */
     private static final int RESOLUTION = 512;
@@ -118,7 +123,7 @@ public final class WebPanels {
                     ? BrowserVisibility.NEARBY : BrowserVisibility.DISTANT);
             return panel.texture;
         }
-        if (panels.size() >= MAX_LIVE) {
+        if (panels.size() >= maxLive()) {
             return null;
         }
         return open(pos, url);

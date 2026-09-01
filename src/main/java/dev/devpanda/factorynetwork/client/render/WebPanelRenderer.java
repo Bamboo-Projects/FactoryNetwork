@@ -42,10 +42,23 @@ public class WebPanelRenderer implements BlockEntityRenderer<WebPanelBlockEntity
     /**
      * Wo die Vorderseite der Tafel liegt, von ihrer Mitte aus.
      *
-     * <p>Die Tafel ist zwei Pixel dick, also endet sie sechs Sechzehntel vor
-     * der Blockmitte und nicht acht. Ein halber Block wäre zwei Pixel zu weit
-     * — die Seite schwebte vor der Tafel, wäre perspektivisch größer als ihr
-     * Block und ragte über die Nachbarn.
+     * <p><b>Die Rechnung stand zweimal falsch, deshalb steht sie hier
+     * ausgeschrieben.</b> Die Drehung stellt lokales {@code +Z} in die
+     * Blickrichtung der Tafel, also zum Betrachter. Die Tafel selbst sitzt
+     * aber an der <i>hinteren</i> Kante ihres Blocks: Bei Blickrichtung Norden
+     * geht ihr Körper in Welt-Z von 14/16 bis 16/16, und die Fläche, die man
+     * sieht, liegt bei 14/16 — also sechs Sechzehntel <i>südlich</i> der
+     * Blockmitte.
+     *
+     * <pre>
+     *   lokales +Z  =  Norden  =  Welt −Z
+     *   Tafelfläche =  Welt +0,375  =  lokal −0,375
+     * </pre>
+     *
+     * <p>Der Wert wird deshalb <b>abgezogen</b>. Mit umgekehrtem Vorzeichen
+     * schwebt die Seite drei Viertel Blöcke vor der Tafel; mit einem halben
+     * Block statt sechs Sechzehnteln liegt sie in der Wand dahinter und ist
+     * schwarz. Zwischen beiden Fehlern liegen zwei Pixel.
      */
     private static final float FRONT = 0.5F - 2.0F / 16.0F;
 
@@ -89,7 +102,7 @@ public class WebPanelRenderer implements BlockEntityRenderer<WebPanelBlockEntity
         // sehen wäre die Modelltextur.
         pose.translate(0.5, 0.5, 0.5);
         pose.mulPose(com.mojang.math.Axis.YP.rotationDegrees(-facing.toYRot()));
-        pose.translate(0, 0, FRONT + EPSILON);
+        pose.translate(0, 0, -FRONT + EPSILON);
 
         Matrix4f matrix = pose.last().pose();
         VertexConsumer quad = buffers.getBuffer(RenderType.text(texture));
