@@ -85,6 +85,15 @@ public class FnBrowser extends CefBrowser_N implements CefRenderHandler {
 
         /** Chromium hätte gern einen anderen Mauszeiger. */
         void cursorChanged(int cefCursorType);
+
+        /**
+         * Chromium hat das Schließen bestätigt.
+         *
+         * <p>Kommt nach {@code close(true)} und aus der Nachrichtenschleife —
+         * also später, nicht sofort. Wer beim Herunterfahren darauf wartet,
+         * muss pumpen.
+         */
+        void browserClosed();
     }
 
     /**
@@ -259,6 +268,30 @@ public class FnBrowser extends CefBrowser_N implements CefRenderHandler {
         if (events != null && size != null) {
             guarded("onPopupSize",
                     () -> events.popupPlaced(size.x, size.y, size.width, size.height));
+        }
+    }
+
+
+    /**
+     * Chromium bestätigt das Schließen.
+     *
+     * <p><b>Erst hier ist der Browser weg</b>, nicht schon bei
+     * {@code close(true)} — das ist eine Bitte. Die Bestätigung kommt aus der
+     * Nachrichtenschleife und damit aus dem Pumpthread.
+     *
+     * <p>Der Aufruf an die Oberklasse muss zuerst kommen: Sie gibt dort
+     * eigene Verweise frei und markiert den Browser als geschlossen.
+     */
+    @Override
+    public void onBeforeClose() {
+        super.onBeforeClose();
+        if (events != null) {
+            try {
+                events.browserClosed();
+            } catch (Throwable broken) {
+                com.mojang.logging.LogUtils.getLogger()
+                        .warn("Rückruf onBeforeClose ist gescheitert", broken);
+            }
         }
     }
 

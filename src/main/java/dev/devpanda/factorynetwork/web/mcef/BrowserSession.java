@@ -28,7 +28,8 @@ import java.util.function.IntConsumer;
  * derselben Formel. Nur so kann später eine Fläche in der Welt dieselbe
  * Sitzung mit ihren eigenen Koordinaten füttern.
  */
-public final class BrowserSession implements AutoCloseable, FnBrowser.Events {
+public final class BrowserSession implements AutoCloseable, FnBrowser.Events,
+        dev.devpanda.factorynetwork.web.ManagedBrowser {
 
     private final FnBrowser browser;
     private final GlTextureBackend texture = new GlTextureBackend();
@@ -113,6 +114,18 @@ public final class BrowserSession implements AutoCloseable, FnBrowser.Events {
     private final long createdNanos = System.nanoTime();
     private boolean closed;
 
+    /**
+     * Eine laufende Nummer je Sitzung.
+     *
+     * <p>Sie steht in jeder Protokollzeile über diese Sitzung. Ohne sie sind
+     * zwei gleichzeitig offene Browser im Protokoll nicht auseinanderzuhalten,
+     * und genau dann braucht man es.
+     */
+    private static final java.util.concurrent.atomic.AtomicInteger COUNTER =
+            new java.util.concurrent.atomic.AtomicInteger();
+
+    private final int id = COUNTER.incrementAndGet();
+
     private BrowserSession(String url, boolean transparent, int width, int height,
                            BrowserVisibility visibility) {
         this.pacer = new FramePacer(visibility);
@@ -126,6 +139,26 @@ public final class BrowserSession implements AutoCloseable, FnBrowser.Events {
         browser.setCloseAllowed();
         browser.createImmediately();
         browser.resize(width, height);
+        // Erst jetzt anmelden: Ein Browser, der beim Erzeugen scheitert, soll
+        // nicht als offen gelten.
+        dev.devpanda.factorynetwork.web.BrowserManager.register(this);
+    }
+
+    /** Wie diese Sitzung im Protokoll heißt. */
+    @Override
+    public String describe() {
+        return "Sitzung " + id + " (" + width() + "x" + height() + ")";
+    }
+
+    /**
+     * Chromium hat das Schließen bestätigt.
+     *
+     * <p>Kommt nach {@code close(true)} und aus der Nachrichtenschleife, also
+     * später und aus dem Pumpthread. Erst damit ist die Sitzung wirklich weg.
+     */
+    @Override
+    public void browserClosed() {
+        dev.devpanda.factorynetwork.web.BrowserManager.closed(this);
     }
 
     /**
@@ -542,6 +575,9 @@ public final class BrowserSession implements AutoCloseable, FnBrowser.Events {
         }
         closed = true;
         cursorSink = null;
+        // Ab hier gilt sie nicht mehr als offen, ist aber noch nicht fertig:
+        // close(true) ist eine Bitte, die Bestätigung kommt später.
+        dev.devpanda.factorynetwork.web.BrowserManager.closing(this);
         try {
             browser.close(true);
         } catch (Throwable broken) {

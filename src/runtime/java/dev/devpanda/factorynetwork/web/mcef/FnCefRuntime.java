@@ -108,6 +108,12 @@ public final class FnCefRuntime {
         // Datei über java.library.path — auf Windows speist der sich aus dem
         // PATH, und den setzt das Buildskript für diesen Lauf.
 
+        // <b>Vor CefApp.startup, nicht danach.</b> Der Wächter klammert den
+        // eigenen Prozess ein, und Kindprozesse erben die Zugehörigkeit. Wer
+        // erst nach dem Start klammert, klammert die schon gestarteten Helfer
+        // nicht mehr ein.
+        dev.devpanda.factorynetwork.web.ProcessGuard.install();
+
         if (!CefApp.startup(new String[] {})) {
             throw new IllegalStateException("CefApp.startup schlug fehl");
         }

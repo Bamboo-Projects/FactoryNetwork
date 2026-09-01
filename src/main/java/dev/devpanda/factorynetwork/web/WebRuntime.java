@@ -117,6 +117,16 @@ public final class WebRuntime {
      * <p>Auch das darf nicht werfen: Beim Beenden des Spiels ist eine
      * Ausnahme aus einem Browser das Letzte, was jemand sehen will.
      */
+    /**
+     * Wie lange auf Chromiums Bestätigungen gewartet wird.
+     *
+     * <p>Großzügig genug für den Normalfall — im Prüfstand kam die Bestätigung
+     * nach wenigen Runden — und kurz genug, dass niemand denkt, das Spiel
+     * hänge. Ohne Frist könnte ein einziger Browser, der nie bestätigt, das
+     * Beenden für immer aufhalten.
+     */
+    private static final long CLOSE_TIMEOUT_MILLIS = 2000;
+
     public static synchronized void shutdown() {
         // <b>Erst zurücksetzen, dann schließen.</b> Andersherum bliebe nach
         // einem gescheiterten Start der alte Grund für immer stehen: Es gäbe
@@ -125,6 +135,31 @@ public final class WebRuntime {
         WebBackend closing = backend;
         backend = null;
         status = WebRuntimeStatus.of(WebRuntimeState.NOT_STARTED);
+
+        // <b>Die Reihenfolge ist der ganze Inhalt dieser Methode.</b>
+        //
+        //   1. alle Browser bitten, zuzugehen
+        //   2. weiterpumpen, bis Chromium jede Schließung bestätigt hat
+        //   3. erst dann den Unterbau abräumen
+        //
+        // Wer bei 3 anfängt, räumt CEF ab, während es noch Browser schließen
+        // wollte — und genau daraus entstehen die Hilfsprozesse, die
+        // stehenbleiben. close(true) ist eine Bitte, keine Tat.
+        //
+        // <b>Das läuft im Renderthread</b>, und das muss es: Gepumpt wird
+        // dort, und nur wer pumpt, bekommt die Bestätigungen zu sehen.
+        LOG.info("Web-Runtime fährt herunter — im Thread {}, offen: {}",
+                Thread.currentThread().getName(), BrowserManager.count());
+        try {
+            BrowserManager.closeAll();
+            if (BrowserManager.pending() > 0) {
+                BrowserManager.awaitClosed(CLOSE_TIMEOUT_MILLIS,
+                        dev.devpanda.factorynetwork.web.mcef.WebPump::frame);
+            }
+        } catch (Throwable broken) {
+            LOG.warn("Beim Schließen der Browser ging etwas schief", broken);
+        }
+
         if (closing == null) {
             return;
         }
@@ -133,5 +168,7 @@ public final class WebRuntime {
         } catch (Throwable broken) {
             LOG.warn("Beim Herunterfahren der Web-Runtime ging etwas schief", broken);
         }
+        LOG.info("Web-Runtime ist unten — offen: {}, ohne Bestätigung: {}",
+                BrowserManager.count(), BrowserManager.pending());
     }
 }

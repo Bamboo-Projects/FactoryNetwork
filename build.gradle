@@ -282,6 +282,14 @@ dependencies {
     compileOnly "mezz.jei:jei-1.21.1-neoforge-api:${jei_version}"
     runtimeOnly "mezz.jei:jei-1.21.1-neoforge:${jei_version}"
 
+    // JNA nur zum Übersetzen: Der ProcessGuard braucht drei Funktionen aus
+    // kernel32, die JNAs eigenes Kernel32-Interface nicht kennt. Mitgeliefert
+    // wird nichts — Minecraft bringt JNA über OSHI ohnehin mit, und eine
+    // zweite Fassung im Klassenpfad wäre genau die Art Konflikt, die wir
+    // gerade bei org.cef hinter uns haben.
+    compileOnly 'net.java.dev.jna:jna:5.14.0'
+    compileOnly 'net.java.dev.jna:jna-platform:5.14.0'
+
     testImplementation platform('org.junit:junit-bom:5.11.4')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
