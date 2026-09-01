@@ -5,7 +5,6 @@ import net.minecraft.client.Minecraft;
 import org.cef.CefApp;
 import org.cef.CefClient;
 import org.cef.CefSettings;
-import org.cef.SystemBootstrap;
 import org.slf4j.Logger;
 
 import java.io.File;
@@ -44,6 +43,15 @@ public final class FnCefRuntime {
      */
     private static final String DIR_PROPERTY = "fn.runtime.dir";
 
+    /**
+     * Ob die Fehlersuche mitläuft: {@code -Dfn.cef.trace=true}.
+     *
+     * <p>Sie hängt sich in die Standardfehlerausgabe und schreibt jede Taste
+     * mit. Beides ist im Alltag nur Lärm und im Zweifelsfall das Einzige, was
+     * hilft — deshalb ein Schalter und keine Entscheidung für immer.
+     */
+    static final boolean TRACE = Boolean.getBoolean("fn.cef.trace");
+
     private static CefApp app;
     private static CefClient client;
     private static Thread owner;
@@ -77,22 +85,28 @@ public final class FnCefRuntime {
         File dir = runtimeDir();
         owner = Thread.currentThread();
         LOG.info("Eigene Laufzeitumgebung: {} — im Thread {}", dir, owner.getName());
+        if (TRACE) {
+            captureStandardError();
+        }
 
-        // <b>Die Bibliotheken kommen aus unserem Ordner, nicht aus
-        // java.library.path.</b> Der zeigt im Entwicklungslauf woandershin,
-        // und ihn zur Laufzeit zu ändern ist ein Trick, der je nach JVM geht
-        // oder nicht. Der Ladeweg ist dafür ausdrücklich vorgesehen.
+        // <b>Die Bibliotheken lädt java-cef selbst, und das muss so sein.</b>
+        // Der erste Entwurf setzte hier einen eigenen Ladeweg über
+        // SystemBootstrap.setLoader und System.load mit absolutem Pfad. Das
+        // lädt die Datei zwar, nützt aber nichts: Native Methoden findet die
+        // JVM nur in Bibliotheken, die der Klassenlader der jeweiligen Klasse
+        // geladen hat. Gemessen im Spiel —
         //
-        // Was nicht in unserem Ordner liegt — jawt gehört dem JDK —, geht den
-        // gewöhnlichen Weg.
-        SystemBootstrap.setLoader(name -> {
-            File library = new File(dir, name + ".dll");
-            if (library.isFile()) {
-                System.load(library.getAbsolutePath());
-            } else {
-                System.loadLibrary(name);
-            }
-        });
+        //   CefApp        cpw.mods.cl.ModuleClassLoader
+        //   FnCefRuntime  cpw.mods.modlauncher.TransformingClassLoader
+        //
+        // — und ein System.load aus unserem Code bindet an den zweiten. Die
+        // Folge ist ein UnsatisfiedLinkError beim ersten nativen Aufruf,
+        // obwohl die Bibliothek längst im Prozess steht.
+        //
+        // Deshalb bleibt der Vorgabeweg: java-cef ruft System.loadLibrary aus
+        // seiner eigenen Klasse, und dann stimmt der Lader. Gefunden wird die
+        // Datei über java.library.path — auf Windows speist der sich aus dem
+        // PATH, und den setzt das Buildskript für diesen Lauf.
 
         if (!CefApp.startup(new String[] {})) {
             throw new IllegalStateException("CefApp.startup schlug fehl");
@@ -191,6 +205,46 @@ public final class FnCefRuntime {
             LOG.warn("Beim Herunterfahren ging etwas schief", broken);
         }
         LOG.info("Chromium ist unten: {}", CefApp.getState());
+    }
+
+    /**
+     * Schreibt mit, was auf die Standardfehlerausgabe geht.
+     *
+     * <p><b>Wozu, obwohl es ein Protokoll gibt.</b> Wenn eine Ausnahme aus
+     * einem Rückruf von Chromium heraus fliegt, meldet der native Teil sie
+     * über {@code ExceptionDescribe}: Die Kopfzeile geht an die nackte
+     * Fehlerausgabe, der Stapel über {@code printStackTrace} an
+     * {@code System.err} — und den hat das Spiel längst umgebogen. Übrig
+     * bleibt ein „Exception in thread" ohne alles dahinter, und damit lässt
+     * sich nichts anfangen.
+     *
+     * <p>Hier wird deshalb ein zweiter Weg danebengelegt, der niemandem
+     * gehört: eine Datei unter {@code logs/}. Was durchgeht, geht weiterhin
+     * auch dorthin, wo es vorher hinging.
+     */
+    private static void captureStandardError() {
+        try {
+            File file = new File(gameDirectory(), "logs/fn-cef-stderr.log");
+            file.getParentFile().mkdirs();
+            java.io.PrintStream original = System.err;
+            java.io.OutputStream toFile = new java.io.FileOutputStream(file, true);
+            System.setErr(new java.io.PrintStream(new java.io.OutputStream() {
+                @Override
+                public void write(int b) throws java.io.IOException {
+                    toFile.write(b);
+                    original.write(b);
+                }
+
+                @Override
+                public void flush() throws java.io.IOException {
+                    toFile.flush();
+                    original.flush();
+                }
+            }, true));
+            LOG.info("Fehlerausgabe wird zusätzlich nach {} geschrieben", file);
+        } catch (Throwable broken) {
+            LOG.warn("Fehlerausgabe konnte nicht mitgeschrieben werden", broken);
+        }
     }
 
     private static File runtimeDir() {

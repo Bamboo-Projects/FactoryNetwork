@@ -203,18 +203,24 @@ public class FnBrowser extends CefBrowser_N implements CefRenderHandler {
 
     @Override
     public Rectangle getViewRect(CefBrowser browser) {
+        countCall("getViewRect");
         return viewRect;
     }
 
     @Override
     public Point getScreenPoint(CefBrowser browser, Point viewPoint) {
-        return new Point(viewPoint);
+        countCall("getScreenPoint");
+        return viewPoint == null ? new Point() : new Point(viewPoint);
     }
 
     @Override
     public boolean getScreenInfo(CefBrowser browser, CefScreenInfo screenInfo) {
-        screenInfo.Set(1.0, 32, 8, false, viewRect.getBounds(), viewRect.getBounds());
-        return true;
+        boolean[] ok = {false};
+        guarded("getScreenInfo", () -> {
+            screenInfo.Set(1.0, 32, 8, false, viewRect.getBounds(), viewRect.getBounds());
+            ok[0] = true;
+        });
+        return ok[0];
     }
 
     @Override
@@ -224,17 +230,19 @@ public class FnBrowser extends CefBrowser_N implements CefRenderHandler {
             return;
         }
         BorrowedFrame frame = new BorrowedFrame(buffer, width, height, regionsOf(dirtyRects));
-        if (popup) {
-            events.popupFrame(frame);
-        } else {
-            events.frame(frame);
-        }
+        guarded("onPaint", () -> {
+            if (popup) {
+                events.popupFrame(frame);
+            } else {
+                events.frame(frame);
+            }
+        });
     }
 
     @Override
     public void onPopupShow(CefBrowser browser, boolean show) {
         if (events != null) {
-            events.popupShown(show);
+            guarded("onPopupShow", () -> events.popupShown(show));
         }
     }
 
@@ -249,14 +257,15 @@ public class FnBrowser extends CefBrowser_N implements CefRenderHandler {
     @Override
     public void onPopupSize(CefBrowser browser, Rectangle size) {
         if (events != null && size != null) {
-            events.popupPlaced(size.x, size.y, size.width, size.height);
+            guarded("onPopupSize",
+                    () -> events.popupPlaced(size.x, size.y, size.width, size.height));
         }
     }
 
     @Override
     public boolean onCursorChange(CefBrowser browser, int cursorType) {
         if (events != null) {
-            events.cursorChanged(cursorType);
+            guarded("onCursorChange", () -> events.cursorChanged(cursorType));
         }
         // Wahr heißt: Wir haben uns gekümmert. Chromium versucht sonst, selbst
         // einen Zeiger zu setzen — auf ein Fenster, das es nicht gibt.
@@ -265,11 +274,13 @@ public class FnBrowser extends CefBrowser_N implements CefRenderHandler {
 
     @Override
     public boolean startDragging(CefBrowser browser, CefDragData dragData, int mask, int x, int y) {
+        countCall("startDragging");
         return false;
     }
 
     @Override
     public void updateDragCursor(CefBrowser browser, int operation) {
+        countCall("updateDragCursor");
     }
 
     @Override
@@ -372,6 +383,70 @@ public class FnBrowser extends CefBrowser_N implements CefRenderHandler {
     /** Zeilen je Rastung, von MCEF übernommen und dort erprobt. */
     private static final int UNITS_PER_NOTCH = 3;
 
+    private static int tracedKeys;
+
+    /**
+     * Fängt ab, was sonst in JNI verschwindet.
+     *
+     * <p><b>Eine Ausnahme aus einem Rückruf ist unsichtbar.</b> Der native
+     * Teil meldet sie über {@code ExceptionDescribe}; die Kopfzeile landet auf
+     * der nackten Standardfehlerausgabe, der Stapel im Protokoll — und weil
+     * beides verschiedene Wege nimmt, steht am Ende ein „Exception in thread"
+     * ohne alles dahinter. Gemessen genau so, beim ersten Lauf im Spiel.
+     *
+     * <p>Deshalb wird hier gefangen und ordentlich geschrieben. Weiterwerfen
+     * hätte niemandem geholfen: Chromium kann mit einer Ausnahme aus einem
+     * Rückruf nichts anfangen und macht ohnehin weiter.
+     */
+    private static final java.util.Set<String> SEEN = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
+    /**
+     * Schreibt jeden Rückruf einmal ins Protokoll.
+     *
+     * <p>Nur für die Fehlersuche: Welche Rückrufe Chromium in welcher
+     * Reihenfolge macht, steht in keiner Dokumentation, und eine Ausnahme aus
+     * einem davon kommt ohne Stapel an.
+     */
+    private static void countCall(String what) {
+        if (FnCefRuntime.TRACE && SEEN.add(what)) {
+            com.mojang.logging.LogUtils.getLogger().info("Rückruf zum ersten Mal: {}", what);
+        }
+    }
+
+    private static void guarded(String what, Runnable body) {
+        countCall(what);
+        try {
+            body.run();
+        } catch (Throwable broken) {
+            com.mojang.logging.LogUtils.getLogger()
+                    .error("Rückruf {} ist gescheitert", what, broken);
+        }
+    }
+
+    /**
+     * Schreibt die ersten Tastendrücke ins Protokoll — roh.
+     *
+     * <p><b>Wozu, obwohl der Prüfstand grün ist.</b> Dort kam der Scancode aus
+     * {@code glfwGetKeyScancode}; hier kommt er aus Minecrafts Tastenrückruf.
+     * Dass beide dieselbe Kodierung tragen, ist wahrscheinlich und
+     * unbewiesen — und fehlte das Bit 0x100 hier, wäre der Adapter im Spiel
+     * still falsch, obwohl jede Messung stimmt. Zehn Zeilen im Protokoll
+     * beantworten das einmal und für immer.
+     */
+    private static void traceFirstKeys(int glfwKeyCode, int scanCode, int modifiers,
+            boolean down) {
+        if (!FnCefRuntime.TRACE || tracedKeys >= 80) {
+            return;
+        }
+        tracedKeys++;
+        com.mojang.logging.LogUtils.getLogger().info(
+                "Taste {}: glfw={} scancode=0x{} basis=0x{} erweitert={} mods=0x{} vk={}",
+                down ? "herunter" : "herauf", glfwKeyCode,
+                Integer.toHexString(scanCode), Integer.toHexString(GlfwScancodes.base(scanCode)),
+                GlfwScancodes.extended(scanCode), Integer.toHexString(modifiers),
+                GlfwKeys.toAwtKeyCode(glfwKeyCode));
+    }
+
     /**
      * Eine Taste geht herunter oder herauf.
      *
@@ -389,6 +464,7 @@ public class FnBrowser extends CefBrowser_N implements CefRenderHandler {
      * verliert, bekommt für Pfeil-hoch die Acht des Ziffernblocks.
      */
     public void sendKey(int glfwKeyCode, int scanCode, int modifiers, boolean down) {
+        traceFirstKeys(glfwKeyCode, scanCode, modifiers, down);
         sendKeyEventRaw(down ? KeyEvent.KEY_PRESSED : KeyEvent.KEY_RELEASED,
                 AwtModifiers.forKey(modifiers),
                 KeyEvent.CHAR_UNDEFINED,

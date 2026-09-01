@@ -44,6 +44,21 @@ neoForge {
             // Schalter an ist — ohne ihn läuft der Client wie bisher auf MCEF.
             if (useOwnRuntime) {
                 systemProperty 'fn.runtime.dir', ownRuntimeDir.absolutePath
+                // <b>Und der Ordner muss auf den PATH.</b> Nicht aus
+                // Bequemlichkeit: Native Methoden findet die JVM nur in
+                // Bibliotheken, die der Klassenlader der jeweiligen Klasse
+                // geladen hat. org.cef liegt hier im ModuleClassLoader, unser
+                // Code im TransformingClassLoader — ein System.load aus
+                // unserem Code bindet an den falschen. Über java.library.path
+                // lädt java-cef selbst, und dann stimmt der Lader. Auf Windows
+                // speist sich dieser Pfad aus dem PATH.
+                environment 'PATH', (ownRuntimeDir.absolutePath
+                        + File.pathSeparator + System.getenv('PATH'))
+                // Ohne das wirft die JVM wiederholte Ausnahmen an derselben
+                // Stelle irgendwann ohne Stapel — und eine Ausnahme aus einem
+                // Chromium-Rückruf kommt ohnehin nur als Kopfzeile an. Beides
+                // zusammen ergibt ein „Exception in thread" ohne jeden Hinweis.
+                jvmArgument '-XX:-OmitStackTraceInFastThrow'
             }
             // Debugger-Anschluss für HotSwap, nur auf Anforderung:
             //   ./gradlew runClient -Pdebug
@@ -171,6 +186,17 @@ repositories {
 // und ein Lieferant für org.cef. Alles andere steht in src/main/java und weiß
 // von keinem der beiden.
 sourceSets.main.java.srcDir(useOwnRuntime ? 'src/runtime/java' : 'src/mcef/java')
+
+// <b>Der Laufklassenpfad ist ein eigener.</b> Ein runtimeOnly auf eine Datei
+// landet zwar im runtimeClasspath, aber nicht in der Liste, die ModDevGradle
+// dem Client mitgibt — dort stehen nur aufgelöste Module. Für alles andere
+// gibt es je Lauf eine eigene Konfiguration, und genau die ist hier gemeint.
+if (useOwnRuntime) {
+    dependencies {
+        add(neoForge.runs.client.additionalRuntimeClasspathConfiguration.name,
+                files(new File(ownRuntimeDir, 'jcef.jar')))
+    }
+}
 
 dependencies {
     // Jade nur zum Übersetzen und zum Ausprobieren — die Mod läuft ohne.
