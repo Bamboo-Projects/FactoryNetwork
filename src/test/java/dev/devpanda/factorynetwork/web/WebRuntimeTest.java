@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Der Fall, den man nicht prüft, ist der, bei dem jemandem der Client nicht
  * mehr startet.
  *
- * <p>MCEF wird hier nie angefasst. Der Unterbau kommt als Lambda herein, und
+ * <p>Chromium wird hier nie angefasst. Der Unterbau kommt als Lambda herein, und
  * genau deshalb ist diese Schicht ohne Minecraft prüfbar — Chromium in einem
  * gewöhnlichen Prüflauf hochzufahren wäre weder möglich noch sinnvoll.
  */
@@ -82,23 +82,23 @@ class WebRuntimeTest {
     @DisplayName("Ein vorhergesehener Grund kommt unverändert durch")
     void aKnownReasonSurvives() {
         WebRuntimeStatus status = WebRuntime.start(() -> {
-            throw new WebRuntimeUnavailable(WebRuntimeState.MOD_MISSING,
-                    "MCEF liegt nicht in diesem Pack");
+            throw new WebRuntimeUnavailable(WebRuntimeState.RUNTIME_MISSING,
+                    "Die Laufzeitumgebung liegt nicht neben dem Spiel");
         });
 
-        assertEquals(WebRuntimeState.MOD_MISSING, status.state());
-        assertEquals("MCEF liegt nicht in diesem Pack", status.reason());
+        assertEquals(WebRuntimeState.RUNTIME_MISSING, status.state());
+        assertEquals("Die Laufzeitumgebung liegt nicht neben dem Spiel", status.reason());
         assertFalse(WebRuntime.isAvailable());
     }
 
     @Test
     @DisplayName("Auch ein NoClassDefFoundError bringt nur einen Zustand zurück")
     void evenAnErrorIsJustAState() {
-        // Genau das passiert, wenn MCEF fehlt und trotzdem jemand die Klasse
-        // anfasst: kein Exception, sondern ein Error. Wer nur Exception fängt,
-        // nimmt den Client mit.
+        // Genau das passiert, wenn die Laufzeitumgebung fehlt und trotzdem
+        // jemand eine Klasse daraus anfasst: kein Exception, sondern ein
+        // Error. Wer nur Exception fängt, nimmt den Client mit.
         WebRuntimeStatus status = WebRuntime.start(() -> {
-            throw new NoClassDefFoundError("com/cinemamod/mcef/MCEF");
+            throw new NoClassDefFoundError("org/cef/CefApp");
         });
 
         assertEquals(WebRuntimeState.FAILED, status.state());

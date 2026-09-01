@@ -5,11 +5,12 @@ import java.util.function.Supplier;
 /**
  * Der eine Ort, an dem entschieden wird, worauf die Runtime läuft.
  *
- * <p>Heute gibt es genau einen Unterbau. Er steht trotzdem hier und nicht in
+ * <p>Es gibt genau einen Unterbau. Er steht trotzdem hier und nicht in
  * {@link WebRuntime}, aus einem Grund, der nichts mit Vorrat zu tun hat:
- * {@code WebRuntime} darf keinen MCEF-Typ nennen, sonst verlangt schon ihr
- * Laden die fremde Mod. Diese Klasse nennt ihn auch nicht — sie reicht ein
- * Lambda weiter, und erst dessen Aufruf lädt die Klasse, die es tut.
+ * {@code WebRuntime} darf keinen Typ aus {@code org.cef} nennen, sonst
+ * verlangt schon ihr Laden die native Laufzeitumgebung. Diese Klasse nennt ihn
+ * auch nicht — sie reicht ein Lambda weiter, und erst dessen Aufruf lädt die
+ * Klasse, die es tut.
  */
 public final class WebSupport {
 
@@ -19,9 +20,9 @@ public final class WebSupport {
     /**
      * Fährt die Runtime hoch, falls es geht.
      *
-     * <p>Beim ersten Bedarf zu rufen und nicht beim Start des Spiels: MCEF
-     * fährt sich nebenher selbst hoch, und wer zu früh fragt, bekommt ein
-     * „noch nicht" als „nein".
+     * <p>Beim ersten Bedarf zu rufen und nicht beim Start des Spiels:
+     * Chromium fährt im Renderthread hoch und braucht dafür ein paar hundert
+     * Millisekunden. Wer zu früh fragt, bekommt ein „noch nicht" als „nein".
      */
     public static WebRuntimeStatus ensureStarted() {
         return WebRuntime.start(backend());
@@ -35,7 +36,8 @@ public final class WebSupport {
     private static Supplier<WebBackend> backend() {
         // Ein Lambda und kein Methodenverweis: Beide wären hier richtig, aber
         // der Rumpf macht sichtbar, dass die Klasse erst beim Aufruf geladen
-        // wird — und genau darauf beruht, dass MCEF fehlen darf.
+        // wird — und genau darauf beruht, dass die Laufzeitumgebung fehlen
+        // darf, ohne die Mod mitzunehmen.
         return () -> dev.devpanda.factorynetwork.web.runtime.CefHost.backend();
     }
 }

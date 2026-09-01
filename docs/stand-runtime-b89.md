@@ -117,9 +117,6 @@ Runtime Distribution   der nächste Block: gebaute Laufzeitumgebung ausliefern,
                        statt sie von jedem bauen zu lassen
 echter Launcher        ProcessGuard dort ungeprüft; der Protokolltext für den
                        Fall „schon in einem Job" steht bereit
-p95 in Stufe B         vier Millisekunden hinter MCEF, bei anderer Monitorlage
-                       als in B4 gemessen — nachmessen, wenn der Rechner in
-                       einem festen Zustand ist
 logs/ im Repo          logs/debug.log und logs/latest.log sind eingecheckt und
                        ändern sich bei jedem Lauf. Sieht nach Versehen aus
 ```
@@ -133,6 +130,23 @@ Zwei Punkte aus der Liste oben sind noch erledigt worden:
 **Das Paket heißt jetzt `web.runtime`.** Es trug den Namen der Mod, die es
 gerade losgeworden war. Vierzehn Klassen sind umgezogen, fünfundzwanzig
 Dateien nennen den neuen Namen; der Bau und die Prüfläufe blieben grün.
+
+**Der p95 ist nachgemessen — und der Verdacht war richtig.** Der Wert stand
+mit vier Millisekunden hinter MCEF im Bericht zu B5–B7, gemessen an einem Tag,
+an dem der Rechner drei Monitore dazubekommen hatte. Auf festem Stand,
+derselbe Lauf (`runClient -Pide -Pprobe -Pw=1920 -Ph=1080`):
+
+| Größe | B4 | B5–B7 (Monitorwechsel) | MCEF | **heute** |
+|---|---|---|---|---|
+| A Takt p50 | 16,78 ms | 16,58 ms | 33,40 ms | **17,13 ms = 58,4/s** |
+| B Eingabe→Bild p50 | 22,3 ms | 27,1 ms | 32,1 ms | **24,0 ms** |
+| B Eingabe→Bild p95 | 26,8 ms | 59,6 ms | 55,4 ms | **30,2 ms** |
+| B Upload p50 | 8,9 ms | 13,9 ms | 9,7 ms | **9,8 ms** |
+
+Der p95 liegt damit nicht vier Millisekunden hinter MCEF, sondern bei knapp
+der Hälfte. Alle drei ausgerissenen Werte sind auf ihren B4-Stand
+zurückgekehrt, und das schließt einen Rückschritt durch den Fokus-Fix
+endgültig aus: Die Monitorlage war die Ursache, wie vermutet.
 
 **Die Protokolle des Clients sind aus der Versionsverwaltung.**
 `logs/debug.log` und `logs/latest.log` waren verfolgt und änderten sich bei

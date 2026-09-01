@@ -8,12 +8,13 @@ import java.util.function.Supplier;
 /**
  * Die Web-Runtime: hochfahren, Zustand nennen, herunterfahren.
  *
- * <p><b>Diese Klasse fasst MCEF nicht an.</b> Kein Import, kein Feld, keine
- * Signatur — der Unterbau kommt als {@link WebBackend} herein. Der Grund ist
- * kein Geschmack: Eine Klasse, die einen MCEF-Typ nennt, verlangt ihn beim
- * Laden. Wer MCEF nicht installiert hat, bekäme beim Start der Mod einen
- * {@code NoClassDefFoundError} — und eine freiwillige Abhängigkeit, die den
- * Client zerlegt, ist keine freiwillige.
+ * <p><b>Diese Klasse fasst Chromium nicht an.</b> Kein Import, kein Feld,
+ * keine Signatur aus {@code org.cef} — der Unterbau kommt als
+ * {@link WebBackend} herein. Der Grund ist kein Geschmack: Eine Klasse, die
+ * einen solchen Typ nennt, verlangt ihn beim Laden. Wem die Laufzeitumgebung
+ * fehlt, der bekäme beim Start der Mod einen {@code NoClassDefFoundError} —
+ * und ein fehlender Browser, der den Client zerlegt, ist mehr als ein
+ * fehlender Browser.
  *
  * <p><b>Nichts hier wirft.</b> Jeder Weg endet in einem
  * {@link WebRuntimeStatus}, auch der, an dem etwas kaputt ist. Das ist die
@@ -39,7 +40,7 @@ public final class WebRuntime {
      * Fährt hoch, falls noch nicht geschehen.
      *
      * <p>Der Aufrufer reicht herein, wie ein Unterbau entsteht. Diese Klasse
-     * weiß nicht, dass es MCEF ist — und soll es nicht wissen.
+     * weiß nicht, was dahintersteht — und soll es nicht wissen.
      *
      * @param start baut den Unterbau, oder wirft
      */

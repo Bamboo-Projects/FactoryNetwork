@@ -9,27 +9,25 @@ package dev.devpanda.factorynetwork.web;
  * ihm, sondern daran, wer ihn ansieht: Ein Editor unter den Fingern braucht
  * jeden Tastenanschlag sofort, eine Tafel am anderen Ende der Halle nicht.
  *
- * <p><b>Nach oben ist hier nichts zu holen.</b> Gemessen liefert Chromium im
- * fensterlosen Betrieb <b>30,1 Bilder je Sekunde</b> — CEFs Voreinstellung.
- * Die JCEF-Fassung, die MCEF mitbringt, kennt weder {@code CefBrowserSettings}
- * noch ein {@code windowless_frame_rate}; {@code createBrowser} nimmt gar
- * keine Browser-Einstellungen entgegen. Diese Stufen können also nur
- * <b>drosseln</b>. {@link #FOREGROUND} liegt bewusst darüber: Die Stufe soll
- * heißen „so schnell wie es geht", und was das ist, entscheidet CEF.
+ * <p><b>Nach oben ist hier etwas zu holen — seit CEF 146.</b> Die Zahlen
+ * gelten in beide Richtungen: {@code CefBrowserSettings.windowless_frame_rate}
+ * nimmt sie entgegen, wir setzen sechzig, und gemessen kommen <b>60,3 Bilder
+ * je Sekunde</b> an. Die frühere JCEF-Fassung kannte weder die Einstellung
+ * noch einen Weg, sie zu übergeben; dort waren dreißig die Decke, und diese
+ * Stufen konnten nur drosseln.
  *
- * <p>Die übrigen Zahlen sind ein Anfang und keine Messung. Sie stehen hier,
- * damit die Drosselung von Beginn an existiert — nachträglich eingezogen wäre
- * sie ein Umbau jeder Aufrufstelle.
+ * <p>Die Zahlen unterhalb von {@link #FOREGROUND} sind ein Anfang und keine
+ * Messung. Sie stehen hier, damit die Drosselung von Beginn an existiert —
+ * nachträglich eingezogen wäre sie ein Umbau jeder Aufrufstelle.
  */
 public enum BrowserVisibility {
 
     /**
      * Vollbild, unter den Fingern des Spielers.
      *
-     * <p>Die Sechzig ist keine erreichbare Zahl, sondern eine offene Tür:
-     * Chromium liefert gemessen dreißig, und diese Stufe drosselt deshalb
-     * nichts. Sollte eine spätere JCEF-Fassung die Bildrate freigeben, steht
-     * hier schon, was dann gelten soll.
+     * <p>Die Sechzig ist erreicht: Gemessen kommen 60,3 Bilder je Sekunde an.
+     * Diese Stufe drosselt damit nichts — sie ist die Zahl, die beim Aufbau
+     * des Browsers gesetzt wird.
      */
     FOREGROUND(60),
 

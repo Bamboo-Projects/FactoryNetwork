@@ -8,10 +8,15 @@ import java.util.Map;
 /**
  * Setzt den Mauszeiger, den die Seite gerade haben möchte.
  *
- * <p><b>Warum das hier steht.</b> MCEF hat dieselbe Abbildung, aber die
- * Methode dafür ist paketprivat — von außen nicht erreichbar. Die Tabelle
- * dahinter stand im CinemaMod-Fork von JCEF; upstream hat sie nicht. Sie
- * gehört deshalb uns und steht in {@link CursorType}.
+ * <p><b>Warum das hier steht.</b> Die Tabelle dahinter stand im
+ * CinemaMod-Fork von JCEF; upstream hat sie nicht — dort meldet
+ * {@code onCursorChange} eine nackte Zahl. Sie gehört deshalb uns und steht in
+ * {@link CursorType}.
+ *
+ * <p><b>Und die Zahl ist nicht überall dieselbe.</b> Upstreams nativer Teil
+ * übersetzt vorher nach {@link java.awt.Cursor}; zurückgerechnet wird das in
+ * {@code AwtCursors}, bevor es hier ankommt. Was hier eintrifft, ist immer die
+ * Ordnungszahl von Chromium.
  *
  * <p>Übrig bleibt das Aufbewahren: {@code glfwCreateStandardCursor} legt jedes
  * Mal einen neuen Zeiger an, und einer je Mausbewegung über einen Link wäre

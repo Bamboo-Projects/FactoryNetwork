@@ -31,9 +31,9 @@ import java.nio.ByteBuffer;
  * Bild zeichnet, dreht stattdessen die Texturkoordinaten. Spiegeln beim
  * Hochladen wäre die teuerste Stelle für die billigste Rechnung.
  *
- * <p>Alle Aufrufe gehören in den Render-Thread. Bei MCEF ist das gegeben:
- * Chromiums Nachrichtenschleife läuft dort, also kommt auch {@code onPaint}
- * dort an.
+ * <p>Alle Aufrufe gehören in den Render-Thread. Das ist heute gegeben:
+ * Chromiums Nachrichtenschleife wird dort gepumpt, also kommt auch
+ * {@code onPaint} dort an.
  */
 public final class GlTextureBackend implements BrowserTextureBackend {
 

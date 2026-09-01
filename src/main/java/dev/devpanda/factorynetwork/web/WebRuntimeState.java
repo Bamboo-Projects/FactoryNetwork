@@ -4,7 +4,7 @@ package dev.devpanda.factorynetwork.web;
  * Warum es gerade einen Browser gibt — oder keinen.
  *
  * <p><b>Fünf Zustände und kein {@code boolean}.</b> „Web geht nicht" ist keine
- * Auskunft: Wer MCEF nicht installiert hat, braucht einen anderen Satz als
+ * Auskunft: Wem die Laufzeitumgebung fehlt, der braucht einen anderen Satz als
  * wer hinter einem Firmen-Proxy sitzt, und beide einen anderen als jemand auf
  * einer Plattform, für die es keine Binärdateien gibt. Ein zusammengefasstes
  * {@code false} macht aus drei Fragen eine unbeantwortbare.
@@ -19,13 +19,16 @@ public enum WebRuntimeState {
     NOT_STARTED,
 
     /**
-     * MCEF liegt nicht in diesem Pack.
+     * Die Laufzeitumgebung liegt nicht neben dem Spiel.
      *
-     * <p>Der häufigste Fall und der harmloseste: Die Mod ist freiwillig, wie
-     * Jade und JEI. Wer sie nachinstalliert, hat beim nächsten Start einen
-     * Browser.
+     * <p>Chromium wiegt 379 Megabyte und steckt deshalb nicht im Jar dieser
+     * Mod. Wer es nachlädt, hat beim nächsten Start einen Browser.
+     *
+     * <p><b>Wird heute noch von niemandem gesetzt.</b> Der Zustand wartet auf
+     * die Auslieferung der Laufzeitumgebung; bis dahin endet ein fehlender
+     * Ordner in {@link #FAILED} mit der Zeile, die den Bauweg nennt.
      */
-    MOD_MISSING,
+    RUNTIME_MISSING,
 
     /**
      * Für diese Plattform gibt es keine Binärdateien.
@@ -33,15 +36,21 @@ public enum WebRuntimeState {
      * <p>Kein Nachinstallieren hilft. Das muss anders klingen als ein
      * fehlender Download, sonst sucht jemand stundenlang an der falschen
      * Stelle.
+     *
+     * <p><b>Wird heute noch von niemandem gesetzt</b>, aus demselben Grund wie
+     * {@link #RUNTIME_MISSING}. Gebaut ist bisher nur {@code windows-x86_64}.
      */
     UNSUPPORTED,
 
     /**
      * Chromium ist noch nicht auf der Platte.
      *
-     * <p>MCEF lädt es beim ersten Start von einem eigenen Spiegel. Hinter
-     * einem Proxy, ohne Netz oder wenn der Spiegel steht, bleibt es dabei —
-     * und das ist ein Zustand, der beim nächsten Versuch anders ausgehen kann.
+     * <p>Vorgesehen für den Nachlademechanismus: Hinter einem Proxy, ohne Netz
+     * oder wenn die Ablage steht, bleibt es dabei — und das ist ein Zustand,
+     * der beim nächsten Versuch anders ausgehen kann.
+     *
+     * <p><b>Wird heute noch von niemandem gesetzt</b>, aus demselben Grund wie
+     * {@link #RUNTIME_MISSING}.
      */
     NOT_DOWNLOADED,
 

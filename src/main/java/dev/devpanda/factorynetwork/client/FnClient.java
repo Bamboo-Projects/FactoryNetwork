@@ -55,9 +55,10 @@ public final class FnClient {
      * Runde liefert, soll noch in die Textur, die dieses Bild benutzt — sonst
      * hinkt die Seite um ein Bild hinterher.
      *
-     * <p>Wer hier wirklich pumpt, hängt vom Unterbau ab und steht deshalb
-     * hinter {@code WebPump}: Auf MCEF tut es dessen eigener Mixin, und diese
-     * Zeile ist dann folgenlos.
+     * <p>Gepumpt wird hinter {@code WebPump}. Die Stelle war einmal
+     * folgenlos: Solange MCEF den Unterbau stellte, tat es dessen eigener
+     * Mixin. Seit die Laufzeitumgebung uns gehört, gibt es keinen Mixin mehr,
+     * und der Takt kommt aus genau dieser Zeile.
      */
     @SubscribeEvent
     public static void pumpWebRuntime(
@@ -81,10 +82,10 @@ public final class FnClient {
      * Beim Verlassen des Spiels gibt die Web-Runtime frei, was sie hält.
      *
      * <p><b>Nur das Herunterfahren steht hier, nicht das Hochfahren.</b> Ein
-     * Browser entsteht erst, wenn jemand einen sehen will: MCEF fährt sich
-     * nebenher selbst hoch, und wer beim Start des Spiels fragt, bekommt ein
-     * „noch nicht" als „nein". Es gibt also nichts anzumelden — nur etwas
-     * aufzuräumen, falls doch einer entstanden ist.
+     * Browser entsteht erst, wenn jemand einen sehen will, und Chromium fährt
+     * mit ihm hoch — im Renderthread, beim ersten Bedarf. Es gibt hier also
+     * nichts anzumelden, nur etwas aufzuräumen, falls doch einer entstanden
+     * ist.
      */
     @SubscribeEvent
     public static void closeWebRuntime(

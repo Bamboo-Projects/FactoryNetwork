@@ -22,8 +22,8 @@ public final class FactoryNetwork {
     public static final String MOD_ID = "factorynetwork";
 
     public FactoryNetwork(IEventBus modBus, ModContainer container) {
-        // <b>Der früheste Java-Code, den diese Mod hat.</b> MCEF startet
-        // Chromium beim allerersten Bildschirmwechsel — und der kommt schon
+        // <b>Der früheste Java-Code, den diese Mod hat.</b> Chromium kann
+        // schon beim allerersten Bildschirmwechsel starten — und der kommt
         // während des Ladens, also vor jedem Aufbau-Ereignis. Wer Chromiums
         // Kommandozeile ergänzen will, muss es hier tun oder gar nicht.
         //

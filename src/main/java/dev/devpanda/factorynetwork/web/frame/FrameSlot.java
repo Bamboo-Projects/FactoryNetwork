@@ -18,14 +18,14 @@ package dev.devpanda.factorynetwork.web.frame;
  * Bilderrecycling später ohne Umbau anzuhängen — und ohne Recycling
  * alloziert man bei 1080p achteinhalb Megabyte je Bild.
  *
- * <p><b>Zur Nebenläufigkeit:</b> Bei MCEF kommt {@code onPaint} im
- * Render-Thread an — die Mod pumpt Chromiums Nachrichtenschleife per Mixin in
- * {@code GameRenderer.render}. Ein Postfach über Threadgrenzen ist dort
- * <i>nicht nötig</i>. Es steht trotzdem hier, und zwar für die zwei Fälle, die
- * absehbar kommen: ein eigener Nachrichtentakt, sobald wir Chromium mit
- * {@code external_begin_frame} an unseren Renderloop hängen, und der GPU-Pfad,
- * bei dem der Aufruf gerade nicht dort ankommt, wo die Textur liegt. Die
- * Synchronisierung kostet einen unbestrittenen Monitor je Bild.
+ * <p><b>Zur Nebenläufigkeit:</b> {@code onPaint} kommt heute im Render-Thread
+ * an — dort pumpt {@code WebPump} Chromiums Nachrichtenschleife, einmal je
+ * Bild. Ein Postfach über Threadgrenzen ist damit <i>nicht nötig</i>. Es steht
+ * trotzdem hier, und zwar für die zwei Fälle, die absehbar kommen: ein eigener
+ * Nachrichtentakt, sobald wir Chromium mit {@code external_begin_frame} an
+ * unseren Renderloop hängen, und der GPU-Pfad, bei dem der Aufruf gerade nicht
+ * dort ankommt, wo die Textur liegt. Die Synchronisierung kostet einen
+ * unbestrittenen Monitor je Bild.
  */
 public final class FrameSlot implements AutoCloseable {
 

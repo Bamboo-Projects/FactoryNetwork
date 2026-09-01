@@ -5,13 +5,18 @@ package dev.devpanda.factorynetwork.web;
  *
  * <p><b>Eine Schnittstelle für einen Unterbau, den es nur einmal gibt</b> —
  * das sieht nach Vorrat aus und ist keiner. Sie ist die Stelle, an der die
- * Runtime <i>ohne</i> MCEF geladen werden kann: Stünde hier ein
- * MCEF-Typ, brächte schon das Laden von {@link WebRuntime} einen
- * {@code NoClassDefFoundError}, und die Mod startete nicht mehr, bloß weil
- * eine freiwillige Abhängigkeit fehlt.
+ * Runtime geladen werden kann, <i>ohne dass Chromium da sein muss</i>. Stünde
+ * hier ein Typ aus {@code org.cef}, brächte schon das Laden von
+ * {@link WebRuntime} einen {@code NoClassDefFoundError} — und die Mod startete
+ * nicht mehr, bloß weil eine Laufzeitumgebung fehlt, die 379 Megabyte wiegt
+ * und getrennt ausgeliefert wird.
  *
- * <p>Dass sie später einen zweiten Unterbau tragen kann — einen eigenen
- * JCEF-Aufsatz, einen GPU-Pfad —, ist ein Nebeneffekt und nicht der Zweck.
+ * <p>Das galt zur MCEF-Zeit, als der Unterbau eine fremde Mod war, und es gilt
+ * seitdem umso mehr: Jetzt gehört er uns, aber er liegt immer noch nicht im
+ * Jar.
+ *
+ * <p>Dass sie einen zweiten Unterbau tragen kann — einen GPU-Pfad etwa —, ist
+ * ein Nebeneffekt und nicht der Zweck.
  */
 public interface WebBackend extends AutoCloseable {
 

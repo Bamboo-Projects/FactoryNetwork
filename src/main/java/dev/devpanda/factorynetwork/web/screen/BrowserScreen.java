@@ -38,8 +38,10 @@ import org.slf4j.LoggerFactory;
  * {@code removed()} kommt in jedem Fall.
  *
  * <p><b>Das Schließen betrifft nur diesen Browser.</b> Chromium selbst bleibt
- * stehen: Es gehört MCEF, andere Mods im selben Pack benutzen es mit, und wer
- * es herunterfährt, nimmt es ihnen weg.
+ * stehen — und das gilt weiter, seit es uns gehört: Andere Browser derselben
+ * Mod hängen daran, und Hochfahren kostet Sekunden. Abgeräumt wird beim
+ * Verlassen des Spiels, an einer Stelle, nicht bei jedem geschlossenen
+ * Bildschirm.
  */
 public class BrowserScreen extends Screen {
 
