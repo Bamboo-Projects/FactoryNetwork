@@ -65,32 +65,19 @@ teuerste Weg, denselben Fehler noch einmal zu machen.
 
 ---
 
-## Entschieden am 1. September 2026
+## Was zu entscheiden ist, bevor der Parser angefasst wird
 
-**1. Der Block bleibt, bis der Code-Weg grün ist.** Dieselbe Regel wie bei
-MCEF: nicht entfernen, bevor das Neue trägt. Solange ist die Tafel der einzige
-lauffähige Beweis des Renderpfads — zeigt der freie Renderer nichts, sagt sie,
-ob es an ihm liegt oder am Rest der Kette. Danach fällt sie.
+**1. Was wird aus Block und Tafel?** Der Code-Weg ersetzt sie inhaltlich. Der
+Vorschlag folgt der Regel, die bei MCEF galt: erst bauen, was ersetzen soll,
+und erst entfernen, wenn es grün ist. Bis dahin bleibt die Tafel der einzige
+lauffähige Beweis des Renderpfads.
 
-**2. Jeder in Reichweite sieht sie.** Wie ein Display: Wer hinschaut, sieht
-etwas. Jeder Client fährt dafür eigenes Chromium; fünf Spieler mit zehn
-Flächen sind fünfzig Browser, aber verteilt auf fünf Rechner. Die Obergrenze
-aus `FnClientConfig` greift damit pro Spieler und nicht je Welt — sie steht
-dort schon richtig.
+**2. Wer sieht die Fläche?** Ein Display rechnet auf dem Server und schickt
+allen dieselben Zeilen. Eine Web-Fläche lädt jeder Client selbst — mit eigenem
+Chromium, eigener Sitzung, eigenem Zähler gegen die Obergrenze. Bei fünf
+Spielern in einer Basis sind zehn Flächen fünfzig Browser, nicht zehn.
 
-**3. Die Auflösung folgt der Größe, gedeckelt.** 512 Pixel je Block
-Kantenlänge, höchstens 2048×2048. Eine Fläche von 4×3 Blöcken bekäme
-2048×1536 — doppelt so viel Upload wie der Editor in Vollbild, und damit die
-Stelle, an der es aufhören muss.
-
-```text
-1x1 Block   →   512 x  512      wie heute die Tafel
-2x2         →  1024 x 1024
-4x3         →  2048 x 1536      gedeckelt
-8x6         →  2048 x 1536      dieselbe Zahl, nur gröber
-```
-
-**4. Wann sie verschwindet.** „Solange das Programm läuft" heißt: Wird es neu
+**3. Wann verschwindet sie?** „Solange das Programm läuft" heißt: Wird es neu
 eingespielt oder der Controller abgebaut, geht die Fläche zu. Am billigsten
 über einen vollständigen Abgleich — das Paket trägt die ganze Liste, und was
 darin fehlt, wird geschlossen. Dasselbe Verfahren wie bei den Anzeigen.

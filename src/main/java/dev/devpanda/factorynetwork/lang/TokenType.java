@@ -28,9 +28,6 @@ public enum TokenType {
     // Display
     TITLE, ROW, TEXT, PROGRESS, INDICATOR, LIST, BUTTON, SCALE,
 
-    // Web-Flächen
-    WEBVIEW, URL, FACE, SIZE,
-
     // Rezepte an Maschinen
     RECIPE, AT, OUT, STORE,
 
@@ -80,8 +77,6 @@ public enum TokenType {
             Map.entry("progress", PROGRESS), Map.entry("indicator", INDICATOR),
             Map.entry("list", LIST), Map.entry("button", BUTTON),
             Map.entry("scale", SCALE),
-            Map.entry("webview", WEBVIEW), Map.entry("url", URL),
-            Map.entry("face", FACE), Map.entry("size", SIZE),
             Map.entry("recipe", RECIPE), Map.entry("at", AT), Map.entry("out", OUT),
             Map.entry("store", STORE),
             Map.entry("emit", EMIT), Map.entry("await", AWAIT), Map.entry("where", WHERE),

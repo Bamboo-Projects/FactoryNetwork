@@ -58,38 +58,6 @@ public sealed interface Decl {
         }
     }
 
-    // ---- Web-Flächen ------------------------------------------------------
-
-    /**
-     * <pre>
-     * webview lager {
-     *   url  "https://…"
-     *   at   112.5 68 -340.5
-     *   face south
-     *   size 4 x 3
-     * }
-     * </pre>
-     *
-     * <p>Eine Fläche, die frei im Raum steht und eine Seite zeigt. Anders als
-     * ein Display rechnet der Server hier nichts aus — er sagt nur, wo sie
-     * hängt und was sie laden soll. Geladen wird bei jedem Spieler einzeln,
-     * mit seinem eigenen Chromium.
-     *
-     * <p><b>Die Größe ist in Blöcken angegeben, nicht in Pixeln.</b> Wie viele
-     * Pixel daraus werden, entscheidet der Client — fünfhundertzwölf je Block
-     * Kantenlänge, gedeckelt. Eine Zahl in Pixeln im Programm hieße, dass ein
-     * Server über den Speicher fremder Rechner bestimmt.
-     */
-    record WebView(String name, String url, Vec3 at, Facing face,
-                   int widthBlocks, int heightBlocks, Span span) implements Decl {
-
-        /** Wo die Fläche steht, in Weltkoordinaten. */
-        public record Vec3(double x, double y, double z) {}
-
-        /** Wohin sie schaut. */
-        public enum Facing { NORTH, EAST, SOUTH, WEST, UP, DOWN }
-    }
-
     /**
      * {@code recipe erz_mahlen at brecher { in 1 item:iron_ore out 2 item:iron_dust }}
      *

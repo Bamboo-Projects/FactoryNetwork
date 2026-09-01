@@ -40,10 +40,6 @@ public final class ProgramSize {
             case Decl.On on -> of(on.body());
             case Decl.Worker worker -> worker.entries().size();
             case Decl.Display display -> display.entries().size();
-            // Eine Web-Fläche kostet ihre vier Angaben. Was sie den Client
-            // kostet, steht auf einem anderen Blatt — hier zählt, was das
-            // Programm trägt.
-            case Decl.WebView ignored -> 4;
             case Decl.Group group -> group.members().size();
             case Decl.Multiblock multiblock -> {
                 int inner = multiblock.devices().size();
