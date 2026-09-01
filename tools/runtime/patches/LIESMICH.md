@@ -12,6 +12,7 @@ halb gepatchten Code zu übersetzen.
 | `0002-send-key-event-raw.patch` | 189 | `sendKeyEventRaw`: Tastenereignisse aus Werten statt aus einem `KeyEvent` |
 | `0003-clang-format-nicht-fatal.patch` | 6 | Der Bau bricht nicht mehr ab, wenn `clang-format` nicht geladen werden kann |
 | `0004-cef-im-eigenen-thread.patch` | 63 | `useCallingThread()`: CEF arbeitet im aufrufenden Thread statt in AWTs Ereignisthread |
+| `0005-bibliotheken-aus-genanntem-ordner.patch` | 26 | `jcef.library.path`: die nativen Bibliotheken aus einem zur Laufzeit genannten Ordner laden |
 
 Jeder Patch trägt seine Begründung im Kopf, und jeder sagt dort, was ihn
 überflüssig machen würde. Erzeugt werden sie mit `git format-patch` gegen den

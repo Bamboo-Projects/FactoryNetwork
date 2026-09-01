@@ -38,16 +38,12 @@ neoForge {
             systemProperty 'neoforge.enabledGameTestNamespaces', mod_id
             // Wo die eigene Laufzeitumgebung liegt.
             systemProperty 'fn.runtime.dir', ownRuntimeDir.absolutePath
-            // <b>Und der Ordner muss auf den PATH.</b> Nicht aus
-            // Bequemlichkeit: Native Methoden findet die JVM nur in
-            // Bibliotheken, die der Klassenlader der jeweiligen Klasse
-            // geladen hat. org.cef liegt hier im ModuleClassLoader, unser
-            // Code im TransformingClassLoader — ein System.load aus
-            // unserem Code bindet an den falschen. Über java.library.path
-            // lädt java-cef selbst, und dann stimmt der Lader. Auf Windows
-            // speist sich dieser Pfad aus dem PATH.
-            environment 'PATH', (ownRuntimeDir.absolutePath
-                    + File.pathSeparator + System.getenv('PATH'))
+            // <b>Kein PATH-Eintrag mehr.</b> Hier stand einer, weil java-cef
+            // seine Bibliotheken über java.library.path suchte und der sich
+            // auf Windows aus dem PATH speist. Das trug nur im Entwicklungs-
+            // lauf — ein Launcher setzt keinen PATH für uns. Seit Patch 0005
+            // nennt die Mod den Ordner selbst über jcef.library.path, und
+            // dieser Lauf prüft damit denselben Weg, den ein Spieler geht.
             // Ohne das wirft die JVM wiederholte Ausnahmen an derselben
             // Stelle irgendwann ohne Stapel — und eine Ausnahme aus einem
             // Chromium-Rückruf kommt ohnehin nur als Kopfzeile an. Beides

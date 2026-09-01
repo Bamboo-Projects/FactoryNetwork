@@ -40,6 +40,9 @@ public final class FnCefRuntime {
      * <p>Gesetzt vom Buildskript bei jedem Lauf. Der Rückfall auf einen
      * relativen Pfad ist für den Fall gedacht, dass jemand den Client von Hand
      * startet.
+     *
+     * <p>Aus diesem Ordner wird auch {@code jcef.library.path} gefüllt — die
+     * Eigenschaft, über die Patch 0005 die nativen Bibliotheken findet.
      */
     private static final String DIR_PROPERTY = "fn.runtime.dir";
 
@@ -89,24 +92,25 @@ public final class FnCefRuntime {
             captureStandardError();
         }
 
-        // <b>Die Bibliotheken lädt java-cef selbst, und das muss so sein.</b>
-        // Der erste Entwurf setzte hier einen eigenen Ladeweg über
-        // SystemBootstrap.setLoader und System.load mit absolutem Pfad. Das
-        // lädt die Datei zwar, nützt aber nichts: Native Methoden findet die
-        // JVM nur in Bibliotheken, die der Klassenlader der jeweiligen Klasse
-        // geladen hat. Gemessen im Spiel —
+        // <b>Wir nennen den Ordner, laden tut java-cef selbst.</b> Ein eigener
+        // Ladeweg über SystemBootstrap.setLoader und System.load mit absolutem
+        // Pfad lädt die Datei zwar, nützt aber nichts: Native Methoden findet
+        // die JVM nur in Bibliotheken, die der Klassenlader der jeweiligen
+        // Klasse geladen hat. Gemessen im Spiel —
         //
         //   CefApp        cpw.mods.cl.ModuleClassLoader
         //   FnCefRuntime  cpw.mods.modlauncher.TransformingClassLoader
         //
         // — und ein System.load aus unserem Code bindet an den zweiten. Die
         // Folge ist ein UnsatisfiedLinkError beim ersten nativen Aufruf,
-        // obwohl die Bibliothek längst im Prozess steht.
+        // obwohl die Bibliothek längst im Prozess steht. Ein Loader, den wir
+        // von außen setzen, hätte dasselbe Problem: Er liefe in unserem Lader.
         //
-        // Deshalb bleibt der Vorgabeweg: java-cef ruft System.loadLibrary aus
-        // seiner eigenen Klasse, und dann stimmt der Lader. Gefunden wird die
-        // Datei über java.library.path — auf Windows speist der sich aus dem
-        // PATH, und den setzt das Buildskript für diesen Lauf.
+        // Deshalb sagt Patch 0005 dem Vorgabeweg, wo er suchen soll. Der
+        // System.load-Aufruf steht damit in SystemBootstrap selbst, der Lader
+        // stimmt, und es braucht keinen PATH-Eintrag mehr — den setzt unter
+        // einem echten Launcher ohnehin niemand für uns.
+        System.setProperty("jcef.library.path", dir.getAbsolutePath());
 
         // <b>Vor CefApp.startup, nicht danach.</b> Der Wächter klammert den
         // eigenen Prozess ein, und Kindprozesse erben die Zugehörigkeit. Wer
