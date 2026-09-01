@@ -79,6 +79,7 @@ public final class Parser {
             case MULTIBLOCK -> parseMultiblock();
             case EVENT -> parseEvent();
             case DISPLAY -> parseDisplay();
+            case WEBVIEW -> parseWebView();
             case FN -> parseFn();
             case ON -> parseOn();
             case GLOBAL -> parseGlobal();
@@ -532,6 +533,195 @@ public final class Parser {
         String name = expectName("des Ereignisses");
         List<Decl.Param> parameters = parseParamList(true);
         return new Decl.Event(name, parameters, keyword.span().to(previous().span()));
+    }
+
+    /**
+     * <pre>
+     * webview lager {
+     *   url  "https://…"
+     *   at   112.5 68 -340.5
+     *   face south
+     *   size 4 x 3
+     * }
+     * </pre>
+     *
+     * <p><b>Vier Eigenschaften in beliebiger Reihenfolge, keine ein
+     * Baustein.</b> Ein Display sammelt Zeilen, und dort ist die Reihenfolge
+     * der Inhalt. Hier steht viermal eine Angabe — sie zweimal zu schreiben
+     * ist ein Fehler, und Adresse und Ort dürfen nicht fehlen.
+     */
+    private Decl parseWebView() {
+        Token keyword = advance();
+        String name = expectName("der Web-Fläche");
+        if (!expect(TokenType.LBRACE, "Nach dem Namen fehlt die geschweifte Klammer.")) {
+            recoverToDeclaration();
+            return new Decl.Invalid(name, keyword.span());
+        }
+        String url = null;
+        Decl.WebView.Vec3 where = null;
+        Decl.WebView.Facing face = null;
+        int width = 1;
+        int height = 1;
+        boolean sized = false;
+        skipNewlines();
+        while (!at(TokenType.RBRACE) && !at(TokenType.EOF)) {
+            Token start = peek();
+            switch (start.type()) {
+                case URL -> {
+                    advance();
+                    Token text = peek();
+                    if (!text.is(TokenType.STRING)) {
+                        error(text.span(), "Nach url fehlt die Adresse in Anführungszeichen.",
+                                "Zum Beispiel: url \"https://example.org\"");
+                        recoverToLineEnd();
+                    } else {
+                        advance();
+                        if (url != null) {
+                            error(start.span(), "Die Adresse steht schon weiter oben.");
+                        }
+                        url = text.text();
+                    }
+                }
+                case AT -> {
+                    advance();
+                    Decl.WebView.Vec3 read = parseWebViewPosition();
+                    if (read != null) {
+                        if (where != null) {
+                            error(start.span(), "Der Ort steht schon weiter oben.");
+                        }
+                        where = read;
+                    }
+                }
+                case FACE -> {
+                    advance();
+                    Decl.WebView.Facing read = parseWebViewFacing();
+                    if (read != null) {
+                        if (face != null) {
+                            error(start.span(), "Die Blickrichtung steht schon weiter oben.");
+                        }
+                        face = read;
+                    }
+                }
+                case SIZE -> {
+                    advance();
+                    int[] read = parseWebViewSize();
+                    if (read != null) {
+                        if (sized) {
+                            error(start.span(), "Die Größe steht schon weiter oben.");
+                        }
+                        width = read[0];
+                        height = read[1];
+                        sized = true;
+                    }
+                }
+                default -> {
+                    error(start.span(), describe(start) + " gehört nicht in eine webview.",
+                            "Erlaubt sind url, at, face und size.");
+                    recoverToLineEnd();
+                }
+            }
+            skipNewlines();
+        }
+        Token end = expectBrace(keyword, "webview");
+        Span span = keyword.span().to(end.span());
+        if (url == null) {
+            error(span, "Der Web-Fläche " + name + " fehlt die Adresse.",
+                    "Zum Beispiel: url \"https://example.org\"");
+        }
+        if (where == null) {
+            error(span, "Der Web-Fläche " + name + " fehlt der Ort.",
+                    "Zum Beispiel: at 112.5 68 -340.5");
+        }
+        return new Decl.WebView(name, url == null ? "" : url,
+                where == null ? new Decl.WebView.Vec3(0, 0, 0) : where,
+                face == null ? Decl.WebView.Facing.NORTH : face,
+                width, height, span);
+    }
+
+    /** Drei Zahlen, ganz oder mit Punkt, jede darf ein Minus tragen. */
+    private Decl.WebView.Vec3 parseWebViewPosition() {
+        Double x = parseWebViewNumber();
+        Double y = x == null ? null : parseWebViewNumber();
+        Double z = y == null ? null : parseWebViewNumber();
+        if (z == null) {
+            recoverToLineEnd();
+            return null;
+        }
+        return new Decl.WebView.Vec3(x, y, z);
+    }
+
+    private Double parseWebViewNumber() {
+        boolean negative = at(TokenType.MINUS);
+        if (negative) {
+            advance();
+        }
+        Token number = peek();
+        if (!number.is(TokenType.INT) && !number.is(TokenType.FLOAT)) {
+            error(number.span(), "Hier fehlt eine Zahl.",
+                    "Ein Ort besteht aus drei: at 112.5 68 -340.5");
+            return null;
+        }
+        advance();
+        double value = Double.parseDouble(number.text());
+        return negative ? -value : value;
+    }
+
+    /**
+     * Eine Himmelsrichtung, oben oder unten.
+     *
+     * <p>Als Name gelesen und nicht als Schlüsselwort: north und die übrigen
+     * gehören der Sprache nicht, und sie zu Schlüsselwörtern zu machen nähme
+     * sie jedem, der ein Gerät so nennen will.
+     */
+    private Decl.WebView.Facing parseWebViewFacing() {
+        Token token = peek();
+        if (!token.is(TokenType.NAME)) {
+            error(token.span(), "Nach face fehlt die Blickrichtung.",
+                    "Erlaubt sind north, east, south, west, up und down.");
+            recoverToLineEnd();
+            return null;
+        }
+        advance();
+        try {
+            return Decl.WebView.Facing.valueOf(
+                    token.text().toUpperCase(java.util.Locale.ROOT));
+        } catch (IllegalArgumentException unknown) {
+            error(token.span(), token.text() + " ist keine Blickrichtung.",
+                    "Erlaubt sind north, east, south, west, up und down.");
+            recoverToLineEnd();
+            return null;
+        }
+    }
+
+    /**
+     * Breite und Höhe in Blöcken, mit oder ohne x dazwischen.
+     *
+     * <p>Wie viele Pixel daraus werden, entscheidet der Client. Eine Zahl in
+     * Pixeln hier hieße, dass ein Server über den Speicher fremder Rechner
+     * bestimmt.
+     */
+    private int[] parseWebViewSize() {
+        Token first = peek();
+        if (!first.is(TokenType.INT)) {
+            error(first.span(), "Nach size fehlt die Breite in Blöcken.",
+                    "Zum Beispiel: size 4 x 3");
+            recoverToLineEnd();
+            return null;
+        }
+        advance();
+        // Das x zwischen den Zahlen ist Schmuck und darf fehlen.
+        if (at(TokenType.NAME) && peek().text().equals("x")) {
+            advance();
+        }
+        Token second = peek();
+        if (!second.is(TokenType.INT)) {
+            error(second.span(), "Nach der Breite fehlt die Höhe in Blöcken.",
+                    "Zum Beispiel: size 4 x 3");
+            recoverToLineEnd();
+            return null;
+        }
+        advance();
+        return new int[] {Integer.parseInt(first.text()), Integer.parseInt(second.text())};
     }
 
     private Decl parseDisplay() {

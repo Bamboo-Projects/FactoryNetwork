@@ -34,6 +34,9 @@
       "include": "#display"
     },
     {
+      "include": "#webview"
+    },
+    {
       "include": "#recipe-key"
     },
     {
@@ -85,7 +88,7 @@
     "declaration": {
       "comment": "Was auf oberster Ebene stehen darf",
       "name": "keyword.declaration.manifold",
-      "match": "\\b(fn|worker|group|filter|multiblock|event|display|store|recipe|on|import|global|const)\\b"
+      "match": "\\b(fn|worker|group|filter|multiblock|event|display|webview|store|recipe|on|import|global|const)\\b"
     },
     "control": {
       "name": "keyword.control.manifold",
@@ -100,6 +103,11 @@
       "comment": "Die Zeilenarten einer Anzeige",
       "name": "entity.name.tag.display.manifold",
       "match": "\\b(title|row|text|progress|indicator|list|button|scale)\\b"
+    },
+    "webview": {
+      "comment": "Die Angaben einer Web-Fläche",
+      "name": "entity.name.tag.webview.manifold",
+      "match": "\b(url|face|size)\b"
     },
     "source": {
       "comment": "Woher ein Wert kommt — storage.count, network.energy",
