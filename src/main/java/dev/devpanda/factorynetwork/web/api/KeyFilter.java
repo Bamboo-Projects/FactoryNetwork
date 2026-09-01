@@ -62,13 +62,39 @@ public interface KeyFilter {
         return (key, modifiers) -> Arrays.binarySearch(blocked, key) < 0;
     }
 
-    /** Diese Fläche <b>und</b> jene — eine Taste muss durch beide passen. */
+    /** Dieser Filter <b>und</b> jener — eine Taste muss durch beide passen. */
     default KeyFilter and(KeyFilter other) {
         return (key, modifiers) -> routes(key, modifiers) && other.routes(key, modifiers);
     }
 
-    /** Diese Fläche <b>oder</b> jene. */
+    /** Dieser Filter <b>oder</b> jener. */
     default KeyFilter or(KeyFilter other) {
         return (key, modifiers) -> routes(key, modifiers) || other.routes(key, modifiers);
+    }
+
+    /**
+     * Diese Tasten zusätzlich.
+     *
+     * <p>Der häufigste Wunsch nach einer Gruppe: fast die richtige, nur noch
+     * eine Taste dazu. {@code Keys.ARROWS.plus(GLFW_KEY_ENTER)} liest sich
+     * besser als eine zweite Gruppe daneben.
+     */
+    default KeyFilter plus(int... keys) {
+        return or(only(keys));
+    }
+
+    /**
+     * Diese Tasten nicht.
+     *
+     * <p>Das Gegenstück: {@code KeyFilter.ALL.minus(GLFW_KEY_ESCAPE)} ist ein
+     * Editor, aus dem der Spieler herauskommt.
+     */
+    default KeyFilter minus(int... keys) {
+        return and(except(keys));
+    }
+
+    /** Genau das Gegenteil dieses Filters. */
+    default KeyFilter negate() {
+        return (key, modifiers) -> !routes(key, modifiers);
     }
 }

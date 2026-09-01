@@ -24,6 +24,14 @@ class KeyFilterTest {
     private static final int DOWN = 264;
     private static final int W = 87;
     private static final int SHIFT = 0x0001;
+    private static final int CONTROL = 0x0002;
+    private static final int SPACE = 32;
+    private static final int C = 67;
+    private static final int ENTER = 257;
+    private static final int BACKSPACE = 259;
+    private static final int F1 = 290;
+    private static final int F12 = 301;
+    private static final int ONE = 49;
 
     @Test
     @DisplayName("Ein Editor nimmt alles")
@@ -79,6 +87,73 @@ class KeyFilterTest {
 
         KeyFilter either = KeyFilter.only(ESCAPE).or(KeyFilter.only(UP));
         assertTrue(either.routes(UP, 0));
+    }
+
+    @Test
+    @DisplayName("Ein Schnellmenü aus zwei Gruppen")
+    void groupsCombineIntoAQuickMenu() {
+        KeyFilter menu = Keys.CLOSE.or(Keys.ARROWS);
+
+        assertTrue(menu.routes(ESCAPE, 0));
+        assertTrue(menu.routes(UP, 0));
+        assertFalse(menu.routes(W, 0));
+    }
+
+    @Test
+    @DisplayName("Ein Eingabefeld nimmt, was Text bewegt und ändert")
+    void textEntryTakesWhatMovesAndChangesText() {
+        assertTrue(Keys.TEXT_ENTRY.routes(BACKSPACE, 0));
+        assertTrue(Keys.TEXT_ENTRY.routes(UP, 0));
+        assertTrue(Keys.TEXT_ENTRY.routes(ENTER, 0));
+        assertFalse(Keys.TEXT_ENTRY.routes(ESCAPE, 0),
+                "ob Escape das Feld schließt oder die Eingabe verwirft, "
+                        + "entscheidet der Aufrufer");
+    }
+
+    @Test
+    @DisplayName("Alles außer der Bewegung — der Spieler bleibt beweglich")
+    void everythingButMovement() {
+        assertTrue(Keys.NOT_MOVEMENT.routes(ESCAPE, 0));
+        assertTrue(Keys.NOT_MOVEMENT.routes(UP, 0));
+        assertFalse(Keys.NOT_MOVEMENT.routes(W, 0));
+        assertFalse(Keys.NOT_MOVEMENT.routes(SPACE, 0));
+    }
+
+    @Test
+    @DisplayName("Kürzel gelten nur mit Strg")
+    void shortcutsNeedControl() {
+        // Ein blankes C durchzulassen naehme dem Spieler den Buchstaben — und
+        // dieselbe Taste ist ohne Strg etwas voellig anderes.
+        assertTrue(Keys.SHORTCUTS.routes(C, CONTROL));
+        assertFalse(Keys.SHORTCUTS.routes(C, 0));
+        assertFalse(Keys.SHORTCUTS.routes(W, CONTROL));
+    }
+
+    @Test
+    @DisplayName("Bereiche: Funktionstasten und Schnellleiste")
+    void rangesCoverTheirEnds() {
+        assertTrue(Keys.FUNCTION.routes(F1, 0));
+        assertTrue(Keys.FUNCTION.routes(F12, 0), "beide Enden gehören dazu");
+        assertFalse(Keys.FUNCTION.routes(ESCAPE, 0));
+        assertTrue(Keys.HOTBAR.routes(ONE, 0));
+    }
+
+    @Test
+    @DisplayName("Eine Gruppe plus eine Taste, und eine Gruppe minus einer")
+    void plusAndMinusAdjustAGroup() {
+        assertTrue(Keys.ARROWS.plus(ENTER).routes(ENTER, 0));
+        assertTrue(Keys.ARROWS.plus(ENTER).routes(UP, 0));
+
+        KeyFilter editor = KeyFilter.ALL.minus(ESCAPE);
+        assertTrue(editor.routes(W, 0));
+        assertFalse(editor.routes(ESCAPE, 0), "damit der Spieler herauskommt");
+    }
+
+    @Test
+    @DisplayName("Das Gegenteil eines Filters")
+    void negateFlipsTheAnswer() {
+        assertTrue(Keys.MOVEMENT.negate().routes(ESCAPE, 0));
+        assertFalse(Keys.MOVEMENT.negate().routes(W, 0));
     }
 
     @Test
