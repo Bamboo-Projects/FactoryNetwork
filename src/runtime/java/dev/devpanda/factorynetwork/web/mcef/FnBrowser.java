@@ -602,6 +602,41 @@ public class FnBrowser extends CefBrowser_N implements CefRenderHandler {
                 GlfwScancodes.base(scanCode),
                 GlfwScancodes.extended(scanCode),
                 GlfwKeys.toAwtKeyCode(glfwKeyCode));
+        if (down && needsCarriageReturn(glfwKeyCode, modifiers)) {
+            sendChar(CARRIAGE_RETURN, modifiers);
+        }
+    }
+
+    /** Was Chromium für einen Zeilenumbruch sehen will. */
+    private static final char CARRIAGE_RETURN = '\r';
+
+    /**
+     * Ob nach diesem Tastendruck noch ein Wagenrücklauf gehört.
+     *
+     * <p><b>Die Eingabetaste ist die eine Taste, die beides braucht</b> — den
+     * Tastendruck <i>und</i> ein Zeichen. Upstreams eigener Quelltext sagt es
+     * im Zweig für Linux ausdrücklich: „We need to treat the enter key as a
+     * key press of character \r. This is apparently just how webkit handles it
+     * and what it expects." Unter Windows liefert das Betriebssystem nach der
+     * Tastenmeldung genau dafür eine Zeichenmeldung nach.
+     *
+     * <p>Bei uns kam sie nie an: {@code KEY_TYPED} entsteht ausschließlich aus
+     * Minecrafts {@code charTyped}, und das wird für die Eingabetaste nicht
+     * gerufen — sie ist kein druckbares Zeichen. Der Tastendruck kam an, der
+     * Zeilenumbruch nicht. Gefunden hat das die Handprüfung; die maschinelle
+     * Matrix hatte für die Eingabetaste den Tastencode geprüft und nicht den
+     * Text.
+     *
+     * <p><b>Nicht mit Strg oder Alt.</b> Dann ist die Eingabetaste ein
+     * Tastenkürzel und kein Zeilenumbruch — ein Zeichen hinterherzuschicken
+     * schriebe eine Zeile, die niemand wollte. Umschalt bleibt erlaubt:
+     * Umschalt+Eingabe ist in einem Editor ein Zeilenumbruch wie jeder andere.
+     */
+    private static boolean needsCarriageReturn(int glfwKeyCode, int modifiers) {
+        boolean enter = glfwKeyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_ENTER
+                || glfwKeyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_KP_ENTER;
+        int blocking = org.lwjgl.glfw.GLFW.GLFW_MOD_CONTROL | org.lwjgl.glfw.GLFW.GLFW_MOD_ALT;
+        return enter && (modifiers & blocking) == 0;
     }
 
     /**

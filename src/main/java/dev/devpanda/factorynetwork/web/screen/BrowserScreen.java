@@ -219,10 +219,13 @@ public class BrowserScreen extends Screen {
     // ---- Fokus -------------------------------------------------------------
 
     /**
-     * Escape schließt nicht.
+     * Escape schließt nicht von selbst.
      *
-     * <p>Solange die Seite den Fokus hat, gehört Escape ihr. Ist der Fokus bei
-     * Minecraft, wird Escape in {@link #keyPressed} von Hand behandelt.
+     * <p>Solange die Seite den Fokus hat, gehört das erste Escape ihr; ein
+     * zweites unmittelbar danach schließt. Ist der Fokus bei Minecraft, wird
+     * Escape in {@link #keyPressed} von Hand behandelt. Minecrafts eigene
+     * Behandlung würde beim ersten Escape schließen und der Seite nichts
+     * lassen.
      */
     @Override
     public boolean shouldCloseOnEsc() {
@@ -257,6 +260,26 @@ public class BrowserScreen extends Screen {
 
     // ---- Tastatur ----------------------------------------------------------
 
+    /**
+     * Ob das letzte Ereignis ein Escape war.
+     *
+     * <p><b>Warum es das braucht.</b> Escape gehört zwei Empfängern: Monaco
+     * schließt damit seine Vorschlagsliste, sein Suchfeld, seine Übersicht —
+     * und ein Minecraft-Bildschirm schließt sich damit. Beides gleichzeitig
+     * geht nicht, und wer den Fokus hat, bekommt sonst alles.
+     *
+     * <p>Bisher bekam die Seite jedes Escape, und der Zweig, der schließt, war
+     * nie erreichbar. Jetzt gilt: <b>Das erste Escape gehört der Seite, ein
+     * zweites unmittelbar danach schließt den Bildschirm.</b> Jede andere
+     * Eingabe dazwischen — Taste oder Mausklick — setzt den Zähler zurück,
+     * denn dann hat der Benutzer weitergearbeitet und meinte kein Schließen.
+     *
+     * <p>Java kann nicht wissen, ob Monaco gerade etwas offen hat. Diese Regel
+     * braucht es auch nicht: Wer etwas geschlossen hat, drückt nicht sofort
+     * noch einmal.
+     */
+    private boolean escapePending;
+
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (keyCode == RELEASE_KEY) {
@@ -269,12 +292,26 @@ public class BrowserScreen extends Screen {
             return true;
         }
         if (session != null && focus.routesKeyboard()) {
+            if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
+                if (escapePending) {
+                    // Das zweite Escape. Das erste hatte die Seite; wenn sie
+                    // damit etwas geschlossen hat, hätte der Benutzer danach
+                    // weitergearbeitet und nicht noch einmal Escape gedrückt.
+                    escapePending = false;
+                    onClose();
+                    return true;
+                }
+                escapePending = true;
+            } else {
+                escapePending = false;
+            }
             session.keyPressed(keyCode, scanCode, modifiers);
             // <b>Nicht an super weitergeben.</b> Sonst sieht der Bildschirm
             // dieselbe Taste noch einmal, und was die Seite gerade
             // entgegengenommen hat, löst zusätzlich etwas in Minecraft aus.
             return true;
         }
+        escapePending = false;
         if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
             onClose();
             return true;
@@ -334,6 +371,9 @@ public class BrowserScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        // Wer klickt, arbeitet weiter und meint mit dem nächsten Escape nicht
+        // das Schließen des Bildschirms.
+        escapePending = false;
         if (session == null || view == null || !view.contains(mouseX, mouseY)) {
             return super.mouseClicked(mouseX, mouseY, button);
         }
