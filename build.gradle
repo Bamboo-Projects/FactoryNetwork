@@ -165,14 +165,6 @@ repositories {
         forRepository { maven { url = 'https://api.modrinth.com/maven' } }
         filter { includeGroup 'maven.modrinth' }
     }
-    // MCEF bringt Chromium ins Spiel. Es liegt auf dem Maven der CinemaMod
-    // Group; ein anderes gibt es nicht.
-    exclusiveContent {
-        forRepository {
-            maven { url = 'https://mcef-download.cinemamod.com/repositories/releases' }
-        }
-        filter { includeGroup 'com.cinemamod' }
-    }
     // JEI liegt bei BlameJared und nicht auf Modrinth-Maven. Die API ist
     // ein eigenes Artefakt — zum Übersetzen reicht sie, und sie zieht nicht
     // die halbe Mod in den Klassenpfad.

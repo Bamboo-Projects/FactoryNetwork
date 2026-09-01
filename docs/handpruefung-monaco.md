@@ -19,11 +19,13 @@ die ein Mensch in vier Minuten findet.** Genau deshalb gibt es diese Liste.
 
 ```text
 pwsh -File tools/runtime/build-jcef.ps1     falls die Laufzeitumgebung fehlt
-./gradlew runClient -Pfnruntime -Pide       Editor öffnet sich, F6 öffnet erneut
+./gradlew runClient -Pide                   Editor öffnet sich, F6 öffnet erneut
 ```
 
-Zum Vergleich derselbe Lauf ohne `-Pfnruntime` — dann läuft alles auf MCEF wie
-bisher. **Wo sich beide unterscheiden, ist der interessante Fall.**
+**Gefahren wurde mit `-Pfnruntime`**, dem Schalter der damaligen Zeit. Seit B8
+gibt es ihn nicht mehr, weil es nichts mehr umzuschalten gibt — die
+Befehlszeile oben ist dieselbe Sache ohne den Schalter. Ein Vergleichslauf auf
+MCEF ist seitdem nicht mehr möglich.
 
 ---
 
