@@ -111,10 +111,11 @@ entsprechendem Text ins Protokoll.
 
 | Messung | Helfer vorher | danach |
 |---|---|---|
-| harter Abbruch mit Wächter | 5 | **0** |
 | normaler Ausgang | 4 | **0** |
 
-Zum Vergleich ohne Wächter: dreimal gemessen, einmal eine Waise.
+Die harten Abbrüche stehen weiter unten unter „Die Nachprüfungen" — dreimal
+gemessen, dreimal null. Zum Vergleich ohne Wächter: ebenfalls dreimal
+gemessen, einmal eine Waise.
 
 ---
 
