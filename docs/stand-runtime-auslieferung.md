@@ -75,7 +75,7 @@ Kein Entwicklungsordner, die Laufzeitumgebung muss von selbst kommen.
 
 ```text
 21:01:17.606  Lade die Laufzeitumgebung: https://factorynetwork.bamboo-srv.de/fn-runtime-146.0.10-windows-x86_64.tar.gz
-21:01:18.680  Kein Browser zu haben: NOT_DOWNLOADED: Die Laufzeitumgebung wird geladen
+21:01:18.680  Kein Browser zu haben: FAILED: NOT_DOWNLOADED: Die Laufzeitumgebung wird geladen
 21:01:18.841  Laufzeitumgebung: 20 von 165 MB
      …
 21:01:23.131  Laufzeitumgebung: 160 von 165 MB
@@ -101,7 +101,7 @@ heute so gewollt und unten unter „offen" notiert.
 21:04:29.280  Seite: IDE bereit: 8 Modelle, 800 Zeilen im größten
 ```
 
-Keine Warnung der Mod im ganzen Lauf, sechs `jcef_helper` bei drei offenen
+Keine Warnung der Mod im ganzen Lauf, sechs `jcef_helper` bei zwei offenen
 Browsern, nach dem Fensterkreuz alle Prozesse binnen einer Sekunde weg. Damit
 ist die Stufe „Start ohne Gradle" aus `stand-runtime-b567.md` bestanden — auf
 der nachgeladenen Laufzeitumgebung, nicht auf der aus dem Entwicklungsordner.
