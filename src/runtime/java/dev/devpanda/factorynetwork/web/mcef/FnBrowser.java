@@ -323,10 +323,60 @@ public class FnBrowser extends CefBrowser_N implements CefRenderHandler {
      * <p>Der Aufruf an die Oberklasse muss zuerst kommen: Sie gibt dort
      * eigene Verweise frei und markiert den Browser als geschlossen.
      */
+    /**
+     * Ob gerade ein Fokuswechsel läuft.
+     *
+     * <p>Kein Zustand, den jemand abfragt — nur die Bremse gegen den Kreis
+     * unten. Ein Feld ohne Nebenläufigkeitsschutz genügt: Fokus wird im
+     * Renderthread gesetzt, und die Rückmeldung kommt aus derselben
+     * Nachrichtenschleife.
+     */
+    private boolean settingFocus;
+
+    /**
+     * Setzt den Fokus — genau einmal je Anlass.
+     *
+     * <p><b>Ohne die Bremse ist das eine Endlosschleife.</b> Gemessen im
+     * Spiel, als Stapel:
+     *
+     * <pre>
+     *   FnBrowser.setFocus(true)
+     *     → CefBrowser_N.setFocus → N_SetFocus (nativ)
+     *         → CefClient.onGotFocus
+     *             → browser.setFocus(true)     zurück auf Anfang
+     * </pre>
+     *
+     * <p>Sie läuft, bis der Stapel überläuft; der native Teil schluckt den
+     * {@code StackOverflowError} und macht weiter. Sichtbar war davon nur
+     * {@code Exception in thread "Render thread"} ohne Stapel — ein bis sieben
+     * Mal je Browsererzeugung, je nachdem wie oft der Bildschirm den Fokus
+     * setzt.
+     *
+     * <p><b>Der CinemaMod-Fork hat den Rückschlag nicht:</b> Dessen
+     * {@code CefClient.onGotFocus} reicht die Meldung nur an den
+     * Fokus-Handler weiter, upstream setzt zusätzlich den Fokus erneut. Das
+     * ist der Grund, warum derselbe Bildschirm auf MCEF keine einzige dieser
+     * Meldungen erzeugt.
+     *
+     * <p>Der Kreis lässt sich nur hier brechen: Die andere Hälfte gehört
+     * upstream, und ein Patch dafür wäre ein Patch gegen fremdes
+     * Fokusverhalten statt gegen eine fehlende Möglichkeit.
+     */
     @Override
     public void setFocus(boolean enable) {
-        trace("setFocus " + enable);
-        super.setFocus(enable);
+        if (settingFocus) {
+            // Das ist Chromiums Rückmeldung auf den Fokus, den wir gerade
+            // setzen. Sie noch einmal weiterzureichen hieße, sie ein drittes
+            // Mal zu bekommen.
+            return;
+        }
+        settingFocus = true;
+        try {
+            trace("setFocus " + enable);
+            super.setFocus(enable);
+        } finally {
+            settingFocus = false;
+        }
     }
 
     @Override
