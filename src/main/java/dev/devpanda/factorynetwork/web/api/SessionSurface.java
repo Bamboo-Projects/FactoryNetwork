@@ -30,12 +30,14 @@ final class SessionSurface implements WebSurface {
 
     private final BrowserSession session;
     private final KeyFilter keys;
+    private final KeyRouting routing;
     private final ResourceLocation location;
     private boolean closed;
 
     SessionSurface(BrowserSession session, KeyFilter keys) {
         this.session = session;
         this.keys = keys;
+        this.routing = new KeyRouting(keys);
         this.location = ResourceLocation.fromNamespaceAndPath(
                 "factorynetwork", "web_surface/" + nextId++);
         Minecraft.getInstance().getTextureManager()
@@ -77,7 +79,15 @@ final class SessionSurface implements WebSurface {
 
     @Override
     public boolean alive() {
-        return !closed;
+        // Beides: Wer die Fläche selbst schloss, und wer den Browser darunter
+        // verlor — beim Verlassen der Welt schließt der Verwalter alle
+        // Sitzungen, und die Fläche erfährt es nur auf diesem Weg.
+        return !closed && session.isOpen();
+    }
+
+    /** Für die Zeichner im selben Paket: die Sitzung samt Popup-Angaben. */
+    BrowserSession session() {
+        return session;
     }
 
     // ---- Eingaben -----------------------------------------------------------
@@ -117,9 +127,12 @@ final class SessionSurface implements WebSurface {
         }
     }
 
+    // Der Filter entscheidet beim Drücken; Zeichen, Wiederholung und
+    // Loslassen folgen dieser Entscheidung — siehe KeyRouting.
+
     @Override
     public boolean keyPressed(int glfwKey, int scanCode, int modifiers) {
-        if (closed || !keys.routes(glfwKey, modifiers)) {
+        if (closed || !routing.press(glfwKey, modifiers)) {
             return false;
         }
         session.keyPressed(glfwKey, scanCode, modifiers);
@@ -128,24 +141,16 @@ final class SessionSurface implements WebSurface {
 
     @Override
     public boolean keyReleased(int glfwKey, int scanCode, int modifiers) {
-        if (closed || !keys.routes(glfwKey, modifiers)) {
+        if (closed || !routing.release(glfwKey)) {
             return false;
         }
         session.keyReleased(glfwKey, scanCode, modifiers);
         return true;
     }
 
-    /**
-     * Ein Zeichen folgt seiner Taste.
-     *
-     * <p>Ein eigener Filter für Zeichen wäre eine zweite Regel für dieselbe
-     * Frage — und eine, die niemand richtig hinbekommt: Zu einem getippten
-     * Zeichen gibt es keine Tastennummer mehr, nur noch das Zeichen selbst.
-     * Deshalb entscheidet hier, ob die Fläche überhaupt Tasten nimmt.
-     */
     @Override
     public boolean charTyped(char typed, int modifiers) {
-        if (closed || keys == KeyFilter.NONE) {
+        if (closed || !routing.typed()) {
             return false;
         }
         session.charTyped(typed, modifiers);
@@ -154,9 +159,15 @@ final class SessionSurface implements WebSurface {
 
     @Override
     public void setFocused(boolean focused) {
-        if (!closed) {
-            session.setFocused(focused);
+        if (closed) {
+            return;
         }
+        if (!focused) {
+            // Wer den Fokus verliert, hält nichts mehr: Ein Loslassen, das
+            // danach noch kommt, gehört dann dem Spiel.
+            routing.releaseAll();
+        }
+        session.setFocused(focused);
     }
 
     @Override

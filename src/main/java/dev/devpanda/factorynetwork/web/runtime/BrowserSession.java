@@ -167,6 +167,17 @@ public final class BrowserSession implements AutoCloseable, FnBrowser.Events,
     }
 
     /**
+     * Ist die Sitzung noch offen?
+     *
+     * <p>Falsch ab dem Augenblick, in dem jemand {@link #close()} rief —
+     * auch der Verwalter beim Verlassen der Welt. Wer eine Textur dieser
+     * Sitzung zeichnet, fragt das vor jedem Bild.
+     */
+    public boolean isOpen() {
+        return !closed;
+    }
+
+    /**
      * Chromium hat das Schließen bestätigt.
      *
      * <p>Kommt nach {@code close(true)} und aus der Nachrichtenschleife, also
