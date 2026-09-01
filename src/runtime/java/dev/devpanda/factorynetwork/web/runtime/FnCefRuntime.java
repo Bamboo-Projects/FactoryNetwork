@@ -35,18 +35,6 @@ public final class FnCefRuntime {
     private static final Logger LOG = LogUtils.getLogger();
 
     /**
-     * Wo die gebaute Laufzeitumgebung liegt.
-     *
-     * <p>Gesetzt vom Buildskript bei jedem Lauf. Der Rückfall auf einen
-     * relativen Pfad ist für den Fall gedacht, dass jemand den Client von Hand
-     * startet.
-     *
-     * <p>Aus diesem Ordner wird auch {@code jcef.library.path} gefüllt — die
-     * Eigenschaft, über die Patch 0005 die nativen Bibliotheken findet.
-     */
-    private static final String DIR_PROPERTY = "fn.runtime.dir";
-
-    /**
      * Ob die Fehlersuche mitläuft: {@code -Dfn.cef.trace=true}.
      *
      * <p>Sie hängt sich in die Standardfehlerausgabe und schreibt jede Taste
@@ -76,6 +64,20 @@ public final class FnCefRuntime {
         }
         try {
             start();
+        } catch (dev.devpanda.factorynetwork.web.WebRuntimeUnavailable known) {
+            // <b>Ein vorhergesehener Zustand geht unverändert weiter.</b> Wer
+            // ihn in eine IllegalStateException packte, machte aus „wird
+            // gerade geladen" ein „kaputt" — und die Auskunft, die der Spieler
+            // liest, wäre die falsche.
+            //
+            // Und er wird nicht gemerkt, wenn ein zweiter Versuch lohnt: Nach
+            // einem Download soll derselbe Aufruf durchgehen und nicht an
+            // einem Merkposten scheitern.
+            if (!known.status().state().worthRetrying()) {
+                failed = true;
+                failure = known.getMessage();
+            }
+            throw known;
         } catch (Throwable broken) {
             failed = true;
             failure = broken.getMessage() == null ? broken.toString() : broken.getMessage();
@@ -257,16 +259,15 @@ public final class FnCefRuntime {
         }
     }
 
+    /**
+     * Wo die Laufzeitumgebung liegt.
+     *
+     * <p>Die Suche steht in {@code RuntimeInstall} und nicht hier: Sie darf
+     * keine Klasse aus {@code org.cef} anfassen — sie läuft ja gerade deshalb,
+     * weil noch nicht feststeht, ob es welche gibt.
+     */
     private static File runtimeDir() {
-        String configured = System.getProperty(DIR_PROPERTY);
-        File dir = configured != null
-                ? new File(configured)
-                : new File(gameDirectory(), "../tools/runtime/build/out/windows-x86_64");
-        if (!new File(dir, "jcef.jar").isFile()) {
-            throw new IllegalStateException("Keine Laufzeitumgebung unter " + dir
-                    + " — erst: pwsh -File tools/runtime/build-jcef.ps1");
-        }
-        return dir;
+        return dev.devpanda.factorynetwork.web.RuntimeInstall.locate(gameDirectory());
     }
 
     private static File gameDirectory() {

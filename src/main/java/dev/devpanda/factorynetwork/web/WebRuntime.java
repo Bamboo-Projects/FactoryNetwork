@@ -77,10 +77,10 @@ public final class WebRuntime {
             // Ein Zustand, den jemand vorhergesehen hat — der übliche Fall.
             return remember(known.status());
         } catch (Throwable broken) {
-            // Alles andere: fehlende Systembibliothek, halber Download,
-            // NoClassDefFoundError, weil MCEF doch nicht da war. Throwable und
-            // nicht Exception — genau die Fehler, die den Client sonst
-            // mitnehmen, sind keine Exceptions.
+            // Alles andere: fehlende Systembibliothek, ein Archiv, das sich
+            // nicht auspacken ließ, ein NoClassDefFoundError aus org.cef.
+            // Throwable und nicht Exception — genau die Fehler, die den Client
+            // sonst mitnehmen, sind keine Exceptions.
             LOG.warn("Die Web-Runtime ist nicht hochgekommen; das Spiel läuft ohne sie", broken);
             return remember(WebRuntimeStatus.of(WebRuntimeState.FAILED,
                     broken.getClass().getSimpleName() + ": " + broken.getMessage()));

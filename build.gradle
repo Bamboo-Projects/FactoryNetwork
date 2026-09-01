@@ -176,6 +176,16 @@ repositories {
     }
 }
 
+// <b>Was ausgeliefert wird, muss die Mod wissen.</b> tools/runtime/dist.properties
+// trägt Fassung, Archivname und Prüfsumme; geschrieben wird sie beim
+// Paketieren, gelesen zur Laufzeit. Als Ressource im Jar und nicht als Kopie
+// im Quellbaum: So gibt es sie genau einmal.
+processResources {
+    from('tools/runtime/dist.properties') {
+        rename { 'fn-runtime.properties' }
+    }
+}
+
 // Was org.cef berührt, steht hier und nirgends sonst: fünf Klassen gegen
 // upstream java-cef. Alles andere liegt in src/main/java und weiß von keiner
 // Chromium-Fassung. Die Trennung stammt aus der Zeit, als es zwei Wege gab —
