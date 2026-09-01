@@ -1,8 +1,8 @@
 # Handprüfung Monaco
 
 **Status: gefahren am 1. September 2026 auf der eigenen Laufzeitumgebung.
-Drei Fehlschläge, alle drei mit Ursache belegt. Zwei sind behoben und vom
-Menschen nachgeprüft; beim dritten steht der Fix, die Nachprüfung fehlt.**
+Drei Fehlschläge, alle drei behoben und alle drei von einem Menschen
+nachgeprüft. Die Liste ist damit bestanden.**
 
 Diese Liste kann kein Programm abhaken. Alles darin hängt an einem Menschen an
 einer echten Tastatur — an einem deutschen Layout, an dem Gefühl, ob Scrollen
@@ -49,7 +49,7 @@ bisher. **Wo sich beide unterscheiden, ist der interessante Fall.**
 | 18 | Doppelklick auf ein Wort | wählt das Wort | **ja** |
 | 19 | Ziehen über Text | Auswahl entsteht | **ja** |
 | 20 | Rechtsklick | greift oder tut nichts, aber nichts Kaputtes | **ja** |
-| 21 | **Mauszeiger über der Dateiliste** | Hand | **offen** — Fix zu Befund 3 ungeprüft |
+| 21 | **Mauszeiger über der Dateiliste** | Hand | **ja**, nach Befund 3 |
 
 ---
 
@@ -154,8 +154,18 @@ AWT-Kennung wird auf die Ordnungszahl von Chromium zurückgerechnet, bevor sie
 weitergereicht wird. Alles dahinter bleibt für beide Wege gleich, und die
 gemeinsame Tabelle wird nicht angefasst — auf dem MCEF-Weg stimmt sie ja.
 
-**Nachzuprüfen bleibt es im Spiel.** Der Beleg ist bisher der Quelltext, nicht
-ein Lauf.
+**Nachgeprüft im Spiel** am selben Tag, und das Protokoll zeigt genau die drei
+erwarteten Zeiger:
+
+```text
+IBEAM (3)    über dem Text im Editor
+HAND (2)     über den Dateien in der Seitenleiste
+POINTER (0)  über den Ordnern
+```
+
+**Die 3 ist der eigentliche Beleg.** Sie kam vor dem Fix in keinem einzigen
+Lauf vor, obwohl über Monacos Text eine Schreibmarke fällig war — und ein
+Größenänderungszeiger kommt jetzt nirgends mehr.
 
 **Was dabei verlorengeht.** Der `switch` im nativen Teil kennt dreizehn Fälle
 und macht aus allem übrigen `DEFAULT_CURSOR`. Verbotsschild, Greifhand und
@@ -182,12 +192,16 @@ dieser Prüfung.
 
 ## Bevor MCEF entfernt wird
 
-Befund 1 und 2 sind behoben und **von Hand nachgeprüft** — die Eingabetaste
-macht eine Zeile, das zweite Escape schließt den Bildschirm.
+Alle drei Befunde sind behoben und **von Hand nachgeprüft**: Die Eingabetaste
+macht eine Zeile, das zweite Escape schließt den Bildschirm, und über den
+Dateien steht die Hand.
 
-Bei Befund 3 steht der Fix, aber **niemand hat ihn im Spiel gesehen**. Das
-gehört nachgeholt, bevor irgendetwas als bestanden gilt: Zeiger über eine
-Datei in der Seitenleiste halten, es muss die Hand sein.
+Die geplante Vergleichsmessung auf dem MCEF-Weg entfällt — die Ursache stand
+im Quelltext von java-cef, und sie lag auf unserer Seite.
 
-Die geplante Vergleichsmessung auf dem MCEF-Weg entfällt — die Ursache steht
-im Quelltext von java-cef, und sie liegt auf unserer Seite.
+**Was diese Liste geleistet hat und die Automatik nicht konnte:** Alle drei
+Befunde lagen in unserem Code, alle drei waren an einer Maschine unsichtbar.
+Die Testmatrix prüfte für die Eingabetaste den Tastencode statt den Text; das
+zweite Escape stand als Erwartung da und war nie gebaut; und ein Mauszeiger
+hat kein Ereignis, das sich abfragen ließe. Vier Minuten an einer echten
+Tastatur haben gefunden, was vierzig grüne Prüfungen nicht sahen.
