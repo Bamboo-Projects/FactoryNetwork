@@ -20,7 +20,7 @@ import java.io.File;
  *
  * <pre>
  *   pwsh -File tools/runtime/build-jcef.ps1
- *   ./gradlew runClient -Pfnruntime
+ *   ./gradlew runClient
  * </pre>
  *
  * <p><b>Alles läuft im Renderthread — auch das Hochfahren.</b> CEF verlangt,
@@ -37,9 +37,9 @@ public final class FnCefRuntime {
     /**
      * Wo die gebaute Laufzeitumgebung liegt.
      *
-     * <p>Gesetzt vom Buildskript, wenn {@code -Pfnruntime} angegeben ist. Der
-     * Rückfall auf einen relativen Pfad ist für den Fall gedacht, dass jemand
-     * den Client von Hand startet.
+     * <p>Gesetzt vom Buildskript bei jedem Lauf. Der Rückfall auf einen
+     * relativen Pfad ist für den Fall gedacht, dass jemand den Client von Hand
+     * startet.
      */
     private static final String DIR_PROPERTY = "fn.runtime.dir";
 

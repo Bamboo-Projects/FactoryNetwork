@@ -8,21 +8,18 @@ import org.cef.CefClient;
  * Woher Chromium kommt — in dieser Fassung: aus unserer eigenen
  * Laufzeitumgebung.
  *
- * <p><b>Diese Klasse gibt es zweimal</b>, unter demselben Namen, in zwei
- * Quellverzeichnissen. Welche gebaut wird, entscheidet ein Schalter im
- * Buildskript:
+ * <p><b>Diese Klasse lag bis B8 zweimal vor</b>, unter demselben Namen, in
+ * zwei Quellverzeichnissen — eine gegen MCEF, eine gegen upstream java-cef.
+ * Ein Schalter im Buildskript entschied. Seit MCEF draußen ist, gibt es nur
+ * noch {@code src/runtime/java}, und der Schalter ist weg.
  *
- * <pre>
- *   src/mcef/java     ohne Schalter — MCEF liefert Chromium wie bisher
- *   src/runtime/java  mit -Pfnruntime — unsere eigene Laufzeitumgebung
- * </pre>
- *
- * <p><b>Warum getrennte Quellverzeichnisse und nicht eine Verzweigung.</b>
- * MCEF und upstream java-cef bringen beide das vollständige Paket
- * {@code org.cef} mit — 170 Klassen, gleiche Namen, anderer Inhalt. Sie
- * können nicht nebeneinander im Klassenpfad liegen. Damit ist jede Lösung
- * innerhalb einer Übersetzungseinheit ausgeschlossen; die Trennung muss vor
- * den Compiler.
+ * <p><b>Warum es überhaupt zwei Quellverzeichnisse waren und keine
+ * Verzweigung.</b> MCEF und upstream java-cef bringen beide das vollständige
+ * Paket {@code org.cef} mit — 170 Klassen, gleiche Namen, anderer Inhalt. Sie
+ * können nicht nebeneinander im Klassenpfad liegen. Damit war jede Lösung
+ * innerhalb einer Übersetzungseinheit ausgeschlossen; die Trennung musste vor
+ * den Compiler. Das Verzeichnis ist geblieben: Es hält sichtbar, was
+ * {@code org.cef} überhaupt berührt.
  */
 public final class CefHost {
 
