@@ -59,6 +59,7 @@ public final class BrowserSession implements AutoCloseable, FnBrowser.Events,
     private int popupHeight;
 
     private IntConsumer cursorSink;
+    private volatile java.util.function.Consumer<String> messageSink;
 
     /**
      * Wann zuletzt eine Eingabe hineinging, auf die noch kein Bild kam.
@@ -286,6 +287,28 @@ public final class BrowserSession implements AutoCloseable, FnBrowser.Events,
     /** Wer die Zeigerwünsche bekommt — der Screen, solange er offen ist. */
     public void onCursor(IntConsumer sink) {
         this.cursorSink = sink;
+    }
+
+    /**
+     * Der Empfänger für Nachrichten aus der Seite ({@code window.fnSend}).
+     *
+     * <p>Ein Empfänger je Sitzung; er läuft im Renderthread. {@code null}
+     * meldet ihn wieder ab.
+     */
+    public void onMessage(java.util.function.Consumer<String> sink) {
+        this.messageSink = sink;
+        if (sink == null || closed) {
+            WebMessages.unregister(browser);
+        } else {
+            WebMessages.register(browser, this::deliverMessage);
+        }
+    }
+
+    private void deliverMessage(String message) {
+        java.util.function.Consumer<String> sink = messageSink;
+        if (sink != null && !closed) {
+            sink.accept(message);
+        }
     }
 
     // ---- Eingabe -----------------------------------------------------------
@@ -615,6 +638,8 @@ public final class BrowserSession implements AutoCloseable, FnBrowser.Events,
         }
         closed = true;
         cursorSink = null;
+        messageSink = null;
+        WebMessages.unregister(browser);
         // Ab hier gilt sie nicht mehr als offen, ist aber noch nicht fertig:
         // close(true) ist eine Bitte, die Bestätigung kommt später.
         dev.devpanda.factorynetwork.web.BrowserManager.closing(this);

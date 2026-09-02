@@ -176,6 +176,13 @@ final class SessionSurface implements WebSurface {
     }
 
     @Override
+    public void onMessage(java.util.function.Consumer<String> handler) {
+        if (!closed) {
+            session.onMessage(handler);
+        }
+    }
+
+    @Override
     public void close() {
         if (closed) {
             return;

@@ -53,6 +53,7 @@
     } else if (e.key === 'Enter') {
       wahlFeld.textContent = eintraege[wahl].textContent;
       console.log('overlay: gewählt ' + eintraege[wahl].textContent);
+      if (window.fnSend) window.fnSend({ gewaehlt: eintraege[wahl].textContent, nummer: wahl });
     } else if (e.key === 'Escape') {
       console.log('overlay: Escape');
     }
@@ -64,6 +65,7 @@
     wahl = i;
     wahlFeld.textContent = e.textContent;
     console.log('overlay: geklickt ' + e.textContent);
+    if (window.fnSend) window.fnSend({ gewaehlt: e.textContent, nummer: i });
     zeige();
   }));
 

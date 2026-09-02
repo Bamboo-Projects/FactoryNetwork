@@ -52,6 +52,7 @@ public final class FnRuntimeBackend implements WebBackend {
         // mit Hintergrund. Vorher hing das am Anmelden des Bildschemas, und
         // Overlays und Tafeln liefen stumm.
         WebConsole.attach();
+        WebMessages.attach();
         return new FnRuntimeBackend();
     }
 

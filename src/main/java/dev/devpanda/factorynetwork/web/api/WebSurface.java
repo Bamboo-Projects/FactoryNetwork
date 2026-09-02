@@ -97,6 +97,18 @@ public interface WebSurface extends AutoCloseable {
      */
     void onCursor(java.util.function.IntConsumer sink);
 
+    /**
+     * Nachrichten aus der Seite entgegennehmen.
+     *
+     * <p>In der Seite: {@code window.fnSend("...")} oder
+     * {@code window.fnSend({...})} — eine Zeichenkette oder ein Objekt als
+     * JSON. Der Empfänger läuft im Renderthread. {@code null} meldet ihn ab.
+     *
+     * <p>Damit schließt sich der Kreis: Ein Schnellmenü kann nicht nur Tasten
+     * bekommen, sondern seine Wahl auch zurückgeben.
+     */
+    void onMessage(java.util.function.Consumer<String> handler);
+
     @Override
     void close();
 }

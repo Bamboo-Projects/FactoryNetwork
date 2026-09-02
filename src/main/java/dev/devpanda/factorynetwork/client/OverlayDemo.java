@@ -6,6 +6,8 @@ import dev.devpanda.factorynetwork.web.api.Keys;
 import dev.devpanda.factorynetwork.web.api.OverlayFocus;
 import dev.devpanda.factorynetwork.web.api.SurfaceSpec;
 import dev.devpanda.factorynetwork.web.api.WebOverlay;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Das Schnellmenü als Vorführung der Overlay-Schnittstelle.
@@ -17,6 +19,7 @@ import dev.devpanda.factorynetwork.web.api.WebOverlay;
  */
 public final class OverlayDemo {
 
+    private static final Logger LOG = LoggerFactory.getLogger("FactoryNetwork/Overlay");
     private static final String PAGE = "assets/factorynetwork/web/overlay/menu.html";
 
     private static WebOverlay overlay;
@@ -45,6 +48,9 @@ public final class OverlayDemo {
                 .transparent(true);
         overlay = FnWeb.openOverlay(spec, 12, 12);
         if (overlay != null) {
+            // Der Rückweg: Was die Seite über window.fnSend schickt, landet
+            // hier — die Wahl des Menüs, die es sonst niemandem sagen könnte.
+            overlay.surface().onMessage(message -> LOG.info("Overlay meldet: {}", message));
             overlay.focus(OverlayFocus.KEYBOARD);
         }
         return overlay;
