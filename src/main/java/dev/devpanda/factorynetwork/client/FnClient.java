@@ -21,24 +21,19 @@ public final class FnClient {
      * <p>On the client's tick and not on the screen: the tick keeps running
      * when someone closes the window in the same second in which they typed
      * the last character.
+     *
+     * <p><b>Nothing about the web runtime happens here any more.</b> Pumping
+     * Chromium, the overlays and the surfaces in the world are the library's
+     * own beat and hang in its own client class. What stays are this mod's
+     * ticks: the ones that use the library, not the ones that drive it.
      */
     @SubscribeEvent
     public static void tickDraft(net.neoforged.neoforge.client.event.ClientTickEvent.Post event) {
         ClientProjectState.tick();
-        // The self-test of the image path, once per session. It needs a
-        // drawing context and can therefore not be an ordinary check run.
-        dev.devpanda.factorynetwork.web.runtime.WebSelfTest.tick();
-        // The render proof after that — it needs a screen and can therefore
-        // only run once the texture self-test has cleared away its browser
-        // again.
-        WebProofChain.tick();
-        // The benchmark last, and only on request: -Dfn.benchmark=true
-        dev.devpanda.factorynetwork.web.runtime.WebBenchmark.tick();
-        dev.devpanda.factorynetwork.web.api.Overlays.tick();
-        dev.devpanda.factorynetwork.web.api.WorldSurfaces.tick();
         WorldPointer.tick();
         OverlayProof.tick();
         WorldSurfaceDemo.tick();
+        IdeLauncher.tick();
     }
 
     /**
@@ -57,64 +52,6 @@ public final class FnClient {
         }
     }
 
-    /** Overlays on top of the picture — after everything Minecraft paints there. */
-    @SubscribeEvent
-    public static void drawOverlays(
-            net.neoforged.neoforge.client.event.RenderGuiEvent.Post event) {
-        dev.devpanda.factorynetwork.web.api.Overlays.draw(event.getGuiGraphics());
-    }
-
-    /**
-     * Surfaces in the world — after the translucent blocks, so that water and
-     * glass stay in front and the surface does not shine through them.
-     */
-    @SubscribeEvent
-    public static void drawWorldSurfaces(
-            net.neoforged.neoforge.client.event.RenderLevelStageEvent event) {
-        if (event.getStage()
-                != net.neoforged.neoforge.client.event.RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) {
-            return;
-        }
-        com.mojang.blaze3d.vertex.PoseStack pose = event.getPoseStack();
-        if (pose == null) {
-            return;
-        }
-        net.minecraft.world.phys.Vec3 camera = event.getCamera().getPosition();
-        var buffers = net.minecraft.client.Minecraft.getInstance().renderBuffers().bufferSource();
-        dev.devpanda.factorynetwork.web.api.WorldSurfaces.draw(pose, buffers,
-                camera.x, camera.y, camera.z);
-    }
-
-    /**
-     * The gap between two frames — the only number a player notices.
-     *
-     * <p>On the frame and not on the tick: the tick runs at a fixed twenty per
-     * second and knows nothing of whether the drawing stutters in between.
-     */
-    @SubscribeEvent
-    public static void measureFrame(
-            net.neoforged.neoforge.client.event.RenderFrameEvent.Post event) {
-        dev.devpanda.factorynetwork.web.runtime.WebBenchmark.frameRendered();
-    }
-
-    /**
-     * Chromium's message loop, once per frame.
-     *
-     * <p><b>Before the drawing and not after.</b> What Chromium delivers in
-     * this round should still make it into the texture this frame uses —
-     * otherwise the page lags one frame behind.
-     *
-     * <p>Pumping happens behind {@code WebPump}. The spot was once without
-     * consequence: as long as MCEF provided the underpinnings, its own mixin
-     * did it. Since the runtime belongs to us, there is no mixin any more, and
-     * the beat comes from exactly this line.
-     */
-    @SubscribeEvent
-    public static void pumpWebRuntime(
-            net.neoforged.neoforge.client.event.RenderFrameEvent.Pre event) {
-        dev.devpanda.factorynetwork.web.runtime.WebPump.frame();
-    }
-
     /**
      * When leaving a world nothing is left standing.
      *
@@ -125,43 +62,6 @@ public final class FnClient {
     public static void forgetDraft(
             net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingOut event) {
         ClientProjectState.clear();
-    }
-
-    /**
-     * When leaving a world the browsers close — Chromium stays.
-     *
-     * <p><b>A full shutdown once stood here, and that was a mistake.</b> CEF
-     * can be started exactly once in a process; a second attempt ends with
-     * "Settings can only be passed to CEF before createClient is called the
-     * first time". Whoever left one world and entered another had no browser
-     * for the rest of the session — neither a surface in the world nor the
-     * editor.
-     *
-     * <p>What belongs here are the browsers: they point at blocks of a world
-     * that will be gone in a moment. Chromium itself only shuts down when the
-     * game is quit, in {@link #shutDownWebRuntime}.
-     */
-    @SubscribeEvent
-    public static void closeBrowsersOfThisWorld(
-            net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingOut event) {
-        dev.devpanda.factorynetwork.web.api.Overlays.closeAll();
-        dev.devpanda.factorynetwork.web.api.WorldSurfaces.closeAll();
-        dev.devpanda.factorynetwork.web.BrowserManager.closeAll();
-    }
-
-    /**
-     * When the game is quit, Chromium shuts down.
-     *
-     * <p>And only here, because it works exactly once. The order sits in
-     * {@code WebRuntime.shutdown()}: first ask all browsers to close, then pump
-     * for their confirmation, then clean up. Whoever reverses it leaves helper
-     * processes behind.
-     */
-    @SubscribeEvent
-    public static void shutDownWebRuntime(
-            net.neoforged.neoforge.event.GameShuttingDownEvent event) {
-        dev.devpanda.factorynetwork.web.api.WorldSurfaces.closeAll();
-        dev.devpanda.factorynetwork.web.WebRuntime.shutdown();
     }
 
     @SubscribeEvent

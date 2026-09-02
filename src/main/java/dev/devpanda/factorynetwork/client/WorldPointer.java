@@ -1,7 +1,7 @@
 package dev.devpanda.factorynetwork.client;
 
-import dev.devpanda.factorynetwork.web.api.WebSurface;
-import dev.devpanda.factorynetwork.web.api.WorldSurfaces;
+import dev.devpanda.bamboocef.web.api.WebSurface;
+import dev.devpanda.bamboocef.web.api.WorldSurfaces;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;

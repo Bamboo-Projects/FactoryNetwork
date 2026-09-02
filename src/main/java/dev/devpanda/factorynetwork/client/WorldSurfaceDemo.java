@@ -1,11 +1,11 @@
 package dev.devpanda.factorynetwork.client;
 
-import dev.devpanda.factorynetwork.web.BrowserVisibility;
-import dev.devpanda.factorynetwork.web.WebPage;
-import dev.devpanda.factorynetwork.web.api.FnWeb;
-import dev.devpanda.factorynetwork.web.api.SurfaceSpec;
-import dev.devpanda.factorynetwork.web.api.WorldSurface;
-import dev.devpanda.factorynetwork.web.api.WorldSurfaces;
+import dev.devpanda.bamboocef.web.BrowserVisibility;
+import dev.devpanda.bamboocef.web.WebPage;
+import dev.devpanda.bamboocef.web.api.FnWeb;
+import dev.devpanda.bamboocef.web.api.SurfaceSpec;
+import dev.devpanda.bamboocef.web.api.WorldSurface;
+import dev.devpanda.bamboocef.web.api.WorldSurfaces;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.phys.Vec3;

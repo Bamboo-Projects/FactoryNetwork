@@ -6,21 +6,13 @@ plugins {
 version = mod_version
 group = mod_group_id
 
-// <b>Chromium kommt aus dem eigenen Bau, nicht mehr von MCEF.</b> Bis zur
-// bestandenen Handprüfung am 1. September 2026 lagen beide Wege nebeneinander
-// und ein Schalter entschied. Er ist weg: Was er einschaltete, ist jetzt der
-// einzige Weg.
+// Chromium belongs to BambooCEF and is built there:
+//   pwsh -File ../BambooCEFMC/tools/runtime/build-jcef.ps1
 //
-// Nebeneinander konnten sie ohnehin nie stehen — MCEF und upstream java-cef
-// bringen beide das vollständige Paket org.cef mit, 170 Klassen, gleiche
-// Namen, anderer Inhalt. Deshalb war es ein Schalter vor dem Compiler und
-// keine Verzweigung darin.
-//
-// Die Laufzeitumgebung entsteht mit
-//   pwsh -File tools/runtime/build-jcef.ps1
-// und ist ab hier Voraussetzung für jeden Bau. Ohne sie bricht Gradle mit
-// einer Ansage ab, statt den Fehler in den Compiler zu tragen.
-def ownRuntimeDir = file('tools/runtime/build/out/windows-x86_64')
+// This mod never compiles against org.cef and carries no copy of the runtime.
+// The only reason the directory is named here at all is the dev client: it
+// needs the native libraries on disk, and they are not part of any jar.
+def ownRuntimeDir = file('../BambooCEFMC/tools/runtime/build/out/windows-x86_64').canonicalFile
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
@@ -36,18 +28,21 @@ neoForge {
         client {
             client()
             systemProperty 'neoforge.enabledGameTestNamespaces', mod_id
-            // Wo die eigene Laufzeitumgebung liegt.
+            // Where the native runtime lies. BambooCEF's RuntimeInstall reads
+            // exactly this property name and skips its own download when it
+            // finds a complete directory there.
             systemProperty 'fn.runtime.dir', ownRuntimeDir.absolutePath
-            // <b>Kein PATH-Eintrag mehr.</b> Hier stand einer, weil java-cef
-            // seine Bibliotheken über java.library.path suchte und der sich
-            // auf Windows aus dem PATH speist. Das trug nur im Entwicklungs-
-            // lauf — ein Launcher setzt keinen PATH für uns. Seit Patch 0005
-            // nennt die Mod den Ordner selbst über jcef.library.path, und
-            // dieser Lauf prüft damit denselben Weg, den ein Spieler geht.
-            // Ohne das wirft die JVM wiederholte Ausnahmen an derselben
-            // Stelle irgendwann ohne Stapel — und eine Ausnahme aus einem
-            // Chromium-Rückruf kommt ohnehin nur als Kopfzeile an. Beides
-            // zusammen ergibt ein „Exception in thread" ohne jeden Hinweis.
+            // <b>No PATH entry.</b> One stood here, because java-cef looked
+            // for its libraries via java.library.path, which on Windows is fed
+            // from the PATH. That only carried the dev run — a launcher sets no
+            // PATH for us. BambooCEF names the directory itself via
+            // jcef.library.path, so this run walks the same way a player does.
+            //
+            // The flag below is what makes a failure on that way readable:
+            // without it the JVM eventually drops the stack of exceptions
+            // thrown repeatedly at the same spot — and an exception out of a
+            // Chromium callback arrives as a headline anyway. Together that
+            // makes an "Exception in thread" with no hint at all.
             jvmArgument '-XX:-OmitStackTraceInFastThrow'
             // Chromiums Fernwartung auf 127.0.0.1:9222:
             //   ./gradlew runClient -Pdevtools
@@ -181,26 +176,14 @@ repositories {
     }
 }
 
-// <b>Was ausgeliefert wird, muss die Mod wissen.</b> tools/runtime/dist.properties
-// trägt Fassung, Archivname und Prüfsumme; geschrieben wird sie beim
-// Paketieren, gelesen zur Laufzeit. Als Ressource im Jar und nicht als Kopie
-// im Quellbaum: So gibt es sie genau einmal.
-processResources {
-    from('tools/runtime/dist.properties') {
-        rename { 'fn-runtime.properties' }
-    }
-}
-
-// Was org.cef berührt, steht hier und nirgends sonst: fünf Klassen gegen
-// upstream java-cef. Alles andere liegt in src/main/java und weiß von keiner
-// Chromium-Fassung. Die Trennung stammt aus der Zeit, als es zwei Wege gab —
-// sie bleibt, weil sie diese Grenze sichtbar hält.
-sourceSets.main.java.srcDir('src/runtime/java')
-
-// <b>Der Laufklassenpfad ist ein eigener.</b> Ein runtimeOnly auf eine Datei
-// landet zwar im runtimeClasspath, aber nicht in der Liste, die ModDevGradle
-// dem Client mitgibt — dort stehen nur aufgelöste Module. Für alles andere
-// gibt es je Lauf eine eigene Konfiguration, und genau die ist hier gemeint.
+// <b>The run classpath is its own.</b> A runtimeOnly on a file does land in
+// the runtimeClasspath, but not in the list ModDevGradle hands the client —
+// only resolved modules stand there. Every run has its own configuration for
+// the rest, and that is what is meant here.
+//
+// This is the one place where this project still names jcef.jar. Nothing in
+// src compiles against org.cef; the dev client just needs the jar beside the
+// native libraries, and BambooCEF's own build cannot put it on this run.
 dependencies {
     add(neoForge.runs.client.additionalRuntimeClasspathConfiguration.name,
             files(new File(ownRuntimeDir, 'jcef.jar')))
@@ -256,23 +239,6 @@ dependencies {
     runtimeOnly "maven.modrinth:geckolib:${geckolib_version}"
     runtimeOnly "maven.modrinth:curios:${curios_version}"
 
-    // <b>Chromium steckt nicht in diesem Jar und soll es nicht.</b> Die
-    // Laufzeitumgebung wird gebaut, nicht bezogen — sie liegt neben dem
-    // Quellbaum und wird getrennt ausgeliefert. Deshalb hier nur ein Verweis
-    // auf das gebaute jcef.jar, niemals implementation und niemals ein
-    // Shadow-Jar.
-    //
-    // <b>Der Abbruch ist Absicht.</b> Ohne den Bau fehlt org.cef vollständig,
-    // und der Compiler meldete das als Dutzende fehlender Symbole. Eine Zeile,
-    // die den Weg nennt, ist die bessere Meldung — auch wenn sie jeden
-    // Gradle-Aufruf trifft, den clean eingeschlossen.
-    if (!ownRuntimeDir.exists()) {
-        throw new GradleException("Keine Laufzeitumgebung unter ${ownRuntimeDir}. "
-                + "Erst: pwsh -File tools/runtime/build-jcef.ps1")
-    }
-    compileOnly files(new File(ownRuntimeDir, 'jcef.jar'))
-    runtimeOnly files(new File(ownRuntimeDir, 'jcef.jar'))
-
     // JEI zeigt die Rezepte der Presse. Ohne die Mod fehlt nur die Anzeige:
     // Das Plugin wird von JEI selbst gefunden, und wer es nicht hat, lädt die
     // Klassen nie. Deshalb compileOnly auf die API und runtimeOnly auf die
@@ -280,14 +246,6 @@ dependencies {
     compileOnly "mezz.jei:jei-1.21.1-common-api:${jei_version}"
     compileOnly "mezz.jei:jei-1.21.1-neoforge-api:${jei_version}"
     runtimeOnly "mezz.jei:jei-1.21.1-neoforge:${jei_version}"
-
-    // JNA nur zum Übersetzen: Der ProcessGuard braucht drei Funktionen aus
-    // kernel32, die JNAs eigenes Kernel32-Interface nicht kennt. Mitgeliefert
-    // wird nichts — Minecraft bringt JNA über OSHI ohnehin mit, und eine
-    // zweite Fassung im Klassenpfad wäre genau die Art Konflikt, die wir
-    // gerade bei org.cef hinter uns haben.
-    compileOnly 'net.java.dev.jna:jna:5.14.0'
-    compileOnly 'net.java.dev.jna:jna-platform:5.14.0'
 
     testImplementation platform('org.junit:junit-bom:5.11.4')
     testImplementation 'org.junit.jupiter:junit-jupiter'

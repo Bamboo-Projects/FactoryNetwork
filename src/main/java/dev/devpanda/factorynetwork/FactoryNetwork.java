@@ -22,16 +22,6 @@ public final class FactoryNetwork {
     public static final String MOD_ID = "factorynetwork";
 
     public FactoryNetwork(IEventBus modBus, ModContainer container) {
-        // <b>The earliest Java code this mod has.</b> Chromium can start as
-        // early as the very first screen switch — and that comes during
-        // loading, so before every setup event. Anyone who wants to add to
-        // Chromium's command line has to do it here or not at all.
-        //
-        // Only does anything when fn.devtools is set; on a server the class
-        // does not even exist in the first place.
-        if (net.neoforged.fml.loading.FMLEnvironment.dist.isClient()) {
-            dev.devpanda.factorynetwork.web.runtime.WebDebug.requestIfEnabled();
-        }
         // The limits for user code belong to the server operator, not the
         // source. Without this line the file never ends up beside the world.
         container.registerConfig(net.neoforged.fml.config.ModConfig.Type.SERVER,

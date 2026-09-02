@@ -13,9 +13,6 @@ Connector und damit einen Namen; die gesamte Logistik wird in Manifold
 geschrieben, einer Sprache, die für Fabriken gemacht ist.
 '''
 
-[[mixins]]
-config = "factorynetwork.mixins.json"
-
 [[dependencies.${mod_id}]]
 modId = "neoforge"
 type = "required"
@@ -29,6 +26,16 @@ type = "required"
 versionRange = "[1.21.1]"
 ordering = "NONE"
 side = "BOTH"
+
+[[dependencies.${mod_id}]]
+# BambooCEF is the CEF web runtime behind the editor, the overlays and the
+# world surfaces. Client only: the library has no server side, and a server
+# running FactoryNetwork must not be asked for it.
+modId = "bamboocef"
+type = "required"
+versionRange = "[0.1.0,)"
+ordering = "AFTER"
+side = "CLIENT"
 
 # Jade zeigt an, was man ansieht — bei uns die Kanalbelegung eines Kabels.
 # Freiwillig: Ohne Jade fehlt nur die Anzeige, nichts sonst.

@@ -1,6 +1,6 @@
 package dev.devpanda.factorynetwork.client;
 
-import dev.devpanda.factorynetwork.web.api.WebOverlay;
+import dev.devpanda.bamboocef.web.api.WebOverlay;
 import net.minecraft.client.Minecraft;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,7 +53,7 @@ public final class OverlayProof {
             mouseGiven = true;
             WebOverlay overlay = OverlayDemo.current();
             if (overlay != null) {
-                overlay.focus(dev.devpanda.factorynetwork.web.api.OverlayFocus.MOUSE);
+                overlay.focus(dev.devpanda.bamboocef.web.api.OverlayFocus.MOUSE);
                 LOG.info("Overlay-Nachweis: Mausfokus gegeben — {}", overlay);
             }
         }

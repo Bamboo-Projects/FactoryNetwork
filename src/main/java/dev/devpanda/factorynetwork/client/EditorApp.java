@@ -1,10 +1,10 @@
 package dev.devpanda.factorynetwork.client;
 
-import dev.devpanda.factorynetwork.web.WebAssets;
-import dev.devpanda.factorynetwork.web.api.FnWeb;
-import dev.devpanda.factorynetwork.web.api.Keys;
-import dev.devpanda.factorynetwork.web.api.SurfaceSpec;
-import dev.devpanda.factorynetwork.web.api.WebSurface;
+import dev.devpanda.bamboocef.web.WebAssets;
+import dev.devpanda.bamboocef.web.api.FnWeb;
+import dev.devpanda.bamboocef.web.api.Keys;
+import dev.devpanda.bamboocef.web.api.SurfaceSpec;
+import dev.devpanda.bamboocef.web.api.WebSurface;
 import net.minecraft.client.Minecraft;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

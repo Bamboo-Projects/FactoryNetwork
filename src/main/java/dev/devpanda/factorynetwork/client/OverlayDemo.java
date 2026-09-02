@@ -1,11 +1,11 @@
 package dev.devpanda.factorynetwork.client;
 
-import dev.devpanda.factorynetwork.web.WebPage;
-import dev.devpanda.factorynetwork.web.api.FnWeb;
-import dev.devpanda.factorynetwork.web.api.Keys;
-import dev.devpanda.factorynetwork.web.api.OverlayFocus;
-import dev.devpanda.factorynetwork.web.api.SurfaceSpec;
-import dev.devpanda.factorynetwork.web.api.WebOverlay;
+import dev.devpanda.bamboocef.web.WebPage;
+import dev.devpanda.bamboocef.web.api.FnWeb;
+import dev.devpanda.bamboocef.web.api.Keys;
+import dev.devpanda.bamboocef.web.api.OverlayFocus;
+import dev.devpanda.bamboocef.web.api.SurfaceSpec;
+import dev.devpanda.bamboocef.web.api.WebOverlay;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
