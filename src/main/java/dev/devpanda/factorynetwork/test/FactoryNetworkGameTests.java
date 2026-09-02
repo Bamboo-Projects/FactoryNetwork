@@ -32,12 +32,13 @@ import java.util.List;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
 /**
- * Prüft in einer echten Welt, was Einheitstests nicht können: dass Blöcke
- * zusammenfinden, dass der Graph die Connectoren sieht und dass ein Worker
- * wirklich Gegenstände bewegt.
+ * Checks in a real world what unit tests cannot: that blocks find each
+ * other, that the graph sees the connectors, and that a worker really moves
+ * items.
  *
- * <p>Aufbau in allen Tests: Controller, ein Kabel, zwei Connectoren, davor je
- * eine Kiste. Dieselbe Anordnung, die auch im Konzept als Beispiel steht.
+ * <p>Setup in all tests: controller, one cable, two connectors, each with a
+ * chest in front of it. The same arrangement that the concept uses as its
+ * example.
  */
 @GameTestHolder(FactoryNetwork.MOD_ID)
 @PrefixGameTestTemplate(false)
@@ -45,13 +46,13 @@ public final class FactoryNetworkGameTests {
 
     private static final String EMPTY = "empty";
 
-    /** Setzt den Aufbau und liefert die Position des Controllers. */
+    /** Builds the setup and returns the position of the controller. */
     private static BlockPos buildSetup(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 1, 1);
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
         rackWithServer(helper, controller.west());
 
-        // Kabel nach Osten, daran zwei Connectoren.
+        // Cable to the east, two connectors on it.
         BlockPos cable = controller.east();
         helper.setBlock(cable, FnBlocks.CABLE.get());
 
@@ -66,15 +67,15 @@ public final class FactoryNetworkGameTests {
         name(helper, sourceConnector, "quarry_output");
         name(helper, targetConnector, "depot");
 
-        // Ein Laufwerk mit großer Zelle: Seit es Zellen gibt, lagert ein Netz
-        // ohne Laufwerk nichts. Wer den Speicher selbst prüft, nimmt
-        // bareSetup und stellt sich sein Laufwerk hin.
+        // A drive with a large cell: since cells exist, a network without a
+        // drive stores nothing. Whoever tests the storage itself uses
+        // bareSetup and places their own drive.
         driveWithCell(helper, controller.above(),
                 dev.devpanda.factorynetwork.storage.CellTier.K64);
         return controller;
     }
 
-    /** Derselbe Aufbau ohne Laufwerk — für die Prüfungen am Speicher selbst. */
+    /** The same setup without a drive — for the checks on the storage itself. */
     private static BlockPos bareSetup(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 1, 1);
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
@@ -94,22 +95,21 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ein Kabel mit einem Anschluss an dieser Fläche.
+     * A cable with a connector on this face.
      *
-     * <p><b>Der Ersatz für den alten Connectorblock</b>, an derselben Stelle
-     * und mit derselben Blickrichtung — deshalb bleibt in den Prüfläufen
-     * jede Kiste liegen, wo sie lag.
+     * <p><b>The replacement for the old connector block</b>, at the same spot
+     * and with the same facing — which is why in the test runs every chest
+     * stays where it was.
      *
-     * <p>Ein Unterschied bleibt und ist keiner zu wenig: Diese Stelle ist
-     * jetzt ein Kabel und <b>leitet weiter</b>. Wo ein Prüflauf sich darauf
-     * verließ, dass ein Connector eine Sackgasse ist, steht das jetzt
-     * ausdrücklich da.
+     * <p>One difference remains, and it is not a small one: this spot is now
+     * a cable and <b>conducts onwards</b>. Wherever a test run relied on a
+     * connector being a dead end, that is now stated explicitly.
      */
     private static void connector(GameTestHelper helper, BlockPos pos, Direction facing) {
         connector(helper, pos, facing, CableColour.NONE);
     }
 
-    /** Dasselbe an einem farbigen Strang — die Farbe trennt wie überall. */
+    /** The same on a coloured strand — the colour separates, as everywhere. */
     private static void connector(GameTestHelper helper, BlockPos pos, Direction facing,
                                   CableColour colour) {
         partOn(helper, pos, facing, FnBlocks.CABLE.get().defaultBlockState()
@@ -117,11 +117,10 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ein Anschluss an einem <b>dichten</b> Kabel.
+     * A connector on a <b>dense</b> cable.
      *
-     * <p>Nötig, wo der Strang vierundsechzig Kanäle trägt: Ein dünnes Kabel
-     * an dieser Stelle wäre das schwächste Glied und deckelte die ganze
-     * Strecke auf sechzehn.
+     * <p>Needed where the strand carries sixty-four channels: a thin cable at
+     * this spot would be the weakest link and cap the whole run at sixteen.
      */
     private static void denseConnector(GameTestHelper helper, BlockPos pos, Direction facing) {
         partOn(helper, pos, facing, FnBlocks.DENSE_CABLE.get().defaultBlockState());
@@ -138,7 +137,7 @@ public final class FactoryNetworkGameTests {
         }
     }
 
-    /** Der Anschluss an dieser Stelle — es sitzt genau einer dort. */
+    /** The connector at this spot — exactly one sits there. */
     private static dev.devpanda.factorynetwork.block.entity.ConnectorPart partAt(
             GameTestHelper helper, BlockPos pos) {
         return dev.devpanda.factorynetwork.block.entity.Connectors.at(
@@ -154,7 +153,7 @@ public final class FactoryNetworkGameTests {
         }
     }
 
-    /** Wie viel in der Kiste an dieser Stelle liegt, über alle Fächer. */
+    /** How much lies in the chest at this spot, across all slots. */
     private static int countIn(GameTestHelper helper, BlockPos pos) {
         if (!(helper.getBlockEntity(pos) instanceof ChestBlockEntity container)) {
             return 0;
@@ -176,12 +175,12 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Füllt den Stromvorrat und fährt das Netz hoch.
+     * Fills the power reserve and boots the network.
      *
-     * <p>In der Prüfwelt steht kein Generator. Ohne diesen Griff wäre jede
-     * Prüfung eine über den Stromausfall — und keine über das, was sie
-     * eigentlich prüfen will. Gegangen wird der echte Weg: erst füllen, dann
-     * die Hochfahrzeit abwarten.
+     * <p>There is no generator in the test world. Without this handle every
+     * test would be one about the power outage — and none about what it
+     * actually wants to test. The real path is taken: fill first, then wait
+     * out the boot-up time.
      */
     private static void powerUp(ControllerBlockEntity controller) {
         var power = controller.power();
@@ -213,7 +212,7 @@ public final class FactoryNetworkGameTests {
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void unnamedConnectorStaysInvisible(GameTestHelper helper) {
         BlockPos controller = buildSetup(helper);
-        // Ein dritter Connector ohne Namen darf im Netz nicht auftauchen.
+        // A third connector without a name must not appear in the network.
         BlockPos extra = controller.east().above();
         connector(helper, extra, Direction.NORTH);
 
@@ -245,7 +244,7 @@ public final class FactoryNetworkGameTests {
         helper.assertTrue(accepted, "Das Programm wurde nicht übernommen");
         entity.rebuildNetwork();
 
-        // Der Worker braucht ein paar Ticks, dann muss das Erz im Speicher sein.
+        // The worker needs a few ticks, then the ore must be in storage.
         helper.runAfterDelay(20, () -> {
             long stored = entity.storage().count(Items.IRON_ORE);
             helper.assertTrue(stored > 0,
@@ -349,7 +348,7 @@ public final class FactoryNetworkGameTests {
         BlockPos controller = buildSetup(helper);
         ControllerBlockEntity entity = controllerAt(helper, controller);
 
-        // Ein Redstoneblock neben dem Connector gibt Signal.
+        // A redstone block next to the connector gives a signal.
         helper.setBlock(controller.east().north().above(), Blocks.REDSTONE_BLOCK);
 
         helper.assertTrue(entity.deploy("""
@@ -430,7 +429,7 @@ public final class FactoryNetworkGameTests {
             container.setItem(0, new ItemStack(Items.IRON_ORE, 64));
         }
 
-        // Der Speicher ist leer, die Bedingung verlangt mehr als 100.
+        // The storage is empty, the condition demands more than 100.
         helper.assertTrue(entity.deploy("""
                 worker only_when_full {
                     from quarry_output
@@ -452,7 +451,7 @@ public final class FactoryNetworkGameTests {
         BlockPos controller = buildSetup(helper);
         ControllerBlockEntity entity = controllerAt(helper, controller);
 
-        // Zwei verschiedene Baumstämme — derselbe Tag.
+        // Two different logs — the same tag.
         BlockPos source = controller.east().north().north();
         if (helper.getBlockEntity(source) instanceof ChestBlockEntity container) {
             container.setItem(0, new ItemStack(Items.OAK_LOG, 8));
@@ -492,8 +491,9 @@ public final class FactoryNetworkGameTests {
             container.setItem(2, new ItemStack(Items.IRON_INGOT, 8));
         }
 
-        // Genau der Fall aus AllTheOres: Die Steinart steht als Vorsilbe,
-        // die Form als Nachsilbe. Ein Muster nur am Rand fände nicht beides.
+        // Exactly the case from AllTheOres: the stone type is the prefix, the
+        // shape is the suffix. A pattern anchored at one end only would not
+        // find both.
         helper.assertTrue(entity.deploy("""
                 worker ores {
                     from quarry_output
@@ -519,8 +519,8 @@ public final class FactoryNetworkGameTests {
         BlockPos controller = buildSetup(helper);
         ControllerBlockEntity entity = controllerAt(helper, controller);
 
-        // Zwei Arten im selben Tag. Bei "insgesamt" kämen zusammen 8 an,
-        // bei "je Art" acht von jeder — das unterscheidet die beiden Lesarten.
+        // Two kinds in the same tag. With "in total" 8 arrive altogether, with
+        // "per kind" eight of each — that is what tells the two readings apart.
         BlockPos source = controller.east().north().north();
         BlockPos target = controller.east().south().south();
         if (helper.getBlockEntity(source) instanceof ChestBlockEntity container) {
@@ -570,8 +570,8 @@ public final class FactoryNetworkGameTests {
             container.setItem(1, new ItemStack(Items.IRON_ORE, 16));
         }
 
-        // Vorher fiel eine Auswahl, die kein einzelner Gegenstand ist, still
-        // auf "alles" zurück — das Erz wäre mitgewandert.
+        // Previously a selection that is not a single item silently fell back
+        // to "everything" — the ore would have travelled along.
         helper.assertTrue(entity.deploy("""
                 fn hole() {
                     move 4 tag:minecraft/logs from quarry_output to storage
@@ -589,7 +589,7 @@ public final class FactoryNetworkGameTests {
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void duplicateNamesMakeBothUnusable(GameTestHelper helper) {
         BlockPos controller = buildSetup(helper);
-        // Beide Connectoren auf denselben Namen setzen.
+        // Set both connectors to the same name.
         BlockPos second = controller.east().south();
         name(helper, second, "quarry_output");
 
@@ -610,13 +610,13 @@ public final class FactoryNetworkGameTests {
         BlockPos controller = buildSetup(helper);
         ControllerBlockEntity entity = controllerAt(helper, controller);
 
-        // quarry_output und depot sind vergeben; ein Ofen soll furnace_1
-        // heissen, und beim zweiten Mal furnace_2.
+        // quarry_output and depot are taken; a furnace is to be called
+        // furnace_1, and the second time furnace_2.
         entity.rebuildNetwork();
         String first = ConnectorNaming.nextFree("furnace", entity.graph());
         helper.assertValueEqual(first, "furnace_1", "erster freier Name");
 
-        // Jetzt furnace_1 belegen — der Vorschlag muss weiterzählen.
+        // Now take furnace_1 — the suggestion must keep counting.
         name(helper, controller.east().south(), "furnace_1");
         entity.rebuildNetwork();
         String second = ConnectorNaming.nextFree("furnace", entity.graph());
@@ -629,14 +629,14 @@ public final class FactoryNetworkGameTests {
         BlockPos controller = buildSetup(helper);
         BlockPos connector = controller.east().south();
 
-        // Zerlegte Form setzen, wie sie manche Texteingabe liefert.
+        // Set the decomposed form, as some text input methods deliver it.
         String decomposed = "ofen_su\u0308d";
         partAt(helper, connector).setLabel(ConnectorNaming.normalize(decomposed));
 
         ControllerBlockEntity controllerEntity = controllerAt(helper, controller);
         controllerEntity.rebuildNetwork();
 
-        // Gesucht wird mit der zusammengesetzten Form.
+        // The lookup uses the composed form.
         helper.assertTrue(controllerEntity.graph().connector("ofen_süd").isPresent(),
                 "Zerlegtes und zusammengesetztes ü müssen derselbe Name sein");
         helper.succeed();
@@ -649,8 +649,8 @@ public final class FactoryNetworkGameTests {
         entity.rebuildNetwork();
         entity.storage().insert(Items.IRON_INGOT, 3);
 
-        // Die Anzeige kann veraltet sein: Wer 64 anfordert, bekommt die 3,
-        // die wirklich da sind — und nicht mehr.
+        // The display may be stale: whoever requests 64 gets the 3 that are
+        // really there — and no more.
         long taken = entity.storage().extract(Items.IRON_INGOT, 64);
         helper.assertValueEqual(taken, 3L, "entnommene Menge");
         helper.assertValueEqual(entity.storage().count(Items.IRON_INGOT), 0L,
@@ -676,9 +676,9 @@ public final class FactoryNetworkGameTests {
         entity.rebuildNetwork();
         entity.storage().insert(Items.IRON_INGOT, 5);
 
-        // Ein Eintrag aus einer Mod, die es nicht mehr gibt, darf beim Lesen
-        // nicht als Luft im Bestand landen. Der Bestand liegt jetzt in der
-        // Zelle, also wird dort geprüft.
+        // An entry from a mod that no longer exists must not end up as air in
+        // the stock when read. The stock now lives in the cell, so that is
+        // where it is checked.
         var drive = (dev.devpanda.factorynetwork.block.entity.DriveBlockEntity)
                 helper.getBlockEntity(controller.above());
         drive.flushCells();
@@ -708,18 +708,18 @@ public final class FactoryNetworkGameTests {
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
         rackWithServer(helper, controller.west());
 
-        // Grüner Strang zum ersten Connector
+        // Green strand to the first connector
         BlockPos green = controller.east();
         helper.setBlock(green, FnBlocks.CABLE.get().defaultBlockState()
                 .setValue(CableBlock.COLOUR, CableColour.GREEN));
-        // Der Anschluss sitzt am grünen Strang und trägt dessen Farbe: Ein
-        // farbloses Kabel an dieser Stelle verbände beide Stränge, und genau
-        // das soll der Prüflauf ausschließen.
+        // The connector sits on the green strand and carries its colour: an
+        // uncoloured cable at this spot would join both strands, and that is
+        // exactly what the test run is meant to rule out.
         BlockPos reachable = green.east();
         connector(helper, reachable, Direction.NORTH, CableColour.GREEN);
         name(helper, reachable, "erreichbar");
 
-        // Roter Strang, an den grünen angesetzt — darf nicht durchleiten
+        // Red strand attached to the green one — must not conduct through
         BlockPos red = green.above();
         helper.setBlock(red, FnBlocks.CABLE.get().defaultBlockState()
                 .setValue(CableBlock.COLOUR, CableColour.RED));
@@ -743,7 +743,7 @@ public final class FactoryNetworkGameTests {
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
         rackWithServer(helper, controller.west());
 
-        // Standardfarbe zwischen Controller und einem blauen Strang
+        // Default colour between the controller and a blue strand
         BlockPos plain = controller.east();
         helper.setBlock(plain, FnBlocks.CABLE.get());
         BlockPos blue = plain.east();
@@ -762,18 +762,18 @@ public final class FactoryNetworkGameTests {
 
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void aBundleDoesNotBridgeColours(GameTestHelper helper) {
-        // Der eigentliche Test: Ein Bündel darf zwei gleichfarbige Stränge
-        // nicht über eine fremde Farbe hinweg verbinden.
+        // The actual test: a bundle must not join two strands of the same
+        // colour across a foreign colour.
         BlockPos controller = new BlockPos(1, 1, 1);
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
         rackWithServer(helper, controller.west());
 
-        // Grün vom Controller weg
+        // Green away from the controller
         BlockPos green = controller.east();
         helper.setBlock(green, FnBlocks.CABLE.get().defaultBlockState()
                 .setValue(CableBlock.COLOUR, CableColour.GREEN));
 
-        // Ein Bündel mit nur Rot dahinter — Grün endet hier
+        // A bundle with only red behind it — green ends here
         BlockPos redOnly = green.east();
         helper.setBlock(redOnly, FnBlocks.CABLE.get().defaultBlockState()
                 .setValue(CableBlock.COLOUR, CableColour.RED));
@@ -789,7 +789,7 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
-    /** Legt eine Reihe Kabel und hängt an jedes Ende einen Connector. */
+    /** Lays a row of cables and hangs a connector on each end. */
     private static void line(GameTestHelper helper, BlockPos from, int length) {
         for (int i = 0; i < length; i++) {
             helper.setBlock(from.east(i), FnBlocks.CABLE.get());
@@ -798,7 +798,7 @@ public final class FactoryNetworkGameTests {
 
 
 
-    /** Baut Controller, Kabelreihe und drei benannte Kisten. */
+    /** Builds controller, cable row and three named chests. */
     private static ControllerBlockEntity threeChests(GameTestHelper helper, BlockPos controller) {
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
         rackWithServer(helper, controller.west());
@@ -867,7 +867,7 @@ public final class FactoryNetworkGameTests {
         entity.storage().insert(Items.COBBLESTONE, 12);
 
         helper.runAfterDelay(60, () -> {
-            // Reihum heißt: Nicht alles landet in derselben Kiste.
+            // Round robin means: not everything lands in the same chest.
             int filled = 0;
             for (int i = 0; i < 3; i++) {
                 BlockPos chest = controller.east(i + 2).above(2);
@@ -901,8 +901,8 @@ public final class FactoryNetworkGameTests {
         }
 
         ControllerBlockEntity controllerEntity = controllerAt(helper, controller);
-        // Erst das Netz aufbauen: Ohne das kennt der Speicher sein Laufwerk
-        // nicht, und dann lagert er nichts.
+        // Build the network first: without that the storage does not know its
+        // drive, and then it stores nothing.
         controllerEntity.rebuildNetwork();
         controllerEntity.storage().insert(Items.IRON_INGOT, 1234);
         helper.assertTrue(controllerEntity.deploy("""
@@ -921,7 +921,7 @@ public final class FactoryNetworkGameTests {
             var lines = shown.lines();
             helper.assertValueEqual(lines.size(), 3, "Zeilen auf dem Display");
             helper.assertTrue(lines.get(0).contains("Lager"), "Überschrift fehlt");
-            // 1234 wird zu 1,2k gekürzt — große Zahlen sind sonst nicht zu lesen
+            // 1234 is shortened to 1,2k — large numbers are unreadable otherwise
             helper.assertTrue(lines.get(1).contains("1,2k"),
                     "Der Bestand fehlt: " + lines.get(1));
             helper.succeed();
@@ -929,11 +929,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * {@code scale} macht die Schrift größer, und die Zeile bleibt eine Zeile.
+     * {@code scale} makes the text larger, and the line stays one line.
      *
-     * <p>Der Maßstab gehört zur Tafel und nicht in ihren Text: Er geht mit
-     * den Zeilen hinüber, damit der Client die Sprache nicht kennen muss —
-     * aber er schreibt nichts hin.
+     * <p>The scale belongs to the panel and not into its text: it travels
+     * over with the lines so that the client need not know the language —
+     * but it writes nothing.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void scaleMakesTheTextBigger(GameTestHelper helper) {
@@ -974,7 +974,7 @@ public final class FactoryNetworkGameTests {
         });
     }
 
-    /** Ein unsinniger Maßstab wird auf das Machbare gezogen. */
+    /** A nonsensical scale is pulled into the feasible range. */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void anabsurdScaleIsPulledIntoRange(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 1, 1);
@@ -990,9 +990,9 @@ public final class FactoryNetworkGameTests {
 
         ControllerBlockEntity controllerEntity = controllerAt(helper, controller);
         controllerEntity.rebuildNetwork();
-        // Null wäre eine unsichtbare Tafel, tausend ein Buchstabe über der
-        // halben Wand. Beides ist kein Fehler im Programm, sondern eine Zahl,
-        // die niemand so gemeint hat.
+        // Zero would be an invisible panel, a thousand one letter across half
+        // the wall. Neither is an error in the program, just a number nobody
+        // meant that way.
         helper.assertTrue(controllerEntity.deploy("""
                 display halle {
                     scale 0
@@ -1024,8 +1024,8 @@ public final class FactoryNetworkGameTests {
 
         helper.runAfterDelay(25, () -> {
             if (helper.getBlockEntity(display) instanceof DisplayBlockEntity entity) {
-                // Eine leere Fläche ließe offen, ob das Netz steht oder der
-                // Name falsch ist. Das Display sagt es selbst.
+                // An empty surface would leave open whether the network is up
+                // or the name is wrong. The display says so itself.
                 helper.assertTrue(entity.lines().stream()
                                 .anyMatch(line -> line.contains("gibt_es_nicht")),
                         "Das Display muss den fehlenden Namen nennen");
@@ -1055,7 +1055,7 @@ public final class FactoryNetworkGameTests {
             return;
         }
         helper.assertValueEqual(emitter.emittedRedstone(), 15, "gesetzte Stärke");
-        // Und der Block gibt es auch wirklich nach außen weiter.
+        // And the block really does pass it on to the outside.
         helper.assertTrue(helper.getLevel().getBestNeighborSignal(
                 helper.absolutePos(connector.above())) > 0,
                 "Das Signal muss beim Nachbarn ankommen");
@@ -1105,7 +1105,7 @@ public final class FactoryNetworkGameTests {
         var flow = entity.startFlow("warte", java.util.List.of());
         helper.assertValueEqual(flow.status().name(), "AWAITING",
                 "Der Ablauf muss warten");
-        // Die Zahl von vor dem Warten muss den Halt überstehen.
+        // The number from before the wait must survive the halt.
         helper.assertTrue(flow.find("vorher") != null, "Die Variable ist verloren");
 
         entity.fireEvent("ChargeDone", java.util.List.of(
@@ -1231,8 +1231,8 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
 
-        // await steckt hier in einem if in einer while — genau die
-        // Verschachtelung, an der sich das Wiederfinden der Rahmen bewährt.
+        // Here await sits in an if inside a while — exactly the nesting on
+        // which finding the frames again proves itself.
         helper.assertTrue(entity.deploy("""
                 event Takt(nummer: Int)
 
@@ -1265,13 +1265,13 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * {@code network.power} liest den Vorrat des laufenden Netzes.
+     * {@code network.power} reads the reserve of the running network.
      *
-     * <p>Die Rechnung dahinter steht im Einheitstest; hier geht es um die
-     * <b>Verdrahtung</b>. Der Controller hält den Vorrat, der Ausdruck fragt
-     * den Host, und ein vergessenes {@code setPower} fiele sonst nirgends
-     * auf: Ohne Welt meldet sich der Ausdruck ehrlich, mit Welt aber sähe man
-     * dieselbe Meldung und hielte sie für richtig.
+     * <p>The arithmetic behind it is in the unit test; here it is about the
+     * <b>wiring</b>. The controller holds the reserve, the expression asks the
+     * host, and a forgotten {@code setPower} would otherwise show up nowhere:
+     * without a world the expression reports honestly, with a world one would
+     * see the same message and take it for correct.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void networkPowerReadsTheRunningNetwork(GameTestHelper helper) {
@@ -1296,16 +1296,16 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Und ein Worker darf danach fragen: {@code when network.power > …}.
+     * And a worker may ask about it: {@code when network.power > …}.
      *
-     * <p>Das Handbuch verspricht genau diese Zeile — ein Worker, der aufhört,
-     * bevor das Netz ausgeht. Sie hängt an derselben Verdrahtung wie oben,
-     * aber an einem anderen Weg dorthin: Die Bedingung eines Workers wertet
-     * die Laufzeit aus, nicht ein Ablauf.
+     * <p>The manual promises exactly this line — a worker that stops before
+     * the network goes out. It hangs on the same wiring as above, but on a
+     * different path to it: a worker's condition is evaluated by the runtime,
+     * not by a flow.
      *
-     * <p><b>Geprüft wird der Status und nicht nur der Stillstand.</b> Ein
-     * Worker, der die Bedingung gar nicht auswerten kann, steht auch still —
-     * dann aber auf {@code HALTED}. Der Unterschied ist der ganze Punkt.
+     * <p><b>The status is checked, not just the standstill.</b> A worker that
+     * cannot evaluate the condition at all stands still too — but then on
+     * {@code HALTED}. The difference is the whole point.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void aworkerCanAskForTheNetworkReserve(GameTestHelper helper) {
@@ -1319,8 +1319,8 @@ public final class FactoryNetworkGameTests {
             helper.fail("Keine Kiste als Quelle");
         }
 
-        // Eine Schwelle, die kein Netz erreicht: Der Worker muss sie ablesen
-        // können und darf trotzdem nicht arbeiten.
+        // A threshold no network reaches: the worker must be able to read it
+        // and still must not work.
         helper.assertTrue(entity.deploy("""
                 worker holen {
                     from quarry_output
@@ -1343,7 +1343,7 @@ public final class FactoryNetworkGameTests {
                 .thenSucceed();
     }
 
-    /** Und {@code network.capacity}, wie viel hineinpasst. */
+    /** And {@code network.capacity}, how much fits in. */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void networkCapacityReadsWhatFits(GameTestHelper helper) {
         BlockPos controller = buildSetup(helper);
@@ -1366,16 +1366,16 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * {@code hebel.click()} fasst die Maschine an, auf die der Connector zeigt.
+     * {@code hebel.click()} touches the machine the connector points at.
      *
-     * <p>Manche Maschinen tun nichts, bis jemand sie anfasst — und für die
-     * gab es bisher keinen Griff. <b>Kein zweiter Block:</b> Ein- und Ausgang
-     * trennt hier schon der Code und nicht die Bauform, und für eine dritte
-     * Fähigkeit gilt dasselbe.
+     * <p>Some machines do nothing until someone touches them — and for those
+     * there was no handle so far. <b>No second block:</b> input and output are
+     * already separated here by the code and not by the block shape, and the
+     * same goes for a third capability.
      *
-     * <p>Geprüft an einem Hebel, und das ist Absicht: Er ist die einzige
-     * Vanilla-Antwort auf einen Klick, die man <b>sehen</b> kann, ohne ein
-     * Fenster zu öffnen — sein Zustand kippt, und das steht im Block.
+     * <p>Tested on a lever, and that is deliberate: it is the only vanilla
+     * response to a click that you can <b>see</b> without opening a window —
+     * its state flips, and that is stored in the block.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void clickTouchesTheMachine(GameTestHelper helper) {
@@ -1408,11 +1408,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Und an einem Block, den ein Klick nicht interessiert, meldet er das.
+     * And on a block that a click does not interest, it reports that.
      *
-     * <p>Kein Fehler: Ein Stein, der auf einen Rechtsklick nicht reagiert,
-     * ist kein kaputtes Programm. Aber {@code false} statt {@code true},
-     * damit ein Ablauf, der auf Wirkung wartet, das merkt.
+     * <p>Not an error: a stone that does not react to a right-click is not a
+     * broken program. But {@code false} instead of {@code true}, so that a
+     * flow waiting for an effect notices.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void clickOnastoneChangesNothing(GameTestHelper helper) {
@@ -1437,16 +1437,16 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Eine fremde Leitung darf am Controller <b>ziehen</b>, nicht nur einspeisen.
+     * A foreign line may <b>draw</b> from the controller, not just feed in.
      *
-     * <p>Bisher nahm der Anschluss nur an. Wer Strom aus dem Netz in ein
-     * anderes System wollte, brauchte einen Worker in einen Energiewürfel und
-     * daran den fremden Anschluss — und genau dieser Umweg kostet
-     * Übertragungsrate, denn der Würfel hat seine eigene.
+     * <p>Until now the connection only accepted. Whoever wanted power from the
+     * network in another system needed a worker into an energy cube and the
+     * foreign connection on that — and exactly this detour costs transfer
+     * rate, because the cube has its own.
      *
-     * <p>Jetzt geht es direkt: Ein Flux Plug, ein Kabel, ein Verbraucher zieht
-     * am Controller. <b>Ohne Ratengrenze</b> — die galt der Aufnahme, und für
-     * die Abgabe wäre sie genau das, was hier stört.
+     * <p>Now it goes directly: a Flux Plug, a cable, a consumer draws from the
+     * controller. <b>Without a rate limit</b> — that applied to the intake,
+     * and for the output it would be exactly what gets in the way here.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void aforeignLineMayDrawFromTheController(GameTestHelper helper) {
@@ -1468,12 +1468,12 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Und er hört auf, bevor das Netz sich selbst abschaltet.
+     * And it stops before the network switches itself off.
      *
-     * <p>Die eine Grenze, die bleibt — und sie ist keine Rate, sondern ein
-     * Boden. Ohne ihn zöge eine fremde Leitung das Netz bis unter die
-     * Anlaufschwelle, es ginge aus, führe drei Sekunden hoch, ginge wieder
-     * aus: ein Flackern, das wie ein Fehler aussieht und keiner ist.
+     * <p>The one limit that remains — and it is not a rate but a floor.
+     * Without it a foreign line would pull the network below the start-up
+     * threshold, it would go out, boot for three seconds, go out again: a
+     * flicker that looks like a bug and is none.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void drawingStopsAtTheFloor(GameTestHelper helper) {
@@ -1493,12 +1493,13 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * {@code store kiste_1 { }} — was in der Kiste liegt, gehört dem Netz.
+     * {@code store kiste_1 { }} — what lies in the chest belongs to the network.
      *
-     * <p>Der Speicherbus, wie AE2 ihn hat, nur ohne eigenen Block. Der
-     * Unterschied zu einem gewöhnlichen Gerät ist der ganze Punkt: Ohne diese
-     * Zeile ist die Kiste etwas, aus dem man mit {@code move} holt; mit ihr
-     * zählt ihr Inhalt zum Bestand, den jeder Auftrag und jede Anzeige sieht.
+     * <p>The storage bus as AE2 has it, only without a block of its own. The
+     * difference from an ordinary device is the whole point: without this
+     * line the chest is something you fetch from with {@code move}; with it
+     * its contents count toward the stock that every job and every display
+     * sees.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void astoreCountsTowardsTheNetwork(GameTestHelper helper) {
@@ -1528,12 +1529,12 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Und was jemand hineinlegt, sieht das Netz beim nächsten Blick.
+     * And what somebody puts in, the network sees at the next look.
      *
-     * <p>Der Unterschied zwischen einer Kopie und einer Sicht: Eine Kiste
-     * ändert sich ohne das Netz — ein Spieler räumt sie aus, ein Trichter
-     * füllt sie. Ein Bestand, der das erst nach einem Neuaufbau merkt, wäre
-     * falsch, und ein Auftrag, der darauf rechnet, hinterließe halbe Arbeit.
+     * <p>The difference between a copy and a view: a chest changes without the
+     * network — a player empties it, a hopper fills it. A stock that only
+     * notices after a rebuild would be wrong, and a job that counts on it
+     * would leave half-finished work behind.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void astoreSeesWhatSomebodyPutsIn(GameTestHelper helper) {
@@ -1562,11 +1563,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Was das Netz einlagert, darf in der Kiste landen.
+     * What the network puts away may land in the chest.
      *
-     * <p>Die andere Hälfte des Speicherbusses, und ohne sie wäre die erste
-     * gefährlich: Ein Bestand, den man sieht und nicht anfassen kann, bringt
-     * jeden Auftrag durcheinander, der damit rechnet.
+     * <p>The other half of the storage bus, and without it the first would be
+     * dangerous: a stock you can see and cannot touch throws off every job
+     * that counts on it.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void astoreTakesWhatTheNetworkPutsAway(GameTestHelper helper) {
@@ -1574,7 +1575,7 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
 
-        // Kein Laufwerk, keine Zelle — die Kiste ist der ganze Speicher.
+        // No drive, no cell — the chest is the entire storage.
         helper.assertTrue(entity.deploy("""
                 store quarry_output {
                 }"""), "Das Programm wurde nicht übernommen");
@@ -1595,7 +1596,7 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
-    /** Und das Netz holt es dort auch wieder heraus. */
+    /** And the network fetches it back out of there too. */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void astoreGivesBackWhatTheNetworkAsksFor(GameTestHelper helper) {
         BlockPos controller = bareSetup(helper);
@@ -1622,11 +1623,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ein {@code filter} sagt, was in die Kiste darf.
+     * A {@code filter} says what may go into the chest.
      *
-     * <p>Wie in AE2: Der Bus nimmt nur an, was dasteht. Was schon drinliegt,
-     * zählt trotzdem zum Bestand — es zu verschweigen, weil es nicht zum
-     * Filter passt, wäre eine Lüge über etwas, das jeder sehen kann.
+     * <p>As in AE2: the bus only accepts what is listed. What already lies
+     * inside still counts toward the stock — concealing it because it does
+     * not match the filter would be a lie about something everyone can see.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void afilterSaysWhatMayGoIn(GameTestHelper helper) {
@@ -1649,7 +1650,7 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
-    /** Was schon drinliegt, zählt auch gegen den Filter. */
+    /** What already lies inside also counts against the filter. */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void whatIsAlreadyInsideStillCounts(GameTestHelper helper) {
         BlockPos controller = bareSetup(helper);
@@ -1674,23 +1675,23 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ein Anschluss von unten an einen Ofen, mit Kohle im Brennstofffach.
+     * A connector from below on a furnace, with coal in the fuel slot.
      *
-     * <p>Von unten zeigt ein Ofen sein Ausgabe- und sein Brennstofffach.
-     * Zeigen ist aber nicht hergeben: Den Brennstoff behält er von unten für
-     * sich — {@code canTakeItemThroughFace} sagt genau das, und die Kommentare
-     * am Speicherbus nennen es ausdrücklich keine Fehlermeldung, sondern eine
-     * Maschine, die ihre Regeln behält.
+     * <p>From below a furnace shows its output slot and its fuel slot. Showing
+     * is not handing over, though: it keeps the fuel to itself from below —
+     * {@code canTakeItemThroughFace} says exactly that, and the comments on
+     * the storage bus explicitly call it not an error but a machine keeping
+     * its rules.
      *
-     * <p>Damit gibt es einen Bestand, den das Netz sieht und nicht anfassen
-     * kann. Genau das braucht jede Prüfung, die wissen will, ob eine Stelle
-     * das Ergebnis von {@code extract} liest oder nur hofft.
+     * <p>That gives a stock the network sees and cannot touch. Exactly what
+     * every test needs that wants to know whether a spot reads the result of
+     * {@code extract} or merely hopes.
      */
     private static void furnaceStore(GameTestHelper helper, BlockPos controller) {
         furnaceStoreAt(helper, controller.east().above());
     }
 
-    /** Derselbe Ofen, aber an einer gewählten Stelle des Kabels. */
+    /** The same furnace, but at a chosen spot on the cable. */
     private static void furnaceStoreAt(GameTestHelper helper, BlockPos below) {
         connector(helper, below, Direction.UP);
         helper.setBlock(below.above(), Blocks.FURNACE);
@@ -1703,7 +1704,7 @@ public final class FactoryNetworkGameTests {
         }
     }
 
-    /** Alle Kohle der Prüfwelt: die im Ofen und die im Ziel. */
+    /** All coal in the test world: what is in the furnace and what is in the target. */
     private static long coalInWorld(GameTestHelper helper, BlockPos controller) {
         long found = 0;
         if (helper.getBlockEntity(controller.east().above().above())
@@ -1726,15 +1727,16 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * <b>Was der Speicher nicht hergibt, darf im Ziel nicht ankommen.</b>
+     * <b>What the storage does not hand over must not arrive in the target.</b>
      *
-     * <p>Der Gegenfall zum Itemverlust, und der teurere von beiden: Erst legt
-     * {@code move} in die Kiste, dann holt es dieselbe Menge aus dem Speicher.
-     * Ein Speicherbus auf einem Ofen zeigt seine Kohle und rückt sie nicht
-     * heraus — dann liegt sie hinterher zweimal da, im Ofen und in der Kiste.
+     * <p>The counterpart to item loss, and the more expensive of the two:
+     * {@code move} first puts into the chest, then fetches the same amount
+     * from the storage. A storage bus on a furnace shows its coal and does not
+     * hand it over — afterwards it lies there twice, in the furnace and in
+     * the chest.
      *
-     * <p>Und nicht einmal: Der Bestand zieht nicht nach, weil nichts
-     * herauskam. Beim nächsten Aufruf steht dieselbe Kohle wieder bereit.
+     * <p>And not just once: the stock does not follow, because nothing came
+     * out. On the next call the same coal is ready again.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void moveTakesOnlyWhatTheStorageGives(GameTestHelper helper) {
@@ -1754,8 +1756,8 @@ public final class FactoryNetworkGameTests {
 
         helper.startSequence()
                 .thenIdle(5)
-                // Diese Zeile ist kein Beiwerk: Sieht der Bestand die Kohle
-                // gar nicht, prüft der Rest nichts.
+                // This line is no decoration: if the stock does not see the
+                // coal at all, the rest checks nothing.
                 .thenExecute(() -> helper.assertValueEqual(
                         entity.storage().count(Items.COAL), 64L,
                         "der Bestand muss die Kohle des Ofens zeigen"))
@@ -1767,7 +1769,7 @@ public final class FactoryNetworkGameTests {
                 .thenSucceed();
     }
 
-    /** Und der Worker geht denselben Weg auf eigener Strecke. */
+    /** And the worker walks the same path on its own track. */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void workerTakesOnlyWhatTheStorageGives(GameTestHelper helper) {
         BlockPos controller = bareSetup(helper);
@@ -1789,8 +1791,8 @@ public final class FactoryNetworkGameTests {
         helper.runAfterDelay(40, () -> {
             helper.assertValueEqual(coalInWorld(helper, controller), 64L,
                     "aus vierundsechzig Kohle sind mehr geworden");
-            // Und der Worker sagt, was los ist. „Nichts zu tun" wäre die
-            // falscheste aller Auskünfte: Er greift jeden Tick ins Leere.
+            // And the worker says what is going on. "Nothing to do" would be
+            // the most wrong answer of all: it grasps at nothing every tick.
             var state = entity.runtime().states().get("holt");
             helper.assertTrue(state != null, "Der Worker hat keinen Zustand");
             helper.assertValueEqual(state.status.name(), "HALTED",
@@ -1800,14 +1802,13 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Der Rückweg selbst, an beiden Enden.
+     * The way back itself, at both ends.
      *
-     * <p>{@code pullBack} ist die eine Stelle, die der Reihenfolge „erst
-     * einlegen, dann entnehmen" ihren Preis abnimmt. Sie muss zweierlei
-     * können: aus einer Kiste wirklich alles zurückholen, und bei einem
-     * Fach, das nichts herausrückt, <b>sagen, dass sie es nicht konnte</b>.
-     * Der zweite Teil ist der wichtigere — er ist die Zahl, die der Aufrufer
-     * nicht als bewegt zählen darf.
+     * <p>{@code pullBack} is the one place that pays the price for the order
+     * "insert first, then extract". It has to do two things: really fetch
+     * everything back out of a chest, and for a slot that hands nothing over,
+     * <b>say that it could not</b>. The second part is the more important —
+     * it is the number the caller must not count as moved.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void pullBackSaysWhatStaysInside(GameTestHelper helper) {
@@ -1817,7 +1818,7 @@ public final class FactoryNetworkGameTests {
 
         var key = dev.devpanda.factorynetwork.storage.ItemKey.of(new ItemStack(Items.COAL));
 
-        // Aus der Kiste kommt alles zurück.
+        // Everything comes back out of the chest.
         BlockPos depot = controller.east().south();
         IItemHandler chest = partAt(helper, depot).machineInventory();
         dev.devpanda.factorynetwork.runtime.Handoffs.insertInto(chest,
@@ -1828,8 +1829,8 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(countIn(helper, depot.south()), 0,
                 "und die Kiste danach leer sein");
 
-        // Aus dem Brennstofffach von unten kommt nichts zurück, und genau
-        // diese Zahl ist die Antwort.
+        // Nothing comes back out of the fuel slot from below, and exactly this
+        // number is the answer.
         IItemHandler furnace = partAt(helper, controller.east().above()).machineInventory();
         helper.assertValueEqual(
                 dev.devpanda.factorynetwork.runtime.Handoffs.pullBack(furnace, key, 64), 64L,
@@ -1838,13 +1839,14 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ein Inventar, das mehr verspricht, als es hergibt.
+     * An inventory that promises more than it hands over.
      *
-     * <p>Der Probelauf sagt vierundsechzig, der Griff liefert zweiunddreißig.
-     * Dass es so etwas gibt, steht schon länger im Quelltext — der Rückweg am
-     * Netzspeicher ist ausdrücklich dafür da. Zwischen zwei Geräten fehlte er,
-     * und dort ist der Fehler die teurere Richtung: Was das Ziel schon hat und
-     * die Quelle behält, gibt es hinterher zweimal.
+     * <p>The simulation says sixty-four, the real grab delivers thirty-two.
+     * That such a thing exists has been in the source for a while — the way
+     * back at the network storage is explicitly there for it. Between two
+     * devices it was missing, and there the error is the more expensive
+     * direction: what the target already has and the source keeps exists
+     * twice afterwards.
      */
     private record Boasting(IItemHandler inner) implements IItemHandler {
 
@@ -1881,7 +1883,7 @@ public final class FactoryNetworkGameTests {
         }
     }
 
-    /** Ein Inventar, das annimmt und nichts wieder herausgibt — wie ein Eingangsfach. */
+    /** An inventory that accepts and hands nothing back out — like an input slot. */
     private record Keeping(IItemHandler inner) implements IItemHandler {
 
         @Override
@@ -1924,12 +1926,12 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * <b>Zwischen zwei Geräten darf nichts entstehen.</b>
+     * <b>Nothing may come into being between two devices.</b>
      *
-     * <p>Der Griff legt erst ein und entnimmt danach — die Reihenfolge, die
-     * gegen den Verlust gebaut ist. Gibt die Quelle beim echten Griff weniger
-     * her als beim Probelauf, liegt der Unterschied schon im Ziel und ist aus
-     * dem Nichts entstanden.
+     * <p>The grab inserts first and extracts afterwards — the order built
+     * against loss. If the source hands over less in the real grab than in
+     * the simulation, the difference is already in the target and came out of
+     * nothing.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void nothingIsBornBetweenTwoDevices(GameTestHelper helper) {
@@ -1949,12 +1951,12 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Und wenn auch der Rückweg zu ist, steht es wenigstens da.
+     * And if the way back is closed too, at least it is stated.
      *
-     * <p>Ein Eingangsfach gibt nichts heraus. Dann bleibt der Unterschied im
-     * Ziel liegen — die Lücke lässt sich hier nicht schließen, nur melden.
-     * Gemeldet muss sie werden: Als bewegt gezählt wäre sie eine Zahl, auf die
-     * jeder Auftrag baut und die es nicht gibt.
+     * <p>An input slot hands nothing out. Then the difference stays in the
+     * target — the gap cannot be closed here, only reported. Reported it must
+     * be: counted as moved it would be a number every job builds on and that
+     * does not exist.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void whatCannotComeBackIsSaidOutLoud(GameTestHelper helper) {
@@ -1975,11 +1977,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ein Tank, der mehr verspricht, als er hergibt.
+     * A tank that promises more than it hands over.
      *
-     * <p>Dasselbe wie {@link Boasting}, nur flüssig — und hier ist der Rückweg
-     * enger: In die Quelle zurück geht nichts, weil ein Tank nicht wieder
-     * annehmen muss.
+     * <p>The same as {@link Boasting}, only fluid — and here the way back is
+     * narrower: nothing goes back into the source, because a tank need not
+     * accept again.
      */
     private record BoastingTank(
             net.neoforged.neoforge.fluids.capability.IFluidHandler inner)
@@ -2024,7 +2026,7 @@ public final class FactoryNetworkGameTests {
         }
     }
 
-    /** Ein Tank, der annimmt und nichts wieder hergibt. */
+    /** A tank that accepts and hands nothing back out. */
     private record KeepingTank(
             net.neoforged.neoforge.fluids.capability.IFluidHandler inner)
             implements net.neoforged.neoforge.fluids.capability.IFluidHandler {
@@ -2076,11 +2078,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * <b>Zwischen zwei Tanks darf nichts entstehen.</b>
+     * <b>Nothing may come into being between two tanks.</b>
      *
-     * <p>Derselbe Griff wie bei den Gegenständen und derselbe Preis für seine
-     * Reihenfolge: Erst füllt das Ziel, dann zieht die Quelle ab. Gibt sie
-     * weniger her als beim Probelauf, steht der Unterschied schon im Ziel.
+     * <p>The same grab as with items and the same price for its order: first
+     * the target fills, then the source drains. If it hands over less than in
+     * the simulation, the difference is already in the target.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void nothingIsBornBetweenTwoTanks(GameTestHelper helper) {
@@ -2102,7 +2104,7 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
-    /** Und ein Ziel, das nichts zurückgibt, hinterlässt eine Zahl. */
+    /** And a target that gives nothing back leaves a number behind. */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void whatCannotFlowBackIsSaidOutLoud(GameTestHelper helper) {
         var inner = new net.neoforged.neoforge.fluids.capability.templates.FluidTank(2000);
@@ -2125,13 +2127,13 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * <b>Die Fertigung darf nicht bauen, was sie nicht bezahlt hat.</b>
+     * <b>Crafting must not build what it has not paid for.</b>
      *
-     * <p>Der Schritt prüft den Bestand, entnimmt und legt das Ergebnis ein.
-     * Zwei davon sind Anzeigen: Ein Speicherbus zählt fremde Inventare mit,
-     * und die dürfen ihren Inhalt behalten. Bleibt die Kohle im Ofen, während
-     * der Kohleblock entsteht, ist die Fertigung eine Quelle aus dem Nichts —
-     * und weil der Bestand nicht nachzieht, eine unversiegbare.
+     * <p>The step checks the stock, extracts, and inserts the result. Two of
+     * those are views: a storage bus counts foreign inventories too, and they
+     * may keep their contents. If the coal stays in the furnace while the coal
+     * block comes into being, crafting is a source out of nothing — and
+     * because the stock does not follow, an inexhaustible one.
      */
     @GameTest(template = EMPTY, timeoutTicks = 600)
     public static void craftingPaysForWhatItBuilds(GameTestHelper helper) {
@@ -2168,7 +2170,7 @@ public final class FactoryNetworkGameTests {
                             }
                         }
                     }
-                    // Neun Kohle je Block — die Rechnung des Rezepts, rückwärts.
+                    // Nine coal per block — the recipe's arithmetic, backwards.
                     long gebaut = entity.storage().count(Items.COAL_BLOCK) * 9;
                     helper.assertValueEqual(imOfen + gebaut, 64L,
                             "aus vierundsechzig Kohle sind mehr geworden");
@@ -2177,14 +2179,14 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Und ein Rezept an einer Maschine fängt ohne Zutat gar nicht erst an.
+     * And a recipe at a machine does not even start without its ingredient.
      *
-     * <p>Derselbe Speicher, der zeigt und nicht hergibt, an der anderen Hälfte
-     * der Fertigung. Hier entsteht nichts aus dem Nichts — das Ergebnis holt
-     * das Netz aus der Maschine, und eine Maschine ohne Zutat liefert keins.
-     * Der Schaden ist ein anderer: Der Auftrag stünde für immer auf „läuft"
-     * und wartete auf eine Lieferung, die nie kommen kann. Und das Wasser
-     * eines Rezepts wäre schon eingefüllt.
+     * <p>The same storage that shows and does not hand over, at the other half
+     * of crafting. Nothing comes out of nothing here — the network fetches
+     * the result from the machine, and a machine without an ingredient
+     * delivers none. The damage is a different one: the job would stand on
+     * "running" forever, waiting for a delivery that can never come. And the
+     * water of a recipe would already have been poured in.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void arecipeWaitsWhenTheStorageOnlyShows(GameTestHelper helper) {
@@ -2194,8 +2196,8 @@ public final class FactoryNetworkGameTests {
         furnaceStoreAt(helper, controller.east().east());
         entity.rebuildNetwork();
 
-        // Kohle zu Diamant: Vanilla kennt das nicht, also führt kein anderer
-        // Weg zum Ziel als dieses Rezept an dieser Maschine.
+        // Coal to diamond: vanilla does not know that, so no other path leads
+        // to the target than this recipe at this machine.
         helper.assertTrue(entity.deploy("""
                 store ofen {
                 }
@@ -2218,25 +2220,23 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Eine Flüssigkeit mit Datenkomponenten kommt aus keinem Tank heraus.
+     * A fluid with data components comes out of no tank.
      *
-     * <p>Weder Dupe noch Verlust — es passiert schlicht nichts, und genau das
-     * ist das Unangenehme: Der Worker meldet „nichts zu tun" an einem vollen
-     * Tank, und niemand kann daran ablesen, woran es liegt.
+     * <p>Neither dupe nor loss — simply nothing happens, and that is exactly
+     * the unpleasant part: the worker reports "nothing to do" at a full tank,
+     * and nobody can tell from that what the cause is.
      *
-     * <p><b>Woran es liegt:</b> Der Aufrufer baut die Anfrage aus der Sorte neu
-     * — {@code new FluidStack(inside.getFluid(), n)} —, und dabei bleiben die
-     * Komponenten liegen. Ein Tank vergleicht mit
-     * {@code isSameFluidSameComponents} und antwortet auf eine Anfrage, die er
-     * nicht wiedererkennt, mit nichts.
+     * <p><b>The cause:</b> the caller rebuilds the request from the kind —
+     * {@code new FluidStack(inside.getFluid(), n)} —, and the components get
+     * left behind. A tank compares with {@code isSameFluidSameComponents} and
+     * answers a request it does not recognise with nothing.
      *
-     * <p>Dieser Prüflauf hält den Ist-Zustand fest <b>und die Behebung
-     * daneben</b>: Dieselbe Anfrage mit {@code copyWithAmount} geht durch. Was
-     * dagegen spricht, sie einfach zu bauen, steht in
-     * {@code naechste-schritte.md} — der Netzspeicher ist nach Sorte
-     * verschlüsselt und kann Komponenten nicht halten, die Strecke ins Lager
-     * bliebe also zu. Beides zusammen ist eine Entscheidung und keine
-     * Fehlerbehebung.
+     * <p>This test run pins down the current state <b>and the fix beside
+     * it</b>: the same request with {@code copyWithAmount} goes through. What
+     * speaks against simply building it is in {@code naechste-schritte.md} —
+     * the network storage is keyed by kind and cannot hold components, so the
+     * route into the store would stay closed. Both together are a decision
+     * and not a bug fix.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void fluidWithComponentsStaysWhereItIs(GameTestHelper helper) {
@@ -2249,13 +2249,13 @@ public final class FactoryNetworkGameTests {
                 net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
         var target = new net.neoforged.neoforge.fluids.capability.templates.FluidTank(2000);
 
-        // Eine Kopie: getFluidInTank liefert bei FluidTank das Innenleben, und
-        // das ändert sich gleich unter der Hand.
+        // A copy: with FluidTank, getFluidInTank returns the internals, and
+        // those are about to change under our hands.
         var inside = source.getFluidInTank(0).copy();
         helper.assertTrue(!inside.getComponentsPatch().isEmpty(),
                 "der Tank hält die Komponenten nicht — dann prüft das hier nichts");
 
-        // So fragt der Aufrufer heute.
+        // This is how the caller asks today.
         var stripped = dev.devpanda.factorynetwork.runtime.Handoffs.fluid(source, target,
                 new net.neoforged.neoforge.fluids.FluidStack(inside.getFluid(), 1000));
         helper.assertValueEqual(stripped.moved(), 0L,
@@ -2263,7 +2263,7 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(millibucketsIn(target), 0L, "und das Ziel bleibt leer");
         helper.assertValueEqual(millibucketsIn(source), 1000L, "die Brühe steht noch da");
 
-        // Und so ginge es: mit dem, was wirklich drinsteht.
+        // And this is how it would work: with what is really inside.
         var faithful = dev.devpanda.factorynetwork.runtime.Handoffs.fluid(source, target,
                 inside.copyWithAmount(1000));
         helper.assertValueEqual(faithful.moved(), 1000L,
@@ -2274,24 +2274,22 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * <b>Jeder Block überlebt sein eigenes Update-Paket.</b>
+     * <b>Every block survives its own update packet.</b>
      *
-     * <p>Wenn ein Block gesetzt wird, schickt der Server ein
-     * {@code ClientboundBlockEntityDataPacket} mit dem, was
-     * {@code getUpdateTag} hergibt, und der Client liest es mit
-     * {@code loadAdditional}. Passen die beiden nicht zusammen — schreibt das
-     * eine ein Feld nicht, das das andere bedingungslos liest —, wirft der
-     * Client beim Lesen und <b>fliegt aus der Welt</b>: „Network Protocol
-     * Error", mitten im Bauen.
+     * <p>When a block is placed, the server sends a
+     * {@code ClientboundBlockEntityDataPacket} with what {@code getUpdateTag}
+     * hands over, and the client reads it with {@code loadAdditional}. If the
+     * two do not match — one does not write a field that the other reads
+     * unconditionally —, the client throws while reading and <b>is kicked out
+     * of the world</b>: "Network Protocol Error", in the middle of building.
      *
-     * <p>Genau das tat die Presse. Ihr {@code getUpdateTag} ließ die Energie
-     * weg, ihr {@code loadAdditional} las sie ohne Nachfrage, und NeoForge
-     * antwortet auf ein fehlendes Tag mit einer Ausnahme.
+     * <p>That is exactly what the press did. Its {@code getUpdateTag} left out
+     * the energy, its {@code loadAdditional} read it without asking, and
+     * NeoForge answers a missing tag with an exception.
      *
-     * <p>Deshalb prüft dieser Lauf <b>alle</b> Blöcke der Mod und nicht die
-     * eine: Der Fehler ist nicht in der Presse zuhause, sondern in dem
-     * Abstand zwischen zwei Methoden, den jeder neue Block wieder aufmachen
-     * kann.
+     * <p>That is why this run checks <b>all</b> blocks of the mod and not the
+     * one: the bug does not live in the press but in the gap between two
+     * methods, which every new block can open up again.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void everyBlockSurvivesItsOwnUpdateTag(GameTestHelper helper) {
@@ -2309,15 +2307,15 @@ public final class FactoryNetworkGameTests {
             String name = net.minecraft.core.registries.BuiltInRegistries.BLOCK
                     .getKey(block).getPath();
             helper.setBlock(at, block);
-            // Über die Welt und nicht über helper.getBlockEntity: Das meldet
-            // einen Fehlschlag, wo hier ein Weiterspringen richtig ist.
+            // Via the level and not via helper.getBlockEntity: that reports a
+            // failure where skipping ahead is the right thing here.
             var entity = helper.getLevel().getBlockEntity(helper.absolutePos(at));
             if (entity == null) {
-                // Ein Block ohne BlockEntity verschickt auch keins.
+                // A block without a BlockEntity does not send one either.
                 continue;
             }
             try {
-                // Genau der Weg des Clients: das eigene Update-Paket lesen.
+                // Exactly the client's path: read its own update packet.
                 entity.handleUpdateTag(entity.getUpdateTag(registries), registries);
                 checked++;
             } catch (RuntimeException broken) {
@@ -2327,24 +2325,24 @@ public final class FactoryNetworkGameTests {
             }
             helper.setBlock(at, Blocks.AIR);
         }
-        // Sonst wäre der Lauf grün, weil er fast nichts angefasst hat: Ein
-        // Block, den setBlock nicht mit seiner BlockEntity bestückt, fällt
-        // oben stillschweigend durch.
+        // Otherwise the run would be green because it touched almost nothing:
+        // a block that setBlock does not equip with its BlockEntity silently
+        // falls through above.
         helper.assertTrue(checked >= 12,
                 "nur " + checked + " Blöcke geprüft — der Lauf misst zu wenig");
         helper.succeed();
     }
 
     /**
-     * <b>Eine Maschine, die man nicht beschicken kann, ist keine.</b>
+     * <b>A machine you cannot feed is not one.</b>
      *
-     * <p>Die Presse nimmt Strom an — das steht in FnCapabilities und ist
-     * geprüft. Ob sie auch Material annimmt, stand nirgends: Kein Prüflauf
-     * hat ihr je einen Eisenbarren geschickt. Und ohne Item-Fähigkeit findet
-     * ein Anschluss kein Inventar, egal wie gut das Fenster aussieht.
+     * <p>The press accepts power — that is in FnCapabilities and is tested.
+     * Whether it also accepts material was stated nowhere: no test run has
+     * ever sent it an iron ingot. And without an item capability a connector
+     * finds no inventory, no matter how good the window looks.
      *
-     * <p>Das ist die Bedingung, unter der diese Mod überhaupt gebaut wird:
-     * Was eine Maschine kann, muss ein Programm auslösen können.
+     * <p>That is the condition under which this mod is built at all: what a
+     * machine can do, a program must be able to trigger.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void aMachineTakesItsMaterialFromTheNetwork(GameTestHelper helper) {
@@ -2383,7 +2381,7 @@ public final class FactoryNetworkGameTests {
         });
     }
 
-    /** Die Presse an dieser Stelle, mit Strom und einem Stempel. */
+    /** The press at this spot, with power and a stamp. */
     private static dev.devpanda.factorynetwork.block.entity.PressBlockEntity press(
             GameTestHelper helper, BlockPos at, net.minecraft.world.item.Item stamp) {
         helper.setBlock(at, FnBlocks.PRESS.get());
@@ -2392,11 +2390,11 @@ public final class FactoryNetworkGameTests {
             helper.fail("Da steht keine Presse", at);
             throw new IllegalStateException();
         }
-        // <b>In Portionen füllen.</b> Der Puffer nimmt höchstens zweitausend
-        // je Aufruf — das ist die Drossel, die verhindert, dass eine Presse
-        // ihre Arbeit in einem Tick bezahlt. Wer sie in einem Zug füllen will,
-        // füllt sie in Wahrheit auf zweitausend, und dann steht sie bei jedem
-        // Rezept, das mehr kostet.
+        // <b>Fill in portions.</b> The buffer takes at most two thousand per
+        // call — that is the throttle which prevents a press from paying for
+        // its work in one tick. Whoever wants to fill it in one go in truth
+        // fills it to two thousand, and then it stalls at every recipe that
+        // costs more.
         for (int i = 0; i < 30; i++) {
             presse.energy().receiveEnergy(
                     dev.devpanda.factorynetwork.block.entity.PressBlockEntity.CAPACITY, false);
@@ -2406,7 +2404,7 @@ public final class FactoryNetworkGameTests {
         return presse;
     }
 
-    /** Was im Ausgabeplatz liegt. */
+    /** What lies in the output slot. */
     private static ItemStack pressResult(
             dev.devpanda.factorynetwork.block.entity.PressBlockEntity presse) {
         return presse.item(
@@ -2414,19 +2412,19 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * <b>Ein Rezept mit drei Zutaten, in beliebiger Reihenfolge eingelegt.</b>
+     * <b>A recipe with three ingredients, inserted in any order.</b>
      *
-     * <p>Der Logikkern braucht seit dem 30.08. eine Platte, vier Redstone und
-     * ein Kupfer. Welche Zutat in welchem Platz liegt, darf gleichgültig
-     * sein: Wer vor einer Maschine steht, sortiert nicht nach einer Ordnung,
-     * die nirgends steht.
+     * <p>Since 30 Aug the logic core needs a plate, four redstone and one
+     * copper. Which ingredient lies in which slot may not matter: whoever
+     * stands in front of a machine does not sort by an order that is written
+     * nowhere.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void thepressTakesThreeIngredientsInAnyOrder(GameTestHelper helper) {
         BlockPos at = new BlockPos(1, 1, 1);
         var presse = press(helper, at, FnItems.STAMP_LOGIC.get());
         int first = dev.devpanda.factorynetwork.block.entity.PressBlockEntity.SLOT_MATERIAL;
-        // Absichtlich verkehrt herum: Kupfer, Platte, Redstone.
+        // Deliberately the wrong way round: copper, plate, redstone.
         presse.setItem(first, new ItemStack(Items.COPPER_INGOT, 1));
         presse.setItem(first + 1, new ItemStack(FnItems.PLATE.get(), 1));
         presse.setItem(first + 2, new ItemStack(Items.REDSTONE, 4));
@@ -2443,10 +2441,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Fehlt eine Zutat, passiert nichts — und die anderen bleiben liegen.
+     * If an ingredient is missing, nothing happens — and the others stay put.
      *
-     * <p>Die Gegenprobe zum Test darüber. Ohne sie wäre nicht gesagt, ob die
-     * Presse wirklich alle drei fordert oder nur zufällig etwas herstellt.
+     * <p>The cross-check to the test above. Without it, it would not be
+     * settled whether the press really demands all three or just happens to
+     * produce something.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void thepressWaitsForEveryIngredient(GameTestHelper helper) {
@@ -2455,7 +2454,7 @@ public final class FactoryNetworkGameTests {
         int first = dev.devpanda.factorynetwork.block.entity.PressBlockEntity.SLOT_MATERIAL;
         presse.setItem(first, new ItemStack(FnItems.PLATE.get(), 1));
         presse.setItem(first + 1, new ItemStack(Items.REDSTONE, 4));
-        // Das Kupfer fehlt.
+        // The copper is missing.
 
         helper.runAfterDelay(200, () -> {
             helper.assertTrue(pressResult(presse).isEmpty(),
@@ -2467,10 +2466,10 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Zu wenig von einer Zutat ist wie gar keine.
+     * Too little of an ingredient is like none at all.
      *
-     * <p>Vier Redstone fordert das Rezept. Bei dreien darf die Presse nicht
-     * anfangen — sonst stünde sie mit halb verbrauchtem Material da.
+     * <p>The recipe demands four redstone. With three the press must not
+     * start — otherwise it would stand there with half-consumed material.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void thepressCountsTheAmount(GameTestHelper helper) {
@@ -2491,17 +2490,17 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * <b>Die Stapelkarte macht drei Kristalle statt einem.</b>
+     * <b>The batch card makes three crystals instead of one.</b>
      *
-     * <p>Und sie verbraucht dreifach. Das ist der ganze Handel: keine Zeit
-     * gespart, sondern die Durchläufe, die sonst nacheinander liefen.
+     * <p>And it consumes threefold. That is the whole trade: no time saved,
+     * but the runs that would otherwise have gone one after the other.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void abatchCardMakesThreeAtOnce(GameTestHelper helper) {
         BlockPos at = new BlockPos(1, 1, 1);
         var presse = press(helper, at, FnItems.STAMP_PLATE.get());
-        // Genau drei: So kann höchstens ein Durchlauf laufen, und die Zahl am
-        // Ende ist die eines Durchlaufs und nicht die des Wartens.
+        // Exactly three: that way at most one run can happen, and the number
+        // at the end is that of one run and not that of the waiting.
         presse.setItem(dev.devpanda.factorynetwork.block.entity.PressBlockEntity.SLOT_MATERIAL,
                 new ItemStack(FnItems.RAW_CRYSTAL.get(), 3));
         presse.setItem(dev.devpanda.factorynetwork.block.entity.PressBlockEntity.SLOT_UPGRADE,
@@ -2519,12 +2518,12 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Die Beschleunigungskarte kommt früher an.
+     * The acceleration card arrives earlier.
      *
-     * <p>Gemessen wird nicht die Zeit, sondern der Vorsprung: Nach derselben
-     * Zahl Ticks ist die bestückte Presse fertig und die nackte noch nicht.
-     * Eine Messung in Ticks wäre eine über die Rechnung, und die steht
-     * anderswo.
+     * <p>Not the time is measured but the lead: after the same number of
+     * ticks the equipped press is done and the bare one is not yet. A
+     * measurement in ticks would be one about the arithmetic, and that lives
+     * elsewhere.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void anaccelerationCardArrivesFirst(GameTestHelper helper) {
@@ -2536,7 +2535,7 @@ public final class FactoryNetworkGameTests {
         schnell.setItem(dev.devpanda.factorynetwork.block.entity.PressBlockEntity.SLOT_UPGRADE,
                 new ItemStack(FnItems.ACCELERATION_CARD.get(), 4));
 
-        // Das nackte Rezept braucht 60 Ticks, das beschleunigte 41.
+        // The bare recipe needs 60 ticks, the accelerated one 41.
         helper.runAfterDelay(50, () -> {
             helper.assertTrue(pressResult(schnell).is(FnItems.PLATE.get()),
                     "die bestückte Presse muss nach 50 Ticks fertig sein");
@@ -2546,7 +2545,7 @@ public final class FactoryNetworkGameTests {
         });
     }
 
-    /** Ein Programm mit await in if in while — die Vorlage der Ablauf-Tests. */
+    /** A program with await in if in while — the template for the flow tests. */
     private static final String COUNTING_PROGRAM = """
             event Takt(nummer: Int)
 
@@ -2589,8 +2588,8 @@ public final class FactoryNetworkGameTests {
         tick(helper, entity, 1);
         helper.assertValueEqual(flow.status().name(), "AWAITING", "Nach Runde 1 wartet er");
 
-        // Dasselbe Programm noch einmal übernehmen stellt einen Neustart nach:
-        // aufschreiben, Maschine wegwerfen, zurücklesen.
+        // Deploying the same program again re-enacts a restart: write it
+        // down, throw the machine away, read it back.
         helper.assertTrue(entity.deploy(COUNTING_PROGRAM), "Erneut übernehmen ging schief");
 
         var wieder = flowOf(entity, id);
@@ -2621,8 +2620,8 @@ public final class FactoryNetworkGameTests {
         long id = flow.id();
         tick(helper, entity, 1);
 
-        // Eine Zeile mehr verschiebt alles dahinter — der Zähler des Ablaufs
-        // zeigt dann auf die falsche Anweisung.
+        // One line more shifts everything behind it — the flow's counter then
+        // points at the wrong statement.
         helper.assertTrue(entity.deploy("""
                 event Takt(nummer: Int)
 
@@ -2645,7 +2644,7 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(wieder.status().name(), "STALE",
                 "Er muss sich melden statt heimlich weiterzulaufen");
 
-        // Ein STALE-Ablauf rührt sich nicht mehr von selbst.
+        // A STALE flow no longer moves on its own.
         tick(helper, entity, 2);
         helper.assertValueEqual(wieder.status().name(), "STALE", "Und bleibt liegen");
         helper.succeed();
@@ -2662,7 +2661,7 @@ public final class FactoryNetworkGameTests {
         long id = flow.id();
         tick(helper, entity, 1);
 
-        // Gleiche Zeilen, andere Rechnung: Die Stellen bleiben, wo sie waren.
+        // Same lines, different arithmetic: the positions stay where they were.
         helper.assertTrue(entity.deploy("""
                 event Takt(nummer: Int)
 
@@ -2703,8 +2702,8 @@ public final class FactoryNetworkGameTests {
         tick(helper, entity, 2);
         helper.assertValueEqual(flow.status().name(), "AWAITING", "Er wartet auf Runde 3");
 
-        // Der Weg, den ein Serverneustart nimmt: Die BlockEntity schreibt sich
-        // auf die Platte, und beim Laden entsteht aus dem Tag eine neue.
+        // The path a server restart takes: the BlockEntity writes itself to
+        // disk, and on load a new one arises from the tag.
         var registries = helper.getLevel().registryAccess();
         net.minecraft.nbt.CompoundTag gespeichert = entity.saveWithFullMetadata(registries);
         var absolut = helper.absolutePos(controller);
@@ -2741,9 +2740,9 @@ public final class FactoryNetworkGameTests {
         long id = flow.id();
         tick(helper, entity, 1);
 
-        // Eine neue Funktion hinten dran: Das Programm ist ein anderes, die
-        // Stellen des wartenden Ablaufs sind aber unberührt. Genau der Fall,
-        // für den es die Wahl gibt.
+        // A new function appended at the end: the program is a different one,
+        // but the positions of the waiting flow are untouched. Exactly the
+        // case for which the choice exists.
         helper.assertTrue(entity.deploy(COUNTING_PROGRAM + """
 
 
@@ -2810,8 +2809,8 @@ public final class FactoryNetworkGameTests {
         var wartend = entity.startFlow("wartet", java.util.List.of());
         helper.assertValueEqual(wartend.status().name(), "AWAITING", "Er wartet");
 
-        // Der Weg, den ein Spieler nimmt: emit steht in seinem Programm, nicht
-        // in einem Java-Aufruf.
+        // The path a player takes: emit is in their program, not in a Java
+        // call.
         entity.startFlow("meldet", java.util.List.of());
 
         helper.assertValueEqual(wartend.status().name(), "DONE",
@@ -2826,8 +2825,8 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
 
-        // Ein on-Block, der selbst wartet — das ging nicht, solange Ereignisse
-        // im Interpreter zu Ende liefen.
+        // An on block that waits itself — that did not work as long as events
+        // ran to completion inside the interpreter.
         helper.assertTrue(entity.deploy("""
                 event Start()
                 event Weiter(wert: Int)
@@ -2863,8 +2862,8 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
 
-        // Allerlei Wertarten, damit der Weg über die Platte nicht nur mit
-        // Zahlen belegt ist.
+        // All sorts of value kinds, so that the path via disk is not covered
+        // with numbers only.
         helper.assertTrue(entity.deploy("""
                 fn schlaeft() {
                     let nachricht = "hallo"
@@ -2916,12 +2915,12 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
 
-        // Der eigentliche Zweck der Sache: für jede Maschine etwas anstoßen
-        // und auf ihre Rückmeldung warten, bevor die nächste drankommt.
+        // The actual purpose of the thing: kick something off for every
+        // machine and wait for its reply before the next one gets its turn.
         //
-        // Genau drei Sorten im Speicher, und die Schleife läuft bis ans Ende.
-        // Vorher lief sie über tag:minecraft/planks und brach nach drei
-        // Runden ab — dass sie überhaupt endet, prüfte damit niemand.
+        // Exactly three kinds in storage, and the loop runs to the end.
+        // Previously it ran over tag:minecraft/planks and broke off after
+        // three rounds — so nobody checked that it ends at all.
         entity.storage().insert(Items.IRON_ORE, 1);
         entity.storage().insert(Items.COAL, 1);
         entity.storage().insert(Items.COBBLESTONE, 1);
@@ -2959,16 +2958,16 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
 
-        // Die Schleife läuft bis ans Ende der Liste und gibt zurück, wie oft
-        // sie herumkam.
+        // The loop runs to the end of the list and returns how many times it
+        // went round.
         //
-        // <b>Verglichen wird mit einem Lauf ohne Neustart.</b> Vorher stand
-        // hier ein „break" nach drei Runden — damit war die Stelle in der
-        // Liste von außen unsichtbar: Sprang der Zeiger beim Laden auf null
-        // zurück, kamen trotzdem drei Runden heraus. Der Test blieb grün,
-        // auch wenn der Stand gar nicht mitgeschrieben wurde. Wie lang die
-        // Liste ist, muss dafür niemand wissen — nur, dass beide Läufe
-        // dieselbe Zahl ergeben.
+        // <b>Compared against a run without a restart.</b> Previously a
+        // "break" after three rounds stood here — which made the position in
+        // the list invisible from the outside: if the pointer jumped back to
+        // zero on load, three rounds still came out. The test stayed green
+        // even if the position was not written down at all. Nobody needs to
+        // know how long the list is for that — only that both runs yield the
+        // same number.
         helper.assertTrue(entity.deploy("""
                 event Takt(nummer: Int)
 
@@ -2988,9 +2987,9 @@ public final class FactoryNetworkGameTests {
 
         var flow = entity.startFlow("reihum", java.util.List.of());
         tick(helper, entity, 1);
-        // Erst der Tick führt den geweckten Lauf wirklich weiter. Ohne ihn
-        // stünde der Zeiger beim Speichern noch auf dem ersten Eintrag, und
-        // ein Rücksprung auf null wäre gar kein Unterschied.
+        // Only the tick really carries the woken run onwards. Without it the
+        // pointer would still be on the first entry when saving, and a jump
+        // back to zero would be no difference at all.
         entity.serverTick();
         helper.assertValueEqual(flow.status().name(), "AWAITING",
                 "Der Lauf steht jetzt beim zweiten Eintrag");
@@ -3006,8 +3005,8 @@ public final class FactoryNetworkGameTests {
         helper.assertTrue(wieder != null, "Der Lauf über die Liste ist verloren gegangen");
         helper.assertValueEqual(wieder.status().name(), "AWAITING", "Er wartet weiter");
 
-        // Wäre der Stand des Laufs nicht mitgeschrieben, begänne die Liste von
-        // vorn — und käme auf mehr Runden als der ungestörte Lauf.
+        // If the run's position were not written down, the list would start
+        // from the beginning — and come to more rounds than the undisturbed run.
         long gezaehlt = runToEnd(helper, geladen, wieder);
         helper.assertValueEqual(gezaehlt, erwartet,
                 "Über den Neustart hinweg dieselbe Zahl Runden wie ohne");
@@ -3015,10 +3014,10 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Taktet, bis der Lauf fertig ist, und liefert sein Ergebnis.
+     * Ticks until the run is done, and returns its result.
      *
-     * <p>Wie lang die Liste ist, muss der Test nicht wissen — nur, dass sie
-     * endet. Die Grenze fängt eine Schleife ab, die sich nicht aufbraucht.
+     * <p>The test need not know how long the list is — only that it ends. The
+     * limit catches a loop that does not use itself up.
      */
     private static long runToEnd(GameTestHelper helper, ControllerBlockEntity entity,
                                  dev.devpanda.factorynetwork.runtime.flow.Flow flow) {
@@ -3050,7 +3049,7 @@ public final class FactoryNetworkGameTests {
                     return wert
                 }"""), "Das Programm wurde nicht übernommen");
 
-        // Kein Ablauf, bevor jemand drückt.
+        // No flow before somebody presses.
         helper.assertValueEqual(entity.flowEngine().flows().size(), 0, "Noch läuft nichts");
 
         entity.pressDisplayButton("leitstand", 1);
@@ -3082,7 +3081,7 @@ public final class FactoryNetworkGameTests {
                     return 1
                 }"""), "Das Programm wurde nicht übernommen");
 
-        // Die Überschrift ist kein Knopf, und eine Nummer daneben gibt es nicht.
+        // The heading is not a button, and a number beside it does not exist.
         entity.pressDisplayButton("leitstand", 0);
         entity.pressDisplayButton("leitstand", 99);
         entity.pressDisplayButton("gibtsnicht", 1);
@@ -3142,7 +3141,7 @@ public final class FactoryNetworkGameTests {
                 }"""), "Das Programm wurde nicht übernommen");
 
         var flow = entity.startFlow("aussen", java.util.List.of());
-        // Sonst hinge das Verhalten einer Funktion davon ab, wer sie ruft.
+        // Otherwise a function's behaviour would depend on who calls it.
         helper.assertValueEqual(flow.status().name(), "FAILED",
                 "Der Name des Rufers darf innen nicht sichtbar sein");
         helper.succeed();
@@ -3190,10 +3189,10 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Zwei Anlagen an einem Kabel — die zweite mit einem fehlenden Gerät.
+     * Two plants on one cable — the second with a missing device.
      *
-     * <p>Die Namen tragen den Anlagennamen vorn: So und nicht anders entsteht
-     * eine gebaute Anlage.
+     * <p>The names carry the plant name in front: this way and no other is
+     * how a built plant comes about.
      */
     private static ControllerBlockEntity twoPlants(GameTestHelper helper, BlockPos controller) {
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
@@ -3215,7 +3214,7 @@ public final class FactoryNetworkGameTests {
         return controllerAt(helper, controller);
     }
 
-    /** Die Kiste über dem Connector an dieser Stelle. */
+    /** The chest above the connector at this spot. */
     private static net.minecraft.world.level.block.entity.ChestBlockEntity plantChest(
             GameTestHelper helper, BlockPos controller, int index) {
         BlockPos chest = controller.east(index + 2).above(2);
@@ -3253,7 +3252,7 @@ public final class FactoryNetworkGameTests {
         helper.assertTrue(entity.deploy(PLANT_PROGRAM), "Das Programm wurde nicht übernommen");
         entity.startFlow("los", java.util.List.of());
 
-        // In der Vorlage steht "eingang" — gemeint ist werk_1/eingang.
+        // The template says "eingang" — meaning werk_1/eingang.
         helper.assertValueEqual(plantChest(helper, controller, 0).getItem(0).getCount(), 7,
                 "Aus dem Eingang der eigenen Anlage");
         helper.assertValueEqual(plantChest(helper, controller, 1).getItem(0).getCount(), 3,
@@ -3272,8 +3271,8 @@ public final class FactoryNetworkGameTests {
                 "werk_2.schleusen()")), "Das Programm wurde nicht übernommen");
         var flow = entity.startFlow("los", java.util.List.of());
 
-        // werk_2 fehlt der Ausgang. Ein halb durchlaufener Aufruf wäre
-        // schlimmer als einer, der gar nicht erst beginnt.
+        // werk_2 lacks the output. A half-completed call would be worse than
+        // one that does not begin at all.
         helper.assertValueEqual(flow.status().name(), "FAILED",
                 "Eine unvollständige Anlage nimmt keine Aufrufe an");
         helper.assertTrue(flow.detail().contains("ausgang"),
@@ -3320,8 +3319,8 @@ public final class FactoryNetworkGameTests {
                 entity.saveWithFullMetadata(registries), registries);
         ControllerBlockEntity geladen = (ControllerBlockEntity) block;
         geladen.setLevel(helper.getLevel());
-        // Im Spiel besorgt das der Tick: Ohne Netz kennt der Controller keine
-        // Geräte, und die Anlage wäre nicht wiederzufinden.
+        // In the game the tick takes care of that: without a network the
+        // controller knows no devices, and the plant could not be found again.
         geladen.rebuildNetwork();
 
         var wieder = flowOf(geladen, flow.id());
@@ -3331,7 +3330,7 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(wieder.status().name(), "DONE",
                 "Er läuft zu Ende, sagt aber: " + wieder.detail());
         helper.assertValueEqual(resultOf(wieder), 7L, "Mit dem Wert aus dem Ereignis");
-        // Ohne den mitgeschriebenen Anlagennamen wüsste er nicht mehr, wohin.
+        // Without the recorded plant name it would no longer know where to go.
         helper.assertValueEqual(plantChest(helper, controller, 1).getItem(0).getCount(), 3,
                 "Und weiß noch, welche Anlage er bedient");
         helper.succeed();
@@ -3352,7 +3351,7 @@ public final class FactoryNetworkGameTests {
                     setRedstone(depot, 3)
                 }"""), "Das Programm wurde nicht übernommen");
 
-        // Ein neuer Connector am Kabel: Das Netz kennt ihn beim nächsten Aufbau.
+        // A new connector on the cable: the network knows it at the next rebuild.
         BlockPos weiterer = controller.east().above();
         connector(helper, weiterer, Direction.UP);
         helper.setBlock(weiterer.above(), Blocks.CHEST);
@@ -3376,8 +3375,8 @@ public final class FactoryNetworkGameTests {
                     setRedstone(depot, 7)
                 }"""), "Das Programm wurde nicht übernommen");
 
-        // Beim allerersten Aufbau ist nichts dazugekommen — es war nur vorher
-        // nichts bekannt.
+        // On the very first rebuild nothing has been added — it was just that
+        // nothing was known before.
         entity.rebuildNetwork();
         helper.assertValueEqual(entity.flowEngine().flows().size()
                 + entity.flowEngine().failed().size(), 0,
@@ -3402,7 +3401,7 @@ public final class FactoryNetworkGameTests {
                 }"""), "Das Programm wurde nicht übernommen");
         entity.startFlow("versuch", java.util.List.of());
 
-        // Eine Auswahl, die nichts trifft, darf nicht "kein Filter" bedeuten.
+        // A selection that matches nothing must not mean "no filter".
         helper.assertValueEqual(
                 ((ChestBlockEntity) helper.getBlockEntity(quelle)).getItem(0).getCount(), 64,
                 "Steine haben mit Wasser nichts zu tun");
@@ -3410,11 +3409,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Zwei Kessel am Kabel.
+     * Two cauldrons on the cable.
      *
-     * <p>NeoForge gibt jedem Kessel einen Tank, und damit gibt es ein
-     * Prüfstück für Flüssigkeiten ohne eigenen Block. Ein Kessel fasst
-     * 1000 Millibucket — genau einen Eimer.
+     * <p>NeoForge gives every cauldron a tank, and with that there is a fluid
+     * test piece without a block of its own. A cauldron holds 1000
+     * millibuckets — exactly one bucket.
      */
     private static ControllerBlockEntity twoCauldrons(GameTestHelper helper, BlockPos controller) {
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
@@ -3429,14 +3428,14 @@ public final class FactoryNetworkGameTests {
             helper.setBlock(connector.above(), Blocks.CAULDRON);
             name(helper, connector, labels[i]);
         }
-        // Seit Flüssigkeiten in Zellen liegen, lagert ein Netz ohne Laufwerk
-        // auch keine Flüssigkeit mehr — genau wie bei den Gegenständen.
+        // Since fluids live in cells, a network without a drive no longer
+        // stores fluid either — exactly as with items.
         driveWithFluidCell(helper, controller.above(),
                 dev.devpanda.factorynetwork.storage.FluidCellTier.B64);
         return controllerAt(helper, controller);
     }
 
-    /** Füllt einen Kessel mit Wasser. */
+    /** Fills a cauldron with water. */
     private static void fillCauldron(GameTestHelper helper, BlockPos controller, int index) {
         helper.setBlock(controller.east(index + 2).above(2),
                 Blocks.WATER_CAULDRON.defaultBlockState()
@@ -3513,10 +3512,10 @@ public final class FactoryNetworkGameTests {
                 net.minecraft.world.level.material.Fluids.WATER), 1000L,
                 "Erst einmal muss es überhaupt im Netz sein");
 
-        // Der Bestand liegt jetzt in der Zelle, nicht mehr im Controller —
-        // also wird das Laufwerk gesichert und zurückgelesen. Beim Sichern
-        // muss der Inhalt aus dem Arbeitsspeicher in den Gegenstand; ohne das
-        // wäre er nach einem Neustart der von vorhin.
+        // The stock now lives in the cell, no longer in the controller — so
+        // the drive is saved and read back. When saving, the contents must go
+        // from memory into the item; without that it would be the earlier
+        // contents after a restart.
         BlockPos drivePos = controller.above();
         var drive = (dev.devpanda.factorynetwork.block.entity.DriveBlockEntity)
                 helper.getBlockEntity(drivePos);
@@ -3590,8 +3589,8 @@ public final class FactoryNetworkGameTests {
         entity.rebuildNetwork();
         fillCauldron(helper, controller, 0);
 
-        // Ohne filter ist das ein Gegenstands-Worker — und der findet an einem
-        // Kessel kein Inventar. Die Meldung muss davon sprechen, nicht schweigen.
+        // Without filter this is an item worker — and that finds no inventory
+        // at a cauldron. The message must say so, not stay silent.
         helper.assertTrue(entity.deploy("""
                 worker unklar {
                     from bottich
@@ -3611,11 +3610,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Schreibt ein Paket und liest es zurück.
+     * Writes a packet and reads it back.
      *
-     * <p>Ein Codec mit der falschen Zahl an Feldern übersetzt anstandslos und
-     * bricht erst, wenn jemand das Terminal öffnet. Diese Prüfung fängt das
-     * ab, ohne dass ein Spieler dafür anwesend sein muss.
+     * <p>A codec with the wrong number of fields compiles without complaint
+     * and only breaks when somebody opens the terminal. This check catches
+     * that without a player having to be present for it.
      */
     private static <T> T roundTrip(GameTestHelper helper,
             net.minecraft.network.codec.StreamCodec<
@@ -3655,8 +3654,8 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(zurueck.connectors().get(0).pos(),
                 new BlockPos(1, 2, 3), "und die Stelle kommt mit");
 
-        // Das Profil kommt als flache Liste über die Leitung und muss drüben
-        // wieder dasselbe Gerät sein — samt seitenlosem Zugang.
+        // The profile travels over the wire as a flat list and must be the
+        // same device on the other side — including sideless access.
         var profil = dev.devpanda.factorynetwork.network.packet.DeviceProfileCodec
                 .fromFlat(zurueck.profiles().get(0));
         helper.assertValueEqual(zurueck.profiles().get(0).name(), "kiste_1", "Name im Profil");
@@ -3727,8 +3726,8 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(anzeigenZurueck.panels().get(0).buttons().get(0).entry(), 1,
                 "Und welchen Eintrag sie meint");
 
-        // Die Fertigung geht denselben Weg über die Leitung. Im Einzelspieler
-        // fällt ein kaputter Codec nicht auf, auf einem Server sofort.
+        // Crafting takes the same path over the wire. In single-player a
+        // broken codec goes unnoticed, on a server it shows immediately.
         var auftraege = new dev.devpanda.factorynetwork.network.packet.CraftingStatePacket(
                 java.util.List.of(new dev.devpanda.factorynetwork.network.packet
                         .CraftingStatePacket.Line(3, "Truhe", 64, 8, "WAITING",
@@ -3805,8 +3804,8 @@ public final class FactoryNetworkGameTests {
         entity.startFlow("wartet", java.util.List.of());
         entity.fluids().insert(net.minecraft.world.level.material.Fluids.WATER, 1500);
 
-        // Was das Terminal zu sehen bekommt, entsteht hier. Ohne diese Prüfung
-        // fiele ein Fehler darin erst auf, wenn jemand das Terminal öffnet.
+        // What the terminal gets to see is created here. Without this check an
+        // error in it would only surface when somebody opens the terminal.
         var anzeigen = entity.displayPanels();
         helper.assertValueEqual(anzeigen.size(), 1, "Eine Anzeige");
         helper.assertValueEqual(anzeigen.get(0).lines().size(), 4, "Vier Zeilen");
@@ -3820,7 +3819,7 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(ablaeufe.get(0).status(), "AWAITING", "Und er wartet");
 
         helper.assertValueEqual(entity.plants().size(), 2, "Beide Anlagen erscheinen");
-        // Die Reihenfolge kommt aus einer Menge und ist nicht zugesagt.
+        // The order comes from a set and is not guaranteed.
         helper.assertTrue(entity.plants().stream().anyMatch(plant -> plant.contains("fehlt")),
                 "Die unvollständige Anlage sagt es: " + entity.plants());
         helper.assertValueEqual(entity.fluidLines().get(0), "water: 1500 mB",
@@ -3844,8 +3843,8 @@ public final class FactoryNetworkGameTests {
                 }"""), "Das Programm wurde nicht übernommen");
 
         var flow = entity.startFlow("zaehlt", java.util.List.of());
-        // Eine Schleife über nichts sieht aus wie eine, die nichts zu tun
-        // hatte — und ist damit der schlimmste Fall.
+        // A loop over nothing looks like one that had nothing to do — and is
+        // thereby the worst case.
         helper.assertValueEqual(flow.status().name(), "DONE",
                 "Der Ablauf sagt: " + flow.detail());
         helper.assertValueEqual(resultOf(flow), 1L, "Wasser ist eine Sorte");
@@ -3858,13 +3857,13 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
         entity.storage().insert(Items.IRON_ORE, 320);
-        // Ohne Signal ist das Lämpchen aus, und die Prüfung darauf beweist
-        // nichts. Ein Redstoneblock neben depot macht die Frage erst zu einer.
+        // Without a signal the lamp is off, and the check for it proves
+        // nothing. A redstone block next to depot is what turns the question
+        // into one.
         helper.setBlock(controller.east().south().above(), Blocks.REDSTONE_BLOCK);
 
-        // Was in beispiele.md steht, muss nicht nur übersetzen, sondern laufen.
-        // Ein Beispiel mit einem Methodennamen, den es nicht gibt, ist
-        // schlimmer als keines.
+        // What is in beispiele.md must not only compile but run. An example
+        // with a method name that does not exist is worse than none.
         helper.assertTrue(entity.deploy("""
                 display leitstand {
                     title "Erzlinie"
@@ -3892,11 +3891,11 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(zeilen.size(), 5, "Fünf Zeilen");
         helper.assertTrue(zeilen.get(1).contains("320"),
                 "Der Bestand steht da: " + zeilen.get(1));
-        // Der Balken zeichnet immer zehn Blöcke, und das Label steht auch an
-        // einem dunklen Lämpchen: contains("█") und contains("Depot") trafen
-        // beide auch dann, wenn gar nichts ausgewertet wurde. Geprüft wird
-        // deshalb die Grenze zwischen hell und dunkel — ein halber Balken
-        // trägt sein §8 in der Mitte, ein leerer gleich am Anfang.
+        // The bar always draws ten blocks, and the label also stands beside a
+        // dark lamp: contains("█") and contains("Depot") both matched even when
+        // nothing had been evaluated at all. So the boundary between light and
+        // dark is checked — a half bar carries its §8 in the middle, an empty
+        // one right at the start.
         helper.assertTrue(zeilen.get(2).contains("§a█████§8█████"),
                 "320 von 640 sind ein halber Balken: " + zeilen.get(2));
         helper.assertTrue(zeilen.get(2).contains("50 %"),
@@ -3905,8 +3904,8 @@ public final class FactoryNetworkGameTests {
                 "Der Redstoneblock liegt daneben, das Lämpchen muss leuchten: "
                         + zeilen.get(3));
 
-        // Der Knopf und der Ereignisblock laufen wirklich.
-        // Eine Variable als Auswahl in move — steht so in beispiele.md.
+        // The button and the event block really run.
+        // A variable as the selection in move — that is how beispiele.md has it.
         entity.startFlow("mit_variabler_auswahl", java.util.List.of());
         entity.pressDisplayButton("leitstand", 4);
         entity.fireEvent("device_offline", java.util.List.of(
@@ -3922,7 +3921,7 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
 
-        // Eingebaute Ereignisse werden nicht deklariert — wie redstone_changed.
+        // Built-in events are not declared — like redstone_changed.
         helper.assertTrue(entity.deploy("""
                 fn wartet() {
                     let gerät = await device_changed
@@ -3937,9 +3936,9 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(flow.status().name(), "AWAITING", "Er wartet");
 
         BlockPos quelle = controller.east().north().north();
-        // Erst muss einmal hingeschaut worden sein: Beim ersten Blick wird
-        // nichts gemeldet, denn da hat sich nichts geändert — es war nur
-        // nichts bekannt.
+        // Somebody must have looked once first: on the first look nothing is
+        // reported, because nothing has changed — it was just that nothing was
+        // known.
         helper.startSequence()
                 .thenIdle(15)
                 .thenExecute(() -> {
@@ -3954,10 +3953,10 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Eine Gruppe ist ein Wert: Sie nennt ihre Mitglieder und nimmt an.
+     * A group is a value: it names its members and accepts.
      *
-     * <p>Im GameTest, weil beides am Netz hängt — welche Geräte in der Gruppe
-     * sind, entscheidet die Welt und nicht das Programm.
+     * <p>In the GameTest because both hang on the network — which devices are
+     * in the group is decided by the world and not by the program.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void aGroupIsAValue(GameTestHelper helper) {
@@ -3996,13 +3995,13 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Eine Menge vor einem Vorlagennamen bewegt auch wirklich etwas.
+     * An amount before a template name really moves something.
      *
-     * <p>Dass {@code send(64 erze)} übersetzt, sagt der Prüfer für die
-     * Doku-Beispiele. Ob der Interpreter den Namen an dieser Stelle auch
-     * <b>auflöst</b>, sagt er nicht — er übersetzt nur. Genau dort lag der
-     * Fehler vorher: Das Beispiel stand in {@code beispiele.md} und ließ sich
-     * nicht einmal lesen.
+     * <p>That {@code send(64 erze)} compiles is stated by the checker for the
+     * doc examples. Whether the interpreter also <b>resolves</b> the name at
+     * this spot it does not say — it only compiles. That is exactly where the
+     * bug was before: the example stood in {@code beispiele.md} and could not
+     * even be read.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void anamountBeforeAtemplateNameReallyMoves(GameTestHelper helper) {
@@ -4034,7 +4033,7 @@ public final class FactoryNetworkGameTests {
                 .thenSucceed();
     }
 
-    /** Ein Festwert wird gelesen wie ein globaler, nur nie geschrieben. */
+    /** A constant is read like a global, only never written. */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void aConstantIsReadableAtRuntime(GameTestHelper helper) {
         BlockPos controller = buildSetup(helper);
@@ -4058,11 +4057,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Eine globale Liste übersteht den Neustart.
+     * A global list survives the restart.
      *
-     * <p>Der Grund, warum es sie überhaupt gibt: Eine Warteschlange, die beim
-     * Serverneustart verschwindet, ist keine. Geprüft wird der ganze Weg —
-     * anhängen über eine Zuweisung, speichern, zurücklesen.
+     * <p>The reason it exists at all: a queue that vanishes on a server
+     * restart is none. The whole path is checked — append via an assignment,
+     * save, read back.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void aglobalListSurvivesArestart(GameTestHelper helper) {
@@ -4092,12 +4091,12 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Eine Liste als Festwert lässt sich nicht ändern.
+     * A list as a constant cannot be changed.
      *
-     * <p><b>Das ist geschenkt</b> und der Grund für die Entscheidung: Weil
-     * Anhängen eine Zuweisung ist, bewacht dieselbe Prüfung, die
-     * {@code stapel = 65} meldet, auch {@code sorten = sorten.plus(…)}. Ein
-     * änderndes {@code add} liefe daran vorbei.
+     * <p><b>That comes for free</b> and is the reason for the decision:
+     * because appending is an assignment, the same check that reports
+     * {@code stapel = 65} also guards {@code sorten = sorten.plus(…)}. A
+     * mutating {@code add} would slip past it.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void aconstListCannotBeChanged(GameTestHelper helper) {
@@ -4105,9 +4104,9 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
 
-        // Erst die Gegenprobe: Dasselbe Programm ohne die Zuweisung geht
-        // durch. Ohne sie wäre der Test auch dann grün, wenn schon das
-        // Listenliteral nicht übersetzt — und geprüft wäre gar nichts.
+        // The cross-check first: the same program without the assignment goes
+        // through. Without it the test would be green even if the list
+        // literal itself did not compile — and nothing would be checked.
         helper.assertTrue(entity.deploy("""
                 const sorten = ["eisen", "gold"]
 
@@ -4125,10 +4124,10 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ein Posten aus dem Bestand kennt seine Art und seine Menge.
+     * An entry from the stock knows its kind and its amount.
      *
-     * <p>Im GameTest, weil eine Art ohne Registry keine ist: Der Einheitstest
-     * kann nur prüfen, was ohne Welt zu prüfen ist.
+     * <p>In the GameTest because a kind without a registry is none: the unit
+     * test can only check what can be checked without a world.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void aStockEntryKnowsItsKindAndAmount(GameTestHelper helper) {
@@ -4164,11 +4163,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * {@code gerät.count(…)} zählt das Gerät und nicht den Speicher.
+     * {@code gerät.count(…)} counts the device and not the storage.
      *
-     * <p>Der Netzspeicher bleibt im Test ausdrücklich leer. Läge in beiden
-     * dasselbe, zeigte der Test nichts — er könnte die Verwechslung nicht von
-     * der richtigen Antwort unterscheiden.
+     * <p>The network storage deliberately stays empty in the test. If both
+     * held the same, the test would show nothing — it could not tell the
+     * mix-up from the right answer.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void countAtADeviceCountsTheDevice(GameTestHelper helper) {
@@ -4208,12 +4207,12 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * <b>Eine Auswahl, die nichts trifft, darf nicht alles bewegen.</b>
+     * <b>A selection that matches nothing must not move everything.</b>
      *
-     * <p>Eine leere Liste heißt für {@code move} „kein Filter", und kein
-     * Filter heißt „alles". Solange der Interpreter die Ausnahme wegwarf,
-     * ging ein vertippter Tag über den Weg der geschriebenen Auswahl und
-     * meldete sich; seit er auflöst, muss er selbst melden.
+     * <p>An empty list means "no filter" to {@code move}, and no filter means
+     * "everything". As long as the interpreter threw the exception away, a
+     * mistyped tag went via the path of the written selection and reported
+     * itself; since it resolves, it has to report itself.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void anEmptySelectionMovesNothing(GameTestHelper helper) {
@@ -4246,7 +4245,7 @@ public final class FactoryNetworkGameTests {
                 .thenSucceed();
     }
 
-    /** Eine Menge vor einer Vorlage heißt insgesamt, nicht je Art. */
+    /** An amount before a template means in total, not per kind. */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void anAmountBeforeATemplateMeansTotal(GameTestHelper helper) {
         BlockPos controller = buildSetup(helper);
@@ -4280,10 +4279,10 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * <b>Die Ausnahme wirkte nur im Worker.</b> Der Interpreter wertete
-     * {@code Expr.Except} als seine Grundlage aus und warf die Ausschlüsse
-     * weg — in einem {@code move} stand die Ausnahme also da und tat nichts,
-     * obwohl sprache.md sie zeigt.
+     * <b>The exception only worked in the worker.</b> The interpreter
+     * evaluated {@code Expr.Except} as its base and threw the exclusions away
+     * — in a {@code move} the exception therefore stood there and did
+     * nothing, although sprache.md shows it.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void exceptWorksInMoveToo(GameTestHelper helper) {
@@ -4314,7 +4313,7 @@ public final class FactoryNetworkGameTests {
                 .thenSucceed();
     }
 
-    /** Dieselbe Vorlage wie im Worker, aber in einem move. */
+    /** The same template as in the worker, but in a move. */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void moveUsesAFilterTemplate(GameTestHelper helper) {
         BlockPos controller = buildSetup(helper);
@@ -4350,7 +4349,7 @@ public final class FactoryNetworkGameTests {
                 .thenSucceed();
     }
 
-    /** Eine Vorlage zählt auch, wenn nur gelesen wird. */
+    /** A template counts even when only reading. */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void countUsesAFilterTemplate(GameTestHelper helper) {
         BlockPos controller = buildSetup(helper);
@@ -4380,11 +4379,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ein Worker filtert nach einer Vorlage.
+     * A worker filters by a template.
      *
-     * <p>Drei Sorten liegen in der Kiste, zwei stehen in der Vorlage, eine
-     * davon nimmt sie wieder heraus. Nur so zeigt der Test beides: dass die
-     * Vorlage greift und dass ihre Ausnahme wirkt.
+     * <p>Three kinds lie in the chest, two are in the template, one of those
+     * it takes out again. Only this way does the test show both: that the
+     * template applies and that its exception works.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void aWorkerFiltersByTemplate(GameTestHelper helper) {
@@ -4428,11 +4427,10 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ein Flüssigkeits-Tag löst sich gegen die Fluid-Registry auf.
+     * A fluid tag resolves against the fluid registry.
      *
-     * <p>Vanilla führt {@code minecraft:water} als Tag über Wasser und
-     * fließendes Wasser — der einzige, auf den in einer leeren Welt Verlass
-     * ist.
+     * <p>Vanilla keeps {@code minecraft:water} as a tag over water and flowing
+     * water — the only one that can be relied on in an empty world.
      */
     @GameTest(template = EMPTY, timeoutTicks = 100)
     public static void aFluidTagResolvesAgainstFluids(GameTestHelper helper) {
@@ -4452,10 +4450,10 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Eine Vorlage legt zusammen und nimmt heraus.
+     * A template gathers and excludes.
      *
-     * <p>Im GameTest und nicht als Einheitstest: Welche Gegenstände hinter
-     * einer Auswahl stehen, weiß erst die Registry.
+     * <p>In the GameTest and not as a unit test: which items stand behind a
+     * selection is known only to the registry.
      */
     @GameTest(template = EMPTY, timeoutTicks = 100)
     public static void aFilterTemplateGathersAndExcludes(GameTestHelper helper) {
@@ -4480,7 +4478,7 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
-    /** Bleibt nach den Ausnahmen nichts übrig, ist das kein stiller Leerlauf. */
+    /** If nothing is left after the exceptions, that is no silent idling. */
     @GameTest(template = EMPTY, timeoutTicks = 100)
     public static void aFilterTemplateThatMatchesNothingSaysSo(GameTestHelper helper) {
         var result = dev.devpanda.factorynetwork.lang.parse.Parser.parse("""
@@ -4503,8 +4501,8 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Das Gegenstück zu {@link #aChangedInventoryWakesAWaitingFlow}: Nicht
-     * jede Regung, sondern nur, was dazugekommen ist.
+     * The counterpart to {@link #aChangedInventoryWakesAWaitingFlow}: not
+     * every stir, only what has been added.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void newContentInADeviceWakesAWaitingFlow(GameTestHelper helper) {
@@ -4536,10 +4534,10 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * <b>Der Grund, warum das Ereignis eine Grundlinie braucht.</b> Ohne sie
-     * meldete das Netz seine eigene Lieferung als Ausgabe — und ein Ablauf,
-     * der einlegt und dann wartet, wäre sofort wieder wach, ohne dass die
-     * Maschine auch nur angefangen hätte.
+     * <b>The reason the event needs a baseline.</b> Without it the network
+     * reported its own delivery as output — and a flow that inserts and then
+     * waits would be awake again immediately, without the machine having so
+     * much as started.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void whatTheNetworkPutsInIsNoOutput(GameTestHelper helper) {
@@ -4548,8 +4546,8 @@ public final class FactoryNetworkGameTests {
         entity.rebuildNetwork();
         entity.storage().insert(Items.COBBLESTONE, 64);
 
-        // Im Ziel liegt schon etwas: genau der Fall, an dem die einfache
-        // Fassung scheiterte, die gegen leer vergleicht.
+        // Something already lies in the target: exactly the case on which the
+        // simple version failed, the one that compares against empty.
         BlockPos ziel = controller.east().south().south();
         if (helper.getBlockEntity(ziel) instanceof ChestBlockEntity container) {
             container.setItem(0, new ItemStack(Items.COBBLESTONE, 5));
@@ -4576,10 +4574,10 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * <b>Der Worker schreibt auf eigenem Weg.</b> Er geht nicht durch den
-     * Interpreter, sondern legt selbst ein — und wenn diese Stelle die
-     * Grundlinie nicht nachzieht, meldet jede Lieferung des Netzes eine
-     * Ausgabe, die es nie gab.
+     * <b>The worker writes on its own path.</b> It does not go through the
+     * interpreter but inserts itself — and if that spot does not advance the
+     * baseline, every delivery of the network reports an output that never
+     * existed.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void whatAWorkerPutsInIsNoOutput(GameTestHelper helper) {
@@ -4603,10 +4601,10 @@ public final class FactoryNetworkGameTests {
 
         BlockPos ziel = controller.east().south().south();
         var flow = entity.startFlow("wartet", List.of());
-        // Langsam genug, dass noch geliefert wird, wenn die Grundlinie steht:
-        // Ein Worker, der in den ersten zehn Ticks fertig ist, liefe ganz vor
-        // dem ersten Blick ab, und der meldet nie etwas. Der Test wäre grün,
-        // ohne je etwas geprüft zu haben.
+        // Slow enough that delivery is still going on when the baseline is
+        // set: a worker that is done within the first ten ticks would run
+        // entirely before the first look, and that never reports anything.
+        // The test would be green without ever having checked anything.
         int[] zwischenstand = new int[1];
         helper.startSequence()
                 .thenIdle(25)
@@ -4622,7 +4620,7 @@ public final class FactoryNetworkGameTests {
                 .thenSucceed();
     }
 
-    /** Weniger ist nichts Neues: Entnehmen darf nichts auslösen. */
+    /** Less is nothing new: taking out must not trigger anything. */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void takingSomethingOutIsNoOutput(GameTestHelper helper) {
         BlockPos controller = buildSetup(helper);
@@ -4655,9 +4653,9 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * <b>Kein Einmalschuss.</b> Eine Maschine, die eine Ladung stückweise
-     * ausgibt, muss jedes Stück melden — sonst bliebe der Rest in ihr stehen,
-     * und genau das ist der Verlust, den das Ereignis vermeiden soll.
+     * <b>No one-shot.</b> A machine that outputs a batch piece by piece must
+     * report every piece — otherwise the rest would stay stuck in it, and
+     * that is exactly the loss the event is meant to avoid.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void everyNewStackIsReported(GameTestHelper helper) {
@@ -4698,10 +4696,10 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
 
-        // <b>Die einfachste Frage überhaupt, und sie hatte keinen Test.</b>
-        // Aufgefallen ist das beim Schärfen eines ganz anderen Tests: Nach
-        // dem Einlagern standen drei Sorten im Speicher, nach dem Übernehmen
-        // eines Programms auch — nach einem Tick keine mehr.
+        // <b>The simplest question of all, and it had no test.</b> It came to
+        // light while sharpening an entirely different test: after storing,
+        // three kinds were in the storage, after deploying a program too —
+        // after one tick none any more.
         entity.storage().insert(Items.IRON_ORE, 64);
         entity.storage().insert(Items.COAL, 32);
         helper.assertValueEqual(entity.storage().count(Items.IRON_ORE), 64L,
@@ -4721,9 +4719,9 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(entity.storage().contents().size(), 2,
                 "Beide Sorten stehen noch da");
 
-        // Und derselbe Weg noch einmal mit einem Programm, das über den
-        // Bestand läuft und dabei wartet — genau die Lage, in der der
-        // Bestand einmal leer dastand.
+        // And the same path once more with a program that runs over the stock
+        // and waits while doing so — exactly the situation in which the stock
+        // once stood empty.
         helper.assertTrue(entity.deploy("""
                 event Takt(nummer: Int)
 
@@ -4774,8 +4772,8 @@ public final class FactoryNetworkGameTests {
                 "Und wer es geschrieben hat");
         helper.assertTrue(zeilen.get(0).time() > 0, "Mit Zeitstempel");
 
-        // Der eigentliche Zweck: Wer morgens nachsieht, warum die Anlage
-        // nachts stehen blieb, findet die Zeile auch nach einem Neustart.
+        // The actual purpose: whoever checks in the morning why the plant
+        // stopped at night finds the line even after a restart.
         var registries = helper.getLevel().registryAccess();
         var block = net.minecraft.world.level.block.entity.BlockEntity.loadStatic(
                 helper.absolutePos(controller), helper.getBlockState(controller),
@@ -4789,8 +4787,8 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(geladen.log().get(3).source(), "schreiben",
                 "Und samt Herkunft");
 
-        // Leeren heißt leeren: Wer einen sauberen Anfang für den nächsten
-        // Versuch will, soll ihn bekommen — auch nach einem Neustart.
+        // Clearing means clearing: whoever wants a clean start for the next
+        // attempt should get one — even after a restart.
         entity.clearLog();
         helper.assertTrue(entity.log().isEmpty(),
                 "Nach dem Leeren steht nichts mehr da: " + entity.log());
@@ -4808,9 +4806,9 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
 
-        // maintain ohne filter — der Worker weiß nicht, was er vorhalten
-        // soll, und sagt es. Bisher sammelte die Laufzeit diesen Hinweis und
-        // niemand las ihn.
+        // maintain without filter — the worker does not know what it is
+        // supposed to keep in stock, and says so. Until now the runtime
+        // collected this hint and nobody read it.
         helper.assertTrue(entity.deploy("""
                 worker nachschub {
                     from quarry_output
@@ -4841,13 +4839,12 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
 
-        // <b>Der Weg, den ein Spieler wirklich nimmt.</b> Ein Knopf auf einer
-        // Anzeige, ein on-Block, ein await — alles drei läuft über die
-        // Ablaufmaschine, und die kannte die globalen Werte nicht. „modus =
-        // nacht" in einer Funktion warf „Unbekannter Name modus" und riet
-        // dazu, ein let davorzusetzen: Das übersetzt, läuft, meldet nichts
-        // und ändert den globalen Wert nicht. Genau dieses Muster steht im
-        // Handbuch und in beispiele.md.
+        // <b>The path a player really takes.</b> A button on a display, an on
+        // block, an await — all three run through the flow engine, and that
+        // did not know the global values. "modus = nacht" in a function threw
+        // "Unbekannter Name modus" and advised putting a let in front: that
+        // compiles, runs, reports nothing and does not change the global
+        // value. Exactly this pattern is in the manual and in beispiele.md.
         helper.assertTrue(entity.deploy("""
                 global modus = "tag"
                 global runden = 0
@@ -4875,7 +4872,7 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(entity.globals().get("runden").describe(), "1",
                 "Und ihn dabei auch lesen");
 
-        // Und über den Knopf, weil das der Weg aus dem Handbuch ist.
+        // And via the button, because that is the path from the manual.
         entity.pressDisplayButton("halle", 2);
         helper.assertValueEqual(entity.globals().get("modus").describe(), "tag",
                 "Der Knopf schaltet zurück");
@@ -4892,10 +4889,10 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
 
-        // Ohne on-Block — genau so steht es in beispiele.md, und genau so
-        // wartete es für immer: Gezählt wurden nur die Blöcke, also wurde gar
-        // nicht erst hingesehen, also fiel das Ereignis nie. Ein await ist
-        // aber derselbe Zuhörer.
+        // Without an on block — exactly as it stands in beispiele.md, and
+        // exactly like that it waited forever: only the blocks were counted,
+        // so nobody even looked, so the event never fired. But an await is
+        // the same listener.
         helper.assertTrue(entity.deploy("""
                 fn wartet() {
                     let gerät = await device_changed
@@ -4935,8 +4932,8 @@ public final class FactoryNetworkGameTests {
             container.setItem(0, new ItemStack(Items.COBBLESTONE, 5));
         }
 
-        // Ohne on device_changed wird gar nicht erst hingeschaut. Bei fünfzig
-        // Connectoren wäre das sonst Arbeit für nichts.
+        // Without on device_changed nobody even looks. With fifty connectors
+        // that would otherwise be work for nothing.
         helper.runAfterDelay(25, () -> {
             helper.assertValueEqual(entity.flowEngine().flows().size(), 0, "Kein Ablauf");
             helper.assertValueEqual(entity.flowEngine().failed().size(), 0, "Und kein Fehler");
@@ -4945,10 +4942,10 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Zwei Kessel als Anlage benannt.
+     * Two cauldrons named as a plant.
      *
-     * <p>Für den Fall, den keine Einzelprüfung abdeckt: eine Vorlage, die
-     * Flüssigkeit bewegt und dabei wartet.
+     * <p>For the case no single check covers: a template that moves fluid and
+     * waits while doing so.
      */
     private static ControllerBlockEntity plantWithTanks(GameTestHelper helper,
             BlockPos controller) {
@@ -4999,8 +4996,8 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(flow.status().name(), "AWAITING",
                 "Die Anlage wartet auf ihre Freigabe");
 
-        // Mitten im Warten neu laden — mit allem, was diese Nacht dazukam:
-        // zwei Rahmen tief, in einer Vorlage, vor einer Flüssigkeitsbewegung.
+        // Reload in the middle of waiting — with everything that was added
+        // that night: two frames deep, in a template, before a fluid move.
         var registries = helper.getLevel().registryAccess();
         var block = net.minecraft.world.level.block.entity.BlockEntity.loadStatic(
                 helper.absolutePos(controller), helper.getBlockState(controller),
@@ -5024,7 +5021,7 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
-    /** Drei Kessel: einer voll, zwei leere als Gruppe. */
+    /** Three cauldrons: one full, two empty ones as a group. */
     private static ControllerBlockEntity threeCauldrons(GameTestHelper helper,
             BlockPos controller) {
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
@@ -5066,8 +5063,8 @@ public final class FactoryNetworkGameTests {
             entity.serverTick();
         }
 
-        // Ein Kessel fasst genau einen Eimer, also landet alles in einem der
-        // beiden — welcher es ist, entscheidet die Verteilung.
+        // A cauldron holds exactly one bucket, so everything lands in one of
+        // the two — which one is decided by the distribution.
         boolean a = hasWater(helper, controller, 1);
         boolean b = hasWater(helper, controller, 2);
         helper.assertTrue(a || b, "Ein Mitglied der Gruppe muss etwas bekommen haben");
@@ -5094,14 +5091,14 @@ public final class FactoryNetworkGameTests {
             entity.serverTick();
         }
 
-        // Wasser ist ausgenommen — es bleibt liegen.
+        // Water is excluded — it stays put.
         helper.assertTrue(hasWater(helper, controller, 0),
                 "Was ausgenommen ist, wird nicht bewegt");
         helper.assertTrue(!hasWater(helper, controller, 1), "Und kommt nirgends an");
         helper.succeed();
     }
 
-    /** Lädt den Controller neu, wie es ein Serverneustart täte. */
+    /** Reloads the controller as a server restart would. */
     private static ControllerBlockEntity reload(GameTestHelper helper, BlockPos controller,
             ControllerBlockEntity entity) {
         var registries = helper.getLevel().registryAccess();
@@ -5131,8 +5128,8 @@ public final class FactoryNetworkGameTests {
         long id = entity.startFlow("wartetAuf",
                 java.util.List.of(new dev.devpanda.factorynetwork.runtime.Value.Int(2))).id();
 
-        // where steht im Programm und nicht im Ablauf: Nach dem Laden muss es
-        // sich über den Zähler des Rahmens wiederfinden lassen.
+        // where is in the program and not in the flow: after loading it must
+        // be found again via the frame's counter.
         ControllerBlockEntity geladen = reload(helper, controller, entity);
         var wieder = flowOf(geladen, id);
         helper.assertTrue(wieder != null, "Der Ablauf hat den Neustart nicht überlebt");
@@ -5170,8 +5167,8 @@ public final class FactoryNetworkGameTests {
         var wieder = flowOf(geladen, id);
         helper.assertTrue(wieder != null, "Der wartende Ablauf ist verloren gegangen");
 
-        // Die Frist ist absolute Spielzeit — sie läuft über den Neustart hinweg
-        // ab, und der else-Zweig steht im Programm, nicht im Ablauf.
+        // The deadline is absolute game time — it expires across the restart,
+        // and the else branch is in the program, not in the flow.
         helper.startSequence()
                 .thenIdle(30)
                 .thenExecute(() -> geladen.flowEngine().tick(helper.getLevel().getGameTime()))
@@ -5192,7 +5189,7 @@ public final class FactoryNetworkGameTests {
 
         var data = dev.devpanda.factorynetwork.analyser.AnalyserScan.of(entity);
 
-        // Der Controller selbst und die beiden benannten Connectoren.
+        // The controller itself and the two named connectors.
         helper.assertTrue(data.nodes().size() >= 3,
                 "Zu wenige Knoten: " + data.nodes().size());
         helper.assertTrue(data.nodes().stream().anyMatch(node -> node.state().name()
@@ -5202,7 +5199,7 @@ public final class FactoryNetworkGameTests {
                         node.label().equals("quarry_output")),
                 "Die Geräte müssen mit Namen erscheinen");
 
-        // Ohne Verbindungen wäre es eine Punktwolke statt eines Netzes.
+        // Without links it would be a point cloud instead of a network.
         helper.assertTrue(!data.links().isEmpty(), "Es muss Verbindungen geben");
         helper.assertValueEqual(data.summary().devices(), 2, "Geräte in der Übersicht");
         helper.assertTrue(data.summary().isHealthy(), "Dieses Netz ist in Ordnung");
@@ -5214,28 +5211,27 @@ public final class FactoryNetworkGameTests {
 
 
     /**
-     * Setzt einen Serverschrank mit einem bestückten Einschub daneben.
+     * Places a server rack with an equipped bay next to it.
      *
-     * <p>Seit es Serverschränke gibt, rechnet ein Netz ohne einen davon
-     * nicht. Fast jede Prüfung braucht deshalb einen — genau wie fast jede
-     * ein Laufwerk braucht, seit es Zellen gibt.
+     * <p>Since server racks exist, a network without one does not compute.
+     * Almost every check therefore needs one — just as almost every one
+     * needs a drive since cells exist.
      *
-     * <p><b>Reichlich bestückt</b>, nämlich mit sechzehn Plätzen: Eine
-     * Prüfung soll an dem scheitern, was sie prüft, und nicht daran, dass
-     * drei Abläufe gleichzeitig laufen wollten. Wer die Grenze selbst prüft,
-     * baut sich einen kleineren Schrank.
+     * <p><b>Generously equipped</b>, namely with sixteen slots: a check should
+     * fail at what it checks, and not because three flows wanted to run at
+     * the same time. Whoever checks the limit itself builds a smaller rack.
      */
     private static final int TEST_CPU = 32;
     private static final int TEST_RAM = 128;
     private static final int TEST_DISK = 4096;
 
     /**
-     * Setzt einen Serverschrank — beide Hälften, wie beim Setzen von Hand.
+     * Places a server rack — both halves, as when placing by hand.
      *
-     * <p>{@code setBlock} geht nicht durch {@code setPlacedBy}, also entsteht
-     * die obere Hälfte nicht von selbst. Ohne sie fiele der Schrank beim
-     * nächsten Nachbarwechsel von oben in sich zusammen — und die Prüfung
-     * scheiterte an etwas ganz anderem als dem, was sie prüft.
+     * <p>{@code setBlock} does not go through {@code setPlacedBy}, so the
+     * upper half does not arise by itself. Without it the rack would collapse
+     * at the next neighbour change from above — and the check would fail at
+     * something entirely different from what it checks.
      */
     private static void placeRack(GameTestHelper helper, BlockPos at) {
         helper.setBlock(at, FnBlocks.RACK.get().defaultBlockState());
@@ -5245,7 +5241,7 @@ public final class FactoryNetworkGameTests {
                                 .DoubleBlockHalf.UPPER));
     }
 
-    /** Der Gegenstand zu Bauteilart und Stufe. */
+    /** The item for a part kind and tier. */
     private static ItemStack serverPart(dev.devpanda.factorynetwork.item.ServerPart kind,
                                         int value) {
         for (var item : dev.devpanda.factorynetwork.registry.FnItems.SERVER_PARTS.get(kind)) {
@@ -5257,18 +5253,17 @@ public final class FactoryNetworkGameTests {
         throw new IllegalArgumentException("Kein " + kind + " der Stufe " + value);
     }
 
-    /** Ein leeres Servergehäuse. */
+    /** An empty server chassis. */
     private static ItemStack chassis() {
         return new ItemStack(
                 dev.devpanda.factorynetwork.registry.FnItems.SERVER_CHASSIS.get());
     }
 
     /**
-     * Bestückt einen Einschub vollständig.
+     * Fully equips a bay.
      *
-     * <p>Das Gehäuse zuerst: Ohne eines nimmt der Einschub keine Bauteile an,
-     * und das ist die Regel, die den Gegenstand überhaupt zu einem Server
-     * macht.
+     * <p>The chassis first: without one the bay accepts no parts, and that is
+     * the rule that makes the item a server in the first place.
      */
     private static void fillBay(GameTestHelper helper, BlockPos at, int bay,
                                 int cpu, int ram, int disk) {
@@ -5290,15 +5285,15 @@ public final class FactoryNetworkGameTests {
                 serverPart(dev.devpanda.factorynetwork.item.ServerPart.DISK, disk));
     }
 
-    /** Ein Serverschrank mit einem reichlich bestückten Einschub. */
+    /** A server rack with one generously equipped bay. */
     private static void rackWithServer(GameTestHelper helper, BlockPos at) {
         placeRack(helper, at);
         fillBay(helper, at, 0, TEST_CPU, TEST_RAM, TEST_DISK);
     }
 
     /**
-     * Schiebt das erste Bauteil aus dem Rucksack ins Regal — wie ein
-     * Umschalt-Klick im Fenster.
+     * Pushes the first part from the player's inventory into the shelf —
+     * like a shift-click in the window.
      */
     private static void intoShelf(GameTestHelper helper, BlockPos at,
                                   net.minecraft.world.entity.player.Player player) {
@@ -5319,10 +5314,10 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Nimmt ein Bauteil über das Fenster heraus — wie ein Umschalt-Klick.
+     * Takes a part out via the window — like a shift-click.
      *
-     * <p>Seit es ein Fenster gibt, ist das der Weg. Die leere Hand am Block
-     * macht es auf, statt etwas herauszuziehen.
+     * <p>Since there is a window, that is the path. The empty hand on the
+     * block opens it instead of pulling something out.
      */
     private static void takeFromShelf(GameTestHelper helper, BlockPos at, int slot,
                                       net.minecraft.world.entity.player.Player player) {
@@ -5336,7 +5331,7 @@ public final class FactoryNetworkGameTests {
                 .quickMoveStack(player, slot);
     }
 
-    /** Setzt ein Laufwerk ans Kabel und steckt eine Flüssigkeitszelle hinein. */
+    /** Places a drive on the cable and inserts a fluid cell. */
     private static void driveWithFluidCell(GameTestHelper helper, BlockPos at,
             dev.devpanda.factorynetwork.storage.FluidCellTier tier) {
         helper.setBlock(at, FnBlocks.DRIVE.get());
@@ -5349,7 +5344,7 @@ public final class FactoryNetworkGameTests {
         }
     }
 
-    /** Setzt ein Laufwerk ans Kabel und steckt eine Zelle hinein. */
+    /** Places a drive on the cable and inserts a cell. */
     private static void driveWithCell(GameTestHelper helper, BlockPos at,
             dev.devpanda.factorynetwork.storage.CellTier tier) {
         helper.setBlock(at, FnBlocks.DRIVE.get());
@@ -5368,8 +5363,8 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
 
-        // Lagerraum ist jetzt etwas, das man baut. Ohne Laufwerk gibt es
-        // keinen — und das Einlagern muss das sagen, nicht schlucken.
+        // Storage space is now something you build. Without a drive there is
+        // none — and storing must say so, not swallow it.
         long rest = entity.storage().insert(Items.IRON_INGOT, 64);
         helper.assertValueEqual(rest, 64L, "Ohne Laufwerk passt nichts hinein");
         helper.assertValueEqual(entity.storage().count(Items.IRON_INGOT), 0L, "Bestand");
@@ -5388,7 +5383,7 @@ public final class FactoryNetworkGameTests {
                 "Das passt hinein");
         helper.assertValueEqual(entity.storage().count(Items.IRON_INGOT), 64L, "Bestand");
 
-        // Die Menge einer 1k-Zelle ist achttausend.
+        // The amount of a 1k cell is eight thousand.
         helper.assertValueEqual(entity.storage().insert(Items.COBBLESTONE, 8_000), 64L,
                 "Was über die Menge geht, bleibt draußen");
         helper.succeed();
@@ -5402,8 +5397,8 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
 
-        // Acht Arten passen in eine 1k-Zelle, die neunte nicht — obwohl die
-        // Menge bei weitem nicht erreicht ist. Genau das treibt zum Sortieren.
+        // Eight kinds fit into a 1k cell, the ninth does not — although the
+        // amount is far from reached. Exactly that drives you to sort.
         Item[] arten = {Items.IRON_INGOT, Items.GOLD_INGOT, Items.COPPER_INGOT,
                 Items.COBBLESTONE, Items.DIRT, Items.SAND, Items.GRAVEL, Items.OAK_LOG};
         for (Item art : arten) {
@@ -5413,8 +5408,9 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(entity.storage().insert(Items.STONE, 1), 1L,
                 "Die neunte Art findet keinen Platz mehr");
 
-        // Von einer schon vorhandenen Art geht dagegen weiter etwas hinein —
-        // sonst müsste man beim Aufräumen jede Zelle einzeln im Blick haben.
+        // Of a kind already present, by contrast, more keeps going in —
+        // otherwise you would have to watch every cell individually when
+        // tidying up.
         helper.assertValueEqual(entity.storage().insert(Items.IRON_INGOT, 100), 0L,
                 "Was schon drin ist, nimmt sie weiter an");
         helper.succeed();
@@ -5429,12 +5425,12 @@ public final class FactoryNetworkGameTests {
         entity.rebuildNetwork();
         entity.storage().insert(Items.DIAMOND, 12);
 
-        // Der Bestand steckt im Gegenstand, nicht im Laufwerk. Das ist der
-        // Grund, warum eine Zelle etwas wert ist.
+        // The stock sits in the item, not in the drive. That is the reason a
+        // cell is worth something.
         var drive = (dev.devpanda.factorynetwork.block.entity.DriveBlockEntity)
                 helper.getBlockEntity(drivePos);
-        // Der Bestand lebt im Laufwerk und geht erst beim Sichern in den
-        // Gegenstand. Wer ihn vorher liest, sieht den Stand von vorhin.
+        // The stock lives in the drive and only goes into the item when
+        // saving. Whoever reads it before that sees the earlier state.
         drive.flushCells();
         ItemStack cell = drive.cell(0);
         var inhalt = dev.devpanda.factorynetwork.storage.CellContents.read(cell,
@@ -5442,7 +5438,7 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(inhalt.getOrDefault(dev.devpanda.factorynetwork.storage.ItemKey.bare(Items.DIAMOND), 0L), 12L,
                 "Die Zelle trägt ihren Inhalt selbst");
 
-        // Zelle heraus: Das Netz hat nichts mehr.
+        // Cell out: the network has nothing any more.
         drive.setCell(0, ItemStack.EMPTY);
         entity.rebuildNetwork();
         helper.assertValueEqual(entity.storage().count(Items.DIAMOND), 0L,
@@ -5451,12 +5447,12 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ein zweites Laufwerk vergrößert den Speicher.
+     * A second drive enlarges the storage.
      *
-     * <p>Das ist die Antwort auf „ein eigener Speicherblock": Er steht, und
-     * er heißt Laufwerk. Geprüft wird die Zusage, die daran hängt — <b>wer
-     * mehr Platz will, stellt eines dazu</b>. Ohne sie wäre das Laufwerk ein
-     * Speicher mit fester Größe an anderer Stelle.
+     * <p>That is the answer to "a storage block of its own": it exists, and
+     * it is called drive. What is checked is the promise that hangs on it —
+     * <b>whoever wants more room adds one</b>. Without it the drive would be
+     * a fixed-size storage in a different place.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void asecondDriveEnlargesTheStorage(GameTestHelper helper) {
@@ -5468,7 +5464,7 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
 
-        // Acht Arten füllen die Artenplätze einer 1k-Zelle.
+        // Eight kinds fill the type slots of a 1k cell.
         Item[] acht = {Items.IRON_INGOT, Items.GOLD_INGOT, Items.COPPER_INGOT,
                 Items.COBBLESTONE, Items.DIRT, Items.SAND, Items.GRAVEL, Items.OAK_LOG};
         for (Item art : acht) {
@@ -5476,8 +5472,8 @@ public final class FactoryNetworkGameTests {
                     "Art " + art + " muss hineinpassen");
         }
 
-        // Die neunte scheiterte an einer einzelnen Zelle. Mit einem zweiten
-        // Laufwerk findet sie dort Platz.
+        // The ninth failed at a single cell. With a second drive it finds room
+        // there.
         helper.assertValueEqual(entity.storage().insert(Items.STONE, 1), 0L,
                 "Die neunte Art gehört ins zweite Laufwerk");
         helper.assertValueEqual(entity.storage().count(Items.STONE), 1L,
@@ -5500,7 +5496,7 @@ public final class FactoryNetworkGameTests {
         press.setItem(dev.devpanda.factorynetwork.block.entity.PressBlockEntity.SLOT_MATERIAL,
                 new ItemStack(Items.IRON_INGOT, 4));
 
-        // Ohne Strom passiert nichts, egal wie lange man wartet.
+        // Without power nothing happens, no matter how long you wait.
         for (int i = 0; i < 200; i++) {
             press.serverTick();
         }
@@ -5509,7 +5505,7 @@ public final class FactoryNetworkGameTests {
                         dev.devpanda.factorynetwork.block.entity.PressBlockEntity.SLOT_RESULT)
                 .isEmpty(), "Und nichts herauskommen");
 
-        // Mit Strom läuft sie — aber nicht sofort fertig.
+        // With power it runs — but is not done immediately.
         press.energy().receiveEnergy(
                 dev.devpanda.factorynetwork.block.entity.PressBlockEntity.CAPACITY, false);
         press.serverTick();
@@ -5524,7 +5520,7 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(ergebnis.getItem(),
                 dev.devpanda.factorynetwork.registry.FnItems.PLATE.get(), "Eine Platte");
 
-        // Der Stempel bleibt, das Material wird verbraucht.
+        // The stamp stays, the material is consumed.
         helper.assertTrue(!press.item(
                         dev.devpanda.factorynetwork.block.entity.PressBlockEntity.SLOT_STAMP)
                 .isEmpty(), "Der Stempel ist Werkzeug, keine Zutat");
@@ -5545,8 +5541,8 @@ public final class FactoryNetworkGameTests {
                 new ItemStack(dev.devpanda.factorynetwork.registry.FnItems.STAMP_PLATE.get()));
         press.setItem(dev.devpanda.factorynetwork.block.entity.PressBlockEntity.SLOT_MATERIAL,
                 new ItemStack(Items.IRON_INGOT, 64));
-        // Ausgabe mit etwas Fremdem belegt: Dann darf sie nicht laufen und
-        // schon gar nicht Strom dafür verbrauchen.
+        // Output occupied by something foreign: then it must not run, and
+        // certainly not consume power for it.
         press.setItem(dev.devpanda.factorynetwork.block.entity.PressBlockEntity.SLOT_RESULT,
                 new ItemStack(Items.DIAMOND, 1));
         press.energy().receiveEnergy(
@@ -5570,11 +5566,11 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
 
-        // Die Zelle bis an die Mengengrenze füllen.
+        // Fill the cell up to the amount limit.
         entity.storage().insert(Items.COBBLESTONE, 8_000);
         helper.assertValueEqual(entity.storage().count(Items.COBBLESTONE), 8_000L, "voll");
 
-        // Eine Kiste am Netz, aus der ein Worker einlagern soll.
+        // A chest on the network from which a worker is to store.
         BlockPos quelle = controller.east().north().north();
         if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity container) {
             container.setItem(0, new ItemStack(Items.IRON_INGOT, 64));
@@ -5590,8 +5586,8 @@ public final class FactoryNetworkGameTests {
             entity.serverTick();
         }
 
-        // Der Speicher ist voll — die Barren müssen noch da sein, in der
-        // Kiste oder auf dem Boden, aber nicht verschwunden.
+        // The storage is full — the ingots must still be there, in the chest
+        // or on the ground, but not vanished.
         long inKiste = 0;
         if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity container) {
             for (int slot = 0; slot < container.getContainerSize(); slot++) {
@@ -5616,8 +5612,8 @@ public final class FactoryNetworkGameTests {
         entity.rebuildNetwork();
         entity.storage().insert(Items.DIAMOND, 42);
 
-        // Der Bestand lebt im Speicher des Laufwerks. Erst beim Sichern geht
-        // er in den Gegenstand — ohne das wäre er nach einem Neustart weg.
+        // The stock lives in the drive's memory. Only when saving does it go
+        // into the item — without that it would be gone after a restart.
         var drive = (dev.devpanda.factorynetwork.block.entity.DriveBlockEntity)
                 helper.getBlockEntity(drivePos);
         var registries = helper.getLevel().registryAccess();
@@ -5637,11 +5633,11 @@ public final class FactoryNetworkGameTests {
     // ---- Router ----------------------------------------------------------
 
     /**
-     * Die Richtung von einer Stelle zur anderen, in Weltkoordinaten.
+     * The direction from one spot to another, in world coordinates.
      *
-     * <p>Ein Testaufbau darf gedreht stehen. Eine Richtung, die im Test
-     * „Norden" heißt, ist es in der Welt dann nicht — deshalb wird sie aus
-     * zwei absoluten Stellen gerechnet statt hingeschrieben.
+     * <p>A test setup may stand rotated. A direction called "north" in the
+     * test is then not north in the world — which is why it is computed from
+     * two absolute positions instead of written down.
      */
     private static net.minecraft.core.Direction towards(GameTestHelper helper,
                                                         BlockPos from, BlockPos to) {
@@ -5667,11 +5663,11 @@ public final class FactoryNetworkGameTests {
 
 
     /**
-     * Eine abgeklemmte Seite trennt auch den Weg dahinter.
+     * A closed side also cuts off the path behind it.
      *
-     * <p>Nicht nur die Seite selbst: Alles, was über sie erreichbar war,
-     * gehört danach nicht mehr zum Netz. Sonst wäre Abklemmen bloß eine
-     * Anzeige.
+     * <p>Not just the side itself: everything that was reachable through it
+     * no longer belongs to the network afterwards. Otherwise closing would be
+     * a mere display.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void aClosedSideCutsTheLineBehindIt(GameTestHelper helper) {
@@ -5706,13 +5702,12 @@ public final class FactoryNetworkGameTests {
 
 
     /**
-     * Der Bestand folgt, wenn jemand eine Zelle herauszieht.
+     * The stock follows when somebody pulls a cell.
      *
-     * <p>Der Netzindex hält den Bestand aller Zellen zusammen, damit ihn nicht
-     * jede Frage neu zusammenzählt. Der Preis dafür ist genau diese Gefahr:
-     * dass er stehen bleibt, während sich die Wahrheit ändert. Wer diesen Test
-     * kaputt macht, hat ein Netz gebaut, das Gegenstände meldet, die es nicht
-     * mehr hat.
+     * <p>The network index keeps the stock of all cells together so that not
+     * every query adds it up anew. The price for that is exactly this danger:
+     * that it stands still while the truth changes. Whoever breaks this test
+     * has built a network that reports items it no longer has.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void theStockFollowsWhenACellIsPulled(GameTestHelper helper) {
@@ -5730,14 +5725,14 @@ public final class FactoryNetworkGameTests {
 
         var drive = (dev.devpanda.factorynetwork.block.entity.DriveBlockEntity)
                 helper.getBlockEntity(drivePos);
-        // Dieselbe Instanz, keine Kopie: Beim Herausnehmen schreibt das
-        // Laufwerk den Bestand in genau diesen Gegenstand zurück, und
-        // derselbe wandert im Spiel in die Hand des Spielers.
+        // The same instance, no copy: when taking out, the drive writes the
+        // stock back into exactly this item, and the same one travels into the
+        // player's hand in the game.
         ItemStack cell = drive.cell(0);
         drive.setCell(0, ItemStack.EMPTY);
 
-        // Ohne Zelle ist nichts da — auch dann nicht, wenn eben noch etwas da
-        // war. Das Netz wurde dazwischen nicht neu aufgebaut.
+        // Without a cell nothing is there — not even if something was there a
+        // moment ago. The network was not rebuilt in between.
         helper.assertValueEqual(entity.storage().count(Items.IRON_INGOT), 0L,
                 "Bestand ohne Zelle");
         helper.assertValueEqual(entity.storage().distinctTypes(), 0, "Arten ohne Zelle");
@@ -5749,12 +5744,12 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ablegen und Entnehmen rechnen den Index fort, statt ihn zu verwerfen.
+     * Storing and extracting update the index instead of discarding it.
      *
-     * <p>Ein Index, der sich nach jeder Ablage selbst wegwirft, ist keiner —
-     * in einem Tick mit zwanzig Workern wäre er zwanzigmal neu gebaut. Geprüft
-     * wird das Ergebnis: eine lange Folge von Ablagen und Entnahmen, und am
-     * Ende muss der Index dasselbe sagen wie die Zellen.
+     * <p>An index that throws itself away after every store is none — in a
+     * tick with twenty workers it would be rebuilt twenty times. The result
+     * is checked: a long sequence of stores and extractions, and at the end
+     * the index must say the same as the cells.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void theIndexKeepsUpWithManyMoves(GameTestHelper helper) {
@@ -5795,11 +5790,11 @@ public final class FactoryNetworkGameTests {
 
 
     /**
-     * Eine Zelle geht über das Fenster hinein und wieder heraus.
+     * A cell goes in through the window and out again.
      *
-     * <p>Ein Klick auf das Laufwerk macht auf — immer, egal was in der Hand
-     * liegt. Vorher ging ein Bauteil in der Hand direkt hinein; das ersparte
-     * einen Griff, war aber eine eigene Regel für zwei Blöcke.
+     * <p>A click on the drive opens it — always, no matter what is in hand.
+     * Previously a part in hand went straight in; that saved one step but
+     * was a rule of its own for two blocks.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void aCellGoesIntoTheWindowAndOutAgain(GameTestHelper helper) {
@@ -5811,7 +5806,7 @@ public final class FactoryNetworkGameTests {
 
         var drive = (dev.devpanda.factorynetwork.block.entity.DriveBlockEntity)
                 helper.getBlockEntity(drivePos);
-        // Umschalt-Klick aus dem Rucksack ins Regal und zurück.
+        // Shift-click from the player's inventory into the shelf and back.
         intoShelf(helper, drivePos, player);
         helper.assertValueEqual(drive.usedSlots(), 1, "Zellen im Laufwerk");
 
@@ -5825,10 +5820,10 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ein Bauteil geht über das Fenster hinein und wieder heraus.
+     * A part goes in through the window and out again.
      *
-     * <p>Dasselbe Fenster wie beim Laufwerk: Beide sind ein Regal, und wer
-     * eines bedienen kann, kann auch das andere.
+     * <p>The same window as with the drive: both are a shelf, and whoever can
+     * operate one can operate the other.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void aProcessorGoesIntoTheWindowAndOutAgain(GameTestHelper helper) {
@@ -5845,9 +5840,9 @@ public final class FactoryNetworkGameTests {
 
         var rack = (dev.devpanda.factorynetwork.block.entity.RackBlockEntity)
                 helper.getBlockEntity(rackPos);
-        // Jedes Teil findet seinen Platz von selbst — der Umschalt-Klick muss
-        // nicht wissen, wohin ein Datenträger gehört. Das Gehäuse zuerst,
-        // weil die Bauteile ohne eines gar nicht hineindürfen.
+        // Every part finds its slot by itself — the shift-click need not know
+        // where a disk belongs. The chassis first, because without one the
+        // parts may not go in at all.
         intoShelf(helper, rackPos, player);
         helper.assertValueEqual(rack.usedSlots(), 1, "erst das Gehäuse");
         intoShelf(helper, rackPos, player);
@@ -5866,7 +5861,7 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
-    /** Ist alles belegt, bleibt die elfte Zelle im Rucksack. */
+    /** If everything is occupied, the eleventh cell stays in the player's inventory. */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void anEleventhCellFindsNoSlot(GameTestHelper helper) {
         BlockPos drivePos = new BlockPos(1, 2, 1);
@@ -5893,11 +5888,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Die herausgenommene Zelle bringt ihren Bestand mit.
+     * The cell that was taken out brings its stock along.
      *
-     * <p>Der Bestand steckt im Gegenstand, nicht im Laufwerk. Ginge er beim
-     * Herausnehmen verloren, wäre eine Zelle ein Schlüssel und kein Speicher —
-     * und jeder Umbau einer Anlage kostete das halbe Lager.
+     * <p>The stock sits in the item, not in the drive. If it were lost when
+     * taking the cell out, a cell would be a key and not storage — and every
+     * rebuild of a plant would cost half the store.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void aPulledCellCarriesItsStock(GameTestHelper helper) {
@@ -5930,11 +5925,11 @@ public final class FactoryNetworkGameTests {
 
 
     /**
-     * Eine Flüssigkeitszelle hat eine Grenze, und die gilt.
+     * A fluid cell has a limit, and it applies.
      *
-     * <p>Vorher lagerte das Netz Flüssigkeiten unbegrenzt im Controller. Für
-     * Eisen brauchte man ein Laufwerk, für Lava nicht — eine Ungleichheit, die
-     * niemand erklären kann.
+     * <p>Previously the network stored fluids without limit in the controller.
+     * For iron you needed a drive, for lava you did not — an inequality nobody
+     * can explain.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void aFluidCellHasALimit(GameTestHelper helper) {
@@ -5956,12 +5951,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ist der Speicher voll, bleibt die Flüssigkeit im Tank.
+     * If the storage is full, the fluid stays in the tank.
      *
-     * <p><b>Das ist die Prüfung, an der es hängt.</b> Ein Gegenstand, den der
-     * Speicher nicht nimmt, lässt sich zurücklegen; eine gezogene Flüssigkeit
-     * nicht unbedingt — nimmt der Tank sie nicht wieder an, ist sie weg. Also
-     * wird erst gefragt und dann gezogen.
+     * <p><b>This is the check it hinges on.</b> An item the storage does not
+     * take can be put back; a drained fluid not necessarily — if the tank
+     * does not accept it again, it is gone. So ask first, then drain.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void afullNetworkLeavesTheTankAlone(GameTestHelper helper) {
@@ -5970,7 +5964,7 @@ public final class FactoryNetworkGameTests {
         entity.rebuildNetwork();
         fillCauldron(helper, controller, 0);
 
-        // Die Zelle randvoll mit Lava: Wasser findet keinen Platz mehr.
+        // The cell brimful with lava: water finds no room any more.
         entity.fluids().insert(net.minecraft.world.level.material.Fluids.LAVA,
                 dev.devpanda.factorynetwork.storage.FluidCellTier.B64.amount());
 
@@ -5994,10 +5988,10 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Eine herausgenommene Flüssigkeitszelle nimmt ihren Bestand mit.
+     * A fluid cell that was taken out takes its stock along.
      *
-     * <p>Wie bei den Gegenständen: Der Bestand steckt im Gegenstand, sonst
-     * wäre die Zelle nur ein Schlüssel.
+     * <p>As with items: the stock sits in the item, otherwise the cell would
+     * be only a key.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void aPulledFluidCellCarriesItsStock(GameTestHelper helper) {
@@ -6028,14 +6022,14 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
-    // ---- Serverschrank ----------------------------------------------------
+    // ---- Server rack ------------------------------------------------------
 
     /**
-     * Ohne Serverschrank rechnet das Netz nicht.
+     * Without a server rack the network does not compute.
      *
-     * <p>So wie ein Laufwerk die Voraussetzung dafür ist, dass es lagert.
-     * Jede Fähigkeit des Netzes hängt an einem Block, den man bauen muss —
-     * und das Programm sagt, welcher fehlt, statt still nichts zu tun.
+     * <p>Just as a drive is the prerequisite for it storing anything. Every
+     * capability of the network hangs on a block you have to build — and the
+     * program says which one is missing instead of silently doing nothing.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void withoutAServerNothingRuns(GameTestHelper helper) {
@@ -6053,7 +6047,7 @@ public final class FactoryNetworkGameTests {
                         .anyMatch(d -> d.message().contains("Serverschrank")),
                 "die Meldung muss den Schrank nennen: " + entity.diagnostics());
 
-        // Schrank hin, und dasselbe Programm läuft.
+        // Rack in place, and the same program runs.
         rackWithServer(helper, controller.west());
         helper.assertTrue(entity.deploy("""
                 fn nichts() {
@@ -6066,10 +6060,10 @@ public final class FactoryNetworkGameTests {
 
 
     /**
-     * Die Rechenleistung ist die Summe über alle Schränke im Netz.
+     * The computing power is the sum over all racks in the network.
      *
-     * <p>Nicht die des nächsten oder größten: Wer nachrüstet, stellt einen
-     * zweiten Schrank daneben, und das muss zählen.
+     * <p>Not that of the nearest or largest one: whoever upgrades places a
+     * second rack next to it, and that has to count.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void threadsAddUpAcrossRacks(GameTestHelper helper) {
@@ -6078,7 +6072,7 @@ public final class FactoryNetworkGameTests {
         rackWithServer(helper, controller.west());
         rackWithServer(helper, controller.above());
 
-        // Im zweiten Schrank noch ein kleiner Einschub dazu.
+        // In the second rack another small bay on top.
         fillBay(helper, controller.above(), 1, 8, 8, 64);
 
         ControllerBlockEntity entity = controllerAt(helper, controller);
@@ -6089,11 +6083,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Das Gehäuse nimmt seine Hardware mit — und bringt sie wieder.
+     * The chassis takes its hardware along — and brings it back.
      *
-     * <p>Das ist der ganze Zweck des Gegenstands: einen fertigen Server
-     * herausziehen, wegtragen, woanders einsetzen. Ginge die Hardware dabei
-     * verloren oder bliebe sie doppelt zurück, wäre das Gehäuse eine Falle.
+     * <p>That is the whole purpose of the item: pull out a finished server,
+     * carry it away, put it in somewhere else. If the hardware were lost on
+     * the way or stayed behind twice, the chassis would be a trap.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void achassisCarriesItsHardware(GameTestHelper helper) {
@@ -6127,7 +6121,7 @@ public final class FactoryNetworkGameTests {
                         darin.get(dev.devpanda.factorynetwork.item.ServerPart.DISK.ordinal())),
                 4096, "und der Datenträger auch");
 
-        // Und wieder hinein: die Hardware kommt zurück in die Plätze.
+        // And back in: the hardware returns to its slots.
         intoShelf(helper, rackPos, player);
         helper.assertValueEqual(rack.usedSlots(), 4, "vier Plätze wieder belegt");
         helper.assertValueEqual(rack.threads(), 32, "und der Server läuft wieder");
@@ -6139,13 +6133,13 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Passt das Gehäuse nicht in den Rucksack, bleibt alles, wie es war.
+     * If the chassis does not fit into the player's inventory, everything stays as it was.
      *
-     * <p>Der Umschalt-Klick nimmt den Gegenstand erst heraus und schiebt ihn
-     * dann — und beim Herausnehmen packt das Gehäuse ein. Schlägt das
-     * Schieben fehl, muss es zurück und wieder auspacken. <b>Genau hier
-     * entstünde sonst ein doppelter oder ein verlorener Server</b>, und man
-     * merkte es erst, wenn der Schrank plötzlich weniger trägt.
+     * <p>The shift-click first takes the item out and then pushes it — and on
+     * taking out, the chassis packs up. If the push fails, it must go back
+     * and unpack again. <b>Exactly here a duplicated or a lost server would
+     * otherwise arise</b>, and you would only notice when the rack suddenly
+     * carries less.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void afailedMoveLeavesTheChassisWhereItWas(GameTestHelper helper) {
@@ -6173,11 +6167,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ohne Gehäuse nimmt ein Einschub keine Bauteile an.
+     * Without a chassis a bay accepts no parts.
      *
-     * <p>Die Regel, die den Gegenstand zu einem Server macht. Ohne sie wären
-     * die drei Plätze schon der Server, und das Gehäuse wäre etwas, das man
-     * kauft und das nichts ändert.
+     * <p>The rule that makes the item a server. Without it the three slots
+     * would already be the server, and the chassis would be something you buy
+     * that changes nothing.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void hardwareNeedsAChassis(GameTestHelper helper) {
@@ -6205,11 +6199,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ein unvollständiger Einschub trägt nichts.
+     * An incomplete bay carries nothing.
      *
-     * <p>Nicht anteilig, gar nichts — sonst wäre der Schrank eine Summe von
-     * Bauteilen und keine Reihe von Servern, und die Entscheidung, welcher
-     * Einschub das große Teil bekommt, gäbe es nicht.
+     * <p>Not proportionally, nothing at all — otherwise the rack would be a
+     * sum of parts and not a row of servers, and the decision which bay gets
+     * the big part would not exist.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void anIncompleteBayCarriesNothing(GameTestHelper helper) {
@@ -6237,11 +6231,10 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Jeder Platz nimmt nur seine eigene Art.
+     * Every slot takes only its own kind.
      *
-     * <p>Sonst läge ein Rechenwerk auf dem Datenträgerplatz, der Einschub
-     * wäre voll und liefe trotzdem nicht — ein Fehler, den man beim Ansehen
-     * nicht findet.
+     * <p>Otherwise a processor would lie in the disk slot, the bay would be
+     * full and still not run — a fault you cannot find by looking.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void aSlotTakesOnlyItsOwnKind(GameTestHelper helper) {
@@ -6252,7 +6245,7 @@ public final class FactoryNetworkGameTests {
 
         int diskSlot = dev.devpanda.factorynetwork.block.entity.RackBlockEntity
                 .slotOf(0, dev.devpanda.factorynetwork.item.ServerPart.DISK);
-        // Ohne Gehäuse geht gar nichts hinein.
+        // Without a chassis nothing goes in at all.
         helper.assertTrue(!rack.canPlaceItem(diskSlot,
                         serverPart(dev.devpanda.factorynetwork.item.ServerPart.DISK, 64)),
                 "ohne Gehäuse nimmt der Einschub nichts an");
@@ -6268,19 +6261,19 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Der Schrank ist zwei Blöcke hoch und trotzdem ein Gerät.
+     * The rack is two blocks tall and still one device.
      *
-     * <p>Wer oben ankabelt, kabelt denselben Schrank an. Zählte die obere
-     * Hälfte für sich, kostete ein Schrank zwei Kanäle und stünde zweimal in
-     * der Liste — und die zweite BlockEntity gäbe es gar nicht.
+     * <p>Whoever cables up at the top cables up the same rack. If the upper
+     * half counted on its own, a rack would cost two channels and appear
+     * twice in the list — and the second BlockEntity would not even exist.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void aTallRackIsStillOneDevice(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 2, 1);
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
-        // Der Schrank steht neben dem Controller: Seine untere Hälfte
-        // berührt ihn, seine obere ein Kabel, das ebenfalls an ihm hängt.
-        // Zwei Wege zu einem Gerät.
+        // The rack stands next to the controller: its lower half touches it,
+        // its upper half a cable that also hangs off it. Two paths to one
+        // device.
         rackWithServer(helper, controller.west());
         helper.setBlock(controller.above(), FnBlocks.CABLE.get());
 
@@ -6293,11 +6286,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Wird der letzte Schrank abgebaut, stehen die Worker still.
+     * If the last rack is broken down, the workers stand still.
      *
-     * <p>Was schon läuft, läuft zu Ende — es mittendrin zu töten hieße,
-     * Gegenstände zu verlieren, die gerade in der Hand eines Ablaufs sind.
-     * Aber neue Arbeit fängt nicht mehr an.
+     * <p>What is already running runs to completion — killing it midway would
+     * mean losing items that are in the hands of a flow right now. But new
+     * work no longer starts.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void withoutAServerTheWorkersStandStill(GameTestHelper helper) {
@@ -6322,7 +6315,7 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
-    /** Controller, Kabel, eine benannte Kiste mit Erz und ein Laufwerk. */
+    /** Controller, cable, a named chest with ore and a drive. */
     private static BlockPos threeChestsSetup(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 2, 1);
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
@@ -6342,10 +6335,10 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ein Serverschrank mit genau so viel Rechenleistung, wie angegeben.
+     * A server rack with exactly as much computing power as given.
      *
-     * <p>Speicher und Datenträger reichlich: Wer die Rechengrenze prüft,
-     * soll nicht an der Speichergrenze scheitern.
+     * <p>Memory and disk generous: whoever checks the compute limit should not
+     * fail at the memory limit.
      */
     private static void smallRack(GameTestHelper helper, BlockPos at, int cpu) {
         placeRack(helper, at);
@@ -6353,20 +6346,19 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ist der Speicher voll, scheitert der nächste Ablauf sichtbar.
+     * If the memory is full, the next flow fails visibly.
      *
-     * <p>Anders als bei den Rechenwerken wird hier nicht angestellt. Ein
-     * Ablauf, für den kein Speicher da ist, wartet nicht — er passt nicht
-     * hinein, und das muss unter den Fehlern stehen, statt lautlos zu
-     * verschwinden.
+     * <p>Unlike with the processors, nothing queues up here. A flow for which
+     * there is no memory does not wait — it does not fit in, and that must
+     * appear among the errors instead of vanishing silently.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void afullMemoryRejectsTheNextFlow(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 2, 1);
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
         placeRack(helper, controller.west());
-        // Reichlich Rechenwerk, knapper Speicher: Die Grenze, die greift,
-        // soll die geprüfte sein.
+        // Plenty of processor, scarce memory: the limit that applies should
+        // be the one under test.
         fillBay(helper, controller.west(), 0, 128, 8, TEST_DISK);
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
@@ -6384,8 +6376,9 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(engine.inMemory(), 8, "mehr passt nicht hinein");
         helper.assertTrue(!engine.failed().isEmpty(),
                 "der neunte muss unter den Fehlern stehen");
-        // „Arbeitsspeicher" und nicht nur „Speicher": Die Zellen im Laufwerk
-        // heißen auch so, und wer diese Meldung las, ging Zellen einbauen.
+        // "Arbeitsspeicher" and not just "Speicher": the cells in the drive
+        // are also called that, and whoever read this message went off to
+        // install cells.
         helper.assertTrue(engine.failed().get(0).detail().contains("Arbeitsspeicher"),
                 "und der Grund muss den richtigen Speicher nennen: "
                         + engine.failed().get(0).detail());
@@ -6393,11 +6386,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ein zu großes Programm wird gar nicht erst übernommen.
+     * A program that is too large is not deployed at all.
      *
-     * <p>Beim Drücken auf Übernehmen und nicht eine Minute später an einer
-     * Fabrik, die stillsteht. Und mit der Zahl in der Meldung: „zu groß"
-     * allein sagt nicht, um wie viel.
+     * <p>When pressing Deploy, and not a minute later at a factory standing
+     * still. And with the number in the message: "too large" alone does not
+     * say by how much.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void atooLargeProgramIsRefused(GameTestHelper helper) {
@@ -6422,18 +6415,18 @@ public final class FactoryNetworkGameTests {
         helper.assertTrue(entity.diagnostics().stream()
                         .anyMatch(d -> d.message().contains("64")),
                 "und die Grenze nennen: " + entity.diagnostics());
-        // Das alte Programm läuft weiter — ein abgelehntes ersetzt nichts.
+        // The old program keeps running — a rejected one replaces nothing.
         helper.assertValueEqual(entity.programSize(), vorher, "das kleine steht noch");
         helper.succeed();
     }
 
     /**
-     * Wird der Datenträger gezogen, friert das Netz ein.
+     * If the disk is pulled, the network freezes.
      *
-     * <p>Nicht abbrechen und nicht kürzen — dieselbe Antwort wie bei
-     * Stromausfall. Geprüft mit zwei Einschüben: Bliebe nur einer, wäre der
-     * Schrank ohne Datenträger gar kein Server mehr, und das Netz stünde
-     * aus dem alten Grund still statt aus dem geprüften.
+     * <p>Neither abort nor cut short — the same answer as on power outage.
+     * Checked with two bays: if only one remained, the rack without a disk
+     * would no longer be a server at all, and the network would stand still
+     * for the old reason instead of the one under test.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void pullingTheDiskFreezesTheNetwork(GameTestHelper helper) {
@@ -6451,7 +6444,7 @@ public final class FactoryNetworkGameTests {
         helper.assertTrue(entity.deploy(programm), "zweihunderteins passen auf 4160");
         helper.assertTrue(!entity.flowEngine().isFrozen(), "so läuft es");
 
-        // Den großen Datenträger heraus: Es bleibt ein Server mit 64.
+        // The large disk out: a server with 64 remains.
         var rack = (dev.devpanda.factorynetwork.block.entity.RackBlockEntity)
                 helper.getBlockEntity(rackPos);
         rack.setItem(dev.devpanda.factorynetwork.block.entity.RackBlockEntity
@@ -6461,7 +6454,7 @@ public final class FactoryNetworkGameTests {
         helper.assertTrue(!entity.programFits(), "das Programm passt nicht mehr");
         helper.assertTrue(entity.flowEngine().isFrozen(), "also steht das Netz");
 
-        // Wieder hinein, und es läuft weiter.
+        // Back in, and it keeps running.
         fillBay(helper, rackPos, 0, TEST_CPU, TEST_RAM, 4096);
         entity.rebuildNetwork();
         helper.assertTrue(!entity.flowEngine().isFrozen(), "und läuft wieder");
@@ -6469,11 +6462,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Das Programm liegt als Datei neben der Welt und lässt sich dort ändern.
+     * The program lives as a file beside the world and can be changed there.
      *
-     * <p>Die Brücke zu einem richtigen Editor. Zwei Richtungen in einer
-     * Prüfung, weil sie nur zusammen etwas taugen: Was im Spiel übernommen
-     * wird, steht in der Datei; was in der Datei steht, gilt im Spiel.
+     * <p>The bridge to a proper editor. Two directions in one check, because
+     * they are only worth something together: what is deployed in the game
+     * is in the file; what is in the file applies in the game.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void theProgramLivesInAFileBesideTheWorld(GameTestHelper helper) {
@@ -6498,16 +6491,16 @@ public final class FactoryNetworkGameTests {
                 helper.assertTrue(java.nio.file.Files.readString(main).contains("fn eins"),
                         "main.mf enthält das Programm nicht");
 
-                // Eine zweite Datei von außen: Sie gehört ab jetzt dazu.
+                // A second file from outside: from now on it belongs.
                 java.nio.file.Files.writeString(folder.resolve("zwei.mf"),
                         "fn zwei() {\n    let b = 2\n}");
             } catch (java.io.IOException failed) {
                 helper.fail("Der Ordner ließ sich nicht anfassen: " + failed);
             }
 
-            // Über runAfterDelay und nicht über eine Schleife von
-            // serverTick-Aufrufen: Innerhalb eines Ticks steht die Spielzeit
-            // still, und der Controller sieht nur alle zwanzig Ticks nach.
+            // Via runAfterDelay and not via a loop of serverTick calls:
+            // within one tick the game time stands still, and the controller
+            // only checks every twenty ticks.
             helper.runAfterDelay(25, () -> {
                 helper.assertValueEqual(entity.project().names().size(), 2,
                         "die neue Datei gehört zum Projekt");
@@ -6518,7 +6511,7 @@ public final class FactoryNetworkGameTests {
                                 .anyMatch(fn -> fn.name().equals("eins")),
                         "die erste ist dabei nicht verlorengegangen");
 
-                // Und wieder weg: Löschen ist in einem Projekt eine Absicht.
+                // And gone again: deleting is an intention in a project.
                 try {
                     java.nio.file.Files.delete(folder.resolve("zwei.mf"));
                 } catch (java.io.IOException failed) {
@@ -6538,12 +6531,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Mehr Abläufe als Plätze: Der Rest stellt sich an.
+     * More flows than threads: the rest queue up.
      *
-     * <p>Angestellt, nicht abgelehnt. <b>Verzögerung ist wiederherstellbar,
-     * Verlust nicht</b> — ein abgelehntes Ereignis ist für immer weg, und die
-     * Gegenstände stehen bis zum nächsten Neustart in einer Maschine, die
-     * niemand mehr anfasst.
+     * <p>Queued, not rejected. <b>Delay is recoverable, loss is not</b> — a
+     * rejected event is gone forever, and the items sit until the next
+     * restart in a machine nobody touches any more.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void moreFlowsThanThreadsQueueUp(GameTestHelper helper) {
@@ -6566,7 +6558,7 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(engine.occupied(), 2, "so viele laufen");
         helper.assertValueEqual(engine.queued(), 2, "so viele stehen an");
 
-        // Sind die ersten durch, rücken die anderen nach.
+        // Once the first ones are through, the others move up.
         helper.runAfterDelay(12, () -> {
             for (int i = 0; i < 12; i++) {
                 entity.serverTick();
@@ -6578,11 +6570,10 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ein angestellter Ablauf übersteht das Aufschreiben.
+     * A queued flow survives being written down.
      *
-     * <p>Er hat noch keinen Schritt gemacht, aber seinen Rahmen schon. Ginge
-     * er beim Sichern verloren, verschwände Arbeit, von der niemand weiß,
-     * dass es sie gab.
+     * <p>It has not taken a step yet, but it already has its frame. If it were
+     * lost on save, work would vanish that nobody knows existed.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void aQueuedFlowSurvivesBeingWrittenDown(GameTestHelper helper) {
@@ -6616,11 +6607,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Eine zu lange Warteschlange scheitert sichtbar.
+     * A queue that is too long fails visibly.
      *
-     * <p>Eine unbegrenzte wäre eine Anlage, die Arbeit ansammelt, die sie nie
-     * abarbeitet. Was darüber hinausgeht, steht unter den letzten Fehlern —
-     * still zu verschwinden wäre das Schlimmste von beidem.
+     * <p>An unlimited one would be a plant that accumulates work it never
+     * finishes. What goes beyond appears among the last errors — vanishing
+     * silently would be the worse of the two.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void anOverfullQueueFailsVisibly(GameTestHelper helper) {
@@ -6649,11 +6640,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Der Analysator zeigt auch, was Platz und Rechenleistung bereitstellt.
+     * The analyser also shows what provides room and computing power.
      *
-     * <p>Laufwerke, Serverschränke und Kreuzungen gehörten schon zum Netz und
-     * waren trotzdem unsichtbar. Wer sucht, warum nichts lagert oder nichts
-     * rechnet, sucht genau danach.
+     * <p>Drives, server racks and routers already belonged to the network and
+     * were still invisible. Whoever looks for why nothing is stored or
+     * nothing computes looks for exactly those.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void theAnalyserShowsDrivesRacksAndRouters(GameTestHelper helper) {
@@ -6680,12 +6671,12 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Die Bahnzuordnung eines Routers übersteht das Aufschreiben.
+     * A router's lane assignment survives being written down.
      *
-     * <p>Sie steht in der BlockEntity und nicht im Blockzustand — also muss
-     * sie von Hand gesichert werden. Ginge sie verloren, läge nach einem
-     * Neustart alles wieder auf Bahn eins, und zwei Netze, die sich
-     * berührungslos kreuzten, wären plötzlich eines.
+     * <p>It lives in the BlockEntity and not in the block state — so it has
+     * to be saved by hand. If it were lost, after a restart everything would
+     * lie on lane one again, and two networks that crossed without touching
+     * would suddenly be one.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void routerLanesSurviveBeingWrittenDown(GameTestHelper helper) {
@@ -6709,18 +6700,18 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(geladen.lane(unten),
                 dev.devpanda.factorynetwork.block.entity.RouterBlockEntity.OFF,
                 "abgeklemmt bleibt abgeklemmt");
-        // Was niemand angefasst hat, liegt weiter auf der Vorgabe.
+        // What nobody touched still lies on the default.
         helper.assertValueEqual(geladen.lane(towards(helper, routerPos, routerPos.north())), 1,
                 "unberührte Seite");
         helper.succeed();
     }
 
     /**
-     * Die Bauteile überstehen das Aufschreiben.
+     * The parts survive being written down.
      *
-     * <p>Sonst stünde nach einem Neustart ein leerer Schrank da, das Netz
-     * rechnete nicht mehr, und niemand käme auf den Gedanken, dass die
-     * Bauteile beim Sichern verlorengingen.
+     * <p>Otherwise an empty rack would stand there after a restart, the
+     * network would no longer compute, and nobody would think of the parts
+     * having been lost on save.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void processorsSurviveBeingWrittenDown(GameTestHelper helper) {
@@ -6743,11 +6734,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ein abgebauter Schrank gibt seine Bauteile zurück.
+     * A broken-down rack gives its parts back.
      *
-     * <p>Die Loot-Tabelle sieht nur den Blockzustand, nicht die BlockEntity.
-     * Ohne diesen Weg wäre ein versehentlicher Schlag der Verlust von
-     * sechsunddreißig Bauteilen.
+     * <p>The loot table only sees the block state, not the BlockEntity.
+     * Without this path an accidental hit would be the loss of thirty-six
+     * parts.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void abrokenRackDropsItsProcessors(GameTestHelper helper) {
@@ -6755,14 +6746,13 @@ public final class FactoryNetworkGameTests {
         smallRack(helper, rackPos, 8);
         helper.setBlock(rackPos, Blocks.AIR);
 
-        // <b>Nicht „irgendein Gegenstand fällt".</b> Ein leeres Gehäuse hätte
-        // diesen Test bestanden, und dahinter stünde genau der Verlust, den er
-        // verhindern soll: sechsunddreißig Bauteile, die niemand
-        // wiederbekommt.
+        // <b>Not "some item drops".</b> An empty chassis would have passed
+        // this test, and behind it would stand exactly the loss it is meant
+        // to prevent: thirty-six parts nobody gets back.
         //
-        // Herausfallen tut ein <b>fertiger Server</b> und keine Einzelteile —
-        // das Gehäuse trägt seine Bauteile in sich (siehe RackBlock.onRemove).
-        // Geprüft wird deshalb, dass es nicht leer ist.
+        // What drops is a <b>finished server</b> and not individual parts —
+        // the chassis carries its parts inside it (see RackBlock.onRemove).
+        // So what is checked is that it is not empty.
         helper.succeedWhen(() -> {
             helper.assertItemEntityPresent(
                     dev.devpanda.factorynetwork.registry.FnItems.SERVER_CHASSIS.get(),
@@ -6783,11 +6773,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ein leerer Akku hält kein Fenster offen — und ein voller kostet.
+     * An empty battery holds no window open — and a full one costs.
      *
-     * <p>Ohne diesen Lauf wäre der Ladestand eine Zahl im Tooltip. Er hält
-     * beides fest: dass Strom wirklich abgezogen wird, und dass ein Gerät
-     * ohne Ladung das Fenster nicht offen hält.
+     * <p>Without this run the charge level would be a number in the tooltip.
+     * It pins down both: that power is really deducted, and that a device
+     * without charge does not hold the window open.
      */
     @GameTest(template = EMPTY, timeoutTicks = 100)
     public static void anEmptyBatteryClosesTheWindow(GameTestHelper helper) {
@@ -6807,15 +6797,14 @@ public final class FactoryNetworkGameTests {
                 1, player.getInventory(), mast, helper.getLevel().dimension(),
                 dev.devpanda.factorynetwork.upgrade.RemoteDevice.TERMINAL, 0);
 
-        // Leer: Es lässt sich nichts abbuchen, und das Fenster darf nicht
-        // offen bleiben.
+        // Empty: nothing can be deducted, and the window must not stay open.
         helper.assertTrue(
                 !menu.charge(player, dev.devpanda.factorynetwork.network.Power.REMOTE_ACTION),
                 "aus einem leeren Akku ließ sich Strom nehmen");
         helper.assertTrue(!menu.stillValid(player),
                 "das Fenster bleibt mit leerem Akku offen");
 
-        // Geladen: Es geht, und der Stand sinkt um genau den Betrag.
+        // Charged: it works, and the level drops by exactly that amount.
         var battery = device.getCapability(
                 net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM);
         battery.receiveEnergy(10_000, false);
@@ -6834,9 +6823,9 @@ public final class FactoryNetworkGameTests {
                 "abgezogen wurden " + (before - after) + " statt "
                         + dev.devpanda.factorynetwork.network.Power.REMOTE_ACTION);
 
-        // Und der Fall dazwischen: zu wenig für eine Handlung, aber nicht
-        // leer. Ein Abzug, der die Ablehnung nicht überlebt, wäre schlimmer
-        // als gar keiner — der Spieler verlöre den Rest und bekäme nichts.
+        // And the case in between: too little for one action, but not empty.
+        // A deduction that does not survive the refusal would be worse than
+        // none at all — the player would lose the rest and get nothing.
         var drained = new ItemStack(
                 dev.devpanda.factorynetwork.registry.FnItems.WIRELESS_TERMINAL.get());
         dev.devpanda.factorynetwork.item.RemoteDeviceItem.couple(drained, where);
@@ -6856,7 +6845,7 @@ public final class FactoryNetworkGameTests {
                         player.getInventory().getItem(1)) == tooLittle,
                 "der abgelehnte Griff hat trotzdem Strom gekostet");
 
-        // Am Block kostet dasselbe nichts: Dort zahlt das Netz.
+        // At the block the same costs nothing: there the network pays.
         var fixed = new dev.devpanda.factorynetwork.client.menu.TerminalMenu(
                 2, player.getInventory(), mast);
         helper.assertTrue(fixed.charge(player, 1_000_000),
@@ -6865,27 +6854,27 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Der Schlüssel, unter dem ein Gegenstand im Lager liegt.
+     * The key under which an item lies in the store.
      *
-     * <p><b>Eine Kennung sagt, was etwas ist, aber nicht, welches.</b> Zwei
-     * Spitzhacken sind dasselbe Item und trotzdem verschiedene Dinge, sobald
-     * eine davon einen Namen trägt oder halb verbraucht ist.
+     * <p><b>An id says what something is, but not which one.</b> Two
+     * pickaxes are the same item and still different things as soon as one
+     * of them carries a name or is half used up.
      *
-     * <p>Steht hier und nicht in einem reinen Prüflauf: {@code ItemStack}
-     * braucht die Registrierungen, und {@code Bootstrap.bootStrap()}
-     * scheitert außerhalb des Spiels an den Mod-Dateien.
+     * <p>Lives here and not in a pure unit test: {@code ItemStack} needs the
+     * registrations, and {@code Bootstrap.bootStrap()} fails outside the game
+     * on the mod files.
      */
     @GameTest(template = EMPTY, timeoutTicks = 100)
     public static void anItemKeyKnowsWhichOneItIs(GameTestHelper helper) {
-        // Gleiche Kennung, gleiche Daten: derselbe Schlüssel.
+        // Same id, same data: the same key.
         helper.assertTrue(
                 key("Kurt").equals(key("Kurt")),
                 "zwei gleich benannte Hacken sind verschiedene Schlüssel");
         helper.assertTrue(key("Kurt").hashCode() == key("Kurt").hashCode(),
                 "gleiche Schlüssel, verschiedene Hashes");
 
-        // Ein Name macht daraus einen anderen Gegenstand. Genau das war der
-        // Fehler: Beide lagen als "Diamantspitzhacke" im Lager.
+        // A name makes it a different item. That was exactly the bug: both
+        // lay in the store as "Diamantspitzhacke".
         helper.assertTrue(!key("Kurt").equals(key("Erna")),
                 "Kurt und Erna gelten als derselbe Gegenstand");
         helper.assertTrue(
@@ -6893,8 +6882,8 @@ public final class FactoryNetworkGameTests {
                         net.minecraft.world.item.Items.DIAMOND_PICKAXE)),
                 "eine benannte Hacke gilt wie eine nackte");
 
-        // Die Menge zählt nicht mit — sonst wären drei Eisen und fünf Eisen
-        // zwei Einträge.
+        // The amount does not count — otherwise three iron and five iron
+        // would be two entries.
         helper.assertTrue(
                 dev.devpanda.factorynetwork.storage.ItemKey.of(
                         new ItemStack(Items.IRON_INGOT, 3)).equals(
@@ -6902,9 +6891,9 @@ public final class FactoryNetworkGameTests {
                                 new ItemStack(Items.IRON_INGOT, 64))),
                 "die Menge steckt im Schlüssel");
 
-        // <b>Die gefährlichste Falle des Umbaus.</b> Ein Schlüssel, dessen
-        // Hash sich ändert, während er in einer Map liegt, macht seinen
-        // Bestand unauffindbar: Er ist da und wird nie wieder gefunden.
+        // <b>The most dangerous trap of the rework.</b> A key whose hash
+        // changes while it lies in a map makes its stock unfindable: it is
+        // there and is never found again.
         ItemStack stack = named("Kurt");
         var stable = dev.devpanda.factorynetwork.storage.ItemKey.of(stack);
         int before = stable.hashCode();
@@ -6916,7 +6905,7 @@ public final class FactoryNetworkGameTests {
         helper.assertTrue(stable.equals(key("Kurt")),
                 "der Schlüssel hat sich hinterher verändert");
 
-        // Und was er herausgibt, ist eine Kopie.
+        // And what it hands out is a copy.
         ItemStack out = stable.toStack(5);
         helper.assertTrue(out.getCount() == 5, "die Menge stimmt nicht");
         out.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME,
@@ -6928,8 +6917,8 @@ public final class FactoryNetworkGameTests {
                 dev.devpanda.factorynetwork.storage.ItemKey.of(ItemStack.EMPTY) == null,
                 "Leeres bekommt einen Schlüssel");
 
-        // Die Stapelgrenze kommt vom Gegenstand: Die Komponente kann sie
-        // ändern, und das Entnehmen im Terminal rechnet damit.
+        // The stack limit comes from the item: the component can change it,
+        // and extracting in the terminal counts on that.
         ItemStack limited = new ItemStack(Items.IRON_INGOT);
         limited.set(net.minecraft.core.component.DataComponents.MAX_STACK_SIZE, 8);
         helper.assertTrue(
@@ -6942,7 +6931,7 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
-    /** Eine Diamantspitzhacke mit Namen. */
+    /** A diamond pickaxe with a name. */
     private static ItemStack named(String name) {
         ItemStack stack = new ItemStack(net.minecraft.world.item.Items.DIAMOND_PICKAXE);
         stack.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME,
@@ -6950,21 +6939,21 @@ public final class FactoryNetworkGameTests {
         return stack;
     }
 
-    /** Ihr Schlüssel. */
+    /** Its key. */
     private static dev.devpanda.factorynetwork.storage.ItemKey key(String name) {
         return dev.devpanda.factorynetwork.storage.ItemKey.of(named(name));
     }
 
     /**
-     * Ein Worker nimmt jetzt auch mit, was Daten trägt.
+     * A worker now also takes along what carries data.
      *
-     * <p><b>Dieser Lauf stand bis zum 28.08. auf dem Kopf:</b> Er hielt fest,
-     * dass eine benannte Hacke in der Kiste <i>liegen bleibt</i>. Das war die
-     * Notbremse, solange das Lager sie nur entkernt hätte aufnehmen können.
+     * <p><b>Until 28 Aug this run stood on its head:</b> it pinned down that
+     * a named pickaxe <i>stays</i> in the chest. That was the emergency brake
+     * as long as the store could only have taken it in gutted.
      *
-     * <p>Jetzt wandert sie — samt Namen. Ein Worker räumt eine Kiste im
-     * Hintergrund leer, und niemand sieht dabei zu; genau deshalb ist das
-     * der Lauf, an dem der Umbau sich beweist.
+     * <p>Now it travels — name included. A worker empties a chest in the
+     * background, and nobody watches; that is exactly why this is the run on
+     * which the rework proves itself.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void aWorkerCarriesDataIntoStorage(GameTestHelper helper) {
@@ -7007,17 +6996,17 @@ public final class FactoryNetworkGameTests {
 
 
     /**
-     * Zwei Bauten an zwei Werkbänken kreuzen sich nicht.
+     * Two crafts at two crafting tables do not cross.
      *
-     * <p><b>Ein Rezept gibt es einmal, nicht einmal je Werkbank.</b> Der
-     * {@code RecipeManager} hält je JSON genau ein Objekt, geteilt über alle
-     * Spieler und jeden Crafter-Block. Wer sich darin etwas merkt, merkt es
-     * für alle.
+     * <p><b>A recipe exists once, not once per crafting table.</b> The
+     * {@code RecipeManager} holds exactly one object per JSON, shared across
+     * all players and every crafter block. Whoever remembers something in it
+     * remembers it for everyone.
      *
-     * <p>Der Fall, der dabei kaputtgeht: Spieler eins legt fertig, Spieler
-     * zwei legt fertig, Spieler eins nimmt heraus — und bekommt die Hälfte
-     * von Spieler zwei. Beide halten dann eine Hälfte, deren Partner
-     * woanders liegt, und niemand kann sagen warum.
+     * <p>The case that breaks: player one lays out the finished craft, player
+     * two lays out theirs, player one takes it out — and gets player two's
+     * half. Both then hold a half whose partner lies elsewhere, and nobody
+     * can say why.
      */
     @GameTest(template = EMPTY, timeoutTicks = 100)
     public static void twoCraftsAtOnceDoNotCross(GameTestHelper helper) {
@@ -7025,7 +7014,7 @@ public final class FactoryNetworkGameTests {
                 net.minecraft.world.item.crafting.CraftingBookCategory.MISC);
         var registries = helper.getLevel().registryAccess();
 
-        // Zwei Bauten ineinander verschränkt, wie an zwei Werkbänken.
+        // Two crafts interleaved, as at two crafting tables.
         ItemStack ersterBau = recipe.assemble(entanglementInput(), registries);
         ItemStack zweiterBau = recipe.assemble(entanglementInput(), registries);
 
@@ -7036,15 +7025,15 @@ public final class FactoryNetworkGameTests {
         helper.assertTrue(ersterBau.getCount() == 2 && zweiterBau.getCount() == 2,
                 "ein Bau liefert nicht beide Hälften auf einmal");
 
-        // Und jeder Bau trägt seine beiden Hälften selbst — kein Rest, der
-        // sich zwischendurch überschreiben ließe.
+        // And every craft carries its two halves itself — no remainder that
+        // could be overwritten in between.
         var rest = recipe.getRemainingItems(entanglementInput());
         helper.assertTrue(rest.stream().allMatch(ItemStack::isEmpty),
                 "das Rezept legt noch etwas beiseite");
         helper.succeed();
     }
 
-    /** Zwei Netzkerne und ein Kristall, wie sie in der Werkbank liegen. */
+    /** Two network cores and a crystal, as they lie in the crafting table. */
     private static net.minecraft.world.item.crafting.CraftingInput entanglementInput() {
         return net.minecraft.world.item.crafting.CraftingInput.of(3, 1,
                 java.util.List.of(
@@ -7057,25 +7046,25 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Der Router greift einzelne Farben aus dem Hauptstrang ab.
+     * The router taps individual colours off the trunk.
      *
-     * <p><b>Das Glasfaser-Bild.</b> Eine Leitung trägt alle Farben; der
-     * Router zieht eine davon heraus und lässt den Rest weiterlaufen.
+     * <p><b>The fibre-optic picture.</b> One line carries all colours; the
+     * router pulls one of them out and lets the rest run on.
      *
-     * <p>Vorher war er das Gegenteil: farbneutral, ein Mischer. Was auf
-     * einer Bahn zusammenkam, galt als verbunden — zwei getrennte Teilnetze
-     * wuchsen darüber zusammen.
+     * <p>Previously it was the opposite: colour-neutral, a mixer. Whatever
+     * came together on one lane counted as connected — two separate
+     * sub-networks grew together across it.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void aRouterTapsOneColourOffTheTrunk(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 1, 1);
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
 
-        // Der Hauptstrang: neutral, also alle Farben.
+        // The trunk: neutral, so all colours.
         BlockPos trunk = controller.east();
         placeCable(helper, trunk, dev.devpanda.factorynetwork.block.CableColour.NONE);
 
-        // Der Router daran.
+        // The router on it.
         BlockPos router = trunk.east();
         helper.setBlock(router, FnBlocks.ROUTER.get());
         if (!(helper.getBlockEntity(router)
@@ -7083,7 +7072,7 @@ public final class FactoryNetworkGameTests {
             helper.fail("kein Router", router);
             return;
         }
-        // Zum Hauptstrang hin: alles. Nach Norden: nur Rot.
+        // Towards the trunk: everything. To the north: only red.
         box.setFilter(Direction.WEST, null);
         box.setFilter(Direction.NORTH, dev.devpanda.factorynetwork.block.CableColour.RED);
         box.setFilter(Direction.SOUTH, dev.devpanda.factorynetwork.block.CableColour.BLUE);
@@ -7093,9 +7082,9 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(box.filter(Direction.NORTH),
                 dev.devpanda.factorynetwork.block.CableColour.RED,
                 "die Nordseite führt nicht Rot");
-        // Eine unberührte Seite lässt alles durch. Das ist die
-        // verträgliche Vorgabe: Ein frisch gesetzter Router verbindet, statt
-        // stillzustehen, bis jemand ihn einstellt.
+        // An untouched side lets everything through. That is the
+        // compatible default: a freshly placed router connects instead of
+        // standing still until somebody configures it.
         helper.assertTrue(!box.isOff(Direction.EAST),
                 "eine frische Seite ist abgeklemmt");
         helper.assertTrue(box.filter(Direction.EAST) == null,
@@ -7104,7 +7093,7 @@ public final class FactoryNetworkGameTests {
         helper.assertTrue(box.isOff(Direction.EAST),
                 "turnOff klemmt die Seite nicht ab");
 
-        // Ein rotes Kabel nach Norden, ein blaues nach Süden.
+        // A red cable to the north, a blue one to the south.
         BlockPos rot = router.north();
         placeCable(helper, rot, dev.devpanda.factorynetwork.block.CableColour.RED);
         if (helper.getBlockEntity(rot)
@@ -7121,17 +7110,17 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
 
-        // Beide hängen am Netz — der Hauptstrang trägt beide Farben.
+        // Both hang on the network — the trunk carries both colours.
         helper.assertTrue(entity.graph().connectorNames().contains("am_roten"),
                 "das rote Teilnetz hängt nicht am Hauptstrang");
         helper.assertTrue(entity.graph().connectorNames().contains("am_blauen"),
                 "das blaue Teilnetz hängt nicht am Hauptstrang");
 
-        // <b>Und der Filter sperrt wirklich.</b> Das ist die Probe, auf
-        // die es ankommt: Ein blaues Kabel an einem Ausgang, der nur Rot
-        // durchlässt, darf nicht erreichbar sein. Ohne sie könnte der Filter
-        // fehlen und der Lauf bliebe grün — der Hauptstrang ist neutral und
-        // verbindet sich ohnehin mit allem.
+        // <b>And the filter really blocks.</b> That is the test that matters:
+        // a blue cable on an output that lets only red through must not be
+        // reachable. Without it the filter could be missing and the run would
+        // stay green — the trunk is neutral and connects with everything
+        // anyway.
         BlockPos falsch = router.west().north();
         placeCable(helper, falsch, dev.devpanda.factorynetwork.block.CableColour.BLUE);
         BlockPos amFalschen = router.east();
@@ -7140,16 +7129,16 @@ public final class FactoryNetworkGameTests {
                 instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus) {
             bus.addPart(Direction.EAST).setLabel("hinter_rot");
         }
-        // Der Ostausgang lässt nur Rot durch; dort hängt ein neutrales Kabel
-        // mit einem Gerät. Neutral verbindet sich mit allem — außer der
-        // Router lässt es nicht hinaus.
+        // The east output lets only red through; a neutral cable with a
+        // device hangs there. Neutral connects with everything — unless the
+        // router does not let it out.
         box.setFilter(Direction.EAST, dev.devpanda.factorynetwork.block.CableColour.GREEN);
         entity.rebuildNetwork();
         helper.assertTrue(!entity.graph().connectorNames().contains("hinter_rot"),
                 "hinter einem grünen Ausgang hängt ein Gerät am neutralen Kabel");
 
-        // Und mit passendem Filter kommt es durch: Es liegt am Filter, nicht
-        // an der Leitung.
+        // And with a matching filter it gets through: it is the filter, not
+        // the line.
         box.setFilter(Direction.EAST, null);
         entity.rebuildNetwork();
         helper.assertTrue(entity.graph().connectorNames().contains("hinter_rot"),
@@ -7158,12 +7147,12 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Der Analysator zeigt, was wirklich floss — nicht, was fließen könnte.
+     * The analyser shows what really flowed — not what could flow.
      *
-     * <p><b>Die Zahl kommt aus dem Budget, nicht aus einer Schätzung.</b> Ein
-     * Analysator, der Kapazitäten nennt und Auslastung behauptet, wäre
-     * schlimmer als einer, der schweigt: Man sucht dann an der Stelle, die er
-     * anzeigt, statt an der, die eng ist.
+     * <p><b>The number comes from the budget, not from an estimate.</b> An
+     * analyser that names capacities and claims utilisation would be worse
+     * than one that stays silent: you would then search at the spot it shows
+     * instead of at the one that is tight.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void theAnalyserShowsWhatActuallyFlowed(GameTestHelper helper) {
@@ -7178,12 +7167,12 @@ public final class FactoryNetworkGameTests {
         var node = new dev.devpanda.factorynetwork.network.FactoryGraph.Node(
                 helper.absolutePos(cable), dev.devpanda.factorynetwork.block.CableColour.NONE);
 
-        // Frisch: nichts geflossen.
+        // Fresh: nothing flowed.
         helper.assertValueEqual(entity.runtime().budget().usedAt(node), 0,
                 "ein frisches Budget meldet Verkehr");
 
-        // Etwas hindurchgeschickt.
-        // Knapp die Hälfte der Kabelbreite.
+        // Sent something through.
+        // Just under half the cable width.
         int half = dev.devpanda.factorynetwork.network.Bandwidth.CABLE / 2;
         entity.runtime().budget().spend(java.util.List.of(node), half);
         helper.assertValueEqual(entity.runtime().budget().usedAt(node), half,
@@ -7203,7 +7192,7 @@ public final class FactoryNetworkGameTests {
                 dev.devpanda.factorynetwork.analyser.AnalyserData.LinkState.FREE,
                 "die halbe Kabelbreite ist noch nicht eng");
 
-        // Und voll ist voll.
+        // And full is full.
         entity.runtime().budget().spend(java.util.List.of(node),
                 dev.devpanda.factorynetwork.network.Bandwidth.CABLE);
         var voll = dev.devpanda.factorynetwork.analyser.AnalyserScan.of(entity).links().stream()
@@ -7213,7 +7202,7 @@ public final class FactoryNetworkGameTests {
                 dev.devpanda.factorynetwork.analyser.AnalyserData.LinkState.FULL,
                 "anderthalb Kabelbreiten gelten nicht als voll");
 
-        // Und die Anzeige spricht Kilobyte: Das ist der Sinn der Einheit.
+        // And the display speaks kilobytes: that is the point of the unit.
         helper.assertValueEqual(
                 dev.devpanda.factorynetwork.network.Bandwidth.perSecond(strecke.capacity()),
                 "25,6 MB/s", "die Kapazität liest sich nicht als Megabyte");
@@ -7221,16 +7210,16 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Das Kabel begrenzt, was je Tick hindurchgeht.
+     * The cable limits what passes through per tick.
      *
-     * <p><b>Der Lauf, an dem der ganze Wechsel hängt.</b> Ohne ihn wären die
-     * Zahlen in {@code Throughput} Dekoration: Ein Worker könnte beliebig
-     * viel durch ein dünnes Kabel schieben, und die Grenze stünde nur im
-     * Kommentar.
+     * <p><b>The run the whole change hinges on.</b> Without it the numbers in
+     * {@code Throughput} would be decoration: a worker could push as much as
+     * it likes through a thin cable, and the limit would exist only in the
+     * comment.
      *
-     * <p>Geprüft wird direkt am Budget, nicht am Ergebnis eines Programms:
-     * Was ein Worker in einem Tick bewegt, hängt an einem Dutzend Dinge —
-     * hier soll genau eines davon zählen.
+     * <p>Checked directly at the budget, not at the result of a program: what
+     * a worker moves in one tick hangs on a dozen things — here exactly one
+     * of them is meant to count.
      */
     @GameTest(template = EMPTY, timeoutTicks = 100)
     public static void theCableLimitsWhatPassesPerTick(GameTestHelper helper) {
@@ -7243,29 +7232,29 @@ public final class FactoryNetworkGameTests {
                 thin, dev.devpanda.factorynetwork.block.CableColour.NONE);
         var path = java.util.List.of(node);
 
-        // Frisch: Das ganze Kabel steht zur Verfügung.
+        // Fresh: the whole cable is available.
         helper.assertValueEqual(budget.free(level, path),
                 dev.devpanda.factorynetwork.network.Bandwidth.CABLE,
                 "ein leeres Kabel gibt nicht seinen vollen Durchsatz her");
 
-        // Die Hälfte verbraucht: die Hälfte bleibt.
+        // Half consumed: half remains.
         budget.spend(path, dev.devpanda.factorynetwork.network.Bandwidth.CABLE / 2);
         helper.assertValueEqual(budget.free(level, path),
                 dev.devpanda.factorynetwork.network.Bandwidth.CABLE / 2,
                 "der Verbrauch wird nicht abgezogen");
 
-        // Voll: nichts mehr frei — aber nicht negativ.
+        // Full: nothing free any more — but not negative.
         budget.spend(path, dev.devpanda.factorynetwork.network.Bandwidth.CABLE);
         helper.assertValueEqual(budget.free(level, path), 0,
                 "ein überfülltes Kabel meldet keine Null");
 
-        // Der neue Tick fängt bei null an.
+        // The new tick starts at zero.
         budget.reset();
         helper.assertValueEqual(budget.free(level, path),
                 dev.devpanda.factorynetwork.network.Bandwidth.CABLE,
                 "der Verbrauch überlebt den Tickwechsel");
 
-        // Und die Engstelle entscheidet: dicht plus dünn ist dünn.
+        // And the bottleneck decides: dense plus thin is thin.
         BlockPos dense = helper.absolutePos(new BlockPos(3, 2, 1));
         level.setBlockAndUpdate(dense, FnBlocks.DENSE_CABLE.get().defaultBlockState());
         var gemischt = java.util.List.of(
@@ -7276,7 +7265,7 @@ public final class FactoryNetworkGameTests {
                 dev.devpanda.factorynetwork.network.Bandwidth.CABLE,
                 "die Engstelle auf dem Weg wird übergangen");
 
-        // Was über den gemischten Weg geht, belastet beide Stücke.
+        // What goes over the mixed path burdens both pieces.
         budget.spend(gemischt, 10);
         helper.assertValueEqual(budget.free(level, path),
                 dev.devpanda.factorynetwork.network.Bandwidth.CABLE - 10,
@@ -7285,23 +7274,23 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Jedes erreichbare Gerät hängt am Netz — ohne Ausnahme.
+     * Every reachable device hangs on the network — without exception.
      *
-     * <p><b>Das ist der Kern des Wechsels vom 29.08.</b> Vorher konnte ein
-     * Gerät erreichbar sein und trotzdem stumm bleiben: kein Kanal mehr frei.
-     * Diesen Zustand gibt es nicht mehr. Was am Kabel hängt, arbeitet — nur
-     * womöglich langsamer, wenn viele am selben Strang ziehen.
+     * <p><b>This is the core of the change of 29 Aug.</b> Previously a device
+     * could be reachable and still stay silent: no channel free any more.
+     * That state no longer exists. What hangs on the cable works — only
+     * possibly slower when many pull on the same strand.
      *
-     * <p>Zwanzig Anschlüsse an einem gewöhnlichen Kabel: Unter der alten
-     * Regel wären vier davon leer ausgegangen (sechzehn Kanäle). Jetzt sind
-     * alle zwanzig da.
+     * <p>Twenty connectors on an ordinary cable: under the old rule four of
+     * them would have gone empty (sixteen channels). Now all twenty are
+     * there.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void everyReachableDeviceIsOnTheNetwork(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 1, 1);
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
 
-        // Eine Reihe gewöhnlicher Kabel, an jedem zwei Anschlüsse.
+        // A row of ordinary cables, two connectors on each.
         int gesetzt = 0;
         for (int schritt = 1; schritt <= 10; schritt++) {
             BlockPos cable = controller.east(schritt);
@@ -7321,7 +7310,7 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
 
-        // Alle zwanzig, obwohl ein gewöhnliches Kabel früher sechzehn trug.
+        // All twenty, although an ordinary cable used to carry sixteen.
         for (int i = 0; i < gesetzt; i++) {
             helper.assertTrue(entity.graph().connectorNames().contains("gerat_" + i),
                     "gerat_" + i + " hängt nicht am Netz");
@@ -7330,18 +7319,18 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Der schwächste Punkt auf dem Weg entscheidet über den Durchsatz.
+     * The weakest point on the path decides the throughput.
      *
-     * <p>Ein dichtes Kabel hinter einem gewöhnlichen bringt nichts — die
-     * Ware muss durch beide. Das ist dieselbe Regel, die vorher für die
-     * Kanäle galt, nur zählt sie jetzt Stapel statt Geräte.
+     * <p>A dense cable behind an ordinary one gains nothing — the goods have
+     * to pass through both. That is the same rule that used to apply to the
+     * channels, only now it counts stacks instead of devices.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void theWeakestCableDecidesTheThroughput(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 1, 1);
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
 
-        // Dicht, dann gewöhnlich, dann wieder dicht.
+        // Dense, then ordinary, then dense again.
         BlockPos erst = controller.east();
         helper.setBlock(erst, FnBlocks.DENSE_CABLE.get());
         BlockPos eng = erst.east();
@@ -7361,8 +7350,8 @@ public final class FactoryNetworkGameTests {
                 dev.devpanda.factorynetwork.network.Bandwidth.CABLE,
                 "das gewöhnliche Kabel trägt nicht den gewöhnlichen Durchsatz");
 
-        // Ein Gerät hinter der Engstelle: Sein Weg ist so gut wie das
-        // schwächste Stück darauf.
+        // A device behind the bottleneck: its path is as good as the weakest
+        // piece on it.
         if (helper.getBlockEntity(dann)
                 instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus) {
             bus.addPart(Direction.NORTH).setLabel("dahinter");
@@ -7379,10 +7368,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Router, Gateway und Brücke tragen so viel wie ein dichtes Kabel.
+     * Router, gateway and bridge carry as much as a dense cable.
      *
-     * <p>Sie sind Leitung und kein Vermehrer. Trüge eines davon mehr, wäre
-     * es die Stelle, an der man die Grenze umgeht — und dann gäbe es keine.
+     * <p>They are line and not multiplier. If one of them carried more, it
+     * would be the spot where you bypass the limit — and then there would be
+     * none.
      */
     @GameTest(template = EMPTY, timeoutTicks = 100)
     public static void junctionsCarryLikeADenseCable(GameTestHelper helper) {
@@ -7401,9 +7391,9 @@ public final class FactoryNetworkGameTests {
             level.removeBlock(where, false);
         }
 
-        // Und der Controller begrenzt sehr wohl — seit dem 30.08. Vorher
-        // stand hier UNLIMITED mit der Begründung „er ist Ziel, nicht
-        // Strecke". Er ist beides, und als Strecke liegt er auf jedem Weg.
+        // And the controller does limit — since 30 Aug. Previously UNLIMITED
+        // stood here with the reasoning "it is a target, not a route". It is
+        // both, and as a route it lies on every path.
         BlockPos controller = helper.absolutePos(new BlockPos(1, 2, 1));
         level.setBlockAndUpdate(controller, FnBlocks.CONTROLLER.get().defaultBlockState());
         helper.assertValueEqual(
@@ -7414,16 +7404,16 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Eine AE2-Zelle zieht in unser Netz um — samt allem, was drinsteht.
+     * An AE2 cell moves into our network — with everything inside it.
      *
-     * <p><b>Der Folgenutzen des Lagerumbaus, eingelöst.</b> AE2 speichert
-     * Gegenstände samt allem, was sie tragen. Bis zum 28.08. führte unser
-     * Lager nur die Kennung — ein verzaubertes Buch aus einer AE2-Zelle wäre
-     * beim Einlesen zu einem leeren geworden. Genau das prüft dieser Lauf.
+     * <p><b>The follow-on benefit of the store rework, redeemed.</b> AE2
+     * stores items with everything they carry. Until 28 Aug our store kept
+     * only the id — an enchanted book from an AE2 cell would have become an
+     * empty one on import. That is exactly what this run checks.
      *
-     * <p>Er läuft nur, wenn AE2 im Pack liegt. Im Entwicklungsaufbau tut es
-     * das; ein Pack ohne AE2 überspringt ihn, statt ihn fehlschlagen zu
-     * lassen — eine fehlende Mod ist kein Fehler dieser Mod.
+     * <p>It only runs if AE2 is in the pack. In the development setup it is;
+     * a pack without AE2 skips it instead of letting it fail — a missing mod
+     * is not a bug of this mod.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void anAe2CellMovesIn(GameTestHelper helper) {
@@ -7438,7 +7428,7 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
 
-        // Eine echte AE2-Zelle, über AE2s eigene API befüllt.
+        // A real AE2 cell, filled via AE2's own API.
         ItemStack cell = new ItemStack(appeng.core.definitions.AEItems.ITEM_CELL_64K.asItem());
         helper.assertTrue(
                 dev.devpanda.factorynetwork.compat.ae2.Ae2Cells.isCell(cell),
@@ -7468,7 +7458,7 @@ public final class FactoryNetworkGameTests {
                         dev.devpanda.factorynetwork.storage.ItemKey.bare(Items.IRON_INGOT)),
                 100L, "das Eisen fehlt");
 
-        // Und die Zelle ist danach leer: Es ist ein Umzug, keine Kopie.
+        // And the cell is empty afterwards: it is a move, not a copy.
         helper.assertTrue(
                 appeng.api.storage.StorageCells.getCellInventory(cell, null)
                         .getAvailableStacks().isEmpty(),
@@ -7477,15 +7467,15 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Beide Brücken zeigen, ob die Verbindung steht.
+     * Both bridges show whether the link is up.
      *
-     * <p><b>Ohne diese Anzeige sucht man den Fehler im Kabel.</b> Eine
-     * Brücke, deren Partner abgebaut wurde, sieht sonst aus wie eine, die
-     * arbeitet — und das Netz endet ohne sichtbaren Grund.
+     * <p><b>Without this display you look for the fault in the cable.</b> A
+     * bridge whose partner was broken down otherwise looks like one that is
+     * working — and the network ends without visible reason.
      *
-     * <p><b>Und die Gegenstelle muss es auch erfahren.</b> Sie wird beim
-     * Abbau nicht angefasst; wer nur die eigene Seite umschaltet, lässt
-     * drüben ein Licht brennen, hinter dem nichts mehr ist.
+     * <p><b>And the far end has to learn of it too.</b> It is not touched
+     * when breaking down; whoever only switches their own side leaves a
+     * light burning over there with nothing behind it any more.
      */
     @GameTest(template = EMPTY, timeoutTicks = 100)
     public static void bothEndsShowTheLink(GameTestHelper helper) {
@@ -7501,14 +7491,14 @@ public final class FactoryNetworkGameTests {
         helper.assertTrue(linked(helper, hier), "die erste Brücke zeigt nichts an");
         helper.assertTrue(linked(helper, dort), "die zweite Brücke zeigt nichts an");
 
-        // Die Gegenstelle abbauen: Hier muss das Licht ausgehen.
+        // Break down the far end: here the light must go out.
         helper.getLevel().removeBlock(dort, false);
         helper.assertTrue(!linked(helper, hier),
                 "die verbliebene Brücke leuchtet weiter, obwohl drüben nichts mehr ist");
         helper.succeed();
     }
 
-    /** Zeigt diese Brücke eine stehende Verbindung? */
+    /** Does this bridge show a standing link? */
     private static boolean linked(GameTestHelper helper, BlockPos where) {
         var state = helper.getLevel().getBlockState(where);
         return state.getBlock() instanceof dev.devpanda.factorynetwork.block.BridgeBlock
@@ -7516,30 +7506,30 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Das Netz reicht durch die Brücke — und nur durch eine gekoppelte.
+     * The network reaches through the bridge — and only through a paired one.
      *
-     * <p><b>Der Beweis, dass die Brücke etwas tut.</b> Zwei Kabelstränge, die
-     * einander nicht berühren; nur die beiden Brücken dazwischen verbinden
-     * sie. Ohne den Sprung im Graphen endet das Netz am ersten Strang, und
-     * der zweite gehört zu niemandem.
+     * <p><b>The proof that the bridge does something.</b> Two cable strands
+     * that do not touch each other; only the two bridges in between connect
+     * them. Without the jump in the graph the network ends at the first
+     * strand, and the second belongs to nobody.
      *
-     * <p>Die Gegenprobe steckt im Aufbau: Erst ohne Hälften prüfen, dann mit.
-     * Ein Lauf, der nur den fertigen Zustand ansieht, verwechselte eine
-     * wirkende Brücke mit zwei Strängen, die sich zufällig doch berühren.
+     * <p>The cross-check is built into the setup: check without halves first,
+     * then with. A run that only looks at the finished state would mistake a
+     * working bridge for two strands that happen to touch after all.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void theNetworkReachesThroughTheBridge(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 1, 1);
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
 
-        // Erster Strang: Controller, Kabel, Brücke.
+        // First strand: controller, cable, bridge.
         BlockPos hier = controller.east();
         placeCable(helper, hier, dev.devpanda.factorynetwork.block.CableColour.NONE);
         BlockPos brueckeHier = hier.east();
         helper.setBlock(brueckeHier, FnBlocks.BRIDGE.get());
 
-        // Zweiter Strang, weit weg und ohne Berührung: Brücke, Kabel,
-        // Laufwerk. Über das Laufwerk sieht man, ob das Netz dort ankommt.
+        // Second strand, far away and without contact: bridge, cable, drive.
+        // The drive shows whether the network arrives there.
         BlockPos brueckeDort = new BlockPos(1, 4, 5);
         helper.setBlock(brueckeDort, FnBlocks.BRIDGE.get());
         BlockPos dortKabel = brueckeDort.east();
@@ -7552,7 +7542,7 @@ public final class FactoryNetworkGameTests {
         helper.assertTrue(!entity.graph().contains(helper.absolutePos(drivePos)),
                 "das Laufwerk hängt am Netz, obwohl keine Hälften eingesetzt sind");
 
-        // Jetzt die beiden Hälften hinein.
+        // Now the two halves go in.
         ItemStack paar = dev.devpanda.factorynetwork.item.EntanglementItem.newPair();
         if (helper.getBlockEntity(brueckeHier)
                 instanceof dev.devpanda.factorynetwork.block.entity.BridgeBlockEntity eine) {
@@ -7574,21 +7564,21 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Zwei Brücken mit derselben Nummer finden einander — und nur die.
+     * Two bridges with the same number find each other — and only those.
      *
-     * <p><b>Gesucht wird nicht, angemeldet wird.</b> Eine Brücke, die ihren
-     * Partner über die Welt suchen müsste, durchsuchte bei jeder Frage
-     * Millionen Blöcke. Sie trägt sich stattdessen beim Laden in ein
-     * Verzeichnis ein — dasselbe Vorgehen wie beim Controller.
+     * <p><b>No searching, registering.</b> A bridge that had to search the
+     * world for its partner would scan millions of blocks on every query.
+     * Instead it registers itself in a directory on load — the same approach
+     * as with the controller.
      *
-     * <p>Drei Regeln, und jede fängt einen Fall, den es im Spiel gibt:
+     * <p>Three rules, and each catches a case that exists in the game:
      * <ol>
-     *   <li>Eine Brücke ohne Hälfte gehört zu niemandem.</li>
-     *   <li>Eine Brücke ist nie ihr eigener Partner — sonst zeigte ein Netz
-     *       durch sich hindurch auf sich selbst.</li>
-     *   <li>Drei Brücken mit derselben Nummer verbinden gar nichts. Im
-     *       Kreativmodus lässt sich eine Hälfte vervielfachen, und „zwei von
-     *       dreien, aber welche" ist keine Regel, die jemand erraten kann.</li>
+     *   <li>A bridge without a half belongs to nobody.</li>
+     *   <li>A bridge is never its own partner — otherwise a network would
+     *       point through itself at itself.</li>
+     *   <li>Three bridges with the same number connect nothing at all. In
+     *       creative mode a half can be duplicated, and "two of three, but
+     *       which" is not a rule anybody can guess.</li>
      * </ol>
      */
     @GameTest(template = EMPTY, timeoutTicks = 100)
@@ -7616,7 +7606,7 @@ public final class FactoryNetworkGameTests {
                         .partnerOf(level, dort)),
                 "die Verbindung gilt nur in eine Richtung");
 
-        // Eine dritte mit derselben Nummer: Jetzt ist nichts mehr eindeutig.
+        // A third one with the same number: now nothing is unambiguous any more.
         BlockPos dritte = helper.absolutePos(new BlockPos(7, 2, 1));
         ItemStack kopie = eine.copy();
         placeBridge(helper, dritte, kopie);
@@ -7625,14 +7615,14 @@ public final class FactoryNetworkGameTests {
                         == null,
                 "drei Brücken mit einer Nummer verbinden trotzdem");
 
-        // Die dritte weg, und die beiden finden sich wieder.
+        // The third one gone, and the two find each other again.
         level.removeBlock(dritte, false);
         helper.assertTrue(
                 dort.equals(dev.devpanda.factorynetwork.network.BridgeRegistry
                         .partnerOf(level, hier)),
                 "nach dem Abbau der dritten bleibt die Verbindung tot");
 
-        // Und eine fremde Nummer verbindet nichts.
+        // And a foreign number connects nothing.
         BlockPos fremd = helper.absolutePos(new BlockPos(7, 2, 4));
         placeBridge(helper, fremd,
                 dev.devpanda.factorynetwork.item.EntanglementItem.newPair());
@@ -7643,7 +7633,7 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
-    /** Stellt eine Brücke hin und legt eine Hälfte hinein. */
+    /** Places a bridge and puts a half into it. */
     private static void placeBridge(GameTestHelper helper, BlockPos where, ItemStack half) {
         helper.getLevel().setBlockAndUpdate(where,
                 FnBlocks.BRIDGE.get().defaultBlockState());
@@ -7654,11 +7644,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ein Bau liefert beide Hälften, und sie gehören zusammen.
+     * One craft yields both halves, and they belong together.
      *
-     * <p>Als ein Stapel zu zweit: Ein Rezept hat ein Ausgabefeld, und alles,
-     * was daneben aufgehoben werden müsste, gehörte allen Werkbänken
-     * gleichzeitig — siehe {@code twoCraftsAtOnceDoNotCross}.
+     * <p>As one stack of two: a recipe has one output slot, and anything that
+     * would have to be kept beside it would belong to all crafting tables at
+     * once — see {@code twoCraftsAtOnceDoNotCross}.
      */
     @GameTest(template = EMPTY, timeoutTicks = 100)
     public static void oneCraftMakesOnePair(GameTestHelper helper) {
@@ -7678,7 +7668,7 @@ public final class FactoryNetworkGameTests {
                 dev.devpanda.factorynetwork.item.EntanglementItem.matched(eine, paar),
                 "die Hälften eines Stapels kennen einander nicht");
 
-        // Was nicht hineingehört, ergibt auch nichts.
+        // What does not belong in there yields nothing either.
         var falsch = net.minecraft.world.item.crafting.CraftingInput.of(3, 1,
                 java.util.List.of(
                         new ItemStack(dev.devpanda.factorynetwork.registry.FnItems
@@ -7692,16 +7682,16 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Zwei Hälften einer Verschränkung gehören zusammen — und nur die.
+     * Two halves of an entanglement belong together — and only those.
      *
-     * <p>Das Paar entsteht beim Bauen, nicht beim Anklicken: Wer zwei
-     * Brücken erst hinstellt und dann verbindet, muss sich merken, welche
-     * wohin gehört; wer zwei Hälften desselben Stapels einsetzt, muss gar
-     * nichts merken.
+     * <p>The pair arises when crafting, not when clicking: whoever first
+     * places two bridges and then links them has to remember which goes
+     * where; whoever inserts two halves of the same stack has to remember
+     * nothing at all.
      *
-     * <p><b>Ob eine Brücke sich selbst verbindet, steht hier nicht.</b> Das
-     * entscheidet der Block über die Position — zwei Orte, dieselbe Nummer.
-     * Eine Regel am Gegenstand wäre eine zweite Wahrheit darüber.
+     * <p><b>Whether a bridge links to itself is not decided here.</b> The
+     * block decides that by position — two places, the same number. A rule
+     * on the item would be a second truth about it.
      */
     @GameTest(template = EMPTY, timeoutTicks = 100)
     public static void twoHalvesKnowEachOther(GameTestHelper helper) {
@@ -7712,23 +7702,23 @@ public final class FactoryNetworkGameTests {
                 dev.devpanda.factorynetwork.item.EntanglementItem.idOf(paar) != null,
                 "eine frische Hälfte hat keine Kennnummer");
 
-        // Geteilt bleiben beide dasselbe Paar — so kommen sie in zwei
-        // Brücken.
+        // Split, both remain the same pair — that is how they get into two
+        // bridges.
         ItemStack eine = paar.split(1);
         helper.assertTrue(
                 dev.devpanda.factorynetwork.item.EntanglementItem.matched(eine, paar),
                 "die beiden Hälften kennen sich nach dem Teilen nicht mehr");
 
-        // Zwei aus verschiedenen Bauten gehören nicht zusammen. Ohne diese
-        // Probe könnte jede Hälfte zu jeder passen, und zwei Brücken in
-        // derselben Welt verbänden sich zufällig.
+        // Two from different crafts do not belong together. Without this
+        // check any half could match any other, and two bridges in the same
+        // world would link by accident.
         ItemStack anderes = dev.devpanda.factorynetwork.item.EntanglementItem.newPair();
         helper.assertTrue(
                 !dev.devpanda.factorynetwork.item.EntanglementItem.matched(eine, anderes),
                 "Hälften aus verschiedenen Bauten gelten als Paar");
 
-        // Und ein Gegenstand ohne Nummer passt zu nichts, auch nicht zu
-        // einem zweiten ohne Nummer.
+        // And an item without a number matches nothing, not even a second one
+        // without a number.
         ItemStack roh = new ItemStack(
                 dev.devpanda.factorynetwork.registry.FnItems.ENTANGLEMENT.get());
         helper.assertTrue(
@@ -7741,17 +7731,17 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Und zurück: Was aus dem Lager kommt, trägt seine Daten noch.
+     * And back: what comes out of the store still carries its data.
      *
-     * <p><b>Der fehlende Halbkreis.</b> Dass ein benanntes Werkzeug ins Lager
-     * geht, hält {@code aWorkerCarriesDataIntoStorage} fest. Der Weg heraus
-     * ist eine eigene Stelle — dort wurde der Stapel aus einer Kennung neu
-     * gebaut, und der Name blieb im Lager zurück.
+     * <p><b>The missing half of the circle.</b> That a named tool goes into
+     * the store is pinned down by {@code aWorkerCarriesDataIntoStorage}. The
+     * way out is a place of its own — there the stack was rebuilt from an
+     * id, and the name stayed behind in the store.
      *
-     * <p>Zwei Posten derselben Kennung machen die Probe scharf: Ein Worker,
-     * der die nackten zuerst nimmt, hätte die benannte nie angefasst und der
-     * Lauf bliebe grün, ohne etwas zu zeigen. Deshalb liegt nur die benannte
-     * da.
+     * <p>Two entries of the same id make the check sharp: a worker that takes
+     * the bare ones first would never have touched the named one and the run
+     * would stay green without showing anything. That is why only the named
+     * one lies there.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void whatLeavesStorageKeepsItsData(GameTestHelper helper) {
@@ -7791,17 +7781,17 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Eine Zelle aus der Zeit vor dem Umbau liest sich weiter.
+     * A cell from before the rework still reads.
      *
-     * <p><b>Sonst wäre der Umbau ein Datenverlust mit anderem Vorzeichen.</b>
-     * Jede Zelle, die heute im Boden liegt, schreibt Kennung und Menge und
-     * kein {@code components}-Feld. Ein Posten ohne dieses Feld muss ein
-     * Gegenstand ohne eigene Daten sein — sonst verschwände beim ersten
-     * Laden ein ganzes Lager.
+     * <p><b>Otherwise the rework would be data loss with the opposite
+     * sign.</b> Every cell lying in the ground today writes id and amount and
+     * no {@code components} field. An entry without this field must be an
+     * item without data of its own — otherwise a whole store would vanish on
+     * the first load.
      *
-     * <p>Das Alt-Format wird hier von Hand gebaut, nicht über den heutigen
-     * Schreibweg: Der schriebe ja das neue. Nur so ist die Probe eine über
-     * das Format und nicht eine über sich selbst.
+     * <p>The old format is built by hand here, not via today's write path:
+     * that would write the new one. Only that way is the check one about the
+     * format and not one about itself.
      */
     @GameTest(template = EMPTY, timeoutTicks = 100)
     public static void anOldCellStillReads(GameTestHelper helper) {
@@ -7809,7 +7799,7 @@ public final class FactoryNetworkGameTests {
                 dev.devpanda.factorynetwork.registry.FnItems.CELLS
                         .get(dev.devpanda.factorynetwork.storage.CellTier.K4).get());
 
-        // Genau das, was vor dem 28.08. in einer Zelle stand.
+        // Exactly what stood in a cell before 28 Aug.
         net.minecraft.nbt.ListTag posten = new net.minecraft.nbt.ListTag();
         net.minecraft.nbt.CompoundTag eisen = new net.minecraft.nbt.CompoundTag();
         eisen.putString("Item", "minecraft:iron_ingot");
@@ -7835,9 +7825,9 @@ public final class FactoryNetworkGameTests {
                                 .bare(Items.DIAMOND_PICKAXE), 0L), 2L,
                 "die Hacken aus der alten Zelle fehlen");
 
-        // Und wer sie neu schreibt, ohne etwas zu ändern, schreibt wieder
-        // dasselbe: kein components-Feld an einem nackten Gegenstand. Der Weg
-        // zurück auf eine ältere Fassung bleibt damit offen.
+        // And whoever writes it anew without changing anything writes the
+        // same again: no components field on a bare item. The way back to an
+        // older version thus stays open.
         dev.devpanda.factorynetwork.storage.CellContents.write(cell, inhalt,
                 helper.getLevel().registryAccess());
         var geschrieben = cell.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA)
@@ -7853,16 +7843,15 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Was Daten trägt, geht ins Lager und kommt unverändert zurück.
+     * What carries data goes into the store and comes back unchanged.
      *
-     * <p><b>Der Beweislauf des ganzen Umbaus.</b> Bis zum 28.08. führte das
-     * Lager nur Kennung und Menge: Ein verzaubertes Buch, ein benanntes
-     * Werkzeug, ein halb geladenes Gerät gingen als „ein Stück davon" hinein
-     * und kamen nackt zurück. Nichts warnte, nichts fiel auf — bis jemand
-     * sein Werkzeug wiederholte.
+     * <p><b>The proof run of the whole rework.</b> Until 28 Aug the store
+     * kept only id and amount: an enchanted book, a named tool, a half-charged
+     * device went in as "one piece of that" and came back bare. Nothing
+     * warned, nothing stood out — until somebody fetched their tool back.
      *
-     * <p>Geprüft wird der ganze Kreis: hinein, im Bestand nachsehen, wieder
-     * heraus. An jeder dieser drei Stellen ging es vorher verloren.
+     * <p>The whole circle is checked: in, look it up in the stock, out again.
+     * At each of these three spots it used to get lost.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void itemsWithDataSurviveStorage(GameTestHelper helper) {
@@ -7879,7 +7868,7 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(entity.storage().insert(named), 0L,
                 "die benannte Hacke ging nicht ins Lager");
 
-        // Im Bestand steht sie als eigener Posten — neben einer nackten.
+        // In the stock it is an entry of its own — next to a bare one.
         entity.storage().insert(new ItemStack(Items.DIAMOND_PICKAXE, 3));
         var key = dev.devpanda.factorynetwork.storage.ItemKey.of(named);
         helper.assertValueEqual(entity.storage().count(key), 1L,
@@ -7889,11 +7878,11 @@ public final class FactoryNetworkGameTests {
                                 .bare(Items.DIAMOND_PICKAXE)), 3L,
                 "die nackten Hacken sind mit der benannten verschmolzen");
 
-        // Und je Kennung zusammen: Das ist, was ein Programm sieht.
+        // And together per id: that is what a program sees.
         helper.assertValueEqual(entity.storage().count(Items.DIAMOND_PICKAXE), 4L,
                 "je Kennung zählen nicht alle Ausführungen zusammen");
 
-        // Wieder heraus, und der Name ist noch da.
+        // Out again, and the name is still there.
         helper.assertValueEqual(entity.storage().extract(key, 1), 1L,
                 "die benannte Hacke kam nicht wieder heraus");
         helper.assertValueEqual(entity.storage().count(key), 0L,
@@ -7903,8 +7892,8 @@ public final class FactoryNetworkGameTests {
                 back.get(net.minecraft.core.component.DataComponents.CUSTOM_NAME) != null,
                 "sie kam ohne ihren Namen zurück");
 
-        // Und die nackten sind unangetastet: Wer eine bestimmte Ausführung
-        // nimmt, nimmt nicht irgendeine.
+        // And the bare ones are untouched: whoever takes a particular variant
+        // does not take just any.
         helper.assertValueEqual(entity.storage().count(
                         dev.devpanda.factorynetwork.storage.ItemKey
                                 .bare(Items.DIAMOND_PICKAXE)), 3L,
@@ -7913,11 +7902,10 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Und dasselbe über eine Zelle hinweg, samt Sichern und Laden.
+     * And the same across a cell, including saving and loading.
      *
-     * <p>Der Bestand lebt im Gegenstand, nicht im Laufwerk. Was hier
-     * schiefginge, fiele erst nach einem Neustart der Welt auf — und dann
-     * ist es weg.
+     * <p>The stock lives in the item, not in the drive. What went wrong here
+     * would only show after a restart of the world — and then it is gone.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void dataInACellSurvivesSaving(GameTestHelper helper) {
@@ -7936,14 +7924,14 @@ public final class FactoryNetworkGameTests {
                 helper.getBlockEntity(drivePos);
         drive.flushCells();
 
-        // Aus dem Gegenstand zurücklesen — das ist der Weg über die Platte.
+        // Read back from the item — that is the path via disk.
         var inhalt = dev.devpanda.factorynetwork.storage.CellContents.read(
                 drive.cell(0), helper.getLevel().registryAccess());
         var key = dev.devpanda.factorynetwork.storage.ItemKey.of(named);
         helper.assertValueEqual(inhalt.getOrDefault(key, 0L), 1L,
                 "die Zelle hat den Namen beim Schreiben verloren");
 
-        // Und eine nackte Hacke bleibt ein zweiter Posten.
+        // And a bare pickaxe stays a second entry.
         entity.storage().insert(new ItemStack(Items.DIAMOND_PICKAXE));
         drive.flushCells();
         var wieder = dev.devpanda.factorynetwork.storage.CellContents.read(
@@ -7954,16 +7942,16 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Das offene Gerät lässt sich nicht wegräumen.
+     * The open device cannot be stored away.
      *
-     * <p><b>Sonst zieht man die Leiter hinter sich hoch.</b> Wer sein
-     * Wireless Terminal aus dem Terminal heraus ins Lager legt, hat es im
-     * Netz — und kommt ohne ein zweites Gerät oder einen Weg zum
-     * Terminal-Block nicht mehr daran. Das Fenster ginge im selben Moment zu,
-     * und das Netz behielte den Schlüssel zu sich selbst.
+     * <p><b>Otherwise you pull the ladder up behind you.</b> Whoever puts
+     * their wireless terminal into the store from within the terminal has it
+     * in the network — and cannot get at it any more without a second device
+     * or a way to the terminal block. The window would close in the same
+     * moment, and the network would keep the key to itself.
      *
-     * <p>Der Platz ist deshalb gesperrt, solange sein Fenster offen ist —
-     * gegen den Umschalt-Klick und gegen das Aufnehmen mit der Maus.
+     * <p>The slot is therefore locked as long as its window is open — against
+     * the shift-click and against picking it up with the mouse.
      */
     @GameTest(template = EMPTY, timeoutTicks = 100)
     public static void theOpenDeviceCannotBeStoredAway(GameTestHelper helper) {
@@ -7974,35 +7962,35 @@ public final class FactoryNetworkGameTests {
         ItemStack device = new ItemStack(
                 dev.devpanda.factorynetwork.registry.FnItems.WIRELESS_TERMINAL.get());
         dev.devpanda.factorynetwork.item.RemoteDeviceItem.couple(device, where);
-        // Platz 0 im Inventar ist der erste der Schnellzugriffsleiste.
+        // Slot 0 in the inventory is the first of the hotbar.
         player.getInventory().setItem(0, device);
 
         var menu = new dev.devpanda.factorynetwork.client.menu.TerminalMenu(
                 1, player.getInventory(), mast, helper.getLevel().dimension(),
                 dev.devpanda.factorynetwork.upgrade.RemoteDevice.TERMINAL, 0);
 
-        // Drei Reihen Inventar, dann die Schnellzugriffsleiste: Platz 0
-        // liegt im Fenster an Stelle 27.
+        // Three rows of inventory, then the hotbar: slot 0 lies in the window
+        // at index 27.
         var slot = menu.getSlot(27);
         helper.assertTrue(slot.getItem() == device,
                 "an Stelle 27 liegt nicht das Gerät, sondern " + slot.getItem());
         helper.assertTrue(!slot.mayPickup(player),
                 "das offene Gerät lässt sich mit der Maus aufnehmen");
 
-        // Und der Umschalt-Klick nimmt es auch nicht.
+        // And the shift-click does not take it either.
         menu.quickMoveStack(player, 27);
         helper.assertTrue(player.getInventory().getItem(0) == device,
                 "der Umschalt-Klick hat das offene Gerät weggeräumt");
 
-        // Die Gegenprobe: Jeder andere Platz bleibt frei bedienbar. Ohne sie
-        // könnte die Sperre auf das ganze Inventar greifen.
+        // The cross-check: every other slot remains freely usable. Without it
+        // the lock could extend to the whole inventory.
         player.getInventory().setItem(1, new ItemStack(
                 dev.devpanda.factorynetwork.registry.FnItems.WRENCH.get()));
         helper.assertTrue(menu.getSlot(28).mayPickup(player),
                 "auch der Nachbarplatz ist gesperrt");
 
-        // Und am Block ist gar nichts gesperrt: Dort gibt es kein Gerät,
-        // das man sich wegnehmen könnte.
+        // And at the block nothing is locked at all: there is no device there
+        // that could be taken away from you.
         var fixed = new dev.devpanda.factorynetwork.client.menu.TerminalMenu(
                 2, player.getInventory(), mast);
         helper.assertTrue(fixed.getSlot(27).mayPickup(player),
@@ -8011,25 +7999,25 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Was ein Öffner schreibt, liest das Fenster genau auf.
+     * What an opener writes, the window reads exactly.
      *
-     * <p><b>Das ist der Lauf, der gefehlt hat.</b> Beim Umbau auf Welten
-     * schrieb das Gerät ein Feld weniger, als der Konstruktor las: Der Enum
-     * wurde als Boolean gelesen, danach war jedes weitere Feld verschoben,
-     * und der Client flog beim Öffnen mit einer
-     * ArrayIndexOutOfBoundsException aus der Welt. Kein Prüflauf konnte das
-     * sehen — alle riefen den Konstruktor mit Werten statt mit einem Puffer.
+     * <p><b>This is the run that was missing.</b> During the rework to worlds
+     * the device wrote one field fewer than the constructor read: the enum
+     * was read as a boolean, after that every further field was shifted, and
+     * the client was kicked out of the world on opening with an
+     * ArrayIndexOutOfBoundsException. No test run could see that — all called
+     * the constructor with values instead of with a buffer.
      *
-     * <p>Geprüft wird deshalb der Weg über die Leitung, und am Ende die
-     * Frage, auf die es ankommt: <b>Ist der Puffer leer?</b> Bleibt etwas
-     * übrig, hat der Leser zu wenig genommen; fehlt etwas, zu viel.
+     * <p>So the path over the wire is checked, and at the end the question
+     * that matters: <b>is the buffer empty?</b> If something is left over,
+     * the reader took too little; if something is missing, too much.
      */
     @GameTest(template = EMPTY, timeoutTicks = 100)
     public static void theWindowReadsExactlyWhatTheOpenerWrote(GameTestHelper helper) {
         var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
         BlockPos where = helper.absolutePos(new BlockPos(1, 2, 1));
 
-        // Der Weg am Block: nur ein Ort.
+        // The path at the block: only a position.
         var atBlock = new net.minecraft.network.RegistryFriendlyByteBuf(
                 io.netty.buffer.Unpooled.buffer(), helper.getLevel().registryAccess());
         dev.devpanda.factorynetwork.client.menu.TerminalMenu.writeBlock(atBlock, where);
@@ -8042,7 +8030,7 @@ public final class FactoryNetworkGameTests {
         helper.assertTrue(where.equals(fixed.position()),
                 "der Ort ist auf dem Weg verlorengegangen");
 
-        // Und der Weg aus der Ferne: Ort, Welt, Art, Platz.
+        // And the path from afar: position, world, kind, slot.
         for (var kind : dev.devpanda.factorynetwork.upgrade.RemoteDevice.values()) {
             var remote = new net.minecraft.network.RegistryFriendlyByteBuf(
                     io.netty.buffer.Unpooled.buffer(), helper.getLevel().registryAccess());
@@ -8063,17 +8051,17 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Über eine Dimensionsgrenze reicht nur die Grenzenlos-Karte.
+     * Across a dimension boundary only the infinity card reaches.
      *
-     * <p>Geprüft wird die <b>Auflösung</b> und nicht die Reise: Ein
-     * Mock-Spieler wechselt die Dimension nicht sauber, also bleibt er in der
-     * Oberwelt und der Mast steht im Nether. Genau das ist der Fall, um den
-     * es geht — jemand steht woanders als sein Netz.
+     * <p>What is checked is the <b>resolution</b>, not the journey: a mock
+     * player does not change dimension cleanly, so it stays in the overworld
+     * and the mast stands in the Nether. That is exactly the case in
+     * question — somebody stands somewhere other than their network.
      *
-     * <p><b>Zwei Dinge fallen hier auf, die kein anderer Lauf sieht:</b> ob
-     * der Mast in seiner eigenen Welt gefunden wird statt in der des
-     * Spielers, und ob eine Koordinate allein reicht. Sie reicht nicht —
-     * dieselbe Zahl gibt es in jeder Dimension.
+     * <p><b>Two things show up here that no other run sees:</b> whether the
+     * mast is found in its own world instead of the player's, and whether a
+     * coordinate alone is enough. It is not — the same number exists in
+     * every dimension.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void onlyTheInfinityCardCrossesWorlds(GameTestHelper helper) {
@@ -8084,8 +8072,8 @@ public final class FactoryNetworkGameTests {
             return;
         }
 
-        // Der Mast steht im Nether. setBlockAndUpdate lädt das Stück Welt,
-        // also ist er auch erreichbar.
+        // The mast stands in the Nether. setBlockAndUpdate loads that piece
+        // of world, so it is reachable too.
         BlockPos far = new BlockPos(64, 70, 64);
         nether.setBlockAndUpdate(far, FnBlocks.MAST.get().defaultBlockState());
         if (!(nether.getBlockEntity(far)
@@ -8096,7 +8084,7 @@ public final class FactoryNetworkGameTests {
         var where = net.minecraft.core.GlobalPos.of(
                 net.minecraft.world.level.Level.NETHER, far);
 
-        // Der Spieler bleibt in der Oberwelt.
+        // The player stays in the overworld.
         var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
         ItemStack device = new ItemStack(
                 dev.devpanda.factorynetwork.registry.FnItems.LAPTOP.get());
@@ -8110,23 +8098,23 @@ public final class FactoryNetworkGameTests {
                 !dev.devpanda.factorynetwork.terminal.RemoteAccess.allowed(player, 0, where),
                 "ohne Grenzenlos-Karte geht der Zugriff über die Dimensionsgrenze");
 
-        // Vier Reichweitenkarten ändern daran nichts: Eine Dimensionsgrenze
-        // ist keine Strecke.
+        // Four range cards change nothing about that: a dimension boundary is
+        // not a distance.
         mast.setItem(0, new ItemStack(
                 dev.devpanda.factorynetwork.registry.FnItems.RANGE_CARD.get(), 4));
         helper.assertTrue(
                 !dev.devpanda.factorynetwork.terminal.RemoteAccess.allowed(player, 0, where),
                 "vier Reichweitenkarten überbrücken die Dimensionsgrenze");
 
-        // Die Grenzenlos-Karte schon.
+        // The infinity card does.
         mast.setItem(0, new ItemStack(
                 dev.devpanda.factorynetwork.registry.FnItems.INFINITY_CARD.get()));
         helper.assertTrue(
                 dev.devpanda.factorynetwork.terminal.RemoteAccess.allowed(player, 0, where),
                 "die Grenzenlos-Karte reicht nicht über die Dimensionsgrenze");
 
-        // Und eine Koordinate allein reicht nicht: Derselbe Ort in der
-        // Oberwelt ist ein anderer Mast — oder gar keiner.
+        // And a coordinate alone is not enough: the same position in the
+        // overworld is a different mast — or none at all.
         var samePlaceHere = net.minecraft.core.GlobalPos.of(
                 net.minecraft.world.level.Level.OVERWORLD, far);
         helper.assertTrue(
@@ -8139,18 +8127,18 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Jeder Block, der zum Netz gehört, bekommt auch einen Arm vom Kabel.
+     * Every block that belongs to the network also gets an arm from the cable.
      *
-     * <p><b>Dieselbe Wahrheit stand an drei Stellen</b>, und jede kannte eine
-     * andere Teilmenge: {@code consumerAt} sammelt Verbraucher ein,
-     * {@code contains} zählt auf, wer zum Netz gehört, und {@code connects}
-     * entscheidet, wohin ein Arm wächst. Der Sendemast stand in der ersten
-     * und fehlte in den beiden anderen — er hing am Netz und sah aus, als
-     * hinge er an nichts.
+     * <p><b>The same truth stood in three places</b>, and each knew a
+     * different subset: {@code consumerAt} collects consumers,
+     * {@code contains} lists who belongs to the network, and
+     * {@code connects} decides where an arm grows. The mast was in the first
+     * and missing from the other two — it hung on the network and looked as
+     * if it hung on nothing.
      *
-     * <p>Vor ihm passierte dasselbe mit Laufwerk und Serverschrank. Dieser
-     * Lauf hält alle drei Listen gegeneinander, damit es beim nächsten Block
-     * auffällt und nicht erst im Spiel.
+     * <p>Before it, the same happened with the drive and the server rack.
+     * This run holds all three lists against each other so that it shows up
+     * with the next block and not only in the game.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void everyNetworkBlockGetsAnArm(GameTestHelper helper) {
@@ -8186,8 +8174,8 @@ public final class FactoryNetworkGameTests {
         helper.assertTrue(fehlend.isEmpty(),
                 "kein Arm vom Kabel zu: " + fehlend);
 
-        // Die Gegenprobe: Zu einer Kiste wächst keiner. Ohne sie könnte
-        // connects() einfach immer wahr sagen und der Lauf bliebe grün.
+        // The cross-check: none grows towards a chest. Without it connects()
+        // could simply always say true and the run would stay green.
         BlockPos cable = new BlockPos(1, 2, 1);
         helper.setBlock(cable.east(), net.minecraft.world.level.block.Blocks.CHEST);
         placeCable(helper, cable, dev.devpanda.factorynetwork.block.CableColour.NONE);
@@ -8199,23 +8187,23 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ein Mast am Kabel gehört zum Netz — und man findet ihn auch dort.
+     * A mast on the cable belongs to the network — and is found there too.
      *
-     * <p><b>Zwei Fragen, die auseinanderfielen.</b> Der Graph sammelte den
-     * Mast als Verbraucher ein und zog Strom für ihn, aber
-     * {@code contains()} zählte ihn nicht auf. Alles, was über
+     * <p><b>Two questions that fell apart.</b> The graph collected the mast
+     * as a consumer and drew power for it, but {@code contains()} did not
+     * list it. Everything that goes through
      * {@link dev.devpanda.factorynetwork.network.ControllerRegistry#owning}
-     * geht, fand ihn deshalb nicht: das Anmelden eines Geräts, das Öffnen
-     * des Fensters aus der Ferne, jede Anzeige.
+     * therefore did not find it: registering a device, opening the window
+     * from afar, every display.
      *
-     * <p>Im Spiel sah das aus, als hinge der Mast an gar nichts.
+     * <p>In the game that looked as if the mast hung on nothing at all.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void aMastAtTheCableBelongsToTheNetwork(GameTestHelper helper) {
         BlockPos controller = buildSetup(helper);
         ControllerBlockEntity entity = controllerAt(helper, controller);
 
-        // Ein Mast direkt an einem Kabel des Netzes.
+        // A mast directly on a cable of the network.
         BlockPos mast = controller.above();
         placeCable(helper, mast, dev.devpanda.factorynetwork.block.CableColour.NONE);
         BlockPos onTop = mast.above();
@@ -8227,10 +8215,10 @@ public final class FactoryNetworkGameTests {
         helper.assertTrue(entity.graph().contains(helper.absolutePos(onTop)),
                 "der Graph sammelt den Mast ein, zählt ihn aber nicht zum Netz");
 
-        // Und das ist die Frage, die im Spiel wirklich gestellt wird.
-        // Anmelden von Hand: Im Spiel erledigt das onLoad, aber setBlock im
-        // Prüflauf ruft es erst im nächsten Tick — und geprüft werden soll
-        // nicht die Anmeldung, sondern was owning damit anfängt.
+        // And that is the question really asked in the game.
+        // Registering by hand: in the game onLoad does that, but setBlock in
+        // the test run only calls it on the next tick — and what is to be
+        // checked is not the registration but what owning makes of it.
         dev.devpanda.factorynetwork.network.ControllerRegistry.add(
                 helper.getLevel(), helper.absolutePos(controller));
         helper.assertTrue(
@@ -8238,8 +8226,8 @@ public final class FactoryNetworkGameTests {
                         helper.getLevel(), helper.absolutePos(onTop)).isPresent(),
                 "kein Controller für den Mast — ein Gerät könnte sich nicht anmelden");
 
-        // Ein Mast ohne Kabel dagegen gehört zu keinem: Sonst wäre die
-        // Prüfung wertlos, weil sie immer wahr sagte.
+        // A mast without a cable, by contrast, belongs to none: otherwise the
+        // check would be worthless because it always said true.
         BlockPos lonely = new BlockPos(5, 1, 5);
         helper.setBlock(lonely, FnBlocks.MAST.get().defaultBlockState());
         entity.rebuildNetwork();
@@ -8249,12 +8237,12 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ein Anschluss darf vor dem Kabel dasein — und leitet dann nichts.
+     * A connector may exist before the cable — and then conducts nothing.
      *
-     * <p>Der Halter ist ein Kabelblock ohne Strang. Er sieht aus wie ein
-     * Anschluss an einer Wand, gehört zu keinem Netz und wartet auf ein
-     * Kabel. <b>Ohne die zweite Hälfte wäre die erste gefährlich:</b> Ein
-     * Halter, der leitete, verbände zwei Netze, zwischen denen nichts liegt.
+     * <p>The holder is a cable block without a strand. It looks like a
+     * connector on a wall, belongs to no network and waits for a cable.
+     * <b>Without the second half the first would be dangerous:</b> a holder
+     * that conducted would join two networks with nothing in between.
      */
     @GameTest(template = EMPTY, timeoutTicks = 100)
     public static void aHolderCarriesNothing(GameTestHelper helper) {
@@ -8268,7 +8256,7 @@ public final class FactoryNetworkGameTests {
                 !dev.devpanda.factorynetwork.block.CableBlock.carries(state),
                 "der Halter hält sich für ein Kabel");
 
-        // Ein Kabel daneben greift nicht nach ihm.
+        // A cable next to it does not reach for it.
         BlockPos next = world.east();
         helper.getLevel().setBlockAndUpdate(next, FnBlocks.CABLE.get().defaultBlockState());
         var neighbour = dev.devpanda.factorynetwork.block.CableBlock.withConnections(
@@ -8278,21 +8266,21 @@ public final class FactoryNetworkGameTests {
                         .contains(Direction.WEST),
                 "ein Kabel wächst einen Arm zum Halter, in dem gar nichts liegt");
 
-        // Und der Halter selbst hat nach keiner Seite einen — gelesen aus
-        // der Welt und nicht frisch gerechnet.
+        // And the holder itself has none on any side — read from the world
+        // and not freshly computed.
         //
-        // <b>Der Unterschied ist der Punkt dieser Probe.</b> withConnections
-        // ruft nur, wer selbst rechnet; Vanillas Nachbarrunde geht über
-        // updateShape. Ein Test, der die erste Fassung ruft, prüft den Weg,
-        // den das Spiel nicht nimmt.
+        // <b>The difference is the point of this check.</b> withConnections
+        // is only called by whoever computes themselves; vanilla's neighbour
+        // round goes through updateShape. A test that calls the first
+        // version checks the path the game does not take.
         var fromWorld = helper.getLevel().getBlockState(world);
         helper.assertTrue(
                 dev.devpanda.factorynetwork.block.CableBlock.connectionsOf(fromWorld).isEmpty(),
                 "der Halter hat Arme, obwohl kein Kabel in ihm liegt");
 
-        // Und darum geht es wirklich: Ein Halter neben einem Kabel muss auf
-        // dieser Fläche noch einen Anschluss nehmen können. Stünde dort ein
-        // Verbindungsbit, verweigerte er ihn.
+        // And this is what it is really about: a holder next to a cable must
+        // still be able to take a connector on this face. If a connection bit
+        // stood there, it would refuse it.
         if (helper.getLevel().getBlockEntity(world)
                 instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity holder) {
             helper.assertTrue(
@@ -8307,12 +8295,12 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ein Anschluss im Halter lässt sich benennen, bevor ein Kabel da ist.
+     * A connector in the holder can be named before a cable is there.
      *
-     * <p>Das war die zweite Hälfte des Wunsches: setzen <b>und benennen</b>,
-     * bevor er angeschlossen ist. Der Name wird gegen die Namen im Netz
-     * geprüft — und ein Halter hat keines. Ginge die Prüfung daran kaputt,
-     * schlüge genau das fehl, wofür der Halter da ist.
+     * <p>That was the second half of the wish: place <b>and name</b> before
+     * it is connected. The name is checked against the names in the network
+     * — and a holder has none. If the check broke on that, exactly what the
+     * holder exists for would fail.
      */
     @GameTest(template = EMPTY, timeoutTicks = 100)
     public static void aHolderPartTakesAName(GameTestHelper helper) {
@@ -8327,7 +8315,7 @@ public final class FactoryNetworkGameTests {
         }
         var part = bus.addPart(Direction.NORTH);
 
-        // Ohne Netz gibt es keinen Graphen — genau der Fall am Halter.
+        // Without a network there is no graph — exactly the case at the holder.
         var warning = dev.devpanda.factorynetwork.item.ConnectorNaming.check(
                 "ofen_1", null);
         helper.assertTrue(warning.isFine(),
@@ -8337,7 +8325,7 @@ public final class FactoryNetworkGameTests {
         helper.assertTrue("ofen_1".equals(part.label()),
                 "der Name ist nicht am Anschluss angekommen");
 
-        // Und ein untauglicher Name bleibt untauglich, auch ohne Netz.
+        // And an unfit name stays unfit, even without a network.
         helper.assertTrue(
                 !dev.devpanda.factorynetwork.item.ConnectorNaming.check(
                         "1 ofen", null).isFine(),
@@ -8346,30 +8334,29 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ist der Speicher voll, bleibt alles liegen — nichts fällt auf den Boden.
+     * If the storage is full, everything stays put — nothing falls on the ground.
      *
-     * <p><b>Die schlimmste Art zu scheitern.</b> Ein Worker nahm bisher erst
-     * aus der Kiste und fragte danach, ob das Netz es nimmt. Passte es nicht
-     * und war die Kiste inzwischen voll, fiel es auf den Boden — und ein
-     * Gegenstand auf dem Boden verschwindet nach fünf Minuten.
+     * <p><b>The worst way to fail.</b> Until now a worker first took from the
+     * chest and asked afterwards whether the network takes it. If it did not
+     * fit and the chest had filled up in the meantime, it fell on the ground
+     * — and an item on the ground vanishes after five minutes.
      *
-     * <p>Der Fall ist selten und deshalb gefährlich: Er trifft genau dann,
-     * wenn niemand zusieht — nachts, bei vollem Lager, an einer Kiste, die
-     * ein anderer Worker gerade auffüllt.
+     * <p>The case is rare and therefore dangerous: it strikes exactly when
+     * nobody is watching — at night, with a full store, at a chest another
+     * worker is filling up right now.
      *
-     * <p>Jetzt wird vorher gefragt. Wer nichts unterbringen kann, nimmt
-     * nichts heraus.
+     * <p>Now it asks first. Whoever cannot house anything takes nothing out.
      */
     /**
-     * Bei vollem Lager wartet die Fertigung, statt die Verwahrung zu füllen.
+     * With a full store, crafting waits instead of filling the holding.
      *
-     * <p><b>Sonst wäre die Verwahrung schlimmer als der Boden.</b> Ein
-     * Auftrag, der bei vollem Lager weiterproduziert, füllt sie ohne Ende —
-     * jeder Stapel eine Zeile im Protokoll, alles im Spielstand. Der Boden
-     * hatte wenigstens eine Selbstbegrenzung: nach fünf Minuten war es weg.
+     * <p><b>Otherwise the holding would be worse than the ground.</b> A job
+     * that keeps producing with a full store fills it without end — every
+     * stack a line in the log, all of it in the save file. The ground at
+     * least had a self-limit: after five minutes it was gone.
      *
-     * <p>Die richtige Antwort ist keine von beiden, sondern der Rückstau:
-     * Der Auftrag wartet, die Zutaten bleiben liegen.
+     * <p>The right answer is neither of the two but back-pressure: the job
+     * waits, the ingredients stay put.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void afullStorageStopsCraftingInsteadOfPilingUp(GameTestHelper helper) {
@@ -8380,9 +8367,9 @@ public final class FactoryNetworkGameTests {
                 dev.devpanda.factorynetwork.storage.CellTier.K1);
         entity.rebuildNetwork();
 
-        // Acht Arten sind das Limit einer 1k-Zelle, und die Bretter sind
-        // eine davon: Nach der Entnahme bleiben Bretter übrig, der Artenplatz
-        // bleibt belegt — die Kiste wäre die neunte Art und passt nicht.
+        // Eight kinds are the limit of a 1k cell, and the planks are one of
+        // them: after extraction planks remain, the type slot stays occupied
+        // — the chest would be the ninth kind and does not fit.
         entity.storage().insert(new ItemStack(Items.OAK_PLANKS, 64));
         for (Item kind : List.of(Items.COBBLESTONE, Items.DIRT, Items.STONE,
                 Items.SAND, Items.GRAVEL, Items.GLASS, Items.BRICK)) {
@@ -8394,7 +8381,7 @@ public final class FactoryNetworkGameTests {
         helper.startSequence()
                 .thenIdle(60)
                 .thenExecute(() -> {
-                    // Die eigentliche Zusicherung: Es wurde nichts angefangen.
+                    // The actual assertion: nothing was started.
                     helper.assertValueEqual(entity.storage().count(Items.OAK_PLANKS), 64L,
                             "die Zutaten sind weg, obwohl nichts entstehen konnte");
                     helper.assertTrue(entity.held().isEmpty(),
@@ -8410,12 +8397,12 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Verwahrtes übersteht das Speichern.
+     * What is held back survives saving.
      *
-     * <p><b>Sonst käme der Verlust durch die Hintertür zurück:</b> Ein Chunk,
-     * der entlädt, nähme mit, was der Controller gerade festhält — und das
-     * wäre genau derselbe stille Verlust, gegen den die Verwahrung gebaut
-     * ist, nur später.
+     * <p><b>Otherwise the loss would come back through the back door:</b> a
+     * chunk that unloads would take along what the controller is holding
+     * right now — and that would be exactly the same silent loss the holding
+     * is built against, only later.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void heldBackSurvivesSaving(GameTestHelper helper) {
@@ -8442,35 +8429,34 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Was nirgends unterkommt, wird verwahrt — nicht geworfen.
+     * What finds no room anywhere is held back — not thrown.
      *
-     * <p><b>Der letzte Weg in die Welt.</b> Seit ein Worker vor dem Griff
-     * fragt, sollte nie etwas hier landen. Sollte. Eine Maschine, die auf
-     * {@code simulate} anders antwortet als auf den Griff, gibt es — und
-     * dann entscheidet dieser Weg, ob die Ware wiederkommt oder nach fünf
-     * Minuten weg ist.
+     * <p><b>The last path into the world.</b> Since a worker asks before the
+     * grab, nothing should ever land here. Should. A machine that answers
+     * {@code simulate} differently from the grab exists — and then this path
+     * decides whether the goods come back or are gone after five minutes.
      *
-     * <p>Geprüft wird beides: dass nichts in der Welt landet, und dass das
-     * Verwahrte von selbst ins Lager geht, sobald Platz da ist.
+     * <p>Both are checked: that nothing lands in the world, and that what is
+     * held back goes into the store by itself as soon as there is room.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void heldBackGoesInLaterInsteadOfOntoTheGround(GameTestHelper helper) {
         BlockPos controller = buildSetup(helper);
         ControllerBlockEntity entity = controllerAt(helper, controller);
 
-        // Ein volles Laufwerk: Was jetzt kommt, kommt nirgends unter.
+        // A full drive: what comes now finds no room anywhere.
         driveWithCell(helper, controller.above(),
                 dev.devpanda.factorynetwork.storage.CellTier.K1);
         entity.rebuildNetwork();
         entity.storage().insert(new ItemStack(Items.COBBLESTONE, 64));
         while (entity.storage().insert(new ItemStack(Items.DIRT, 64)) == 0) {
-            // Weiter, solange alles hineingeht.
+            // Keep going as long as everything goes in.
         }
 
         entity.holdBack(new ItemStack(Items.DIAMOND, 64));
 
         helper.runAfterDelay(10, () -> {
-            // Nichts in der Welt, alles noch in Verwahrung.
+            // Nothing in the world, everything still held back.
             helper.assertItemEntityNotPresent(Items.DIAMOND);
             long held = entity.held().stream()
                     .filter(stack -> stack.is(Items.DIAMOND))
@@ -8478,7 +8464,7 @@ public final class FactoryNetworkGameTests {
             helper.assertValueEqual(held, 64L,
                     "die Diamanten liegen nicht mehr in Verwahrung");
 
-            // Jetzt kommt Platz dazu — ein zweites Laufwerk mit leerer Zelle.
+            // Now room is added — a second drive with an empty cell.
             driveWithCell(helper, controller.below(),
                     dev.devpanda.factorynetwork.storage.CellTier.K64);
             entity.rebuildNetwork();
@@ -8499,24 +8485,24 @@ public final class FactoryNetworkGameTests {
         BlockPos controller = buildSetup(helper);
         ControllerBlockEntity entity = controllerAt(helper, controller);
 
-        // Ein Laufwerk mit der kleinsten Zelle, randvoll gefahren.
+        // A drive with the smallest cell, driven brimful.
         driveWithCell(helper, controller.above(),
                 dev.devpanda.factorynetwork.storage.CellTier.K1);
         entity.rebuildNetwork();
         entity.storage().insert(new ItemStack(Items.COBBLESTONE, 64));
         while (entity.storage().insert(new ItemStack(Items.DIRT, 64)) == 0) {
-            // Weiter, solange alles hineingeht. Bleibt ein Rest, ist Schluss.
+            // Keep going as long as everything goes in. If a remainder stays, stop.
         }
-        // Und voll heißt voll. Diese Zeile ist kein Beiwerk: Ohne sie misst
-        // der Prüflauf das Falsche, sobald die Zelle doch noch Platz hat.
+        // And full means full. This line is no decoration: without it the
+        // test run measures the wrong thing as soon as the cell has room after all.
         helper.assertValueEqual(entity.storage().insert(new ItemStack(Items.DIAMOND, 1)),
                 1L, "die Zelle ist nicht voll — der Prüflauf misst das Falsche");
 
-        // <b>Ein Ofen als Quelle, keine Kiste.</b> Darin liegt der ganze
-        // Prüflauf: Von der Seite zeigt ein Ofen nur den Brennstoffplatz,
-        // und Diamanten nimmt er dort nicht an. Der Rückweg, der eine Kiste
-        // rettet, steht damit nicht zur Verfügung — übrig bleibt die Frage,
-        // ob vorher gefragt wurde.
+        // <b>A furnace as the source, not a chest.</b> That is the whole test
+        // run: from the side a furnace shows only the fuel slot, and it does
+        // not accept diamonds there. The way back that rescues a chest is
+        // thus not available — what remains is the question whether it asked
+        // beforehand.
         BlockPos source = controller.east().north().north();
         helper.setBlock(source, Blocks.FURNACE);
         if (!(helper.getBlockEntity(source)
@@ -8535,8 +8521,8 @@ public final class FactoryNetworkGameTests {
         entity.rebuildNetwork();
 
         helper.runAfterDelay(40, () -> {
-            // <b>Nichts liegt auf dem Boden.</b> Das ist die eigentliche
-            // Zusicherung: Wo das Lager voll ist, bleibt die Ware liegen.
+            // <b>Nothing lies on the ground.</b> That is the actual
+            // assertion: where the store is full, the goods stay put.
             helper.assertItemEntityNotPresent(Items.DIAMOND);
 
             if (!(helper.getBlockEntity(source)
@@ -8551,8 +8537,8 @@ public final class FactoryNetworkGameTests {
                 }
             }
             long inStorage = entity.storage().count(Items.DIAMOND);
-            // Die Summe, nicht der Boden: Ein Gegenstand kann auch
-            // verschwinden, ohne je als Entity aufzutauchen.
+            // The sum, not the ground: an item can also vanish without ever
+            // appearing as an entity.
             helper.assertValueEqual(inFurnace + inStorage, 64L,
                     "von vierundsechzig Diamanten sind welche verschwunden");
             helper.succeed();
@@ -8560,16 +8546,15 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Auf einen Halter lässt sich ein Kabel setzen — über den Spielweg.
+     * A cable can be placed onto a holder — via the in-game path.
      *
-     * <p><b>Der bestehende Lauf ruft {@code useItemOn} direkt.</b> Damit
-     * prüft er die Regel, aber nicht den Weg dorthin: Ein Spieler klickt auf
-     * einen Block, und Minecraft entscheidet erst danach, ob der Block oder
-     * der Gegenstand gefragt wird. Genau dort ging es im Spiel schief.
+     * <p><b>The existing run calls {@code useItemOn} directly.</b> That
+     * checks the rule but not the path to it: a player clicks on a block,
+     * and only afterwards does Minecraft decide whether the block or the
+     * item is asked. That is exactly where it went wrong in the game.
      *
-     * <p>Hier läuft der ganze Weg: {@code useItemOn} am Gegenstand, mit
-     * einem Treffer auf der Platte des Anschlusses — der Stelle, die man
-     * beim Hinsehen trifft.
+     * <p>Here the whole path runs: {@code useItemOn} on the item, with a hit
+     * on the connector's plate — the spot you hit when aiming at it.
      */
     @GameTest(template = EMPTY, timeoutTicks = 100)
     public static void aCableGoesOntoAHolderTheWayAPlayerClicks(GameTestHelper helper) {
@@ -8591,14 +8576,14 @@ public final class FactoryNetworkGameTests {
                         .get(dev.devpanda.factorynetwork.block.CableColour.RED).get());
         player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, cable);
 
-        // Der Treffer sitzt auf der Nordplatte — dort, wo der Anschluss ist
-        // und wohin man zielt.
+        // The hit sits on the north plate — where the connector is and where
+        // you aim.
         var hit = new net.minecraft.world.phys.BlockHitResult(
                 net.minecraft.world.phys.Vec3.atCenterOf(world).add(0, 0, -0.5),
                 Direction.NORTH, world, false);
 
-        // Und über den Gegenstand, nicht über den Block: Das ist der Weg,
-        // den Minecraft nimmt, wenn jemand mit etwas in der Hand klickt.
+        // And via the item, not via the block: that is the path Minecraft
+        // takes when somebody clicks with something in hand.
         cable.useOn(new net.minecraft.world.item.context.UseOnContext(
                 helper.getLevel(), player, net.minecraft.world.InteractionHand.MAIN_HAND,
                 cable, hit));
@@ -8613,19 +8598,19 @@ public final class FactoryNetworkGameTests {
         helper.assertTrue(bus.partAt(Direction.NORTH) != null,
                 "der Anschluss ist beim Einlegen verschwunden");
 
-        // Und daneben ist kein zweiter Block entstanden: Genau das soll der
-        // Halter verhindern.
+        // And no second block has appeared next to it: that is exactly what
+        // the holder is meant to prevent.
         helper.assertBlockNotPresent(FnBlocks.CABLE.get(), pos.north());
         helper.succeed();
     }
 
     /**
-     * Ein Kabel auf einen Halter macht daraus eine Leitung.
+     * A cable onto a holder turns it into a line.
      *
-     * <p>Das ist der Sinn des Halters: Der Anschluss bleibt sitzen, wo er
-     * sitzt. Setzte das Kabel stattdessen einen zweiten Block daneben, müsste
-     * man den Anschluss abnehmen und neu setzen — und dann hätte man ihn auch
-     * gleich später setzen können.
+     * <p>That is the point of the holder: the connector stays seated where it
+     * sits. If the cable instead placed a second block next to it, you would
+     * have to take the connector off and place it anew — and then you could
+     * just as well have placed it later.
      */
     @GameTest(template = EMPTY, timeoutTicks = 100)
     public static void aCableTurnsAHolderIntoALine(GameTestHelper helper) {
@@ -8665,13 +8650,13 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ein Halter ohne Anschlüsse verschwindet von selbst.
+     * A holder without connectors vanishes by itself.
      *
-     * <p>Sonst bliebe ein Block stehen, in dem nichts ist: unsichtbar, weil
-     * er weder Kern noch Arme zeichnet, und nicht anzuklicken, weil seine
-     * Trefferfläche aus den Platten besteht, die es nicht mehr gibt.
+     * <p>Otherwise a block with nothing in it would remain: invisible,
+     * because it draws neither core nor arms, and unclickable, because its
+     * hit surface consists of the plates that no longer exist.
      *
-     * <p>AE2 macht dasselbe in {@code CableBusContainer.cleanup()}.
+     * <p>AE2 does the same in {@code CableBusContainer.cleanup()}.
      */
     @GameTest(template = EMPTY, timeoutTicks = 100)
     public static void anEmptyHolderRemovesItself(GameTestHelper helper) {
@@ -8694,15 +8679,15 @@ public final class FactoryNetworkGameTests {
         dev.devpanda.factorynetwork.item.Wrenches.takePart(helper.getLevel(), world, hit);
         helper.assertBlockPresent(FnBlocks.CABLE.get(), pos);
 
-        // Der zweite und letzte: Jetzt hält der Block nichts mehr.
+        // The second and last: now the block holds nothing any more.
         var second = new net.minecraft.world.phys.BlockHitResult(
                 net.minecraft.world.phys.Vec3.atCenterOf(world).add(0, 0, 0.5),
                 Direction.SOUTH, world, false);
         dev.devpanda.factorynetwork.item.Wrenches.takePart(helper.getLevel(), world, second);
         helper.assertBlockNotPresent(FnBlocks.CABLE.get(), pos);
 
-        // Ein Kabel dagegen bleibt stehen, auch wenn sein letzter Anschluss
-        // abgeht — es ist eine Leitung, und die hält von selbst.
+        // A cable, by contrast, stays even when its last connector comes off
+        // — it is a line, and that holds by itself.
         BlockPos line = helper.absolutePos(new BlockPos(2, 2, 1));
         helper.getLevel().setBlockAndUpdate(line, FnBlocks.CABLE.get().defaultBlockState());
         if (helper.getLevel().getBlockEntity(line)
@@ -8718,13 +8703,14 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Aus der Ferne fehlt dem Terminal der Code-Reiter, dem Laptop nicht.
+     * From afar the terminal lacks the code tab, the laptop does not.
      *
-     * <p>Das ist die ganze Trennung. Fiele sie weg, wäre der Laptop ein
-     * teureres Terminal und der Grund, ihn zu bauen, verschwunden.
+     * <p>That is the whole separation. If it fell away, the laptop would be a
+     * more expensive terminal and the reason to build it gone.
      *
-     * <p><b>Am Block gilt sie nicht:</b> Wer vor dem Terminal steht, kommt
-     * an alles. Der Fernzugriff nimmt etwas weg, er gibt nichts dazu.
+     * <p><b>At the block it does not apply:</b> whoever stands in front of
+     * the terminal gets at everything. Remote access takes something away,
+     * it adds nothing.
      */
     @GameTest(template = EMPTY, timeoutTicks = 100)
     public static void onlyTheLaptopCarriesCode(GameTestHelper helper) {
@@ -8754,7 +8740,7 @@ public final class FactoryNetworkGameTests {
             helper.assertTrue(portable.allows(tab), tab + " fehlt am Laptop");
         }
 
-        // Und am Block ist alles offen.
+        // And at the block everything is open.
         var fixed = new dev.devpanda.factorynetwork.client.menu.TerminalMenu(
                 3, inventory, anywhere);
         for (var tab : dev.devpanda.factorynetwork.terminal.TerminalTab.values()) {
@@ -8764,12 +8750,12 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Das Fenster geht zu, wenn das Gerät nicht mehr da ist, wo es war.
+     * The window closes when the device is no longer where it was.
      *
-     * <p>Vier Wege, es zu verlieren, und jeder muss zählen: weglegen, gegen
-     * ein Gerät an einem anderen Mast tauschen, den Mast abbauen, aus der
-     * Reichweite laufen. <b>Geprüft wird die Regel direkt</b> und nicht das
-     * Zugehen eines Fensters — sonst prüfte der Lauf den Ticker.
+     * <p>Four ways to lose it, and each has to count: put it away, swap it
+     * for a device on another mast, break down the mast, walk out of range.
+     * <b>The rule is checked directly</b> and not the closing of a window —
+     * otherwise the run would check the ticker.
      */
     @GameTest(template = EMPTY, timeoutTicks = 100)
     public static void aRemoteWindowClosesWhenItShould(GameTestHelper helper) {
@@ -8789,14 +8775,14 @@ public final class FactoryNetworkGameTests {
                 dev.devpanda.factorynetwork.terminal.RemoteAccess.allowed(player, 0, where),
                 "direkt am Mast ist der Zugriff verwehrt");
 
-        // Weggelegt.
+        // Put away.
         player.getInventory().setItem(0, ItemStack.EMPTY);
         helper.assertTrue(
                 !dev.devpanda.factorynetwork.terminal.RemoteAccess.allowed(player, 0, where),
                 "das Fenster bleibt offen, obwohl das Gerät weg ist");
 
-        // Ein anderes Gerät an einem anderen Mast im selben Platz: Das
-        // Fenster hängt am alten Netz und muss trotzdem zugehen.
+        // A different device on a different mast in the same slot: the window
+        // hangs on the old network and still has to close.
         ItemStack other = new ItemStack(
                 dev.devpanda.factorynetwork.registry.FnItems.LAPTOP.get());
         dev.devpanda.factorynetwork.item.RemoteDeviceItem.couple(other,
@@ -8806,7 +8792,7 @@ public final class FactoryNetworkGameTests {
                 !dev.devpanda.factorynetwork.terminal.RemoteAccess.allowed(player, 0, where),
                 "ein getauschtes Gerät hält das Fenster am alten Netz offen");
 
-        // Zurück zum richtigen Gerät, aber zu weit weg.
+        // Back to the right device, but too far away.
         player.getInventory().setItem(0, device);
         int reach = dev.devpanda.factorynetwork.upgrade.Range.reach(
                 dev.devpanda.factorynetwork.upgrade.Loadout.of(java.util.List.of()),
@@ -8816,14 +8802,14 @@ public final class FactoryNetworkGameTests {
                 !dev.devpanda.factorynetwork.terminal.RemoteAccess.allowed(player, 0, where),
                 "die Reichweite hält nicht — " + reach + " Blöcke sollten sie sein");
 
-        // Und wieder heran: Es liegt am Abstand und nicht daran, dass etwas
-        // kaputtgegangen ist.
+        // And close again: it is the distance and not something having
+        // broken.
         player.setPos(mast.getX() + 0.5, mast.getY() + 1.0, mast.getZ() + 0.5);
         helper.assertTrue(
                 dev.devpanda.factorynetwork.terminal.RemoteAccess.allowed(player, 0, where),
                 "aus der Nähe geht es auch nicht mehr");
 
-        // Der Mast weg: dasselbe.
+        // The mast gone: the same.
         helper.getLevel().removeBlock(mast, false);
         helper.assertTrue(
                 !dev.devpanda.factorynetwork.terminal.RemoteAccess.allowed(player, 0, where),
@@ -8832,11 +8818,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ein Gerät meldet sich am Mast an — und beim zweiten Klick wieder ab.
+     * A device binds to a mast — and unbinds on the second click.
      *
-     * <p>Der Rückweg ist der Punkt. Ohne ihn wäre ein Gerät, das einmal am
-     * falschen Mast hängt, für immer daran gebunden, und der einzige Ausweg
-     * hieße: wegwerfen und neu bauen.
+     * <p>The way back is the point. Without it a device that once hangs on
+     * the wrong mast would be bound to it forever, and the only way out
+     * would be: throw it away and build a new one.
      */
     @GameTest(template = EMPTY, timeoutTicks = 100)
     public static void aDeviceBindsToAMastAndBackAgain(GameTestHelper helper) {
@@ -8858,7 +8844,7 @@ public final class FactoryNetworkGameTests {
                 dev.devpanda.factorynetwork.item.RemoteDeviceItem.networkOf(device) != null,
                 "ohne Namen zeigt der Tooltip nichts an");
 
-        // Derselbe Mast noch einmal: das ist der Rückweg.
+        // The same mast once more: that is the way back.
         helper.assertTrue(
                 !dev.devpanda.factorynetwork.item.RemoteDeviceItem.couple(device, mast),
                 "der zweite Klick hat nicht abgemeldet");
@@ -8866,7 +8852,7 @@ public final class FactoryNetworkGameTests {
                 dev.devpanda.factorynetwork.item.RemoteDeviceItem.mastOf(device) == null,
                 "das Gerät hängt nach dem Abmelden noch am Mast");
 
-        // Ein anderer Mast dagegen meldet um, statt abzumelden.
+        // A different mast, by contrast, rebinds instead of unbinding.
         helper.assertTrue(
                 dev.devpanda.factorynetwork.item.RemoteDeviceItem.couple(device, mast),
                 "die zweite Anmeldung ging nicht");
@@ -8882,13 +8868,13 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Beide Geräte haben einen Akku, den Fremdmods füllen können.
+     * Both devices have a battery that foreign mods can fill.
      *
-     * <p><b>Das ist die Stelle, an der Powah und Flux Networks andocken.</b>
-     * Sie fragen {@code IEnergyStorage} am ItemStack — findet die Anmeldung
-     * in {@code FnCapabilities} nicht statt, ist der Ladestand eine Zahl, die
-     * niemand füllen kann, und im Spiel merkt man es erst, wenn man mit einem
-     * geladenen Gerät dasteht, das leer bleibt.
+     * <p><b>This is the spot where Powah and Flux Networks dock on.</b> They
+     * ask for {@code IEnergyStorage} on the ItemStack — if the registration
+     * in {@code FnCapabilities} does not happen, the charge level is a number
+     * nobody can fill, and in the game you only notice when you stand there
+     * with a charged device that stays empty.
      */
     @GameTest(template = EMPTY, timeoutTicks = 100)
     public static void bothDevicesTakeChargeFromOutside(GameTestHelper helper) {
@@ -8916,12 +8902,12 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Der Laptop fasst mehr Ausbauten als das Terminal — und was drinliegt,
-     * überlebt den Weg durch den Stapel.
+     * The laptop holds more upgrades than the terminal — and what is inside
+     * survives the trip through the stack.
      *
-     * <p>Die Steckplätze wohnen in einer Datenkomponente. Ginge das Speichern
-     * schief, wären die Karten beim ersten Blick ins Inventar weg — und mit
-     * ihnen die Reichweite, für die man sie gebaut hat.
+     * <p>The upgrade slots live in a data component. If saving went wrong,
+     * the cards would be gone at the first look into the inventory — and
+     * with them the range you built them for.
      */
     @GameTest(template = EMPTY, timeoutTicks = 100)
     public static void upgradesSurviveTheItemStack(GameTestHelper helper) {
@@ -8943,8 +8929,8 @@ public final class FactoryNetworkGameTests {
                         .count(dev.devpanda.factorynetwork.upgrade.Card.RANGE) == 2,
                 "die Bestückung zählt die Karten nicht");
 
-        // Und das Terminal hat weniger Platz — das ist der zweite Grund für
-        // den Laptop, neben dem Code.
+        // And the terminal has less room — that is the second reason for the
+        // laptop, besides the code.
         ItemStack small = new ItemStack(
                 dev.devpanda.factorynetwork.registry.FnItems.WIRELESS_TERMINAL.get());
         helper.assertTrue(
@@ -8954,12 +8940,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Der Schraubenschlüssel nimmt einen Anschluss ab und lässt das Kabel
-     * stehen.
+     * The wrench takes a connector off and leaves the cable standing.
      *
-     * <p>Das ist das ganze Versprechen dieses Werkzeugs. Ohne es müsste man
-     * den Kabelblock abbauen — und damit den Strang, der durch ihn läuft,
-     * und die anderen fünf Anschlüsse gleich mit.
+     * <p>That is the whole promise of this tool. Without it you would have to
+     * break the cable block — and with it the strand running through it, and
+     * the other five connectors along with it.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void aWrenchTakesOnlyThePart(GameTestHelper helper) {
@@ -8974,8 +8959,8 @@ public final class FactoryNetworkGameTests {
         bus.addPart(Direction.SOUTH);
         helper.assertTrue(bus.partAt(Direction.NORTH) != null, "der Anschluss sitzt nicht");
 
-        // Derselbe Weg, den der Ereignisbehandler nimmt — mit einem Treffer
-        // auf der Nordfläche.
+        // The same path the event handler takes — with a hit on the north
+        // face.
         BlockPos world = helper.absolutePos(pos);
         var hit = new net.minecraft.world.phys.BlockHitResult(
                 net.minecraft.world.phys.Vec3.atCenterOf(world)
@@ -8991,19 +8976,18 @@ public final class FactoryNetworkGameTests {
                 "der zweite Anschluss ist mit abgegangen");
         helper.assertBlockPresent(FnBlocks.CABLE.get(), pos);
 
-        // Und er kommt zurück: Der Schlüssel zerlegt, er zerstört nicht.
+        // And it comes back: the wrench disassembles, it does not destroy.
         helper.succeedWhen(() -> helper.assertItemEntityPresent(
                 dev.devpanda.factorynetwork.registry.FnItems.CONNECTOR.get(),
                 pos, 2.0));
     }
 
     /**
-     * Und jeder fremde Schlüssel tut es auch.
+     * And every foreign wrench does it too.
      *
-     * <p>Die Regel steht in einem Tag der Konvention und nicht in einer
-     * Klasse. Bräche das weg, funktionierte nur noch unser eigener — und
-     * niemand würde es merken, bis jemand mit einem Werkzeug von Mekanism
-     * davorsteht.
+     * <p>The rule is in a convention tag and not in a class. If that broke
+     * away, only our own would still work — and nobody would notice until
+     * somebody stands in front of it with a tool from Mekanism.
      */
     @GameTest(template = EMPTY, timeoutTicks = 100)
     public static void ourWrenchIsInTheConventionTag(GameTestHelper helper) {
@@ -9017,9 +9001,9 @@ public final class FactoryNetworkGameTests {
                         new ItemStack(net.minecraft.world.item.Items.STICK)),
                 "ein Stock gilt als Schraubenschlüssel");
 
-        // Und ohne Schleichen zerlegt er nicht. Ohne diese Probe könnte die
-        // Bedingung wegfallen, und ein Rechtsklick auf einen Anschluss
-        // nähme ihn ab, statt sein Fenster zu öffnen.
+        // And without sneaking it does not disassemble. Without this check
+        // the condition could fall away, and a right-click on a connector
+        // would take it off instead of opening its window.
         var player = helper.makeMockPlayer(
                 net.minecraft.world.level.GameType.SURVIVAL);
         player.setShiftKeyDown(false);
@@ -9034,11 +9018,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ein bestückter Mast gibt seine Karten zurück.
+     * An equipped mast gives its cards back.
      *
-     * <p>Die Loot-Tabelle sieht sie nicht — sie kennt nur den Block. Ohne
-     * {@code onRemove} wären vier Karten weg, und eine davon kann die
-     * teuerste im Spiel sein.
+     * <p>The loot table does not see them — it knows only the block. Without
+     * {@code onRemove} four cards would be gone, and one of them can be the
+     * most expensive in the game.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void breakingAMastReturnsItsCards(GameTestHelper helper) {
@@ -9054,8 +9038,8 @@ public final class FactoryNetworkGameTests {
         mast.setItem(1, new net.minecraft.world.item.ItemStack(
                 dev.devpanda.factorynetwork.registry.FnItems.INFINITY_CARD.get()));
 
-        // Und was drinsteckt, rechnet er auch aus: zwei Karten und die
-        // Grenzenlos-Karte heißt unbegrenzt.
+        // And what is inside it also computes: two cards plus the infinity
+        // card means unlimited.
         helper.assertTrue(mast.loadout().unlimited(
                         dev.devpanda.factorynetwork.upgrade.Stat.RANGE),
                 "der Mast merkt die Grenzenlos-Karte nicht");
@@ -9075,11 +9059,10 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Fällt eine Hälfte, geht die andere mit.
+     * If one half falls, the other goes with it.
      *
-     * <p>Sonst bliebe nach einer Explosion eine schwebende Blechhaube
-     * stehen, die nichts kann und die man auch nicht mehr als Schrank
-     * erkennt.
+     * <p>Otherwise after an explosion a floating sheet-metal hood would
+     * remain, which can do nothing and is no longer recognisable as a rack.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void breakingOneHalfTakesTheOther(GameTestHelper helper) {
@@ -9087,12 +9070,12 @@ public final class FactoryNetworkGameTests {
         placeRack(helper, unten);
         helper.assertBlockPresent(FnBlocks.RACK.get(), unten.above());
 
-        // Die obere weg — die untere geht mit.
+        // The upper one gone — the lower one goes with it.
         helper.setBlock(unten.above(), Blocks.AIR);
         helper.assertBlockNotPresent(FnBlocks.RACK.get(), unten);
         helper.assertBlockNotPresent(FnBlocks.RACK.get(), unten.above());
 
-        // Und andersherum.
+        // And the other way round.
         placeRack(helper, unten);
         helper.setBlock(unten, Blocks.AIR);
         helper.assertBlockNotPresent(FnBlocks.RACK.get(), unten.above());
@@ -9100,12 +9083,12 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Wer oben zuschlägt, bekommt den Schrank und seinen Inhalt.
+     * Whoever strikes at the top gets the rack and its contents.
      *
-     * <p>Der Gegenstand hängt an der unteren Hälfte, weil die Loot-Tabelle
-     * nur dort etwas hergibt — sonst machte eine Explosion aus einem
-     * Schrank zwei. Ein Spieler, der die obere Hälfte abbaut, meint aber den
-     * Schrank und soll nicht mit leeren Händen dastehen.
+     * <p>The item hangs on the lower half because the loot table only yields
+     * something there — otherwise an explosion would make two racks out of
+     * one. But a player who breaks the upper half means the rack and should
+     * not stand there empty-handed.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void breakingTheUpperHalfStillDropsTheRack(GameTestHelper helper) {
@@ -9121,7 +9104,7 @@ public final class FactoryNetworkGameTests {
         helper.assertBlockNotPresent(FnBlocks.RACK.get(), unten);
         helper.assertBlockNotPresent(FnBlocks.RACK.get(), oben);
 
-        // Ein Schrank und drei Bauteile liegen auf dem Boden.
+        // A rack and three parts lie on the ground.
         java.util.List<net.minecraft.world.entity.item.ItemEntity> liegend =
                 helper.getLevel().getEntitiesOfClass(
                         net.minecraft.world.entity.item.ItemEntity.class,
@@ -9153,11 +9136,10 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ohne Server fängt kein Ablauf an — aber er geht auch nicht verloren.
+     * Without a server no flow starts — but it is not lost either.
      *
-     * <p>Er stellt sich an und läuft, sobald wieder ein Schrank steht. Das ist
-     * dieselbe Antwort wie bei der Überlast: Verzögerung ist
-     * wiederherstellbar, Verlust nicht.
+     * <p>It queues up and runs as soon as a rack stands again. That is the
+     * same answer as with overload: delay is recoverable, loss is not.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void withoutAServerAFlowWaitsInstead(GameTestHelper helper) {
@@ -9171,14 +9153,14 @@ public final class FactoryNetworkGameTests {
                     sleep 1t
                 }"""), "Programm nicht übernommen");
 
-        // Schrank weg, dann einen Ablauf anstoßen.
+        // Rack gone, then kick off a flow.
         helper.setBlock(controller.west(), Blocks.AIR);
         entity.rebuildNetwork();
         var flow = entity.startFlow("kurz", java.util.List.of());
         helper.assertValueEqual(flow.status().name(), "QUEUED",
                 "ohne Server darf nichts anfangen, aber auch nichts wegfallen");
 
-        // Schrank zurück, und er läuft.
+        // Rack back, and it runs.
         rackWithServer(helper, controller.west());
         entity.rebuildNetwork();
         for (int i = 0; i < 5; i++) {
@@ -9189,9 +9171,9 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
-    // ---- Farbige Kabel ----------------------------------------------------
+    // ---- Coloured cables --------------------------------------------------
 
-    /** Setzt ein Kabel so, wie es der Gegenstand täte — samt Farbe. */
+    /** Places a cable as the item would — colour included. */
     private static void placeCable(GameTestHelper helper, BlockPos at,
             dev.devpanda.factorynetwork.block.CableColour colour) {
         helper.setBlock(at, dev.devpanda.factorynetwork.block.CableBlock.withConnections(
@@ -9207,12 +9189,12 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Zwei Kabel verschiedener Farbe greifen nicht nacheinander.
+     * Two cables of different colours do not reach for each other.
      *
-     * <p>Die Farbe kam vorher aus der Welt statt aus dem Zustand. Beim Setzen
-     * steht an der eigenen Stelle aber noch Luft, und Luft gilt als neutral —
-     * ein rotes Kabel rechnete sich seine Verbindungen deshalb als neutrales
-     * aus und wuchs einen Arm zu jedem Nachbarn, egal welcher Farbe.
+     * <p>The colour used to come from the world instead of from the state.
+     * On placing, though, the own spot still holds air, and air counts as
+     * neutral — a red cable therefore computed its connections as a neutral
+     * one and grew an arm to every neighbour, no matter which colour.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void cablesOfDifferentColoursDoNotReachForEachOther(GameTestHelper helper) {
@@ -9230,13 +9212,13 @@ public final class FactoryNetworkGameTests {
         helper.assertTrue(!connected(helper, rechts, links),
                 "und das grüne nicht nach dem roten");
 
-        // Gleiche Farbe schon.
+        // Same colour does.
         BlockPos zweitesRot = links.west();
         placeCable(helper, zweitesRot, rot);
         helper.assertTrue(connected(helper, links, zweitesRot), "rot an rot");
         helper.assertTrue(connected(helper, zweitesRot, links), "und zurück");
 
-        // Neutral verbindet sich mit allem — das ist der Sinn der Vorgabe.
+        // Neutral connects with everything — that is the point of the default.
         BlockPos oben = links.above();
         placeCable(helper, oben, neutral);
         helper.assertTrue(connected(helper, oben, links), "neutral an rot");
@@ -9245,10 +9227,10 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ein abgebautes Kabel gibt seine Farbe zurück.
+     * A broken-down cable gives its colour back.
      *
-     * <p>Die Farbe steht im Blockzustand, der Gegenstand ist je Farbe ein
-     * eigener. Die Loot-Tabelle war leer — es fiel gar nichts heraus.
+     * <p>The colour is in the block state, the item is a separate one per
+     * colour. The loot table was empty — nothing dropped at all.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void abrokenCableDropsItsColour(GameTestHelper helper) {
@@ -9266,10 +9248,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Jede Farbe hat ihren eigenen Namen.
+     * Every colour has its own name.
      *
-     * <p>Ein BlockItem nimmt seinen Namen sonst vom Block, und alle siebzehn
-     * zeigen auf denselben — im Kreativ-Reiter stand siebzehnmal „Kabel".
+     * <p>A BlockItem otherwise takes its name from the block, and all
+     * seventeen point at the same one — the creative tab said "Kabel"
+     * seventeen times.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void everyCableColourHasItsOwnName(GameTestHelper helper) {
@@ -9285,21 +9268,20 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Jeder Gegenstand der Mod steht im Kreativ-Reiter.
+     * Every item of the mod is in the creative tab.
      *
-     * <p>Die dichten Kabel waren angemeldet, hatten Modelle, Namen und
-     * Rezepte — und standen trotzdem nirgends, weil eine Zeile im Reiter
-     * fehlte. Nur über {@code /give} zu erreichen heißt: nicht da.
+     * <p>The dense cables were registered, had models, names and recipes —
+     * and still appeared nowhere, because one line in the tab was missing.
+     * Reachable only via {@code /give} means: not there.
      *
-     * <p>Diese Prüfung ist bewusst allgemein. Sie fängt nicht diesen einen
-     * Fall, sondern jeden künftigen derselben Art.
+     * <p>This check is deliberately general. It does not catch this one case
+     * but every future one of the same kind.
      *
-     * <p><b>Eine Ausnahme gibt es, und sie steht hier namentlich:</b> die
-     * dichten Kabel. Sie sind seit dem 30.08. stillgelegt — kein Rezept, kein
-     * Platz im Reiter —, aber noch registriert, weil NeoForge 21.1 eine
-     * gelöschte Kennung in einer bestehenden Welt nicht umschreiben kann.
-     * Namentlich und nicht als Muster: Die nächste Stilllegung soll wieder
-     * auffallen.
+     * <p><b>There is one exception, and it is named here explicitly:</b> the
+     * dense cables. They have been retired since 30 Aug — no recipe, no place
+     * in the tab —, but still registered, because NeoForge 21.1 cannot remap
+     * a deleted id in an existing world. By name and not as a pattern: the
+     * next retirement should stand out again.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void everyItemIsInTheCreativeTab(GameTestHelper helper) {
@@ -9328,11 +9310,10 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Jeder Gegenstand hat einen eigenen Namen in beiden Sprachen.
+     * Every item has a name of its own in both languages.
      *
-     * <p>Siebzehn Kabel hießen alle „Kabel". Ein Name, den zwei Gegenstände
-     * teilen, ist kein Name — im Reiter steht dann eine Reihe, die man nicht
-     * lesen kann.
+     * <p>Seventeen cables were all called "Kabel". A name two items share is
+     * no name — the tab then shows a row you cannot read.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void everyItemHasItsOwnName(GameTestHelper helper) {
@@ -9354,17 +9335,17 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
-    // ---- Wer einen Kanal kostet -------------------------------------------
+    // ---- Who costs a channel ----------------------------------------------
 
 
 
 
     /**
-     * Eine Wand aus Tafeln schreibt einmal, nicht sechsmal.
+     * A wall of panels writes once, not six times.
      *
-     * <p>Sechs Tafeln mit demselben Text untereinander sind kein
-     * Bildschirm, sondern sechs Zettel. Geschrieben wird von der Tafel
-     * unten links, und zwar über die ganze Fläche.
+     * <p>Six panels with the same text one below the other are not a screen
+     * but six notes. Writing is done by the panel at the bottom left, across
+     * the whole surface.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void awallOfDisplaysWritesOnce(GameTestHelper helper) {
@@ -9373,8 +9354,8 @@ public final class FactoryNetworkGameTests {
         rackWithServer(helper, controller.west());
         helper.setBlock(controller.east(), FnBlocks.CABLE.get());
 
-        // Drei breit, zwei hoch, alle nach Norden — und nur die erste
-        // berührt das Kabel.
+        // Three wide, two high, all facing north — and only the first touches
+        // the cable.
         BlockPos ecke = controller.east().north();
         java.util.List<BlockPos> tafeln = new java.util.ArrayList<>();
         for (int reihe = 0; reihe < 2; reihe++) {
@@ -9392,7 +9373,7 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(entity.graph().displays().size(), 6,
                 "alle sechs Tafeln hängen am Netz");
 
-        // Nur eine bekommt einen Namen — die Wand heißt trotzdem so.
+        // Only one gets a name — the wall is still called that.
         var irgendeine = (dev.devpanda.factorynetwork.block.entity.DisplayBlockEntity)
                 helper.getBlockEntity(tafeln.get(4));
         irgendeine.setDisplayName("wand");
@@ -9420,8 +9401,8 @@ public final class FactoryNetworkGameTests {
         }
         helper.assertValueEqual(schreibende, 1, "genau eine Tafel schreibt");
 
-        // Und der Rahmen fällt weg, wo eine zweite Tafel anschließt: Die
-        // mittlere der unteren Reihe hat links, rechts und oben Nachbarn.
+        // And the frame falls away where a second panel adjoins: the middle
+        // one of the bottom row has neighbours left, right and above.
         var mitte = helper.getBlockState(tafeln.get(1));
         helper.assertTrue(mitte.getValue(
                         dev.devpanda.factorynetwork.block.DisplayBlock.JOINED_UP),
@@ -9438,12 +9419,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Eine benannte Tafel ohne Programmstück steht trotzdem im Reiter.
+     * A named panel without a program piece is still in the tab.
      *
-     * <p>Vorher listete er nur die Deklarationen. Eine Tafel, die man
-     * benannt hat und die das Programm nicht kennt, war damit nirgends zu
-     * sehen — sie sagte es nur selbst auf ihrer Front, und die hängt
-     * womöglich drei Räume weiter.
+     * <p>Previously it listed only the declarations. A panel that you named
+     * and that the program does not know was thus visible nowhere — it only
+     * said so itself on its front, and that may hang three rooms away.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void anunknownDisplayShowsUpInTheList(GameTestHelper helper) {
@@ -9457,13 +9437,13 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
 
-        // Ohne Namen: eine Zeile, dass da etwas namenlos hängt.
+        // Without a name: a line saying something nameless hangs there.
         helper.assertTrue(entity.displayPanels().stream()
                         .anyMatch(panel -> panel.lines().stream()
                                 .anyMatch(zeile -> zeile.contains("ohne Namen"))),
                 "die namenlose Tafel fehlt: " + entity.displayPanels());
 
-        // Benannt, aber ohne Programmstück: mit Namen und Hinweis.
+        // Named, but without a program piece: with name and hint.
         var panel = (dev.devpanda.factorynetwork.block.entity.DisplayBlockEntity)
                 helper.getBlockEntity(tafel);
         panel.setDisplayName("wand");
@@ -9471,8 +9451,8 @@ public final class FactoryNetworkGameTests {
                         .anyMatch(entry -> entry.name().equals("wand")),
                 "die benannte Tafel fehlt: " + entity.displayPanels());
 
-        // Sobald das Programm sie kennt, steht sie als Anzeige da und nicht
-        // mehr als Hinweis.
+        // As soon as the program knows it, it appears as a display and no
+        // longer as a hint.
         helper.assertTrue(entity.deploy("""
                 display wand {
                     text "hallo"
@@ -9486,17 +9466,17 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Über eine Anzeige wachsen zwei Farben nicht zusammen.
+     * Two colours do not grow together across a display.
      *
-     * <p>Sie leitet mit der Farbe, mit der sie erreicht wurde. Wäre sie
-     * farbneutral, hinge an jeder Wand ein Loch in der Trennung, das man
-     * beim Bauen nicht sieht.
+     * <p>It conducts with the colour it was reached with. If it were
+     * colour-neutral, every wall would carry a hole in the separation that
+     * you cannot see while building.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void adisplayDoesNotBridgeColours(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 2, 1);
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
-        // Roter Strang nach Osten, dahinter eine Anzeige, dahinter blau.
+        // Red strand to the east, behind it a display, behind that blue.
         BlockPos rot = controller.east();
         helper.setBlock(rot, FnBlocks.CABLE.get().defaultBlockState()
                 .setValue(dev.devpanda.factorynetwork.block.CableBlock.COLOUR,
@@ -9519,20 +9499,20 @@ public final class FactoryNetworkGameTests {
     }
 
 
-    // ---- Strom -------------------------------------------------------------
+    // ---- Power -------------------------------------------------------------
 
-    /** Kurz für die Stromwerte des Netzes. */
+    /** Short for the network's power values. */
     private static dev.devpanda.factorynetwork.network.NetworkPower powerOf(
             ControllerBlockEntity entity) {
         return entity.power();
     }
 
     /**
-     * Jedes Gerät am Netz kostet Strom.
+     * Every device on the network costs power.
      *
-     * <p>Gezahlt wird für Bereitschaft, nicht für Arbeit: Ein Worker, der
-     * etwas bewegt, kostet nicht mehr als einer, der wartet. Wer seine Anlage
-     * plant, will eine Zahl, die stillsteht.
+     * <p>You pay for readiness, not for work: a worker that moves something
+     * costs no more than one that waits. Whoever plans their plant wants a
+     * number that stands still.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void everyDeviceOnTheNetworkCostsPower(GameTestHelper helper) {
@@ -9553,20 +9533,20 @@ public final class FactoryNetworkGameTests {
                 + dev.devpanda.factorynetwork.network.Power.DISPLAY
                 + dev.devpanda.factorynetwork.network.Power.DRIVE
                 + dev.devpanda.factorynetwork.network.Power.PER_CELL;
-        // Auf eine Zahl festgenagelt, sonst prüft der Test nur seine eigene
-        // Rechnung: Stünde DISPLAY auf null, bliebe er grün — obwohl er
-        // gerade behauptet, jedes Gerät koste Strom.
+        // Pinned to a number, otherwise the test only checks its own
+        // arithmetic: if DISPLAY stood at zero it would stay green — although
+        // it just claims that every device costs power.
         helper.assertValueEqual(erwartet, 8, "Vier für den Controller, je eins für den Rest");
         helper.assertValueEqual(entity.powerDraw(), erwartet, "Bedarf des Netzes in FE je Tick");
         helper.succeed();
     }
 
     /**
-     * Ohne Strom steht das Netz still — und läuft weiter, wo es war.
+     * Without power the network stands still — and carries on where it was.
      *
-     * <p>Nichts wird abgebrochen: Ein Ablauf hält zwischen zwei Schritten
-     * keine Gegenstände, also kostet das Einfrieren nichts. Ein Stromausfall
-     * soll eine Pause sein und kein Verlust.
+     * <p>Nothing is aborted: a flow holds no items between two steps, so
+     * freezing costs nothing. A power outage should be a pause and not a
+     * loss.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void withoutPowerTheNetworkStandsStill(GameTestHelper helper) {
@@ -9597,10 +9577,10 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Kommt der Strom zurück, fährt das Netz erst hoch.
+     * When the power comes back, the network boots first.
      *
-     * <p>Ohne diese Zeit wäre ein Stromausfall ein Flackern, das niemand
-     * bemerkt. Mit ihr merkt man sofort, dass die Versorgung nicht reicht.
+     * <p>Without this time a power outage would be a flicker nobody notices.
+     * With it you notice immediately that the supply is not enough.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void powerComingBackMeansBootingUp(GameTestHelper helper) {
@@ -9627,12 +9607,12 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Eine zu schwache Versorgung lässt das Netz aus, statt es blinken zu
-     * lassen.
+     * An undersized supply leaves the network off instead of letting it
+     * blink.
      *
-     * <p>Ohne diese Schwelle liefe es an, verbrauchte den Vorrat beim
-     * Hochfahren und ginge sofort wieder aus — ein Blinken im
-     * Halbminutentakt, das wie ein Fehler aussieht statt wie zu wenig Strom.
+     * <p>Without this threshold it would start up, consume the reserve while
+     * booting and go out again immediately — a blinking every half minute
+     * that looks like a bug instead of like too little power.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void anUndersizedSupplyLeavesTheNetworkOff(GameTestHelper helper) {
@@ -9658,13 +9638,12 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ein Ablauf übersteht den Stromausfall und macht danach weiter.
+     * A flow survives the power cut and carries on afterwards.
      *
-     * <p>Das ist der Grund fürs Einfrieren statt Abbrechen: Wer eine Anlage
-     * nachts ohne Strom lässt, findet sie morgens dort, wo sie
-     * stehengeblieben ist. Auch ein Ereignis, das während des Ausfalls
-     * eintrifft, geht nicht verloren — es bleibt liegen und kommt an, sobald
-     * das Netz wieder läuft.
+     * <p>That is the reason for freezing instead of aborting: whoever leaves
+     * a plant without power overnight finds it in the morning where it
+     * stopped. An event that arrives during the outage is not lost either —
+     * it stays put and arrives as soon as the network runs again.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void aflowSurvivesAPowerCut(GameTestHelper helper) {
@@ -9683,8 +9662,8 @@ public final class FactoryNetworkGameTests {
         var flow = entity.startFlow("wartet", java.util.List.of());
         helper.assertValueEqual(flow.status().name(), "AWAITING", "er wartet");
 
-        // Ein Ereignis während des Ausfalls geht nicht verloren, es bleibt
-        // liegen — und kommt an, sobald das Netz wieder läuft.
+        // An event during the outage is not lost, it stays put — and arrives
+        // as soon as the network runs again.
         powerOf(entity).empty();
         entity.serverTick();
         entity.fireEvent("Takt", java.util.List.of());
@@ -9704,11 +9683,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Die Brennkammer erzeugt Strom und schiebt ihn in den Controller.
+     * The burner generates power and pushes it into the controller.
      *
-     * <p>Ohne eine Quelle in der Mod selbst wäre die Fertigungskette — Erz,
-     * Platte, Kerne, Zellen, Serverbauteile — ohne Fremdmod nicht zu
-     * durchlaufen. Diese Prüfung ist der Nachweis, dass sie es ist.
+     * <p>Without a source in the mod itself the production chain — ore,
+     * plate, cores, cells, server parts — could not be completed without a
+     * foreign mod. This check is the proof that it can.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void theBurnerFeedsTheController(GameTestHelper helper) {
@@ -9737,10 +9716,10 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ohne Abnehmer legt sie nicht nach.
+     * Without a consumer it does not add fuel.
      *
-     * <p>Sonst verbrennt eine Kohle, während niemand etwas abnimmt — und das
-     * merkt man erst, wenn der Kohlenstapel weg ist.
+     * <p>Otherwise a coal burns while nobody takes anything off — and you
+     * only notice when the coal stack is gone.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void thebBurnerDoesNotBurnIntoAFullBuffer(GameTestHelper helper) {
@@ -9768,12 +9747,12 @@ public final class FactoryNetworkGameTests {
     private FactoryNetworkGameTests() {
     }
     /**
-     * Der Entwurf überlebt das Speichern und hält die Fabrik nicht an.
+     * The draft survives saving and does not stop the factory.
      *
-     * <p>Der eigentliche Zweck der Sache: Wer zwanzig Minuten an einem Worker
-     * gebaut hat und dann abstürzt, hatte vorher alles verloren — Übernehmen
-     * hätte es gesichert, aber Übernehmen geht nur bei fehlerfreiem Code, und
-     * mitten in einer Änderung ist er das nie.
+     * <p>The actual purpose of the thing: whoever built on a worker for
+     * twenty minutes and then crashes had lost everything before — Deploy
+     * would have saved it, but Deploy only works with error-free code, and
+     * in the middle of a change it never is.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void theDraftSurvivesAndDoesNotRun(GameTestHelper helper) {
@@ -9786,8 +9765,7 @@ public final class FactoryNetworkGameTests {
         helper.assertTrue(entity.deploy("fn laeuft() { }"),
                 "das erste Programm wurde nicht übernommen");
 
-        // Ein Entwurf, der nicht übersetzt. Genau der Fall, den es zu
-        // sichern gilt.
+        // A draft that does not compile. Exactly the case that needs saving.
         var kaputt = dev.devpanda.factorynetwork.lang.Project.of("fn halb() { let a =");
         entity.acceptDraft(kaputt, null, null);
 
@@ -9800,7 +9778,7 @@ public final class FactoryNetworkGameTests {
                         .noneMatch(fn -> fn.name().equals("halb")),
                 "ein Entwurf läuft nicht");
 
-        // Über das Speicherformat und zurück.
+        // Through the save format and back.
         net.minecraft.nbt.CompoundTag tag = entity.saveWithoutMetadata(
                 helper.getLevel().registryAccess());
         ControllerBlockEntity wieder = new ControllerBlockEntity(
@@ -9814,7 +9792,7 @@ public final class FactoryNetworkGameTests {
                         .anyMatch(fn -> fn.name().equals("laeuft")),
                 "der laufende Stand auch");
 
-        // Übernehmen führt beide wieder zusammen.
+        // Deploying brings the two back together.
         helper.assertTrue(entity.deploy("fn fertig() { }"), "das zweite Übernehmen");
         helper.assertValueEqual(entity.draft().source("main.mf"), "fn fertig() { }",
                 "nach dem Übernehmen sind Entwurf und laufender Stand dasselbe");
@@ -9822,12 +9800,12 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Die Tafel an der Wand zeigt, was im Programm steht.
+     * The panel on the wall shows what is in the program.
      *
-     * <p><b>Geprüft war bisher nur der Reiter im Terminal.</b> Dass die
-     * Tafel selbst zu ihren Zeilen kommt — über ihren Takt, ihren Namen und
-     * den Controller, der sie kennt — hing an vier Stellen, die einzeln
-     * stimmten und zusammen nie nachgemessen wurden.
+     * <p><b>Until now only the tab in the terminal was checked.</b> That the
+     * panel itself gets to its lines — via its tick, its name and the
+     * controller that knows it — hung on four places that were individually
+     * correct and were never measured together.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void theWallItselfShowsTheProgram(GameTestHelper helper) {
@@ -9850,8 +9828,8 @@ public final class FactoryNetworkGameTests {
                     text "testo"
                 }"""), "das Programm wurde nicht übernommen");
 
-        // Die Tafel rechnet einmal je Sekunde. Über runAfterDelay und nicht
-        // über eine Schleife: Innerhalb eines Ticks steht die Spielzeit still.
+        // The panel computes once per second. Via runAfterDelay and not via a
+        // loop: within one tick the game time stands still.
         helper.runAfterDelay(25, () -> {
             var zeilen = panel.lines();
             helper.assertTrue(!zeilen.isEmpty(),
@@ -9865,11 +9843,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Und sie sagt selbst, warum sie leer ist.
+     * And it says itself why it is empty.
      *
-     * <p>Eine schwarze Fläche lässt offen, ob das Netz steht, der Name
-     * falsch ist oder das Programm die Tafel nicht kennt. Jeder dieser Fälle
-     * hat einen eigenen Satz — auf der Tafel, denn dort sieht man hin.
+     * <p>A black surface leaves open whether the network is up, the name is
+     * wrong or the program does not know the panel. Each of these cases has
+     * its own sentence — on the panel, because that is where you look.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void theWallExplainsWhyItIsEmpty(GameTestHelper helper) {
@@ -9901,10 +9879,10 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Zwei Spieler überschreiben einander nicht.
+     * Two players do not overwrite each other.
      *
-     * <p>Beide schicken den ganzen Entwurf. Ohne Sperre gewänne, wer zuletzt
-     * tippt — auch über eine Datei, die er gar nicht offen hatte.
+     * <p>Both send the whole draft. Without a lock, whoever types last would
+     * win — even over a file they did not even have open.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void twoPlayersDoNotOverwriteEachOther(GameTestHelper helper) {
@@ -9914,9 +9892,9 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
 
-        // Kennungen statt Attrappen: Ein echter ServerPlayer im Test löst
-        // die Beitrittspakete fremder Mods aus, und gebraucht werden hier
-        // eine Kennung und ein Name.
+        // Ids instead of dummies: a real ServerPlayer in the test triggers
+        // the join packets of foreign mods, and what is needed here is an id
+        // and a name.
         var anna = java.util.UUID.randomUUID();
         var bert = java.util.UUID.randomUUID();
 
@@ -9925,14 +9903,14 @@ public final class FactoryNetworkGameTests {
                 "worker.mf", "fn zwei() { }"));
         entity.acceptDraft(start, null, null);
 
-        // Anna schreibt main.mf und hält sie damit.
+        // Anna writes main.mf and thereby holds it.
         entity.acceptDraft(start.with("main.mf", "fn eins() { let a = 1 }"),
                 anna, "Anna");
         helper.assertValueEqual(entity.draft().source("main.mf"), "fn eins() { let a = 1 }",
                 "Annas Änderung");
 
-        // Bert schickt seinen ganzen Entwurf — mit einem alten Stand von
-        // main.mf und einer eigenen Änderung an worker.mf.
+        // Bert sends his whole draft — with an old version of main.mf and a
+        // change of his own to worker.mf.
         entity.acceptDraft(start.with("worker.mf", "fn zwei() { let b = 2 }"),
                 bert, "Bert");
 
@@ -9941,12 +9919,12 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(entity.draft().source("worker.mf"), "fn zwei() { let b = 2 }",
                 "Berts eigene Änderung kommt an");
 
-        // Und Bert sieht, wer main.mf hält.
+        // And Bert sees who holds main.mf.
         helper.assertValueEqual(entity.locksFor(bert).get("main.mf"), "Anna",
                 "der Halter wird gemeldet");
-        // Und was hier steht, ist nicht, was Bert geschickt hat: Sein
-        // Entwurf trug einen alten Stand von main.mf. Genau deshalb bekommt
-        // er den Zustand zurück, obwohl er der Absender war.
+        // And what stands here is not what Bert sent: his draft carried an
+        // old version of main.mf. That is exactly why he gets the state back
+        // although he was the sender.
         helper.assertTrue(!entity.draft().source("main.mf").equals("fn eins() { }"),
                 "Berts alter Stand darf nicht gewonnen haben");
         helper.assertTrue(entity.locksFor(anna).get("main.mf") == null,
@@ -9955,11 +9933,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Eine frisch angelegte Datei kommt an, obwohl sie leer ist.
+     * A freshly created file arrives although it is empty.
      *
-     * <p>Der erste Anlauf verglich sie mit dem, was der Server hat — und der
-     * hat für eine unbekannte Datei den leeren Text. Damit sah jede neue
-     * Datei wie eine unveränderte aus und fiel durch.
+     * <p>The first attempt compared it with what the server has — and for an
+     * unknown file that has the empty text. So every new file looked like an
+     * unchanged one and fell through.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void aFreshEmptyFileStillArrives(GameTestHelper helper) {
@@ -9980,12 +9958,13 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ein Worker mit einer Textbedingung schaltet wirklich ab.
+     * A worker with a text condition really switches off.
      *
-     * <p><b>Der Test, der lange gefehlt hat.</b> {@code when} hatte einen
-     * eigenen kleinen Auswerter, der nur Zahlen konnte — alles andere galt
-     * als wahr. {@code when modus == "tag"} lief damit rund um die Uhr, und
-     * die Doku versprach das Gegenteil. Hier steht jetzt, was gelten soll.
+     * <p><b>The test that was missing for a long time.</b> {@code when} had a
+     * small evaluator of its own that could only do numbers — everything
+     * else counted as true. {@code when modus == "tag"} thus ran around the
+     * clock, and the docs promised the opposite. Here now stands what is
+     * meant to apply.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void aTextConditionReallySwitchesTheWorkerOff(GameTestHelper helper) {
@@ -10008,7 +9987,7 @@ public final class FactoryNetworkGameTests {
                     modus = "tag"
                 }"""), "das Programm wurde nicht übernommen");
 
-        // Erster Durchgang: Der Modus ist „nacht", der Worker muss schlafen.
+        // First pass: the mode is "nacht", the worker must sleep.
         entity.serverTick();
         var zustand = entity.runtime().states().get("liefern");
         helper.assertTrue(zustand != null, "den Worker gibt es nicht");
@@ -10018,11 +9997,11 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(entity.storage().count(Items.IRON_INGOT), 64L,
                 "es darf nichts bewegt worden sein");
 
-        // Umschalten — jetzt muss er laufen.
+        // Switch over — now it must run.
         //
-        // Mit Abstand: Ein Worker ohne rate läuft alle zwanzig Ticks, und ein
-        // zweiter Tick im selben Augenblick würde übersprungen. Er behielte
-        // dann seinen alten Zustand, und der Test prüfte nichts.
+        // With a gap: a worker without rate runs every twenty ticks, and a
+        // second tick in the same instant would be skipped. It would then
+        // keep its old state, and the test would check nothing.
         entity.callFunction("tagschicht", List.of());
         helper.runAfterDelay(25, () -> {
             entity.serverTick();
@@ -10035,13 +10014,12 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Eine Menge vor einer Schleifenvariablen gilt wirklich.
+     * An amount before a loop variable really applies.
      *
-     * <p><b>Der gefährlichste Fehler, den diese Sprache hatte.</b>
-     * {@code move 8 sorte} bewegte alles statt acht, weil die Menge nur auf
-     * geschriebene Auswahlausdrücke gesetzt wurde — eine Schleifenvariable
-     * ist ein aufgelöster Wert. Das Programm sah dabei aus, als täte es, was
-     * dasteht, und räumte das Lager leer.
+     * <p><b>The most dangerous bug this language had.</b> {@code move 8 sorte}
+     * moved everything instead of eight, because the amount was only set on
+     * written selection expressions — a loop variable is a resolved value.
+     * The program looked as if it did what it says, and emptied the store.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void anAmountBeforeALoopVariableIsKept(GameTestHelper helper) {
@@ -10065,10 +10043,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Eine Anzeige nennt einen globalen Wert beim Namen.
+     * A display names a global value by name.
      *
-     * <p>Geprüft wird der Text selbst und nicht, ob überhaupt etwas dasteht —
-     * ein Fragezeichen ist auch etwas, und genau das kam vorher heraus.
+     * <p>The text itself is checked and not whether anything is there at all
+     * — a question mark is also something, and that is exactly what came out
+     * before.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void aDisplayShowsAGlobalValue(GameTestHelper helper) {
@@ -10095,7 +10074,7 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
-    /** Der Analysator sagt, was an einem Gerät hängt — und wie viele Fächer. */
+    /** The analyser says what hangs on a device — and how many slots. */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void theAnalyserNamesWhatADeviceCan(GameTestHelper helper) {
         BlockPos controller = buildSetup(helper);
@@ -10116,11 +10095,12 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Die Fachnummern im Editor sind die, die das Programm anspricht.
+     * The slot numbers in the editor are the ones the program addresses.
      *
-     * <p>Eine Seite zeigt ihre Fächer unter eigenen Nummern; {@code slots(3)}
-     * meint das dritte Fach der Maschine. Zeigte der Tooltip die Nummern der
-     * Seite, wiese die Auskunft woandershin, als sie greift.
+     * <p>A side shows its slots under numbers of its own; {@code slots(3)}
+     * means the third slot of the machine. If the tooltip showed the side's
+     * numbers, the information would point somewhere other than where it
+     * takes effect.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void theSnapshotNumbersMatchTheProgram(GameTestHelper helper) {
@@ -10144,13 +10124,13 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * <b>In ein bestimmtes Fach legen.</b>
+     * <b>Put into a particular slot.</b>
      *
-     * <p>Die Kehrseite von {@link #movingOnlyFromCertainSlots}: Wer eine
-     * Fachnummer schreibt, legt auch dorthin — am ungeteilten Inventar, also
-     * ohne die Seitenregeln der Maschine. Genau dafür ist die Form da (ein
-     * Anschluss je Maschine, der Brennstoff kommt trotzdem ins Brennstofffach),
-     * und genau deshalb steht der Preis in sprache.md.
+     * <p>The flip side of {@link #movingOnlyFromCertainSlots}: whoever writes
+     * a slot number also puts there — on the undivided inventory, so without
+     * the machine's side rules. That is exactly what the form is for (one
+     * connector per machine, the fuel still goes into the fuel slot), and
+     * exactly why the price is stated in sprache.md.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void movingIntoACertainSlot(GameTestHelper helper) {
@@ -10182,12 +10162,12 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * <b>Nur den Ausgang abräumen.</b>
+     * <b>Clear only the output.</b>
      *
-     * <p>Der Fall, für den es die Fächer gibt: Eine Maschine, die Eingang und
-     * Ausgang im selben Inventar hält, und ein move, das den Eingang stehen
-     * lässt. Ein zweiter Connector an einer anderen Seite ist ausdrücklich
-     * nicht die Antwort — ein Anschluss je Maschine soll reichen.
+     * <p>The case the slots exist for: a machine that keeps input and output
+     * in the same inventory, and a move that leaves the input standing. A
+     * second connector on another side is explicitly not the answer — one
+     * connector per machine should suffice.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void movingOnlyFromCertainSlots(GameTestHelper helper) {
@@ -10197,7 +10177,7 @@ public final class FactoryNetworkGameTests {
 
         BlockPos quelle = controller.east().north().north();
         if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity container) {
-            // Fach 0 ist der „Eingang", Fach 3 der „Ausgang".
+            // Slot 0 is the "input", slot 3 the "output".
             container.setItem(0, new ItemStack(Items.IRON_ORE, 8));
             container.setItem(3, new ItemStack(Items.GOLD_ORE, 5));
         }
@@ -10220,10 +10200,10 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * {@code slots(…)} liest gezielt einzelne Fächer.
+     * {@code slots(…)} reads individual slots specifically.
      *
-     * <p>Über das ganze Inventar: Ein Anschluss je Maschine soll reichen,
-     * und welches Fach gemeint ist, entscheidet der Code.
+     * <p>Over the whole inventory: one connector per machine should suffice,
+     * and which slot is meant is decided by the code.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void slotsReadSingleSlots(GameTestHelper helper) {
@@ -10263,11 +10243,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Eine Tafel darf in eine Maschine sehen.
+     * A panel may look into a machine.
      *
-     * <p>Der Preis ist ein Blick in eine BlockEntity je Tafel und Sekunde —
-     * die Anzeige liest den Netzbestand ohnehin in diesem Takt. Ein `?` auf
-     * der Tafel, das niemand erklären kann, wäre der schlechtere Tausch.
+     * <p>The price is one look into a BlockEntity per panel and second — the
+     * display reads the network stock at this rate anyway. A `?` on the
+     * panel that nobody can explain would be the worse trade.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void adisplayCanLookIntoAMachine(GameTestHelper helper) {
@@ -10301,14 +10281,13 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
-    // ---- Strom verteilen ---------------------------------------------------
+    // ---- Distributing power -----------------------------------------------
 
     /**
-     * Das Netz versorgt eine Maschine.
+     * The network supplies a machine.
      *
-     * <p>Die Presse ist die einzige Maschine der Mod, die Strom annimmt — und
-     * damit die ehrlichste Prüfstrecke: Was hier ankommt, ist wirklich
-     * angekommen.
+     * <p>The press is the only machine of the mod that accepts power — and
+     * thus the most honest test track: what arrives here has really arrived.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void thenetworkSuppliesAMachine(GameTestHelper helper) {
@@ -10343,20 +10322,20 @@ public final class FactoryNetworkGameTests {
                 .thenSucceed();
     }
 
-    /** Und andersherum: aus einer Maschine ins Netz. */
+    /** And the other way round: from a machine into the network. */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void amachineFeedsTheNetwork(GameTestHelper helper) {
         BlockPos controller = buildSetup(helper);
         ControllerBlockEntity entity = controllerAt(helper, controller);
-        // Die Kreativquelle ist die einzige Stromquelle dieser Mod, die
-        // etwas hergibt: Eine Maschine ist kein Akku, und die Presse
-        // verweigert die Entnahme mit Absicht.
+        // The creative source is the only power source of this mod that
+        // hands anything out: a machine is not a battery, and the press
+        // refuses extraction on purpose.
         BlockPos quelle = controller.east().north().north();
         helper.setBlock(quelle, FnBlocks.CREATIVE_SOURCE.get());
         entity.rebuildNetwork();
-        // Der Puffer startet voll; ohne Platz darin fließt nichts hinein.
-        // Entnommen statt geleert: empty() schaltet das Netz ab, und ein
-        // abgeschaltetes Netz lässt keine Worker laufen.
+        // The buffer starts full; without room in it nothing flows in.
+        // Taken rather than emptied: empty() switches the network off, and a
+        // switched-off network lets no workers run.
         entity.power().take(entity.power().stored() - 2_000);
 
         helper.assertTrue(entity.deploy("""
@@ -10378,11 +10357,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Bei Knappheit gilt die Reihenfolge der {@code priority}.
+     * Under scarcity the order of {@code priority} applies.
      *
-     * <p>Zwei Worker, einer mit Vorrang, und weniger Strom, als beide
-     * zusammen wollen. Der mit der kleinen Zahl läuft voll, der andere geht
-     * leer aus — nicht beide halb.
+     * <p>Two workers, one with precedence, and less power than both together
+     * want. The one with the small number runs fully, the other goes empty —
+     * not both by half.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void priorityDecidesWhoGetsPower(GameTestHelper helper) {
@@ -10414,8 +10393,8 @@ public final class FactoryNetworkGameTests {
 
         helper.startSequence()
                 .thenExecute(() -> {
-                    // Knapp, aber laufend: Was übrig bleibt, reicht für ein
-                    // paar Würfe und nicht für beide Worker.
+                    // Scarce, but running: what remains is enough for a few
+                    // throws and not for both workers.
                     entity.power().take(entity.power().stored() - 300);
                 })
                 .thenIdle(40)
@@ -10434,11 +10413,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Die Abgabe steht als eigene Zahl im Netz-Reiter.
+     * The output is a number of its own in the network tab.
      *
-     * <p>Ohne sie sieht ein Netz, das vierzig FE je Tick durchreicht, aus wie
-     * eines, das nichts tut: Der Bedarf zählt sie nicht mit, und der Vorrat
-     * steht still, solange genug nachkommt.
+     * <p>Without it a network that passes forty FE per tick through looks
+     * like one that does nothing: the demand does not count it, and the
+     * reserve stands still as long as enough comes in.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void thesupplyIsItsOwnNumber(GameTestHelper helper) {
@@ -10467,11 +10446,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * {@code list} ist eine Aufzählung, keine Zeile.
+     * {@code list} is an enumeration, not a row.
      *
-     * <p>Die Spezifikation nennt es „Aufzählung, etwa Bestände oder
-     * Aufträge". Gezeichnet wurde bis dahin eine einzelne Zeile wie bei
-     * {@code row} — mit einem Text darin, den niemand lesen wollte.
+     * <p>The specification calls it "enumeration, such as stocks or jobs".
+     * Until then a single row was drawn as with {@code row} — with a text in
+     * it that nobody wanted to read.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void alistShowsOneRowPerEntry(GameTestHelper helper) {
@@ -10507,7 +10486,7 @@ public final class FactoryNetworkGameTests {
                 return;
             }
             var lines = shown.lines();
-            // Eine Überschrift und zwei Posten — nicht eine Zeile für alles.
+            // A heading and two entries — not one row for everything.
             helper.assertValueEqual(lines.size(), 3, "Zeilen auf dem Display: " + lines);
             helper.assertTrue(lines.stream().anyMatch(line -> line.contains("64")),
                     "Die Menge des Eisens fehlt: " + lines);
@@ -10517,7 +10496,7 @@ public final class FactoryNetworkGameTests {
         });
     }
 
-    /** Ein leerer Bestand sagt es, statt eine leere Zeile zu zeichnen. */
+    /** An empty stock says so instead of drawing an empty row. */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void anemptyListSaysSo(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 1, 1);
@@ -10558,14 +10537,14 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ein Knopf hinter einer Aufzählung trifft trotzdem.
+     * A button behind an enumeration still hits.
      *
-     * <p>Der Reiter nimmt die Nummer, die im Paket steht, und schickt sie
-     * zurück — genau das prüft dieser Test, statt eine Nummer zu erfinden.
-     * <b>Solange jeder Eintrag genau eine Zeile war, waren beide Nummern
-     * dieselbe</b>, und der Unterschied fiel niemandem auf. Eine Aufzählung
-     * bringt mehrere Zeilen mit, und ab da zeigt eine Zeilennummer auf einen
-     * anderen Eintrag.
+     * <p>The tab takes the number that is in the packet and sends it back —
+     * that is exactly what this test checks, instead of inventing a number.
+     * <b>As long as every entry was exactly one row, both numbers were the
+     * same</b>, and nobody noticed the difference. An enumeration brings
+     * several rows, and from then on a row number points at a different
+     * entry.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void abuttonBehindAlistStillHits(GameTestHelper helper) {
@@ -10599,7 +10578,7 @@ public final class FactoryNetworkGameTests {
         }
         helper.assertValueEqual(panel.buttons().size(), 1, "Ein Knopf");
 
-        // Was der Reiter beim Klicken schickt.
+        // What the tab sends on click.
         entity.pressDisplayButton("leitstand", panel.buttons().get(0).entry());
 
         helper.assertValueEqual(entity.flowEngine().flows().size(), 1,
@@ -10608,10 +10587,10 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * {@code brecher.energy()} liest den Stromstand einer Maschine.
+     * {@code brecher.energy()} reads a machine's energy level.
      *
-     * <p>Mit Klammern wie {@code redstone()} und {@code count()}: Es ist ein
-     * Blick in die Welt und kein Name, den das Programm ohnehin kennt.
+     * <p>With parentheses like {@code redstone()} and {@code count()}: it is
+     * a look into the world and not a name the program knows anyway.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void adeviceTellsItsEnergy(GameTestHelper helper) {
@@ -10640,15 +10619,15 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
-    /** Eine Maschine ohne Stromspeicher meldet null und keinen Fehler. */
+    /** A machine without energy storage reports zero and no error. */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void adeviceWithoutEnergySaysZero(GameTestHelper helper) {
         BlockPos controller = buildSetup(helper);
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
 
-        // An quarry_output hängt eine Kiste. Sie hat keinen Strom, und das
-        // ist kein Programmfehler, sondern eine Kiste.
+        // A chest hangs on quarry_output. It has no energy, and that is not a
+        // program error but a chest.
         helper.assertTrue(entity.deploy("""
                 fn nachsehen() {
                     return quarry_output.energy()
@@ -10661,14 +10640,14 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
-    // ---- Alles von A nach B ------------------------------------------------
+    // ---- Everything from A to B ---------------------------------------------
 
     /**
-     * {@code move all} nimmt, was auch immer darin liegt.
+     * {@code move all} takes whatever lies in there.
      *
-     * <p>Ein Worker ohne {@code filter} konnte das seit jeher; in einer
-     * Funktion gab es keine Schreibweise dafür. Aufgefallen ist die Lücke beim
-     * Streichen von {@code output()}.
+     * <p>A worker without {@code filter} could always do that; in a function
+     * there was no notation for it. The gap came to light when striking
+     * {@code output()}.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void moveAllTakesWhateverIsThere(GameTestHelper helper) {
@@ -10694,7 +10673,7 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
-    /** Auch aus dem Netzspeicher — dort steht sonst „sag, was bewegt wird". */
+    /** Also from the network storage — otherwise it says "say what is moved". */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void moveAllEmptiesTheStorage(GameTestHelper helper) {
         BlockPos controller = buildSetup(helper);
@@ -10715,7 +10694,7 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
-    /** Mit Menge davor: {@code move 8 all} nimmt acht Stück von irgendwas. */
+    /** With an amount in front: {@code move 8 all} takes eight pieces of anything. */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void moveAllTakesAnAmount(GameTestHelper helper) {
         BlockPos controller = buildSetup(helper);
@@ -10740,12 +10719,12 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * {@code all except …} räumt alles bis auf eines ab.
+     * {@code all except …} clears everything but one.
      *
-     * <p>Der natürlichste Gebrauch von {@code all}, und die Grammatik erlaubt
-     * ihn: {@code selection = selTerm { 'except' selTerm }}. Aufgelöst wird
-     * die Ausnahme gegen das, was wirklich dasteht — gegen die Registry ginge
-     * es nicht, denn „alles" ist dort jeder Gegenstand des Packs.
+     * <p>The most natural use of {@code all}, and the grammar allows it:
+     * {@code selection = selTerm { 'except' selTerm }}. The exception is
+     * resolved against what is really there — against the registry it would
+     * not work, because "everything" there is every item of the pack.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void moveAllCanSpareSomething(GameTestHelper helper) {
@@ -10771,7 +10750,7 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
-    /** {@code filter all} in einem Worker ist dasselbe wie kein Filter. */
+    /** {@code filter all} in a worker is the same as no filter. */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void aworkerWithFilterAllTakesEverything(GameTestHelper helper) {
         BlockPos controller = buildSetup(helper);
@@ -10800,7 +10779,7 @@ public final class FactoryNetworkGameTests {
                 .thenSucceed();
     }
 
-    /** {@code insert(all)} legt hinein, was der Speicher hergibt. */
+    /** {@code insert(all)} puts in what the storage hands over. */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void insertAllPutsInWhatThereIs(GameTestHelper helper) {
         BlockPos controller = buildSetup(helper);
@@ -10821,18 +10800,18 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Die Annahme-Probe gilt auch für Behälter.
+     * The acceptance probe also applies to tanks.
      *
-     * <p>Dieselbe Frage wie bei den Fächern, dieselbe Antwort: Ein
-     * {@code IFluidHandler} kann nicht sagen, was er annimmt. Also wird
-     * gefragt — mit den Flüssigkeiten, die im Entwurf stehen, und mit
-     * {@code fill(…, SIMULATE)}, das nichts bewegt.
+     * <p>The same question as with the slots, the same answer: an
+     * {@code IFluidHandler} cannot say what it accepts. So it is asked — with
+     * the fluids that are in the draft, and with {@code fill(…, SIMULATE)},
+     * which moves nothing.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void theProbeAlsoAsksTheTanks(GameTestHelper helper) {
         BlockPos controller = buildSetup(helper);
         ControllerBlockEntity entity = controllerAt(helper, controller);
-        // Vor dem Connector steht ein leerer Kessel statt der Kiste.
+        // In front of the connector stands an empty cauldron instead of the chest.
         helper.setBlock(controller.east().south().south(), Blocks.CAULDRON);
         entity.rebuildNetwork();
 
@@ -10852,7 +10831,7 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
-    /** Eine Kiste hat keine Behälter und sagt dazu nichts. */
+    /** A chest has no tanks and says nothing about them. */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void achestSaysNothingAboutTanks(GameTestHelper helper) {
         BlockPos controller = buildSetup(helper);
@@ -10873,14 +10852,14 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
-    // ---- Worauf sich ein Muster auflöst -------------------------------------
+    // ---- What a pattern resolves to -----------------------------------------
 
     /**
-     * Ein Muster sagt, was es trifft.
+     * A pattern says what it hits.
      *
-     * <p>Ohne diese Auskunft ist {@code maintain 64 tag:c/ores} eine Zusage
-     * ins Blaue: Gehalten werden vierundsechzig <b>je Art</b>, und wie viele
-     * Arten das sind, weiß nur das Pack.
+     * <p>Without this information {@code maintain 64 tag:c/ores} is a promise
+     * into the blue: sixty-four are kept <b>per kind</b>, and how many kinds
+     * that is only the pack knows.
      */
     @GameTest(template = EMPTY, timeoutTicks = 100)
     public static void apatternSaysWhatItHits(GameTestHelper helper) {
@@ -10894,7 +10873,7 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
-    /** Ein einzelner Gegenstand trifft genau eine Art. */
+    /** A single item hits exactly one kind. */
     @GameTest(template = EMPTY, timeoutTicks = 100)
     public static void asingleItemHitsOne(GameTestHelper helper) {
         var summary = dev.devpanda.factorynetwork.runtime.SelectionSummary.of(
@@ -10905,16 +10884,16 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Mit Mekanism geht eine Chemikalien-Auswahl durch.
+     * With Mekanism a chemical selection goes through.
      *
-     * <p>Der Test hieß einmal „ohne Mekanism sagt die Meldung, dass Mekanism
-     * fehlt", und er hat zweimal die Wahrheit gewechselt: erst, als die
-     * Abhängigkeit in den Prüflauf kam, dann, als die Anbindung stand. Jetzt
-     * prüft er, was ab hier gilt — mit Mekanism ist {@code chemical:} eine
-     * Auswahl wie jede andere.
+     * <p>The test was once called "without Mekanism the message says that
+     * Mekanism is missing", and it has changed its truth twice: first when
+     * the dependency came into the test run, then when the integration was
+     * in place. Now it checks what applies from here on — with Mekanism,
+     * {@code chemical:} is a selection like any other.
      *
-     * <p>Der Fall ohne Mekanism steht als Einheitstest in
-     * {@code FilterCheckTest}, wo keine Modliste geladen wird.
+     * <p>The case without Mekanism is a unit test in
+     * {@code FilterCheckTest}, where no mod list is loaded.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void withMekanismChemicalsGoThrough(GameTestHelper helper) {
@@ -10930,14 +10909,14 @@ public final class FactoryNetworkGameTests {
                     move chemical:mekanism/hydrogen from depot to storage
                 }"""), "Das Programm wurde nicht übernommen");
 
-        // An depot hängt eine Kiste und kein Tank — es kommt nichts, aber es
-        // wirft auch nichts. Ein Gerät ohne Chemikalien ist keine
-        // Fehlermeldung, sondern ein leeres Gerät.
-        // An depot hängt eine Kiste, also kommt nichts — aber es wirft auch
-        // nichts, und das ist der Unterschied zu vorher.
+        // A chest hangs on depot and no tank — nothing comes, but nothing
+        // throws either. A device without chemicals is not an error message
+        // but an empty device.
+        // A chest hangs on depot, so nothing comes — but nothing throws
+        // either, and that is the difference from before.
         entity.callFunction("holen", List.of());
 
-        // Und eine Vorlage nimmt chemical: jetzt an, statt es abzulehnen.
+        // And a template now accepts chemical: instead of rejecting it.
         helper.assertTrue(entity.deploy("""
                 filter gase {
                     chemical:mekanism/hydrogen
@@ -10946,12 +10925,12 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Eine Chemikalie ist ein Wert und nicht nur eine Auswahl.
+     * A chemical is a value and not just a selection.
      *
-     * <p>Was hier zählt, ist die <b>Auflösung gegen die Registry</b>: Sie
-     * gehört Mekanism, und ohne die Mod gibt es sie nicht — deshalb steht
-     * dieser Fall im Prüflauf und nicht im Einheitstest. Was danach kommt,
-     * die Sorte an einem Posten abzulesen, steht dort.
+     * <p>What counts here is the <b>resolution against the registry</b>: it
+     * belongs to Mekanism, and without the mod it does not exist — which is
+     * why this case is in the test run and not in the unit test. What comes
+     * after, reading the kind off an entry, is there.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void achemicalIsAvalueOfItsOwn(GameTestHelper helper) {
@@ -10979,12 +10958,12 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Und ein Ausschluss darüber liefert eine Chemikalie, keine Zahl.
+     * And an exclusion over it yields a chemical, not a number.
      *
-     * <p>{@code except} ist der Weg, auf dem eine Chemikalienauswahl schon
-     * vor dem Bewegen aufgelöst wird. Bleibt genau eine Sorte übrig, steht
-     * sie mit {@code .chemical} da — dieselbe Regel wie bei
-     * {@code it.item} und {@code it.fluid}.
+     * <p>{@code except} is the path on which a chemical selection is
+     * resolved before moving. If exactly one kind remains, it is there with
+     * {@code .chemical} — the same rule as with {@code it.item} and
+     * {@code it.fluid}.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void achemicalExceptKeepsTheKind(GameTestHelper helper) {
@@ -11011,19 +10990,19 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Chemikalien gehen aus dem Netz in einen Behälter und wieder zurück.
+     * Chemicals go from the network into a tank and back again.
      *
-     * <p><b>Der Behälter ist keiner in der Welt, sondern einer aus Mekanisms
-     * API.</b> Das ist kein Ausweichen, sondern die Folge einer Messung: Ein
-     * Chemikalientank, den ein Prüflauf per {@code setBlock} hinstellt, gibt
-     * an <b>keiner</b> Seite eine Capability heraus und nimmt auch ungeteilt
-     * nichts an — ihm fehlt die Seitenkonfiguration, die ein Spieler beim
-     * Platzieren mitbringt. Nachgemessen mit allen sechs Seiten.
+     * <p><b>The tank is not one in the world but one from Mekanism's
+     * API.</b> That is no evasion but the consequence of a measurement: a
+     * chemical tank that a test run places via {@code setBlock} hands out a
+     * capability on <b>no</b> side and accepts nothing undivided either — it
+     * lacks the side configuration a player brings along when placing.
+     * Measured with all six sides.
      *
-     * <p>Was hier eigen ist und deshalb geprüft wird, ist das Hin und Her mit
-     * dem Netzspeicher: erst proben, dann entnehmen, und was der Behälter
-     * doch nicht nimmt, zurücklegen. Wie der Behälter gefunden wird, ist
-     * derselbe Weg wie bei Flüssigkeiten.
+     * <p>What is specific here and therefore checked is the back and forth
+     * with the network storage: probe first, then extract, and put back what
+     * the tank does not take after all. How the tank is found is the same
+     * path as with fluids.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void chemicalsGoIntoAtankAndBack(GameTestHelper helper) {
@@ -11095,16 +11074,16 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Was der Speicher nicht fasst, bleibt im Behälter.
+     * What the storage cannot hold stays in the tank.
      *
-     * <p>Die Zusage, die bei Flüssigkeiten schon gilt: Ein Gas, das draußen
-     * ist und nirgends hineinpasst, wäre weg.
+     * <p>The promise that already applies to fluids: a gas that is outside
+     * and fits nowhere would be gone.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void whatThestoreCannotHoldStaysInThetank(GameTestHelper helper) {
         BlockPos controller = bareSetup(helper);
         ControllerBlockEntity entity = controllerAt(helper, controller);
-        // Die kleinste Zelle: 64.000 mB.
+        // The smallest cell: 64,000 mB.
         driveWithChemicalCell(helper, controller.above(),
                 dev.devpanda.factorynetwork.storage.ChemicalCellTier.K64);
         entity.rebuildNetwork();
@@ -11171,11 +11150,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ein Chemikalien-Worker braucht ein filter.
+     * A chemical worker needs a filter.
      *
-     * <p>Dieselbe Regel wie bei Flüssigkeiten und aus demselben Grund: Ein
-     * Behälter hält meist genau eine Sorte, und die falsche zu ziehen ist
-     * teurer als bei Gegenständen.
+     * <p>The same rule as with fluids and for the same reason: a tank
+     * usually holds exactly one kind, and pulling the wrong one is more
+     * expensive than with items.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void achemicalWorkerNeedsAfilter(GameTestHelper helper) {
@@ -11183,9 +11162,9 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
 
-        // Ohne filter ist der Worker gar kein Chemikalien-Worker — er fällt
-        // in den Gegenstandszweig. Also mit filter, aber ohne Ziel im Netz:
-        // Auch das muss eine Meldung geben und keinen stillen Stillstand.
+        // Without filter the worker is not a chemical worker at all — it
+        // falls into the item branch. So with filter, but without a target in
+        // the network: that too must give a message and no silent standstill.
         helper.assertTrue(entity.deploy("""
                 worker gase {
                     from gibtsnicht
@@ -11207,11 +11186,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Und er geht nur zwischen Gerät und Speicher.
+     * And it only goes between device and storage.
      *
-     * <p>Von Gerät zu Gerät läuft es über den Speicher; dafür schreibt man
-     * zwei Worker. Ein dritter Weg für denselben Vorgang wäre eine dritte
-     * Stelle, an der eine Menge unterwegs verlorengehen kann.
+     * <p>From device to device it runs via the storage; for that you write
+     * two workers. A third path for the same operation would be a third
+     * place where an amount can get lost on the way.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void achemicalWorkerGoesBetweenDeviceAndStorage(GameTestHelper helper) {
@@ -11239,7 +11218,7 @@ public final class FactoryNetworkGameTests {
                 .thenSucceed();
     }
 
-    /** Setzt ein Laufwerk ans Kabel und steckt eine Chemikalienzelle hinein. */
+    /** Places a drive on the cable and inserts a chemical cell. */
     private static void driveWithChemicalCell(GameTestHelper helper, BlockPos at,
             dev.devpanda.factorynetwork.storage.ChemicalCellTier tier) {
         helper.setBlock(at, FnBlocks.DRIVE.get());
@@ -11253,11 +11232,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Eine Chemikalienzelle hält Chemikalien.
+     * A chemical cell holds chemicals.
      *
-     * <p>Dieselben zwei Grenzen wie überall — so viele Sorten, so viel Menge —
-     * und dieselbe Rechnung dahinter: Sie stand seit den Flüssigkeiten offen
-     * für den Typ, und Chemikalien haben nichts daran geändert.
+     * <p>The same two limits as everywhere — so many kinds, so much amount —
+     * and the same arithmetic behind it: it has been open over the type
+     * since the fluids, and chemicals changed nothing about that.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void achemicalCellHoldsChemicals(GameTestHelper helper) {
@@ -11272,7 +11251,7 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(entity.chemicals().count("mekanism:hydrogen"), 1000L,
                 "und steht danach im Netz");
 
-        // Die kleinste Zelle fasst 64.000 mB; was darüber geht, bleibt draußen.
+        // The smallest cell holds 64,000 mB; what goes beyond stays outside.
         helper.assertValueEqual(entity.chemicals().insert("mekanism:oxygen", 64_000), 1000L,
                 "was über die Menge geht, bleibt draußen");
 
@@ -11283,7 +11262,7 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
-    /** Ohne Laufwerk lagert das Netz keine Chemikalien. */
+    /** Without a drive the network stores no chemicals. */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void withoutAdriveNochemicalsAreStored(GameTestHelper helper) {
         BlockPos controller = bareSetup(helper);
@@ -11297,10 +11276,10 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Der Inhalt fährt in der Zelle mit.
+     * The contents ride along in the cell.
      *
-     * <p>Der Grund, warum eine Zelle etwas wert ist — und derselbe wie bei den
-     * anderen beiden Arten.
+     * <p>The reason a cell is worth something — and the same as with the
+     * other two kinds.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void thestoredChemicalsRideAlongInThecell(GameTestHelper helper) {
@@ -11328,11 +11307,10 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Eine Chemikalien-Auswahl löst sich auf.
+     * A chemical selection resolves.
      *
-     * <p>Mekanism liegt im Prüflauf, also gibt es Wasserstoff. Ohne Mekanism
-     * ist die Liste leer und die Meldung sagt es — der Fall steht als
-     * Einheitstest da.
+     * <p>Mekanism is in the test run, so there is hydrogen. Without Mekanism
+     * the list is empty and the message says so — that case is a unit test.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void achemicalSelectionResolves(GameTestHelper helper) {
@@ -11345,7 +11323,7 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
-    /** Ein Muster trifft mehrere, und ein Name, den es nicht gibt, keine. */
+    /** A pattern hits several, and a name that does not exist hits none. */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void achemicalPatternHitsSeveral(GameTestHelper helper) {
         var alle = dev.devpanda.factorynetwork.compat.mekanism.Chemicals.resolve(
@@ -11359,7 +11337,7 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
-    /** Und der Editor zeigt, worauf sie sich auflöst. */
+    /** And the editor shows what it resolves to. */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void theeditorShowsWhatAchemicalResolvesTo(GameTestHelper helper) {
         var summary = dev.devpanda.factorynetwork.runtime.SelectionSummary.of(
@@ -11372,10 +11350,10 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Was nichts trifft, sagt das.
+     * What hits nothing says so.
      *
-     * <p>Die häufigste Ursache ist ein Tag, den dieses Pack nicht kennt — und
-     * der sieht im Editor aus wie jeder andere.
+     * <p>The most common cause is a tag this pack does not know — and that
+     * looks like any other in the editor.
      */
     @GameTest(template = EMPTY, timeoutTicks = 100)
     public static void whatHitsNothingSaysSo(GameTestHelper helper) {
@@ -11386,7 +11364,7 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
-    /** Flüssigkeiten gehen denselben Weg. */
+    /** Fluids go the same way. */
     @GameTest(template = EMPTY, timeoutTicks = 100)
     public static void fluidsGoTheSameWay(GameTestHelper helper) {
         var summary = dev.devpanda.factorynetwork.runtime.SelectionSummary.of(
@@ -11397,14 +11375,14 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
-    // ---- Fertigung ---------------------------------------------------------
+    // ---- Crafting ----------------------------------------------------------
 
     /**
-     * Ein Auftrag über vierundsechzig Truhen zieht Bretter und liefert Truhen.
+     * A job for sixty-four chests draws planks and delivers chests.
      *
-     * <p><b>Einstufig</b>: Der Fabricator baut, was er aus dem Speicher bauen
-     * kann. Fehlen Bretter, macht er keine aus Stämmen — das kommt später und
-     * ist ein bewusster Schnitt, kein Mangel.
+     * <p><b>Single-stage</b>: the fabricator builds what it can build from
+     * the storage. If planks are missing, it does not make any from logs —
+     * that comes later and is a deliberate cut, not a shortcoming.
      */
     @GameTest(template = EMPTY, timeoutTicks = 600)
     public static void afabricatorCraftsFromStock(GameTestHelper helper) {
@@ -11412,7 +11390,7 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
         helper.setBlock(controller.east().above(), FnBlocks.FABRICATOR.get());
         entity.rebuildNetwork();
-        // Acht Bretter je Truhe, vierundsechzig Truhen.
+        // Eight planks per chest, sixty-four chests.
         entity.storage().insert(Items.OAK_PLANKS, 512);
 
         entity.requestCraft(Items.CHEST, 64);
@@ -11429,10 +11407,10 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ohne Zutaten wartet der Auftrag und sagt, was fehlt.
+     * Without ingredients the job waits and says what is missing.
      *
-     * <p>Dieselbe Ehrlichkeit wie bei einem Worker vor einer vollen Kiste:
-     * Ein Auftrag, der nichts tut, muss den Grund nennen.
+     * <p>The same honesty as a worker in front of a full chest: a job that
+     * does nothing must name the reason.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void ajobWithoutIngredientsSaysWhatIsMissing(GameTestHelper helper) {
@@ -11456,7 +11434,7 @@ public final class FactoryNetworkGameTests {
                 .thenSucceed();
     }
 
-    /** Ohne Fabricator im Netz wird gar nichts gefertigt. */
+    /** Without a fabricator in the network nothing is crafted at all. */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void withoutAfabricatorNothingIsCrafted(GameTestHelper helper) {
         BlockPos controller = buildSetup(helper);
@@ -11471,16 +11449,16 @@ public final class FactoryNetworkGameTests {
                 .thenExecute(() -> {
                     helper.assertValueEqual(entity.storage().count(Items.CHEST), 0L,
                             "ohne Fabricator entsteht nichts");
-                    // Auf den Grund geprüft und nicht auf den Zustand: WAITING
-                    // steht schon beim Anlegen da, der Satz erst nach dem
-                    // ersten Takt.
+                    // Checked on the reason and not on the state: WAITING is
+                    // there from creation, the sentence only after the first
+                    // tick.
                     helper.assertValueEqual(entity.craftingJobs().get(0).detail(),
                             "kein Fabricator im Netz", "der Auftrag sagt, woran es liegt");
                 })
                 .thenSucceed();
     }
 
-    /** Ein Rezept, das es nicht gibt, wird gar nicht erst angenommen. */
+    /** A recipe that does not exist is not accepted in the first place. */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void arequestWithoutArecipeIsRefused(GameTestHelper helper) {
         BlockPos controller = buildSetup(helper);
@@ -11488,7 +11466,7 @@ public final class FactoryNetworkGameTests {
         helper.setBlock(controller.east().above(), FnBlocks.FABRICATOR.get());
         entity.rebuildNetwork();
 
-        // Bruchstein hat kein Rezept — er kommt aus der Welt.
+        // Cobblestone has no recipe — it comes from the world.
         helper.assertTrue(entity.requestCraft(Items.COBBLESTONE, 1) == null,
                 "ohne Rezept darf kein Auftrag entstehen");
         helper.assertTrue(entity.craftingJobs().isEmpty(), "und keiner in der Liste stehen");
@@ -11496,11 +11474,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ein Auftrag übersteht den Neustart.
+     * A job survives the restart.
      *
-     * <p>Das ist der ganze Grund, warum er am Controller lebt und nicht am
-     * Gerät: Wer eine Bestellung über zehntausend Barren aufgibt und den
-     * Server neu startet, will sie wiederfinden.
+     * <p>That is the whole reason it lives on the controller and not on the
+     * device: whoever places an order for ten thousand ingots and restarts
+     * the server wants to find it again.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void ajobSurvivesArestart(GameTestHelper helper) {
@@ -11527,7 +11505,7 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
-    /** Ein fertiger Auftrag meldet sich als Ereignis. */
+    /** A finished job announces itself as an event. */
     @GameTest(template = EMPTY, timeoutTicks = 600)
     public static void afinishedJobFiresAnEvent(GameTestHelper helper) {
         BlockPos controller = buildSetup(helper);
@@ -11554,11 +11532,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * {@code craft(64 item:chest)} bestellt aus dem Programm.
+     * {@code craft(64 item:chest)} orders from the program.
      *
-     * <p>Der Weg, der zu dieser Mod gehört: Ein Netz tut nichts von selbst,
-     * also wird auch eine Bestellung geschrieben und nicht geklickt. Der
-     * Reiter zeigt danach, was daraus wurde.
+     * <p>The path that belongs to this mod: a network does nothing by itself,
+     * so an order too is written and not clicked. The tab afterwards shows
+     * what became of it.
      */
     @GameTest(template = EMPTY, timeoutTicks = 600)
     public static void craftOrdersFromCode(GameTestHelper helper) {
@@ -11586,7 +11564,7 @@ public final class FactoryNetworkGameTests {
                 .thenSucceed();
     }
 
-    /** Ohne Rezept liefert {@code craft} eine Null und legt nichts an. */
+    /** Without a recipe {@code craft} returns null and creates nothing. */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void craftWithoutArecipeGivesZero(GameTestHelper helper) {
         BlockPos controller = buildSetup(helper);
@@ -11607,10 +11585,10 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Der Reiter bekommt die Aufträge als fertige Zeilen.
+     * The tab gets the jobs as finished lines.
      *
-     * <p>Geprüft wird nicht das Zeichnen, sondern das, was hinübergeht: Der
-     * Name des Ziels als Text, die Zahlen, der Zustand und der Grund.
+     * <p>Not the drawing is checked but what goes across: the name of the
+     * target as text, the numbers, the state and the reason.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void thecraftingTabGetsItsLines(GameTestHelper helper) {
@@ -11634,7 +11612,7 @@ public final class FactoryNetworkGameTests {
                 .thenSucceed();
     }
 
-    /** Ein abgebrochener Auftrag ist weg — das Gebaute bleibt. */
+    /** A cancelled job is gone — what was built stays. */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void acancelledJobIsGone(GameTestHelper helper) {
         BlockPos controller = buildSetup(helper);
@@ -11650,11 +11628,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Stellt einen Ofen mit Brennstoff an einen Connector des Netzes.
+     * Places a furnace with fuel at a connector of the network.
      *
-     * <p>Der Brennstoff gehört dem Spieler: Das Netz legt die Zutat ein und
-     * holt das Ergebnis, aber es heizt nicht. Wer will, dass es heizt,
-     * schreibt einen Worker.
+     * <p>The fuel belongs to the player: the network inserts the ingredient
+     * and fetches the result, but it does not heat. Whoever wants it to heat
+     * writes a worker.
      */
     private static void furnaceWithFuel(GameTestHelper helper, BlockPos connector,
                                         net.minecraft.world.level.block.Block kind) {
@@ -11669,18 +11647,18 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ein Ofen im Netz schmilzt für einen Fertigungsauftrag.
+     * A furnace in the network smelts for a crafting job.
      *
-     * <p>Das ist der Unterschied zwischen Werkbank und Maschine: Ein
-     * Werkbank-Rezept ist in einem Zug erledigt, ein Ofenrezept braucht
-     * Zeit. Der Auftrag legt ein, wartet und holt ab — und dazwischen tut er
-     * nichts anderes.
+     * <p>That is the difference between crafting table and machine: a
+     * crafting-table recipe is done in one go, a furnace recipe takes time.
+     * The job inserts, waits and collects — and in between does nothing
+     * else.
      */
     @GameTest(template = EMPTY, timeoutTicks = 800)
     public static void anovenInThenetworkSmeltsForAjob(GameTestHelper helper) {
         BlockPos controller = buildSetup(helper);
         ControllerBlockEntity entity = controllerAt(helper, controller);
-        // quarry_output zeigt nach Norden; dort stand eine Kiste.
+        // quarry_output faces north; a chest used to stand there.
         furnaceWithFuel(helper, controller.east().north(), Blocks.FURNACE);
         helper.setBlock(controller.east().above(), FnBlocks.FABRICATOR.get());
         entity.rebuildNetwork();
@@ -11697,12 +11675,12 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Was im Ofen liegt, übersteht den Neustart.
+     * What lies in the furnace survives the restart.
      *
-     * <p><b>Der Unterschied zum Plan.</b> Den rechnet der Controller bei
-     * jedem Takt neu, weil er nur eine Absicht ist. Ein laufender Schritt ist
-     * eine Tatsache über die Welt: Die Zutaten liegen im Ofen. Wer das
-     * vergisst, hat sie verloren und legt beim nächsten Mal neue nach.
+     * <p><b>The difference from the plan.</b> The controller recomputes that
+     * every tick, because it is only an intention. A running step is a fact
+     * about the world: the ingredients lie in the furnace. Whoever forgets
+     * that has lost them and puts in new ones next time.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void whatIsIntheovenSurvivesArestart(GameTestHelper helper) {
@@ -11741,13 +11719,12 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ein Rezept aus dem Programm zieht seine Zutaten in die Maschine.
+     * A recipe from the program draws its ingredients into the machine.
      *
-     * <p>Geprüft an einer Kiste, und das ist Absicht: Sie ist keine Maschine,
-     * aber sie nimmt an und gibt heraus — genau die beiden Eigenschaften, auf
-     * die sich ein erklärtes Rezept verlässt. Eine echte Fremdmod-Maschine
-     * steht in keinem Prüflauf zur Verfügung; was hier zählt, ist der Weg der
-     * Gegenstände.
+     * <p>Checked on a chest, and that is deliberate: it is no machine, but it
+     * accepts and hands out — exactly the two properties a declared recipe
+     * relies on. A real foreign-mod machine is available in no test run;
+     * what counts here is the path of the items.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void adeclaredRecipeFeedsItsMachine(GameTestHelper helper) {
@@ -11768,8 +11745,8 @@ public final class FactoryNetworkGameTests {
         helper.startSequence()
                 .thenIdle(60)
                 .thenExecute(() -> {
-                    // Das Erz ist aus dem Speicher in die Kiste gewandert, und
-                    // der Auftrag wartet auf das, was zurückkommen soll.
+                    // The ore has travelled from the storage into the chest,
+                    // and the job waits for what is supposed to come back.
                     helper.assertValueEqual(entity.storage().count(Items.IRON_ORE), 3L,
                             "ein Erz ist in die Maschine gegangen");
                     var job = entity.craftingJobs().get(0);
@@ -11778,8 +11755,8 @@ public final class FactoryNetworkGameTests {
                     helper.assertValueEqual(job.running().device(), "quarry_output",
                             "und wissen, an welcher");
 
-                    // Jetzt liefert die „Maschine": Was sie herausgibt, holt
-                    // das Netz von selbst ab.
+                    // Now the "machine" delivers: what it hands out, the
+                    // network collects by itself.
                     if (helper.getBlockEntity(controller.east().north().north())
                             instanceof ChestBlockEntity chest) {
                         chest.setItem(1, new ItemStack(Items.IRON_NUGGET, 2));
@@ -11795,14 +11772,13 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Fehlt die Flüssigkeit eines Rezepts, wartet der Auftrag und rührt nichts an.
+     * If a recipe's fluid is missing, the job waits and touches nothing.
      *
-     * <p>Der Schnitt, um den es geht: Ein Rezept darf {@code in 1000
-     * fluid:water} sagen. Der Planner rechnet damit nicht — Flüssigkeiten
-     * werden nicht beschafft —, aber der Ausführende muss sie beim Anfangen
-     * einfüllen. Und wenn er das nicht kann, darf er die Gegenstände nicht
-     * schon einmal hineinlegen: Eine Maschine mit vier Erzen und ohne Wasser
-     * fängt nie an, und das Erz wäre aus dem Netz verschwunden.
+     * <p>The cut in question: a recipe may say {@code in 1000 fluid:water}.
+     * The planner does not count on it — fluids are not procured —, but the
+     * executor has to pour it in when starting. And if it cannot, it must not
+     * have already put the items in: a machine with four ores and no water
+     * never starts, and the ore would have vanished from the network.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void arecipeWaitsForItsFluid(GameTestHelper helper) {
@@ -11827,8 +11803,8 @@ public final class FactoryNetworkGameTests {
                     var job = entity.craftingJobs().get(0);
                     helper.assertValueEqual(job.status().name(), "WAITING",
                             "der Auftrag muss warten: " + job.detail());
-                    // Auf Deutsch heißt sie Wasser, im Prüflauf ohne
-                    // Sprachdateien Water — geprüft wird beides, wie beim Ofen.
+                    // In German it is called Wasser, in the test run without
+                    // language files Water — both are checked, as with the furnace.
                     helper.assertTrue(job.detail().toLowerCase().contains("wasser")
                                     || job.detail().toLowerCase().contains("water"),
                             "und sagen, welche Sorte fehlt: " + job.detail());
@@ -11841,12 +11817,12 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Und ebenso, wenn die Maschine die Flüssigkeit gar nicht nimmt.
+     * And likewise if the machine does not take the fluid at all.
      *
-     * <p>Geprüft an einer Kiste: Sie nimmt Gegenstände an und hat keinen
-     * Tank — der Fall, in dem jemand {@code fluid:} an ein Gerät schreibt,
-     * das damit nichts anfangen kann. Auch dann bleibt beides liegen, wo es
-     * liegt, und die Meldung nennt die Sorte statt nur „geht nicht".
+     * <p>Checked on a chest: it accepts items and has no tank — the case in
+     * which somebody writes {@code fluid:} on a device that can do nothing
+     * with it. Then too both stay where they lie, and the message names the
+     * kind instead of just "does not work".
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void arecipeWaitsIfTheMachineTakesNofluid(GameTestHelper helper) {
@@ -11886,7 +11862,7 @@ public final class FactoryNetworkGameTests {
                 .thenSucceed();
     }
 
-    /** Ein Rezept an einem Gerät, das es nicht gibt, meldet sich beim Übernehmen. */
+    /** A recipe at a device that does not exist is reported on deploy. */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void arecipeAtAnunknownDeviceIsReported(GameTestHelper helper) {
         BlockPos controller = buildSetup(helper);
@@ -11905,7 +11881,7 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
-    /** Ohne Ofen im Netz wartet der Auftrag und sagt es. */
+    /** Without a furnace in the network the job waits and says so. */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void withoutAnovenThejobWaitsAndSaysSo(GameTestHelper helper) {
         BlockPos controller = buildSetup(helper);
@@ -11929,11 +11905,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Was fehlt, baut das Netz selbst.
+     * What is missing, the network builds itself.
      *
-     * <p>Der Schnitt, der vorher hier lag: Ein Auftrag über eine Truhe stand
-     * still und meldete „es fehlen 8 Bretter", während im Laufwerk Stämme
-     * lagen und der Weg dahin ein einziges Rezept war.
+     * <p>The cut that used to lie here: a job for one chest stood still and
+     * reported "8 planks missing", while logs lay in the drive and the way
+     * there was a single recipe.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void amissingIngredientIsCraftedInTurn(GameTestHelper helper) {
@@ -11941,7 +11917,7 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
         helper.setBlock(controller.east().above(), FnBlocks.FABRICATOR.get());
         entity.rebuildNetwork();
-        // Zwei Stämme sind acht Bretter sind eine Truhe.
+        // Two logs are eight planks are one chest.
         entity.storage().insert(Items.OAK_LOG, 2);
 
         entity.requestCraft(Items.CHEST, 1);
@@ -11958,12 +11934,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Das Netz nimmt das Holz, das es hat.
+     * The network takes the wood it has.
      *
-     * <p>Eine Zutat ist eine Auswahl — {@code #planks} und nicht
-     * „Eichenbrett". Wer sich beim Planen auf die erste Sorte festlegt,
-     * meldet einem Spieler mit einem Laufwerk voll Fichtenstämmen, es fehlten
-     * ihm Eichenbretter.
+     * <p>An ingredient is a selection — {@code #planks} and not "oak planks".
+     * Whoever commits to the first kind when planning tells a player with a
+     * drive full of spruce logs that they are missing oak planks.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void thenetworkTakesTheWoodItHas(GameTestHelper helper) {
@@ -11971,7 +11946,7 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
         helper.setBlock(controller.east().above(), FnBlocks.FABRICATOR.get());
         entity.rebuildNetwork();
-        // Keine Eiche weit und breit.
+        // No oak anywhere.
         entity.storage().insert(Items.SPRUCE_LOG, 2);
 
         entity.requestCraft(Items.CHEST, 1);
@@ -11988,10 +11963,10 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Die Fehlzeile nennt den Grundstoff, nicht die Zwischenstufe.
+     * The missing line names the raw material, not the intermediate.
      *
-     * <p>„Es fehlen 8 Bretter" hilft niemandem, der Bretter herstellen kann.
-     * Gesucht ist das, was jemand hinlegen muss.
+     * <p>"8 planks missing" helps nobody who can make planks. What is wanted
+     * is what somebody has to put in.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void whatIsMissingIsNamedDownToTheRawMaterial(GameTestHelper helper) {
@@ -12016,10 +11991,10 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Nachschub ist derselbe Worker.
+     * Resupply is the same worker.
      *
-     * <p>Der Grund, warum {@code from} eine Quelle nennt und keine Betriebsart:
-     * „hol es aus dem Lager" und „lass es herstellen" bekommen dieselbe Form.
+     * <p>The reason {@code from} names a source and not a mode of operation:
+     * "fetch it from the store" and "have it made" get the same form.
      */
     @GameTest(template = EMPTY, timeoutTicks = 600)
     public static void acraftingWorkerOrdersWhatIsMissing(GameTestHelper helper) {
@@ -12046,17 +12021,17 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Und er bestellt genau einmal.
+     * And it orders exactly once.
      *
-     * <p>Der Bestand steigt erst, wenn der Auftrag fertig ist. Ein Worker, der
-     * nur den Bestand ansieht, bestellt in der Zwischenzeit jede Runde neu —
-     * und aus „halte vier vor" werden vierzig.
+     * <p>The stock only rises when the job is done. A worker that only looks
+     * at the stock reorders every round in the meantime — and "keep four in
+     * stock" becomes forty.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void acraftingWorkerOrdersOnlyOnce(GameTestHelper helper) {
         BlockPos controller = buildSetup(helper);
         ControllerBlockEntity entity = controllerAt(helper, controller);
-        // Kein Fabricator: Der Auftrag steht und wird nie fertig.
+        // No fabricator: the job stands and never finishes.
         entity.rebuildNetwork();
         entity.storage().insert(Items.OAK_PLANKS, 64);
 
@@ -12080,7 +12055,7 @@ public final class FactoryNetworkGameTests {
                 .thenSucceed();
     }
 
-    /** Steht der Vorrat, bestellt er nichts. */
+    /** If the stock is there, it orders nothing. */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void acraftingWorkerWithAfullStockOrdersNothing(GameTestHelper helper) {
         BlockPos controller = buildSetup(helper);
@@ -12109,11 +12084,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Gefertigt wird in den Speicher, nicht in eine Maschine.
+     * Crafting goes into the storage, not into a machine.
      *
-     * <p>Der Weg dahin steht schon: Ein zweiter Worker holt es aus dem Lager
-     * und legt es in die Maschine. Beides in eine Zeile zu ziehen hieße, dem
-     * Fabricator ein Ziel beizubringen, das er nicht hat.
+     * <p>The path there already exists: a second worker fetches it from the
+     * store and puts it into the machine. Pulling both into one line would
+     * mean teaching the fabricator a target it does not have.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void acraftingWorkerDeliversOnlyToStorage(GameTestHelper helper) {
@@ -12143,7 +12118,7 @@ public final class FactoryNetworkGameTests {
                 .thenSucceed();
     }
 
-    /** Ohne {@code maintain} weiß niemand, wie viel bestellt werden soll. */
+    /** Without {@code maintain} nobody knows how much to order. */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void acraftingWorkerWithoutMaintainStops(GameTestHelper helper) {
         BlockPos controller = buildSetup(helper);
@@ -12170,7 +12145,7 @@ public final class FactoryNetworkGameTests {
                 .thenSucceed();
     }
 
-    /** Was kein Rezept hat, wird nicht bestellt — und der Worker sagt es. */
+    /** What has no recipe is not ordered — and the worker says so. */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void whatHasNorecipeIsNotOrdered(GameTestHelper helper) {
         BlockPos controller = buildSetup(helper);
@@ -12198,12 +12173,12 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Der Rückweg der Brücke: Was das Spiel weiß, steht neben den Dateien.
+     * The bridge's way back: what the game knows is written next to the files.
      *
-     * <p>Hin funktioniert sie längst — wer in VS Code speichert, dessen
-     * Programm übernimmt der Controller. Zurück kam bisher nichts: Ein Fehler
-     * stand im Terminal, und wer nicht im Spiel war, sah eine Datei, die
-     * stumm nicht lief.
+     * <p>The way there has long worked — whoever saves in VS Code has their
+     * program deployed by the controller. Until now nothing came back: an
+     * error stood in the terminal, and whoever was not in the game saw a
+     * file that silently did not run.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void thegameWritesWhatItKnowsNextToThefiles(GameTestHelper helper) {
@@ -12211,16 +12186,16 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
 
-        // Ein Programm mit einem Gerätenamen, den es nicht gibt: Der
-        // Übersetzer warnt, und genau das soll draußen ankommen.
+        // A program with a device name that does not exist: the compiler
+        // warns, and exactly that should arrive outside.
         helper.assertTrue(entity.deploy("""
                 fn holen() {
                     move 64 item:iron_ore from kist to depot
                 }"""), "Eine Warnung hält das Programm nicht auf");
 
         helper.startSequence()
-                // Der Ordner entsteht erst beim ersten Blick, und der kommt
-                // im Sekundentakt.
+                // The folder only comes into being at the first look, and
+                // that comes once a second.
                 .thenIdle(45)
                 .thenExecute(() -> {
                     java.nio.file.Path folder = entity.programFilePath();
@@ -12241,21 +12216,22 @@ public final class FactoryNetworkGameTests {
                 .thenSucceed();
     }
 
-    // ---- Der Anbau am Controller -------------------------------------------
+    // ---- The extension on the controller -----------------------------------
 
     /**
-     * Ein Kabel am Anbau gehört zum Netz.
+     * A cable on the extension belongs to the network.
      *
-     * <p>Der Anbau bringt Seiten mit, und an einer Seite hängt ein Strang wie
-     * an jeder Seite des Controllers. Ohne das wäre er ein Zierblock.
+     * <p>The extension brings sides, and a strand hangs on one of its sides
+     * as on any side of the controller. Without that it would be a
+     * decorative block.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void acableOnTheExtensionBelongsToTheNetwork(GameTestHelper helper) {
         BlockPos controller = bareSetup(helper);
         ControllerBlockEntity entity = controllerAt(helper, controller);
 
-        // Nach Norden: Anbau, Kabel, Connector — der Controller selbst wird
-        // dabei nie berührt.
+        // To the north: extension, cable, connector — the controller itself
+        // is never touched in the process.
         BlockPos anbau = controller.north();
         helper.setBlock(anbau, FnBlocks.CONTROLLER_EXTENSION.get());
         helper.setBlock(anbau.north(), FnBlocks.CABLE.get());
@@ -12272,27 +12248,27 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ein Anbau ohne Controller daneben tut nichts.
+     * An extension without a controller next to it does nothing.
      *
-     * <p><b>Der Anbau muss den Controller berühren</b> — unmittelbar oder über
-     * andere Anbauten. Ließe er sich über ein Kabel anschließen, wäre er ein
-     * beliebig oft setzbarer Kanalvermehrer: sechs neue Seiten für einen
-     * Block, und die Kanalgrenze bedeutete nichts mehr.
+     * <p><b>The extension has to touch the controller</b> — directly or via
+     * other extensions. If it could be connected via a cable, it would be a
+     * channel multiplier placeable any number of times: six new sides for
+     * one block, and the channel limit would mean nothing any more.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void anextensionAtTheEndOfACableIsNothing(GameTestHelper helper) {
         BlockPos controller = bareSetup(helper);
         ControllerBlockEntity entity = controllerAt(helper, controller);
 
-        // Ein Kabel vom Controller zum Anbau, und vom Anbau soll es
-        // weitergehen — soll es aber nicht.
+        // A cable from the controller to the extension, and from the
+        // extension it is supposed to go on — but must not.
         BlockPos anbau = controller.north().north();
         helper.setBlock(controller.north(), FnBlocks.CABLE.get());
         helper.setBlock(anbau, FnBlocks.CONTROLLER_EXTENSION.get());
-        // Nach oben und nicht nach Osten: Östlich liegt der Grundaufbau, und
-        // seit ein Anschluss auf einem Kabel sitzt, ist diese Stelle selbst
-        // eine Leitung — der Strang liefe am Anbau vorbei, und der Prüflauf
-        // prüfte etwas anderes, als er behauptet.
+        // Upwards and not to the east: to the east lies the base setup, and
+        // since a connector sits on a cable, that spot is itself a line — the
+        // strand would run past the extension, and the test run would check
+        // something other than what it claims.
         helper.setBlock(anbau.above(), FnBlocks.CABLE.get());
         BlockPos connector = anbau.above().above();
         connector(helper, connector, Direction.EAST);
@@ -12305,7 +12281,7 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
-    /** Zwei Anbauten hintereinander reichen die Seiten weiter. */
+    /** Two extensions in a row pass the sides on. */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void extensionsChain(GameTestHelper helper) {
         BlockPos controller = bareSetup(helper);
@@ -12328,12 +12304,12 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Der Controller liegt auf jedem Weg — sonst begrenzt er nichts.
+     * The controller lies on every path — otherwise it limits nothing.
      *
-     * <p><b>Das ist die Zusicherung, an der die ganze Grenze hängt.</b> Das
-     * Budget rechnet über die Knoten eines Weges; steht der Controller nicht
-     * darauf, sieht es ihn nie, und eine noch so schöne Zahl in
-     * {@code Bandwidth} täte gar nichts.
+     * <p><b>This is the assertion the whole limit hangs on.</b> The budget
+     * computes over the nodes of a path; if the controller is not on it, the
+     * budget never sees it, and however fine a number in {@code Bandwidth}
+     * would do nothing at all.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void everyPathRunsThroughTheController(GameTestHelper helper) {
@@ -12351,15 +12327,15 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ein voller Controller macht die Strecken dahinter voll.
+     * A full controller makes the stretches behind it full.
      *
-     * <p><b>Sonst sucht man den Engpass an der falschen Stelle.</b> Eine
-     * Kabelstrecke trägt so viel wie ein Kabel — aber alles, was über sie
-     * geht, kam durch den Controller. Ist der randvoll, ist die Strecke es
-     * auch, ganz gleich, was das Kabel könnte.
+     * <p><b>Otherwise you look for the bottleneck in the wrong place.</b> A
+     * cable stretch carries as much as a cable — but everything that goes
+     * over it came through the controller. If that is brimful, so is the
+     * stretch, no matter what the cable could do.
      *
-     * <p>Ohne die Deckelung meldete der Analysator „frei" für jede Strecke,
-     * während nichts mehr fließt.
+     * <p>Without the cap the analyser reported "free" for every stretch
+     * while nothing flows any more.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void afullControllerMakesTheStretchesFull(GameTestHelper helper) {
@@ -12367,7 +12343,7 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
 
-        // Den Controller randvoll fahren — nur ihn, nicht die Kabel.
+        // Drive the controller brimful — only it, not the cables.
         entity.runtime().budget().spend(java.util.List.of(
                         new dev.devpanda.factorynetwork.network.FactoryGraph.Node(
                                 helper.absolutePos(controller),
@@ -12380,8 +12356,8 @@ public final class FactoryNetworkGameTests {
             helper.assertValueEqual(link.state(),
                     dev.devpanda.factorynetwork.analyser.AnalyserData.LinkState.FULL,
                     "eine Strecke meldet frei, obwohl der Controller davor voll ist");
-            // Die Kapazität bleibt die des Kabels: Was diese Strecke könnte,
-            // ändert sich nicht dadurch, dass davor nichts durchkommt.
+            // The capacity remains that of the cable: what this stretch could
+            // do does not change because nothing gets through before it.
             helper.assertValueEqual(link.capacity(),
                     dev.devpanda.factorynetwork.network.Bandwidth.CABLE,
                     "die Strecke gibt eine andere Kapazität an als das Kabel");
@@ -12390,17 +12366,17 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Beide Kabelsorten tragen dasselbe.
+     * Both cable kinds carry the same.
      *
-     * <p><b>Das dichte Kabel ist seit dem 30.08. eine Altlast.</b> Es
-     * bündelte Kanäle, und Kanäle gibt es seit dem 29.08. nicht mehr — damit
-     * war es die Antwort auf eine Frage, die niemand mehr stellt. Aus dem
-     * Kreativmenü und den Rezepten ist es verschwunden.
+     * <p><b>The dense cable has been a legacy since 30 Aug.</b> It bundled
+     * channels, and channels no longer exist since 29 Aug — so it was the
+     * answer to a question nobody asks any more. It has vanished from the
+     * creative menu and the recipes.
      *
-     * <p><b>Gelöscht ist es nicht</b>, und der Grund steht in NeoForge:
-     * 21.1 kennt keinen Weg, eine verschwundene Kennung in einer bestehenden
-     * Welt umzuschreiben. Wer eines im Boden hat, hätte danach Luft. Also
-     * bleibt der Block und trägt, was ein Kabel trägt.
+     * <p><b>It is not deleted</b>, and the reason is in NeoForge: 21.1 knows
+     * no way to remap a vanished id in an existing world. Whoever has one in
+     * the ground would have air afterwards. So the block stays and carries
+     * what a cable carries.
      */
     @GameTest(template = EMPTY, timeoutTicks = 100)
     public static void bothCableKindsCarryTheSame(GameTestHelper helper) {
@@ -12422,11 +12398,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ein Aufbau, bei dem zwei Router im Weg stehen.
+     * A setup in which two routers stand in the way.
      *
-     * <p>Controller, Kabel, Router, Router, Kabel, Anschluss, Kiste — in
-     * einer Reihe nach Osten. Die Kiste heißt {@code quarry_output} wie
-     * überall sonst, damit dieselben Programme darauf passen.
+     * <p>Controller, cable, router, router, cable, connector, chest — in a
+     * row to the east. The chest is called {@code quarry_output} as
+     * everywhere else, so that the same programs fit it.
      */
     private static BlockPos twoRoutersSetup(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 1, 1);
@@ -12448,12 +12424,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Zwei Router auf dem Weg sind zwei Ticks Latenz.
+     * Two routers on the way are two ticks of latency.
      *
-     * <p><b>Je Gerät, nicht je Block.</b> Licht braucht für zwanzig Blöcke
-     * sechzig Nanosekunden — gegen einen Tick von fünfzig Millisekunden ist
-     * das nichts. Was in einem echten Netz Zeit kostet, ist das Auspacken an
-     * jedem Knoten.
+     * <p><b>Per device, not per block.</b> Light needs sixty nanoseconds for
+     * twenty blocks — against a tick of fifty milliseconds that is nothing.
+     * What costs time in a real network is the unpacking at every node.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void eachRouterOnTheWayCostsATick(GameTestHelper helper) {
@@ -12469,8 +12444,9 @@ public final class FactoryNetworkGameTests {
                 2 * dev.devpanda.factorynetwork.network.Latency.PER_HOP,
                 "zwei Router auf dem Weg kosten nicht zwei Ticks");
 
-        // Und das Kabel dazwischen kostet nichts: Sonst wäre es Entfernung,
-        // die zählt, und genau das ist der Fehler, den diese Zahl vermeidet.
+        // And the cable in between costs nothing: otherwise it would be
+        // distance that counts, and that is exactly the mistake this number
+        // avoids.
         BlockPos far = new BlockPos(1, 1, 1);
         helper.assertValueEqual(
                 dev.devpanda.factorynetwork.network.Latency.of(
@@ -12483,15 +12459,16 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Die Latenz verzögert den Anfang, nicht den Takt.
+     * Latency delays the start, not the rate.
      *
-     * <p><b>Das ist die Zusicherung, an der der ganze Entwurf hängt.</b>
-     * Würde jeder Griff um die Latenz verzögert, liefe ein Worker hinter
-     * zwei Routern auf ein Drittel — die Latenz wäre eine Bandbreitenstrafe
-     * in Verkleidung, und wer sein Netz sauber trennt, würde dafür bestraft.
+     * <p><b>This is the assertion the whole design hangs on.</b> If every
+     * grab were delayed by the latency, a worker behind two routers would run
+     * at a third — the latency would be a bandwidth penalty in disguise, and
+     * whoever separates their network cleanly would be punished for it.
      *
-     * <p>Gemessen wird deshalb die Dauerrate: Nach vierzig Ticks muss fast
-     * alles durch sein, was ein Worker mit {@code rate 64 per 1t} schafft.
+     * <p>So the sustained rate is measured: after forty ticks almost
+     * everything a worker with {@code rate 64 per 1t} manages must be
+     * through.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void latencyDelaysTheStartNotTheRate(GameTestHelper helper) {
@@ -12514,9 +12491,9 @@ public final class FactoryNetworkGameTests {
 
         helper.runAfterDelay(40, () -> {
             long moved = entity.storage().count(Items.COBBLESTONE);
-            // Zwanzig volle Griffe in vierzig Ticks: Zwei gehen für die
-            // Latenz drauf, ein paar für den Anlauf. Bei einer Drossel je
-            // Griff wäre es ein Drittel davon.
+            // Twenty full grabs in forty ticks: two go to the latency, a few
+            // to the start-up. With a throttle per grab it would be a third
+            // of that.
             helper.assertTrue(moved >= 20 * 64,
                     "nur " + moved + " Steine in vierzig Ticks — die Latenz drosselt");
             helper.succeed();
@@ -12524,13 +12501,12 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Eine Brücke ist ein Stück Weg, kein Loch darin.
+     * A bridge is a piece of the way, not a hole in it.
      *
-     * <p><b>Dieselbe Falle wie beim Controller.</b> {@code Bandwidth.at}
-     * kennt die Brücke längst — aber wenn sie auf keinem Weg steht, sieht
-     * das Budget sie nie, und ihr Verkehr wird nirgends gebucht. Der
-     * Analysator verdeckt das: Seine Strecken kommen aus den Kanten, nicht
-     * aus dem Weg.
+     * <p><b>The same trap as with the controller.</b> {@code Bandwidth.at}
+     * has long known the bridge — but if it stands on no path, the budget
+     * never sees it, and its traffic is booked nowhere. The analyser hides
+     * that: its stretches come from the edges, not from the path.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void abridgeIsAStretchOnTheWay(GameTestHelper helper) {
@@ -12576,12 +12552,12 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Der Controller findet seine eigene Auslastung wieder.
+     * The controller finds its own load again.
      *
-     * <p><b>Er baut seinen Knoten selbst nach</b>, um im Budget nachzusehen —
-     * und ein Knoten, der nur fast derselbe ist, liefert stumm eine Null.
-     * Genau das prüft dieser Lauf: gebucht wird über den Weg, gelesen über
-     * den nachgebauten Knoten.
+     * <p><b>It rebuilds its node itself</b> to look it up in the budget — and
+     * a node that is only almost the same silently yields a zero. That is
+     * exactly what this run checks: booked via the path, read via the
+     * rebuilt node.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void theControllerFindsItsOwnLoad(GameTestHelper helper) {
@@ -12601,10 +12577,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ohne Anbau trägt der Controller ein dichtes Kabel, mit zweien mehr.
+     * Without an extension the controller carries a dense cable, with two
+     * more.
      *
-     * <p><b>Der Anbau ist das Upgrade</b> — kein Steckplatz, keine Karte.
-     * Man sieht einem großen Netz an, dass es groß ist.
+     * <p><b>The extension is the upgrade</b> — no slot, no card. You can see
+     * on a large network that it is large.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void extensionsRaiseTheControllerLimit(GameTestHelper helper) {
@@ -12625,7 +12602,7 @@ public final class FactoryNetworkGameTests {
                         + 2 * dev.devpanda.factorynetwork.network.Bandwidth.EXTENSION,
                 "zwei Anbauten heben die Grenze nicht");
 
-        // Und die Zahl kommt auch dort an, wo das Budget sie liest.
+        // And the number also arrives where the budget reads it.
         helper.assertValueEqual(
                 dev.devpanda.factorynetwork.network.Bandwidth.at(
                         helper.getLevel(), helper.absolutePos(controller)),
@@ -12634,7 +12611,7 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
-    /** Der Anbau kostet Strom wie jedes andere Bauteil am Netz. */
+    /** The extension costs power like every other part on the network. */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void anextensionCostsPower(GameTestHelper helper) {
         BlockPos controller = bareSetup(helper);
@@ -12651,9 +12628,9 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
-    // ---- Energiezellen -----------------------------------------------------
+    // ---- Energy cells ------------------------------------------------------
 
-    /** Das Laufwerk im Standardaufbau, samt einer Energiezelle im zweiten Platz. */
+    /** The drive in the standard setup, with an energy cell in the second slot. */
     private static dev.devpanda.factorynetwork.storage.EnergyCellView energyCell(
             GameTestHelper helper, BlockPos controller,
             dev.devpanda.factorynetwork.storage.EnergyCellTier tier) {
@@ -12669,9 +12646,9 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Eine Energiezelle vergrößert den Vorrat.
+     * An energy cell enlarges the reserve.
      *
-     * <p>Der Puffer im Controller bleibt, was er war — die Zelle kommt dazu.
+     * <p>The buffer in the controller stays what it was — the cell is added.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void anenergyCellEnlargesTheSupply(GameTestHelper helper) {
@@ -12691,11 +12668,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Das Netz läuft auch, wenn nur die Zelle etwas hat.
+     * The network also runs when only the cell has something.
      *
-     * <p><b>Der Kern der ganzen Sache.</b> Ein Vorrat, der nur im
-     * Controllerpuffer zählt, lässt ein Netz mit vollen Zellen ausgehen — und
-     * zwar mitten im Betrieb, ohne dass irgendwo eine Zahl auf null steht.
+     * <p><b>The core of the whole thing.</b> A reserve that only counts in
+     * the controller buffer lets a network with full cells go out — in the
+     * middle of operation, without any number anywhere standing at zero.
      */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void thenetworkRunsOnACellAlone(GameTestHelper helper) {
@@ -12704,8 +12681,8 @@ public final class FactoryNetworkGameTests {
         var zelle = energyCell(helper, controller,
                 dev.devpanda.factorynetwork.storage.EnergyCellTier.FE64K);
         entity.rebuildNetwork();
-        // Der Puffer auf null, die Zelle voll: Alles, was das Netz hat, liegt
-        // im Laufwerk.
+        // The buffer at zero, the cell full: everything the network has lies
+        // in the drive.
         entity.power().empty();
         if (zelle != null) {
             zelle.fill(64_000);
@@ -12720,7 +12697,7 @@ public final class FactoryNetworkGameTests {
                 .thenSucceed();
     }
 
-    /** Was das Netz verbraucht, zahlt am Ende die Zelle. */
+    /** What the network consumes, the cell pays for in the end. */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void theCellPaysWhenTheBufferIsEmpty(GameTestHelper helper) {
         BlockPos controller = buildSetup(helper);
@@ -12744,11 +12721,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Wer den Puffer füllt, füllt danach die Zellen.
+     * Whoever fills the buffer fills the cells afterwards.
      *
-     * <p>Sonst bliebe eine Energiezelle für immer leer: Strom kommt von außen
-     * durch den Anschluss am Controller, und der endet ohne diesen Weg am
-     * Rand des Puffers.
+     * <p>Otherwise an energy cell would stay empty forever: power comes from
+     * outside through the port on the controller, and without this path
+     * that ends at the edge of the buffer.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void powerFlowsOnIntoTheCell(GameTestHelper helper) {
@@ -12760,12 +12737,12 @@ public final class FactoryNetworkGameTests {
         if (zelle == null) {
             return;
         }
-        // Erst auf null, dann den Puffer randvoll: Der Aufbau lässt das Netz
-        // laufen und hat ihn dabei schon fast gefüllt.
+        // First to zero, then the buffer brimful: the setup lets the network
+        // run and has already almost filled it in the process.
         entity.power().empty();
         entity.power().fill(Power.CAPACITY);
 
-        // Der Weg von außen: derselbe, den ein fremdes Kabel nimmt.
+        // The path from outside: the same a foreign cable takes.
         int angenommen = entity.power().port().receiveEnergy(1_000, false);
 
         helper.assertTrue(angenommen == 1_000,
@@ -12775,7 +12752,7 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
-    /** Eine Zelle, die herausgeht, nimmt ihre Ladung mit. */
+    /** A cell that goes out takes its charge along. */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void acellCarriesItsChargeOut(GameTestHelper helper) {
         BlockPos controller = buildSetup(helper);
@@ -12790,14 +12767,14 @@ public final class FactoryNetworkGameTests {
 
         var drive = (dev.devpanda.factorynetwork.block.entity.DriveBlockEntity)
                 helper.getBlockEntity(controller.above());
-        // Der Gegenstand selbst, keine Kopie: Das Zurückschreiben geschieht
-        // erst beim Herausnehmen, und eine Kopie von vorher hätte es nicht
-        // mitbekommen. Im Spiel wandert genau dieser Gegenstand in die Hand.
+        // The item itself, no copy: the write-back only happens on removal,
+        // and an earlier copy would not have received it. In the game exactly
+        // this item travels into the hand.
         ItemStack heraus = drive.cell(1);
         drive.setCell(1, ItemStack.EMPTY);
 
-        // Der Gegenstand in der Hand: Was jetzt darin steht, ist alles, was
-        // von der Ladung bleibt.
+        // The item in hand: what is in it now is all that remains of the
+        // charge.
         helper.assertTrue(
                 dev.devpanda.factorynetwork.storage.EnergyCellItem.chargeOf(heraus) == 12_345,
                 "Die Ladung muss im Gegenstand stehen, es sind "
@@ -12806,14 +12783,14 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Wer eine Zelle leert, sagt dem Laufwerk Bescheid.
+     * Whoever drains a cell tells the drive.
      *
-     * <p>Die Ladung liegt im Arbeitsspeicher und geht erst beim Sichern in den
-     * Gegenstand. Ohne diese Meldung weiß Minecraft nicht, dass der Chunk
-     * gesichert werden muss — und ein Laufwerk in einem anderen Chunk als der
-     * Controller hätte nach einem Neustart die Ladung von vorhin.
+     * <p>The charge lives in memory and only goes into the item on save.
+     * Without this notice Minecraft does not know that the chunk has to be
+     * saved — and a drive in a different chunk from the controller would
+     * have the earlier charge after a restart.
      *
-     * <p>Derselbe Grund wie beim Lagerbestand, siehe
+     * <p>The same reason as with the store contents, see
      * {@code NetworkStorage.markChanged}.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
@@ -12831,8 +12808,8 @@ public final class FactoryNetworkGameTests {
 
         var chunk = helper.getLevel().getChunkAt(helper.absolutePos(controller.above()));
         chunk.setUnsaved(false);
-        // Der Puffer ist leer, also zahlt die Zelle — und zwischen diesen
-        // beiden Zeilen läuft nichts anderes.
+        // The buffer is empty, so the cell pays — and nothing else runs
+        // between these two lines.
         entity.power().take(50);
 
         helper.assertTrue(chunk.isUnsaved(),
@@ -12841,13 +12818,13 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
-    // ---- Gerätemitglieder --------------------------------------------------
+    // ---- Device members ----------------------------------------------------
 
     /**
-     * {@code insert} und {@code items} in einer echten Welt.
+     * {@code insert} and {@code items} in a real world.
      *
-     * <p>Der Einheitstest prüft die Sprache gegen eine Welt aus Papier; hier
-     * geht es um die Frage, ob wirklich Gegenstände wandern.
+     * <p>The unit test checks the language against a world made of paper;
+     * here the question is whether items really travel.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void insertPutsItemsIntoTheMachine(GameTestHelper helper) {
@@ -12855,7 +12832,7 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
 
-        // Etwas in den Netzspeicher, damit insert etwas zu holen hat.
+        // Something into the network storage so that insert has something to fetch.
         entity.storage().insert(Items.IRON_INGOT, 30);
 
         helper.assertTrue(entity.deploy("""
@@ -12888,10 +12865,10 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Was nicht hineinpasst, ist kein Fehler.
+     * What does not fit in is no error.
      *
-     * <p>Eine volle Maschine meldet Null, und das Programm läuft weiter —
-     * dieselbe Regel wie bei {@code move}.
+     * <p>A full machine reports zero, and the program carries on — the same
+     * rule as with {@code move}.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void insertIntoNothingIsZeroAndNoError(GameTestHelper helper) {
@@ -12899,22 +12876,22 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
 
-        // <b>Der Rückgabewert war die ganze Frage und wurde nie geprüft.</b>
-        // Der Test rief die Funktion auf und war zufrieden, dass nichts
-        // scheiterte — die Null im Namen sah sich niemand an. Ein Programm,
-        // dem insert 20 meldet, obwohl nichts ankam, bucht Bestand ab, den es
-        // nie bewegt hat.
+        // <b>The return value was the whole question and was never
+        // checked.</b> The test called the function and was content that
+        // nothing failed — nobody looked at the zero in the name. A program
+        // that insert reports 20 to, although nothing arrived, writes off
+        // stock it never moved.
         helper.assertTrue(entity.deploy("""
                 fn füllen() {
                     return depot.insert(20 item:iron_ingot)
                 }"""), "das Programm wurde nicht übernommen");
 
-        // Nichts im Speicher: Es gibt nichts einzulegen.
+        // Nothing in storage: there is nothing to insert.
         long ohneBestand = ((dev.devpanda.factorynetwork.runtime.Value.Int)
                 entity.callFunction("füllen", List.of())).value();
         helper.assertValueEqual(ohneBestand, 0L, "Aus einem leeren Speicher kommt nichts");
 
-        // Fünf im Speicher, zwanzig gewünscht: Es können nur fünf werden.
+        // Five in storage, twenty wanted: it can only become five.
         entity.storage().insert(Items.IRON_INGOT, 5);
         long mitFuenf = ((dev.devpanda.factorynetwork.runtime.Value.Int)
                 entity.callFunction("füllen", List.of())).value();
@@ -12937,15 +12914,15 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
-    // ---- Globale Werte -----------------------------------------------------
+    // ---- Global values -----------------------------------------------------
 
     /**
-     * Ein globaler Wert überlebt den Serverneustart.
+     * A global value survives the server restart.
      *
-     * <p>Geprüft wird über denselben Weg, den auch ein Neustart geht:
-     * aufschreiben, neue BlockEntity, zurücklesen. Ein Wert, der sagt, in
-     * welchem Modus die Fabrik läuft, wäre nach einem Neustart sinnlos, wenn
-     * er wieder auf dem Anfangswert stünde.
+     * <p>Checked via the same path a restart takes: write down, new
+     * BlockEntity, read back. A value that says which mode the factory runs
+     * in would be pointless after a restart if it stood at the initial value
+     * again.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void aGlobalSurvivesARestart(GameTestHelper helper) {
@@ -12966,7 +12943,7 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(entity.globals().get("modus").describe(), "nacht",
                 "nach dem Aufruf");
 
-        // Der Weg durch einen Serverneustart.
+        // The path through a server restart.
         var registries = helper.getLevel().registryAccess();
         var saved = entity.saveWithFullMetadata(registries);
         ControllerBlockEntity reborn = new ControllerBlockEntity(
@@ -12981,11 +12958,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Beim Programmwechsel bleibt, was noch passt.
+     * On a program change, what still fits stays.
      *
-     * <p>Dieselbe Haltung wie bei den Worker-Zuständen: Wer den Modus auf
-     * „nacht" gestellt hat und dann einen Worker ändert, will nicht wieder
-     * bei „tag" anfangen.
+     * <p>The same stance as with the worker states: whoever set the mode to
+     * "nacht" and then changes a worker does not want to start at "tag"
+     * again.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void aGlobalSurvivesADeploy(GameTestHelper helper) {
@@ -13000,7 +12977,7 @@ public final class FactoryNetworkGameTests {
                 }""");
         entity.callFunction("nachtschicht", List.of());
 
-        // Dasselbe Programm mit einer zusätzlichen Zeile.
+        // The same program with one additional line.
         entity.deploy("""
                 global modus = "tag"
                 global zaehler = 0
@@ -13014,7 +12991,7 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(entity.globals().get("zaehler").describe(), "0",
                 "der neue Name bekommt seinen Anfangswert");
 
-        // Und derselbe Name mit anderer Art fängt neu an.
+        // And the same name with a different kind starts afresh.
         entity.deploy("""
                 global modus = 0
 
@@ -13028,7 +13005,7 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
-    // ---- Geräteerkennung ---------------------------------------------------
+    // ---- Device recognition ------------------------------------------------
 
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void aChestIsRecognisedFromEverySide(GameTestHelper helper) {
@@ -13060,7 +13037,7 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
 
-        // Zwei Barren in die Kiste hinter quarry_output.
+        // Two ingots into the chest behind quarry_output.
         var connector = entity.graph().connectors().get("quarry_output");
         helper.assertTrue(connector != null, "quarry_output fehlt im Netz");
         var port = dev.devpanda.factorynetwork.block.entity.Connectors.at(
@@ -13083,13 +13060,13 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Der ganze Weg einer Anfrage: Terminal offen, Name gefragt, Antwort da.
+     * The whole path of a request: terminal open, name asked, answer there.
      *
-     * <p>Ohne diesen Test prüfte nur {@code DeviceSnapshotPacket.of} — also
-     * gerade der Teil, der ohnehin am wenigsten schiefgeht. Die Kette davor
-     * (steht der Spieler vor einem Terminal, findet das Menü seinen
-     * Controller) ließe sich sonst nur im laufenden Spiel von Hand
-     * nachvollziehen.
+     * <p>Without this test only {@code DeviceSnapshotPacket.of} was checked —
+     * that is, precisely the part that goes wrong least anyway. The chain
+     * before it (is the player standing at a terminal, does the menu find its
+     * controller) could otherwise only be traced by hand in the running
+     * game.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void aRequestFromAnOpenTerminalIsAnswered(GameTestHelper helper) {
@@ -13119,9 +13096,9 @@ public final class FactoryNetworkGameTests {
         BlockPos controller = buildSetup(helper);
         controllerAt(helper, controller).rebuildNetwork();
 
-        // Kein Terminal offen — der Spieler hat sein eigenes Inventar vor
-        // sich. Eine Antwort wäre hier ein Weg, das Netz auszulesen, ohne
-        // davorzustehen.
+        // No terminal open — the player has their own inventory in front of
+        // them. An answer here would be a way to read the network without
+        // standing in front of it.
         var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
 
         helper.assertTrue(dev.devpanda.factorynetwork.network.packet
@@ -13131,11 +13108,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Die Annahme-Probe gegen die Gegenstände aus dem Entwurf.
+     * The acceptance probe against the items from the draft.
      *
-     * <p>Eine Kiste nimmt alles an — der Test prüft deshalb nicht, ob die
-     * Probe klug ist, sondern ob sie überhaupt läuft: dass die Kandidaten aus
-     * dem Programm gelesen werden und dass jedes Fach eine Auskunft bekommt.
+     * <p>A chest accepts everything — so the test does not check whether the
+     * probe is clever but whether it runs at all: that the candidates are
+     * read from the program and that every slot gets an answer.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void theProbeUsesTheItemsFromTheDraft(GameTestHelper helper) {
@@ -13143,7 +13120,7 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
 
-        // Der Entwurf nennt einen Gegenstand — daraus wird der Kandidat.
+        // The draft names an item — that becomes the candidate.
         helper.assertTrue(entity.deploy("""
                 worker mahlen {
                     from storage
@@ -13176,13 +13153,13 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ein Connector, der ins Leere zeigt.
+     * A connector pointing into the void.
      *
-     * <p><b>Luft ist eine Auskunft, keine fehlende.</b> Der Test stand hier
-     * einmal andersherum — er verlangte, dass über Luft „nichts bekannt" sei,
-     * und schrieb damit einen Fehler fest: Im Spiel stand dann „Nicht
-     * geladen" vor einem Spieler, der davorstand. Wer ins Leere zeigt, soll
-     * genau das erfahren.
+     * <p><b>Air is an answer, not a missing one.</b> The test once stood the
+     * other way round here — it demanded that "nothing known" be reported
+     * about air, and thereby cemented a bug: in the game "Nicht geladen" then
+     * stood in front of a player who was standing right there. Whoever points
+     * into the void should learn exactly that.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void aConnectorPointingAtAirSaysSo(GameTestHelper helper) {
@@ -13202,18 +13179,18 @@ public final class FactoryNetworkGameTests {
 
 
     /**
-     * Eine Chemikalie fährt nicht auf dem Gegenstandsweg.
+     * A chemical does not travel on the item path.
      *
-     * <p><b>Der schlimmste Fehler, den diese Sprache haben kann</b>, in der
-     * Ausgabe von 2026-08-26: {@code move} entschied den Weg an der Art, und
-     * es fragte dafür nur die geschriebene Auswahl. Eine schon aufgelöste —
-     * so kommt sie aus einer Schleife und aus jedem {@code it} — hatte für
-     * Flüssigkeiten einen Nachtrag bekommen, für Chemikalien nicht. Damit
-     * landete eine Chemikalie in der Gegenstandsauflösung, traf dort nichts,
-     * und keine Auswahl heißt dort <i>alles</i>: Die Kiste ging leer aus.
+     * <p><b>The worst bug this language can have</b>, in the release of
+     * 2026-08-26: {@code move} decided the path by the kind, and for that it
+     * asked only the written selection. An already resolved one — that is
+     * how it comes out of a loop and out of every {@code it} — had received
+     * an addendum for fluids, not for chemicals. So a chemical landed in the
+     * item resolution, hit nothing there, and no selection means
+     * <i>everything</i> there: the chest ended up empty.
      *
-     * <p>Der Prüflauf braucht dafür keinen Chemikalientank. Es genügt, dass
-     * die Auswahl sich auflöst — was danach passieren soll, ist nichts.
+     * <p>The test run needs no chemical tank for that. It is enough that the
+     * selection resolves — what is supposed to happen afterwards is nothing.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void aresolvedChemicalDoesNotTravelOnTheItemPath(GameTestHelper helper) {
@@ -13245,13 +13222,12 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ein gespeicherter Gegenstand heißt auf der Platte weiterhin so.
+     * A saved item is still called the same on disk.
      *
-     * <p>Dieselbe Zusage wie in {@code ValueCodecFormatTest}, nur für die
-     * beiden Arten, die eine Registry brauchen: Ein wartender Ablauf aus
-     * einer alten Welt muss seine Variablen wiederfinden. Von Hand gebaut
-     * und nicht über einen Rundlauf — ein Rundlauf ist mit sich selbst
-     * immer einig.
+     * <p>The same promise as in {@code ValueCodecFormatTest}, only for the two
+     * kinds that need a registry: a waiting flow from an old world must find
+     * its variables again. Built by hand and not via a round trip — a round
+     * trip always agrees with itself.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void asavedItemKeepsItsNameOnDisk(GameTestHelper helper) {
@@ -13297,17 +13273,17 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Die drei Speicher beantworten dieselben Fragen auf dieselbe Weise.
+     * The three stores answer the same questions in the same way.
      *
-     * <p>Schnitt 2 aus `ressourcenarten.md`: Gegenstände, Flüssigkeiten und
-     * Chemikalien liegen alle in Zellen in Laufwerken, und die Sicht des
-     * Netzes darauf war dreimal dieselbe Klasse mit anderen Typen. Jetzt ist
-     * es eine Schnittstelle, und hier steht ihr Vertrag — einmal
-     * hingeschrieben und dreimal durchlaufen.
+     * <p>Cut 2 from `ressourcenarten.md`: items, fluids and chemicals all
+     * lie in cells in drives, and the network's view of them was three times
+     * the same class with different types. Now it is an interface, and here
+     * stands its contract — written down once and run through three times.
      *
-     * <p><b>Über eine Referenz vom Typ der Schnittstelle.</b> Wer die
-     * konkreten Klassen anspräche, prüfte drei Wege statt einen und merkte
-     * nicht, wenn einer davon abdriftet. Genau das war in Schnitt 1 passiert.
+     * <p><b>Via a reference of the interface type.</b> Whoever addressed the
+     * concrete classes would check three paths instead of one and would not
+     * notice when one of them drifts. That is exactly what had happened in
+     * cut 1.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void thethreeStoresKeepTheSameContract(GameTestHelper helper) {
@@ -13344,11 +13320,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Hinein, nachsehen, wieder heraus.
+     * In, look, out again.
      *
-     * <p>Die vier Fragen, die jeder Speicher beantworten muss, dazu die
-     * fünfte, die es nur gibt, weil manches nicht zurückgelegt werden kann:
-     * {@code room} wird gefragt, <b>bevor</b> ein Behälter geleert wird.
+     * <p>The four questions every store must answer, plus the fifth that
+     * exists only because some things cannot be put back: {@code room} is
+     * asked <b>before</b> a tank is drained.
      */
     private static void keepsTheContract(GameTestHelper helper,
             dev.devpanda.factorynetwork.network.ResourceStore store,
@@ -13369,25 +13345,23 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Eine Chemikalienauswahl, die nichts trifft, meldet sich.
+     * A chemical selection that hits nothing reports itself.
      *
-     * <p><b>Die dritte Abdrift derselben Art.</b> Schnitt 1 fand sie im
-     * Wertemodell, die Suche in Schnitt 2 fand keine in den Speichern — sie
-     * saß in den Auflösern: Bei Gegenständen und Flüssigkeiten ist „trifft
-     * nichts" ein Fehler mit Meldung, bei Chemikalien kam eine leere Liste
-     * zurück.
+     * <p><b>The third drift of the same kind.</b> Cut 1 found it in the value
+     * model, the search in cut 2 found none in the stores — it sat in the
+     * resolvers: with items and fluids "hits nothing" is an error with a
+     * message, with chemicals an empty list came back.
      *
-     * <p>Und leer heißt weiter unten <b>alles</b>: {@code MekTanks.matches}
-     * lässt jede Sorte durch, wenn keine dasteht, und
-     * {@code fillIntoHandler} nimmt dann den ganzen Netzbestand. Ein
-     * Tippfehler in {@code chemical:…} füllte damit irgendein Gas in die
-     * Maschine — dieselbe Klasse Fehler wie ein {@code move} mit leerem
-     * Filter, das die Kiste leerräumt.
+     * <p>And empty means <b>everything</b> further down: {@code MekTanks.matches}
+     * lets every kind through when none is given, and
+     * {@code fillIntoHandler} then takes the whole network stock. A typo in
+     * {@code chemical:…} thus filled some gas or other into the machine —
+     * the same class of bug as a {@code move} with an empty filter that
+     * clears out the chest.
      *
-     * <p>Geprüft wird die <b>Meldung</b> und nicht das Gas: Ein per
-     * {@code setBlock} gestellter Mekanism-Tank gibt an keiner Seite eine
-     * Capability heraus, und der Fehler muss ohnehin fallen, bevor irgendein
-     * Behälter gefragt wird.
+     * <p>The <b>message</b> is checked and not the gas: a Mekanism tank
+     * placed via {@code setBlock} hands out a capability on no side, and the
+     * error has to fall before any tank is asked anyway.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void achemicalSelectionThatHitsNothingSaysSo(GameTestHelper helper) {
@@ -13423,7 +13397,7 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
-    /** Wie viel von einer Art in der Kiste an dieser Stelle liegt. */
+    /** How much of one kind lies in the chest at this spot. */
     private static int countIn(GameTestHelper helper, BlockPos pos, Item wanted) {
         if (!(helper.getBlockEntity(pos) instanceof ChestBlockEntity container)) {
             return 0;
@@ -13439,16 +13413,17 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Zwei Speicherbusse nebeneinander, und die priority entscheidet.
+     * Two storage buses side by side, and the priority decides.
      *
-     * <p>Schnitt 4 aus {@code speicherbus.md}. Die drei Schnitte davor sind
-     * mit <b>einem</b> Bus geprüft worden — dass mehrere zusammen einen
-     * Bestand ergeben und dass die Reihenfolge beim Einlagern stimmt, war
-     * eine Zusage ohne Beleg. Dieselbe Lücke wie beim zweiten Laufwerk (5.2).
+     * <p>Cut 4 from {@code speicherbus.md}. The three cuts before it were
+     * checked with <b>one</b> bus — that several together yield one stock
+     * and that the order when storing is right was a promise without proof.
+     * The same gap as with the second drive (5.2).
      *
-     * <p>Geprüft werden beide Hälften: Der Bestand ist die <b>Summe</b>
-     * beider Kisten, und was das Netz einlagert, geht in die mit der höheren
-     * {@code priority} — nicht in die, die zufällig zuerst im Programm steht.
+     * <p>Both halves are checked: the stock is the <b>sum</b> of both chests,
+     * and what the network stores goes into the one with the higher
+     * {@code priority} — not into the one that happens to come first in the
+     * program.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void twoStoresAddUpAndPriorityDecides(GameTestHelper helper) {
@@ -13469,9 +13444,9 @@ public final class FactoryNetworkGameTests {
             helper.fail("Keine Kiste an depot", zweite);
         }
 
-        // quarry_output steht zuerst im Programm und hat die niedrigere
-        // priority — damit sagt der Test etwas über die Reihenfolge und
-        // nicht über die Schreibreihenfolge.
+        // quarry_output comes first in the program and has the lower
+        // priority — that way the test says something about the order and
+        // not about the order of writing.
         helper.assertTrue(entity.deploy("""
                 store quarry_output {
                 }
@@ -13486,7 +13461,7 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(entity.storage().count(Items.COBBLESTONE), 7L,
                 "die zweite auch — ein Bestand ist die Summe aller Busse");
 
-        // Kein Laufwerk im Aufbau: Was hineingeht, muss in eine der Kisten.
+        // No drive in the setup: what goes in has to go into one of the chests.
         long rest = entity.storage().insert(Items.GOLD_INGOT, 5);
 
         helper.assertValueEqual(rest, 0L, "fünf Barren passen in eine Kiste");
@@ -13498,26 +13473,26 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Im laufenden Spiel ist die Liste der Ressourcenarten zu.
+     * In the running game the list of resource kinds is closed.
      *
-     * <p>Die Registry ist offen — aber nur beim Laden. Das ist keine Bitte an
-     * fremde Mods, sondern die Zusage, auf der alles andere ruht: <b>Was ein
-     * Programm bedeutet, hängt nicht davon ab, wann jemand etwas anmeldet.</b>
-     * Ohne sie könnte eine Mod mitten im Spiel ein Präfix belegen, und
-     * dasselbe Programm hieße vorher und nachher etwas anderes.
+     * <p>The registry is open — but only during loading. That is not a
+     * request to foreign mods but the promise everything else rests on:
+     * <b>what a program means does not depend on when somebody registers
+     * something.</b> Without it a mod could claim a prefix in the middle of
+     * the game, and the same program would mean something different before
+     * and after.
      *
-     * <p>Geprüft wird deshalb die geschlossene Tür und nicht die offene: Dass
-     * man anmelden <i>kann</i>, zeigt {@code ForeignResourceKindTest}. Dass es
-     * danach nicht mehr geht, kann nur ein laufendes Spiel zeigen — der
-     * Aufruf, der zumacht, hängt am Mod-Ladevorgang.
+     * <p>So the closed door is checked and not the open one: that you
+     * <i>can</i> register is shown by {@code ForeignResourceKindTest}. That it
+     * no longer works afterwards can only be shown by a running game — the
+     * call that closes hangs on the mod loading process.
      */
     @GameTest(template = EMPTY, timeoutTicks = 100)
     public static void theresourceKindsAreClosedInArunningGame(GameTestHelper helper) {
         var kinds = dev.devpanda.factorynetwork.runtime.ResourceKinds.all();
-        // Drei eingebaute und Source aus compat/ars. Die vierte steht hier
-        // nicht als Beiwerk: Sie ist der Beweis, dass eine fremde Art im
-        // laufenden Spiel wirklich dabei ist — angemeldet beim Laden, wie
-        // jede andere auch.
+        // Three built-in ones and Source from compat/ars. The fourth is not
+        // here as decoration: it is the proof that a foreign kind is really
+        // in a running game — registered on load, like every other.
         helper.assertValueEqual(kinds.size(), 4, "drei eingebaute und Source");
         helper.assertTrue(dev.devpanda.factorynetwork.runtime.ResourceKinds
                         .byPrefix("source") != null,
@@ -13540,22 +13515,22 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Der Connector schickt seinen Namen zum Client.
+     * The connector sends its name to the client.
      *
-     * <p><b>Gefunden beim ersten Spielen.</b> Das Fenster „Gerät benennen"
-     * stand leer vor einem Connector, der längst {@code kiste_1} hieß. Der
-     * Grund lag nicht im Fenster: Es liest den Namen aus der BlockEntity auf
-     * der Clientseite, und dort kam er nie an.
+     * <p><b>Found on the first play.</b> The "name device" window stood empty
+     * in front of a connector that had long been called {@code kiste_1}. The
+     * reason was not in the window: it reads the name from the BlockEntity
+     * on the client side, and it never arrived there.
      *
-     * <p>{@code setLabel} ruft {@code sendBlockUpdated} — aber das schickt
-     * nur, was {@code getUpdatePacket()} liefert, und das war nicht
-     * überschrieben. Die Vorgabe gibt {@code null}, also ging nichts hinaus.
-     * Beim Display stand die Methode seit jeher da; der Connector war die
-     * Kopie, die niemand nachgezogen hat.
+     * <p>{@code setLabel} calls {@code sendBlockUpdated} — but that only sends
+     * what {@code getUpdatePacket()} returns, and that was not overridden.
+     * The default returns {@code null}, so nothing went out. On the display
+     * the method had always been there; the connector was the copy nobody
+     * kept up to date.
      *
-     * <p>Geprüft wird das Paket und nicht das Fenster: Ein Prüflauf hat
-     * keinen Client. Was hier gezeigt wird, ist die Stelle, an der es hakte —
-     * ohne Paket kommt beim Client nichts an, mit Paket steht der Name darin.
+     * <p>The packet is checked and not the window: a test run has no client.
+     * What is shown here is the spot where it got stuck — without a packet
+     * nothing arrives at the client, with a packet the name is in it.
      */
     @GameTest(template = EMPTY, timeoutTicks = 100)
     public static void aconnectorSendsItsNameToTheClient(GameTestHelper helper) {
@@ -13569,8 +13544,8 @@ public final class FactoryNetworkGameTests {
 
         entity.setLabel("kiste_1");
 
-        // Das Paket kommt vom Kabelblock: Er trägt die Anschlüsse, also
-        // schickt er sie auch.
+        // The packet comes from the cable block: it carries the connectors,
+        // so it sends them too.
         var packet = helper.getBlockEntity(connector).getUpdatePacket();
         helper.assertTrue(packet != null,
                 "Ohne Paket erfährt der Client nie, wie das Gerät heißt");
@@ -13583,7 +13558,7 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
-    /** Steht dieser Name an einem der Anschlüsse im Paket? */
+    /** Is this name on one of the connectors in the packet? */
     private static boolean labelledIn(net.minecraft.nbt.CompoundTag tag, String label) {
         var parts = tag.getList("Parts", net.minecraft.nbt.Tag.TAG_COMPOUND);
         for (int i = 0; i < parts.size(); i++) {
@@ -13595,21 +13570,21 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ein Gateway gibt seiner Umgebung den Anlagennamen.
+     * A gateway gives its surroundings the plant name.
      *
-     * <p>Eine Anlage entsteht bisher allein über die Beschriftung —
-     * {@code werk_1/eingang} an jedem einzelnen Gerät. Das bleibt, aber es
-     * verlangt, dass man den Namen zwölfmal wiederholt und beim Umbenennen
-     * zwölfmal hingeht.
+     * <p>So far a plant comes about solely through labelling —
+     * {@code werk_1/eingang} on every single device. That stays, but it
+     * demands that you repeat the name twelve times and walk to twelve places
+     * when renaming.
      *
-     * <p>Das Gateway ist die andere Antwort und geht von dem aus, was eine
-     * Anlage im Spiel wirklich ist: <b>etwas Zusammenhängendes</b>. Was
-     * hinter ihm am Kabel hängt, gehört dazu — ohne dass an einem einzigen
-     * Connector der Name steht.
+     * <p>The gateway is the other answer and starts from what a plant really
+     * is in the game: <b>something contiguous</b>. What hangs on the cable
+     * behind it belongs to it — without the name standing on a single
+     * connector.
      *
-     * <p>Geprüft wird der Name, den das <b>Netz</b> kennt, und nicht der am
-     * Block: Genau darauf schauen der Interpreter, die Anlagenerkennung und
-     * beide Editoren.
+     * <p>What is checked is the name the <b>network</b> knows, not the one on
+     * the block: that is exactly what the interpreter, the plant recognition
+     * and both editors look at.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void agatewayNamesWhatHangsBehindIt(GameTestHelper helper) {
@@ -13617,7 +13592,7 @@ public final class FactoryNetworkGameTests {
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
         rackWithServer(helper, controller.west());
 
-        // Controller — Kabel — Gateway — Kabel — Connector.
+        // Controller — cable — gateway — cable — connector.
         BlockPos cable = controller.east();
         BlockPos gateway = cable.east();
         BlockPos beyond = gateway.east();
@@ -13649,11 +13624,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Die Beschriftung gewinnt gegen das Gateway.
+     * The label wins against the gateway.
      *
-     * <p>Steht der Schrägstrich schon im Namen, ist die Anlage gesagt. Ein
-     * hingestellter Block darf daran nichts still verschieben — das ist die
-     * Sorte Überraschung, die man am längsten sucht.
+     * <p>If the slash is already in the name, the plant is stated. A block
+     * placed nearby may not silently shift anything about that — that is
+     * the kind of surprise you search for the longest.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void thelabelWinsAgainstTheGateway(GameTestHelper helper) {
@@ -13688,16 +13663,16 @@ public final class FactoryNetworkGameTests {
 
 
     /**
-     * Ein Anschluss am Kabelblock zählt zum Netz.
+     * A connector on the cable block counts toward the network.
      *
-     * <p>Bisher stand für jede Maschine ein eigener Connectorblock <b>neben</b>
-     * dem Kabel — eine Maschinenwand kostete sechs Blöcke, wo einer reicht.
-     * Seit dem Kabelbus sitzt der Anschluss an einer Fläche des Kabels, wie
-     * bei AE2.
+     * <p>Until now a separate connector block stood <b>next to</b> the cable
+     * for every machine — a wall of machines cost six blocks where one
+     * suffices. Since the cable bus the connector sits on a face of the
+     * cable, as in AE2.
      *
-     * <p>Geprüft wird, was das Netz kennt: Der Anschluss muss unter seinem
-     * Namen im Graphen stehen und die Maschine dahinter erreichen — beides
-     * hing bisher daran, dass ein eigener Block dort stand.
+     * <p>What is checked is what the network knows: the connector must appear
+     * under its name in the graph and reach the machine behind it — both
+     * used to depend on a block of its own standing there.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void aparIsSeenOnTheCableItself(GameTestHelper helper) {
@@ -13707,8 +13682,8 @@ public final class FactoryNetworkGameTests {
 
         BlockPos cable = controller.east();
         helper.setBlock(cable, FnBlocks.CABLE.get());
-        // Die Kiste liegt nördlich; der Anschluss sitzt an derselben Fläche
-        // des Kabels — kein eigener Block dazwischen.
+        // The chest lies to the north; the connector sits on the same face of
+        // the cable — no block of its own in between.
         helper.setBlock(cable.north(), Blocks.CHEST);
 
         if (helper.getBlockEntity(cable)
@@ -13735,12 +13710,12 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Zwei Anschlüsse an einem Kabelblock sind zwei Geräte.
+     * Two connectors on one cable block are two devices.
      *
-     * <p>Das ist der Gewinn, um den es ging: ein Block, zwei Maschinen. Der
-     * Graph unterscheidet sie noch nicht — er merkt sich einen Ort und keine
-     * Seite —, und genau deshalb steht dieser Test hier: Er hält fest, was
-     * der nächste Schnitt zu lösen hat.
+     * <p>That is the gain it was about: one block, two machines. The graph
+     * does not distinguish them yet — it remembers a position and no side —,
+     * and that is exactly why this test is here: it pins down what the next
+     * cut has to solve.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void twopartsOnOneBlockAreTwoDevices(GameTestHelper helper) {
@@ -13768,7 +13743,7 @@ public final class FactoryNetworkGameTests {
                 dev.devpanda.factorynetwork.block.entity.Connectors
                         .at(level, here, Direction.SOUTH).label(), "sued",
                 "und der südliche");
-        // Ohne Seite gibt es keine Antwort — geraten wird nicht.
+        // Without a side there is no answer — no guessing.
         helper.assertTrue(dev.devpanda.factorynetwork.block.entity.Connectors
                         .at(level, here) == null,
                 "und ohne Seite gibt es keine Antwort");
@@ -13776,12 +13751,11 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ein Programm bewegt Gegenstände durch einen Anschluss am Kabel.
+     * A program moves items through a connector on the cable.
      *
-     * <p>Der Beweis, dass es nicht bei der Buchhaltung bleibt: Der Graph
-     * kennt den Anschluss, und die Laufzeit greift durch ihn hindurch auf die
-     * Maschine. Bis hierher war beides an einen eigenen Connectorblock
-     * gebunden.
+     * <p>The proof that it does not stop at bookkeeping: the graph knows the
+     * connector, and the runtime reaches through it to the machine. Up to
+     * here both were bound to a connector block of its own.
      */
     @GameTest(template = EMPTY, timeoutTicks = 300)
     public static void amoveRunsThroughApartOnTheCable(GameTestHelper helper) {
@@ -13824,17 +13798,18 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Zwei benannte Anschlüsse an einem Kabelblock sind zwei Geräte.
+     * Two named connectors on one cable block are two devices.
      *
-     * <p>Das ist der Gewinn, um den es bei AE2s Bauform geht: ein Block, zwei
-     * Maschinen. Bis hierher merkte sich der Graph <b>einen Ort</b> — und ein
-     * Ort mit zwei Anschlüssen war deshalb kein Gerät, sondern gar keines:
-     * {@code Connectors.at(level, pos)} gibt ohne Seite keine Antwort, und die
-     * Kanalzuteilung ließ den Ort aus. Beide Namen fehlten im Netz.
+     * <p>That is the gain AE2's block form is about: one block, two machines.
+     * Up to here the graph remembered <b>one position</b> — and a position
+     * with two connectors was therefore not one device but none at all:
+     * {@code Connectors.at(level, pos)} gives no answer without a side, and
+     * the channel allocation skipped the position. Both names were missing
+     * from the network.
      *
-     * <p>Geprüft wird nicht nur, dass beide Namen dastehen, sondern dass jeder
-     * <b>seine eigene</b> Maschine trifft: Der nördliche Anschluss holt Erz,
-     * der südliche holt Kohle, und keiner holt beides.
+     * <p>What is checked is not only that both names are there but that each
+     * hits <b>its own</b> machine: the northern connector fetches ore, the
+     * southern fetches coal, and neither fetches both.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void btwoNamedPartsOnOneCableAreTwoDevices(GameTestHelper helper) {
@@ -13881,17 +13856,18 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Jeder Anschluss gibt sein Redstone an seine eigene Maschine.
+     * Every connector gives its redstone to its own machine.
      *
-     * <p>Der Connectorblock gibt nach allen Seiten dasselbe — er hat ja nur
-     * ein Gesicht. Am Kabelblock ginge das nicht: Sechs Anschlüsse mit einer
-     * gemeinsamen Stärke wären sechs Maschinen an einem Schalter, und
-     * {@code setRedstone} verlöre seinen Sinn.
+     * <p>The connector block gives the same to all sides — it has only one
+     * face, after all. On the cable block that would not work: six
+     * connectors with a shared strength would be six machines on one switch,
+     * and {@code setRedstone} would lose its meaning.
      *
-     * <p>Die Regel, die für beide Bauformen dasselbe bedeutet: <b>Eine Fläche
-     * mit Anschluss gibt genau dessen Stärke. Eine freie Fläche gibt die
-     * stärkste</b> — sonst ließe sich an einem Kabel kein Lämpchen mehr
-     * schalten, und am Connectorblock käme etwas anderes heraus als bisher.
+     * <p>The rule that means the same for both block forms: <b>a face with a
+     * connector gives exactly its strength. A free face gives the
+     * strongest</b> — otherwise no lamp could be switched at a cable any
+     * more, and the connector block would yield something different from
+     * before.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void bapartEmitsRedstoneTowardsItsOwnMachine(GameTestHelper helper) {
@@ -13908,9 +13884,9 @@ public final class FactoryNetworkGameTests {
 
         var level = helper.getLevel();
         BlockPos here = helper.absolutePos(cable);
-        // Wer nördlich steht, fragt mit SOUTH: Die Richtung zeigt von ihm zum
-        // Kabel. Ihm antwortet das Teil, das ihn ansieht — das an der
-        // Nordfläche.
+        // Whoever stands to the north asks with SOUTH: the direction points
+        // from them to the cable. The part that faces them answers — the one
+        // on the north face.
         helper.assertValueEqual(level.getSignal(here, Direction.SOUTH), 15,
                 "Nach Norden geht die Stärke des nördlichen Anschlusses");
         helper.assertValueEqual(level.getSignal(here, Direction.NORTH), 3,
@@ -13921,7 +13897,7 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
-    /** Eine Kiste mit Inhalt, weil drei Tests dieselben sechs Zeilen brauchten. */
+    /** A chest with contents, because three tests needed the same six lines. */
     private static void fillChest(GameTestHelper helper, BlockPos at,
                                   net.minecraft.world.item.Item what, int amount) {
         helper.setBlock(at, Blocks.CHEST);
@@ -13933,15 +13909,16 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ein Anschluss am Kabel gehört zur Anlage des Gateways.
+     * A connector on the cable belongs to the gateway's plant.
      *
-     * <p>Die Anlagenerkennung geht von Block zu Block und hielt an allem an,
-     * was kein Kabel ist — ein Kabel <b>war</b> nur eine Leitung. Seit es
-     * Anschlüsse an seinen Flächen trägt, ist es beides: Der Strang läuft
-     * durch, und was daran hängt, gehört dazu.
+     * <p>Plant recognition walks from block to block and stopped at
+     * everything that is not a cable — a cable <b>was</b> only a line. Since
+     * it carries connectors on its faces, it is both: the strand runs
+     * through, and what hangs on it belongs.
      *
-     * <p>Ohne diesen Schritt hieße das Gerät weiter {@code eingang} — und
-     * jedes Programm, das {@code werk_1/eingang} schreibt, fände es nicht.
+     * <p>Without this step the device would still be called {@code eingang}
+     * — and every program that writes {@code werk_1/eingang} would not find
+     * it.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void bagatewayNamesApartOnTheCable(GameTestHelper helper) {
@@ -13949,7 +13926,7 @@ public final class FactoryNetworkGameTests {
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
         rackWithServer(helper, controller.west());
 
-        // Controller — Kabel — Gateway — Kabel mit Anschluss an der Nordseite.
+        // Controller — cable — gateway — cable with a connector on the north side.
         BlockPos cable = controller.east();
         BlockPos gateway = cable.east();
         BlockPos beyond = gateway.east();
@@ -13982,9 +13959,9 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
-    // ---- Anschlüsse an einer Kabelfläche setzen und wegnehmen --------------
+    // ---- Placing and removing connectors on a cable face --------------------
 
-    /** Der Kabelblock samt seiner BlockEntity, oder der Test schlägt fehl. */
+    /** The cable block with its BlockEntity, or the test fails. */
     private static dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity busAt(
             GameTestHelper helper, BlockPos cable) {
         if (helper.getBlockEntity(cable)
@@ -13995,7 +13972,7 @@ public final class FactoryNetworkGameTests {
         return null;
     }
 
-    /** Ein Treffer mitten auf einer Fläche des Blocks. */
+    /** A hit in the middle of a face of the block. */
     private static net.minecraft.world.phys.BlockHitResult hitOn(
             GameTestHelper helper, BlockPos block, Direction face) {
         BlockPos here = helper.absolutePos(block);
@@ -14005,23 +13982,22 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ein Connector wird an eine Kabelfläche gesetzt.
+     * A connector is placed on a cable face.
      *
-     * <p>Das ist der Griff, um den es bei AE2s Bauform geht: Der Anschluss
-     * geht nicht <b>neben</b> das Kabel, sondern <b>an</b> es. Bis hierher
-     * ließ sich ein Teil nur im Prüflauf anlegen — im Spiel gab es keinen
-     * Weg dorthin.
+     * <p>That is the move AE2's block form is about: the connector does not
+     * go <b>next to</b> the cable but <b>onto</b> it. Up to here a part could
+     * only be created in the test run — in the game there was no way to it.
      *
-     * <p>Geprüft wird gleich mit, dass eine belegte Fläche nichts annimmt:
-     * Wo das Kabel schon weiterläuft, ist kein Platz, und ein zweites Teil
-     * auf derselben Fläche gibt es nicht.
+     * <p>It is checked at the same time that an occupied face accepts
+     * nothing: where the cable already continues there is no room, and a
+     * second part on the same face does not exist.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void bapartIsPlacedOnAcableFace(GameTestHelper helper) {
         BlockPos cable = new BlockPos(2, 1, 1);
         helper.setBlock(cable, FnBlocks.CABLE.get());
         helper.setBlock(cable.north(), Blocks.CHEST);
-        // Nach Osten läuft das Kabel weiter — dort ist kein Platz.
+        // To the east the cable continues — there is no room there.
         helper.setBlock(cable.east(), FnBlocks.CABLE.get());
 
         var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
@@ -14041,13 +14017,13 @@ public final class FactoryNetworkGameTests {
                 "an der geklickten Fläche muss ein Anschluss sitzen");
         helper.assertValueEqual(stack.getCount(), 1, "und einer aus der Hand");
 
-        // Noch einmal dieselbe Fläche: Sie ist besetzt.
+        // The same face once more: it is occupied.
         helper.getBlockState(cable).useItemOn(stack, helper.getLevel(), player,
                 net.minecraft.world.InteractionHand.MAIN_HAND,
                 hitOn(helper, cable, Direction.NORTH));
         helper.assertValueEqual(stack.getCount(), 1, "eine besetzte Fläche nimmt nichts");
 
-        // Und die Fläche, an der das Kabel weiterläuft.
+        // And the face where the cable continues.
         helper.getBlockState(cable).useItemOn(stack, helper.getLevel(), player,
                 net.minecraft.world.InteractionHand.MAIN_HAND,
                 hitOn(helper, cable, Direction.EAST));
@@ -14057,14 +14033,14 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Schleichen mit leerer Hand nimmt den Anschluss wieder ab.
+     * Sneaking with an empty hand takes the connector off again.
      *
-     * <p>Ohne diesen Weg käme man nur an sein Teil zurück, indem man das
-     * ganze Kabel abbaut — und mit ihm alle anderen Anschlüsse daran.
+     * <p>Without this path you could only get your part back by breaking
+     * the whole cable — and with it all the other connectors on it.
      *
-     * <p>Der leere Klick ohne Schleichen bleibt das Namensfenster. Die
-     * Unterscheidung geht auf, weil Minecraft {@code useWithoutItem} auch
-     * beim Schleichen ruft, solange beide Hände leer sind.
+     * <p>The empty click without sneaking remains the naming window. The
+     * distinction works because Minecraft calls {@code useWithoutItem} even
+     * when sneaking, as long as both hands are empty.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void bapartComesOffAgainWhenSneaking(GameTestHelper helper) {
@@ -14089,10 +14065,10 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Wer das Kabel abbaut, bekommt seine Anschlüsse zurück.
+     * Whoever breaks the cable gets its connectors back.
      *
-     * <p>Sonst verschwänden sie mit dem Block — zwei Gegenstände weg, ohne
-     * dass etwas darauf hinweist.
+     * <p>Otherwise they would vanish with the block — two items gone,
+     * without anything pointing to it.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void btwopartsDropWithTheCable(GameTestHelper helper) {
@@ -14112,13 +14088,13 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Ein Nachbar, der dazukommt, kostet keinen Anschluss.
+     * A neighbour that is added costs no connector.
      *
-     * <p><b>Der Klassiker an dieser Stelle:</b> {@code onRemove} feuert bei
-     * jedem Zustandswechsel, und ein Kabel wechselt seinen Zustand bei jedem
-     * Nachbarn, der auftaucht oder verschwindet. Ohne die Prüfung, ob dort
-     * wirklich ein anderer Block hinkommt, fielen die Teile bei jedem
-     * Verbindungsupdate heraus — beim Bauen der Leitung, nicht beim Abbauen.
+     * <p><b>The classic at this spot:</b> {@code onRemove} fires on every
+     * state change, and a cable changes its state with every neighbour that
+     * appears or disappears. Without the check whether a different block
+     * really goes there, the parts would drop out on every connection update
+     * — while building the line, not while breaking it.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void bapartSurvivesAnewNeighbour(GameTestHelper helper) {
@@ -14131,7 +14107,7 @@ public final class FactoryNetworkGameTests {
         }
         bus.addPart(Direction.NORTH).setLabel("kiste_1");
 
-        // Die Leitung wächst weiter: Der Zustand des Kabels ändert sich.
+        // The line keeps growing: the cable's state changes.
         helper.setBlock(cable.east(), FnBlocks.CABLE.get());
         helper.setBlock(cable.west(), FnBlocks.CABLE.get());
 
@@ -14145,10 +14121,10 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Woran man hängenbleibt, ist auch der Anschluss.
+     * What you get caught on is the connector too.
      *
-     * <p>Ohne eigene Trefferfläche griffe man durch ihn hindurch: Der Klick
-     * träfe das Kabel dahinter, und benennen ließe sich nichts.
+     * <p>Without a hit surface of its own you would reach right through it:
+     * the click would hit the cable behind, and nothing could be named.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void bapartHasItsOwnHitBox(GameTestHelper helper) {
@@ -14175,14 +14151,14 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Zwei Anschlüsse an einem Block sind ein Punkt im Bild.
+     * Two connectors on one block are one point in the picture.
      *
-     * <p>Der Analysator zeichnet Punkte in den Raum, und ein Kabelblock ist
-     * <b>ein</b> Punkt — auch wenn sechs Anschlüsse daran hängen. Zwei
-     * Knoten an derselben Stelle hießen zwei Beschriftungen übereinander:
-     * lesbar wäre keine davon.
+     * <p>The analyser draws points into space, and a cable block is
+     * <b>one</b> point — even if six connectors hang on it. Two nodes at the
+     * same spot would mean two labels on top of each other: neither would be
+     * readable.
      *
-     * <p>Der Punkt nennt deshalb beide Namen.
+     * <p>So the point names both.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void btwopartsAreOnePointInThePicture(GameTestHelper helper) {
@@ -14218,18 +14194,18 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
-    // ---- Der Netzzustand am Anschluss --------------------------------------
+    // ---- The network state at the connector ----------------------------------
 
     /**
-     * Ein Anschluss weiß, wie es um ihn steht.
+     * A connector knows how things stand for it.
      *
-     * <p>Vier Zustände sehen im Spiel bisher gleich aus: benannt und
-     * erreichbar, ohne Namen, doppelt vergeben, ohne freien Kanal. Wer den
-     * letzten für einen Tippfehler hält, sucht lange — und wer davorsteht,
-     * sieht dem Block gar nichts an.
+     * <p>Four states have looked the same in the game so far: named and
+     * reachable, without a name, assigned twice, without a free channel.
+     * Whoever takes the last for a typo searches for a long time — and
+     * whoever stands in front of it sees nothing on the block.
      *
-     * <p>Der Zustand ist ein Schatten des Graphen und keine eigene Wahrheit:
-     * Der Controller stempelt ihn beim Neuaufbau, gerechnet wird er dort.
+     * <p>The state is a shadow of the graph and no truth of its own: the
+     * controller stamps it on rebuild, it is computed there.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void bstatusTellsTheNetworkState(GameTestHelper helper) {
@@ -14267,15 +14243,15 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Am Netz und nicht am Netz sind zwei verschiedene Dinge.
+     * On the network and not on the network are two different things.
      *
-     * <p><b>Bis zum 29.08. waren es drei.</b> Dazwischen lag „im Netz, aber
-     * ohne freien Kanal" — ein Gerät, das erreichbar war und trotzdem stumm
-     * blieb. Mit dem Durchsatz gibt es diesen Fall nicht mehr: Wer
-     * erreichbar ist, arbeitet.
+     * <p><b>Until 29 Aug there were three.</b> In between lay "in the
+     * network, but without a free channel" — a device that was reachable and
+     * still stayed silent. With throughput this case no longer exists:
+     * whoever is reachable works.
      *
-     * <p>Was bleibt, ist der Unterschied, der wirklich zählt: angeschlossen
-     * oder nicht.
+     * <p>What remains is the difference that really counts: connected or
+     * not.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void bstatusTellsCutOffFromWithoutAnetwork(GameTestHelper helper) {
@@ -14292,7 +14268,7 @@ public final class FactoryNetworkGameTests {
         bus.addPart(Direction.NORTH).setLabel("dabei");
         bus.addPart(Direction.SOUTH).setLabel("auch_dabei");
 
-        // Und einer, der mit dem Netz nichts zu tun hat.
+        // And one that has nothing to do with the network.
         BlockPos allein = new BlockPos(1, 1, 1);
         helper.setBlock(allein, FnBlocks.CABLE.get());
         var fern = busAt(helper, allein);
@@ -14304,8 +14280,8 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
 
-        // Beide am selben dünnen Kabel — und beide online. Früher wäre der
-        // zweite leer ausgegangen, sobald der erste den Strang füllte.
+        // Both on the same thin cable — and both online. Previously the
+        // second would have gone empty as soon as the first filled the strand.
         helper.assertValueEqual(bus.partAt(Direction.NORTH).state(),
                 dev.devpanda.factorynetwork.network.DeviceState.ONLINE,
                 "der erste hängt nicht am Netz");
@@ -14319,13 +14295,12 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Wer aus dem Netz fällt, erfährt es auch.
+     * Whoever drops out of the network learns of it too.
      *
-     * <p>Das ist die Stelle, an der ein Zustand als Schatten schiefgehen
-     * kann: Ein Anschluss, den der Graph nicht mehr kennt, bekommt von
-     * niemandem mehr etwas gesagt — und stünde für immer auf seinem letzten
-     * Zustand. Ein grünes Lämpchen an einem abgeschnittenen Gerät wäre
-     * schlimmer als gar keines.
+     * <p>This is the spot where a state as a shadow can go wrong: a
+     * connector the graph no longer knows is told nothing by anybody any
+     * more — and would stand on its last state forever. A green lamp on a
+     * cut-off device would be worse than none at all.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void bstatusGoesOfflineWhenTheCableIsCut(GameTestHelper helper) {
@@ -14351,7 +14326,7 @@ public final class FactoryNetworkGameTests {
                 dev.devpanda.factorynetwork.network.DeviceState.ONLINE,
                 "am Netz und benannt");
 
-        // Die Leitung dazwischen weg — der Anschluss hängt an nichts mehr.
+        // The line in between gone — the connector hangs on nothing any more.
         helper.destroyBlock(mitte);
         entity.rebuildNetwork();
 
@@ -14362,16 +14337,16 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
-     * Das Kabel wächst einen Arm zu seinem Anschluss.
+     * The cable grows an arm to its connector.
      *
-     * <p>Bis hierher galt die umgekehrte Regel: Eine Fläche mit Anschluss
-     * verband nicht, damit kein Arm mitten durch die Platte lief. Der Preis
-     * war ein grauer Stiel zwischen Platte und Kern — ein Fremdkörper in
-     * einer Leitung, die sonst überall durchläuft.
+     * <p>Up to here the opposite rule applied: a face with a connector did
+     * not connect, so that no arm ran right through the plate. The price was
+     * a grey stalk between plate and core — a foreign body in a line that
+     * otherwise runs through everywhere.
      *
-     * <p>Jetzt trägt der Arm selbst, was der Stiel trug. Damit entsteht am
-     * Kabel eine sichtbare Kreuzung, und die Leitung endet dort, wo sie
-     * hingehört: am Anschluss.
+     * <p>Now the arm itself carries what the stalk carried. That creates a
+     * visible junction at the cable, and the line ends where it belongs: at
+     * the connector.
      */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void bacableGrowsAnArmToItsPart(GameTestHelper helper) {
@@ -14389,7 +14364,7 @@ public final class FactoryNetworkGameTests {
         helper.assertTrue(helper.getBlockState(cable).getValue(
                         dev.devpanda.factorynetwork.block.CableBlock.connection(Direction.NORTH)),
                 "das Kabel muss einen Arm zum Anschluss wachsen lassen");
-        // Nach Süden liegt nichts — dort bleibt es beim blanken Kern.
+        // To the south lies nothing — there it stays at the bare core.
         helper.assertFalse(helper.getBlockState(cable).getValue(
                         dev.devpanda.factorynetwork.block.CableBlock.connection(Direction.SOUTH)),
                 "und nur dorthin");
