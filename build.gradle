@@ -207,6 +207,11 @@ dependencies {
 }
 
 dependencies {
+    // BambooCEF carries the CEF web runtime as a separate mod. The version is
+    // omitted on purpose: the composite build in settings.gradle substitutes
+    // this module with the sibling project, so its own version always wins.
+    implementation 'dev.devpanda.bamboocef:bamboocef'
+
     // Jade nur zum Übersetzen und zum Ausprobieren — die Mod läuft ohne.
     // Die Anbindung ist so geschrieben, dass sie ohne Jade gar nicht erst
     // geladen wird.

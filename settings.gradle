@@ -10,4 +10,9 @@ plugins {
     id 'org.gradle.toolchains.foojay-resolver-convention' version '0.9.0'
 }
 
+// The CEF web runtime lives in its own mod project next door. A composite
+// build substitutes 'dev.devpanda.bamboocef:bamboocef' with that build, so
+// there is no published artifact and no jar copy in between.
+includeBuild('../BambooCEFMC')
+
 rootProject.name = 'factorynetwork'
