@@ -4,68 +4,67 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Die Maße des Laufwerks — als reine Zahlen, Vorderseite nach Norden.
+ * The dimensions of the drive — as pure numbers, front facing north.
  *
- * <p><b>Ohne jeden Minecraft-Bezug</b>, aus demselben Grund wie
- * {@link CableLayout} und {@link GatewayLayout}: Nur so lässt sich die
- * Geometrie in einem gewöhnlichen Test gegen die erzeugte Modelldatei
- * prüfen.
+ * <p><b>Without any Minecraft dependency</b>, for the same reason as
+ * {@link CableLayout} and {@link GatewayLayout}: only this way can the
+ * geometry be checked against the generated model file in an ordinary test.
  *
- * <p>Die Zahlen beschreiben nur die eine Richtung. Die anderen drei rechnet
- * {@link FacingShapes} daraus — dieselbe Drehung, die auch der Blockzustand
- * am Modell vornimmt.
+ * <p>The numbers describe only the one direction. {@link FacingShapes}
+ * computes the other three from them — the same rotation that the block state
+ * applies to the model.
  *
- * <p>Dieselben Zahlen stehen im Modellskript {@code tools/assets.py};
- * {@code DriveLayoutTest} wacht darüber, dass beide dasselbe sagen.
+ * <p>The same numbers live in the model script {@code tools/assets.py};
+ * {@code DriveLayoutTest} watches over both saying the same thing.
  */
 public final class DriveLayout {
 
-    /** Höhe der Füße. */
+    /** Height of the feet. */
     public static final int FOOT = 2;
 
-    /** Grundfläche eines Fußes. */
+    /** Footprint of a foot. */
     public static final int FOOT_WIDE = 3;
 
-    /** Wie weit die Blende vor dem Gehäuse steht. */
+    /** How far the faceplate stands out in front of the housing. */
     public static final int FRONT = 2;
 
-    /** Wie weit das Gehäuse hinter der Blende zurückspringt. */
+    /** How far the housing sets back behind the faceplate. */
     public static final int INSET = 1;
 
     /**
-     * Breite der Fassung um das Schachtfeld.
+     * Width of the bezel around the bay field.
      *
-     * <p>Zwei und nicht eins, weil die vier Nieten der Textur um die
-     * Texturpixel 4 und 59 sitzen und mit Radius 2 gezeichnet werden — in
-     * Blockpixeln also von 0,5 bis 1,5 und von 14,25 bis 15,25. Eine Fassung
-     * von einem Blockpixel schnitt jede von ihnen in der Mitte durch.
+     * <p>Two and not one, because the texture's four rivets sit around texture
+     * pixels 4 and 59 and are drawn with radius 2 — so in block pixels from 0.5
+     * to 1.5 and from 14.25 to 15.25. A bezel of one block pixel cut each of
+     * them through the middle.
      */
     public static final int BEZEL = 2;
 
-    /** Wie tief das Feld in der Blende liegt. */
+    /** How deep the field sits within the faceplate. */
     public static final int RECESS = 1;
 
-    /** Alle Kästen des Modells, jeder als {@code x0 y0 z0 x1 y1 z1}. */
+    /** All boxes of the model, each as {@code x0 y0 z0 x1 y1 z1}. */
     public static List<int[]> boxes() {
         List<int[]> boxes = new ArrayList<>();
 
-        // Das Gehäuse.
+        // The housing.
         boxes.add(new int[] {INSET, FOOT, FRONT, 16 - INSET, 16, 16});
 
-        // Die Fassung der Blende, über die volle Höhe: Die beiden unteren
-        // Nieten der Textur sitzen unterhalb von zwei Blockpixeln.
+        // The bezel of the faceplate, over the full height: the two lower
+        // rivets of the texture sit below two block pixels.
         boxes.add(new int[] {0, 16 - BEZEL, 0, 16, 16, FRONT});
         boxes.add(new int[] {0, 0, 0, 16, BEZEL, FRONT});
         boxes.add(new int[] {0, BEZEL, 0, BEZEL, 16 - BEZEL, FRONT});
         boxes.add(new int[] {16 - BEZEL, BEZEL, 0, 16, 16 - BEZEL, FRONT});
 
-        // Das versenkte Schachtfeld.
+        // The recessed bay field.
         boxes.add(new int[] {BEZEL, BEZEL, RECESS,
                 16 - BEZEL, 16 - BEZEL, FRONT});
 
-        // Vier Füße, unter dem Gehäuse und nicht an den Blockecken: Dort
-        // ragte jeder genau den Blockpixel heraus, um den das Gehäuse
-        // schmaler ist als die Blende.
+        // Four feet, under the housing and not at the block corners: there
+        // each one stuck out by exactly the block pixel by which the housing
+        // is narrower than the faceplate.
         for (int x : new int[] {INSET, 16 - INSET - FOOT_WIDE}) {
             for (int z : new int[] {FRONT, 16 - FOOT_WIDE}) {
                 boxes.add(new int[] {x, 0, z, x + FOOT_WIDE, FOOT, z + FOOT_WIDE});

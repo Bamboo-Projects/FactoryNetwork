@@ -17,39 +17,39 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 
 /**
- * Zeigt an der Front, welche Einschübe laufen.
+ * Shows on the front which bays are running.
  *
- * <p>Drei Zustände, und der mittlere ist der wichtige: <b>angefangen und
- * nicht fertig</b>. Ein Einschub, in dem ein Gehäuse ohne Datenträger
- * steckt, sieht von weitem aus wie ein voller und rechnet doch nicht — ohne
- * eigene Farbe dafür sucht man den Fehler im Programm.
+ * <p>Three states, and the middle one is the important one: <b>started and
+ * not finished</b>. A bay in which a chassis without storage media sits looks
+ * from afar like a full one and yet does not compute — without a colour of
+ * its own for it you go looking for the bug in the program.
  *
- * <p>Gezeichnet über zwei Blöcke: Der Schrank ist zwei hoch, die BlockEntity
- * sitzt unten, und die oberen sechs Einschübe liegen im Nachbarblock.
+ * <p>Drawn across two blocks: the rack is two tall, the BlockEntity sits at
+ * the bottom, and the upper six bays lie in the neighbouring block.
  */
 public class RackRenderer implements BlockEntityRenderer<RackBlockEntity> {
 
     private static final ResourceLocation BLADES = ResourceLocation.fromNamespaceAndPath(
             FactoryNetwork.MOD_ID, "textures/misc/rack_blades.png");
 
-    /** Leer, angefangen, laufend. */
+    /** Empty, started, running. */
     private static final float TILES = 3.0F;
     private static final double MAX_DISTANCE = 32.0;
 
-    /** Ein Block ist sechzehn Pixel; die Front des Schranks ist zweiunddreißig. */
+    /** A block is sixteen pixels; the front of the rack is thirty-two. */
     private static final float PIXEL = 16.0F;
 
-    /** So weit liegt die Front hinter dem Rahmen — dieselben zwei Pixel wie im Modell. */
+    /** How far the front sits behind the frame — the same two pixels as in the model. */
     private static final float DEPTH = 2.0F / PIXEL;
 
     private static final float BAY_X0 = 3.0F;
     private static final float BAY_X1 = 13.0F;
 
-    /** Oberkante des ersten Einschubs, gemessen von oben über beide Blöcke. */
+    /** Top edge of the first bay, measured from the top across both blocks. */
     private static final float BAY_TOP = 2.0F;
     private static final float BAY_HEIGHT = 2.0F;
 
-    /** Die achtundzwanzig Pixel zwischen den Rahmenleisten, geteilt durch zwölf. */
+    /** The twenty-eight pixels between the frame rails, divided by twelve. */
     private static final float BAY_STEP = 28.0F / RackBlockEntity.BAYS;
 
     public RackRenderer(BlockEntityRendererProvider.Context context) {
@@ -79,12 +79,12 @@ public class RackRenderer implements BlockEntityRenderer<RackBlockEntity> {
     }
 
     /**
-     * Leer, angefangen, laufend.
+     * Empty, started, running.
      *
-     * <p>Angefangen ist schon ein Gehäuse ohne Hardware: Es sieht aus wie
-     * ein Server und ist keiner. Dieselbe Auskunft gibt das Fenster, und
-     * zwei Stellen, die verschieden zählen, wären schlimmer als eine, die
-     * schweigt.
+     * <p>Started is already a chassis without hardware: it looks like a
+     * server and is none. The window gives the same information, and two
+     * places that count differently would be worse than one that stays
+     * silent.
      */
     private static int kindOf(RackBlockEntity rack, int bay) {
         if (!rack.hasChassis(bay)) {
@@ -94,11 +94,11 @@ public class RackRenderer implements BlockEntityRenderer<RackBlockEntity> {
     }
 
     /**
-     * Der Schrank reicht einen Block höher als seine BlockEntity.
+     * The rack reaches one block higher than its BlockEntity.
      *
-     * <p>Ohne diese Angabe verschwinden die oberen sechs Einschübe, sobald
-     * der untere Block aus dem Blickfeld rutscht — man sieht den Schrank und
-     * seine Lämpchen sind weg.
+     * <p>Without this declaration the upper six bays disappear as soon as the
+     * lower block slides out of view — you see the rack and its indicator
+     * lights are gone.
      */
     @Override
     public AABB getRenderBoundingBox(RackBlockEntity rack) {

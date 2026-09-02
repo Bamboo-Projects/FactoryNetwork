@@ -6,36 +6,35 @@ import net.minecraft.core.Direction;
 import org.joml.Matrix4f;
 
 /**
- * Legt kleine Bilder auf die Vorderseite eines Blocks.
+ * Places small images onto the front face of a block.
  *
- * <p><b>Warum gezeichnet und nicht gebacken:</b> Ein Laufwerk mit zehn
- * Plätzen und sechs Zuständen je Platz wären über sechzig Millionen
- * Blockzustände. Was drinsteckt, gehört in die BlockEntity, und die Front
- * wird darüber gemalt.
+ * <p><b>Why drawn and not baked:</b> a drive with ten slots and six states
+ * per slot would be over sixty million block states. What is inside belongs
+ * in the BlockEntity, and the front is painted over it.
  *
- * <p>Gerechnet wird in Texturkoordinaten der Vorderseite: null links oben,
- * eins rechts unten — dieselben Zahlen, mit denen die Textur entstanden ist.
- * So steht die Geometrie im Renderer an derselben Stelle wie im Malskript,
- * und ein verschobener Schacht fällt beim Vergleich auf.
+ * <p>The computation is in texture coordinates of the front face: zero at the
+ * top left, one at the bottom right — the same numbers the texture was made
+ * with. That way the geometry in the renderer sits in the same place as in
+ * the drawing script, and a shifted bay stands out on comparison.
  */
 public final class FaceOverlay {
 
-    /** Knapp vor der Fläche, damit nichts flimmert. */
+    /** Just in front of the face, so that nothing flickers. */
     private static final float OFFSET = 0.5F + 0.004F;
 
     private FaceOverlay() {
     }
 
     /**
-     * Ein Rechteck auf die Vorderseite.
+     * A rectangle onto the front face.
      *
-     * @param facing wohin der Block zeigt
-     * @param tx0 linke Kante in Texturkoordinaten, null bis eins
-     * @param ty0 obere Kante
-     * @param tx1 rechte Kante
-     * @param ty1 untere Kante
-     * @param u0 linke Kante im Bildstreifen
-     * @param u1 rechte Kante im Bildstreifen
+     * @param facing which way the block points
+     * @param tx0 left edge in texture coordinates, zero to one
+     * @param ty0 top edge
+     * @param tx1 right edge
+     * @param ty1 bottom edge
+     * @param u0 left edge in the image strip
+     * @param u1 right edge in the image strip
      */
     public static void tile(VertexConsumer buffer, Matrix4f matrix, Direction facing,
                             float tx0, float ty0, float tx1, float ty1,
@@ -44,22 +43,22 @@ public final class FaceOverlay {
     }
 
     /**
-     * Dasselbe, aber ein Stück tiefer.
+     * The same, but set a little deeper.
      *
-     * <p>Der Serverschrank hat eine zurückgesetzte Front: Die Einschübe
-     * liegen hinter dem Rahmen, nicht darauf. Ohne diesen Abstand steckten
-     * sie im Blech.
+     * <p>The server rack has a recessed front: the bays lie behind the frame,
+     * not on it. Without this offset they would sit inside the sheet metal.
      *
-     * @param depth wie weit hinter der Außenfläche, in Blöcken
+     * @param depth how far behind the outer face, in blocks
      */
     public static void tile(VertexConsumer buffer, Matrix4f matrix, Direction facing,
                             float tx0, float ty0, float tx1, float ty1,
                             float u0, float u1, int light, float depth) {
         float nx = facing.getStepX();
         float nz = facing.getStepZ();
-        // Von aussen betrachtet zeigt die Textur nach rechts, wohin die
-        // Gegenuhrzeigerdrehung der Blickrichtung zeigt. Bei Norden ist das
-        // Westen — wer im Spiel nach Norden sieht, hat Osten rechts.
+        // Seen from outside, the texture points to the right, where the
+        // counter-clockwise turn of the facing direction points. For north
+        // that is west — someone looking north in the game has east on the
+        // right.
         Direction right = facing.getCounterClockWise();
         float rx = right.getStepX();
         float rz = right.getStepZ();

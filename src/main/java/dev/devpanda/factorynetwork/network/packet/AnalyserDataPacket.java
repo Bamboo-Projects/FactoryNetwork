@@ -14,15 +14,14 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 import java.util.List;
 
 /**
- * Das Netz für den Analysator.
+ * The network, for the analyser.
  *
- * <p>Geht laufend an den Spieler, solange er das Werkzeug in der Hand hält —
- * ein Netz ändert sich, während man davorsteht, und ein eingefrorenes Bild
- * wäre bei der Fehlersuche das Gegenteil von hilfreich.
+ * <p>Goes to the player continuously as long as they hold the tool in hand —
+ * a network changes while you stand in front of it, and a frozen picture would
+ * be the opposite of helpful when tracking down a fault.
  *
- * <p>Die Obergrenzen sind großzügig, aber vorhanden: Ein Netz mit
- * zehntausend Kabeln würde sonst jedes Anfassen des Werkzeugs zu einer
- * Übertragung machen, die man merkt.
+ * <p>The caps are generous, but present: a network with ten thousand cables
+ * would otherwise turn every touch of the tool into a transfer you can feel.
  */
 public record AnalyserDataPacket(List<AnalyserData.Node> nodes, List<AnalyserData.Link> links,
                                  AnalyserData.Summary summary) implements CustomPacketPayload {
@@ -52,8 +51,8 @@ public record AnalyserDataPacket(List<AnalyserData.Node> nodes, List<AnalyserDat
                     AnalyserData.Link::new);
 
     /**
-     * Von Hand geschrieben: {@code composite} trägt höchstens sechs Felder,
-     * die Zusammenfassung hat sieben.
+     * Written by hand: {@code composite} carries at most six fields, and the
+     * summary has seven.
      */
     private static final StreamCodec<RegistryFriendlyByteBuf, AnalyserData.Summary> SUMMARY =
             StreamCodec.of(

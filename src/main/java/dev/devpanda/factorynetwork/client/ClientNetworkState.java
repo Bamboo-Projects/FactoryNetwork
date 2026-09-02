@@ -11,16 +11,15 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Was der Client über das Netzwerk weiß.
+ * What the client knows about the network.
  *
- * <p>Der Editor braucht die Namen aus dem Netz für die Vervollständigung. Sie
- * hier zu halten statt bei jedem Tastendruck nachzufragen, ist der
- * Unterschied zwischen einer Vervollständigung, die sich flüssig anfühlt, und
- * einer, die hakt.
+ * <p>The editor needs the names from the network for completion. Keeping them
+ * here instead of asking again on every keystroke is the difference between a
+ * completion that feels fluid and one that stutters.
  *
- * <p>Connectoren <b>und</b> Anzeigen: Beide tragen Namen, die im Programm
- * stehen müssen, und beide sollen vorgeschlagen werden. Der Quelltext lag
- * früher auch hier; er kommt jetzt über {@code ClientProjectState}.
+ * <p>Connectors <b>and</b> displays: both carry names that have to appear in
+ * the program, and both should be suggested. The source used to live here too;
+ * it now comes through {@code ClientProjectState}.
  */
 public final class ClientNetworkState {
 
@@ -46,23 +45,23 @@ public final class ClientNetworkState {
     }
 
     /**
-     * Was hinter einem Connector steht.
+     * What stands behind a connector.
      *
-     * <p>Nie {@code null}: Wer nach einem Namen fragt, den es nicht gibt,
-     * bekommt ein Profil, das über sich nichts sagt.
+     * <p>Never {@code null}: whoever asks for a name that does not exist gets
+     * a profile that says nothing about itself.
      */
     public static DeviceProfile profile(String connector) {
         return profiles.getOrDefault(connector, DeviceProfile.unreachable());
     }
 
     /**
-     * Ein Profil aus einer Antwort auf eine Anfrage.
+     * A profile from an answer to a request.
      *
-     * <p><b>Sonst widersprächen sich zwei Auskünfte.</b> Die Antwort trägt
-     * den frischen Stand mit; läge er nur beim Zeigen vor, sagte der Tooltip
-     * nach einem Maschinentausch „Tank", während die Warnung in der Zeile
-     * noch mit der Kiste rechnet. Hier abgelegt, sehen Vorschlagsliste und
-     * Prüfung dasselbe.
+     * <p><b>Otherwise two pieces of information would contradict each other.</b>
+     * The answer carries the fresh state with it; if that were available only
+     * on hover, the tooltip would say "tank" after a machine swap while the
+     * warning in the line still reckons with the chest. Stored here, the
+     * suggestion list and the check see the same thing.
      */
     public static void updateProfile(String connector, DeviceProfile profile) {
         Map<String, DeviceProfile> next = new HashMap<>(profiles);
@@ -70,21 +69,21 @@ public final class ClientNetworkState {
         profiles = next;
     }
 
-    /** Die Namen der Connectoren. */
+    /** The names of the connectors. */
     public static List<String> connectors() {
         return connectors.stream().map(NamedPlace::name).toList();
     }
 
-    /** Die Namen der Anzeigewände im Netz — für {@code display NAME { … }}. */
+    /** The names of the display walls in the network — for {@code display NAME { … }}. */
     public static List<String> displays() {
         return displays.stream().map(NamedPlace::name).toList();
     }
 
     /**
-     * Wo ein Name im Netz hängt, oder {@code null}.
+     * Where a name hangs in the network, or {@code null}.
      *
-     * <p>Connectoren und Anzeigen zusammen: Von der Stelle im Code aus ist
-     * beides dasselbe — ein Name, hinter dem ein Block in der Welt steht.
+     * <p>Connectors and displays together: from the spot in the code both are
+     * the same — a name behind which a block stands in the world.
      */
     public static net.minecraft.core.BlockPos placeOf(String name) {
         for (NamedPlace place : connectors) {

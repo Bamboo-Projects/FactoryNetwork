@@ -14,59 +14,60 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Was ein Router je Seite durchlässt.
+ * What a router lets through per side.
  *
- * <p><b>Das Glasfaser-Bild.</b> Eine Leitung trägt alle Farben; der Router
- * zieht einzelne heraus. Eine Seite ohne Filter ist der Anschluss an den
- * Hauptstrang — dort geht alles durch. Eine Seite mit Farbe greift genau
- * diese ab.
+ * <p><b>The fibre-optic picture.</b> One line carries all colours; the router
+ * pulls out individual ones. A side without a filter is the connection to the
+ * trunk — there everything passes. A side with a colour taps exactly that
+ * one.
  *
- * <p><b>Bis zum 29.08. war es umgekehrt.</b> Der Router trug Bahnnummern und
- * war farbneutral: Was auf einer Bahn zusammenkam, galt als verbunden. Er war
- * ein Mischer, kein Splitter — zwei getrennte Teilnetze wuchsen über ihn
- * zusammen.
+ * <p><b>Until 29.08. it was the other way round.</b> The router carried lane
+ * numbers and was colour-neutral: whatever met on one lane counted as
+ * connected. It was a mixer, not a splitter — two separate subnetworks grew
+ * together across it.
  *
- * <p>Die alte Aufgabe kann er weiterhin: Zwei Seiten auf dieselbe Farbe
- * gestellt sind verbunden, verschiedene kreuzen sich berührungslos. Das
- * Kreuzen ist damit ein Sonderfall des Filterns.
+ * <p>It can still do the old job: two sides set to the same colour are
+ * connected, different ones cross without touching. Crossing is thereby a
+ * special case of filtering.
  *
- * <p>Die Zuordnung steht in der BlockEntity und nicht im Blockzustand: Sechs
- * Seiten mit je fünf Werten wären 15625 Zustände, und die legt Minecraft
- * alle beim Start an.
+ * <p>The assignment lives in the BlockEntity and not in the block state: six
+ * sides with five values each would be 15625 states, and Minecraft creates
+ * all of them at startup.
  */
 public class RouterBlockEntity extends BlockEntity {
 
-    /** Diese Seite ist abgeklemmt: Es geht nichts hinein und nichts heraus. */
+    /** This side is switched off: nothing goes in and nothing comes out. */
     public static final int OFF = 0;
 
     /**
-     * Vier Bahnen.
+     * Four lanes.
      *
-     * <p>Mehr Kreuzungen in einem einzigen Block sind nicht mehr zu lesen —
-     * bei sechs Seiten und sechs Bahnen wäre fast jede Seite für sich, und
-     * dafür braucht es keinen Block.
+     * <p>More crossings in a single block can no longer be read — with six
+     * sides and six lanes almost every side would be on its own, and for that
+     * you need no block.
      */
     /**
-     * Diese Seite lässt alles durch — der Anschluss an den Hauptstrang.
+     * This side lets everything through — the connection to the trunk.
      *
-     * <p>Der Wert ist die alte Bahn 1: Ein Router aus einer älteren Welt hat
-     * danach eine Seite, die alles durchlässt, statt einer auf Bahn 1. Das
-     * ist die verträglichere Vorgabe — er verbindet weiter, was er verband.
+     * <p>The value is the old lane 1: a router from an older world therefore
+     * has a side that lets everything through instead of one on lane 1. That
+     * is the more compatible default — it goes on connecting what it
+     * connected.
      */
     public static final int ALL = 1;
 
-    /** So viele Einstellungen gibt es je Seite: aus, alles, und je Farbe eine. */
+    /** This many settings exist per side: off, all, and one per colour. */
     public static final int LANES = ALL
             + dev.devpanda.factorynetwork.block.CableColour.values().length;
 
     private static final String KEY_LANES = "Lanes";
 
     /**
-     * Bahn je Seite, in der Reihenfolge von {@link Direction#values()}.
+     * Lane per side, in the order of {@link Direction#values()}.
      *
-     * <p>Frisch gesetzt liegt alles auf Bahn eins: Ein Router, den man
-     * hinstellt und nicht anfasst, verhält sich wie ein Stück Kabel. Wer
-     * trennen will, sagt es — nicht umgekehrt.
+     * <p>Freshly placed, everything lies on lane one: a router you set down
+     * and do not touch behaves like a piece of cable. Whoever wants to
+     * separate says so — not the other way round.
      */
     private final byte[] lanes = new byte[Direction.values().length];
 
@@ -76,10 +77,10 @@ public class RouterBlockEntity extends BlockEntity {
     }
 
     /**
-     * Was diese Seite durchlässt.
+     * What this side lets through.
      *
-     * <p>{@code null} heißt <b>alles</b> — die Seite zum Hauptstrang. Eine
-     * Farbe heißt: nur diese. Ob die Seite überhaupt an ist, fragt
+     * <p>{@code null} means <b>everything</b> — the side toward the trunk. A
+     * colour means: only that one. Whether the side is on at all is asked of
      * {@link #isOff}.
      */
     public dev.devpanda.factorynetwork.block.CableColour filter(Direction side) {
@@ -87,30 +88,30 @@ public class RouterBlockEntity extends BlockEntity {
         if (wert == OFF || wert == ALL) {
             return null;
         }
-        // Die Farbwerte fangen bei zwei an, weil eins schon „alles"
-        // heißt. Ein Router aus einer Welt von vor dem 29.08. hat danach
-        // Farben statt Bahnen — die Trennung bleibt dieselbe, nur heißt sie
-        // anders.
+        // The colour values start at two, because one already means "all".
+        // A router from a world before 29.08. therefore has colours instead
+        // of lanes — the separation stays the same, only it is called
+        // something else.
         var farben = dev.devpanda.factorynetwork.block.CableColour.values();
         return farben[Math.min(wert - 2, farben.length - 1)];
     }
 
     /**
-     * Die rohe Einstellung dieser Seite.
+     * The raw setting of this side.
      *
-     * <p>Für Anzeige und Speicherung: aus, alles, oder eine Farbe als Zahl.
-     * Wer wissen will, <i>was</i> durchgeht, fragt {@link #filter}.
+     * <p>For display and storage: off, all, or a colour as a number. Whoever
+     * wants to know <i>what</i> passes asks {@link #filter}.
      */
     public int lane(Direction side) {
         return lanes[side.ordinal()];
     }
 
-    /** Ist diese Seite abgeklemmt? */
+    /** Is this side switched off? */
     public boolean isOff(Direction side) {
         return lanes[side.ordinal()] == OFF;
     }
 
-    /** Setzt den Filter: {@code null} für alles. */
+    /** Sets the filter: {@code null} for everything. */
     public void setFilter(Direction side,
                           dev.devpanda.factorynetwork.block.CableColour colour) {
         lanes[side.ordinal()] = (byte) (colour == null ? ALL : colour.ordinal() + 2);
@@ -118,17 +119,17 @@ public class RouterBlockEntity extends BlockEntity {
     }
 
     /**
-     * Setzt die rohe Einstellung.
+     * Sets the raw setting.
      *
-     * <p>Für das Fenster, das sich durch die Werte klickt, und für die
-     * Speicherung. Wer eine Farbe meint, nimmt {@link #setFilter}.
+     * <p>For the screen that clicks through the values, and for storage.
+     * Whoever means a colour uses {@link #setFilter}.
      */
     public void setLane(Direction side, int lane) {
         lanes[side.ordinal()] = (byte) Math.max(OFF, Math.min(LANES, lane));
         update();
     }
 
-    /** Klemmt diese Seite ab. */
+    /** Switches this side off. */
     public void turnOff(Direction side) {
         lanes[side.ordinal()] = (byte) OFF;
         update();
@@ -142,11 +143,11 @@ public class RouterBlockEntity extends BlockEntity {
     }
 
     /**
-     * Schaltet eine Seite eine Bahn weiter: 1, 2, 3, 4, aus, wieder 1.
+     * Advances a side by one lane: 1, 2, 3, 4, off, then 1 again.
      *
-     * <p>Nur vorwärts. Rückwärts über die Schleichtaste wäre schneller am
-     * Ziel, aber die Schleichtaste ist beim Anklicken eines Blocks schon
-     * belegt, und fünf Klicks bis zurück sind auszuhalten.
+     * <p>Forward only. Backward via the sneak key would reach the goal faster,
+     * but the sneak key is already taken when clicking a block, and five
+     * clicks to get back around are bearable.
      */
     public int cycle(Direction side) {
         int next = lanes[side.ordinal()] + 1;
@@ -159,11 +160,11 @@ public class RouterBlockEntity extends BlockEntity {
     }
 
     /**
-     * Welche Bahn diese Seite führt — null, wenn dort gar kein Router steht.
+     * Which lane this side carries — zero if there is no router there at all.
      *
-     * <p>Der Graph fragt so, weil er über die Welt läuft und nicht über
-     * BlockEntities: Für ihn ist eine abgeklemmte Seite dasselbe wie gar
-     * kein Router.
+     * <p>The graph asks this way because it runs over the world and not over
+     * BlockEntities: to it, a switched-off side is the same as no router at
+     * all.
      */
     public static int laneAt(BlockGetter level, BlockPos pos, Direction side) {
         return level.getBlockEntity(pos) instanceof RouterBlockEntity router
@@ -171,11 +172,11 @@ public class RouterBlockEntity extends BlockEntity {
     }
 
     /**
-     * Was diese Seite durchlässt — für den Graphen, der über die Welt läuft.
+     * What this side lets through — for the graph that runs over the world.
      *
-     * <p>Gibt {@code null} zurück, wenn alles durchgeht <b>oder</b> wenn dort
-     * kein Router steht. Ob die Seite überhaupt offen ist, fragt der Graph
-     * mit {@link #laneAt} — zwei Fragen, zwei Antworten.
+     * <p>Returns {@code null} when everything passes <b>or</b> when there is
+     * no router there. Whether the side is open at all is asked by the graph
+     * with {@link #laneAt} — two questions, two answers.
      */
     public static dev.devpanda.factorynetwork.block.CableColour filterAt(
             BlockGetter level, BlockPos pos, Direction side) {
@@ -184,10 +185,10 @@ public class RouterBlockEntity extends BlockEntity {
     }
 
     /**
-     * Das Fenster zum Router.
+     * The screen for the router.
      *
-     * <p>Die Bahnlasten holt es sich beim Controller, der das Netz kennt —
-     * der Router selbst weiß nur, welche Seite auf welcher Bahn liegt.
+     * <p>It fetches the lane loads from the controller, which knows the
+     * network — the router itself only knows which side lies on which lane.
      */
     public net.minecraft.world.MenuProvider menu() {
         return new net.minecraft.world.SimpleMenuProvider(
@@ -204,18 +205,18 @@ public class RouterBlockEntity extends BlockEntity {
         if (level == null) {
             return 0;
         }
-        // Seit dem 29.08. gibt es keine Kanallast mehr — was eine Bahn
-        // trägt, ist ihr Durchsatz, und der hängt nicht davon ab, wie viele
-        // Geräte dahinter liegen.
+        // Since 29.08. there is no longer any channel load — what a lane
+        // carries is its throughput, and that does not depend on how many
+        // devices lie behind it.
         return dev.devpanda.factorynetwork.network.Bandwidth.CABLE;
     }
 
-    /** Was eine Bahn trägt: so viel wie ein dichtes Kabel. */
+    /** What a lane carries: as much as a solid cable. */
     private int laneCapacity() {
         return dev.devpanda.factorynetwork.network.Bandwidth.CABLE;
     }
 
-    /** Wie viele Seiten überhaupt angeschlossen sind. */
+    /** How many sides are connected at all. */
     public int connectedSides() {
         int count = 0;
         for (byte lane : lanes) {
@@ -226,7 +227,7 @@ public class RouterBlockEntity extends BlockEntity {
         return count;
     }
 
-    /** Wie viele verschiedene Bahnen der Router gerade führt. */
+    /** How many different lanes the router currently carries. */
     public int usedLanes() {
         boolean[] seen = new boolean[LANES + 1];
         for (byte lane : lanes) {
@@ -246,8 +247,8 @@ public class RouterBlockEntity extends BlockEntity {
         super.loadAdditional(tag, registries);
         byte[] stored = tag.getByteArray(KEY_LANES);
         for (int i = 0; i < lanes.length; i++) {
-            // Kürzere Felder aus älteren Ständen sollen nicht abstürzen; was
-            // fehlt, bleibt auf der Vorgabe.
+            // Shorter arrays from older saves should not crash; what is
+            // missing stays at the default.
             if (i < stored.length) {
                 lanes[i] = (byte) Math.max(OFF, Math.min(LANES, stored[i]));
             }

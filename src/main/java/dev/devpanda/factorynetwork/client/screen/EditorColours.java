@@ -1,19 +1,19 @@
 package dev.devpanda.factorynetwork.client.screen;
 
 /**
- * Die Farben des Code-Bildschirms.
+ * The colours of the code screen.
  *
- * <p><b>Achtung beim Füllen:</b> Die Werte für Text stehen ohne Alphakanal
- * da. Das geht gut, solange sie in {@code drawString} landen — Minecrafts
- * Schriftsatz ergänzt volle Deckkraft, wenn die obersten Bits null sind. Eine
- * Füllung tut das nicht: Dort ist derselbe Wert vollständig durchsichtig.
- * Wer eine dieser Farben in {@code graphics.fill} verwendet, schreibt
- * {@code 0xFF000000 |} davor. Der Cursor war ohne das durchsichtig, seit es
- * ihn gibt — man sieht so etwas nicht, man sucht es.
+ * <p><b>Careful when filling:</b> the values for text carry no alpha channel.
+ * That works fine as long as they end up in {@code drawString} — Minecraft's
+ * font renderer adds full opacity when the top bits are zero. A fill does
+ * not: there the same value is fully transparent. Anyone using one of these
+ * colours in {@code graphics.fill} writes {@code 0xFF000000 |} in front of
+ * it. The cursor was transparent without that from the day it existed — you
+ * don't see something like this, you go hunting for it.
  *
- * <p>Dieselben Werte, mit denen die Blocktexturen arbeiten: Blau für
- * Schlüsselwörter, Grün für Auswahlausdrücke. Wer den Controller ansieht und
- * dann den Code, soll denselben Farbklang wiedererkennen.
+ * <p>The same values the block textures work with: blue for keywords, green
+ * for selector expressions. Anyone who looks at the controller and then at
+ * the code should recognise the same colour palette.
  */
 public final class EditorColours {
 
@@ -24,64 +24,64 @@ public final class EditorColours {
     public static final int COMMENT = 0x6B7480;
     public static final int ERROR = 0xE88388;
     public static final int CURSOR = 0xD8DEE4;
-    /** Hinterlegung einer Zeile mit Fehler — bei zehn Pixeln Höhe trägt keine Welle. */
+    /** Background for a line with an error — at ten pixels of height no squiggle carries. */
     public static final int ERROR_LINE = 0x30E88388;
 
     /**
-     * Und dasselbe für eine Warnung.
+     * And the same for a warning.
      *
-     * <p>Vorher sahen beide gleich aus. Eine Warnung hält das Programm nicht
-     * auf — sie so zu färben wie einen Fehler heißt, dass man beide gleich
-     * ernst nimmt oder beide gleich wenig.
+     * <p>Before, the two looked alike. A warning does not stop the program —
+     * colouring it the same as an error means taking both equally seriously,
+     * or both equally little.
      */
     public static final int WARNING_LINE = 0x30E8AC3E;
 
     /**
-     * Die Auswahl: kräftig genug, um sie zu sehen, blass genug, um den Text
-     * darüber noch zu lesen.
+     * The selection: strong enough to see it, faint enough to still read the
+     * text on top of it.
      */
     public static final int SELECTION = 0x664A7BC4;
 
     /**
-     * Fundstellen der Suche.
+     * Search hits.
      *
-     * <p>Zwei Töne: alle Treffer matt, der gerade angefahrene kräftig. Ohne
-     * die Unterscheidung sieht man zwar, dass es Treffer gibt, aber nicht,
-     * wo man gerade steht.
+     * <p>Two shades: all matches dim, the one currently focused strong.
+     * Without the distinction you can see that there are matches, but not
+     * where you currently are.
      */
     public static final int MATCH = 0x40C8A03C;
     public static final int MATCH_CURRENT = 0x90C8A03C;
 
-    /** Die Suchzeile über dem Text. */
+    /** The search bar above the text. */
     public static final int SEARCH_BAR = 0xC0202429;
 
     /**
-     * Die Zeile, in der der Cursor steht.
+     * The line the cursor sits on.
      *
-     * <p>Sehr blass. Sie soll den Blick zurückführen, wenn man von der
-     * Tastatur aufsieht, und nicht mitlesen wollen. Bei einer Auswahl bleibt
-     * sie weg — zwei Hinterlegungen übereinander sind keine.
+     * <p>Very faint. It should guide the eye back when you look up from the
+     * keyboard, and not demand to be read along with the rest. With a
+     * selection it stays away — two backgrounds on top of each other are none.
      */
     public static final int CURRENT_LINE = 0x18FFFFFF;
 
-    /** Die Nummer der Zeile, in der der Cursor steht. */
+    /** The number of the line the cursor sits on. */
     public static final int LINE_NUMBER_ACTIVE = 0xA8B2BC;
 
     /**
-     * Die senkrechten Striche der Einrückung.
+     * The vertical strokes of the indentation.
      *
-     * <p>Fast unsichtbar, und das ist der Sinn: Sie beantworten „zu welchem
-     * Block gehört diese Zeile" beim Überfliegen, ohne beim Lesen im Weg zu
-     * stehen. In einer Sprache mit geschweiften Klammern ist das die Frage,
-     * die man am häufigsten stellt.
+     * <p>Almost invisible, and that is the point: they answer "which block
+     * does this line belong to" at a glance, without getting in the way while
+     * reading. In a language with curly braces that is the question asked
+     * most often.
      */
     public static final int INDENT_GUIDE = 0x1EFFFFFF;
 
     /**
-     * Das Klammernpaar um den Cursor.
+     * The bracket pair around the cursor.
      *
-     * <p>Hinterlegt statt eingerahmt: Ein Rahmen um ein Zeichen von fünf
-     * Pixeln Breite ist ein Fleck.
+     * <p>Backed rather than framed: a frame around a character five pixels
+     * wide is a smudge.
      */
     public static final int BRACKET = 0x605A8AC4;
 

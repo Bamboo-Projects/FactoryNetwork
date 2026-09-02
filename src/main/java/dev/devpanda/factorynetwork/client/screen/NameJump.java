@@ -6,27 +6,26 @@ import dev.devpanda.factorynetwork.lang.Project;
 import net.minecraft.core.BlockPos;
 
 /**
- * Wohin ein Strg+Klick auf einen Namen führt.
+ * Where a Ctrl+click on a name leads.
  *
- * <p>Zwei Ziele, und welches gilt, entscheidet der Name: Steht er im
- * Programm, ist die Frage „wo wird das erklärt" — steht er in der Welt, ist
- * sie „welcher Block ist das", und die beantwortet eine Marke.
+ * <p>Two destinations, and the name decides which one applies: if it lives in
+ * the program, the question is "where is this declared" — if it lives in the
+ * world, it is "which block is this", and a marker answers that.
  *
- * <p><b>An einer Stelle, weil beide Fenster sie brauchen.</b> Sie stand
- * zuerst nur im eigenen Fenster; im Reiter des Terminals führte derselbe
- * Griff ins Leere. Aufgefallen ist das erst, als das Zeigen ihn dort
- * ankündigte — ein Hinweistext, der auf etwas verweist, das es nicht gibt,
- * ist schlimmer als kein Hinweis.
+ * <p><b>In one place, because both windows need it.</b> At first it lived only
+ * in the standalone window; in the terminal's tab the same gesture led
+ * nowhere. That only came to light once the tooltip announced it there — a
+ * hint that points to something which does not exist is worse than no hint.
  */
 public final class NameJump {
 
     /**
-     * Ein Ziel.
+     * A destination.
      *
-     * <p>Genau eines der beiden Felder ist gesetzt.
+     * <p>Exactly one of the two fields is set.
      *
-     * @param inCode  wo der Name erklärt wird, oder {@code null}
-     * @param inWorld wo der Block steht, oder {@code null}
+     * @param inCode  where the name is declared, or {@code null}
+     * @param inWorld where the block sits, or {@code null}
      */
     public record Jump(Definitions.Location inCode, BlockPos inWorld) {
     }
@@ -35,11 +34,11 @@ public final class NameJump {
     }
 
     /**
-     * Wohin dieser Name führt, oder {@code null}.
+     * Where this name leads, or {@code null}.
      *
-     * <p>Die Erklärung im Programm hat Vorrang: Wer einen Namen im Code
-     * sucht, meint meistens seine Erklärung — die Stelle in der Welt steht
-     * ohnehin schon im Tooltip.
+     * <p>The declaration in the program takes precedence: someone searching
+     * for a name in the code usually means its declaration — the spot in the
+     * world is already in the tooltip anyway.
      */
     public static Jump resolve(String word, Project project) {
         if (word == null || word.isEmpty()) {

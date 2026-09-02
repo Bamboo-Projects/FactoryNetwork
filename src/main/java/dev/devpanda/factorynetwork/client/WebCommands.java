@@ -15,16 +15,17 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RegisterClientCommandsEvent;
 
 /**
- * Der Weg, einen Browser zu öffnen — vorerst über die Konsole.
+ * The way to open a browser — for now through the console.
  *
- * <p><b>Warum das hier steht und nicht im Web-Paket.</b> Die Runtime darf
- * nichts von der Mod wissen; die Mod darf alles von der Runtime wissen. Ein
- * Befehl ist etwas, das die Mod anbietet, und er gehört auf diese Seite der
- * Grenze. Der Prüflauf über die Paketgrenze würde es sonst auch melden.
+ * <p><b>Why this stands here and not in the web package.</b> The runtime must
+ * know nothing of the mod; the mod may know everything of the runtime. A
+ * command is something the mod offers, and it belongs on this side of the
+ * boundary. The check across the package boundary would otherwise report it
+ * too.
  *
- * <p>Später öffnet ein Block oder ein Gegenstand denselben Bildschirm. Bis
- * dahin ist ein Befehl das ehrlichste Mittel: Er behauptet nicht, schon ein
- * fertiges Bedienkonzept zu sein.
+ * <p>Later a block or an item will open the same screen. Until then a command
+ * is the most honest means: it does not pretend to be a finished control
+ * scheme already.
  */
 @EventBusSubscriber(modid = FactoryNetwork.MOD_ID, value = Dist.CLIENT)
 public final class WebCommands {
@@ -77,9 +78,9 @@ public final class WebCommands {
                                             dev.devpanda.factorynetwork.web.screen
                                                     .BackdropScreen.Mode.LOW_5,
                                             0.5,
-                                            // BMP, wie der Bericht es
-                                            // empfiehlt: Die Kodierung kostet
-                                            // ein Zweihundertstel von PNG.
+                                            // BMP, as the report
+                                            // recommends: the encoding costs
+                                            // a two-hundredth of PNG.
                                             dev.devpanda.factorynetwork.web.capture
                                                     .WorldCapture.Format.BMP);
                                 } catch (Exception broken) {
@@ -168,12 +169,12 @@ public final class WebCommands {
     }
 
     /**
-     * Erst im nächsten Durchlauf ausführen.
+     * Only run on the next pass.
      *
-     * <p><b>Sonst passiert nichts.</b> Ein Befehl läuft, während die Konsole
-     * noch offen ist; Minecraft schließt sie unmittelbar danach und setzt den
-     * Bildschirm dabei auf nichts. Ein Bildschirm, der währenddessen gesetzt
-     * wird, ist eine Zehntelsekunde später wieder weg.
+     * <p><b>Otherwise nothing happens.</b> A command runs while the console is
+     * still open; Minecraft closes it immediately afterwards and sets the
+     * screen to nothing in doing so. A screen that is set in the meantime is
+     * gone again a tenth of a second later.
      */
     private static void later(Runnable what) {
         Minecraft.getInstance().execute(what);

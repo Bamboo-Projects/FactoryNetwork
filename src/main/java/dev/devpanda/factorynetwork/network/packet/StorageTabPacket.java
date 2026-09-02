@@ -11,11 +11,11 @@ import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /**
- * Meldet, ob der Speicher-Reiter offen ist.
+ * Reports whether the storage tab is open.
  *
- * <p>Welcher Reiter angezeigt wird, ist sonst reine Client-Sache. Diese eine
- * Ausnahme gibt es, weil der Server nur dann Bestandsänderungen schicken soll,
- * wenn auch jemand hinsieht — wer Code liest, braucht keine Paketflut.
+ * <p>Which tab is shown is otherwise purely the client's business. This one
+ * exception exists because the server should only send stock changes when
+ * someone is actually looking — whoever reads code needs no flood of packets.
  */
 public record StorageTabPacket(boolean open) implements CustomPacketPayload {
 

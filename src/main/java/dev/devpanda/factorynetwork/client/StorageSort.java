@@ -3,12 +3,12 @@ package dev.devpanda.factorynetwork.client;
 import net.minecraft.network.chat.Component;
 
 /**
- * Wonach der Bestand sortiert wird.
+ * What the stock is sorted by.
  *
- * <p>Dieselben drei wie bei Applied Energistics, weil sie die drei Fragen
- * beantworten, die man an einen Bestand hat: Wie heißt es, wie viel ist da,
- * woher kommt es. Was dort noch dazukommt — „nur Herstellbares" — hat bei uns
- * keinen Sinn, solange es kein Autocrafting gibt.
+ * <p>The same three as in Applied Energistics, because they answer the three
+ * questions one has about a stock: what it is called, how much is there, where
+ * it comes from. What is added there on top — "craftable only" — makes no
+ * sense for us as long as there is no autocrafting.
  */
 public enum StorageSort {
 
@@ -26,7 +26,7 @@ public enum StorageSort {
         return Component.translatable("screen.factorynetwork.terminal.sort." + key);
     }
 
-    /** Der Buchstabe auf dem Knopf — für Symbole ist bei zwölf Pixeln kein Platz. */
+    /** The letter on the button — at twelve pixels there is no room for icons. */
     public String badge() {
         return switch (this) {
             case AMOUNT -> "#";

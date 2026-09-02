@@ -16,16 +16,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Der Bildschirm eines Regals.
+ * A rack's screen.
  *
- * <p>Zwei Zuschnitte, ein Bildschirm: Das Laufwerk hat zwei Spalten zu fünf
- * Reihen wie seine Schächte, der Schrank zwölf Einschübe zu je vier Plätzen —
- * das Gehäuse und seine drei Bauteile.
+ * <p>Two layouts, one screen: the drive has two columns of five rows like its
+ * slots, the cabinet twelve bays of four slots each — the chassis and its
+ * three components.
  *
- * <p>Was der Schrank zusätzlich zeigt, ist der <b>Zustand je Einschub</b>:
- * ein Lämpchen hinter jedem, grün wenn er läuft, gelb wenn ein Gehäuse
- * steckt und trotzdem nichts rechnet. Ohne das sieht ein Einschub, dem der
- * Datenträger fehlt, genauso aus wie ein fertiger.
+ * <p>What the cabinet additionally shows is the <b>state per bay</b>: a little
+ * lamp behind each, green when it runs, yellow when a chassis is in place and
+ * still nothing computes. Without that, a bay missing its disk looks just like
+ * a finished one.
  */
 public class ShelfScreen extends AbstractContainerScreen<ShelfMenu> {
 
@@ -36,10 +36,10 @@ public class ShelfScreen extends AbstractContainerScreen<ShelfMenu> {
     private static final ResourceLocation MAST = ResourceLocation.fromNamespaceAndPath(
             FactoryNetwork.MOD_ID, "textures/gui/mast.png");
 
-    /** Das Bild liegt auf einem 512er Blatt, wie alle Oberflächen der Mod. */
+    /** The image sits on a 512 sheet, like all of the mod's interfaces. */
     private static final int SHEET = 512;
 
-    /** Dieselben Töne wie an der Front des Blocks. */
+    /** The same shades as on the block's front. */
     private static final int RUNNING = 0xFF78DC8C;
     private static final int INCOMPLETE = 0xFFE8AC3E;
 
@@ -50,9 +50,9 @@ public class ShelfScreen extends AbstractContainerScreen<ShelfMenu> {
         this.imageWidth = menu.layout().width();
         this.imageHeight = menu.layout().height();
         this.inventoryLabelY = menu.layout().inventoryY() - 11;
-        // Die Beschriftung des Inventars steht über dessen linker Kante und
-        // nicht über der des Fensters — sonst hängt sie beim breiten
-        // Schrankfenster im Nichts.
+        // The inventory label sits above its own left edge and not above the
+        // window's — otherwise it dangles in empty space on the wide cabinet
+        // window.
         this.inventoryLabelX = menu.layout().inventoryX() - 1;
     }
 
@@ -61,11 +61,11 @@ public class ShelfScreen extends AbstractContainerScreen<ShelfMenu> {
     }
 
     /**
-     * Was in einem Einschub steckt — der Inhalt steht in den Plätzen.
+     * What is in a bay — the contents sit in the slots.
      *
-     * <p>Ohne Gehäuse nichts, genau wie im Schrank selbst. Sonst zeigte das
-     * Fenster einen laufenden Einschub, wo der Server rechnet, was er nicht
-     * rechnet.
+     * <p>Nothing without a chassis, exactly as in the cabinet itself.
+     * Otherwise the window would show a running bay where the server computes
+     * what it does not compute.
      */
     private ServerBay bay(int bay) {
         if (!hasChassis(bay)) {
@@ -81,7 +81,7 @@ public class ShelfScreen extends AbstractContainerScreen<ShelfMenu> {
         return !menu.slots.get(RackBlockEntity.chassisSlot(bay)).getItem().isEmpty();
     }
 
-    /** Die linke obere Ecke des Lämpchens eines Einschubs, im Fenster. */
+    /** The top-left corner of a bay's lamp, in the window. */
     private int lampX(int bay) {
         int column = (bay % 2) * RackBlockEntity.SLOTS_PER_BAY
                 + RackBlockEntity.SLOTS_PER_BAY - 1;
@@ -92,7 +92,7 @@ public class ShelfScreen extends AbstractContainerScreen<ShelfMenu> {
         return menu.layout().rowY(bay / 2) + 6;
     }
 
-    /** Die Fläche zu diesem Zuschnitt. */
+    /** The background image for this layout. */
     private ResourceLocation background() {
         if (menu.layout() == ShelfMenu.RACK) {
             return RACK;
@@ -108,9 +108,9 @@ public class ShelfScreen extends AbstractContainerScreen<ShelfMenu> {
             return;
         }
         for (int bay = 0; bay < RackBlockEntity.BAYS; bay++) {
-            // Ein Gehäuse allein leuchtet schon gelb: Es sieht aus wie ein
-            // Server und ist keiner, und das ist die Auskunft, um die es
-            // hier geht.
+            // A chassis on its own already glows yellow: it looks like a
+            // server and is none, and that is the piece of information this is
+            // about.
             if (!hasChassis(bay)) {
                 continue;
             }
@@ -122,11 +122,11 @@ public class ShelfScreen extends AbstractContainerScreen<ShelfMenu> {
     }
 
     /**
-     * Die Summe steht neben dem Namen.
+     * The total sits next to the name.
      *
-     * <p>Drei Zahlen in der Titelzeile: Abläufe, Speicher, Anweisungen. Wer
-     * einen Datenträger tauscht, sieht sofort, was er davon hat — sonst
-     * müsste er das Fenster schließen und den Block anschauen.
+     * <p>Three numbers in the title line: processes, memory, instructions.
+     * Whoever swaps a disk sees at once what they gain from it — otherwise
+     * they would have to close the window and look at the block.
      */
     @Override
     protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
@@ -158,17 +158,17 @@ public class ShelfScreen extends AbstractContainerScreen<ShelfMenu> {
     }
 
     /**
-     * Zeigt beim Zeigen auf ein Lämpchen, was dem Einschub fehlt.
+     * On hover over a lamp, shows what the bay is missing.
      *
-     * <p>Nur, wenn nicht ohnehin ein Platz unter dem Zeiger liegt: Zwei
-     * Erklärungen übereinander sind keine.
+     * <p>Only when a slot is not already under the cursor anyway: two
+     * explanations on top of each other are none.
      */
     private void bayTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
         for (int bay = 0; bay < RackBlockEntity.BAYS; bay++) {
             int x = leftPos + lampX(bay);
             int y = topPos + lampY(bay);
-            // Ein Lämpchen ist fünf Pixel breit; das trifft niemand. Der
-            // Bereich reicht deshalb über die volle Höhe der Reihe.
+            // A lamp is five pixels wide; nobody hits that. The area therefore
+            // spans the full height of the row.
             if (mouseX < x - 2 || mouseX > x + LAMP + 2
                     || mouseY < y - 6 || mouseY > y + LAMP + 6) {
                 continue;

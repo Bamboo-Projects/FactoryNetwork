@@ -23,20 +23,19 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Was im Sendemast steckt.
+ * What sits in the transmission mast.
  *
- * <p>Vier Plätze, und mehr Zustand hat er nicht: Wie weit er trägt, rechnet
- * {@code Range} aus dem, was darin liegt.
+ * <p>Four slots, and it has no more state than that: how far it reaches is
+ * computed by {@code Range} from what lies within.
  *
- * <p><b>Er ist ein {@link Container}, aber kein {@link ShelfBlockEntity}.</b>
- * Ein Regal hält Zellen und Serverbauteile und weiß, was ein Einschub ist;
- * hier liegen vier gleichwertige Plätze, und was hineindarf, entscheidet
- * {@link UpgradeSlots}. Das Fenster teilen sich beide trotzdem — es ist
- * dieselbe Handlung.
+ * <p><b>It is a {@link Container}, but not a {@link ShelfBlockEntity}.</b> A
+ * shelf holds cells and server parts and knows what a bay is; here lie four
+ * equivalent slots, and what may go in is decided by {@link UpgradeSlots}.
+ * The two still share the screen — it is the same operation.
  */
 public class MastBlockEntity extends BlockEntity implements Container, MenuProvider {
 
-    /** So viele Plätze hat ein Mast — siehe fernzugriff.md §3. */
+    /** This many slots a mast has — see fernzugriff.md §3. */
     public static final int SLOTS = 4;
 
     private final UpgradeSlots slots = new UpgradeSlots(SLOTS);
@@ -49,7 +48,7 @@ public class MastBlockEntity extends BlockEntity implements Container, MenuProvi
         return slots;
     }
 
-    /** Was dieser Mast kann und wie weit er trägt. */
+    /** What this mast can do and how far it reaches. */
     public Loadout loadout() {
         return slots.loadout();
     }
@@ -97,10 +96,10 @@ public class MastBlockEntity extends BlockEntity implements Container, MenuProvi
     }
 
     /**
-     * Was hineindarf, entscheidet das Ausbausystem.
+     * What may go in is decided by the upgrade system.
      *
-     * <p>Das Fenster fragt hier, bevor es einen Stapel annimmt — sonst zieht
-     * der Spieler ihn hinein und er springt zurück.
+     * <p>The screen asks here before it accepts a stack — otherwise the player
+     * drags it in and it springs back.
      */
     @Override
     public boolean canPlaceItem(int slot, ItemStack stack) {
@@ -121,7 +120,7 @@ public class MastBlockEntity extends BlockEntity implements Container, MenuProvi
         setChanged();
     }
 
-    // ---- Fenster --------------------------------------------------------
+    // ---- Screen ---------------------------------------------------------
 
     @Override
     public Component getDisplayName() {
@@ -134,7 +133,7 @@ public class MastBlockEntity extends BlockEntity implements Container, MenuProvi
         return ShelfMenu.of(id, inventory, this, ShelfMenu.MAST);
     }
 
-    // ---- Speichern ------------------------------------------------------
+    // ---- Saving ---------------------------------------------------------
 
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
@@ -149,11 +148,10 @@ public class MastBlockEntity extends BlockEntity implements Container, MenuProvi
     }
 
     /**
-     * Der Inhalt geht auch an den Client.
+     * The contents go to the client as well.
      *
-     * <p>Ohne das zeigt das Fenster beim Öffnen vier leere Plätze und füllt
-     * sie erst einen Tick später — das sieht aus, als hätte man etwas
-     * verloren.
+     * <p>Without it the screen shows four empty slots on opening and fills
+     * them only a tick later — which looks as if something had been lost.
      */
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {

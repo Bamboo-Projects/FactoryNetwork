@@ -16,12 +16,12 @@ import java.util.List;
 import java.util.function.Consumer;
 
 /**
- * Ein mehrzeiliges Textfeld mit Syntaxhervorhebung.
+ * A multi-line text field with syntax highlighting.
  *
- * <p>Minecraft bringt keines mit — {@code MultiLineEditBox} kann keine Farben
- * pro Wort und keine Zeilennummern. Deshalb hier eine eigene, schmale Fassung:
- * Zeilen als Liste, ein Cursor, kein Umbruch. Kein Umbruch ist Absicht; in
- * Code wäre er verwirrend, weil die Zeilennummer nicht mehr stimmt.
+ * <p>Minecraft ships none — {@code MultiLineEditBox} can do neither per-word
+ * colours nor line numbers. Hence a small, home-grown version: lines as a
+ * list, one cursor, no wrapping. No wrapping is deliberate; in code it would
+ * be confusing, because the line number would no longer match.
  */
 public class CodeEditor {
 
@@ -29,18 +29,18 @@ public class CodeEditor {
     private static final int GUTTER_WIDTH = 18;
     private static final int TEXT_LEFT = 4;
 
-    /** So weit rückt eine Stufe ein — hier und in {@code newLine}. */
+    /** How far one level indents — here and in {@code newLine}. */
     private static final int INDENT = 4;
 
-    /** Ein Zeilenende, damit die Bausteine unten ohne Escapes auskommen. */
+    /** A line ending, so the building blocks below need no escapes. */
     private static final String NEWLINE = "\n";
 
     /**
-     * Vereinheitlicht Zeilenenden und ersetzt Tabulatoren durch Leerzeichen.
+     * Normalises line endings and replaces tabs with spaces.
      *
-     * <p>Wer aus einem fremden Editor kopiert, bringt sonst Steuerzeichen mit,
-     * die hier nichts verloren haben — und ein Tabulator zerreißt die
-     * Einrückung, weil der Editor in Leerzeichen rechnet.
+     * <p>Otherwise anyone pasting from another editor drags in control
+     * characters that have no business here — and a tab tears apart the
+     * indentation, because the editor counts in spaces.
      */
     private static String normalise(String text) {
         StringBuilder out = new StringBuilder(text.length());
@@ -72,22 +72,22 @@ public class CodeEditor {
     private int scrollLine;
 
     /**
-     * Die erste sichtbare Spalte.
+     * The first visible column.
      *
-     * <p><b>Ohne sie lief eine lange Zeile einfach aus dem Fenster heraus</b>
-     * — über den Rand, über die Fußleiste, über das, was rechts daneben lag.
-     * Ein Umbruch kommt nicht in Frage, weil dann die Zeilennummer nicht mehr
-     * zur Zeile passt; also wird geschoben, wie in jedem Editor.
+     * <p><b>Without it a long line simply ran out of the window</b> — past the
+     * edge, past the footer, past whatever lay to the right. Wrapping is out of
+     * the question, because then the line number would no longer match the
+     * line; so the view scrolls sideways, as in every editor.
      */
     private int scrollColumn;
     private Consumer<String> changeListener = text -> { };
 
     /**
-     * Ob nur gelesen werden darf.
+     * Whether only reading is allowed.
      *
-     * <p>Für eine Datei, die gerade jemand anders bearbeitet. Bewegen,
-     * markieren, kopieren und suchen gehen weiter — man will ja sehen, was
-     * dort steht; nur ändern nicht.
+     * <p>For a file someone else is editing right now. Moving, selecting,
+     * copying and searching still work — you do want to see what's there;
+     * only changing it doesn't.
      */
     private boolean readOnly;
     private long lastBlink;
@@ -97,19 +97,19 @@ public class CodeEditor {
     private int selectedSuggestion;
 
     /**
-     * Wo eine Auswahl begann, oder -1.
+     * Where a selection began, or -1.
      *
-     * <p>Der Anker bleibt stehen, während der Cursor wandert — so wächst und
-     * schrumpft die Auswahl in beide Richtungen, ohne dass man sich merken
-     * muss, welche Seite die frühere war.
+     * <p>The anchor stays put while the cursor moves — so the selection grows
+     * and shrinks in both directions, without having to remember which side
+     * was the earlier one.
      */
     private int anchorLine = -1;
     private int anchorColumn;
 
-    /** Der Vorschub der Schrift, einmal gemessen. */
+    /** The font's advance, measured once. */
     private float advance;
 
-    /** Was rückgängig gemacht werden kann, und was danach wieder vorwärts. */
+    /** What can be undone, and what can then be redone. */
     private final Deque<Snapshot> undoStack = new ArrayDeque<>();
     private final Deque<Snapshot> redoStack = new ArrayDeque<>();
     private EditKind lastKind;
@@ -140,21 +140,21 @@ public class CodeEditor {
         return readOnly;
     }
 
-    /** In welcher Zeile der Cursor steht, von null an. */
+    /** Which line the cursor is on, counting from zero. */
     public int cursorLine() {
         return cursorLine;
     }
 
-    /** In welcher Spalte der Cursor steht, von null an. */
+    /** Which column the cursor is on, counting from zero. */
     public int cursorColumn() {
         return cursorColumn;
     }
 
     /**
-     * Wählt einen Bereich aus.
+     * Selects a range.
      *
-     * <p>Anker und Cursor in einem Zug — die Auswahl, die man sonst mit
-     * gedrückter Umschalttaste zieht.
+     * <p>Anchor and cursor in one go — the selection you would otherwise drag
+     * with the Shift key held down.
      */
     public void select(int fromLine, int fromColumn, int toLine, int toColumn) {
         anchorLine = Mth.clamp(fromLine, 0, lines.size() - 1);
@@ -164,7 +164,7 @@ public class CodeEditor {
         ensureVisible();
     }
 
-    /** Setzt den Cursor, ohne die Auswahl mitzunehmen. */
+    /** Sets the cursor without carrying the selection along. */
     public void setCursor(int line, int column) {
         cursorLine = Mth.clamp(line, 0, lines.size() - 1);
         cursorColumn = Mth.clamp(column, 0, lines.get(cursorLine).length());
@@ -189,36 +189,36 @@ public class CodeEditor {
         cursorColumn = 0;
         scrollLine = 0;
         scrollColumn = 0;
-        // Ein neuer Text ist kein Schritt, den man rückgängig machen kann:
-        // Er kommt vom Server oder vom Öffnen des Fensters, nicht vom Tippen.
+        // Fresh text is not a step you can undo: it comes from the server or
+        // from opening the window, not from typing.
         undoStack.clear();
         redoStack.clear();
         lastKind = null;
     }
 
     /**
-     * Wie breit ein Zeichen ist, in Bildpunkten mit Nachkomma.
+     * How wide a character is, in pixels with a fraction.
      *
-     * <p><b>Hier steckt die ganze Vorsicht an der eigenen Schrift.</b>
-     * {@code Font.width} rundet auf: Bei einem Vorschub von 5,4 Punkten kostet
-     * jeder Aufruf bis zu 0,6 Punkte zu viel. Der Editor zeichnet Token für
-     * Token und summierte diesen Fehler — nach acht Token stand der Text fünf
-     * Punkte neben dem Cursor, und aus einem Bildschirmfoto wäre der Grund
-     * nicht zu erraten gewesen.
+     * <p><b>Here is all the caution around the custom font.</b>
+     * {@code Font.width} rounds up: at an advance of 5.4 points each call costs
+     * up to 0.6 points too much. The editor draws token by token and used to
+     * accumulate this error — after eight tokens the text sat five points off
+     * the cursor, and from a screenshot the reason would have been
+     * unguessable.
      *
-     * <p>Die Schrift ist dicktengleich. Also wird der Vorschub einmal
-     * gemessen und danach nur noch multipliziert — jede Spalte landet an
-     * derselben Stelle, egal wie viele Token davor lagen. So rechnet jeder
-     * Code-Editor.
+     * <p>The font is monospaced. So the advance is measured once and after
+     * that only multiplied — every column lands in the same place, no matter
+     * how many tokens came before it. This is how every code editor computes
+     * it.
      */
     private float advance() {
         if (advance <= 0.0F) {
-            // Ohne Schrift ein runder Wert. Das ist kein Notbehelf für den
-            // Betrieb — dort gibt es immer eine —, sondern für den Test: Der
-            // baut den Editor ohne Fenster, und seit der Cursor auch
-            // waagerecht im Bild gehalten wird, rechnet jede Änderung mit dem
-            // Vorschub. Gezeichnet wird dabei nichts, also ist jede Zahl
-            // recht; sie darf nur nicht fehlen.
+            // Without a font, a round value. This is no stopgap for running —
+            // in operation there is always one — but for the test: it builds
+            // the editor without a window, and since the cursor is now kept in
+            // view horizontally too, every change computes with the advance.
+            // Nothing is drawn in the process, so any number will do; it just
+            // must not be missing.
             if (font == null) {
                 return 6.0F;
             }
@@ -228,12 +228,12 @@ public class CodeEditor {
         return advance;
     }
 
-    /** Wo eine Spalte anfängt — um den waagerechten Versatz verschoben. */
+    /** Where a column starts — shifted by the horizontal offset. */
     private int columnX(int textX, int column) {
         return textX + Math.round((column - scrollColumn) * advance());
     }
 
-    /** Wie viele Spalten nebeneinander passen. */
+    /** How many columns fit side by side. */
     private int visibleColumns() {
         return Math.max(8, (int) ((width - GUTTER_WIDTH - TEXT_LEFT - 6) / advance()));
     }
@@ -246,7 +246,7 @@ public class CodeEditor {
         return dev.devpanda.factorynetwork.client.FnFonts.mono(text);
     }
 
-    /** Schneidet auf eine Breite, ebenfalls in der Schrift des Editors. */
+    /** Cuts to a width, likewise in the editor's font. */
     private String plainSubstrByWidth(String text, int width) {
         int zeichen = (int) (width / advance());
         return zeichen >= text.length() ? text : text.substring(0, Math.max(0, zeichen));
@@ -256,20 +256,20 @@ public class CodeEditor {
         return Math.max(1, (height - 12) / LINE_HEIGHT);
     }
 
-    // ---- Zeichnen ---------------------------------------------------------
+    // ---- Drawing ---------------------------------------------------------
 
     /**
-     * Zeichnet den Ausschnitt.
+     * Draws the visible section.
      *
-     * <p><b>Zwei Durchgänge, weil nur einer beschnitten werden darf.</b> Der
-     * Bundsteg — Zeilennummern und Fehlermarken — steht links vom Text und
-     * wandert beim waagerechten Schieben nicht mit; er muss also außerhalb
-     * der Schere liegen. Der Text muss hinein, sonst zeichnet eine lange
-     * Zeile über den Rand hinaus in das, was daneben liegt.
+     * <p><b>Two passes, because only one may be clipped.</b> The gutter — line
+     * numbers and error markers — stands to the left of the text and doesn't
+     * move along with horizontal scrolling; so it has to lie outside the
+     * scissor. The text has to lie inside, otherwise a long line draws past
+     * the edge into whatever sits beside it.
      *
-     * <p>Und die Schere einmal um den ganzen Durchgang statt einmal je Zeile:
-     * Jede Änderung am Beschnitt leert den Zeichenpuffer, und vierzig
-     * Leerungen je Bild sind vierzig zu viel.
+     * <p>And the scissor once around the whole pass instead of once per line:
+     * every change to the clip flushes the draw buffer, and forty flushes per
+     * frame are forty too many.
      */
     public void render(GuiGraphics graphics, List<Diagnostic> diagnostics) {
         int visible = visibleLines();
@@ -277,13 +277,13 @@ public class CodeEditor {
         int[] partner = matchingBracket();
         int last = Math.min(visible, lines.size() - scrollLine);
 
-        // ---- Erster Durchgang: der Bundsteg, unbeschnitten ----
+        // ---- First pass: the gutter, unclipped ----
         for (int i = 0; i < last; i++) {
             int lineIndex = scrollLine + i;
             int lineY = y + 10 + i * LINE_HEIGHT;
 
-            // Zeilennummer, gedämpft — sie soll da sein, aber nicht ablenken.
-            // Die eigene heller: Sie ist der Bezugspunkt beim Aufsehen.
+            // Line number, muted — it should be there but not distract. The
+            // current one brighter: it's the reference point when you look up.
             String number = String.valueOf(lineIndex + 1);
             graphics.drawString(font, mono(number),
                     x + GUTTER_WIDTH - widthOf(number) - 2, lineY,
@@ -291,9 +291,9 @@ public class CodeEditor {
                             ? EditorColours.LINE_NUMBER_ACTIVE : EditorColours.COMMENT,
                     false);
 
-            // Die Marke zu einer Meldung: Der Streifen im Text sagt, dass
-            // etwas ist, aber nicht was. Die Marke ist der Ort, an dem die
-            // Meldung hängt — beim Zeigen steht sie da.
+            // The marker for a diagnostic: the stripe in the text says that
+            // something is there, but not what. The marker is the place the
+            // message hangs on — on hover, it shows there.
             Diagnostic problem = diagnosticIn(diagnostics, lineIndex + 1);
             if (problem != null) {
                 graphics.fill(x + 1, lineY - 1, x + 3, lineY + LINE_HEIGHT - 2,
@@ -301,16 +301,16 @@ public class CodeEditor {
             }
         }
 
-        // ---- Zweiter Durchgang: der Text, beschnitten ----
+        // ---- Second pass: the text, clipped ----
         graphics.enableScissor(x + GUTTER_WIDTH, y + 9, x + width - 2,
                 y + 10 + visible * LINE_HEIGHT);
         for (int i = 0; i < last; i++) {
             int lineIndex = scrollLine + i;
             int lineY = y + 10 + i * LINE_HEIGHT;
 
-            // Die Zeile unter dem Cursor bekommt einen Hauch Hintergrund.
-            // Nicht bei einer Auswahl: Die ist schon eine Hinterlegung, und
-            // zwei übereinander sind keine.
+            // The line under the cursor gets a hint of background. Not during
+            // a selection: that is already a backing, and two on top of each
+            // other are none.
             if (lineIndex == cursorLine && !hasSelection()) {
                 graphics.fill(x + GUTTER_WIDTH, lineY - 1, x + width - 2,
                         lineY + LINE_HEIGHT - 2, EditorColours.CURRENT_LINE);
@@ -318,13 +318,13 @@ public class CodeEditor {
 
             drawIndentGuides(graphics, lineIndex, textX, lineY);
 
-            // Die Auswahl liegt unter dem Text, sonst verschluckt sie ihn.
+            // The selection sits under the text, otherwise it swallows it.
             drawSelection(graphics, lineIndex, textX, lineY);
             drawMatches(graphics, lineIndex, textX, lineY);
             drawBracket(graphics, lineIndex, textX, lineY, partner);
 
-            // Zeilen mit Fehler bekommen einen Streifen statt einer Welle:
-            // Wellen sind bei zehn Pixel Zeilenhöhe nicht zu erkennen.
+            // Lines with an error get a stripe instead of a squiggle:
+            // squiggles can't be made out at ten pixels of line height.
             Diagnostic problem = diagnosticIn(diagnostics, lineIndex + 1);
             if (problem != null) {
                 graphics.fill(x + GUTTER_WIDTH, lineY - 1, x + width - 2,
@@ -341,28 +341,27 @@ public class CodeEditor {
         drawColumnHint(graphics, visible);
         drawScrollHint(graphics, visible);
         drawSearchBar(graphics);
-        // Beide stehen bewusst außerhalb der Schere: Sie dürfen über den
-        // Textbereich hinausragen, das ist der Sinn eines Kastens.
+        // Both sit deliberately outside the scissor: they may extend beyond
+        // the text area, that is the whole point of a box.
         drawSignature(graphics, textX);
         drawSuggestions(graphics, textX);
     }
 
     /**
-     * Die Form der Angabe, in der der Cursor steht.
+     * The shape of the statement the cursor is in.
      *
-     * <p><b>Die Antwort auf „ich sehe nie, was ich wo angeben muss".</b> Eine
-     * Vorschlagsliste sagt, welche Wörter es gibt; sie sagt nicht, dass hinter
-     * {@code row} erst ein Text und dann ein Ausdruck kommt. Das stand nur in
-     * der Grammatik, also neben dem Bildschirm.
+     * <p><b>The answer to "I never see what I have to give where".</b> A
+     * suggestion list says which words exist; it doesn't say that after
+     * {@code row} comes first a text and then an expression. That was only in
+     * the grammar, so off to the side of the screen.
      *
-     * <p>Hier steht die ganze Form, und die Stelle, die gerade dran ist, ist
-     * hervorgehoben. Sie erscheint von selbst und muss nicht angefordert
-     * werden — sie ist kein Vorschlag, sondern eine Beschriftung.
+     * <p>Here the whole shape stands, and the slot that is currently up is
+     * highlighted. It appears on its own and needn't be requested — it is no
+     * suggestion but a label.
      *
-     * <p>Über der Zeile und nicht darunter: Darunter sitzt die
-     * Vorschlagsliste, und zwei Kästen übereinander verdecken den Code, den
-     * man gerade schreibt. Ganz oben rutscht sie nach unten, sonst stünde sie
-     * außerhalb.
+     * <p>Above the line and not below it: below sits the suggestion list, and
+     * two boxes on top of each other hide the code you are writing. At the very
+     * top it slides down, otherwise it would stand outside.
      */
     private void drawSignature(GuiGraphics graphics, int textX) {
         if (searching) {
@@ -377,9 +376,9 @@ public class CodeEditor {
             return;
         }
 
-        // Die Teile der Form: erst das Schlüsselwort, dann die Stellen. Eine
-        // Stelle, die wegfallen darf, steht in eckigen Klammern — mitsamt
-        // dem Wert, den sie einführt, so wie in der Grammatik.
+        // The parts of the shape: first the keyword, then the slots. A slot
+        // that may be omitted stands in square brackets — together with the
+        // value it introduces, just as in the grammar.
         var slots = where.signature().slots();
         List<String> parts = new ArrayList<>();
         parts.add(where.signature().keyword());
@@ -394,9 +393,9 @@ public class CodeEditor {
         }
         int active = where.slotIndex() + 1;
 
-        // In einem niedrigen Fenster nur die Form ohne den Satz dazu: Im
-        // Reiter des Terminals sind acht Zeilen sichtbar, und ein Kasten von
-        // zwei Zeilen nähme davon ein Viertel.
+        // In a low window only the shape without the sentence alongside: in the
+        // terminal's tab eight lines are visible, and a box of two lines would
+        // take a quarter of them.
         boolean roomy = height >= 120;
         String help = where.signature().help();
         int shapeWidth = widthOf(String.join(" ", parts));
@@ -418,8 +417,8 @@ public class CodeEditor {
         int at = boxX + 4;
         for (int i = 0; i < parts.size(); i++) {
             String part = parts.get(i);
-            // Die aktive Stelle hell und unterstrichen, die übrigen matt. Das
-            // Schlüsselwort selbst ist nie aktiv — man steht immer dahinter.
+            // The active slot bright and underlined, the rest muted. The
+            // keyword itself is never active — you always stand behind it.
             boolean current = i == active;
             graphics.drawString(font, mono(part), at, boxY + 2,
                     current ? EditorColours.SELECTOR
@@ -437,7 +436,7 @@ public class CodeEditor {
         }
     }
 
-    /** Färbt eine Zeile nach Token-Arten. */
+    /** Colours a line by token kind. */
     private void drawHighlighted(GuiGraphics graphics, String line, int startX, int lineY) {
         if (line.isEmpty()) {
             return;
@@ -445,8 +444,8 @@ public class CodeEditor {
         int comment = line.indexOf("//");
         String code = comment >= 0 ? line.substring(0, comment) : line;
 
-        // Gezeichnet wird nach Spalte, nicht nach aufsummierter Breite: Die
-        // Schrift ist dicktengleich, also liegt jede Spalte fest.
+        // Drawn by column, not by accumulated width: the font is monospaced,
+        // so every column is fixed.
         if (!code.isBlank()) {
             List<Token> tokens = Lexer.tokenize(code).tokens();
             int consumed = 0;
@@ -494,7 +493,7 @@ public class CodeEditor {
                 || type == TokenType.DURATION) {
             return EditorColours.MUTED;
         }
-        // Ein Schlüsselwort erkennt man daran, dass seine Art zum Text passt.
+        // A keyword is recognised by its kind matching its text.
         if (TokenType.keyword(token.text()) == type) {
             return EditorColours.KEYWORD;
         }
@@ -502,11 +501,11 @@ public class CodeEditor {
     }
 
     /**
-     * Die erste Meldung zu einer Zeile, oder {@code null}.
+     * The first diagnostic for a line, or {@code null}.
      *
-     * <p>Die erste und nicht alle: In eine Zeile passt eine Marke, und wer
-     * den ersten Fehler behebt, sieht den zweiten von selbst. Ein Fehler
-     * verschiebt außerdem oft alle folgenden.
+     * <p>The first and not all: one line has room for one marker, and whoever
+     * fixes the first error sees the second on their own. An error also often
+     * shifts all the ones that follow.
      */
     public Diagnostic diagnosticIn(List<Diagnostic> diagnostics, int line) {
         return diagnostics.stream()
@@ -516,10 +515,10 @@ public class CodeEditor {
     }
 
     /**
-     * Was unter dem Zeiger steht — für die Erklärung beim Zeigen.
+     * What sits under the pointer — for the explanation on hover.
      *
-     * <p>Die ganze Zeile zählt und nicht nur die Marke: Eine Marke ist zwei
-     * Pixel breit, und niemand trifft zwei Pixel.
+     * <p>The whole line counts, not just the marker: a marker is two pixels
+     * wide, and no one hits two pixels.
      */
     public Diagnostic diagnosticAt(List<Diagnostic> diagnostics, double mouseX,
                                    double mouseY) {
@@ -530,16 +529,15 @@ public class CodeEditor {
     }
 
     /**
-     * Die Form zum Schlüsselwort unter dem Zeiger, oder {@code null}.
+     * The shape for the keyword under the pointer, or {@code null}.
      *
-     * <p>Die Formzeile über dem Cursor sagt, was man gerade schreibt. Beim
-     * <b>Lesen</b> hilft sie nicht: Da steht der Cursor woanders, und man
-     * will wissen, was diese eine Zeile tut. Also dasselbe noch einmal für
-     * den Mauszeiger.
+     * <p>The shape line above the cursor says what you are writing. When
+     * <b>reading</b> it doesn't help: there the cursor is elsewhere, and you
+     * want to know what this one line does. So the same thing again for the
+     * mouse pointer.
      *
-     * <p>Erkannt wird nur das erste Wort einer Zeile — das Schlüsselwort.
-     * Was dahinter steht, sind Namen und Werte; die erklärt eine
-     * Signaturtabelle nicht.
+     * <p>Only the first word of a line is recognised — the keyword. What comes
+     * after are names and values; a signature table doesn't explain those.
      */
     public dev.devpanda.factorynetwork.lang.Signatures.Signature signatureAt(double mouseX,
                                                                             double mouseY) {
@@ -554,7 +552,7 @@ public class CodeEditor {
         if (keyword.isEmpty()) {
             return null;
         }
-        // Nur, solange der Zeiger wirklich über dem Wort steht.
+        // Only while the pointer really stands over the word.
         int start = line.indexOf(keyword);
         int column = columnAt(lineIndex, mouseX);
         if (column < start || column > start + keyword.length()) {
@@ -565,18 +563,17 @@ public class CodeEditor {
     }
 
     /**
-     * Das ganze Wort unter dem Zeiger, oder leer.
+     * The whole word under the pointer, or empty.
      *
-     * <p>Für den Sprung zur Erklärung. Ein Wort ist hier, was auch ein Name
-     * sein darf: Buchstaben, Ziffern, Unterstrich.
+     * <p>For the jump to the explanation. A word here is whatever a name may
+     * also be: letters, digits, underscore.
      */
     /**
-     * Der Auswahlausdruck unter dem Zeiger, oder ein leerer Text.
+     * The selector expression under the pointer, or empty text.
      *
-     * <p>Ein Selektor ist mehr als ein Wort — {@code item:*_ore} trägt
-     * Doppelpunkt, Stern und Unterstrich. {@link #wordAt} hört an jedem davon
-     * auf; die Regel dafür steht in {@code Selectors}, weil beide Editoren
-     * dieselbe brauchen.
+     * <p>A selector is more than a word — {@code item:*_ore} carries a colon,
+     * star and underscore. {@link #wordAt} stops at each of those; the rule for
+     * it lives in {@code Selectors}, because both editors need the same one.
      */
     public String selectorAt(double mouseX, double mouseY) {
         if (!inside(mouseX, mouseY)) {
@@ -596,8 +593,8 @@ public class CodeEditor {
         String line = lines.get(lineIndex);
         int column = columnAt(lineIndex, mouseX);
         if (column >= line.length() || !isWordChar(line.charAt(column))) {
-            // Einen Schritt zurück: Wer hinter das letzte Zeichen eines
-            // Wortes klickt, meint das Wort.
+            // One step back: whoever clicks past the last character of a word
+            // means the word.
             column--;
         }
         if (column < 0 || column >= line.length() || !isWordChar(line.charAt(column))) {
@@ -614,12 +611,12 @@ public class CodeEditor {
         return line.substring(from, to + 1);
     }
 
-    /** Springt an eine Zeile und Spalte, beide von eins an gezählt. */
+    /** Jumps to a line and column, both counted from one. */
     public void jumpTo(int line, int column) {
         setCursor(line - 1, Math.max(0, column - 1));
     }
 
-    /** Setzt den Cursor auf die Stelle einer Meldung. */
+    /** Sets the cursor to the location of a diagnostic. */
     public void jumpTo(Diagnostic diagnostic) {
         setCursor(diagnostic.span().line() - 1, Math.max(0, diagnostic.span().column() - 1));
     }
@@ -641,19 +638,19 @@ public class CodeEditor {
         int column = Math.min(cursorColumn, line.length());
         int cursorX = columnX(textX, column);
         int cursorY = y + 10 + row * LINE_HEIGHT;
-        // <b>Mit Alphakanal.</b> Die Farben in EditorColours sind für Text
-        // gedacht und stehen ohne einen da; Minecrafts Schriftsatz ergänzt
-        // ihn selbst, wenn er fehlt. Eine Füllung tut das nicht — der Cursor
-        // war deshalb durchsichtig, seit es ihn gibt.
+        // <b>With an alpha channel.</b> The colours in EditorColours are meant
+        // for text and stand there without one; Minecraft's font supplies it
+        // itself when it's missing. A fill does not — the cursor was therefore
+        // transparent for as long as it existed.
         graphics.fill(cursorX, cursorY - 1, cursorX + 1, cursorY + LINE_HEIGHT - 2,
                 0xFF000000 | EditorColours.CURSOR);
     }
 
     /**
-     * Der waagerechte Balken, wenn eine Zeile breiter ist als das Fenster.
+     * The horizontal bar, when a line is wider than the window.
      *
-     * <p>Nur dann: Ein Balken, der immer da ist und immer voll, sagt nichts
-     * und kostet eine Zeile.
+     * <p>Only then: a bar that is always there and always full says nothing
+     * and costs a line.
      */
     private void drawColumnHint(GuiGraphics graphics, int visible) {
         int longest = longestLine();
@@ -685,33 +682,33 @@ public class CodeEditor {
                 trackTop + offset + thumbHeight, 0xFF000000 | EditorColours.COMMENT);
     }
 
-    // ---- Eingabe ----------------------------------------------------------
+    // ---- Input ----------------------------------------------------------
 
     /**
-     * Die Tastenbefehle, die jeder Editor hat.
+     * The keyboard commands every editor has.
      *
-     * <p>Sie stehen vor allem anderen: Wer Strg und C drückt, will kopieren —
-     * und nicht ein C tippen, weil die Abfrage weiter unten stand.
+     * <p>They come before everything else: whoever presses Ctrl and C wants to
+     * copy — and not type a C because the check stood further down.
      */
     private boolean handleShortcut(int key) {
         if (!net.minecraft.client.gui.screens.Screen.hasControlDown()) {
             return false;
         }
         switch (key) {
-            case 65 -> { // A: alles auswählen
+            case 65 -> { // A: select all
                 anchorLine = 0;
                 anchorColumn = 0;
                 cursorLine = lines.size() - 1;
                 cursorColumn = lines.get(cursorLine).length();
                 return true;
             }
-            case 67 -> { // C: kopieren
+            case 67 -> { // C: copy
                 if (hasSelection()) {
                     Minecraft.getInstance().keyboardHandler.setClipboard(selectedText());
                 }
                 return true;
             }
-            case 88 -> { // X: ausschneiden
+            case 88 -> { // X: cut
                 if (hasSelection()) {
                     Minecraft.getInstance().keyboardHandler.setClipboard(selectedText());
                     remember(EditKind.STRUCTURAL);
@@ -719,7 +716,7 @@ public class CodeEditor {
                 }
                 return true;
             }
-            case 86 -> { // V: einfügen
+            case 86 -> { // V: paste
                 String clipboard = Minecraft.getInstance().keyboardHandler.getClipboard();
                 if (clipboard != null && !clipboard.isEmpty()) {
                     remember(EditKind.STRUCTURAL);
@@ -729,13 +726,13 @@ public class CodeEditor {
                 return true;
             }
             case 89, 90 -> {
-                // Beide Tasten machen rückgängig, mit Umschalt wieder vorwärts.
+                // Both keys undo, with Shift they redo.
                 //
-                // GLFW meldet die Taste nach ihrer Lage auf einer
-                // US-Tastatur. Auf einer deutschen liegt dort, wo „Z" steht,
-                // die Meldung „Y" — Strg+Z und Strg+Y wären damit je nach
-                // Belegung vertauscht. Beide auf dasselbe zu legen ist die
-                // Auflösung, die auf jeder Belegung das Erwartete tut.
+                // GLFW reports the key by its position on a US keyboard. On a
+                // German one, where "Z" sits GLFW reports "Y" — so Ctrl+Z and
+                // Ctrl+Y would be swapped depending on the layout. Mapping both
+                // to the same thing is the resolution that does the expected
+                // thing on every layout.
                 if (net.minecraft.client.gui.screens.Screen.hasShiftDown()) {
                     redo();
                 } else {
@@ -744,18 +741,17 @@ public class CodeEditor {
                 return true;
             }
             case 32 -> {
-                // Leertaste: um Vorschläge bitten.
+                // Space bar: ask for suggestions.
                 //
-                // <b>Der Griff, ohne den eine Vervollständigung nicht
-                // benutzbar ist.</b> Vorher erschien die Liste nur beim
-                // Tippen und war weg, sobald man sie einmal weggeklickt
-                // hatte — bis zum nächsten Anschlag. Wer wissen wollte, was
-                // an einer Stelle erlaubt ist, musste ein Zeichen tippen und
-                // wieder löschen.
+                // <b>The move without which completion isn't usable.</b>
+                // Before, the list appeared only while typing and was gone the
+                // moment you clicked it away once — until the next keystroke.
+                // Whoever wanted to know what's allowed at a spot had to type a
+                // character and delete it again.
                 updateSuggestions();
                 return true;
             }
-            case 70 -> { // F: suchen
+            case 70 -> { // F: search
                 if (searching && !replacing) {
                     closeSearch();
                 } else {
@@ -764,7 +760,7 @@ public class CodeEditor {
                 }
                 return true;
             }
-            case 72 -> { // H: suchen und ersetzen
+            case 72 -> { // H: search and replace
                 if (searching && replacing) {
                     closeSearch();
                 } else {
@@ -773,12 +769,12 @@ public class CodeEditor {
                 }
                 return true;
             }
-            case 68 -> { // D: Zeile verdoppeln
+            case 68 -> { // D: duplicate line
                 remember(EditKind.STRUCTURAL);
                 duplicateLine();
                 return true;
             }
-            case 259 -> { // Rücktaste: ein ganzes Wort
+            case 259 -> { // Backspace: a whole word
                 if (hasSelection() || cursorColumn > 0 || cursorLine > 0) {
                     remember(EditKind.DELETING);
                 }
@@ -789,15 +785,15 @@ public class CodeEditor {
                 }
                 return true;
             }
-            case 263 -> { // links: ein Wort
+            case 263 -> { // left: one word
                 move(this::moveWordLeft);
                 return true;
             }
-            case 262 -> { // rechts: ein Wort
+            case 262 -> { // right: one word
                 move(this::moveWordRight);
                 return true;
             }
-            case 268 -> { // Pos1: an den Anfang des Programms
+            case 268 -> { // Home: to the start of the program
                 move(() -> {
                     cursorLine = 0;
                     cursorColumn = 0;
@@ -805,7 +801,7 @@ public class CodeEditor {
                 });
                 return true;
             }
-            case 269 -> { // Ende: ans Ende des Programms
+            case 269 -> { // End: to the end of the program
                 move(() -> {
                     cursorLine = lines.size() - 1;
                     cursorColumn = lines.get(cursorLine).length();
@@ -820,12 +816,12 @@ public class CodeEditor {
     }
 
     /**
-     * Bewegt den Cursor und führt dabei die Auswahl nach.
+     * Moves the cursor and carries the selection along with it.
      *
-     * <p>Eine offene Vorschlagsliste geht dabei zu: Sie galt für die Stelle,
-     * an der sie aufging. Sie stehen zu lassen hieße, dass sie nach zwei
-     * Schritten nach links etwas anbietet, das dort nicht mehr passt. Die
-     * Formzeile bleibt — die wird bei jedem Bild neu bestimmt.
+     * <p>An open suggestion list closes in the process: it applied to the spot
+     * where it opened. Leaving it standing would mean that after two steps to
+     * the left it offers something that no longer fits there. The shape line
+     * stays — it is recomputed on every frame.
      */
     private void move(Runnable movement) {
         if (net.minecraft.client.gui.screens.Screen.hasShiftDown()) {
@@ -835,8 +831,8 @@ public class CodeEditor {
         }
         clearSuggestions();
         movement.run();
-        // Danach und nicht in den Bewegungen selbst: moveRight innerhalb einer
-        // Zeile rief es nicht, und genau dort läuft man aus dem Bild.
+        // Afterwards and not in the movements themselves: moveRight within a
+        // line didn't call it, and that's exactly where you run off-screen.
         ensureVisible();
     }
 
@@ -847,28 +843,28 @@ public class CodeEditor {
         if (handleShortcut(key)) {
             return true;
         }
-        // Solange die Suche offen ist, gehören ihr die Tasten: Wer sucht,
-        // tippt ein Wort und keinen Code.
+        // While search is open, the keys belong to it: whoever searches types
+        // a word, not code.
         if (searching && handleSearchKey(key)) {
             return true;
         }
-        // Solange Vorschläge offen sind, gehören ihnen Tab, Pfeile und Escape.
+        // While suggestions are open, Tab, arrows and Escape belong to them.
         if (!suggestions.isEmpty()) {
             switch (key) {
-                case 258 -> { // Tabulator übernimmt
+                case 258 -> { // Tab accepts
                     applySuggestion();
                     return true;
                 }
-                case 264 -> { // runter
+                case 264 -> { // down
                     selectedSuggestion = (selectedSuggestion + 1) % suggestions.size();
                     return true;
                 }
-                case 265 -> { // hoch
+                case 265 -> { // up
                     selectedSuggestion =
                             (selectedSuggestion - 1 + suggestions.size()) % suggestions.size();
                     return true;
                 }
-                case 256 -> { // Escape schließt nur die Liste, nicht den Editor
+                case 256 -> { // Escape closes only the list, not the editor
                     clearSuggestions();
                     return true;
                 }
@@ -876,10 +872,10 @@ public class CodeEditor {
             }
         }
         switch (key) {
-            case 259 -> { // Rücktaste
-                // Am Anfang des Textes passiert nichts. Es trotzdem zu merken
-                // kostete einen Schritt Geschichte und löschte den Weg
-                // vorwärts — für einen Anschlag, der nichts getan hat.
+            case 259 -> { // Backspace
+                // At the start of the text nothing happens. Recording it anyway
+                // would cost a step of history and wipe the way forward — for a
+                // keystroke that did nothing.
                 if (hasSelection() || cursorColumn > 0 || cursorLine > 0) {
                     remember(EditKind.DELETING);
                 }
@@ -890,7 +886,7 @@ public class CodeEditor {
                 backspace();
                 return true;
             }
-            case 261 -> { // Entfernen
+            case 261 -> { // Delete
                 boolean atEnd = cursorLine == lines.size() - 1
                         && cursorColumn >= lines.get(cursorLine).length();
                 if (hasSelection() || !atEnd) {
@@ -903,12 +899,12 @@ public class CodeEditor {
                 delete();
                 return true;
             }
-            case 257, 335 -> { // Eingabe
+            case 257, 335 -> { // Enter
                 remember(EditKind.STRUCTURAL);
                 newLine();
                 return true;
             }
-            case 258 -> { // Tabulator: vier Leerzeichen, nie ein Tabulatorzeichen
+            case 258 -> { // Tab: four spaces, never a tab character
                 remember(EditKind.STRUCTURAL);
                 boolean shift = net.minecraft.client.gui.screens.Screen.hasShiftDown();
                 if (shift || hasSelection()) {
@@ -918,35 +914,35 @@ public class CodeEditor {
                 }
                 return true;
             }
-            case 263 -> { // links
+            case 263 -> { // left
                 move(this::moveLeft);
                 return true;
             }
-            case 262 -> { // rechts
+            case 262 -> { // right
                 move(this::moveRight);
                 return true;
             }
-            case 265 -> { // hoch
+            case 265 -> { // up
                 move(() -> moveVertically(-1));
                 return true;
             }
-            case 264 -> { // runter
+            case 264 -> { // down
                 move(() -> moveVertically(1));
                 return true;
             }
-            case 268 -> { // Pos1
+            case 268 -> { // Home
                 move(() -> cursorColumn = 0);
                 return true;
             }
-            case 269 -> { // Ende
+            case 269 -> { // End
                 move(() -> cursorColumn = lines.get(cursorLine).length());
                 return true;
             }
-            case 266 -> { // Bild hoch
+            case 266 -> { // Page up
                 moveVertically(-visibleLines());
                 return true;
             }
-            case 267 -> { // Bild runter
+            case 267 -> { // Page down
                 moveVertically(visibleLines());
                 return true;
             }
@@ -960,16 +956,16 @@ public class CodeEditor {
     }
 
     /**
-     * Tasten in einer gesperrten Datei.
+     * Keys in a locked file.
      *
-     * <p>Was nichts ändert, geht durch: Pfeile, Sprünge, Auswahl, Kopieren,
-     * Suchen. Alles andere wird verschluckt — <b>und zwar verschluckt und
-     * nicht durchgereicht</b>, sonst schlösse die Inventartaste das Fenster
-     * über einer Datei, in der man gerade liest.
+     * <p>Whatever changes nothing passes through: arrows, jumps, selection,
+     * copying, searching. Everything else is swallowed — <b>swallowed and not
+     * passed on</b>, otherwise the inventory key would close the window over a
+     * file you are reading.
      */
     private boolean readOnlyKey(int key, int scanCode, int modifiers) {
         boolean control = net.minecraft.client.gui.screens.Screen.hasControlDown();
-        if (control && (key == 67 || key == 65)) { // C und A
+        if (control && (key == 67 || key == 65)) { // C and A
             if (key == 65) {
                 anchorLine = 0;
                 anchorColumn = 0;
@@ -980,7 +976,7 @@ public class CodeEditor {
             }
             return true;
         }
-        if (control && key == 70) { // F: suchen
+        if (control && key == 70) { // F: search
             if (searching) {
                 closeSearch();
             } else {
@@ -1021,8 +1017,8 @@ public class CodeEditor {
 
     public boolean charTyped(char character, int modifiers) {
         if (readOnly && !searching) {
-            // Verschluckt und nicht durchgereicht: Sonst löste ein „e" in
-            // einer gesperrten Datei das Inventar aus.
+            // Swallowed and not passed on: otherwise an "e" in a locked file
+            // would trigger the inventory.
             return true;
         }
         if (character == '\n' || character == '\r') {
@@ -1047,18 +1043,18 @@ public class CodeEditor {
     }
 
     /**
-     * Klammern und Anführungszeichen schließen sich selbst.
+     * Brackets and quotation marks close themselves.
      *
-     * <p>Zwei Fälle, und der zweite ist der wichtigere: Wer eine
-     * schließende Klammer tippt, obwohl sie schon dasteht, will darüber
-     * hinweg und nicht zwei davon. Ohne das wäre die Selbstergänzung
-     * lästiger als hilfreich.
+     * <p>Two cases, and the second is the more important: whoever types a
+     * closing bracket though it's already there wants to step over it and not
+     * have two of them. Without this the auto-closing would be more of a
+     * nuisance than a help.
      *
-     * <p>Ergänzt wird nur, wenn rechts vom Cursor nichts Handfestes mehr
-     * steht — Zeilenende, Leerzeichen oder eine andere schließende Klammer.
-     * Wer mitten in ein Wort tippt, meint das eine Zeichen.
+     * <p>It only completes when nothing solid stands to the right of the
+     * cursor — line end, space or another closing bracket. Whoever types in
+     * the middle of a word means the single character.
      *
-     * @return ob der Fall behandelt wurde
+     * @return whether the case was handled
      */
     private boolean typePair(char character) {
         if (hasSelection()) {
@@ -1068,7 +1064,7 @@ public class CodeEditor {
         int column = Math.min(cursorColumn, line.length());
         char next = column < line.length() ? line.charAt(column) : '\0';
 
-        // Über ein bereits stehendes Gegenstück hinweg.
+        // Step over a counterpart that's already there.
         if ((CLOSERS.indexOf(character) >= 0 || character == '"') && next == character) {
             cursorColumn = column + 1;
             return true;
@@ -1087,7 +1083,7 @@ public class CodeEditor {
         return true;
     }
 
-    /** Rollen schiebt den Text; mit Umschalt zur Seite. */
+    /** Scrolling shifts the text; with Shift, sideways. */
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
         if (!inside(mouseX, mouseY)) {
             return false;
@@ -1103,21 +1099,21 @@ public class CodeEditor {
         return true;
     }
 
-    // ---- Bearbeiten -------------------------------------------------------
+    // ---- Editing -------------------------------------------------------
 
     /**
-     * Zeichnet den ausgewählten Bereich einer Zeile.
+     * Draws the selected range of a line.
      *
-     * <p>Eine Auswahl ohne Anzeige ist schlimmer als keine: Man weiss nicht,
-     * was das nächste Zeichen ersetzt.
+     * <p>A selection without display is worse than none: you don't know what
+     * the next character replaces.
      */
     /**
-     * Die senkrechten Striche der Einrückung.
+     * The vertical strokes of the indentation.
      *
-     * <p>Einer je vier Leerzeichen, aber nicht in der Spalte null: Der linke
-     * Rand ist schon eine Kante. Für eine leere Zeile gilt die Einrückung
-     * der Umgebung — sonst reißt jede Leerzeile alle Striche auf, und dann
-     * beantworten sie die Frage nicht mehr, für die sie da sind.
+     * <p>One per four spaces, but not in column zero: the left margin is
+     * already an edge. For a blank line the surrounding indentation applies —
+     * otherwise every blank line tears all the strokes open, and then they no
+     * longer answer the question they are there for.
      */
     private void drawIndentGuides(GuiGraphics graphics, int lineIndex, int textX, int lineY) {
         int indent = guideIndentAt(lineIndex);
@@ -1132,8 +1128,8 @@ public class CodeEditor {
         if (!lines.get(lineIndex).isBlank()) {
             return indentOf(lines.get(lineIndex));
         }
-        // Eine leere Zeile erbt, was um sie herum steht — der kleinere der
-        // beiden Nachbarn, damit ein Strich nicht ins Leere weiterläuft.
+        // A blank line inherits what stands around it — the smaller of the two
+        // neighbours, so that a stroke doesn't run on into nothing.
         int above = 0;
         for (int i = lineIndex - 1; i >= 0; i--) {
             if (!lines.get(i).isBlank()) {
@@ -1159,12 +1155,12 @@ public class CodeEditor {
         return indent;
     }
 
-    // ---- Klammernpaare ----------------------------------------------------
+    // ---- Bracket pairs ----------------------------------------------------
 
     private static final String OPENERS = "{([";
     private static final String CLOSERS = "})]";
 
-    /** Steht hier ein Paar ohne Inhalt — {@code ()}, {@code []}, {@code ""}? */
+    /** Is there an empty pair here — {@code ()}, {@code []}, {@code ""}? */
     private static boolean isEmptyPair(char before, char after) {
         if (before == '"') {
             return after == '"';
@@ -1174,15 +1170,15 @@ public class CodeEditor {
     }
 
     /**
-     * Sucht das Gegenstück zur Klammer am Cursor.
+     * Finds the counterpart to the bracket at the cursor.
      *
-     * <p>Zuerst rechts vom Cursor, dann links: Wer gerade eine schließende
-     * Klammer getippt hat, steht dahinter und meint sie. Gefunden wird über
-     * eine Tiefenzählung, die Zeichenketten und Kommentare überspringt —
-     * eine geschweifte Klammer in einem Text ist keine.
+     * <p>First to the right of the cursor, then left: whoever has just typed a
+     * closing bracket stands behind it and means it. It's found via a depth
+     * count that skips strings and comments — a curly brace inside a string
+     * isn't one.
      *
-     * @return vier Zahlen — Zeile und Spalte der Klammer am Cursor, dann die
-     *         des Gegenstücks — oder {@code null}
+     * @return four numbers — line and column of the bracket at the cursor, then
+     *         those of the counterpart — or {@code null}
      */
     private int[] matchingBracket() {
         String line = lines.get(cursorLine);
@@ -1209,7 +1205,7 @@ public class CodeEditor {
         return new int[] {cursorLine, column, hit[0], hit[1]};
     }
 
-    /** Steht an dieser Stelle eine Klammer, die zählt? */
+    /** Is there a bracket at this position that counts? */
     private static int bracketAt(String line, int column) {
         if (column < 0 || column >= line.length()) {
             return -1;
@@ -1222,8 +1218,8 @@ public class CodeEditor {
     }
 
     /**
-     * Liegt diese Spalte im Code — also nicht in einem Text und nicht hinter
-     * einem Kommentarzeichen?
+     * Does this column lie in code — that is, not inside a string and not
+     * behind a comment marker?
      */
     private static boolean inCode(String line, int column) {
         boolean inString = false;
@@ -1240,18 +1236,18 @@ public class CodeEditor {
     }
 
     /**
-     * Zählt sich durch das Dokument, bis die Tiefe wieder null ist.
+     * Counts its way through the document until the depth is back to zero.
      *
-     * <p>Über Zeilengrenzen hinweg: Ein {@code fn}-Block geht über zwanzig
-     * Zeilen, und genau dort will man wissen, wo er endet.
+     * <p>Across line boundaries: an {@code fn} block runs over twenty lines,
+     * and that's exactly where you want to know where it ends.
      */
     private int[] scanFor(int fromLine, int fromColumn, char bracket, char partner,
                           boolean forward) {
         int depth = 0;
         int lineIndex = fromLine;
         int column = fromColumn;
-        // Eine Obergrenze, damit ein Dokument ohne Gegenstück nicht bei
-        // jedem Bild ganz durchlaufen wird.
+        // An upper bound, so that a document without a counterpart isn't
+        // walked in full on every frame.
         int budget = 20_000;
         while (lineIndex >= 0 && lineIndex < lines.size() && budget-- > 0) {
             String line = lines.get(lineIndex);
@@ -1274,7 +1270,7 @@ public class CodeEditor {
         return null;
     }
 
-    /** Hinterlegt beide Klammern eines Paares. */
+    /** Highlights both brackets of a pair. */
     private void drawBracket(GuiGraphics graphics, int lineIndex, int textX, int lineY,
                              int[] partner) {
         if (partner == null) {
@@ -1304,8 +1300,8 @@ public class CodeEditor {
         int from = lineIndex == b[0] ? Math.min(b[1], line.length()) : 0;
         int to = lineIndex == b[2] ? Math.min(b[3], line.length()) : line.length();
         int left = columnX(textX, from);
-        // Eine leere Zeile mitten in der Auswahl bekommt einen schmalen
-        // Streifen — sonst sieht es aus, als wäre sie nicht mit dabei.
+        // A blank line in the middle of the selection gets a thin stripe —
+        // otherwise it looks as if it weren't part of it.
         int right = from == to && lineIndex != b[2]
                 ? left + 4
                 : columnX(textX, to);
@@ -1313,14 +1309,14 @@ public class CodeEditor {
                 lineY + LINE_HEIGHT - 2, EditorColours.SELECTION);
     }
 
-    // ---- Auswahl ----------------------------------------------------------
+    // ---- Selection ----------------------------------------------------------
 
     public boolean hasSelection() {
         return anchorLine >= 0
                 && (anchorLine != cursorLine || anchorColumn != cursorColumn);
     }
 
-    /** Setzt den Anker, falls noch keiner steht — für Umschalt-Bewegungen. */
+    /** Sets the anchor if none is set yet — for Shift movements. */
     private void anchorIfNeeded() {
         if (anchorLine < 0) {
             anchorLine = cursorLine;
@@ -1332,7 +1328,7 @@ public class CodeEditor {
         anchorLine = -1;
     }
 
-    /** Anfang und Ende der Auswahl, in Leserichtung sortiert. */
+    /** Start and end of the selection, sorted in reading order. */
     private int[] selectionBounds() {
         int startLine = anchorLine;
         int startColumn = anchorColumn;
@@ -1370,7 +1366,7 @@ public class CodeEditor {
         return out.toString();
     }
 
-    /** Löscht die Auswahl und setzt den Cursor an ihren Anfang. */
+    /** Deletes the selection and sets the cursor to its start. */
     private void deleteSelection() {
         if (!hasSelection()) {
             return;
@@ -1391,19 +1387,18 @@ public class CodeEditor {
     }
 
     /**
-     * Fügt Text ein, der Zeilenumbrüche enthalten darf.
+     * Inserts text that may contain line breaks.
      *
-     * <p>Das ist der Grund, warum es die Zwischenablage überhaupt braucht:
-     * Ein Programm aus der Dokumentation abzutippen ist die Sorte Arbeit, die
-     * niemand zweimal macht.
+     * <p>This is the reason the clipboard is needed at all: typing out a
+     * program from the documentation is the sort of work no one does twice.
      */
     private void insertMultiline(String text) {
         if (hasSelection()) {
             deleteSelection();
         }
-        // Fremde Zeilenenden und Tabulatoren vereinheitlichen: Wer aus einem
-        // Editor kopiert, bringt sonst Steuerzeichen mit, die hier nichts
-        // verloren haben.
+        // Normalise foreign line endings and tabs: otherwise whoever copies
+        // from an editor drags in control characters that have no business
+        // here.
         String cleaned = normalise(text);
         String[] parts = cleaned.split("\n", -1);
         if (parts.length == 1) {
@@ -1443,7 +1438,7 @@ public class CodeEditor {
         String before = line.substring(0, column);
         String after = line.substring(column);
 
-        // Einrückung der Zeile übernehmen, und nach { eine Stufe mehr.
+        // Take over the line's indentation, and one level more after {.
         int indent = 0;
         while (indent < before.length() && before.charAt(indent) == ' ') {
             indent++;
@@ -1456,9 +1451,9 @@ public class CodeEditor {
 
         lines.set(cursorLine, before);
         lines.add(cursorLine + 1, padding + after);
-        // Steht der Cursor zwischen den Klammern, kommt die schließende auf
-        // eine eigene Zeile und der Cursor dazwischen — die Form, in der man
-        // einen Block sowieso geschrieben hätte.
+        // If the cursor is between the braces, the closing one goes on its own
+        // line with the cursor in between — the shape you would have written a
+        // block in anyway.
         if (opened && after.stripLeading().startsWith("}")) {
             lines.set(cursorLine + 1, padding);
             lines.add(cursorLine + 2, " ".repeat(indent - INDENT) + after.stripLeading());
@@ -1473,15 +1468,14 @@ public class CodeEditor {
         String line = lines.get(cursorLine);
         if (cursorColumn > 0) {
             int column = Math.min(cursorColumn, line.length());
-            // Vier Leerzeichen am Zeilenanfang gehen gemeinsam weg.
+            // Four spaces at the line start go away together.
             int remove = 1;
             if (column >= INDENT && line.substring(0, column).endsWith("    ")
                     && line.substring(0, column).isBlank()) {
                 remove = INDENT;
             }
-            // Und ein leeres Paar auch: Was der Editor zusammen gesetzt hat,
-            // nimmt er zusammen wieder weg. Sonst bleibt nach jedem Vertipper
-            // eine einsame Klammer stehen.
+            // And an empty pair too: what the editor set together, it removes
+            // together. Otherwise after every typo a lone bracket stays behind.
             int after = column;
             if (column < line.length() && isEmptyPair(line.charAt(column - 1),
                     line.charAt(column))) {
@@ -1543,11 +1537,11 @@ public class CodeEditor {
     }
 
     /**
-     * Holt den Cursor zurück in den Ausschnitt — senkrecht und waagerecht.
+     * Brings the cursor back into view — vertically and horizontally.
      *
-     * <p>Waagerecht mit einem Rand von drei Spalten: Stünde der Cursor beim
-     * Tippen genau am Rand, spränge der Ausschnitt bei jedem Zeichen, und man
-     * schriebe gegen eine Wand.
+     * <p>Horizontally with a margin of three columns: if the cursor sat right
+     * at the edge while typing, the view would jump on every character, and
+     * you'd be writing against a wall.
      */
     private void ensureVisible() {
         int visible = visibleLines();
@@ -1568,7 +1562,7 @@ public class CodeEditor {
         scrollColumn = Math.max(0, scrollColumn);
     }
 
-    /** Die längste Zeile, in Zeichen — für den waagerechten Balken. */
+    /** The longest line, in characters — for the horizontal bar. */
     private int longestLine() {
         int longest = 0;
         for (String line : lines) {
@@ -1585,7 +1579,7 @@ public class CodeEditor {
         changeListener.accept(text());
     }
 
-    // ---- Vorschläge -------------------------------------------------------
+    // ---- Suggestions -------------------------------------------------------
 
     private void updateSuggestions() {
         if (readOnly) {
@@ -1600,7 +1594,7 @@ public class CodeEditor {
         selectedSuggestion = 0;
     }
 
-    /** Übernimmt den ausgewählten Vorschlag und ersetzt das angefangene Wort. */
+    /** Accepts the selected suggestion and replaces the started word. */
     private void applySuggestion() {
         if (suggestions.isEmpty() || readOnly) {
             return;
@@ -1630,8 +1624,8 @@ public class CodeEditor {
         int listX = columnX(textX, column - word.length());
         int listY = y + 10 + (row + 1) * LINE_HEIGHT;
 
-        // Breit genug für Wort und Form nebeneinander: „row" allein ist ein
-        // Wort, „row  string expr" ist eine Anleitung.
+        // Wide enough for word and shape side by side: "row" alone is a word,
+        // "row  string expr" is an instruction.
         int listWidth = 0;
         for (Completions.Entry entry : suggestions) {
             int needed = widthOf(entry.text()) + 8;
@@ -1643,7 +1637,7 @@ public class CodeEditor {
         listWidth = Math.min(listWidth, width - 8);
         int listHeight = suggestions.size() * LINE_HEIGHT + 2;
 
-        // Nach oben klappen, wenn unten kein Platz mehr ist.
+        // Flip upward when there's no room left below.
         if (listY + listHeight > y + height) {
             listY = y + 10 + row * LINE_HEIGHT - listHeight;
         }
@@ -1666,8 +1660,8 @@ public class CodeEditor {
             if (entry.detail().isEmpty()) {
                 continue;
             }
-            // Rechtsbündig und matt: Die Form ist die Erklärung zum Wort und
-            // nicht das, was man auswählt.
+            // Right-aligned and muted: the shape is the explanation of the word
+            // and not what you select.
             int detailWidth = widthOf(entry.detail());
             int detailX = listX + listWidth - 4 - detailWidth;
             if (detailX > listX + 4 + widthOf(entry.text()) + 6) {
@@ -1684,34 +1678,33 @@ public class CodeEditor {
             case BUILTIN, KEYWORD -> EditorColours.KEYWORD;
         };
     }
-    // ---- Rückgängig -------------------------------------------------------
+    // ---- Undo -------------------------------------------------------
     //
-    // Die Bearbeitungsschritte ab hier stehen ohne Sichtbarkeitsangabe da:
-    // Der Test im selben Paket ruft sie unmittelbar auf. Über die Tastatur
-    // wären sie nicht zu prüfen — hasControlDown() fragt das Fenster, und im
-    // Test gibt es keines.
+    // The editing steps from here on stand without a visibility modifier: the
+    // test in the same package calls them directly. Over the keyboard they
+    // couldn't be checked — hasControlDown() asks the window, and in the test
+    // there is none.
 
     /**
-     * Ein Stand des Textes samt Cursor.
+     * A state of the text together with the cursor.
      *
-     * <p>Ganze Stände statt einzelner Änderungen: Ein Programm im Terminal
-     * ist ein paar Dutzend Zeilen, und ein Änderungsprotokoll mit Positionen
-     * ist die Sorte Code, in der sich ein Fehler erst zeigt, wenn der Text
-     * schon kaputt ist.
+     * <p>Whole states instead of individual changes: a program in the terminal
+     * is a few dozen lines, and a change log with positions is the sort of code
+     * where a bug only shows once the text is already broken.
      */
     private record Snapshot(List<String> lines, int cursorLine, int cursorColumn) {
     }
 
     /**
-     * Wozu eine Änderung gehört.
+     * What a change belongs to.
      *
-     * <p>Aufeinanderfolgende Anschläge derselben Art werden zu einem Schritt
-     * zusammengefasst. Ohne das nähme ein Rückgängig genau ein Zeichen
-     * zurück, und ein versehentlich überschriebenes Wort wären acht Griffe.
+     * <p>Consecutive keystrokes of the same kind are merged into one step.
+     * Without this an undo would take back exactly one character, and an
+     * accidentally overwritten word would be eight moves.
      */
     enum EditKind { TYPING, DELETING, STRUCTURAL }
 
-    /** Weiter zurück reicht kein Mensch; darüber wächst nur der Speicher. */
+    /** No one reaches back further; beyond that only memory grows. */
     private static final int MAX_HISTORY = 200;
 
     private Snapshot snapshot() {
@@ -1729,11 +1722,11 @@ public class CodeEditor {
     }
 
     /**
-     * Merkt sich den Stand vor einer Änderung.
+     * Remembers the state before a change.
      *
-     * <p>Läuft eine Änderung derselben Art auf derselben Zeile weiter, wird
-     * nichts gemerkt: Der Stand von vor dem Lauf steht schon oben auf dem
-     * Stapel, und genau dorthin soll ein Rückgängig führen.
+     * <p>If a change of the same kind continues on the same line, nothing is
+     * remembered: the state from before the run is already on top of the
+     * stack, and that's exactly where an undo should lead.
      */
     void remember(EditKind kind) {
         if (kind != EditKind.STRUCTURAL && kind == lastKind && cursorLine == lastKindLine) {
@@ -1754,7 +1747,7 @@ public class CodeEditor {
         }
         redoStack.push(snapshot());
         restore(undoStack.pop());
-        // Nach einem Sprung durch die Geschichte fängt jeder Lauf neu an.
+        // After a jump through history every run starts anew.
         lastKind = null;
         changeListener.accept(text());
     }
@@ -1769,18 +1762,18 @@ public class CodeEditor {
         changeListener.accept(text());
     }
 
-    // ---- Wortweise bewegen ------------------------------------------------
+    // ---- Word-wise movement ------------------------------------------------
 
     private static boolean isWordChar(char c) {
         return Character.isLetterOrDigit(c) || c == '_';
     }
 
     /**
-     * Ein Wort nach links.
+     * One word to the left.
      *
-     * <p>Erst über Trennzeichen hinweg, dann über das Wort: So landet man vor
-     * dem Wort und nicht in der Lücke davor — sonst bräuchte jedes zweite
-     * Wort zwei Anschläge.
+     * <p>First over separators, then over the word: this lands you before the
+     * word and not in the gap ahead of it — otherwise every other word would
+     * need two keystrokes.
      */
     void moveWordLeft() {
         if (cursorColumn == 0) {
@@ -1814,7 +1807,7 @@ public class CodeEditor {
         cursorColumn = column;
     }
 
-    /** Löscht das Wort links vom Cursor. */
+    /** Deletes the word to the left of the cursor. */
     void deleteWordLeft() {
         if (cursorColumn == 0) {
             backspace();
@@ -1828,15 +1821,15 @@ public class CodeEditor {
         changed();
     }
 
-    // ---- Zeilen umformen --------------------------------------------------
+    // ---- Reshaping lines --------------------------------------------------
 
     /**
-     * Rückt die betroffenen Zeilen ein oder aus.
+     * Indents the affected lines in or out.
      *
-     * <p>Mit einer Auswahl alle darin, ohne nur die aktuelle. Das ist der
-     * Grund, warum der Tabulator bei einer Auswahl etwas anderes tut als
-     * sonst: Vier Leerzeichen einzufügen und dabei die Auswahl zu löschen
-     * wäre bei mehreren Zeilen nie das Gemeinte.
+     * <p>With a selection all lines in it, without one only the current. This
+     * is why Tab does something different during a selection than otherwise:
+     * inserting four spaces and deleting the selection in the process would,
+     * with several lines, never be what was meant.
      */
     void indentLines(boolean out) {
         int first = hasSelection() ? selectionBounds()[0] : cursorLine;
@@ -1869,7 +1862,7 @@ public class CodeEditor {
         changed();
     }
 
-    /** Verdoppelt die aktuelle Zeile unter sich. */
+    /** Duplicates the current line below itself. */
     void duplicateLine() {
         lines.add(cursorLine + 1, lines.get(cursorLine));
         cursorLine++;
@@ -1877,35 +1870,35 @@ public class CodeEditor {
         ensureVisible();
         changed();
     }
-    // ---- Maus -------------------------------------------------------------
+    // ---- Mouse -------------------------------------------------------------
 
-    /** Wie lange zwei Klicks auseinanderliegen dürfen, um einer zu sein. */
+    /** How far apart two clicks may be to count as one. */
     private static final long DOUBLE_CLICK_MILLIS = 260;
 
     private long lastClickTime;
     private int lastClickLine = -1;
     private int lastClickColumn = -1;
 
-    /** In welcher Zeile ein Mauszeiger steht. */
+    /** Which line a mouse pointer is on. */
     private int lineAt(double mouseY) {
         int row = (int) Math.floor((mouseY - y - 10) / LINE_HEIGHT);
         return Mth.clamp(scrollLine + row, 0, lines.size() - 1);
     }
 
     /**
-     * In welcher Spalte ein Mauszeiger steht.
+     * Which column a mouse pointer is on.
      *
-     * <p>Gesucht wird die Lücke, der er am nächsten ist, nicht das Zeichen
-     * unter ihm: Ein Klick auf die rechte Hälfte eines Buchstabens setzt den
-     * Cursor dahinter. Ohne das kommt man nie ans Zeilenende.
+     * <p>What's sought is the gap it's closest to, not the character under it:
+     * a click on the right half of a letter puts the cursor behind it. Without
+     * this you'd never reach the line end.
      */
     private int columnAt(int lineIndex, double mouseX) {
         String line = lines.get(lineIndex);
         int textX = x + GUTTER_WIDTH + TEXT_LEFT;
-        // Eine Division statt einer Schleife: Bei dicktengleicher Schrift ist
-        // die Spalte der abgerundete Abstand. Das Runden setzt die Grenze in
-        // die Mitte eines Zeichens — ein Klick auf die rechte Hälfte landet
-        // dahinter, wie in jedem Editor.
+        // A division instead of a loop: with a monospaced font the column is
+        // the rounded distance. The rounding puts the boundary in the middle of
+        // a character — a click on the right half lands behind it, as in every
+        // editor.
         int column = (int) Math.round((mouseX - textX) / advance()) + scrollColumn;
         return Mth.clamp(column, 0, line.length());
     }
@@ -1915,11 +1908,11 @@ public class CodeEditor {
     }
 
     /**
-     * Wählt das Wort an einer Stelle aus.
+     * Selects the word at a position.
      *
-     * <p>Steht der Cursor nicht in einem Wort, sondern in einer Lücke, wird
-     * die Lücke ausgewählt. Nichts zu tun wäre die schlechtere Antwort: Ein
-     * Doppelklick, der manchmal nichts bewirkt, fühlt sich kaputt an.
+     * <p>If the cursor is not in a word but in a gap, the gap is selected.
+     * Doing nothing would be the worse answer: a double-click that sometimes
+     * does nothing feels broken.
      */
     void selectWordAt(int lineIndex, int column) {
         String line = lines.get(lineIndex);
@@ -1941,8 +1934,8 @@ public class CodeEditor {
     }
 
     /**
-     * Ein Klick setzt den Cursor — mit Umschalt zieht er die Auswahl dorthin,
-     * doppelt nimmt er das Wort.
+     * A click sets the cursor — with Shift it drags the selection there, a
+     * double-click takes the word.
      */
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (!inside(mouseX, mouseY)) {
@@ -1974,11 +1967,11 @@ public class CodeEditor {
     }
 
     /**
-     * Ziehen wählt aus.
+     * Dragging selects.
      *
-     * <p>Wandert der Zeiger über den Rand hinaus, rollt der Text mit — sonst
-     * endet jede Auswahl am sichtbaren Ausschnitt, und längere Stellen wären
-     * nur über die Tastatur zu erreichen.
+     * <p>If the pointer wanders past the edge, the text scrolls along —
+     * otherwise every selection ends at the visible view, and longer spans
+     * could only be reached with the keyboard.
      */
     public boolean mouseDragged(double mouseX, double mouseY, int button) {
         if (button != 0 || lastClickLine < 0) {
@@ -1994,35 +1987,33 @@ public class CodeEditor {
         cursorColumn = columnAt(cursorLine, mouseX);
         return true;
     }
-    // ---- Suchen -----------------------------------------------------------
+    // ---- Search -----------------------------------------------------------
 
     /**
-     * Die Suche im Editor.
+     * The search within the editor.
      *
-     * <p>Ein Programm wird länger, als es auf den Bildschirm passt, lange
-     * bevor es kompliziert wird. Ohne Suche bleibt nur Scrollen, und wer
-     * einen Connectornamen ändert, muss jede Stelle von Hand finden.
+     * <p>A program grows longer than fits on the screen long before it grows
+     * complicated. Without search only scrolling is left, and whoever changes
+     * a connector name has to find every spot by hand.
      *
-     * <p>Gesucht wird ohne Rücksicht auf Groß- und Kleinschreibung: Die
-     * Sprache unterscheidet sie zwar, aber wer sucht, weiß meist nur
-     * ungefähr, wie es geschrieben war.
+     * <p>The search ignores case: the language does distinguish it, but
+     * whoever searches usually only roughly knows how it was written.
      */
     private boolean searching;
     private String searchTerm = "";
     private int matchIndex;
 
     /**
-     * Ob die Zeile auch ein Ersetzen anbietet.
+     * Whether the bar also offers a replace.
      *
-     * <p>Dieselbe Zeile für beides und kein zweites Fenster: Suchen und
-     * Ersetzen sind eine Handlung mit einem Feld mehr. Strg+F öffnet sie
-     * ohne, Strg+H mit — und aus dem einen wird das andere, ohne dass man
-     * schließt und neu aufmacht.
+     * <p>The same bar for both and no second window: search and replace are one
+     * action with one field more. Ctrl+F opens it without, Ctrl+H with — and
+     * one turns into the other without closing and reopening.
      */
     private boolean replacing;
     private String replaceTerm = "";
 
-    /** Welches der beiden Felder gerade tippt. Tabulator wechselt. */
+    /** Which of the two fields is typing right now. Tab switches. */
     private boolean editingReplacement;
 
     public boolean isSearching() {
@@ -2033,7 +2024,7 @@ public class CodeEditor {
         return searchTerm;
     }
 
-    /** Öffnet die Suche. Eine Auswahl wird zum Suchwort. */
+    /** Opens the search. A selection becomes the search term. */
     void openSearch() {
         searching = true;
         if (hasSelection()) {
@@ -2054,12 +2045,12 @@ public class CodeEditor {
         editingReplacement = false;
     }
 
-    /** Wodurch ersetzt wird. */
+    /** What to replace with. */
     void setReplaceTerm(String term) {
         replaceTerm = term == null ? "" : term;
     }
 
-    /** Die erste sichtbare Spalte — für die Prüfung des Schiebens. */
+    /** The first visible column — for the scroll test. */
     int firstVisibleColumn() {
         return scrollColumn;
     }
@@ -2071,11 +2062,11 @@ public class CodeEditor {
     }
 
     /**
-     * Alle Fundstellen, von oben nach unten.
+     * All matches, from top to bottom.
      *
-     * <p>Bei jedem Tastendruck neu gesucht. Ein Programm im Terminal ist ein
-     * paar Dutzend Zeilen — eine Fundstellenliste zu pflegen wäre Buchführung
-     * für eine Rechnung, die niemand merkt.
+     * <p>Searched anew on every keystroke. A program in the terminal is a few
+     * dozen lines — maintaining a match list would be bookkeeping for a cost no
+     * one would notice.
      */
     List<int[]> matches() {
         if (searchTerm.isEmpty()) {
@@ -2092,17 +2083,17 @@ public class CodeEditor {
                     break;
                 }
                 found.add(new int[] {i, at});
-                // Hinter die Fundstelle und nicht ein Zeichen weiter: Sonst
-                // fände die Suche nach „aa" in „aaa" zwei Stellen, die
-                // einander überlappen — und „alle ersetzen" schriebe in die
-                // eigene Ersetzung hinein.
+                // Past the match and not one character further: otherwise a
+                // search for "aa" in "aaa" would find two spots that overlap
+                // each other — and "replace all" would write into its own
+                // replacement.
                 from = at + needle.length();
             }
         }
         return found;
     }
 
-    /** Zur nächsten Fundstelle, oder zur vorherigen. */
+    /** To the next match, or the previous one. */
     void step(int direction) {
         List<int[]> found = matches();
         if (found.isEmpty()) {
@@ -2112,7 +2103,7 @@ public class CodeEditor {
         jumpToMatch();
     }
 
-    /** Welche Fundstelle gerade dran ist, von eins an. Null heißt keine. */
+    /** Which match is currently active, from one. Zero means none. */
     int matchNumber() {
         List<int[]> found = matches();
         return found.isEmpty() ? 0 : Math.floorMod(matchIndex, found.size()) + 1;
@@ -2124,13 +2115,13 @@ public class CodeEditor {
             return;
         }
         int[] at = found.get(Math.floorMod(matchIndex, found.size()));
-        // Die Fundstelle wird ausgewählt, nicht nur angefahren: Dann trägt
-        // Strg+C sie weiter, und ein Tippen ersetzt sie.
+        // The match is selected, not just moved to: then Ctrl+C carries it on,
+        // and typing replaces it.
         select(at[0], at[1], at[0], at[1] + searchTerm.length());
         ensureVisible();
     }
 
-    /** Legt einen matten Streifen unter jede Fundstelle in dieser Zeile. */
+    /** Lays a muted stripe under every match in this line. */
     private void drawMatches(GuiGraphics graphics, int lineIndex, int textX, int lineY) {
         if (!searching || searchTerm.isEmpty()) {
             return;
@@ -2152,12 +2143,12 @@ public class CodeEditor {
     }
 
     /**
-     * Die Such- und Ersetzenzeile über dem Text.
+     * The search-and-replace bar above the text.
      *
-     * <p>Das aktive Feld trägt einen Strich; ohne ihn wüsste man nach einem
-     * Tabulator nicht, wohin man tippt. Die Zahl der Fundstellen steht rechts
-     * und wird rot, wenn es keine gibt — ein leeres Ergebnis ist eine
-     * Auskunft und kein Fehler, aber man soll es sehen.
+     * <p>The active field carries an underline; without it you wouldn't know
+     * after a Tab where you're typing. The number of matches stands on the
+     * right and turns red when there are none — an empty result is information
+     * and not an error, but you should see it.
      */
     private void drawSearchBar(GuiGraphics graphics) {
         if (!searching) {
@@ -2190,7 +2181,7 @@ public class CodeEditor {
                         : EditorColours.COMMENT, false);
     }
 
-    /** Ein Feld der Suchzeile; das aktive bekommt einen Strich darunter. */
+    /** A field of the search bar; the active one gets an underline. */
     private int drawField(GuiGraphics graphics, int at, String text, boolean active,
                           boolean bad) {
         String shown = plainSubstrByWidth(text, width / 3);
@@ -2206,11 +2197,11 @@ public class CodeEditor {
     }
 
     /**
-     * Tastendrücke, solange die Suche offen ist.
+     * Key presses while the search is open.
      *
-     * <p>Sie gehen an die Suche und nicht an den Text: Wer sucht, tippt ein
-     * Wort und keinen Code. Escape schließt, Eingabe geht weiter, Umschalt
-     * und Eingabe zurück.
+     * <p>They go to the search and not to the text: whoever searches types a
+     * word, not code. Escape closes, Enter goes forward, Shift and Enter go
+     * back.
      */
     private boolean handleSearchKey(int key) {
         switch (key) {
@@ -2218,20 +2209,20 @@ public class CodeEditor {
                 closeSearch();
                 return true;
             }
-            case 258 -> { // Tabulator wechselt zwischen den beiden Feldern
+            case 258 -> { // Tab switches between the two fields
                 if (replacing) {
                     editingReplacement = !editingReplacement;
                 }
                 return true;
             }
-            case 257, 335 -> { // Eingabe
+            case 257, 335 -> { // Enter
                 if (!replacing) {
                     step(net.minecraft.client.gui.screens.Screen.hasShiftDown() ? -1 : 1);
                     return true;
                 }
-                // Mit Alt alle auf einmal — Strg und Eingabe ist im Terminal
-                // schon das Übernehmen, und zwei Bedeutungen für einen Griff
-                // sind eine zu viel.
+                // With Alt all at once — Ctrl and Enter is already the accept
+                // in the terminal, and two meanings for one gesture are one too
+                // many.
                 if (net.minecraft.client.gui.screens.Screen.hasAltDown()) {
                     replaceAll();
                 } else {
@@ -2239,7 +2230,7 @@ public class CodeEditor {
                 }
                 return true;
             }
-            case 259 -> { // Rücktaste
+            case 259 -> { // Backspace
                 if (editingReplacement) {
                     if (!replaceTerm.isEmpty()) {
                         replaceTerm = replaceTerm.substring(0, replaceTerm.length() - 1);
@@ -2256,11 +2247,11 @@ public class CodeEditor {
     }
 
     /**
-     * Ersetzt die angefahrene Fundstelle und geht zur nächsten.
+     * Replaces the match currently moved to and goes to the next.
      *
-     * <p>Die Fundstelle ist ausgewählt — {@link #jumpToMatch()} sorgt dafür.
-     * Ersetzt wird also über die Auswahl, mit denselben Handgriffen wie beim
-     * Tippen, und ein Rückgängig nimmt es als einen Schritt zurück.
+     * <p>The match is selected — {@link #jumpToMatch()} sees to that. So the
+     * replace goes through the selection, with the same motions as when typing,
+     * and an undo takes it back as one step.
      */
     void replaceCurrent() {
         if (searchTerm.isEmpty() || matches().isEmpty()) {
@@ -2277,8 +2268,8 @@ public class CodeEditor {
         if (!replaceTerm.isEmpty()) {
             insert(replaceTerm);
         }
-        // Nach dem Ersetzen steht die nächste Fundstelle an derselben Nummer:
-        // Die eben ersetzte ist aus der Liste heraus.
+        // After the replace the next match sits at the same number: the one
+        // just replaced is out of the list.
         List<int[]> rest = matches();
         if (rest.isEmpty()) {
             return;
@@ -2288,12 +2279,12 @@ public class CodeEditor {
     }
 
     /**
-     * Ersetzt alle Fundstellen auf einmal.
+     * Replaces all matches at once.
      *
-     * <p>Zeile für Zeile und von hinten nach vorn innerhalb einer Zeile —
-     * sonst verschöbe die erste Ersetzung die Stellen aller folgenden. Ein
-     * Rückgängig nimmt das Ganze als einen Schritt zurück; alles andere wäre
-     * bei zwanzig Stellen zwanzig Griffe.
+     * <p>Line by line and from back to front within a line — otherwise the
+     * first replacement would shift the spots of all the following ones. An
+     * undo takes the whole thing back as one step; anything else would, with
+     * twenty spots, be twenty moves.
      */
     void replaceAll() {
         if (searchTerm.isEmpty()) {

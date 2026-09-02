@@ -10,28 +10,28 @@ import net.minecraft.resources.ResourceLocation;
 import java.util.List;
 
 /**
- * Was das Netz über die Zeit bewegt hat — für das Diagramm im Terminal.
+ * What the network has moved over time — for the chart in the terminal.
  *
- * <p><b>Ein eigenes Paket und kein Feld mehr in {@code NetworkStatePacket}.</b>
- * Das ist voll: {@code StreamCodec.composite} trägt sechs Felder, und ein
- * siebtes ginge nur über eine verschachtelte Hilfsklasse.
+ * <p><b>Its own packet and no longer a field in {@code NetworkStatePacket}.</b>
+ * That one is full: {@code StreamCodec.composite} carries six fields, and a
+ * seventh would only go through a nested helper class.
  *
- * <p>Zwei Gründe sprechen ohnehin dafür: Der Verlauf ändert sich in jeder
- * Sekunde, der Netzzustand fast nie — beides in einem Paket hieße, die ganze
- * Geräteliste im Sekundentakt zu schicken. Und er wird nur gebraucht, solange
- * jemand hinsieht.
+ * <p>Two reasons speak for it anyway: the history changes every second, the
+ * network state almost never — both in one packet would mean sending the whole
+ * device list every second. And it is only needed as long as someone is
+ * looking.
  *
- * @param perSecond der Verlauf, ältester Punkt zuerst, in Byte je Sekunde
- * @param top       die größten Verbraucher, absteigend
- * @param total     was seit dem Start des Netzes insgesamt bewegt wurde
- * @param capacity  was der Controller je Tick durchlässt — ohne diese Zahl
- *                  ist der Durchsatz im Kopf eine Zahl ohne Maßstab
+ * @param perSecond the history, oldest point first, in bytes per second
+ * @param top       the largest consumers, descending
+ * @param total     what has been moved in total since the network started
+ * @param capacity  what the controller lets through per tick — without this
+ *                  number the throughput in your head is a figure with no scale
  */
 public record TrafficPacket(List<Integer> perSecond, List<Consumer> top, long total,
                             int capacity)
         implements CustomPacketPayload {
 
-    /** Ein Verbraucher mit seiner Menge. */
+    /** A consumer with its amount. */
     public record Consumer(String name, long bytes) {
 
         public static final StreamCodec<RegistryFriendlyByteBuf, Consumer> STREAM_CODEC =
@@ -41,7 +41,7 @@ public record TrafficPacket(List<Integer> perSecond, List<Consumer> top, long to
                         Consumer::new);
     }
 
-    /** So viele Verbraucher stehen in der Rangliste. */
+    /** This many consumers appear in the ranking. */
     public static final int TOP = 8;
 
     public static final Type<TrafficPacket> TYPE = new Type<>(
@@ -49,7 +49,7 @@ public record TrafficPacket(List<Integer> perSecond, List<Consumer> top, long to
 
     public static final StreamCodec<RegistryFriendlyByteBuf, TrafficPacket> STREAM_CODEC =
             StreamCodec.composite(
-                    // Fünf Minuten Verlauf, ein Punkt je Sekunde.
+                    // Five minutes of history, one point per second.
                     ByteBufCodecs.VAR_INT.apply(ByteBufCodecs.list(
                             dev.devpanda.factorynetwork.network.TrafficHistory.SAMPLES)),
                     TrafficPacket::perSecond,
@@ -70,7 +70,7 @@ public record TrafficPacket(List<Integer> perSecond, List<Consumer> top, long to
                 dev.devpanda.factorynetwork.client.ClientTraffic.accept(packet));
     }
 
-    /** Baut das Paket aus dem Verlauf eines Controllers. */
+    /** Builds the packet from a controller's history. */
     public static TrafficPacket of(
             dev.devpanda.factorynetwork.network.TrafficHistory history, int capacity) {
         List<Consumer> top = history.top(TOP).stream()

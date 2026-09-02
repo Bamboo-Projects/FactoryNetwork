@@ -19,29 +19,29 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Zeigt, welche Seiten laufen und wo ihre Werkzeuge stehen.
+ * Shows which pages are running and where their tools are.
  *
- * <p><b>Chromiums eigene Werkzeuge, nicht nachgebaute.</b> Läuft die
- * Fernwartung, führt Chromium unter {@code /json/list} jede offene Seite mit
- * Titel, Adresse und einer eigenen Werkzeugadresse. Das hier ist nur die
- * Übersetzung dieser Liste in den Chat — mit der Zuordnung, die dort fehlt:
- * welche Seite zu welcher Tafel gehört.
+ * <p><b>Chromium's own tools, not reimplemented ones.</b> If remote debugging
+ * is running, Chromium lists under {@code /json/list} every open page with
+ * title, address and a tools address of its own. This here is only the
+ * translation of that list into the chat — with the mapping that is missing
+ * there: which page belongs to which board.
  *
- * <p><b>Die Zuordnung steckt im Fragment.</b> Jede Fläche hängt ihren Namen
- * als {@code #fn-panel=…} an ihre Adresse. Ohne das heißen in der Liste alle
- * gleich — dieselbe Seite, derselbe Titel.
+ * <p><b>The mapping sits in the fragment.</b> Every surface appends its name
+ * as {@code #fn-panel=…} to its address. Without that they are all called the
+ * same in the list — the same page, the same title.
  *
- * <p><b>Der Abruf läuft nicht im Renderthread.</b> Er geht zwar an die eigene
- * Maschine, aber ein hängender Port hinge sonst das Spiel auf. Ein kurzer
- * Thread holt, der Renderthread schreibt.
+ * <p><b>The fetch does not run on the render thread.</b> It does go to the
+ * local machine, but a hanging port would otherwise hang the game. A short
+ * thread fetches, the render thread writes.
  */
 public final class WebDevTools {
 
-    /** Woher die Liste kommt. */
+    /** Where the list comes from. */
     private static final String LIST = "http://127.0.0.1:"
             + dev.devpanda.factorynetwork.web.runtime.WebDebug.PORT + "/json/list";
 
-    /** Was man im Browser öffnet, um alles zu sehen. */
+    /** What you open in the browser to see everything. */
     private static final String FRONT = "http://127.0.0.1:"
             + dev.devpanda.factorynetwork.web.runtime.WebDebug.PORT;
 
@@ -49,10 +49,10 @@ public final class WebDevTools {
     }
 
     /**
-     * Schreibt die Liste in den Chat.
+     * Writes the list into the chat.
      *
-     * <p>Aus dem Spiel zu rufen; die Antwort kommt ein paar Millisekunden
-     * später und läuft über {@code Minecraft.execute} zurück.
+     * <p>To be called from the game; the answer comes a few milliseconds later
+     * and runs back through {@code Minecraft.execute}.
      */
     public static void show() {
         if (!dev.devpanda.factorynetwork.web.runtime.WebDebug.isRequested()) {
@@ -124,11 +124,11 @@ public final class WebDevTools {
     }
 
     /**
-     * Der Name aus dem Fragment, oder leer.
+     * The name from the fragment, or empty.
      *
-     * <p>Eine Fläche hängt beim Öffnen {@code #fn-panel=<name>} an ihre
-     * Adresse; daraus kommt der Name. Eine Seite ohne Fragment ist keine
-     * benannte Fläche — der Editor etwa.
+     * <p>A surface appends {@code #fn-panel=<name>} to its address when
+     * opening; the name comes from that. A page without a fragment is not a
+     * named surface — the editor, for instance.
      */
     private static String panelName(String url) {
         int at = url.indexOf("#fn-panel=");
@@ -139,7 +139,7 @@ public final class WebDevTools {
         return java.net.URLDecoder.decode(raw, StandardCharsets.UTF_8);
     }
 
-    /** Lange Dateiadressen sind im Chat nur Rauschen. */
+    /** Long file addresses are just noise in the chat. */
     private static String shorten(String url) {
         int cut = url.indexOf('#');
         String plain = cut < 0 ? url : url.substring(0, cut);

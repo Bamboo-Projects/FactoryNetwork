@@ -16,12 +16,12 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import java.util.List;
 
 /**
- * Der Bestand des Netzwerks.
+ * The network's stock.
  *
- * <p>Die Felder sehen aus wie Slots und verhalten sich wie Slots, sind aber
- * keine: Zwanzigtausend Arten lassen sich nicht als Slots anlegen. Geklickt
- * wird deshalb über eigene Nachrichten — und der Server rechnet jedes Mal
- * nach, weil die Anzeige einen Moment alt sein kann.
+ * <p>The cells look like slots and behave like slots, but are not: twenty
+ * thousand types cannot be laid out as slots. Clicking therefore goes through
+ * dedicated packets — and the server recomputes every time, because the
+ * display can be a moment out of date.
  */
 public class StorageTabView {
 
@@ -34,10 +34,10 @@ public class StorageTabView {
     private static final int COLUMNS = dev.devpanda.factorynetwork.client.menu
             .TerminalLayout.GRID_COLUMNS;
     /**
-     * Sechs Reihen, seit die Fußzeile in die Statuszeile gewandert ist.
+     * Six rows, since the footer moved into the status line.
      *
-     * <p>Der Platz, den sie freigemacht hat, geht in vierzehn weitere
-     * sichtbare Arten — und nicht in Luft.
+     * <p>The room it freed up goes into fourteen more visible types — and not
+     * into thin air.
      */
     private static final int ROWS = dev.devpanda.factorynetwork.client.menu
             .TerminalLayout.GRID_ROWS;
@@ -79,7 +79,7 @@ public class StorageTabView {
         drawSearch(graphics);
         drawSortButtons(graphics, mouseX, mouseY);
 
-        // Rasterhintergrund, so gross wie gebraucht
+        // Grid background, as large as needed
         graphics.blit(GRID, gridX(), gridY(), 0, 0, COLUMNS * SLOT, ROWS * SLOT, 512, 512);
 
         List<ClientStorageView.Row> rows = ClientStorageView.rows();
@@ -94,12 +94,12 @@ public class StorageTabView {
             int cellY = gridY() + (index / COLUMNS) * SLOT + 1;
 
             graphics.renderItem(row.stack(), cellX, cellY);
-            // Die Menge steht als Text daneben, nicht als Stapelzahl: Ein
-            // Netzbestand geht weit über vierundsechzig hinaus.
+            // The amount is shown as text beside it, not as a stack count: a
+            // network stock goes well beyond sixty-four.
             String amount = ClientStorageView.shortAmount(row.amount());
             if (row.isFluid()) {
-                // Damit niemand drei Eimer liest, wo dreitausend Millibucket
-                // stehen.
+                // So that nobody reads three buckets where three thousand
+                // millibuckets stand.
                 amount = amount + row.unit();
             }
             graphics.pose().pushPose();
@@ -112,7 +112,7 @@ public class StorageTabView {
         drawScrollbar(graphics);
     }
 
-    /** Wo die drei Sortierknöpfe sitzen — rechts neben dem Suchfeld. */
+    /** Where the three sort buttons sit — right next to the search field. */
     private int sortButtonX(int index) {
         return x + width - 4 - (StorageSort.values().length - index) * 14;
     }
@@ -124,11 +124,11 @@ public class StorageTabView {
             boolean active = ClientStorageView.sort() == candidate;
             graphics.blit(WIDGETS, bx, by, 64, active ? 16 : 0, 12, 12, 512, 512);
 
-            // Auf dem Knopf ein Buchstabe, darunter die Richtung.
+            // A letter on the button, the direction beneath it.
             graphics.pose().pushPose();
             graphics.pose().translate(0, 0, 100);
-            // Auf dunklem Blech hell: Der gedrückte Knopf war vorher fast
-            // schwarz beschriftet, weil er ein heller Knopf war.
+            // Light on dark metal: the pressed button was previously labelled
+            // almost black, because it used to be a light button.
             graphics.drawString(font, candidate.badge(), bx + 3, by + 2,
                     active ? TerminalScreen.TEXT : TerminalScreen.TEXT_DIM, false);
             if (active) {
@@ -163,9 +163,9 @@ public class StorageTabView {
         int trackY = gridY();
         int trackH = ROWS * SLOT;
 
-        // Die Rinne über die volle Höhe. Die Kachel ist fünfzehn Pixel hoch;
-        // einmal gezeichnet klebte sie oben in der Ecke und sah aus wie ein
-        // vergessenes Bruchstück.
+        // The track over the full height. The tile is fifteen pixels tall;
+        // drawn once, it stuck in the top corner and looked like a forgotten
+        // fragment.
         for (int y = 0; y < trackH; y += 15) {
             int height = Math.min(15, trackH - y);
             graphics.blit(WIDGETS, trackX, trackY + y, 108, 32, 12, height, 512, 512);
@@ -178,11 +178,11 @@ public class StorageTabView {
     }
 
     /**
-     * Was der Reiter in der Statuszeile links stehen hat.
+     * What the tab shows on the left of the status line.
      *
-     * <p>Früher stand das als eigene Fußzeile unter dem Raster. Die
-     * Statuszeile gibt es jetzt für alle Reiter, und zwei Zeilen
-     * übereinander wären eine zu viel.
+     * <p>This used to sit as its own footer below the grid. The status line
+     * now exists for all tabs, and two lines on top of each other would be one
+     * too many.
      */
     public Component statusText() {
         if (isFull()) {
@@ -197,27 +197,27 @@ public class StorageTabView {
                 ClientStorageView.shortAmount(ClientStorageView.totalCount()));
     }
 
-    /** Geht keine neue Art mehr hinein? */
+    /** No room for another type? */
     public boolean isFull() {
         return ClientStorageView.freeTypes() == 0 && ClientStorageView.freeFluidTypes() == 0;
     }
 
     /**
-     * Der freie Platz, als Erklärung beim Zeigen.
+     * The free space, as an explanation on hover.
      *
-     * <p>In der Zeile selbst ist dafür kein Raum — und solange noch Platz
-     * ist, ist die Zahl auch keine Nachricht. Wird es eng, tritt sie als
-     * Warnung an die Stelle der Zusammenfassung.
+     * <p>There is no room for it in the line itself — and as long as there is
+     * still space, the number is not news either. When it gets tight, it
+     * takes the place of the summary as a warning.
      */
     public Component roomHint() {
         return Component.translatable("screen.factorynetwork.terminal.storage.room",
                 ClientStorageView.freeTypes(), ClientStorageView.freeFluidTypes());
     }
 
-    // ---- Bedienung --------------------------------------------------------
+    // ---- Controls ---------------------------------------------------------
 
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        // Sortierknöpfe zuerst — sie liegen im Bereich des Suchfelds
+        // Sort buttons first — they lie within the area of the search field
         for (StorageSort candidate : StorageSort.values()) {
             int bx = sortButtonX(candidate.ordinal());
             if (mouseX >= bx && mouseX < bx + 12 && mouseY >= y + 2 && mouseY < y + 14) {
@@ -242,7 +242,7 @@ public class StorageTabView {
 
         ItemStack carried = screen.getMenu().getCarried();
         if (!carried.isEmpty()) {
-            // Voller Zeiger legt ab — rechts nur eines, wie im Inventar.
+            // A full cursor deposits — right-click only one, as in the inventory.
             int amount = button == 1 ? 1 : carried.getCount();
             PacketDistributor.sendToServer(new StorageActionPacket(
                     StorageActionPacket.Kind.INSERT, dev.devpanda.factorynetwork.storage.ItemKey.of(carried), amount));
@@ -253,12 +253,12 @@ public class StorageTabView {
         }
         ClientStorageView.Row entry = rows.get(index);
         if (entry.isFluid()) {
-            // Eine Flüssigkeit lässt sich nicht auf den Mauszeiger nehmen.
-            // Der Eimer ist hier nur ein Bild; ihn zu entnehmen hieße, einen
-            // Gegenstand aus dem Nichts zu holen.
+            // A fluid cannot be picked up onto the mouse cursor. The bucket
+            // here is only an image; taking it out would mean fetching an
+            // item out of nothing.
             return true;
         }
-        // Vertraute Belegung: links ein Stapel, rechts ein halber.
+        // Familiar bindings: left a full stack, right a half one.
         int stack = entry.stack().getMaxStackSize();
         int wanted = button == 1 ? Math.max(1, stack / 2) : stack;
         if (Screen.hasShiftDown()) {
@@ -270,12 +270,12 @@ public class StorageTabView {
     }
 
     /**
-     * Was unter dem Zeiger liegt, mit genauer Menge.
+     * What lies under the cursor, with the exact amount.
      *
-     * <p>Wird nach allem anderen gezeichnet, sonst verschwindet es hinter dem
-     * Raster. Für Flüssigkeiten ist es mehr als eine Annehmlichkeit: Im Raster
-     * steht eine gekürzte Zahl, und der Unterschied zwischen drei Eimern und
-     * dreitausend Millibucket gehört gesagt.
+     * <p>Drawn after everything else, otherwise it disappears behind the grid.
+     * For fluids it is more than a convenience: the grid shows a shortened
+     * number, and the difference between three buckets and three thousand
+     * millibuckets deserves to be said.
      */
     public void renderTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
         ClientStorageView.Row row = rowAt(mouseX, mouseY);
@@ -291,7 +291,7 @@ public class StorageTabView {
         graphics.renderComponentTooltip(font, lines, mouseX, mouseY);
     }
 
-    /** Der Eintrag unter dem Zeiger, oder {@code null}. */
+    /** The entry under the cursor, or {@code null}. */
     private ClientStorageView.Row rowAt(double mouseX, double mouseY) {
         int column = (int) ((mouseX - gridX()) / SLOT);
         int row = (int) ((mouseY - gridY()) / SLOT);
@@ -312,14 +312,14 @@ public class StorageTabView {
     }
 
     /**
-     * Tasten für die Suchzeile.
+     * Keys for the search bar.
      *
-     * <p><b>Solange sie tippt, gehören ihr alle Tasten.</b> Vorher gab sie
-     * alles zurück, was sie nicht selbst brauchte, und ein Fenster mit
-     * Inventar schließt sich bei der Inventartaste — also stand man nach dem
-     * „e" in „Eisenerz" wieder in der Welt. Escape gibt die Zeile frei, statt
-     * das Fenster zu schließen: Der erste Escape beendet die Suche, der
-     * zweite das Terminal.
+     * <p><b>As long as it is focused for typing, all keys belong to it.</b>
+     * Before, it handed back everything it did not need itself, and a window
+     * with an inventory closes on the inventory key — so after the "e" in
+     * "iron ore" you were standing in the world again. Escape releases the bar
+     * instead of closing the window: the first Escape ends the search, the
+     * second the terminal.
      */
     public boolean keyPressed(int key, int scanCode, int modifiers) {
         if (!searchFocused) {

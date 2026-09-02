@@ -6,16 +6,16 @@ import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 
 /**
- * Ein Name im Netz und die Stelle, an der er hängt.
+ * A name in the network and the place it hangs on.
  *
- * <p><b>Der Name allein reicht nicht.</b> Wer im Editor {@code crusher_1}
- * liest, will wissen, welche Maschine das ist — und in einer Fabrik mit
- * vierzig Öfen ist das ohne Koordinate nicht zu beantworten. Bisher trug der
- * Netzzustand nur Namen, und die Frage „welcher davon ist es" führte in den
- * Keller.
+ * <p><b>The name alone is not enough.</b> Whoever reads {@code crusher_1} in
+ * the editor wants to know which machine that is — and in a factory with forty
+ * furnaces that cannot be answered without a coordinate. Until now the network
+ * state carried only names, and the question "which one of them is it" led
+ * down into the basement.
  *
- * @param name wie er heißt
- * @param pos  wo er steht
+ * @param name what it is called
+ * @param pos  where it stands
  */
 public record NamedPlace(String name, BlockPos pos) {
 

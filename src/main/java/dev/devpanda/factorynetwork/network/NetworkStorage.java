@@ -15,41 +15,41 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Der Speicher des Netzwerks.
+ * The network's storage.
  *
- * <p><b>Schlüsselbasiert, nicht slotbasiert.</b> Das ist die eine Lehre aus
- * dem Vorprojekt: Ein Bestand, der als Liste von Slots modelliert wird, macht
- * jede Suche linear und jede Filteroperation quadratisch. Die Messung in
- * {@code docs/referenz-messung-speicherzugriff.md} zeigt, was das bei
- * zehntausend Arten kostet — 67 Millisekunden für einen einzigen Durchlauf,
- * bei einem Tickbudget von 50.
+ * <p><b>Key-based, not slot-based.</b> This is the one lesson from the
+ * previous project: a stock modelled as a list of slots makes every search
+ * linear and every filter operation quadratic. The measurement in
+ * {@code docs/referenz-messung-speicherzugriff.md} shows what that costs at
+ * ten thousand kinds — 67 milliseconds for a single pass, on a tick budget
+ * of 50.
  *
- * <p><b>Der Bestand liegt in den Zellen, nicht hier.</b> Diese Klasse ist die
- * Sicht des Netzes darauf: Sie kennt die Laufwerke und verteilt zwischen
- * ihnen. Ein eigener Vorrat daneben wäre eine zweite Wahrheit, die
- * auseinanderläuft, sobald jemand eine Zelle herauszieht.
+ * <p><b>The stock lives in the cells, not here.</b> This class is the
+ * network's view of it: it knows the drives and distributes among them. A
+ * separate reserve alongside would be a second truth, one that drifts apart
+ * the moment someone pulls a cell out.
  */
 public final class NetworkStorage implements ResourceStore {
 
     private final List<DriveBlockEntity> drives = new ArrayList<>();
 
     /**
-     * Der Bestand aller Zellen an einer Stelle.
+     * The stock of all cells in one place.
      *
-     * <p><b>Ohne ihn zählt jede Frage alles neu.</b> Zehn Laufwerke mit je
-     * zehn Zellen und vierundsechzig Arten sind sechstausend Einträge — und
-     * gefragt wird oft: von jedem Worker, von jeder Bedingung, von jeder
-     * Anzeige, mehrmals im selben Tick.
+     * <p><b>Without it every question recounts everything.</b> Ten drives with
+     * ten cells each and sixty-four kinds are six thousand entries — and it is
+     * asked often: by every worker, by every condition, by every display,
+     * several times in the same tick.
      *
-     * <p>Eigene Ablagen und Entnahmen werden eingerechnet, nicht neu gezählt.
-     * Neu gezählt wird nur, wenn jemand anders etwas getan hat — eine Zelle
-     * herausgezogen etwa. Das meldet der Zählstand des Laufwerks.
+     * <p>Own deposits and withdrawals are folded in, not recounted. A recount
+     * happens only when someone else has done something — pulled a cell out,
+     * say. The drive's revision counter reports that.
      */
     private final Map<ItemKey, Long> index = new LinkedHashMap<>();
     private boolean indexValid;
-    /** Stand der Laufwerke, als der Index gebaut wurde. */
+    /** The state of the drives when the index was built. */
     private long[] seenRevisions = new long[0];
-    /** Wird bei jeder Änderung gerufen — der Controller schickt dann gebündelt. */
+    /** Called on every change — the controller then sends in a batch. */
     private Runnable onChange = () -> { };
 
     @Override
@@ -58,10 +58,10 @@ public final class NetworkStorage implements ResourceStore {
     }
 
     /**
-     * Welche Laufwerke im Netz hängen.
+     * Which drives hang on the network.
      *
-     * <p>Setzt der Controller bei jedem Neuaufbau. Steht hier nichts, gibt es
-     * keinen Platz — ein Netz ohne Laufwerk lagert nichts.
+     * <p>The controller sets them on every rebuild. If nothing stands here
+     * there is no space — a network without a drive stores nothing.
      */
     @Override
     public void setDrives(List<DriveBlockEntity> found) {
@@ -71,11 +71,11 @@ public final class NetworkStorage implements ResourceStore {
     }
 
     /**
-     * Die fremden Inventare, die zum Speicher zählen.
+     * The foreign inventories that count toward the storage.
      *
-     * <p>Aus den {@code store}-Zeilen des Programms; setzt der Controller bei
-     * jedem Neuaufbau, wie die Laufwerke. Ohne sie ist eine Kiste am Netz
-     * weiterhin ein Gerät und nichts weiter.
+     * <p>From the program's {@code store} lines; the controller sets them on
+     * every rebuild, like the drives. Without them a chest on the network
+     * remains a device and nothing more.
      */
     private final List<StorageBus> buses = new ArrayList<>();
 
@@ -89,14 +89,13 @@ public final class NetworkStorage implements ResourceStore {
     }
 
     /**
-     * Liest die fremden Inventare neu — einmal je Tick.
+     * Re-reads the foreign inventories — once per tick.
      *
-     * <p>Eine Kiste ändert sich ohne das Netz, und sie sagt es niemandem.
-     * Deshalb sieht der Controller nach; hier wird nur der Index verworfen,
-     * wenn sich wirklich etwas geändert hat, damit nicht jeder Tick alle
-     * Zellen neu zählt.
+     * <p>A chest changes without the network, and it tells no one. So the
+     * controller checks; here the index is discarded only when something has
+     * really changed, so that not every tick recounts all cells.
      *
-     * @return ob sich etwas geändert hat
+     * @return whether something has changed
      */
     public boolean refreshBuses() {
         boolean changed = false;
@@ -110,12 +109,12 @@ public final class NetworkStorage implements ResourceStore {
         return changed;
     }
 
-    /** Die Busse, in der Reihenfolge, in der eingelagert wird. */
+    /** The buses, in the order in which things are stored. */
     public List<StorageBus> buses() {
         return List.copyOf(buses);
     }
 
-    /** Der Bestand, frisch genug. */
+    /** The stock, fresh enough. */
     private Map<ItemKey, Long> index() {
         if (!indexValid || drivesChanged()) {
             rebuildIndex();
@@ -124,10 +123,10 @@ public final class NetworkStorage implements ResourceStore {
     }
 
     /**
-     * Hat jemand anders an den Laufwerken gearbeitet?
+     * Has someone else worked on the drives?
      *
-     * <p>Ein Vergleich von ein paar Zahlen. Die Alternative wäre, den Index
-     * bei jeder Frage neu zu bauen — also genau das, was er einspart.
+     * <p>A comparison of a few numbers. The alternative would be to rebuild
+     * the index on every question — exactly what it saves.
      */
     private boolean drivesChanged() {
         if (seenRevisions.length != drives.size()) {
@@ -146,8 +145,8 @@ public final class NetworkStorage implements ResourceStore {
         for (CellInventory<ItemKey> cell : cells()) {
             cell.contentsView().forEach((item, count) -> index.merge(item, count, Long::sum));
         }
-        // Und was in den fremden Inventaren liegt. Gelesen wird hier nicht —
-        // das tut refreshBuses je Tick; hier steht nur, was zuletzt dastand.
+        // And whatever lies in the foreign inventories. Nothing is read here —
+        // refreshBuses does that per tick; here stands only what stood there last.
         for (StorageBus bus : buses) {
             bus.contents().forEach((item, count) -> index.merge(item, count, Long::sum));
         }
@@ -159,31 +158,31 @@ public final class NetworkStorage implements ResourceStore {
     }
 
     /**
-     * Ob überhaupt Platz da ist.
+     * Whether there is any space at all.
      *
-     * <p>Ein Bus zählt mit: Ein Netz ohne Laufwerk, aber mit einer Kiste am
-     * {@code store}, lagert sehr wohl etwas — nur eben dort.
+     * <p>A bus counts too: a network without a drive but with a chest on the
+     * {@code store} does store something after all — just there.
      */
     @Override
     public boolean hasDrives() {
         return !drives.isEmpty() || !buses.isEmpty();
     }
 
-    // ---- Die Schnittstelle -----------------------------------------------
+    // ---- The interface ---------------------------------------------------
     //
-    // Der Umweg über den gemeinsamen Nenner. Die Umwandlung muss dastehen:
-    // Ohne sie riefe jede dieser Zeilen sich selbst auf, weil Object auf
-    // Object passt und Item nicht enger ist als Object — ein Überlauf, der
-    // erst dann auffällt, wenn jemand den allgemeinen Weg nimmt.
+    // The detour via the common denominator. The conversion must be there:
+    // without it each of these lines would call itself, because Object
+    // matches Object and Item is no narrower than Object — an overflow that
+    // only surfaces once someone takes the general path.
 
     /**
-     * Der allgemeine Weg nimmt beides an: einen Gegenstand oder eine Kennung.
+     * The general path accepts both: an item or an identifier.
      *
-     * <p><b>Weil beide Fragen vorkommen.</b> Die Sprache fragt nach
-     * {@code eisenbarren} und meint jede Ausführung; das Terminal fragt nach
-     * genau dem Stapel, den jemand angeklickt hat. Ein einziger Typ hier
-     * hieße, dass eine der beiden Seiten übersetzen muss — und die
-     * Übersetzung gehört an den Bestand, nicht an ihre Ränder.
+     * <p><b>Because both questions occur.</b> The language asks for
+     * {@code eisenbarren} and means every variant; the terminal asks for
+     * exactly the stack someone clicked. A single type here would mean that
+     * one of the two sides must translate — and the translation belongs at
+     * the stock, not at its edges.
      */
     @Override
     public long count(Object key) {
@@ -210,27 +209,26 @@ public final class NetworkStorage implements ResourceStore {
     }
 
     /**
-     * Wie viele davon noch hineingingen.
+     * How many more of them would fit in.
      *
-     * <p><b>Zellen und Speicherbusse.</b> Ein Bus antwortet über
-     * {@code insertItem} mit {@code simulate} — dasselbe Ablegen, nur ohne
-     * Folgen.
+     * <p><b>Cells and storage buses.</b> A bus answers via {@code insertItem}
+     * with {@code simulate} — the same deposit, just without consequences.
      *
-     * <p>Früher zählten hier nur die Zellen, mit der Begründung, eine Kiste
-     * habe kein Probieren. Das stimmt nicht, und es wäre teuer geworden:
-     * Seit ein Worker vor dem Griff fragt, hielte eine zu niedrige Antwort
-     * ein Netz an, dessen Busse noch Platz haben.
+     * <p>Earlier only the cells counted here, on the grounds that a chest
+     * cannot try things out. That is not true, and it would have grown
+     * expensive: since a worker asks before the grab, too low an answer would
+     * stall a network whose buses still have room.
      *
-     * <p>Die Reihenfolge ist eine andere als beim Ablegen, und das ist ohne
-     * Belang: Gefragt wird nach der Summe, nicht danach, wo es landet.
+     * <p>The order differs from that of depositing, and that is of no
+     * consequence: what is asked for is the sum, not where it lands.
      */
     @Override
     public long room(Object key, long wanted) {
         if (wanted <= 0) {
             return 0;
         }
-        // Wie bei count und insert: Beide Fragen kommen vor. Eine Kennung
-        // ohne eigene Daten ist der nackte Gegenstand.
+        // As with count and insert: both questions occur. An identifier
+        // without its own data is the bare item.
         ItemKey item = key instanceof ItemKey found ? found
                 : key instanceof Item plain ? ItemKey.bare(plain) : null;
         if (item == null) {
@@ -252,7 +250,7 @@ public final class NetworkStorage implements ResourceStore {
         return free;
     }
 
-    /** Alle Zellen aller Laufwerke, frisch gelesen. */
+    /** All cells of all drives, freshly read. */
     private List<CellInventory<ItemKey>> cells() {
         List<CellInventory<ItemKey>> all = new ArrayList<>();
         for (DriveBlockEntity drive : drives) {
@@ -262,20 +260,20 @@ public final class NetworkStorage implements ResourceStore {
     }
 
     /**
-     * Legt ab und liefert, was nicht hineinpasste.
+     * Stores it and returns what did not fit.
      *
-     * <p>Erst in Zellen, die diese Art schon führen — sonst zersplittert ein
-     * Bestand über alle Zellen und belegt überall einen Artenplatz.
+     * <p>First into cells that already carry this kind — otherwise a stock
+     * splinters across all cells and occupies a type slot everywhere.
      */
     public long insert(ItemKey item, long count) {
         if (count <= 0) {
             return 0;
         }
-        // Erst den Index auf Stand bringen, dann rechnen: Danach ist die
-        // eigene Ablage die einzige Änderung, und die ist bekannt.
+        // First bring the index up to date, then compute: after that the
+        // own deposit is the only change, and that is known.
         Map<ItemKey, Long> stock = index();
         long left = count;
-        // Wer sich vorgedrängt hat, kommt vor die Zellen.
+        // Whoever pushed ahead comes before the cells.
         for (StorageBus bus : buses) {
             if (left <= 0 || bus.priority() <= 0) {
                 break;
@@ -297,9 +295,9 @@ public final class NetworkStorage implements ResourceStore {
             }
             left -= cell.insert(item, left);
         }
-        // Und zuletzt die fremden Inventare — es sei denn, eines hat sich
-        // vorgedrängt: priority höher als null heißt „hierhin zuerst". Bei
-        // Gleichstand gewinnen die Zellen, denn die gehören dem Netz.
+        // And last the foreign inventories — unless one has pushed ahead: a
+        // priority higher than zero means "here first". On a tie the cells
+        // win, because they belong to the network.
         for (StorageBus bus : buses) {
             if (left <= 0) {
                 break;
@@ -317,7 +315,7 @@ public final class NetworkStorage implements ResourceStore {
         return stack.isEmpty() ? 0 : insert(ItemKey.of(stack), stack.getCount());
     }
 
-    /** Nimmt heraus und liefert, wie viel es wurde. */
+    /** Takes out and returns how much it came to. */
     public long extract(ItemKey item, long count) {
         if (count <= 0) {
             return 0;
@@ -330,10 +328,10 @@ public final class NetworkStorage implements ResourceStore {
             }
             taken += cell.extract(item, count - taken);
         }
-        // Aus den fremden Inventaren erst, wenn die Zellen leer sind. Was in
-        // einer Kiste liegt, hat oft einen Grund — ein Drawer als Puffer, ein
-        // Vorrat für die Hand. Die Zellen gehören dem Netz und sind der Ort,
-        // an dem es zuerst zugreift.
+        // From the foreign inventories only once the cells are empty. What
+        // lies in a chest often has a reason — a Drawer as a buffer, a
+        // reserve for the hand. The cells belong to the network and are the
+        // place it reaches for first.
         for (StorageBus bus : buses) {
             if (taken >= count) {
                 break;
@@ -353,15 +351,15 @@ public final class NetworkStorage implements ResourceStore {
     }
 
     /**
-     * Wie viel von dieser Kennung im Netz liegt, über alle Ausführungen.
+     * How much of this identifier lies in the network, across all variants.
      *
-     * <p><b>Hier trifft die Sprache auf das Lager.</b> Ein Programm sagt
-     * {@code eisenbarren} und meint alles, was so heißt — nicht eine
-     * bestimmte Ausführung. Das Lager dagegen führt Gegenstände: Eine
-     * benannte Spitzhacke und eine nackte sind zwei Posten.
+     * <p><b>Here the language meets the store.</b> A program says
+     * {@code eisenbarren} and means everything by that name — not one
+     * particular variant. The store, by contrast, carries items: a named
+     * pickaxe and a bare one are two entries.
      *
-     * <p>Die Übersetzung steht deshalb hier und nicht in der Sprache: Sie ist
-     * eine Frage an den Bestand, keine Frage der Grammatik.
+     * <p>The translation therefore lives here and not in the language: it is
+     * a question for the stock, not a question of grammar.
      */
     public long count(Item item) {
         long found = 0;
@@ -374,11 +372,11 @@ public final class NetworkStorage implements ResourceStore {
     }
 
     /**
-     * Der Bestand je Kennung, über alle Ausführungen zusammengezählt.
+     * The stock per identifier, summed across all variants.
      *
-     * <p>Was die Sprache und die Anzeigetafeln brauchen: Dort ist
-     * {@code eisenbarren} eine Zahl und kein Dutzend Posten. Wer die
-     * einzelnen Gegenstände braucht — das Terminal —, fragt
+     * <p>What the language and the display boards need: there
+     * {@code eisenbarren} is one number and not a dozen entries. Whoever
+     * needs the individual items — the terminal — asks
      * {@link #contents()}.
      */
     public Map<Item, Long> byItem() {
@@ -387,18 +385,18 @@ public final class NetworkStorage implements ResourceStore {
         return found;
     }
 
-    /** Legt ab, als hätte der Gegenstand keine eigenen Daten. */
+    /** Stores it as if the item had no data of its own. */
     public long insert(Item item, long count) {
         return insert(ItemKey.bare(item), count);
     }
 
     /**
-     * Nimmt von dieser Kennung, egal in welcher Ausführung.
+     * Takes from this identifier, no matter which variant.
      *
-     * <p>Nackte zuerst: Wer {@code move 64 eisenbarren} schreibt, meint den
-     * Vorrat und nicht die benannte Spitzhacke, die zufällig dieselbe
-     * Kennung trägt. Erst wenn nichts Nacktes mehr da ist, kommen die
-     * anderen an die Reihe — und dann in der Reihenfolge des Bestands.
+     * <p>Bare ones first: whoever writes {@code move 64 eisenbarren} means
+     * the reserve and not the named pickaxe that happens to carry the same
+     * identifier. Only once nothing bare is left do the others get their
+     * turn — and then in the order of the stock.
      */
     public long extract(Item item, long count) {
         long taken = extract(ItemKey.bare(item), count);
@@ -421,12 +419,12 @@ public final class NetworkStorage implements ResourceStore {
     }
 
     /**
-     * Der gesamte Bestand über alle Zellen.
+     * The entire stock across all cells.
      *
-     * <p>Eine Kopie, keine Sicht: Der Bestand wird oft durchlaufen, während
-     * nebenher etwas verschoben wird, und eine Sicht führte dort zu einer
-     * ConcurrentModificationException an einer Stelle, die mit dem Verschieben
-     * nichts zu tun hat.
+     * <p>A copy, not a view: the stock is often iterated while something is
+     * being moved on the side, and a view would lead there to a
+     * ConcurrentModificationException at a place that has nothing to do with
+     * the moving.
      */
     @Override
     public Map<ItemKey, Long> contents() {
@@ -437,7 +435,7 @@ public final class NetworkStorage implements ResourceStore {
         return index().size();
     }
 
-    /** Wie viele Artenplätze insgesamt frei sind — für die Anzeige. */
+    /** How many type slots are free in total — for the display. */
     public int freeTypes() {
         int free = 0;
         for (CellInventory<ItemKey> cell : cells()) {
@@ -456,12 +454,12 @@ public final class NetworkStorage implements ResourceStore {
     }
 
     /**
-     * Meldet, dass sich etwas geändert hat.
+     * Reports that something has changed.
      *
-     * <p><b>Die Laufwerke müssen mit.</b> Der Bestand liegt in ihren Zellen,
-     * und ohne diese Meldung weiß Minecraft nicht, dass der Chunk gesichert
-     * werden muss — bei einem Laufwerk in einem anderen Chunk als der
-     * Controller wäre der Bestand nach einem Neustart der von vorhin.
+     * <p><b>The drives must come along.</b> The stock lives in their cells,
+     * and without this notification Minecraft does not know the chunk must be
+     * saved — for a drive in a different chunk than the controller, the stock
+     * after a restart would be the one from before.
      */
     private void markChanged() {
         drives.forEach(DriveBlockEntity::setChanged);
@@ -469,16 +467,16 @@ public final class NetworkStorage implements ResourceStore {
     }
 
     /**
-     * Speichern und Laden entfallen.
+     * Saving and loading are unnecessary.
      *
-     * <p>Der Bestand liegt in den Zellen, und die liegen in den Laufwerken —
-     * beide speichern sich selbst. Ein zweiter Ort wäre eine zweite Wahrheit.
+     * <p>The stock lives in the cells, and they live in the drives — both
+     * save themselves. A second place would be a second truth.
      */
     public void save(CompoundTag tag, HolderLookup.Provider registries) {
-        // Nichts zu tun.
+        // Nothing to do.
     }
 
     public void load(CompoundTag tag, HolderLookup.Provider registries) {
-        // Nichts zu tun.
+        // Nothing to do.
     }
 }

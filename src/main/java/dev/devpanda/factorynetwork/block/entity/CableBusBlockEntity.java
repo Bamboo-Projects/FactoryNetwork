@@ -17,24 +17,23 @@ import java.util.EnumMap;
 import java.util.Map;
 
 /**
- * Ein Kabelblock, der an seinen Flächen Anschlüsse trägt.
+ * A cable block that carries connectors on its faces.
  *
- * <p><b>Das ist AE2s Modell:</b> ein Block, in der Mitte die Leitung, an jeder
- * der sechs Flächen ein Teil. Bisher stand für jede Maschine ein eigener
- * Connectorblock neben dem Kabel — eine Maschinenwand kostete sechs Blöcke,
- * wo einer reicht.
+ * <p><b>This is AE2's model:</b> one block, the cable in the middle, a part on
+ * each of the six faces. Until now every machine had its own connector block
+ * next to the cable — a wall of machines cost six blocks where one is enough.
  *
- * <p>Was ein Anschluss <b>ist</b>, steht in {@link ConnectorPart}; hier steht
- * nur, dass es bis zu sechs davon gibt und an welcher Fläche jeder sitzt. Die
- * Trennung stammt aus dem Schnitt davor und ist der Grund, warum dieser hier
- * überhaupt klein sein kann.
+ * <p>What a connector <b>is</b> lives in {@link ConnectorPart}; here we only
+ * say that there are up to six of them and which face each one sits on. The
+ * split comes from the previous cut and is the reason this class can be small
+ * at all.
  *
- * <p><b>Jeder Kabelblock hat eine.</b> Das ist die teure Entscheidung dieses
- * Schnitts, und sie ist bewusst so gefallen: Eine BlockEntity nur dann
- * anzulegen, wenn ein Teil dazukommt, verlangt einen Zustand im BlockState,
- * der sich beim Setzen und Abbauen ändert — und damit eine zweite Wahrheit
- * darüber, ob hier Teile sitzen. AE2 legt sie ebenfalls überall an. Was das
- * bei zehntausend Kabeln kostet, ist ungemessen und steht als offener Punkt.
+ * <p><b>Every cable block has one.</b> That is the expensive decision of this
+ * cut, and it was made deliberately: creating a BlockEntity only when a part
+ * is added would demand a value in the BlockState that changes on placement
+ * and removal — and with it a second source of truth about whether parts sit
+ * here. AE2 also creates one everywhere. What that costs at ten thousand
+ * cables is unmeasured and stands as an open question.
  */
 public class CableBusBlockEntity extends BlockEntity {
 
@@ -47,12 +46,12 @@ public class CableBusBlockEntity extends BlockEntity {
         super(FnBlockEntities.CABLE_BUS.get(), pos, state);
     }
 
-    /** Der Anschluss an dieser Fläche, oder {@code null}. */
+    /** The connector on this face, or {@code null}. */
     public @Nullable ConnectorPart partAt(Direction side) {
         return parts.get(side);
     }
 
-    /** Alle Anschlüsse, die dieser Block trägt. */
+    /** All connectors this block carries. */
     public Map<Direction, ConnectorPart> parts() {
         return parts;
     }
@@ -62,9 +61,9 @@ public class CableBusBlockEntity extends BlockEntity {
     }
 
     /**
-     * Setzt einen Anschluss an eine Fläche.
+     * Places a connector on a face.
      *
-     * @return das Teil, oder das schon vorhandene — an eine Fläche gehört eins
+     * @return the part, or the one already there — a face holds exactly one
      */
     public ConnectorPart addPart(Direction side) {
         ConnectorPart taken = parts.get(side);
@@ -77,7 +76,7 @@ public class CableBusBlockEntity extends BlockEntity {
         return part;
     }
 
-    /** Nimmt den Anschluss an dieser Fläche weg. */
+    /** Removes the connector on this face. */
     public @Nullable ConnectorPart removePart(Direction side) {
         ConnectorPart gone = parts.remove(side);
         if (gone != null) {
@@ -94,12 +93,12 @@ public class CableBusBlockEntity extends BlockEntity {
     }
 
     /**
-     * Was ein Teil von diesem Block weiß.
+     * What a part knows about this block.
      *
-     * <p>Je Fläche eine eigene Sicht: Der Ort ist derselbe, die Blickrichtung
-     * nicht. Genau darin unterscheidet sich ein Kabelblock mit sechs
-     * Anschlüssen von einem Connectorblock mit einem — und genau deshalb
-     * konnte die Blickrichtung im Schnitt davor aus dem BlockState wandern.
+     * <p>A separate view per face: the position is the same, the facing is
+     * not. That is exactly what sets a cable block with six connectors apart
+     * from a connector block with one — and exactly why, in the previous cut,
+     * the facing could move out of the BlockState.
      */
     private final class SideHost implements ConnectorPart.Host {
 
@@ -139,7 +138,7 @@ public class CableBusBlockEntity extends BlockEntity {
         }
     }
 
-    // ---- Speichern ---------------------------------------------------------
+    // ---- Saving -------------------------------------------------------------
 
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
@@ -177,11 +176,11 @@ public class CableBusBlockEntity extends BlockEntity {
     }
 
     /**
-     * Ohne dieses Paket erfährt der Client von einem Anschluss nie.
+     * Without this packet the client never learns of a connector.
      *
-     * <p>Derselbe Fehler wie beim Connectorblock, der beim ersten Spielen
-     * auffiel: {@code sendBlockUpdated} schickt genau das, was hier
-     * zurückkommt, und die Vorgabe ist {@code null}.
+     * <p>The same bug as with the connector block, noticed on first play:
+     * {@code sendBlockUpdated} sends exactly what comes back here, and the
+     * default is {@code null}.
      */
     @Override
     public @Nullable Packet<ClientGamePacketListener> getUpdatePacket() {

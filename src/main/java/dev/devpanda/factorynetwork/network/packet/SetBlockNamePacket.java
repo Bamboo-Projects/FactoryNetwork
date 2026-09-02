@@ -16,20 +16,20 @@ import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /**
- * Ein Block bekommt einen Namen — aus dem Fenster am Block.
+ * A block gets a name — from the window on the block.
  *
- * <p><b>Geprüft wird auf dem Server</b>, mit denselben Regeln wie bei der
- * Beschriftungspistole: Ein Name muss ein Bezeichner sein, und zwei Geräte
- * mit demselben Namen machen beide unbrauchbar. Der Client wiederholt die
- * Prüfung nur, um früh zu warnen; verlassen darf man sich darauf nicht.
+ * <p><b>The check happens on the server</b>, with the same rules as for the
+ * label gun: a name must be an identifier, and two devices with the same name
+ * make both unusable. The client repeats the check only to warn early; you may
+ * not rely on it.
  */
 public record SetBlockNamePacket(BlockPos position, int side, String name)
         implements CustomPacketPayload {
 
-    /** Kein Anschluss an einer Fläche, sondern ein ganzer Block. */
+    /** Not a connector on a face, but a whole block. */
     public static final int NO_SIDE = -1;
 
-    /** So weit darf der Block weg sein — dasselbe wie im Fenster. */
+    /** This is how far away the block may be — the same as in the window. */
     private static final double REACH = 8.0;
 
     public static final Type<SetBlockNamePacket> TYPE = new Type<>(
@@ -53,16 +53,16 @@ public record SetBlockNamePacket(BlockPos position, int side, String name)
                 return;
             }
             BlockPos pos = packet.position();
-            // Der Client sagt, welcher Block gemeint ist. Ohne diese Prüfung
-            // ließe sich jeder Block auf der Karte umbenennen.
+            // The client says which block is meant. Without this check, any
+            // block on the map could be renamed.
             if (player.distanceToSqr(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5)
                     > REACH * REACH) {
                 return;
             }
             String wanted = ConnectorNaming.normalize(packet.name());
-            // Sagt der Klick eine Fläche, gilt sie: An einem Kabelblock
-            // hängen bis zu sechs Anschlüsse, und der Ort allein benennt
-            // irgendeinen davon.
+            // If the click names a face, it holds: a cable block has up to six
+            // connectors hanging off it, and the location alone would name
+            // just any one of them.
             if (packet.side() != NO_SIDE) {
                 var part = dev.devpanda.factorynetwork.block.entity.Connectors.at(
                         player.level(), pos,
@@ -91,11 +91,10 @@ public record SetBlockNamePacket(BlockPos position, int side, String name)
     }
 
     /**
-     * Eine Anzeige heißt nie allein.
+     * A display is never named alone.
      *
-     * <p>Der Name gehört der Wand, nicht der Tafel — wer eine Wand
-     * beschriftet, hat die Wand beschriftet und nicht die eine Tafel, die er
-     * getroffen hat.
+     * <p>The name belongs to the wall, not the panel — whoever labels a wall
+     * has labelled the wall and not the one panel they happened to hit.
      */
     private static void nameWall(DisplayBlockEntity display, String wanted,
                                  ServerPlayer player) {
@@ -114,12 +113,12 @@ public record SetBlockNamePacket(BlockPos position, int side, String name)
     }
 
     /**
-     * Ein Connector prüft zusätzlich, ob der Name schon vergeben ist.
+     * A connector additionally checks whether the name is already taken.
      *
-     * <p>Dieselbe Prüfung wie die Pistole, und aus demselben Grund: Zwei
-     * Geräte mit demselben Namen lassen sich beide nicht mehr ansprechen.
-     * Anders als die Pistole schlägt das Fenster nichts vor — wer tippt,
-     * bekommt gesagt, was nicht geht, und tippt weiter.
+     * <p>The same check as the gun, and for the same reason: two devices with
+     * the same name can neither be addressed anymore. Unlike the gun, the
+     * window suggests nothing — whoever types is told what does not work, and
+     * types on.
      */
     private static void nameConnector(
             dev.devpanda.factorynetwork.block.entity.ConnectorPart connector, String wanted,
@@ -143,7 +142,7 @@ public record SetBlockNamePacket(BlockPos position, int side, String name)
                 say(player, "message.factorynetwork.label_gun.invalid", wanted);
                 return;
             }
-            // Ein Schlüsselwort ist erlaubt; im Code braucht es Rückstriche.
+            // A keyword is allowed; in code it needs backticks.
             case KEYWORD -> say(player, "message.factorynetwork.label_gun.keyword", wanted);
             default -> { }
         }
@@ -152,13 +151,12 @@ public record SetBlockNamePacket(BlockPos position, int side, String name)
     }
 
     /**
-     * Ein Gateway trägt einen Anlagennamen und keine Rolle.
+     * A gateway carries a plant name and no role.
      *
-     * <p>Deshalb ohne Schrägstrich und ohne die Frage, ob der Name schon
-     * vergeben ist: Zwei Gateways mit demselben Namen sind kein Fehler,
-     * sondern zwei Teile derselben Anlage. Erst wenn beide dasselbe Gerät
-     * beanspruchen, gehört es zu keiner — und das meldet der Reiter
-     * <i>Netz</i>.
+     * <p>Hence without a slash and without the question of whether the name is
+     * already taken: two gateways with the same name are not a mistake, but
+     * two parts of the same plant. Only when both claim the same device does it
+     * belong to none — and that is reported by the <i>Network</i> tab.
      */
     private static void nameGateway(dev.devpanda.factorynetwork.block.entity
             .GatewayBlockEntity gateway, String wanted, ServerPlayer player) {

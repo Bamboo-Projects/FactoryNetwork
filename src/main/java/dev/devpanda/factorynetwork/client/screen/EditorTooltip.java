@@ -22,33 +22,33 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Was beim Zeigen im Editor dasteht.
+ * What is shown on hover in the editor.
  *
- * <p>An einer Stelle und nicht in jedem Fenster einzeln. Der Anlass war eine
- * Ungleichheit, die niemandem aufgefallen war: Das eigene Fenster erklärte
- * einen Namen unter dem Zeiger — Stelle im Netz, Erklärungsort, Fundstellen —,
- * der Reiter im Terminal nicht. Dieselbe Frage, zwei Antworten, je nachdem wo
- * man tippt.
+ * <p>In one place, not in every window separately. The occasion was a
+ * disparity nobody had noticed: the standalone window explained a name under
+ * the cursor — its spot in the network, where it is declared, its references —
+ * the terminal's tab did not. The same question, two answers, depending on
+ * where you type.
  *
- * <p>Die Reihenfolge ist Absicht: Ein Name ist das Genaueste, was unter dem
- * Zeiger stehen kann. Die Signatur gilt für die ganze Zeile, die Meldung auch.
+ * <p>The order is deliberate: a name is the most precise thing that can be
+ * under the cursor. The signature applies to the whole line, the message too.
  */
 public final class EditorTooltip {
 
-    /** Mehr Fundstellen deckten den halben Bildschirm. */
+    /** More references covered half the screen. */
     private static final int MAX_PLACES = 5;
 
-    /** Und mehr belegte Fächer auch. */
+    /** And more occupied slots did too. */
     private static final int MAX_SLOTS_SHOWN = 6;
 
     private EditorTooltip() {
     }
 
     /**
-     * Zeichnet den Tooltip, wenn es einen gibt.
+     * Draws the tooltip, if there is one.
      *
-     * <p>Die Prüfungen auf Knöpfe und offene Menüs bleiben beim jeweiligen
-     * Fenster — sie unterscheiden sich, und sie kennen ihre eigenen Flächen.
+     * <p>The checks for buttons and open menus stay with the respective
+     * window — they differ, and they know their own areas.
      */
     public static void render(GuiGraphics graphics, Font font, CodeEditor editor,
                               Project project, List<Diagnostic> problems,
@@ -83,17 +83,17 @@ public final class EditorTooltip {
     }
 
     /**
-     * Worauf sich der Auswahlausdruck unter dem Zeiger gerade auflöst.
+     * What the selector expression under the cursor currently resolves to.
      *
-     * <p><b>Ein Muster ist eine Suche</b>, und eine Suche ohne Trefferliste
-     * ist eine Zusage ins Blaue: {@code maintain 64 tag:c/ores} hält von jeder
-     * Art vierundsechzig, und wie viele Arten das sind, weiß nur das Pack.
+     * <p><b>A pattern is a search</b>, and a search without a list of matches
+     * is a promise into the blue: {@code maintain 64 tag:c/ores} keeps
+     * sixty-four of every kind, and how many kinds that is only the pack
+     * knows.
      *
-     * <p>Aufgelöst wird gegen die Registry des Clients — dieselbe, aus der
-     * auch JEI liest. Was hier steht, gilt für diese Welt und nicht für die
-     * Sprache.
+     * <p>It is resolved against the client's registry — the same one JEI reads
+     * from. What stands here holds for this world and not for the language.
      *
-     * @return ob etwas gezeichnet wurde
+     * @return whether anything was drawn
      */
     private static boolean describeSelector(GuiGraphics graphics, Font font,
                                             CodeEditor editor, int mouseX, int mouseY) {
@@ -108,9 +108,9 @@ public final class EditorTooltip {
             return false;
         }
         List<Component> lines = new ArrayList<>();
-        // Die erste Zeile ist die Zahl, und sie ist die Antwort. Rot, wenn es
-        // keine gibt: Ein Tag, den dieses Pack nicht kennt, sieht im Editor
-        // aus wie jeder andere.
+        // The first line is the number, and it is the answer. Red when there
+        // is none: a tag this pack does not know looks in the editor like any
+        // other.
         lines.add(Component.literal(("trifft nichts".equals(summary.get(0)) ? "§c" : "§f")
                 + summary.get(0)));
         for (int i = 1; i < summary.size(); i++) {
@@ -121,12 +121,12 @@ public final class EditorTooltip {
     }
 
     /**
-     * Der Name unter dem Zeiger, erklärt.
+     * The name under the cursor, explained.
      *
-     * <p>Die Reihenfolge im Kasten folgt der Frage, die man stellt: erst was
-     * es ist, dann wo es steht, dann was im Programm damit passiert.
+     * <p>The order in the box follows the question you ask: first what it is,
+     * then where it is, then what happens with it in the program.
      *
-     * @return ob etwas gezeichnet wurde
+     * @return whether anything was drawn
      */
     private static boolean describeName(GuiGraphics graphics, Font font, CodeEditor editor,
                                         Project project, int mouseX, int mouseY) {
@@ -141,10 +141,10 @@ public final class EditorTooltip {
             return false;
         }
 
-        // Vor der Prüfung auf ein bekanntes Profil: Ein Gerät, dessen Chunk
-        // beim Öffnen nicht geladen war, hat noch keines — und die Antwort
-        // auf die Anfrage bringt es mit. Wer hier erst fragt, wenn schon
-        // etwas bekannt ist, bekommt für genau diese Geräte nie etwas.
+        // Before the check for a known profile: a device whose chunk was not
+        // loaded when the screen opened has none yet — and the reply to the
+        // request brings it along. Whoever only asks once something is already
+        // known never gets anything for exactly these devices.
         if (isConnector) {
             ClientDeviceState.hovering(word);
         } else {
@@ -170,7 +170,7 @@ public final class EditorTooltip {
         return true;
     }
 
-    /** Was die Maschine ist, kann und gerade enthält. */
+    /** What the machine is, can do, and currently holds. */
     private static void addDevice(List<Component> lines, String connector) {
         DeviceProfile profile = profileOf(connector);
         if (!profile.reachable()) {
@@ -178,10 +178,10 @@ public final class EditorTooltip {
                     + "nichts bekannt."));
             return;
         }
-        // Der Connector zeigt ins Leere. Das ist eine eigene Auskunft und
-        // nicht „nichts anzuschließen": Dort steht gar keine Maschine, und
-        // der Hinweis lautet anders — dreh ihn um, statt eine andere Seite
-        // zu suchen.
+        // The connector points into the void. That is a message of its own and
+        // not "nichts anzuschließen": there is no machine there at all, and the
+        // hint reads differently — turn it around instead of looking for
+        // another side.
         if (profile.access().isEmpty() && profile.descriptionId().endsWith(".air")) {
             lines.add(Component.literal("§cZeigt ins Leere — dort steht keine Maschine."));
             lines.add(Component.literal("§7Dreh den Connector auf die Seite, an der sie steht."));
@@ -192,8 +192,8 @@ public final class EditorTooltip {
         lines.add(Component.literal("§7Angeschlossen: "
                 + profile.connectedSide().written()));
 
-        // Seiten mit gleichem Zugang stehen zusammen — eine Maschine, die an
-        // vier Seiten dasselbe kann, soll das nicht viermal sagen.
+        // Sides with the same access stand together — a machine that can do
+        // the same thing on four sides should not say so four times.
         for (DeviceProfile.Group group : profile.grouped()) {
             List<String> what = new ArrayList<>();
             if (group.access().slots() > 0) {
@@ -210,8 +210,8 @@ public final class EditorTooltip {
                     + ": " + String.join(", ", what)));
         }
 
-        // An der angeschlossenen Seite geht gar nichts — der Fehler, den man
-        // sonst nur durch Ausprobieren findet.
+        // Nothing works at all on the connected side — the mistake you would
+        // otherwise only find by trial and error.
         if (profile.accessAt(profile.connectedSide()) == null) {
             List<Side> elsewhere = new ArrayList<>(
                     profile.sidesWith(DeviceProfile.Access.Ability.ITEMS));
@@ -225,10 +225,10 @@ public final class EditorTooltip {
     }
 
     /**
-     * Was gerade drin liegt, sobald die Antwort da ist.
+     * What is currently inside, once the reply is here.
      *
-     * <p>Vorher steht hier nichts. Der Kasten springt dann um ein paar Zeilen
-     * — besser als einer, der eine Viertelsekunde lang gar nicht da ist.
+     * <p>Before that, nothing stands here. The box then jumps by a few lines —
+     * better than one that is not there at all for a quarter of a second.
      */
     private static void addContents(List<Component> lines, String connector) {
         DeviceSnapshotPacket snapshot = ClientDeviceState.snapshot(connector);
@@ -268,17 +268,16 @@ public final class EditorTooltip {
     }
 
     /**
-     * Was die Fächer können — und womit sie sich abfinden würden.
+     * What the slots can do — and what they would settle for.
      *
-     * <p><b>Zwei verschiedene Auskünfte in einer Zeile</b>, und der
-     * Unterschied muss lesbar bleiben: „nimmt auf" und „gibt ab" sind
-     * Tatsachen, die geprüft wurden. Was dahinter steht, ist eine
-     * <b>Stichprobe</b> aus dem, was im Programm steht — eine Maschine nimmt
-     * womöglich hundert Dinge an, von denen hier nur die auftauchen, über die
-     * gerade jemand schreibt.
+     * <p><b>Two different pieces of information on one line</b>, and the
+     * difference has to stay legible: "nimmt auf" and "gibt ab" are facts that
+     * were checked. What comes after is a <b>sample</b> from what stands in the
+     * program — a machine may accept a hundred things, of which only those
+     * someone is currently writing about show up here.
      *
-     * <p>Deshalb steht dort „passt" und nicht „nimmt an": Das eine sagt etwas
-     * über den geprüften Gegenstand, das andere über die Maschine.
+     * <p>That is why it says "passt" and not "nimmt an": the one says something
+     * about the checked item, the other about the machine.
      */
     private static void addProbes(List<Component> lines, DeviceSnapshotPacket snapshot) {
         int shown = 0;
@@ -311,15 +310,15 @@ public final class EditorTooltip {
         }
     }
 
-    /** Wo der Name erklärt wird und wo er sonst noch vorkommt. */
+    /** Where the name is declared and where else it occurs. */
     private static void addDeclaration(List<Component> lines, Project project, String word,
                                        Definitions.Location declared) {
         List<Definitions.Location> places = Definitions.references(project, word);
         lines.add(Component.translatable("screen.factorynetwork.code.declared_in",
                         declared.file(), declared.line())
                 .withStyle(ChatFormatting.GRAY));
-        // Die Erklärung selbst ist eine Fundstelle; gezählt wird, was sonst
-        // noch da ist.
+        // The declaration itself is a reference; what is counted is what else
+        // is there.
         int used = Math.max(0, places.size() - 1);
         lines.add(Component.translatable("screen.factorynetwork.code.used", used)
                 .withStyle(ChatFormatting.DARK_GRAY));
@@ -336,11 +335,11 @@ public final class EditorTooltip {
     }
 
     /**
-     * Das Profil, bevorzugt aus der letzten Antwort.
+     * The profile, preferably from the latest reply.
      *
-     * <p>Die Antwort auf eine Anfrage trägt die Struktur mit. Wer sie
-     * bevorzugt, bekommt eine ausgetauschte Maschine mit — und ein Gerät,
-     * dessen Chunk beim Öffnen nicht geladen war, überhaupt erst.
+     * <p>The reply to a request carries the structure along. Whoever prefers
+     * it picks up a swapped-out machine — and a device whose chunk was not
+     * loaded when the screen opened, in the first place.
      */
     private static DeviceProfile profileOf(String connector) {
         DeviceSnapshotPacket snapshot = ClientDeviceState.snapshot(connector);

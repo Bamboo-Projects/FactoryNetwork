@@ -7,66 +7,64 @@ import net.minecraft.core.BlockPos;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
- * Das Projekt am Client — was läuft, und was gerade bearbeitet wird.
+ * The project on the client — what runs, and what is currently being edited.
  *
- * <p><b>Zwei Stände, weil es zwei Wahrheiten gibt.</b> {@link #deployed()}
- * ist das Programm im Controller. {@link #draft()} ist das, was im Editor
- * steht. Solange beide gleich sind, ist nichts offen.
+ * <p><b>Two states, because there are two truths.</b> {@link #deployed()} is
+ * the program in the controller. {@link #draft()} is what stands in the
+ * editor. As long as both are equal, nothing is pending.
  *
- * <p><b>Der Entwurf geht zum Server.</b> Vorher lebte er nur hier: Ein
- * Absturz, ein Kick, ein versehentliches Verlassen der Welt — und eine halbe
- * Stunde Arbeit war weg. Übernehmen hätte sie gesichert, aber Übernehmen geht
- * nur bei fehlerfreiem Code, und mitten in einer Änderung ist er das nie.
+ * <p><b>The draft goes to the server.</b> Before, it lived only here: a crash,
+ * a kick, an accidental leave from the world — and half an hour of work was
+ * gone. Deploying would have saved it, but deploying only works with
+ * error-free code, and in the middle of a change it never is.
  *
- * <p>Geschickt wird eine Sekunde nach dem letzten Anschlag, nicht bei jedem.
- * Ein Anschlag ist ein Paket, eine Sekunde Tippen sind fünf bis zehn — und
- * niemand verliert eine Sekunde ungern. Strg+S schickt sofort, und das
- * Schließen des Fensters auch.
+ * <p>It is sent one second after the last keystroke, not on every one. A
+ * keystroke is one packet, a second of typing is five to ten — and no one
+ * minds losing a second. Ctrl+S sends immediately, and so does closing the
+ * window.
  *
- * <p><b>Der Entwurf liegt hier und nicht im Bildschirm.</b> Die Ansichten
- * werden bei jedem {@code init} neu gebaut; beim Wechsel zwischen Terminal
- * und großem Editorfenster wäre sonst jede ungesicherte Zeile weg.
+ * <p><b>The draft lives here and not in the screen.</b> The views are rebuilt
+ * on every {@code init}; when switching between the terminal and the large
+ * editor window every unsaved line would otherwise be gone.
  */
 public final class ClientProjectState {
 
-    /** So lange nach dem letzten Anschlag wird gewartet, in Ticks. */
+    /** How long to wait after the last keystroke, in ticks. */
     private static final int QUIET_TICKS = 20;
 
     private static Project deployed = Project.of("");
     private static Project draft = deployed;
 
-    /** Wo der Controller steht, dessen Projekt das ist. */
+    /** Where the controller stands whose project this is. */
     private static BlockPos controller;
 
     /**
-     * Welche Datei gerade jemand anders bearbeitet, und wer.
+     * Which file someone else is currently editing, and who.
      *
-     * <p>Die eigenen stehen nicht darin — dass man selbst schreibt, ist keine
-     * Nachricht.
+     * <p>One's own are not in it — that you are writing yourself is not news.
      */
     private static java.util.Map<String, String> locks = java.util.Map.of();
 
-    /** Was zuletzt zum Server ging — daran hängt, ob etwas offen ist. */
+    /** What last went to the server — whether anything is pending hangs on it. */
     private static Project sent = deployed;
 
-    /** Wie viele Ticks seit der letzten Änderung vergangen sind. */
+    /** How many ticks have passed since the last change. */
     private static int quiet;
 
     private ClientProjectState() {
     }
 
     /**
-     * Der Server meldet, was im Controller steht.
+     * The server reports what stands in the controller.
      *
-     * <p>Der Entwurf zieht nur mit, wenn hier nichts Ungesichertes liegt.
-     * Sonst gewinnt, was der Spieler getippt hat — eine Meldung, die einem
-     * gerade Schreibenden den Text unter den Fingern austauscht, wäre die
-     * schlimmere Antwort.
+     * <p>The draft only moves along if nothing unsaved lies here. Otherwise
+     * what the player typed wins — a message that swaps out the text under the
+     * fingers of someone who is writing right now would be the worse answer.
      *
-     * <p>Bei zwei Spielern an einem Controller greift zusätzlich die
-     * Dateisperre: Der Server nimmt nur an, was der Absender halten darf, und
-     * meldet in {@code locks}, was jemand anders hält. Der zweite sieht die
-     * fremde Datei, kann sie lesen und nicht ändern.
+     * <p>With two players at one controller the file lock takes hold as well:
+     * the server only accepts what the sender is allowed to hold, and reports
+     * in {@code locks} what someone else holds. The second one sees the other
+     * player's file, can read it and not change it.
      */
     public static void accept(ProjectStatePacket packet) {
         controller = packet.controller();
@@ -78,12 +76,12 @@ public final class ClientProjectState {
         }
     }
 
-    /** Was im Controller läuft. */
+    /** What runs in the controller. */
     public static Project deployed() {
         return deployed;
     }
 
-    /** Was im Editor steht. */
+    /** What stands in the editor. */
     public static Project draft() {
         return draft;
     }
@@ -96,27 +94,27 @@ public final class ClientProjectState {
         quiet = 0;
     }
 
-    /** Wer diese Datei hält, oder {@code null}. */
+    /** Who holds this file, or {@code null}. */
     public static String heldBy(String file) {
         return locks.get(file);
     }
 
-    /** Steht im Editor etwas anderes als im Controller? */
+    /** Does something other than in the controller stand in the editor? */
     public static boolean isDeployed() {
         return draft.files().equals(deployed.files());
     }
 
-    /** Liegt hier etwas, das der Server noch nicht hat? */
+    /** Is there something here that the server does not have yet? */
     public static boolean isDirty() {
         return !draft.files().equals(sent.files());
     }
 
     /**
-     * Zählt die Ruhe nach dem letzten Anschlag und sichert dann.
+     * Counts the quiet after the last keystroke and then saves.
      *
-     * <p>Vom Client-Tick aufgerufen, nicht vom Bildschirm: Er läuft auch
-     * weiter, wenn jemand das Fenster in derselben Sekunde zumacht, in der
-     * er das letzte Zeichen getippt hat.
+     * <p>Called from the client tick, not from the screen: it keeps running
+     * even when someone closes the window in the same second in which they
+     * typed the last character.
      */
     public static void tick() {
         if (!isDirty() || controller == null) {
@@ -128,7 +126,7 @@ public final class ClientProjectState {
         flush();
     }
 
-    /** Schickt sofort, was offen ist. */
+    /** Sends immediately whatever is pending. */
     public static void flush() {
         if (!isDirty() || controller == null) {
             return;
@@ -139,10 +137,10 @@ public final class ClientProjectState {
     }
 
     /**
-     * Vergisst alles.
+     * Forgets everything.
      *
-     * <p>Beim Verlassen einer Welt: Der nächste Controller ist ein anderer,
-     * und sein Projekt darf nicht mit dem letzten anfangen.
+     * <p>When leaving a world: the next controller is a different one, and its
+     * project must not begin with the last one.
      */
     public static void clear() {
         deployed = Project.of("");

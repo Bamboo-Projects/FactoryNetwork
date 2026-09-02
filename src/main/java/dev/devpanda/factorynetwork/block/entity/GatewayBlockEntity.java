@@ -12,10 +12,10 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Der Name der Anlage, die hinter diesem Gateway hängt.
+ * The name of the installation that hangs behind this gateway.
  *
- * <p>Mehr hält er nicht: keine Gegenstände, keinen Strom, keinen Kanal. Er
- * ist ein Kabelstück mit einem Namensschild.
+ * <p>It holds no more than that: no items, no power, no channel. It is a piece
+ * of cable with a name tag.
  */
 public class GatewayBlockEntity extends BlockEntity {
 
@@ -32,12 +32,12 @@ public class GatewayBlockEntity extends BlockEntity {
     }
 
     /**
-     * Setzt den Anlagennamen.
+     * Sets the installation name.
      *
-     * <p>Mit derselben Meldung zum Client wie beim Connector: Ohne
-     * {@link #getUpdatePacket()} stünde das Fenster leer vor einem Gateway,
-     * das längst einen Namen trägt — genau der Fehler, der beim Connector
-     * beim ersten Spielen auffiel.
+     * <p>With the same message to the client as for the connector: without
+     * {@link #getUpdatePacket()} the screen would stand empty in front of a
+     * gateway that has long carried a name — exactly the bug noticed at the
+     * connector on first play.
      */
     public void setInstance(String name) {
         this.instance = name == null ? "" : name.trim();

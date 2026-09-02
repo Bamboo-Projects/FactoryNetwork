@@ -13,41 +13,41 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 import java.util.List;
 
 /**
- * Der Bestand des Netzwerks für die Speicheransicht.
+ * The network's stock for the storage view.
  *
- * <p>Beim Öffnen einmal vollständig, danach nur noch die Änderungen — und die
- * gebündelt, nicht einzeln. Ein Worker, der in jedem Tick etwas bewegt, darf
- * nicht in jedem Tick ein Paket auslösen.
+ * <p>On opening, once in full; after that only the changes — and those
+ * bundled, not one by one. A worker that moves something every tick must not
+ * trigger a packet every tick.
  *
- * <p>Gesucht wird auf dem Client über diesen Schnappschuss. Das ist der Grund,
- * warum sich die Suche sofort anfühlt — und der Grund für die Obergrenze:
- * Ein Pack mit zwanzigtausend Arten würde sonst jedes Öffnen zu einer
- * Übertragung machen, die man merkt.
+ * <p>Searching happens on the client over this snapshot. That is the reason
+ * the search feels instant — and the reason for the cap: a pack with twenty
+ * thousand types would otherwise turn every opening into a transfer you can
+ * feel.
  */
 public record StorageSnapshotPacket(List<Entry> entries, List<FluidEntry> fluids,
                                     boolean replace, int totalTypes,
                                     int freeTypes, int freeFluidTypes)
         implements CustomPacketPayload {
 
-    // freeTypes und freeFluidTypes sind die Zahl, die man ohne Hilfe nicht
-    // sieht: Eine Zelle mit allen Artenplätzen belegt nimmt nichts Neues mehr
-    // an, obwohl sie nach Menge fast leer ist. Ohne die Anzeige sucht man den
-    // Fehler beim Worker.
+    // freeTypes and freeFluidTypes are the number you do not see without
+    // help: a cell with all its type slots occupied takes nothing new anymore,
+    // even though by amount it is nearly empty. Without the display you look
+    // for the fault at the worker.
 
-    /** So viele Arten gehen höchstens über die Leitung. */
+    /** This many types go over the wire at most. */
     public static final int MAX_ENTRIES = 4096;
 
     /**
-     * Ein Posten des Bestands.
+     * An entry of the stock.
      *
-     * <p><b>Ein Gegenstand und keine Kennung.</b> Sonst stünden ein
-     * verzaubertes Buch und ein leeres in derselben Zeile, und wer eines
-     * herausnähme, bekäme irgendeines.
+     * <p><b>An item and not a key.</b> Otherwise an enchanted book and an empty
+     * one would stand in the same line, and whoever took one out would get just
+     * any one.
      */
     public record Entry(dev.devpanda.factorynetwork.storage.ItemKey key, long amount) {
     }
 
-    /** Eine Flüssigkeit mit ihrer Menge in Millibucket. */
+    /** A fluid with its amount in millibuckets. */
     public record FluidEntry(net.minecraft.world.level.material.Fluid fluid, long amount) {
     }
 
@@ -85,7 +85,7 @@ public record StorageSnapshotPacket(List<Entry> entries, List<FluidEntry> fluids
         return TYPE;
     }
 
-    /** Wurde etwas weggelassen, weil es zu viel war? */
+    /** Was something omitted because it was too much? */
     public boolean isTruncated() {
         return totalTypes > entries.size();
     }

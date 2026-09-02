@@ -12,19 +12,19 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 import java.util.List;
 
 /**
- * Das Protokoll für das Terminal.
+ * The log for the terminal.
  *
- * <p>Es liegt auf dem Server und geht als Ganzes hinüber. Zweihundert Zeilen
- * sind wenige Kilobyte, und die Alternative — nur das Neue schicken — hieße,
- * auf beiden Seiten mitzuzählen, wer was schon gesehen hat. Das Protokoll
- * ändert sich zu selten, als dass sich das lohnte.
+ * <p>It lives on the server and goes across as a whole. Two hundred lines are
+ * a few kilobytes, and the alternative — sending only what is new — would mean
+ * counting along on both sides who has already seen what. The log changes too
+ * rarely for that to be worth it.
  *
- * <p>Die Stufe wandert als Name und nicht als Zahl: Eine Zahl, die eine Seite
- * anders liest als die andere, wäre ein Fehler, den niemand sieht.
+ * <p>The level travels as a name and not as a number: a number that one side
+ * reads differently from the other would be a bug no one sees.
  */
 public record LogStatePacket(List<Line> lines) implements CustomPacketPayload {
 
-    /** Eine Zeile: wie ernst, wann, von wem, was. */
+    /** A line: how serious, when, from whom, what. */
     public record Line(String level, long time, String source, String text) {
 
         public static final StreamCodec<RegistryFriendlyByteBuf, Line> STREAM_CODEC =

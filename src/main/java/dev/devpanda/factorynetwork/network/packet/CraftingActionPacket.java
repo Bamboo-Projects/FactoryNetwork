@@ -11,14 +11,15 @@ import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /**
- * Einen Fertigungsauftrag abbrechen.
+ * Cancel a crafting job.
  *
- * <p>Die einzige Wahl, die es an einem Auftrag gibt. Pausieren wäre eine
- * zweite, aber ein pausierter Auftrag hält nichts fest — er wartet ohnehin,
- * sobald etwas fehlt, und der Unterschied wäre keiner.
+ * <p>The only choice there is on a job. Pausing would be a second one, but a
+ * paused job holds nothing back — it waits anyway as soon as something is
+ * missing, and the difference would be none.
  *
- * <p>Was schon gebaut wurde, bleibt im Speicher. Ein Abbruch nimmt nichts
- * zurück: Die Truhen sind Truhen, auch wenn niemand mehr auf sie wartet.
+ * <p>What has already been built stays in storage. A cancellation takes
+ * nothing back: the chests are chests, even if no one is waiting on them
+ * anymore.
  */
 public record CraftingActionPacket(long id) implements CustomPacketPayload {
 
@@ -45,9 +46,9 @@ public record CraftingActionPacket(long id) implements CustomPacketPayload {
                 return;
             }
             menu.controller(player).ifPresent(controller -> {
-                // Derselbe Schutz wie beim Programm: Einen fremden Auftrag
-                // abzubrechen ändert, was die Anlage tut — und das ist
-                // Umbauen und nicht Benutzen.
+                // The same protection as for the program: cancelling someone
+                // else's job changes what the plant does — and that is
+                // rebuilding, not using.
                 if (!DeployProgramPacket.mayEdit(player, controller)) {
                     player.sendSystemMessage(net.minecraft.network.chat.Component.translatable(
                             "message.factorynetwork.protection.denied"));

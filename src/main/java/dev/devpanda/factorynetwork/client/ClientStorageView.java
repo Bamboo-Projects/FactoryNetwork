@@ -14,12 +14,12 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Der Bestand, wie der Client ihn kennt.
+ * The stock as the client knows it.
  *
- * <p>Gesucht wird hier, nicht auf dem Server. Deshalb fühlt sich die Suche
- * sofort an — der Preis ist, dass die Anzeige einen Augenblick alt sein kann.
- * Für die Anzeige reicht das; was wirklich zählt, prüft der Server bei jeder
- * Entnahme nach.
+ * <p>Searching happens here, not on the server. That is why the search feels
+ * instant — the price is that the display can be a moment out of date. For the
+ * display that is enough; what really counts the server verifies on every
+ * withdrawal.
  */
 public final class ClientStorageView {
 
@@ -34,12 +34,12 @@ public final class ClientStorageView {
     private static boolean descending = true;
 
     /**
-     * Ein Eintrag der Anzeige: Gegenstand, Menge und der Text zum Suchen.
+     * A row of the display: item, amount and the text to search on.
      *
-     * <p>{@code unit} ist leer für Gegenstände und {@code mB} für
-     * Flüssigkeiten. Daran hängt mehr als die Beschriftung: Eine Flüssigkeit
-     * lässt sich nicht auf den Mauszeiger nehmen, und ein Klick darauf muss
-     * folgenlos bleiben, statt einen Eimer aus dem Nichts zu holen.
+     * <p>{@code unit} is empty for items and {@code mB} for fluids. More hangs
+     * on it than the label: a fluid cannot be picked up onto the mouse cursor,
+     * and a click on it must stay without consequence, instead of conjuring a
+     * bucket out of nothing.
      */
     public record Row(ItemStack stack, long amount, String searchText, String modId,
                       String unit) {
@@ -61,11 +61,11 @@ public final class ClientStorageView {
     }
 
     /**
-     * Wechselt die Sortierung.
+     * Switches the sorting.
      *
-     * <p>Derselbe Knopf noch einmal dreht die Richtung um, statt weiter zu
-     * schalten — so kommt man mit einem Klick zurück, statt einmal im Kreis
-     * zu gehen.
+     * <p>The same button again reverses the direction instead of advancing
+     * further — this way one click gets you back, instead of going once around
+     * the circle.
      */
     public static void setSort(StorageSort next) {
         if (sort == next) {
@@ -135,17 +135,17 @@ public final class ClientStorageView {
         return totalTypes;
     }
 
-    /** Wie viele Artenplätze in den Zellen noch frei sind. */
+    /** How many type slots in the cells are still free. */
     public static int freeTypes() {
         return freeTypes;
     }
 
-    /** Dasselbe für die Flüssigkeitszellen. */
+    /** The same for the fluid cells. */
     public static int freeFluidTypes() {
         return freeFluidTypes;
     }
 
-    /** Wurde etwas weggelassen, weil der Bestand zu groß ist? */
+    /** Was something left out because the stock is too large? */
     public static boolean isTruncated() {
         return totalTypes > amounts.size();
     }
@@ -157,15 +157,15 @@ public final class ClientStorageView {
     private static void refilter() {
         List<Row> rows = new ArrayList<>(amounts.size());
         amounts.forEach((key, amount) -> {
-            // Der echte Gegenstand und kein frisch gebauter: Ein benanntes
-            // Werkzeug soll im Terminal seinen Namen tragen, und danach
-            // soll man auch suchen können.
+            // The real item and not a freshly built one: a named tool should
+            // carry its name in the terminal, and one should also be able to
+            // search on it.
             ItemStack stack = key.toStack(1);
             String name = stack.getHoverName().getString().toLowerCase(Locale.ROOT);
             String mod = net.minecraft.core.registries.BuiltInRegistries.ITEM
                     .getKey(key.item()).getNamespace();
-            // Ein Kürzel wie "@mek" sucht nach der Mod statt nach dem Namen —
-            // in einem großen Pack ist das die häufigere Frage.
+            // A shorthand like "@mek" searches by the mod instead of by the
+            // name — in a large pack that is the more common question.
             boolean matches = query.isEmpty()
                     || (query.startsWith("@") ? mod.contains(query.substring(1))
                                               : name.contains(query));
@@ -174,12 +174,12 @@ public final class ClientStorageView {
             }
         });
 
-        // Flüssigkeiten stehen mit im Raster, dargestellt durch ihren Eimer.
-        // Ein eigenes Raster daneben wäre ein zweiter Ort zum Suchen.
+        // Fluids stand in the grid too, represented by their bucket. A grid of
+        // their own beside it would be a second place to search.
         fluidAmounts.forEach((fluid, amount) -> {
             ItemStack bucket = new ItemStack(fluid.getBucket());
             if (bucket.isEmpty()) {
-                // Ohne Eimer kein Bild — das gibt es bei einigen Mods.
+                // No bucket, no picture — this happens with some mods.
                 bucket = new ItemStack(net.minecraft.world.item.Items.BUCKET);
             }
             String name = bucket.getHoverName().getString().toLowerCase(Locale.ROOT);
@@ -202,7 +202,7 @@ public final class ClientStorageView {
         filtered = List.copyOf(rows);
     }
 
-    /** Kurzform großer Zahlen: 11842 wird zu 11.8k. */
+    /** Short form of large numbers: 11842 becomes 11.8k. */
     public static String shortAmount(long amount) {
         if (amount < 1000) {
             return String.valueOf(amount);

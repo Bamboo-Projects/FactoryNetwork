@@ -3,12 +3,11 @@ package dev.devpanda.factorynetwork.client;
 import dev.devpanda.factorynetwork.network.packet.DeployResultPacket;
 
 /**
- * Wie das letzte Übernehmen ausgegangen ist.
+ * How the last deploy turned out.
  *
- * <p>Nur zum Anzeigen, und nur bis zum nächsten Anschlag: Sobald jemand
- * weitertippt, ist die Meldung von vorhin nicht mehr wahr, und eine
- * stehengebliebene Erfolgsmeldung über geändertem Code ist schlimmer als
- * keine.
+ * <p>For display only, and only until the next keystroke: as soon as someone
+ * keeps typing, the earlier message is no longer true, and a leftover success
+ * message about changed code is worse than none.
  */
 public final class ClientDeployState {
 
@@ -23,7 +22,7 @@ public final class ClientDeployState {
         message = packet.message();
     }
 
-    /** Vergisst die Meldung — beim ersten Anschlag nach dem Übernehmen. */
+    /** Forgets the message — at the first keystroke after the deploy. */
     public static void clear() {
         message = "";
     }

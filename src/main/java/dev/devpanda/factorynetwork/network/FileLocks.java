@@ -6,30 +6,28 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Wer welche Datei eines Projekts gerade bearbeitet.
+ * Who is currently editing which file of a project.
  *
- * <p><b>Ohne das überschreiben sich zwei Spieler wortlos.</b> Beide schicken
- * den ganzen Entwurf, und wer zuletzt tippt, gewinnt — auch über eine Datei,
- * die er gar nicht offen hatte. Der andere merkt es, wenn seine Arbeit weg
- * ist.
+ * <p><b>Without this, two players overwrite each other silently.</b> Both send
+ * the whole draft, and whoever types last wins — even over a file they never
+ * had open. The other one notices when their work is gone.
  *
- * <p><b>Je Datei und nicht je Projekt.</b> Zwei Leute an einer Fabrik
- * arbeiten fast immer an verschiedenen Stücken; das ganze Projekt zu sperren
- * hieße, dass einer wartet, obwohl nichts kollidiert.
+ * <p><b>Per file and not per project.</b> Two people on a factory almost
+ * always work on different pieces; locking the whole project would mean one
+ * waits even though nothing conflicts.
  *
- * <p><b>Genommen wird eine Sperre durch Schreiben, nicht durch Öffnen.</b>
- * Wer eine Datei nur ansieht, soll sie nicht blockieren — und niemand soll
- * daran denken müssen, sie wieder freizugeben. Sie verfällt von selbst,
- * wenn eine Weile nichts mehr kam.
+ * <p><b>A lock is taken by writing, not by opening.</b> Whoever only looks at
+ * a file should not block it — and no one should have to remember to release
+ * it again. It expires on its own once nothing has come in for a while.
  *
- * <p><b>Ohne jeden Minecraft-Bezug.</b> Gebraucht werden eine Kennung und
- * ein Name; wer die mitbringt, ist der Sache gleich. So lässt sich die Regel
- * in gewöhnlichen Tests prüfen — ein {@code ServerPlayer} bräuchte eine
- * Welt, einen Server und ein halbes Spiel.
+ * <p><b>Without any tie to Minecraft.</b> What is needed is an identifier and
+ * a name; whoever brings those is all the same to it. This lets the rule be
+ * checked in ordinary tests — a {@code ServerPlayer} would need a world, a
+ * server and half a game.
  */
 public final class FileLocks {
 
-    /** So lange nach dem letzten Schreiben gilt eine Sperre weiter. */
+    /** A lock stays in force this long after the last write. */
     private static final long TIMEOUT_TICKS = 20L * 60;
 
     private record Holder(UUID player, String name, long touched) {
@@ -38,10 +36,10 @@ public final class FileLocks {
     private final Map<String, Holder> holders = new HashMap<>();
 
     /**
-     * Darf dieser Spieler in diese Datei schreiben?
+     * May this player write to this file?
      *
-     * <p>Ja, wenn sie frei ist, ihm gehört oder die Sperre abgelaufen ist.
-     * Im ersten und letzten Fall nimmt er sie damit.
+     * <p>Yes, if it is free, belongs to them, or the lock has expired. In the
+     * first and last case they take it in doing so.
      */
     public boolean claim(String file, UUID player, String name, long now) {
         Holder holder = holders.get(file);
@@ -54,11 +52,11 @@ public final class FileLocks {
     }
 
     /**
-     * Wer diese Datei gerade hält, oder {@code null}.
+     * Who currently holds this file, or {@code null}.
      *
-     * <p>Für „Bearbeitung anfragen": Wer anklopfen will, braucht jemanden zum
-     * Anklopfen. Eine abgelaufene Sperre zählt nicht — dann ist die Datei
-     * frei, und der Anfragende soll sie einfach nehmen.
+     * <p>For "request editing": whoever wants to knock needs someone to knock
+     * on. An expired lock does not count — then the file is free, and the
+     * requester should simply take it.
      */
     public UUID holderOf(String file, long now) {
         Holder holder = holders.get(file);
@@ -69,21 +67,21 @@ public final class FileLocks {
     }
 
     /**
-     * Gibt alles frei, was diesem Spieler gehört.
+     * Releases everything that belongs to this player.
      *
-     * <p>Beim Schließen des Terminals. Auf den Zeitablauf zu warten hieße,
-     * dass ein anderer eine Minute vor einer Datei steht, die niemand mehr
-     * offen hat.
+     * <p>On closing the terminal. Waiting for the timeout would mean someone
+     * else stands for a minute in front of a file that no one has open
+     * anymore.
      */
     public void release(UUID player) {
         holders.values().removeIf(holder -> holder.player().equals(player));
     }
 
     /**
-     * Wer welche Datei hält, aus Sicht eines bestimmten Spielers.
+     * Who holds which file, from the perspective of a particular player.
      *
-     * <p>Die eigenen Sperren stehen nicht darin: Dass man selbst schreibt,
-     * ist keine Nachricht.
+     * <p>Your own locks are not in it: the fact that you are writing yourself
+     * is not news.
      */
     public Map<String, String> othersFor(UUID player, long now) {
         Map<String, String> shown = new LinkedHashMap<>();

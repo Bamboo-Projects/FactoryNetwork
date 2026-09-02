@@ -13,28 +13,28 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Der Flüssigkeitsspeicher des Netzwerks.
+ * The network's fluid store.
  *
- * <p>Dieselbe Bauart wie beim Gegenstandsspeicher, aus demselben Grund: eine
- * Abbildung von Sorte auf Menge, kein Verbund einzelner Tanks. Wer in einem
- * großen Pack mit zwei Dutzend Flüssigkeiten arbeitet, sucht sonst bei jedem
- * Zugriff durch alle.
+ * <p>The same construction as the item store, for the same reason: a mapping
+ * from type to amount, not a compound of individual tanks. Whoever works in a
+ * large pack with two dozen fluids would otherwise search through all of them
+ * on every access.
  *
- * <p><b>Der Bestand liegt in Flüssigkeitszellen</b>, wie die Gegenstände in
- * ihren. Vorher lagerte das Netz Flüssigkeiten unbegrenzt im Controller —
- * eine Ungleichheit, die niemand erklären kann: Für Eisen brauchte man ein
- * Laufwerk, für Lava nicht.
+ * <p><b>The stock lives in fluid cells</b>, as the items do in theirs.
+ * Previously the network stored fluids without limit in the controller — an
+ * inequality no one can explain: for iron you needed a drive, for lava you
+ * did not.
  *
- * <p>Gerechnet wird in Millibucket, wie überall in NeoForge — ein Eimer sind
- * 1000. Die Sprache schreibt {@code 1000 fluid:water}, und damit steht dieselbe
- * Zahl im Programm wie in jeder anderen Mod.
+ * <p>Everything is counted in millibuckets, as everywhere in NeoForge — a
+ * bucket is 1000. The language writes {@code 1000 fluid:water}, so the same
+ * number stands in the program as in every other mod.
  */
 public final class NetworkFluids implements ResourceStore {
 
     private final List<DriveBlockEntity> drives = new ArrayList<>();
     private Runnable onChange = () -> { };
 
-    /** Der Bestand aller Zellen an einer Stelle — siehe {@link NetworkStorage}. */
+    /** The stock of all cells in one place — see {@link NetworkStorage}. */
     private final Map<Fluid, Long> index = new LinkedHashMap<>();
     private boolean indexValid;
     private long[] seenRevisions = new long[0];
@@ -44,7 +44,7 @@ public final class NetworkFluids implements ResourceStore {
         this.onChange = listener == null ? () -> { } : listener;
     }
 
-    /** Welche Laufwerke im Netz hängen. Setzt der Controller beim Neuaufbau. */
+    /** Which drives hang on the network. The controller sets them on rebuild. */
     @Override
     public void setDrives(List<DriveBlockEntity> found) {
         drives.clear();
@@ -57,9 +57,9 @@ public final class NetworkFluids implements ResourceStore {
         return !drives.isEmpty();
     }
 
-    // ---- Die Schnittstelle -----------------------------------------------
-    // Siehe NetworkStorage: Die Umwandlung muss dastehen, sonst ruft sich
-    // jede dieser Zeilen selbst auf.
+    // ---- The interface ---------------------------------------------------
+    // See NetworkStorage: the conversion must be there, otherwise each of
+    // these lines would call itself.
 
     @Override
     public long count(Object key) {
@@ -121,12 +121,12 @@ public final class NetworkFluids implements ResourceStore {
     }
 
     /**
-     * Wie viel von dieser Sorte noch hineinginge.
+     * How much of this type would still fit in.
      *
-     * <p>Gebraucht, bevor ein Tank geleert wird: Was der Speicher nicht nimmt,
-     * darf gar nicht erst aus dem Tank gezogen werden. Bei Gegenständen kann
-     * man den Rest zurücklegen, bei Flüssigkeiten nimmt der Tank ihn
-     * vielleicht nicht wieder an — und dann wäre er weg.
+     * <p>Needed before a tank is drained: what the store will not take must
+     * not be pulled from the tank in the first place. With items you can put
+     * the rest back, with fluids the tank might not take it again — and then
+     * it would be gone.
      */
     public long room(Fluid fluid, long wanted) {
         if (wanted <= 0 || fluid == Fluids.EMPTY) {
@@ -143,10 +143,10 @@ public final class NetworkFluids implements ResourceStore {
     }
 
     /**
-     * Legt ab und liefert, was nicht hineinpasste.
+     * Stores it and returns what did not fit.
      *
-     * <p>Erst in Zellen, die diese Sorte schon führen — sonst zersplittert ein
-     * Bestand über alle Zellen und belegt überall einen Sortenplatz.
+     * <p>First into cells that already carry this type — otherwise a stock
+     * splinters across all cells and occupies a type slot everywhere.
      */
     public long insert(Fluid fluid, long amount) {
         if (amount <= 0 || fluid == Fluids.EMPTY) {
@@ -176,7 +176,7 @@ public final class NetworkFluids implements ResourceStore {
         return left;
     }
 
-    /** Nimmt heraus und liefert, wie viel es wurde. */
+    /** Takes out and returns how much it came to. */
     public long extract(Fluid fluid, long amount) {
         if (amount <= 0) {
             return 0;
@@ -205,13 +205,13 @@ public final class NetworkFluids implements ResourceStore {
         return index().getOrDefault(fluid, 0L);
     }
 
-    /** Der gesamte Bestand. Eine Kopie — siehe {@link NetworkStorage#contents}. */
+    /** The entire stock. A copy — see {@link NetworkStorage#contents}. */
     @Override
     public Map<Fluid, Long> contents() {
         return new LinkedHashMap<>(index());
     }
 
-    /** Wie viele Sortenplätze insgesamt frei sind — für die Anzeige. */
+    /** How many type slots are free in total — for the display. */
     public int freeTypes() {
         int free = 0;
         for (CellInventory<Fluid> cell : cells()) {
@@ -235,16 +235,16 @@ public final class NetworkFluids implements ResourceStore {
     }
 
     /**
-     * Speichern und Laden entfallen.
+     * Saving and loading are unnecessary.
      *
-     * <p>Der Bestand liegt in den Zellen, und die liegen in den Laufwerken —
-     * beide speichern sich selbst. Ein zweiter Ort wäre eine zweite Wahrheit.
+     * <p>The stock lives in the cells, and they live in the drives — both
+     * save themselves. A second place would be a second truth.
      */
     public void save(CompoundTag tag, HolderLookup.Provider registries) {
-        // Nichts zu tun.
+        // Nothing to do.
     }
 
     public void load(CompoundTag tag, HolderLookup.Provider registries) {
-        // Nichts zu tun.
+        // Nothing to do.
     }
 }

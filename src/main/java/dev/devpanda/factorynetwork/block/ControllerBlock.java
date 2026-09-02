@@ -18,15 +18,15 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Wurzel eines Netzwerks.
+ * Root of a network.
  *
- * <p>In der ersten Fassung hält er auch den Speicher. Das Konzept sieht dafür
- * einen eigenen Block vor; ihn jetzt zu bauen hätte den vertikalen Schnitt
- * verlängert, ohne etwas zu zeigen, was der Controller nicht auch zeigt.
+ * <p>In the first version it also holds the storage. The concept foresees a
+ * dedicated block for that; building it now would have lengthened the vertical
+ * slice without showing anything the controller does not also show.
  */
 public class ControllerBlock extends Block implements EntityBlock {
 
-    /** Der Umriss aus Deckplatten, Kantensäulen und dem Körper dazwischen. */
+    /** The outline from cap plates, edge pillars, and the body between them. */
     private static final net.minecraft.world.phys.shapes.VoxelShape SHAPE =
             FacingShapes.whole(ControllerLayout.boxes());
 
@@ -58,11 +58,11 @@ public class ControllerBlock extends Block implements EntityBlock {
     }
 
     /**
-     * Merkt sich, wer den Controller gesetzt hat.
+     * Remembers who placed the controller.
      *
-     * <p>Gebraucht nur, wenn der Server den Schutz einschaltet — gemerkt wird
-     * es trotzdem immer: Wer ihn erst später einschaltet, hätte sonst lauter
-     * herrenlose Anlagen.
+     * <p>Needed only when the server turns protection on — it is remembered
+     * always anyway: whoever turns it on only later would otherwise have
+     * nothing but ownerless installations.
      */
     @Override
     public void setPlacedBy(Level level, BlockPos pos, BlockState state,

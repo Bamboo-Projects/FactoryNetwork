@@ -11,11 +11,11 @@ import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /**
- * Ein gedrückter Knopf auf einer Anzeige.
+ * A pressed button on a display.
  *
- * <p>Es reist nur, welcher Knopf es war. Was er auslöst, sucht der Server im
- * Programm — so kann kein Client eine Funktion aufrufen, die auf keiner
- * Anzeige steht.
+ * <p>Only which button it was travels. What it triggers, the server looks up
+ * in the program — this way no client can call a function that is on no
+ * display.
  */
 public record DisplayActionPacket(String display, int entry) implements CustomPacketPayload {
 

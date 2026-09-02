@@ -25,23 +25,23 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Der Serverschrank: Ohne ihn rechnet das Netz nicht.
+ * The rack: without it the network does not compute.
  *
- * <p>So wie ein Laufwerk die Voraussetzung dafür ist, dass das Netz lagert,
- * ist der Schrank die Voraussetzung dafür, dass es rechnet. Jede Fähigkeit
- * des Netzes hängt an einem Block, den man bauen muss.
+ * <p>Just as a drive is the prerequisite for the network to store, the rack
+ * is the prerequisite for it to compute. Every ability of the network hangs
+ * on a block you have to build.
  *
- * <p><b>Zwei Blöcke hoch, ein Gerät.</b> Ein Schrank mit zwölf Einschüben,
- * der einen Würfel groß ist, sieht aus wie ein Kasten und nicht wie ein
- * Schrank — und zwölf Kacheln auf einer Würfelseite sind kleiner als das
- * Fadenkreuz. Die untere Hälfte trägt alles: die BlockEntity, den Inhalt,
- * den Platz im Netz. Die obere ist Blech, das mitgeht.
+ * <p><b>Two blocks tall, one device.</b> A rack with twelve bays that is one
+ * cube in size looks like a box and not like a rack — and twelve tiles on one
+ * face of a cube are smaller than the crosshair. The lower half carries
+ * everything: the BlockEntity, the contents, the place in the network. The
+ * upper half is sheet metal that comes along.
  */
 public class RackBlock extends HorizontalDirectionalBlock implements EntityBlock {
 
     public static final MapCodec<RackBlock> CODEC = simpleCodec(RackBlock::new);
 
-    /** Untere oder obere Hälfte — wie bei Tür und Bett. */
+    /** Lower or upper half — as with door and bed. */
     public static final net.minecraft.world.level.block.state.properties.EnumProperty<
             DoubleBlockHalf> HALF =
             net.minecraft.world.level.block.state.properties.BlockStateProperties.DOUBLE_BLOCK_HALF;
@@ -63,16 +63,16 @@ public class RackBlock extends HorizontalDirectionalBlock implements EntityBlock
         builder.add(FACING, HALF);
     }
 
-    /** Die Hälfte, an der alles hängt. */
+    /** The half everything hangs on. */
     public static BlockPos baseOf(BlockState state, BlockPos pos) {
         return state.getValue(HALF) == DoubleBlockHalf.UPPER ? pos.below() : pos;
     }
 
     /**
-     * Nur, wenn darüber Platz ist.
+     * Only if there is room above.
      *
-     * <p>{@code null} heißt „nicht setzen" — besser als ein halber Schrank,
-     * den man danach nicht mehr von einem ganzen unterscheiden kann.
+     * <p>{@code null} means "do not place" — better than half a rack that you
+     * afterwards can no longer tell apart from a whole one.
      */
     @Override
     public @Nullable BlockState getStateForPlacement(BlockPlaceContext context) {
@@ -93,7 +93,7 @@ public class RackBlock extends HorizontalDirectionalBlock implements EntityBlock
                 state.setValue(HALF, DoubleBlockHalf.UPPER), Block.UPDATE_ALL);
     }
 
-    /** Die obere Hälfte steht nur, solange die untere darunter steht. */
+    /** The upper half stands only as long as the lower one stands beneath it. */
     @Override
     protected boolean canSurvive(BlockState state, LevelReader level, BlockPos pos) {
         if (state.getValue(HALF) != DoubleBlockHalf.UPPER) {
@@ -104,10 +104,11 @@ public class RackBlock extends HorizontalDirectionalBlock implements EntityBlock
     }
 
     /**
-     * Fällt eine Hälfte, geht die andere mit.
+     * If one half falls, the other goes with it.
      *
-     * <p>Dasselbe Muster wie bei Tür und Doppelblume. Ohne das bliebe nach
-     * einer Explosion eine schwebende Blechhaube stehen, die nichts kann.
+     * <p>The same pattern as with door and tall flower. Without it a floating
+     * sheet-metal hood would be left standing after an explosion, able to do
+     * nothing.
      */
     @Override
     protected BlockState updateShape(BlockState state, Direction direction, BlockState neighbour,
@@ -124,12 +125,12 @@ public class RackBlock extends HorizontalDirectionalBlock implements EntityBlock
     }
 
     /**
-     * Wer oben zuschlägt, baut trotzdem den Schrank ab.
+     * Striking the top still breaks the whole rack.
      *
-     * <p>Der Gegenstand und der Inhalt hängen an der unteren Hälfte — die
-     * Loot-Tabelle gibt nur dort etwas her, damit eine Explosion nicht zwei
-     * Schränke aus einem macht. Also wird sie zuerst und regulär abgebaut;
-     * die obere räumt {@link #updateShape} danach von selbst ab.
+     * <p>The item and the contents hang on the lower half — the loot table
+     * only yields something there, so that an explosion does not turn one rack
+     * into two. So it is broken first and in the regular way; the upper half
+     * is then cleared away by {@link #updateShape} on its own.
      */
     @Override
     public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state,
@@ -144,7 +145,7 @@ public class RackBlock extends HorizontalDirectionalBlock implements EntityBlock
         return super.playerWillDestroy(level, pos, state, player);
     }
 
-    /** Nur die untere Hälfte hat eine BlockEntity — es ist ein Gerät. */
+    /** Only the lower half has a BlockEntity — it is one device. */
     @Override
     public @Nullable BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return state.getValue(HALF) == DoubleBlockHalf.LOWER
@@ -153,11 +154,10 @@ public class RackBlock extends HorizontalDirectionalBlock implements EntityBlock
     }
 
     /**
-     * Ein Klick öffnet das Fenster — oben wie unten.
+     * A click opens the window — top or bottom.
      *
-     * <p>Wer den Schrank anklickt, will ihn öffnen; ob er dabei die obere
-     * oder die untere Hälfte trifft, ist eine Frage der Körpergröße und
-     * keine Entscheidung.
+     * <p>Whoever clicks the rack wants to open it; whether they hit the upper
+     * or the lower half is a matter of body height and not a decision.
      */
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
@@ -174,14 +174,14 @@ public class RackBlock extends HorizontalDirectionalBlock implements EntityBlock
         return InteractionResult.CONSUME;
     }
 
-    /** Beim Abbauen fallen die Server heraus. Die Loot-Tabelle sieht sie nicht. */
+    /** When broken, the servers fall out. The loot table does not see them. */
     @Override
     protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState,
                             boolean moved) {
         if (!state.is(newState.getBlock())
                 && level.getBlockEntity(pos) instanceof RackBlockEntity rack) {
-            // Erst einpacken: Was herausfällt, sollen fertige Server sein und
-            // nicht achtundvierzig Einzelteile, die man wieder sortiert.
+            // Pack up first: what falls out should be finished servers and
+            // not forty-eight individual parts that you have to sort again.
             rack.packAll();
             for (ItemStack stack : rack.contents()) {
                 if (!stack.isEmpty()) {

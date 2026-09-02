@@ -11,11 +11,11 @@ import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /**
- * Die Wahl bei einem Ablauf, der sich gemeldet hat.
+ * The choice on a flow that has spoken up.
  *
- * <p>Zwei Möglichkeiten, mehr gibt es nicht: weiterlaufen lassen oder
- * abbrechen. Der Server entscheidet, ob die Wahl noch gilt — der Ablauf kann
- * inzwischen von selbst zu Ende gegangen sein.
+ * <p>Two options, and no more: let it keep running or cancel it. The server
+ * decides whether the choice still applies — the flow may have ended on its
+ * own in the meantime.
  */
 public record FlowActionPacket(long id, boolean keep) implements CustomPacketPayload {
 

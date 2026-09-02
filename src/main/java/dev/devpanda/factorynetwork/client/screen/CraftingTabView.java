@@ -12,23 +12,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Die Fertigungsaufträge des Netzes.
+ * The network's crafting jobs.
  *
- * <p><b>Der Reiter war seit dem ersten Tag ausgegraut.</b> Er stand trotzdem
- * da, damit man sieht, wohin es geht — jetzt steht darin, was er versprochen
- * hat.
+ * <p><b>The tab was greyed out from day one.</b> It stood there anyway, so you
+ * could see where things were headed — now it holds what it promised.
  *
- * <p>Bestellt wird nicht hier, sondern im Code: {@code craft(64 item:chest)}.
- * Das ist keine Sparsamkeit, sondern dieselbe Haltung wie überall in dieser
- * Mod — ein Netz tut nichts von selbst, und eine Bestellung ist etwas, das
- * man hinschreibt. Was dieser Reiter beiträgt, ist die Antwort darauf: was
- * daraus wurde und woran es hängt.
+ * <p>Ordering does not happen here but in the code: {@code craft(64 item:chest)}.
+ * That is not thrift but the same stance as everywhere in this mod — a network
+ * does nothing on its own, and an order is something you write down. What this
+ * tab contributes is the answer to it: what came of it and what it is stuck
+ * on.
  */
 public class CraftingTabView {
 
     private static final int LINE = 10;
 
-    /** Breite des Abbruchknopfs. */
+    /** Width of the cancel button. */
     private static final int CANCEL = 11;
 
     private final Font font;
@@ -71,9 +70,9 @@ public class CraftingTabView {
             if (line > y + height - LINE) {
                 break;
             }
-            // Der Abbruchknopf ganz rechts: Er ist die einzige Wahl, die es
-            // an einem Auftrag gibt, und darf nicht neben dem Text stehen,
-            // dessen Länge sich ändert.
+            // The cancel button at the far right: it is the only choice a job
+            // offers, and it must not sit next to the text, whose length
+            // changes.
             int right = x + width - 4;
             boolean hovered = mouseX >= right - CANCEL && mouseX < right
                     && mouseY >= line - 1 && mouseY < line + LINE - 1;
@@ -88,8 +87,8 @@ public class CraftingTabView {
                     x + 3, line, TerminalScreen.TEXT, false);
             line += LINE;
 
-            // Der Grund steht darunter und eingerückt: Er gehört zum Auftrag
-            // und ist doch nicht der Auftrag.
+            // The reason sits below it and indented: it belongs to the job
+            // and yet is not the job.
             String detail = job.detail().isEmpty() ? statusOf(job) : job.detail();
             if (line <= y + height - LINE) {
                 graphics.drawString(font,
@@ -101,7 +100,7 @@ public class CraftingTabView {
         }
     }
 
-    /** Ohne eigenen Grund steht dort der Zustand. */
+    /** Without a reason of its own, the status stands there. */
     private static String statusOf(CraftingStatePacket.Line job) {
         return Component.translatable(
                 "screen.factorynetwork.terminal.crafting.status."

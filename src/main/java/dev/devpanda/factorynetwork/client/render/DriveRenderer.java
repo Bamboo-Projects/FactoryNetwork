@@ -21,37 +21,37 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 
 /**
- * Zeigt an der Front, welche Zellen stecken.
+ * Shows on the front which cells are inserted.
  *
- * <p>Ein Laufwerk, dem man nicht ansieht, ob es voll bestückt ist, zwingt zum
- * Anklicken. Bei einer Wand aus zehn Laufwerken ist das der Unterschied
- * zwischen Hinsehen und Suchen.
+ * <p>A drive you cannot tell at a glance is fully stocked forces a click.
+ * With a wall of ten drives, that is the difference between looking and
+ * searching.
  *
- * <p><b>Gezeigt wird die Zelle, nicht ihr Füllstand.</b> Der Inhalt lebt im
- * Laufwerk und steht erst beim Sichern im Gegenstand — was der Client kennt,
- * wäre der Stand von vorhin. Lieber gar keine Anzeige als eine, die
- * hinterherhinkt; wie voll es ist, sagen Jade und das Fenster.
+ * <p><b>What is shown is the cell, not its fill level.</b> The contents live
+ * in the drive and only reach the item when saved — what the client knows
+ * would be the state from before. Better no display at all than one that
+ * lags behind; how full it is, Jade and the window tell you.
  */
 public class DriveRenderer implements BlockEntityRenderer<DriveBlockEntity> {
 
     private static final ResourceLocation BAYS = ResourceLocation.fromNamespaceAndPath(
             FactoryNetwork.MOD_ID, "textures/misc/drive_bays.png");
 
-    /** Leer, dann die vier Größen, dann die Flüssigkeitszelle. */
+    /** Empty, then the four sizes, then the fluid cell. */
     private static final float TILES = 7.0F;
 
-    /** Weiter als das ist ein Schacht von fünf Blockpixeln nicht zu lesen. */
+    /** Beyond that a bay of five block pixels cannot be read. */
     private static final double MAX_DISTANCE = 24.0;
 
-    /** Die Schächte liegen so, wie sie {@code textures.py} malt. */
+    /** The bays are laid out the way {@code textures.py} draws them. */
     private static final float TEXTURE = 64.0F;
     /**
-     * So weit liegt das Schachtfeld hinter der Fassung — dieselbe Zahl wie im
-     * Modell.
+     * How far the bay panel sits behind the housing — the same number as in
+     * the model.
      *
-     * <p>Solange die Front ein flacher Würfel war, gab es sie nicht. Seit dem
-     * Umbau liegt das Feld einen Blockpixel tiefer, und ohne diesen Abstand
-     * schwebten die Zellen davor.
+     * <p>As long as the front was a flat cube, it did not exist. Since the
+     * rebuild the panel sits one block pixel deeper, and without this offset
+     * the cells would float in front of it.
      */
     private static final float DEPTH =
             dev.devpanda.factorynetwork.block.DriveLayout.RECESS / 16.0F;
@@ -95,7 +95,7 @@ public class DriveRenderer implements BlockEntityRenderer<DriveBlockEntity> {
         poses.popPose();
     }
 
-    /** Welche Kachel des Streifens zu dieser Zelle gehört. */
+    /** Which tile of the strip belongs to this cell. */
     private static int kindOf(ItemStack stack) {
         if (stack.getItem() instanceof FluidCellItem) {
             return 5;

@@ -5,11 +5,11 @@ import dev.devpanda.factorynetwork.network.packet.FlowStatePacket;
 import java.util.List;
 
 /**
- * Der letzte bekannte Stand der Abläufe.
+ * The last known state of the flows.
  *
- * <p>Nur zum Anzeigen. Was hier steht, war zum Zeitpunkt des letzten Pakets
- * wahr — gehandelt wird ausschließlich über Kennungen, die der Server
- * nachprüft.
+ * <p>For display only. What stands here was true at the moment of the last
+ * packet — action is taken exclusively through identifiers that the server
+ * verifies.
  */
 public final class ClientFlowState {
 
@@ -20,27 +20,27 @@ public final class ClientFlowState {
     private static FlowStatePacket.Supply supply =
             new FlowStatePacket.Supply(0, 0, 0, 0, 0);
 
-    /** Der Strom des Netzes, wie ihn der Server zuletzt gemeldet hat. */
+    /** The network's power, as the server last reported it. */
     public static FlowStatePacket.Supply supply() {
         return supply;
     }
 
-    /** Was die Server tragen und was davon belegt ist. */
+    /** What the servers carry and how much of that is occupied. */
     public static FlowStatePacket.Compute compute() {
         return compute;
     }
 
-    /** Wie viele Abläufe gleichzeitig laufen dürfen. */
+    /** How many flows may run at the same time. */
     public static int threads() {
         return compute.threads();
     }
 
-    /** Wie viele Plätze gerade belegt sind. */
+    /** How many slots are currently occupied. */
     public static int occupied() {
         return compute.occupied();
     }
 
-    /** Wie viele anstehen. */
+    /** How many are queued. */
     public static int queued() {
         return compute.queued();
     }
@@ -55,7 +55,7 @@ public final class ClientFlowState {
         globals = List.copyOf(packet.globals());
     }
 
-    /** Die globalen Werte des Programms, als „name = wert". */
+    /** The program's global values, as "name = value". */
     public static List<String> globals() {
         return globals;
     }

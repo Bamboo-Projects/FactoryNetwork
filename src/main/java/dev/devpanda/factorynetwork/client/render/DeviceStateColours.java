@@ -3,34 +3,34 @@ package dev.devpanda.factorynetwork.client.render;
 import dev.devpanda.factorynetwork.network.DeviceState;
 
 /**
- * Welche Farbe ein Netzzustand trägt.
+ * Which colour a network state carries.
  *
- * <p><b>An einer Stelle</b>, weil sie an dreien gebraucht wird: am Lämpchen
- * des Anschlusses am Kabel, am Lämpchen des Connectorblocks und am Namenszug
- * über beiden. Drei Paletten wären drei Gelegenheiten, dass Rot an einer
- * Stelle Orange heißt.
+ * <p><b>In one place</b>, because it is needed in three: at the indicator
+ * light of the connector on the cable, at the indicator light of the
+ * connector block, and at the name label above both. Three palettes would be
+ * three chances for red to be called orange in one place.
  *
- * <p>Die Werte multiplizieren eine weiße Textur — es sind keine Farben,
- * sondern Faktoren. Deshalb ist Grün hier hell und nicht sattgrün: Ein
- * Lämpchen soll leuchten und nicht wie ein Aufkleber wirken.
+ * <p>The values multiply a white texture — they are not colours but factors.
+ * That is why green here is light and not deep green: an indicator light
+ * should glow and not look like a sticker.
  */
 public final class DeviceStateColours {
 
-    /** Benannt und erreichbar. */
+    /** Named and reachable. */
     private static final int ONLINE = 0xA3D9A5;
-    /** Am Netz, aber ohne Namen. */
+    /** On the network, but without a name. */
     private static final int UNNAMED = 0x8A939C;
-    /** Doppelt vergeben — beide unbrauchbar. */
+    /** Assigned twice — both unusable. */
     private static final int DUPLICATE = 0xE8C888;
-    /** Am Netz, aber ohne freien Kanal. */
+    /** On the network, but without a free channel. */
     private static final int STARVED = 0xE88388;
-    /** Gar nicht am Netz. */
+    /** Not on the network at all. */
     private static final int OFFLINE = 0x4A4F55;
 
     private DeviceStateColours() {
     }
 
-    /** Der Farbwert als 0xRRGGBB. */
+    /** The colour value as 0xRRGGBB. */
     public static int of(DeviceState state) {
         return switch (state) {
             case ONLINE -> ONLINE;
@@ -41,12 +41,12 @@ public final class DeviceStateColours {
         };
     }
 
-    /** Derselbe Wert als undurchsichtiges 0xAARRGGBB, für Schrift. */
+    /** The same value as opaque 0xAARRGGBB, for text. */
     public static int opaque(DeviceState state) {
         return 0xFF000000 | of(state);
     }
 
-    /** Der Rotanteil als Faktor, für {@code renderModel}. */
+    /** The red component as a factor, for {@code renderModel}. */
     public static float red(DeviceState state) {
         return ((of(state) >> 16) & 0xFF) / 255.0F;
     }

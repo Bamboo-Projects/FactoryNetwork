@@ -11,15 +11,16 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 import java.util.List;
 
 /**
- * Die Fertigungsaufträge des Netzes, für den Reiter.
+ * The network's crafting jobs, for the tab.
  *
- * <p>Der Name des Ziels geht als <b>fertiger Text</b> hinüber und nicht als
- * Kennung: Dieselbe Entscheidung wie bei den Behältern im Geräte-Tooltip. Ihn
- * drüben wieder aufzulösen wäre dreimal so viel Code für dieselbe Zeile.
+ * <p>The target's name goes across as <b>ready-made text</b> and not as an
+ * identifier: the same decision as for the tanks in the device tooltip.
+ * Resolving it again on the other side would be three times as much code for
+ * the same line.
  */
 public record CraftingStatePacket(List<Line> jobs) implements CustomPacketPayload {
 
-    /** Ein Auftrag, so wie er im Reiter steht. */
+    /** A job, exactly as it appears in the tab. */
     public record Line(long id, String target, int wanted, int done, String status,
                        String detail) {
 

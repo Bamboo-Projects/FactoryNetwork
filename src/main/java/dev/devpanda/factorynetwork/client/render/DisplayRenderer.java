@@ -16,39 +16,38 @@ import org.joml.Matrix4f;
 import java.util.List;
 
 /**
- * Zeichnet die Zeilen eines Displays auf seine Vorderseite.
+ * Draws the lines of a display onto its front face.
  *
- * <p>Text in der Welt, nicht in einer Oberfläche — man soll im Vorbeigehen
- * sehen, wie es der Fabrik geht, ohne etwas anzuklicken. Das ist der ganze
- * Zweck des Blocks; ein Display, für das man erst ein Fenster öffnet, wäre
- * ein umständliches Terminal.
+ * <p>Text in the world, not in a GUI — you should see how the factory is
+ * doing in passing, without clicking anything. That is the whole purpose of
+ * the block; a display for which you first have to open a window would be a
+ * clumsy terminal.
  *
- * <p><b>Eine Wand aus Tafeln ist ein Bildschirm.</b> Geschrieben wird von der
- * Tafel unten links, und zwar über die ganze Fläche.
+ * <p><b>A wall of panels is one screen.</b> Writing starts from the panel at
+ * the bottom left, and spans the whole area.
  *
- * <p><b>Die Schrift wächst nicht von selbst mit.</b> Der Platz einer großen
- * Wand geht in mehr Zeilen und längere — eine Wand, deren Text mit ihr wächst,
- * ist aus drei Metern genauso lesbar wie eine einzelne Tafel und verschenkt
- * den ganzen Vorteil. Wer eine Überschrift will, die man aus zwanzig Metern
- * liest, schreibt {@code scale 4} in den Display-Block: Dann entscheidet der,
- * der die Wand gebaut hat, und nicht die Wand.
+ * <p><b>The text does not grow along on its own.</b> The room of a large wall
+ * goes into more lines and longer ones — a wall whose text grows with it is
+ * just as readable from three metres as a single panel and gives away the
+ * entire advantage. Whoever wants a heading readable from twenty metres
+ * writes {@code scale 4} into the display block: then the one who built the
+ * wall decides, and not the wall.
  *
- * <p>Ab einer gewissen Entfernung wird nichts mehr gezeichnet: Zwanzig
- * Displays an einer Wand, jedes mit zehn Zeilen, sind zweihundert Textblöcke
- * je Bild.
+ * <p>Beyond a certain distance nothing is drawn any more: twenty displays on
+ * a wall, each with ten lines, are two hundred blocks of text per frame.
  */
 public class DisplayRenderer implements BlockEntityRenderer<DisplayBlockEntity> {
 
-    /** Weiter als das ist die Schrift ohnehin nicht zu lesen. */
+    /** Beyond that the text cannot be read anyway. */
     private static final double MAX_DISTANCE = 16.0;
 
     private static final float SCALE = 0.006F;
     private static final int LINE_HEIGHT = 9;
 
-    /** So viele Zeilen trägt eine Tafel — eine Wand entsprechend mehr. */
+    /** This many lines a panel carries — a wall correspondingly more. */
     private static final int LINES_PER_PANEL = 12;
 
-    /** Wie viele Schrifteinheiten ein Block hoch und breit ist. */
+    /** How many text units a block is tall and wide. */
     private static final float UNITS_PER_BLOCK = 1.0F / SCALE;
 
     private final Font font;
@@ -70,25 +69,25 @@ public class DisplayRenderer implements BlockEntityRenderer<DisplayBlockEntity> 
         int textScale = display.textScale();
         poses.pushPose();
 
-        // In die Mitte der Vorderseite, dann in die Blickrichtung drehen.
+        // To the centre of the front face, then rotate to the facing direction.
         poses.translate(0.5, 0.5, 0.5);
         poses.mulPose(com.mojang.math.Axis.YP.rotationDegrees(-facing.toYRot()));
         poses.translate(0, 0, -0.47);
         poses.scale(-SCALE * textScale, -SCALE * textScale, SCALE);
 
-        // Von der eigenen Tafel in die Mitte der Wand. Der Maßstab steht
-        // schon, also wird hier in Schrifteinheiten gerechnet — und die
-        // x-Achse ist gespiegelt, deshalb das Minus.
+        // From the panel's own position to the centre of the wall. The scale
+        // is already set, so this is computed in text units here — and the
+        // x-axis is mirrored, hence the minus.
         float toCentreX = -((wall.columns() - 1) / 2.0F - wall.anchorColumn());
         float toCentreY = -((wall.rows() - 1) / 2.0F - wall.anchorRow());
-        // Der Maßstab steckt jetzt in der Matrix, also ist ein Block weniger
-        // Schrifteinheiten breit. Ohne die Teilung liefe die Verschiebung
-        // mit der Schriftgröße mit und die Wand rutschte aus dem Rahmen.
+        // The scale is now baked into the matrix, so a block is fewer text
+        // units wide. Without the division the shift would scale with the
+        // text size and the wall would slide out of the frame.
         float unitsPerBlock = UNITS_PER_BLOCK / textScale;
         poses.translate(toCentreX * unitsPerBlock, toCentreY * unitsPerBlock, 0.0F);
 
-        // Große Schrift, weniger Zeilen — der Tausch steht offen da, und der
-        // Spieler hat ihn selbst gewählt.
+        // Large text, fewer lines — the trade-off is out in the open, and the
+        // player chose it themselves.
         int room = Math.max(1, wall.rows() * LINES_PER_PANEL / textScale);
         int shown = Math.min(lines.size(), room);
         int totalHeight = shown * LINE_HEIGHT;
@@ -105,11 +104,11 @@ public class DisplayRenderer implements BlockEntityRenderer<DisplayBlockEntity> 
     }
 
     /**
-     * Der Text einer Wand reicht über die eigene Tafel hinaus.
+     * The text of a wall reaches beyond its own panel.
      *
-     * <p>Ohne diese Angabe verschwindet er, sobald der Block unten links aus
-     * dem Blickfeld rutscht — und das ist bei einer Wand, vor der man steht,
-     * fast immer der Fall.
+     * <p>Without this declaration it disappears as soon as the bottom-left
+     * block slides out of view — and with a wall you are standing in front
+     * of, that is almost always the case.
      */
     @Override
     public AABB getRenderBoundingBox(DisplayBlockEntity display) {
@@ -125,13 +124,13 @@ public class DisplayRenderer implements BlockEntityRenderer<DisplayBlockEntity> 
     }
 
     /**
-     * Aus der Ferne nicht zeichnen — die Schrift wäre ohnehin unlesbar.
+     * Do not draw from afar — the text would be illegible anyway.
      *
-     * <p><b>Die Grenze wächst mit dem Maßstab.</b> Sechzehn Blöcke waren die
-     * Entfernung, aus der Schrift in Normalgröße noch etwas hergibt; eine
-     * viermal so große gibt auf viermal so weit etwas her. Ohne das wäre
-     * {@code scale} ein Griff, der die Schrift vergrößert und sie trotzdem
-     * genau dort verschwinden lässt, wo man sie lesen wollte.
+     * <p><b>The limit grows with the scale.</b> Sixteen blocks was the
+     * distance at which text at normal size still gives something; text four
+     * times as large gives something at four times the distance. Without
+     * that, {@code scale} would be a control that enlarges the text and yet
+     * makes it disappear exactly where you wanted to read it.
      */
     @Override
     public boolean shouldRender(DisplayBlockEntity display, Vec3 camera) {

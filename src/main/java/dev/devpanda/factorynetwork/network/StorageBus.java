@@ -9,27 +9,27 @@ import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.items.IItemHandler;
 
 /**
- * Ein fremdes Inventar, das zum Netzspeicher zählt.
+ * A foreign inventory that counts toward the network store.
  *
- * <p>Der Speicherbus, wie AE2 ihn hat — nur erklärt das Programm ihn und
- * nicht ein Block: {@code store kiste_1 { … }}. Die Begründung steht in
+ * <p>The storage bus, as AE2 has it — only here the program declares it and
+ * not a block: {@code store kiste_1 { … }}. The reasoning is in
  * {@code speicherbus.md}.
  *
- * <p><b>Durchgereicht und nicht gespiegelt.</b> Eine Kopie ist falsch, sobald
- * jemand die Kiste anfasst — ein Spieler räumt sie aus, ein Trichter füllt
- * sie, eine fremde Maschine leert sie im selben Tick. Ein Auftrag, der auf
- * eine veraltete Kopie rechnet, hinterließe genau den halben Stapel
- * Zwischenzeug, den die Fertigung ausdrücklich vermeidet.
+ * <p><b>Passed through and not mirrored.</b> A copy is wrong the moment
+ * someone touches the chest — a player empties it, a hopper fills it, a
+ * foreign machine drains it in the same tick. A job that reckons on a stale
+ * copy would leave behind exactly the half stack of intermediates that
+ * crafting explicitly avoids.
  *
- * <p><b>Einmal je Tick gelesen.</b> Durchreichen heißt nicht, bei jeder Frage
- * das ganze Inventar zu zählen: Ein Worker fragt je Tick, eine Anzeige auch,
- * und ein Auftrag mehrmals. Der Bus liest deshalb, wenn ihn jemand dazu
- * auffordert — der Controller tut das je Tick —, und behält die Antwort
- * dazwischen. Sie ist damit nie älter als ein Tick.
+ * <p><b>Read once per tick.</b> Passing through does not mean counting the
+ * whole inventory on every question: a worker asks per tick, a display too,
+ * and a job several times. The bus therefore reads when someone asks it to —
+ * the controller does that per tick — and keeps the answer in between. It is
+ * thus never older than one tick.
  *
- * <p>Der Zugriff steht hinter einem {@link Supplier}: Ein Connector kann
- * abgebaut, die Kiste zerschlagen, der Klotz entladen werden. Ein festes
- * {@code IItemHandler} hier wäre ein Zeiger auf etwas, das es nicht mehr gibt.
+ * <p>Access sits behind a {@link Supplier}: a connector can be removed, the
+ * chest broken, the chunk unloaded. A fixed {@code IItemHandler} here would be
+ * a pointer to something that no longer exists.
  */
 public final class StorageBus {
 
@@ -38,16 +38,16 @@ public final class StorageBus {
     private final Supplier<IItemHandler> access;
 
     /**
-     * Was hinein darf, oder leer für alles.
+     * What may go in, or empty for everything.
      *
-     * <p>Schon aufgelöst: Der Bus fragt je Ablage, und eine Auswahl je Ablage
-     * gegen die Registry aufzulösen wäre der teuerste Weg, dieselbe Antwort
-     * zu bekommen. Der Controller löst sie beim Neuaufbau auf — dann, wenn
-     * sich das Programm ohnehin geändert haben kann.
+     * <p>Already resolved: the bus asks per deposit, and resolving a selection
+     * against the registry on every deposit would be the most expensive way to
+     * get the same answer. The controller resolves it on rebuild — at the
+     * moment when the program may have changed anyway.
      */
     private final java.util.Set<ItemKey> allowed;
 
-    /** Was beim letzten Lesen darin lag. */
+    /** What was in it at the last read. */
     private final Map<ItemKey, Long> contents = new LinkedHashMap<>();
 
     public StorageBus(String device, long priority, java.util.Collection<ItemKey> allowed,
@@ -59,13 +59,13 @@ public final class StorageBus {
     }
 
     /**
-     * Ob diese Art hinein darf.
+     * Whether this kind may go in.
      *
-     * <p>Ohne Filter darf alles. <b>Für das Herausholen gilt er nicht:</b>
-     * Was schon drinliegt, gehört zum Bestand und ist erreichbar — es zu
-     * verschweigen, weil es nicht zum Filter passt, wäre eine Lüge über
-     * etwas, das jeder sehen kann, und ein Bestand, aus dem man nichts holen
-     * kann, wäre die schlimmere Hälfte davon.
+     * <p>Without a filter everything may. <b>For taking out it does not
+     * apply:</b> what is already in there belongs to the stock and is
+     * reachable — to conceal it because it does not match the filter would be
+     * a lie about something everyone can see, and a stock you cannot take
+     * anything out of would be the worse half of that.
      */
     public boolean accepts(ItemKey item) {
         return allowed.isEmpty() || allowed.contains(item);
@@ -75,39 +75,39 @@ public final class StorageBus {
         return device;
     }
 
-    /** Wohin zuerst eingelagert wird; die Zellen stehen auf null. */
+    /** Where things are stored first; the cells stand at zero. */
     public long priority() {
         return priority;
     }
 
-    /** Der Zugriff, oder {@code null}, wenn gerade keiner dasteht. */
+    /** The access, or {@code null} if none is present right now. */
     public IItemHandler handler() {
         return access.get();
     }
 
-    /** Was beim letzten Lesen darin lag. */
+    /** What was in it at the last read. */
     public Map<ItemKey, Long> contents() {
         return contents;
     }
 
     /**
-     * Legt ab und liefert, was nicht hineinpasste.
+     * Stores and returns what did not fit.
      *
-     * <p>Über die Fächer der Maschine und nicht in ein eigenes Fach: Wohin
-     * etwas gehört, weiß sie selbst — dieselbe Auskunft, auf die sich auch
-     * {@code move} verlässt.
+     * <p>Through the machine's slots and not into a slot of its own: where
+     * something belongs it knows itself — the same answer {@code move} relies
+     * on too.
      *
-     * <p>Der gemerkte Inhalt wird mitgeführt und nicht neu gelesen. Ein Lesen
-     * je Ablage wäre genau das, was das Lesen je Tick einspart.
+     * <p>The remembered contents are carried along and not read afresh. A read
+     * per deposit would be exactly what reading once per tick saves.
      */
     public long insert(ItemKey item, long count) {
         IItemHandler handler = access.get();
         if (handler == null || count <= 0 || !accepts(item)) {
             return count;
         }
-        // Der Stapel wird aus dem Schlüssel gebaut und trägt damit, was der
-        // Gegenstand ausmacht. Vorher entstand hier ein nackter — ein
-        // verzaubertes Buch kam in der Kiste ohne Verzauberung an.
+        // The stack is built from the key and thus carries what makes up the
+        // item. Before, a bare one arose here — an enchanted book arrived in
+        // the chest without its enchantment.
         ItemStack rest = item.toStack(
                 (int) Math.min(count, item.maxStackSize()));
         for (int slot = 0; slot < handler.getSlots() && !rest.isEmpty(); slot++) {
@@ -121,15 +121,15 @@ public final class StorageBus {
     }
 
     /**
-     * Wie viel davon hineinginge, ohne etwas abzulegen.
+     * How much of it would go in, without depositing anything.
      *
-     * <p><b>Eine Maschine kann sehr wohl probieren.</b> {@code insertItem}
-     * mit {@code simulate} ist genau das: dieselbe Frage an dieselben Fächer,
-     * nur ohne Folgen. Deshalb kann ein Speicherbus mitzählen, wenn das Netz
-     * gefragt wird, wie viel noch hineinpasst.
+     * <p><b>A machine very much can try.</b> {@code insertItem} with
+     * {@code simulate} is exactly that: the same question to the same slots,
+     * only without consequences. That is why a storage bus can count along
+     * when the network is asked how much still fits.
      *
-     * <p>Höchstens ein Stapel, genau wie beim Ablegen — sonst verspräche die
-     * Antwort mehr, als ein Aufruf einlöst.
+     * <p>At most one stack, exactly as with depositing — otherwise the answer
+     * would promise more than a single call delivers.
      */
     public long room(ItemKey item, long wanted) {
         IItemHandler handler = access.get();
@@ -146,11 +146,11 @@ public final class StorageBus {
     }
 
     /**
-     * Holt heraus und liefert, wie viel es wurde.
+     * Takes out and returns how much it came to.
      *
-     * <p>Nur aus Fächern, die diese Art führen — und nur so viel, wie die
-     * Maschine hergibt. Ein Eingangsfach, das nichts herausrückt, ist keine
-     * Fehlermeldung, sondern eine Maschine, die ihre Regeln behält.
+     * <p>Only from slots that carry this kind — and only as much as the
+     * machine gives up. An input slot that hands nothing out is not an error,
+     * but a machine that keeps its rules.
      */
     public long extract(ItemKey item, long count) {
         IItemHandler handler = access.get();
@@ -159,9 +159,9 @@ public final class StorageBus {
         }
         long taken = 0;
         for (int slot = 0; slot < handler.getSlots() && taken < count; slot++) {
-            // Ganze Gegenstände vergleichen, nicht nur die Kennung: Sonst
-            // holte eine Anforderung nach einer nackten Spitzhacke die
-            // verzauberte aus der Kiste.
+            // Compare whole items, not just the identifier: otherwise a
+            // request for a bare pickaxe would take the enchanted one out of
+            // the chest.
             if (!item.equals(ItemKey.of(handler.getStackInSlot(slot)))) {
                 continue;
             }
@@ -179,9 +179,9 @@ public final class StorageBus {
     }
 
     /**
-     * Liest das Inventar neu.
+     * Reads the inventory afresh.
      *
-     * @return ob sich etwas geändert hat
+     * @return whether anything changed
      */
     public boolean refresh() {
         IItemHandler handler = access.get();

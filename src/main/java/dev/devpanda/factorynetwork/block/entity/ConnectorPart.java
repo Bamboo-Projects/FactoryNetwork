@@ -10,21 +10,21 @@ import net.neoforged.neoforge.items.IItemHandler;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Ein Anschluss an einer Blockfläche — der Connector, ohne den Block darunter.
+ * A connector on a block face — the connector, without the block beneath it.
  *
- * <p><b>Warum das getrennt ist.</b> Ein Connector ist heute ein eigener Block,
- * und für eine Maschine stehen zwei nebeneinander: Kabel und Connector. Bei
- * AE2 sitzt das Gegenstück als <i>Teil</i> an einer Fläche des Kabelblocks —
- * ein Block, bis zu sechs Anschlüsse. Das ist der Weg, den
- * {@code connector-im-kabel.md} als B beschreibt und der gewünscht ist.
+ * <p><b>Why this is separated.</b> A connector is today its own block, and for
+ * one machine two stand side by side: cable and connector. In AE2 the
+ * counterpart sits as a <i>part</i> on a face of the cable block — one block,
+ * up to six connectors. That is the path {@code connector-im-kabel.md}
+ * describes as B, and the one that is wanted.
  *
- * <p>Diese Klasse ist der erste Schnitt dorthin: <b>alles, was ein Connector
- * ist, ohne alles, was ein Block ist.</b> Wer sie hält — heute die
- * {@link ConnectorBlockEntity} mit genau einem, morgen ein Kabelblock mit bis
- * zu sechs —, steht in {@link Host}.
+ * <p>This class is the first cut toward it: <b>everything a connector is,
+ * without everything a block is.</b> Who holds it — today the
+ * {@link ConnectorBlockEntity} with exactly one, tomorrow a cable block with
+ * up to six — lives in {@link Host}.
  *
- * <p>Am Verhalten ändert dieser Schnitt nichts. Er verschiebt nur die Grenze,
- * an der ein Connector aufhört und sein Block anfängt.
+ * <p>This cut changes nothing about behaviour. It only shifts the boundary
+ * where a connector ends and its block begins.
  */
 public final class ConnectorPart {
 
@@ -34,11 +34,11 @@ public final class ConnectorPart {
     private static final String KEY_REDSTONE = "Redstone";
 
     /**
-     * Wer dieses Teil hält.
+     * Who holds this part.
      *
-     * <p>Drei Auskünfte und eine Meldung — mehr braucht ein Anschluss nicht
-     * von seinem Block zu wissen. Insbesondere weiß er nicht, ob er allein
-     * dort sitzt.
+     * <p>Three pieces of information and one notification — a connector needs
+     * to know no more than that about its block. In particular it does not
+     * know whether it sits there alone.
      */
     public interface Host {
 
@@ -46,17 +46,17 @@ public final class ConnectorPart {
 
         BlockPos pos();
 
-        /** Wohin dieses Teil zeigt — dort sitzt die Maschine. */
+        /** Which way this part faces — the machine sits there. */
         Direction facing();
 
-        /** Etwas hat sich geändert und muss gespeichert und geschickt werden. */
+        /** Something changed and must be saved and sent. */
         void partChanged();
 
         /**
-         * Das Redstone hat sich geändert.
+         * The redstone has changed.
          *
-         * <p>Getrennt von {@link #partChanged()}, weil es zusätzlich die
-         * Nachbarn anstoßen muss: Ohne das merkt niemand die Änderung.
+         * <p>Separate from {@link #partChanged()}, because it must also nudge
+         * the neighbours: without that, no one notices the change.
          */
         void redstoneChanged();
     }
@@ -67,32 +67,32 @@ public final class ConnectorPart {
     private String label = "";
 
     /**
-     * Wie viele Kanäle dieses Gerät braucht.
+     * How many channels this device needs.
      *
-     * <p>Heute immer einer. Als Feld statt als feste Eins, damit ein Gerät
-     * mit höherem Bedarf später keine Wanderung durch den Pfadcode nach sich
-     * zieht — das kostet jetzt nichts und spart sie dann.
+     * <p>Always one today. As a field rather than a fixed one, so that a
+     * device with a higher demand later does not entail a trek through the
+     * pathfinding code — it costs nothing now and saves it then.
      */
     /**
-     * Was dieser Anschluss früher an Kanälen kostete.
+     * What this connector used to cost in channels.
      *
-     * <p><b>Ohne Wirkung seit dem 29.08.</b> Kanäle gibt es nicht mehr; die
-     * Grenze am Kabel ist der Durchsatz je Tick, und der hängt nicht davon
-     * ab, wie viele Geräte dahinter liegen.
+     * <p><b>Without effect since 29.08.</b> Channels no longer exist; the
+     * limit at the cable is the throughput per tick, and that does not depend
+     * on how many devices lie behind it.
      *
-     * <p>Gelesen und geschrieben wird das Feld weiter: Es steht im
-     * Speicherformat jeder bestehenden Welt, und ein Wegfall hier hieße, jede
-     * davon beim ersten Laden anzufassen. Ein totes Feld ist billiger als
-     * eine Migration für nichts.
+     * <p>The field is still read and written: it is in the save format of
+     * every existing world, and dropping it here would mean touching each of
+     * them on first load. A dead field is cheaper than a migration for
+     * nothing.
      */
     private int channelCost = 1;
 
     /**
-     * Was dieser Connector an Redstone ausgibt.
+     * What redstone this connector emits.
      *
-     * <p>Null heißt: gibt nichts aus. Das ist etwas anderes als „gibt Null
-     * aus" — ein Connector ohne Programm soll das Redstone daneben nicht
-     * überschreiben.
+     * <p>Zero means: emits nothing. That is different from "emits a zero" —
+     * a connector without a program should not overwrite the redstone next
+     * to it.
      */
     private int emittedRedstone;
 
@@ -119,22 +119,22 @@ public final class ConnectorPart {
     }
 
     /**
-     * Wie es um diesen Anschluss im Netz steht.
+     * How this connector stands within the network.
      *
-     * <p>Gestempelt vom Controller beim Neuaufbau. Ohne Netz bleibt er
-     * {@link DeviceState#OFFLINE} — das ist auch der Anfangswert, denn ein
-     * frisch gesetzter Anschluss hängt an nichts, bis ihn eine Suche findet.
+     * <p>Stamped by the controller on rebuild. Without a network it stays
+     * {@link DeviceState#OFFLINE} — which is also the initial value, since a
+     * freshly placed connector hangs on nothing until a scan finds it.
      */
     public DeviceState state() {
         return state;
     }
 
     /**
-     * Setzt den Zustand — und meldet ihn nur, wenn er sich geändert hat.
+     * Sets the state — and reports it only when it has changed.
      *
-     * <p>Der Neuaufbau läuft alle hundert Ticks und stempelt jedes Mal alle
-     * Geräte. Ohne diese Prüfung schickte jedes Netz alle fünf Sekunden ein
-     * Paket je Anschluss an jeden, der den Chunk verfolgt.
+     * <p>The rebuild runs every hundred ticks and stamps every device each
+     * time. Without this check, every network would send a packet per
+     * connector every five seconds to everyone tracking the chunk.
      */
     public void setState(DeviceState wanted) {
         if (wanted == state) {
@@ -157,36 +157,36 @@ public final class ConnectorPart {
         host.redstoneChanged();
     }
 
-    /** Die Welt, in der dieses Teil sitzt. */
+    /** The world this part sits in. */
     public @Nullable Level level() {
         return host.level();
     }
 
     /**
-     * Der Block, an dem dieses Teil sitzt.
+     * The block this part sits on.
      *
-     * <p>Nicht die Maschine davor — die steht in {@link #machinePos()}. Der
-     * Unterschied ist am Kabelbus wichtiger als am eigenen Block: Dort teilen
-     * sich bis zu sechs Teile diese eine Stelle.
+     * <p>Not the machine in front of it — that is in {@link #machinePos()}.
+     * The difference matters more at the cable bus than at its own block:
+     * there, up to six parts share this one spot.
      */
     public BlockPos pos() {
         return host.pos();
     }
 
-    /** Wohin dieses Teil zeigt. */
+    /** Which way this part faces. */
     public Direction facing() {
         return host.facing();
     }
 
-    // ---- Die Maschine dahinter --------------------------------------------
+    // ---- The machine behind it --------------------------------------------
 
     /**
-     * Das <b>ganze</b> Inventar der Maschine, ohne Rücksicht auf Seiten.
+     * The <b>whole</b> inventory of the machine, regardless of sides.
      *
-     * <p>Gebraucht für {@code slots(…)}: Ein Anschluss je Maschine soll
-     * reichen, und welches Fach gemeint ist, entscheidet der Code. Die
-     * seitenbezogene Fassung darunter bleibt die Vorgabe für alles andere —
-     * dort hält die Maschine ihre eigenen Regeln.
+     * <p>Needed for {@code slots(…)}: one connector per machine should be
+     * enough, and which slot is meant is decided by the code. The
+     * side-specific version below stays the default for everything else —
+     * there the machine keeps its own rules.
      */
     public @Nullable IItemHandler machineInventoryAll() {
         return capability(Capabilities.ItemHandler.BLOCK, null);
@@ -197,31 +197,31 @@ public final class ConnectorPart {
     }
 
     /**
-     * Der Tank der Maschine.
+     * The machine's tank.
      *
-     * <p>Derselbe Nachbar, dieselbe Seite — nur eine andere Fähigkeit. Eine
-     * Maschine kann beides haben; welches gemeint ist, entscheidet die
-     * Auswahl im Programm, nicht der Connector.
+     * <p>The same neighbour, the same side — only a different capability. A
+     * machine can have both; which one is meant is decided by the selection
+     * in the program, not by the connector.
      */
     public @Nullable net.neoforged.neoforge.fluids.capability.IFluidHandler machineTank() {
         return capability(Capabilities.FluidHandler.BLOCK, facing().getOpposite());
     }
 
     /**
-     * Der Stromspeicher der Maschine.
+     * The machine's energy store.
      *
-     * <p>Gelesen wird er für das Zeigen im Editor und für {@code energy()}.
+     * <p>Read for showing in the editor and for {@code energy()}.
      */
     public @Nullable net.neoforged.neoforge.energy.IEnergyStorage machineEnergy() {
         return capability(Capabilities.EnergyStorage.BLOCK, facing().getOpposite());
     }
 
     /**
-     * Die BlockEntity der Maschine, oder {@code null}.
+     * The machine's BlockEntity, or {@code null}.
      *
-     * <p>Gebraucht, um eine Maschine an ihrer <b>Art</b> zu erkennen und
-     * nicht an ihrem Namen: Ein Ofen heißt auf einem englischen Server anders
-     * als im deutschen Client, aber er ist überall dieselbe Klasse.
+     * <p>Needed to recognise a machine by its <b>type</b> and not by its
+     * name: a furnace is named differently on an English server than in a
+     * German client, but it is the same class everywhere.
      */
     public @Nullable net.minecraft.world.level.block.entity.BlockEntity machineBlockEntity() {
         BlockPos target = machinePos();
@@ -229,7 +229,7 @@ public final class ConnectorPart {
         return target != null && level.isLoaded(target) ? level.getBlockEntity(target) : null;
     }
 
-    /** Wo die Maschine steht, oder {@code null}, wenn dort nichts geladen ist. */
+    /** Where the machine stands, or {@code null} if nothing is loaded there. */
     public @Nullable BlockPos machinePos() {
         Level level = host.level();
         if (level == null) {
@@ -246,15 +246,15 @@ public final class ConnectorPart {
         return target == null ? null : host.level().getCapability(which, target, side);
     }
 
-    // ---- Speichern ---------------------------------------------------------
+    // ---- Saving -------------------------------------------------------------
 
     public void save(CompoundTag tag) {
         tag.putString(KEY_LABEL, label);
         tag.putInt(KEY_COST, channelCost);
         tag.putInt(KEY_REDSTONE, emittedRedstone);
-        // Auch auf die Platte: Wer eine Welt lädt, sieht sonst fünf Sekunden
-        // lang lauter offline gemeldete Anschlüsse, bis der erste Neuaufbau
-        // durch ist.
+        // To disk as well: otherwise, whoever loads a world sees nothing but
+        // connectors reported offline for five seconds, until the first
+        // rebuild is through.
         tag.putByte(KEY_STATE, state.id());
     }
 

@@ -14,20 +14,20 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.client.model.data.ModelData;
 
 /**
- * Zeichnet die Anschlüsse, die an den Flächen eines Kabels sitzen.
+ * Draws the connectors that sit on the faces of a cable.
  *
- * <p><b>Warum gezeichnet und nicht gebacken:</b> Welche Flächen ein Teil
- * tragen, steht in der BlockEntity und nicht im Blockzustand. Es in den
- * Zustand zu nehmen hieße sechs weitere Wahrheitswerte — mal den vorhandenen
- * sechs Verbindungen, mal siebzehn Farben: fast siebzigtausend Zustände je
- * Kabelart, die Minecraft alle beim Start anlegt.
+ * <p><b>Why drawn and not baked:</b> which faces carry a part is held in the
+ * BlockEntity, not in the block state. Taking it into the state would mean
+ * six more booleans — times the existing six connections, times seventeen
+ * colours: almost seventy thousand states per cable type, all of which
+ * Minecraft creates at startup.
  *
- * <p><b>Der Preis:</b> Mit einem angemeldeten Renderer landet <b>jede</b>
- * Kabel-BlockEntity in der Zeichenliste, auch die ohne Teile — und das sind
- * fast alle. Deshalb steht der Rücksprung in der ersten Zeile. Was das bei
- * zehntausend Kabeln kostet, ist ungemessen und steht als offener Punkt; ein
- * Wechsel auf ein gebackenes Modell bliebe jederzeit möglich, weil hier
- * nichts gespeichert wird.
+ * <p><b>The price:</b> with a registered renderer, <b>every</b> cable
+ * BlockEntity ends up in the draw list, even those without parts — and that
+ * is almost all of them. That is why the early return is in the first line.
+ * What that costs with ten thousand cables is unmeasured and stands as an
+ * open item; a switch to a baked model would remain possible at any time,
+ * because nothing is stored here.
  */
 public class CableBusRenderer implements BlockEntityRenderer<CableBusBlockEntity> {
 
@@ -46,12 +46,13 @@ public class CableBusRenderer implements BlockEntityRenderer<CableBusBlockEntity
         BlockState cable = bus.getBlockState();
         int size = CableBlock.sizeOf(cable);
         var models = Minecraft.getInstance().getModelManager();
-        // Dieselbe Zeichenart wie das Kabel: Die Ränder der Textur sind
-        // durchsichtig.
+        // The same render type as the cable: the edges of the texture are
+        // transparent.
         var buffer = buffers.getBuffer(RenderType.cutout());
         for (var entry : bus.parts().entrySet()) {
-            // Die Farbe trifft nur den Lämpchenring: renderModel färbt allein
-            // Flächen mit tintindex, und den hat im Teilmodell nur er.
+            // The colour affects only the indicator-light ring: renderModel
+            // tints only faces with a tintindex, and in the part model only
+            // the ring has one.
             var state = entry.getValue().state();
             blocks.getModelRenderer().renderModel(poses.last(), buffer, cable,
                     models.getModel(ConnectorPartModels.of(size, entry.getKey())),

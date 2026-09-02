@@ -22,11 +22,11 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Öffnet den Editor.
+ * Opens the editor.
  *
- * <p>Das Terminal hält selbst nichts: Programm und Speicher liegen im
- * Controller. Es sucht sich den Controller über das Netzwerk und arbeitet auf
- * dessen Daten — so bleibt auch bei mehreren Terminals nur eine Wahrheit.
+ * <p>The terminal itself holds nothing: program and storage live in the
+ * controller. It finds the controller over the network and works on its data
+ * — so even with several terminals there is only one source of truth.
  */
 public class TerminalBlockEntity extends BlockEntity implements MenuProvider {
 
@@ -34,7 +34,7 @@ public class TerminalBlockEntity extends BlockEntity implements MenuProvider {
         super(FnBlockEntities.TERMINAL.get(), pos, state);
     }
 
-    /** Sucht den Controller in der Nachbarschaft. */
+    /** Looks for the controller in the neighbourhood. */
     public Optional<ControllerBlockEntity> controller() {
         if (level == null) {
             return Optional.empty();
@@ -49,12 +49,12 @@ public class TerminalBlockEntity extends BlockEntity implements MenuProvider {
         return Optional.empty();
     }
 
-    /** Schickt Quelltext, Connectoren und Workerstand an den Editor. */
+    /** Sends source code, connectors and worker state to the editor. */
     public void sendStateTo(ServerPlayer player) {
         Optional<ControllerBlockEntity> controller = controller();
         if (controller.isEmpty()) {
-            // Ein Terminal ohne Netz schickt Leere und nicht nichts: Der
-            // Client soll seine alten Listen loswerden.
+            // A terminal without a network sends emptiness, not nothing: the
+            // client should get rid of its old lists.
             PacketDistributor.sendToPlayer(player,
                     new NetworkStatePacket(List.of(), List.of(), List.of(), List.of(),
                             List.of(), List.of()));

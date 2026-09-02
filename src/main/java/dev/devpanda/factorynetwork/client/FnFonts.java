@@ -7,28 +7,28 @@ import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 
 /**
- * Die Schrift des Terminals.
+ * The terminal's font.
  *
- * <p>Minecrafts Standardschrift ist acht Pixel hoch und kennt kein
- * Fettgewicht. <b>Damit sieht jede Oberfläche gleich aus</b>, egal wie sorgfältig
- * das Gehäuse gezeichnet ist — und ein Code-Editor in der Schrift, mit der
- * auch Schilder beschriftet werden, sieht nicht nach Werkzeug aus.
+ * <p>Minecraft's default font is eight pixels tall and knows no bold weight.
+ * <b>That makes every interface look the same</b>, no matter how carefully the
+ * casing is drawn — and a code editor in the font that signs are also lettered
+ * with does not look like a tool.
  *
- * <p>JetBrains Mono, weil es eine Schrift für Code ist und weil ihre Lizenz
- * das Mitliefern erlaubt. Größe neun, weil Minecrafts Zeilenhöhe neun ist:
- * Bei zehn stoßen die Unterlängen in die nächste Zeile.
+ * <p>JetBrains Mono, because it is a font for code and because its licence
+ * allows bundling it. Size nine, because Minecraft's line height is nine: at
+ * ten the descenders bump into the next line.
  *
- * <p><b>Nur im Terminal.</b> Das Spielerinventar, Jade und alle Meldungen im
- * Chat bleiben bei Vanilla — eine Mod, die überall ihre eigene Schrift
- * durchsetzt, sieht nicht besser aus, sondern fremd.
+ * <p><b>Only in the terminal.</b> The player inventory, Jade and all messages
+ * in the chat stay with vanilla — a mod that forces its own font everywhere
+ * does not look better, only alien.
  */
 public final class FnFonts {
 
-    /** Die Schrift für Code und Zahlen. */
+    /** The font for code and numbers. */
     public static final ResourceLocation MONO =
             ResourceLocation.fromNamespaceAndPath(FactoryNetwork.MOD_ID, "mono");
 
-    /** Dieselbe, fett — für Überschriften und den aktiven Reiter. */
+    /** The same, bold — for headings and the active tab. */
     public static final ResourceLocation MONO_BOLD =
             ResourceLocation.fromNamespaceAndPath(FactoryNetwork.MOD_ID, "mono_bold");
 
@@ -46,7 +46,7 @@ public final class FnFonts {
         return Component.literal(text).setStyle(BOLD_STYLE);
     }
 
-    /** Legt die Schrift auf einen fertigen Text, etwa aus der Sprachdatei. */
+    /** Applies the font to a finished text, e.g. from the language file. */
     public static MutableComponent mono(Component text) {
         return text.copy().setStyle(text.getStyle().withFont(MONO));
     }

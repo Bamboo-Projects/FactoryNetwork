@@ -29,101 +29,100 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * Das Netzwerk eines Controllers: alle Connectoren, die über Kabel mit ihm
- * verbunden sind.
+ * A controller's network: all connectors connected to it by cable.
  *
- * <p>Der Graph wird nicht dauernd gepflegt, sondern neu aufgebaut, wenn sich
- * etwas geändert hat. Das ist für die Größenordnung, um die es geht — einige
- * hundert Blöcke — deutlich einfacher als eine mitwachsende Struktur, und ein
- * Kabel wird selten gesetzt.
+ * <p>The graph is not maintained continuously but rebuilt whenever something
+ * has changed. For the scale in question — a few hundred blocks — that is far
+ * simpler than a structure that grows along with it, and a cable is rarely
+ * placed.
  *
- * <p>Nicht geladene Chunks werden übersprungen. Ein Connector dort ist nicht
- * weg, sondern vorübergehend nicht erreichbar — der Unterschied steht in
- * {@code sprache.md}, Abschnitt 14.
+ * <p>Unloaded chunks are skipped. A connector there is not gone, merely
+ * temporarily unreachable — the difference is explained in {@code sprache.md},
+ * section 14.
  */
 public final class FactoryGraph {
 
     /**
-     * Weiter als das sucht der Aufbau nicht; schützt vor Endlosnetzen.
+     * The build searches no further than this; guards against endless
+     * networks.
      *
-     * <p>Einstellbar in der Serverkonfiguration — der Betreiber eines Packs
-     * kennt seine Spieler und seine Hardware, die Mod nicht.
+     * <p>Configurable in the server config — the operator of a pack knows
+     * their players and their hardware, the mod does not.
      */
     private static int maxNodes() {
         return dev.devpanda.factorynetwork.FnConfig.networkNodes();
     }
 
     /**
-     * Name auf Stellen. Mehr als eine bedeutet: Der Name ist doppelt
-     * vergeben und damit unbrauchbar — siehe {@link #isAmbiguous}.
+     * Name to spots. More than one means: the name is assigned twice and thus
+     * unusable — see {@link #isAmbiguous}.
      *
-     * <p>Eine Stelle ist Ort <b>und</b> Fläche ({@link DevicePos}): An einem
-     * Kabelblock sitzen bis zu sechs Anschlüsse, und zwei davon sind zwei
-     * Geräte mit zwei Namen.
+     * <p>A spot is a place <b>and</b> a face ({@link DevicePos}): a cable block
+     * carries up to six connectors, and two of them are two devices with two
+     * names.
      */
     private final Map<String, List<DevicePos>> connectorsByName;
     /**
-     * Connectoren ohne Namen.
+     * Connectors without a name.
      *
-     * <p>Sie lassen sich nicht ansprechen — dafür braucht es einen Namen —,
-     * aber sie hängen im Netz, und der Spieler muss das sehen. Sie hier
-     * wegzulassen hieß, dass der Controller „0 Connectoren" meldete, während
-     * drei danebenhingen.
+     * <p>They cannot be addressed — that needs a name — but they hang in the
+     * network, and the player must see it. Leaving them out here would mean the
+     * controller reported "0 connectors" while three hung right beside it.
      */
     private final List<DevicePos> unnamed;
-    /** Geräte, die im Netz hängen, aber keinen freien Kanal bekommen haben. */
+    /** Devices that hang in the network but received no free channel. */
     /**
-     * Über welche Kabel ein Gerät arbeitet.
+     * Which cables a device works over.
      *
-     * <p>Bis zum 29.08. stand hier {@code starved}: Geräte, für die kein
-     * Kanal mehr frei war. Es gibt sie nicht mehr — wer erreichbar ist, hängt
-     * am Netz. Was knapp werden kann, ist der Durchsatz, und der steht am
-     * Weg.
+     * <p>Until 29.08. this held {@code starved}: devices for which no channel
+     * was free any more. They no longer exist — whoever is reachable hangs on
+     * the network. What can get scarce is the throughput, and that sits along
+     * the path.
      */
     private final Map<DevicePos, List<Node>> paths;
-    /** Displays am Netz. Sie zeigen nur an und brauchen keinen Kanal. */
+    /** Displays on the network. They only show and need no channel. */
     private final List<BlockPos> displays;
     private final Set<BlockPos> cables;
-    /** Router am Netz. Sie leiten weiter und kosten selbst keinen Kanal. */
+    /** Routers on the network. They forward and cost no channel themselves. */
     private final Set<BlockPos> routers;
 
     /**
-     * Geräte, die zwei Gateways beanspruchen — sie gehören zu keiner Anlage.
+     * Devices claimed by two gateways — they belong to no installation.
      *
-     * <p>Welches gewönne, hinge an der Suchreihenfolge. Geraten wird nicht;
-     * gemeldet schon.
+     * <p>Which one would win would hang on the search order. Nothing is
+     * guessed; it is reported, though.
      */
     private final Set<BlockPos> contested;
-    /** Laufwerke am Netz. Sie tragen den Speicher, den das Netz benutzt. */
+    /** Drives on the network. They carry the storage the network uses. */
     private final List<BlockPos> drives;
-    /** Serverschränke am Netz. Sie tragen die Rechenleistung. */
+    /** Server racks on the network. They carry the computing power. */
     private final List<BlockPos> racks;
-    /** Fabricators am Netz. Jeder erlaubt einen Fertigungsschritt je Takt. */
+    /** Fabricators on the network. Each allows one crafting step per cycle. */
     private final List<BlockPos> fabricators;
     /**
-     * Die Anbauten am Controller.
+     * The extensions on the controller.
      *
-     * <p>Sie hängen nicht am Netz, sie <b>sind</b> das Netz — jeder bringt
-     * eigene Seiten mit, an denen ein Strang beginnen kann. Aufgehoben werden
-     * sie für den Strombedarf und für den Analysator.
+     * <p>They do not hang on the network, they <b>are</b> the network — each
+     * brings its own sides on which a strand can begin. They are kept for the
+     * energy draw and for the analyzer.
      */
     private final List<BlockPos> extensions;
-    /** Wie viele Kanäle jeder Kabelstrang trägt. */
+    /** How many channels each cable strand carries. */
 
     /**
-     * Wer mit wem verbunden ist.
+     * Who is connected to whom.
      *
-     * <p>Die Suche kennt das ohnehin — sie merkt sich zu jedem Knoten, woher
-     * sie kam. Aufgehoben wird es für den Netzanalysator, der das Netz als
-     * Linien in die Welt zeichnet. Ohne die Kanten bliebe ihm nur eine Wolke
-     * von Punkten.
+     * <p>The search knows this anyway — for every node it remembers where it
+     * came from. It is kept for the network analyzer, which draws the network
+     * as lines into the world. Without the edges it would be left with only a
+     * cloud of points.
      */
     private final List<Edge> edges;
     private final List<BlockPos> masts;
     private final Set<BlockPos> bridges;
     private final boolean truncated;
 
-    /** Eine Verbindung zwischen zwei Knoten des Netzes. */
+    /** A connection between two nodes of the network. */
     public record Edge(Node from, Node to) {}
 
     private FactoryGraph(Map<String, List<DevicePos>> connectorsByName,
@@ -159,66 +158,66 @@ public final class FactoryGraph {
                 List.of(), List.of(), Set.of(), List.of(), Set.of(), false);
     }
 
-    /** Die Fabricators am Netz. */
+    /** The fabricators on the network. */
     public List<BlockPos> fabricators() {
         return fabricators;
     }
 
     /**
-     * Die Sendemasten am Netz.
+     * The transmitter masts on the network.
      *
-     * <p>Der Controller braucht sie für die Stromrechnung: Was ein Mast
-     * zieht, hängt daran, was in ihm steckt.
+     * <p>The controller needs them for the energy bill: what a mast draws
+     * depends on what is in it.
      */
     public List<BlockPos> masts() {
         return masts;
     }
 
     /**
-     * Die Quantum-Brücken am Netz.
+     * The quantum bridges on the network.
      *
-     * <p>Immer paarweise, wenn beide Enden geladen sind — sonst steht nur
-     * das diesseitige darin, und der Weg endet dort.
+     * <p>Always in pairs, when both ends are loaded — otherwise only the near
+     * end stands in it, and the path ends there.
      */
     public Set<BlockPos> bridges() {
         return bridges;
     }
 
-    /** Die Anbauten am Controller. */
+    /** The extensions on the controller. */
     public List<BlockPos> extensions() {
         return extensions;
     }
 
-    /** Die Laufwerke am Netz. */
+    /** The drives on the network. */
     public List<BlockPos> drives() {
         return drives;
     }
 
-    /** Die Serverschränke am Netz. */
+    /** The server racks on the network. */
     public List<BlockPos> racks() {
         return racks;
     }
 
-    /** Die Verbindungen des Netzes, für die Anzeige im Raum. */
+    /** The network's connections, for the in-world display. */
     public List<Edge> edges() {
         return edges;
     }
 
     /**
-     * Ein Knoten der Suche: eine Stelle und ein Strang.
+     * A node of the search: a spot and a strand.
      *
-     * <p>Ein Kabelblock ist nicht ein Knoten, sondern bis zu vier — sonst
-     * liefe ein grüner Strang über einen Block, in dem auch ein roter liegt,
-     * und beide wären plötzlich verbunden.
+     * <p>A cable block is not one node but up to four — otherwise a green
+     * strand would run over a block that also holds a red one, and the two
+     * would suddenly be connected.
      */
     public record Node(BlockPos pos, CableColour colour, int lane) {
 
         /**
-         * Ein Knoten ohne Bahn — alles außer einem Router.
+         * A node without a lane — everything except a router.
          *
-         * <p>Die Bahn trennt nur innerhalb eines Routers. Ein Kabel hat
-         * keine, also steht dort {@link RouterBlockEntity#OFF}, und die
-         * bisherigen Aufrufer bleiben, wie sie sind.
+         * <p>The lane separates only within a router. A cable has none, so
+         * {@link RouterBlockEntity#OFF} stands there, and the existing callers
+         * stay as they are.
          */
         public Node(BlockPos pos, CableColour colour) {
             this(pos, colour, RouterBlockEntity.OFF);
@@ -227,21 +226,21 @@ public final class FactoryGraph {
 
 
     /**
-     * Baut den Graphen ausgehend vom Controller auf.
+     * Builds the graph starting from the controller.
      *
-     * <p>Die Breitensuche geht in fester Richtungsfolge — {@code Direction}
-     * in seiner eigenen Reihenfolge — und sammelt Geräte nach Entfernung.
-     * <b>Damit gewinnt bei knappen Kanälen immer das nähere Gerät</b>, und bei
-     * gleicher Entfernung das in der früheren Richtung. Diese Regel muss
-     * feststehen und erklärbar sein: Sonst ist „warum ist dieses Gerät
-     * offline" nicht zu beantworten.
+     * <p>The breadth-first search goes in a fixed order of directions —
+     * {@code Direction} in its own order — and collects devices by distance.
+     * <b>So with scarce channels the nearer device always wins</b>, and at
+     * equal distance the one in the earlier direction. This rule must be fixed
+     * and explainable: otherwise "why is this device offline" cannot be
+     * answered.
      */
     public static FactoryGraph build(Level level, BlockPos controller) {
         Map<String, List<DevicePos>> connectors = new LinkedHashMap<>();
         List<DevicePos> unnamed = new ArrayList<>();
-        // Der Weg jedes Geräts zum Controller. Er begrenzt nicht mehr,
-        // wer angeschlossen ist — er sagt, über welche Kabel ein Gerät
-        // arbeitet, und daran hängt der Durchsatz.
+        // Each device's path to the controller. It no longer limits who is
+        // connected — it says which cables a device works over, and the
+        // throughput hangs on that.
         Map<DevicePos, List<Node>> paths = new java.util.LinkedHashMap<>();
         List<BlockPos> displays = new ArrayList<>();
         Set<BlockPos> cables = new HashSet<>();
@@ -254,19 +253,19 @@ public final class FactoryGraph {
         List<BlockPos> fabricators = new ArrayList<>();
 
         Map<Node, Node> parents = new HashMap<>();
-        // Gerät auf die Kabelstränge, über die es erreichbar ist — in der
-        // Reihenfolge, in der die Suche sie gefunden hat.
+        // Device to the cable strands over which it is reachable — in the
+        // order in which the search found them.
         //
-        // Der Schlüssel ist Ort und Fläche und nicht nur der Ort: Sechs
-        // Anschlüsse an einem Kabelblock sind sechs Geräte, jedes mit
-        // eigenem Namen und eigenem Kanalbedarf.
+        // The key is place and face and not just place: six connectors on a
+        // cable block are six devices, each with its own name and its own
+        // channel demand.
         Map<DevicePos, List<Node>> reachable = new LinkedHashMap<>();
         Map<DevicePos, Consumer> kinds = new LinkedHashMap<>();
         Deque<Node> queue = new ArrayDeque<>();
 
-        // Der Controller und seine Anbauten sind farbneutral: Von jedem von
-        // ihnen gehen alle Stränge aus, die an ihm hängen. Mehrere Wurzeln
-        // sind genau der Sinn des Anbaus — sechs Seiten je Block.
+        // The controller and its extensions are colour-neutral: from each of
+        // them radiate all the strands that hang on it. Multiple roots are
+        // exactly the point of an extension — six sides per block.
         List<BlockPos> extensions = extensionsAround(level, controller);
         Node root = new Node(controller, CableColour.NONE);
         queue.add(root);
@@ -284,38 +283,38 @@ public final class FactoryGraph {
                 break;
             }
             Node current = queue.poll();
-            // Steht die Suche in einem Router, gilt sie nur für eine Bahn.
-            // Der Filter muss vor allem anderen stehen, nicht nur vor dem
-            // Kabelzweig: Auch ein Gerät an einer fremden Bahn gehört nicht
-            // dazu.
-            // Am Block gefragt und nicht am Knoten: Der Knoten trug früher
-            // die Bahnnummer, und die gibt es nicht mehr — ein Router ist
-            // jetzt ein Knoten, nicht vier.
+            // If the search stands in a router, it applies to one lane only.
+            // The filter must come before everything else, not just before
+            // the cable branch: a device on a foreign lane does not belong
+            // here either.
+            // Asked at the block and not at the node: the node used to carry
+            // the lane number, and that is gone — a router is now one node,
+            // not four.
             boolean atRouter = level.getBlockState(current.pos()).getBlock()
                     instanceof RouterBlock;
             for (Direction direction : Direction.values()) {
-                // Aus einem Router hinaus nur, wo die Seite es zulässt.
-                // Vorher stand hier ein Bahnvergleich; jetzt entscheidet der
-                // Filter der Austrittsseite — siehe mayLeaveRouter.
+                // Out of a router only where the side allows it. Previously a
+                // lane comparison stood here; now the filter of the exit side
+                // decides — see mayLeaveRouter.
                 if (atRouter && !mayLeaveRouter(level, current.pos(), direction,
                         current.colour())) {
                     continue;
                 }
                 BlockPos next = current.pos().relative(direction);
                 if (!level.isLoaded(next)) {
-                    // Ein nicht geladener Chunk beendet den Zweig, ohne Fehler.
+                    // An unloaded chunk ends the branch, without error.
                     continue;
                 }
                 BlockState state = level.getBlockState(next);
-                // Ein Halter ohne Kabel leitet nicht. Sein Anschluss sitzt
-                // darin und wartet auf ein Kabel — bis dahin gehört er zu
-                // keinem Netz.
+                // A holder without a cable does not conduct. Its connector
+                // sits inside it and waits for a cable — until then it belongs
+                // to no network.
                 if (state.getBlock() instanceof CableBlock
                         && dev.devpanda.factorynetwork.block.CableBlock.carries(state)) {
                     Node node = visitCable(level, next, current, parents, queue, cables);
-                    // Jeder Anschluss an einer Fläche dieses Kabels ist ein
-                    // eigenes Gerät — und sein Weg zum Controller führt über
-                    // das Kabel selbst, nicht über das davor.
+                    // Every connector on a face of this cable is its own
+                    // device — and its path to the controller runs over the
+                    // cable itself, not over the one before it.
                     if (node != null) {
                         for (Direction side : partsAt(level, next)) {
                             DevicePos device = DevicePos.of(next, side);
@@ -326,12 +325,13 @@ public final class FactoryGraph {
                     }
                 } else if (state.getBlock()
                         instanceof dev.devpanda.factorynetwork.block.GatewayBlock) {
-                    // Er reicht den Strang durch wie ein Kabel und vermehrt
-                    // dabei nichts: Seine Kanalgrenze steht in capacityAt.
-                    // Was er zusätzlich tut — der Umgebung einen
-                    // Anlagennamen geben —, entscheidet die Nachbarschaft am
-                    // Kabel und nicht der Weg zum Controller; deshalb steht
-                    // es in GatewayRegions und nicht hier.
+                    // It passes the strand through like a cable and multiplies
+                    // nothing in doing so: its channel limit lives in
+                    // capacityAt. What it does on top — giving its
+                    // surroundings an installation name — is decided by the
+                    // neighbourhood at the cable and not by the path to the
+                    // controller; that is why it lives in GatewayRegions and
+                    // not here.
                     visitCable(level, next, current, parents, queue, cables);
                     gateways.add(next.immutable());
                 } else if (state.getBlock()
@@ -340,22 +340,21 @@ public final class FactoryGraph {
                 } else if (state.getBlock() instanceof RouterBlock) {
                     visitRouter(level, next, direction, current, parents, queue, routers);
                 } else {
-                    // Alles, was einen Kanal kostet, geht denselben Weg —
-                    // noch nicht zuteilen: Ein Gerät kann an mehreren
-                    // Strängen hängen, und welcher es trägt, entscheidet
-                    // sich erst, wenn alle Wege bekannt sind.
+                    // Everything that costs a channel goes the same way — do
+                    // not assign yet: a device can hang on several strands,
+                    // and which one carries it is decided only once all paths
+                    // are known.
                     Consumer kind = consumerAt(state);
                     if (kind != null) {
                         DevicePos device = deviceAt(state, next);
                         reachable.computeIfAbsent(device, key -> new ArrayList<>())
                                 .add(current);
                         kinds.put(device, kind);
-                        // Anzeigen leiten weiter. Eine Wand aus sechs Tafeln
-                        // ist ein Bild und keine sechs Geräte, und hinter
-                        // jede ein Kabel zu legen ist Arbeit ohne
-                        // Entscheidung. Alle anderen Geräte enden hier: Wer
-                        // zwei Laufwerke aneinanderstellt, meint zwei
-                        // Laufwerke und keine Leitung.
+                        // Displays forward. A wall of six panels is one
+                        // picture and not six devices, and laying a cable
+                        // behind each one is work without a decision. All
+                        // other devices end here: whoever places two drives
+                        // side by side means two drives and not a line.
                         if (kind == Consumer.DISPLAY) {
                             visitDisplay(next, current, parents, queue);
                         }
@@ -364,9 +363,9 @@ public final class FactoryGraph {
             }
         }
 
-        // Erst jetzt, weil erst jetzt feststeht, welche Gateways im Netz
-        // hängen. Ein Gateway ohne Kabel zum Controller gehört nicht dazu
-        // und benennt deshalb auch nichts.
+        // Only now, because only now is it settled which gateways hang in the
+        // network. A gateway without a cable to the controller does not belong
+        // and therefore names nothing either.
         GatewayRegions regions = gateways.isEmpty()
                 ? GatewayRegions.EMPTY : GatewayRegions.of(level, gateways, maxNodes());
         assignPaths(level, reachable, kinds, parents, connectors, unnamed,
@@ -389,17 +388,18 @@ public final class FactoryGraph {
     }
 
     /**
-     * Die Anbauten, die den Controller berühren — unmittelbar oder über
-     * andere Anbauten.
+     * The extensions that touch the controller — directly or through other
+     * extensions.
      *
-     * <p><b>Nur über Flächen, nie über ein Kabel.</b> Ließe sich ein Anbau
-     * ankabeln, wäre er ein beliebig oft setzbarer Kanalvermehrer: sechs neue
-     * Seiten für einen Block, irgendwo im Gelände, und die Kanalgrenze
-     * bedeutete nichts mehr. Wer ausbauen will, baut am Controller.
+     * <p><b>Only across faces, never across a cable.</b> If an extension could
+     * be cabled up, it would be a channel multiplier placeable any number of
+     * times: six new sides for a block, somewhere out in the terrain, and the
+     * channel limit would mean nothing any more. Whoever wants to expand
+     * builds on the controller.
      *
-     * <p>Eine Obergrenze gibt es nicht. Sechs Seiten je Block, und jeder
-     * Anbau bringt neue — begrenzt wird das von der Bauform und vom
-     * Strombedarf, nicht von einer Zahl im Code.
+     * <p>There is no upper limit. Six sides per block, and each extension
+     * brings new ones — this is bounded by the build's shape and by the energy
+     * draw, not by a number in the code.
      */
     private static List<BlockPos> extensionsAround(Level level, BlockPos controller) {
         List<BlockPos> found = new ArrayList<>();
@@ -424,12 +424,11 @@ public final class FactoryGraph {
     }
 
     /**
-     * Was am Netz ein Gerät ist.
+     * What counts as a device on the network.
      *
-     * <p><b>Ohne Kosten seit dem 29.08.</b> Jede dieser Arten kostete
-     * einen Kanal oder keinen; Kanäle gibt es nicht mehr. Was bleibt, ist
-     * die Art selbst — der Suchlauf muss wissen, in welche Liste ein Fund
-     * gehört.
+     * <p><b>Without cost since 29.08.</b> Each of these kinds cost either one
+     * channel or none; channels no longer exist. What remains is the kind
+     * itself — the traversal must know which list a find belongs in.
      */
     private enum Consumer {
         CONNECTOR,
@@ -441,16 +440,15 @@ public final class FactoryGraph {
     }
 
     /**
-     * Wo ein Gerät zählt, wenn es mehr als einen Block belegt.
+     * Where a device counts when it occupies more than one block.
      *
-     * <p>Der Serverschrank ist zwei Blöcke hoch und trotzdem ein Gerät: ein
-     * Kanal, eine BlockEntity, ein Eintrag in der Liste. Wer oben ankabelt,
-     * kabelt denselben Schrank an — deshalb steht die obere Hälfte hier auf
-     * die untere um, statt ein zweites Mal zu zählen.
+     * <p>The server rack is two blocks tall and still one device: one channel,
+     * one BlockEntity, one entry in the list. Whoever cables up the top cables
+     * up the same rack — which is why the upper half is remapped here onto the
+     * lower one, instead of counting a second time.
      *
-     * <p>Eine Fläche bekommt nur ein Anschluss. Alles andere ist ein ganzer
-     * Block: Wer ein Laufwerk von zwei Seiten ankabelt, hat ein Laufwerk und
-     * nicht zwei.
+     * <p>A face gets only one connector. Everything else is a whole block:
+     * whoever cables up a drive from two sides has one drive and not two.
      */
     private static DevicePos deviceAt(BlockState state, BlockPos pos) {
         if (state.getBlock() instanceof RackBlock) {
@@ -460,10 +458,10 @@ public final class FactoryGraph {
     }
 
     /**
-     * Die Flächen eines Kabelblocks, an denen ein Anschluss sitzt.
+     * The faces of a cable block on which a connector sits.
      *
-     * <p>Leer bei jedem gewöhnlichen Kabel — und das ist der Normalfall, den
-     * die Suche tausendfach durchläuft.
+     * <p>Empty for every ordinary cable — and that is the normal case, which
+     * the search runs through a thousand times over.
      */
     private static List<Direction> partsAt(Level level, BlockPos pos) {
         return level.getBlockEntity(pos)
@@ -472,9 +470,8 @@ public final class FactoryGraph {
     }
 
     private static Consumer consumerAt(BlockState state) {
-        // Ein Anschluss steht hier nicht mehr: Er ist kein Block, sondern
-        // ein Teil an einer Kabelfläche, und den findet die Suche im
-        // Kabelzweig.
+        // A connector no longer appears here: it is not a block but a part on
+        // a cable face, and the search finds that in the cable branch.
         if (state.getBlock() instanceof DriveBlock) {
             return Consumer.DRIVE;
         }
@@ -494,8 +491,8 @@ public final class FactoryGraph {
     }
 
     /**
-     * Geht in einen Kabelblock hinein — aber nur, wenn seine Farbe zu der
-     * passt, aus der man kommt.
+     * Steps into a cable block — but only if its colour matches the one you
+     * come from.
      */
     private static Node visitCable(Level level, BlockPos pos, Node from,
                                    Map<Node, Node> parents,
@@ -510,24 +507,24 @@ public final class FactoryGraph {
             queue.add(node);
             cables.add(pos.immutable());
         }
-        // Auch ein schon besuchtes Kabel darf seine Teile beisteuern: Der
-        // Knoten ist derselbe, und über ihn läuft ihr Weg zum Controller.
+        // Even an already-visited cable may contribute its parts: the node is
+        // the same, and their path to the controller runs through it.
         return node;
     }
 
     /**
-     * Springt durch eine Quantum-Brücke zu ihrer Gegenstelle.
+     * Jumps through a quantum bridge to its counterpart.
      *
-     * <p>Die Brücke ist ein Stück Leitung, das an zwei Orten liegt. Wer sie
-     * betritt, steht danach am anderen Ende — mit der Farbe, mit der er sie
-     * erreicht hat, denn eine Leitung ändert ihre Farbe nicht unterwegs.
+     * <p>The bridge is a piece of line that lies in two places. Whoever enters
+     * it stands afterward at the other end — with the colour they reached it
+     * with, because a line does not change its colour along the way.
      *
-     * <p><b>Ist die Gegenstelle nicht geladen, endet der Weg hier.</b>
-     * Dieselbe Regel wie beim Sendemast: {@code getBlockEntity} lüde sonst
-     * nach, und diese Frage fällt bei jedem Neuaufbau des Netzes.
+     * <p><b>If the counterpart is not loaded, the path ends here.</b> The same
+     * rule as with the transmitter mast: {@code getBlockEntity} would otherwise
+     * load it in, and this question comes up on every rebuild of the network.
      *
-     * <p>Das Ping-Pong zwischen den beiden Enden fängt {@code parents}: Ein
-     * Knoten, der schon einen Weg hat, bekommt keinen zweiten.
+     * <p>The ping-pong between the two ends is caught by {@code parents}: a
+     * node that already has a path gets no second one.
      */
     private static void visitBridge(Level level, BlockPos pos, Node from,
                                     Map<Node, Node> parents, Deque<Node> queue,
@@ -551,17 +548,16 @@ public final class FactoryGraph {
     }
 
     /**
-     * Geht durch eine Anzeige hindurch.
+     * Passes through a display.
      *
-     * <p>Eine Anzeige führt den Strang weiter, mit der Farbe, mit der sie
-     * erreicht wurde. Sie ist damit ein Stück derselben Leitung: Eine rote
-     * Wand bleibt rot, und zwei verschiedenfarbige Netze wachsen nicht über
-     * eine Anzeige zusammen.
+     * <p>A display carries the strand onward, with the colour it was reached
+     * with. It is thus a piece of the same line: a red wall stays red, and two
+     * differently coloured networks do not grow together across a display.
      *
-     * <p>Sie trägt dabei keine eigene Kanalgrenze — {@code capacityAt} gibt
-     * für alles, was kein Kabel ist, unbegrenzt zurück. Was eine Wand
-     * kostet, begrenzt das Kabel, an dem sie hängt, und das ist die Stelle,
-     * an der man es auch nachsieht.
+     * <p>It carries no channel limit of its own in doing so — {@code capacityAt}
+     * returns unlimited for everything that is not a cable. What a wall costs
+     * is limited by the cable it hangs on, and that is the place where you
+     * check it, too.
      */
     private static void visitDisplay(BlockPos pos, Node from, Map<Node, Node> parents,
                                      Deque<Node> queue) {
@@ -573,12 +569,11 @@ public final class FactoryGraph {
     }
 
     /**
-     * Geht in einen Router hinein — auf der Bahn, die die berührte Seite
-     * führt.
+     * Steps into a router — on the lane that the touched side carries.
      *
-     * <p>Die berührte Seite ist die dem Weg zugewandte, also die Gegenseite
-     * der Richtung, in die man gegangen ist. Ist sie abgeklemmt, endet der
-     * Zweig; das ist der ganze Zweck einer abgeklemmten Seite.
+     * <p>The touched side is the one facing the path, i.e. the opposite of the
+     * direction you went in. If it is cut off, the branch ends; that is the
+     * whole purpose of a cut-off side.
      */
     private static void visitRouter(Level level, BlockPos pos, Direction direction, Node from,
                                     Map<Node, Node> parents, Deque<Node> queue,
@@ -588,29 +583,29 @@ public final class FactoryGraph {
         if (lane == RouterBlockEntity.OFF) {
             return;
         }
-        // <b>Der Router filtert, er mischt nicht.</b> Bis zum 29.08. war der
-        // Knoten farbneutral: Was auf einer Bahn zusammenkam, galt als
-        // verbunden — zwei getrennte Teilnetze wuchsen darüber zusammen.
+        // <b>The router filters, it does not mix.</b> Until 29.08. the node
+        // was colour-neutral: whatever came together on a lane counted as
+        // connected — two separate subnetworks grew together over it.
         //
-        // Jetzt trägt der Knoten eine Farbe. Eine Seite ohne Filter reicht
-        // die Farbe durch, mit der es ankam; eine mit Filter lässt nur diese
-        // eine durch. Damit treffen sich zwei Farben im selben Block, ohne
-        // einander zu berühren — das Glasfaser-Bild.
+        // Now the node carries a colour. A side without a filter passes on the
+        // colour it arrived with; one with a filter lets only that one
+        // through. So two colours meet in the same block without touching each
+        // other — the fiber-optic picture.
         CableColour filter = RouterBlockEntity.filterAt(level, pos, eintritt);
         if (filter != null && !filter.connectsTo(from.colour())) {
             return;
         }
-        // <b>Ein Router ist ein Knoten, nicht vier.</b> Vorher trug der
-        // Knoten die Bahnnummer der Eintrittsseite — und reichte damit nie
-        // zu einer Seite mit anderer Nummer hinaus. Vier Bahnen waren vier
-        // Router im selben Block.
+        // <b>A router is one node, not four.</b> Previously the node carried
+        // the lane number of the entry side — and thus never reached out to a
+        // side with a different number. Four lanes were four routers in the
+        // same block.
         //
-        // Jetzt ist er ein Durchgang, und die Filter sitzen an seinen
-        // Seiten: Was hereindarf, entscheidet der Eintritt; was hinausdarf,
-        // der Austritt. Ein roter Ausgang lässt nur Rotes hinaus.
+        // Now it is a passage, and the filters sit on its sides: what may
+        // enter is decided by the entry; what may leave, by the exit. A red
+        // exit lets only red out.
         //
-        // Die Farbe des Knotens ist die, mit der es ankam — der Filter
-        // entscheidet, ob etwas hindurchdarf, nicht, was es danach ist.
+        // The node's colour is the one it arrived with — the filter decides
+        // whether something may pass through, not what it is afterward.
         Node node = new Node(pos.immutable(), from.colour());
         routers.add(pos.immutable());
         if (!parents.containsKey(node)) {
@@ -620,11 +615,11 @@ public final class FactoryGraph {
     }
 
     /**
-     * Darf diese Farbe hier hinaus?
+     * May this colour leave here?
      *
-     * <p>Die Gegenprobe zum Eintritt: Der Router hat je Seite einen Filter,
-     * und beide Richtungen zählen. Ohne diese Frage wäre ein roter Ausgang
-     * eine Beschriftung ohne Wirkung — es käme heraus, was hereinkam.
+     * <p>The counter-check to entry: the router has one filter per side, and
+     * both directions count. Without this question a red exit would be a label
+     * with no effect — out would come whatever came in.
      */
     private static boolean mayLeaveRouter(Level level, BlockPos pos, Direction side,
                                           CableColour colour) {
@@ -635,30 +630,30 @@ public final class FactoryGraph {
         if (filter == null) {
             return true;
         }
-        // <b>Die Farbe des Kabels dahinter entscheidet, nicht die des
-        // Strangs davor.</b> Ein roter Ausgang führt in ein rotes Kabel;
-        // liegt dort ein blaues, geht nichts hinaus.
+        // <b>The colour of the cable behind it decides, not that of the strand
+        // in front.</b> A red exit leads into a red cable; if a blue one lies
+        // there, nothing leaves.
         //
-        // connectsTo allein reichte nicht: Neutral verbindet sich mit allem,
-        // und ein neutrales Kabel käme durch jeden Filter — ein Filter, den
-        // alles passiert, ist keiner.
+        // connectsTo alone was not enough: neutral connects to everything, and
+        // a neutral cable would pass through every filter — a filter that
+        // everything passes is none.
         CableColour dahinter = CableBlock.colourOf(
                 level.getBlockState(pos.relative(side)));
         return filter == dahinter;
     }
 
     /**
-     * Teilt den Geräten ihre Kanäle zu.
+     * Assigns their channels to the devices.
      *
-     * <p>Läuft erst, wenn die Suche durch ist — vorher weiß man nicht, über
-     * welche Stränge ein Gerät überhaupt erreichbar ist. <b>Ein Gerät nimmt
-     * den ersten Strang, auf dessen Weg noch Platz ist</b>, nicht einfach den
-     * erstgefundenen: Sonst bliebe ein Gerät hungrig, während im selben Block
-     * ein freier Strang liegt. Genau das heißt „Kanäle je Kabel, nicht je
-     * Bündel".
+     * <p>Runs only once the search is through — before that you do not know
+     * over which strands a device is reachable at all. <b>A device takes the
+     * first strand whose path still has room</b>, not simply the first one
+     * found: otherwise a device would stay starved while a free strand lies in
+     * the same block. That is exactly what "channels per cable, not per
+     * bundle" means.
      *
-     * <p>Die Reihenfolge ist die der Suche, also nach Entfernung: Bei knappen
-     * Kanälen gewinnt das nähere Gerät.
+     * <p>The order is that of the search, i.e. by distance: with scarce
+     * channels the nearer device wins.
      */
     private static void assignPaths(Level level, Map<DevicePos, List<Node>> reachable,
                                        Map<DevicePos, Consumer> kinds,
@@ -673,10 +668,9 @@ public final class FactoryGraph {
             DevicePos device = entry.getKey();
             BlockPos pos = device.pos();
             Consumer kind = kinds.get(device);
-            // Über Connectors und nicht über die BlockEntity: Ein Anschluss
-            // sitzt entweder allein in einem Connectorblock oder an einer
-            // Fläche eines Kabels. Welche Bauform, geht die Zuteilung nichts
-            // an — die Fläche schon.
+            // Via Connectors and not via the BlockEntity: a connector sits
+            // either alone in a connector block or on a face of a cable. Which
+            // build form is no concern of the assignment — the face is.
             dev.devpanda.factorynetwork.block.entity.ConnectorPart connector =
                     device.side() == null ? null
                             : dev.devpanda.factorynetwork.block.entity.Connectors
@@ -684,14 +678,13 @@ public final class FactoryGraph {
             if (kind == null || (kind == Consumer.CONNECTOR && connector == null)) {
                 continue;
             }
-            // <b>Der kürzeste Weg, ohne Kapazitätsfrage.</b> Bis zum
-            // 29.08. stand hier eine Prüfung: Passt dieses Gerät noch auf
-            // diesen Strang, oder muss es ausweichen? Sie ist mit den
-            // Kanälen gefallen.
+            // <b>The shortest path, without a capacity question.</b> Until
+            // 29.08. a check stood here: does this device still fit on this
+            // strand, or must it move aside? It fell along with the channels.
             //
-            // Was bleibt, ist die Wegewahl selbst — ohne Weg gibt es kein
-            // "hängt am Netz". Der erste gefundene ist der kürzeste: Die
-            // Suche läuft in die Breite.
+            // What remains is the choice of path itself — without a path there
+            // is no "hangs on the network". The first one found is the
+            // shortest: the search runs breadth-first.
             List<Node> chosen = entry.getValue().isEmpty() ? null
                     : pathOf(level, entry.getValue().get(0), parents);
             if (chosen == null) {
@@ -706,15 +699,15 @@ public final class FactoryGraph {
                 case DISPLAY -> displays.add(pos);
                 case MAST -> masts.add(pos);
                 case CONNECTOR -> {
-                    // Die Anlage steht am Ort und nicht an der Fläche: Ein
-                    // Gateway benennt, was um es herum hängt, und ein
-                    // Kabelblock hängt mit allen seinen Anschlüssen dort.
+                    // The installation sits at the place and not at the face:
+                    // a gateway names what hangs around it, and a cable block
+                    // hangs there with all its connectors.
                     String label = effectiveLabel(connector.label(), regions.instanceAt(pos));
                     if (label == null || label.isBlank()) {
                         unnamed.add(device);
                     } else {
-                        // Nicht überschreiben: Zwei Connectoren mit demselben
-                        // Namen sind ein Fehler, kein Vorrang.
+                        // Do not overwrite: two connectors with the same name
+                        // are an error, not a precedence.
                         connectors.computeIfAbsent(label, key -> new ArrayList<>()).add(device);
                     }
                 }
@@ -724,17 +717,16 @@ public final class FactoryGraph {
     }
 
     /**
-     * Der Name, unter dem ein Gerät im Netz steht.
+     * The name a device goes by in the network.
      *
-     * <p><b>Die Beschriftung gewinnt.</b> Steht ein Schrägstrich darin, ist
-     * die Anlage schon gesagt, und ein Gateway ändert daran nichts — sonst
-     * hätte ein hingestellter Block still verschoben, was ein Programm über
-     * ein Gerät sagt.
+     * <p><b>The label wins.</b> If a slash appears in it, the installation is
+     * already stated, and a gateway changes nothing about that — otherwise a
+     * placed block would silently shift what a program says about a device.
      *
-     * <p>Sonst setzt das Gateway seinen Namen davor. Für alles dahinter ist
-     * das Gerät damit {@code werk_1/eingang}, ohne dass es an einem einzigen
-     * Connector dasteht: Der Interpreter, die Anlagenerkennung und beide
-     * Editoren sehen denselben Namen wie vorher.
+     * <p>Otherwise the gateway puts its name in front. For everything behind
+     * it the device is thus {@code werk_1/eingang}, without it being written
+     * on a single connector: the interpreter, the installation detection and
+     * both editors see the same name as before.
      */
     static String effectiveLabel(String label, String instance) {
         if (label == null || label.isBlank() || instance == null || instance.isBlank()) {
@@ -747,18 +739,18 @@ public final class FactoryGraph {
                         .MultiblockInstances.SEPARATOR + label;
     }
 
-    /** Der Weg eines Geräts zum Controller, als Liste seiner Kabelstränge. */
+    /** A device's path to the controller, as a list of its cable strands. */
     private static List<Node> pathOf(Level level, Node from, Map<Node, Node> parents) {
         List<Node> path = new ArrayList<>();
         for (Node node = from; node != null; node = parents.get(node)) {
-            // Was auf dem Weg Bandbreite kostet, gehört hier hinein. Ließe
-            // man den Router aus, wäre eine Kreuzung unbegrenzt, und ein Netz
-            // dahinter hätte plötzlich keine Grenze mehr.
+            // Whatever costs bandwidth along the path belongs in here. If the
+            // router were left out, a junction would be unlimited, and a
+            // network behind it would suddenly have no limit any more.
             //
-            // <b>Der Controller steht seit dem 30.08. mit darin</b>, und er
-            // ist der wichtigste Eintrag: Er liegt auf jedem Weg, also teilen
-            // sich alle Worker seine Bandbreite. Genau das ist gemeint mit
-            // „das Netz ist nur so gut wie sein schwächstes Glied".
+            // <b>The controller has been in here since 30.08.</b>, and it is
+            // the most important entry: it lies on every path, so all workers
+            // share its bandwidth. That is exactly what is meant by "a network
+            // is only as good as its weakest link".
             var state = level.getBlockState(node.pos());
             var block = state.getBlock();
             if ((block instanceof CableBlock
@@ -774,47 +766,47 @@ public final class FactoryGraph {
     }
 
     /**
-     * Geräte, die von zwei Gateways beansprucht werden.
+     * Devices claimed by two gateways.
      *
-     * <p>Sie gehören zu keiner Anlage. Der Reiter <i>Netz</i> nennt sie,
-     * statt still eines der beiden zu wählen.
+     * <p>They belong to no installation. The <i>Network</i> tab names them,
+     * instead of silently choosing one of the two.
      */
     public Set<BlockPos> contested() {
         return contested;
     }
 
-    /** Die Router am Netz. */
+    /** The routers on the network. */
     public Set<BlockPos> routers() {
         return routers;
     }
 
 
     /**
-     * Wie viel an dieser Stelle noch frei ist.
+     * How much is still free at this spot.
      *
-     * <p>Braucht die Welt, weil die Kapazität am Kabel steht. Ohne sie bleibt
-     * nur die Annahme, es sei ein gewöhnliches — was bei einem dichten um das
-     * Vierfache danebenläge.
+     * <p>Needs the world, because the capacity lives at the cable. Without it,
+     * only the assumption remains that it is an ordinary one — which for a
+     * dense one would be off by a factor of four.
      */
     public int throughputAt(Level level, BlockPos pos) {
         return Bandwidth.at(level, pos);
     }
 
     /**
-     * Über welche Kabel dieses Gerät arbeitet.
+     * Which cables this device works over.
      *
-     * <p>Der Weg zum Controller, Stelle für Stelle. Daran hängt der
-     * Durchsatz: Was ein Worker bewegt, belegt jedes Stück des Weges.
+     * <p>The path to the controller, spot by spot. The throughput hangs on it:
+     * what a worker moves occupies every piece of the path.
      */
     public List<Node> pathTo(DevicePos device) {
         return paths.getOrDefault(device, List.of());
     }
 
     /**
-     * Der schwächste Punkt auf dem Weg dieses Geräts, je Tick.
+     * The weakest point on this device's path, per tick.
      *
-     * <p>Ein Weg ist so gut wie sein engstes Stück: Ein dichtes Kabel hinter
-     * einem gewöhnlichen bringt nichts.
+     * <p>A path is as good as its tightest piece: a dense cable behind an
+     * ordinary one gains nothing.
      */
     public int throughputTo(Level level, DevicePos device) {
         int least = Bandwidth.UNLIMITED;
@@ -825,9 +817,9 @@ public final class FactoryGraph {
     }
 
     /**
-     * Die Position eines Connectors — leer, wenn es ihn nicht gibt <b>oder</b>
-     * wenn der Name doppelt vergeben ist. Ein mehrdeutiger Name darf nicht
-     * stillschweigend auf einen der beiden zeigen.
+     * The position of a connector — empty if it does not exist <b>or</b> if
+     * the name is assigned twice. An ambiguous name must not silently point to
+     * one of the two.
      */
     public Optional<DevicePos> connector(String name) {
         List<DevicePos> found = connectorsByName.get(name);
@@ -835,13 +827,13 @@ public final class FactoryGraph {
                 ? Optional.of(found.get(0)) : Optional.empty();
     }
 
-    /** Ist dieser Name mehr als einmal vergeben? */
+    /** Is this name assigned more than once? */
     public boolean isAmbiguous(String name) {
         List<DevicePos> found = connectorsByName.get(name);
         return found != null && found.size() > 1;
     }
 
-    /** Alle Namen, die mehr als einmal vergeben sind. */
+    /** All names that are assigned more than once. */
     public List<String> ambiguousNames() {
         return connectorsByName.entrySet().stream()
                 .filter(entry -> entry.getValue().size() > 1)
@@ -849,12 +841,12 @@ public final class FactoryGraph {
                 .toList();
     }
 
-    /** Alle Stellen zu einem Namen — bei einem Konflikt mehr als eine. */
+    /** All spots for a name — more than one in the case of a conflict. */
     public List<DevicePos> positionsOf(String name) {
         return connectorsByName.getOrDefault(name, List.of());
     }
 
-    /** Ist dieser Name im Netz schon vergeben? */
+    /** Is this name already assigned in the network? */
     public boolean isTaken(String name) {
         return connectorsByName.containsKey(name);
     }
@@ -863,7 +855,7 @@ public final class FactoryGraph {
         return connectorsByName.keySet();
     }
 
-    /** Nur die eindeutigen Connectoren — die, mit denen sich arbeiten lässt. */
+    /** Only the unambiguous connectors — the ones you can work with. */
     public Map<String, DevicePos> connectors() {
         Map<String, DevicePos> unique = new LinkedHashMap<>();
         connectorsByName.forEach((name, found) -> {
@@ -874,61 +866,63 @@ public final class FactoryGraph {
         return unique;
     }
 
-    /** Connectoren ohne Namen — im Netz, aber nicht ansprechbar. */
+    /** Connectors without a name — in the network, but not addressable. */
     public List<DevicePos> unnamedConnectors() {
         return unnamed;
     }
 
-    /** Alle Connectoren im Netz, benannt oder nicht. */
+    /** All connectors in the network, named or not. */
     public int connectorCount() {
         return connectorsByName.values().stream().mapToInt(List::size).sum() + unnamed.size();
     }
 
     /**
-     * Alles im Netz, das kein Kabel ist.
+     * Everything in the network that is not a cable.
      *
-     * <p><b>Ein Gerät ist mehr als ein Connector.</b> Der Tooltip am
-     * Controller schrieb „Geräte" und zählte {@link #connectorCount()} — ein
-     * Netz aus Serverschrank, Laufwerk, Router und Anzeigewand meldete
-     * „0 Geräte". Das stimmte für den Code, der nur Connectoren ansprechen
-     * kann, aber nicht für die Frage, die der Tooltip beantwortet: wie groß
-     * ist dieses Netz.
+     * <p><b>A device is more than a connector.</b> The tooltip on the
+     * controller wrote "Devices" and counted {@link #connectorCount()} — a
+     * network of server rack, drive, router and display wall reported "0
+     * devices". That was right for the code, which can only address
+     * connectors, but not for the question the tooltip answers: how large is
+     * this network.
      *
-     * <p>Die ohne freien Kanal zählen mit. Sie stehen im Netz, sie ziehen
-     * Strom, sie sind nur nicht erreichbar — und dass eines fehlt, sagt die
-     * eigene Zeile darunter.
+     * <p>The ones without a free channel count too. They stand in the network,
+     * they draw energy, they are only unreachable — and that one is missing is
+     * said by its own line below.
      */
     public int deviceCount() {
         return connectorCount() + drives.size() + racks.size() + displays.size()
                 + routers.size();
     }
 
-    /** Displays am Netz. */
+    /** Displays on the network. */
     public List<BlockPos> displays() {
         return displays;
     }
 
-    /** Gehört diese Stelle zu diesem Netz — als Kabel, Gerät oder Display? */
+    /** Does this spot belong to this network — as cable, device or display? */
     public boolean contains(BlockPos pos) {
         return cables.contains(pos)
                 || racks.contains(pos)
-                // Der Schrank steht nur mit seiner unteren Hälfte in der
-                // Liste; die obere gehört genauso dazu.
+                // The rack stands in the list only with its lower half; the
+                // upper one belongs just as much.
                 || racks.contains(pos.below())
                 || drives.contains(pos)
                 || routers.contains(pos)
                 || displays.contains(pos)
-                // Was der Graph als Verbraucher einsammelt, gehört auch dazu.
-                // Fehlte hier eines, wäre es zwar im Netz, aber niemand fände
-                // es: ControllerRegistry.owning geht über diese Frage, und
-                // daran hängen das Anmelden eines Ferngeräts, das Öffnen des
-                // Fensters und jede Anzeige. Im Spiel sah der Mast deshalb
-                // aus, als hinge er an gar nichts.
+                // What the graph collects as a consumer belongs here too. If
+                // one were missing here, it would be in the network but no one
+                // would find it: ControllerRegistry.owning goes through this
+                // question, and on it hang the registration of a remote
+                // device, the opening of the window and every display. In the
+                // game the mast therefore looked as if it hung on nothing at
+                // all.
                 || masts.contains(pos)
                 || fabricators.contains(pos)
                 || bridges.contains(pos)
-                // Bei den Anschlüssen zählt allein der Ort: Gefragt wird, ob
-                // dieser Block zum Netz gehört, nicht welche seiner Flächen.
+                // For the connectors only the place counts: the question is
+                // whether this block belongs to the network, not which of its
+                // faces.
                 || atPos(unnamed, pos)
                 || connectorsByName.values().stream()
                         .anyMatch(found -> atPos(found, pos));
@@ -942,14 +936,14 @@ public final class FactoryGraph {
         return cables.size();
     }
 
-    /** Wurde der Aufbau abgebrochen, weil das Netz zu groß ist? */
+    /** Was the build aborted because the network is too large? */
     public boolean isTruncated() {
         return truncated;
     }
 
     /**
-     * Findet Namen, die einem gesuchten ähneln — für die Meldung
-     * „Unbekannter Connector `cruhser_1` — meintest du `crusher_1`?".
+     * Finds names that resemble a sought one — for the message "Unknown
+     * connector `cruhser_1` — did you mean `crusher_1`?".
      */
     public Optional<String> closestName(String wanted) {
         String best = null;
@@ -961,7 +955,7 @@ public final class FactoryGraph {
                 best = candidate;
             }
         }
-        // Bei zu großem Abstand ist ein Vorschlag eher verwirrend als hilfreich.
+        // When the distance is too large, a suggestion is more confusing than helpful.
         return NameDistance.isCloseEnough(wanted, bestDistance)
                 ? Optional.ofNullable(best) : Optional.empty();
     }

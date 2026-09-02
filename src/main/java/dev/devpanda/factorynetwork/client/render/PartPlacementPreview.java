@@ -20,21 +20,21 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderHighlightEvent;
 
 /**
- * Zeigt vor dem Setzen, wohin der Anschluss käme.
+ * Shows before placement where the connector would go.
  *
- * <p><b>Der gewöhnliche Blockumriss beantwortet die Frage nicht.</b> Er
- * umfasst das ganze Kabel samt allem, was schon daran hängt — welche der
- * sechs Flächen der Klick trifft, sieht man ihm nicht an. Bei einem Kabel von
- * sechs Blockpixeln ist das keine Kleinigkeit: Man zielt auf eine Röhre und
- * trifft die Fläche daneben.
+ * <p><b>The ordinary block outline does not answer that question.</b> It
+ * encompasses the whole cable together with everything already attached to
+ * it — which of the six faces the click hits cannot be told from it. With a
+ * cable of six block pixels that is no small matter: you aim at a tube and
+ * hit the face next to it.
  *
- * <p>Gezeichnet wird <b>zusätzlich</b> zum Umriss und nicht statt seiner: Wer
- * das Ereignis abbricht, nimmt dem Spieler die Auskunft, welchen Block er
- * überhaupt ansieht.
+ * <p>It is drawn <b>in addition</b> to the outline and not instead of it:
+ * whoever cancels the event deprives the player of the information about
+ * which block they are even looking at.
  *
- * <p>Rot heißt: Dort ist kein Platz. Die Prüfung dafür ist dieselbe, die das
- * Setzen benutzt — sonst verspräche die Vorschau etwas, das der Klick danach
- * ablehnt.
+ * <p>Red means: there is no room there. The check for it is the same one
+ * placement uses — otherwise the preview would promise something the click
+ * then rejects.
  */
 @EventBusSubscriber(modid = FactoryNetwork.MOD_ID, value = Dist.CLIENT)
 public final class PartPlacementPreview {
@@ -68,10 +68,10 @@ public final class PartPlacementPreview {
     }
 
     /**
-     * Beide Hände.
+     * Both hands.
      *
-     * <p>Gesetzt wird mit der Hand, die den Anschluss hält — welche das ist,
-     * entscheidet Minecraft und nicht wir.
+     * <p>Placement is done with the hand holding the connector — which one
+     * that is is Minecraft's decision, not ours.
      */
     private static boolean holdsConnector(Player player) {
         var connector = FnItems.CONNECTOR.get();

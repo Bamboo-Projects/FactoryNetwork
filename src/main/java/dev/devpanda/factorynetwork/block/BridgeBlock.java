@@ -17,14 +17,14 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Die Quantum-Brücke: ein Ende einer Leitung ohne Kabel dazwischen.
+ * The quantum bridge: one end of a conduit with no cable in between.
  *
- * <p>Zwei davon, jede mit einer Hälfte derselben Verschränkung, verbinden ihre
- * Netze über jede Entfernung. Was hindurchgeht, sind Kanäle wie durch ein
- * dichtes Kabel — sie ist eine Leitung und kein Vermehrer.
+ * <p>Two of them, each holding one half of the same entanglement, connect their
+ * networks across any distance. What passes through are channels, as through a
+ * dense cable — it is a conduit, not a multiplier.
  *
- * <p><b>Sie hat keine Vorderseite.</b> Wie der Sendemast: Sie steht, und wohin
- * sie zeigt, ändert nichts an dem, was sie tut.
+ * <p><b>It has no front face.</b> Like the mast: it just stands there, and which
+ * way it points changes nothing about what it does.
  */
 public class BridgeBlock extends Block implements EntityBlock {
 
@@ -32,11 +32,11 @@ public class BridgeBlock extends Block implements EntityBlock {
             FacingShapes.whole(BridgeLayout.boxes());
 
     /**
-     * Antwortet die Gegenstelle?
+     * Is the far end responding?
      *
-     * <p><b>Ohne diese Anzeige sucht man den Fehler im Kabel.</b> Eine
-     * Brücke, deren Partner abgebaut oder nicht geladen ist, sieht sonst aus
-     * wie eine, die arbeitet — und das Netz endet ohne sichtbaren Grund.
+     * <p><b>Without this indicator you go hunting for the fault in the cable.</b> A
+     * bridge whose partner has been removed or is not loaded otherwise looks
+     * just like one that is working — and the network ends for no visible reason.
      */
     public static final net.minecraft.world.level.block.state.properties.BooleanProperty
             LINKED = net.minecraft.world.level.block.state.properties.BooleanProperty
@@ -67,10 +67,10 @@ public class BridgeBlock extends Block implements EntityBlock {
     }
 
     /**
-     * Rechtsklick mit einer Hälfte legt sie hinein.
+     * Right-clicking with a half places it inside.
      *
-     * <p>Kein Fenster für einen einzigen Platz: Was hineingehört, ist genau
-     * eine Sache, und man hält sie schon in der Hand.
+     * <p>No screen for a single slot: what belongs in there is exactly one
+     * thing, and you are already holding it in your hand.
      */
     @Override
     protected ItemInteractionResult useItemOn(ItemStack held, BlockState state, Level level,
@@ -94,7 +94,7 @@ public class BridgeBlock extends Block implements EntityBlock {
         return ItemInteractionResult.CONSUME;
     }
 
-    /** Und ohne etwas in der Hand kommt sie wieder heraus. */
+    /** And with an empty hand it comes back out again. */
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
                                                Player player, BlockHitResult hit) {
@@ -113,10 +113,10 @@ public class BridgeBlock extends Block implements EntityBlock {
     }
 
     /**
-     * Beim Abbauen fällt die Hälfte heraus.
+     * When broken, the half drops out.
      *
-     * <p>Die Loot-Tabelle sieht sie nicht — und eine verlorene Hälfte macht
-     * die andere wertlos, denn ein Paar entsteht nur beim Bauen.
+     * <p>The loot table does not see it — and a lost half makes the other one
+     * worthless, since a pair only comes into being when crafted.
      */
     @Override
     protected void onRemove(BlockState state, Level level, BlockPos pos,

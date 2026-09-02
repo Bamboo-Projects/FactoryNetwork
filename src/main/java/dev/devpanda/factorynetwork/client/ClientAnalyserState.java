@@ -4,11 +4,11 @@ import dev.devpanda.factorynetwork.analyser.AnalyserData;
 import dev.devpanda.factorynetwork.network.packet.AnalyserDataPacket;
 
 /**
- * Das Netz, wie der Analysator es zuletzt gemeldet hat.
+ * The network as the analyser last reported it.
  *
- * <p>Nur zum Zeichnen. Was hier steht, war beim letzten Paket wahr — bei
- * einem Werkzeug zur Fehlersuche ist das genau richtig, denn es kommt
- * mehrmals je Sekunde nach.
+ * <p>For drawing only. What stands here was true at the last packet — for a
+ * debugging tool that is exactly right, because it comes in again several
+ * times a second.
  */
 public final class ClientAnalyserState {
 
@@ -28,11 +28,11 @@ public final class ClientAnalyserState {
     }
 
     /**
-     * Ist das Bild noch frisch?
+     * Is the picture still fresh?
      *
-     * <p>Bleibt der Nachschub aus — weil das Werkzeug weggelegt wurde oder
-     * der Controller verschwunden ist —, verschwindet die Anzeige von selbst,
-     * statt ein altes Netz zu zeigen.
+     * <p>If the supply stops — because the tool was put away or the controller
+     * has disappeared —, the display vanishes by itself instead of showing an
+     * old network.
      */
     public static boolean isFresh() {
         return System.currentTimeMillis() - lastUpdate < 2000;

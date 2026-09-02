@@ -4,17 +4,16 @@ import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.item.DyeColor;
 
 /**
- * Die Farbe eines Kabels.
+ * The colour of a cable.
  *
- * <p><b>Die Farbe ist nicht nur Anstrich: Sie entscheidet, was sich
- * verbindet.</b> Zwei Kabel verschiedener Farbe laufen aneinander vorbei,
- * ohne sich zu sehen. Genau darum geht es — so lassen sich mehrere Netze
- * durch dieselbe Wand führen, jedes mit eigenen Kanälen.
+ * <p><b>Colour is not just paint: it decides what connects.</b> Two cables of
+ * different colours run past each other without seeing each other. That is the
+ * whole point — it lets several networks run through the same wall, each with
+ * its own channels.
  *
- * <p>{@link #NONE} ist die Standardfarbe und verbindet sich mit allem. Damit
- * baut man das gewöhnliche Netz und trennt nur dort, wo es nötig ist —
- * andernfalls müsste man sich schon beim ersten Kabel für eine Farbe
- * entscheiden.
+ * <p>{@link #NONE} is the default colour and connects to everything. With it
+ * you build the ordinary network and separate only where needed — otherwise
+ * you would have to commit to a colour with the very first cable.
  */
 public enum CableColour implements StringRepresentable {
 
@@ -54,10 +53,10 @@ public enum CableColour implements StringRepresentable {
     }
 
     /**
-     * Verbinden sich diese beiden Farben?
+     * Do these two colours connect?
      *
-     * <p>Gleiche Farbe immer, und die Standardfarbe mit jeder. Alles andere
-     * läuft aneinander vorbei.
+     * <p>The same colour always, and the default colour with every one.
+     * Everything else runs past.
      */
     public boolean connectsTo(CableColour other) {
         return this == other || this == NONE || other == NONE;

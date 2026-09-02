@@ -25,26 +25,26 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Zeigt die Namen der Connectoren in der Welt, solange die Label-Gun in der
- * Hand ist.
+ * Shows the names of the connectors in the world, as long as the label gun is
+ * in hand.
  *
- * <p>SuperFactoryManager löst dasselbe Problem mit drei Ansichtsmodi und einem
- * Overlay, das erklärt, in welchem man gerade ist. Das ist der Preis dafür,
- * dass die Namen dort in der Gun stecken und nicht in der Welt. Hier tragen
- * die Connectoren ihre Namen selbst, also lassen sie sich einfach anzeigen —
- * ohne Modus, ohne Erinnerung.
+ * <p>SuperFactoryManager solves the same problem with three view modes and an
+ * overlay that explains which one you are currently in. That is the price of
+ * the names being held in the gun there and not in the world. Here the
+ * connectors carry their names themselves, so they can simply be shown — no
+ * mode, no remembering.
  *
- * <p>Drei Zustände sind unterscheidbar, und alle drei sind welche, die man
- * sehen will: benannt, unbenannt, und doppelt vergeben.
+ * <p>Three states are distinguishable, and all three are ones you want to
+ * see: named, unnamed, and assigned twice.
  */
 @EventBusSubscriber(modid = FactoryNetwork.MOD_ID, value = Dist.CLIENT)
 public final class ConnectorNameOverlay {
 
-    /** Weiter als das wird nicht beschriftet — sonst steht der Bildschirm voll. */
+    /** Nothing is labelled beyond this — otherwise the screen fills up. */
     private static final int RANGE = 16;
 
-    // Dieselbe Palette wie die Lämpchen an den Anschlüssen: Rot heißt an
-    // beiden Stellen dasselbe, und es steht nur einmal da.
+    // The same palette as the little lamps on the connectors: red means the
+    // same in both places, and it stands there only once.
     private static final int COLOR_NAMED = dev.devpanda.factorynetwork.client.render
             .DeviceStateColours.opaque(dev.devpanda.factorynetwork.network
                     .DeviceState.ONLINE);
@@ -87,8 +87,8 @@ public final class ConnectorNameOverlay {
             return;
         }
 
-        // Namen, die mehr als einmal vorkommen, sind unbrauchbar — beide
-        // Connectoren werden rot, nicht einer davon.
+        // Names that occur more than once are unusable — both connectors turn
+        // red, not just one of them.
         Map<String, Integer> counts = new HashMap<>();
         for (List<dev.devpanda.factorynetwork.block.entity.ConnectorPart> parts : connectors.values()) {
             for (dev.devpanda.factorynetwork.block.entity.ConnectorPart connector : parts) {
@@ -114,9 +114,9 @@ public final class ConnectorNameOverlay {
                 dev.devpanda.factorynetwork.block.entity.ConnectorPart connector = parts.get(i);
                 String label = connector.label();
                 String shown = label.isBlank() ? "?" : label;
-                // Erst wenn mehrere an einem Block hängen, muss dabeistehen,
-                // welche Fläche gemeint ist. Bei einem einzigen wäre die
-                // Angabe nur Beiwerk.
+                // Only when several hang on one block does it need to say
+                // which face is meant. For a single one the note would be mere
+                // clutter.
                 if (parts.size() > 1) {
                     shown = mark(connector.facing()) + " " + shown;
                 }
@@ -124,8 +124,8 @@ public final class ConnectorNameOverlay {
                         : counts.getOrDefault(label, 0) > 1 ? COLOR_CONFLICT : COLOR_NAMED;
 
                 poses.pushPose();
-                // Übereinander, nicht ineinander: Sechs Namen an einem
-                // Kabelblock stünden sonst alle an derselben Stelle.
+                // Stacked, not overlapping: six names on one cable block would
+                // otherwise all stand in the same spot.
                 poses.translate(
                         pos.getX() + 0.5 - cameraPosition.x,
                         pos.getY() + 1.1 + i * LINE_HEIGHT - cameraPosition.y,
@@ -144,11 +144,11 @@ public final class ConnectorNameOverlay {
     }
 
     /**
-     * Alle Connectoren in Reichweite.
+     * All connectors in range.
      *
-     * <p>Gelesen wird aus den geladenen BlockEntities des Chunks, nicht durch
-     * Abtasten der Blöcke: Ein Würfel von 33 Blocklänge wären
-     * fünfunddreißigtausend Positionen — in jedem Bild.
+     * <p>Read from the chunk's loaded BlockEntities, not by scanning the
+     * blocks: a cube 33 blocks on a side would be thirty-five thousand
+     * positions — in every frame.
      */
     private static Map<BlockPos, List<dev.devpanda.factorynetwork.block.entity.ConnectorPart>> nearbyConnectors(
             Level level, BlockPos center) {
@@ -169,9 +169,9 @@ public final class ConnectorNameOverlay {
                     }
                     if (entity instanceof dev.devpanda.factorynetwork.block.entity
                             .CableBusBlockEntity bus && bus.hasParts()) {
-                        // Nach Flächen geordnet, weil die Karte eine EnumMap
-                        // ist: Dieselben sechs Namen stehen immer in
-                        // derselben Reihenfolge übereinander.
+                        // Ordered by face, because the map is an EnumMap: the
+                        // same six names always stand stacked in the same
+                        // order.
                         found.put(bus.getBlockPos(), List.copyOf(bus.parts().values()));
                     }
                 }
@@ -180,14 +180,14 @@ public final class ConnectorNameOverlay {
         return found;
     }
 
-    /** Wie weit zwei Namen übereinander auseinanderstehen, in Blöcken. */
+    /** How far apart two stacked names stand, in blocks. */
     private static final double LINE_HEIGHT = 0.28;
 
     /**
-     * Die Fläche in zwei Zeichen.
+     * The face in two characters.
      *
-     * <p>Deutsch und ohne Pfeile: Ob die Schriftart einen Pfeil hat, sieht
-     * man erst im Spiel — {@code Ob} und {@code Un} hat sie sicher.
+     * <p>German abbreviations and no arrows: whether the font has an arrow
+     * you only see in-game — {@code Ob} and {@code Un} it has for certain.
      */
     private static String mark(net.minecraft.core.Direction side) {
         return switch (side) {

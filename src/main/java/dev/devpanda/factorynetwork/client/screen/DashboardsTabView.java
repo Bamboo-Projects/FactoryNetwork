@@ -12,15 +12,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Die Anzeigen des Programms, aus der Ferne.
+ * The program's displays, from afar.
  *
- * <p>Dieselben Zeilen wie auf dem Display an der Wand — der Server hat sie
- * fertig ausgewertet geschickt. Der Sinn ist der Weg dorthin: Wer eine Anlage
- * über mehrere Kammern verteilt hat, will nicht zu jedem Schild laufen, um zu
- * sehen, ob etwas klemmt.
+ * <p>The same lines as on the display on the wall — the server sent them
+ * already evaluated. The point is the trip it saves: someone who has spread a
+ * plant across several rooms does not want to walk to every sign to see
+ * whether something is stuck.
  *
- * <p>Knöpfe wirken hier wie dort. Was hinter einem steckt, weiß nur der
- * Server; von hier geht allein die Nummer.
+ * <p>Buttons act here as they do there. What sits behind one only the server
+ * knows; from here only the number goes out.
  */
 public class DashboardsTabView {
 
@@ -33,7 +33,7 @@ public class DashboardsTabView {
     private final int height;
     private final List<Hit> hits = new ArrayList<>();
 
-    /** Ein Knopf an seiner Stelle, für den Klick gemerkt. */
+    /** A button at its place, remembered for the click. */
     private record Hit(int left, int top, int right, String display, int entry) {
 
         boolean covers(double mouseX, double mouseY) {
@@ -79,7 +79,7 @@ public class DashboardsTabView {
                             && mouseY >= line - 1 && mouseY < line + LINE - 1;
                     graphics.fill(x + 6, line - 1, x + 9 + textWidth, line + 9,
                             hovered ? TerminalScreen.BUTTON_HOVER : TerminalScreen.BUTTON);
-                    // Getroffen wird die Zeile, geschickt der Eintrag.
+                    // The line is what gets hit, the entry is what gets sent.
                     hits.add(new Hit(x + 6, line - 1, x + 9 + textWidth, panel.name(),
                             button.entry()));
                     graphics.drawString(font, content, x + 8, line, TerminalScreen.TEXT, false);

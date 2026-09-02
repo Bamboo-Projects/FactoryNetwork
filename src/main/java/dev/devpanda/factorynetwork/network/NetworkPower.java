@@ -10,27 +10,27 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Der Strom des Netzwerks: Vorrat, Bedarf und Zustand.
+ * The network's energy: reserve, demand and state.
  *
- * <p>Drei Zustände, und der mittlere ist der wichtige: <b>Wer keinen Strom
- * mehr hat, geht aus und muss danach erst wieder hochfahren.</b> Ohne die
- * Hochfahrzeit wäre ein Stromausfall ein Flackern, das niemand bemerkt — und
- * mit ihr merkt man sofort, dass die Versorgung nicht reicht.
+ * <p>Three states, and the middle one is the important one: <b>whoever runs
+ * out of energy goes out and must boot up again first.</b> Without the boot-up
+ * time a power outage would be a flicker that no one notices — and with it you
+ * notice at once that the supply is not enough.
  *
- * <p>Der Vorrat liegt im Controller und nimmt Forge Energy an, wie es die
- * Presse schon tut. Ein eigener Energiebegriff wäre näher an Applied
- * Energistics, bräuchte aber eine eigene Erzeugerkette; die Mod setzt ohnehin
- * ein Pack voraus.
+ * <p>The reserve sits in the controller and accepts Forge Energy, as the press
+ * already does. A dedicated notion of energy would be closer to Applied
+ * Energistics, but would need its own generation chain; the mod presupposes a
+ * pack anyway.
  */
 public final class NetworkPower {
 
-    /** Wie es um die Versorgung steht. */
+    /** How the supply stands. */
     public enum State {
-        /** Genug Strom, das Netz arbeitet. */
+        /** Enough energy, the network is working. */
         RUNNING,
-        /** Der Vorrat ist leer. Nichts läuft. */
+        /** The reserve is empty. Nothing runs. */
         OFF,
-        /** Strom ist wieder da, das Netz kommt hoch. */
+        /** Energy is back, the network is coming up. */
         BOOTING
     }
 
@@ -39,26 +39,26 @@ public final class NetworkPower {
     private static final String KEY_BOOT = "Boot";
 
     /**
-     * Der Puffer im Controller.
+     * The buffer in the controller.
      *
-     * <p>Er nimmt von außen an und gibt von sich aus nichts heraus — wer
-     * Strom aus dem Netz will, schreibt einen Worker dafür. Der Weg von außen
-     * herein ist {@link #port()} und nicht dieser Puffer: Seit es
-     * Energiezellen gibt, ist er nur noch der erste Topf von mehreren.
+     * <p>It accepts from outside and gives nothing out on its own — whoever
+     * wants energy out of the network writes a worker for it. The way in from
+     * outside is {@link #port()} and not this buffer: ever since there are
+     * energy cells, it is only the first pot of several.
      *
-     * <p><b>Er wird zuerst gefüllt und zuerst geleert.</b> Damit sind die
-     * Zellen die Reserve und nicht der Arbeitsspeicher — was durchläuft,
-     * berührt keinen einzigen Gegenstand.
+     * <p><b>It is filled first and emptied first.</b> This makes the cells the
+     * reserve and not the working memory — what passes straight through touches
+     * not a single item.
      */
     private final InternalBuffer buffer =
             new InternalBuffer(Power.CAPACITY, Power.MAX_INPUT);
 
     /**
-     * Die Laufwerke des Netzes, wegen der Energiezellen darin.
+     * The network's drives, for the sake of the energy cells inside them.
      *
-     * <p>Gehalten wie bei {@code NetworkStorage}: Der Controller setzt sie
-     * bei jedem Neuaufbau, gefragt wird bei jedem Zugriff neu. Eine
-     * Momentaufnahme der Zellen wäre nach dem ersten Zellentausch falsch.
+     * <p>Held as in {@code NetworkStorage}: the controller sets them on every
+     * rebuild, and they are queried afresh on every access. A snapshot of the
+     * cells would be wrong after the first cell swap.
      */
     private final List<DriveBlockEntity> drives = new ArrayList<>();
 
@@ -66,37 +66,37 @@ public final class NetworkPower {
     private int bootTicks;
     private int draw;
 
-    /** Was das Netz zuletzt je Tick abgegeben hat, gemittelt über eine Sekunde. */
+    /** What the network last output per tick, averaged over a second. */
     private int supplied;
 
-    /** Was in der laufenden Sekunde bisher abgeflossen ist. */
+    /** What has flowed out so far in the current second. */
     private int suppliedWindow;
 
     private int windowTicks;
 
-    /** Wie viel das Netz gerade zieht, in FE je Tick. */
+    /** How much the network is currently drawing, in FE per tick. */
     public int draw() {
         return draw;
     }
 
     /**
-     * Was das Netz an Maschinen abgibt, in FE je Tick.
+     * What the network outputs to machines, in FE per tick.
      *
-     * <p><b>Gemittelt über eine Sekunde, nicht der letzte Tick.</b> Ein
-     * Worker mit {@code rate 800 per 20t} schiebt einmal und ruht neunzehnmal;
-     * die Zahl im Tick wäre neunzehnmal null und einmal achthundert, und
-     * niemand liest daraus, dass vierzig fließen.
+     * <p><b>Averaged over a second, not the last tick.</b> A worker with
+     * {@code rate 800 per 20t} pushes once and rests nineteen times; the
+     * per-tick number would be zero nineteen times and eight hundred once, and
+     * no one reads from that that forty are flowing.
      *
-     * <p>Sie gehört nicht zum {@link #draw()}: Der ist, was das Netz für
-     * seine Bereitschaft braucht. Strom, der durchgereicht wird, ist kein
-     * Eigenbedarf — ihn mitzuzählen hieße, dass ein Netz sich abschaltet,
-     * weil es zu viel liefert.
+     * <p>It does not belong to {@link #draw()}: that is what the network needs
+     * for its readiness. Energy that is passed through is not own draw —
+     * counting it in would mean that a network shuts itself off because it
+     * delivers too much.
      */
     public int supplied() {
         return supplied;
     }
 
-    /** Meldet, was ein Worker gerade an eine Maschine gegeben hat. */
+    /** Reports what a worker just gave to a machine. */
     public void noteSupplied(int amount) {
         suppliedWindow += Math.max(0, amount);
     }
@@ -109,22 +109,22 @@ public final class NetworkPower {
         return state;
     }
 
-    /** Läuft das Netz? Nur dann arbeiten Worker und Abläufe. */
+    /** Is the network running? Only then do workers and processes work. */
     public boolean isRunning() {
         return state == State.RUNNING;
     }
 
-    /** Wie viele Ticks das Hochfahren noch dauert. */
+    /** How many ticks the boot-up still takes. */
     public int bootTicksLeft() {
         return bootTicks;
     }
 
     /**
-     * Welche Laufwerke im Netz hängen.
+     * Which drives hang on the network.
      *
-     * <p>Setzt der Controller bei jedem Neuaufbau — wie beim Speicher und bei
-     * den Flüssigkeiten. Hängt keines im Netz, ist der Vorrat der Puffer, und
-     * mehr nicht.
+     * <p>Set by the controller on every rebuild — as with the storage and the
+     * fluids. If none hang on the network, the reserve is the buffer, and
+     * nothing more.
      */
     public void setDrives(List<DriveBlockEntity> found) {
         drives.clear();
@@ -132,12 +132,12 @@ public final class NetworkPower {
     }
 
     /**
-     * Wie viel Strom das Netz insgesamt hat.
+     * How much energy the network has in total.
      *
-     * <p>Puffer plus Energiezellen. <b>An dieser Zahl hängt alles</b> — der
-     * Eigenbedarf, das Hochfahren, die Abgabe an Maschinen. Nur den Puffer zu
-     * zählen hieße, dass ein Netz mit vollen Zellen ausgeht, und zwar
-     * mitten im Betrieb, ohne dass irgendwo eine Null steht.
+     * <p>Buffer plus energy cells. <b>Everything hangs on this number</b> — the
+     * own draw, the boot-up, the output to machines. Counting only the buffer
+     * would mean that a network with full cells goes out, and right in the
+     * middle of operation, without a zero standing anywhere.
      */
     public int stored() {
         long total = buffer.getEnergyStored();
@@ -155,7 +155,7 @@ public final class NetworkPower {
         return saturated(total);
     }
 
-    /** Wie viel noch hineinpasst. */
+    /** How much still fits in. */
     public int room() {
         long total = (long) buffer.getMaxEnergyStored() - buffer.getEnergyStored();
         for (EnergyCellView cell : cells()) {
@@ -165,29 +165,29 @@ public final class NetworkPower {
     }
 
     /**
-     * Eine Summe, die nicht überläuft.
+     * A sum that does not overflow.
      *
-     * <p>Zweiundfünfzig volle Laufwerke mit den größten Zellen sprengen einen
-     * int. Das ist eine Anlage, die kaum jemand baut — aber wer sie baut,
-     * soll einen zu kleinen Vorrat sehen und keinen negativen.
+     * <p>Fifty-two full drives with the largest cells blow past an int. That
+     * is an installation almost no one builds — but whoever does build it
+     * should see a reserve that is too small, not a negative one.
      */
     private static int saturated(long total) {
         return (int) Math.max(0, Math.min(Integer.MAX_VALUE, total));
     }
 
     /**
-     * Meldet, dass sich in den Zellen etwas geändert hat.
+     * Reports that something in the cells has changed.
      *
-     * <p><b>Die Laufwerke müssen mit.</b> Die Ladung liegt im Arbeitsspeicher
-     * und geht erst beim Sichern in den Gegenstand; ohne diese Meldung weiß
-     * Minecraft nicht, dass der Chunk gesichert werden muss. Ein Laufwerk in
-     * einem anderen Chunk als der Controller hätte nach einem Neustart die
-     * Ladung von vorhin — derselbe Grund wie beim Lagerbestand, siehe
+     * <p><b>The drives have to come along.</b> The charge sits in working
+     * memory and only goes into the item on save; without this notification
+     * Minecraft does not know that the chunk must be saved. A drive in a
+     * different chunk than the controller would have the charge from before
+     * after a restart — the same reason as with the stored stock, see
      * {@code NetworkStorage.markChanged}.
      *
-     * <p>Nur wenn wirklich eine Zelle berührt wurde. Der Puffer wird zuerst
-     * gefüllt und zuerst geleert, und ein Netz, das nur durchreicht, würde
-     * sonst jeden Tick alle seine Laufwerke zum Sichern anmelden.
+     * <p>Only when a cell was actually touched. The buffer is filled first and
+     * emptied first, and a network that only passes energy through would
+     * otherwise register all its drives for saving every tick.
      */
     private void markCellsChanged() {
         for (DriveBlockEntity drive : drives) {
@@ -197,7 +197,7 @@ public final class NetworkPower {
         }
     }
 
-    /** Alle Energiezellen in allen Laufwerken des Netzes. */
+    /** All energy cells in all drives of the network. */
     private List<EnergyCellView> cells() {
         if (drives.isEmpty()) {
             return List.of();
@@ -211,22 +211,22 @@ public final class NetworkPower {
         return found;
     }
 
-    /** Der Puffer allein — für die Anzeige, die beides getrennt nennt. */
+    /** The buffer alone — for the display, which names both separately. */
     public InternalBuffer buffer() {
         return buffer;
     }
 
     /**
-     * Der Anschluss für Fremdmods.
+     * The connection point for foreign mods.
      *
-     * <p><b>Nicht der Puffer selbst.</b> Wer sein Kabel an den Controller
-     * legt, füllt damit den ganzen Vorrat und nicht nur dessen erste
-     * zwanzigtausend — sonst bliebe jede Energiezelle für immer leer, denn
-     * einen anderen Weg hinein gibt es nicht.
+     * <p><b>Not the buffer itself.</b> Whoever lays their cable to the
+     * controller fills the whole reserve with it and not just its first twenty
+     * thousand — otherwise every energy cell would stay empty forever, since
+     * there is no other way in.
      *
-     * <p>Die Rate bleibt {@link Power#MAX_INPUT}: Das ist die einzige
-     * Stromgrenze im ganzen System, und sie gilt für die Aufnahme des
-     * Netzes, nicht für einen einzelnen Topf darin.
+     * <p>The rate stays {@link Power#MAX_INPUT}: that is the only energy limit
+     * in the whole system, and it applies to the network's intake, not to a
+     * single pot within it.
      */
     public IEnergyStorage port() {
         return port;
@@ -243,19 +243,18 @@ public final class NetworkPower {
         }
 
         /**
-         * Und hinaus, ohne Ratengrenze.
+         * And out, without a rate limit.
          *
-         * <p><b>Die Grenze galt der Aufnahme</b>, und für die Abgabe wäre sie
-         * genau das, was stört: Wer Strom aus dem Netz in ein anderes System
-         * leitet, ging bisher über einen Energiewürfel, und dessen eigene
-         * Rate war der Engpass. Der Umweg ist der Grund, warum es diesen Weg
-         * gibt.
+         * <p><b>The limit was for intake</b>, and for output it would be
+         * exactly what gets in the way: whoever routes energy from the network
+         * into another system used to go via an energy cube, and its own rate
+         * was the bottleneck. That detour is the reason this way exists.
          *
-         * <p><b>Bis auf den Boden und nicht bis auf null.</b> Die eine
-         * Grenze, die bleibt, ist keine Rate: Zöge eine fremde Leitung unter
-         * die Anlaufschwelle, ginge das Netz aus, führe drei Sekunden hoch
-         * und ginge wieder aus — ein Flackern, das wie ein Fehler aussieht
-         * und keiner ist. Wer den Rest auch noch will, schaltet das Netz ab.
+         * <p><b>Down to the floor and not down to zero.</b> The one limit that
+         * remains is not a rate: if a foreign line drew below the restart
+         * threshold, the network would go out, boot up for three seconds and
+         * go out again — a flicker that looks like a bug and is none. Whoever
+         * wants the rest as well switches the network off.
          */
         @Override
         public int extractEnergy(int toExtract, boolean simulate) {
@@ -290,24 +289,24 @@ public final class NetworkPower {
     };
 
     /**
-     * Ein Tick Strom.
+     * One tick of energy.
      *
-     * <p>Erst zahlen, dann arbeiten: Was hier abgezogen wird, ist die
-     * Bereitschaft für diesen Tick. Reicht der Vorrat nicht, geht das Netz
-     * aus — und kommt erst wieder, wenn genug beisammen ist, um das
-     * Hochfahren zu überstehen und danach noch zu laufen.
+     * <p>Pay first, then work: what is deducted here is the readiness for this
+     * tick. If the reserve is not enough, the network goes out — and comes
+     * back only once enough is gathered to survive the boot-up and still run
+     * afterward.
      */
     public void tick() {
-        // Zuerst das Fenster, denn darunter wird an mehreren Stellen
-        // ausgestiegen — und eine Abgabe, die beim Hochfahren stehenbleibt,
-        // sähe aus wie eine, die noch fließt.
+        // The window first, because below this we bail out in several places
+        // — and an output that stalled during boot-up would look like one that
+        // is still flowing.
         if (++windowTicks >= 20) {
             supplied = (suppliedWindow + windowTicks / 2) / windowTicks;
             suppliedWindow = 0;
             windowTicks = 0;
         }
         if (draw <= 0) {
-            // Ein Netz ohne Verbraucher braucht nichts und läuft immer.
+            // A network with no consumers needs nothing and always runs.
             state = State.RUNNING;
             bootTicks = 0;
             return;
@@ -315,9 +314,9 @@ public final class NetworkPower {
         if (stored() < draw) {
             state = State.OFF;
             bootTicks = 0;
-            // Nur der Puffer. Die Zellen behalten ihren Rest: Ein Gegenstand,
-            // dem beim Ausgehen des Netzes still der Inhalt gelöscht wird,
-            // ist ein Verlust, den niemand kommen sieht.
+            // Only the buffer. The cells keep their remainder: an item whose
+            // contents are silently deleted when the network goes out is a
+            // loss no one sees coming.
             buffer.drain();
             return;
         }
@@ -341,10 +340,11 @@ public final class NetworkPower {
     }
 
     /**
-     * Füllt den Vorrat, ohne den Umweg über einen Anschluss und ohne Rate.
+     * Fills the reserve, without the detour via a connection point and without
+     * a rate.
      *
-     * <p>Erst den Puffer, dann die Zellen. Was auch dort nicht mehr
-     * hineinpasst, fällt weg — wie bei jedem Speicher.
+     * <p>The buffer first, then the cells. Whatever no longer fits there
+     * either falls away — as with every store.
      */
     public void fill(int amount) {
         int rest = Math.max(0, amount);
@@ -365,7 +365,7 @@ public final class NetworkPower {
         }
     }
 
-    /** Nimmt von innen: erst aus dem Puffer, dann aus den Zellen. */
+    /** Takes from within: first from the buffer, then from the cells. */
     private void consume(int amount) {
         int rest = Math.max(0, amount);
         int fromBuffer = Math.min(rest, buffer.getEnergyStored());
@@ -386,11 +386,11 @@ public final class NetworkPower {
     }
 
     /**
-     * Nimmt bis zu {@code amount} aus dem Vorrat und sagt, wie viel es wurde.
+     * Takes up to {@code amount} from the reserve and says how much it was.
      *
-     * <p>Für die Abgabe an eine Maschine. <b>Bis zu</b>, weil ein leeres Netz
-     * kein Fehler ist: Wer nichts hat, gibt nichts ab, und der Worker steht
-     * danach als {@code WAITING_TARGET} da wie vor einer vollen Kiste.
+     * <p>For output to a machine. <b>Up to</b>, because an empty network is not
+     * an error: whoever has nothing gives nothing out, and the worker then
+     * stands there as {@code WAITING_TARGET} as if before a full chest.
      */
     public int take(int amount) {
         int taken = Math.min(Math.max(amount, 0), stored());
@@ -399,14 +399,15 @@ public final class NetworkPower {
     }
 
     /**
-     * Leert den Vorrat auf einen Schlag — <b>samt der Zellen</b>.
+     * Empties the reserve in one go — <b>cells and all</b>.
      *
-     * <p>Für den Fall, dass die Versorgung wegbricht, und für Prüfungen, die
-     * genau das nachstellen wollen, ohne zwanzigtausend Ticks zu warten.
+     * <p>For the case that the supply breaks down, and for tests that want to
+     * reproduce exactly that without waiting twenty thousand ticks.
      *
-     * <p>Die Zellen gehören dazu, obwohl das Ausgehen im Tick sie verschont:
-     * Wer den Vorrat auf null setzt, meint den ganzen. Bliebe hier etwas
-     * übrig, wäre der Ausgangspunkt jeder Prüfung eine andere Zahl als null.
+     * <p>The cells belong to it, even though going out during the tick spares
+     * them: whoever sets the reserve to zero means the whole of it. If
+     * something were left here, the starting point of every test would be a
+     * number other than zero.
      */
     public void empty() {
         buffer.drain();
@@ -431,9 +432,9 @@ public final class NetworkPower {
         if (tag.contains(KEY_ENERGY)) {
             buffer.deserializeNBT(registries, tag.get(KEY_ENERGY));
         }
-        // Der Zustand kommt mit zurück. Ein entladener Chunk ist kein
-        // Stromausfall — wer eine Anlage verlässt und wiederkommt, soll sie
-        // laufen sehen und nicht drei Sekunden warten.
+        // The state comes back with it. An unloaded chunk is not a power
+        // outage — whoever leaves an installation and returns should see it
+        // running and not wait three seconds.
         state = State.OFF;
         bootTicks = 0;
         if (tag.contains(KEY_STATE)) {

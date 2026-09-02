@@ -5,24 +5,24 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * Der Fabricator: Er baut, was das Netz bestellt.
+ * The fabricator: it builds what the network orders.
  *
- * <p><b>Keine Muster-Items.</b> Was er bauen kann, weiß das Spiel bereits —
- * jedes Werkbank-Rezept steht im Server. Ein Netz, das sich seine Rezepte
- * erst auf Papierschnipsel schreiben lässt, verlangt Arbeit für eine
- * Auskunft, die schon dasteht.
+ * <p><b>No pattern items.</b> What it can build the game already knows — every
+ * crafting-table recipe lives in the server. A network that first has to have
+ * its recipes written onto scraps of paper demands work for information that is
+ * already there.
  *
- * <p><b>Keine BlockEntity.</b> Er hält nichts: Der Auftrag lebt am
- * Controller, die Zutaten im Speicher, das Rezept im Server. Was er
- * beisteuert, ist die Erlaubnis, dass gebaut wird — und wie viele im Netz
- * hängen, entscheidet, wie viele Schritte je Takt geschehen. Wer schneller
- * fertigen will, stellt einen zweiten hin.
+ * <p><b>No BlockEntity.</b> It holds nothing: the order lives at the
+ * controller, the ingredients in the storage, the recipe in the server. What
+ * it contributes is the permission for building to happen — and how many hang
+ * in the network decides how many steps happen per cycle. Whoever wants to
+ * fabricate faster places a second one.
  *
- * <p>Er kostet einen Kanal und Strom wie jedes andere Gerät am Netz.
+ * <p>It costs one channel and power like every other device on the network.
  */
 public class FabricatorBlock extends Block {
 
-    /** Der Umriss aus den Kästen des Modells. */
+    /** The outline from the boxes of the model. */
     private static final net.minecraft.world.phys.shapes.VoxelShape SHAPE =
             FacingShapes.whole(MachineLayouts.fabricator());
 

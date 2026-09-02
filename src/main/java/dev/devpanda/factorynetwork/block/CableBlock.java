@@ -28,58 +28,58 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Verbindet Blöcke zu einem Netzwerk.
+ * Connects blocks into a network.
  *
- * <p>Die Form richtet sich danach, wohin verbunden wird — ein Kabel mitten in
- * der Luft ist ein Würfel, eines zwischen zwei Nachbarn eine Röhre. Das ist
- * reine Optik, gelaufen wird über {@code FactoryGraph}.
+ * <p>The shape follows where connections are made — a cable out in mid-air is a
+ * cube, one between two neighbours a tube. This is purely visual; routing runs
+ * through {@code FactoryGraph}.
  */
 public class CableBlock extends Block implements net.minecraft.world.level.block.EntityBlock {
 
     public static final MapCodec<CableBlock> CODEC = simpleCodec(CableBlock::new);
 
     /**
-     * Wie stark dieses Kabel ist und wie viele Kanäle es trägt.
+     * How thick this cable is and how many channels it carries.
      *
-     * <p>Zwei Sorten, dieselbe Klasse: Der Unterschied ist eine Zahl, kein
-     * Verhalten. Ein eigener Typ je Stärke brächte zwei Fassungen derselben
-     * Verbindungslogik, und die eine bekäme irgendwann eine Verbesserung, die
-     * der anderen fehlt.
+     * <p>Two kinds, the same class: the difference is a number, not behaviour.
+     * A dedicated type per thickness would bring two copies of the same
+     * connection logic, and one of them would eventually get an improvement the
+     * other lacks.
      */
     private final int size;
 
     /**
-     * Was dieses Kabel je Tick trägt, in Byte.
+     * What this cable carries per tick, in bytes.
      *
-     * <p>Bis zum 29.08. stand hier eine Kanalzahl — wie viele Geräte
-     * dahinter hängen durften. Jetzt zählt, wie viel hindurchgeht.
+     * <p>Until 29 Aug this held a channel count — how many devices were allowed
+     * to hang off it. Now what counts is how much passes through.
      */
     private final int bandwidth;
 
-    /** Die Farbe steckt im Blockzustand, nicht in einer BlockEntity —
-     *  sie ändert sich nie und muss beim Zeichnen sofort verfügbar sein. */
+    /** The colour sits in the block state, not in a BlockEntity —
+     *  it never changes and must be available immediately when drawing. */
     public static final EnumProperty<CableColour> COLOUR =
             EnumProperty.create("colour", CableColour.class);
 
     /**
-     * Liegt in diesem Block ein Kabel?
+     * Does this block hold a cable?
      *
-     * <p><b>Nein heißt: Er ist ein bloßer Halter.</b> Ein Anschluss sitzt
-     * darin, aber er hängt an nichts — kein Strang, keine Leitung, keine
-     * Verbindung zum Netz. Das Kabel kommt später und macht daraus eine
-     * Leitung, ohne dass der Anschluss neu gesetzt werden müsste.
+     * <p><b>No means: it is a mere holder.</b> A connector sits inside it, but
+     * it hangs off nothing — no run, no conduit, no connection to the network.
+     * The cable comes later and turns it into a conduit, without the connector
+     * having to be placed anew.
      *
-     * <p>Die Vorgabe ist {@code true}. Jeder Block, der heute steht, bleibt
-     * damit, was er ist.
+     * <p>The default is {@code true}. Every block that stands today thereby
+     * stays what it is.
      *
-     * <p>So macht es AE2: Dort ist der Block der Kabelbus und das Kabel nur
-     * eines der Teile darin. {@code CableBusContainer.canAddPart} lässt ein
-     * Teil an jede freie Seite, „if any" Kabel — und ein leerer Bus räumt
-     * sich in {@code cleanup()} selbst weg.
+     * <p>This is how AE2 does it: there the block is the cable bus and the cable
+     * is just one of the parts inside it. {@code CableBusContainer.canAddPart}
+     * allows a part on every free side, "if any" cable — and an empty bus
+     * clears itself away in {@code cleanup()}.
      */
     public static final BooleanProperty CABLE = BooleanProperty.create("cable");
 
-    /** Trägt dieser Block ein Kabel, oder ist er nur ein Halter? */
+    /** Does this block carry a cable, or is it only a holder? */
     public static boolean carries(BlockState state) {
         return !(state.getBlock() instanceof CableBlock) || state.getValue(CABLE);
     }
@@ -121,18 +121,17 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
         registerDefaultState(state);
     }
 
-    /** Das gewöhnliche Kabel trägt sechzehn Kanäle. */
+    /** The ordinary cable carries sixteen channels. */
     /**
-     * Jeder Kabelblock trägt eine BlockEntity für seine Anschlüsse.
+     * Every cable block carries a BlockEntity for its connectors.
      *
-     * <p><b>Auch wenn keiner daran sitzt.</b> Die Alternative — sie erst
-     * anlegen, wenn ein Teil dazukommt — verlangt einen Zustand im
-     * BlockState, der sich beim Setzen und Abbauen ändert, und damit eine
-     * zweite Wahrheit darüber, ob hier Teile sitzen. AE2 legt sie ebenfalls
-     * überall an.
+     * <p><b>Even when none sits on it.</b> The alternative — only creating it
+     * once a part is added — demands a flag in the BlockState that changes on
+     * placement and removal, and with it a second source of truth about whether
+     * parts sit here. AE2 likewise creates one everywhere.
      *
-     * <p>Was das bei zehntausend Kabeln kostet, ist <b>ungemessen</b> und
-     * steht als offener Punkt in {@code connector-im-kabel.md}.
+     * <p>What that costs across ten thousand cables is <b>unmeasured</b> and
+     * stands as an open item in {@code connector-im-kabel.md}.
      */
     @Override
     public net.minecraft.world.level.block.entity.@org.jetbrains.annotations.Nullable BlockEntity
@@ -144,17 +143,17 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
         return size;
     }
 
-    /** Was dieses Kabel je Tick trägt, in Byte. */
+    /** What this cable carries per tick, in bytes. */
     public int bandwidth() {
         return bandwidth;
     }
 
     /**
-     * Die Gegenstände zu dieser Kabelsorte, je Farbe einer.
+     * The items for this kind of cable, one per colour.
      *
-     * <p>Gebraucht für die Mitteltaste: Ohne das bekäme man beim Aufnehmen
-     * eines roten Kabels ein neutrales, und die Verbindung, die man gerade
-     * nachbauen wollte, käme nicht zustande.
+     * <p>Needed for the middle-click pick: without it, picking up a red cable
+     * would give you a neutral one, and the connection you were about to
+     * recreate would not come about.
      */
     protected java.util.Map<CableColour, net.neoforged.neoforge.registries.DeferredItem<
             net.minecraft.world.item.BlockItem>> items() {
@@ -165,8 +164,8 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
     public ItemStack getCloneItemStack(net.minecraft.world.level.LevelReader level,
                                        BlockPos pos, BlockState state) {
         if (!carries(state)) {
-            // Ein Halter ist kein Kabel. Der Mittelklick soll das geben, was
-            // dort tatsächlich sitzt.
+            // A holder is not a cable. The middle-click should give what
+            // actually sits there.
             return new ItemStack(dev.devpanda.factorynetwork.registry.FnItems.CONNECTOR.get());
         }
         var entry = items().get(colourOf(state));
@@ -204,13 +203,13 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
                                      LevelAccessor level, BlockPos pos, BlockPos neighbourPos) {
         BooleanProperty property = CONNECTIONS.get(direction);
         if (!carries(state)) {
-            // Ein Halter bekommt auch hier keine Arme.
+            // A holder gets no arms here either.
             //
-            // Nicht nur eine Frage des Bildes: Die Bits landen im
-            // gespeicherten Zustand, und hasRoomForPart liest sie. Ein Halter
-            // neben einem Kabel verweigerte sonst auf dieser Fläche einen
-            // zweiten Anschluss, den er nehmen müsste — und die Farbe eines
-            // Halters ist neutral, also gilt das neben jedem Kabel.
+            // Not just a matter of appearance: the bits land in the stored
+            // state, and hasRoomForPart reads them. A holder next to a cable
+            // would otherwise refuse a second connector on this face, one it
+            // would have to take — and a holder's colour is neutral, so that
+            // holds next to any cable.
             return state.setValue(property, false);
         }
         return state.setValue(property, connectsOrCarries(level, pos, direction,
@@ -218,15 +217,15 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
     }
 
     /**
-     * Rechnet alle sechs Verbindungen für einen Zustand aus.
+     * Computes all six connections for a state.
      *
-     * <p>Öffentlich, weil der Gegenstand sie noch einmal braucht: Er setzt
-     * erst die Farbe und muss danach neu rechnen lassen.
+     * <p>Public because the item needs it once more: it first sets the colour
+     * and must then have them recomputed.
      */
     public static BlockState withConnections(BlockState state, LevelReader level, BlockPos pos) {
         if (!carries(state)) {
-            // Ein Halter hat keine Arme. Er hält einen Anschluss und sonst
-            // nichts — der wird gesondert gezeichnet.
+            // A holder has no arms. It holds a connector and nothing else —
+            // that one is drawn separately.
             for (BooleanProperty property : CONNECTIONS.values()) {
                 state = state.setValue(property, false);
             }
@@ -242,19 +241,19 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
     }
 
     /**
-     * Bekommt diese Fläche einen Arm?
+     * Does this face get an arm?
      *
-     * <p><b>Ein Anschluss zählt wie ein Nachbar.</b> Bis zum 26.08. galt die
-     * umgekehrte Regel — eine Fläche mit Anschluss verband nicht, damit kein
-     * Arm mitten durch die Platte lief. Der Preis war ein grauer Stiel
-     * zwischen Platte und Kern: ein Fremdkörper in einer Leitung, die sonst
-     * überall durchläuft, und an einem Kabelbündel sah es aus, als hinge der
-     * Anschluss daneben statt daran.
+     * <p><b>A connector counts like a neighbour.</b> Until 26 Aug the opposite
+     * rule applied — a face with a connector did not connect, so that no arm
+     * ran through the middle of the plate. The price was a grey stalk between
+     * plate and core: a foreign body in a conduit that otherwise runs through
+     * everywhere, and on a cable bundle it looked as if the connector hung
+     * beside it rather than on it.
      *
-     * <p>Jetzt trägt der Arm, was der Stiel trug — er läuft in der Farbe des
-     * Kabels bis unter die Platte, und am Kabel entsteht eine sichtbare
-     * Kreuzung. Durch die Platte läuft er nicht: Sie hat keinen Stiel mehr,
-     * vor dem er halten müsste, und ihre Vorderseite deckt ihn ab.
+     * <p>Now the arm carries what the stalk carried — it runs in the cable's
+     * colour up to under the plate, and a visible crossing forms at the cable.
+     * It does not run through the plate: the plate no longer has a stalk it
+     * would have to stop in front of, and its front face covers it.
      */
     private static boolean connectsOrCarries(BlockGetter level, BlockPos pos,
                                              Direction direction, CableColour colour,
@@ -263,35 +262,35 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
     }
 
     /**
-     * Verbindet sich ein Kabel dieser Farbe sichtbar zu diesem Nachbarn?
+     * Does a cable of this colour visibly connect to this neighbour?
      *
-     * <p>Ein Block trägt genau ein Kabel in genau einer Farbe. Zwei Kabel
-     * verbinden sich, wenn ihre Farben zueinander passen — neutral zu allem,
-     * gleiche Farbe zueinander.
+     * <p>A block carries exactly one cable in exactly one colour. Two cables
+     * connect when their colours match — neutral to anything, same colour to
+     * same colour.
      *
-     * <p><b>Die Farbe kommt aus dem Zustand, nicht aus der Welt.</b> Vorher
-     * wurde sie an der eigenen Stelle nachgeschlagen; beim Setzen steht dort
-     * aber noch Luft, und Luft gilt als neutral. Ein rotes Kabel rechnete
-     * sich seine Verbindungen deshalb als neutrales aus und griff nach allem,
-     * was danebenlag.
+     * <p><b>The colour comes from the state, not from the world.</b> Previously
+     * it was looked up at its own position; but during placement there is still
+     * air there, and air counts as neutral. A red cable therefore computed its
+     * connections as a neutral one and reached for everything lying next to it.
      */
     private static boolean connects(CableColour colour, BlockState neighbour) {
         if (neighbour.getBlock() instanceof CableBlock) {
-            // An einen Halter dockt niemand an: In ihm liegt kein Kabel, und
-            // ein Arm, der auf ihn zeigte, zeigte auf nichts.
+            // Nobody docks onto a holder: it holds no cable, and an arm that
+            // pointed at it would point at nothing.
             return carries(neighbour) && colour.connectsTo(colourOf(neighbour));
         }
-        // Alles, was zum Netz gehört, bekommt einen Arm.
+        // Everything that belongs to the network gets an arm.
         //
-        // <b>Diese Liste ist dreimal falsch gewesen.</b> Erst fehlten
-        // Laufwerk und Serverschrank, dann Fabricator, Sendemast, Gateway und
-        // Anbau. Der Grund ist immer derselbe: Dieselbe Frage — was gehört
-        // zum Netz — steht an drei Stellen, und wer einen Block einträgt,
-        // findet die anderen zwei nicht. Die beiden anderen sind
-        // FactoryGraph.consumerAt und FactoryGraph.contains.
+        // <b>This list has been wrong three times.</b> First drive and rack
+        // were missing, then fabricator, mast, gateway and controller
+        // extension. The reason is always the same: the same question — what
+        // belongs to the network — sits in three places, and whoever adds a
+        // block does not find the other two. The other two are
+        // FactoryGraph.consumerAt and FactoryGraph.contains.
         //
-        // Ein Prüflauf hält die drei jetzt gegeneinander, damit der nächste
-        // Block auffällt, bevor er im Spiel neben dem Kabel in der Luft hängt.
+        // A check now holds the three against one another, so that the next
+        // block stands out before it hangs in the air next to the cable in the
+        // game.
         return neighbour.getBlock() instanceof RouterBlock
                 || neighbour.getBlock() instanceof ControllerBlock
                 || neighbour.getBlock() instanceof TerminalBlock
@@ -305,7 +304,7 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
                 || neighbour.getBlock() instanceof BridgeBlock;
     }
 
-    /** Welche Richtungen dieser Block verbindet. */
+    /** Which directions this block connects. */
     public static List<Direction> connectionsOf(BlockState state) {
         List<Direction> directions = new ArrayList<>();
         for (Map.Entry<Direction, BooleanProperty> entry : CONNECTIONS.entrySet()) {
@@ -325,25 +324,25 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
         return CableShapes.whole(size, connectionsOf(state), partsOf(level, pos));
     }
 
-    /** Wie stark das Kabel an dieser Stelle ist, in Blockpixeln. */
+    /** How thick the cable is at this spot, in block pixels. */
     public static int sizeOf(BlockState state) {
         return state.getBlock() instanceof CableBlock cable ? cable.size() : CableLayout.THIN;
     }
 
-    /** Die Flächen, an denen ein Anschluss sitzt. */
+    /** The faces on which a connector sits. */
     public static java.util.Set<Direction> partsOf(BlockGetter level, BlockPos pos) {
         return level.getBlockEntity(pos) instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus
                 ? bus.parts().keySet() : java.util.Set.of();
     }
 
     /**
-     * Passt an diese Fläche noch ein Anschluss?
+     * Does another connector fit on this face?
      *
-     * <p>Zwei Gründe sprechen dagegen: Dort sitzt schon einer, oder das Kabel
-     * läuft dorthin weiter. <b>An einer Stelle</b>, weil zwei sie brauchen —
-     * das Setzen und die Vorschau davor. Zwei Fassungen wären zwei
-     * Gelegenheiten, dass die Vorschau etwas verspricht, was das Setzen dann
-     * ablehnt.
+     * <p>Two reasons argue against it: one already sits there, or the cable
+     * continues in that direction. <b>In one place</b>, because two things need
+     * it — the placement and the preview before it. Two copies would be two
+     * chances for the preview to promise something that the placement then
+     * refuses.
      */
     public static boolean hasRoomForPart(BlockState state, BlockGetter level, BlockPos pos,
                                          Direction side) {
@@ -356,12 +355,12 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
     }
 
     /**
-     * Welchen Anschluss dieser Klick meint.
+     * Which connector this click means.
      *
-     * <p>Meist die getroffene Fläche. Aber die Platte ragt aus dem Kabel
-     * heraus, und wer ihre Schmalseite trifft, bekommt von Minecraft die
-     * Richtung <b>dieser Schmalseite</b> — die zeigt woandershin als das
-     * Teil. Dann entscheidet, in wessen Kasten der Treffer liegt.
+     * <p>Usually the face that was hit. But the plate juts out of the cable,
+     * and whoever hits its narrow side gets from Minecraft the direction of
+     * <b>that narrow side</b> — which points somewhere other than the part.
+     * Then what decides is whose box the hit falls in.
      */
     public static @org.jetbrains.annotations.Nullable Direction partSideAt(
             BlockGetter level, BlockPos pos, BlockHitResult hit) {
@@ -382,33 +381,31 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
         return null;
     }
 
-    // ---- Anschlüsse an den Flächen ----------------------------------------
+    // ---- Connectors on the faces ------------------------------------------
 
     /**
-     * Setzt einen Anschluss an die getroffene Fläche.
+     * Places a connector on the face that was hit.
      *
-     * <p><b>Warum nicht daneben:</b> Das ist der Griff, um den es bei AE2s
-     * Bauform geht — ein Block bedient bis zu sechs Nachbarn, wo bisher sechs
-     * Blöcke standen.
+     * <p><b>Why not beside it:</b> this is the whole point of AE2's build form —
+     * one block serves up to six neighbours where six blocks used to stand.
      *
-     * <p><b>Warum ein Fehlschlag hier trotzdem „erledigt" meldet:</b> Damit
-     * der Spieler erfährt, woran es lag. Ein {@code FAIL} fällt durch auf den
-     * Gegenstand — und der ist seit dem 26.08. ein schlichter Gegenstand ohne
-     * eigenes Verhalten, also passiert danach nichts, was den Klick erklären
-     * würde.
+     * <p><b>Why a failure here still reports "done":</b> so that the player
+     * learns what the trouble was. A {@code FAIL} falls through to the item —
+     * and since 26 Aug that is a plain item with no behaviour of its own, so
+     * nothing happens afterwards that would explain the click.
      *
-     * <p><b>Und schleichend klicken führt ins Leere.</b> Minecraft überspringt
-     * diesen Weg dann und ruft den Gegenstand — der nichts tut. Solange es
-     * den Connector als eigenen Block gab, war das die Fluchtluke, um ihn
-     * doch danebenzusetzen; heute ist es ein Klick ohne Wirkung.
+     * <p><b>And sneak-clicking leads nowhere.</b> Minecraft then skips this path
+     * and calls the item — which does nothing. As long as the connector existed
+     * as its own block, this was the escape hatch to place it beside after all;
+     * today it is a click with no effect.
      */
     @Override
     protected net.minecraft.world.ItemInteractionResult useItemOn(
             ItemStack stack, BlockState state, Level level, BlockPos pos, Player player,
             net.minecraft.world.InteractionHand hand, BlockHitResult hit) {
-        // Ein Kabel auf einen Halter legt das Kabel hinein, statt einen
-        // zweiten Block danebenzusetzen. Genau dafür ist der Halter da: Der
-        // Anschluss sitzt schon, und das Kabel kommt nach.
+        // A cable onto a holder puts the cable inside, instead of placing a
+        // second block beside it. That is exactly what the holder is for: the
+        // connector already sits there, and the cable follows.
         if (!carries(state)
                 && stack.getItem() instanceof dev.devpanda.factorynetwork.item.ColouredCableItem cable) {
             if (!level.isClientSide) {
@@ -444,9 +441,9 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
             if (!player.getAbilities().instabuild) {
                 stack.shrink(1);
             }
-            // Der Arm zum Anschluss steht im Blockzustand und muss jetzt
-            // dazu — ohne das bliebe die Kreuzung bis zum nächsten
-            // Nachbarwechsel aus.
+            // The arm to the connector lives in the block state and must be
+            // added now — without it the crossing would be missing until the
+            // next neighbour change.
             level.setBlock(pos, withConnections(state, level, pos), UPDATE_ALL);
             dev.devpanda.factorynetwork.network.ControllerRegistry.refreshAround(level, pos);
         }
@@ -454,10 +451,10 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
     }
 
     /**
-     * Nimmt den Anschluss ab und gibt ihn zurück.
+     * Removes the connector and gives it back.
      *
-     * <p>Ohne diesen Weg käme man nur an sein Teil zurück, indem man das
-     * ganze Kabel abbaut — und mit ihm alle anderen Anschlüsse daran.
+     * <p>Without this path you could only get your part back by breaking the
+     * whole cable — and with it every other connector on it.
      */
     private static void removePart(Level level, BlockPos pos, Direction side, Player player) {
         if (!(level.getBlockEntity(pos) instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus)
@@ -468,31 +465,30 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
             popResource(level, pos,
                         new ItemStack(dev.devpanda.factorynetwork.registry.FnItems.CONNECTOR.get()));
         }
-        // Ein Halter ohne Anschlüsse ist nichts mehr: kein Kabel darin,
-        // kein Teil daran. Er verschwindet, statt als unsichtbarer Block
-        // stehenzubleiben, den niemand mehr trifft.
+        // A holder with no connectors is nothing any more: no cable inside,
+        // no part on it. It disappears, instead of staying put as an invisible
+        // block that nobody can hit any more.
         //
-        // AE2 macht dasselbe in CableBusContainer.cleanup(): Ein leerer Bus
-        // ruft removeBlock auf sich selbst.
+        // AE2 does the same in CableBusContainer.cleanup(): an empty bus
+        // calls removeBlock on itself.
         if (!carries(level.getBlockState(pos)) && bus.parts().isEmpty()) {
             level.removeBlock(pos, false);
             dev.devpanda.factorynetwork.network.ControllerRegistry.refreshAround(level, pos);
             return;
         }
-        // Die Fläche ist wieder frei: Vielleicht will das Kabel dorthin
-        // jetzt einen Arm.
+        // The face is free again: maybe the cable now wants an arm in that
+        // direction.
         level.setBlock(pos, withConnections(level.getBlockState(pos), level, pos), UPDATE_ALL);
         dev.devpanda.factorynetwork.network.ControllerRegistry.refreshAround(level, pos);
     }
 
     /**
-     * Wer das Kabel abbaut, bekommt seine Anschlüsse zurück.
+     * Whoever breaks the cable gets their connectors back.
      *
-     * <p><b>Nur, wenn dort wirklich ein anderer Block hinkommt.</b>
-     * {@code onRemove} feuert auch bei jedem Zustandswechsel, und ein Kabel
-     * wechselt seinen Zustand bei jedem Nachbarn, der auftaucht oder
-     * verschwindet — ohne diese Prüfung fielen die Teile beim <i>Bauen</i>
-     * der Leitung heraus.
+     * <p><b>Only when a different block really takes its place.</b>
+     * {@code onRemove} also fires on every state change, and a cable changes
+     * its state with every neighbour that appears or disappears — without this
+     * check the parts would drop out while the conduit was being <i>built</i>.
      */
     @Override
     protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState,
@@ -508,14 +504,14 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
     }
 
     /**
-     * Öffnet das Namensfenster des Anschlusses an der getroffenen Fläche.
+     * Opens the naming screen for the connector on the face that was hit.
      *
-     * <p>Die Fläche entscheidet, welcher gemeint ist. Ohne sie wäre ein Klick
-     * auf einen Kabelblock mit sechs Anschlüssen eine Frage ohne Antwort —
-     * und eine geratene Antwort benennt das falsche Gerät.
+     * <p>The face decides which one is meant. Without it, a click on a cable
+     * block with six connectors would be a question without an answer — and a
+     * guessed answer names the wrong device.
      *
-     * <p>Ein Kabel ohne Anschlüsse verhält sich wie zuvor: Der Klick geht
-     * durch, damit ein Kabel in der Hand weiterhin gesetzt wird.
+     * <p>A cable with no connectors behaves as before: the click passes
+     * through, so that a cable in the hand still gets placed.
      */
     @Override
     protected net.minecraft.world.InteractionResult useWithoutItem(
@@ -524,9 +520,9 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
         if (side == null) {
             return net.minecraft.world.InteractionResult.PASS;
         }
-        // Schleichen mit leeren Händen nimmt ab statt zu benennen. Minecraft
-        // ruft diesen Weg auch beim Schleichen, solange beide Hände leer
-        // sind — genau darauf beruht die Unterscheidung.
+        // Sneaking with empty hands removes instead of naming. Minecraft calls
+        // this path while sneaking too, as long as both hands are empty — the
+        // distinction rests exactly on that.
         if (player.isSecondaryUseActive()) {
             if (!level.isClientSide) {
                 removePart(level, pos, side, player);
@@ -549,21 +545,21 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
     }
 
     /**
-     * Gibt Redstone aus, wenn ein Anschluss daran es verlangt.
+     * Emits redstone when a connector on it calls for it.
      *
-     * <p><b>Eine Fläche mit Anschluss gibt genau dessen Stärke; eine freie
-     * gibt die stärkste.</b> Der erste Teil ist der Sinn der Sache: Sechs
-     * Anschlüsse an einem Block schalten sechs Maschinen, und mit einer
-     * gemeinsamen Stärke wären es sechs Maschinen an einem Schalter. Der
-     * zweite hält, was der Connectorblock schon konnte — dort kommt bei einem
-     * einzigen Anschluss nach allen Seiten dasselbe heraus, und ein Lämpchen
-     * neben dem Kabel leuchtet weiter.
+     * <p><b>A face with a connector emits exactly that connector's strength; a
+     * free one emits the strongest.</b> The first part is the point of the
+     * thing: six connectors on one block switch six machines, and with a single
+     * shared strength it would be six machines on one switch. The second keeps
+     * what the connector block could already do — there, a single connector
+     * puts out the same on every side, and a little lamp next to the cable
+     * keeps glowing.
      *
-     * <p><b>Der Preis:</b> {@code isSignalSource} sieht nur den BlockState und
-     * damit nicht, ob hier Teile sitzen. Es steht deshalb bedingungslos auf
-     * {@code true}, und Redstonestaub zeigt auch auf ein leeres Kabel. Das
-     * Gegenteil verlangte einen zweiten Zustand im BlockState — und damit
-     * eine zweite Wahrheit darüber, ob ein Kabel Anschlüsse trägt.
+     * <p><b>The price:</b> {@code isSignalSource} sees only the BlockState and
+     * thus not whether parts sit here. It therefore stands unconditionally at
+     * {@code true}, and redstone dust points at an empty cable too. The
+     * opposite would demand a second flag in the BlockState — and with it a
+     * second source of truth about whether a cable carries connectors.
      */
     @Override
     protected boolean isSignalSource(BlockState state) {
@@ -577,8 +573,8 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
                 || !bus.hasParts()) {
             return 0;
         }
-        // Wer aus Richtung direction fragt, steht auf der Gegenseite: Ihm
-        // sieht das Teil an der Fläche direction.getOpposite() ins Gesicht.
+        // Whoever asks from direction is standing on the opposite side: the
+        // part on the face direction.getOpposite() faces them.
         dev.devpanda.factorynetwork.block.entity.ConnectorPart ahead = bus.partAt(direction.getOpposite());
         if (ahead != null) {
             return ahead.emittedRedstone();

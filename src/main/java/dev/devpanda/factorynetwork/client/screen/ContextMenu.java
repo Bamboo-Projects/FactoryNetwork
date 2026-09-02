@@ -8,19 +8,19 @@ import net.minecraft.network.chat.Component;
 import java.util.List;
 
 /**
- * Ein kleines Menü an der Stelle, an der geklickt wurde.
+ * A small menu at the spot where the click happened.
  *
- * <p>Für die Handgriffe an einer Datei. Sie als Knöpfe in die Zeile zu legen
- * ginge nicht: Eine Zeile ist zwölf Pixel hoch, und drei Symbole darin sind
- * drei Flecken, die man nicht trifft.
+ * <p>For the little operations on a file. Laying them out as buttons in the
+ * row would not work: a row is twelve pixels tall, and three icons in it are
+ * three specks you cannot hit.
  *
- * <p>Ein Eintrag, der gerade nicht geht — die letzte Datei löschen —, wird
- * matt gezeigt und nicht weggelassen. Ein Menü, dessen Einträge wandern, muss
- * man jedes Mal neu lesen.
+ * <p>An entry that is currently unavailable — deleting the last file — is
+ * shown dimmed rather than left out. A menu whose entries move around has to
+ * be read anew every time.
  */
 public class ContextMenu {
 
-    /** Höhe eines Eintrags. */
+    /** Height of an entry. */
     private static final int ROW = 12;
 
     private static final int PAD = 4;
@@ -83,10 +83,10 @@ public class ContextMenu {
     }
 
     /**
-     * Führt aus, worauf geklickt wurde.
+     * Runs whatever was clicked.
      *
-     * @return ob der Klick im Menü lag — daran erkennt der Aufrufer, dass er
-     *         ihn nicht noch einmal auswerten darf
+     * @return whether the click landed in the menu — this tells the caller
+     *         that it must not evaluate it a second time
      */
     public boolean mouseClicked(double mouseX, double mouseY) {
         if (mouseX < x || mouseX >= x + width || mouseY < y || mouseY >= y + height()) {

@@ -10,28 +10,26 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Macht aus den Kästen eines Modells die Trefferflächen aller vier
- * Richtungen.
+ * Turns the boxes of a model into the hitboxes for all four directions.
  *
- * <p><b>Warum das nötig ist:</b> Ein waagerecht ausgerichteter Block trägt
- * sein Modell nur einmal — der Blockzustand dreht es. Die Trefferfläche dreht
- * dabei niemand mit. Ein Laufwerk, das nach Osten zeigt, hätte also die
- * Trefferfläche eines, das nach Norden zeigt, und man griffe an drei von vier
- * Wänden daneben.
+ * <p><b>Why this is needed:</b> A horizontally aligned block carries its
+ * model only once — the block state rotates it. Nothing rotates the hitbox
+ * along with it. A drive facing east would therefore have the hitbox of one
+ * facing north, and you would grab past it on three of four walls.
  *
- * <p>Gedreht wird genau so, wie Minecraft das Modell dreht: {@code y=90} legt
- * die Vorderseite von Norden nach Osten, also {@code (x, z) → (16 - z, x)}.
- * Wer die Formel nachrechnen will, nimmt die Mitte der Vorderseite,
- * {@code (8, 0)}: Sie muss auf {@code (16, 8)} landen.
+ * <p>The rotation is exactly the one Minecraft applies to the model:
+ * {@code y=90} moves the front from north to east, so {@code (x, z) → (16 - z, x)}.
+ * Anyone wanting to check the formula takes the centre of the front,
+ * {@code (8, 0)}: it must land on {@code (16, 8)}.
  */
 public final class FacingShapes {
 
     /**
-     * Die Trefferfläche zu einem Satz Kästen, ungedreht.
+     * The hitbox for a set of boxes, unrotated.
      *
-     * <p>Für die Blöcke, die keine Vorderseite haben — Gateway und
-     * Controller. Sie brauchen die Drehung nicht, aber dieselbe Vereinigung
-     * von Kästen, und die soll nicht dreimal im Projekt stehen.
+     * <p>For the blocks that have no front — gateway and controller. They do
+     * not need the rotation, but the same union of boxes, and that should not
+     * appear three times in the project.
      */
     public static VoxelShape whole(List<int[]> boxes) {
         VoxelShape shape = Shapes.empty();
@@ -44,7 +42,7 @@ public final class FacingShapes {
     }
 
     /**
-     * Die vier Trefferflächen zu einem Satz Kästen, der nach Norden zeigt.
+     * The four hitboxes for a set of boxes that faces north.
      */
     public static Map<Direction, VoxelShape> horizontal(List<int[]> boxes) {
         Map<Direction, VoxelShape> shapes = new EnumMap<>(Direction.class);
@@ -58,7 +56,7 @@ public final class FacingShapes {
         return shapes;
     }
 
-    /** Ein Kasten, in die Richtung gedreht, in die der Block zeigt. */
+    /** A box, rotated in the direction the block faces. */
     private static VoxelShape turn(int[] box, Direction facing) {
         double[] near = spin(box[0], box[2], facing);
         double[] far = spin(box[3], box[5], facing);
@@ -70,11 +68,11 @@ public final class FacingShapes {
     }
 
     /**
-     * Ein Punkt der Grundfläche, um die Blockmitte gedreht.
+     * A point of the footprint, rotated about the block's centre.
      *
-     * <p>Sichtbar fürs Paket, damit ein Test die Formel nachrechnen kann,
-     * ohne eine {@link VoxelShape} zu bauen — die braucht ein geladenes
-     * Minecraft, die Formel nicht.
+     * <p>Package-visible so that a test can check the formula without building
+     * a {@link VoxelShape} — that needs a loaded Minecraft, the formula does
+     * not.
      */
     static double[] spin(int x, int z, Direction facing) {
         return switch (facing) {

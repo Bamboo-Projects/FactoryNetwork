@@ -5,41 +5,39 @@ import net.minecraft.core.Direction;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Wo ein Gerät im Netz sitzt: eine Stelle und, bei einem Anschluss, eine
- * Fläche.
+ * Where a device sits in the network: a spot and, for a connector, a face.
  *
- * <p><b>Ein Ort allein reichte, solange ein Block einen Anschluss trug.</b>
- * Seit ein Kabelblock bis zu sechs trägt, ist „welches Gerät steht an dieser
- * Stelle" keine beantwortbare Frage mehr — es können sechs sein, jedes mit
- * eigenem Namen, eigenem Kanalbedarf und eigener Maschine dahinter. Der Graph
- * hat sich deshalb bis hierher genau ein Gerät je Kabelblock gemerkt und die
- * anderen fünf verschluckt.
+ * <p><b>A location alone was enough as long as a block carried one
+ * connector.</b> Since a cable block carries up to six, "which device is at
+ * this spot" is no longer an answerable question — there can be six, each with
+ * its own name, its own channel demand and its own machine behind it. Up to
+ * now the graph therefore remembered exactly one device per cable block and
+ * swallowed the other five.
  *
- * <p>Die Seite ist {@code null}, wo es keine gibt: Ein Laufwerk, ein
- * Serverschrank, eine Anzeige sind ganze Blöcke. Nur ein Anschluss sieht in
- * eine Richtung — und er hat immer eine, auch im eigenen Connectorblock, wo
- * sie im {@code FACING} steht.
+ * <p>The side is {@code null} where there is none: a drive, a server rack, a
+ * display are whole blocks. Only a connector faces in one direction — and it
+ * always has one, even in its own connector block, where it sits in
+ * {@code FACING}.
  */
 public record DevicePos(BlockPos pos, @Nullable Direction side) {
 
     public DevicePos {
-        // Ein BlockPos aus der Suche ist oft ein wandernder MutableBlockPos.
-        // Als Schlüssel einer Map wäre das ein Fehler, den man erst drei
-        // Schritte später sieht.
+        // A BlockPos from the search is often a roaming MutableBlockPos. As a
+        // map key that would be a bug you only notice three steps later.
         pos = pos.immutable();
     }
 
-    /** Ein ganzer Block — Laufwerk, Schrank, Anzeige. */
+    /** A whole block — drive, rack, display. */
     public static DevicePos of(BlockPos pos) {
         return new DevicePos(pos, null);
     }
 
-    /** Ein Anschluss an einer Fläche. */
+    /** A connector on a face. */
     public static DevicePos of(BlockPos pos, Direction side) {
         return new DevicePos(pos, side);
     }
 
-    /** Die Stelle, an der die Maschine steht — bei einem ganzen Block er selbst. */
+    /** The spot where the machine sits — for a whole block, itself. */
     public BlockPos machine() {
         return side == null ? pos : pos.relative(side);
     }

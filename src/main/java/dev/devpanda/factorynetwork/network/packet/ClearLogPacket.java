@@ -10,15 +10,15 @@ import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /**
- * „Leeren" im Reiter Log.
+ * "Clear" in the Log tab.
  *
- * <p>Ohne Inhalt: Es gibt nur ein Protokoll je Netz, und welches gemeint ist,
- * sagt das offene Terminal. Der Server prüft das nach — ein Paket allein
- * berechtigt zu nichts.
+ * <p>No payload: there is only one log per network, and which one is meant is
+ * told by the open terminal. The server verifies that — a packet alone
+ * authorises nothing.
  *
- * <p>Das Protokoll wird gelöscht und nicht nur ausgeblendet. Wer leert, will
- * einen sauberen Anfang für den nächsten Versuch; ein Filter, der alte Zeilen
- * versteckt, wäre etwas anderes und heißt hier auch anders.
+ * <p>The log is deleted, not merely hidden. Whoever clears it wants a clean
+ * start for the next attempt; a filter that hides old lines would be something
+ * else, and is called something else here too.
  */
 public record ClearLogPacket() implements CustomPacketPayload {
 
@@ -41,9 +41,9 @@ public record ClearLogPacket() implements CustomPacketPayload {
             }
             menu.controller(player).ifPresent(controller -> {
                 controller.clearLog();
-                // Sofort zurückschicken: Sonst steht die alte Liste noch da,
-                // bis das regelmäßige Schicken das nächste Mal dran ist, und
-                // der Knopf sieht kaputt aus.
+                // Send back immediately: otherwise the old list stays up
+                // until the next regular push comes around, and the button
+                // looks broken.
                 controller.pushLogTo(player);
             });
         });

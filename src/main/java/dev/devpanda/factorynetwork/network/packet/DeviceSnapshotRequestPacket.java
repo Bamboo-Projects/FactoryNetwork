@@ -12,11 +12,11 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /**
- * „Was liegt gerade in diesem Gerät?"
+ * "What is currently in this device?"
  *
- * <p>Auf Anfrage und nicht laufend: In einer Fabrik mit vierzig Connectoren
- * wäre die laufende Übertragung Dauerverkehr für etwas, das man einmal
- * ansieht. Gefragt wird, wenn der Zeiger auf einem Gerätenamen stehen bleibt.
+ * <p>On request and not continuously: in a factory with forty connectors the
+ * continuous transfer would be constant traffic for something you look at
+ * once. It is asked when the pointer comes to rest on a device name.
  */
 public record DeviceSnapshotRequestPacket(String connector) implements CustomPacketPayload {
 
@@ -47,27 +47,26 @@ public record DeviceSnapshotRequestPacket(String connector) implements CustomPac
     }
 
     /**
-     * Die Antwort für diesen Spieler, oder {@code null}.
+     * The answer for this player, or {@code null}.
      *
-     * <p>Getrennt vom Versand, damit ein GameTest den ganzen Weg gehen kann:
-     * Terminal offen, Name gefragt, Antwort da. Bliebe die Prüfung im
-     * Handler, ließe sie sich nur im laufenden Spiel von Hand nachvollziehen
-     * — und geprüft würde am Ende nur {@code DeviceSnapshotPacket.of}, also
-     * gerade der Teil, der ohnehin am wenigsten schiefgeht.
+     * <p>Kept separate from the sending so that a GameTest can go the whole
+     * way: terminal open, name asked, answer there. Were the check to stay in
+     * the handler, it could only be followed by hand in a running game — and
+     * in the end only {@code DeviceSnapshotPacket.of} would be tested, which is
+     * exactly the part that goes wrong least anyway.
      *
-     * <p><b>Über das offene Menü und nicht über eine mitgeschickte
-     * Koordinate:</b> Wer nach einem Gerät fragt, muss vor dem Terminal
-     * stehen, das dazugehört. Eine Koordinate im Paket könnte jeder
-     * schicken.
+     * <p><b>Through the open menu and not through a coordinate sent along:</b>
+     * whoever asks about a device must be standing in front of the terminal it
+     * belongs to. A coordinate in the packet, anyone could send.
      */
     public static DeviceSnapshotPacket answerFor(net.minecraft.world.entity.player.Player player,
                                                  String connector) {
         if (!(player.containerMenu instanceof TerminalMenu menu)) {
             return null;
         }
-        // controller(player) und nicht controller() — das Menü löst den
-        // Controller über den Spieler auf, weil es selbst nur die Koordinate
-        // des Terminals kennt.
+        // controller(player) and not controller() — the menu resolves the
+        // controller through the player, because it itself only knows the
+        // terminal's coordinate.
         return menu.controller(player)
                 .map(controller -> DeviceSnapshotPacket.of(controller, connector))
                 .orElse(null);

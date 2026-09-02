@@ -4,63 +4,63 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Die Maße des Torbogens — als reine Zahlen.
+ * The dimensions of the archway — as plain numbers.
  *
- * <p><b>Ohne jeden Minecraft-Bezug</b>, aus demselben Grund wie
- * {@link CableLayout}: Nur so lässt sich die Geometrie in einem gewöhnlichen
- * Test gegen die erzeugte Modelldatei prüfen. Minecraft hält Modell und
- * Trefferfläche getrennt, und ein Block, den man sieht, aber nicht trifft,
- * ist der Fehler, den man am längsten sucht.
+ * <p><b>With no reference to Minecraft</b>, for the same reason as
+ * {@link CableLayout}: only this way can the geometry be checked against the
+ * generated model file in an ordinary test. Minecraft keeps model and hitbox
+ * separate, and a block you can see but cannot hit is the bug you spend the
+ * longest hunting for.
  *
- * <p>Dieselben Zahlen stehen im Modellskript {@code tools/assets.py};
- * {@code GatewayLayoutTest} wacht darüber, dass beide dasselbe sagen.
+ * <p>The same numbers live in the model script {@code tools/assets.py};
+ * {@code GatewayLayoutTest} watches that both say the same thing.
  */
 public final class GatewayLayout {
 
-    /** Bis hierhin reicht der Sockel. */
+    /** The base reaches up to here. */
     public static final int FOOT = 5;
 
-    /** Ab hier der Sturz. */
+    /** From here up, the lintel. */
     public static final int HEAD = 11;
 
-    /** Kantenlänge einer Ecksäule. */
+    /** Edge length of a corner post. */
     public static final int POST = 6;
 
-    /** Ab dieser Höhe verengen die Schultern den Durchgang. */
+    /** From this height the shoulders narrow the passage. */
     public static final int SHOULDER = 9;
 
-    /** Bis hierhin reicht eine Schulter in den Durchgang. */
+    /** This far a shoulder reaches into the passage. */
     public static final int REACH = 7;
 
-    /** Wie stark die beiden Leuchtbänder sind. */
+    /** How thick the two glow strips are. */
     public static final int GLOW = 1;
 
     /**
-     * Alle Kästen des Modells, jeder als {@code x0 y0 z0 x1 y1 z1}.
+     * All boxes of the model, each as {@code x0 y0 z0 x1 y1 z1}.
      *
-     * <p>Die beiden Leuchtbänder liegen in der Blockhülle und teilen sich die
-     * Kanten mit Sockel und Sturz — für die Trefferfläche sind sie deshalb
-     * keine eigenen Kästen, sondern gehören zu ihnen.
+     * <p>The two glow strips lie within the block shell and share their edges
+     * with base and lintel — for the hitbox they are therefore not boxes of
+     * their own, but belong to those.
      */
     public static List<int[]> boxes() {
         List<int[]> boxes = new ArrayList<>();
 
-        // Sockel und Sturz über die volle Grundfläche, jeweils in zwei
-        // Kästen: der Block selbst und das Leuchtband darauf. Im Modell sind
-        // es zwei, weil sie verschiedene Texturen tragen.
+        // Base and lintel across the full footprint, each in two boxes: the
+        // block itself and the glow strip on it. In the model they are two,
+        // because they carry different textures.
         boxes.add(new int[] {0, 0, 0, 16, FOOT - GLOW, 16});
         boxes.add(new int[] {0, FOOT - GLOW, 0, 16, FOOT, 16});
         boxes.add(new int[] {0, HEAD, 0, 16, HEAD + GLOW, 16});
         boxes.add(new int[] {0, HEAD + GLOW, 0, 16, 16, 16});
 
-        // Die vier Ecksäulen.
+        // The four corner posts.
         for (int x : new int[] {0, 16 - POST}) {
             for (int z : new int[] {0, 16 - POST}) {
                 boxes.add(new int[] {x, FOOT, z, x + POST, HEAD, z + POST});
             }
         }
 
-        // Über jeder der vier Öffnungen zwei Schultern.
+        // Two shoulders above each of the four openings.
         for (int lo : new int[] {POST, 16 - REACH}) {
             int hi = lo + REACH - POST;
             boxes.add(new int[] {lo, SHOULDER, 0, hi, HEAD, POST});

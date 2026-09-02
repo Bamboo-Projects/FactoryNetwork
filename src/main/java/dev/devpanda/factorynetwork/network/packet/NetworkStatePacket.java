@@ -12,40 +12,39 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 import java.util.List;
 
 /**
- * Der Zustand des Netzwerks für den Editor: Quelltext, bekannte Connectoren
- * und der Stand der Worker.
+ * The network's state for the editor: source text, known connectors and the
+ * status of the workers.
  *
- * <p>Die Connectorliste ist das, was die Vervollständigung braucht. Sie wird
- * beim Öffnen geschickt, nicht laufend — ein Netz ändert sich seltener als
- * jemand tippt.
+ * <p>The connector list is what completion needs. It is sent on opening, not
+ * continuously — a network changes less often than someone types.
  *
- * <p>Die Anlagen stehen mit dabei, weil eine unvollständige sonst unsichtbar
- * bliebe: Sie tut nichts und sagt nichts, und der Spieler sucht den Fehler im
- * Programm statt an der Beschriftung.
+ * <p>The plants are included, because an incomplete one would otherwise stay
+ * invisible: it does nothing and says nothing, and the player looks for the
+ * fault in the program instead of at the labelling.
  *
- * <p><b>Mit Stelle und nicht nur mit Namen.</b> Wer im Editor
- * {@code crusher_1} liest, will wissen, welche Maschine das ist — in einer
- * Fabrik mit vierzig Öfen führte diese Frage bisher in den Keller.
+ * <p><b>With a place and not only a name.</b> Whoever reads {@code crusher_1}
+ * in the editor wants to know which machine that is — in a factory with forty
+ * furnaces this question used to lead down into the basement.
  *
- * <p><b>Die Anzeigen gehören genauso dazu.</b> {@code display NAME { … }}
- * verlangt den Namen, den die Tafel in der Welt trägt — und der stand
- * nirgends, wo der Editor ihn hätte vorschlagen können. Wer seine Wand
- * benannt hatte, musste sich den Namen merken und richtig abtippen.
+ * <p><b>The displays belong here just as much.</b> {@code display NAME { … }}
+ * demands the name the panel carries in the world — and that stood nowhere the
+ * editor could have suggested it. Whoever had named their wall had to remember
+ * the name and type it out correctly.
  *
- * <p><b>Die Profile sagen, was hinter den Connectoren steht.</b> Sie reisen
- * hier mit und nicht auf Anfrage, weil sie sich nur ändern, wenn jemand die
- * Maschine austauscht. Was gerade in den Fächern liegt, kommt dagegen über
- * {@link DeviceSnapshotPacket} — das ändert sich im Sekundentakt.
+ * <p><b>The profiles say what is behind the connectors.</b> They travel along
+ * here and not on request, because they only change when someone swaps out the
+ * machine. What is currently in the slots, by contrast, comes over
+ * {@link DeviceSnapshotPacket} — that changes every second.
  *
- * <p><b>Sechs Felder sind die Grenze.</b> {@code StreamCodec.composite} trägt
- * nicht mehr; ein siebtes bräuchte eine von Hand geschriebene Fassung wie in
+ * <p><b>Six fields are the limit.</b> {@code StreamCodec.composite} carries no
+ * more; a seventh would need a hand-written version as in
  * {@link AnalyserDataPacket}.
  *
- * <p>Der Quelltext ist hier ausgezogen. Er stand als Zeichenkette bis 64 KB
- * in jedem Netzzustand — und der geht raus, sooft sich am Netz etwas ändert,
- * während ihn seit dem Projektumbau niemand mehr liest. Er kommt über
- * {@link ProjectStatePacket}, und der geht nur beim Öffnen und beim
- * Übernehmen.
+ * <p>The source text has been moved out of here. It stood as a string of up to
+ * 64 KB in every network state — and that goes out whenever something on the
+ * network changes, while since the project rework no one reads it anymore. It
+ * comes over {@link ProjectStatePacket}, and that goes only on opening and on
+ * applying.
  */
 public record NetworkStatePacket(List<NamedPlace> connectors, List<NamedPlace> displays,
                                  List<String> workers, List<String> plants,

@@ -21,15 +21,15 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import org.joml.Matrix4f;
 
 /**
- * Zeichnet das Netz als Gerüst in die Welt.
+ * Draws the network into the world as a wireframe.
  *
- * <p><b>Ohne Tiefenprüfung.</b> Das ist die eine Eigenschaft, an der alles
- * hängt: In einer verbauten Basis liegen die Kabel hinter Wänden, und ein
- * Werkzeug zur Fehlersuche, das nur zeigt, was ohnehin zu sehen ist, hilft
- * nicht. Dieselbe Entscheidung trifft der Netzanalysator von ExtendedAE.
+ * <p><b>Without a depth test.</b> That is the one property everything hangs
+ * on: in a built-up base the cables lie behind walls, and a troubleshooting
+ * tool that only shows what is visible anyway is no help. ExtendedAE's network
+ * analyser makes the same decision.
  *
- * <p>Knoten sind kleine Würfel, Strecken sind Linien. Die Farbe sagt, was
- * los ist — grün heißt Luft, gelb knapp, rot voll oder kaputt.
+ * <p>Nodes are small cubes, links are lines. The colour says what is going
+ * on — green means room, yellow tight, red full or broken.
  */
 @EventBusSubscriber(modid = FactoryNetwork.MOD_ID, value = Dist.CLIENT)
 public final class AnalyserRenderer {
@@ -119,13 +119,13 @@ public final class AnalyserRenderer {
             case DISPLAY -> new float[] {0.60f, 0.60f, 0.75f, 0.70f};
             case UNNAMED -> new float[] {0.95f, 0.75f, 0.20f, 0.90f};
             case DUPLICATE -> new float[] {0.95f, 0.40f, 0.85f, 0.95f};
-            // Eng, nicht tot: dasselbe Rot, aber es bedeutet jetzt
-            // langsamer statt stumm.
+            // Congested, not dead: the same red, but it now means slower
+            // instead of silent.
             case CONGESTED -> new float[] {0.95f, 0.25f, 0.20f, 0.95f};
             case DRIVE -> new float[] {0.45f, 0.85f, 0.60f, 0.75f};
             case RACK -> new float[] {0.85f, 0.65f, 0.35f, 0.75f};
             case ROUTER -> new float[] {0.70f, 0.75f, 0.85f, 0.60f};
-            // Blasser als der Controller: dieselbe Familie, andere Rolle.
+            // Paler than the controller: the same family, a different role.
             case EXTENSION -> new float[] {0.40f, 0.70f, 1.00f, 0.55f};
         };
     }
@@ -140,7 +140,7 @@ public final class AnalyserRenderer {
                 .setNormal(0.0F, 1.0F, 0.0F);
     }
 
-    /** Ein kleiner Würfel um einen Punkt — sechs Flächen, keine Textur. */
+    /** A small cube around a point — six faces, no texture. */
     private static void cube(com.mojang.blaze3d.vertex.BufferBuilder buffer, Matrix4f matrix,
                              Vec3 at, float size, float[] c) {
         float x0 = (float) at.x - size;

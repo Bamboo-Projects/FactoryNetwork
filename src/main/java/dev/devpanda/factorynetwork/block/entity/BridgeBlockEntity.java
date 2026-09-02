@@ -19,32 +19,31 @@ import org.jetbrains.annotations.Nullable;
 import java.util.UUID;
 
 /**
- * Eine Quantum-Brücke: ein Ende einer Leitung ohne Kabel dazwischen.
+ * A quantum bridge: one end of a connection with no cable in between.
  *
- * <p>In ihr steckt eine Hälfte einer Verschränkung. Die andere Hälfte steckt
- * in einer zweiten Brücke, irgendwo in derselben Welt — und die beiden
- * verbinden ihre Netze, als läge ein dichtes Kabel dazwischen.
+ * <p>It holds one half of an entanglement. The other half sits in a second
+ * bridge, somewhere in the same world — and the two join their networks as if
+ * a solid cable ran between them.
  *
- * <p><b>Was sie nicht tut: suchen.</b> Sie meldet sich beim Laden in
- * {@link BridgeRegistry} an, unter der Nummer ihrer Hälfte. Eine Brücke, die
- * ihren Partner über die Welt suchen müsste, durchsuchte bei jeder Frage
- * Millionen Blöcke.
+ * <p><b>What it does not do: search.</b> On load it registers itself in
+ * {@link BridgeRegistry} under the id of its half. A bridge that had to search
+ * the world for its partner would scan millions of blocks on every query.
  */
 public class BridgeBlockEntity extends BlockEntity implements Container {
 
-    /** Ein Platz: eine Brücke trägt genau eine Hälfte. */
+    /** One slot: a bridge holds exactly one half. */
     public static final int SLOTS = 1;
 
     private final NonNullList<ItemStack> contents =
             NonNullList.withSize(SLOTS, ItemStack.EMPTY);
 
     /**
-     * Unter welcher Nummer diese Brücke angemeldet ist.
+     * The id under which this bridge is registered.
      *
-     * <p>Gemerkt und nicht aus dem Platz gelesen: Beim Abmelden ist die
-     * Hälfte womöglich schon heraus, und dann fände die Abmeldung ihren
-     * eigenen Eintrag nicht mehr — die Brücke bliebe als Geist im
-     * Verzeichnis stehen.
+     * <p>Remembered rather than read back from the slot: by the time it
+     * unregisters, the half may already be gone, and then the unregistration
+     * would no longer find its own entry — the bridge would linger as a ghost
+     * in the registry.
      */
     private @Nullable UUID registered;
 
@@ -52,22 +51,22 @@ public class BridgeBlockEntity extends BlockEntity implements Container {
         super(FnBlockEntities.BRIDGE.get(), pos, state);
     }
 
-    /** Die Nummer der Hälfte, die hier steckt — oder {@code null}. */
+    /** The id of the half held here — or {@code null}. */
     public @Nullable UUID pair() {
         return EntanglementItem.idOf(contents.get(0));
     }
 
-    /** Die Gegenstelle, oder {@code null}: siehe {@link BridgeRegistry}. */
+    /** The counterpart, or {@code null}: see {@link BridgeRegistry}. */
     public @Nullable BlockPos partner() {
         return level == null ? null : BridgeRegistry.partnerOf(level, worldPosition);
     }
 
     /**
-     * Trägt die Anmeldung nach, wenn sich die Hälfte geändert hat.
+     * Updates the registration when the half has changed.
      *
-     * <p>Erst ab-, dann anmelden, und beides nur bei einer echten Änderung:
-     * Ein Verzeichnis, das bei jedem {@code setChanged} neu geschrieben wird,
-     * ist ein Verzeichnis, das man in jedem Tick anfasst.
+     * <p>Unregister first, then register, and both only on a real change: a
+     * registry that gets rewritten on every {@code setChanged} is a registry
+     * you touch on every tick.
      */
     private void syncRegistration() {
         if (level == null || level.isClientSide) {
@@ -84,16 +83,16 @@ public class BridgeBlockEntity extends BlockEntity implements Container {
         if (now != null) {
             BridgeRegistry.add(level, now, worldPosition);
         }
-        // Das Netz sieht anders aus, sobald eine Brücke auf- oder zugeht.
+        // The network looks different the moment a bridge opens or closes.
         ControllerRegistry.refreshAround(level, worldPosition);
         showLink();
     }
 
     /**
-     * Trägt den Zustand ins Blockbild.
+     * Writes the state into the block's appearance.
      *
-     * <p>Auch an der Gegenstelle: Sie erfährt sonst nie, dass sie einen
-     * Partner bekommen hat — sie wird ja nicht angefasst.
+     * <p>At the counterpart too: otherwise it would never learn that it has
+     * gained a partner — nothing else touches it.
      */
     private void showLink() {
         if (level == null || level.isClientSide) {
@@ -129,10 +128,10 @@ public class BridgeBlockEntity extends BlockEntity implements Container {
     @Override
     public void setRemoved() {
         if (level != null && !level.isClientSide && registered != null) {
-            // Die Gegenstelle merken, bevor die Abmeldung sie unauffindbar
-            // macht: Sie wird beim Abbau nicht angefasst und erführe sonst
-            // nie, dass sie allein ist — ein Licht, hinter dem nichts mehr
-            // steht.
+            // Remember the counterpart before unregistration makes it
+            // unfindable: it is not touched when this one is broken, and would
+            // otherwise never learn that it is alone — a light with nothing
+            // behind it any more.
             BlockPos partner = partner();
             BridgeRegistry.remove(level, registered, worldPosition);
             registered = null;
@@ -183,7 +182,7 @@ public class BridgeBlockEntity extends BlockEntity implements Container {
         setChanged();
     }
 
-    /** Nur eine Verschränkung passt hinein — ein Platz für alles wäre eine Kiste. */
+    /** Only an entanglement fits inside — a slot for anything would be a chest. */
     @Override
     public boolean canPlaceItem(int slot, ItemStack stack) {
         return stack.isEmpty() || EntanglementItem.idOf(stack) != null;

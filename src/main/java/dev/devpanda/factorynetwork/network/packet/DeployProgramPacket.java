@@ -15,17 +15,16 @@ import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /**
- * Übergibt das Projekt aus dem Editor an den Controller.
+ * Hands the project from the editor to the controller.
  *
- * <p>Alle Dateien auf einmal und nicht die offene allein: Wer eine Datei
- * anlegt und dann eine andere übernimmt, hätte sonst die neue verloren.
- * Lang, aber selten — geschickt wird es nur, wenn jemand „Übernehmen"
- * drückt.
+ * <p>All files at once, and not the open one alone: whoever creates a file and
+ * then applies another would otherwise have lost the new one. Long, but rare —
+ * it is only sent when someone presses "Apply".
  */
 public record DeployProgramPacket(BlockPos terminal, Map<String, String> files)
         implements CustomPacketPayload {
 
-    /** Mehr als das nimmt der Server je Datei nicht an. */
+    /** The server accepts no more than this per file. */
     private static final int MAX_LENGTH = 64 * 1024;
 
     public static final Type<DeployProgramPacket> TYPE = new Type<>(
@@ -39,7 +38,7 @@ public record DeployProgramPacket(BlockPos terminal, Map<String, String> files)
                     DeployProgramPacket::files,
                     DeployProgramPacket::new);
 
-    /** Für alles, was nur einen Text hat. */
+    /** For anything that has only a single text. */
     public static DeployProgramPacket of(BlockPos terminal,
                                          dev.devpanda.factorynetwork.lang.Project project) {
         return new DeployProgramPacket(terminal, project.files());
@@ -51,11 +50,11 @@ public record DeployProgramPacket(BlockPos terminal, Map<String, String> files)
     }
 
     /**
-     * Darf dieser Spieler hier etwas ändern?
+     * May this player change anything here?
      *
-     * <p>Die Rechnung steht in {@code FnProtection}; hier stehen nur die
-     * Angaben, die es dafür braucht. Operatoren dürfen immer — sonst hätte
-     * ein Server niemanden, der eine verwaiste Anlage wieder in Gang bringt.
+     * <p>The reasoning lives in {@code FnProtection}; here are only the inputs
+     * it needs. Operators are always allowed — otherwise a server would have
+     * no one to get an orphaned plant running again.
      */
     static boolean mayEdit(ServerPlayer player,
                            dev.devpanda.factorynetwork.block.entity.ControllerBlockEntity
@@ -70,16 +69,16 @@ public record DeployProgramPacket(BlockPos terminal, Map<String, String> files)
             if (!(context.player() instanceof ServerPlayer player)) {
                 return;
             }
-            // Nur wer ein Terminalfenster offen hat, darf übernehmen —
-            // und nur, wenn es den Code überhaupt zeigt.
+            // Only someone with a terminal window open may apply —
+            // and only if it actually shows the code.
             //
-            // Früher stand hier ein Abstand zu der Position, die im Paket
-            // stand. Das trug, solange man dafür vor einem Block stehen
-            // musste. Mit dem Laptop steht man nirgends mehr davor, und die
-            // Koordinate im Paket ist eine Behauptung des Clients. Das
-            // offene Fenster dagegen tickt der Server selbst: Läuft der
-            // Spieler aus der Reichweite, geht es zu, und hier kommt nichts
-            // mehr an.
+            // Previously there was a distance check against the position
+            // carried in the packet. That held up as long as you had to
+            // stand in front of a block for it. With the laptop you stand in
+            // front of nothing anymore, and the coordinate in the packet is
+            // a claim by the client. The open window, by contrast, the
+            // server ticks itself: if the player walks out of range, it
+            // closes, and nothing arrives here anymore.
             if (!(player.containerMenu instanceof dev.devpanda.factorynetwork.client.menu
                     .TerminalMenu menu)
                     || !menu.allows(dev.devpanda.factorynetwork.terminal.TerminalTab.CODE)) {
@@ -89,8 +88,8 @@ public record DeployProgramPacket(BlockPos terminal, Map<String, String> files)
                 return;
             }
             menu.controller(player).ifPresentOrElse(controller -> {
-                // Erst die Erlaubnis, dann der Übersetzer: Wer nicht darf,
-                // soll das erfahren und nicht erst seine Tippfehler.
+                // Permission first, then the compiler: whoever is not allowed
+                // should learn that, and not their typos first.
                 if (!mayEdit(player, controller)) {
                     net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,
                             new DeployResultPacket(false, Component.translatable(
@@ -99,10 +98,10 @@ public record DeployProgramPacket(BlockPos terminal, Map<String, String> files)
                 }
                 boolean accepted = controller.deploy(
                         new dev.devpanda.factorynetwork.lang.Project(packet.files()));
-                // Der Ausgang gehört in den Editor und nicht nur in den Chat:
-                // Zwei der Gründe — kein Serverschrank, Programm zu groß —
-                // kennt der Client gar nicht, weil er sie nicht selbst
-                // übersetzen kann.
+                // The outcome belongs in the editor and not only in the chat:
+                // two of the reasons — no server rack, program too large —
+                // the client does not know at all, because it cannot compile
+                // them itself.
                 String line = accepted
                         ? Component.translatable("message.factorynetwork.deploy.accepted",
                                 controller.program().workers().size()).getString()
@@ -112,8 +111,8 @@ public record DeployProgramPacket(BlockPos terminal, Map<String, String> files)
                                 : controller.diagnostics().get(0).message();
                 net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,
                         new DeployResultPacket(accepted, line));
-                // Die vollständige Liste bleibt im Chat: In eine Fußzeile
-                // passt eine Meldung, nicht zwölf.
+                // The full list stays in the chat: a footer has room for one
+                // message, not twelve.
                 if (!accepted) {
                     controller.diagnostics().forEach(diagnostic ->
                             player.sendSystemMessage(Component.literal(diagnostic.toString())));

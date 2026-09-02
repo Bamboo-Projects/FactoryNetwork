@@ -26,34 +26,33 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Zeigt an, was im Netz vorgeht.
+ * Shows what is going on in the network.
  *
- * <p>Flach an der Wand, wie ein Bilderrahmen — ein Display ist keine
- * Maschine, sondern eine Auskunft. Was es zeigt, steht im Programm; welches
- * Display gemeint ist, entscheidet sein Name.
+ * <p>Flat against the wall, like a picture frame — a display is not a
+ * machine but a readout. What it shows lives in the program; which display
+ * is meant is decided by its name.
  */
 public class DisplayBlock extends HorizontalDirectionalBlock implements EntityBlock {
 
     public static final MapCodec<DisplayBlock> CODEC = simpleCodec(DisplayBlock::new);
 
-    /** Zwei Pixel tief: Es hängt an der Wand, es steht nicht davor. */
+    /** Two pixels deep: it hangs on the wall, it does not stand in front of it. */
     private static final VoxelShape NORTH = Block.box(0, 0, 14, 16, 16, 16);
     private static final VoxelShape SOUTH = Block.box(0, 0, 0, 16, 16, 2);
     private static final VoxelShape WEST = Block.box(14, 0, 0, 16, 16, 16);
     private static final VoxelShape EAST = Block.box(0, 0, 0, 2, 16, 16);
 
     /**
-     * An welchen Seiten eine zweite Tafel anschließt.
+     * On which sides a second panel adjoins.
      *
-     * <p>Links und rechts <b>von vorn gesehen</b>, nicht in Weltrichtungen:
-     * Der Rahmen fällt dort weg, wo im Bild eine Nachbartafel liegt, und im
-     * Bild gibt es kein Norden.
+     * <p>Left and right <b>as seen from the front</b>, not in world
+     * directions: the frame falls away where a neighbouring panel lies in the
+     * picture, and in the picture there is no north.
      *
-     * <p>Vier Wahrheitswerte mal vier Richtungen sind vierundsechzig
-     * Blockzustände. Das ist viel für einen Rahmen — und trotzdem der
-     * richtige Weg: Was man sieht, muss im Blockzustand stehen, sonst kann
-     * es der Renderer nicht aus dem Modell nehmen, und dann zeichnet er
-     * jeden Rahmen selbst.
+     * <p>Four booleans times four directions are sixty-four block states.
+     * That is a lot for a frame — and still the right way: what you see has
+     * to be in the block state, otherwise the renderer cannot take it from
+     * the model, and then it draws every frame itself.
      */
     public static final BooleanProperty JOINED_UP = BooleanProperty.create("joined_up");
     public static final BooleanProperty JOINED_DOWN = BooleanProperty.create("joined_down");
@@ -71,25 +70,25 @@ public class DisplayBlock extends HorizontalDirectionalBlock implements EntityBl
     }
 
     /**
-     * Wohin „rechts" zeigt, von vorn gesehen.
+     * Which way "right" points, as seen from the front.
      *
-     * <p>Bei einer Tafel nach Norden ist das Westen — wer von Norden auf sie
-     * schaut, hat Westen zur Rechten. Dieselbe Regel steht in
-     * {@code FaceOverlay} und in {@code DisplayWall}; sie muss überall
-     * dieselbe sein, sonst sitzt der Rahmen auf der falschen Seite.
+     * <p>For a panel facing north that is west — someone looking at it from
+     * the north has west on their right. The same rule lives in
+     * {@code FaceOverlay} and in {@code DisplayWall}; it has to be the same
+     * everywhere, otherwise the frame sits on the wrong side.
      */
     public static Direction rightOf(Direction facing) {
         return facing.getCounterClockWise();
     }
 
-    /** Steht dort eine Tafel, die in dieselbe Richtung zeigt? */
+    /** Is there a panel there facing the same direction? */
     private boolean joins(net.minecraft.world.level.LevelReader level, BlockPos pos,
                           Direction facing) {
         BlockState neighbour = level.getBlockState(pos);
         return neighbour.getBlock() == this && neighbour.getValue(FACING) == facing;
     }
 
-    /** Trägt die vier Nachbarschaften in einen Zustand ein. */
+    /** Records the four adjacencies into a state. */
     private BlockState withJoins(BlockState state, net.minecraft.world.level.LevelReader level,
                                  BlockPos pos) {
         Direction facing = state.getValue(FACING);
@@ -102,12 +101,12 @@ public class DisplayBlock extends HorizontalDirectionalBlock implements EntityBl
     }
 
     /**
-     * Auch eine Tafel, die nicht von Hand gesetzt wurde, sieht sich um.
+     * A panel that was not placed by hand looks around too.
      *
-     * <p>{@code getStateForPlacement} greift nur beim Setzen aus der Hand.
-     * Ein Kolben, ein Bauwerk oder ein {@code /setblock} legen die Tafel
-     * ohne Nachbarschaft ab — und die Nachbarn erfahren zwar davon, die neue
-     * Tafel selbst aber nicht.
+     * <p>{@code getStateForPlacement} only fires when placing from the hand.
+     * A piston, a structure or a {@code /setblock} drop the panel with no
+     * neighbourhood — and while the neighbours hear about it, the new panel
+     * itself does not.
      */
     @Override
     protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState,
@@ -123,11 +122,11 @@ public class DisplayBlock extends HorizontalDirectionalBlock implements EntityBl
     }
 
     /**
-     * Ändert sich ein Nachbar, ändert sich der Rahmen.
+     * When a neighbour changes, the frame changes.
      *
-     * <p>Alle vier auf einmal statt nur die betroffene Seite: Der Aufwand
-     * ist derselbe, und eine Fallunterscheidung, die vier Fälle auf einen
-     * abbildet, ist eine Fallunterscheidung, die falsch sein kann.
+     * <p>All four at once instead of only the affected side: the effort is
+     * the same, and a case distinction that maps four cases onto one is a
+     * case distinction that can be wrong.
      */
     @Override
     protected BlockState updateShape(BlockState state, Direction direction, BlockState neighbour,
@@ -181,12 +180,12 @@ public class DisplayBlock extends HorizontalDirectionalBlock implements EntityBl
     }
 
     /**
-     * Rechtsklick fragt nach dem Namen.
+     * Right-click asks for the name.
      *
-     * <p>Vorher sagte er einem den Namen, den man ohnehin an der Tafel las —
-     * eine Handlung, die nichts tut. Jetzt geht das Fenster auf, in dem man
-     * ihn setzt. Was die Tafel <b>zeigt</b>, steht weiterhin im Programm;
-     * hier steht nur, welches Programmstück gemeint ist.
+     * <p>Before, it told you the name you were already reading on the panel —
+     * an action that does nothing. Now the window opens where you set it.
+     * What the panel <b>shows</b> still lives in the program; this only says
+     * which piece of the program is meant.
      */
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,

@@ -15,17 +15,17 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 import java.util.UUID;
 
 /**
- * „Ich hätte die Datei gern."
+ * "I would like the file."
  *
- * <p>Die Sperre hält, und das ist richtig — zwei Leute, die dieselbe Datei
- * schreiben, verlieren die Arbeit des einen. Aber wer davorsteht, konnte
- * bisher <b>nur warten</b>, ohne zu wissen, wie lange. Ein Klopfen kostet
- * nichts und löst den häufigsten Fall: Der andere hat die Datei offen, tippt
- * aber gar nicht mehr.
+ * <p>The lock holds, and that is right — two people writing the same file lose
+ * one of their work. But whoever is standing in front of it could until now
+ * <b>only wait</b>, without knowing for how long. A knock costs nothing and
+ * resolves the most common case: the other person has the file open but is no
+ * longer typing at all.
  *
- * <p><b>Kein Übernehmen, nur ein Klopfen.</b> Die Sperre wegzunehmen wäre
- * genau das, wogegen sie gebaut wurde. Wer angeklopft wird, schließt die
- * Datei — oder eben nicht.
+ * <p><b>No takeover, just a knock.</b> Taking the lock away would be exactly
+ * what it was built against. Whoever gets knocked on closes the file — or
+ * simply does not.
  */
 public record RequestEditPacket(String file) implements CustomPacketPayload {
 
@@ -47,10 +47,10 @@ public record RequestEditPacket(String file) implements CustomPacketPayload {
                     || !(asking.containerMenu instanceof TerminalMenu menu)) {
                 return;
             }
-            // Wer den Code-Reiter nicht hat, fragt auch nicht nach fremdem
-            // Quelltext. Der Reiter fehlt am Wireless Terminal nur in der
-            // Anzeige — hier steht die Regel, die auch ein veränderter
-            // Client nicht umgeht.
+            // Whoever does not have the Code tab does not ask for someone
+            // else's source either. The tab is missing on the Wireless
+            // Terminal only in the display — here stands the rule that even
+            // a modified client cannot get around.
             if (!menu.allows(dev.devpanda.factorynetwork.terminal.TerminalTab.CODE)) {
                 return;
             }
@@ -60,8 +60,8 @@ public record RequestEditPacket(String file) implements CustomPacketPayload {
             }
             UUID holder = controller.holderOf(packet.file());
             if (holder == null) {
-                // Niemand hält sie mehr — die Anfrage hat sich erledigt, und
-                // der Fragende merkt es beim nächsten Tippen.
+                // No one holds it anymore — the request has settled itself,
+                // and the asker notices at the next keystroke.
                 asking.sendSystemMessage(Component.translatable(
                         "message.factorynetwork.request_edit.free", packet.file()));
                 return;
@@ -74,11 +74,11 @@ public record RequestEditPacket(String file) implements CustomPacketPayload {
             if (owner == null) {
                 return;
             }
-            // An den Halter: wer fragt und wonach.
+            // To the holder: who asks and for what.
             owner.sendSystemMessage(Component.translatable(
                     "message.factorynetwork.request_edit.asked",
                     asking.getName(), packet.file()));
-            // Und an den Fragenden, damit der Klick eine Antwort hat.
+            // And to the asker, so the click has an answer.
             asking.sendSystemMessage(Component.translatable(
                     "message.factorynetwork.request_edit.sent", owner.getName()));
         });

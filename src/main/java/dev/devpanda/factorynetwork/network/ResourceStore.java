@@ -6,75 +6,74 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Die Sicht des Netzes auf einen Bestand.
+ * The network's view of a stock.
  *
- * <p>Gegenstände, Flüssigkeiten und Chemikalien liegen alle in Zellen in
- * Laufwerken, und die Sicht darauf war dreimal dieselbe Klasse mit anderen
- * Typen: ein Index über allen Zellen, zwei Durchläufe beim Ablegen, ein
- * Vergleich der Laufwerksstände beim Nachsehen. Hier stehen die Fragen
- * einmal; die Antworten stehen in {@link NetworkStorage},
- * {@link NetworkFluids} und im Chemikalienspeicher unter
- * {@code compat/mekanism}.
+ * <p>Items, fluids and chemicals all sit in cells in drives, and the view of
+ * them was three times the same class with different types: an index over all
+ * cells, two passes when storing, a comparison of the drive states when
+ * checking. Here the questions stand once; the answers stand in
+ * {@link NetworkStorage}, {@link NetworkFluids} and in the chemical store
+ * under {@code compat/mekanism}.
  *
- * <p><b>Der Schlüssel ist ein {@code Object}</b>, wie im Wertemodell: ein
- * {@code Item}, ein {@code Fluid} oder — bei einer Chemikalie — die Kennung
- * als Text. Ein gemeinsamer Obertyp gäbe es nur, wenn alle drei aus derselben
- * Hand kämen, und ein {@link String} kommt aus keiner. Welche Form zu welcher
- * Art gehört, sagt {@code ResourceKind.type()}; wer eine falsche hereingibt,
- * bekommt eine {@link ClassCastException} und keine stille Null.
+ * <p><b>The key is an {@code Object}</b>, as in the value model: an
+ * {@code Item}, a {@code Fluid} or — for a chemical — the identifier as text.
+ * A common supertype would exist only if all three came from the same hand,
+ * and a {@link String} comes from none. Which form belongs to which kind is
+ * told by {@code ResourceKind.type()}; whoever passes in a wrong one gets a
+ * {@link ClassCastException} and not a silent zero.
  *
- * <p><b>Warum eine Schnittstelle und nicht nur eine gemeinsame Oberklasse:</b>
- * Der Chemikalienspeicher fasst Mekanism-Typen an. Eine Klasse, die das im
- * Kern täte, ließe sich in einem Pack ohne Mekanism nicht laden, und mit ihr
- * fiele der ganze Controller. Deshalb steht hier die Frage und die Antwort
- * dort — und deshalb gibt es {@link #NONE}.
+ * <p><b>Why an interface and not just a shared superclass:</b> the chemical
+ * store touches Mekanism types. A class that did so at its core could not be
+ * loaded in a pack without Mekanism, and it would take the whole controller
+ * down with it. That is why the question lives here and the answer there — and
+ * why {@link #NONE} exists.
  */
 public interface ResourceStore {
 
-    /** Wie viel davon im Netz liegt. Stück bei Gegenständen, sonst Millibucket. */
+    /** How much of it is in the network. In pieces for items, otherwise millibuckets. */
     long count(Object key);
 
     /**
-     * Wie viel davon noch hineinginge.
+     * How much of it would still go in.
      *
-     * <p>Gebraucht, <b>bevor</b> ein Behälter geleert wird: Was der Speicher
-     * nicht nimmt, darf gar nicht erst herauskommen. Bei Gegenständen kann man
-     * den Rest zurücklegen; ein Gas, das draußen ist und dessen Behälter es
-     * inzwischen nicht mehr annimmt, wäre weg.
+     * <p>Needed <b>before</b> a tank is emptied: what the store does not take
+     * must not come out in the first place. With items the rest can be put
+     * back; a gas that is out and whose tank no longer takes it back by then
+     * would be gone.
      */
     long room(Object key, long wanted);
 
-    /** Lagert ein und meldet, was <b>nicht</b> hineinpasste. */
+    /** Stores it and reports what did <b>not</b> fit. */
     long insert(Object key, long amount);
 
-    /** Entnimmt und meldet, wie viel wirklich kam. */
+    /** Extracts and reports how much really came. */
     long extract(Object key, long amount);
 
     /**
-     * Der ganze Bestand.
+     * The whole stock.
      *
-     * <p>Eine Kopie und keine Sicht: Der Bestand wird oft durchlaufen, während
-     * nebenher etwas verschoben wird. Die Schlüssel haben die Form, die zur
-     * Art gehört — deshalb steht hier {@code ?} und nicht {@code Object}: Wer
-     * die Art kennt, darf die Karte typisiert entgegennehmen.
+     * <p>A copy and not a view: the stock is often iterated while something is
+     * moved on the side. The keys have the form that belongs to the kind —
+     * that is why {@code ?} stands here and not {@code Object}: whoever knows
+     * the kind may take the map typed.
      */
     Map<?, Long> contents();
 
-    /** Welche Laufwerke im Netz hängen. Setzt der Controller beim Neuaufbau. */
+    /** Which drives hang on the network. Set by the controller on rebuild. */
     void setDrives(List<DriveBlockEntity> drives);
 
-    /** Ob überhaupt Platz da ist. Ohne Laufwerk lagert ein Netz nichts. */
+    /** Whether there is any room at all. Without a drive a network stores nothing. */
     boolean hasDrives();
 
-    /** Wird gerufen, wenn sich etwas geändert hat. */
+    /** Called when something has changed. */
     void setChangeListener(Runnable listener);
 
     /**
-     * Ein Speicher, den es nicht gibt.
+     * A store that does not exist.
      *
-     * <p>Er nimmt nichts an, gibt nichts her und hat keine Laufwerke. Das ist
-     * keine Notlösung, sondern die Wahrheit über ein Pack ohne die Mod, die
-     * diese Ressourcenart mitbringt.
+     * <p>It accepts nothing, gives nothing out and has no drives. This is not
+     * a stopgap, but the truth about a pack without the mod that brings this
+     * resource kind.
      */
     ResourceStore NONE = new ResourceStore() {
 

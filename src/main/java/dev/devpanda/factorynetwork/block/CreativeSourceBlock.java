@@ -10,37 +10,37 @@ import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.energy.IEnergyStorage;
 
 /**
- * Eine Stromquelle ohne Brennstoff, für den Kreativmodus.
+ * A power source without fuel, for creative mode.
  *
- * <p>Die Mod erzeugt keinen Strom — sie nimmt Forge Energy aus dem Pack, wie
- * es die Presse schon tut. Zum Ausprobieren steht aber kein Pack daneben, und
- * ohne eine Quelle steht jedes Netz sofort still. <b>Dieser Block ist genau
- * dafür da und für nichts sonst:</b> kein Rezept, keine Kette, er steht nur
- * im Kreativ-Reiter.
+ * <p>The mod does not generate power — it draws Forge Energy from the pack, as
+ * the press already does. But for trying things out there is no pack on hand,
+ * and without a source every network stands still at once. <b>This block is
+ * there for exactly that and nothing else:</b> no recipe, no chain, it only
+ * appears in the creative tab.
  *
- * <p>Er schiebt in jeden Nachbarn, der Strom annimmt — auch in Maschinen
- * anderer Mods. Wer ihn im Überlebensmodus bekäme, hätte das Spiel schon
- * gewonnen.
+ * <p>It pushes into every neighbour that accepts power — machines of other
+ * mods included. Anyone who got hold of it in survival mode would already have
+ * won the game.
  */
 public class CreativeSourceBlock extends Block {
 
-    /** Der Umriss aus den Kästen des Modells. */
+    /** The outline from the boxes of the model. */
     private static final net.minecraft.world.phys.shapes.VoxelShape SHAPE =
             FacingShapes.whole(MachineLayouts.source());
 
     public static final MapCodec<CreativeSourceBlock> CODEC =
             simpleCodec(CreativeSourceBlock::new);
 
-    /** Reichlich: Der Block soll nie der Engpass sein. */
+    /** Plenty: the block should never be the bottleneck. */
     private static final int PER_TICK = 100_000;
 
     /**
-     * Und dasselbe zum Abholen.
+     * And the same for pulling.
      *
-     * <p>Schieben allein reicht nicht mehr, seit ein Worker Strom
-     * <b>holen</b> kann: {@code from quelle to network} fragt den Block nach
-     * seinem Speicher. Ohne diesen hier stünde die Kreativquelle als einzige
-     * Stromquelle da, an die kein Programm herankommt.
+     * <p>Pushing alone is no longer enough now that a worker can <b>pull</b>
+     * power: {@code from quelle to network} asks the block for its storage.
+     * Without this one here the creative source would be the only power source
+     * that no program can reach.
      */
     public static final IEnergyStorage TAP = new IEnergyStorage() {
         @Override
@@ -84,11 +84,11 @@ public class CreativeSourceBlock extends Block {
     }
 
     /**
-     * Geschoben wird über den Blocktick.
+     * Pushing happens via the block tick.
      *
-     * <p>Ein zufälliger Tick käme zu selten, eine BlockEntity wäre Aufwand für
-     * einen Block, der nichts merkt. Der geplante Tick trägt sich selbst
-     * weiter, solange der Block steht.
+     * <p>A random tick would come too rarely, a BlockEntity would be effort
+     * for a block that keeps no state. The scheduled tick carries itself on,
+     * as long as the block stands.
      */
     @Override
     protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState,

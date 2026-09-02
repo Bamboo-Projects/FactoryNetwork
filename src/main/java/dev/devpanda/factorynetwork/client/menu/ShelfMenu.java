@@ -11,36 +11,35 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * Das Fenster eines Regals — Laufwerk wie Serverschrank.
+ * The window of a shelf — drive as well as server rack.
  *
- * <p>Ein Fenster für beide, weil es dieselbe Handlung ist: Bauteile in Plätze
- * stecken. Was sich unterscheidet, sind zwei Zahlen und die Frage, was
- * hineindarf — und die beantwortet das Regal selbst.
+ * <p>One window for both, because it is the same action: putting components
+ * into slots. What differs is two numbers and the question of what may go in
+ * — and the shelf answers that itself.
  *
- * <p>Vorher ging es nur über Klicken am Block: vorne rein, hinten raus. Zum
- * Bestücken reicht das, aber man sieht nicht, was drinsteckt, und kommt an
- * eine bestimmte Zelle nicht heran.
+ * <p>Before, this was only possible by clicking on the block: in the front,
+ * out the back. For stocking that is enough, but you cannot see what is
+ * inside and cannot reach a particular cell.
  */
 public class ShelfMenu extends AbstractContainerMenu {
 
     /**
-     * So liegen die Plätze im Fenster — dieselben Zahlen wie in {@code gui.py}.
+     * How the slots are laid out in the window — the same numbers as in {@code gui.py}.
      *
-     * <p>{@code group} und {@code gap} fassen Spalten zu Blöcken zusammen:
-     * Der Schrank stellt je vier Plätze als einen Einschub nebeneinander und
-     * lässt dann Luft. {@code innerAfter} und {@code innerGap} setzen
-     * innerhalb eines Blocks noch einmal eine kleinere Lücke — nach dem
-     * Gehäuse, damit die drei Bauteile daneben nicht aussehen wie ein
-     * viertes.
+     * <p>{@code group} and {@code gap} bundle columns into blocks: the rack
+     * places four slots side by side as one bay and then leaves a gap.
+     * {@code innerAfter} and {@code innerGap} add one more, smaller gap
+     * within a block — after the chassis, so that the three components beside
+     * it do not look like a fourth.
      *
-     * <p>Die Breite steht mit dabei: Ein Schrank mit vier Plätzen je
-     * Einschub passt nicht in die 176 einer Truhe.
+     * <p>The width comes along with it: a rack with four slots per bay does
+     * not fit into the 176 of a chest.
      */
     public record Layout(int width, int height, int columns, int rows,
                          int left, int top, int inventoryY, int hotbarY,
                          int group, int gap, int innerAfter, int innerGap) {
 
-        /** Ein Regal ohne Gruppierung — ein schlichtes Raster. */
+        /** A shelf without grouping — a plain grid. */
         public Layout(int width, int height, int columns, int rows,
                       int left, int top, int inventoryY, int hotbarY) {
             this(width, height, columns, rows, left, top, inventoryY, hotbarY, 0, 0, 0, 0);
@@ -50,7 +49,7 @@ public class ShelfMenu extends AbstractContainerMenu {
             return columns * rows;
         }
 
-        /** Wo eine Spalte anfängt, die Lücken schon eingerechnet. */
+        /** Where a column begins, with the gaps already accounted for. */
         public int columnX(int column) {
             int gaps = group > 0 ? (column / group) * gap : 0;
             int inner = group > 0 && innerGap > 0 && column % group > innerAfter
@@ -62,43 +61,43 @@ public class ShelfMenu extends AbstractContainerMenu {
             return top + row * SLOT;
         }
 
-        /** Das Spielerinventar sitzt mittig, egal wie breit das Fenster ist. */
+        /** The player inventory sits centred, no matter how wide the window is. */
         public int inventoryX() {
             return (width - 9 * SLOT) / 2 + 1;
         }
     }
 
-    /** Das Laufwerk: zwei Spalten, fünf Reihen — wie die Schächte an der Front. */
+    /** The drive: two columns, five rows — like the bays on the front. */
     public static final Layout DRIVE = new Layout(176, 204, 2, 5, 70, 18, 121, 179);
 
     /**
-     * Der Schrank: zwölf Einschübe, in zwei Säulen zu sechs.
+     * The rack: twelve bays, in two columns of six.
      *
-     * <p>Je Einschub vier Plätze — das Gehäuse und seine drei Bauteile — und
-     * dahinter das Lämpchen. Zwölf Reihen untereinander wären 216 Pixel nur
-     * für die Plätze, mehr als ein Fenster hoch sein darf.
+     * <p>Four slots per bay — the chassis and its three components — and the
+     * indicator light behind them. Twelve rows one below another would be 216
+     * pixels for the slots alone, more than a window is allowed to be tall.
      */
     public static final Layout RACK =
             new Layout(192, 222, 8, 6, 12, 18, 139, 197, 4, 12, 0, 4);
 
     /**
-     * Der Sendemast: vier Steckplätze in einer Reihe.
+     * The transmitter mast: four slots in a row.
      *
-     * <p>Keine Gruppen, keine Lämpchen — vier Plätze sind vier Plätze. Die
-     * Zahlen kommen aus {@code tools/gui.py}, das die Fläche malt und sie
-     * beim Lauf ausgibt.
+     * <p>No groups, no indicator lights — four slots are four slots. The
+     * numbers come from {@code tools/gui.py}, which draws the face and prints
+     * them on its run.
      */
     public static final Layout MAST = new Layout(176, 132, 4, 1, 52, 18, 49, 107);
 
     private static final int SLOT = 18;
 
     /**
-     * Die Zuschnitte in der Reihenfolge, in der sie über die Leitung gehen.
+     * The layouts in the order in which they go over the wire.
      *
-     * <p><b>Ein Byte und kein Ja-Nein.</b> Solange es zwei Regale gab, reichte
-     * ein Bit; mit dem Sendemast sind es drei, und der nächste wäre der
-     * vierte. Wer hier einen Zuschnitt ergänzt, hängt ihn hinten an — die
-     * Zahl steht sonst nirgends.
+     * <p><b>A byte and not a yes-no.</b> As long as there were two shelves, a
+     * bit was enough; with the transmitter mast there are three, and the next
+     * would be the fourth. Whoever adds a layout here appends it at the end —
+     * the number is written nowhere else.
      */
     private static final Layout[] KINDS = {DRIVE, RACK, MAST};
 
@@ -130,19 +129,19 @@ public class ShelfMenu extends AbstractContainerMenu {
     }
 
     /**
-     * Die Kiste, die der Client benutzt, bis der Inhalt eintrifft.
+     * The box the client uses until the contents arrive.
      *
-     * <p>Sie muss dieselben Regeln kennen wie das Regal auf dem Server —
-     * sonst zeigt der Client ein Rechenwerk auf dem Datenträgerplatz, bis
-     * der Server widerspricht, und das sieht aus wie ein Fehler.
+     * <p>It must know the same rules as the shelf on the server — otherwise
+     * the client shows a processor in the storage slot until the server
+     * disagrees, and that looks like a bug.
      */
     private static Container placeholder(Layout layout, int slots) {
         if (layout == DRIVE) {
             return new SimpleContainer(slots);
         }
         if (layout == MAST) {
-            // Am Mast gilt dieselbe Regel wie überall im Ausbausystem: Was
-            // kein Modul und keine Karte ist, kommt nicht hinein.
+            // At the mast the same rule applies as everywhere in the upgrade
+            // system: whatever is not a module and not a card does not go in.
             return new SimpleContainer(slots) {
                 @Override
                 public boolean canPlaceItem(int slot, ItemStack stack) {
@@ -171,18 +170,18 @@ public class ShelfMenu extends AbstractContainerMenu {
     }
 
     /**
-     * Für den Server: der Behälter selbst statt einer leeren Kiste.
+     * For the server: the container itself instead of an empty box.
      *
-     * <p>Nimmt einen {@link Container} und keinen {@code ShelfBlockEntity}:
-     * Der Sendemast ist keines der beiden Regale, hält seine Plätze aber
-     * genauso.
+     * <p>Takes a {@link Container} and not a {@code ShelfBlockEntity}: the
+     * transmitter mast is neither of the two shelves, but holds its slots
+     * just the same.
      */
     public static ShelfMenu of(int id, Inventory inventory, Container container,
                                Layout layout) {
         return new ShelfMenu(id, inventory, layout, container);
     }
 
-    /** Welchen Zuschnitt dieses Fenster hat, als Zahl für die Leitung. */
+    /** Which layout this window has, as a number for the wire. */
     public static int kindOf(Layout layout) {
         for (int index = 0; index < KINDS.length; index++) {
             if (KINDS[index] == layout) {
@@ -210,10 +209,10 @@ public class ShelfMenu extends AbstractContainerMenu {
     }
 
     /**
-     * Umschalt-Klick schiebt zwischen Regal und Rucksack hin und her.
+     * Shift-click moves back and forth between the shelf and the backpack.
      *
-     * <p>Ohne das müsste man jede Zelle einzeln ziehen — bei zehn Plätzen ist
-     * das der Unterschied zwischen einem Griff und zehn.
+     * <p>Without it you would have to drag every cell one at a time — with
+     * ten slots that is the difference between one grab and ten.
      */
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
@@ -225,10 +224,10 @@ public class ShelfMenu extends AbstractContainerMenu {
         ItemStack copy = stack.copy();
         int shelfSlots = layout.slots();
         if (index < shelfSlots) {
-            // Erst herausnehmen, dann verschieben. moveItemStackTo greift
-            // sonst den Gegenstand ab, bevor das Regal ihn losgelassen hat —
-            // und eine Zelle schreibt ihren Bestand genau in dem Moment
-            // zurück. Der Spieler bekäme eine Kopie von vorhin.
+            // Take it out first, then move it. Otherwise moveItemStackTo
+            // grabs the item before the shelf has let go of it — and a cell
+            // writes its contents back at exactly that moment. The player
+            // would get a copy of what was there before.
             ItemStack taken = container.removeItem(index, stack.getCount());
             if (!moveItemStackTo(taken, shelfSlots, slots.size(), true)) {
                 container.setItem(index, taken);

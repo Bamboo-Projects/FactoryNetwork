@@ -11,39 +11,37 @@ import java.util.List;
 import java.util.function.Consumer;
 
 /**
- * Der Dateibaum eines Projekts.
+ * The file tree of a project.
  *
- * <p>Eine Spalte mit den Dateien, und darin alles, was man mit einer Datei
- * macht: anlegen, umbenennen, verdoppeln, löschen. <b>Das fehlte, und der
- * Hinweistext im Fenster sagte den Leuten, sie sollen dafür das Spiel
- * verlassen</b> — der Ordner neben der Welt ist ein guter zweiter Weg, aber
- * kein Ersatz für den ersten.
+ * <p>A column with the files, and within it everything you do to a file:
+ * create, rename, duplicate, delete. <b>That was missing, and the hint text
+ * in the window told people to leave the game for it</b> — the folder next to
+ * the world is a good second route, but no substitute for the first.
  *
- * <p>Umbenannt wird an Ort und Stelle: Die Zeile wird zum Eingabefeld. Ein
- * eigenes Fenster für einen Dateinamen wäre ein Fenster über einem Fenster,
- * und man verlöre beim Tippen aus den Augen, wie die anderen Dateien heißen —
- * genau das, wonach man sich beim Benennen richtet.
+ * <p>Renaming happens in place: the row becomes an input field. A separate
+ * window for a file name would be a window on top of a window, and while
+ * typing you would lose sight of what the other files are called — exactly
+ * what you go by when naming.
  *
- * <p>Ein Name, den es schon gibt oder der nicht ins Muster passt, wird rot
- * gezeigt und nicht angenommen. Die Eingabe bleibt dabei stehen: Ein Feld,
- * das sich bei einem Tippfehler selbst leert, ist die Sorte Hilfsbereitschaft,
- * für die man es zweimal tippt.
+ * <p>A name that already exists or does not fit the pattern is shown red and
+ * not accepted. The input stays put while that happens: a field that clears
+ * itself on a typo is the kind of helpfulness you type it twice for.
  */
 public class ProjectPanel {
 
-    /** Höhe einer Zeile. */
+    /** Height of a row. */
     private static final int ROW = 12;
 
-    /** Höhe der Überschrift mit dem Pluszeichen. */
+    /** Height of the heading with the plus sign. */
     private static final int HEADER = 16;
 
-    /** Der Grund der Spalte — die unterste der drei Ebenen. */
+    /** The floor of the column — the lowest of the three layers. */
     private static final int WELL = 0xFF0E1214;
 
-    /** Der Streifen, auf dem die Überschrift sitzt. */
+    /** The band the heading sits on. */
     private static final int HEADER_BAND = 0xFF161C19;
 
-    /** Die offene Datei: heller als der Grund, weil sie oben aufliegt. */
+    /** The open file: lighter than the floor, because it lies on top. */
     private static final int ROW_ACTIVE = 0xFF232B27;
 
     private final Font font;
@@ -52,17 +50,17 @@ public class ProjectPanel {
     private final int width;
     private final int height;
 
-    /** Wohin die Änderungen gehen. */
+    /** Where the changes go. */
     private final Consumer<Project> onChanged;
 
-    /** Was passiert, wenn eine Datei gewählt wird. */
+    /** What happens when a file is selected. */
     private final Consumer<String> onOpen;
 
     private Project project;
     private String open;
     private List<Diagnostic> problems = List.of();
 
-    /** Welche Datei gerade umbenannt wird, oder {@code null}. */
+    /** Which file is currently being renamed, or {@code null}. */
     private String renaming;
     private String typed = "";
 
@@ -91,7 +89,7 @@ public class ProjectPanel {
         this.problems = problems;
     }
 
-    /** Läuft gerade eine Eingabe, die die Tastatur braucht? */
+    /** Is an input that needs the keyboard currently active? */
     public boolean isEditing() {
         return renaming != null;
     }
@@ -100,7 +98,7 @@ public class ProjectPanel {
         return menu != null;
     }
 
-    // ---- Zeichnen ----------------------------------------------------------
+    // ---- Drawing -----------------------------------------------------------
 
     private int rowY(int index) {
         return y + HEADER + index * ROW;
@@ -115,7 +113,7 @@ public class ProjectPanel {
                 && mouseY >= y + 1 && mouseY < y + HEADER;
     }
 
-    /** Welche Zeile unter dem Zeiger liegt, oder -1. */
+    /** Which row lies under the cursor, or -1. */
     private int rowAt(double mouseX, double mouseY) {
         if (mouseX < x || mouseX >= x + width) {
             return -1;
@@ -125,17 +123,16 @@ public class ProjectPanel {
     }
 
     public void render(GuiGraphics graphics, int mouseX, int mouseY) {
-        // Eine eigene Mulde neben dem Editor, damit die Spalte als Bereich
-        // lesbar ist und nicht als Text, der zufällig links steht. Der Wert
-        // ist deutlich dunkler als die Scheibe und nicht nur ein bisschen:
-        // Auf einer Fläche dieser Größe sieht man keine Kante mehr, sondern
-        // nur noch den Ton.
+        // A recess of its own next to the editor, so the column reads as an
+        // area and not as text that happens to sit on the left. The value is
+        // markedly darker than the pane and not just a little: on a surface
+        // this size you no longer see an edge, only the shade.
         graphics.fill(x - 3, y - 2, x + width, y + height, WELL);
-        // Die senkrechte Kante zum Editor trägt die Trennung. Rechts hell,
-        // wie bei jeder Mulde in diesem Projekt.
+        // The vertical edge to the editor carries the separation. Light on
+        // the right, as with every recess in this project.
         graphics.fill(x + width, y - 2, x + width + 1, y + height, CodeScreen.EDGE);
-        // Die Überschrift steht auf einem eigenen Streifen — sonst hängt das
-        // Pluszeichen frei im Dunkeln.
+        // The heading sits on a band of its own — otherwise the plus sign
+        // hangs free in the dark.
         graphics.fill(x - 3, y - 2, x + width, y + HEADER - 2, HEADER_BAND);
         graphics.fill(x - 3, y + HEADER - 3, x + width, y + HEADER - 2, 0xFF232B27);
 
@@ -171,9 +168,9 @@ public class ProjectPanel {
             boolean broken = problems.stream()
                     .anyMatch(problem -> problem.isError() && problem.file().equals(name));
             String holder = dev.devpanda.factorynetwork.client.ClientProjectState.heldBy(name);
-            // Eine gesperrte Datei matt: Man darf sie öffnen und lesen, nur
-            // nicht ändern. Grau ist dafür die ehrlichere Farbe als Rot —
-            // es ist kein Fehler, es ist jemand anders.
+            // A locked file dim: you may open and read it, only not change
+            // it. Grey is the more honest colour for that than red — it is
+            // not an error, it is someone else.
             int colour = holder != null ? TerminalScreen.TEXT_FAINT
                     : active ? TerminalScreen.TEXT : TerminalScreen.TEXT_DIM;
             graphics.drawString(font, FnFonts.mono(clipName(name, width - 12)),
@@ -193,11 +190,11 @@ public class ProjectPanel {
     }
 
     /**
-     * Die Zeile als Eingabefeld.
+     * The row as an input field.
      *
-     * <p>Der Cursor ist ein Strich hinter dem Text und blinkt nicht: Bei einem
-     * Feld, das genau so lange offen ist, wie man einen Namen tippt, ist ein
-     * Blinken nur Bewegung.
+     * <p>The cursor is a stroke after the text and does not blink: in a field
+     * that stays open exactly as long as it takes to type a name, a blink is
+     * only motion.
      */
     private void drawRenameField(GuiGraphics graphics, int rowTop) {
         boolean valid = isAcceptable(typed);
@@ -216,15 +213,15 @@ public class ProjectPanel {
     }
 
     /**
-     * Ein Dateiname, so gekürzt, dass der Name übrig bleibt.
+     * A file name, shortened so that the name itself is what remains.
      *
-     * <p>Bei {@code erz/eisen/schmelzen.mf} steht das Wichtige hinten. Von
-     * rechts zu kürzen ergäbe {@code erz/eisen/schm}, und damit sähen zwei
-     * Dateien desselben Ordners gleich aus. Gekürzt wird deshalb von vorn:
-     * {@code …/schmelzen.mf}.
+     * <p>In {@code erz/eisen/schmelzen.mf} the important part is at the end.
+     * Shortening from the right would give {@code erz/eisen/schm}, and two
+     * files in the same folder would then look alike. So it is shortened from
+     * the front: {@code …/schmelzen.mf}.
      *
-     * <p>Ohne Ordner bleibt es beim Kürzen von rechts — dort steht die
-     * Endung, und die ist bei jeder Datei dieselbe.
+     * <p>Without a folder it stays shortened from the right — that is where
+     * the extension is, and it is the same for every file.
      */
     private String clipName(String name, int available) {
         if (font.width(FnFonts.mono(name)) <= available || name.indexOf('/') < 0) {
@@ -240,13 +237,13 @@ public class ProjectPanel {
         return clip(rest, available);
     }
 
-    // ---- Umbenennen --------------------------------------------------------
+    // ---- Renaming ----------------------------------------------------------
 
     /**
-     * Geht dieser Name durch?
+     * Does this name pass?
      *
-     * <p>Der eigene alte Name geht durch — sonst stünde die Zeile rot da,
-     * sobald man das Umbenennen öffnet und noch nichts geändert hat.
+     * <p>The file's own old name passes — otherwise the row would sit there
+     * red the moment you open the rename and have not changed anything yet.
      */
     private boolean isAcceptable(String name) {
         if (name.equals(renaming)) {
@@ -266,13 +263,12 @@ public class ProjectPanel {
     }
 
     /**
-     * Übernimmt den getippten Namen.
+     * Applies the typed name.
      *
-     * @param force ob die Eingabe auch dann zugeht, wenn der Name nicht
-     *              durchgeht — so beim Klick daneben, der ein Abbruch ist.
-     *              Die Eingabetaste lässt das Feld dagegen offen stehen: Wer
-     *              gerade einen roten Namen getippt hat, will ihn ändern und
-     *              nicht verlieren.
+     * @param force whether the input also closes when the name does not pass
+     *              — as with a click elsewhere, which is a cancellation. The
+     *              Enter key, by contrast, leaves the field open: someone who
+     *              has just typed a red name wants to change it, not lose it.
      */
     private void commitRename(boolean force) {
         if (renaming == null) {
@@ -307,16 +303,15 @@ public class ProjectPanel {
         renaming = null;
     }
 
-    // ---- Anlegen, Verdoppeln, Löschen --------------------------------------
+    // ---- Create, Duplicate, Delete -----------------------------------------
 
     /**
-     * Legt eine Datei an — und öffnet sie sofort zum Benennen.
+     * Creates a file — and opens it immediately for naming.
      *
-     * <p>Der Name {@code datei2.mf} ist ein Platzhalter und kein Vorschlag.
-     * Wer eine Datei anlegt, weiß, wie sie heißen soll; die Eingabe gleich zu
-     * öffnen erspart den zweiten Griff und den einen Fall, in dem eine Datei
-     * für immer {@code datei2.mf} heißt, weil das Umbenennen zu umständlich
-     * war.
+     * <p>The name {@code datei2.mf} is a placeholder, not a suggestion.
+     * Anyone creating a file knows what it should be called; opening the input
+     * right away saves the second step and the one case where a file is called
+     * {@code datei2.mf} forever, because renaming was too much bother.
      */
     public void addFile() {
         String name = project.freeNameLike("datei");
@@ -335,11 +330,12 @@ public class ProjectPanel {
     }
 
     /**
-     * Löscht eine Datei.
+     * Deletes a file.
      *
-     * <p>Ohne Rückfrage, aber nur über das Menü: Zwei Klicks an einer Stelle,
-     * an die man nicht aus Versehen kommt, sind die Rückfrage. Ein
-     * Bestätigungsfenster über dem Editorfenster wäre die dritte Ebene.
+     * <p>Without a confirmation prompt, but only through the menu: two clicks
+     * in a place you do not reach by accident are the confirmation. A
+     * confirmation window on top of the editor window would be the third
+     * layer.
      */
     private void delete(String name) {
         if (project.files().size() <= 1) {
@@ -352,7 +348,7 @@ public class ProjectPanel {
         }
     }
 
-    // ---- Menü --------------------------------------------------------------
+    // ---- Menu --------------------------------------------------------------
 
     private void closeMenu() {
         menu = null;
@@ -360,8 +356,8 @@ public class ProjectPanel {
 
     private void openMenu(String name, double mouseX, double mouseY) {
         boolean last = project.files().size() <= 1;
-        // Eine Datei, die jemand anders hält, wird weder umbenannt noch
-        // gelöscht — das wäre dasselbe Überschreiben durch die Hintertür.
+        // A file someone else is holding is neither renamed nor deleted —
+        // that would be the same overwriting through the back door.
         boolean free = dev.devpanda.factorynetwork.client.ClientProjectState.heldBy(name) == null;
         if (!free) {
             menu = new ContextMenu(font, (int) mouseX, (int) mouseY, List.of(
@@ -382,20 +378,20 @@ public class ProjectPanel {
                         () -> delete(name))));
     }
 
-    // ---- Bedienung ---------------------------------------------------------
+    // ---- Controls ----------------------------------------------------------
 
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (menu != null) {
-            // Auch ein Klick daneben gehört dem Menü: Er schließt es, und er
-            // soll dabei nicht zusätzlich den Cursor im Editor versetzen.
+            // A click elsewhere belongs to the menu too: it closes the menu,
+            // and should not also move the cursor in the editor while doing so.
             boolean inside = menu.mouseClicked(mouseX, mouseY);
             closeMenu();
             return inside || contains(mouseX, mouseY);
         }
         if (renaming != null) {
             commitRename(true);
-            // Kein return: Der Klick, der die Eingabe beendet, darf im selben
-            // Zug die Datei treffen, auf die er zeigt.
+            // No return: the click that ends the input may, in the same
+            // motion, hit the file it points at.
         }
         if (!contains(mouseX, mouseY)) {
             return false;
@@ -414,8 +410,8 @@ public class ProjectPanel {
             return true;
         }
         if (name.equals(open)) {
-            // Ein zweiter Klick auf die offene Datei benennt um — so wie ein
-            // langsamer Doppelklick im Dateimanager.
+            // A second click on the open file renames it — like a slow double
+            // click in a file manager.
             beginRename(name);
             return true;
         }
@@ -428,13 +424,13 @@ public class ProjectPanel {
     }
 
     /**
-     * Tasten für den Dateibaum.
+     * Keys for the file tree.
      *
-     * <p><b>Nur solange eine Eingabe oder ein Menü offen ist, und F2.</b> Der
-     * Baum nimmt bewusst keinen Tastaturgriff: Hätte er einen, wanderten die
-     * Pfeiltasten nach einem Klick auf eine Datei zwischen den Dateien statt
-     * durch den Text, und Entfernen löschte eine Datei statt eines Zeichens.
-     * Gelöscht wird über das Menü — dorthin kommt man nicht aus Versehen.
+     * <p><b>Only while an input or a menu is open, and F2.</b> The tree
+     * deliberately takes no keyboard focus: if it did, after a click on a file
+     * the arrow keys would move between the files instead of through the text,
+     * and Delete would remove a file instead of a character. Deleting goes
+     * through the menu — you do not get there by accident.
      */
     public boolean keyPressed(int key, int scanCode, int modifiers) {
         if (menu != null) {
@@ -468,9 +464,9 @@ public class ProjectPanel {
         if (renaming == null) {
             return false;
         }
-        // Alles, was in einen Dateinamen darf, und sonst nichts. Ein
-        // Grossbuchstabe wird kleingeschrieben statt verworfen: Er ist
-        // erkennbar gemeint, nur nicht erlaubt.
+        // Everything allowed in a file name, and nothing else. An uppercase
+        // letter is lowercased rather than discarded: it is recognisably
+        // intended, only not permitted.
         char lower = Character.toLowerCase(character);
         if ((lower >= 'a' && lower <= 'z') || (lower >= '0' && lower <= '9')
                 || lower == '_' || lower == '.') {

@@ -22,35 +22,35 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import org.joml.Matrix4f;
 
 /**
- * Zeigt eine Stelle im Netz in der Welt an.
+ * Shows a spot in the network in the world.
  *
- * <p><b>Der Griff, der aus einem Texteditor eine Fabrik-Oberfläche macht.</b>
- * Im Code steht {@code crusher_1}; in einer Fabrik mit vierzig Öfen ist damit
- * noch nicht gesagt, welcher das ist. Strg und Klick auf den Namen setzt eine
- * Marke, und die steht auch noch da, wenn das Terminal längst zu ist.
+ * <p><b>The move that turns a text editor into a factory interface.</b> In the
+ * code it says {@code crusher_1}; in a factory with forty furnaces that does
+ * not yet say which one that is. Ctrl and a click on the name sets a marker,
+ * and it still stands there long after the terminal is closed.
  *
- * <p>Durch Wände sichtbar: Wer sucht, weiß nicht, hinter welcher sie liegt.
- * Und mit einer Frist, damit sie nicht bis zum Ausloggen im Bild steht — zwei
- * Minuten reichen quer durch eine Basis.
+ * <p>Visible through walls: whoever is searching does not know which one it
+ * lies behind. And with a time limit, so it does not stay on screen until
+ * logout — two minutes reach right across a base.
  */
 @EventBusSubscriber(modid = FactoryNetwork.MOD_ID, value = Dist.CLIENT)
 public final class LocateMarker {
 
-    /** So lange bleibt eine Marke stehen, in Ticks. */
+    /** This long a marker stays, in ticks. */
     private static final int LIFETIME = 20 * 120;
 
-    /** So nah muss man heran, damit sie von selbst verschwindet. */
+    /** This close you have to get for it to vanish by itself. */
     private static final double ARRIVED = 3.0;
 
     /**
-     * So lange steht sie auf jeden Fall, in Ticks.
+     * This long it stands in any case, in ticks.
      *
-     * <p><b>Sonst antwortet sie gerade dann nicht, wenn man fragt.</b> Wer
-     * vor vier Connectoren steht und wissen will, welcher {@code kiste_2}
-     * ist, steht näher als {@link #ARRIVED} — die Marke galt damit als
-     * erreicht und verschwand im selben Bild, in dem sie gesetzt wurde. Das
-     * sah aus wie ein kaputter Griff und war eine Annahme über den Abstand,
-     * aus dem jemand sucht.
+     * <p><b>Otherwise it fails to answer precisely when you ask.</b> Whoever
+     * stands in front of four connectors and wants to know which one is
+     * {@code kiste_2} is standing closer than {@link #ARRIVED} — the marker
+     * thereby counted as reached and vanished in the same frame in which it
+     * was set. That looked like a broken move and was an assumption about the
+     * distance from which someone searches.
      */
     private static final int MINIMUM = 20 * 30;
 
@@ -61,13 +61,13 @@ public final class LocateMarker {
     private static String label = "";
     private static long until;
 
-    /** Wann sie gesetzt wurde — für {@link #MINIMUM}. */
+    /** When it was set — for {@link #MINIMUM}. */
     private static long since;
 
     private LocateMarker() {
     }
 
-    /** Setzt die Marke. Eine vorherige wird dabei abgelöst. */
+    /** Sets the marker. A previous one is replaced in doing so. */
     public static void mark(BlockPos pos, String name) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null) {
@@ -92,9 +92,9 @@ public final class LocateMarker {
         if (minecraft.level == null || minecraft.player == null) {
             return;
         }
-        // Abgelaufen oder angekommen — beides heißt, die Marke hat ihren
-        // Zweck erfüllt. „Angekommen" gilt aber erst nach MINIMUM: Wer schon
-        // davorsteht, während er fragt, soll trotzdem eine Antwort bekommen.
+        // Expired or arrived — both mean the marker has served its purpose.
+        // "Arrived" only counts after MINIMUM, though: whoever is already
+        // standing in front of it while asking should still get an answer.
         long now = minecraft.level.getGameTime();
         boolean arrived = now - since >= MINIMUM
                 && minecraft.player.position().distanceTo(target.getCenter()) < ARRIVED;
@@ -108,13 +108,13 @@ public final class LocateMarker {
         PoseStack poses = event.getPoseStack();
         MultiBufferSource.BufferSource buffers = minecraft.renderBuffers().bufferSource();
 
-        // Der Kasten um den Block. Ein Hauch größer als der Block selbst,
-        // sonst liegt die Linie in seiner Fläche und flackert.
+        // The box around the block. A hair larger than the block itself,
+        // otherwise the line lies in its surface and flickers.
         //
-        // <b>Von Hand und nicht über RenderType.lines():</b> Der bringt
-        // seinen Tiefentest mit, und dann liegt die Marke hinter der ersten
-        // Wand — genau da, wo man sie sucht. Derselbe Weg wie beim
-        // Analysator, der das Netz aus demselben Grund durch Wände zeigt.
+        // <b>By hand and not via RenderType.lines():</b> that brings its own
+        // depth test along, and then the marker lies behind the first wall —
+        // exactly where you are looking for it. The same approach as with the
+        // analyser, which shows the network through walls for the same reason.
         poses.pushPose();
         poses.translate(-eye.x, -eye.y, -eye.z);
         Matrix4f box = poses.last().pose();
@@ -137,7 +137,7 @@ public final class LocateMarker {
         RenderSystem.disableBlend();
         poses.popPose();
 
-        // Und der Name darüber, damit man ihn schon von weitem liest.
+        // And the name above it, so you can read it from afar.
         Font font = minecraft.font;
         poses.pushPose();
         poses.translate(
@@ -154,10 +154,10 @@ public final class LocateMarker {
     }
 
     /**
-     * Die zwölf Kanten eines Blocks.
+     * The twelve edges of a block.
      *
-     * <p>Ein Hauch größer als der Block, sonst liegt die Linie in seiner
-     * Fläche und flackert.
+     * <p>A hair larger than the block, otherwise the line lies in its surface
+     * and flickers.
      */
     private static void outline(com.mojang.blaze3d.vertex.BufferBuilder buffer,
                                 Matrix4f matrix, BlockPos pos) {
@@ -169,17 +169,17 @@ public final class LocateMarker {
         float y1 = (float) box.maxY;
         float z1 = (float) box.maxZ;
 
-        // Boden
+        // Bottom
         line(buffer, matrix, x0, y0, z0, x1, y0, z0);
         line(buffer, matrix, x1, y0, z0, x1, y0, z1);
         line(buffer, matrix, x1, y0, z1, x0, y0, z1);
         line(buffer, matrix, x0, y0, z1, x0, y0, z0);
-        // Decke
+        // Top
         line(buffer, matrix, x0, y1, z0, x1, y1, z0);
         line(buffer, matrix, x1, y1, z0, x1, y1, z1);
         line(buffer, matrix, x1, y1, z1, x0, y1, z1);
         line(buffer, matrix, x0, y1, z1, x0, y1, z0);
-        // Pfosten
+        // Uprights
         line(buffer, matrix, x0, y0, z0, x0, y1, z0);
         line(buffer, matrix, x1, y0, z0, x1, y1, z0);
         line(buffer, matrix, x1, y0, z1, x1, y1, z1);

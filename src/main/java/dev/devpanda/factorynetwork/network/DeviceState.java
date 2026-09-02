@@ -1,53 +1,53 @@
 package dev.devpanda.factorynetwork.network;
 
 /**
- * Wie es um ein Gerät im Netz steht.
+ * How a device stands within the network.
  *
- * <p><b>Vier davon sehen im Spiel gleich aus</b>, und drei davon bedeuten
- * „nicht ansprechbar" aus drei verschiedenen Gründen. Wer den falschen
- * vermutet, sucht an der falschen Stelle: einmal am Namen, einmal an der
- * Kanalgrenze, einmal an der Leitung.
+ * <p><b>Four of these look the same in game</b>, and three of them mean "not
+ * addressable" for three different reasons. Guess the wrong one and you look
+ * in the wrong place: once at the name, once at the channel limit, once at the
+ * line.
  *
- * <p><b>Das ist ein Schatten des Graphen und keine eigene Wahrheit.</b>
- * Gerechnet wird der Zustand beim Neuaufbau des Netzes; der Anschluss hebt
- * ihn nur auf, damit ihn ein Blick auf den Block beantworten kann, ohne den
- * Controller zu fragen.
+ * <p><b>This is a shadow of the graph and not a truth of its own.</b> The
+ * state is computed when the network is rebuilt; the connector merely holds
+ * onto it, so that a glance at the block can answer it without asking the
+ * controller.
  */
 public enum DeviceState {
 
-    /** Gar nicht am Netz — oder an keinem, das gerade lädt. */
+    /** Not on the network at all — or on none that is currently loading. */
     OFFLINE,
-    /** Benannt und erreichbar. */
+    /** Named and reachable. */
     ONLINE,
-    /** Am Netz, aber ohne Namen — und damit im Code nicht ansprechbar. */
+    /** On the network, but without a name — and so not addressable in code. */
     UNNAMED,
-    /** Der Name ist mehrfach vergeben; alle davon sind unbrauchbar. */
+    /** The name is assigned more than once; all of them are unusable. */
     DUPLICATE,
     /**
-     * Am Netz, aber die Leitung dorthin ist ausgelastet.
+     * On the network, but the line to it is saturated.
      *
-     * <p><b>Wird seit dem 29.08. nicht mehr vergeben.</b> Damals hieß der
-     * Zustand „ohne freien Kanal" und bedeutete: stumm. Kanäle gibt es nicht
-     * mehr; ein Gerät an einer vollen Leitung arbeitet langsamer, nicht gar
-     * nicht — und das ist kein eigener Zustand, sondern eine Zahl.
+     * <p><b>No longer assigned since 29.08.</b> Back then the state was called
+     * "without a free channel" and meant: silent. Channels no longer exist; a
+     * device on a full line works more slowly, not stopping entirely — and
+     * that is not a state of its own but a number.
      *
-     * <p>Der Wert bleibt, weil er in jeder bestehenden Welt gespeichert
-     * steht. Ein Gerät, das ihn beim Laden mitbringt, bekommt beim ersten
-     * Netzaufbau seinen richtigen.
+     * <p>The value stays because it is stored in every existing world. A
+     * device that brings it along on load gets its correct one at the first
+     * network build.
      */
     STARVED;
 
     /**
-     * Die Nummer, unter der dieser Zustand gespeichert wird.
+     * The number under which this state is stored.
      *
-     * <p>Die Reihenfolge oben ist damit festgelegt: Wer sie ändert, ändert
-     * gespeicherte Welten. Neue Zustände gehören ans Ende.
+     * <p>The order above is thereby fixed: change it and you change saved
+     * worlds. New states belong at the end.
      */
     public byte id() {
         return (byte) ordinal();
     }
 
-    /** Zu einer gespeicherten Nummer der Zustand — Unbekanntes gilt als offline. */
+    /** The state for a stored number — anything unknown counts as offline. */
     public static DeviceState byId(int id) {
         DeviceState[] all = values();
         return id >= 0 && id < all.length ? all[id] : OFFLINE;

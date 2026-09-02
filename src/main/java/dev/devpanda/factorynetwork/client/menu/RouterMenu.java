@@ -16,22 +16,21 @@ import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * Das Fenster des Routers.
+ * The router's window.
  *
- * <p>Am Block anzuklicken ist der schnelle Weg und bleibt — was man dort
- * einstellt, ist räumlich, und eine Seite anzuklicken ist eindeutiger als ein
- * Feld in einer Liste. <b>Aber man kommt oft nicht an alle sechs Seiten:</b>
- * Ein Router in einer Wand hat Flächen, die niemand erreicht. Dafür ist
- * dieses Fenster da.
+ * <p>Clicking on the block is the quick way and stays — what you set there is
+ * spatial, and clicking a face is less ambiguous than a field in a list.
+ * <b>But often you cannot reach all six faces:</b> a router in a wall has
+ * faces no one can get at. That is what this window is for.
  *
- * <p>Es hat keine Plätze — ein Router nimmt nichts auf. Was hin und her geht,
- * sind sechs Zahlen und ein Knopfdruck, und beides trägt Minecraft von sich
- * aus: {@link ContainerData} für die Zahlen, {@code clickMenuButton} für den
- * Druck.
+ * <p>It has no slots — a router holds nothing. What travels back and forth
+ * is six numbers and a button press, and Minecraft carries both on its own:
+ * {@link ContainerData} for the numbers, {@code clickMenuButton} for the
+ * press.
  */
 public class RouterMenu extends AbstractContainerMenu {
 
-    /** Sechs Seiten, dann vier Bahnlasten, dann die Kapazität. */
+    /** Six faces, then four lane loads, then the capacity. */
     public static final int DATA_SIZE = Direction.values().length + RouterBlockEntity.LANES + 1;
     private static final int LOAD_OFFSET = Direction.values().length;
     private static final int CAPACITY_INDEX = DATA_SIZE - 1;
@@ -50,38 +49,38 @@ public class RouterMenu extends AbstractContainerMenu {
         addDataSlots(data);
     }
 
-    /** Welche Bahn diese Seite führt. */
+    /** Which lane this face carries. */
     public int lane(Direction side) {
         return data.get(side.ordinal());
     }
 
-    /** Was diese Bahn trägt. */
+    /** What this lane carries. */
     public int load(int lane) {
         return lane >= 1 && lane <= RouterBlockEntity.LANES
                 ? data.get(LOAD_OFFSET + lane - 1) : 0;
     }
 
-    /** Was eine Bahn tragen kann. */
+    /** What a lane can carry. */
     public int capacity() {
         return data.get(CAPACITY_INDEX);
     }
 
     public String formatLoad(int lane) {
-        // In Byte je Sekunde, wie überall: "0,4 von 1 KB/s" statt "12/16".
+        // In bytes per second, as everywhere: "0.4 of 1 KB/s" instead of "12/16".
         return dev.devpanda.factorynetwork.network.Bandwidth.usage(
                 load(lane), capacity());
     }
 
-    /** Die Knopfnummer für eine Seite und eine Bahn. */
+    /** The button number for a face and a lane. */
     public static int buttonFor(Direction side, int lane) {
         return side.ordinal() * (RouterBlockEntity.LANES + 1) + lane;
     }
 
     /**
-     * Ein Druck stellt eine Seite auf eine Bahn.
+     * A press sets a face to a lane.
      *
-     * <p>Serverseitig, wie jeder Knopf in einem Fenster: Der Client sagt nur,
-     * welcher gedrückt wurde.
+     * <p>Server-side, like every button in a window: the client only says
+     * which one was pressed.
      */
     @Override
     public boolean clickMenuButton(Player player, int id) {
@@ -94,16 +93,16 @@ public class RouterMenu extends AbstractContainerMenu {
         access.execute((level, pos) -> {
             if (level.getBlockEntity(pos) instanceof RouterBlockEntity router) {
                 router.setLane(Direction.values()[seite], bahn);
-                // Sofort neu aufbauen, statt auf den Turnus zu warten: Fünf
-                // Sekunden zwischen Klick und Wirkung sind zu lang, um noch
-                // als Ursache erkannt zu werden.
+                // Rebuild immediately instead of waiting for the cycle: five
+                // seconds between click and effect are too long to still be
+                // recognised as the cause.
                 ControllerRegistry.refreshAround(level, pos);
             }
         });
         return true;
     }
 
-    /** Ein Router nimmt nichts auf, also gibt es auch nichts zu schieben. */
+    /** A router holds nothing, so there is nothing to move either. */
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
         return ItemStack.EMPTY;
@@ -114,7 +113,7 @@ public class RouterMenu extends AbstractContainerMenu {
         return stillValid(access, player, FnBlocks.ROUTER.get());
     }
 
-    /** Die Zahlen, die der Router in das Fenster schiebt. */
+    /** The numbers the router pushes into the window. */
     public static ContainerData dataOf(RouterBlockEntity router,
                                        java.util.function.ToIntFunction<Integer> laneLoad,
                                        java.util.function.IntSupplier capacity) {

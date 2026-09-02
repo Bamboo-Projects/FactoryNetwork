@@ -18,54 +18,52 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Was das Netz zu sagen hatte.
+ * What the network had to say.
  *
- * <p><b>Der Anlass:</b> {@code log()} gab es seit dem ersten Tag, und die
- * Zeilen gingen in eine Liste, die niemand las. Dasselbe galt für die
- * Hinweise der Laufzeit — „maintain ohne filter", „Der Knopf nennt keine
- * Funktion". Ein Programm, das nichts sagen kann, ist beim Suchen eines
- * Fehlers auf Raten angewiesen.
+ * <p><b>The occasion:</b> {@code log()} existed from day one, and the lines
+ * went into a list nobody read. The same went for the runtime's hints —
+ * "maintain ohne filter", "Der Knopf nennt keine Funktion". A program that can
+ * say nothing is reduced to guesswork when hunting for a fault.
  *
- * <p>Das Jüngste steht unten, wie in jedem Protokoll: Wer nachsieht, will
- * wissen, was zuletzt geschah, und findet es dort, wo der Text aufhört.
+ * <p>The most recent stands at the bottom, as in every log: whoever looks
+ * wants to know what happened last, and finds it where the text ends.
  */
 public class LogTabView {
 
     private static final int LINE = 10;
 
-    /** Breite eines Filterknopfs. */
+    /** Width of a filter button. */
     private static final int FILTER = 40;
 
-    /** Abstand zwischen Uhrzeit und Text. */
+    /** The gap between the time and the text. */
     private static final int TIME_WIDTH = 34;
 
     /**
-     * Die Uhrzeit, ohne Datum.
+     * The time of day, without a date.
      *
-     * <p>Zweihundert Zeilen reichen selten über einen Tag; wo doch, trennt
-     * die Datumszeile dazwischen.
+     * <p>Two hundred lines rarely span more than a day; where they do, the
+     * date line in between separates them.
      */
     private static final DateTimeFormatter CLOCK = DateTimeFormatter.ofPattern("HH:mm:ss");
     private static final DateTimeFormatter DAY = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
-    /** Für die Zwischenablage: mit Tag, weil der Text allein weiterwandert. */
+    /** For the clipboard: with the date, because the text travels on by itself. */
     private static final DateTimeFormatter STAMP =
             DateTimeFormatter.ofPattern("dd.MM. HH:mm:ss");
 
     private final List<Filter> filters = new ArrayList<>();
 
-    /** Die Zeilen, wie sie zuletzt gezeichnet wurden — für den Klick. */
+    /** The lines as they were last drawn — for the click. */
     private final List<Row> rows = new ArrayList<>();
 
-    /** Die beiden Knöpfe rechts in der Filterzeile. */
+    /** The two buttons on the right in the filter row. */
     private final List<Action> actions = new ArrayList<>();
 
     /**
-     * Was zuletzt geschah, und wie lange es noch dasteht.
+     * What happened last, and how long it stays on screen.
      *
-     * <p>Kopieren tut sichtbar nichts. Ohne Rückmeldung klickt man ein
-     * zweites und ein drittes Mal und weiß immer noch nicht, ob es geklappt
-     * hat.
+     * <p>Copying visibly does nothing. Without feedback you click a second and
+     * a third time and still do not know whether it worked.
      */
     private String note = "";
     private long noteUntil;
@@ -76,7 +74,7 @@ public class LogTabView {
     private final int width;
     private final int height;
 
-    /** Um wie viele Zeilen nach oben geblättert wurde. */
+    /** By how many lines the view has been scrolled up. */
     private int scroll;
 
     public LogTabView(Font font, int x, int y, int width, int height) {
@@ -111,7 +109,7 @@ public class LogTabView {
             String day = format(entry.time(), DAY);
             if (!day.equals(lastDay)) {
                 lastDay = day;
-                // Nur beim Wechsel: Ein Datum über jeder Zeile wäre Lärm.
+                // Only on a change: a date above every line would be noise.
                 if (i > first || scroll > 0) {
                     graphics.drawString(font, day, x + 3, line, TerminalScreen.TEXT_FAINT, false);
                     line += LINE;
@@ -123,7 +121,7 @@ public class LogTabView {
         renderNote(graphics);
     }
 
-    /** Die Rückmeldung unten, ein paar Sekunden lang. */
+    /** The feedback at the bottom, for a few seconds. */
     private void renderNote(GuiGraphics graphics) {
         if (note.isEmpty() || System.currentTimeMillis() > noteUntil) {
             return;
@@ -138,8 +136,8 @@ public class LogTabView {
                 TerminalScreen.TEXT_FAINT, false);
 
         int textX = x + 3 + TIME_WIDTH;
-        // Die Herkunft in Klammern davor, gedämpft: Sie ist die Auskunft,
-        // nach der man sucht, und nicht die, die man liest.
+        // The origin in brackets in front, muted: it is the information you
+        // search for, not the one you read.
         if (!entry.source().isBlank()) {
             String source = "[" + entry.source() + "] ";
             graphics.drawString(font, source, textX, line, TerminalScreen.TEXT_DIM, false);
@@ -164,12 +162,12 @@ public class LogTabView {
     }
 
     /**
-     * Die vier Filterknöpfe.
+     * The four filter buttons.
      *
-     * <p>Sie schalten nicht einzelne Stufen an und aus, sondern setzen eine
-     * Untergrenze: Wer Warnungen sehen will, will die Fehler auch. Vier
-     * Knöpfe mit je zwei Zuständen wären sechzehn Ansichten, von denen
-     * fünfzehn niemand meint.
+     * <p>They do not switch individual levels on and off, but set a lower
+     * bound: whoever wants to see warnings wants the errors too. Four buttons
+     * with two states each would be sixteen views, fifteen of which nobody
+     * means.
      */
     private int renderFilters(GuiGraphics graphics, int line, int mouseX, int mouseY) {
         int left = x + 3;
@@ -192,16 +190,16 @@ public class LogTabView {
             left += FILTER + 2;
         }
 
-        // Rechtsbündig und weg von den Filtern: „Leeren" ist der einzige
-        // Knopf hier, der etwas wegnimmt, und er soll nicht neben dem sitzen,
-        // den man oft drückt.
+        // Right-aligned and away from the filters: "Clear" is the only button
+        // here that takes something away, and it should not sit next to the
+        // one you press often.
         int right = x + width - 3;
         right = renderAction(graphics, right, line, "clear", mouseX, mouseY);
         renderAction(graphics, right - 2, line, "copy", mouseX, mouseY);
         return line + LINE + 4;
     }
 
-    /** Ein Knopf rechts; gibt zurück, wo der nächste enden darf. */
+    /** A button on the right; returns where the next one may end. */
     private int renderAction(GuiGraphics graphics, int right, int line,
                              String key, int mouseX, int mouseY) {
         String label = Component.translatable(
@@ -238,9 +236,8 @@ public class LogTabView {
             }
             return true;
         }
-        // Ein Klick auf eine Zeile nimmt sie mit. Beim Melden eines Fehlers
-        // ist genau sie die Zeile, die man braucht, und abtippen will sie
-        // niemand.
+        // A click on a line takes it along. When reporting a fault it is
+        // exactly the line you need, and nobody wants to type it out by hand.
         for (Row row : rows) {
             if (mouseY >= row.top() && mouseY < row.top() + LINE
                     && mouseX >= x && mouseX < x + width) {
@@ -252,7 +249,7 @@ public class LogTabView {
         return false;
     }
 
-    /** Das ganze sichtbare Protokoll, Zeile für Zeile. */
+    /** The whole visible log, line by line. */
     private void copyAll() {
         StringBuilder out = new StringBuilder();
         for (LogStatePacket.Line entry : ClientLogState.visible()) {
@@ -263,10 +260,10 @@ public class LogTabView {
     }
 
     /**
-     * Eine Zeile als Text.
+     * A line as text.
      *
-     * <p>Mit Datum, anders als auf dem Bildschirm: Was in einer Nachricht an
-     * jemand anderen landet, hat keinen Reiter darüber, der den Tag verrät.
+     * <p>With a date, unlike on screen: what ends up in a message to someone
+     * else has no tab above it that gives away the day.
      */
     private static String plain(LogStatePacket.Line entry) {
         String stamp = format(entry.time(), STAMP);
@@ -291,11 +288,11 @@ public class LogTabView {
                 .format(formatter);
     }
 
-    /** Eine gezeichnete Zeile, für den Klick gemerkt. */
+    /** A drawn line, remembered for the click. */
     private record Row(int top, LogStatePacket.Line entry) {
     }
 
-    /** Ein Knopf rechts, für den Klick gemerkt. */
+    /** A button on the right, remembered for the click. */
     private record Action(int left, int top, int right, String key) {
 
         boolean hit(double mouseX, double mouseY) {
@@ -304,7 +301,7 @@ public class LogTabView {
         }
     }
 
-    /** Ein Filterknopf, für den Klick gemerkt. */
+    /** A filter button, remembered for the click. */
     private record Filter(int left, int top, LogLevel level) {
 
         boolean hit(double mouseX, double mouseY) {

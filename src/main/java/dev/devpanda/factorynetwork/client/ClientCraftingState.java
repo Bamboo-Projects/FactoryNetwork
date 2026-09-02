@@ -5,10 +5,10 @@ import dev.devpanda.factorynetwork.network.packet.CraftingStatePacket;
 import java.util.List;
 
 /**
- * Die zuletzt gemeldeten Fertigungsaufträge.
+ * The most recently reported crafting jobs.
  *
- * <p>Nur zum Anzeigen, wie {@link ClientFlowState}: Der Client urteilt nicht
- * über einen Auftrag, er zeigt ihn.
+ * <p>For display only, like {@link ClientFlowState}: the client does not judge
+ * a job, it shows it.
  */
 public final class ClientCraftingState {
 

@@ -13,14 +13,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Eine Fläche in der Welt, drei Blöcke vor dem Spieler — Vorführung und
- * maschineller Nachweis der Weltflächen.
+ * A surface in the world, three blocks in front of the player — demonstration
+ * and automated proof of the world surfaces.
  *
- * <p>{@code /fnweb welt} stellt sie hin, {@code -Dfn.world=true} tut das von
- * selbst, sobald die Welt steht, und schreibt jede Sekunde, ob sie lebt. Die
- * Seite ist das anklickbare Schnellmenü: Wer es anschaut und rechtsklickt,
- * wählt einen Eintrag, und die Wahl steht als „Weltfläche meldet:" im
- * Protokoll — der Beweis, dass Zeigen, Klicken und der Rückweg zusammenspielen.
+ * <p>{@code /fnweb welt} places it, {@code -Dfn.world=true} does so by itself
+ * as soon as the world is up, and writes every second whether it is alive. The
+ * page is the clickable quick menu: whoever looks at it and right-clicks
+ * chooses an entry, and the choice appears as "Weltfläche meldet:" in the log —
+ * the proof that pointing, clicking and the return path work together.
  */
 public final class WorldSurfaceDemo {
 
@@ -37,7 +37,7 @@ public final class WorldSurfaceDemo {
     private WorldSurfaceDemo() {
     }
 
-    /** Stellt eine Fläche vor den Spieler, oder nimmt die letzte weg. */
+    /** Places a surface in front of the player, or removes the last one. */
     public static WorldSurface toggle() {
         if (surface != null && surface.alive()) {
             surface.close();
@@ -56,10 +56,10 @@ public final class WorldSurfaceDemo {
         if (url == null) {
             return null;
         }
-        // Drei Blöcke vor den Augen, und die Fläche schaut zurück.
-        // Die Richtung kommt aus dem Gierwinkel, nicht aus dem Blickvektor:
-        // Wer gerade nach oben schaut, hätte sonst keinen waagerechten Anteil,
-        // und die Fläche landete auf seinem Gesicht.
+        // Three blocks in front of the eyes, and the surface looks back.
+        // The direction comes from the yaw angle, not from the look vector:
+        // whoever is looking straight up would otherwise have no horizontal
+        // component, and the surface would land on their face.
         Vec3 eye = player.getEyePosition();
         float yaw = player.getYRot();
         double forwardX = -Math.sin(Math.toRadians(yaw));

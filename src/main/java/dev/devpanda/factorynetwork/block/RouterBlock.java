@@ -18,26 +18,26 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Kreuzung für dicke Kabel.
+ * A junction for dense cables.
  *
- * <p>Beim dünnen Kabel trennt die Farbe, und vier dünne Stränge passen
- * nebeneinander in einen Block. Beim dicken passt das nicht — zehn Blockpixel
- * füllen den Block fast aus. Statt zu bündeln steht hier ein Block, an dem
- * jede Seite einer Bahn zugewiesen wird: <b>gleiche Bahn heißt verbunden,
- * verschiedene Bahnen kreuzen sich berührungslos.</b>
+ * <p>With the thin cable the colour keeps things apart, and four thin runs
+ * fit side by side in one block. With the dense one that does not fit — ten
+ * block pixels almost fill the block. Instead of bundling, a block stands
+ * here on which each side is assigned to a lane: <b>the same lane means
+ * connected, different lanes cross without touching.</b>
  *
- * <p>Anklicken schaltet die angeklickte Seite eine Bahn weiter. Eine Seite
- * auf „aus" ist abgeklemmt — so trennt man ein Netz, ohne das Kabel
- * abzureißen.
+ * <p>Clicking advances the clicked side by one lane. A side set to "off" is
+ * disconnected — this is how you split a network without tearing the cable
+ * down.
  *
- * <p><b>Der Router ist farbneutral.</b> Wer ein rotes und ein grünes Kabel auf
- * dieselbe Bahn legt, hat sie verbunden — das ist Absicht und der Unterschied
- * zu zwei Kabeln, die sich bloß einen Block teilen: Hier hat es jemand
- * eingestellt.
+ * <p><b>The router is colour-neutral.</b> Anyone who puts a red and a green
+ * cable on the same lane has connected them — that is intentional and the
+ * difference from two cables that merely share a block: here someone set it
+ * up.
  */
 public class RouterBlock extends Block implements EntityBlock {
 
-    /** Der Umriss aus den Kästen des Modells. */
+    /** The outline from the boxes of the model. */
     private static final net.minecraft.world.phys.shapes.VoxelShape SHAPE =
             FacingShapes.whole(MachineLayouts.router());
 
@@ -58,12 +58,12 @@ public class RouterBlock extends Block implements EntityBlock {
     }
 
     /**
-     * Ein Klick schaltet die angeklickte Seite weiter.
+     * A click advances the clicked side.
      *
-     * <p>Danach wird das Netz sofort neu aufgebaut, statt auf den nächsten
-     * Turnus zu warten. Fünf Sekunden zwischen Klick und Wirkung sind zu
-     * lang, um noch als Ursache erkannt zu werden — der Spieler klickt in der
-     * Zeit dreimal weiter und weiß am Ende nicht, was gerade gilt.
+     * <p>Afterwards the network is rebuilt at once, instead of waiting for the
+     * next cycle. Five seconds between click and effect are too long to still
+     * be recognised as the cause — in that time the player clicks on three
+     * more times and in the end does not know what currently holds.
      */
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
@@ -75,8 +75,8 @@ public class RouterBlock extends Block implements EntityBlock {
             return InteractionResult.PASS;
         }
         if (player.isSecondaryUseActive()) {
-            // Schleichen macht das Fenster auf: An eine Seite in der Wand
-            // kommt man nicht heran, und dort steht auch, was jede Bahn trägt.
+            // Sneaking opens the screen: a side set against the wall cannot
+            // be reached, and it also shows what each lane carries.
             player.openMenu(router.menu());
             return InteractionResult.CONSUME;
         }
@@ -99,11 +99,12 @@ public class RouterBlock extends Block implements EntityBlock {
     }
 
     /**
-     * Ein abgerissener Router nimmt das Netz mit, das über ihn lief.
+     * A router that is torn down takes the network that ran through it with
+     * it.
      *
-     * <p>Ohne das bliebe der Graph bis zum nächsten Turnus bei der alten
-     * Auskunft, und der Netzanalysator zeichnete Strecken durch einen Block,
-     * den es nicht mehr gibt.
+     * <p>Without this the graph would keep its old answer until the next
+     * cycle, and the network analyzer would draw routes through a block that
+     * no longer exists.
      */
     @Override
     protected void onRemove(BlockState state, Level level, BlockPos pos,

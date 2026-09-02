@@ -3,16 +3,16 @@ package dev.devpanda.factorynetwork.block;
 import com.mojang.serialization.MapCodec;
 
 /**
- * Das dichte Kabel.
+ * The dense cable.
  *
- * <p>Zehn Blockpixel stark und mit vierundsechzig Kanälen — dieselbe
- * Verdopplung wie bei Applied Energistics, nur eine Stufe höher angesetzt.
- * Es bündelt nicht; wer zwei Netze durch dieselbe Wand führen will, nimmt den
- * Verteiler.
+ * <p>Ten block pixels thick and carrying sixty-four channels — the same
+ * doubling as in Applied Energistics, just set one tier higher. It does not
+ * bundle; whoever wants to run two networks through the same wall uses the
+ * distributor.
  *
- * <p>Eine eigene Klasse nur wegen des Codecs: Minecraft braucht je Block
- * einen, und {@code simpleCodec} verlangt einen Konstruktor mit genau den
- * Eigenschaften. Das Verhalten steckt vollständig in {@link CableBlock}.
+ * <p>Its own class only because of the codec: Minecraft needs one per block,
+ * and {@code simpleCodec} requires a constructor with exactly those
+ * properties. The behaviour lives entirely in {@link CableBlock}.
  */
 public class DenseCableBlock extends CableBlock {
 

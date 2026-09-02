@@ -14,37 +14,37 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Mehrere Anzeigen nebeneinander sind eine Anzeige.
+ * Several displays side by side are one display.
  *
- * <p>Wer eine Wand aus sechs Tafeln baut, will einen großen Bildschirm und
- * nicht sechsmal denselben kleinen. <b>Also schreibt genau eine Tafel, und
- * sie schreibt über die ganze Fläche.</b>
+ * <p>Anyone who builds a wall from six panels wants one large screen and not
+ * the same small one six times over. <b>So exactly one panel writes, and it
+ * writes across the whole surface.</b>
  *
- * <p>Zusammen gehören Tafeln, die in dieselbe Richtung zeigen und sich in
- * ihrer Ebene berühren. Nicht über Ecken: Eine Tafel an der Nordwand und
- * eine an der Ostwand stoßen zwar aneinander, sind aber zwei Bildschirme —
- * man kann nicht beide gleichzeitig ansehen.
+ * <p>Panels belong together when they face the same direction and touch
+ * within their plane. Not around corners: a panel on the north wall and one
+ * on the east wall do meet, but they are two screens — you cannot look at
+ * both at once.
  *
- * <p><b>Eine bekannte Grenze:</b> Gesucht wird über {@code getBlockState},
- * und das liefert für eine nicht geladene Stelle Luft. Eine sehr breite Wand
- * an einer Chunk-Grenze kann deshalb für einen Moment kleiner aussehen, als
- * sie ist — dann wandert die schreibende Tafel, und der Text springt. Zu
- * beheben wäre das nur mit einer Buchführung über Wände, die Chunkladen und
- * Weltwechsel überlebt, und das ist für den Fall zu viel Maschinerie.
+ * <p><b>A known limit:</b> the search goes through {@code getBlockState}, and
+ * that returns air for a location that is not loaded. A very wide wall at a
+ * chunk boundary can therefore look smaller for a moment than it is — then
+ * the writing panel moves, and the text jumps. Fixing that would take
+ * bookkeeping over walls that survives chunk loading and world changes, and
+ * that is too much machinery for the case.
  *
- * <p>Die schreibende Tafel ist die <b>unten links</b>, von vorn gesehen. Eine
- * feste Regel, weil sie erklärbar sein muss: „warum steht der Text bei
- * dieser" ist sonst nicht zu beantworten. Für eine Wand mit Loch oder Stufe
- * gilt trotzdem das umschließende Rechteck als Fläche — der Text läuft dann
- * über die Lücke hinweg, und das ist immer noch besser als sechs Texte.
+ * <p>The writing panel is the <b>bottom left</b> one, seen from the front. A
+ * fixed rule, because it has to be explainable: otherwise "why does the text
+ * sit at this one" cannot be answered. For a wall with a hole or a step the
+ * enclosing rectangle still counts as the surface — the text then runs across
+ * the gap, and that is still better than six texts.
  */
 public record DisplayWall(BlockPos anchor, List<BlockPos> members,
                           int columns, int rows, int anchorColumn, int anchorRow) {
 
-    /** So viele Tafeln werden höchstens zu einer Wand — gegen Ausreißer. */
+    /** At most this many panels become one wall — a guard against runaways. */
     private static final int MAX_MEMBERS = 256;
 
-    /** Zeigt diese Stelle eine Anzeige in diese Richtung? */
+    /** Does this location show a display facing this direction? */
     private static boolean isPanel(BlockGetter level, BlockPos pos, Direction facing) {
         BlockState state = level.getBlockState(pos);
         return state.getBlock() instanceof DisplayBlock
@@ -52,10 +52,10 @@ public record DisplayWall(BlockPos anchor, List<BlockPos> members,
     }
 
     /**
-     * Die Wand, zu der diese Tafel gehört.
+     * The wall this panel belongs to.
      *
-     * <p>Eine einzelne Tafel ist eine Wand aus einer — so muss nirgends
-     * zwischen „allein" und „in einer Wand" unterschieden werden.
+     * <p>A single panel is a wall of one — so nowhere is there any need to
+     * distinguish between "alone" and "in a wall".
      */
     public static DisplayWall around(BlockGetter level, BlockPos pos, Direction facing) {
         Direction right = DisplayBlock.rightOf(facing);
@@ -92,10 +92,10 @@ public record DisplayWall(BlockPos anchor, List<BlockPos> members,
             maxRow = Math.max(maxRow, row);
         }
 
-        // Unten links, von vorn gesehen: erst die tiefste Reihe, darin die
-        // linke Spalte. Bei einer Wand mit Stufe ist das eine Tafel, die es
-        // wirklich gibt — die Ecke des umschließenden Rechtecks wäre unter
-        // Umständen Luft.
+        // Bottom left, seen from the front: first the lowest row, and within
+        // it the left column. For a wall with a step this is a panel that
+        // really exists — the corner of the enclosing rectangle might under
+        // some circumstances be air.
         BlockPos anchor = members.get(0);
         int anchorColumn = columnOf(anchor, pos, right);
         int anchorRow = anchor.getY() - pos.getY();
@@ -109,8 +109,8 @@ public record DisplayWall(BlockPos anchor, List<BlockPos> members,
             }
         }
 
-        // Die Mitglieder in Leserichtung: oben links zuerst. Danach wird der
-        // Name der Wand gesucht, und die Reihenfolge muss feststehen.
+        // The members in reading order: top left first. The wall's name is
+        // looked up afterwards, and the order has to be fixed.
         int originColumn = minColumn;
         int originRow = minRow;
         members.sort((a, b) -> {
@@ -126,13 +126,13 @@ public record DisplayWall(BlockPos anchor, List<BlockPos> members,
                 anchorColumn - originColumn, anchorRow - originRow);
     }
 
-    /** Wie weit rechts eine Stelle vom Ausgangspunkt liegt, in Blöcken. */
+    /** How far to the right a location sits from the origin, in blocks. */
     private static int columnOf(BlockPos pos, BlockPos origin, Direction right) {
         return (pos.getX() - origin.getX()) * right.getStepX()
                 + (pos.getZ() - origin.getZ()) * right.getStepZ();
     }
 
-    /** Schreibt diese Tafel für die ganze Wand? */
+    /** Does this panel write for the whole wall? */
     public boolean isAnchor(BlockPos pos) {
         return anchor.equals(pos);
     }

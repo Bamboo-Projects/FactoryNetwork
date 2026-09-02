@@ -21,39 +21,39 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Was gerade in einem Gerät liegt.
+ * What is currently in a device.
  *
- * <p>Trägt die Struktur gleich mit: Damit ist der Fall „Maschine wurde
- * ausgetauscht, während das Terminal offen ist" nebenbei erledigt, ohne
- * dafür einen eigenen Mechanismus zu bauen — und ein Gerät, dessen Chunk
- * beim Öffnen nicht geladen war, bekommt überhaupt erst ein Profil.
+ * <p>Carries the structure along with it: this handles the "machine was
+ * swapped out while the terminal is open" case on the side, without building a
+ * dedicated mechanism for it — and a device whose chunk was not loaded when
+ * opened gets a profile at all only this way.
  *
- * <p><b>Gedeckelt auf 64 Fächer</b>, und wenn gekürzt wurde, steht das
- * dabei. Ein Fassregal mit zweihundert Fächern soll den Tooltip nicht
- * sprengen — aber auch nicht heimlich lügen.
+ * <p><b>Capped at 64 slots</b>, and if it was truncated, that is noted along
+ * with it. A barrel rack with two hundred slots should not blow up the tooltip
+ * — but should not silently lie either.
  */
 public record DeviceSnapshotPacket(String connector, DeviceProfileCodec.Flat profile,
                                    List<ItemStack> slots, int slotsOmitted,
                                    Levels levels, List<SlotProbe> probes)
         implements CustomPacketPayload {
 
-    /** Mehr passt in keinen Tooltip. */
+    /** No tooltip has room for more. */
     public static final int MAX_SLOTS = 64;
 
     /**
-     * Die Füllstände der Maschine: Strom und Flüssigkeiten.
+     * The machine's levels: energy and fluids.
      *
-     * <p>Als eigener Satz und nicht als weitere Felder oben:
-     * {@code StreamCodec.composite} trägt höchstens sechs, und die Probe
-     * braucht eines davon.
+     * <p>As its own set and not as more fields above:
+     * {@code StreamCodec.composite} carries at most six, and the probe needs
+     * one of them.
      *
-     * <p><b>Die Behälter als fertige Zeilen</b> und nicht als Fluid-Kennungen
-     * mit Mengen: Eine Flüssigkeit trägt ihren Namen in der Registry, ihre
-     * Menge in Millibucket und ihr Fassungsvermögen je Behälter — das über
-     * die Leitung zu schicken, um es drüben wieder zusammenzusetzen, wäre
-     * dreimal so viel Code für dieselbe Zeile. Übersetzt wird trotzdem
-     * richtig: {@code fluidName} liefert den Anzeigenamen der Flüssigkeit in
-     * der Sprache des Servers — der einzige Ort, an dem das hier auffällt.
+     * <p><b>The tanks as finished lines</b> and not as fluid identifiers with
+     * amounts: a fluid carries its name in the registry, its amount in
+     * millibuckets and its capacity per tank — sending that over the wire only
+     * to reassemble it on the other side would be three times as much code for
+     * the same line. It is still translated correctly: {@code fluidName} yields
+     * the fluid's display name in the server's language — the one place where
+     * that shows here.
      */
     public record Levels(int energy, int energyCapacity, List<String> tanks) {
 
@@ -67,18 +67,17 @@ public record DeviceSnapshotPacket(String connector, DeviceProfileCodec.Flat pro
     }
 
     /**
-     * Was ein Fach kann, und womit es sich abfinden würde.
+     * What a slot can do, and what it would put up with.
      *
-     * <p><b>{@code takes} und {@code gives} sind Tatsachen</b>, ermittelt aus
-     * einem simulierten Einfügeversuch und einem simulierten Auszug.
-     * {@code accepts} ist dagegen eine <b>Stichprobe</b>: die Gegenstände aus
-     * dem Entwurf, die dieses Fach annehmen würde. Sie ist nie vollständig,
-     * und sie darf nie so aussehen.
+     * <p><b>{@code takes} and {@code gives} are facts</b>, determined from a
+     * simulated insertion attempt and a simulated extraction. {@code accepts},
+     * by contrast, is a <b>sample</b>: the items from the draft that this slot
+     * would accept. It is never complete, and it must never look as if it were.
      *
-     * @param slot    die laufende Nummer des Fachs
-     * @param takes   nimmt es überhaupt etwas an
-     * @param gives   lässt sich etwas herausnehmen
-     * @param accepts welche der geprüften Gegenstände hineinpassen
+     * @param slot    the slot's running number
+     * @param takes   whether it takes anything at all
+     * @param gives   whether something can be taken out
+     * @param accepts which of the probed items fit in
      */
     public record SlotProbe(int slot, boolean takes, boolean gives, List<String> accepts) {
 
@@ -112,7 +111,7 @@ public record DeviceSnapshotPacket(String connector, DeviceProfileCodec.Flat pro
         return TYPE;
     }
 
-    /** Liest das Gerät aus, oder liefert {@code null}, wenn es das nicht gibt. */
+    /** Reads the device out, or returns {@code null} if there is none. */
     public static DeviceSnapshotPacket of(ControllerBlockEntity controller, String connector) {
         if (controller.getLevel() == null) {
             return null;
@@ -129,11 +128,11 @@ public record DeviceSnapshotPacket(String connector, DeviceProfileCodec.Flat pro
 
         List<ItemStack> stacks = new ArrayList<>();
         int omitted = 0;
-        // <b>Das ungeteilte Inventar, nicht die Seite.</b> Die Nummern hier
-        // sind die, die jemand in slots(3) schreibt — und eine Seite zeigt
-        // ihre Fächer unter anderen Nummern. Was im Tooltip steht, muss
-        // dasselbe Fach meinen wie das Programm, sonst zeigt die Auskunft
-        // woandershin, als sie greift.
+        // <b>The undivided inventory, not the side.</b> The numbers here are
+        // the ones someone writes in slots(3) — and a side exposes its slots
+        // under different numbers. What the tooltip shows must mean the same
+        // slot as the program does, otherwise the readout points somewhere
+        // other than where it actually reaches.
         IItemHandler items = entity.machineInventoryAll();
         if (items == null) {
             items = entity.machineInventory();
@@ -164,11 +163,11 @@ public record DeviceSnapshotPacket(String connector, DeviceProfileCodec.Flat pro
     }
 
     /**
-     * Die Behälter der Maschine als lesbare Zeilen.
+     * The machine's tanks as readable lines.
      *
-     * <p>Leere Behälter fallen weg — bis auf den Fall, dass alle leer sind:
-     * Dann sagt „leer" mehr als gar nichts, weil es die Frage beantwortet,
-     * ob überhaupt einer da ist.
+     * <p>Empty tanks are dropped — except in the case where all are empty:
+     * then "leer" says more than nothing at all, because it answers the
+     * question whether there is one there in the first place.
      */
     private static List<String> tanksOf(
             dev.devpanda.factorynetwork.block.entity.ConnectorPart entity,
@@ -195,18 +194,18 @@ public record DeviceSnapshotPacket(String connector, DeviceProfileCodec.Flat pro
     }
 
     /**
-     * Was die Behälter annehmen würden.
+     * What the tanks would accept.
      *
-     * <p>Dieselbe Frage wie bei den Fächern und aus demselben Grund: Ein
-     * {@code IFluidHandler} kann nicht sagen, was er annimmt. Also wird die
-     * Frage umgedreht — mit den Flüssigkeiten, die im Entwurf stehen. Wer
-     * {@code fluid:water} tippt, fragt sich über Wasser etwas.
+     * <p>The same question as for the slots, and for the same reason: an
+     * {@code IFluidHandler} cannot say what it accepts. So the question is
+     * turned around — with the fluids that appear in the draft. Whoever types
+     * {@code fluid:water} is asking something about water.
      *
-     * <p><b>Ein Eimer je Probe.</b> Mit einem Millibucket sagt ein Tank oft
-     * ja, der in Wahrheit nur volle Eimer nimmt; mit einem Eimer antwortet
-     * er auf die Frage, die man wirklich hat.
+     * <p><b>One bucket per probe.</b> With a single millibucket a tank often
+     * says yes when in truth it only takes full buckets; with a bucket it
+     * answers the question you actually have.
      *
-     * <p>Alles simuliert: {@code fill} mit {@code SIMULATE} bewegt nichts.
+     * <p>All simulated: {@code fill} with {@code SIMULATE} moves nothing.
      */
     private static List<String> tankProbe(IFluidHandler tanks,
                                           dev.devpanda.factorynetwork.lang.Project draft) {
@@ -239,20 +238,20 @@ public record DeviceSnapshotPacket(String connector, DeviceProfileCodec.Flat pro
     }
 
     /**
-     * Was jedes Fach kann, und womit es sich abfinden würde.
+     * What each slot can do, and what it would put up with.
      *
-     * <p><b>Warum überhaupt geprobt wird:</b> {@code IItemHandler} kann nicht
-     * sagen, was es annimmt — es gibt keine API dafür, und
-     * {@code isItemValid} beantwortet nur die Frage nach einem konkreten
-     * Gegenstand. Gemoddete Maschinen antworten darauf oft lax: Ein
-     * Ofen-Eingang nimmt alles an und prüft das Rezept erst beim Verarbeiten.
+     * <p><b>Why probing happens at all:</b> {@code IItemHandler} cannot say
+     * what it accepts — there is no API for it, and {@code isItemValid} only
+     * answers the question about one concrete item. Modded machines often
+     * answer that laxly: a furnace input accepts everything and only checks
+     * the recipe when it processes.
      *
-     * <p>Deshalb wird die Frage umgedreht — mit den Gegenständen, die im
-     * Entwurf stehen. Wer {@code item:iron_ore} tippt, fragt sich über
-     * Eisenerz etwas.
+     * <p>So the question is turned around — with the items that appear in the
+     * draft. Whoever types {@code item:iron_ore} is asking something about
+     * iron ore.
      *
-     * <p>Alles hier ist <b>simuliert</b>: {@code insertItem} und
-     * {@code extractItem} mit {@code simulate = true} bewegen nichts.
+     * <p>Everything here is <b>simulated</b>: {@code insertItem} and
+     * {@code extractItem} with {@code simulate = true} move nothing.
      */
     private static List<SlotProbe> probe(IItemHandler items,
                                          dev.devpanda.factorynetwork.lang.Project draft) {
@@ -264,8 +263,8 @@ public record DeviceSnapshotPacket(String connector, DeviceProfileCodec.Flat pro
         for (String name : dev.devpanda.factorynetwork.lang.ItemCandidates.of(draft)) {
             ResourceLocation id = ResourceLocation.tryParse(
                     name.contains(":") ? name : name.replace('/', ':'));
-            // „mekanism/steel_dust" meint mekanism:steel_dust — im Programm
-            // steht der Schrägstrich, in der Registry der Doppelpunkt.
+            // "mekanism/steel_dust" means mekanism:steel_dust — in the program
+            // it is a slash, in the registry a colon.
             if (id == null) {
                 continue;
             }
@@ -277,8 +276,8 @@ public record DeviceSnapshotPacket(String connector, DeviceProfileCodec.Flat pro
         }
 
         for (int slot = 0; slot < items.getSlots() && slot < MAX_SLOTS; slot++) {
-            // Nimmt es überhaupt etwas? Geprüft mit dem, was drinliegt —
-            // sonst mit einem Kandidaten, sonst gar nicht.
+            // Does it take anything at all? Checked with what is inside —
+            // otherwise with a candidate, otherwise not at all.
             ItemStack inside = items.getStackInSlot(slot);
             boolean takes = false;
             if (!inside.isEmpty()) {

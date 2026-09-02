@@ -10,12 +10,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Das Schnellmenü als Vorführung der Overlay-Schnittstelle.
+ * The quick menu as a demonstration of the overlay interface.
  *
- * <p>Ein Overlay in der linken oberen Ecke, das Escape, die Pfeile und Enter
- * bekommt und dem Spieler alles andere lässt. Genau der Fall, für den der
- * Tastenfilter gebaut ist — und der erste Aufrufer der Schnittstelle, der
- * nicht die Schnittstelle selbst ist.
+ * <p>An overlay in the top-left corner that gets Escape, the arrows and Enter
+ * and leaves everything else to the player. Exactly the case the key filter
+ * was built for — and the first caller of the interface that is not the
+ * interface itself.
  */
 public final class OverlayDemo {
 
@@ -27,7 +27,7 @@ public final class OverlayDemo {
     private OverlayDemo() {
     }
 
-    /** Öffnet das Menü, oder schließt es, wenn es offen ist. */
+    /** Opens the menu, or closes it if it is open. */
     public static WebOverlay toggle() {
         if (overlay != null && overlay.alive()) {
             overlay.close();
@@ -48,8 +48,8 @@ public final class OverlayDemo {
                 .transparent(true);
         overlay = FnWeb.openOverlay(spec, 12, 12);
         if (overlay != null) {
-            // Der Rückweg: Was die Seite über window.fnSend schickt, landet
-            // hier — die Wahl des Menüs, die es sonst niemandem sagen könnte.
+            // The return path: what the page sends via window.fnSend lands
+            // here — the menu's choice, which it could otherwise tell no one.
             overlay.surface().onMessage(message -> LOG.info("Overlay meldet: {}", message));
             overlay.focus(OverlayFocus.KEYBOARD);
         }

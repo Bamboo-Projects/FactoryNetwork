@@ -15,21 +15,21 @@ import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /**
- * Entnehmen und Einlagern aus der Speicheransicht.
+ * Withdrawing and storing from the storage view.
  *
- * <p><b>Der Server rechnet nach.</b> Was der Client anzeigt, ist ein
- * Schnappschuss von vorhin — in der Zwischenzeit kann ein Worker den Bestand
- * geleert haben. Deshalb wird die angeforderte Menge nie geglaubt, sondern
- * gegen den echten Bestand geprüft. Ohne diese Regel entstehen genau die
- * Fehler, an denen sich vergleichbare Mods lange abgearbeitet haben.
+ * <p><b>The server recomputes.</b> What the client shows is a snapshot from
+ * before — in the meantime a worker may have emptied the stock. That is why
+ * the requested amount is never believed, but checked against the real stock.
+ * Without this rule you get exactly the bugs that comparable mods have long
+ * struggled with.
  */
 public record StorageActionPacket(Kind kind, dev.devpanda.factorynetwork.storage.ItemKey key, int amount)
         implements CustomPacketPayload {
 
     public enum Kind {
-        /** Aus dem Netz auf den Mauszeiger. */
+        /** From the network onto the cursor. */
         EXTRACT,
-        /** Vom Mauszeiger ins Netz. */
+        /** From the cursor into the network. */
         INSERT
     }
 
@@ -55,8 +55,8 @@ public record StorageActionPacket(Kind kind, dev.devpanda.factorynetwork.storage
                     || !(player.containerMenu instanceof TerminalMenu menu)) {
                 return;
             }
-            // Aus der Ferne kostet jeder Griff ins Lager. Am Block gibt
-            // charge() immer true zurück — dort zahlt das Netz.
+            // From afar, every reach into storage costs. At the block,
+            // charge() always returns true — there the network pays.
             if (!menu.charge(player, dev.devpanda.factorynetwork.network.Power.REMOTE_ACTION)) {
                 return;
             }
@@ -68,10 +68,10 @@ public record StorageActionPacket(Kind kind, dev.devpanda.factorynetwork.storage
                               ControllerBlockEntity controller, TerminalMenu menu) {
         switch (packet.kind()) {
             case EXTRACT -> {
-                // Die Stapelgrenze des Gegenstands, nicht die seiner
-                // Kennung: Eine Komponente kann sie verändern.
+                // The item's stack limit, not that of its key: a component
+                // can change it.
                 int wanted = Math.min(packet.amount(), packet.key().maxStackSize());
-                // Nachrechnen: Der Bestand kann sich geändert haben.
+                // Recompute: the stock may have changed.
                 long taken = controller.storage().extract(packet.key(), wanted);
                 if (taken <= 0) {
                     return;
@@ -84,12 +84,12 @@ public record StorageActionPacket(Kind kind, dev.devpanda.factorynetwork.storage
                     int room = carried.getMaxStackSize() - carried.getCount();
                     int added = Math.min(room, stack.getCount());
                     carried.grow(added);
-                    // Was nicht auf den Zeiger passt, geht zurück ins Netz.
+                    // What does not fit on the cursor goes back into the network.
                     if (added < stack.getCount()) {
                         controller.storage().insert(packet.key(), stack.getCount() - added);
                     }
                 } else {
-                    // Zeiger ist belegt: nichts entnehmen, alles zurücklegen.
+                    // Cursor is occupied: withdraw nothing, put everything back.
                     controller.storage().insert(packet.key(), taken);
                     return;
                 }
@@ -97,8 +97,8 @@ public record StorageActionPacket(Kind kind, dev.devpanda.factorynetwork.storage
             }
             case INSERT -> {
                 ItemStack carried = menu.getCarried();
-                // Ganz vergleichen: Wer ein verzaubertes Buch auf dem
-                // Zeiger hat, legt nicht das leere ab.
+                // Compare fully: someone holding an enchanted book on the
+                // cursor does not deposit the empty one.
                 if (carried.isEmpty() || !packet.key().equals(dev.devpanda.factorynetwork.storage.ItemKey.of(carried))) {
                     return;
                 }

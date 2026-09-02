@@ -22,25 +22,25 @@ import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.energy.IEnergyStorage;
 
 /**
- * Die Brennkammer: Strom aus Ofenbrennstoff.
+ * The burner: power from furnace fuel.
  *
- * <p><b>Absichtlich mittelmäßig.</b> Sie hat keine Ausbaustufen und keinen
- * Aufrüstpfad, und in einem Pack stellt man nach der ersten Stunde etwas
- * Besseres daneben. Sie ist nicht dafür da, mit Generatoren anderer Mods zu
- * konkurrieren, sondern dafür, dass man ohne sie nicht blockiert ist —
- * dasselbe Bild wie die Vibrationskammer bei Applied Energistics.
+ * <p><b>Deliberately mediocre.</b> It has no tiers and no upgrade path, and in
+ * a pack you set something better beside it after the first hour. It is not
+ * there to compete with other mods' generators, but so that you are not
+ * blocked without it — the same picture as the vibration chamber in Applied
+ * Energistics.
  *
- * <p>Der Grund ist konkreter als der Strom des Netzes: Die Presse braucht FE,
- * und ohne eine Quelle in der Mod selbst wäre die ganze Fertigungskette —
- * Erz, Platte, Kerne, Zellen, Serverbauteile — ohne Fremdmod nicht zu
- * durchlaufen.
+ * <p>The reason is more concrete than the network's power: the press needs FE,
+ * and without a source in the mod itself the whole crafting chain — ore,
+ * plate, cores, cells, server parts — could not be run through without a
+ * third-party mod.
  */
 public class BurnerBlockEntity extends BlockEntity implements Container, MenuProvider {
 
-    /** Wie viel sie erzeugt, solange sie brennt. */
+    /** How much it produces while it burns. */
     public static final int PER_TICK = 40;
 
-    /** Was sie puffert, bis der Nachbar es abnimmt. */
+    /** How much it buffers until a neighbour takes it. */
     public static final int CAPACITY = 20_000;
 
     public static final int SLOT_FUEL = 0;
@@ -59,10 +59,10 @@ public class BurnerBlockEntity extends BlockEntity implements Container, MenuPro
     private final NonNullList<ItemStack> items = NonNullList.withSize(SLOTS, ItemStack.EMPTY);
 
     /**
-     * Gibt nach außen nichts ab, sondern schiebt selbst.
+     * Hands nothing out on request; it pushes on its own instead.
      *
-     * <p>Der Controller nimmt an und zieht nicht. Eine Quelle, die nur
-     * bereitstellt, käme bei ihm nie an.
+     * <p>The controller accepts but does not pull. A source that only makes
+     * itself available would never reach it.
      */
     private final InternalBuffer energy = new InternalBuffer(CAPACITY, CAPACITY);
 
@@ -86,11 +86,11 @@ public class BurnerBlockEntity extends BlockEntity implements Container, MenuPro
     }
 
     /**
-     * Ein Tick: brennen, erzeugen, weitergeben.
+     * One tick: burn, produce, pass on.
      *
-     * <p>Nachgelegt wird erst, wenn der Puffer nicht voll ist. Sonst
-     * verbrennt eine Kohle, während niemand abnimmt — und das merkt man erst,
-     * wenn der Kohlenstapel weg ist.
+     * <p>Fresh fuel is only lit when the buffer is not full. Otherwise a piece
+     * of coal burns while no one is drawing — and you notice only once the
+     * stack of coal is gone.
      */
     public static void serverTick(net.minecraft.world.level.Level level, BlockPos pos,
                                   BlockState state, BurnerBlockEntity burner) {
@@ -103,9 +103,9 @@ public class BurnerBlockEntity extends BlockEntity implements Container, MenuPro
         }
         burner.pushToNeighbours(level, pos);
         if (brannte != burner.burnTicks > 0) {
-            // Die Front zeigt das Feuer, und der Block leuchtet dabei. Beides
-            // hängt am Zustand, nicht an der BlockEntity: Es ist genau ein
-            // Wahrheitswert.
+            // The front shows the fire, and the block glows with it. Both
+            // hang on the state, not on the BlockEntity: it is exactly one
+            // boolean.
             level.setBlock(pos, state.setValue(
                     dev.devpanda.factorynetwork.block.BurnerBlock.LIT,
                     burner.burnTicks > 0), 3);
@@ -113,7 +113,7 @@ public class BurnerBlockEntity extends BlockEntity implements Container, MenuPro
         }
     }
 
-    /** Zündet den nächsten Brennstoff, wenn einer da ist. */
+    /** Lights the next piece of fuel, if there is one. */
     private void light() {
         ItemStack fuel = items.get(SLOT_FUEL);
         if (fuel.isEmpty()) {
@@ -125,7 +125,7 @@ public class BurnerBlockEntity extends BlockEntity implements Container, MenuPro
         }
         burnTicks = burn;
         burnTotal = burn;
-        // Ein Eimer Lava lässt seinen Eimer da, wie im Ofen auch.
+        // A lava bucket leaves its bucket behind, just as in a furnace.
         ItemStack rest = fuel.getCraftingRemainingItem();
         fuel.shrink(1);
         if (fuel.isEmpty() && !rest.isEmpty()) {
@@ -135,10 +135,10 @@ public class BurnerBlockEntity extends BlockEntity implements Container, MenuPro
     }
 
     /**
-     * Schiebt in jeden Nachbarn, der annimmt.
+     * Pushes into every neighbour that accepts.
      *
-     * <p>Reihum in fester Richtungsfolge: Wer zwei Verbraucher anschließt,
-     * soll erklären können, welcher zuerst bekommt.
+     * <p>In turn, in a fixed order of directions: whoever connects two
+     * consumers should be able to explain which one gets served first.
      */
     private void pushToNeighbours(net.minecraft.world.level.Level level, BlockPos pos) {
         if (energy.getEnergyStored() <= 0) {
@@ -161,7 +161,7 @@ public class BurnerBlockEntity extends BlockEntity implements Container, MenuPro
         }
     }
 
-    /** Die Zahlen für das Fenster. */
+    /** The numbers for the screen. */
     public final ContainerData data = new ContainerData() {
         @Override
         public int get(int index) {
@@ -242,7 +242,7 @@ public class BurnerBlockEntity extends BlockEntity implements Container, MenuPro
         return items;
     }
 
-    // ---- Fenster ----------------------------------------------------------
+    // ---- Screen -----------------------------------------------------------
 
     @Override
     public Component getDisplayName() {
@@ -255,7 +255,7 @@ public class BurnerBlockEntity extends BlockEntity implements Container, MenuPro
                 id, inventory, this, data);
     }
 
-    // ---- Sichern ----------------------------------------------------------
+    // ---- Saving -----------------------------------------------------------
 
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {

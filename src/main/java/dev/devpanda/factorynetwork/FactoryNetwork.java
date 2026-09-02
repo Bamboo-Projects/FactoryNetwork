@@ -10,11 +10,11 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.ModContainer;
 
 /**
- * Einstiegspunkt der Mod.
+ * Entry point of the mod.
  *
- * <p>Die Arbeit liegt in den Unterpaketen: {@code lang} enthält Manifold —
- * Lexer, Parser und Prüfung —, {@code network} das Netzwerk aus Connectoren
- * und den Speicher, {@code runtime} die Ausführung der Worker.
+ * <p>The real work lives in the subpackages: {@code lang} holds Manifold —
+ * lexer, parser and checking —, {@code network} the network of connectors
+ * and the storage, {@code runtime} the execution of the workers.
  */
 @Mod(FactoryNetwork.MOD_ID)
 public final class FactoryNetwork {
@@ -22,27 +22,28 @@ public final class FactoryNetwork {
     public static final String MOD_ID = "factorynetwork";
 
     public FactoryNetwork(IEventBus modBus, ModContainer container) {
-        // <b>Der früheste Java-Code, den diese Mod hat.</b> Chromium kann
-        // schon beim allerersten Bildschirmwechsel starten — und der kommt
-        // während des Ladens, also vor jedem Aufbau-Ereignis. Wer Chromiums
-        // Kommandozeile ergänzen will, muss es hier tun oder gar nicht.
+        // <b>The earliest Java code this mod has.</b> Chromium can start as
+        // early as the very first screen switch — and that comes during
+        // loading, so before every setup event. Anyone who wants to add to
+        // Chromium's command line has to do it here or not at all.
         //
-        // Tut nur etwas, wenn fn.devtools gesetzt ist; auf einem Server
-        // existiert die Klasse gar nicht erst.
+        // Only does anything when fn.devtools is set; on a server the class
+        // does not even exist in the first place.
         if (net.neoforged.fml.loading.FMLEnvironment.dist.isClient()) {
             dev.devpanda.factorynetwork.web.runtime.WebDebug.requestIfEnabled();
         }
-        // Die Grenzen für Nutzercode gehören dem Serverbetreiber, nicht dem
-        // Quelltext. Ohne diese Zeile liegt die Datei nie neben der Welt.
+        // The limits for user code belong to the server operator, not the
+        // source. Without this line the file never ends up beside the world.
         container.registerConfig(net.neoforged.fml.config.ModConfig.Type.SERVER,
                 FnConfig.SERVER_SPEC);
-        // Die Ressourcenarten sind offen, aber nur beim Laden: Was ein
-        // Programm bedeutet, darf nicht davon abhängen, wann jemand etwas
-        // anmeldet. Der Aufruf lädt die Klasse und damit die eingebauten drei.
+        // The resource kinds are open, but only during loading: what a
+        // program means must not depend on when someone registers something.
+        // The call loads the class and with it the three built-in ones.
         modBus.addListener((net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent event) -> {
-            // Fremde Arten vor dem Einfrieren. Auch ohne die Mod, die sie
-            // mitbringt: Sonst hieße source:source in einem Pack ohne Ars
-            // Nouveau „keine Ressourcenart" statt „diese Mod fehlt".
+            // Foreign kinds before the freeze. Even without the mod that
+            // brings them: otherwise source:source in a pack without Ars
+            // Nouveau would mean "no such resource kind" instead of "this mod
+            // is missing".
             dev.devpanda.factorynetwork.compat.ars.ArsSource.register();
             dev.devpanda.factorynetwork.runtime.ResourceKinds.freeze();
         });
@@ -53,8 +54,8 @@ public final class FactoryNetwork {
         FnMenus.MENUS.register(modBus);
         FnCreativeTabs.TABS.register(modBus);
         dev.devpanda.factorynetwork.press.FnRecipes.register(modBus);
-        // Das Handbuch nur, wenn GuideME da ist — sonst startet die Mod ohne
-        // Handbuch statt gar nicht. Dieselbe Haltung wie bei Jade.
+        // The manual only if GuideME is present — otherwise the mod starts
+        // without a manual instead of not at all. The same stance as with Jade.
         if (net.neoforged.fml.ModList.get().isLoaded("guideme")) {
             dev.devpanda.factorynetwork.compat.guide.FnGuide.register();
         }

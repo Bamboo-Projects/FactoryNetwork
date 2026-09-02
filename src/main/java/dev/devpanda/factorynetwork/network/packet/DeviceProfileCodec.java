@@ -12,17 +12,16 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Bringt ein {@link DeviceProfile} über die Leitung.
+ * Carries a {@link DeviceProfile} over the wire.
  *
- * <p>Der Umweg über eine flache Form hat einen Grund: Eine Karte von
- * Aufzählung auf Aufzählung mit einem Verbundwert lässt sich mit
- * {@code StreamCodec.composite} nicht bauen, und von Hand geschriebene
- * Puffercodes sind schwer zu prüfen. Die flache Form ist eine Liste von
- * Vieren und lässt sich ohne Minecraft testen.
+ * <p>The detour through a flat form has a reason: a map from enum to enum with
+ * a composite value cannot be built with {@code StreamCodec.composite}, and
+ * hand-written buffer codecs are hard to review. The flat form is a list of
+ * fours and can be tested without Minecraft.
  */
 public final class DeviceProfileCodec {
 
-    /** Ein Zugang als flache Vier: Seite, Fächer, Behälter, Strom. */
+    /** An access as a flat four: side, slots, tanks, energy. */
     public record FlatAccess(int side, int slots, int tanks, boolean energy) {
 
         public static final StreamCodec<RegistryFriendlyByteBuf, FlatAccess> STREAM_CODEC =
@@ -34,7 +33,7 @@ public final class DeviceProfileCodec {
                         FlatAccess::new);
     }
 
-    /** Ein ganzes Profil, flach. */
+    /** A whole profile, flat. */
     public record Flat(String name, String descriptionId, String namespace,
                        int connectedSide, List<FlatAccess> access) {
 
@@ -51,7 +50,7 @@ public final class DeviceProfileCodec {
     private DeviceProfileCodec() {
     }
 
-    /** Ohne Namen — für den Test und für die Antwort auf eine Anfrage. */
+    /** Without a name — for the test and for the answer to a request. */
     public static Flat toFlat(DeviceProfile profile) {
         return toFlat("", profile);
     }

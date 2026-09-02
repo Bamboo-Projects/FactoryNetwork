@@ -24,21 +24,20 @@ import net.minecraft.world.item.ItemStack;
 import java.util.Optional;
 
 /**
- * Das Menü hinter dem Terminal.
+ * The menu behind the terminal.
  *
- * <p>Die sechsunddreißig Slots des Spielerinventars sitzen an den Stellen,
- * an denen sie in jedem Minecraft-Inventar sitzen. Das ist kein Zufall: Wer
- * ein Fenster öffnet, greift blind dorthin, und ein echter {@link Slot}
- * bringt Umschalt-Klick, Ziehen über mehrere Felder, Zahlentasten und
- * Doppelklick-Sammeln von selbst mit.
+ * <p>The thirty-six slots of the player inventory sit in the places where
+ * they sit in every Minecraft inventory. That is no accident: whoever opens
+ * a window reaches there blindly, and a real {@link Slot} brings shift-click,
+ * dragging across several fields, number keys, and double-click collecting on
+ * its own.
  *
- * <p>Der Netzbestand ist dagegen <b>kein</b> Slot. Zwanzigtausend Arten
- * lassen sich nicht anlegen; er wird gezeichnet und über eigene Nachrichten
- * bedient.
+ * <p>The network stock, by contrast, is <b>not</b> a slot. Twenty thousand
+ * kinds cannot be created; it is drawn and operated over its own messages.
  */
 public class TerminalMenu extends AbstractContainerMenu {
 
-    /** Dieselben Werte wie in jedem Vanilla-Fenster — siehe TerminalLayout. */
+    /** The same values as in every vanilla window — see TerminalLayout. */
     private static final int INV_X = TerminalLayout.INV_X;
     private static final int INV_Y = TerminalLayout.INV_Y;
     private static final int HOTBAR_Y = TerminalLayout.HOTBAR_Y;
@@ -49,67 +48,67 @@ public class TerminalMenu extends AbstractContainerMenu {
     private final Player owner;
 
     /**
-     * Womit dieses Fenster geöffnet wurde, oder {@code null} am Block.
+     * What this window was opened with, or {@code null} at the block.
      *
-     * <p>Es geht über die Leitung mit, damit der Client dieselben Reiter
-     * zeichnet, die der Server erlaubt. Ein Reiter, der sich öffnen lässt und
-     * dann nichts tut, ist schlimmer als einer, der gar nicht da ist.
+     * <p>It travels along the wire so that the client draws the same tabs the
+     * server allows. A tab that can be opened and then does nothing is worse
+     * than one that is not there at all.
      */
     private final RemoteDevice device;
 
     /**
-     * Der Platz im Inventar, an dem das Gerät beim Öffnen lag.
+     * The inventory slot the device was in when it was opened.
      *
-     * <p>Gemerkt und nicht jedes Mal gesucht: Ein Gerät, das während des
-     * Betriebs in eine Kiste wandert, soll das Fenster schließen — und das
-     * merkt nur, wer weiß, wo es lag.
+     * <p>Remembered and not searched for each time: a device that moves into
+     * a chest while in use should close the window — and only someone who
+     * knows where it was will notice that.
      */
     private final int deviceSlot;
 
     /**
-     * In welcher Welt der Mast steht, oder {@code null} am Block.
+     * Which world the mast stands in, or {@code null} at the block.
      *
-     * <p><b>Ohne sie liefe das Fenster leer.</b> Der Controller wird über ein
-     * Level aufgelöst, und wer im Nether steht und auf ein Netz in der
-     * Oberwelt schaut, bekäme dort nichts — das Fenster ginge auf und jede
-     * Handlung verpuffte.
+     * <p><b>Without it the window would run empty.</b> The controller is
+     * resolved via a level, and someone standing in the Nether looking at a
+     * network in the Overworld would get nothing there — the window would
+     * open and every action would fizzle out.
      */
     private final ResourceKey<Level> home;
 
     /**
-     * Schreibt, was ein Terminal-Block zu melden hat: nichts als seinen Ort.
+     * Writes what a terminal block has to report: nothing but its location.
      *
-     * <p><b>Steht hier, direkt neben dem Konstruktor, der es liest.</b> Als
-     * die beiden Seiten in verschiedenen Dateien standen, ging genau das
-     * schief, was hier nicht mehr schiefgehen soll: Der Schreiber setzte ein
-     * Feld weniger als der Leser erwartete, und der Client warf beim Öffnen
-     * eine ArrayIndexOutOfBoundsException.
+     * <p><b>Sits here, right next to the constructor that reads it.</b> When
+     * the two sides lived in different files, exactly what should no longer go
+     * wrong here went wrong: the writer set one field fewer than the reader
+     * expected, and the client threw an ArrayIndexOutOfBoundsException on
+     * opening.
      */
     public static void writeBlock(RegistryFriendlyByteBuf buffer, BlockPos position) {
         buffer.writeBlockPos(position);
         buffer.writeBoolean(false);
     }
 
-    /** Und was ein Ferngerät zu melden hat: Welt, Art und Platz im Inventar. */
+    /** And what a remote device has to report: world, kind, and inventory slot. */
     public static void writeRemote(RegistryFriendlyByteBuf buffer, GlobalPos mast,
                                    RemoteDevice device, int slot) {
         buffer.writeBlockPos(mast.pos());
         buffer.writeBoolean(true);
-        // Die Welt muss mit: Das Menü löst seinen Controller sonst über die
-        // Welt des Spielers auf, und der steht woanders.
+        // The world must come along: otherwise the menu resolves its
+        // controller via the player's world, and the player is elsewhere.
         buffer.writeResourceKey(mast.dimension());
         buffer.writeEnum(device);
         buffer.writeVarInt(slot);
     }
 
     /**
-     * Liest, was der Öffner geschrieben hat.
+     * Reads what the opener wrote.
      *
-     * <p><b>Ein Flag für alles Ferne, nicht drei.</b> Aus der Ferne gibt es
-     * immer eine Welt, ein Gerät und einen Platz im Inventar; am Block keins
-     * davon. Zwei Flags waren ein Feld, das man beim Schreiben vergessen
-     * konnte — und genau das ist passiert: Der Enum wurde als Boolean
-     * gelesen, und danach war jedes weitere Feld verschoben.
+     * <p><b>One flag for everything remote, not three.</b> From afar there is
+     * always a world, a device, and an inventory slot; at the block none of
+     * them. Two flags were one field you could forget when writing — and that
+     * is exactly what happened: the enum was read as a boolean, and after that
+     * every further field was shifted.
      */
     public TerminalMenu(int id, Inventory inventory, RegistryFriendlyByteBuf buffer) {
         this(id, inventory, buffer.readBlockPos(), buffer, buffer.readBoolean());
@@ -137,20 +136,20 @@ public class TerminalMenu extends AbstractContainerMenu {
         this.owner = inventory.player;
         this.access = ContainerLevelAccess.create(inventory.player.level(), position);
 
-        // Drei Reihen Inventar
+        // Three rows of inventory
         for (int row = 0; row < 3; row++) {
             for (int column = 0; column < 9; column++) {
                 addSlot(slotFor(inventory, column + row * 9 + 9,
                         INV_X + column * SLOT_SIZE, INV_Y + row * SLOT_SIZE));
             }
         }
-        // Schnellzugriff
+        // Hotbar
         for (int column = 0; column < 9; column++) {
             addSlot(slotFor(inventory, column, INV_X + column * SLOT_SIZE, HOTBAR_Y));
         }
 
-        // Ab jetzt bekommt der Spieler den Netzzustand — die Statuszeile
-        // steht auf jedem Reiter, also darf sie nicht am Speicher hängen.
+        // From now on the player receives the network state — the status row
+        // is on every tab, so it must not depend on storage.
         if (inventory.player instanceof ServerPlayer serverPlayer) {
             controller(serverPlayer).ifPresent(
                     controller -> controller.watchTerminal(serverPlayer));
@@ -158,17 +157,16 @@ public class TerminalMenu extends AbstractContainerMenu {
     }
 
     /**
-     * Ein gewöhnlicher Platz — außer für das Gerät, mit dem dieses Fenster
-     * offen ist.
+     * An ordinary slot — except for the device this window is open with.
      *
-     * <p><b>Sonst zieht man die Leiter hinter sich hoch.</b> Wer sein
-     * Wireless Terminal aus dem Terminal heraus ins Lager legt, hat es im
-     * Netz und kommt ohne ein zweites Gerät nicht mehr daran. Das Fenster
-     * ginge im selben Moment zu, und das Netz behielte den Schlüssel zu sich
-     * selbst.
+     * <p><b>Otherwise you pull the ladder up behind you.</b> Whoever puts
+     * their Wireless Terminal from the terminal into storage has it in the
+     * network and can no longer reach it without a second device. The window
+     * would close at that same moment, and the network would keep the key to
+     * itself.
      *
-     * <p>Am Block ist nichts gesperrt: Dort gibt es kein Gerät, das man sich
-     * wegnehmen könnte.
+     * <p>At the block nothing is locked: there is no device there that you
+     * could take away from yourself.
      */
     private Slot slotFor(Inventory inventory, int index, int x, int y) {
         if (device == null || index != deviceSlot) {
@@ -182,7 +180,7 @@ public class TerminalMenu extends AbstractContainerMenu {
         };
     }
 
-    /** Liegt an diesem Platz im Fenster das Gerät, mit dem es offen ist? */
+    /** Is the device this window is open with at this slot in the window? */
     private boolean holdsOpenDevice(int index) {
         return device != null && index >= 0 && index < slots.size()
                 && slots.get(index) instanceof Slot slot
@@ -194,11 +192,11 @@ public class TerminalMenu extends AbstractContainerMenu {
     }
 
     /**
-     * Der Controller, auf dessen Daten dieses Fenster arbeitet.
+     * The controller on whose data this window works.
      *
-     * <p>Am Block steht ein Terminal an der Position und weiß, zu welchem
-     * Netz es gehört. Aus der Ferne steht dort ein Sendemast — und den fragt
-     * man wie jeden anderen Block danach, in welchem Netz er liegt.
+     * <p>At the block, a terminal stands at the position and knows which
+     * network it belongs to. From afar, a transmitter mast stands there — and
+     * you ask it, like any other block, which network it lies in.
      */
     public Optional<ControllerBlockEntity> controller(Player player) {
         if (player.level().getBlockEntity(position) instanceof TerminalBlockEntity terminal) {
@@ -207,8 +205,8 @@ public class TerminalMenu extends AbstractContainerMenu {
         if (device == null) {
             return Optional.empty();
         }
-        // In der Welt des Masts nachsehen, nicht in der des Spielers: Mit
-        // einer Grenzenlos-Karte sitzt er in einer anderen.
+        // Look in the mast's world, not the player's: with a boundless card
+        // it sits in a different one.
         net.minecraft.world.level.Level level = levelOfMast(player);
         return level == null || !level.isLoaded(position)
                 ? Optional.empty()
@@ -216,7 +214,7 @@ public class TerminalMenu extends AbstractContainerMenu {
                         .owning(level, position);
     }
 
-    /** Die Welt, in der der Mast steht — auch wenn es nicht die des Spielers ist. */
+    /** The world the mast stands in — even when it is not the player's. */
     private net.minecraft.world.level.Level levelOfMast(Player player) {
         if (home == null || player.level().dimension().equals(home)) {
             return player.level();
@@ -224,24 +222,24 @@ public class TerminalMenu extends AbstractContainerMenu {
         return player.getServer() == null ? null : player.getServer().getLevel(home);
     }
 
-    /** Womit dieses Fenster geöffnet wurde, oder {@code null} am Block. */
+    /** What this window was opened with, or {@code null} at the block. */
     public RemoteDevice device() {
         return device;
     }
 
     /**
-     * Darf dieser Reiter gezeigt werden?
+     * May this tab be shown?
      *
-     * <p>Am Block alle. Aus der Ferne alles außer Code, es sei denn, es ist
-     * ein Laptop.
+     * <p>At the block, all of them. From afar, everything except code, unless
+     * it is a laptop.
      */
     public boolean allows(TerminalTab tab) {
         return device == null || device.allows(tab);
     }
 
     /**
-     * Umschalt-Klick legt ins Netz ab — aber nur, wenn der Speicher-Reiter
-     * offen ist. Sonst verschwänden Gegenstände, während jemand Code liest.
+     * Shift-click deposits into the network — but only when the storage tab
+     * is open. Otherwise items would vanish while someone is reading code.
      */
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
@@ -250,13 +248,13 @@ public class TerminalMenu extends AbstractContainerMenu {
         }
         Slot slot = slots.get(index);
         if (!slot.hasItem() || holdsOpenDevice(index)) {
-            // Das Gerät, mit dem dieses Fenster offen ist, bleibt liegen —
-            // siehe slotFor.
+            // The device this window is open with stays put — see slotFor.
             return ItemStack.EMPTY;
         }
-        // Auch dieser Weg legt ins Netz ab, geht aber über Vanillas Klick
-        // und nicht über StorageActionPacket. Ohne diese Zeile wäre
-        // "ein Stapel bewegt kostet Strom" nur in einer Richtung wahr.
+        // This path also deposits into the network, but goes through
+        // vanilla's click and not through StorageActionPacket. Without this
+        // line, "moving a stack costs power" would be true in only one
+        // direction.
         if (!charge(player, dev.devpanda.factorynetwork.network.Power.REMOTE_ACTION)) {
             return ItemStack.EMPTY;
         }
@@ -265,9 +263,9 @@ public class TerminalMenu extends AbstractContainerMenu {
             return ItemStack.EMPTY;
         }
         ItemStack stack = slot.getItem();
-        // Der ganze Stapel, samt allem, was er trägt — und was nicht
-        // hineinpasst, bleibt liegen. Ein Netz kann voll sein, seit es
-        // Zellen gibt; ohne diese Zeile verschwände der Rest.
+        // The whole stack, together with everything it carries — and whatever
+        // does not fit stays put. A network can be full ever since there are
+        // cells; without this line the remainder would vanish.
         long left = controller.get().storage().insert(stack);
         slot.set(left <= 0 ? ItemStack.EMPTY : stack.copyWithCount((int) left));
         controller.get().pushStorageTo(serverPlayer, true);
@@ -275,8 +273,8 @@ public class TerminalMenu extends AbstractContainerMenu {
     }
 
     /**
-     * Ob der Speicher-Reiter offen ist. Der Client meldet das, damit der
-     * Bestand nicht läuft, während jemand im Editor tippt.
+     * Whether the storage tab is open. The client reports this so that the
+     * stock does not stream while someone is typing in the editor.
      */
     private boolean storageTabOpen;
 
@@ -297,24 +295,24 @@ public class TerminalMenu extends AbstractContainerMenu {
     @Override
     public void removed(Player player) {
         super.removed(player);
-        // Abmelden, sonst schickt der Controller ewig weiter.
+        // Unsubscribe, otherwise the controller keeps sending forever.
         if (player instanceof ServerPlayer serverPlayer) {
             controller(player).ifPresent(controller -> controller.unwatchTerminal(serverPlayer));
         }
     }
 
     /**
-     * Nimmt Strom aus dem Akku des Geräts.
+     * Takes power from the device's battery.
      *
-     * <p>Am Block kostet nichts — dort hängt das Terminal am Netz, und was
-     * das Netz zieht, rechnet der Controller ab.
+     * <p>At the block nothing costs anything — there the terminal hangs on the
+     * network, and what the network draws is settled by the controller.
      *
-     * <p><b>Erst fragen, dann nehmen.</b> Ein Abzug, der die Ablehnung nicht
-     * überlebt, wäre schlimmer als gar keiner: Wer hundert FE hat und eine
-     * Handlung für hundertzwanzig versucht, verlöre die hundert und bekäme
-     * nichts dafür — und beim nächsten Versuch wieder.
+     * <p><b>Ask first, then take.</b> A deduction that does not survive the
+     * rejection would be worse than none: someone who has a hundred FE and
+     * attempts an action costing a hundred and twenty would lose the hundred
+     * and get nothing for it — and again on the next attempt.
      *
-     * @return ob genug da war
+     * @return whether there was enough
      */
     public boolean charge(Player player, int amount) {
         if (device == null) {
@@ -331,15 +329,15 @@ public class TerminalMenu extends AbstractContainerMenu {
     }
 
     /**
-     * Zieht ab, was ein offenes Fenster je Tick kostet.
+     * Deducts what an open window costs per tick.
      *
-     * <p><b>Hier und nicht in einem eigenen Ticker:</b> Vanilla ruft das je
-     * Tick für jedes offene Fenster, und ein zweiter Weg dafür wäre ein
-     * zweiter Weg, ihn zu vergessen.
+     * <p><b>Here and not in a ticker of its own:</b> vanilla calls this per
+     * tick for every open window, and a second path for it would be a second
+     * path to forget it.
      *
-     * <p>Geschlossen wird hier nicht. Das erledigt {@link #stillValid} beim
-     * nächsten Durchgang — ein Fenster mitten im Verteilen der Änderungen zu
-     * schließen, hieße die Liste zu ändern, über die gerade gelaufen wird.
+     * <p>Nothing is closed here. That is done by {@link #stillValid} on the
+     * next pass — closing a window in the middle of distributing the changes
+     * would mean altering the list that is currently being iterated.
      */
     @Override
     public void broadcastChanges() {
@@ -350,17 +348,17 @@ public class TerminalMenu extends AbstractContainerMenu {
     }
 
     /**
-     * Am Block: Steht er noch da und ist der Spieler nah genug?
+     * At the block: is it still there and is the player near enough?
      *
-     * <p>Aus der Ferne sind es andere Fragen, und sie stehen in
-     * {@link RemoteAccess} — dort kann ein Prüflauf sie stellen, ohne auf
-     * das Zugehen eines Fensters zu warten.
+     * <p>From afar the questions are different, and they live in
+     * {@link RemoteAccess} — there a test can ask them without waiting for a
+     * window to close.
      */
     @Override
     public boolean stillValid(Player player) {
         if (device != null) {
-            // Leerer Akku heißt zu. Der Ladestand wird in broadcastChanges
-            // abgezogen; hier fällt auf, dass nichts mehr da ist.
+            // An empty battery means closed. The charge is deducted in
+            // broadcastChanges; here it is noticed that nothing is left.
             return RemoteAccess.allowed(player, deviceSlot,
                             net.minecraft.core.GlobalPos.of(home, position))
                     && dev.devpanda.factorynetwork.item.RemoteDeviceItem.energyOf(

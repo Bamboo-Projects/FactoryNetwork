@@ -7,74 +7,70 @@ import net.minecraft.world.level.Level;
 import java.util.Collection;
 
 /**
- * Wie eine Ressourcenart an einer fremden Maschine gelesen und geschrieben
- * wird.
+ * How a resource kind is read from and written to a foreign machine.
  *
- * <p><b>Die zweite Achse.</b> {@link ResourceStore} sagt, wo eine Art im Netz
- * liegt — das gehört dieser Mod, und deshalb ließ es sich hinter eine
- * Schnittstelle bringen. Die Maschine gehört jemand anderem: Dort stehen
- * {@code IItemHandler} und {@code IFluidHandler} aus NeoForge und
- * {@code IChemicalHandler} aus Mekanism nebeneinander, heißen an jeder
- * Methode anders und rechnen in verschiedenen Einheiten. Ein gemeinsamer
- * Obertyp existiert nicht.
+ * <p><b>The second axis.</b> {@link ResourceStore} says where a kind sits in
+ * the network — that belongs to this mod, and so it could be put behind an
+ * interface. The machine belongs to someone else: there {@code IItemHandler}
+ * and {@code IFluidHandler} from NeoForge and {@code IChemicalHandler} from
+ * Mekanism sit side by side, are named differently on every method and count
+ * in different units. A common supertype does not exist.
  *
- * <p><b>Gemeinsam ist nicht der Typ, sondern die Handlung.</b> Drei davon
- * gibt es, und sie sind nicht erfunden, sondern abgelesen: {@code
- * ChemicalStores} hatte genau diese drei, weil die Chemikalien als letzte
- * gebaut wurden und dabei die Naht zum Kompatibilitätsmodul brauchten.
+ * <p><b>What is shared is not the type, but the action.</b> There are three of
+ * them, and they are not invented but read off: {@code ChemicalStores} had
+ * exactly these three, because the chemicals were built last and in doing so
+ * needed the seam to the compatibility module.
  *
- * <p><b>Wofür das da ist:</b> Eine fremde Mod meldet eine Ressourcenart an
- * (siehe {@code ResourceKinds}) und liefert hier dazu, wie ihre Maschinen sie
- * hergeben und annehmen. Ohne das kann ihre Art im Netz liegen und sich in
- * einem Programm nennen lassen — bewegen ließe sie sich nicht.
+ * <p><b>What this is for:</b> a foreign mod registers a resource kind (see
+ * {@code ResourceKinds}) and supplies here how its machines give it out and
+ * take it in. Without that, its kind can sit in the network and be named in a
+ * program — but it could not be moved.
  *
- * <p><b>Die eingebauten drei gehen noch ihren eigenen Weg.</b> Sie hierher zu
- * ziehen ist ein eigener Schnitt, und er wartet auf eine Runde Spielen:
- * {@code move} ist die Stelle, an der diese Mod Gegenstände in der Hand hält,
- * und ein Fehler dort kostet einen Bestand statt einer Meldung. Siehe
- * {@code maschinenzugriff.md}, Abschnitt 5.
+ * <p><b>The three built-in ones still go their own way.</b> Pulling them in
+ * here is a separate cut, and it is waiting on a round of playtesting:
+ * {@code move} is the place where this mod holds items in hand, and a bug
+ * there costs stock rather than a message. See {@code maschinenzugriff.md},
+ * section 5.
  */
 public interface MachineAccess {
 
     /**
-     * Wie viel davon in der Maschine liegt.
+     * How much of it sits in the machine.
      *
-     * <p>{@code keys} trägt Schlüssel in der Form, die
-     * {@code ResourceKind.type()} für diese Art nennt. <b>Leer heißt nicht
-     * „alles".</b> Eine leere Auswahl hat am 26.08. schon einmal ein Gas
-     * verwechselt; wer alles meint, sagt es mit einer vollen Liste.
+     * <p>{@code keys} carries keys in the form that
+     * {@code ResourceKind.type()} names for this kind. <b>Empty does not mean
+     * "everything".</b> An empty selection already mixed up a gas once on
+     * 26.08.; whoever means everything says so with a full list.
      */
     long count(Level level, BlockPos pos, Direction side, Collection<?> keys);
 
     /**
-     * Aus dem Netzspeicher in die Maschine.
+     * From the network store into the machine.
      *
-     * @return wie viel angekommen ist — weniger als gewünscht ist normal
+     * @return how much arrived — less than requested is normal
      */
     long fill(ResourceStore from, Level level, BlockPos pos, Direction side,
             Collection<?> keys, long limit);
 
     /**
-     * Aus der Maschine in den Netzspeicher.
+     * From the machine into the network store.
      *
-     * <p><b>Erst fragen, dann ziehen.</b> Was der Speicher nicht nimmt, darf
-     * gar nicht erst aus der Maschine kommen — bei Gegenständen ließe sich
-     * der Rest zurücklegen, bei einem Gas nicht. Diese Regel steht hier und
-     * nicht beim Aufrufer, weil sie sonst beim vierten Eintrag vergessen
-     * wird.
+     * <p><b>Ask first, then pull.</b> What the store does not take must not
+     * leave the machine in the first place — with items the rest could be put
+     * back, with a gas it could not. This rule lives here and not at the
+     * caller, because otherwise it gets forgotten at the fourth entry.
      *
-     * @return wie viel im Netz angekommen ist
+     * @return how much arrived in the network
      */
     long drain(Level level, BlockPos pos, Direction side,
             Collection<?> keys, ResourceStore into, long limit);
 
     /**
-     * Eine Art, die an keiner Maschine ankommt.
+     * A kind that reaches no machine.
      *
-     * <p>Die Vorgabe, und keine Notlösung: Eine Art darf im Netz liegen, ohne
-     * dass eine Maschine sie kennt — so wie sie sich bewegen darf, ohne
-     * lagerbar zu sein. Wer sie trotzdem bewegen will, bekommt eine Meldung
-     * und keine stille Null.
+     * <p>The default, and not a stopgap: a kind may sit in the network without
+     * any machine knowing it — just as it may be moved without being storable.
+     * Whoever still wants to move it gets a message and not a silent zero.
      */
     MachineAccess NONE = new MachineAccess() {
 

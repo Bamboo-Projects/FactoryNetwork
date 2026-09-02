@@ -14,11 +14,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Was das Netz gerade tut.
+ * What the network is doing right now.
  *
- * <p>Rein lesend, und aus Daten, die ohnehin schon beim Öffnen übertragen
- * werden. Der Wert liegt darin, dass ein stehender Worker sichtbar wird — bis
- * jetzt erfuhr man davon nur, wenn eine Maschine nichts mehr bekam.
+ * <p>Read-only, and from data that is transferred on open anyway. The value
+ * lies in a stalled worker becoming visible — until now you only learned of
+ * it when a machine stopped getting anything.
  */
 import dev.devpanda.factorynetwork.client.ClientTraffic;
 import dev.devpanda.factorynetwork.network.Bandwidth;
@@ -28,7 +28,7 @@ public class NetworkTabView {
 
     private static final int LINE = 10;
 
-    /** Breite der Knöpfe an einer Zeile, die auf eine Wahl wartet. */
+    /** Width of the buttons on a line that is waiting for a choice. */
     private static final int BUTTON = 34;
 
     private final List<Button> buttons = new ArrayList<>();
@@ -48,32 +48,29 @@ public class NetworkTabView {
     }
 
     /**
-     * Um wie viele Zeilen der Inhalt nach oben geschoben ist.
+     * By how many lines the content is pushed up.
      *
-     * <p><b>Der Reiter war schon zu lang, bevor das Diagramm dazukam.</b>
-     * Anschlüsse, Anzeigen, Worker, Flüssigkeiten, Anlagen, Abläufe, globale
-     * Werte, Speicher — bei einem gewachsenen Netz reicht das Fenster für
-     * die Hälfte. Vorher hörte die Liste einfach auf; jetzt kann man
-     * weiterrollen.
+     * <p><b>The tab was already too long before the chart came along.</b>
+     * Connectors, displays, workers, fluids, plants, flows, globals, storage
+     * — on a grown network the window has room for half. Before, the list
+     * simply stopped; now you can scroll on.
      */
     private int scroll;
 
     /**
-     * Wie weit der Inhalt beim letzten Zeichnen reichte.
+     * How far the content reached at the last draw.
      *
-     * <p>Gemessen statt gerechnet: Wie hoch dieser Reiter wird, hängt an
-     * acht Listen und einem Diagramm — eine Formel dafür wäre eine zweite
-     * Wahrheit neben dem Zeichencode und liefe bei der nächsten Zeile
-     * auseinander.
+     * <p>Measured, not computed: how tall this tab becomes depends on eight
+     * lists and a chart — a formula for it would be a second truth beside the
+     * drawing code and would drift apart at the next line.
      */
     private int contentHeight;
 
     /**
-     * Rollt, wenn es etwas zu rollen gibt.
+     * Scrolls, if there is anything to scroll.
      *
-     * <p>Die Grenze kommt aus der zuletzt gezeichneten Höhe. Beim ersten
-     * Bild ist sie null, also rollt nichts — dann steht ohnehin alles im
-     * Fenster.
+     * <p>The limit comes from the last drawn height. On the first frame it is
+     * zero, so nothing scrolls — and then everything is in the window anyway.
      */
     public boolean mouseScrolled(double delta) {
         int ueberhang = Math.max(0, contentHeight - height + LINE);
@@ -83,43 +80,43 @@ public class NetworkTabView {
     }
 
     public void render(GuiGraphics graphics, int mouseX, int mouseY) {
-        // Beschnitt, sonst zeichnet der gerollte Inhalt über die
-        // Reiterleiste und die Statuszeile darunter.
+        // Clip, otherwise the scrolled content draws over the tab bar and the
+        // status line below it.
         graphics.enableScissor(x, y, x + width, y + height);
         try {
             renderContent(graphics, mouseX, mouseY);
         } finally {
-            // Auch bei einem Fehler: Ein offener Beschnitt macht den ganzen
-            // Bildschirm unsichtbar, nicht nur diesen Reiter.
+            // Even on an error: an open clip makes the whole screen invisible,
+            // not just this tab.
             graphics.disableScissor();
         }
     }
 
     /**
-     * Wie hoch der Kopf ist: eine Zeile Zahlen und darunter die Kurve.
+     * How tall the head is: one line of numbers and the curve below it.
      *
-     * <p>Sie war erst elf Pixel hoch und stand neben den Zahlen — bei sechzig
-     * Pixeln Breite sah das nach einem Balken aus, nicht nach einem
-     * Diagramm. Jetzt bekommt sie eine eigene Zeile über die ganze Breite:
-     * Fünf Minuten Verlauf sind fünf Minuten, und die sieht man nur, wenn
-     * sie Platz haben.
+     * <p>It was first eleven pixels tall and sat beside the numbers — at
+     * sixty pixels wide that looked like a bar, not a chart. Now it gets its
+     * own line across the full width: five minutes of history are five
+     * minutes, and you only see them when they have room.
      */
     private static final int HEAD_HEIGHT = 40;
 
-    /** Wie hoch die Kurve selbst ist. */
+    /** How tall the curve itself is. */
     private static final int SPARK_HEIGHT = 24;
 
     private void renderContent(GuiGraphics graphics, int mouseX, int mouseY) {
         int top = y + 3 - scroll * LINE;
 
-        // <b>Der Kopf trägt, was immer gilt.</b> Strom und Durchsatz stehen
-        // an derselben Stelle, egal wie das Netz aussieht — wer hinsieht,
-        // muss nicht erst suchen.
+        // <b>The head carries what always holds.</b> Power and throughput sit
+        // in the same place, no matter how the network looks — whoever looks
+        // doesn't have to search first.
         int line = head(graphics, top);
 
-        // <b>Links, was arbeitet. Rechts, was da ist.</b> Zwei Fragen, zwei
-        // Spalten: „läuft es" und „was hängt dran". Vorher standen acht
-        // Abschnitte untereinander, alle gleich gewichtet.
+        // <b>On the left, what works. On the right, what is there.</b> Two
+        // questions, two columns: "is it running" and "what is attached".
+        // Before, eight sections stood one below the other, all weighted the
+        // same.
         int gap = 8;
         int columnWidth = (width - 6 - gap) / 2;
         int leftX = x + 3;
@@ -128,43 +125,43 @@ public class NetworkTabView {
         int leftEnd = working(graphics, leftX, line, columnWidth);
         int rightEnd = present(graphics, rightX, line, columnWidth);
 
-        // <b>Und unten, was klemmt.</b> Warnungen gehören zusammen und ans
-        // Ende: Wer sie oben zwischen die Listen streut, muss den ganzen
-        // Reiter lesen, um zu wissen, ob etwas fehlt.
+        // <b>And at the bottom, what is stuck.</b> Warnings belong together
+        // and at the end: scatter them among the lists up top and you have to
+        // read the whole tab to know whether something is missing.
         remember(warnings(graphics, Math.max(leftEnd, rightEnd) + 4));
     }
 
     /**
-     * Der Kopf: Strom, Durchsatz mit Minikurve, Gesamtmenge.
+     * The head: power, throughput with a mini-curve, total amount.
      *
-     * <p><b>Die große Kurve ist dafür gefallen.</b> Sie nahm ein Drittel der
-     * Fläche und zeigte bei einem ruhigen Netz eine leere Box. Sechzig Pixel
-     * reichen, um eine Spitze zu sehen — und wer die Zahlen will, liest sie
-     * daneben.
+     * <p><b>The big curve was dropped for this.</b> It took a third of the
+     * area and showed an empty box on a quiet network. Sixty pixels are
+     * enough to see a spike — and whoever wants the numbers reads them beside
+     * it.
      */
     private int head(GuiGraphics graphics, int line) {
         int right = x + width - 3;
 
-        // Strom links: Wer sieht, dass nichts läuft, fragt zuerst danach.
+        // Power on the left: whoever sees that nothing is running asks about that first.
         var supply = ClientFlowState.supply();
         String power = Component.translatable(
                         "screen.factorynetwork.terminal.network.power_short",
                         supply.stored(), supply.capacity(), supply.draw())
                 .getString();
-        // Rot, wenn der Vorrat unter ein Zehntel fällt: Das ist der Moment,
-        // in dem gleich Geräte ausfallen — und der einzige Zustand am Strom,
-        // den man sofort sehen muss.
+        // Red when the reserve drops below a tenth: this is the moment when
+        // devices are about to fail — and the only power state you have to
+        // see at once.
         int powerColour = supply.capacity() > 0
                 && supply.stored() * 10 < supply.capacity()
                         ? TerminalScreen.BAD : TerminalScreen.TEXT;
         graphics.drawString(font, power, x + 3, line + 3, powerColour, false);
 
-        // Die Zahlen rechts in der Kopfzeile: jetzt und insgesamt.
+        // The numbers on the right in the header: now and in total.
         List<Integer> verlauf = ClientTraffic.perSecond();
         int peak = ClientTraffic.peak();
         int jetzt = verlauf.isEmpty() ? 0 : verlauf.get(verlauf.size() - 1);
-        // Nicht nur, was fließt, sondern wovon. Eine Zahl ohne Maßstab
-        // beantwortet die Frage nicht, die man im Kopf hat: Ist das viel?
+        // Not only what flows, but out of how much. A number without a scale
+        // doesn't answer the question you have in mind: is that a lot?
         int capacity = ClientTraffic.capacity();
         String rate = capacity > 0
                 ? Bandwidth.usage(jetzt / Bandwidth.TICKS_PER_SECOND, capacity)
@@ -176,20 +173,20 @@ public class NetworkTabView {
                 right - 8 - font.width(rate) - font.width(gesamt), line + 3,
                 TerminalScreen.TEXT_DIM, false);
 
-        // Und darunter die Kurve über die ganze Breite.
+        // And below it the curve across the full width.
         int sparkLeft = x + 3;
         int sparkTop = line + LINE + 3;
         int sparkBottom = sparkTop + SPARK_HEIGHT;
         graphics.fill(sparkLeft, sparkTop, right, sparkBottom, 0x22000000);
 
-        // Eine feine Linie auf halber Höhe: Ohne sie ist nicht zu sehen, ob
-        // eine Säule ein Viertel oder die Hälfte der Spitze erreicht.
+        // A fine line at half height: without it there is no seeing whether a
+        // bar reaches a quarter or half of the peak.
         int middle = (sparkTop + sparkBottom) / 2;
         graphics.fill(sparkLeft, middle, right, middle + 1, 0x18FFFFFF);
 
-        // Und die Grenze des Controllers als eigene Linie — aber nur, wenn
-        // sie ins Bild passt. Ein Netz, das ein Prozent seiner Grenze nutzt,
-        // bekäme sonst eine Linie am oberen Rand, die nichts erklärt.
+        // And the controller's limit as its own line — but only if it fits in
+        // the frame. A network that uses one percent of its limit would
+        // otherwise get a line at the top edge that explains nothing.
         int limit = capacity * Bandwidth.TICKS_PER_SECOND;
         if (capacity > 0 && limit <= peak) {
             int y = sparkBottom - Math.max(1, limit * SPARK_HEIGHT / peak);
@@ -204,23 +201,24 @@ public class NetworkTabView {
             graphics.fill(cx, sparkBottom - hoehe, cx + 1, sparkBottom, 0xFF57C97A);
         }
 
-        // Die Spitze am linken Rand der Kurve: der Maßstab, ohne den eine
-        // Säule keine Höhe hat.
+        // The peak at the left edge of the curve: the scale, without which a
+        // bar has no height.
         String spitze = Bandwidth.perSecond(peak / Bandwidth.TICKS_PER_SECOND);
         graphics.drawString(font, spitze, sparkLeft + 2, sparkTop + 1,
                 TerminalScreen.TEXT_FAINT, false);
 
-        // Eine Linie darunter trennt den Kopf vom Inhalt.
+        // A line below it separates the head from the content.
         graphics.fill(x + 3, line + HEAD_HEIGHT, x + width - 3, line + HEAD_HEIGHT + 1,
                 0x33FFFFFF);
         return line + HEAD_HEIGHT + 5;
     }
 
     /**
-     * Die linke Spalte: was arbeitet.
+     * The left column: what works.
      *
-     * <p>Worker mit ihrem Verbrauch, darunter die Abläufe. Beides beantwortet
-     * dieselbe Frage — läuft es, und wenn nicht, woran hängt es.
+     * <p>Workers with their consumption, and below them the flows. Both
+     * answer the same question — is it running, and if not, what is it stuck
+     * on.
      */
     private int working(GuiGraphics graphics, int cx, int line, int cw) {
         List<String> workers = ClientNetworkState.workers();
@@ -230,8 +228,8 @@ public class NetworkTabView {
         if (workers.isEmpty()) {
             line = dim(graphics, cx, line, "—");
         } else {
-            // Der Verbrauch je Worker steht neben dem Worker: Eine eigene
-            // Rangliste hätte dieselben Namen ein zweites Mal genannt.
+            // The consumption per worker sits next to the worker: a separate
+            // ranking would have named the same names a second time.
             var verbrauch = new java.util.HashMap<String, Long>();
             for (TrafficPacket.Consumer one : ClientTraffic.top()) {
                 verbrauch.put(one.name(), one.bytes());
@@ -244,8 +242,8 @@ public class NetworkTabView {
                         : worker.contains("WAITING") ? TerminalScreen.WARN
                         : worker.contains("RUNNING") ? TerminalScreen.GOOD
                         : TerminalScreen.TEXT_DIM;
-                // Der Name steht vor dem Doppelpunkt; danach kommt der
-                // Zustand, den die Farbe schon zeigt.
+                // The name comes before the colon; after it comes the state,
+                // which the colour already shows.
                 String name = worker.contains(":")
                         ? worker.substring(0, worker.indexOf(':')) : worker;
                 String menge = verbrauch.containsKey(name)
@@ -267,8 +265,8 @@ public class NetworkTabView {
                 "screen.factorynetwork.terminal.network.flows", flows.size());
         line = flows(graphics, cx, line, cw);
 
-        // Die globalen Werte gehören zum Programm wie die Abläufe — und nur
-        // hierhin, wenn es welche gibt.
+        // The globals belong to the program like the flows — and only here,
+        // if there are any.
         List<String> werte = ClientFlowState.globals();
         if (!werte.isEmpty()) {
             line += 5;
@@ -287,11 +285,11 @@ public class NetworkTabView {
     }
 
     /**
-     * Die rechte Spalte: was da ist.
+     * The right column: what is there.
      *
-     * <p>Anschlüsse und Anzeigen, dazu Flüssigkeiten und Anlagen — aber nur,
-     * wenn es sie gibt. Eine Überschrift mit „keine" darunter kostet zwei
-     * Zeilen und sagt nichts.
+     * <p>Connectors and displays, plus fluids and plants — but only if they
+     * exist. A heading with "none" beneath it costs two lines and says
+     * nothing.
      */
     private int present(GuiGraphics graphics, int cx, int line, int cw) {
         List<String> connectors = ClientNetworkState.connectors();
@@ -324,8 +322,8 @@ public class NetworkTabView {
                 if (line > y + height - LINE) {
                     break;
                 }
-                // Was fehlt oder mehrdeutig ist, sticht heraus — danach sucht
-                // man, wenn eine Anlage nichts tut.
+                // What is missing or ambiguous stands out — that is what you
+                // look for when a plant does nothing.
                 int colour = plant.contains("?") || plant.contains("!")
                         ? TerminalScreen.WARN : TerminalScreen.TEXT;
                 graphics.drawString(font, font.plainSubstrByWidth(plant, cw),
@@ -334,17 +332,17 @@ public class NetworkTabView {
             }
         }
 
-        // Speicher und Datenträger: Sie sagen, was das Netz halten kann —
-        // dieselbe Frage wie die Listen darüber.
+        // Memory and disk: they say what the network can hold — the same
+        // question as the lists above.
         line = capacity(graphics, cx, line, cw);
         return line;
     }
 
     /**
-     * Eine Überschrift mit Zahl.
+     * A heading with a number.
      *
-     * <p>„WORKER 3" sagt in einem Zeichen, was drei Zeilen Liste sagen
-     * würden — und man sieht es, ohne die Liste zu lesen.
+     * <p>"WORKER 3" says at a glance what three lines of list would say — and
+     * you see it without reading the list.
      */
     private int columnHead(GuiGraphics graphics, int cx, int line, int cw,
                            String key, int count) {
@@ -353,12 +351,12 @@ public class NetworkTabView {
         String zahl = String.valueOf(count);
         graphics.drawString(font, zahl, cx + cw - font.width(zahl), line,
                 TerminalScreen.TEXT_DIM, false);
-        // Eine feine Linie darunter fasst die Spalte zusammen.
+        // A fine line below it sums up the column.
         graphics.fill(cx, line + LINE, cx + cw, line + LINE + 1, 0x22FFFFFF);
         return line + LINE + 3;
     }
 
-    /** Eine Namensliste, einspaltig — die Spalte ist schon eine Spalte. */
+    /** A list of names, single-column — the column is already a column. */
     private int names(GuiGraphics graphics, int cx, int line, int cw, List<String> items) {
         if (items.isEmpty()) {
             return dim(graphics, cx, line, "—");
@@ -374,7 +372,7 @@ public class NetworkTabView {
         return line;
     }
 
-    /** Eine Zeile in einer Spalte, auf ihre Breite gekürzt. */
+    /** A line in a column, cut to its width. */
     private int columnLine(GuiGraphics graphics, int cx, int line, int cw,
                            String content, int colour) {
         graphics.drawString(font, font.plainSubstrByWidth(content, cw),
@@ -388,11 +386,11 @@ public class NetworkTabView {
     }
 
     /**
-     * Der Fuß: was klemmt.
+     * The foot: what is stuck.
      *
-     * <p>Gesammelt und nur, wenn es etwas gibt. Vorher stand „Kein
-     * Serverschrank" — der Grund, warum gar nichts läuft — in derselben
-     * Schrift wie eine Liste von Anlagennamen.
+     * <p>Collected, and only when there is something. Before, "No server
+     * rack" — the reason nothing runs at all — stood in the same type as a
+     * list of plant names.
      */
     private int warnings(GuiGraphics graphics, int line) {
         List<Component> found = new ArrayList<>();
@@ -433,24 +431,24 @@ public class NetworkTabView {
     }
 
     /**
-     * Merkt sich, wie weit der Inhalt reichte.
+     * Remembers how far the content reached.
      *
-     * <p>Ohne den Versatz gerechnet: Wie viel Platz der Inhalt braucht,
-     * ändert sich nicht dadurch, dass man ihn verschiebt.
+     * <p>Computed without the offset: how much room the content needs does
+     * not change just because you shift it.
      */
     private void remember(int line) {
         contentHeight = line - (y + 3 - scroll * LINE);
     }
 
     /**
-     * Speicher und Datenträger.
+     * Memory and disk.
      *
-     * <p>Nur, wenn es überhaupt einen Server gibt — sonst stünde dreimal
-     * dieselbe Null da und die Zeile davor sagt es schon.
+     * <p>Only if there is a server at all — otherwise the same zero would
+     * stand there three times, and the line before it already says so.
      *
-     * <p>Die Programmgröße steht neben dem Platz, weil das die einzige
-     * Grenze ist, die man beim Schreiben überschreitet, ohne es zu merken:
-     * Wer eine Funktion ergänzt, zählt keine Anweisungen mit.
+     * <p>The program size sits next to the space, because it is the only
+     * limit you exceed while writing without noticing: whoever adds a
+     * function does not count the instructions along the way.
      */
     private int capacity(GuiGraphics graphics, int cx, int line, int cw) {
         var rechen = dev.devpanda.factorynetwork.client.ClientFlowState.compute();
@@ -469,11 +467,11 @@ public class NetworkTabView {
     }
 
     /**
-     * Der Strom des Netzes.
+     * The network's power.
      *
-     * <p>Was eine Anlage an Strom zieht, sieht man ihr nicht an — und ein
-     * Netz, das steht, weil der Vorrat leer ist, sieht aus wie eines mit
-     * einem Fehler im Programm. Deshalb steht es hier ganz oben.
+     * <p>How much power a plant draws you can't tell by looking at it — and a
+     * network that has stalled because the reserve is empty looks like one
+     * with a bug in the program. That is why it stands right at the top here.
      */
     private int supply(GuiGraphics graphics, int line) {
         var strom = dev.devpanda.factorynetwork.client.ClientFlowState.supply();
@@ -490,9 +488,9 @@ public class NetworkTabView {
             case BOOTING -> TerminalScreen.WARN;
             case OFF -> TerminalScreen.BAD;
         };
-        // Die Abgabe steht nur in der laufenden Zeile: Ein Netz, das
-        // hochfährt oder steht, gibt nichts ab, und eine Null dort wäre eine
-        // Zahl, die nichts sagt.
+        // The output is shown only on the running line: a network that is
+        // booting or stalled gives nothing off, and a zero there would be a
+        // number that says nothing.
         if (zustand == dev.devpanda.factorynetwork.network.NetworkPower.State.RUNNING) {
             return text(graphics, line, Component.translatable(schluessel, strom.draw(),
                     strom.supplied(), grouped(strom.stored()),
@@ -507,12 +505,11 @@ public class NetworkTabView {
     }
 
     /**
-     * Die Abläufe, die gerade warten.
+     * The flows that are currently waiting.
      *
-     * <p>Ein Ablauf, der sich gemeldet hat, bekommt zwei Knöpfe: weiterlaufen
-     * lassen oder abbrechen. Das ist die Wahl, die die Sprache verspricht, und
-     * sie muss dort stehen, wo der Spieler den Zustand sieht — nicht in einem
-     * Befehl, den er erst nachschlagen muss.
+     * <p>A flow that has reported in gets two buttons: let it run on or abort
+     * it. That is the choice the language promises, and it has to sit where
+     * the player sees the state — not in a command they must first look up.
      */
     private int flows(GuiGraphics graphics, int cx, int line, int cw) {
         buttons.clear();
@@ -544,7 +541,7 @@ public class NetworkTabView {
         return line;
     }
 
-    /** Was in der Zeile steht: der Grund, sonst der Zustand. */
+    /** What the line shows: the reason, otherwise the state. */
     private static String describe(FlowStatePacket.Line flow) {
         return flow.detail().isBlank() ? flow.status().toLowerCase(java.util.Locale.ROOT)
                 : flow.detail();
@@ -560,7 +557,7 @@ public class NetworkTabView {
         buttons.add(new Button(left, top - 1, id, keep));
     }
 
-    /** Ein Knopf an einer STALE-Zeile, für den Klick gemerkt. */
+    /** A button on a STALE line, remembered for the click. */
     private record Button(int left, int top, long id, boolean keep) {
 
         boolean hit(double mouseX, double mouseY) {

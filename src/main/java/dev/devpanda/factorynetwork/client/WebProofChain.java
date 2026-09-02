@@ -11,37 +11,37 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Bringt die Nachweise in eine Reihenfolge, die sich nicht selbst stört.
+ * Brings the proofs into an order that does not disturb itself.
  *
- * <p>Drei Läufe wollen dasselbe Chromium benutzen:
+ * <p>Three runs want to use the same Chromium:
  *
  * <ol>
- *   <li>Der <b>Textur-Selbsttest</b> — kommt das Bild richtig in die Textur?</li>
- *   <li>Der <b>Bildnachweis</b> — kommt es richtig auf den Schirm?</li>
- *   <li>Die <b>Messung</b> — was kostet das?</li>
+ *   <li>The <b>texture self-test</b> — does the picture reach the texture correctly?</li>
+ *   <li>The <b>render proof</b> — does it reach the screen correctly?</li>
+ *   <li>The <b>benchmark</b> — what does it cost?</li>
  * </ol>
  *
- * <p>Gleichzeitig ginge keiner davon: Zwei Browser teilen sich die Bildrate,
- * und jede Messung berichtete die Hälfte als Grenze. Der Bildnachweis braucht
- * zusätzlich einen Bildschirm für sich allein.
+ * <p>None of them would work at the same time: two browsers share the frame
+ * rate, and every benchmark would report half as the limit. The render proof
+ * additionally needs a screen all to itself.
  *
- * <p>Läuft nur, wenn {@code fn.benchmark} gesetzt ist. Im gewöhnlichen Spiel
- * hat niemand etwas davon, dass beim Betreten der Welt ein Prüfbild aufpoppt.
- * Von Hand geht es jederzeit mit {@code /fnweb nachweis}.
+ * <p>Runs only when {@code fn.benchmark} is set. In ordinary play no one gains
+ * anything from a test image popping up when entering the world. By hand it
+ * works any time with {@code /fnweb nachweis}.
  */
 final class WebProofChain {
 
-    /** Kurze Ruhe zwischen zwei Browsern — zwei Sekunden. */
+    /** A short pause between two browsers — two seconds. */
     private static final int SETTLE_TICKS = 40;
 
     private static final boolean ENABLED = Boolean.getBoolean("fn.benchmark");
 
     /**
-     * Nur die Entwicklungsumgebung, ohne die Kette davor.
+     * Only the development environment, without the chain before it.
      *
-     * <p>Die Nachweise aus A bis E brauchen zusammen über drei Minuten, bevor
-     * das erste Monaco-Bild erscheint. Für einen Spike, der mehrere Läufe
-     * braucht, ist das jedes Mal eine verlorene Viertelstunde.
+     * <p>The proofs A through E together need over three minutes before the
+     * first Monaco image appears. For a spike that needs several runs, that is
+     * a lost quarter of an hour every time.
      */
     private static final boolean IDE_ONLY = Boolean.getBoolean("fn.ide");
 
@@ -65,8 +65,8 @@ final class WebProofChain {
             return;
         }
         Minecraft client = Minecraft.getInstance();
-        // Ohne Welt gibt es keinen sinnvollen Hintergrund und die Bildrate ist
-        // gedeckelt; die Messung wartet ohnehin darauf.
+        // Without a world there is no meaningful background and the frame rate
+        // is capped; the benchmark waits for it anyway.
         if (client.level == null || !WebSelfTest.finished()) {
             return;
         }
@@ -86,8 +86,8 @@ final class WebProofChain {
             BackdropProof.openIfPossible(client);
             return;
         }
-        // Die Hintergrundmessung direkt nach ihrem Nachweis: Sie braucht den
-        // Bildschirm für sich, und was danach kommt, braucht ihn ebenso.
+        // The backdrop benchmark right after its proof: it needs the screen to
+        // itself, and what comes after needs it just as much.
         if (!backdropMeasured && BackdropProof.finished()) {
             backdropMeasured = true;
             ticksWaiting = 0;
@@ -98,8 +98,8 @@ final class WebProofChain {
             }
             return;
         }
-        // Die Interaktionsmessung ganz zuletzt: Sie hält den Bildschirm für
-        // sich, und die Zahlenmessung davor braucht ihn frei.
+        // The interaction benchmark very last: it holds the screen to itself,
+        // and the numbers benchmark before it needs it free.
         if (!interactionStarted && BackdropBenchmark.finished() && WebBenchmark.finished()) {
             interactionStarted = true;
             try {
@@ -109,11 +109,11 @@ final class WebProofChain {
             }
         }
     }
-    /** Der kurze Weg: Welt abwarten, Oberfläche öffnen. */
+    /** The short way: wait for the world, open the interface. */
     private static void tickIdeOnly() {
         Minecraft client = Minecraft.getInstance();
-        // Der Lebenslauf-Ablauf öffnet und schließt selbst; er darf deshalb
-        // nicht auf die einmalige Eröffnung unten warten.
+        // The lifecycle run opens and closes on its own; it must therefore not
+        // wait for the one-time opening below.
         if (Boolean.getBoolean("fn.lifecycle")) {
             if (client.level == null) {
                 return;
@@ -140,9 +140,9 @@ final class WebProofChain {
         proofStarted = true;
         boolean opened;
         if (Boolean.getBoolean("fn.probe")) {
-            // Die Marke für die erste Speicherstufe: Chromium läuft, aber
-            // dieser Bildschirm hat noch keinen Browser aufgemacht. Danach
-            // gibt es diesen Zustand in dieser Sitzung nicht wieder.
+            // The marker for the first memory stage: Chromium is running, but
+            // this screen has not yet opened a browser. After that, this state
+            // does not occur again in this session.
             LOG.info("RAM:cef-ohne-browser — Marke gesetzt");
             opened = dev.devpanda.factorynetwork.web.ide.ProbeBenchmark.open(client);
         } else if (Boolean.getBoolean("fn.typing")) {
@@ -158,15 +158,15 @@ final class WebProofChain {
     }
 
     /**
-     * Öffnet die Oberfläche auf F6 erneut.
+     * Opens the interface again on F6.
      *
-     * <p><b>Wozu.</b> Die Oberfläche geht beim Start einmal auf. Wer prüfen
-     * will, ob beim wiederholten Öffnen und Schließen Prozesse liegenbleiben,
-     * braucht aber genau das: wiederholtes Öffnen. Ohne einen Weg zurück ist
-     * die Frage nicht zu beantworten.
+     * <p><b>What for.</b> The interface opens once at startup. But whoever
+     * wants to check whether processes are left behind on repeated opening and
+     * closing needs exactly that: repeated opening. Without a way back the
+     * question cannot be answered.
      *
-     * <p>Nur im Messbetrieb, also wenn {@code fn.ide} gesetzt ist — im Spiel
-     * gehört eine Oberfläche an einen Block und nicht an eine Taste.
+     * <p>Only in measurement mode, that is when {@code fn.ide} is set — in the
+     * game an interface belongs on a block and not on a key.
      */
     private static void reopenOnKey(Minecraft client) {
         if (client.screen != null || client.level == null) {
@@ -175,8 +175,8 @@ final class WebProofChain {
         long window = client.getWindow().getWindow();
         boolean down = org.lwjgl.glfw.GLFW.glfwGetKey(window,
                 org.lwjgl.glfw.GLFW.GLFW_KEY_F6) == org.lwjgl.glfw.GLFW.GLFW_PRESS;
-        // Nur die Flanke zählt: Gedrückt gehalten würde die Oberfläche sonst
-        // in jedem Takt neu aufgemacht.
+        // Only the edge counts: held down, the interface would otherwise be
+        // opened anew on every tick.
         if (down && !reopenKeyWasDown) {
             LOG.info("F6 — Oberfläche wird erneut geöffnet");
             EditorApp.open(client);

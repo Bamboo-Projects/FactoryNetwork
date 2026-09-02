@@ -17,37 +17,37 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Ein Kabelstück, das seiner Umgebung einen Anlagennamen gibt.
+ * A piece of cable that gives its surroundings an installation name.
  *
- * <p><b>Eine Anlage entsteht bisher allein über die Beschriftung:</b>
- * {@code werk_1/eingang}, {@code werk_1/ausgang}. Das funktioniert und bleibt
- * — aber es verlangt, dass man den Anlagennamen an jedem einzelnen Gerät
- * wiederholt, und wer ihn ändern will, geht sie alle noch einmal ab.
+ * <p><b>An installation has so far come about through the labelling alone:</b>
+ * {@code werk_1/eingang}, {@code werk_1/ausgang}. That works and stays — but it
+ * demands that you repeat the installation name on every single device, and
+ * whoever wants to change it walks them all over again.
  *
- * <p>Dieser Block ist die andere Antwort auf dieselbe Frage: <b>Eine Anlage
- * ist etwas Zusammenhängendes.</b> Was hinter dem Gateway am Kabel hängt,
- * gehört zu seiner Anlage — ohne dass an einem einzigen Gerät der Name
- * dasteht. Ein Umbenennen ist dann ein Block und nicht zwölf.
+ * <p>This block is the other answer to the same question: <b>An installation is
+ * something contiguous.</b> Whatever hangs on the cable behind the gateway
+ * belongs to its installation — without the name standing on a single device.
+ * A rename is then one block and not twelve.
  *
- * <p><b>Er vermehrt keine Kanäle.</b> Er reicht den Strang durch, auf dem er
- * sitzt, und ein dichtes Kabel trägt vierundsechzig — mehr wird es dadurch
- * nicht. Das ist dieselbe Regel, an der auch der Controller-Anbau hängt: Ein
- * Kanalvermehrer zum Hinstellen machte die Kanalgrenze bedeutungslos.
+ * <p><b>It does not multiply channels.</b> It passes through the run it sits
+ * on, and a dense cable carries sixty-four — that does not grow because of it.
+ * This is the same rule the controller extension hangs on too: a placeable
+ * channel multiplier would make the channel limit meaningless.
  *
- * <p><b>Die Beschriftung gewinnt.</b> Trägt ein Gerät selbst einen
- * Schrägstrich, gilt der. Sonst hätte ein hingestellter Block still
- * geändert, was ein Programm über ein Gerät sagt — und das ist die Sorte
- * Überraschung, die man am längsten sucht.
+ * <p><b>The labelling wins.</b> If a device itself carries a slash, that one
+ * applies. Otherwise a placed block would have silently changed what a program
+ * says about a device — and that is the kind of surprise you spend the longest
+ * hunting for.
  */
 public class GatewayBlock extends Block implements EntityBlock {
 
     /**
-     * Der Torbogen als Trefferfläche — dieselben Kästen wie im Modell.
+     * The archway as a hitbox — the same boxes as in the model.
      *
-     * <p>Ohne sie greift man in die Öffnungen und trifft trotzdem den ganzen
-     * Würfel. Das fällt beim Abbauen kaum auf und beim Zielen sofort:
-     * Der Rahmen steht sichtbar da, und die Hand hält einen Blockpixel
-     * daneben.
+     * <p>Without it you reach into the openings and still hit the whole cube.
+     * That barely shows when breaking and shows at once when aiming:
+     * the frame stands there visibly, and the hand holds one block pixel
+     * beside it.
      */
     private static final VoxelShape SHAPE = FacingShapes.whole(GatewayLayout.boxes());
 
@@ -67,11 +67,12 @@ public class GatewayBlock extends Block implements EntityBlock {
     }
 
     /**
-     * Rechtsklick benennt die Anlage — dasselbe Fenster wie am Connector.
+     * Right-clicking names the installation — the same screen as on the
+     * connector.
      *
-     * <p>Ein eigenes wäre eine zweite Maske für dieselbe Handlung. Was
-     * darin steht, ist hier nur das obere Feld: Ein Gateway hat eine
-     * Anlage und keine Rolle.
+     * <p>A dedicated one would be a second form for the same action. What
+     * shows in it is only the upper field here: a gateway has an
+     * installation and no role.
      */
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,

@@ -14,10 +14,10 @@ import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /**
- * Legt den Namen in die Label-Gun, den der nächste Klick vergibt.
+ * Puts into the label gun the name that the next click assigns.
  *
- * <p>Eingegeben wird er in einem eigenen Fenster — vorher ging das nur über
- * den Amboss, was niemand erwartet, oder gar nicht.
+ * <p>It is entered in a dedicated window — previously that only went through
+ * the anvil, which no one expects, or not at all.
  */
 public record SetLabelPacket(String label) implements CustomPacketPayload {
 

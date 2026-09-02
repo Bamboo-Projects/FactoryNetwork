@@ -17,22 +17,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Der Editor im ganzen Fenster.
+ * The editor across the whole window.
  *
- * <p><b>Warum ein zweites Fenster und nicht ein größerer Reiter:</b> Das
- * Terminal ist 288 Pixel breit, weil darunter das Spielerinventar sitzt und
- * das Slotraster nicht verhandelbar ist. In dieser Breite bleiben nach
- * Bundsteg und Rand vierundvierzig Spalten und acht Zeilen — genug, um
- * nachzusehen, zu wenig, um zu arbeiten. Eine Dateispalte hätte davon noch
- * ein Viertel gekostet.
+ * <p><b>Why a second window and not a wider tab:</b> The terminal is 288
+ * pixels wide, because the player inventory sits beneath it and the slot grid
+ * is not negotiable. At that width, after gutter and margin, forty-four
+ * columns and eight lines remain — enough to look something up, too few to
+ * work. A file column would have cost a quarter of that.
  *
- * <p>Hier gibt es kein Inventar, also auch keine feste Breite. Links der
- * Dateibaum, rechts der Editor, unten die Meldung des Übersetzers und der
- * Knopf zum Übernehmen.
+ * <p>Here there is no inventory, and so no fixed width either. The file tree
+ * on the left, the editor on the right, the compiler's message and the deploy
+ * button below.
  *
- * <p><b>Beide Fenster arbeiten am selben Entwurf.</b> Er liegt in
- * {@link ClientProjectState} und nicht in einer der beiden Ansichten — sonst
- * wäre jeder Wechsel ein Verlust.
+ * <p><b>Both windows work on the same draft.</b> It lives in
+ * {@link ClientProjectState} and not in either of the two views — otherwise
+ * every switch would be a loss.
  */
 public class CodeScreen extends Screen {
 
@@ -46,39 +45,38 @@ public class CodeScreen extends Screen {
     private static final int BUTTON_HEIGHT = 14;
 
     /**
-     * Die Farben des Gehäuses.
+     * The colours of the casing.
      *
-     * <p>Dieselbe Regel wie im Terminal — <b>was vertieft liegt, ist dunkler
-     * als sein Grund</b> —, aber mit größeren Schritten. Im Terminal liegen
-     * die drei Ebenen auf 288 Pixeln dicht beieinander und grenzen überall
-     * aneinander; da reichen vier Werte Unterschied, weil das Auge die Kante
-     * sieht und nicht die Fläche. Hier ist eine Fläche einen halben Bildschirm
-     * groß, und dann sieht man nur noch die Fläche. Der erste Entwurf setzte
-     * den Dateibaum auf {@code 0x14181A} vor eine Scheibe aus
-     * {@code 0x181E1B} — er war unsichtbar, und die Frage war zu Recht, wo
-     * die Seitenspalte bleibt.
+     * <p>The same rule as in the terminal — <b>what sits recessed is darker
+     * than its ground</b> — but with larger steps. In the terminal the three
+     * layers sit close together across 288 pixels and border each other
+     * everywhere; there four values of difference are enough, because the eye
+     * sees the edge and not the surface. Here a surface is half a screen wide,
+     * and then all you see is the surface. The first draft put the file tree
+     * at {@code 0x14181A} in front of a pane of {@code 0x181E1B} — it was
+     * invisible, and the question of where the side column had gone was a fair
+     * one.
      */
     private static final int CASE = 0xFF232B27;
     private static final int GLASS = 0xFF181E1B;
 
-    /** Die Kante zwischen zwei Ebenen — hell genug, um sie zu sehen. */
+    /** The edge between two layers — bright enough to see it. */
     static final int EDGE = 0xFF39443D;
 
     private final Screen parent;
     private final BlockPos controller;
 
     /**
-     * Die Griffe, die es gibt.
+     * The shortcuts there are.
      *
-     * <p><b>Weil man sie sonst nicht findet.</b> Ein Editor im Spiel hat
-     * keine Menüleiste, in der man nachsieht, und keine Doku, die daneben
-     * liegt. Strg+Leertaste, Strg+H und F2 sind da, aber wer nicht weiß, dass
-     * es sie gibt, benutzt sie nie — und der Editor fühlt sich ärmer an, als
-     * er ist.
+     * <p><b>Because you won't find them otherwise.</b> An editor in the game
+     * has no menu bar to check and no docs lying next to it. Ctrl+Space,
+     * Ctrl+H and F2 are there, but anyone who doesn't know they exist never
+     * uses them — and the editor feels poorer than it is.
      *
-     * <p>Fest im Code und nicht in der Sprachdatei: Es sind Tastennamen, und
-     * die heißen in jeder Sprache gleich. Was sie tun, steht daneben und
-     * kommt aus der Sprachdatei.
+     * <p>Hard-coded and not in the language file: these are key names, and
+     * those are the same in every language. What they do sits beside them and
+     * comes from the language file.
      */
     private static final String[][] HELP = {
             {"Strg+Leer", "help.suggest"},
@@ -103,14 +101,14 @@ public class CodeScreen extends Screen {
     private ProjectPanel panel;
     private CodeEditor editor;
 
-    /** Ob die Griffliste offen ist. */
+    /** Whether the shortcut list is open. */
     private boolean showingHelp;
 
     /**
-     * Die Rückmeldung zur letzten Marke, oder {@code null}.
+     * The feedback for the last marker, or {@code null}.
      *
-     * <p>Ohne sie wäre der Griff unsichtbar: Die Marke steht in der Welt,
-     * und die sieht man erst, wenn das Fenster zu ist.
+     * <p>Without it the action would be invisible: the marker sits out in the
+     * world, and you only see that once the window is closed.
      */
     private Component located;
 
@@ -146,7 +144,7 @@ public class CodeScreen extends Screen {
         recheck();
     }
 
-    // ---- Der Entwurf -------------------------------------------------------
+    // ---- The draft -------------------------------------------------------
 
     private void onTextChanged(String text) {
         ClientDeployState.clear();
@@ -155,7 +153,7 @@ public class CodeScreen extends Screen {
         publish();
     }
 
-    /** Der Dateibaum hat Dateien angelegt, umbenannt oder gelöscht. */
+    /** The file tree created, renamed or deleted files. */
     private void onProjectChanged(Project next) {
         ClientDeployState.clear();
         project = next;
@@ -178,12 +176,12 @@ public class CodeScreen extends Screen {
         recheck();
     }
 
-    /** Übersetzt das ganze Projekt und sortiert die Meldungen. */
+    /** Compiles the whole project and sorts the messages. */
     private void recheck() {
-        // Eine Datei, die jemand anders hält, lässt sich lesen und nicht
-        // ändern. Der Server würde eine Änderung ohnehin verwerfen — sie
-        // hier gar nicht erst zuzulassen, erspart den Moment, in dem der
-        // eigene Text beim nächsten Zustand verschwindet.
+        // A file that someone else holds can be read but not changed. The
+        // server would reject an edit anyway — not allowing it here in the
+        // first place spares the moment when your own text vanishes on the
+        // next state update.
         editor.setReadOnly(
                 dev.devpanda.factorynetwork.client.ClientProjectState.heldBy(open) != null);
         problems = project.parse(
@@ -205,13 +203,13 @@ public class CodeScreen extends Screen {
     }
 
     /**
-     * Springt zu der Stelle, an der das Wort unter dem Zeiger erklärt wird.
+     * Jumps to where the word under the pointer is defined.
      *
-     * <p>Alle Dateien teilen einen Namensraum, und deshalb ist von der Stelle
-     * des Gebrauchs aus nicht zu sehen, wo die Erklärung steht. Bei drei
-     * Dateien sucht man sie noch, bei acht nicht mehr.
+     * <p>All files share one namespace, and so from the point of use there is
+     * no seeing where the definition sits. With three files you can still hunt
+     * for it, with eight no longer.
      *
-     * @return ob gesprungen wurde
+     * @return whether a jump happened
      */
     private boolean goToDefinition(double mouseX, double mouseY) {
         String word = editor.wordAt(mouseX, mouseY);
@@ -224,8 +222,8 @@ public class CodeScreen extends Screen {
             editor.jumpTo(jump.inCode().line(), jump.inCode().column());
             return true;
         }
-        // Ein Name aus der Welt: Die Frage ist nicht „wo steht das im Code",
-        // sondern „welcher Block ist das", und die beantwortet eine Marke.
+        // A name from the world: the question is not "where is this in the
+        // code" but "which block is this", and a marker answers that.
         dev.devpanda.factorynetwork.client.LocateMarker.mark(jump.inWorld(), word);
         located = Component.translatable("screen.factorynetwork.code.located", word,
                 jump.inWorld().getX(), jump.inWorld().getY(), jump.inWorld().getZ());
@@ -238,7 +236,7 @@ public class CodeScreen extends Screen {
                         .of(controller, project));
     }
 
-    // ---- Zeichnen ----------------------------------------------------------
+    // ---- Drawing ----------------------------------------------------------
 
     private int buttonX() {
         return width - MARGIN - BUTTON_WIDTH;
@@ -254,34 +252,33 @@ public class CodeScreen extends Screen {
     }
 
     /**
-     * Zeichnet das Fenster.
+     * Draws the window.
      *
-     * <p><b>Kein {@code super.render} und kein {@code renderBackground}.</b>
-     * {@code Screen.render} ruft als erstes {@code renderBackground}, und das
-     * ruft {@code processBlurEffect} — einen Nachbearbeitungsschritt, der das
-     * Bild im Puffer weichzeichnet. In Vanilla steht der Aufruf am Anfang,
-     * also trifft er die Welt hinter dem Fenster; das Fenster selbst wird
-     * danach scharf darübergemalt.
+     * <p><b>No {@code super.render} and no {@code renderBackground}.</b>
+     * {@code Screen.render} first calls {@code renderBackground}, and that
+     * calls {@code processBlurEffect} — a post-processing step that blurs the
+     * image in the buffer. In vanilla the call comes at the start, so it hits
+     * the world behind the window; the window itself is then painted sharply
+     * on top.
      *
-     * <p>Der erste Entwurf rief {@code super.render} am <b>Ende</b>. Damit lag
-     * schon alles im Puffer, was hier gezeichnet wird, und der Weichzeichner
-     * ging über die eigene Oberfläche: Aus einer ein Pixel breiten hellen
-     * Kante wurde ein zwanzig Pixel breiter Verlauf, aus Text ein Schmier.
-     * Auf einem Bildschirmfoto sah es aus wie eine falsche Farbwahl, und ich
-     * habe zuerst auch an den Farben gedreht — messbar war es erst am
-     * Querschnitt durch eine Kante, die es gar nicht mehr gab.
+     * <p>The first draft called {@code super.render} at the <b>end</b>. By
+     * then everything drawn here was already in the buffer, and the blur ran
+     * over our own surface: a one-pixel bright edge became a twenty-pixel
+     * gradient, text became a smear. In a screenshot it looked like a wrong
+     * choice of colour, and I first went and fiddled with the colours too —
+     * it only became measurable at a cross-section through an edge that was
+     * no longer there.
      *
-     * <p>Die Welt dahinter braucht keinen Weichzeichner: Das Fenster deckt
-     * sie vollständig ab. Was von {@code Screen.render} bleibt, ist die
-     * Schleife über die Widgets — für den Fall, dass hier einmal welche
-     * hinzukommen.
+     * <p>The world behind needs no blur: the window covers it completely.
+     * What remains of {@code Screen.render} is the loop over the widgets —
+     * in case any are ever added here.
      */
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         graphics.fill(0, 0, width, height, CASE);
         graphics.fill(MARGIN - 4, MARGIN - 4, width - MARGIN + 4, height - MARGIN + 4, GLASS);
-        // Die helle Kante um die Scheibe: Ohne sie schwimmt der Inhalt im
-        // Blech, weil zwischen beiden nur ein paar Werte liegen.
+        // The bright edge around the pane: without it the content floats in
+        // the metal, because only a few values lie between the two.
         outline(graphics, MARGIN - 4, MARGIN - 4, width - MARGIN + 4, height - MARGIN + 4,
                 0xFF2E3833);
 
@@ -300,11 +297,10 @@ public class CodeScreen extends Screen {
     }
 
     /**
-     * Die Kopfzeile: wo man ist und wie man zurückkommt.
+     * The header: where you are and how you get back.
      *
-     * <p>Der Hinweis auf Escape steht da, weil dieses Fenster kein Inventar
-     * hat und damit auch nicht so aussieht, als könnte man es wie jedes andere
-     * schließen.
+     * <p>The hint about Escape is there because this window has no inventory
+     * and so doesn't look like something you could close like any other.
      */
     private void drawHeader(GuiGraphics graphics) {
         graphics.drawString(font, FnFonts.bold(title), MARGIN, MARGIN, TerminalScreen.TEXT,
@@ -317,7 +313,7 @@ public class CodeScreen extends Screen {
         graphics.fill(MARGIN, MARGIN + 12, width - MARGIN, MARGIN + 13, EDGE);
     }
 
-    /** Ein Rahmen aus vier Strichen. */
+    /** A frame made of four lines. */
     static void outline(GuiGraphics graphics, int left, int top, int right, int bottom,
                         int colour) {
         graphics.fill(left, top, right, top + 1, colour);
@@ -342,7 +338,7 @@ public class CodeScreen extends Screen {
                 FnFonts.mono(font.plainSubstrByWidth(shown, buttonX() - MARGIN - 90)),
                 MARGIN, footerY, colour, false);
 
-        // Rechts neben dem Knopf: wo der Cursor steht.
+        // To the right of the button: where the cursor is.
         Component position = FnFonts.mono(Component.translatable(
                 "screen.factorynetwork.terminal.cursor",
                 editor.cursorLine() + 1, editor.cursorColumn() + 1));
@@ -350,16 +346,16 @@ public class CodeScreen extends Screen {
         graphics.drawString(font, position, positionX, footerY,
                 TerminalScreen.TEXT_FAINT, false);
 
-        // Und davor, in welchem Zustand der Text ist. Drei Fälle, ein Ort:
-        // noch nicht beim Server, beim Server aber nicht übernommen, oder
-        // deckungsgleich mit dem, was läuft. Im letzten Fall steht dort
-        // nichts — ein Hinweis, der immer da ist, wird nicht gelesen.
+        // And before it, what state the text is in. Three cases, one place:
+        // not yet at the server, at the server but not deployed, or identical
+        // to what is running. In the last case nothing is shown there — a
+        // hint that is always present goes unread.
         String state = null;
         int stateColour = TerminalScreen.TEXT_FAINT;
         String holder = ClientProjectState.heldBy(open);
         if (holder != null) {
-            // Vor allem anderen: Solange die Datei jemand anders hält, ist
-            // jede andere Auskunft über ihren Zustand belanglos.
+            // Before anything else: as long as someone else holds the file,
+            // any other information about its state is irrelevant.
             Component label = FnFonts.mono(Component.translatable(
                     "screen.factorynetwork.code.held_by", holder));
             graphics.drawString(font, label, positionX - font.width(label) - 12, footerY,
@@ -389,12 +385,12 @@ public class CodeScreen extends Screen {
     }
 
     /**
-     * Die Griffliste über allem.
+     * The shortcut list over everything.
      *
-     * <p>In zwei Spalten und mittig: Sie ist eine Nachschlagetafel, kein
-     * Bereich des Fensters. Sie deckt den Code ab, solange sie offen ist —
-     * das ist richtig so, denn wer sie aufmacht, sucht etwas und schreibt
-     * gerade nicht.
+     * <p>In two columns and centred: it is a reference card, not a region of
+     * the window. It covers the code while it is open — and rightly so,
+     * because whoever opens it is looking something up and not writing right
+     * now.
      */
     private void drawHelp(GuiGraphics graphics) {
         int rows = HELP.length;
@@ -439,7 +435,7 @@ public class CodeScreen extends Screen {
         EditorTooltip.render(graphics, font, editor, project, openProblems, mouseX, mouseY);
     }
 
-    // ---- Bedienung ---------------------------------------------------------
+    // ---- Input ---------------------------------------------------------
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
@@ -454,12 +450,12 @@ public class CodeScreen extends Screen {
             deploy();
             return true;
         }
-        // Strg und Klick springt zur Erklärung — quer durch die Dateien.
+        // Ctrl and click jump to the definition — across the files.
         if (button == 0 && hasControlDown() && goToDefinition(mouseX, mouseY)) {
             return true;
         }
-        // Ein Klick auf die Fußleiste springt zur ersten Meldung — auch quer
-        // durch die Dateien.
+        // A click on the footer jumps to the first message — again across
+        // the files.
         if (!problems.isEmpty() && mouseY >= height - MARGIN - FOOTER && mouseX < buttonX()) {
             Diagnostic first = problems.get(0);
             openFile(first.file().isEmpty() ? open : first.file());
@@ -487,27 +483,27 @@ public class CodeScreen extends Screen {
 
     @Override
     public boolean keyPressed(int key, int scanCode, int modifiers) {
-        // F1 vor allem anderen: Die Liste muss sich auch schließen lassen,
-        // während unten eine Eingabe offen steht.
+        // F1 before anything else: the list must be closable even while an
+        // input is open below.
         if (key == 290) {
             showingHelp = !showingHelp;
             return true;
         }
         if (showingHelp) {
-            // Solange sie offen ist, geht nichts an den Text. Sonst tippte
-            // man hinter der Tafel weiter, ohne es zu sehen.
+            // While it is open, nothing reaches the text. Otherwise you would
+            // go on typing behind the card without seeing it.
             showingHelp = false;
             return true;
         }
-        // Strg+Eingabe übernimmt, egal wo der Griff gerade liegt.
+        // Ctrl+Enter deploys, no matter where the focus currently is.
         if ((key == 257 || key == 335) && hasControlDown()) {
             deploy();
             return true;
         }
-        // Strg+S sichert den Entwurf sofort. Er geht ohnehin eine Sekunde
-        // nach dem letzten Anschlag hinaus — der Griff ist für den Moment,
-        // in dem man vom Rechner weggeht und es genau wissen will.
-        // F4 fragt nach einer Datei, die jemand anders hält.
+        // Ctrl+S saves the draft immediately. It goes out a second after the
+        // last keystroke anyway — the shortcut is for the moment when you
+        // step away from the machine and want to be sure.
+        // F4 asks for a file that someone else holds.
         if (key == RequestEdit.KEY && RequestEdit.ask(open)) {
             return true;
         }
@@ -515,9 +511,9 @@ public class CodeScreen extends Screen {
             ClientProjectState.flush();
             return true;
         }
-        // Der Dateibaum bekommt die Tasten nur, solange er etwas Offenes hat —
-        // eine Eingabe oder ein Menü — sowie F2. Alles andere gehört dem
-        // Editor, damit die Pfeiltasten immer dasselbe tun.
+        // The file tree gets the keys only while it has something open — an
+        // input or a menu — plus F2. Everything else belongs to the editor,
+        // so that the arrow keys always do the same thing.
         if (panel.keyPressed(key, scanCode, modifiers)) {
             return true;
         }
@@ -531,8 +527,8 @@ public class CodeScreen extends Screen {
             onClose();
             return true;
         }
-        // Alles andere verschlucken: Ein „e" im Editor darf nicht das
-        // Inventar öffnen.
+        // Swallow everything else: an "e" in the editor must not open the
+        // inventory.
         return true;
     }
 
@@ -544,7 +540,7 @@ public class CodeScreen extends Screen {
         return editor.charTyped(character, modifiers);
     }
 
-    /** Zurück ins Terminal, nicht ins Spiel — und den Entwurf mitnehmen. */
+    /** Back to the terminal, not to the game — and take the draft along. */
     @Override
     public void onClose() {
         ClientProjectState.flush();

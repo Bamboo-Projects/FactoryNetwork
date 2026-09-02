@@ -7,30 +7,30 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Wie viel in diesem Tick schon über jedes Kabel gegangen ist.
+ * How much has already gone over each cable in this tick.
  *
- * <p><b>Das ist die Stelle, an der der Durchsatz überhaupt etwas tut.</b> Die
- * Zahlen in {@link Throughput} sagen, was ein Kabel trägt; hier steht, was es
- * heute schon getragen hat.
+ * <p><b>This is where throughput actually does anything.</b> The numbers in
+ * {@link Throughput} say what a cable carries; here is what it has already
+ * carried today.
  *
- * <p><b>Und hier wird es eng, nicht tot.</b> Ein Worker, dessen Weg voll ist,
- * bewegt weniger — er fällt nicht aus. Ein Netz an der Grenze arbeitet
- * weiter, nur zäher. Das ist der ganze Unterschied zu den Kanälen, die es bis
- * zum 29.08. gab: Dort hieß voll, dass ein Gerät stumm blieb.
+ * <p><b>And here it gets tight, not dead.</b> A worker whose path is full
+ * moves less — it does not drop out. A network at its limit keeps working,
+ * just more sluggishly. That is the whole difference from the channels there
+ * were until 29.08.: back then, full meant a device stayed silent.
  *
- * <p><b>Je Controller und je Tick.</b> Zwei Netze teilen sich kein Budget,
- * auch wenn sie sich ein Kabel teilen — dieselbe Trennung, die schon für die
- * Kanäle galt: Die Zahlen gehören dem Graphen, nicht den Blöcken.
+ * <p><b>Per controller and per tick.</b> Two networks do not share a budget,
+ * even when they share a cable — the same separation that already held for the
+ * channels: the numbers belong to the graph, not to the blocks.
  */
 public final class TickBudget {
 
     private final Map<Node, Integer> used = new HashMap<>();
 
     /**
-     * Was ein Weg jetzt noch hergibt.
+     * What a path still has to give right now.
      *
-     * <p>Der schwächste Punkt entscheidet: Ein dichtes Kabel hinter einem
-     * gewöhnlichen bringt nichts, denn die Ware muss durch beide.
+     * <p>The weakest point decides: a dense cable behind an ordinary one gains
+     * nothing, since the goods have to pass through both.
      */
     public int free(net.minecraft.world.level.Level level, List<Node> path) {
         int least = Bandwidth.UNLIMITED;
@@ -42,11 +42,10 @@ public final class TickBudget {
     }
 
     /**
-     * Bucht ab, was gerade über diesen Weg gegangen ist.
+     * Charges off what has just gone over this path.
      *
-     * <p><b>Nach dem Bewegen und mit der wirklichen Menge</b>, nicht mit der
-     * geplanten: Ein Worker, der 64 wollte und 3 bekam, hat das Kabel nicht
-     * mit 64 belegt.
+     * <p><b>After the move and with the real amount</b>, not the planned one: a
+     * worker that wanted 64 and got 3 did not tie up the cable with 64.
      */
     public void spend(List<Node> path, int amount) {
         if (amount <= 0) {
@@ -57,12 +56,12 @@ public final class TickBudget {
         }
     }
 
-    /** Ein neuer Tick fängt bei null an. */
+    /** A new tick starts at zero. */
     public void reset() {
         used.clear();
     }
 
-    /** Was über diese Stelle in diesem Tick schon ging — für die Anzeige. */
+    /** What has already gone over this spot this tick — for display. */
     public int usedAt(Node node) {
         return used.getOrDefault(node, 0);
     }

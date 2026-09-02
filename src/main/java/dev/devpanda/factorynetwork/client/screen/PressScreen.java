@@ -11,25 +11,25 @@ import net.minecraft.world.entity.player.Inventory;
 import java.util.List;
 
 /**
- * Das Fenster der Presse.
+ * The press's window.
  *
- * <p>Zwei Anzeigen tragen die Bedienung: der Pfeil zeigt, wie weit der
- * Vorgang ist, der Balken links, wie viel Strom da ist. Beide sind wichtiger
- * als sie aussehen — eine Maschine, die stillsteht, muss sagen können warum,
- * sonst sucht der Spieler den Fehler bei sich.
+ * <p>Two gauges carry the interface: the arrow shows how far the operation
+ * has come, the bar on the left how much power there is. Both matter more than
+ * they look — a machine standing idle must be able to say why, or the player
+ * looks for the fault in themselves.
  */
 public class PressScreen extends AbstractContainerScreen<PressMenu> {
 
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
             FactoryNetwork.MOD_ID, "textures/gui/press.png");
 
-    /** Wo die gefüllten Fassungen im Atlas liegen. */
+    /** Where the filled variants sit in the atlas. */
     private static final int ARROW_U = 180;
     private static final int ARROW_V = 0;
     private static final int ENERGY_U = 180;
     private static final int ENERGY_V = 20;
 
-    /** Wie hoch der Strombalken ist, in Bildpunkten. */
+    /** How tall the power bar is, in pixels. */
     private static final int BAR = 66;
 
     public PressScreen(PressMenu menu, Inventory inventory, Component title) {
@@ -43,7 +43,7 @@ public class PressScreen extends AbstractContainerScreen<PressMenu> {
     protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
         graphics.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight, 512, 512);
 
-        // Fortschritt: der Pfeil wächst von links nach rechts.
+        // Progress: the arrow grows from left to right.
         int required = menu.required();
         if (required > 0 && menu.progress() > 0) {
             int breite = Math.min(30, menu.progress() * 30 / required);
@@ -51,7 +51,7 @@ public class PressScreen extends AbstractContainerScreen<PressMenu> {
                     breite, 14, 512, 512);
         }
 
-        // Strom: der Balken wächst von unten nach oben, wie ein Tank.
+        // Power: the bar grows from the bottom up, like a tank.
         int hoehe = (int) Math.min(BAR, (long) menu.energy() * BAR / menu.capacity());
         if (hoehe > 0) {
             graphics.blit(TEXTURE, leftPos + 8, topPos + 17 + (BAR - hoehe),
@@ -68,11 +68,11 @@ public class PressScreen extends AbstractContainerScreen<PressMenu> {
     }
 
     /**
-     * Der Balken sagt beim Überfahren, wie viel wirklich drin ist.
+     * On hover, the bar says how much is really in there.
      *
-     * <p>Ein Balken allein beantwortet die Frage „reicht das noch?" nicht —
-     * dafür braucht es die Zahl, und die will man nicht dauerhaft im Bild
-     * haben.
+     * <p>A bar alone does not answer the question "is that still enough?" —
+     * for that you need the number, and you do not want it on screen all the
+     * time.
      */
     private void renderEnergyTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
         int x = leftPos + 8;

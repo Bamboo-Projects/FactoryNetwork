@@ -8,20 +8,19 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Was der Client über den Inhalt der Geräte weiß.
+ * What the client knows about the contents of the devices.
  *
- * <p><b>Erst nach einer Viertelsekunde fragen.</b> Sonst schickt jede
- * Mausbewegung über eine Zeile mit drei Namen drei Anfragen. Bis die Antwort
- * da ist, steht im Tooltip, was ohnehin bekannt ist — Identität, Seiten,
- * Fächerzahl.
+ * <p><b>Only ask after a quarter second.</b> Otherwise every mouse movement
+ * over a line with three names sends three requests. Until the answer is
+ * there, the tooltip shows what is known anyway — identity, sides, slot count.
  *
- * <p>Die Antwort bleibt bis zum Schließen des Terminals liegen, wird beim
- * erneuten Zeigen aber neu geholt: Ein zweites Mal hinsehen heißt meistens
- * nachsehen, ob sich etwas geändert hat.
+ * <p>The answer stays around until the terminal is closed, but is fetched
+ * anew on the next hover: looking a second time usually means checking whether
+ * something has changed.
  */
 public final class ClientDeviceState {
 
-    /** So lange muss der Zeiger stillhalten, in Millisekunden. */
+    /** How long the pointer must hold still, in milliseconds. */
     private static final long DELAY = 250;
 
     private static final Map<String, DeviceSnapshotPacket> snapshots = new HashMap<>();
@@ -33,10 +32,10 @@ public final class ClientDeviceState {
     }
 
     /**
-     * Meldet, dass der Zeiger auf diesem Gerät steht.
+     * Reports that the pointer is over this device.
      *
-     * <p>Wird bei jedem Bild aufgerufen; die Anfrage geht erst, wenn der
-     * Zeiger lange genug stillhält.
+     * <p>Called every frame; the request only goes out once the pointer holds
+     * still long enough.
      */
     public static void hovering(String connector) {
         long now = System.currentTimeMillis();
@@ -51,29 +50,29 @@ public final class ClientDeviceState {
         }
     }
 
-    /** Der Zeiger steht auf keinem Gerät mehr. */
+    /** The pointer is no longer over any device. */
     public static void notHovering() {
         pending = "";
         since = 0;
     }
 
-    /** Was zuletzt über ein Gerät ankam, oder {@code null}. */
+    /** What last arrived about a device, or {@code null}. */
     public static DeviceSnapshotPacket snapshot(String connector) {
         return snapshots.get(connector);
     }
 
     public static void accept(DeviceSnapshotPacket packet) {
         snapshots.put(packet.connector(), packet);
-        // Das Profil aus der Antwort ist frischer als das vom Öffnen. Es
-        // gehört nicht nur ins Zeigen, sondern auch dorthin, wo die
-        // Vorschlagsliste und die Prüfung es lesen — sonst behaupten zwei
-        // Stellen Verschiedenes über dasselbe Gerät.
+        // The profile from the answer is fresher than the one from opening. It
+        // belongs not only in the hover, but also where the suggestion list
+        // and the check read it — otherwise two places claim different things
+        // about the same device.
         ClientNetworkState.updateProfile(packet.connector(),
                 dev.devpanda.factorynetwork.network.packet.DeviceProfileCodec
                         .fromFlat(packet.profile()));
     }
 
-    /** Beim Schließen des Terminals: Der Inhalt von vorhin gilt nicht mehr. */
+    /** When the terminal is closed: the earlier contents no longer hold. */
     public static void clear() {
         snapshots.clear();
         notHovering();

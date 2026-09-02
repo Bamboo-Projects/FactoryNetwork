@@ -9,25 +9,25 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Was das Netz über die Zeit bewegt hat.
+ * What the network has moved over time.
  *
- * <p><b>Auf dem Server gemessen, nicht im Fenster.</b> Ein Verlauf, den der
- * Client selbst mitschreibt, hat Lücken, sobald jemand das Fenster schließt —
- * und genau dann interessiert er sich später dafür, warum nachts nichts lief.
+ * <p><b>Measured on the server, not in the window.</b> A history the client
+ * records itself has gaps the moment someone closes the window — and that is
+ * exactly when they later care why nothing ran overnight.
  *
- * <p><b>Je Sekunde ein Punkt, nicht je Tick.</b> Zwanzig Punkte je Sekunde
- * wären in einer Minute zwölfhundert: für ein Diagramm von zweihundert Pixeln
- * sinnlos und über die Leitung teuer.
+ * <p><b>One sample per second, not per tick.</b> Twenty samples per second
+ * would be twelve hundred in a minute: pointless for a chart two hundred
+ * pixels wide, and expensive over the wire.
  *
- * <p><b>Und der Verlauf hat ein Ende.</b> Einer, der ewig wächst, ist ein
- * Speicherleck mit Diagramm.
+ * <p><b>And the history has an end.</b> One that grows forever is a memory
+ * leak with a chart.
  */
 public class TrafficHistory {
 
-    /** Fünf Minuten Verlauf — so weit reicht die Frage „was war eben". */
+    /** Five minutes of history — as far back as the question "what just happened" reaches. */
     public static final int SAMPLES = 300;
 
-    /** Ein Gerät und was es bewegt hat. */
+    /** A device and what it has moved. */
     public record Consumer(String name, long bytes) { }
 
     private final Deque<Integer> samples = new ArrayDeque<>();
@@ -38,11 +38,11 @@ public class TrafficHistory {
     private long total;
 
     /**
-     * Bucht, was ein Gerät gerade bewegt hat.
+     * Records what a device has just moved.
      *
-     * <p>Der Name und nicht die Stelle: Ein Diagramm, das Koordinaten nennt,
-     * beantwortet die Frage „was frisst am meisten" nicht — man müsste erst
-     * hingehen und nachsehen.
+     * <p>The name and not the position: a chart that names coordinates does
+     * not answer the question "what eats the most" — you would first have to
+     * go there and look.
      */
     public void record(String device, int bytes) {
         if (bytes <= 0) {
@@ -54,10 +54,10 @@ public class TrafficHistory {
     }
 
     /**
-     * Ein Tick vergeht.
+     * A tick passes.
      *
-     * <p>Nach zwanzig davon wird ein Punkt geschrieben und die laufende
-     * Sekunde zurückgesetzt.
+     * <p>After twenty of them a sample is written and the running second is
+     * reset.
      */
     public void tick() {
         ticks++;
@@ -72,25 +72,25 @@ public class TrafficHistory {
         }
     }
 
-    /** Der Verlauf, ältester Punkt zuerst. */
+    /** The history, oldest sample first. */
     public List<Integer> perSecond() {
         return List.copyOf(samples);
     }
 
-    /** Was seit dem Start des Netzes insgesamt bewegt wurde. */
+    /** What has been moved in total since the network started. */
     public long total() {
         return total;
     }
 
-    /** Was je Gerät bewegt wurde. */
+    /** What has been moved per device. */
     public Map<String, Long> byDevice() {
         return Map.copyOf(byDevice);
     }
 
     /**
-     * Die größten Verbraucher, absteigend.
+     * The biggest consumers, descending.
      *
-     * <p>Die Frage lautet „was frisst am meisten", nicht „was gibt es".
+     * <p>The question is "what eats the most", not "what exists".
      */
     public List<Consumer> top(int count) {
         List<Consumer> found = new ArrayList<>();

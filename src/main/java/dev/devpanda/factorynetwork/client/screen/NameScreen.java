@@ -14,12 +14,12 @@ import net.minecraft.world.entity.player.Inventory;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
- * Das Fenster, in dem ein Block seinen Namen bekommt.
+ * The window where a block gets its name.
  *
- * <p>Ein Feld, zwei Knöpfe, eine Zeile Rückmeldung. <b>Jede Höhe ist eine
- * Summe</b> — die Oberfläche der Beschriftungspistole hatte ihre Werte
- * geraten, und die Knöpfe standen über dem Rand hinaus. Wer eine Fläche
- * zeichnet, rechnet sie von einer Kante zur anderen durch.
+ * <p>One field, two buttons, one line of feedback. <b>Every height is a
+ * sum</b> — the label gun's interface had guessed its values, and the buttons
+ * stood out past the edge. Whoever draws an area computes it all the way from
+ * one edge to the other.
  */
 public class NameScreen extends AbstractContainerScreen<NameMenu> {
 
@@ -28,22 +28,21 @@ public class NameScreen extends AbstractContainerScreen<NameMenu> {
     private static final int BUTTON = 20;
     private static final int LINE = 11;
 
-    /** Der Schrägstrich, der eine Anlage von ihrer Rolle trennt. */
+    /** The slash that separates a plant from its role. */
     private static final char SEPARATOR =
             dev.devpanda.factorynetwork.runtime.MultiblockInstances.SEPARATOR;
 
     /**
-     * Die Anlage, zu der dieses Gerät gehört — oder leer.
+     * The plant this device belongs to — or empty.
      *
-     * <p><b>Ein eigenes Feld und kein Schrägstrich zum Tippen.</b> Eine
-     * Anlage entsteht dadurch, dass ihre Geräte {@code werk_1/eingang}
-     * heißen; das steht so in {@code anlagen.md}. Nur sah man dem Fenster
-     * nicht an, dass es das gibt — und bis heute ließ es sich dort nicht
-     * einmal eintippen.
+     * <p><b>A field of its own, not a slash to type.</b> A plant comes about
+     * from its devices being named {@code werk_1/eingang}; that is how it is
+     * written in {@code anlagen.md}. Only, the window gave no sign that this
+     * existed — and until now it could not even be typed there.
      *
-     * <p>Was hinausgeht, ist derselbe Name wie vorher. Die zwei Felder sind
-     * eine Lesehilfe und kein zweites Format: Wer den Schrägstrich ins
-     * Namensfeld tippt, bekommt dasselbe Ergebnis.
+     * <p>What goes out is the same name as before. The two fields are a
+     * reading aid and not a second format: whoever types the slash into the
+     * name field gets the same result.
      */
     private EditBox instance;
 
@@ -54,28 +53,28 @@ public class NameScreen extends AbstractContainerScreen<NameMenu> {
     public NameScreen(NameMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
         this.imageWidth = 192;
-        // Rand, Titel, Anlage, Titel, Feld, Hinweiszeile, Knöpfe, Rand.
+        // Border, title, plant, title, field, hint line, buttons, border.
         this.imageHeight = PAD + LINE + 4 + FIELD + 4
                 + LINE + 4 + FIELD + 3 + LINE + 4 + BUTTON + PAD;
-        // Am Gateway fehlt das obere Feld samt Beschriftung.
+        // At a gateway the upper field and its label are missing.
         if (isGateway()) {
             this.imageHeight -= LINE + 4 + FIELD + 4;
         }
     }
 
-    /** Der Teil vor dem Schrägstrich, oder leer. */
+    /** The part before the slash, or empty. */
     private static String instancePart(String label) {
         int cut = label.indexOf(SEPARATOR);
         return cut <= 0 ? "" : label.substring(0, cut);
     }
 
-    /** Der Teil dahinter — oder der ganze Name, wenn keiner dasteht. */
+    /** The part after it — or the whole name, if none is there. */
     private static String rolePart(String label) {
         int cut = label.indexOf(SEPARATOR);
         return cut <= 0 ? label : label.substring(cut + 1);
     }
 
-    /** Was am Ende hinausgeht. */
+    /** What goes out in the end. */
     private String composed() {
         String rolle = ConnectorNaming.normalize(input.getValue());
         if (instance == null) {
@@ -85,7 +84,7 @@ public class NameScreen extends AbstractContainerScreen<NameMenu> {
         return anlage.isEmpty() ? rolle : anlage + SEPARATOR + rolle;
     }
 
-    /** Was gerade dransteht — aus dem Block, nicht aus dem Paket. */
+    /** What it currently reads — from the block, not from the packet. */
     private String currentName() {
         var level = minecraft == null ? null : minecraft.level;
         if (level == null) {
@@ -95,8 +94,8 @@ public class NameScreen extends AbstractContainerScreen<NameMenu> {
         if (entity instanceof DisplayBlockEntity display) {
             return display.displayName();
         }
-        // Mit Fläche, wenn der Klick eine genannt hat: Am Kabelblock ist der
-        // Ort allein kein Anschluss.
+        // With the face, if the click named one: at the cable block the
+        // position alone is not a connection.
         var part = menu.side() == null
                 ? dev.devpanda.factorynetwork.block.entity.Connectors.at(level, menu.position())
                 : dev.devpanda.factorynetwork.block.entity.Connectors.at(
@@ -112,10 +111,10 @@ public class NameScreen extends AbstractContainerScreen<NameMenu> {
     }
 
     /**
-     * Ob am anderen Ende ein Gateway hängt.
+     * Whether a gateway hangs on the other end.
      *
-     * <p>Dann steht dort <b>nur</b> die Anlage: Ein Gateway hat keine Rolle,
-     * und ein zweites Feld dafür wäre eine Frage ohne Antwort.
+     * <p>Then <b>only</b> the plant stands there: a gateway has no role, and a
+     * second field for it would be a question without an answer.
      */
     private boolean isGateway() {
         var level = minecraft == null ? null : minecraft.level;
@@ -123,7 +122,7 @@ public class NameScreen extends AbstractContainerScreen<NameMenu> {
                 instanceof dev.devpanda.factorynetwork.block.entity.GatewayBlockEntity;
     }
 
-    /** Ob am anderen Ende eine Anzeige hängt — nur für die Überschrift. */
+    /** Whether a display hangs on the other end — only for the heading. */
     private boolean isDisplay() {
         var level = minecraft == null ? null : minecraft.level;
         return level != null && level.getBlockEntity(menu.position())
@@ -138,8 +137,8 @@ public class NameScreen extends AbstractContainerScreen<NameMenu> {
         int top = topPos + PAD + LINE + 4;
         String label = currentName();
 
-        // Am Gateway gibt es nur die Anlage: Es hat keine Rolle, und ein
-        // leeres zweites Feld wäre eine Frage, auf die es keine Antwort gibt.
+        // At a gateway there is only the plant: it has no role, and an empty
+        // second field would be a question that has no answer.
         if (!isGateway()) {
             instance = new EditBox(font, left, top, width, FIELD,
                     Component.translatable("screen.factorynetwork.name.instance"));
@@ -169,14 +168,15 @@ public class NameScreen extends AbstractContainerScreen<NameMenu> {
     }
 
     /**
-     * Beim Tippen dieselben Regeln wie beim Übernehmen.
+     * While typing, the same rules as on applying.
      *
-     * <p>Ob der Name schon vergeben ist, weiß der Client nicht — das prüft
-     * der Server. Hier steht nur, was sich ohne Netzwissen sagen lässt.
+     * <p>Whether the name is already taken the client does not know — the
+     * server checks that. Here stands only what can be said without knowledge
+     * of the network.
      */
     private void onTyped(String text) {
-        // Geprüft wird der zusammengesetzte Name und nicht das Feld: Was
-        // hinausgeht, ist werk_1/eingang, und daran hängen die Regeln.
+        // What is checked is the composed name and not the field: what goes
+        // out is werk_1/eingang, and the rules hang on that.
         ConnectorNaming.Warning result = ConnectorNaming.check(composed(), null);
         switch (result.kind()) {
             case EMPTY -> {
@@ -192,8 +192,8 @@ public class NameScreen extends AbstractContainerScreen<NameMenu> {
                 noteColour = TerminalScreen.WARN;
             }
             default -> {
-                // Der volle Name als Rückmeldung: In einer Anlage steht am
-                // Ende etwas anderes da als das, was man gerade tippt.
+                // The full name as feedback: in a plant, what ends up there is
+                // something other than what you are currently typing.
                 note = FnFonts.mono(Component.literal(composed()));
                 noteColour = TerminalScreen.GOOD;
             }
@@ -214,7 +214,7 @@ public class NameScreen extends AbstractContainerScreen<NameMenu> {
 
     @Override
     public boolean keyPressed(int key, int scanCode, int modifiers) {
-        // Eingabetaste übernimmt — sonst muss man mit der Maus zurück.
+        // The Enter key applies — otherwise you have to go back with the mouse.
         if (key == 257 || key == 335) {
             confirm();
             return true;
@@ -223,13 +223,13 @@ public class NameScreen extends AbstractContainerScreen<NameMenu> {
             onClose();
             return true;
         }
-        // <b>Solange das Feld tippt, gehören ihm alle übrigen Tasten.</b>
-        // AbstractContainerScreen.keyPressed schließt das Fenster, wenn die
-        // Taste die Inventartaste ist — und die ist standardmäßig „e". Wer
-        // einen Connector „extruder_1" nennen wollte, stand nach dem zweiten
-        // Buchstaben wieder in der Welt. Vanilla löst es im Amboss genauso:
-        // erst das Feld fragen, dann canConsumeInput, und nur wenn beides
-        // verneint, geht die Taste weiter.
+        // <b>As long as the field is typing, all remaining keys belong to
+        // it.</b> AbstractContainerScreen.keyPressed closes the window when the
+        // key is the inventory key — and that is "e" by default. Whoever wanted
+        // to name a connector "extruder_1" was back in the world after the
+        // second letter. Vanilla solves it the same way in the anvil: ask the
+        // field first, then canConsumeInput, and only when both say no does the
+        // key pass on.
         if (input.keyPressed(key, scanCode, modifiers) || input.canConsumeInput()
                 || (instance != null
                         && (instance.keyPressed(key, scanCode, modifiers)

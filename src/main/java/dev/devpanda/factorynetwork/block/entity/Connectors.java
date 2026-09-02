@@ -6,23 +6,23 @@ import net.minecraft.world.level.BlockGetter;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Der eine Weg, einen Anschluss zu finden.
+ * The one way to find a connector.
  *
- * <p><b>Vorher stand er einunddreißigmal da:</b>
- * {@code level.getBlockEntity(pos) instanceof ConnectorBlockEntity} — im
- * Graphen, in der Geräteerkennung, in der Laufzeit, in den Paketen, im Editor.
- * Solange ein Block genau einen Anschluss trug, war das richtig. Seit ein
- * Kabelblock bis zu sechs trägt, ist es die falsche Frage: Sie hat keine
- * Antwort ohne eine Seite.
+ * <p><b>It used to appear thirty-one times:</b>
+ * {@code level.getBlockEntity(pos) instanceof ConnectorBlockEntity} — in the
+ * graph, in device detection, in the runtime, in the packets, in the editor.
+ * As long as a block carried exactly one connector, that was right. Since a
+ * cable block carries up to six, it is the wrong question: it has no answer
+ * without a side.
  *
- * <p><b>Es gibt nur noch eine Bauform</b> (26.08.): den Anschluss an einer
- * Fläche eines Kabels. Der eigene Connectorblock ist weg — er konnte
- * dasselbe und brauchte einen Platz mehr.
+ * <p><b>There is only one form left</b> (26.08.): the connector on a face of
+ * a cable. The dedicated connector block is gone — it could do the same and
+ * needed one block more.
  *
- * <p>{@link #at(BlockGetter, BlockPos)} ohne Seite bleibt trotzdem: Wer nur
- * einen Punkt im Raum hat — der Analysator, die Beschriftungspistole, das
- * Namensfenster —, bekommt den Anschluss, wenn dort genau einer sitzt.
- * Sitzen zwei, gibt es keine Antwort; geraten wird nicht.
+ * <p>{@link #at(BlockGetter, BlockPos)} without a side stays all the same:
+ * whoever has only a point in space — the analyzer, the labeling gun, the
+ * naming screen — gets the connector if exactly one sits there. If two sit
+ * there, there is no answer; nothing is guessed.
  */
 public final class Connectors {
 
@@ -30,10 +30,10 @@ public final class Connectors {
     }
 
     /**
-     * Der Anschluss an dieser Fläche, oder {@code null}.
+     * The connector on this face, or {@code null}.
      *
-     * <p>Am Connectorblock gilt sie nur, wenn er ohnehin dorthin zeigt: Er hat
-     * eine Blickrichtung und keine sechs.
+     * <p>At the connector block it applies only if it faces that way anyway:
+     * it has one facing, not six.
      */
     public static @Nullable ConnectorPart at(BlockGetter level, BlockPos pos, Direction side) {
         return level.getBlockEntity(pos) instanceof CableBusBlockEntity bus
@@ -41,11 +41,11 @@ public final class Connectors {
     }
 
     /**
-     * Der Anschluss an dieser Stelle, wenn es <b>genau einen</b> gibt.
+     * The connector at this spot, if there is <b>exactly one</b>.
      *
-     * <p>Für die Stellen, die noch mit einem Ort allein auskommen. Sitzen
-     * zwei an einem Block, gibt es hier {@code null} — geraten wird nicht,
-     * und die Stelle gehört auf Ort und Seite umgestellt.
+     * <p>For the call sites that still make do with a position alone. If two
+     * sit on one block, this returns {@code null} — nothing is guessed, and
+     * the call site ought to be switched over to position and side.
      */
     public static @Nullable ConnectorPart at(BlockGetter level, BlockPos pos) {
         return level.getBlockEntity(pos) instanceof CableBusBlockEntity bus
@@ -53,13 +53,13 @@ public final class Connectors {
                 ? bus.parts().values().iterator().next() : null;
     }
 
-    /** Ob an dieser Stelle überhaupt ein Anschluss sitzt. */
+    /** Whether any connector sits at this spot at all. */
     public static boolean any(BlockGetter level, BlockPos pos) {
         return level.getBlockEntity(pos) instanceof CableBusBlockEntity bus
                 && bus.hasParts();
     }
 
-    /** Wie viele Anschlüsse an dieser Stelle sitzen. */
+    /** How many connectors sit at this spot. */
     public static int count(BlockGetter level, BlockPos pos) {
         return level.getBlockEntity(pos) instanceof CableBusBlockEntity bus
                 ? bus.parts().size() : 0;

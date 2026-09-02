@@ -1,92 +1,90 @@
 package dev.devpanda.factorynetwork.block;
 
 /**
- * Die Maße eines Kabels — als reine Zahlen.
+ * The dimensions of a cable — as plain numbers.
  *
- * <p><b>Ohne jeden Minecraft-Bezug</b>, damit sich die Geometrie in
- * gewöhnlichen Tests gegen die erzeugten Modelldateien prüfen lässt. Genau
- * diese Zahlen laufen sonst auseinander, ohne dass es jemand merkt: Minecraft
- * hält Modell und Trefferfläche getrennt.
+ * <p><b>With no reference to Minecraft</b>, so that the geometry can be checked
+ * against the generated model files in ordinary tests. It is exactly these
+ * numbers that otherwise drift apart without anyone noticing: Minecraft keeps
+ * model and hitbox separate.
  *
- * <p>Die Werte stammen aus Applied Energistics — dort ist ein ummanteltes
- * Kabel sechs Blockpixel stark und ein dichtes zehn. Dieselben Zahlen stehen
- * im Modellskript {@code tools/assets.py}; {@code CableLayoutTest} wacht
- * darüber, dass beide dasselbe sagen.
+ * <p>The values come from Applied Energistics — there a covered cable is six
+ * block pixels thick and a dense one ten. The same numbers live in the model
+ * script {@code tools/assets.py}; {@code CableLayoutTest} watches that both say
+ * the same thing.
  */
 public final class CableLayout {
 
-    /** Das gewöhnliche Kabel: sechs Blockpixel, wie AE2s ummanteltes. */
+    /** The ordinary cable: six block pixels, like AE2's covered one. */
     public static final int THIN = 6;
 
-    /** Das dichte Kabel: zehn Blockpixel, wie AE2s dense. */
+    /** The dense cable: ten block pixels, like AE2's dense one. */
     public static final int DENSE = 10;
 
-    /** Wo der Mantel beginnt — er sitzt mittig im Block. */
+    /** Where the sheath begins — it sits centred in the block. */
     public static int offset(int size) {
         return (16 - size) / 2;
     }
 
-    /** Wo der Mantel endet. */
+    /** Where the sheath ends. */
     public static int far(int size) {
         return offset(size) + size;
     }
 
     /**
-     * Die Bahnen der Kanallinien, in Blockpixeln von der Blockkante.
+     * The lanes of the channel lines, in block pixels from the block edge.
      *
-     * <p>Acht Bahnen in der Kabelmitte, je ein Viertel Blockpixel breit und
-     * um ein Achtel versetzt — die ersten vier für die Kanäle eins bis vier,
-     * die zweiten vier für fünf bis acht. Genau AE2s Aufteilung, nur dass eine
-     * Bahn bei uns mehr als einen Kanal zählt.
+     * <p>Eight lanes in the middle of the cable, each a quarter block pixel
+     * wide and offset by an eighth — the first four for channels one to four,
+     * the second four for five to eight. Exactly AE2's layout, except that with
+     * us one lane counts more than one channel.
      */
     public static double[] channelLanes() {
         return new double[] {7.00, 7.25, 7.50, 7.75, 8.00, 8.25, 8.50, 8.75};
     }
 
-    /** Wie breit eine Kanallinie ist, in Blockpixeln. */
+    /** How wide a channel line is, in block pixels. */
     public static final double LANE_WIDTH = 0.25;
 
     /**
-     * Wie tief ein Anschluss aus der Blockfläche in den Block ragt.
+     * How deep a connector juts from the block face into the block.
      *
-     * <p>Drei Blockpixel — genug, um ihn als eigenes Ding zu sehen und zu
-     * treffen, und wenig genug, dass er beim dichten Kabel gerade an dessen
-     * Mantel stößt: Dort beginnt der Kern schon bei drei.
+     * <p>Three block pixels — enough to see it as its own thing and to hit it,
+     * and little enough that on the dense cable it just meets that cable's
+     * sheath: there the core already begins at three.
      */
     public static final int PART_DEPTH = 3;
 
-    /** Wie breit die Platte eines Anschlusses ist. */
+    /** How wide the plate of a connector is. */
     public static final int PART_WIDTH = 12;
 
     /**
-     * Wie weit die Platte über die Blockkante hinausragt.
+     * How far the plate protrudes past the block edge.
      *
-     * <p><b>Gegen Z-Fighting.</b> Seit das Kabel einen Arm zu jeder Fläche
-     * mit Anschluss wachsen lässt, enden Arm und Platte beide genau auf der
-     * Blockkante — zwei Flächen in derselben Ebene. Steht dahinter eine
-     * Maschine, schneidet Minecraft beide weg und man sieht nichts davon.
-     * Zeigt der Anschluss ins Leere, flimmert die Farbe des Kabels quer über
-     * sein Gesicht.
+     * <p><b>Against Z-fighting.</b> Ever since the cable grows an arm to every
+     * face with a connector, arm and plate both end exactly on the block
+     * edge — two surfaces in the same plane. If a machine stands behind it,
+     * Minecraft culls both away and you see nothing of it. If the connector
+     * points into empty space, the cable's colour flickers across its face.
      *
-     * <p>Ein zwanzigstel Blockpixel reicht, damit die Platte gewinnt. Das ist
-     * ein Dreitausendstel Block — im Spiel unsichtbar, und in die Maschine
-     * dahinter ragt es nur dorthin, wo deren eigene Fläche es ohnehin
-     * verdeckt.
+     * <p>One twentieth of a block pixel is enough for the plate to win. That is
+     * one three-thousandth of a block — invisible in the game, and it juts into
+     * the machine behind only where that machine's own surface hides it anyway.
      */
     public static final double PART_OVERHANG = 0.05;
 
-    /** Wo die Platte beginnt — sie sitzt mittig auf der Fläche. */
+    /** Where the plate begins — it sits centred on the face. */
     public static int partOffset() {
         return (16 - PART_WIDTH) / 2;
     }
 
     /**
-     * <b>Den Stiel gibt es nicht mehr.</b>
+     * <b>The stalk no longer exists.</b>
      *
-     * <p>Bis zum 26.08. saß zwischen Platte und Kabelkern ein grauer Kasten.
-     * Seit die Fläche mit Anschluss einen gewöhnlichen Arm bekommt, trägt der
-     * Arm diese Strecke — in der Farbe des Kabels, und am Kabel entsteht eine
-     * sichtbare Kreuzung statt eines Fremdkörpers.
+     * <p>Until 26 Aug a grey box sat between plate and cable core. Ever since
+     * the face with a connector gets an ordinary arm, the arm carries that
+     * stretch — in the cable's colour, and a visible crossing forms at the
+     * cable instead of a foreign body.
      */
 
     private CableLayout() {

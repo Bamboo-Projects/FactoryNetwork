@@ -3,55 +3,55 @@ package dev.devpanda.factorynetwork;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 /**
- * Die Einstellungen der Mod.
+ * The mod's settings.
  *
- * <p>Bis hierher hatte sie keine — und damit war jede Grenze für Nutzercode
- * eine Zahl im Quelltext. Für den Serverbetreiber eines Packs ist das die
- * falsche Stelle: Er kennt seine Spieler und seine Hardware, die Mod nicht.
+ * <p>Until now it had none — and so every limit for user code was a number in
+ * the source. For the server operator of a pack that is the wrong place: they
+ * know their players and their hardware, the mod does not.
  *
- * <p><b>Nur Serverseite, und nur Grenzen.</b> Was hier steht, entscheidet
- * über die Welt und nicht über den Bildschirm; ein Clientteil kommt, wenn es
- * etwas gibt, das ihn braucht (siehe {@code entscheidungen.md}, „Die Brücke
- * zu VS Code"). Leere Abschnitte auf Vorrat wären Fragen an den Betreiber,
- * die niemand beantworten kann.
+ * <p><b>Server side only, and limits only.</b> What stands here decides over
+ * the world and not over the screen; a client part will come once there is
+ * something that needs it (see {@code entscheidungen.md}, „Die Brücke zu
+ * VS Code"). Empty sections kept in reserve would be questions to the operator
+ * that no one can answer.
  *
- * <p>Die Zahlen der Bereitschaft — was ein Connector an Strom kostet, wie
- * viele Kanäle ein Kabel trägt — stehen bewusst nicht hier. Sie sind
- * Spielinhalt und gehören zum Ausgleich der Mod; wer sie ändert, ändert das
- * Spiel und nicht seine Serverlast.
+ * <p>The provisioning numbers — what a connector costs in power, how many
+ * channels a cable carries — deliberately do not stand here. They are game
+ * content and belong to the mod's balance; whoever changes them changes the
+ * game and not their server load.
  */
 public final class FnConfig {
 
     /**
-     * Wie viele Schritte ein Durchlauf darf.
+     * How many steps a run may take.
      *
-     * <p>Die Zahl, die vorher als {@code MAX_STEPS} im Interpreter stand.
-     * Eine Konfiguration darf das Spiel nicht nebenbei ändern: Wer nichts
-     * einstellt, bekommt genau das, was die Mod vorher tat.
+     * <p>The number that previously stood as {@code MAX_STEPS} in the
+     * interpreter. A configuration must not change the game as a side effect:
+     * whoever sets nothing gets exactly what the mod did before.
      */
     public static final int DEFAULT_STEP_BUDGET = 10_000;
 
-    /** Und wie weit der Aufbau des Netzgraphen sucht. */
+    /** And how far building the network graph searches. */
     public static final int DEFAULT_NETWORK_NODES = 4_096;
 
     /**
-     * Wie viele Rezepte tief eine Fertigung sucht.
+     * How many recipes deep a crafting run searches.
      *
-     * <p>Acht Ebenen reichen für alles, was ein Pack an Ketten kennt — Erz zu
-     * Barren zu Platte zu Bauteil zu Maschine sind fünf. Wer tiefer sucht,
-     * findet keine neuen Wege, sondern nur längere.
+     * <p>Eight levels are enough for anything a pack knows in the way of
+     * chains — ore to ingot to plate to component to machine is five. Whoever
+     * searches deeper finds no new paths, only longer ones.
      */
     public static final int DEFAULT_CRAFTING_DEPTH = 8;
 
-    /** Und wie viele Bedarfe sie dabei ansehen darf. */
+    /** And how many demands it may look at while doing so. */
     public static final int DEFAULT_CRAFTING_BUDGET = 512;
 
     /**
-     * Wie lang ein globaler Listenwert werden darf.
+     * How long a global list value may grow.
      *
-     * <p>Er ist der einzige Wert, den ein Programm in einer Schleife wachsen
-     * lassen kann und der den Neustart übersteht. Ohne Deckel wäre er der
-     * einzige Weg, mit drei Zeilen Nutzercode eine Weltdatei zu sprengen.
+     * <p>It is the only value a program can let grow in a loop and that
+     * survives a restart. Without a cap it would be the only way to blow up a
+     * world file with three lines of user code.
      */
     public static final int DEFAULT_GLOBAL_LIST = 256;
 
@@ -121,43 +121,43 @@ public final class FnConfig {
     }
 
     /**
-     * Wie viele Schritte ein Durchlauf darf.
+     * How many steps a run may take.
      *
-     * <p><b>Mit Rückfall auf die Vorgabe.</b> Ein Einheitstest lädt keine
-     * Konfigurationsdatei, ein Datengenerator auch nicht, und ein Wert, der
-     * dann wirft, macht aus einer Einstellung einen Absturz an Stellen, die
-     * mit Einstellungen nichts zu tun haben.
+     * <p><b>With a fallback to the default.</b> A unit test loads no
+     * configuration file, nor does a data generator, and a value that then
+     * throws turns a setting into a crash in places that have nothing to do
+     * with settings.
      */
     public static int stepBudget() {
         return SERVER_SPEC.isLoaded() ? STEP_BUDGET.get() : DEFAULT_STEP_BUDGET;
     }
 
-    /** Wie weit der Aufbau des Netzgraphen sucht. */
+    /** How far building the network graph searches. */
     public static int networkNodes() {
         return SERVER_SPEC.isLoaded() ? NETWORK_NODES.get() : DEFAULT_NETWORK_NODES;
     }
 
-    /** Wie viele Rezepte tief eine Fertigung sucht. */
+    /** How many recipes deep a crafting run searches. */
     public static int craftingDepth() {
         return SERVER_SPEC.isLoaded() ? CRAFTING_DEPTH.get() : DEFAULT_CRAFTING_DEPTH;
     }
 
-    /** Und wie viele Bedarfe sie dabei ansieht. */
+    /** And how many demands it looks at while doing so. */
     public static int craftingBudget() {
         return SERVER_SPEC.isLoaded() ? CRAFTING_BUDGET.get() : DEFAULT_CRAFTING_BUDGET;
     }
 
-    /** Wie lang ein globaler Listenwert werden darf. */
+    /** How long a global list value may grow. */
     public static int globalListSize() {
         return SERVER_SPEC.isLoaded() ? GLOBAL_LIST.get() : DEFAULT_GLOBAL_LIST;
     }
 
     /**
-     * Wer eine fremde Fabrik umbauen darf.
+     * Who may rebuild someone else's factory.
      *
-     * <p>Ohne geladene Konfiguration: jeder. Eine Sperre, die aus einem
-     * fehlenden Wert entsteht, ist die falsche Richtung — sie stünde genau
-     * dann da, wenn niemand sie eingerichtet hat.
+     * <p>Without a loaded configuration: everyone. A lock that arises from a
+     * missing value is the wrong direction — it would stand there precisely
+     * when no one has set it up.
      */
     public static FnProtection.Mode protection() {
         return SERVER_SPEC.isLoaded() ? PROTECTION.get() : FnProtection.Mode.OFF;

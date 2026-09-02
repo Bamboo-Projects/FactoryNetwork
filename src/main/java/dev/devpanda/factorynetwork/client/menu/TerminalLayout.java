@@ -1,77 +1,76 @@
 package dev.devpanda.factorynetwork.client.menu;
 
 /**
- * Die Maße des Terminalfensters — dieselben Zahlen wie in {@code gui.py}.
+ * The dimensions of the terminal window — the same numbers as in {@code gui.py}.
  *
- * <p><b>An einer Stelle, weil zwei Seiten sie brauchen.</b> Das Menü setzt
- * die Slots des Spielerinventars, der Bildschirm zeichnet die Mulden darunter.
- * Standen die Zahlen an beiden Orten, lagen die Slots nach dem ersten Umbau
- * zwanzig Pixel über ihren Mulden — und das sieht man erst im Spiel, weil
- * kein Test das Zeichnen prüft.
+ * <p><b>In one place, because two sides need them.</b> The menu positions the
+ * slots of the player inventory, the screen draws the wells beneath them. If
+ * the numbers lived in both places, the slots would sit twenty pixels above
+ * their wells after the first rebuild — and you only see that in the game,
+ * because no test checks the drawing.
  *
- * <p>Hier und nicht im Bildschirm: Der Bildschirm ist Client-Code, das Menü
- * läuft auch auf einem Server ohne Grafik.
+ * <p>Here and not in the screen: the screen is client code, the menu also
+ * runs on a server without graphics.
  *
- * <p><b>Die Höhe wird gerechnet, nicht gesetzt.</b> Jede Zeile kennt ihre
- * eigene Höhe; was das Fenster misst, ist die Summe. Beim Entwurf hatte ich
- * sie geraten, und die Statuszeile lag im Raster.
+ * <p><b>The height is computed, not set.</b> Each row knows its own height;
+ * what the window measures is the sum. When designing it I had guessed the
+ * height, and the status row ended up in the grid.
  */
 public final class TerminalLayout {
 
     /**
-     * Breiter als Vanillas 176.
+     * Wider than vanilla's 176.
      *
-     * <p>Der Netzwerk-Reiter trägt zwei Spalten, und der Code-Editor
-     * lebt von jeder Zeile, die er ganz zeigen kann. 352 bleibt bei
-     * Skalierung 3 unter 1100 Pixeln — das trägt jeder Bildschirm, auf
-     * dem man Minecraft spielt, und Minecraft skaliert notfalls selbst
-     * herunter.
+     * <p>The network tab carries two columns, and the code editor lives on
+     * every line it can show in full. At GUI scale 3, 352 stays under 1100
+     * pixels — that fits every screen on which one plays Minecraft, and
+     * Minecraft scales down on its own if need be.
      *
-     * <p>Dieselbe Zahl steht in {@code tools/gui.py}: Das Malskript
-     * läuft nicht zur Laufzeit, und laufen die beiden auseinander,
-     * zeichnet der Rahmen woanders als der Inhalt.
+     * <p>The same number is in {@code tools/gui.py}: the drawing script does
+     * not run at runtime, and if the two drift apart, the frame is drawn
+     * somewhere other than the contents.
      */
     public static final int WIDTH = 352;
 
-    /** Die Scheibe im Blech. */
+    /** The pane in the sheet metal. */
     public static final int SCREEN_X0 = 6;
     public static final int SCREEN_X1 = WIDTH - 7;
     public static final int SCREEN_TOP = 6;
     public static final int SCREEN_PAD = 3;
 
-    /** Die Zeile mit den Reiterbeschriftungen. */
+    /** The row with the tab labels. */
     public static final int TAB_ROW = 14;
 
-    /** Die Suchzeile des Speicher-Reiters. */
+    /** The search row of the storage tab. */
     public static final int SEARCH_ROW = 13;
 
-    /** Das Bestandsraster. */
+    /** The stored-items grid. */
     /**
-     * Wie viele Spalten das Gitter der Speicheransicht hat.
+     * How many columns the grid of the storage view has.
      *
-     * <p>So viele, wie zwischen Rand und Rollbalken passen — bei 352
-     * Bildpunkten Fensterbreite siebzehn. Vorher vierzehn, und die drei
-     * fehlenden ließen rechts eine Lücke.
+     * <p>As many as fit between the edge and the scrollbar — seventeen at a
+     * window width of 352 pixels. Fourteen before, and the three missing ones
+     * left a gap on the right.
      *
-     * <p><b>Dieselbe Zahl steht in {@code tools/gui.py}</b>: Das Malskript
-     * zeichnet die Kacheln, und laufen die beiden auseinander, endet das
-     * Bild vor oder hinter den Slots.
+     * <p><b>The same number is in {@code tools/gui.py}</b>: the drawing script
+     * draws the tiles, and if the two drift apart, the image ends before or
+     * behind the slots.
      */
     public static final int GRID_COLUMNS = 17;
     /**
-     * Wie viele Reihen hoch die Arbeitsfläche ist.
+     * How many rows tall the work area is.
      *
-     * <p>Drei mehr als vorher: Der Netzwerk-Reiter zeigt zwei Spalten,
-     * und der Code-Editor lebt von jeder Zeile, die er ganz zeigt.
+     * <p>Three more than before: the network tab shows two columns, and the
+     * code editor lives on every line it shows in full.
      */
     public static final int GRID_ROWS = 9;
 
     public static final int SLOT = 18;
 
-    /** Die Statuszeile am unteren Rand der Scheibe. */
+    /** The status row at the bottom edge of the pane. */
     public static final int STATUS_ROW = 11;
 
-    /** Der Bereich, in den die Reiter zeichnen. */
+    /** The area into which the tabs draw. */
     public static final int WORK_X = SCREEN_X0 + 3;
     public static final int WORK_Y = SCREEN_TOP + SCREEN_PAD + TAB_ROW + 1;
     public static final int WORK_W = (SCREEN_X1 - 2) - WORK_X;
@@ -80,7 +79,7 @@ public final class TerminalLayout {
     public static final int SCREEN_BOTTOM = WORK_Y + WORK_H + 2 + STATUS_ROW;
     public static final int HEIGHT = SCREEN_BOTTOM + 14 + 82;
 
-    /** Das Spielerinventar sitzt, wo es in jedem Minecraft-Fenster sitzt. */
+    /** The player inventory sits where it sits in every Minecraft window. */
     public static final int INV_X = (WIDTH - 9 * SLOT) / 2;
     public static final int INV_Y = HEIGHT - 82;
     public static final int HOTBAR_Y = HEIGHT - 24;

@@ -15,32 +15,32 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Ein Serverschrank mit zwölf Einschüben.
+ * A server rack with twelve bays.
  *
- * <p>In jeden Einschub gehört ein <b>Servergehäuse</b>, und erst dann öffnen
- * sich daneben die drei Plätze für Rechenwerk, Speicher und Datenträger. Ein
- * Einschub trägt erst etwas bei, wenn alle vier stecken.
+ * <p>Each bay takes a <b>server chassis</b>, and only then do the three slots
+ * beside it open up for CPU, RAM and disk. A bay contributes nothing until all
+ * four are in place.
  *
- * <p>Die Plätze liegen als flache Liste, vier je Einschub: erst das Gehäuse,
- * dann die drei Bauteile in der Reihenfolge von {@link ServerPart}. Genau so
- * liegen sie auch im Fenster. Eine Liste von Einschüben, die jeweils vier
- * Plätze halten, wäre dieselbe Sache mit einer Zwischenschicht — und
- * {@link ShelfBlockEntity} führt sowieso eine flache Liste.
+ * <p>The slots lie as a flat list, four per bay: first the chassis, then the
+ * three parts in the order of {@link ServerPart}. They lie the same way in the
+ * screen. A list of bays that each hold four slots would be the same thing
+ * with an intermediate layer — and {@link ShelfBlockEntity} keeps a flat list
+ * anyway.
  *
- * <p><b>Das Gehäuse nimmt seine Bauteile mit.</b> Wird es herausgezogen,
- * wandern sie in den Gegenstand; wird ein bestücktes hineingesteckt, kommen
- * sie heraus in die Plätze. Damit ist ein fertiger Server tragbar, ohne dass
- * man je einen Gegenstand im Rucksack aufmachen müsste.
+ * <p><b>The chassis takes its parts with it.</b> When it is pulled out, they
+ * move into the item; when a stocked one is inserted, they come out into the
+ * slots. This makes a finished server portable without ever having to open an
+ * item in the backpack.
  */
 public class RackBlockEntity extends ShelfBlockEntity {
 
-    /** So viele Server passen hinein. */
+    /** This many servers fit inside. */
     public static final int BAYS = 12;
 
-    /** Rechenwerk, Speicher, Datenträger. */
+    /** CPU, RAM, disk. */
     public static final int PARTS_PER_BAY = ServerPart.values().length;
 
-    /** Und davor das Gehäuse. */
+    /** And the chassis in front of them. */
     public static final int SLOTS_PER_BAY = PARTS_PER_BAY + 1;
 
     public static final int SLOTS = BAYS * SLOTS_PER_BAY;
@@ -49,12 +49,12 @@ public class RackBlockEntity extends ShelfBlockEntity {
         super(FnBlockEntities.RACK.get(), pos, state, SLOTS);
     }
 
-    /** Zu welchem Einschub ein Platz gehört. */
+    /** Which bay a slot belongs to. */
     public static int bayOf(int slot) {
         return slot / SLOTS_PER_BAY;
     }
 
-    /** Der Gehäuseplatz eines Einschubs — der erste. */
+    /** The chassis slot of a bay — the first one. */
     public static int chassisSlot(int bay) {
         return bay * SLOTS_PER_BAY;
     }
@@ -64,15 +64,15 @@ public class RackBlockEntity extends ShelfBlockEntity {
     }
 
     /**
-     * Welche Art von Bauteil in diesen Platz gehört, oder {@code null} für
-     * den Gehäuseplatz.
+     * Which kind of part belongs in this slot, or {@code null} for the
+     * chassis slot.
      */
     public static ServerPart partOf(int slot) {
         int within = Math.floorMod(slot, SLOTS_PER_BAY);
         return within == 0 ? null : ServerPart.values()[within - 1];
     }
 
-    /** Der Platz eines bestimmten Bauteils in einem bestimmten Einschub. */
+    /** The slot of a particular part in a particular bay. */
     public static int slotOf(int bay, ServerPart part) {
         return chassisSlot(bay) + 1 + part.ordinal();
     }
@@ -83,12 +83,12 @@ public class RackBlockEntity extends ShelfBlockEntity {
     }
 
     /**
-     * Jeder Platz nimmt nur, was hineingehört — und Bauteile nur, wenn ein
-     * Gehäuse dasteht.
+     * Each slot takes only what belongs in it — and parts only when a chassis
+     * is present.
      *
-     * <p>Die zweite Regel macht das Gehäuse zu dem, was es sein soll. Ohne
-     * sie wären die drei Plätze schon der Server, und das Gehäuse wäre ein
-     * Gegenstand, den man kauft und der nichts ändert.
+     * <p>The second rule makes the chassis into what it is meant to be.
+     * Without it the three slots would already be the server, and the chassis
+     * would be an item you buy that changes nothing.
      */
     @Override
     public boolean canPlaceItem(int slot, ItemStack stack) {
@@ -96,7 +96,7 @@ public class RackBlockEntity extends ShelfBlockEntity {
             return false;
         }
         if (isChassisSlot(slot)) {
-            // Auch ein bestücktes Gehäuse: Es packt beim Einsetzen aus.
+            // A stocked chassis too: it unpacks on insertion.
             return ServerChassis.is(stack);
         }
         return ServerPartItem.partOf(stack) == partOf(slot)
@@ -104,11 +104,11 @@ public class RackBlockEntity extends ShelfBlockEntity {
     }
 
     /**
-     * Ein Platz, ein Gegenstand.
+     * One slot, one item.
      *
-     * <p>Vorher zählte der Schrank Stapel mit, und ein Stapel von sechzehn
-     * Prozessoren auf einem Platz war sechzehnmal so viel Leistung. Damit
-     * waren die Plätze keine Grenze mehr, sondern eine Formalität.
+     * <p>The rack used to count stacks, and a stack of sixteen processors in
+     * one slot was sixteen times the performance. That made the slots no
+     * longer a limit, but a formality.
      */
     @Override
     public int getMaxStackSize() {
@@ -124,15 +124,15 @@ public class RackBlockEntity extends ShelfBlockEntity {
         return parts();
     }
 
-    // ---- Das Gehäuse nimmt mit, was drinsteckt ----------------------------
+    // ---- The chassis takes with it what is inside -------------------------
 
     /**
-     * Bevor ein Gehäuse den Platz verlässt, packt es ein.
+     * Before a chassis leaves the slot, it packs up.
      *
-     * <p>Diese Stelle ist der einzige Weg nach draußen: {@code removeItem}
-     * geht über {@code setItem}, und das ruft hier herein, <b>solange der
-     * alte Gegenstand noch dasteht</b>. Der Aufrufer bekommt danach genau
-     * dieses Stück Blech in die Hand — mit den Bauteilen darin.
+     * <p>This spot is the only way out: {@code removeItem} goes through
+     * {@code setItem}, and that calls in here <b>while the old item is still
+     * present</b>. The caller then gets exactly this piece of sheet metal in
+     * hand — with the parts inside it.
      */
     @Override
     protected void beforeSlotChange(int slot) {
@@ -154,12 +154,11 @@ public class RackBlockEntity extends ShelfBlockEntity {
     }
 
     /**
-     * Schreibt die drei Bauteile eines Einschubs in das Gehäuse und leert
-     * die Plätze.
+     * Writes the three parts of a bay into the chassis and empties the slots.
      *
-     * <p><b>Geschrieben wird direkt in die Liste</b> und nicht über
-     * {@code setItem}: Das riefe wieder hier herein, und ein Aufräumen, das
-     * sich selbst aufruft, ist ein Aufräumen, das man nicht mehr überblickt.
+     * <p><b>Written directly into the list</b> and not through
+     * {@code setItem}: that would call in here again, and a cleanup that calls
+     * itself is a cleanup you can no longer keep track of.
      */
     private void packInto(ItemStack chassis, int bay) {
         List<ItemStack> taken = new ArrayList<>(PARTS_PER_BAY);
@@ -180,7 +179,7 @@ public class RackBlockEntity extends ShelfBlockEntity {
         setChanged();
     }
 
-    /** Und der umgekehrte Weg, sobald ein Gehäuse eingesetzt wurde. */
+    /** And the reverse way, as soon as a chassis has been inserted. */
     private void unpackFrom(ItemStack chassis, int bay) {
         if (ServerChassis.isEmpty(chassis)) {
             return;
@@ -188,9 +187,9 @@ public class RackBlockEntity extends ShelfBlockEntity {
         NonNullList<ItemStack> stored = ServerChassis.read(chassis);
         for (ServerPart part : ServerPart.values()) {
             ItemStack stack = stored.get(part.ordinal());
-            // Nur, was hineingehört. Ein Gehäuse aus dem Kreativmodus kann
-            // alles enthalten, und ein Rechenwerk auf dem Datenträgerplatz
-            // wäre ein Einschub, der voll aussieht und nicht läuft.
+            // Only what belongs in it. A chassis from creative mode can
+            // contain anything, and a CPU in the disk slot would be a bay
+            // that looks full and does not run.
             parts().set(slotOf(bay, part),
                     ServerPartItem.partOf(stack) == part ? stack : ItemStack.EMPTY);
         }
@@ -200,10 +199,11 @@ public class RackBlockEntity extends ShelfBlockEntity {
     }
 
     /**
-     * Packt alle Einschübe ein — vor dem Abbauen.
+     * Packs up all bays — before the rack is broken.
      *
-     * <p>Danach liegen in den Bauteilplätzen keine losen Teile mehr, und was
-     * herausfällt, sind zwölf fertige Server statt achtundvierzig Einzelteile.
+     * <p>Afterwards no loose parts remain in the part slots, and what falls
+     * out are twelve finished servers instead of forty-eight individual
+     * pieces.
      */
     public void packAll() {
         for (int bay = 0; bay < BAYS; bay++) {
@@ -214,18 +214,18 @@ public class RackBlockEntity extends ShelfBlockEntity {
         }
     }
 
-    // ---- Was der Schrank trägt --------------------------------------------
+    // ---- What the rack carries --------------------------------------------
 
-    /** Steckt in diesem Einschub ein Gehäuse? */
+    /** Is there a chassis in this bay? */
     public boolean hasChassis(int bay) {
         return bay >= 0 && bay < BAYS && !getItem(chassisSlot(bay)).isEmpty();
     }
 
     /**
-     * Was in einem Einschub steckt.
+     * What sits in a bay.
      *
-     * <p>Ohne Gehäuse nichts — auch wenn dort wider Erwarten Bauteile lägen.
-     * Die Regel steht damit an einer Stelle und nicht an dreien.
+     * <p>Nothing without a chassis — even if, against expectation, parts lay
+     * there. The rule thus stands in one place and not in three.
      */
     public ServerBay bay(int bay) {
         if (!hasChassis(bay)) {
@@ -237,7 +237,7 @@ public class RackBlockEntity extends ShelfBlockEntity {
                 getItem(slotOf(bay, ServerPart.DISK)));
     }
 
-    /** Die Summe der vollständigen Einschübe. */
+    /** The sum of the complete bays. */
     public ServerBay capacity() {
         ServerBay total = ServerBay.EMPTY;
         for (int bay = 0; bay < BAYS; bay++) {
@@ -246,7 +246,7 @@ public class RackBlockEntity extends ShelfBlockEntity {
         return total;
     }
 
-    /** Wie viele Einschübe laufen. */
+    /** How many bays are running. */
     public int runningBays() {
         int count = 0;
         for (int bay = 0; bay < BAYS; bay++) {
@@ -258,10 +258,10 @@ public class RackBlockEntity extends ShelfBlockEntity {
     }
 
     /**
-     * Wie viele Einschübe angefangen und nicht fertig sind.
+     * How many bays are started and not finished.
      *
-     * <p>Ein Gehäuse ohne Hardware zählt dazu: Es sieht von außen aus wie
-     * ein Server und ist keiner.
+     * <p>A chassis without hardware counts here: from the outside it looks
+     * like a server and is none.
      */
     public int incompleteBays() {
         int count = 0;
@@ -273,7 +273,7 @@ public class RackBlockEntity extends ShelfBlockEntity {
         return count;
     }
 
-    /** Wie viele gleichzeitige Abläufe dieser Schrank trägt. */
+    /** How many concurrent flows this rack carries. */
     public int threads() {
         return capacity().cpu();
     }

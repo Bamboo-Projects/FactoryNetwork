@@ -16,28 +16,26 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Sichert den Entwurf auf dem Server.
+ * Saves the draft on the server.
  *
- * <p><b>Anders als {@link DeployProgramPacket} verlangt das keinen
- * fehlerfreien Code.</b> Genau darin liegt der Sinn: Übernehmen geht nur,
- * wenn das Programm übersetzt, und mitten in einer Änderung tut es das nie.
- * Wer zwanzig Minuten an einem Worker gebaut hat und dann abstürzt, hätte
- * ohne diesen Weg alles verloren.
+ * <p><b>Unlike {@link DeployProgramPacket}, this demands no error-free
+ * code.</b> That is precisely the point: applying only works when the program
+ * compiles, and in the middle of a change it never does. Whoever has spent
+ * twenty minutes building a worker and then crashes would, without this path,
+ * have lost everything.
  *
- * <p>Der Entwurf läuft nicht. Er wird nur aufgehoben — der laufende Stand
- * bleibt, was er war, bis jemand übernimmt. Ein Tippfehler hält die Fabrik
- * nicht an.
+ * <p>The draft does not run. It is only kept — the running state stays what it
+ * was until someone applies. A typo does not stop the factory.
  *
- * <p>Geschickt wird kurz nach dem letzten Anschlag, nicht bei jedem. Und der
- * ganze Entwurf statt einer Änderungsliste: Ein Programm hier ist ein paar
- * Dutzend Zeilen, und eine Liste aus Positionen und Einfügungen ist die
- * Sorte Code, in der sich ein Fehler erst zeigt, wenn der Text schon kaputt
- * ist.
+ * <p>It is sent shortly after the last keystroke, not on every one. And the
+ * whole draft instead of a change list: a program here is a few dozen lines,
+ * and a list of positions and insertions is the kind of code where a bug only
+ * shows once the text is already broken.
  */
 public record SaveDraftPacket(BlockPos controller, Map<String, String> files)
         implements CustomPacketPayload {
 
-    /** Mehr als das nimmt der Server je Datei nicht an. */
+    /** The server accepts no more than this per file. */
     private static final int MAX_LENGTH = 64 * 1024;
 
     public static final Type<SaveDraftPacket> TYPE = new Type<>(
@@ -65,9 +63,9 @@ public record SaveDraftPacket(BlockPos controller, Map<String, String> files)
             if (!(context.player() instanceof ServerPlayer player)) {
                 return;
             }
-            // Dasselbe wie beim Übernehmen: Das offene Fenster ist die
-            // Erlaubnis, nicht die Koordinate im Paket. Ein Entwurf ist Code,
-            // und Code kann das Wireless Terminal nicht.
+            // Same as for applying: the open window is the permission, not the
+            // coordinate in the packet. A draft is code, and the Wireless
+            // Terminal cannot do code.
             if (!(player.containerMenu instanceof dev.devpanda.factorynetwork.client.menu
                     .TerminalMenu menu)
                     || !menu.allows(dev.devpanda.factorynetwork.terminal.TerminalTab.CODE)) {
@@ -78,8 +76,8 @@ public record SaveDraftPacket(BlockPos controller, Map<String, String> files)
             }
             if (menu.controller(player).orElse(null)
                     instanceof ControllerBlockEntity controller) {
-                // Derselbe Schutz wie beim Übernehmen: Ein überschriebener
-                // Entwurf ist verlorene Arbeit, auch wenn er nie lief.
+                // The same protection as for applying: an overwritten draft
+                // is lost work, even if it never ran.
                 if (!DeployProgramPacket.mayEdit(player, controller)) {
                     player.sendSystemMessage(net.minecraft.network.chat.Component.translatable(
                             "message.factorynetwork.protection.denied"));

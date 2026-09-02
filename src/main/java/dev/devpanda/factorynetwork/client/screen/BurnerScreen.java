@@ -11,19 +11,19 @@ import net.minecraft.world.entity.player.Inventory;
 import java.util.List;
 
 /**
- * Das Fenster der Brennkammer.
+ * The burner chamber's window.
  *
- * <p>Eine Flamme über dem Brennstoff und ein Balken für den Vorrat. Der
- * Balken ist der wichtigere von beiden: Eine Kammer, die brennt, obwohl
- * niemand abnimmt, verheizt Kohle für nichts — und das sieht man nur daran,
- * dass der Vorrat oben ansteht.
+ * <p>A flame above the fuel and a bar for the reserve. The bar is the more
+ * important of the two: a chamber that keeps burning even though nobody is
+ * drawing from it wastes coal for nothing — and you only see that from the
+ * reserve bumping up against the top.
  */
 public class BurnerScreen extends AbstractContainerScreen<BurnerMenu> {
 
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
             FactoryNetwork.MOD_ID, "textures/gui/burner.png");
 
-    /** Wo die gefüllten Fassungen im Blatt liegen. */
+    /** Where the filled variants sit in the sheet. */
     private static final int FLAME_U = 180;
     private static final int FLAME_V = 0;
     private static final int ENERGY_U = 180;
@@ -50,14 +50,14 @@ public class BurnerScreen extends AbstractContainerScreen<BurnerMenu> {
     protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
         graphics.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight, 512, 512);
 
-        // Die Flamme brennt von oben herunter, wie im Ofen.
+        // The flame burns down from the top, like in a furnace.
         int flamme = Math.round(menu.burnFraction() * FLAME_H);
         if (flamme > 0) {
             graphics.blit(TEXTURE, leftPos + FLAME_X, topPos + FLAME_Y + (FLAME_H - flamme),
                     FLAME_U, FLAME_V + (FLAME_H - flamme), FLAME_W, flamme, 512, 512);
         }
 
-        // Der Vorrat wächst von unten nach oben, wie ein Tank.
+        // The reserve grows from the bottom up, like a tank.
         int hoehe = Math.round(menu.energyFraction() * BAR_H);
         if (hoehe > 0) {
             graphics.blit(TEXTURE, leftPos + BAR_X, topPos + BAR_Y + (BAR_H - hoehe),
@@ -71,7 +71,7 @@ public class BurnerScreen extends AbstractContainerScreen<BurnerMenu> {
         super.render(graphics, mouseX, mouseY, partialTick);
         renderTooltip(graphics, mouseX, mouseY);
 
-        // Am Balken steht die Zahl: „voll" allein sagt nicht, ob es reicht.
+        // The number sits by the bar: "full" alone does not say if it lasts.
         if (mouseX >= leftPos + BAR_X && mouseX < leftPos + BAR_X + BAR_W
                 && mouseY >= topPos + BAR_Y && mouseY < topPos + BAR_Y + BAR_H) {
             graphics.renderTooltip(font, List.of(

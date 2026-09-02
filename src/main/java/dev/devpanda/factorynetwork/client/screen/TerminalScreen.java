@@ -16,20 +16,20 @@ import net.minecraft.world.entity.player.Inventory;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
- * Das Terminal.
+ * The terminal.
  *
- * <p>Ein Fenster mit Reitern statt einer Oberfläche je Block. Das Gehäuse ist
- * bewusst Minecraft: dasselbe Slotraster, das Spielerinventar an der Stelle,
- * an der es immer sitzt. <b>Was blind funktioniert, ist die Position</b> —
- * dieselben Stellen, dieselben Maße, dieselben Abstände.
+ * <p>A single window with tabs instead of a surface per block. The casing is
+ * deliberately Minecraft: the same slot grid, the player inventory in the
+ * place where it always sits. <b>What works blind is the position</b> — the
+ * same spots, the same measurements, the same spacings.
  *
- * <p>Die Farbe ist es nicht. Das Terminal ist ein Gerät und sieht auch so
- * aus: ein Blechgehäuse mit einer dunklen Scheibe darin, in die alle Reiter
- * zeichnen. Vorher war nur der Code-Reiter dunkel und alles andere hellgrau —
- * das waren zwei Entwürfe in einem Fenster.
+ * <p>The colour is not. The terminal is a device and looks like one: a metal
+ * casing with a dark pane in it, into which all tabs draw. Before, only the
+ * code tab was dark and everything else light grey — those were two designs
+ * in one window.
  *
- * <p>Drei Ebenen, eine Regel: <b>Was vertieft liegt, ist dunkler als sein
- * Grund und hat unten rechts eine helle Kante.</b> Blech, Scheibe, Mulde.
+ * <p>Three layers, one rule: <b>what lies recessed is darker than its ground
+ * and has a light edge at the bottom right.</b> Metal, pane, recess.
  */
 public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
 
@@ -38,8 +38,8 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
     private static final ResourceLocation WIDGETS = ResourceLocation.fromNamespaceAndPath(
             FactoryNetwork.MOD_ID, "textures/gui/widgets.png");
 
-    // Die Maße stehen in TerminalLayout, weil das Menü sie auch braucht und
-    // auf einem Server ohne Grafik läuft. Hier nur die kurzen Namen.
+    // The measurements live in TerminalLayout, because the menu needs them
+    // too and runs on a server without graphics. Here only the short names.
     static final int WIDTH = dev.devpanda.factorynetwork.client.menu.TerminalLayout.WIDTH;
     static final int HEIGHT = dev.devpanda.factorynetwork.client.menu.TerminalLayout.HEIGHT;
     static final int SCREEN_X0 =
@@ -60,30 +60,29 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
     static final int WORK_W = dev.devpanda.factorynetwork.client.menu.TerminalLayout.WORK_W;
     static final int WORK_H = dev.devpanda.factorynetwork.client.menu.TerminalLayout.WORK_H;
 
-    /** Wie weit die Reiterbeschriftungen auseinanderstehen. */
+    /** How far apart the tab labels stand. */
     private static final int TAB_GAP = 12;
 
-    // Schrift auf dunklem Grund. Die Werte sind dieselben wie in der
-    // Blockpalette der Mod — wer den Controller ansieht und dann das
-    // Terminal, soll denselben Farbklang wiedererkennen.
+    // Text on a dark ground. The values are the same as in the mod's block
+    // palette — anyone who looks at the controller and then the terminal
+    // should recognise the same colour palette.
     static final int TEXT = 0xD3DBD5;
     static final int TEXT_DIM = 0x8B978F;
     static final int TEXT_FAINT = 0x5D6862;
     static final int ACCENT = 0x78DC8C;
 
     /**
-     * Zustandsfarben, für dunklen Grund gewählt.
+     * State colours, chosen for a dark ground.
      *
-     * <p>Die alten waren für helles Grau gedacht: ein dunkles Grün für
-     * „läuft", ein dunkles Rot für „gescheitert". Auf Blech verschlammen die
-     * beiden zu derselben schmutzigen Fläche, und dann sagt die Farbe nichts
-     * mehr.
+     * <p>The old ones were meant for light grey: a dark green for "running",
+     * a dark red for "failed". On metal the two silt up into the same dirty
+     * surface, and then the colour says nothing any more.
      */
     static final int GOOD = 0x78DC8C;
     static final int WARN = 0xE8AC3E;
     static final int BAD = 0xE88388;
 
-    /** Knöpfe im Bildschirm: erhabenes Blech, beim Zeigen heller. */
+    /** Buttons in the screen: raised metal, lighter on hover. */
     static final int BUTTON = 0xFF232B27;
     static final int BUTTON_HOVER = 0xFF39443D;
 
@@ -118,18 +117,18 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         announceTab();
     }
 
-    /** Der Server erfährt nur, ob der Speicher offen ist — sonst nichts. */
+    /** The server learns only whether storage is open — nothing else. */
     private void announceTab() {
         PacketDistributor.sendToServer(new StorageTabPacket(tab == TerminalTab.STORAGE));
     }
 
     /**
-     * Die Reiter, die dieses Fenster zeigt.
+     * The tabs this window shows.
      *
-     * <p>Am Block alle. Aus der Ferne alles außer Code — es sei denn, es ist
-     * ein Laptop. <b>Die Entscheidung fällt der Server</b>; hier wird sie nur
-     * noch einmal gestellt, damit nichts gezeichnet wird, das drüben
-     * abgelehnt würde.
+     * <p>At the block, all of them. From a distance everything except code —
+     * unless it is a laptop. <b>The decision is the server's to make</b>; here
+     * it is only asked once more, so that nothing is drawn that would be
+     * rejected on the other side.
      */
     private java.util.List<TerminalTab> tabs() {
         return java.util.Arrays.stream(TerminalTab.values())
@@ -149,7 +148,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         return tab;
     }
 
-    // ---- Zeichnen ---------------------------------------------------------
+    // ---- Drawing ----------------------------------------------------------
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
@@ -179,29 +178,28 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
             case CODE -> codeView.render(graphics, mouseX, mouseY);
             default -> { }
         }
-        // Zuletzt, damit sie über allem liegt, was ein Reiter unten zeichnet.
+        // Last, so it lies over everything a tab draws at the bottom.
         drawStatus(graphics);
     }
 
     /**
-     * Wie breit eine Reiterbeschriftung ist.
+     * How wide a tab label is.
      *
-     * <p>Nach dem Text und nicht nach dem Fünftel des Fensters: Reiter sind
-     * jetzt Beschriftungen und keine Karteikarten, und eine Beschriftung ist
-     * so breit, wie sie ist. Nebenbei fällt damit der Fehler weg, dass eine
-     * feste Breite zu einer Grafik fester Breite passen musste.
+     * <p>By the text and not by a fifth of the window: tabs are now labels and
+     * not index cards, and a label is as wide as it is. Along the way this
+     * removes the bug where a fixed width had to match a fixed-width graphic.
      */
     private int tabWidth(TerminalTab tab) {
         return font.width(FnFonts.mono(tab.title()));
     }
 
     /**
-     * Der Abstand zwischen zwei Beschriftungen.
+     * The gap between two labels.
      *
-     * <p><b>Schrumpft, wenn es eng wird.</b> Mit einem festen Abstand lief
-     * der sechste Reiter aus dem Fenster, und der siebte täte es wieder. Die
-     * Leiste rechnet lieber selbst nach, als dass jemand beim nächsten Reiter
-     * daran denken muss.
+     * <p><b>Shrinks when space gets tight.</b> With a fixed gap the sixth tab
+     * ran off the window, and the seventh would do it again. The bar would
+     * rather do the arithmetic itself than have someone remember it at the
+     * next tab.
      */
     private int tabGap() {
         int labels = 0;
@@ -209,13 +207,13 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
             labels += tabWidth(candidate);
         }
         int room = SCREEN_X1 - (SCREEN_X0 + 6) - labels;
-        // Weniger Reiter, weitere Abstände: Fünf Beschriftungen sollen die
-        // Leiste füllen und nicht links zusammenkleben.
+        // Fewer tabs, wider gaps: five labels should fill the bar and not
+        // clump together on the left.
         int gaps = Math.max(1, tabs().size() - 1);
         return Math.max(3, Math.min(TAB_GAP, room / gaps));
     }
 
-    /** Wo eine Reiterbeschriftung anfängt, im Fenster gerechnet. */
+    /** Where a tab label begins, measured within the window. */
     private int tabX(TerminalTab wanted) {
         int x = SCREEN_X0 + 6;
         int gap = tabGap();
@@ -233,11 +231,10 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
     }
 
     /**
-     * Die Reiter: flacher Text in der Scheibe, der aktive mit einem Strich.
+     * The tabs: flat text in the pane, the active one with an underline.
      *
-     * <p>Karteikarten sind das Kreativ-Inventar. Ein Gerät hat
-     * Beschriftungen, und welche gilt, sagt eine Linie darunter — so wie in
-     * jedem Editor.
+     * <p>Index cards are the creative inventory. A device has labels, and
+     * which one applies is told by a line beneath it — as in every editor.
      */
     private void drawTabs(GuiGraphics graphics, int mouseX, int mouseY) {
         for (TerminalTab candidate : tabs()) {
@@ -252,7 +249,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         }
     }
 
-    /** Trifft der Zeiger diese Beschriftung? */
+    /** Does the cursor hit this label? */
     private boolean overTab(TerminalTab candidate, double mouseX, double mouseY) {
         int x = leftPos + tabX(candidate);
         int y = topPos + tabY();
@@ -261,15 +258,15 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
     }
 
     /**
-     * Die Statuszeile am unteren Rand der Scheibe.
+     * The status line at the bottom edge of the pane.
      *
-     * <p>Rechts, was das Netz macht — auf jedem Reiter dasselbe. Links, was
-     * der Reiter zu sagen hat. <b>Statuszeilen gehören nach unten</b>; das
-     * weiß jeder, der einen Editor benutzt, und oben wäre sie eine dritte
-     * Zeile Kopf über dem eigentlichen Inhalt.
+     * <p>On the right, what the network is doing — the same on every tab. On
+     * the left, what the tab has to say. <b>Status lines belong at the
+     * bottom</b>; everyone who uses an editor knows that, and at the top it
+     * would be a third line of header above the actual content.
      *
-     * <p>Beide Texte werden gemessen und gegeneinander geprüft. Beim Entwurf
-     * hatte ich nur den rechten gemessen, und sie schoben sich ineinander.
+     * <p>Both texts are measured and checked against each other. In the draft
+     * I had measured only the right one, and they slid into each other.
      */
     private void drawStatus(GuiGraphics graphics) {
         int y = topPos + SCREEN_BOTTOM - STATUS_ROW + 1;
@@ -312,7 +309,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
                 false);
     }
 
-    /** Was der aktive Reiter links in der Statuszeile stehen hat. */
+    /** What the active tab shows on the left of the status line. */
     private Component statusLeft() {
         return switch (tab) {
             case STORAGE -> storageView.statusText();
@@ -321,7 +318,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         };
     }
 
-    /** Beim Zeigen auf die Statuszeile steht dort, was die Zahlen bedeuten. */
+    /** On hover over the status line, it shows what the numbers mean. */
     private void renderStatusTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
         int y = topPos + SCREEN_BOTTOM - STATUS_ROW + 1;
         if (mouseY < y || mouseY >= y + STATUS_ROW
@@ -346,19 +343,18 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
 
     @Override
     protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
-        // Der Fenstertitel steht in der Reiterleiste; nur das Inventar wird
-        // beschriftet, so wie in jedem Vanilla-Fenster.
+        // The window title is in the tab bar; only the inventory is labelled,
+        // as in every vanilla window.
         graphics.drawString(font, playerInventoryTitle, (WIDTH - 9 * 18) / 2,
                 inventoryLabelY, Widgets.CASE_TEXT, false);
     }
 
     /**
-     * Übernimmt das Programm — und lässt das Fenster offen.
+     * Applies the program — and leaves the window open.
      *
-     * <p>Vorher schloss es sich dabei. Bei einer Ablehnung stand man draußen
-     * mit einer Chatzeile und musste das Terminal wieder aufmachen, um zu
-     * suchen, was nicht ging. Was daraus geworden ist, steht jetzt in der
-     * Fußleiste des Editors.
+     * <p>Before, it closed in the process. On a rejection you stood outside
+     * with a chat line and had to reopen the terminal to look for what did not
+     * work. What became of it now sits in the editor's footer.
      */
     void deploy() {
         PacketDistributor.sendToServer(
@@ -366,22 +362,22 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
     }
 
     /**
-     * Öffnet den Editor im ganzen Fenster.
+     * Opens the editor in the whole window.
      *
-     * <p>Das Terminal bleibt dabei offen — es wird nur überdeckt. Es geht
-     * kein {@code closeContainer} an den Server, also bleibt der Spieler beim
-     * Controller angemeldet, und beim Zurückkommen steht das Fenster mit
-     * denselben Zahlen da.
+     * <p>The terminal stays open while this happens — it is only covered. No
+     * {@code closeContainer} goes to the server, so the player stays signed in
+     * at the controller, and on coming back the window is there with the same
+     * numbers.
      */
     void openBigEditor() {
         minecraft.setScreen(new CodeScreen(this, menu.position()));
     }
 
-    // ---- Eingabe ----------------------------------------------------------
+    // ---- Input ------------------------------------------------------------
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        // Reiterleiste zuerst
+        // Tab bar first
         for (TerminalTab candidate : tabs()) {
             if (overTab(candidate, mouseX, mouseY)) {
                 switchTo(candidate);
@@ -401,10 +397,10 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
     }
 
     /**
-     * Ziehen gehört dem Code-Reiter: Dort wählt es Text aus.
+     * Dragging belongs to the code tab: there it selects text.
      *
-     * <p>Die anderen Reiter kennen kein Ziehen — dort geht der Griff an
-     * Minecraft zurück, damit Schieberegler und Knöpfe weiter arbeiten.
+     * <p>The other tabs know no dragging — there the gesture goes back to
+     * Minecraft, so that sliders and buttons keep working.
      */
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button,
@@ -429,21 +425,21 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
 
     @Override
     /**
-     * Tasten für das Terminal.
+     * Keys for the terminal.
      *
-     * <p><b>Escape geht durch den Reiter, bevor es das Fenster schließt.</b>
-     * Vorher stand es ganz oben, und die Suchzeile des Speichers wie auch die
-     * Suche im Editor sahen es nie — man schloss das ganze Terminal, wo man
-     * nur eine Eingabe beenden wollte. Jetzt beendet der erste Escape, was
-     * offen ist, und der zweite das Fenster.
+     * <p><b>Escape passes through the tab before it closes the window.</b>
+     * Before, it sat at the very top, and neither the storage search bar nor
+     * the search in the editor ever saw it — you closed the whole terminal
+     * where you only wanted to end an input. Now the first Escape ends
+     * whatever is open, and the second the window.
      *
-     * <p>Und die Inventartaste darf keinen Reiter treffen, der tippt: Ein
-     * Fenster mit Inventar schließt sich bei „e", und dann steht man mitten
-     * im Wort „Eisenerz" wieder in der Welt.
+     * <p>And the inventory key must not reach a tab that is typing: a window
+     * with an inventory closes on "e", and then you are standing in the middle
+     * of the word "iron ore" back in the world.
      */
     public boolean keyPressed(int key, int scanCode, int modifiers) {
         if (tab == TerminalTab.CODE) {
-            // Strg+Eingabe übernimmt das Programm.
+            // Ctrl+Enter applies the program.
             if ((key == 257 || key == 335) && hasControlDown()) {
                 deploy();
                 return true;
@@ -459,8 +455,8 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
                 onClose();
                 return true;
             }
-            // Alles Übrige verschlucken, damit kein Tastendruck im Text
-            // draußen etwas auslöst.
+            // Swallow everything else, so that no keystroke in the text
+            // triggers something outside.
             return true;
         }
         if (tab == TerminalTab.STORAGE && storageView.keyPressed(key, scanCode, modifiers)) {
@@ -486,13 +482,13 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
 
     @Override
     public void onClose() {
-        // Zuerst sichern: Danach ist das Fenster weg, und mit ihm der Anlass,
-        // noch einmal nachzusehen.
+        // Save first: after this the window is gone, and with it the occasion
+        // to look once more.
         dev.devpanda.factorynetwork.client.ClientProjectState.flush();
         PacketDistributor.sendToServer(new StorageTabPacket(false));
         ClientStorageView.clear();
-        // Was in den Geräten lag, galt für diesen Besuch. Beim nächsten Öffnen
-        // wird neu gefragt.
+        // What was in the devices applied to this visit. On the next opening
+        // it is asked anew.
         dev.devpanda.factorynetwork.client.ClientDeviceState.clear();
         super.onClose();
     }

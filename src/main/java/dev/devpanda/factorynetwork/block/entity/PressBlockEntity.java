@@ -18,15 +18,15 @@ import dev.devpanda.factorynetwork.network.InternalBuffer;
 import java.util.Optional;
 
 /**
- * Die Presse.
+ * The press.
  *
- * <p>Drei Plätze: Stempel, Material, Ausgabe. Sie zieht Strom aus dem
- * gewöhnlichen Forge-Netz — jede Mod im Pack kann sie speisen, und wir bauen
- * kein eigenes Energiesystem daneben.
+ * <p>Three slots: stamp, material, output. It draws power from the ordinary
+ * Forge network — any mod in the pack can feed it, and we build no energy
+ * system of our own beside it.
  *
- * <p><b>Ohne Strom passiert nichts, und das sagt sie auch.</b> Eine Maschine,
- * die stumm stehenbleibt, schickt den Spieler auf die Suche nach dem falschen
- * Fehler; deshalb steht der Ladestand in der Oberfläche und im Jade-Tooltip.
+ * <p><b>Without power nothing happens, and it says so too.</b> A machine that
+ * stands there silently sends the player hunting for the wrong bug; that is
+ * why the charge level appears in the interface and in the Jade tooltip.
  */
 public class PressBlockEntity extends BlockEntity
         implements net.minecraft.world.MenuProvider {
@@ -34,12 +34,12 @@ public class PressBlockEntity extends BlockEntity
     public static final int SLOT_STAMP = 0;
 
     /**
-     * Die Materialplätze.
+     * The material slots.
      *
-     * <p>Drei, weil ein Rezept höchstens drei Zutaten fordern darf: Ein
-     * Prozessor braucht Redstone, Kupfer und einen Träger, und das ist die
-     * dickste Rechnung, die eine Presse führen soll. Wer mehr braucht,
-     * braucht keine Presse, sondern eine Fertigungsstraße.
+     * <p>Three, because a recipe may demand at most three ingredients: a
+     * processor needs redstone, copper and a carrier, and that is the heaviest
+     * reckoning a press should carry. Whoever needs more needs not a press but
+     * an assembly line.
      */
     public static final int SLOT_MATERIAL = 1;
     public static final int MATERIAL_SLOTS = PressRecipe.MOST_MATERIALS;
@@ -47,29 +47,28 @@ public class PressBlockEntity extends BlockEntity
     public static final int SLOT_RESULT = SLOT_MATERIAL + MATERIAL_SLOTS;
 
     /**
-     * Die Steckplätze für Ausbauten.
+     * The slots for upgrades.
      *
-     * <p>Fünf, und sie zählen stapelweise: Was sie ausmachen, rechnet
-     * {@link dev.devpanda.factorynetwork.upgrade.Tuning}, und die deckelt bei
-     * acht Karten je Art.
+     * <p>Five, and they count by the stack: what they amount to is computed by
+     * {@link dev.devpanda.factorynetwork.upgrade.Tuning}, which caps at eight
+     * cards per type.
      */
     public static final int SLOT_UPGRADE = SLOT_RESULT + 1;
     public static final int UPGRADE_SLOTS = 5;
 
     public static final int SLOTS = SLOT_UPGRADE + UPGRADE_SLOTS;
 
-    /** Fasst so viel, dass ein Vorgang durchläuft, ohne am Tropf zu hängen. */
+    /** Holds enough that one pass runs through without hanging on a drip feed. */
     public static final int CAPACITY = 40_000;
 
-    /** Höchstens so viel je Tick — sonst wäre die Zeit im Rezept sinnlos. */
+    /** At most this much per tick — otherwise the time in the recipe would be pointless. */
     private static final int MAX_INPUT = 2_000;
 
     /**
-     * Was in den Stempelplatz darf.
+     * What may go into the stamp slot.
      *
-     * <p>Ein Tag und keine feste Liste: Ein Datenpaket darf Rezepte
-     * mitbringen, und ein eigener Stempel dazu soll sich einlegen lassen,
-     * ohne dass jemand die Mod anfasst.
+     * <p>A tag and not a fixed list: a datapack may bring recipes along, and
+     * a stamp of its own should be insertable without anyone touching the mod.
      */
     public static final net.minecraft.tags.TagKey<net.minecraft.world.item.Item> STAMPS =
             net.minecraft.tags.TagKey.create(
@@ -80,10 +79,10 @@ public class PressBlockEntity extends BlockEntity
     private final NonNullList<ItemStack> items = NonNullList.withSize(SLOTS, ItemStack.EMPTY);
 
     /**
-     * Nimmt an, gibt nichts ab.
+     * Accepts, hands nothing out.
      *
-     * <p>Eine Maschine, die ihren Strom weiterreicht, wird zum Kabel — und
-     * dann baut jemand eine Kette daraus und wundert sich über die Verluste.
+     * <p>A machine that passes its power on becomes a cable — and then someone
+     * builds a chain of them and wonders about the losses.
      */
     private final InternalBuffer energy = new InternalBuffer(CAPACITY, MAX_INPUT) {
         @Override
@@ -131,11 +130,11 @@ public class PressBlockEntity extends BlockEntity
     }
 
     /**
-     * Ein Tick Arbeit.
+     * One tick of work.
      *
-     * <p>Erst prüfen, ob ein Rezept passt und das Ergebnis Platz hat, dann
-     * Strom abziehen. Andersherum verbrauchte eine volle Presse Energie für
-     * nichts.
+     * <p>First check whether a recipe fits and the result has room, then draw
+     * power. The other way round, a full press would consume energy for
+     * nothing.
      */
     public void serverTick() {
         if (level == null || level.isClientSide) {
@@ -164,7 +163,7 @@ public class PressBlockEntity extends BlockEntity
         setChanged();
     }
 
-    /** Was in den Materialplätzen liegt, in ihrer Reihenfolge. */
+    /** What lies in the material slots, in their order. */
     private PressInput input() {
         java.util.List<ItemStack> materials = new java.util.ArrayList<>(MATERIAL_SLOTS);
         for (int i = 0; i < MATERIAL_SLOTS; i++) {
@@ -183,10 +182,10 @@ public class PressBlockEntity extends BlockEntity
     }
 
     /**
-     * Was in den Steckplätzen steckt.
+     * What sits in the upgrade slots.
      *
-     * <p>Jedes Stück eines Stapels zählt — dieselbe Regel wie bei den
-     * Reichweitenkarten, und dieselbe Klasse rechnet sie.
+     * <p>Every piece of a stack counts — the same rule as for the range cards,
+     * and the same class computes it.
      */
     private dev.devpanda.factorynetwork.upgrade.Loadout loadout() {
         java.util.Map<dev.devpanda.factorynetwork.upgrade.Upgrade, Integer> counts =
@@ -201,18 +200,18 @@ public class PressBlockEntity extends BlockEntity
         return dev.devpanda.factorynetwork.upgrade.Loadout.ofCounts(counts);
     }
 
-    /** Das Rezept, wie diese Presse mit ihren Karten es ausführt. */
+    /** The recipe, as this press carries it out with its cards. */
     public dev.devpanda.factorynetwork.upgrade.Tuned tuned(PressRecipe recipe) {
         return dev.devpanda.factorynetwork.upgrade.Tuning.of(
                 loadout(), recipe.ticks(), recipe.energy());
     }
 
     /**
-     * Reicht das Material, und passt das Ergebnis in den Ausgabeplatz?
+     * Is there enough material, and does the result fit into the output slot?
      *
-     * <p>Beides gegen die Stückzahl gerechnet: Eine Presse mit Stapelkarten
-     * verbraucht das Mehrfache und legt das Mehrfache ab. Wer nur das Rezept
-     * prüft, fängt einen Durchlauf an, den er nicht zu Ende bringt.
+     * <p>Both reckoned against the batch size: a press with stack cards
+     * consumes the multiple and deposits the multiple. Whoever checks only the
+     * recipe starts a run they cannot finish.
      */
     private boolean fits(PressRecipe recipe) {
         int batch = tuned(recipe).batch();
@@ -240,7 +239,7 @@ public class PressBlockEntity extends BlockEntity
         int batch = tuned(recipe).batch();
         int[] from = recipe.slotsFor(input());
         if (from == null) {
-            // Zwischen Prüfung und Abschluss hat jemand ausgeräumt.
+            // Between the check and the finish someone cleared it out.
             progress = 0;
             return;
         }
@@ -252,24 +251,24 @@ public class PressBlockEntity extends BlockEntity
         } else {
             current.grow(result.getCount());
         }
-        // Jede Zutat aus dem Platz, der sie erfüllt hat — nicht der Reihe
-        // nach: Die Reihenfolge in der Presse ist eine andere als im Rezept.
+        // Each ingredient from the slot that fulfilled it — not in order: the
+        // order in the press is a different one than in the recipe.
         for (int i = 0; i < from.length; i++) {
             item(SLOT_MATERIAL + from[i])
                     .shrink(recipe.materials().get(i).count() * batch);
         }
-        // Der Stempel bleibt — er ist Werkzeug, nicht Zutat.
+        // The stamp stays — it is a tool, not an ingredient.
         progress = 0;
     }
 
-    // ---- Fenster ----------------------------------------------------------
+    // ---- Screen -------------------------------------------------------------
 
     /**
-     * Die Zahlen, die das Fenster laufend braucht.
+     * The numbers the screen needs continuously.
      *
-     * <p>Der schmale Weg, den Minecraft dafür vorsieht: ein paar Werte, die
-     * sich jeden Tick ändern und beim Zuschauen aktuell sein müssen. Ein
-     * eigenes Paket dafür wäre Aufwand für vier Zahlen.
+     * <p>The narrow path Minecraft provides for this: a few values that change
+     * every tick and must be current while you watch. A packet of its own for
+     * this would be effort for four numbers.
      */
     private final net.minecraft.world.inventory.ContainerData data =
             new net.minecraft.world.inventory.ContainerData() {
@@ -290,7 +289,7 @@ public class PressBlockEntity extends BlockEntity
 
                 @Override
                 public void set(int index, int value) {
-                    // Nichts: Der Server rechnet, der Client schaut zu.
+                    // Nothing: the server computes, the client watches.
                 }
 
                 @Override
@@ -300,19 +299,19 @@ public class PressBlockEntity extends BlockEntity
             };
 
     /**
-     * Das Inventar, das ein Anschluss sieht.
+     * The inventory a connector sees.
      *
-     * <p><b>Ohne das ist die Presse keine Maschine, sondern ein Möbelstück.</b>
-     * Sie nahm Strom an, seit es sie gibt — aber kein Anschluss fand je ein
-     * Inventar an ihr, und damit konnte kein Worker und kein {@code move} ihr
-     * einen Eisenbarren geben. Bei einer Mod, deren Zweck Automatisierung
-     * ist, war das die Lücke unter allen anderen.
+     * <p><b>Without it the press is not a machine but a piece of furniture.</b>
+     * It has accepted power since it existed — but no connector ever found an
+     * inventory on it, and so no worker and no {@code move} could give it an
+     * iron ingot. In a mod whose purpose is automation, that was the gap
+     * beneath all others.
      *
-     * <p><b>Die Plätze haben verschiedene Regeln</b>, und deshalb steht hier
-     * ein eigener Handler statt eines Wrappers um den Container: Der Stempel
-     * nimmt nur Stempel, das Material nimmt keinen Stempel, und aus dem
-     * Ergebnis wird nur genommen. Ein Wrapper ohne Regeln ließe eine
-     * Sortiermaschine ihren ganzen Inhalt in die Presse schieben.
+     * <p><b>The slots have different rules</b>, and that is why there is a
+     * dedicated handler here instead of a wrapper around the container: the
+     * stamp takes only stamps, the material takes no stamp, and from the
+     * result only takes are allowed. A wrapper without rules would let a
+     * sorting machine shove its entire contents into the press.
      */
     private final net.neoforged.neoforge.items.IItemHandler handler =
             new net.neoforged.neoforge.items.IItemHandler() {
@@ -357,10 +356,9 @@ public class PressBlockEntity extends BlockEntity
 
                 @Override
                 public ItemStack extractItem(int slot, int amount, boolean simulate) {
-                    // <b>Nur das Ergebnis geht heraus.</b> Wer den Stempel
-                    // abziehen dürfte, hätte eine Presse, die sich selbst
-                    // entwaffnet — und das Material gehört der Maschine,
-                    // sobald es drin liegt.
+                    // <b>Only the result goes out.</b> Whoever could pull the
+                    // stamp out would have a press that disarms itself — and
+                    // the material belongs to the machine once it lies inside.
                     if (slot != SLOT_RESULT || amount <= 0) {
                         return ItemStack.EMPTY;
                     }
@@ -385,30 +383,30 @@ public class PressBlockEntity extends BlockEntity
                 @Override
                 public boolean isItemValid(int slot, ItemStack stack) {
                     if (slot == SLOT_STAMP) {
-                        // Ein Stempel und sonst nichts.
+                        // A stamp and nothing else.
                         return stack.is(STAMPS);
                     }
                     if (slot >= SLOT_MATERIAL && slot < SLOT_MATERIAL + MATERIAL_SLOTS) {
-                        // Alles, was kein Stempel ist: Welche Rezepte es gibt,
-                        // entscheidet ein Datenpaket, und diese Frage gegen den
-                        // Rezeptbestand zu stellen hieße, sie bei jedem
-                        // Einlegeversuch neu zu stellen.
+                        // Anything that is not a stamp: which recipes exist is
+                        // decided by a datapack, and asking this question
+                        // against the set of recipes would mean asking it anew
+                        // on every attempt to insert.
                         return !stack.is(STAMPS);
                     }
-                    // <b>Die Steckplätze sind von außen zu.</b> Sie sind eine
-                    // Einstellung und kein Durchlauf: Eine Sortiermaschine,
-                    // die Karten hineinschiebt, änderte im Vorbeigehen, wie
-                    // schnell die Presse läuft.
+                    // <b>The upgrade slots are closed from outside.</b> They
+                    // are a setting, not a throughput: a sorting machine that
+                    // shoved cards in would change, in passing, how fast the
+                    // press runs.
                     return false;
                 }
             };
 
-    /** Das Inventar für die Anschlüsse ringsum. */
+    /** The inventory for the connectors all around. */
     public net.neoforged.neoforge.items.IItemHandler inventory() {
         return handler;
     }
 
-    /** Die Plätze als Container, damit das Fenster damit umgehen kann. */
+    /** The slots as a container, so the screen can work with them. */
     private final net.minecraft.world.Container container =
             new net.minecraft.world.SimpleContainer(SLOTS) {
                 @Override
@@ -473,11 +471,11 @@ public class PressBlockEntity extends BlockEntity
         super.loadAdditional(tag, registries);
         items.clear();
         ContainerHelper.loadAllItems(tag, items, registries);
-        // Nur wenn es dasteht: Das Update-Paket an den Client trägt die
-        // Energie nicht mit — sie steht in der ContainerData des Menüs, und
-        // die Anzeige braucht sie im Blockzustand nicht. NeoForge antwortet
-        // auf ein fehlendes Tag aber mit einer Ausnahme, und die kostet den
-        // Spieler die Verbindung, sobald jemand eine Presse setzt.
+        // Only if it is present: the update packet to the client does not
+        // carry the energy — it lives in the menu's ContainerData, and the
+        // display does not need it in the block state. NeoForge, however,
+        // answers a missing tag with an exception, and that costs the player
+        // the connection the moment someone places a press.
         if (tag.contains("Energy")) {
             energy.deserializeNBT(registries, tag.get("Energy"));
         }

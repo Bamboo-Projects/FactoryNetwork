@@ -17,10 +17,10 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Der Sendemast: von hier aus funkt das Netz.
+ * The mast: from here the network transmits.
  *
- * <p>Er hat keine Vorderseite — ein Mast steht, und wohin seine Ausleger
- * zeigen, ändert nichts an dem, was er tut.
+ * <p>It has no front face — a mast just stands there, and which way its arms
+ * point changes nothing about what it does.
  */
 import dev.devpanda.factorynetwork.item.RemoteDeviceItem;
 import net.minecraft.network.chat.Component;
@@ -50,14 +50,14 @@ public class MastBlock extends Block implements EntityBlock {
     }
 
     /**
-     * Mit einem Ferngerät in der Hand: anmelden statt öffnen.
+     * With a remote device in hand: register instead of open.
      *
-     * <p><b>Ein Klick und eine Zeile Text, kein Fenster.</b> Die Anmeldung
-     * ist eine einzige Angabe — welcher Mast. Ein Fenster dafür wäre ein
-     * Fenster mit einem Knopf.
+     * <p><b>One click and one line of text, no screen.</b> The registration is
+     * a single piece of information — which mast. A screen for that would be a
+     * screen with one button.
      *
-     * <p>Wer schon angemeldet ist und noch einmal klickt, meldet sich ab.
-     * Sonst gäbe es keinen Weg zurück außer dem, das Gerät wegzuwerfen.
+     * <p>Whoever is already registered and clicks again deregisters. Otherwise
+     * there would be no way back except throwing the device away.
      */
     @Override
     protected ItemInteractionResult useItemOn(ItemStack held, BlockState state, Level level,
@@ -84,7 +84,7 @@ public class MastBlock extends Block implements EntityBlock {
         return ItemInteractionResult.CONSUME;
     }
 
-    /** Rechtsklick ohne Gerät öffnet die vier Steckplätze. */
+    /** Right-clicking without a device opens the four slots. */
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
                                                Player player, BlockHitResult hit) {
@@ -101,11 +101,11 @@ public class MastBlock extends Block implements EntityBlock {
     }
 
     /**
-     * Beim Abbauen fallen die Karten heraus.
+     * When broken, the cards drop out.
      *
-     * <p>Die Loot-Tabelle sieht sie nicht — wer einen bestückten Mast abbaut,
-     * verlöre sonst vier Karten, und eine davon kann die teuerste im Spiel
-     * sein.
+     * <p>The loot table does not see them — whoever breaks a stocked mast would
+     * otherwise lose four cards, and one of them can be the most expensive in
+     * the game.
      */
     @Override
     protected void onRemove(BlockState state, Level level, BlockPos pos,

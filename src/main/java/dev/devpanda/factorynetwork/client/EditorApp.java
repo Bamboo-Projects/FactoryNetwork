@@ -16,38 +16,37 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 
 /**
- * Die Entwicklungsumgebung von FactoryNetwork — über die CEF-API geöffnet.
+ * FactoryNetwork's development environment — opened through the CEF API.
  *
- * <p><b>FactoryNetwork ist hier ein Nutzer der Schnittstelle wie jede andere
- * Mod.</b> Der Editor greift nicht mehr in die Runtime, sondern öffnet einen
- * Web-Bildschirm über {@link FnWeb#openScreen}. Was er von der Runtime
- * braucht, sind nur die öffentliche API und der Helfer, der ein Bündel
- * auspackt — nichts aus {@code web.runtime}, {@code web.screen} oder
- * {@code web.view}.
+ * <p><b>FactoryNetwork is a consumer of the interface here like any other
+ * mod.</b> The editor no longer reaches into the runtime, but opens a web
+ * screen through {@link FnWeb#openScreen}. All it needs from the runtime are
+ * the public API and the helper that unpacks a bundle — nothing from
+ * {@code web.runtime}, {@code web.screen} or {@code web.view}.
  *
- * <p><b>Durchscheinend über der lebenden Welt.</b> Der frühere Editor fror
- * das Weltbild als halbaufgelöstes Standbild ein — ein Messgerät, das Monaco
- * ohne die laufende Welt vermessen sollte. Ausgeliefert wird die einfachere,
- * gewöhnliche Form: eine durchsichtige Seite über Minecrafts unscharfem Bild.
+ * <p><b>Translucent over the living world.</b> The earlier editor froze the
+ * world image as a half-resolution still — a measuring rig meant to gauge
+ * Monaco without the running world. What ships is the simpler, ordinary form:
+ * a transparent page over Minecraft's blurred picture.
  */
 public final class EditorApp {
 
     private static final Logger LOG = LoggerFactory.getLogger("FactoryNetwork/IDE");
 
-    /** Das Verzeichnis der Weboberfläche im Klassenpfad. */
+    /** The directory of the web interface in the classpath. */
     private static final String MANIFEST = "assets/factorynetwork/web/ide/files.txt";
-    /** Und die Seite selbst. */
+    /** And the page itself. */
     private static final String PAGE = "assets/factorynetwork/web/ide/index.html";
-    /** Der Ordner unter dem Spielordner, in den ausgepackt wird. */
+    /** The folder under the game folder into which it is unpacked. */
     private static final String UNPACKED = "factorynetwork-web";
 
     private EditorApp() {
     }
 
     /**
-     * Packt aus, falls nötig, und öffnet den Editor als Vollbild.
+     * Unpacks if necessary and opens the editor full screen.
      *
-     * @return ob es geklappt hat
+     * @return whether it succeeded
      */
     public static boolean open(Minecraft client) {
         String url = prepare(client);
@@ -67,13 +66,13 @@ public final class EditorApp {
     }
 
     /**
-     * Packt Bündel und Seite aus und gibt die Adresse zurück.
+     * Unpacks the bundle and the page and returns the address.
      *
-     * <p>Die Seite liegt neben dem Bündel und nicht darin — sie ist unser
-     * Werk, nicht Teil dessen, was Monaco mitbringt. Beide müssen in denselben
-     * Ordner, sonst lösen sich Monacos relative Adressen nicht auf.
+     * <p>The page lies beside the bundle and not inside it — it is our work,
+     * not part of what Monaco brings along. Both have to be in the same
+     * folder, otherwise Monaco's relative addresses do not resolve.
      *
-     * @return die {@code file:}-Adresse, oder {@code null}, wenn etwas fehlte
+     * @return the {@code file:} address, or {@code null} if something was missing
      */
     private static String prepare(Minecraft client) {
         Path into = client.gameDirectory.toPath().resolve(UNPACKED).resolve("ide");

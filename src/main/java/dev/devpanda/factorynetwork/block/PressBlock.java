@@ -17,15 +17,14 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Presst Bauteile aus Material.
+ * Presses components out of material.
  *
- * <p>Der Stempel bleibt liegen und wird wiederverwendet; verbraucht wird nur
- * das Material. Strom kommt aus dem gewöhnlichen Forge-Netz — jede Mod im
- * Pack kann sie speisen.
+ * <p>The die stays in place and is reused; only the material is consumed. Power
+ * comes from the ordinary Forge network — any mod in the pack can feed it.
  */
 public class PressBlock extends HorizontalDirectionalBlock implements EntityBlock {
 
-    /** Die Trefferfläche, für jede der vier Richtungen einmal. */
+    /** The hitbox, once for each of the four directions. */
     private static final java.util.Map<net.minecraft.core.Direction, net.minecraft.world.phys.shapes.VoxelShape>
             SHAPES = FacingShapes.horizontal(MachineLayouts.press());
 
@@ -69,7 +68,7 @@ public class PressBlock extends HorizontalDirectionalBlock implements EntityBloc
                 : null;
     }
 
-    /** Rechtsklick öffnet das Fenster. */
+    /** Right-clicking opens the screen. */
     @Override
     protected net.minecraft.world.InteractionResult useWithoutItem(BlockState state, Level level,
             BlockPos pos, net.minecraft.world.entity.player.Player player,
@@ -83,10 +82,10 @@ public class PressBlock extends HorizontalDirectionalBlock implements EntityBloc
     }
 
     /**
-     * Beim Abbauen fällt heraus, was drinliegt.
+     * When broken, whatever is inside drops out.
      *
-     * <p>Ein Stempel ist teuer — ihn beim versehentlichen Abbauen zu
-     * verlieren wäre die Sorte Ärger, die man nicht wiedergutmachen kann.
+     * <p>A die is expensive — losing it to an accidental break would be the
+     * kind of grief you cannot make good again.
      */
     @Override
     protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState,

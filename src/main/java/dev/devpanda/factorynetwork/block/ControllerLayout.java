@@ -4,27 +4,27 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Die Maße des Controllers — als reine Zahlen.
+ * The controller's dimensions — as plain numbers.
  *
- * <p><b>Ohne jeden Minecraft-Bezug</b>, aus demselben Grund wie
- * {@link CableLayout}: Nur so lässt sich die Geometrie in einem gewöhnlichen
- * Test gegen die erzeugte Modelldatei prüfen.
+ * <p><b>With no ties to Minecraft whatsoever</b>, for the same reason as
+ * {@link CableLayout}: only this way can the geometry be checked against the
+ * generated model file in an ordinary test.
  *
- * <p>Dieselben Zahlen stehen im Modellskript {@code tools/assets.py};
- * {@code MachineLayoutTest} wacht darüber, dass beide dasselbe sagen.
+ * <p>The same numbers live in the model script {@code tools/assets.py};
+ * {@code MachineLayoutTest} watches that both say the same thing.
  */
 public final class ControllerLayout {
 
-    /** Höhe der Deckplatten oben und unten. */
+    /** Height of the cover plates, top and bottom. */
     public static final int PLATE = 1;
 
-    /** Wie weit der Körper dazwischen zurückspringt. */
+    /** How far the body between them is inset. */
     public static final int INSET = 1;
 
-    /** Breite einer Kantensäule. */
+    /** Width of an edge column. */
     public static final int EDGE = 3;
 
-    /** Alle Kästen des Modells, jeder als {@code x0 y0 z0 x1 y1 z1}. */
+    /** All boxes of the model, each as {@code x0 y0 z0 x1 y1 z1}. */
     public static List<int[]> boxes() {
         List<int[]> boxes = new ArrayList<>();
 

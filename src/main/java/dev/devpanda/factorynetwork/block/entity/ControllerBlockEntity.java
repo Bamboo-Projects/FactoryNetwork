@@ -46,12 +46,11 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Wurzel eines Netzwerks: hält Programm, Speicher, Graph und Laufzeit.
+ * Root of a network: holds program, storage, graph and runtime.
  *
- * <p>Der Graph wird nicht in jedem Tick neu aufgebaut, sondern in Abständen
- * und wenn jemand den Controller anklickt. Ein Kabel wird selten gesetzt; ein
- * dauernder Neuaufbau wäre die teuerste Stelle der Mod für den geringsten
- * Nutzen.
+ * <p>The graph is not rebuilt on every tick, but at intervals and when someone
+ * clicks the controller. A cable is rarely placed; a constant rebuild would be
+ * the most expensive spot in the mod for the least benefit.
  */
 public class ControllerBlockEntity extends BlockEntity {
 
@@ -65,36 +64,36 @@ public class ControllerBlockEntity extends BlockEntity {
     private static final String KEY_HELD_BACK = "HeldBack";
 
     /**
-     * So viele Zeilen hält das Protokoll.
+     * This many lines the log holds.
      *
-     * <p>Es geht mit der Welt auf die Platte, also darf es nicht wachsen.
-     * Zweihundert Zeilen sind genug, um zu sehen, was in der letzten Stunde
-     * schiefging, und klein genug, dass niemand sie bemerkt.
+     * <p>It goes to disk with the world, so it must not grow. Two hundred
+     * lines are enough to see what went wrong in the last hour, and small
+     * enough that no one notices them.
      */
     private static final int LOG_LIMIT = 200;
     private static final int REBUILD_INTERVAL = 100;
 
     /**
-     * Das Programm als Projekt aus mehreren Dateien.
+     * The program as a project of several files.
      *
-     * <p>Ein Programm von dreihundert Zeilen in einem Stück ist keine
-     * Übersicht. Alle Dateien teilen einen Namensraum — Dateien sind Ordnung
-     * für den Menschen, keine Grenze für die Sprache.
+     * <p>A program of three hundred lines in one piece is no overview. All
+     * files share one namespace — files are order for the human, not a
+     * boundary for the language.
      */
     /**
-     * Wer welche Datei gerade bearbeitet.
+     * Who is currently editing which file.
      *
-     * <p>Nur zur Laufzeit — eine Sperre über einen Serverneustart hinweg
-     * wäre eine Datei, die niemandem mehr gehört und die keiner aufmacht.
+     * <p>Only at runtime — a lock that outlasts a server restart would be a
+     * file that belongs to no one any more and that no one opens.
      */
     private final dev.devpanda.factorynetwork.network.FileLocks locks =
             new dev.devpanda.factorynetwork.network.FileLocks();
 
     /**
-     * Was im Editor steht.
+     * What is in the editor.
      *
-     * <p>Neben {@link #project}, das läuft. Ein Tippfehler darf die Fabrik
-     * nicht anhalten: Der Entwurf darf kaputt sein, der laufende Stand nicht.
+     * <p>Beside {@link #project}, which is running. A typo must not stop the
+     * factory: the draft may be broken, the running state may not.
      */
     private dev.devpanda.factorynetwork.lang.Project draft =
             dev.devpanda.factorynetwork.lang.Project.of("");
@@ -104,12 +103,12 @@ public class ControllerBlockEntity extends BlockEntity {
     private Program program = new Program(List.of());
 
     /**
-     * Die globalen Werte des Programms.
+     * The program's global values.
      *
-     * <p>Sie gehören zum Netz wie der Stromvorrat und der Speicherinhalt, und
-     * sie überleben aus demselben Grund den Serverneustart: Ein Wert, der
-     * sagt, in welchem Modus die Fabrik läuft, wäre nach einem Neustart
-     * sinnlos, wenn er wieder auf dem Anfangswert stünde.
+     * <p>They belong to the network like the power reserve and the storage
+     * contents, and they survive the server restart for the same reason: a
+     * value that says which mode the factory runs in would be pointless after
+     * a restart if it stood at its initial value again.
      */
     private final Map<String, dev.devpanda.factorynetwork.runtime.Value> globals =
             new java.util.LinkedHashMap<>();
@@ -117,12 +116,11 @@ public class ControllerBlockEntity extends BlockEntity {
     private List<Diagnostic> diagnostics = new ArrayList<>();
     private FactoryGraph graph = FactoryGraph.empty();
     /**
-     * Alle Bestände des Netzes, nach Ressourcenart.
+     * All of the network's contents, by resource kind.
      *
-     * <p>Die drei benannten Felder darunter zeigen hinein und ersparen den
-     * Umweg an den vielen Stellen, die eine bestimmte Art meinen. Der Besitz
-     * liegt bei {@code stores}: Ein vierter Speicher kommt dort an und
-     * nirgends sonst.
+     * <p>The three named fields below point into it and spare the detour at
+     * the many places that mean a particular kind. Ownership lies with
+     * {@code stores}: a fourth store arrives there and nowhere else.
      */
     private final dev.devpanda.factorynetwork.network.NetworkStores stores =
             new dev.devpanda.factorynetwork.network.NetworkStores();
@@ -131,125 +129,123 @@ public class ControllerBlockEntity extends BlockEntity {
     private final NetworkFluids fluidStorage = stores.fluids();
 
     /**
-     * Der Chemikalienspeicher.
+     * The chemical store.
      *
-     * <p>Eine Schnittstelle und keine Klasse: Chemikalien gehören Mekanism,
-     * und ein Feld mit einem Mekanism-Typ ließe diesen Controller in einem
-     * Pack ohne die Mod nicht mehr laden. Ohne Mekanism steht hier der
-     * Speicher, der nichts kann — und das ist die Wahrheit über ein solches
-     * Pack, keine Notlösung.
+     * <p>An interface and not a class: chemicals belong to Mekanism, and a
+     * field with a Mekanism type would keep this controller from loading in a
+     * pack without the mod. Without Mekanism, the store here is the one that
+     * can do nothing — and that is the truth about such a pack, not a stopgap.
      */
     private final dev.devpanda.factorynetwork.network.ResourceStore chemicalStorage =
             stores.chemicals();
     private final WorkerRuntime runtime = new WorkerRuntime();
 
     /**
-     * Die Serverschränke im Netz.
+     * The server racks in the network.
      *
-     * <p>Ohne einen davon rechnet das Netz nicht — weder Worker noch Abläufe.
-     * So wie ein Laufwerk die Voraussetzung dafür ist, dass es lagert.
+     * <p>Without one of them the network does not compute — neither workers
+     * nor flows. Just as a drive is the prerequisite for it to store.
      */
     private final List<dev.devpanda.factorynetwork.block.entity.RackBlockEntity> racks =
             new ArrayList<>();
 
-    /** Die Laufwerke im Netz — für den Stromverbrauch je Zelle. */
+    /** The drives in the network — for the power draw per cell. */
     private final List<DriveBlockEntity> drives = new ArrayList<>();
 
     /**
-     * Der Strom des Netzes.
+     * The network's power.
      *
-     * <p>Der Puffer sitzt im Controller und nimmt Forge Energy an. Ohne
-     * Strom steht alles still — und muss danach erst wieder hochfahren.
+     * <p>The buffer sits in the controller and accepts Forge Energy. Without
+     * power everything stands still — and must spin up again afterwards.
      */
     private final dev.devpanda.factorynetwork.network.NetworkPower power =
             new dev.devpanda.factorynetwork.network.NetworkPower();
-    /** Abläufe, die warten können — sie überleben einen Serverneustart. */
+    /** Flows that can wait — they survive a server restart. */
     private FlowEngine flows;
 
     /**
-     * Aufgeschriebene Abläufe, die noch warten, bis es eine Welt gibt.
+     * Written-down flows that still wait until there is a world.
      *
-     * <p>Beim Laden steht die Welt noch nicht bereit, die Abläufe brauchen
-     * aber einen Interpreter und der eine Welt. Also bleibt der Tag liegen,
-     * bis der erste Tick kommt.
+     * <p>On load the world is not yet ready, but the flows need an interpreter
+     * and it needs a world. So the tag is left lying until the first tick
+     * comes.
      */
     private CompoundTag pendingFlows;
 
     /**
-     * Ob das Netz schon einmal aufgebaut wurde.
+     * Whether the network has ever been built.
      *
-     * <p>Ein leerer Graph und ein noch nie aufgebauter sehen gleich aus, sind
-     * es aber nicht: Beim ersten Mal ist nichts dazugekommen.
+     * <p>An empty graph and a never-yet-built one look the same, but are not:
+     * the first time, nothing has come in.
      */
     private boolean networkKnown;
-    /** Negativ statt Long.MIN_VALUE: Die Differenz liefe sonst über. */
+    /** Negative instead of Long.MIN_VALUE: the difference would otherwise overflow. */
     private long lastRebuild = -REBUILD_INTERVAL;
 
     /**
-     * Das Projekt als Ordner neben der Welt — die Brücke zu VS Code.
+     * The project as a folder next to the world — the bridge to VS Code.
      *
-     * <p>Erst beim ersten Tick angelegt: Vorher gibt es keinen Server und
-     * damit keinen Weltordner.
+     * <p>Created only at the first tick: before that there is no server and
+     * therefore no world folder.
      */
     private dev.devpanda.factorynetwork.lang.ProgramFolder programFolder;
     private long lastFileCheck = -dev.devpanda.factorynetwork.lang.ProgramFolder.CHECK_INTERVAL;
 
     /**
-     * Ob sich seit dem letzten Schreiben etwas geändert hat, das nach draußen
-     * gehört: Fehler oder Gerätenamen.
+     * Whether something has changed since the last write that belongs outside:
+     * errors or device names.
      *
-     * <p>Ein Merker und kein Schreiben je Tick. {@code ProgramStatus} schreibt
-     * zwar nur, wenn sich der Inhalt unterscheidet — aber die Datei jedesmal
-     * zu bauen und zu vergleichen wäre Arbeit für nichts, und zwar je
-     * Controller und Sekunde.
+     * <p>A flag and not a write per tick. {@code ProgramStatus} does write only
+     * when the content differs — but building and comparing the file every
+     * time would be work for nothing, and that per controller and second.
      */
     private boolean statusStale = true;
 
-    /** Letzte gesehene Redstone-Stärke je Connector, für das Ereignis. */
+    /** Last seen redstone strength per connector, for the event. */
     private final Map<String, Integer> lastRedstone = new HashMap<>();
     /**
-     * Was das Netz zu sagen hatte.
+     * What the network had to say.
      *
-     * <p>Geht mit der Welt auf die Platte: Wer morgens nachsieht, warum die
-     * Anlage nachts stehen blieb, findet die Zeile auch dann noch, wenn der
-     * Server zwischendurch neu startete.
+     * <p>Goes to disk with the world: whoever checks in the morning why the
+     * installation stopped in the night still finds the line even if the
+     * server restarted in between.
      */
     private final List<dev.devpanda.factorynetwork.runtime.LogEntry> log = new ArrayList<>();
 
     /**
-     * Was nirgends unterkam — behalten statt geworfen.
+     * What found no place anywhere — kept rather than thrown out.
      *
-     * <p><b>Der Boden ist kein Lager.</b> Ein Gegenstand dort verschwindet
-     * nach fünf Minuten, und der Fall trifft genau dann, wenn niemand
-     * zusieht. Der Controller hält ihn stattdessen fest und bietet ihn jeden
-     * Tick erneut an — der Grund kann jederzeit wegfallen: ein Laufwerk
-     * mehr, eine getauschte Zelle, eine geleerte Kiste.
+     * <p><b>The ground is not a store.</b> An item there vanishes after five
+     * minutes, and the case strikes exactly when no one is watching. The
+     * controller holds it instead and offers it again every tick — the reason
+     * can fall away at any time: one more drive, a swapped cell, an emptied
+     * chest.
      *
-     * <p>Seit ein Worker vor dem Griff fragt, sollte hier nie etwas landen.
-     * Diese Liste ist das Netz darunter, für Maschinen, die auf
-     * {@code simulate} anders antworten als auf den Griff.
+     * <p>Since a worker asks before reaching, nothing should ever land here.
+     * This list is the net beneath, for machines that answer {@code simulate}
+     * differently than the actual grab.
      */
     private final List<ItemStack> heldBack = new ArrayList<>();
 
     /**
-     * Wer gerade die Speicheransicht offen hat.
+     * Who currently has the storage view open.
      *
-     * <p>Nur an diese Spieler wird der Bestand geschickt, und nur solange sie
-     * hinsehen. Wer den Code-Reiter liest, braucht keine Bestandsänderungen —
-     * und der Bestand ist das Teuerste, was über die Leitung geht.
+     * <p>Only to these players is the inventory sent, and only while they are
+     * looking. Whoever reads the code tab needs no inventory changes — and the
+     * inventory is the most expensive thing that goes over the wire.
      */
     private final Set<ServerPlayer> storageWatchers = new HashSet<>();
 
     /**
-     * Wer das Terminal überhaupt offen hat, auf welchem Reiter auch immer.
+     * Who has the terminal open at all, on whichever tab.
      *
-     * <p><b>Getrennt vom Bestand, weil die Statuszeile immer steht.</b> Strom,
-     * Kanäle und Server gehören zu jedem Reiter; sie nur beim Speicher zu
-     * schicken hieße, dass die Zeile im Code-Reiter einfriert und beim
-     * Zurückwechseln springt. Das sieht aus wie ein Fehler und ist einer.
+     * <p><b>Separate from the inventory, because the status line is always
+     * there.</b> Power, channels and servers belong to every tab; sending them
+     * only with storage would mean the line freezes on the code tab and jumps
+     * when switching back. That looks like a bug and is one.
      *
-     * <p>Teuer ist das nicht: ein paar Zahlen und die Liste der Abläufe, alle
-     * zehn Ticks.
+     * <p>It is not expensive: a few numbers and the list of flows, every ten
+     * ticks.
      */
     private final Set<ServerPlayer> terminalWatchers = new HashSet<>();
     private long lastStoragePush = -10;
@@ -261,18 +257,18 @@ public class ControllerBlockEntity extends BlockEntity {
         runtime.setDeviceFilled(this::noteFilled);
     }
 
-    // ---- Programm ---------------------------------------------------------
+    // ---- Program ------------------------------------------------------------
 
-    /** Das Projekt mit allen seinen Dateien. */
+    /** The project with all of its files. */
     public dev.devpanda.factorynetwork.lang.Project project() {
         return project;
     }
 
     /**
-     * Der ganze Quelltext am Stück.
+     * The whole source code in one piece.
      *
-     * <p>Für alles, was nur lesen will. Wer eine einzelne Datei braucht,
-     * fragt das Projekt.
+     * <p>For everything that only wants to read. Whoever needs a single file
+     * asks the project.
      */
     public String source() {
         return project.joined();
@@ -287,41 +283,42 @@ public class ControllerBlockEntity extends BlockEntity {
     }
 
     /**
-     * Übernimmt neuen Code. Bei Fehlern bleibt das laufende Programm stehen —
-     * eine Fabrik, die wegen eines Tippfehlers ausgeht, ist schlimmer als eine,
-     * die noch mit der alten Fassung läuft.
+     * Adopts new code. On errors the running program stays put — a factory
+     * that goes out because of a typo is worse than one that still runs on the
+     * old version.
      */
     /**
-     * Übernimmt einen einzelnen Text als ganzes Projekt.
+     * Adopts a single text as a whole project.
      *
-     * <p>Der bequeme Weg für alles, was nur einen Text hat — Prüfungen, die
-     * Dateibrücke einer alten Welt, ein Aufruf von außen.
+     * <p>The convenient way for everything that has only one text — tests, the
+     * file bridge of an old world, a call from outside.
      */
     public boolean deploy(String newSource) {
         return deploy(dev.devpanda.factorynetwork.lang.Project.of(newSource));
     }
 
     public boolean deploy(dev.devpanda.factorynetwork.lang.Project newProject) {
-        // Mit dem Blick aufs Netz: Auch wer über den Ordner neben der Welt
-        // schreibt, soll erfahren, dass keine Tafel „test" heißt.
+        // With an eye on the network: even someone who writes through the
+        // folder next to the world should learn that no display is called
+        // "test".
         Parser.ParseResult result = newProject.parse(networkView());
         this.project = newProject;
         this.diagnostics = new ArrayList<>(result.diagnostics());
-        // Was der Übersetzer sagt, gehört auch nach draußen.
+        // What the compiler says belongs outside too.
         statusStale = true;
-        // Übernommen heißt: Entwurf und laufender Stand sind dasselbe.
+        // Adopted means: the draft and the running state are the same.
         this.draft = newProject;
         writeProgramFile();
         pushProjectToWatchers();
-        // Erst nachsehen, dann urteilen: Wer eben einen Schrank gesetzt hat,
-        // bekäme sonst „kein Server" zu hören, obwohl einer danebensteht.
+        // Look first, then judge: whoever just placed a rack would otherwise
+        // be told "no server", even though one stands right beside it.
         if (level != null && !hasServer()) {
             rebuildNetwork();
         }
         if (!hasServer()) {
-            // Ein Programm ohne Server ist kein Fehler im Code. Es wird
-            // trotzdem nicht übernommen — sonst stünde es da und liefe nicht,
-            // und niemand wüsste warum.
+            // A program without a server is not an error in the code. It is
+            // still not adopted — otherwise it would stand there and not run,
+            // and no one would know why.
             this.diagnostics.add(new Diagnostic(Diagnostic.Severity.ERROR,
                     new dev.devpanda.factorynetwork.lang.Span(0, 0, 1, 1),
                     "Kein Serverschrank im Netz.",
@@ -334,9 +331,9 @@ public class ControllerBlockEntity extends BlockEntity {
         if (result.hasErrors()) {
             return false;
         }
-        // Die Grenze steht hier und nicht erst beim Laufen: Wer auf Übernehmen
-        // drückt, soll im selben Moment erfahren, dass es nicht passt — nicht
-        // eine Minute später an einer Fabrik, die stillsteht.
+        // The limit stands here and not first at run time: whoever presses
+        // Adopt should learn at the same moment that it does not fit — not a
+        // minute later at a factory that stands still.
         int size = dev.devpanda.factorynetwork.lang.ProgramSize.of(result.program());
         if (size > diskSpace()) {
             this.diagnostics.add(new Diagnostic(Diagnostic.Severity.ERROR,
@@ -347,18 +344,16 @@ public class ControllerBlockEntity extends BlockEntity {
                             + "Kommentare und Leerzeilen zählen nicht mit."));
             return false;
         }
-        // Wartende Abläufe gehen denselben Weg wie über einen Serverneustart:
-        // aufschreiben, neue Maschine bauen, zurücklesen. Passt die Gestalt
-        // des Programms noch, laufen sie weiter; passt sie nicht, melden sie
-        // sich als STALE. Ein Weg, ein Verhalten — statt zwei, die
-        // auseinanderlaufen.
+        // Waiting flows go the same way as over a server restart: write down,
+        // build a new machine, read back. If the shape of the program still
+        // fits, they run on; if it does not, they report themselves as STALE.
+        // One way, one behaviour — instead of two that drift apart.
         CompoundTag carried = flows == null ? null : FlowCodec.write(flows);
         adoptGlobals(result.program());
         this.program = result.program();
         runtime.reset();
-        // Gruppen sofort auflösen und nicht erst im nächsten Tick: Ein
-        // Ablauf, der gleich nach dem Übernehmen startet, fragt sonst eine
-        // leere Gruppe.
+        // Resolve groups at once and not first on the next tick: a flow that
+        // starts right after adoption would otherwise query an empty group.
         runtime.resolveGroups(this.program, graph);
         this.flows = null;
         if (!FlowCodec.isEmpty(carried)) {
@@ -367,31 +362,30 @@ public class ControllerBlockEntity extends BlockEntity {
         return true;
     }
 
-    // ---- Globale Werte -----------------------------------------------------
+    // ---- Global values ------------------------------------------------------
 
-    /** Was das Programm an globalen Werten hält. */
+    /** What global values the program holds. */
     public Map<String, dev.devpanda.factorynetwork.runtime.Value> globals() {
         return globals;
     }
 
     /**
-     * Stellt die globalen Werte auf ein neues Programm um.
+     * Switches the global values over to a new program.
      *
-     * <p>Die Regel in vier Fällen:
+     * <p>The rule in four cases:
      *
      * <ul>
-     *   <li><b>Gleicher Name, gleiche Art:</b> Der Wert bleibt. Wer den Modus
-     *       auf „nacht" gestellt hat und dann einen Worker ändert, will nicht
-     *       wieder bei „tag" anfangen.
-     *   <li><b>Neuer Name:</b> der Anfangswert aus der Deklaration.
-     *   <li><b>Name weg:</b> vergessen.
-     *   <li><b>Gleicher Name, andere Art:</b> der neue Anfangswert. Ein Text,
-     *       der plötzlich als Zahl gelesen wird, ist kein erhaltenswerter
-     *       Zustand.
+     *   <li><b>Same name, same type:</b> the value stays. Whoever set the mode
+     *       to "night" and then changes a worker does not want to start again
+     *       at "day".
+     *   <li><b>New name:</b> the initial value from the declaration.
+     *   <li><b>Name gone:</b> forgotten.
+     *   <li><b>Same name, different type:</b> the new initial value. A text
+     *       suddenly read as a number is not a state worth keeping.
      * </ul>
      *
-     * <p>Dieselbe Haltung wie bei den Worker-Zuständen: Was noch passt,
-     * bleibt; was nicht mehr passt, fängt neu an.
+     * <p>The same stance as with the worker states: what still fits stays;
+     * what no longer fits starts anew.
      */
     private void adoptGlobals(Program incoming) {
         Map<String, dev.devpanda.factorynetwork.runtime.Value> next =
@@ -411,19 +405,19 @@ public class ControllerBlockEntity extends BlockEntity {
         setChanged();
     }
 
-    // ---- Strom -------------------------------------------------------------
+    // ---- Power --------------------------------------------------------------
 
     public dev.devpanda.factorynetwork.network.NetworkPower power() {
         return power;
     }
 
     /**
-     * Was das Netz gerade zieht, in FE je Tick.
+     * What the network currently draws, in FE per tick.
      *
-     * <p>Gezählt statt mitgeführt, wie die belegten Rechenplätze: Ein
-     * Zähler müsste bei jedem gesetzten und abgerissenen Block nachgeführt
-     * werden, und der eine vergessene Ort wäre ein Netz, das für Geräte
-     * zahlt, die es nicht mehr gibt.
+     * <p>Counted rather than carried along, like the occupied compute slots: a
+     * counter would have to be updated on every block placed and torn down,
+     * and the one forgotten spot would be a network that pays for devices
+     * that no longer exist.
      */
     public int powerDraw() {
         int total = dev.devpanda.factorynetwork.network.Power.CONTROLLER;
@@ -431,12 +425,12 @@ public class ControllerBlockEntity extends BlockEntity {
         total += graph.displays().size() * dev.devpanda.factorynetwork.network.Power.DISPLAY;
         total += graph.routers().size() * dev.devpanda.factorynetwork.network.Power.ROUTER;
         total += graph.extensions().size() * dev.devpanda.factorynetwork.network.Power.EXTENSION;
-        // Beide Enden zahlen; im Graphen stehen beide, wenn beide geladen sind.
+        // Both ends pay; both stand in the graph when both are loaded.
         total += graph.bridges().size() * dev.devpanda.factorynetwork.network.Power.BRIDGE;
         total += graph.fabricators().size()
                 * dev.devpanda.factorynetwork.network.Power.FABRICATOR;
-        // Ein Mast kostet nach Ausbau: Was er zieht, hängt an seinen Karten.
-        // Deshalb steht hier eine Schleife und keine Multiplikation.
+        // A mast costs according to its build-out: what it draws hangs on its
+        // cards. That is why there is a loop here and not a multiplication.
         for (net.minecraft.core.BlockPos pos : graph.masts()) {
             if (level != null && level.getBlockEntity(pos)
                     instanceof MastBlockEntity mast) {
@@ -454,19 +448,18 @@ public class ControllerBlockEntity extends BlockEntity {
         return total;
     }
 
-    /** Läuft das Netz — genug Strom und ein Serverschrank? */
+    /** Is the network running — enough power and a server rack? */
     public boolean isOnline() {
         return hasServer() && power.isRunning();
     }
 
-    // ---- Rechenleistung ---------------------------------------------------
+    // ---- Compute power ------------------------------------------------------
 
     /**
-     * Was die Server des Netzes zusammen tragen.
+     * What the network's servers carry together.
      *
-     * <p>Die Summe über alle <b>vollständigen</b> Einschübe in allen
-     * Schränken. Ein Einschub ohne Datenträger steht nicht darin — er ist
-     * kein Server, sondern ein Haufen Bauteile.
+     * <p>The sum over all <b>complete</b> bays in all racks. A bay without a
+     * disk is not in it — it is not a server, but a heap of parts.
      */
     public dev.devpanda.factorynetwork.network.ServerBay capacity() {
         var total = dev.devpanda.factorynetwork.network.ServerBay.EMPTY;
@@ -477,46 +470,46 @@ public class ControllerBlockEntity extends BlockEntity {
     }
 
     /**
-     * Wie viele Abläufe gleichzeitig laufen dürfen.
+     * How many flows may run at once.
      *
-     * <p>Die Rechenwerke. Null heißt: Es gibt keinen Server, und dann läuft
-     * gar nichts.
+     * <p>The CPUs. Zero means: there is no server, and then nothing runs at
+     * all.
      */
     public int threads() {
         return capacity().cpu();
     }
 
-    /** Wie viele Abläufe überhaupt bestehen dürfen — die Speicher. */
+    /** How many flows may exist at all — the RAM. */
     public int memory() {
         return capacity().ram();
     }
 
-    /** Wie groß das Programm sein darf — die Datenträger. */
+    /** How large the program may be — the disks. */
     public int diskSpace() {
         return capacity().disk();
     }
 
-    /** Wie groß das Programm gerade ist, in Anweisungen. */
+    /** How large the program currently is, in instructions. */
     public int programSize() {
         return dev.devpanda.factorynetwork.lang.ProgramSize.of(program);
     }
 
     /**
-     * Passt das Programm auf die Datenträger?
+     * Does the program fit onto the disks?
      *
-     * <p>Ohne Server ist die Frage keine: Dann läuft ohnehin nichts, und ein
-     * zweiter Grund dafür verwirrt nur.
+     * <p>Without a server the question is none: nothing runs anyway then, and
+     * a second reason for that only confuses.
      */
     public boolean programFits() {
         return !hasServer() || programSize() <= diskSpace();
     }
 
-    /** Steht im Netz überhaupt Rechenleistung? */
+    /** Is there any compute power in the network at all? */
     public boolean hasServer() {
         return threads() > 0;
     }
 
-    // ---- Netzwerk ---------------------------------------------------------
+    // ---- Network ------------------------------------------------------------
 
     public FactoryGraph graph() {
         return graph;
@@ -527,12 +520,12 @@ public class ControllerBlockEntity extends BlockEntity {
     }
 
     /**
-     * Wo eine Ressourcenart lagert.
+     * Where a resource kind is stored.
      *
-     * <p>Die eine Stelle, an der das Netz nach einem Bestand gefragt wird,
-     * ohne vorher zu wissen, um welche Art es geht. Die benannten Zugänge
-     * daneben bleiben: Gegenstände haben Speicherbusse, Flüssigkeiten
-     * Sortenplätze, und danach fragt man nur, wenn man die Art meint.
+     * <p>The one place where the network is asked for contents without knowing
+     * in advance which kind it is about. The named accessors beside it stay:
+     * items have storage buses, fluids have variety slots, and one asks for
+     * those only when one means the kind.
      */
     public dev.devpanda.factorynetwork.network.ResourceStore store(
             dev.devpanda.factorynetwork.runtime.ResourceKind kind) {
@@ -543,7 +536,7 @@ public class ControllerBlockEntity extends BlockEntity {
         return fluidStorage;
     }
 
-    /** Der Chemikalienspeicher; ohne Mekanism einer, der nichts kann. */
+    /** The chemical store; without Mekanism, one that can do nothing. */
     public dev.devpanda.factorynetwork.network.ResourceStore chemicals() {
         return chemicalStorage;
     }
@@ -573,22 +566,22 @@ public class ControllerBlockEntity extends BlockEntity {
             return;
         }
         Set<String> before = networkKnown ? Set.copyOf(graph.connectorNames()) : null;
-        // Die Gerätenamen ändern sich hier, und sie stehen in keiner Datei —
-        // ein Editor daneben erfährt sie nur von uns.
+        // The device names change here, and they are in no file — an editor
+        // beside us learns them only from us.
         statusStale = true;
         graph = FactoryGraph.build(level, worldPosition);
-        // Hier gezählt und nicht bei jeder Frage: Bandwidth.at trifft den
-        // Controller je Fach je Worker je Tick, und die Anbauten ändern sich
-        // nur, wenn jemand baut.
+        // Counted here and not on every query: Bandwidth.at hits the
+        // controller per slot per worker per tick, and the attachments change
+        // only when someone builds.
         extensionCount = graph.extensions().size();
-        // Der Weg kann ein anderer sein als eben — also auch seine Latenz.
+        // The path may be a different one than before — and so its latency too.
         runtime.remeasureLatency();
         lastRebuild = level.getGameTime();
         networkKnown = true;
         stampDeviceStates();
-        // Der Speicher ist die Summe der Laufwerke im Netz. Ohne diesen
-        // Schritt lagert der Controller nichts — was auch stimmt: Ohne
-        // Laufwerk gibt es keinen Platz.
+        // Storage is the sum of the drives in the network. Without this step
+        // the controller stores nothing — which is also true: without a drive
+        // there is no space.
         List<DriveBlockEntity> found = new ArrayList<>();
         for (BlockPos pos : graph.drives()) {
             if (level.isLoaded(pos)
@@ -598,13 +591,13 @@ public class ControllerBlockEntity extends BlockEntity {
         }
         drives.clear();
         drives.addAll(found);
-        // Dieselben Laufwerke tragen die Zellen aller Arten: Ein zweites
-        // Laufwerk nur für Flüssigkeiten wäre ein Block mehr für dieselbe
-        // Handlung. Welche Zellen ein Speicher lesen kann, weiß er selbst.
+        // The same drives carry the cells of all kinds: a second drive just
+        // for fluids would be one more block for the same operation. Which
+        // cells a store can read, it knows itself.
         stores.setDrives(found);
-        // Und dieselben tragen die Energiezellen. Ohne diese Zeile ist der
-        // Vorrat der Puffer im Controller, egal wie viele Akkus im Regal
-        // stecken.
+        // And the same ones carry the energy cells. Without this line the
+        // reserve is the buffer in the controller, no matter how many
+        // batteries sit in the shelf.
         power.setDrives(found);
         rebuildBuses();
         racks.clear();
@@ -618,12 +611,11 @@ public class ControllerBlockEntity extends BlockEntity {
     }
 
     /**
-     * Meldet, welche Geräte gekommen und gegangen sind.
+     * Reports which devices have come and gone.
      *
-     * <p>Beim allerersten Aufbau bleibt es still: Da ist nichts
-     * dazugekommen, es war nur vorher nichts bekannt. Ein Sturm von
-     * {@code device_online} bei jedem Serverstart wäre für den Spieler
-     * dasselbe wie Rauschen.
+     * <p>On the very first build it stays silent: nothing has come in, it was
+     * only that nothing was known before. A storm of {@code device_online} on
+     * every server start would be the same as noise to the player.
      */
     private void announceDeviceChanges(Set<String> before) {
         if (before == null || program.handlers().isEmpty()) {
@@ -637,8 +629,8 @@ public class ControllerBlockEntity extends BlockEntity {
         }
         for (String name : before) {
             if (!now.contains(name)) {
-                // Kein Value.Device: Das Gerät gibt es nicht mehr, und ein
-                // Verweis darauf ließe sich nicht mehr auflösen.
+                // No Value.Device: the device no longer exists, and a
+                // reference to it could no longer be resolved.
                 fireEvent(BuiltinEvents.DEVICE_OFFLINE, List.of(new Value.Text(name)));
             }
         }
@@ -653,29 +645,29 @@ public class ControllerBlockEntity extends BlockEntity {
         if (level.getGameTime() - lastRebuild >= REBUILD_INTERVAL) {
             rebuildNetwork();
         }
-        // Eine Kiste am store ändert sich, ohne es jemandem zu sagen. Einmal
-        // je Tick nachsehen ist der Preis dafür, dass ihr Inhalt zum Bestand
-        // zählt — und billiger als bei jeder Frage zu zählen.
+        // A chest on the storage bus changes without telling anyone. Looking
+        // once per tick is the price of its contents counting toward the
+        // inventory — and cheaper than counting on every query.
         storage.refreshBuses();
         power.setDraw(powerDraw());
         power.tick();
 
-        // Vor dem Ausstieg unten: Ein Netz ohne Strom oder ohne Server ist
-        // genau das Netz, an dessen Programm man gerade arbeitet.
+        // Before the early return below: a network without power or without a
+        // server is exactly the network whose program you are working on.
         checkProgramFile();
 
-        // Ohne Serverschrank oder ohne Strom steht das Netz still — und läuft
-        // weiter, wo es war, sobald beides wieder da ist. Nichts wird
-        // abgebrochen: Ein Ablauf hält zwischen zwei Schritten keine
-        // Gegenstände, also kostet das Einfrieren nichts.
+        // Without a server rack or without power the network stands still —
+        // and runs on where it was, as soon as both are back. Nothing is
+        // aborted: a flow holds no items between two steps, so freezing costs
+        // nothing.
         if (!isOnline()) {
             pushStorageIfDue();
             pushFlowsIfDue();
             setChanged();
             return;
         }
-        // Abläufe laufen auch ohne Worker weiter — ein Programm darf allein
-        // aus Funktionen bestehen, die auf Ereignisse warten.
+        // Flows run on even without workers — a program may consist solely of
+        // functions that wait on events.
         if (!program.workers().isEmpty()) {
             runtime.setConnectorLookup(where ->
                     where.side() != null && level.isLoaded(where.pos())
@@ -685,15 +677,15 @@ public class ControllerBlockEntity extends BlockEntity {
             runtime.setCrafting(craftingForWorkers);
             runtime.tick(level, program, graph, stores,
                     newHost());
-            // Was die Worker zu melden hatten, gehört ins Protokoll. Bisher
-            // sammelte die Laufzeit diese Hinweise und niemand las sie.
+            // What the workers had to report belongs in the log. Until now
+            // the runtime collected these notes and no one read them.
             runtime.drainNotes().forEach(this::add);
-            // Was weder Speicher noch Gerät annahm, behält der Controller.
+            // What neither storage nor device accepted, the controller keeps.
             runtime.takeDropped().forEach(this::holdBack);
         }
-        // Außerhalb des Worker-Blocks, und das mit Absicht: Verwahrtes gehört
-        // zurück, sobald Platz da ist — auch in einem Netz, dessen Programm
-        // gerade keinen Worker hat.
+        // Outside the worker block, and deliberately so: held-back items
+        // belong back as soon as there is room — even in a network whose
+        // program currently has no worker.
         retryHeldBack();
         tickFlows();
         tickCrafting();
@@ -705,17 +697,17 @@ public class ControllerBlockEntity extends BlockEntity {
         setChanged();
     }
 
-    // ---- Fertigung --------------------------------------------------------
+    // ---- Crafting -----------------------------------------------------------
 
-    /** Alle zwanzig Ticks ein Schritt je Fabricator. */
+    /** Every twenty ticks one step per fabricator. */
     private static final int CRAFT_INTERVAL = 20;
 
     /**
-     * Die Fertigungsaufträge des Netzes.
+     * The network's crafting jobs.
      *
-     * <p>Sie leben hier und nicht am Fabricator: Ein Auftrag, der am Gerät
-     * hinge, wäre weg, sobald jemand das Gerät abbaut — und das ist genau der
-     * Moment, in dem man wissen will, was noch offen war.
+     * <p>They live here and not at the fabricator: a job that hung on the
+     * device would be gone the moment someone breaks the device — and that is
+     * exactly the moment you want to know what was still open.
      */
     private final List<dev.devpanda.factorynetwork.crafting.CraftingJob> jobs =
             new ArrayList<>();
@@ -727,14 +719,14 @@ public class ControllerBlockEntity extends BlockEntity {
     }
 
     /**
-     * Nimmt einen Auftrag an, oder lehnt ihn ab.
+     * Accepts a job, or rejects it.
      *
-     * <p><b>Abgelehnt wird nur, was gar kein Rezept hat.</b> Fehlende Zutaten
-     * sind kein Grund: Der Auftrag wartet dann und sagt, was fehlt — wer 64
-     * Truhen bestellt und danach Bretter einlagert, soll nicht noch einmal
-     * bestellen müssen.
+     * <p><b>Only what has no recipe at all is rejected.</b> Missing ingredients
+     * are no reason: the job then waits and says what is missing — whoever
+     * orders 64 chests and afterwards stores planks should not have to order
+     * again.
      *
-     * @return der Auftrag, oder {@code null}, wenn es kein Rezept gibt
+     * @return the job, or {@code null} if there is no recipe
      */
     public dev.devpanda.factorynetwork.crafting.CraftingJob requestCraft(
             net.minecraft.world.item.Item target, int amount) {
@@ -752,11 +744,11 @@ public class ControllerBlockEntity extends BlockEntity {
     }
 
     /**
-     * Die Fertigung, wie ein {@code from crafting}-Worker sie sieht.
+     * Crafting, as a {@code from crafting} worker sees it.
      *
-     * <p>Ein Feld und keine neue Instanz je Tick: Der Worker fragt sie
-     * mehrmals je Runde, und ein Objekt, das zwanzigmal je Sekunde entsteht,
-     * ist Müll ohne Zweck.
+     * <p>A field and not a new instance per tick: the worker queries it
+     * several times per round, and an object created twenty times a second is
+     * garbage without purpose.
      */
     private final dev.devpanda.factorynetwork.runtime.WorkerRuntime.Crafting craftingForWorkers =
             new dev.devpanda.factorynetwork.runtime.WorkerRuntime.Crafting() {
@@ -778,7 +770,7 @@ public class ControllerBlockEntity extends BlockEntity {
                 }
             };
 
-    /** Bricht einen Auftrag ab. */
+    /** Cancels a job. */
     public boolean cancelCraft(long id) {
         boolean removed = jobs.removeIf(job -> job.id() == id);
         if (removed) {
@@ -788,19 +780,19 @@ public class ControllerBlockEntity extends BlockEntity {
     }
 
     /**
-     * Ein Fertigungstakt.
+     * One crafting cycle.
      *
-     * <p><b>Ein Schritt je Fabricator</b>, und ein Schritt ist ein Durchlauf
-     * eines Rezepts, so oft er in einen Stapel passt. Wer schneller fertigen
-     * will, stellt einen zweiten Fabricator hin — das ist dieselbe Antwort
-     * wie bei Kanälen und Laufwerken: Mehr Gerät, mehr Durchsatz.
+     * <p><b>One step per fabricator</b>, and a step is one run of a recipe, as
+     * many times as it fits into a stack. Whoever wants to craft faster sets
+     * down a second fabricator — the same answer as with channels and drives:
+     * more device, more throughput.
      */
     private void tickCrafting() {
         if (jobs.isEmpty()) {
             return;
         }
-        // Erledigte melden sich, bevor sie aus der Liste fallen. Ein Ereignis
-        // nach dem Verschwinden hätte niemanden mehr, über den es spricht.
+        // Finished ones report before they drop out of the list. An event
+        // after they vanish would have no one left to speak about.
         jobs.removeIf(job -> {
             if (job.status() == dev.devpanda.factorynetwork.crafting.CraftingJob.Status.DONE) {
                 fireEvent(dev.devpanda.factorynetwork.lang.BuiltinEvents.CRAFTING_FINISHED,
@@ -838,12 +830,12 @@ public class ControllerBlockEntity extends BlockEntity {
     }
 
     /**
-     * Das Rezeptverzeichnis dieses Ticks.
+     * The recipe lookup for this tick.
      *
-     * <p>Einmal je Tick gebaut und dann für alle Aufträge und alle Knoten
-     * ihrer Rezeptbäume benutzt. Länger aufzubewahren hieße, sich darauf zu
-     * verlassen, dass ein {@code /reload} den Rezeptverwalter austauscht —
-     * und das ist keine Zusage, sondern Innenleben.
+     * <p>Built once per tick and then used for all jobs and all nodes of their
+     * recipe trees. Keeping it longer would mean relying on a {@code /reload}
+     * swapping out the recipe manager — and that is not a promise, but
+     * internals.
      */
     private dev.devpanda.factorynetwork.crafting.RecipeLookup handCache;
     private dev.devpanda.factorynetwork.crafting.MachineRecipes machineCache;
@@ -859,10 +851,10 @@ public class ControllerBlockEntity extends BlockEntity {
             machineCache = dev.devpanda.factorynetwork.crafting.MachineRecipes.of(level);
             recipeCacheTick = now;
         }
-        // Die erklärten Rezepte hängen am Programm und nicht am Tick: Sie
-        // ändern sich nur beim Übernehmen. Das laufende Programm ist ohnehin
-        // schon übersetzt — es noch einmal zu lesen wäre der teuerste Weg zu
-        // einer Auskunft, die danebenliegt.
+        // The declared recipes hang on the program and not on the tick: they
+        // change only on adoption. The running program is already compiled
+        // anyway — reading it again would be the most expensive way to an
+        // answer that is off the mark.
         if (declaredCache == null || declaredFrom != program()) {
             declaredFrom = program();
             declaredCache =
@@ -871,13 +863,13 @@ public class ControllerBlockEntity extends BlockEntity {
     }
 
     /**
-     * Alle Rezepte, die das Netz lesen kann.
+     * All recipes the network can read.
      *
-     * <p>Zwei Quellen: was ohne Maschine geht (Werkbank, Steinsäge) und was
-     * eine Maschine braucht (Ofenfamilie, Presse). Für einen Gegenstand
-     * können beide etwas haben — neun Barren aus einem Block, ein Barren aus
-     * Roherz —, und <b>der Bestand entscheidet</b>, wie schon innerhalb einer
-     * Quelle.
+     * <p>Two sources: what works without a machine (crafting table, stonecutter)
+     * and what needs a machine (the furnace family, the press). For one item
+     * both can have something — nine ingots from a block, one ingot from raw
+     * ore — and <b>the inventory decides</b>, as it does already within a
+     * single source.
      */
     private dev.devpanda.factorynetwork.crafting.CraftingPlanner.Recipes<
             net.minecraft.world.item.Item> recipes() {
@@ -886,48 +878,47 @@ public class ControllerBlockEntity extends BlockEntity {
                 handCache, machineCache, declaredCache);
     }
 
-    /** Ob es für diesen Gegenstand überhaupt ein Rezept gibt — in einer der Quellen. */
+    /** Whether there is any recipe for this item at all — in one of the sources. */
     private boolean recipeKnown(net.minecraft.world.item.Item target) {
         return recipes().find(target, item -> 0L) != null;
     }
 
     /**
-     * Ein Durchlauf für einen Auftrag.
+     * One run for a job.
      *
-     * <p><b>Erst planen, dann einen Schritt.</b> Der Plan zerlegt die
-     * Bestellung bis zu dem, was dasteht — acht Bretter, die es nicht gibt,
-     * werden zu zwei Stämmen, die es gibt. Ausgeführt wird davon der unterste
-     * Schritt, also der, der sofort laufen kann; den nächsten findet der
-     * nächste Takt.
+     * <p><b>Plan first, then one step.</b> The plan breaks the order down to
+     * what is on hand — eight planks that do not exist become two logs that
+     * do. Of that, the lowest step is carried out, the one that can run at
+     * once; the next one is found by the next cycle.
      *
-     * <p><b>Und der Plan wird jedes Mal neu gerechnet</b>, nicht gemerkt. Ein
-     * gemerkter Plan wäre ab dem Moment falsch, in dem ein Worker etwas
-     * einlagert — und genau das tun Worker den ganzen Tag. Dafür kostet er
-     * nichts an Speicherformat und übersteht jeden Neustart von selbst.
+     * <p><b>And the plan is recomputed each time</b>, not remembered. A
+     * remembered plan would be wrong from the moment a worker stores something
+     * — and that is exactly what workers do all day. In return it costs
+     * nothing in the save format and survives every restart on its own.
      *
-     * <p>Erst prüfen, dann entnehmen, dann einlagern. Anders ginge es nicht:
-     * Ein Rezept, dem nach der halben Entnahme etwas fehlt, hätte die andere
-     * Hälfte verschwinden lassen.
+     * <p>Check first, then extract, then store. It could not be otherwise: a
+     * recipe that lacks something after half the extraction would have let the
+     * other half vanish.
      *
-     * @return ob wirklich gebaut wurde
+     * @return whether anything was actually built
      */
     private boolean craftOnce(dev.devpanda.factorynetwork.crafting.CraftingJob job) {
-        // Liegt schon etwas in einer Maschine, geschieht sonst nichts. Ein
-        // neu gerechneter Plan saehe die Zutat verschwunden und das Ergebnis
-        // noch nicht da - und legte ein zweites Mal ein.
+        // If something already lies in a machine, nothing else happens. A
+        // freshly computed plan would see the ingredient gone and the result
+        // not yet there - and would insert a second time.
         if (job.running() != null) {
             return collectRunning(job);
         }
         var recipes = recipes();
         if (!recipeKnown(job.target())) {
-            // Ein Rezept, das es nicht mehr gibt: Der Auftrag kann nicht mehr
-            // fertig werden, und darauf zu warten hieße, für immer zu warten.
+            // A recipe that no longer exists: the job can no longer be
+            // finished, and waiting on that would mean waiting forever.
             job.note(dev.devpanda.factorynetwork.crafting.CraftingJob.Status.FAILED,
                     "kein Rezept mehr");
             return false;
         }
-        // Höchstens ein Stapel des Ziels je Schritt. Ein Auftrag über
-        // zehntausend soll nicht einen Tick lang den Server halten.
+        // At most one stack of the target per step. A job for ten thousand
+        // should not hold the server for a whole tick.
         long want = Math.min(job.remaining(), job.target().getDefaultMaxStackSize());
         var plan = dev.devpanda.factorynetwork.crafting.CraftingPlanner.plan(
                 recipes, storage::count, job.target(), want,
@@ -939,9 +930,9 @@ public class ControllerBlockEntity extends BlockEntity {
             return false;
         }
         var step = plan.steps().get(0);
-        // Der Plan hat mit demselben Bestand gerechnet, aus dem gleich
-        // entnommen wird. Die Probe kostet nichts und hält die Zusage, dass
-        // nie eine halbe Entnahme stehenbleibt.
+        // The plan reckoned with the same inventory that is about to be drawn
+        // from. The check costs nothing and keeps the promise that no half
+        // extraction is ever left standing.
         for (var entry : step.consumed().entrySet()) {
             if (storage.count(entry.getKey()) < entry.getValue()) {
                 job.note(dev.devpanda.factorynetwork.crafting.CraftingJob.Status.WAITING,
@@ -953,12 +944,12 @@ public class ControllerBlockEntity extends BlockEntity {
         if (!step.station().isEmpty()) {
             return startAtMachine(job, step);
         }
-        // <b>Auch die Probe darüber ist nur eine Anzeige.</b> Ein Speicherbus
-        // zählt fremde Inventare zum Bestand, und die dürfen ihren Inhalt
-        // behalten — ein Ofen zeigt von unten sein Brennstofffach und rückt es
-        // nicht heraus. Was wirklich herauskam, entscheidet, ob der Schritt
-        // stattgefunden hat; sonst entstünde das Ergebnis unbezahlt, und weil
-        // der Bestand dabei nicht nachzieht, in jeder Runde erneut.
+        // <b>The check above is only an indication too.</b> A storage bus
+        // counts foreign inventories toward the inventory, and those may keep
+        // their contents — a furnace shows its fuel slot from below and does
+        // not give it up. What actually came out decides whether the step took
+        // place; otherwise the result would arise unpaid, and because the
+        // inventory does not follow along, anew every round.
         Map<Item, Long> paid = new LinkedHashMap<>();
         for (var entry : step.consumed().entrySet()) {
             long got = storage.extract(entry.getKey(), entry.getValue());
@@ -974,15 +965,14 @@ public class ControllerBlockEntity extends BlockEntity {
         }
         long left = storage.insert(step.result(), step.yield());
         if (left > 0) {
-            // <b>Dann hat der Schritt nicht stattgefunden.</b> Das Ergebnis
-            // kommt wieder heraus, die Zutaten gehen zurück, und der Auftrag
-            // wartet. Verwahren wäre hier falsch: Eine Fertigung, die bei
-            // vollem Lager weiterläuft, füllt die Verwahrung ohne Ende.
+            // <b>Then the step did not take place.</b> The result comes back
+            // out, the ingredients go back, and the job waits. Holding back
+            // would be wrong here: a crafting that runs on with a full store
+            // fills the holdback without end.
             //
-            // <b>Warum nicht vorher fragen?</b> Ein Rezept, das neun Steine
-            // zu einem Block presst, schafft sich beim Entnehmen den Platz
-            // für sein eigenes Ergebnis. Wer vorher fragt, hielte es bei
-            // vollem Lager für immer an.
+            // <b>Why not ask beforehand?</b> A recipe that presses nine stones
+            // into one block makes room for its own result while extracting.
+            // Whoever asks beforehand would hold it forever at a full store.
             storage.extract(step.result(), step.yield() - left);
             refund(step.consumed());
             job.note(dev.devpanda.factorynetwork.crafting.CraftingJob.Status.WAITING,
@@ -992,9 +982,9 @@ public class ControllerBlockEntity extends BlockEntity {
         if (step.result() == job.target()) {
             job.produced((int) step.yield());
         } else {
-            // Eine Zwischenstufe zählt nicht als Fortschritt der Bestellung —
-            // aber sie soll dastehen, sonst sieht ein Auftrag über eine
-            // Maschine minutenlang aus, als geschehe nichts.
+            // An intermediate stage does not count as progress on the order —
+            // but it should be shown, otherwise a job over a machine looks for
+            // minutes as if nothing were happening.
             job.note(dev.devpanda.factorynetwork.crafting.CraftingJob.Status.RUNNING,
                     "baut " + step.yield() + " " + step.result().getDescription().getString());
         }
@@ -1002,23 +992,23 @@ public class ControllerBlockEntity extends BlockEntity {
     }
 
     /**
-     * Legt die Zutat in eine freie Maschine und merkt sich, worauf gewartet wird.
+     * Places the ingredient into a free machine and remembers what is waited on.
      *
-     * <p><b>Eine Sorte je Durchgang.</b> Der Plan darf mischen — fünf
-     * Eisenerze und drei Roheisen für acht Barren —, ein Ofenfach kann das
-     * nicht. Genommen wird deshalb die erste Sorte und so viel davon, wie in
-     * ein Fach passt; der Rest kommt beim nächsten Takt dran.
+     * <p><b>One kind per pass.</b> The plan may mix — five iron ores and three
+     * raw iron for eight ingots — but a furnace slot cannot. So the first kind
+     * is taken, and as much of it as fits into one slot; the rest comes up on
+     * the next cycle.
      *
-     * @return ob wirklich etwas angefangen wurde
+     * @return whether anything was actually started
      */
     /**
-     * Legt Zutaten zurück, aus denen nichts geworden ist.
+     * Puts back ingredients that came to nothing.
      *
-     * <p>Der Platz ist gerade erst frei geworden, es müsste also alles wieder
-     * hineingehen. Wenn doch nicht — ein Speicherbus mit Filter nimmt nicht
-     * jedes zurück, was er hergegeben hat —, dann verwahrt der Controller es.
-     * Auf den Boden werfen wäre hier falsch: Der Spieler hat den Auftrag
-     * gegeben, nicht die Zutaten aus der Hand gelegt.
+     * <p>The space has only just become free, so everything ought to go back
+     * in. If it does not — a storage bus with a filter does not take back
+     * everything it gave out — then the controller holds it. Throwing it on
+     * the ground would be wrong here: the player gave the order, they did not
+     * set the ingredients down.
      */
     private void refund(Map<Item, Long> items) {
         items.forEach((item, amount) -> {
@@ -1066,8 +1056,8 @@ public class ControllerBlockEntity extends BlockEntity {
                 new net.minecraft.world.item.ItemStack(ingredient, (int) got), false);
         long placed = got - rest.getCount();
         if (!rest.isEmpty()) {
-            // Was die Maschine doch nicht nahm, geht zurück — dasselbe Muster
-            // wie überall, wo diese Mod etwas anbietet.
+            // What the machine did not take after all goes back — the same
+            // pattern as everywhere this mod offers something.
             storage.insert(ingredient, rest.getCount());
         }
         if (placed <= 0) {
@@ -1083,17 +1073,17 @@ public class ControllerBlockEntity extends BlockEntity {
     }
 
     /**
-     * Ein Rezept aus dem Programm: die Zutaten in die genannte Maschine.
+     * A recipe from the program: the ingredients into the named machine.
      *
-     * <p><b>Ohne Fachnummern.</b> Wo bei einer fremden Maschine was hingehört,
-     * weiß nur sie selbst — und genau dafür gibt es den seitenbezogenen
-     * Zugriff, den auch {@code move} benutzt. Der Ofen ist der Sonderfall, bei
-     * dem diese Mod die Fächer kennt; eine Maschine aus einer fremden Mod ist
-     * es nicht, und sie soll ihre eigenen Regeln behalten.
+     * <p><b>Without slot numbers.</b> Where something belongs in a foreign
+     * machine, only it knows itself — and that is exactly what the side-based
+     * access is for, the one {@code move} also uses. The furnace is the
+     * special case where this mod knows the slots; a machine from a foreign
+     * mod is not, and it should keep its own rules.
      *
-     * <p>Anders als bei der Ofenfamilie werden <b>alle</b> Zutaten auf einmal
-     * eingelegt: Ein erklärtes Rezept darf mehrere haben, und eine Maschine,
-     * die nur die halbe Rechnung bekommt, fängt gar nicht erst an.
+     * <p>Unlike with the furnace family, <b>all</b> ingredients are inserted
+     * at once: a declared recipe may have several, and a machine that gets
+     * only half the reckoning does not even start.
      */
     private boolean startAtDeclared(dev.devpanda.factorynetwork.crafting.CraftingJob job,
             dev.devpanda.factorynetwork.crafting.CraftingPlanner.Step<
@@ -1104,9 +1094,9 @@ public class ControllerBlockEntity extends BlockEntity {
                     "an " + device + " hängt keine Maschine");
             return false;
         }
-        // Erst proben, dann entnehmen: Eine Maschine, die die zweite Zutat
-        // ablehnt, hätte sonst die erste geschluckt und den Auftrag mit einem
-        // halben Rezept stehenlassen.
+        // Test first, then extract: a machine that rejects the second
+        // ingredient would otherwise have swallowed the first and left the job
+        // standing with half a recipe.
         for (var entry : step.consumed().entrySet()) {
             net.minecraft.world.item.ItemStack probe = new net.minecraft.world.item.ItemStack(
                     entry.getKey(), (int) (long) entry.getValue());
@@ -1116,18 +1106,18 @@ public class ControllerBlockEntity extends BlockEntity {
                 return false;
             }
         }
-        // Und dasselbe für das, was kein Gegenstand ist. Die Probe steht vor
-        // jeder Bewegung, sonst läge das Erz schon in der Maschine, während
-        // das Wasser fehlt.
+        // And the same for what is not an item. The test stands before every
+        // movement, otherwise the ore would already lie in the machine while
+        // the water is missing.
         String missing = fillExtras(step, device, true);
         if (missing != null) {
             job.note(dev.devpanda.factorynetwork.crafting.CraftingJob.Status.WAITING, missing);
             return false;
         }
-        // <b>Die Zutaten vor dem Wasser.</b> Ein Speicherbus kann zeigen, was
-        // er nicht hergibt; kommt das erst nach dem Einfüllen heraus, steht
-        // das Wasser in der Maschine und der Auftrag wartet auf ein Ergebnis,
-        // das ohne Zutat nie entsteht.
+        // <b>The ingredients before the water.</b> A storage bus can show what
+        // it does not give up; if that only comes out after filling, the water
+        // stands in the machine and the job waits for a result that, without
+        // the ingredient, never arises.
         Map<Item, Long> paid = new LinkedHashMap<>();
         for (var entry : step.consumed().entrySet()) {
             long got = storage.extract(entry.getKey(), entry.getValue());
@@ -1143,8 +1133,8 @@ public class ControllerBlockEntity extends BlockEntity {
         }
         String failed = fillExtras(step, device, false);
         if (failed != null) {
-            // Zwischen Probe und Zug hat sich etwas geändert. Selten, aber
-            // dann ehrlich gemeldet statt stillschweigend halb ausgeführt.
+            // Something changed between the test and the move. Rare, but then
+            // honestly reported instead of silently half-executed.
             refund(paid);
             job.note(dev.devpanda.factorynetwork.crafting.CraftingJob.Status.WAITING, failed);
             return false;
@@ -1164,20 +1154,20 @@ public class ControllerBlockEntity extends BlockEntity {
     }
 
     /**
-     * Füllt die Zutaten ein, die keine Gegenstände sind.
+     * Fills in the ingredients that are not items.
      *
-     * <p><b>Aus dem Netzspeicher in die Maschine</b>, genau wie die
-     * Gegenstände daneben. Der Planner beschafft Flüssigkeiten nicht — dazu
-     * bräuchte es eine Ressourcenart, die offen ist statt fest —, aber
-     * bewegen muss der Auftrag sie: Sonst behauptet die Zeile {@code in 1000
-     * fluid:water} etwas, das nie geschieht, und wer den Tank per Worker
-     * füllt, käme mit dem Netzbestand durcheinander.
+     * <p><b>From the network storage into the machine</b>, exactly like the
+     * items beside them. The planner does not procure fluids — that would need
+     * a resource kind that is open rather than fixed — but the job must move
+     * them: otherwise the line {@code in 1000 fluid:water} claims something
+     * that never happens, and whoever fills the tank by worker would get out
+     * of step with the network inventory.
      *
-     * <p>Die Menge wächst mit den Durchgängen: Die Gegenstände gehen für alle
-     * auf einmal hinein, das Wasser muss mithalten.
+     * <p>The amount grows with the passes: the items go in for all at once,
+     * the water has to keep up.
      *
-     * @param probe ob nur gefragt und noch nichts bewegt wird
-     * @return was fehlt, oder {@code null}, wenn alles da ist
+     * @param probe whether only a query is made and nothing is moved yet
+     * @return what is missing, or {@code null} if everything is present
      */
     private String fillExtras(dev.devpanda.factorynetwork.crafting.CraftingPlanner.Step<
             net.minecraft.world.item.Item> step, String device, boolean probe) {
@@ -1200,12 +1190,12 @@ public class ControllerBlockEntity extends BlockEntity {
     }
 
     /**
-     * Eine Flüssigkeit aus dem Netz in den Tank der Maschine.
+     * A fluid from the network into the machine's tank.
      *
-     * <p><b>Eine Sorte je Zutat.</b> Trifft die Auswahl mehrere — {@code
-     * fluidtag:c/water} —, wird die genommen, von der genug da ist. Ein Tank
-     * hält meist genau eine, und zwei Sorten hineinzumischen wäre kein
-     * Rezept, sondern ein Unfall.
+     * <p><b>One variety per ingredient.</b> If the selection matches several —
+     * {@code fluidtag:c/water} — the one there is enough of is taken. A tank
+     * usually holds exactly one, and mixing two varieties in would be not a
+     * recipe but an accident.
      */
     private String fillFluid(String device,
             dev.devpanda.factorynetwork.crafting.DeclaredRecipes.Extra extra, long need,
@@ -1244,24 +1234,23 @@ public class ControllerBlockEntity extends BlockEntity {
         int placed = tank.fill(new net.neoforged.neoforge.fluids.FluidStack(chosen, (int) got),
                 net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
         if (placed < got) {
-            // Zurück, was doch nicht hineinging — dasselbe Muster wie überall,
-            // wo diese Mod etwas anbietet.
+            // Back with what did not go in after all — the same pattern as
+            // everywhere this mod offers something.
             fluidStorage.insert(chosen, got - placed);
         }
         return null;
     }
 
     /**
-     * Dasselbe für eine Chemikalie.
+     * The same for a chemical.
      *
-     * <p>Ohne Mekanism gibt es keine, und dann fehlt sie — die Meldung sagt
-     * das, statt so zu tun, als sei die Maschine schuld.
+     * <p>Without Mekanism there are none, and then it is missing — the message
+     * says so, instead of pretending the machine is to blame.
      *
-     * <p><b>Ungeprüft im Spiel.</b> Ein Mekanism-Tank, der per {@code
-     * setBlock} in einen Prüflauf gestellt wird, hat keine
-     * Seitenkonfiguration und nimmt nichts an — nachgemessen, dieselbe Lücke
-     * wie beim Chemikalien-Worker. Was hier steht, ist derselbe Weg wie bei
-     * Flüssigkeiten, mit demselben Erst-fragen-dann-ziehen.
+     * <p><b>Untested in game.</b> A Mekanism tank put into a test run via
+     * {@code setBlock} has no side configuration and accepts nothing —
+     * measured, the same gap as with the chemical worker. What stands here is
+     * the same way as with fluids, with the same ask-first-then-pull.
      */
     private String fillChemical(String device,
             dev.devpanda.factorynetwork.crafting.DeclaredRecipes.Extra extra, long need,
@@ -1304,22 +1293,22 @@ public class ControllerBlockEntity extends BlockEntity {
         return null;
     }
 
-    /** Wie eine Flüssigkeit im Klartext heißt. */
+    /** What a fluid is called in plain text. */
     private static String fluidName(net.minecraft.world.level.material.Fluid fluid) {
         return fluid.getFluidType().getDescription().getString();
     }
 
-    /** Der Tank der Maschine hinter einem Gerätenamen. */
+    /** The tank of the machine behind a device name. */
     private net.neoforged.neoforge.fluids.capability.IFluidHandler machineTank(String device) {
         var connector = connectorNamed(device);
         return connector == null ? null : connector.machineTank();
     }
 
     /**
-     * Legt einen Stapel in irgendein Fach, das ihn nimmt.
+     * Places a stack into any slot that takes it.
      *
-     * <p>Welches, entscheidet die Maschine über ihre Seitenregeln — dieselbe
-     * Auskunft, auf die sich {@code move} verlässt.
+     * <p>Which one is decided by the machine through its side rules — the same
+     * information {@code move} relies on.
      */
     private static net.minecraft.world.item.ItemStack insertAll(
             net.neoforged.neoforge.items.IItemHandler handler,
@@ -1332,11 +1321,11 @@ public class ControllerBlockEntity extends BlockEntity {
     }
 
     /**
-     * Zieht ein Ergebnis aus irgendeinem Fach, das es hergibt.
+     * Pulls a result out of any slot that gives it up.
      *
-     * <p>Ein Eingangsfach gibt von sich aus nichts heraus — das entscheidet
-     * die Maschine, und deshalb holt diese Schleife nie versehentlich die
-     * Zutat zurück, die gerade verarbeitet wird.
+     * <p>An input slot gives nothing up on its own — the machine decides that,
+     * and so this loop never accidentally fetches back the ingredient that is
+     * currently being processed.
      */
     private static long extractAll(net.neoforged.neoforge.items.IItemHandler handler,
             net.minecraft.world.item.Item wanted, long limit) {
@@ -1351,15 +1340,14 @@ public class ControllerBlockEntity extends BlockEntity {
     }
 
     /**
-     * Welche fremden Inventare zum Speicher zählen.
+     * Which foreign inventories count toward storage.
      *
-     * <p>Aus den {@code store}-Zeilen des Programms, aufgelöst gegen das
-     * Netz. Ein Name, den es nicht gibt, fällt weg — gemeldet hat ihn schon
-     * die Prüfung beim Übernehmen, und ein Auftrag, der deshalb abbräche,
-     * hälfe niemandem.
+     * <p>From the program's {@code store} lines, resolved against the network.
+     * A name that does not exist falls away — the check on adoption already
+     * reported it, and a job that aborted because of it would help no one.
      *
-     * <p>Höhere Priorität zuerst: Wer {@code priority 10} schreibt, will,
-     * dass dort vor den Zellen eingelagert wird.
+     * <p>Higher priority first: whoever writes {@code priority 10} wants
+     * things stored there before the cells.
      */
     private void rebuildBuses() {
         var program = program();
@@ -1377,17 +1365,17 @@ public class ControllerBlockEntity extends BlockEntity {
                 continue;
             }
             String device = store.device();
-            // Der Filter wird hier aufgelöst und nicht je Ablage: Eine
-            // Auswahl gegen die Registry zu prüfen ist teuer, und sie ändert
-            // sich nur, wenn sich das Programm ändert.
+            // The filter is resolved here and not per store operation:
+            // checking a selection against the registry is expensive, and it
+            // changes only when the program changes.
             var erlaubt = store.filter() == null ? java.util.List
                     .<net.minecraft.world.item.Item>of()
                     : dev.devpanda.factorynetwork.runtime.ItemSelection.resolve(store.filter());
             found.add(new dev.devpanda.factorynetwork.network.StorageBus(
                     device, store.priority(),
-                    // Ein Filter nennt Kennungen, und jede Ausführung davon
-                    // ist gemeint: Wer "eisenbarren" schreibt, meint auch die
-                    // aus einer anderen Mod umbenannten.
+                    // A filter names identifiers, and every variant of them
+                    // is meant: whoever writes "eisenbarren" also means the
+                    // ones renamed from another mod.
                     erlaubt.stream()
                             .map(dev.devpanda.factorynetwork.storage.ItemKey::bare)
                             .toList(),
@@ -1398,19 +1386,19 @@ public class ControllerBlockEntity extends BlockEntity {
         storage.setBuses(found);
     }
 
-    /** Der seitenbezogene Zugriff auf die Maschine hinter einem Connector. */
+    /** The side-based access to the machine behind a connector. */
     private net.neoforged.neoforge.items.IItemHandler machineSide(String device) {
         var connector = connectorNamed(device);
         return connector == null ? null : connector.machineInventory();
     }
 
     /**
-     * Holt ab, was die Maschine fertig hat.
+     * Collects what the machine has finished.
      *
-     * <p>Das Netz holt selbst und wartet nicht darauf, dass jemand einen
-     * Worker dafür schreibt. Ein Auftrag, der stillsteht, weil eine Zeile im
-     * Programm fehlt, die niemand verlangt hat, wäre die unangenehmste Sorte
-     * Stillstand.
+     * <p>The network collects itself and does not wait for someone to write a
+     * worker for it. A job that stands still because a line is missing from
+     * the program that no one asked for would be the most unpleasant kind of
+     * standstill.
      */
     private boolean collectRunning(dev.devpanda.factorynetwork.crafting.CraftingJob job) {
         var running = job.running();
@@ -1425,9 +1413,9 @@ public class ControllerBlockEntity extends BlockEntity {
                     running.device() + " ist nicht erreichbar");
             return false;
         }
-        // Erst fragen, dann holen. Was nicht ins Lager passt, bleibt in der
-        // Maschine — das ist der natürliche Rückstau: Sie stockt, statt dass
-        // sich vor dem Controller ein Berg auftürmt.
+        // Ask first, then collect. What does not fit into storage stays in the
+        // machine — that is the natural backlog: it stalls instead of a heap
+        // piling up in front of the controller.
         long fits = storage.room(running.result(), running.left());
         if (fits <= 0) {
             job.note(dev.devpanda.factorynetwork.crafting.CraftingJob.Status.WAITING,
@@ -1447,8 +1435,8 @@ public class ControllerBlockEntity extends BlockEntity {
         }
         long rest = storage.insert(running.result(), got);
         if (rest > 0) {
-            // Das Netz darunter: gefragt wurde vorher, aber eine Kiste hinter
-            // einem Speicherbus kann sich dazwischen geändert haben.
+            // The net beneath: it was asked beforehand, but a chest behind a
+            // storage bus may have changed in between.
             holdBack(new ItemStack(running.result(), (int) rest));
         }
         long done = running.done() + got;
@@ -1469,11 +1457,11 @@ public class ControllerBlockEntity extends BlockEntity {
     }
 
     /**
-     * Ein Connector, an dem eine passende und freie Maschine hängt.
+     * A connector to which a matching and free machine is attached.
      *
-     * <p><b>Frei heißt: das Ausgangsfach ist leer</b> und ins Eingangsfach
-     * passt die Zutat. Wer schon etwas anderes schmilzt, wird nicht
-     * angerührt — sonst mischte ein Auftrag sein Erz unter fremde Arbeit.
+     * <p><b>Free means: the output slot is empty</b> and the ingredient fits
+     * into the input slot. Whatever is already smelting something else is not
+     * touched — otherwise a job would mix its ore into someone else's work.
      */
     private String freeMachine(String station,
             dev.devpanda.factorynetwork.crafting.MachineRecipes.Station shape,
@@ -1509,7 +1497,7 @@ public class ControllerBlockEntity extends BlockEntity {
         return connector == null ? null : connector.machineInventoryAll();
     }
 
-    /** Wie die Maschine einer Station im Klartext heißt. */
+    /** What the machine of a station is called in plain text. */
     private static String machineName(String station) {
         return dev.devpanda.factorynetwork.crafting.MachineRecipes.machineName(station);
     }
@@ -1517,19 +1505,19 @@ public class ControllerBlockEntity extends BlockEntity {
     private static final String KEY_JOBS = "Jobs";
     private static final String KEY_NEXT_JOB = "NextJob";
 
-    /** Unter diesem Namen stehen die Dateien des Projekts. */
+    /** Under this name stand the files of the project. */
     private static final String KEY_FILES = "Files";
 
-    /** Und darunter der Entwurf, der noch nicht übernommen wurde. */
+    /** And under this the draft that has not yet been adopted. */
     private static final String KEY_DRAFT = "Draft";
     private static final String KEY_OWNER = "Owner";
 
     /**
-     * Liest das Projekt aus dem Speicherformat.
+     * Reads the project from the save format.
      *
-     * <p><b>Alte Welten mitgelesen:</b> Dort steht ein einzelner Text unter
-     * {@code Source}. Der wird zur {@code main.mf} — ein Projekt aus einer
-     * Datei ist genau das, was ein Controller vorher hatte.
+     * <p><b>Old worlds read along too:</b> there a single text stands under
+     * {@code Source}. It becomes the {@code main.mf} — a project of one file
+     * is exactly what a controller had before.
      */
     private static dev.devpanda.factorynetwork.lang.Project readProject(CompoundTag tag) {
         if (tag.contains(KEY_FILES)) {
@@ -1545,32 +1533,32 @@ public class ControllerBlockEntity extends BlockEntity {
         CompoundTag files = new CompoundTag();
         project.files().forEach(files::putString);
         tag.put(KEY_FILES, files);
-        // Der Entwurf nur, wenn er sich vom Laufenden unterscheidet: Sonst
-        // stünde jedes Programm zweimal in der Welt.
+        // The draft only if it differs from the running one: otherwise every
+        // program would stand in the world twice.
         if (!draft.files().equals(project.files())) {
             CompoundTag entwurf = new CompoundTag();
             draft.files().forEach(entwurf::putString);
             tag.put(KEY_DRAFT, entwurf);
         }
-        // Der alte Schlüssel bleibt beschrieben: Wer die Welt mit einer
-        // älteren Fassung der Mod öffnet, findet wenigstens seinen Text
-        // wieder, statt ein leeres Terminal.
+        // The old key stays written: whoever opens the world with an older
+        // version of the mod at least finds their text again, instead of an
+        // empty terminal.
         tag.putString(KEY_SOURCE, project.joined());
     }
 
-    // ---- Die Datei neben der Welt -----------------------------------------
+    // ---- The file next to the world ---------------------------------------
 
     /**
-     * Sieht nach, ob jemand das Programm von außen geändert hat.
+     * Checks whether someone has changed the program from outside.
      *
-     * <p>Beim allerersten Blick entscheidet, ob es die Datei schon gibt:
-     * Gibt es keine, bekommt sie das laufende Programm. Gibt es eine, gilt
-     * sie — dann hat jemand sie angelegt oder bei ausgeschaltetem Server
-     * bearbeitet, und beides ist eine Absicht.
+     * <p>On the very first look, what decides is whether the file already
+     * exists: if there is none, it receives the running program. If there is
+     * one, it holds — then someone created it or edited it while the server
+     * was off, and both are intentional.
      *
-     * <p><b>Ein Controller, der an dieselbe Stelle zurückkommt, findet sein
-     * Programm wieder.</b> Die Datei bleibt beim Abbauen liegen; wer sich
-     * verklickt hat, setzt den Block zurück und hat alles.
+     * <p><b>A controller that returns to the same spot finds its program
+     * again.</b> The file stays when the block is broken; whoever misclicked
+     * places the block back and has everything.
      */
     private void checkProgramFile() {
         if (!(level instanceof net.minecraft.server.level.ServerLevel server)) {
@@ -1588,10 +1576,10 @@ public class ControllerBlockEntity extends BlockEntity {
             if (programFolder == null) {
                 return;
             }
-            // Beim ersten Blick: Ist der Ordner leer, bekommt er das
-            // laufende Projekt. Steht etwas darin, gilt das — dann hat
-            // jemand es angelegt oder bei ausgeschaltetem Server
-            // bearbeitet, und beides ist eine Absicht.
+            // On the first look: if the folder is empty, it receives the
+            // running project. If something stands in it, that holds — then
+            // someone created it or edited it while the server was off, and
+            // both are intentional.
             programFolder.write(project);
             statusStale = true;
         }
@@ -1604,29 +1592,29 @@ public class ControllerBlockEntity extends BlockEntity {
             note("Projekt aus " + name + " übernommen: "
                     + String.join(", ", incoming.names()));
         } else {
-            // Die Fehler stehen wie immer im Code-Reiter. Hier nur der
-            // Hinweis, dass es an den Dateien lag und nicht am Terminal.
+            // The errors stand in the code tab as always. Here only the note
+            // that it was the files and not the terminal.
             note(dev.devpanda.factorynetwork.runtime.LogLevel.ERROR, name,
                     "Fehler beim Übernehmen — das laufende Programm läuft weiter.");
         }
-        // In beiden Fällen, und im zweiten erst recht: Wer in VS Code
-        // arbeitet, sieht sonst gar nichts — sein Programm läuft still nicht.
+        // In both cases, and in the second all the more: whoever works in VS
+        // Code sees nothing otherwise — their program silently does not run.
         statusStale = true;
     }
 
     /**
-     * Schreibt neben die Programmdateien, was das Spiel über sie weiß.
+     * Writes, next to the program files, what the game knows about them.
      *
-     * <p>Fehler mit Datei und Zeile, dazu die Namen aus der Welt. Damit
-     * bekommt ein Editor daneben beides, was er allein nicht haben kann — und
-     * zwar vom Übersetzer, der ohnehin läuft, statt von einer zweiten Fassung
-     * derselben Regeln.
+     * <p>Errors with file and line, plus the names from the world. With that,
+     * an editor beside them gets both things it cannot have on its own — and
+     * from the compiler, which runs anyway, instead of from a second version
+     * of the same rules.
      *
-     * <p>Gerufen, wenn sich etwas ändert: nach einem Übernehmen, nach einem
-     * gescheiterten Übernehmen und nach einem Neuaufbau des Netzes — dort
-     * ändern sich die Gerätenamen. Nicht je Tick: {@code ProgramStatus}
-     * schreibt zwar nur bei Änderung, aber die Datei jedesmal zu bauen und zu
-     * vergleichen wäre Arbeit für nichts.
+     * <p>Called when something changes: after an adoption, after a failed
+     * adoption, and after a rebuild of the network — the device names change
+     * there. Not per tick: {@code ProgramStatus} does write only on change,
+     * but building and comparing the file every time would be work for
+     * nothing.
      */
     private void writeStatus() {
         if (programFolder == null || !statusStale) {
@@ -1635,8 +1623,9 @@ public class ControllerBlockEntity extends BlockEntity {
         statusStale = false;
         dev.devpanda.factorynetwork.lang.ProgramStatus.write(programFolder.path(),
                 diagnostics, List.copyOf(graph.connectorNames()), displayNames(),
-                // Was in diesem Pack eine Ressourcenart ist, weiß nur das
-                // laufende Spiel — seit fremde Mods eigene anmelden dürfen.
+                // What counts as a resource kind in this pack, only the
+                // running game knows — since foreign mods may register their
+                // own.
                 List.copyOf(new java.util.TreeSet<>(
                         dev.devpanda.factorynetwork.runtime.ResourceKinds
                                 .selectorPrefixes())));
@@ -1644,20 +1633,20 @@ public class ControllerBlockEntity extends BlockEntity {
 
 
     /**
-     * Wo das Projekt als Ordner liegt, oder {@code null}, solange noch
-     * niemand danach gesehen hat.
+     * Where the project lies as a folder, or {@code null} as long as no one
+     * has yet looked for it.
      */
     public java.nio.file.Path programFilePath() {
         return programFolder == null ? null : programFolder.path();
     }
 
     /**
-     * Schreibt das Programm in die Datei.
+     * Writes the program into the file.
      *
-     * <p>Nach <b>jedem</b> Übernehmen, auch nach einem mit Fehlern: Ordner
-     * und Terminal müssen denselben Text zeigen. Stünde in den Dateien noch
-     * die letzte fehlerfreie Fassung, holte der nächste Blick sie zurück und
-     * überschriebe, was gerade eingetippt wurde.
+     * <p>After <b>every</b> adoption, even one with errors: folder and
+     * terminal must show the same text. If the files still held the last
+     * error-free version, the next look would fetch it back and overwrite what
+     * had just been typed.
      */
     private void writeProgramFile() {
         if (programFolder != null) {
@@ -1665,25 +1654,24 @@ public class ControllerBlockEntity extends BlockEntity {
         }
     }
 
-    // ---- Speicheransicht --------------------------------------------------
+    // ---- Storage view -------------------------------------------------------
 
     /**
-     * So oft höchstens, in Ticks. Ein Worker bewegt sonst jeden Tick etwas.
+     * At most this often, in ticks. Otherwise a worker moves something every
+     * tick.
      *
-     * <p>Der Anfangswert von {@code lastStoragePush} ist derselbe Wert
-     * negativ — als Konstante geschrieben liefe er der Feldreihenfolge
-     * voraus.
+     * <p>The initial value of {@code lastStoragePush} is the same value
+     * negated — written as a constant it would run ahead of the field order.
      */
     private static final int STORAGE_PUSH_INTERVAL = 10;
 
     /**
-     * Schickt den Netzzustand an einen Spieler, der gerade ein Fenster
-     * aufmacht.
+     * Sends the network state to a player who is just opening a screen.
      *
-     * <p><b>Steht hier und nicht am Terminal-Block</b>, seit es zwei Wege ins
-     * Fenster gibt. Der zweite führt über einen Sendemast, und dort steht
-     * kein Terminal, das die Frage beantworten könnte — ohne diesen Umzug
-     * bliebe der Netzwerk-Reiter aus der Ferne leer.
+     * <p><b>Lives here and not on the terminal block</b>, since there are two
+     * ways into the screen. The second leads over a transmission mast, and
+     * there is no terminal there to answer the question — without this move
+     * the network tab would stay empty from afar.
      */
     public void sendNetworkStateTo(ServerPlayer player) {
         rebuildNetwork();
@@ -1696,25 +1684,25 @@ public class ControllerBlockEntity extends BlockEntity {
                         fluidLines(), connectorProfiles()));
     }
 
-    /** Das Terminal ist auf, egal welcher Reiter. */
+    /** The terminal is open, no matter which tab. */
     public void watchTerminal(ServerPlayer player) {
         terminalWatchers.add(player);
         pushProjectTo(player);
         pushFlowsTo(player);
         pushDisplaysTo(player);
-        // Sonst bliebe der Reiter leer, bis das nächste Fenster des
-        // regelmäßigen Schickens auftut — und wer ihn gezielt aufmacht,
-        // hätte den Eindruck, es sei nichts passiert.
+        // Otherwise the tab would stay empty until the next window of the
+        // regular sending opens up — and whoever opens it on purpose would
+        // have the impression that nothing had happened.
         pushLogTo(player);
         pushTrafficTo(player);
     }
 
     /**
-     * Schickt den Verkehrsverlauf an einen Zuschauer.
+     * Sends the traffic history to a watcher.
      *
-     * <p>Nur an die, die das Terminal offen haben: Der Verlauf ändert sich
-     * jede Sekunde, und ein Netz mit zehn Spielern schickte ihn sonst
-     * zehnmal an niemanden.
+     * <p>Only to those who have the terminal open: the history changes every
+     * second, and a network with ten players would otherwise send it ten
+     * times to no one.
      */
     private void pushTrafficTo(ServerPlayer player) {
         net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,
@@ -1723,10 +1711,10 @@ public class ControllerBlockEntity extends BlockEntity {
     }
 
     /**
-     * Und einmal je Sekunde an alle Zuschauer.
+     * And once per second to all watchers.
      *
-     * <p>Je Sekunde, weil der Verlauf einen Punkt je Sekunde hat — häufiger
-     * zu schicken hieße, dieselbe Kurve mehrmals zu übertragen.
+     * <p>Per second, because the history has one point per second — sending
+     * more often would mean transmitting the same curve several times.
      */
     private void pushTraffic() {
         if (level == null || terminalWatchers.isEmpty()
@@ -1741,10 +1729,10 @@ public class ControllerBlockEntity extends BlockEntity {
     }
 
     /**
-     * Schickt das ganze Projekt.
+     * Sends the whole project.
      *
-     * <p>Beim Öffnen und nach jedem Übernehmen — nicht laufend. Ein Projekt
-     * ändert sich, wenn jemand es ändert, und dann weiß der Server es.
+     * <p>On opening and after every adoption — not continuously. A project
+     * changes when someone changes it, and then the server knows.
      */
     public void pushProjectTo(ServerPlayer player) {
         PacketDistributor.sendToPlayer(player,
@@ -1753,11 +1741,11 @@ public class ControllerBlockEntity extends BlockEntity {
     }
 
     /**
-     * Was das Netz an Namen hergibt — für den Übersetzer.
+     * What names the network yields — for the compiler.
      *
-     * <p>Damit meldet auch das Übernehmen, was der Editor schon beim Tippen
-     * sagt. Wichtig für den Weg über den Ordner neben der Welt: Wer dort
-     * schreibt, hat keinen Editor, der ihn warnt.
+     * <p>With this, adoption too reports what the editor already says while
+     * typing. Important for the way over the folder next to the world:
+     * whoever writes there has no editor to warn them.
      */
     public dev.devpanda.factorynetwork.lang.NetworkView networkView() {
         List<String> connectorNames = new ArrayList<>(graph.connectorNames());
@@ -1781,12 +1769,11 @@ public class ControllerBlockEntity extends BlockEntity {
     }
 
     /**
-     * Die Anzeigewände im Netz, jede einmal, mit ihrer Stelle.
+     * The display walls in the network, each once, with its location.
      *
-     * <p>Die Namen aus den Blöcken und nicht aus dem Graphen: Der merkt sich
-     * Stellen, keine Namen. Eine Wand besteht aus vielen Tafeln mit
-     * demselben Namen — genommen wird die erste, und die reicht zum
-     * Wiederfinden.
+     * <p>The names from the blocks and not from the graph: the graph remembers
+     * locations, not names. A wall consists of many panels with the same name
+     * — the first is taken, and that is enough to find it again.
      */
     public List<dev.devpanda.factorynetwork.network.packet.NamedPlace> displayPlaces() {
         if (level == null) {
@@ -1807,7 +1794,7 @@ public class ControllerBlockEntity extends BlockEntity {
                 .toList();
     }
 
-    /** Nur die Namen — für den Übersetzer, der keine Stellen braucht. */
+    /** Only the names — for the compiler, which needs no locations. */
     public List<String> displayNames() {
         return displayPlaces().stream()
                 .map(dev.devpanda.factorynetwork.network.packet.NamedPlace::name)
@@ -1815,10 +1802,10 @@ public class ControllerBlockEntity extends BlockEntity {
     }
 
     /**
-     * Die Connectoren im Netz mit ihrer Stelle.
+     * The connectors in the network with their location.
      *
-     * <p>Der Ort und nicht die Fläche: Der Name wird über dem Block
-     * geschrieben, an dem der Anschluss sitzt.
+     * <p>The position and not the face: the name is written above the block
+     * on which the connector sits.
      */
     public List<dev.devpanda.factorynetwork.network.packet.NamedPlace> connectorPlaces() {
         return graph.connectors().entrySet().stream()
@@ -1828,11 +1815,11 @@ public class ControllerBlockEntity extends BlockEntity {
     }
 
     /**
-     * Die Profile aller Connectoren, für den Editor.
+     * The profiles of all connectors, for the editor.
      *
-     * <p>Einmal beim Öffnen des Terminals. Wer nicht geladen ist, liefert ein
-     * Profil, das nichts über sich sagt — und das ist etwas anderes als eines,
-     * das nichts kann.
+     * <p>Once on opening the terminal. Whatever is not loaded yields a profile
+     * that says nothing about itself — and that is something other than one
+     * that can do nothing.
      */
     public List<dev.devpanda.factorynetwork.network.packet.DeviceProfileCodec.Flat>
             connectorProfiles() {
@@ -1853,34 +1840,33 @@ public class ControllerBlockEntity extends BlockEntity {
     }
 
 
-    // ---- Der Netzzustand am Anschluss --------------------------------------
+    // ---- The network state at the connector --------------------------------
 
     /**
-     * Welche Anschlüsse dieser Controller zuletzt gestempelt hat.
+     * Which connectors this controller last stamped.
      *
-     * <p>Gebraucht für die, die aus dem Netz fallen: Wer nicht mehr im
-     * Graphen steht, bekommt niemanden mehr, der ihm etwas sagt — und stünde
-     * sonst für immer auf seinem letzten Zustand. Ein grünes Lämpchen an
-     * einem abgeschnittenen Gerät wäre schlimmer als gar keines.
+     * <p>Needed for those that drop out of the network: whoever no longer
+     * stands in the graph gets no one to tell them anything — and would
+     * otherwise stay forever on their last state. A green light on a cut-off
+     * device would be worse than none at all.
      */
     private java.util.Set<DevicePos> stamped = java.util.Set.of();
 
     /**
-     * Schreibt jedem Anschluss auf, wie es um ihn steht.
+     * Writes down for each connector how it stands.
      *
-     * <p><b>Der Zustand ist ein Schatten des Graphen.</b> Gerechnet wird er
-     * hier, beim Neuaufbau — alle hundert Ticks und bei jeder Änderung am
-     * Netz. Der Anschluss hebt ihn nur auf, damit ein Blick auf den Block ihn
-     * beantworten kann, ohne den Controller zu fragen.
+     * <p><b>The state is a shadow of the graph.</b> It is computed here, on
+     * rebuild — every hundred ticks and on every change to the network. The
+     * connector only stores it, so that a look at the block can answer it
+     * without asking the controller.
      *
-     * <p><b>Was das kostet:</b> nichts, was der Graph nicht ohnehin rechnet,
-     * und ein Paket nur dort, wo sich wirklich etwas geändert hat — darum
-     * kümmert sich {@code ConnectorPart.setState}.
+     * <p><b>What that costs:</b> nothing the graph does not compute anyway,
+     * and a packet only where something has really changed — {@code
+     * ConnectorPart.setState} takes care of that.
      *
-     * <p>Hängt ein Anschluss an zwei Netzen, gewinnt der Controller, der
-     * zuletzt gestempelt hat. Das ist derselbe Fall, den der Reiter
-     * <i>Netz</i> als umstritten meldet, und er ist selten genug, um ihn hier
-     * nicht eigens aufzulösen.
+     * <p>If a connector hangs on two networks, the controller that stamped
+     * last wins. That is the same case the <i>Network</i> tab reports as
+     * contested, and it is rare enough not to resolve specially here.
      */
     private void stampDeviceStates() {
         Map<DevicePos, DeviceState> wanted = statesFromGraph();
@@ -1893,13 +1879,14 @@ public class ControllerBlockEntity extends BlockEntity {
         stamped = java.util.Set.copyOf(wanted.keySet());
     }
 
-    /** Was der Graph über jeden Anschluss sagt. */
+    /** What the graph says about each connector. */
     private Map<DevicePos, DeviceState> statesFromGraph() {
         Map<DevicePos, DeviceState> found = new LinkedHashMap<>();
         graph.connectors().forEach((name, where) ->
                 found.put(where, DeviceState.ONLINE));
-        // Mehrfach vergebene Namen stehen nicht in connectors() — genau
-        // deshalb, und genau deshalb müssen sie hier eigens dazu.
+        // Names given more than once are not in connectors() — precisely for
+        // that reason, and precisely for that reason they must be added here
+        // explicitly.
         for (String name : graph.ambiguousNames()) {
             for (DevicePos where : graph.positionsOf(name)) {
                 found.put(where, DeviceState.DUPLICATE);
@@ -1921,27 +1908,27 @@ public class ControllerBlockEntity extends BlockEntity {
         }
     }
 
-    /** Was im Editor steht, auch wenn es noch nicht läuft. */
+    /** What is in the editor, even if it is not running yet. */
     public dev.devpanda.factorynetwork.lang.Project draft() {
         return draft;
     }
 
     /**
-     * Nimmt einen Entwurf entgegen.
+     * Receives a draft.
      *
-     * <p><b>Der Grund, warum es ihn gibt:</b> Vorher lebte der Text nur im
-     * Client. Ein Absturz, ein Kick, ein versehentliches Verlassen der Welt —
-     * und eine halbe Stunde Arbeit war weg, weil nur das Übernehmen sie
-     * gesichert hätte. Und Übernehmen geht nur, wenn das Programm fehlerfrei
-     * ist; genau in der Mitte einer Änderung ist es das nie.
+     * <p><b>The reason it exists:</b> before, the text lived only in the
+     * client. A crash, a kick, an accidental leaving of the world — and half
+     * an hour of work was gone, because only adoption would have saved it. And
+     * adoption works only when the program is error-free; right in the middle
+     * of a change it never is.
      *
-     * <p>Geschickt wird der ganze Entwurf und keine Änderungsliste. Ein
-     * Programm hier ist ein paar Dutzend Zeilen, gedeckelt auf 64 KB je
-     * Datei, und eine Änderungsliste mit Positionen ist die Sorte Code, in
-     * der sich ein Fehler erst zeigt, wenn der Text schon kaputt ist.
+     * <p>The whole draft is sent and not a change list. A program here is a
+     * few dozen lines, capped at 64 KB per file, and a change list with
+     * positions is the kind of code where a bug only shows once the text is
+     * already broken.
      *
-     * <p>Der Absender bekommt nichts zurück: Er hat den Text ja gerade
-     * geschickt, und ein Echo träfe ihn mitten im Tippen.
+     * <p>The sender gets nothing back: they just sent the text, and an echo
+     * would hit them mid-typing.
      */
     public void acceptDraft(dev.devpanda.factorynetwork.lang.Project incoming,
                             java.util.UUID author, String authorName) {
@@ -1950,12 +1937,12 @@ public class ControllerBlockEntity extends BlockEntity {
         }
         this.draft = author == null ? incoming : merge(incoming, author, authorName);
         setChanged();
-        // Der Absender bekommt normalerweise nichts zurück — er hat den Text
-        // ja gerade geschickt, und ein Echo träfe ihn mitten im Tippen.
+        // The sender normally gets nothing back — they just sent the text,
+        // and an echo would hit them mid-typing.
         //
-        // <b>Außer, es wurde etwas abgelehnt.</b> Dann ist das Echo die
-        // einzige Auskunft darüber, und ohne sie tippt er weiter in eine
-        // Datei, die niemand mehr annimmt.
+        // <b>Except when something was rejected.</b> Then the echo is the only
+        // word about it, and without it they keep typing into a file no one
+        // accepts any more.
         boolean rejected = !draft.files().equals(incoming.files());
         for (ServerPlayer watcher : terminalWatchers) {
             if (!watcher.getUUID().equals(author) || rejected) {
@@ -1965,16 +1952,14 @@ public class ControllerBlockEntity extends BlockEntity {
     }
 
     /**
-     * Übernimmt vom eingehenden Entwurf nur, was der Absender schreiben darf.
+     * Adopts from the incoming draft only what the sender may write.
      *
-     * <p><b>Ohne das überschreiben sich zwei Spieler wortlos.</b> Beide
-     * schicken den ganzen Entwurf; wer zuletzt tippt, gewinnt — auch über
-     * eine Datei, die er gar nicht offen hatte. Der andere merkt es, wenn
-     * seine Arbeit weg ist.
+     * <p><b>Without this, two players overwrite each other wordlessly.</b> Both
+     * send the whole draft; whoever types last wins — even over a file they
+     * did not have open at all. The other notices when their work is gone.
      *
-     * <p>Eine Datei, die jemand anders hält, bleibt deshalb stehen, wie sie
-     * ist. Der Absender bekommt sie beim nächsten Zustand zurückgeschickt
-     * und sieht sie im Editor als gesperrt.
+     * <p>A file someone else holds therefore stays as it is. The sender gets it
+     * sent back with the next state and sees it as locked in the editor.
      */
     private dev.devpanda.factorynetwork.lang.Project merge(
             dev.devpanda.factorynetwork.lang.Project incoming, java.util.UUID author,
@@ -1984,27 +1969,27 @@ public class ControllerBlockEntity extends BlockEntity {
         for (Map.Entry<String, String> entry : incoming.files().entrySet()) {
             if (draft.files().containsKey(entry.getKey())
                     && entry.getValue().equals(draft.source(entry.getKey()))) {
-                // Unverändert mitgeschickt: keine Änderung, also auch kein
-                // Anspruch auf die Datei.
+                // Sent along unchanged: no change, so no claim on the file
+                // either.
                 //
-                // Die Prüfung auf „gibt es schon" gehört dazu: Eine frisch
-                // angelegte Datei ist leer, und source() liefert für eine
-                // unbekannte ebenfalls den leeren Text. Ohne sie fiele jede
-                // neue Datei hier durch und käme nie beim Server an.
+                // The check for "already exists" belongs to it: a freshly
+                // created file is empty, and source() likewise returns the
+                // empty text for an unknown one. Without it, every new file
+                // would fall through here and never reach the server.
                 continue;
             }
             if (locks.claim(entry.getKey(), author, authorName, now)) {
                 merged.put(entry.getKey(), entry.getValue());
             }
         }
-        // Gelöscht wird nur, was der Absender auch halten darf.
+        // Only what the sender may also hold is deleted.
         merged.keySet().removeIf(name -> !incoming.files().containsKey(name)
                 && locks.claim(name, author, authorName, now));
         return new dev.devpanda.factorynetwork.lang.Project(merged);
     }
 
-    /** Wer welche Datei hält, aus Sicht dieses Spielers. */
-    /** Wer diese Datei gerade hält, oder {@code null}. */
+    /** Who holds which file, from this player's point of view. */
+    /** Who currently holds this file, or {@code null}. */
     public java.util.UUID holderOf(String file) {
         return level == null ? null : locks.holderOf(file, level.getGameTime());
     }
@@ -2013,15 +1998,15 @@ public class ControllerBlockEntity extends BlockEntity {
         return locks.othersFor(player, level == null ? 0L : level.getGameTime());
     }
 
-    /** Und an alle, die gerade zusehen — nach einer Änderung von außen. */
+    /** And to all who are watching — after a change from outside. */
     private void pushProjectToWatchers() {
         terminalWatchers.forEach(this::pushProjectTo);
     }
 
     public void unwatchTerminal(ServerPlayer player) {
-        // Erst freigeben, dann abmelden: Auf den Zeitablauf zu warten hieße,
-        // dass ein anderer eine Minute vor einer Datei steht, die niemand
-        // mehr offen hat.
+        // Release first, then unregister: waiting for the timeout would mean
+        // someone else standing for a minute in front of a file no one has
+        // open any more.
         locks.release(player.getUUID());
         terminalWatchers.stream().filter(other -> other != player)
                 .forEach(this::pushProjectTo);
@@ -2038,7 +2023,7 @@ public class ControllerBlockEntity extends BlockEntity {
         storageWatchers.remove(player);
     }
 
-    /** Merkt vor, dass sich etwas geändert hat — geschickt wird gebündelt. */
+    /** Notes that something changed — the send is bundled. */
     public void markStorageDirty() {
         storageDirty = true;
     }
@@ -2052,16 +2037,16 @@ public class ControllerBlockEntity extends BlockEntity {
         }
         lastStoragePush = level.getGameTime();
         storageDirty = false;
-        // Abgemeldete Spieler mitnehmen, damit die Menge nicht leckt.
+        // Take along logged-off players, so the set does not leak.
         storageWatchers.removeIf(player -> player.isRemoved()
                 || !(player.containerMenu instanceof TerminalMenu));
         storageWatchers.forEach(player -> pushStorageTo(player, true));
     }
 
-    /** Schickt den Bestand an einen Spieler. */
+    /** Sends the inventory to a player. */
     public void pushStorageTo(ServerPlayer player, boolean replace) {
-        // Die Gegenstände selbst und nicht ihre Kennungen: Sonst stünden
-        // ein verzaubertes Buch und ein leeres in derselben Zeile.
+        // The items themselves and not their identifiers: otherwise an
+        // enchanted book and an empty one would stand in the same line.
         var contents = storage.contents();
         List<StorageSnapshotPacket.Entry> entries = contents.entrySet().stream()
                 .sorted(Map.Entry.<dev.devpanda.factorynetwork.storage.ItemKey, Long>
@@ -2079,19 +2064,19 @@ public class ControllerBlockEntity extends BlockEntity {
                         storage.freeTypes(), fluidStorage.freeTypes()));
     }
 
-    // ---- Abläufe im Terminal ----------------------------------------------
+    // ---- Flows in the terminal --------------------------------------------
 
-    /** So oft höchstens, in Ticks. */
+    /** At most this often, in ticks. */
     private static final int FLOW_PUSH_INTERVAL = 10;
 
     private long lastFlowPush = -FLOW_PUSH_INTERVAL;
 
     /**
-     * Schickt die Liste der Abläufe an die Zuschauer.
+     * Sends the list of flows to the watchers.
      *
-     * <p>Anders als der Bestand wird sie nicht vorgemerkt, sondern regelmäßig
-     * geschickt: Ein Ablauf, der schläft, ändert nichts und wäre trotzdem eine
-     * Zeile wert, deren Zustand sich jederzeit ändern kann.
+     * <p>Unlike the inventory, it is not flagged but sent regularly: a flow
+     * that sleeps changes nothing and would still be worth a line whose state
+     * can change at any time.
      */
     private void pushFlowsIfDue() {
         if (level == null || terminalWatchers.isEmpty()
@@ -2110,7 +2095,7 @@ public class ControllerBlockEntity extends BlockEntity {
         });
     }
 
-    /** Schickt die Abläufe an einen Spieler. */
+    /** Sends the flows to a player. */
     public void pushFlowsTo(ServerPlayer player) {
         FlowEngine engine = flowEngine();
         PacketDistributor.sendToPlayer(player, new FlowStatePacket(flowLines(),
@@ -2124,10 +2109,10 @@ public class ControllerBlockEntity extends BlockEntity {
     }
 
     /**
-     * Schickt die Fertigungsaufträge an einen Spieler.
+     * Sends the crafting jobs to a player.
      *
-     * <p>Der Name des Ziels als fertiger Text: Der Client soll ihn zeigen und
-     * nicht auflösen müssen.
+     * <p>The name of the target as finished text: the client should show it and
+     * not have to resolve it.
      */
     public void pushCraftingTo(ServerPlayer player) {
         PacketDistributor.sendToPlayer(player,
@@ -2135,7 +2120,7 @@ public class ControllerBlockEntity extends BlockEntity {
                         craftingLines()));
     }
 
-    /** Die Aufträge als fertige Zeilen — getrennt vom Senden, damit prüfbar. */
+    /** The jobs as finished lines — separate from sending, so it is testable. */
     public List<dev.devpanda.factorynetwork.network.packet.CraftingStatePacket.Line>
             craftingLines() {
         List<dev.devpanda.factorynetwork.network.packet.CraftingStatePacket.Line> lines =
@@ -2149,7 +2134,7 @@ public class ControllerBlockEntity extends BlockEntity {
         return lines;
     }
 
-    /** Schickt das Protokoll an einen Spieler. */
+    /** Sends the log to a player. */
     public void pushLogTo(ServerPlayer player) {
         List<dev.devpanda.factorynetwork.network.packet.LogStatePacket.Line> lines =
                 new ArrayList<>(log.size());
@@ -2162,11 +2147,11 @@ public class ControllerBlockEntity extends BlockEntity {
     }
 
     /**
-     * Die globalen Werte als Zeilen für das Terminal.
+     * The global values as lines for the terminal.
      *
-     * <p><b>Ein Wert, den man nicht sehen kann, ist beim Fehlersuchen
-     * wertlos.</b> Der Umweg wäre ein {@code log()} in einer Schleife — und
-     * das ist die Sorte Notlösung, die man dann vergisst herauszunehmen.
+     * <p><b>A value you cannot see is worthless when debugging.</b> The detour
+     * would be a {@code log()} in a loop — and that is the kind of stopgap you
+     * then forget to take out again.
      */
     public List<String> globalLines() {
         List<String> lines = new ArrayList<>();
@@ -2174,33 +2159,33 @@ public class ControllerBlockEntity extends BlockEntity {
         return lines;
     }
 
-    /** Die Abläufe als Zeilen — getrennt vom Senden, damit prüfbar. */
+    /** The flows as lines — separate from sending, so it is testable. */
     public List<FlowStatePacket.Line> flowLines() {
         List<FlowStatePacket.Line> lines = new ArrayList<>();
         if (flows != null) {
             flows.flows().values().forEach(flow -> lines.add(new FlowStatePacket.Line(
                     flow.id(), flow.entryPoint(), flow.status().name(), flow.detail())));
-            // Die zuletzt gescheiterten hinten dran, damit ein Fehler von
-            // heute Nacht morgen früh noch dasteht.
+            // The most recently failed ones appended, so that a failure from
+            // last night is still there in the morning.
             flows.failed().forEach(flow -> lines.add(new FlowStatePacket.Line(
                     flow.id(), flow.entryPoint(), flow.status().name(), flow.detail())));
         }
         return lines;
     }
 
-    // ---- Anzeigen im Terminal ---------------------------------------------
+    // ---- Displays in the terminal -----------------------------------------
 
     /**
-     * Schickt die Anzeigen an einen Spieler.
+     * Sends the displays to a player.
      *
-     * <p>Ausgewertet wird hier, gezeichnet dort — dieselbe Aufteilung wie beim
-     * Display an der Wand. Was über die Leitung geht, steht am Ende so da.
+     * <p>Evaluated here, drawn there — the same split as with the display on
+     * the wall. What goes over the wire is how it finally stands.
      */
     public void pushDisplaysTo(ServerPlayer player) {
         PacketDistributor.sendToPlayer(player, new DisplayStatePacket(displayPanels()));
     }
 
-    /** Die Anzeigen als fertige Zeilen — getrennt vom Senden, damit prüfbar. */
+    /** The displays as finished lines — separate from sending, so it is testable. */
     public List<DisplayStatePacket.Panel> displayPanels() {
         List<DisplayStatePacket.Panel> panels = new ArrayList<>();
         DisplayValues values = new DisplayValues(graph, storage, runtime, globals, level);
@@ -2211,8 +2196,8 @@ public class ControllerBlockEntity extends BlockEntity {
             List<String> lines = new ArrayList<>();
             List<DisplayStatePacket.Button> buttons = new ArrayList<>();
             List<DisplayValues.Line> evaluated = values.evaluate(display);
-            // Der Eintrag zählt für sich: Eine Aufzählung bringt mehrere
-            // Zeilen mit, und die Zeilennummer läuft danach voraus.
+            // The entry counts on its own: a list brings several lines with
+            // it, and the line number runs ahead afterwards.
             int entryIndex = -1;
             Decl.Display.Entry.Kind previous = null;
             for (int i = 0; i < evaluated.size(); i++) {
@@ -2235,11 +2220,11 @@ public class ControllerBlockEntity extends BlockEntity {
     }
 
     /**
-     * Gehört diese Zeile noch zum Eintrag davor?
+     * Does this line still belong to the entry before it?
      *
-     * <p>Nur eine Aufzählung bringt mehr als eine Zeile mit: Auf ihre
-     * Überschrift folgen die Posten als Zeilen, bis der nächste Eintrag
-     * beginnt. Alles andere ist eins zu eins.
+     * <p>Only a list brings more than one line with it: its heading is
+     * followed by the items as lines, until the next entry begins. Everything
+     * else is one to one.
      */
     private static boolean belongsToPreviousEntry(DisplayValues.Line line,
                                                   Decl.Display.Entry.Kind previous) {
@@ -2251,16 +2236,16 @@ public class ControllerBlockEntity extends BlockEntity {
     }
 
     /**
-     * Trägt nach, was in der Welt hängt und im Programm fehlt.
+     * Adds what hangs in the world and is missing from the program.
      *
-     * <p>Bisher listete der Reiter nur die {@code display}-Deklarationen.
-     * Eine benannte Tafel ohne passende Deklaration war damit <b>nirgends</b>
-     * zu sehen — sie sagte es nur selbst auf ihrer Front, und die hängt
-     * womöglich drei Räume weiter. Dasselbe gilt für eine Tafel ohne Namen.
+     * <p>Until now the tab listed only the {@code display} declarations. A
+     * named panel without a matching declaration was thus visible
+     * <b>nowhere</b> — it only said so itself on its front, and that hangs
+     * perhaps three rooms away. The same holds for a panel without a name.
      *
-     * <p>Das ist dieselbe Sorte Auskunft wie „unbenannter Connector" oder
-     * „Gerät ohne Kanal": etwas hängt im Netz und tut nichts, und der Grund
-     * gehört dorthin, wo man nachsieht.
+     * <p>That is the same kind of information as "unnamed connector" or
+     * "device without a channel": something hangs in the network and does
+     * nothing, and the reason belongs where you look.
      */
     private void addUnknownPanels(List<DisplayStatePacket.Panel> panels) {
         if (level == null) {
@@ -2280,7 +2265,7 @@ public class ControllerBlockEntity extends BlockEntity {
                     || !(level.getBlockEntity(pos) instanceof DisplayBlockEntity panel)) {
                 continue;
             }
-            // Eine Wand einmal, nicht einmal je Tafel.
+            // A wall once, not once per panel.
             var wall = panel.wall();
             if (!walls.add(wall.anchor())) {
                 continue;
@@ -2304,11 +2289,11 @@ public class ControllerBlockEntity extends BlockEntity {
     }
 
     /**
-     * Der Flüssigkeitsbestand, als Zeilen für das Terminal.
+     * The fluid contents, as lines for the terminal.
      *
-     * <p>Als Text und nicht als Symbolraster: Eine Flüssigkeit hat kein
-     * Gegenstandsbild, und ein Netz hält selten mehr als eine Handvoll Sorten
-     * — dafür lohnt kein zweites Raster.
+     * <p>As text and not as a grid of symbols: a fluid has no item icon, and a
+     * network rarely holds more than a handful of varieties — no second grid
+     * is worth it for that.
      */
     public List<String> fluidLines() {
         return fluidStorage.contents().entrySet().stream()
@@ -2320,11 +2305,11 @@ public class ControllerBlockEntity extends BlockEntity {
     }
 
     /**
-     * Die gebauten Anlagen, als Zeilen für das Terminal.
+     * The built installations, as lines for the terminal.
      *
-     * <p>Eine unvollständige Anlage bliebe sonst unsichtbar: Sie tut nichts
-     * und sagt nichts, und der Spieler sucht den Fehler im Programm statt an
-     * der Beschriftung.
+     * <p>An incomplete installation would otherwise stay invisible: it does
+     * nothing and says nothing, and the player hunts for the error in the
+     * program instead of in the labeling.
      */
     public List<String> plants() {
         return MultiblockInstances.resolve(program, graph.connectorNames()).values().stream()
@@ -2342,10 +2327,10 @@ public class ControllerBlockEntity extends BlockEntity {
     }
 
     /**
-     * Löst aus, was hinter einem Knopf steht.
+     * Triggers what stands behind a button.
      *
-     * <p>Als Ablauf, nicht als gewöhnlicher Aufruf: Ein Knopf soll etwas
-     * anstoßen dürfen, das wartet, und einen Rückgabewert braucht niemand.
+     * <p>As a flow, not as an ordinary call: a button should be allowed to set
+     * something going that waits, and no one needs a return value.
      */
     public void pressDisplayButton(String displayName, int entryIndex) {
         Decl.Display display = program.declarations().stream()
@@ -2357,7 +2342,7 @@ public class ControllerBlockEntity extends BlockEntity {
         }
         Decl.Display.Entry entry = display.entries().get(entryIndex);
         if (entry.kind() != Decl.Display.Entry.Kind.BUTTON) {
-            // Der Client hat auf eine Zeile gezeigt, die kein Knopf ist.
+            // The client pointed at a line that is not a button.
             return;
         }
         String function = functionNameOf(entry.value());
@@ -2373,7 +2358,7 @@ public class ControllerBlockEntity extends BlockEntity {
         }
     }
 
-    /** Welche Funktion hinter einem Knopf steht — Name oder Aufruf. */
+    /** Which function stands behind a button — a name or a call. */
     private static String functionNameOf(Expr value) {
         return switch (value) {
             case Expr.Name name -> name.value();
@@ -2383,43 +2368,42 @@ public class ControllerBlockEntity extends BlockEntity {
     }
 
     /**
-     * Sucht nach Änderungen der Redstone-Stärke und löst dafür Ereignisse aus.
+     * Looks for changes in redstone strength and fires events for them.
      *
-     * <p>Abgefragt statt gemeldet, und nur alle zehn Ticks: Das Konzept lässt
-     * der Laufzeit ausdrücklich internes Abfragen, solange der Spieler dafür
-     * keine Schleife schreiben muss. Bei einigen Dutzend Connectoren ist das
-     * billiger als an jedem Block zu horchen.
+     * <p>Polled rather than reported, and only every ten ticks: the concept
+     * expressly allows the runtime internal polling, as long as the player
+     * need not write a loop for it. With a few dozen connectors that is
+     * cheaper than listening at every block.
      */
-    /** Der zuletzt gesehene Inhalt je Gerät, als Fingerabdruck. */
+    /** The last seen contents per device, as a fingerprint. */
     private final Map<String, Integer> lastContents = new HashMap<>();
 
-    /** Die zuletzt gesehenen Mengen je Gerät — die Grundlinie für device_output. */
+    /** The last seen amounts per device — the baseline for device_output. */
     private final Map<String, DeviceAmounts> lastAmounts = new HashMap<>();
 
     /**
-     * Meldet, was an den Geräten geschieht.
+     * Reports what happens at the devices.
      *
-     * <p><b>{@code device_changed}: irgendetwas hat sich geregt.</b> Mehr
-     * sagt es nicht, und mehr kann es nicht sagen — auch das Verbrennen von
-     * Kohle ist eine Änderung. Was das bedeutet, schreibt der Spieler selbst.
+     * <p><b>{@code device_changed}: something stirred.</b> It says no more, and
+     * can say no more — burning coal is a change too. What that means the
+     * player writes themselves.
      *
-     * <p><b>{@code device_output}: es ist etwas dazugekommen.</b> Verglichen
-     * werden die Mengen je Art mit denen vom letzten Blick; nur mehr zählt,
-     * also lösen Verbrauch und Entnahme nie etwas aus. Was das Netz selbst
-     * einlegt, zieht die Grundlinie sofort nach (siehe {@link #noteFilled})
-     * und geht deshalb nie als Ausgabe durch. Gemeldet wird jeder Zuwachs
-     * und nicht nur der erste: Eine Maschine, die eine Ladung stückweise
-     * ausgibt, meldet jedes Stück — sonst bliebe der Rest in ihr stehen.
+     * <p><b>{@code device_output}: something has come in.</b> The amounts per
+     * kind are compared with those from the last look; only more counts, so
+     * consumption and extraction never trigger anything. What the network
+     * inserts itself pulls the baseline along at once (see {@link
+     * #noteFilled}) and so never passes as an output. Every increase is
+     * reported and not only the first: a machine that puts out a batch piece
+     * by piece reports every piece — otherwise the rest would stay in it.
      *
-     * <p><b>Nicht „fertig".</b> Ob eine Maschine ihre Arbeit beendet hat,
-     * weiß von außen niemand: Der Ausgang kann von vorher gefüllt sein, und
-     * jede Mod zählt anders. Eine Automatisierung, die einmal zu früh
-     * weiterschaltet, verliert Gegenstände in einer Kiste, die niemand mehr
-     * findet — deshalb sagt der Name, was gemessen wird, und nicht, was der
-     * Spieler daraus schließen möchte.
+     * <p><b>Not "done".</b> Whether a machine has finished its work, no one
+     * knows from outside: the output can be filled from before, and every mod
+     * counts differently. An automation that once switches on too early loses
+     * items in a chest no one finds again — so the name says what is measured,
+     * and not what the player would like to conclude from it.
      *
-     * <p>Abgefragt statt gemeldet und nur alle zehn Ticks, wie beim Redstone —
-     * und je Ereignis nur, wenn das Programm überhaupt darauf hört.
+     * <p>Polled rather than reported and only every ten ticks, as with the
+     * redstone — and per event only if the program listens for it at all.
      */
     private void fireInventoryEvents() {
         if (level == null || level.getGameTime() % 10 != 0) {
@@ -2442,8 +2426,8 @@ public class ControllerBlockEntity extends BlockEntity {
             if (connector == null) {
                 continue;
             }
-            // Beim ersten Sehen wird nicht gemeldet: Da hat sich nichts
-            // geändert, es war nur nichts bekannt.
+            // On first sight nothing is reported: nothing has changed there,
+            // it was only that nothing was known.
             if (watchChanges) {
                 int fingerprint = contentsFingerprint(connector);
                 Integer previous = lastContents.put(entry.getKey(), fingerprint);
@@ -2464,31 +2448,30 @@ public class ControllerBlockEntity extends BlockEntity {
     }
 
     /**
-     * Das Netz hat gerade selbst etwas in ein Gerät gelegt.
+     * The network has just put something into a device itself.
      *
-     * <p>Die Grundlinie wird sofort nachgezogen, damit die eigene Lieferung
-     * beim nächsten Blick nicht als Ausgabe des Geräts durchgeht. Ohne das
-     * weckte ein Ablauf, der einlegt und dann wartet, sich selbst.
+     * <p>The baseline is pulled along at once, so that its own delivery does
+     * not pass as an output of the device on the next look. Without it, a flow
+     * that inserts and then waits would wake itself.
      *
-     * <p>Nur für Geräte, die schon beobachtet werden. Wer noch keine
-     * Grundlinie hat, bekommt sie beim nächsten Blick — und der erste Blick
-     * meldet nie.
+     * <p>Only for devices that are already watched. Whatever has no baseline
+     * yet gets one on the next look — and the first look never reports.
      */
     public void noteFilled(String device) {
         lastAmounts.computeIfPresent(device, (name, previous) -> {
             var connector = connectorNamed(name);
-            // Ein Gerät, das gerade nicht erreichbar ist, behält seine alte
-            // Grundlinie. Eine leere hieße: Beim nächsten Blick ist alles
-            // darin neu.
+            // A device that is currently unreachable keeps its old baseline.
+            // An empty one would mean: at the next look everything in it is
+            // new.
             return connector == null ? previous : DeviceAmounts.of(connector);
         });
     }
 
     /**
-     * Der Anschluss mit diesem Namen, oder {@code null}.
+     * The connector with this name, or {@code null}.
      *
-     * <p>Über Ort <b>und</b> Fläche: Sitzen sechs Anschlüsse an einem
-     * Kabelblock, ist der Ort allein keine Antwort.
+     * <p>By position <b>and</b> face: if six connectors sit on one cable
+     * block, the position alone is no answer.
      */
     private ConnectorPart connectorNamed(String device) {
         var where = graph.connector(device).orElse(null);
@@ -2500,10 +2483,10 @@ public class ControllerBlockEntity extends BlockEntity {
     }
 
     /**
-     * Eine Zahl, die sich ändert, wenn sich der Inhalt ändert.
+     * A number that changes when the contents change.
      *
-     * <p>Inventar und Tank zusammen — eine Maschine kann beides haben, und wer
-     * auf sie wartet, will von beidem wissen.
+     * <p>Inventory and tank together — a machine can have both, and whoever
+     * waits on it wants to know about both.
      */
     private static int contentsFingerprint(ConnectorPart connector) {
         int hash = 17;
@@ -2527,17 +2510,17 @@ public class ControllerBlockEntity extends BlockEntity {
     }
 
     /**
-     * Hört irgendwer auf dieses Ereignis?
+     * Does anyone listen for this event?
      *
-     * <p><b>Ein wartender Ablauf zählt mit.</b> Gezählt wurden lange nur die
-     * {@code on}-Blöcke, und damit stand ein
+     * <p><b>A waiting flow counts too.</b> For a long time only the {@code on}
+     * blocks were counted, and so a
      *
      * <pre>let gerät = await device_changed</pre>
      *
-     * für immer: Ohne Block wurde gar nicht erst hingesehen, das Ereignis
-     * fiel nie, und der Ablauf wartete auf etwas, das niemand mehr auslöste.
-     * Die Abfrage ist teuer genug, um sie zu sparen — aber nur, wenn wirklich
-     * niemand zuhört.
+     * stood forever: without a block nothing was even looked at, the event
+     * never fired, and the flow waited on something no one triggered any more.
+     * The query is expensive enough to spare — but only when truly no one is
+     * listening.
      */
     private boolean listensTo(String event) {
         if (program.handlers().stream().anyMatch(handler -> handler.name().equals(event))) {
@@ -2558,28 +2541,28 @@ public class ControllerBlockEntity extends BlockEntity {
             if (!level.isLoaded(entry.getValue().pos())) {
                 continue;
             }
-            // Am Block gelesen und nicht an der Fläche — dieselbe Regel wie
-            // in WorldHost.redstone: Was den Block erreicht, erreicht jeden
-            // Anschluss daran.
+            // Read at the block and not at the face — the same rule as in
+            // WorldHost.redstone: what reaches the block reaches every
+            // connector on it.
             int strength = level.getBestNeighborSignal(entry.getValue().pos());
             Integer previous = lastRedstone.put(entry.getKey(), strength);
             if (previous != null && previous == strength) {
                 continue;
             }
-            // Über die Ablaufmaschine, damit ein on redstone_changed selbst
-            // warten darf — auf eine Maschine, auf einen Zähler, auf Zeit.
+            // Through the flow engine, so that an on redstone_changed may
+            // itself wait — on a machine, on a counter, on time.
             fireEvent(BuiltinEvents.REDSTONE_CHANGED,
                     List.of(new Value.Device(entry.getKey()), new Value.Int(strength)));
         }
     }
 
     /**
-     * Lässt die wartenden Abläufe arbeiten.
+     * Lets the waiting flows work.
      *
-     * <p>Die Maschine wird beim ersten Bedarf gebaut und beim Übernehmen
-     * neuen Codes verworfen — mit der Einschränkung, die noch fehlt: Abläufe,
-     * die gerade warten, müssten den Wechsel überstehen und den Spieler
-     * fragen. Das kommt im nächsten Schritt.
+     * <p>The engine is built on first need and discarded on adopting new code
+     * — with the limitation that is still missing: flows that are currently
+     * waiting would have to survive the change and ask the player. That comes
+     * in the next step.
      */
     private void tickFlows() {
         if (flows == null && pendingFlows == null) {
@@ -2592,12 +2575,12 @@ public class ControllerBlockEntity extends BlockEntity {
     }
 
     /**
-     * Die Ablaufmaschine, bei Bedarf gebaut und mit dem Gespeicherten gefüllt.
+     * The flow engine, built on demand and filled with what was saved.
      *
-     * <p>Das Auspacken steht hier und nicht im Tick, damit es nicht darauf
-     * ankommt, wer zuerst fragt. Ein Ereignis, das im selben Tick eintrifft,
-     * in dem der Chunk geladen wurde, würde sonst auf eine leere Maschine
-     * treffen — und die wartenden Abläufe kämen einen Tick zu spät.
+     * <p>The unpacking stands here and not in the tick, so that it does not
+     * matter who asks first. An event that arrives in the same tick the chunk
+     * was loaded would otherwise meet an empty engine — and the waiting flows
+     * would come a tick too late.
      */
     public FlowEngine flowEngine() {
         if (flows == null && level != null) {
@@ -2609,30 +2592,31 @@ public class ControllerBlockEntity extends BlockEntity {
             pendingFlows = null;
             FlowCodec.read(saved, flows);
         }
-        // Ein frisch geladener Controller kennt sein Netz noch nicht. Das ist
-        // etwas anderes als „kein Server, kein Strom" — ohne diesen Aufbau
-        // stünde jedes Netz nach dem Laden still, bis der erste Tick kommt.
+        // A freshly loaded controller does not yet know its network. That is
+        // something other than "no server, no power" — without this build
+        // every network would stand still after loading until the first tick
+        // comes.
         if (flows != null && !networkKnown) {
             rebuildNetwork();
         }
         if (flows != null) {
-            // Hier und nicht im Tick: Jeder Zugriff auf die Maschine geht
-            // durch diese Stelle, und beides kann sich zwischen zwei Ticks
-            // ändern — jemand steckt ein Bauteil dazu, reißt den Schrank
-            // ab oder der Strom fällt aus. Ein Knopf am Display und ein
-            // Ereignis treiben die Maschine unmittelbar an, ohne über den
-            // Tick zu gehen; die Sperre muss deshalb hier sitzen.
+            // Here and not in the tick: every access to the engine goes
+            // through this spot, and both can change between two ticks —
+            // someone adds a part, tears the rack down, or the power fails. A
+            // button on the display and an event drive the engine directly,
+            // without going through the tick; the lock must therefore sit
+            // here.
             flows.setThreadLimit(threads());
             flows.setMemoryLimit(memory());
-            // Zieht jemand einen Datenträger heraus, passt das Programm
-            // plötzlich nicht mehr. Dann friert das Netz ein, wie bei
-            // Stromausfall — nicht abbrechen, nicht kürzen.
+            // If someone pulls out a disk, the program suddenly no longer
+            // fits. Then the network freezes, as with a power failure — not
+            // aborting, not truncating.
             flows.setFrozen(!isOnline() || !programFits());
         }
         return flows;
     }
 
-    /** Beginnt einen wartefähigen Ablauf. */
+    /** Begins a flow that can wait. */
     public Flow startFlow(String functionName, List<Value> arguments) {
         FlowEngine engine = flowEngine();
         if (engine == null) {
@@ -2643,7 +2627,7 @@ public class ControllerBlockEntity extends BlockEntity {
         return flow;
     }
 
-    /** Weckt wartende Abläufe und löst Ereignisblöcke aus. */
+    /** Wakes waiting flows and fires event blocks. */
     public void fireEvent(String event, List<Value> arguments) {
         FlowEngine engine = flowEngine();
         if (engine == null) {
@@ -2653,7 +2637,7 @@ public class ControllerBlockEntity extends BlockEntity {
         engine.tick(level.getGameTime());
     }
 
-    /** Ruft eine Funktion des Programms auf — für Tests und das Terminal. */
+    /** Calls a function of the program — for tests and the terminal. */
     public Value callFunction(String name, List<Value> arguments) {
         if (level == null) {
             throw new ScriptError("Keine Welt.");
@@ -2662,8 +2646,8 @@ public class ControllerBlockEntity extends BlockEntity {
         Interpreter interpreter = new Interpreter(program, host);
         FlowEngine engine = flowEngine();
         if (engine != null) {
-            // Auch ein Aufruf aus dem Terminal kann etwas auslösen, worauf
-            // ein Ablauf wartet.
+            // A call from the terminal too can trigger something a flow is
+            // waiting on.
             interpreter.setEventSink(engine::post);
         }
         interpreter.setLogSource(name);
@@ -2680,18 +2664,18 @@ public class ControllerBlockEntity extends BlockEntity {
         return List.copyOf(log);
     }
 
-    /** Löscht das Protokoll — nur auf ausdrücklichen Wunsch im Terminal. */
+    /** Clears the log — only on explicit request in the terminal. */
     public void clearLog() {
         log.clear();
         setChanged();
     }
 
     /**
-     * Ein Host, der ins Protokoll schreibt.
+     * A host that writes to the log.
      *
-     * <p>An einer Stelle gebaut, weil es sonst drei sind — für die Worker,
-     * für die Ablaufmaschine und für den Aufruf aus dem Terminal. Eine davon
-     * wurde vergessen, und die Meldungen der Abläufe kamen nirgends an.
+     * <p>Built in one place, because otherwise there are three — for the
+     * workers, for the flow engine, and for the call from the terminal. One of
+     * them was forgotten, and the flows' messages arrived nowhere.
      */
     private WorldHost newHost() {
         WorldHost host = new WorldHost(level, graph, stores, globals,
@@ -2699,12 +2683,12 @@ public class ControllerBlockEntity extends BlockEntity {
         host.setLogSink(this::add);
         host.setPower(power);
         host.setDeviceFilled(this::noteFilled);
-        // Damit ein move, das an einer bockigen Maschine scheitert, die Ware
-        // nicht mit dem Fehler mitnimmt.
+        // So that a move which fails at a stubborn machine does not take the
+        // goods along with the error.
         host.setHoldBack(this::holdBack);
-        // Dieselben Gruppen wie die Worker, samt ihrem Zeiger für round_robin.
+        // The same groups as the workers, including their pointer for round_robin.
         host.setGroups(runtime.groups());
-        // Bestellungen gehen an dieselbe Liste, die auch der Reiter zeigt.
+        // Orders go to the same list the tab also shows.
         host.setCrafting((item, amount) -> {
             var job = requestCraft(item, amount);
             return job == null ? 0 : job.id();
@@ -2723,11 +2707,11 @@ public class ControllerBlockEntity extends BlockEntity {
     }
 
     /**
-     * Nimmt in Verwahrung, was nirgends unterkam.
+     * Takes into holding what found no place anywhere.
      *
-     * <p>Und sagt es im Protokoll. Ein stiller Puffer wäre nur die
-     * freundlichere Art zu verschwinden — wer nachsieht, warum eine Kiste
-     * leer bleibt, soll es hier lesen.
+     * <p>And says so in the log. A silent buffer would only be the friendlier
+     * way to vanish — whoever checks why a chest stays empty should read it
+     * here.
      */
     public void holdBack(ItemStack stack) {
         if (stack.isEmpty()) {
@@ -2742,30 +2726,29 @@ public class ControllerBlockEntity extends BlockEntity {
     }
 
     /**
-     * Was der Controller je Tick durchlässt.
+     * What the controller lets through per tick.
      *
-     * <p><b>Er ist das schwächste Glied, und das mit Absicht.</b> Alles im
-     * Netz geht durch ihn — sechs dichte Kabel an sechs Seiten trugen bis
-     * zum 30.08. zusammen 153 MB/s, und er reichte alles durch. Jetzt trägt
-     * er so viel wie ein dichtes Kabel, und jeder Anbau legt die Hälfte
-     * dazu.
+     * <p><b>It is the weakest link, and deliberately so.</b> Everything in the
+     * network goes through it — six solid cables on six sides together carried
+     * 153 MB/s until 30.08., and it passed all of it through. Now it carries
+     * as much as one solid cable, and each attachment adds half again.
      *
-     * <p>An der Grenze wird alles langsamer, nicht einzelnes tot — dieselbe
-     * Regel wie am Kabel. Zwei verschiedene Antworten auf dieselbe Frage
-     * wären eine zu viel.
+     * <p>At the limit everything gets slower, not individual things dead — the
+     * same rule as at the cable. Two different answers to the same question
+     * would be one too many.
      */
     public int bandwidth() {
         return dev.devpanda.factorynetwork.network.Bandwidth.ofController(extensionCount);
     }
 
-    /** Wie viele Anbauten am Controller hängen — beim Neuaufbau gezählt. */
+    /** How many attachments hang on the controller — counted on rebuild. */
     private int extensionCount;
 
     /**
-     * Was in diesem Tick schon durch den Controller ging.
+     * What has already gone through the controller in this tick.
      *
-     * <p>Er ist sein eigener Knoten im Budget, und weil jeder Weg über ihn
-     * läuft, steht hier die Summe des ganzen Netzes.
+     * <p>It is its own node in the budget, and because every path runs through
+     * it, the sum of the whole network stands here.
      */
     public int bandwidthUsed() {
         return runtime.budget().usedAt(
@@ -2774,22 +2757,21 @@ public class ControllerBlockEntity extends BlockEntity {
                         dev.devpanda.factorynetwork.block.CableColour.NONE));
     }
 
-    /** Wie viele Anbauten mitzählen — für die Auskunft des Analysators. */
+    /** How many attachments count — for the analyzer's readout. */
     public int extensionCount() {
         return extensionCount;
     }
 
-    /** Was gerade in Verwahrung liegt. */
+    /** What currently lies in holding. */
     public List<ItemStack> held() {
         return List.copyOf(heldBack);
     }
 
     /**
-     * Bietet Zurückgehaltenes erneut an.
+     * Offers held-back items again.
      *
-     * <p>Jeden Tick, weil der Grund jederzeit wegfallen kann. Was hineingeht,
-     * geht hinein; der Rest bleibt liegen und wird beim nächsten Mal wieder
-     * gefragt.
+     * <p>Every tick, because the reason can fall away at any time. What goes
+     * in goes in; the rest stays and is asked again next time.
      */
     private void retryHeldBack() {
         if (heldBack.isEmpty()) {
@@ -2800,7 +2782,7 @@ public class ControllerBlockEntity extends BlockEntity {
             if (rest <= 0) {
                 return true;
             }
-            // Teilweise untergekommen: Nur der Rest bleibt liegen.
+            // Partially accommodated: only the rest stays.
             stack.setCount((int) rest);
             return false;
         });
@@ -2816,11 +2798,12 @@ public class ControllerBlockEntity extends BlockEntity {
     }
 
     /**
-     * Wer den Controller gesetzt hat, oder {@code null}.
+     * Who placed the controller, or {@code null}.
      *
-     * <p>Gebraucht nur, wenn der Server es verlangt (siehe {@code FnConfig},
-     * Abschnitt {@code protection}). Gemerkt wird es trotzdem immer: Wer den
-     * Schutz erst später einschaltet, hätte sonst lauter herrenlose Anlagen.
+     * <p>Needed only when the server demands it (see {@code FnConfig}, section
+     * {@code protection}). It is remembered always regardless: whoever turns
+     * the protection on only later would otherwise have nothing but ownerless
+     * installations.
      */
     private java.util.UUID owner;
 
@@ -2828,13 +2811,13 @@ public class ControllerBlockEntity extends BlockEntity {
         return owner;
     }
 
-    /** Setzt der Block beim Platzieren. */
+    /** Set by the block on placement. */
     public void setOwner(java.util.UUID who) {
         this.owner = who;
         setChanged();
     }
 
-    // ---- Speichern --------------------------------------------------------
+    // ---- Saving -------------------------------------------------------------
 
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
@@ -2852,7 +2835,7 @@ public class ControllerBlockEntity extends BlockEntity {
             }
         }
         project = readProject(tag);
-        // Ohne eigenen Entwurf ist der laufende Stand der Entwurf.
+        // Without a draft of its own, the running state is the draft.
         if (tag.contains(KEY_DRAFT)) {
             CompoundTag entwurf = tag.getCompound(KEY_DRAFT);
             Map<String, String> sources = new HashMap<>();
@@ -2883,13 +2866,11 @@ public class ControllerBlockEntity extends BlockEntity {
             log.add(dev.devpanda.factorynetwork.runtime.LogEntry
                     .read(logTag.getCompound(i)));
         }
-        // Die Abläufe warten auf den ersten Tick: Sie brauchen einen
-        // Interpreter, der braucht eine Welt, und die gibt es hier noch nicht
-        // verlässlich.
+        // The flows wait for the first tick: they need an interpreter, which
+        // needs a world, and that is not yet reliably available here.
         pendingFlows = tag.contains(KEY_FLOWS) ? tag.getCompound(KEY_FLOWS) : null;
-        // Nach dem Laden wird neu übersetzt: Der Baum selbst wird nicht
-        // gespeichert, weil sich die Sprache ändern kann, der Quelltext aber
-        // gültig bleibt.
+        // After loading it is recompiled: the tree itself is not saved,
+        // because the language can change while the source text stays valid.
         if (!source().isBlank()) {
             Parser.ParseResult result = project.parse();
             diagnostics = new ArrayList<>(result.diagnostics());
@@ -2927,8 +2908,8 @@ public class ControllerBlockEntity extends BlockEntity {
         log.forEach(entry -> logTag.add(entry.write()));
         tag.put(KEY_LOG, logTag);
         if (!heldBack.isEmpty()) {
-            // Ohne das käme der Verlust durch die Hintertür zurück: Ein Chunk,
-            // der entlädt, nähme das Zurückgehaltene mit.
+            // Without this the loss would come back through the back door: a
+            // chunk that unloads would take the held-back items with it.
             net.minecraft.nbt.ListTag heldTag = new net.minecraft.nbt.ListTag();
             heldBack.forEach(stack -> heldTag.add(stack.save(registries)));
             tag.put(KEY_HELD_BACK, heldTag);
@@ -2936,8 +2917,8 @@ public class ControllerBlockEntity extends BlockEntity {
         if (flows != null) {
             tag.put(KEY_FLOWS, FlowCodec.write(flows));
         } else if (pendingFlows != null) {
-            // Noch nicht ausgepackt — dann unverändert weiterreichen, statt
-            // die Abläufe beim ersten Speichern zu verlieren.
+            // Not yet unpacked — then pass it on unchanged, instead of losing
+            // the flows on the first save.
             tag.put(KEY_FLOWS, pendingFlows);
         }
     }

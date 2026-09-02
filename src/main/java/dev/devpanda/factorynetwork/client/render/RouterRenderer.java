@@ -17,30 +17,30 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 
 /**
- * Malt auf jede Seite eines Routers, welche Bahn sie führt.
+ * Paints onto each face of a router which lane it carries.
  *
- * <p><b>Warum gezeichnet und nicht gebacken:</b> Sechs Seiten mit je fünf
- * Werten sind 15625 Blockzustände. Die legt Minecraft beim Start alle an, und
- * jeder davon bekäme ein gebackenes Modell — für eine Auskunft, die sich in
- * einem Ring erschöpft.
+ * <p><b>Why drawn and not baked:</b> six faces with five values each are
+ * 15625 block states. Minecraft creates them all at startup, and each of
+ * them would get a baked model — for a piece of information that amounts to
+ * no more than a ring.
  *
- * <p>Die Kennung liegt am Rand der Fläche, nicht in ihrer Mitte: Ein dickes
- * Kabel deckt die mittleren zehn Blockpixel ab. Eine Kennung dort wäre genau
- * dann verdeckt, wenn die Seite angeschlossen ist — also immer dann, wenn man
- * sie lesen will.
+ * <p>The marker sits at the edge of the face, not in its centre: a thick
+ * cable covers the middle ten block pixels. A marker there would be hidden
+ * exactly when the face is connected — that is, always when you want to read
+ * it.
  */
 public class RouterRenderer implements BlockEntityRenderer<RouterBlockEntity> {
 
-    /** Ein Streifen aus fünf Kacheln: aus, dann Bahn eins bis vier. */
+    /** A strip of five tiles: off, then lane one to four. */
     private static final ResourceLocation LANES = ResourceLocation.fromNamespaceAndPath(
             FactoryNetwork.MOD_ID, "textures/misc/router_lanes.png");
-    /** Zwei Kacheln: abgeklemmt und offen. Die Farbe kommt beim Zeichnen. */
+    /** Two tiles: disconnected and open. The colour comes at draw time. */
     private static final float TILES = 2;
 
-    /** Weiter als das ist ein Ring von zwei Blockpixeln nicht mehr zu lesen. */
+    /** Beyond that a ring of two block pixels can no longer be read. */
     private static final double MAX_DISTANCE = 24.0;
 
-    /** Knapp vor der Fläche, damit nichts flimmert. */
+    /** Just in front of the face, so that nothing flickers. */
     private static final float OFFSET = 0.5F + 0.004F;
     private static final float HALF = 0.5F;
 
@@ -56,18 +56,18 @@ public class RouterRenderer implements BlockEntityRenderer<RouterBlockEntity> {
         Matrix4f matrix = poses.last().pose();
         for (Direction side : Direction.values()) {
             int lane = router.lane(side);
-            // Eine offene Seite leuchtet, eine abgeklemmte nicht. Die
-            // Beleuchtung dafür kommt von der Nachbarstelle: Im Block selbst
-            // ist es dunkel, dort steht ja der Block.
+            // An open face glows, a disconnected one does not. The lighting
+            // for it comes from the neighbouring position: inside the block
+            // itself it is dark, since that is where the block stands.
             int faceLight = lane == RouterBlockEntity.OFF
                     ? LevelRenderer.getLightColor(router.getLevel(),
                             router.getBlockPos().relative(side))
                     : LightTexture.FULL_BRIGHT;
-            // <b>Zwei Kacheln, gefärbt.</b> Seit der Router Farben führt
-            // statt vier Bahnen, gäbe es achtzehn Zustände — ein Streifen
-            // mit achtzehn Kacheln wäre eine Textur, die niemand mehr
-            // nachzeichnen kann. Der Ring ist grau und bekommt die Farbe
-            // beim Zeichnen, wie beim Kabel auch.
+            // <b>Two tiles, coloured.</b> Ever since the router carries
+            // colours instead of four lanes, there would be eighteen states —
+            // a strip with eighteen tiles would be a texture no one could
+            // redraw any more. The ring is grey and gets its colour at draw
+            // time, just like the cable.
             quad(buffer, matrix, side, lane == RouterBlockEntity.OFF ? 0 : 1,
                     colourOf(side, router), faceLight);
         }
@@ -75,18 +75,18 @@ public class RouterRenderer implements BlockEntityRenderer<RouterBlockEntity> {
     }
 
     /**
-     * Eine Kachel auf eine Seite.
+     * A tile onto a face.
      *
-     * <p>Die Ecken werden aus zwei Achsen in der Fläche gerechnet statt aus
-     * einer Drehung. Der Ring ist vierfach symmetrisch, also spielt es keine
-     * Rolle, welche der beiden Achsen oben liegt — und eine Rechnung, die
-     * nichts dreht, kann sich auch nicht verdrehen.
+     * <p>The corners are computed from two axes in the face rather than from
+     * a rotation. The ring is four-fold symmetric, so it makes no difference
+     * which of the two axes lies on top — and a computation that rotates
+     * nothing cannot get twisted either.
      */
     /**
-     * Welche Farbe die Kennung dieser Seite trägt.
+     * Which colour the marker of this face carries.
      *
-     * <p>Grau für „alles" und für „aus" — beides ist keine Farbe, und ein
-     * Farbton dafür wäre eine Farbe zu viel im Bild.
+     * <p>Grey for "all" and for "off" — neither is a colour, and a hue for it
+     * would be one colour too many in the image.
      */
     private static int colourOf(Direction side, RouterBlockEntity router) {
         var filter = router.filter(side);
@@ -101,8 +101,8 @@ public class RouterRenderer implements BlockEntityRenderer<RouterBlockEntity> {
         float nx = side.getStepX();
         float ny = side.getStepY();
         float nz = side.getStepZ();
-        // Zwei Achsen in der Fläche: bei waagerechten Seiten X und Z, sonst
-        // die verbleibende waagerechte und Y.
+        // Two axes in the face: for horizontal faces X and Z, otherwise the
+        // remaining horizontal one and Y.
         boolean vertical = side.getAxis().isVertical();
         float ux = side.getAxis() == Direction.Axis.X ? 0 : 1;
         float uz = side.getAxis() == Direction.Axis.X ? 1 : 0;

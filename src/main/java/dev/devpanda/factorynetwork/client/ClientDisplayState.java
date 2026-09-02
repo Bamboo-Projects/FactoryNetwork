@@ -4,7 +4,7 @@ import dev.devpanda.factorynetwork.network.packet.DisplayStatePacket;
 
 import java.util.List;
 
-/** Der letzte bekannte Stand der Anzeigen. */
+/** The last known state of the displays. */
 public final class ClientDisplayState {
 
     private static List<DisplayStatePacket.Panel> panels = List.of();

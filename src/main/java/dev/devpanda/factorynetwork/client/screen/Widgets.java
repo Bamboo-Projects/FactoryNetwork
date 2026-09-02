@@ -5,58 +5,59 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
 
 /**
- * Kleinteile der Oberfläche auf beliebige Breite.
+ * Small UI parts at an arbitrary width.
  *
- * <p>Reiter und Suchfeld sind so breit, wie das Fenster es zulässt, ihre
- * Vorlagen im Atlas aber nicht. <b>Zweimal ist genau daran etwas
- * kaputtgegangen</b>, und beide Male sah es aus wie ein Zeichenfehler:
+ * <p>Tabs and the search field are as wide as the window allows, but their
+ * templates in the atlas are not. <b>Twice something broke on exactly
+ * this</b>, and both times it looked like a drawing glitch:
  *
  * <ul>
- *   <li>Die Vorlage einfach breiter zeichnen holt die fehlenden Pixel aus dem
- *       Nachbarbild im Atlas — mitten durch „Storage" lief ein Strich.</li>
- *   <li>Die ganze Vorlage kacheln bringt bei jeder Kachel ihren Rand mit —
- *       alle sechsundneunzig Pixel eine Naht durch die Eingabezeile.</li>
+ *   <li>Simply drawing the template wider pulls the missing pixels from the
+ *       neighbouring image in the atlas — a stripe ran straight through
+ *       "Storage".</li>
+ *   <li>Tiling the whole template brings each tile's border along with it —
+ *       a seam through the input line every ninety-six pixels.</li>
  * </ul>
  *
- * <p>Richtig ist beides zusammen: die Kappen einmal an die Enden, und
- * dazwischen so oft die <b>randlose</b> Mitte, wie hineinpasst. Deshalb steht
- * das hier an einer Stelle und nicht in jedem Bildschirm neu.
+ * <p>The right answer is both together: the caps once at the ends, and between
+ * them the <b>borderless</b> middle as often as it fits. That is why this
+ * lives in one place and not anew in every screen.
  */
 public final class Widgets {
 
     public static final ResourceLocation ATLAS = ResourceLocation.fromNamespaceAndPath(
             FactoryNetwork.MOD_ID, "textures/gui/widgets.png");
 
-    /** Das Blatt, auf dem die Kleinteile liegen. */
+    /** The sheet the small parts sit on. */
     private static final int SHEET = 512;
 
     /**
-     * Beschriftung auf dem Blech.
+     * Lettering on the casing.
      *
-     * <p>Dieselbe Farbe, mit der Minecraft „Inventory" in jede Kiste
-     * schreibt. Sie steht hier und nicht dreimal als Zahl: Das Gehäuse ist
-     * hell, seit man das Slotraster darin sehen soll, und heller Text darauf
-     * wäre unlesbar gewesen. Wer die Palette in {@code tools/gui.py} wieder
-     * dreht, dreht diese eine Zeile mit.
+     * <p>The same colour Minecraft uses to write "Inventory" on every chest.
+     * It lives here and not three times over as a number: the casing is light,
+     * ever since the slot grid inside it was meant to be visible, and light
+     * text on top would have been unreadable. Whoever turns the palette in
+     * {@code tools/gui.py} back turns this one line with it.
      *
-     * <p>Was <b>im</b> Bildschirm steht, gehört nicht hierher — die Scheibe
-     * bleibt dunkel, und ihre Schrift bleibt hell.
+     * <p>What sits <b>inside</b> the screen does not belong here — the pane
+     * stays dark, and its text stays light.
      */
     public static final int CASE_TEXT = 0x3F3F3F;
 
-    /** Dasselbe für eine Nebensache, die nicht zuerst gelesen werden soll. */
+    /** The same for a secondary detail that should not be read first. */
     public static final int CASE_TEXT_DIM = 0x7F7F7F;
 
     private Widgets() {
     }
 
     /**
-     * Zeichnet ein Kleinteil in beliebiger Breite.
+     * Draws a small part at an arbitrary width.
      *
-     * @param u      linke Kante der Vorlage im Atlas
-     * @param v      obere Kante der Vorlage im Atlas
-     * @param source wie breit die Vorlage ist
-     * @param cap    wie breit die beiden Kappen sind
+     * @param u      left edge of the template in the atlas
+     * @param v      top edge of the template in the atlas
+     * @param source how wide the template is
+     * @param cap    how wide the two caps are
      */
     public static void stretched(GuiGraphics graphics, int x, int y, int width, int height,
                                  int u, int v, int source, int cap) {

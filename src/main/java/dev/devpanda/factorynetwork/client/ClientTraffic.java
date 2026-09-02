@@ -6,11 +6,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Was das Netz zuletzt bewegt hat — der Stand auf dem Client.
+ * What the network last moved — the state on the client.
  *
- * <p>Wie {@code ClientNetworkState}: Der Server schickt, der Client hält den
- * letzten Stand, und das Fenster zeichnet ihn. Gerechnet wird nichts hier —
- * ein Client, der selbst mitschreibt, hat Lücken, sobald das Fenster zu ist.
+ * <p>Like {@code ClientNetworkState}: the server sends, the client holds the
+ * last state, and the window draws it. Nothing is computed here — a client
+ * that keeps its own tally has gaps as soon as the window is closed.
  */
 public final class ClientTraffic {
 
@@ -26,37 +26,37 @@ public final class ClientTraffic {
         capacity = packet.capacity();
     }
 
-    /** Der Verlauf, ältester Punkt zuerst, in Byte je Sekunde. */
+    /** The history, oldest point first, in bytes per second. */
     public static List<Integer> perSecond() {
         return perSecond;
     }
 
-    /** Die größten Verbraucher, absteigend. */
+    /** The largest consumers, descending. */
     public static List<TrafficPacket.Consumer> top() {
         return top;
     }
 
-    /** Was seit dem Start des Netzes insgesamt bewegt wurde. */
+    /** What has been moved in total since the network started. */
     public static long total() {
         return total;
     }
 
     /**
-     * Was der Controller je Tick durchlässt.
+     * What the controller lets through per tick.
      *
-     * <p>Null, solange kein Paket kam — dann zeigt der Kopf die nackte Zahl
-     * statt einer Auslastung von null.
+     * <p>Zero as long as no packet has come — then the header shows the bare
+     * number instead of a utilization of zero.
      */
     public static int capacity() {
         return capacity;
     }
 
     /**
-     * Die Spitze des Verlaufs.
+     * The peak of the history.
      *
-     * <p>Ein Diagramm braucht einen Maßstab, und der feste Maßstab wäre bei
-     * einem ruhigen Netz eine flache Linie am Boden. Mindestens ein Kilobyte,
-     * damit ein leeres Netz nicht bei null durch null teilt.
+     * <p>A chart needs a scale, and a fixed scale would be a flat line at the
+     * bottom for a quiet network. At least one kilobyte, so an empty network
+     * does not divide zero by zero.
      */
     public static int peak() {
         return Math.max(1000, perSecond.stream().mapToInt(Integer::intValue).max().orElse(0));

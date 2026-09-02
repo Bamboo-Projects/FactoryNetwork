@@ -6,22 +6,22 @@ import dev.devpanda.factorynetwork.runtime.LogLevel;
 import java.util.List;
 
 /**
- * Das zuletzt gemeldete Protokoll.
+ * The most recently reported log.
  *
- * <p>Nur zum Anzeigen, wie {@link ClientFlowState}. Der Filter lebt
- * ebenfalls hier und nicht im Reiter: Wer den Reiter wechselt und
- * zurückkommt, will seine Einstellung wiederfinden.
+ * <p>For display only, like {@link ClientFlowState}. The filter lives here too
+ * and not in the tab: whoever switches tabs and comes back wants to find their
+ * setting again.
  */
 public final class ClientLogState {
 
     private static List<LogStatePacket.Line> lines = List.of();
 
     /**
-     * Ab welcher Stufe gezeigt wird.
+     * From which level upward things are shown.
      *
-     * <p>{@code INFO} als Voreinstellung: Ein {@code debug} in einer Schleife
-     * schreibt zwanzig Zeilen je Sekunde, und danach findet niemand mehr die
-     * eine Meldung, auf die es ankam.
+     * <p>{@code INFO} as the default: a {@code debug} in a loop writes twenty
+     * lines a second, and after that no one can find the one message that
+     * mattered.
      */
     private static LogLevel minimum = LogLevel.INFO;
 
@@ -32,12 +32,12 @@ public final class ClientLogState {
         lines = packet.lines();
     }
 
-    /** Alles, was der Server geschickt hat. */
+    /** Everything the server has sent. */
     public static List<LogStatePacket.Line> all() {
         return lines;
     }
 
-    /** Was der Filter durchlässt, das Jüngste zuletzt. */
+    /** What the filter lets through, the newest last. */
     public static List<LogStatePacket.Line> visible() {
         return lines.stream()
                 .filter(line -> {
@@ -55,7 +55,7 @@ public final class ClientLogState {
         minimum = level == null ? LogLevel.INFO : level;
     }
 
-    /** Wie viele Zeilen diese Stufe hat — für die Zahl am Filterknopf. */
+    /** How many lines this level has — for the number on the filter button. */
     public static long count(LogLevel level) {
         return lines.stream().filter(line -> level.key().equals(line.level())).count();
     }

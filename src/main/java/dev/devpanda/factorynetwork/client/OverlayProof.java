@@ -6,18 +6,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Der maschinelle Nachweis für das Overlay: {@code -Dfn.overlay=true}.
+ * The automated proof for the overlay: {@code -Dfn.overlay=true}.
  *
- * <p>Öffnet das Schnellmenü, sobald die Welt steht, und schreibt jede
- * Sekunde, was von außen nicht zu sehen ist: ob ein Bildschirm offen ist
- * (Escape darf keinen öffnen), welchen Fokus das Overlay hat, und wo der
- * Spieler steht (W muss ihn bewegen). Die Tasten selbst kommen von außen —
- * echte, über das Fenster, denn nur die gehen durch das Mixin.
+ * <p>Opens the quick menu as soon as the world is up, and writes every second
+ * what cannot be seen from outside: whether a screen is open (Escape must not
+ * open one), which focus the overlay has, and where the player stands (W must
+ * move them). The keys themselves come from outside — real ones, through the
+ * window, because only those pass through the mixin.
  */
 public final class OverlayProof {
 
     private static final Logger LOG = LoggerFactory.getLogger("FactoryNetwork/OverlayProof");
-    /** {@code true}: Tastaturfokus. {@code mouse}: nach fünf Sekunden Mausfokus. */
+    /** {@code true}: keyboard focus. {@code mouse}: mouse focus after five seconds. */
     private static final String MODE = System.getProperty("fn.overlay", "");
     private static final boolean ENABLED = !MODE.isEmpty() && !MODE.equals("false");
     private static final int SETTLE_TICKS = 60;

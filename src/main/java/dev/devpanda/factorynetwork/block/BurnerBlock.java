@@ -22,25 +22,25 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Die Brennkammer: Strom aus Ofenbrennstoff.
+ * The burner: power from furnace fuel.
  *
- * <p>Absichtlich mittelmäßig — sie soll nicht mit Generatoren anderer Mods
- * konkurrieren, sondern dafür sorgen, dass die Fertigungskette der Mod ohne
- * Fremdmod überhaupt anläuft.
+ * <p>Deliberately mediocre — it is not meant to compete with the generators of
+ * other mods, but to make sure the mod's production chain starts up at all
+ * without a foreign mod.
  *
- * <p>Ob sie brennt, steht im Blockzustand und nicht in der BlockEntity: Es ist
- * genau ein Wahrheitswert, und daran hängt sowohl die Textur als auch das
- * Licht.
+ * <p>Whether it is burning lives in the block state, not in the BlockEntity: it
+ * is exactly one boolean value, and both the texture and the light hang off
+ * it.
  */
 public class BurnerBlock extends HorizontalDirectionalBlock implements EntityBlock {
 
-    /** Die Trefferfläche, für jede der vier Richtungen einmal. */
+    /** The hitbox, once for each of the four directions. */
     private static final java.util.Map<net.minecraft.core.Direction, net.minecraft.world.phys.shapes.VoxelShape>
             SHAPES = FacingShapes.horizontal(MachineLayouts.burner());
 
     public static final MapCodec<BurnerBlock> CODEC = simpleCodec(BurnerBlock::new);
 
-    /** Brennt sie gerade? Daran hängen Textur und Licht. */
+    /** Is it burning right now? Texture and light hang off this. */
     public static final BooleanProperty LIT = BooleanProperty.create("lit");
 
     public BurnerBlock(Properties properties) {
@@ -96,7 +96,7 @@ public class BurnerBlock extends HorizontalDirectionalBlock implements EntityBlo
         return InteractionResult.PASS;
     }
 
-    /** Beim Abbauen fällt der Brennstoff heraus. */
+    /** When broken, the fuel drops out. */
     @Override
     protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState,
                             boolean moved) {

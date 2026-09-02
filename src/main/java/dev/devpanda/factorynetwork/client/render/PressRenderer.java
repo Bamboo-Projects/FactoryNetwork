@@ -16,30 +16,29 @@ import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.neoforged.neoforge.client.model.data.ModelData;
 
 /**
- * Zeichnet den Stempel der Presse — das eine Teil, das sich bewegt.
+ * Draws the press's ram — the one part that moves.
  *
- * <p><b>Warum nicht im Blockmodell.</b> Der Stempel fährt herunter und wieder
- * hoch, solange gearbeitet wird. Ein Blockmodell steht still, und ein
- * Blockzustand je Zwischenstellung wären dreißig Zustände für eine Bewegung.
- * Er ist deshalb ein eigenes Modell, das hier gezeichnet und dabei
- * verschoben wird — dasselbe Verfahren wie bei den Anschlüssen am Kabel.
+ * <p><b>Why not in the block model.</b> The ram travels down and back up
+ * again while work is being done. A block model stands still, and a block
+ * state per intermediate position would be thirty states for one movement.
+ * It is therefore a model of its own, drawn here and shifted in the process
+ * — the same procedure as with the connectors on the cable.
  *
- * <p><b>Warum die Bewegung aus der Spielzeit kommt und nicht aus dem
- * Fortschritt.</b> Der Fortschritt steht in der BlockEntity und erreicht den
- * Client nur, wenn ein Blockupdate gesendet wird — jeden Tick eines zu
- * schicken, nur damit ein Stempel flüssig läuft, wäre Netzlast für nichts.
- * Der Client fragt deshalb nur, <i>ob</i> gearbeitet wird, und rechnet die
- * Bewegung selbst. Ein Schlag je Sekunde, gleichmäßig — was die Presse
- * gerade wie weit fertig hat, sagt ohnehin die Oberfläche und nicht der
- * Stempel.
+ * <p><b>Why the movement comes from the game time and not from the
+ * progress.</b> The progress is held in the BlockEntity and reaches the
+ * client only when a block update is sent — sending one every tick, just so
+ * that a ram runs smoothly, would be network load for nothing. The client
+ * therefore only asks <i>whether</i> work is being done, and computes the
+ * movement itself. One stroke per second, evenly — how far along the press
+ * currently is, the GUI tells you anyway, not the ram.
  */
 public class PressRenderer implements BlockEntityRenderer<PressBlockEntity> {
 
-    /** Das Modell des Stempels, das FnClient eigens anmeldet. */
+    /** The model of the ram, which FnClient registers separately. */
     public static final ModelResourceLocation RAM = ModelResourceLocation.standalone(
             ResourceLocation.fromNamespaceAndPath(FactoryNetwork.MOD_ID, "block/press_ram"));
 
-    /** Ein Schlag je Sekunde. */
+    /** One stroke per second. */
     private static final float TICKS_PER_STROKE = 20.0F;
 
     private final Minecraft client = Minecraft.getInstance();
@@ -55,8 +54,8 @@ public class PressRenderer implements BlockEntityRenderer<PressBlockEntity> {
         }
 
         poses.pushPose();
-        // Die Presse steht in vier Richtungen; ihr Modell dreht der
-        // Blockzustand, der Stempel muss selbst mitdrehen.
+        // The press faces in four directions; its model is rotated by the
+        // block state, the ram has to turn along itself.
         Direction facing = press.getBlockState()
                 .getValue(HorizontalDirectionalBlock.FACING);
         poses.translate(0.5F, 0.5F, 0.5F);
@@ -73,11 +72,11 @@ public class PressRenderer implements BlockEntityRenderer<PressBlockEntity> {
     }
 
     /**
-     * Wie tief der Stempel gerade steht, in Blöcken.
+     * How deep the ram currently sits, in blocks.
      *
-     * <p>Null, solange nichts läuft — dann hängt er unter der Decke. Sonst
-     * ein weicher Weg nach unten und zurück, dessen Tiefe genau der Abstand
-     * bis auf den Amboss ist.
+     * <p>Zero as long as nothing is running — then it hangs at the top.
+     * Otherwise a smooth path down and back, whose depth is exactly the
+     * distance down to the anvil.
      */
     private static float drop(PressBlockEntity press, float partialTick) {
         if (press.progress() <= 0 || press.getLevel() == null) {

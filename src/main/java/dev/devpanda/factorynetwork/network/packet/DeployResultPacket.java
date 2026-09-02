@@ -10,19 +10,18 @@ import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /**
- * Was aus dem Übernehmen geworden ist.
+ * What came of the apply.
  *
- * <p><b>Der Editor muss es erfahren.</b> Vorher schloss sich das Fenster beim
- * Übernehmen und der Ausgang stand als Zeile im Chat — bei einer Ablehnung
- * stand man also draußen und musste das Terminal wieder aufmachen, um zu
- * suchen, was nicht ging.
+ * <p><b>The editor must learn of it.</b> Previously the window closed on apply
+ * and the outcome appeared as a line in the chat — so on a rejection you were
+ * left outside and had to open the terminal again to look for what went wrong.
  *
- * <p>Und zwei der Gründe kennt nur der Server: „Kein Serverschrank im Netz"
- * und „Das Programm ist zu groß". Die stehen in keinem Übersetzungslauf, den
- * der Client selbst macht — ohne diese Nachricht bleiben sie unsichtbar.
+ * <p>And two of the reasons only the server knows: "No server rack in the
+ * network" and "The program is too large". These appear in no compile run the
+ * client does itself — without this message they stay invisible.
  *
- * @param accepted ob das Programm übernommen wurde
- * @param message  eine Zeile für die Fußleiste des Editors
+ * @param accepted whether the program was applied
+ * @param message  a line for the editor's status bar
  */
 public record DeployResultPacket(boolean accepted, String message)
         implements CustomPacketPayload {

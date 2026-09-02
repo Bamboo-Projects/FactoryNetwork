@@ -16,23 +16,23 @@ import java.util.EnumMap;
 import java.util.Map;
 
 /**
- * Probt, was die Maschine hinter einem Connector kann.
+ * Probes what the machine behind a connector can do.
  *
- * <p>Alle sechs Richtungen und dazu den seitenlosen Zugang: Manche Maschine
- * bietet ihre Fähigkeit ausschließlich ohne Seite an, und wer nur die sechs
- * Richtungen probt, meldet für genau die „nimmt nichts an" — die schlechteste
- * Sorte Fehler, weil sie plausibel aussieht.
+ * <p>All six directions plus the side-less access: some machine offers its
+ * capability only without a side, and whoever probes just the six directions
+ * reports "accepts nothing" for exactly those — the worst kind of bug,
+ * because it looks plausible.
  *
- * <p>Der Aufwand fällt beim Öffnen des Terminals an, nicht laufend. Sieben
- * Zugänge mal drei Fähigkeiten je Connector; die Abfragen sind in NeoForge
- * zwischengespeichert und kosten in dieser Größenordnung nichts.
+ * <p>The work is done when the terminal is opened, not continuously. Seven
+ * accesses times three capabilities per connector; the queries are cached in
+ * NeoForge and cost nothing on this scale.
  */
 public final class DeviceScan {
 
     private DeviceScan() {
     }
 
-    /** Das Profil der Maschine hinter diesem Anschluss. */
+    /** The profile of the machine behind this connector. */
     public static DeviceProfile of(ConnectorPart connector) {
         Level level = connector.level();
         if (level == null) {
@@ -43,15 +43,15 @@ public final class DeviceScan {
         if (!level.isLoaded(target)) {
             return DeviceProfile.unreachable();
         }
-        // Luft ist keine fehlende Auskunft, sondern eine: Da steht nichts.
-        // Beides zusammenzuwerfen hieße, einem Spieler „nicht geladen" zu
-        // sagen, während er davorsteht — und die Meldung über die falsche
-        // Seite bliebe aus, weil sie ein Profil braucht.
+        // Air is not a missing answer, but an answer: nothing is there.
+        // Throwing the two together would mean telling a player "not loaded"
+        // while they stand in front of it — and the message about the wrong
+        // side would be missing, because it needs a profile.
         BlockState machine = level.getBlockState(target);
 
         Map<Side, DeviceProfile.Access> access = new EnumMap<>(Side.class);
         for (Direction direction : Direction.values()) {
-            // Aus Sicht der Maschine kommt der Zugriff von der Gegenseite.
+            // From the machine's point of view the access comes from the opposite side.
             DeviceProfile.Access at = probe(level, target, direction.getOpposite());
             if (at != null) {
                 access.put(side(direction), at);
@@ -68,11 +68,11 @@ public final class DeviceScan {
     }
 
     /**
-     * Was an einer Seite geht, oder {@code null}, wenn dort nichts geht.
+     * What works on a side, or {@code null} if nothing works there.
      *
-     * <p>{@code null} und kein leerer Eintrag: Eine Seite, die nichts kann,
-     * steht gar nicht erst in der Karte, und das Profil bleibt so klein wie
-     * die Maschine schlicht ist.
+     * <p>{@code null} and not an empty entry: a side that can do nothing does
+     * not appear in the map at all, and the profile stays as small as the
+     * machine is plain.
      */
     private static DeviceProfile.Access probe(Level level, BlockPos pos, Direction from) {
         IItemHandler items = level.getCapability(Capabilities.ItemHandler.BLOCK, pos, from);
@@ -88,7 +88,7 @@ public final class DeviceScan {
         return new DeviceProfile.Access(slots, tanks, power);
     }
 
-    /** Minecrafts Richtung als Seite der Sprache. */
+    /** Minecraft's direction as a side of the language. */
     public static Side side(Direction direction) {
         return switch (direction) {
             case DOWN -> Side.DOWN;

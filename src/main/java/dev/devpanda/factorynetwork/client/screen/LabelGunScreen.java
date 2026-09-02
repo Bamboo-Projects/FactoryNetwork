@@ -17,20 +17,20 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import java.util.List;
 
 /**
- * Die Namenseingabe der Beschriftungspistole.
+ * The name entry of the label gun.
  *
- * <p>Seit Connector und Anzeige ein eigenes Fenster haben, ist die Pistole
- * keine Voraussetzung mehr, um überhaupt etwas benennen zu können. Sie kann
- * dafür etwas, das ein Fenster am Block nicht kann: <b>einen Namen einmal
- * tippen und zwanzigmal vergeben.</b> Darum geht es hier — die Liste der
- * zuletzt benutzten Namen ist der eigentliche Inhalt.
+ * <p>Ever since the connector and the display have their own window, the gun
+ * is no longer a prerequisite for being able to name anything at all. In
+ * return it can do something a window on the block cannot: <b>type a name once
+ * and hand it out twenty times.</b> That is what this is about — the list of
+ * recently used names is the real content.
  *
- * <p><b>Die Fläche wird gerechnet, nicht gesetzt.</b> Vorher standen hier
- * geratene Abstände: die Knöpfe bei {@code top + 60 + i * 22}, der Rand bei
- * {@code top + 64 + Zeilen * 22}, die Warnung acht Pixel über dem ersten
- * Knopf. Bei einer Erklärung, die über zwei Zeilen läuft, oder bei fünf
- * gemerkten Namen ging das nicht mehr auf. Jetzt kennt jede Zeile ihre Höhe,
- * und der Rahmen ist ihre Summe.
+ * <p><b>The area is computed, not hard-set.</b> There used to be guessed
+ * offsets here: the buttons at {@code top + 60 + i * 22}, the border at
+ * {@code top + 64 + Zeilen * 22}, the warning eight pixels above the first
+ * button. With an explanation running over two lines, or with five remembered
+ * names, that no longer worked out. Now every line knows its height, and the
+ * frame is their sum.
  */
 public class LabelGunScreen extends Screen {
 
@@ -43,7 +43,7 @@ public class LabelGunScreen extends Screen {
     private static final int RECENT = 22;
     private static final int GAP = 5;
 
-    /** So viele gemerkte Namen stehen zur Auswahl. */
+    /** This many remembered names are offered to choose from. */
     private static final int MAX_RECENT = 5;
 
     private final ItemStack gun;
@@ -64,7 +64,7 @@ public class LabelGunScreen extends Screen {
         return Math.min(LabelGunItem.recentLabels(gun).size(), MAX_RECENT);
     }
 
-    /** Wie hoch die Fläche sein muss, damit alles hineinpasst. */
+    /** How tall the area must be so that everything fits inside. */
     private int panelHeight() {
         int height = PAD + TITLE + explain.size() * LINE + GAP
                 + FIELD + 3 + LINE + GAP + BUTTON + PAD;
@@ -115,12 +115,12 @@ public class LabelGunScreen extends Screen {
     }
 
     /**
-     * Prüft beim Tippen, was an dem Namen auffällt.
+     * Checks while typing what stands out about the name.
      *
-     * <p>Dieselben Regeln wie der Übersetzer, aber ohne zu blockieren: Ein
-     * Schlüsselwort ist als Name erlaubt, es braucht im Code nur Rückstriche.
-     * Ob der Name schon vergeben ist, weiß der Client hier nicht — das
-     * merkt die Pistole beim Klick auf den Connector.
+     * <p>The same rules as the compiler, but without blocking: a keyword is
+     * allowed as a name, in code it only needs backticks. Whether the name is
+     * already taken the client does not know here — the gun notices that on
+     * the click on the connector.
      */
     private void onTyped(String text) {
         ConnectorNaming.Warning result = ConnectorNaming.check(text, null);
@@ -163,9 +163,9 @@ public class LabelGunScreen extends Screen {
                 0xFF080A09);
         graphics.fill(left - PAD, panelTop, left + WIDTH + PAD, panelBottom, 0xFF232B27);
 
-        // Text über die Fläche heben: Minecraft sammelt Beschriftungen in
-        // einem eigenen Puffer und zeichnet sie zusammen — ohne diesen
-        // Vorsprung landen sie hinter jeder Füllung, die danach kommt.
+        // Lift the text above the panel: Minecraft collects labels in a buffer
+        // of their own and draws them together — without this head start they
+        // land behind every fill that comes afterwards.
         graphics.pose().pushPose();
         graphics.pose().translate(0, 0, 100);
         graphics.drawString(font, FnFonts.mono(title), left, panelTop + PAD,
@@ -184,11 +184,10 @@ public class LabelGunScreen extends Screen {
         }
         graphics.pose().popPose();
 
-        // Nur die Widgets, nicht super.render: Das ruft noch einmal
-        // renderBackground und damit den Weichzeichner — über alles, was hier
-        // oben schon gezeichnet wurde. Der Grund, warum dieses Fenster
-        // verschmiert aussah. Der Weichzeichner gehört an den Anfang, und
-        // dort steht er auch.
+        // Only the widgets, not super.render: that would call renderBackground
+        // again and with it the blur — over everything already drawn up here.
+        // The reason this window looked smeared. The blur belongs at the
+        // start, and that is where it is.
         for (Renderable renderable : this.renderables) {
             renderable.render(graphics, mouseX, mouseY, partialTick);
         }
@@ -196,7 +195,7 @@ public class LabelGunScreen extends Screen {
 
     @Override
     public boolean keyPressed(int key, int scanCode, int modifiers) {
-        // Eingabe bestätigt, wie in jedem Textfeld des Spiels.
+        // Enter confirms, as in every text field in the game.
         if (key == 257 || key == 335) {
             confirm();
             return true;

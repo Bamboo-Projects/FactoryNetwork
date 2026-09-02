@@ -3,39 +3,38 @@ package dev.devpanda.factorynetwork;
 import java.util.UUID;
 
 /**
- * Wer ein Programm ändern darf.
+ * Who may change a program.
  *
- * <p>Bis hierher jeder: Wer an ein Terminal kam, konnte das Programm einer
- * fremden Fabrik überschreiben. Im Einzelspieler ist das richtig, auf einem
- * Server nicht — und es fiel nirgends auf, weil ein überschriebenes Programm
- * keine Meldung hinterlässt, sondern nur eine Anlage, die plötzlich etwas
- * anderes tut.
+ * <p>Until now anyone: whoever reached a terminal could overwrite the program
+ * of someone else's factory. In singleplayer that is right, on a server it is
+ * not — and it went unnoticed everywhere, because an overwritten program
+ * leaves no message behind, only an installation that suddenly does something
+ * else.
  *
- * <p><b>Standard bleibt „jeder".</b> Eine Mod, die nach einem Update
- * Fabriken sperrt, an denen zwei Leute gemeinsam bauen, hat dasselbe Problem
- * in die andere Richtung. Wer schützen will, stellt es ein — der
- * Serverbetreiber kennt seine Spieler, die Mod nicht.
+ * <p><b>The default stays "everyone".</b> A mod that, after an update, locks
+ * factories where two people build together has the same problem in the other
+ * direction. Whoever wants protection sets it up — the server operator knows
+ * their players, the mod does not.
  *
- * <p>Geschützt ist, was eine fremde Anlage <b>umbaut</b>: ein Programm
- * übernehmen, einen Entwurf speichern, einen Fertigungsauftrag abbrechen.
- * Zusehen, Bestände lesen und Knöpfe drücken bleibt allen offen — das ist
- * Benutzen und nicht Umbauen.
+ * <p>Protected is whatever <b>rebuilds</b> someone else's installation: taking
+ * over a program, saving a draft, cancelling a crafting job. Watching, reading
+ * stocks and pressing buttons stays open to everyone — that is using, not
+ * rebuilding.
  *
- * <p><b>Nicht dabei: die Beschriftungspistole.</b> Einen Connector
- * umzubenennen bricht Programme genauso, ist aber eine Handlung in der Welt
- * wie das Abbauen eines Blocks — und dafür gibt es Schutzmods, die es besser
- * können als eine Logistikmod. Was hier steht, schützt das Programm, nicht
- * das Grundstück.
+ * <p><b>Not included: the label gun.</b> Renaming a connector breaks programs
+ * just as much, but it is an action in the world like breaking a block — and
+ * for that there are protection mods that do it better than a logistics mod.
+ * What stands here protects the program, not the plot of land.
  */
 public final class FnProtection {
 
-    /** Wie streng es zugeht. */
+    /** How strict things are. */
     public enum Mode {
-        /** Jeder darf. Der Stand vor dieser Einstellung. */
+        /** Everyone may. The state before this setting. */
         OFF,
-        /** Nur wer den Controller gesetzt hat — und Operatoren. */
+        /** Only whoever set the controller — and operators. */
         OWNER,
-        /** Nur Operatoren. Für Server, auf denen die Fabrik allen gehört. */
+        /** Only operators. For servers where the factory belongs to everyone. */
         OPS
     }
 
@@ -43,13 +42,13 @@ public final class FnProtection {
     }
 
     /**
-     * Darf dieser Spieler das Programm dieses Controllers ändern?
+     * May this player change this controller's program?
      *
-     * <p>Ohne Minecraft-Typen, damit die Frage prüfbar ist: Ein Rechtefehler
-     * ist der eine Fehler, den man nicht ausprobieren möchte.
+     * <p>Without Minecraft types, so that the question is testable: a
+     * permission bug is the one bug you do not want to find out by trying.
      *
-     * @param owner wer den Controller gesetzt hat, oder {@code null}
-     * @param operator ob der Spieler auf dem Server Operatorrechte hat
+     * @param owner who set the controller, or {@code null}
+     * @param operator whether the player has operator rights on the server
      */
     public static boolean mayEdit(Mode mode, UUID owner, UUID player, boolean operator) {
         if (operator) {
@@ -57,9 +56,9 @@ public final class FnProtection {
         }
         return switch (mode) {
             case OFF -> true;
-            // Ein Controller ohne Besitzer gehört allen: aus einer Welt von
-            // vorher, oder von einem Befehl gesetzt. Ihn niemandem
-            // zuzuordnen wäre eine Sperre, die niemand aufheben kann.
+            // A controller without an owner belongs to everyone: from a world
+            // from before, or set by a command. Assigning it to no one would
+            // be a lock that no one can lift.
             case OWNER -> owner == null || owner.equals(player);
             case OPS -> false;
         };

@@ -11,26 +11,25 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Was in einem Gerät liegt, nach Art zusammengezählt.
+ * What lies in a device, summed up by type.
  *
- * <p>Die Grundlinie für {@code device_output}: Ist beim nächsten Blick von
- * einer Art mehr da als hier, hat das Gerät etwas ausgegeben.
+ * <p>The baseline for {@code device_output}: if at the next look there is more
+ * of a type than here, the device has put something out.
  *
- * <p><b>Nach Art und nicht nach Fach.</b> Maschinen schieben ihren Inhalt
- * zwischen Fächern hin und her — ein Ofen räumt das Ergebnis um, ein
- * Modulinventar sortiert. Fachweise verglichen wäre jedes Umräumen eine
- * Ausgabe. Zusammengezählt bleibt es, was es ist: dieselbe Menge an derselben
- * Art.
+ * <p><b>By type and not by slot.</b> Machines shove their contents back and
+ * forth between slots — a furnace shuffles the result around, a modular
+ * inventory sorts. Compared slot by slot, every reshuffle would be an output.
+ * Summed up, it stays what it is: the same amount of the same type.
  *
- * <p>Inventar und Tank zusammen, aus demselben Grund wie beim Fingerabdruck
- * für {@code device_changed}: Eine Maschine kann beides haben, und wer auf
- * ihre Ausgabe wartet, will von beidem wissen.
+ * <p>Inventory and tank together, for the same reason as the fingerprint for
+ * {@code device_changed}: a machine can have both, and whoever waits on its
+ * output wants to know about both.
  */
 public record DeviceAmounts(Map<Item, Long> items, Map<Fluid, Long> fluids) {
 
     private static final DeviceAmounts EMPTY = new DeviceAmounts(Map.of(), Map.of());
 
-    /** Was gerade in dem Gerät hinter diesem Anschluss liegt. */
+    /** What currently lies in the device behind this connector. */
     public static DeviceAmounts of(ConnectorPart connector) {
         if (connector == null) {
             return EMPTY;
@@ -59,10 +58,10 @@ public record DeviceAmounts(Map<Item, Long> items, Map<Fluid, Long> fluids) {
     }
 
     /**
-     * Ist von irgendeiner Art mehr da als vorhin?
+     * Is there more of any type than before?
      *
-     * <p>Nur mehr zählt. Was verbraucht oder herausgenommen wird, ist keine
-     * Ausgabe — sonst meldete ein Ofen jedes Stück Kohle, das er verbrennt.
+     * <p>Only more counts. What is consumed or taken out is not an output —
+     * otherwise a furnace would report every piece of coal it burns.
      */
     public boolean hasMoreThan(DeviceAmounts earlier) {
         for (Map.Entry<Item, Long> entry : items.entrySet()) {

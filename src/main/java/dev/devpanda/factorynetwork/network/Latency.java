@@ -5,46 +5,47 @@ import net.minecraft.world.level.Level;
 import java.util.List;
 
 /**
- * Wie lange es dauert, bis der erste Gegenstand ankommt.
+ * How long it takes until the first item arrives.
  *
- * <p><b>Nicht je Block, sondern je Gerät auf dem Weg.</b> Licht braucht für
- * zwanzig Blöcke sechzig Nanosekunden; ein Minecraft-Tick ist fünfzig
- * Millisekunden — eine Million mal länger. Latenz aus Entfernung wäre in
- * dieser Mod frei erfunden.
+ * <p><b>Not per block, but per device along the path.</b> Light needs sixty
+ * nanoseconds for twenty blocks; a Minecraft tick is fifty milliseconds — a
+ * million times longer. Latency from distance would be pure invention in this
+ * mod.
  *
- * <p><b>Was in einem echten Netz wirklich Zeit kostet, ist die
- * Verarbeitung.</b> Jeder Switch auf dem Weg packt das Paket aus, sieht nach,
- * packt es wieder ein. Bei Glasfaser über Kontinente ist das der größere Teil
- * der Latenz, nicht die Strecke.
+ * <p><b>What really costs time in a real network is the processing.</b> Every
+ * switch along the way unpacks the packet, looks at it, and packs it up
+ * again. Over fiber across continents that is the larger part of the latency,
+ * not the distance.
  *
- * <p><b>Und sie verzögert den Anfang, nicht den Takt.</b> Ein Worker hinter
- * drei Routern fängt drei Ticks später an — danach läuft er so schnell wie
- * jeder andere. Alles andere wäre eine heimliche Bandbreitenstrafe: Wer
- * sauber trennt, bekäme weniger Durchsatz, und genau das soll die Latenz
- * nicht sein.
+ * <p><b>And it delays the start, not the cadence.</b> A worker behind three
+ * routers begins three ticks later — after that it runs as fast as any other.
+ * Anything else would be a covert bandwidth penalty: whoever separates things
+ * cleanly would get less throughput, and that is exactly what latency is not
+ * meant to be.
  */
 public final class Latency {
 
     /**
-     * Was ein Gerät auf dem Weg kostet: einen Tick.
+     * What a device along the path costs: one tick.
      *
-     * <p>Ein Brückenpaar kostet damit zwei — eine Hälfte packt ein, die
-     * andere aus. Der Plan vom 30.08. nannte einen; zwei ist die ehrlichere
-     * Zahl und braucht keine Sonderregel.
+     * <p>A bridge pair therefore costs two — one half packs it in, the other
+     * unpacks it. The plan of 30.08. named one; two is the more honest number
+     * and needs no special rule.
      *
-     * <p><b>Wer diese Zahl anhebt, prüft die Sprachtexte:</b> Dort steht
-     * „%s Tick" im Singular, und bei zwei wäre das falsch.
+     * <p><b>Whoever raises this number should check the language files:</b>
+     * there it reads "%s tick" in the singular, and with two that would be
+     * wrong.
      */
     public static final int PER_HOP = 1;
 
-    /** Wie viele Ticks dieser Weg braucht, bis der erste Griff ankommt. */
+    /** How many ticks this path needs until the first grab arrives. */
     public static int of(Level level, List<FactoryGraph.Node> path) {
         int ticks = 0;
         for (FactoryGraph.Node node : path) {
             var block = level.getBlockState(node.pos()).getBlock();
-            // Kabel und Controller kosten nichts: Das Kabel ist Glasfaser,
-            // und der Controller ist der Anfang des Weges, nicht ein Halt
-            // darauf.
+            // Cables and the controller cost nothing: the cable is fiber, and
+            // the controller is the start of the path, not a stop along the
+            // way.
             if (block instanceof dev.devpanda.factorynetwork.block.RouterBlock
                     || block instanceof dev.devpanda.factorynetwork.block.BridgeBlock) {
                 ticks += PER_HOP;

@@ -12,12 +12,12 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Woran man hängenbleibt.
+ * What you bump into.
  *
- * <p>Dieselben Zahlen wie im Modellskript {@code tools/assets.py} — sie müssen
- * übereinstimmen, sonst greift man neben das, was man sieht. Sie hier noch
- * einmal zu führen ist der Preis dafür, dass Minecraft Modelle und
- * Trefferflächen getrennt hält; ein Test wacht darüber.
+ * <p>The same numbers as in the model script {@code tools/assets.py} — they
+ * must match, otherwise you grab beside what you see. Carrying them here a
+ * second time is the price for Minecraft keeping models and hitboxes apart; a
+ * test watches over it.
  */
 public final class CableShapes {
 
@@ -43,7 +43,7 @@ public final class CableShapes {
         return Shapes.box(x0 / 16.0, y0 / 16.0, z0 / 16.0, x1 / 16.0, y1 / 16.0, z1 / 16.0);
     }
 
-    /** Der Arm von der Blockkante bis an den Kern. */
+    /** The arm from the block edge in to the core. */
     private static VoxelShape arm(Direction direction, int lo, int hi) {
         return switch (direction) {
             case NORTH -> box(lo, lo, 0, hi, hi, lo);
@@ -55,18 +55,18 @@ public final class CableShapes {
         };
     }
 
-    /** Kern samt der Arme, die wirklich verbunden sind. */
+    /** The core together with the arms that are actually connected. */
     public static VoxelShape whole(int size, List<Direction> connections) {
         return whole(size, connections, List.of());
     }
 
     /**
-     * Kern, Arme und die Anschlüsse an den Flächen.
+     * Core, arms, and the connectors on the faces.
      *
-     * <p>Ein Anschluss ist zwei Kästen: die Platte an der Blockfläche und der
-     * Stiel zum Kern. Ohne den Stiel schwebte die Platte, sobald das Kabel
-     * dünn ist — beim dichten stößt sie ohnehin an den Mantel, und dann gibt
-     * es keinen.
+     * <p>A connector is two boxes: the plate on the block face and the stalk to
+     * the core. Without the stalk the plate would float as soon as the cable is
+     * thin — on the dense one it meets the sheath anyway, and then there is
+     * none.
      */
     public static VoxelShape whole(int size, List<Direction> connections,
                                    Collection<Direction> parts) {
@@ -82,11 +82,10 @@ public final class CableShapes {
     }
 
     /**
-     * Ein Halter ohne Kabel: nur die Platten seiner Anschlüsse.
+     * A holder without a cable: only the plates of its connectors.
      *
-     * <p>Kein Kern, keine Arme — in ihm liegt kein Kabel. Was bleibt, ist
-     * dünn und schwer zu treffen, und das ist ehrlich: Da hängt eine Platte
-     * an einer Wand und sonst nichts.
+     * <p>No core, no arms — it holds no cable. What remains is thin and hard to
+     * hit, and that is honest: there hangs a plate on a wall and nothing else.
      */
     public static VoxelShape holder(int size, Collection<Direction> parts) {
         VoxelShape shape = Shapes.empty();
@@ -97,14 +96,14 @@ public final class CableShapes {
     }
 
     /**
-     * Die Platte eines Anschlusses an dieser Fläche.
+     * The plate of a connector on this face.
      *
-     * <p>Nur die Platte: Die Strecke zum Kern deckt der Arm ab, den das Kabel
-     * zu jeder Fläche mit Anschluss wachsen lässt.
+     * <p>Only the plate: the stretch to the core is covered by the arm that the
+     * cable grows to every face with a connector.
      *
-     * <p>{@code size} spielt keine Rolle mehr und bleibt trotzdem stehen —
-     * die Platte ist an beiden Kabelstärken dieselbe, und die Aufrufer sollen
-     * sich das nicht merken müssen.
+     * <p>{@code size} no longer matters and yet stays — the plate is the same
+     * at both cable thicknesses, and the callers should not have to remember
+     * that.
      */
     public static VoxelShape part(int size, Direction facing) {
         int wide = CableLayout.partOffset();
@@ -112,12 +111,12 @@ public final class CableShapes {
     }
 
     /**
-     * Ein Kasten, gemessen von einer Blockfläche nach innen.
+     * A box, measured inward from a block face.
      *
-     * <p>{@code near} und {@code far} sind der Abstand von der Fläche, zu der
-     * {@code facing} zeigt; {@code lo} und {@code hi} spannen die beiden
-     * anderen Achsen. Dieselbe Rechnung erzeugt im Modellskript die Modelle —
-     * {@code CableLayoutTest} hält beide zusammen.
+     * <p>{@code near} and {@code far} are the distance from the face that
+     * {@code facing} points to; {@code lo} and {@code hi} span the two other
+     * axes. The same computation produces the models in the model script —
+     * {@code CableLayoutTest} holds both together.
      */
     public static VoxelShape slab(Direction facing, double near, double far,
                                   double lo, double hi) {
@@ -125,7 +124,7 @@ public final class CableShapes {
         return box(box[0], box[1], box[2], box[3], box[4], box[5]);
     }
 
-    /** Dieselben Zahlen als {@code from}/{@code to} eines Modellkastens. */
+    /** The same numbers as the {@code from}/{@code to} of a model box. */
     public static double[] slabBox(Direction facing, double near, double far,
                                    double lo, double hi) {
         return switch (facing) {

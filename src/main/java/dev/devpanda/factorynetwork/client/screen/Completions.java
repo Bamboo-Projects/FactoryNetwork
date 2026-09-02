@@ -12,51 +12,51 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Vorschläge für den Editor.
+ * Completions for the editor.
  *
- * <p>Der Punkt, an dem sich entscheidet, ob die Sprache benutzbar ist. In
- * einem Pack mit zwanzigtausend Gegenstandsarten ist eine alphabetische Liste
- * wertlos — es muss ausgewählt werden, nicht aufgezählt.
+ * <p>The point where it is decided whether the language is usable. In a pack
+ * with twenty thousand kinds of item an alphabetical list is worthless — it
+ * has to select, not enumerate.
  *
- * <p>Deshalb wird nach der Stelle im Code unterschieden: Hinter {@code from}
- * und {@code to} stehen Geräte, hinter {@code filter} Gegenstände, am
- * Zeilenanfang in einem Worker seine Angaben. Ein Vorschlag, der überall
- * dasselbe zeigt, hilft nirgends.
+ * <p>That is why it distinguishes by the position in the code: after
+ * {@code from} and {@code to} come devices, after {@code filter} items, at
+ * the start of a line in a worker its arguments. A completion that shows the
+ * same thing everywhere helps nowhere.
  *
- * <p><b>Was wo stehen darf, steht nicht hier, sondern in
- * {@link Signatures}.</b> Diese Klasse entscheidet nur, welche Stelle gerade
- * dran ist, und holt sich von dort, was dazu passt. Die Trennung ist der
- * Grund, warum dieselbe Auskunft auch die Hinweiszeile im Editor speist —
- * und einmal ein Sprachserver für VS Code.
+ * <p><b>What may stand where is not here but in {@link Signatures}.</b> This
+ * class only decides which position is currently in play, and fetches from
+ * there what fits it. That separation is the reason the same information also
+ * feeds the hint line in the editor — and one day a language server for VS
+ * Code.
  */
 public final class Completions {
 
-    /** Mehr als das wird nicht angezeigt; alles andere ist Scrollen ohne Nutzen. */
+    /** No more than that is shown; anything else is scrolling for nothing. */
     private static final int MAX = 8;
 
     /**
-     * Eine vollständige Liste wird nicht gekürzt.
+     * A complete list is not truncated.
      *
-     * <p>Das Limit gilt den Namen aus der Welt: zwanzigtausend Gegenstände,
-     * dreihundert Geräte — dort ist Abschneiden richtig. Was die Sprache
-     * selbst hergibt, ist abzählbar und muss ganz dastehen. Aufgefallen ist
-     * es beim neunten Gerätemitglied: {@code click} fiel hinten heraus, und
-     * der Editor verschwieg eine Fähigkeit, statt zu scrollen.
+     * <p>The limit applies to the names from the world: twenty thousand
+     * items, three hundred devices — there truncating is right. What the
+     * language itself provides is finite and must stand in full. It came to
+     * light at the ninth device member: {@code click} dropped off the end,
+     * and the editor hid a capability instead of scrolling.
      */
     private static List<Entry> whole(List<Entry> entries) {
         return entries;
     }
 
     /**
-     * Ein Vorschlag.
+     * A completion.
      *
-     * @param text   was in der Liste steht und womit verglichen wird
-     * @param insert was beim Übernehmen eingesetzt wird
-     * @param kind   die Farbe
-     * @param detail was dahinter gehört — {@code string expr} hinter
-     *               {@code row}. <b>Das ist die Antwort auf „was muss ich wo
-     *               angeben".</b> Ohne sie ist ein Vorschlag ein Wort ohne
-     *               Form, und man legt die Doku daneben.
+     * @param text   what appears in the list and what is compared against
+     * @param insert what is inserted when it is accepted
+     * @param kind   the colour
+     * @param detail what belongs after it — {@code string expr} after
+     *               {@code row}. <b>This is the answer to "what do I have to
+     *               give and where".</b> Without it a completion is a word
+     *               without a form, and you end up laying the docs beside it.
      */
     public record Entry(String text, String insert, Kind kind, String detail) {
 
@@ -67,20 +67,20 @@ public final class Completions {
         public enum Kind { KEYWORD, CONNECTOR, ITEM, TAG, BUILTIN }
     }
 
-    /** Dieselbe Liste, die auch VS Code bekommt — sie steht in Signatures. */
+    /** The same list VS Code also gets — it lives in Signatures. */
     private static final List<String> DECLARATIONS = Signatures.DECLARATIONS;
 
     /**
-     * Ein Vorschlag, der seine Klammern mitbringt.
+     * A completion that brings its own brackets.
      *
-     * <p><b>Beim ersten Spielen aufgefallen:</b> Der Vorschlag setzte den
-     * Namen und nichts weiter, und man tippte {@code ()} jedes Mal von Hand
-     * nach — bei {@code log}, bei {@code count()}, bei jedem Aufruf.
+     * <p><b>Noticed on the first playthrough:</b> the completion inserted the
+     * name and nothing more, and you typed {@code ()} in by hand every time —
+     * for {@code log}, for {@code count()}, on every call.
      *
-     * <p>Ob welche dazugehören, steht in der <b>Form</b> und nicht in einer
-     * zweiten Liste: {@code redstone() int} hat welche, {@code power int}
-     * nicht. Damit kann die Antwort nicht von der Wahrheit abweichen, und
-     * ein neues Mitglied bringt sie von selbst mit.
+     * <p>Whether any belong is held in the <b>shape</b> and not in a second
+     * list: {@code redstone() int} has them, {@code power int} does not. That
+     * way the answer cannot diverge from the truth, and a new member brings
+     * it along by itself.
      */
     private static Entry callable(Signatures.Member member, Entry.Kind kind) {
         boolean call = member.shape().contains("(");
@@ -89,29 +89,29 @@ public final class Completions {
     }
 
     /**
-     * Die eingebauten Namen, die der Interpreter <b>wirklich</b> kennt.
+     * The built-in names the interpreter <b>really</b> knows.
      *
-     * <p>Die Sprache parst auch {@code world}, {@code network},
-     * {@code workers} und {@code multiblocks} — auswerten kann sie keines
-     * davon. Sie anzubieten hieß: Wer {@code to network} schreibt, bekommt
-     * „Als Ziel taugt nur ein Name", eine Meldung, die dem Vorschlag
-     * widerspricht, der sie ausgelöst hat.
+     * <p>The language also parses {@code world}, {@code network},
+     * {@code workers} and {@code multiblocks} — it can evaluate none of them.
+     * Offering them meant: whoever writes {@code to network} gets "Only a
+     * name works as a target", a message that contradicts the completion that
+     * triggered it.
      *
-     * <p>Sie kommen zurück, sobald sie etwas tun. {@code crafting} ist diesen
-     * Weg gegangen und steht in {@link #SOURCES} — als Quelle, denn ein Ziel
-     * ist es nicht.
+     * <p>They come back as soon as they do something. {@code crafting} went
+     * this way and lives in {@link #SOURCES} — as a source, because a target
+     * it is not.
      */
     private static final List<String> BUILTINS = List.of("storage");
 
-    /** Was nur als Quelle taugt — {@code from crafting} bestellt, was fehlt. */
+    /** What only works as a source — {@code from crafting} orders what is missing. */
     private static final List<String> SOURCES = List.of("crafting");
 
     /**
-     * Was an dieser Stelle passt.
+     * What fits at this position.
      *
-     * @param lines      alle Zeilen des Programms
-     * @param lineIndex  Zeile, in der der Cursor steht
-     * @param column     Spalte des Cursors
+     * @param lines      all lines of the program
+     * @param lineIndex  line the cursor is on
+     * @param column     column of the cursor
      */
     public static List<Entry> at(List<String> lines, int lineIndex, int column) {
         String line = lines.get(lineIndex);
@@ -121,27 +121,27 @@ public final class Completions {
 
         List<Entry> entries = new ArrayList<>();
 
-        // „display halle " — der Name steht, als Nächstes kommt die Klammer.
+        // "display halle " — the name is there, next comes the brace.
         if (afterDeclarationName(upToCursor, prefix)) {
             return List.of();
         }
 
-        // Nach einem Punkt hinter einem Gerätenamen: was ein Gerät hat.
+        // After a dot behind a device name: what a device has.
         //
-        // Vor der Prüfung auf die Stelle in der Angabe, weil „to crusher_1."
-        // sonst als angefangener Zielname gelesen würde — und dann stünden
-        // dort wieder die Connectoren.
+        // Before the check for the position in the argument list, because
+        // "to crusher_1." would otherwise be read as a started target name —
+        // and then the connectors would stand there again.
         //
-        // <b>Und der Punkt beendet die Liste in jedem Fall.</b> Steht davor
-        // kein bekannter Connector, gibt es eben nichts: Vorher fiel dieser
-        // Fall bis zur Ausdrucksstelle durch und bot „storage, crafting,
-        // world …" an — hinter einem Punkt ergibt keines davon einen Satz.
-        // Hinter „…items()." steht eine Liste und kein Gerät. Vor afterDot
-        // geprüft, weil dort ein Name vor dem Punkt erwartet wird — hier
-        // steht eine schließende Klammer.
+        // <b>And the dot ends the list in every case.</b> If no known
+        // connector stands before it, there is simply nothing: before, this
+        // case fell through as far as the expression position and offered
+        // "storage, crafting, world …" — after a dot none of those makes a
+        // sentence. After "…items()." there is a list and not a device.
+        // Checked before afterDot, because there a name before the dot is
+        // expected — here there is a closing bracket.
         //
-        // Der Editor kennt keine Typen, aber diesen einen Fall erkennt er am
-        // Text, und er ist der einzige, der heute vorkommt.
+        // The editor knows no types, but this one case it recognizes from the
+        // text, and it is the only one that occurs today.
         if (afterListCall(upToCursor)) {
             for (Signatures.Member candidate : Signatures.LIST_MEMBERS) {
                 if (matches(candidate.name(), prefix)) {
@@ -151,14 +151,15 @@ public final class Completions {
             return whole(entries);
         }
         if (afterDot(upToCursor)) {
-            // <b>it ist kein Gerät.</b> Es steht für einen Posten, und daran
-            // stehen andere Dinge. Vorher fiel es durch memberPrefix, das
-            // nur bekannte Connectoren durchlässt — nach „it." kam damit
-            // gar nichts.
+            // <b>it is not a device.</b> It stands for an entry, and other
+            // things stand on it. Before, it fell through memberPrefix, which
+            // only lets known connectors pass — so after "it." nothing came
+            // at all.
             String receiver = wordBeforeDot(upToCursor);
-            // Das Netz ist kein Gerät: An ihm stehen power und capacity, und
-            // sonst nichts. Vor der Prüfung auf einen Connector, denn
-            // „network" ist keiner und fiele sonst auf die leere Liste.
+            // The network is not a device: on it stand power and capacity,
+            // and nothing else. Before the check for a connector, because
+            // "network" is not one and would otherwise fall to the empty
+            // list.
             if ("network".equals(receiver)) {
                 for (Signatures.Member candidate : Signatures.NETWORK_MEMBERS) {
                     if (matches(candidate.name(), prefix)) {
@@ -167,8 +168,8 @@ public final class Completions {
                 }
                 return whole(entries);
             }
-            // Eine Gruppe ist kein Gerät: An ihr stehen members und send, und
-            // sonst nichts.
+            // A group is not a device: on it stand members and send, and
+            // nothing else.
             if (isGroupName(receiver, lines)) {
                 for (Signatures.Member candidate : Signatures.GROUP_MEMBERS) {
                     if (matches(candidate.name(), prefix)) {
@@ -196,40 +197,38 @@ public final class Completions {
             return whole(entries);
         }
 
-        // Nach display: die Wände, die in der Welt stehen.
+        // After display: the walls that stand in the world.
         //
-        // "display NAME { … }" verlangt den Namen, den die Tafel trägt. Wer
-        // ihn falsch schreibt, bekommt kein Programm, das nicht übersetzt,
-        // sondern eine Wand, die schwarz bleibt — der Fehler, den man am
-        // längsten sucht.
+        // "display NAME { … }" requires the name the board carries. Whoever
+        // spells it wrong gets not a program that fails to compile, but a
+        // wall that stays black — the bug you hunt for the longest.
         if (before.endsWith("display") && indentOf(line) == 0) {
             addDisplays(entries, prefix);
             return limit(entries);
         }
 
-        // Nach on: die Ereignisse, auf die sich hören lässt.
+        // After on: the events you can listen for.
         //
-        // Die vier des Netzes stehen in keiner Datei — wer sie nicht
-        // auswendig weiß, sucht sie in der Doku. Und ein vertippter Name ist
-        // hier besonders teuer: Ein on braucht keine Deklaration, der Block
-        // wird übernommen und läuft nie. Der Editor kann diesen Fehler
-        // verhindern, statt ihn hinterher zu melden.
+        // The four of the network stand in no file — whoever doesn't know
+        // them by heart looks them up in the docs. And a mistyped name is
+        // especially costly here: an on needs no declaration, the block is
+        // accepted and never runs. The editor can prevent this error instead
+        // of reporting it after the fact.
         if (before.endsWith("on") && indentOf(line) == 0) {
             addEvents(entries, prefix, lines);
             return limit(entries);
         }
 
-        // <b>Der Kern.</b> Steht der Cursor hinter einem Schlüsselwort mit
-        // Form, richtet sich der Vorschlag nach der Stelle, die gerade dran
-        // ist — und nicht mehr nach dem Block. Vorher bot der Editor hinter
-        // „row" wieder „title, row, text …" an, also genau das, was dort
-        // nicht hingehört.
+        // <b>The core.</b> If the cursor is behind a keyword with a shape,
+        // the completion follows the position that is currently in play — and
+        // no longer the block. Before, the editor offered "title, row, text
+        // …" again behind "row", exactly what does not belong there.
         Signatures.Where where = whereAt(lines, lineIndex, column);
         if (where != null) {
             return limit(forSlot(where, entries, prefix, lines));
         }
 
-        // Ein angefangener Auswahlausdruck.
+        // A started selection expression.
         if (prefix.contains(":")) {
             addItems(entries, prefix);
             return limit(entries);
@@ -238,10 +237,10 @@ public final class Completions {
     }
 
     /**
-     * Wo der Cursor in einer Angabe steht, oder {@code null}.
+     * Where the cursor sits within an argument list, or {@code null}.
      *
-     * <p>Öffentlich, weil der Editor dasselbe wissen muss: Er zeichnet daraus
-     * die Hinweiszeile mit der ganzen Form und der markierten Stelle.
+     * <p>Public, because the editor has to know the same: from it it draws
+     * the hint line with the whole shape and the marked position.
      */
     public static Signatures.Where whereAt(List<String> lines, int lineIndex, int column) {
         String line = lines.get(lineIndex);
@@ -249,32 +248,32 @@ public final class Completions {
         return Signatures.at(enclosingBlock(lines, lineIndex), upToCursor);
     }
 
-    /** Was an dieser Stelle einer Angabe stehen darf. */
+    /** What may stand at this position in an argument list. */
     private static List<Entry> forSlot(Signatures.Where where, List<Entry> entries,
                                        String prefix, List<String> lines) {
         Signatures.Slot slot = where.slot();
         if (slot == null) {
-            // Die Angabe ist voll. Nichts vorzuschlagen ist hier die Auskunft:
-            // Die Zeile ist fertig.
+            // The argument list is full. Suggesting nothing is the answer
+            // here: the line is done.
             return entries;
         }
         switch (slot.kind()) {
             case TARGET -> {
                 addConnectors(entries, prefix);
                 addAll(entries, BUILTINS, prefix, Entry.Kind.BUILTIN);
-                // crafting ist eine Quelle und kein Ziel: Gefertigt wird in
-                // den Speicher, und von dort holt es ein zweiter Worker ab.
-                // Es bei „to" vorzuschlagen führte in eine Meldung, die dem
-                // Vorschlag widerspricht, der sie ausgelöst hat.
+                // crafting is a source and not a target: crafting goes into
+                // storage, and from there a second worker picks it up.
+                // Suggesting it at "to" led into a message that contradicts
+                // the completion that triggered it.
                 if ("from".equals(where.signature().keyword())) {
                     addAll(entries, SOURCES, prefix, Entry.Kind.BUILTIN);
                 }
             }
             case EXPR -> {
-                // Ein angefangener Auswahlausdruck ist auch ein Ausdruck.
-                // Ohne diesen Zweig fiele „let x = minecraft:" durch: Die
-                // Prüfung auf den Doppelpunkt steht weiter unten und wird
-                // hier gar nicht mehr erreicht.
+                // A started selection expression is an expression too.
+                // Without this branch "let x = minecraft:" would fall
+                // through: the check for the colon is further down and is not
+                // reached here at all.
                 if (prefix.contains(":")) {
                     addItems(entries, prefix);
                     return entries;
@@ -283,13 +282,12 @@ public final class Completions {
                 addAll(entries, BUILTINS, prefix, Entry.Kind.BUILTIN);
             }
             case SELECTION -> {
-                // Die Vorlagen zuerst: Wer eine angelegt hat, meint an dieser
-                // Stelle meistens sie und nicht den einzelnen Gegenstand.
+                // The templates first: whoever has created one usually means
+                // it here and not the single item.
                 addTemplates(entries, prefix, lines);
                 addItems(entries, prefix);
-                // Die beiden ohne Doppelpunkt tauchen in der
-                // Gegenstandssuche nicht auf — sie müssen eigens angeboten
-                // werden, sonst findet sie niemand.
+                // The two without a colon don't show up in the item search —
+                // they have to be offered specially, or nobody finds them.
                 addAll(entries, List.of("power", "all"), prefix, Entry.Kind.KEYWORD);
             }
             case STRATEGY -> addAll(entries, Signatures.STRATEGIES, prefix,
@@ -299,8 +297,9 @@ public final class Completions {
             case EVENT -> addEvents(entries, prefix, lines);
             case LITERAL -> {
                 addAll(entries, List.of(slot.label()), prefix, Entry.Kind.KEYWORD);
-                // Darf diese Stelle wegfallen, ist auch das Wort dahinter
-                // erlaubt: Nach „move 64 " kommt „from" oder gleich „to".
+                // If this position may be dropped, the word after it is
+                // allowed too: after "move 64 " comes "from", or "to"
+                // directly.
                 if (slot.optional()) {
                     Signatures.Slot next =
                             where.signature().slotAt(where.slotIndex() + 2);
@@ -310,21 +309,21 @@ public final class Completions {
                     }
                 }
             }
-            // Ein Name, der hier erst entsteht, lässt sich nicht vorschlagen.
+            // A name that only comes into being here can't be suggested.
             case NEW_NAME -> { }
-            // Für einen Text, eine Zahl oder eine Dauer gibt es nichts
-            // vorzuschlagen. Die Hinweiszeile sagt trotzdem, was hier steht —
-            // dafür ist sie da.
+            // For a text, a number or a duration there is nothing to suggest.
+            // The hint line still says what goes here — that is what it is
+            // for.
             default -> { }
         }
         return entries;
     }
 
-    /** Die Ereignisse des Projekts — für {@code emit}. */
+    /** The project's events — for {@code emit}. */
     private static void addEvents(List<Entry> entries, String prefix, List<String> lines) {
-        // Die vier des Netzes zuerst: Sie stehen in keiner Datei und wären
-        // sonst nirgends zu finden — man muss sie auswendig wissen oder in
-        // der Doku nachsehen.
+        // The four of the network first: they stand in no file and would
+        // otherwise be found nowhere — you have to know them by heart or look
+        // them up in the docs.
         addAll(entries,
                 List.copyOf(new java.util.TreeSet<>(
                         dev.devpanda.factorynetwork.lang.BuiltinEvents.ARITY.keySet())),
@@ -332,18 +331,18 @@ public final class Completions {
         addDeclaredNames(entries, prefix, lines, "event ", "event");
     }
 
-    /** Die Funktionen des Projekts — für den Knopf einer Anzeige. */
+    /** The project's functions — for a display's button. */
     private static void addFunctions(List<Entry> entries, String prefix, List<String> lines) {
         addDeclaredNames(entries, prefix, lines, "fn ", "fn");
     }
 
     /**
-     * Dieselben Funktionen, aber als Aufruf.
+     * The same functions, but as a call.
      *
-     * <p>Der Unterschied zu {@link #addFunctions} ist die Stelle: Am
-     * {@code button} einer Anzeige steht der <b>Name</b> einer Funktion, in
-     * einem Rumpf steht ihr <b>Aufruf</b>. Ein Vorschlag, der beide Male
-     * dasselbe einfügt, hat an einer der zwei Stellen unrecht.
+     * <p>The difference from {@link #addFunctions} is the position: at a
+     * display's {@code button} stands the <b>name</b> of a function, in a
+     * body stands its <b>call</b>. A completion that inserts the same thing
+     * both times is wrong in one of the two places.
      */
     private static void addCalls(List<Entry> entries, String prefix, List<String> lines) {
         List<Entry> named = new ArrayList<>();
@@ -354,7 +353,7 @@ public final class Completions {
         }
     }
 
-    /** Heißt so eine Gruppe im Projekt? */
+    /** Is a group in the project named this? */
     private static boolean isGroupName(String word, List<String> lines) {
         if (word == null || word.isEmpty()) {
             return false;
@@ -364,28 +363,28 @@ public final class Completions {
         return groups.stream().anyMatch(entry -> entry.text().equals(word));
     }
 
-    /** Die Filter-Vorlagen des Projekts. */
+    /** The project's filter templates. */
     private static void addTemplates(List<Entry> entries, String prefix, List<String> lines) {
         addDeclaredNames(entries, prefix, lines, "filter ", "filter");
     }
 
     /**
-     * Namen, die das Projekt vergibt — aus <b>allen</b> Dateien.
+     * Names the project assigns — from <b>all</b> files.
      *
-     * <p>Alle Dateien teilen einen Namensraum: Ein {@code fn} in
-     * {@code werte.mf} wird in {@code main.mf} aufgerufen, ohne dass irgendwo
-     * ein Import steht. Wer nur die offene Datei liest, schlägt genau die
-     * Namen nicht vor, für die man den Editor am ehesten braucht — die aus
-     * einer Datei, die man gerade <b>nicht</b> vor sich hat.
+     * <p>All files share one namespace: an {@code fn} in {@code werte.mf} is
+     * called in {@code main.mf} without an import standing anywhere. Whoever
+     * reads only the open file fails to suggest exactly the names the editor
+     * is most needed for — those from a file you do <b>not</b> currently have
+     * in front of you.
      *
-     * <p><b>Die offene Datei kommt trotzdem aus dem Text</b> und nicht aus
-     * dem Entwurf auf dem Client: Sie enthält, was gerade getippt wird, und
-     * eine Funktion soll aufrufbar sein, sobald ihr Name dasteht — nicht erst
-     * nach dem Speichern.
+     * <p><b>The open file still comes from the text</b> and not from the
+     * draft on the client: it holds what is being typed right now, and a
+     * function should be callable as soon as its name is there — not only
+     * after saving.
      *
-     * <p>Über den Text und nicht über den Baum, wie bei
-     * {@code Definitions.references}: Unfertiger Code hat keinen Baum, und
-     * gerade dort soll die Vervollständigung helfen.
+     * <p>Via the text and not via the tree, as in
+     * {@code Definitions.references}: unfinished code has no tree, and that
+     * is exactly where completion should help.
      */
     private static void addDeclaredNames(List<Entry> entries, String prefix,
                                          List<String> lines, String keyword, String detail) {
@@ -405,7 +404,7 @@ public final class Completions {
         }
     }
 
-    /** Die erste der beiden Klammern, oder -1. */
+    /** The first of the two brackets, or -1. */
     private static int firstOf(String text, char one, char other) {
         int first = text.indexOf(one);
         int second = text.indexOf(other);
@@ -425,26 +424,25 @@ public final class Completions {
             if (!trimmed.startsWith(keyword)) {
                 continue;
             }
-            // Der Name endet an der Klammer — bei einer Funktion an der
-            // runden, bei einer Vorlage an der geschweiften. Ohne die zweite
-            // hieß die Vorlage „erze {".
+            // The name ends at the bracket — for a function at the round one,
+            // for a template at the curly one. Without the second, the
+            // template was named "erze {".
             int open = firstOf(trimmed, '(', '{');
             String name = (open < 0 ? trimmed.substring(keyword.length())
                     : trimmed.substring(keyword.length(), open)).trim();
-            // Ein „fn" in einem Multiblock zählt mit: Es ist eine Erklärung
-            // wie jede andere, nur eingerückt.
+            // An "fn" in a multiblock counts too: it is a declaration like
+            // any other, just indented.
             if (!name.isEmpty()) {
                 into.add(name);
             }
         }
     }
 
-    /** Vorschläge, die von der Stelle im Aufbau abhängen. */
+    /** Completions that depend on the position in the structure. */
     private static List<Entry> structural(List<Entry> entries, List<String> lines,
                                           int lineIndex, String prefix) {
-        // Auf oberster Ebene stehen Deklarationen. Die meisten öffnen einen
-        // Block und haben keine Form; global ist die Ausnahme und bringt
-        // seine mit.
+        // At the top level stand declarations. Most of them open a block and
+        // have no shape; global is the exception and brings its own.
         if (indentOf(lines.get(lineIndex)) == 0) {
             for (String word : DECLARATIONS) {
                 if (!matches(word, prefix)) {
@@ -457,8 +455,7 @@ public final class Completions {
             }
             return entries;
         }
-        // In einem Block: seine Angaben oder seine Anweisungen, jede mit
-        // ihrer Form.
+        // In a block: its arguments or its statements, each with its shape.
         String block = enclosingBlock(lines, lineIndex);
         List<Signatures.Signature> shapes = Signatures.forBlock(block);
         if (!shapes.isEmpty()) {
@@ -470,60 +467,59 @@ public final class Completions {
                             Entry.Kind.KEYWORD, detail));
                 }
             }
-            // In einer Vorlage ist jede Zeile eine Auswahl. Ohne das stünde
-            // dort nur „except" zur Wahl — das Wort für die Ausnahme, aber
-            // nichts für den Regelfall.
+            // In a template every line is a selection. Without that only
+            // "except" would stand there to choose — the word for the
+            // exception, but nothing for the normal case.
             if ("filter".equals(block)) {
                 addItems(entries, prefix);
                 return entries;
             }
             if (isCodeBlock(block)) {
-                // In einer Funktion ist auch ein Ausdruck eine Anweisung —
-                // also gehören die Bestände und die Connectoren dazu. Und die
-                // drei Wörter ohne eigene Form.
+                // In a function an expression is also a statement — so the
+                // stocks and the connectors belong there too. And the three
+                // words without a shape of their own.
                 addAll(entries, List.of("else", "break", "continue"), prefix,
                         Entry.Kind.KEYWORD);
-                // Die Funktionen ohne Empfänger: log und die drei Stufen
-                // daneben. Sie standen nirgends und wurden deshalb nie
-                // vorgeschlagen — man musste wissen, dass es sie gibt.
+                // The functions without a receiver: log and the three levels
+                // beside it. They stood nowhere and were therefore never
+                // suggested — you had to know they exist.
                 for (Signatures.Member function : Signatures.FREE_FUNCTIONS) {
                     if (matches(function.name(), prefix)) {
                         entries.add(callable(function, Entry.Kind.BUILTIN));
                     }
                 }
-                // Die eigenen Funktionen des Projekts. Sie standen hier
-                // nicht, und wer seine eigene rufen wollte, tippte den Namen
-                // vollständig aus — obwohl der Editor ihn kennt, weil er ihn
-                // im Sprungziel und in VS Code längst anbietet.
+                // The project's own functions. They didn't stand here, and
+                // whoever wanted to call their own typed the name out in full
+                // — even though the editor knows it, because it has long
+                // offered it in the jump target and in VS Code.
                 addCalls(entries, prefix, lines);
                 addConnectors(entries, prefix);
                 addAll(entries, BUILTINS, prefix, Entry.Kind.BUILTIN);
             }
             return entries;
         }
-        // Außerhalb jedes bekannten Blocks: Connectoren und Eingebautes.
+        // Outside any known block: connectors and built-ins.
         addConnectors(entries, prefix);
         addAll(entries, BUILTINS, prefix, Entry.Kind.BUILTIN);
         return entries;
     }
 
-    /** Enthält dieser Block Anweisungen statt fester Angaben? */
+    /** Does this block contain statements instead of fixed arguments? */
     private static boolean isCodeBlock(String declaration) {
         return "fn".equals(declaration) || "on".equals(declaration)
                 || "multiblock".equals(declaration);
     }
 
     /**
-     * Welche Deklaration den Cursor umgibt, oder {@code null}.
+     * Which declaration encloses the cursor, or {@code null}.
      *
-     * <p>Rückwärts bis zur ersten Zeile, die auf Spalte null mit einem
-     * Deklarationswort anfängt — das reicht, weil Deklarationen nicht
-     * ineinander stehen.
+     * <p>Backwards to the first line that starts at column zero with a
+     * declaration word — that is enough, because declarations don't nest.
      *
-     * <p>Vorher fragte diese Stelle nur „ist das ein Worker", und alles
-     * andere fiel in denselben Topf: In einer Anzeige bekam man die
-     * Anweisungen einer Funktion vorgeschlagen. Jede Blockart hat aber ihre
-     * eigenen Angaben, und außerhalb davon sind sie falsch.
+     * <p>Before, this spot only asked "is this a worker", and everything else
+     * fell into the same pot: in a display you were offered a function's
+     * statements. But every kind of block has its own arguments, and outside
+     * them they are wrong.
      */
     static String enclosingBlock(List<String> lines, int lineIndex) {
         for (int i = lineIndex; i >= 0; i--) {
@@ -542,12 +538,12 @@ public final class Completions {
     }
 
     /**
-     * Steht in dieser Zeile schon eine Deklaration mit Namen?
+     * Is there already a named declaration on this line?
      *
-     * <p>Dann kommt als Nächstes die geschweifte Klammer, und dafür gibt es
-     * nichts vorzuschlagen. Solange der Name noch getippt wird, gilt das
-     * nicht — daran, dass hinter dem Schlüsselwort genau das angefangene Wort
-     * steht, ist er zu erkennen.
+     * <p>Then the curly brace comes next, and for that there is nothing to
+     * suggest. As long as the name is still being typed, this doesn't hold —
+     * you can tell by the fact that behind the keyword stands exactly the
+     * word being started.
      */
     private static boolean afterDeclarationName(String upToCursor, String prefix) {
         String trimmed = upToCursor.trim();
@@ -560,10 +556,10 @@ public final class Completions {
     }
 
     /**
-     * Steht der Cursor hinter einem Punkt, der auf einen Namen folgt?
+     * Is the cursor behind a dot that follows a name?
      *
-     * <p>{@code 3.5} zählt nicht: Davor steht eine Zahl und kein Name, und
-     * ein Punktzugriff ist es damit nicht.
+     * <p>{@code 3.5} doesn't count: before it stands a number and not a name,
+     * and so it is not a dot access.
      */
     private static boolean afterDot(String upToCursor) {
         String prefix = currentWord(upToCursor);
@@ -576,13 +572,13 @@ public final class Completions {
     }
 
     /**
-     * Steht vor dem Punkt ein Aufruf, der eine Liste liefert?
+     * Is there a call before the dot that returns a list?
      *
-     * <p>Heute gibt es genau einen: {@code items()}. Das über den Text zu
-     * erkennen ist grob, aber ehrlicher als die Alternative — der Editor
-     * kennt keine Typen, und einen halben Typprüfer für die
-     * Vervollständigung zu bauen wäre die falsche Antwort auf eine Frage,
-     * die sich mit sechs Zeichen beantworten lässt.
+     * <p>Today there is exactly one: {@code items()}. Recognizing this from
+     * the text is crude, but more honest than the alternative — the editor
+     * knows no types, and building half a type checker for completion would
+     * be the wrong answer to a question that can be answered with six
+     * characters.
      */
     private static boolean afterListCall(String upToCursor) {
         String prefix = currentWord(upToCursor);
@@ -591,11 +587,10 @@ public final class Completions {
     }
 
     /**
-     * Der Gerätename vor dem Punkt, oder {@code null}.
+     * The device name before the dot, or {@code null}.
      *
-     * <p>Nur, wenn davor wirklich ein Connector steht: {@code storage.} ist
-     * etwas anderes, und was niemand so genannt hat, hat auch keine
-     * Mitglieder.
+     * <p>Only if a connector really stands before it: {@code storage.} is
+     * something else, and what nobody has named that has no members either.
      */
     private static String memberPrefix(String upToCursor) {
         if (!afterDot(upToCursor)) {
@@ -605,7 +600,7 @@ public final class Completions {
         return ClientNetworkState.connectors().contains(name) ? name : null;
     }
 
-    /** Das Wort vor dem Punkt, ohne zu prüfen, ob es etwas bedeutet. */
+    /** The word before the dot, without checking whether it means anything. */
     private static String wordBeforeDot(String upToCursor) {
         String prefix = currentWord(upToCursor);
         String before = upToCursor.substring(0, upToCursor.length() - prefix.length());
@@ -613,23 +608,22 @@ public final class Completions {
     }
 
     /**
-     * Was ein Gerät kann, in einer Zeile.
+     * What a device can do, in one line.
      *
-     * <p>Über alle Seiten zusammengefasst und nicht je Seite: In der
-     * Vorschlagsliste ist Platz für ein paar Wörter, und die Frage dort
-     * lautet „taugt das überhaupt". Welche Seite es genau ist, sagt das
-     * Zeigen.
+     * <p>Summarized across all sides and not per side: in the completion list
+     * there is room for a few words, and the question there is "is this any
+     * use at all". Which side exactly, hovering shows.
      */
     public static String abilities(DeviceProfile profile) {
         return profile.abilities();
     }
 
     /**
-     * Die Connectoren, jeder mit der Maschine dahinter.
+     * The connectors, each with the machine behind it.
      *
-     * <p>Das {@code detail} stand hier lange leer. Es ist die billigste
-     * Stelle mit dem größten Nutzen: Sie steht in jeder Vorschlagsliste, ohne
-     * dass jemand etwas dafür tun muss.
+     * <p>The {@code detail} stood empty here for a long time. It is the
+     * cheapest spot with the greatest benefit: it appears in every completion
+     * list without anyone having to do anything for it.
      */
     private static void addConnectors(List<Entry> entries, String prefix) {
         for (String connector : ClientNetworkState.connectors()) {
@@ -655,11 +649,11 @@ public final class Completions {
     }
 
     /**
-     * Gegenstände aus der Registry.
+     * Items from the registry.
      *
-     * <p>Erst ab drei Zeichen, und nur die ersten Treffer: Über zwanzigtausend
-     * Einträge zu laufen, während jemand tippt, ist genau die Stelle, an der
-     * ein Editor anfängt zu haken.
+     * <p>Only from three characters on, and only the first hits: running over
+     * twenty thousand entries while someone is typing is exactly the spot
+     * where an editor starts to stutter.
      */
     private static void addItems(List<Entry> entries, String prefix) {
         String search = prefix.startsWith("item:") ? prefix.substring(5)
@@ -667,16 +661,16 @@ public final class Completions {
                 : prefix;
         boolean asTag = prefix.startsWith("tag:");
         if (search.length() < 2 && !prefix.contains(":")) {
-            // Aus der Registry und nicht aus einer Liste hier: Seit dem 26.08.
-            // dürfen fremde Mods eigene Arten anmelden, und was der Editor
-            // anbietet, muss dasselbe sein, was der Übersetzer annimmt.
+            // From the registry and not from a list here: since 26.08. other
+            // mods may register their own kinds, and what the editor offers
+            // must be the same as what the compiler accepts.
             //
-            // Die Liste hier stand vier Einträge lang da und kannte
-            // „chemical:" nicht — obwohl es das seit dem 26.08. gibt. Genau
-            // das passiert mit einer Kopie, die niemand nachzieht.
+            // The list here stood four entries long and didn't know
+            // "chemical:" — even though it has existed since 26.08. That is
+            // exactly what happens with a copy that nobody keeps in sync.
             //
-            // „tag:" und „fluidtag:" sind keine Arten, sondern Schreibweisen
-            // für zwei davon; selectorPrefixes() trägt beides zusammen.
+            // "tag:" and "fluidtag:" are not kinds but spellings for two of
+            // them; selectorPrefixes() brings both together.
             new java.util.TreeSet<>(dev.devpanda.factorynetwork.runtime.ResourceKinds
                     .selectorPrefixes())
                     .forEach(known -> entries.add(
@@ -712,12 +706,12 @@ public final class Completions {
     }
 
     /**
-     * Passt dieser Vorschlag zum angefangenen Wort?
+     * Does this completion fit the word being started?
      *
-     * <p><b>Was schon vollständig dasteht, ist kein Vorschlag.</b> Wer
-     * {@code halle} zu Ende getippt hat, bekam bis eben {@code halle}
-     * angeboten — eine Liste mit einem Eintrag, der nichts ändert, und sie
-     * verdeckt die Zeile darunter.
+     * <p><b>What already stands there in full is not a completion.</b>
+     * Whoever has typed {@code halle} to the end was, until just now, offered
+     * {@code halle} — a list with one entry that changes nothing, and it
+     * covers the line below.
      */
     private static boolean matches(String candidate, String prefix) {
         if (candidate.equalsIgnoreCase(prefix)) {
@@ -731,7 +725,7 @@ public final class Completions {
         return entries.size() <= MAX ? entries : entries.subList(0, MAX);
     }
 
-    /** Das angefangene Wort links vom Cursor. */
+    /** The word being started, to the left of the cursor. */
     public static String currentWord(String upToCursor) {
         int start = upToCursor.length();
         while (start > 0) {

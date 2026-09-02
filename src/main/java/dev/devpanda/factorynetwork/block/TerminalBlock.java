@@ -18,10 +18,10 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.server.level.ServerPlayer;
 import org.jetbrains.annotations.Nullable;
 
-/** Zugang zum Code-Editor. */
+/** Access to the code editor. */
 public class TerminalBlock extends HorizontalDirectionalBlock implements EntityBlock {
 
-    /** Die Trefferfläche, für jede der vier Richtungen einmal. */
+    /** The hitbox, once for each of the four directions. */
     private static final java.util.Map<Direction, net.minecraft.world.phys.shapes.VoxelShape>
             SHAPES = FacingShapes.horizontal(TerminalLayout.boxes());
 
@@ -60,13 +60,12 @@ public class TerminalBlock extends HorizontalDirectionalBlock implements EntityB
         }
         if (level.getBlockEntity(pos) instanceof TerminalBlockEntity terminal
                 && player instanceof ServerPlayer serverPlayer) {
-            // Erst den Zustand schicken, dann öffnen: Der Editor soll die
-            // Connectorliste schon haben, wenn er das erste Mal zeichnet.
+            // Send the state first, then open: the editor should already have
+            // the connector list when it draws for the first time.
             terminal.sendStateTo(serverPlayer);
-            // Dieselben drei Felder wie beim Fernzugriff: Position, ob ein
-            // Gerät im Spiel ist, und wo es liegt. Der Menü-Konstruktor liest
-            // sie in dieser Reihenfolge, und ein fehlendes Feld verschiebt
-            // alle folgenden.
+            // The same three fields as for remote access: position, whether a
+            // device is in play, and where it is. The menu constructor reads
+            // them in this order, and a missing field shifts all that follow.
             serverPlayer.openMenu(terminal, buffer ->
                     dev.devpanda.factorynetwork.client.menu.TerminalMenu
                             .writeBlock(buffer, pos));

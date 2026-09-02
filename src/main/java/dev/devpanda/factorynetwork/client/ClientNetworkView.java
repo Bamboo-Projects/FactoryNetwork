@@ -5,15 +5,15 @@ import dev.devpanda.factorynetwork.lang.NetworkView;
 import java.util.List;
 
 /**
- * Was der Client über das Netz weiß, für den Übersetzer im Editor.
+ * What the client knows about the network, for the compiler in the editor.
  *
- * <p>Damit fällt schon beim Tippen auf, dass keine Tafel {@code test} heißt —
- * statt erst an einer schwarzen Wand drei Räume weiter.
+ * <p>This way it shows already while typing that no board is called
+ * {@code test} — instead of only at a blank wall three rooms further on.
  *
- * <p><b>Solange nichts angekommen ist, wird nichts geprüft.</b> Ein Terminal,
- * das gerade erst aufgeht, hat noch keine Namen; jeden davon als unbekannt zu
- * melden wäre eine Zeile voller Warnungen, die eine Sekunde später von selbst
- * verschwinden.
+ * <p><b>As long as nothing has arrived, nothing is checked.</b> A terminal
+ * that has only just opened has no names yet; reporting each of them as
+ * unknown would be a line full of warnings that vanish by themselves a second
+ * later.
  */
 public final class ClientNetworkView implements NetworkView {
 

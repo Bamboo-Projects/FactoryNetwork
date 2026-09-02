@@ -21,19 +21,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Ein Display an der Wand.
+ * A display on the wall.
  *
- * <p>Es hält seinen Namen und die zuletzt berechneten Zeilen. Gerechnet wird
- * auf dem Server, gezeichnet auf dem Client — und dazwischen gehen fertige
- * Zeichenketten, keine Ausdrücke. Das ist Absicht: Der Client soll nicht
- * wissen müssen, was {@code storage.count} bedeutet.
+ * <p>It holds its name and the most recently computed lines. Computing happens
+ * on the server, drawing on the client — and between them go finished strings,
+ * not expressions. That is intentional: the client should not need to know
+ * what {@code storage.count} means.
  *
- * <p>Aktualisiert wird im Sekundentakt, nicht in jedem Tick. An einer Wand
- * hängen schnell dreißig Displays, und niemand liest schneller.
+ * <p>Refreshed once a second, not on every tick. A wall soon carries thirty
+ * displays, and no one reads faster.
  */
 public class DisplayBlockEntity extends BlockEntity {
 
-    /** Zwanzig Ticks — einmal je Sekunde. */
+    /** Twenty ticks — once per second. */
     private static final int REFRESH_INTERVAL = 20;
 
     private static final String KEY_NAME = "DisplayName";
@@ -41,11 +41,11 @@ public class DisplayBlockEntity extends BlockEntity {
     private static final String KEY_SCALE = "TextScale";
 
     /**
-     * Die größte Schrift, die zugelassen wird.
+     * The largest font that is allowed.
      *
-     * <p>Achtmal so groß ist auf einer einzelnen Tafel nicht mehr als eine
-     * Zeile mit anderthalb Buchstaben. Wer mehr will, baut breiter — und
-     * darum geht es ja.
+     * <p>Eight times as large is, on a single panel, no more than one line of
+     * a letter and a half. Whoever wants more builds wider — and that is the
+     * whole point.
      */
     public static final int MAX_SCALE = 8;
 
@@ -53,22 +53,22 @@ public class DisplayBlockEntity extends BlockEntity {
     private List<String> lines = List.of();
 
     /**
-     * Wie groß die Schrift ist; 1 ist normal.
+     * How large the font is; 1 is normal.
      *
-     * <p><b>Sie steht hier und nicht beim Zeichnen</b>, weil sie aus dem
-     * Programm kommt: {@code scale 4} im Display-Block. Der Client bekommt
-     * sie mit den Zeilen und muss die Sprache nicht kennen.
+     * <p><b>It lives here and not in the drawing code</b>, because it comes
+     * from the program: {@code scale 4} in the display block. The client
+     * receives it with the lines and need not know the language.
      */
     private int textScale = 1;
     /**
-     * Anfangs so gesetzt, dass der erste Tick sofort rechnet.
+     * Set initially so that the first tick computes at once.
      *
-     * <p>Nicht {@code Long.MIN_VALUE}: Die Differenz zur Spielzeit
-     * läuft dann über und wird negativ — die Abfrage feuert nie.
+     * <p>Not {@code Long.MIN_VALUE}: the difference from the game time would
+     * then overflow and turn negative — the check would never fire.
      */
     private long lastRefresh = -REFRESH_INTERVAL;
 
-    /** Die zuletzt gefundene Wand, und wann. */
+    /** The wall last found, and when. */
     private dev.devpanda.factorynetwork.block.DisplayWall cachedWall;
     private long wallComputedAt;
 
@@ -86,12 +86,12 @@ public class DisplayBlockEntity extends BlockEntity {
         setChanged();
     }
 
-    /** Die fertigen Zeilen, wie sie gezeichnet werden. */
+    /** The finished lines, as they are drawn. */
     public List<String> lines() {
         return lines;
     }
 
-    /** Wie groß die Schrift ist; 1 ist normal. */
+    /** How large the font is; 1 is normal. */
     public int textScale() {
         return textScale;
     }
@@ -107,21 +107,21 @@ public class DisplayBlockEntity extends BlockEntity {
             lines = fresh.lines();
             textScale = fresh.scale();
             setChanged();
-            // Nur bei Änderung übertragen — ein Display, dessen Zahlen
-            // stillstehen, soll keine Pakete erzeugen.
+            // Transmit only on change — a display whose numbers stand still
+            // should produce no packets.
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
         }
     }
 
     /**
-     * Berechnet, was auf dem Display steht.
+     * Computes what stands on the display.
      *
-     * <p>Gesucht wird der Controller, dessen Netz dieses Display kennt — und
-     * darin die Deklaration mit passendem Namen. Findet sich keine, sagt das
-     * Display es selbst; eine leere Fläche ließe den Spieler im Unklaren,
-     * ob das Netz steht oder der Name falsch ist.
+     * <p>It looks for the controller whose network knows this display — and
+     * within it the declaration with a matching name. If none is found, the
+     * display says so itself; a blank surface would leave the player unsure
+     * whether the network is down or the name is wrong.
      */
-    /** Was auf der Tafel steht, und wie groß. */
+    /** What stands on the panel, and how large. */
     private record Rendered(List<String> lines, int scale) {
 
         static Rendered of(List<String> lines) {
@@ -129,15 +129,15 @@ public class DisplayBlockEntity extends BlockEntity {
         }
     }
 
-    /** Ein Maßstab, der sich zeichnen lässt. */
+    /** A scale that can actually be drawn. */
     private static int clampScale(int wanted) {
         return Math.max(1, Math.min(MAX_SCALE, wanted));
     }
 
     private Rendered compute() {
-        // Nur die schreibende Tafel der Wand rechnet. Die anderen bleiben
-        // leer — sonst stünde derselbe Text sechsmal untereinander, und
-        // genau das soll eine Wand ja nicht sein.
+        // Only the wall's writing panel computes. The others stay empty —
+        // otherwise the same text would stand six times one below the other,
+        // and that is exactly what a wall should not be.
         dev.devpanda.factorynetwork.block.DisplayWall wall = wall();
         if (!wall.isAnchor(worldPosition)) {
             return Rendered.of(List.of());
@@ -171,11 +171,11 @@ public class DisplayBlockEntity extends BlockEntity {
     }
 
     /**
-     * Der Maßstab, den das Programm für diese Tafel nennt.
+     * The scale the program names for this panel.
      *
-     * <p>Der <b>letzte</b> gewinnt, wenn jemand zwei hinschreibt — dieselbe
-     * Regel wie bei jeder doppelten Angabe: Was weiter unten steht, hat der
-     * Schreibende zuletzt gemeint.
+     * <p>The <b>last</b> one wins if someone writes two — the same rule as for
+     * any duplicate entry: what stands further down is what the writer meant
+     * last.
      */
     private static int scaleOf(Decl.Display declaration) {
         int found = 1;
@@ -190,18 +190,18 @@ public class DisplayBlockEntity extends BlockEntity {
     }
 
     /**
-     * Die Wand, zu der diese Tafel gehört — auch wenn sie allein steht.
+     * The wall this panel belongs to — even if it stands alone.
      *
-     * <p><b>Höchstens einmal je Sekunde gerechnet.</b> Der Renderer fragt
-     * für jedes Bild und für jede Tafel, auch für die leeren: Ohne den
-     * Zwischenspeicher liefe bei einer Wand aus zwanzig Tafeln
-     * zwanzigmal je Bild eine Breitensuche mit frischen Listen — genau der
-     * Aufwand, gegen den es die Entfernungsgrenze überhaupt gibt.
+     * <p><b>Computed at most once a second.</b> The renderer asks for every
+     * frame and for every panel, the empty ones included: without the cache,
+     * a wall of twenty panels would run a breadth-first search with fresh
+     * lists twenty times per frame — exactly the work the distance limit
+     * exists to prevent.
      *
-     * <p>Eine Sekunde Verzug ist dieselbe Kadenz, in der die Tafel auch
-     * ihren Text neu rechnet. Der Rahmen hängt am Blockzustand und ändert
-     * sich sofort; nur die Aufteilung des Textes hinkt kurz nach, und das
-     * fällt schon deshalb nicht auf, weil der Text es auch tut.
+     * <p>A second of lag is the same cadence at which the panel recomputes
+     * its text. The frame hangs on the block state and changes at once; only
+     * the layout of the text lags briefly behind, and that goes unnoticed
+     * precisely because the text does too.
      */
     public dev.devpanda.factorynetwork.block.DisplayWall wall() {
         long now = level == null ? 0L : level.getGameTime();
@@ -216,13 +216,13 @@ public class DisplayBlockEntity extends BlockEntity {
     }
 
     /**
-     * Wie die Wand heißt.
+     * What the wall is called.
      *
-     * <p>Der erste Name, der in Leserichtung auftaucht. <b>Nicht der der
-     * schreibenden Tafel:</b> Wer eine Wand baut und dann eine davon
-     * beschriftet, hat sie beschriftet — welche es war, sollte keine Rolle
-     * spielen. Die Beschriftungspistole setzt den Namen ohnehin auf alle,
-     * das hier fängt nur die Fälle auf, in denen sie es nicht war.
+     * <p>The first name that turns up in reading order. <b>Not that of the
+     * writing panel:</b> whoever builds a wall and then labels one of them
+     * has labeled it — which one it was should not matter. The labeling gun
+     * sets the name on all of them anyway; this only catches the cases where
+     * it was not the gun.
      */
     public String wallName(dev.devpanda.factorynetwork.block.DisplayWall wall) {
         for (net.minecraft.core.BlockPos member : wall.members()) {
@@ -235,11 +235,11 @@ public class DisplayBlockEntity extends BlockEntity {
     }
 
     /**
-     * Bringt eine Zeile in die Form, in der sie gezeichnet wird.
+     * Brings a line into the form in which it is drawn.
      *
-     * <p>Die Formatierung geschieht hier und nicht beim Zeichnen: So geht
-     * über die Leitung, was am Ende dasteht, und der Client muss die Sprache
-     * nicht kennen.
+     * <p>The formatting happens here and not in the drawing code: this way
+     * what finally stands there goes over the wire, and the client need not
+     * know the language.
      */
     public static String format(DisplayValues.Line line) {
         return switch (line.kind()) {
@@ -251,25 +251,25 @@ public class DisplayBlockEntity extends BlockEntity {
             case INDICATOR -> (line.flag() ? "§a● " : "§8● ") + "§7" + line.label();
             case LIST -> "§7" + line.label() + " §f" + line.value();
             case BUTTON -> "§8[" + line.label() + "]";
-            // Kommt hier nie an — scale erzeugt keine Zeile.
+            // Never reaches here — scale produces no line.
             case SCALE -> "";
         };
     }
 
-    /** Ein Balken aus Blöcken — Minecrafts Schrift hat keine feineren Mittel. */
+    /** A bar made of blocks — Minecraft's font has no finer means. */
     private static String bar(double fraction) {
         int filled = (int) Math.round(Math.max(0, Math.min(1, fraction)) * 10);
         return "█".repeat(filled) + "§8" + "█".repeat(10 - filled);
     }
 
-    // ---- Speichern und Übertragen -----------------------------------------
+    // ---- Saving and transmitting ------------------------------------------
 
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         displayName = tag.getString(KEY_NAME);
-        // Ohne Angabe die Vorgabe: Eine Welt von gestern hat den Schlüssel
-        // nicht, und eine Tafel mit Maßstab null wäre unsichtbar.
+        // Default when unspecified: a world from yesterday does not have the
+        // key, and a panel with a scale of zero would be invisible.
         textScale = tag.contains(KEY_SCALE) ? clampScale(tag.getInt(KEY_SCALE)) : 1;
         ListTag list = tag.getList(KEY_LINES, Tag.TAG_STRING);
         List<String> loaded = new ArrayList<>(list.size());

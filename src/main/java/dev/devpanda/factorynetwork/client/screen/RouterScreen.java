@@ -14,30 +14,30 @@ import net.minecraft.world.entity.player.Inventory;
 import java.util.List;
 
 /**
- * Der Bildschirm des Routers: sechs Seiten, fünf Knöpfe je Seite.
+ * The router's screen: six sides, five buttons per side.
  *
- * <p>Dieselben Farben wie die Ringe am Block — wer die Front gesehen hat,
- * erkennt hier dieselbe Bahn wieder. Und dieselbe Reihenfolge: aus, dann eins
- * bis vier.
+ * <p>The same colours as the rings on the block — whoever has seen the front
+ * recognises the same lane here again. And the same order: off, then one
+ * through four.
  */
 public class RouterScreen extends AbstractContainerScreen<RouterMenu> {
 
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
             FactoryNetwork.MOD_ID, "textures/gui/router.png");
 
-    /** Abgeklemmt: dasselbe Dunkelgrau wie am Block. */
+    /** Disconnected: the same dark grey as on the block. */
     private static final int OFF_COLOUR = 0xFF34383C;
 
-    /** Alles durch: ein neutrales Hellgrau, kein Farbton. */
+    /** Everything through: a neutral light grey, no hue. */
     private static final int ALL_COLOUR = 0xFFB0B4B8;
 
     /**
-     * Die Farbe eines Knopfes.
+     * The colour of a button.
      *
-     * <p><b>Aus dem Farbstoff und nicht aus einer Liste.</b> Vorher standen
-     * hier fünf Zahlen, doppelt aufgeschrieben — einmal hier, einmal im
-     * Malskript. Seit der Router Farben führt statt Bahnen, sind es
-     * siebzehn, und siebzehn doppelt gepflegte Zahlen laufen auseinander.
+     * <p><b>From the dye, not from a list.</b> There used to be five numbers
+     * here, written down twice — once here, once in the paint script. Since
+     * the router carries colours instead of lanes there are seventeen, and
+     * seventeen numbers kept in two places drift apart.
      */
     private static int colourOf(int wert) {
         if (wert == RouterBlockEntity.OFF) {
@@ -57,16 +57,16 @@ public class RouterScreen extends AbstractContainerScreen<RouterMenu> {
     private static final int BUTTON_LEFT = 62;
 
     /**
-     * Ein Knopf je Seite, nicht einer je Einstellung.
+     * One button per side, not one per setting.
      *
-     * <p>Achtzehn Einstellungen mal sechs Seiten wären hundertacht Knöpfe.
-     * Stattdessen zeigt jede Zeile <b>ihren</b> Wert, und ein Klick schaltet
-     * weiter — dieselbe Geste wie am Block.
+     * <p>Eighteen settings times six sides would be a hundred and eight
+     * buttons. Instead each row shows <b>its</b> value, and a click steps
+     * onward — the same gesture as on the block.
      */
     private static final int BUTTON_SIZE = 16;
     private static final int BUTTON_STEP = 20;
 
-    /** Wie eine Einstellung heißt: aus, alles, oder eine Farbe. */
+    /** What a setting is called: off, all, or a colour. */
     private static Component labelOf(int wert) {
         if (wert == RouterBlockEntity.OFF) {
             return Component.translatable("screen.factorynetwork.router.off");
@@ -83,8 +83,8 @@ public class RouterScreen extends AbstractContainerScreen<RouterMenu> {
         super(menu, inventory, title);
         this.imageWidth = 176;
         this.imageHeight = 162;
-        // Ein Router nimmt nichts auf; die Beschriftung „Inventar" wäre eine
-        // Überschrift ohne Inhalt.
+        // A router takes nothing in; the "Inventory" label would be a heading
+        // with no content.
         this.inventoryLabelY = -1000;
     }
 
@@ -104,16 +104,16 @@ public class RouterScreen extends AbstractContainerScreen<RouterMenu> {
             graphics.fill(x + 1, y + 1, x + BUTTON_SIZE - 1, y + BUTTON_SIZE - 1,
                     colourOf(aktiv));
 
-            // Daneben der Name: Ein Farbfeld allein ist bei siebzehn Farben
-            // nicht mehr zu unterscheiden — Hellblau und Cyan liegen zwei
-            // Pixel auseinander.
+            // The name beside it: with seventeen colours a colour swatch alone
+            // can no longer be told apart — light blue and cyan are two pixels
+            // apart.
             graphics.drawString(font, labelOf(aktiv),
                     x + BUTTON_SIZE + 6, y + 4, Widgets.CASE_TEXT, false);
         }
 
-        // Unter den Seiten, was der Router kostet: einen Tick. Ohne diese
-        // Zeile wäre die Verzögerung eine Wirkung ohne sichtbare Ursache —
-        // und wer sein Netz sauber trennt, wüsste nicht, wofür er zahlt.
+        // Below the sides, what the router costs: one tick. Without this line
+        // the delay would be an effect with no visible cause — and someone who
+        // cleanly separates their network would not know what they pay for.
         graphics.drawString(font, Component.translatable(
                         "screen.factorynetwork.router.latency",
                         dev.devpanda.factorynetwork.network.Latency.PER_HOP),
@@ -127,8 +127,8 @@ public class RouterScreen extends AbstractContainerScreen<RouterMenu> {
         super.render(graphics, mouseX, mouseY, partialTick);
         renderTooltip(graphics, mouseX, mouseY);
 
-        // Über den Knöpfen steht, was die Bahn trägt — die Zahl, für die man
-        // sonst jede Seite einzeln ansehen müsste.
+        // Above the buttons stands what the lane carries — the number you
+        // would otherwise have to read off each side one at a time.
         int lane = laneAt(mouseX, mouseY);
         if (lane > 0) {
             graphics.renderTooltip(font, List.of(
@@ -142,13 +142,13 @@ public class RouterScreen extends AbstractContainerScreen<RouterMenu> {
         }
     }
 
-    /** Welche Einstellung unter dem Zeiger steht, oder -1. */
+    /** Which setting sits under the cursor, or -1. */
     private int laneAt(int mouseX, int mouseY) {
         Direction side = sideAt(mouseX, mouseY);
         return side == null ? -1 : menu.lane(side);
     }
 
-    /** Über welcher Zeile der Zeiger steht, oder {@code null}. */
+    /** Which row the cursor is over, or {@code null}. */
     private Direction sideAt(double mouseX, double mouseY) {
         int x = leftPos + BUTTON_LEFT;
         if (mouseX < x || mouseX >= x + BUTTON_SIZE) {
@@ -167,9 +167,9 @@ public class RouterScreen extends AbstractContainerScreen<RouterMenu> {
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         Direction side = sideAt(mouseX, mouseY);
         if (side != null) {
-            // Ein Klick schaltet weiter, statt einen von achtzehn Knöpfen zu
-            // treffen — dieselbe Geste wie am Block. Rechtsklick geht
-            // zurück: Wer eine Farbe verpasst, wartet sonst siebzehn Klicks.
+            // A click steps onward instead of hitting one of eighteen buttons
+            // — the same gesture as on the block. Right-click goes back:
+            // whoever overshoots a colour otherwise waits seventeen clicks.
             int naechste = button == 1
                     ? (menu.lane(side) + RouterBlockEntity.LANES) % (RouterBlockEntity.LANES + 1)
                     : (menu.lane(side) + 1) % (RouterBlockEntity.LANES + 1);

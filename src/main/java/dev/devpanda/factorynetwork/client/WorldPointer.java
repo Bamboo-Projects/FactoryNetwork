@@ -7,24 +7,23 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 
 /**
- * Das Fadenkreuz als Zeiger auf Flächen in der Welt.
+ * The crosshair as a pointer at surfaces in the world.
  *
- * <p><b>Zielen mit dem Kopf.</b> Wohin die Kamera schaut, dorthin zeigt der
- * Zeiger; ein Rechtsklick klickt dort. Der Spieler bleibt in der Welt und
- * kann nebenbei laufen — es gibt keinen Modus, aus dem man wieder heraus
- * müsste.
+ * <p><b>Aiming with the head.</b> Wherever the camera looks, that is where the
+ * pointer points; a right-click clicks there. The player stays in the world
+ * and can walk about at the same time — there is no mode you would have to
+ * leave again.
  *
- * <p>Jeden Takt sucht {@link WorldSurfaces#pick} die nächste getroffene
- * Fläche und schickt ihr die Zeigerbewegung; so folgt die Hervorhebung einer
- * Schaltfläche dem Blick. Verlässt der Blick die Fläche, bekommt sie ein
- * „Zeiger weg".
+ * <p>Every tick {@link WorldSurfaces#pick} finds the nearest hit surface and
+ * sends it the pointer movement; this way the highlighting of a button follows
+ * the gaze. If the gaze leaves the surface, it gets a "pointer gone".
  *
- * <p>Alles im Renderthread — Kamera, Flächen und Chromiums Sitzungen leben
- * dort.
+ * <p>Everything on the render thread — camera, surfaces and Chromium's
+ * sessions live there.
  */
 public final class WorldPointer {
 
-    /** So weit reicht der Zeiger, in Blöcken. Etwas über der Baureichweite. */
+    /** This far the pointer reaches, in blocks. A little beyond the build reach. */
     private static final double REACH = 5.0;
 
     private static WebSurface hovered;
@@ -34,7 +33,7 @@ public final class WorldPointer {
     private WorldPointer() {
     }
 
-    /** Je Takt: den Blickstrahl auf die Flächen legen. */
+    /** Each tick: cast the gaze ray onto the surfaces. */
     public static void tick() {
         if (WorldSurfaces.count() == 0) {
             clearHover();
@@ -64,12 +63,12 @@ public final class WorldPointer {
     }
 
     /**
-     * Ein Rechtsklick, während der Blick auf einer Fläche liegt.
+     * A right-click while the gaze lies on a surface.
      *
-     * <p>Als linker Mausklick an die Seite — das ist der Klick, auf den eine
-     * Schaltfläche im Web reagiert.
+     * <p>As a left mouse click to the page — that is the click a button on the
+     * web responds to.
      *
-     * @return ob eine Fläche den Klick bekam (dann gehört er nicht dem Spiel)
+     * @return whether a surface got the click (then it does not belong to the game)
      */
     public static boolean click() {
         if (hovered == null || !hovered.alive()) {

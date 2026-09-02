@@ -14,11 +14,11 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * Das Fenster der Brennkammer.
+ * The burner's window.
  *
- * <p>Ein Platz für Brennstoff, eine Flamme und ein Balken für den Vorrat.
- * Mehr gibt es nicht zu bedienen — und das ist der Punkt: Sie ist absichtlich
- * die einfachste Maschine der Mod.
+ * <p>One slot for fuel, a flame, and a bar for the reserve. There is nothing
+ * else to operate — and that is the point: it is deliberately the simplest
+ * machine in the mod.
  */
 public class BurnerMenu extends AbstractContainerMenu {
 
@@ -40,7 +40,7 @@ public class BurnerMenu extends AbstractContainerMenu {
         this.data = data;
 
         addSlot(new Slot(container, BurnerBlockEntity.SLOT_FUEL, 80, 53) {
-            /** Nur, was auch im Ofen brennt. */
+            /** Only what would also burn in a furnace. */
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return container.canPlaceItem(BurnerBlockEntity.SLOT_FUEL, stack);
@@ -58,14 +58,14 @@ public class BurnerMenu extends AbstractContainerMenu {
         addDataSlots(data);
     }
 
-    /** Wie weit die Flamme heruntergebrannt ist, von null bis eins. */
+    /** How far the flame has burned down, from zero to one. */
     public float burnFraction() {
         int total = data.get(BurnerBlockEntity.DATA_BURN_TOTAL);
         return total <= 0 ? 0.0F
                 : Math.min(1.0F, data.get(BurnerBlockEntity.DATA_BURN) / (float) total);
     }
 
-    /** Wie voll der Vorrat ist, von null bis eins. */
+    /** How full the reserve is, from zero to one. */
     public float energyFraction() {
         int capacity = data.get(BurnerBlockEntity.DATA_CAPACITY);
         return capacity <= 0 ? 0.0F

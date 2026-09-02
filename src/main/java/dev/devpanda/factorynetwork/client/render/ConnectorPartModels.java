@@ -11,17 +11,17 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 /**
- * Die zwölf Modelle eines Anschlusses an einer Kabelfläche.
+ * The twelve models of a connector on a cable face.
  *
- * <p><b>Zwölf statt zwei gedrehter:</b> Sechs Richtungen mal zwei
- * Kabelstärken. Ein einziges Modell zu drehen verlangte Quaternionen im
- * Renderer, und ob eine davon stimmt, sieht man erst im Spiel — erzeugte
- * Dateien lassen sich dagegen Zahl für Zahl gegen {@link CableLayout} prüfen,
- * und {@code CableLayoutTest} tut das.
+ * <p><b>Twelve instead of two rotated ones:</b> six directions times two
+ * cable thicknesses. Rotating a single model would require quaternions in the
+ * renderer, and whether one of them is correct you only see in the game —
+ * generated files, by contrast, can be checked number for number against
+ * {@link CableLayout}, and {@code CableLayoutTest} does that.
  *
- * <p>Sie gehören zu keinem Blockzustand: Ein Kabelblock trägt seine
- * Anschlüsse in der BlockEntity, nicht im Zustand. Deshalb werden sie
- * eigens angemeldet und vom {@link CableBusRenderer} gezeichnet.
+ * <p>They belong to no block state: a cable block carries its connectors in
+ * the BlockEntity, not in the state. That is why they are registered
+ * separately and drawn by the {@link CableBusRenderer}.
  */
 public final class ConnectorPartModels {
 
@@ -41,12 +41,12 @@ public final class ConnectorPartModels {
         return found;
     }
 
-    /** Das Modell für diese Kabelstärke und diese Fläche. */
+    /** The model for this cable thickness and this face. */
     public static ModelResourceLocation of(int size, Direction side) {
         return (size >= CableLayout.DENSE ? DENSE : THIN).get(side);
     }
 
-    /** Alle zwölf, für die Anmeldung beim Laden der Modelle. */
+    /** All twelve, for registration when the models are loaded. */
     public static void all(Consumer<ModelResourceLocation> sink) {
         THIN.values().forEach(sink);
         DENSE.values().forEach(sink);

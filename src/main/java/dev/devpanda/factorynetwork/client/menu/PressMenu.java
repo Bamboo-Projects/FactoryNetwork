@@ -16,15 +16,16 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * Das Fenster der Presse.
+ * The press's window.
  *
- * <p>Drei Plätze mit fester Bedeutung: Stempel oben, Material links, Ausgabe
- * rechts. Aus der Ausgabe lässt sich nur nehmen — wer dort etwas hineinlegen
- * könnte, würde den nächsten Vorgang blockieren, ohne zu verstehen warum.
+ * <p>Three slots with fixed meaning: stamp on top, material on the left,
+ * output on the right. From the output you can only take — anyone able to
+ * place something there would block the next operation without understanding
+ * why.
  *
- * <p>Fortschritt und Ladestand reisen über {@link ContainerData}. Das ist der
- * schmale Weg, den Minecraft für genau diesen Fall vorsieht: ein paar Zahlen,
- * die sich jeden Tick ändern und beim Zuschauen aktuell sein müssen.
+ * <p>Progress and charge travel over {@link ContainerData}. That is the
+ * narrow path Minecraft provides for exactly this case: a few numbers that
+ * change every tick and must be current while you watch.
  */
 public class PressMenu extends AbstractContainerMenu {
 
@@ -55,17 +56,17 @@ public class PressMenu extends AbstractContainerMenu {
         this.container = container;
         this.data = data;
 
-        // Stempel: nimmt nur Stempel an. Ein falscher Gegenstand dort sieht
-        // aus wie ein Fehler der Maschine, nicht wie einer des Spielers.
+        // Stamp: accepts only stamps. A wrong item there looks like a fault
+        // of the machine, not one of the player.
         addSlot(new Slot(container, PressBlockEntity.SLOT_STAMP, 26, 17) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return isStamp(stack);
             }
         });
-        // Die Materialplätze in einer Reihe. Welcher Platz welche Zutat
-        // erfüllt, sucht das Rezept selbst — hier gibt es keine Ordnung, die
-        // der Spieler einhalten müsste.
+        // The material slots in a row. Which slot satisfies which ingredient
+        // is worked out by the recipe itself — there is no order here that
+        // the player would have to keep to.
         for (int i = 0; i < PressBlockEntity.MATERIAL_SLOTS; i++) {
             addSlot(new Slot(container, PressBlockEntity.SLOT_MATERIAL + i,
                     26 + i * 18, 39) {
@@ -82,8 +83,8 @@ public class PressMenu extends AbstractContainerMenu {
             }
         });
 
-        // Die Steckplätze, abgesetzt darunter: Was hier liegt, läuft nicht
-        // durch, es stellt ein.
+        // The upgrade slots, set apart below: what sits here does not pass
+        // through — it configures.
         for (int i = 0; i < PressBlockEntity.UPGRADE_SLOTS; i++) {
             addSlot(new Slot(container, PressBlockEntity.SLOT_UPGRADE + i,
                     26 + i * 18, 67) {
@@ -108,12 +109,12 @@ public class PressMenu extends AbstractContainerMenu {
     }
 
     /**
-     * Ist das ein Stempel?
+     * Is this a stamp?
      *
-     * <p>Über den Tag und nicht über vier feste Gegenstände: Ein Datenpaket
-     * darf ein Rezept mit eigenem Stempel mitbringen, und dann muss er sich
-     * auch einlegen lassen. Dieselbe Frage stellt der Handler, mit dem ein
-     * Anschluss die Presse beschickt.
+     * <p>Via the tag and not via four fixed items: a datapack may bring a
+     * recipe with its own stamp, and then it too must be possible to insert.
+     * The handler with which a connector feeds the press asks the same
+     * question.
      */
     private static boolean isStamp(ItemStack stack) {
         return stack.is(PressBlockEntity.STAMPS);
@@ -140,11 +141,11 @@ public class PressMenu extends AbstractContainerMenu {
     }
 
     /**
-     * Umschalt-Klick: Stempel nach oben, alles andere ins Material.
+     * Shift-click: stamp to the top, everything else into the material.
      *
-     * <p>Ohne diese Unterscheidung landet ein Stempel im Materialplatz und
-     * wird beim nächsten Vorgang verbraucht — ein teurer Gegenstand, weg
-     * wegen eines Klicks.
+     * <p>Without this distinction a stamp ends up in a material slot and is
+     * consumed by the next operation — an expensive item, gone because of a
+     * single click.
      */
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
@@ -167,9 +168,9 @@ public class PressMenu extends AbstractContainerMenu {
                 return ItemStack.EMPTY;
             }
         } else if (dev.devpanda.factorynetwork.item.UpgradeItem.upgradeOf(stack) != null) {
-            // Eine Karte gehört in die Steckplätze und nirgendwo sonst. Ohne
-            // diesen Zweig landete sie im Materialplatz und wäre dort etwas,
-            // das die Presse zu pressen versucht.
+            // A card belongs in the upgrade slots and nowhere else. Without
+            // this branch it would end up in a material slot and be something
+            // there that the press tries to press.
             if (!moveItemStackTo(stack, PressBlockEntity.SLOT_UPGRADE,
                     PressBlockEntity.SLOT_UPGRADE + PressBlockEntity.UPGRADE_SLOTS, false)) {
                 return ItemStack.EMPTY;

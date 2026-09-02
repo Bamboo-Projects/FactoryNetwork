@@ -10,34 +10,34 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * Das Fenster, in dem ein Block seinen Namen bekommt.
+ * The window in which a block is given its name.
  *
- * <p>Eines für Connector und Anzeige: Es ist dieselbe Handlung — einem Block
- * im Netz sagen, wie er heißt. Zwei Fassungen wären zwei Orte, an denen die
- * Namensregeln auseinanderlaufen.
+ * <p>One for the connector and the display: it is the same action — telling a
+ * block in the network what it is called. Two versions would be two places
+ * where the naming rules drift apart.
  *
- * <p><b>Warum überhaupt ein Fenster am Block?</b> Bisher ging Benennen nur
- * mit der Beschriftungspistole, und das hieß: Ohne gebaute Pistole lässt sich
- * kein Gerät ansprechen. Ein Rechtsklick sagte einem nur den Namen, den man
- * ohnehin sah. Die Pistole bleibt — sie kann etwas, das ein Fenster nicht
- * kann: einen Namen einmal tippen und zwanzigmal vergeben.
+ * <p><b>Why a window on the block at all?</b> Until now, naming was only
+ * possible with the label gun, and that meant: without a crafted gun, no
+ * device could be addressed. A right-click merely told you the name you saw
+ * anyway. The gun stays — it can do something a window cannot: type a name
+ * once and hand it out twenty times.
  *
- * <p>Keine Plätze: Ein Name ist eine Zeichenkette und kein Gegenstand. Was
- * hin und her geht, ist eine Position und ein Wort.
+ * <p>No slots: a name is a string, not an item. What travels back and forth
+ * is a position and a word.
  */
 public class NameMenu extends AbstractContainerMenu {
 
-    /** So weit darf man sich vom Block entfernen, bevor es zugeht. */
+    /** How far you may move from the block before it closes. */
     private static final double REACH = 8.0;
 
     private final BlockPos position;
     /**
-     * Die Fläche, an der der Anschluss sitzt — {@code null} bei allem, was
-     * ein ganzer Block ist.
+     * The face the connector sits on — {@code null} for anything that is a
+     * whole block.
      *
-     * <p>An einem Kabelblock hängen bis zu sechs Anschlüsse. Welcher gemeint
-     * ist, weiß nur der Klick, der das Fenster geöffnet hat: Danach ist es
-     * nicht mehr zu erfahren.
+     * <p>A cable block carries up to six connectors. Only the click that
+     * opened the window knows which one is meant: afterwards it can no longer
+     * be found out.
      */
     private final @org.jetbrains.annotations.Nullable Direction side;
 
@@ -74,11 +74,11 @@ public class NameMenu extends AbstractContainerMenu {
     }
 
     /**
-     * Solange man in der Nähe steht.
+     * As long as you are standing nearby.
      *
-     * <p>Nicht über {@code stillValid(access, player, block)} wie die anderen
-     * Fenster: Das Menü kennt den Block nicht, für den es aufgeht — Connector
-     * und Anzeige teilen es sich.
+     * <p>Not via {@code stillValid(access, player, block)} like the other
+     * windows: the menu does not know the block it opens for — the connector
+     * and the display share it.
      */
     @Override
     public boolean stillValid(Player player) {

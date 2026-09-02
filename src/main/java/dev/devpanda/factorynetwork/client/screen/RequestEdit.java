@@ -5,16 +5,16 @@ import dev.devpanda.factorynetwork.network.packet.RequestEditPacket;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
- * „Bearbeitung anfragen" — für beide Fenster.
+ * "Request editing" — for both windows.
  *
- * <p>Die Sperre hält, und wer davorsteht, konnte bisher nur warten. Ein
- * Klopfen kostet nichts und löst den häufigsten Fall: Der andere hat die
- * Datei offen, tippt aber gar nicht mehr.
+ * <p>The lock holds, and whoever stands in front of it could so far only
+ * wait. A knock costs nothing and resolves the most common case: the other
+ * person has the file open but has stopped typing.
  *
- * <p><b>F4 und kein Knopf.</b> Ein Knopf bräuchte Platz in einer Fußzeile,
- * die im Reiter 288 Pixel breit ist — und er stünde dort auch dann, wenn
- * niemand die Datei hält. Die Taste steht in der Griffliste und im Hinweis
- * daneben; gefunden wird sie dort, wo die Frage aufkommt.
+ * <p><b>F4 and no button.</b> A button would need room in a footer that is
+ * 288 pixels wide in the tab — and it would sit there even when nobody holds
+ * the file. The key is listed in the shortcut list and in the hint beside
+ * it; it is found right where the question comes up.
  */
 public final class RequestEdit {
 
@@ -25,14 +25,14 @@ public final class RequestEdit {
     }
 
     /**
-     * Fragt nach der Datei, wenn sie jemand anders hält.
+     * Asks for the file when someone else is holding it.
      *
-     * @return ob die Taste verbraucht wurde
+     * @return whether the key press was consumed
      */
     public static boolean ask(String file) {
         if (file == null || ClientProjectState.heldBy(file) == null) {
-            // Frei — dann ist nichts anzufragen, und die Taste soll nicht so
-            // tun, als hätte sie etwas getan.
+            // Free — then there is nothing to request, and the key should not
+            // pretend it did something.
             return false;
         }
         PacketDistributor.sendToServer(new RequestEditPacket(file));

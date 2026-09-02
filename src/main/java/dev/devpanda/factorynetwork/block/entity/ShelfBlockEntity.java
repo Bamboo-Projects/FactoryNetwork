@@ -13,18 +13,17 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * Ein Regal mit Plätzen für Bauteile.
+ * A shelf with slots for parts.
  *
- * <p>Das Laufwerk nimmt Zellen, der Serverschrank Serverbauteile — und sonst
- * unterscheiden sie sich nicht: Beide sind ein Gehäuse, dessen Fähigkeit in
- * dem steckt, was man hineinsteckt. <b>Deshalb steht die Buchführung ein
- * einziges Mal da.</b> Zwei Fassungen wären zwei Orte, an denen ein Bauteil
- * verlorengehen kann, und die eine bekäme irgendwann eine Verbesserung, die
- * der anderen fehlt.
+ * <p>The drive takes cells, the server rack takes server parts — and otherwise
+ * they do not differ: both are a housing whose capability lies in what you put
+ * into it. <b>That is why the bookkeeping stands here a single time.</b> Two
+ * versions would be two places where a part can go missing, and one of them
+ * would eventually get an improvement the other lacks.
  *
- * <p>Ein {@link Container} ist es, damit ein Fenster darauf zeigen kann. Der
- * Weg durch {@link #setItem} ist der einzige: Dort zählt der Stand hoch, und
- * dort erfährt die Unterklasse, dass sie aufräumen muss.
+ * <p>It is a {@link Container} so that a screen can look at it. The path
+ * through {@link #setItem} is the only one: there the revision counts up, and
+ * there the subclass learns that it must clean up.
  */
 public abstract class ShelfBlockEntity extends BlockEntity
         implements Container, net.minecraft.world.MenuProvider {
@@ -32,15 +31,16 @@ public abstract class ShelfBlockEntity extends BlockEntity
     private final NonNullList<ItemStack> parts;
 
     /**
-     * Zählt hoch, sobald sich die Bestückung ändert.
+     * Counts up as soon as the loadout changes.
      *
-     * <p>Der Netzindex hält den Bestand aller Zellen zusammen. Ändert er ihn
-     * selbst, rechnet er die Änderung ein; wird dagegen eine Zelle
-     * herausgezogen, muss er es merken. Genau dafür ist diese Zahl da — sie
-     * ist der billigste Weg, „hier hat jemand anders etwas getan" zu sagen.
+     * <p>The network index holds the contents of all cells together. When it
+     * changes them itself, it folds the change in; but when a cell is pulled
+     * out, it must notice. That is exactly what this number is for — it is the
+     * cheapest way to say "someone else did something here".
      *
-     * <p><b>Nicht in {@code setChanged}</b>: Das ruft der Speicher nach jeder
-     * eigenen Ablage selbst, und dann wäre jeder Index sofort wieder hin.
+     * <p><b>Not in {@code setChanged}</b>: the store calls that itself after
+     * each of its own writes, and then every index would be stale again at
+     * once.
      */
     private long revision;
 
@@ -50,10 +50,10 @@ public abstract class ShelfBlockEntity extends BlockEntity
         this.parts = NonNullList.withSize(slots, ItemStack.EMPTY);
     }
 
-    /** Was in dieses Regal darf. */
+    /** What may go into this shelf. */
     public abstract boolean accepts(ItemStack stack);
 
-    /** Wie das Fenster dieses Regals zugeschnitten ist. */
+    /** How this shelf's screen is laid out. */
     public abstract dev.devpanda.factorynetwork.client.menu.ShelfMenu.Layout layout();
 
     @Override
@@ -69,11 +69,11 @@ public abstract class ShelfBlockEntity extends BlockEntity
     }
 
     /**
-     * Ein Platz hat gewechselt.
+     * A slot has changed.
      *
-     * <p>Wird gerufen, <b>bevor</b> der neue Gegenstand eingetragen ist — das
-     * Laufwerk schreibt hier den Bestand seiner offenen Zelle zurück, und
-     * dafür muss die alte noch dastehen.
+     * <p>Called <b>before</b> the new item is entered — the drive writes back
+     * the contents of its open cell here, and for that the old one must still
+     * be there.
      */
     protected void beforeSlotChange(int slot) {
     }
@@ -83,11 +83,10 @@ public abstract class ShelfBlockEntity extends BlockEntity
     }
 
     /**
-     * Zählt den Stand hoch, ohne über {@link #setItem} zu gehen.
+     * Counts the revision up without going through {@link #setItem}.
      *
-     * <p>Für Unterklassen, die mehrere Plätze in einem Zug umschreiben — der
-     * Serverschrank packt beim Herausziehen eines Gehäuses drei Plätze
-     * gleichzeitig aus.
+     * <p>For subclasses that rewrite several slots in one go — the server rack
+     * unpacks three slots at once when a housing is pulled out.
      */
     protected void bumpRevision() {
         revision++;
@@ -97,7 +96,7 @@ public abstract class ShelfBlockEntity extends BlockEntity
         return parts;
     }
 
-    /** Der erste freie Platz, oder -1. */
+    /** The first free slot, or -1. */
     public int firstFreeSlot() {
         for (int slot = 0; slot < parts.size(); slot++) {
             if (parts.get(slot).isEmpty()) {
@@ -107,7 +106,7 @@ public abstract class ShelfBlockEntity extends BlockEntity
         return -1;
     }
 
-    /** Der letzte belegte Platz, oder -1. */
+    /** The last occupied slot, or -1. */
     public int lastUsedSlot() {
         for (int slot = parts.size() - 1; slot >= 0; slot--) {
             if (!parts.get(slot).isEmpty()) {
@@ -146,8 +145,8 @@ public abstract class ShelfBlockEntity extends BlockEntity
 
     @Override
     public ItemStack removeItem(int slot, int amount) {
-        // Ein Bauteil geht ganz oder gar nicht: Ein halber Stapel Zellen aus
-        // einem Platz wäre ein Platz, der zwei Bestände trägt.
+        // A part goes whole or not at all: half a stack of cells out of one
+        // slot would be a slot that holds two sets of contents.
         return removeItemNoUpdate(slot);
     }
 
@@ -191,7 +190,7 @@ public abstract class ShelfBlockEntity extends BlockEntity
         }
     }
 
-    // ---- Sichern ----------------------------------------------------------
+    // ---- Saving -------------------------------------------------------------
 
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {

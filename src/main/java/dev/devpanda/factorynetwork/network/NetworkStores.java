@@ -9,33 +9,33 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Alle Bestände eines Netzes, nach Ressourcenart.
+ * All of a network's stocks, by resource kind.
  *
- * <p>Vorher trug jede Stelle, die einen Bestand braucht, drei Felder und drei
- * Signaturen: der Controller, {@code WorldHost}, {@code WorkerRuntime}. Ein
- * vierter Speicher hätte sie alle noch einmal angefasst — und das war der
- * eigentliche Preis, nicht die Klasse selbst.
+ * <p>Previously every place that needs a stock carried three fields and three
+ * signatures: the controller, {@code WorldHost}, {@code WorkerRuntime}. A
+ * fourth store would have touched all of them once more — and that was the
+ * real cost, not the class itself.
  *
- * <p>Jetzt gibt es eine Stelle, an der steht, welche Art wo lagert. Wer einen
- * Bestand braucht, nimmt {@link #of(ResourceKind)}; wer eine bestimmte Art
- * meint und ihre eigenen Fragen stellt — Speicherbusse, Sortenplätze —, nimmt
- * die benannten Zugänge.
+ * <p>Now there is one place that records which kind is stored where. Whoever
+ * needs a stock uses {@link #of(ResourceKind)}; whoever means a particular
+ * kind and asks its own questions — storage buses, type slots — uses the
+ * named accessors.
  *
- * <p><b>Warum hier und nicht in {@code runtime}:</b> Der Bestand gehört dem
- * Netz. Dass diese Klasse dafür {@link ResourceKind} aus {@code runtime}
- * kennt, ist der Preis; die Gegenrechnung wäre ein zweiter Aufzählungswert im
- * Netzpaket — also genau der Zwilling, den dieser Umbau abschafft.
+ * <p><b>Why here and not in {@code runtime}:</b> The stock belongs to the
+ * network. That this class knows {@link ResourceKind} from {@code runtime} for
+ * it is the price; the counter-cost would be a second enum value in the
+ * network package — exactly the twin this rework abolishes.
  */
 public final class NetworkStores {
 
     /**
-     * Je Art ein Speicher, und welche es gibt, sagt die Registry.
+     * One store per kind, and which kinds exist is what the registry says.
      *
-     * <p><b>Nach Identität und nicht nach Gleichheit.</b> Eine Art wird
-     * einmal angemeldet und ist dann dieses eine Ding; zwei Einträge mit
-     * demselben Präfix lehnt die Registry ab. Damit ist {@code ==} die
-     * richtige Frage, und eine fremde Art, die {@code equals} eigenwillig
-     * überschreibt, kann hier nichts verwechseln.
+     * <p><b>By identity, not by equality.</b> A kind is registered once and is
+     * then this one thing; two entries with the same prefix are rejected by
+     * the registry. That makes {@code ==} the right question, and a foreign
+     * kind that overrides {@code equals} in its own idiosyncratic way can
+     * confuse nothing here.
      */
     private final Map<ResourceKind, ResourceStore> byKind = new IdentityHashMap<>();
 
@@ -46,53 +46,53 @@ public final class NetworkStores {
         for (ResourceKind kind : ResourceKinds.all()) {
             byKind.put(kind, kind.newStore());
         }
-        // Die beiden mit eigenen Fragen — Speicherbusse, Sortenplätze. Dass
-        // ihre Art diesen Speicher liefert, steht in ResourceKinds und ist
-        // die einzige Stelle, an der es so sein muss.
+        // The two with their own questions — storage buses, type slots. That
+        // their kind supplies this store is recorded in ResourceKinds and is
+        // the only place where it has to be so.
         this.items = (NetworkStorage) byKind.get(ResourceKinds.ITEM);
         this.fluids = (NetworkFluids) byKind.get(ResourceKinds.FLUID);
     }
 
     /**
-     * Wo diese Art lagert.
+     * Where this kind is stored.
      *
-     * <p>Eine Art ohne Speicher gibt es nicht — {@link ResourceStore#NONE}
-     * steht dort, wo die Mod dazu fehlt, und der antwortet ehrlich mit
-     * nichts. Deshalb kommt hier nie {@code null} heraus.
+     * <p>There is no kind without a store — {@link ResourceStore#NONE} stands
+     * wherever the mod for it is missing, and it honestly answers with
+     * nothing. So {@code null} never comes out of here.
      */
     public ResourceStore of(ResourceKind kind) {
         ResourceStore store = byKind.get(kind);
         return store == null ? ResourceStore.NONE : store;
     }
 
-    /** Der Gegenstandsspeicher, mit seinen eigenen Fragen: Busse, Artenplätze. */
+    /** The item store, with its own questions: buses, type slots. */
     public NetworkStorage items() {
         return items;
     }
 
-    /** Der Flüssigkeitsspeicher, mit seinen eigenen Fragen: Sortenplätze. */
+    /** The fluid store, with its own questions: type slots. */
     public NetworkFluids fluids() {
         return fluids;
     }
 
     /**
-     * Ohne Mekanism der Speicher, der nichts kann.
+     * Without Mekanism, the store that can do nothing.
      *
-     * <p>Das ist keine Notlösung: In einem Pack ohne die Mod gibt es keine
-     * Chemikalien, und ein Speicher, der so täte, wäre eine Lüge mit
-     * Nebenwirkungen.
+     * <p>This is not a stopgap: in a pack without the mod there are no
+     * chemicals, and a store that pretended otherwise would be a lie with
+     * side effects.
      */
     public ResourceStore chemicals() {
         return of(ResourceKinds.CHEMICAL);
     }
 
     /**
-     * Welche Laufwerke im Netz hängen.
+     * Which drives hang on the network.
      *
-     * <p>Dieselbe Liste an alle: Ein Laufwerk trägt Zellen aller Arten, und
-     * welche davon ein Speicher lesen kann, weiß er selbst. Vorher stand
-     * dieser Aufruf dreimal untereinander, und beim vierten hätte ihn jemand
-     * vergessen.
+     * <p>The same list to all: a drive carries cells of every kind, and which
+     * of them a store can read it knows itself. Previously this call stood
+     * three times in a row, and on the fourth someone would have forgotten
+     * it.
      */
     public void setDrives(List<DriveBlockEntity> found) {
         byKind.values().forEach(store -> store.setDrives(found));

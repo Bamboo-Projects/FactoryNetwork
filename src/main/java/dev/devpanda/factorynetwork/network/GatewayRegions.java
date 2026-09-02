@@ -16,31 +16,32 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Welches Gerät hinter welchem Gateway hängt.
+ * Which device hangs behind which gateway.
  *
- * <p>Ein Gateway gibt seiner Umgebung einen Anlagennamen: Was von ihm aus über
- * Kabel erreichbar ist, gehört zu seiner Anlage. Das ist die zweite Antwort auf
- * dieselbe Frage, die {@code werk_1/eingang} beantwortet — und sie geht von
- * dem aus, was eine Anlage im Spiel wirklich ist: <b>etwas
- * Zusammenhängendes</b>.
+ * <p>A gateway gives its surroundings an installation name: whatever is
+ * reachable from it over cable belongs to its installation. This is the second
+ * answer to the same question that {@code werk_1/eingang} answers — and it
+ * starts from what an installation really is in the game: <b>something
+ * connected</b>.
  *
- * <p><b>Ein anderes Gateway ist die Grenze.</b> Wer zwei Anlagen nebeneinander
- * baut, stellt zwei Gateways hin, und dazwischen hört jede auf. Ohne diese
- * Regel liefe die Suche über das ganze Netz und jede Anlage hieße wie das
- * zuletzt gefundene Gateway.
+ * <p><b>Another gateway is the boundary.</b> Whoever builds two installations
+ * side by side puts down two gateways, and between them each one ends. Without
+ * this rule the search would run across the whole network and every
+ * installation would be named after the last gateway found.
  *
- * <p><b>Der Controller ist auch eine.</b> Sonst zöge sich eine Anlage über den
- * Controller hinweg in jeden anderen Strang, und aus einem Gateway würde eine
- * Aussage über das ganze Netz.
+ * <p><b>The controller is a boundary too.</b> Otherwise an installation would
+ * stretch across the controller into every other strand, and a gateway would
+ * turn into a statement about the whole network.
  *
- * <p><b>Zwei Gateways auf demselben Gerät heben sich auf.</b> Dann steht nicht
- * fest, welche Anlage gemeint ist, und geraten wird nicht — das Gerät gehört
- * dann zu keiner, so als stünde kein Gateway da. Gemeldet wird es im Reiter
- * <i>Netz</i>; still das erste zu nehmen hinge an der Suchreihenfolge.
+ * <p><b>Two gateways on the same device cancel each other out.</b> Then it is
+ * not settled which installation is meant, and nothing is guessed — the device
+ * then belongs to none, as if no gateway stood there. It is reported in the
+ * <i>Network</i> tab; silently taking the first would hinge on the search
+ * order.
  */
 public final class GatewayRegions {
 
-    /** Nichts gefunden — kein Gateway im Netz. */
+    /** Nothing found — no gateway in the network. */
     public static final GatewayRegions EMPTY =
             new GatewayRegions(Map.of(), Set.of());
 
@@ -52,12 +53,12 @@ public final class GatewayRegions {
         this.contested = contested;
     }
 
-    /** Die Anlage eines Geräts, oder {@code null}. */
+    /** The installation of a device, or {@code null}. */
     public String instanceAt(BlockPos device) {
         return byDevice.get(device);
     }
 
-    /** Geräte, die von zwei Gateways beansprucht werden. */
+    /** Devices claimed by two gateways. */
     public Set<BlockPos> contested() {
         return contested;
     }
@@ -67,12 +68,13 @@ public final class GatewayRegions {
     }
 
     /**
-     * Sucht von jedem Gateway aus, was zu ihm gehört.
+     * Searches from each gateway for what belongs to it.
      *
-     * <p>Gelaufen wird über die Kabel, nicht über den Netzgraphen: Der kennt
-     * die Wege zum Controller, und hier zählt die Nachbarschaft zum Gateway.
+     * <p>Walked over the cables, not over the network graph: that one knows the
+     * paths to the controller, and here what counts is the neighbourhood of the
+     * gateway.
      *
-     * @param gateways die Stellen, an denen ein Gateway steht
+     * @param gateways the spots where a gateway stands
      */
     public static GatewayRegions of(Level level, Iterable<BlockPos> gateways,
             int maxNodes) {
@@ -92,8 +94,8 @@ public final class GatewayRegions {
                 }
             }
         }
-        // Ein umstrittenes Gerät gehört zu keiner Anlage: Die Antwort „die
-        // erste gefundene" hinge an der Reihenfolge der Suche.
+        // A contested device belongs to no installation: the answer "the
+        // first one found" would hinge on the order of the search.
         contested.forEach(byDevice::remove);
         return byDevice.isEmpty() && contested.isEmpty()
                 ? EMPTY : new GatewayRegions(Map.copyOf(byDevice), Set.copyOf(contested));
@@ -105,11 +107,11 @@ public final class GatewayRegions {
     }
 
     /**
-     * Die Connectoren, die von diesem Gateway aus über Kabel erreichbar sind.
+     * The connectors reachable from this gateway over cable.
      *
-     * <p>Angehalten wird an einem anderen Gateway, am Controller und an allem,
-     * was kein Kabel ist. Ein Gerät selbst leitet nicht weiter — wer zwei
-     * Connectoren aneinanderstellt, meint zwei Connectoren und keine Leitung.
+     * <p>It stops at another gateway, at the controller and at everything that
+     * is not a cable. A device itself does not conduct onward — whoever puts
+     * two connectors next to each other means two connectors and no line.
      */
     private static Set<BlockPos> reach(Level level, BlockPos gateway, int maxNodes) {
         Set<BlockPos> found = new HashSet<>();
@@ -128,9 +130,9 @@ public final class GatewayRegions {
                 if (state.getBlock() instanceof CableBlock
                         && dev.devpanda.factorynetwork.block.CableBlock.carries(state)) {
                     queue.add(next);
-                    // Ein Kabel leitet weiter und trägt zugleich Anschlüsse an
-                    // seinen Flächen. Beides gilt: Der Strang läuft durch, und
-                    // was daran hängt, gehört zu dieser Anlage.
+                    // A cable conducts onward while also carrying connectors
+                    // on its faces. Both hold: the strand runs through, and
+                    // what hangs on it belongs to this installation.
                     if (dev.devpanda.factorynetwork.block.entity.Connectors.any(level, next)) {
                         found.add(next);
                     }
@@ -138,7 +140,7 @@ public final class GatewayRegions {
                         .any(level, next)) {
                     found.add(next);
                 }
-                // Alles andere endet hier — auch ein zweites Gateway.
+                // Everything else ends here — a second gateway included.
             }
         }
         return found;

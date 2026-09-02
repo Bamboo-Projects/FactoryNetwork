@@ -12,20 +12,20 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 import java.util.List;
 
 /**
- * Die Anzeigen des Programms, fertig ausgewertet.
+ * The program's displays, fully evaluated.
  *
- * <p>Gerechnet wird auf dem Server — dieselbe Regel wie beim Display an der
- * Wand. Der Client bekommt Zeilen, die schon dastehen, und muss die Sprache
- * nicht kennen.
+ * <p>The computation happens on the server — the same rule as for the display
+ * on the wall. The client receives lines that are already there, and need not
+ * know the language.
  *
- * <p>Welche Zeilen Knöpfe sind, steht daneben. Der Client schickt beim Klick
- * nur die Nummer zurück; welche Funktion dahintersteht, entscheidet der
- * Server. Einen Funktionsnamen vom Client zu glauben hieße, jedem Spieler
- * jeden Aufruf zu erlauben.
+ * <p>Which lines are buttons is noted alongside. On a click the client only
+ * sends the number back; which function is behind it, the server decides.
+ * Trusting a function name from the client would mean allowing every player
+ * every call.
  */
 public record DisplayStatePacket(List<Panel> panels) implements CustomPacketPayload {
 
-    /** Eine Anzeige mit ihren Zeilen. */
+    /** A display with its lines. */
     public record Panel(String name, List<String> lines, List<Button> buttons) {
 
         public static final StreamCodec<RegistryFriendlyByteBuf, Panel> STREAM_CODEC =
@@ -37,15 +37,14 @@ public record DisplayStatePacket(List<Panel> panels) implements CustomPacketPayl
     }
 
     /**
-     * Ein Knopf: die Zeile, auf die man klickt, und der Eintrag, den das
-     * meint.
+     * A button: the line you click on, and the entry it refers to.
      *
-     * <p><b>Zwei Nummern, weil es zwei Dinge sind.</b> Der Reiter trifft eine
-     * <i>Zeile</i>, der Controller führt einen <i>Eintrag</i> aus. Solange
-     * jeder Eintrag genau eine Zeile war, waren beide dieselbe Zahl — bis
-     * {@code list} kam und eine Aufzählung mehrere Zeilen belegte. Ab da zeigt
-     * eine Zeilennummer auf den falschen Eintrag, und der Knopf löst aus, was
-     * darüber steht.
+     * <p><b>Two numbers, because they are two things.</b> The tab hits a
+     * <i>line</i>, the controller runs an <i>entry</i>. As long as each entry
+     * was exactly one line, both were the same number — until {@code list}
+     * came along and one listing occupied several lines. From then on a line
+     * number points to the wrong entry, and the button triggers whatever is
+     * above it.
      */
     public record Button(int line, int entry) {
 

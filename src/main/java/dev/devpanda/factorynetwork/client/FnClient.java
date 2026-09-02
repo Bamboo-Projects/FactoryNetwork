@@ -16,23 +16,23 @@ import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 public final class FnClient {
 
     /**
-     * Zählt die Ruhe im Editor und sichert den Entwurf.
+     * Counts the quiet in the editor and saves the draft.
      *
-     * <p>Am Takt des Clients und nicht am Bildschirm: Der Takt läuft weiter,
-     * wenn jemand das Fenster in derselben Sekunde zumacht, in der er das
-     * letzte Zeichen getippt hat.
+     * <p>On the client's tick and not on the screen: the tick keeps running
+     * when someone closes the window in the same second in which they typed
+     * the last character.
      */
     @SubscribeEvent
     public static void tickDraft(net.neoforged.neoforge.client.event.ClientTickEvent.Post event) {
         ClientProjectState.tick();
-        // Der Selbsttest des Bildwegs, einmal je Sitzung. Er braucht einen
-        // Zeichenkontext und kann deshalb kein gewöhnlicher Prüflauf sein.
+        // The self-test of the image path, once per session. It needs a
+        // drawing context and can therefore not be an ordinary check run.
         dev.devpanda.factorynetwork.web.runtime.WebSelfTest.tick();
-        // Der Bildnachweis danach — er braucht einen Bildschirm und kann
-        // deshalb erst laufen, wenn der Textur-Selbsttest seinen Browser
-        // wieder abgeräumt hat.
+        // The render proof after that — it needs a screen and can therefore
+        // only run once the texture self-test has cleared away its browser
+        // again.
         WebProofChain.tick();
-        // Die Messung zuletzt, und nur auf Ansage: -Dfn.benchmark=true
+        // The benchmark last, and only on request: -Dfn.benchmark=true
         dev.devpanda.factorynetwork.web.runtime.WebBenchmark.tick();
         dev.devpanda.factorynetwork.web.api.Overlays.tick();
         dev.devpanda.factorynetwork.web.api.WorldSurfaces.tick();
@@ -42,12 +42,11 @@ public final class FnClient {
     }
 
     /**
-     * Rechtsklick auf ein Display in der Welt: dorthin klicken, wohin das
-     * Fadenkreuz zeigt.
+     * Right-click on a display in the world: click where the crosshair points.
      *
-     * <p>Trifft der Blick eine Fläche, bekommt sie den Klick, und der Griff
-     * des Spielers unterbleibt — sonst schlüge er neben dem Display in die
-     * Luft. Trifft er keine, läuft alles wie immer.
+     * <p>If the gaze hits a face, it gets the click, and the player's swing is
+     * suppressed — otherwise it would swing at the air next to the display. If
+     * it hits none, everything runs as usual.
      */
     @SubscribeEvent
     public static void clickWorldSurface(
@@ -58,7 +57,7 @@ public final class FnClient {
         }
     }
 
-    /** Overlays über dem Bild — nach allem, was Minecraft dort malt. */
+    /** Overlays on top of the picture — after everything Minecraft paints there. */
     @SubscribeEvent
     public static void drawOverlays(
             net.neoforged.neoforge.client.event.RenderGuiEvent.Post event) {
@@ -66,8 +65,8 @@ public final class FnClient {
     }
 
     /**
-     * Flächen in der Welt — nach den durchscheinenden Blöcken, damit Wasser
-     * und Glas davor bleiben und die Fläche nicht durch sie hindurchleuchtet.
+     * Surfaces in the world — after the translucent blocks, so that water and
+     * glass stay in front and the surface does not shine through them.
      */
     @SubscribeEvent
     public static void drawWorldSurfaces(
@@ -87,10 +86,10 @@ public final class FnClient {
     }
 
     /**
-     * Der Abstand zweier Bilder — die einzige Zahl, die ein Spieler merkt.
+     * The gap between two frames — the only number a player notices.
      *
-     * <p>Am Bild und nicht am Takt: Der Takt läuft mit festen zwanzig je
-     * Sekunde und weiß nichts davon, ob das Zeichnen dazwischen stockt.
+     * <p>On the frame and not on the tick: the tick runs at a fixed twenty per
+     * second and knows nothing of whether the drawing stutters in between.
      */
     @SubscribeEvent
     public static void measureFrame(
@@ -99,16 +98,16 @@ public final class FnClient {
     }
 
     /**
-     * Chromiums Nachrichtenschleife, einmal je Bild.
+     * Chromium's message loop, once per frame.
      *
-     * <p><b>Vor dem Zeichnen und nicht danach.</b> Was Chromium in dieser
-     * Runde liefert, soll noch in die Textur, die dieses Bild benutzt — sonst
-     * hinkt die Seite um ein Bild hinterher.
+     * <p><b>Before the drawing and not after.</b> What Chromium delivers in
+     * this round should still make it into the texture this frame uses —
+     * otherwise the page lags one frame behind.
      *
-     * <p>Gepumpt wird hinter {@code WebPump}. Die Stelle war einmal
-     * folgenlos: Solange MCEF den Unterbau stellte, tat es dessen eigener
-     * Mixin. Seit die Laufzeitumgebung uns gehört, gibt es keinen Mixin mehr,
-     * und der Takt kommt aus genau dieser Zeile.
+     * <p>Pumping happens behind {@code WebPump}. The spot was once without
+     * consequence: as long as MCEF provided the underpinnings, its own mixin
+     * did it. Since the runtime belongs to us, there is no mixin any more, and
+     * the beat comes from exactly this line.
      */
     @SubscribeEvent
     public static void pumpWebRuntime(
@@ -117,10 +116,10 @@ public final class FnClient {
     }
 
     /**
-     * Beim Verlassen einer Welt bleibt nichts stehen.
+     * When leaving a world nothing is left standing.
      *
-     * <p>Sonst fände der nächste Controller den Entwurf des letzten vor —
-     * und schriebe ihn beim ersten Anschlag über sein eigenes Programm.
+     * <p>Otherwise the next controller would find the last one's draft — and
+     * write it over its own program at the first keystroke.
      */
     @SubscribeEvent
     public static void forgetDraft(
@@ -129,18 +128,18 @@ public final class FnClient {
     }
 
     /**
-     * Beim Verlassen einer Welt gehen die Browser zu — Chromium bleibt.
+     * When leaving a world the browsers close — Chromium stays.
      *
-     * <p><b>Hier stand einmal ein vollständiges Herunterfahren, und das war
-     * ein Fehler.</b> CEF lässt sich in einem Prozess genau einmal starten;
-     * ein zweiter Versuch endet mit „Settings can only be passed to CEF before
-     * createClient is called the first time". Wer eine Welt verließ und eine
-     * andere betrat, hatte für den Rest der Sitzung keinen Browser mehr —
-     * weder eine Fläche in der Welt noch den Editor.
+     * <p><b>A full shutdown once stood here, and that was a mistake.</b> CEF
+     * can be started exactly once in a process; a second attempt ends with
+     * "Settings can only be passed to CEF before createClient is called the
+     * first time". Whoever left one world and entered another had no browser
+     * for the rest of the session — neither a surface in the world nor the
+     * editor.
      *
-     * <p>Was hierher gehört, sind die Browser: Sie zeigen auf Blöcke einer
-     * Welt, die es gleich nicht mehr gibt. Chromium selbst fährt erst beim
-     * Beenden des Spiels herunter, in {@link #shutDownWebRuntime}.
+     * <p>What belongs here are the browsers: they point at blocks of a world
+     * that will be gone in a moment. Chromium itself only shuts down when the
+     * game is quit, in {@link #shutDownWebRuntime}.
      */
     @SubscribeEvent
     public static void closeBrowsersOfThisWorld(
@@ -151,12 +150,12 @@ public final class FnClient {
     }
 
     /**
-     * Beim Beenden des Spiels fährt Chromium herunter.
+     * When the game is quit, Chromium shuts down.
      *
-     * <p>Und nur hier, weil es genau einmal geht. Die Reihenfolge steckt in
-     * {@code WebRuntime.shutdown()}: erst alle Browser bitten zuzugehen, dann
-     * auf ihre Bestätigung pumpen, dann abräumen. Wer sie umdreht, hinterlässt
-     * Hilfsprozesse.
+     * <p>And only here, because it works exactly once. The order sits in
+     * {@code WebRuntime.shutdown()}: first ask all browsers to close, then pump
+     * for their confirmation, then clean up. Whoever reverses it leaves helper
+     * processes behind.
      */
     @SubscribeEvent
     public static void shutDownWebRuntime(
@@ -204,26 +203,26 @@ public final class FnClient {
     }
 
     /**
-     * Die Modelle der Anschlüsse gehören zu keinem Blockzustand.
+     * The models of the connectors belong to no block state.
      *
-     * <p>Welche Flächen eines Kabels ein Teil tragen, steht in der
-     * BlockEntity. Modelle, die niemand über eine Blockstate-Datei anfordert,
-     * lädt Minecraft nicht von selbst — sie werden hier angemeldet und vom
-     * CableBusRenderer gezeichnet.
+     * <p>Which faces of a cable a part occupies stands in the BlockEntity.
+     * Models that no one requests through a blockstate file Minecraft does not
+     * load by itself — they are registered here and drawn by the
+     * CableBusRenderer.
      */
     @SubscribeEvent
     public static void registerPartModels(
             net.neoforged.neoforge.client.event.ModelEvent.RegisterAdditional event) {
         dev.devpanda.factorynetwork.client.render.ConnectorPartModels.all(event::register);
-        // Der Stempel der Presse gehört ebenfalls keinem Blockzustand: Wo er
-        // gerade steht, hängt am Fortschritt in der BlockEntity.
+        // The press's ram also belongs to no block state: where it currently
+        // stands hangs on the progress in the BlockEntity.
         event.register(dev.devpanda.factorynetwork.client.render.PressRenderer.RAM);
     }
 
     @SubscribeEvent
     public static void setup(FMLClientSetupEvent event) {
-        // Das Kabel ist schmaler als ein Block und braucht deshalb eine
-        // Zeichenart, die durchsichtige Ränder verträgt.
+        // The cable is narrower than a block and therefore needs a render type
+        // that tolerates transparent edges.
         event.enqueueWork(() -> {
             ItemBlockRenderTypes.setRenderLayer(FnBlocks.CABLE.get(), RenderType.cutout());
             ItemBlockRenderTypes.setRenderLayer(FnBlocks.DISPLAY.get(), RenderType.cutout());

@@ -12,29 +12,29 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 import java.util.List;
 
 /**
- * Was gerade wartet.
+ * What is currently waiting.
  *
- * <p>Abläufe leben auf dem Server; der Client bekommt einen Schnappschuss.
- * Anders wäre es nicht zu haben — der Stapel eines Ablaufs ist Serverzustand,
- * und ihn zu spiegeln hieße, ihn zweimal zu pflegen.
+ * <p>Flows live on the server; the client gets a snapshot. There is no other
+ * way to have it — a flow's stack is server state, and mirroring it would mean
+ * maintaining it twice.
  *
- * <p>Die Kennung wandert mit, weil der Spieler bei einem {@code STALE}-Ablauf
- * entscheiden können muss, und die Wahl den richtigen treffen soll — auch
- * wenn sich die Liste zwischen Anzeigen und Klicken verschoben hat.
+ * <p>The identifier travels along, because the player must be able to decide
+ * on a {@code STALE} flow, and the choice should hit the right one — even if
+ * the list has shifted between showing and clicking.
  */
 public record FlowStatePacket(List<Line> flows, Compute compute, Supply supply,
                               List<String> globals)
         implements CustomPacketPayload {
 
     /**
-     * Was die Server tragen und was davon belegt ist.
+     * What the servers can carry, and how much of it is occupied.
      *
-     * <p>Zahlen, die man ohne Anzeige nie sieht: Was eine Schleife an
-     * Rechenleistung kostet, sieht niemand — bei Kanälen ist die Grenze
-     * wenigstens offensichtlich. Wer ansteht, muss lesen können, warum.
+     * <p>Numbers you never see without a display: what a loop costs in compute,
+     * no one sees — with channels the limit is at least obvious. Whoever is
+     * queued must be able to read why.
      *
-     * <p>Als eigener Satz und nicht als sechs weitere Felder oben:
-     * {@code StreamCodec.composite} trägt höchstens sechs.
+     * <p>As its own set and not as six more fields above:
+     * {@code StreamCodec.composite} carries at most six.
      */
     public record Compute(int threads, int occupied, int queued,
                           int memory, int program, int disk) {
@@ -51,15 +51,15 @@ public record FlowStatePacket(List<Line> flows, Compute compute, Supply supply,
     }
 
     /**
-     * Der Strom des Netzes.
+     * The network's power.
      *
-     * <p>Aus demselben Grund ein eigener Satz Zahlen wie {@link Compute}.
+     * <p>Its own set of numbers, for the same reason as {@link Compute}.
      *
-     * <p>{@code state} ist die laufende Nummer aus {@code NetworkPower.State}
-     * — der Client soll den Zustand anzeigen und nicht darüber urteilen.
+     * <p>{@code state} is the running number from {@code NetworkPower.State}
+     * — the client should show the state, not judge it.
      *
-     * <p>{@code draw} und {@code supplied} sind zwei verschiedene Dinge: was
-     * das Netz für sich braucht, und was es an Maschinen weiterreicht.
+     * <p>{@code draw} and {@code supplied} are two different things: what the
+     * network needs for itself, and what it passes on to machines.
      */
     public record Supply(int state, int stored, int capacity, int draw, int supplied) {
 
@@ -73,7 +73,7 @@ public record FlowStatePacket(List<Line> flows, Compute compute, Supply supply,
                         Supply::new);
     }
 
-    /** Eine Zeile der Liste. */
+    /** A line of the list. */
     public record Line(long id, String entry, String status, String detail) {
 
         public static final StreamCodec<RegistryFriendlyByteBuf, Line> STREAM_CODEC =
