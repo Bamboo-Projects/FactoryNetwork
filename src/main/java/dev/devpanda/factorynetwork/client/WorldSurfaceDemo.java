@@ -57,14 +57,19 @@ public final class WorldSurfaceDemo {
             return null;
         }
         // Drei Blöcke vor den Augen, und die Fläche schaut zurück.
+        // Die Richtung kommt aus dem Gierwinkel, nicht aus dem Blickvektor:
+        // Wer gerade nach oben schaut, hätte sonst keinen waagerechten Anteil,
+        // und die Fläche landete auf seinem Gesicht.
         Vec3 eye = player.getEyePosition();
-        Vec3 look = player.getLookAngle();
-        Vec3 at = eye.add(look.x * 3.0, 0.0, look.z * 3.0);
-        float yaw = player.getYRot() + 180f;
+        float yaw = player.getYRot();
+        double forwardX = -Math.sin(Math.toRadians(yaw));
+        double forwardZ = Math.cos(Math.toRadians(yaw));
+        Vec3 at = eye.add(forwardX * 3.0, 0.0, forwardZ * 3.0);
+        float surfaceYaw = yaw + 180f;
         SurfaceSpec spec = SurfaceSpec.of(url, 512, 384)
                 .named("Welt-Nachweis")
                 .visibility(BrowserVisibility.NEARBY);
-        surface = FnWeb.openInWorld(spec, at.x, at.y, at.z, yaw, 2.0f, 1.5f);
+        surface = FnWeb.openInWorld(spec, at.x, at.y, at.z, surfaceYaw, 2.0f, 1.5f);
         if (surface != null) {
             surface.surface().onMessage(message -> LOG.info("Weltfläche meldet: {}", message));
         }
