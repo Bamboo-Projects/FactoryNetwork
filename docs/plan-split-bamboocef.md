@@ -11,7 +11,7 @@ Mod-Id `bamboocef`), FactoryNetwork ein Nutzer wie jede fremde Mod.
   Commit-Nachrichten englisch, Autor-Mail mit devpanda0 verknüpft.
 - WebPanel-Block aus FactoryNetwork gelöscht (Gerüst, die API ersetzt ihn).
 
-## Offen, in dieser Reihenfolge
+## Erledigt am 2. September 2026 (Schritte 1–3)
 
 ### 1. BambooCEFMC eigenständig machen
 
@@ -59,9 +59,16 @@ Mod-Id `bamboocef`), FactoryNetwork ein Nutzer wie jede fremde Mod.
   `WebPage`, `WebAssets`, `BrowserVisibility`; Ausnahme nur `client/bench`.
 - Prüfung: beide bauen, beide Testläufe grün (FactoryNetwork ohne Web-Tests).
 
+## Offen
+
 ### 4. Abnahme
 
 - Dev-Start mit beiden Mods; Overlay, Weltfläche, Editor, Kanal Seite→Mod
   wie in den `stand-web-*.md` beschrieben.
 - Danach: Minotaur + `publish.yml`, erster Release über `/release`,
   Monaco-NOTICE, Wegwerf-`run/` unter dem alten Pfad löschen.
+- Feinschliff in BambooCEFMC: die Namen `fn.runtime.dir`, `fn.devtools`,
+  `fn.benchmark` und die Logger „FactoryNetwork/…" auf `bamboocef` drehen
+  (mit den runClient-Skripten im Scratchpad abstimmen).
+- FactoryNetworks `neoforge.mods.toml` verlangt `bamboocef` jetzt als
+  Client-Abhängigkeit (erledigt, hier nur der Vollständigkeit halber).
