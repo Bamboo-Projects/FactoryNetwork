@@ -10,14 +10,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Schreibt Werte auf und liest sie zurück.
+ * Writes values out and reads them back.
  *
- * <p>Gebraucht für die Variablen eines wartenden Ablaufs. Anders als beim
- * Netzwerkspeicher wird hier <b>nichts stillschweigend übergangen</b>: Fehlt
- * der Gegenstand einer Variablen, weil eine Mod aus dem Pack genommen wurde,
- * scheitert der Ablauf mit klarer Meldung. Ein Lagerbestand darf einen Posten
- * verlieren; eine Variable, mit der weitergerechnet wird, darf sich nicht
- * heimlich in etwas anderes verwandeln.
+ * <p>Needed for the variables of a waiting flow. Unlike the network storage,
+ * <b>nothing is silently skipped</b> here: if the item behind a variable is
+ * missing because a mod was removed from the pack, the flow fails with a
+ * clear message. A stock inventory may lose an entry; a variable that further
+ * computation depends on must not quietly turn into something else.
  */
 public final class ValueCodec {
 
@@ -52,10 +51,10 @@ public final class ValueCodec {
                 tag.putString(KEY_TYPE, "dur");
                 tag.putLong(KEY_VALUE, duration.ticks());
             }
-            // Alle drei Arten auf einem Weg — und trotzdem stehen auf der
-            // Platte dieselben Namen wie vorher: Ein wartender Ablauf aus
-            // einer alten Welt muss seine Variablen wiederfinden. Welcher
-            // Name zu welcher Art gehört, sagt ResourceKind.
+            // All three kinds through one path — and yet the same names as
+            // before end up on disk: a waiting flow from an old world has to
+            // find its variables again. Which name belongs to which kind is
+            // ResourceKind's business.
             case Value.Resource resource -> {
                 tag.putString(KEY_TYPE, resource.kind().tag());
                 tag.putString(KEY_VALUE, resource.kind().idOf(resource.key()));
@@ -77,9 +76,9 @@ public final class ValueCodec {
                 tag.putString(KEY_TYPE, "dev");
                 tag.putString(KEY_VALUE, device.name());
             }
-            // Eine Gruppe trägt nur ihren Namen, und genau deshalb übersteht
-            // sie den Neustart unbeschadet: Wer heute darin steht, entscheidet
-            // beim nächsten Blick wieder das Netz.
+            // A group carries only its name, and that is exactly why it
+            // survives the restart unharmed: who is in it today is decided
+            // afresh by the network at the next look.
             case Value.Group group -> {
                 tag.putString(KEY_TYPE, "grp");
                 tag.putString(KEY_VALUE, group.name());
@@ -107,9 +106,9 @@ public final class ValueCodec {
 
     public static Value read(CompoundTag tag) {
         String type = tag.getString(KEY_TYPE);
-        // Erst die Ressourcen: Ihre Namen gehören der Art, und welche Art zu
-        // einem Namen gehört, weiß die Registry. Ohne diesen Umweg stünde
-        // für jede neue Art eine Zeile mehr in diesem Codec.
+        // Resources first: their names belong to the kind, and which kind
+        // belongs to a name is known to the registry. Without this detour
+        // every new kind would mean one more line in this codec.
         var kind = dev.devpanda.factorynetwork.runtime.ResourceKinds.byTag(type);
         if (kind != null) {
             return kind.tag().equals(type)
@@ -130,9 +129,9 @@ public final class ValueCodec {
             case "builtin" -> new Value.Builtin(tag.getString(KEY_VALUE));
             case "list" -> readList(tag);
             case "nothing" -> Value.Nothing.get();
-            // Eine Art, die niemand mehr kennt. Seit die Registry offen ist,
-            // ist das der wahrscheinlichere Fall: Nicht der Codec ist kaputt,
-            // sondern die Mod fehlt, die diese Art mitgebracht hat.
+            // A kind nobody knows any more. Since the registry became open,
+            // this is the more likely case: it is not the codec that is
+            // broken, but the mod that brought this kind is missing.
             default -> throw new ScriptError(
                     "Diese Art von Wert kennt hier niemand: " + type + ".",
                     "Ein wartender Ablauf hielt sie fest. Wurde eine Mod aus dem "
@@ -141,11 +140,11 @@ public final class ValueCodec {
     }
 
     /**
-     * Eine Auswahl, Eintrag für Eintrag.
+     * A selection, entry by entry.
      *
-     * <p>Ob eine Kennung gegen eine Registry geprüft wird, entscheidet die
-     * Art — und das ist der einzige Unterschied, der von den drei Lesern
-     * übrig ist. Er steht in {@code ResourceKind.fromId}.
+     * <p>Whether an id is checked against a registry is decided by the kind —
+     * and that is the only difference left over from the three readers. It
+     * lives in {@code ResourceKind.fromId}.
      */
     private static Value readSelection(
             dev.devpanda.factorynetwork.runtime.ResourceKind kind, CompoundTag tag) {

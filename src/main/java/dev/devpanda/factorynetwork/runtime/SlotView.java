@@ -6,20 +6,20 @@ import net.neoforged.neoforge.items.IItemHandler;
 import java.util.List;
 
 /**
- * Ein Inventar, das nur bestimmte Fächer zeigt.
+ * An inventory that exposes only certain slots.
  *
- * <p>Damit wird aus {@code brecher_1.slots(2..3)} eine Quelle für
- * {@code move}: Alles, was von außen darauf zugreift, sieht ein Gerät mit
- * genau zwei Fächern. <b>Das ist der Punkt der ganzen Übung</b> — ein Worker,
- * der nur den Ausgang leeren soll, darf den Eingang nicht mitnehmen, und der
- * Griff dafür steht im Code und nicht in der Bauform.
+ * <p>This is what turns {@code brecher_1.slots(2..3)} into a source for
+ * {@code move}: everything that accesses it from outside sees a device with
+ * exactly two slots. <b>That is the whole point of the exercise</b> — a worker
+ * that is only supposed to empty the output must not take the input along,
+ * and the handle for that lives in the code, not in the block layout.
  *
- * <p>Über das ungeteilte Inventar der Maschine: Wer eine Fachnummer schreibt,
- * kennt sie, und ein Anschluss je Maschine soll reichen.
+ * <p>Built over the machine's undivided inventory: whoever writes a slot
+ * number knows it, and one connector per machine should be enough.
  *
- * <p>Nummern, die es nicht gibt, fallen beim Bauen weg. Wie viele Fächer eine
- * fremde Maschine hat, weiß erst die Welt, und ein Bereich, der darüber
- * hinausreicht, ist kein Programmfehler.
+ * <p>Numbers that do not exist are dropped at construction. Only the world
+ * knows how many slots a third-party machine has, and a range that reaches
+ * beyond them is not a program error.
  */
 public final class SlotView implements IItemHandler {
 
@@ -31,7 +31,7 @@ public final class SlotView implements IItemHandler {
         this.slots = slots;
     }
 
-    /** Der Blick auf diese Fächer, oder {@code null} ohne Inventar. */
+    /** The view onto these slots, or {@code null} without an inventory. */
     public static IItemHandler of(IItemHandler inner, List<Integer> wanted) {
         if (inner == null) {
             return null;

@@ -13,23 +13,22 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Was hinter dem Namen einer Filter-Vorlage steht.
+ * What stands behind the name of a filter template.
  *
- * <p><b>Erst alles zusammen, dann die Ausnahmen weg.</b> Nicht zeilenweise
- * abwechselnd: So ist die Reihenfolge der Zeilen gleichgültig, und wer die
- * Vorlage liest, muss keinen Zwischenstand mitführen.
+ * <p><b>First everything together, then the exclusions removed.</b> Not
+ * alternating line by line: that way the order of the lines does not matter,
+ * and whoever reads the template need not track an intermediate state.
  *
- * <p>Aufgelöst wird ausschließlich über {@link ItemSelection} und
- * {@link FluidSelection} — dieselbe Stelle wie für jede geschriebene Auswahl,
- * mitsamt ihrem Zwischenspeicher. Eine zweite Fassung daneben liefe
- * auseinander.
+ * <p>Resolution goes exclusively through {@link ItemSelection} and
+ * {@link FluidSelection} — the same place as for every written selection,
+ * including its cache. A second version alongside would drift apart.
  */
 public final class FilterTemplates {
 
     private FilterTemplates() {
     }
 
-    /** Die Vorlagen eines Programms, nach Namen. */
+    /** The templates of a program, by name. */
     public static Map<String, Decl.FilterTemplate> of(Program program) {
         Map<String, Decl.FilterTemplate> found = new LinkedHashMap<>();
         for (Decl declaration : program.declarations()) {
@@ -40,7 +39,7 @@ public final class FilterTemplates {
         return found;
     }
 
-    /** Die Gegenstandsarten einer Vorlage. */
+    /** The item kinds of a template. */
     public static List<Item> items(Decl.FilterTemplate template) {
         Set<Item> found = new LinkedHashSet<>();
         for (Expr entry : template.includes()) {
@@ -55,7 +54,7 @@ public final class FilterTemplates {
         return List.copyOf(found);
     }
 
-    /** Die Flüssigkeitssorten einer Vorlage. */
+    /** The fluid types of a template. */
     public static List<Fluid> fluids(Decl.FilterTemplate template) {
         Set<Fluid> found = new LinkedHashSet<>();
         for (Expr entry : template.includes()) {
@@ -71,11 +70,11 @@ public final class FilterTemplates {
     }
 
     /**
-     * Die Meldung nennt die Vorlage beim Namen.
+     * The message names the template.
      *
-     * <p>Ohne den stünde da „die Auswahl trifft nichts" — und der Spieler
-     * sucht sie an der Stelle, an der er den Namen geschrieben hat, statt in
-     * der Vorlage.
+     * <p>Without it, the message would read "the selection matches nothing" —
+     * and the player would look for it at the place where they wrote the
+     * name, rather than in the template.
      */
     private static ScriptError empty(Decl.FilterTemplate template) {
         return new ScriptError("Die Vorlage " + template.name() + " trifft nichts.",

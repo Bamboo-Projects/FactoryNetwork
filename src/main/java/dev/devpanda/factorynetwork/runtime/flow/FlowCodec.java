@@ -12,16 +12,17 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Schreibt wartende Abläufe auf und holt sie zurück.
+ * Persists waiting flows and brings them back.
  *
- * <p><b>Hier wird die Zusage der Mod eingelöst:</b> Ein Ablauf, der auf ein
- * Ereignis wartet, steht nach einem Serverneustart wieder an derselben Stelle
- * — mit denselben Variablen, in derselben Schleifenrunde, im selben Zweig.
+ * <p><b>This is where the mod's promise is kept:</b> a flow that is waiting
+ * for an event stands in the same place again after a server restart — with
+ * the same variables, in the same loop round, in the same branch.
  *
- * <p>Aufgeschrieben wird dabei möglichst wenig. Was im Programm steht, kommt
- * aus dem Programm zurück: die {@code where}-Klausel, der {@code else}-Zweig,
- * der Rumpf einer Schleife. Nur was der Ablauf selbst erlebt hat — wo er
- * steht, was er in Händen hält, worauf er wartet — muss auf die Platte.
+ * <p>As little as possible is written. What is in the program comes back
+ * from the program: the {@code where} clause, the {@code else} branch, the
+ * body of a loop. Only what the flow itself has experienced — where it
+ * stands, what it holds in its hands, what it is waiting for — has to go to
+ * disk.
  */
 public final class FlowCodec {
 
@@ -55,15 +56,15 @@ public final class FlowCodec {
     private FlowCodec() {
     }
 
-    // ---- Schreiben --------------------------------------------------------
+    // ---- Writing ----------------------------------------------------------
 
     public static CompoundTag write(FlowEngine engine) {
         CompoundTag tag = new CompoundTag();
         tag.putLong(KEY_NEXT_ID, engine.nextId());
         ListTag list = new ListTag();
         for (Flow flow : engine.flows().values()) {
-            // Fertige Abläufe kommen nicht wieder; sie aufzuschreiben hieße,
-            // sie beim Laden sofort wegzuwerfen.
+            // Finished flows do not come back; persisting them would mean
+            // throwing them away immediately on load.
             if (flow.isFinished()) {
                 continue;
             }
@@ -78,15 +79,15 @@ public final class FlowCodec {
 
     private static CompoundTag write(Flow flow, BlockIndex blocks) {
         ListTag stack = new ListTag();
-        // Von unten nach oben, damit die Rahmen beim Laden in derselben
-        // Reihenfolge wieder aufeinander liegen.
+        // Bottom to top, so that on loading the frames end up stacked in the
+        // same order again.
         for (var frames = flow.stack().descendingIterator(); frames.hasNext(); ) {
             Frame frame = frames.next();
             int id = blocks.id(frame.block());
             if (id < 0) {
-                // Der Block gehört nicht zu diesem Programm — dann lässt sich
-                // der Ablauf nicht wiederfinden, und ihn halb aufzuschreiben
-                // wäre schlimmer als ihn zu verlieren.
+                // The block does not belong to this program — then the flow
+                // cannot be found again, and persisting it halfway would be
+                // worse than losing it.
                 return null;
             }
             CompoundTag entry = new CompoundTag();
@@ -102,14 +103,14 @@ public final class FlowCodec {
                 }
             }
             if (!frame.devicePrefix().isEmpty()) {
-                // Ohne den wüsste ein Ablauf nach dem Neustart nicht mehr,
-                // welche der drei Anlagen er bedient.
+                // Without it, after the restart a flow would no longer know
+                // which of the three multiblock instances it is serving.
                 entry.putString(KEY_PREFIX, frame.devicePrefix());
             }
             if (frame.hasIteration()) {
-                // Der Stand eines Laufs über eine Liste steht nur hier. Ohne
-                // ihn begänne die Schleife nach einem Neustart von vorn — und
-                // täte alles ein zweites Mal.
+                // The position of an iteration over a list lives only here.
+                // Without it the loop would start over after a restart — and
+                // do everything a second time.
                 entry.putString(KEY_ITER_VAR, frame.iterationVariable());
                 entry.putInt(KEY_ITER_INDEX, frame.iterationIndex());
                 ListTag values = new ListTag();
@@ -146,20 +147,19 @@ public final class FlowCodec {
         return list;
     }
 
-    /** Steht in diesem Tag kein einziger Ablauf? */
+    /** Does this tag contain not a single flow? */
     public static boolean isEmpty(CompoundTag tag) {
         return tag == null || tag.getList(KEY_FLOWS, Tag.TAG_COMPOUND).isEmpty();
     }
 
-    // ---- Lesen ------------------------------------------------------------
+    // ---- Reading ----------------------------------------------------------
 
     /**
-     * Holt die Abläufe zurück in eine Maschine.
+     * Brings the flows back into an engine.
      *
-     * <p>Stimmt die Gestalt des Programms nicht mehr, wird der Ablauf
-     * {@code STALE}. Sein Stapel bleibt dabei erhalten, soweit er sich
-     * auflösen lässt — der Spieler soll sehen können, wo der Ablauf stand,
-     * bevor er entscheidet.
+     * <p>If the shape of the program no longer matches, the flow becomes
+     * {@code STALE}. Its stack is kept as far as it can be resolved — the
+     * player should be able to see where the flow stood before deciding.
      */
     public static void read(CompoundTag tag, FlowEngine engine) {
         engine.setNextId(Math.max(1, tag.getLong(KEY_NEXT_ID)));
@@ -184,8 +184,8 @@ public final class FlowCodec {
                 flow.push(readFrame(stack.getCompound(i), blocks));
             }
         } catch (ScriptError error) {
-            // Ein Wert ließ sich nicht zurücklesen. Der Ablauf ist damit
-            // hinüber, aber er soll es sagen und nicht spurlos verschwinden.
+            // A value could not be read back. The flow is done for, but it
+            // should say so rather than vanish without a trace.
             flow.fail(error.toString());
             return flow;
         }
@@ -215,8 +215,8 @@ public final class FlowCodec {
                     "Das Programm hat sich stärker geändert, als sich nachvollziehen lässt.");
         }
         Frame frame = new Frame(block, tag.getBoolean(KEY_LOOP));
-        // Der Zähler darf über das Ende zeigen — dann verlässt der Ablauf den
-        // Rahmen als Erstes. Weiter darf er nicht zeigen.
+        // The counter may point past the end — then the first thing the flow
+        // does is leave the frame. It must not point any further.
         frame.setIndex(Math.max(0, Math.min(tag.getInt(KEY_INDEX), block.statements().size())));
         frame.setExitOnLeave(tag.getBoolean(KEY_EXIT));
         ListTag locals = tag.getList(KEY_LOCALS, Tag.TAG_COMPOUND);
@@ -252,7 +252,7 @@ public final class FlowCodec {
         return Flow.Status.RUNNING;
     }
 
-    /** Die Rahmen eines Ablaufs, von unten nach oben, als Liste. */
+    /** The frames of a flow, bottom to top, as a list. */
     public static List<Frame> framesBottomUp(Flow flow) {
         List<Frame> frames = new ArrayList<>();
         flow.stack().descendingIterator().forEachRemaining(frames::add);

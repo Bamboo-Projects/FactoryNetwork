@@ -12,27 +12,27 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Wertet aus, was ein Display zeigt.
+ * Evaluates what a display shows.
  *
- * <p><b>Ein Display liest ab und rechnet damit — mehr nicht.</b> Ablesbar
- * sind ein Bestand, ein Redstonesignal, ein Workerzustand, ein globaler Wert.
- * Damit darf gerechnet und verglichen werden. Was hier nicht steht, meldet
- * das Display, statt es zu raten: keine Aufrufe, keine Schleifen, keine
- * Zuweisungen. Ein Interpreter ist das nicht.
+ * <p><b>A display reads values and does arithmetic on them — nothing more.</b>
+ * Readable are a stock level, a redstone signal, a worker state, a global
+ * value. Those may be computed with and compared. Anything not listed here
+ * the display reports instead of guessing: no calls, no loops, no
+ * assignments. This is not an interpreter.
  *
- * <p>Die Rechnung ist nötig, nicht bequem. Ein Fortschrittsbalken ohne
- * genannte Obergrenze ist geraten — {@code storage.count(item:coal) / 640.0}
- * sagt, worauf sich der Balken bezieht, und nur der Nutzer weiß das. Ohne
- * die Division blieb der Balken leer, während die Doku erklärte, warum der
- * Punkt in {@code 640.0} so wichtig sei.
+ * <p>The arithmetic is necessary, not a convenience. A progress bar without a
+ * stated upper bound is a guess — {@code storage.count(item:coal) / 640.0}
+ * says what the bar refers to, and only the user knows that. Without the
+ * division the bar stayed empty while the docs explained why the dot in
+ * {@code 640.0} was so important.
  *
- * <p>Die Grenze bleibt dieselbe wie bei {@code when}: Nur was das System
- * beobachten kann, kommt hier vor. An einer Wand hängen schnell dreißig
- * Displays, und keines davon darf ein Programm starten.
+ * <p>The boundary stays the same as for {@code when}: only what the system
+ * can observe appears here. A wall quickly holds thirty displays, and none
+ * of them may start a program.
  */
 public final class DisplayValues {
 
-    /** Ein fertig ausgewerteter Eintrag, so wie er gezeigt wird. */
+    /** A fully evaluated entry, as it is shown. */
     public record Line(Decl.Display.Entry.Kind kind, String label, String value, double fraction,
                        boolean flag) {
 
@@ -46,22 +46,22 @@ public final class DisplayValues {
     private final WorkerRuntime runtime;
 
     /**
-     * Die globalen Werte des Netzes, oder leer.
+     * The network's global values, or empty.
      *
-     * <p><b>Ein globaler Wert ist genau das, was oben steht: ein Wert, den
-     * man nennt.</b> Er kostet keine Rechnung, nur einen Blick in eine Karte
-     * — deshalb passt er hierher, während {@code storage.count(…) / 640.0}
-     * es weiterhin nicht tut.
+     * <p><b>A global value is exactly what is stated above: a value one
+     * names.</b> It costs no computation, only a lookup in a map — which is
+     * why it belongs here, while {@code storage.count(…) / 640.0} still does
+     * not.
      */
     private final java.util.Map<String, Value> globals;
 
     /**
-     * Die Welt, um Redstone abzulesen — oder {@code null}.
+     * The world, for reading redstone — or {@code null}.
      *
-     * <p>Ein Signal zu lesen ist ein Blick auf die Nachbarblöcke, sonst
-     * nichts. Ohne Welt bleibt {@code redstone()} unbeantwortet, statt zu
-     * raten: Ein Display, das „0" behauptet, wo es nicht nachsehen konnte,
-     * schickt den Spieler zur falschen Maschine.
+     * <p>Reading a signal is a look at the neighbouring blocks, nothing more.
+     * Without a world, {@code redstone()} stays unanswered instead of
+     * guessing: a display that claims "0" where it could not look sends the
+     * player to the wrong machine.
      */
     private final net.minecraft.world.level.Level level;
 
@@ -85,26 +85,26 @@ public final class DisplayValues {
     }
 
     /**
-     * Wie viele Posten eine Aufzählung höchstens zeigt.
+     * How many entries a listing shows at most.
      *
-     * <p>Eine Tafel trägt sechs Zeilen, eine Wand mehr — wie viele, weiß erst
-     * der Client, der sie zeichnet. Acht ist die Zahl, die auf einer
-     * zweireihigen Wand aufgeht und auf einer einzelnen Tafel ehrlich
-     * abgeschnitten wird: Die letzte Zeile sagt dann, wie viele fehlen.
+     * <p>A panel holds six lines, a wall more — how many, only the client
+     * that draws it knows. Eight is the number that fits a two-row wall
+     * evenly and is honestly cut off on a single panel: the last line then
+     * says how many are missing.
      */
     private static final int LIST_LIMIT = 8;
 
     public List<Line> evaluate(Decl.Display display) {
         List<Line> lines = new ArrayList<>();
         for (Decl.Display.Entry entry : display.entries()) {
-            // scale ist keine Zeile, sondern eine Angabe über die Tafel.
-            // Sie steht im Block, weil sie zu dieser Anzeige gehört — aber
-            // sie schreibt nichts hin.
+            // scale is not a line but a statement about the panel. It sits
+            // in the block because it belongs to this display — but it
+            // writes nothing.
             if (entry.kind() == Decl.Display.Entry.Kind.SCALE) {
                 continue;
             }
-            // Eine Aufzählung ist mehr als eine Zeile — das ist ihr ganzer
-            // Sinn und der Unterschied zu row.
+            // A listing is more than one line — that is its whole point and
+            // the difference from row.
             if (entry.kind() == Decl.Display.Entry.Kind.LIST) {
                 lines.addAll(listing(entry));
             } else {
@@ -115,19 +115,19 @@ public final class DisplayValues {
     }
 
     /**
-     * Eine Aufzählung: Überschrift und je Posten eine Zeile.
+     * A listing: a heading and one line per entry.
      *
-     * <p>Absteigend nach Menge, denn wer auf eine Wand sieht, sucht meist,
-     * wovon zu viel oder zu wenig da ist. Was über {@link #LIST_LIMIT} hinaus
-     * geht, wird gezählt statt weggelassen — eine Liste, die still endet,
-     * liest sich wie ein vollständiger Bestand.
+     * <p>Descending by amount, because whoever looks at a wall is usually
+     * looking for what there is too much or too little of. Whatever exceeds
+     * {@link #LIST_LIMIT} is counted rather than dropped — a list that ends
+     * silently reads like a complete inventory.
      */
     private List<Line> listing(Decl.Display.Entry entry) {
         List<Line> lines = new ArrayList<>();
         List<Map.Entry<String, Long>> posten = entries(entry.value());
         if (posten == null) {
-            // Kein Bestand, sondern etwas anderes — dann wie bisher eine
-            // Zeile, samt der Meldung, die describe() dafür kennt.
+            // Not a stock level but something else — then a single line as
+            // before, including the message describe() knows for it.
             lines.add(Line.text(entry.kind(), entry.label(), describe(entry.value())));
             return lines;
         }
@@ -147,11 +147,11 @@ public final class DisplayValues {
     }
 
     /**
-     * Die Posten hinter {@code storage.items()} oder {@code brecher.items()},
-     * oder {@code null}, wenn dort etwas anderes steht.
+     * The entries behind {@code storage.items()} or {@code brecher.items()},
+     * or {@code null} if something else is there.
      *
-     * <p>Nur diese beiden. Ein Display rechnet nicht — es liest ab, und die
-     * Grenze ist dieselbe wie überall sonst in dieser Klasse.
+     * <p>Only these two. A display does not compute — it reads, and the
+     * boundary is the same as everywhere else in this class.
      */
     private List<Map.Entry<String, Long>> entries(Expr expr) {
         if (!(expr instanceof Expr.Call call)
@@ -174,8 +174,8 @@ public final class DisplayValues {
         var amounts = dev.devpanda.factorynetwork.block.entity.DeviceAmounts.of(connector);
         List<Map.Entry<String, Long>> found =
                 named(amounts.items(), item -> item.getDescription().getString());
-        // Eine Maschine kann beides führen. Getrennt zu zählen und zusammen
-        // zu zeigen ist genau das, was man vor ihr wissen will.
+        // A machine can hold both. Counting them separately and showing them
+        // together is exactly what one wants to know standing in front of it.
         found.addAll(named(amounts.fluids(), fluid -> fluid.getFluidType()
                 .getDescription().getString()));
         return found;
@@ -203,19 +203,20 @@ public final class DisplayValues {
                     0, truth(entry.value()));
             case LIST -> Line.text(entry.kind(), entry.label(), describe(entry.value()));
             case BUTTON -> Line.text(entry.kind(), entry.label(), "");
-            // Kommt hier nie an: evaluate(Decl.Display) überspringt es. Der
-            // Fall steht trotzdem da, damit der Übersetzer beim nächsten
-            // neuen Baustein wieder meckert.
+            // Never reached: evaluate(Decl.Display) skips it. The case is
+            // there anyway so that the compiler complains again at the next
+            // new building block.
             case SCALE -> Line.text(entry.kind(), null, "");
         };
     }
 
     /**
-     * Was ein Ausdruck anzeigt.
+     * What an expression displays.
      *
-     * <p>Bewusst wenige Fälle. Was hier nicht steht, erscheint als Hinweis
-     * auf dem Display selbst — eine leere Zeile wäre schlimmer, weil man dann
-     * den Fehler beim Netz sucht statt beim Programm.
+     * <p>Deliberately few cases. Whatever is not listed here appears as a
+     * hint on the display itself — an empty line would be worse, because
+     * one would then look for the fault in the network instead of the
+     * program.
      */
     private String describe(Expr expr) {
         if (expr == null) {
@@ -248,7 +249,7 @@ public final class DisplayValues {
                 default -> "?";
             };
         }
-        // Ein globaler Wert steht für sich — kein Aufruf, keine Rechnung.
+        // A global value stands on its own — no call, no computation.
         if (expr instanceof Expr.Name name) {
             Value value = globals.get(name.value());
             if (value != null) {
@@ -263,11 +264,11 @@ public final class DisplayValues {
     }
 
     /**
-     * Was neben dem Balken steht.
+     * What is written next to the bar.
      *
-     * <p>Bei einem Bestand die Menge, bei einem Anteil der Prozentwert.
-     * „0,5" neben einem halb gefüllten Balken sagt dasselbe zweimal und
-     * beantwortet die eine Frage nicht, die man an einen Balken hat.
+     * <p>For a stock level the amount, for a fraction the percentage. "0.5"
+     * next to a half-filled bar says the same thing twice and does not answer
+     * the one question one has for a bar.
      */
     private String progressText(Expr expr) {
         if (expr == null) {
@@ -284,16 +285,16 @@ public final class DisplayValues {
     }
 
     /**
-     * Was hinter einem Ausdruck für eine Zahl steckt, oder {@code null}.
+     * The number behind an expression, or {@code null}.
      *
-     * <p>Hier steht die ganze Rechenkunst eines Displays: die vier
-     * Grundrechenarten über Werten, die man ablesen kann. Die Rekursion läuft
-     * über den geparsten Ausdruck und kann deshalb nicht tiefer werden, als
-     * der Spieler geschrieben hat.
+     * <p>This is the entire arithmetic of a display: the four basic
+     * operations over values that can be read. The recursion runs over the
+     * parsed expression and therefore cannot get deeper than what the player
+     * wrote.
      *
-     * <p><b>{@code null} heißt „weiß ich nicht", nicht „null".</b> Der
-     * Unterschied trägt die Anzeige: Ein unbekannter Ausdruck wird zu „?",
-     * ein leerer Speicher zu „0".
+     * <p><b>{@code null} means "don't know", not "zero".</b> The display
+     * relies on the difference: an unknown expression becomes "?", an empty
+     * storage becomes "0".
      */
     private Double number(Expr expr) {
         if (expr == null) {
@@ -334,8 +335,8 @@ public final class DisplayValues {
                 case ADD -> left + right;
                 case SUB -> left - right;
                 case MUL -> left * right;
-                // Durch null zu teilen ist keine Zahl, und „Unendlich" auf
-                // einem Balken ist schlimmer als ein Fragezeichen.
+                // Dividing by zero is not a number, and "infinity" on a bar
+                // is worse than a question mark.
                 case DIV -> right == 0 ? null : left / right;
                 case MOD -> right == 0 ? null : left % right;
                 default -> null;
@@ -344,7 +345,7 @@ public final class DisplayValues {
         return null;
     }
 
-    /** {@code depot.redstone()} — die Stärke am Connector, oder {@code null}. */
+    /** {@code depot.redstone()} — the signal strength at the connector, or {@code null}. */
     private Integer redstone(Expr expr) {
         if (level == null
                 || !(expr instanceof Expr.Call call)
@@ -354,13 +355,13 @@ public final class DisplayValues {
                 || !call.arguments().isEmpty()) {
             return null;
         }
-        // Ohne Connector gibt es keine Antwort — dasselbe wie bei online.
+        // Without a connector there is no answer — same as with online.
         return graph.connector(device.value())
                 .map(where -> level.getBestNeighborSignal(where.pos()))
                 .orElse(null);
     }
 
-    /** Ganze Zahlen ohne Komma, alles andere mit einer Stelle. */
+    /** Whole numbers without a decimal point, everything else with one digit. */
     private static String round(double value) {
         if (value == Math.rint(value) && !Double.isInfinite(value)) {
             return String.valueOf((long) value);
@@ -368,16 +369,16 @@ public final class DisplayValues {
         return String.format(Locale.GERMAN, "%.1f", value);
     }
 
-    /** {@code storage.count(item:…)} — der häufigste Fall auf einem Display. */
+    /** {@code storage.count(item:…)} — the most common case on a display. */
     /**
-     * {@code brecher.count(item:iron_ore)} — was in der Maschine liegt.
+     * {@code brecher.count(item:iron_ore)} — what is inside the machine.
      *
-     * <p>Ein Blick in eine BlockEntity je Tafel und Sekunde. Den Netzbestand
-     * liest die Anzeige ohnehin in diesem Takt; ein {@code ?} auf der Tafel,
-     * das niemand erklären kann, wäre der schlechtere Tausch.
+     * <p>One look into a BlockEntity per panel per second. The display reads
+     * the network stock at that rate anyway; a {@code ?} on the panel that
+     * nobody can explain would be the worse trade.
      *
-     * <p>Ohne Welt — in den Prüfungen — bleibt es beim {@code null}: Eine
-     * erfundene Null schickte den Spieler zur falschen Maschine.
+     * <p>Without a world — in the tests — it stays at {@code null}: an
+     * invented zero would send the player to the wrong machine.
      */
     private Long deviceCount(Expr expr) {
         if (!(expr instanceof Expr.Call call)
@@ -420,7 +421,7 @@ public final class DisplayValues {
         return items.stream().mapToLong(storage::count).sum();
     }
 
-    /** {@code ore_import.status} oder ein Workername für sich. */
+    /** {@code ore_import.status} or a worker name on its own. */
     private String workerState(Expr expr) {
         String name = null;
         if (expr instanceof Expr.Name plain) {
@@ -446,13 +447,13 @@ public final class DisplayValues {
         };
     }
 
-    /** Für Fortschrittsbalken: ein Wert zwischen null und eins. */
+    /** For progress bars: a value between zero and one. */
     private double fraction(Expr expr) {
         Long count = storageCount(expr);
         if (count != null) {
-            // Ein nackter Bestand nennt seine Obergrenze nicht. Ein voller
-            // Stapel gilt als voll — wer es genauer braucht, teilt selbst,
-            // und genau dafür ist die Rechnung da.
+            // A bare stock level does not state its upper bound. A full
+            // stack counts as full — whoever needs it more precise divides
+            // themselves, and that is exactly what the arithmetic is for.
             return Math.min(1.0, count / 64.0);
         }
         Double value = number(expr);
@@ -489,12 +490,12 @@ public final class DisplayValues {
     }
 
     /**
-     * Ein Vergleich für ein Lämpchen, oder {@code null}.
+     * A comparison for an indicator, or {@code null}.
      *
-     * <p>Zahlen wie {@code depot.redstone() > 0}, Text wie
-     * {@code modus == "tag"}. Der Textvergleich ist kein Luxus: Ein globaler
-     * Wert hält meistens ein Wort, und ein Lämpchen, das dieses Wort nicht
-     * prüfen kann, bleibt für immer dunkel.
+     * <p>Numbers like {@code depot.redstone() > 0}, text like
+     * {@code modus == "tag"}. The text comparison is no luxury: a global
+     * value usually holds a word, and an indicator that cannot check that
+     * word stays dark forever.
      */
     private Boolean compare(Expr.Binary binary) {
         switch (binary.op()) {
@@ -535,7 +536,7 @@ public final class DisplayValues {
                 : !leftText.equals(rightText);
     }
 
-    /** Text, mit dem sich vergleichen lässt: ein Literal oder ein globaler Wert. */
+    /** Text that can be compared against: a literal or a global value. */
     private String comparableText(Expr expr) {
         if (expr instanceof Expr.StringLit text) {
             return text.value();
@@ -557,7 +558,7 @@ public final class DisplayValues {
         return String.format(Locale.GERMAN, "%.1fM", amount / 1_000_000.0);
     }
 
-    /** Der Anschluss mit diesem Namen, oder {@code null}. */
+    /** The connector with this name, or {@code null}. */
     private dev.devpanda.factorynetwork.block.entity.ConnectorPart connectorNamed(
             String device) {
         var where = graph.connector(device).orElse(null);

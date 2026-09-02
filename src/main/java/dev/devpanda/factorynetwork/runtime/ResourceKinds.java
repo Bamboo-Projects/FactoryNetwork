@@ -15,35 +15,35 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Die Ressourcenarten, die es gibt — die eingebauten und die angemeldeten.
+ * The resource kinds that exist — the built-in ones and the registered ones.
  *
- * <p>Am 26.08. entschieden: Fremde Mods dürfen die Sprache erweitern. Diese
- * Klasse ist die Tür dazu. Wer eine eigene Art mitbringt, erfüllt
- * {@link ResourceKind} und ruft im Mod-Konstruktor {@link #register}.
+ * <p>Decided on 26 August: third-party mods may extend the language. This
+ * class is the door to that. Whoever brings their own kind implements
+ * {@link ResourceKind} and calls {@link #register} in the mod constructor.
  *
- * <p><b>Angemeldet wird beim Laden und danach nie wieder.</b> Genau das ist
- * die Unumkehrbarkeit, die mit der Entscheidung angenommen wurde: Ein
- * Programm mit {@code source:mana} läuft in einer Welt, deren Kern das Wort
- * nie gesehen hat, und wer die Art später zurückzöge, bräche fremde
- * Programme. {@link #freeze()} macht daraus eine Zusage statt einer Bitte.
+ * <p><b>Registration happens at load time and never again afterwards.</b>
+ * That is precisely the irreversibility accepted with the decision: a program
+ * with {@code source:mana} runs in a world whose core has never seen the
+ * word, and whoever withdrew the kind later would break third-party programs.
+ * {@link #freeze()} turns that from a request into a promise.
  *
- * <p><b>Ein Präfix gehört einer Art.</b> Zwei Einträge mit demselben Wort
- * lehnt die Registry ab, statt einen davon zu verdecken — welcher gewönne,
- * hinge an der Ladereihenfolge, und die ist keine Erklärung, die ein Spieler
- * lesen kann.
+ * <p><b>A prefix belongs to one kind.</b> The registry rejects two entries
+ * with the same word instead of shadowing one of them — which one would win
+ * would depend on load order, and that is not an explanation a player can
+ * read.
  */
 public final class ResourceKinds {
 
     /**
-     * Was der Sprache gehört und keine Art meint.
+     * What belongs to the language and does not denote a kind.
      *
-     * <p>{@code tag} und {@code fluidtag} sind Schreibweisen für Arten, die
-     * es schon gibt. {@code power} und {@code all} tragen gar keine Sorte.
-     * Wer eines davon belegte, machte bestehende Programme mehrdeutig.
+     * <p>{@code tag} and {@code fluidtag} are notations for kinds that
+     * already exist. {@code power} and {@code all} carry no type at all.
+     * Whoever claimed one of these would make existing programs ambiguous.
      */
     public static final Set<String> RESERVED = Set.of("tag", "fluidtag", "power", "all");
 
-    /** Reihenfolge der Anmeldung — sie entscheidet nichts, liest sich aber besser. */
+    /** Registration order — it decides nothing, but reads better. */
     private static final Map<String, ResourceKind> BY_PREFIX = new LinkedHashMap<>();
     private static final Map<ResourceLocation, ResourceKind> BY_ID = new LinkedHashMap<>();
     private static final Map<String, ResourceKind> BY_TAG = new LinkedHashMap<>();
@@ -51,18 +51,18 @@ public final class ResourceKinds {
     private static boolean frozen;
 
     /**
-     * Die Liste für den Lexer, einmal gebaut.
+     * The list for the lexer, built once.
      *
-     * <p>Er fragt sie bei <b>jedem</b> Wort im Quelltext. Sie dort jedes Mal
-     * neu zusammenzusetzen wäre eine Allokation je Token — und die Liste
-     * ändert sich nur beim Anmelden.
+     * <p>It asks for it at <b>every</b> word in the source text. Assembling
+     * it anew there each time would be one allocation per token — and the
+     * list only changes on registration.
      */
     private static Set<String> selectorPrefixes;
 
     private ResourceKinds() {
     }
 
-    /** Gegenstandsarten. Ein {@code tag:} löst sich hierauf auf. */
+    /** Item kinds. A {@code tag:} resolves to this. */
     public static final ResourceKind ITEM = new Builtin(
             "item", "Arten", Item.class, "item", "sel") {
 
@@ -98,7 +98,7 @@ public final class ResourceKinds {
         }
     };
 
-    /** Flüssigkeitssorten, gemessen in Millibucket. */
+    /** Fluid types, measured in millibuckets. */
     public static final ResourceKind FLUID = new Builtin(
             "fluid", "Flüssigkeiten", Fluid.class, "fluid", "fluidsel") {
 
@@ -135,12 +135,12 @@ public final class ResourceKinds {
     };
 
     /**
-     * Chemikalien aus Mekanism, als Kennung.
+     * Chemicals from Mekanism, as an identifier.
      *
-     * <p>Ein Text und kein Mekanism-Typ: Eine Signatur mit {@code Chemical}
-     * darin ließe die Klasse ohne die Mod nicht mehr laden. Ohne Mekanism
-     * trifft eine Auswahl nichts und der Speicher kann nichts — beides ist
-     * die Wahrheit über ein solches Pack und keine Notlösung.
+     * <p>A string and not a Mekanism type: a signature with {@code Chemical}
+     * in it would keep the class from loading without the mod. Without
+     * Mekanism a selection matches nothing and the store can do nothing —
+     * both are the truth about such a pack, not a workaround.
      */
     public static final ResourceKind CHEMICAL = new Builtin(
             "chemical", "Chemikalien", String.class, "chem", "chemsel") {
@@ -152,10 +152,10 @@ public final class ResourceKinds {
 
         @Override
         public Object fromId(String id) {
-            // Ohne Prüfung gegen eine Registry: Die gehört Mekanism, und ohne
-            // die Mod gibt es sie nicht. Eine Kennung, die niemand mehr
-            // auflösen kann, ist immer noch die Wahrheit darüber, was der
-            // Ablauf gemeint hat.
+            // No check against a registry: it belongs to Mekanism, and
+            // without the mod it does not exist. An identifier nobody can
+            // resolve any more is still the truth about what the flow
+            // meant.
             return id;
         }
 
@@ -182,10 +182,10 @@ public final class ResourceKinds {
     }
 
     /**
-     * Meldet eine Art an.
+     * Registers a kind.
      *
-     * @throws IllegalStateException wenn das Laden vorbei ist, das Präfix der
-     *                               Sprache gehört oder es schon vergeben ist
+     * @throws IllegalStateException if loading is over, the prefix belongs to
+     *                               the language, or it is already taken
      */
     public static void register(ResourceKind kind) {
         if (frozen) {
@@ -216,59 +216,59 @@ public final class ResourceKinds {
     }
 
     /**
-     * Schließt die Anmeldung.
+     * Closes registration.
      *
-     * <p>Ruft der Mod-Konstruktor, nachdem alle Mods geladen sind. Danach ist
-     * die Liste fest, und das ist die Zusage, auf der alles andere ruht: Was
-     * ein Programm bedeutet, hängt nicht davon ab, wann jemand etwas anmeldet.
+     * <p>Called by the mod constructor once all mods are loaded. After that
+     * the list is fixed, and that is the promise everything else rests on:
+     * what a program means does not depend on when somebody registers
+     * something.
      */
     public static void freeze() {
         frozen = true;
     }
 
-    /** Die Art zu einem Präfix, oder {@code null}. */
+    /** The kind for a prefix, or {@code null}. */
     public static ResourceKind byPrefix(String prefix) {
         return BY_PREFIX.get(prefix);
     }
 
-    /** Die Art zu einer Kennung, oder {@code null}. */
+    /** The kind for an identifier, or {@code null}. */
     public static ResourceKind byId(ResourceLocation id) {
         return BY_ID.get(id);
     }
 
     /**
-     * Die Art zu einem Namen auf der Platte, oder {@code null}.
+     * The kind for a name on disk, or {@code null}.
      *
-     * <p>Beide Namen einer Art führen hierher — der für den Einzelwert und
-     * der für die Auswahl. Welcher gemeint war, entscheidet der Aufrufer.
+     * <p>Both names of a kind lead here — the one for the single value and
+     * the one for the selection. Which was meant is up to the caller.
      */
     public static ResourceKind byTag(String tag) {
         return BY_TAG.get(tag);
     }
 
-    /** Alle Arten, in der Reihenfolge ihrer Anmeldung. */
+    /** All kinds, in the order of their registration. */
     public static Collection<ResourceKind> all() {
         return List.copyOf(BY_PREFIX.values());
     }
 
-    /** Die Präfixe, die ein Programm schreiben darf. */
+    /** The prefixes a program may write. */
     public static Set<String> prefixes() {
         return Set.copyOf(BY_PREFIX.keySet());
     }
 
     /**
-     * Was der Lexer als Auswahl zusammenkleben darf.
+     * What the lexer may glue together as a selection.
      *
-     * <p>Die angemeldeten Arten und dazu {@code tag} und {@code fluidtag} —
-     * die sind keine Arten, sondern Schreibweisen für zwei davon.
-     * {@code power} und {@code all} stehen ohne Doppelpunkt und gehören
-     * deshalb nicht dazu.
+     * <p>The registered kinds plus {@code tag} and {@code fluidtag} — those
+     * are not kinds but notations for two of them. {@code power} and
+     * {@code all} are written without a colon and therefore do not belong.
      *
-     * <p><b>Diese Liste stand einmal viermal da:</b> im Lexer, im Parser, in
-     * {@code Selectors} und im Wertemodell. Vier Kopien mit drei
-     * verschiedenen Antworten auf ein unbekanntes Wort — der Lexer klebte
-     * nicht, der Parser machte einen Tag daraus, {@code Selectors} gab
-     * {@code null}. Jetzt steht sie hier.
+     * <p><b>This list once existed four times:</b> in the lexer, in the
+     * parser, in {@code Selectors} and in the value model. Four copies with
+     * three different answers to an unknown word — the lexer did not glue,
+     * the parser made a tag out of it, {@code Selectors} returned
+     * {@code null}. Now it lives here.
      */
     public static Set<String> selectorPrefixes() {
         Set<String> known = selectorPrefixes;
@@ -283,10 +283,10 @@ public final class ResourceKinds {
     }
 
     /**
-     * Die Schreibweise hinter einem Präfix, oder {@code null}.
+     * The written form behind a prefix, or {@code null}.
      *
-     * <p>{@code null} heißt: Dieses Wort ist keine Ressourcenart. Der
-     * Aufrufer meldet das — er weiß, wo im Programm es steht.
+     * <p>{@code null} means: this word is not a resource kind. The caller
+     * reports that — it knows where in the program it stands.
      */
     public static Expr.Selector.Kind kindOf(String prefix) {
         return switch (prefix) {
@@ -300,10 +300,10 @@ public final class ResourceKinds {
     }
 
     /**
-     * Das Präfix, das jemand gemeint haben könnte, oder {@code null}.
+     * The prefix somebody might have meant, or {@code null}.
      *
-     * <p>Derselbe Maßstab wie bei Connectornamen und Ereignissen: Ein
-     * ähnlicher Name ist die beste Auskunft, die ganze Liste die zweitbeste.
+     * <p>The same yardstick as for connector names and events: a similar
+     * name is the best information, the whole list the second best.
      */
     public static String suggest(String wanted) {
         String best = null;
@@ -320,17 +320,17 @@ public final class ResourceKinds {
                 ? best : null;
     }
 
-    /** Die bekannten Präfixe, sortiert — für eine Meldung. */
+    /** The known prefixes, sorted — for a message. */
     public static String known() {
         return String.join(", ", new java.util.TreeSet<>(selectorPrefixes()));
     }
 
     /**
-     * Was alle eingebauten Arten gemeinsam haben.
+     * What all built-in kinds have in common.
      *
-     * <p>Nur die Angaben — was sie <b>tun</b>, steht bei jeder einzeln. Eine
-     * fremde Art braucht diese Klasse nicht; sie erfüllt
-     * {@link ResourceKind} und sonst nichts.
+     * <p>Only the data — what they <b>do</b> is stated with each one
+     * individually. A third-party kind does not need this class; it
+     * implements {@link ResourceKind} and nothing else.
      */
     private abstract static class Builtin implements ResourceKind {
 

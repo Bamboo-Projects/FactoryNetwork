@@ -12,32 +12,31 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Welche Anlagen in der Welt stehen.
+ * Which multiblocks exist in the world.
  *
- * <p>Eine Vorlage beschreibt Rollen, keine Maschine. Gebaut wird sie so oft man
- * will — und getrennt werden die Instanzen über den Namen ihrer Connectoren:
- * {@code ore_plant_1/crusher} gehört zur Anlage {@code ore_plant_1} und spielt
- * dort die Rolle {@code crusher}.
+ * <p>A template describes roles, not a machine. It can be built as often as
+ * you like — and the instances are told apart by the names of their
+ * connectors: {@code ore_plant_1/crusher} belongs to the multiblock
+ * {@code ore_plant_1} and plays the role {@code crusher} there.
  *
- * <p>Das kostet keinen neuen Block und keine Zuordnungsmaske: Wer drei
- * Connectoren mit der Beschriftungspistole benennt, hat eine Anlage. Die
- * Geräte dürfen dabei quer durchs Gebäude verteilt sein, was in großen Packs
- * der Normalfall ist.
+ * <p>That costs no new block and no assignment screen: whoever names three
+ * connectors with the label gun has a multiblock. The devices may be spread
+ * all over the building, which is the normal case in large packs.
  *
- * <p>Zu welcher Vorlage eine Anlage gehört, wird aus ihren Rollen erschlossen.
- * Ein Vorlagenname im Label wäre die Alternative gewesen — er würde jeden
- * Namen länger machen und bei jedem Umbenennen einer Vorlage brechen.
+ * <p>Which template a multiblock belongs to is inferred from its roles. A
+ * template name in the label would have been the alternative — it would make
+ * every name longer and break every time a template is renamed.
  */
 public final class MultiblockInstances {
 
-    /** Der Trenner zwischen Anlage und Rolle. */
+    /** The separator between multiblock and role. */
     public static final char SEPARATOR = '/';
 
     /**
-     * Eine Anlage in der Welt.
+     * A multiblock in the world.
      *
-     * @param missing   fehlende Rollen — dann nimmt sie keine Aufrufe an
-     * @param ambiguous ob mehrere Vorlagen passen
+     * @param missing   missing roles — if any, it accepts no calls
+     * @param ambiguous whether several templates match
      */
     public record Instance(String name, Decl.Multiblock template, Set<String> roles,
                            List<String> missing, boolean ambiguous) {
@@ -46,7 +45,7 @@ public final class MultiblockInstances {
             return missing.isEmpty() && !ambiguous;
         }
 
-        /** Der volle Name eines ihrer Geräte. */
+        /** The full name of one of its devices. */
         public String device(String role) {
             return name + SEPARATOR + role;
         }
@@ -55,16 +54,16 @@ public final class MultiblockInstances {
     private MultiblockInstances() {
     }
 
-    /** Der Name der Anlage in einem Gerätenamen, oder {@code null}. */
+    /** The multiblock name within a device name, or {@code null}. */
     public static String instanceOf(String device) {
         int cut = device.indexOf(SEPARATOR);
         return cut <= 0 ? null : device.substring(0, cut);
     }
 
     /**
-     * Sucht alle Anlagen zusammen.
+     * Gathers all multiblocks.
      *
-     * @param devices alle bekannten Gerätenamen des Netzes
+     * @param devices all known device names of the network
      */
     public static Map<String, Instance> resolve(Program program, Collection<String> devices) {
         List<Decl.Multiblock> templates = program.declarations().stream()
@@ -75,7 +74,7 @@ public final class MultiblockInstances {
             return Map.of();
         }
 
-        // Erst nach Anlagennamen sammeln, welche Rollen dastehen.
+        // First collect, per multiblock name, which roles are present.
         Map<String, Set<String>> byInstance = new LinkedHashMap<>();
         for (String device : devices) {
             int cut = device.indexOf(SEPARATOR);
@@ -97,16 +96,16 @@ public final class MultiblockInstances {
     }
 
     /**
-     * Sucht die Vorlage zu einer Anlage.
+     * Finds the template for a multiblock.
      *
-     * <p>Vollständige Treffer zuerst: Passt genau eine Vorlage ganz, gehört
-     * die Anlage zu ihr. Passen mehrere, ist sie mehrdeutig — beides zu raten
-     * wäre schlimmer als zu fragen.
+     * <p>Complete matches first: if exactly one template matches in full, the
+     * multiblock belongs to it. If several match, it is ambiguous — guessing
+     * either would be worse than asking.
      *
-     * <p>Passt keine ganz, gilt die mit der größten Überschneidung als
-     * gemeint und die Anlage als unvollständig. Das ist der Fall, den die
-     * Sprache vorsieht: Wer ein Gerät vergessen hat, soll es im Terminal
-     * lesen und nicht rätseln, warum nichts geschieht.
+     * <p>If none matches in full, the one with the largest overlap counts as
+     * intended and the multiblock as incomplete. That is the case the
+     * language provides for: whoever forgot a device should read it in the
+     * terminal, not puzzle over why nothing happens.
      */
     private static Instance match(String name, Set<String> roles,
             List<Decl.Multiblock> templates) {
@@ -130,7 +129,7 @@ public final class MultiblockInstances {
             }
         }
         if (closest == null) {
-            // Ein Schrägstrich im Namen allein macht noch keine Anlage.
+            // A slash in the name alone does not make a multiblock.
             return null;
         }
         List<String> missing = new ArrayList<>(closest.devices());

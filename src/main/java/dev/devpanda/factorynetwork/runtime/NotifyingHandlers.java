@@ -6,36 +6,36 @@ import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.items.IItemHandler;
 
 /**
- * Inventare und Tanks, die melden, wenn das Netz selbst etwas eingelegt hat.
+ * Inventories and tanks that report when the network itself has put
+ * something in.
  *
- * <p>Gebraucht wird das für {@code device_output}: Was das Netz in ein Gerät
- * legt, darf beim nächsten Blick nicht als Ausgabe des Geräts durchgehen.
- * Die Grundlinie muss also genau dann nachgezogen werden, wenn geschrieben
- * wurde.
+ * <p>This is needed for {@code device_output}: what the network puts into a
+ * device must not pass as the device's output on the next look. So the
+ * baseline has to be advanced exactly when a write happened.
  *
- * <p><b>Warum die Meldung am Inventar hängt und nicht an der Aufrufstelle:</b>
- * Es schreiben viele — der Interpreter für {@code move} und {@code insert},
- * die Workerlaufzeit auf drei Wegen, und beide legen zurück, wenn der
- * Netzspeicher voll ist. Jede dieser Stellen müsste daran denken, und eine
- * vergessene wäre nicht sichtbar kaputt: Ein Ablauf, der einlegt und dann
- * wartet, weckte sich selbst. Hier hängt die Meldung an dem, was geschrieben
- * wird; wer schreibt, muss nichts davon wissen.
+ * <p><b>Why the notification hangs on the inventory and not on the call
+ * site:</b> many places write — the interpreter for {@code move} and
+ * {@code insert}, the worker runtime on three paths, and both put things back
+ * when network storage is full. Each of those places would have to remember,
+ * and a forgotten one would not be visibly broken: a flow that inserts and
+ * then waits would wake itself up. Here the notification hangs on what is
+ * being written to; whoever writes need not know anything about it.
  *
- * <p>Gemeldet wird nur, was wirklich angekommen ist. Ein Probelauf
- * ({@code simulate}) ändert nichts und meldet nichts — sonst löste die
- * Annahme-Probe des Editors Ereignisse aus.
+ * <p>Only what actually arrived is reported. A dry run ({@code simulate})
+ * changes nothing and reports nothing — otherwise the editor's acceptance
+ * probe would trigger events.
  */
 public final class NotifyingHandlers {
 
     private NotifyingHandlers() {
     }
 
-    /** Dasselbe Inventar, nur meldend. Ohne Empfänger unverändert. */
+    /** The same inventory, but reporting. Unchanged without a receiver. */
     public static IItemHandler items(IItemHandler handler, Runnable onFilled) {
         return handler == null || onFilled == null ? handler : new Items(handler, onFilled);
     }
 
-    /** Derselbe Tank, nur meldend. Ohne Empfänger unverändert. */
+    /** The same tank, but reporting. Unchanged without a receiver. */
     public static IFluidHandler fluids(IFluidHandler handler, Runnable onFilled) {
         return handler == null || onFilled == null ? handler : new Fluids(handler, onFilled);
     }

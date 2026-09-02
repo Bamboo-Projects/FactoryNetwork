@@ -7,142 +7,139 @@ import net.minecraft.resources.ResourceLocation;
 import java.util.List;
 
 /**
- * Was für eine Ressource ein Wert meint.
+ * What kind of resource a value refers to.
  *
- * <p>Vorher stand diese Auskunft nirgends: Es gab drei Wertepaare —
+ * <p>Previously this information lived nowhere: there were three value pairs —
  * {@code ItemValue}/{@code Selection}, {@code FluidValue}/{@code FluidSelection},
- * {@code ChemicalValue}/{@code ChemicalSelection} —, und jede Stelle, die
- * Werte behandelt, trug alle drei nebeneinander. Gemessen waren das zehn
- * Stellen für eine einzige neue Art, neun davon Kopien voneinander
- * (siehe {@code ressourcenarten.md}, Abschnitt 2). Kopien laufen auseinander,
- * und genau das war passiert: {@code move} entschied den Weg an der Art und
- * kannte dabei die aufgelöste Flüssigkeitsauswahl, die aufgelöste
- * Chemikalienauswahl aber nicht.
+ * {@code ChemicalValue}/{@code ChemicalSelection} — and every place that
+ * handles values carried all three side by side. Measured, that came to ten
+ * places for a single new kind, nine of them copies of one another
+ * (see {@code ressourcenarten.md}, section 2). Copies drift apart, and that is
+ * exactly what had happened: {@code move} chose its path by kind and knew the
+ * resolved fluid selection, but not the resolved chemical selection.
  *
- * <p>Jetzt trägt der Wert seine Art als Feld, und was je Art verschieden ist,
- * steht hier — an einer Stelle und vollzählig.
+ * <p>Now the value carries its kind as a field, and whatever differs per kind
+ * lives here — in one place and complete.
  *
- * <p><b>Und die Liste der Arten ist offen.</b> Seit dem 26.08. ist
- * entschieden, dass fremde Mods die Sprache erweitern dürfen: Wer eine eigene
- * Art mitbringt, erfüllt diese Schnittstelle und meldet sie bei
- * {@link ResourceKinds} an. Der Kern muss dafür nicht angefasst werden. Die
- * Begründung und das, was daran nicht umkehrbar ist, stehen in
- * {@code entscheidungen.md}, „Fremde Mods dürfen die Sprache erweitern".
+ * <p><b>And the list of kinds is open.</b> Since 26 August it has been decided
+ * that third-party mods may extend the language: whoever brings their own
+ * kind implements this interface and registers it with {@link ResourceKinds}.
+ * The core does not need to be touched for that. The reasoning, and what is
+ * irreversible about it, is in {@code entscheidungen.md}, "Fremde Mods dürfen
+ * die Sprache erweitern" (third-party mods may extend the language).
  *
- * <p><b>Der Schlüssel ist ein {@code Object}.</b> Ein gemeinsamer Obertyp
- * gäbe es nur, wenn alle Arten aus derselben Hand kämen — ein Gegenstand ist
- * ein {@code Item}, eine Chemikalie ist ein {@link String}, weil eine Signatur
- * mit einem Mekanism-Typ die Klasse beim Laden auflösen würde. Welche Form zu
- * dieser Art gehört, sagt {@link #type()}, und der Wert prüft sie beim
- * Anlegen.
+ * <p><b>The key is an {@code Object}.</b> A common supertype would only exist
+ * if all kinds came from the same hand — an item is an {@code Item}, a
+ * chemical is a {@link String}, because a signature with a Mekanism type would
+ * force the class to resolve it at load time. Which form belongs to this kind
+ * is stated by {@link #type()}, and the value checks it on construction.
  *
- * <p><b>Eine Art ist ein einziges Ding.</b> Angemeldet wird sie einmal, und
- * Gleichheit ist Identität — {@code ==} statt {@code equals}. Zwei Einträge
- * mit demselben Präfix lehnt die Registry ab, statt einen davon zu verdecken.
+ * <p><b>A kind is a single thing.</b> It is registered once, and equality is
+ * identity — {@code ==} rather than {@code equals}. The registry rejects two
+ * entries with the same prefix instead of shadowing one of them.
  */
 public interface ResourceKind {
 
-    /** Die Kennung dieser Art, etwa {@code arsnouveau:source}. */
+    /** The identifier of this kind, for example {@code arsnouveau:source}. */
     ResourceLocation id();
 
     /**
-     * Was vor dem Doppelpunkt steht — und wie der Posten danach gefragt wird.
+     * What stands before the colon — and how the entry is queried afterwards.
      *
-     * <p>Dieselbe Silbe an beiden Stellen, und das ist keine Sparsamkeit:
-     * Wer {@code chemical:mekanism/hydrogen} schreibt, liest den Posten mit
-     * {@code it.chemical} ab. Zwei Wörter für dieselbe Art wären zwei Dinge
-     * zum Merken.
+     * <p>The same word in both places, and that is not thrift: whoever writes
+     * {@code chemical:mekanism/hydrogen} reads the entry with
+     * {@code it.chemical}. Two words for the same kind would be two things to
+     * remember.
      */
     String prefix();
 
-    /** Wie eine Auswahl dieser Art im Protokoll gezählt wird. */
+    /** How a selection of this kind is counted in the log. */
     String plural();
 
-    /** Woran eine Ressource dieser Art zu erkennen ist. */
+    /** What a resource of this kind is recognised by. */
     Class<?> type();
 
     /**
-     * Wie diese Art auf der Platte heißt.
+     * What this kind is called on disk.
      *
-     * <p>Bei den eingebauten drei ist der Name <b>unregelmäßig</b>, und das
-     * bleibt so: {@code item} gegen {@code sel}, aber {@code chem} gegen
-     * {@code chemsel} — gewachsen, nicht entworfen. Ein wartender Ablauf
-     * liegt mit diesen Namen in der Welt; sie geradezuziehen hieße, alten
-     * Welten ihre Abläufe verlieren zu lassen. Festgehalten in
-     * {@code ValueCodecFormatTest}.
+     * <p>For the built-in three the name is <b>irregular</b>, and it stays
+     * that way: {@code item} versus {@code sel}, but {@code chem} versus
+     * {@code chemsel} — grown, not designed. A waiting flow sits in the world
+     * with these names; straightening them out would mean letting old worlds
+     * lose their flows. Pinned down in {@code ValueCodecFormatTest}.
      *
-     * <p>Eine fremde Art wählt ihren eigenen. Er muss über Neustarts hinweg
-     * derselbe bleiben und darf keinem anderen gleichen — beides prüft
-     * {@link ResourceKinds}.
+     * <p>A third-party kind chooses its own. It must stay the same across
+     * restarts and must not equal any other — {@link ResourceKinds} checks
+     * both.
      */
     String tag();
 
-    /** Dasselbe für eine Auswahl. */
+    /** The same for a selection. */
     String selectionTag();
 
-    /** Die Kennung einer Ressource, wie sie auf der Platte steht. */
+    /** The identifier of a resource as it appears on disk. */
     String idOf(Object key);
 
     /**
-     * Die Ressource hinter einer Kennung.
+     * The resource behind an identifier.
      *
-     * <p>Ob dabei gegen eine Registry geprüft wird, entscheidet die Art.
-     * Gegenstände und Flüssigkeiten scheitern mit Meldung, wenn es sie nicht
-     * mehr gibt: Eine Variable, mit der weitergerechnet wird, darf sich nicht
-     * heimlich in etwas anderes verwandeln. Chemikalien tun es nicht — ihre
-     * Registry gehört Mekanism, und ohne die Mod gibt es sie nicht.
+     * <p>Whether this is checked against a registry is up to the kind. Items
+     * and fluids fail with a message when they no longer exist: a variable
+     * that calculations continue with must not secretly turn into something
+     * else. Chemicals do not — their registry belongs to Mekanism, and
+     * without the mod it does not exist.
      */
     Object fromId(String id);
 
-    /** Wie eine einzelne Ressource im Protokoll erscheint. */
+    /** How a single resource appears in the log. */
     String nameOf(Object key);
 
     /**
-     * Worauf sich ein Auswahlausdruck dieser Art auflöst.
+     * What a selection expression of this kind resolves to.
      *
-     * <p>Die Auflöser bleiben getrennt — sie sind keine Zwillinge, sondern
-     * verschiedene Registries mit verschiedenen Zwischenspeichern. Was
-     * zusammenkommt, ist allein die Frage, welchen davon eine Stelle braucht.
+     * <p>The resolvers stay separate — they are not twins but different
+     * registries with different caches. What comes together is solely the
+     * question of which of them a given place needs.
      */
     List<?> resolve(Expr selector);
 
     /**
-     * Der Speicher, in dem diese Art im Netz liegt.
+     * The store in which this kind lives in the network.
      *
-     * <p><b>Standardmäßig keiner.</b> Eine Art darf beweglich sein, ohne
-     * lagerbar zu sein — und {@link ResourceStore#NONE} ist die ehrliche
-     * Antwort darauf: Er nimmt nichts an und gibt nichts her. Wer lagern
-     * will, liefert hier je Netz einen neuen.
+     * <p><b>None by default.</b> A kind may be movable without being storable
+     * — and {@link ResourceStore#NONE} is the honest answer to that: it
+     * accepts nothing and hands out nothing. Whoever wants to store supplies
+     * a new one per network here.
      */
     default ResourceStore newStore() {
         return ResourceStore.NONE;
     }
 
     /**
-     * Wie diese Art an einer fremden Maschine gelesen und geschrieben wird.
+     * How this kind is read from and written to a third-party machine.
      *
-     * <p><b>Die zweite Achse.</b> {@link #newStore()} sagt, wo die Art im Netz
-     * liegt; das hier sagt, wie sie dort hin und wieder heraus kommt. Beides
-     * braucht eine Art, um in einem Programm nützlich zu sein.
+     * <p><b>The second axis.</b> {@link #newStore()} says where the kind lives
+     * in the network; this says how it gets there and back out. A kind needs
+     * both to be useful in a program.
      *
-     * <p><b>Standardmäßig keiner.</b> Eine Art darf im Netz liegen, ohne dass
-     * eine Maschine sie kennt — so wie sie sich bewegen darf, ohne lagerbar
-     * zu sein. {@code move} sagt das dann und liefert keine stille Null.
+     * <p><b>None by default.</b> A kind may live in the network without any
+     * machine knowing it — just as it may move without being storable.
+     * {@code move} then says so and does not return a silent zero.
      *
-     * <p>Die eingebauten drei liefern hier ebenfalls nichts: Ihr Weg steht
-     * heute in {@code WorldHost} und zieht erst mit Schnitt 3 hierher um.
-     * Siehe {@code maschinenzugriff.md}.
+     * <p>The built-in three also return nothing here: their path currently
+     * lives in {@code WorldHost} and only moves here with slice 3. See
+     * {@code maschinenzugriff.md}.
      */
     default dev.devpanda.factorynetwork.network.MachineAccess machine() {
         return dev.devpanda.factorynetwork.network.MachineAccess.NONE;
     }
 
     /**
-     * Die Art hinter einer Schreibweise, oder {@code null}.
+     * The kind behind a written form, or {@code null}.
      *
-     * <p>{@code null} heißt „keine Ressourcenart" und nicht „Gegenstände":
-     * {@code power} und {@code all} tragen keine Sorte, und wer sie als
-     * Gegenstände läse, bewegte bei {@code power} das Falsche.
+     * <p>{@code null} means "no resource kind" and not "items": {@code power}
+     * and {@code all} carry no type, and whoever read them as items would
+     * move the wrong thing for {@code power}.
      */
     static ResourceKind of(Expr.Selector.Kind written) {
         if (written == null) {
@@ -152,18 +149,18 @@ public interface ResourceKind {
             case ITEM, TAG -> ResourceKinds.ITEM;
             case FLUID, FLUIDTAG -> ResourceKinds.FLUID;
             case CHEMICAL -> ResourceKinds.CHEMICAL;
-            // Eine angemeldete fremde Art lässt sich aus der Schreibweise
-            // allein nicht bestimmen — welche es ist, steht im Präfix. Wer
-            // sie braucht, nimmt of(Expr.Selector) und nicht diese hier.
+            // A registered third-party kind cannot be determined from the
+            // written form alone — which one it is stands in the prefix.
+            // Whoever needs it uses of(Expr.Selector) rather than this one.
             case CUSTOM, POWER, ALL -> null;
         };
     }
 
     /**
-     * Die Art hinter einem Auswahlausdruck, oder {@code null}.
+     * The kind behind a selection expression, or {@code null}.
      *
-     * <p>Die Fassung, die auch fremde Arten trifft: Bei ihnen steht die
-     * Antwort im Präfix und nicht in der Aufzählung.
+     * <p>The version that also covers third-party kinds: for them the answer
+     * stands in the prefix and not in the enum.
      */
     static ResourceKind of(Expr.Selector selector) {
         if (selector == null) {
@@ -174,7 +171,7 @@ public interface ResourceKind {
                 : of(selector.kind());
     }
 
-    /** Dieselbe Frage für eine Auswahl, die noch als Text dasteht. */
+    /** The same question for a selection that is still present as text. */
     static ResourceKind of(Value.Request.Kind written) {
         if (written == null) {
             return null;
@@ -188,35 +185,33 @@ public interface ResourceKind {
     }
 
     /**
-     * Dieselbe Frage, wo eine Antwort gebraucht wird und {@code null} keine
-     * wäre.
+     * The same question where an answer is required and {@code null} would
+     * not be one.
      *
-     * <p>Ohne Art sind <b>Gegenstände</b> gemeint: {@code all} sagt das
-     * ausdrücklich, ein Worker ohne Filter tut es seit jeher, und eine
-     * Schreibweise, die niemand kennt, fällt beim Auflösen auf und nicht
-     * hier.
+     * <p>Without a kind, <b>items</b> are meant: {@code all} says so
+     * explicitly, a worker without a filter has always done so, and a written
+     * form nobody knows is caught during resolution, not here.
      */
     static ResourceKind orItems(Expr.Selector.Kind written) {
         ResourceKind kind = of(written);
         return kind == null ? ResourceKinds.ITEM : kind;
     }
 
-    /** Dasselbe für eine Auswahl, die noch als Text dasteht. */
+    /** The same for a selection that is still present as text. */
     static ResourceKind orItems(Value.Request.Kind written) {
         ResourceKind kind = of(written);
         return kind == null ? ResourceKinds.ITEM : kind;
     }
 
     /**
-     * Die Art, für die ein Wert steht, oder {@code null}.
+     * The kind a value stands for, or {@code null}.
      *
-     * <p><b>Die Stelle, an der {@code move} seinen Weg wählt.</b> Vorher gab
-     * es dafür zwei Fragen — eine für Flüssigkeiten, eine für Chemikalien —,
-     * und jede kannte einen anderen Ausschnitt der Werte: Die eine hatte den
-     * Nachtrag für die aufgelöste Auswahl bekommen, die andere nicht. Eine
-     * Chemikalie aus einer Schleife lief damit in die
-     * Gegenstandsauflösung, traf dort nichts, und keine Auswahl heißt dort
-     * <i>alles</i>.
+     * <p><b>The place where {@code move} chooses its path.</b> Previously
+     * there were two questions for that — one for fluids, one for chemicals
+     * — and each knew a different subset of the values: one had received the
+     * addition for the resolved selection, the other had not. A chemical from
+     * a loop thus ran into the item resolution, matched nothing there, and no
+     * selection means <i>everything</i> there.
      */
     static ResourceKind of(Value value) {
         return switch (value) {

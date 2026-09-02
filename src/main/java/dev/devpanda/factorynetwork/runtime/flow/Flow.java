@@ -9,46 +9,45 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Ein Ablauf, der warten kann.
+ * A flow that can wait.
  *
- * <p><b>Das ist die Zusage, um derentwillen die Mod gebaut wird:</b> Ein
- * Ablauf, der auf ein Ereignis wartet, macht nach einem Serverneustart genau
- * dort weiter. Möglich ist das, weil sein Zustand nicht im Aufrufstapel von
- * Java steht, sondern in Rahmen, die sich aufschreiben lassen.
+ * <p><b>This is the promise the mod is being built for:</b> a flow that is
+ * waiting for an event picks up exactly there after a server restart. That
+ * is possible because its state does not live in Java's call stack but in
+ * frames that can be persisted.
  *
- * <p>Nicht jede Funktion braucht das. Wer nur rechnet und Gegenstände bewegt,
- * läuft durch den gewöhnlichen Interpreter — schneller und ohne Buchführung.
- * Erst {@code await} und {@code sleep} machen einen Ablauf daraus.
+ * <p>Not every function needs this. One that only computes and moves items
+ * runs through the ordinary interpreter — faster and without bookkeeping.
+ * Only {@code await} and {@code sleep} turn it into a flow.
  */
 public final class Flow {
 
     public enum Status {
-        /** Läuft und will Schritte machen. */
+        /** Running and wants to take steps. */
         RUNNING,
         /**
-         * Angestellt: Es fehlt ein freies Rechenwerk.
+         * Queued: no free processor is available.
          *
-         * <p>Nicht abgelehnt, sondern verschoben. <b>Verzögerung ist
-         * wiederherstellbar, Verlust nicht</b> — ein abgelehntes
-         * {@code device_changed} ist für immer weg, und die Gegenstände
-         * stehen bis zum nächsten Neustart in einer Maschine, die niemand
-         * mehr anfasst.
+         * <p>Not rejected, but postponed. <b>Delay is recoverable, loss is
+         * not</b> — a rejected {@code device_changed} is gone for good, and
+         * the items sit until the next restart in a machine nobody touches
+         * any more.
          */
         QUEUED,
-        /** Wartet auf eine bestimmte Spielzeit. */
+        /** Waiting for a particular game time. */
         SLEEPING,
-        /** Wartet auf ein Ereignis. */
+        /** Waiting for an event. */
         AWAITING,
-        /** Zu Ende. */
+        /** Finished. */
         DONE,
-        /** Abgebrochen, mit Grund. */
+        /** Aborted, with a reason. */
         FAILED,
         /**
-         * Das Programm hat sich geändert, während dieser Ablauf wartete.
+         * The program changed while this flow was waiting.
          *
-         * <p>Er wird nicht heimlich fortgesetzt und nicht heimlich verworfen,
-         * sondern erscheint im Terminal mit der Wahl: abbrechen oder
-         * weiterlaufen lassen. So wurde es festgelegt.
+         * <p>It is neither silently resumed nor silently discarded, but shows
+         * up in the terminal with a choice: abort or let it continue. That is
+         * how it was decided.
          */
         STALE
     }
@@ -61,7 +60,7 @@ public final class Flow {
     private String detail = "";
     private Value result = Value.Nothing.get();
 
-    /** Worauf gewartet wird. */
+    /** What is being waited for. */
     private long wakeAt = -1;
     private String awaitedEvent;
     private long awaitDeadline = -1;
@@ -76,7 +75,7 @@ public final class Flow {
         return id;
     }
 
-    /** Die Funktion oder der Ereignisblock, mit dem er begann. */
+    /** The function or event block it started with. */
     public String entryPoint() {
         return entryPoint;
     }
@@ -113,7 +112,7 @@ public final class Flow {
         return status == Status.DONE || status == Status.FAILED;
     }
 
-    // ---- Zustandswechsel --------------------------------------------------
+    // ---- State transitions ------------------------------------------------
 
     public void sleepUntil(long gameTime) {
         status = Status.SLEEPING;
@@ -140,14 +139,14 @@ public final class Flow {
         detail = reason;
     }
 
-    /** Der Ablauf wartete, als das Programm gewechselt wurde. */
-    /** Stellt den Ablauf an: Es fehlt ein Platz. */
+    /** The flow was waiting when the program was swapped. */
+    /** Queues the flow: no slot is available. */
     public void queue(String reason) {
         status = Status.QUEUED;
         detail = reason;
     }
 
-    /** Holt ihn wieder aus der Warteschlange. */
+    /** Takes it back out of the queue. */
     public void dequeue() {
         status = Status.RUNNING;
         detail = "";
@@ -159,11 +158,11 @@ public final class Flow {
     }
 
     /**
-     * Nimmt einen {@code STALE}-Ablauf wieder auf.
+     * Takes a {@code STALE} flow back up.
      *
-     * <p>Die Wahl des Spielers: weiterlaufen lassen statt abbrechen. Wohin er
-     * zurückkehrt, steht in seinen eigenen Feldern — worauf er wartete, ist
-     * beim Anhalten nicht verloren gegangen.
+     * <p>The player's choice: let it continue rather than abort. Where it
+     * returns to is recorded in its own fields — what it was waiting for was
+     * not lost when it was halted.
      */
     public void unstale(int structureHash) {
         this.structureHash = structureHash;
@@ -188,12 +187,12 @@ public final class Flow {
     }
 
     /**
-     * Die Gestalt des Programms, mit dem dieser Ablauf begann.
+     * The shape of the program this flow started with.
      *
-     * <p>Zeigt der Ablauf nach einem Neustart oder einem neuen Programm noch
-     * auf dieselben Stellen? Diese Zahl beantwortet das. Stimmt sie nicht
-     * mehr, wird der Ablauf {@code STALE} — nicht heimlich fortgesetzt und
-     * nicht heimlich verworfen.
+     * <p>After a restart or a new program, does the flow still point at the
+     * same places? This number answers that. If it no longer matches, the
+     * flow becomes {@code STALE} — neither silently resumed nor silently
+     * discarded.
      */
     private int structureHash;
 
@@ -205,7 +204,7 @@ public final class Flow {
         this.structureHash = structureHash;
     }
 
-    /** Setzt den gespeicherten Wartezustand zurück in den Ablauf. */
+    /** Puts the saved waiting state back into the flow. */
     public void restore(Status status, String detail, Value result, long wakeAt,
             String awaitedEvent, long awaitDeadline, String awaitResultName) {
         this.status = status;
@@ -217,19 +216,19 @@ public final class Flow {
         this.awaitResultName = awaitResultName;
     }
 
-    // ---- Warten -----------------------------------------------------------
+    // ---- Waiting ----------------------------------------------------------
 
-    /** Ist die Zeit gekommen, auf die gewartet wurde? */
+    /** Has the time that was waited for arrived? */
     public boolean isDue(long gameTime) {
         return status == Status.SLEEPING && gameTime >= wakeAt;
     }
 
-    /** Wartet dieser Ablauf auf dieses Ereignis? */
+    /** Is this flow waiting for this event? */
     public boolean waitsFor(String event) {
         return status == Status.AWAITING && event.equals(awaitedEvent);
     }
 
-    /** Ist die Frist abgelaufen? */
+    /** Has the deadline passed? */
     public boolean hasTimedOut(long gameTime) {
         return status == Status.AWAITING && awaitDeadline >= 0 && gameTime >= awaitDeadline;
     }
@@ -246,18 +245,18 @@ public final class Flow {
         return wakeAt;
     }
 
-    /** Unter welchem Namen das Ergebnis des Wartens abgelegt wird. */
+    /** The name under which the result of the wait is stored. */
     public String awaitResultName() {
         return awaitResultName;
     }
 
-    /** Zu welcher Anlage der Ablauf gerade gehört, oder leer. */
+    /** Which multiblock instance the flow currently belongs to, or empty. */
     public String devicePrefix() {
         Frame frame = top();
         return frame == null ? "" : frame.devicePrefix();
     }
 
-    /** Legt einen Wert in den obersten Rahmen — das Ergebnis eines await. */
+    /** Puts a value into the topmost frame — the result of an await. */
     public void bind(String name, Value value) {
         if (name != null && top() != null) {
             top().locals().put(name, value);
@@ -265,11 +264,11 @@ public final class Flow {
     }
 
     /**
-     * Sucht einen Namen von innen nach außen.
+     * Looks up a name from the inside out.
      *
-     * <p>Dieselbe Regel wie im gewöhnlichen Interpreter: Der innerste Rahmen
-     * gewinnt. Nur steht der Stapel hier als Liste da, statt in Javas
-     * Aufrufen zu stecken.
+     * <p>The same rule as in the ordinary interpreter: the innermost frame
+     * wins. Only here the stack is laid out as a list instead of being buried
+     * in Java calls.
      */
     public Value find(String name) {
         for (Frame frame : stack) {
@@ -278,9 +277,9 @@ public final class Flow {
                 return value;
             }
             if (frame.isCall()) {
-                // Weiter unten liegt der Rufende. Seine Namen gehen die
-                // gerufene Funktion nichts an — sonst hinge das Verhalten
-                // davon ab, wer sie gerade aufruft.
+                // Further down lies the caller. Its names are none of the
+                // called function's business — otherwise the behaviour would
+                // depend on who happens to be calling it.
                 return null;
             }
         }
@@ -300,7 +299,7 @@ public final class Flow {
         return false;
     }
 
-    /** Alle sichtbaren Namen — für das Aufschreiben und die Anzeige. */
+    /** All visible names — for persisting and for display. */
     public Map<String, Value> visibleLocals() {
         Map<String, Value> all = new LinkedHashMap<>();
         stack.descendingIterator().forEachRemaining(frame -> all.putAll(frame.locals()));

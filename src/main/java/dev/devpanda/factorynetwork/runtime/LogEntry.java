@@ -3,16 +3,16 @@ package dev.devpanda.factorynetwork.runtime;
 import net.minecraft.nbt.CompoundTag;
 
 /**
- * Eine Zeile im Protokoll.
+ * One line in the log.
  *
- * @param level  wie ernst
- * @param time   wann, in Millisekunden seit 1970 — echte Zeit und nicht
- *               Spielzeit: Wer nachsieht, warum die Anlage heute Nacht stehen
- *               blieb, denkt in Uhrzeiten und nicht in Ticks
- * @param source woher, etwa {@code worker erz_import} oder {@code main.mf} —
- *               <b>die halbe Auskunft</b>. Eine Zeile ohne Absender bedeutet
- *               bei dreißig Workern nichts
- * @param text   was
+ * @param level  how serious
+ * @param time   when, in milliseconds since 1970 — real time and not game
+ *               time: whoever checks why the plant stopped last night thinks
+ *               in clock times, not in ticks
+ * @param source where from, e.g. {@code worker erz_import} or {@code main.mf} —
+ *               <b>half the information</b>. A line without a sender means
+ *               nothing when there are thirty workers
+ * @param text   what
  */
 public record LogEntry(LogLevel level, long time, String source, String text) {
 

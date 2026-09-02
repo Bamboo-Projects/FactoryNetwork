@@ -1,35 +1,35 @@
 package dev.devpanda.factorynetwork.runtime;
 
 /**
- * Wie ernst ein Eintrag im Protokoll ist.
+ * How serious a log entry is.
  *
- * <p><b>Vier und nicht mehr.</b> Jede weitere Stufe kostet den Spieler eine
- * Entscheidung beim Schreiben und beim Lesen, und die Grenze zwischen
- * „notice" und „info" zieht ohnehin niemand zweimal gleich. Die vier hier
- * sind die, die jeder schon kennt.
+ * <p><b>Four and no more.</b> Every additional level costs the player a
+ * decision when writing and when reading, and nobody draws the line between
+ * "notice" and "info" the same way twice anyway. The four here are the ones
+ * everyone already knows.
  *
- * <p>Die Reihenfolge ist die Rangfolge: {@code DEBUG} zuunterst,
- * {@code ERROR} zuoberst. Der Filter im Terminal zeigt alles ab einer Stufe,
- * und dafür muss sie vergleichbar sein.
+ * <p>The declaration order is the ranking: {@code DEBUG} at the bottom,
+ * {@code ERROR} at the top. The filter in the terminal shows everything from
+ * a given level upwards, and for that the levels must be comparable.
  */
 public enum LogLevel {
 
     /**
-     * Zwischenstände beim Suchen eines Fehlers.
+     * Intermediate states while hunting a bug.
      *
-     * <p>Im Terminal voreingestellt ausgeblendet: Ein {@code debug} in einer
-     * Schleife schreibt hundert Zeilen je Sekunde, und danach findet niemand
-     * mehr die eine Meldung, auf die es ankam.
+     * <p>Hidden in the terminal by default: a {@code debug} inside a loop
+     * writes a hundred lines per second, and afterwards nobody can find the
+     * one message that mattered.
      */
     DEBUG("debug", "§8"),
 
-    /** Was gut lief. Auch das schlichte {@code log()} landet hier. */
+    /** What went well. The plain {@code log()} ends up here too. */
     INFO("info", "§f"),
 
-    /** Etwas stimmt nicht, die Fabrik läuft aber weiter. */
+    /** Something is wrong, but the factory keeps running. */
     WARN("warn", "§e"),
 
-    /** Etwas ist stehen geblieben. */
+    /** Something has come to a halt. */
     ERROR("error", "§c");
 
     private final String key;
@@ -40,17 +40,17 @@ public enum LogLevel {
         this.colour = colour;
     }
 
-    /** Der Name, unter dem die Stufe im Code und in der Sprachdatei steht. */
+    /** The name under which the level appears in code and in the language file. */
     public String key() {
         return key;
     }
 
-    /** Die Farbe im Terminal. */
+    /** The colour in the terminal. */
     public String colour() {
         return colour;
     }
 
-    /** Die Stufe zu einem Namen, oder {@code null}. */
+    /** The level for a name, or {@code null}. */
     public static LogLevel of(String name) {
         for (LogLevel level : values()) {
             if (level.key.equals(name)) {
@@ -60,7 +60,7 @@ public enum LogLevel {
         return null;
     }
 
-    /** Ist diese Stufe mindestens so ernst wie jene? */
+    /** Is this level at least as serious as that one? */
     public boolean atLeast(LogLevel other) {
         return ordinal() >= other.ordinal();
     }

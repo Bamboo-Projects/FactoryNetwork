@@ -15,73 +15,73 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Führt Abläufe aus, die warten können.
+ * Executes flows that can wait.
  *
- * <p>Der Unterschied zum gewöhnlichen Interpreter ist allein die
- * Ablaufsteuerung: Statt sich rekursiv aufzurufen, legt diese Maschine Rahmen
- * auf einen Stapel und arbeitet ihn Schritt für Schritt ab. Was eine
- * Anweisung <b>tut</b> — Gegenstände bewegen, Redstone setzen, rechnen —
- * steht weiterhin nur an einer Stelle, im Interpreter.
+ * <p>The only difference from the ordinary interpreter is the control flow:
+ * instead of calling itself recursively, this engine pushes frames onto a
+ * stack and works through it step by step. What a statement <b>does</b> —
+ * moving items, setting redstone, computing — still lives in one place only,
+ * in the interpreter.
  *
- * <p>Nur dadurch lässt sich ein Ablauf mitten in einer Funktion anhalten,
- * aufschreiben und nach einem Serverneustart fortsetzen.
+ * <p>Only this makes it possible to halt a flow in the middle of a function,
+ * persist it, and resume it after a server restart.
  */
 public final class FlowEngine {
 
-    /** So viele Anweisungen darf ein Ablauf je Tick machen. */
+    /** How many statements a flow may execute per tick. */
     /**
-     * So viele Schritte darf <b>ein einzelner</b> Ablauf je Tick machen.
+     * How many steps <b>a single</b> flow may take per tick.
      *
-     * <p>Das ist kein Kapazitätsmodell, sondern eine Bremse gegen die
-     * Endlosschleife: Eine falsch geschriebene {@code while}-Schleife soll
-     * den Server nicht anhalten. Wie viele Abläufe nebeneinander laufen
-     * dürfen, ist eine andere Frage und steht an den Rechenwerken.
+     * <p>This is not a capacity model but a brake against the infinite loop:
+     * a badly written {@code while} loop must not stall the server. How many
+     * flows may run side by side is a different question and is determined
+     * by the processors.
      */
     private static final int STEPS_PER_TICK = 500;
 
     /**
-     * Wie viele Abläufe gleichzeitig laufen dürfen.
+     * How many flows may run at the same time.
      *
-     * <p>Setzt der Controller aus den Rechenwerken in seinen Serverschränken.
-     * Ohne ihn — etwa in einem Test der Maschine allein — gilt keine Grenze.
+     * <p>Set by the controller from the processors in its server racks.
+     * Without one — in a test of the engine on its own, say — no limit
+     * applies.
      */
     private int threadLimit = Integer.MAX_VALUE;
 
     /**
-     * Steht das Netz still?
+     * Is the network at a standstill?
      *
-     * <p>Ohne Serverschrank oder ohne Strom bewegt sich kein Ablauf — und
-     * zwar <b>eingefroren, nicht abgebrochen</b>: Er läuft weiter, wo er war,
-     * sobald beides wieder da ist.
+     * <p>Without a server rack or without power no flow moves — and it is
+     * <b>frozen, not aborted</b>: it carries on where it was as soon as both
+     * are back.
      *
-     * <p>Als eigenes Kennzeichen und nicht als Grenze von null: Eine Grenze
-     * hält nur neue Abläufe auf, die laufenden liefen weiter. Und weil
-     * {@code startFlow} und {@code fireEvent} die Maschine unmittelbar
-     * antreiben, ohne über den Tick des Controllers zu gehen, muss die
-     * Sperre in der Maschine sitzen und nicht davor.
+     * <p>A flag of its own rather than a limit of zero: a limit only holds
+     * back new flows, the running ones would keep going. And because
+     * {@code startFlow} and {@code fireEvent} drive the engine directly,
+     * without going through the controller's tick, the lock has to sit in
+     * the engine and not in front of it.
      */
     private boolean frozen;
 
     /**
-     * Wie viele Abläufe überhaupt bestehen dürfen — laufende und wartende.
+     * How many flows may exist at all — running and waiting ones.
      *
-     * <p>Der Speicher der Server. Anders als die Grenze der Rechenwerke ist das
-     * keine Warteschlange, sondern eine Wand: Was nicht mehr hineinpasst,
-     * scheitert sichtbar. <b>Ein Ablauf, der schläft oder auf ein Ereignis
-     * wartet, belegt Speicher genauso wie ein rechnender</b> — er steht
-     * schließlich irgendwo, mit allen seinen Variablen.
+     * <p>The servers' memory. Unlike the processor limit this is not a queue
+     * but a wall: whatever no longer fits fails visibly. <b>A flow that is
+     * sleeping or waiting for an event occupies memory just like a computing
+     * one</b> — after all, it sits somewhere, with all of its variables.
      *
-     * <p>Ohne Controller — etwa in einem Test der Maschine allein — gilt
-     * keine Grenze.
+     * <p>Without a controller — in a test of the engine on its own, say — no
+     * limit applies.
      */
     private int memoryLimit = Integer.MAX_VALUE;
 
     /**
-     * So viele dürfen höchstens anstehen.
+     * At most this many may be queued.
      *
-     * <p>Eine unbegrenzte Warteschlange wäre eine Anlage, die Arbeit
-     * ansammelt, die sie nie abarbeitet. Was darüber hinausgeht, scheitert
-     * sichtbar und steht unter den letzten Fehlern.
+     * <p>An unbounded queue would be a plant that accumulates work it never
+     * gets through. Anything beyond this fails visibly and shows up among the
+     * recent failures.
      */
     private static final int MAX_QUEUE = 32;
 
@@ -93,24 +93,24 @@ public final class FlowEngine {
     private final java.util.Deque<PendingEvent> pending = new java.util.ArrayDeque<>();
     private long nextId = 1;
 
-    /** So viele gescheiterte Abläufe bleiben zum Nachsehen liegen. */
+    /** This many failed flows are kept around for inspection. */
     private static final int KEPT_FAILURES = 10;
 
     public FlowEngine(Program program, Interpreter interpreter) {
         this.program = program;
         this.interpreter = interpreter;
         this.blocks = BlockIndex.of(program);
-        // Ab jetzt gehen alle emit dieses Interpreters durch diese Maschine.
+        // From now on every emit of this interpreter goes through this engine.
         interpreter.setEventSink(this::post);
     }
 
     /**
-     * Nimmt ein Ereignis entgegen, ohne es sofort auszuliefern.
+     * Accepts an event without delivering it immediately.
      *
-     * <p>Ein {@code emit} kann mitten in einem Ablauf stehen, und das
-     * Ausliefern würde denselben Stapel anfassen, auf dem gerade gearbeitet
-     * wird. Also wartet das Ereignis bis zwischen zwei Schritten. Für den
-     * Spieler bleibt es derselbe Tick.
+     * <p>An {@code emit} can sit in the middle of a flow, and delivering it
+     * would touch the very stack that is currently being worked on. So the
+     * event waits until between two steps. For the player it is still the
+     * same tick.
      */
     public void setThreadLimit(int limit) {
         this.threadLimit = Math.max(0, limit);
@@ -124,7 +124,7 @@ public final class FlowEngine {
         return memoryLimit;
     }
 
-    /** Wie viele Abläufe gerade Speicher belegen. */
+    /** How many flows currently occupy memory. */
     public int inMemory() {
         return occupied() + queued();
     }
@@ -142,13 +142,13 @@ public final class FlowEngine {
     }
 
     /**
-     * Wie viele Plätze gerade belegt sind.
+     * How many slots are currently occupied.
      *
-     * <p><b>Gezählt, nicht mitgeführt.</b> Ein Zähler müsste auf jedem
-     * Ausgang wieder herunter — fertig, gescheitert, abgebrochen, veraltet,
-     * Frist abgelaufen —, und der eine vergessene Ausgang wäre ein Netz, das
-     * nach einer Stunde nichts mehr startet. Die Liste ist klein; zählen
-     * kostet nichts und kann nicht lecken.
+     * <p><b>Counted, not tracked.</b> A counter would have to be decremented
+     * on every exit path — finished, failed, aborted, stale, deadline passed
+     * —, and the one forgotten exit would be a network that starts nothing
+     * any more after an hour. The list is small; counting costs nothing and
+     * cannot leak.
      */
     public int occupied() {
         int count = 0;
@@ -161,7 +161,7 @@ public final class FlowEngine {
         return count;
     }
 
-    /** Wie viele gerade anstehen. */
+    /** How many are currently queued. */
     public int queued() {
         int count = 0;
         for (Flow flow : flows.values()) {
@@ -173,32 +173,32 @@ public final class FlowEngine {
     }
 
     /**
-     * Stellt einen frisch gebauten Ablauf an, wenn kein Platz frei ist.
+     * Queues a freshly built flow if no slot is free.
      *
-     * <p>Der Ablauf ist bereits fertig aufgebaut — er wartet nur. So bleibt
-     * er im Terminal sichtbar, statt in einer zweiten Liste zu verschwinden,
-     * die niemand ansieht.
+     * <p>The flow is already fully set up — it is merely waiting. That way it
+     * stays visible in the terminal instead of disappearing into a second
+     * list nobody looks at.
      */
     private boolean admit(Flow flow) {
-        // Der Speicher zuerst: Ein Ablauf, für den kein Platz im Speicher
-        // ist, wartet auch nicht — er passt schlicht nicht hinein.
+        // Memory first: a flow for which there is no room in memory does not
+        // wait either — it simply does not fit.
         //
-        // <b>Nicht, solange das Netz steht.</b> Dann ist die Grenze null,
-        // weil es keinen Server gibt, und jeder Ablauf ginge verloren,
-        // statt zu warten, bis wieder einer da ist. Verzögerung ist
-        // wiederherstellbar, Verlust nicht — dieselbe Antwort wie bei der
-        // Überlast.
+        // <b>Not while the network is down.</b> Then the limit is zero,
+        // because there is no server, and every flow would be lost instead
+        // of waiting until one is back. Delay is recoverable, loss is not —
+        // the same answer as for overload.
         if (!frozen && inMemory() >= memoryLimit) {
-            // „Der Speicher ist voll" heißt woanders: die Zellen im Laufwerk.
-            // Wer beides kennt, ging bei dieser Meldung Zellen einbauen.
+            // "The storage is full" means something else elsewhere: the cells
+            // in the drive. Anyone who knows both would go and install cells
+            // on seeing that message.
             flow.fail("Kein Platz im Arbeitsspeicher — " + memoryLimit
                     + " Abläufe passen hinein. Bau größere Speicher in den Serverschrank.");
             remember(flow);
             return false;
         }
-        // Vor dem Eintragen gefragt: Sonst zählte der neue Ablauf sich selbst
-        // mit, und der zweite von zwei Plätzen wäre schon belegt, bevor er
-        // ihn bekommt.
+        // Asked before registering: otherwise the new flow would count
+        // itself, and the second of two slots would already be taken before
+        // it gets it.
         if (occupied() < threadLimit) {
             return true;
         }
@@ -212,11 +212,11 @@ public final class FlowEngine {
     }
 
     /**
-     * Holt an, was ansteht, solange Plätze frei sind.
+     * Pulls in what is queued, as long as slots are free.
      *
-     * <p>Der Ältere zuerst, und nur an dieser einen Stelle im Tick. Eine
-     * Regel, die feststeht und sich erklären lässt — sonst ist „warum lief
-     * meiner nicht" nicht zu beantworten.
+     * <p>Oldest first, and only at this one point in the tick. A rule that
+     * is fixed and can be explained — otherwise "why didn't mine run" has no
+     * answer.
      */
     private void promote() {
         List<Flow> waiting = flows.values().stream()
@@ -235,7 +235,7 @@ public final class FlowEngine {
         pending.add(new PendingEvent(event, List.copyOf(arguments)));
     }
 
-    /** Ein Ereignis, das auf seine Auslieferung wartet. */
+    /** An event waiting to be delivered. */
     private record PendingEvent(String event, List<Value> arguments) {}
 
     public Map<Long, Flow> flows() {
@@ -258,7 +258,7 @@ public final class FlowEngine {
         this.nextId = nextId;
     }
 
-    /** Nimmt einen geladenen Ablauf auf, ohne ihn neu zu beginnen. */
+    /** Adopts a loaded flow without starting it over. */
     public void adopt(Flow flow) {
         flows.put(flow.id(), flow);
         if (flow.id() >= nextId) {
@@ -266,7 +266,7 @@ public final class FlowEngine {
         }
     }
 
-    /** Beginnt einen Ablauf mit einer Funktion des Programms. */
+    /** Starts a flow with one of the program's functions. */
     public Flow start(String functionName, List<Value> arguments) {
         Decl.Fn function = program.functions().stream()
                 .filter(candidate -> candidate.name().equals(functionName))
@@ -288,19 +288,18 @@ public final class FlowEngine {
     }
 
     /**
-     * Steht gerade ein Ablauf und wartet auf dieses Ereignis?
+     * Is a flow currently standing by, waiting for this event?
      *
-     * <p><b>Ein {@code await} ist genauso ein Zuhörer wie ein {@code on}.</b>
-     * Wer nur die Blöcke zählt, hält ein Ereignis für ungehört, auf das
-     * jemand wartet — und der Wartende wacht nie wieder auf. Beim Redstone
-     * und beim Inventar entscheidet diese Frage, ob überhaupt hingesehen
-     * wird.
+     * <p><b>An {@code await} is just as much a listener as an {@code on}.</b>
+     * Counting only the blocks would treat an event somebody is waiting for
+     * as unheard — and the waiter would never wake up again. For redstone and
+     * for inventories this question decides whether anyone looks at all.
      */
     public boolean awaits(String event) {
         return flows.values().stream().anyMatch(flow -> flow.waitsFor(event));
     }
 
-    /** Beginnt einen Ablauf für jeden Block, der auf dieses Ereignis hört. */
+    /** Starts a flow for every block listening for this event. */
     public List<Flow> fire(String event, List<Value> arguments) {
         List<Flow> started = new ArrayList<>();
         for (Decl.On handler : program.handlers()) {
@@ -324,19 +323,19 @@ public final class FlowEngine {
     }
 
     /**
-     * Ein Tick: Weckt, was fällig ist, und lässt die laufenden Abläufe
-     * arbeiten.
+     * One tick: wakes whatever is due and lets the running flows do their
+     * work.
      */
     public void tick(long gameTime) {
         if (frozen) {
-            // Ereignisse bleiben liegen, statt verlorenzugehen: Sie kommen
-            // an, sobald das Netz wieder läuft.
+            // Events stay put instead of getting lost: they arrive as soon as
+            // the network is running again.
             return;
         }
-        // Ein Ereignis kann Abläufe wecken, die ihrerseits Ereignisse
-        // auslösen. Das darf im selben Tick weitergehen, aber nicht endlos:
-        // Zwei Abläufe, die sich gegenseitig aufwecken, würden den Server
-        // sonst stehen lassen. Was übrig bleibt, wartet auf den nächsten Tick.
+        // An event can wake flows that in turn fire events. That may carry on
+        // within the same tick, but not endlessly: two flows waking each
+        // other up would otherwise stall the server. Whatever is left waits
+        // for the next tick.
         for (int runde = 0; runde < EVENT_ROUNDS; runde++) {
             deliver();
             advanceAll(gameTime);
@@ -346,7 +345,7 @@ public final class FlowEngine {
         }
     }
 
-    /** So viele Ereignisrunden dürfen in einem Tick aufeinander folgen. */
+    /** This many event rounds may follow one another within a single tick. */
     private static final int EVENT_ROUNDS = 8;
 
     private void deliver() {
@@ -366,7 +365,7 @@ public final class FlowEngine {
             if (flow.isDue(gameTime)) {
                 flow.resume();
             } else if (flow.hasTimedOut(gameTime)) {
-                // Die Frist ist um: Der else-Zweig übernimmt.
+                // The deadline has passed: the else branch takes over.
                 timeOut(flow);
             }
             if (flow.status() == Flow.Status.RUNNING) {
@@ -382,17 +381,17 @@ public final class FlowEngine {
             }
             return true;
         });
-        // Erst aufräumen, dann nachrücken: Ein Platz, der in diesem Tick frei
-        // wurde, soll noch in diesem Tick wieder belegt werden.
+        // Clean up first, then promote: a slot that became free in this tick
+        // should be filled again in this very tick.
         promote();
     }
 
     /**
-     * Behält die letzten gescheiterten Abläufe.
+     * Keeps the most recent failed flows.
      *
-     * <p>Ein Ablauf, der stirbt, verschwand bisher aus der Liste, und mit ihm
-     * der Grund. Wer nachts eine Anlage baut, sieht am nächsten Morgen sonst
-     * nur, dass nichts passiert ist.
+     * <p>A flow that died used to vanish from the list, and its reason with
+     * it. Someone building a plant at night would otherwise see nothing the
+     * next morning except that nothing happened.
      */
     private void remember(Flow flow) {
         failed.add(flow);
@@ -401,21 +400,21 @@ public final class FlowEngine {
         }
     }
 
-    /** Die letzten gescheiterten Abläufe, ältester zuerst. */
+    /** The most recent failed flows, oldest first. */
     public List<Flow> failed() {
         return List.copyOf(failed);
     }
 
     /**
-     * Weckt Abläufe, die auf dieses Ereignis warten.
+     * Wakes flows waiting for this event.
      *
-     * <p>Die {@code where}-Klausel entscheidet mit: Ein Ablauf, der auf
-     * <em>seinen</em> Auftrag wartet, darf nicht von fremden Ereignissen
-     * geweckt werden. Passt sie nicht, bleibt der Ablauf liegen — und seine
-     * Frist läuft weiter, denn sie ist absolute Spielzeit.
+     * <p>The {@code where} clause has a say: a flow waiting for <em>its</em>
+     * job must not be woken by somebody else's events. If the clause does not
+     * match, the flow stays put — and its deadline keeps running, because it
+     * is absolute game time.
      *
-     * <p>Das Ergebnis landet unter dem Namen, den das {@code await} angegeben
-     * hat — dort, wo im Programm {@code let ergebnis = await …} steht.
+     * <p>The result lands under the name the {@code await} specified — where
+     * the program says {@code let ergebnis = await …}.
      */
     public int wake(String event, List<Value> arguments) {
         Decl.Event declaration = program.event(event);
@@ -437,16 +436,16 @@ public final class FlowEngine {
     }
 
     /**
-     * Prüft die {@code where}-Klausel.
+     * Checks the {@code where} clause.
      *
-     * <p>Sichtbar sind dabei die Parameter des Ereignisses — {@code where
-     * amount > 100} meint den Parameter der Deklaration, nicht eine Variable
-     * des Ablaufs. Nur was dort nicht gefunden wird, sucht der Ablauf bei
-     * sich; so lässt sich {@code where id == jobId} schreiben, mit {@code id}
-     * aus dem Ereignis und {@code jobId} aus dem Ablauf.
+     * <p>The event's parameters are visible here — {@code where
+     * amount > 100} refers to the declaration's parameter, not to a variable
+     * of the flow. Only what is not found there does the flow look up in
+     * itself; that allows writing {@code where id == jobId}, with {@code id}
+     * from the event and {@code jobId} from the flow.
      *
-     * <p>Ein Fehler in der Bedingung darf nicht das Ereignis für alle anderen
-     * verderben: Er hält nur diesen einen Ablauf an.
+     * <p>An error in the condition must not spoil the event for everyone
+     * else: it halts only this one flow.
      */
     private boolean matches(Flow flow, Expr where, Decl.Event declaration,
             List<Value> arguments) {
@@ -466,7 +465,7 @@ public final class FlowEngine {
         }
     }
 
-    /** Ein Ereignis mit einem Wert liefert diesen, mit mehreren eine Liste. */
+    /** An event with one value yields that value, with several a list. */
     private static Value resultOf(List<Value> arguments) {
         return switch (arguments.size()) {
             case 0 -> Value.Nothing.get();
@@ -476,13 +475,13 @@ public final class FlowEngine {
     }
 
     /**
-     * Holt die {@code await}-Anweisung zurück, auf der ein Ablauf steht.
+     * Recovers the {@code await} statement a flow is standing on.
      *
-     * <p>Der Zähler wurde beim Warten schon weitergeschaltet, damit der
-     * Ablauf nach dem Aufwachen hinter dem {@code await} weitermacht — die
-     * Anweisung selbst liegt also eine Stelle davor. Dass sie sich so
-     * wiederfinden lässt, spart {@code where} und den {@code else}-Zweig beim
-     * Aufschreiben: Beide stehen im Programm und nicht im Ablauf.
+     * <p>The counter was already advanced when the wait began, so that the
+     * flow continues after the {@code await} once it wakes up — the statement
+     * itself therefore sits one position earlier. Being able to find it again
+     * this way saves persisting {@code where} and the {@code else} branch:
+     * both live in the program, not in the flow.
      */
     private static Expr.Await awaitOf(Flow flow) {
         Frame frame = flow.top();
@@ -499,11 +498,11 @@ public final class FlowEngine {
     }
 
     /**
-     * Bricht einen Ablauf ab.
+     * Aborts a flow.
      *
-     * <p>Die eine Hälfte der Wahl bei {@code STALE}, und zugleich der Weg,
-     * einen Ablauf loszuwerden, der auf ein Ereignis wartet, das niemand mehr
-     * auslöst.
+     * <p>One half of the choice for {@code STALE}, and at the same time the
+     * way to get rid of a flow that is waiting for an event nobody fires any
+     * more.
      */
     public boolean abort(long id) {
         Flow flow = flows.remove(id);
@@ -515,7 +514,7 @@ public final class FlowEngine {
         return true;
     }
 
-    /** Die andere Hälfte: weiterlaufen lassen, wo der Ablauf stehen blieb. */
+    /** The other half: let the flow continue where it stopped. */
     public boolean unstale(long id) {
         Flow flow = flows.get(id);
         if (flow == null || flow.status() != Flow.Status.STALE) {
@@ -525,14 +524,14 @@ public final class FlowEngine {
         return true;
     }
 
-    /** Abläufe, die auf die Wahl des Spielers warten. */
+    /** Flows waiting for the player's decision. */
     public List<Flow> stale() {
         return flows.values().stream()
                 .filter(flow -> flow.status() == Flow.Status.STALE)
                 .toList();
     }
 
-    /** Lässt einen Ablauf arbeiten, bis er wartet oder sein Budget aufbraucht. */
+    /** Lets a flow work until it waits or uses up its budget. */
     private void advance(Flow flow, long gameTime) {
         int steps = 0;
         while (flow.status() == Flow.Status.RUNNING && steps++ < STEPS_PER_TICK) {
@@ -547,9 +546,9 @@ public final class FlowEngine {
             }
             Stmt statement = frame.block().statements().get(frame.index());
             try {
-                // Wer gerade schreibt, steht im Protokoll daneben. Ohne das
-                // steht dort „Kohle wird knapp" und niemand weiß, welcher der
-                // dreißig Abläufe das meint.
+                // Whoever is writing is noted next to the log line. Without
+                // that, the log says "coal is running low" and nobody knows
+                // which of the thirty flows means it.
                 interpreter.setLogSource(flow.entryPoint());
                 Step step = interpreter.perform(statement, new FlowScope(flow), gameTime);
                 apply(flow, frame, step);
@@ -560,26 +559,26 @@ public final class FlowEngine {
         }
     }
 
-    /** Ein neuer Rahmen gehört zu derselben Anlage wie der, aus dem er kommt. */
+    /** A new frame belongs to the same multiblock as the one it comes from. */
     private static Frame inherit(Frame parent, Frame child) {
         child.setDevicePrefix(parent.devicePrefix());
         return child;
     }
 
     /**
-     * Kehrt aus einer gerufenen Funktion zurück.
+     * Returns from a called function.
      *
-     * <p>Ein {@code return} beendet nicht mehr zwangsläufig den Ablauf: Steht
-     * darüber ein Aufruf, landet der Wert dort unter seinem Namen und es geht
-     * hinter dem Aufruf weiter. Erst im äußersten Rahmen ist der Ablauf zu
-     * Ende — und sein Rückgabewert ist der des Einstiegs.
+     * <p>A {@code return} no longer necessarily ends the flow: if there is a
+     * call above it, the value lands there under its name and execution
+     * continues after the call. Only in the outermost frame is the flow
+     * finished — and its return value is that of the entry point.
      */
     private void returnFrom(Flow flow, Value value) {
         while (!flow.stack().isEmpty()) {
             Frame frame = flow.pop();
             if (frame.exitOnLeave()) {
-                // Der else-Zweig verlässt den Ablauf — mit dem Wert, den er
-                // zurückgibt, nicht mit nichts.
+                // The else branch leaves the flow — with the value it
+                // returns, not with nothing.
                 flow.finish(value);
                 return;
             }
@@ -595,15 +594,14 @@ public final class FlowEngine {
     }
 
     /**
-     * Verlässt einen Rahmen.
+     * Leaves a frame.
      *
-     * <p>Ein Schleifenrumpf beginnt von vorn — die Bedingung wird beim
-     * nächsten Durchlauf der {@code while}-Anweisung geprüft, die eine Ebene
-     * darunter liegt.
+     * <p>A loop body starts over — the condition is checked on the next pass
+     * of the {@code while} statement, which sits one level below.
      */
     private void leaveFrame(Flow flow, Frame frame) {
-        // Ein Lauf über eine Liste behält seinen Rahmen: Der Stand steht dort
-        // und nirgends sonst.
+        // An iteration over a list keeps its frame: the position lives there
+        // and nowhere else.
         if (frame.hasIteration() && frame.nextIteration()) {
             frame.restart();
             return;
@@ -614,7 +612,7 @@ public final class FlowEngine {
             return;
         }
         if (frame.isCall()) {
-            // Eine Funktion, die ohne return endet, gibt nichts zurück.
+            // A function that ends without a return returns nothing.
             if (frame.resultName() != null) {
                 flow.top().locals().put(frame.resultName(), Value.Nothing.get());
             }
@@ -622,17 +620,17 @@ public final class FlowEngine {
             return;
         }
         if (!frame.isLoop() || frame.hasIteration()) {
-            // Die Anweisung, die den Block geöffnet hat, ist erledigt.
+            // The statement that opened the block is done.
             //
-            // Bei while ist sie das nicht: Ihre Bedingung muss erneut geprüft
-            // werden. Bei for schon — die Liste ist durch. Ohne diese
-            // Unterscheidung wertet der Lauf seine Liste erneut aus und
-            // beginnt von vorn, endlos.
+            // With while it is not: its condition has to be checked again.
+            // With for it is — the list is exhausted. Without this
+            // distinction the iteration would evaluate its list again and
+            // start over, endlessly.
             flow.top().advance();
         }
     }
 
-    /** Setzt um, was die Anweisung als nächsten Schritt verlangt hat. */
+    /** Carries out what the statement requested as its next step. */
     private void apply(Flow flow, Frame frame, Step step) {
         switch (step) {
             case Step.Next ignored -> frame.advance();
@@ -652,7 +650,7 @@ public final class FlowEngine {
             }
             case Step.ForEach each -> {
                 if (each.values().isEmpty()) {
-                    // Nichts zu tun — die Schleife ist damit erledigt.
+                    // Nothing to do — that settles the loop.
                     frame.advance();
                 } else {
                     Frame body = inherit(frame, new Frame(each.body(), true));
@@ -664,8 +662,8 @@ public final class FlowEngine {
             case Step.Break ignored -> unwindLoop(flow, true);
             case Step.Continue ignored -> unwindLoop(flow, false);
             case Step.Sleep sleep -> {
-                // Erst weiterschalten, dann schlafen: Nach dem Aufwachen soll
-                // der Ablauf hinter dem sleep weitermachen, nicht davor.
+                // Advance first, then sleep: after waking up the flow should
+                // continue after the sleep, not before it.
                 frame.advance();
                 flow.sleepUntil(sleep.untilGameTime());
             }
@@ -677,26 +675,26 @@ public final class FlowEngine {
     }
 
     /**
-     * Verlässt die innerste Schleife.
+     * Leaves the innermost loop.
      *
-     * <p>{@code break} wirft den Schleifenrumpf <em>und</em> die
-     * {@code while}-Anweisung darunter weg; {@code continue} nur den Rumpf,
-     * damit die Bedingung erneut geprüft wird.
+     * <p>{@code break} discards the loop body <em>and</em> the {@code while}
+     * statement beneath it; {@code continue} only the body, so that the
+     * condition is checked again.
      */
     private void unwindLoop(Flow flow, boolean leaveLoop) {
         while (!flow.stack().isEmpty()) {
             Frame frame = flow.top();
             if (frame.isCall() && !frame.isLoop()) {
-                // break und continue reichen nicht über einen Aufruf hinaus —
-                // sonst verließe eine gerufene Funktion die Schleife ihres
-                // Rufers, und der Aufruf hinge davon ab, wo er steht.
+                // break and continue do not reach beyond a call — otherwise a
+                // called function would leave its caller's loop, and the call
+                // would depend on where it sits.
                 flow.fail("break oder continue steht hier außerhalb einer Schleife.");
                 return;
             }
             if (frame.isLoop() && !leaveLoop && frame.hasIteration()) {
-                // continue in einem Lauf über eine Liste: nächster Eintrag.
-                // Ein Poppen wie bei while wäre hier falsch — die Liste würde
-                // neu ausgewertet und der Lauf begänne von vorn.
+                // continue in an iteration over a list: next entry. Popping
+                // as with while would be wrong here — the list would be
+                // re-evaluated and the iteration would start over.
                 if (frame.nextIteration()) {
                     frame.restart();
                     return;
@@ -709,8 +707,8 @@ public final class FlowEngine {
             }
             flow.pop();
             if (frame.exitOnLeave()) {
-                // Der else-Zweig eines await verlässt den Ablauf, auch wenn
-                // er mit break oder continue endet.
+                // The else branch of an await leaves the flow, even if it
+                // ends with break or continue.
                 flow.finish(Value.Nothing.get());
                 return;
             }
@@ -725,12 +723,11 @@ public final class FlowEngine {
     }
 
     /**
-     * Die Frist eines {@code await} ist abgelaufen.
+     * The deadline of an {@code await} has passed.
      *
-     * <p>Gibt es einen {@code else}-Zweig, läuft er — dort steht, was beim
-     * Ausbleiben zu tun ist. Die Sprache verlangt, dass er den Ablauf
-     * verlässt; darauf verlässt sich diese Stelle nicht, sondern merkt es am
-     * Rahmen vor.
+     * <p>If there is an {@code else} branch, it runs — it says what to do
+     * when the event fails to arrive. The language requires it to leave the
+     * flow; this code does not rely on that but marks it on the frame.
      */
     private void timeOut(Flow flow) {
         Expr.Await await = awaitOf(flow);
@@ -746,11 +743,11 @@ public final class FlowEngine {
     }
 
     /**
-     * Die Namen eines Ereignisses, mit dem Ablauf dahinter.
+     * An event's names, with the flow behind them.
      *
-     * <p>Zuweisen greift immer auf den Ablauf durch: Die Parameter eines
-     * Ereignisses gibt es nur für die Dauer der Prüfung, ihnen etwas
-     * zuzuweisen wäre folgenlos und damit irreführend.
+     * <p>Assignment always passes through to the flow: an event's parameters
+     * exist only for the duration of the check, and assigning to them would
+     * have no effect and would therefore be misleading.
      */
     private record EventScope(Map<String, Value> bindings, Flow flow)
             implements Interpreter.Scope {
@@ -773,10 +770,10 @@ public final class FlowEngine {
     }
 
     /**
-     * Der Blick eines Ablaufs auf seine Namen.
+     * A flow's view of its names.
      *
-     * <p>Der Interpreter kennt nur diese Schnittstelle und muss nicht wissen,
-     * ob dahinter sein eigener Stapel steht oder die Rahmen eines Ablaufs.
+     * <p>The interpreter knows only this interface and need not know whether
+     * its own stack or the frames of a flow are behind it.
      */
     public static final class FlowScope implements Interpreter.Scope {
 

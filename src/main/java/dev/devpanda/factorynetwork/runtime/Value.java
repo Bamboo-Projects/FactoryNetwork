@@ -5,10 +5,10 @@ import net.minecraft.world.item.Item;
 import java.util.List;
 
 /**
- * Ein Wert zur Laufzeit.
+ * A value at runtime.
  *
- * <p>Versiegelt, damit jede Stelle, die Werte behandelt, vollständig sein
- * muss. Die Typen entsprechen denen aus {@code sprache.md}, Abschnitt 5.
+ * <p>Sealed so that every place that handles values must be exhaustive. The
+ * types correspond to those in {@code sprache.md}, section 5.
  */
 public sealed interface Value {
 
@@ -20,22 +20,21 @@ public sealed interface Value {
 
     record Text(String value) implements Value {}
 
-    /** Eine Zeitangabe, in Ticks. */
+    /** A duration, in ticks. */
     record Duration(long ticks) implements Value {}
 
     /**
-     * Eine einzelne Ressource — eine Gegenstandsart, eine Flüssigkeitssorte,
-     * eine Chemikalie.
+     * A single resource — an item kind, a fluid type, a chemical.
      *
-     * <p><b>Eine Form für drei Arten.</b> Vorher standen hier drei Records
-     * nebeneinander, und mit ihnen drei Zwillingszweige in jeder Stelle, die
-     * Werte behandelt. Was je Art verschieden ist, steht in
-     * {@link ResourceKind}; was gleich ist, steht hier einmal.
+     * <p><b>One shape for three kinds.</b> Previously three records stood here
+     * side by side, and with them three twin branches in every place that
+     * handles values. What differs per kind lives in {@link ResourceKind};
+     * what is the same lives here, once.
      *
-     * <p>{@code key} trägt die Ressource selbst: einen {@link Item}, einen
-     * {@code Fluid} oder — bei einer Chemikalie — ihre Kennung als Text. Dass
-     * sie zur Art passt, prüft der Konstruktor; wer sie herausholt, nimmt
-     * {@link #item()}, {@link #fluid()} oder {@link #chemical()}.
+     * <p>{@code key} carries the resource itself: an {@link Item}, a
+     * {@code Fluid} or — for a chemical — its identifier as text. The
+     * constructor checks that it matches the kind; whoever extracts it uses
+     * {@link #item()}, {@link #fluid()} or {@link #chemical()}.
      */
     record Resource(ResourceKind kind, Object key) implements Value {
 
@@ -72,17 +71,16 @@ public sealed interface Value {
     }
 
     /**
-     * Eine Auswahl mit wahlweise vorangestellter Menge, wie in
+     * A selection with an optional leading amount, as in
      * {@code 64 item:iron_ore}.
      *
-     * <p>{@code amount} ist {@code -1}, wenn keine Menge dastand — dann ist
-     * alles gemeint, was verfügbar ist. Die Auswahl bleibt hier als
-     * geschriebener Text stehen und wird erst dort aufgelöst, wo die Registry
-     * erreichbar ist.
+     * <p>{@code amount} is {@code -1} when no amount was written — then
+     * everything available is meant. The selection stays here as written
+     * text and is only resolved where the registry is reachable.
      */
     record Request(String selector, long amount) implements Value {
 
-        /** Worauf sich eine Auswahl bezieht. */
+        /** What a selection refers to. */
         public enum Kind { ITEM, FLUID, CHEMICAL, TAG, FLUIDTAG, ALL, UNKNOWN }
 
         public boolean hasAmount() {
@@ -90,17 +88,17 @@ public sealed interface Value {
         }
 
         /**
-         * Die Art der Auswahl.
+         * The kind of the selection.
          *
-         * <p>Sie steht im geschriebenen Text vor dem Doppelpunkt. Diese
-         * Methode ist die einzige Stelle, die ihn dafür liest — überall sonst
-         * wird nach {@code kind()} gefragt. Ohne diese Auskunft käme bei
-         * {@code move 1000 fluid:water} die Meldung, es gebe kein Wasser im
-         * Pack, statt der wahren: dass Flüssigkeiten hier nicht gemeint sein
-         * können.
+         * <p>It stands in the written text before the colon. This method is
+         * the only place that reads the text for it — everywhere else asks
+         * {@code kind()}. Without this information,
+         * {@code move 1000 fluid:water} would report that there is no water
+         * in the pack instead of the true reason: that fluids cannot be meant
+         * here.
          */
         public Kind kind() {
-            // „all" trägt keine Sorte und deshalb keinen Doppelpunkt.
+            // "all" carries no type and therefore no colon.
             if ("all".equals(selector)) {
                 return Kind.ALL;
             }
@@ -108,9 +106,9 @@ public sealed interface Value {
             if (colon < 0) {
                 return Kind.UNKNOWN;
             }
-            // Dieselbe Liste wie im Lexer und im Parser, und das ist der
-            // Punkt: Sie stand hier einmal zum vierten Mal, mit einer
-            // eigenen Antwort auf ein unbekanntes Wort.
+            // The same list as in the lexer and the parser, and that is the
+            // point: it once stood here for the fourth time, with its own
+            // answer to an unknown word.
             var written = ResourceKinds.kindOf(selector.substring(0, colon));
             if (written == null) {
                 return Kind.UNKNOWN;
@@ -121,26 +119,26 @@ public sealed interface Value {
                 case CHEMICAL -> Kind.CHEMICAL;
                 case FLUIDTAG -> Kind.FLUIDTAG;
                 case TAG -> Kind.TAG;
-                // Eine angemeldete fremde Art. Aus einem Text allein lässt
-                // sich hier nicht mehr sagen; wer mehr braucht, nimmt den
-                // Auswahlausdruck und nicht seine Schreibweise.
+                // A registered third-party kind. Nothing more can be said
+                // from text alone here; whoever needs more takes the
+                // selection expression rather than its written form.
                 case CUSTOM, POWER, ALL -> Kind.UNKNOWN;
             };
         }
     }
 
     /**
-     * Eine Auswahl, schon aufgelöst — und zugleich ein Posten aus einer
-     * Bestandsliste.
+     * A selection, already resolved — and at the same time an entry from a
+     * stock list.
      *
-     * <p>Mengen bei Gegenständen in Stück, bei Flüssigkeiten und Chemikalien
-     * in Millibucket. {@code amount} ist {@code -1}, wenn keine dastand.
+     * <p>Amounts for items in pieces, for fluids and chemicals in
+     * millibuckets. {@code amount} is {@code -1} when none was written.
      *
-     * <p>Die Ressourcen selbst liegen in {@code keys}, in der Form, die
-     * {@link ResourceKind#type()} für diese Art nennt. Gemischt geht nicht:
-     * Der Konstruktor prüft jeden Eintrag. Eine Auswahl über Wasser und Stein
-     * wäre an jeder Verwendungsstelle etwas anderes — dieselbe Regel, die
-     * {@code FilterKind} für Vorlagen aufstellt.
+     * <p>The resources themselves live in {@code keys}, in the form that
+     * {@link ResourceKind#type()} names for this kind. Mixing is not possible:
+     * the constructor checks every entry. A selection over water and stone
+     * would be something different at every usage site — the same rule that
+     * {@code FilterKind} establishes for templates.
      */
     record Selection(ResourceKind kind, List<?> keys, long amount) implements Value {
 
@@ -183,46 +181,46 @@ public sealed interface Value {
         }
 
         /**
-         * Der erste Eintrag als einzelner Wert.
+         * The first entry as a single value.
          *
-         * <p>Gemeint ist der Fall, in dem es nur einen gibt. Dass es so ist,
-         * prüft der Aufrufer — er hat die Meldung dafür, hier gäbe es nur
-         * eine geratene.
+         * <p>Intended for the case in which there is only one. That this is
+         * so is checked by the caller — it has the message for it; here there
+         * would only be a guessed one.
          */
         public Resource single() {
             return new Resource(kind, keys.get(0));
         }
     }
 
-    /** Ein Gerät im Netzwerk, über seinen Namen. */
+    /** A device in the network, by its name. */
     record Device(String name) implements Value {}
 
     /**
-     * Bestimmte Fächer eines Geräts — {@code brecher_1.slots(2..3)}.
+     * Specific slots of a device — {@code brecher_1.slots(2..3)}.
      *
-     * <p><b>Zum Lesen und zum Bewegen dieselbe Form.</b> Gelesen verhält sie
-     * sich wie eine Liste von Posten, als Quelle oder Ziel eines
-     * {@code move} wie ein Gerät, das nur diese Fächer hat. Damit braucht es
-     * keine zweite Schreibweise für „nimm nur aus dem Ausgang".
+     * <p><b>The same shape for reading and for moving.</b> When read it
+     * behaves like a list of entries; as the source or target of a
+     * {@code move} like a device that has only these slots. That way no second
+     * notation is needed for "take only from the output".
      */
     record DeviceSlots(String device, List<Integer> slots) implements Value {}
 
     /**
-     * Eine Gerätegruppe, über ihren Namen.
+     * A device group, by its name.
      *
-     * <p><b>Der Name und nicht die Mitglieder.</b> Wer heute in der Gruppe
-     * steht, entscheidet das Netz: Ein Muster wie {@code furnace_*} nimmt den
-     * Ofen auf, sobald er dasteht. Ein Wert, der die Mitglieder mitträgt,
-     * wäre schon veraltet, wenn er einen Tick später gelesen wird.
+     * <p><b>The name and not the members.</b> Who is in the group today is
+     * decided by the network: a pattern like {@code furnace_*} picks up the
+     * furnace as soon as it is placed. A value that carried the members along
+     * would already be stale when read one tick later.
      */
     record Group(String name) implements Value {}
 
-    /** Der Netzwerkspeicher oder ein anderes eingebautes Ziel. */
+    /** The network storage or another built-in target. */
     record Builtin(String name) implements Value {}
 
     record ValueList(List<Value> entries) implements Value {}
 
-    /** Steht für „kein Wert" — etwa der Rückgabewert einer Funktion ohne return. */
+    /** Stands for "no value" — for example the return value of a function without return. */
     record Nothing() implements Value {
 
         private static final Nothing INSTANCE = new Nothing();
@@ -232,7 +230,7 @@ public sealed interface Value {
         }
     }
 
-    /** Für Meldungen: wie der Wert im Terminal erscheint. */
+    /** For messages: how the value appears in the terminal. */
     default String describe() {
         return switch (this) {
             case Int value -> String.valueOf(value.value());
@@ -242,9 +240,9 @@ public sealed interface Value {
             case Duration value -> value.ticks() + "t";
             case Request value -> (value.hasAmount() ? value.amount() + " " : "")
                     + value.selector();
-            // Über nameOf, damit im Protokoll „Wasserstoff" steht und nicht
-            // die Kennung. Ohne Mekanism gibt es keinen Namen, und dann steht
-            // die Kennung da — erfunden wird nichts.
+            // Via nameOf, so that the log says "Hydrogen" and not the
+            // identifier. Without Mekanism there is no name, and then the
+            // identifier is shown — nothing is made up.
             case Resource value -> value.kind().nameOf(value.key());
             case Selection value -> value.keys().size() + " " + value.kind().plural();
             case Device value -> value.name();
@@ -258,16 +256,16 @@ public sealed interface Value {
         };
     }
 
-    /** So viele Einträge einer Liste werden genannt, der Rest gezählt. */
+    /** This many entries of a list are named, the rest counted. */
     int LIST_SHOWN = 6;
 
     /**
-     * Eine Liste, wie sie im Protokoll und im Netz-Reiter erscheint.
+     * A list as it appears in the log and in the network tab.
      *
-     * <p>Vorher stand hier die Zahl der Einträge, und die half niemandem:
-     * Wer eine Liste hinschreibt, will wissen, was darin steht. Gekürzt wird
-     * mit einer Zählung und nicht mit einem Abbruch — eine Liste, die still
-     * endet, liest sich wie eine vollständige.
+     * <p>Previously this showed the number of entries, and that helped
+     * nobody: whoever writes out a list wants to know what is in it. It is
+     * shortened with a count and not with a cut-off — a list that ends
+     * silently reads like a complete one.
      */
     private static String listText(ValueList list) {
         StringBuilder out = new StringBuilder("[");
@@ -286,13 +284,13 @@ public sealed interface Value {
     }
 
     /**
-     * Ein Literal aus dem Syntaxbaum als Wert.
+     * A literal from the syntax tree as a value.
      *
-     * <p>Gebraucht für den Anfangswert eines globalen Werts: Er steht als
-     * Literal im Programm und muss beim Übernehmen zu einem Wert werden, den
-     * die Laufzeit hält. Ein Ausdruck, der keiner ist, liefert
-     * {@link Nothing} — dass es ein Literal sein muss, prüft
-     * {@code GlobalCheck} und meldet es dort, wo man es sieht.
+     * <p>Needed for the initial value of a global: it stands in the program
+     * as a literal and must become a value the runtime holds when it is
+     * adopted. An expression that is not a literal yields {@link Nothing} —
+     * that it must be a literal is checked by {@code GlobalCheck}, which
+     * reports it where it can be seen.
      */
     static Value ofLiteral(dev.devpanda.factorynetwork.lang.ast.Expr expr) {
         return switch (expr) {
@@ -306,9 +304,9 @@ public sealed interface Value {
                     new Bool(flag.value());
             case dev.devpanda.factorynetwork.lang.ast.Expr.DurationLit duration ->
                     new Duration(duration.ticks());
-            // Auch der Anfangswert einer Liste ist ein Literal. Ohne diesen
-            // Fall stünde „global warteschlange = []" beim Übernehmen als
-            // Nothing da — ein globaler Wert, den es gibt und der nichts ist.
+            // The initial value of a list is a literal too. Without this
+            // case, "global warteschlange = []" would come out as Nothing
+            // when adopted — a global that exists and is nothing.
             case dev.devpanda.factorynetwork.lang.ast.Expr.ListLit list ->
                     new ValueList(list.entries().stream().map(Value::ofLiteral).toList());
             case null, default -> Nothing.get();

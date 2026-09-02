@@ -12,20 +12,20 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
- * Eine Gruppe von Geräten, aufgelöst gegen das Netz.
+ * A group of devices, resolved against the network.
  *
- * <p><b>Muster über Connectoren lösen sich zur Laufzeit auf</b>, anders als
- * Muster über Gegenstände. Wer einen weiteren Ofen aufstellt und ihn
- * {@code furnace_9} nennt, soll ihn nicht auch noch im Code eintragen müssen.
- * Bezahlbar ist das, weil es Connectoren dutzendweise gibt und nicht zu
- * Tausenden — genau der Unterschied, der bei Gegenständen dagegen sprach.
+ * <p><b>Patterns over connectors resolve at runtime</b>, unlike patterns over
+ * items. Whoever places another furnace and names it {@code furnace_9} should
+ * not have to enter it in the code as well. That is affordable because
+ * connectors come by the dozen and not by the thousand — exactly the
+ * difference that argued against it for items.
  */
 public final class DeviceGroup {
 
     private final String name;
     private final List<String> members;
     private final Strategy strategy;
-    /** Wandert weiter, damit round_robin nicht immer beim ersten anfängt. */
+    /** Advances so that round_robin does not always start at the first one. */
     private int cursor;
 
     public DeviceGroup(String name, List<String> members, Strategy strategy) {
@@ -51,11 +51,12 @@ public final class DeviceGroup {
     }
 
     /**
-     * Löst eine Deklaration gegen das Netz auf.
+     * Resolves a declaration against the network.
      *
-     * <p>Namen ohne Muster kommen mit, auch wenn sie gerade nicht im Netz
-     * hängen: Ein Gerät, dessen Chunk nicht geladen ist, gehört weiter zur
-     * Gruppe. Muster dagegen können nur treffen, was da ist.
+     * <p>Names without a pattern are included even if they are not currently
+     * attached to the network: a device whose chunk is not loaded still
+     * belongs to the group. Patterns, by contrast, can only match what is
+     * there.
      */
     public static DeviceGroup resolve(Decl.Group declaration, FactoryGraph graph) {
         Set<String> found = new LinkedHashSet<>();
@@ -74,7 +75,7 @@ public final class DeviceGroup {
         return new DeviceGroup(declaration.name(), List.copyOf(found), strategy);
     }
 
-    /** Übersetzt ein Namensmuster; nur {@code *} zählt. */
+    /** Translates a name pattern; only {@code *} counts. */
     private static Pattern toPattern(String pattern) {
         StringBuilder regex = new StringBuilder();
         for (int i = 0; i < pattern.length(); i++) {
@@ -89,24 +90,24 @@ public final class DeviceGroup {
     }
 
     /**
-     * Wie eine Gruppe auf ihre Mitglieder verteilt.
+     * How a group distributes across its members.
      *
-     * <p>Fünf Verfahren, wie im Konzept festgelegt. {@code balanced} ist
-     * gestrichen: Seine Bedeutung ließ sich nicht von {@code least_filled}
-     * unterscheiden, und was niemand erklären kann, wählt auch niemand
-     * bewusst.
+     * <p>Five strategies, as laid down in the concept. {@code balanced} is
+     * dropped: its meaning could not be distinguished from
+     * {@code least_filled}, and what nobody can explain, nobody chooses
+     * deliberately either.
      */
     public enum Strategy {
 
-        /** Reihum, gleichmäßig. */
+        /** In turn, evenly. */
         ROUND_ROBIN("round_robin"),
-        /** Das erste, das kann. */
+        /** The first one that can. */
         FIRST_AVAILABLE("first_available"),
-        /** Dorthin, wo am wenigsten liegt. */
+        /** To wherever the least is stored. */
         LEAST_FILLED("least_filled"),
-        /** Zufällig. */
+        /** Random. */
         RANDOM("random"),
-        /** In der Reihenfolge der Mitglieder. */
+        /** In the order of the members. */
         PRIORITY("priority");
 
         private final String key;
@@ -119,7 +120,7 @@ public final class DeviceGroup {
             return key;
         }
 
-        /** Ohne Angabe reihum — das gleichmäßigste Verfahren. */
+        /** Round robin when unspecified — the most even strategy. */
         public static Strategy of(String name) {
             if (name == null) {
                 return ROUND_ROBIN;
@@ -134,13 +135,12 @@ public final class DeviceGroup {
     }
 
     /**
-     * Die Reihenfolge, in der die Mitglieder für einen Transfer versucht
-     * werden.
+     * The order in which the members are tried for a transfer.
      *
-     * <p>Alle Verfahren liefern eine vollständige Reihenfolge, keine einzelne
-     * Wahl: Ist das erste Gerät voll, muss der Transfer beim nächsten
-     * weitermachen können, statt aufzugeben. Nur so ist eine Gruppe mehr als
-     * eine umständliche Schreibweise für ein Gerät.
+     * <p>All strategies return a complete order, not a single choice: if the
+     * first device is full, the transfer must be able to continue with the
+     * next one instead of giving up. Only then is a group more than a
+     * roundabout way of writing a single device.
      */
     public List<String> order(java.util.function.ToLongFunction<String> fillLevel,
                               java.util.random.RandomGenerator random) {
@@ -156,10 +156,10 @@ public final class DeviceGroup {
                     java.util.Comparator.comparingLong(fillLevel));
             case RANDOM -> java.util.Collections.shuffle(order, toJavaRandom(random));
             case FIRST_AVAILABLE, PRIORITY -> {
-                // Beide nehmen die Reihenfolge, in der sie dastehen. Der
-                // Unterschied liegt in der Absicht, nicht im Ergebnis: Wer
-                // priority schreibt, meint eine Rangfolge; wer
-                // first_available schreibt, meint „irgendeines, das kann".
+                // Both take the order in which they are listed. The
+                // difference lies in the intent, not in the result: whoever
+                // writes priority means a ranking; whoever writes
+                // first_available means "any one that can".
             }
         }
         return order;

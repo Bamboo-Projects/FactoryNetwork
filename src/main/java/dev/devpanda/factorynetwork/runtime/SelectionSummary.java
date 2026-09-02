@@ -8,34 +8,35 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Worauf sich eine Auswahl gerade auflöst.
+ * What a selection currently resolves to.
  *
- * <p><b>Die Anzeige, die {@code sprache.md} an zwei Stellen verspricht.</b>
- * Bei {@code except} steht dort „der Editor zeigt zu jedem Muster an, was es
- * gerade trifft", und bei {@code maintain} ist ohne sie nicht abzusehen, was
- * man zugesagt hat: {@code maintain 64 tag:c/ores} hält von <i>jeder</i> Art
- * vierundsechzig, und wie viele das sind, weiß nur das Pack.
+ * <p><b>The display that {@code sprache.md} promises in two places.</b> For
+ * {@code except} it says "the editor shows for every pattern what it
+ * currently matches", and for {@code maintain} there is no way to foresee
+ * what one has committed to without it: {@code maintain 64 tag:c/ores} keeps
+ * sixty-four of <i>every</i> kind, and only the pack knows how many that is.
  *
- * <p>Ein Muster ist eine Suche, und eine Suche ohne Trefferliste ist eine
- * Zusage ins Blaue.
+ * <p>A pattern is a search, and a search without a hit list is a promise made
+ * blind.
  *
- * <p>Steht hier und nicht im Editor, weil es die Registry braucht und keinen
- * Bildschirm — so lässt es sich in einer echten Welt prüfen.
+ * <p>Lives here and not in the editor because it needs the registry and no
+ * screen — that way it can be verified in a real world.
  */
 public final class SelectionSummary {
 
-    /** Mehr Namen deckten den halben Bildschirm. */
+    /** More names would cover half the screen. */
     private static final int MAX_NAMES = 6;
 
     private SelectionSummary() {
     }
 
     /**
-     * Ein paar Zeilen über das, was diese Auswahl trifft.
+     * A few lines about what this selection matches.
      *
-     * <p>Die erste nennt die Zahl, die weiteren die Namen. Trifft sie nichts,
-     * steht genau das da — die häufigste Ursache ist ein Tag, den dieses Pack
-     * nicht kennt, und der sieht im Editor aus wie jeder andere.
+     * <p>The first names the count, the following ones the names. If it
+     * matches nothing, that is exactly what is shown — the most common cause
+     * is a tag this pack does not know, and in the editor it looks like any
+     * other.
      */
     public static List<String> of(Expr.Selector selector) {
         List<String> lines = new ArrayList<>();
@@ -44,8 +45,8 @@ public final class SelectionSummary {
         }
         if (selector.kind() == Expr.Selector.Kind.CHEMICAL) {
             if (!dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.installed()) {
-                // Ohne Punkt am Ende: Im Kasten des Editors steht eine
-                // Auskunft und kein Satz.
+                // No full stop at the end: the editor's box shows a piece of
+                // information, not a sentence.
                 lines.add("Chemikalien brauchen Mekanism");
                 return lines;
             }
@@ -71,11 +72,11 @@ public final class SelectionSummary {
     }
 
     /**
-     * Die Zahl und die ersten Namen.
+     * The count and the first few names.
      *
-     * <p>An einer Stelle, weil es inzwischen drei Arten von Auswahl gibt und
-     * alle dieselbe Auskunft geben sollen — eine Zahl, ein paar Namen, und
-     * gezählt statt abgeschnitten.
+     * <p>In one place, because there are now three kinds of selection and all
+     * of them should give the same information — a count, a few names, and
+     * counted rather than cut off.
      */
     private static List<String> summarise(List<String> lines, List<String> names) {
         if (names.isEmpty()) {

@@ -14,35 +14,33 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Führt Funktionen und Ereignisblöcke aus.
+ * Executes functions and event blocks.
  *
- * <p>Ein Baum-Interpreter, kein Bytecode. Für die Größenordnung, um die es
- * geht — einige hundert Anweisungen je Auslöser —, ist das schnell genug, und
- * er ist die Grundlage, auf der die Continuations später aufsetzen: Wo hier
- * ein Aufruf zurückkehrt, wird später ein Zustand gespeichert.
+ * <p>A tree-walking interpreter, not bytecode. For the scale in question —
+ * a few hundred statements per trigger — that is fast enough, and it is the
+ * foundation the continuations will later build on: where a call returns
+ * here, a state will later be saved.
  *
- * <p><b>Was hier noch fehlt:</b> Wartende Abläufe überleben keinen
- * Serverneustart. {@code await} und {@code sleep} halten den Ablauf an und
- * geben auf, statt ihren Zustand zu sichern. Das ist die größte offene
- * Zusage der Mod und bewusst nicht halb gebaut — eine Persistenz, die nur in
- * einfachen Fällen trägt, ist schlimmer als gar keine, weil sich niemand
- * darauf verlassen kann.
+ * <p><b>What is still missing here:</b> waiting flows do not survive a server
+ * restart. {@code await} and {@code sleep} halt the flow and give up instead
+ * of saving their state. That is the mod's biggest open promise and
+ * deliberately not half-built — persistence that only holds in simple cases
+ * is worse than none at all, because nobody can rely on it.
  */
 public final class Interpreter {
 
     /**
-     * Wie viele Anweisungen ein Ablauf ausführen darf, bevor er abgebrochen
-     * wird. Kein Tickbudget mit Fortsetzung, sondern eine harte Grenze —
-     * solange es keine Continuations gibt, kann ein Ablauf nicht angehalten
-     * und später fortgesetzt werden.
+     * How many statements a flow may execute before it is aborted. Not a
+     * tick budget with continuation, but a hard limit — as long as there are
+     * no continuations, a flow cannot be paused and resumed later.
      *
-     * <p><b>Einmal je Interpreter gelesen</b>, nicht bei jedem Schritt: Die
-     * Grenze soll sich nicht mitten in einer Schleife verschieben, wenn
-     * jemand die Konfiguration neu lädt.
+     * <p><b>Read once per interpreter</b>, not at every step: the limit
+     * should not shift in the middle of a loop when somebody reloads the
+     * configuration.
      */
     private final int maxSteps = dev.devpanda.factorynetwork.FnConfig.stepBudget();
 
-    /** Wie lang ein globaler Listenwert werden darf. */
+    /** How long a global list value may become. */
     private final int maxGlobalList =
             dev.devpanda.factorynetwork.FnConfig.globalListSize();
 
@@ -52,11 +50,11 @@ public final class Interpreter {
     private int steps;
 
     /**
-     * Der Blick auf die Namen eines Ablaufs.
+     * The view onto the names of a flow.
      *
-     * <p>Der gewöhnliche Interpreter führt seinen eigenen Stapel; ein Ablauf
-     * hält seine Rahmen als Daten. Beide bieten dieselben drei Zugriffe an,
-     * und die Anweisungslogik muss den Unterschied nicht kennen.
+     * <p>The ordinary interpreter keeps its own stack; a flow holds its frames
+     * as data. Both offer the same three accesses, and the statement logic
+     * need not know the difference.
      */
     public interface Scope {
 
@@ -67,10 +65,10 @@ public final class Interpreter {
         boolean assign(String name, Value value);
 
         /**
-         * Zu welcher Anlage der Ablauf gehört, oder leer.
+         * Which plant the flow belongs to, or empty.
          *
-         * <p>Nur Abläufe wissen das; der gewöhnliche Weg betritt keine
-         * Vorlagenfunktion und kennt deshalb keine Instanzen.
+         * <p>Only flows know that; the ordinary path never enters a template
+         * function and therefore knows no instances.
          */
         default String devicePrefix() {
             return "";
@@ -78,215 +76,215 @@ public final class Interpreter {
     }
 
     /**
-     * Was der Interpreter von der Welt braucht.
+     * What the interpreter needs from the world.
      *
-     * <p>Als Schnittstelle, damit sich die Sprache ohne Minecraft prüfen
-     * lässt — die Tests setzen hier eine einfache Fassung ein.
+     * <p>As an interface, so the language can be tested without Minecraft —
+     * the tests plug in a simple version here.
      */
     public interface Host {
 
-        /** Bewegt Gegenstände und liefert, wie viele es wurden. */
+        /** Moves items and returns how many were moved. */
         long move(Value amount, Value from, Value to);
 
-        /** Wie viel von einer Art im Speicher liegt. */
+        /** How much of a kind lies in storage. */
         long count(Value what);
 
         /**
-         * Wie viel von einer Art in einem Gerät liegt.
+         * How much of a kind lies in a device.
          *
-         * <p>Getrennt von {@link #count(Value)}, weil es eine andere Frage
-         * ist: {@code storage.count(…)} zählt den Netzspeicher,
-         * {@code brecher.count(…)} den Brecher. Bis zum 25.08. taten beide
-         * dasselbe — die Schreibweise am Gerät maß den Speicher, und niemand
-         * konnte das sehen.
+         * <p>Separate from {@link #count(Value)} because it is a different
+         * question: {@code storage.count(…)} counts the network storage,
+         * {@code brecher.count(…)} the crusher. Until 25 August both did the
+         * same — the notation on the device measured the storage, and nobody
+         * could see that.
          *
-         * <p><b>Die Vorgabe meldet sich, statt null zu liefern.</b> Ein Host
-         * ohne Welt — die Prüfungen, der Editor — kann nicht in ein Gerät
-         * sehen, und eine erfundene Null wäre eine Antwort auf eine Frage,
-         * die er nicht beantworten kann.
+         * <p><b>The default speaks up instead of returning zero.</b> A host
+         * without a world — the tests, the editor — cannot look into a
+         * device, and an invented zero would be an answer to a question it
+         * cannot answer.
          *
-         * @param what die Auswahl, oder {@link Value.Nothing} für alles
+         * @param what the selection, or {@link Value.Nothing} for everything
          */
         default long countIn(String device, Value what) {
             throw new ScriptError("Ohne Welt lässt sich nicht in ein Gerät sehen.");
         }
 
         /**
-         * Bestellt eine Fertigung und liefert die Kennung des Auftrags.
+         * Orders a crafting job and returns the job's identifier.
          *
-         * <p>Null heißt „kein Auftrag" — und der einzige Grund dafür ist ein
-         * fehlendes Rezept. Fehlende Zutaten sind keiner: Der Auftrag wartet
-         * dann und sagt, was fehlt.
+         * <p>Zero means "no job" — and the only reason for that is a missing
+         * recipe. Missing ingredients are not one: the job then waits and
+         * says what is missing.
          *
-         * <p>Ein Host ohne Welt kennt keine Rezepte und liefert null. Das ist
-         * hier keine erfundene Antwort, sondern dieselbe wie „gibt es nicht".
+         * <p>A host without a world knows no recipes and returns zero. That
+         * is not an invented answer here, but the same as "does not exist".
          */
         default long craft(Value what) {
             return 0;
         }
 
         /**
-         * Wie viel Strom in einem Gerät steht, in FE.
+         * How much energy a device holds, in FE.
          *
-         * <p>Ein Gerät ohne Stromspeicher meldet null. <b>Das ist keine
-         * erfundene Antwort</b>, anders als bei {@code countIn}: Eine Kiste
-         * hat keinen Strom, und null ist die Wahrheit über eine Kiste. Ein
-         * Host ohne Welt kann dagegen gar nicht nachsehen und sagt es.
+         * <p>A device without an energy store reports zero. <b>That is not an
+         * invented answer</b>, unlike with {@code countIn}: a chest has no
+         * energy, and zero is the truth about a chest. A host without a
+         * world, by contrast, cannot look at all and says so.
          */
         default long energyIn(String device) {
             throw new ScriptError("Ohne Welt lässt sich kein Stromstand ablesen.");
         }
 
         /**
-         * Fasst die Maschine hinter einem Gerät an — ein Rechtsklick.
+         * Touches the machine behind a device — a right-click.
          *
-         * <p>Für die Maschinen, die von sich aus nichts tun: Ein Altar, der
-         * auf eine Hand wartet, ein Hebel, ein Knopf. Ohne diesen Griff gäbe
-         * es für sie keinen.
+         * <p>For the machines that do nothing on their own: an altar waiting
+         * for a hand, a lever, a button. Without this handle there would be
+         * none for them.
          *
-         * <p>Ein Host ohne Welt kann niemanden anfassen und sagt es.
+         * <p>A host without a world cannot touch anything and says so.
          *
-         * @return ob der Klick angekommen ist
+         * @return whether the click went through
          */
         default boolean clickAt(String device) {
             throw new ScriptError("Ohne Welt lässt sich nichts anfassen.");
         }
 
         /**
-         * Wie viel Strom im Netz steht, in FE.
+         * How much energy the network holds, in FE.
          *
-         * <p><b>Der eigene Vorrat und keine Nachfrage in der Welt.</b> Er
-         * liegt im Controller, der ihn ohnehin je Takt fortschreibt — deshalb
-         * steht er ohne Klammern da, anders als {@link #energyIn(String)}.
+         * <p><b>Its own reserve, not a query into the world.</b> It lives in
+         * the controller, which updates it every tick anyway — which is why
+         * it is written without parentheses, unlike {@link #energyIn(String)}.
          *
-         * <p>Ein Host ohne Welt hat kein Netz und sagt es, statt null zu
-         * erfinden: Null hieße „leer", und leer ist etwas anderes als
-         * „gibt es hier nicht".
+         * <p>A host without a world has no network and says so instead of
+         * inventing zero: zero would mean "empty", and empty is something
+         * different from "does not exist here".
          */
         default long networkPower() {
             throw new ScriptError("Ohne Welt gibt es keinen Netzvorrat.");
         }
 
         /**
-         * Und wie viel hineinpasst.
+         * And how much fits in.
          *
-         * <p>Die Bezugsgröße dazu. Eine Zahl allein lässt sich nicht
-         * anzeigen: {@code progress(…)} will einen Anteil, und „12.000 FE"
-         * heißt in einem Netz mit einer Energiezelle etwas anderes als in
-         * einem mit dreißig.
+         * <p>The reference value for it. A number alone cannot be displayed:
+         * {@code progress(…)} wants a fraction, and "12,000 FE" means
+         * something different in a network with one energy cell than in one
+         * with thirty.
          */
         default long networkCapacity() {
             throw new ScriptError("Ohne Welt gibt es keinen Netzvorrat.");
         }
 
         /**
-         * Die Geräte einer Gruppe, in der Reihenfolge ihrer Verteilung.
+         * The devices of a group, in the order of their distribution.
          *
-         * <p>Aufgelöst gegen das Netz und nicht gegen das Programm: Ein
-         * Muster nimmt auf, was gerade dasteht. Ein Host ohne Welt kennt
-         * keine Gruppen und liefert nichts.
+         * <p>Resolved against the network and not against the program: a
+         * pattern picks up whatever is present right now. A host without a
+         * world knows no groups and returns nothing.
          */
         default java.util.List<String> membersOf(String group) {
             return java.util.List.of();
         }
 
-        /** Redstone-Stärke eines Geräts, 0 bis 15. */
+        /** Redstone strength of a device, 0 to 15. */
         int redstone(String device);
 
-        /** Setzt die Redstone-Stärke eines Geräts. */
+        /** Sets the redstone strength of a device. */
         void setRedstone(String device, int strength);
 
-        /** Schreibt eine Zeile ins Protokoll. */
+        /** Writes a line to the log. */
         void log(String message);
 
         /**
-         * Dasselbe mit einer Stufe.
+         * The same with a level.
          *
-         * <p>Als Voreinstellung auf die schlichte Fassung zurück, damit ein
-         * Host, der nur Text sammelt — die Prüfungen tun das —, nichts
-         * nachziehen muss.
+         * <p>Falls back to the plain version by default, so that a host that
+         * only collects text — the tests do that — need not catch up.
          */
         default void log(LogLevel level, String message) {
             log(message);
         }
 
         /**
-         * Wer gerade schreibt — ein Worker, ein Ablauf, eine Funktion.
+         * Who is currently writing — a worker, a flow, a function.
          *
-         * <p>Wird vor dem Ausführen gesetzt und gilt, bis jemand anderes sie
-         * setzt. <b>Ohne sie ist eine Protokollzeile bei dreißig Workern
-         * kaum etwas wert:</b> Man liest „Kohle wird knapp" und weiß nicht,
-         * welcher von ihnen das meint.
+         * <p>Set before execution and valid until somebody else sets it.
+         * <b>Without it, a log line is worth little with thirty workers:</b>
+         * one reads "coal is running low" and does not know which of them
+         * means it.
          */
         default void setLogSource(String source) {
         }
 
-        /** Gibt es ein Gerät dieses Namens? */
+        /** Is there a device of this name? */
         boolean hasDevice(String name);
 
-        /** Vorschlag bei einem unbekannten Namen. */
+        /** A suggestion for an unknown name. */
         String suggestDevice(String name);
 
         /**
-         * Alle bekannten Gerätenamen.
+         * All known device names.
          *
-         * <p>Daraus werden die Anlagen erschlossen. Wer das nicht liefert,
-         * bekommt keine Multiblocks — und braucht sie in einem Test meist
-         * auch nicht.
+         * <p>The plants are derived from these. Whoever does not supply them
+         * gets no multiblocks — and usually does not need them in a test
+         * either.
          */
         default java.util.Collection<String> deviceNames() {
             return List.of();
         }
 
         /**
-         * Ein globaler Wert, oder {@code null}.
+         * A global value, or {@code null}.
          *
-         * <p><b>Nicht im Stapel der Geltungsbereiche.</b> Der lebt für einen
-         * Aufruf und wird danach weggeworfen; ein globaler Wert lebt für die
-         * Fabrik und übersteht den Serverneustart. Er liegt deshalb dort, wo
-         * auch Bestände und Redstone liegen — beim Host.
+         * <p><b>Not in the scope stack.</b> That lives for one call and is
+         * thrown away afterwards; a global value lives for the factory and
+         * survives the server restart. It therefore lives where stocks and
+         * redstone live too — with the host.
          *
-         * <p>{@code null} heißt „gibt es nicht" und ist etwas anderes als
-         * {@link Value.Nothing}: Ein globaler Wert, der nichts enthält, ist
-         * erklärt; einer, der nicht erklärt wurde, ist ein Vertipper.
+         * <p>{@code null} means "does not exist" and is something different
+         * from {@link Value.Nothing}: a global value that contains nothing is
+         * declared; one that was not declared is a typo.
          */
         default Value global(String name) {
             return null;
         }
 
-        /** Setzt einen globalen Wert. */
+        /** Sets a global value. */
         default void setGlobal(String name, Value value) {
         }
 
         /**
-         * Legt aus dem Netzspeicher etwas in ein Gerät.
+         * Puts something from the network storage into a device.
          *
-         * @return wie viel angekommen ist. <b>Weniger als gewünscht ist
-         *         normal</b>, {@code 0} auch: Die Maschine kann voll sein und
-         *         der Speicher leer. Ein Fehler ist es erst, wenn das Gerät
-         *         nicht mehr da ist.
+         * @return how much arrived. <b>Less than requested is normal</b>,
+         *         {@code 0} too: the machine may be full and the storage
+         *         empty. It is only an error once the device is no longer
+         *         there.
          */
         default long insertInto(String device, Value selection) {
             return 0;
         }
 
         /**
-         * Was in einem Gerät liegt.
+         * What lies in a device.
          *
-         * <p>Eine leere Liste heißt „nichts drin" und ist kein Fehler — auch
-         * dann nicht, wenn das Gerät gar kein Inventar hat. Wer wissen will,
-         * ob es eines hat, sieht im Editor nach; das Profil sagt es.
+         * <p>An empty list means "nothing inside" and is not an error — not
+         * even when the device has no inventory at all. Whoever wants to know
+         * whether it has one looks in the editor; the profile says so.
          */
         default List<Value> itemsIn(String device) {
             return List.of();
         }
 
         /**
-         * Was in bestimmten Fächern eines Geräts liegt.
+         * What lies in specific slots of a device.
          *
-         * <p><b>Über das ganze Inventar</b> und nicht über die Seite, an der
-         * der Connector hängt: Eine Fachnummer schreibt nur, wer die Maschine
-         * kennt, und ein Anschluss je Maschine soll reichen.
+         * <p><b>Over the whole inventory</b> and not over the side the
+         * connector is attached to: only somebody who knows the machine
+         * writes a slot number, and one connector per machine should be
+         * enough.
          */
         default java.util.List<Value> itemsInSlots(String device,
                 java.util.List<Integer> slots) {
@@ -294,10 +292,10 @@ public final class Interpreter {
         }
 
         /**
-         * Was im Netzspeicher liegt.
+         * What lies in the network storage.
          *
-         * <p>Dieselbe Form wie {@link #itemsIn}, andere Quelle: Ein Bestand
-         * ist ein Bestand, ob er in einer Zelle liegt oder in einer Kiste.
+         * <p>The same shape as {@link #itemsIn}, a different source: a stock
+         * is a stock, whether it lies in a cell or in a chest.
          */
         default List<Value> storedItems() {
             return List.of();
@@ -305,11 +303,11 @@ public final class Interpreter {
     }
 
     /**
-     * Die Filter-Vorlagen des Programms, nach Namen.
+     * The program's filter templates, by name.
      *
-     * <p>Aus dem Programm und nicht über den {@link Host}: Eine Vorlage steht
-     * im Code und nicht in der Welt. Der Host ist die Naht zu dem, was
-     * draußen liegt — Bestände, Geräte, Redstone.
+     * <p>From the program and not via the {@link Host}: a template lives in
+     * the code and not in the world. The host is the seam to what lies
+     * outside — stocks, devices, redstone.
      */
     private final Map<String, dev.devpanda.factorynetwork.lang.ast.Decl.FilterTemplate>
             templates;
@@ -320,9 +318,9 @@ public final class Interpreter {
         this.templates = FilterTemplates.of(program);
     }
 
-    // ---- Einstiegspunkte --------------------------------------------------
+    // ---- Entry points -----------------------------------------------------
 
-    /** Ruft eine Funktion des Programms auf. */
+    /** Calls a function of the program. */
     public Value call(String name, List<Value> arguments) {
         Decl.Fn function = program.functions().stream()
                 .filter(candidate -> candidate.name().equals(name))
@@ -333,13 +331,13 @@ public final class Interpreter {
     }
 
     /**
-     * Wohin ein {@code emit} geht.
+     * Where an {@code emit} goes.
      *
-     * <p>Ohne Empfänger löst der Interpreter die {@code on}-Blöcke selbst aus
-     * und ist damit fertig. Das reicht nicht, sobald es wartende Abläufe gibt:
-     * Ein Ereignis muss auch die wecken, und ein {@code on}-Block muss selbst
-     * warten dürfen. Beides kann nur die Ablaufmaschine, also nimmt sie das
-     * Ereignis entgegen, wenn es sie gibt.
+     * <p>Without a receiver, the interpreter fires the {@code on} blocks
+     * itself and is done. That is not enough once there are waiting flows: an
+     * event must wake those too, and an {@code on} block must be allowed to
+     * wait itself. Only the flow engine can do both, so it receives the event
+     * when it exists.
      */
     @FunctionalInterface
     public interface EventSink {
@@ -352,7 +350,7 @@ public final class Interpreter {
         this.eventSink = eventSink;
     }
 
-    /** Gibt ein Ereignis weiter — an die Ablaufmaschine oder an sich selbst. */
+    /** Passes an event on — to the flow engine or to itself. */
     private void emit(String event, List<Value> arguments) {
         if (eventSink != null) {
             eventSink.emit(event, arguments);
@@ -361,7 +359,7 @@ public final class Interpreter {
         fire(event, arguments);
     }
 
-    /** Löst alle Blöcke aus, die auf dieses Ereignis hören. */
+    /** Fires all blocks that listen for this event. */
     public void fire(String event, List<Value> arguments) {
         for (Decl.On handler : program.handlers()) {
             if (handler.name().equals(event)) {
@@ -389,7 +387,7 @@ public final class Interpreter {
         }
     }
 
-    // ---- Anweisungen ------------------------------------------------------
+    // ---- Statements -------------------------------------------------------
 
     private void execute(Block block) {
         scopes.push(new HashMap<>());
@@ -452,24 +450,24 @@ public final class Interpreter {
             } catch (BreakLoop stop) {
                 return;
             } catch (ContinueLoop ignored) {
-                // weiter mit der nächsten Runde
+                // on to the next round
             }
         }
     }
 
     /**
-     * Woraus sich eine Runde je Eintrag machen lässt.
+     * What one round per entry can be made from.
      *
-     * <p>Ein Selektor wie {@code tag:c/ores} wird dabei aufgelöst: Über die
-     * Gegenstände eines Tags zu laufen ist der häufigere Wunsch, als eine
-     * Anfrage als Ganzes in der Hand zu halten.
+     * <p>A selector like {@code tag:c/ores} is resolved in the process:
+     * iterating over the items of a tag is the more common wish than holding
+     * a request as a whole.
      */
     private List<Value> entriesOf(Expr iterable) {
         Value value = evaluate(iterable);
         if (value instanceof Value.Request request) {
-            // Nach der Art fragen und nicht raten: Ein Flüssigkeits-Selektor
-            // träfe in der Gegenstandsauflösung nichts, und eine Schleife über
-            // nichts sieht aus wie eine, die nichts zu tun hatte.
+            // Ask for the kind rather than guess: a fluid selector would
+            // match nothing in the item resolution, and a loop over nothing
+            // looks like one that had nothing to do.
             ResourceKind kind = ResourceKind.orItems(request.kind());
             return kind.resolve(iterable).stream()
                     .map(key -> (Value) new Value.Resource(kind, key)).toList();
@@ -496,7 +494,7 @@ public final class Interpreter {
             } catch (BreakLoop stop) {
                 return;
             } catch (ContinueLoop ignored) {
-                // weiter
+                // continue
             } finally {
                 scopes.pop();
             }
@@ -504,13 +502,13 @@ public final class Interpreter {
     }
 
     /**
-     * Führt eine einzelne Anweisung aus und meldet, wie es weitergeht.
+     * Executes a single statement and reports how to proceed.
      *
-     * <p>Hier steht, was eine Anweisung <b>tut</b>. Wie es danach weitergeht,
-     * entscheidet der Aufrufer: Der gewöhnliche Weg ruft sich selbst auf, ein
-     * Ablauf legt einen Rahmen auf seinen Stapel. Ohne diese Trennung gäbe es
-     * jede Anweisung zweimal — und eine der beiden Fassungen liefe
-     * irgendwann auseinander.
+     * <p>This is where what a statement <b>does</b> lives. How to proceed
+     * afterwards is decided by the caller: the ordinary path calls itself, a
+     * flow pushes a frame onto its stack. Without this separation every
+     * statement would exist twice — and one of the two versions would drift
+     * apart eventually.
      */
     public Step perform(Stmt statement, Scope scope, long gameTime) {
         Scope previous = externalScope;
@@ -518,9 +516,9 @@ public final class Interpreter {
         try {
             return switch (statement) {
                 case Stmt.Let let -> {
-                    // Der Fall, um den es geht: let ergebnis = await …
-                    // Hier wird nicht ausgewertet, sondern gewartet — und der
-                    // Name gemerkt, unter dem das Ergebnis später landet.
+                    // The case this is all about: let ergebnis = await …
+                    // Nothing is evaluated here; instead we wait — and
+                    // remember the name under which the result lands later.
                     if (let.value() instanceof Expr.Await await) {
                         yield awaitStep(await, let.name(), gameTime);
                     }
@@ -537,11 +535,10 @@ public final class Interpreter {
                     }
                     Value assigned = evaluate(assign.value());
                     if (!scope.assign(name.value(), assigned)) {
-                        // Der Rahmen eines Ablaufs kennt nur seine eigenen
-                        // Namen. Ohne diesen Zweig scheiterte jedes
-                        // „modus = …" in einem Ablauf — und ein Ablauf ist
-                        // alles, was über einen Knopf, ein Ereignis oder ein
-                        // await läuft, also fast alles.
+                        // A flow's frame knows only its own names. Without
+                        // this branch every "modus = …" in a flow failed —
+                        // and a flow is everything that runs via a button,
+                        // an event or an await, so almost everything.
                         if (host.global(name.value()) == null) {
                             throw new ScriptError("Unbekannter Name " + name.value() + ".",
                                     "Neue Namen bekommen ein let davor. Ein Wert, den alle "
@@ -609,12 +606,12 @@ public final class Interpreter {
     }
 
     /**
-     * Baut den Warteschritt aus einem {@code await}.
+     * Builds the wait step from an {@code await}.
      *
-     * <p>Die Frist ist absolute Spielzeit. Solange der Server steht, vergeht
-     * keine — eine Frist von dreißig Sekunden läuft also nicht ab, während
-     * niemand spielt. Für Minecraft ist das die richtige Bedeutung, auch wenn
-     * es für den, der an eine Uhr denkt, nach einem Fehler aussieht.
+     * <p>The deadline is absolute game time. While the server is stopped,
+     * none passes — so a thirty-second deadline does not expire while nobody
+     * is playing. For Minecraft that is the right meaning, even if it looks
+     * like a bug to somebody thinking of a clock.
      */
     private Step awaitStep(Expr.Await await, String resultName, long gameTime) {
         long deadline = -1;
@@ -630,16 +627,15 @@ public final class Interpreter {
     }
 
     /**
-     * Macht aus dem Aufruf einer eigenen Funktion einen eigenen Rahmen.
+     * Turns the call of a user-defined function into its own frame.
      *
-     * <p>Nur wenn der Aufruf allein dasteht — als Anweisung oder rechts von
-     * einem {@code let}. Steckt er in einer Rechnung wie {@code let x = f() +
-     * 2}, läuft er den gewöhnlichen Weg und kann dort nicht warten. Das ist
-     * die ehrliche Grenze: Einen halb ausgewerteten Ausdruck aufzuschreiben
-     * hieße, den Ausdrucksbaum selbst zur Zustandsmaschine zu machen.
+     * <p>Only when the call stands alone — as a statement or on the right of
+     * a {@code let}. If it sits inside a calculation like {@code let x = f() +
+     * 2}, it takes the ordinary path and cannot wait there. That is the
+     * honest limit: writing down a half-evaluated expression would mean
+     * turning the expression tree itself into a state machine.
      *
-     * @return der Schritt, oder {@code null} für alles, was nicht so ein
-     *         Aufruf ist
+     * @return the step, or {@code null} for anything that is not such a call
      */
     private Step invokeStep(Expr expr, String resultName) {
         if (!(expr instanceof Expr.Call call)) {
@@ -659,8 +655,8 @@ public final class Interpreter {
                 .filter(candidate -> candidate.name().equals(name.value()))
                 .findFirst().orElse(null);
         if (function == null) {
-            // Eingebautes wie log(), oder unbekannt — darum kümmert sich der
-            // gewöhnliche Weg, samt seiner Fehlermeldung.
+            // Something built-in like log(), or unknown — the ordinary path
+            // takes care of that, including its error message.
             return null;
         }
         return new Step.Invoke(
@@ -670,14 +666,14 @@ public final class Interpreter {
     }
 
     /**
-     * Der Aufruf einer Funktion an einer gebauten Anlage.
+     * The call of a function on a built plant.
      *
-     * <p>{@code ore_plant_1.process(…)} läuft im Rumpf der Vorlage, aber mit
-     * den Geräten dieser einen Anlage. Der Rahmen merkt sich, zu welcher — und
-     * schreibt es mit auf, sonst wüsste ein wartender Ablauf nach einem
-     * Neustart nicht mehr, welche der drei Anlagen er bedient.
+     * <p>{@code ore_plant_1.process(…)} runs in the body of the template, but
+     * with the devices of this one plant. The frame remembers which one — and
+     * writes it down too, otherwise a waiting flow would no longer know after
+     * a restart which of the three plants it serves.
      *
-     * @return {@code null}, wenn das gar keine Anlage ist
+     * @return {@code null} if this is not a plant at all
      */
     private Step instanceStep(String instanceName, String functionName, Expr.Call call,
             String resultName) {
@@ -707,15 +703,15 @@ public final class Interpreter {
                 function.body(), resultName, instanceName);
     }
 
-    /** Ein bloßes await ohne Zuweisung — dasselbe, nur ohne Namen. */
+    /** A bare await without assignment — the same, just without a name. */
     private Step awaitStep(Expr.Await await, long gameTime) {
         return awaitStep(await, null, gameTime);
     }
 
-    /** Gesetzt, solange eine Anweisung für einen Ablauf ausgeführt wird. */
+    /** Set while a statement is being executed for a flow. */
     private Scope externalScope;
 
-    /** Zu welcher Anlage der laufende Ablauf gehört, oder leer. */
+    /** Which plant the running flow belongs to, or empty. */
     private String devicePrefix() {
         return externalScope == null ? "" : externalScope.devicePrefix();
     }
@@ -724,11 +720,11 @@ public final class Interpreter {
     private java.util.Collection<String> instanceCacheFor;
 
     /**
-     * Die Anlagen des Netzes, gemerkt bis sich die Gerätenamen ändern.
+     * The plants of the network, remembered until the device names change.
      *
-     * <p>Sie bei jedem Aufruf neu zu suchen wäre bei einigen Dutzend
-     * Connectoren spürbar — und die Namen ändern sich nur, wenn jemand mit der
-     * Beschriftungspistole daran war.
+     * <p>Searching for them anew on every call would be noticeable with a
+     * few dozen connectors — and the names only change when somebody has
+     * been at them with the label gun.
      */
     private Map<String, MultiblockInstances.Instance> instances() {
         java.util.Collection<String> names = host.deviceNames();
@@ -739,14 +735,14 @@ public final class Interpreter {
         return instanceCache;
     }
 
-    // ---- Ausdrücke --------------------------------------------------------
+    // ---- Expressions ------------------------------------------------------
 
     /**
-     * Wertet einen Ausdruck mit fremden Namen aus.
+     * Evaluates an expression with foreign names.
      *
-     * <p>Gebraucht für die {@code where}-Klausel eines {@code await}: Dort
-     * sind die Parameter des Ereignisses sichtbar, die es im Ablauf selbst
-     * nicht gibt.
+     * <p>Needed for the {@code where} clause of an {@code await}: there the
+     * parameters of the event are visible, which do not exist in the flow
+     * itself.
      */
     public Value evaluateWith(Expr expr, Scope scope) {
         Scope previous = externalScope;
@@ -758,7 +754,7 @@ public final class Interpreter {
         }
     }
 
-    /** Wahrheitswert eines Ausdrucks, für Aufrufer außerhalb. */
+    /** Truth value of an expression, for callers outside. */
     public boolean truthOf(Value value) {
         return truth(value);
     }
@@ -779,11 +775,11 @@ public final class Interpreter {
                     builtin.kind().name().toLowerCase(java.util.Locale.ROOT));
             case Expr.Selector selector -> new Value.Request(written(selector), -1);
             case Expr.Amount amount -> withAmount(evaluate(amount.selection()), amount.count());
-            // Eine Ausnahme lässt sich erst nach dem Auflösen anwenden:
-            // Aus einem Tag etwas herauszunehmen heißt, die Menge zu kennen.
-            // Solange hier evaluate(except.base()) stand, fielen die
-            // Ausschlüsse weg — im Worker wirkte except, in move und count
-            // nicht.
+            // An exclusion can only be applied after resolving: taking
+            // something out of a tag means knowing the set. As long as
+            // evaluate(except.base()) stood here, the exclusions were
+            // dropped — except worked in the worker, but not in move and
+            // count.
             case Expr.Except except -> resolvedSelection(except);
             case Expr.Move move -> new Value.Int(
                     doMove(move.amount(), move.from(), move.to()));
@@ -805,23 +801,22 @@ public final class Interpreter {
     }
 
     /**
-     * Setzt die vorangestellte Menge auf eine Auswahl.
+     * Applies the leading amount to a selection.
      *
-     * <p><b>Für jede Art von Auswahl, nicht nur für geschriebene.</b> Hier
-     * stand einmal nur {@link Value.Request} — der Fall, in dem
-     * {@code 8 item:iron_ore} wörtlich im Programm steht. Eine
-     * Schleifenvariable ist aber ein aufgelöster Wert, und für die fiel die
-     * Menge stillschweigend weg:
+     * <p><b>For every kind of selection, not just written ones.</b> This once
+     * handled only {@link Value.Request} — the case in which
+     * {@code 8 item:iron_ore} appears literally in the program. A loop
+     * variable, however, is a resolved value, and for that the amount was
+     * silently dropped:
      *
      * <pre>
      * for sorte in storage.items() {
-     *     move 8 sorte to ofen     // bewegte alles, nicht acht
+     *     move 8 sorte to ofen     // moved everything, not eight
      * }
      * </pre>
      *
-     * <p>Das ist der schlimmste Fehler, den diese Sprache haben kann — er
-     * räumt ein Lager leer und sieht dabei aus wie ein Programm, das tut, was
-     * dasteht.
+     * <p>That is the worst bug this language can have — it empties a
+     * warehouse while looking like a program that does what it says.
      */
     private static Value withAmount(Value selection, Long count) {
         if (count == null) {
@@ -838,10 +833,10 @@ public final class Interpreter {
     }
 
     private static String written(Expr.Selector selector) {
-        // Die beiden ohne Sorte stehen ohne Doppelpunkt da — so, wie sie
-        // geschrieben werden. Ein „all:" mit leerem Rest wäre eine Lüge über
-        // die Form, und die Auflösung suchte danach einen Gegenstand
-        // namens nichts.
+        // The two without a type are written without a colon — the way they
+        // are written in the program. An "all:" with an empty remainder would
+        // be a lie about the form, and resolution would then look for an
+        // item named nothing.
         if (selector.kind() == Expr.Selector.Kind.ALL
                 || selector.kind() == Expr.Selector.Kind.POWER) {
             return selector.kind().name().toLowerCase(java.util.Locale.ROOT);
@@ -852,18 +847,18 @@ public final class Interpreter {
     }
 
     /**
-     * Eine Auswahl, die schon aufgelöst ist.
+     * A selection that is already resolved.
      *
-     * <p>Gebraucht überall dort, wo der geschriebene Text allein nicht mehr
-     * reicht — bei {@code except} und bei einer Filter-Vorlage. Aufgelöst
-     * wird über dieselbe Stelle wie sonst auch, mitsamt Zwischenspeicher.
+     * <p>Needed wherever the written text alone no longer suffices — with
+     * {@code except} and with a filter template. Resolution goes through the
+     * same place as everywhere else, including the cache.
      */
     /**
-     * Bewegt und liefert, wie viel es wurde.
+     * Moves and returns how much was moved.
      *
-     * <p>An einer Stelle, weil es drei Aufrufer gibt: die Anweisung in einer
-     * Funktion, dieselbe Anweisung als Schritt eines Ablaufs, und den
-     * Ausdruck. Drei Fassungen liefen auseinander.
+     * <p>In one place, because there are three callers: the statement in a
+     * function, the same statement as a step of a flow, and the expression.
+     * Three versions drifted apart.
      */
     private long doMove(Expr amount, Expr from, Expr to) {
         return host.move(evaluate(amount),
@@ -872,17 +867,17 @@ public final class Interpreter {
     }
 
     private Value resolvedSelection(Expr expr) {
-        // Über den Ausdruck und nicht über seine Schreibweise: Eine fremde
-        // Art heißt in der Aufzählung nur CUSTOM, und welche es ist, steht
-        // im Präfix.
+        // Via the expression and not via its written form: a third-party
+        // kind is merely CUSTOM in the enum, and which one it is stands in
+        // the prefix.
         ResourceKind written = ResourceKind.of(
                 dev.devpanda.factorynetwork.lang.WorkerKind.selectorOf(expr));
         ResourceKind kind = written == null ? ResourceKinds.ITEM : written;
         List<?> keys = kind.resolve(expr);
         if (keys.isEmpty()) {
-            // Ohne Mekanism trifft eine Chemikalienauswahl nichts, und die
-            // Meldung muss sagen, woran es liegt — nicht so tun, als sei das
-            // Pack schuld.
+            // Without Mekanism a chemical selection matches nothing, and the
+            // message must say what the cause is — not pretend the pack is
+            // to blame.
             throw kind == ResourceKinds.CHEMICAL
                     && !dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.installed()
                     ? new ScriptError("Dafür fehlt Mekanism.",
@@ -893,13 +888,13 @@ public final class Interpreter {
     }
 
     /**
-     * Nichts getroffen ist ein Fehler und keine leere Auswahl.
+     * Matching nothing is an error, not an empty selection.
      *
-     * <p><b>Sonst bewegte ein vertippter Tag alles.</b> Eine leere Liste
-     * heißt für {@code move} „kein Filter", und kein Filter heißt „alles".
-     * Solange die Ausnahme wegfiel, ging so ein Ausdruck über den Weg der
-     * geschriebenen Auswahl und meldete sich dort; wer selbst auflöst, muss
-     * selbst melden.
+     * <p><b>Otherwise a mistyped tag would move everything.</b> To
+     * {@code move}, an empty list means "no filter", and no filter means
+     * "everything". As long as the exclusion was dropped, such an expression
+     * took the path of the written selection and reported there; whoever
+     * resolves on their own must report on their own.
      */
     private static ScriptError nothingSelected() {
         return new ScriptError("Die Auswahl trifft nichts.",
@@ -908,12 +903,11 @@ public final class Interpreter {
     }
 
     /**
-     * {@code 1..5} als Liste, beide Enden eingeschlossen.
+     * {@code 1..5} as a list, both ends inclusive.
      *
-     * <p>Rückwärts gibt nichts: {@code 5..1} ist leer und kein Fehler. Wer
-     * eine Grenze ausrechnet, bekommt sonst einen Abbruch für einen Fall, den
-     * er nicht vorhergesehen hat — und eine leere Liste ist genau das, was
-     * dort gemeint ist.
+     * <p>Backwards yields nothing: {@code 5..1} is empty and not an error.
+     * Otherwise, whoever computes a bound would get an abort for a case they
+     * did not foresee — and an empty list is exactly what is meant there.
      */
     private Value rangeList(Expr.Range range) {
         long from = Math.round(number(evaluate(range.from()), "Bereich"));
@@ -925,7 +919,7 @@ public final class Interpreter {
         return new Value.ValueList(List.copyOf(entries));
     }
 
-    /** Die Menge, die vor einer Auswahl steht, oder -1 ohne Angabe. */
+    /** The amount written before a selection, or -1 when none is given. */
     private static long amountIn(Expr expr) {
         return switch (expr) {
             case Expr.Amount amount -> amount.count() == null ? -1 : amount.count();
@@ -935,13 +929,13 @@ public final class Interpreter {
     }
 
     /**
-     * Die Auswahl hinter dem Namen einer Filter-Vorlage, oder {@code null}.
+     * The selection behind the name of a filter template, or {@code null}.
      *
-     * <p>Nachgesehen wird <b>vor</b> den Geräten: Ein Vorlagenname steht im
-     * Programm, ein Gerätename kommt aus der Beschriftungspistole. Hinge die
-     * Bedeutung eines Programms daran, wie jemand später einen Connector
-     * benennt, wäre es aus der Ferne nicht mehr zu lesen. Dass eine Vorlage
-     * ein gleichnamiges Gerät verdeckt, meldet der Editor als Warnung.
+     * <p>Looked up <b>before</b> the devices: a template name lives in the
+     * program, a device name comes from the label gun. If the meaning of a
+     * program depended on how somebody later names a connector, it could no
+     * longer be read from a distance. That a template shadows a device of
+     * the same name is reported by the editor as a warning.
      */
     private Value templateValue(String name) {
         var template = templates.get(name);
@@ -959,19 +953,19 @@ public final class Interpreter {
         if (local != null) {
             return local;
         }
-        // Ein Ablauf sucht in seinem eigenen Rahmen und sonst nirgends. Der
-        // globale Wert kommt danach — dieselbe Reihenfolge wie beim
-        // gewöhnlichen Aufruf, wo find() ihn zuletzt selbst holt. Ohne das
-        // hier war ein globaler Wert in einem Ablauf schlicht unbekannt.
+        // A flow searches in its own frame and nowhere else. The global
+        // value comes afterwards — the same order as in the ordinary call,
+        // where find() fetches it last itself. Without this, a global value
+        // was simply unknown in a flow.
         if (externalScope != null) {
             Value shared = host.global(name);
             if (shared != null) {
                 return shared;
             }
         }
-        // Ein Festwert steht im Programm und nicht in der Welt: Er kommt
-        // aus derselben Quelle wie eine Filter-Vorlage und braucht keinen
-        // Weg über den Host.
+        // A constant lives in the program and not in the world: it comes
+        // from the same source as a filter template and needs no detour via
+        // the host.
         for (dev.devpanda.factorynetwork.lang.ast.Decl declaration : program.declarations()) {
             if (declaration instanceof dev.devpanda.factorynetwork.lang.ast.Decl.Const constant
                     && constant.name().equals(name)) {
@@ -982,18 +976,19 @@ public final class Interpreter {
         if (template != null) {
             return template;
         }
-        // Eine Gruppe steht im Programm, ihre Mitglieder stehen im Netz.
-        // Deshalb trägt der Wert nur den Namen — nachgesehen wird erst, wenn
-        // jemand fragt.
+        // A group lives in the program, its members live in the network.
+        // That is why the value carries only the name — the lookup happens
+        // only when somebody asks.
         for (dev.devpanda.factorynetwork.lang.ast.Decl declaration : program.declarations()) {
             if (declaration instanceof dev.devpanda.factorynetwork.lang.ast.Decl.Group group
                     && group.name().equals(name)) {
                 return new Value.Group(name);
             }
         }
-        // In einer Vorlage meint ein Gerätename immer das eigene Gerät. Erst
-        // wenn die Anlage keines dieses Namens hat, zählt der Rest des Netzes
-        // — sonst wäre ein Netzspeicher aus einer Vorlage heraus unerreichbar.
+        // In a template a device name always means the plant's own device.
+        // Only when the plant has none of that name does the rest of the
+        // network count — otherwise a network storage would be unreachable
+        // from within a template.
         String prefix = devicePrefix();
         if (!prefix.isEmpty()) {
             String own = prefix + MultiblockInstances.SEPARATOR + name;
@@ -1023,7 +1018,7 @@ public final class Interpreter {
     }
 
     private Value binary(Expr.Binary binary) {
-        // Und und Oder werten die rechte Seite nur aus, wenn es darauf ankommt.
+        // And and Or evaluate the right-hand side only when it matters.
         if (binary.op() == Expr.Binary.Op.AND) {
             return new Value.Bool(truth(evaluate(binary.left()))
                     && truth(evaluate(binary.right())));
@@ -1042,7 +1037,7 @@ public final class Interpreter {
         if (binary.op() == Expr.Binary.Op.NEQ) {
             return new Value.Bool(!equal(left, right));
         }
-        // Text plus Text hängt aneinander — praktisch für log().
+        // Text plus text concatenates — handy for log().
         if (binary.op() == Expr.Binary.Op.ADD
                 && (left instanceof Value.Text || right instanceof Value.Text)) {
             return new Value.Text(left.describe() + right.describe());
@@ -1079,8 +1074,9 @@ public final class Interpreter {
     private Value member(Expr.Member member) {
         Value target = evaluate(member.target());
         String name = member.name();
-        // Das Netz selbst. Ohne Klammern, wie online: Was hier steht, weiß
-        // der Controller ohnehin — es ist kein Blick in eine fremde Maschine.
+        // The network itself. Without parentheses, like online: what stands
+        // here the controller knows anyway — it is not a look into a foreign
+        // machine.
         if (target instanceof Value.Builtin builtin && "network".equals(builtin.name())) {
             return switch (name) {
                 case "power" -> new Value.Int(host.networkPower());
@@ -1096,9 +1092,9 @@ public final class Interpreter {
             return switch (name) {
                 case "online" -> new Value.Bool(host.hasDevice(device.name()));
                 case "name" -> new Value.Text(device.name());
-                // Wer hierher kommt, hat meistens die Klammern vergessen —
-                // „Bekannt sind online und name" verschwieg genau das und
-                // ließ ihn glauben, es gäbe nichts weiter.
+                // Whoever ends up here has usually forgotten the parentheses
+                // — "known are online and name" concealed exactly that and
+                // let them believe there was nothing more.
                 default -> throw new ScriptError(
                         "Ein Gerät hat kein " + name + ".",
                         "Ohne Klammern gibt es nur online und name. Mit Klammern: "
@@ -1118,17 +1114,17 @@ public final class Interpreter {
     }
 
     /**
-     * Was an einem Posten steht: {@code it.item} und {@code it.amount}.
+     * What a stock entry exposes: {@code it.item} and {@code it.amount}.
      *
-     * <p><b>Zwei Angaben, mehr nicht.</b> Ohne sie war eine Bestandsliste
-     * nicht zu gebrauchen: {@code where} hatte nichts zu vergleichen,
-     * {@code sort} sortierte nach lauter Nullen, und {@code sum} warf.
+     * <p><b>Two pieces of information, no more.</b> Without them a stock list
+     * was unusable: {@code where} had nothing to compare, {@code sort} sorted
+     * by nothing but zeros, and {@code sum} threw.
      *
-     * <p>{@code it.item} gibt es nur, wenn der Posten genau eine Art meint.
-     * Eine Auswahl über mehrere — etwa eine Filter-Vorlage — hat keine eine
-     * Art, und sich für die erste zu entscheiden wäre geraten.
+     * <p>{@code it.item} exists only when the entry denotes exactly one kind.
+     * A selection over several — a filter template, say — has no single
+     * kind, and settling on the first would be a guess.
      *
-     * @return {@code null}, wenn dieser Wert kein Posten ist
+     * @return {@code null} if this value is not a stock entry
      */
     private static Value entryMember(Value target, String name) {
         if (!(target instanceof Value.Selection selection)) {
@@ -1137,9 +1133,9 @@ public final class Interpreter {
         if ("amount".equals(name)) {
             return new Value.Int(selection.amount());
         }
-        // Die Sorte heißt wie die Art: it.item, it.fluid, it.chemical. Nach
-        // einer anderen zu fragen ist keine Ausnahme, sondern schlicht kein
-        // Mitglied — die Meldung dazu steht bei member().
+        // The resource member is named after the kind: it.item, it.fluid,
+        // it.chemical. Asking for a different one is not an exception but
+        // simply not a member — the message for that lives in member().
         if (!selection.kind().prefix().equals(name)) {
             return null;
         }
@@ -1157,11 +1153,11 @@ public final class Interpreter {
     }
 
     private Value call(Expr.Call call) {
-        // <b>Zwei Aufrufe werten ihr Argument nicht vorher aus.</b>
-        // {@code where} und {@code sort} brauchen es für jeden Eintrag
-        // einzeln, mit einem anderen {@code it} — würde es hier ausgerechnet,
-        // stünde am Ende ein einziger Wert da, und die Liste hätte nichts
-        // davon.
+        // <b>Two calls do not evaluate their argument beforehand.</b>
+        // {@code where} and {@code sort} need it for each entry
+        // individually, with a different {@code it} — if it were computed
+        // here, a single value would remain at the end, and the list would
+        // gain nothing from it.
         if (call.callee() instanceof Expr.Member member
                 && ("where".equals(member.name()) || "sort".equals(member.name()))
                 && !call.arguments().isEmpty()) {
@@ -1178,7 +1174,7 @@ public final class Interpreter {
                 .map(argument -> evaluate(argument.value()))
                 .toList();
 
-        // Aufruf einer Methode: crusher_1.insert(...), storage.count(...)
+        // Call of a method: crusher_1.insert(...), storage.count(...)
         if (call.callee() instanceof Expr.Member member) {
             return callMember(member, arguments);
         }
@@ -1204,7 +1200,7 @@ public final class Interpreter {
         if (target instanceof Value.ValueList list) {
             return listMember(list, name, arguments);
         }
-        // Fächer verhalten sich beim Lesen wie eine Liste ihrer Posten.
+        // When read, slots behave like a list of their entries.
         if (target instanceof Value.DeviceSlots view) {
             return listMember(new Value.ValueList(
                     host.itemsInSlots(view.device(), view.slots())), name, arguments);
@@ -1214,8 +1210,8 @@ public final class Interpreter {
                 case "members" -> new Value.ValueList(host.membersOf(group.name()).stream()
                         .map(each -> (Value) new Value.Device(each))
                         .toList());
-                // send ist move in kurz: aus dem Speicher an die Gruppe, und
-                // wie verteilt wird, entscheidet die Gruppe selbst.
+                // send is move in short: from the storage to the group, and
+                // how it is distributed is decided by the group itself.
                 case "send" -> new Value.Int(host.move(
                         arguments.isEmpty() ? Value.Nothing.get() : arguments.get(0),
                         new Value.Builtin("storage"), group));
@@ -1235,34 +1231,36 @@ public final class Interpreter {
                     host.setRedstone(device.name(), (int) number(arguments.get(0), "redstone"));
                     yield Value.Nothing.get();
                 }
-                // <b>Das Gerät und nicht der Speicher.</b> Hier stand
-                // host.count(…), also dieselbe Zahl wie bei storage.count(…):
-                // Die Schreibweise sagte „im Brecher", gemessen wurde das
-                // Netz. Alle anderen Mitglieder am Gerät meinten schon immer
-                // dieses Gerät.
+                // <b>The device and not the storage.</b> This used to be
+                // host.count(…), i.e. the same number as storage.count(…):
+                // the notation said "in the crusher", but the network was
+                // measured. All other members on the device have always
+                // meant this device.
                 case "count" -> new Value.Int(host.countIn(device.name(),
                         arguments.isEmpty() ? Value.Nothing.get() : arguments.get(0)));
-                // Legt aus dem Netzspeicher etwas ins Gerät und meldet, wie
-                // viel ankam. Weniger als gewünscht ist normal: Die Maschine
-                // kann voll sein, der Speicher leer.
+                // Puts something from the network storage into the device and
+                // reports how much arrived. Less than requested is normal:
+                // the machine may be full, the storage empty.
                 case "insert" -> new Value.Int(host.insertInto(device.name(),
                         arguments.isEmpty() ? Value.Nothing.get() : arguments.get(0)));
-                // Was gerade drinliegt. Ohne die Listenoperationen aus
-                // sprache.md §12 reicht das für log() und für eine Zählung —
-                // mehr ist es heute nicht, und das ist ehrlicher als eine
-                // Liste, mit der man nichts anfangen kann.
+                // What is currently inside. Without the list operations from
+                // sprache.md §12 this suffices for log() and for a count —
+                // it is no more than that today, and that is more honest
+                // than a list one can do nothing with.
                 case "items" -> new Value.ValueList(host.itemsIn(device.name()));
-                // <b>Fächer sehen das ganze Inventar</b>, nicht nur die Seite,
-                // an der der Connector hängt. Wer eine Nummer schreibt, weiß,
-                // was er tut — und ein Connector je Maschine soll reichen.
+                // <b>Slots see the whole inventory</b>, not just the side the
+                // connector is attached to. Whoever writes a number knows
+                // what they are doing — and one connector per machine should
+                // be enough.
                 case "slots" -> new Value.DeviceSlots(device.name(),
                         slotNumbers(arguments));
-                // Mit Klammern wie redstone() und count(): Es ist ein Blick
-                // in die Welt und kein Name, den das Programm ohnehin kennt.
+                // With parentheses like redstone() and count(): it is a look
+                // into the world and not a name the program knows anyway.
                 case "energy" -> new Value.Int(host.energyIn(device.name()));
-                // Mit Klammern wie alles, was in die Welt greift — und hier
-                // greift es am weitesten: Ein Klick ist derselbe Vorgang wie
-                // ein Rechtsklick eines Spielers, mit allem, was daran hängt.
+                // With parentheses like everything that reaches into the
+                // world — and here it reaches furthest: a click is the same
+                // operation as a player's right-click, with everything that
+                // entails.
                 case "click" -> new Value.Bool(host.clickAt(device.name()));
                 default -> throw new ScriptError(
                         "Ein Gerät kann kein " + name + ".",
@@ -1274,11 +1272,11 @@ public final class Interpreter {
     }
 
     /**
-     * Die Fachnummern aus dem Argument von {@code slots(…)}.
+     * The slot numbers from the argument of {@code slots(…)}.
      *
-     * <p>Eine Zahl oder ein Bereich — {@code slots(2)} und
-     * {@code slots(1..5)}. Gezählt wird ab null, wie überall dort, wo man
-     * Fachnummern sonst zu sehen bekommt.
+     * <p>A number or a range — {@code slots(2)} and {@code slots(1..5)}.
+     * Counting starts at zero, as everywhere else one gets to see slot
+     * numbers.
      */
     private static List<Integer> slotNumbers(List<Value> arguments) {
         if (arguments.isEmpty()) {
@@ -1303,18 +1301,18 @@ public final class Interpreter {
     }
 
     /**
-     * Was sich mit einer Liste anfangen lässt.
+     * What can be done with a list.
      *
-     * <p>Drei von fünf, die {@code sprache.md} §12 nennt. {@code where} und
-     * {@code sort} fehlen, weil sie ihren Ausdruck <b>je Element</b> auswerten
-     * müssen — und Argumente werden hier vorher ausgewertet. Das ist ein
-     * eigener Eingriff und kein Nachtrag.
+     * <p>Three of the five that {@code sprache.md} §12 names. {@code where}
+     * and {@code sort} are missing because they must evaluate their
+     * expression <b>per element</b> — and arguments are evaluated beforehand
+     * here. That is a separate intervention, not an afterthought.
      *
-     * <p>Eine leere Liste ist nirgends ein Fehler: {@code first()} gibt
-     * nichts, {@code sum()} gibt null. Wer über einen leeren Bestand rechnet,
-     * hat einen leeren Bestand — keinen Programmfehler.
+     * <p>An empty list is never an error: {@code first()} yields nothing,
+     * {@code sum()} yields zero. Whoever computes over an empty stock has an
+     * empty stock — not a program error.
      */
-    /** Die Menge eines Postens, oder {@code null} bei allem anderen. */
+    /** The amount of a stock entry, or {@code null} for anything else. */
     private static Double amountOf(Value entry) {
         return entry instanceof Value.Selection selection
                 ? (double) selection.amount()
@@ -1322,20 +1320,21 @@ public final class Interpreter {
     }
 
     /**
-     * Was eine Liste kann.
+     * What a list can do.
      *
-     * <p><b>Alles liefert Neues, nichts ändert.</b> Das ist keine Vorliebe,
-     * sondern folgt aus zwei Dingen, die schon da sind: Ein änderndes
-     * {@code add} wäre keine Zuweisung und liefe damit an der Wache für
-     * {@code const} und am Schutz im Mehrspielerbetrieb vorbei — beide hängen
-     * am Schreibpfad. Und ein wartender Ablauf überlebt den Neustart über den
-     * {@code ValueCodec}, der Verweise auf denselben Wert trennt: Vor dem
-     * Neustart wäre eine Änderung durch zwei Namen sichtbar, danach nur noch
-     * durch einen. Mit unveränderlichen Werten gibt es den Unterschied nicht.
+     * <p><b>Everything returns something new, nothing mutates.</b> That is
+     * not a preference but follows from two things already in place: a
+     * mutating {@code add} would not be an assignment and would thus bypass
+     * the guard for {@code const} and the protection in multiplayer — both
+     * hang off the write path. And a waiting flow survives the restart via
+     * the {@code ValueCodec}, which separates references to the same value:
+     * before the restart a change would be visible through two names,
+     * afterwards only through one. With immutable values that difference
+     * does not exist.
      *
-     * <p>Geschrieben wird deshalb {@code liste = liste.plus(x)} — wortreicher
-     * als {@code add}, aber die Sprache schreibt Zustand ohnehin über eine
-     * Zuweisung.
+     * <p>One therefore writes {@code liste = liste.plus(x)} — wordier than
+     * {@code add}, but the language writes state through an assignment
+     * anyway.
      */
     private Value listMember(Value.ValueList list, String name, List<Value> arguments) {
         return switch (name) {
@@ -1349,9 +1348,9 @@ public final class Interpreter {
                 longer.add(arguments.get(0));
                 yield new Value.ValueList(List.copyOf(longer));
             }
-            // Verglichen wird wie mit == — jedes Vorkommen und nicht nur das erste: „ohne Eisen" heißt
-            // ohne Eisen. Wer nur eines herausnehmen will, hat eine
-            // Warteschlange, und dafür gibt es first und rest.
+            // Compared as with == — every occurrence and not just the first:
+            // "without iron" means without iron. Whoever wants to remove
+            // only one has a queue, and for that there are first and rest.
             case "without" -> {
                 if (arguments.isEmpty()) {
                     throw new ScriptError("without braucht den Wert, der wegfällt.",
@@ -1365,10 +1364,10 @@ public final class Interpreter {
                 }
                 yield new Value.ValueList(List.copyOf(kept));
             }
-            // Alles außer dem ersten. Mit first zusammen ist das die
-            // Warteschlange — und der Grund, warum es keinen Zugriff über
-            // eine Nummer gibt: Eine Liste, in die man an beliebiger Stelle
-            // greift, will auch an beliebiger Stelle geändert werden.
+            // Everything except the first. Together with first this is the
+            // queue — and the reason there is no access by index: a list one
+            // reaches into at an arbitrary position also wants to be changed
+            // at an arbitrary position.
             case "rest" -> new Value.ValueList(list.entries().isEmpty()
                     ? List.of()
                     : List.copyOf(list.entries().subList(1, list.entries().size())));
@@ -1378,9 +1377,9 @@ public final class Interpreter {
                 double total = 0;
                 boolean whole = true;
                 for (Value entry : list.entries()) {
-                    // Ein Posten ist keine Zahl, trägt aber eine: seine
-                    // Menge. Ohne diese Zeile warf sum genau an der Liste,
-                    // für die es gedacht war — dem Bestand.
+                    // A stock entry is not a number, but carries one: its
+                    // amount. Without this line, sum threw on exactly the
+                    // list it was meant for — the stock.
                     Double amount = amountOf(entry);
                     if (amount != null) {
                         total += amount;
@@ -1391,9 +1390,10 @@ public final class Interpreter {
                 }
                 yield numberValue(total, whole);
             }
-            // where und sort kommen hier nicht an: Sie werden in call()
-            // abgefangen, weil sie ihren Ausdruck ungerechnet brauchen. Ohne
-            // Argument landen sie doch hier, und dann fehlt genau das.
+            // where and sort do not arrive here: they are intercepted in
+            // call() because they need their expression unevaluated. Without
+            // an argument they do end up here, and then exactly that is
+            // missing.
             case "where", "sort" -> throw new ScriptError(
                     name + " braucht einen Ausdruck.",
                     "Zum Beispiel: items().where(it) oder items().sort(it).");
@@ -1405,17 +1405,16 @@ public final class Interpreter {
     }
 
     /**
-     * {@code where} und {@code sort} — der Ausdruck gilt je Eintrag.
+     * {@code where} and {@code sort} — the expression applies per entry.
      *
-     * <p><b>{@code it} ist der Eintrag</b>, und er lebt in einem eigenen
-     * Geltungsbereich, der nach jedem Eintrag wieder verschwindet. Damit
-     * verdeckt er nichts, was außen steht, und zwei ineinandergeschachtelte
-     * Aufrufe kommen sich nicht in die Quere — der innere legt sein eigenes
-     * {@code it} darüber.
+     * <p><b>{@code it} is the entry</b>, and it lives in its own scope that
+     * disappears again after each entry. That way it shadows nothing that
+     * stands outside, and two nested calls do not get in each other's way —
+     * the inner one lays its own {@code it} on top.
      *
-     * <p>Ein Vergleich in {@code sort} braucht Zahlen. Was keine ist, zählt
-     * als Null: Eine Liste zu sortieren, in der etwas Unvergleichbares steht,
-     * ist kein Grund, das Programm anzuhalten — sie steht dann eben vorn.
+     * <p>A comparison in {@code sort} needs numbers. Whatever is not one
+     * counts as zero: sorting a list containing something incomparable is no
+     * reason to halt the program — it simply ends up at the front.
      */
     private Value perEntry(Value.ValueList list, String operation, Expr expression) {
         if ("where".equals(operation)) {
@@ -1436,7 +1435,7 @@ public final class Interpreter {
         return new Value.ValueList(sorted);
     }
 
-    /** Wertet einen Ausdruck aus, in dem {@code it} dieser Eintrag ist. */
+    /** Evaluates an expression in which {@code it} is this entry. */
     private Value withIt(Value entry, Expr expression) {
         scopes.push(new HashMap<>(Map.of("it", entry)));
         try {
@@ -1447,12 +1446,12 @@ public final class Interpreter {
     }
 
     /**
-     * Die Stufe, unter der dieser Aufruf schreibt — oder {@code null}.
+     * The level under which this call writes — or {@code null}.
      *
-     * <p>{@code log()} bleibt und schreibt als {@code info}: Es steht in
-     * jeder Doku und in jedem Programm, das es schon gibt.
+     * <p>{@code log()} stays and writes as {@code info}: it appears in every
+     * piece of documentation and in every program that already exists.
      */
-    /** Reicht durch, wer gerade schreibt. */
+    /** Passes through who is currently writing. */
     public void setLogSource(String source) {
         host.setLogSource(source);
     }
@@ -1474,8 +1473,8 @@ public final class Interpreter {
         if (calculated != null) {
             return calculated;
         }
-        // Bestellen ist eine Anweisung an das Netz wie log() — kein Punkt
-        // davor, weil es nicht einem Gerät gehört, sondern dem Netz.
+        // Ordering is an instruction to the network like log() — no dot in
+        // front, because it belongs not to a device but to the network.
         if ("craft".equals(name)) {
             return new Value.Int(host.craft(arguments.isEmpty()
                     ? Value.Nothing.get() : arguments.get(0)));
@@ -1485,7 +1484,7 @@ public final class Interpreter {
         if (!known) {
             throw new ScriptError("Unbekannte Funktion " + name + ".");
         }
-        // Eigene Aufrufe bekommen einen frischen Rahmen, aber denselben Zähler.
+        // User-defined calls get a fresh frame, but the same counter.
         int outerSteps = steps;
         Deque<Map<String, Value>> outerScopes = new ArrayDeque<>(scopes);
         try {
@@ -1498,15 +1497,15 @@ public final class Interpreter {
     }
 
     /**
-     * Die Rechenfunktionen, oder {@code null} bei einem anderen Namen.
+     * The math functions, or {@code null} for any other name.
      *
-     * <p><b>Ganz bleibt ganz.</b> {@code min(64, 20)} ist eine ganze Zahl,
-     * {@code min(64, 19.5)} eine gebrochene — dieselbe Regel wie beim Rechnen
-     * mit {@code +} und {@code *}. Wer Stückzahlen vergleicht, bekommt eine
-     * Stückzahl zurück und keine 20.0.
+     * <p><b>Whole stays whole.</b> {@code min(64, 20)} is an integer,
+     * {@code min(64, 19.5)} a decimal — the same rule as when calculating
+     * with {@code +} and {@code *}. Whoever compares piece counts gets a
+     * piece count back and not 20.0.
      *
-     * <p>{@code round}, {@code floor} und {@code ceil} liefern immer eine
-     * ganze Zahl: Sie sind dazu da, eine gebrochene loszuwerden.
+     * <p>{@code round}, {@code floor} and {@code ceil} always return an
+     * integer: they exist to get rid of a decimal.
      */
     private Value math(String name, List<Value> arguments) {
         return switch (name) {
@@ -1519,8 +1518,8 @@ public final class Interpreter {
             case "round" -> new Value.Int(Math.round(single(name, arguments)));
             case "floor" -> new Value.Int((long) Math.floor(single(name, arguments)));
             case "ceil" -> new Value.Int((long) Math.ceil(single(name, arguments)));
-            // <b>Beide Enden eingeschlossen</b>, wie bei einem Bereich:
-            // random(1, 6) ist ein Würfel und nicht fünf Sechstel davon.
+            // <b>Both ends inclusive</b>, as with a range: random(1, 6) is a
+            // die and not five sixths of one.
             case "random" -> {
                 if (arguments.size() < 2) {
                     throw new ScriptError("random braucht zwei Zahlen.",
@@ -1546,7 +1545,7 @@ public final class Interpreter {
         return number(arguments.get(0), name);
     }
 
-    /** {@code min(3, 7, 5)} geht auch — der Reihe nach, von links. */
+    /** {@code min(3, 7, 5)} works too — in order, from the left. */
     private Value fold(String name, List<Value> arguments,
                        java.util.function.DoubleBinaryOperator step) {
         if (arguments.isEmpty()) {
@@ -1564,7 +1563,7 @@ public final class Interpreter {
         return arguments.stream().allMatch(value -> value instanceof Value.Int);
     }
 
-    // ---- Umgebung ---------------------------------------------------------
+    // ---- Environment ------------------------------------------------------
 
     private void declare(String name, Value value) {
         scopes.peek().put(name, value);
@@ -1581,8 +1580,8 @@ public final class Interpreter {
                 return;
             }
         }
-        // Kein Name in Reichweite — aber vielleicht ein globaler. Dieselbe
-        // Reihenfolge wie beim Lesen: Was in der Funktion steht, geht vor.
+        // No name in reach — but perhaps a global one. The same order as
+        // when reading: what stands in the function takes precedence.
         if (host.global(name.value()) != null) {
             writeGlobal(name.value(), value);
             return;
@@ -1593,14 +1592,14 @@ public final class Interpreter {
     }
 
     /**
-     * Schreibt einen globalen Wert — die einzige Stelle, an der das geschieht.
+     * Writes a global value — the only place where that happens.
      *
-     * <p>Es gibt zwei Wege dorthin, den geradeaus laufenden Interpreter und
-     * die Ablaufmaschine, und beide gehen hier durch. Das ist der Grund,
-     * warum {@code plus} keine ändernde Fassung hat: Solange jede Änderung
-     * eine Zuweisung ist, muss der Deckel nur an einer Stelle stehen — und
-     * dasselbe gilt für die Wache über {@code const} und den Schutz im
-     * Mehrspielerbetrieb.
+     * <p>There are two ways to get here, the straight-line interpreter and
+     * the flow engine, and both pass through here. That is the reason
+     * {@code plus} has no mutating version: as long as every change is an
+     * assignment, the cap only needs to stand in one place — and the same
+     * goes for the guard over {@code const} and the protection in
+     * multiplayer.
      */
     private void writeGlobal(String name, Value value) {
         if (value instanceof Value.ValueList list
@@ -1622,11 +1621,11 @@ public final class Interpreter {
                 return value;
             }
         }
-        // Zuletzt die globalen Werte, und ausdrücklich nicht zuerst: Ein
-        // gleichnamiges let in einer Funktion verdeckt sie. Andersherum
-        // könnte man einen globalen Wert nie überdecken, und ein Name, den
-        // jemand in seiner Funktion vergibt, hinge davon ab, was anderswo
-        // im Projekt steht.
+        // The global values last, and explicitly not first: a let of the
+        // same name in a function shadows them. The other way round, a
+        // global value could never be shadowed, and a name somebody assigns
+        // in their function would depend on what stands elsewhere in the
+        // project.
         return host.global(name);
     }
 
@@ -1639,18 +1638,17 @@ public final class Interpreter {
     }
 
     /**
-     * Wertet einen Ausdruck als Bedingung aus.
+     * Evaluates an expression as a condition.
      *
-     * <p>Für das {@code when} eines Workers, das je Durchgang geprüft wird.
-     * Ein frischer Geltungsbereich, weil es dort keine Umgebung gibt — nur
-     * globale Werte, Bestände und Gerätezustände, und die kommen alle vom
-     * Host.
+     * <p>For the {@code when} of a worker, which is checked every pass. A
+     * fresh scope, because there is no environment there — only global
+     * values, stocks and device states, and those all come from the host.
      *
-     * <p><b>Ohne Seiteneffekte gemeint, aber nicht erzwungen.</b> Wer in ein
-     * {@code when} einen Aufruf schreibt, der etwas bewegt, bewegt es je
-     * Durchgang. Das ist die Folge davon, dass eine Bedingung ein gewöhnlicher
-     * Ausdruck ist, und die Alternative — eine zweite, eingeschränkte
-     * Ausdruckssprache nur für {@code when} — wäre schlimmer.
+     * <p><b>Meant to be side-effect free, but not enforced.</b> Whoever
+     * writes a call into a {@code when} that moves something moves it every
+     * pass. That is the consequence of a condition being an ordinary
+     * expression, and the alternative — a second, restricted expression
+     * language just for {@code when} — would be worse.
      */
     public boolean evaluateAsBoolean(Expr expr) {
         scopes.clear();
@@ -1663,7 +1661,7 @@ public final class Interpreter {
         }
     }
 
-    // ---- Umwandlungen -----------------------------------------------------
+    // ---- Conversions ------------------------------------------------------
 
     private static boolean truth(Value value) {
         return switch (value) {
@@ -1706,9 +1704,9 @@ public final class Interpreter {
         return left.equals(right);
     }
 
-    // ---- Ablaufsteuerung --------------------------------------------------
+    // ---- Control flow -----------------------------------------------------
 
-    /** Kein Fehler, sondern ein Sprung — deshalb ohne Stapel und ohne Meldung. */
+    /** Not an error but a jump — hence without a stack trace and without a message. */
     private static final class Return extends RuntimeException {
         private final transient Value value;
 

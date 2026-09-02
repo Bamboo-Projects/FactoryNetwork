@@ -1,12 +1,12 @@
 package dev.devpanda.factorynetwork.runtime;
 
 /**
- * Ein Fehler zur Laufzeit — nach der Linie aus {@code sprache.md},
- * Abschnitt 14: Erwartbare Zustände sind keine Fehler, unerwartete halten den
- * Ablauf an.
+ * A runtime error — following the line laid down in {@code sprache.md},
+ * section 14: expected states are not errors; unexpected ones halt the
+ * flow.
  *
- * <p>Deshalb trägt diese Ausnahme keinen Stapel: Der Spieler soll lesen, was
- * los ist, nicht wo im Java-Code es passierte.
+ * <p>That is why this exception carries no stack trace: the player should read
+ * what is going on, not where in the Java code it happened.
  */
 public class ScriptError extends RuntimeException {
 

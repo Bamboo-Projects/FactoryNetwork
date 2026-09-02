@@ -12,21 +12,20 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Gibt jedem Block eines Programms eine Nummer.
+ * Gives every block of a program a number.
  *
- * <p>Ein wartender Ablauf muss aufschreiben, in welchem Block er steht. Ein
- * Block ist ein Objekt im Speicher und lässt sich nicht aufschreiben — seine
- * Nummer schon. Beim Laden wird aus der Nummer wieder derselbe Block, solange
- * das Programm dasselbe ist.
+ * <p>A waiting flow has to record which block it is in. A block is an object
+ * in memory and cannot be persisted — its number can. On loading, the number
+ * turns back into the same block, as long as the program is the same.
  *
- * <p>Genau dieses „solange" bewacht der Quelltext-Hash: Ändert sich das
- * Programm, verschieben sich die Nummern, und der Ablauf wird nicht heimlich
- * an falscher Stelle fortgesetzt, sondern als {@code STALE} gemeldet.
+ * <p>Exactly this "as long as" is what the source hash guards: if the program
+ * changes, the numbers shift, and the flow is not silently resumed in the
+ * wrong place but reported as {@code STALE}.
  *
- * <p>Der Weg durch den Baum liegt fest: Deklarationen in Programmreihenfolge,
- * darin Anweisungen von oben nach unten, bei jeder Anweisung erst der eigene
- * Block, dann die darin enthaltenen. Solange dieser Weg gleich bleibt,
- * bleiben es auch die Nummern.
+ * <p>The walk through the tree is fixed: declarations in program order,
+ * within them statements top to bottom, and for each statement first its own
+ * block, then the ones nested inside. As long as this walk stays the same, so
+ * do the numbers.
  */
 public final class BlockIndex {
 
@@ -42,27 +41,27 @@ public final class BlockIndex {
             switch (declaration) {
                 case Decl.Fn function -> index.walk(function.body());
                 case Decl.On handler -> index.walk(handler.body());
-                // Die Funktionen einer Vorlage zählen mit. Fehlten sie, bekäme
-                // ein Ablauf darin keine Nummer — und verschwände beim
-                // Aufschreiben still, statt sich zu melden.
+                // The functions of a template count too. Without them, a flow
+                // inside one would get no number — and would vanish silently
+                // when persisted instead of speaking up.
                 case Decl.Multiblock template -> template.functions()
                         .forEach(function -> index.walk(function.body()));
                 default -> {
-                    // Worker, Gruppen, Anzeigen haben keine Anweisungsblöcke,
-                    // in denen ein Ablauf stehen könnte.
+                    // Workers, groups, displays have no statement blocks in
+                    // which a flow could be standing.
                 }
             }
         }
         return index;
     }
 
-    /** Die Nummer eines Blocks, oder -1, wenn er nicht zu diesem Programm gehört. */
+    /** The number of a block, or -1 if it does not belong to this program. */
     public int id(Block block) {
         Integer number = numbers.get(block);
         return number == null ? -1 : number;
     }
 
-    /** Der Block zu einer Nummer, oder {@code null}. */
+    /** The block for a number, or {@code null}. */
     public Block block(int id) {
         return id >= 0 && id < blocks.size() ? blocks.get(id) : null;
     }
@@ -72,22 +71,21 @@ public final class BlockIndex {
     }
 
     /**
-     * Eine Zahl, die sich genau dann ändert, wenn sich die Nummern ändern.
+     * A number that changes exactly when the block numbers change.
      *
-     * <p>Ein wartender Ablauf zeigt mit Nummern auf Blöcke und mit einem
-     * Zähler auf eine Anweisung darin. Beides bleibt gültig, solange Anzahl
-     * und Art der Anweisungen gleich bleiben — Kommentare, Einrückung und
-     * geänderte Zahlen im Rumpf verschieben nichts. Eine eingefügte Zeile
-     * verschiebt dagegen alles, was dahinter steht.
+     * <p>A waiting flow points at blocks with numbers and at a statement
+     * inside one with a counter. Both stay valid as long as the count and
+     * kind of statements stay the same — comments, indentation and changed
+     * numbers in a body shift nothing. An inserted line, by contrast, shifts
+     * everything that follows it.
      *
-     * <p>Deshalb bewacht diese Zahl die Fortsetzung und nicht ein Hash des
-     * Quelltextes: Sonst würde ein hinzugefügter Kommentar jeden wartenden
-     * Ablauf zur Nachfrage zwingen, obwohl er weiterlaufen könnte.
+     * <p>That is why this number guards resumption rather than a hash of the
+     * source text: otherwise an added comment would force every waiting flow
+     * into a confirmation prompt, even though it could carry on.
      *
-     * <p>Der Name eines erwarteten Ereignisses zählt mit. Wird aus
-     * {@code await Fertig} ein {@code await Abgebrochen}, ist die Struktur
-     * gleich, der Ablauf wartete aber auf etwas anderes als das Programm
-     * jetzt meint.
+     * <p>The name of an awaited event counts too. If {@code await Fertig}
+     * becomes {@code await Abgebrochen}, the structure is the same, but the
+     * flow was waiting for something other than what the program now means.
      */
     public int structureHash() {
         int hash = 17;
@@ -138,12 +136,12 @@ public final class BlockIndex {
             case Stmt.Let let -> walkAwait(let.value());
             case Stmt.ExprStmt expr -> walkAwait(expr.expr());
             default -> {
-                // Alles andere öffnet keinen Block.
+                // Nothing else opens a block.
             }
         }
     }
 
-    /** Der else-Zweig eines {@code await} ist ebenfalls ein Block. */
+    /** The else branch of an {@code await} is a block as well. */
     private void walkAwait(Expr expr) {
         if (expr instanceof Expr.Await await) {
             walk(await.elseBody());

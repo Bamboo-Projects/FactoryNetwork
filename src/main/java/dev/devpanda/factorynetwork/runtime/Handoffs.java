@@ -5,17 +5,17 @@ import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.items.IItemHandler;
 
 /**
- * Die zwei Griffe, mit denen überall Ware in ein Gerät geht und wieder heraus.
+ * The two transfers by which goods go into a device and out again, everywhere.
  *
- * <p>Sie stehen hier und nicht je einmal beim Worker und beim Interpreter,
- * weil beide dieselbe Reihenfolge einhalten müssen: <b>erst einlegen, dann
- * entnehmen.</b> Andersherum wäre die Ware schon aus der Quelle, wenn das Ziel
- * sie nicht nimmt — und eine Maschine, die ihren Brennstoffplatz hergibt,
- * füllt ihn nicht wieder auf.
+ * <p>They live here and not once each in the worker and the interpreter,
+ * because both must keep the same order: <b>insert first, then extract.</b>
+ * The other way round, the goods would already be out of the source when the
+ * target refuses them — and a machine that gives up its fuel slot does not
+ * refill it.
  *
- * <p>Die Reihenfolge hat einen Preis, und der ist {@link #pullBack}: Liefert
- * die Quelle beim echten Griff weniger als versprochen, liegt der Unterschied
- * schon im Ziel. Er ist aus dem Nichts entstanden und muss wieder heraus.
+ * <p>The order has a price, and that price is {@link #pullBack}: if the
+ * source delivers less on the real transfer than it promised, the difference
+ * is already in the target. It came out of nothing and has to come back out.
  */
 public final class Handoffs {
 
@@ -23,22 +23,23 @@ public final class Handoffs {
     }
 
     /**
-     * Was ein Griff bewegt hat und was dabei aufgefallen ist.
+     * What a transfer moved and what was noticed along the way.
      *
-     * @param moved     wie viel wirklich von der Quelle ins Ziel ging
-     * @param targetFull ob das Ziel nichts mehr annahm
-     * @param stranded  wie viel im Ziel liegt, ohne je aus der Quelle gekommen
-     *                  zu sein — siehe {@link #pullBack}
+     * @param moved     how much actually went from the source into the target
+     * @param targetFull whether the target stopped accepting
+     * @param stranded  how much sits in the target without ever having come
+     *                  from the source — see {@link #pullBack}
      */
     public record Handoff(long moved, boolean targetFull, long stranded) {
     }
 
     /**
-     * Von einem Gerät ins andere, so viel wie das Ziel nimmt.
+     * From one device into another, as much as the target takes.
      *
-     * <p>Die Reihenfolge ist die des ganzen Hauses: erst einlegen, dann
-     * entnehmen. Was die Quelle beim echten Griff weniger hergibt als beim
-     * Probelauf, holt {@link #pullBack} wieder aus dem Ziel.
+     * <p>The order is the same as everywhere in this codebase: insert first,
+     * then extract. Whatever the source yields on the real transfer short of
+     * what the dry run promised, {@link #pullBack} fetches back out of the
+     * target.
      */
     public static Handoff items(IItemHandler in, IItemHandler out,
                                 java.util.List<net.minecraft.world.item.Item> filter,
@@ -57,9 +58,9 @@ public final class Handoffs {
             if (accepted <= 0) {
                 return new Handoff(moved, true, stranded);
             }
-            // Was der Griff wirklich hergibt, und nicht, was der Probelauf
-            // versprochen hat. Der Unterschied liegt schon im Ziel und ist aus
-            // dem Nichts entstanden.
+            // What the transfer actually yields, not what the dry run
+            // promised. The difference is already in the target and came out
+            // of nothing.
             int taken = in.extractItem(slot, accepted, false).getCount();
             if (taken < accepted) {
                 stranded += pullBack(out, ItemKey.of(simulated), accepted - taken);
@@ -70,17 +71,17 @@ public final class Handoffs {
     }
 
     /**
-     * Ein Griff aus einem Tank in einen anderen.
+     * One transfer from one tank into another.
      *
-     * <p>Nur ein Griff und keine Schleife: Was ein leerer oder unwilliger Tank
-     * bedeutet, entscheiden die beiden Aufrufer verschieden — der Worker hört
-     * auf, der Interpreter geht zur nächsten Sorte weiter. Diese Entscheidung
-     * gehört ihnen und nicht hierher.
+     * <p>A single transfer and no loop: what an empty or unwilling tank means
+     * is decided differently by the two callers — the worker stops, the
+     * interpreter moves on to the next kind. That decision belongs to them,
+     * not here.
      *
-     * <p>Der Rückweg ist hier enger als bei Gegenständen: Eine gezogene
-     * Flüssigkeit lässt sich nicht in die Quelle zurücklegen, weil ein Tank
-     * sie nicht wieder annehmen muss. Was zu viel im Ziel liegt, wird deshalb
-     * dort abgezogen und ist danach weg — es hat nie existiert.
+     * <p>The way back is narrower here than with items: a drained fluid
+     * cannot be put back into the source, because a tank is not obliged to
+     * accept it again. Whatever is in excess in the target is therefore
+     * drained there and is gone afterwards — it never existed.
      */
     public static Handoff fluid(net.neoforged.neoforge.fluids.capability.IFluidHandler in,
                                 net.neoforged.neoforge.fluids.capability.IFluidHandler out,
@@ -95,8 +96,8 @@ public final class Handoffs {
         if (accepted <= 0) {
             return new Handoff(0, true, 0);
         }
-        // Was der Griff wirklich hergibt, und nicht, was der Probelauf
-        // versprochen hat.
+        // What the transfer actually yields, not what the dry run
+        // promised.
         int taken = in.drain(simulated.copyWithAmount(accepted), action).getAmount();
         if (taken >= accepted) {
             return new Handoff(taken, false, 0);
@@ -106,7 +107,7 @@ public final class Handoffs {
         return new Handoff(taken, false, surplus - pulled);
     }
 
-    /** Legt über alle Fächer ein und liefert, was nicht hineinpasste. */
+    /** Inserts across all slots and returns what did not fit. */
     public static ItemStack insertInto(IItemHandler handler, ItemStack stack) {
         ItemStack rest = stack.copy();
         for (int slot = 0; slot < handler.getSlots() && !rest.isEmpty(); slot++) {
@@ -116,27 +117,27 @@ public final class Handoffs {
     }
 
     /**
-     * Holt zurück, was gerade eingelegt und nicht gedeckt war.
+     * Fetches back what was just inserted and not covered.
      *
-     * <p>Der Rückweg für den einen Fall, in dem sonst Ware entsteht: Das Ziel
-     * hat schon bekommen, die Quelle hat dann weniger hergegeben. Was hier
-     * herauskommt, geht <b>nirgendwo</b> hin — es hat nie existiert, und es
-     * irgendwo abzulegen wäre die Verdopplung mit einem Umweg.
+     * <p>The way back for the one case in which goods would otherwise be
+     * created: the target has already received, and the source then gave up
+     * less. What comes out here goes <b>nowhere</b> — it never existed, and
+     * putting it down somewhere would be duplication by a detour.
      *
-     * <p>Gelingen muss es nicht. Ein Eingangsfach gibt nichts heraus, und dann
-     * bleibt der Rest liegen; der Aufrufer erfährt es an der Rückgabe und
-     * zählt ihn nicht als bewegt. Das ist die kleinere Hälfte des Übels: eine
-     * Menge, die einmal zu viel im Gerät liegt, statt einer, die jeden Tick
-     * nachwächst.
+     * <p>It need not succeed. An input slot gives nothing out, and then the
+     * remainder stays put; the caller learns of it from the return value and
+     * does not count it as moved. That is the lesser half of the evil: an
+     * amount that sits in the device once too many, instead of one that grows
+     * back every tick.
      *
-     * @return wie viel nicht mehr herauszuholen war
+     * @return how much could no longer be fetched out
      */
     public static long pullBack(IItemHandler handler, ItemKey item, long amount) {
         long left = amount;
         for (int slot = 0; slot < handler.getSlots() && left > 0; slot++) {
-            // Ganzer Gegenstand, nicht nur die Kennung — sonst käme die
-            // verzauberte Spitzhacke zurück statt der nackten, die eben
-            // hineinging.
+            // The whole item, not just the id — otherwise the enchanted
+            // pickaxe would come back instead of the plain one that just
+            // went in.
             if (!item.equals(ItemKey.of(handler.getStackInSlot(slot)))) {
                 continue;
             }

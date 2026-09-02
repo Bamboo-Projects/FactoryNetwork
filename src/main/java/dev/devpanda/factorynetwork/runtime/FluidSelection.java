@@ -17,21 +17,21 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
- * Löst Flüssigkeits-Auswahlen auf.
+ * Resolves fluid selections.
  *
- * <p>Dieselben Regeln wie bei Gegenständen: Ohne Namensraum ist
- * {@code minecraft} gemeint, ein Muster sucht dagegen über alle Namensräume.
+ * <p>The same rules as for items: without a namespace, {@code minecraft} is
+ * meant, whereas a pattern searches across all namespaces.
  *
- * <p>Ein Unterschied fällt auf: <b>Nur stehende Flüssigkeiten zählen.</b> In
- * der Registry stehen Wasser und fließendes Wasser als zwei Einträge; ein
- * Muster wie {@code fluid:*water*} würde sonst beide finden, und der Spieler
- * bekäme eine Sorte doppelt angeboten, von der die eine nirgends lagerbar ist.
+ * <p>One difference stands out: <b>only source fluids count.</b> The registry
+ * lists water and flowing water as two entries; a pattern like
+ * {@code fluid:*water*} would otherwise find both, and the player would be
+ * offered one type twice, one of which cannot be stored anywhere.
  */
 public final class FluidSelection {
 
     private static final Map<String, List<Fluid>> CACHE = new HashMap<>();
 
-    /** Nach einem Neuladen der Datenpakete stimmen die Tags nicht mehr. */
+    /** After a datapack reload the tags are no longer correct. */
     public static void invalidate() {
         CACHE.clear();
     }
@@ -63,8 +63,8 @@ public final class FluidSelection {
     }
 
     private static List<Fluid> compute(Expr.Selector selector) {
-        // tag: bleibt hier stumm: Ein Gegenstands-Tag trifft keine
-        // Flüssigkeit, und fluidtag: gibt es genau deshalb.
+        // tag: stays silent here: an item tag matches no fluid, and
+        // fluidtag: exists for exactly that reason.
         if (selector.kind() == Expr.Selector.Kind.FLUIDTAG) {
             return fromTag(selector);
         }
@@ -127,7 +127,7 @@ public final class FluidSelection {
         return List.copyOf(found);
     }
 
-    /** Fließendes Wasser ist keine Sorte, die sich lagern ließe. */
+    /** Flowing water is not a type that could be stored. */
     private static boolean isSource(Fluid fluid) {
         return fluid != net.minecraft.world.level.material.Fluids.EMPTY
                 && fluid.isSource(fluid.defaultFluidState());

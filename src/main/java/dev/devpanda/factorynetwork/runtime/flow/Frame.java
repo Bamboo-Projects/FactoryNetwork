@@ -7,17 +7,16 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Ein Rahmen auf dem Stapel eines Ablaufs.
+ * A frame on a flow's stack.
  *
- * <p>Er weiß, in welchem Block er steht und bei welcher Anweisung. Das ist
- * der ganze Unterschied zum gewöhnlichen Aufrufstapel von Java: Diese Angaben
- * sind Daten und lassen sich aufschreiben. Ein Ablauf, der wartet, ist damit
- * nichts weiter als eine Liste solcher Rahmen — und die übersteht einen
- * Serverneustart.
+ * <p>It knows which block it is in and at which statement. That is the whole
+ * difference from Java's ordinary call stack: this information is data and
+ * can be persisted. A waiting flow is thus nothing more than a list of such
+ * frames — and that survives a server restart.
  *
- * <p>Welcher Block das ist, wird beim Aufschreiben zur Nummer aus dem
- * {@link BlockIndex}. Der Rahmen selbst führt keine Nummer mit; sie gilt nur
- * für ein bestimmtes Programm, der Rahmen aber lebt im Speicher.
+ * <p>Which block it is becomes, when persisted, the number from the
+ * {@link BlockIndex}. The frame itself carries no number; a number is only
+ * valid for a particular program, whereas the frame lives in memory.
  */
 public final class Frame {
 
@@ -48,19 +47,18 @@ public final class Frame {
         index++;
     }
 
-    /** Ist dieser Rahmen ein Schleifenrumpf? */
+    /** Is this frame a loop body? */
     public boolean isLoop() {
         return loop;
     }
 
     /**
-     * Endet der ganze Ablauf, sobald dieser Rahmen fertig ist?
+     * Does the whole flow end as soon as this frame is finished?
      *
-     * <p>Gesetzt für den {@code else}-Zweig eines {@code await} mit Frist.
-     * Die Sprache verlangt, dass dieser Zweig den Ablauf verlässt — steht
-     * dort kein {@code return}, sorgt dieses Merkmal dafür, dass der Ablauf
-     * trotzdem endet, statt hinter dem {@code await} mit einem Wert
-     * weiterzumachen, den es nie gab.
+     * <p>Set for the {@code else} branch of an {@code await} with a deadline.
+     * The language requires that branch to leave the flow — if there is no
+     * {@code return} in it, this flag makes sure the flow ends anyway instead
+     * of continuing after the {@code await} with a value that never existed.
      */
     public boolean exitOnLeave() {
         return exitOnLeave;
@@ -70,17 +68,17 @@ public final class Frame {
         this.exitOnLeave = exitOnLeave;
     }
 
-    // ---- Aufruf einer eigenen Funktion ------------------------------------
+    // ---- Calling a user-defined function ----------------------------------
 
     private boolean call;
     private String resultName;
     private String devicePrefix = "";
 
     /**
-     * Macht diesen Rahmen zum Rumpf eines Aufrufs.
+     * Turns this frame into the body of a call.
      *
-     * <p>Ein {@code return} darin beendet nicht den ganzen Ablauf, sondern nur
-     * diesen Rahmen — der Wert landet im rufenden unter {@code resultName}.
+     * <p>A {@code return} inside it does not end the whole flow, only this
+     * frame — the value lands in the calling frame under {@code resultName}.
      */
     public void beginCall(String resultName, String devicePrefix) {
         this.call = true;
@@ -97,12 +95,12 @@ public final class Frame {
     }
 
     /**
-     * Vor welchen Gerätenamen dieser Rahmen etwas setzt.
+     * What this frame prepends to device names.
      *
-     * <p>In einer Vorlage heißt ein Gerät {@code crusher}; in der Welt trägt
-     * es den Namen der Anlage davor. Der Rahmen weiß, zu welcher Anlage er
-     * gehört — sonst wüsste ein Ablauf nach einem Neustart nicht mehr, welche
-     * der drei Erzanlagen er bedient.
+     * <p>In a template a device is called {@code crusher}; in the world it
+     * carries the name of the multiblock instance in front. The frame knows
+     * which instance it belongs to — otherwise, after a restart, a flow would
+     * no longer know which of the three ore plants it is serving.
      */
     public String devicePrefix() {
         return devicePrefix;
@@ -112,19 +110,19 @@ public final class Frame {
         this.devicePrefix = devicePrefix == null ? "" : devicePrefix;
     }
 
-    // ---- Lauf über eine Liste ---------------------------------------------
+    // ---- Iterating over a list --------------------------------------------
 
     private String iterationVariable;
     private java.util.List<Value> iterationValues = java.util.List.of();
     private int iterationIndex;
 
     /**
-     * Macht diesen Rahmen zum Rumpf eines {@code for}.
+     * Turns this frame into the body of a {@code for}.
      *
-     * <p>Der Stand steht damit im Rahmen und nicht im Programm — anders als
-     * bei {@code while}, wo die Bedingung jede Runde neu geprüft wird. Nur so
-     * lässt sich ein {@code for}, das mitten in der Liste auf ein Ereignis
-     * wartet, aufschreiben und fortsetzen.
+     * <p>The position thereby lives in the frame and not in the program —
+     * unlike {@code while}, where the condition is re-checked every round.
+     * Only this way can a {@code for} that waits for an event in the middle
+     * of the list be persisted and resumed.
      */
     public void beginIteration(String variable, java.util.List<Value> values) {
         this.iterationVariable = variable;
@@ -133,7 +131,7 @@ public final class Frame {
         bindCurrent();
     }
 
-    /** Nur zum Zurücklesen: Stand mitten in der Liste. */
+    /** Only for reading back: a position in the middle of the list. */
     public void restoreIteration(String variable, java.util.List<Value> values, int index) {
         this.iterationVariable = variable;
         this.iterationValues = java.util.List.copyOf(values);
@@ -157,9 +155,9 @@ public final class Frame {
     }
 
     /**
-     * Rückt auf den nächsten Eintrag vor.
+     * Advances to the next entry.
      *
-     * @return ob es noch einen gab
+     * @return whether there was another one
      */
     public boolean nextIteration() {
         if (!hasIteration() || iterationIndex + 1 >= iterationValues.size()) {
@@ -184,7 +182,7 @@ public final class Frame {
         return locals;
     }
 
-    /** Setzt den Zähler zurück — für die nächste Runde einer Schleife. */
+    /** Resets the counter — for the next round of a loop. */
     public void restart() {
         index = 0;
     }
