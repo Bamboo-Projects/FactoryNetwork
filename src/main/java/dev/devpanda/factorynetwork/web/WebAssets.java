@@ -1,4 +1,4 @@
-package dev.devpanda.factorynetwork.web.ide;
+package dev.devpanda.factorynetwork.web;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

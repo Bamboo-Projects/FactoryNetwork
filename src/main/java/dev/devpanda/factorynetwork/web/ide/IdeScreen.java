@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.web.ide;
 
+import dev.devpanda.factorynetwork.web.WebAssets;
 import dev.devpanda.factorynetwork.web.capture.WorldCapture;
 import dev.devpanda.factorynetwork.web.screen.BackdropScreen;
 import net.minecraft.client.Minecraft;

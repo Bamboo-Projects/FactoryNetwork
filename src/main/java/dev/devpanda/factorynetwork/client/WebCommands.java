@@ -61,8 +61,7 @@ public final class WebCommands {
                 .then(Commands.literal("ide")
                         .executes(context -> {
                             later(() -> {
-                                if (!dev.devpanda.factorynetwork.web.ide.IdeScreen
-                                        .open(Minecraft.getInstance())) {
+                                if (!EditorApp.open(Minecraft.getInstance())) {
                                     say("Die Oberfläche ließ sich nicht öffnen — "
                                             + "ist tools/monaco.py gelaufen?");
                                 }

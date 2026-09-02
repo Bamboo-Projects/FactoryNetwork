@@ -138,6 +138,49 @@ public final class FnWeb {
         }
     }
 
+    /**
+     * Öffnet eine Fläche als Bildschirm über das ganze Bild.
+     *
+     * <p>Die Größe kommt vom Fenster, nicht aus dem Bauplan — ein Bildschirm
+     * füllt es und zieht bei einer Skalierungsänderung nach. Der Grund
+     * scheint durch, wenn der Bauplan {@code transparent} ist; dahinter liegt
+     * Minecrafts unscharfe Welt.
+     *
+     * <p>Lässt der Bauplan die Tasten offen, bekommt der Bildschirm alle —
+     * ein Editor ohne Tasten wäre sinnlos, und das Spiel ruht ohnehin,
+     * solange ein Bildschirm offen ist.
+     *
+     * <p>Zweimal Escape schließt, F10 in jedem Fall. Der Aufrufer hängt seinen
+     * {@code onMessage} an die zurückgegebene Fläche und prüft {@code alive()};
+     * das Schließen besorgt der Bildschirm.
+     *
+     * @return die Fläche, oder {@code null}, wenn es keinen Browser gibt
+     */
+    public static WebSurface openScreen(SurfaceSpec spec) {
+        if (!available()) {
+            return null;
+        }
+        try {
+            net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
+            var window = client.getWindow();
+            dev.devpanda.factorynetwork.web.view.BrowserView view =
+                    dev.devpanda.factorynetwork.web.view.BrowserView.fullscreen(
+                            window.getGuiScaledWidth(), window.getGuiScaledHeight(),
+                            window.getGuiScale());
+            KeyFilter keys = spec.keys() == KeyFilter.NONE ? KeyFilter.ALL : spec.keys();
+            BrowserSession session = BrowserSession.open(spec.url(), spec.transparent(),
+                    view.browserWidth(), view.browserHeight(),
+                    dev.devpanda.factorynetwork.web.BrowserVisibility.FOREGROUND, spec.name());
+            SessionSurface surface = new SessionSurface(session, keys);
+            client.setScreen(new WebScreenImpl(surface, view, spec.transparent()));
+            return surface;
+        } catch (Throwable broken) {
+            com.mojang.logging.LogUtils.getLogger()
+                    .warn("Der Web-Bildschirm {} kam nicht zustande", spec.name(), broken);
+            return null;
+        }
+    }
+
     public static boolean available() {
         return WebSupport.ensureStarted().usable();
     }

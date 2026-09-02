@@ -150,7 +150,7 @@ final class WebProofChain {
         } else if (Boolean.getBoolean("fn.idebench")) {
             opened = dev.devpanda.factorynetwork.web.ide.MonacoBenchmark.open(client);
         } else {
-            opened = dev.devpanda.factorynetwork.web.ide.IdeScreen.open(client);
+            opened = EditorApp.open(client);
         }
         if (!opened) {
             LOG.warn("Die Oberfläche ließ sich nicht öffnen");
@@ -179,7 +179,7 @@ final class WebProofChain {
         // in jedem Takt neu aufgemacht.
         if (down && !reopenKeyWasDown) {
             LOG.info("F6 — Oberfläche wird erneut geöffnet");
-            dev.devpanda.factorynetwork.web.ide.IdeScreen.open(client);
+            EditorApp.open(client);
         }
         reopenKeyWasDown = down;
     }
