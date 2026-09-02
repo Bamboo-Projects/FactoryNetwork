@@ -137,11 +137,8 @@ wer laufen und ein Overlay bedienen will, nimmt `KEYBOARD`.
 ## Was offen bleibt
 
 ```text
-Seite → Mod           Ein Schnellmenü, das seine Wahl nicht melden kann, ist
-                      keins. CefMessageRouter liegt im jcef.jar; ein
-                      WebSurface.onMessage(Consumer<String>) mit
-                      window.fnSend({request: "..."}) in der Seite wären rund
-                      dreißig Zeilen. Der wichtigste nächste Punkt der API.
+Seite → Mod           erledigt: WebSurface.onMessage und window.fnSend,
+                      siehe stand-web-kanal.md.
 Fokus bei Fensterwechsel   Verliert das Fenster den Fokus, öffnet Minecraft
                       das Pausemenü; das Overlay behält seinen Fokusstand und
                       bekommt Tasten wieder, sobald das Menü zu ist. Gewollt,

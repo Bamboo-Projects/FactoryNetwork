@@ -102,10 +102,8 @@ Welt malt, zeigt das Tageslichtbild aus Schritt 4.
                         oder die Messungen aufgeben. Das ist eine Entscheidung,
                         keine Fleißarbeit — sie gehört an den nächsten
                         Haltepunkt, nicht in einen stillen Umbau.
-Seite → Mod             weiterhin der wichtigste Punkt: CefMessageRouter liegt
-                        im jcef.jar, ein WebSurface.onMessage(Consumer<String>)
-                        wären rund dreißig Zeilen. Ohne ihn kann ein
-                        Schnellmenü seine Wahl nicht melden.
+Seite → Mod             erledigt: WebSurface.onMessage und window.fnSend,
+                        siehe stand-web-kanal.md.
 Block/Tafel entfernen   erst wenn 5b steht — der Block ist bis dahin der
                         einzige Weg, eine Fläche in der Welt zu bekommen, den
                         ein Spieler ohne Code hat.

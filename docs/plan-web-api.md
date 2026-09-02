@@ -54,7 +54,7 @@ ohne Ankündigung. Das bindet, und zwar an drei Stellen:
 
 | Stück | Was es ist |
 |---|---|
-| `WebSurface` | eine lebende Fläche: Textur, Größe, Eingaben, Schließen |
+| `WebSurface` | eine lebende Fläche: Textur, Größe, Eingaben, `onMessage`, Schließen |
 | `SurfaceSpec` | der Bauplan: Adresse, Größe, Name, Filter, Sichtbarkeitsstufe |
 | `KeyFilter` | welche Tasten durchgehen |
 | `FnWeb` | der Einstieg: öffnen, Zustand erfragen, Grenzen |
