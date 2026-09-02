@@ -3,58 +3,58 @@ package dev.devpanda.factorynetwork.lang;
 import java.util.Map;
 
 /**
- * Die Token-Arten von Manifold.
+ * The token kinds of Manifold.
  *
- * <p>Schlüsselwörter sind eigene Arten und nicht Namen mit einer Kennzeichnung.
- * Das kostet hier eine lange Liste, spart aber im Parser bei jedem Vergleich
- * eine Abfrage auf den Textinhalt.
+ * <p>Keywords are their own kinds, not names carrying a marker. That costs a
+ * long list here, but saves the parser a check on the text content at every
+ * comparison.
  */
 public enum TokenType {
-    // Ablauf
+    // Control flow
     IF, ELSE, FOR, IN, WHILE, BREAK, CONTINUE, RETURN, FN, LET,
 
-    // Werte
+    // Values
     TRUE, FALSE, IT,
 
-    // Deklarationen
+    // Declarations
     WORKER, GROUP, MULTIBLOCK, EVENT, DISPLAY, ON, IMPORT, GLOBAL, CONST, POWER, ALL,
 
     // Worker
     FROM, TO, FILTER, MAINTAIN, RATE, PER, WHEN, PRIORITY, STRATEGY, OVERFLOW,
 
-    // Gruppen und Multiblocks
+    // Groups and multiblocks
     MEMBERS, DEVICES,
 
     // Display
     TITLE, ROW, TEXT, PROGRESS, INDICATOR, LIST, BUTTON, SCALE,
 
-    // Rezepte an Maschinen
+    // Recipes at machines
     RECIPE, AT, OUT, STORE,
 
-    // Ereignisse
+    // Events
     EMIT, AWAIT, WHERE, TIMEOUT, SLEEP,
 
-    // Auswahl
+    // Selection
     MOVE, EXCEPT,
 
-    // Eingebaute Geräte
+    // Built-in devices
     STORAGE, CRAFTING, WORLD, NETWORK, WORKERS, MULTIBLOCKS,
 
-    // Literale und Namen
+    // Literals and names
     INT, FLOAT, STRING, DURATION, SELECTOR, NAME, ESCAPED_NAME, NAME_PATTERN,
 
-    // Operatoren
+    // Operators
     PLUS, MINUS, STAR, SLASH, PERCENT,
     EQ, EQ_EQ, BANG, BANG_EQ, LT, LT_EQ, GT, GT_EQ, AND_AND, OR_OR,
 
-    // Zeichen
+    // Punctuation
     LPAREN, RPAREN, LBRACE, RBRACE, LBRACKET, RBRACKET,
     COMMA, DOT, DOT_DOT, COLON,
 
-    // Struktur
+    // Structure
     NL, EOF,
 
-    /** Steht für einen Abschnitt, den der Lexer nicht deuten konnte. */
+    /** Stands for a section the lexer could not interpret. */
     INVALID;
 
     private static final Map<String, TokenType> KEYWORDS = Map.ofEntries(
@@ -87,20 +87,20 @@ public enum TokenType {
             Map.entry("workers", WORKERS), Map.entry("multiblocks", MULTIBLOCKS));
 
     /**
-     * Jedes Wort, das der Sprache gehört.
+     * Every word that belongs to the language.
      *
-     * <p>Gebraucht von {@code GrammarKeywordTest}: Die Hervorhebung in VS Code
-     * führt dieselbe Liste ein zweites Mal, in einer TextMate-Grammatik. Sie
-     * ist am 27.08. schon einmal fünf Wörter hinterhergehinkt — {@code store},
-     * {@code recipe}, {@code scale}, {@code at} und {@code out} standen nicht
-     * darin, und im Editor blieben sie farblos. Das fällt niemandem auf, der
-     * die Sprache kennt, und verwirrt jeden, der sie lernt.
+     * <p>Used by {@code GrammarKeywordTest}: the highlighting in VS Code keeps
+     * the same list a second time, in a TextMate grammar. On Aug 27 it had
+     * already fallen five words behind once — {@code store}, {@code recipe},
+     * {@code scale}, {@code at} and {@code out} were missing from it, and in
+     * the editor they stayed colorless. Nobody who knows the language notices
+     * that, and everybody who is learning it gets confused.
      */
     public static java.util.Set<String> keywords() {
         return KEYWORDS.keySet();
     }
 
-    /** Liefert die Schlüsselwortart zu einem Bezeichner, oder {@code null}. */
+    /** Returns the keyword kind for an identifier, or {@code null}. */
     public static TokenType keyword(String text) {
         return KEYWORDS.get(text);
     }
@@ -110,8 +110,8 @@ public enum TokenType {
     }
 
     /**
-     * Ein Wert, der in einem Ausdruck für sich stehen kann — gebraucht für die
-     * Regel, wann ein Zeilenumbruch eine Anweisung beendet.
+     * A value that can stand on its own in an expression — used for the rule
+     * of when a line break ends a statement.
      */
     public boolean endsExpression() {
         return switch (this) {

@@ -8,17 +8,17 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * Tasten und Zeichen, bevor Minecraft sie sieht.
+ * Keys and characters, before Minecraft sees them.
  *
- * <p><b>Warum ein Mixin und kein Ereignis.</b> Ohne offenen Bildschirm
- * verarbeitet {@code KeyboardHandler.keyPress} Escape (Pausemenü) und die
- * Bewegungstasten ({@code KeyMapping.set}) selbst, und erst danach kommt
- * NeoForges {@code InputEvent.Key} — nicht abbrechbar. Ein Overlay, das
- * Escape und die Pfeile bekommen soll, während der Spieler weiterläuft,
- * muss davor stehen. Das geht nur hier.
+ * <p><b>Why a mixin and not an event.</b> With no screen open,
+ * {@code KeyboardHandler.keyPress} handles Escape (the pause menu) and the
+ * movement keys ({@code KeyMapping.set}) itself, and only afterwards comes
+ * NeoForge's {@code InputEvent.Key} — which cannot be cancelled. An overlay
+ * that is meant to get Escape and the arrows while the player keeps moving
+ * must sit ahead of that. This is the only place it can.
  *
- * <p>Zwei Einhängungen, je eine Zeile, beide nur weiterreichend: Die
- * Entscheidung fällt in {@link Overlays}, wo sie ohne Mixin prüfbar ist.
+ * <p>Two injections, one line each, both merely forwarding: the decision is
+ * made in {@link Overlays}, where it is testable without a mixin.
  */
 @Mixin(KeyboardHandler.class)
 public abstract class KeyboardHandlerMixin {

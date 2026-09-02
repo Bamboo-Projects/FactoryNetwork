@@ -13,15 +13,15 @@ import snownee.jade.api.ITooltip;
 import snownee.jade.api.config.IPluginConfig;
 
 /**
- * Was Jade über ein Laufwerk sagt: wie viele Zellen stecken, wie voll sie
- * sind, und ob die Arten oder die Menge zuerst ausgehen.
+ * What Jade says about a drive: how many cells are inserted, how full they
+ * are, and whether the types or the amount run out first.
  *
- * <p>Der letzte Punkt ist der, den man ohne Hilfe nicht sieht: Eine Zelle mit
- * allen Artenplätzen belegt nimmt nichts Neues mehr an, obwohl sie nach Menge
- * fast leer ist.
+ * <p>The last point is the one you can't see unaided: a cell with all its type
+ * slots occupied accepts nothing new, even though by amount it is nearly
+ * empty.
  *
- * <p>Gegenstände und Flüssigkeiten bekommen je eine Zeile, aber nur, wenn es
- * sie gibt. Ein Laufwerk mit drei Gegenstandszellen soll nicht „0 mB" melden.
+ * <p>Items and fluids each get a line, but only if they are present. A drive
+ * with three item cells shouldn't report "0 mB".
  */
 public enum DriveInfo implements IBlockComponentProvider, IServerDataProvider<BlockAccessor> {
 

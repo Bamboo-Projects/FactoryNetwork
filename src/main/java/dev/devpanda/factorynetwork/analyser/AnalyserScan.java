@@ -11,12 +11,12 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Liest aus einem Controller heraus, was der Analysator zeigen soll.
+ * Reads out of a controller what the analyser should show.
  *
- * <p>Das Netz ist bereits durchsucht — der Graph kennt Geräte, Kabel,
- * Kanallast und Verbindungen. Diese Klasse bewertet nur: Was ist in Ordnung,
- * was ist knapp, was klemmt. Nichts davon wird hier neu berechnet, sonst
- * liefen zwei Fassungen derselben Wahrheit nebeneinander.
+ * <p>The network has already been scanned — the graph knows devices, cables,
+ * channel load and connections. This class only rates them: what is fine, what
+ * is tight, what jams. None of it is recomputed here, or else two versions of
+ * the same truth would run side by side.
  */
 public final class AnalyserScan {
 
@@ -26,13 +26,12 @@ public final class AnalyserScan {
     public static AnalyserData of(ControllerBlockEntity controller) {
         FactoryGraph graph = controller.graph();
         List<AnalyserData.Node> nodes = new ArrayList<>();
-        // Gezeichnet wird an Blöcken: Zwei Anschlüsse an einem Kabelblock
-        // stehen an derselben Stelle im Raum, und der Punkt dort gilt für
-        // beide.
+        // Drawing happens at blocks: two connectors on one cable block sit at
+        // the same place in space, and the point there stands for both.
         Set<BlockPos> unnamed = places(graph.unnamedConnectors());
 
-        // Doppelt vergebene Namen: Alle Stellen dazu sind unbrauchbar, nicht
-        // nur die zweite — deshalb zählen sie alle als solche.
+        // Names given out twice: every place with one is unusable, not just
+        // the second — so they all count as such.
         Set<BlockPos> duplicates = new HashSet<>();
         for (String name : graph.ambiguousNames()) {
             duplicates.addAll(places(graph.positionsOf(name)));
@@ -41,10 +40,10 @@ public final class AnalyserScan {
         nodes.add(new AnalyserData.Node(controller.getBlockPos(),
                 AnalyserData.NodeState.CONTROLLER, ""));
 
-        // <b>Ein Kabelblock ist ein Punkt</b>, auch wenn sechs Anschlüsse
-        // daran hängen: Zwei Knoten an derselben Stelle hießen zwei
-        // Beschriftungen übereinander, und lesbar wäre keine davon. Der
-        // Punkt nennt deshalb alle Namen, die dort sitzen.
+        // <b>A cable block is one point</b>, even when six connectors hang off
+        // it: two nodes at the same place would mean two labels on top of each
+        // other, and neither of them would be legible. The point therefore
+        // names every name that sits there.
         java.util.Map<BlockPos, List<String>> namesAt = new java.util.LinkedHashMap<>();
         graph.connectors().forEach((name, where) ->
                 namesAt.computeIfAbsent(where.pos(), key -> new ArrayList<>()).add(name));
@@ -61,9 +60,9 @@ public final class AnalyserScan {
         for (BlockPos pos : graph.displays()) {
             nodes.add(new AnalyserData.Node(pos, AnalyserData.NodeState.DISPLAY, ""));
         }
-        // Laufwerke, Schränke und Kreuzungen gehören zum Netz und waren
-        // trotzdem unsichtbar. Wer sucht, warum nichts lagert oder nichts
-        // rechnet, sucht genau danach.
+        // Drives, racks and routers belong to the network and were invisible
+        // all the same. Whoever is looking for why nothing is stored or
+        // nothing is computed is looking for exactly these.
         for (BlockPos pos : graph.drives()) {
             nodes.add(new AnalyserData.Node(pos, AnalyserData.NodeState.DRIVE, ""));
         }
@@ -73,40 +72,40 @@ public final class AnalyserScan {
         for (BlockPos pos : graph.routers()) {
             nodes.add(new AnalyserData.Node(pos, AnalyserData.NodeState.ROUTER, ""));
         }
-        // Der Anbau sieht aus wie ein Block neben dem Controller. Ob er
-        // wirklich dazugehört — ob er den Controller berührt —, sieht man
-        // ihm nicht an; hier schon.
+        // The extension looks like a block next to the controller. Whether it
+        // really belongs — whether it touches the controller — you cannot tell
+        // by looking at it; here you can.
         for (BlockPos pos : graph.extensions()) {
             nodes.add(new AnalyserData.Node(pos, AnalyserData.NodeState.EXTENSION, ""));
         }
-        // Geräte ohne Kanal stehen nicht in der Namensliste, wenn sie gar
+        // Devices without a channel do not appear in the name list, if they even
 
         int tight = 0;
         int full = 0;
         List<AnalyserData.Link> links = new ArrayList<>();
-        // Einmal gelesen und nicht je Strecke: Der Controller ist für alle
-        // derselbe, und was er noch hergibt, gilt für jede von ihnen.
+        // Read once and not per link: the controller is the same for all of
+        // them, and what it still has to give applies to every one of them.
         int controllerCapacity = controller.bandwidth();
         int controllerLeft = controllerCapacity - controller.bandwidthUsed();
         for (FactoryGraph.Edge edge : graph.edges()) {
-            // <b>Was im letzten Tick über diese Stelle ging.</b> Nicht
-            // wie viele Geräte dahinter hängen — seit dem 29.08. zählt der
-            // Durchsatz, und den weiß nur die Laufzeit.
+            // <b>What went over this spot in the last tick.</b> Not how many
+            // devices hang behind it — since 29 Aug it is the throughput that
+            // counts, and only the runtime knows that.
             //
-            // Ein Bild aus einem Tick, kein Mittelwert: Wer sehen will, ob
-            // eine Ader eng ist, schaut mehrmals hin. Ein geglätteter Wert
-            // versteckte genau die Spitzen, die man sucht.
+            // A snapshot from one tick, not an average: whoever wants to see
+            // whether a wire is tight looks more than once. A smoothed value
+            // would hide exactly the peaks one is looking for.
             int capacity = dev.devpanda.factorynetwork.network.Bandwidth.at(
                     controller.getLevel(), edge.to().pos());
             int load = controller.runtime().budget().usedAt(edge.to());
-            // <b>Und der Weg davor zählt mit.</b> Eine Strecke, über die
-            // nichts mehr kommt, weil der Controller randvoll ist, ist eng —
-            // auch wenn ihr eigenes Kabel Luft hätte. Ohne das meldete der
-            // Analysator „frei" für jede Strecke, während nichts fließt, und
-            // man suchte den Engpass am falschen Ort.
+            // <b>And the path before it counts too.</b> A link over which
+            // nothing more gets through, because the controller is brimful, is
+            // tight — even when its own cable would have room. Without this the
+            // analyser would report "free" for every link while nothing flows,
+            // and one would look for the bottleneck in the wrong place.
             //
-            // Die Kapazität bleibt die des Kabels: Das ist die Wahrheit über
-            // diese Strecke. Nur die Bewertung sieht weiter als sie selbst.
+            // The capacity stays that of the cable: that is the truth about
+            // this link. Only the rating looks further than the link itself.
             AnalyserData.LinkState state =
                     load >= capacity || controllerLeft <= 0 ? AnalyserData.LinkState.FULL
                     : load * 4 >= capacity * 3 || controllerLeft * 4 <= controllerCapacity
@@ -128,11 +127,10 @@ public final class AnalyserScan {
     }
 
     /**
-     * Die Blöcke, an denen diese Geräte sitzen.
+     * The blocks at which these devices sit.
      *
-     * <p>Weniger als Geräte, sobald zwei Anschlüsse an einem Kabelblock
-     * hängen — für eine Zeichnung im Raum ist das richtig: Dort steht ein
-     * Block.
+     * <p>Fewer than devices as soon as two connectors hang off one cable
+     * block — for a drawing in space that is right: there stands one block.
      */
     private static Set<BlockPos> places(
             java.util.List<dev.devpanda.factorynetwork.network.DevicePos> devices) {

@@ -9,30 +9,31 @@ import java.text.Normalizer;
 import java.util.Locale;
 
 /**
- * Wie ein Connector zu seinem Namen kommt.
+ * How a connector arrives at its name.
  *
- * <p>Getrennt vom Gegenstand, damit sich die Regeln ohne Server prüfen lassen
- * — dieselbe Trennung wie bei {@code NameDistance}.
+ * <p>Separate from the item so that the rules can be checked without a server
+ * — the same separation as with {@code NameDistance}.
  */
 public final class ConnectorNaming {
 
-    /** Weiter als bis hierhin wird nicht durchnummeriert. */
+    /** Numbering does not continue past this point. */
     private static final int MAX_SUFFIX = 999;
 
     /**
-     * Schlägt einen Namen für die Maschine hinter dem Connector vor.
+     * Suggests a name for the machine behind the connector.
      *
-     * <p>Aus {@code minecraft:blast_furnace} wird {@code blast_furnace_1}, und
-     * beim nächsten Ofen {@code blast_furnace_2}. Die Nummer kommt aus dem
-     * Netzwerk, nicht aus der Gun: Sonst vergäben zwei Spieler mit zwei Guns
-     * denselben Namen, und wer die Gun neu herstellt, finge wieder bei eins an.
+     * <p>{@code minecraft:blast_furnace} becomes {@code blast_furnace_1}, and
+     * the next furnace {@code blast_furnace_2}. The number comes from the
+     * network, not from the gun: otherwise two players with two guns would
+     * hand out the same name, and whoever crafts the gun anew would start
+     * over at one.
      */
     public static String suggestFor(BlockState machine, FactoryGraph graph) {
         String base = baseName(machine);
         return nextFree(base, graph);
     }
 
-    /** Der Blockname ohne Namensraum, als Grundlage für den Vorschlag. */
+    /** The block name without namespace, as the basis for the suggestion. */
     public static String baseName(BlockState machine) {
         if (machine == null || machine.isAir()) {
             return "device";
@@ -41,7 +42,7 @@ public final class ConnectorNaming {
         return path.isBlank() ? "device" : path;
     }
 
-    /** Die kleinste freie Nummer zu einem Grundnamen. */
+    /** The smallest free number for a base name. */
     public static String nextFree(String base, FactoryGraph graph) {
         for (int suffix = 1; suffix <= MAX_SUFFIX; suffix++) {
             String candidate = base + "_" + suffix;
@@ -53,14 +54,13 @@ public final class ConnectorNaming {
     }
 
     /**
-     * Was an einem eingegebenen Namen auffällt.
+     * What stands out about an entered name.
      *
-     * <p>Die Gun ist der Ort, an dem Namen entstehen — was hier durchgeht,
-     * steht später im Code. Deshalb prüft sie dieselben Regeln wie der
-     * Übersetzer, aber sie <b>blockiert nicht</b>: Ein Name, der ein
-     * Schlüsselwort ist, bleibt erlaubt, er braucht im Code nur Rückstriche.
-     * Das ist die Entscheidung aus {@code sprache.md}, Abschnitt 6 — Namen
-     * sind Spielstand, Schlüsselwörter sind es nicht.
+     * <p>The gun is the place where names come into being — what passes here
+     * appears later in the code. That is why it checks the same rules as the
+     * compiler, but it <b>does not block</b>: a name that is a keyword stays
+     * allowed, it only needs backticks in the code. That is the decision from
+     * {@code sprache.md}, section 6 — names are save data, keywords are not.
      */
     public static Warning check(String name, FactoryGraph graph) {
         String trimmed = normalize(name);
@@ -86,46 +86,45 @@ public final class ConnectorNaming {
     }
 
     public enum Kind {
-        /** Alles in Ordnung. */
+        /** All in order. */
         NONE,
-        /** Leer — der Connector bleibt unbenannt und damit unsichtbar. */
+        /** Empty — the connector stays unnamed and thus invisible. */
         EMPTY,
-        /** Enthält Zeichen, die kein Name sein können. */
+        /** Contains characters that cannot be a name. */
         NOT_AN_IDENTIFIER,
-        /** Ist ein Schlüsselwort — erlaubt, braucht im Code aber Rückstriche. */
+        /** Is a keyword — allowed, but needs backticks in the code. */
         KEYWORD,
-        /** Schon vergeben — zwei gleiche Namen machen beide unbrauchbar. */
+        /** Already taken — two equal names make both unusable. */
         TAKEN
     }
 
     /**
-     * Normalform NFC, wie im Übersetzer.
+     * NFC normal form, as in the compiler.
      *
-     * <p>Ohne das entstünden hier Namen, die im Code nicht wiederzufinden
-     * sind: Die Texteingabe im Spiel liefert {@code ü} je nach Herkunft als
-     * ein Zeichen oder als {@code u} mit angehängten Punkten.
+     * <p>Without this, names would arise here that cannot be found again in
+     * the code: the in-game text input delivers {@code ü}, depending on its
+     * origin, as one character or as {@code u} with combining dots appended.
      */
     public static String normalize(String name) {
         return name == null ? "" : Normalizer.normalize(name.trim(), Normalizer.Form.NFC);
     }
 
     /**
-     * Taugt das als Name eines Geräts im Netz?
+     * Is this usable as the name of a device in the network?
      *
-     * <p><b>Ein Bezeichner, oder zwei mit einem Schrägstrich dazwischen.</b>
-     * Die zweite Form baut eine Anlage: {@code werk_1/eingang} heißt „die
-     * Rolle eingang in der Anlage werk_1", und {@code anlagen.md} nennt die
-     * Beschriftungspistole ausdrücklich den Weg, auf dem eine Anlage
-     * entsteht.
+     * <p><b>An identifier, or two with a slash between them.</b> The second
+     * form builds an assembly: {@code werk_1/eingang} means "the role eingang
+     * in the assembly werk_1", and {@code anlagen.md} explicitly names the
+     * label gun as the way an assembly comes into being.
      *
-     * <p><b>Nur ging das nicht.</b> Hier stand {@link #isValidIdentifier},
-     * und der kennt keinen Schrägstrich — Fenster wie Pistole lehnten
-     * {@code werk_1/eingang} ab. Ein Multiblock ließ sich im Spiel damit gar
-     * nicht bauen, obwohl das Handbuch genau diesen Weg beschreibt.
+     * <p><b>Only that did not work.</b> {@link #isValidIdentifier} stood
+     * here, and it knows no slash — screens like the gun rejected
+     * {@code werk_1/eingang}. A multiblock could not be built in the game
+     * that way at all, although the manual describes exactly this path.
      *
-     * <p>Zwei Ebenen gibt es nicht: {@code a/b/c} bleibt draußen. Im Code
-     * steht {@code werk_1.schleusen()}, und dafür braucht es genau einen
-     * Namen und eine Rolle.
+     * <p>There are no two levels: {@code a/b/c} stays out. In the code it is
+     * {@code werk_1.schleusen()}, and that needs exactly one name and one
+     * role.
      */
     public static boolean isValidDeviceName(String name) {
         int cut = name.indexOf(
@@ -139,10 +138,10 @@ public final class ConnectorNaming {
     }
 
     /**
-     * Taugt der Name als Bezeichner in Manifold?
+     * Is the name usable as an identifier in Manifold?
      *
-     * <p>Ohne Schrägstrich: Der steht in der Beschriftung und nie im Code.
-     * Wer einen Gerätenamen prüft, nimmt {@link #isValidDeviceName}.
+     * <p>Without a slash: that belongs in the label and never in the code.
+     * Whoever checks a device name uses {@link #isValidDeviceName}.
      */
     public static boolean isValidIdentifier(String name) {
         if (name.isEmpty()) {
@@ -161,7 +160,7 @@ public final class ConnectorNaming {
         return true;
     }
 
-    /** Entfernt eine angehängte Nummer, damit weitergezählt werden kann. */
+    /** Removes an appended number so counting can continue. */
     public static String stripSuffix(String name) {
         int underscore = name.lastIndexOf('_');
         if (underscore <= 0 || underscore == name.length() - 1) {

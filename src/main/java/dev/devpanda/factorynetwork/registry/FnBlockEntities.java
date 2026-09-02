@@ -24,7 +24,7 @@ public final class FnBlockEntities {
                     .of(ControllerBlockEntity::new, FnBlocks.CONTROLLER.get())
                     .build(null));
 
-    /** Der Sendemast hält vier Steckplätze und sonst nichts. */
+    /** The mast holds four slots and nothing else. */
     public static final DeferredHolder<BlockEntityType<?>,
             BlockEntityType<dev.devpanda.factorynetwork.block.entity.MastBlockEntity>>
             MAST = BLOCK_ENTITIES.register("mast", () -> BlockEntityType.Builder
@@ -47,10 +47,10 @@ public final class FnBlockEntities {
                     .build(null));
 
     /**
-     * Der Kabelblock, der Anschlüsse trägt.
+     * The cable block that carries connectors.
      *
-     * <p>Beide Kabelarten teilen ihn: Ein dichtes Kabel trägt dieselben
-     * Teile wie ein gewöhnliches, nur mehr Kanäle.
+     * <p>Both cable kinds share it: a dense cable carries the same parts as an
+     * ordinary one, just more channels.
      */
     public static final DeferredHolder<BlockEntityType<?>,
             BlockEntityType<dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity>>

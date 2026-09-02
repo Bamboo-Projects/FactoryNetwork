@@ -11,15 +11,15 @@ import net.minecraft.world.item.TooltipFlag;
 import java.util.List;
 
 /**
- * Ein Servergehäuse.
+ * A server chassis.
  *
- * <p>Der Server selbst: ein Blech mit drei Steckplätzen. Für sich genommen
- * kann es nichts — <b>und das ist der Punkt</b>. Wer zwölf davon in einen
- * Schrank stellt, hat zwölf Server, aber erst die Hardware darin sagt, was
- * sie leisten.
+ * <p>The server itself: a metal frame with three slots. On its own it can do
+ * nothing — <b>and that is the point</b>. Whoever puts twelve of them in a
+ * rack has twelve servers, but only the hardware inside says what they
+ * achieve.
  *
- * <p>Bestückt wird im Schrank. Man kann ein fertiges Gehäuse herausziehen,
- * wegtragen und in einen anderen Schrank stecken — die Hardware kommt mit.
+ * <p>It is equipped in the rack. You can pull a finished chassis out, carry
+ * it away and plug it into another rack — the hardware comes along.
  */
 public class ServerChassisItem extends Item {
 
@@ -39,9 +39,9 @@ public class ServerChassisItem extends Item {
                     .withStyle(ChatFormatting.DARK_GRAY));
             return;
         }
-        // Jede Art einzeln, auch die fehlende: Ein Gehäuse, dem der
-        // Datenträger fehlt, sieht in einer Truhe sonst aus wie ein fertiger
-        // Server, und im Schrank läuft es dann nicht.
+        // Each type on its own, including the missing one: a chassis that
+        // lacks the disk otherwise looks in a chest like a finished server,
+        // and then it does not run in the rack.
         line(lines, ServerPart.CPU, bay.cpu());
         line(lines, ServerPart.RAM, bay.ram());
         line(lines, ServerPart.DISK, bay.disk());
@@ -61,7 +61,7 @@ public class ServerChassisItem extends Item {
                 .withStyle(value > 0 ? ChatFormatting.GRAY : ChatFormatting.DARK_GRAY));
     }
 
-    /** Ein bestücktes Gehäuse trägt seinen Balken, wie eine volle Zelle. */
+    /** An equipped chassis carries its bar, like a full cell. */
     @Override
     public boolean isBarVisible(ItemStack stack) {
         return !ServerChassis.isEmpty(stack);

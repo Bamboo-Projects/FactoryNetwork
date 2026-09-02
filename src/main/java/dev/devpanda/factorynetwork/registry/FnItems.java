@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/** Die Gegenstände der Mod, samt der Blockgegenstände. */
+/** The items of the mod, including the block items. */
 public final class FnItems {
 
     public static final DeferredRegister.Items ITEMS =
@@ -24,39 +24,39 @@ public final class FnItems {
 
     public static final DeferredItem<BlockItem> CONTROLLER = ITEMS.registerSimpleBlockItem(FnBlocks.CONTROLLER);
 
-    /** Baut, was das Netz bestellt. */
+    /** Builds what the network orders. */
     public static final DeferredItem<BlockItem> FABRICATOR =
             ITEMS.registerSimpleBlockItem(FnBlocks.FABRICATOR);
 
-    /** Der Anbau: Seiten für Kabel, sonst nichts. */
+    /** The extension: sides for cables, nothing else. */
     public static final DeferredItem<BlockItem> CONTROLLER_EXTENSION =
             ITEMS.registerSimpleBlockItem(FnBlocks.CONTROLLER_EXTENSION);
 
-    /** Ein Ende einer Leitung ohne Kabel dazwischen. */
+    /** One end of a line without cable in between. */
     public static final DeferredItem<BlockItem> BRIDGE =
             ITEMS.registerSimpleBlockItem(FnBlocks.BRIDGE);
 
-    /** Der Sendemast, den man hinstellt. */
+    /** The mast that one places. */
     public static final DeferredItem<BlockItem> MAST =
             ITEMS.registerSimpleBlockItem(FnBlocks.MAST);
 
     public static final DeferredItem<BlockItem> GATEWAY =
             ITEMS.registerSimpleBlockItem(FnBlocks.GATEWAY);
     /**
-     * Ein Kabelgegenstand je Farbe.
+     * One cable item per colour.
      *
-     * <p>Nur ein Block, aber siebzehn Gegenstände: Die Farbe steht im
-     * Blockzustand, und der Gegenstand entscheidet, mit welcher gesetzt wird.
-     * Siebzehn eigene Blöcke wären dieselbe Sache mit siebzehnfachem
-     * Registrierungsaufwand.
+     * <p>Only one block, but seventeen items: the colour lives in the block
+     * state, and the item decides which one it is placed with. Seventeen
+     * separate blocks would be the same thing with seventeen times the
+     * registration effort.
      */
     public static final Map<CableColour, DeferredItem<BlockItem>> CABLES = registerCables();
 
-    /** Dasselbe noch einmal für das dichte Kabel. */
+    /** The same again for the dense cable. */
     public static final Map<CableColour, DeferredItem<BlockItem>> DENSE_CABLES =
             registerCables(FnBlocks.DENSE_CABLE, "dense_cable");
 
-    /** Die Standardfarbe — verbindet sich mit allem. */
+    /** The default colour — connects to everything. */
     public static final DeferredItem<BlockItem> CABLE = CABLES.get(CableColour.NONE);
 
     public static final DeferredItem<BlockItem> DENSE_CABLE = DENSE_CABLES.get(CableColour.NONE);
@@ -66,11 +66,11 @@ public final class FnItems {
     }
 
     /**
-     * Alle siebzehn Farben einer Kabelsorte.
+     * All seventeen colours of a cable kind.
      *
-     * <p>Der Name der neutralen Fassung ist der Sortenname selbst, die
-     * anderen tragen ihre Farbe davor — {@code cable} und {@code red_cable},
-     * {@code dense_cable} und {@code red_dense_cable}.
+     * <p>The name of the neutral version is the kind name itself, the others
+     * carry their colour in front — {@code cable} and {@code red_cable},
+     * {@code dense_cable} and {@code red_dense_cable}.
      */
     private static Map<CableColour, DeferredItem<BlockItem>> registerCables(
             net.neoforged.neoforge.registries.DeferredBlock<
@@ -84,16 +84,15 @@ public final class FnItems {
         }
         return Map.copyOf(cables);
     }
-    /** Kreuzung für dicke Kabel. */
+    /** Junction for thick cables. */
     public static final DeferredItem<BlockItem> ROUTER = ITEMS.registerSimpleBlockItem(FnBlocks.ROUTER);
 
     /**
-     * Der Anschluss — ein Gegenstand ohne eigenen Block.
+     * The connector — an item without its own block.
      *
-     * <p>Er wird an eine Fläche eines Kabels gesetzt und nicht daneben; was
-     * dabei entsteht, ist ein Teil in der BlockEntity des Kabels. Bis zum
-     * 26.08. gab es dazu einen eigenen Block, der dasselbe konnte und einen
-     * Platz mehr brauchte.
+     * <p>It is placed on a face of a cable and not next to it; what results is
+     * a part in the cable's BlockEntity. Until 26.08. there was a separate
+     * block for this that could do the same and needed one more slot.
      */
     public static final DeferredItem<Item> CONNECTOR = ITEMS.register("connector",
             () -> new dev.devpanda.factorynetwork.item.ConnectorItem(new Item.Properties()));
@@ -101,10 +100,10 @@ public final class FnItems {
     public static final DeferredItem<BlockItem> DISPLAY = ITEMS.registerSimpleBlockItem(FnBlocks.DISPLAY);
 
     /**
-     * Die Ausbauten: ein Modul und zwei Karten.
+     * The upgrades: one module and two cards.
      *
-     * <p>Sie stapeln sich, weil zwei gleiche Karten dasselbe tun — und weil
-     * gleiche Karten sich addieren, hat man selten nur eine.
+     * <p>They stack, because two identical cards do the same thing — and
+     * because identical cards add up, one rarely has just one.
      */
     public static final DeferredItem<Item> WIRELESS_MODULE = ITEMS.register(
             dev.devpanda.factorynetwork.upgrade.Ability.WIRELESS.id(),
@@ -119,11 +118,11 @@ public final class FnItems {
                     dev.devpanda.factorynetwork.upgrade.Card.RANGE));
 
     /**
-     * Die Karten für Maschinen.
+     * The cards for machines.
      *
-     * <p>Sie stecken in denselben Plätzen wie die Reichweitenkarten und
-     * rechnen doch anders: Ihr Schritt ist null, weil sie nichts addieren.
-     * Was sie tun, steht in {@link dev.devpanda.factorynetwork.upgrade.Tuning}.
+     * <p>They sit in the same slots as the range cards and yet compute
+     * differently: their step is zero, because they add nothing. What they do
+     * is in {@link dev.devpanda.factorynetwork.upgrade.Tuning}.
      */
     public static final DeferredItem<Item> ACCELERATION_CARD = ITEMS.register(
             dev.devpanda.factorynetwork.upgrade.Card.ACCELERATION.id(),
@@ -144,26 +143,27 @@ public final class FnItems {
                     dev.devpanda.factorynetwork.upgrade.Card.INFINITY));
 
     /**
-     * Nimmt einen Anschluss ab, ohne das Kabel anzufassen.
+     * Removes a connector without touching the cable.
      *
-     * <p>Er steht im Tag {@code c:tools/wrench} und ist damit nicht der
-     * einzige, der das kann — wer einen Schlüssel von Mekanism oder Thermal
-     * dabeihat, braucht diesen hier nicht. Er ist für alle, die ohne
-     * Fremdmod spielen.
+     * <p>It is in the tag {@code c:tools/wrench} and is thus not the only one
+     * that can do this — whoever has a wrench from Mekanism or Thermal on hand
+     * does not need this one. It is for everyone who plays without a foreign
+     * mod.
      */
     public static final DeferredItem<Item> WRENCH = ITEMS.register("wrench",
             () -> new Item(new Item.Properties().stacksTo(1)));
 
-    /** Vergibt einem Connector seinen Namen. */
+    /** Assigns a connector its name. */
     public static final DeferredItem<Item> LABEL_GUN = ITEMS.register("label_gun",
             () -> new LabelGunItem(new Item.Properties().stacksTo(1)));
 
     /**
-     * Die Stempel der Presse.
+     * The stamps of the press.
      *
-     * <p>Werkzeug, keine Zutat: Wer einen hat, presst damit beliebig oft. Das
-     * trennt den einmaligen Aufwand vom laufenden — und genau diese Trennung
-     * macht eine Kette interessant statt nur lang.
+     * <p>A tool, not an ingredient: whoever has one presses with it any number
+     * of times. That separates the one-off effort from the ongoing one — and
+     * exactly this separation makes a chain interesting rather than merely
+     * long.
      */
     public static final DeferredItem<Item> STAMP_PLATE = ITEMS.register("stamp_plate",
             () -> new Item(new Item.Properties().stacksTo(1)));
@@ -177,20 +177,20 @@ public final class FnItems {
     public static final DeferredItem<Item> STAMP_NETWORK = ITEMS.register("stamp_network",
             () -> new Item(new Item.Properties().stacksTo(1)));
 
-    /** Das Halbzeug: gepresstes Metall. */
+    /** The semi-finished good: pressed metal. */
     public static final DeferredItem<Item> PLATE = ITEMS.register("plate",
             () -> new Item(new Item.Properties()));
 
-    /** Der geschliffene Kristall — aus dem rohen gepresst. */
+    /** The cut crystal — pressed from the raw one. */
     public static final DeferredItem<Item> CRYSTAL = ITEMS.register("crystal",
             () -> new Item(new Item.Properties()));
 
     /**
-     * Die drei Kerne.
+     * The three cores.
      *
-     * <p>Sie trennen den Ausbau in Richtungen: Wer Speicher ausbaut, braucht
-     * andere Kerne als wer das Netz ausbaut. Ohne diese Trennung wäre die
-     * Kette nur ein längerer Weg zum selben Ziel.
+     * <p>They split the expansion into directions: whoever expands storage
+     * needs different cores than whoever expands the network. Without this
+     * separation the chain would just be a longer path to the same goal.
      */
     public static final DeferredItem<Item> CORE_LOGIC = ITEMS.register("core_logic",
             () -> new Item(new Item.Properties()));
@@ -201,11 +201,11 @@ public final class FnItems {
     public static final DeferredItem<Item> CORE_NETWORK = ITEMS.register("core_network",
             () -> new Item(new Item.Properties()));
 
-    /** Die Presse selbst. */
+    /** The press itself. */
     public static final DeferredItem<net.minecraft.world.item.BlockItem> PRESS =
             ITEMS.registerSimpleBlockItem(FnBlocks.PRESS);
 
-    /** Das Erz und sein Ertrag. */
+    /** The ore and its yield. */
     public static final DeferredItem<net.minecraft.world.item.BlockItem> CRYSTAL_ORE =
             ITEMS.registerSimpleBlockItem(FnBlocks.CRYSTAL_ORE);
 
@@ -213,24 +213,24 @@ public final class FnItems {
             ITEMS.registerSimpleBlockItem(FnBlocks.DEEPSLATE_CRYSTAL_ORE);
 
     /**
-     * Der rohe Kristall, wie er aus dem Stein kommt.
+     * The raw crystal, as it comes out of the stone.
      *
-     * <p>Für sich genommen nutzlos — erst die Presse macht daraus etwas. Das
-     * ist die erste Stufe der Kette und der Grund, überhaupt graben zu gehen.
+     * <p>Useless on its own — only the press makes something of it. It is the
+     * first stage of the chain and the reason to go digging at all.
      */
     public static final DeferredItem<Item> RAW_CRYSTAL = ITEMS.register("raw_crystal",
             () -> new Item(new Item.Properties()));
 
-    /** Der Lagerraum: ein Block, der Zellen aufnimmt. */
+    /** The storage room: a block that takes cells. */
     public static final DeferredItem<net.minecraft.world.item.BlockItem> DRIVE =
             ITEMS.registerSimpleBlockItem(FnBlocks.DRIVE);
 
     /**
-     * Die vier Zellengrößen.
+     * The four cell sizes.
      *
-     * <p>Jede hat zwei Grenzen: wie viele Arten und wie viele Gegenstände.
-     * Die Arten sind das Knappe — wer alles in eine Zelle wirft, hat sie voll,
-     * lange bevor die Menge erreicht ist.
+     * <p>Each has two limits: how many kinds and how many items. The kinds are
+     * the scarce one — whoever throws everything into one cell fills it long
+     * before the quantity is reached.
      */
     public static final Map<CellTier, DeferredItem<Item>> CELLS = registerCells();
 
@@ -244,11 +244,10 @@ public final class FnItems {
     }
 
     /**
-     * Die vier Größen der Flüssigkeitszelle.
+     * The four sizes of the fluid cell.
      *
-     * <p>Weniger Sorten und mehr Menge als bei den Gegenstandszellen:
-     * Flüssigkeiten gibt es in weniger Sorten und größeren Mengen. Die Zahl
-     * im Namen sind Eimer.
+     * <p>Fewer kinds and more capacity than the item cells: fluids come in
+     * fewer kinds and larger amounts. The number in the name is buckets.
      */
     public static final Map<dev.devpanda.factorynetwork.storage.FluidCellTier,
             DeferredItem<Item>> FLUID_CELLS = registerFluidCells();
@@ -266,13 +265,13 @@ public final class FnItems {
     }
 
     /**
-     * Die vier Größen der Chemikalienzelle.
+     * The four sizes of the chemical cell.
      *
-     * <p><b>Immer registriert, auch ohne Mekanism.</b> Bedingt zu
-     * registrieren hieße: Wer die Mod entfernt, verliert seine Zellen aus der
-     * Welt — samt Inhalt, denn ein unbekannter Gegenstand verschwindet beim
-     * Laden. Ein Gegenstand, den es immer gibt und dessen Tooltip sagt, was
-     * ihm fehlt, ist die freundlichere Antwort.
+     * <p><b>Always registered, even without Mekanism.</b> To register
+     * conditionally would mean: whoever removes the mod loses their cells from
+     * the world — contents and all, because an unknown item disappears on
+     * load. An item that always exists and whose tooltip says what it is
+     * missing is the friendlier answer.
      */
     public static final Map<dev.devpanda.factorynetwork.storage.ChemicalCellTier,
             DeferredItem<Item>> CHEMICAL_CELLS = registerChemicalCells();
@@ -290,11 +289,11 @@ public final class FnItems {
     }
 
     /**
-     * Die vier Größen der Energiezelle.
+     * The four sizes of the energy cell.
      *
-     * <p>Nur eine Zahl je Stufe, denn Strom hat keine Sorten. Die kleinste
-     * trägt schon mehr als der Puffer im Controller — wer eine einsetzt, sieht
-     * den Unterschied.
+     * <p>Only one number per tier, because power has no kinds. The smallest
+     * already holds more than the buffer in the controller — whoever inserts
+     * one sees the difference.
      */
     public static final Map<dev.devpanda.factorynetwork.storage.EnergyCellTier,
             DeferredItem<Item>> ENERGY_CELLS = registerEnergyCells();
@@ -311,26 +310,25 @@ public final class FnItems {
         return Map.copyOf(cells);
     }
 
-    /** Nimmt Server auf — ohne ihn rechnet das Netz nicht. */
+    /** Takes servers — without it the network does not compute. */
     public static final DeferredItem<net.minecraft.world.item.BlockItem> RACK =
             ITEMS.registerSimpleBlockItem(FnBlocks.RACK);
 
     /**
-     * Das Servergehäuse: ein Blech mit drei Steckplätzen.
+     * The server chassis: a sheet of metal with three slots.
      *
-     * <p>Für sich genommen kann es nichts, und das ist der Punkt. Es macht
-     * aus drei Bauteilen einen Server, den man herausziehen und woanders
-     * hineinstecken kann.
+     * <p>On its own it can do nothing, and that is the point. It makes three
+     * components into a server that one can pull out and plug in elsewhere.
      */
     public static final DeferredItem<Item> SERVER_CHASSIS = ITEMS.register("server_chassis",
             () -> new dev.devpanda.factorynetwork.item.ServerChassisItem(new Item.Properties()));
 
     /**
-     * Die Serverbauteile, nach Art und Stufe.
+     * The server components, by kind and tier.
      *
-     * <p>Zwölf Gegenstände aus zwei Schleifen. Von Hand geschrieben wären es
-     * zwölf fast gleiche Zeilen, und die dreizehnte stünde irgendwann mit
-     * einem Zahlendreher darunter.
+     * <p>Twelve items from two loops. Written by hand it would be twelve
+     * nearly identical lines, and the thirteenth would eventually sit below
+     * with a transposed number.
      */
     public static final Map<dev.devpanda.factorynetwork.item.ServerPart,
             List<DeferredItem<Item>>> SERVER_PARTS = registerServerParts();
@@ -351,20 +349,20 @@ public final class FnItems {
         return java.util.Collections.unmodifiableMap(all);
     }
 
-    /** Strom aus Ofenbrennstoff — absichtlich mittelmäßig. */
+    /** Power from furnace fuel — deliberately mediocre. */
     public static final DeferredItem<net.minecraft.world.item.BlockItem> BURNER =
             ITEMS.registerSimpleBlockItem(FnBlocks.BURNER);
 
-    /** Strom ohne Brennstoff — nur zum Ausprobieren. */
+    /** Power without fuel — just for trying out. */
     public static final DeferredItem<net.minecraft.world.item.BlockItem> CREATIVE_SOURCE =
             ITEMS.registerSimpleBlockItem(FnBlocks.CREATIVE_SOURCE);
 
-    /** Zeigt das Netz als Gerüst in der Welt — auch durch Wände. */
+    /** Shows the network as a scaffold in the world — even through walls. */
     /**
-     * Das Wireless Terminal: das Lager aus der Ferne, aber ohne Code.
+     * The wireless terminal: the storage from afar, but without code.
      *
-     * <p>Der Akku ist kleiner als der des Laptops — er hat weniger zu tun,
-     * und die beiden sollen sich auch darin unterscheiden.
+     * <p>The battery is smaller than the laptop's — it has less to do, and the
+     * two should differ in that too.
      */
     public static final DeferredItem<Item> WIRELESS_TERMINAL =
             ITEMS.register("wireless_terminal",
@@ -373,7 +371,7 @@ public final class FnItems {
                             dev.devpanda.factorynetwork.upgrade.RemoteDevice.TERMINAL,
                             200_000));
 
-    /** Der Laptop: dasselbe und dazu der Code. */
+    /** The laptop: the same plus the code. */
     public static final DeferredItem<Item> LAPTOP =
             ITEMS.register("laptop",
                     () -> new dev.devpanda.factorynetwork.item.RemoteDeviceItem(
@@ -381,7 +379,7 @@ public final class FnItems {
                             dev.devpanda.factorynetwork.upgrade.RemoteDevice.LAPTOP,
                             600_000));
 
-    /** Eine Hälfte einer Verschränkung — sie gehört in eine Quantum-Brücke. */
+    /** One half of an entanglement — it belongs in a quantum bridge. */
     public static final DeferredItem<Item> ENTANGLEMENT =
             ITEMS.register("entanglement",
                     () -> new dev.devpanda.factorynetwork.item.EntanglementItem(

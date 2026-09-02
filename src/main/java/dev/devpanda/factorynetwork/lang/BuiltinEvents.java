@@ -3,62 +3,60 @@ package dev.devpanda.factorynetwork.lang;
 import java.util.Map;
 
 /**
- * Die Ereignisse, die das Netz von sich aus auslöst.
+ * The events the network triggers on its own.
  *
- * <p><b>Hier und sonst nirgends.</b> Die Namen standen als Zeichenketten an
- * der Stelle, die sie auslöst, und als zweite Liste im Editor — beide Listen
- * liefen auseinander, sobald ein Ereignis dazukam. Der Editor bot ein
- * {@code inventory_changed} an, das nie jemand ausgelöst hat, und
- * verschwieg {@code device_changed}.
+ * <p><b>Here and nowhere else.</b> The names stood as strings at the place that
+ * triggers them, and as a second list in the editor — both lists drifted apart
+ * as soon as an event was added. The editor offered an {@code inventory_changed}
+ * that nobody ever triggered, and kept quiet about {@code device_changed}.
  *
- * <p>Das ist die teuerste Art von Fehler, die diese Sprache kennt: Ein
- * {@code on}-Block braucht keine Deklaration, also nimmt der Übersetzer
- * jeden Namen an. Wer sich vertippt, bekommt keine Meldung — sein Block
- * hängt im Programm und läuft nie. Deshalb prüft {@link EventCheck} gegen
- * diese Karte, und wer ein Ereignis auslöst, nimmt die Konstante von hier.
+ * <p>This is the most expensive kind of error this language knows: an
+ * {@code on} block needs no declaration, so the compiler accepts any name.
+ * Whoever makes a typo gets no message — their block hangs in the program and
+ * never runs. That is why {@link EventCheck} checks against this map, and
+ * whoever triggers an event takes the constant from here.
  */
 public final class BuiltinEvents {
 
-    /** Ein Gerät ist im Netz aufgetaucht. */
+    /** A device has appeared in the network. */
     public static final String DEVICE_ONLINE = "device_online";
 
-    /** Ein Gerät ist verschwunden — übergeben wird sein Name, kein Gerät. */
+    /** A device has disappeared — its name is passed, not a device. */
     public static final String DEVICE_OFFLINE = "device_offline";
 
-    /** An einem Gerät hat sich der Inhalt geändert. */
+    /** The content at a device has changed. */
     public static final String DEVICE_CHANGED = "device_changed";
 
     /**
-     * In einem Gerät ist etwas dazugekommen.
+     * Something has been added in a device.
      *
-     * <p><b>Nicht „fertig".</b> Ob eine Maschine ihre Arbeit beendet hat,
-     * weiß von außen niemand; gemessen wird der Unterschied zum letzten
-     * Blick. Was das Netz selbst einlegt, zählt nie mit.
+     * <p><b>Not "done".</b> Whether a machine has finished its work, no one
+     * knows from outside; what is measured is the difference from the last
+     * look. What the network itself puts in never counts.
      */
     public static final String DEVICE_OUTPUT = "device_output";
 
-    /** Das Redstonesignal an einem Connector ist ein anderes geworden. */
+    /** The redstone signal at a connector has become a different one. */
     public static final String REDSTONE_CHANGED = "redstone_changed";
 
     /**
-     * Ein Fertigungsauftrag ist fertig.
+     * A crafting job is finished.
      *
-     * <p>Übergeben wird der Auftrag — heute als Zahl, seine Kennung. Ein
-     * eigener Typ {@code Job} steht in {@code sprache.md} und fehlt im
-     * Wertemodell; eine Kennung ist das, was sich davon heute ehrlich sagen
-     * lässt.
+     * <p>The job is passed — today as a number, its identifier. A dedicated type
+     * {@code Job} stands in {@code sprache.md} and is missing from the value
+     * model; an identifier is what can honestly be said of it today.
      */
     public static final String CRAFTING_FINISHED = "crafting_finished";
 
-    /** Und einer, der nicht mehr weiterkommt — mit dem Grund als Text. */
+    /** And one that can no longer proceed — with the reason as text. */
     public static final String CRAFTING_FAILED = "crafting_failed";
 
     /**
-     * Wie viele Werte ein Block bekommt.
+     * How many values a block receives.
      *
-     * <p>Nur {@code redstone_changed} übergibt zwei — das Gerät und die
-     * Stärke. Wer die drei anderen mit zwei Namen schreibt, bekommt einen
-     * zweiten Namen, der für immer leer bleibt.
+     * <p>Only {@code redstone_changed} passes two — the device and the strength.
+     * Whoever writes the three others with two names gets a second name that
+     * stays empty forever.
      */
     public static final Map<String, Integer> ARITY = Map.of(
             DEVICE_ONLINE, 1,

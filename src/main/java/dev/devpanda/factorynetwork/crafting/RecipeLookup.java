@@ -17,28 +17,27 @@ import java.util.Map;
 import java.util.function.ToLongFunction;
 
 /**
- * Findet die Rezepte zu einem Gegenstand und sagt, was sie kosten.
+ * Finds the recipes for an item and says what they cost.
  *
- * <p><b>Eine eigene Klasse und nicht drei Zeilen in der BlockEntity:</b> Die
- * Rezeptsuche ist die Stelle, an der eine Fertigung falsch liegt, ohne dass
- * es auffällt — ein anderes Rezept, eine andere Zutat, dieselbe Ausgabe. So
- * lässt sie sich in einer echten Welt prüfen, ohne einen Block zu setzen.
+ * <p><b>A dedicated class and not three lines in the BlockEntity:</b> recipe
+ * lookup is the place where a crafting goes wrong without anyone noticing — a
+ * different recipe, a different ingredient, the same output. This way it can
+ * be tested in a real world without placing a block.
  *
- * <p><b>Was ohne Maschine geht.</b> Werkbank und Steinsäge: Beides ist
- * Handarbeit, beides steht im Server, beides ist in einem Zug erledigt — und
- * deshalb läuft beides am Fabricator, ohne ein einziges Muster-Item. Was eine
- * Maschine und Zeit braucht, steht in {@link MachineRecipes}.
+ * <p><b>What works without a machine.</b> Crafting table and stonecutter: both
+ * are handwork, both are in the server, both are done in one go — and that is
+ * why both run at the fabricator, without a single pattern item. What needs a
+ * machine and time is in {@link MachineRecipes}.
  *
- * <p>Die Steinsäge stand zuerst dort, und das war falsch: Ihr Rezept ist
- * lesbar, aber der Block hat keine BlockEntity — niemand kann hineinschieben.
- * Lesbar und ausführbar sind zwei verschiedene Fragen.
+ * <p>The stonecutter was there first, and that was wrong: its recipe is
+ * readable, but the block has no BlockEntity — no one can push into it.
+ * Readable and executable are two different questions.
  *
- * <p><b>Ein Verzeichnis, kein Durchsuchen.</b> Die Rezeptliste eines Packs
- * hat fünfstellige Länge, und der Planner fragt sie für jeden Knoten eines
- * Rezeptbaums. Deshalb wird sie einmal nach Ergebnis geordnet und dann
- * nachgeschlagen. Das Verzeichnis lebt genau einen Tick: Es nach einem
- * {@code /reload} von Hand ungültig zu machen hieße, sich auf Innenleben zu
- * verlassen, das keine Zusage ist.
+ * <p><b>An index, not a search.</b> A pack's recipe list has a five-digit
+ * length, and the planner queries it for every node of a recipe tree. So it is
+ * ordered once by result and then looked up. The index lives exactly one tick:
+ * invalidating it by hand after a {@code /reload} would mean relying on
+ * internals that are no guarantee.
  */
 public final class RecipeLookup implements CraftingPlanner.Recipes<Item> {
 
@@ -48,7 +47,7 @@ public final class RecipeLookup implements CraftingPlanner.Recipes<Item> {
         this.byResult = byResult;
     }
 
-    /** Das Verzeichnis dessen, was der Fabricator kann. */
+    /** The index of what the fabricator can do. */
     public static RecipeLookup of(Level level) {
         HolderLookup.Provider registries = level.registryAccess();
         Map<Item, List<CraftingPlanner.Recipe<Item>>> byResult = new HashMap<>();
@@ -78,21 +77,19 @@ public final class RecipeLookup implements CraftingPlanner.Recipes<Item> {
     }
 
     /**
-     * Das erste Rezept, dessen Zutaten der Bestand hergibt.
+     * The first recipe whose ingredients the stock provides.
      *
-     * <p><b>Der Bestand entscheidet mit</b>, und das ist der ganze Trick an
-     * dieser Stelle: Für einen Gegenstand gibt es oft mehrere Rezepte, und
-     * eines davon passt zu dem, was dasteht. Wer nur das erstbeste nähme,
-     * meldete „es fehlt Fichtenholz", während ein Stapel Eichenbretter im
-     * Laufwerk liegt.
+     * <p><b>The stock has a say</b>, and that is the whole trick here: for an
+     * item there are often several recipes, and one of them fits what is on
+     * hand. Whoever took just the first would report "spruce wood is missing"
+     * while a stack of oak planks sits in the drive.
      *
-     * <p>Findet sich keines, dessen Zutaten vollständig da sind, kommt das
-     * erste überhaupt zurück — dann steht im Auftrag, was fehlt, statt „kein
-     * Rezept".
+     * <p>If none is found whose ingredients are fully present, the first one at
+     * all comes back — then the job says what is missing instead of "no
+     * recipe".
      *
-     * @param available wie viel von einer Art zur Verfügung steht; beim
-     *                  Planen ist das nicht der Speicher, sondern der Stand
-     *                  der Planung
+     * @param available how much of a kind is available; when planning this is
+     *                  not the storage but the state of the planning
      */
     @Override
     public CraftingPlanner.Recipe<Item> find(Item target, ToLongFunction<Item> available) {
@@ -108,26 +105,26 @@ public final class RecipeLookup implements CraftingPlanner.Recipes<Item> {
         return first;
     }
 
-    /** Ob es für diesen Gegenstand überhaupt ein Rezept gibt. */
+    /** Whether there is any recipe at all for this item. */
     public boolean known(Item target) {
         return find(target, item -> 0L) != null;
     }
 
     /**
-     * Die Zutaten eines Rezepts.
+     * The ingredients of a recipe.
      *
-     * <p>Eine Zutat bleibt eine <b>Auswahl</b> — „irgendein Brett" —, und
-     * genau so wird sie weitergereicht. Sich hier auf eine Art festzulegen
-     * war der Fehler der ersten Fassung: Sie nahm die Sorte, von der am
-     * meisten dalag, und wenn von keiner etwas dalag, die erste. Wer nur
-     * Fichtenstämme hatte, bekam „es fehlen 8 Eichenbretter".
+     * <p>An ingredient remains a <b>choice</b> — "any plank" — and is passed on
+     * exactly that way. Committing to one type here was the mistake of the
+     * first version: it took the option there was the most of, and if there was
+     * none of any, the first. Whoever had only spruce logs got "8 oak planks
+     * are missing".
      *
-     * @return {@code null}, wenn eine Zutat gar nichts zulässt
+     * @return {@code null} if an ingredient allows nothing at all
      */
     private static List<CraftingPlanner.Need<Item>> needsOf(
             net.minecraft.world.item.crafting.Recipe<?> recipe) {
-        // Gleiche Auswahlen gehören zusammen: Acht Bretter sind ein Bedarf
-        // über acht und nicht acht Bedarfe über eines.
+        // Identical choices belong together: eight planks are one need for
+        // eight and not eight needs for one.
         Map<List<Item>, Integer> merged = new LinkedHashMap<>();
         for (Ingredient ingredient : recipe.getIngredients()) {
             if (ingredient.isEmpty()) {
@@ -151,12 +148,12 @@ public final class RecipeLookup implements CraftingPlanner.Recipes<Item> {
     }
 
     /**
-     * Was fehlt, als lesbare Zeile.
+     * What is missing, as a readable line.
      *
-     * <p>Leer, wenn nichts fehlt. Ein Auftrag, der stillsteht, muss den Grund
-     * nennen — sonst sucht man ihn beim Netz statt beim Bestand. Genannt wird
-     * der <b>Grundstoff</b> und nicht die Zwischenstufe: „es fehlen 8
-     * Bretter" hilft niemandem, der Bretter herstellen kann.
+     * <p>Empty when nothing is missing. A job that stands still must name the
+     * reason — otherwise one looks for it in the network instead of in the
+     * stock. The base material is named, not the intermediate stage: "8 planks
+     * are missing" helps no one who can make planks.
      */
     public static String missing(Map<Item, Long> missing) {
         if (missing.isEmpty()) {

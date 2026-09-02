@@ -7,28 +7,26 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Wo Source im Netz liegt, während es unterwegs ist.
+ * Where Source sits in the network while it is in transit.
  *
- * <p><b>Ein Zwischenhalt und kein Lager.</b> {@code move} führt auch von
- * Gerät zu Gerät über den Netzspeicher — ohne ihn bräuchte es einen dritten
- * Weg für denselben Vorgang, und was unterwegs verlorenginge, hätte niemand
- * gezählt. Source braucht deshalb einen Speicher, damit es sich überhaupt
- * bewegen lässt.
+ * <p><b>A stopover, not storage.</b> {@code move} also routes device-to-device
+ * through the network storage — without it, the same operation would need a
+ * third code path, and whatever went missing in transit no one would have
+ * counted. Source therefore needs a store so that it can be moved at all.
  *
- * <p><b>Er überlebt keinen Neustart</b>, und das ist Absicht: Gegenstände,
- * Flüssigkeiten und Chemikalien liegen in Zellen in einem Laufwerk, und wie
- * viel hineinpasst, entscheidet die Zelle. Für Source gibt es keine Zelle.
- * Ein Netzspeicher, der ohne Zelle beliebig viel hält, wäre Lagerraum
- * geschenkt — das Lager sind die Quellgläser von Ars Nouveau.
+ * <p><b>It survives no restart</b>, and that is by design: items, fluids and
+ * chemicals sit in cells in a drive, and how much fits is decided by the cell.
+ * For Source there is no cell. A network store that held any amount without a
+ * cell would be free storage space — the storage is Ars Nouveau's Source Jars.
  *
- * <p><b>Die Obergrenze ist eine Annahme.</b> Zehntausend ist reichlich für
- * jeden Transport und zu wenig, um als Lager zu taugen; welche Zahl richtig
- * ist, sagt eine Runde Spielen. Sie steht als offene Frage in
+ * <p><b>The upper limit is a guess.</b> Ten thousand is plenty for any
+ * transport and too little to serve as storage; which number is right, a round
+ * of play will tell. It is recorded as an open question in
  * {@code ressourcenarten.md}.
  */
 public final class SourceBuffer implements ResourceStore {
 
-    /** So viel hält der Zwischenhalt. Siehe Klassenkommentar. */
+    /** This is how much the stopover holds. See the class comment. */
     public static final long CAPACITY = 10_000;
 
     private long held;
@@ -81,10 +79,10 @@ public final class SourceBuffer implements ResourceStore {
     }
 
     /**
-     * Laufwerke spielen hier keine Rolle.
+     * Drives play no role here.
      *
-     * <p>Es gibt keine Source-Zelle, und der Zwischenhalt hängt an keinem
-     * Laufwerk — er ist der Weg und nicht der Ort.
+     * <p>There is no Source cell, and the stopover is attached to no drive —
+     * it is the route, not the place.
      */
     @Override
     public void setDrives(List<DriveBlockEntity> drives) {

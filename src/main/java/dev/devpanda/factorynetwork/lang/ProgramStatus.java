@@ -10,84 +10,85 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Was das Spiel über ein Projekt weiß, für einen Editor daneben.
+ * What the game knows about a project, for an editor alongside it.
  *
- * <p><b>Der Rückweg der Brücke.</b> Hin funktioniert sie längst: Wer in
- * VS Code speichert, dessen Programm übernimmt der Controller im
- * Sekundentakt. Zurück kam bisher nichts — ein Fehler im Programm stand im
- * Terminal, und wer nicht im Spiel war, sah eine Datei, die stumm nicht lief.
+ * <p><b>The return path of the bridge.</b> The way there has worked for a long
+ * time: whoever saves in VS Code has their program adopted by the controller
+ * every second. Nothing came back the other way so far — an error in the
+ * program stood in the terminal, and anyone not in the game saw a file that
+ * silently did not run.
  *
- * <p>Diese Datei schließt den Kreis. Sie liegt neben den Programmdateien und
- * trägt zwei Dinge, die ein Editor allein nicht wissen kann:
+ * <p>This file closes the loop. It sits next to the program files and carries
+ * two things an editor cannot know on its own:
  *
  * <ul>
- *   <li><b>Die Fehler</b>, so wie der Übersetzer sie sieht — mit Datei, Zeile
- *       und Spalte. Kein zweiter Übersetzer in JavaScript, keine zweite
- *       Fassung derselben Regeln: Es rechnet der, der es ohnehin tut.</li>
- *   <li><b>Die Namen aus der Welt</b> — Connectoren und Anzeigen. Sie stehen
- *       in keiner Datei; sie kommen aus der Beschriftungspistole.</li>
- *   <li><b>Die Präfixe der Ressourcenarten.</b> Seit dem 26.08. dürfen fremde
- *       Mods eigene anmelden, und was in einem Pack gilt, weiß nur das
- *       laufende Spiel. Ohne diese Zeile schlüge ein Editor daneben genau
- *       die vier vor, die er selbst kennt — und verschwiege den Rest.</li>
+ *   <li><b>The errors</b>, the way the compiler sees them — with file, line,
+ *       and column. No second compiler in JavaScript, no second version of the
+ *       same rules: the one that does it anyway does the computing.</li>
+ *   <li><b>The names from the world</b> — connectors and displays. They stand
+ *       in no file; they come from the label gun.</li>
+ *   <li><b>The prefixes of the resource kinds.</b> Since Aug 26 foreign mods
+ *       may register their own, and what applies in a pack only the running
+ *       game knows. Without this line an editor would suggest exactly the four
+ *       it knows itself — and keep quiet about the rest.</li>
  * </ul>
  *
- * <p><b>Kein Port, keine neue Erlaubnis.</b> Das ist der Einzelspieler-Schnitt
- * von Punkt 4.1: Er benutzt den Kanal, den es gibt, und macht keinen neuen
- * auf. Die Schnittstelle für Server — mit den zwei Stufen aus
- * {@code entscheidungen.md} — bleibt davon unberührt und offen.
+ * <p><b>No port, no new permission.</b> This is the single-player cut of
+ * point 4.1: it uses the channel that exists and does not open a new one. The
+ * interface for servers — with the two stages from {@code entscheidungen.md} —
+ * stays untouched by this and open.
  *
- * <p><b>Von Hand geschrieben, ohne JSON-Bibliothek.</b> Die Mod hat keine im
- * Übersetzungspfad, und der Inhalt ist flach: zwei Listen und eine Karte. Ein
- * Schreiber von vierzig Zeilen ist billiger als eine Abhängigkeit — und was
- * ihn lesen muss, ist ohnehin JavaScript.
+ * <p><b>Written by hand, without a JSON library.</b> The mod has none in the
+ * compilation path, and the content is flat: two lists and a map. A writer of
+ * forty lines is cheaper than a dependency — and what has to read it is
+ * JavaScript anyway.
  *
- * @param diagnostics Fehler und Warnungen, nach Datei
- * @param connectors  die benannten Geräte im Netz
- * @param displays    die Anzeigen in der Welt
- * @param prefixes    die Ressourcenarten, die dieses Pack kennt
+ * @param diagnostics errors and warnings, by file
+ * @param connectors  the named devices in the network
+ * @param displays    the displays in the world
+ * @param prefixes    the resource kinds this pack knows
  */
 public record ProgramStatus(Map<String, List<Problem>> diagnostics,
                             List<String> connectors, List<String> displays,
                             List<String> prefixes) {
 
-    /** So heißt die Datei im Ordner des Controllers. */
+    /** The name of the file in the controller's folder. */
     public static final String FILE = ".fn-status.json";
 
     /**
-     * Ein Fehler, wie ein Editor ihn braucht.
+     * An error the way an editor needs it.
      *
-     * <p>Zeile und Spalte zählen ab eins, wie im Übersetzer. Wer sie in
-     * VS Code einträgt, zieht selbst eine ab — dort zählt alles ab null, und
-     * die Umrechnung gehört dorthin, wo sie gebraucht wird.
+     * <p>Line and column count from one, as in the compiler. Whoever enters
+     * them into VS Code subtracts one themselves — there everything counts from
+     * zero, and the conversion belongs where it is needed.
      */
     public record Problem(int line, int column, int length, String severity,
                           String message, String hint,
                           String fixText, int fixLine, int fixColumn, int fixLength) {
 
-        /** Ohne anwendbaren Vorschlag. */
+        /** Without an applicable suggestion. */
         public Problem(int line, int column, int length, String severity,
                        String message, String hint) {
             this(line, column, length, severity, message, hint, "", 0, 0, 0);
         }
 
-        /** Trägt diese Meldung einen Vorschlag, den ein Editor anwenden kann? */
+        /** Does this message carry a suggestion that an editor can apply? */
         public boolean hasFix() {
             return fixText != null && !fixText.isEmpty();
         }
     }
 
-    /** Der leere Stand — für einen Ordner, in dem noch nichts steht. */
+    /** The empty status — for a folder in which nothing stands yet. */
     public static ProgramStatus empty() {
         return new ProgramStatus(Map.of(), List.of(), List.of(), List.of());
     }
 
     /**
-     * Schreibt den Stand neben die Programmdateien.
+     * Writes the status next to the program files.
      *
-     * <p><b>Nur bei Änderung.</b> Ein Editor mit Dateiwächter würde sonst
-     * jede Sekunde geweckt, obwohl sich nichts geändert hat — und läse
-     * denselben Inhalt noch einmal.
+     * <p><b>Only on change.</b> An editor with a file watcher would otherwise
+     * be woken every second even though nothing has changed — and would read
+     * the same content once more.
      */
     public static void write(Path folder, List<Diagnostic> problems,
                              List<String> connectors, List<String> displays,
@@ -102,17 +103,17 @@ public record ProgramStatus(Map<String, List<Problem>> diagnostics,
             Files.createDirectories(folder);
             Files.writeString(file, json, StandardCharsets.UTF_8);
         } catch (IOException ignored) {
-            // Ein schreibgeschützter Weltordner ist kein Fehler des Netzes —
-            // dieselbe Haltung wie beim Schreiben der Programmdateien.
+            // A read-only world folder is not an error of the network — the
+            // same stance as when writing the program files.
         }
     }
 
     /**
-     * Liest den Stand, oder gibt einen leeren.
+     * Reads the status, or returns an empty one.
      *
-     * <p>Gebraucht wird das Lesen nur zum Prüfen: Im Betrieb liest die
-     * Erweiterung, und die ist in JavaScript. Ein Format, das nur eine Seite
-     * schreiben kann, ließe sich aber nicht nachmessen.
+     * <p>Reading is needed only for testing: in operation the extension reads,
+     * and that is in JavaScript. But a format only one side can write could not
+     * be verified.
      */
     public static ProgramStatus read(Path folder) {
         try {
@@ -125,7 +126,7 @@ public record ProgramStatus(Map<String, List<Problem>> diagnostics,
         }
     }
 
-    // ---- Schreiben ---------------------------------------------------------
+    // ---- Writing -----------------------------------------------------------
 
     private static String toJson(List<Diagnostic> problems, List<String> connectors,
                                  List<String> displays, List<String> prefixes) {
@@ -166,14 +167,14 @@ public record ProgramStatus(Map<String, List<Problem>> diagnostics,
     }
 
     /**
-     * Der anwendbare Vorschlag, flach danebengeschrieben.
+     * The applicable suggestion, written flat alongside.
      *
-     * <p>Flach und nicht als eigenes Objekt: Der Leser hier drüber ist von
-     * Hand geschrieben und kennt Zahlen und Zeichenketten — ein
-     * verschachteltes Objekt wäre ein zweiter Leser.
+     * <p>Flat and not as its own object: the reader above here is written by
+     * hand and knows numbers and strings — a nested object would be a second
+     * reader.
      *
-     * <p>Ohne Vorschlag steht gar nichts da. Ein leeres Feld wäre dasselbe in
-     * länger.
+     * <p>Without a suggestion nothing stands there at all. An empty field would
+     * be the same thing at greater length.
      */
     private static String fixJson(Diagnostic.Fix fix) {
         if (fix == null) {
@@ -210,8 +211,8 @@ public record ProgramStatus(Map<String, List<Problem>> diagnostics,
                     if (c < 0x20) {
                         out.append(String.format("\\u%04x", (int) c));
                     } else {
-                        // Umlaute bleiben Umlaute: Die Datei ist UTF-8, und
-                        // ein ü in einer Fehlermeldung liest niemand.
+                        // Umlauts stay umlauts: the file is UTF-8, and no one
+                        // reads an escaped umlaut in an error message.
                         out.append(c);
                     }
                 }
@@ -220,15 +221,15 @@ public record ProgramStatus(Map<String, List<Problem>> diagnostics,
         return out.append('"').toString();
     }
 
-    // ---- Lesen -------------------------------------------------------------
+    // ---- Reading -----------------------------------------------------------
 
     /**
-     * Ein Leser für genau dieses Format.
+     * A reader for exactly this format.
      *
-     * <p>Kein allgemeiner JSON-Leser: Er kennt die drei Schlüssel, die
-     * {@link #toJson} schreibt, und sonst nichts. Was er nicht versteht,
-     * überspringt er — eine Statusdatei aus einer künftigen Fassung soll
-     * einen alten Prüflauf nicht anhalten.
+     * <p>Not a general JSON reader: it knows the three keys that
+     * {@link #toJson} writes, and nothing else. What it does not understand it
+     * skips — a status file from a future version should not halt an old test
+     * run.
      */
     private static ProgramStatus fromJson(String json) {
         Map<String, List<Problem>> diagnostics = new LinkedHashMap<>();
@@ -334,7 +335,7 @@ public record ProgramStatus(Map<String, List<Problem>> diagnostics,
         return List.copyOf(found);
     }
 
-    /** Die schließende Klammer zur öffnenden an dieser Stelle. */
+    /** The closing brace matching the opening one at this position. */
     private static int matching(String json, int open) {
         int depth = 0;
         boolean inText = false;

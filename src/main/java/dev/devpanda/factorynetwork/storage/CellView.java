@@ -3,26 +3,26 @@ package dev.devpanda.factorynetwork.storage;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * Eine offene Zelle im Laufwerk.
+ * An open cell in the drive.
  *
- * <p>Das Laufwerk hält seine Zellen im Speicher und schreibt erst zurück,
- * wenn es sein muss (siehe {@code DriveBlockEntity.inventories}). Drei Fragen
- * braucht es dafür, und nur diese drei: <b>zu welchem Gegenstand gehörst du,
- * steckt dort überhaupt eine Zelle, und schreib dich zurück.</b>
+ * <p>The drive keeps its cells in memory and only writes back when it has to
+ * (see {@code DriveBlockEntity.inventories}). It needs three questions for
+ * that, and only these three: <b>which item do you belong to, is there
+ * actually a cell inserted, and write yourself back.</b>
  *
- * <p>Deshalb steht das hier und nicht als drei gleichlautende Methoden in
- * jeder Zellenart: Das Laufwerk verwaltet Gegenstands-, Flüssigkeits- und
- * Energiezellen mit derselben Rechnung, und was sie unterscheidet, ist ihr
- * Inhalt — nicht ihre Verwaltung.
+ * <p>That is why this lives here and not as three identical methods in every
+ * kind of cell: the drive manages item, fluid and energy cells with the same
+ * accounting, and what sets them apart is their contents — not their
+ * management.
  */
 public interface CellView {
 
-    /** Der Gegenstand, zu dem diese Sicht gehört. */
+    /** The item this view belongs to. */
     ItemStack stack();
 
-    /** Steckt dort wirklich eine Zelle dieser Art? */
+    /** Is a cell of this kind actually inserted there? */
     boolean isValid();
 
-    /** Schreibt den Inhalt in den Gegenstand zurück. */
+    /** Writes the contents back into the item. */
     void flush();
 }

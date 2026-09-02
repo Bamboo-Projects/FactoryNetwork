@@ -6,58 +6,57 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 
 /**
- * Ein Fertigungsauftrag.
+ * A crafting job.
  *
- * <p>Er lebt am Controller wie ein Ablauf: Der Fabricator führt Schritte aus,
- * aber was noch zu tun ist, gehört dem Netz. Ein Auftrag, der am Gerät hinge,
- * wäre weg, sobald jemand das Gerät abbaut — und das ist genau der Moment, in
- * dem man wissen will, was noch offen war.
+ * <p>It lives on the controller like a process: the fabricator carries out
+ * steps, but what remains to be done belongs to the network. A job tied to
+ * the device would be gone the moment someone breaks the device — and that is
+ * exactly the moment when one wants to know what was still open.
  *
- * <p>Der Zustand ist absichtlich derselbe Wortschatz wie bei den Workern:
- * {@code RUNNING}, wenn etwas geschieht, {@code WAITING}, wenn etwas fehlt.
- * Ein zweiter Satz Wörter für dieselbe Sache wäre eine zweite Sprache im
- * selben Fenster.
+ * <p>The status deliberately uses the same vocabulary as the workers:
+ * {@code RUNNING} when something is happening, {@code WAITING} when something
+ * is missing. A second set of words for the same thing would be a second
+ * language in the same window.
  */
 public final class CraftingJob {
 
-    /** Wie es um einen Auftrag steht. */
+    /** How a job stands. */
     public enum Status {
-        /** Es wird gebaut. */
+        /** It is being built. */
         RUNNING,
-        /** Es fehlt etwas — Zutaten oder ein Fabricator. */
+        /** Something is missing — ingredients or a fabricator. */
         WAITING,
-        /** Fertig. */
+        /** Done. */
         DONE,
         /**
-         * Kann nicht mehr fertig werden.
+         * Can no longer be finished.
          *
-         * <p>Der einzige Grund ist ein Rezept, das es nicht mehr gibt — etwa
-         * weil eine Mod aus dem Pack ist. Fehlende Zutaten sind keiner: Wer
-         * darauf wartet, wartet, und morgen liegen sie vielleicht da.
+         * <p>The only reason is a recipe that no longer exists — for instance
+         * because a mod is out of the pack. Missing ingredients are not one:
+         * whoever waits for them waits, and tomorrow they might be there.
          */
         FAILED
     }
 
     /**
-     * Ein Schritt, der an einer Maschine läuft.
+     * A step running at a machine.
      *
-     * <p><b>Der wird gespeichert</b> — im Gegensatz zum Plan, den der
-     * Controller bei jedem Takt neu rechnet. Der Unterschied ist keiner der
-     * Bequemlichkeit: Ein Plan ist eine Absicht und darf veralten, ein
-     * laufender Schritt ist eine <b>Tatsache über die Welt</b>. Die Zutaten
-     * liegen im Ofen. Wer das vergisst, hat sie verloren und legt beim
-     * nächsten Mal neue nach.
+     * <p><b>This one is saved</b> — unlike the plan, which the controller
+     * recomputes every tick. The difference is not one of convenience: a plan
+     * is an intention and may go stale, a running step is a <b>fact about the
+     * world</b>. The ingredients are in the furnace. Whoever forgets that has
+     * lost them and puts in new ones next time.
      *
-     * @param station  die Rezeptart, für den Ausführenden
-     * @param device   der Connector, an dem die Maschine hängt
-     * @param result   was herauskommen soll
-     * @param expected wie viel davon
-     * @param done     wie viel davon schon abgeholt ist
+     * @param station  the recipe type, for the executor
+     * @param device   the connector the machine hangs on
+     * @param result   what should come out
+     * @param expected how much of it
+     * @param done     how much of it has already been collected
      */
     public record Running(String station, String device, Item result,
                           long expected, long done) {
 
-        /** Wie viel noch fehlt. */
+        /** How much is still missing. */
         public long left() {
             return Math.max(0, expected - done);
         }
@@ -102,7 +101,7 @@ public final class CraftingJob {
     private Status status = Status.WAITING;
     private String detail = "";
 
-    /** Was gerade in einer Maschine liegt, oder {@code null}. */
+    /** What currently lies in a machine, or {@code null}. */
     private Running running;
 
     public CraftingJob(long id, Item target, int wanted) {
@@ -131,12 +130,12 @@ public final class CraftingJob {
         return status;
     }
 
-    /** Warum er gerade steht, oder leer. */
+    /** Why it is currently stalled, or empty. */
     public String detail() {
         return detail;
     }
 
-    /** Was gerade in einer Maschine liegt, oder {@code null}. */
+    /** What currently lies in a machine, or {@code null}. */
     public Running running() {
         return running;
     }
@@ -145,7 +144,7 @@ public final class CraftingJob {
         this.running = step;
     }
 
-    /** Wie viele noch fehlen. */
+    /** How many are still missing. */
     public int remaining() {
         return Math.max(0, wanted - done);
     }
@@ -155,7 +154,7 @@ public final class CraftingJob {
         this.detail = why == null ? "" : why;
     }
 
-    /** Trägt ein, was ein Schritt geliefert hat. */
+    /** Records what a step has delivered. */
     public void produced(int amount) {
         done = Math.min(wanted, done + Math.max(0, amount));
         if (done >= wanted) {
@@ -180,12 +179,12 @@ public final class CraftingJob {
     }
 
     /**
-     * Liest einen Auftrag zurück, oder {@code null}.
+     * Reads a job back, or {@code null}.
      *
-     * <p>Ist die Mod des Zielgegenstands aus dem Pack, ist der Auftrag weg.
-     * Das ist dieselbe stille Haltung wie beim Lagerbestand: Ein Auftrag über
-     * etwas, das es nicht mehr gibt, lässt sich nicht mehr erfüllen, und eine
-     * Meldung darüber hilft niemandem beim Aufräumen.
+     * <p>If the target item's mod is out of the pack, the job is gone. That is
+     * the same quiet stance as with the stored stock: a job for something that
+     * no longer exists can no longer be fulfilled, and a message about it
+     * helps no one in cleaning up.
      */
     public static CraftingJob load(CompoundTag tag) {
         ResourceLocation id = ResourceLocation.tryParse(tag.getString(KEY_TARGET));

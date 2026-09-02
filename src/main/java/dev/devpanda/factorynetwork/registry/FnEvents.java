@@ -12,17 +12,16 @@ import net.neoforged.neoforge.event.TagsUpdatedEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 
 /**
- * Serverseitige Ereignisse, die die Mod selbst braucht.
+ * Server-side events that the mod itself needs.
  */
 @EventBusSubscriber(modid = FactoryNetwork.MOD_ID)
 public final class FnEvents {
 
     /**
-     * Aufgelöste Auswahlen werden gemerkt, damit ein Muster über
-     * zwanzigtausend Einträge den Server nicht in jedem Tick beschäftigt. Beim
-     * Neuladen der Datenpakete ändern sich Tags — dann muss der
-     * Zwischenspeicher weg, sonst arbeitet die Fabrik mit einem Bestand von
-     * vorhin weiter.
+     * Resolved selections are cached, so that a pattern over twenty thousand
+     * entries does not keep the server busy every tick. On reloading the data
+     * packs, tags change — then the cache must go, otherwise the factory keeps
+     * working with a stock from before.
      */
     @SubscribeEvent
     public static void onTagsUpdated(TagsUpdatedEvent event) {
@@ -30,18 +29,17 @@ public final class FnEvents {
     }
 
     /**
-     * Ein Schraubenschlüssel nimmt einen Anschluss ab und lässt das Kabel
-     * stehen.
+     * A wrench removes a connector and leaves the cable standing.
      *
-     * <p><b>Wozu.</b> Wer heute einen Anschluss loswerden will, muss den
-     * Kabelblock abbauen — und damit den Strang, der durch ihn läuft, und
-     * die anderen fünf Anschlüsse gleich mit. An einer Maschinenwand
-     * bedeutet das, sechs Dinge kaputtzumachen, um eines zu ändern.
+     * <p><b>Why.</b> Whoever wants to get rid of a connector today has to break
+     * the cable block — and with it the strand running through it, and the
+     * other five connectors along with it. At a machine wall that means
+     * breaking six things to change one.
      *
-     * <p><b>Warum als Ereignis und nicht am Block.</b> Der Klick soll
-     * abgefangen werden, bevor der Block ihn sieht: Sonst öffnet ein
-     * Rechtsklick erst das Namensfenster und nimmt den Anschluss danach ab.
-     * AE2 hängt aus demselben Grund an derselben Stelle.
+     * <p><b>Why as an event and not on the block.</b> The click should be
+     * intercepted before the block sees it: otherwise a right-click first
+     * opens the name window and removes the connector afterwards. AE2 hooks in
+     * at the same spot for the same reason.
      */
     @SubscribeEvent
     public static void onWrenchUse(PlayerInteractEvent.RightClickBlock event) {

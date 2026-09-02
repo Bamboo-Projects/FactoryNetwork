@@ -6,26 +6,24 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Was in der Welt steht, aus Sicht des Übersetzers.
+ * What stands in the world, from the compiler's point of view.
  *
- * <p><b>Der Übersetzer allein kann einen Namen nicht prüfen.</b>
- * {@code display test} ist grammatisch tadellos, auch wenn keine Tafel so
- * heißt — und dann bleibt die Wand schwarz, ohne dass irgendwo etwas rot
- * wird. Das ist der Fehler, den man am längsten sucht: Er sieht nach einem
- * kaputten Netz aus und ist ein Tippfehler.
+ * <p><b>The compiler alone cannot check a name.</b> {@code display test} is
+ * grammatically flawless even when no board is called that — and then the wall
+ * stays black without anything turning red anywhere. This is the error you
+ * search for the longest: it looks like a broken network and is a typo.
  *
- * <p>Deshalb bekommt der Übersetzer wahlweise einen Blick auf das echte Netz.
- * Wahlweise, weil es zwei Aufrufer gibt: Der Client hat die Namen aus dem
- * Netzzustand, der Server hat den Graphen — und ein Test hat nichts, und
- * soll trotzdem übersetzen können.
+ * <p>That is why the compiler optionally gets a look at the real network.
+ * Optionally, because there are two callers: the client has the names from the
+ * network state, the server has the graph — and a test has nothing, and should
+ * still be able to compile.
  *
- * <p>Was dabei herauskommt, sind <b>Warnungen und keine Fehler</b>. Eine
- * Wand, die man erst morgen baut, darf man heute schon ins Programm
- * schreiben.
+ * <p>What comes out of it are <b>warnings and not errors</b>. A wall you only
+ * build tomorrow, you may already write into the program today.
  */
 public interface NetworkView {
 
-    /** Ein Blick, der nichts weiß — dann wird auch nichts geprüft. */
+    /** A view that knows nothing — then nothing is checked either. */
     NetworkView NONE = new NetworkView() {
         @Override
         public boolean knowsNetwork() {
@@ -44,49 +42,49 @@ public interface NetworkView {
     };
 
     /**
-     * Ob überhaupt etwas bekannt ist.
+     * Whether anything is known at all.
      *
-     * <p>Nicht dasselbe wie „die Listen sind leer": Ein Netz ohne Connectoren
-     * ist ein bekanntes Netz ohne Connectoren, und dann ist jeder Name darin
-     * falsch. Ein unbekanntes Netz sagt zu keinem Namen etwas.
+     * <p>Not the same as "the lists are empty": a network without connectors is
+     * a known network without connectors, and then every name in it is wrong. An
+     * unknown network says nothing about any name.
      */
     default boolean knowsNetwork() {
         return true;
     }
 
-    /** Die Namen der Connectoren im Netz. */
+    /** The names of the connectors in the network. */
     List<String> connectors();
 
-    /** Die Namen der Anzeigewände im Netz. */
+    /** The names of the display walls in the network. */
     List<String> displays();
 
     /**
-     * Was hinter einem Connector steht.
+     * What stands behind a connector.
      *
-     * <p>Standardmäßig unbekannt: Ein Test hat kein Netz, und der Server
-     * kannte bis hierher nur Namen. Wer nichts weiß, sagt zu keinem Gerät
-     * etwas — das ist etwas anderes, als ein Gerät für leer zu erklären.
+     * <p>Unknown by default: a test has no network, and the server knew only
+     * names up to here. Whoever knows nothing says nothing about any device —
+     * that is something other than declaring a device empty.
      */
     default DeviceProfile profile(String connector) {
         return DeviceProfile.unreachable();
     }
 
-    /** Der ähnlichste Connectorname, für „meintest du". */
+    /** The most similar connector name, for "did you mean". */
     default Optional<String> closestConnector(String wanted) {
         return closest(wanted, connectors());
     }
 
-    /** Und dasselbe für Anzeigen. */
+    /** And the same for displays. */
     default Optional<String> closestDisplay(String wanted) {
         return closest(wanted, displays());
     }
 
     /**
-     * Der ähnlichste Name aus einer Liste.
+     * The most similar name from a list.
      *
-     * <p>Ein Drittel der Länge Abstand, höchstens drei Zeichen: Weiter weg
-     * ist kein Vertipper mehr, sondern ein anderer Name — und ein falscher
-     * Vorschlag ist schlimmer als keiner.
+     * <p>A third of the length in distance, at most three characters: further
+     * away is no longer a typo but a different name — and a wrong suggestion is
+     * worse than none.
      */
     private static Optional<String> closest(String wanted, List<String> candidates) {
         String best = null;
@@ -98,9 +96,9 @@ public interface NetworkView {
                 best = candidate;
             }
         }
-        // Die Schwelle steht in NameDistance und nicht hier: Sie gilt auch
-        // für „meintest du" beim Übersetzen, und zwei Schwellen liefen
-        // auseinander.
+        // The threshold lives in NameDistance and not here: it also applies to
+        // "did you mean" during compilation, and two thresholds would drift
+        // apart.
         return NameDistance.isCloseEnough(wanted, bestDistance)
                 ? Optional.ofNullable(best) : Optional.empty();
     }

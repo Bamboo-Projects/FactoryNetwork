@@ -1,11 +1,11 @@
 package dev.devpanda.factorynetwork.upgrade;
 
 /**
- * Ein Rezept, wie eine bestückte Maschine es ausführt.
+ * A recipe as an equipped machine runs it.
  *
- * @param ticks  wie lange ein Durchlauf dauert
- * @param energy was er insgesamt kostet
- * @param batch  wie viele Werkstücke dabei entstehen
+ * @param ticks  how long a run takes
+ * @param energy what it costs in total
+ * @param batch  how many workpieces come out of it
  */
 public record Tuned(int ticks, int energy, int batch) {
 }

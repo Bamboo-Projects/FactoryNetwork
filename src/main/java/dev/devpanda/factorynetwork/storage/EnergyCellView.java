@@ -3,17 +3,17 @@ package dev.devpanda.factorynetwork.storage;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * Eine Energiezelle als Speicher.
+ * An energy cell as storage.
  *
- * <p>Sie hält ihre Ladung im Arbeitsspeicher und schreibt erst zurück, wenn
- * das Laufwerk sichert oder die Zelle herausgeht — aus demselben Grund wie
- * bei den anderen Zellen: Der Vorrat ändert sich jeden Tick, und jeden Tick
- * einen Gegenstand neu zu beschreiben ist Arbeit für nichts.
+ * <p>It keeps its charge in memory and only writes back when the drive saves
+ * or the cell comes out — for the same reason as with the other cells: the
+ * store changes every tick, and rewriting an item every tick is work for
+ * nothing.
  *
- * <p>Vom Rest der Zellenwelt unterscheidet sie sich in einem Punkt, und der
- * steht schon in {@link EnergyCellTier}: <b>Es gibt keine Sorten.</b> Damit
- * fällt die ganze Rechnung weg, die {@link CellInventory} ausmacht, und übrig
- * bleiben zwei Zeilen — annehmen und abgeben.
+ * <p>It differs from the rest of the cell world in one point, and that one
+ * already stands in {@link EnergyCellTier}: <b>there are no types.</b> With
+ * that the whole accounting that makes up {@link CellInventory} falls away,
+ * and two lines remain — take in and give out.
  */
 public final class EnergyCellView implements CellView {
 
@@ -27,7 +27,7 @@ public final class EnergyCellView implements CellView {
         this.charge = tier == null ? 0 : EnergyCellItem.chargeOf(cell);
     }
 
-    /** Ungültig, wenn dort keine Energiezelle steckt. */
+    /** Invalid if no energy cell is inserted there. */
     public static EnergyCellView of(ItemStack cell) {
         return new EnergyCellView(cell);
     }
@@ -54,14 +54,14 @@ public final class EnergyCellView implements CellView {
         return capacity() - charge;
     }
 
-    /** Nimmt an, was hineinpasst, und sagt, wie viel es wurde. */
+    /** Takes in what fits, and says how much it was. */
     public int fill(int amount) {
         int taken = Math.max(0, Math.min(amount, room()));
         charge += taken;
         return taken;
     }
 
-    /** Gibt her, was da ist, und sagt, wie viel es wurde. */
+    /** Gives out what is there, and says how much it was. */
     public int take(int amount) {
         int given = Math.max(0, Math.min(amount, charge));
         charge -= given;

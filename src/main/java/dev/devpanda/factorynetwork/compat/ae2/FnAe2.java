@@ -3,12 +3,11 @@ package dev.devpanda.factorynetwork.compat.ae2;
 import net.neoforged.fml.ModList;
 
 /**
- * Ob Applied Energistics 2 im Pack liegt.
+ * Whether Applied Energistics 2 is present in the pack.
  *
- * <p>Dieselbe Vorsicht wie bei {@code FnMekanism}: Ohne geladene Modliste
- * gilt „nicht installiert". Ein Einheitstest lädt kein FML, ein
- * Datengenerator auch nicht — und die Vorgabe ist die, die niemanden in die
- * Irre schickt.
+ * <p>The same caution as with {@code FnMekanism}: with no mod list loaded,
+ * treat it as "not installed". A unit test loads no FML, and neither does a
+ * data generator — and the default is the one that misleads no one.
  */
 public final class FnAe2 {
 

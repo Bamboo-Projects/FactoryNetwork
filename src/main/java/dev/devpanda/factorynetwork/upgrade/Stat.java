@@ -1,21 +1,20 @@
 package dev.devpanda.factorynetwork.upgrade;
 
-/** Die Werte, die Karten heben können. */
+/** The stats that cards can raise. */
 public enum Stat {
 
-    /** Wie weit ein Funksignal trägt, in Blöcken. */
+    /** How far a wireless signal reaches, in blocks. */
     RANGE,
 
     /**
-     * Wie schnell eine Maschine arbeitet.
+     * How fast a machine works.
      *
-     * <p>Anders als die Reichweite ist das kein Zuschlag in einer Einheit,
-     * sondern ein Faktor: Die Karten zählt {@link Tuning}, ihr Schritt bleibt
-     * null. Der Wert steht hier trotzdem, weil ein Steckplatz wissen muss,
-     * was er annimmt.
+     * <p>Unlike range, this is not an addition in some unit but a factor:
+     * {@link Tuning} counts the cards, their step stays zero. The stat is
+     * listed here nonetheless, because a slot must know what it accepts.
      */
     SPEED,
 
-    /** Wie viele Werkstücke ein Durchlauf zugleich fasst. */
+    /** How many workpieces a run holds at once. */
     BATCH
 }

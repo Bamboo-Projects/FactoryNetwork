@@ -5,17 +5,17 @@ import dev.devpanda.factorynetwork.lang.Span;
 import java.util.List;
 
 /**
- * Ausdrücke von Manifold.
+ * Expressions of Manifold.
  *
- * <p>Versiegelt, damit der Übersetzer sie mit {@code switch} vollständig
- * behandeln muss — ein neuer Ausdruck fällt sofort an jeder Stelle auf, die
- * ihn noch nicht kennt.
+ * <p>Sealed, so that the compiler has to handle them exhaustively with
+ * {@code switch} — a new expression immediately shows up at every place that
+ * does not yet know it.
  */
 public sealed interface Expr {
 
     Span span();
 
-    // ---- Literale ---------------------------------------------------------
+    // ---- Literals ---------------------------------------------------------
 
     record IntLit(long value, Span span) implements Expr {}
 
@@ -25,43 +25,42 @@ public sealed interface Expr {
 
     record BoolLit(boolean value, Span span) implements Expr {}
 
-    /** Zeitangabe, schon in Ticks umgerechnet. */
+    /** Duration, already converted to ticks. */
     record DurationLit(long ticks, String written, Span span) implements Expr {}
 
     /**
-     * Eine hingeschriebene Liste: {@code ["eisen", "gold"]}.
+     * A written-out list: {@code ["eisen", "gold"]}.
      *
-     * <p>Der Grund, warum es sie gibt: Ein globaler Listenwert muss irgendwo
-     * anfangen, und fast immer fängt er leer an. Ohne {@code []} müsste man
-     * ihn mit einem Platzhalter beginnen und den gleich wieder herausnehmen.
+     * <p>The reason it exists: a global list value has to start somewhere, and
+     * almost always it starts empty. Without {@code []} you would have to begin
+     * it with a placeholder and take that right back out again.
      *
-     * <p>Sie ist ein Literal wie jedes andere und trotzdem das einzige, das
-     * Ausdrücke enthält. Wer über die Elemente laufen muss — der Netzprüfer
-     * etwa —, muss deshalb hineingehen.
+     * <p>It is a literal like any other and yet the only one that contains
+     * expressions. Anyone who has to walk over the elements — the network
+     * checker, say — therefore has to step inside it.
      */
     record ListLit(java.util.List<Expr> entries, Span span) implements Expr {}
 
-    // ---- Auswahl ----------------------------------------------------------
+    // ---- Selectors --------------------------------------------------------
 
     /**
-     * Ein Auswahlausdruck wie {@code item:iron_ingot} oder {@code tag:c/ores}.
+     * A selector expression like {@code item:iron_ingot} or {@code tag:c/ores}.
      *
-     * <p>{@code namespace} ist leer, wenn keiner dastand. Was das bedeutet,
-     * entscheidet erst der Übersetzer: ohne Platzhalter {@code minecraft}, mit
-     * Platzhalter alle Namensräume.
+     * <p>{@code namespace} is empty when none was written. What that means is
+     * only decided by the compiler: without a wildcard {@code minecraft}, with
+     * a wildcard all namespaces.
      */
     record Selector(Kind kind, String prefix, String namespace, String path, Span span)
             implements Expr {
 
         /**
-         * Das Wort vor dem Doppelpunkt, so wie es dastand.
+         * The word before the colon, exactly as it stood.
          *
-         * <p><b>Es ist die Wahrheit, {@link #kind()} ist die Abkürzung.</b>
-         * Seit die Ressourcenarten eine offene Registry sind, gibt es
-         * Präfixe, für die es keinen Aufzählungswert gibt — und für die steht
-         * {@link Kind#CUSTOM} da. Wer den geschriebenen Text braucht, etwa
-         * für eine Meldung, nimmt diesen hier und nicht den Namen der
-         * Aufzählung.
+         * <p><b>It is the truth, {@link #kind()} is the shorthand.</b> Since
+         * the resource kinds became an open registry, there are prefixes for
+         * which there is no enum value — and for those {@link Kind#CUSTOM}
+         * stands in. Anyone who needs the written text, for a message say,
+         * takes this one and not the name of the enum.
          */
         public String prefix() {
             return prefix;
@@ -71,50 +70,49 @@ public sealed interface Expr {
             ITEM, FLUID, CHEMICAL, TAG,
 
             /**
-             * Ein Tag über Flüssigkeiten, {@code fluidtag:c/molten}.
+             * A tag over fluids, {@code fluidtag:c/molten}.
              *
-             * <p><b>Eine eigene Art und kein {@code tag:}, das beides
-             * durchsucht.</b> An mehreren Stellen muss aus dem geschriebenen
-             * Text allein hervorgehen, ob Gegenstände oder Flüssigkeiten
-             * gemeint sind: {@code WorkerKind} wählt danach den
-             * Ausführungspfad, {@code FilterKind} die Sorte einer Vorlage,
-             * {@code move} den Weg. Ein Tag, der beides treffen kann, macht
-             * genau diese Entscheidung unmöglich.
+             * <p><b>Its own kind and not a {@code tag:} that searches
+             * both.</b> In several places the written text alone has to make
+             * clear whether items or fluids are meant: {@code WorkerKind} picks
+             * the execution path from it, {@code FilterKind} the sort of a
+             * template, {@code move} the route. A tag that can match both makes
+             * exactly this decision impossible.
              */
             FLUIDTAG,
             /**
-             * Strom.
+             * Power.
              *
-             * <p><b>Der einzige ohne Sorte.</b> Es gibt nur FE, und
-             * {@code power:} mit leerem Rest wäre eine Lüge über die Form —
-             * deshalb steht {@code power} allein und ohne Doppelpunkt. Der
-             * Pfad ist leer.
+             * <p><b>The only one without a sort.</b> There is only FE, and
+             * {@code power:} with an empty remainder would be a lie about the
+             * form — that is why {@code power} stands alone and without a colon.
+             * The path is empty.
              */
             POWER,
             /**
-             * Alles, was da ist.
+             * Everything that is there.
              *
-             * <p>Die Auswahl, die nichts aussucht — {@code move all from
-             * brecher to storage}. Ein Worker ohne {@code filter} tat das
-             * seit jeher; in einer Funktion gab es keine Schreibweise dafür,
-             * und {@code move} verlangt eine Auswahl.
+             * <p>The selector that picks out nothing — {@code move all from
+             * brecher to storage}. A worker without a {@code filter} always
+             * did that; in a function there was no way to write it, and
+             * {@code move} demands a selector.
              *
-             * <p>Sie meint <b>Gegenstände</b>, wie ein Worker ohne Filter.
-             * Flüssigkeiten bleiben ausdrücklich: Wer sie meint, schreibt
-             * {@code fluid:}, und niemand räumt versehentlich einen Tank leer.
+             * <p>It means <b>items</b>, like a worker without a filter. Fluids
+             * are left out deliberately: whoever means them writes
+             * {@code fluid:}, and nobody empties a tank by accident.
              */
             ALL,
             /**
-             * Eine Art, die eine fremde Mod angemeldet hat.
+             * A kind that a foreign mod has registered.
              *
-             * <p>Welche, sagt {@link Selector#prefix()}. Hier steht nur, dass
-             * es keine der eingebauten ist — der Kern kennt sie nicht, und
-             * das ist seit dem 26.08. erlaubt.
+             * <p>Which one, {@link Selector#prefix()} says. Here it only says
+             * that it is none of the built-in ones — the core does not know it,
+             * and that has been allowed since Aug 26.
              *
-             * <p><b>Sie geht durch, wo nach der Art gefragt wird, und bleibt
-             * stehen, wo es um Gegenstände geht.</b> Ein Filter aus
-             * {@code source:} ist keine Gegenstandsauswahl, und
-             * {@code FilterKind} sagt deshalb „unbekannt" statt zu raten.
+             * <p><b>It passes where the kind is asked for, and stops where
+             * items are concerned.</b> A filter from {@code source:} is not an
+             * item selector, and {@code FilterKind} therefore says "unknown"
+             * instead of guessing.
              */
             CUSTOM
         }
@@ -131,34 +129,34 @@ public sealed interface Expr {
     /** {@code tag:c/ores except item:ancient_debris} */
     record Except(Expr base, List<Expr> exclusions, Span span) implements Expr {}
 
-    /** Eine Auswahl mit vorangestellter Menge, etwa {@code 64 item:iron_ingot}. */
+    /** A selector with a leading amount, e.g. {@code 64 item:iron_ingot}. */
     record Amount(Long count, Expr selection, Span span) implements Expr {}
 
     /**
-     * {@code 1..5} — ein Bereich ganzer Zahlen, beide Enden eingeschlossen.
+     * {@code 1..5} — a range of whole numbers, both ends included.
      *
-     * <p>Zur Laufzeit eine Liste, kein eigener Werttyp: Damit greifen
-     * {@code count}, {@code where} und {@code sort} ohne Zutun, und
-     * {@code for i in 1..5} fällt mit ab.
+     * <p>At runtime a list, not its own value type: that way {@code count},
+     * {@code where} and {@code sort} apply without any extra work, and
+     * {@code for i in 1..5} falls out with them.
      */
     record Range(Expr from, Expr to, Span span) implements Expr {}
 
     /**
-     * {@code move 64 item:iron_ore from chest to crusher_1} als Ausdruck.
+     * {@code move 64 item:iron_ore from chest to crusher_1} as an expression.
      *
-     * <p><b>Warum ein Ausdruck und nicht nur eine Anweisung:</b>
-     * {@code crusher.insert(64 item:x)} und {@code move 64 item:x from
-     * storage to crusher} sind dieselbe Operation — {@code insertInto} ruft
-     * {@code move} auf. Die eine lieferte die angekommene Menge, die andere
-     * warf sie weg.
+     * <p><b>Why an expression and not just a statement:</b>
+     * {@code crusher.insert(64 item:x)} and {@code move 64 item:x from
+     * storage to crusher} are the same operation — {@code insertInto} calls
+     * {@code move}. The one returned the amount that arrived, the other threw
+     * it away.
      *
-     * <p>Die Anweisungsform bleibt daneben bestehen ({@code Stmt.Move}): In
-     * einem Ablauf ist ein {@code move} ein Schritt, und das braucht die
-     * Fortsetzung nach einem Serverneustart.
+     * <p>The statement form stays alongside it ({@code Stmt.Move}): in a
+     * sequence a {@code move} is one step, and that needs to resume after a
+     * server restart.
      */
     record Move(Expr amount, Expr from, Expr to, Span span) implements Expr {}
 
-    // ---- Namen ------------------------------------------------------------
+    // ---- Names ------------------------------------------------------------
 
     record Name(String value, Span span) implements Expr {}
 
@@ -167,19 +165,19 @@ public sealed interface Expr {
         public enum Kind { STORAGE, CRAFTING, WORLD, NETWORK, WORKERS, MULTIBLOCKS }
     }
 
-    /** Das implizite Element in {@code where(it.busy)}. */
+    /** The implicit element in {@code where(it.busy)}. */
     record It(Span span) implements Expr {}
 
-    /** Ein Namensmuster wie {@code furnace_*} in einer Gruppendeklaration. */
+    /** A name pattern like {@code furnace_*} in a group declaration. */
     record NamePattern(String pattern, Span span) implements Expr {}
 
-    // ---- Zusammengesetzt --------------------------------------------------
+    // ---- Composite --------------------------------------------------------
 
     record Member(Expr target, String name, Span span) implements Expr {}
 
     record Call(Expr callee, List<Argument> arguments, Span span) implements Expr {}
 
-    /** Ein Argument, wahlweise mit vorangestelltem Namen ({@code strategy: least_filled}). */
+    /** An argument, optionally with a leading name ({@code strategy: least_filled}). */
     record Argument(String name, Expr value, Span span) {
         public boolean isNamed() {
             return name != null;
@@ -211,8 +209,9 @@ public sealed interface Expr {
     /**
      * {@code await BatchFinished where id == jobId timeout 30s else { … }}
      *
-     * <p>{@code timeout} und {@code elseBody} kommen nur gemeinsam vor; ohne
-     * {@code else} stünde nach Ablauf ein Wert da, den es nie gab.
+     * <p>{@code timeout} and {@code elseBody} only occur together; without
+     * {@code else} a value would stand there after the timeout that never
+     * existed.
      */
     record Await(String eventName, Expr where, Expr timeout, Block elseBody, Span span)
             implements Expr {}
@@ -220,11 +219,11 @@ public sealed interface Expr {
     /**
      * {@code m => storage.count(m.input) > 0}
      *
-     * <p>Gebraucht nur dort, wo {@code it} nicht reicht — bei verschachtelten
-     * Listenoperationen.
+     * <p>Used only where {@code it} is not enough — with nested list
+     * operations.
      */
     record Lambda(String parameter, Expr body, Span span) implements Expr {}
 
-    /** Steht für einen Ausdruck, den der Parser nicht lesen konnte. */
+    /** Stands for an expression the parser could not read. */
     record Invalid(Span span) implements Expr {}
 }

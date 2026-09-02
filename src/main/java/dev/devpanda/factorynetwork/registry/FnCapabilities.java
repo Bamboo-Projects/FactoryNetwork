@@ -9,20 +9,20 @@ import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 
 /**
- * Wo Fremdmods andocken.
+ * Where foreign mods dock in.
  *
- * <p>Ein Puffer allein reicht nicht: Ohne diese Anmeldung findet ihn kein
- * Kabel und kein Generator, und der Block steht mit einem Stromspeicher da,
- * in den niemand etwas hineingeben kann. <b>Genau das war bei der Presse der
- * Fall</b> — sie brauchte FE und konnte keines bekommen.
+ * <p>A buffer alone is not enough: without this registration no cable and no
+ * generator finds it, and the block sits there with an energy store that
+ * nobody can put anything into. <b>That is exactly what happened with the
+ * press</b> — it needed FE and could get none.
  */
 @EventBusSubscriber(modid = FactoryNetwork.MOD_ID, bus = EventBusSubscriber.Bus.MOD)
 public final class FnCapabilities {
 
     @SubscribeEvent
     public static void register(RegisterCapabilitiesEvent event) {
-        // Auf allen Seiten: Welche Seite Strom annimmt, ist eine Frage, die
-        // niemand stellen will, wenn er ein Kabel anlegt.
+        // On all sides: which side accepts power is a question nobody wants to
+        // ask when laying a cable.
         event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK,
                 FnBlockEntities.PRESS.get(),
                 (PressBlockEntity press, net.minecraft.core.Direction side) -> press.energy());
@@ -34,21 +34,21 @@ public final class FnCapabilities {
                 FnBlockEntities.CONTROLLER.get(),
                 (ControllerBlockEntity controller, net.minecraft.core.Direction side)
                         -> controller.power().port());
-        // <b>Das Inventar der Presse.</b> Ohne diese Zeile nimmt sie Strom an
-        // und sonst nichts: Kein Anschluss findet ein Inventar, kein Worker
-        // kann sie beschicken, und eine Maschine, die man nicht beschicken
-        // kann, ist in dieser Mod keine.
+        // <b>The press's inventory.</b> Without this line it accepts power and
+        // nothing else: no connector finds an inventory, no worker can feed
+        // it, and a machine that cannot be fed is, in this mod, no machine at
+        // all.
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK,
                 FnBlockEntities.PRESS.get(),
                 (PressBlockEntity press, net.minecraft.core.Direction side)
                         -> press.inventory());
 
-        // Der Akku der Ferngeräte.
+        // The battery of the remote devices.
         //
-        // Das ist die eine Zeile, die Powah, Flux Networks und jede andere
-        // Mod anschließt, die Gegenstände im Inventar lädt: Sie alle suchen
-        // IEnergyStorage am ItemStack und finden ihn hier. Ohne sie wäre der
-        // Ladestand eine Zahl, die niemand füllen kann.
+        // This is the one line that connects Powah, Flux Networks and every
+        // other mod that charges items in the inventory: they all look for
+        // IEnergyStorage on the ItemStack and find it here. Without it the
+        // charge level would be a number nobody can fill.
         for (net.neoforged.neoforge.registries.DeferredItem<net.minecraft.world.item.Item> held
                 : java.util.List.of(FnItems.WIRELESS_TERMINAL, FnItems.LAPTOP)) {
             event.registerItem(Capabilities.EnergyStorage.ITEM,
@@ -59,8 +59,8 @@ public final class FnCapabilities {
                     held.get());
         }
 
-        // Ohne BlockEntity: Die Kreativquelle ist ein schlichter Block, und
-        // ihr Speicher ist eine Zahl ohne Zustand.
+        // Without a BlockEntity: the creative source is a plain block, and its
+        // storage is a number without state.
         event.registerBlock(Capabilities.EnergyStorage.BLOCK,
                 (level, pos, state, blockEntity, side)
                         -> dev.devpanda.factorynetwork.block.CreativeSourceBlock.TAP,

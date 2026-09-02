@@ -17,24 +17,22 @@ import net.minecraft.world.item.crafting.RecipeHolder;
 import java.util.List;
 
 /**
- * Die Anbindung an JEI.
+ * The integration with JEI.
  *
- * <p><b>Wozu überhaupt.</b> Die Presse hat einen eigenen Rezepttyp, und der
- * steht in keinem Rezeptbuch: Ohne diese Klasse gibt es im Spiel keinen Weg
- * herauszufinden, dass ein Eisenbarren unter dem Plattenstempel zu einer
- * Platte wird. Fünf Rezepte, die niemand findet, sind fünf Rezepte, die es
- * nicht gibt.
+ * <p><b>Why at all.</b> The press has its own recipe type, and it appears in
+ * no recipe book: without this class there is no way in-game to find out that
+ * an iron ingot becomes a plate under the plate stamp. Five recipes no one
+ * finds are five recipes that don't exist.
  *
- * <p><b>Warum kein Schalter für „JEI vorhanden".</b> Anders als bei Mekanism
- * und Ars Nouveau fragt hier nichts nach der fremden Mod: JEI sucht sich
- * seine Plugins selbst über die Annotation. Wer JEI nicht hat, lädt diese
- * Klasse nie — sie wird von keiner anderen Stelle im Quelltext angefasst.
- * Deshalb steht sie auch allein in ihrem Paket.
+ * <p><b>Why no switch for "JEI present".</b> Unlike with Mekanism and Ars
+ * Nouveau, nothing here asks for the third-party mod: JEI finds its plugins
+ * itself via the annotation. Whoever doesn't have JEI never loads this class —
+ * it is touched from no other place in the source. That is also why it sits
+ * alone in its package.
  *
- * <p><b>Die Presse ist ihr eigener Auslöser.</b> Wer den Block im
- * Kreativmenü anklickt oder im Spiel davorsteht und R drückt, sieht ihre
- * Rezepte — das ist der Weg, den ein Spieler von jeder anderen Maschine
- * kennt.
+ * <p><b>The press is its own trigger.</b> Whoever clicks the block in the
+ * creative menu or stands in front of it in-game and presses R sees its
+ * recipes — the path a player knows from every other machine.
  */
 @JeiPlugin
 public class FactoryNetworkJeiPlugin implements IModPlugin {
@@ -55,9 +53,8 @@ public class FactoryNetworkJeiPlugin implements IModPlugin {
 
     @Override
     public void registerRecipes(IRecipeRegistration registration) {
-        // Aus der Welt und nicht aus einer eigenen Liste: Ein Datenpaket darf
-        // Rezepte hinzufügen oder wegnehmen, und JEI soll zeigen, was
-        // wirklich gilt.
+        // From the world and not from a separate list: a data pack may add or
+        // remove recipes, and JEI should show what actually applies.
         var level = Minecraft.getInstance().level;
         if (level == null) {
             return;

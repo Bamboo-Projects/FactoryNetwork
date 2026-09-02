@@ -20,21 +20,21 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import java.util.Optional;
 
 /**
- * Zeigt das Netz als Linien in der Welt.
+ * Shows the network as lines in the world.
  *
- * <p><b>Angeklickt wird einmal, gezeigt wird dauerhaft.</b> Ein Rechtsklick
- * auf irgendeinen Teil des Netzes merkt sich dessen Stelle im Werkzeug;
- * solange man es danach in der Hand hält, wird das Netz laufend nachgereicht
- * und gezeichnet. Wer den Engpass sucht, will nicht jedes Kabel einzeln
- * anvisieren — er will sehen, wo die Linien rot werden.
+ * <p><b>Clicked once, shown continuously.</b> A right-click on any part of
+ * the network remembers its location in the tool; as long as you hold the
+ * tool afterwards, the network is streamed and drawn continuously. Whoever
+ * looks for the bottleneck does not want to target every cable individually
+ * — they want to see where the lines turn red.
  *
- * <p>Nachgereicht wird nur alle paar Ticks. Ein Netz mit tausend Kabeln bei
- * jedem Tick zu verschicken wäre spürbar, und so schnell ändert sich keine
- * Anlage.
+ * <p>It is streamed only every few ticks. Sending a network with a thousand
+ * cables every tick would be noticeable, and no installation changes that
+ * fast.
  */
 public class NetworkAnalyserItem extends Item {
 
-    /** Wie oft nachgereicht wird, in Ticks. */
+    /** How often it is streamed, in ticks. */
     private static final int INTERVAL = 10;
 
     private static final String KEY_POS = "AnalysedPos";
@@ -67,19 +67,19 @@ public class NetworkAnalyserItem extends Item {
     }
 
     /**
-     * Was hier hängt — oder, wenn es kein Gerät ist, dass das Netz beobachtet
-     * wird.
+     * What hangs here — or, if it is not a device, that the network is being
+     * watched.
      *
-     * <p><b>Am Rechtsklick und nicht in der Sicht durch Wände.</b> Die
-     * Knotenbeschriftung wird gar nicht gezeichnet; der Analysator malt
-     * Würfel. Die Frage „was kann diese Maschine" stellt sich ohnehin dort,
-     * wo man davorsteht.
+     * <p><b>On the right-click and not in the through-the-walls view.</b> The
+     * node labelling is not drawn at all; the analyser paints cubes. The
+     * question "what can this machine do" comes up anyway where you stand in
+     * front of it.
      */
     private static Component deviceLine(Level level, BlockPos pos) {
-        // <b>Der Controller zuerst.</b> Seit dem 30.08. ist er die Stelle,
-        // durch die alles geht — und damit die erste, die eng wird. Das ist
-        // die Auskunft, die man beim Ausbauen braucht: Klemmt es am Kabel
-        // oder am Controller?
+        // <b>The controller first.</b> Since 30 Aug it is the place through
+        // which everything goes — and thus the first to become tight. That
+        // is the information you need when expanding: is it the cable or the
+        // controller that is the bottleneck?
         if (level.getBlockEntity(pos) instanceof ControllerBlockEntity here) {
             return Component.translatable(
                     "message.factorynetwork.analyser.controller",
@@ -87,10 +87,10 @@ public class NetworkAnalyserItem extends Item {
                             here.bandwidthUsed(), here.bandwidth()),
                     here.extensionCount());
         }
-        // Über Connectors und nicht über die BlockEntity: An dieser Stelle
-        // kann ein Connectorblock stehen oder ein Kabel mit einem Anschluss.
-        // Sitzen mehrere daran, gibt es hier keine Auskunft — welcher gemeint
-        // wäre, sagt ein Punkt im Raum nicht.
+        // Via Connectors and not via the BlockEntity: at this spot there can
+        // be a connector block or a cable with a connector. If several sit
+        // on it, there is no information here — which one is meant, a point
+        // in space does not say.
         var connector = dev.devpanda.factorynetwork.block.entity.Connectors.at(level, pos);
         if (connector != null) {
             var profile = dev.devpanda.factorynetwork.block.entity.DeviceScan.of(connector);
@@ -126,7 +126,7 @@ public class NetworkAnalyserItem extends Item {
                 new AnalyserDataPacket(data.nodes(), data.links(), data.summary()));
     }
 
-    /** Die Stelle, die dieses Werkzeug beobachtet. */
+    /** The location this tool watches. */
     public static BlockPos remembered(ItemStack stack) {
         CustomData data = stack.get(DataComponents.CUSTOM_DATA);
         if (data == null || !data.contains(KEY_POS)) {

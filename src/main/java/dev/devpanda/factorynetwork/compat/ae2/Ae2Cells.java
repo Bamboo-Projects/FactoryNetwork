@@ -9,39 +9,38 @@ import dev.devpanda.factorynetwork.storage.ItemKey;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * Liest eine AE2-Speicherzelle in unser Netz.
+ * Reads an AE2 storage cell into our network.
  *
- * <p><b>Wofür das da ist:</b> Wer ein AE2-Netz stehen hat und hierher
- * umzieht, soll seine Sachen mitnehmen können, ohne sie erst in tausend
- * Kisten zu leeren. Eine AE2-Zelle ist nichts anderes als eine Liste aus
- * Gegenstand und Menge — dieselbe Form, die unser Lager seit dem 28.08.
- * führt.
+ * <p><b>What this is for:</b> anyone who has an AE2 network standing and moves
+ * over here should be able to bring their things along, without first emptying
+ * them into a thousand chests. An AE2 cell is nothing more than a list of item
+ * and amount — the same shape our storage has held since 28 Aug.
  *
- * <p><b>Vorher wäre genau das unmöglich gewesen.</b> AE2 speichert
- * {@code AEItemKey}: Gegenstand samt allem, was er trägt. Unser Lager kannte
- * bis dahin nur die Kennung — ein verzaubertes Buch aus einer AE2-Zelle wäre
- * beim Einlesen zu einem leeren geworden. Der Umbau macht diesen Weg erst
- * gangbar, und dieser Leser ist sein erster Nutznießer.
+ * <p><b>Before, this very thing would have been impossible.</b> AE2 stores
+ * {@code AEItemKey}: an item together with everything it carries. Until then
+ * our storage knew only the identifier — an enchanted book from an AE2 cell
+ * would have turned into a blank one on read-in. The rework is what makes this
+ * path viable in the first place, and this reader is its first beneficiary.
  *
- * <p><b>Eine Einbahnstraße.</b> Aus der Zelle heraus, ins Netz hinein — nie
- * zurück. Was das Netz nicht nimmt, bleibt in der Zelle: Ein Netz kann voll
- * sein, und ein Umzug, der dabei etwas verliert, ist kein Umzug.
+ * <p><b>A one-way street.</b> Out of the cell, into the network — never back.
+ * Whatever the network won't take stays in the cell: a network can be full,
+ * and a move that loses something along the way is no move at all.
  */
 public final class Ae2Cells {
 
-    /** Ist das eine Zelle, die AE2 kennt? */
+    /** Is this a cell that AE2 recognizes? */
     public static boolean isCell(ItemStack stack) {
         return FnAe2.installed() && !stack.isEmpty() && StorageCells.isCellHandled(stack);
     }
 
     /**
-     * Schüttet den Inhalt einer AE2-Zelle in unser Netz.
+     * Pours the contents of an AE2 cell into our network.
      *
-     * <p>Nur Gegenstände: Was AE2 sonst noch führt — Flüssigkeiten,
-     * fremde Arten aus anderen Mods — bleibt liegen, statt beim Umziehen
-     * still zu verschwinden.
+     * <p>Items only: whatever else AE2 carries — fluids, foreign kinds from
+     * other mods — is left behind, rather than quietly vanishing during the
+     * move.
      *
-     * @return wie viele Stücke übergegangen sind
+     * @return how many pieces were transferred
      */
     public static long drainInto(ItemStack cell, NetworkStorage storage) {
         if (!isCell(cell)) {
@@ -53,8 +52,8 @@ public final class Ae2Cells {
         }
         IActionSource source = IActionSource.empty();
         long moved = 0;
-        // Über eine Kopie der Liste: Das Entnehmen ändert sie, und wer
-        // dabei über das Original läuft, überspringt Posten.
+        // Over a copy of the list: extracting mutates it, and iterating over
+        // the original would skip entries.
         for (var entry : inventory.getAvailableStacks().keySet().stream().toList()) {
             if (!(entry instanceof AEItemKey found)) {
                 continue;
@@ -67,16 +66,16 @@ public final class Ae2Cells {
             if (key == null) {
                 continue;
             }
-            // Erst fragen, wie viel hineinpasst, dann genau so viel
-            // herausnehmen. Umgekehrt läge der Rest auf dem Boden.
+            // Ask first how much fits, then take out exactly that much. The
+            // other way around, the remainder would end up on the floor.
             long fits = there - storage.insert(key, there);
             if (fits <= 0) {
                 continue;
             }
             long taken = inventory.extract(found, fits, Actionable.MODULATE, source);
             if (taken < fits) {
-                // Die Zelle gab weniger her als angekündigt — den Überschuss
-                // zurück ins Netz legen, statt ihn zu erfinden.
+                // The cell yielded less than announced — put the surplus back
+                // into the network, rather than inventing it.
                 storage.extract(key, fits - taken);
             }
             moved += taken;

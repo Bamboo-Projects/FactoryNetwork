@@ -13,13 +13,13 @@ import snownee.jade.api.ITooltip;
 import snownee.jade.api.config.IPluginConfig;
 
 /**
- * Was Jade über einen Serverschrank sagt: wie viele Einschübe laufen und was
- * sie zusammen tragen.
+ * What Jade says about a server rack: how many bays are running and what they
+ * carry together.
  *
- * <p>Die wichtigste Zeile ist die über die unvollständigen Einschübe. Ein
- * Schrank, in dem elf Bauteile stecken und trotzdem nichts läuft, ist von
- * außen nicht von einem vollen zu unterscheiden — und das ist genau der
- * Fehler, den man ohne Hinweis lange sucht.
+ * <p>The most important line is the one about the incomplete bays. A rack
+ * holding eleven components while nothing runs is indistinguishable from a
+ * full one from the outside — and that is exactly the mistake you search for a
+ * long time without a hint.
  */
 public enum RackInfo implements IBlockComponentProvider, IServerDataProvider<BlockAccessor> {
 
@@ -32,11 +32,11 @@ public enum RackInfo implements IBlockComponentProvider, IServerDataProvider<Blo
     private static final String KEY_DISK = "FnRackDisk";
 
     /**
-     * Die Zahlen stehen in der unteren Hälfte.
+     * The numbers live in the lower half.
      *
-     * <p>Auf Augenhöhe schaut man auf die obere, und dort sitzt keine
-     * BlockEntity. Ohne diesen Umweg bliebe der Tooltip genau dann leer,
-     * wenn man geradeaus hinsieht.
+     * <p>At eye level you look at the upper one, and there is no block entity
+     * there. Without this detour the tooltip would stay empty precisely when
+     * you look straight ahead.
      */
     @Override
     public void appendServerData(CompoundTag data, BlockAccessor accessor) {

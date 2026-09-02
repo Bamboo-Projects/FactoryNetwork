@@ -20,22 +20,21 @@ import net.minecraft.world.item.crafting.RecipeHolder;
 import java.util.Locale;
 
 /**
- * Die Rezepte der Presse in JEI.
+ * The press recipes in JEI.
  *
- * <p><b>Ohne diese Klasse ist der Stempel unauffindbar.</b> Die Presse
- * braucht zwei Zutaten, und die eine davon ist ein Werkzeug, das nirgends
- * sonst vorkommt: Wer einen Plattenstempel im Kreativmenü sieht, hat keinen
- * Weg herauszufinden, wozu er gut ist. In der Werkbank steht das Rezept, in
- * der Presse stand es bisher nirgends.
+ * <p><b>Without this class the stamp is impossible to find.</b> The press
+ * needs two ingredients, and one of them is a tool that appears nowhere else:
+ * whoever sees a plate stamp in the creative menu has no way to find out what
+ * it is good for. In the crafting table the recipe is shown, in the press it
+ * was shown nowhere until now.
  *
- * <p><b>Der Stempel wird nicht verbraucht</b>, und das muss man sehen. Er
- * steht deshalb links als eigener Platz und trägt darunter das Wort
- * „bleibt" — eine Zutat, die man einmal legt, ist etwas anderes als eine,
- * die jedes Mal draufgeht.
+ * <p><b>The stamp is not consumed</b>, and that has to be visible. It
+ * therefore sits on the left as its own slot and carries the word "stays"
+ * beneath it — an ingredient you place once is a different thing from one that
+ * is spent every time.
  *
- * <p>Energie und Dauer stehen als Text und nicht als Balken: Ein Balken
- * zeigt einen Anteil von etwas, und hier gibt es kein Ganzes, gegen das man
- * ihn lesen könnte.
+ * <p>Energy and duration are given as text, not as a bar: a bar shows a
+ * fraction of something, and here there is no whole to read it against.
  */
 public class PressCategory implements IRecipeCategory<RecipeHolder<PressRecipe>> {
 
@@ -43,7 +42,7 @@ public class PressCategory implements IRecipeCategory<RecipeHolder<PressRecipe>>
             FactoryNetwork.MOD_ID, "press",
             (Class<RecipeHolder<PressRecipe>>) (Class<?>) RecipeHolder.class);
 
-    /** Die Maße der Fläche, auf der ein Rezept steht. */
+    /** The dimensions of the area a recipe sits on. */
     private static final int WIDTH = 130;
     private static final int HEIGHT = 44;
 
@@ -55,8 +54,8 @@ public class PressCategory implements IRecipeCategory<RecipeHolder<PressRecipe>>
         this.background = helper.createBlankDrawable(WIDTH, HEIGHT);
         this.icon = helper.createDrawableItemStack(
                 new ItemStack(FnBlocks.PRESS.get()));
-        // Vanillas Pfeil aus dem Ofenfenster: Er zeigt dieselbe Sache, und
-        // ein eigener wäre ein zweiter Pfeil für dieselbe Bedeutung.
+        // Vanilla's arrow from the furnace screen: it shows the same thing,
+        // and a custom one would be a second arrow for the same meaning.
         this.arrow = helper.drawableBuilder(
                         ResourceLocation.withDefaultNamespace(
                                 "textures/gui/container/furnace.png"),
@@ -90,9 +89,9 @@ public class PressCategory implements IRecipeCategory<RecipeHolder<PressRecipe>>
         PressRecipe recipe = holder.value();
         builder.addSlot(RecipeIngredientRole.CATALYST, 1, 5)
                 .addIngredients(recipe.stamp());
-        // Die Zutaten nebeneinander, in der Reihenfolge des Rezepts. Dass die
-        // Presse sie in beliebigen Plätzen annimmt, muss hier niemand zeigen
-        // — wer drei Felder sieht, legt drei Dinge hinein.
+        // The ingredients side by side, in the recipe's order. That the press
+        // accepts them in any slots need not be shown here — whoever sees
+        // three fields puts three things in.
         var materials = recipe.materials();
         for (int i = 0; i < materials.size(); i++) {
             var sized = materials.get(i);
@@ -116,7 +115,8 @@ public class PressCategory implements IRecipeCategory<RecipeHolder<PressRecipe>>
         arrow.draw(graphics, 74, 16);
 
         var font = net.minecraft.client.Minecraft.getInstance().font;
-        // Der Stempel bleibt liegen — die wichtigste Auskunft dieser Fläche.
+        // The stamp stays put — the most important piece of information on
+        // this area.
         graphics.drawString(font,
                 Component.translatable("gui.factorynetwork.jei.press.stamp"),
                 22, 9, 0x404040, false);

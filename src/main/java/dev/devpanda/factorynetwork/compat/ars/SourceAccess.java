@@ -9,21 +9,21 @@ import net.minecraft.world.level.Level;
 import java.util.Collection;
 
 /**
- * Wie Source an einer fremden Maschine gelesen und geschrieben wird.
+ * How Source is read from and written to a third-party machine.
  *
- * <p><b>Der Beweis für die zweite Achse.</b> Ars Nouveau meldet eine
- * gewöhnliche Block-Capability an — {@code BlockCapability<ISourceCap,
- * Direction>} —, genau in der Form, in der auch Strom und Flüssigkeit
- * danebenliegen. Was hier steht, ist die Übersetzung von deren Wortschatz in
- * unseren, und keine Zeile davon steht im Kern.
+ * <p><b>The proof for the second axis.</b> Ars Nouveau registers an ordinary
+ * block capability — {@code BlockCapability<ISourceCap, Direction>} — in
+ * exactly the form that power and fluid sit in alongside it. What is here is
+ * the translation of their vocabulary into ours, and not a line of it lives in
+ * the core.
  *
- * <p><b>Erst fragen, dann ziehen.</b> Die Regel aus {@link MachineAccess}:
- * Was der Netzspeicher nicht nimmt, darf gar nicht erst aus der Maschine
- * kommen. Source lässt sich nicht auf den Boden legen.
+ * <p><b>Ask first, then pull.</b> The rule from {@link MachineAccess}:
+ * whatever the network storage won't take must never leave the machine in the
+ * first place. Source cannot be dropped on the ground.
  */
 public final class SourceAccess implements MachineAccess {
 
-    /** Der eine Schlüssel dieser Art — es gibt nur eine Sorte Source. */
+    /** The single key of this kind — there is only one variety of Source. */
     static final String KEY = "source";
 
     public static final SourceAccess INSTANCE = new SourceAccess();
@@ -60,8 +60,8 @@ public final class SourceAccess implements MachineAccess {
         }
         int arrived = cap.receiveSource(clamp(taken), false);
         if (arrived < taken) {
-            // Zurück in den Speicher: Zwischen Probe und Tat kann sich die
-            // Maschine anders entschieden haben.
+            // Back into the store: between the trial and the act the machine
+            // may have decided differently.
             from.insert(KEY, taken - arrived);
         }
         return arrived;
@@ -91,19 +91,19 @@ public final class SourceAccess implements MachineAccess {
         }
         long stranded = into.insert(KEY, pulled);
         if (stranded > 0) {
-            // Was nicht hineinpasst, geht zurück in die Maschine. Passt es
-            // auch dort nicht mehr, ist es verloren — deshalb steht die
-            // Probe oben.
+            // Whatever doesn't fit goes back into the machine. If it no longer
+            // fits there either, it is lost — which is why the trial sits
+            // above.
             cap.receiveSource(clamp(stranded), false);
         }
         return pulled - stranded;
     }
 
     /**
-     * Die Capability an dieser Seite, oder {@code null}.
+     * The capability on this side, or {@code null}.
      *
-     * <p>Der Zugriff auf die Klassen von Ars Nouveau steht in einer eigenen
-     * Methode: So lädt die JVM sie erst, wenn wirklich jemand fragt.
+     * <p>Access to the Ars Nouveau classes lives in its own method: that way
+     * the JVM loads them only when someone actually asks.
      */
     private static com.hollingsworth.arsnouveau.api.source.ISourceCap capAt(
             Level level, BlockPos pos, Direction side) {
@@ -116,17 +116,17 @@ public final class SourceAccess implements MachineAccess {
     }
 
     /**
-     * Ist Source überhaupt gemeint?
+     * Is Source even meant?
      *
-     * <p>Eine leere Auswahl heißt nicht „alles" — dieselbe Regel wie in
-     * {@link MachineAccess#count}, und sie hat am 26.08. schon einmal eine
-     * Kiste leergeräumt.
+     * <p>An empty selection does not mean "everything" — the same rule as in
+     * {@link MachineAccess#count}, and it already emptied a chest once, on
+     * 26 Aug.
      */
     private static boolean wanted(Collection<?> keys) {
         return keys != null && keys.contains(KEY);
     }
 
-    /** Ars Nouveau rechnet in {@code int}; unsere Mengen sind {@code long}. */
+    /** Ars Nouveau counts in {@code int}; our amounts are {@code long}. */
     private static int clamp(long amount) {
         return (int) Math.min(amount, Integer.MAX_VALUE);
     }

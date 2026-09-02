@@ -1,17 +1,17 @@
 package dev.devpanda.factorynetwork.lang;
 
 /**
- * Eine Seite eines Blocks, aus Sicht der Sprache.
+ * A side of a block, from the language's point of view.
  *
- * <p><b>Warum nicht Minecrafts {@code Direction}:</b> Eine Fähigkeit lässt
- * sich auch ohne Seite anbieten, und manche Maschine bietet sie
- * ausschließlich so an. In {@code Direction} wäre das ein {@code null} —
- * als Schlüssel in einer Karte die Sorte Falle, die erst spät zuschnappt.
- * Hier ist es {@link #ANY}, ein Wert wie jeder andere.
+ * <p><b>Why not Minecraft's {@code Direction}:</b> a capability can also be
+ * offered without a side, and some machines offer it only that way. In
+ * {@code Direction} that would be a {@code null} — as a key in a map, the kind
+ * of trap that only springs shut late. Here it is {@link #ANY}, a value like
+ * any other.
  *
- * <p>Der zweite Grund: {@link NetworkView} und {@link NetworkCheck} kommen
- * ohne Minecraft aus, und ihre Tests laufen deshalb in Millisekunden statt
- * in einer Minute GameTest.
+ * <p>The second reason: {@link NetworkView} and {@link NetworkCheck} get by
+ * without Minecraft, and their tests therefore run in milliseconds instead of
+ * a minute of GameTest.
  */
 public enum Side {
     DOWN("unten"),
@@ -20,7 +20,7 @@ public enum Side {
     SOUTH("Süden"),
     WEST("Westen"),
     EAST("Osten"),
-    /** Ohne Seite angeboten — gilt für jede Richtung. */
+    /** Offered without a side — applies to every direction. */
     ANY("überall");
 
     private final String written;
@@ -29,7 +29,7 @@ public enum Side {
         this.written = written;
     }
 
-    /** Wie die Seite in einer Meldung dasteht. */
+    /** How the side reads in a message. */
     public String written() {
         return written;
     }

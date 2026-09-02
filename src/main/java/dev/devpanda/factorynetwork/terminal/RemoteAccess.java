@@ -10,42 +10,43 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
 /**
- * Ob ein Fenster aus der Ferne offen bleiben darf.
+ * Whether a window may stay open from a distance.
  *
- * <p>Am Block ist die Frage einfach: Steht der Block noch da und ist der
- * Spieler nah genug? Aus der Ferne sind es drei Fragen, und alle drei können
- * mitten im Spiel umschlagen.
+ * <p>At the block the question is simple: is the block still there and is the
+ * player near enough? From a distance there are three questions, and all three
+ * can flip mid-game.
  *
- * <p><b>Sie steht hier und nicht im Menü</b>, damit ein Prüflauf sie stellen
- * kann. Ein Test, der stattdessen auf das Zugehen des Fensters wartet, prüft
- * den Ticker und nicht die Regel.
+ * <p><b>It lives here and not in the menu</b>, so that a test run can pose it.
+ * A test that instead waits for the window to close checks the ticker and not
+ * the rule.
  */
 public final class RemoteAccess {
 
     /**
-     * Darf der Spieler mit diesem Gerät weiterarbeiten?
+     * May the player keep working with this device?
      *
-     * <p>Drei Bedingungen, in dieser Reihenfolge:
+     * <p>Three conditions, in this order:
      *
      * <ol>
-     *   <li><b>Das Gerät liegt noch dort, wo es war.</b> Wer es weglegt, in
-     *       eine Kiste tut oder fallen lässt, hat keines mehr in der Hand.
-     *       Ohne diese Prüfung bliebe das Fenster offen, während der
-     *       Gegenstand längst in einer Kiste liegt.</li>
-     *   <li><b>Es ist noch dasselbe Netz.</b> Wer ein zweites Gerät in den
-     *       Platz tauscht, das an einem anderen Mast hängt, hielte sonst ein
-     *       Fenster auf ein Netz offen, zu dem das Gerät in seiner Hand gar
-     *       nicht gehört.</li>
-     *   <li><b>Der Mast steht noch — und sein Stück Welt ist geladen.</b>
-     *       Er kann abgebaut worden sein, während das Fenster offen war.</li>
-     *   <li><b>Der Spieler ist in Reichweite.</b> Sie kommt aus den Karten in
-     *       Mast und Gerät — das ist die Stelle, an der die Reichweite
-     *       überhaupt etwas tut. Steht er in einer anderen Welt, reicht nur
-     *       die Grenzenlos-Karte.</li>
+     *   <li><b>The device is still where it was.</b> Whoever puts it away,
+     *       into a chest, or drops it, no longer has one in hand. Without this
+     *       check the window would stay open while the item has long since
+     *       been sitting in a chest.</li>
+     *   <li><b>It is still the same network.</b> Whoever swaps a second device
+     *       into the slot, one that hangs off a different mast, would otherwise
+     *       hold a window open onto a network the device in their hand does not
+     *       belong to at all.</li>
+     *   <li><b>The mast is still standing — and its piece of world is
+     *       loaded.</b> It may have been mined away while the window was
+     *       open.</li>
+     *   <li><b>The player is in range.</b> It comes from the cards in the mast
+     *       and the device — this is the place where the range does anything at
+     *       all. If they stand in another dimension, only the infinity card
+     *       reaches.</li>
      * </ol>
      *
-     * @param slot der Platz im Inventar, an dem das Gerät beim Öffnen lag
-     * @param expected der Mast, an dem dieses Fenster hängt
+     * @param slot the slot in the inventory where the device lay when it was opened
+     * @param expected the mast this window hangs off
      */
     public static boolean allowed(Player player, int slot, GlobalPos expected) {
         if (slot < 0 || slot >= player.getInventory().getContainerSize()) {
@@ -65,10 +66,10 @@ public final class RemoteAccess {
             return false;
         }
         boolean sameLevel = player.level().dimension().equals(mast.dimension());
-        // Der Abstand zählt vom Mast, nicht vom Controller: Wer einen
-        // zweiten Mast aufstellt, verlängert damit seine Reichweite, und
-        // genau dafür baut man ihn. In einer anderen Welt gibt es keinen
-        // Abstand — dort entscheidet allein die Karte.
+        // The distance counts from the mast, not from the controller: whoever
+        // puts up a second mast extends their range with it, and that is
+        // exactly what one builds it for. In another dimension there is no
+        // distance — there the card alone decides.
         double distance = sameLevel
                 ? Math.sqrt(player.distanceToSqr(mast.pos().getX() + 0.5,
                         mast.pos().getY() + 0.5, mast.pos().getZ() + 0.5))
@@ -78,16 +79,16 @@ public final class RemoteAccess {
     }
 
     /**
-     * Der Mast an dieser Stelle — auch in einer anderen Welt.
+     * The mast at this spot — even in another dimension.
      *
-     * <p><b>Erst fragen, ob das Stück Welt geladen ist.</b>
-     * {@code getBlockEntity} lädt es sonst nach, und diese Frage wird für
-     * jedes offene Fenster in jedem Tick gestellt — ein Netz am anderen Ende
-     * der Welt hielte damit dauerhaft Land offen, das niemand betritt.
+     * <p><b>First ask whether the piece of world is loaded.</b>
+     * {@code getBlockEntity} would otherwise load it in, and this question is
+     * asked for every open window on every tick — a network at the other end
+     * of the world would thereby keep land loaded permanently that no one sets
+     * foot on.
      *
-     * <p>Ein nicht geladener Mast gilt als nicht erreichbar. Das ist ehrlich:
-     * Was dort geschieht, rechnet niemand aus, solange kein Spieler in der
-     * Nähe ist.
+     * <p>A mast that is not loaded counts as unreachable. That is honest: no
+     * one computes what happens there as long as no player is nearby.
      */
     public static MastBlockEntity mastAt(Player player, GlobalPos mast) {
         Level level = player.level();
@@ -105,11 +106,11 @@ public final class RemoteAccess {
     }
 
     /**
-     * Wo im Inventar dieses Gerät liegt, oder -1.
+     * Where in the inventory this device lies, or -1.
      *
-     * <p>Gesucht wird der Gegenstand selbst, nicht ein gleicher: Zwei
-     * Terminals im Inventar sind verschiedene Geräte mit verschiedenen
-     * Masten, und wer das zweite herausnimmt, soll nicht das erste schließen.
+     * <p>What is searched for is the item itself, not an equal one: two
+     * terminals in the inventory are different devices with different masts,
+     * and whoever takes out the second should not close the first.
      */
     public static int slotOf(Player player, ItemStack device) {
         for (int slot = 0; slot < player.getInventory().getContainerSize(); slot++) {

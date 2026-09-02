@@ -10,10 +10,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Eine Speicherzelle.
+ * A storage cell.
  *
- * <p>Sie gehört in ein Laufwerk. Was darin liegt, steht im Gegenstand selbst
- * — eine volle Zelle in der Truhe ist voller Speicher, kein leeres Gehäuse.
+ * <p>It belongs in a drive. What sits inside it is held in the item itself
+ * — a full cell in the chest is full storage, not an empty casing.
  */
 public class StorageCellItem extends Item {
 
@@ -37,8 +37,8 @@ public class StorageCellItem extends Item {
                                 TooltipFlag flag) {
         Map<ItemKey, Long> contents = CellContents.read(stack, context.registries());
         long total = dev.devpanda.factorynetwork.storage.CellFormat.total(contents);
-        // Beide Grenzen nennen: Voll ist eine Zelle meist an den Arten, nicht
-        // an der Menge — wer nur die Menge sieht, sucht den Fehler woanders.
+        // Name both limits: a cell is usually full on types, not on amount —
+        // whoever sees only the amount looks for the problem elsewhere.
         lines.add(Component.translatable("item.factorynetwork.cell.types",
                 contents.size(), tier.types()).withStyle(ChatFormatting.GRAY));
         lines.add(Component.translatable("item.factorynetwork.cell.amount",
@@ -55,10 +55,10 @@ public class StorageCellItem extends Item {
     }
 
     /**
-     * Der Balken zeigt die knappere der beiden Grenzen.
+     * The bar shows the tighter of the two limits.
      *
-     * <p>Sonst stünde eine Zelle mit allen Arten belegt als halb leer da,
-     * obwohl nichts Neues mehr hineingeht.
+     * <p>Otherwise a cell with all types occupied would show as half empty,
+     * although nothing new goes in any more.
      */
     @Override
     public int getBarWidth(ItemStack stack) {

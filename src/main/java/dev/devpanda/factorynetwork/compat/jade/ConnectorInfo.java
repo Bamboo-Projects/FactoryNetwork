@@ -11,11 +11,11 @@ import snownee.jade.api.ITooltip;
 import snownee.jade.api.config.IPluginConfig;
 
 /**
- * Was Jade über einen Connector sagt.
+ * What Jade says about a connector.
  *
- * <p>Vier Zustände sind zu unterscheiden, und drei davon sehen im Spiel
- * gleich aus: benannt und erreichbar, unbenannt, doppelt vergeben, oder ohne
- * freien Kanal. Wer den letzten für einen Tippfehler hält, sucht lange.
+ * <p>Four states must be told apart, and three of them look the same in-game:
+ * named and reachable, unnamed, duplicated, or without a free channel. Anyone
+ * who mistakes the last one for a typo will search a long time.
  */
 public enum ConnectorInfo implements IBlockComponentProvider, IServerDataProvider<BlockAccessor> {
 
@@ -34,11 +34,10 @@ public enum ConnectorInfo implements IBlockComponentProvider, IServerDataProvide
         String label = connector.label();
         data.putString(KEY_LABEL, label == null ? "" : label);
         data.putInt(KEY_COST, connector.channelCost());
-        // <b>Derselbe Zustand, den das Lämpchen zeigt.</b> Vorher rechnete
-        // Jade ihn hier ein zweites Mal aus dem Graphen — dieselbe Frage,
-        // zwei Antworten, und die eine bekam Verbesserungen, die der anderen
-        // fehlten. Gerechnet wird er beim Neuaufbau, und der läuft bei jeder
-        // Änderung am Netz.
+        // <b>The same state the indicator light shows.</b> Previously Jade
+        // computed it here a second time from the graph — the same question,
+        // two answers, and one of them got improvements the other lacked. It
+        // is computed on rebuild, which runs on every change to the network.
         data.putInt(KEY_STATE, connector.state().id());
     }
 
@@ -61,9 +60,9 @@ public enum ConnectorInfo implements IBlockComponentProvider, IServerDataProvide
             case DUPLICATE -> tooltip.add(Component.translatable(
                     "jade.factorynetwork.connector.duplicate", label)
                     .withStyle(ChatFormatting.RED));
-            // Nur noch aus alten Welten: Seit dem 29.08. wird dieser
-            // Zustand nicht mehr vergeben, und beim ersten Netzaufbau
-            // bekommt das Gerät seinen richtigen.
+            // Only from old worlds now: since 29 Aug this state is no longer
+            // assigned, and on the first network build the device gets its
+            // correct one.
             case STARVED -> tooltip.add(Component.translatable(
                     "jade.factorynetwork.connector.saturated")
                     .withStyle(ChatFormatting.GOLD));
@@ -75,12 +74,12 @@ public enum ConnectorInfo implements IBlockComponentProvider, IServerDataProvide
     }
 
     /**
-     * Der Anschluss, auf den der Spieler gerade sieht.
+     * The connection the player is currently looking at.
      *
-     * <p>Am Kabelblock entscheidet die getroffene Fläche: Dort hängen bis zu
-     * sechs, und ohne sie stünde im Fenster irgendeiner davon. Am eigenen
-     * Connectorblock gibt es nur einen, und der Weg über die Fläche fällt
-     * still auf ihn zurück.
+     * <p>On the cable block the face that was hit decides: up to six hang
+     * there, and without it any one of them would show in the window. On the
+     * dedicated connector block there is only one, and the face-based path
+     * quietly falls back to it.
      */
     private static dev.devpanda.factorynetwork.block.entity.ConnectorPart partAt(BlockAccessor accessor) {
         var level = accessor.getLevel();

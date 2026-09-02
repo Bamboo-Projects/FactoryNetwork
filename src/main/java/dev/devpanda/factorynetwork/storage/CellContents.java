@@ -6,19 +6,19 @@ import net.minecraft.world.item.ItemStack;
 import java.util.Map;
 
 /**
- * Was in einer Gegenstandszelle liegt.
+ * What sits inside an item cell.
  *
- * <p><b>Der Inhalt steckt im Gegenstand, nicht im Laufwerk.</b> Das ist der
- * Grund, warum eine Zelle etwas wert ist: Man zieht sie heraus, trägt sie weg
- * und steckt sie anderswo hinein — der Bestand kommt mit. Läge er im
- * Laufwerk, wäre die Zelle nur ein Schlüssel und kein Speicher.
+ * <p><b>The contents live in the item, not in the drive.</b> That is the
+ * reason a cell is worth something: you pull it out, carry it away and plug
+ * it in somewhere else — the stored contents come along. Were they in the
+ * drive, the cell would be a mere key and not storage.
  *
- * <p>Gerechnet wird schlüsselbasiert, wie im ganzen Netz: eine Abbildung von
- * Art auf Menge. Eine Liste von Stapeln wäre bei sechzig Arten schon eine
- * lineare Suche je Zugriff, und davon gibt es Dutzende je Tick.
+ * <p>The accounting is key-based, as everywhere in the network: a mapping
+ * from type to amount. A list of stacks would already be a linear search per
+ * access at sixty types, and there are dozens of those per tick.
  *
- * <p>Die Arbeit selbst steht in {@link CellFormat}, denn Flüssigkeiten liegen
- * gleich. Diese Klasse ist der bequeme Zugang für den häufigeren Fall.
+ * <p>The work itself lives in {@link CellFormat}, since fluids sit the same
+ * way. This class is the convenient entry point for the more common case.
  */
 public final class CellContents {
 
@@ -35,7 +35,7 @@ public final class CellContents {
         CellFormat.ITEMS.write(cell, contents, registries);
     }
 
-    /** Wie viel insgesamt darin liegt. */
+    /** How much sits inside it in total. */
     public static long total(Map<Item, Long> contents) {
         return CellFormat.total(contents);
     }

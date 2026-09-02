@@ -18,11 +18,11 @@ import snownee.jade.api.ITooltip;
 import snownee.jade.api.config.IPluginConfig;
 
 /**
- * Was Jade über ein Kabel sagt.
+ * What Jade says about a cable.
  *
- * <p>Je Strang eine Zeile: Farbe und Kanalstand. Das ist die Auskunft, für
- * die es Jade hier überhaupt gibt — wie viele der acht Drähte an dieser
- * Stelle noch frei sind, sieht man dem Kabel sonst nicht an.
+ * <p>One line per strand: colour and channel count. This is the very
+ * information Jade is here for — how many of the eight wires are still free at
+ * this spot is otherwise invisible on the cable.
  */
 public enum CableInfo implements IBlockComponentProvider, IServerDataProvider<BlockAccessor> {
 
@@ -31,8 +31,8 @@ public enum CableInfo implements IBlockComponentProvider, IServerDataProvider<Bl
     private static final String KEY_STRANDS = "FnStrands";
 
     /**
-     * Die Zahlen holt der Server: Der Graph liegt beim Controller, und den
-     * kennt der Client nicht.
+     * The server fetches the numbers: the graph lives at the controller, and
+     * the client doesn't know it.
      */
     @Override
     public void appendServerData(CompoundTag data, BlockAccessor accessor) {
@@ -42,14 +42,13 @@ public enum CableInfo implements IBlockComponentProvider, IServerDataProvider<Bl
 
         var controller = ControllerRegistry.owning(level, pos);
         CableColour colour = CableBlock.colourOf(level.getBlockState(pos));
-        // Die Kapazität steht am Kabel, nicht an der Mod: ein dickes trägt
-        // vierundsechzig, ein gewöhnliches sechzehn. Mit der festen Zahl
-        // meldete ein dichtes Kabel ab dem sechzehnten Kanal „voll".
-        // Der Durchsatz je Tick, nicht die Kanallast: Seit dem 29.08.
-        // begrenzt, wie viel hindurchgeht, und nicht, wie viele Geräte
-        // dahinter hängen.
-        // In Byte je Sekunde, nicht als rohe Zahl je Tick: "500" ist keine
-        // Auskunft, "10 KB/s" schon.
+        // The capacity is a property of the cable, not of the mod: a thick one
+        // carries sixty-four, an ordinary one sixteen. With a fixed number, a
+        // dense cable would report "full" from the sixteenth channel on.
+        // Throughput per tick, not channel load: since 29 Aug what is limited
+        // is how much passes through, and not how many devices hang behind it.
+        // In bytes per second, not as a raw per-tick number: "500" says
+        // nothing, "10 KB/s" does.
         String load = dev.devpanda.factorynetwork.network.Bandwidth.perSecond(
                 dev.devpanda.factorynetwork.network.Bandwidth.at(level, pos));
         lines.add(StringTag.valueOf(colour.getSerializedName() + " " + load));
@@ -67,8 +66,8 @@ public enum CableInfo implements IBlockComponentProvider, IServerDataProvider<Bl
             Component name = Component.translatable(
                     "jade.factorynetwork.colour." + parts[0]);
             String load = parts.length > 1 ? parts[1] : "";
-            // Ohne Controller in Reichweite steht ein Strich statt einer
-            // Zahl; ein Kabel ohne Netz hat keinen Durchsatz, nicht null.
+            // With no controller in range, a dash stands in place of a number;
+            // a cable without a network has no throughput, not zero.
             ChatFormatting colour = load.startsWith("—")
                     ? ChatFormatting.DARK_GRAY : ChatFormatting.GRAY;
             tooltip.add(Component.translatable("jade.factorynetwork.cable.colour", name, load)
@@ -76,7 +75,7 @@ public enum CableInfo implements IBlockComponentProvider, IServerDataProvider<Bl
         }
     }
 
-    /** Steht in „12/16" links dieselbe Zahl wie rechts? */
+    /** In "12/16", is the number on the left the same as the one on the right? */
     private static boolean isFull(String load) {
         int slash = load.indexOf('/');
         return slash > 0 && load.substring(0, slash).equals(load.substring(slash + 1));

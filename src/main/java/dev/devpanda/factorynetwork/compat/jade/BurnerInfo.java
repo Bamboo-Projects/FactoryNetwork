@@ -12,11 +12,11 @@ import snownee.jade.api.ITooltip;
 import snownee.jade.api.config.IPluginConfig;
 
 /**
- * Was Jade über die Brennkammer sagt.
+ * What Jade says about the burner.
  *
- * <p>Die zweite Zeile ist die, um die es geht: <b>Ein voller Vorrat heißt,
- * dass niemand abnimmt.</b> Eine Kammer, die brennt und deren Vorrat oben
- * ansteht, verheizt Kohle für nichts — und das sieht man ihr sonst nicht an.
+ * <p>The second line is the one that matters: <b>a full supply means nothing
+ * is drawing from it.</b> A chamber that is burning while its supply is topped
+ * out is burning coal for nothing — and there is otherwise no way to tell.
  */
 public enum BurnerInfo implements IBlockComponentProvider, IServerDataProvider<BlockAccessor> {
 

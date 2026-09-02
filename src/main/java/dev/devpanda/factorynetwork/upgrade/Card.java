@@ -1,36 +1,36 @@
 package dev.devpanda.factorynetwork.upgrade;
 
 /**
- * Die Karten und was sie heben.
+ * The cards and what they raise.
  *
- * <p><b>Gleiche Karten addieren sich, statt in Stufen aufzurüsten.</b> Ein
- * Stufensystem — Reichweite I, II, III — macht die alte Karte wertlos, sobald
- * die neue da ist. Vier gleiche Karten in vier Plätzen halten den Wert an der
- * Zahl der Plätze fest, und die ist die eigentliche Entscheidung.
+ * <p><b>Identical cards add up instead of upgrading in tiers.</b> A tier
+ * system — Range I, II, III — makes the old card worthless the moment the new
+ * one arrives. Four identical cards in four slots tie the value to the number
+ * of slots, and that is the real decision.
  */
 public enum Card implements Upgrade {
 
-    /** Acht Blöcke mehr Reichweite, je Stück. */
+    /** Eight more blocks of range, per card. */
     RANGE("range_card", Stat.RANGE, 8, false),
 
     /**
-     * Hebt die Reichweitengrenze ganz auf.
+     * Removes the range limit entirely.
      *
-     * <p>Eine Karte und kein Modul: Sie schafft nichts Neues, sie hebt eine
-     * Grenze auf. Ihr Zahlenwert ist null, weil ihn niemand liest — wer
-     * {@code unlimited} fragt, fragt {@code value} nicht mehr.
+     * <p>A card and not a module: it creates nothing new, it lifts a limit.
+     * Its numeric value is zero, because nobody reads it — whoever asks
+     * {@code unlimited} no longer asks {@code value}.
      */
     INFINITY("infinity_card", Stat.RANGE, 0, true),
 
     /**
-     * Nimmt einer Maschine ein Fünftel ihrer Zeit und legt Strom drauf.
+     * Takes a fifth of a machine's time and adds power on top.
      *
-     * <p>Ihr Schritt ist null: Sie addiert nichts, sie multipliziert — und
-     * das rechnet {@link Tuning} aus der Stückzahl, nicht aus einer Summe.
+     * <p>Its step is zero: it adds nothing, it multiplies — and {@link Tuning}
+     * computes that from the count, not from a sum.
      */
     ACCELERATION("acceleration_card", Stat.SPEED, 0, false),
 
-    /** Legt einer Maschine ein Werkstück je Durchlauf zu. */
+    /** Gives a machine one more workpiece per run. */
     BATCH("batch_card", Stat.BATCH, 0, false);
 
     private final String id;
@@ -50,17 +50,17 @@ public enum Card implements Upgrade {
         return id;
     }
 
-    /** Worauf sie wirkt — genau ein Punkt, nie zwei. */
+    /** What it acts on — exactly one stat, never two. */
     public Stat stat() {
         return stat;
     }
 
-    /** Um wie viel sie ihn hebt, je Stück. */
+    /** By how much it raises it, per card. */
     public int step() {
         return step;
     }
 
-    /** Ob sie die Grenze ganz aufhebt. */
+    /** Whether it lifts the limit entirely. */
     public boolean unlimited() {
         return unlimited;
     }

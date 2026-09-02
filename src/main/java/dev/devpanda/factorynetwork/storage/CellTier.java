@@ -3,17 +3,17 @@ package dev.devpanda.factorynetwork.storage;
 import net.minecraft.util.StringRepresentable;
 
 /**
- * Die Größen einer Speicherzelle.
+ * The sizes of a storage cell.
  *
- * <p><b>Zwei Grenzen statt einer Byte-Rechnung.</b> Applied Energistics zählt
- * Bytes: Jede Art kostet vorab acht, dann fasst ein Byte acht Gegenstände.
- * Das ist gewachsen und wird von kaum jemandem verstanden — man merkt nur,
- * dass eine Zelle früher voll ist als die Zahl im Namen vermuten lässt.
+ * <p><b>Two limits instead of a byte reckoning.</b> Applied Energistics
+ * counts bytes: each type costs eight up front, then one byte holds eight
+ * items. That grew over time and is understood by hardly anyone — you only
+ * notice that a cell is full sooner than the number in its name suggests.
  *
- * <p>Hier stehen beide Grenzen offen da: wie viele <b>Arten</b> und wie viele
- * <b>Gegenstände</b>. Der Reiz bleibt derselbe, denn die Arten sind das
- * Knappe — wer alles in eine Zelle wirft, hat sie voll, lange bevor die Menge
- * erreicht ist. Genau das treibt zum Sortieren.
+ * <p>Here both limits are out in the open: how many <b>types</b> and how many
+ * <b>items</b>. The appeal stays the same, because the types are what is
+ * scarce — whoever throws everything into one cell has it full long before
+ * the amount is reached. That is exactly what drives sorting.
  */
 public enum CellTier implements StringRepresentable, CellSize {
 
@@ -32,13 +32,13 @@ public enum CellTier implements StringRepresentable, CellSize {
         this.amount = amount;
     }
 
-    /** Wie viele verschiedene Arten hineinpassen. */
+    /** How many different types fit in. */
     @Override
     public int types() {
         return types;
     }
 
-    /** Wie viele Gegenstände insgesamt hineinpassen. */
+    /** How many items fit in total. */
     @Override
     public long amount() {
         return amount;

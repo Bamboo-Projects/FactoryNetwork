@@ -6,13 +6,13 @@ import dev.devpanda.factorynetwork.lang.ast.Expr;
 import java.util.Map;
 
 /**
- * Was ein Worker bewegt: Gegenstände, Flüssigkeiten oder Chemikalien.
+ * What a worker moves: items, fluids, or chemicals.
  *
- * <p>Ein Worker trägt seine Art nicht als eigene Angabe, sondern am
- * Auswahlausdruck seines Filters — {@code filter item:iron_ore} gegen
- * {@code filter fluid:water}. Das steht hier und nicht in der Laufzeit,
- * weil die Prüfung im Editor dieselbe Regel braucht und kein Minecraft
- * mitziehen soll.
+ * <p>A worker does not carry its kind as a separate entry, but on the selector
+ * expression of its filter — {@code filter item:iron_ore} versus
+ * {@code filter fluid:water}. This lives here and not in the runtime, because
+ * the check in the editor needs the same rule and should not have to drag
+ * Minecraft along.
  */
 public final class WorkerKind {
 
@@ -20,23 +20,21 @@ public final class WorkerKind {
     }
 
     /**
-     * Die Art dieses Workers, oder {@code null}.
+     * The kind of this worker, or {@code null}.
      *
-     * <p>{@code null} heißt „unbekannt" und nicht „Gegenstände": Ohne Filter
-     * lässt sich nichts sagen, und eine geratene Art führt zu einer Warnung,
-     * die falsch ist.
+     * <p>{@code null} means "unknown" and not "items": without a filter nothing
+     * can be said, and a guessed kind leads to a warning that is wrong.
      */
     public static Expr.Selector.Kind of(Decl.Worker worker) {
         return of(worker, Map.of());
     }
 
     /**
-     * Dieselbe Frage, wenn das Projekt Filter-Vorlagen kennt.
+     * The same question, when the project knows filter templates.
      *
-     * <p><b>Ohne die Vorlagen bliebe ein {@code filter kuehlmittel}
-     * unbestimmt</b>, und ein Worker für Flüssigkeiten liefe in den
-     * Gegenstandspfad: Dort träfe seine Auswahl nichts, und er stünde für
-     * immer auf IDLE.
+     * <p><b>Without the templates a {@code filter kuehlmittel} would stay
+     * undetermined</b>, and a worker for fluids would run into the item path:
+     * there its selector would match nothing, and it would sit on IDLE forever.
      */
     public static Expr.Selector.Kind of(Decl.Worker worker,
             Map<String, Decl.FilterTemplate> templates) {
@@ -49,8 +47,8 @@ public final class WorkerKind {
             return template == null ? null : switch (FilterKind.of(template)) {
                 case ITEM -> Expr.Selector.Kind.ITEM;
                 case FLUID -> Expr.Selector.Kind.FLUID;
-                // Gemischt und leer sind Fehler, die FilterCheck meldet. Hier
-                // heißt beides „unbekannt" — geraten wird nicht.
+                // Mixed and empty are errors that FilterCheck reports. Here
+                // both mean "unknown" — nothing is guessed.
                 case MIXED, EMPTY -> null;
             };
         }
@@ -58,22 +56,21 @@ public final class WorkerKind {
     }
 
     /**
-     * Die Ressource hinter einer Schreibweise.
+     * The resource behind a spelling.
      *
-     * <p>Ein Flüssigkeits-Tag bewegt Flüssigkeiten. Die Art eines Workers
-     * fragt nach dem, was er bewegt, nicht danach, wie es geschrieben steht —
-     * sonst müsste jede Stelle, die den Ausführungspfad wählt, beide Formen
-     * kennen.
+     * <p>A fluid tag moves fluids. A worker's kind asks about what it moves,
+     * not about how it is written — otherwise every place that picks the
+     * execution path would have to know both forms.
      */
     public static Expr.Selector.Kind resource(Expr.Selector.Kind written) {
         return written == Expr.Selector.Kind.FLUIDTAG ? Expr.Selector.Kind.FLUID : written;
     }
 
     /**
-     * Die Art eines Auswahlausdrucks, durch Menge und Ausnahme hindurch.
+     * The kind of a selector expression, through amount and exception.
      *
-     * <p>{@code 64 item:iron_ore} und {@code tag:c/ores except item:x} tragen
-     * ihre Art nicht an der Wurzel.
+     * <p>{@code 64 item:iron_ore} and {@code tag:c/ores except item:x} do not
+     * carry their kind at the root.
      */
     public static Expr.Selector.Kind selectorKind(Expr expr) {
         Expr.Selector selector = selectorOf(expr);
@@ -81,11 +78,11 @@ public final class WorkerKind {
     }
 
     /**
-     * Der Auswahlausdruck selbst, durch Menge und Ausnahme hindurch.
+     * The selector expression itself, through amount and exception.
      *
-     * <p>Gebraucht, seit es fremde Arten gibt: Ihre Schreibweise ist
-     * {@code CUSTOM}, und welche Art gemeint ist, steht im Präfix. Wer nur
-     * die Aufzählung hat, kann sie nicht mehr auseinanderhalten.
+     * <p>Needed since foreign kinds exist: their spelling is {@code CUSTOM},
+     * and which kind is meant is in the prefix. Anyone who has only the enum
+     * can no longer tell them apart.
      */
     public static Expr.Selector selectorOf(Expr expr) {
         return switch (expr) {

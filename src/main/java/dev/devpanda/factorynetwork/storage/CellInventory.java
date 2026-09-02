@@ -9,19 +9,19 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Eine Zelle als Speicher, mit ihren beiden Grenzen.
+ * A cell as storage, with its two limits.
  *
- * <p>Das Einlagern kennt zwei Fälle, und der Unterschied entscheidet über das
- * Spielgefühl: Eine <b>neue Art</b> braucht einen freien Artenplatz, eine
- * <b>schon vorhandene</b> nur noch Menge. Deshalb nimmt eine volle Zelle
- * weiterhin an, was schon darin liegt — sonst müsste man beim Aufräumen jede
- * Zelle einzeln im Blick behalten.
+ * <p>Inserting knows two cases, and the difference decides how the game
+ * feels: a <b>new type</b> needs a free type slot, an <b>already present</b>
+ * one only more amount. That is why a full cell still accepts what already
+ * sits inside it — otherwise you would have to keep an eye on every cell
+ * individually when tidying up.
  *
- * <p>Der Typ steht offen, weil Flüssigkeiten dieselbe Rechnung brauchen. Was
- * sich unterscheidet, ist nur die Registry im {@link CellFormat} und die
- * Größe — nicht eine einzige Zeile dieser Rechnung.
+ * <p>The type is left open because fluids need the same accounting. All that
+ * differs is the registry in {@link CellFormat} and the size — not a single
+ * line of this accounting.
  *
- * @param <T> Gegenstand oder Flüssigkeit
+ * @param <T> item or fluid
  */
 public final class CellInventory<T> implements CellView {
 
@@ -31,12 +31,11 @@ public final class CellInventory<T> implements CellView {
     private final Map<T, Long> contents;
 
     /**
-     * Woher die Registrierungen kommen.
+     * Where the registries come from.
      *
-     * <p><b>Gemerkt und nicht bei jedem Zugriff neu gefragt.</b> Was ein
-     * Gegenstand über seine Kennung hinaus trägt, lässt sich ohne sie weder
-     * lesen noch schreiben — und eine Zelle wird zwischen Öffnen und
-     * Zurückschreiben mehrmals angefasst.
+     * <p><b>Kept, not queried afresh on every access.</b> What an item
+     * carries beyond its id can be neither read nor written without them —
+     * and a cell is touched several times between opening and writing back.
      */
     private final HolderLookup.Provider registries;
 
@@ -50,11 +49,11 @@ public final class CellInventory<T> implements CellView {
     }
 
     /**
-     * Eine Zelle beliebiger Art.
+     * A cell of any kind.
      *
-     * <p>Offen, weil es eine dritte Art gibt, die dieser Kern nicht kennen
-     * darf: Chemikalien gehören Mekanism. Wer sie öffnet, bringt Größe und
-     * Format selbst mit — die Rechnung mit Sorten und Mengen bleibt dieselbe.
+     * <p>Open because there is a third kind this core must not know about:
+     * chemicals belong to Mekanism. Whoever opens them brings size and format
+     * along themselves — the accounting with types and amounts stays the same.
      */
     public static <T> CellInventory<T> of(ItemStack cell, CellSize size,
                                           CellFormat<T> format,
@@ -62,21 +61,21 @@ public final class CellInventory<T> implements CellView {
         return new CellInventory<>(cell, size, format, registries);
     }
 
-    /** Eine Gegenstandszelle. Ungültig, wenn dort keine steckt. */
+    /** An item cell. Invalid if none is inserted there. */
     public static CellInventory<ItemKey> ofItems(ItemStack cell,
                                                  HolderLookup.Provider registries) {
         return new CellInventory<>(cell, StorageCellItem.tierOf(cell), CellFormat.ITEMS,
                 registries);
     }
 
-    /** Eine Flüssigkeitszelle. Ungültig, wenn dort keine steckt. */
+    /** A fluid cell. Invalid if none is inserted there. */
     public static CellInventory<net.minecraft.world.level.material.Fluid> ofFluids(
             ItemStack cell, HolderLookup.Provider registries) {
         return new CellInventory<>(cell, FluidCellItem.tierOf(cell), CellFormat.FLUIDS,
                 registries);
     }
 
-    /** Der Gegenstand, zu dem diese Sicht gehört. */
+    /** The item this view belongs to. */
     @Override
     public ItemStack stack() {
         return cell;
@@ -92,12 +91,12 @@ public final class CellInventory<T> implements CellView {
     }
 
     /**
-     * Derselbe Bestand ohne Kopie.
+     * The same contents without a copy.
      *
-     * <p>Für den Netzindex, der über alle Zellen läuft: Bei zehn Laufwerken
-     * mit je zehn Zellen ist eine Kopie je Zelle hundert Kopien für eine
-     * Frage. Wer die Sicht behält, während sich die Zelle ändert, sieht die
-     * Änderung — das ist hier gewollt und der Grund, warum es beide gibt.
+     * <p>For the network index that runs over all cells: with ten drives of
+     * ten cells each, one copy per cell is a hundred copies for one query.
+     * Whoever keeps the view while the cell changes sees the change — that is
+     * intended here and the reason both exist.
      */
     public Map<T, Long> contentsView() {
         return Collections.unmodifiableMap(contents);
@@ -115,7 +114,7 @@ public final class CellInventory<T> implements CellView {
         return CellFormat.total(contents);
     }
 
-    /** Wie viel von dieser Art noch hineinginge. */
+    /** How much of this type would still fit in. */
     public long room(T key) {
         if (!isValid()) {
             return 0;
@@ -127,7 +126,7 @@ public final class CellInventory<T> implements CellView {
         return Math.max(0, size.amount() - usedAmount());
     }
 
-    /** Legt ab und liefert, wie viel wirklich hineinging. */
+    /** Stores and returns how much actually went in. */
     public long insert(T key, long count) {
         long room = Math.min(count, room(key));
         if (room <= 0) {
@@ -137,7 +136,7 @@ public final class CellInventory<T> implements CellView {
         return room;
     }
 
-    /** Nimmt heraus und liefert, wie viel es wurde. */
+    /** Takes out and returns how much it was. */
     public long extract(T key, long count) {
         Long available = contents.get(key);
         if (available == null || count <= 0) {
@@ -152,7 +151,7 @@ public final class CellInventory<T> implements CellView {
         return taken;
     }
 
-    /** Wie viele Artenplätze noch frei sind. */
+    /** How many type slots are still free. */
     public int freeTypes() {
         return isValid() ? Math.max(0, size.types() - contents.size()) : 0;
     }
@@ -161,7 +160,7 @@ public final class CellInventory<T> implements CellView {
         contents.clear();
     }
 
-    /** Schreibt zurück in den Gegenstand. Ohne das war alles nur gedacht. */
+    /** Writes back into the item. Without this, everything was only in memory. */
     public void flush() {
         format.write(cell, contents, registries);
     }

@@ -10,14 +10,13 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Prüft, ob eine Filter-Vorlage etwas auswählen kann.
+ * Checks whether a filter template can select anything.
  *
- * <p><b>Fehler und keine Warnungen</b>, anders als bei {@link EventCheck} und
- * {@link NetworkCheck}. Deren Begründung — ein Programm, das erst mit der
- * nächsten Datei vollständig wird, soll sich heute schon übernehmen lassen —
- * trägt hier nicht: Eine gemischte oder leere Vorlage wird durch keine
- * weitere Datei richtig. Sie ist an Ort und Stelle falsch, und was sie
- * auswählte, könnte niemand sagen.
+ * <p><b>Errors and not warnings</b>, unlike with {@link EventCheck} and
+ * {@link NetworkCheck}. Their rationale — a program that only becomes complete
+ * with the next file should already be adoptable today — does not carry here: a
+ * mixed or empty template is not made right by any further file. It is wrong on
+ * the spot, and what it selected nobody could say.
  */
 public final class FilterCheck {
 
@@ -25,12 +24,12 @@ public final class FilterCheck {
     }
 
     /**
-     * Die Namen, die im Projekt schon etwas anderes tragen — Name auf Art.
+     * The names that already carry something else in the project — name to kind.
      *
-     * <p>Nur, was an denselben Stellen steht wie eine Vorlage: Worker,
-     * Gruppen, Multiblocks, Funktionen und globale Werte stehen alle in
-     * Ausdrücken. Eine Anzeige oder ein Ereignis nicht — die dürfen so heißen
-     * wie eine Vorlage, ohne dass irgendwo unklar würde, was gemeint ist.
+     * <p>Only what stands in the same places as a template: workers, groups,
+     * multiblocks, functions, and global values all stand in expressions. A
+     * display or an event does not — those may be called the same as a template
+     * without it becoming unclear anywhere what is meant.
      */
     public static Map<String, String> declaredNames(Program program) {
         Map<String, String> found = new LinkedHashMap<>();
@@ -52,8 +51,8 @@ public final class FilterCheck {
     }
 
     /**
-     * @param program das übersetzte Programm einer Datei
-     * @param taken   was im ganzen Projekt schon einen Namen trägt, aus
+     * @param program the compiled program of a file
+     * @param taken   what already carries a name in the whole project, from
      *                {@link #declaredNames}
      */
     public static List<Diagnostic> run(Program program, Map<String, String> taken) {
@@ -100,9 +99,9 @@ public final class FilterCheck {
             }
             for (Expr.Selector selector : selectors) {
                 switch (selector.kind()) {
-                    // Mit Mekanism ist eine Chemikalie eine Auswahl wie jede
-                    // andere. Ohne bleibt es ein Fehler, und die Meldung zeigt
-                    // auf die Modliste statt auf diese Mod.
+                    // With Mekanism a chemical is a selector like any other.
+                    // Without, it stays an error, and the message points at the
+                    // mod list instead of at this mod.
                     case CHEMICAL -> {
                         if (!dev.devpanda.factorynetwork.compat.mekanism.FnMekanism
                                 .installed()) {
@@ -126,11 +125,11 @@ public final class FilterCheck {
     }
 
     /**
-     * Eine Zeile, die keine Auswahl ist.
+     * A line that is not a selector.
      *
-     * <p>Fast immer ein Name — der Versuch, eine Vorlage in eine andere zu
-     * legen. Das sagt die Meldung auch, statt „hier fehlt eine Auswahl": Wer
-     * es versucht, hat eine Absicht, und die verdient eine Antwort.
+     * <p>Almost always a name — the attempt to put one template inside another.
+     * The message says that too, instead of "a selector is missing here":
+     * whoever tries it has an intent, and that deserves an answer.
      */
     private static Diagnostic noSelection(Expr entry) {
         if (entry instanceof Expr.Name name) {

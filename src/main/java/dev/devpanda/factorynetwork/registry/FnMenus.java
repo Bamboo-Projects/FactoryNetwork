@@ -28,18 +28,18 @@ public final class FnMenus {
             MENUS.register("router", () -> IMenuTypeExtension.create(
                     dev.devpanda.factorynetwork.client.menu.RouterMenu::new));
 
-    /** Ein Fenster für Laufwerk und Serverschrank — beide sind ein Regal. */
+    /** A window for drive and rack — both are a shelf. */
     public static final DeferredHolder<MenuType<?>, MenuType<
             dev.devpanda.factorynetwork.client.menu.ShelfMenu>> SHELF =
             MENUS.register("shelf", () -> IMenuTypeExtension.create(
                     dev.devpanda.factorynetwork.client.menu.ShelfMenu::new));
 
     /**
-     * Ein Fenster für Connector und Anzeige: beide bekommen einen Namen.
+     * A window for connector and display: both get a name.
      *
-     * <p>Bisher ging das nur mit der Beschriftungspistole. Ohne gebaute
-     * Pistole ließ sich kein Gerät ansprechen — und der Rechtsklick sagte
-     * einem nur den Namen, den man ohnehin sah.
+     * <p>Until now this only worked with the label gun. Without a built gun no
+     * device could be addressed — and the right-click only told you the name
+     * you saw anyway.
      */
     public static final DeferredHolder<MenuType<?>, MenuType<
             dev.devpanda.factorynetwork.client.menu.NameMenu>> NAME =

@@ -1,26 +1,26 @@
 package dev.devpanda.factorynetwork.util;
 
 /**
- * Abstand zwischen zwei Namen, für Vorschläge wie „meintest du
+ * Distance between two names, for suggestions like "did you mean
  * {@code crusher_1}?".
  *
- * <p>Steht bewusst ohne jeden Minecraft-Bezug hier: So lässt sie sich in
- * gewöhnlichen Tests prüfen, ohne einen Server zu starten. Der erste Fehler
- * darin fiel erst in einem GameTest auf, der eine Minute braucht — dieselbe
- * Prüfung dauert hier Millisekunden.
+ * <p>Deliberately sits here without any tie to Minecraft: this way it can be
+ * tested in ordinary tests without starting a server. The first bug in it only
+ * showed up in a GameTest that takes a minute — the same check takes
+ * milliseconds here.
  */
 public final class NameDistance {
 
     /**
-     * Wie viele einzelne Änderungen von {@code a} nach {@code b} führen —
-     * einfügen, löschen, ersetzen und <b>vertauschen</b>.
+     * How many single edits lead from {@code a} to {@code b} —
+     * insert, delete, replace and <b>transpose</b>.
      *
-     * <p>Das Vertauschen zweier Nachbarn kostet einen Schritt und nicht zwei.
-     * Das ist der Unterschied zwischen Levenshtein und Damerau, und er
-     * entscheidet in der Praxis fast alles: Ein Dreher ist der häufigste
-     * Vertipper überhaupt. Ohne ihn bekam {@code halel} keinen Vorschlag auf
-     * {@code halle}, weil zwei Schritte über der Schwelle lagen — und genau
-     * dann hätte man ihn gebraucht.
+     * <p>Transposing two neighbours costs one step and not two. That is the
+     * difference between Levenshtein and Damerau, and in practice it decides
+     * almost everything: a transposition is the most common typo there is.
+     * Without it {@code halel} got no suggestion of {@code halle}, because two
+     * steps lay above the threshold — and that is exactly when it would have
+     * been needed.
      */
     public static int between(String a, String b) {
         int width = b.length() + 1;
@@ -36,10 +36,10 @@ public final class NameDistance {
                 int cost = a.charAt(i - 1) == b.charAt(j - 1) ? 0 : 1;
                 int value = Math.min(
                         Math.min(current[j - 1] + 1, previous[j] + 1),
-                        // Die Diagonale, nicht die Zelle darüber. Genau hier
-                        // steckte der Fehler, der jeden Abstand überschätzte.
+                        // The diagonal, not the cell above. Right here was the
+                        // bug that overestimated every distance.
                         previous[j - 1] + cost);
-                // Zwei Nachbarn vertauscht: ein Schritt, nicht zwei.
+                // Two neighbours transposed: one step, not two.
                 if (i > 1 && j > 1
                         && a.charAt(i - 1) == b.charAt(j - 2)
                         && a.charAt(i - 2) == b.charAt(j - 1)) {
@@ -56,10 +56,10 @@ public final class NameDistance {
     }
 
     /**
-     * Ab welchem Abstand ein Vorschlag mehr verwirrt als hilft.
+     * At what distance a suggestion confuses more than it helps.
      *
-     * <p>Ein Drittel der Länge, mindestens aber eins: Bei kurzen Namen soll
-     * ein Buchstabe reichen, bei langen darf mehr danebengehen.
+     * <p>A third of the length, but at least one: for short names a single
+     * letter should be enough, for long ones more may be off.
      */
     public static boolean isCloseEnough(String wanted, int distance) {
         return distance <= Math.max(1, wanted.length() / 3);

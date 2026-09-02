@@ -1,21 +1,20 @@
 package dev.devpanda.factorynetwork.storage;
 
 /**
- * Die beiden Grenzen einer Zelle.
+ * The two limits of a cell.
  *
- * <p>Gegenstände und Flüssigkeiten haben verschiedene Größen, aber dieselbe
- * Rechnung: so viele Arten, so viel Menge. Die Grenze ist immer die Art —
- * wer alles in eine Zelle wirft, hat sie voll, lange bevor die Menge erreicht
- * ist.
+ * <p>Items and fluids have different sizes but the same accounting: so many
+ * types, so much amount. The limit is always the type — whoever throws
+ * everything into one cell has it full long before the amount is reached.
  */
 public interface CellSize {
 
-    /** Wie viele verschiedene Arten hineinpassen. */
+    /** How many different types fit in. */
     int types();
 
-    /** Wie viel insgesamt hineinpasst — Gegenstände oder Millibucket. */
+    /** How much fits in total — items or millibuckets. */
     long amount();
 
-    /** Was auf der Zelle steht. */
+    /** What is written on the cell. */
     String label();
 }

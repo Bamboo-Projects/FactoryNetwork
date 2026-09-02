@@ -6,25 +6,24 @@ import dev.devpanda.factorynetwork.lang.ast.Program;
 import dev.devpanda.factorynetwork.lang.ast.Stmt;
 
 /**
- * Wie groß ein Programm ist, gemessen in Anweisungen.
+ * How large a program is, measured in statements.
  *
- * <p>Der Datenträger im Serverschrank begrenzt diese Zahl. <b>Gezählt werden
- * Anweisungen und nicht Zeichen</b>: Kommentare, Einrückung und lange Namen
- * kosten nichts. Eine Sprache, in der Erklären teuer ist, wird nicht
- * erklärt — und ein Programm, das an der Grenze steht, soll man kommentieren
- * dürfen, nicht kürzen müssen.
+ * <p>The storage medium in the server rack limits this number. <b>Statements
+ * are counted, not characters</b>: comments, indentation, and long names cost
+ * nothing. A language in which explaining is expensive does not get explained —
+ * and a program that sits at the limit should be one you are allowed to
+ * comment, not forced to shorten.
  *
- * <p>Eine Deklaration zählt selbst mit: Ein leerer Worker ist nicht nichts,
- * er läuft. Und ein verschachtelter Block zählt seine Anweisungen dazu, denn
- * eine Schleife mit zehn Zeilen ist zehnmal so viel Programm wie eine mit
- * einer.
+ * <p>A declaration counts itself: an empty worker is not nothing, it runs. And
+ * a nested block adds its statements, because a loop with ten lines is ten
+ * times as much program as one with a single line.
  */
 public final class ProgramSize {
 
     private ProgramSize() {
     }
 
-    /** Wie viele Anweisungen das Programm hat. */
+    /** How many statements the program has. */
     public static int of(Program program) {
         int total = 0;
         for (Decl declaration : program.declarations()) {
@@ -34,7 +33,7 @@ public final class ProgramSize {
     }
 
     private static int of(Decl declaration) {
-        // Jede Deklaration zählt selbst, dazu ihr Inhalt.
+        // Each declaration counts itself, plus its content.
         return 1 + switch (declaration) {
             case Decl.Fn fn -> of(fn.body());
             case Decl.On on -> of(on.body());
@@ -49,24 +48,24 @@ public final class ProgramSize {
                 yield inner;
             }
             case Decl.Event event -> event.parameters().size();
-            // Ein Rezept kostet seine Zeilen: je Zutat und je Ergebnis eine.
+            // A recipe costs its lines: one per ingredient and one per result.
             case Decl.Recipe recipe -> recipe.inputs().size() + recipe.outputs().size();
-            // Ein Speicher kostet seine Angaben. Die Eins davor zählt ihn
-            // selbst; ein store ohne Klammerinhalt ist damit nicht gratis,
-            // denn er kostet das Netz je Tick eine Inventarlesung.
+            // A store costs its entries. The one in front counts it itself; a
+            // store with no braces content is thus not free, because it costs
+            // the network one inventory read per tick.
             case Decl.Store store -> (store.filter() == null ? 0 : 1)
                     + (store.priority() == 0 ? 0 : 1);
-            // Wie bei einer Gruppe: je Zeile eine. Eine Vorlage über zwanzig
-            // Selektoren ist nichts, was der Server nebenbei mitträgt.
+            // As with a group: one per line. A template of twenty selectors is
+            // not something the server carries along on the side.
             case Decl.FilterTemplate template ->
                     template.includes().size() + template.excludes().size();
-            // Ein globaler Wert kostet seine eine Zeile und nichts weiter:
-            // Sein Anfangswert ist ein Literal, keine Anweisung. Null wäre
-            // trotzdem falsch — die Eins davor zählt ihn, und damit sind
-            // tausend globale Werte nicht gratis.
+            // A global value costs its one line and nothing more: its initial
+            // value is a literal, not a statement. Zero would still be wrong —
+            // the one in front counts it, and so a thousand global values are
+            // not free.
             case Decl.Global ignored -> 0;
-            // Ein Festwert kostet seine Zeile wie ein globaler Wert. Die Eins
-            // davor zählt ihn; tausend Festwerte sind nicht gratis.
+            // A constant costs its line like a global value. The one in front
+            // counts it; a thousand constants are not free.
             case Decl.Const ignored -> 0;
             case Decl.Invalid ignored -> 0;
         };

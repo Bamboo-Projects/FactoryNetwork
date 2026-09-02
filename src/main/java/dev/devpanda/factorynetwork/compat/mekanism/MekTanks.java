@@ -13,18 +13,17 @@ import net.neoforged.neoforge.capabilities.BlockCapability;
 import java.util.Collection;
 
 /**
- * Der Griff an einen Chemikalienbehälter in der Welt.
+ * The grip on a chemical container in the world.
  *
- * <p><b>Die Capability wird selbst gebaut, nicht importiert.</b> Mekanism
- * hält sie in {@code mekanism.common.capabilities.Capabilities} — also im
- * Bauch der Mod und nicht in ihrem API-Jar. Gegen {@code common} zu
- * übersetzen wäre eine Abhängigkeit auf Innenleben, das keine Zusage trägt.
+ * <p><b>The capability is built ourselves, not imported.</b> Mekanism keeps it
+ * in {@code mekanism.common.capabilities.Capabilities} — that is, in the belly
+ * of the mod and not in its API jar. Compiling against {@code common} would be
+ * a dependency on internals that carry no guarantee.
  *
- * <p>NeoForge gibt für denselben Namen und denselben Typ dieselbe Instanz
- * zurück; der Name steht in Mekanisms Bytecode als
- * {@code mekanism:chemical_handler}, und das ist der Vertrag, an dem sich
- * jede Fremdmod festhält. Ändert er sich, findet diese Klasse keine Behälter
- * mehr — und das ist ein Ausfall, kein Absturz.
+ * <p>NeoForge returns the same instance for the same name and the same type;
+ * the name appears in Mekanism's bytecode as {@code mekanism:chemical_handler},
+ * and that is the contract every third-party mod holds onto. If it changes,
+ * this class finds no more containers — and that is an outage, not a crash.
  */
 final class MekTanks {
 
@@ -37,23 +36,22 @@ final class MekTanks {
     }
 
     /**
-     * Der Behälter an der Seite, an der der Connector hängt.
+     * The container on the side the connector is attached to.
      *
-     * <p><b>Seitenbezogen, wie bei Gegenständen und Flüssigkeiten.</b> Eine
-     * Mekanism-Maschine hat eine Seitenkonfiguration, und sie gehört dem
-     * Spieler: Wer eine Seite auf „nichts" stellt, will dort nichts.
+     * <p><b>Side-specific, as with items and fluids.</b> A Mekanism machine
+     * has a side configuration, and it belongs to the player: whoever sets a
+     * side to "nothing" wants nothing there.
      *
-     * <p>Ein Rückfall auf den ungeteilten Zugriff stand hier kurz und ist
-     * wieder weg. Nachgemessen: Der ungeteilte Handler eines Chemikalientanks
-     * lässt sich <b>lesen</b>, nimmt aber nichts an — er ist kein
-     * Hintereingang, sondern eine Auskunft. Ein Rückfall darauf hätte nur
-     * verschleiert, dass die Seite nicht eingerichtet ist.
+     * <p>A fallback to the unsided access stood here briefly and is gone
+     * again. Measured: the unsided handler of a chemical tank can be
+     * <b>read</b>, but accepts nothing — it is not a back door but a readout.
+     * A fallback to it would only have masked that the side is not configured.
      */
     static IChemicalHandler at(Level level, BlockPos pos, Direction side) {
         return level.isLoaded(pos) ? level.getCapability(CHEMICAL, pos, side) : null;
     }
 
-    /** Wie viel von diesen Sorten dort liegt. */
+    /** How much of these chemicals is there. */
     static long amountIn(IChemicalHandler handler, Collection<String> ids) {
         long total = 0;
         for (int tank = 0; tank < handler.getChemicalTanks(); tank++) {
@@ -66,13 +64,13 @@ final class MekTanks {
     }
 
     /**
-     * Was oben liegt, ohne es herauszunehmen.
+     * What is on top, without taking it out.
      *
-     * <p>Der Blick, den es braucht, um <b>vorher</b> zu fragen: Erst wenn die
-     * Sorte bekannt ist, lässt sich der Speicher nach Platz fragen — und erst
-     * dann darf gezogen werden.
+     * <p>The look needed to ask <b>beforehand</b>: only once the chemical is
+     * known can the store be asked for room — and only then may anything be
+     * pulled.
      *
-     * @return der Stapel im ersten passenden Behälter, oder leer
+     * @return the stack in the first matching tank, or empty
      */
     static ChemicalStack peek(IChemicalHandler handler, Collection<String> ids) {
         for (int tank = 0; tank < handler.getChemicalTanks(); tank++) {
@@ -85,12 +83,11 @@ final class MekTanks {
     }
 
     /**
-     * Zieht heraus und meldet, was kam — als Kennung und Menge.
+     * Pulls out and reports what came — as identifier and amount.
      *
-     * <p>Höchstens eine Sorte je Zug: Wer zwei Gase in einem Behälter hat,
-     * bekommt sie nacheinander. Das ist dieselbe Zurückhaltung wie bei
-     * Flüssigkeiten, und aus demselben Grund — der Aufrufer soll wissen, was
-     * er in der Hand hält.
+     * <p>At most one chemical per pass: whoever has two gases in one container
+     * gets them one after another. This is the same restraint as with fluids,
+     * and for the same reason — the caller should know what it is holding.
      */
     static ChemicalStack drain(IChemicalHandler handler, Collection<String> ids, long limit) {
         for (int tank = 0; tank < handler.getChemicalTanks(); tank++) {
@@ -107,7 +104,7 @@ final class MekTanks {
         return ChemicalStack.EMPTY;
     }
 
-    /** Füllt ein und meldet, wie viel hineinging. */
+    /** Fills in and reports how much went in. */
     static long fill(IChemicalHandler handler, String id, long amount, boolean simulate) {
         Chemical chemical = MekCells.chemical(id);
         if (chemical == null || amount <= 0) {
@@ -119,14 +116,14 @@ final class MekTanks {
         return amount - rest.getAmount();
     }
 
-    /** Die Kennung dessen, was in einem Stapel steckt. */
+    /** The identifier of what is in a stack. */
     static String idOf(ChemicalStack stack) {
         return MekCells.idOf(stack.getChemical());
     }
 
     private static boolean matches(ChemicalStack stack, Collection<String> ids) {
-        // Eine leere Auswahl heißt „alles" — dieselbe Regel wie beim Filter
-        // eines Workers.
+        // An empty selection means "everything" — the same rule as with a
+        // worker's filter.
         return ids.isEmpty() || ids.contains(MekCells.idOf(stack.getChemical()));
     }
 }

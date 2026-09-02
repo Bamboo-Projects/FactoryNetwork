@@ -3,16 +3,16 @@ package dev.devpanda.factorynetwork.lang;
 import dev.devpanda.factorynetwork.lang.ast.Expr;
 
 /**
- * Auswahlausdrücke in ihrer geschriebenen Form.
+ * Selector expressions in their written form.
  *
- * <p>Zwei Fragen, die an mehreren Stellen gebraucht werden: <b>Welcher
- * Selektor steht an dieser Stelle einer Zeile</b> — für den Editor, der zeigen
- * soll, worauf sich ein Muster auflöst — und <b>was bedeutet dieser Text</b>,
- * wenn er nicht mehr als Programmtext, sondern als Wert daherkommt.
+ * <p>Two questions that are needed in several places: <b>which selector stands
+ * at this position in a line</b> — for the editor, which should show what a
+ * pattern resolves to — and <b>what does this text mean</b>, when it comes not
+ * as program text but as a value.
  *
- * <p>Die zweite hatte die Laufzeit schon für sich; hier steht sie einmal, weil
- * der Editor sie ebenfalls braucht. Zwei Fassungen liefen auseinander, und die
- * eine bekäme irgendwann eine Verbesserung, die der anderen fehlt.
+ * <p>The runtime already had the second one to itself; here it stands once,
+ * because the editor needs it too. Two versions drifted apart, and one of them
+ * would eventually get an improvement the other lacks.
  */
 public final class Selectors {
 
@@ -20,24 +20,24 @@ public final class Selectors {
     }
 
     /**
-     * Der Selektor an dieser Stelle der Zeile, oder ein leerer Text.
+     * The selector at this position in the line, or an empty text.
      *
-     * <p>Ein Selektor ist mehr als ein Wort: {@code item:*_ore} trägt einen
-     * Doppelpunkt, einen Stern und einen Unterstrich, und {@code tag:c/ores}
-     * dazu einen Schrägstrich. {@code wordAt} im Editor hört an jedem davon
-     * auf — deshalb diese eigene Fassung.
+     * <p>A selector is more than a word: {@code item:*_ore} carries a colon, a
+     * star, and an underscore, and {@code tag:c/ores} a slash on top. The
+     * editor's {@code wordAt} stops at each of those — hence this dedicated
+     * version.
      *
-     * <p>Ohne Doppelpunkt gibt es nichts zurück: Ein Name ist kein Selektor,
-     * und die beiden ohne Sorte ({@code power}, {@code all}) lösen sich auf
-     * nichts auf, was man zeigen könnte.
+     * <p>Without a colon it returns nothing: a name is not a selector, and the
+     * two without a sort ({@code power}, {@code all}) resolve to nothing that
+     * could be shown.
      */
     public static String at(String line, int column) {
         if (line == null || column < 0 || column > line.length()) {
             return "";
         }
-        // Kein Zurückgehen wie bei einem Klick: Der Zeiger schwebt, und wer
-        // rechts neben einer kurzen Zeile steht, meint nichts. Ein Tooltip,
-        // der dort noch etwas zeigt, folgt der Maus statt dem Blick.
+        // No stepping back as with a click: the cursor hovers, and whoever is
+        // to the right of a short line means nothing. A tooltip that still
+        // shows something there follows the mouse instead of the gaze.
         int cursor = column;
         if (cursor >= line.length() || !isSelectorChar(line.charAt(cursor))) {
             return "";
@@ -60,12 +60,11 @@ public final class Selectors {
     }
 
     /**
-     * Baut aus der geschriebenen Form wieder einen Auswahlausdruck, oder
-     * {@code null}.
+     * Rebuilds a selector expression from the written form, or {@code null}.
      *
-     * <p><b>Ohne Meldung.</b> Wer eine braucht, formuliert sie selbst — die
-     * Laufzeit tut es, weil dort ein Programm läuft; der Editor nicht, weil
-     * dort der Zeiger nur zufällig über einem Wort steht.
+     * <p><b>Without a message.</b> Whoever needs one formulates it themselves —
+     * the runtime does, because a program runs there; the editor does not,
+     * because there the cursor only happens to stand over a word by chance.
      */
     public static Expr.Selector parse(String written) {
         if (written == null) {
@@ -85,9 +84,9 @@ public final class Selectors {
         int slash = rest.indexOf('/');
         String namespace = null;
         String path = rest;
-        // Bei einem Tag trennt der erste Schrägstrich immer den Namensraum ab;
-        // bei einem Gegenstand nur dann, wenn davor kein Muster steht —
-        // „item:*_ore" sucht über alle Namensräume.
+        // For a tag the first slash always splits off the namespace; for an
+        // item only when no pattern stands before it — "item:*_ore" searches
+        // across all namespaces.
         if (slash >= 0 && (kind == Expr.Selector.Kind.TAG
                 || kind == Expr.Selector.Kind.FLUIDTAG || !rest.startsWith("*"))) {
             namespace = rest.substring(0, slash);

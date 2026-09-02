@@ -13,18 +13,18 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Der Chemikalienspeicher des Netzes.
+ * The network's chemical store.
  *
- * <p>Dieselbe Rechnung wie bei Gegenständen und Flüssigkeiten: Der Bestand
- * liegt in den Zellen, diese Klasse ist die Sicht des Netzes darauf, und ein
- * Index davor beantwortet die Fragen, die oft kommen. Neu gezählt wird nur,
- * wenn jemand anders etwas getan hat — das meldet der Zählstand des Laufwerks.
+ * <p>The same arithmetic as for items and fluids: the stock sits in the cells,
+ * this class is the network's view onto it, and an index in front of it
+ * answers the questions that come often. It is recounted only when someone
+ * else has done something — the drive's revision count reports that.
  *
- * <p><b>Nach außen in Texten.</b> Die Schnittstelle {@link ResourceStore}
- * spricht über {@code "mekanism:hydrogen"}, nicht über {@code Chemical}. Das
- * ist der Preis dafür, dass der Controller sie halten kann, ohne Mekanism zu
- * kennen — und er ist klein: Zwischen Kennung und Chemikalie liegt eine
- * Registry-Suche, und die geschieht einmal je Frage, nicht je Zelle.
+ * <p><b>Strings to the outside.</b> The {@link ResourceStore} interface talks
+ * in terms of {@code "mekanism:hydrogen"}, not {@code Chemical}. That is the
+ * price of the controller being able to hold it without knowing Mekanism — and
+ * it is small: between identifier and chemical lies one registry lookup, and
+ * that happens once per query, not per cell.
  */
 final class MekChemicalStore implements ResourceStore {
 
@@ -60,8 +60,9 @@ final class MekChemicalStore implements ResourceStore {
                     drive.getLevel() == null
                             ? net.minecraft.core.RegistryAccess.EMPTY
                             : drive.getLevel().registryAccess()))) {
-                // Die Fabrik oben baut nur Chemikalienzellen; was sie liefert,
-                // ist per Bau eine — der Kern kann das nur nicht ausdrücken.
+                // The factory above builds only chemical cells; what it
+                // returns is one by construction — the core just cannot
+                // express that.
                 all.add((CellInventory<Chemical>) view);
             }
         }
@@ -101,12 +102,12 @@ final class MekChemicalStore implements ResourceStore {
     }
 
     /**
-     * Die Chemikalie hinter einer Kennung, oder {@code null}.
+     * The chemical behind an identifier, or {@code null}.
      *
-     * <p>Der Schlüssel kommt als {@code Object} herein, weil die
-     * Schnittstelle drei Arten bedient. Etwas anderes als ein Text kann hier
-     * nicht ankommen — der Weg dorthin geht über {@code ResourceKind}, und
-     * das Wertemodell prüft die Form schon beim Anlegen.
+     * <p>The key comes in as an {@code Object}, because the interface serves
+     * three kinds. Nothing but a string can arrive here — the path here goes
+     * through {@code ResourceKind}, and the value model checks the form
+     * already at creation time.
      */
     private Chemical chemical(Object key) {
         return key instanceof String id ? MekCells.chemical(id) : null;
@@ -146,10 +147,10 @@ final class MekChemicalStore implements ResourceStore {
     }
 
     /**
-     * Legt ab und liefert, was nicht hineinpasste.
+     * Stores and returns what did not fit.
      *
-     * <p>Erst in Zellen, die diese Sorte schon führen — sonst zersplittert ein
-     * Bestand über alle Zellen und belegt überall einen Sortenplatz.
+     * <p>First into cells that already carry this chemical — otherwise a stock
+     * splinters across all cells and occupies a type slot everywhere.
      */
     @Override
     public long insert(Object key, long amount) {

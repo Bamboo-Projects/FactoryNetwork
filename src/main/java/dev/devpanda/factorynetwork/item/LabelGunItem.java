@@ -26,23 +26,22 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Vergibt Connectoren ihre Namen.
+ * Gives connectors their names.
  *
- * <p>Das Bedienmodell folgt SuperFactoryManager, das Datenmodell ist
- * umgedreht: <b>Dort trägt die Gun die Namen, hier trägt sie der Connector.</b>
- * Deshalb gibt es kein Übertragen zwischen Gun und Controller — die Welt ist
- * die Wahrheit, und was in der Gun steckt, ist eine Zwischenablage, keine
- * Datenbank.
+ * <p>The interaction model follows SuperFactoryManager, the data model is
+ * reversed: <b>there the gun carries the names, here the connector does.</b>
+ * That is why there is no transfer between gun and controller — the world is
+ * the truth, and what sits in the gun is a clipboard, not a database.
  *
- * <p>Bedienung:
+ * <p>Controls:
  * <ul>
- *   <li><b>Rechtsklick</b> auf einen Connector vergibt den bereitgelegten
- *       Namen. Ist keiner bereitgelegt, wird einer aus der Maschine dahinter
- *       vorgeschlagen und durchnummeriert.
- *   <li><b>Rechtsklick</b> auf einen Connector, der schon so heißt, nimmt den
- *       Namen wieder weg.
- *   <li><b>Schleichen + Rechtsklick</b> übernimmt den Namen des Connectors in
- *       die Zwischenablage.
+ *   <li><b>Right-click</b> on a connector assigns the prepared name. If none
+ *       is prepared, one is suggested from the machine behind it and
+ *       numbered.
+ *   <li><b>Right-click</b> on a connector that is already called that takes
+ *       the name away again.
+ *   <li><b>Sneak + right-click</b> picks up the connector's name into the
+ *       clipboard.
  * </ul>
  */
 public class LabelGunItem extends Item {
@@ -50,16 +49,16 @@ public class LabelGunItem extends Item {
     private static final String KEY_ACTIVE = "ActiveLabel";
     private static final String KEY_CONTROLLER = "Controller";
     private static final String KEY_RECENT = "Recent";
-    /** Mehr merkt sich die Zwischenablage nicht. */
+    /** The clipboard remembers no more than this. */
     private static final int MAX_RECENT = 16;
 
     public LabelGunItem(Properties properties) {
         super(properties);
     }
 
-    // ---- Zwischenablage ---------------------------------------------------
+    // ---- Clipboard --------------------------------------------------------
 
-    /** Der Name, der beim nächsten Klick vergeben wird. */
+    /** The name that will be assigned on the next click. */
     public static String activeLabel(ItemStack gun) {
         CustomData data = gun.get(DataComponents.CUSTOM_DATA);
         return data == null ? "" : data.copyTag().getString(KEY_ACTIVE);
@@ -81,13 +80,13 @@ public class LabelGunItem extends Item {
         });
     }
 
-    /** Die zuletzt benutzten Namen — zum Durchblättern. */
+    /** The most recently used names — for cycling through. */
     public static List<String> recentLabels(ItemStack gun) {
         CustomData data = gun.get(DataComponents.CUSTOM_DATA);
         return data == null ? List.of() : List.copyOf(readRecent(data.copyTag()));
     }
 
-    /** Blättert um {@code direction} weiter und liefert den neuen Namen. */
+    /** Steps on by {@code direction} and returns the new name. */
     public static String cycle(ItemStack gun, int direction) {
         List<String> recent = recentLabels(gun);
         if (recent.isEmpty()) {
@@ -116,14 +115,14 @@ public class LabelGunItem extends Item {
         tag.put(KEY_RECENT, list);
     }
 
-    // ---- Benutzen ---------------------------------------------------------
+    // ---- Using ------------------------------------------------------------
 
     /**
-     * Öffnet die Namenseingabe.
+     * Opens the name input.
      *
-     * <p>Greift nur, wenn gar kein Block anvisiert ist — in einem Gebäude
-     * also so gut wie nie. Deshalb öffnet auch der Klick auf einen Block, der
-     * weder Connector noch Controller ist, dasselbe Fenster; siehe
+     * <p>Only triggers when no block at all is targeted — so inside a
+     * building almost never. That is why clicking a block that is neither
+     * connector nor controller opens the same window too; see
      * {@link #useOn}.
      */
     @Override
@@ -147,7 +146,7 @@ public class LabelGunItem extends Item {
         BlockEntity entity = level.getBlockEntity(pos);
         ItemStack gun = context.getItemInHand();
 
-        // Rechtsklick auf den Controller verknüpft die Gun mit dem Netz.
+        // Right-click on the controller links the gun to the network.
         if (entity instanceof ControllerBlockEntity controller) {
             controller.rebuildNetwork();
             link(gun, pos);
@@ -159,17 +158,17 @@ public class LabelGunItem extends Item {
             return InteractionResult.CONSUME;
         }
 
-        // Ein Display bekommt seinen Namen von derselben Gun: Es ist
-        // dieselbe Handlung — einem Block im Netz sagen, wie er heißt.
+        // A display gets its name from the same gun: it is the same action —
+        // telling a block in the network what it is called.
         if (entity instanceof DisplayBlockEntity display) {
             String wanted = activeLabel(gun);
             if (wanted.isBlank()) {
                 return InteractionResult.PASS;
             }
-            // Auf alle Tafeln der Wand: Wer eine Wand beschriftet, hat die
-            // Wand beschriftet und nicht die eine Tafel, die er getroffen
-            // hat. Sonst müsste man wissen, welche davon die schreibende
-            // ist — und das sieht man ihr nicht an.
+            // Onto all panels of the wall: whoever labels a wall has
+            // labelled the wall and not the one panel they hit. Otherwise
+            // you would have to know which of them is the writing one — and
+            // you cannot tell that by looking at it.
             for (net.minecraft.core.BlockPos member : display.wall().members()) {
                 if (level.getBlockEntity(member) instanceof DisplayBlockEntity panel) {
                     panel.setDisplayName(wanted);
@@ -181,30 +180,30 @@ public class LabelGunItem extends Item {
             return InteractionResult.CONSUME;
         }
 
-        // Erst die getroffene Fläche, dann der Block: An einem Kabelblock
-        // sitzen bis zu sechs Anschlüsse, und der Klick sagt, welcher gemeint
-        // ist. Am eigenen Connectorblock trifft man oft eine andere Fläche
-        // als die, in die er sieht — dort gilt weiter „genau einer da".
+        // The hit face first, then the block: a cable block has up to six
+        // connectors sitting on it, and the click says which one is meant.
+        // On the dedicated connector block you often hit a face other than
+        // the one it faces — there "exactly one present" still applies.
         var connector = dev.devpanda.factorynetwork.block.entity.Connectors.at(
                 level, pos, context.getClickedFace());
         if (connector == null) {
             connector = dev.devpanda.factorynetwork.block.entity.Connectors.at(level, pos);
         }
         if (connector == null) {
-            // Auf eine Maschine neben einem Connector geklickt: Das ist der
-            // häufigste Irrtum, und stillschweigend nichts zu tun hilft nicht.
+            // Clicked on a machine next to a connector: that is the most
+            // common mistake, and silently doing nothing does not help.
             if (player != null && hasAdjacentConnector(level, pos)) {
                 say(player, "message.factorynetwork.label_gun.aim_at_connector");
                 return InteractionResult.CONSUME;
             }
-            // Sonst ist der Klick die Aufforderung, einen Namen einzugeben.
-            // Ihn nur ins Leere zuzulassen hieße: in einem Gebäude nie.
+            // Otherwise the click is the prompt to enter a name. Allowing it
+            // only into empty space would mean: inside a building, never.
             return InteractionResult.PASS;
         }
 
         FactoryGraph graph = linkedGraph(gun, level);
 
-        // Schleichen übernimmt den Namen statt ihn zu vergeben.
+        // Sneaking picks up the name instead of assigning it.
         if (player != null && player.isShiftKeyDown()) {
             String existing = connector.label();
             if (existing.isBlank()) {
@@ -216,10 +215,9 @@ public class LabelGunItem extends Item {
             return InteractionResult.CONSUME;
         }
 
-        // Ohne Verknüpfung fehlt der Gun das Netzwissen: Sie kann weder
-        // durchnummerieren noch vor doppelten Namen warnen. Das ist der
-        // Moment, es zu sagen — nicht erst, wenn im Terminal zwei gleiche
-        // Namen stehen.
+        // Without a link the gun lacks the network knowledge: it can neither
+        // number nor warn about duplicate names. This is the moment to say
+        // so — not only once two equal names stand in the terminal.
         if (!isLinked(gun) && player != null) {
             say(player, "message.factorynetwork.label_gun.not_linked");
             return InteractionResult.CONSUME;
@@ -236,7 +234,7 @@ public class LabelGunItem extends Item {
     private InteractionResult apply(
             dev.devpanda.factorynetwork.block.entity.ConnectorPart connector, ItemStack gun,
             FactoryGraph graph, String wanted, Player player) {
-        // Nochmal derselbe Name: Der Klick nimmt ihn wieder weg.
+        // The same name again: the click takes it away again.
         if (wanted.equals(connector.label())) {
             connector.setLabel("");
             if (player != null) {
@@ -249,9 +247,9 @@ public class LabelGunItem extends Item {
         if (player != null) {
             switch (warning.kind()) {
                 case TAKEN -> {
-                    // Zwei Connectoren mit demselben Namen machen beide
-                    // unbrauchbar. Deshalb wird hier nicht vergeben, sondern
-                    // der nächste freie Name vorgeschlagen.
+                    // Two connectors with the same name make both unusable.
+                    // That is why nothing is assigned here; instead the next
+                    // free name is suggested.
                     say(player, "message.factorynetwork.label_gun.taken",
                             wanted, warning.suggestion());
                     setActiveLabel(gun, warning.suggestion());
@@ -266,7 +264,7 @@ public class LabelGunItem extends Item {
                     return InteractionResult.CONSUME;
                 }
                 case KEYWORD ->
-                    // Erlaubt, aber im Code braucht der Name Rückstriche.
+                    // Allowed, but the name needs backticks in the code.
                     say(player, "message.factorynetwork.label_gun.keyword", wanted);
                 case NONE -> { }
             }
@@ -280,19 +278,20 @@ public class LabelGunItem extends Item {
         return InteractionResult.CONSUME;
     }
 
-    // ---- Umgebung ---------------------------------------------------------
+    // ---- Surroundings -----------------------------------------------------
 
     /**
-     * Der Graph des Netzes, mit dem die Gun verknüpft ist.
+     * The graph of the network the gun is linked to.
      *
-     * <p>Verknüpft wird durch einen Rechtsklick auf den Controller. Das
-     * ersetzt das Übertragen von Namen zwischen Gun und Manager, das
-     * SuperFactoryManager braucht: Dort wandern die Daten hin und her, hier
-     * zeigt die Gun einfach auf das Netz und liest, was ohnehin dort steht.
+     * <p>Linking happens through a right-click on the controller. That
+     * replaces the transfer of names between gun and manager that
+     * SuperFactoryManager needs: there the data travels back and forth, here
+     * the gun simply points at the network and reads what stands there
+     * anyway.
      *
-     * <p>Die Alternative wäre, den Controller bei jedem Klick in der Umgebung
-     * zu suchen. Bei einem Umkreis, der für ein gewachsenes Netz reicht, sind
-     * das über fünfzigtausend Blockpositionen — pro Klick.
+     * <p>The alternative would be to search for the controller in the
+     * surroundings on every click. With a radius large enough for a grown
+     * network, that is over fifty thousand block positions — per click.
      */
     private static FactoryGraph linkedGraph(ItemStack gun, Level level) {
         return linkedController(gun, level)

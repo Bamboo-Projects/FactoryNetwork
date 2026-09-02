@@ -17,47 +17,48 @@ import java.util.Map;
 import java.util.function.ToLongFunction;
 
 /**
- * Die Rezepte, die eine Maschine ausführt — und die das Netz lesen kann.
+ * The recipes that a machine runs — and that the network can read.
  *
- * <p><b>Nicht alle.</b> Ein Maschinenrezept einer fremden Mod ist generisch
- * nicht zu lesen: {@code Recipe.getIngredients()} liefert als Vorgabe eine
- * leere Liste, eine {@code Ingredient} trägt keine Menge, Flüssigkeiten und
- * Strom stehen nicht darin, und {@code getResultItem} kennt genau eine
- * Ausgabe. Die Begründung mit Belegen steht in {@code entscheidungen.md},
+ * <p><b>Not all of them.</b> A machine recipe from a foreign mod is not
+ * readable generically: {@code Recipe.getIngredients()} returns an empty list
+ * by default, an {@code Ingredient} carries no amount, fluids and power are
+ * not in it, and {@code getResultItem} knows exactly one output. The
+ * reasoning with evidence is in {@code entscheidungen.md},
  * „Processing-Rezepte: die Erkundung".
  *
- * <p>Was hier steht, sind die Arten mit <b>fester, bekannter Form</b>: eine
- * Zutat, eine Ausgabe, eine Dauer. Das ist die Ofenfamilie und die eigene
- * Presse — für sie sind die vier Löcher zugemauert, weil die Form bekannt
- * ist. Alles andere schreibt der Spieler als {@code recipe} ins Programm.
+ * <p>What stands here are the types with a <b>fixed, known shape</b>: one
+ * ingredient, one output, one duration. That is the furnace family and the
+ * mod's own press — for them the four holes are walled off, because the shape
+ * is known. Everything else the player writes as {@code recipe} into the
+ * program.
  *
- * <p><b>Die Station ist die Rezeptart, nicht das Gerät.</b> Welcher Ofen
- * gebraucht wird, entscheidet erst der Ausführende — und der nimmt einen, der
- * gerade frei ist. Stünde hier schon ein Gerätename, wartete ein Auftrag vor
- * einem beschäftigten Ofen, während zwei leere danebenstehen.
+ * <p><b>The station is the recipe type, not the device.</b> Which furnace is
+ * needed the executor decides only at execution — and it takes one that is
+ * currently free. If a device name were already here, a job would wait in
+ * front of a busy furnace while two empty ones stand beside it.
  */
 public final class MachineRecipes implements CraftingPlanner.Recipes<Item> {
 
     /**
-     * Was der Ausführende an einer Station wissen muss.
+     * What the executor must know at a station.
      *
-     * @param inputSlot  wohin die Zutat kommt
-     * @param outputSlot woher das Ergebnis kommt
-     * @param supply     was der Spieler beisteuern muss, für die Meldung
+     * @param inputSlot  where the ingredient goes
+     * @param outputSlot where the result comes from
+     * @param supply     what the player must contribute, for the message
      */
     public record Station(int inputSlot, int outputSlot, String supply) {
     }
 
-    /** Ofen, Schmelzofen, Räucherofen: Zutat in 0, Brennstoff in 1, Ergebnis in 2. */
+    /** Furnace, blast furnace, smoker: ingredient in 0, fuel in 1, result in 2. */
     private static final Station FURNACE = new Station(0, 2, "Brennstoff");
 
-    /** Die eigene Presse: Stempel in 0, Werkstoff in 1, Ergebnis in 2. */
+    /** The mod's own press: stamp in 0, material in 1, result in 2. */
     private static final Station PRESS =
             new Station(dev.devpanda.factorynetwork.block.entity.PressBlockEntity.SLOT_MATERIAL,
                     dev.devpanda.factorynetwork.block.entity.PressBlockEntity.SLOT_RESULT,
                     "einen Stempel");
 
-    /** Die Kennungen, unter denen die Stationen im Plan stehen. */
+    /** The ids under which the stations appear in the plan. */
     public static final String SMELTING = "minecraft:smelting";
     public static final String BLASTING = "minecraft:blasting";
     public static final String SMOKING = "minecraft:smoking";
@@ -66,19 +67,19 @@ public final class MachineRecipes implements CraftingPlanner.Recipes<Item> {
     private static final Map<String, Station> STATIONS = Map.of(
             SMELTING, FURNACE, BLASTING, FURNACE, SMOKING, FURNACE, PRESSING, PRESS);
 
-    /** Was der Ausführende über diese Station wissen muss, oder {@code null}. */
+    /** What the executor must know about this station, or {@code null}. */
     public static Station stationOf(String name) {
         return STATIONS.get(name);
     }
 
     /**
-     * Passt diese Maschine zu dieser Station?
+     * Does this machine fit this station?
      *
-     * <p><b>An der Klasse und nicht am Namen.</b> Ein Ofen heißt auf einem
-     * englischen Server anders als im deutschen Client; seine BlockEntity ist
-     * überall dieselbe. Und ein Schmelzofen ist keine Untermenge eines Ofens,
-     * obwohl beide von {@code AbstractFurnaceBlockEntity} erben — er kann
-     * andere Rezepte, und deshalb wird auf die genaue Klasse geprüft.
+     * <p><b>By the class and not the name.</b> A furnace is named differently
+     * on an English server than in a German client; its BlockEntity is the
+     * same everywhere. And a blast furnace is not a subset of a furnace,
+     * although both inherit from {@code AbstractFurnaceBlockEntity} — it can do
+     * different recipes, and therefore the exact class is checked.
      */
     public static boolean fits(String station,
             net.minecraft.world.level.block.entity.BlockEntity machine) {
@@ -103,11 +104,11 @@ public final class MachineRecipes implements CraftingPlanner.Recipes<Item> {
     }
 
     /**
-     * Wie die Maschine einer Station heißt — für die Meldung im Auftrag.
+     * What the machine of a station is called — for the message in the job.
      *
-     * <p>Auf Deutsch und fest: Diese Zeile steht im Terminal neben lauter
-     * anderen deutschen Zeilen, und ein Auftrag, der halb übersetzt ist,
-     * liest sich schlechter als einer, der es gar nicht ist.
+     * <p>German and hard-coded: this line appears in the terminal alongside
+     * plenty of other German lines, and a job that is half translated reads
+     * worse than one that is not translated at all.
      */
     public static String machineName(String station) {
         return switch (station) {
@@ -126,11 +127,11 @@ public final class MachineRecipes implements CraftingPlanner.Recipes<Item> {
     }
 
     /**
-     * Das Verzeichnis der lesbaren Maschinenrezepte dieser Welt.
+     * The index of this world's readable machine recipes.
      *
-     * <p>Einmal je Tick gebaut wie das der Werkbank-Rezepte, und aus demselben
-     * Grund: Länger aufzubewahren hieße, sich darauf zu verlassen, dass ein
-     * {@code /reload} den Rezeptverwalter austauscht.
+     * <p>Built once per tick like the crafting-table recipes' index, and for
+     * the same reason: keeping it longer would mean relying on a
+     * {@code /reload} to swap out the recipe manager.
      */
     public static MachineRecipes of(Level level) {
         Map<Item, List<CraftingPlanner.Recipe<Item>>> byResult = new HashMap<>();
@@ -159,11 +160,10 @@ public final class MachineRecipes implements CraftingPlanner.Recipes<Item> {
     }
 
     /**
-     * Die Presse — und ihr Stempel zählt nicht als Zutat.
+     * The press — and its stamp does not count as an ingredient.
      *
-     * <p>Er ist ein Werkzeug: Er liegt im Fach und bleibt dort. Ihn
-     * einzuplanen hieße, ihn für jeden Durchlauf neu zu bestellen und
-     * aufzubrauchen.
+     * <p>It is a tool: it sits in the slot and stays there. To plan it in would
+     * mean ordering it anew for every run and using it up.
      */
     private static void collectPress(Level level,
             Map<Item, List<CraftingPlanner.Recipe<Item>>> byResult) {
@@ -175,10 +175,10 @@ public final class MachineRecipes implements CraftingPlanner.Recipes<Item> {
             if (result.isEmpty()) {
                 continue;
             }
-            // <b>Jede Zutat wird ein eigener Bedarf.</b> Seit ein Rezept
-            // mehrere fordern darf, wäre die erste allein eine Rechnung, die
-            // nie aufgeht: Der Auftrag bestellte Kupfer und stünde dann vor
-            // einer Maschine, der das Redstone fehlt.
+            // <b>Each ingredient becomes its own need.</b> Since a recipe may
+            // demand several, the first alone would be a calculation that never
+            // works out: the job would order copper and then stand in front of
+            // a machine that is missing the redstone.
             List<CraftingPlanner.Need<Item>> needs = new ArrayList<>();
             boolean complete = true;
             for (var material : holder.value().materials()) {
@@ -199,13 +199,13 @@ public final class MachineRecipes implements CraftingPlanner.Recipes<Item> {
     }
 
     /**
-     * Die eine Zutat eines Kochrezepts.
+     * The single ingredient of a cooking recipe.
      *
-     * <p>Genau eine, und das ist der Grund, warum diese Arten überhaupt
-     * lesbar sind. Stünden dort mehrere, wüsste niemand, wie viele von
-     * welcher — {@code Ingredient} trägt keine Menge.
+     * <p>Exactly one, and that is why these types are readable at all. Were
+     * there several, no one would know how many of which — {@code Ingredient}
+     * carries no amount.
      *
-     * @return {@code null}, wenn die Form nicht stimmt
+     * @return {@code null} if the shape is not right
      */
     private static List<CraftingPlanner.Need<Item>> needsOf(Recipe<?> recipe) {
         List<Ingredient> ingredients = recipe.getIngredients().stream()

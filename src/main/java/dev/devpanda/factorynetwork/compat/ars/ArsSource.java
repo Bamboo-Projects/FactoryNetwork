@@ -10,28 +10,26 @@ import net.minecraft.resources.ResourceLocation;
 import java.util.List;
 
 /**
- * Source aus Ars Nouveau als Ressourcenart.
+ * Source from Ars Nouveau as a resource kind.
  *
- * <p><b>Der Beweis, für den die offene Registry gebaut wurde.</b> Diese Art
- * kommt von einer fremden Mod, und der Kern kennt sie nicht: keine Zeile in
- * {@code ResourceKinds}, keine im Parser, keine im Wertemodell. Was sie
- * kostet, steht vollständig in diesem Ordner — vier Klassen und ein Aufruf
- * beim Laden.
+ * <p><b>The proof the open registry was built for.</b> This kind comes from a
+ * third-party mod, and the core knows nothing of it: not a line in
+ * {@code ResourceKinds}, none in the parser, none in the value model. What it
+ * costs sits entirely in this folder — four classes and one call at load time.
  *
- * <p><b>Geschrieben wird {@code source:source}.</b> Das liest sich doppelt
- * und ist trotzdem richtig: Die Präfixform ist die einzige, die eine fremde
- * Mod bekommen kann. Das nackte Wort — wie bei {@code power} — verlangt ein
- * Schlüsselwort im Lexer, und Schlüsselwörter gehören der Sprache: Sie stehen
- * in der Grammatik für VS Code, in der EBNF und im Handbuch, und keine dieser
- * Stellen kann eine Mod beim Laden ergänzen. Dazu kollidierte ein nacktes
- * {@code source} mit einer Filtervorlage dieses Namens, die es heute geben
- * darf.
+ * <p><b>It is written as {@code source:source}.</b> That reads redundantly and
+ * is still correct: the prefix form is the only one a third-party mod can get.
+ * The bare word — as with {@code power} — requires a keyword in the lexer, and
+ * keywords belong to the language: they live in the grammar for VS Code, in the
+ * EBNF and in the manual, and none of these places can a mod extend at load
+ * time. On top of that, a bare {@code source} would collide with a filter
+ * template of that name, which is allowed to exist today.
  *
- * <p><b>Eine Sorte, ein Schlüssel.</b> Source ist eine ungeteilte Menge wie
- * Strom, kein Sortiment wie Gegenstände. Der Schlüssel ist deshalb die
- * Zeichenkette {@code "source"} und nicht ein Typ von Ars Nouveau: Eine
- * Signatur mit einer fremden Klasse würde diese beim Laden auflösen, auch in
- * einem Pack ohne die Mod. Dieselbe Vorsicht wie bei den Chemikalien.
+ * <p><b>One variety, one key.</b> Source is a single undivided quantity like
+ * power, not an assortment like items. The key is therefore the string
+ * {@code "source"} and not a type from Ars Nouveau: a signature with a
+ * third-party class would resolve it at load time, even in a pack without the
+ * mod. The same caution as with the chemicals.
  */
 public final class ArsSource implements ResourceKind {
 
@@ -44,12 +42,13 @@ public final class ArsSource implements ResourceKind {
     }
 
     /**
-     * Meldet die Art an — einmal, beim Laden.
+     * Registers the kind — once, at load time.
      *
-     * <p>Auch ohne Ars Nouveau: Sonst hieße {@code source:source} in einem
-     * Pack ohne die Mod „keine Ressourcenart" statt „diese Mod fehlt", und der
-     * Spieler suchte den Tippfehler. Was ohne die Mod fehlt, ist der Zugriff
-     * auf die Maschinen — und der meldet sich von selbst.
+     * <p>Even without Ars Nouveau: otherwise {@code source:source} in a pack
+     * without the mod would mean "no such resource kind" instead of "this mod
+     * is missing", and the player would go hunting for the typo. What is
+     * missing without the mod is access to the machines — and that reports
+     * itself.
      */
     public static void register() {
         ResourceKinds.register(INSTANCE);
@@ -101,11 +100,11 @@ public final class ArsSource implements ResourceKind {
     }
 
     /**
-     * Es gibt genau eine Sorte, und sie heißt wie ihre Art.
+     * There is exactly one variety, and it shares its kind's name.
      *
-     * <p>{@code source:source} trifft sie. Alles andere hinter dem
-     * Doppelpunkt trifft nichts — und eine leere Liste ist die ehrliche
-     * Antwort darauf, nicht eine stille Umdeutung auf die eine Sorte.
+     * <p>{@code source:source} matches it. Anything else after the colon
+     * matches nothing — and an empty list is the honest answer to that, not a
+     * silent reinterpretation as the one variety.
      */
     @Override
     public List<?> resolve(Expr selector) {

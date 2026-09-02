@@ -1,42 +1,39 @@
 package dev.devpanda.factorynetwork.upgrade;
 
 /**
- * Was Ausbauten aus einem Rezept machen.
+ * What upgrades make of a recipe.
  *
- * <p><b>Ohne Minecraft-Typen</b>, wie alles in diesem Paket: Die Rechnung ist
- * der Teil, an dem sich ein Gleichgewicht entscheidet, und sie gehört in
- * gewöhnliche Prüfläufe und nicht in eine Welt, die erst hochfahren muss.
+ * <p><b>Without Minecraft types</b>, like everything in this package: the
+ * calculation is the part where a balance is decided, and it belongs in
+ * ordinary test runs, not in a world that first has to boot up.
  *
- * <p><b>Zwei Karten, zwei verschiedene Dinge.</b> Die Beschleunigung nimmt
- * Zeit weg und legt Strom drauf; der Stapel nimmt keine Zeit weg, sondern
- * legt Werkstücke dazu. Wer beides steckt, bekommt beides — die Faktoren
- * multiplizieren sich.
+ * <p><b>Two cards, two different things.</b> Acceleration takes time away and
+ * adds power on top; the batch takes no time away but adds workpieces. Whoever
+ * installs both gets both — the factors multiply.
  *
- * <p><b>Warum die Beschleunigung überproportional kostet.</b> Ein Fünftel
- * weniger Zeit für die Hälfte mehr Strom: Nach vier Karten läuft die Maschine
- * zweieinhalbmal so schnell und verbraucht dreimal so viel. Wäre der Handel
- * fair, gäbe es keinen Grund, jemals eine zweite Maschine zu bauen — und
- * genau das soll eine Fabrik ja sein, eine Anlage aus vielen Teilen und nicht
- * ein aufgerüsteter Klotz.
+ * <p><b>Why acceleration costs disproportionately.</b> A fifth less time for
+ * half again as much power: after four cards the machine runs two and a half
+ * times as fast and consumes three times as much. Were the trade fair, there
+ * would be no reason to ever build a second machine — and that is exactly what
+ * a factory is meant to be, a plant of many parts and not one upgraded lump.
  */
 public final class Tuning {
 
     /**
-     * Wie viele Karten je Art noch zählen.
+     * How many cards per kind still count.
      *
-     * <p>Ein Steckplatz hält einen ganzen Stapel, und jedes Stück darin zählt
-     * — bei der Reichweite ist das richtig, bei der Zeit wäre es das Ende
-     * jedes Gleichgewichts: Vierundsechzig Karten drückten jedes Rezept auf
-     * einen Tick, und der Fortschrittsbalken hätte nichts mehr zu zeigen.
-     * Acht sind mehr, als in die Steckplätze einer Maschine einzeln passen,
-     * und lassen trotzdem Raum, sie zu stapeln.
+     * <p>A slot holds a whole stack, and every item in it counts — for range
+     * that is right, for time it would be the end of every balance: sixty-four
+     * cards would press every recipe down to one tick, and the progress bar
+     * would have nothing left to show. Eight is more than fits into a
+     * machine's slots individually, and still leaves room to stack them.
      */
     public static final int MOST = 8;
 
-    /** Was eine Beschleunigungskarte von der Zeit übrig lässt. */
+    /** What an acceleration card leaves of the time. */
     private static final double KEEPS = 0.8;
 
-    /** Und was sie zusätzlich auf den Strom legt. */
+    /** And what it adds on top of the power. */
     private static final double COSTS = 0.5;
 
     private Tuning() {
@@ -47,13 +44,13 @@ public final class Tuning {
         int wide = Math.min(MOST, loadout.count(Card.BATCH));
 
         double factor = Math.pow(KEEPS, fast);
-        // Aufrunden und mindestens ein Tick: Ein Durchlauf in null Ticks wäre
-        // kein Durchlauf, sondern ein Sprung.
+        // Round up and at least one tick: a run in zero ticks would be no run
+        // but a jump.
         int fasterTicks = Math.max(1, (int) Math.round(ticks * factor));
 
         int batch = 1 + wide;
-        // Erst der Aufschlag für das Tempo, dann die Menge. Beides sind
-        // Faktoren auf denselben Grundpreis.
+        // First the surcharge for speed, then the amount. Both are factors on
+        // the same base price.
         double price = energy * (1.0 + COSTS * fast) * batch;
         return new Tuned(fasterTicks, (int) Math.round(price), batch);
     }

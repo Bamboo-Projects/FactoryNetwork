@@ -11,44 +11,43 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
- * Löst Chemikalien-Auswahlen auf — wenn Mekanism da ist.
+ * Resolves chemical selections — when Mekanism is present.
  *
- * <p>Dieselben Regeln wie bei Gegenständen und Flüssigkeiten: Ohne
- * Namensraum ist {@code mekanism} gemeint, ein Muster sucht über alle
- * Namensräume. Der Namensraum ist hier <b>nicht</b> {@code minecraft} —
- * Chemikalien gibt es in Minecraft nicht, und wer {@code chemical:hydrogen}
- * schreibt, meint das von Mekanism.
+ * <p>The same rules as for items and fluids: with no namespace,
+ * {@code mekanism} is meant; a pattern searches across all namespaces. The
+ * namespace here is <b>not</b> {@code minecraft} — chemicals don't exist in
+ * Minecraft, and whoever writes {@code chemical:hydrogen} means the one from
+ * Mekanism.
  *
- * <p><b>Die Kennungen sind Texte und keine Chemikalien.</b> Das ist die
- * Naht, an der diese Anbindung hängt: Alles außerhalb von
- * {@code compat/mekanism} spricht über {@code "mekanism:hydrogen"} und nie
- * über einen Mekanism-Typ. Sonst lüde die Klasse, die eine solche Signatur
- * trägt, beim Initialisieren fremde Klassen — und die Mod startete ohne
- * Mekanism nicht mehr.
+ * <p><b>The identifiers are strings, not chemicals.</b> This is the seam this
+ * integration hangs on: everything outside {@code compat/mekanism} talks in
+ * terms of {@code "mekanism:hydrogen"} and never a Mekanism type. Otherwise
+ * the class carrying such a signature would load third-party classes on
+ * initialization — and the mod would no longer start without Mekanism.
  *
- * <p>Ohne Mekanism ist jede Antwort leer. Das ist kein Fehler, sondern die
- * Wahrheit über ein Pack ohne die Mod; die Meldung dazu steht in
+ * <p>Without Mekanism every answer is empty. That is not an error but the
+ * truth about a pack without the mod; the message for it lives in
  * {@link FnMekanism}.
  *
- * <p><b>Kein Mekanism-Typ in einer Signatur dieser Klasse.</b> Java löst die
- * Klassen einer Signatur beim Laden auf; stünde hier eines, ließe sich diese
- * Klasse ohne Mekanism nicht mehr laden. Was Mekanism kennt, steht in
- * {@link MekRegistry} und wird nur betreten, wenn die Mod da ist.
+ * <p><b>No Mekanism type in a signature of this class.</b> Java resolves the
+ * classes of a signature at load time; if one stood here, this class could no
+ * longer be loaded without Mekanism. Everything that references Mekanism lives
+ * in {@link MekRegistry} and is entered only when the mod is present.
  */
 public final class Chemicals {
 
-    /** Der Namensraum, den {@code chemical:} ohne Angabe meint. */
+    /** The namespace {@code chemical:} means when none is given. */
     public static final String DEFAULT_NAMESPACE = "mekanism";
 
     private Chemicals() {
     }
 
     /**
-     * Die Kennungen hinter einer Auswahl, als Text.
+     * The identifiers behind a selection, as strings.
      *
-     * <p>Leer, wenn Mekanism fehlt oder die Auswahl nichts trifft. Der
-     * Unterschied ist für den Aufrufer keiner — beides heißt „hier ist
-     * nichts" —, und für die Meldung fragt er {@link FnMekanism}.
+     * <p>Empty when Mekanism is missing or the selection matches nothing. For
+     * the caller the difference is none — both mean "there is nothing here" —
+     * and for the message it asks {@link FnMekanism}.
      */
     public static List<String> resolve(Expr expr) {
         if (!FnMekanism.installed()) {
@@ -102,11 +101,11 @@ public final class Chemicals {
     }
 
     /**
-     * Ein Muster als regulärer Ausdruck.
+     * A pattern as a regular expression.
      *
-     * <p>Nur {@code *} ist ein Platzhalter; alles andere wird wörtlich
-     * genommen. Dieselbe Regel wie bei Gegenständen — ein Punkt in einer
-     * Kennung ist ein Punkt und kein „irgendein Zeichen".
+     * <p>Only {@code *} is a wildcard; everything else is taken literally. The
+     * same rule as for items — a dot in an identifier is a dot and not "any
+     * character".
      */
     private static Pattern toPattern(String path) {
         StringBuilder out = new StringBuilder();
@@ -119,7 +118,7 @@ public final class Chemicals {
         return Pattern.compile(out.toString());
     }
 
-    /** Wie eine Chemikalie im Klartext heißt, oder ihre Kennung. */
+    /** The plain-text name of a chemical, or its identifier. */
     public static String nameOf(String id) {
         if (!FnMekanism.installed()) {
             return id;
@@ -131,7 +130,7 @@ public final class Chemicals {
         return MekRegistry.name(key);
     }
 
-    /** Ob es diese Chemikalie gibt. */
+    /** Whether this chemical exists. */
     public static boolean known(String id) {
         if (!FnMekanism.installed()) {
             return false;

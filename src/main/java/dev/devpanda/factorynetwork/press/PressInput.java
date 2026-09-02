@@ -6,16 +6,17 @@ import net.minecraft.world.item.crafting.RecipeInput;
 import java.util.List;
 
 /**
- * Was gerade in der Presse liegt.
+ * What currently lies in the press.
  *
- * <p>Ein Stempel und mehrere Materialplätze — feste Bedeutungen statt eines
- * Rasters: Der Stempel gehört nach oben, das Material darunter. Ein Raster
- * wäre allgemeiner und gleichzeitig unklarer; man müsste raten, welcher Platz
- * was tut.
+ * <p>A stamp and several material slots — fixed meanings instead of a grid:
+ * the stamp belongs on top, the material below it. A grid would be more
+ * general and at the same time less clear; one would have to guess which slot
+ * does what.
  *
- * <p><b>Unter den Materialplätzen gibt es keine Ordnung.</b> Wer Redstone
- * links und Kupfer rechts einlegt, meint dasselbe wie andersherum — welche
- * Zutat aus welchem Platz kommt, sucht {@link Assignment}.
+ * <p><b>Among the material slots there is no order.</b> Whoever inserts
+ * redstone on the left and copper on the right means the same as the other way
+ * round — which ingredient comes from which slot is worked out by
+ * {@link Assignment}.
  */
 public record PressInput(ItemStack stamp, List<ItemStack> materials) implements RecipeInput {
 
@@ -38,11 +39,11 @@ public record PressInput(ItemStack stamp, List<ItemStack> materials) implements 
     }
 
     /**
-     * Liegt überhaupt etwas darin?
+     * Is there anything in it at all?
      *
-     * <p>Minecraft fragt das, bevor es Rezepte sucht. Ohne diese Fassung
-     * gälte eine Presse mit leeren Plätzen als beschickt, und der
-     * Rezeptmanager liefe bei jedem Tick durch alle Rezepte.
+     * <p>Minecraft asks this before it searches for recipes. Without this
+     * version a press with empty slots would count as loaded, and the recipe
+     * manager would run through all recipes on every tick.
      */
     @Override
     public boolean isEmpty() {

@@ -9,12 +9,12 @@ import net.minecraft.world.item.TooltipFlag;
 import java.util.List;
 
 /**
- * Ein Bauteil für einen Einschub im Serverschrank.
+ * A part for a bay in the server rack.
  *
- * <p>Eine Klasse für alle drei Arten, weil sie sich in nichts unterscheiden
- * außer der Zahl und dem Wort davor. Was die Zahl <b>bedeutet</b>, steht
- * nicht hier, sondern dort, wo sie wirkt: {@code ServerBay} rechnet sie
- * zusammen, der Controller setzt sie durch.
+ * <p>One class for all three types, because they differ in nothing but the
+ * number and the word before it. What the number <b>means</b> is not here
+ * but where it takes effect: {@code ServerBay} adds it up, the controller
+ * enforces it.
  */
 public class ServerPartItem extends Item {
 
@@ -35,17 +35,17 @@ public class ServerPartItem extends Item {
         return value;
     }
 
-    /** Die Art dieses Gegenstands, oder null, wenn er keins von beidem ist. */
+    /** The type of this item, or null if it is neither. */
     public static ServerPart partOf(ItemStack stack) {
         return stack.getItem() instanceof ServerPartItem item ? item.part() : null;
     }
 
-    /** Der Wert dieses Gegenstands, oder null, wenn er kein Bauteil ist. */
+    /** The value of this item, or null if it is not a part. */
     public static int valueOf(ItemStack stack) {
         return stack.getItem() instanceof ServerPartItem item ? item.value() : 0;
     }
 
-    /** Der Wert, aber nur wenn der Gegenstand von der gesuchten Art ist. */
+    /** The value, but only if the item is of the requested type. */
     public static int valueOf(ItemStack stack, ServerPart wanted) {
         return stack.getItem() instanceof ServerPartItem item && item.part() == wanted
                 ? item.value()

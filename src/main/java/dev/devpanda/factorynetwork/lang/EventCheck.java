@@ -12,20 +12,20 @@ import java.util.Optional;
 import java.util.TreeSet;
 
 /**
- * Prüft, ob ein {@code on}-Block je laufen kann.
+ * Checks whether an {@code on} block can ever run.
  *
- * <p><b>Der Anlass ist ein Block, der nichts tut und nichts sagt.</b> Ein
- * {@code on} braucht keine Deklaration — der Übersetzer nimmt jeden Namen an,
- * weil er nicht wissen kann, welche Ereignisse eine andere Datei erklärt.
- * {@code on inventory_changed(kiste) { … }} übersetzt sauber, wird übernommen
- * und läuft nie: Dieses Ereignis löst niemand aus.
+ * <p><b>The occasion is a block that does nothing and says nothing.</b> An
+ * {@code on} needs no declaration — the compiler accepts any name, because it
+ * cannot know which events another file declares.
+ * {@code on inventory_changed(kiste) { … }} compiles cleanly, is adopted, and
+ * never runs: nobody triggers this event.
  *
- * <p>Anders als bei einem Tippfehler in einem Connectornamen fällt das nicht
- * beim ersten Lauf auf, sondern gar nicht. Es gibt keinen ersten Lauf.
+ * <p>Unlike a typo in a connector name, this shows up not on the first run but
+ * not at all. There is no first run.
  *
- * <p><b>Warnungen, keine Fehler.</b> Dieselbe Begründung wie bei
- * {@link NetworkCheck}: Ein Programm, das erst mit der nächsten Datei
- * vollständig wird, soll sich heute schon übernehmen lassen.
+ * <p><b>Warnings, not errors.</b> The same rationale as with
+ * {@link NetworkCheck}: a program that only becomes complete with the next file
+ * should already be adoptable today.
  */
 public final class EventCheck {
 
@@ -33,11 +33,11 @@ public final class EventCheck {
     }
 
     /**
-     * Die Ereignisse, die diese Datei erklärt — Name und Zahl der Werte.
+     * The events this file declares — name and number of values.
      *
-     * <p>Getrennt von {@link #run}, weil alle Dateien einen Namensraum teilen:
-     * Erst werden alle Deklarationen eingesammelt, dann geprüft. Sonst
-     * beanstandete die erste Datei, was die zweite erklärt.
+     * <p>Separate from {@link #run}, because all files share one namespace:
+     * first all declarations are collected, then checked. Otherwise the first
+     * file would object to what the second declares.
      */
     public static Map<String, Integer> declaredEvents(Program program) {
         Map<String, Integer> events = new HashMap<>();
@@ -50,10 +50,10 @@ public final class EventCheck {
     }
 
     /**
-     * Sucht {@code on}-Blöcke, die niemand aufruft.
+     * Searches for {@code on} blocks that nobody calls.
      *
-     * @param program  das übersetzte Programm einer Datei
-     * @param declared alle {@code event}-Deklarationen des Projekts
+     * @param program  the compiled program of a file
+     * @param declared all {@code event} declarations of the project
      */
     public static List<Diagnostic> run(Program program, Map<String, Integer> declared) {
         List<Diagnostic> problems = new ArrayList<>();
@@ -84,15 +84,15 @@ public final class EventCheck {
     }
 
     /**
-     * Der Hinweis unter einem unbekannten Ereignis.
+     * The hint under an unknown event.
      *
-     * <p>Ein ähnlicher Name ist die beste Auskunft, die ganze Liste die
-     * zweitbeste. Beides schlägt „unbekannt" ohne Zusatz, weil der Spieler
-     * sonst nicht sehen kann, ob er sich vertippt hat oder ob es das
-     * Ereignis überhaupt nicht gibt.
+     * <p>A similar name is the best information, the whole list the second best.
+     * Both beat "unknown" with nothing added, because otherwise the player
+     * cannot see whether they made a typo or whether the event does not exist at
+     * all.
      */
     private static String unknownHint(String wanted, Map<String, Integer> declared) {
-        // Erst unter allem suchen, was es wirklich gibt — eingebaut wie erklärt.
+        // First search among everything that really exists — built-in as well as declared.
         List<String> known = new ArrayList<>(BuiltinEvents.ARITY.keySet());
         known.addAll(declared.keySet());
         Optional<String> closest = closest(wanted, known);
@@ -103,7 +103,7 @@ public final class EventCheck {
                 + " aus. Eigene Ereignisse brauchen ein event und ein emit.";
     }
 
-    /** Welche Werte ein Ereignis wirklich mitbringt. */
+    /** Which values an event actually brings along. */
     private static String tooManyHint(String event) {
         if (BuiltinEvents.REDSTONE_CHANGED.equals(event)) {
             return "Es sind das Gerät und die Stärke.";
@@ -117,7 +117,7 @@ public final class EventCheck {
         return "Die Zahl steht in der event-Zeile.";
     }
 
-    /** Derselbe Maßstab wie bei Connectornamen: nah genug ist ein Vertipper. */
+    /** The same measure as for connector names: close enough is a typo. */
     private static Optional<String> closest(String wanted, List<String> candidates) {
         String best = null;
         int bestDistance = Integer.MAX_VALUE;

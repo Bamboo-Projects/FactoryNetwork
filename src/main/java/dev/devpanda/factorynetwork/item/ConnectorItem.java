@@ -15,19 +15,21 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 
 /**
- * Der Anschluss, den man auch ohne Kabel setzen kann.
+ * The connector you can place even without a cable.
  *
- * <p><b>Warum das geht.</b> Wer eine Anlage baut, stellt erst die Maschinen
- * hin und zieht die Leitung danach. Müsste das Kabel zuerst da sein, wäre die
- * Reihenfolge vorgeschrieben — und wer sie umdreht, setzt Anschlüsse ein
- * zweites Mal.
+ * <p><b>Why this works.</b> Whoever builds an installation places the
+ * machines first and runs the wiring afterwards. If the cable had to be
+ * there first, the order would be prescribed — and whoever reverses it
+ * places connectors a second time.
  *
- * <p>Was dabei entsteht, ist ein Kabelblock ohne Strang: ein Halter, in dem
- * der Anschluss sitzt und der an keinem Netz hängt. Ein Kabel darauf macht
- * daraus eine Leitung, ohne dass der Anschluss neu gesetzt werden müsste.
+ * <p>What arises in the process is a cable block without a cable run: a
+ * holder in which the connector sits and which hangs on no network. A cable
+ * on it turns that into a line, without the connector having to be placed
+ * anew.
  *
- * <p>So macht es AE2. Dort ist der Block ein Kabelbus, und das Kabel ist nur
- * eines der Teile darin — deshalb darf ein Bus auch ohne bestehen.
+ * <p>That is how AE2 does it. There the block is a cable bus, and the cable
+ * is only one of the parts in it — which is why a bus may exist without one
+ * too.
  */
 public class ConnectorItem extends Item {
 
@@ -36,15 +38,13 @@ public class ConnectorItem extends Item {
     }
 
     /**
-     * Setzt einen Halter vor die geklickte Fläche.
+     * Places a holder in front of the clicked face.
      *
-     * <p>Der Anschluss zeigt auf den Block, den man angeklickt hat — das ist
-     * die Geste, die man ohnehin macht: an das Gerät klicken, das man
-     * anschließen will.
+     * <p>The connector points at the block that was clicked — that is the
+     * gesture you make anyway: click the device you want to connect.
      *
-     * <p>Auf ein Kabel oder einen bestehenden Halter zu klicken, führt hier
-     * nicht durch: Das erledigt {@link CableBlock} selbst, und dort sitzt
-     * auch die Vorschau.
+     * <p>Clicking on a cable or an existing holder does not go through here:
+     * {@link CableBlock} handles that itself, and the preview sits there too.
      */
     @Override
     public InteractionResult useOn(UseOnContext context) {
@@ -61,12 +61,12 @@ public class ConnectorItem extends Item {
         if (level.isClientSide) {
             return InteractionResult.SUCCESS;
         }
-        // Ein Halter: derselbe Block wie ein Kabel, nur ohne Strang darin.
+        // A holder: the same block as a cable, only without a cable run in it.
         level.setBlock(target, FnBlocks.CABLE.get().defaultBlockState()
                 .setValue(CableBlock.CABLE, false), Block.UPDATE_ALL);
         if (!(level.getBlockEntity(target) instanceof CableBusBlockEntity bus)) {
-            // Sollte nicht vorkommen; wenn doch, keinen leeren Block
-            // stehenlassen — der wäre unsichtbar und nicht anzuklicken.
+            // Should not happen; if it does, do not leave an empty block
+            // standing — it would be invisible and impossible to click.
             level.removeBlock(target, false);
             return InteractionResult.FAIL;
         }

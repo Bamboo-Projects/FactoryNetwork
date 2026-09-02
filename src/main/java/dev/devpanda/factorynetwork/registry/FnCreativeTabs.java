@@ -22,15 +22,15 @@ public final class FnCreativeTabs {
                         output.accept(FnItems.CONTROLLER_EXTENSION.get());
                         output.accept(FnItems.GATEWAY.get());
                         output.accept(FnItems.FABRICATOR.get());
-                        // Alle Kabelfarben, Standardfarbe zuerst, und der
-                        // Router dahinter — er greift Farben daraus ab.
+                        // All cable colours, default colour first, and the
+                        // router behind it — it picks up colours from them.
                         //
-                        // <b>Das dichte Kabel fehlt hier seit dem 30.08.</b>
-                        // Es trägt dasselbe wie das gewöhnliche und ist damit
-                        // eine Sorte ohne Unterschied. Der Block bleibt
-                        // registriert, weil NeoForge 21.1 keinen Weg hat,
-                        // eine gelöschte Kennung in einer bestehenden Welt
-                        // umzuschreiben — dort stünde sonst Luft.
+                        // <b>The dense cable has been missing here since 30.08.</b>
+                        // It carries the same as the ordinary one and is thus a
+                        // variant without difference. The block stays
+                        // registered, because NeoForge 21.1 has no way to
+                        // rewrite a deleted id in an existing world — there
+                        // would otherwise be air.
                         FnItems.CABLES.values()
                                 .forEach(cable -> output.accept(cable.get()));
                         output.accept(FnItems.ROUTER.get());
@@ -45,9 +45,9 @@ public final class FnCreativeTabs {
                         output.accept(FnItems.WRENCH.get());
                         output.accept(FnItems.LABEL_GUN.get());
                         output.accept(FnItems.ANALYSER.get());
-                        // Die Ausbauten: erst das Modul, dann die Karten von
-                        // klein nach groß — dieselbe Reihenfolge wie im
-                        // Rezeptbaum.
+                        // The upgrades: first the module, then the cards from
+                        // small to large — the same order as in the recipe
+                        // tree.
                         output.accept(FnItems.WIRELESS_MODULE.get());
                         output.accept(FnItems.RANGE_CARD.get());
                         output.accept(FnItems.INFINITY_CARD.get());
@@ -56,9 +56,9 @@ public final class FnCreativeTabs {
                         output.accept(FnItems.DRIVE.get());
                         output.accept(FnItems.RACK.get());
                         output.accept(FnItems.SERVER_CHASSIS.get());
-                        // Erst alle Rechenwerke, dann alle Speicher, dann alle
-                        // Datenträger — nach Art sortiert und darin nach Stufe,
-                        // so wie man sie auch einbaut.
+                        // First all compute units, then all memory, then all
+                        // drives — sorted by kind and within that by tier, the
+                        // way one installs them.
                         FnItems.SERVER_PARTS.values().forEach(tiers ->
                                 tiers.forEach(part -> output.accept(part.get())));
                         output.accept(FnItems.CREATIVE_SOURCE.get());

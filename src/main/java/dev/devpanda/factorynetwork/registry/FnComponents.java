@@ -10,18 +10,17 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 /**
- * Was Gegenstände dieser Mod an sich tragen.
+ * What items of this mod carry on themselves.
  *
- * <p><b>Warum eigene Komponenten und kein NBT-Klumpen.</b> Der Bestand legt
- * Kleinkram über {@code CustomData} ab — ein Tag, in dem alles landet. Das
- * trägt, solange nur diese Mod hineinschaut. Der Akku aber wird von fremden
- * Mods gefüllt: Powah, Flux Networks und alles, was {@code IEnergyStorage}
- * spricht, greift über {@link net.neoforged.neoforge.energy.ComponentEnergyStorage}
- * zu — und die verlangt eine <b>angemeldete</b> Komponente, keinen Untertag.
+ * <p><b>Why dedicated components and not an NBT blob.</b> The existing code
+ * stows odds and ends in {@code CustomData} — a tag where everything ends up.
+ * That holds as long as only this mod looks inside. The battery, however, is
+ * filled by foreign mods: Powah, Flux Networks and everything that speaks
+ * {@code IEnergyStorage} accesses it through {@link net.neoforged.neoforge.energy.ComponentEnergyStorage}
+ * — and that demands a <b>registered</b> component, not a subtag.
  *
- * <p>Was einmal angemeldet ist, wird zudem von selbst über die Leitung
- * geschickt und im Tooltip vergleichbar. Beides fällt bei {@code CustomData}
- * aus.
+ * <p>What is registered once is moreover sent over the wire on its own and
+ * comparable in the tooltip. Both fall away with {@code CustomData}.
  */
 public final class FnComponents {
 
@@ -29,11 +28,11 @@ public final class FnComponents {
             DeferredRegister.create(Registries.DATA_COMPONENT_TYPE, FactoryNetwork.MOD_ID);
 
     /**
-     * Der Ladestand eines Geräts.
+     * A device's charge level.
      *
-     * <p>Die Zahl allein — wie viel hineinpasst, sagt das Gerät, nicht der
-     * Stapel. Sonst hätte ein alter Gegenstand nach einer Änderung noch die
-     * alte Kapazität.
+     * <p>The number alone — how much fits is told by the device, not by the
+     * stack. Otherwise an old item would still have the old capacity after a
+     * change.
      */
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> ENERGY =
             COMPONENTS.register("energy", () -> DataComponentType.<Integer>builder()
@@ -42,17 +41,17 @@ public final class FnComponents {
                     .build());
 
     /**
-     * Der Sendemast, an dem ein Gerät angemeldet ist — mit seiner Welt.
+     * The mast a device is registered with — together with its world.
      *
-     * <p><b>Der Mast und nicht der Controller:</b> Ein Netz kann mehrere
-     * Masten haben, und welcher davon reicht, hängt an seinen Karten. Wer den
-     * Controller merkte, verlöre die Frage nach der Reichweite.
+     * <p><b>The mast and not the controller:</b> a network can have several
+     * masts, and which of them reaches depends on its cards. Whoever remembered
+     * the controller would lose the question of range.
      *
-     * <p><b>Und die Welt gehört dazu, nicht nur der Ort.</b> Koordinaten
-     * wiederholen sich in jeder Dimension: Ein Gerät, das sich nur
-     * {@code 120, 64, -30} merkt, verbände sich im Nether mit einem
-     * fremden Mast, der zufällig dort steht. Vanilla hält es beim
-     * Lodestone-Kompass genauso.
+     * <p><b>And the world belongs with it, not just the position.</b>
+     * Coordinates repeat in every dimension: a device that only remembers
+     * {@code 120, 64, -30} would connect in the Nether to a foreign mast that
+     * happens to stand there. Vanilla does the same with the lodestone
+     * compass.
      */
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<GlobalPos>> MAST =
             COMPONENTS.register("mast", () -> DataComponentType.<GlobalPos>builder()
@@ -61,10 +60,10 @@ public final class FnComponents {
                     .build());
 
     /**
-     * Der Name des gekoppelten Netzes, für die Anzeige.
+     * The name of the paired network, for display.
      *
-     * <p>Steht hier, damit der Tooltip ihn zeigen kann, ohne dass der Client
-     * die Welt an der Mastposition kennt — im Inventar hat er sie nicht.
+     * <p>Lives here so the tooltip can show it without the client knowing the
+     * world at the mast position — in the inventory it does not have it.
      */
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<String>> NETWORK_NAME =
             COMPONENTS.register("network_name", () -> DataComponentType.<String>builder()
@@ -73,10 +72,10 @@ public final class FnComponents {
                     .build());
 
     /**
-     * Welche Verschränkung eine Hälfte trägt.
+     * Which entanglement a half carries.
      *
-     * <p>Zwei Hälften mit derselben Nummer gehören zusammen — daran hängt,
-     * welche Quantum-Brücke welche findet.
+     * <p>Two halves with the same number belong together — on that hangs which
+     * quantum bridge finds which.
      */
     public static final DeferredHolder<DataComponentType<?>,
             DataComponentType<java.util.UUID>> ENTANGLEMENT =

@@ -8,11 +8,10 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * Setzt ein Kabel in seiner Farbe.
+ * Places a cable in its colour.
  *
- * <p>Alle siebzehn Gegenstände setzen denselben Block — nur mit
- * unterschiedlichem Zustand. Der Unterschied ist keine Kleinigkeit: An der
- * Farbe hängt, welche Kabel sich verbinden.
+ * <p>All seventeen items place the same block — only with a different state.
+ * The difference is no trifle: which cables connect depends on the colour.
  */
 public class ColouredCableItem extends BlockItem {
 
@@ -28,11 +27,11 @@ public class ColouredCableItem extends BlockItem {
     }
 
     /**
-     * Jeder der siebzehn Gegenstände heißt anders.
+     * Each of the seventeen items has a different name.
      *
-     * <p>Ein {@link BlockItem} nimmt seinen Namen sonst vom Block, und alle
-     * siebzehn zeigen auf denselben — im Kreativ-Reiter stand siebzehnmal
-     * „Kabel". Hier zählt der Name des Gegenstands, nicht der des Blocks.
+     * <p>A {@link BlockItem} otherwise takes its name from the block, and all
+     * seventeen point at the same one — in the creative tab it said "Cable"
+     * seventeen times. Here the item's name counts, not the block's.
      */
     @Override
     public String getDescriptionId() {
@@ -40,19 +39,19 @@ public class ColouredCableItem extends BlockItem {
     }
 
     /**
-     * Erst den Block fragen, dann daneben setzen.
+     * Ask the block first, then place beside it.
      *
-     * <p><b>Ein {@link BlockItem} fragt sonst gar nicht.</b> Es sucht sich
-     * eine freie Stelle und setzt dorthin — und ein Halter, in dem schon ein
-     * Anschluss sitzt, gilt als besetzt. Der Klick landete daneben, statt
-     * das Kabel in den Halter zu legen.
+     * <p><b>A {@link BlockItem} otherwise does not ask at all.</b> It looks
+     * for a free spot and places there — and a holder that already has a
+     * connector sitting in it counts as occupied. The click landed beside it
+     * instead of putting the cable into the holder.
      *
-     * <p>Dieselbe Reihenfolge, die der Connector nimmt: Der Block bekommt
-     * die erste Gelegenheit, und nur wenn er ablehnt, wird gesetzt.
+     * <p>The same order the connector takes: the block gets the first chance,
+     * and only if it declines is a block placed.
      *
-     * <p><b>Außer beim Schleichen.</b> Wer schleichend klickt, will
-     * daneben bauen — das ist die Geste, die in Minecraft überall
-     * „ignoriere den Block" bedeutet.
+     * <p><b>Except when sneaking.</b> Whoever clicks while sneaking wants to
+     * build beside it — that is the gesture that everywhere in Minecraft
+     * means "ignore the block".
      */
     @Override
     public net.minecraft.world.InteractionResult useOn(
@@ -63,8 +62,8 @@ public class ColouredCableItem extends BlockItem {
             var pos = context.getClickedPos();
             var state = level.getBlockState(pos);
             if (state.getBlock() instanceof CableBlock && !CableBlock.carries(state)) {
-                // Den Treffer selbst bauen: UseOnContext hält ihn, gibt ihn
-                // aber nicht heraus. Die drei Angaben, die zählen, hat er.
+                // Build the hit result ourselves: UseOnContext holds it but
+                // does not hand it out. It has the three values that matter.
                 var hit = new net.minecraft.world.phys.BlockHitResult(
                         context.getClickLocation(), context.getClickedFace(), pos, false);
                 var result = state.useItemOn(context.getItemInHand(), level, player,
@@ -78,10 +77,11 @@ public class ColouredCableItem extends BlockItem {
     }
 
     /**
-     * Beim Setzen bekommt der Block die Farbe des Gegenstands.
+     * On placement the block takes the item's colour.
      *
-     * <p>Ohne das stünde überall das neutrale Kabel: Der Zustand kommt vom
-     * Block, nicht vom Gegenstand, und beide kennen einander sonst nicht.
+     * <p>Without this the neutral cable would stand everywhere: the state
+     * comes from the block, not the item, and otherwise the two do not know
+     * each other.
      */
     @Override
     protected BlockState getPlacementState(BlockPlaceContext context) {
@@ -89,9 +89,9 @@ public class ColouredCableItem extends BlockItem {
         if (state == null) {
             return null;
         }
-        // Erst färben, dann die Verbindungen rechnen lassen. Umgekehrt wären
-        // sie die eines neutralen Kabels — und ein rotes griffe nach jedem
-        // Nachbarn, egal welcher Farbe.
+        // Colour first, then let the connections be computed. The other way
+        // round they would be those of a neutral cable — and a red one would
+        // reach for every neighbour, whatever its colour.
         return CableBlock.withConnections(state.setValue(CableBlock.COLOUR, colour),
                 context.getLevel(), context.getClickedPos());
     }

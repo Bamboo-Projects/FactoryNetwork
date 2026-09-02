@@ -15,16 +15,16 @@ import org.jetbrains.annotations.Nullable;
 import java.util.UUID;
 
 /**
- * Eine Hälfte einer Verschränkung — das Paar für die Quantum-Brücke.
+ * One half of an entanglement — the pair for the quantum bridge.
  *
- * <p><b>Das Paar entsteht beim Bauen, nicht beim Anklicken.</b> Wer zwei
- * Brücken erst hinstellt und sie dann verbindet, muss sich merken, welche
- * wohin gehört — über fünftausend Blöcke hinweg, mit einer Karte in der Hand.
- * Wer zwei Hälften desselben Gegenstands einsetzt, muss gar nichts merken:
- * Sie gehören zusammen, egal wohin man sie trägt.
+ * <p><b>The pair comes into being on crafting, not on clicking.</b> Whoever
+ * first places two bridges and then connects them has to remember which
+ * belongs where — across five thousand blocks, with a map in hand. Whoever
+ * inserts two halves of the same item has nothing to remember at all: they
+ * belong together, wherever you carry them.
  *
- * <p>So macht es AE2 mit der Quantum-Entangled Singularity, und der Gedanke
- * ist der bessere von beiden.
+ * <p>That is how AE2 does it with the Quantum-Entangled Singularity, and the
+ * idea is the better of the two.
  */
 public class EntanglementItem extends Item {
 
@@ -33,19 +33,18 @@ public class EntanglementItem extends Item {
     }
 
     /**
-     * Ein frisches Paar — ein Stapel zu zweit.
+     * A fresh pair — a stack of two.
      *
-     * <p><b>Ein Stapel und keine zwei Gegenstände.</b> Ein Rezept gibt es
-     * einmal, nicht einmal je Werkbank; wer sich zwischen dem Zusammenbauen
-     * und dem Herausnehmen etwas merkt, merkt es für alle Spieler
-     * gleichzeitig. Zwei Bauten kreuzten sich dann, und jeder hielte eine
-     * Hälfte, deren Partner woanders liegt.
+     * <p><b>One stack and not two items.</b> A recipe exists once, not once
+     * per crafting table; whoever remembers something between assembling and
+     * taking out remembers it for all players at once. Two builds would then
+     * cross, and each would hold a half whose partner lies elsewhere.
      *
-     * <p>Ein Stapel entsteht in einem Zug und trägt seine Nummer selbst.
+     * <p>A stack comes into being in one go and carries its number itself.
      *
-     * <p>Die Nummer ist zufällig. Zwei Paare aus demselben Rezept dürfen
-     * sich nicht kennen, sonst verbänden sich zwei Brücken in derselben Welt
-     * zufällig.
+     * <p>The number is random. Two pairs from the same recipe must not know
+     * each other, otherwise two bridges in the same world would link up by
+     * chance.
      */
     public static ItemStack newPair() {
         ItemStack stack = new ItemStack(
@@ -55,25 +54,25 @@ public class EntanglementItem extends Item {
     }
 
     /**
-     * Welche Verschränkung dieser Stapel trägt, oder {@code null}.
+     * Which entanglement this stack carries, or {@code null}.
      *
-     * <p><b>Nur die Nummer, keine Seite.</b> Welche der beiden Hälften eine
-     * ist, muss niemand wissen: Was ein Paar ausmacht, ist dieselbe Nummer
-     * an <b>zwei verschiedenen Orten</b> — und das entscheidet der Block,
-     * nicht der Gegenstand. Eine Brücke kann sich damit nicht mit sich
-     * selbst verbinden, ohne dass es dafür eine Regel bräuchte.
+     * <p><b>Only the number, no side.</b> Which of the two halves one is, no
+     * one needs to know: what makes a pair is the same number in <b>two
+     * different places</b> — and that is decided by the block, not the item.
+     * A bridge thus cannot connect to itself, without any rule being needed
+     * for it.
      */
     public static @Nullable UUID idOf(ItemStack stack) {
         return stack.get(FnComponents.ENTANGLEMENT.get());
     }
 
     /**
-     * Im Inventar sieht eine Hälfte aus wie jede andere.
+     * In the inventory one half looks like any other.
      *
-     * <p>Über fünftausend Blöcke will man vor dem Loslaufen wissen, welche
-     * man trägt — dieselbe Überlegung wie beim Ferngerät, das sein Netz im
-     * Tooltip nennt. Acht Zeichen der Nummer reichen, um zwei Paare
-     * auseinanderzuhalten.
+     * <p>Across five thousand blocks you want to know before setting off
+     * which one you carry — the same reasoning as with the remote device,
+     * which names its network in the tooltip. Eight characters of the number
+     * are enough to tell two pairs apart.
      */
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context,
@@ -81,8 +80,8 @@ public class EntanglementItem extends Item {
                                 net.minecraft.world.item.TooltipFlag flag) {
         UUID id = idOf(stack);
         if (id == null) {
-            // Die Hälfte aus dem Kreativ-Reiter hat keine Nummer. Ohne diese
-            // Zeile wirkt sie kaputt statt unfertig.
+            // The half from the creative tab has no number. Without this
+            // line it looks broken rather than unfinished.
             lines.add(net.minecraft.network.chat.Component
                     .translatable("item.factorynetwork.entanglement.loose")
                     .withStyle(net.minecraft.ChatFormatting.GRAY));
@@ -94,7 +93,7 @@ public class EntanglementItem extends Item {
                 .withStyle(net.minecraft.ChatFormatting.AQUA));
     }
 
-    /** Tragen diese beiden Stapel dieselbe Verschränkung? */
+    /** Do these two stacks carry the same entanglement? */
     public static boolean matched(ItemStack one, ItemStack other) {
         UUID first = idOf(one);
         return first != null && first.equals(idOf(other));

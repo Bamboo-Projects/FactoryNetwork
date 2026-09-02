@@ -7,41 +7,41 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Wovon eine Filter-Vorlage handelt.
+ * What a filter template is about.
  *
- * <p><b>Gegenstände oder Flüssigkeiten, nie beides.</b> {@code move} schickt
- * Wasser und Steine über verschiedene Wege; eine Vorlage, die beides
- * enthielte, wäre an jeder Verwendungsstelle etwas anderes. Gemischt ist
- * deshalb ein Fehler und keine stillschweigende Auswahl — gemeldet wird er
- * in {@link FilterCheck}, hier steht nur der Befund.
+ * <p><b>Items or fluids, never both.</b> {@code move} sends water and stones
+ * over different routes; a template that contained both would be something
+ * different at every place it is used. Mixed is therefore an error and not a
+ * silent choice — it is reported in {@link FilterCheck}, here stands only the
+ * finding.
  *
- * <p>Reine Baumbetrachtung, ohne Registry: <b>welche</b> Gegenstände
- * {@code tag:c/ores} trifft, weiß erst die Welt — dass es Gegenstände sind,
- * steht schon im Programm. Deshalb liegt das hier und nicht in
+ * <p>Pure tree inspection, without the registry: <b>which</b> items
+ * {@code tag:c/ores} matches only the world knows — that they are items is
+ * already in the program. That is why this lives here and not in
  * {@code runtime}.
  */
 public enum FilterKind {
 
-    /** Gegenstände. Ein {@code tag:} zählt dazu. */
+    /** Items. A {@code tag:} counts among them. */
     ITEM,
 
-    /** Flüssigkeiten. */
+    /** Fluids. */
     FLUID,
 
-    /** Beides in einer Vorlage — ein Fehler. */
+    /** Both in one template — an error. */
     MIXED,
 
-    /** Keine Zeile, die etwas einschließt. */
+    /** No line that includes anything. */
     EMPTY;
 
     /**
-     * Die Sorte einer Vorlage.
+     * The sort of a template.
      *
-     * <p>Ohne einschließende Zeile ist sie {@link #EMPTY}, ganz gleich, was
-     * in den Ausnahmen steht: Es gibt nichts, wovon abgezogen würde.
-     * Andernfalls entscheiden <b>alle</b> Zeilen mit, auch die Ausnahmen —
-     * sonst hinge die Sorte davon ab, in welcher Zeile etwas steht, und eine
-     * Ausnahme, die gar nicht zur Vorlage passt, fiele niemandem auf.
+     * <p>Without an including line it is {@link #EMPTY}, no matter what stands
+     * in the exceptions: there is nothing to subtract from. Otherwise <b>all</b>
+     * lines have a say, the exceptions too — otherwise the sort would depend on
+     * which line something stands in, and an exception that does not fit the
+     * template at all would go unnoticed.
      */
     public static FilterKind of(Decl.FilterTemplate template) {
         if (template.includes().isEmpty()) {
@@ -54,9 +54,9 @@ public enum FilterKind {
                 switch (selector.kind()) {
                     case ITEM, TAG -> items = true;
                     case FLUID, FLUIDTAG -> fluids = true;
-                    // Chemikalien, Strom und fremde Arten sagen nichts über
-                    // Gegenstand oder Flüssigkeit. Dass sie hier nichts zu
-                    // suchen haben, meldet FilterCheck.
+                    // Chemicals, power, and foreign kinds say nothing about
+                    // item or fluid. That they have no business here is
+                    // reported by FilterCheck.
                     case CHEMICAL, POWER, CUSTOM -> { }
                 }
             }
@@ -70,7 +70,7 @@ public enum FilterKind {
         return ITEM;
     }
 
-    /** Alle Zeilen einer Vorlage, Ausnahmen mitgezählt. */
+    /** All lines of a template, exceptions counted in. */
     public static List<Expr> entries(Decl.FilterTemplate template) {
         List<Expr> all = new ArrayList<>(template.includes());
         all.addAll(template.excludes());
@@ -78,13 +78,12 @@ public enum FilterKind {
     }
 
     /**
-     * Die Selektoren in einer Zeile — durch {@code except} und Mengen
-     * hindurch.
+     * The selectors in a line — through {@code except} and amounts.
      *
-     * <p>Was hier nicht durchkommt, ist keine Auswahl: ein Name (also der
-     * Versuch, eine Vorlage in eine andere zu legen), eine Rechnung, ein
-     * Text. {@link FilterCheck} erkennt das daran, dass eine Zeile keinen
-     * einzigen Selektor hergibt.
+     * <p>What does not get through here is not a selector: a name (that is, the
+     * attempt to put one template inside another), a computation, a text.
+     * {@link FilterCheck} recognizes that by a line yielding not a single
+     * selector.
      */
     public static List<Expr.Selector> selectorsOf(Expr entry) {
         List<Expr.Selector> found = new ArrayList<>();

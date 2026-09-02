@@ -6,37 +6,37 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Was hinter einem Connector steht.
+ * What stands behind a connector.
  *
- * <p>Reine Auskunft, keine Rechnung: Der Server probt die Fähigkeiten des
- * Nachbarblocks, und was dabei herauskommt, steht hier. Der Editor liest es
- * für das Zeigen, für die Vorschläge und für die Warnung, wenn der Connector
- * an einer Seite hängt, an der die Maschine nichts annimmt.
+ * <p>Pure information, no computation: the server probes the capabilities of
+ * the neighboring block, and what comes out of that stands here. The editor
+ * reads it for the display, for the suggestions, and for the warning when the
+ * connector hangs on a side where the machine accepts nothing.
  *
- * <p><b>Der Übersetzungsschlüssel und nicht der fertige Text.</b> „Crusher"
- * heißt auf einem englischen Server anders als im deutschen Client, und
- * übersetzt wird dort, wo jemand hinsieht.
+ * <p><b>The translation key and not the finished text.</b> "Crusher" is called
+ * something else on an English server than in the German client, and the
+ * translation happens where someone looks.
  *
- * @param descriptionId Übersetzungsschlüssel des Blocks, etwa
+ * @param descriptionId translation key of the block, e.g.
  *                      {@code block.mekanism.crusher}
- * @param namespace     die Mod, aus der er stammt
- * @param connectedSide die Seite, an der der Connector tatsächlich hängt
- * @param access        was an welcher Seite geht; Seiten ohne Eintrag können
- *                      nichts
+ * @param namespace     the mod it comes from
+ * @param connectedSide the side the connector actually hangs on
+ * @param access        what works on which side; sides without an entry can do
+ *                      nothing
  */
 public record DeviceProfile(String descriptionId, String namespace,
                             Side connectedSide, Map<Side, Access> access) {
 
     /**
-     * Was an einer Seite geht.
+     * What works on a side.
      *
-     * @param slots  Fächer des Gegenstandsspeichers, null wenn keiner
-     * @param tanks  Behälter des Flüssigkeitsspeichers, null wenn keiner
-     * @param energy ob dort Strom hineingeht oder herauskommt
+     * @param slots  compartments of the item storage, zero when there is none
+     * @param tanks  containers of the fluid storage, zero when there is none
+     * @param energy whether power goes in or comes out there
      */
     public record Access(int slots, int tanks, boolean energy) {
 
-        /** Wonach sich fragen lässt. */
+        /** What can be asked about. */
         public enum Ability { ITEMS, FLUIDS, ENERGY }
 
         public boolean has(Ability ability) {
@@ -48,34 +48,34 @@ public record DeviceProfile(String descriptionId, String namespace,
         }
     }
 
-    /** Mehrere Seiten, die dasselbe können. */
+    /** Several sides that can do the same. */
     public record Group(List<Side> sides, Access access) {
     }
 
     /**
-     * Ein Gerät, über das nichts bekannt ist.
+     * A device about which nothing is known.
      *
-     * <p>Der Chunk ist nicht geladen, oder da steht gar nichts. <b>Das ist
-     * etwas anderes als ein Gerät, das nichts kann</b> — dieselbe
-     * Unterscheidung wie bei {@link NetworkView#knowsNetwork()}. Wer sie
-     * einebnet, warnt vor Maschinen, die tadellos funktionieren.
+     * <p>The chunk is not loaded, or there is nothing there at all. <b>That is
+     * something other than a device that can do nothing</b> — the same
+     * distinction as with {@link NetworkView#knowsNetwork()}. Whoever levels it
+     * out warns about machines that work flawlessly.
      */
     public static DeviceProfile unreachable() {
         return new DeviceProfile("", "", Side.ANY, Map.of());
     }
 
-    /** Ist überhaupt etwas bekannt? */
+    /** Is anything known at all? */
     public boolean reachable() {
         return !descriptionId.isEmpty();
     }
 
-    /** Was an dieser Seite geht — oder nichts. */
+    /** What works on this side — or nothing. */
     public Access accessAt(Side side) {
         Access direct = access.get(side);
         if (direct != null) {
             return direct;
         }
-        // Was ohne Seite angeboten wird, gilt für jede.
+        // What is offered without a side applies to every one.
         return access.get(Side.ANY);
     }
 
@@ -97,10 +97,10 @@ public record DeviceProfile(String descriptionId, String namespace,
     }
 
     /**
-     * Die Seiten, an denen das geht — für „Norden hätte einen".
+     * The sides where this works — for "North would have one".
      *
-     * <p>Ohne die angeschlossene: Wer sie nennt, sagt dem Spieler, er solle
-     * den Connector dorthin hängen, wo er schon hängt.
+     * <p>Without the connected one: whoever names it tells the player to hang
+     * the connector where it already hangs.
      */
     public List<Side> sidesWith(Access.Ability ability) {
         List<Side> found = new ArrayList<>();
@@ -113,16 +113,16 @@ public record DeviceProfile(String descriptionId, String namespace,
     }
 
     /**
-     * Seiten mit gleichem Zugang zusammengefasst.
+     * Sides with the same access grouped together.
      *
-     * <p>Eine Maschine bietet an vier Seiten dasselbe an, und ohne das hier
-     * stünde es im Tooltip viermal. Zusammengefasst wird nach dem Inhalt des
-     * Zugangs und nicht nach der Handler-Instanz: Für die Anzeige ist
-     * „Norden, Süden: 3 Fächer" richtig, gleichgültig ob es dieselbe Instanz
-     * ist — und die Instanz überlebt den Weg zum Client ohnehin nicht.
+     * <p>A machine offers the same on four sides, and without this it would
+     * stand in the tooltip four times. Grouping is by the content of the access
+     * and not by the handler instance: for the display "North, South: 3 slots"
+     * is right, no matter whether it is the same instance — and the instance
+     * does not survive the trip to the client anyway.
      *
-     * <p>Die Reihenfolge der Seiten ist die der Aufzählung, damit dasselbe
-     * Gerät immer gleich dasteht.
+     * <p>The order of the sides is that of the enum, so that the same device
+     * always reads the same.
      */
     public List<Group> grouped() {
         Map<Access, List<Side>> byAccess = new LinkedHashMap<>();
@@ -140,15 +140,13 @@ public record DeviceProfile(String descriptionId, String namespace,
     }
 
     /**
-     * Was an diesem Gerät hängt, in einer Zeile.
+     * What hangs on this device, in one line.
      *
-     * <p>Über alle Seiten zusammengefasst und nicht je Seite: Die Frage
-     * lautet „taugt das überhaupt". Welche Seite es genau ist, sagt das
-     * Zeigen.
+     * <p>Summed over all sides and not per side: the question is "is this any
+     * good at all". Which side exactly it is, the display says.
      *
-     * <p>Hier und nicht im Editor, weil zwei Stellen sie brauchen — die
-     * Vorschlagsliste im Spiel und der Netzanalysator, der auf dem Server
-     * läuft.
+     * <p>Here and not in the editor, because two places need it — the suggestion
+     * list in the game and the network analyzer that runs on the server.
      */
     public String abilities() {
         if (!reachable()) {

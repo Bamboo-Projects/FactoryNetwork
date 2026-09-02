@@ -14,42 +14,41 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 /**
- * Das Projekt eines Controllers als Ordner neben der Welt.
+ * A controller's project as a folder next to the world.
  *
- * <p><b>Damit man es in einem richtigen Editor schreiben kann.</b> Ein Ordner
- * und keine Datei mehr: Ein Projekt aus mehreren {@code .mf}-Dateien ist in
- * VS Code ein Arbeitsbereich, und das ist der ganze Punkt — Übersicht.
+ * <p><b>So that you can write it in a real editor.</b> A folder and no longer a
+ * file: a project of several {@code .mf} files is a workspace in VS Code, and
+ * that is the whole point — overview.
  *
- * <p>Die Regel ist in beide Richtungen dieselbe: <b>Wer zuletzt geschrieben
- * hat, gewinnt.</b> Ein Übernehmen im Spiel schreibt den Ordner, ein Speichern
- * im Editor wird im Spiel übernommen.
+ * <p>The rule is the same in both directions: <b>whoever wrote last wins.</b>
+ * An adoption in the game writes the folder, a save in the editor is adopted in
+ * the game.
  *
- * <p>Verglichen wird der <b>Inhalt</b> des ganzen Ordners und nicht der
- * Zeitstempel je Datei. Das löst drei Fälle auf einmal, die mit Zeitstempeln
- * jeder für sich zu behandeln wären: Eine Datei wird angelegt, eine wird
- * gelöscht, eine wird umbenannt — Umbenennen ist von außen nichts anderes als
- * beides zusammen. Und der Fall „zwei Schreibvorgänge in derselben
- * Millisekunde" verschwindet mit.
+ * <p>What is compared is the <b>content</b> of the whole folder and not the
+ * timestamp per file. That resolves three cases at once that would each have to
+ * be handled separately with timestamps: a file is created, one is deleted, one
+ * is renamed — a rename, seen from outside, is nothing other than both
+ * together. And the case of "two writes in the same millisecond" goes away with
+ * them.
  *
- * <p><b>Nachgesehen wird im Sekundentakt, nicht überwacht.</b> Ein
- * {@code WatchService} wäre unmittelbar, bräuchte aber einen eigenen Thread,
- * eine Entprellung gegen die Doppelereignisse der Editoren und ein
- * verlässliches Aufräumen beim Weltwechsel.
+ * <p><b>Checked every second, not watched.</b> A {@code WatchService} would be
+ * immediate, but would need its own thread, a debounce against the editors'
+ * double events, and reliable cleanup on a world change.
  */
 public final class ProgramFolder {
 
     private static final String ROOT = "factorynetwork";
 
-    /** So oft wird nachgesehen — zwanzig Ticks sind eine Sekunde. */
+    /** How often it is checked — twenty ticks are one second. */
     public static final int CHECK_INTERVAL = 20;
 
     private final Path folder;
 
     /**
-     * Was wir zuletzt selbst geschrieben haben.
+     * What we last wrote ourselves.
      *
-     * <p>Ohne diesen Vergleich löst jedes eigene Schreiben beim nächsten
-     * Nachsehen ein Übernehmen aus, das wieder schreibt.
+     * <p>Without this comparison, every write of our own triggers an adoption
+     * on the next check, which writes again.
      */
     private Map<String, String> written = Map.of();
 
@@ -58,11 +57,10 @@ public final class ProgramFolder {
     }
 
     /**
-     * Der Ordner eines Controllers, oder {@code null}, wenn er sich nicht
-     * anlegen lässt.
+     * A controller's folder, or {@code null} if it cannot be created.
      *
-     * <p>Der Name trägt Dimension und Position: Zwei Controller können in
-     * verschiedenen Welten an derselben Stelle stehen.
+     * <p>The name carries dimension and position: two controllers can stand at
+     * the same spot in different worlds.
      */
     public static ProgramFolder of(ServerLevel level, BlockPos pos) {
         try {
@@ -75,29 +73,29 @@ public final class ProgramFolder {
             migrateSingleFile(root, name, folder);
             return at(folder);
         } catch (IOException | RuntimeException failed) {
-            // Ohne Ordner läuft alles weiter, nur eben ohne Brücke.
+            // Without a folder everything keeps running, just without the bridge.
             return null;
         }
     }
 
     /**
-     * Die Brücke zu einem beliebigen Ordner.
+     * The bridge to an arbitrary folder.
      *
-     * <p>Getrennt von {@link #of}, weil es zwei Fragen sind: <b>welcher
-     * Ordner</b> — dafür braucht es Welt und Position — und <b>was mit dem
-     * Ordner geschieht</b>. Nur die zweite ist hier interessant, und nur sie
-     * lässt sich ohne laufenden Server vorführen.
+     * <p>Separate from {@link #of}, because these are two questions: <b>which
+     * folder</b> — for that you need world and position — and <b>what happens
+     * to the folder</b>. Only the second is of interest here, and only it can
+     * be demonstrated without a running server.
      */
     public static ProgramFolder at(Path folder) {
         return new ProgramFolder(folder);
     }
 
     /**
-     * Holt die alte Einzeldatei in den Ordner.
+     * Pulls the old single file into the folder.
      *
-     * <p>Vor dem Projekt lag das Programm als {@code controller_….mf} neben
-     * dem Ordner. Sie wird zur {@code main.mf} und verschwindet — sonst
-     * stünden zwei Wahrheiten nebeneinander, und die Brücke sähe nur eine.
+     * <p>Before the project, the program lay as {@code controller_….mf} next to
+     * the folder. It becomes the {@code main.mf} and disappears — otherwise two
+     * truths would stand side by side, and the bridge would see only one.
      */
     private static void migrateSingleFile(Path root, String name, Path folder)
             throws IOException {
@@ -118,18 +116,18 @@ public final class ProgramFolder {
     }
 
     /**
-     * Schreibt das Projekt hin und merkt sich, dass wir es waren.
+     * Writes the project out and remembers that it was us.
      *
-     * <p>Dateien, die es im Projekt nicht mehr gibt, verschwinden auch im
-     * Ordner: Ein gelöschtes Programmstück, das als Datei liegen bleibt,
-     * käme beim nächsten Nachsehen zurück.
+     * <p>Files that no longer exist in the project disappear from the folder
+     * too: a deleted program piece that stays lying around as a file would come
+     * back on the next check.
      */
     public void write(Project project) {
         try {
             for (Map.Entry<String, String> file : project.files().entrySet()) {
                 Path path = folder.resolve(file.getKey());
-                // Der Ordner einer Datei entsteht mit ihr. Ohne das schlüge
-                // die erste Datei in einem neuen Ordner fehl, und zwar still.
+                // A file's folder comes into being with it. Without this the
+                // first file in a new folder would fail, and silently at that.
                 Path parent = path.getParent();
                 if (parent != null) {
                     Files.createDirectories(parent);
@@ -147,21 +145,20 @@ public final class ProgramFolder {
             }
             written = Map.copyOf(project.files());
         } catch (IOException ignored) {
-            // Ein schreibgeschützter Weltordner ist kein Fehler des Netzes.
+            // A read-only world folder is not an error of the network.
         }
     }
 
     /**
-     * Sieht nach, ob jemand von außen geschrieben hat.
+     * Checks whether someone has written from outside.
      *
-     * <p>Eine angelegte Datei gehört ab jetzt dazu, eine gelöschte ist weg.
-     * <b>Löschen ist eine Absicht</b> — bei einer einzelnen Datei kam sie
-     * beim nächsten Schreiben zurück, weil man sie kaum absichtlich löscht;
-     * in einem Projekt löscht man ein Programmstück, das man nicht mehr
-     * will.
+     * <p>A created file belongs from now on, a deleted one is gone.
+     * <b>Deleting is an intent</b> — with a single file it came back on the
+     * next write, because one hardly deletes it on purpose; in a project one
+     * deletes a program piece that one no longer wants.
      *
-     * @param current was der Controller gerade hält
-     * @return das neue Projekt, oder {@code null}, wenn nichts zu tun ist
+     * @param current what the controller currently holds
+     * @return the new project, or {@code null} if there is nothing to do
      */
     public Project poll(Project current) {
         Map<String, String> found = read();
@@ -169,7 +166,7 @@ public final class ProgramFolder {
             return null;
         }
         if (found.equals(written) || found.equals(current.files())) {
-            // Unsere eigene Schrift, oder eine Änderung, die nichts ändert.
+            // Our own writing, or a change that changes nothing.
             written = found;
             return null;
         }
@@ -178,23 +175,23 @@ public final class ProgramFolder {
     }
 
     /**
-     * Wie tief unter dem Ordner nachgesehen wird.
+     * How deep below the folder the check goes.
      *
-     * <p>Weiter, als ein gültiger Name reichen kann: Ein Name hat höchstens
-     * sechsundneunzig Zeichen, und jede Ebene kostet zwei. Die Zahl ist die
-     * Bremse gegen einen Ordner, in den jemand einen Verweiskreis gelegt hat
-     * — nicht die Grenze für den Menschen.
+     * <p>Deeper than a valid name can reach: a name has at most ninety-six
+     * characters, and each level costs two. The number is the brake against a
+     * folder into which someone has laid a reference cycle — not the limit for
+     * the human.
      */
     private static final int MAX_DEPTH = 16;
 
     /**
-     * Alle gültigen Dateinamen im Ordner, mitsamt Unterordnern.
+     * All valid file names in the folder, including subfolders.
      *
-     * <p><b>Der Name ist der Pfad unter dem Ordner, mit Schrägstrichen.</b>
-     * Auf Windows liefert {@code relativize} den Rückstrich, und ein
-     * {@code erz\brecher.mf} entspricht keinem {@code erz/brecher.mf} im
-     * Projekt: Die Brücke sähe eine fremde Datei und zugleich eine fehlende
-     * und schriebe im Sekundentakt zwei Wahrheiten gegeneinander.
+     * <p><b>The name is the path below the folder, with forward slashes.</b> On
+     * Windows {@code relativize} yields the backslash, and an
+     * {@code erz\brecher.mf} does not match any {@code erz/brecher.mf} in the
+     * project: the bridge would see a foreign file and a missing one at the same
+     * time and would write two truths against each other every second.
      */
     private List<String> listNames() throws IOException {
         try (Stream<Path> entries = Files.walk(folder, MAX_DEPTH)) {
@@ -207,15 +204,14 @@ public final class ProgramFolder {
     }
 
     /**
-     * Liest den Ordner, oder {@code null}, wenn er sich nicht lesen lässt.
+     * Reads the folder, or {@code null} if it cannot be read.
      *
-     * <p>Dateien mit einem Namen, den das Projekt nicht erlaubt, werden
-     * übergangen. Eine {@code Notizen.txt} im Ordner ist kein Programmstück,
-     * und ein {@code Erz/Gross.mf} mit Großbuchstaben auch nicht.
+     * <p>Files with a name the project does not allow are skipped. A
+     * {@code Notizen.txt} in the folder is not a program piece, and neither is
+     * an {@code Erz/Gross.mf} with capital letters.
      *
-     * <p>Öffentlich für die Prüfung: Der Weg hin und zurück ist die eine
-     * Sache, die an dieser Klasse schiefgehen kann, und er lässt sich in
-     * einem Wegwerfordner vorführen.
+     * <p>Public for testing: the round trip is the one thing that can go wrong
+     * in this class, and it can be demonstrated in a throwaway folder.
      */
     public Map<String, String> read() {
         try {
@@ -225,8 +221,8 @@ public final class ProgramFolder {
             }
             return found;
         } catch (IOException ignored) {
-            // Halb geschriebene Datei, gesperrt vom Editor — beim nächsten
-            // Blick steht sie vollständig da.
+            // Half-written file, locked by the editor — on the next look it
+            // stands there in full.
             return null;
         }
     }

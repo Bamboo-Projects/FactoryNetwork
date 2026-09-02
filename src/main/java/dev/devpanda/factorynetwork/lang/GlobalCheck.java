@@ -14,27 +14,27 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Prüft die globalen Werte eines Programms.
+ * Checks the global values of a program.
  *
- * <p><b>Wie weit die Prüfung reicht, entscheidet der Bestand:</b> Die Sprache
- * hat keinen Typprüfer, und Typfehler fallen zur Laufzeit auf. Einen Prüfer
- * nur für globale Werte zu bauen, wäre eine Insel mit eigenen Regeln —
- * dieselbe Schreibweise würde an einer Stelle beanstandet und an der nächsten
- * nicht.
+ * <p><b>How far the check reaches is decided by what exists:</b> the language
+ * has no type checker, and type errors surface at runtime. To build a checker
+ * only for global values would be an island with its own rules — the same
+ * spelling would be objected to in one place and not in the next.
  *
- * <p>Gemeldet wird deshalb, was <b>ohne Typsystem entscheidbar</b> ist:
+ * <p>What is reported is therefore what is <b>decidable without a type
+ * system</b>:
  *
  * <ul>
- *   <li>Der Anfangswert ist keine Rechnung. {@code global x = storage.count(…)}
- *       liefe wann? Beim Übernehmen, beim Serverstart, bei jedem Laden des
- *       Chunks? Ein Literal hat diese Frage nicht.
- *   <li>Kein Name doppelt.
- *   <li>Literal gegen Literal: {@code global modus = "tag"} und irgendwo
- *       {@code modus = 3}. Das ist der Fall, der in der Praxis vorkommt, weil
- *       er ein Vertipper ist.
+ *   <li>The initial value is not a computation. {@code global x = storage.count(…)}
+ *       would run when? On acceptance, on server start, on every load of the
+ *       chunk? A literal does not have this question.
+ *   <li>No name twice.
+ *   <li>Literal against literal: {@code global modus = "tag"} and somewhere
+ *       {@code modus = 3}. That is the case that occurs in practice, because it
+ *       is a typo.
  * </ul>
  *
- * <p>{@code modus = irgendeineFunktion()} bleibt offen, bis es läuft.
+ * <p>{@code modus = irgendeineFunktion()} stays open until it runs.
  */
 public final class GlobalCheck {
 
@@ -42,12 +42,12 @@ public final class GlobalCheck {
     }
 
     /**
-     * Die Art eines Literals, oder {@code null}.
+     * The kind of a literal, or {@code null}.
      *
-     * <p><b>Zahlen sind eine Art</b>, ganze wie gebrochene: Die Sprache
-     * rechnet ohnehin mit beiden und wandelt zwischen ihnen. Wer
-     * {@code menge = 2.5} an eine Null zuweist, meint keinen anderen Typ,
-     * sondern eine genauere Zahl.
+     * <p><b>Numbers are one kind</b>, whole as well as fractional: the language
+     * computes with both anyway and converts between them. Whoever assigns
+     * {@code menge = 2.5} to a zero means no different type, but a more precise
+     * number.
      */
     private static String literalKind(Expr expr) {
         return switch (expr) {
@@ -56,25 +56,24 @@ public final class GlobalCheck {
             case Expr.StringLit ignored -> "Text";
             case Expr.BoolLit ignored -> "Wahrheitswert";
             case Expr.DurationLit ignored -> "Dauer";
-            // Elementunabhängig, und `[]` gehört dazu: Was in einer Liste
-            // steht, weiß die Sprache ohne Typprüfer nicht — dass es eine
-            // Liste ist, reicht, um eine Zuweisung von "tag" daran zu melden.
+            // Element-independent, and `[]` belongs to it: what stands in a
+            // list the language does not know without a type checker — that it
+            // is a list is enough to report an assignment of "tag" to it.
             case Expr.ListLit ignored -> "Liste";
             case null, default -> null;
         };
     }
 
     /**
-     * Welche globalen Werte diese Datei erklärt, und von welcher Art.
+     * Which global values this file declares, and of what kind.
      *
-     * <p>Getrennt vom Prüfen, weil <b>alle Dateien einen Namensraum
-     * teilen</b>: Ein Wert aus {@code werte.mf} wird in {@code main.mf}
-     * zugewiesen, und ohne die Sammlung über alle Dateien hinweg wüsste die
-     * Prüfung dort nichts von ihm. Dasselbe Muster wie bei
-     * {@link NetworkCheck#localNames}.
+     * <p>Separate from the checking, because <b>all files share one
+     * namespace</b>: a value from {@code werte.mf} is assigned in {@code main.mf},
+     * and without collecting across all files the check there would know nothing
+     * of it. The same pattern as with {@link NetworkCheck#localNames}.
      *
-     * <p>Doppelte Namen meldet {@code Project} — dort ist bekannt, aus
-     * welcher Datei der erste stammt.
+     * <p>Duplicate names are reported by {@code Project} — there it is known
+     * which file the first one comes from.
      */
     public static Map<String, String> declaredKinds(Program program) {
         Map<String, String> kinds = new HashMap<>();
@@ -90,12 +89,12 @@ public final class GlobalCheck {
     }
 
     /**
-     * Die Festwerte dieser Datei, Name auf Art.
+     * The constants of this file, name to kind.
      *
-     * <p>Getrennt von {@link #declaredKinds}, weil ein Festwert eine andere
-     * Frage beantwortet: Bei einem globalen Wert geht es darum, ob eine
-     * Zuweisung zum Typ passt — bei einem Festwert darum, dass es sie gar
-     * nicht geben darf.
+     * <p>Separate from {@link #declaredKinds}, because a constant answers a
+     * different question: for a global value it is about whether an assignment
+     * fits the type — for a constant it is about there being no assignment at
+     * all.
      */
     public static Map<String, String> declaredConstants(Program program) {
         Map<String, String> constants = new HashMap<>();
@@ -109,18 +108,18 @@ public final class GlobalCheck {
     }
 
     /**
-     * Sucht, was ohne Typprüfer zu finden ist.
+     * Searches for what can be found without a type checker.
      *
-     * @param kinds die Arten aller globalen Werte des Projekts, aus
-     *              {@link #declaredKinds} über alle Dateien gesammelt
+     * @param kinds the kinds of all global values of the project, collected from
+     *              {@link #declaredKinds} across all files
      */
     public static List<Diagnostic> run(Program program, Map<String, String> kinds) {
         return run(program, kinds, Map.of());
     }
 
     /**
-     * @param constants die Festwerte des Projekts, aus
-     *                  {@link #declaredConstants} über alle Dateien gesammelt
+     * @param constants the constants of the project, collected from
+     *                  {@link #declaredConstants} across all files
      */
     public static List<Diagnostic> run(Program program, Map<String, String> kinds,
                                        Map<String, String> constants) {
@@ -176,13 +175,13 @@ public final class GlobalCheck {
     }
 
     /**
-     * Wandert durch einen Block und alles, was darin verschachtelt ist.
+     * Walks through a block and everything nested within it.
      *
-     * <p>Von Hand und ohne allgemeinen Besucher: Es gibt keinen, und einen für
-     * diese eine Prüfung einzuführen hieße, ihn für die ganze Sprache zu
-     * pflegen. Kommt eine Anweisungsart dazu, die einen Block enthält, fehlt
-     * sie hier — der Preis ist eine Meldung, die ausbleibt, nicht eine
-     * falsche.
+     * <p>By hand and without a general visitor: there is none, and introducing
+     * one for this single check would mean maintaining it for the whole
+     * language. If a kind of statement that contains a block is added, it is
+     * missing here — the price is a message that fails to appear, not a wrong
+     * one.
      */
     private static void checkBlock(Block block, Map<String, String> kinds,
                                    Map<String, String> constants,
@@ -190,9 +189,9 @@ public final class GlobalCheck {
         if (block == null) {
             return;
         }
-        // Ein let gilt ab seiner Zeile und nur bis zum Ende seines Blocks.
-        // Deshalb eine eigene Menge je Block, die mit der von außen anfängt —
-        // und die der Aufrufer nicht zurückbekommt.
+        // A let applies from its line and only until the end of its block. So a
+        // separate set per block, which starts with the one from outside — and
+        // which the caller does not get back.
         Set<String> shadowed = new HashSet<>(shadowedOutside);
         for (Stmt statement : block.statements()) {
             if (statement instanceof Stmt.Let let) {
@@ -215,8 +214,8 @@ public final class GlobalCheck {
                     checkStatement(branch.elseIf(), kinds, constants, problems, shadowed);
                 }
             }
-            // Die Schleifenvariable verdeckt einen gleichnamigen globalen Wert
-            // genauso wie ein let.
+            // The loop variable shadows a global value of the same name just
+            // like a let.
             case Stmt.For loop -> {
                 Set<String> inner = new HashSet<>(shadowed);
                 inner.add(loop.variable());
@@ -228,12 +227,12 @@ public final class GlobalCheck {
     }
 
     /**
-     * Eine Zuweisung an einen globalen Wert.
+     * An assignment to a global value.
      *
-     * <p>Ein {@code let} gleichen Namens verdeckt den globalen Wert; eine
-     * Zuweisung danach trifft die eigene Variable und nicht die Fabrik. Wer
-     * das übergeht, meldet einen Fehler, den es nicht gibt — und das ist die
-     * Sorte Meldung, die man abschaltet.
+     * <p>A {@code let} of the same name shadows the global value; an assignment
+     * after it hits one's own variable and not the factory. Whoever overlooks
+     * that reports an error that does not exist — and that is the sort of message
+     * one turns off.
      */
     private static void checkAssign(Stmt.Assign assign, Map<String, String> kinds,
                                     Map<String, String> constants,
@@ -241,10 +240,9 @@ public final class GlobalCheck {
         if (!(assign.target() instanceof Expr.Name name) || shadowed.contains(name.value())) {
             return;
         }
-        // <b>Ein Festwert ist keiner, wenn er sich schreiben lässt.</b> Das
-        // ist der einzige Unterschied zu einem globalen Wert, und er wird
-        // hier gemacht — nicht in der Laufzeit, wo er erst beim Laufen
-        // auffiele.
+        // <b>A constant is not one if it can be written to.</b> That is the
+        // only difference from a global value, and it is made here — not in the
+        // runtime, where it would only surface at run time.
         if (constants.containsKey(name.value())) {
             problems.add(new Diagnostic(Diagnostic.Severity.ERROR, assign.span(),
                     "„" + name.value() + "“ ist ein Festwert und lässt sich nicht ändern.",

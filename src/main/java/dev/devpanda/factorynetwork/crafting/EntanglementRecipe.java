@@ -13,18 +13,17 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.Level;
 
 /**
- * Baut zwei verschränkte Hälften — beide mit derselben Nummer.
+ * Builds two entangled halves — both with the same number.
  *
- * <p><b>Warum ein eigenes Rezept.</b> Ein gewöhnliches Rezept liefert immer
- * dasselbe Ergebnis; zwei Hälften müssen aber bei jedem Bau eine neue,
- * gemeinsame Nummer bekommen. Zwei Paare aus demselben Rezept dürfen sich
- * nicht kennen, sonst verbänden sich zwei Brücken in derselben Welt
- * zufällig.
+ * <p><b>Why a dedicated recipe.</b> An ordinary recipe always yields the same
+ * result; but two halves must get a new, shared number on every build. Two
+ * pairs from the same recipe must not know each other, otherwise two bridges
+ * in the same world would connect by chance.
  *
- * <p><b>Und warum das Ergebnis nur eine Hälfte ist:</b> Ein Rezept hat genau
- * ein Ausgabefeld. Die zweite Hälfte kommt über {@code getRemainingItems}
- * zurück — denselben Weg, auf dem ein Eimer aus einem Kuchenrezept
- * zurückkommt. Sie landet damit im Raster und nicht auf dem Boden.
+ * <p><b>And why the result is only one half:</b> a recipe has exactly one
+ * output field. The second half comes back via {@code getRemainingItems} —
+ * the same way a bucket comes back from a cake recipe. It thus ends up in the
+ * grid and not on the floor.
  */
 public class EntanglementRecipe extends CustomRecipe {
 
@@ -33,10 +32,10 @@ public class EntanglementRecipe extends CustomRecipe {
     }
 
     /**
-     * Zwei Netzkerne und ein Kristall, in beliebiger Anordnung.
+     * Two network cores and one crystal, in any arrangement.
      *
-     * <p>Formlos, weil die Anordnung hier nichts erzählt: Es gibt keine
-     * Vorder- und keine Rückseite an einer Verschränkung.
+     * <p>Shapeless, because the arrangement tells nothing here: there is no
+     * front and no back to an entanglement.
      */
     @Override
     public boolean matches(CraftingInput input, Level level) {
@@ -59,14 +58,14 @@ public class EntanglementRecipe extends CustomRecipe {
     }
 
     /**
-     * Beide Hälften auf einmal, als ein Stapel zu zweit.
+     * Both halves at once, as a stack of two.
      *
-     * <p><b>Und nichts gemerkt.</b> Ein Rezept gibt es einmal, nicht einmal
-     * je Werkbank — der {@code RecipeManager} hält je JSON genau ein Objekt,
-     * geteilt über alle Spieler und jeden Crafter-Block. Ein Feld darin, das
-     * zwischen dem Zusammenbauen und dem Herausnehmen etwas aufhebt, gehört
-     * allen gleichzeitig: Zwei Bauten kreuzten sich, und jeder Spieler
-     * hielte eine Hälfte, deren Partner woanders liegt.
+     * <p><b>And nothing remembered.</b> A recipe exists once, not once per
+     * crafting table — the {@code RecipeManager} keeps exactly one object per
+     * JSON, shared across all players and every crafter block. A field in it
+     * that holds something between assembling and taking out belongs to
+     * everyone at once: two builds would cross, and each player would hold a
+     * half whose partner lies elsewhere.
      */
     @Override
     public ItemStack assemble(CraftingInput input, HolderLookup.Provider registries) {

@@ -22,12 +22,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Was Jade über einen Router sagt.
+ * What Jade says about a router.
  *
- * <p>Nach Bahnen gruppiert, nicht nach Seiten: Die Frage vor dem Block ist
- * „was hängt hier zusammen", und die beantwortet eine Zeile je Bahn mit den
- * Seiten darin. Sechs Zeilen mit je einer Seite wären dieselbe Auskunft, nur
- * müsste man sie selbst sortieren.
+ * <p>Grouped by lanes, not by sides: the question in front of the block is
+ * "what belongs together here", and one line per lane with the sides in it
+ * answers it. Six lines with one side each would be the same information, only
+ * you'd have to sort them yourself.
  */
 public enum RouterInfo implements IBlockComponentProvider, IServerDataProvider<BlockAccessor> {
 
@@ -36,10 +36,10 @@ public enum RouterInfo implements IBlockComponentProvider, IServerDataProvider<B
     private static final String KEY_LANES = "FnRouterLanes";
 
     /**
-     * Trennzeichen der Zeilen zwischen Server und Client.
+     * Line separator between server and client.
      *
-     * <p>Ein Semikolon, weil {@code split} einen regulären Ausdruck nimmt:
-     * Ein senkrechter Strich hieße dort „oder" und müsste geschützt werden.
+     * <p>A semicolon, because {@code split} takes a regular expression: a
+     * vertical bar would mean "or" there and would have to be escaped.
      */
     private static final String SEPARATOR = ";";
 
@@ -59,17 +59,17 @@ public enum RouterInfo implements IBlockComponentProvider, IServerDataProvider<B
                 continue;
             }
             final int current = lane;
-            // Ohne Controller in Reichweite gibt es keine Kanalzahlen: Eine
-            // Bahn ohne Netz trägt nichts, das ist nicht dasselbe wie null.
-            // Was eine Bahn trägt, ist ihr Durchsatz je Tick — nicht,
-            // wie viele Geräte dahinter hängen.
-            // Roh über die Leitung, formatiert beim Anzeigen: Die
-            // Sprachdatei des Betrachters entscheidet, wie eine Zahl
-            // aussieht, nicht die des Servers.
+            // With no controller in range there are no channel counts: a lane
+            // without a network carries nothing, which is not the same as
+            // zero. What a lane carries is its throughput per tick — not how
+            // many devices hang behind it.
+            // Raw over the wire, formatted at display time: the viewer's
+            // language file decides what a number looks like, not the
+            // server's.
             int durchsatzProTick = dev.devpanda.factorynetwork.network.Bandwidth.CABLE;
             lines.add(StringTag.valueOf(lane + SEPARATOR + durchsatzProTick
                     + SEPARATOR + String.join(",", sides)));
-            // Die Kapazität steht als ganze Zahl da: Ein Router trägt immer
+            // The capacity is given as a whole number: a router always carries
         }
         List<String> off = sidesOn(router, RouterBlockEntity.OFF);
         if (!off.isEmpty()) {
@@ -103,8 +103,8 @@ public enum RouterInfo implements IBlockComponentProvider, IServerDataProvider<B
                         .withStyle(ChatFormatting.DARK_GRAY));
                 continue;
             }
-            // Was diese Seite durchlässt, als Name — eine Nummer sagt
-            // seit dem 29.08. nichts mehr: Der Router führt Farben.
+            // What this side lets through, as a name — a number has said
+            // nothing since 29 Aug: the router carries colours.
             int wert = Integer.parseInt(parts[0]);
             Component filter = wert == dev.devpanda.factorynetwork.block.entity
                     .RouterBlockEntity.ALL
@@ -117,8 +117,8 @@ public enum RouterInfo implements IBlockComponentProvider, IServerDataProvider<B
                             sides)
                     .withStyle(ChatFormatting.GRAY));
         }
-        // Und was er kostet. Filtern braucht Zeit — hier steht die Ursache
-        // zu einer Verzögerung, die man sonst nur spürt.
+        // And what it costs. Filtering takes time — here is the cause of a
+        // delay you would otherwise only feel.
         if (!lines.isEmpty()) {
             tooltip.add(Component.translatable("jade.factorynetwork.router.latency",
                             dev.devpanda.factorynetwork.network.Latency.PER_HOP)
@@ -126,7 +126,7 @@ public enum RouterInfo implements IBlockComponentProvider, IServerDataProvider<B
         }
     }
 
-    /** Wie die Farbe hinter einer Einstellungsnummer heißt. */
+    /** The name of the colour behind a setting number. */
     private static Component colourName(int wert) {
         var farben = dev.devpanda.factorynetwork.block.CableColour.values();
         var farbe = farben[Math.max(0, Math.min(wert - 2, farben.length - 1))];

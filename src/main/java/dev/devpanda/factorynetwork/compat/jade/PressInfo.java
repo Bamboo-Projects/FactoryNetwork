@@ -12,11 +12,11 @@ import snownee.jade.api.ITooltip;
 import snownee.jade.api.config.IPluginConfig;
 
 /**
- * Was Jade über die Presse sagt.
+ * What Jade says about the press.
  *
- * <p>Vor allem eines: <b>warum sie steht</b>. Eine Maschine ohne Strom und
- * eine ohne Material sehen gleich aus, und der Unterschied entscheidet, wo man
- * suchen muss.
+ * <p>Above all one thing: <b>why it is stalled</b>. A machine without power
+ * and one without material look the same, and the difference decides where you
+ * have to look.
  */
 public enum PressInfo implements IBlockComponentProvider, IServerDataProvider<BlockAccessor> {
 
@@ -63,8 +63,7 @@ public enum PressInfo implements IBlockComponentProvider, IServerDataProvider<Bl
             return;
         }
 
-        // Steht sie, dann sagen warum — in der Reihenfolge, in der man es
-        // beheben würde.
+        // If it is stalled, say why — in the order in which you would fix it.
         String grund = !data.getBoolean(KEY_HAS_STAMP) ? "no_stamp"
                 : !data.getBoolean(KEY_HAS_MATERIAL) ? "no_material"
                 : energie <= 0 ? "no_power"

@@ -6,32 +6,31 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Zerlegt Manifold-Quelltext in Token.
+ * Breaks Manifold source text into tokens.
  *
- * <p>Drei Dinge entscheidet der Lexer, die sonst im Parser landen würden:
+ * <p>The lexer decides three things that would otherwise land in the parser:
  *
  * <ul>
- *   <li><b>Zeilenumbrüche.</b> Manifold beendet Anweisungen mit dem
- *       Zeilenende. Ein Umbruch wird nur dann zum Token, wenn die Zeile
- *       überhaupt zu Ende sein kann — nach einem Operator oder innerhalb einer
- *       offenen Klammer ist sie es nicht.
- *   <li><b>Zeitangaben.</b> 30s ist ein Token, nicht die Zahl 30 gefolgt von
- *       einem Namen. Sonst wäre "30 s" dasselbe.
- *   <li><b>Auswahlausdrücke.</b> item:iron_ingot ist ein Token. Das muss hier
- *       entschieden werden, weil eine Typangabe genauso beginnt — der
- *       Unterschied ist der Leerraum nach dem Doppelpunkt.
+ *   <li><b>Line breaks.</b> Manifold ends statements at the end of the line. A
+ *       break only becomes a token when the line can actually end there — after
+ *       an operator, or inside an open bracket, it cannot.
+ *   <li><b>Durations.</b> 30s is one token, not the number 30 followed by a
+ *       name. Otherwise "30 s" would mean the same thing.
+ *   <li><b>Selector expressions.</b> item:iron_ingot is one token. That has to
+ *       be decided here, because a type annotation begins the same way — the
+ *       difference is the whitespace after the colon.
  * </ul>
  */
 public final class Lexer {
 
     /**
-     * Was als Auswahl zusammengeklebt wird.
+     * What gets glued together into a selector.
      *
-     * <p>Nicht mehr fest, sondern aus der Registry: Seit dem 26.08. dürfen
-     * fremde Mods eigene Arten anmelden, und {@code source:mana} muss dann
-     * ein Wort sein und nicht drei. Gefragt wird bei jedem Aufruf — die
-     * Registry steht nach dem Laden fest, und ein Zwischenspeicher hier wäre
-     * eine zweite Wahrheit über dieselbe Liste.
+     * <p>No longer fixed, but taken from the registry: since Aug 26 foreign
+     * mods may register their own kinds, and {@code source:mana} then has to be
+     * one word, not three. Queried on every call — the registry is fixed once
+     * loading is done, and a cache here would be a second source of truth about
+     * the same list.
      */
     private static Set<String> selectorKinds() {
         return dev.devpanda.factorynetwork.runtime.ResourceKinds.selectorPrefixes();
@@ -45,11 +44,11 @@ public final class Lexer {
     private int pos;
     private int line = 1;
     private int lineStart;
-    /** Tiefe offener runder Klammern — darin beendet ein Umbruch nichts. */
+    /** Depth of open parentheses — inside them a break ends nothing. */
     private int parenDepth;
 
     public Lexer(String source) {
-        // NFC, damit zwei sichtbar gleiche Namen auch gleich sind.
+        // NFC, so that two names that look the same really are the same.
         this.source = Normalizer.normalize(source, Normalizer.Form.NFC);
     }
 
@@ -77,14 +76,14 @@ public final class Lexer {
                 readToken();
             }
         }
-        // Ein abschließender Umbruch, damit die letzte Anweisung endet.
+        // A trailing break, so that the last statement ends.
         if (!tokens.isEmpty() && lastType() != TokenType.NL) {
             add(TokenType.NL, "\n", pos, pos);
         }
         add(TokenType.EOF, "", pos, pos);
     }
 
-    // ---- Zeilenumbrüche ---------------------------------------------------
+    // ---- Line breaks ------------------------------------------------------
 
     private void consumeNewline() {
         int start = pos;
@@ -97,10 +96,9 @@ public final class Lexer {
     }
 
     /**
-     * Beendet ein Umbruch an dieser Stelle eine Anweisung? Nur wenn das
-     * vorherige Token einen Ausdruck abschließen kann, keine Klammer offen
-     * ist, und die nächste Zeile nicht mit einem Punkt oder mit else
-     * weitermacht.
+     * Does a break at this point end a statement? Only if the previous token
+     * can end an expression, no bracket is open, and the next line does not
+     * continue with a dot or with else.
      */
     private boolean breaksStatement() {
         if (parenDepth > 0 || tokens.isEmpty()) {
@@ -122,7 +120,7 @@ public final class Lexer {
         return !continuesOnNextLine();
     }
 
-    /** Blickt über Leerraum und Kommentare hinweg auf den nächsten Inhalt. */
+    /** Looks past whitespace and comments to the next content. */
     private boolean continuesOnNextLine() {
         int look = pos;
         while (look < source.length()) {
@@ -178,7 +176,7 @@ public final class Lexer {
                 advance();
             }
         }
-        // Eine unmittelbar folgende Einheit macht daraus eine Zeitangabe.
+        // A unit immediately following turns this into a duration.
         int unitStart = pos;
         while (!atEnd() && Character.isLetter(peek())) {
             advance();
@@ -237,28 +235,27 @@ public final class Lexer {
         }
         String text = source.substring(start, pos);
 
-        // item:iron_ingot ist eine Auswahl, "item: Item" eine Typangabe.
-        // Den Unterschied macht der Leerraum hinter dem Doppelpunkt.
+        // item:iron_ingot is a selector, "item: Item" a type annotation.
+        // The difference is the whitespace after the colon.
         if (selectorKinds().contains(text) && !atEnd() && peek() == ':'
                 && pos + 1 < source.length() && isSelectorPart(source.charAt(pos + 1))) {
             advance();
             while (!atEnd() && isSelectorPart(peek())) {
                 advance();
             }
-            // Ein zweiter Doppelpunkt gehört noch dazu — nicht weil die
-            // Sprache ihn kennt, sondern damit der Parser ihn sieht.
+            // A second colon belongs to it too — not because the language
+            // knows it, but so that the parser gets to see it.
             //
-            // <b>Aus JEI kopiert man mekanism:steel_ingot.</b> Wer daraus
-            // item:mekanism:steel_ingot macht, bekam sieben Fehler in einer
-            // Zeile, von denen keiner den Grund nannte: „Bei move fehlt das
-            // Ziel", „from ist ein Schlüsselwort". Der Lexer hörte am
-            // Doppelpunkt auf, und der Rest der Zeile zerfiel. Als ein Wort
-            // gelesen wird daraus eine Meldung, die die richtige Schreibweise
-            // nennt.
+            // <b>From JEI you copy mekanism:steel_ingot.</b> Anyone who turns
+            // that into item:mekanism:steel_ingot got seven errors on one
+            // line, none of which named the cause: "move is missing its
+            // target", "from is a keyword". The lexer stopped at the colon,
+            // and the rest of the line fell apart. Read as a single word it
+            // becomes one message that names the correct spelling.
             //
-            // Dieselbe Bedingung wie oben: nur mitlesen, wenn ein
-            // Auswahlzeichen folgt. Sonst verschluckt ein halb getippter
-            // Ausdruck den Rest der Zeile.
+            // Same condition as above: only read on when a selector character
+            // follows. Otherwise a half-typed expression swallows the rest of
+            // the line.
             if (!atEnd() && peek() == ':'
                     && pos + 1 < source.length() && isSelectorPart(source.charAt(pos + 1))) {
                 advance();
@@ -286,9 +283,9 @@ public final class Lexer {
         switch (c) {
             case '(' -> { parenDepth++; add(TokenType.LPAREN, "(", start, pos); }
             case ')' -> { if (parenDepth > 0) { parenDepth--; } add(TokenType.RPAREN, ")", start, pos); }
-            // Eckige Klammern zählen wie runde: Was zwischen ihnen steht,
-            // ist ein Ausdruck, und ein Ausdruck endet nicht an einer Zeile.
-            // Eine Liste aus sechs Namen schreibt niemand in eine Zeile.
+            // Square brackets count like round ones: what stands between them
+            // is an expression, and an expression does not end at a line break.
+            // Nobody writes a list of six names on a single line.
             case '[' -> { parenDepth++; add(TokenType.LBRACKET, "[", start, pos); }
             case ']' -> {
                 if (parenDepth > 0) {
@@ -299,9 +296,9 @@ public final class Lexer {
             case '{' -> add(TokenType.LBRACE, "{", start, pos);
             case '}' -> add(TokenType.RBRACE, "}", start, pos);
             case ',' -> add(TokenType.COMMA, ",", start, pos);
-            // Zwei Punkte sind ein Bereich: 1..5. Eine Kommazahl kommt
-            // hier nie an — readNumberOrDuration nimmt den Punkt nur mit,
-            // wenn eine Ziffer folgt.
+            // Two dots are a range: 1..5. A decimal number never reaches
+            // here — readNumberOrDuration only takes the dot along when a
+            // digit follows.
             case '.' -> {
                 if (!atEnd() && peek() == '.') {
                     advance();
@@ -351,7 +348,7 @@ public final class Lexer {
         }
     }
 
-    // ---- Hilfen -----------------------------------------------------------
+    // ---- Helpers ----------------------------------------------------------
 
     private void skipBlanksAndComments() {
         while (!atEnd()) {

@@ -12,9 +12,9 @@ import snownee.jade.api.ITooltip;
 import snownee.jade.api.config.IPluginConfig;
 
 /**
- * Was Jade über den Controller sagt: der Zustand des ganzen Netzes auf einen
- * Blick — Geräte, Kabel, wie viele ohne Kanal geblieben sind, und wie viele
- * Worker gerade stehen.
+ * What Jade says about the controller: the state of the whole network at a
+ * glance — devices, cables, how many were left without a channel, and how many
+ * workers are currently halted.
  */
 public enum ControllerInfo implements IBlockComponentProvider, IServerDataProvider<BlockAccessor> {
 
@@ -41,9 +41,8 @@ public enum ControllerInfo implements IBlockComponentProvider, IServerDataProvid
         data.putInt(KEY_DEVICES, graph.deviceCount());
         data.putInt(KEY_CONNECTORS, graph.connectorCount());
         data.putInt(KEY_UNNAMED, graph.unnamedConnectors().size());
-        // Seit dem 29.08. gibt es keine Geräte ohne Kanal mehr. Der
-        // Schlüssel bleibt, damit ein alter Client nicht danach sucht
-        // und nichts findet.
+        // Since 29 Aug there are no more devices without a channel. The key
+        // stays so that an old client doesn't look for it and find nothing.
         data.putInt(KEY_STARVED, 0);
         data.putInt(KEY_CABLES, graph.cableCount());
         data.putInt(KEY_WORKERS, controller.program().workers().size());
@@ -63,8 +62,8 @@ public enum ControllerInfo implements IBlockComponentProvider, IServerDataProvid
         if (!data.contains(KEY_DEVICES)) {
             return;
         }
-        // Der Strom zuerst: Ein Netz, das steht, weil der Vorrat leer ist,
-        // sieht aus wie eines mit einem Fehler im Programm.
+        // Power first: a network that is stalled because its reserve is empty
+        // looks like one with a bug in the program.
         var zustand = dev.devpanda.factorynetwork.network.NetworkPower.State
                 .values()[data.getInt(KEY_POWER_STATE)];
         String schluessel = switch (zustand) {
@@ -88,9 +87,9 @@ public enum ControllerInfo implements IBlockComponentProvider, IServerDataProvid
         tooltip.add(Component.translatable("jade.factorynetwork.controller.network",
                 data.getInt(KEY_DEVICES), data.getInt(KEY_CABLES))
                 .withStyle(ChatFormatting.GRAY));
-        // Und darunter, wie viele davon der Code ansprechen kann. Die beiden
-        // Zahlen gehen weit auseinander: Schränke, Laufwerke, Router und
-        // Anzeigen sind Geräte, aber kein Connector.
+        // And below it, how many of them the code can address. The two numbers
+        // diverge widely: racks, drives, routers and displays are devices, but
+        // not connectors.
         tooltip.add(Component.translatable("jade.factorynetwork.controller.connectors",
                 data.getInt(KEY_CONNECTORS))
                 .withStyle(ChatFormatting.DARK_GRAY));

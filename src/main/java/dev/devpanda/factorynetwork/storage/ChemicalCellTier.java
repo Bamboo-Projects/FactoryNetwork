@@ -3,20 +3,20 @@ package dev.devpanda.factorynetwork.storage;
 import net.minecraft.util.StringRepresentable;
 
 /**
- * Die Größen einer Chemikalienzelle.
+ * The sizes of a chemical cell.
  *
- * <p>Dieselbe Rechnung wie bei Gegenständen und Flüssigkeiten — so viele
- * Sorten, so viel Menge —, und dieselben Sortenzahlen wie bei den
- * Flüssigkeiten: Chemikalien gibt es in wenigen Sorten und großen Mengen.
+ * <p>The same accounting as for items and fluids — so many types, so much
+ * amount —, and the same type counts as the fluids: chemicals come in few
+ * types and large amounts.
  *
- * <p><b>Die Namen sagen Kilo-Millibucket.</b> Mekanism rechnet in Millibucket
- * wie das Spiel bei Flüssigkeiten, aber in ganz anderen Größenordnungen: Ein
- * Elektrolyseur macht Hunderte je Sekunde. Eine Zelle in Eimern zu beschriften
- * ergäbe vierstellige Zahlen auf jedem Gegenstand.
+ * <p><b>The names say kilo-millibuckets.</b> Mekanism reckons in millibuckets
+ * like the game does for fluids, but on quite different orders of magnitude:
+ * an electrolyser makes hundreds per second. Labelling a cell in buckets
+ * would give four-digit numbers on every item.
  *
- * <p><b>Die Zahlen sind gesetzt, nicht hergeleitet</b> — wie die an den
- * Serverbauteilen (5.4). Wie sie sich anfühlen, zeigt eine Runde Spielen; sie
- * lassen sich an dieser einen Stelle ändern.
+ * <p><b>The numbers are set, not derived</b> — like those on the server parts
+ * (5.4). How they feel is shown by a round of play; they can be changed at
+ * this one place.
  */
 public enum ChemicalCellTier implements StringRepresentable, CellSize {
 
@@ -40,7 +40,7 @@ public enum ChemicalCellTier implements StringRepresentable, CellSize {
         return types;
     }
 
-    /** Wie viele Millibucket insgesamt hineinpassen. */
+    /** How many millibuckets fit in total. */
     @Override
     public long amount() {
         return amount;

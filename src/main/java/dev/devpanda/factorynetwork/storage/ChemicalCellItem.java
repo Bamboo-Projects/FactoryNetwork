@@ -10,21 +10,21 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Eine Chemikalienzelle.
+ * A chemical cell.
  *
- * <p>Sie gehört in dasselbe Laufwerk wie die anderen beiden. Ein drittes
- * Laufwerk wäre ein Block mehr für dieselbe Handlung.
+ * <p>It belongs in the same drive as the other two. A third drive would be
+ * one more block for the same action.
  *
- * <p><b>Es gibt sie immer, auch ohne Mekanism.</b> Bedingt zu registrieren
- * hieße: Wer die Mod entfernt, verliert seine Zellen aus der Welt — samt
- * Inhalt, denn ein unbekannter Gegenstand verschwindet beim Laden. Ein
- * Gegenstand, den es immer gibt und dessen Tooltip sagt, was ihm fehlt, ist
- * die freundlichere Antwort und erfüllt dieselbe Zusage: Ohne Mekanism läuft
- * alles wie vorher, es geht nur nichts hinein.
+ * <p><b>It always exists, even without Mekanism.</b> Registering it
+ * conditionally would mean: whoever removes the mod loses their cells from
+ * the world — contents and all, since an unknown item disappears on load. An
+ * item that always exists and whose tooltip says what it is missing is the
+ * friendlier answer and keeps the same promise: without Mekanism everything
+ * runs as before, only nothing goes in.
  *
- * <p><b>Kein Mekanism-Typ in einer Signatur.</b> Diese Klasse wird beim
- * Registrieren geladen — also immer. Was sie über den Inhalt weiß, holt sie
- * über Texte aus {@code compat/mekanism}.
+ * <p><b>No Mekanism type in a signature.</b> This class is loaded on
+ * registration — that is, always. What it knows about the contents, it
+ * obtains as strings from {@code compat/mekanism}.
  */
 public class ChemicalCellItem extends Item {
 
@@ -43,7 +43,7 @@ public class ChemicalCellItem extends Item {
         return stack.getItem() instanceof ChemicalCellItem cell ? cell.tier() : null;
     }
 
-    /** Was in dieser Zelle liegt: Kennung auf Menge. Ohne Mekanism leer. */
+    /** What sits in this cell: id to amount. Empty without Mekanism. */
     private static Map<String, Long> contents(ItemStack stack) {
         return dev.devpanda.factorynetwork.compat.mekanism.ChemicalStores.read(stack,
                 net.minecraft.core.RegistryAccess.EMPTY);
@@ -62,8 +62,8 @@ public class ChemicalCellItem extends Item {
         for (long amount : contents.values()) {
             total += amount;
         }
-        // Beide Grenzen nennen: Voll ist eine Zelle meist an den Sorten, nicht
-        // an der Menge — wer nur die Menge sieht, sucht den Fehler woanders.
+        // Name both limits: a cell is usually full on types, not on amount —
+        // whoever sees only the amount looks for the problem elsewhere.
         lines.add(Component.translatable("item.factorynetwork.chemical_cell.types",
                 contents.size(), tier.types()).withStyle(ChatFormatting.GRAY));
         lines.add(Component.translatable("item.factorynetwork.chemical_cell.amount",
@@ -79,7 +79,7 @@ public class ChemicalCellItem extends Item {
         return !contents(stack).isEmpty();
     }
 
-    /** Der Balken zeigt die knappere der beiden Grenzen. */
+    /** The bar shows the tighter of the two limits. */
     @Override
     public int getBarWidth(ItemStack stack) {
         Map<String, Long> contents = contents(stack);

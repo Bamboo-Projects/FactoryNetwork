@@ -13,12 +13,11 @@ import java.util.Map;
 import java.util.function.ToLongFunction;
 
 /**
- * Die Rezepte, die im Programm stehen.
+ * The recipes declared in the program.
  *
- * <p>Was eine fremde Maschine kann, ist generisch nicht zu lesen — die
- * Belege stehen in {@code entscheidungen.md}, „Processing-Rezepte". Also
- * schreibt es der Spieler auf, und zwar dort, wo bei dieser Mod alles steht:
- * im Programm.
+ * <p>What a foreign machine can do is not readable generically — the evidence
+ * is in {@code entscheidungen.md}, „Processing-Rezepte". So the player writes
+ * it down, and does so where everything in this mod lives: in the program.
  *
  * <pre>
  * recipe erz_mahlen at brecher {
@@ -27,45 +26,44 @@ import java.util.function.ToLongFunction;
  * }
  * </pre>
  *
- * <p><b>Kein Muster-Item.</b> Der Fabricator baut ohne, und der Grund trägt
- * hierher weiter: Ein Musterterminal wäre der zweite Ort, an dem eine Fabrik
- * erklärt wird — der erste ist das Programm. Eine Deklaration geht dafür mit
- * der Datei nach VS Code, lässt sich versionieren, und ein Rezept an einem
- * Gerät, das es nicht gibt, meldet sich beim Übernehmen.
+ * <p><b>No pattern item.</b> The fabricator builds without one, and the reason
+ * carries over here: a pattern terminal would be the second place where a
+ * factory is described — the first is the program. A declaration instead
+ * travels with the file to VS Code, can be versioned, and a recipe at a device
+ * that does not exist reports itself when applied.
  *
- * <p><b>Flüssigkeiten und Chemikalien werden eingefüllt, nicht geplant.</b>
- * Der Planner rechnet mit Gegenständen; sie auch zu beschaffen hieße, eine
- * Ressourcenart zu brauchen, die offen ist statt fest — eine eigene
- * Entscheidung. Bis dahin holt der Auftrag sie beim Anfangen aus dem
- * Netzspeicher, und ist zu wenig da, wartet er und sagt, welche Sorte fehlt.
+ * <p><b>Fluids and chemicals are filled in, not planned.</b> The planner works
+ * with items; procuring them too would mean needing a resource kind that is
+ * open rather than fixed — a decision of its own. Until then the job fetches
+ * them from the network storage when starting, and if too little is there, it
+ * waits and says which kind is missing.
  *
- * <p><b>Das erste {@code out} zählt.</b> Ein Rezept darf mehrere Ergebnisse
- * nennen — ein Brecher liefert Staub und manchmal ein Nebenprodukt —, aber
- * geplant wird auf das erste. Die anderen landen trotzdem im Netz, wenn der
- * Ausführende abholt; sie sind eine Zugabe und kein Ziel.
+ * <p><b>The first {@code out} counts.</b> A recipe may name several results —
+ * a crusher yields dust and sometimes a by-product — but planning targets the
+ * first. The others still land in the network when the executor collects; they
+ * are a bonus and not a target.
  */
 public final class DeclaredRecipes implements CraftingPlanner.Recipes<Item> {
 
-    /** Woran der Ausführende erkennt, dass ein Rezept aus dem Programm kommt. */
+    /** How the executor recognizes that a recipe comes from the program. */
     public static final String PREFIX = "at:";
 
-    /** Was in einer Station das Gerät vom Rezeptnamen trennt. */
+    /** What separates the device from the recipe name within a station. */
     private static final char SEPARATOR = '#';
 
     /**
-     * Die Station eines Rezepts an diesem Gerät.
+     * The station of a recipe at this device.
      *
-     * <p>Der Name des Rezepts steht mit darin, getrennt durch ein
-     * Doppelkreuz. Er wird gebraucht, um die <b>Nebenzutaten</b>
-     * wiederzufinden: Zwei Rezepte am selben Gerät mit derselben Ausgabe
-     * ließen sich sonst nicht unterscheiden, und dann bekäme die Maschine das
-     * Wasser des anderen.
+     * <p>The recipe's name is included in it, separated by a hash. It is
+     * needed to find the <b>extras</b> again: two recipes at the same device
+     * with the same output could otherwise not be told apart, and then the
+     * machine would get the other one's water.
      */
     public static String stationFor(String device, String recipe) {
         return PREFIX + device + "#" + recipe;
     }
 
-    /** Das Gerät hinter einer Station, oder {@code null}. */
+    /** The device behind a station, or {@code null}. */
     public static String deviceOf(String station) {
         if (!station.startsWith(PREFIX)) {
             return null;
@@ -76,11 +74,10 @@ public final class DeclaredRecipes implements CraftingPlanner.Recipes<Item> {
     }
 
     /**
-     * Und der Name des Rezepts, oder leer.
+     * And the recipe's name, or empty.
      *
-     * <p>Leer heißt: eine Station aus einer Welt, die vor den Nebenzutaten
-     * gespeichert wurde. Der Auftrag läuft weiter — er hat nur nichts
-     * einzufüllen.
+     * <p>Empty means: a station from a world that was saved before the extras.
+     * The job carries on — it just has nothing to fill in.
      */
     public static String recipeOf(String station) {
         int hash = station.indexOf(SEPARATOR);
@@ -88,29 +85,29 @@ public final class DeclaredRecipes implements CraftingPlanner.Recipes<Item> {
     }
 
     /**
-     * Eine Zutat, die kein Gegenstand ist.
+     * An ingredient that is not an item.
      *
-     * <p><b>Sie wird eingefüllt, nicht geplant.</b> Der Planner rechnet mit
-     * Gegenständen; eine Flüssigkeit als Zutat auch zu <i>beschaffen</i>
-     * hieße, dass er Rezepte über Flüssigkeiten kennen müsste — und dazu
-     * bräuchte es eine Ressourcenart, die offen ist statt fest. Das ist eine
-     * eigene Entscheidung (siehe {@code offene-punkte.md}).
+     * <p><b>It is filled in, not planned.</b> The planner works with items;
+     * procuring a fluid as an ingredient too would mean it had to know recipes
+     * about fluids — and for that a resource kind that is open rather than
+     * fixed would be needed. That is a decision of its own (see
+     * {@code offene-punkte.md}).
      *
-     * <p>Bis dahin gilt: Was hier steht, holt der Auftrag beim Anfangen aus
-     * dem Netzspeicher und füllt es in die Maschine — genau wie die
-     * Gegenstände daneben, nur ohne die Rekursion dahinter. Ist zu wenig da,
-     * wartet er und sagt, welche Sorte fehlt.
+     * <p>Until then: what stands here the job fetches from the network storage
+     * when starting and fills it into the machine — just like the items
+     * alongside, only without the recursion behind it. If too little is there,
+     * it waits and says which kind is missing.
      *
-     * @param fluid ob es eine Flüssigkeit ist; sonst eine Chemikalie
+     * @param fluid whether it is a fluid; otherwise a chemical
      */
     public record Extra(boolean fluid, long amount, Expr selection) {
 
         /**
-         * Wie viel für so viele Durchgänge gebraucht wird.
+         * How much is needed for that many runs.
          *
-         * <p>Die Gegenstände gehen für alle Durchgänge auf einmal in die
-         * Maschine; das Wasser muss mitwachsen. Sonst stünde dort eine
-         * Maschine mit vier Erzen und einem Eimer.
+         * <p>The items go into the machine all at once for all runs; the water
+         * has to grow with them. Otherwise there would stand a machine with
+         * four ores and one bucket.
          */
         public long needFor(long runs) {
             return runs <= 0 ? 0 : amount * runs;
@@ -119,7 +116,7 @@ public final class DeclaredRecipes implements CraftingPlanner.Recipes<Item> {
 
     private final Map<Item, List<CraftingPlanner.Recipe<Item>>> byResult;
 
-    /** Die Nebenzutaten je Station — Flüssigkeiten und Chemikalien. */
+    /** The extras per station — fluids and chemicals. */
     private final Map<String, List<Extra>> extras;
 
     private DeclaredRecipes(Map<Item, List<CraftingPlanner.Recipe<Item>>> byResult,
@@ -128,12 +125,12 @@ public final class DeclaredRecipes implements CraftingPlanner.Recipes<Item> {
         this.extras = extras;
     }
 
-    /** Was diese Station außer Gegenständen braucht. */
+    /** What this station needs besides items. */
     public List<Extra> extrasOf(String station) {
         return extras.getOrDefault(station, List.of());
     }
 
-    /** Was das Programm an Rezepten erklärt. */
+    /** What the program declares as recipes. */
     public static DeclaredRecipes of(Program program) {
         Map<Item, List<CraftingPlanner.Recipe<Item>>> byResult = new HashMap<>();
         Map<String, List<Extra>> extras = new HashMap<>();
@@ -148,9 +145,9 @@ public final class DeclaredRecipes implements CraftingPlanner.Recipes<Item> {
                 continue;
             }
             extras.put(station, extrasOf(recipe));
-            // Trifft die Ausgabe mehrere Arten, gilt das Rezept für jede: Wer
-            // „out 2 tag:c/dusts" schreibt, hat eine Auswahl hingeschrieben,
-            // und welche davon herauskommt, weiß erst die Maschine.
+            // If the output matches several types, the recipe applies to each.
+            // Whoever writes „out 2 tag:c/dusts" has written down a choice, and
+            // which of them comes out only the machine knows.
             int perCraft = (int) recipe.outputs().get(0).amount();
             for (Item result : results) {
                 byResult.computeIfAbsent(result, item -> new ArrayList<>())
@@ -161,10 +158,10 @@ public final class DeclaredRecipes implements CraftingPlanner.Recipes<Item> {
     }
 
     /**
-     * Die Zutaten, die keine Gegenstände sind.
+     * The ingredients that are not items.
      *
-     * <p>Erkannt an der Art der Auswahl, nicht daran, dass sie nichts trifft:
-     * Ein {@code item:gibtsnicht} ist ein Tippfehler und keine Flüssigkeit.
+     * <p>Recognized by the kind of selection, not by matching nothing: an
+     * {@code item:gibtsnicht} is a typo and not a fluid.
      */
     private static List<Extra> extrasOf(Decl.Recipe recipe) {
         List<Extra> found = new ArrayList<>();
@@ -184,19 +181,19 @@ public final class DeclaredRecipes implements CraftingPlanner.Recipes<Item> {
     }
 
     /**
-     * Die Zutaten eines erklärten Rezepts.
+     * The ingredients of a declared recipe.
      *
-     * <p>Eine Auswahl bleibt eine Auswahl, wie überall: {@code in 8
-     * tag:c/plates} heißt acht von irgendwelchen Platten, und welche, sucht
-     * der Planner nach Bestand aus.
+     * <p>A choice remains a choice, as everywhere: {@code in 8
+     * tag:c/plates} means eight of any plates, and which ones the planner
+     * picks by stock.
      *
-     * @return {@code null}, wenn eine Zutat gar nichts trifft
+     * @return {@code null} if an ingredient matches nothing at all
      */
     private static List<CraftingPlanner.Need<Item>> needsOf(Decl.Recipe recipe) {
         List<CraftingPlanner.Need<Item>> needs = new ArrayList<>();
         for (Decl.Recipe.Part part : recipe.inputs()) {
-            // Flüssigkeiten und Chemikalien gehen den anderen Weg: Sie werden
-            // eingefüllt, nicht geplant.
+            // Fluids and chemicals go the other way: they are filled in, not
+            // planned.
             Expr.Selector.Kind kind = kindOf(part);
             if (kind != Expr.Selector.Kind.ITEM && kind != Expr.Selector.Kind.TAG) {
                 continue;

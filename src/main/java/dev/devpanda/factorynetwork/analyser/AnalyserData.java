@@ -5,74 +5,73 @@ import net.minecraft.core.BlockPos;
 import java.util.List;
 
 /**
- * Das Netz, wie der Analysator es zeigt.
+ * The network as the analyser shows it.
  *
- * <p>Knoten und Verbindungen mit je einer Bewertung. Gerechnet wird auf dem
- * Server, gezeichnet auf dem Client — dieselbe Aufteilung wie bei den
- * Anzeigen, und aus demselben Grund: Der Graph ist Serverzustand, und ihn zu
- * spiegeln hieße, ihn zweimal zu pflegen.
+ * <p>Nodes and links, each with a rating. Computed on the server, drawn on the
+ * client — the same split as the displays, and for the same reason: the graph
+ * is server state, and mirroring it would mean maintaining it twice.
  */
 public record AnalyserData(List<Node> nodes, List<Link> links, Summary summary) {
 
     /**
-     * Wie es um einen Knoten steht.
+     * How a node is doing.
      *
-     * <p>Die ersten sechs stehen nach Dringlichkeit. Danach kommt, was nur
-     * Auskunft gibt — angehängt und nicht eingeordnet, weil die Reihenfolge
-     * über die Leitung geht: Der Zustand wird als laufende Nummer verschickt,
-     * und eine Einordnung in der Mitte hieße, dass ein alter Client etwas
-     * anderes liest, als ein neuer Server meint.
+     * <p>The first six are ordered by urgency. After them comes what is merely
+     * informational — appended and not sorted in, because the order travels
+     * over the wire: the state is sent as a running number, and inserting one
+     * in the middle would mean that an old client reads something other than
+     * what a new server means.
      */
     public enum NodeState {
-        /** Der Controller selbst. */
+        /** The controller itself. */
         CONTROLLER,
-        /** Ein Gerät mit Kanal — alles in Ordnung. */
+        /** A device with a channel — all is well. */
         DEVICE,
-        /** Eine Anzeige. Sie braucht keinen Kanal. */
+        /** A display. It needs no channel. */
         DISPLAY,
-        /** Hängt am Netz, hat aber keinen Namen. */
+        /** Attached to the network, but has no name. */
         UNNAMED,
-        /** Der Name ist mehrfach vergeben — alle davon sind unbrauchbar. */
+        /** The name is used more than once — all of them are unusable. */
         DUPLICATE,
-        /** Am Netz, aber ohne freien Kanal auf dem Weg zum Controller. */
+        /** On the network, but with no free channel on the way to the controller. */
         /**
-         * Ein Gerät, dessen Weg eng ist.
+         * A device whose path is tight.
          *
-         * <p>Hieß bis zum 29.08. {@code STARVED} und bedeutete: ohne Kanal,
-         * also stumm. Diesen Zustand gibt es nicht mehr — was eng ist,
-         * arbeitet langsamer, nicht gar nicht.
+         * <p>Was called {@code STARVED} until 29 Aug and meant: no channel, and
+         * so silent. That state no longer exists — what is tight runs more
+         * slowly, rather than not at all.
          */
         CONGESTED,
-        /** Ein Laufwerk. Es stellt Platz bereit, statt welchen zu brauchen. */
+        /** A drive. It provides space instead of needing any. */
         DRIVE,
-        /** Ein Serverschrank. Ohne ihn rechnet das Netz nicht. */
+        /** A server rack. Without it the network does not compute. */
         RACK,
-        /** Eine Kreuzung. Sie leitet weiter und kostet selbst keinen Kanal. */
+        /** A router. It forwards traffic and costs no channel of its own. */
         ROUTER,
-        /** Ein Anbau am Controller. Er bringt Seiten mit, statt welche zu belegen. */
+        /** An extension of the controller. It brings sides of its own instead of taking any up. */
         EXTENSION
     }
 
-    /** Wie es um eine Kabelstrecke steht. */
+    /** How a cable link is doing. */
     public enum LinkState {
-        /** Noch Luft. */
+        /** Still room. */
         FREE,
-        /** Drei Viertel oder mehr belegt. */
+        /** Three quarters or more used. */
         TIGHT,
-        /** Kein Kanal mehr frei — hier klemmt es. */
+        /** No channel free any more — this is where it jams. */
         FULL
     }
 
     public record Node(BlockPos pos, NodeState state, String label) {}
 
-    /** {@code load} und {@code capacity} zeigen die Kanäle dieser Strecke. */
+    /** {@code load} and {@code capacity} show the channels of this link. */
     public record Link(BlockPos from, BlockPos to, LinkState state, int load, int capacity) {}
 
     /**
-     * Was die Zusammenfassung sagt, wenn man das Werkzeug in die Luft hält.
+     * What the summary says when you hold the tool up in the air.
      *
-     * <p>Absichtlich Zahlen und keine Sätze: Der Client baut daraus seine
-     * Zeilen und übersetzt sie, statt fertigen Text zu bekommen.
+     * <p>Deliberately numbers and not sentences: the client builds its lines
+     * from them and translates them, instead of receiving finished text.
      */
     public record Summary(int devices, int cables, int starved, int unnamed,
                           int duplicates, int tightLinks, int fullLinks) {

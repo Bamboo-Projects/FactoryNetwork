@@ -12,21 +12,20 @@ import net.minecraft.world.item.component.CustomData;
 import java.util.List;
 
 /**
- * Eine Energiezelle.
+ * An energy cell.
  *
- * <p>Sie gehört in dasselbe Laufwerk wie eine Gegenstands- oder
- * Flüssigkeitszelle und vergrößert den Vorrat des Netzes. Ein eigener
- * Akkublock wäre ein Block mehr für dieselbe Handlung — und die Frage
- * „welches nehme ich" hat keine gute Antwort.
+ * <p>It belongs in the same drive as an item or fluid cell and enlarges the
+ * network's store. A dedicated battery block would be one more block for the
+ * same action — and the question "which one do I take" has no good answer.
  *
- * <p>Ihr Inhalt ist eine einzige Zahl, und die steht als {@code Charge} im
- * Gegenstand. Kein {@link CellFormat}: Der ist dafür da, Kennungen durch eine
- * Registry zu schicken, und eine Zahl hat keine Kennung.
+ * <p>Its contents are a single number, held as {@code Charge} in the item. No
+ * {@link CellFormat}: that exists to send ids through a registry, and a
+ * number has no id.
  *
- * <p><b>Eine eingesetzte Zelle kostet laufend Strom</b> ({@code
- * Power.PER_CELL}, wie jede andere). Das ist hier kein Nebeneffekt, sondern
- * passt: Ein Akku, der Strom kostet, um Strom zu halten, ist ein Akku mit
- * Selbstentladung.
+ * <p><b>An inserted cell costs power continuously</b> ({@code
+ * Power.PER_CELL}, like every other). That is not a side effect here but
+ * fitting: a battery that costs power to hold power is a battery with
+ * self-discharge.
  */
 public class EnergyCellItem extends Item {
 
@@ -47,7 +46,7 @@ public class EnergyCellItem extends Item {
         return stack.getItem() instanceof EnergyCellItem cell ? cell.tier() : null;
     }
 
-    /** Wie viel FE in diesem Gegenstand stehen. */
+    /** How much FE this item holds. */
     public static int chargeOf(ItemStack stack) {
         CustomData data = stack.get(DataComponents.CUSTOM_DATA);
         if (data == null) {
@@ -56,13 +55,13 @@ public class EnergyCellItem extends Item {
         CompoundTag tag = data.copyTag();
         EnergyCellTier tier = tierOf(stack);
         int charge = tag.getInt(KEY_CHARGE);
-        // Eine Zelle, die von einer größeren Stufe herabgestuft wurde — oder
-        // aus einer Welt kommt, in der die Zahlen anders standen —, gibt
-        // nicht mehr her, als in sie hineinpasst.
+        // A cell that has been downgraded from a larger tier — or comes from
+        // a world where the numbers were different —, gives out no more than
+        // fits into it.
         return tier == null ? 0 : Math.max(0, Math.min(charge, tier.capacity()));
     }
 
-    /** Schreibt die Ladung in den Gegenstand. */
+    /** Writes the charge into the item. */
     public static void setCharge(ItemStack stack, int charge) {
         EnergyCellTier tier = tierOf(stack);
         int kept = tier == null ? 0 : Math.max(0, Math.min(charge, tier.capacity()));
@@ -75,8 +74,8 @@ public class EnergyCellItem extends Item {
                                 TooltipFlag flag) {
         lines.add(Component.translatable("item.factorynetwork.energy_cell.charge",
                 chargeOf(stack), tier.capacity()).withStyle(ChatFormatting.GRAY));
-        // Der Satz, den man beim Kauf der ersten Zelle lesen will: Sie zählt
-        // zum Netz, nicht zu der Maschine, neben der sie liegt.
+        // The sentence you want to read when you get your first cell: it
+        // counts toward the network, not toward the machine it sits next to.
         lines.add(Component.translatable("item.factorynetwork.energy_cell.hint")
                 .withStyle(ChatFormatting.DARK_GRAY));
     }

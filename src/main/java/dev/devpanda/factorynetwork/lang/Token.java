@@ -1,11 +1,11 @@
 package dev.devpanda.factorynetwork.lang;
 
 /**
- * Ein Token mit seiner Stelle im Quelltext.
+ * A token together with its place in the source text.
  *
- * <p>{@code text} ist der Quelltext, wie er dastand — bei {@code ESCAPED_NAME}
- * ohne die Rückstriche, bei {@code STRING} ohne die Anführungszeichen. Der
- * Parser bekommt damit schon den Namen, den der Spieler gemeint hat.
+ * <p>{@code text} is the source text as it stood — for {@code ESCAPED_NAME}
+ * without the backticks, for {@code STRING} without the quotation marks. That
+ * way the parser already gets the name the player meant.
  */
 public record Token(TokenType type, String text, Span span) {
 

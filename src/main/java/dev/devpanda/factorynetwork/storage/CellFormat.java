@@ -16,45 +16,43 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Wie der Inhalt einer Zelle im Gegenstand steht.
+ * How a cell's contents are stored in the item.
  *
- * <p>Gegenstände und Flüssigkeiten liegen gleich: eine Liste aus Kennung und
- * Menge. <b>Deshalb steht das Lesen und Schreiben ein einziges Mal da</b> —
- * zwei Fassungen wären zwei Orte, an denen ein Bestand verlorengehen kann,
- * und die eine bekäme irgendwann eine Verbesserung, die der anderen fehlt.
+ * <p>Items and fluids sit the same way: a list of id and amount. <b>That is
+ * why reading and writing live in a single place</b> — two versions would be
+ * two places where stored contents can be lost, and one of them would
+ * eventually gain an improvement the other lacks.
  *
- * <p><b>Was sie unterscheidet, ist der Eintrag.</b> Eine Flüssigkeit ist mit
- * ihrer Kennung vollständig beschrieben; ein Gegenstand nicht — er kann einen
- * Namen tragen, verzaubert oder halb verbraucht sein. Deshalb steht hier
- * keine Registry mehr, sondern ein Paar aus Lesen und Schreiben.
+ * <p><b>What sets them apart is the entry.</b> A fluid is fully described by
+ * its id; an item is not — it may carry a name, be enchanted or half-used.
+ * That is why there is no registry here any more, but a pair of read and
+ * write.
  *
- * @param nbtKey    unter welchem Namen die Liste im Gegenstand steht
- * @param amountKey wie das Feld mit der Menge heißt — verschieden je Sorte,
- *                  und deshalb hier: Eine Flüssigkeitszelle schreibt seit
- *                  jeher {@code Amount}, eine Gegenstandszelle {@code Count}.
- *                  Wer das vereinheitlicht, macht jeden bestehenden Bestand
- *                  unlesbar.
- * @param entry     wie ein einzelner Posten gelesen und geschrieben wird
+ * @param nbtKey    the name under which the list sits in the item
+ * @param amountKey the name of the field holding the amount — different per
+ *                  type, and therefore here: a fluid cell has always written
+ *                  {@code Amount}, an item cell {@code Count}. Unifying that
+ *                  makes every existing store of contents unreadable.
+ * @param entry     how a single entry is read and written
  */
 public record CellFormat<T>(String nbtKey, String amountKey, Entry<T> entry) {
 
-    /** Wie ein Posten in der Liste steht. */
+    /** How an entry appears in the list. */
     public interface Entry<T> {
 
-        /** Was hier steht — oder {@code null}, wenn es das nicht mehr gibt. */
+        /** What is stored here — or {@code null} if it no longer exists. */
         @Nullable T read(CompoundTag tag, HolderLookup.Provider registries);
 
         void write(CompoundTag tag, T key, HolderLookup.Provider registries);
     }
 
     /**
-     * Gegenstände.
+     * Items.
      *
-     * <p>Die Namen der Felder sind die von früher, und {@code components} ist
-     * <b>optional</b> — eine Zelle aus der Zeit vor dem 28.08. hat es nicht,
-     * und ein Posten ohne dieses Feld ist ein Gegenstand ohne eigene Daten.
-     * Alte Zellen bleiben damit lesbar, ohne dass irgendwo ein
-     * Migrationslauf nötig wäre.
+     * <p>The field names are the ones from before, and {@code components} is
+     * <b>optional</b> — a cell from before 28 Aug does not have it, and an
+     * entry without this field is an item without its own data. Old cells
+     * stay readable that way, without a migration pass being needed anywhere.
      */
     public static final CellFormat<ItemKey> ITEMS =
             new CellFormat<>("Cell", "Count", new Entry<>() {
@@ -62,8 +60,8 @@ public record CellFormat<T>(String nbtKey, String amountKey, Entry<T> entry) {
                 @Override
                 public ItemKey read(CompoundTag tag, HolderLookup.Provider registries) {
                     ResourceLocation id = ResourceLocation.tryParse(tag.getString("Item"));
-                    // Ist die Mod aus dem Pack, ist der Posten weg. Ein
-                    // Lagerbestand darf das still hinnehmen.
+                    // If the mod has left the pack, the entry is gone. A
+                    // stored inventory may accept that quietly.
                     if (id == null || !BuiltInRegistries.ITEM.containsKey(id)) {
                         return null;
                     }
@@ -75,10 +73,10 @@ public record CellFormat<T>(String nbtKey, String amountKey, Entry<T> entry) {
                                     net.minecraft.nbt.NbtOps.INSTANCE), tag.get("components"))
                             .result()
                             .map(patch -> ItemKey.of(BuiltInRegistries.ITEM.get(id), patch))
-                            // Lässt sich der Zusatz nicht lesen — eine Mod
-                            // ist weg, ein Format hat sich geändert —, bleibt
-                            // der nackte Gegenstand. Besser als ein Posten,
-                            // der ganz verschwindet.
+                            // If the extra data cannot be read — a mod is
+                            // gone, a format has changed —, the bare item
+                            // remains. Better than an entry that vanishes
+                            // entirely.
                             .orElseGet(() -> ItemKey.bare(BuiltInRegistries.ITEM.get(id)));
                 }
 
@@ -87,9 +85,9 @@ public record CellFormat<T>(String nbtKey, String amountKey, Entry<T> entry) {
                     tag.putString("Item",
                             BuiltInRegistries.ITEM.getKey(key.item()).toString());
                     if (key.isBare()) {
-                        // Kein leeres Feld schreiben: Eine Zelle voll nackter
-                        // Gegenstände sieht danach aus wie vorher, und der
-                        // Weg zurück auf eine ältere Fassung bleibt offen.
+                        // Do not write an empty field: a cell full of bare
+                        // items looks the same as before afterwards, and the
+                        // way back to an older version stays open.
                         return;
                     }
                     net.minecraft.core.component.DataComponentPatch.CODEC
@@ -101,12 +99,12 @@ public record CellFormat<T>(String nbtKey, String amountKey, Entry<T> entry) {
                 }
             });
 
-    /** Flüssigkeiten, in Millibucket. Sie tragen keine eigenen Daten. */
+    /** Fluids, in millibuckets. They carry no data of their own. */
     public static final CellFormat<Fluid> FLUIDS =
             new CellFormat<>("FluidCell", "Amount",
                     registryEntry(BuiltInRegistries.FLUID, "Fluid"));
 
-    /** Der Weg für alles, was mit seiner Kennung vollständig beschrieben ist. */
+    /** The path for everything fully described by its id. */
     private static <T> Entry<T> registryEntry(Registry<T> registry, String idKey) {
         return new Entry<>() {
 
@@ -136,8 +134,8 @@ public record CellFormat<T>(String nbtKey, String amountKey, Entry<T> entry) {
             T key = entry.read(one, registries);
             long count = one.getLong(amountKey);
             if (key != null && count > 0) {
-                // Zusammenzählen und nicht überschreiben: Zwei Posten können
-                // nach einem Formatwechsel auf denselben Schlüssel fallen.
+                // Add up rather than overwrite: two entries can fall onto
+                // the same key after a format change.
                 contents.merge(key, count, Long::sum);
             }
         }
@@ -160,15 +158,16 @@ public record CellFormat<T>(String nbtKey, String amountKey, Entry<T> entry) {
     }
 
     /**
-     * Wie viele Sorten und wie viel insgesamt — ohne die Posten zu deuten.
+     * How many types and how much in total — without interpreting the
+     * entries.
      *
-     * <p><b>Für den Balken am Gegenstand.</b> Er läuft beim Zeichnen jedes
-     * Inventarplatzes und hat weder Registrierungen zur Hand noch einen Grund
-     * dafür: Ob ein Posten ein benanntes Schwert ist oder ein nacktes,
-     * ändert an „drei von acht Sorten" nichts.
+     * <p><b>For the bar on the item.</b> It runs when every inventory slot is
+     * drawn and has neither registries at hand nor a reason for them: whether
+     * an entry is a named sword or a bare one changes nothing about "three of
+     * eight types".
      *
-     * @param types  wie viele Posten in der Liste stehen
-     * @param amount was sie zusammen ergeben
+     * @param types  how many entries are in the list
+     * @param amount what they add up to
      */
     public record Summary(int types, long amount) { }
 
@@ -185,7 +184,7 @@ public record CellFormat<T>(String nbtKey, String amountKey, Entry<T> entry) {
         return new Summary(entries.size(), amount);
     }
 
-    /** Wie viel insgesamt darin liegt. */
+    /** How much sits inside it in total. */
     public static long total(Map<?, Long> contents) {
         return contents.values().stream().mapToLong(Long::longValue).sum();
     }

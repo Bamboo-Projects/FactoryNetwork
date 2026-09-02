@@ -3,63 +3,62 @@ package dev.devpanda.factorynetwork.lang;
 import java.util.Objects;
 
 /**
- * Eine Meldung an den Spieler — der eigentliche Zweck dieses Übersetzers.
+ * A message to the player — the real purpose of this compiler.
  *
- * <p>Der Text ist deutsch und richtet sich an jemanden, der kein Programmierer
- * ist. {@code hint} trägt den Vorschlag, der aus einer Fehlermeldung eine
- * Hilfe macht: „Meinst du den Connector gleichen Namens? Dann schreibe ihn in
- * Rückstriche."
+ * <p>The text is German and addressed to someone who is not a programmer.
+ * {@code hint} carries the suggestion that turns an error message into help:
+ * "Did you mean the connector of the same name? Then write it in backticks."
  */
 public record Diagnostic(Severity severity, Span span, String message, String hint,
                          String file, Fix fix) {
 
     /**
-     * Ein Vorschlag, den eine Maschine anwenden kann.
+     * A suggestion that a machine can apply.
      *
-     * <p><b>Getrennt vom Hinweis, und mit eigener Stelle.</b> Der Hinweis ist
-     * ein Satz für einen Menschen — „Meinst du {@code chemical}:?" —, und ein
-     * Editor müsste ihn zerpflücken, um daraus eine Schnellkorrektur zu
-     * bauen. Zwei Fassungen derselben Auskunft laufen auseinander; deshalb
-     * steht sie hier zweimal in <i>einer</i> Meldung, einmal als Satz und
-     * einmal als Ersetzung.
+     * <p><b>Separate from the hint, and with its own location.</b> The hint is
+     * a sentence for a human — "Did you mean {@code chemical}:?" —, and an
+     * editor would have to take it apart to build a quick fix from it. Two
+     * versions of the same information drift apart; that is why it stands here
+     * twice within <i>one</i> message, once as a sentence and once as a
+     * replacement.
      *
-     * <p>Die eigene Stelle ist nötig, weil sie selten die der Meldung ist:
-     * Bei einer verschriebenen Ressourcenart unterstreicht die Meldung die
-     * ganze Auswahl — {@code chemiacl:hydrogen} —, ersetzt wird aber nur das
-     * Wort davor.
+     * <p>The own location is needed because it is rarely the one of the
+     * message: for a misspelled resource kind the message underlines the whole
+     * selector — {@code chemiacl:hydrogen} —, but only the word before it is
+     * replaced.
      */
     public record Fix(Span span, String text) {
     }
 
-    /** Ohne Vorschlag — der Normalfall. */
+    /** Without a suggestion — the normal case. */
     public Diagnostic(Severity severity, Span span, String message, String hint,
                       String file) {
         this(severity, span, message, hint, file, null);
     }
 
     /**
-     * Ohne Datei — der Übersetzer einer einzelnen Datei weiß nicht, wie sie
-     * heißt. Den Namen trägt {@link Project} nach, wenn er die Meldungen
-     * mehrerer Dateien zusammenlegt.
+     * Without a file — the compiler of a single file does not know what it is
+     * called. {@link Project} adds the name afterwards, when it merges the
+     * messages of several files.
      */
     public Diagnostic(Severity severity, Span span, String message, String hint) {
         this(severity, span, message, hint, "", null);
     }
 
-    /** Dieselbe Meldung, aber mit Dateinamen. */
+    /** The same message, but with a file name. */
     public Diagnostic withFile(String file) {
         return new Diagnostic(severity, span, message, hint, file, fix);
     }
 
-    /** Dieselbe Meldung, aber mit einem Vorschlag zum Anwenden. */
+    /** The same message, but with a suggestion to apply. */
     public Diagnostic withFix(Span where, String text) {
         return new Diagnostic(severity, span, message, hint, file, new Fix(where, text));
     }
 
     public enum Severity {
-        /** Blockiert die Übernahme. */
+        /** Blocks acceptance of the program. */
         ERROR,
-        /** Läuft, ist aber vermutlich nicht gemeint. */
+        /** Runs, but is probably not what was meant. */
         WARNING
     }
 

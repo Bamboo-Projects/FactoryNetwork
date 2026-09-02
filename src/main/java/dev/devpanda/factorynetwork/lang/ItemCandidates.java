@@ -6,60 +6,58 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Die Gegenstände, über die ein Programm gerade spricht.
+ * The items a program is currently talking about.
  *
- * <p><b>Wofür:</b> Ob eine Maschine einen bestimmten Gegenstand annimmt,
- * lässt sich nicht aufzählen — {@code IItemHandler} hat keine API dafür. Man
- * kann nur mit einem konkreten Gegenstand einen Einfügeversuch simulieren.
- * Dafür braucht es Kandidaten, und die stehen im Programm: Wer
- * {@code item:iron_ore} tippt, fragt sich über Eisenerz etwas, nicht über die
- * zwanzigtausend anderen Arten.
+ * <p><b>What for:</b> whether a machine accepts a particular item cannot be
+ * enumerated — {@code IItemHandler} has no API for it. One can only simulate an
+ * insertion attempt with a concrete item. For that you need candidates, and
+ * those stand in the program: whoever types {@code item:iron_ore} is asking
+ * something about iron ore, not about the twenty thousand other kinds.
  *
- * <p><b>Über den Text und nicht über den Baum</b> — dieselbe Entscheidung wie
- * bei {@link Definitions#references}: Ein Auswahlausdruck steht in Filtern,
- * Argumenten, Bedingungen und Anweisungen, und ihn im Baum überall zu finden
- * hieße, jede Ausdrucksart einzeln zu behandeln. Die Textsuche findet dafür
- * gelegentlich einen Treffer in einem Kommentar. Das ist hier folgenlos: Ein
- * Kandidat zu viel kostet einen simulierten Einfügeversuch.
+ * <p><b>Over the text and not over the tree</b> — the same decision as with
+ * {@link Definitions#references}: a selector expression stands in filters,
+ * arguments, conditions, and statements, and finding it everywhere in the tree
+ * would mean handling each kind of expression separately. The text search, in
+ * return, occasionally finds a hit in a comment. That is harmless here: one
+ * candidate too many costs one simulated insertion attempt.
  *
- * <p>Tags bleiben außen vor. Sie stehen für viele Arten, und welche das sind,
- * weiß erst die Registry — die Probe würde damit so teuer wie die
- * Registry-Variante, die der Entwurf verwirft.
+ * <p>Tags are left out. They stand for many kinds, and which those are only the
+ * registry knows — the probe would thereby become as expensive as the registry
+ * variant that the design rejects.
  */
 public final class ItemCandidates {
 
     /**
-     * {@code item:mekanism/iron_ore} oder {@code item:iron_ore}.
+     * {@code item:mekanism/iron_ore} or {@code item:iron_ore}.
      *
-     * <p>Ohne Platzhalter: {@code item:*_dust} steht für viele Arten und ist
-     * damit ein Tag in anderer Schreibweise.
+     * <p>Without a wildcard: {@code item:*_dust} stands for many kinds and is
+     * thereby a tag in a different spelling.
      */
     private static final Pattern ITEM_SELECTOR =
             Pattern.compile("\\bitem:([a-z0-9_.-]+(?:/[a-z0-9_./-]+)?)");
 
-    /** Mehr Kandidaten kosten mehr, ohne mehr zu sagen. */
+    /** More candidates cost more without saying more. */
     private static final int MAX = 24;
 
     private ItemCandidates() {
     }
 
     /**
-     * Dasselbe für {@code fluid:}.
+     * The same for {@code fluid:}.
      *
-     * <p>Getrennt gesammelt und nicht in einem Topf: Ein Behälter wird mit
-     * Flüssigkeiten geprobt und ein Fach mit Gegenständen — wer beides
-     * mischte, bekäme zwei Listen voller Kandidaten, die nirgends passen
-     * können.
+     * <p>Collected separately and not in one pot: a container is probed with
+     * fluids and a compartment with items — whoever mixed the two would get two
+     * lists full of candidates that can fit nowhere.
      */
     private static final Pattern FLUID_SELECTOR =
             Pattern.compile("\\bfluid:([a-z0-9_.-]+(?:/[a-z0-9_./-]+)?)");
 
-    /** Was im ganzen Projekt an {@code item:}-Literalen steht. */
+    /** What {@code item:} literals stand in the whole project. */
     public static Set<String> of(Project project) {
         return collectAll(project, ITEM_SELECTOR);
     }
 
-    /** Und was an {@code fluid:}-Literalen. */
+    /** And what {@code fluid:} literals. */
     public static Set<String> fluidsOf(Project project) {
         return collectAll(project, FLUID_SELECTOR);
     }

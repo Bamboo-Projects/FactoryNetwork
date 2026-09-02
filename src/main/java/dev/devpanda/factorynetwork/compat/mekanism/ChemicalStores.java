@@ -8,15 +8,15 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Der Weg vom Kern zu den Chemikalien — und die Rückfahrkarte.
+ * The path from the core to the chemicals — and the return ticket.
  *
- * <p>Diese Klasse trägt selbst keinen Mekanism-Typ in einer Signatur; sie ist
- * die Tür, durch die der Kern geht. Was dahinter liegt, wird nur betreten,
- * wenn {@link FnMekanism#installed()} wahr ist — und dann lädt die JVM erst
- * die Klassen, die Mekanism brauchen.
+ * <p>This class itself carries no Mekanism type in a signature; it is the door
+ * the core goes through. What lies beyond is entered only when
+ * {@link FnMekanism#installed()} is true — and only then does the JVM load the
+ * classes that need Mekanism.
  *
- * <p>Das ist dasselbe Muster wie bei GuideME und Jade, nur eine Schicht
- * tiefer: Dort entscheidet der Mod-Konstruktor, hier jede einzelne Frage.
+ * <p>This is the same pattern as with GuideME and Jade, only one layer deeper:
+ * there the mod constructor decides, here every single query does.
  */
 public final class ChemicalStores {
 
@@ -24,21 +24,20 @@ public final class ChemicalStores {
     }
 
     /**
-     * Der Chemikalienspeicher für ein Netz.
+     * The chemical store for a network.
      *
-     * <p>Ohne Mekanism der, der nichts kann. Er ist kein Platzhalter, sondern
-     * die richtige Antwort: In einem Pack ohne die Mod gibt es keine
-     * Chemikalien, und ein Speicher, der so tut, wäre eine Lüge mit
-     * Nebenwirkungen.
+     * <p>Without Mekanism, the one that can do nothing. It is not a placeholder
+     * but the correct answer: in a pack without the mod there are no chemicals,
+     * and a store that pretended otherwise would be a lie with side effects.
      */
     public static ResourceStore create() {
         return FnMekanism.installed() ? new MekChemicalStore() : ResourceStore.NONE;
     }
 
     /**
-     * Öffnet eine Chemikalienzelle, oder {@code null} ohne Mekanism.
+     * Opens a chemical cell, or {@code null} without Mekanism.
      *
-     * <p>Die Fabrik, die {@code DriveBlockEntity} von außen bekommt.
+     * <p>The factory {@code DriveBlockEntity} receives from outside.
      */
     public static CellView open(ItemStack cell,
                                net.minecraft.core.HolderLookup.Provider registries) {
@@ -46,9 +45,9 @@ public final class ChemicalStores {
     }
 
     /**
-     * Wie viel von diesen Sorten in der Maschine an dieser Stelle liegt.
+     * How much of these chemicals is in the machine at this location.
      *
-     * <p>Ohne Mekanism null — es gibt dort keine Chemikalien.
+     * <p>Without Mekanism, zero — there are no chemicals there.
      */
     public static long amountAt(net.minecraft.world.level.Level level,
             net.minecraft.core.BlockPos pos, net.minecraft.core.Direction side,
@@ -61,12 +60,12 @@ public final class ChemicalStores {
     }
 
     /**
-     * Wie viel von dieser Sorte gerade in die Maschine passt.
+     * How much of this chemical currently fits into the machine.
      *
-     * <p>Die Probe vor dem Einfüllen: Ein Rezept, dessen Gas nicht ganz
-     * hineingeht, soll gar nicht erst anfangen — sonst stünde die Maschine
-     * mit halber Rechnung da. Nach außen sind das nur Kennungen und Zahlen;
-     * der Behälter bleibt in diesem Paket.
+     * <p>The trial before filling: a recipe whose gas doesn't fully fit should
+     * not even start — otherwise the machine would be left with a half-done
+     * calculation. To the outside these are only identifiers and numbers; the
+     * handler stays within this package.
      */
     public static long roomFor(net.minecraft.world.level.Level level,
             net.minecraft.core.BlockPos pos, net.minecraft.core.Direction side,
@@ -79,14 +78,13 @@ public final class ChemicalStores {
     }
 
     /**
-     * Zieht aus einer Maschine in den Netzspeicher.
+     * Pulls from a machine into the network storage.
      *
-     * <p><b>Erst fragen, dann ziehen.</b> Was der Speicher nicht nimmt, darf
-     * gar nicht erst aus dem Behälter kommen: Ein Gas, das draußen ist und
-     * nirgends hineinpasst, wäre weg. Dieselbe Vorsicht wie bei
-     * Flüssigkeiten.
+     * <p><b>Ask first, then pull.</b> Whatever the store won't take must never
+     * leave the container in the first place: a gas that is out and fits
+     * nowhere would be gone. The same caution as with fluids.
      *
-     * @return wie viel angekommen ist
+     * @return how much arrived
      */
     public static long drainInto(net.minecraft.world.level.Level level,
             net.minecraft.core.BlockPos pos, net.minecraft.core.Direction side,
@@ -100,32 +98,31 @@ public final class ChemicalStores {
     }
 
     /**
-     * Dasselbe, aber mit einem Behälter statt einer Stelle in der Welt.
+     * The same, but with a handler instead of a location in the world.
      *
-     * <p>Getrennt, weil die <b>Rechnung</b> das Prüfbare ist: Ein
-     * Mekanism-Tank, der per {@code setBlock} in einen Prüflauf gestellt wird,
-     * hat keine Seitenkonfiguration und nimmt deshalb nichts an — nachgemessen.
-     * Die Suche nach dem Behälter ist dieselbe wie bei Flüssigkeiten und
-     * anderswo geprüft; was hier eigen ist, ist das Hin und Her mit dem
-     * Speicher, und das lässt sich mit einem Behälter aus dem API-Jar
-     * vorführen.
+     * <p>Separated because the <b>calculation</b> is what is testable: a
+     * Mekanism tank placed into a test run via {@code setBlock} has no side
+     * configuration and therefore accepts nothing — measured and confirmed.
+     * The lookup of the handler is the same as for fluids and tested
+     * elsewhere; what is specific here is the back-and-forth with the store,
+     * and that can be demonstrated with a handler from the API jar.
      */
     public static long drainIntoHandler(mekanism.api.chemical.IChemicalHandler handler,
             java.util.Collection<String> ids,
             ResourceStore store, long limit) {
         long moved = 0;
-        // Höchstens acht Sorten je Zug: Ein Behälter mit mehr wird über
-        // mehrere Aufrufe geleert, und die Schleife kann nicht ins Endlose
-        // laufen, wenn eine Sorte weder passt noch weicht.
+        // At most eight chemicals per pass: a handler with more is drained
+        // over several calls, and the loop cannot run forever if a chemical
+        // neither fits nor gives way.
         for (int guard = 0; guard < 8 && moved < limit; guard++) {
             var oben = MekTanks.peek(handler, ids);
             if (oben.isEmpty()) {
                 break;
             }
             String id = MekTanks.idOf(oben);
-            // Erst fragen: So viel, wie der Speicher wirklich nimmt — und
-            // keinen Tropfen mehr. Was draußen ist und nirgends hineinpasst,
-            // müsste zurück, und das Zurücklegen kann scheitern.
+            // Ask first: only as much as the store really takes — and not a
+            // drop more. Whatever is out and fits nowhere would have to go
+            // back, and putting it back can fail.
             long room = store.room(id, Math.min(limit - moved, oben.getAmount()));
             if (room <= 0) {
                 break;
@@ -136,9 +133,8 @@ public final class ChemicalStores {
             }
             long rest = store.insert(id, taken.getAmount());
             if (rest > 0) {
-                // Sollte nach der Frage nicht mehr vorkommen; wenn doch, ist
-                // Zurücklegen die einzige Antwort, die nichts verschwinden
-                // lässt.
+                // Should no longer happen after the query; if it does, putting
+                // it back is the only answer that lets nothing vanish.
                 MekTanks.fill(handler, id, rest, false);
             }
             moved += taken.getAmount() - rest;
@@ -147,9 +143,9 @@ public final class ChemicalStores {
     }
 
     /**
-     * Füllt aus dem Netzspeicher in eine Maschine.
+     * Fills from the network storage into a machine.
      *
-     * @return wie viel angekommen ist
+     * @return how much arrived
      */
     public static long fillFrom(ResourceStore store,
             net.minecraft.world.level.Level level, net.minecraft.core.BlockPos pos,
@@ -161,20 +157,20 @@ public final class ChemicalStores {
         return handler == null ? 0 : fillIntoHandler(store, handler, ids, limit);
     }
 
-    /** Dasselbe, aber mit einem Behälter statt einer Stelle in der Welt. */
+    /** The same, but with a handler instead of a location in the world. */
     public static long fillIntoHandler(
             ResourceStore store,
             mekanism.api.chemical.IChemicalHandler handler,
             java.util.Collection<String> ids, long limit) {
         long moved = 0;
-        // Ohne Angabe alles, was im Netz liegt. Der Bestand kommt mit den
-        // Schlüsseln der Art heraus — hier sind es Kennungen, und der Weg
-        // dorthin lässt keine anderen zu.
+        // With nothing specified, everything in the network. The contents come
+        // out keyed by the kind's keys — here these are identifiers, and the
+        // path there permits no others.
         //
-        // Aus der Sprache kommt diese leere Liste nicht mehr: Ein Worker
-        // ohne filter hält an, und eine Auswahl, die nichts trifft, meldet
-        // sich seit dem 26.08. in WorldHost.chemicalsOf. Vorher tat sie es
-        // nicht, und dann füllte ein Tippfehler irgendein Gas ein.
+        // This empty list no longer comes from the language: a worker without
+        // filter halts, and a selection that matches nothing reports itself,
+        // since 26 Aug, in WorldHost.chemicalsOf. Previously it did not, and
+        // then a typo would fill in some arbitrary gas.
         java.util.Collection<?> wanted = ids.isEmpty() ? store.contents().keySet() : ids;
         for (Object key : wanted) {
             String id = String.valueOf(key);
@@ -185,7 +181,7 @@ public final class ChemicalStores {
             if (have <= 0) {
                 continue;
             }
-            // Erst proben: Was die Maschine nicht nimmt, bleibt im Speicher.
+            // Trial first: whatever the machine won't take stays in the store.
             long fits = MekTanks.fill(handler, id, Math.min(have, limit - moved), true);
             if (fits <= 0) {
                 continue;
@@ -201,10 +197,10 @@ public final class ChemicalStores {
     }
 
     /**
-     * Was in einer Zelle liegt, als Kennung auf Menge.
+     * What is in a cell, as identifier to amount.
      *
-     * <p>Für den Tooltip: Der Gegenstand gibt es immer, auch ohne Mekanism —
-     * dann ist die Antwort leer, und der Tooltip sagt, woran es liegt.
+     * <p>For the tooltip: the item always exists, even without Mekanism — then
+     * the answer is empty, and the tooltip says why.
      */
     public static Map<String, Long> read(ItemStack cell,
                                         net.minecraft.core.HolderLookup.Provider registries) {

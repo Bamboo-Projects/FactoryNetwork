@@ -19,29 +19,29 @@ import net.minecraft.world.level.material.MapColor;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
-/** Die Blöcke der Mod. */
+/** The blocks of the mod. */
 public final class FnBlocks {
 
     public static final DeferredRegister.Blocks BLOCKS =
             DeferredRegister.createBlocks(FactoryNetwork.MOD_ID);
 
-    // Fast jeder Block hier trägt noOcclusion. Der Grund ist derselbe wie
-    // beim ersten: Sobald ein Modell nicht mehr den ganzen Würfel füllt,
-    // lässt Minecraft die Flächen der Nachbarn weg, die man durch die Lücken
-    // sieht — und in der Lücke steht dann ein schwarzes Loch.
+    // Almost every block here carries noOcclusion. The reason is the same as
+    // for the first one: as soon as a model no longer fills the whole cube,
+    // Minecraft omits the neighbours' faces one sees through the gaps — and
+    // then a black hole sits in the gap.
 
-    /** Wurzel eines Netzwerks: hält Programm, Speicher und die Laufzeit. */
+    /** Root of a network: holds program, storage and the runtime. */
     public static final DeferredBlock<Block> CONTROLLER = BLOCKS.register("controller",
-            // noOcclusion, weil der Körper zwischen den Deckplatten
-            // zurückspringt: Ohne die Angabe fehlt den Nachbarn die Fläche,
-            // die man in der Fuge sieht.
+            // noOcclusion, because the body recedes between the cover plates:
+            // without the setting the neighbours lack the face one sees in the
+            // seam.
             () -> new ControllerBlock(machineProperties().noOcclusion()));
 
     /**
-     * Mehr Außenflächen für Kabel, und sonst nichts.
+     * More outer faces for cables, and nothing else.
      *
-     * <p>Er hält weder Programm noch Speicher noch Strom — deshalb kann die
-     * Master-Rolle nicht wandern. Siehe {@link
+     * <p>It holds neither program nor storage nor power — that is why the
+     * master role cannot migrate. See {@link
      * dev.devpanda.factorynetwork.block.ControllerExtensionBlock}.
      */
     public static final DeferredBlock<Block> CONTROLLER_EXTENSION =
@@ -50,28 +50,29 @@ public final class FnBlocks {
                             machineProperties().noOcclusion()));
 
     /**
-     * Baut, was das Netz bestellt.
+     * Builds what the network orders.
      *
-     * <p>Ohne Muster-Items: Jedes Werkbank-Rezept steht schon im Server.
+     * <p>Without pattern items: every crafting-table recipe is already in the
+     * server.
      */
     public static final DeferredBlock<Block> FABRICATOR = BLOCKS.register("fabricator",
             () -> new dev.devpanda.factorynetwork.block.FabricatorBlock(
                             machineProperties().noOcclusion()));
 
     /**
-     * Gibt seiner Umgebung einen Anlagennamen.
+     * Gives its surroundings a plant name.
      *
-     * <p>Ein Kabelstück mit Namensschild: Was hinter ihm am Kabel hängt,
-     * gehört zu seiner Anlage. Kanäle vermehrt er nicht.
+     * <p>A piece of cable with a name tag: whatever hangs on the cable behind
+     * it belongs to its plant. It does not multiply channels.
      */
     public static final DeferredBlock<Block> GATEWAY = BLOCKS.register("gateway",
-            // noOcclusion, weil der Torbogen kein voller Würfel mehr ist:
-            // Sonst lässt Minecraft die Flächen der Nachbarn weg, die man
-            // durch die Öffnungen sieht, und im Tor steht ein schwarzes Loch.
+            // noOcclusion, because the archway is no longer a full cube:
+            // otherwise Minecraft omits the neighbours' faces one sees through
+            // the openings, and a black hole sits in the gate.
             () -> new dev.devpanda.factorynetwork.block.GatewayBlock(
                     machineProperties().noOcclusion()));
 
-    /** Verbindet Blöcke zu einem Netzwerk. */
+    /** Connects blocks into a network. */
     public static final DeferredBlock<Block> CABLE = BLOCKS.register("cable",
             () -> new CableBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_GRAY)
@@ -79,7 +80,7 @@ public final class FnBlocks {
                     .sound(SoundType.METAL)
                     .noOcclusion()));
 
-    /** Vierundsechzig Kanäle statt sechzehn, und zehn Blockpixel statt sechs. */
+    /** Sixty-four channels instead of sixteen, and ten block-pixels instead of six. */
     public static final DeferredBlock<Block> DENSE_CABLE = BLOCKS.register("dense_cable",
             () -> new DenseCableBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_GRAY)
@@ -88,10 +89,10 @@ public final class FnBlocks {
                     .noOcclusion()));
 
     /**
-     * Kreuzung für dicke Kabel: Jede Seite bekommt eine Bahn.
+     * Junction for thick cables: each side gets a lane.
      *
-     * <p>Härter als ein Kabel, aber kein Maschinengehäuse — er steht in der
-     * Leitung und soll sich mit ihr abbauen lassen.
+     * <p>Harder than a cable, but not a machine housing — it stands in the
+     * line and should be removable along with it.
      */
     public static final DeferredBlock<Block> ROUTER = BLOCKS.register("router",
             () -> new RouterBlock(BlockBehaviour.Properties.of()
@@ -101,10 +102,11 @@ public final class FnBlocks {
                     .noOcclusion()));
 
     /**
-     * Das Erz, aus dem alles wird.
+     * The ore that everything comes from.
      *
-     * <p>Zwei Fassungen, weil Minecraft unter Y=0 Deepslate statt Stein hat —
-     * ein Erz mit der falschen Grundfarbe fällt in einer Höhle sofort auf.
+     * <p>Two versions, because below Y=0 Minecraft has deepslate instead of
+     * stone — an ore with the wrong base colour stands out immediately in a
+     * cave.
      */
     public static final DeferredBlock<Block> CRYSTAL_ORE = BLOCKS.register("crystal_ore",
             () -> new net.minecraft.world.level.block.DropExperienceBlock(
@@ -126,10 +128,10 @@ public final class FnBlocks {
                                     .requiresCorrectToolForDrops()));
 
     /**
-     * Strom aus Ofenbrennstoff — absichtlich mittelmäßig.
+     * Power from furnace fuel — deliberately mediocre.
      *
-     * <p>Sie soll nicht mit Generatoren anderer Mods konkurrieren, sondern
-     * dafür sorgen, dass die Fertigungskette der Mod ohne Fremdmod anläuft.
+     * <p>It is not meant to compete with other mods' generators, but to ensure
+     * that the mod's production chain gets going without a foreign mod.
      */
     public static final DeferredBlock<Block> BURNER = BLOCKS.register("burner",
             () -> new BurnerBlock(BlockBehaviour.Properties.of()
@@ -140,15 +142,15 @@ public final class FnBlocks {
                     .lightLevel(state -> state.getValue(BurnerBlock.LIT) ? 13 : 0)
                     .noOcclusion()));
 
-    /** Presst Bauteile — der Einstieg in die Fertigungskette. */
+    /** Presses components — the entry into the production chain. */
     public static final DeferredBlock<Block> PRESS = BLOCKS.register("press",
             () -> new PressBlock(machineProperties().noOcclusion()));
 
     /**
-     * Strom ohne Brennstoff — nur zum Ausprobieren.
+     * Power without fuel — just for trying out.
      *
-     * <p>Die Mod erzeugt keinen Strom. Zum Bauen und Prüfen steht aber kein
-     * Pack daneben, und ohne Quelle steht jedes Netz sofort still.
+     * <p>The mod generates no power. But for building and testing there is no
+     * pack alongside, and without a source every network stalls at once.
      */
     public static final DeferredBlock<Block> CREATIVE_SOURCE =
             BLOCKS.register("creative_source", () -> new CreativeSourceBlock(
@@ -159,18 +161,18 @@ public final class FnBlocks {
                             .lightLevel(state -> 10)
                             .noOcclusion()));
 
-    /** Nimmt zwölf Server auf — ohne ihn rechnet das Netz nicht. */
+    /** Takes twelve servers — without it the network does not compute. */
     public static final DeferredBlock<Block> RACK = BLOCKS.register("server_rack",
             () -> new RackBlock(machineProperties()));
 
-    /** Nimmt Speicherzellen auf — der Lagerraum des Netzes. */
+    /** Takes storage cells — the network's storage room. */
     public static final DeferredBlock<Block> DRIVE = BLOCKS.register("drive",
-            // noOcclusion, weil das Gehäuse auf Füßen steht und die Blende
-            // seitlich darüber hinausragt: Ohne die Angabe lässt Minecraft
-            // die Flächen der Nachbarn weg, die man dazwischen sieht.
+            // noOcclusion, because the housing stands on feet and the fascia
+            // juts out sideways beyond it: without the setting Minecraft omits
+            // the neighbours' faces one sees between them.
             () -> new DriveBlock(machineProperties().noOcclusion()));
 
-    /** Zeigt an der Wand, was im Netz vorgeht. */
+    /** Shows on the wall what goes on in the network. */
     public static final DeferredBlock<Block> DISPLAY = BLOCKS.register("display",
             () -> new DisplayBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.METAL)
@@ -180,24 +182,24 @@ public final class FnBlocks {
                     .lightLevel(state -> 5)));
 
     /**
-     * Von hier aus funkt das Netz.
+     * From here the network broadcasts.
      *
-     * <p>Zwischen Sockel und Auslegern ist Luft — deshalb noOcclusion, wie
-     * bei jedem Block hier, der kein voller Würfel ist.
+     * <p>Between base and arms there is air — hence noOcclusion, as with every
+     * block here that is not a full cube.
      */
     public static final DeferredBlock<Block> MAST = BLOCKS.register("mast",
             () -> new dev.devpanda.factorynetwork.block.MastBlock(
                     machineProperties().noOcclusion()));
 
-    /** Ein Ende einer Leitung ohne Kabel dazwischen. */
+    /** One end of a line without cable in between. */
     public static final DeferredBlock<Block> BRIDGE = BLOCKS.register("bridge",
             () -> new dev.devpanda.factorynetwork.block.BridgeBlock(
                     machineProperties().noOcclusion()));
 
-    /** Zugang zum Code-Editor. */
+    /** Access to the code editor. */
     public static final DeferredBlock<Block> TERMINAL = BLOCKS.register("terminal",
-            // noOcclusion, weil Konsole und Rahmen vorstehen und das Gehäuse
-            // seitlich schmaler ist.
+            // noOcclusion, because console and frame protrude and the housing
+            // is narrower at the sides.
             () -> new TerminalBlock(machineProperties().noOcclusion()));
 
     private static BlockBehaviour.Properties machineProperties() {

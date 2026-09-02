@@ -11,11 +11,11 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Eine Flüssigkeitszelle.
+ * A fluid cell.
  *
- * <p>Sie gehört in dasselbe Laufwerk wie eine Gegenstandszelle. Ein zweites
- * Laufwerk nur für Flüssigkeiten wäre ein Block mehr für dieselbe Handlung —
- * und die Frage „welches nehme ich" hat keine gute Antwort.
+ * <p>It belongs in the same drive as an item cell. A second drive just for
+ * fluids would be one more block for the same action — and the question
+ * "which one do I take" has no good answer.
  */
 public class FluidCellItem extends Item {
 
@@ -39,8 +39,8 @@ public class FluidCellItem extends Item {
                                 TooltipFlag flag) {
         Map<Fluid, Long> contents = CellFormat.FLUIDS.read(stack, context.registries());
         long total = CellFormat.total(contents);
-        // Beide Grenzen nennen: Voll ist eine Zelle meist an den Sorten, nicht
-        // an der Menge — wer nur die Menge sieht, sucht den Fehler woanders.
+        // Name both limits: a cell is usually full on types, not on amount —
+        // whoever sees only the amount looks for the problem elsewhere.
         lines.add(Component.translatable("item.factorynetwork.fluid_cell.types",
                 contents.size(), tier.types()).withStyle(ChatFormatting.GRAY));
         lines.add(Component.translatable("item.factorynetwork.fluid_cell.amount",
@@ -56,7 +56,7 @@ public class FluidCellItem extends Item {
         return CellFormat.FLUIDS.summarize(stack).types() > 0;
     }
 
-    /** Der Balken zeigt die knappere der beiden Grenzen. */
+    /** The bar shows the tighter of the two limits. */
     @Override
     public int getBarWidth(ItemStack stack) {
         CellFormat.Summary summary = CellFormat.FLUIDS.summarize(stack);

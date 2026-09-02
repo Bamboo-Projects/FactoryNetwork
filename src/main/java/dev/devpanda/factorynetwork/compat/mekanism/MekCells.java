@@ -12,26 +12,25 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Chemikalienzellen, mit Mekanism-Typen.
+ * Chemical cells, with Mekanism types.
  *
- * <p><b>Die Rechnung stand schon da.</b> {@code CellInventory} und
- * {@code CellFormat} sind seit den Flüssigkeiten offen für den Typ: Was sich
- * unterscheidet, ist die Registry und die Größe, nicht eine einzige Zeile der
- * Rechnung mit Sorten und Mengen. Hier steht deshalb kaum mehr als das
- * Format — und das ist das Ergebnis einer Entscheidung von vor zwei Tagen,
- * nicht Zufall.
+ * <p><b>The arithmetic was already there.</b> {@code CellInventory} and
+ * {@code CellFormat} have been generic in the type since the fluids: what
+ * differs is the registry and the size, not a single line of the arithmetic
+ * over types and amounts. So there is hardly more here than the format — and
+ * that is the result of a decision from two days ago, not chance.
  *
- * <p>Diese Klasse wird nur betreten, wenn Mekanism da ist. Sie darf deshalb
- * heißen, wie sie will, und Mekanism kennen.
+ * <p>This class is entered only when Mekanism is present. It may therefore be
+ * named whatever it likes, and know Mekanism.
  */
 final class MekCells {
 
     /**
-     * Wie der Inhalt einer Chemikalienzelle im Gegenstand steht.
+     * How the contents of a chemical cell are stored in the item.
      *
-     * <p>Eigene Feldnamen, damit eine Zelle nie mit einer Flüssigkeitszelle
-     * verwechselt wird: Beide zählen in Millibucket, und ein vertauschtes
-     * Format läse Wasser als Wasserstoff.
+     * <p>Dedicated field names, so a cell is never confused with a fluid cell:
+     * both count in millibuckets, and a swapped format would read water as
+     * hydrogen.
      */
     static final CellFormat<Chemical> CHEMICALS = new CellFormat<>(
             "ChemicalCell", "Amount", new CellFormat.Entry<>() {
@@ -56,7 +55,7 @@ final class MekCells {
     private MekCells() {
     }
 
-    /** Eine geöffnete Zelle, oder {@code null}, wenn dort keine steckt. */
+    /** An opened cell, or {@code null} if none is inserted. */
     static CellView open(ItemStack cell,
                          net.minecraft.core.HolderLookup.Provider registries) {
         if (ChemicalCellItem.tierOf(cell) == null) {
@@ -65,7 +64,7 @@ final class MekCells {
         return CellInventory.of(cell, ChemicalCellItem.tierOf(cell), CHEMICALS, registries);
     }
 
-    /** Was in der Zelle steht, als Kennung auf Menge. */
+    /** What is in the cell, as identifier to amount. */
     static Map<String, Long> read(ItemStack cell,
                                   net.minecraft.core.HolderLookup.Provider registries) {
         Map<String, Long> found = new LinkedHashMap<>();
@@ -78,7 +77,7 @@ final class MekCells {
         return found;
     }
 
-    /** Die Chemikalie zu einer Kennung, oder {@code null}. */
+    /** The chemical for an identifier, or {@code null}. */
     static Chemical chemical(String id) {
         ResourceLocation key = ResourceLocation.tryParse(id);
         if (key == null || !mekanism.api.MekanismAPI.CHEMICAL_REGISTRY.containsKey(key)) {
@@ -87,7 +86,7 @@ final class MekCells {
         return mekanism.api.MekanismAPI.CHEMICAL_REGISTRY.get(key);
     }
 
-    /** Und zurück. */
+    /** And back. */
     static String idOf(Chemical chemical) {
         ResourceLocation id = mekanism.api.MekanismAPI.CHEMICAL_REGISTRY.getKey(chemical);
         return id == null ? "" : id.toString();

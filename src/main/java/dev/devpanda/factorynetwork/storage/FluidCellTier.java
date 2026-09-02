@@ -3,20 +3,20 @@ package dev.devpanda.factorynetwork.storage;
 import net.minecraft.util.StringRepresentable;
 
 /**
- * Die Größen einer Flüssigkeitszelle.
+ * The sizes of a fluid cell.
  *
- * <p>Dieselbe Rechnung wie bei den Gegenstandszellen — so viele Sorten, so
- * viel Menge —, aber andere Zahlen: Flüssigkeiten gibt es in weniger Sorten
- * und größeren Mengen. Vier Sorten in der kleinsten reichen für Wasser, Lava
- * und zwei aus dem Pack; vierundsechzig wären ein Platz, den nie jemand füllt.
+ * <p>The same accounting as for the item cells — so many types, so much
+ * amount —, but different numbers: fluids come in fewer types and larger
+ * amounts. Four types in the smallest are enough for water, lava and two
+ * from the pack; sixty-four would be a slot nobody ever fills.
  *
- * <p><b>Die Namen sagen Eimer, nicht Kilo.</b> Bei den Gegenstandszellen
- * stimmt die Zahl im Namen mit dem Inhalt überein, und der Preis folgt ihr —
- * eine 64k kostet vierundsechzig kleine. Eine Flüssigkeitszelle „1k" mit
- * vierundsechzig Eimern hätte diese Ehrlichkeit nicht.
+ * <p><b>The names say buckets, not kilo.</b> With the item cells the number
+ * in the name matches the contents, and the price follows it — a 64k costs
+ * sixty-four small ones. A fluid cell "1k" with sixty-four buckets would not
+ * have that honesty.
  *
- * <p>Die Zahlen sind gesetzt, nicht hergeleitet. Sie lassen sich an einer
- * Stelle ändern, wenn sich das Spiel anders anfühlt als gedacht.
+ * <p>The numbers are set, not derived. They can be changed at one place if
+ * the game feels different than intended.
  */
 public enum FluidCellTier implements StringRepresentable, CellSize {
 
@@ -40,7 +40,7 @@ public enum FluidCellTier implements StringRepresentable, CellSize {
         return types;
     }
 
-    /** Wie viele Millibucket insgesamt hineinpassen. */
+    /** How many millibuckets fit in total. */
     @Override
     public long amount() {
         return amount;
@@ -51,7 +51,7 @@ public enum FluidCellTier implements StringRepresentable, CellSize {
         return label;
     }
 
-    /** Wie viele Eimer das sind — die Zahl, die auf der Zelle steht. */
+    /** How many buckets that is — the number written on the cell. */
     public long buckets() {
         return amount / 1000;
     }

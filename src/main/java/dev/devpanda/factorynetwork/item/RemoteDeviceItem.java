@@ -26,15 +26,14 @@ import net.neoforged.neoforge.energy.IEnergyStorage;
 import java.util.List;
 
 /**
- * Ein Gerät für den Fernzugriff: das Wireless Terminal oder der Laptop.
+ * A device for remote access: the wireless terminal or the laptop.
  *
- * <p>Ein Gegenstand für beide. Was sie unterscheidet, steht in
- * {@link RemoteDevice} — die Zahl der Steckplätze und die Frage, ob der
- * Code-Reiter dabei ist.
+ * <p>One item for both. What sets them apart is in {@link RemoteDevice} —
+ * the number of slots and the question whether the code tab is included.
  *
- * <p><b>Drei Dinge trägt so ein Gerät mit sich:</b> den Mast, an dem es
- * angemeldet ist; was in seinen Steckplätzen liegt; und wie voll sein Akku
- * ist. Alle drei als angemeldete Komponenten, siehe
+ * <p><b>Such a device carries three things with it:</b> the mast it is bound
+ * to; what sits in its slots; and how full its battery is. All three as
+ * registered components, see
  * {@link FnComponents}.
  */
 public class RemoteDeviceItem extends Item {
@@ -52,31 +51,31 @@ public class RemoteDeviceItem extends Item {
         return device;
     }
 
-    /** Wie viel Strom hineinpasst. */
+    /** How much power fits in. */
     public int capacity() {
         return capacity;
     }
 
-    /** Welches Gerät das ist — oder {@code null}, wenn es keines ist. */
+    /** Which device this is — or {@code null} if it is none. */
     public static RemoteDevice deviceOf(ItemStack stack) {
         return stack.getItem() instanceof RemoteDeviceItem item ? item.device() : null;
     }
 
-    /** An welchem Mast das Gerät hängt, samt Welt — oder {@code null}. */
+    /** Which mast the device hangs on, world and all — or {@code null}. */
     public static GlobalPos mastOf(ItemStack stack) {
         return stack.get(FnComponents.MAST.get());
     }
 
-    /** Der Name des gekoppelten Netzes, oder {@code null}. */
+    /** The name of the coupled network, or {@code null}. */
     public static String networkOf(ItemStack stack) {
         return stack.get(FnComponents.NETWORK_NAME.get());
     }
 
     /**
-     * Meldet das Gerät an einem Mast an.
+     * Binds the device to a mast.
      *
-     * <p>Der Netzname kommt mit, damit der Tooltip ihn zeigen kann, ohne die
-     * Welt zu befragen — im Inventar hat der Client sie nicht.
+     * <p>The network name comes along so the tooltip can show it without
+     * querying the world — in the inventory the client does not have it.
      */
     public static void bind(ItemStack stack, GlobalPos mast, String network) {
         stack.set(FnComponents.MAST.get(), mast);
@@ -84,17 +83,18 @@ public class RemoteDeviceItem extends Item {
     }
 
     /**
-     * Meldet ein Gerät an diesem Mast an — oder wieder ab.
+     * Binds a device to this mast — or unbinds it again.
      *
-     * <p>Steht hier und nicht im Block, damit ein Prüflauf sie aufrufen kann.
-     * Ein Test, der stattdessen {@link #bind} ruft, prüft das Setzen einer
-     * Komponente und nicht die Regel, um die es geht: <b>derselbe Mast
-     * zweimal meldet ab.</b>
+     * <p>Lives here and not in the block so that a test run can call it. A
+     * test that instead calls {@link #bind} checks the setting of a
+     * component and not the rule that matters: <b>binding the same mast
+     * twice unbinds.</b>
      *
-     * <p>Ohne den Rückweg gäbe es keinen — außer das Gerät wegzuwerfen.
+     * <p>Without the way back there would be none — other than throwing the
+     * device away.
      *
-     * @return {@code true}, wenn danach eine Anmeldung besteht;
-     *         {@code false} nach dem Abmelden
+     * @return {@code true} if a binding exists afterwards;
+     *         {@code false} after unbinding
      */
     public static boolean couple(ItemStack stack, GlobalPos mast) {
         if (mast.equals(mastOf(stack))) {
@@ -106,14 +106,14 @@ public class RemoteDeviceItem extends Item {
     }
 
     /**
-     * Wie ein Mast im Tooltip heißt.
+     * What a mast is called in the tooltip.
      *
-     * <p>Der Name ist die Position: Es gibt keine Netznamen, und eine
-     * erfundene Nummer wäre im Spiel nicht wiederzufinden.
+     * <p>The name is the position: there are no network names, and an
+     * invented number would not be findable in the game.
      *
-     * <p>Die Welt steht nur dabei, wenn es nicht die Oberwelt ist. Sie
-     * überall zu nennen machte die Zeile länger, ohne etwas zu sagen — die
-     * meisten Netze stehen ohnehin dort.
+     * <p>The world is only stated when it is not the Overworld. Naming it
+     * everywhere would make the line longer without saying anything — most
+     * networks stand there anyway.
      */
     public static String describe(GlobalPos mast) {
         BlockPos pos = mast.pos();
@@ -124,18 +124,17 @@ public class RemoteDeviceItem extends Item {
         return place + " (" + mast.dimension().location().getPath() + ")";
     }
 
-    /** Nimmt die Anmeldung zurück. */
+    /** Takes back the binding. */
     public static void unbind(ItemStack stack) {
         stack.remove(FnComponents.MAST.get());
         stack.remove(FnComponents.NETWORK_NAME.get());
     }
 
     /**
-     * Was in den Steckplätzen liegt.
+     * What sits in the slots.
      *
-     * <p>Frisch aus dem Stapel gelesen, nicht gemerkt: Ein Gerät kann in
-     * einer Kiste liegen und dort umgebaut werden, während ein Fenster offen
-     * ist.
+     * <p>Read fresh from the stack, not remembered: a device can lie in a
+     * chest and be rearranged there while a window is open.
      */
     public static UpgradeSlots slotsOf(ItemStack stack) {
         RemoteDevice device = deviceOf(stack);
@@ -150,29 +149,29 @@ public class RemoteDeviceItem extends Item {
         return slots;
     }
 
-    /** Schreibt die Steckplätze zurück an den Stapel. */
+    /** Writes the slots back to the stack. */
     public static void saveSlots(ItemStack stack, UpgradeSlots slots) {
         stack.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(slots.contents()));
     }
 
-    /** Was dieses Gerät kann — die Kurzform für die Reichweitenrechnung. */
+    /** What this device can do — the short form for the range calculation. */
     public static Loadout loadoutOf(ItemStack stack) {
         return slotsOf(stack).loadout();
     }
 
-    /** Der Ladestand, oder 0 ohne Akku. */
+    /** The charge level, or 0 without a battery. */
     public static int energyOf(ItemStack stack) {
         IEnergyStorage battery = stack.getCapability(Capabilities.EnergyStorage.ITEM);
         return battery == null ? 0 : battery.getEnergyStored();
     }
 
     /**
-     * Rechtsklick in die Luft öffnet das Terminal aus der Ferne.
+     * A right-click into the air opens the terminal from afar.
      *
-     * <p>Vier Gründe, es nicht zu tun, und für jeden eine eigene Meldung:
-     * kein Netz angemeldet, der Mast steht nicht mehr, er gehört zu keinem
-     * Netz, oder er ist zu weit weg. Eine gemeinsame Meldung „geht nicht"
-     * ließe den Spieler raten, welcher der vier Fälle vorliegt.
+     * <p>Four reasons not to do it, and a separate message for each: no
+     * network bound, the mast is gone, it belongs to no network, or it is
+     * too far away. A single message "doesn't work" would leave the player
+     * guessing which of the four cases applies.
      */
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player,
@@ -188,9 +187,10 @@ public class RemoteDeviceItem extends Item {
         Level home = level.dimension().equals(mast.dimension()) || player.getServer() == null
                 ? level : player.getServer().getLevel(mast.dimension());
         if (home == null || !home.isLoaded(mast.pos())) {
-            // Nicht dasselbe wie abgebaut, und deshalb eine eigene Meldung:
-            // Wer "Der Sendemast steht nicht mehr" liest, baut einen neuen —
-            // und der alte steht noch, nur schaut dort gerade niemand hin.
+            // Not the same as dismantled, and therefore a separate message:
+            // whoever reads "The transmitter mast is gone" builds a new one —
+            // and the old one still stands, only no one is looking there
+            // right now.
             return refuse(player, held, "message.factorynetwork.remote.not_loaded");
         }
         if (!(home.getBlockEntity(mast.pos())
@@ -204,15 +204,15 @@ public class RemoteDeviceItem extends Item {
         }
         int slot = RemoteAccess.slotOf(player, held);
         if (slot < 0 || !RemoteAccess.allowed(player, slot, mast)) {
-            // Zwei Gründe, eine Meldung wäre zu wenig: Wer in einer anderen
-            // Welt steht, läuft nicht näher heran — er braucht eine Karte.
+            // Two reasons, one message would be too few: whoever stands in
+            // another dimension does not walk closer — they need a card.
             return refuse(player, held,
                     level.dimension().equals(mast.dimension())
                             ? "message.factorynetwork.remote.out_of_range"
                             : "message.factorynetwork.remote.other_world");
         }
-        // Erst fragen, dann nehmen: Ein halb geladenes Gerät soll seinen
-        // Rest behalten, wenn es das Fenster ohnehin nicht öffnen kann.
+        // Ask first, then take: a half-charged device should keep its
+        // remainder if it cannot open the window anyway.
         int opening = dev.devpanda.factorynetwork.network.Power.REMOTE_OPEN;
         var battery = held.getCapability(Capabilities.EnergyStorage.ITEM);
         if (battery == null || battery.extractEnergy(opening, true) < opening) {
@@ -220,13 +220,13 @@ public class RemoteDeviceItem extends Item {
         }
         battery.extractEnergy(opening, false);
         if (player instanceof ServerPlayer serverPlayer) {
-            // Erst den Zustand schicken, dann öffnen — wie am Block: Der
-            // Editor soll seine Daten schon haben, wenn er zeichnet.
+            // Send the state first, then open — as at the block: the editor
+            // should already have its data when it draws.
             //
-            // watchTerminal allein reicht nicht. Es schickt Projekt, Abläufe
-            // und Anzeigen, aber nicht die Netzübersicht — die käme sonst
-            // erst beim nächsten regelmäßigen Schicken, und der Reiter stünde
-            // bis dahin leer da.
+            // watchTerminal alone is not enough. It sends project, flows and
+            // displays, but not the network overview — that would otherwise
+            // arrive only on the next regular send, and the tab would stand
+            // empty until then.
             controller.get().sendNetworkStateTo(serverPlayer);
             controller.get().watchTerminal(serverPlayer);
             serverPlayer.openMenu(new SimpleMenuProvider(
@@ -240,7 +240,7 @@ public class RemoteDeviceItem extends Item {
         return InteractionResultHolder.consume(held);
     }
 
-    /** Eine Absage mit Grund. */
+    /** A refusal with a reason. */
     private static InteractionResultHolder<ItemStack> refuse(Player player, ItemStack held,
                                                              String message) {
         player.displayClientMessage(Component.translatable(message), true);
@@ -250,8 +250,8 @@ public class RemoteDeviceItem extends Item {
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context,
                                 List<Component> lines, TooltipFlag flag) {
-        // Zwei Geräte sehen im Inventar gleich aus. Was sie unterscheidet,
-        // ist das Netz, an dem sie hängen — das gehört sichtbar.
+        // Two devices look the same in the inventory. What sets them apart
+        // is the network they hang on — that deserves to be visible.
         String network = networkOf(stack);
         if (network == null || network.isBlank()) {
             lines.add(Component.translatable("item.factorynetwork.remote.unbound")
@@ -285,7 +285,7 @@ public class RemoteDeviceItem extends Item {
 
     @Override
     public int getBarColor(ItemStack stack) {
-        // Dasselbe Blau wie die Energieanzeige der Maschinen.
+        // The same blue as the machines' energy display.
         return 0x3BA7DB;
     }
 }

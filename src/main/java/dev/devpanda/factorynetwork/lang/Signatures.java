@@ -4,57 +4,57 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Was hinter einem Schlüsselwort stehen muss.
+ * What has to stand behind a keyword.
  *
- * <p><b>Die Stelle, an der die Grammatik aufhört, ein Dokument zu sein.</b>
- * In {@code grammatik.md} steht {@code row STRING expr} — im Editor stand es
- * nirgends. Wer {@code row} getippt hatte, bekam wieder die Liste der
- * Schlüsselwörter angeboten und musste die Doku danebenlegen, um zu wissen,
- * dass jetzt ein Text kommt und danach ein Ausdruck.
+ * <p><b>The place where the grammar stops being a document.</b> In
+ * {@code grammatik.md} it says {@code row STRING expr} — in the editor it stood
+ * nowhere. Whoever had typed {@code row} was offered the list of keywords
+ * again and had to lay the docs next to it to know that a text comes now and an
+ * expression after it.
  *
- * <p>Hier steht dieselbe Tabelle einmal als Daten. Zwei Dinge lesen sie: die
- * Vervollständigung, um an jeder Stelle das Passende anzubieten, und die
- * Hinweiszeile, die die ganze Form zeigt und markiert, wo man gerade steht.
+ * <p>Here the same table stands once, as data. Two things read it: the
+ * completion, to offer the fitting thing at each position, and the hint line,
+ * which shows the whole shape and marks where you currently are.
  *
- * <p><b>Absichtlich im Sprachpaket und nicht im Editor.</b> Sie gehört zur
- * Sprache, nicht zu einem Fenster — der Editor im Spiel ist nur der erste,
- * der sie braucht. Ein Sprachserver für VS Code liest dieselbe Tabelle.
+ * <p><b>Deliberately in the language package and not in the editor.</b> It
+ * belongs to the language, not to a window — the in-game editor is only the
+ * first that needs it. A language server for VS Code reads the same table.
  */
 public final class Signatures {
 
-    /** Was für ein Wert an einer Stelle steht. */
+    /** What kind of value stands at a position. */
     public enum Kind {
-        /** Ein Text in Anführungszeichen. */
+        /** A text in quotation marks. */
         STRING,
-        /** Ein Ausdruck — Bestände, Rechnungen, Vergleiche. */
+        /** An expression — stock levels, computations, comparisons. */
         EXPR,
-        /** Eine ganze Zahl. */
+        /** A whole number. */
         INT,
-        /** Eine Dauer, etwa {@code 5s} oder {@code 2min}. */
+        /** A duration, e.g. {@code 5s} or {@code 2min}. */
         DURATION,
-        /** Ein Connector, {@code storage} oder {@code crafting}. */
+        /** A connector, {@code storage} or {@code crafting}. */
         TARGET,
-        /** Ein Auswahlausdruck über Gegenstände oder Tags. */
+        /** A selector expression over items or tags. */
         SELECTION,
-        /** Der Name einer Verteilung. */
+        /** The name of a distribution. */
         STRATEGY,
-        /** Der Name einer Funktion im Projekt. */
+        /** The name of a function in the project. */
         FUNCTION,
-        /** Eine Aufzählung von Connectoren oder Mustern. */
+        /** A list of connectors or patterns. */
         MEMBERS,
-        /** Ein Name, der hier erst entsteht — dafür gibt es keinen Vorschlag. */
+        /** A name that only comes into being here — there is no suggestion for it. */
         NEW_NAME,
-        /** Der Name eines Ereignisses aus dem Projekt. */
+        /** The name of an event from the project. */
         EVENT,
-        /** Ein festes Wort, das genau so dastehen muss. */
+        /** A fixed word that has to stand exactly so. */
         LITERAL
     }
 
     /**
-     * Eine Stelle in einer Form.
+     * A position in a shape.
      *
-     * @param kind  was dort stehen muss
-     * @param label wie es in der Hinweiszeile heißt
+     * @param kind  what has to stand there
+     * @param label how it is called in the hint line
      */
     public record Slot(Kind kind, String label, boolean optional) {
 
@@ -75,13 +75,13 @@ public final class Signatures {
         }
 
         /**
-         * Ein festes Wort, das auch fehlen darf.
+         * A fixed word that may also be missing.
          *
-         * <p>Es führt immer genau einen Wert ein — {@code from ziel},
-         * {@code to ziel}. Fehlt das Wort, fehlt auch der Wert, und beim
-         * Zählen werden beide Stellen übersprungen. Das ist die Regel, mit
-         * der {@code move menge [from ziel] to ziel} ohne einen zweiten
-         * Übersetzer auskommt.
+         * <p>It always introduces exactly one value — {@code from ziel},
+         * {@code to ziel}. If the word is missing, the value is missing too, and
+         * when counting, both positions are skipped. That is the rule with which
+         * {@code move menge [from ziel] to ziel} gets by without a second
+         * compiler.
          */
         static Slot maybe(String word) {
             return new Slot(Kind.LITERAL, word, true);
@@ -89,22 +89,22 @@ public final class Signatures {
     }
 
     /**
-     * Ein Schlüsselwort mit allem, was dahinter gehört.
+     * A keyword with everything that belongs behind it.
      *
-     * @param keyword das Wort selbst
-     * @param slots   die Stellen dahinter, in der Reihenfolge
-     * @param help    ein Satz dazu, für die Erklärung beim Zeigen
+     * @param keyword the word itself
+     * @param slots   the positions behind it, in order
+     * @param help    a sentence about it, for the explanation when shown
      */
     public record Signature(String keyword, List<Slot> slots, String help) {
 
-        /** Die ganze Form als Text: {@code row string expr}. */
+        /** The whole shape as text: {@code row string expr}. */
         public String shape() {
             StringBuilder out = new StringBuilder(keyword);
             for (int i = 0; i < slots.size(); i++) {
                 Slot slot = slots.get(i);
                 if (slot.optional()) {
-                    // Das feste Wort und sein Wert stehen zusammen in eckigen
-                    // Klammern — so schreibt es auch die Grammatik.
+                    // The fixed word and its value stand together in square
+                    // brackets — that is how the grammar writes it too.
                     out.append(" [").append(slot.label());
                     if (i + 1 < slots.size()) {
                         out.append(' ').append(slots.get(i + 1).label());
@@ -118,7 +118,7 @@ public final class Signatures {
             return out.toString();
         }
 
-        /** Was an dieser Stelle steht, oder {@code null} hinter dem Ende. */
+        /** What stands at this position, or {@code null} past the end. */
         public Slot slotAt(int index) {
             return index >= 0 && index < slots.size() ? slots.get(index) : null;
         }
@@ -128,7 +128,7 @@ public final class Signatures {
         return new Signature(keyword, List.of(slots), help);
     }
 
-    /** Die Angaben in einer Anzeige. */
+    /** The entries in a display. */
     public static final List<Signature> DISPLAY = List.of(
             of("title", "Die Überschrift der Wand.", Slot.of(Kind.STRING)),
             of("row", "Eine Zeile mit Beschriftung und Wert.",
@@ -146,10 +146,11 @@ public final class Signatures {
                     Slot.of(Kind.INT)));
 
     /**
-     * Die Angaben in einem Rezept an einer Maschine.
+     * The entries in a recipe at a machine.
      *
-     * <p>Zwei, und beide dürfen mehrfach stehen: {@code in} für jede Zutat,
-     * {@code out} für jedes Ergebnis. Die Menge steht immer da, auch die Eins.
+     * <p>Two, and both may appear multiple times: {@code in} for each
+     * ingredient, {@code out} for each result. The amount is always there, even
+     * the one.
      */
     public static final List<Signature> RECIPE = List.of(
             of("in", "Eine Zutat, mit Menge.",
@@ -158,11 +159,11 @@ public final class Signatures {
                     Slot.of(Kind.INT), Slot.of(Kind.SELECTION)));
 
     /**
-     * Die Angaben in einem {@code store}.
+     * The entries in a {@code store}.
      *
-     * <p>Zwei, und beide dürfen fehlen: Ein Speicher ohne Angaben nimmt alles
-     * und steht gleichauf mit den Zellen. Mehr braucht der häufigste Fall
-     * nicht — eine Kiste, die zum Netz gehören soll.
+     * <p>Two, and both may be missing: a store without entries takes everything
+     * and stands level with the cells. The most common case needs no more — a
+     * chest that should belong to the network.
      */
     public static final List<Signature> STORE = List.of(
             of("priority", "Wohin zuerst eingelagert wird. Die Zellen stehen auf 0.",
@@ -170,7 +171,7 @@ public final class Signatures {
             of("filter", "Was hinein darf. Ohne Angabe alles.",
                     Slot.of(Kind.SELECTION)));
 
-    /** Die Angaben in einem Worker. */
+    /** The entries in a worker. */
     public static final List<Signature> WORKER = List.of(
             of("from", "Woher die Gegenstände kommen.", Slot.of(Kind.TARGET)),
             of("to", "Wohin sie gehen.", Slot.of(Kind.TARGET)),
@@ -188,29 +189,29 @@ public final class Signatures {
             of("overflow", "Wohin, wenn das Ziel voll ist.",
                     Slot.literal("to"), Slot.of(Kind.TARGET)));
 
-    /** Die Angaben in einer Gruppe. */
+    /** The entries in a group. */
     public static final List<Signature> GROUP = List.of(
             of("members", "Die Connectoren der Gruppe, mit Komma getrennt.",
                     Slot.of(Kind.MEMBERS)),
             of("strategy", "Wie auf sie verteilt wird.", Slot.of(Kind.STRATEGY)));
 
     /**
-     * Die Zeilen in einer Filter-Vorlage.
+     * The lines in a filter template.
      *
-     * <p>Nur eine Form, und die ist die Ausnahme: Eine gewöhnliche Zeile ist
-     * eine Auswahl und braucht kein Wort davor. Der Editor schlägt deshalb
-     * an dieser Stelle die Auswahlen selbst vor und {@code except} dazu.
+     * <p>Only one shape, and it is the exception: an ordinary line is a selector
+     * and needs no word in front. The editor therefore suggests the selectors
+     * themselves at this position, and {@code except} on top.
      */
     public static final List<Signature> FILTER = List.of(
             of("except", "Nimmt wieder heraus, was die Zeilen darüber einschließen.",
                     Slot.of(Kind.SELECTION)));
 
     /**
-     * Die Anweisungen in einer Funktion oder einem Ereignisblock.
+     * The statements in a function or an event block.
      *
-     * <p>Bedingungen stehen ohne runde Klammern und ein Block ist Pflicht —
-     * deshalb endet die Form von {@code if} beim Ausdruck. Die geschweifte
-     * Klammer setzt der Editor beim Zeilenumbruch selbst.
+     * <p>Conditions stand without round brackets and a block is mandatory — so
+     * the shape of {@code if} ends at the expression. The editor sets the curly
+     * brace itself at the line break.
      */
     public static final List<Signature> STATEMENT = List.of(
             of("let", "Ein neuer Wert mit Namen.",
@@ -232,11 +233,11 @@ public final class Signatures {
             of("await", "Wartet auf ein Ereignis.", Slot.of(Kind.EVENT)));
 
     /**
-     * Die Funktionen, die es ohne Empfänger gibt.
+     * The functions that exist without a receiver.
      *
-     * <p>Sie waren nirgends aufgeführt, und deshalb schlug sie kein Editor
-     * vor — {@code log()} gibt es seit dem ersten Tag, und finden musste man
-     * es in der Doku.
+     * <p>They were listed nowhere, and so no editor suggested them —
+     * {@code log()} has existed since the first day, and one had to find it in
+     * the docs.
      */
     public static final List<Member> FREE_FUNCTIONS = List.of(
             new Member("log", "log(text)", "Schreibt ins Protokoll, als info."),
@@ -258,18 +259,17 @@ public final class Signatures {
                     "Bestellt eine Fertigung und liefert die Kennung des Auftrags. "
                             + "Null heißt: kein Rezept."));
 
-    /** Die Verteilungen, die {@code strategy} kennt. */
+    /** The distributions that {@code strategy} knows. */
     public static final List<String> STRATEGIES = List.of(
             "round_robin", "first_available", "least_filled", "random", "priority");
 
     /**
-     * Was auf oberster Ebene eine Form hat.
+     * What has a shape at the top level.
      *
-     * <p>Bisher gab es hier nichts: Alle Deklarationen öffnen einen Block, und
-     * die Frage „was kommt hinter dem Wort" stellte sich erst darin.
-     * {@code global} ist die erste, die in einer Zeile fertig wird — und
-     * damit die erste, für die eine Formzeile auf oberster Ebene einen Sinn
-     * ergibt.
+     * <p>So far there was nothing here: all declarations open a block, and the
+     * question "what comes after the word" only arose inside it. {@code global}
+     * is the first that finishes on one line — and thus the first for which a
+     * shape line at the top level makes any sense.
      */
     public static final List<Signature> TOP_LEVEL = List.of(
             of("global", "Ein Wert, den alle Dateien sehen.",
@@ -280,46 +280,44 @@ public final class Signatures {
                     Slot.of(Kind.EXPR)));
 
     /**
-     * Die Wörter, mit denen eine Deklaration anfängt.
+     * The words a declaration begins with.
      *
-     * <p><b>Hier und nur hier.</b> Sie stand dreimal da — im Editor im Spiel,
-     * im Export für VS Code, und im Parser sowieso. Aufgefallen ist das beim
-     * Hinzufügen von {@code store}: Der Editor im Spiel bot es an, VS Code
-     * nicht, und beide Prüfläufe waren grün, weil jeder seine eigene Liste
-     * prüfte.
+     * <p><b>Here and only here.</b> It stood in three places — in the in-game
+     * editor, in the export for VS Code, and in the parser anyway. This came to
+     * light when adding {@code store}: the in-game editor offered it, VS Code
+     * did not, and both test runs were green, because each checked its own list.
      */
     public static final List<String> DECLARATIONS = List.of(
             "worker", "group", "filter", "multiblock", "event", "display", "recipe",
             "store", "fn", "on", "global", "const");
 
     /**
-     * Die Deklarationen, in denen Angaben mit einer Form stehen.
+     * The declarations in which entries with a shape stand.
      *
-     * <p>Nicht alle: {@code fn}, {@code on} und {@code multiblock} enthalten
-     * Anweisungen, {@code event} und {@code global} sind in einer Zeile
-     * fertig. Für die anderen gibt es eine Liste erlaubter Wörter, und die
-     * braucht beide Editoren.
+     * <p>Not all: {@code fn}, {@code on} and {@code multiblock} contain
+     * statements, {@code event} and {@code global} finish on one line. For the
+     * others there is a list of allowed words, and both editors need it.
      */
     public static final List<String> BLOCKS_WITH_ENTRIES = List.of(
             "display", "worker", "group", "filter", "recipe", "store", "fn");
 
-    /** Ein Ding, das an einem Gerät steht. */
+    /** A thing that stands on a device. */
     public record Member(String name, String shape, String help) {
     }
 
     /**
-     * Was an einem Gerät steht — {@code crusher_1.online}.
+     * What stands on a device — {@code crusher_1.online}.
      *
-     * <p><b>Nur, was der Interpreter wirklich kennt.</b> Die Liste unten ist
-     * vollzählig; {@code output()} und {@code busy} sind am 25.08. gestrichen
-     * worden, weil das eine dasselbe sagte wie {@code move} und das andere
-     * nichts Nachprüfbares. Was hier steht, muss laufen — ein Vorschlag, der
-     * in einen Laufzeitfehler führt, ist schlimmer als gar keiner.
+     * <p><b>Only what the interpreter really knows.</b> The list below is
+     * complete; {@code output()} and {@code busy} were struck on Aug 25, because
+     * the one said the same as {@code move} and the other nothing verifiable.
+     * What stands here has to run — a suggestion that leads into a runtime error
+     * is worse than none at all.
      *
-     * <p>Für jedes Gerät dieselben: Gerätespezifisches gibt es nach dem Punkt
-     * erst, wenn die Mitglieder aus §6 gebaut sind. Dann ist es ein Eintrag
-     * hier und nichts weiter. Was eine <b>Gruppe</b> kann, steht getrennt in
-     * {@link #GROUP_MEMBERS} — es sind andere Dinge.
+     * <p>The same for every device: device-specific things after the dot exist
+     * only once the members from §6 are built. Then it is one entry here and
+     * nothing more. What a <b>group</b> can do stands separately in
+     * {@link #GROUP_MEMBERS} — those are other things.
      */
     public static final List<Member> MEMBERS = List.of(
             new Member("online", "bool",
@@ -345,11 +343,11 @@ public final class Signatures {
                             + "angekommen ist. Ein Fenster geht dabei nicht auf."));
 
     /**
-     * Was am Netz selbst steht: {@code network.power}.
+     * What stands on the network itself: {@code network.power}.
      *
-     * <p><b>Ohne Klammern</b>, anders als {@code geraet.energy()}. Der
-     * Unterschied ist nicht Geschmack: Der Stand einer fremden Maschine ist
-     * ein Blick in die Welt, der eigene Vorrat liegt im Controller.
+     * <p><b>Without parentheses</b>, unlike {@code geraet.energy()}. The
+     * difference is not taste: the state of a foreign machine is a look into the
+     * world, one's own supply sits in the controller.
      */
     public static final List<Member> NETWORK_MEMBERS = List.of(
             new Member("power", "int", "Wie viel Strom im Netz steht, in FE."),
@@ -357,11 +355,11 @@ public final class Signatures {
                     "Wie viel hineinpasst, in FE. Die Bezugsgröße zu power."));
 
     /**
-     * Was an einer Liste steht.
+     * What stands on a list.
      *
-     * <p>Alle fünf, die {@code sprache.md} §12 nennt. {@code where} und
-     * {@code sort} werten ihren Ausdruck je Eintrag aus, mit {@code it} als
-     * diesem Eintrag.
+     * <p>All five that {@code sprache.md} §12 names. {@code where} and
+     * {@code sort} evaluate their expression per entry, with {@code it} as that
+     * entry.
      */
     public static final List<Member> LIST_MEMBERS = List.of(
             new Member("count", "count() int", "Wie viele Einträge."),
@@ -377,11 +375,11 @@ public final class Signatures {
             new Member("rest", "rest() list", "Alles außer dem ersten Eintrag."));
 
     /**
-     * Was an einer Gerätegruppe steht.
+     * What stands on a device group.
      *
-     * <p>Zwei Aufrufe und sonst nichts. Was ein einzelnes Gerät kann, fragt
-     * man an einem Mitglied — eine Gruppe ist kein Gerät mit mehr Fächern,
-     * sondern eine Verteilung.
+     * <p>Two calls and nothing else. What a single device can do you ask at a
+     * member — a group is not a device with more compartments, but a
+     * distribution.
      */
     public static final List<Member> GROUP_MEMBERS = List.of(
             new Member("members", "members() list",
@@ -391,12 +389,11 @@ public final class Signatures {
                             + "strategy."));
 
     /**
-     * Was an einem einzelnen Posten steht — {@code it.amount}.
+     * What stands on a single entry — {@code it.amount}.
      *
-     * <p>Die Menge und drei Arten, die Sorte zu nennen. Der Editor kennt
-     * keine Typen und kann deshalb nicht wissen, ob ein Posten Gegenstände,
-     * Flüssigkeiten oder Chemikalien meint; er bietet alle an und sagt in der
-     * Form, wofür es gilt.
+     * <p>The amount and three ways to name the sort. The editor knows no types
+     * and therefore cannot know whether an entry means items, fluids, or
+     * chemicals; it offers all and says in the shape what each applies to.
      */
     public static final List<Member> ENTRY_MEMBERS = List.of(
             new Member("amount", "amount int", "Die Menge dieses Postens."),
@@ -408,14 +405,14 @@ public final class Signatures {
                     "Dieselbe Angabe für Chemikalien. Braucht Mekanism."));
 
     /**
-     * Die Formen, die in dieser Blockart gelten.
+     * The shapes that apply in this kind of block.
      *
-     * @param declaration das Deklarationswort, etwa {@code display}
+     * @param declaration the declaration word, e.g. {@code display}
      */
     public static List<Signature> forBlock(String declaration) {
         if (declaration == null) {
-            // Kein Block heißt oberste Ebene, und dort steht seit global
-            // etwas mit Form.
+            // No block means the top level, and since global something with a
+            // shape stands there.
             return TOP_LEVEL;
         }
         return switch (declaration) {
@@ -425,13 +422,13 @@ public final class Signatures {
             case "worker" -> WORKER;
             case "group" -> GROUP;
             case "filter" -> FILTER;
-            // fn, on und multiblock enthalten Anweisungen, keine Angaben.
+            // fn, on and multiblock contain statements, not entries.
             case "fn", "on", "multiblock" -> STATEMENT;
             default -> List.of();
         };
     }
 
-    /** Die Form zu einem Schlüsselwort in dieser Blockart, oder {@code null}. */
+    /** The shape for a keyword in this kind of block, or {@code null}. */
     public static Signature find(String declaration, String keyword) {
         for (Signature signature : forBlock(declaration)) {
             if (signature.keyword().equals(keyword)) {
@@ -442,15 +439,15 @@ public final class Signatures {
     }
 
     /**
-     * Wo der Cursor in einer Angabe steht.
+     * Where the cursor stands within an entry.
      *
-     * @param signature die Form, die auf dieser Zeile begonnen wurde
-     * @param slotIndex die Stelle, die gerade dran ist; hinter der letzten
-     *                  steht die Zahl der Stellen, dann ist die Angabe voll
+     * @param signature the shape that was begun on this line
+     * @param slotIndex the position that is currently up; past the last one
+     *                  stands the number of positions, then the entry is full
      */
     public record Where(Signature signature, int slotIndex) {
 
-        /** Was hier stehen muss, oder {@code null}, wenn die Angabe voll ist. */
+        /** What has to stand here, or {@code null} when the entry is full. */
         public Slot slot() {
             return signature.slotAt(slotIndex);
         }
@@ -461,22 +458,22 @@ public final class Signatures {
     }
 
     /**
-     * Liest aus der angefangenen Zeile, welche Angabe gemeint ist und welche
-     * Stelle davon dran ist.
+     * Reads from the started line which entry is meant and which position of it
+     * is up.
      *
-     * <p>Gezählt wird über die Wörter dahinter, wobei ein Text in
-     * Anführungszeichen <b>eines</b> ist — sonst rutschte {@code row "Freier
-     * Platz"} um ein Wort weiter, und die Hinweiszeile zeigte auf die falsche
-     * Stelle.
+     * <p>Counting is over the words behind it, where a text in quotation marks
+     * is <b>one</b> — otherwise {@code row "Freier
+     * Platz"} would slip one word further, and the hint line would point at the
+     * wrong position.
      *
-     * <p>Endet die Zeile mit einem Leerzeichen, wird die nächste Stelle
-     * angefangen; sonst wird die letzte noch getippt. Das ist der Unterschied
-     * zwischen „{@code row "a" }" — jetzt kommt der Ausdruck — und
-     * „{@code row "a}" — der Text ist noch nicht fertig.
+     * <p>If the line ends with a space, the next position is begun; otherwise
+     * the last one is still being typed. That is the difference between
+     * "{@code row "a" }" — now the expression comes — and
+     * "{@code row "a}" — the text is not yet finished.
      *
-     * @param declaration    das Deklarationswort des umgebenden Blocks
-     * @param lineUpToCursor die Zeile bis zum Cursor
-     * @return wo man steht, oder {@code null} außerhalb jeder bekannten Angabe
+     * @param declaration    the declaration word of the surrounding block
+     * @param lineUpToCursor the line up to the cursor
+     * @return where you are, or {@code null} outside any known entry
      */
     public static Where at(String declaration, String lineUpToCursor) {
         String text = lineUpToCursor.stripLeading();
@@ -485,7 +482,7 @@ public final class Signatures {
         }
         int wordEnd = text.indexOf(' ');
         if (wordEnd < 0) {
-            // Das Schlüsselwort selbst wird noch getippt.
+            // The keyword itself is still being typed.
             return null;
         }
         Signature signature = find(declaration, text.substring(0, wordEnd));
@@ -496,19 +493,19 @@ public final class Signatures {
         List<String> words = splitWords(rest);
         boolean typing = !rest.isEmpty() && rest.charAt(rest.length() - 1) != ' ';
         if (typing && !words.isEmpty()) {
-            // Das letzte Wort wird noch getippt und zählt noch nicht.
+            // The last word is still being typed and does not count yet.
             words = words.subList(0, words.size() - 1);
         }
         return new Where(signature, slotAfter(signature, words));
     }
 
     /**
-     * Welche Stelle nach diesen Wörtern dran ist.
+     * Which position is up after these words.
      *
-     * <p>Wort für Wort durch die Form. Steht dabei eine Stelle an, die ein
-     * festes Wort <b>sein kann</b>, und das Wort passt nicht dazu, fällt sie
-     * samt ihrem Wert weg: {@code move 64 to kiste} hat kein {@code from},
-     * und ohne diese Regel landete das {@code to} auf der Stelle der Quelle.
+     * <p>Word by word through the shape. If a position comes up that <b>can
+     * be</b> a fixed word, and the word does not match it, it falls away
+     * together with its value: {@code move 64 to kiste} has no {@code from}, and
+     * without this rule the {@code to} would land on the position of the source.
      */
     private static int slotAfter(Signature signature, List<String> words) {
         int slot = 0;
@@ -526,7 +523,7 @@ public final class Signatures {
         return slot;
     }
 
-    /** Die Wörter hinter dem Schlüsselwort; ein Text in Anführungszeichen ist eines. */
+    /** The words behind the keyword; a text in quotation marks is one. */
     private static List<String> splitWords(String rest) {
         List<String> words = new java.util.ArrayList<>();
         int i = 0;

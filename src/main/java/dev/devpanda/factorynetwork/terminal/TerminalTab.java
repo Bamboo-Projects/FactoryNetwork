@@ -3,17 +3,17 @@ package dev.devpanda.factorynetwork.terminal;
 import net.minecraft.network.chat.Component;
 
 /**
- * Die Reiter des Terminals.
+ * The tabs of the terminal.
 
- * <p><b>Warum nicht bei den Bildschirmen?</b> Weil ab dem Fernzugriff der
- * Server entscheidet, welche Reiter ein Gerät zeigen darf — das Wireless
- * Terminal hat keinen Code. Servercode, der aus {@code client.*} importiert,
- * läuft hier durch und fällt erst auf einem echten Server auf.
+ * <p><b>Why not with the screens?</b> Because from remote access onward the
+ * server decides which tabs a device may show — the Wireless Terminal has no
+ * code. Server code that imports from {@code client.*} slips through here and
+ * only shows up on a real server.
  *
- * <p>Alle sechs tun inzwischen etwas. Die Fertigung stand lange ausgegraut in
- * der Leiste — sichtbar, damit man sah, wohin es geht, statt sie zu
- * verstecken und eines Tages unerklärt auftauchen zu lassen. Seit dem 25.08.
- * steht darin, was sie versprochen hat.
+ * <p>All six now do something. Crafting stood greyed out in the bar for a long
+ * time — visible, so that one could see where things were headed, rather than
+ * hiding it and letting it turn up unexplained one day. Since 25 Aug it holds
+ * what it promised.
  */
 public enum TerminalTab {
 

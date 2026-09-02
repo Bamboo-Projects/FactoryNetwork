@@ -11,56 +11,54 @@ import java.util.Map;
 import java.util.function.ToLongFunction;
 
 /**
- * Zerlegt eine Bestellung in Schritte.
+ * Breaks an order into steps.
  *
- * <p>Der einstufige Fabricator konnte eine Truhe bauen, wenn Bretter dalagen.
- * Lagen keine da, sagte er das — auch dann, wenn ein Stapel Stämme im
- * Laufwerk lag und der Weg dahin aus einem einzigen Rezept bestand. Der
- * Planner geht diesen Weg: Er fragt für jede fehlende Zutat, ob das Netz sie
- * selbst herstellen kann, und tut das so lange, bis er bei etwas ankommt, das
- * jemand hinlegen muss.
+ * <p>The single-stage fabricator could build a chest if planks were on hand.
+ * If none were, it said so — even when a stack of logs sat in the drive and
+ * the path there was a single recipe. The planner walks that path: for each
+ * missing ingredient it asks whether the network can make it itself, and does
+ * so until it arrives at something someone has to put down.
  *
- * <p><b>Er kennt keine Gegenstände.</b> Was ein Ziel ist, entscheidet der
- * Aufrufer über {@code T} — im Spiel ein {@code Item}, in der Prüfung ein
- * Text. Das ist kein Selbstzweck: Die Fälle, an denen eine solche Rekursion
- * scheitert — ein Kreis, eine zu tiefe Kette, ein Überschuss, der verfällt,
- * eine Zutat mit mehreren erlaubten Sorten — lassen sich so ohne geladene
- * Welt vorführen.
+ * <p><b>It knows no items.</b> What a target is is decided by the caller via
+ * {@code T} — in the game an {@code Item}, in the test a string. This is not
+ * an end in itself: the cases where such a recursion fails — a cycle, a chain
+ * too deep, a surplus that goes to waste, an ingredient with several allowed
+ * options — can thus be demonstrated without a loaded world.
  *
- * <p><b>Der Plan wird nicht aufbewahrt.</b> Der Controller rechnet ihn bei
- * jedem Fertigungstakt neu. Ein gespeicherter Plan wäre ab dem Moment falsch,
- * in dem ein Worker etwas einlagert — und genau das tun Worker den ganzen Tag.
- * Siehe {@code entscheidungen.md}, „Der Plan wird gerechnet, nicht gemerkt".
+ * <p><b>The plan is not kept.</b> The controller recomputes it every crafting
+ * tick. A stored plan would be wrong from the moment a worker stores
+ * something — and that is exactly what workers do all day. See
+ * {@code entscheidungen.md}, „Der Plan wird gerechnet, nicht gemerkt".
  */
 public final class CraftingPlanner<T> {
 
     /**
-     * Eine Zutat: so viel von einer dieser Sorten.
+     * An ingredient: this much of one of these options.
      *
-     * <p><b>Sorten in der Mehrzahl</b>, weil eine Zutat in Minecraft eine
-     * Auswahl ist und keine Art: „irgendein Brett". Wer sich vorher auf eine
-     * festlegt, meldet einem Spieler mit einem Laufwerk voll Fichtenstämmen,
-     * es fehlten ihm Eichenbretter.
+     * <p><b>Options in the plural</b>, because an ingredient in Minecraft is a
+     * choice and not a type: "any plank". Whoever commits to one in advance
+     * tells a player with a drive full of spruce logs that they are missing
+     * oak planks.
      */
     public record Need<T>(List<T> options, int count) {
     }
 
     /**
-     * Ein Rezept: was herauskommt, wie viel je Durchlauf, und was hineingeht.
+     * A recipe: what comes out, how much per run, and what goes in.
      *
-     * <p>Gleiche Zutaten gehören zusammen: Acht Bretter sind ein Bedarf über
-     * acht und nicht acht Bedarfe über eines.
+     * <p>Identical ingredients belong together: eight planks are one need for
+     * eight and not eight needs for one.
      *
-     * <p>{@code station} nennt die Rezeptart, wenn eine Maschine gebraucht
-     * wird — {@code minecraft:smelting} etwa. Leer heißt: am Fabricator, in
-     * einem Zug.
+     * <p>{@code station} names the recipe type when a machine is needed —
+     * {@code minecraft:smelting} for instance. Empty means: at the fabricator,
+     * in one go.
      */
     public record Recipe<T>(T result, int perCraft, List<Need<T>> needs, String station) {
 
         /**
-         * Ein Rezept ohne Station — es läuft am Fabricator.
+         * A recipe without a station — it runs at the fabricator.
          *
-         * <p>Der häufigere Fall, und der, den es zuerst gab.
+         * <p>The more common case, and the one that existed first.
          */
         public Recipe(T result, int perCraft, List<Need<T>> needs) {
             this(result, perCraft, needs, "");
@@ -68,78 +66,77 @@ public final class CraftingPlanner<T> {
     }
 
     /**
-     * Ein Schritt: dieses Rezept, so oft, mit dieser Rechnung.
+     * A step: this recipe, this many times, with this calculation.
      *
-     * <p>{@code consumed} ist die fertige Entnahmeliste — die Auswahl ist
-     * getroffen. Der Ausführende entnimmt, was hier steht, und wählt nicht
-     * noch einmal; sonst könnte er sich anders entscheiden als der Plan, und
-     * der Schritt darüber fände nicht vor, was er erwartet.
+     * <p>{@code consumed} is the finished withdrawal list — the choice is
+     * made. The executor withdraws what is listed here and does not choose
+     * again; otherwise it could decide differently from the plan, and the step
+     * above it would not find what it expects.
      *
-     * <p>{@code station} sagt, <b>wo</b> er läuft: leer für den Fabricator,
-     * sonst die Kennung einer Rezeptart wie {@code minecraft:smelting}. Der
-     * Planner versteht sie nicht — er reicht durch, was die Rezeptquelle
-     * dazugeschrieben hat. Der Unterschied zählt erst beim Ausführen: Was am
-     * Fabricator läuft, ist in einem Zug erledigt; was eine Maschine braucht,
-     * braucht auch Zeit.
+     * <p>{@code station} says <b>where</b> it runs: empty for the fabricator,
+     * otherwise the id of a recipe type like {@code minecraft:smelting}. The
+     * planner does not understand it — it passes through what the recipe source
+     * attached. The difference only matters at execution: what runs at the
+     * fabricator is done in one go; what needs a machine also needs time.
      */
     public record Step<T>(T result, int perCraft, long runs, Map<T, Long> consumed,
                          String station) {
 
-        /** Was der Schritt liefert. */
+        /** What the step yields. */
         public long yield() {
             return runs * (long) perCraft;
         }
     }
 
     /**
-     * Woher die Rezepte kommen.
+     * Where the recipes come from.
      *
-     * <p>Der Bestand steht mit in der Frage, weil es für einen Gegenstand
-     * oft mehrere Rezepte gibt und eines davon zu dem passt, was dasteht. Und
-     * es ist <b>nicht</b> der Bestand des Netzes, sondern der Stand der
-     * Planung: Bretter, die ein früherer Schritt erst herstellt, zählen mit.
+     * <p>The stock is part of the question, because for an item there are
+     * often several recipes and one of them fits what is on hand. And it is
+     * <b>not</b> the network's stock but the state of the planning: planks
+     * that an earlier step only produces count too.
      */
     @FunctionalInterface
     public interface Recipes<T> {
 
-        /** Das Rezept für dieses Ziel, oder {@code null}. */
+        /** The recipe for this target, or {@code null}. */
         Recipe<T> find(T target, ToLongFunction<T> available);
     }
 
     /**
-     * Was zu tun ist, und was dafür fehlt.
+     * What is to be done, and what is missing for it.
      *
-     * @param steps   von unten nach oben — der erste Schritt ist der, der
-     *                sofort laufen kann
-     * @param missing was niemand herstellen kann und jemand hinlegen muss
+     * @param steps   from bottom to top — the first step is the one that can
+     *                run immediately
+     * @param missing what no one can make and someone has to put down
      */
     public record Plan<T>(List<Step<T>> steps, Map<T, Long> missing) {
 
-        /** Ob der Plan aufgeht. */
+        /** Whether the plan works out. */
         public boolean complete() {
             return missing.isEmpty();
         }
     }
 
-    /** Wie ein Teilbedarf ausgegangen ist. */
+    /** How a sub-need turned out. */
     private enum Outcome {
-        /** Gedeckt — aus dem Bestand oder durch Schritte. */
+        /** Covered — from stock or by steps. */
         COVERED,
-        /** Nicht gedeckt, und der Grund steht schon in {@code missing}. */
+        /** Not covered, and the reason is already in {@code missing}. */
         REPORTED,
         /**
-         * Nicht gedeckt, und niemand hat es eingetragen.
+         * Not covered, and no one has recorded it.
          *
-         * <p>Der Fall ist der Kreis: „Barren aus Block" und „Block aus
-         * Barren". Dort einzutragen, was gerade oben in Arbeit ist, hieße dem
-         * Spieler zu sagen, es fehle ihm das, was er bestellt hat. Statt­
-         * dessen trägt die Ebene darüber sich selbst ein — und die ist etwas,
-         * das er wirklich hinlegen kann.
+         * <p>The case is the cycle: "ingot from block" and "block from ingot".
+         * To record there what is currently in progress above would mean
+         * telling the player they are missing what they ordered. Instead the
+         * level above records itself — and that is something they can actually
+         * put down.
          */
         UNREPORTED
     }
 
-    /** Der Stand der Planung, um einen Versuch zurücknehmen zu können. */
+    /** The state of the planning, so an attempt can be undone. */
     private record Snapshot<T>(Map<T, Long> available, int steps, Map<T, Long> missing) {
     }
 
@@ -163,18 +160,18 @@ public final class CraftingPlanner<T> {
     }
 
     /**
-     * Der Plan für eine Bestellung.
+     * The plan for an order.
      *
-     * <p><b>Das Ziel selbst wird gebaut</b>, auch wenn es im Speicher liegt.
-     * Wer 8 Truhen bestellt, will 8 gebaut haben; ein Auftrag, der sich am
-     * eigenen Bestand bedient, wäre beim Anlegen schon fertig und nie
-     * geschehen. Nur die Zutaten kommen aus dem Bestand — dafür ist er da.
+     * <p><b>The target itself is built</b>, even when it is in storage.
+     * Whoever orders 8 chests wants 8 built; a job that helps itself to its
+     * own stock would already be done when created and never happen. Only the
+     * ingredients come from the stock — that is what it is for.
      *
-     * @param amount    wie viel vom Ziel
-     * @param maxDepth  wie viele Rezepte tief gesucht wird
-     * @param maxVisits wie viele Bedarfe insgesamt betrachtet werden dürfen —
-     *                  die Grenze gegen einen Rezeptbaum, der sich verzweigt,
-     *                  bis der Server steht
+     * @param amount    how much of the target
+     * @param maxDepth  how many recipes deep the search goes
+     * @param maxVisits how many needs may be considered in total — the limit
+     *                  against a recipe tree that branches until the server
+     *                  stalls
      */
     public static <T> Plan<T> plan(Recipes<T> recipes, ToLongFunction<T> stock,
                                    T target, long amount, int maxDepth, int maxVisits) {
@@ -185,15 +182,15 @@ public final class CraftingPlanner<T> {
     }
 
     /**
-     * Ob der Bestand die Zutaten eines Rezepts hergibt.
+     * Whether the stock yields a recipe's ingredients.
      *
-     * <p>Grob gerechnet: Zwei Bedarfe, die dieselbe Sorte zulassen, zählen
-     * sie beide. Das reicht für die Frage, für die es gedacht ist — welches
-     * von mehreren Rezepten dem Bestand am nächsten kommt. Wie viel wirklich
-     * gedeckt ist, rechnet der Planner selbst, und der rechnet es genau.
+     * <p>Roughly reckoned: two needs that allow the same option both count it.
+     * That suffices for the question it is meant for — which of several
+     * recipes comes closest to the stock. How much is really covered the
+     * planner computes itself, and it computes it exactly.
      *
-     * <p>Hier und nicht in der Rezeptquelle, weil es inzwischen mehrere
-     * Quellen gibt und jede dieselbe Frage stellt.
+     * <p>Here and not in the recipe source, because there are now several
+     * sources and each asks the same question.
      */
     public static <T> boolean covers(Recipe<T> recipe, ToLongFunction<T> available) {
         for (Need<T> need : recipe.needs()) {
@@ -209,12 +206,12 @@ public final class CraftingPlanner<T> {
     }
 
     /**
-     * Mehrere Rezeptquellen als eine.
+     * Several recipe sources as one.
      *
-     * <p>Werkbank und Ofen können dasselbe herstellen — neun Barren aus einem
-     * Block, ein Barren aus Roherz. <b>Der Bestand entscheidet</b>, wie schon
-     * innerhalb einer Quelle: Genommen wird das erste Rezept, dessen Zutaten
-     * dastehen, und sonst das erste überhaupt.
+     * <p>Crafting table and furnace can make the same thing — nine ingots from
+     * one block, one ingot from raw ore. <b>The stock decides</b>, as already
+     * within a single source: the first recipe whose ingredients are on hand
+     * is taken, and otherwise the first one at all.
      */
     @SafeVarargs
     public static <T> Recipes<T> anyOf(Recipes<T>... sources) {
@@ -238,17 +235,17 @@ public final class CraftingPlanner<T> {
     }
 
     /**
-     * Deckt einen Bedarf — aus dem Bestand, sonst durch ein Rezept.
+     * Covers a need — from stock, otherwise by a recipe.
      *
-     * @param useStock ob der Bestand zählt; beim Ziel selbst tut er es nicht
+     * @param useStock whether the stock counts; for the target itself it does not
      */
     private Outcome request(T item, long needed, int depth, boolean useStock) {
         if (needed <= 0) {
             return Outcome.COVERED;
         }
-        // Auch das Nachsehen kostet: Ein Baum, der sich bei jeder Zutat in
-        // zehn Sorten verzweigt, ist nach acht Ebenen groß genug, um einen
-        // Server anzuhalten, ohne je einen Schritt zu ergeben.
+        // Even the looking-up costs: a tree that branches into ten options at
+        // every ingredient is, after eight levels, large enough to stall a
+        // server without ever yielding a single step.
         if (++visits > maxVisits) {
             missing.merge(item, needed, Long::sum);
             return Outcome.REPORTED;
@@ -264,9 +261,9 @@ public final class CraftingPlanner<T> {
                 return Outcome.COVERED;
             }
         }
-        // Zu tief: Hier wird nicht weitergesucht, und was hier steht, ist
-        // etwas, das jemand hinlegen kann. Deshalb steht es in der Liste —
-        // anders als beim Kreis.
+        // Too deep: no further search happens here, and what stands here is
+        // something someone can put down. That is why it is in the list —
+        // unlike with the cycle.
         if (depth >= maxDepth) {
             missing.merge(item, needed, Long::sum);
             return Outcome.REPORTED;
@@ -297,20 +294,20 @@ public final class CraftingPlanner<T> {
             path.pop();
         }
         if (!complete) {
-            // Was der halbe Versuch angefasst hat, kommt zurück: Sonst gilt
-            // ein Grundstoff als verbraucht, den in Wahrheit niemand bekommen
-            // hat, und der nächste Bedarf meldet fälschlich, er sei gedeckt.
+            // What the half attempt touched comes back: otherwise a base
+            // material counts as consumed that in truth no one received, and
+            // the next need falsely reports that it is covered.
             restore(before, false);
             if (!reported) {
-                // Alle Zutaten scheiterten am Kreis: Dann ist dieser
-                // Gegenstand das, was fehlt.
+                // All ingredients failed at the cycle: then this item is what
+                // is missing.
                 missing.merge(item, needed, Long::sum);
             }
             return Outcome.REPORTED;
         }
-        // Was ein Durchlauf zu viel liefert, bleibt liegen und deckt den
-        // nächsten Bedarf mit. Ohne das liefe der Grundstoff mehrfach: einmal
-        // für jeden Zweig, der ihn braucht.
+        // What a run delivers in excess stays and helps cover the next need.
+        // Without that the base material would run several times: once for
+        // each branch that needs it.
         available.put(item, available(item) + runs * recipe.perCraft() - needed);
         steps.add(new Step<>(item, recipe.perCraft(), runs, Map.copyOf(consumed),
                 recipe.station()));
@@ -318,17 +315,17 @@ public final class CraftingPlanner<T> {
     }
 
     /**
-     * Deckt eine Zutat, die mehrere Sorten zulässt.
+     * Covers an ingredient that allows several options.
      *
-     * <p>Erst der Bestand — die reichste Sorte zuerst, und <b>gemischt</b>,
-     * wenn keine allein reicht: Das Spiel erlaubt Eiche neben Fichte in
-     * derselben Truhe, und ein Netz, das darauf besteht, alles aus einer
-     * Sorte zu nehmen, verweigert eine Arbeit, die von Hand ginge.
+     * <p>First the stock — the richest option first, and <b>mixed</b> if none
+     * suffices alone: the game allows oak next to spruce in the same chest,
+     * and a network that insists on taking everything from one option refuses
+     * work that would go by hand.
      *
-     * <p>Bleibt etwas offen, wird gebaut — die erste Sorte, die aufgeht. Ein
-     * Versuch, der scheitert, wird vollständig zurückgenommen, samt seiner
-     * Fehlmeldungen; sonst hielte er der Sorte, die gelingt, den Grundstoff
-     * vor.
+     * <p>If something remains open, it is built — the first option that works
+     * out. An attempt that fails is fully undone, together with its error
+     * reports; otherwise it would withhold the base material from the option
+     * that succeeds.
      */
     private Outcome cover(Need<T> need, long amount, int depth, Map<T, Long> consumed) {
         List<T> options = new ArrayList<>(need.options());
@@ -360,9 +357,9 @@ public final class CraftingPlanner<T> {
                 return Outcome.COVERED;
             }
             if (firstOutcome == null) {
-                // Die erste Sorte steht in der Fehlzeile, wenn keine geht.
-                // Irgendeine muss es sein, und die erste ist die, auf die auch
-                // ein Spieler zeigen würde.
+                // The first option goes in the error line if none works. It
+                // has to be some one, and the first is the one a player would
+                // point to as well.
                 firstOutcome = outcome;
                 firstMissing = new LinkedHashMap<>(missing);
             }
@@ -392,7 +389,7 @@ public final class CraftingPlanner<T> {
         }
     }
 
-    /** Der Stand der Planung für einen Gegenstand; beim ersten Blick der Bestand. */
+    /** The state of the planning for an item; at first glance the stock. */
     private long available(T item) {
         return available.computeIfAbsent(item, stock::applyAsLong);
     }

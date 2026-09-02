@@ -5,11 +5,10 @@ import dev.devpanda.factorynetwork.lang.Span;
 import java.util.List;
 
 /**
- * Deklarationen — die andere Hälfte der Sprache.
+ * Declarations — the other half of the language.
  *
- * <p>Was hier steht, gilt dauerhaft und darf vom System umgestellt und
- * optimiert werden. Anweisungen dagegen laufen in der Reihenfolge, in der sie
- * dastehen.
+ * <p>What stands here holds permanently and may be reordered and optimized by
+ * the system. Statements, by contrast, run in the order in which they stand.
  */
 public sealed interface Decl {
 
@@ -21,7 +20,7 @@ public sealed interface Decl {
 
     record Worker(String name, List<Entry> entries, Span span) implements Decl {
 
-        /** Eine einzelne Angabe. Welche fehlen oder doppelt sind, prüft der Übersetzer. */
+        /** A single entry. The compiler checks which are missing or duplicated. */
         public record Entry(Kind kind, Expr value, Expr second, Span span) {
             public enum Kind {
                 FROM, TO, FILTER, MAINTAIN, RATE, WHEN, PRIORITY, STRATEGY, OVERFLOW
@@ -33,7 +32,7 @@ public sealed interface Decl {
         }
     }
 
-    // ---- Gruppe -----------------------------------------------------------
+    // ---- Group ------------------------------------------------------------
 
     record Group(String name, List<Expr> members, String strategy, Span span) implements Decl {}
 
@@ -42,11 +41,11 @@ public sealed interface Decl {
     record Multiblock(String name, List<String> devices, List<Fn> functions, Span span)
             implements Decl {}
 
-    // ---- Ereignis ---------------------------------------------------------
+    // ---- Event ------------------------------------------------------------
 
     record Event(String name, List<Param> parameters, Span span) implements Decl {}
 
-    /** Ein Parameter mit Typangabe, etwa {@code amount: Int}. */
+    /** A parameter with a type annotation, e.g. {@code amount: Int}. */
     record Param(String name, String type, Span span) {}
 
     // ---- Display ----------------------------------------------------------
@@ -61,32 +60,30 @@ public sealed interface Decl {
     /**
      * {@code recipe erz_mahlen at brecher { in 1 item:iron_ore out 2 item:iron_dust }}
      *
-     * <p>Was eine Maschine kann, die das Netz nicht von selbst lesen kann.
-     * Die Ofenfamilie und die eigene Presse gehen ohne das; alles andere ist
-     * generisch nicht zu lesen (siehe {@code entscheidungen.md},
-     * „Processing-Rezepte"), und deshalb schreibt es der Spieler auf.
+     * <p>What a machine can do that the network cannot read on its own. The
+     * furnace family and our own press work without this; everything else
+     * cannot be read generically (see {@code entscheidungen.md},
+     * "Processing-Rezepte"), and so the player writes it down.
      *
-     * <p><b>Kein Muster-Item, sondern eine Zeile im Programm.</b> Sie steht
-     * neben den Workern, geht mit der Datei nach VS Code, lässt sich
-     * versionieren, und ein Rezept an einem Gerät, das es nicht gibt, meldet
-     * sich beim Übernehmen.
+     * <p><b>Not a template item, but a line in the program.</b> It stands next
+     * to the workers, travels with the file to VS Code, can be versioned, and
+     * a recipe at a device that does not exist reports itself on acceptance.
      */
     /**
-     * {@code store kiste_1 { … }} — ein fremdes Inventar zählt zum Netzspeicher.
+     * {@code store kiste_1 { … }} — a foreign inventory counts toward network storage.
      *
-     * <p>Der Speicherbus, wie AE2 ihn hat, nur ohne eigenen Block. Der
-     * Connector hängt ohnehin an der Kiste; diese Zeile sagt, dass ihr Inhalt
-     * zum Netz gehört: {@code storage.count(…)} sieht ihn, ein Auftrag rechnet
-     * damit, ein Worker {@code to storage} darf dort landen.
+     * <p>The storage bus, the way AE2 has it, only without its own block. The
+     * connector is attached to the chest anyway; this line says that its
+     * contents belong to the network: {@code storage.count(…)} sees them, a job
+     * counts on them, a worker {@code to storage} may land there.
      *
-     * <p><b>Im Programm und nicht in einem Fenster</b>, aus demselben Grund
-     * wie bei {@code recipe}: Ein Filter, den man nur im Spiel sieht, ist
-     * nicht versionierbar, geht nicht mit der Datei nach VS Code, und ein
-     * Vertipper darin fällt niemandem auf. Die Begründung steht in
-     * {@code speicherbus.md}.
+     * <p><b>In the program and not in a window</b>, for the same reason as with
+     * {@code recipe}: a filter you only see in-game cannot be versioned, does
+     * not travel with the file to VS Code, and a typo in it goes unnoticed. The
+     * rationale is in {@code speicherbus.md}.
      *
-     * @param priority wohin zuerst eingelagert wird; die Zellen stehen auf 0
-     * @param filter   was hinein darf, oder {@code null} für alles
+     * @param priority where things are stored first; the cells sit at 0
+     * @param filter   what may go in, or {@code null} for everything
      */
     record Store(String device, long priority, Expr filter, Span span) implements Decl {
 
@@ -100,83 +97,81 @@ public sealed interface Decl {
                   Span span) implements Decl {
 
         /**
-         * So viel von dieser Auswahl.
+         * This much of that selector.
          *
-         * <p>Die Menge steht immer da, auch die Eins. Ein Rezept ohne Mengen
-         * wäre an der Stelle mehrdeutig, an der es am meisten kostet.
+         * <p>The amount is always written out, even the one. A recipe without
+         * amounts would be ambiguous exactly where it costs the most.
          */
         public record Part(long amount, Expr selection, Span span) {
         }
     }
 
-    // ---- Funktion und Ereignisblock ---------------------------------------
+    // ---- Function and event block -----------------------------------------
 
     record Fn(String name, List<Param> parameters, Block body, Span span) implements Decl {}
 
     /**
      * {@code on redstone_changed(sensor, strength) { … }}
      *
-     * <p>Hier stehen keine Typen: Sie sind durch die Ereignisdeklaration
-     * bekannt.
+     * <p>No types here: they are known from the event declaration.
      */
     record On(String name, List<String> parameters, Block body, Span span) implements Decl {}
 
-    // ---- Globaler Wert ----------------------------------------------------
+    // ---- Global value -----------------------------------------------------
 
     /**
-     * {@code global modus = "tag"} — ein Wert, den alle Dateien sehen.
+     * {@code global modus = "tag"} — a value that all files see.
      *
-     * <p><b>Die einzige Deklaration ohne Klammern.</b> Alle anderen sammeln
-     * Angaben in einem Block; diese erklärt einen Wert, und dafür ist eine
-     * Zeile die ehrlichere Form.
+     * <p><b>The only declaration without braces.</b> All others gather entries
+     * in a block; this one declares a value, and for that a single line is the
+     * more honest form.
      *
-     * <p><b>Und kein {@code let} auf oberster Ebene.</b> Ein Programm besteht
-     * nur aus Deklarationen, es gibt kein Hauptprogramm, das beim Laden
-     * losläuft — ein {@code let} draußen sähe aus wie eine Anweisung, die
-     * niemand ausführt. {@code global} sagt außerdem, was es ist: etwas, das
-     * alle sehen.
+     * <p><b>And no {@code let} at the top level.</b> A program consists only of
+     * declarations, there is no main program that starts running on load — a
+     * {@code let} out there would look like a statement that nobody executes.
+     * {@code global} also says what it is: something that everyone sees.
      *
-     * @param value der Anfangswert. Ein Literal, und keine Rechnung: Wann
-     *              liefe die? Beim Übernehmen, beim Serverstart, bei jedem
-     *              Laden des Chunks? Ein Literal hat diese Frage nicht.
+     * @param value the initial value. A literal, and not a computation: when
+     *              would it run? On acceptance, on server start, on every load
+     *              of the chunk? A literal does not have this question.
      */
     record Global(String name, Expr value, Span span) implements Decl {}
 
     /**
-     * {@code const rate = 64} — ein Wert, der sich nie ändert.
+     * {@code const rate = 64} — a value that never changes.
      *
-     * <p>Wie {@link Global} in einer Zeile erklärt, und mit demselben
-     * Anspruch an den Wert: ein Literal, keine Rechnung. Zwei Unterschiede —
-     * schreiben lässt er sich nicht, und er wird nicht gespeichert, weil ein
-     * Wert, der im Programm steht, aus dem Programm wiederkommt.
+     * <p>Declared on one line like {@link Global}, and with the same demand on
+     * the value: a literal, no computation. Two differences — it cannot be
+     * written to, and it is not persisted, because a value that stands in the
+     * program comes back from the program.
      */
     record Const(String name, Expr value, Span span) implements Decl {}
 
-    // ---- Filter-Vorlage ---------------------------------------------------
+    // ---- Filter template --------------------------------------------------
 
     /**
-     * {@code filter ore_factory { … }} — eine Auswahl mit einem Namen.
+     * {@code filter ore_factory { … }} — a selector with a name.
      *
-     * <p>Sie steht überall, wo eine geschriebene Auswahl steht: im Worker, in
-     * {@code move}, in {@code count}. Zwei Dinge kann die Sprache dadurch,
-     * die sie vorher nicht konnte — dieselbe Auswahl an mehreren Stellen
-     * nennen, ohne sie zu wiederholen, und mehrere Auswahlen zu einer
-     * zusammenlegen. Ein Worker nimmt nur eine {@code filter}-Zeile.
+     * <p>It stands everywhere a written selector stands: in the worker, in
+     * {@code move}, in {@code count}. Two things the language can do with it
+     * that it could not before — name the same selector in several places
+     * without repeating it, and merge several selectors into one. A worker
+     * takes only one {@code filter} line.
      *
-     * <p><b>Nackte Zeilen statt {@code members}.</b> Eine Gruppe hat zwei
-     * Arten von Zeilen — {@code members} und {@code strategy} — und braucht
-     * deshalb ein Wort zur Unterscheidung. Eine Vorlage hat nur eine Art; ein
-     * zweites Wort wäre Zeremonie ohne Aufgabe.
+     * <p><b>Bare lines instead of {@code members}.</b> A group has two kinds of
+     * lines — {@code members} and {@code strategy} — and therefore needs a word
+     * to tell them apart. A template has only one kind; a second word would be
+     * ceremony without a job.
      *
-     * @param includes was dazugehört, je Zeile ein Eintrag
-     * @param excludes was wieder herausfällt — die Zeilen mit {@code except}.
-     *                 <b>Erst alles zusammen, dann die Ausnahmen</b>, damit
-     *                 die Reihenfolge der Zeilen gleichgültig ist und niemand
-     *                 beim Lesen einen Zwischenstand mitführen muss.
+     * @param includes what belongs, one entry per line
+     * @param excludes what drops back out — the lines with {@code except}.
+     *                 <b>First everything together, then the exceptions</b>, so
+     *                 that the order of the lines does not matter and nobody has
+     *                 to carry an intermediate state while reading.
      */
     record FilterTemplate(String name, List<Expr> includes, List<Expr> excludes, Span span)
             implements Decl {}
 
-    /** Steht für eine Deklaration, die der Parser nicht lesen konnte. */
+    /** Stands for a declaration the parser could not read. */
     record Invalid(String name, Span span) implements Decl {}
 }

@@ -3,23 +3,23 @@ package dev.devpanda.factorynetwork.storage;
 import net.minecraft.util.StringRepresentable;
 
 /**
- * Die Größen einer Energiezelle.
+ * The sizes of an energy cell.
  *
- * <p><b>Eine Zahl, nicht zwei.</b> Gegenstands- und Flüssigkeitszellen tragen
- * zwei Grenzen — wie viele Sorten und wie viel Menge —, und die Sorten sind
- * das Knappe, das zum Sortieren treibt. Bei Strom gibt es keine Sorten. Eine
- * Energiezelle ist damit schlichter als ihre Geschwister, und der Reiz, der
- * bei den anderen im Sortieren liegt, fehlt hier ganz.
+ * <p><b>One number, not two.</b> Item and fluid cells carry two limits — how
+ * many types and how much amount —, and the types are what is scarce, what
+ * drives sorting. With power there are no types. An energy cell is thus
+ * plainer than its siblings, and the appeal that lies in sorting for the
+ * others is entirely absent here.
  *
- * <p>Das ist kein Mangel, sondern die Sache selbst: Ein Akku ist eine Zahl.
- * Wer mehr will, steckt eine größere Zelle ein oder eine zweite dazu.
- * Deshalb erfüllt diese Aufzählung auch nicht {@link CellSize} — es gäbe eine
- * der beiden Zahlen zu erfinden.
+ * <p>That is not a shortcoming but the thing itself: a battery is a number.
+ * Whoever wants more inserts a larger cell or a second one alongside. That
+ * is also why this enum does not implement {@link CellSize} — one of the two
+ * numbers would have to be invented.
  *
- * <p>Die Leiter ist die der Flüssigkeitszellen, viermal je Stufe. Die
- * kleinste trägt gut das Dreifache des Controllerpuffers
- * ({@code Power.CAPACITY}) — genug, dass sich das Einsetzen sofort bemerkbar
- * macht, und wenig genug, dass die große noch etwas bedeutet.
+ * <p>The ladder is that of the fluid cells, fourfold per tier. The smallest
+ * carries a good three times the controller buffer ({@code Power.CAPACITY})
+ * — enough that inserting one makes itself felt at once, and little enough
+ * that the large one still means something.
  */
 public enum EnergyCellTier implements StringRepresentable {
 
@@ -36,12 +36,12 @@ public enum EnergyCellTier implements StringRepresentable {
         this.capacity = capacity;
     }
 
-    /** Wie viel FE hineinpassen. */
+    /** How much FE fits in. */
     public int capacity() {
         return capacity;
     }
 
-    /** Was auf der Zelle steht. */
+    /** What is written on the cell. */
     public String label() {
         return label;
     }

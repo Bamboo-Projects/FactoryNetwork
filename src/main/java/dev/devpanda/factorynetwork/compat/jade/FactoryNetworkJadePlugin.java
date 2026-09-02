@@ -10,16 +10,16 @@ import snownee.jade.api.IWailaPlugin;
 import snownee.jade.api.WailaPlugin;
 
 /**
- * Anbindung an Jade.
+ * Integration with Jade.
  *
- * <p>Jade zeigt an, was man gerade ansieht — bei uns vor allem, wie viele
- * Kanäle ein Kabelstrang trägt. Die Frage „wie viele sind belegt" beantwortet
- * sich sonst nur durch Ausprobieren, und im Spiel steht der Wert genau da, wo
- * man hinsieht.
+ * <p>Jade shows what you are currently looking at — for us above all how many
+ * channels a cable strand carries. The question "how many are in use" is
+ * otherwise answered only by trial and error, and in-game the value sits
+ * exactly where you are looking.
  *
- * <p>Die Klasse wird nur geladen, wenn Jade vorhanden ist: Jade sucht selbst
- * nach {@link WailaPlugin}, und ohne Jade findet sie niemand. Deshalb braucht
- * es keine Abfrage — nur den Verzicht darauf, sie von anderswo aufzurufen.
+ * <p>The class is loaded only when Jade is present: Jade itself scans for
+ * {@link WailaPlugin}, and without Jade no one finds it. So no check is needed
+ * — only the discipline not to call it from anywhere else.
  */
 @WailaPlugin
 public class FactoryNetworkJadePlugin implements IWailaPlugin {
@@ -43,8 +43,8 @@ public class FactoryNetworkJadePlugin implements IWailaPlugin {
 
     @Override
     public void register(IWailaCommonRegistration registration) {
-        // Das Kabel hat keine BlockEntity. Stand hier die des Connectors,
-        // lief der Server-Teil nie, und der Tooltip blieb leer.
+        // The cable has no block entity. If the connector's stood here, the
+        // server part never ran, and the tooltip stayed empty.
         registration.registerBlockDataProvider(CableInfo.INSTANCE, CableBlock.class);
         registration.registerBlockDataProvider(RouterInfo.INSTANCE,
                 dev.devpanda.factorynetwork.block.entity.RouterBlockEntity.class);
@@ -54,21 +54,21 @@ public class FactoryNetworkJadePlugin implements IWailaPlugin {
                 dev.devpanda.factorynetwork.block.entity.PressBlockEntity.class);
         registration.registerBlockDataProvider(DriveInfo.INSTANCE,
                 dev.devpanda.factorynetwork.block.entity.DriveBlockEntity.class);
-        // Am Block und nicht an der BlockEntity: Der Schrank ist zwei hoch,
-        // und auf Augenhöhe sieht man die obere Hälfte — die hat keine.
+        // On the block, not on the block entity: the rack is two high, and at
+        // eye level you see the upper half — which has none.
         registration.registerBlockDataProvider(RackInfo.INSTANCE,
                 dev.devpanda.factorynetwork.block.RackBlock.class);
         registration.registerBlockDataProvider(BurnerInfo.INSTANCE,
                 dev.devpanda.factorynetwork.block.entity.BurnerBlockEntity.class);
-        // <b>Diese beiden Zeilen fehlten, seit es ConnectorInfo gibt.</b> Die
-        // Klasse war nur als Client-Komponente angemeldet; ihr Server-Teil
-        // lief nie, KEY_STATE stand nie im Beutel, und der Tooltip brach
-        // stillschweigend ab. Jade sagte über keinen einzigen Anschluss ein
-        // Wort — auch nicht am eigenen Connectorblock.
+        // <b>These two lines were missing ever since ConnectorInfo existed.</b>
+        // The class was registered only as a client component; its server part
+        // never ran, KEY_STATE never made it into the bag, and the tooltip
+        // broke off silently. Jade said not a word about a single connector —
+        // not even on the dedicated connector block.
         //
-        // Dieselbe Falle wie beim Kabel eine Handvoll Zeilen weiter oben.
-        // Wer hier einen Anbieter hinzufügt, muss <b>beide</b> Seiten
-        // anmelden: register für die Daten, registerClient für die Zeilen.
+        // The same trap as with the cable a handful of lines above. Anyone
+        // adding a provider here must register <b>both</b> sides: register for
+        // the data, registerClient for the lines.
         registration.registerBlockDataProvider(ConnectorInfo.INSTANCE, CableBlock.class);
     }
 

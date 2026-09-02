@@ -15,16 +15,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Liest Token und baut daraus den Syntaxbaum.
+ * Reads tokens and builds the syntax tree from them.
  *
- * <p>Von Hand geschrieben, nicht erzeugt. Der Grund steht in
- * {@code docs/entscheidungen.md}: Ein Generator weiß an der Fehlerstelle nur,
- * welche Token dort erlaubt gewesen wären. Hier lässt sich stattdessen sagen,
- * was der Spieler vermutlich gemeint hat.
+ * <p>Written by hand, not generated. The reason is in
+ * {@code docs/entscheidungen.md}: at the error site a generator knows only
+ * which tokens would have been allowed there. Here one can instead say what the
+ * player probably meant.
  *
- * <p>Nach einem Fehler wird nicht abgebrochen, sondern bis zur nächsten
- * Anweisung oder Deklaration weitergelesen. Der Editor braucht einen Baum auch
- * für Code, der noch nicht fertig ist — sonst kann er nicht vervollständigen.
+ * <p>After an error it does not abort but reads on to the next statement or
+ * declaration. The editor needs a tree even for code that is not yet finished —
+ * otherwise it cannot complete.
  */
 public final class Parser {
 
@@ -32,9 +32,9 @@ public final class Parser {
     private final List<Diagnostic> diagnostics = new ArrayList<>();
     private int index;
     /**
-     * Steht der Parser gerade in einer Bedingung? Nur dort ist ein einzelnes
-     * Gleichheitszeichen ein Tippfehler — auf Anweisungsebene ist es eine
-     * Zuweisung, und die ist der häufigere Fall.
+     * Is the parser currently inside a condition? Only there is a single equals
+     * sign a typo — at statement level it is an assignment, and that is the more
+     * common case.
      */
     private int conditionDepth;
 
@@ -56,7 +56,7 @@ public final class Parser {
         return new ParseResult(program, List.copyOf(parser.diagnostics));
     }
 
-    // ---- Programm ---------------------------------------------------------
+    // ---- Program ----------------------------------------------------------
 
     private Program parseProgram() {
         List<Decl> declarations = new ArrayList<>();
@@ -105,16 +105,15 @@ public final class Parser {
         };
     }
 
-    // ---- Fremder Speicher am Netz -----------------------------------------
+    // ---- Foreign storage on the network -----------------------------------
 
     /**
      * {@code store kiste_1 { priority 5  filter tag:c/ores }}
      *
-     * <p><b>Das Gerät steht direkt hinter dem Wort</b> und nicht hinter einem
-     * {@code at} wie beim Rezept. Der Unterschied ist keine Laune: Ein Rezept
-     * hat einen eigenen Namen und läuft <i>an</i> einer Maschine; ein
-     * Speicher <i>ist</i> das Gerät, und ein zweiter Name daneben wäre einer
-     * zu viel.
+     * <p><b>The device stands directly after the word</b> and not after an
+     * {@code at} like with the recipe. The difference is no whim: a recipe has
+     * its own name and runs <i>at</i> a machine; a store <i>is</i> the device,
+     * and a second name next to it would be one too many.
      */
     private Decl parseStore() {
         Token keyword = advance();
@@ -158,14 +157,14 @@ public final class Parser {
         return new Decl.Store(device, priority, filter, keyword.span().to(end.span()));
     }
 
-    // ---- Rezept an einer Maschine -----------------------------------------
+    // ---- Recipe at a machine ----------------------------------------------
 
     /**
      * {@code recipe erz_mahlen at brecher { in … out … }}
      *
-     * <p><b>Das {@code at} ist Pflicht.</b> Ein Rezept ohne Maschine wäre
-     * keines: Wo es läuft, ist der ganze Grund, warum es aufgeschrieben wird —
-     * was ohne Maschine geht, weiß das Spiel schon.
+     * <p><b>The {@code at} is mandatory.</b> A recipe without a machine would be
+     * none: where it runs is the whole reason it is written down — what works
+     * without a machine the game already knows.
      */
     private Decl parseRecipe() {
         Token keyword = advance();
@@ -210,11 +209,11 @@ public final class Parser {
     }
 
     /**
-     * {@code 1 item:iron_ore} — Menge und Auswahl.
+     * {@code 1 item:iron_ore} — amount and selector.
      *
-     * <p>Die Menge steht immer da, auch die Eins: Ein Rezept ist die eine
-     * Stelle, an der eine fehlende Zahl teuer wird — sie entscheidet, wie oft
-     * die Maschine läuft.
+     * <p>The amount is always there, even the one: a recipe is the one place
+     * where a missing number gets expensive — it decides how often the machine
+     * runs.
      */
     private void addPart(List<Decl.Recipe.Part> parts, Token keyword) {
         Token count = peek();
@@ -287,9 +286,9 @@ public final class Parser {
                             new Expr.Name(chosen.text(), chosen.span()), start);
                 }
                 Expr value = parseExpression();
-                // Am Worker steht dieselbe Angabe wie an der Gruppe, und sie
-                // hat denselben Fallstrick: Ein unbekannter Name fiel still
-                // auf round_robin zurück.
+                // At the worker the same entry stands as at the group, and it
+                // has the same pitfall: an unknown name fell silently back to
+                // round_robin.
                 if (value instanceof Expr.Name chosen
                         && !dev.devpanda.factorynetwork.lang.Signatures.STRATEGIES
                                 .contains(chosen.value())) {
@@ -328,7 +327,7 @@ public final class Parser {
         return new Decl.Worker.Entry(kind, value, null, start.span().to(value.span()));
     }
 
-    /** Ein Ziel ist ein Name oder eines der eingebauten Geräte. */
+    /** A target is a name or one of the built-in devices. */
     private Expr parseTarget() {
         Token token = peek();
         return switch (token.type()) {
@@ -336,9 +335,9 @@ public final class Parser {
             case NAME, ESCAPED_NAME -> {
                 advance();
                 Expr name = new Expr.Name(token.text(), token.span());
-                // <b>brecher_1.slots(2..3) ist auch ein Ziel.</b> Ein Punkt
-                // hinter dem Namen heißt: Es geht nicht um das ganze Gerät,
-                // sondern um einen Ausschnitt davon.
+                // <b>brecher_1.slots(2..3) is also a target.</b> A dot after
+                // the name means: it is not about the whole device, but about a
+                // section of it.
                 if (at(TokenType.DOT)) {
                     yield parsePostfixFrom(name);
                 }
@@ -355,7 +354,7 @@ public final class Parser {
         };
     }
 
-    // ---- Gruppe, Multiblock, Ereignis -------------------------------------
+    // ---- Group, multiblock, event -----------------------------------------
 
     private Decl parseGroup() {
         Token keyword = advance();
@@ -375,17 +374,17 @@ public final class Parser {
             } else if (start.is(TokenType.STRATEGY)) {
                 advance();
                 Token value = peek();
-                // „priority" ist zugleich eine Worker-Angabe und damit ein
-                // Schlüsselwort — als Verteilungsname war es deshalb gar nicht
-                // schreibbar, obwohl es in jeder Liste steht. Hinter
-                // „strategy" ist der Zusammenhang eindeutig.
+                // "priority" is at the same time a worker entry and thus a
+                // keyword — as a distribution name it was therefore not even
+                // writable, although it stands in every list. After "strategy"
+                // the context is unambiguous.
                 if (value.is(TokenType.NAME) || isStrategyWord(value)) {
                     advance();
                     strategy = value.text();
-                    // Ein unbekannter Name fiel stillschweigend auf
-                    // round_robin zurück. Im Bestand stand jahrelang
-                    // „strategy emptiest" — gemeint war least_filled,
-                    // verteilt wurde reihum, und niemand konnte es sehen.
+                    // An unknown name fell silently back to round_robin. In the
+                    // codebase there stood for years "strategy emptiest" —
+                    // least_filled was meant, distribution went round-robin, and
+                    // nobody could see it.
                     if (!dev.devpanda.factorynetwork.lang.Signatures.STRATEGIES
                             .contains(strategy)) {
                         error(value.span(),
@@ -411,18 +410,19 @@ public final class Parser {
                 keyword.span().to(end.span()));
     }
 
-    // ---- Filter-Vorlage ---------------------------------------------------
+    // ---- Filter template --------------------------------------------------
 
     /**
-     * {@code filter ore_factory { … }} — eine Auswahl mit einem Namen.
+     * {@code filter ore_factory { … }} — a selector with a name.
      *
-     * <p>Dasselbe Wort wie die Worker-Angabe, und das ist Absicht: Es meint
-     * an beiden Orten dasselbe. Unterschieden wird nach dem Ort — auf
-     * oberster Ebene folgen ein Name und ein Block, im Worker eine Auswahl.
+     * <p>The same word as the worker entry, and that is intentional: it means
+     * the same in both places. They are told apart by location — at the top
+     * level a name and a block follow, in the worker a selector.
      *
-     * <p>Jede Zeile ist für sich eine Auswahl und darf deshalb selbst ein
-     * {@code except} enthalten. Steht {@code except} dagegen am Anfang der
-     * Zeile, gehört es zur Vorlage: Diese Zeile nimmt weg, statt dazuzulegen.
+     * <p>Each line is a selector in its own right and may therefore itself
+     * contain an {@code except}. If {@code except} stands at the beginning of
+     * the line instead, it belongs to the template: this line takes away instead
+     * of adding.
      */
     private Decl parseFilterTemplate() {
         Token keyword = advance();
@@ -576,10 +576,10 @@ public final class Parser {
         }
         advance();
 
-        // scale trägt eine feste Zahl und keinen Ausdruck: Die Größe der
-        // Schrift ist Aufbau und nicht Inhalt. Ein Maßstab, der sich beim
-        // Zusehen ändert, wäre eine Spielerei, für die die Wand jedes Mal neu
-        // umbricht — und was dabei aus dem Bild fällt, sähe wie ein Fehler aus.
+        // scale carries a fixed number and not an expression: the size of the
+        // font is layout, not content. A scale that changes while you watch
+        // would be a gimmick for which the wall reflows every time — and what
+        // falls out of the frame in the process would look like an error.
         if (kind == Decl.Display.Entry.Kind.SCALE) {
             Token number = peek();
             if (!number.is(TokenType.INT)) {
@@ -594,7 +594,7 @@ public final class Parser {
                     start.span().to(number.span()));
         }
 
-        // title und text tragen nur einen Wert, alles andere Beschriftung und Wert.
+        // title and text carry only a value, everything else a label and a value.
         if (kind == Decl.Display.Entry.Kind.TITLE) {
             Token label = peek();
             if (!label.is(TokenType.STRING)) {
@@ -612,10 +612,10 @@ public final class Parser {
         }
         Token label = peek();
         if (!label.is(TokenType.STRING)) {
-            // Je Bausteinart ein eigenes Beispiel. Für button war das eine
-            // Beispiel für alle sogar falsch: Dort steht ein Funktionsname,
-            // und ein storage.count(…) dahinter meldet später „Der Knopf
-            // nennt keine Funktion" — an einer ganz anderen Stelle.
+            // One example per building block. For button the one example for
+            // all was even wrong: there stands a function name, and a
+            // storage.count(…) after it later reports "The button names no
+            // function" — at a completely different place.
             String example = switch (kind) {
                 case BUTTON -> " \"Nachschub\" nachschub_starten";
                 case PROGRESS -> " \"Kohle\" storage.count(item:coal) / 640.0";
@@ -636,9 +636,9 @@ public final class Parser {
     /**
      * {@code global modus = "tag"}
      *
-     * <p>Die einzige Deklaration ohne {@code parseBlock}: Die Zeile endet mit
-     * dem Wert. Ob der ein Literal ist, prüft nicht der Parser, sondern
-     * {@code GlobalCheck} — hier steht die Form, dort die Regel.
+     * <p>The only declaration without {@code parseBlock}: the line ends with
+     * the value. Whether it is a literal the parser does not check, but
+     * {@code GlobalCheck} does — here stands the form, there the rule.
      */
     private Decl parseGlobal() {
         Token keyword = advance();
@@ -646,16 +646,16 @@ public final class Parser {
         boolean hasEquals = expect(TokenType.EQ,
                 "Nach " + name + " fehlt das Gleichheitszeichen.");
 
-        // <b>Der Wert muss auf derselben Zeile stehen.</b>
+        // <b>The value must stand on the same line.</b>
         //
-        // Nach einem Gleichheitszeichen erzeugt der Lexer absichtlich kein
-        // Zeilenende (siehe {@code Lexer.breaksStatement}): Ein Ausdruck muss
-        // folgen, und er darf umbrechen. Bei einem Block stimmt das; hier
-        // verschlingt es die nächste Deklaration. Aus „global kaputt ="
-        // gefolgt von „worker erz {" würde sonst ein globaler Wert namens
-        // „worker", und der Worker wäre weg — samt allem, was in ihm steht.
+        // After an equals sign the lexer deliberately produces no line end
+        // (see {@code Lexer.breaksStatement}): an expression must follow, and it
+        // may wrap. For a block that is right; here it devours the next
+        // declaration. Otherwise "global kaputt =" followed by "worker erz {"
+        // would become a global value named "worker", and the worker would be
+        // gone — along with everything in it.
         //
-        // Geprüft wird deshalb die Zeile und nicht das Zeilenende.
+        // The line is therefore checked, not the line end.
         if (!hasEquals || peek().span().line() != previous().span().line()) {
             error(peek().span(), "Nach " + name + " fehlt der Wert.",
                     "Ein globaler Wert bekommt seinen Typ aus dem, was hier steht — "
@@ -671,9 +671,9 @@ public final class Parser {
     /**
      * {@code const rate = 64}
      *
-     * <p>Dieselbe Form wie {@code global} und dieselbe Regel für den Wert.
-     * Gelesen wird beides an einer Stelle; was sie unterscheidet, steht
-     * nicht im Parser, sondern in der Prüfung und in der Laufzeit.
+     * <p>The same form as {@code global} and the same rule for the value. Both
+     * are read at one place; what tells them apart stands not in the parser but
+     * in the check and in the runtime.
      */
     private Decl parseConst() {
         Token keyword = advance();
@@ -709,9 +709,9 @@ public final class Parser {
     }
 
     /**
-     * Parameterliste. Bei {@code fn} und {@code event} mit Typangabe, bei
-     * {@code on} ohne — dort sind die Typen durch die Ereignisdeklaration
-     * bekannt.
+     * Parameter list. For {@code fn} and {@code event} with a type annotation,
+     * for {@code on} without — there the types are known from the event
+     * declaration.
      */
     private List<Decl.Param> parseParamList(boolean typed) {
         List<Decl.Param> parameters = new ArrayList<>();
@@ -756,7 +756,7 @@ public final class Parser {
         return List.copyOf(parameters);
     }
 
-    // ---- Anweisungen ------------------------------------------------------
+    // ---- Statements -------------------------------------------------------
 
     private Block parseBlock() {
         Token open = peek();
@@ -779,11 +779,11 @@ public final class Parser {
     private Stmt parseStatement() {
         Token start = peek();
 
-        // Ein Schlüsselwort mit einem Punkt oder einer Klammer dahinter kann
-        // nur ein Connector sein, den jemand ohne Rückstriche geschrieben hat.
-        // Das muss hier stehen und nicht erst bei den Ausdrücken, weil sonst
-        // "for.insert(…)" als Schleife gelesen wird und die Meldung von der
-        // fehlenden Schleifenvariable spricht.
+        // A keyword with a dot or a parenthesis after it can only be a
+        // connector that someone wrote without backticks. This has to stand
+        // here and not only at the expressions, because otherwise
+        // "for.insert(…)" is read as a loop and the message speaks of the
+        // missing loop variable.
         if (isRealKeyword(start)
                 && (peekAt(1).is(TokenType.DOT) || peekAt(1).is(TokenType.LPAREN))) {
             error(start.span(), quote(start.text()) + " ist ein Schlüsselwort.",

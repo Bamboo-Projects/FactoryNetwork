@@ -6,36 +6,36 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Die einzige Stelle, die Mekanism-Typen anfasst.
+ * The only place that touches Mekanism types.
  *
- * <p><b>Warum sie getrennt steht:</b> Java löst die Klassen einer Signatur
- * beim Laden auf. Trüge {@link Chemicals} irgendwo ein
- * {@code Registry<Chemical>} in einer Methodensignatur, könnte die Klasse in
- * einem Pack ohne Mekanism nicht mehr geladen werden — und mit ihr fiele
- * alles, was sie ruft. Hier steht deshalb, was Mekanism kennt, und alles
- * andere spricht in {@code String} und {@code long}.
+ * <p><b>Why it stands apart:</b> Java resolves the classes of a signature at
+ * load time. If {@link Chemicals} carried a {@code Registry<Chemical>}
+ * anywhere in a method signature, the class could no longer be loaded in a
+ * pack without Mekanism — and with it would fall everything it calls. So this
+ * is where what references Mekanism lives, and everything else speaks in
+ * {@code String} and {@code long}.
  *
- * <p>Diese Klasse wird nur betreten, wenn {@link FnMekanism#installed()} wahr
- * ist. Wer sie ohne Mekanism anfasst, bekommt einen {@code NoClassDefFound} —
- * und das ist richtig so: Es wäre ein Fehler im Aufrufer, kein Zustand, den
- * man abfangen sollte.
+ * <p>This class is entered only when {@link FnMekanism#installed()} is true.
+ * Whoever touches it without Mekanism gets a {@code NoClassDefFound} — and
+ * rightly so: it would be a bug in the caller, not a condition one should
+ * catch.
  */
 final class MekRegistry {
 
     private MekRegistry() {
     }
 
-    /** Ob es eine Chemikalie mit dieser Kennung gibt. */
+    /** Whether a chemical with this identifier exists. */
     static boolean has(ResourceLocation id) {
         return mekanism.api.MekanismAPI.CHEMICAL_REGISTRY.containsKey(id);
     }
 
-    /** Alle Kennungen, als Text. */
+    /** All identifiers, as text. */
     static List<ResourceLocation> keys() {
         return new ArrayList<>(mekanism.api.MekanismAPI.CHEMICAL_REGISTRY.keySet());
     }
 
-    /** Der Klartextname einer Chemikalie. */
+    /** The plain-text name of a chemical. */
     static String name(ResourceLocation id) {
         return mekanism.api.MekanismAPI.CHEMICAL_REGISTRY.get(id).getTextComponent().getString();
     }

@@ -9,20 +9,20 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Prüft die Namen im Programm gegen das, was wirklich im Netz steht.
+ * Checks the names in the program against what really stands in the network.
  *
- * <p><b>Der Anlass war eine schwarze Wand.</b> {@code display test { … }} war
- * grammatisch tadellos, der Übersetzer sagte „bereit", und die Tafel blieb
- * leer — weil sie in der Welt anders hieß. Der Hinweis stand auf der Tafel
- * selbst, und die hängt womöglich drei Räume weiter. Er gehört dorthin, wo
- * man den Namen tippt.
+ * <p><b>The occasion was a black wall.</b> {@code display test { … }} was
+ * grammatically flawless, the compiler said "ready", and the board stayed
+ * empty — because it was called something else in the world. The hint stood on
+ * the board itself, and that may hang three rooms away. It belongs where you
+ * type the name.
  *
- * <p>Dasselbe gilt für Connectoren: {@code from kiste_1} ist eine gültige
- * Zeile, auch wenn nichts so heißt.
+ * <p>The same holds for connectors: {@code from kiste_1} is a valid line, even
+ * when nothing is called that.
  *
- * <p><b>Warnungen, keine Fehler.</b> Eine Wand, die man erst morgen baut,
- * darf man heute schon ins Programm schreiben — und ein Programm, das auf
- * einem Server ohne geladenes Netz übersetzt wird, soll nicht scheitern.
+ * <p><b>Warnings, not errors.</b> A wall you only build tomorrow, you may
+ * already write into the program today — and a program compiled on a server
+ * without a loaded network should not fail.
  */
 public final class NetworkCheck {
 
@@ -30,13 +30,13 @@ public final class NetworkCheck {
     }
 
     /**
-     * Sucht Namen, die es nicht gibt.
+     * Searches for names that do not exist.
      *
-     * @param program das übersetzte Programm einer Datei
-     * @param view    was im Netz steht
-     * @param local   Namen, die das Programm selbst vergibt — Gruppen und
-     *                Multiblocks. Sie stehen an denselben Stellen wie
-     *                Connectoren und sind trotzdem keine.
+     * @param program the compiled program of a file
+     * @param view    what stands in the network
+     * @param local   names the program assigns itself — groups and multiblocks.
+     *                They stand in the same places as connectors and are still
+     *                not connectors.
      */
     public static List<Diagnostic> run(Program program, NetworkView view, Set<String> local) {
         List<Diagnostic> problems = new ArrayList<>();
@@ -54,8 +54,8 @@ public final class NetworkCheck {
                         withParameters(local, function), problems);
                 case Decl.On handler -> checkMoves(handler.body(), view,
                         with(local, handler.parameters()), problems);
-                // In einer Vorlage meint ein Gerätename das Gerät der Anlage
-                // und nicht eines im Netz. Deshalb zählen ihre Rollen mit.
+                // In a template a device name means the device of the plant
+                // and not one in the network. That is why its roles count too.
                 case Decl.Multiblock template -> {
                     for (Decl.Fn function : template.functions()) {
                         checkMoves(function.body(), view,
@@ -72,12 +72,12 @@ public final class NetworkCheck {
     }
 
     /**
-     * Ein Rezept zeigt auf ein Gerät, das es geben muss.
+     * A recipe points at a device that has to exist.
      *
-     * <p>Das ist der Grund, warum ein Rezept im Programm steht und nicht auf
-     * einem Muster-Item: Ein Muster mit vertipptem Ziel merkt niemand, bis
-     * die Fabrik stillsteht. Eine Warnung und kein Fehler — wer die Maschine
-     * erst morgen hinstellt, darf das Rezept heute schon schreiben.
+     * <p>That is the reason a recipe stands in the program and not on a template
+     * item: a template with a mistyped target nobody notices until the factory
+     * stands still. A warning and not an error — whoever only sets the machine
+     * up tomorrow may write the recipe today.
      */
     private static void checkRecipe(Decl.Recipe recipe, NetworkView view,
                                     Set<String> local, List<Diagnostic> problems) {
@@ -95,23 +95,23 @@ public final class NetworkCheck {
     }
 
     /**
-     * {@code in 1000 power} — eine Zeile, die nichts tut.
+     * {@code in 1000 power} — a line that does nothing.
      *
-     * <p>Sie parst, weil {@code power} eine Auswahl ist wie jede andere. Nur
-     * legt der Auftrag Gegenstände ein und füllt Flüssigkeiten auf; Strom
-     * bekommt die Maschine über die <b>Stromverteilung</b>, und zwar je Tick
-     * und nach ihrem eigenen Bedarf.
+     * <p>It parses, because {@code power} is a selector like any other. Only,
+     * the job inserts items and tops up fluids; power the machine gets over the
+     * <b>power distribution</b>, and at that per tick and according to its own
+     * demand.
      *
-     * <p><b>Und das bleibt so.</b> Eine Zahl im Rezept wäre geraten: Was eine
-     * fremde Maschine je Durchgang zieht, hängt an ihren Upgrades und an der
-     * Mod, und nachprüfbar ist es nirgends. Ein Warte-Gate auf den Netzvorrat
-     * hätte obendrein dieselbe Verklemmung wie der verworfene
-     * Nur-prüfen-Entwurf bei Flüssigkeiten: Die Verteilung senkt laufend
-     * genau den Vorrat, auf den gewartet würde.
+     * <p><b>And it stays that way.</b> A number in the recipe would be a guess:
+     * what a foreign machine draws per pass hangs on its upgrades and on the
+     * mod, and it is verifiable nowhere. A wait gate on the network supply would
+     * on top of that have the same deadlock as the discarded check-only design
+     * for fluids: the distribution continuously lowers exactly the supply that
+     * would be waited on.
      *
-     * <p>Eine Warnung und kein Fehler — die Zeile schadet nicht, sie hält
-     * bloß nicht, was sie verspricht. Seit die Flüssigkeit daneben wirklich
-     * eingefüllt wird, ist ihr Schweigen irreführender als vorher.
+     * <p>A warning and not an error — the line does no harm, it just does not
+     * keep what it promises. Since the fluid next to it is now really filled in,
+     * its silence is more misleading than before.
      */
     private static void checkRecipePower(Decl.Recipe recipe, List<Diagnostic> problems) {
         for (Decl.Recipe.Part part : recipe.inputs()) {
@@ -127,14 +127,14 @@ public final class NetworkCheck {
     }
 
     /**
-     * Ein Speicher an einem Gerät, das es nicht gibt.
+     * A store at a device that does not exist.
      *
-     * <p>Derselbe Vertipper wie beim Rezept, und hier fällt er noch schwerer
-     * auf die Füße: Im Terminal stünde ein Bestand, dem eine Kiste fehlt, die
-     * es nie gab. Niemand käme darauf, dafür im Programm nachzusehen.
+     * <p>The same typo as with the recipe, and here it comes down even harder:
+     * in the terminal there would stand a stock missing a chest that never
+     * existed. Nobody would think to look for that in the program.
      *
-     * <p>Eine Warnung und kein Fehler — wer die Kiste erst morgen hinstellt,
-     * darf die Zeile heute schon schreiben.
+     * <p>A warning and not an error — whoever only sets the chest up tomorrow
+     * may write the line today.
      */
     private static void checkStore(Decl.Store store, NetworkView view,
                                    Set<String> local, List<Diagnostic> problems) {
@@ -151,12 +151,12 @@ public final class NetworkCheck {
     }
 
     /**
-     * Eine Vorlage, die heißt wie ein Gerät im Netz.
+     * A template that is called like a device in the network.
      *
-     * <p>Nur eine Warnung, und die Vorlage geht vor: Gerätenamen kommen aus
-     * der Beschriftungspistole und nicht aus dem Programm. Hinge die
-     * Bedeutung eines Programms daran, wie jemand später einen Connector
-     * benennt, wäre es aus der Ferne nicht mehr zu lesen.
+     * <p>Only a warning, and the template takes precedence: device names come
+     * from the label gun and not from the program. If the meaning of a program
+     * hung on how someone later names a connector, it could no longer be read
+     * from afar.
      */
     private static void checkTemplateName(Decl.FilterTemplate template, NetworkView view,
                                           List<Diagnostic> problems) {
@@ -200,17 +200,15 @@ public final class NetworkCheck {
     }
 
     /**
-     * Passt die Seite, an der der Connector hängt, zu dem, was der Worker
-     * bewegt?
+     * Does the side the connector hangs on fit what the worker moves?
      *
-     * <p>Der Fehler dahinter ist der stillste von allen: Der Worker läuft,
-     * bewegt nichts, und meldet nichts — denn „nichts bewegt" ist der
-     * Normalfall. Wer die Maschine falsch herum ankabelt, sucht das im
-     * Programm.
+     * <p>The error behind this is the quietest of all: the worker runs, moves
+     * nothing, and reports nothing — because "nothing moved" is the normal case.
+     * Whoever wires the machine up the wrong way round searches for that in the
+     * program.
      *
-     * <p><b>Geprüft wird die angeschlossene Seite</b>, nicht ob irgendeine
-     * Seite es könnte. Sonst schweigt die Warnung genau in dem Fall, für den
-     * sie gebaut ist.
+     * <p><b>The connected side is checked</b>, not whether any side could do it.
+     * Otherwise the warning stays silent in exactly the case it was built for.
      */
     private static void checkSide(Decl.Worker worker, Expr target, NetworkView view,
                                   List<Diagnostic> problems) {
@@ -226,25 +224,24 @@ public final class NetworkCheck {
             return;
         }
         DeviceProfile.Access.Ability needed = switch (kind) {
-            // „all" meint Gegenstände, wie ein Worker ohne Filter.
+            // "all" means items, like a worker without a filter.
             case ITEM, TAG, ALL -> DeviceProfile.Access.Ability.ITEMS;
-            // FLUIDTAG kommt hier nie an — WorkerKind.of nennt die
-            // Ressource und nicht die Schreibweise. Der Fall steht trotzdem
-            // da: Der Schalter ist erschöpfend, und eine stille Lücke wäre
-            // eine ausbleibende Warnung.
+            // FLUIDTAG never arrives here — WorkerKind.of names the resource
+            // and not the spelling. The case still stands there: the switch is
+            // exhaustive, and a silent gap would be a warning that fails to
+            // appear.
             case FLUID, FLUIDTAG -> DeviceProfile.Access.Ability.FLUIDS;
-            // Ein Strom-Worker verlangt einen Energiespeicher an der
-            // angeschlossenen Seite. Das Profil weiß es bereits — die Warnung
-            // fällt ohne Zusatzarbeit ab, weil die Geräteerkennung Energie
-            // ohnehin probt.
+            // A power worker demands an energy store on the connected side. The
+            // profile already knows it — the warning falls out without extra
+            // work, because device detection probes energy anyway.
             case POWER -> DeviceProfile.Access.Ability.ENERGY;
-            // Chemikalien sind noch nicht angebunden; über sie wird nichts
-            // behauptet, solange der Server sie nicht proben kann.
+            // Chemicals are not yet connected; nothing is claimed about them as
+            // long as the server cannot probe them.
             //
-            // Und über eine fremde Art erst recht nicht: Das Geräteprofil
-            // probt Gegenstände, Flüssigkeiten und Energie — was eine Mod
-            // sonst an einer Maschine erwartet, kann es nicht wissen. Das ist
-            // die zweite Achse aus entscheidungen.md, und sie fehlt.
+            // And about a foreign kind even less so: the device profile probes
+            // items, fluids, and energy — what a mod otherwise expects at a
+            // machine it cannot know. That is the second axis from
+            // entscheidungen.md, and it is missing.
             case CHEMICAL, CUSTOM -> null;
         };
         if (needed == null || profile.can(profile.connectedSide(), needed)) {
@@ -266,7 +263,7 @@ public final class NetworkCheck {
                 hint));
     }
 
-    /** „Norden", „Norden und Süden", „Norden, Süden und oben". */
+    /** "North", "North and South", "North, South and up". */
     private static String written(List<Side> sides) {
         List<String> words = sides.stream().map(Side::written).toList();
         if (words.size() == 1) {
@@ -296,17 +293,17 @@ public final class NetworkCheck {
     }
 
     /**
-     * Sucht die Gerätenamen in den {@code move}-Anweisungen eines Blocks.
+     * Searches for the device names in the {@code move} statements of a block.
      *
-     * <p><b>Örtliche Namen werden ausgespart</b> — Parameter, {@code let},
-     * Schleifenvariablen, globale Werte, Festwerte, Filter-Vorlagen, Gruppen
-     * und die Rollen eines Multiblocks. Genau das war der Grund, warum es
-     * diese Prüfung lange nicht gab: Eine, die vor richtigen Programmen
-     * warnt, schaltet man ab.
+     * <p><b>Local names are left out</b> — parameters, {@code let}, loop
+     * variables, global values, constants, filter templates, groups, and the
+     * roles of a multiblock. That was exactly the reason this check did not
+     * exist for a long time: one that warns about correct programs gets turned
+     * off.
      *
-     * <p>Großzügig gerechnet: Ein {@code let} gilt für den ganzen Block und
-     * nicht erst ab seiner Zeile. Eine Warnung zu wenig ist hier besser als
-     * eine zu viel.
+     * <p>Generously reckoned: a {@code let} applies to the whole block and not
+     * only from its line on. One warning too few is better here than one too
+     * many.
      */
     private static void checkMoves(dev.devpanda.factorynetwork.lang.ast.Block block,
                                    NetworkView view, Set<String> known,
@@ -363,7 +360,7 @@ public final class NetworkCheck {
         }
     }
 
-    /** Ein {@code move} steht auch mitten in einem Ausdruck. */
+    /** A {@code move} also stands in the middle of an expression. */
     private static void checkExprMoves(Expr expr, NetworkView view, Set<String> known,
                                        List<Diagnostic> problems) {
         switch (expr) {
@@ -383,9 +380,9 @@ public final class NetworkCheck {
                         checkExprMoves(argument.value(), view, known, problems));
             }
             case Expr.Member member -> checkExprMoves(member.target(), view, known, problems);
-            // Das einzige Literal, das Ausdrücke enthält. Ohne diese Zeile
-            // liefe ein falscher Gerätename in einer Liste durch — und eine
-            // Liste von Zielen ist der offensichtliche Gebrauch.
+            // The only literal that contains expressions. Without this line a
+            // wrong device name in a list would slip through — and a list of
+            // targets is the obvious use.
             case Expr.ListLit list -> list.entries().forEach(entry ->
                     checkExprMoves(entry, view, known, problems));
             case null, default -> { }
@@ -393,11 +390,11 @@ public final class NetworkCheck {
     }
 
     /**
-     * Ein Ziel muss ein Connector sein, eine Gruppe, ein Multiblock oder
-     * etwas Eingebautes.
+     * A target has to be a connector, a group, a multiblock, or something
+     * built-in.
      *
-     * <p>Ein Namensmuster wird übergangen: {@code ofen_*} passt vielleicht
-     * auf nichts, und das ist kein Fehler, sondern eine leere Gruppe.
+     * <p>A name pattern is skipped: {@code ofen_*} may match nothing, and that
+     * is not an error but an empty group.
      */
     private static void checkTarget(Expr target, NetworkView view, Set<String> local,
                                     List<Diagnostic> problems) {
@@ -416,13 +413,13 @@ public final class NetworkCheck {
                 "Nichts im Netz heißt „" + name.value() + "“.", hint));
     }
 
-    /** Die Namen, die ein Programm selbst vergibt: Gruppen und Multiblocks. */
+    /** The names a program assigns itself: groups and multiblocks. */
     public static Set<String> localNames(Program program) {
         Set<String> names = new java.util.HashSet<>();
         for (Decl declaration : program.declarations()) {
-            // Alles, was das Programm selbst benennt und was an derselben
-            // Stelle stehen darf wie ein Gerät. Ohne die letzten drei würde
-            // die Prüfung in einem move vor richtigen Programmen warnen.
+            // Everything the program names itself and that may stand in the
+            // same place as a device. Without the last three, the check in a
+            // move would warn about correct programs.
             if (declaration instanceof Decl.Group
                     || declaration instanceof Decl.Multiblock
                     || declaration instanceof Decl.Global

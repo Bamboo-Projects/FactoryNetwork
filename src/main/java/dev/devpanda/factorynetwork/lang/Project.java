@@ -12,58 +12,57 @@ import java.util.TreeMap;
 import java.util.regex.Pattern;
 
 /**
- * Das Programm eines Controllers, aufgeteilt auf mehrere Dateien.
+ * A controller's program, split across several files.
  *
- * <p>Ein Programm von dreihundert Zeilen in einem Stück ist keine Übersicht.
- * <b>Also ein Projekt:</b> {@code worker.mf}, {@code anzeigen.mf},
- * {@code ereignisse.mf} — wie man es aufteilt, entscheidet der Spieler.
+ * <p>A program of three hundred lines in one piece is not an overview.
+ * <b>So a project:</b> {@code worker.mf}, {@code anzeigen.mf},
+ * {@code ereignisse.mf} — how to split it, the player decides.
  *
- * <p><b>Alle Dateien teilen einen Namensraum.</b> Das stand seit dem ersten
- * Tag so im Übersetzer: Ein {@code fn} in der einen Datei ruft ein {@code fn}
- * in der anderen, ohne dass irgendwo {@code import} stehen muss. Dateien sind
- * hier Ordnung für den Menschen, keine Grenze für die Sprache — echte Module
- * mit eigenen Namensräumen sind etwas anderes, und dafür ist das Schlüsselwort
- * {@code import} reserviert.
+ * <p><b>All files share one namespace.</b> That has been so in the compiler
+ * since day one: an {@code fn} in one file calls an {@code fn} in another
+ * without any {@code import} having to stand anywhere. Files here are order for
+ * the human, not a boundary for the language — real modules with their own
+ * namespaces are something else, and the keyword {@code import} is reserved for
+ * that.
  *
- * <p>Die Reihenfolge ist <b>alphabetisch nach Dateiname</b> und nicht die des
- * Anlegens. Sonst hinge die Reihenfolge der Deklarationen daran, in welcher
- * Reihenfolge das Speicherformat sie zurückgibt — und ein wartender Ablauf
- * verglichen sich nach einem Serverneustart mit einem anders sortierten
- * Programm.
+ * <p>The order is <b>alphabetical by file name</b> and not that of creation.
+ * Otherwise the order of the declarations would hang on the order in which the
+ * storage format returns them — and a waiting sequence would compare itself,
+ * after a server restart, against a differently sorted program.
  */
 public record Project(Map<String, String> files) {
 
-    /** Die Datei, die es immer gibt. */
+    /** The file that always exists. */
     public static final String MAIN = "main.mf";
 
     /**
-     * Was als Dateiname durchgeht.
+     * What passes as a file name.
      *
-     * <p><b>Streng, weil der Name in drei Welten landet:</b> ins
-     * Speicherformat, ins Dateisystem neben der Welt und über die Leitung.
-     * Kleinbuchstaben, damit zwei Dateien nicht auf einem System verschieden
-     * und auf dem nächsten gleich heißen.
+     * <p><b>Strict, because the name ends up in three worlds:</b> in the storage
+     * format, in the file system next to the world, and over the wire.
+     * Lowercase, so that two files are not called different on one system and
+     * the same on the next.
      *
-     * <p><b>Ordner sind erlaubt</b>, als Abschnitte mit Schrägstrich davor:
-     * {@code erz/brecher.mf}. Sie sind reine Gliederung für den Menschen —
-     * alle Dateien teilen weiterhin einen Namensraum, und ein {@code fn} in
-     * {@code erz/brecher.mf} ruft eines in {@code main.mf} ohne Umweg.
+     * <p><b>Folders are allowed</b>, as sections with a slash in front:
+     * {@code erz/brecher.mf}. They are pure structure for the human — all files
+     * still share one namespace, and an {@code fn} in {@code erz/brecher.mf}
+     * calls one in {@code main.mf} without a detour.
      *
-     * <p><b>Der Punkt steht nicht im Alphabet eines Abschnitts.</b> Damit ist
-     * {@code ../} nicht verboten, sondern unmöglich, und dasselbe gilt für
-     * den Rückstrich von Windows und den Doppelpunkt eines Laufwerks. Eine
-     * Verbotsliste hätte man umgehen können; ein Alphabet nicht.
+     * <p><b>The dot is not in the alphabet of a section.</b> That makes
+     * {@code ../} not forbidden but impossible, and the same holds for the
+     * Windows backslash and a drive's colon. A blocklist could have been gotten
+     * around; an alphabet cannot.
      */
     private static final Pattern NAME =
             Pattern.compile("([a-z0-9_]{1,32}/)*[a-z0-9_]{1,32}\\.mf");
 
     /**
-     * Und wie lang der ganze Pfad höchstens ist.
+     * And how long the whole path is at most.
      *
-     * <p>Vorher lag die Grenze bei fünfunddreißig Zeichen, weil ein Name aus
-     * genau einem Abschnitt bestand. Ohne eine neue wüchse mit jeder Ebene
-     * das Speicherformat, das Paket über die Leitung und der Pfad im
-     * Dateisystem — und der hat auf Windows selbst eine Grenze.
+     * <p>Previously the limit lay at thirty-five characters, because a name
+     * consisted of exactly one section. Without a new one, the storage format,
+     * the package over the wire, and the path in the file system would grow with
+     * every level — and that path has a limit of its own on Windows.
      */
     private static final int MAX_NAME = 96;
 
@@ -80,7 +79,7 @@ public record Project(Map<String, String> files) {
         files = Map.copyOf(sorted);
     }
 
-    /** Ein Projekt aus einer einzelnen Datei — der bisherige Zustand. */
+    /** A project from a single file — the previous state. */
     public static Project of(String source) {
         return new Project(Map.of(MAIN, source == null ? "" : source));
     }
@@ -89,7 +88,7 @@ public record Project(Map<String, String> files) {
         return name != null && name.length() <= MAX_NAME && NAME.matcher(name).matches();
     }
 
-    /** Die Dateinamen, alphabetisch. */
+    /** The file names, alphabetically. */
     public List<String> names() {
         return new ArrayList<>(new TreeMap<>(files).keySet());
     }
@@ -98,7 +97,7 @@ public record Project(Map<String, String> files) {
         return files.getOrDefault(name, "");
     }
 
-    /** Dasselbe Projekt mit einer geänderten oder neuen Datei. */
+    /** The same project with a changed or new file. */
     public Project with(String name, String source) {
         Map<String, String> next = new HashMap<>(files);
         next.put(name, source);
@@ -106,12 +105,12 @@ public record Project(Map<String, String> files) {
     }
 
     /**
-     * Dasselbe Projekt unter einem anderen Dateinamen.
+     * The same project under a different file name.
      *
-     * <p>Der Inhalt zieht mit, die Reihenfolge ergibt sich neu aus dem
-     * Alphabet. Ist der neue Name ungültig oder schon vergeben, bleibt alles
-     * wie es war — das Umbenennen ist dann eine Eingabe, die der Bildschirm
-     * gar nicht erst annimmt, und hier steht nur die zweite Sicherung.
+     * <p>The content moves along, the order results anew from the alphabet. If
+     * the new name is invalid or already taken, everything stays as it was — the
+     * rename is then an input the screen does not accept in the first place, and
+     * here stands only the second safeguard.
      */
     public Project renamed(String from, String to) {
         if (!files.containsKey(from) || !isValidName(to) || files.containsKey(to)) {
@@ -123,18 +122,18 @@ public record Project(Map<String, String> files) {
     }
 
     /**
-     * Ein freier Name in der Art des gegebenen.
+     * A free name in the manner of the given one.
      *
-     * <p>Für das Verdoppeln und für neue Dateien: {@code worker.mf} wird zu
-     * {@code worker2.mf}, und wenn es die schon gibt, zu {@code worker3.mf}.
-     * Eine Ziffer am Ende des Namens wird dabei weitergezählt und nicht
-     * angehängt — sonst hieße die Kopie von {@code worker2.mf} nach dem
-     * dritten Mal {@code worker222.mf}.
+     * <p>For duplicating and for new files: {@code worker.mf} becomes
+     * {@code worker2.mf}, and if that already exists, {@code worker3.mf}. A digit
+     * at the end of the name is counted on and not appended — otherwise the copy
+     * of {@code worker2.mf} would be called {@code worker222.mf} after the third
+     * time.
      *
-     * <p><b>Gezählt wird im letzten Abschnitt.</b> Die Kopie von
-     * {@code erz/brecher.mf} heißt {@code erz/brecher2.mf} und bleibt damit
-     * neben ihrer Vorlage. Eine Ziffer am Ordner zöge sie in einen Ordner,
-     * den es nicht gibt.
+     * <p><b>Counting happens in the last section.</b> The copy of
+     * {@code erz/brecher.mf} is called {@code erz/brecher2.mf} and thus stays
+     * next to its original. A digit on the folder would pull it into a folder
+     * that does not exist.
      */
     public String freeNameLike(String name) {
         String base = name.endsWith(".mf") ? name.substring(0, name.length() - 3) : name;
@@ -156,10 +155,10 @@ public record Project(Map<String, String> files) {
     }
 
     /**
-     * Dasselbe Projekt ohne diese Datei.
+     * The same project without this file.
      *
-     * <p>Die letzte lässt sich nicht löschen — ein Projekt ohne Datei wäre
-     * kein Projekt, und der Konstruktor legte sofort wieder eine an.
+     * <p>The last one cannot be deleted — a project without a file would be no
+     * project, and the constructor would immediately create one again.
      */
     public Project without(String name) {
         if (files.size() <= 1) {
@@ -170,7 +169,7 @@ public record Project(Map<String, String> files) {
         return new Project(next);
     }
 
-    /** Der ganze Quelltext am Stück — für alles, was nur lesen will. */
+    /** The whole source text in one piece — for anything that only wants to read. */
     public String joined() {
         StringBuilder out = new StringBuilder();
         for (String name : names()) {
@@ -183,29 +182,28 @@ public record Project(Map<String, String> files) {
     }
 
     /**
-     * Übersetzt alle Dateien und legt sie zu einem Programm zusammen.
+     * Compiles all files and merges them into one program.
      *
-     * <p>Jede Datei für sich, damit eine Zeilennummer die Zeile <b>in ihrer
-     * Datei</b> meint. Würde der Übersetzer den zusammengehängten Text
-     * bekommen, zeigte jeder Fehler ab der zweiten Datei auf eine Zeile, die
-     * es dort nicht gibt.
+     * <p>Each file on its own, so that a line number means the line <b>in its
+     * file</b>. If the compiler got the concatenated text, every error from the
+     * second file on would point at a line that does not exist there.
      */
     public Parser.ParseResult parse() {
         return parse(NetworkView.NONE);
     }
 
     /**
-     * Dasselbe, aber mit einem Blick auf das, was wirklich im Netz steht.
+     * The same, but with a look at what really stands in the network.
      *
-     * <p>Damit fällt auf, was die Grammatik nicht sieht: eine Anzeige, die es
-     * in der Welt nicht gibt, oder ein Ziel, das niemand so genannt hat.
-     * Beides sind <b>Warnungen</b> — eine Wand, die man erst morgen baut,
-     * darf man heute schon ins Programm schreiben.
+     * <p>This catches what the grammar does not see: a display that does not
+     * exist in the world, or a target nobody named that way. Both are
+     * <b>warnings</b> — a wall you only build tomorrow, you may already write
+     * into the program today.
      *
-     * <p>Die Namen, die das Programm selbst vergibt — Gruppen, Multiblocks —
-     * werden vorher über alle Dateien gesammelt. Sonst meldete eine Gruppe in
-     * {@code gruppen.mf} als unbekannt, sobald ein Worker in
-     * {@code worker.mf} sie benutzt.
+     * <p>The names the program assigns itself — groups, multiblocks — are
+     * collected over all files beforehand. Otherwise a group in
+     * {@code gruppen.mf} would report as unknown as soon as a worker in
+     * {@code worker.mf} uses it.
      */
     public Parser.ParseResult parse(NetworkView view) {
         List<Decl> declarations = new ArrayList<>();
@@ -218,22 +216,20 @@ public record Project(Map<String, String> files) {
         java.util.Set<String> local = new java.util.HashSet<>();
         parsed.values().forEach(
                 result -> local.addAll(NetworkCheck.localNames(result.program())));
-        // Dasselbe für die globalen Werte: Sie gelten über alle Dateien, und
-        // eine Zuweisung in der einen meint die Erklärung in der anderen.
+        // The same for the global values: they apply across all files, and an
+        // assignment in one means the declaration in another.
         Map<String, String> globals = new HashMap<>();
         parsed.values().forEach(
                 result -> globals.putAll(GlobalCheck.declaredKinds(result.program())));
         Map<String, String> constants = new HashMap<>();
         parsed.values().forEach(
                 result -> constants.putAll(GlobalCheck.declaredConstants(result.program())));
-        // Und für die Ereignisse: Ein on in der einen Datei meint das event in
-        // der anderen.
+        // And for the events: an on in one file means the event in another.
         Map<String, Integer> events = new HashMap<>();
         parsed.values().forEach(
                 result -> events.putAll(EventCheck.declaredEvents(result.program())));
-        // Und für die Filter-Vorlagen: Eine Vorlage in der einen Datei darf
-        // nicht heißen wie eine Gruppe in der anderen — beide stehen in
-        // Ausdrücken.
+        // And for the filter templates: a template in one file must not be
+        // called like a group in another — both stand in expressions.
         Map<String, String> takenNames = new HashMap<>();
         parsed.values().forEach(
                 result -> takenNames.putAll(FilterCheck.declaredNames(result.program())));
@@ -251,11 +247,11 @@ public record Project(Map<String, String> files) {
             FilterCheck.run(result.program(), takenNames).forEach(
                     diagnostic -> diagnostics.add(diagnostic.withFile(name)));
             for (Decl declaration : result.program().declarations()) {
-                // Eine eigene Funktion, die wie eine eingebaute heißt, wäre
-                // nie erreichbar: Der Interpreter prüft die eingebauten
-                // zuerst. Das still hinzunehmen hieße, dass ein fn dasteht
-                // und nie läuft — derselbe Fehler wie ein on mit vertipptem
-                // Ereignisnamen.
+                // A custom function called like a built-in one would never be
+                // reachable: the interpreter checks the built-in ones first.
+                // To accept that silently would mean an fn stands there and
+                // never runs — the same error as an on with a mistyped event
+                // name.
                 if (declaration instanceof Decl.Fn
                         && Signatures.FREE_FUNCTIONS.stream()
                                 .anyMatch(free -> free.name().equals(declaration.name()))) {
@@ -285,11 +281,10 @@ public record Project(Map<String, String> files) {
     }
 
     /**
-     * Merkt sich, wem ein Name gehört, und meldet den zweiten Anwärter.
+     * Remembers whom a name belongs to, and reports the second claimant.
      *
-     * <p>Nicht für {@code on}: Zwei Blöcke für dasselbe Ereignis sind
-     * erlaubt und laufen beide. Und nicht für kaputte Deklarationen — die
-     * haben schon eine Meldung.
+     * <p>Not for {@code on}: two blocks for the same event are allowed and both
+     * run. And not for broken declarations — those already have a message.
      */
     private static String duplicateOf(Decl declaration, Map<String, String> owners,
                                       String file) {

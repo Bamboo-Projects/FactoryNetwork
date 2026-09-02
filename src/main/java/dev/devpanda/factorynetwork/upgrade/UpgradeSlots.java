@@ -11,20 +11,19 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Die Steckplätze eines Geräts oder Blocks.
+ * The slots of a device or block.
  *
- * <p><b>Die Zahl der Plätze ist fest und die eigentliche Entscheidung.</b>
- * Wer alles will, muss wählen, was er weglässt — ein Behälter, der wächst,
- * nähme dem Ausbau seinen Preis.
+ * <p><b>The number of slots is fixed and the real decision.</b> Whoever wants
+ * everything must choose what to leave out — a container that grows would rob
+ * the upgrade of its price.
  *
- * <p>Er nimmt nur Ausbauten an. Ein Platz, in den alles passt, ist ein
- * Rucksack und kein Steckplatz.
+ * <p>It only accepts upgrades. A slot that everything fits into is a backpack,
+ * not an upgrade slot.
  *
- * <p><b>Zur Zählung:</b> Ein Platz hält einen Stapel, und jedes Stück darin
- * zählt. Drei Reichweitenkarten auf einem Platz wirken damit wie drei Karten
- * — die Folge daraus, dass gleiche Karten sich addieren. Wenn das im Spiel
- * falsch wirkt, ist die Antwort eine Stapelgrenze am Gegenstand und nicht
- * eine zweite Rechnung hier.
+ * <p><b>On counting:</b> a slot holds a stack, and every item in it counts.
+ * Three range cards in one slot thus act like three cards — the consequence of
+ * identical cards adding up. If that feels wrong in the game, the answer is a
+ * stack limit on the item, not a second calculation here.
  */
 public class UpgradeSlots {
 
@@ -38,7 +37,7 @@ public class UpgradeSlots {
         return contents.size();
     }
 
-    /** Passt dieser Stapel in einen Steckplatz? Leer passt immer. */
+    /** Does this stack fit into a slot? Empty always fits. */
     public boolean accepts(ItemStack stack) {
         return stack.isEmpty() || UpgradeItem.upgradeOf(stack) != null;
     }
@@ -48,10 +47,10 @@ public class UpgradeSlots {
     }
 
     /**
-     * Legt einen Stapel in einen Platz.
+     * Places a stack into a slot.
      *
-     * @throws IllegalArgumentException wenn es kein Ausbau ist — wer das
-     *         aufruft, hat {@link #accepts} nicht gefragt.
+     * @throws IllegalArgumentException if it is not an upgrade — whoever calls
+     *         this did not ask {@link #accepts}.
      */
     public void set(int slot, ItemStack stack) {
         if (!accepts(stack)) {
@@ -61,12 +60,11 @@ public class UpgradeSlots {
     }
 
     /**
-     * Was diese Bestückung kann und wie hoch ihre Werte sind.
+     * What this loadout can do and how high its values are.
      *
-     * <p>Die Zählung selbst steht in {@link Loadout#ofCounts} und wird dort
-     * geprüft. Hier wird nur gesammelt, was in den Plätzen liegt: Diese
-     * Klasse hält {@link ItemStack} und lässt sich deshalb in keinem
-     * gewöhnlichen Test anfassen.
+     * <p>The counting itself lives in {@link Loadout#ofCounts} and is tested
+     * there. Here only what lies in the slots is gathered: this class holds
+     * {@link ItemStack} and therefore cannot be touched in any ordinary test.
      */
     public Loadout loadout() {
         Map<Upgrade, Integer> counts = new LinkedHashMap<>();
@@ -79,7 +77,7 @@ public class UpgradeSlots {
         return Loadout.ofCounts(counts);
     }
 
-    /** Der rohe Inhalt — für Behälterfenster und zum Fallenlassen. */
+    /** The raw contents — for container windows and for dropping. */
     public NonNullList<ItemStack> contents() {
         return contents;
     }

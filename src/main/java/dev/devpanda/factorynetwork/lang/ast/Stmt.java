@@ -4,18 +4,18 @@ import dev.devpanda.factorynetwork.lang.Span;
 
 import java.util.List;
 
-/** Anweisungen von Manifold. */
+/** Statements of Manifold. */
 public sealed interface Stmt {
 
     Span span();
 
     record Let(String name, Expr value, Span span) implements Stmt {}
 
-    /** Zuweisung an einen bestehenden Namen oder ein Feld. */
+    /** Assignment to an existing name or a field. */
     record Assign(Expr target, Expr value, Span span) implements Stmt {}
 
     record If(Expr condition, Block thenBody, Object elseBody, Span span) implements Stmt {
-        /** {@code elseBody} ist entweder ein {@link Block}, ein {@link If} oder {@code null}. */
+        /** {@code elseBody} is either a {@link Block}, an {@link If}, or {@code null}. */
         public Block elseBlock() {
             return elseBody instanceof Block block ? block : null;
         }
@@ -38,8 +38,8 @@ public sealed interface Stmt {
     /**
      * {@code move 64 item:iron_ore from chest to crusher_1}
      *
-     * <p>{@code from} darf fehlen — dann ist die Quelle aus dem Zusammenhang
-     * gemeint, etwa innerhalb eines Multiblocks.
+     * <p>{@code from} may be omitted — then the source is meant from context,
+     * for instance inside a multiblock.
      */
     record Move(Expr amount, Expr from, Expr to, Span span) implements Stmt {}
 
@@ -47,9 +47,9 @@ public sealed interface Stmt {
 
     record Sleep(Expr duration, Span span) implements Stmt {}
 
-    /** Ein Ausdruck als Anweisung, etwa ein Aufruf. */
+    /** An expression as a statement, e.g. a call. */
     record ExprStmt(Expr expr, Span span) implements Stmt {}
 
-    /** Steht für eine Anweisung, die der Parser nicht lesen konnte. */
+    /** Stands for a statement the parser could not read. */
     record Invalid(Span span) implements Stmt {}
 }

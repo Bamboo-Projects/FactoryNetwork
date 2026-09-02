@@ -5,23 +5,22 @@ import java.util.List;
 import java.util.function.BiPredicate;
 
 /**
- * Ordnet Forderungen Plätzen zu — jede Forderung bekommt ihren eigenen.
+ * Assigns demands to slots — each demand gets its own.
  *
- * <p><b>Warum das nicht die gierige Schleife ist.</b> Wer der Reihe nach den
- * ersten passenden Platz nimmt, verbaut sich: Ein Rezept aus <i>irgendein
- * Metall</i> und <i>Kupfer</i> liegt in einer Presse mit Kupfer und Eisen —
- * nimmt die erste Forderung das Kupfer, findet die zweite nichts mehr,
- * obwohl die Zuordnung offensichtlich aufgeht. Diese Rechnung nimmt zurück
- * und probiert weiter.
+ * <p><b>Why this is not the greedy loop.</b> Whoever takes the first matching
+ * slot in turn boxes themselves in: a recipe of <i>any metal</i> and
+ * <i>copper</i> lies in a press with copper and iron — if the first demand
+ * takes the copper, the second finds nothing left, even though the assignment
+ * obviously works out. This computation backtracks and keeps trying.
  *
- * <p><b>Ohne Minecraft-Typen</b>, wie alles, was sich lohnt zu prüfen: Was
- * „passt" heißt, entscheidet der Aufrufer. Die Presse fragt ein
- * {@code Ingredient}, der Prüflauf vergleicht Buchstaben.
+ * <p><b>Without Minecraft types</b>, like everything worth testing: what
+ * "matches" means is decided by the caller. The press asks an
+ * {@code Ingredient}, the test run compares letters.
  *
- * <p>Die Suche ist Backtracking und damit im schlechtesten Fall so teuer wie
- * die Zahl der Anordnungen. Das ist hier gleichgültig: Eine Presse hat drei
- * Materialplätze, also höchstens sechs Anordnungen — und sie fragt nur, wenn
- * sich ihr Inhalt geändert hat.
+ * <p>The search is backtracking and thus in the worst case as expensive as the
+ * number of arrangements. That does not matter here: a press has three
+ * material slots, so at most six arrangements — and it only asks when its
+ * contents have changed.
  */
 public final class Assignment {
 
@@ -29,11 +28,11 @@ public final class Assignment {
     }
 
     /**
-     * Lässt sich jede Forderung auf einen eigenen Platz legen?
+     * Can every demand be placed on a slot of its own?
      *
-     * @param demands was das Rezept verlangt
-     * @param slots   was in der Maschine liegt
-     * @param matches ob diese Forderung von diesem Platz erfüllt wird
+     * @param demands what the recipe requires
+     * @param slots   what is in the machine
+     * @param matches whether this demand is satisfied by this slot
      */
     public static <D, S> boolean fits(List<D> demands, List<S> slots,
                                       BiPredicate<D, S> matches) {
@@ -41,13 +40,13 @@ public final class Assignment {
     }
 
     /**
-     * Dieselbe Suche, aber sie sagt auch, <b>wohin</b>.
+     * The same search, but it also says <b>where to</b>.
      *
-     * <p>Gebraucht beim Verbrauchen: Wer drei Zutaten abzieht, muss wissen,
-     * aus welchem Platz jede kommt — sonst zieht er zweimal aus demselben.
+     * <p>Needed when consuming: whoever draws off three ingredients must know
+     * which slot each comes from — otherwise they draw twice from the same one.
      *
-     * @return je Forderung der Platz, der sie erfüllt, oder {@code null},
-     *         wenn es keine Zuordnung gibt
+     * @return per demand the slot that satisfies it, or {@code null} when
+     *         there is no assignment
      */
     public static <D, S> int[] assign(List<D> demands, List<S> slots,
                                       BiPredicate<D, S> matches) {
@@ -79,8 +78,8 @@ public final class Assignment {
             if (search(demands, slots, matches, demand + 1, used)) {
                 return true;
             }
-            // Zurücknehmen: Dieser Platz war für diese Forderung frei, aber
-            // eine spätere kommt damit nicht aus.
+            // Backtrack: this slot was free for this demand, but a later one
+            // cannot manage with it.
             used.remove(used.size() - 1);
         }
         return false;

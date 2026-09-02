@@ -1,23 +1,23 @@
 package dev.devpanda.factorynetwork.item;
 
 /**
- * Die drei Bauteile eines Servers.
+ * The three parts of a server.
  *
- * <p>Ein Einschub im Schrank nimmt genau eines von jeder Art. <b>Erst wenn
- * alle drei stecken, ist es ein Server</b> — ein Rechner ohne Speicher ist
- * keiner, und ein halb bestückter Einschub soll nichts beitragen. Das ist
- * die Entscheidung, um die es bei diesem Block überhaupt geht: nicht „wie
- * viele Bauteile", sondern „wie viele vollständige Server".
+ * <p>A bay in the rack takes exactly one of each type. <b>Only once all
+ * three are inserted is it a server</b> — a computer without memory is none,
+ * and a half-equipped bay should contribute nothing. That is the decision
+ * this block is really about: not "how many parts", but "how many complete
+ * servers".
  */
 public enum ServerPart {
 
-    /** Rechenwerk: wie viele Abläufe gleichzeitig laufen. */
+    /** Processor: how many flows run concurrently. */
     CPU("cpu"),
 
-    /** Arbeitsspeicher: wie viele Abläufe überhaupt bestehen dürfen. */
+    /** Memory: how many flows may exist at all. */
     RAM("ram"),
 
-    /** Datenträger: wie groß das Programm sein darf. */
+    /** Disk: how large the program may be. */
     DISK("disk");
 
     private final String prefix;
@@ -26,18 +26,18 @@ public enum ServerPart {
         this.prefix = prefix;
     }
 
-    /** Der Anfang des Registrierungsnamens, etwa {@code cpu_32}. */
+    /** The start of the registration name, such as {@code cpu_32}. */
     public String prefix() {
         return prefix;
     }
 
     /**
-     * Die Stufen dieser Art, von klein nach groß.
+     * The tiers of this type, from small to large.
      *
-     * <p>Viermal so viel je Stufe, und die Zahl im Namen ist der Wert — wie
-     * bei den Speicherzellen. Wer eine große Stufe baut, tauscht nicht nur
-     * Leistung ein, sondern vor allem Platz: Ein Schrank hat zwölf
-     * Einschübe, und die sind das Knappe.
+     * <p>Four times as much per tier, and the number in the name is the
+     * value — as with the storage cells. Whoever builds a large tier trades
+     * in not only performance but above all space: a rack has twelve bays,
+     * and those are what is scarce.
      */
     public int[] tiers() {
         return switch (this) {

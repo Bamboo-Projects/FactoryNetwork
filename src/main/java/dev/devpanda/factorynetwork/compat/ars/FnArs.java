@@ -1,24 +1,24 @@
 package dev.devpanda.factorynetwork.compat.ars;
 
 /**
- * Was diese Mod über Ars Nouveau weiß.
+ * What this mod knows about Ars Nouveau.
  *
- * <p>Dieselbe Tür wie {@code FnMekanism}, aus demselben Grund: Ohne die Mod
- * gibt es Source überhaupt nicht, und „Source ist noch nicht angebunden"
- * schickte den Spieler an die falsche Stelle.
+ * <p>The same door as {@code FnMekanism}, for the same reason: without the mod
+ * there is no Source at all, and "Source is not wired up yet" would send the
+ * player to the wrong place.
  *
- * <p><b>Ohne geladene Modliste gilt „nicht installiert".</b> Ein Einheitstest
- * lädt kein FML — die Vorgabe ist die, die niemanden in die Irre schickt.
+ * <p><b>With no mod list loaded, treat it as "not installed".</b> A unit test
+ * loads no FML — the default is the one that misleads no one.
  */
 public final class FnArs {
 
-    /** So heißt die Mod in der Modliste. */
+    /** This is the mod's name in the mod list. */
     public static final String MOD_ID = "ars_nouveau";
 
     private FnArs() {
     }
 
-    /** Liegt Ars Nouveau in diesem Pack? */
+    /** Is Ars Nouveau present in this pack? */
     public static boolean installed() {
         try {
             net.neoforged.fml.ModList list = net.neoforged.fml.ModList.get();

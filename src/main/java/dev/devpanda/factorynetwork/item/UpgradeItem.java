@@ -5,11 +5,10 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * Ein Modul oder eine Karte als Gegenstand.
+ * A module or a card as an item.
  *
- * <p>Er trägt keine Daten: Was er tut, steht in seinem {@link Upgrade}, und
- * das hängt an der Gegenstandsart. Zwei Reichweitenkarten sind dasselbe und
- * stapeln sich deshalb.
+ * <p>It carries no data: what it does is in its {@link Upgrade}, and that
+ * hangs on the item type. Two range cards are the same and therefore stack.
  */
 public class UpgradeItem extends Item {
 
@@ -24,7 +23,7 @@ public class UpgradeItem extends Item {
         return upgrade;
     }
 
-    /** Welcher Ausbau in diesem Stapel steckt, oder {@code null}. */
+    /** Which upgrade sits in this stack, or {@code null}. */
     public static Upgrade upgradeOf(ItemStack stack) {
         return stack.getItem() instanceof UpgradeItem item ? item.upgrade() : null;
     }

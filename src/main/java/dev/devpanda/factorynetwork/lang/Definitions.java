@@ -8,25 +8,25 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Wo ein Name im Projekt erklärt wird.
+ * Where a name is declared in the project.
  *
- * <p>Alle Dateien teilen einen Namensraum — ein {@code fn} in der einen wird
- * in der anderen aufgerufen, ohne dass irgendwo {@code import} steht. Genau
- * deshalb braucht es das hier: <b>Der Ort einer Erklärung ist von der Stelle
- * ihres Gebrauchs aus nicht zu sehen.</b> Bei drei Dateien sucht man sie noch,
- * bei acht nicht mehr.
+ * <p>All files share one namespace — an {@code fn} in one is called in another
+ * without any {@code import} standing anywhere. That is exactly why this is
+ * needed: <b>the place of a declaration cannot be seen from the place it is
+ * used.</b> With three files you can still search for it, with eight no longer.
  *
- * <p>Im Sprachpaket und nicht im Editor, wie {@link Signatures}: Es ist eine
- * Frage an die Sprache, und ein Sprachserver für VS Code stellt dieselbe.
+ * <p>In the language package and not in the editor, like {@link Signatures}: it
+ * is a question to the language, and a language server for VS Code asks the same
+ * one.
  */
 public final class Definitions {
 
     /**
-     * Eine Fundstelle.
+     * A found location.
      *
-     * @param file   die Datei
-     * @param line   die Zeile darin, von eins an
-     * @param column die Spalte, von eins an
+     * @param file   the file
+     * @param line   the line in it, from one
+     * @param column the column, from one
      */
     public record Location(String file, int line, int column) {
     }
@@ -35,11 +35,11 @@ public final class Definitions {
     }
 
     /**
-     * Sucht die Deklaration zu einem Namen.
+     * Searches for the declaration of a name.
      *
-     * <p>Die erste, die passt. Zwei gleiche Namen sind ein Fehler, den der
-     * Übersetzer schon meldet — hier noch einmal darauf einzugehen hieße, den
-     * Sprung wegen eines Fehlers zu verweigern, den man gerade beheben will.
+     * <p>The first one that matches. Two identical names are an error the
+     * compiler already reports — to address it again here would mean refusing
+     * the jump because of an error one is just about to fix.
      */
     public static Optional<Location> find(Project project, String name) {
         if (name == null || name.isBlank()) {
@@ -58,8 +58,8 @@ public final class Definitions {
     }
 
     /**
-     * Alle Stellen, an denen ein Name erklärt wird — für „wo wird das
-     * benutzt" gibt es {@link #references}.
+     * All places where a name is declared — for "where is this used" there is
+     * {@link #references}.
      */
     public static List<Location> findAll(Project project, String name) {
         List<Location> found = new ArrayList<>();
@@ -76,17 +76,17 @@ public final class Definitions {
     }
 
     /**
-     * Wo ein Name im Projekt vorkommt.
+     * Where a name occurs in the project.
      *
-     * <p><b>Über den Text und nicht über den Baum.</b> Ein Name steht in
-     * Ausdrücken, Argumenten, Mustern und Zeichenketten; ihn im Baum überall
-     * zu finden hieße, jede Ausdrucksart einzeln zu behandeln — und die
-     * nächste, die dazukommt, würde vergessen. Die Textsuche findet dafür
-     * gelegentlich einen Treffer in einem Kommentar. Das ist der bessere
-     * Fehler: Man sieht ihn sofort und übersieht keine Stelle.
+     * <p><b>Over the text and not over the tree.</b> A name stands in
+     * expressions, arguments, patterns, and strings; finding it everywhere in
+     * the tree would mean handling each kind of expression separately — and the
+     * next one that gets added would be forgotten. The text search, in return,
+     * occasionally finds a hit in a comment. That is the better error: you see
+     * it at once and miss no place.
      *
-     * <p>Gefunden wird nur ein ganzes Wort: {@code ofen_1} ist keine
-     * Fundstelle in {@code ofen_10}.
+     * <p>Only a whole word is found: {@code ofen_1} is not a location in
+     * {@code ofen_10}.
      */
     public static List<Location> references(Project project, String name) {
         List<Location> found = new ArrayList<>();
@@ -123,7 +123,7 @@ public final class Definitions {
         return Character.isLetterOrDigit(c) || c == '_';
     }
 
-    /** Deklarationen samt der Funktionen, die in einem Multiblock stecken. */
+    /** Declarations together with the functions that sit inside a multiblock. */
     private static List<Decl> flatten(List<Decl> declarations) {
         List<Decl> all = new ArrayList<>(declarations);
         for (Decl declaration : declarations) {

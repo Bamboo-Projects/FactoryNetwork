@@ -1,34 +1,34 @@
 package dev.devpanda.factorynetwork.upgrade;
 
 /**
- * Wie weit ein Funksignal trägt.
+ * How far a wireless signal reaches.
  *
- * <p>Die Zahlen stehen in {@code docs/fernzugriff.md} §3 und hier — sonst
- * nirgends. Wer sie ändert, ändert sie an beiden Stellen, und
- * {@code RangeTest} rechnet sie nach.
+ * <p>The numbers live in {@code docs/fernzugriff.md} §3 and here — nowhere
+ * else. Whoever changes them changes them in both places, and
+ * {@code RangeTest} checks them.
  */
 public final class Range {
 
-    /** Ein Mast ohne Karten trägt so weit. */
+    /** A mast without cards reaches this far. */
     public static final int MAST_BASE = 16;
 
     /**
-     * Um so viel zählt eine Karte im Mast mehr als im Gerät.
+     * By this much a card counts more in the mast than in the device.
      *
-     * <p><b>Warum am Ort und nicht an der Karte:</b> Es ist dieselbe Karte.
-     * Eine, die an zwei Orten verschieden viel hebt, widerspräche der Regel
-     * aus dem Ausbausystem — dort hebt eine Karte ihren Wert, und der ist
-     * einer. Das Verstärken ist eine Eigenschaft des Masts.
+     * <p><b>Why here and not on the card:</b> it is the same card. One that
+     * raised different amounts in two places would contradict the rule from
+     * the upgrade system — there a card raises its value, and that value is
+     * one. The amplification is a property of the mast.
      */
     public static final int MAST_FACTOR = 2;
 
-    /** Was {@link #reach} liefert, wenn es keine Grenze mehr gibt. */
+    /** What {@link #reach} returns when there is no longer a limit. */
     public static final int UNLIMITED = -1;
 
     /**
-     * Wie weit dieser Mast dieses Gerät erreicht, in Blöcken.
+     * How far this mast reaches this device, in blocks.
      *
-     * @return {@link #UNLIMITED}, wenn der Mast eine Grenzenlos-Karte trägt
+     * @return {@link #UNLIMITED} if the mast carries an Infinity card
      */
     public static int reach(Loadout mast, Loadout device) {
         if (mast.unlimited(Stat.RANGE)) {
@@ -40,30 +40,30 @@ public final class Range {
     }
 
     /**
-     * Reicht es über diese Entfernung?
+     * Does it reach across this distance?
      *
-     * <p>Die Grenze zählt noch dazu: Wer genau auf ihr steht, ist drin.
+     * <p>The limit still counts: whoever stands exactly on it is within.
      */
     public static boolean covers(Loadout mast, Loadout device, double distance) {
         return covers(mast, device, true, distance);
     }
 
     /**
-     * Reicht es bis dorthin — auch wenn das in einer anderen Welt liegt?
+     * Does it reach all the way there — even when that lies in another world?
      *
-     * <p><b>Über eine Dimensionsgrenze reicht nur die Grenzenlos-Karte</b>,
-     * und dann ohne jede Rechnung. Zwischen zwei Dimensionen gibt es keinen
-     * Abstand, den man messen könnte: Der Nether liegt nicht hundert Blöcke
-     * von der Oberwelt entfernt, er liegt daneben und zugleich nirgends. Eine
-     * Rechnung mit Koordinaten aus zwei Welten ergäbe eine Zahl ohne
-     * Bedeutung.
+     * <p><b>Across a dimension boundary only the Infinity card reaches</b>,
+     * and then without any calculation. Between two dimensions there is no
+     * distance one could measure: the Nether does not lie a hundred blocks
+     * from the Overworld, it lies alongside it and nowhere at once. A
+     * calculation with coordinates from two worlds would yield a number
+     * without meaning.
      *
-     * <p>Auch vier Reichweitenkarten helfen dort nicht. Reichweite ist eine
-     * Strecke, und eine Dimensionsgrenze ist keine — das ist der Grund, die
-     * Karte überhaupt zu bauen.
+     * <p>Even four range cards do not help there. Range is a distance, and a
+     * dimension boundary is not one — that is the reason to build the card at
+     * all.
      *
-     * @param sameLevel ob Mast und Gerät in derselben Dimension sind
-     * @param distance der Abstand; bedeutungslos, wenn sie es nicht sind
+     * @param sameLevel whether mast and device are in the same dimension
+     * @param distance the distance; meaningless if they are not
      */
     public static boolean covers(Loadout mast, Loadout device, boolean sameLevel,
                                  double distance) {

@@ -3,11 +3,11 @@ package dev.devpanda.factorynetwork.lang.ast;
 import java.util.List;
 
 /**
- * Ein übersetztes Programm.
+ * A compiled program.
  *
- * <p>Alle {@code .mf}-Dateien eines Projekts bilden einen Namensraum, deshalb
- * gibt es hier keine Dateigrenzen mehr — der Übersetzer legt die
- * Deklarationen aller Dateien zusammen.
+ * <p>All {@code .mf} files of a project form one namespace, so there are no
+ * file boundaries here anymore — the compiler merges the declarations of all
+ * files.
  */
 public record Program(List<Decl> declarations) {
 
@@ -31,7 +31,7 @@ public record Program(List<Decl> declarations) {
                 .map(Decl.Event.class::cast).toList();
     }
 
-    /** Die Deklaration eines Ereignisses, oder {@code null}. */
+    /** The declaration of an event, or {@code null}. */
     public Decl.Event event(String name) {
         return events().stream().filter(candidate -> candidate.name().equals(name))
                 .findFirst().orElse(null);

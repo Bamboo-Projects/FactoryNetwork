@@ -5,11 +5,11 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Was eine Bestückung kann, und wie hoch ihre Werte sind.
+ * What a loadout can do, and how high its values are.
  *
- * <p>Zwei Fragen, mehr nicht: <i>Habe ich diese Fähigkeit?</i> und <i>wie
- * hoch ist dieser Wert?</i> Alles, was Steckplätze hat, stellt sie — der
- * Sendemast, die Geräte, die Anzeigetafel.
+ * <p>Two questions, no more: <i>do I have this ability?</i> and <i>how high is
+ * this value?</i> Everything that has slots asks them — the mast, the devices,
+ * the display.
  */
 public record Loadout(List<Upgrade> installed) {
 
@@ -18,20 +18,20 @@ public record Loadout(List<Upgrade> installed) {
     }
 
     public static Loadout of(List<? extends Upgrade> installed) {
-        // Der Umweg über ArrayList ist nötig: List.copyOf einer Liste von
-        // Untertypen bleibt eine Liste von Untertypen, und der Record will
-        // eine von Upgrade.
+        // The detour through ArrayList is necessary: List.copyOf of a list of
+        // subtypes stays a list of subtypes, and the record wants one of
+        // Upgrade.
         return new Loadout(new ArrayList<Upgrade>(installed));
     }
 
     /**
-     * Dieselbe Rechnung aus Stückzahlen statt aus einer Liste.
+     * The same calculation from counts instead of from a list.
      *
-     * <p><b>Wozu.</b> Ein Steckplatz hält einen Stapel, und jedes Stück darin
-     * zählt: Drei Reichweitenkarten auf einem Platz wirken wie drei Karten.
-     * Diese Regel gehört geprüft, und sie soll dafür nicht in einem Behälter
-     * stecken, den kein gewöhnlicher Test anfassen kann — {@code ItemStack}
-     * verlangt ein hochgefahrenes Minecraft.
+     * <p><b>Why.</b> A slot holds a stack, and every item in it counts: three
+     * range cards in one slot act like three cards. This rule deserves to be
+     * tested, and for that it should not sit inside a container that no
+     * ordinary test can touch — {@code ItemStack} requires a booted-up
+     * Minecraft.
      */
     public static Loadout ofCounts(Map<? extends Upgrade, Integer> counts) {
         List<Upgrade> found = new ArrayList<>();
@@ -44,11 +44,11 @@ public record Loadout(List<Upgrade> installed) {
     }
 
     /**
-     * Wie oft dieser Ausbau steckt.
+     * How many times this upgrade is installed.
      *
-     * <p>Wer Stückzahlen braucht — die Stromrechnung tut das —, soll sie
-     * nicht aus einem Wert zurückrechnen müssen. Das ginge nur, solange es
-     * je Wert genau eine Kartenart gibt.
+     * <p>Whoever needs counts — the power calculation does — should not have to
+     * derive them back from a value. That would only work as long as there is
+     * exactly one kind of card per stat.
      */
     public int count(Upgrade upgrade) {
         int found = 0;
@@ -60,16 +60,16 @@ public record Loadout(List<Upgrade> installed) {
         return found;
     }
 
-    /** Steckt ein Modul dieser Art darin? */
+    /** Is a module of this kind installed in it? */
     public boolean has(Ability ability) {
         return installed.contains(ability);
     }
 
     /**
-     * Die Summe aller Karten auf diesen Wert.
+     * The sum of all cards on this stat.
      *
-     * <p>Ohne die Grenzenlos-Karte: Deren Schritt ist null, und wer sie
-     * steckt, fragt {@link #unlimited} statt dieser Zahl.
+     * <p>Without the Infinity card: its step is zero, and whoever installs it
+     * asks {@link #unlimited} instead of this number.
      */
     public int value(Stat stat) {
         int sum = 0;
@@ -81,7 +81,7 @@ public record Loadout(List<Upgrade> installed) {
         return sum;
     }
 
-    /** Hebt eine der Karten die Grenze dieses Werts auf? */
+    /** Does one of the cards lift the limit of this stat? */
     public boolean unlimited(Stat stat) {
         for (Upgrade upgrade : installed) {
             if (upgrade instanceof Card card && card.stat() == stat

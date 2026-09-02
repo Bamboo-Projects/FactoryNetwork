@@ -8,7 +8,7 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
-/** Der Rezepttyp der Presse. */
+/** The recipe type of the press. */
 public final class FnRecipes {
 
     private static final DeferredRegister<RecipeType<?>> TYPES =
@@ -26,10 +26,10 @@ public final class FnRecipes {
             });
 
     /**
-     * Zwei verschränkte Hälften mit gemeinsamer Nummer.
+     * Two entangled halves with a shared number.
      *
-     * <p>Ein eigenes Rezept, weil das Ergebnis bei jedem Bau ein anderes ist:
-     * Zwei Paare dürfen sich nicht kennen.
+     * <p>Its own recipe, because the result is a different one on every craft:
+     * two pairs must not know each other.
      */
     public static final DeferredHolder<RecipeSerializer<?>,
             net.minecraft.world.item.crafting.SimpleCraftingRecipeSerializer<

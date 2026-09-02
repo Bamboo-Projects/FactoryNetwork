@@ -13,39 +13,39 @@ import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Unter welchem Schlüssel ein Gegenstand im Lager liegt.
+ * Under which key an item sits in storage.
  *
- * <p><b>Eine Registry-Kennung sagt, was etwas ist, aber nicht, welches.</b>
- * Zwei Spitzhacken sind dasselbe Item und trotzdem verschiedene Dinge, sobald
- * eine davon einen Namen trägt, verzaubert oder halb verbraucht ist. Bis zum
- * 28.08. führte das Lager nur die Kennung — und alles andere fiel beim
- * Einlagern weg, ohne dass es jemand merkte.
+ * <p><b>A registry id says what something is, but not which one.</b> Two
+ * pickaxes are the same item and yet different things once one of them
+ * carries a name, is enchanted or half-used. Until 28 Aug the store held
+ * only the id — and everything else fell away on insertion, without anyone
+ * noticing.
  *
- * <p>Abgeschaut bei AE2s {@code AEItemKey}. Zwei Eigenschaften daran sind
- * kein Zufall:
+ * <p>Borrowed from AE2's {@code AEItemKey}. Two of its properties are no
+ * accident:
  *
  * <ol>
- *   <li><b>Der Stapel ist privat und immer eine Kopie.</b> Ein Schlüssel,
- *       dessen Hash sich ändert, während er in einer Map liegt, macht seinen
- *       Bestand unauffindbar: Er ist da und wird nie wieder gefunden.</li>
- *   <li><b>Die Stapelgrenze steht am Schlüssel</b>, nicht am Item. Die
- *       Komponente {@code MAX_STACK_SIZE} kann sie ändern, und das Entnehmen
- *       im Terminal rechnet damit.</li>
+ *   <li><b>The stack is private and always a copy.</b> A key whose hash
+ *       changes while it sits in a map makes its holdings unfindable: it is
+ *       there and is never found again.</li>
+ *   <li><b>The stack limit sits on the key</b>, not on the item. The
+ *       {@code MAX_STACK_SIZE} component can change it, and extracting in the
+ *       terminal reckons with that.</li>
  * </ol>
  *
- * <p>Die Menge gehört <b>nicht</b> dazu. Ein Schlüssel sagt, was etwas ist;
- * wie viel davon daliegt, steht daneben — sonst wären drei Eisen und fünf
- * Eisen zwei Einträge.
+ * <p>The amount does <b>not</b> belong to it. A key says what something is;
+ * how much of it sits there stands alongside — otherwise three iron and five
+ * iron would be two entries.
  */
 public final class ItemKey {
 
     /**
-     * Wie ein Schlüssel auf der Platte steht.
+     * How a key is stored on disk.
      *
-     * <p>Das Feld {@code components} ist <b>optional</b>: Ein Eintrag ohne
-     * es ist ein Gegenstand ohne eigene Daten — genau das, was in jeder
-     * heute bestehenden Zelle steht. Alte Zellen bleiben damit lesbar, ohne
-     * dass irgendwo ein Migrationslauf nötig wäre.
+     * <p>The field {@code components} is <b>optional</b>: an entry without it
+     * is an item without its own data — exactly what sits in every cell that
+     * exists today. Old cells stay readable that way, without a migration
+     * pass being needed anywhere.
      */
     public static final MapCodec<ItemKey> MAP_CODEC = RecordCodecBuilder.mapCodec(
             builder -> builder.group(
@@ -77,21 +77,21 @@ public final class ItemKey {
     }
 
     /**
-     * Der Schlüssel zu diesem Stapel, oder {@code null} für einen leeren.
+     * The key to this stack, or {@code null} for an empty one.
      *
-     * <p>Der Stapel wird kopiert — was der Aufrufer danach mit seinem macht,
-     * geht den Schlüssel nichts mehr an.
+     * <p>The stack is copied — what the caller does with theirs afterwards
+     * is no longer any concern of the key.
      */
     public static @Nullable ItemKey of(ItemStack stack) {
         return stack.isEmpty() ? null : new ItemKey(stack.copyWithCount(1));
     }
 
-    /** Ein Schlüssel ohne eigene Daten — der Weg, auf dem alte Zellen lesen. */
+    /** A key without its own data — the path by which old cells read. */
     public static ItemKey bare(Item item) {
         return new ItemKey(new ItemStack(item));
     }
 
-    /** Aus Kennung und Daten zusammengesetzt, wie es auf der Platte steht. */
+    /** Assembled from id and data, as it is stored on disk. */
     public static ItemKey of(Item item, DataComponentPatch components) {
         return new ItemKey(new ItemStack(item.builtInRegistryHolder(), 1, components));
     }
@@ -100,26 +100,26 @@ public final class ItemKey {
         return stack.getItem();
     }
 
-    /** Wie viele davon auf einen Stapel gehen. */
+    /** How many of these go onto one stack. */
     public int maxStackSize() {
         return maxStackSize;
     }
 
-    /** Was diesen Gegenstand von einem frisch gebauten unterscheidet. */
+    /** What sets this item apart from a freshly built one. */
     public net.minecraft.core.component.DataComponentPatch components() {
         return stack.getComponentsPatch();
     }
 
-    /** Trägt dieser Gegenstand überhaupt eigene Daten? */
+    /** Does this item carry any data of its own at all? */
     public boolean isBare() {
         return stack.isComponentsPatchEmpty();
     }
 
     /**
-     * Ein echter Stapel daraus, in dieser Menge.
+     * A real stack from it, in this amount.
      *
-     * <p>Immer neu gebaut: Wer den zurückgegebenen Stapel ändert, darf damit
-     * nicht den Schlüssel ändern.
+     * <p>Always built anew: whoever changes the returned stack must not
+     * thereby change the key.
      */
     public ItemStack toStack(int count) {
         return stack.copyWithCount(count);
