@@ -205,6 +205,20 @@ final class WorldSurfaceImpl implements WorldSurface {
 
     // ---- Ende -------------------------------------------------------------------
 
+    /**
+     * Wohin ein Strahl auf dieser Fläche zeigt.
+     *
+     * @return {@code {pixelX, pixelY, entfernung}} oder {@code null}, wenn er
+     *         sie nicht trifft; nur eine sichtbare, lebende Fläche trifft
+     */
+    double[] pick(double ox, double oy, double oz, double dx, double dy, double dz) {
+        if (!visible || !alive()) {
+            return null;
+        }
+        return SurfacePicking.hit(x, y, z, yaw, pitch, width, height,
+                surface.width(), surface.height(), ox, oy, oz, dx, dy, dz);
+    }
+
     @Override
     public boolean alive() {
         return !closed && surface.alive();

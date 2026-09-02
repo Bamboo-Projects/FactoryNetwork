@@ -18,13 +18,14 @@ import org.slf4j.LoggerFactory;
  *
  * <p>{@code /fnweb welt} stellt sie hin, {@code -Dfn.world=true} tut das von
  * selbst, sobald die Welt steht, und schreibt jede Sekunde, ob sie lebt. Die
- * Seite ist die Startseite der Tafel: Ihr Zähler im Bild beweist, dass sie
- * malt.
+ * Seite ist das anklickbare Schnellmenü: Wer es anschaut und rechtsklickt,
+ * wählt einen Eintrag, und die Wahl steht als „Weltfläche meldet:" im
+ * Protokoll — der Beweis, dass Zeigen, Klicken und der Rückweg zusammenspielen.
  */
 public final class WorldSurfaceDemo {
 
     private static final Logger LOG = LoggerFactory.getLogger("FactoryNetwork/WorldProof");
-    private static final String PAGE = "assets/factorynetwork/web/panel/start.html";
+    private static final String PAGE = "assets/factorynetwork/web/overlay/menu.html";
     private static final boolean PROOF = Boolean.getBoolean("fn.world");
     private static final int SETTLE_TICKS = 60;
     private static final int REPORT_EVERY = 20;
@@ -51,7 +52,7 @@ public final class WorldSurfaceDemo {
         if (player == null) {
             return null;
         }
-        String url = WebPage.unpack(PAGE, "panel-start.html");
+        String url = WebPage.unpack(PAGE, "welt-menu.html");
         if (url == null) {
             return null;
         }
@@ -64,6 +65,9 @@ public final class WorldSurfaceDemo {
                 .named("Welt-Nachweis")
                 .visibility(BrowserVisibility.NEARBY);
         surface = FnWeb.openInWorld(spec, at.x, at.y, at.z, yaw, 2.0f, 1.5f);
+        if (surface != null) {
+            surface.surface().onMessage(message -> LOG.info("Weltfläche meldet: {}", message));
+        }
         return surface;
     }
 

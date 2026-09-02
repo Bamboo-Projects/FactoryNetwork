@@ -40,8 +40,26 @@ public final class FnClient {
         dev.devpanda.factorynetwork.client.panel.WebPanels.tick();
         dev.devpanda.factorynetwork.web.api.Overlays.tick();
         dev.devpanda.factorynetwork.web.api.WorldSurfaces.tick();
+        WorldPointer.tick();
         OverlayProof.tick();
         WorldSurfaceDemo.tick();
+    }
+
+    /**
+     * Rechtsklick auf ein Display in der Welt: dorthin klicken, wohin das
+     * Fadenkreuz zeigt.
+     *
+     * <p>Trifft der Blick eine Fläche, bekommt sie den Klick, und der Griff
+     * des Spielers unterbleibt — sonst schlüge er neben dem Display in die
+     * Luft. Trifft er keine, läuft alles wie immer.
+     */
+    @SubscribeEvent
+    public static void clickWorldSurface(
+            net.neoforged.neoforge.client.event.InputEvent.InteractionKeyMappingTriggered event) {
+        if (event.isUseItem() && WorldPointer.click()) {
+            event.setSwingHand(false);
+            event.setCanceled(true);
+        }
     }
 
     /** Overlays über dem Bild — nach allem, was Minecraft dort malt. */

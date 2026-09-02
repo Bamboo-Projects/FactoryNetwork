@@ -74,4 +74,33 @@ public final class WorldSurfaces {
     public static int count() {
         return surfaces.size();
     }
+
+    /**
+     * Welche Fläche ein Strahl zuerst trifft, und wo.
+     *
+     * <p>Die Kamera als drei Zahlen, die Blickrichtung als drei — kein
+     * Weltklasse. Getroffen wird die nächste innerhalb von {@code maxDistance}
+     * Blöcken.
+     *
+     * @return der Treffer oder {@code null}
+     */
+    public static Pick pick(double camX, double camY, double camZ,
+                            double dirX, double dirY, double dirZ, double maxDistance) {
+        Pick best = null;
+        for (WorldSurfaceImpl surface : surfaces) {
+            double[] hit = surface.pick(camX, camY, camZ, dirX, dirY, dirZ);
+            if (hit == null || hit[2] > maxDistance) {
+                continue;
+            }
+            if (best == null || hit[2] < best.distance()) {
+                best = new Pick(surface.surface(), (int) Math.round(hit[0]),
+                        (int) Math.round(hit[1]), hit[2]);
+            }
+        }
+        return best;
+    }
+
+    /** Ein Treffer: welche Fläche, welcher Pixel, wie weit. */
+    public record Pick(WebSurface surface, int x, int y, double distance) {
+    }
 }
