@@ -1,18 +1,20 @@
-# Die Trennung: BambooCEF wird eine eigene Mod
+# Die Trennung: die Runtime wird eine eigene Mod (Repo BambooCEFMC)
 
 Festgelegt am 2. September 2026. Die CEF/Web-Runtime wird eine eigenständige
-NeoForge-Mod **BambooCEF** (Mod-Id `bamboocef`), eigenes Projekt/Jar;
+NeoForge-Mod im Repo **BambooCEFMC** (Mod-Id `bamboocef`, In-Game-Name
+BambooCEF), eigenes Projekt/Jar;
 FactoryNetwork hängt als Abhängigkeit daran und ist nur noch ein Nutzer der
 Schnittstelle.
 
-Nicht verwechseln mit `D:\Projekte\BambooCEF` — das ist der Unity/.NET-CEF-Fork
-der BambooEngine. Die Minecraft-Mods leben unter `D:\Projekte\MinecraftMods\`.
+Der Name ist plattformbewusst: BambooCEF ist die Familie, `BambooCEFMC` die
+Minecraft-Lib, später BambooCEFUnity / BambooCEFUnreal. Nicht verwechseln mit
+`D:\Projekte\BambooCEF` — dem Unity/.NET-CEF-Fork der BambooEngine. Die Minecraft-Mods leben unter `D:\Projekte\MinecraftMods\`.
 
 ## Zielbild
 
 ```
 D:\Projekte\MinecraftMods\
-  BambooCEF\        bamboocef  — API, Runtime, WebPanel-Block, Runtime-Verteilung
+  BambooCEFMC\      bamboocef  — API, Runtime, WebPanel-Block, Runtime-Verteilung
   FactoryNetwork\   factorynetwork — Fabrik, Sprache, Editor, Displays; hängt an bamboocef
 ```
 
