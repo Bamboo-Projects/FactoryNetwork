@@ -126,8 +126,9 @@ public final class WebDevTools {
     /**
      * Der Name aus dem Fragment, oder leer.
      *
-     * <p>Das Fragment schreibt {@code WebPanels} beim Öffnen einer Fläche.
-     * Eine Seite ohne Fragment ist keine Fläche — der Editor etwa.
+     * <p>Eine Fläche hängt beim Öffnen {@code #fn-panel=<name>} an ihre
+     * Adresse; daraus kommt der Name. Eine Seite ohne Fragment ist keine
+     * benannte Fläche — der Editor etwa.
      */
     private static String panelName(String url) {
         int at = url.indexOf("#fn-panel=");

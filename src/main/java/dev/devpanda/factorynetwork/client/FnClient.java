@@ -34,10 +34,6 @@ public final class FnClient {
         WebProofChain.tick();
         // Die Messung zuletzt, und nur auf Ansage: -Dfn.benchmark=true
         dev.devpanda.factorynetwork.web.runtime.WebBenchmark.tick();
-        // Und die Flächen in der Welt räumen auf, was niemand mehr ansieht.
-        // Hier und nicht im Renderer: Wer nicht gezeichnet wird, meldet sich
-        // auch nicht — genau das ist die Information.
-        dev.devpanda.factorynetwork.client.panel.WebPanels.tick();
         dev.devpanda.factorynetwork.web.api.Overlays.tick();
         dev.devpanda.factorynetwork.web.api.WorldSurfaces.tick();
         WorldPointer.tick();
@@ -151,7 +147,6 @@ public final class FnClient {
             net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingOut event) {
         dev.devpanda.factorynetwork.web.api.Overlays.closeAll();
         dev.devpanda.factorynetwork.web.api.WorldSurfaces.closeAll();
-        dev.devpanda.factorynetwork.client.panel.WebPanels.closeAll();
         dev.devpanda.factorynetwork.web.BrowserManager.closeAll();
     }
 
@@ -167,7 +162,6 @@ public final class FnClient {
     public static void shutDownWebRuntime(
             net.neoforged.neoforge.event.GameShuttingDownEvent event) {
         dev.devpanda.factorynetwork.web.api.WorldSurfaces.closeAll();
-        dev.devpanda.factorynetwork.client.panel.WebPanels.closeAll();
         dev.devpanda.factorynetwork.web.WebRuntime.shutdown();
     }
 
@@ -192,9 +186,6 @@ public final class FnClient {
         event.registerBlockEntityRenderer(
                 dev.devpanda.factorynetwork.registry.FnBlockEntities.DISPLAY.get(),
                 dev.devpanda.factorynetwork.client.render.DisplayRenderer::new);
-        event.registerBlockEntityRenderer(
-                dev.devpanda.factorynetwork.registry.FnBlockEntities.WEB_PANEL.get(),
-                dev.devpanda.factorynetwork.client.render.WebPanelRenderer::new);
         event.registerBlockEntityRenderer(
                 dev.devpanda.factorynetwork.registry.FnBlockEntities.ROUTER.get(),
                 dev.devpanda.factorynetwork.client.render.RouterRenderer::new);

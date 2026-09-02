@@ -179,18 +179,6 @@ public final class FnBlocks {
                     .noOcclusion()
                     .lightLevel(state -> 5)));
 
-    /** Zeigt an der Wand eine Seite — was darauf steht, entscheidet der Spieler. */
-    public static final DeferredBlock<Block> WEB_PANEL = BLOCKS.register("web_panel",
-            () -> new dev.devpanda.factorynetwork.block.WebPanelBlock(
-                    BlockBehaviour.Properties.of()
-                            .mapColor(MapColor.COLOR_BLACK)
-                            .strength(1.5F)
-                            .sound(SoundType.METAL)
-                            .noOcclusion()
-                            // Eine Seite leuchtet von selbst; der Block soll
-                            // im Dunkeln nicht schwarz vor der Wand hängen.
-                            .lightLevel(state -> 7)));
-
     /**
      * Von hier aus funkt das Netz.
      *

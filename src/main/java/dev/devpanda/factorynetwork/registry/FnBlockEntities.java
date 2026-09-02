@@ -90,13 +90,6 @@ public final class FnBlockEntities {
                     .of(DisplayBlockEntity::new, FnBlocks.DISPLAY.get())
                     .build(null));
 
-    public static final DeferredHolder<BlockEntityType<?>,
-            BlockEntityType<dev.devpanda.factorynetwork.block.entity.WebPanelBlockEntity>>
-            WEB_PANEL = BLOCK_ENTITIES.register("web_panel", () -> BlockEntityType.Builder
-                    .of(dev.devpanda.factorynetwork.block.entity.WebPanelBlockEntity::new,
-                            FnBlocks.WEB_PANEL.get())
-                    .build(null));
-
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<TerminalBlockEntity>> TERMINAL =
             BLOCK_ENTITIES.register("terminal", () -> BlockEntityType.Builder
                     .of(TerminalBlockEntity::new, FnBlocks.TERMINAL.get())
