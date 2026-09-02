@@ -7,17 +7,17 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Die Grenzen für Nutzercode, und was ohne geladene Konfiguration gilt.
+ * The limits for user code, and what applies without a loaded configuration.
  *
- * <p><b>Der zweite Fall ist der wichtigere.</b> Ein Einheitstest lädt keine
- * Konfigurationsdatei, ein Datengenerator auch nicht, und ein Wert, der dann
- * wirft, macht aus einer Einstellung einen Absturz an Stellen, die mit
- * Einstellungen nichts zu tun haben.
+ * <p><b>The second case is the more important one.</b> A unit test loads no
+ * configuration file, and neither does a data generator, and a value that then
+ * throws turns a setting into a crash in places that have nothing to do with
+ * settings.
  */
 class FnConfigTest {
 
     @Test
-    @DisplayName("Ohne geladene Konfiguration gelten die Vorgaben")
+    @DisplayName("Without a loaded configuration the defaults apply")
     void withoutAloadedConfigTheDefaultsApply() {
         assertEquals(FnConfig.DEFAULT_STEP_BUDGET, FnConfig.stepBudget());
         assertEquals(FnConfig.DEFAULT_NETWORK_NODES, FnConfig.networkNodes());
@@ -26,16 +26,16 @@ class FnConfigTest {
     }
 
     @Test
-    @DisplayName("Die Vorgaben sind die Zahlen, die vorher im Code standen")
+    @DisplayName("The defaults are the numbers that used to be in the code")
     void thedefaultsAreTheNumbersThatUsedToBeInTheCode() {
-        // Eine Konfiguration darf das Spiel nicht nebenbei ändern: Wer nichts
-        // einstellt, bekommt genau das, was die Mod vorher tat.
+        // A configuration must not change the game as a side effect: whoever
+        // sets nothing gets exactly what the mod did before.
         assertEquals(10_000, FnConfig.DEFAULT_STEP_BUDGET);
         assertEquals(4_096, FnConfig.DEFAULT_NETWORK_NODES);
     }
 
     @Test
-    @DisplayName("Es gibt eine Serverkonfiguration")
+    @DisplayName("There is a server configuration")
     void thereIsAserverConfig() {
         assertTrue(FnConfig.SERVER_SPEC != null, "die Angabe fehlt");
     }

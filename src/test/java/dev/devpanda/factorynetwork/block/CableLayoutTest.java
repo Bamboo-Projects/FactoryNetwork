@@ -14,12 +14,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Wacht darüber, dass Modelle und Trefferflächen dieselben Zahlen tragen.
+ * Watches that models and hitboxes carry the same numbers.
  *
- * <p>Minecraft hält beides getrennt: Das Modell steht in JSON, die
- * Trefferfläche in Java. Laufen sie auseinander, greift der Spieler neben das,
- * was er sieht — ein Fehler, den man im Spiel spürt, aber schwer benennen
- * kann. Deshalb liest dieser Test die erzeugten Modelldateien.
+ * <p>Minecraft keeps the two apart: the model lives in JSON, the hitbox in
+ * Java. If they drift apart, the player grabs next to what he sees — an error
+ * you feel in the game but can hardly name. That is why this test reads the
+ * generated model files.
  */
 class CableLayoutTest {
 
@@ -33,14 +33,14 @@ class CableLayoutTest {
     }
 
     @Test
-    @DisplayName("Die Stärken sind die von AE2: sechs und zehn Blockpixel")
+    @DisplayName("The thicknesses are those of AE2: six and ten block pixels")
     void sizesMatchAppliedEnergistics() {
         assertEquals(6, CableLayout.THIN);
         assertEquals(10, CableLayout.DENSE);
     }
 
     @Test
-    @DisplayName("Der Mantel sitzt mittig im Block")
+    @DisplayName("The sheath sits centred in the block")
     void mantleIsCentred() {
         assertEquals(5, CableLayout.offset(CableLayout.THIN));
         assertEquals(11, CableLayout.far(CableLayout.THIN));
@@ -49,7 +49,7 @@ class CableLayoutTest {
     }
 
     @Test
-    @DisplayName("Der Kern im Modell hat die Maße aus CableLayout")
+    @DisplayName("The core in the model has the dimensions from CableLayout")
     void coreModelMatchesLayout() throws IOException {
         for (int size : new int[] {CableLayout.THIN, CableLayout.DENSE}) {
             String name = size == CableLayout.THIN ? "cable_core.json" : "dense_cable_core.json";
@@ -64,7 +64,7 @@ class CableLayoutTest {
     }
 
     @Test
-    @DisplayName("Der Arm reicht von der Blockkante bis an den Kern")
+    @DisplayName("The arm reaches from the block edge up to the core")
     void armReachesFromEdgeToCore() throws IOException {
         for (int size : new int[] {CableLayout.THIN, CableLayout.DENSE}) {
             String name = size == CableLayout.THIN ? "cable_arm.json" : "dense_cable_arm.json";
@@ -77,29 +77,29 @@ class CableLayoutTest {
     }
 
     /**
-     * Die Ausrichtung der Textur ist der Fehler, der im Spiel als Wellblech
-     * auffiel: Alle Flächen hatten denselben Ausschnitt.
+     * The orientation of the texture is the error that showed up in the game
+     * as corrugated iron: all faces had the same cutout.
      */
     @Test
-    @DisplayName("Längsflächen nehmen den Randbereich der Textur, Stirnflächen die Mitte")
+    @DisplayName("Lengthwise faces take the edge region of the texture, end faces the middle")
     void uvsRunAlongTheCable() throws IOException {
         int lo = CableLayout.offset(CableLayout.THIN);
         int hi = CableLayout.far(CableLayout.THIN);
         String json = read("cable_arm.json");
 
-        // Stirnfläche: in beiden Achsen der Querschnitt.
+        // End face: the cross section in both axes.
         assertTrue(json.contains("\"uv\":[" + lo + "," + lo + "," + hi + "," + hi + "]"),
                 "Die Stirnfläche muss den Querschnitt zeigen");
-        // Seiten: längs über die Tiefe, quer über die Höhe.
+        // Sides: lengthwise over the depth, crosswise over the height.
         assertTrue(json.contains("\"uv\":[0," + lo + "," + lo + "," + hi + "]"),
                 "Die Seitenflächen müssen längs laufen");
-        // Oben und unten: quer über die Breite.
+        // Top and bottom: crosswise over the width.
         assertTrue(json.contains("\"uv\":[" + lo + ",0," + hi + "," + lo + "]"),
                 "Ober- und Unterseite müssen längs laufen");
     }
 
     @Test
-    @DisplayName("Die Blockstate kennt keine Stränge mehr")
+    @DisplayName("The blockstate no longer knows any strands")
     void blockstateHasNoStrands() throws IOException {
         Path file = Path.of("src/main/resources/assets/factorynetwork/blockstates/cable.json");
         String json = Files.readString(file, StandardCharsets.UTF_8);
@@ -112,15 +112,15 @@ class CableLayoutTest {
     }
 
     /**
-     * Die Anschlüsse an den Flächen: zwölf Modelle, dieselben Zahlen.
+     * The connectors on the faces: twelve models, the same numbers.
      *
-     * <p>Hier zahlt sich die doppelte Buchführung aus. {@code CableShapes}
-     * rechnet die Trefferfläche, {@code tools/assets.py} das Modell — beide
-     * mit derselben Formel, aber in zwei Sprachen. Läuft eine der beiden
-     * davon, greift man neben das, was man sieht.
+     * <p>Here the double bookkeeping pays off. {@code CableShapes} computes the
+     * hitbox, {@code tools/assets.py} the model — both with the same formula,
+     * but in two languages. If one of the two runs off, you grab next to what
+     * you see.
      */
     @Test
-    @DisplayName("Platte und Stiel im Modell haben die Maße aus CableLayout")
+    @DisplayName("Plate and stem in the model have the dimensions from CableLayout")
     void partModelsMatchLayout() throws IOException {
         int wide = CableLayout.partOffset();
         for (int size : new int[] {CableLayout.THIN, CableLayout.DENSE}) {
@@ -136,26 +136,27 @@ class CableLayoutTest {
                 assertTrue(json.contains(corner("to", plate, 3)),
                         name + ": die Platte endet woanders als in CableLayout");
 
-                // Platte und Lämpchenring — mehr nicht. Die Strecke zum Kern
-                // deckt der Arm des Kabels ab, und ein Stiel dort wäre ein
-                // zweiter Kasten an derselben Stelle.
+                // Plate and lamp ring — nothing more. The stretch to the core
+                // is covered by the arm of the cable, and a stem there would be
+                // a second box at the same spot.
                 assertEquals(2, elementCount(json),
                         name + ": ein Kasten zu viel oder zu wenig");
             }
         }
     }
 
-    /** Eine Ecke als das, was im Modell steht: {@code "from":[2,2,-0.05]}. */
+    /** A corner as it stands in the model: {@code "from":[2,2,-0.05]}. */
     private static String corner(String key, double[] box, int at) {
         return "\"" + key + "\":[" + number(box[at]) + "," + number(box[at + 1])
                 + "," + number(box[at + 2]) + "]";
     }
 
     /**
-     * Eine Zahl so, wie das Modellskript sie schreibt.
+     * A number the way the model script writes it.
      *
-     * <p>Ganze Zahlen ohne Komma, gebrochene mit — genau das macht Pythons
-     * {@code json.dumps} mit einem {@code int} und einem {@code float}.
+     * <p>Whole numbers without a decimal point, fractional ones with — exactly
+     * what Python's {@code json.dumps} does with an {@code int} and a
+     * {@code float}.
      */
     private static String number(double value) {
         return value == Math.rint(value) ? String.valueOf((int) value)

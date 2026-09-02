@@ -11,22 +11,21 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 /**
- * Was am Netz selbst abzulesen ist.
+ * What can be read off the network itself.
  *
- * <p>`strom.md` §8 nennt `network.power`, und bis heute gab es das nicht:
- * `network` war ein Ziel für Strom und sonst nichts. Wer einen Worker
- * anhalten wollte, solange der Vorrat knapp ist, hatte keine Zahl dafür — der
- * Stand stand nur im Netz-Reiter, und den liest kein Programm.
+ * <p>`strom.md` §8 names `network.power`, and until today that did not exist:
+ * `network` was a target for power and nothing else. Whoever wanted to halt a
+ * worker while the reserve is low had no number for it — the level stood only
+ * in the network tab, and no program reads that.
  *
- * <p><b>Ohne Klammern</b>, anders als {@code crusher_1.energy()}. Der
- * Unterschied ist nicht Geschmack: {@code energy()} ist ein Blick in eine
- * fremde Maschine, der eine Abfrage kostet. Der eigene Vorrat liegt im
- * Controller und ist keine Nachfrage in der Welt — dieselbe Lage wie bei
- * {@code online}.
+ * <p><b>Without parentheses</b>, unlike {@code crusher_1.energy()}. The
+ * difference is not taste: {@code energy()} is a look into a foreign machine
+ * that costs a query. The own reserve lies in the controller and is no query
+ * into the world — the same situation as with {@code online}.
  */
 class NetworkMemberTest {
 
-    /** Eine Welt aus Papier mit einem Stromvorrat. */
+    /** A paper world with a power reserve. */
     private static final class TestHost implements Interpreter.Host {
 
         final List<String> logs = new ArrayList<>();
@@ -87,7 +86,7 @@ class NetworkMemberTest {
     }
 
     @Test
-    @DisplayName("network.power ist der Vorrat des Netzes")
+    @DisplayName("network.power is the reserve of the network")
     void networkPowerIsTheStoredEnergy() {
         TestHost host = new TestHost();
         host.stored = 12_000;
@@ -102,7 +101,7 @@ class NetworkMemberTest {
     }
 
     @Test
-    @DisplayName("network.capacity ist, was hineinpasst")
+    @DisplayName("network.capacity is what fits in")
     void networkCapacityIsWhatFits() {
         TestHost host = new TestHost();
         host.capacity = 40_000;
@@ -117,10 +116,10 @@ class NetworkMemberTest {
     }
 
     @Test
-    @DisplayName("Beides zusammen ergibt einen Anteil")
+    @DisplayName("Both together make a share")
     void bothTogetherMakeAshare() {
-        // Der Grund, warum capacity mitkommt: Eine Zahl ohne Bezugsgröße
-        // lässt sich nicht anzeigen, und progress() will einen Anteil.
+        // The reason capacity comes along: a number without a reference value
+        // cannot be displayed, and progress() wants a share.
         TestHost host = new TestHost();
         host.stored = 10_000;
         host.capacity = 40_000;
@@ -135,11 +134,11 @@ class NetworkMemberTest {
     }
 
     @Test
-    @DisplayName("Der Anteil für einen Balken braucht eine Kommazahl")
+    @DisplayName("The share for a bar needs a decimal number")
     void theShareForAbarNeedsAdecimal() {
-        // Das Handbuch zeigt „network.power * 1.0 / network.capacity", und
-        // das * 1.0 ist keine Zierde: Ohne es teilt eine ganze Zahl durch
-        // eine ganze, und der Balken stünde immer auf null.
+        // The manual shows „network.power * 1.0 / network.capacity", and
+        // the * 1.0 is no ornament: without it a whole number divides by a
+        // whole one, and the bar would always stand at zero.
         TestHost host = new TestHost();
         host.stored = 10_000;
         host.capacity = 40_000;
@@ -157,7 +156,7 @@ class NetworkMemberTest {
     }
 
     @Test
-    @DisplayName("Ein anderes Mitglied am Netz sagt, was es gibt")
+    @DisplayName("Another member on the network says what exists")
     void anotherMemberSaysWhatExists() {
         TestHost host = new TestHost();
         Interpreter interpreter = interpreterFor("""
@@ -174,11 +173,11 @@ class NetworkMemberTest {
     }
 
     @Test
-    @DisplayName("Ohne Welt wird der Vorrat nicht erfunden")
+    @DisplayName("Without a world the reserve is not invented")
     void withoutAworldTheReserveIsNotInvented() {
-        // Dieselbe Haltung wie bei countIn: Ein Host ohne Welt kann nicht
-        // nachsehen, und eine erfundene Null wäre eine Antwort auf eine Frage,
-        // die er nicht beantworten kann.
+        // The same stance as with countIn: a host without a world cannot look
+        // it up, and an invented zero would be an answer to a question it
+        // cannot answer.
         Interpreter.Host bare = new Interpreter.Host() {
             @Override
             public long move(Value amount, Value from, Value to) {

@@ -12,17 +12,17 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Ein Projekt aus mehreren Dateien.
+ * A project made of several files.
  *
- * <p>Die wichtigste Prüfung hier ist die mit der Zeilennummer: Würde der
- * Übersetzer den zusammengehängten Text bekommen, zeigte jeder Fehler ab der
- * zweiten Datei auf eine Zeile, die es dort nicht gibt — und der Editor
- * markierte die falsche.
+ * <p>The most important check here is the one with the line number: if the
+ * compiler were handed the concatenated text, every error from the second
+ * file on would point to a line that does not exist there — and the editor
+ * would mark the wrong one.
  */
 class ProjectTest {
 
     @Test
-    @DisplayName("Ein Fehler kennt seine Datei und seine Zeile darin")
+    @DisplayName("An error knows its file and its line within it")
     void diagnosticsKnowTheirFile() {
         Project project = new Project(Map.of(
                 "aaa.mf", String.join("\n", "fn eins() {", "    let a = 1", "}"),
@@ -38,7 +38,7 @@ class ProjectTest {
     }
 
     @Test
-    @DisplayName("Alle Dateien teilen einen Namensraum")
+    @DisplayName("All files share one namespace")
     void oneNamespace() {
         Project project = new Project(Map.of(
                 "eins.mf", "fn ruft() {\n    hilfe()\n}",
@@ -50,7 +50,7 @@ class ProjectTest {
     }
 
     @Test
-    @DisplayName("Derselbe Name in zwei Dateien ist ein Fehler, der beide nennt")
+    @DisplayName("The same name in two files is an error that names both")
     void duplicatesAcrossFiles() {
         Project project = new Project(Map.of(
                 "aaa.mf", "fn doppelt() {\n}",
@@ -66,7 +66,7 @@ class ProjectTest {
     }
 
     @Test
-    @DisplayName("Zwei on-Blöcke für dasselbe Ereignis sind erlaubt")
+    @DisplayName("Two on blocks for the same event are allowed")
     void handlersMayRepeat() {
         Project project = new Project(Map.of(
                 "aaa.mf", "on redstone_changed(a, b) {\n}",
@@ -77,40 +77,40 @@ class ProjectTest {
     }
 
     @Test
-    @DisplayName("Die Reihenfolge ist alphabetisch, nicht die des Anlegens")
+    @DisplayName("The order is alphabetical, not that of creation")
     void stableOrder() {
         Project project = Project.of("").with("zzz.mf", "").with("aaa.mf", "");
         assertEquals(List.of("aaa.mf", "main.mf", "zzz.mf"), project.names());
     }
 
     @Test
-    @DisplayName("Dateinamen, die aus dem Ordner herausführen, gibt es nicht")
+    @DisplayName("File names that lead out of the folder do not exist")
     void nameRules() {
         assertTrue(Project.isValidName("worker.mf"));
         assertTrue(Project.isValidName("anzeigen_2.mf"));
         assertFalse(Project.isValidName("../evil.mf"), "kein Weg nach oben");
-        // Ein Pfadtrenner ist seit den Ordnern erlaubt; was er nicht darf,
-        // steht in „Aus dem Ordner heraus führt kein Name".
+        // A path separator has been allowed since folders arrived; what it
+        // may not do is covered in "No name leads out of the folder".
         assertTrue(Project.isValidName("unter/ordner.mf"), "ein Ordner geht");
         assertFalse(Project.isValidName("Gross.mf"), "keine Großbuchstaben");
         assertFalse(Project.isValidName("ohne_endung"), "die Endung gehört dazu");
         assertFalse(Project.isValidName(""), "und leer schon gar nicht");
 
-        // Ein ungültiger Name fällt beim Bauen heraus, statt sich
-        // durchzuschmuggeln.
+        // An invalid name drops out at construction instead of sneaking
+        // through.
         Project project = new Project(Map.of("../evil.mf", "boom", "gut.mf", "ok"));
         assertEquals(List.of("gut.mf"), project.names());
     }
 
     @Test
-    @DisplayName("Ohne Datei gibt es trotzdem eine")
+    @DisplayName("Without a file there is still one")
     void neverEmpty() {
         assertEquals(List.of(Project.MAIN), new Project(Map.of()).names());
         assertEquals(List.of(Project.MAIN),
                 Project.of("x").without(Project.MAIN).names());
     }
     @Test
-    @DisplayName("Umbenennen nimmt den Inhalt mit")
+    @DisplayName("Renaming carries the content along")
     void renameCarriesTheSource() {
         Project project = new Project(Map.of("main.mf", "fn eins() { }",
                 "alt.mf", "fn zwei() { }"));
@@ -121,7 +121,7 @@ class ProjectTest {
     }
 
     @Test
-    @DisplayName("Auf einen belegten oder ungültigen Namen wird nicht umbenannt")
+    @DisplayName("No rename onto a taken or invalid name")
     void renameRefusesTakenAndInvalidNames() {
         Project project = new Project(Map.of("main.mf", "a", "worker.mf", "b"));
 
@@ -135,7 +135,7 @@ class ProjectTest {
     }
 
     @Test
-    @DisplayName("Der freie Name zählt eine Ziffer weiter, statt sie anzuhängen")
+    @DisplayName("The free name counts a digit up instead of appending one")
     void freeNameCountsUpInsteadOfAppending() {
         Project project = new Project(Map.of("main.mf", ""));
         assertEquals("worker2.mf", project.freeNameLike("worker.mf"));
@@ -145,10 +145,10 @@ class ProjectTest {
                 "aus worker2 wird worker3 und nicht worker22");
     }
 
-    // ---- Ordner ------------------------------------------------------------
+    // ---- Folders -----------------------------------------------------------
 
     @Test
-    @DisplayName("Ein Name darf einen Ordner nennen")
+    @DisplayName("A name may name a folder")
     void anameMayNameAfolder() {
         assertTrue(Project.isValidName("erz/brecher.mf"), "ein Ordner");
         assertTrue(Project.isValidName("erz/eisen/schmelzen.mf"), "und zwei");
@@ -156,11 +156,11 @@ class ProjectTest {
     }
 
     @Test
-    @DisplayName("Aus dem Ordner heraus führt kein Name")
+    @DisplayName("No name leads out of the folder")
     void nonameLeadsOutOfTheFolder() {
-        // Der Punkt steht nicht im Alphabet eines Abschnitts. Damit ist „..“
-        // nicht verboten, sondern unmöglich — eine Verbotsliste hätte man
-        // umgehen können.
+        // The dot is not in the alphabet of a segment. That makes ".." not
+        // forbidden but impossible — a deny list could have been worked
+        // around.
         assertFalse(Project.isValidName("../weg.mf"), "hinaus");
         assertFalse(Project.isValidName("erz/../../weg.mf"), "und hinaus über Umwege");
         assertFalse(Project.isValidName("/weg.mf"), "von der Wurzel");
@@ -169,7 +169,7 @@ class ProjectTest {
     }
 
     @Test
-    @DisplayName("Ein Abschnitt ohne Inhalt ist keiner")
+    @DisplayName("A segment without content is none")
     void anemptySegmentIsNone() {
         assertFalse(Project.isValidName("erz//brecher.mf"), "zwei Schrägstriche");
         assertFalse(Project.isValidName("erz/.mf"), "ein Ordner ohne Datei");
@@ -178,17 +178,17 @@ class ProjectTest {
     }
 
     @Test
-    @DisplayName("Ein Pfad hat eine Obergrenze")
+    @DisplayName("A path has an upper bound")
     void apathHasAnupperBound() {
-        // Vorher lag sie bei fünfunddreißig Zeichen, weil ein Name aus einem
-        // Abschnitt bestand. Ohne eine neue wüchse jedes Paket und jeder
-        // Dateipfad ins Offene.
+        // It used to be thirty-five characters, because a name consisted of
+        // a single segment. Without a new one every packet and every file
+        // path would grow without limit.
         String tief = "a/".repeat(60) + "x.mf";
         assertFalse(Project.isValidName(tief), "zu lang: " + tief.length() + " Zeichen");
     }
 
     @Test
-    @DisplayName("Der freie Name zählt im letzten Abschnitt weiter")
+    @DisplayName("The free name counts up in the last segment")
     void thefreeNameCountsUpInTheLastSegment() {
         Project project = new Project(Map.of("erz/brecher.mf", ""));
 
@@ -197,11 +197,11 @@ class ProjectTest {
     }
 
     @Test
-    @DisplayName("Ein Ordner steht vor dem Namen, der so anfängt")
+    @DisplayName("A folder comes before the name that starts that way")
     void afolderComesBeforeThenameThatStartsThatWay() {
-        // Der Schrägstrich sortiert vor Ziffern und Buchstaben, also stehen
-        // die Dateien eines Ordners von selbst beieinander. Das ist der
-        // Grund, warum die Liste im Spiel flach bleiben darf.
+        // The slash sorts before digits and letters, so the files of a folder
+        // end up next to each other on their own. That is the reason the list
+        // in game may stay flat.
         Project project = new Project(Map.of(
                 "erz2.mf", "", "erz/brecher.mf", "", "main.mf", ""));
 
@@ -209,7 +209,7 @@ class ProjectTest {
     }
 
     @Test
-    @DisplayName("Ein Fehler in einer Datei im Ordner nennt ihren ganzen Pfad")
+    @DisplayName("An error in a file in a folder names its whole path")
     void anerrorInAfolderNamesItsWholePath() {
         Project project = new Project(Map.of("erz/brecher.mf", "worker {"));
 

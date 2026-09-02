@@ -10,13 +10,13 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Die Regel, die das ganze Ausbausystem trägt: Ein Modul gibt eine
- * Fähigkeit, eine Karte hebt einen Wert.
+ * The rule that carries the whole upgrade system: a module gives an ability,
+ * a card raises a value.
  */
 class LoadoutTest {
 
     @Test
-    @DisplayName("Ohne Bestückung kann ein Gerät nichts und hat keinen Wert")
+    @DisplayName("Without a loadout a device can do nothing and has no value")
     void emptyMeansNothing() {
         Loadout empty = Loadout.of(List.of());
         assertFalse(empty.has(Ability.WIRELESS));
@@ -25,16 +25,16 @@ class LoadoutTest {
     }
 
     @Test
-    @DisplayName("Ein Modul schaltet seine Fähigkeit frei und sonst keine")
+    @DisplayName("A module unlocks its ability and no other")
     void aModuleUnlocksItsOwnAbility() {
         Loadout one = Loadout.of(List.of(Ability.WIRELESS));
         assertTrue(one.has(Ability.WIRELESS));
-        // Und es hebt keinen Wert: Dafür sind Karten da.
+        // And it raises no value: that is what cards are for.
         assertEquals(0, one.value(Stat.RANGE));
     }
 
     @Test
-    @DisplayName("Gleiche Karten addieren sich")
+    @DisplayName("Equal cards add up")
     void equalCardsAddUp() {
         assertEquals(8, Loadout.of(List.of(Card.RANGE)).value(Stat.RANGE));
         assertEquals(24, Loadout.of(
@@ -42,47 +42,46 @@ class LoadoutTest {
     }
 
     @Test
-    @DisplayName("Die Grenzenlos-Karte hebt die Grenze auf, statt sie zu heben")
+    @DisplayName("The Infinity card removes the limit instead of raising it")
     void infinityLiftsTheLimit() {
         Loadout endgame = Loadout.of(List.of(Card.RANGE, Card.INFINITY));
         assertTrue(endgame.unlimited(Stat.RANGE));
-        // Der Zahlenwert bleibt daneben stehen und wird nicht gebraucht —
-        // wer unlimited fragt, fragt value nicht mehr.
+        // The numeric value stays beside it and is not needed — whoever asks
+        // unlimited no longer asks value.
         assertEquals(8, endgame.value(Stat.RANGE));
     }
 
     @Test
-    @DisplayName("Jede Karte wirkt in genau einem Punkt")
+    @DisplayName("Every card acts on exactly one stat")
     void everyCardHitsExactlyOneStat() {
-        // Ohne diese Probe wächst hier über die Zeit ein zweites Regelwerk:
-        // eine Karte, die drei Dinge zugleich tut, und niemand weiß mehr,
-        // was ein Steckplatz kostet.
+        // Without this check a second set of rules grows here over time: a
+        // card that does three things at once, and no one knows any more what
+        // a slot costs.
         for (Card card : Card.values()) {
             assertTrue(card.stat() != null, card + " hebt keinen Wert");
         }
     }
 
     @Test
-    @DisplayName("Ein Stapel auf einem Platz zählt Stück für Stück")
+    @DisplayName("A stack in one slot counts piece by piece")
     void aStackCountsEveryPiece() {
-        // Drei Reichweitenkarten auf einem Steckplatz wirken wie drei Karten.
-        // Das ist die Folge daraus, dass gleiche Karten sich addieren — und
-        // die einzige Regel des Behälters, die sich prüfen lässt, ohne
-        // Minecraft hochzufahren.
+        // Three Range cards in one slot act like three cards. That is the
+        // consequence of equal cards adding up — and the only rule of the
+        // container that can be checked without spinning up Minecraft.
         Loadout stacked = Loadout.ofCounts(java.util.Map.of(Card.RANGE, 3));
         assertEquals(24, stacked.value(Stat.RANGE));
         assertEquals(3, stacked.installed().size());
     }
 
     @Test
-    @DisplayName("Ein leerer Stapel trägt nichts bei")
+    @DisplayName("An empty stack contributes nothing")
     void anEmptyStackAddsNothing() {
         assertEquals(0, Loadout.ofCounts(java.util.Map.of(Card.RANGE, 0))
                 .value(Stat.RANGE));
     }
 
     @Test
-    @DisplayName("Und man kann zählen, wie oft einer steckt")
+    @DisplayName("And one can count how often one is inserted")
     void countingIsPossible() {
         Loadout mixed = Loadout.of(List.of(Card.RANGE, Card.RANGE, Ability.WIRELESS));
         assertEquals(2, mixed.count(Card.RANGE));
@@ -91,7 +90,7 @@ class LoadoutTest {
     }
 
     @Test
-    @DisplayName("Module und Karten teilen sich die Steckplätze")
+    @DisplayName("Modules and cards share the slots")
     void bothKindsShareTheSlots() {
         Loadout mixed = Loadout.of(List.of(Ability.WIRELESS, Card.RANGE, Card.RANGE));
         assertTrue(mixed.has(Ability.WIRELESS));

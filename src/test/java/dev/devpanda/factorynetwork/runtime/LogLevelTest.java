@@ -15,15 +15,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Die Stufen des Protokolls.
+ * The levels of the log.
  *
- * <p>Ohne Minecraft: Ein Host, der nur mitschreibt, reicht — die Frage ist,
- * ob der Interpreter die richtige Stufe wählt und ob {@code log()} weiter
- * geht.
+ * <p>Without Minecraft: a host that only records is enough — the question is
+ * whether the interpreter picks the right level and whether {@code log()}
+ * still works.
  */
 class LogLevelTest {
 
-    /** Ein Host, der nur zuhört. */
+    /** A host that only listens. */
     private static final class Listener implements Interpreter.Host {
 
         private final List<LogEntry> written = new ArrayList<>();
@@ -82,7 +82,7 @@ class LogLevelTest {
     }
 
     @Test
-    @DisplayName("Jede Stufe kommt als sie selbst an")
+    @DisplayName("Every level arrives as itself")
     void everyLevelArrivesAsItself() {
         List<LogEntry> written = run("""
                 fn test() {
@@ -98,9 +98,9 @@ class LogLevelTest {
     }
 
     @Test
-    @DisplayName("log() schreibt weiter, und zwar als info")
+    @DisplayName("log() still writes, and does so as info")
     void plainLogStillWritesAsInfo() {
-        // Es steht in jedem Programm, das es schon gibt, und in jeder Doku.
+        // It stands in every program that already exists, and in every doc.
         List<LogEntry> written = run("""
                 fn test() {
                     log("Es läuft")
@@ -112,7 +112,7 @@ class LogLevelTest {
     }
 
     @Test
-    @DisplayName("Auch eine Zahl oder ein Gerät lässt sich schreiben")
+    @DisplayName("A number or a device can be written too")
     void numbersAndDevicesCanBeWrittenToo() {
         List<LogEntry> written = run("""
                 fn test() {
@@ -123,9 +123,9 @@ class LogLevelTest {
     }
 
     @Test
-    @DisplayName("Eine Stufe kennt ihre Rangfolge")
+    @DisplayName("A level knows its ranking")
     void levelsKnowTheirOrder() {
-        // Der Filter im Terminal zeigt alles ab einer Stufe.
+        // The filter in the terminal shows everything from a level upward.
         assertTrue(LogLevel.ERROR.atLeast(LogLevel.WARN));
         assertTrue(LogLevel.WARN.atLeast(LogLevel.WARN));
         assertTrue(!LogLevel.INFO.atLeast(LogLevel.WARN));
@@ -133,10 +133,11 @@ class LogLevelTest {
     }
 
     @Test
-    @DisplayName("Eine eigene Funktion namens error wird gemeldet")
+    @DisplayName("An own function named error is reported")
     void anOwnFunctionCalledErrorIsReported() {
-        // Sie wäre nie erreichbar: Der Interpreter prüft die eingebauten
-        // zuerst. Still hinzunehmen hieße, dass ein fn dasteht und nie läuft.
+        // It would never be reachable: the interpreter checks the built-in
+        // ones first. Accepting it silently would mean an fn stands there and
+        // never runs.
         List<Diagnostic> problems = new Project(Map.of("main.mf", """
                 fn error(text) {
                     return text
@@ -148,7 +149,7 @@ class LogLevelTest {
     }
 
     @Test
-    @DisplayName("Ein Eintrag übersteht das Speichern")
+    @DisplayName("An entry survives being saved")
     void anEntrySurvivesBeingWritten() {
         LogEntry entry = new LogEntry(LogLevel.WARN, 1234L, "ofen_import", "Kohle knapp");
         LogEntry gelesen = LogEntry.read(entry.write());

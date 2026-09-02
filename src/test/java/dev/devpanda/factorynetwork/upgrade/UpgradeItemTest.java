@@ -13,10 +13,10 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Jeder Ausbau ist auch ein Gegenstand — mit Modell, Textur und Namen.
+ * Every upgrade is also an item — with model, texture and name.
  *
- * <p>Ein Ausbau, den es in Aufzählung und Rezept gibt, aber nicht im
- * Inventar, fällt erst im Spiel auf, und dort auch nur dem, der ihn baut.
+ * <p>An upgrade that exists in the enumeration and the recipe but not in the
+ * inventory only shows up in the game, and there only to whoever builds it.
  */
 class UpgradeItemTest {
 
@@ -39,7 +39,7 @@ class UpgradeItemTest {
     }
 
     @Test
-    @DisplayName("Zu jedem Ausbau gibt es Textur, Modell und zwei Namen")
+    @DisplayName("For every upgrade there is texture, model and two names")
     void everyUpgradeIsAnItem() throws IOException {
         String german = read(ASSETS.resolve("lang/de_de.json"));
         String english = read(ASSETS.resolve("lang/en_us.json"));
@@ -56,7 +56,7 @@ class UpgradeItemTest {
     }
 
     @Test
-    @DisplayName("Und ein Rezept, sonst kommt niemand daran")
+    @DisplayName("And a recipe, otherwise no one gets to it")
     void everyUpgradeCanBeBuilt() {
         for (Upgrade upgrade : upgrades()) {
             assertTrue(Files.exists(DATA.resolve("recipe/" + upgrade.id() + ".json")),

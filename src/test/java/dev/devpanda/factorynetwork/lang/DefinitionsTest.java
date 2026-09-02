@@ -10,11 +10,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Wo ein Name erklärt wird und wo er sonst noch steht.
+ * Where a name is declared and where else it occurs.
  *
- * <p>Alle Dateien teilen einen Namensraum. Genau deshalb braucht es die
- * Suche: Von der Stelle des Gebrauchs aus ist nicht zu sehen, in welcher
- * Datei die Erklärung liegt.
+ * <p>All files share a single namespace. That is exactly why the search
+ * is needed: from the point of use there is no way to tell which file
+ * holds the declaration.
  */
 class DefinitionsTest {
 
@@ -35,7 +35,7 @@ class DefinitionsTest {
     }
 
     @Test
-    @DisplayName("Eine Gruppe wird in ihrer eigenen Datei gefunden")
+    @DisplayName("A group is found in its own file")
     void findsADeclarationInAnotherFile() {
         var found = Definitions.find(project(), "oefen").orElseThrow();
 
@@ -44,7 +44,7 @@ class DefinitionsTest {
     }
 
     @Test
-    @DisplayName("Eine Funktion wird gefunden")
+    @DisplayName("A function is found")
     void findsAFunction() {
         var found = Definitions.find(project(), "leeren").orElseThrow();
 
@@ -53,7 +53,7 @@ class DefinitionsTest {
     }
 
     @Test
-    @DisplayName("Ein Name, den es nicht gibt, wird nicht erfunden")
+    @DisplayName("A name that does not exist is not invented")
     void unknownNamesAreNotFound() {
         assertTrue(Definitions.find(project(), "gibtsnicht").isEmpty());
         assertTrue(Definitions.find(project(), "").isEmpty());
@@ -61,7 +61,7 @@ class DefinitionsTest {
     }
 
     @Test
-    @DisplayName("Fundstellen stehen in beiden Dateien")
+    @DisplayName("Occurrences appear in both files")
     void referencesSpanTheProject() {
         List<Definitions.Location> places = Definitions.references(project(), "oefen");
 
@@ -71,7 +71,7 @@ class DefinitionsTest {
     }
 
     @Test
-    @DisplayName("Nur ganze Wörter zählen")
+    @DisplayName("Only whole words count")
     void onlyWholeWordsCount() {
         Project project = new Project(Map.of("main.mf", String.join("\n",
                 "worker ofen_1 { }",
@@ -84,7 +84,7 @@ class DefinitionsTest {
     }
 
     @Test
-    @DisplayName("Eine Funktion in einem Multiblock wird mitgefunden")
+    @DisplayName("A function inside a multiblock is found too")
     void functionsInsideAMultiblockCount() {
         Project project = new Project(Map.of("main.mf", String.join("\n",
                 "multiblock ofen {",
@@ -97,7 +97,7 @@ class DefinitionsTest {
     }
 
     @Test
-    @DisplayName("Ein globaler Wert wird an seiner global-Zeile erklärt")
+    @DisplayName("A global value is declared at its global line")
     void aGlobalIsDeclaredAtItsLine() {
         Project project = new Project(Map.of("main.mf", String.join("\n",
                 "global modus = \"tag\"",
@@ -113,7 +113,7 @@ class DefinitionsTest {
     }
 
     @Test
-    @DisplayName("Ein globaler Wert wird auch aus einer anderen Datei gefunden")
+    @DisplayName("A global value is found from another file too")
     void aGlobalIsFoundAcrossFiles() {
         Project project = new Project(Map.of(
                 "werte.mf", "global modus = \"tag\"",

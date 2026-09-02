@@ -16,30 +16,28 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 /**
- * Eine Ressourcenart aus einer Mod, die es nicht gibt.
+ * A resource kind from a mod that does not exist.
  *
- * <p><b>Der Beweis, dass die Registry offen ist.</b> Sie ist am 26.08.
- * entschieden worden: Fremde Mods dürfen die Sprache erweitern. Was das
- * heißt, lässt sich nicht daran ablesen, dass die eigenen drei Arten
- * funktionieren — die taten es vorher auch. Es lässt sich nur an einer
- * <b>vierten</b> ablesen, die nirgends im Kern steht.
+ * <p><b>The proof that the registry is open.</b> It was decided on 26.08.:
+ * foreign mods may extend the language. What that means cannot be read off
+ * the fact that the own three kinds work — they did so before too. It can
+ * only be read off a <b>fourth</b> one that stands nowhere in the core.
  *
- * <p>Diese hier heißt {@code testsource} und ist eine Erfindung dieses
- * Tests. Sie braucht keine Mod: Ihre Schlüssel sind Kennungen als Text, wie
- * bei den Chemikalien, und ihre Auflösung denkt sich zwei Einträge aus. Was
- * geprüft wird, ist alles unterhalb des Übersetzers — der Wert, sein Text,
- * die Platte und der Speicher.
+ * <p>This one here is called {@code testsource} and is an invention of this
+ * test. It needs no mod: its keys are identifiers as text, as with the
+ * chemicals, and its resolution makes up two entries. What is tested is
+ * everything below the compiler — the value, its text, the disk and the
+ * storage.
  *
- * <p>Was hier <b>nicht</b> geprüft wird, ist die zweite Achse: wie eine
- * fremde Art an einer fremden Maschine gelesen und geschrieben wird. Die gibt
- * es noch nicht, und {@code entscheidungen.md} sagt, warum das kein
- * Versäumnis dieser Registry ist.
+ * <p>What is <b>not</b> tested here is the second axis: how a foreign kind is
+ * read and written at a foreign machine. That does not exist yet, and
+ * {@code entscheidungen.md} says why this is no failing of this registry.
  */
 class ForeignResourceKindTest {
 
     private static final String PREFIX = "testsource";
 
-    /** Eine Art, die der Kern nicht kennt. */
+    /** A kind that the core does not know. */
     private static final ResourceKind SOURCE = new ResourceKind() {
 
         @Override
@@ -102,16 +100,16 @@ class ForeignResourceKindTest {
     }
 
     @Test
-    @DisplayName("Die fremde Art steht in der Registry, unter ihrem Präfix")
+    @DisplayName("The foreign kind is in the registry, under its prefix")
     void theforeignKindIsInTheRegistry() {
         assertSame(SOURCE, ResourceKinds.byPrefix(PREFIX));
         assertNotNull(ResourceKinds.byId(SOURCE.id()));
     }
 
     @Test
-    @DisplayName("Ein Wert der fremden Art beschreibt sich selbst")
+    @DisplayName("A value of the foreign kind describes itself")
     void avalueOfTheForeignKindDescribesItself() {
-        // Weder Value noch describe() wissen von dieser Art. Sie fragen sie.
+        // Neither Value nor describe() knows of this kind. They ask it.
         assertEquals("Quelle ars:mana",
                 new Value.Resource(SOURCE, "ars:mana").describe());
         assertEquals("2 Quellen",
@@ -120,17 +118,17 @@ class ForeignResourceKindTest {
     }
 
     @Test
-    @DisplayName("Gemischt geht auch bei einer fremden Art nicht")
+    @DisplayName("Mixing is refused for a foreign kind too")
     void mixingIsRefusedForAforeignKindToo() {
         assertThrows(IllegalArgumentException.class,
                 () -> new Value.Selection(SOURCE, List.of(1), 5));
     }
 
     @Test
-    @DisplayName("Ein wartender Ablauf hält sie unter ihrem eigenen Namen")
+    @DisplayName("A waiting flow keeps it under its own name")
     void awaitingFlowKeepsItUnderItsOwnName() {
-        // Die Namen auf der Platte gehören der Art und nicht dem Codec —
-        // sonst müsste für jede neue eine Zeile dort dazu.
+        // The names on disk belong to the kind and not to the codec —
+        // otherwise every new one would need a line added there.
         CompoundTag single = new CompoundTag();
         single.putString("t", "tsrc");
         single.putString("v", "ars:mana");
@@ -147,20 +145,20 @@ class ForeignResourceKindTest {
     }
 
     @Test
-    @DisplayName("Ohne eigenen Speicher lagert sie nichts, und sagt das")
+    @DisplayName("Without its own store it keeps nothing, and says so")
     void withoutAstoreItKeepsNothing() {
-        // Eine Art darf beweglich sein, ohne lagerbar zu sein. Der Speicher,
-        // der nichts kann, ist die ehrliche Antwort darauf.
+        // A kind may be movable without being storable. The store that can
+        // do nothing is the honest answer to that.
         assertSame(dev.devpanda.factorynetwork.network.ResourceStore.NONE, SOURCE.newStore());
     }
 
     @Test
-    @DisplayName("Ein Programm darf die fremde Art hinschreiben")
+    @DisplayName("A program may write down the foreign kind")
     void aprogramMayWriteTheForeignKind() {
-        // Der eigentliche Beweis: Der Übersetzer kennt „testsource" nicht und
-        // nimmt es trotzdem an — weil er die Registry fragt, statt eine
-        // eingebaute Liste zu haben. Ohne diese Zeile wäre die Registry ein
-        // Innenausbau ohne Tür.
+        // The actual proof: the compiler does not know „testsource" and yet
+        // accepts it — because it asks the registry instead of having a
+        // built-in list. Without this line the registry would be an interior
+        // build-out without a door.
         var result = new dev.devpanda.factorynetwork.lang.Project(
                 java.util.Map.of("main.mf", """
                         fn f() {
@@ -173,11 +171,11 @@ class ForeignResourceKindTest {
     }
 
     @Test
-    @DisplayName("Ohne Maschinenzugriff bewegt sie sich nirgends, und sagt das")
+    @DisplayName("Without machine access it moves nowhere, and says so")
     void withoutMachineAccessItMovesNowhere() {
-        // Die zweite Achse: Wo eine Art im Netz liegt, sagt newStore(); wie
-        // sie an eine fremde Maschine kommt, sagt machine(). Beides darf
-        // fehlen, und beides fehlt dann hörbar statt still.
+        // The second axis: where a kind lies in the network, newStore() says;
+        // how it reaches a foreign machine, machine() says. Both may be
+        // missing, and both are then missing audibly instead of silently.
         assertSame(dev.devpanda.factorynetwork.network.MachineAccess.NONE, SOURCE.machine());
 
         var none = dev.devpanda.factorynetwork.network.MachineAccess.NONE;
@@ -189,16 +187,16 @@ class ForeignResourceKindTest {
     }
 
     @Test
-    @DisplayName("Zweimal dasselbe Präfix ist ein Fehler, kein Zufall")
+    @DisplayName("The same prefix twice is an error, not a coincidence")
     void thesamePrefixTwiceIsAnerror() {
         assertThrows(IllegalStateException.class, () -> ResourceKinds.register(SOURCE));
     }
 
     @Test
-    @DisplayName("Die reservierten Wörter gehören der Sprache")
+    @DisplayName("The reserved words belong to the language")
     void thereservedWordsBelongToTheLanguage() {
-        // tag, fluidtag, power und all stehen im Programm und meinen keine
-        // Art. Wer sie belegt, macht bestehende Programme mehrdeutig.
+        // tag, fluidtag, power and all stand in the program and mean no kind.
+        // Whoever claims them makes existing programs ambiguous.
         for (String reserviert : List.of("tag", "fluidtag", "power", "all", "item")) {
             assertThrows(IllegalStateException.class,
                     () -> ResourceKinds.register(kindWithPrefix(reserviert)),

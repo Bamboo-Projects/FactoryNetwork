@@ -11,31 +11,31 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 /**
- * Eine Chemikalie als Wert.
+ * A chemical as a value.
  *
- * <p>Sie fehlte im Wertemodell, obwohl `chemical:` sich längst bewegen und
- * zählen ließ: Ein Posten aus einer Bestandsliste konnte sagen, wie viel er
- * ist, aber nicht, was — {@code it.item} und {@code it.fluid} gab es,
- * {@code it.chemical} nicht. Das ist der Teil von 1.8, dessen Bedingung
- * erfüllt ist, seit Mekanism angebunden ist.
+ * <p>It was missing from the value model even though `chemical:` could long
+ * since be moved and counted: an entry from an inventory listing could say
+ * how much it is, but not what — {@code it.item} and {@code it.fluid} existed,
+ * {@code it.chemical} did not. This is the part of 1.8 whose precondition has
+ * been met ever since Mekanism was hooked up.
  *
- * <p><b>Der Kern spricht in Kennungen.</b> Eine Chemikalie steht hier als
- * Text da, so wie überall außerhalb von {@code compat/mekanism}: Eine
- * Signatur mit einem Mekanism-Typ würde die Klasse beim Laden auflösen, und
- * ohne die Mod bräche alles zusammen, was sie nur streift.
+ * <p><b>The core speaks in identifiers.</b> A chemical stands here as text,
+ * just as everywhere outside of {@code compat/mekanism}: a signature with a
+ * Mekanism type would resolve the class on load, and without the mod
+ * everything that so much as touches it would collapse.
  *
- * <p>Was hier geprüft wird, ist deshalb die <b>Mechanik über Texten</b> — die
- * Auflösung gegen die Registry braucht das laufende Spiel und steht in den
- * Prüfläufen.
+ * <p>What is tested here is therefore the <b>mechanics over text</b> — the
+ * resolution against the registry needs the running game and lives in the
+ * game tests.
  */
 class ChemicalValueTest {
 
-    /** Eine Welt aus Papier mit einem Bestand, den sie sich ausdenkt. */
+    /** A paper world with an inventory it makes up. */
     private static final class TestHost implements Interpreter.Host {
 
         final List<String> logs = new ArrayList<>();
 
-        /** Was eine Bestandsliste liefern soll. */
+        /** What an inventory listing should return. */
         final List<Value> stored = new ArrayList<>();
 
         @Override
@@ -86,7 +86,7 @@ class ChemicalValueTest {
     }
 
     @Test
-    @DisplayName("it.chemical nennt die Sorte eines Postens")
+    @DisplayName("it.chemical names the kind of an entry")
     void itChemicalNamesTheKind() {
         TestHost host = new TestHost();
         host.stored.add(Value.Selection.ofChemicals(List.of("mekanism:hydrogen"), 500));
@@ -107,10 +107,9 @@ class ChemicalValueTest {
     }
 
     @Test
-    @DisplayName("Ein Posten über mehrere Sorten hat keine eine")
+    @DisplayName("An entry over several kinds has no single one")
     void apostOverSeveralKindsHasNosingleOne() {
-        // Dieselbe Regel wie bei it.item: Sich für die erste zu entscheiden
-        // wäre geraten.
+        // The same rule as for it.item: to pick the first would be guessing.
         TestHost host = new TestHost();
         host.stored.add(Value.Selection.ofChemicals(
                 List.of("mekanism:hydrogen", "mekanism:oxygen"), 500));
@@ -125,10 +124,10 @@ class ChemicalValueTest {
     }
 
     @Test
-    @DisplayName("Eine Chemikalie übersteht das Speichern eines Ablaufs")
+    @DisplayName("A chemical survives the saving of a flow")
     void achemicalSurvivesSavingAflow() {
-        // Ein Ablauf, der auf ein Ereignis wartet, wird gespeichert. Ohne
-        // Eintrag im Codec verlöre ein wartender Ablauf still seinen Wert.
+        // A flow waiting for an event gets saved. Without an entry in the
+        // codec a waiting flow would silently lose its value.
         Value single = Value.Resource.ofChemical("mekanism:hydrogen");
         Value selection = Value.Selection.ofChemicals(
                 List.of("mekanism:hydrogen", "mekanism:oxygen"), 500);
@@ -140,10 +139,10 @@ class ChemicalValueTest {
     }
 
     @Test
-    @DisplayName("Ohne Mekanism steht die Kennung da, nicht ein erfundener Name")
+    @DisplayName("Without Mekanism the identifier stands, not an invented name")
     void withoutMekanismTheIdIsShown() {
-        // describe() geht über Chemicals.nameOf, und das gibt ohne die Mod
-        // die Kennung zurück. Erfunden wird nichts.
+        // describe() goes through Chemicals.nameOf, and without the mod that
+        // returns the identifier. Nothing is invented.
         assertEquals("mekanism:hydrogen",
                 Value.Resource.ofChemical("mekanism:hydrogen").describe());
     }

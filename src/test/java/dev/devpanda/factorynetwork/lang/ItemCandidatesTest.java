@@ -11,12 +11,12 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Woraus die Kandidaten für die Annahme-Probe kommen.
+ * Where the candidates for the acceptance check come from.
  */
 class ItemCandidatesTest {
 
     @Test
-    @DisplayName("Was im Filter steht, ist ein Kandidat")
+    @DisplayName("What is in the filter is a candidate")
     void whatIsInAFilterIsACandidate() {
         Set<String> found = ItemCandidates.of(new Project(Map.of("main.mf", """
                 worker mahlen {
@@ -29,7 +29,7 @@ class ItemCandidatesTest {
     }
 
     @Test
-    @DisplayName("Auch über mehrere Dateien und mit Namensraum")
+    @DisplayName("Also across multiple files and with a namespace")
     void acrossFilesAndWithNamespace() {
         Set<String> found = ItemCandidates.of(new Project(Map.of(
                 "a.mf", "worker x {\n    filter item:mekanism/steel_dust\n}",
@@ -40,7 +40,7 @@ class ItemCandidatesTest {
     }
 
     @Test
-    @DisplayName("Tags und Muster bleiben draußen")
+    @DisplayName("Tags and patterns stay out")
     void tagsAndPatternsStayOut() {
         Set<String> found = ItemCandidates.of(new Project(Map.of("main.mf", """
                 worker x {
@@ -57,7 +57,7 @@ class ItemCandidatesTest {
     }
 
     @Test
-    @DisplayName("Ein Programm ohne Gegenstände liefert nichts")
+    @DisplayName("A program without items yields nothing")
     void aProgramWithoutItemsGivesNothing() {
         Set<String> found = ItemCandidates.of(new Project(Map.of("main.mf", """
                 fn test() {
@@ -68,7 +68,7 @@ class ItemCandidatesTest {
     }
 
     @Test
-    @DisplayName("Derselbe Gegenstand zweimal ist ein Kandidat")
+    @DisplayName("The same item twice is one candidate")
     void theSameItemTwiceIsOneCandidate() {
         Set<String> found = ItemCandidates.of(new Project(Map.of("main.mf", """
                 fn test() {

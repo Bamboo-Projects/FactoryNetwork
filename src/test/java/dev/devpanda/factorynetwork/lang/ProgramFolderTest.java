@@ -17,28 +17,28 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Der Ordner neben der Welt, ohne Welt.
+ * The folder next to the world, without the world.
  *
- * <p>Geprüft wird der Weg hin und zurück, und dabei vor allem eines: dass ein
- * Name im Ordner derselbe ist wie im Projekt. Auf Windows heißt der Pfad
- * {@code erz\brecher.mf} und im Projekt {@code erz/brecher.mf} — wer das nicht
- * angleicht, bekommt eine Brücke, die im Sekundentakt zwei Wahrheiten
- * gegeneinander schreibt.
+ * <p>The round trip is checked, and above all one thing: that a
+ * name in the folder is the same as in the project. On Windows the path is
+ * {@code erz\brecher.mf} and in the project {@code erz/brecher.mf} — whoever does
+ * not align that gets a bridge that, once a second, writes two truths
+ * against each other.
  */
 class ProgramFolderTest {
 
     /**
-     * Ein Wegwerfordner für die Tests, die keinen eigenen brauchen.
+     * A throwaway folder for the tests that do not need one of their own.
      *
-     * <p>Als Feld und nicht als Parameter: Die Prüfungen der Statusdatei
-     * arbeiten alle im selben Ordner, und ein Parameter je Test wäre in jeder
-     * Signatur dasselbe Wort.
+     * <p>As a field and not a parameter: the status-file checks
+     * all work in the same folder, and a parameter per test would be the same
+     * word in every signature.
      */
     @TempDir
     Path dir;
 
     @Test
-    @DisplayName("Was geschrieben wurde, kommt genauso zurück")
+    @DisplayName("What was written comes back the same")
     void whatWasWrittenComesBackTheSame(@TempDir Path dir) {
         ProgramFolder folder = ProgramFolder.at(dir);
         Project project = new Project(Map.of(
@@ -52,7 +52,7 @@ class ProgramFolderTest {
     }
 
     @Test
-    @DisplayName("Eine Datei im Unterordner landet im Unterordner")
+    @DisplayName("A file in a subfolder lands in the subfolder")
     void afileInAsubfolderLandsInAsubfolder(@TempDir Path dir) {
         ProgramFolder.at(dir).write(new Project(Map.of("erz/brecher.mf", "fn b() {}")));
 
@@ -61,10 +61,10 @@ class ProgramFolderTest {
     }
 
     @Test
-    @DisplayName("Ein Name aus dem Ordner trägt Schrägstriche, keine Rückstriche")
+    @DisplayName("A name from the folder carries slashes, not backslashes")
     void anameFromTheFolderCarriesSlashes(@TempDir Path dir) throws IOException {
-        // Von Hand angelegt, so wie es ein Editor täte — und nicht über
-        // write, das den Namen ja selbst gesetzt hat.
+        // Created by hand, the way an editor would — and not via
+        // write, which set the name itself.
         Files.createDirectories(dir.resolve("erz"));
         Files.writeString(dir.resolve("erz").resolve("brecher.mf"), "fn b() {}",
                 StandardCharsets.UTF_8);
@@ -75,7 +75,7 @@ class ProgramFolderTest {
     }
 
     @Test
-    @DisplayName("Wer von außen schreibt, wird beim Nachsehen bemerkt")
+    @DisplayName("Whoever writes from outside is noticed on the next look")
     void whoWritesFromOutsideIsNoticed(@TempDir Path dir) throws IOException {
         ProgramFolder folder = ProgramFolder.at(dir);
         Project current = new Project(Map.of("main.mf", "fn a() {}"));
@@ -92,7 +92,7 @@ class ProgramFolderTest {
     }
 
     @Test
-    @DisplayName("Was nicht ins Muster passt, wird übergangen")
+    @DisplayName("What does not fit the pattern is skipped")
     void whatDoesNotFitThepatternIsSkipped(@TempDir Path dir) throws IOException {
         Files.writeString(dir.resolve("main.mf"), "fn a() {}", StandardCharsets.UTF_8);
         Files.writeString(dir.resolve("Notizen.txt"), "kein Programm",
@@ -105,11 +105,11 @@ class ProgramFolderTest {
     }
 
     @Test
-    @DisplayName("Eine fremde Datei im Ordner überlebt das Schreiben")
+    @DisplayName("A foreign file in the folder survives a write")
     void aforeignFileSurvivesAwrite() throws IOException {
-        // Der Ordner gehört nicht allein diesem Projekt: Daneben liegt die
-        // Statusdatei für VS Code, und jemand legt vielleicht Notizen ab.
-        // Geprüft war bisher nur, dass sie beim Lesen übergangen werden.
+        // The folder does not belong to this project alone: next to it lies the
+        // status file for VS Code, and someone may drop notes there.
+        // So far only that they are skipped on reading was checked.
         ProgramFolder folder = ProgramFolder.at(dir);
         Files.writeString(dir.resolve("Notizen.txt"), "meins", StandardCharsets.UTF_8);
         Files.writeString(dir.resolve(".fn-status.json"), "{}", StandardCharsets.UTF_8);
@@ -120,14 +120,14 @@ class ProgramFolderTest {
         assertTrue(Files.exists(dir.resolve(".fn-status.json")), "und die Statusdatei auch");
     }
 
-    // ---- Der Zustand für VS Code -------------------------------------------
+    // ---- The state for VS Code ---------------------------------------------
 
     @Test
-    @DisplayName("Die Statusdatei trägt Fehler mit Datei, Zeile und Spalte")
+    @DisplayName("The status file carries errors with file, line and column")
     void thestatusFileCarriesErrorsWithFileLineAndColumn() {
-        // Der Weg zurück: VS Code speichert, das Spiel übersetzt, und was der
-        // Übersetzer sagt, kommt hier an. Ohne das sieht ein Fehler nur, wer
-        // im Spiel ins Terminal schaut.
+        // The way back: VS Code saves, the game compiles, and what the
+        // compiler says arrives here. Without it an error is seen only by whoever
+        // looks at the terminal in game.
         List<Diagnostic> problems = List.of(new Diagnostic(Diagnostic.Severity.ERROR,
                 new Span(10, 18, 3, 5), "Nichts im Netz heißt kist.",
                 "Meintest du kiste?", "erz/brecher.mf"));
@@ -138,8 +138,8 @@ class ProgramFolderTest {
         ProgramStatus back = ProgramStatus.read(dir);
         assertEquals(List.of("kiste", "ofen"), back.connectors());
         assertEquals(List.of("halle"), back.displays());
-        // Die Präfixe kommen aus dem Spiel: Was eine fremde Mod anmeldet,
-        // kann ein Editor daneben nicht wissen.
+        // The prefixes come from the game: what a foreign mod registers
+        // an editor beside it cannot know.
         assertEquals(List.of("item", "fluid", "source"), back.prefixes());
         List<ProgramStatus.Problem> inFile = back.diagnostics().get("erz/brecher.mf");
         assertEquals(1, inFile.size(), () -> back.diagnostics().toString());
@@ -151,10 +151,10 @@ class ProgramFolderTest {
     }
 
     @Test
-    @DisplayName("Ohne Fehler steht eine leere Liste da, keine fehlende Datei")
+    @DisplayName("Without errors an empty list stands there, not a missing file")
     void withoutErrorsAnemptyListStandsThere() {
-        // Sonst wüsste die Erweiterung nicht, ob alles stimmt oder ob nur
-        // niemand nachgesehen hat — und ließe alte Fehler stehen.
+        // Otherwise the extension would not know whether everything is fine or whether
+        // nobody has looked — and would leave old errors standing.
         ProgramStatus.write(dir, List.of(), List.of(), List.of(), List.of());
 
         ProgramStatus back = ProgramStatus.read(dir);
@@ -163,10 +163,10 @@ class ProgramFolderTest {
     }
 
     @Test
-    @DisplayName("Zweimal dasselbe schreibt die Datei nicht zweimal")
+    @DisplayName("Twice the same does not write the file twice")
     void twiceThesameDoesNotWriteTwice() throws IOException {
-        // Ein Datei-Wächter in VS Code weckt sonst jede Sekunde die
-        // Erweiterung, obwohl sich nichts geändert hat.
+        // A file watcher in VS Code would otherwise wake the
+        // extension every second, even though nothing has changed.
         ProgramStatus.write(dir, List.of(), List.of("kiste"), List.of(), List.of());
         java.nio.file.attribute.FileTime first =
                 Files.getLastModifiedTime(dir.resolve(ProgramStatus.FILE));
@@ -178,7 +178,7 @@ class ProgramFolderTest {
     }
 
     @Test
-    @DisplayName("Eine Statusdatei, die es nicht gibt, ist leer und kein Fehler")
+    @DisplayName("A status file that does not exist is empty and not an error")
     void amissingStatusFileIsEmpty() {
         ProgramStatus back = ProgramStatus.read(dir);
 
@@ -187,7 +187,7 @@ class ProgramFolderTest {
     }
 
     @Test
-    @DisplayName("Eine gelöschte Datei verschwindet auch aus dem Unterordner")
+    @DisplayName("A deleted file also disappears from the subfolder")
     void adeletedFileAlsoLeavesThesubfolder(@TempDir Path dir) {
         ProgramFolder folder = ProgramFolder.at(dir);
         folder.write(new Project(Map.of("main.mf", "", "erz/brecher.mf", "fn b() {}")));
@@ -196,9 +196,9 @@ class ProgramFolderTest {
 
         assertTrue(!Files.exists(dir.resolve("erz").resolve("brecher.mf")),
                 "die Datei muss weg sein");
-        // Der leere Ordner bleibt liegen. Ihn wegzuräumen hieße, im
-        // Weltordner aufzuräumen, was jemand anderes angelegt haben könnte —
-        // und ein leerer Ordner tut niemandem weh.
+        // The empty folder stays behind. Clearing it away would mean tidying
+        // up, inside the world folder, what someone else may have created —
+        // and an empty folder hurts nobody.
         assertTrue(Files.exists(dir.resolve("erz")), "der leere Ordner darf bleiben");
     }
 }

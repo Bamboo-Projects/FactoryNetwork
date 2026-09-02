@@ -9,13 +9,13 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Über eine Dimensionsgrenze reicht nur die Grenzenlos-Karte.
+ * Across a dimension boundary only the Infinity card reaches.
  *
- * <p><b>Warum die Entfernung dort nicht zählt:</b> Zwischen zwei Dimensionen
- * gibt es keinen Abstand, den man messen könnte. Der Nether liegt nicht
- * hundert Blöcke von der Oberwelt entfernt — er liegt daneben und zugleich
- * nirgends. Eine Rechnung mit Koordinaten aus zwei Welten ergäbe eine Zahl
- * ohne Bedeutung.
+ * <p><b>Why distance does not count there:</b> between two dimensions there
+ * is no distance one could measure. The Nether does not lie a hundred blocks
+ * from the Overworld — it lies alongside and at the same time nowhere. A
+ * calculation with coordinates from two worlds would yield a number without
+ * meaning.
  */
 class DimensionReachTest {
 
@@ -25,34 +25,34 @@ class DimensionReachTest {
     private static final Loadout INFINITE = Loadout.of(List.of(Card.INFINITY));
 
     @Test
-    @DisplayName("In derselben Dimension entscheidet weiter die Entfernung")
+    @DisplayName("Within the same dimension distance still decides")
     void withinOneWorldDistanceStillRules() {
         assertTrue(Range.covers(BARE, BARE, true, 5));
         assertFalse(Range.covers(BARE, BARE, true, 5000));
     }
 
     @Test
-    @DisplayName("Ohne Grenzenlos-Karte endet das Netz an der Dimensionsgrenze")
+    @DisplayName("Without the Infinity card the network ends at the dimension boundary")
     void withoutTheCardTheWorldEnds() {
-        // Auch vier Karten helfen nicht: Reichweite ist eine Strecke, und
-        // eine Dimensionsgrenze ist keine.
+        // Even four cards do not help: range is a distance, and a dimension
+        // boundary is none.
         assertFalse(Range.covers(MANY_CARDS, MANY_CARDS, false, 0));
         assertFalse(Range.covers(MANY_CARDS, MANY_CARDS, false, 1));
     }
 
     @Test
-    @DisplayName("Mit ihr gilt sie überall")
+    @DisplayName("With it, it holds everywhere")
     void withTheCardItReachesEverywhere() {
         assertTrue(Range.covers(INFINITE, BARE, false, 0));
         assertTrue(Range.covers(INFINITE, BARE, false, 1_000_000));
     }
 
     @Test
-    @DisplayName("Die Karte muss im Mast stecken, nicht im Gerät")
+    @DisplayName("The card must sit in the mast, not in the device")
     void theCardBelongsInTheMast() {
-        // Sie ist die teuerste Karte im Spiel und hebt die Grenze für das
-        // ganze Netz. Steckte sie im Gerät, hätte jeder Spieler seine eigene
-        // — und der Mast wäre nicht mehr die Entscheidung.
+        // It is the most expensive card in the game and lifts the limit for
+        // the whole network. If it sat in the device, every player would have
+        // their own — and the mast would no longer be the decision.
         assertFalse(Range.covers(BARE, INFINITE, false, 0));
     }
 }

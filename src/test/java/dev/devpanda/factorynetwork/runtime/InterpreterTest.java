@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class InterpreterTest {
 
-    /** Eine Welt aus Papier: merkt sich, was das Programm getan hat. */
+    /** A paper world: remembers what the program has done. */
     private static final class TestHost implements Interpreter.Host {
 
         final List<String> logs = new ArrayList<>();
@@ -57,7 +57,7 @@ class InterpreterTest {
             return devices.contains(name);
         }
 
-        /** Die Mitglieder je Gruppe. */
+        /** The members per group. */
         final List<String> groupMembers = new ArrayList<>(List.of("chest", "crusher_1"));
 
         @Override
@@ -84,7 +84,7 @@ class InterpreterTest {
     }
 
     @Nested
-    @DisplayName("Rechnen und Ablauf")
+    @DisplayName("Arithmetic and control flow")
     class Basics {
 
         @Test
@@ -132,7 +132,7 @@ class InterpreterTest {
         }
 
         @Test
-        @DisplayName("break verlässt die Schleife")
+        @DisplayName("break leaves the loop")
         void breakLeavesTheLoop() {
             TestHost host = new TestHost();
             Interpreter interpreter = interpreterFor("""
@@ -150,7 +150,7 @@ class InterpreterTest {
         }
 
         @Test
-        @DisplayName("Eine Endlosschleife wird angehalten, nicht der Server")
+        @DisplayName("An endless loop is halted, not the server")
         void endlessLoopIsStopped() {
             TestHost host = new TestHost();
             Interpreter interpreter = interpreterFor("""
@@ -180,7 +180,7 @@ class InterpreterTest {
     }
 
     @Nested
-    @DisplayName("Fabrik")
+    @DisplayName("Factory")
     class Factory {
 
         @Test
@@ -211,7 +211,7 @@ class InterpreterTest {
         }
 
         @Test
-        @DisplayName("Ein Ereignisblock läuft, wenn das Ereignis kommt")
+        @DisplayName("An event block runs when the event arrives")
         void handlerRunsOnEvent() {
             TestHost host = new TestHost();
             Interpreter interpreter = interpreterFor("""
@@ -228,7 +228,7 @@ class InterpreterTest {
         }
 
         @Test
-        @DisplayName("Mehrere Blöcke für dasselbe Ereignis laufen alle")
+        @DisplayName("Several blocks for the same event all run")
         void allHandlersRun() {
             TestHost host = new TestHost();
             Interpreter interpreter = interpreterFor("""
@@ -244,7 +244,7 @@ class InterpreterTest {
         }
 
         @Test
-        @DisplayName("Ein Tippfehler im Gerätenamen schlägt den richtigen vor")
+        @DisplayName("A typo in the device name suggests the right one")
         void unknownDeviceSuggests() {
             TestHost host = new TestHost();
             Interpreter interpreter = interpreterFor("""
@@ -258,7 +258,7 @@ class InterpreterTest {
         }
 
         @Test
-        @DisplayName("await sagt, wo es hingehört, wenn es am falschen Ort steht")
+        @DisplayName("await says where it belongs when it stands in the wrong place")
         void awaitPointsToWhereItBelongs() {
             TestHost host = new TestHost();
             Interpreter interpreter = interpreterFor("""
@@ -270,14 +270,14 @@ class InterpreterTest {
                     }""", host);
             ScriptError error = assertThrows(ScriptError.class,
                     () -> interpreter.call("test", List.of()));
-            // Der gewöhnliche Weg kann nicht warten; das ist keine Lücke, sondern
-            // die Arbeitsteilung. Die Meldung muss den Weg weisen.
+            // The ordinary path cannot wait; that is no gap, but the division
+            // of labour. The message must point the way.
             assertTrue(error.hint().contains("Abläufen"), error::hint);
         }
     }
 
     @Test
-    @DisplayName("move gibt zurück, wie viel bewegt wurde")
+    @DisplayName("move returns how much was moved")
     void moveReportsWhatItMoved() {
         TestHost host = new TestHost();
         Interpreter interpreter = interpreterFor("""
@@ -288,14 +288,14 @@ class InterpreterTest {
 
         interpreter.call("holen", List.of());
 
-        // Der Testhost meldet immer eine Bewegung; entscheidend ist, dass sie
-        // ankommt statt verworfen zu werden.
+        // The test host always reports one movement; what matters is that it
+        // arrives instead of being discarded.
         assertEquals(List.of("1"), host.logs);
         assertEquals(1, host.moves.size(), () -> host.moves.toString());
     }
 
     @Test
-    @DisplayName("move steht auch in einer Bedingung")
+    @DisplayName("move also stands in a condition")
     void moveWorksInACondition() {
         TestHost host = new TestHost();
         Interpreter interpreter = interpreterFor("""
@@ -311,7 +311,7 @@ class InterpreterTest {
     }
 
     @Test
-    @DisplayName("move als Anweisung bleibt eine Anweisung")
+    @DisplayName("move as a statement stays a statement")
     void moveAsAStatementStillWorks() {
         TestHost host = new TestHost();
         Interpreter interpreter = interpreterFor("""
@@ -326,7 +326,7 @@ class InterpreterTest {
     }
 
     @Test
-    @DisplayName("members() gibt die Geräte einer Gruppe")
+    @DisplayName("members() gives the devices of a group")
     void membersYieldsTheDevices() {
         TestHost host = new TestHost();
         Interpreter interpreter = interpreterFor("""
@@ -346,7 +346,7 @@ class InterpreterTest {
     }
 
     @Test
-    @DisplayName("send() schickt aus dem Speicher an die Gruppe")
+    @DisplayName("send() sends from storage to the group")
     void sendGoesFromStorageToTheGroup() {
         TestHost host = new TestHost();
         Interpreter interpreter = interpreterFor("""
@@ -366,7 +366,7 @@ class InterpreterTest {
     }
 
     @Test
-    @DisplayName("Eine Gruppe kann nichts, was ein Gerät kann")
+    @DisplayName("A group can do nothing that a device can")
     void aGroupIsNoDevice() {
         TestHost host = new TestHost();
         Interpreter interpreter = interpreterFor("""
@@ -384,7 +384,7 @@ class InterpreterTest {
     }
 
     @Test
-    @DisplayName("min und max nehmen die kleinere und die größere Zahl")
+    @DisplayName("min and max take the smaller and the larger number")
     void minAndMax() {
         TestHost host = new TestHost();
         Interpreter interpreter = interpreterFor("""
@@ -400,7 +400,7 @@ class InterpreterTest {
     }
 
     @Test
-    @DisplayName("Ganze Zahlen bleiben ganz")
+    @DisplayName("Whole numbers stay whole")
     void wholeNumbersStayWhole() {
         TestHost host = new TestHost();
         Interpreter interpreter = interpreterFor("""
@@ -411,13 +411,13 @@ class InterpreterTest {
 
         interpreter.call("rechnen", List.of());
 
-        // Sobald eine Seite gebrochen ist, bleibt es gebrochen — dieselbe
-        // Regel wie beim Rechnen mit + und *.
+        // As soon as one side is fractional, it stays fractional — the same
+        // rule as when calculating with + and *.
         assertEquals(List.of("20", "19.5"), host.logs);
     }
 
     @Test
-    @DisplayName("abs, round, floor und ceil")
+    @DisplayName("abs, round, floor and ceil")
     void theOtherFour() {
         TestHost host = new TestHost();
         Interpreter interpreter = interpreterFor("""
@@ -434,7 +434,7 @@ class InterpreterTest {
     }
 
     @Test
-    @DisplayName("random bleibt zwischen den Grenzen")
+    @DisplayName("random stays between the bounds")
     void randomStaysInside() {
         TestHost host = new TestHost();
         Interpreter interpreter = interpreterFor("""
@@ -453,7 +453,7 @@ class InterpreterTest {
     }
 
     @Test
-    @DisplayName("Eine Rechenfunktion ohne Zahl meldet sich")
+    @DisplayName("A math function without a number complains")
     void aMathFunctionWithoutANumberComplains() {
         TestHost host = new TestHost();
         Interpreter interpreter = interpreterFor("""

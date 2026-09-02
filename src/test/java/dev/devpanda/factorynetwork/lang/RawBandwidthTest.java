@@ -16,32 +16,32 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Keine rohe Bandbreitenzahl erreicht den Bildschirm.
+ * No raw bandwidth number reaches the screen.
  *
- * <p><b>Zweimal ist genau das passiert.</b> Am Kabel stand „Pink: 500" statt
- * „10 KB/s", und im Router-Tooltip dieselbe Zahl gleich zweimal. Beide Male
- * war die Rechnung richtig und nur die Anzeige roh — und beide Male fiel es
- * erst im Spiel auf.
+ * <p><b>Exactly that happened twice.</b> The cable said "Pink: 500" instead
+ * of "10 KB/s", and the router tooltip showed the same number twice over.
+ * Both times the arithmetic was right and only the display was raw — and
+ * both times it was noticed only in game.
  *
- * <p>Der Wächter sucht nach {@code String.valueOf(…Bandwidth…)} und nach
- * einer Bandbreitenzahl, die ohne {@code perSecond} an eine Zeichenkette
- * gehängt wird. Er kennt keine Absicht — wer eine rohe Zahl wirklich
- * braucht, rechnet sie vorher in eine Variable.
+ * <p>The guard looks for {@code String.valueOf(…Bandwidth…)} and for a
+ * bandwidth number that is appended to a string without {@code perSecond}.
+ * It knows no intent — whoever really needs a raw number computes it into a
+ * variable beforehand.
  */
 class RawBandwidthTest {
 
     private static final Path SOURCE = Path.of("src/main/java");
 
-    /** {@code String.valueOf(irgendwas mit Bandwidth)} — die erste Falle. */
+    /** {@code String.valueOf(irgendwas mit Bandwidth)} — the first trap. */
     private static final Pattern VALUE_OF = Pattern.compile(
             "String[.]valueOf[(]\\s*[^)]*Bandwidth[.][A-Za-z]+");
 
-    /** Eine Bandbreitenzahl direkt an eine Zeichenkette gehängt. */
+    /** A bandwidth number appended directly to a string. */
     private static final Pattern CONCAT = Pattern.compile(
             "[+]\\s*[\\w.]*Bandwidth[.](THIN|DENSE|UNLIMITED|at)\\b");
 
     @Test
-    @DisplayName("Keine Bandbreite geht ungerechnet in einen Text")
+    @DisplayName("No bandwidth goes into a text uncomputed")
     void noRawBandwidthReachesTheScreen() throws IOException {
         List<String> gefunden = new ArrayList<>();
         try (Stream<Path> files = Files.walk(SOURCE)) {

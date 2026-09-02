@@ -9,11 +9,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Was Ausbauten aus einer Maschine machen.
+ * What upgrades make of a machine.
  *
- * <p>Die Rechnung steht ohne Minecraft-Typen da und lässt sich deshalb hier
- * prüfen statt im Spiel. Das ist kein Zufall, sondern der Grund, warum das
- * Paket {@code upgrade} so geschnitten ist.
+ * <p>The calculation stands without Minecraft types and can therefore be
+ * tested here instead of in the game. That is no accident, but the reason
+ * the {@code upgrade} package is cut the way it is.
  */
 class TuningTest {
 
@@ -22,7 +22,7 @@ class TuningTest {
     }
 
     @Test
-    @DisplayName("Ohne Karten bleibt alles, wie das Rezept es sagt")
+    @DisplayName("Without cards everything stays as the recipe says")
     void plainRecipeIsUntouched() {
         Tuned tuned = Tuning.of(Loadout.of(java.util.List.of()), 60, 1200);
         assertEquals(60, tuned.ticks());
@@ -31,7 +31,7 @@ class TuningTest {
     }
 
     @Test
-    @DisplayName("Beschleunigung kostet Zeit und bringt Strom auf die Rechnung")
+    @DisplayName("Acceleration costs time and puts power on the bill")
     void accelerationTradesEnergyForTime() {
         Tuned one = Tuning.of(with(Card.ACCELERATION, 1), 100, 1000);
         assertEquals(80, one.ticks(), "eine Karte nimmt ein Fünftel der Zeit");
@@ -40,13 +40,13 @@ class TuningTest {
         Tuned four = Tuning.of(with(Card.ACCELERATION, 4), 100, 1000);
         assertEquals(41, four.ticks());
         assertEquals(3000, four.energy());
-        // Der eigentliche Punkt: Das Tempo wächst langsamer als der Preis.
+        // The actual point: the speed grows slower than the price.
         assertTrue(100.0 / four.ticks() < four.energy() / 1000.0,
                 "vier Karten müssen teurer sein, als sie schnell machen");
     }
 
     @Test
-    @DisplayName("Der Stapel bringt Menge, keine Zeit — und kostet je Stück")
+    @DisplayName("The batch brings amount, no time — and costs per piece")
     void batchBringsAmountAtFullPrice() {
         Tuned tuned = Tuning.of(with(Card.BATCH, 2), 60, 1200);
         assertEquals(3, tuned.batch(), "zwei Karten machen drei Werkstücke");
@@ -55,20 +55,20 @@ class TuningTest {
     }
 
     @Test
-    @DisplayName("Beides zusammen: Zeit von der einen, Menge von der anderen")
+    @DisplayName("Both together: time from the one, amount from the other")
     void bothCardsCombine() {
         Tuned tuned = Tuning.of(
                 Loadout.ofCounts(Map.of(Card.ACCELERATION, 2, Card.BATCH, 1)),
                 100, 1000);
         assertEquals(64, tuned.ticks());
         assertEquals(2, tuned.batch());
-        // Zweimal Beschleunigung: doppelter Strom. Zweimal Menge: noch einmal
-        // doppelt. Die Faktoren multiplizieren sich, sie addieren sich nicht.
+        // Twice Acceleration: double the power. Twice amount: doubled once
+        // more. The factors multiply, they do not add.
         assertEquals(4000, tuned.energy());
     }
 
     @Test
-    @DisplayName("Über acht Karten wirkt keine mehr")
+    @DisplayName("Beyond eight cards none has any effect")
     void tooManyCardsStopCounting() {
         Tuned eight = Tuning.of(with(Card.ACCELERATION, 8), 100, 1000);
         Tuned sixty = Tuning.of(with(Card.ACCELERATION, 64), 100, 1000);
@@ -80,7 +80,7 @@ class TuningTest {
     }
 
     @Test
-    @DisplayName("Ein sehr kurzes Rezept fällt nicht unter einen Tick")
+    @DisplayName("A very short recipe does not drop below one tick")
     void shortRecipesKeepOneTick() {
         assertEquals(1, Tuning.of(with(Card.ACCELERATION, 8), 2, 100).ticks());
     }

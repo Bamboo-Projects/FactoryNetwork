@@ -56,7 +56,7 @@ public record Diagnostic(Severity severity, Span span, String message, String hi
     }
 
     public enum Severity {
-        /** Blocks acceptance of the program. */
+        /** Blocks adoption of the program. */
         ERROR,
         /** Runs, but is probably not what was meant. */
         WARNING

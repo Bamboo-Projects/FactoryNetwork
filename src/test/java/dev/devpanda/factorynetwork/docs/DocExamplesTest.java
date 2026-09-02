@@ -18,43 +18,43 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Die Beispiele in der Doku müssen laufen.
+ * The examples in the docs must run.
  *
- * <p>Doku veraltet still: Wer ein Beispiel abschreibt und eine Fehlermeldung
- * bekommt, glaubt beim nächsten Mal keinem mehr.
+ * <p>Docs age silently: whoever copies an example and gets an error message
+ * does not believe any of them the next time.
  *
- * <p><b>Geprüft wird der Text, den ein Spieler zuerst liest.</b> Lange stand
- * hier nur {@code docs/beispiele.md} — der Guide im Spiel und die Titelseite
- * waren ungeprüft, und genau dort standen die falschen Beispiele: ein
- * Fortschrittsbalken, der immer leer blieb, und ein Gruppenaufruf, den es
- * nicht gibt.
+ * <p><b>What is checked is the text a player reads first.</b> For a long time
+ * only {@code docs/beispiele.md} stood here — the in-game guide and the title
+ * page were unchecked, and it was exactly there that the wrong examples
+ * stood: a progress bar that always stayed empty, and a group call that does
+ * not exist.
  *
- * <p><b>Auch Warnungen zählen.</b> Ein {@code on inventory_changed} übersetzt
- * fehlerfrei und läuft nie — es gibt dieses Ereignis nicht. In einem Beispiel
- * ist das genauso falsch wie ein Syntaxfehler, nur stiller.
+ * <p><b>Warnings count too.</b> An {@code on inventory_changed} compiles
+ * without error and never runs — this event does not exist. In an example
+ * that is just as wrong as a syntax error, only quieter.
  *
- * <p>Was hier nicht auffällt, ist alles, was erst beim Ausführen scheitert:
- * {@code pumps.stop()} übersetzt tadellos. Dafür gibt es die GameTests, die
- * die Beispiele wirklich laufen lassen.
+ * <p>What does not show up here is everything that only fails at run time:
+ * {@code pumps.stop()} compiles flawlessly. For that there are the GameTests,
+ * which really run the examples.
  *
- * <p>Bruchstücke, die absichtlich für sich stehen — eine einzelne
- * {@code filter}-Zeile etwa —, werden übersprungen: Sie beginnen nicht mit
- * einem Deklarationswort.
+ * <p>Fragments that deliberately stand on their own — a single
+ * {@code filter} line, say —, are skipped: they do not begin with a
+ * declaration word.
  */
 class DocExamplesTest {
 
     private static final List<String> DECLARATIONS = List.of(
             "worker ", "fn ", "on ", "event ", "display ", "multiblock ", "group ", "global ",
-            // const fehlte hier, seit es das Wort gibt: Ein Beispiel, das
-            // damit anfängt, wurde übersprungen statt geprüft.
+            // const was missing here ever since the word exists: an example
+            // that begins with it was skipped instead of checked.
             "const ");
 
     /**
-     * Die Dateien, deren Beispiele stimmen müssen.
+     * The files whose examples must be correct.
      *
-     * <p>Nicht alle {@code docs/}: {@code konzept.md} und die Spezifikation
-     * beschreiben auch, was noch nicht gebaut ist. Ein Entwurf darf einer
-     * sein — die Titelseite und der Guide im Spiel dürfen es nicht.
+     * <p>Not all of {@code docs/}: {@code konzept.md} and the specification
+     * also describe what is not built yet. A draft may be one — the title
+     * page and the in-game guide must not be.
      */
     private static List<Path> files() throws IOException {
         List<Path> files = new ArrayList<>();
@@ -68,7 +68,7 @@ class DocExamplesTest {
     }
 
     @Test
-    @DisplayName("Jedes Programm in Titelseite, Beispielen und Guide übersetzt sauber")
+    @DisplayName("Every program in title page, examples and guide compiles cleanly")
     void everyExampleCompiles() throws IOException {
         int checked = 0;
         for (Path file : files()) {
@@ -89,7 +89,7 @@ class DocExamplesTest {
         assertFalse(checked == 0, "Kein einziges Programm gefunden — stimmt das Format?");
     }
 
-    /** Alles zwischen zwei Zeilen aus drei Rückstrichen. */
+    /** Everything between two lines of three backticks. */
     private static List<String> fencedBlocks(String content) {
         List<String> blocks = new ArrayList<>();
         StringBuilder current = null;
@@ -112,11 +112,11 @@ class DocExamplesTest {
 
     private static boolean isProgram(String block) {
         String trimmed = block.stripLeading();
-        // <b>filter ist zweideutig</b>, und deshalb steht es nicht in der
-        // Liste oben: „filter erze {" erklärt eine Vorlage, „filter
-        // tag:c/ores" ist die Angabe eines Workers, aus dem Zusammenhang
-        // gerissen. Nur die erste Form ist ein Programm — die zweite ist ein
-        // Bruchstück, und ein Bruchstück muss nicht für sich übersetzen.
+        // <b>filter is ambiguous</b>, and that is why it does not stand in the
+        // list above: "filter erze {" declares a template, "filter
+        // tag:c/ores" is the entry of a worker, torn out of context. Only the
+        // first form is a program — the second is a fragment, and a fragment
+        // need not compile on its own.
         if (trimmed.startsWith("filter ")) {
             return trimmed.lines().findFirst().orElse("").stripTrailing().endsWith("{");
         }

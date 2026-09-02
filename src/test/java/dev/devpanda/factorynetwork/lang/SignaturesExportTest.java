@@ -14,39 +14,37 @@ import java.nio.file.Path;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * Hält die Tabelle der Erweiterung mit der im Code gleich.
+ * Keeps the extension's table identical to the one in the code.
  *
- * <p><b>Warum sie doppelt vorliegt:</b> Die Erweiterung für VS Code wird
- * kopiert, nicht gebaut — kein {@code npm install}, kein Übersetzer. Sie kann
- * also nicht in den Java-Code sehen und braucht die Formen als Datei neben
- * sich.
+ * <p><b>Why it exists twice:</b> The extension for VS Code is copied, not
+ * built — no {@code npm install}, no compiler. So it cannot look into the
+ * Java code and needs the shapes as a file next to itself.
  *
- * <p><b>Und warum sie trotzdem nicht auseinanderläuft:</b> Diese Prüfung
- * erzeugt die Datei aus {@link Signatures} und vergleicht sie mit der
- * eingecheckten. Wer eine Angabe hinzufügt und die Datei vergisst, bekommt
- * einen roten Test — und die neue Fassung liegt dann schon da und muss nur
- * eingecheckt werden.
+ * <p><b>And why it still does not drift apart:</b> This check generates the
+ * file from {@link Signatures} and compares it with the checked-in one.
+ * Whoever adds an entry and forgets the file gets a red test — and the new
+ * version is already there and only needs to be checked in.
  */
 class SignaturesExportTest {
 
     private static final Path TARGET = Path.of("editor", "vscode", "data", "signatures.json");
 
     @Test
-    @DisplayName("Die Tabelle der Erweiterung ist die aus dem Code")
+    @DisplayName("The extension's table is the one from the code")
     void theExportMatchesTheTable() throws IOException {
         String expected = build();
-        // Zeilenenden angeglichen: Mit core.autocrlf=true checkt Git die
-        // Datei unter Windows als CRLF aus, geschrieben wird sie mit LF.
-        // Ohne diese Zeile schlägt der Test nach jedem Zweigwechsel fehl,
-        // obwohl inhaltlich nichts abweicht — und wer das dreimal erlebt hat,
-        // glaubt ihm beim vierten Mal nicht mehr.
+        // Line endings aligned: with core.autocrlf=true Git checks the file
+        // out as CRLF on Windows, while it is written with LF. Without this
+        // line the test fails after every branch switch even though nothing
+        // differs in content — and whoever has seen that three times no
+        // longer believes it the fourth time.
         String actual = Files.exists(TARGET)
                 ? Files.readString(TARGET, StandardCharsets.UTF_8).replace("\r\n", "\n") : "";
 
         if (!expected.equals(actual)) {
-            // Neu geschrieben statt nur gemeldet: Wer die Tabelle ändert,
-            // soll die Datei nicht von Hand nachziehen müssen. Der Test
-            // scheitert trotzdem — sie will eingecheckt werden.
+            // Rewritten instead of merely reported: whoever changes the table
+            // should not have to update the file by hand. The test fails
+            // anyway — the file wants to be checked in.
             Files.createDirectories(TARGET.getParent());
             Files.writeString(TARGET, expected, StandardCharsets.UTF_8);
         }
@@ -55,7 +53,7 @@ class SignaturesExportTest {
                         + "bitte einchecken.");
     }
 
-    /** Die Tabelle als JSON, so wie die Erweiterung sie liest. */
+    /** The table as JSON, the way the extension reads it. */
     private static String build() {
         JsonObject root = new JsonObject();
 
@@ -86,9 +84,9 @@ class SignaturesExportTest {
         Signatures.STRATEGIES.forEach(strategies::add);
         root.add("strategies", strategies);
 
-        // Was an einem Gerät steht, für die Vervollständigung nach dem Punkt.
-        // Ohne diesen Block wüsste die Erweiterung nichts davon — und die
-        // Behauptung, sie folge denselben Regeln, wäre nur halb wahr.
+        // What a device has, for the completion after the dot. Without this
+        // block the extension would know nothing of it — and the claim that
+        // it follows the same rules would be only half true.
         JsonArray members = new JsonArray();
         for (Signatures.Member member : Signatures.MEMBERS) {
             JsonObject entry = new JsonObject();
@@ -99,9 +97,9 @@ class SignaturesExportTest {
         }
         root.add("members", members);
 
-        // Und dasselbe für eine Liste. Der Editor im Spiel kennt sie seit
-        // langem; ohne diesen Block stand die Erweiterung nach
-        // „storage.items()." ohne einen einzigen Vorschlag da.
+        // And the same for a list. The in-game editor has known them for a
+        // long time; without this block the extension stood there after
+        // „storage.items()." without a single suggestion.
         JsonArray listMembers = new JsonArray();
         for (Signatures.Member member : Signatures.LIST_MEMBERS) {
             JsonObject entry = new JsonObject();
@@ -112,8 +110,8 @@ class SignaturesExportTest {
         }
         root.add("listMembers", listMembers);
 
-        // Und das Netz. Ohne diesen Block bot die Erweiterung nach
-        // „network." die Gerätemitglieder an — also redstone() an einem Netz.
+        // And the network. Without this block the extension offered the
+        // device members after „network." — that is, redstone() on a network.
         JsonArray networkMembers = new JsonArray();
         for (Signatures.Member member : Signatures.NETWORK_MEMBERS) {
             JsonObject entry = new JsonObject();
@@ -134,12 +132,12 @@ class SignaturesExportTest {
         }
         root.add("entryMembers", entryMembers);
 
-        // Die Ereignisse, die das Netz selbst auslöst. Sie stehen in keiner
-        // Datei des Spielers — ohne diesen Block kann die Erweiterung sie
-        // nicht vorschlagen, und ein vertippter Name fällt erst auf, wenn
-        // der Block nie läuft.
-        // Die Funktionen ohne Empfänger. Ohne sie schlug die Erweiterung
-        // nicht einmal log() vor, das es seit dem ersten Tag gibt.
+        // The events the network itself fires. They are in none of the
+        // player's files — without this block the extension cannot suggest
+        // them, and a mistyped name is noticed only when the block never
+        // runs.
+        // The functions without a receiver. Without them the extension did
+        // not even suggest log(), which has existed since day one.
         JsonArray freeFunctions = new JsonArray();
         for (Signatures.Member function : Signatures.FREE_FUNCTIONS) {
             JsonObject entry = new JsonObject();
@@ -154,15 +152,15 @@ class SignaturesExportTest {
         new java.util.TreeSet<>(BuiltinEvents.ARITY.keySet()).forEach(builtinEvents::add);
         root.add("builtinEvents", builtinEvents);
 
-        // Dieselbe Liste wie im Editor im Spiel. Sie stand hier einmal
-        // eigenständig da, und ein neues Wort landete deshalb nur in einem
-        // der beiden Editoren.
+        // The same list as in the in-game editor. It once stood here on its
+        // own, and a new word therefore landed in only one of the two
+        // editors.
         JsonArray declarations = new JsonArray();
         Signatures.DECLARATIONS.forEach(declarations::add);
         root.add("declarations", declarations);
 
-        // Die Formen der obersten Ebene — heute nur global, aber die
-        // Erweiterung kann sie ohne diesen Block nicht anbieten.
+        // The top-level shapes — today only global, but the extension cannot
+        // offer them without this block.
         JsonArray topLevel = new JsonArray();
         for (Signatures.Signature signature : Signatures.TOP_LEVEL) {
             JsonObject entry = new JsonObject();

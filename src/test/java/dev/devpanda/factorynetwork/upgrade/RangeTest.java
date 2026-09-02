@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Die Zahlen aus fernzugriff.md §3, an einer Stelle nachgerechnet.
+ * The numbers from fernzugriff.md §3, recomputed in one place.
  */
 class RangeTest {
 
@@ -22,40 +22,40 @@ class RangeTest {
     }
 
     @Test
-    @DisplayName("Ein Mast ohne Karten reicht sechzehn Blöcke weit")
+    @DisplayName("A mast without cards reaches sixteen blocks")
     void aBareMastReachesSixteen() {
         assertEquals(16, Range.reach(EMPTY, EMPTY));
     }
 
     @Test
-    @DisplayName("Im Mast zählt eine Karte doppelt")
+    @DisplayName("In the mast a card counts double")
     void theMastAmplifies() {
-        // Der Mast ist ein Verstärker: Das Verdoppeln ist eine Eigenschaft
-        // des Orts, nicht der Karte. Sonst hätte dieselbe Karte an zwei
-        // Orten zwei Werte, und die Regel aus dem Ausbausystem wäre hin.
+        // The mast is an amplifier: the doubling is a property of the place,
+        // not of the card. Otherwise the same card would have two values in
+        // two places, and the rule from the upgrade system would be broken.
         assertEquals(16 + 16, Range.reach(cards(1), EMPTY));
         assertEquals(16 + 64, Range.reach(cards(4), EMPTY));
     }
 
     @Test
-    @DisplayName("Im Gerät zählt sie einfach")
+    @DisplayName("In the device it counts single")
     void theDeviceCountsPlain() {
         assertEquals(16 + 8, Range.reach(EMPTY, cards(1)));
         assertEquals(16 + 32, Range.reach(EMPTY, cards(4)));
     }
 
     @Test
-    @DisplayName("Voll ausgebaut sind es die 112 aus dem Entwurf")
+    @DisplayName("Fully built it is the 112 from the spec")
     void fullyBuiltMatchesTheSpec() {
         assertEquals(112, Range.reach(cards(4), cards(4)));
-        // Das Wireless Terminal hat nur zwei Plätze.
+        // The Wireless Terminal has only two slots.
         assertEquals(96, Range.reach(cards(4), cards(2)));
-        // Die Anzeigetafel einen, weil der andere das Modul trägt.
+        // The display board one, because the other carries the module.
         assertEquals(88, Range.reach(cards(4), cards(1)));
     }
 
     @Test
-    @DisplayName("Die Grenzenlos-Karte im Mast hebt alles auf")
+    @DisplayName("The Infinity card in the mast removes all limits")
     void infinityInTheMastLiftsEverything() {
         Loadout endgame = Loadout.of(List.of(Card.INFINITY));
         assertEquals(Range.UNLIMITED, Range.reach(endgame, EMPTY));
@@ -63,18 +63,18 @@ class RangeTest {
     }
 
     @Test
-    @DisplayName("Im Gerät hebt sie nichts auf")
+    @DisplayName("In the device it removes nothing")
     void infinityInTheDeviceDoesNothing() {
-        // Sie ist Infrastruktur und gehört in den Mast. Steckte sie im
-        // Gerät, bräuchte sie auf einem Server jeder Spieler einzeln — so
-        // steht es in fernzugriff.md §3.
+        // It is infrastructure and belongs in the mast. If it sat in the
+        // device, on a server every player would need it individually — that
+        // is how it stands in fernzugriff.md §3.
         Loadout inTheDevice = Loadout.of(List.of(Card.INFINITY));
         assertEquals(16, Range.reach(EMPTY, inTheDevice));
         assertFalse(Range.covers(EMPTY, inTheDevice, 1000.0));
     }
 
     @Test
-    @DisplayName("Die Grenze ist die Grenze")
+    @DisplayName("The edge is the edge")
     void theEdgeIsTheEdge() {
         assertTrue(Range.covers(EMPTY, EMPTY, 16.0));
         assertFalse(Range.covers(EMPTY, EMPTY, 16.01));

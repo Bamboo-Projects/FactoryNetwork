@@ -7,33 +7,33 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Was ein Kabel trägt — in einer Einheit, die man kennt.
+ * What a cable carries — in a unit one knows.
  *
- * <p><b>„64 je Tick" ist eine Zahl ohne Anker.</b> Ist das viel? Wofür
- * reicht es? Man lernt es durch Ausprobieren. „1 KB/s" trägt sein Gefühl
- * mit: Jeder weiß, dass das langsam ist und dass zehn davon mehr sind.
+ * <p><b>"64 per tick" is a number without an anchor.</b> Is that a lot? What
+ * does it suffice for? One learns it by trying it out. „1 KB/s" carries its
+ * feel along: everyone knows that this is slow and that ten of them are more.
  */
 class BandwidthTest {
 
-    /** Zwanzig Ticks sind eine Sekunde. */
+    /** Twenty ticks are one second. */
     private static final int TICKS = 20;
 
     @Test
-    @DisplayName("Ein Kabel trägt zwanzig Stapel je Tick")
+    @DisplayName("A cable carries twenty stacks per tick")
     void aCableCarriesTwentyStacks() {
-        // In Gegenständen gerechnet, denn das ist, was ein Worker bewegt:
-        // 1280 je Tick. Bis zum 30.08. waren es 128, und daneben stand ein
-        // dichtes Kabel mit dem Zehnfachen. Geblieben ist die größere Zahl —
-        // es sind Glasfaserkabel.
+        // Counted in items, because that is what a worker moves: 1280 per
+        // tick. Up to 30.08. it was 128, and next to it stood a dense cable
+        // with ten times that. The larger number stayed — they are
+        // fibre-optic cables.
         assertEquals(1280, Bandwidth.CABLE / Bandwidth.PER_ITEM);
     }
 
     @Test
-    @DisplayName("Der Controller trägt ein Kabel, der Anbau ein halbes")
+    @DisplayName("The controller carries one cable, the extension half of one")
     void theControllerCarriesOneCable() {
-        // Die Grenze, die alles teilt: Sie steht nicht als eigene Zahl da,
-        // sondern leitet sich vom Kabel ab. Eine Zahl, die man an zwei
-        // Stellen pflegt, driftet.
+        // The limit that divides everything: it does not stand as its own
+        // number, but is derived from the cable. A number maintained in two
+        // places drifts.
         assertEquals(Bandwidth.CABLE, Bandwidth.CONTROLLER);
         assertEquals(Bandwidth.CABLE / 2, Bandwidth.EXTENSION);
         assertEquals(Bandwidth.CONTROLLER + 2 * Bandwidth.EXTENSION,
@@ -41,47 +41,47 @@ class BandwidthTest {
     }
 
     @Test
-    @DisplayName("Und die Anzeige sagt es in Megabyte")
+    @DisplayName("And the display says it in megabytes")
     void theLabelReadsAsMegabytes() {
-        // „25600000 B/s" ist keine Auskunft, „25,6 MB/s" schon — und die
-        // Größenordnung klingt nach Netzwerk, weil sie eine ist.
+        // „25600000 B/s" is no help, „25,6 MB/s" is — and the order of
+        // magnitude sounds like networking, because it is one.
         assertEquals("25,6 MB/s", Bandwidth.perSecond(Bandwidth.CABLE));
         assertEquals("12,8 MB/s", Bandwidth.perSecond(Bandwidth.EXTENSION));
     }
 
     @Test
-    @DisplayName("Ein Gegenstand wiegt ein Kilobyte")
+    @DisplayName("An item weighs a kilobyte")
     void anItemWeighsAKilobyte() {
-        // <b>Nicht ein Byte.</b> Mit einem Byte je Gegenstand trüge ein
-        // Kabel 1 KB/s — eine Zahl, die neben „Glasfaser" lächerlich wirkt.
-        // Mit echten Glasfaserzahlen wiederum wäre die Grenze nie
-        // erreichbar: Ein sehr großes Netz bewegt sechstausend Gegenstände
-        // je Tick, echte Glasfaser trüge zweiundsechzig Millionen.
+        // <b>Not one byte.</b> With one byte per item a cable would carry
+        // 1 KB/s — a number that looks ridiculous next to "fibre optic".
+        // With real fibre-optic numbers, in turn, the limit would never be
+        // reachable: a very large network moves six thousand items per tick,
+        // real fibre optic would carry sixty-two million.
         assertEquals(1000, Bandwidth.PER_ITEM);
     }
 
     @Test
-    @DisplayName("Kleine Mengen bleiben in Byte")
+    @DisplayName("Small amounts stay in bytes")
     void smallAmountsStayInBytes() {
-        // „0 KB/s" für einen Worker, der etwas bewegt, wäre eine Lüge durch
-        // Rundung. Unterhalb eines Kilobyte zählt die Anzeige in Byte.
+        // „0 KB/s" for a worker that moves something would be a lie through
+        // rounding. Below a kilobyte the display counts in bytes.
         assertEquals("100 B/s", Bandwidth.perSecond(5));
         assertEquals("0 B/s", Bandwidth.perSecond(0));
     }
 
     @Test
-    @DisplayName("Dazwischen mit einer Nachkommastelle")
+    @DisplayName("In between with one decimal place")
     void inBetweenGetsOneDecimal() {
-        // 30 je Tick sind 600 B/s — aber 75 sind 1500, und „1 KB/s" verlöre
-        // die Hälfte der Auskunft.
+        // 30 per tick are 600 B/s — but 75 are 1500, and „1 KB/s" would lose
+        // half of the information.
         assertEquals("1,5 KB/s", Bandwidth.perSecond(75));
     }
 
     @Test
-    @DisplayName("Eine Gesamtmenge steigt durch die Einheiten")
+    @DisplayName("A total climbs through the units")
     void totalsClimbThroughTheUnits() {
-        // Ein Netz, das eine Woche läuft, bewegt Gigabyte — und
-        // "14603219 B" ist keine Auskunft, sondern eine Zahlenreihe.
+        // A network that runs for a week moves gigabytes — and
+        // "14603219 B" is no help, but a string of digits.
         assertEquals("340 B", Bandwidth.total(340));
         assertEquals("12,4 KB", Bandwidth.total(12_400));
         assertEquals("3,1 MB", Bandwidth.total(3_140_000));
@@ -90,26 +90,26 @@ class BandwidthTest {
     }
 
     @Test
-    @DisplayName("Und hört bei Terabyte auf")
+    @DisplayName("And stops at terabytes")
     void itStopsAtTerabytes() {
-        // Petabyte wäre eine Einheit für eine Zahl, die niemand erreicht —
-        // und eine Stufe, die niemand je gesehen hat, verwirrt mehr, als
-        // eine große Zahl es täte.
+        // A petabyte would be a unit for a number no one reaches — and a step
+        // no one has ever seen confuses more than a large number would.
         assertTrue(Bandwidth.total(9_000_000_000_000_000L).endsWith("TB"));
     }
 
     @Test
-    @DisplayName("Null ist null, nicht 0,0 B")
+    @DisplayName("Zero is zero, not 0,0 B")
     void zeroIsZero() {
         assertEquals("0 B", Bandwidth.total(0));
     }
 
     @Test
-    @DisplayName("Was nicht leitet, begrenzt auch nichts")
+    @DisplayName("What does not carry also limits nothing")
     void whatDoesNotCarryDoesNotLimit() {
         assertEquals(Integer.MAX_VALUE, Bandwidth.UNLIMITED);
-        // Und die Deckelung greift, statt in den negativen Bereich zu laufen:
-        // Ohne sie wäre die größte Bandbreite der Welt eine Zahl unter null.
+        // And the cap takes hold instead of running into the negative range:
+        // without it the largest bandwidth in the world would be a number
+        // below zero.
         assertEquals(Bandwidth.UNLIMITED, Bandwidth.ofController(Integer.MAX_VALUE));
     }
 }

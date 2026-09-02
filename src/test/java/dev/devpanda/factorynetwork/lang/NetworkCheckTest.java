@@ -10,16 +10,16 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Namen, die es in der Welt nicht gibt.
+ * Names that do not exist in the world.
  *
- * <p>Der Anlass war eine schwarze Wand: {@code display test { … }} war
- * grammatisch tadellos, der Übersetzer sagte „bereit", und die Tafel blieb
- * leer, weil sie anders hieß. Ein Fehler, der aussieht wie ein kaputtes Netz
- * und ein Tippfehler ist.
+ * <p>The trigger was a black wall: {@code display test { … }} was
+ * grammatically flawless, the compiler said "ready", and the board stayed
+ * empty because it had a different name. A mistake that looks like a broken
+ * network and is a typo.
  */
 class NetworkCheckTest {
 
-    /** Ein Netz mit genau diesen Namen. */
+    /** A network with exactly these names. */
     private static NetworkView net(List<String> connectors, List<String> displays) {
         return new NetworkView() {
             @Override
@@ -39,7 +39,7 @@ class NetworkCheckTest {
     }
 
     @Test
-    @DisplayName("Eine Anzeige ohne Wand wird gemeldet")
+    @DisplayName("A display without a wall is reported")
     void anUnknownDisplayIsReported() {
         List<Diagnostic> problems = check("""
                 display test {
@@ -55,10 +55,10 @@ class NetworkCheckTest {
     }
 
     @Test
-    @DisplayName("Ein Speicher an einem Gerät, das es nicht gibt, wird gemeldet")
+    @DisplayName("A store at a device that does not exist is reported")
     void astoreAtAnunknownDeviceIsReported() {
-        // Sonst steht im Terminal ein Bestand, der eine Kiste vermisst, die
-        // es nie gab — und niemand käme darauf, im Programm nachzusehen.
+        // Otherwise the terminal shows a stock that misses a chest that
+        // never existed — and nobody would think to look in the program.
         List<Diagnostic> problems = check("store kist_1 { }",
                 net(List.of("kiste_1", "ofen"), List.of()));
 
@@ -71,7 +71,7 @@ class NetworkCheckTest {
     }
 
     @Test
-    @DisplayName("Ein Speicher an einem Gerät, das es gibt, wird nicht gemeldet")
+    @DisplayName("A store at a device that exists is not reported")
     void astoreAtAknownDeviceIsQuiet() {
         List<Diagnostic> problems = check("store kiste_1 { }",
                 net(List.of("kiste_1"), List.of()));
@@ -82,14 +82,14 @@ class NetworkCheckTest {
     }
 
     @Test
-    @DisplayName("Strom in einem Rezept wird gemeldet, statt still zu verschwinden")
+    @DisplayName("Power in a recipe is reported instead of silently vanishing")
     void powerInArecipeIsReported() {
-        // „in 1000 power" parst — power ist eine Auswahl wie jede andere.
-        // Nur tut es nichts: Der Auftrag legt Gegenstände ein und füllt
-        // Flüssigkeiten auf, Strom bekommt die Maschine über die
-        // Stromverteilung. Seit Flüssigkeiten wirklich eingefüllt werden,
-        // ist dieses Schweigen irreführender als vorher — die Zeile daneben
-        // hält, was sie verspricht, diese nicht.
+        // "in 1000 power" parses — power is a selection like any other.
+        // It just does nothing: the order inserts items and tops up
+        // fluids, power reaches the machine through the
+        // power distribution. Since fluids are actually filled in,
+        // this silence is more misleading than before — the line next to it
+        // keeps what it promises, this one does not.
         List<Diagnostic> problems = check("""
                 recipe pressen at presse {
                     in 1 item:iron_ingot
@@ -104,7 +104,7 @@ class NetworkCheckTest {
     }
 
     @Test
-    @DisplayName("Ein Rezept ohne Strom wird nicht gemeldet")
+    @DisplayName("A recipe without power is not reported")
     void arecipeWithoutPowerIsNotReported() {
         List<Diagnostic> problems = check("""
                 recipe pressen at presse {
@@ -119,7 +119,7 @@ class NetworkCheckTest {
     }
 
     @Test
-    @DisplayName("Ein unbekanntes Gerät in einem move wird gemeldet")
+    @DisplayName("An unknown device in a move is reported")
     void anUnknownDeviceInAMoveIsReported() {
         List<Diagnostic> problems = check("""
                 fn holen() {
@@ -132,7 +132,7 @@ class NetworkCheckTest {
     }
 
     @Test
-    @DisplayName("Örtliche Namen in einem move sind keine Geräte")
+    @DisplayName("Local names in a move are not devices")
     void localNamesInAMoveAreNotDevices() {
         List<Diagnostic> problems = check("""
                 global lager = 0
@@ -157,7 +157,7 @@ class NetworkCheckTest {
     }
 
     @Test
-    @DisplayName("Auch ein move als Ausdruck wird geprüft")
+    @DisplayName("A move as an expression is checked too")
     void aMoveExpressionIsCheckedToo() {
         List<Diagnostic> problems = check("""
                 fn holen() {
@@ -169,7 +169,7 @@ class NetworkCheckTest {
     }
 
     @Test
-    @DisplayName("Eine Vorlage, die wie ein Gerät heißt, wird gemeldet")
+    @DisplayName("A template named like a device is reported")
     void aTemplateShadowingADeviceIsReported() {
         List<Diagnostic> problems = check("""
                 filter brecher_1 {
@@ -182,7 +182,7 @@ class NetworkCheckTest {
     }
 
     @Test
-    @DisplayName("Ohne Gerät gleichen Namens ist die Vorlage still")
+    @DisplayName("Without a device of the same name the template is quiet")
     void aTemplateWithoutACollisionIsQuiet() {
         List<Diagnostic> problems = check("""
                 filter erze {
@@ -193,7 +193,7 @@ class NetworkCheckTest {
     }
 
     @Test
-    @DisplayName("Ein Vertipper bekommt einen Vorschlag")
+    @DisplayName("A typo gets a suggestion")
     void aTypoGetsASuggestion() {
         List<Diagnostic> problems = check("""
                 display halel {
@@ -206,7 +206,7 @@ class NetworkCheckTest {
     }
 
     @Test
-    @DisplayName("Eine Anzeige, die es gibt, wird nicht gemeldet")
+    @DisplayName("A display that exists is not reported")
     void aKnownDisplayIsQuiet() {
         assertTrue(check("""
                 display halle {
@@ -215,7 +215,7 @@ class NetworkCheckTest {
     }
 
     @Test
-    @DisplayName("Ein unbekanntes Ziel wird gemeldet, eine Gruppe nicht")
+    @DisplayName("An unknown target is reported, a group is not")
     void unknownTargetsAreReportedButGroupsAreNot() {
         NetworkView view = net(List.of("kiste_1", "ofen_1"), List.of());
 
@@ -226,7 +226,7 @@ class NetworkCheckTest {
                 }""", view).stream().anyMatch(problem -> problem.message().contains("kiste_2")),
                 "kiste_2 gibt es nicht");
 
-        // Eine Gruppe steht an derselben Stelle und ist kein Connector.
+        // A group sits in the same place and is not a connector.
         assertTrue(check("""
                 group oefen {
                     members ofen_1
@@ -239,11 +239,11 @@ class NetworkCheckTest {
     }
 
     @Test
-    @DisplayName("Ohne bekanntes Netz wird nichts geprüft")
+    @DisplayName("Without a known network nothing is checked")
     void nothingIsCheckedWithoutANetwork() {
-        // Ein Terminal, das gerade erst aufgeht, hat noch keine Namen. Jeden
-        // davon zu melden wäre eine Zeile voller Warnungen, die eine Sekunde
-        // später von selbst verschwinden.
+        // A terminal that has only just opened has no names yet. Reporting
+        // each of them would be a line full of warnings that a second
+        // later disappear on their own.
         assertTrue(check("""
                 display test {
                     text "hallo"
@@ -251,7 +251,7 @@ class NetworkCheckTest {
     }
 
     @Test
-    @DisplayName("Eine Warnung hält das Übernehmen nicht auf")
+    @DisplayName("A warning does not hold up deployment")
     void aWarningDoesNotBlockDeployment() {
         var result = new Project(Map.of("main.mf", """
                 display morgen_gebaut {
@@ -262,9 +262,9 @@ class NetworkCheckTest {
                 "eine Wand, die man erst morgen baut, darf man heute schreiben");
     }
 
-    // ---- Die Seite, an der der Connector hängt -----------------------------
+    // ---- The side the connector is attached to -----------------------------
 
-    /** Ein Netz, in dem ein Gerät ein bekanntes Profil hat. */
+    /** A network in which a device has a known profile. */
     private static NetworkView netWith(String name, DeviceProfile profile) {
         return new NetworkView() {
             @Override
@@ -285,7 +285,7 @@ class NetworkCheckTest {
     }
 
     @Test
-    @DisplayName("Ein Ziel ohne Gegenstandsfach an der angeschlossenen Seite wird gemeldet")
+    @DisplayName("A target without an item slot on the connected side is reported")
     void aTargetWithoutItemsOnTheConnectedSideIsReported() {
         DeviceProfile tank = new DeviceProfile("block.mekanism.tank", "mekanism",
                 Side.UP, Map.of(
@@ -308,7 +308,7 @@ class NetworkCheckTest {
     }
 
     @Test
-    @DisplayName("Ein Flüssigkeits-Worker am Tank wird nicht gemeldet")
+    @DisplayName("A fluid worker at the tank is not reported")
     void aFluidWorkerAtATankIsFine() {
         DeviceProfile tank = new DeviceProfile("block.mekanism.tank", "mekanism",
                 Side.UP, Map.of(Side.UP, new DeviceProfile.Access(0, 1, false)));
@@ -325,7 +325,7 @@ class NetworkCheckTest {
     }
 
     @Test
-    @DisplayName("Über ein Gerät ohne Profil wird nichts behauptet")
+    @DisplayName("Nothing is claimed about a device without a profile")
     void nothingIsClaimedAboutAnUnknownDevice() {
         List<Diagnostic> problems = check("""
                 worker mahlen {
@@ -339,7 +339,7 @@ class NetworkCheckTest {
     }
 
     @Test
-    @DisplayName("Ein Worker ohne Filter löst keine Seitenwarnung aus")
+    @DisplayName("A worker without a filter triggers no side warning")
     void aWorkerWithoutFilterIsNotChecked() {
         DeviceProfile tank = new DeviceProfile("block.mekanism.tank", "mekanism",
                 Side.UP, Map.of(Side.UP, new DeviceProfile.Access(0, 1, false)));
@@ -356,12 +356,12 @@ class NetworkCheckTest {
     }
 
     @Test
-    @DisplayName("Auch in einer Liste wird ein Vertipper gefunden")
+    @DisplayName("A typo inside a list is found too")
     void atypoInsideAlistIsFoundToo() {
-        // Ein Listenliteral ist der einzige Ausdruck, der Ausdrücke enthält.
-        // Wer beim Prüfen nicht hineingeht, lässt genau dort einen falschen
-        // Gerätenamen durch — und dort steht er bald, denn eine Liste von
-        // Zielen ist der offensichtliche Gebrauch.
+        // A list literal is the only expression that contains expressions.
+        // Whoever does not descend into it while checking lets a wrong
+        // device name slip through right there — and it will soon be there,
+        // because a list of targets is the obvious use.
         List<Diagnostic> problems = check("""
                 fn holen() {
                     let wege = [move 64 item:iron_ore from kist to ofen]

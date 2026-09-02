@@ -9,26 +9,25 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 /**
- * Die Namen auf der Platte.
+ * The names on disk.
  *
- * <p>Ein wartender Ablauf liegt in der Welt, und seine Variablen liegen darin
- * als NBT. Wer das Wertemodell umbaut, ändert dabei leicht auch diese Namen —
- * und dann liest eine alte Welt ihre Abläufe nicht mehr. Sie stehen hier
- * fest.
+ * <p>A waiting flow lies in the world, and its variables lie within it as
+ * NBT. Whoever rebuilds the value model easily changes these names along the
+ * way — and then an old world no longer reads its flows. They are fixed here.
  *
- * <p><b>Von Hand gebaut und nicht über einen Rundlauf durch den Schreiber.</b>
- * Ein Rundlauf ist mit sich selbst immer einig, auch wenn beide Seiten
- * gemeinsam abgedriftet sind. Geprüft wird deshalb andersherum: ein Tag, wie
- * es heute in einer Welt liegt, hinein — und dasselbe Tag wieder heraus.
+ * <p><b>Built by hand and not via a round-trip through the writer.</b> A
+ * round-trip always agrees with itself, even when both sides have drifted
+ * together. It is therefore tested the other way around: a tag, as it lies in
+ * a world today, goes in — and the same tag comes back out.
  *
- * <p>Gegenstände und Flüssigkeiten fehlen hier, weil ihre Kennungen gegen die
- * Registry aufgelöst werden und die ohne laufendes Spiel keine ist. Für sie
- * steht dieselbe Prüfung im Prüflauf.
+ * <p>Items and fluids are missing here because their identifiers are resolved
+ * against the registry, and without a running game that registry is none. For
+ * them the same check lives in the game test.
  */
 class ValueCodecFormatTest {
 
     @Test
-    @DisplayName("Eine gespeicherte Chemikalie heißt weiterhin chem")
+    @DisplayName("A stored chemical is still called chem")
     void asavedChemicalIsStillCalledChem() {
         CompoundTag stored = new CompoundTag();
         stored.putString("t", "chem");
@@ -38,7 +37,7 @@ class ValueCodecFormatTest {
     }
 
     @Test
-    @DisplayName("Eine gespeicherte Chemikalienauswahl heißt weiterhin chemsel")
+    @DisplayName("A stored chemical selection is still called chemsel")
     void asavedChemicalSelectionIsStillCalledChemsel() {
         ListTag ids = new ListTag();
         ids.add(StringTag.valueOf("mekanism:hydrogen"));
@@ -52,11 +51,11 @@ class ValueCodecFormatTest {
     }
 
     @Test
-    @DisplayName("Eine Auswahl ohne Menge behält die -1")
+    @DisplayName("A selection without an amount keeps the -1")
     void aselectionWithoutAnamountKeepsTheMinusOne() {
-        // -1 heißt „alles, was da ist". Ginge die Zahl beim Umbau auf 0, wäre
-        // aus „alles" still „nichts" geworden — und der Ablauf bewegte nach
-        // dem Neustart keinen Tropfen mehr.
+        // -1 means "everything that is there". If the number turned to 0
+        // during a rebuild, "everything" would silently have become "nothing"
+        // — and after a restart the flow would move not a drop more.
         ListTag ids = new ListTag();
         ids.add(StringTag.valueOf("mekanism:hydrogen"));
         CompoundTag stored = new CompoundTag();

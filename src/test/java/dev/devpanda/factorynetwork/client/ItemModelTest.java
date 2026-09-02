@@ -15,23 +15,23 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Wacht über die Gegenstandsmodelle mit eigenen Kästen.
+ * Watches over the item models with their own boxes.
  *
- * <p><b>Die Falle, die dieser Test stellt.</b> Minecraft erkennt an der
- * Ahnenreihe {@code builtin/generated}, dass es die Flächen eines
- * Gegenstands selbst bauen soll — aus {@code layer0}. Ein Modell, das eigene
- * Kästen mitbringt und trotzdem von {@code item/generated} erbt, hat danach
- * überhaupt keine Flächen mehr: In der Hand ist es unsichtbar.
+ * <p><b>The trap this test sets.</b> Minecraft recognizes from the ancestry
+ * {@code builtin/generated} that it should build the faces of an item itself
+ * — from {@code layer0}. A model that brings its own boxes and still inherits
+ * from {@code item/generated} has no faces at all afterwards: in the hand it
+ * is invisible.
  *
- * <p>Auffallen würde das erst im Spiel, und dort auch nur dem, der genau
- * diesen Gegenstand in die Hand nimmt. Deshalb steht es hier.
+ * <p>This would only show up in the game, and there only to whoever takes
+ * this exact item in hand. That is why it stands here.
  */
 class ItemModelTest {
 
     private static final Path MODELS = Path.of(
             "src/main/resources/assets/factorynetwork/models/item");
 
-    /** Alle Gegenstandsmodelle, die eigene Kästen mitbringen. */
+    /** All item models that bring their own boxes. */
     private static List<Path> withElements() throws IOException {
         List<Path> found = new ArrayList<>();
         try (Stream<Path> files = Files.list(MODELS)) {
@@ -53,7 +53,7 @@ class ItemModelTest {
     }
 
     @Test
-    @DisplayName("Kein Modell mit eigenen Kästen erbt von item/generated")
+    @DisplayName("No model with its own boxes inherits from item/generated")
     void ownBoxesMeanNoGeneratedParent() throws IOException {
         List<Path> models = withElements();
         assertFalse(models.isEmpty(), "kein einziges Modell hat eigene Kästen");
@@ -67,13 +67,13 @@ class ItemModelTest {
     }
 
     @Test
-    @DisplayName("Und bringt seine Ansichten selbst mit")
+    @DisplayName("And brings its own views itself")
     void ownBoxesMeanOwnDisplay() throws IOException {
         for (Path file : withElements()) {
             String json = read(file);
-            // Wer von einem Blockmodell erbt, bekommt sie von dort — vom
-            // eigenen wie von minecraft:block/block. Der Connector tut das:
-            // Er wird gehalten wie ein Block, weil er einer wird.
+            // Whoever inherits from a block model gets them from there — from
+            // its own as from minecraft:block/block. The connector does that:
+            // it is held like a block, because it becomes one.
             if (json.contains("\"parent\":\"factorynetwork:block/")
                     || json.contains("\"parent\":\"minecraft:block/")) {
                 continue;
@@ -85,10 +85,10 @@ class ItemModelTest {
     }
 
     @Test
-    @DisplayName("Jede Fläche eines Gegenstands nennt ihren Ausschnitt")
+    @DisplayName("Every face of an item names its cutout")
     void everyFaceNamesItsUv() throws IOException {
-        // Ohne Vorfahren gibt es keine Vorgabe, aus der Minecraft die UV
-        // ableiten könnte — sie steht im Modell oder sie fehlt.
+        // Without an ancestor there is no default from which Minecraft could
+        // derive the UV — it stands in the model or it is missing.
         for (Path file : withElements()) {
             String json = read(file);
             if (json.contains("\"parent\":")) {

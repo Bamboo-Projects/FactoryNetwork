@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Das Profil ist reine Auskunft: Es rechnet nicht, es sagt nur, was da ist.
+ * The profile is pure information: it does not compute, it only reports what is there.
  */
 class DeviceProfileTest {
 
@@ -24,7 +24,7 @@ class DeviceProfileTest {
     }
 
     @Test
-    @DisplayName("Eine Seite ohne Eintrag kann nichts")
+    @DisplayName("A side without an entry can do nothing")
     void anUnlistedSideCanNothing() {
         DeviceProfile profile = crusher();
 
@@ -34,7 +34,7 @@ class DeviceProfileTest {
     }
 
     @Test
-    @DisplayName("Die angeschlossene Seite wird getrennt geführt")
+    @DisplayName("The connected side is tracked separately")
     void theConnectedSideIsKeptApart() {
         DeviceProfile profile = crusher();
 
@@ -45,7 +45,7 @@ class DeviceProfileTest {
     }
 
     @Test
-    @DisplayName("Wer Gegenstände sucht, bekommt die Seiten genannt, die welche haben")
+    @DisplayName("Asking for items names the sides that have them")
     void sidesWithItemsAreListed() {
         List<Side> sides = crusher().sidesWith(DeviceProfile.Access.Ability.ITEMS);
 
@@ -55,7 +55,7 @@ class DeviceProfileTest {
     }
 
     @Test
-    @DisplayName("Ein Gerät im nicht geladenen Bereich sagt nichts über sich")
+    @DisplayName("A device in an unloaded area says nothing about itself")
     void anUnloadedDeviceSaysNothing() {
         DeviceProfile unknown = DeviceProfile.unreachable();
 
@@ -65,7 +65,7 @@ class DeviceProfileTest {
     }
 
     @Test
-    @DisplayName("Seiten mit gleichem Zugang stehen zusammen")
+    @DisplayName("Sides with the same access are grouped together")
     void sidesWithTheSameAccessAreGrouped() {
         DeviceProfile.Access threeSlots = new DeviceProfile.Access(3, 0, false);
         DeviceProfile machine = new DeviceProfile("block.mekanism.crusher", "mekanism",

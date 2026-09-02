@@ -12,26 +12,26 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Was an einem Gerät steht — über {@code online} und {@code name} hinaus.
+ * What stands on a device — beyond {@code online} and {@code name}.
  *
- * <p>{@code sprache.md} §6 nennt vier Mitglieder. Zwei davon sind eindeutig
- * und stehen hier: {@code insert} legt etwas hinein, {@code items} sagt, was
- * drin ist. {@code output()} und {@code send()} brauchen erst eine
- * Entscheidung — siehe {@code offene-punkte.md}.
+ * <p>{@code sprache.md} §6 names four members. Two of them are unambiguous
+ * and live here: {@code insert} puts something in, {@code items} says what is
+ * inside. {@code output()} and {@code send()} still need a decision — see
+ * {@code offene-punkte.md}.
  */
 class DeviceMemberTest {
 
-    /** Eine Welt aus Papier, die sich merkt, was in die Geräte gewandert ist. */
+    /** A paper world that remembers what has wandered into the devices. */
     private static final class TestHost implements Interpreter.Host {
 
         final List<String> logs = new ArrayList<>();
         final List<String> inserts = new ArrayList<>();
         final List<String> devices = new ArrayList<>(List.of("crusher_1", "furnace_2"));
 
-        /** Was in den Geräten liegt, für {@code items()}. */
+        /** What lies in the devices, for {@code items()}. */
         final List<Value> contents = new ArrayList<>();
 
-        /** Wie viel der nächste Einfügeversuch schafft. */
+        /** How much the next insertion attempt manages. */
         long accepts = 64;
 
         @Override
@@ -79,10 +79,10 @@ class DeviceMemberTest {
             return contents;
         }
 
-        /** Wonach im Gerät gezählt wurde — Gerät und Auswahl. */
+        /** What was counted in the device — device and selection. */
         final List<String> counted = new ArrayList<>();
 
-        /** Was der Blick ins Gerät findet. */
+        /** What the look into the device finds. */
         long inDevice = 7;
 
         @Override
@@ -100,7 +100,7 @@ class DeviceMemberTest {
     }
 
     @Test
-    @DisplayName("insert legt etwas ins Gerät und meldet, wie viel ankam")
+    @DisplayName("insert puts something into the device and reports how much arrived")
     void insertPutsSomethingIn() {
         TestHost host = new TestHost();
         host.accepts = 40;
@@ -120,7 +120,7 @@ class DeviceMemberTest {
     }
 
     @Test
-    @DisplayName("Was nicht hineinpasst, meldet insert als Null")
+    @DisplayName("What does not fit, insert reports as zero")
     void whatDoesNotFitIsReportedAsZero() {
         TestHost host = new TestHost();
         host.accepts = 0;
@@ -136,7 +136,7 @@ class DeviceMemberTest {
     }
 
     @Test
-    @DisplayName("items sagt, was im Gerät liegt")
+    @DisplayName("items says what lies in the device")
     void itemsTellsWhatIsInside() {
         TestHost host = new TestHost();
         host.contents.add(new Value.Text("64 iron_ore"));
@@ -148,14 +148,14 @@ class DeviceMemberTest {
 
         interpreter.call("zeigen", List.of());
 
-        // Die Zahl allein half niemandem: Wer eine Liste ins Protokoll
-        // schreibt oder einen globalen Listenwert im Netz-Reiter ansieht,
-        // will wissen, was darin steht.
+        // The number alone helped no one: whoever writes a list to the log
+        // or looks at a global list value in the network tab wants to know
+        // what is in it.
         assertEquals(List.of("[64 iron_ore, 3 coal]"), host.logs);
     }
 
     @Test
-    @DisplayName("Ein leeres Gerät liefert eine leere Liste, keinen Fehler")
+    @DisplayName("An empty device returns an empty list, not an error")
     void anEmptyDeviceGivesAnEmptyList() {
         TestHost host = new TestHost();
         Interpreter interpreter = interpreterFor("""
@@ -169,10 +169,10 @@ class DeviceMemberTest {
     }
 
     @Test
-    @DisplayName("Eine lange Liste wird gekürzt, nicht abgeschnitten")
+    @DisplayName("A long list is shortened, not cut off")
     void alongListIsShortenedNotCutOff() {
-        // Eine Liste, die still endet, liest sich wie eine vollständige —
-        // dieselbe Regel wie bei der Aufzählung auf einer Anzeigetafel.
+        // A list that ends silently reads like a complete one — the same
+        // rule as for the enumeration on a display board.
         TestHost host = new TestHost();
         for (int i = 0; i < 9; i++) {
             host.contents.add(new Value.Int(i));
@@ -188,7 +188,7 @@ class DeviceMemberTest {
     }
 
     @Test
-    @DisplayName("Ein Mitglied, das es nicht gibt, nennt die, die es gibt")
+    @DisplayName("A member that does not exist names the ones that do")
     void anUnknownMemberNamesTheKnownOnes() {
         TestHost host = new TestHost();
         Interpreter interpreter = interpreterFor("""
@@ -203,11 +203,11 @@ class DeviceMemberTest {
     }
 
     @Test
-    @DisplayName("count am Gerät fragt das Gerät, nicht den Speicher")
+    @DisplayName("count on the device asks the device, not the storage")
     void countAsksTheDevice() {
         TestHost host = new TestHost();
-        // Der Speicher dieses Hosts zählt null. Käme die Zahl von dort,
-        // stünde hier null statt sieben.
+        // The storage of this host counts zero. If the number came from
+        // there, it would be zero here instead of seven.
         host.inDevice = 7;
         Interpreter interpreter = interpreterFor("""
                 fn zaehlen() {
@@ -222,7 +222,7 @@ class DeviceMemberTest {
     }
 
     @Test
-    @DisplayName("Ohne Auswahl zählt es alles im Gerät")
+    @DisplayName("Without a selection it counts everything in the device")
     void countWithoutASelection() {
         TestHost host = new TestHost();
         Interpreter interpreter = interpreterFor("""
@@ -238,7 +238,7 @@ class DeviceMemberTest {
     }
 
     @Test
-    @DisplayName("count am Speicher bleibt der Speicher")
+    @DisplayName("count on the storage stays the storage")
     void countOnStorageIsUnchanged() {
         TestHost host = new TestHost();
         Interpreter interpreter = interpreterFor("""

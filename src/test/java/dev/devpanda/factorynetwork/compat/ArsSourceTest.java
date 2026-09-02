@@ -14,17 +14,16 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 /**
- * Source aus Ars Nouveau — der Beweis, für den die offene Registry gebaut
- * wurde.
+ * Source from Ars Nouveau — the proof for which the open registry was built.
  *
- * <p>Diese Art kommt von einer fremden Mod. Was sie kostet, steht vollständig
- * in {@code compat/ars}: vier Klassen und ein Aufruf beim Laden. Was dieser
- * Prüflauf festhält, ist genau das — dass sie die Schnittstelle erfüllt, ohne
- * dass eine Zeile im Kern von ihr weiß.
+ * <p>This kind comes from a foreign mod. What it costs stands entirely in
+ * {@code compat/ars}: four classes and one call at load time. What this check
+ * captures is exactly that — that it fulfills the interface without a single
+ * line in the core knowing about it.
  *
- * <p>Was er <b>nicht</b> prüfen kann, ist der Zugriff auf die Maschinen: Dazu
- * müsste Ars Nouveau laufen. Ohne die Mod meldet er sich als „nicht da", und
- * genau das ist hier die richtige Antwort.
+ * <p>What it <b>cannot</b> check is access to the machines: that would need
+ * Ars Nouveau to be running. Without the mod it reports itself as "not
+ * there", and that is exactly the right answer here.
  */
 class ArsSourceTest {
 
@@ -35,34 +34,34 @@ class ArsSourceTest {
     }
 
     @Test
-    @DisplayName("Die Art trägt Präfix, Kennung und Plattennamen")
+    @DisplayName("The kind carries prefix, id and disk name")
     void thekindCarriesPrefixIdAndDiskName() {
         assertEquals("source", ArsSource.INSTANCE.prefix());
         assertEquals("ars_nouveau", ArsSource.INSTANCE.id().getNamespace());
         assertEquals("source", ArsSource.INSTANCE.id().getPath());
-        // Der Name auf der Platte muss über Neustarts derselbe bleiben und
-        // darf keinem anderen gleichen — beides prüft die Registry beim
-        // Anmelden, und beides steht hier fest.
+        // The name on the disk must stay the same across restarts and must
+        // not equal any other — the registry checks both at registration, and
+        // both are fixed here.
         assertEquals("src", ArsSource.INSTANCE.tag());
         assertEquals("srcsel", ArsSource.INSTANCE.selectionTag());
     }
 
     @Test
-    @DisplayName("source:source trifft die eine Sorte, alles andere nichts")
+    @DisplayName("source:source hits the one sort, nothing else")
     void sourcecolonSourceHitsTheOneSort() {
         assertEquals(1, ArsSource.INSTANCE.resolve(selector("source")).size());
-        // Keine stille Umdeutung: Wer sich vertippt, bewegt nichts, statt
-        // unbemerkt das Einzige zu treffen, das es gibt.
+        // No silent reinterpretation: whoever mistypes moves nothing, instead
+        // of unnoticed hitting the only one that exists.
         assertTrue(ArsSource.INSTANCE.resolve(selector("mana")).isEmpty());
         assertTrue(ArsSource.INSTANCE.resolve(selector("")).isEmpty());
     }
 
     @Test
-    @DisplayName("Der Schlüssel ist eine Zeichenkette und kein fremder Typ")
+    @DisplayName("The key is a string and not a foreign type")
     void thekeyIsAstringAndNotAforeignType() {
-        // Eine Signatur mit einer Klasse von Ars Nouveau würde diese beim
-        // Laden auflösen — auch in einem Pack ohne die Mod. Dieselbe Vorsicht
-        // wie bei den Chemikalien.
+        // A signature with a class from Ars Nouveau would resolve it at load
+        // time — even in a pack without the mod. The same caution as with the
+        // chemicals.
         assertEquals(String.class, ArsSource.INSTANCE.type());
         Object key = ArsSource.INSTANCE.resolve(selector("source")).get(0);
         assertTrue(ArsSource.INSTANCE.type().isInstance(key));
@@ -70,20 +69,20 @@ class ArsSourceTest {
     }
 
     @Test
-    @DisplayName("Jedes Netz bekommt seinen eigenen Zwischenhalt")
+    @DisplayName("Every network gets its own buffer")
     void everynetworkGetsItsOwnBuffer() {
         assertNotSame(ArsSource.INSTANCE.newStore(), ArsSource.INSTANCE.newStore());
     }
 
     @Test
-    @DisplayName("Der Zwischenhalt meldet, was nicht hineinpasste")
+    @DisplayName("The buffer reports what did not fit")
     void thebufferReportsWhatDidNotFit() {
         SourceBuffer buffer = new SourceBuffer();
         assertEquals(0, buffer.insert("source", 100));
         assertEquals(100, buffer.count("source"));
 
-        // insert meldet den Rest, nicht das Angekommene — dieselbe Regel wie
-        // bei allen anderen Speichern.
+        // insert reports the rest, not what arrived — the same rule as with
+        // all other stores.
         long tooMuch = SourceBuffer.CAPACITY;
         assertEquals(100, buffer.insert("source", tooMuch));
         assertEquals(SourceBuffer.CAPACITY, buffer.count("source"));
@@ -93,22 +92,22 @@ class ArsSourceTest {
     }
 
     @Test
-    @DisplayName("Eine andere Art lagert dort nicht")
+    @DisplayName("Another kind does not rest there")
     void anotherKindDoesNotRestThere() {
         SourceBuffer buffer = new SourceBuffer();
-        // Der Rest ist alles: Nichts davon passte hinein.
+        // The rest is everything: none of it fit in.
         assertEquals(50, buffer.insert("mana", 50));
         assertEquals(0, buffer.count("mana"));
         assertEquals(0, buffer.extract("mana", 50));
     }
 
     @Test
-    @DisplayName("Ohne Ars Nouveau kommt an keiner Maschine etwas an")
+    @DisplayName("Without Ars Nouveau nothing arrives at any machine")
     void withoutArsNouveauNothingArrivesAtAmachine() {
         MachineAccess access = ArsSource.INSTANCE.machine();
-        // Nicht NONE: Der Zugriff ist angemeldet. Er findet nur nichts, weil
-        // die Mod fehlt — und das ist ein anderer Satz für den Spieler als
-        // „diese Art lässt sich an keiner Maschine bewegen".
+        // Not NONE: the access is registered. It just finds nothing because
+        // the mod is missing — and that is a different sentence for the player
+        // than "this kind cannot be moved at any machine".
         assertNotSame(MachineAccess.NONE, access);
         assertEquals(0, access.count(null, null, null, List.of("source")));
     }

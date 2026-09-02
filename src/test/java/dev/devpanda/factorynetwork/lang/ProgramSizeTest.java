@@ -9,15 +9,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /**
- * Was ein Programm auf dem Datenträger kostet.
+ * What a program costs on the storage medium.
  *
- * <p>Die Zahl steht dem Spieler im Terminal vor Augen und begrenzt, was er
- * schreiben darf. Sie muss deshalb nicht nur stimmen, sondern sich auch
- * erklären lassen — deshalb steht hier für jede Bauform, was sie kostet.
+ * <p>The number is right in front of the player in the terminal and limits
+ * what they may write. So it must not only be correct but also be explainable
+ * — which is why, for every construct, what it costs is spelled out here.
  */
 class ProgramSizeTest {
 
-    /** Dasselbe, aber Warnungen sind hier erwünscht. */
+    /** The same, but warnings are welcome here. */
     private static int sizeOfWithWarnings(String source) {
         Parser.ParseResult result = Parser.parse(source);
         assertFalse(result.hasErrors(), () -> "Unerwartete Fehler: " + result.diagnostics());
@@ -32,13 +32,13 @@ class ProgramSizeTest {
     }
 
     @Test
-    @DisplayName("Eine leere Funktion kostet eins")
+    @DisplayName("An empty function costs one")
     void emptyFunction() {
         assertEquals(1, sizeOf("fn nichts() {\n}"));
     }
 
     @Test
-    @DisplayName("Jede Anweisung kostet eins dazu")
+    @DisplayName("Every statement costs one more")
     void oneEach() {
         assertEquals(4, sizeOf("""
                 fn drei() {
@@ -49,7 +49,7 @@ class ProgramSizeTest {
     }
 
     @Test
-    @DisplayName("Kommentare und Leerzeilen kosten nichts")
+    @DisplayName("Comments and blank lines cost nothing")
     void commentsAreFree() {
         assertEquals(sizeOf("""
                 fn zwei() {
@@ -68,9 +68,9 @@ class ProgramSizeTest {
     }
 
     @Test
-    @DisplayName("Ein verschachtelter Block zählt seinen Inhalt mit")
+    @DisplayName("A nested block counts its contents too")
     void nestedBlocksCount() {
-        // Funktion, Schleife und die beiden Anweisungen darin.
+        // Function, loop and the two statements inside it.
         assertEquals(4, sizeOf("""
                 fn schleife() {
                     while true {
@@ -81,7 +81,7 @@ class ProgramSizeTest {
     }
 
     @Test
-    @DisplayName("Der else-Zweig zählt auch")
+    @DisplayName("The else branch counts as well")
     void elseCounts() {
         assertEquals(4, sizeOf("""
                 fn zweig() {
@@ -94,7 +94,7 @@ class ProgramSizeTest {
     }
 
     @Test
-    @DisplayName("Ein Aufruf kostet eins, wie jede andere Anweisung")
+    @DisplayName("A call costs one, like any other statement")
     void call() {
         assertEquals(2, sizeOf("""
                 fn sagt() {
@@ -103,13 +103,13 @@ class ProgramSizeTest {
     }
 
     /**
-     * {@code log "hallo"} ohne Klammern kostet zwei, weil es zwei
-     * Anweisungen sind — ein Name und eine Zeichenkette, beide ohne
-     * Wirkung. Der Parser warnt inzwischen davor; gezählt wird trotzdem,
-     * was dasteht.
+     * {@code log "hallo"} without parentheses costs two, because it is two
+     * statements — a name and a string, both without effect. The parser
+     * warns about it by now; what is counted is still what is written
+     * there.
      */
     @Test
-    @DisplayName("Zwei Ausdrücke nebeneinander sind zwei Anweisungen")
+    @DisplayName("Two expressions side by side are two statements")
     void twoBareExpressions() {
         assertEquals(3, sizeOfWithWarnings("""
                 fn sagt() {

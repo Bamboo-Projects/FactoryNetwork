@@ -9,20 +9,19 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Jede Forderung bekommt ihren eigenen Platz.
+ * Every demand gets its own slot.
  *
- * <p>Klingt einfach und ist es nicht: Wer der Reihe nach den ersten passenden
- * Platz nimmt, verbaut sich. Ein Rezept aus <i>irgendein Metall</i> und
- * <i>Kupfer</i> liegt in einer Presse mit Kupfer und Eisen — nimmt die erste
- * Forderung das Kupfer, findet die zweite nichts mehr, obwohl die Zuordnung
- * offensichtlich aufgeht.
+ * <p>Sounds simple and is not: whoever takes the first matching slot in order
+ * boxes themselves in. A recipe of <i>any metal</i> and <i>copper</i> lies in
+ * a press with copper and iron — if the first demand takes the copper, the
+ * second finds nothing more, although the assignment obviously works out.
  *
- * <p>Deshalb steht die Zuordnung hier als eigene Rechnung, ohne
- * Minecraft-Typen, und wird an Buchstaben geprüft statt an Gegenständen.
+ * <p>That is why the assignment stands here as its own computation, without
+ * Minecraft types, and is checked against letters instead of items.
  */
 class AssignmentTest {
 
-    /** „Passt" heißt hier: derselbe Buchstabe, oder die Forderung ist ein Stern. */
+    /** "Matches" here means: the same letter, or the demand is a star. */
     private static boolean matches(String demand, String slot) {
         return demand.equals("*") ? !slot.isEmpty() : demand.equals(slot);
     }
@@ -32,26 +31,26 @@ class AssignmentTest {
     }
 
     @Test
-    @DisplayName("Was gefordert ist und dasteht, geht auf")
+    @DisplayName("What is demanded and present works out")
     void plainCase() {
         assertTrue(fits(List.of("a", "b"), List.of("a", "b", "")));
         assertTrue(fits(List.of("a", "b"), List.of("b", "a", "")));
     }
 
     @Test
-    @DisplayName("Ohne Forderung passt jeder Bestand")
+    @DisplayName("Without a demand any stock fits")
     void noDemands() {
         assertTrue(fits(List.of(), List.of("a", "b", "")));
     }
 
     @Test
-    @DisplayName("Was fehlt, fehlt")
+    @DisplayName("What is missing is missing")
     void missingIngredient() {
         assertFalse(fits(List.of("a", "c"), List.of("a", "b", "")));
     }
 
     @Test
-    @DisplayName("Zwei gleiche Forderungen brauchen zwei Plätze")
+    @DisplayName("Two identical demands need two slots")
     void twoOfTheSame() {
         assertTrue(fits(List.of("a", "a"), List.of("a", "a", "")));
         assertFalse(fits(List.of("a", "a"), List.of("a", "b", "")),
@@ -59,23 +58,23 @@ class AssignmentTest {
     }
 
     @Test
-    @DisplayName("Die gierige Zuordnung verbaut sich — diese nicht")
+    @DisplayName("The greedy assignment boxes itself in — this one does not")
     void greedyWouldFail() {
-        // Der Stern greift zuerst und nimmt gierig das „b" — dann findet die
-        // zweite Forderung nichts mehr, obwohl „a" für den Stern dagewesen
-        // wäre. Er muss zurücktreten können.
+        // The star grabs first and greedily takes the "b" — then the second
+        // demand finds nothing more, although "a" would have been there for
+        // the star. It has to be able to step back.
         assertTrue(fits(List.of("*", "b"), List.of("b", "a", "")),
                 "der Stern muss zurücktreten können");
         assertTrue(fits(List.of("*", "*", "c"), List.of("a", "c", "b")));
 
-        // Und die Gegenprobe zur Zeile darüber: Mit nur einem belegten Platz
-        // gibt es für zwei Forderungen nichts zu verteilen.
+        // And the counter-check to the line above: with only one occupied
+        // slot there is nothing to distribute for two demands.
         assertFalse(fits(List.of("*", "b"), List.of("b", "", "")),
                 "zwei Forderungen brauchen zwei belegte Plätze");
     }
 
     @Test
-    @DisplayName("Die Zuordnung sagt auch, aus welchem Platz was kommt")
+    @DisplayName("The assignment also says from which slot what comes")
     void assignmentNamesTheSlots() {
         int[] wohin = Assignment.assign(List.of("b", "a"), List.of("a", "b", ""),
                 AssignmentTest::matches);
@@ -89,7 +88,7 @@ class AssignmentTest {
     }
 
     @Test
-    @DisplayName("Mehr Forderungen als Plätze gehen nie auf")
+    @DisplayName("More demands than slots never work out")
     void tooManyDemands() {
         assertFalse(fits(List.of("a", "b", "c", "d"), List.of("a", "b", "c")));
     }

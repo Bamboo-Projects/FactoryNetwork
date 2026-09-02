@@ -13,17 +13,17 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Eine aus JEI kopierte ID wird angenommen.
+ * An ID copied from JEI is accepted.
  *
- * <p><b>Jeder kopiert IDs aus JEI</b>, und dort steht
- * {@code mekanism:steel_ingot}. Wer daraus {@code item:mekanism:steel_ingot}
- * machte, bekam zuerst sieben Fehlermeldungen in einer Zeile, dann eine, die
- * die richtige Schreibweise nannte — und musste sie trotzdem bei jeder
- * kopierten ID von Hand berichtigen.
+ * <p><b>Everyone copies IDs from JEI</b>, and there it reads
+ * {@code mekanism:steel_ingot}. Whoever turned that into
+ * {@code item:mekanism:steel_ingot} first got seven error messages on one
+ * line, then one that named the correct spelling — and still had to correct
+ * it by hand for every copied ID.
  *
- * <p>Seit dem 25.08. gelten beide Formen. Der Doppelpunkt trennt Namensraum
- * und Pfad genauso wie der Schrägstrich; welchen jemand schreibt, ist seine
- * Sache.
+ * <p>Since 25.08. both forms are valid. The colon separates namespace and
+ * path just like the slash does; which one someone writes is their own
+ * business.
  */
 class JeiIdTest {
 
@@ -33,7 +33,7 @@ class JeiIdTest {
                 .toList();
     }
 
-    /** Die Auswahl aus der {@code filter}-Zeile des ersten Workers. */
+    /** The selection from the {@code filter} line of the first worker. */
     private static Expr.Selector selectorOf(String source) {
         Parser.ParseResult result = Parser.parse(source);
         assertTrue(result.diagnostics().stream().noneMatch(Diagnostic::isError),
@@ -45,7 +45,7 @@ class JeiIdTest {
     }
 
     @Test
-    @DisplayName("Die JEI-Schreibweise wird angenommen")
+    @DisplayName("The JEI spelling is accepted")
     void theJeiFormIsAccepted() {
         Expr.Selector selector = selectorOf("""
                 worker w {
@@ -60,7 +60,7 @@ class JeiIdTest {
     }
 
     @Test
-    @DisplayName("Sie meint dasselbe wie die Form mit Schrägstrich")
+    @DisplayName("It means the same as the form with a slash")
     void bothFormsMeanTheSame() {
         Expr.Selector mitDoppelpunkt = selectorOf("""
                 worker w {
@@ -81,7 +81,7 @@ class JeiIdTest {
     }
 
     @Test
-    @DisplayName("Ein Tag aus JEI ebenso — der Pfad darf Schrägstriche behalten")
+    @DisplayName("A tag from JEI likewise — the path may keep slashes")
     void aTagFromJeiToo() {
         Expr.Selector selector = selectorOf("""
                 worker w {
@@ -96,7 +96,7 @@ class JeiIdTest {
     }
 
     @Test
-    @DisplayName("In einem move ebenfalls, ohne Meldung")
+    @DisplayName("In a move as well, without a message")
     void insideAMoveToo() {
         assertTrue(errorsOf("""
                 fn t() {
@@ -105,7 +105,7 @@ class JeiIdTest {
     }
 
     @Test
-    @DisplayName("Die Form mit Schrägstrich bleibt fehlerfrei")
+    @DisplayName("The form with a slash stays error-free")
     void theSlashFormStaysClean() {
         assertTrue(errorsOf("""
                 fn t() {
@@ -116,12 +116,12 @@ class JeiIdTest {
     }
 
     @Test
-    @DisplayName("Ein Doppelpunkt ohne Auswahl dahinter bleibt außerhalb der Auswahl")
+    @DisplayName("A colon with no selection after it stays outside the selection")
     void aTrailingColonStaysOutsideTheSelector() {
-        // Beim Tippen steht der Doppelpunkt kurz allein da. Verschluckte der
-        // Lexer den Rest der Zeile, liefe die Vervollständigung bei jedem
-        // Tastendruck auf einem halben Ausdruck — deshalb wird der zweite
-        // Doppelpunkt nur mitgelesen, wenn wirklich eine Auswahl folgt.
+        // While typing, the colon briefly stands alone. If the lexer
+        // swallowed the rest of the line, completion would run on a half
+        // expression at every keystroke — which is why the second colon is
+        // read along only when a selection really follows.
         var tokens = dev.devpanda.factorynetwork.lang.Lexer
                 .tokenize("move 1 item:iron_ore: from a to b").tokens();
         var auswahl = tokens.stream()
@@ -141,7 +141,7 @@ class JeiIdTest {
     }
 
     @Test
-    @DisplayName("fluidtag: ist eine eigene Art")
+    @DisplayName("fluidtag: is a kind of its own")
     void aFluidTagIsItsOwnKind() {
         Expr.Selector selector = selectorOf("""
                 worker w {
@@ -156,7 +156,7 @@ class JeiIdTest {
     }
 
     @Test
-    @DisplayName("Auch in der JEI-Schreibweise")
+    @DisplayName("Also in the JEI spelling")
     void aFluidTagFromJei() {
         Expr.Selector selector = selectorOf("""
                 worker w {

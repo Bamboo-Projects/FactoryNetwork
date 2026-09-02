@@ -11,11 +11,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Was an einer Filter-Vorlage schiefgehen kann, sagt der Übersetzer.
+ * What can go wrong with a filter template is reported by the compiler.
  *
- * <p><b>Fehler und keine Warnungen</b>, anders als bei {@link EventCheck}:
- * Eine gemischte oder leere Vorlage wird durch eine weitere Datei nicht
- * besser. Sie ist an Ort und Stelle falsch.
+ * <p><b>Errors, not warnings</b>, unlike {@link EventCheck}:
+ * a mixed or empty template does not get any better from another file.
+ * It is wrong right where it stands.
  */
 class FilterCheckTest {
 
@@ -32,7 +32,7 @@ class FilterCheckTest {
     }
 
     @Test
-    @DisplayName("Eine saubere Vorlage meldet nichts")
+    @DisplayName("A clean template reports nothing")
     void aSoundTemplateIsQuiet() {
         assertEquals(List.of(), check("""
                 filter erze {
@@ -42,7 +42,7 @@ class FilterCheckTest {
     }
 
     @Test
-    @DisplayName("Gegenstände und Flüssigkeiten in einer Vorlage")
+    @DisplayName("Items and fluids in one template")
     void mixedIsAnError() {
         hasError(check("""
                 filter durcheinander {
@@ -52,7 +52,7 @@ class FilterCheckTest {
     }
 
     @Test
-    @DisplayName("Ein leerer Block wählt nichts aus")
+    @DisplayName("An empty block selects nothing")
     void anEmptyTemplateIsAnError() {
         hasError(check("""
                 filter leer {
@@ -60,7 +60,7 @@ class FilterCheckTest {
     }
 
     @Test
-    @DisplayName("Nur Ausnahmen wählen auch nichts aus")
+    @DisplayName("Only exclusions also select nothing")
     void onlyExclusionsIsAnError() {
         hasError(check("""
                 filter leer {
@@ -69,7 +69,7 @@ class FilterCheckTest {
     }
 
     @Test
-    @DisplayName("Eine Vorlage in einer Vorlage")
+    @DisplayName("A template inside a template")
     void anestedTemplateIsAnError() {
         hasError(check("""
                 filter erze {
@@ -83,13 +83,13 @@ class FilterCheckTest {
     }
 
     @Test
-    @DisplayName("Ohne Mekanism sagt die Meldung, dass Mekanism fehlt")
+    @DisplayName("Without Mekanism the message says Mekanism is missing")
     void withoutMekanismThemessageSaysSo() {
-        // „Chemikalien sind noch nicht angebunden" war die halbe Wahrheit:
-        // In einem Pack ohne Mekanism gibt es sie überhaupt nicht, und der
-        // Spieler sucht den Fehler bei dieser Mod statt bei seiner Modliste.
-        // Ohne geladene Modliste — also im Einheitstest — gilt „nicht
-        // installiert": Das ist die ehrlichere Vorgabe.
+        // "Chemicals are not wired up yet" was only half the truth:
+        // in a pack without Mekanism they do not exist at all, and the
+        // player looks for the fault in this mod instead of in their mod list.
+        // Without a loaded mod list — that is, in a unit test — "not
+        // installed" applies: that is the more honest default.
         hasError(check("""
                 filter gase {
                     chemical:mekanism/hydrogen
@@ -102,7 +102,7 @@ class FilterCheckTest {
     }
 
     @Test
-    @DisplayName("Strom ist keine Auswahl")
+    @DisplayName("Power is not a selection")
     void powerIsNoSelection() {
         hasError(check("""
                 filter energie {
@@ -111,7 +111,7 @@ class FilterCheckTest {
     }
 
     @Test
-    @DisplayName("Ein Name, den schon etwas anderes trägt")
+    @DisplayName("A name already carried by something else")
     void aNameTakenBySomethingElse() {
         List<Diagnostic> problems = FilterCheck.run(Parser.parse("""
                 filter pumpen {

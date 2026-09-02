@@ -11,21 +11,21 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Was ein Mast kostet — und dass Reichweite eine Entscheidung bleibt.
+ * What a mast costs — and that range stays a decision.
  */
 class MastCostTest {
 
     @Test
-    @DisplayName("Ein Mast ohne Karten zieht wenig")
+    @DisplayName("A mast without cards draws little")
     void aBareMastIsCheap() {
         assertEquals(Power.MAST_BASE, Power.mast(Loadout.of(List.of())));
     }
 
     @Test
-    @DisplayName("Jede Karte kostet Strom")
+    @DisplayName("Every card costs power")
     void everyCardCosts() {
-        // Ohne das wäre Reichweite ein Häkchen und keine Entscheidung: Wer
-        // vier Karten hat, steckt vier hinein, und niemand überlegt.
+        // Without this, range would be a checkbox and not a decision: whoever
+        // has four cards plugs in four, and no one thinks about it.
         int bare = Power.mast(Loadout.of(List.of()));
         int full = Power.mast(Loadout.ofCounts(Map.of(Card.RANGE, 4)));
         assertTrue(full > bare, "vier Karten kosten nicht mehr als keine");
@@ -33,7 +33,7 @@ class MastCostTest {
     }
 
     @Test
-    @DisplayName("Die Grenzenlos-Karte kostet am meisten")
+    @DisplayName("The Infinity card costs the most")
     void infinityCostsMost() {
         int full = Power.mast(Loadout.ofCounts(Map.of(Card.RANGE, 4)));
         int endgame = Power.mast(Loadout.of(List.of(Card.INFINITY)));
@@ -42,10 +42,10 @@ class MastCostTest {
     }
 
     @Test
-    @DisplayName("Ein Modul kostet nichts")
+    @DisplayName("A module costs nothing")
     void aModuleIsFree() {
-        // Es hebt keinen Wert, also treibt es auch keinen Verbrauch. Was
-        // Strom kostet, ist Reichweite — und die kommt aus Karten.
+        // It raises no value, so it drives no consumption either. What costs
+        // power is range — and that comes from cards.
         assertEquals(Power.MAST_BASE,
                 Power.mast(Loadout.of(List.of(Ability.WIRELESS))));
     }

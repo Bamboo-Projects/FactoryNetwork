@@ -10,11 +10,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 /**
- * Wovon eine Vorlage handelt, steht in ihren Zeilen.
+ * What a template is about is written in its lines.
  *
- * <p>Reine Baumbetrachtung, ohne Registry: <b>welche</b> Gegenstände
- * {@code tag:c/ores} trifft, weiß erst die Welt — dass es Gegenstände sind,
- * steht schon da.
+ * <p>Pure tree inspection, without the registry: <b>which</b> items
+ * {@code tag:c/ores} matches is known only to the world — that they are
+ * items is already stated here.
  */
 class FilterKindTest {
 
@@ -26,7 +26,7 @@ class FilterKindTest {
     }
 
     @Test
-    @DisplayName("Gegenstände und Tags sind eine Gegenstandsvorlage")
+    @DisplayName("Items and tags are an item template")
     void itemsAndTagsAreAnItemTemplate() {
         assertEquals(FilterKind.ITEM, FilterKind.of(template("""
                 filter ore_factory {
@@ -36,11 +36,11 @@ class FilterKindTest {
     }
 
     @Test
-    @DisplayName("Ein Tag allein zählt als Gegenstand")
+    @DisplayName("A tag alone counts as an item")
     void aTagAloneCountsAsItems() {
-        // Solange Flüssigkeits-Tags nicht aufgelöst werden
-        // (offene-punkte.md 1.3), meint tag: Gegenstände. Ändert sich das,
-        // ändert sich diese Zeile mit.
+        // As long as fluid tags are not resolved
+        // (offene-punkte.md 1.3), tag: means items. If that changes,
+        // this line changes with it.
         assertEquals(FilterKind.ITEM, FilterKind.of(template("""
                 filter erze {
                     tag:c/ores
@@ -48,7 +48,7 @@ class FilterKindTest {
     }
 
     @Test
-    @DisplayName("Flüssigkeiten sind eine Flüssigkeitsvorlage")
+    @DisplayName("Fluids are a fluid template")
     void fluidsAreAFluidTemplate() {
         assertEquals(FilterKind.FLUID, FilterKind.of(template("""
                 filter kuehlmittel {
@@ -57,7 +57,7 @@ class FilterKindTest {
     }
 
     @Test
-    @DisplayName("Beides zusammen ist gemischt")
+    @DisplayName("Both together is mixed")
     void bothTogetherIsMixed() {
         assertEquals(FilterKind.MIXED, FilterKind.of(template("""
                 filter durcheinander {
@@ -67,10 +67,10 @@ class FilterKindTest {
     }
 
     @Test
-    @DisplayName("Auch eine Ausnahme entscheidet über die Sorte mit")
+    @DisplayName("An exclusion also has a say in the kind")
     void anExclusionCountsToo() {
-        // Sonst hinge die Sorte davon ab, in welcher Zeile etwas steht — und
-        // eine Ausnahme, die gar nicht zur Vorlage passt, fiele niemandem auf.
+        // Otherwise the kind would depend on which line something is on — and
+        // an exclusion that does not fit the template at all would go unnoticed.
         assertEquals(FilterKind.MIXED, FilterKind.of(template("""
                 filter durcheinander {
                     item:iron_ingot
@@ -79,7 +79,7 @@ class FilterKindTest {
     }
 
     @Test
-    @DisplayName("Auch durch except und Mengen hindurch")
+    @DisplayName("Even through except and amounts")
     void throughExceptAndAmounts() {
         assertEquals(FilterKind.ITEM, FilterKind.of(template("""
                 filter erze {
@@ -88,7 +88,7 @@ class FilterKindTest {
     }
 
     @Test
-    @DisplayName("Ein leerer Block wählt nichts")
+    @DisplayName("An empty block selects nothing")
     void anEmptyBlockIsEmpty() {
         assertEquals(FilterKind.EMPTY, FilterKind.of(template("""
                 filter leer {
@@ -96,10 +96,10 @@ class FilterKindTest {
     }
 
     @Test
-    @DisplayName("Nur Ausnahmen ist genauso leer")
+    @DisplayName("Only exclusions is just as empty")
     void onlyExclusionsIsEmptyToo() {
-        // Es gibt nichts, wovon abgezogen würde. Der Fehler dafür steht in
-        // FilterCheck; hier zählt nur, dass die Sorte es nicht verdeckt.
+        // There is nothing to subtract from. The error for that lives in
+        // FilterCheck; here it only matters that the kind does not hide it.
         assertEquals(FilterKind.EMPTY, FilterKind.of(template("""
                 filter leer {
                     except item:iron_ingot
@@ -107,7 +107,7 @@ class FilterKindTest {
     }
 
     @Test
-    @DisplayName("Ein Flüssigkeits-Tag macht eine Flüssigkeitsvorlage")
+    @DisplayName("A fluid tag makes a fluid template")
     void aFluidTagMakesAFluidTemplate() {
         assertEquals(FilterKind.FLUID, FilterKind.of(template("""
                 filter kuehlmittel {
@@ -117,7 +117,7 @@ class FilterKindTest {
     }
 
     @Test
-    @DisplayName("Ein Flüssigkeits-Tag neben einem Gegenstand ist gemischt")
+    @DisplayName("A fluid tag next to an item is mixed")
     void aFluidTagNextToAnItemIsMixed() {
         assertEquals(FilterKind.MIXED, FilterKind.of(template("""
                 filter durcheinander {

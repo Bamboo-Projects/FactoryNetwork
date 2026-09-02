@@ -11,16 +11,16 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * {@code filter} steht an zwei Orten und meint zweierlei.
+ * {@code filter} appears in two places and means two things.
  *
- * <p>Auf oberster Ebene erklärt es eine Vorlage, im Worker nennt es eine
- * Auswahl. Der Parser unterscheidet nach Ort, nicht nach einem zweiten Wort —
- * deshalb prüft dieser Test beides nebeneinander.
+ * <p>At the top level it declares a template, in a worker it names a
+ * selection. The parser distinguishes by place, not by a second word — which
+ * is why this test checks both side by side.
  */
 class FilterTemplateParseTest {
 
     @Test
-    @DisplayName("Zeilen ohne except legen dazu")
+    @DisplayName("Lines without except are includes")
     void plainLinesAreIncludes() {
         Parser.ParseResult result = Parser.parse("""
                 filter ore_factory {
@@ -37,7 +37,7 @@ class FilterTemplateParseTest {
     }
 
     @Test
-    @DisplayName("except nimmt weg")
+    @DisplayName("except takes away")
     void exceptLinesAreExcludes() {
         Parser.ParseResult result = Parser.parse("""
                 filter ore_factory {
@@ -50,13 +50,13 @@ class FilterTemplateParseTest {
                 result.program().declarations().get(0));
         assertEquals(1, template.includes().size());
         assertEquals(1, template.excludes().size());
-        // Der Ausschluss steht für sich und ist kein Expr.Except: Das Wort
-        // gehört hier zur Zeile und nicht zur Auswahl darin.
+        // The exclusion stands on its own and is no Expr.Except: the word
+        // belongs to the line here and not to the selection within it.
         assertInstanceOf(Expr.Selector.class, template.excludes().get(0));
     }
 
     @Test
-    @DisplayName("Eine Zeile darf selbst ein except enthalten")
+    @DisplayName("A line may itself contain an except")
     void aLineMayCarryItsOwnExcept() {
         Parser.ParseResult result = Parser.parse("""
                 filter ore_factory {
@@ -66,15 +66,15 @@ class FilterTemplateParseTest {
         assertFalse(result.hasErrors(), () -> result.diagnostics().toString());
         Decl.FilterTemplate template = assertInstanceOf(Decl.FilterTemplate.class,
                 result.program().declarations().get(0));
-        // Ein Eintrag, und zwar ein Expr.Except. Das ist die bestehende
-        // Auswahl-Grammatik und keine Sonderregel der Vorlage.
+        // One entry, namely an Expr.Except. That is the existing selection
+        // grammar and no special rule of the template.
         assertEquals(1, template.includes().size());
         assertTrue(template.excludes().isEmpty());
         assertInstanceOf(Expr.Except.class, template.includes().get(0));
     }
 
     @Test
-    @DisplayName("Ein Worker nimmt weiter eine filter-Angabe")
+    @DisplayName("A worker still takes a filter entry")
     void theWorkerEntryStillParses() {
         Parser.ParseResult result = Parser.parse("""
                 filter ore_factory {
@@ -96,7 +96,7 @@ class FilterTemplateParseTest {
     }
 
     @Test
-    @DisplayName("Ohne Namen ist es ein Fehler")
+    @DisplayName("Without a name it is an error")
     void withoutANameItIsAnError() {
         Parser.ParseResult result = Parser.parse("""
                 filter {
@@ -107,7 +107,7 @@ class FilterTemplateParseTest {
     }
 
     @Test
-    @DisplayName("Ein Fehler im Block hält die nächste Deklaration nicht auf")
+    @DisplayName("An error in the block does not stop the next declaration")
     void anErrorDoesNotStopTheNextDeclaration() {
         Parser.ParseResult result = Parser.parse("""
                 filter kaputt {

@@ -8,37 +8,37 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
- * Der Selektor unter dem Zeiger, und was aus seiner geschriebenen Form wird.
+ * The selector under the cursor, and what becomes of its written form.
  *
- * <p>Beides ohne Welt prüfbar: Das eine ist Textarbeit, das andere eine
- * Zerlegung. Erst die Auflösung braucht eine Registry, und die steht in den
+ * <p>Both testable without a world: one is text work, the other a
+ * decomposition. Only the resolution needs a registry, and that lives in the
  * GameTests.
  */
 class SelectorsTest {
 
     @Test
-    @DisplayName("Der Zeiger mitten im Pfad meint den ganzen Selektor")
+    @DisplayName("The cursor in the middle of the path means the whole selector")
     void insideThePathTheWholeSelectorIsMeant() {
         String line = "    filter item:iron_ore";
         assertEquals("item:iron_ore", Selectors.at(line, line.indexOf("iron")));
     }
 
     @Test
-    @DisplayName("Auch auf der Art davor")
+    @DisplayName("Also on the kind before it")
     void alsoOnTheKind() {
         String line = "    filter tag:c/ores";
         assertEquals("tag:c/ores", Selectors.at(line, line.indexOf("tag")));
     }
 
     @Test
-    @DisplayName("Ein Muster gehört dazu")
+    @DisplayName("A pattern belongs to it")
     void apatternBelongsToIt() {
         String line = "move item:*_ore from a to b";
         assertEquals("item:*_ore", Selectors.at(line, line.indexOf('*')));
     }
 
     @Test
-    @DisplayName("Neben einem Selektor ist keiner")
+    @DisplayName("Beside a selector there is none")
     void besideASelectorThereIsNone() {
         String line = "    filter item:iron_ore";
         assertEquals("", Selectors.at(line, 2));
@@ -46,14 +46,14 @@ class SelectorsTest {
     }
 
     @Test
-    @DisplayName("Ein Wort ohne Doppelpunkt ist kein Selektor")
+    @DisplayName("A word without a colon is no selector")
     void awordWithoutAcolonIsNoSelector() {
         String line = "    from quarry_output";
         assertEquals("", Selectors.at(line, line.indexOf("quarry")));
     }
 
     @Test
-    @DisplayName("Aus der geschriebenen Form wird wieder eine Auswahl")
+    @DisplayName("The written form becomes a selection again")
     void thewrittenFormBecomesASelectorAgain() {
         Expr.Selector item = Selectors.parse("item:iron_ore");
         assertEquals(Expr.Selector.Kind.ITEM, item.kind());
@@ -66,17 +66,17 @@ class SelectorsTest {
     }
 
     @Test
-    @DisplayName("Ein Muster ohne Namensraum behält seinen Schrägstrich")
+    @DisplayName("A pattern without a namespace keeps its slash")
     void apatternWithoutAnamespaceKeepsItsSlash() {
-        // item:*/ore ist ein Muster über alle Namensräume — der Schrägstrich
-        // gehört zum Pfad und trennt hier nichts ab.
+        // item:*/ore is a pattern across all namespaces — the slash belongs
+        // to the path and separates nothing here.
         Expr.Selector pattern = Selectors.parse("item:*_ore");
         assertEquals("*_ore", pattern.path());
         assertNull(pattern.namespace());
     }
 
     @Test
-    @DisplayName("Was keine Auswahl ist, gibt nichts")
+    @DisplayName("What is no selection gives nothing")
     void whatIsNoSelectorGivesNothing() {
         assertNull(Selectors.parse("quarry_output"));
         assertNull(Selectors.parse("unfug:etwas"));

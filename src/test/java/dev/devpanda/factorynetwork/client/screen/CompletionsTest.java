@@ -10,16 +10,15 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Was der Editor an welcher Stelle vorschlägt.
+ * What the editor suggests at which spot.
  *
- * <p>Geprüft werden nur die Stellen, die ohne Registry auskommen —
- * Gegenstände und Tags brauchen ein geladenes Spiel und stehen deshalb in
- * den GameTests.
+ * <p>Only the spots that do without the registry are checked — items and
+ * tags need a loaded game and therefore stand in the GameTests.
  *
- * <p>Die Frage dahinter ist immer dieselbe: <b>Passt der Vorschlag zu dem,
- * was die Grammatik an dieser Stelle erlaubt?</b> Ein Vorschlag, der überall
- * dasselbe zeigt, hilft nirgends — und einer, der Verbotenes anbietet, ist
- * schlechter als keiner.
+ * <p>The question behind it is always the same: <b>Does the suggestion fit
+ * what the grammar allows at this spot?</b> A suggestion that shows the same
+ * thing everywhere helps nowhere — and one that offers something forbidden is
+ * worse than none.
  */
 class CompletionsTest {
 
@@ -27,7 +26,7 @@ class CompletionsTest {
         return entries.stream().map(Completions.Entry::text).toList();
     }
 
-    /** Vorschläge am Ende der letzten Zeile. */
+    /** Suggestions at the end of the last line. */
     private static List<String> at(String... lines) {
         List<String> code = List.of(lines);
         int last = code.size() - 1;
@@ -35,7 +34,7 @@ class CompletionsTest {
     }
 
     @Test
-    @DisplayName("In einer Anzeige stehen ihre Angaben, keine Anweisungen")
+    @DisplayName("Inside a display stand its entries, no statements")
     void insideDisplayOnlyDisplayEntries() {
         List<String> shown = at("display halle {", "    ");
 
@@ -50,7 +49,7 @@ class CompletionsTest {
                 () -> "from gehört in einen Worker, nicht in eine Anzeige: " + shown);
     }
 
-    /** Was ein Vorschlag wirklich einfügt. */
+    /** What a suggestion really inserts. */
     private static String insertOf(String wanted, String... lines) {
         List<String> code = List.of(lines);
         int last = code.size() - 1;
@@ -62,12 +61,12 @@ class CompletionsTest {
     }
 
     @Test
-    @DisplayName("Was Klammern hat, wird mit Klammern eingefügt")
+    @DisplayName("What has parentheses is inserted with parentheses")
     void whatHasParenthesesIsInsertedWithThem() {
-        // Beim ersten Spielen aufgefallen: Der Vorschlag setzte den Namen und
-        // nichts weiter, und man tippte die Klammern jedes Mal von Hand nach.
-        // Ob welche dazugehören, steht in der Form — es braucht keine zweite
-        // Liste, die auseinanderläuft.
+        // Noticed on first playing: the suggestion set the name and nothing
+        // more, and you typed the parentheses in by hand every time. Whether
+        // any belong is in the form — it needs no second list that drifts
+        // apart.
         assertEquals("log()", insertOf("log", "fn f() {", "    lo"),
                 "log ist ein Aufruf");
         assertEquals("count()",
@@ -79,34 +78,34 @@ class CompletionsTest {
     }
 
     @Test
-    @DisplayName("Was keine hat, bekommt auch keine")
+    @DisplayName("What has none gets none either")
     void whatHasNoneGetsNone() {
-        // network.power liegt im Controller und ist keine Nachfrage in der
-        // Welt — deshalb steht es ohne Klammern, und der Vorschlag darf
-        // daraus keinen Aufruf machen.
+        // network.power lies in the controller and is not a query into the
+        // world — that is why it stands without parentheses, and the
+        // suggestion must not turn it into a call.
         assertEquals("power", insertOf("power", "fn f() {", "    network.pow"));
         assertEquals("amount",
                 insertOf("amount", "fn f() {", "    log(storage.items().where(it.amo"));
     }
 
     @Test
-    @DisplayName("Eine eigene Funktion steht im Rumpf und wird gerufen")
+    @DisplayName("One's own function stands in the body and is called")
     void anownFunctionStandsInTheBodyAndIsCalled() {
-        // Sie wurde dort gar nicht angeboten: Wer seine eigene Funktion rufen
-        // wollte, tippte den Namen vollständig aus.
+        // It was not offered there at all: whoever wanted to call their own
+        // function typed the name out in full.
         assertEquals("kuehlen()",
                 insertOf("kuehlen", "fn kuehlen() {", "}", "fn main() {", "    kue"));
     }
 
     @Test
-    @DisplayName("Die angebotenen Präfixe sind die, die es wirklich gibt")
+    @DisplayName("The offered prefixes are the ones that really exist")
     void theofferedPrefixesAreTheOnesThatExist() {
         List<String> shown = at("worker w {", "    filter ");
 
-        // Diese Liste stand einmal fest im Editor, vier Einträge lang, und
-        // kannte „chemical:" nicht — obwohl es das seit dem 26.08. gibt.
-        // Jetzt kommt sie aus der Registry, und damit steht dort dasselbe,
-        // was der Übersetzer annimmt.
+        // This list was once hard-coded in the editor, four entries long, and
+        // did not know "chemical:" — although it has existed since 26.08.
+        // Now it comes from the registry, and so the same thing stands there
+        // that the translator assumes.
         for (String prefix : dev.devpanda.factorynetwork.runtime.ResourceKinds
                 .selectorPrefixes()) {
             assertTrue(shown.contains(prefix + ":"),
@@ -117,7 +116,7 @@ class CompletionsTest {
     }
 
     @Test
-    @DisplayName("Auf oberster Ebene steht filter neben den anderen Deklarationen")
+    @DisplayName("At the top level filter stands next to the other declarations")
     void filterIsADeclaration() {
         List<String> shown = at("");
 
@@ -126,7 +125,7 @@ class CompletionsTest {
     }
 
     @Test
-    @DisplayName("In einer Vorlage steht except und keine Deklaration")
+    @DisplayName("Inside a template stands except and no declaration")
     void insideATemplateOnlyExcept() {
         List<String> shown = at("filter erze {", "    ");
 
@@ -140,7 +139,7 @@ class CompletionsTest {
     }
 
     @Test
-    @DisplayName("An einer Auswahlstelle stehen die Vorlagen des Projekts")
+    @DisplayName("At a selection spot stand the templates of the project")
     void templatesAreOfferedWhereASelectionFits() {
         List<String> shown = at("filter erze {", "    tag:c/ores", "}", "",
                 "worker holt {", "    from grube", "    to storage", "    filter ");
@@ -149,7 +148,7 @@ class CompletionsTest {
     }
 
     @Test
-    @DisplayName("Nach it. stehen die Angaben eines Postens")
+    @DisplayName("After it. stand the members of an entry")
     void afterItTheEntryMembers() {
         List<String> shown = at("fn test() {", "    log(storage.items().where(it.");
 
@@ -161,24 +160,24 @@ class CompletionsTest {
     }
 
     @Test
-    @DisplayName("Vorgeschlagen wird nur, was die Laufzeit auch kann")
+    @DisplayName("Only what the runtime can actually do is suggested")
     void onlyWhatTheRuntimeCanDo() {
         List<String> shown = at("worker haul {", "    to ");
 
         assertTrue(shown.contains("storage"), () -> "storage fehlt: " + shown);
-        // world, network, workers und multiblocks parst die Sprache, aber der
-        // Interpreter kennt keines davon: Wer sie hinschreibt, bekommt „Als
-        // Ziel taugt nur ein Name" — eine Meldung, die dem Vorschlag
-        // widerspricht, der sie ausgelöst hat.
+        // world, network, workers and multiblocks are parsed by the language,
+        // but the interpreter knows none of them: whoever writes them gets
+        // „Als Ziel taugt nur ein Name" — a message that contradicts the
+        // suggestion that triggered it.
         assertFalse(shown.contains("network"), () -> shown.toString());
         assertFalse(shown.contains("multiblocks"), () -> shown.toString());
-        // Und crafting ist eine Quelle: Gefertigt wird in den Speicher.
+        // And crafting is a source: crafting is done into the storage.
         assertFalse(shown.contains("crafting"),
                 () -> "crafting ist kein Ziel: " + shown);
     }
 
     @Test
-    @DisplayName("crafting steht bei from, weil es eine Quelle ist")
+    @DisplayName("crafting stands at from, because it is a source")
     void craftingIsOfferedAsAsource() {
         List<String> shown = at("worker nachschub {", "    from ");
 
@@ -187,7 +186,7 @@ class CompletionsTest {
     }
 
     @Test
-    @DisplayName("In der on-Kopfzeile stehen die Ereignisse und keine Deklarationen")
+    @DisplayName("In the on header stand the events and no declarations")
     void theOnHeaderOffersEvents() {
         List<String> shown = at("on ");
 
@@ -200,13 +199,13 @@ class CompletionsTest {
     }
 
     @Test
-    @DisplayName("Nach on stehen die Ereignisse")
+    @DisplayName("After on stand the events")
     void afterOnTheEventsAreOffered() {
         List<String> shown = at("on ");
 
-        // Die vier des Netzes stehen in keiner Datei. Wer sie nicht auswendig
-        // weiß, tippt irgendetwas — und ein on mit vertipptem Namen wird
-        // übernommen und läuft nie.
+        // The four of the network stand in no file. Whoever does not know them
+        // by heart types something — and an on with a mistyped name is
+        // accepted and never runs.
         assertTrue(shown.contains("device_online"), () -> "device_online fehlt: " + shown);
         assertTrue(shown.contains("device_offline"), () -> "device_offline fehlt: " + shown);
         assertTrue(shown.contains("device_changed"), () -> "device_changed fehlt: " + shown);
@@ -216,7 +215,7 @@ class CompletionsTest {
     }
 
     @Test
-    @DisplayName("Nach on gehören auch die selbst erklärten Ereignisse dazu")
+    @DisplayName("After on the self-declared events belong too")
     void afterOnOwnEventsCountToo() {
         List<String> shown = at("event Fertig(nummer: Int)", "", "on ");
 
@@ -224,7 +223,7 @@ class CompletionsTest {
     }
 
     @Test
-    @DisplayName("In einem Rezept stehen in und out")
+    @DisplayName("In a recipe stand in and out")
     void insideArecipeOnlyInAndOut() {
         List<String> shown = at("recipe mahlen at brecher {", "    ");
 
@@ -232,7 +231,7 @@ class CompletionsTest {
     }
 
     @Test
-    @DisplayName("In einem Worker stehen seine Angaben")
+    @DisplayName("In a worker stand its entries")
     void insideWorkerOnlyWorkerEntries() {
         List<String> shown = at("worker haul {", "    ");
 
@@ -242,7 +241,7 @@ class CompletionsTest {
     }
 
     @Test
-    @DisplayName("In einer Gruppe stehen members und strategy")
+    @DisplayName("In a group stand members and strategy")
     void insideGroupOnlyGroupEntries() {
         List<String> shown = at("group oefen {", "    ");
 
@@ -250,7 +249,7 @@ class CompletionsTest {
     }
 
     @Test
-    @DisplayName("Hinter einem fertigen Deklarationsnamen kommt die Klammer")
+    @DisplayName("After a finished declaration name comes the brace")
     void nothingAfterADeclarationName() {
         assertTrue(at("display halle ").isEmpty(),
                 "hinter dem Namen gibt es nichts vorzuschlagen");
@@ -258,23 +257,23 @@ class CompletionsTest {
     }
 
     @Test
-    @DisplayName("Was schon vollständig dasteht, ist kein Vorschlag")
+    @DisplayName("What already stands complete is no suggestion")
     void noSuggestionForAnExactMatch() {
-        // „worker" ist selbst eine Deklaration; wer es zu Ende getippt hat,
-        // braucht es nicht angeboten zu bekommen.
+        // "worker" is itself a declaration; whoever has typed it to the end
+        // does not need it offered.
         assertFalse(at("worker").contains("worker"),
                 "ein Eintrag, der nichts ändert, verdeckt nur die Zeile darunter");
     }
 
     @Test
-    @DisplayName("Auf oberster Ebene stehen die Deklarationen")
+    @DisplayName("At the top level stand the declarations")
     void topLevelOffersDeclarations() {
         List<String> shown = at("disp");
 
         assertTrue(shown.contains("display"), () -> shown.toString());
     }
 
-    /** Die Formangaben der Vorschläge. */
+    /** The form details of the suggestions. */
     private static List<String> details(String... lines) {
         List<String> code = List.of(lines);
         int last = code.size() - 1;
@@ -283,7 +282,7 @@ class CompletionsTest {
     }
 
     @Test
-    @DisplayName("Ein Vorschlag bringt seine Form mit")
+    @DisplayName("A suggestion brings its form with it")
     void everyBlockEntryCarriesItsShape() {
         List<String> shown = at("display halle {", "    ");
         List<String> shapes = details("display halle {", "    ");
@@ -295,11 +294,11 @@ class CompletionsTest {
     }
 
     @Test
-    @DisplayName("Hinter row kommt kein row mehr")
+    @DisplayName("After row no row comes any more")
     void insideAnEntryTheKeywordsAreGone() {
-        // Das war die eigentliche Beschwerde: Nach „row" bot der Editor
-        // wieder „title, row, text …" an — also alles ausser dem, was dort
-        // hingehört.
+        // That was the actual complaint: after "row" the editor offered
+        // "title, row, text …" again — that is, everything except what belongs
+        // there.
         assertFalse(at("display halle {", "    row ").contains("row"),
                 "an dieser Stelle steht ein Text, kein Schlüsselwort");
         assertFalse(at("display halle {", "    row \"Bestand\" ").contains("title"),
@@ -307,34 +306,34 @@ class CompletionsTest {
     }
 
     @Test
-    @DisplayName("An einer Textstelle gibt es nichts vorzuschlagen")
+    @DisplayName("At a text spot there is nothing to suggest")
     void nothingToOfferForAString() {
         assertTrue(at("display halle {", "    title ").isEmpty(),
                 "einen freien Text kann niemand vorschlagen — die Formzeile sagt es");
     }
 
     @Test
-    @DisplayName("An einer Ausdrucksstelle stehen die Bestände")
+    @DisplayName("At an expression spot stand the built-ins")
     void expressionSlotsOfferTheBuiltins() {
         List<String> shown = at("display halle {", "    text ");
 
         assertTrue(shown.contains("storage"), () -> shown.toString());
-        // network stand hier früher mit: Die Sprache parst es, ausgewertet
-        // wird es nirgends — auch nicht in einer Anzeige. Ein Vorschlag, der
-        // in eine Fehlermeldung führt, ist schlechter als keiner.
+        // network used to stand here too: the language parses it, but it is
+        // evaluated nowhere — not even in a display. A suggestion that leads
+        // into an error message is worse than none.
         assertFalse(shown.contains("network"),
                 () -> "network wird nicht ausgewertet: " + shown);
         assertFalse(shown.contains("if"), () -> "kein Ausdruck ist eine Anweisung: " + shown);
     }
 
     @Test
-    @DisplayName("Hinter strategy stehen die Verteilungen")
+    @DisplayName("After strategy stand the distributions")
     void strategySlotOffersStrategies() {
         assertTrue(at("worker haul {", "    strategy ").contains("round_robin"));
     }
 
     @Test
-    @DisplayName("Hinter button stehen die Funktionen des Projekts")
+    @DisplayName("After button stand the functions of the project")
     void buttonSlotOffersFunctions() {
         List<String> shown = at("fn leeren() {", "}", "display halle {",
                 "    button \"Leeren\" ");
@@ -343,19 +342,19 @@ class CompletionsTest {
     }
 
     @Test
-    @DisplayName("Hinter rate steht das feste Wort per")
+    @DisplayName("After rate stands the fixed word per")
     void literalSlotOffersItsWord() {
         assertEquals(List.of("per"), at("worker haul {", "    rate 64 "));
     }
 
     @Test
-    @DisplayName("Eine volle Angabe schlägt nichts mehr vor")
+    @DisplayName("A full entry suggests nothing more")
     void aCompleteEntryOffersNothing() {
         assertTrue(at("worker haul {", "    rate 64 per 5s ").isEmpty());
     }
 
     @Test
-    @DisplayName("Nach move 64 stehen from und to zur Wahl")
+    @DisplayName("After move 64 from and to are up for choice")
     void anOptionalWordOffersBothPaths() {
         List<String> shown = at("fn test() {", "    move 64 ");
 
@@ -365,19 +364,19 @@ class CompletionsTest {
     }
 
     @Test
-    @DisplayName("In einer Funktion stehen Anweisungen und Ausdrücke nebeneinander")
+    @DisplayName("In a function statements and expressions stand side by side")
     void codeBlocksOfferBoth() {
         assertTrue(at("fn test() {", "    ").contains("move"),
                 "die Anweisungen stehen zuerst");
-        // Mit einem angefangenen Wort kommt der Ausdruck durch. Ohne eines
-        // ist die Liste schon von den Anweisungen voll — das ist richtig so,
-        // denn eine Zeile fängt weit öfter mit einer Anweisung an.
+        // With a started word the expression gets through. Without one the
+        // list is already full of the statements — that is right, because a
+        // line far more often begins with a statement.
         assertTrue(at("fn test() {", "    sto").contains("storage"),
                 "ein Ausdruck ist auch eine Anweisung");
     }
 
     @Test
-    @DisplayName("Eine Anweisung bringt ihre Form mit")
+    @DisplayName("A statement brings its form with it")
     void statementsCarryTheirShape() {
         List<String> shown = at("fn test() {", "    ");
         List<String> shapes = details("fn test() {", "    ");
@@ -387,7 +386,7 @@ class CompletionsTest {
     }
 
     @Test
-    @DisplayName("Hinter emit stehen die Ereignisse des Projekts")
+    @DisplayName("After emit stand the events of the project")
     void emitOffersProjectEvents() {
         List<String> shown = at("event ofen_fertig(x: Int)", "fn test() {", "    emit ");
 
@@ -395,21 +394,21 @@ class CompletionsTest {
     }
 
     @Test
-    @DisplayName("Für einen neuen Namen gibt es keinen Vorschlag")
+    @DisplayName("For a new name there is no suggestion")
     void newNamesAreNotSuggested() {
         assertTrue(at("fn test() {", "    let ").isEmpty(),
                 "wie hiesse er auch — er entsteht ja gerade");
     }
 
-    // ---- Nach dem Punkt ----------------------------------------------------
+    // ---- After the dot ----------------------------------------------------
 
     /**
-     * Ein Netz mit genau diesem Connector, für die Dauer eines Tests.
+     * A network with exactly this connector, for the duration of a test.
      *
-     * <p>{@link dev.devpanda.factorynetwork.client.ClientNetworkState} ist
-     * statisch — es gibt einen Client und ein Netz. Für den Test wird es
-     * gefüllt und danach geleert, sonst sieht der nächste Test ein Netz, das
-     * es nicht gibt.
+     * <p>{@link dev.devpanda.factorynetwork.client.ClientNetworkState} is
+     * static — there is one client and one network. For the test it is filled
+     * and afterwards emptied, otherwise the next test sees a network that does
+     * not exist.
      */
     private static void withNetwork(String connector, Runnable body) {
         dev.devpanda.factorynetwork.client.ClientNetworkState.accept(
@@ -427,7 +426,7 @@ class CompletionsTest {
     }
 
     @Test
-    @DisplayName("Nach dem Punkt steht, was ein Gerät hat")
+    @DisplayName("After the dot stands what a device has")
     void afterTheDotTheDeviceMembersAreOffered() {
         withNetwork("crusher_1", () -> assertEquals(
                 List.of("online", "name", "redstone", "count", "insert", "items", "slots",
@@ -436,13 +435,13 @@ class CompletionsTest {
     }
 
     /**
-     * <b>Hier weicht der Editor im Spiel von der Erweiterung ab.</b> Er kennt
-     * das laufende Netz und schlägt nur hinter einem wirklichen Connector
-     * etwas vor. VS Code kennt es nicht und bietet hinter jedem Namen an —
-     * dort ist ein zu großzügiger Vorschlag besser als gar keiner.
+     * <b>Here the editor in the game differs from the extension.</b> It knows
+     * the running network and only suggests something behind a real connector.
+     * VS Code does not know it and offers behind every name — there a too
+     * generous suggestion is better than none at all.
      */
     @Test
-    @DisplayName("Hinter einem unbekannten Namen gibt es nichts")
+    @DisplayName("Behind an unknown name there is nothing")
     void afterAnUnknownNameNothingIsOffered() {
         withNetwork("crusher_1", () -> assertTrue(
                 at("fn test() {", "    if gibt_es_nicht.").isEmpty(),
@@ -450,14 +449,14 @@ class CompletionsTest {
                         + at("fn test() {", "    if gibt_es_nicht.")));
     }
 
-    // ---- Namen aus dem ganzen Projekt --------------------------------------
+    // ---- Names from the whole project --------------------------------------
 
     /**
-     * Ein Projekt aus mehreren Dateien, für die Dauer eines Tests.
+     * A project of several files, for the duration of a test.
      *
-     * <p>{@code ClientProjectState} ist statisch — es gibt einen Client und
-     * einen Entwurf. Danach wird geleert, sonst sieht der nächste Test
-     * Dateien, die es nicht gibt.
+     * <p>{@code ClientProjectState} is static — there is one client and one
+     * draft. Afterwards it is emptied, otherwise the next test sees files
+     * that do not exist.
      */
     private static void withProject(java.util.Map<String, String> files, Runnable body) {
         dev.devpanda.factorynetwork.client.ClientProjectState.setDraft(
@@ -471,7 +470,7 @@ class CompletionsTest {
     }
 
     @Test
-    @DisplayName("Eine Funktion aus einer anderen Datei wird vorgeschlagen")
+    @DisplayName("A function from another file is suggested")
     void aFunctionFromAnotherFileIsOffered() {
         withProject(java.util.Map.of(
                 "werte.mf", "fn heizen() {\n}",
@@ -481,7 +480,7 @@ class CompletionsTest {
     }
 
     @Test
-    @DisplayName("Ein Ereignis aus einer anderen Datei auch")
+    @DisplayName("An event from another file too")
     void anEventFromAnotherFileToo() {
         withProject(java.util.Map.of(
                 "ereignisse.mf", "event nachschub(menge)",
@@ -491,7 +490,7 @@ class CompletionsTest {
     }
 
     @Test
-    @DisplayName("Ohne Projekt bleibt die offene Datei die Quelle")
+    @DisplayName("Without a project the open file stays the source")
     void withoutAProjectTheOpenFileIsTheSource() {
         assertTrue(at("fn heizen() {", "}", "display halle {", "    button \"An\" ")
                         .contains("heizen"),
@@ -499,7 +498,7 @@ class CompletionsTest {
     }
 
     @Test
-    @DisplayName("Hinter items() steht eine Liste, kein Gerät")
+    @DisplayName("After items() stands a list, not a device")
     void afterItemsCallTheListMembersAreOffered() {
         withNetwork("crusher_1", () -> assertEquals(
                 List.of("count", "first", "sum", "where", "sort", "plus", "without",
@@ -508,28 +507,28 @@ class CompletionsTest {
     }
 
     @Test
-    @DisplayName("An einem Posten steht auch die Chemikalie")
+    @DisplayName("At an entry stands the chemical too")
     void apostAlsoHasAchemical() {
-        // Der Editor kennt keine Typen und weiß nicht, ob ein Posten
-        // Gegenstände, Flüssigkeiten oder Chemikalien meint. Er bietet alle
-        // drei an und sagt in der Form, wofür es gilt.
+        // The editor knows no types and does not know whether an entry means
+        // items, fluids or chemicals. It offers all three and says in the form
+        // what it applies to.
         withNetwork("crusher_1", () -> assertTrue(
                 at("fn test() {", "    log(it.").contains("chemical"),
                 "it.chemical gehört zu it.item und it.fluid"));
     }
 
     @Test
-    @DisplayName("Nach network. steht, was am Netz abzulesen ist")
+    @DisplayName("After network. stands what can be read off the network")
     void afterNetworkDotTheNetworkMembersAreOffered() {
-        // network ist ein Punktzugriff wie an einem Gerät und doch keiner:
-        // Ohne die Unterscheidung stünde an einem Netz redstone().
+        // network is a dot access like on a device and yet not one: without
+        // the distinction a network would have redstone().
         withNetwork("crusher_1", () -> assertEquals(
                 List.of("power", "capacity"),
                 at("fn test() {", "    if network.")));
     }
 
     @Test
-    @DisplayName("An einem Gerät gibt es kein power")
+    @DisplayName("At a device there is no power")
     void adeviceHasNopower() {
         withNetwork("crusher_1", () -> assertFalse(
                 at("fn test() {", "    if crusher_1.").contains("power"),
@@ -537,7 +536,7 @@ class CompletionsTest {
     }
 
     @Test
-    @DisplayName("Eine Zahl mit Punkt ist kein Zugriff")
+    @DisplayName("A number with a dot is not an access")
     void aNumberWithADotIsNotAMemberAccess() {
         withNetwork("crusher_1", () -> assertFalse(
                 at("fn test() {", "    let x = 3.").contains("online"),

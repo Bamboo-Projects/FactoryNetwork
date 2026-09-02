@@ -12,15 +12,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Was hinter einem Connector in der Vorschlagsliste steht.
+ * What stands behind a connector in the suggestion list.
  *
- * <p>Der Übersetzungsschlüssel wird hier nicht aufgelöst — das tut der
- * Client mit seiner Sprachdatei. Geprüft wird der Teil dahinter.
+ * <p>The translation key is not resolved here — the client does that with
+ * its language file. What is checked is the part behind it.
  */
 class CompletionsDetailTest {
 
     @Test
-    @DisplayName("Ein Gerät nennt, was es kann")
+    @DisplayName("A device names what it can do")
     void aDeviceNamesWhatItCanDo() {
         DeviceProfile crusher = new DeviceProfile("block.mekanism.crusher", "mekanism",
                 Side.NORTH, Map.of(
@@ -34,13 +34,13 @@ class CompletionsDetailTest {
     }
 
     @Test
-    @DisplayName("Ein unbekanntes Gerät behauptet nichts")
+    @DisplayName("An unknown device claims nothing")
     void anUnknownDeviceClaimsNothing() {
         assertEquals("", Completions.abilities(DeviceProfile.unreachable()));
     }
 
     @Test
-    @DisplayName("Ein Gerät, das nichts kann, sagt das auch")
+    @DisplayName("A device that can do nothing says so too")
     void aDeviceWithoutAbilitiesSaysSo() {
         DeviceProfile stone = new DeviceProfile("block.minecraft.stone", "minecraft",
                 Side.NORTH, Map.of());
@@ -49,7 +49,7 @@ class CompletionsDetailTest {
     }
 
     @Test
-    @DisplayName("Jede Fähigkeit steht nur einmal da")
+    @DisplayName("Every ability is named only once")
     void everyAbilityIsNamedOnce() {
         DeviceProfile.Access slots = new DeviceProfile.Access(3, 0, false);
         DeviceProfile machine = new DeviceProfile("block.minecraft.chest", "minecraft",

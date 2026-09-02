@@ -13,34 +13,34 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Kein sichtbarer Text spricht mehr von Kanälen.
+ * No visible text speaks of channels any more.
  *
- * <p><b>Der Lauf, der gefehlt hat.</b> Die Kanäle fielen am 29.08. aus dem
- * Code, aber neun Sprachtexte redeten weiter von ihnen — am Kabel stand
- * „16 Kanäle", während die Rechnung längst Byte zählte. Kein Prüflauf sah
- * das: Sie prüfen Verhalten, und ein falscher Name ist kein Verhalten.
+ * <p><b>The test that was missing.</b> The channels dropped out of the
+ * code on 29.08., but nine language texts kept talking about them — the cable
+ * said "16 channels" while the maths had long since counted bytes. No test saw
+ * that: they check behaviour, and a wrong name is not behaviour.
  *
- * <p>Aufgefallen ist es dem User im Spiel. Deshalb steht der Wächter hier.
+ * <p>It was the user who noticed it in game. That is why this guard is here.
  */
 class NoChannelsLeftTest {
 
     private static final Path LANG = Path.of(
             "src/main/resources/assets/factorynetwork/lang");
 
-    /** Wörter, die es im Spiel nicht mehr geben darf. */
+    /** Words that must no longer appear in the game. */
     private static final List<String> VERBOTEN = List.of(
             "Kanal", "Kanäle", "Kanälen", "channel", "Channel");
 
     @Test
-    @DisplayName("Keine Sprachdatei nennt Kanäle")
+    @DisplayName("No language file names channels")
     void noLanguageFileMentionsChannels() throws IOException {
         List<String> gefunden = new ArrayList<>();
         for (Path datei : List.of(LANG.resolve("de_de.json"), LANG.resolve("en_us.json"))) {
             String inhalt = Files.readString(datei, StandardCharsets.UTF_8);
             for (String wort : VERBOTEN) {
                 if (inhalt.contains(wort)) {
-                    // Die Zeile mitgeben: Bei vierhundert Einträgen ist
-                    // „irgendwo steht Kanal" keine brauchbare Auskunft.
+                    // Include the line: with four hundred entries,
+                    // "Kanal appears somewhere" is not useful feedback.
                     inhalt.lines()
                             .filter(zeile -> zeile.contains(wort))
                             .forEach(zeile -> gefunden.add(

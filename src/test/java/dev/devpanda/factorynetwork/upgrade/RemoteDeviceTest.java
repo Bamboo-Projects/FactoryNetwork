@@ -11,12 +11,12 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Was die beiden Geräte dürfen — und was den Laptop teurer macht.
+ * What the two devices may do — and what makes the laptop more expensive.
  */
 class RemoteDeviceTest {
 
     @Test
-    @DisplayName("Das Terminal kann alles außer Code")
+    @DisplayName("The terminal can do everything except code")
     void theTerminalHasEverythingButCode() {
         for (TerminalTab tab : TerminalTab.values()) {
             assertEquals(tab != TerminalTab.CODE,
@@ -26,7 +26,7 @@ class RemoteDeviceTest {
     }
 
     @Test
-    @DisplayName("Der Laptop kann alles")
+    @DisplayName("The laptop can do everything")
     void theLaptopHasEverything() {
         for (TerminalTab tab : TerminalTab.values()) {
             assertTrue(RemoteDevice.LAPTOP.allows(tab), tab + " am Laptop");
@@ -34,7 +34,7 @@ class RemoteDeviceTest {
     }
 
     @Test
-    @DisplayName("Und er hat mehr Plätze — das ist der zweite Grund für ihn")
+    @DisplayName("And it has more slots — that is the second reason for it")
     void theLaptopHasMoreSlots() {
         assertEquals(2, RemoteDevice.TERMINAL.slots());
         assertEquals(4, RemoteDevice.LAPTOP.slots());
@@ -42,10 +42,10 @@ class RemoteDeviceTest {
     }
 
     @Test
-    @DisplayName("Genau ein Gerät kann den Code")
+    @DisplayName("Exactly one device can do the code")
     void codeIsTheDividingLine() {
-        // Die Trennung ist der Sinn der ganzen Sache: Unterwegs kommt man
-        // ans Lager, aber nicht an den Code.
+        // The separation is the whole point: on the go one reaches the
+        // storage, but not the code.
         long withCode = Arrays.stream(RemoteDevice.values())
                 .filter(device -> device.allows(TerminalTab.CODE))
                 .count();
@@ -54,10 +54,10 @@ class RemoteDeviceTest {
     }
 
     @Test
-    @DisplayName("Ein Gerät ohne Reichweitenkarten kommt trotzdem ein Stück weit")
+    @DisplayName("A device without Range cards still reaches some distance")
     void everyDeviceReachesSomething() {
-        // Sonst wäre ein frisch gebautes Gerät wertlos, und der Spieler
-        // müsste erst Karten bauen, um zu sehen, dass es überhaupt geht.
+        // Otherwise a freshly built device would be worthless, and the player
+        // would have to build cards first just to see that it works at all.
         assertTrue(Range.reach(Loadout.of(java.util.List.of()),
                 Loadout.of(java.util.List.of())) > 0);
     }

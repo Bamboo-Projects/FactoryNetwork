@@ -8,43 +8,42 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Hält den Rechenfehler fest, den erst ein GameTest gefunden hat: Die
- * Distanz griff auf die Zelle darüber statt auf die Diagonale zu und
- * überschätzte damit jeden Abstand. Ein GameTest dafür dauert eine Minute,
- * dieser hier Millisekunden.
+ * Pins down the calculation error that only a GameTest found: the distance
+ * reached for the cell above instead of the diagonal and thus overestimated
+ * every distance. A GameTest for that takes a minute, this one milliseconds.
  */
 class NameDistanceTest {
 
     @Test
-    @DisplayName("Ein fehlender Buchstabe ist Abstand 1")
+    @DisplayName("A missing letter is distance 1")
     void oneMissingLetter() {
         assertEquals(1, NameDistance.between("quary_output", "quarry_output"));
     }
 
     @Test
-    @DisplayName("Ein vertauschter Buchstabe ist Abstand 1")
+    @DisplayName("A swapped letter is distance 1")
     void oneWrongLetter() {
         assertEquals(1, NameDistance.between("crusher_1", "crusher_2"));
     }
 
     @Test
-    @DisplayName("Gleiche Namen haben Abstand 0")
+    @DisplayName("Identical names have distance 0")
     void identical() {
         assertEquals(0, NameDistance.between("crusher_1", "crusher_1"));
     }
 
     @Test
-    @DisplayName("Zwei vertauschte Buchstaben sind ein Schritt")
+    @DisplayName("Two swapped letters are one step")
     void transposition() {
         assertEquals(1, NameDistance.between("crusehr_1", "crusher_1"));
     }
 
     @Test
-    @DisplayName("Bei kurzen Namen entscheidet der Dreher über den Vorschlag")
+    @DisplayName("With short names the transposition decides the suggestion")
     void transpositionMattersForShortNames() {
-        // Vorher kostete ein Dreher zwei Schritte. Bei „halle" — fünf
-        // Zeichen, also ein Schritt Spielraum — fiel der Vorschlag damit
-        // aus, und zwar genau in dem Fall, für den es ihn gibt.
+        // Previously a transposition cost two steps. With "halle" — five
+        // characters, that is one step of leeway — the suggestion thus fell
+        // away, and precisely in the case it exists for.
         int abstand = NameDistance.between("halel", "halle");
         assertEquals(1, abstand);
         assertTrue(NameDistance.isCloseEnough("halel", abstand));
@@ -56,14 +55,14 @@ class NameDistanceTest {
     }
 
     @Test
-    @DisplayName("Bei kurzen Namen reicht ein Buchstabe Abstand")
+    @DisplayName("With short names one letter of distance is enough")
     void shortNamesAreStrict() {
         assertTrue(NameDistance.isCloseEnough("ofen", 1));
         assertFalse(NameDistance.isCloseEnough("ofen", 2));
     }
 
     @Test
-    @DisplayName("Bei langen Namen darf mehr danebengehen")
+    @DisplayName("With long names more may go wrong")
     void longNamesAreLenient() {
         assertTrue(NameDistance.isCloseEnough("quarry_output_north", 6));
     }

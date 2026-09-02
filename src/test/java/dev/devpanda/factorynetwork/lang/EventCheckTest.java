@@ -10,13 +10,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Ob ein {@code on}-Block je laufen kann.
+ * Whether an {@code on} block can ever run.
  *
- * <p><b>Der Fehler, den das hier verhindert, ist unsichtbar.</b> Ein
- * {@code on} braucht keine Deklaration, also nimmt der Übersetzer jeden Namen
- * an. Wer sich vertippt, bekommt kein rotes Wort und keinen Fehler beim
- * ersten Lauf — es gibt keinen ersten Lauf. Der Block liegt im Programm und
- * schweigt.
+ * <p><b>The mistake this prevents is invisible.</b> An
+ * {@code on} needs no declaration, so the compiler accepts any name.
+ * A typo produces no red word and no error on the first run — there is
+ * no first run. The block sits in the program and stays silent.
  */
 class EventCheckTest {
 
@@ -25,10 +24,10 @@ class EventCheckTest {
     }
 
     @Test
-    @DisplayName("Ein Ereignis, das niemand auslöst, wird gemeldet")
+    @DisplayName("An event nobody fires is reported")
     void anEventNobodyFiresIsReported() {
-        // inventory_changed stand im Editor zur Auswahl und wurde nie
-        // ausgelöst — der Anlass für diese Prüfung.
+        // inventory_changed was offered in the editor's list and was never
+        // fired — the reason for this check.
         List<Diagnostic> problems = check("""
                 on inventory_changed(kiste) {
                     log("nie")
@@ -41,7 +40,7 @@ class EventCheckTest {
     }
 
     @Test
-    @DisplayName("Ein Vertipper bekommt den richtigen Namen vorgeschlagen")
+    @DisplayName("A typo gets the correct name suggested")
     void aTypoGetsTheRealNameSuggested() {
         List<Diagnostic> problems = check("""
                 on device_onlin(gerät) {
@@ -54,15 +53,15 @@ class EventCheckTest {
     }
 
     @Test
-    @DisplayName("Ein Name ohne Ähnlichkeit bekommt die Liste zu sehen")
+    @DisplayName("A name with no similarity is shown the list")
     void anUnrelatedNameGetsTheFullList() {
         List<Diagnostic> problems = check("""
                 on quatsch(x) {
                     log("nie")
                 }""");
 
-        // Ohne die Liste bleibt offen, ob man sich vertippt hat oder ob es
-        // dieses Ereignis überhaupt nicht gibt.
+        // Without the list it stays open whether it was a typo or whether
+        // this event simply does not exist.
         assertTrue(problems.stream().anyMatch(problem ->
                         problem.hint() != null
                                 && problem.hint().contains("redstone_changed")
@@ -71,7 +70,7 @@ class EventCheckTest {
     }
 
     @Test
-    @DisplayName("Die vier eingebauten Ereignisse gehen durch")
+    @DisplayName("The four built-in events pass")
     void theFourBuiltInEventsPass() {
         List<Diagnostic> problems = check("""
                 on device_online(gerät) {
@@ -94,10 +93,10 @@ class EventCheckTest {
     }
 
     @Test
-    @DisplayName("Ein Name zu viel wird gemeldet, ein Name zu wenig nicht")
+    @DisplayName("One name too many is reported, one name too few is not")
     void tooManyNamesAreReportedButTooFewAreNot() {
-        // Genau der Fehler, den das alte Editor-Muster erzeugte: die
-        // Parameterliste von redstone_changed an einem Gerätemeldung.
+        // Exactly the mistake the old editor template produced: the
+        // parameter list of redstone_changed on a device event.
         List<Diagnostic> tooMany = check("""
                 on device_online(gerät, stärke) {
                     log("da")
@@ -111,7 +110,7 @@ class EventCheckTest {
                         problem.hint() != null && problem.hint().contains("redstone_changed")),
                 () -> "der Hinweis auf den einzigen mit zwei Werten fehlt: " + tooMany);
 
-        // Wer die Stärke nicht braucht, darf sie weglassen.
+        // If you do not need the strength, you may leave it out.
         assertTrue(check("""
                 on redstone_changed(gerät) {
                     log("signal")
@@ -119,7 +118,7 @@ class EventCheckTest {
     }
 
     @Test
-    @DisplayName("Ein selbst erklärtes Ereignis gilt")
+    @DisplayName("A self-declared event counts")
     void anOwnEventCounts() {
         assertTrue(check("""
                 event Fertig(nummer: Int)
@@ -130,10 +129,10 @@ class EventCheckTest {
     }
 
     @Test
-    @DisplayName("Das event darf in einer anderen Datei stehen")
+    @DisplayName("The event may live in another file")
     void theEventMayLiveInAnotherFile() {
-        // Alle Dateien teilen einen Namensraum. Die Prüfung je Datei hätte
-        // hier gemeldet, was die Nachbardatei erklärt.
+        // All files share a single namespace. A per-file check would have
+        // reported here what the neighbouring file declares.
         List<Diagnostic> problems = new Project(Map.of(
                 "ereignisse.mf", "event Fertig(nummer: Int)",
                 "main.mf", """
@@ -145,7 +144,7 @@ class EventCheckTest {
     }
 
     @Test
-    @DisplayName("Es bleibt bei einer Warnung — das Programm läuft")
+    @DisplayName("It stays a warning — the program runs")
     void itStaysAWarning() {
         List<Diagnostic> problems = check("""
                 on inventory_changed(kiste) {

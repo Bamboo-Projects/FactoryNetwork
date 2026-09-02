@@ -10,17 +10,17 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Ein falscher Verteilungsname wird gemeldet, statt still zu wirken.
+ * A wrong strategy name is reported instead of silently taking effect.
  *
- * <p><b>Der Anlass steht im eigenen Bestand.</b> Ein GameTest schrieb
- * {@code strategy emptiest} und prüfte damit angeblich die Verteilung nach dem
- * leersten Gerät. Diesen Namen gibt es nicht — {@code Strategy.of} fällt bei
- * jedem unbekannten Namen auf {@code round_robin} zurück, und zwar
- * schweigend. Der Test verteilte reihum und niemand konnte es sehen; sogar ein
- * Javadoc erklärte die Feinheit anhand des Namens, den es nicht gibt.
+ * <p><b>The occasion is in our own codebase.</b> A GameTest wrote
+ * {@code strategy emptiest} and supposedly tested distribution to the
+ * emptiest device with it. That name does not exist — {@code Strategy.of}
+ * falls back to {@code round_robin} on every unknown name, and does so
+ * silently. The test distributed round-robin and nobody could see it; even a
+ * Javadoc explained the subtlety using the name that does not exist.
  *
- * <p>Ein Tippfehler, der etwas anderes tut als gemeint und dabei nichts sagt,
- * ist teurer als einer, der gar nichts tut.
+ * <p>A typo that does something other than intended and says nothing about
+ * it is more expensive than one that does nothing at all.
  */
 class StrategyNameTest {
 
@@ -31,7 +31,7 @@ class StrategyNameTest {
     }
 
     @Test
-    @DisplayName("Eine erfundene Verteilung an der Gruppe wird gemeldet")
+    @DisplayName("An invented strategy on the group is reported")
     void anInventedStrategyOnAGroupIsReported() {
         List<Diagnostic> errors = errorsOf("""
                 group ziele {
@@ -47,7 +47,7 @@ class StrategyNameTest {
     }
 
     @Test
-    @DisplayName("Und am Worker genauso")
+    @DisplayName("And on the worker just the same")
     void andOnAWorkerToo() {
         List<Diagnostic> errors = errorsOf("""
                 worker verteilen {
@@ -62,7 +62,7 @@ class StrategyNameTest {
     }
 
     @Test
-    @DisplayName("Ein Name ohne Ähnlichkeit bekommt die ganze Liste")
+    @DisplayName("A name without any resemblance gets the whole list")
     void anUnrelatedNameGetsTheFullList() {
         List<Diagnostic> errors = errorsOf("""
                 group ziele {
@@ -77,7 +77,7 @@ class StrategyNameTest {
     }
 
     @Test
-    @DisplayName("Alle fünf echten Verteilungen gehen durch")
+    @DisplayName("All five real strategies pass")
     void allFiveRealStrategiesPass() {
         for (String strategy : dev.devpanda.factorynetwork.lang.Signatures.STRATEGIES) {
             assertTrue(errorsOf("""
@@ -90,11 +90,11 @@ class StrategyNameTest {
     }
 
     @Test
-    @DisplayName("priority kommt als Verteilung an, nicht als Worker-Angabe")
+    @DisplayName("priority arrives as a strategy, not as a worker entry")
     void priorityArrivesAsAStrategy() {
-        // Es ist zugleich ein Schlüsselwort. Ohne den Sonderfall parste die
-        // Zeile gar nicht — geprüft wird deshalb der Wert und nicht nur, dass
-        // keine Meldung kommt.
+        // It is a keyword at the same time. Without the special case the line
+        // did not parse at all — so the value is checked and not merely that
+        // no message arrives.
         var program = Parser.parse("""
                 group ziele {
                     members ziel_*
@@ -107,11 +107,11 @@ class StrategyNameTest {
     }
 
     @Test
-    @DisplayName("Die Liste im Editor ist die der Laufzeit")
+    @DisplayName("The list in the editor is the runtime's")
     void theEditorListMatchesTheRuntime() {
-        // Zwei Listen an zwei Orten laufen auseinander, sobald eine Verteilung
-        // dazukommt — und dann meldet der Parser einen Namen als falsch, den
-        // die Laufzeit kennt.
+        // Two lists in two places drift apart as soon as a strategy is added
+        // — and then the parser reports as wrong a name that the runtime
+        // knows.
         List<String> runtime =
                 java.util.Arrays.stream(
                         dev.devpanda.factorynetwork.runtime.DeviceGroup.Strategy.values())

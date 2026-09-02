@@ -32,15 +32,15 @@ class ParserTest {
     }
 
     @org.junit.jupiter.api.Nested
-    @DisplayName("Anweisungen ohne Wirkung")
+    @DisplayName("Statements without effect")
     class OhneWirkung {
 
         @Test
-        @DisplayName("log ohne Klammern warnt zweimal")
+        @DisplayName("log without parentheses warns twice")
         void bareCallWarns() {
-            // Ein Name und eine Zeichenkette nebeneinander: zwei
-            // Anweisungen, beide ohne Wirkung. Genau die Falle, wegen der es
-            // die Warnung gibt — das Programm lief und schrieb nichts.
+            // A name and a string side by side: two statements, both
+            // without effect. Exactly the trap the warning exists for — the
+            // program ran and wrote nothing.
             List<Diagnostic> warnungen = warningsOf("""
                     fn sagt() {
                         log "hallo"
@@ -51,7 +51,7 @@ class ParserTest {
         }
 
         @Test
-        @DisplayName("Mit Klammern ist alles still")
+        @DisplayName("With parentheses everything is quiet")
         void properCallIsQuiet() {
             assertTrue(warningsOf("""
                     fn sagt() {
@@ -60,7 +60,7 @@ class ParserTest {
         }
 
         @Test
-        @DisplayName("Ein Feldzugriff kann Wirkung haben und wird nicht angemeckert")
+        @DisplayName("A member access can have an effect and is not complained about")
         void memberAccessIsQuiet() {
             assertTrue(warningsOf("""
                     fn zaehlt() {
@@ -69,7 +69,7 @@ class ParserTest {
         }
 
         @Test
-        @DisplayName("Eine Warnung hält das Programm nicht auf")
+        @DisplayName("A warning does not stop the program")
         void warningIsNotAnError() {
             Parser.ParseResult result = Parser.parse("""
                     fn sagt() {
@@ -105,7 +105,7 @@ class ParserTest {
         }
 
         @Test
-        @DisplayName("from crafting macht Vorratshaltung zum selben Worker")
+        @DisplayName("from crafting makes stockkeeping the same worker")
         void craftingIsASource() {
             Decl.Worker worker = parseClean("""
                     worker keep_ingots {
@@ -134,7 +134,7 @@ class ParserTest {
         }
 
         @Test
-        @DisplayName("Eine unbekannte Angabe nennt die erlaubten")
+        @DisplayName("An unknown entry names the allowed ones")
         void unknownEntryListsTheAllowedOnes() {
             List<Diagnostic> errors = errorsOf("""
                     worker feed {
@@ -148,11 +148,11 @@ class ParserTest {
     }
 
     @Nested
-    @DisplayName("Meldungen, die weiterhelfen")
+    @DisplayName("Messages that help")
     class HelpfulErrors {
 
         @Test
-        @DisplayName("Ein Schlüsselwort als Connector schlägt Rückstriche vor")
+        @DisplayName("A keyword as connector suggests backticks")
         void keywordAsConnectorSuggestsBackticks() {
             List<Diagnostic> errors = errorsOf("""
                     fn test() {
@@ -165,7 +165,7 @@ class ParserTest {
         }
 
         @Test
-        @DisplayName("Ein Connector in Rückstrichen wird gelesen")
+        @DisplayName("A connector in backticks is read")
         void backtickedKeywordWorks() {
             Program program = parseClean("""
                     fn test() {
@@ -175,7 +175,7 @@ class ParserTest {
         }
 
         @Test
-        @DisplayName("timeout ohne else wird erklärt, nicht nur gemeldet")
+        @DisplayName("timeout without else is explained, not merely reported")
         void timeoutWithoutElse() {
             List<Diagnostic> errors = errorsOf("""
                     fn test() {
@@ -198,10 +198,10 @@ class ParserTest {
         }
 
         @Test
-        @DisplayName("Eine Zuweisung ist kein Vergleich")
+        @DisplayName("An assignment is no comparison")
         void assignmentIsNotAComparison() {
-            // Dieser Fall fiel erst beim Interpreter auf: Die Meldung zum
-            // einzelnen = schlug bei jeder normalen Zuweisung zu.
+            // This case was noticed only at the interpreter: the message
+            // about the single = struck at every ordinary assignment.
             parseClean("""
                     fn test() {
                         let summe = 0
@@ -210,7 +210,7 @@ class ParserTest {
         }
 
         @Test
-        @DisplayName("Ein einzelnes = beim Vergleich wird erkannt")
+        @DisplayName("A single = in a comparison is recognized")
         void singleEqualsInComparison() {
             List<Diagnostic> errors = errorsOf("""
                     fn test() {
@@ -222,7 +222,7 @@ class ParserTest {
         }
 
         @Test
-        @DisplayName("Eine Zeitangabe, die nicht in Ticks aufgeht, nennt die nächste")
+        @DisplayName("A duration that does not divide into ticks names the nearest one")
         void durationThatDoesNotFit() {
             List<Diagnostic> errors = errorsOf("""
                     fn test() {
@@ -233,7 +233,7 @@ class ParserTest {
         }
 
         @Test
-        @DisplayName("Bei on werden keine Typen geschrieben")
+        @DisplayName("In an on handler no types are written")
         void typesOnHandlerAreRejected() {
             List<Diagnostic> errors = errorsOf("""
                     on redstone_changed(sensor: Device, strength: Int) {
@@ -243,7 +243,7 @@ class ParserTest {
         }
 
         @Test
-        @DisplayName("import sagt, dass es das noch nicht gibt")
+        @DisplayName("import says that this does not exist yet")
         void importIsReserved() {
             List<Diagnostic> errors = errorsOf("import lib/smelting");
             assertFalse(errors.isEmpty());
@@ -251,7 +251,7 @@ class ParserTest {
         }
 
         @Test
-        @DisplayName("Nach einem Fehler wird weitergelesen")
+        @DisplayName("Reading continues after an error")
         void recoveryFindsLaterDeclarations() {
             Parser.ParseResult result = Parser.parse("""
                     worker broken {
@@ -268,7 +268,7 @@ class ParserTest {
     }
 
     @Nested
-    @DisplayName("Auswahl von Gegenständen")
+    @DisplayName("Selection of items")
     class Selections {
 
         @Test
@@ -298,7 +298,7 @@ class ParserTest {
         }
 
         @Test
-        @DisplayName("Ein Muster ohne Namensraum bleibt ohne")
+        @DisplayName("A pattern without a namespace stays without one")
         void patternWithoutNamespace() {
             Expr.Selector selector = firstSelector(
                     "worker w { from storage \n to chest \n filter item:*_dust }");
@@ -324,7 +324,7 @@ class ParserTest {
     }
 
     @Nested
-    @DisplayName("Weitere Deklarationsformen")
+    @DisplayName("Further declaration forms")
     class OtherDeclarations {
 
         @Test
@@ -385,9 +385,9 @@ class ParserTest {
 
         @Test
         void displayScaleWantsAnumber() {
-            // Eine Zahl und kein Ausdruck: Die Größe der Schrift ist Aufbau
-            // und nicht Inhalt. Ein Maßstab, der sich beim Zusehen ändert,
-            // wäre eine Spielerei, für die die Wand jedes Mal neu umbricht.
+            // A number and not an expression: the size of the text is layout
+            // and not content. A scale that changes while you watch would be
+            // a gimmick for which the wall re-wraps every time.
             assertTrue(Parser.parse("""
                     display halle {
                         scale storage.count(item:coal)
@@ -408,9 +408,9 @@ class ParserTest {
 
         @Test
         void anemptyListLiteral() {
-            // Der häufigste Anfangswert einer globalen Liste: noch nichts
-            // drin. Ohne ihn müsste man eine Liste mit einem Platzhalter
-            // beginnen und den gleich wieder herausnehmen.
+            // The most common initial value of a global list: nothing in it
+            // yet. Without it one would have to start a list with a
+            // placeholder and take it right back out.
             Program program = parseClean("global warteschlange = []");
             Decl.Global global = (Decl.Global) program.declarations().get(0);
             assertEquals(0, assertInstanceOf(Expr.ListLit.class, global.value())
@@ -437,11 +437,11 @@ class ParserTest {
         }
 
         @Test
-        @DisplayName("Eine Zahl vor einem Namen ist eine Menge, nicht nur vor einer Auswahl")
+        @DisplayName("A number before a name is an amount, not only before a selection")
         void anumberBeforeAnameIsAnamount() {
-            // `move 64 erze` ging längst, `send(64 erze)` nicht — dieselbe
-            // Form an zwei Stellen mit zwei Antworten. Aufgefallen ist es an
-            // einem Beispiel in der Doku, das genau das versprach.
+            // `move 64 erze` had long worked, `send(64 erze)` had not — the
+            // same form in two places with two answers. It was noticed in an
+            // example in the docs that promised exactly that.
             Program program = parseClean("""
                     fn nachschub() {
                         brecher.send(64 erze)
@@ -455,7 +455,7 @@ class ParserTest {
         }
 
         @Test
-        @DisplayName("Ein Rezept nennt seine Maschine, seine Zutaten und sein Ergebnis")
+        @DisplayName("A recipe names its machine, its inputs and its output")
         void arecipeNamesItsMachineInputsAndOutput() {
             Program program = parseClean("""
                     recipe erz_mahlen at brecher {
@@ -470,7 +470,7 @@ class ParserTest {
         }
 
         @Test
-        @DisplayName("Ein Rezept darf mehrere Zutaten haben")
+        @DisplayName("A recipe may have several inputs")
         void arecipeMayHaveSeveralInputs() {
             Program program = parseClean("""
                     recipe legierung at mischer {
@@ -483,7 +483,7 @@ class ParserTest {
         }
 
         @Test
-        @DisplayName("Ohne at fehlt die Maschine")
+        @DisplayName("Without at the machine is missing")
         void withoutAtThemachineIsMissing() {
             List<Diagnostic> errors = errorsOf("""
                     recipe erz_mahlen {
@@ -497,7 +497,7 @@ class ParserTest {
         }
 
         @Test
-        @DisplayName("Ein Rezept ohne Ergebnis ist keines")
+        @DisplayName("A recipe without an output is none")
         void arecipeWithoutAnoutputIsNone() {
             assertFalse(errorsOf("""
                     recipe leer at brecher {
@@ -527,7 +527,7 @@ class ParserTest {
         }
 
         @Test
-        @DisplayName("Listenoperationen mit implizitem it")
+        @DisplayName("List operations with implicit it")
         void implicitIt() {
             parseClean("""
                     fn test() {

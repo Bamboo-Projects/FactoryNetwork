@@ -11,11 +11,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 /**
- * {@code power} als vierte Ressourcenart.
+ * {@code power} as the fourth resource kind.
  *
- * <p><b>Ohne Doppelpunkt</b>, anders als {@code item:} und {@code fluid:}:
- * Strom hat keine Sorten, es gibt nur FE. Ein {@code power:} mit leerem Rest
- * wäre eine Lüge über die Form.
+ * <p><b>Without a colon</b>, unlike {@code item:} and {@code fluid:}: power
+ * has no varieties, there is only FE. A {@code power:} with an empty
+ * remainder would be a lie about the form.
  */
 class PowerSelectorTest {
 
@@ -26,7 +26,7 @@ class PowerSelectorTest {
     }
 
     @Test
-    @DisplayName("filter power macht einen Strom-Worker")
+    @DisplayName("filter power makes a power worker")
     void aPowerFilterMakesAPowerWorker() {
         Decl.Worker worker = firstWorker("""
                 worker versorgung {
@@ -40,7 +40,7 @@ class PowerSelectorTest {
     }
 
     @Test
-    @DisplayName("power ist ein Auswahlausdruck wie die anderen")
+    @DisplayName("power is a selector expression like the others")
     void powerIsASelectorLikeTheOthers() {
         Decl.Worker worker = firstWorker("""
                 worker versorgung {
@@ -56,10 +56,10 @@ class PowerSelectorTest {
     }
 
     @Test
-    @DisplayName("Ein Connector darf weiterhin power heißen")
+    @DisplayName("A connector may still be called power")
     void aConnectorMayStillBeCalledPower() {
-        // Mit Rückstrichen, wie bei jedem Schlüsselwort — dieselbe Regel wie
-        // für einen Connector namens „for".
+        // With backticks, as with every keyword — the same rule as for a
+        // connector named „for".
         Decl.Worker worker = firstWorker("""
                 worker mahlen {
                     from `power`

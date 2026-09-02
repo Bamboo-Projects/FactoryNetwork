@@ -9,11 +9,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Wer ein Programm ändern darf.
+ * Who may change a program.
  *
- * <p>Die Frage steht ohne Welt da — sie ist eine Rechnung aus drei Angaben
- * und keine Sache von Blöcken. Deshalb hier und nicht in den GameTests: Ein
- * Rechtefehler ist der eine Fehler, den man nicht ausprobieren möchte.
+ * <p>The question stands without a world — it is a computation from three
+ * inputs and not a matter of blocks. That is why it is here and not in the
+ * GameTests: a permission error is the one error you do not want to try out.
  */
 class FnProtectionTest {
 
@@ -21,39 +21,39 @@ class FnProtectionTest {
     private static final UUID FREMDER = UUID.nameUUIDFromBytes("fremder".getBytes());
 
     @Test
-    @DisplayName("Ohne Schutz darf jeder — wie bisher")
+    @DisplayName("Without protection everyone may — as before")
     void withoutProtectionEveryoneMay() {
         assertTrue(FnProtection.mayEdit(FnProtection.Mode.OFF, BESITZER, FREMDER, false));
         assertTrue(FnProtection.mayEdit(FnProtection.Mode.OFF, null, FREMDER, false));
     }
 
     @Test
-    @DisplayName("Mit Besitzerschutz darf der Besitzer")
+    @DisplayName("With owner protection the owner may")
     void withOwnerProtectionTheOwnerMay() {
         assertTrue(FnProtection.mayEdit(FnProtection.Mode.OWNER, BESITZER, BESITZER, false));
         assertFalse(FnProtection.mayEdit(FnProtection.Mode.OWNER, BESITZER, FREMDER, false));
     }
 
     @Test
-    @DisplayName("Und ein Operator immer")
+    @DisplayName("And an operator always")
     void andAnoperatorAlways() {
         assertTrue(FnProtection.mayEdit(FnProtection.Mode.OWNER, BESITZER, FREMDER, true));
         assertTrue(FnProtection.mayEdit(FnProtection.Mode.OPS, BESITZER, FREMDER, true));
     }
 
     @Test
-    @DisplayName("Bei OPS reicht Besitz nicht")
+    @DisplayName("With OPS ownership is not enough")
     void withOpsOwnershipIsNotEnough() {
         assertFalse(FnProtection.mayEdit(FnProtection.Mode.OPS, BESITZER, BESITZER, false));
     }
 
     @Test
-    @DisplayName("Ein Controller ohne Besitzer gehört allen")
+    @DisplayName("A controller without an owner belongs to everyone")
     void acontrollerWithoutAnownerBelongsToEveryone() {
-        // Aus einer Welt von vorher, oder von einem Befehl gesetzt: Ihn
-        // niemandem zuzuordnen wäre eine Sperre, die niemand aufheben kann.
+        // From an earlier world, or set by a command: assigning it to nobody
+        // would be a lock that no one can lift.
         assertTrue(FnProtection.mayEdit(FnProtection.Mode.OWNER, null, FREMDER, false));
-        // Bei OPS gilt das nicht: Dort ist der Besitz gar nicht die Frage.
+        // With OPS this does not hold: there ownership is not the question at all.
         assertFalse(FnProtection.mayEdit(FnProtection.Mode.OPS, null, FREMDER, false));
     }
 }

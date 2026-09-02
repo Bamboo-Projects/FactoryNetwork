@@ -10,11 +10,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
- * Woran ein Worker seine Ressourcenart trägt.
+ * Where a worker carries its resource kind.
  *
- * <p>Nicht an einem eigenen Feld, sondern am Auswahlausdruck seines Filters.
- * Die Laufzeit liest sie so, und die Prüfung im Editor muss dieselbe Regel
- * lesen — sonst warnt der eine, wo der andere schweigt.
+ * <p>Not on a field of its own, but on the selector expression of its filter.
+ * The runtime reads it that way, and the check in the editor must read the
+ * same rule — otherwise one warns where the other stays silent.
  */
 class WorkerKindTest {
 
@@ -23,7 +23,7 @@ class WorkerKindTest {
     }
 
     @Test
-    @DisplayName("Ein Filter auf Gegenstände macht einen Gegenstands-Worker")
+    @DisplayName("A filter on items makes an item worker")
     void anItemFilterMakesAnItemWorker() {
         Decl.Worker worker = firstWorker("""
                 worker mahlen {
@@ -36,7 +36,7 @@ class WorkerKindTest {
     }
 
     @Test
-    @DisplayName("Ein Filter auf Flüssigkeiten macht einen Flüssigkeits-Worker")
+    @DisplayName("A filter on fluids makes a fluid worker")
     void aFluidFilterMakesAFluidWorker() {
         Decl.Worker worker = firstWorker("""
                 worker pumpen {
@@ -49,7 +49,7 @@ class WorkerKindTest {
     }
 
     @Test
-    @DisplayName("Eine Menge davor ändert die Art nicht")
+    @DisplayName("An amount in front does not change the kind")
     void anAmountInFrontKeepsTheKind() {
         Decl.Worker worker = firstWorker("""
                 worker mahlen {
@@ -62,7 +62,7 @@ class WorkerKindTest {
     }
 
     @Test
-    @DisplayName("Ohne Filter ist die Art unbekannt")
+    @DisplayName("Without a filter the kind is unknown")
     void withoutAFilterTheKindIsUnknown() {
         Decl.Worker worker = firstWorker("""
                 worker schieben {
@@ -75,7 +75,7 @@ class WorkerKindTest {
     }
 
     @Test
-    @DisplayName("Ein Flüssigkeits-Tag macht einen Flüssigkeits-Worker")
+    @DisplayName("A fluid tag makes a fluid worker")
     void aFluidTagMakesAFluidWorker() {
         Decl.Worker worker = firstWorker("""
                 worker w {
@@ -84,8 +84,8 @@ class WorkerKindTest {
                     filter fluidtag:c/molten
                 }""");
 
-        // Die Art ist die Ressource und nicht die Schreibweise: Wer auf einen
-        // Flüssigkeits-Tag filtert, bewegt Flüssigkeiten.
+        // The kind is the resource and not the spelling: whoever filters on a
+        // fluid tag moves fluids.
         assertEquals(Expr.Selector.Kind.FLUID, WorkerKind.of(worker));
     }
 }

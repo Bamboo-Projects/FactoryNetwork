@@ -10,18 +10,19 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 /**
- * {@code store kiste_1 { … }} — ein fremdes Inventar zählt zum Netzspeicher.
+ * {@code store kiste_1 { … }} — a foreign inventory counts as network storage.
  *
- * <p>Der Speicherbus, wie AE2 ihn hat, nur ohne eigenen Block: Der Connector
- * hängt ohnehin an der Kiste, und die Zeile sagt, dass ihr Inhalt zum Netz
- * gehört. Dieselbe Haltung wie bei {@code recipe … at …} — was das Netz tut,
- * steht im Programm und nicht in einem Fenster, das niemand versionieren
- * kann. Die Begründung steht in {@code speicherbus.md}.
+ * <p>The storage bus as AE2 has it, only without a block of its own: the
+ * connector is attached to the chest anyway, and the line says that its
+ * contents belong to the network. The same stance as with
+ * {@code recipe … at …} — what the network does is in the program and not in
+ * a window that nobody can version. The reasoning is in
+ * {@code speicherbus.md}.
  */
 class StoreParseTest {
 
     @Test
-    @DisplayName("Ein Speicher ohne Angaben trägt nur seinen Gerätenamen")
+    @DisplayName("A store without entries carries only its device name")
     void astoreWithoutEntriesCarriesItsDevice() {
         var result = Parser.parse("store kiste_1 { }");
 
@@ -35,7 +36,7 @@ class StoreParseTest {
     }
 
     @Test
-    @DisplayName("Mit Priorität und Filter")
+    @DisplayName("With priority and filter")
     void withPriorityAndFilter() {
         var result = Parser.parse("""
                 store kiste_1 {
@@ -52,10 +53,10 @@ class StoreParseTest {
     }
 
     @Test
-    @DisplayName("Ein Speicher ohne Gerät ist ein Fehler")
+    @DisplayName("A store without a device is an error")
     void astoreWithoutAdeviceIsAnerror() {
-        // Anders als bei einem Rezept gibt es hier nichts zu raten: Ohne das
-        // Gerät wüsste niemand, wessen Inhalt gemeint ist.
+        // Unlike with a recipe there is nothing to guess here: without the
+        // device nobody would know whose contents are meant.
         var result = Parser.parse("store { }");
 
         assertTrue(result.diagnostics().stream().anyMatch(d -> d.isError()),

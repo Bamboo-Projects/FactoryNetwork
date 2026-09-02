@@ -8,19 +8,19 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Was am Laufwerk eigen ist — und die Drehung, die alle ausgerichteten
- * Blöcke betrifft.
+ * What is peculiar to the drive — and the rotation that concerns all
+ * oriented blocks.
  *
- * <p>Dass Modell und Trefferfläche dieselben Kästen haben, prüft
- * {@link MachineLayoutTest}. Hier steht die zweite Falle: Das Modell dreht
- * der Blockzustand, die Trefferfläche muss jemand mitdrehen. Wer die Formel
- * dafür verdreht, merkt es an drei von vier Wänden — und an der vierten
- * nicht.
+ * <p>That model and hitbox have the same boxes is checked by
+ * {@link MachineLayoutTest}. Here stands the second trap: the block state
+ * rotates the model, someone has to rotate the hitbox along with it. Whoever
+ * garbles the formula for that notices it on three of four walls — and not on
+ * the fourth.
  */
 class DriveLayoutTest {
 
     @Test
-    @DisplayName("Die Blende steht vor dem Gehäuse, das Feld liegt darin")
+    @DisplayName("The bezel stands proud of the housing, the field lies within it")
     void theBezelStandsProud() {
         assertTrue(DriveLayout.FRONT > 0, "die Blende hat keine Tiefe");
         assertTrue(DriveLayout.INSET > 0,
@@ -33,11 +33,11 @@ class DriveLayoutTest {
     }
 
     @Test
-    @DisplayName("Nach Osten gedreht liegt die Vorderseite im Osten")
+    @DisplayName("Rotated east the front lies in the east")
     void turningEastPutsTheFrontEast() {
-        // Die Mitte der Vorderseite bei Norden ist (8, 0). Nach Osten gedreht
-        // muss sie auf (16, 8) liegen — sonst greift man an drei von vier
-        // Wänden daneben.
+        // The centre of the front at north is (8, 0). Rotated east it must
+        // lie at (16, 8) — otherwise you grab next to it on three of four
+        // walls.
         assertPoint(16, 8, FacingShapes.spin(8, 0, Direction.EAST));
         assertPoint(8, 16, FacingShapes.spin(8, 0, Direction.SOUTH));
         assertPoint(0, 8, FacingShapes.spin(8, 0, Direction.WEST));
@@ -45,10 +45,10 @@ class DriveLayoutTest {
     }
 
     @Test
-    @DisplayName("Viermal gedreht steht jeder Punkt wieder am Anfang")
+    @DisplayName("Rotated four times every point stands at the start again")
     void fourTurnsComeBack() {
-        // Eine Drehung, die sich nicht schließt, ist keine Drehung. Die Probe
-        // kostet nichts und fängt jedes falsche Vorzeichen.
+        // A rotation that does not close is no rotation. The check costs
+        // nothing and catches every wrong sign.
         for (int x = 0; x <= 16; x += 4) {
             for (int z = 0; z <= 16; z += 4) {
                 double[] point = {x, z};

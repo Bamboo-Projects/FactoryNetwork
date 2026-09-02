@@ -15,23 +15,22 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Hält Modell und Trefferfläche jedes Blocks zusammen, der kein Würfel mehr
- * ist.
+ * Keeps the model and hitbox of every block that is no longer a cube
+ * together.
  *
- * <p>Minecraft führt beides getrennt: Das Modell steht in JSON, die
- * Trefferfläche in Java. Laufen sie auseinander, greift der Spieler neben
- * das, was er sieht — ein Fehler, den man im Spiel spürt, aber schwer
- * benennen kann.
+ * <p>Minecraft keeps the two apart: the model lives in JSON, the hitbox in
+ * Java. If they drift apart, the player grabs next to what he sees — an error
+ * you feel in the game but can hardly name.
  *
- * <p><b>Eine Klasse für alle</b>, weil die Proben für jeden Block dieselben
- * sind. Was an einem Block eigen ist, steht in seiner eigenen Testklasse:
- * {@link GatewayLayoutTest} und {@link DriveLayoutTest}. Wer den nächsten
- * Block umbaut, trägt ihn unten in die Liste ein und hat die vier
- * Grundproben geschenkt.
+ * <p><b>One class for all</b>, because the checks are the same for every
+ * block. What is peculiar to a single block stands in its own test class:
+ * {@link GatewayLayoutTest} and {@link DriveLayoutTest}. Whoever reworks the
+ * next block adds it to the list below and gets the four basic checks for
+ * free.
  */
 class MachineLayoutTest {
 
-    /** Ein umgebauter Block: Name der Modelldatei, Kästen, alter Vorfahre. */
+    /** A reworked block: name of the model file, boxes, old ancestor. */
     private record Machine(String model, Supplier<List<int[]>> boxes, String cube) {
     }
 
@@ -57,7 +56,7 @@ class MachineLayoutTest {
     }
 
     @Test
-    @DisplayName("Jeder Kasten der Trefferfläche steht so auch im Modell")
+    @DisplayName("Every box of the hitbox stands the same way in the model too")
     void everyBoxIsInTheModel() throws IOException {
         for (Machine machine : MACHINES) {
             String json = model(machine.model());
@@ -71,7 +70,7 @@ class MachineLayoutTest {
     }
 
     @Test
-    @DisplayName("Und kein Modell hat einen Kasten darüber hinaus")
+    @DisplayName("And no model has a box beyond that")
     void noModelHasAnExtraBox() throws IOException {
         for (Machine machine : MACHINES) {
             String json = model(machine.model());
@@ -82,7 +81,7 @@ class MachineLayoutTest {
     }
 
     @Test
-    @DisplayName("Kein Modell erbt mehr einen Würfel")
+    @DisplayName("No model inherits a cube any more")
     void noModelIsACubeAnyMore() throws IOException {
         for (Machine machine : MACHINES) {
             String json = model(machine.model());
@@ -94,7 +93,7 @@ class MachineLayoutTest {
     }
 
     @Test
-    @DisplayName("Kein Kasten ragt aus seinem Block heraus")
+    @DisplayName("No box sticks out of its block")
     void everyBoxStaysInsideTheBlock() {
         for (Machine machine : MACHINES) {
             for (int[] box : machine.boxes().get()) {
@@ -108,20 +107,20 @@ class MachineLayoutTest {
     }
 
     @Test
-    @DisplayName("Der Stempel der Presse fährt genau bis auf den Amboss")
+    @DisplayName("The ram of the press travels exactly down onto the anvil")
     void theRamMeetsTheAnvil() throws IOException {
-        // Der Stempel steht in einem eigenen Modell, weil er sich bewegt.
-        // Wie weit er fährt, rechnet MachineLayouts, und der PressRenderer
-        // nimmt die Zahl von dort. Läuft eines der beiden davon weg, schlägt
-        // er entweder in die Luft oder durch den Amboss hindurch.
+        // The ram stands in its own model because it moves. How far it travels
+        // is computed by MachineLayouts, and the PressRenderer takes the number
+        // from there. If one of the two runs off, it strikes either into the
+        // air or through the anvil.
         String json = model("press_ram");
         assertTrue(json.contains("\"elements\":["), "press_ram.json hat keine Kästen");
 
-        // Die Zahlen stammen aus MachineLayouts: Deckel einen Blockpixel
-        // unter der Oberkante, darunter die Deckplatte, darunter hängt der
-        // Stempel. Der Amboss steht auf dem Sockel.
-        int rest = 16 - 1 - 2 - 4;      // Ruhelage: unter der Decke des Maules
-        int anvil = 2 + 2;              // Oberkante des Ambosses
+        // The numbers come from MachineLayouts: lid one block pixel below the
+        // top edge, beneath it the cover plate, beneath that the ram hangs.
+        // The anvil stands on the base.
+        int rest = 16 - 1 - 2 - 4;      // Rest position: below the ceiling of the maw
+        int anvil = 2 + 2;              // Top edge of the anvil
         assertEquals(rest - anvil, MachineLayouts.pressStroke(),
                 "der Weg des Stempels passt nicht zu Decke und Amboss");
         assertTrue(json.contains("\"from\":[4," + rest + ",2]"),
@@ -136,9 +135,9 @@ class MachineLayoutTest {
     }
 
     @Test
-    @DisplayName("Jeder umgebaute Block hat mehr als einen Kasten")
+    @DisplayName("Every reworked block has more than one box")
     void everyMachineHasShape() {
-        // Ein Layout mit einem einzigen Kasten wäre ein Würfel mit Umweg.
+        // A layout with a single box would be a cube by a detour.
         for (Machine machine : MACHINES) {
             assertTrue(machine.boxes().get().size() > 1,
                     machine.model() + " hat nur einen Kasten");

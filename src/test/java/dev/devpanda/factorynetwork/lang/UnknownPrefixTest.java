@@ -9,23 +9,23 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 /**
- * Ein Wort vor dem Doppelpunkt, das keine Ressourcenart ist.
+ * A word before the colon that is no resource kind.
  *
- * <p><b>Der teuerste Fehler, den ein Übersetzer machen kann, ist einer, der
- * nicht sagt, was los ist.</b> Genau den gab es hier: {@code chemiacl:hydrogen}
- * zerfiel in sechs Meldungen — „Bei move fehlt das Ziel", „Hier wird ein Wert
- * erwartet, gefunden wurde :", „from ist ein Schlüsselwort" —, und keine
- * einzige nannte den Tippfehler.
+ * <p><b>The most expensive mistake a compiler can make is one that does not
+ * say what is going on.</b> Exactly that existed here: {@code chemiacl:hydrogen}
+ * fell apart into six messages — „Bei move fehlt das Ziel", „Hier wird ein Wert
+ * erwartet, gefunden wurde :", „from ist ein Schlüsselwort" —, and not a
+ * single one named the typo.
  *
- * <p>Das ist dieselbe Falle, die am 25.08. für eine aus JEI kopierte Kennung
- * behoben wurde ({@code item:mekanism:steel_ingot}, sieben Meldungen). Der
- * Lexer trägt den Vermerk dazu bis heute — nur galt er für die eine Form und
- * nicht für die andere.
+ * <p>That is the same trap that was fixed on 25.08. for an ID copied from JEI
+ * ({@code item:mekanism:steel_ingot}, seven messages). The lexer carries the
+ * note about it to this day — only it applied to the one form and not to the
+ * other.
  *
- * <p>Seit die Ressourcenarten eine offene Registry sind, hat das Wort vor dem
- * Doppelpunkt eine Liste, gegen die es geprüft werden kann. Vorher stand die
- * Liste viermal da: im Lexer, im Parser, in {@link Selectors} und im
- * Wertemodell.
+ * <p>Since the resource kinds became an open registry, the word before the
+ * colon has a list it can be checked against. Before, the list existed four
+ * times: in the lexer, in the parser, in {@link Selectors} and in the value
+ * model.
  */
 class UnknownPrefixTest {
 
@@ -36,7 +36,7 @@ class UnknownPrefixTest {
     }
 
     @Test
-    @DisplayName("Ein vertipptes Präfix ist eine Meldung und nicht sechs")
+    @DisplayName("A mistyped prefix is one message and not six")
     void amistypedPrefixIsOneMessageAndNotSix() {
         List<Diagnostic> errors = errorsIn("""
                 fn f() {
@@ -50,7 +50,7 @@ class UnknownPrefixTest {
     }
 
     @Test
-    @DisplayName("Und sie schlägt das gemeinte vor")
+    @DisplayName("And it suggests what was meant")
     void anditSuggestsWhatWasMeant() {
         List<Diagnostic> errors = errorsIn("""
                 fn f() {
@@ -63,12 +63,12 @@ class UnknownPrefixTest {
     }
 
     @Test
-    @DisplayName("Der Vorschlag ist anwendbar und trifft nur das Wort davor")
+    @DisplayName("The suggestion is applicable and hits only the word before")
     void thesuggestionIsApplicableAndHitsOnlyTheWordBefore() {
-        // Der Hinweis ist ein Satz für einen Menschen. Ein Editor müsste ihn
-        // zerpflücken, um daraus eine Schnellkorrektur zu bauen — und zwei
-        // Fassungen derselben Auskunft laufen auseinander. Deshalb trägt die
-        // Meldung den Vorschlag zusätzlich als Ersetzung.
+        // The hint is a sentence for a human. An editor would have to pick it
+        // apart to build a quick fix from it — and two versions of the same
+        // information drift apart. That is why the message additionally
+        // carries the suggestion as a replacement.
         Diagnostic error = errorsIn("""
                 fn f() {
                     move 5 chemiacl:hydrogen from lager to tank
@@ -77,8 +77,8 @@ class UnknownPrefixTest {
         assertTrue(error.fix() != null, () -> "ohne Vorschlag: " + error);
         assertEquals("chemical", error.fix().text());
 
-        // Unterstrichen wird die ganze Auswahl, ersetzt nur das Wort davor:
-        // Was hinter dem Doppelpunkt steht, war ja richtig.
+        // The whole selection is underlined, only the word before is
+        // replaced: what comes after the colon was right, after all.
         assertEquals("chemiacl".length(),
                 error.fix().span().end() - error.fix().span().start(),
                 () -> "der Vorschlag greift zu weit: " + error.fix().span());
@@ -87,10 +87,10 @@ class UnknownPrefixTest {
     }
 
     @Test
-    @DisplayName("Ohne gemeinte Art gibt es auch nichts anzuwenden")
+    @DisplayName("Without a meant kind there is nothing to apply either")
     void withoutAmeantKindThereIsNothingToApply() {
-        // Ein Vorschlag wäre hier geraten, und eine Schnellkorrektur, die rät,
-        // ist schlimmer als keine.
+        // A suggestion here would be a guess, and a quick fix that guesses is
+        // worse than none.
         Diagnostic error = errorsIn("""
                 fn f() {
                     move 5 pressure:air from quelle to storage
@@ -100,17 +100,17 @@ class UnknownPrefixTest {
     }
 
     @Test
-    @DisplayName("Ein Präfix aus einer Mod, die fehlt, nennt die bekannten")
+    @DisplayName("A prefix from a mod that is missing names the known ones")
     void aprefixFromAmissingModNamesTheKnownOnes() {
-        // Kein Tippfehler, sondern eine Art, die es in diesem Pack nicht gibt.
-        // Ein Vorschlag wäre hier geraten; die Liste ist die ehrliche Antwort.
+        // Not a typo, but a kind that does not exist in this pack. A
+        // suggestion here would be a guess; the list is the honest answer.
         //
-        // Nicht mehr „source": Seit dem 26.08. meldet compat/ars diese Art
-        // beim Laden an, auch ohne Ars Nouveau — sonst hieße source:source in
-        // einem Pack ohne die Mod „keine Ressourcenart" statt „diese Mod
-        // fehlt". Ein Einheitstest lädt kein FML und sähe sie deshalb
-        // trotzdem nicht; ein Beispiel, das im Spiel etwas anderes bedeutet
-        // als hier, ist aber keins.
+        // No longer „source": since 26.08. compat/ars registers this kind at
+        // load time, even without Ars Nouveau — otherwise source:source in a
+        // pack without the mod would mean "no resource kind" instead of "this
+        // mod is missing". A unit test loads no FML and therefore still would
+        // not see it; but an example that means something different in game
+        // than it does here is no example.
         List<Diagnostic> errors = errorsIn("""
                 fn f() {
                     move 5 pressure:air from quelle to storage
@@ -125,7 +125,7 @@ class UnknownPrefixTest {
     }
 
     @Test
-    @DisplayName("Ein Worker mit vertipptem Präfix meldet dasselbe")
+    @DisplayName("A worker with a mistyped prefix reports the same")
     void aworkerWithAmistypedPrefixSaysTheSame() {
         List<Diagnostic> errors = errorsIn("""
                 worker w {
@@ -141,15 +141,15 @@ class UnknownPrefixTest {
     }
 
     @Test
-    @DisplayName("Die Meldung über einen fehlenden Namen ist deutsch")
+    @DisplayName("The message about a missing name is in German")
     void themessageAboutAmissingNameIsGerman() {
-        // Beim ersten Spielen im Fenster gelesen: „Hier wird der Name der
-        // Gerät erwartet." Der Satz stand einmal da und setzte das nackte
-        // Wort ein — für die drei weiblichen ging das auf, für die acht
-        // anderen nicht.
-        // Dritte Spalte: der Satz, der vorher dastand. Ohne ihn prüfte diese
-        // Schleife nur, dass irgendetwas Richtiges dabeisteht — und nicht,
-        // dass das Falsche weg ist.
+        // Read in the window on first playing: „Hier wird der Name der
+        // Gerät erwartet." The sentence stood there once and inserted the
+        // bare word — for the three feminine nouns that worked out, for the
+        // eight others it did not.
+        // Third column: the sentence that stood there before. Without it this
+        // loop checked only that something correct is present — and not that
+        // the wrong thing is gone.
         for (String[] fall : new String[][] {
                 {"store", "des Geräts", "der Gerät"},
                 {"worker", "des Workers", "der Worker"},
@@ -171,21 +171,21 @@ class UnknownPrefixTest {
     }
 
     @Test
-    @DisplayName("Eine Typangabe ohne Leerzeichen bleibt eine Typangabe")
+    @DisplayName("A type annotation without a space stays a type annotation")
     void atypeAnnotationWithoutAspaceStaysOne() {
-        // fn f(x:Int) ist gültig und war es immer. Die neue Meldung darf sie
-        // nicht einsammeln — sie steht in einer Parameterliste und nicht dort,
-        // wo ein Wert erwartet wird.
+        // fn f(x:Int) is valid and always was. The new message must not
+        // collect it — it sits in a parameter list and not where a value is
+        // expected.
         assertTrue(errorsIn("fn f(x:Int) {\n    log(x)\n}").isEmpty(),
                 () -> "gemeldet wurde: " + errorsIn("fn f(x:Int) {\n    log(x)\n}"));
         assertTrue(errorsIn("event E(x:Int)\n\non E(v) {\n    log(v)\n}").isEmpty());
     }
 
     @Test
-    @DisplayName("Ein benanntes Argument bleibt eines")
+    @DisplayName("A named argument stays one")
     void anamedArgumentStaysOne() {
-        // strategy: least_filled steht mit Doppelpunkt in einer Klammer. Auch
-        // ohne Leerzeichen ist es keine Auswahl.
+        // strategy: least_filled sits with a colon inside parentheses. Even
+        // without a space it is no selection.
         assertTrue(errorsIn("""
                 fn f() {
                     log(storage.items().sort(it.amount))
@@ -193,7 +193,7 @@ class UnknownPrefixTest {
     }
 
     @Test
-    @DisplayName("Die vier eingebauten Schreibweisen bleiben unberührt")
+    @DisplayName("The four built-in spellings stay untouched")
     void thefourBuiltinSpellingsAreUntouched() {
         assertTrue(errorsIn("""
                 fn f() {

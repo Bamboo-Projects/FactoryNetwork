@@ -11,12 +11,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Was sich mit einer Liste anfangen lässt.
+ * What can be done with a list.
  *
- * <p>{@code sprache.md} §12 nennt fünf: {@code where}, {@code sort},
- * {@code first}, {@code count}, {@code sum}. Die letzten drei brauchen kein
- * {@code it} und stehen hier; {@code where} und {@code sort} werten ihren
- * Ausdruck je Element aus und sind ein eigener Schritt.
+ * <p>{@code sprache.md} §12 names five: {@code where}, {@code sort},
+ * {@code first}, {@code count}, {@code sum}. The last three need no
+ * {@code it} and live here; {@code where} and {@code sort} evaluate their
+ * expression per element and are a step of their own.
  */
 class ListMemberTest {
 
@@ -73,7 +73,7 @@ class ListMemberTest {
     }
 
     @Test
-    @DisplayName("count zählt die Einträge")
+    @DisplayName("count counts the entries")
     void countCountsTheEntries() {
         TestHost host = new TestHost();
         host.contents.add(new Value.Int(3));
@@ -89,7 +89,7 @@ class ListMemberTest {
     }
 
     @Test
-    @DisplayName("first gibt das erste Element")
+    @DisplayName("first gives the first element")
     void firstGivesTheFirstEntry() {
         TestHost host = new TestHost();
         host.contents.add(new Value.Text("vorne"));
@@ -105,7 +105,7 @@ class ListMemberTest {
     }
 
     @Test
-    @DisplayName("first auf einer leeren Liste gibt nichts — und wirft nicht")
+    @DisplayName("first on an empty list gives nothing — and does not throw")
     void firstOnAnEmptyListGivesNothing() {
         TestHost host = new TestHost();
         Interpreter interpreter = interpreterFor("""
@@ -120,7 +120,7 @@ class ListMemberTest {
     }
 
     @Test
-    @DisplayName("sum addiert Zahlen auf")
+    @DisplayName("sum adds numbers up")
     void sumAddsNumbers() {
         TestHost host = new TestHost();
         host.contents.add(new Value.Int(3));
@@ -137,7 +137,7 @@ class ListMemberTest {
     }
 
     @Test
-    @DisplayName("where sortiert aus, mit it als Eintrag")
+    @DisplayName("where filters out, with it as the entry")
     void whereFiltersWithIt() {
         TestHost host = new TestHost();
         host.contents.add(new Value.Int(3));
@@ -154,7 +154,7 @@ class ListMemberTest {
     }
 
     @Test
-    @DisplayName("sort ordnet nach dem Ausdruck")
+    @DisplayName("sort orders by the expression")
     void sortOrdersByTheExpression() {
         TestHost host = new TestHost();
         host.contents.add(new Value.Int(30));
@@ -171,7 +171,7 @@ class ListMemberTest {
     }
 
     @Test
-    @DisplayName("it lebt nur im Aufruf und verschwindet danach")
+    @DisplayName("it lives only in the call and disappears afterwards")
     void itLivesOnlyInsideTheCall() {
         TestHost host = new TestHost();
         host.contents.add(new Value.Int(1));
@@ -188,7 +188,7 @@ class ListMemberTest {
     }
 
     @Test
-    @DisplayName("Ein Name von außen bleibt im Ausdruck erreichbar")
+    @DisplayName("A name from outside stays reachable in the expression")
     void anOuterNameStaysReachableInside() {
         TestHost host = new TestHost();
         host.contents.add(new Value.Int(3));
@@ -206,7 +206,7 @@ class ListMemberTest {
     }
 
     @Test
-    @DisplayName("sum über eine leere Liste ist null")
+    @DisplayName("sum over an empty list is zero")
     void sumOfNothingIsZero() {
         TestHost host = new TestHost();
         Interpreter interpreter = interpreterFor("""
@@ -220,7 +220,7 @@ class ListMemberTest {
     }
 
     @Test
-    @DisplayName("An einem Eintrag steht seine Menge")
+    @DisplayName("An entry carries its amount")
     void anEntryCarriesItsAmount() {
         TestHost host = new TestHost();
         host.contents.add(Value.Selection.ofItems(List.of(), 5));
@@ -235,7 +235,7 @@ class ListMemberTest {
     }
 
     @Test
-    @DisplayName("sum zählt die Mengen zusammen")
+    @DisplayName("sum adds the amounts together")
     void sumAddsTheAmounts() {
         TestHost host = new TestHost();
         host.contents.add(Value.Selection.ofItems(List.of(), 5));
@@ -247,13 +247,14 @@ class ListMemberTest {
                 }""", host);
         interpreter.call("zeigen", List.of());
 
-        // Vorher warf sum an dieser Stelle: Ein Posten war keine Zahl, und
-        // eine Bestandsliste ist der Fall, für den sum überhaupt da ist.
+        // Previously sum threw at this point: an entry was not a number, and
+        // an inventory listing is the case that sum exists for in the first
+        // place.
         assertEquals(List.of("12"), host.logs);
     }
 
     @Test
-    @DisplayName("where filtert nach der Menge")
+    @DisplayName("where filters by the amount")
     void whereFiltersByAmount() {
         TestHost host = new TestHost();
         host.contents.add(Value.Selection.ofItems(List.of(), 5));
@@ -270,7 +271,7 @@ class ListMemberTest {
     }
 
     @Test
-    @DisplayName("sort ordnet nach der Menge")
+    @DisplayName("sort orders by the amount")
     void sortOrdersByAmount() {
         TestHost host = new TestHost();
         host.contents.add(Value.Selection.ofItems(List.of(), 90));
@@ -286,7 +287,7 @@ class ListMemberTest {
     }
 
     @Test
-    @DisplayName("Eine Auswahl über mehrere Arten hat keine eine Art")
+    @DisplayName("A selection over several kinds has no single kind")
     void aSelectionOverSeveralKindsHasNoSingleItem() {
         TestHost host = new TestHost();
         host.contents.add(Value.Selection.ofItems(List.of(), 5));
@@ -296,16 +297,16 @@ class ListMemberTest {
                     log(crusher_1.items().first().item)
                 }""", host);
 
-        // Ohne Art ist it.item keine Auskunft, die sich erfinden lässt.
+        // Without a kind, it.item is no information that can be invented.
         ScriptError error = org.junit.jupiter.api.Assertions.assertThrows(
                 ScriptError.class, () -> interpreter.call("zeigen", List.of()));
         assertTrue(error.getMessage().contains("Art"), error.getMessage());
     }
 
-    // ---- Listen im Programm ------------------------------------------------
+    // ---- Lists in the program ----------------------------------------------
 
     @Test
-    @DisplayName("Eine Liste lässt sich hinschreiben")
+    @DisplayName("A list can be written down")
     void alistCanBeWrittenDown() {
         TestHost host = new TestHost();
         Interpreter interpreter = interpreterFor("""
@@ -319,12 +320,11 @@ class ListMemberTest {
     }
 
     @Test
-    @DisplayName("plus liefert eine neue Liste und lässt die alte in Ruhe")
+    @DisplayName("plus gives a new list and leaves the old one alone")
     void plusGivesAnewListAndLeavesTheOldAlone() {
-        // Das ist die Entscheidung, die hier festgenagelt wird: Eine Liste
-        // wird ersetzt, nicht geändert. Ein änderndes add liefe an der Wache
-        // für const und am Schutz im Mehrspielerbetrieb vorbei — beide hängen
-        // am Zuweisen.
+        // This is the decision nailed down here: a list is replaced, not
+        // mutated. A mutating add would slip past the guard for const and the
+        // protection in multiplayer — both hang on assignment.
         TestHost host = new TestHost();
         Interpreter interpreter = interpreterFor("""
                 fn zeigen() {
@@ -340,7 +340,7 @@ class ListMemberTest {
     }
 
     @Test
-    @DisplayName("without nimmt jedes Vorkommen heraus")
+    @DisplayName("without removes every occurrence")
     void withoutRemovesEveryOccurrence() {
         TestHost host = new TestHost();
         Interpreter interpreter = interpreterFor("""
@@ -354,10 +354,10 @@ class ListMemberTest {
     }
 
     @Test
-    @DisplayName("rest ist alles außer dem ersten")
+    @DisplayName("rest is everything but the first")
     void restIsEverythingButThefirst() {
-        // Mit first zusammen ist das die Warteschlange: nimm den vordersten,
-        // behalte den Rest. Ein Zugriff über die Nummer gibt es nicht.
+        // Together with first this is the queue: take the front one, keep the
+        // rest. Access by number does not exist.
         TestHost host = new TestHost();
         Interpreter interpreter = interpreterFor("""
                 fn zeigen() {
@@ -370,7 +370,7 @@ class ListMemberTest {
     }
 
     @Test
-    @DisplayName("rest einer leeren Liste ist eine leere Liste")
+    @DisplayName("rest of an empty list is an empty list")
     void restOfAnemptyListIsAnemptyList() {
         TestHost host = new TestHost();
         Interpreter interpreter = interpreterFor("""
@@ -384,7 +384,7 @@ class ListMemberTest {
     }
 
     @Test
-    @DisplayName("Über ein Listenliteral lässt sich laufen")
+    @DisplayName("A list literal can be walked over")
     void alistLiteralCanBeWalked() {
         TestHost host = new TestHost();
         Interpreter interpreter = interpreterFor("""

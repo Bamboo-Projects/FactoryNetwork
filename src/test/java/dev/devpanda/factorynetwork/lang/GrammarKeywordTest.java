@@ -13,23 +13,23 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 /**
- * Die Hervorhebung in VS Code kennt jedes Wort der Sprache.
+ * The highlighting in VS Code knows every word of the language.
  *
- * <p><b>Gefunden beim ersten Öffnen einer echten Programmdatei</b> (27.08.):
- * Im Editor stand {@code store kiste_1 { }} — und {@code store} war farblos
- * wie ein Name. Fünf Wörter fehlten in der Grammatik: {@code store},
- * {@code recipe}, {@code scale}, {@code at} und {@code out}. Alle fünf sind
- * später zur Sprache dazugekommen, und niemand hat die zweite Liste
- * nachgezogen.
+ * <p><b>Found the first time a real program file was opened</b> (27.08.):
+ * the editor showed {@code store kiste_1 { }} — and {@code store} was colourless
+ * like a name. Five words were missing from the grammar: {@code store},
+ * {@code recipe}, {@code scale}, {@code at} and {@code out}. All five were
+ * added to the language later, and nobody kept the second list
+ * in step.
  *
- * <p><b>Das ist die Falle, die in dieser Sitzung viermal zugeschlagen hat:</b>
- * Dieselbe Auskunft steht an zwei Stellen, und eine davon altert. Hier ist die
- * eine {@link TokenType} — die Wahrheit, gegen die der Lexer arbeitet —, die
- * andere eine TextMate-Grammatik in JSON, die kein Compiler liest.
+ * <p><b>This is the trap that sprang four times in this session:</b>
+ * the same information sits in two places, and one of them ages. Here one
+ * is {@link TokenType} — the truth the lexer works against —, the
+ * other a TextMate grammar in JSON that no compiler reads.
  *
- * <p>Ein farbloses Schlüsselwort ist kein Fehler, der etwas kaputtmacht. Es
- * fällt niemandem auf, der die Sprache kennt, und verwirrt jeden, der sie
- * lernt — genau die Sorte Mangel, die sich ohne Prüflauf ewig hält.
+ * <p>A colourless keyword is not a mistake that breaks anything. It
+ * goes unnoticed by anyone who knows the language, and confuses everyone who
+ * is learning it — exactly the kind of flaw that lingers forever without a check.
  */
 class GrammarKeywordTest {
 
@@ -37,15 +37,15 @@ class GrammarKeywordTest {
             Path.of("editor/vscode/syntaxes/manifold.tmLanguage.json");
 
     @Test
-    @DisplayName("Jedes Schlüsselwort steht auch in der Grammatik für VS Code")
+    @DisplayName("Every keyword is also in the grammar for VS Code")
     void everyKeywordIsAlsoInTheGrammar() throws IOException {
         assertTrue(Files.exists(GRAMMAR), () -> GRAMMAR + " fehlt");
         String grammar = Files.readString(GRAMMAR, StandardCharsets.UTF_8);
 
         List<String> missing = new ArrayList<>();
         for (String keyword : TokenType.keywords()) {
-            // Als ganzes Wort: „in" steckt in „indicator", und ein Treffer
-            // darin bewiese nichts.
+            // As a whole word: "in" is inside "indicator", and a match
+            // there would prove nothing.
             Pattern whole = Pattern.compile("(?<![A-Za-z])" + Pattern.quote(keyword)
                     + "(?![A-Za-z])");
             if (!whole.matcher(grammar).find()) {
@@ -62,19 +62,19 @@ class GrammarKeywordTest {
     }
 
     @Test
-    @DisplayName("Die Grammatik erfindet keine Wörter, die es nicht gibt")
+    @DisplayName("The grammar invents no words that do not exist")
     void thegrammarInventsNoWordsThatDoNotExist() throws IOException {
         String grammar = Files.readString(GRAMMAR, StandardCharsets.UTF_8);
 
-        // Die andere Richtung, und sie ist die schwächere: Die Grammatik führt
-        // auch Wörter, die keine Schlüsselwörter sind — Ressourcenpräfixe wie
-        // „item" etwa, und die stehen in einer Registry. Geprüft werden
-        // deshalb nur die Muster, die ausdrücklich Schlüsselwörter meinen.
+        // The other direction, and it is the weaker one: the grammar also
+        // carries words that are not keywords — resource prefixes like
+        // "item", say, and those live in a registry. So only the patterns
+        // that explicitly mean keywords are checked.
         List<String> unknown = new ArrayList<>();
         for (String group : new String[] {"declaration", "control", "worker", "display"}) {
             List<String> words = wordsOf(grammar, group);
-            // Ohne diese Zeile bestünde der Test hohl: Findet der Ausdruck
-            // nichts, ist die Liste leer und alles scheinbar in Ordnung.
+            // Without this line the test would be hollow: if the expression
+            // finds nothing, the list is empty and everything looks fine.
             assertTrue(words.size() >= 5,
                     () -> "Aus " + group + " kamen nur " + words.size()
                             + " Wörter — der Ausdruck greift nicht mehr");
@@ -89,7 +89,7 @@ class GrammarKeywordTest {
                 () -> "Der Editor färbt Wörter, die die Sprache nicht kennt: " + unknown);
     }
 
-    /** Die Wörter aus einem Muster der Form {@code \\b(a|b|c)\\b}. */
+    /** The words from a pattern of the form {@code \\b(a|b|c)\\b}. */
     private static List<String> wordsOf(String grammar, String group) {
         var entry = Pattern.compile("\"" + group + "\"\\s*:\\s*\\{[^}]*?\"match\"\\s*:\\s*"
                 + "\"\\\\\\\\b\\(([^)]*)\\)").matcher(grammar);

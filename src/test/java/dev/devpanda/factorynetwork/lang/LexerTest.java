@@ -18,7 +18,7 @@ class LexerTest {
         return result.tokens();
     }
 
-    /** Die Token-Arten ohne NL und EOF — für Tests, die nur die Form prüfen. */
+    /** The token kinds without NL and EOF — for tests that only check the shape. */
     private static List<TokenType> typesOf(String source) {
         return tokensOf(source).stream()
                 .map(Token::type)
@@ -28,11 +28,11 @@ class LexerTest {
 
 
     @Nested
-    @DisplayName("Eckige Klammern")
+    @DisplayName("Square brackets")
     class EckigeKlammern {
 
         @Test
-        @DisplayName("Eine Liste ist ein Paar Klammern mit Kommas darin")
+        @DisplayName("A list is a pair of brackets with commas inside")
         void alistIsApairOfBracketsWithCommas() {
             assertEquals(List.of(TokenType.LBRACKET, TokenType.INT, TokenType.COMMA,
                             TokenType.INT, TokenType.RBRACKET),
@@ -40,19 +40,19 @@ class LexerTest {
         }
 
         @Test
-        @DisplayName("Zwischen Klammern zählt kein Zeilenumbruch")
+        @DisplayName("Between brackets a line break does not count")
         void betweenBracketsAnewlineDoesNotCount() {
-            // Eine Liste aus sechs Namen schreibt niemand in eine Zeile.
-            // Dieselbe Regel wie bei runden Klammern, und aus demselben
-            // Grund: Dort steht ein Ausdruck, und ein Ausdruck endet nicht
-            // an einer Zeile.
+            // Nobody writes a list of six names on one line.
+            // The same rule as for round parentheses, and for the same
+            // reason: there sits an expression, and an expression does not
+            // end at a line.
             assertFalse(typesOf("[1,\n2]").contains(TokenType.NL),
                     "in Klammern trennt kein Umbruch");
         }
     }
 
     @Nested
-    @DisplayName("Auswahlausdrücke gegen Typangaben")
+    @DisplayName("Selectors versus type annotations")
     class Selectors {
 
         @Test
@@ -76,7 +76,7 @@ class LexerTest {
         }
 
         @Test
-        @DisplayName("item: Item ist eine Typangabe, kein Auswahlausdruck")
+        @DisplayName("item: Item is a type annotation, not a selector")
         void typeAnnotationIsNotASelector() {
             assertEquals(
                     List.of(TokenType.NAME, TokenType.COLON, TokenType.NAME),
@@ -84,7 +84,7 @@ class LexerTest {
         }
 
         @Test
-        @DisplayName("Der Leerraum hinter dem Doppelpunkt entscheidet")
+        @DisplayName("The whitespace after the colon decides")
         void wholeParameterList() {
             assertEquals(
                     List.of(TokenType.FN, TokenType.NAME, TokenType.LPAREN,
@@ -97,7 +97,7 @@ class LexerTest {
     }
 
     @Nested
-    @DisplayName("Zeitangaben")
+    @DisplayName("Durations")
     class Durations {
 
         @Test
@@ -110,7 +110,7 @@ class LexerTest {
         }
 
         @Test
-        @DisplayName("30 s mit Leerzeichen ist keine Zeitangabe")
+        @DisplayName("30 s with a space is not a duration")
         void spaceSeparatesNumberAndName() {
             assertEquals(List.of(TokenType.INT, TokenType.NAME), typesOf("30 s"));
         }
@@ -131,7 +131,7 @@ class LexerTest {
     }
 
     @Nested
-    @DisplayName("Zeilenumbrüche")
+    @DisplayName("Line breaks")
     class Newlines {
 
         private static long newlineCount(String source) {
@@ -144,28 +144,28 @@ class LexerTest {
         }
 
         @Test
-        @DisplayName("Nach einem Operator geht die Zeile weiter")
+        @DisplayName("After an operator the line continues")
         void operatorContinuesLine() {
             assertEquals(1, newlineCount("let a = 1 +\n2"));
         }
 
         @Test
-        @DisplayName("In offenen Klammern beendet ein Umbruch nichts")
+        @DisplayName("Inside open parentheses a break ends nothing")
         void openParenSuppressesNewline() {
             assertEquals(1, newlineCount("foo(1,\n2,\n3)"));
         }
 
         @Test
-        @DisplayName("Ein Punkt am Zeilenanfang setzt die Kette fort")
+        @DisplayName("A dot at the start of a line continues the chain")
         void leadingDotContinuesChain() {
             assertEquals(1, newlineCount("let a = crushers.members()\n    .where(it.busy)"));
         }
 
         @Test
-        @DisplayName("Vor else steht nie ein Zeilenende")
+        @DisplayName("Before else there is never a line end")
         void elseContinuesLine() {
-            // Nach { und } gehören Umbrüche hin — die Grammatik verlangt sie.
-            // Geprüft wird deshalb genau die eine Stelle, um die es geht.
+            // After { and } line breaks belong — the grammar requires them.
+            // So exactly the one spot that matters is checked.
             List<Token> tokens = tokensOf("if a {\n}\nelse {\n}");
             for (int i = 1; i < tokens.size(); i++) {
                 if (tokens.get(i).is(TokenType.ELSE)) {
@@ -182,7 +182,7 @@ class LexerTest {
     }
 
     @Nested
-    @DisplayName("Namen")
+    @DisplayName("Names")
     class Names {
 
         @Test
@@ -193,7 +193,7 @@ class LexerTest {
         }
 
         @Test
-        @DisplayName("Ein Connector darf wie ein Schlüsselwort heißen")
+        @DisplayName("A connector may be named like a keyword")
         void backticksMakeAKeywordAName() {
             List<Token> tokens = tokensOf("`for`.insert(1)");
             assertEquals(TokenType.ESCAPED_NAME, tokens.get(0).type());
@@ -201,7 +201,7 @@ class LexerTest {
         }
 
         @Test
-        @DisplayName("Umlaute sind in Namen erlaubt")
+        @DisplayName("Umlauts are allowed in names")
         void umlautsAreAllowed() {
             List<Token> tokens = tokensOf("let ofen_süd = 1");
             assertEquals(TokenType.NAME, tokens.get(1).type());
@@ -209,7 +209,7 @@ class LexerTest {
         }
 
         @Test
-        @DisplayName("Zerlegtes und zusammengesetztes ü sind derselbe Name")
+        @DisplayName("A decomposed and a composed ü are the same name")
         void namesAreNormalizedToNfc() {
             String composed = "ofen_süd";
             String decomposed = "ofen_süd";
@@ -225,7 +225,7 @@ class LexerTest {
     }
 
     @Nested
-    @DisplayName("Meldungen")
+    @DisplayName("Diagnostics")
     class Diagnostics {
 
         @Test
@@ -243,7 +243,7 @@ class LexerTest {
         }
 
         @Test
-        @DisplayName("Ein einzelnes & schlägt das doppelte vor")
+        @DisplayName("A single & suggests the double one")
         void singleAmpersandSuggestsTheDouble() {
             Lexer.LexResult result = Lexer.tokenize("a & b");
             assertTrue(result.hasErrors());
@@ -258,7 +258,7 @@ class LexerTest {
     }
 
     @Test
-    @DisplayName("Ein vollständiger Worker zerfällt in die erwarteten Token")
+    @DisplayName("A complete worker breaks into the expected tokens")
     void completeWorker() {
         List<TokenType> types = typesOf("""
                 worker fuel_supply {

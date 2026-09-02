@@ -14,15 +14,16 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Lesen und Schreiben globaler Werte.
+ * Reading and writing global values.
  *
- * <p><b>Sie liegen nicht im Stapel der Geltungsbereiche.</b> Der lebt für
- * einen Aufruf; ein globaler Wert für die Fabrik. Er liegt deshalb dort, wo
- * auch Bestände und Redstone liegen — beim Host, den die Laufzeit mitbringt.
+ * <p><b>They do not lie in the stack of scopes.</b> That stack lives for one
+ * call; a global value lives for the factory. It therefore lies where
+ * inventories and redstone lie too — with the host that the runtime brings
+ * along.
  */
 class GlobalRuntimeTest {
 
-    /** Eine Welt aus Papier mit einer Kiste voller globaler Werte. */
+    /** A paper world with a chest full of global values. */
     private static final class TestHost implements Interpreter.Host {
 
         final List<String> logs = new ArrayList<>();
@@ -74,8 +75,8 @@ class GlobalRuntimeTest {
     }
 
     /**
-     * Baut eine Laufzeit und füllt die globalen Werte so, wie es der Server
-     * beim Übernehmen eines Programms täte.
+     * Builds a runtime and fills the global values as the server would when
+     * taking over a program.
      */
     private static Interpreter interpreterFor(String source, TestHost host) {
         Parser.ParseResult result = Parser.parse(source);
@@ -91,7 +92,7 @@ class GlobalRuntimeTest {
 
 
     @Test
-    @DisplayName("Ein globaler Wert lässt sich lesen")
+    @DisplayName("A global value can be read")
     void aGlobalCanBeRead() {
         TestHost host = new TestHost();
         Interpreter interpreter = interpreterFor("""
@@ -107,7 +108,7 @@ class GlobalRuntimeTest {
     }
 
     @Test
-    @DisplayName("Was eine Funktion schreibt, sieht die nächste")
+    @DisplayName("What one function writes, the next one sees")
     void whatOneFunctionWritesTheNextOneSees() {
         TestHost host = new TestHost();
         Interpreter interpreter = interpreterFor("""
@@ -129,7 +130,7 @@ class GlobalRuntimeTest {
     }
 
     @Test
-    @DisplayName("Ein Name, den keine global-Zeile erklärt, bleibt ein Fehler")
+    @DisplayName("A name that no global line declares stays an error")
     void anUndeclaredNameIsStillAnError() {
         TestHost host = new TestHost();
         Interpreter interpreter = interpreterFor("""
@@ -143,7 +144,7 @@ class GlobalRuntimeTest {
     }
 
     @Test
-    @DisplayName("Ein gleichnamiges let verdeckt den globalen Wert")
+    @DisplayName("A let with the same name shadows the global value")
     void aLocalLetShadowsTheGlobal() {
         TestHost host = new TestHost();
         Interpreter interpreter = interpreterFor("""
@@ -163,7 +164,7 @@ class GlobalRuntimeTest {
     }
 
     @Test
-    @DisplayName("Eine Zahl lässt sich hochzählen")
+    @DisplayName("A number can be counted up")
     void aNumberCanBeCountedUp() {
         TestHost host = new TestHost();
         Interpreter interpreter = interpreterFor("""
@@ -180,10 +181,10 @@ class GlobalRuntimeTest {
         assertEquals("3", host.globals.get("zaehler").describe());
     }
 
-    // ---- Listen als globale Werte ------------------------------------------
+    // ---- Lists as global values --------------------------------------------
 
     @Test
-    @DisplayName("Eine globale Liste fängt leer an")
+    @DisplayName("A global list starts empty")
     void aglobalListStartsEmpty() {
         TestHost host = new TestHost();
         interpreterFor("""
@@ -197,12 +198,12 @@ class GlobalRuntimeTest {
     }
 
     @Test
-    @DisplayName("Angehängt wird über eine Zuweisung")
+    @DisplayName("Appending goes through an assignment")
     void appendingGoesThroughAnassignment() {
-        // Die Entscheidung in einer Zeile: `liste = liste.plus(x)` und kein
-        // änderndes `add`. Damit läuft jede Änderung über denselben Pfad wie
-        // bei einer Zahl — und damit durch die Wache für const und den
-        // Schutz im Mehrspielerbetrieb.
+        // The decision in one line: `liste = liste.plus(x)` and no mutating
+        // `add`. That way every change goes through the same path as for a
+        // number — and thereby through the guard for const and the protection
+        // in multiplayer.
         TestHost host = new TestHost();
         Interpreter interpreter = interpreterFor("""
                 global warteschlange = []
@@ -218,10 +219,10 @@ class GlobalRuntimeTest {
     }
 
     @Test
-    @DisplayName("Eine Liste, die zu groß wird, hält das Programm an")
+    @DisplayName("A list that grows too big halts the program")
     void alistThatGrowsTooBigStopsTheProgram() {
-        // Ohne Deckel wäre ein globaler Listenwert der einzige Weg, mit einer
-        // Schleife unbegrenzt Speicher zu belegen, der den Neustart übersteht.
+        // Without a cap a global list value would be the only way to occupy
+        // unbounded memory with a loop that survives a restart.
         TestHost host = new TestHost();
         Interpreter interpreter = interpreterFor("""
                 global warteschlange = []

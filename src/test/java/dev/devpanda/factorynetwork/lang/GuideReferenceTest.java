@@ -12,22 +12,22 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * Erzeugt die Referenzseite des Handbuchs aus {@link Signatures}.
+ * Builds the manual's reference page from {@link Signatures}.
  *
- * <p><b>Warum erzeugt und nicht geschrieben:</b> Eine Referenz ist die
- * Seite, die niemand liest, bis sie gebraucht wird — und dann muss sie
- * stimmen. Von Hand gepflegt wäre sie nach der dritten neuen Angabe die
- * Fassung von vorletzter Woche, und man merkte es genau dann nicht, wenn man
- * sich darauf verlässt.
+ * <p><b>Why generated and not written by hand:</b> a reference is the
+ * page nobody reads until it is needed — and then it has to be
+ * right. Maintained by hand it would, by the third new entry, be the
+ * version from the week before last, and you would fail to notice exactly
+ * when you rely on it.
  *
- * <p>Dasselbe Verfahren wie bei {@code signatures.json}: Die Prüfung baut die
- * Seite aus dem Code, vergleicht sie mit der eingecheckten, schreibt sie bei
- * Abweichung neu und scheitert trotzdem — die neue Fassung liegt dann schon
- * da und will eingecheckt werden.
+ * <p>The same procedure as with {@code signatures.json}: the check builds the
+ * page from the code, compares it with the checked-in one, rewrites it on
+ * any difference and fails anyway — the new version is then already
+ * there and waiting to be checked in.
  *
- * <p>Der Fließtext dazwischen steht mit im Erzeuger. Er gehört zur Seite und
- * nicht in eine zweite Datei, die dann doch wieder von Hand nachgezogen
- * würde.
+ * <p>The prose in between lives in the generator too. It belongs to the page and
+ * not in a second file that would then end up being kept in step by hand
+ * after all.
  */
 class GuideReferenceTest {
 
@@ -35,11 +35,11 @@ class GuideReferenceTest {
             "factorynetwork", "guide", "referenz.md");
 
     @Test
-    @DisplayName("Die Referenzseite ist die aus dem Code")
+    @DisplayName("The reference page is the one from the code")
     void thereferencePageMatchesTheTable() throws IOException {
         String expected = build();
-        // Zeilenenden angeglichen, aus demselben Grund wie beim Export der
-        // Signaturtabelle: Git checkt unter Windows CRLF aus.
+        // Line endings normalised, for the same reason as when exporting the
+        // signature table: Git checks out CRLF on Windows.
         String actual = Files.exists(TARGET)
                 ? Files.readString(TARGET, StandardCharsets.UTF_8).replace("\r\n", "\n") : "";
 

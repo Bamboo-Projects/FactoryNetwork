@@ -11,15 +11,15 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * Ein Profil, das über die Leitung geht, muss drüben dasselbe sein.
+ * A profile that goes over the wire must be the same on the other side.
  *
- * <p>Geprüft wird die Umrechnung in die flache Form und zurück — ohne
- * Netzwerkpuffer, damit der Test ohne Minecraft läuft.
+ * <p>What is tested is the conversion into the flat form and back — without
+ * a network buffer, so that the test runs without Minecraft.
  */
 class DeviceProfileCodecTest {
 
     @Test
-    @DisplayName("Ein Profil übersteht Hin- und Rückweg unverändert")
+    @DisplayName("A profile survives the round trip unchanged")
     void aProfileSurvivesTheRoundTrip() {
         DeviceProfile before = new DeviceProfile("block.mekanism.crusher", "mekanism",
                 Side.UP, Map.of(
@@ -32,7 +32,7 @@ class DeviceProfileCodecTest {
     }
 
     @Test
-    @DisplayName("Ein unbekanntes Gerät bleibt unbekannt")
+    @DisplayName("An unknown device stays unknown")
     void anUnreachableProfileStaysUnreachable() {
         DeviceProfile before = DeviceProfile.unreachable();
 
@@ -42,7 +42,7 @@ class DeviceProfileCodecTest {
     }
 
     @Test
-    @DisplayName("Der seitenlose Zugang übersteht den Weg genauso")
+    @DisplayName("The sideless access survives the trip just the same")
     void theSidelessAccessSurvivesToo() {
         DeviceProfile before = new DeviceProfile("block.create.depot", "create",
                 Side.NORTH, Map.of(Side.ANY, new DeviceProfile.Access(1, 0, false)));

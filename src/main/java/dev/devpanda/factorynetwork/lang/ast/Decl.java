@@ -67,7 +67,7 @@ public sealed interface Decl {
      *
      * <p><b>Not a template item, but a line in the program.</b> It stands next
      * to the workers, travels with the file to VS Code, can be versioned, and
-     * a recipe at a device that does not exist reports itself on acceptance.
+     * a recipe at a device that does not exist reports itself on adoption.
      */
     /**
      * {@code store kiste_1 { … }} — a foreign inventory counts toward network storage.
@@ -132,7 +132,7 @@ public sealed interface Decl {
      * {@code global} also says what it is: something that everyone sees.
      *
      * @param value the initial value. A literal, and not a computation: when
-     *              would it run? On acceptance, on server start, on every load
+     *              would it run? On adoption, on server start, on every load
      *              of the chunk? A literal does not have this question.
      */
     record Global(String name, Expr value, Span span) implements Decl {}

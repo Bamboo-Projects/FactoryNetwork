@@ -8,16 +8,16 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Wer welche Datei halten darf.
+ * Who may hold which file.
  *
- * <p>Die Regeln sind klein und greifen ineinander: nehmen durch Schreiben,
- * verfallen durch Warten, freigeben durch Schließen. Jede einzeln geprüft —
- * ein Fehler darin heißt entweder, dass zwei Leute einander überschreiben,
- * oder dass einer vor einer Datei steht, die niemand mehr offen hat.
+ * <p>The rules are small and interlock: take by writing, expire by waiting,
+ * release by closing. Each tested on its own — an error in it means either
+ * that two people overwrite one another, or that someone stands before a file
+ * that no one has open any more.
  *
- * <p>Ohne Server: {@link FileLocks} kennt nur eine Kennung und einen Namen.
- * Ein echter {@code ServerPlayer} bräuchte eine Welt, einen Server und ein
- * halbes Spiel — und der erste Anlauf dieses Tests scheiterte genau daran.
+ * <p>Without a server: {@link FileLocks} knows only an id and a name. A real
+ * {@code ServerPlayer} would need a world, a server and half a game — and the
+ * first attempt at this test failed on exactly that.
  */
 class FileLocksTest {
 
@@ -25,7 +25,7 @@ class FileLocksTest {
     private static final java.util.UUID BERT = java.util.UUID.randomUUID();
 
     @Test
-    @DisplayName("Wer zuerst schreibt, hält die Datei")
+    @DisplayName("Whoever writes first holds the file")
     void theFirstWriterHoldsIt() {
         FileLocks locks = new FileLocks();
         assertTrue(locks.claim("main.mf", ANNA, "Anna", 0));
@@ -36,7 +36,7 @@ class FileLocksTest {
     }
 
     @Test
-    @DisplayName("Der Halter darf weiter schreiben")
+    @DisplayName("The holder may keep writing")
     void theHolderKeepsWriting() {
         FileLocks locks = new FileLocks();
         assertTrue(locks.claim("main.mf", ANNA, "Anna", 0));
@@ -44,7 +44,7 @@ class FileLocksTest {
     }
 
     @Test
-    @DisplayName("Eine Sperre verfällt, wenn eine Weile nichts kam")
+    @DisplayName("A lock expires when nothing came for a while")
     void aLockExpires() {
         FileLocks locks = new FileLocks();
         locks.claim("main.mf", ANNA, "Anna", 0);
@@ -54,7 +54,7 @@ class FileLocksTest {
     }
 
     @Test
-    @DisplayName("Beim Schließen wird alles frei")
+    @DisplayName("On closing everything is released")
     void closingReleasesEverything() {
         FileLocks locks = new FileLocks();
         locks.claim("main.mf", ANNA, "Anna", 0);
@@ -66,7 +66,7 @@ class FileLocksTest {
     }
 
     @Test
-    @DisplayName("Die eigenen Sperren sind keine Nachricht")
+    @DisplayName("Your own locks are not a message")
     void yourOwnLocksAreNotReported() {
         FileLocks locks = new FileLocks();
         locks.claim("main.mf", ANNA, "Anna", 0);

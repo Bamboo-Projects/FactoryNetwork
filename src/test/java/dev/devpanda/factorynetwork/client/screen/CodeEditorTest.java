@@ -6,15 +6,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Prüft die Bearbeitungsschritte des Editors.
+ * Checks the editing steps of the editor.
  *
- * <p>Nicht über die Tastatur: {@code hasControlDown} fragt das Fenster, und
- * im Test gibt es keines. Geprüft wird deshalb, was ein Tastendruck auslöst,
- * nicht der Tastendruck selbst — die Zuordnung von Taste zu Schritt ist eine
- * Zeile im {@code switch} und trägt kein Verhalten.
+ * <p>Not via the keyboard: {@code hasControlDown} asks the window, and in the
+ * test there is none. What is checked is therefore what a key press triggers,
+ * not the key press itself — the mapping from key to step is one line in the
+ * {@code switch} and carries no behavior.
  *
- * <p>Die Schrift ist {@code null}. Der Editor braucht sie erst beim
- * Zeichnen, und Zeichnen steht hier nicht zur Prüfung.
+ * <p>The font is {@code null}. The editor needs it only when drawing, and
+ * drawing is not up for checking here.
  */
 class CodeEditorTest {
 
@@ -67,8 +67,8 @@ class CodeEditorTest {
 
     @Test
     void mittenImWortWirdNichtsErgaenzt() {
-        // Vor einem Buchstaben meint man das eine Zeichen. Ergaenzte der
-        // Editor auch hier, muesste man jede zweite Klammer wieder loeschen.
+        // Before a letter one means the single character. If the editor added
+        // one here too, you would have to delete every second bracket again.
         CodeEditor editor = editor("abc");
         editor.setCursor(0, 0);
         type(editor, "(");
@@ -210,8 +210,8 @@ class CodeEditorTest {
         editor.selectWordAt(0, 7);
         assertEquals("alpha", editor.selectedText());
 
-        // In einer Lücke wird die Lücke genommen — ein Doppelklick, der
-        // manchmal nichts tut, fühlt sich kaputt an.
+        // In a gap the gap is taken — a double click that sometimes does
+        // nothing feels broken.
         editor.selectWordAt(0, 4);
         assertEquals(" ", editor.selectedText());
     }
@@ -227,8 +227,8 @@ class CodeEditorTest {
     void einAnschlagOhneWirkungKostetKeinenSchritt() {
         CodeEditor editor = editor("");
         type(editor, "abc");
-        // Ganz nach vorn, dann Rücktaste ins Leere: Das darf den Weg zurück
-        // nicht aufbrauchen und den Weg vorwärts nicht löschen.
+        // All the way to the front, then backspace into nothing: this must not
+        // use up the way back and must not erase the way forward.
         editor.setCursor(0, 0);
         editor.remember(CodeEditor.EditKind.DELETING);
         editor.undo();
@@ -241,8 +241,8 @@ class CodeEditorTest {
         editor.openSearch();
         editor.setSearchTerm("alpha");
 
-        // Ohne Rücksicht auf Groß- und Kleinschreibung: Wer sucht, weiß meist
-        // nur ungefähr, wie es geschrieben war.
+        // Without regard to upper and lower case: whoever searches usually
+        // only knows roughly how it was written.
         assertEquals(2, editor.matches().size());
         assertEquals(1, editor.matchNumber());
         assertEquals("alpha", editor.selectedText());
@@ -251,7 +251,7 @@ class CodeEditorTest {
         assertEquals(2, editor.matchNumber());
         assertEquals("ALPHA", editor.selectedText());
 
-        // Weiter hinter der letzten Stelle fängt vorn wieder an.
+        // Continuing past the last spot starts at the front again.
         editor.step(1);
         assertEquals(1, editor.matchNumber());
         editor.step(-1);
@@ -286,7 +286,7 @@ class CodeEditorTest {
         editor.closeSearch();
         assertTrue(!editor.isSearching());
     }
-    // ---- Ersetzen ---------------------------------------------------------
+    // ---- Replace ---------------------------------------------------------
 
     @Test
     void ersetzenTrifftDieAngefahreneStelle() {
@@ -315,7 +315,7 @@ class CodeEditorTest {
 
     @Test
     void alleErsetzenIstEinSchrittZurueck() {
-        // Zwanzig Stellen einzeln zurückzunehmen wäre zwanzig Griffe.
+        // Undoing twenty spots one by one would be twenty moves.
         CodeEditor editor = editor("a a a a");
         editor.openSearch();
         editor.setSearchTerm("a");
@@ -340,8 +340,8 @@ class CodeEditorTest {
 
     @Test
     void fundstellenUeberlappenNicht() {
-        // Ohne diese Regel fände die Suche nach „aa" in „aaa" zwei Stellen,
-        // und alle zu ersetzen schriebe in die eigene Ersetzung hinein.
+        // Without this rule the search for "aa" in "aaa" would find two spots,
+        // and replacing all would write into its own replacement.
         CodeEditor editor = editor("aaa");
         editor.openSearch();
         editor.setSearchTerm("aa");
@@ -364,13 +364,13 @@ class CodeEditorTest {
         assertEquals("let x = 1", editor.text());
     }
 
-    // ---- Waagerecht schieben ----------------------------------------------
+    // ---- Horizontal scrolling ----------------------------------------------
 
     @Test
     void derCursorBleibtAuchInDerBreiteImBild() {
-        // 200 Punkte breit, Bundsteg und Rand ab, Vorschub sechs: rund
-        // dreißig Spalten. Eine Zeile mit zweihundert Zeichen lief vorher
-        // einfach aus dem Fenster heraus.
+        // 200 points wide, gutter and margin off, advance six: about thirty
+        // columns. A line with two hundred characters simply ran off the
+        // window before.
         CodeEditor editor = editor("x".repeat(200));
         editor.setCursor(0, 200);
         assertTrue(editor.firstVisibleColumn() > 0,

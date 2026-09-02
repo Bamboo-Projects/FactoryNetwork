@@ -11,15 +11,15 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * {@code global} ist die einzige Deklaration ohne geschweifte Klammern.
+ * {@code global} is the only declaration without curly braces.
  *
- * <p>Alle anderen öffnen einen Block; diese steht in einer Zeile, weil sie
- * einen Wert erklärt und keine Angaben sammelt.
+ * <p>All others open a block; this one fits on a single line because it
+ * declares a value and collects no entries.
  */
 class GlobalParseTest {
 
     @Test
-    @DisplayName("Ein Text als Anfangswert")
+    @DisplayName("A text as initial value")
     void aTextInitialValue() {
         Parser.ParseResult result = Parser.parse("global modus = \"tag\"");
 
@@ -31,7 +31,7 @@ class GlobalParseTest {
     }
 
     @Test
-    @DisplayName("Eine Zahl als Anfangswert")
+    @DisplayName("A number as initial value")
     void aNumberInitialValue() {
         Parser.ParseResult result = Parser.parse("global vorrat = 0");
 
@@ -43,7 +43,7 @@ class GlobalParseTest {
     }
 
     @Test
-    @DisplayName("Mehrere globale Werte nebeneinander")
+    @DisplayName("Several global values side by side")
     void severalGlobals() {
         Parser.ParseResult result = Parser.parse("""
                 global modus = "tag"
@@ -59,7 +59,7 @@ class GlobalParseTest {
     }
 
     @Test
-    @DisplayName("Ohne Anfangswert ist es ein Fehler")
+    @DisplayName("Without an initial value it is an error")
     void withoutAValueItIsAnError() {
         Parser.ParseResult result = Parser.parse("global modus");
 
@@ -68,7 +68,7 @@ class GlobalParseTest {
     }
 
     @Test
-    @DisplayName("Ein Fehler in einer Zeile hält die nächste nicht auf")
+    @DisplayName("An error in one line does not stop the next")
     void anErrorDoesNotStopTheNextDeclaration() {
         Parser.ParseResult result = Parser.parse("""
                 global kaputt =

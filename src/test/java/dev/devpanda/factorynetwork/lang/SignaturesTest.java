@@ -9,12 +9,11 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Welche Stelle einer Angabe gerade dran ist.
+ * Which slot of an entry is currently up.
  *
- * <p>Die Rechnung dahinter ist klein und geht leicht um eins daneben — und
- * dann zeigt die Hinweiszeile im Editor auf die falsche Stelle und die
- * Vervollständigung bietet das Falsche an. Deshalb steht hier jede Stellung
- * einzeln.
+ * <p>The arithmetic behind it is small and easily off by one — and then the
+ * hint line in the editor points to the wrong slot and the completion offers
+ * the wrong thing. That is why every position is listed here individually.
  */
 class SignaturesTest {
 
@@ -26,7 +25,7 @@ class SignaturesTest {
     }
 
     @Test
-    @DisplayName("row: erst ein Text, dann ein Ausdruck, dann nichts mehr")
+    @DisplayName("row: first a text, then an expression, then nothing more")
     void rowWalksItsSlots() {
         assertEquals(Signatures.Kind.STRING, kindAt("    row "));
         assertEquals(Signatures.Kind.STRING, kindAt("    row \"Bes"));
@@ -37,15 +36,15 @@ class SignaturesTest {
     }
 
     @Test
-    @DisplayName("Ein Text mit Leerzeichen zählt als ein Wort")
+    @DisplayName("A text with spaces counts as one word")
     void aQuotedStringIsOneWord() {
-        // Ohne diese Regel rutschte „row \"Freier Platz\"" um ein Wort weiter,
-        // und die Hinweiszeile zeigte hinter das Ende der Angabe.
+        // Without this rule „row \"Freier Platz\"" slipped one word further,
+        // and the hint line pointed past the end of the entry.
         assertEquals(Signatures.Kind.EXPR, kindAt("    row \"Freier Platz\" "));
     }
 
     @Test
-    @DisplayName("rate zählt über ein festes Wort hinweg")
+    @DisplayName("rate counts across a fixed word")
     void literalSlotsCount() {
         assertEquals(Signatures.Kind.INT, Signatures.at("worker", "    rate ").slot().kind());
         assertEquals(Signatures.Kind.LITERAL,
@@ -55,7 +54,7 @@ class SignaturesTest {
     }
 
     @Test
-    @DisplayName("Ein Schlüsselwort, das noch getippt wird, ist keine Angabe")
+    @DisplayName("A keyword still being typed is no entry")
     void anUnfinishedKeywordIsNotASignature() {
         assertNull(Signatures.at("display", "    ro"));
         assertNull(Signatures.at("display", "    "));
@@ -63,7 +62,7 @@ class SignaturesTest {
     }
 
     @Test
-    @DisplayName("Eine Angabe der falschen Blockart gilt nicht")
+    @DisplayName("An entry of the wrong block kind does not count")
     void signaturesBelongToTheirBlock() {
         assertNull(Signatures.at("display", "    from "),
                 "from gehört in einen Worker");
@@ -72,7 +71,7 @@ class SignaturesTest {
     }
 
     @Test
-    @DisplayName("Die Form liest sich wie in der Grammatik")
+    @DisplayName("The shape reads like in the grammar")
     void shapeReadsLikeTheGrammar() {
         Signatures.Signature row = Signatures.find("display", "row");
         assertEquals("row string expr", row.shape());
@@ -82,7 +81,7 @@ class SignaturesTest {
     }
 
     @Test
-    @DisplayName("Jede Angabe hat einen Satz Erklärung")
+    @DisplayName("Every entry has a sentence of explanation")
     void everySignatureExplainsItself() {
         for (String block : new String[] {"display", "worker", "group"}) {
             for (Signatures.Signature signature : Signatures.forBlock(block)) {
@@ -92,7 +91,7 @@ class SignaturesTest {
         }
     }
 
-    // ---- Anweisungen -------------------------------------------------------
+    // ---- Statements --------------------------------------------------------
 
     private static Signatures.Kind inFn(String line) {
         Signatures.Where where = Signatures.at("fn", line);
@@ -102,10 +101,10 @@ class SignaturesTest {
     }
 
     @Test
-    @DisplayName("move ohne from überspringt die Quelle mitsamt ihrem Wort")
+    @DisplayName("move without from skips the source along with its word")
     void moveWithoutFromSkipsTheSourcePair() {
-        // Ohne diese Regel landete das „to" auf der Stelle der Quelle, und
-        // ab da zeigte die Formzeile auf alles Falsche.
+        // Without this rule the „to" landed on the slot of the source, and
+        // from there on the shape line pointed at everything wrong.
         assertEquals(Signatures.Kind.SELECTION, inFn("    move "));
         assertEquals(Signatures.Kind.LITERAL, inFn("    move 64 "));
         assertEquals(Signatures.Kind.TARGET, inFn("    move 64 to "));
@@ -113,7 +112,7 @@ class SignaturesTest {
     }
 
     @Test
-    @DisplayName("move mit from zählt jede Stelle einzeln")
+    @DisplayName("move with from counts every slot individually")
     void moveWithFromWalksEverySlot() {
         assertEquals(Signatures.Kind.LITERAL, inFn("    move 64 "));
         assertEquals(Signatures.Kind.TARGET, inFn("    move 64 from "));
@@ -123,14 +122,14 @@ class SignaturesTest {
     }
 
     @Test
-    @DisplayName("Die Form von move zeigt die Klammern der Grammatik")
+    @DisplayName("The shape of move shows the brackets of the grammar")
     void moveShapeShowsItsBrackets() {
         assertEquals("move menge [from quelle] to ziel",
                 Signatures.find("fn", "move").shape());
     }
 
     @Test
-    @DisplayName("let und for führen einen neuen Namen ein")
+    @DisplayName("let and for introduce a new name")
     void bindingStatementsIntroduceANewName() {
         assertEquals(Signatures.Kind.NEW_NAME, inFn("    let "));
         assertEquals(Signatures.Kind.LITERAL, inFn("    let zahl "));
@@ -142,7 +141,7 @@ class SignaturesTest {
     }
 
     @Test
-    @DisplayName("Anweisungen gelten in fn, on und multiblock")
+    @DisplayName("Statements apply in fn, on and multiblock")
     void statementsApplyToEveryCodeBlock() {
         for (String block : new String[] {"fn", "on", "multiblock"}) {
             assertNotNull(Signatures.at(block, "    sleep "),
@@ -153,9 +152,10 @@ class SignaturesTest {
     }
 
     @Test
-    // Ohne Zahl im Namen: Es waren einmal vier, dann sieben, jetzt acht — und
-    // die Zahl im Titel war jedes Mal die von vorletzter Woche.
-    @DisplayName("Nach dem Punkt steht, was ein Gerät hat")
+    // No number in the name: there were once four, then seven, now eight —
+    // and the number in the title was each time the one from the week before
+    // last.
+    @DisplayName("After the dot comes what a device has")
     void afterTheDotTheDeviceMembersAreOffered() {
         java.util.List<String> names = Signatures.MEMBERS.stream()
                 .map(Signatures.Member::name).toList();
@@ -165,7 +165,7 @@ class SignaturesTest {
     }
 
     @Test
-    @DisplayName("Jedes Mitglied trägt seine Form")
+    @DisplayName("Every member carries its shape")
     void everyMemberCarriesItsShape() {
         for (Signatures.Member member : Signatures.MEMBERS) {
             assertTrue(!member.shape().isBlank(),

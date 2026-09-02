@@ -9,12 +9,12 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Was sich an globalen Werten sagen lässt — und was nicht.
+ * What can be said about global values — and what cannot.
  *
- * <p><b>Die Sprache hat keinen Typprüfer.</b> Geprüft wird deshalb nur, was
- * ohne einen entscheidbar ist: ein fester Anfangswert, keine doppelten Namen,
- * und ein Literal, das einem Literal anderer Art zugewiesen wird. Alles
- * andere fällt zur Laufzeit auf, wie überall sonst.
+ * <p><b>The language has no type checker.</b> So only what is decidable
+ * without one is checked: a fixed initial value, no duplicate names,
+ * and a literal assigned to a literal of another kind. Everything
+ * else surfaces at runtime, as it does everywhere else.
  */
 class GlobalCheckTest {
 
@@ -23,7 +23,7 @@ class GlobalCheckTest {
     }
 
     @Test
-    @DisplayName("Eine Rechnung als Anfangswert wird gemeldet")
+    @DisplayName("A calculation as an initial value is reported")
     void aCalculationAsInitialValueIsReported() {
         List<Diagnostic> problems = check("global x = storage.count(item:stone)");
 
@@ -33,7 +33,7 @@ class GlobalCheckTest {
     }
 
     @Test
-    @DisplayName("Zwei gleiche Namen werden gemeldet")
+    @DisplayName("Two identical names are reported")
     void twoGlobalsWithTheSameNameAreReported() {
         List<Diagnostic> problems = check("""
                 global modus = "tag"
@@ -45,7 +45,7 @@ class GlobalCheckTest {
     }
 
     @Test
-    @DisplayName("Ein Text, dem eine Zahl zugewiesen wird, ist ein Vertipper")
+    @DisplayName("Assigning a number to a text is a typo")
     void assigningANumberToATextIsReported() {
         List<Diagnostic> problems = check("""
                 global modus = "tag"
@@ -60,7 +60,7 @@ class GlobalCheckTest {
     }
 
     @Test
-    @DisplayName("Auch tief in einer Verschachtelung")
+    @DisplayName("Even deep inside nesting")
     void alsoDeepInsideNesting() {
         List<Diagnostic> problems = check("""
                 global vorrat = 0
@@ -79,7 +79,7 @@ class GlobalCheckTest {
     }
 
     @Test
-    @DisplayName("Ein Aufruf als Zuweisung bleibt offen")
+    @DisplayName("A call as an assignment stays open")
     void assigningACallIsNotJudged() {
         List<Diagnostic> problems = check("""
                 global modus = "tag"
@@ -97,7 +97,7 @@ class GlobalCheckTest {
     }
 
     @Test
-    @DisplayName("Ein richtiger Text ist keine Meldung wert")
+    @DisplayName("A proper text is not worth a report")
     void assigningATextToATextIsFine() {
         List<Diagnostic> problems = check("""
                 global modus = "tag"
@@ -110,7 +110,7 @@ class GlobalCheckTest {
     }
 
     @Test
-    @DisplayName("Ein gleichnamiges let verdeckt den globalen Wert")
+    @DisplayName("A let of the same name shadows the global value")
     void aLocalLetShadowsTheGlobal() {
         List<Diagnostic> problems = check("""
                 global modus = "tag"
@@ -125,7 +125,7 @@ class GlobalCheckTest {
     }
 
     @Test
-    @DisplayName("Nach dem Block gilt der globale Wert wieder")
+    @DisplayName("After the block the global value applies again")
     void afterTheBlockTheGlobalIsBackInPlay() {
         List<Diagnostic> problems = check("""
                 global modus = "tag"
@@ -144,7 +144,7 @@ class GlobalCheckTest {
     }
 
     @Test
-    @DisplayName("Eine Kommazahl ist keine ganze Zahl, aber auch kein Vertipper")
+    @DisplayName("A decimal is not a whole number, but not a typo either")
     void aDecimalAssignedToAnIntIsFine() {
         List<Diagnostic> problems = check("""
                 global menge = 0
@@ -159,7 +159,7 @@ class GlobalCheckTest {
     }
 
     @Test
-    @DisplayName("Ein Festwert lässt sich lesen")
+    @DisplayName("A constant can be read")
     void aConstantCanBeRead() {
         assertTrue(check("""
                 const stapel = 64
@@ -170,7 +170,7 @@ class GlobalCheckTest {
     }
 
     @Test
-    @DisplayName("Ein Festwert lässt sich nicht schreiben")
+    @DisplayName("A constant cannot be written")
     void aConstantCannotBeWritten() {
         List<Diagnostic> problems = check("""
                 const stapel = 64
@@ -185,7 +185,7 @@ class GlobalCheckTest {
     }
 
     @Test
-    @DisplayName("Ein Festwert und ein globaler Wert dürfen nicht gleich heißen")
+    @DisplayName("A constant and a global value must not share a name")
     void aConstantAndAGlobalCannotShareAName() {
         List<Diagnostic> problems = check("""
                 global modus = "tag"

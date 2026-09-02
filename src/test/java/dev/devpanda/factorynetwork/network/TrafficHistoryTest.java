@@ -7,16 +7,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Was das Netz über die Zeit bewegt hat.
+ * What the network has moved over time.
  *
- * <p><b>Auf dem Server gemessen, nicht im Fenster.</b> Ein Verlauf, den der
- * Client selbst mitschreibt, hat Lücken, sobald jemand das Fenster schließt —
- * und genau dann interessiert er sich später dafür, warum nachts nichts lief.
+ * <p><b>Measured on the server, not in the window.</b> A history that the
+ * client records itself has gaps as soon as someone closes the window — and
+ * that is exactly when one later cares about why nothing ran at night.
  */
 class TrafficHistoryTest {
 
     @Test
-    @DisplayName("Frisch ist alles leer")
+    @DisplayName("Fresh, everything is empty")
     void freshIsEmpty() {
         TrafficHistory history = new TrafficHistory();
         assertEquals(0, history.total());
@@ -24,7 +24,7 @@ class TrafficHistoryTest {
     }
 
     @Test
-    @DisplayName("Was gebucht wird, zählt zur Gesamtmenge")
+    @DisplayName("What is recorded counts toward the total")
     void whatIsRecordedCounts() {
         TrafficHistory history = new TrafficHistory();
         history.record("brecher", 30);
@@ -36,11 +36,11 @@ class TrafficHistoryTest {
     }
 
     @Test
-    @DisplayName("Je Sekunde ein Punkt, nicht je Tick")
+    @DisplayName("One point per second, not per tick")
     void oneSampleEachSecond() {
-        // Zwanzig Punkte je Sekunde wären in einer Minute zwölfhundert — für
-        // ein Diagramm von zweihundert Pixeln Breite sinnlos, und über die
-        // Leitung teuer.
+        // Twenty points per second would be twelve hundred in a minute — for
+        // a chart two hundred pixels wide pointless, and expensive over the
+        // wire.
         TrafficHistory history = new TrafficHistory();
         for (int tick = 0; tick < Bandwidth.TICKS_PER_SECOND; tick++) {
             history.record("brecher", 5);
@@ -51,9 +51,9 @@ class TrafficHistoryTest {
     }
 
     @Test
-    @DisplayName("Der Verlauf hat ein Ende")
+    @DisplayName("The history has an end")
     void theHistoryHasAnEnd() {
-        // Ein Verlauf, der ewig wächst, ist ein Speicherleck mit Diagramm.
+        // A history that grows forever is a memory leak with a chart.
         TrafficHistory history = new TrafficHistory();
         for (int sekunde = 0; sekunde < TrafficHistory.SAMPLES + 30; sekunde++) {
             history.record("brecher", 1);
@@ -65,9 +65,9 @@ class TrafficHistoryTest {
     }
 
     @Test
-    @DisplayName("Und die Rangliste steht oben")
+    @DisplayName("And the ranking is at the top")
     void theTopConsumersComeFirst() {
-        // Die Frage lautet „was frisst am meisten", nicht „was gibt es".
+        // The question is "what eats the most", not "what is there".
         TrafficHistory history = new TrafficHistory();
         history.record("klein", 5);
         history.record("gross", 500);

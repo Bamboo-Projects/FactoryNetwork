@@ -26,7 +26,7 @@ import java.util.Set;
  *
  * <ul>
  *   <li>The initial value is not a computation. {@code global x = storage.count(…)}
- *       would run when? On acceptance, on server start, on every load of the
+ *       would run when? On adoption, on server start, on every load of the
  *       chunk? A literal does not have this question.
  *   <li>No name twice.
  *   <li>Literal against literal: {@code global modus = "tag"} and somewhere

@@ -884,12 +884,12 @@ public final class Parser {
     }
 
     /**
-     * Dasselbe {@code move} als Ausdruck.
+     * The same {@code move} as an expression.
      *
-     * <p>Es liefert die bewegte Menge, und deshalb steht es überall dort, wo
-     * ein Wert steht: {@code let bewegt = move …}, {@code if move … > 0}.
-     * Die Anweisungsform darüber baut denselben Ausdruck und wirft den Wert
-     * weg — gelesen wird beides an einer Stelle.
+     * <p>It returns the amount moved, and therefore stands everywhere a value
+     * stands: {@code let bewegt = move …}, {@code if move … > 0}. The statement
+     * form above builds the same expression and throws the value away — both are
+     * read at one place.
      */
     private Expr parseMoveExpr() {
         Token keyword = advance();
@@ -906,7 +906,7 @@ public final class Parser {
         return new Expr.Move(amount, from, to, keyword.span().to(to.span()));
     }
 
-    /** Eine Auswahl mit wahlweise vorangestellter Menge. */
+    /** A selector with an optionally leading amount. */
     private Expr parseAmount() {
         Token start = peek();
         Long count = null;
@@ -921,9 +921,9 @@ public final class Parser {
         return new Expr.Amount(count, selection, start.span().to(selection.span()));
     }
 
-    // ---- Ausdrücke --------------------------------------------------------
+    // ---- Expressions ------------------------------------------------------
 
-    /** Ein Ausdruck in Bedingungsstellung — dort ist ein einzelnes = ein Fehler. */
+    /** An expression in condition position — there a single = is an error. */
     private Expr parseCondition() {
         conditionDepth++;
         try {
@@ -943,8 +943,8 @@ public final class Parser {
     /**
      * {@code 1..5}
      *
-     * <p>Über allem anderen, damit {@code 1..n * 2} das Erwartete tut: Erst
-     * rechnen, dann den Bereich bilden.
+     * <p>Above everything else, so that {@code 1..n * 2} does the expected: first
+     * compute, then form the range.
      */
     private Expr parseRange() {
         Expr from = parseOr();
@@ -1016,11 +1016,11 @@ public final class Parser {
             case GT_EQ -> Expr.Binary.Op.GTE;
             case EQ -> {
                 if (conditionDepth == 0) {
-                    // Auf Anweisungsebene ist das eine Zuweisung; der Aufrufer
-                    // liest sie. Hier darf nichts gemeldet werden.
+                    // At statement level this is an assignment; the caller reads
+                    // it. Nothing may be reported here.
                     yield null;
                 }
-                // In einer Bedingung dagegen ist es der häufige Griff daneben.
+                // In a condition, by contrast, it is the common slip.
                 error(peek().span(), "Zum Vergleichen braucht es zwei Gleichheitszeichen.",
                         "Ein einzelnes weist zu. Gemeint ist vermutlich ==.");
                 yield Expr.Binary.Op.EQ;
@@ -1077,15 +1077,15 @@ public final class Parser {
         return parsePostfixFrom(parsePrimary());
     }
 
-    /** Derselbe Nachlauf, aber mit einem schon gelesenen Anfang. */
+    /** The same postfix run, but with an already-read start. */
     private Expr parsePostfixFrom(Expr start) {
         Expr expr = start;
         while (true) {
             if (at(TokenType.DOT)) {
                 advance();
                 Token name = peek();
-                // Nach dem Punkt gilt die Schlüsselwortliste nicht: Was dort
-                // steht, vergibt das System, nicht der Spieler.
+                // After the dot the keyword list does not apply: what stands
+                // there is assigned by the system, not the player.
                 if (name.is(TokenType.EOF) || name.is(TokenType.NL)) {
                     error(name.span(), "Nach dem Punkt fehlt der Name.");
                     return expr;
@@ -1110,11 +1110,11 @@ public final class Parser {
     }
 
     /**
-     * {@code ["eisen", "gold"]} — eine hingeschriebene Liste.
+     * {@code ["eisen", "gold"]} — a written-out list.
      *
-     * <p>Ein nachgestelltes Komma ist erlaubt. Wer eine Liste über mehrere
-     * Zeilen schreibt, hängt unten etwas an, und dann steht das Komma schon
-     * da — es dafür zu melden wäre eine Strenge ohne Nutzen.
+     * <p>A trailing comma is allowed. Whoever writes a list over several lines
+     * appends something at the bottom, and then the comma is already there —
+     * reporting it for that would be a strictness without benefit.
      */
     private Expr parseListLiteral() {
         Token open = advance();
@@ -1146,15 +1146,14 @@ public final class Parser {
             }
             case INT -> {
                 advance();
-                // Eine Zahl vor einer Auswahl ist die Menge: 64 item:iron_ingot.
+                // A number before a selector is the amount: 64 item:iron_ingot.
                 //
-                // <b>Und vor einem Namen auch</b>, denn eine Filter-Vorlage
-                // ist eine Auswahl mit Namen: 64 erze. Der Parser kann nicht
-                // wissen, ob ein Name eine Vorlage meint — aber er weiß, dass
-                // eine Zahl unmittelbar vor einem Namen sonst gar nichts
-                // heißt. Ohne diese Zeile ging `move 64 erze` und
-                // `brecher.send(64 erze)` nicht: dieselbe Form an zwei Stellen
-                // mit zwei Antworten.
+                // <b>And before a name too</b>, because a filter template is a
+                // selector with a name: 64 erze. The parser cannot know whether
+                // a name means a template — but it knows that a number
+                // immediately before a name means nothing else at all. Without
+                // this line `move 64 erze` and `brecher.send(64 erze)` did not
+                // work: the same form in two places with two answers.
                 if (at(TokenType.SELECTOR) || at(TokenType.NAME)) {
                     Expr selection = parsePostfix();
                     return new Expr.Amount(Long.parseLong(token.text()), selection,
@@ -1189,17 +1188,17 @@ public final class Parser {
                 advance();
                 return parseSelector(token);
             }
-            // „power" steht allein, weil Strom keine Sorte hat. Ein echtes
-            // Schlüsselwort und kein Name: Wer seinen Connector so nennt,
-            // schreibt ihn in Rückstrichen — dieselbe Regel wie bei „for".
+            // "power" stands alone, because power has no sort. A real keyword
+            // and not a name: whoever names their connector that way writes it
+            // in backticks — the same rule as with "for".
             case POWER -> {
                 advance();
                 return new Expr.Selector(
                         Expr.Selector.Kind.POWER, "power", "", "", token.span());
             }
-            // „all" ist die Auswahl, die nichts aussucht: was auch immer
-            // darin liegt. Ein Worker ohne filter konnte das seit jeher, eine
-            // Funktion hatte keine Schreibweise dafür.
+            // "all" is the selector that picks out nothing: whatever lies in
+            // it. A worker without a filter could always do that, a function
+            // had no way to write it.
             case ALL -> {
                 advance();
                 return new Expr.Selector(
@@ -1235,8 +1234,8 @@ public final class Parser {
                 return inner;
             }
             default -> {
-                // Ein Schlüsselwort an dieser Stelle ist meistens ein Connector,
-                // den jemand ohne Rückstriche geschrieben hat.
+                // A keyword at this position is usually a connector that someone
+                // wrote without backticks.
                 if (TokenType.isKeyword(token.text())) {
                     error(token.span(),
                             quote(token.text()) + " ist ein Schlüsselwort.",
@@ -1253,26 +1252,25 @@ public final class Parser {
     }
 
     /**
-     * Ein Wort vor einem Doppelpunkt, das keine Ressourcenart ist.
+     * A word before a colon that is not a resource kind.
      *
-     * <p><b>Der Fehler, der nicht sagt, was los ist.</b> {@code
-     * chemiacl:hydrogen} zerfiel in sechs Meldungen — „Bei move fehlt das
-     * Ziel", „Hier wird ein Wert erwartet, gefunden wurde :", „from ist ein
-     * Schlüsselwort" —, und keine nannte den Tippfehler. Dieselbe Falle wie
-     * bei der aus JEI kopierten Kennung, die am 25.08. behoben wurde; nur galt
-     * die Reparatur dort für die eine Form und nicht für diese.
+     * <p><b>The error that does not say what is going on.</b>
+     * {@code chemiacl:hydrogen} fell apart into six messages — "move is missing
+     * its target", "a value is expected here, found :", "from is a keyword" —,
+     * and none named the typo. The same trap as with the identifier copied from
+     * JEI that was fixed on Aug 25; only there the repair applied to the one
+     * form and not to this one.
      *
-     * <p>Der Lexer klebt eine Auswahl nur zusammen, wenn er ihr Präfix kennt —
-     * und seit die Ressourcenarten offen sind, kennt er die angemeldeten.
-     * Bleibt ein Wort übrig, das mit einem Doppelpunkt weitergeht, war eine
-     * Auswahl gemeint.
+     * <p>The lexer only glues a selector together when it knows its prefix —
+     * and since the resource kinds are open, it knows the registered ones. If a
+     * word is left over that continues with a colon, a selector was meant.
      *
-     * <p><b>Nur wo ein Wert erwartet wird.</b> {@code fn f(x:Int)} steht in
-     * einer Parameterliste und kommt hier nie an, {@code sort(strategy: x)}
-     * hat das Paar schon vorher verbraucht. Beides ist geprüft.
+     * <p><b>Only where a value is expected.</b> {@code fn f(x:Int)} stands in a
+     * parameter list and never arrives here, {@code sort(strategy: x)} has
+     * already consumed the pair earlier. Both are checked.
      *
-     * @return ein Ersatz für den Ausdruck, oder {@code null}, wenn hier
-     *         nichts dergleichen steht
+     * @return a replacement for the expression, or {@code null} when nothing of
+     *         the sort stands here
      */
     private Expr unknownPrefix(Token name) {
         if (!at(TokenType.COLON) || peek().span().start() != name.span().end()) {
@@ -1280,8 +1278,8 @@ public final class Parser {
         }
         Token colon = peek();
         advance();
-        // Der Rest der Auswahl gehört zur Meldung und nicht zur nächsten:
-        // Was unmittelbar folgt, hätte hinter dem Doppelpunkt gestanden.
+        // The rest of the selector belongs to the message and not to the next:
+        // what immediately follows would have stood after the colon.
         Span span = name.span().to(colon.span());
         while (!at(TokenType.EOF) && !at(TokenType.NL)
                 && peek().span().start() == previous().span().end()) {
@@ -1296,8 +1294,8 @@ public final class Parser {
                         : "Hier gibt es " + dev.devpanda.factorynetwork.runtime.ResourceKinds
                                 .known() + ". Eine weitere bringt eine Mod mit.");
         if (suggestion != null) {
-            // Nur das Wort davor, nicht die ganze unterstrichene Auswahl:
-            // Was hinter dem Doppelpunkt steht, war ja richtig.
+            // Only the word before, not the whole underlined selector: what
+            // stands after the colon was correct after all.
             replaceLast(name.span(), suggestion);
         }
         return new Expr.Invalid(span);
@@ -1307,7 +1305,7 @@ public final class Parser {
         return new Expr.Builtin(kind, token.span());
     }
 
-    /** Rechnet eine Zeitangabe in Ticks um und meldet, was nicht aufgeht. */
+    /** Converts a duration to ticks and reports what does not come out even. */
     private Expr parseDuration(Token token) {
         String text = token.text();
         int split = 0;
@@ -1336,22 +1334,21 @@ public final class Parser {
     private Expr parseSelector(Token token) {
         String text = token.text();
         int colon = text.indexOf(':');
-        // Der Lexer klebt nur zusammen, was die Registry kennt — hier kann
-        // deshalb nichts Unbekanntes ankommen. Vorher stand hier ein
-        // default-Zweig, der jedes fremde Wort zu einem Tag machte.
+        // The lexer only glues together what the registry knows — nothing
+        // unknown can therefore arrive here. Previously there was a default
+        // branch here that turned every foreign word into a tag.
         String prefix = text.substring(0, colon);
         Expr.Selector.Kind kind = dev.devpanda.factorynetwork.runtime.ResourceKinds
                 .kindOf(prefix);
         String rest = text.substring(colon + 1);
 
-        // <b>Aus JEI kopiert man „mekanism:steel_ingot".</b> Seit dem 25.08.
-        // trennt der Doppelpunkt Namensraum und Pfad genauso wie der
-        // Schrägstrich. Vorher stand hier eine Meldung mit der richtigen
-        // Schreibweise — sie war richtig und kam trotzdem bei jeder
-        // kopierten ID wieder.
+        // <b>From JEI you copy "mekanism:steel_ingot".</b> Since Aug 25 the
+        // colon separates namespace and path just like the slash. Previously
+        // there was a message here with the correct spelling — it was right and
+        // still came back with every copied ID.
         //
-        // Der Rest des Pfades behält seine Schrägstriche: tag:c:ingots/iron
-        // meint den Namensraum c und den Pfad ingots/iron.
+        // The rest of the path keeps its slashes: tag:c:ingots/iron means the
+        // namespace c and the path ingots/iron.
         int mark = rest.indexOf(':');
         if (mark >= 0) {
             return new Expr.Selector(kind, prefix, rest.substring(0, mark),
@@ -1361,7 +1358,7 @@ public final class Parser {
         int slash = rest.indexOf('/');
         String namespace = null;
         String path = rest;
-        // Beim Tag ist der erste Abschnitt immer der Namensraum (tag:c/ores).
+        // For a tag the first section is always the namespace (tag:c/ores).
         if (slash >= 0 && (kind == Expr.Selector.Kind.TAG
                 || kind == Expr.Selector.Kind.FLUIDTAG || !rest.startsWith("*"))) {
             namespace = rest.substring(0, slash);
@@ -1381,7 +1378,7 @@ public final class Parser {
         do {
             Token start = peek();
             String name = null;
-            // Ein benanntes Argument: strategy: least_filled
+            // A named argument: strategy: least_filled
             if (start.is(TokenType.NAME) && peekAt(1).is(TokenType.COLON)) {
                 advance();
                 advance();
@@ -1398,7 +1395,7 @@ public final class Parser {
         return List.copyOf(arguments);
     }
 
-    /** Erkennt die Pfeilform {@code m => …}, die nur verschachtelt gebraucht wird. */
+    /** Recognizes the arrow form {@code m => …}, which is only used nested. */
     private Expr parseLambdaOrExpression() {
         Token start = peek();
         if (start.is(TokenType.NAME) && peekAt(1).is(TokenType.EQ) && peekAt(2).is(TokenType.GT)) {
@@ -1411,11 +1408,11 @@ public final class Parser {
         return parseExpression();
     }
 
-    // ---- Fehlerbehebung ---------------------------------------------------
+    // ---- Error recovery ---------------------------------------------------
 
     /**
-     * Liest bis zur nächsten Deklaration weiter. Der Editor braucht auch für
-     * unfertigen Code einen Baum, sonst kann er nicht vervollständigen.
+     * Reads on to the next declaration. The editor needs a tree even for
+     * unfinished code, otherwise it cannot complete.
      */
     private void recoverToDeclaration() {
         while (!at(TokenType.EOF)) {
@@ -1447,21 +1444,21 @@ public final class Parser {
         }
     }
 
-    // ---- Hilfen -----------------------------------------------------------
+    // ---- Helpers ----------------------------------------------------------
 
     /**
-     * Der Name hinter einem Deklarationswort.
+     * The name behind a declaration word.
      *
-     * <p><b>{@code what} steht im Genitiv</b>, und das ist keine Pedanterie:
-     * Vorher stand hier „Der Name der " + what + "", und {@code what} war das
-     * nackte Wort. Für die drei weiblichen ging das auf — „der Name der
-     * Gruppe" —, für alle anderen kam „der Name der Gerät", „der Name der
-     * Worker", „der Name der Display" heraus. Beim ersten Spielen stand es
-     * genau so im Fenster.
+     * <p><b>{@code what} is in the genitive</b>, and that is no pedantry:
+     * previously this read „Der Name der " + what + "", with {@code what} the
+     * bare word. For the three feminine ones it worked out — „der Name der
+     * Gruppe" —, for all others it came out as „der Name der Gerät", „der Name
+     * der Worker", „der Name der Display". On first play it stood exactly like
+     * that in the window.
      *
-     * <p>Der Hinweis danach spricht vom <b>Namen</b> und nicht von der Sache:
-     * „Soll er wirklich so heißen" geht für jedes Geschlecht auf, ohne dass
-     * hier eine zweite Angabe mitgeschleppt werden müsste.
+     * <p>The hint afterwards speaks of the <b>name</b> and not of the thing:
+     * „Soll er wirklich so heißen" works out for every gender, without a second
+     * piece of information having to be dragged along here.
      */
     private String expectName(String what) {
         Token token = peek();
@@ -1508,8 +1505,8 @@ public final class Parser {
     }
 
     /**
-     * Steht hier wirklich ein Schlüsselwort? Ein Name in Rückstrichen trägt
-     * denselben Text, ist aber ausdrücklich als Name gemeint.
+     * Is there really a keyword here? A name in backticks carries the same
+     * text but is expressly meant as a name.
      */
     private static boolean isRealKeyword(Token token) {
         return TokenType.keyword(token.text()) == token.type();
@@ -1554,7 +1551,7 @@ public final class Parser {
         }
     }
 
-    /** Beschreibt ein Token so, wie ein Spieler es lesen würde. */
+    /** Describes a token the way a player would read it. */
     private static String describe(Token token) {
         return switch (token.type()) {
             case EOF -> "das Ende der Datei";
@@ -1579,21 +1576,20 @@ public final class Parser {
     }
 
     /**
-     * Warnt vor einer Anweisung, die nichts tun kann.
+     * Warns about a statement that can do nothing.
      *
-     * <p>Der Anlass ist {@code log "hallo"}: Das sieht aus wie ein Aufruf,
-     * ist aber ein Name und eine Zeichenkette nebeneinander — zwei
-     * Anweisungen, die beide nichts bewirken. Der Parser nahm sie klaglos
-     * an, und das Programm lief, ohne etwas zu schreiben. <b>Ein Fehler,
-     * den man nicht findet, weil nichts passiert.</b>
+     * <p>The occasion is {@code log "hallo"}: it looks like a call but is a name
+     * and a string next to each other — two statements, both of which have no
+     * effect. The parser accepted them without complaint, and the program ran
+     * without writing anything. <b>An error you do not find, because nothing
+     * happens.</b>
      *
-     * <p>Eine Warnung und kein Fehler: Das Programm wird übernommen, die
-     * Zeile steht im Reiter Code. Zum Fehler zu machen, was heute
-     * durchgeht, würde Programme brechen, die außer dieser Zeile in Ordnung
-     * sind — und die Zeile tut ja nichts.
+     * <p>A warning and not an error: the program is adopted, the line stands in
+     * the Code tab. To make an error of what passes today would break programs
+     * that are fine apart from this line — and the line does nothing anyway.
      *
-     * <p>Nur die eindeutigen Fälle: Ein Name, ein Wert, eine Auswahl. Ein
-     * Aufruf und ein Zugriff auf ein Feld können Wirkung haben.
+     * <p>Only the unambiguous cases: a name, a value, a selector. A call and an
+     * access to a field can have an effect.
      */
     private void warnIfWithoutEffect(Expr expr) {
         String was = switch (expr) {
@@ -1622,11 +1618,11 @@ public final class Parser {
     }
 
     /**
-     * Hängt der zuletzt gemeldeten Meldung einen anwendbaren Vorschlag an.
+     * Attaches an applicable suggestion to the most recently reported message.
      *
-     * <p>Nachträglich und nicht als weiterer Parameter von {@code error}: Der
-     * Vorschlag ist die Ausnahme, und drei Fassungen von {@code error} wären
-     * mehr Aufwand als die eine Stelle wert ist, die ihn heute erzeugt.
+     * <p>Afterwards and not as another parameter of {@code error}: the
+     * suggestion is the exception, and three versions of {@code error} would be
+     * more effort than the one place that produces it today is worth.
      */
     private void replaceLast(Span where, String text) {
         if (diagnostics.isEmpty()) {
@@ -1636,16 +1632,16 @@ public final class Parser {
         diagnostics.set(last, diagnostics.get(last).withFix(where, text));
     }
 
-    /** Benennt dieses Token eine Verteilung, auch wenn es ein Schlüsselwort ist? */
+    /** Does this token name a distribution, even if it is a keyword? */
     private static boolean isStrategyWord(Token token) {
         return dev.devpanda.factorynetwork.lang.Signatures.STRATEGIES.contains(token.text());
     }
 
     /**
-     * Der Hinweis unter einem falschen Verteilungsnamen.
+     * The hint under a wrong distribution name.
      *
-     * <p>Bei einem Vertipper der richtige Name, sonst die ganze Liste — es
-     * sind fünf, und wer den passenden sucht, hat ihn dann vor sich.
+     * <p>For a typo the correct name, otherwise the whole list — there are five,
+     * and whoever is looking for the fitting one then has it in front of them.
      */
     private static String closestStrategy(String wanted) {
         String best = null;

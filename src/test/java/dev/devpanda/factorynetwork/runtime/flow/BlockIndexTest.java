@@ -13,11 +13,11 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Der Index ohne Minecraft geprüft.
+ * The index tested without Minecraft.
  *
- * <p>Er entscheidet, ob ein wartender Ablauf sich wiederfindet. Ein Block
- * ohne Nummer heißt: Der Ablauf verschwindet beim Aufschreiben — deshalb
- * gehört jede Stelle, an der Anweisungen stehen können, hier hinein.
+ * <p>It decides whether a waiting flow finds itself again. A block without a
+ * number means: the flow disappears when written down — which is why every
+ * place where statements can stand belongs in here.
  */
 class BlockIndexTest {
 
@@ -29,7 +29,7 @@ class BlockIndexTest {
     }
 
     @Test
-    @DisplayName("Jeder Block einer Funktion bekommt eine Nummer")
+    @DisplayName("Every block of a function gets a number")
     void everyBlockOfAFunctionIsNumbered() {
         Program program = parse("""
                 fn test() {
@@ -42,7 +42,7 @@ class BlockIndexTest {
                     }
                 }""");
         BlockIndex index = BlockIndex.of(program);
-        // Rumpf, then-Zweig, while-Rumpf, else-Zweig.
+        // Body, then branch, while body, else branch.
         assertEquals(4, index.size());
         for (int i = 0; i < index.size(); i++) {
             assertNotNull(index.block(i), "Block " + i);
@@ -51,7 +51,7 @@ class BlockIndexTest {
     }
 
     @Test
-    @DisplayName("Auch der else-Zweig einer else-if-Kette")
+    @DisplayName("The else branch of an else-if chain too")
     void elseIfChainsAreCovered() {
         Program program = parse("""
                 fn test() {
@@ -67,7 +67,7 @@ class BlockIndexTest {
     }
 
     @Test
-    @DisplayName("Die Funktionen einer Vorlage zählen mit")
+    @DisplayName("The functions of a template count too")
     void multiblockFunctionsAreNumbered() {
         Program program = parse("""
                 multiblock OrePlant {
@@ -81,13 +81,13 @@ class BlockIndexTest {
                 }""");
         BlockIndex index = BlockIndex.of(program);
         Decl.Multiblock template = (Decl.Multiblock) program.declarations().get(0);
-        // Ohne Nummer verschwände ein Ablauf darin beim Aufschreiben.
+        // Without a number a flow inside it would disappear when written down.
         assertEquals(1, index.size());
         assertSame(template.functions().get(0).body(), index.block(0));
     }
 
     @Test
-    @DisplayName("Ein Kommentar verschiebt nichts, eine Zeile schon")
+    @DisplayName("A comment shifts nothing, a line does")
     void theHashFollowsShapeNotWording() {
         int schlicht = BlockIndex.of(parse("""
                 fn test() {
@@ -112,7 +112,7 @@ class BlockIndexTest {
     }
 
     @Test
-    @DisplayName("Ein anderes erwartetes Ereignis ändert die Gestalt")
+    @DisplayName("A different awaited event changes the shape")
     void awaitedEventNamesCount() {
         int fertig = BlockIndex.of(parse("""
                 event Fertig()

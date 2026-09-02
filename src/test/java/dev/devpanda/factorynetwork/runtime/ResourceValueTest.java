@@ -12,56 +12,56 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 /**
- * Was eine Auswahl über sich sagt.
+ * What a selection says about itself.
  *
- * <p>{@code describe()} steht im Protokoll, im Netz-Reiter und in jeder
- * Fehlermeldung, die einen Wert nennt. Die Texte sind deshalb Zusagen an den
- * Spieler und nicht Nebenwirkungen des Wertemodells — ein Umbau darunter darf
- * sie nicht bewegen.
+ * <p>{@code describe()} stands in the log, in the network tab and in every
+ * error message that names a value. The texts are therefore promises to the
+ * player and not side effects of the value model — a rebuild beneath must not
+ * move them.
  *
- * <p>Gegenstände und Flüssigkeiten stehen hier nur als leere Auswahl: Eine
- * einzelne Sorte braucht die Registry, und die gibt es ohne laufendes Spiel
- * nicht. Was die Zahl davor angeht, ist das kein Verlust — sie zählt Einträge
- * und keine Sorten.
+ * <p>Items and fluids stand here only as an empty selection: a single kind
+ * needs the registry, and that does not exist without a running game. As far
+ * as the number in front is concerned, that is no loss — it counts entries
+ * and not kinds.
  */
 class ResourceValueTest {
 
     @Test
-    @DisplayName("Eine Gegenstandsauswahl zählt Arten")
+    @DisplayName("An item selection counts kinds")
     void anitemSelectionCountsKinds() {
         assertEquals("0 Arten", Value.Selection.ofItems(List.of(), 64).describe());
     }
 
     @Test
-    @DisplayName("Eine Flüssigkeitsauswahl zählt Flüssigkeiten")
+    @DisplayName("A fluid selection counts fluids")
     void afluidSelectionCountsFluids() {
         assertEquals("0 Flüssigkeiten", Value.Selection.ofFluids(List.of(), 1000).describe());
     }
 
     @Test
-    @DisplayName("Eine Chemikalienauswahl zählt Chemikalien")
+    @DisplayName("A chemical selection counts chemicals")
     void achemicalSelectionCountsChemicals() {
         assertEquals("2 Chemikalien", Value.Selection.ofChemicals(
                 List.of("mekanism:hydrogen", "mekanism:oxygen"), 500).describe());
     }
 
     @Test
-    @DisplayName("Eine Auswahl trägt eine Art und nicht zwei")
+    @DisplayName("A selection carries one kind and not two")
     void aselectionCarriesOneKindAndNotTwo() {
-        // Eine Auswahl über Wasser und Stein wäre an jeder Verwendungsstelle
-        // etwas anderes — dieselbe Regel, die FilterKind für Vorlagen
-        // aufstellt. Vorher war sie durch drei getrennte Records erzwungen;
-        // jetzt steht sie im Konstruktor, und deshalb wird sie hier geprüft.
+        // A selection over water and stone would be something different at
+        // every place of use — the same rule that FilterKind sets up for
+        // templates. Previously it was enforced by three separate records;
+        // now it stands in the constructor, and that is why it is tested here.
         assertThrows(IllegalArgumentException.class, () -> new Value.Selection(
                 ResourceKinds.ITEM, List.of("mekanism:hydrogen"), 5));
     }
 
     @Test
-    @DisplayName("Die Art einer aufgelösten Auswahl ist ablesbar")
+    @DisplayName("The kind of a resolved selection can be read")
     void thekindOfAresolvedSelectionCanBeRead() {
-        // Genau diese Frage wählt in move und count den Weg. Vorher gab es
-        // sie zweimal — einmal für Flüssigkeiten, einmal für Chemikalien —,
-        // und die zweite kannte die aufgelöste Auswahl nicht.
+        // Exactly this question chooses the path in move and count. Previously
+        // it existed twice — once for fluids, once for chemicals — and the
+        // second one did not know the resolved selection.
         assertEquals(ResourceKinds.CHEMICAL, ResourceKind.of(
                 Value.Selection.ofChemicals(List.of("mekanism:hydrogen"), 100)));
         assertEquals(ResourceKinds.CHEMICAL, ResourceKind.of(
@@ -73,21 +73,21 @@ class ResourceValueTest {
     }
 
     @Test
-    @DisplayName("all ist keine Ressourcenart")
+    @DisplayName("all is not a resource kind")
     void allIsNotAresourceKind() {
-        // Es ist die Ansage, dass es keinen Filter gibt. Käme hier ITEM
-        // heraus, entschiede „all" die Art mit — und wer es schreibt, meint
-        // gerade das nicht.
+        // It is the declaration that there is no filter. If ITEM came out
+        // here, „all" would decide the kind too — and whoever writes it means
+        // precisely not that.
         assertNull(ResourceKind.of(new Value.Request("all", -1)));
         assertNull(ResourceKind.of(Value.Nothing.get()));
     }
 
     @Test
-    @DisplayName("Der Hinweis nennt die Sorte, nach der gefragt wurde")
+    @DisplayName("The hint names the kind that was asked for")
     void thehintNamesTheMemberThatWasAsked() {
-        // Vorher stand in jedem dieser Hinweise „it.item" — auch dann, wenn
-        // jemand it.fluid geschrieben hatte. Der Zwilling war kopiert, der
-        // Text darin nicht mit angepasst.
+        // Previously every one of these hints said „it.item" — even when
+        // someone had written it.fluid. The twin was copied, the text in it
+        // not adjusted along with it.
         TestHost host = new TestHost();
         host.stored.add(Value.Selection.ofFluids(List.of(), 1000));
         Parser.ParseResult result = Parser.parse("""
@@ -106,7 +106,7 @@ class ResourceValueTest {
                 () -> "gemeldet wurde: " + error.getMessage() + " / " + error.hint());
     }
 
-    /** Eine Welt aus Papier mit einem Bestand, den sie sich ausdenkt. */
+    /** A paper world with an inventory it makes up. */
     private static final class TestHost implements Interpreter.Host {
 
         final List<Value> stored = new ArrayList<>();
