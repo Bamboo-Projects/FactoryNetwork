@@ -59,12 +59,31 @@ Mod-Id `bamboocef`), FactoryNetwork ein Nutzer wie jede fremde Mod.
   `WebPage`, `WebAssets`, `BrowserVisibility`; Ausnahme nur `client/bench`.
 - Prüfung: beide bauen, beide Testläufe grün (FactoryNetwork ohne Web-Tests).
 
+### 4. Abnahme — bestanden am 3. September 2026
+
+Dev-Start von FactoryNetwork mit beiden Mods (Log `run/logs/latest.log`):
+
+- Mod-Liste: `BambooCEF 0.1.0 (bamboocef)` und `factorynetwork`; keine Fehler
+  außer den bekannten Ars-Nouveau-Blockstate-Warnungen.
+- Chromium 146.0.7680 aus `BambooCEFMC/tools/runtime/build/out`, ProcessGuard
+  aktiv; Start erst mit der ersten Fläche (Bibliothek startet nichts von sich
+  aus).
+- Editor: `/fnweb ide` → „IDE bereit: 8 Modelle", Doppel-Escape schließt,
+  erneutes Öffnen als Sitzung 2 — Lebenslauf wiederholbar.
+- Overlay: `/fnweb overlay` + Enter → „Overlay meldet:" (zweimal) — die
+  Tasten laufen durch das bamboocef-Mixin und den Kanal Seite→Mod.
+- Weltfläche: `/fnweb welt` + Fadenkreuz-Rechtsklick → „Weltfläche meldet:"
+  für Maschinen, Programme, Einstellungen.
+
+Gemessen: erstes Öffnen 3,6 s (1,6 s Chromium-Kaltstart + 1,9 s Monaco),
+zweites Öffnen 0,8 s. Der Kaltstart fiel früher in den Selbsttest zehn
+Sekunden nach Spielstart; als Bibliothek darf BambooCEF das nicht mehr von
+sich aus. Antwort: `FnWeb.prepare()` — ein Nutzer, der das Web sicher
+braucht, fordert die Runtime früh an, und BambooCEF fährt sie am Titelbild
+hoch. FactoryNetwork ruft es im Client-Setup.
+
 ## Offen
 
-### 4. Abnahme
-
-- Dev-Start mit beiden Mods; Overlay, Weltfläche, Editor, Kanal Seite→Mod
-  wie in den `stand-web-*.md` beschrieben.
 - Danach: Minotaur + `publish.yml`, erster Release über `/release`,
   Monaco-NOTICE, Wegwerf-`run/` unter dem alten Pfad löschen.
 - Feinschliff in BambooCEFMC: die Namen `fn.runtime.dir`, `fn.devtools`,

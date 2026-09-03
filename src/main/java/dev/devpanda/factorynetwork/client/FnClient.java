@@ -7,6 +7,7 @@ import dev.devpanda.factorynetwork.registry.FnMenus;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
 import net.neoforged.api.distmarker.Dist;
+import dev.devpanda.bamboocef.web.api.FnWeb;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
@@ -121,6 +122,10 @@ public final class FnClient {
 
     @SubscribeEvent
     public static void setup(FMLClientSetupEvent event) {
+        // The editor is central to this mod, so the web runtime is asked for
+        // right away: BambooCEF then starts Chromium at the title screen and
+        // the first editor open skips the cold start.
+        FnWeb.prepare();
         // The cable is narrower than a block and therefore needs a render type
         // that tolerates transparent edges.
         event.enqueueWork(() -> {
