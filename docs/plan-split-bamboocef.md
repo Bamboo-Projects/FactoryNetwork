@@ -93,8 +93,18 @@ führendem `/` in einen Pfad um — `MSYS_NO_PATHCONV=1` setzen).
 
 - Danach: Minotaur + `publish.yml`, erster Release über `/release`,
   Monaco-NOTICE, Wegwerf-`run/` unter dem alten Pfad löschen.
-- Feinschliff in BambooCEFMC: die Namen `fn.runtime.dir`, `fn.devtools`,
-  `fn.benchmark` und die Logger „FactoryNetwork/…" auf `bamboocef` drehen
-  (mit den runClient-Skripten im Scratchpad abstimmen).
-- FactoryNetworks `neoforge.mods.toml` verlangt `bamboocef` jetzt als
-  Client-Abhängigkeit (erledigt, hier nur der Vollständigkeit halber).
+- Feinschliff (erledigt 3.9.2026): `bamboocef.runtime.dir`, `.devtools`,
+  `.benchmark`, `.cef.trace`; Logger „BambooCEF/…"; CEF- und java-cef-Lizenz
+  im Runtime-Paket (`files-windows.txt`, `build-jcef.ps1`); BambooCEFMC hat
+  LICENSE (MIT), englische README und NOTICE.md; FactoryNetwork hat NOTICE.md
+  (Monaco 0.56.0 MIT, JetBrains Mono OFL) und `font/OFL.txt`. `dev` ist per
+  Fast-Forward in `main`/`master` beider Repos.
+- Restposten im Feinschliff, nichts davon dringend: `WebProofChain` in der
+  Bibliothek liest `fn.ide` (ein Schalter des Nutzers) für den Vorrang der
+  Editor-Nachweise; Klassennamen `FnBrowser`, `FnCefRuntime`,
+  `FnRuntimeBackend`; Umgebungsvariablen `FN_JCEF_BUILD`, `FN_PYTHON`,
+  Arbeitsordner `C:njcef`, Temp-Präfix `fn-runtime-probe-`; ein Kommentar
+  in `build-jcef.ps1` nennt noch den alten Pfad `D:\Projekte\FactoryNetwork`.
+- Vor dem ersten Release entscheiden: Runtime-Adresse `bamboocef.bamboo-srv.de`
+  statt `factorynetwork.…` (dann Archivname, `dist.properties`, neu packen mit
+  den Lizenzdateien, hochladen).
