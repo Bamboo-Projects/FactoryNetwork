@@ -31,7 +31,7 @@ neoForge {
             // Where the native runtime lies. BambooCEF's RuntimeInstall reads
             // exactly this property name and skips its own download when it
             // finds a complete directory there.
-            systemProperty 'fn.runtime.dir', ownRuntimeDir.absolutePath
+            systemProperty 'bamboocef.runtime.dir', ownRuntimeDir.absolutePath
             // <b>No PATH entry.</b> One stood here, because java-cef looked
             // for its libraries via java.library.path, which on Windows is fed
             // from the PATH. That only carried the dev run — a launcher sets no
@@ -52,12 +52,12 @@ neoForge {
             // überall, wo eine Seite läuft — die Flächen in der Welt kennen
             // keinen Editor.
             if (project.hasProperty('devtools')) {
-                systemProperty 'fn.devtools', 'true'
+                systemProperty 'bamboocef.devtools', 'true'
             }
             // Die Spur um die Browsererzeugung, nur auf Ansage:
             //   ./gradlew runClient -Ptrace
             if (project.hasProperty('trace')) {
-                systemProperty 'fn.cef.trace', 'true'
+                systemProperty 'bamboocef.cef.trace', 'true'
             }
             // Nur zur Fehlersuche, und nur auf Ansage:
             //   ./gradlew runClient -Pjnicheck
@@ -122,7 +122,7 @@ neoForge {
                 programArgument(project.hasProperty('world') ? world : 'New World')
             }
             if (project.hasProperty('benchmark')) {
-                systemProperty 'fn.benchmark', 'true'
+                systemProperty 'bamboocef.benchmark', 'true'
                 // Direkt in eine Welt: Im Hauptmenü deckelt Minecraft die
                 // Bildrate auf sechzig, und die Bildzeit misst dann die
                 // Deckelung statt der Kosten.
