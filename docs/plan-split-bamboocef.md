@@ -82,6 +82,13 @@ sich aus. Antwort: `FnWeb.prepare()` — ein Nutzer, der das Web sicher
 braucht, fordert die Runtime früh an, und BambooCEF fährt sie am Titelbild
 hoch. FactoryNetwork ruft es im Client-Setup.
 
+Nachgemessen am 3. September 2026 mit `FnWeb.prepare()`: Vorwärmung 17 s
+nach dem Ressourcen-Laden am Titelbild (Status READY), erstes Öffnen des
+Editors danach **0,99 s** (Browser registriert → „IDE bereit") statt 3,6 s.
+Gefahren per Fenster-Skript (`stufe2/probe.ps1`: Welt per Maus, `/fnweb ide`
+per Unicode-Tastatureingabe; Vorsicht: Git Bash wandelt ein Argument mit
+führendem `/` in einen Pfad um — `MSYS_NO_PATHCONV=1` setzen).
+
 ## Offen
 
 - Danach: Minotaur + `publish.yml`, erster Release über `/release`,
