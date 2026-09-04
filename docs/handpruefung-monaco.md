@@ -192,7 +192,7 @@ Maustaste schließen lassen sollen.
 
 Beide stehen in [`ide-offene-punkte.md`](ide-offene-punkte.md) und sind **kein
 Teil dieser Prüfung** — die Grenze steht in
-[`grenze-runtime-ide.md`](grenze-runtime-ide.md).
+[`grenze-runtime-ide.md`](https://github.com/Bamboo-Projects/BambooCEFMC/blob/master/docs/grenze-runtime-ide.md).
 
 ---
 

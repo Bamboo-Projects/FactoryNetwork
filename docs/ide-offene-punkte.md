@@ -1,7 +1,7 @@
 # Offene Punkte der IDE
 
 Nicht die Laufzeitumgebung, sondern die Seite darin — siehe
-[`grenze-runtime-ide.md`](grenze-runtime-ide.md). **Keiner dieser Punkte
+[`grenze-runtime-ide.md`](https://github.com/Bamboo-Projects/BambooCEFMC/blob/master/docs/grenze-runtime-ide.md). **Keiner dieser Punkte
 sperrt die Freigabe der Laufzeitumgebung.**
 
 Gefunden bei der Handprüfung am 1. September 2026
@@ -41,7 +41,7 @@ gibt und nicht als festes Gerüst — dieselbe Voraussetzung wie bei Punkt 1.
 ---
 
 Gefunden bei der Abnahme des Nachladens am 1. September 2026
-([`stand-runtime-auslieferung.md`](stand-runtime-auslieferung.md)). Beides
+([`stand-runtime-auslieferung.md`](https://github.com/Bamboo-Projects/BambooCEFMC/blob/master/docs/stand-runtime-auslieferung.md)). Beides
 liegt auf der Seite der Oberfläche; die Laufzeitumgebung liefert die
 Auskünfte, die es dafür braucht.
 
