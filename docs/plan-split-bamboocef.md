@@ -113,6 +113,10 @@ führendem `/` in einen Pfad um — `MSYS_NO_PATHCONV=1` setzen).
   Unterordner. Nachweis im Spiel ohne `bamboocef.runtime.dir`: 173 MB von der
   neuen Adresse in 3,9 s samt Prüfsumme und Entpacken, 21 Dateien im
   Install-Ordner. Beim ersten Lauf fasste die Vorwärmung nach dem Download
-  nicht nach — behoben (`WebWarmup` sieht alle fünf Sekunden nach, bis die
-  Runtime da ist). Fallen und Befehle stehen im Gedächtnis-Eintrag.
+  nicht nach — und `WebSupport.retry()` rief überhaupt niemand: Nach dem
+  ersten „NOT_DOWNLOADED" blieb die Runtime bis zum Spielneustart unbenutzbar.
+  Behoben: `ensureStarted` versucht es selbst erneut, sobald kein Download
+  mehr läuft, und `WebWarmup` sieht alle fünf Sekunden nach. Nachgewiesen im
+  dritten Frisch-Lauf: Download 4,2 s, Chromium aus dem frischen
+  Install-Ordner, READY 5,6 s nach der Vorwärmung, ohne Zutun des Spielers.
   FactoryNetworks Bucket/Domain bleiben vorerst mit dem alten Archiv.
