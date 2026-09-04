@@ -42,7 +42,7 @@ https://github.com/JetBrains/JetBrainsMono.
 Copyright 2020 The JetBrains Mono Project Authors
 (https://github.com/JetBrains/JetBrainsMono). Licensed under the SIL Open Font
 License, Version 1.1, https://scripts.sil.org/OFL; the license text ships
-next to the font as `assets/factorynetwork/font/OFL.txt`. The font is used
+next to the font as `assets/factorynetwork/font/ofl.txt`. The font is used
 and redistributed unmodified; the OFL permits bundling it with this software.
 
 ## BambooCEF
