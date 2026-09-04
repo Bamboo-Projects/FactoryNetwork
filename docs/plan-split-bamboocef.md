@@ -105,6 +105,14 @@ führendem `/` in einen Pfad um — `MSYS_NO_PATHCONV=1` setzen).
   `FnRuntimeBackend`; Umgebungsvariablen `FN_JCEF_BUILD`, `FN_PYTHON`,
   Arbeitsordner `C:njcef`, Temp-Präfix `fn-runtime-probe-`; ein Kommentar
   in `build-jcef.ps1` nennt noch den alten Pfad `D:\Projekte\FactoryNetwork`.
-- Vor dem ersten Release entscheiden: Runtime-Adresse `bamboocef.bamboo-srv.de`
-  statt `factorynetwork.…` (dann Archivname, `dist.properties`, neu packen mit
-  den Lizenzdateien, hochladen).
+- Runtime-Verteilung umgezogen (4.9.2026, Entscheidung: ein Bucket
+  `bamboocef` für die ganze BambooCEF-Familie, Unterordner je Plattform —
+  `minecraft/neoforge/`, später `unreal/`, `unity/`; Domain
+  `bamboocef.bamboo-srv.de`). Archiv `bamboocef-runtime-<cef>-<plattform>.tar.gz`
+  mit den beiden Lizenztexten, Basis-Adresse in `dist.properties` trägt den
+  Unterordner. Nachweis im Spiel ohne `bamboocef.runtime.dir`: 173 MB von der
+  neuen Adresse in 3,9 s samt Prüfsumme und Entpacken, 21 Dateien im
+  Install-Ordner. Beim ersten Lauf fasste die Vorwärmung nach dem Download
+  nicht nach — behoben (`WebWarmup` sieht alle fünf Sekunden nach, bis die
+  Runtime da ist). Fallen und Befehle stehen im Gedächtnis-Eintrag.
+  FactoryNetworks Bucket/Domain bleiben vorerst mit dem alten Archiv.
