@@ -6,12 +6,10 @@ plugins {
 version = mod_version
 group = mod_group_id
 
-// Chromium belongs to BambooCEF and is built there:
-//   pwsh -File ../BambooCEFMC/tools/runtime/build-jcef.ps1
-//
-// This mod never compiles against org.cef and carries no copy of the runtime.
-// The only reason the directory is named here at all is the dev client: it
-// needs the native libraries on disk, and they are not part of any jar.
+// BambooCEF's native runtime for the dev client. Only the natives matter
+// here: the CEF Java bindings arrive nested inside the bamboocef jar
+// (jar-in-jar), exactly as they do for a player. When the sibling build is
+// missing, the client downloads the runtime like a player's game does.
 def ownRuntimeDir = file('../BambooCEFMC/tools/runtime/build/out/windows-x86_64').canonicalFile
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
@@ -174,19 +172,6 @@ repositories {
         forRepository { maven { url = 'https://modmaven.dev/' } }
         filter { includeGroup 'mekanism' }
     }
-}
-
-// <b>The run classpath is its own.</b> A runtimeOnly on a file does land in
-// the runtimeClasspath, but not in the list ModDevGradle hands the client —
-// only resolved modules stand there. Every run has its own configuration for
-// the rest, and that is what is meant here.
-//
-// This is the one place where this project still names jcef.jar. Nothing in
-// src compiles against org.cef; the dev client just needs the jar beside the
-// native libraries, and BambooCEF's own build cannot put it on this run.
-dependencies {
-    add(neoForge.runs.client.additionalRuntimeClasspathConfiguration.name,
-            files(new File(ownRuntimeDir, 'jcef.jar')))
 }
 
 dependencies {
