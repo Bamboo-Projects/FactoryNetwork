@@ -416,7 +416,7 @@ public final class WorldHost implements Interpreter.Host {
                 // target and has to come back out of there.
                 long taken = storage.extract(key, accepted);
                 if (taken < accepted) {
-                    Handoffs.pullBack(target, key, accepted - taken);
+                    warnStranded(Handoffs.pullBack(target, key, accepted - taken));
                 }
                 moved += taken;
             }
@@ -774,7 +774,24 @@ public final class WorldHost implements Interpreter.Host {
         if (source == null) {
             throw new ScriptError("Bei move fehlt die Quelle.");
         }
-        return Handoffs.items(source, target, items, limit).moved();
+        Handoffs.Handoff done = Handoffs.items(source, target, items, limit);
+        warnStranded(done.stranded());
+        return done.moved();
+    }
+
+    /**
+     * Tells the player that items stayed in a target without ever leaving
+     * their source.
+     *
+     * <p>Those items exist twice now. Dropping the number silently would hide
+     * the one place where a foreign inventory broke its own promise; the
+     * worker reports the same case as a fault.
+     */
+    private void warnStranded(long stranded) {
+        if (stranded > 0) {
+            log(LogLevel.WARN, "Das Ziel hat " + stranded
+                    + " Gegenstände behalten, die die Quelle nicht hergab.");
+        }
     }
 
     /**
