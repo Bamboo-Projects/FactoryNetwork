@@ -37,15 +37,21 @@ public class FluidCellItem extends Item {
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> lines,
                                 TooltipFlag flag) {
-        Map<Fluid, Long> contents = CellFormat.FLUIDS.read(stack, context.registries());
-        long total = CellFormat.total(contents);
+        CellFormat.Loaded<Fluid> loaded = CellFormat.FLUIDS.load(stack, context.registries());
+        Map<Fluid, Long> contents = loaded.contents();
+        int unreadable = loaded.unreadable().size();
+        // Unreadable entries count on both lines, as with the item cell.
+        long total = CellFormat.total(contents) + CellFormat.FLUIDS.amountOf(loaded.unreadable());
         // Name both limits: a cell is usually full on types, not on amount —
         // whoever sees only the amount looks for the problem elsewhere.
         lines.add(Component.translatable("item.factorynetwork.fluid_cell.types",
-                contents.size(), tier.types()).withStyle(ChatFormatting.GRAY));
+                contents.size() + unreadable, tier.types()).withStyle(ChatFormatting.GRAY));
         lines.add(Component.translatable("item.factorynetwork.fluid_cell.amount",
                 total, tier.amount()).withStyle(ChatFormatting.GRAY));
-        if (contents.isEmpty()) {
+        if (unreadable > 0) {
+            lines.add(Component.translatable("item.factorynetwork.cell.unreadable", unreadable)
+                    .withStyle(ChatFormatting.YELLOW));
+        } else if (contents.isEmpty()) {
             lines.add(Component.translatable("item.factorynetwork.fluid_cell.empty")
                     .withStyle(ChatFormatting.DARK_GRAY));
         }

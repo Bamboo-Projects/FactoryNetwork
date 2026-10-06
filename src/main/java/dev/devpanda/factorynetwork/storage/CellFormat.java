@@ -12,7 +12,6 @@ import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.material.Fluid;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -49,6 +48,9 @@ public record CellFormat<T>(String nbtKey, String amountKey, Entry<T> entry) {
     /**
      * Items.
      *
+     * <p>An entry whose item or extra data cannot be read is not handed out;
+     * the cell keeps it unchanged.
+     *
      * <p>The field names are the ones from before, and {@code components} is
      * <b>optional</b> — a cell from before 28 Aug does not have it, and an
      * entry without this field is an item without its own data. Old cells
@@ -60,8 +62,8 @@ public record CellFormat<T>(String nbtKey, String amountKey, Entry<T> entry) {
                 @Override
                 public ItemKey read(CompoundTag tag, HolderLookup.Provider registries) {
                     ResourceLocation id = ResourceLocation.tryParse(tag.getString("Item"));
-                    // If the mod has left the pack, the entry is gone. A
-                    // stored inventory may accept that quietly.
+                    // If the mod has left the pack, the entry cannot be read
+                    // right now. The cell keeps it; see Loaded.
                     if (id == null || !BuiltInRegistries.ITEM.containsKey(id)) {
                         return null;
                     }
@@ -74,10 +76,12 @@ public record CellFormat<T>(String nbtKey, String amountKey, Entry<T> entry) {
                             .result()
                             .map(patch -> ItemKey.of(BuiltInRegistries.ITEM.get(id), patch))
                             // If the extra data cannot be read — a mod is
-                            // gone, a format has changed —, the bare item
-                            // remains. Better than an entry that vanishes
-                            // entirely.
-                            .orElseGet(() -> ItemKey.bare(BuiltInRegistries.ITEM.get(id)));
+                            // gone, a format has changed —, the entry counts
+                            // as unreadable and stays in the cell as it is.
+                            // Handing out the bare item instead would turn an
+                            // enchanted tool into a plain one for good on the
+                            // next write.
+                            .orElse(null);
                 }
 
                 @Override
@@ -121,40 +125,63 @@ public record CellFormat<T>(String nbtKey, String amountKey, Entry<T> entry) {
         };
     }
 
-    public Map<T, Long> read(ItemStack cell, HolderLookup.Provider registries) {
-        CustomData data = cell.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA);
-        if (data == null) {
-            return Map.of();
-        }
-        CompoundTag tag = data.copyTag();
-        ListTag entries = tag.getList(nbtKey, Tag.TAG_COMPOUND);
-        Map<T, Long> contents = new LinkedHashMap<>();
-        for (int i = 0; i < entries.size(); i++) {
-            CompoundTag one = entries.getCompound(i);
-            T key = entry.read(one, registries);
-            long count = one.getLong(amountKey);
-            if (key != null && count > 0) {
-                // Add up rather than overwrite: two entries can fall onto
-                // the same key after a format change.
-                contents.merge(key, count, Long::sum);
-            }
-        }
-        return contents;
+    /**
+     * What a cell holds, split by whether this game can read it.
+     *
+     * <p><b>An unreadable entry is kept, not dropped and not simplified.</b>
+     * A mod may be missing today and back tomorrow; an enchanted pickaxe whose
+     * data cannot be parsed right now is still that pickaxe. Such entries stay
+     * out of the network — nobody can move what cannot be named — but they
+     * keep their place in the cell and are written back untouched.
+     *
+     * @param contents   what can be read and therefore used
+     * @param unreadable the remaining entries exactly as they were stored
+     */
+    public record Loaded<T>(Map<T, Long> contents, java.util.List<CompoundTag> unreadable) {
     }
 
+    public Map<T, Long> read(ItemStack cell, HolderLookup.Provider registries) {
+        return load(cell, registries).contents();
+    }
+
+    /** The contents of a cell together with what could not be read. */
+    public Loaded<T> load(ItemStack cell, HolderLookup.Provider registries) {
+        return load(entriesOf(cell), registries);
+    }
+
+    /** The same on the stored list itself. */
+    public Loaded<T> load(ListTag entries, HolderLookup.Provider registries) {
+        return CellEntries.load(entries, amountKey, entry, registries);
+    }
+
+    /** How much the unreadable entries of a cell add up to. */
+    public long amountOf(java.util.List<CompoundTag> unreadable) {
+        return CellEntries.amountOf(unreadable, amountKey);
+    }
+
+    /**
+     * Writes the contents back into the cell.
+     *
+     * <p><b>What the cell holds unreadably stays in it.</b> It is taken from
+     * the cell at this very moment and not handed in by the caller: a caller
+     * that forgets it would delete someone's items, and there are several
+     * callers.
+     */
     public void write(ItemStack cell, Map<T, Long> contents, HolderLookup.Provider registries) {
-        ListTag entries = new ListTag();
-        contents.forEach((key, count) -> {
-            if (count <= 0) {
-                return;
-            }
-            CompoundTag one = new CompoundTag();
-            entry.write(one, key, registries);
-            one.putLong(amountKey, count);
-            entries.add(one);
-        });
+        ListTag entries = save(contents, load(cell, registries).unreadable(), registries);
         CustomData.update(net.minecraft.core.component.DataComponents.CUSTOM_DATA, cell,
                 tag -> tag.put(nbtKey, entries));
+    }
+
+    /** The stored list for these contents, with the unreadable entries behind them. */
+    public ListTag save(Map<T, Long> contents, java.util.List<CompoundTag> unreadable,
+                        HolderLookup.Provider registries) {
+        return CellEntries.save(contents, unreadable, amountKey, entry, registries);
+    }
+
+    private ListTag entriesOf(ItemStack cell) {
+        CustomData data = cell.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA);
+        return data == null ? new ListTag() : data.copyTag().getList(nbtKey, Tag.TAG_COMPOUND);
     }
 
     /**

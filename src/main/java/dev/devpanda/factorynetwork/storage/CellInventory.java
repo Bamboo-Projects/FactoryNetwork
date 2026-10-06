@@ -31,6 +31,17 @@ public final class CellInventory<T> implements CellView {
     private final Map<T, Long> contents;
 
     /**
+     * What sits in the cell without being readable right now.
+     *
+     * <p>Counted here once, on opening: these entries cannot change while the
+     * cell is open, since nothing can address them. They take up a type slot
+     * and their amount all the same — a cell that ignored them would accept
+     * more than it can hold once they are readable again.
+     */
+    private final int unreadableTypes;
+    private final long unreadableAmount;
+
+    /**
      * Where the registries come from.
      *
      * <p><b>Kept, not queried afresh on every access.</b> What an item
@@ -45,7 +56,10 @@ public final class CellInventory<T> implements CellView {
         this.size = size;
         this.format = format;
         this.registries = registries;
-        this.contents = new LinkedHashMap<>(format.read(cell, registries));
+        CellFormat.Loaded<T> loaded = format.load(cell, registries);
+        this.contents = new LinkedHashMap<>(loaded.contents());
+        this.unreadableTypes = loaded.unreadable().size();
+        this.unreadableAmount = format.amountOf(loaded.unreadable());
     }
 
     /**
@@ -106,12 +120,19 @@ public final class CellInventory<T> implements CellView {
         return contents.getOrDefault(key, 0L);
     }
 
+    /** How many types are occupied, readable or not. */
     public int usedTypes() {
-        return contents.size();
+        return contents.size() + unreadableTypes;
     }
 
+    /** How much is occupied, readable or not. */
     public long usedAmount() {
-        return CellFormat.total(contents);
+        return CellFormat.total(contents) + unreadableAmount;
+    }
+
+    /** How many entries the cell keeps without being able to read them. */
+    public int unreadableTypes() {
+        return unreadableTypes;
     }
 
     /** How much of this type would still fit in. */
@@ -120,7 +141,7 @@ public final class CellInventory<T> implements CellView {
             return 0;
         }
         boolean known = contents.containsKey(key);
-        if (!known && contents.size() >= size.types()) {
+        if (!known && usedTypes() >= size.types()) {
             return 0;
         }
         return Math.max(0, size.amount() - usedAmount());
@@ -153,9 +174,10 @@ public final class CellInventory<T> implements CellView {
 
     /** How many type slots are still free. */
     public int freeTypes() {
-        return isValid() ? Math.max(0, size.types() - contents.size()) : 0;
+        return isValid() ? Math.max(0, size.types() - usedTypes()) : 0;
     }
 
+    /** Empties what can be read. Unreadable entries are not ours to delete. */
     public void clear() {
         contents.clear();
     }

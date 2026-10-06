@@ -35,15 +35,22 @@ public class StorageCellItem extends Item {
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> lines,
                                 TooltipFlag flag) {
-        Map<ItemKey, Long> contents = CellContents.read(stack, context.registries());
-        long total = dev.devpanda.factorynetwork.storage.CellFormat.total(contents);
+        CellFormat.Loaded<ItemKey> loaded = CellFormat.ITEMS.load(stack, context.registries());
+        Map<ItemKey, Long> contents = loaded.contents();
+        int unreadable = loaded.unreadable().size();
+        // Unreadable entries count on both lines: they occupy the cell, and a
+        // cell that reads "3 of 8" while refusing a fourth type is a riddle.
+        long total = CellFormat.total(contents) + CellFormat.ITEMS.amountOf(loaded.unreadable());
         // Name both limits: a cell is usually full on types, not on amount —
         // whoever sees only the amount looks for the problem elsewhere.
         lines.add(Component.translatable("item.factorynetwork.cell.types",
-                contents.size(), tier.types()).withStyle(ChatFormatting.GRAY));
+                contents.size() + unreadable, tier.types()).withStyle(ChatFormatting.GRAY));
         lines.add(Component.translatable("item.factorynetwork.cell.amount",
                 total, tier.amount()).withStyle(ChatFormatting.GRAY));
-        if (contents.isEmpty()) {
+        if (unreadable > 0) {
+            lines.add(Component.translatable("item.factorynetwork.cell.unreadable", unreadable)
+                    .withStyle(ChatFormatting.YELLOW));
+        } else if (contents.isEmpty()) {
             lines.add(Component.translatable("item.factorynetwork.cell.empty")
                     .withStyle(ChatFormatting.DARK_GRAY));
         }
