@@ -555,6 +555,14 @@ public final class FlowEngine {
             } catch (ScriptError error) {
                 flow.fail(error.toString());
                 return;
+            } catch (RuntimeException unexpected) {
+                // Anything that is not a script error is a bug on our side
+                // (or in a foreign mod's handler). Letting it out would abort
+                // the whole tick and, because the flow stays RUNNING, repeat
+                // it on every following tick. A failed flow is visible and
+                // stops; a poisoned controller is neither.
+                flow.fail("Interner Fehler: " + unexpected);
+                return;
             }
         }
     }
