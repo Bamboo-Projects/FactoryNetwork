@@ -135,6 +135,45 @@ public interface ResourceKind {
     }
 
     /**
+     * Something a kind has to tell the player, with what they can do about it.
+     *
+     * @param message what is wrong, as a sentence
+     * @param hint    what helps
+     */
+    record Problem(String message, String hint) {
+    }
+
+    /**
+     * Why this kind cannot be used in this pack, or {@code null} if it can.
+     *
+     * <p><b>A kind is registered even when its mod is missing</b> — otherwise
+     * a program naming it would hear "no such resource kind" and the player
+     * would hunt for a typo. What the mod's absence does mean is said here,
+     * and the core passes it on wherever a selection of this kind turns up.
+     */
+    default Problem unavailable() {
+        return null;
+    }
+
+    /**
+     * What to say when a selection of this kind matches nothing.
+     *
+     * <p>In the kind's own words: only it knows whether a missing namespace
+     * means its own mod, and what a player most likely mistyped.
+     *
+     * @param written the selection as the program wrote it, or {@code null}
+     */
+    default Problem noMatch(String written) {
+        return new Problem("Die Auswahl trifft kein " + prefix() + ".",
+                "Gibt es das in diesem Pack?");
+    }
+
+    /** The unit amounts of this kind are counted in, as shown after a number; empty for pieces. */
+    default String unit() {
+        return "";
+    }
+
+    /**
      * The kind behind a written form, or {@code null}.
      *
      * <p>{@code null} means "no resource kind" and not "items": {@code power}

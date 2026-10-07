@@ -38,13 +38,11 @@ public final class WorldHost implements Interpreter.Host {
     /**
      * All stocks of the network, by kind.
      *
-     * <p>The three named fields above point into it. It is consulted where
+     * <p>The two named fields above point into it. It is consulted where
      * the kind is only known at runtime — with {@code count}, say, which is
      * the same question for items, fluids and chemicals.
      */
     private final dev.devpanda.factorynetwork.network.NetworkStores stores;
-
-    private final dev.devpanda.factorynetwork.network.ResourceStore chemicals;
 
     /**
      * The network's power reserve; set by the controller.
@@ -220,7 +218,6 @@ public final class WorldHost implements Interpreter.Host {
                 ? new dev.devpanda.factorynetwork.network.NetworkStores() : stores;
         this.storage = this.stores.items();
         this.fluidStorage = this.stores.fluids();
-        this.chemicals = this.stores.chemicals();
         this.globals = globals;
         this.onGlobalChanged = onGlobalChanged;
     }
@@ -357,13 +354,10 @@ public final class WorldHost implements Interpreter.Host {
         if (kind == ResourceKinds.FLUID) {
             return moveFluid(amount, from, to);
         }
-        if (kind == ResourceKinds.CHEMICAL) {
-            return moveChemical(amount, from, to);
-        }
-        // A kind registered by a foreign mod: it goes via the second axis,
-        // which the mod itself provides. Without these lines it would run
-        // into item resolution — and what matches nobody there would mean
-        // "no filter".
+        // Every kind that is neither item nor fluid goes via the second axis,
+        // which whoever brings the kind provides — chemicals included. Without
+        // these lines it would run into item resolution — and what matches
+        // nobody there would mean "no filter".
         if (kind != null && kind != ResourceKinds.ITEM) {
             return moveForeign(kind, amount, from, to);
         }
@@ -479,94 +473,6 @@ public final class WorldHost implements Interpreter.Host {
     private static boolean isEverything(Value value) {
         return value instanceof Value.Request request
                 && request.kind() == Value.Request.Kind.ALL;
-    }
-
-    // ---- Chemicals --------------------------------------------------------
-
-    /**
-     * Moves chemicals, in millibuckets.
-     *
-     * <p>The same structure as for fluids, and the same reason for every
-     * line: what the storage will not take must not leave the container in
-     * the first place — a gas that is out and fits nowhere would be gone.
-     *
-     * <p>Whatever touches Mekanism lives in {@code compat/mekanism}; here
-     * there are only ids as text.
-     */
-    private long moveChemical(Value amount, Value from, Value to) {
-        List<String> ids = chemicalsOf(amount);
-        long limit = amountOf(amount);
-        boolean fromStorage = isStorage(from);
-        boolean toStorage = isStorage(to);
-        if (fromStorage && toStorage) {
-            return 0;
-        }
-        if (fromStorage) {
-            var target = machineOf(to);
-            return dev.devpanda.factorynetwork.compat.mekanism.ChemicalStores.fillFrom(
-                    chemicals, level, target.pos(), target.side(), ids, limit);
-        }
-        if (toStorage) {
-            var source = machineOf(from);
-            return dev.devpanda.factorynetwork.compat.mekanism.ChemicalStores.drainInto(
-                    level, source.pos(), source.side(), ids, chemicals, limit);
-        }
-        // Device to device goes via the network storage as an intermediate
-        // stop. Without it there would need to be a third path for the same
-        // operation, and the amount lost on the way would have gone
-        // uncounted.
-        var source = machineOf(from);
-        var target = machineOf(to);
-        long pulled = dev.devpanda.factorynetwork.compat.mekanism.ChemicalStores.drainInto(
-                level, source.pos(), source.side(), ids, chemicals, limit);
-        if (pulled <= 0) {
-            return 0;
-        }
-        return dev.devpanda.factorynetwork.compat.mekanism.ChemicalStores.fillFrom(
-                chemicals, level, target.pos(), target.side(), ids, pulled);
-    }
-
-    /**
-     * The ids behind a chemical selection.
-     *
-     * <p><b>No match is an error, not an empty list</b> — the same rule as
-     * for items and fluids. It was missing here, and that was costly: empty
-     * means <i>everything</i> further down ({@code MekTanks.matches} lets
-     * every sort through when none is given). A typo in {@code chemical:…}
-     * thus filled some random gas from the network into the machine without
-     * saying a word.
-     *
-     * <p>If Mekanism is missing, the message says so instead of pretending
-     * the pack is to blame.
-     */
-    private List<String> chemicalsOf(Value value) {
-        // An already resolved selection — that is how every chemical arrives
-        // from a loop and from every it. Without these two lines the list
-        // would stay empty, and empty means "no filter" further down.
-        if (value instanceof Value.Selection selection
-                && selection.kind() == ResourceKinds.CHEMICAL) {
-            return selection.chemicals();
-        }
-        if (value instanceof Value.Resource resource
-                && resource.kind() == ResourceKinds.CHEMICAL) {
-            return List.of(resource.chemical());
-        }
-        if (value instanceof Value.Request request) {
-            List<String> ids = dev.devpanda.factorynetwork.compat.mekanism.Chemicals.resolve(
-                    dev.devpanda.factorynetwork.lang.Selectors.parse(request.selector()));
-            if (ids.isEmpty()) {
-                throw dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.installed()
-                        ? new ScriptError("Die Auswahl " + request.selector()
-                                + " trifft keine Chemikalie.",
-                                "Gibt es sie in diesem Pack? Ohne Namensraum ist "
-                                        + "mekanism gemeint.")
-                        : new ScriptError(
-                                dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.reason(),
-                                dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.hint());
-            }
-            return ids;
-        }
-        return List.of();
     }
 
     /** Where a machine stands and from which side the connector faces it. */
@@ -813,8 +719,7 @@ public final class WorldHost implements Interpreter.Host {
             return 0;
         }
         ResourceKind kind = ResourceKind.of(what);
-        if (kind != null && kind != ResourceKinds.ITEM && kind != ResourceKinds.FLUID
-                && kind != ResourceKinds.CHEMICAL) {
+        if (kind != null && kind != ResourceKinds.ITEM && kind != ResourceKinds.FLUID) {
             net.minecraft.core.Direction facing = connector.facing();
             return kind.machine().count(level,
                     connector.pos().relative(facing), facing.getOpposite(),
@@ -822,12 +727,6 @@ public final class WorldHost implements Interpreter.Host {
         }
         if (kind == ResourceKinds.FLUID) {
             return countFluids(connector, fluidsOf(what));
-        }
-        if (kind == ResourceKinds.CHEMICAL) {
-            net.minecraft.core.Direction facing = connector.facing();
-            return dev.devpanda.factorynetwork.compat.mekanism.ChemicalStores.amountAt(
-                    level, connector.pos().relative(facing), facing.getOpposite(),
-                    chemicalsOf(what));
         }
         List<Item> items = what instanceof Value.Nothing ? List.of() : itemsOf(what);
         return countItems(connector, items);
@@ -1136,9 +1035,6 @@ public final class WorldHost implements Interpreter.Host {
         if (kind == ResourceKinds.FLUID) {
             return fluidsOf(value);
         }
-        if (kind == ResourceKinds.CHEMICAL) {
-            return chemicalsOf(value);
-        }
         // A foreign kind resolves its selection itself — it knows its
         // registry, and the core does not. An already resolved selection, by
         // contrast, already carries its keys: that is how it arrives from a
@@ -1152,8 +1048,12 @@ public final class WorldHost implements Interpreter.Host {
             }
             List<?> found = kind.resolve(selectorFor(value));
             if (found.isEmpty()) {
-                throw new ScriptError("Die Auswahl trifft kein " + kind.prefix() + ".",
-                        "Gibt es das in diesem Pack?");
+                // No match is an error, not an empty list: empty means
+                // "everything" further down, and a typo would then move
+                // whatever happens to be there. The wording is the kind's.
+                ResourceKind.Problem problem = kind.noMatch(
+                        value instanceof Value.Request request ? request.selector() : null);
+                throw new ScriptError(problem.message(), problem.hint());
             }
             return found;
         }
@@ -1254,10 +1154,15 @@ public final class WorldHost implements Interpreter.Host {
         if (parsed == null) {
             throw new ScriptError("Unbekannte Art in " + written + ".");
         }
-        if (parsed.kind() == Expr.Selector.Kind.CHEMICAL) {
-            throw new ScriptError(
-                    dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.reason(),
-                    dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.hint());
+        // This path resolves items. A kind that is neither item nor fluid has
+        // no business here; if its mod is missing, that is the better message.
+        ResourceKind kind = ResourceKind.of(parsed);
+        if (kind != null && kind != ResourceKinds.ITEM && kind != ResourceKinds.FLUID) {
+            ResourceKind.Problem missing = kind.unavailable();
+            throw missing != null
+                    ? new ScriptError(missing.message(), missing.hint())
+                    : new ScriptError("An dieser Stelle sind Gegenstände gemeint, nicht "
+                            + kind.plural() + ".");
         }
         return parsed;
     }

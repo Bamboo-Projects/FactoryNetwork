@@ -43,17 +43,22 @@ public final class SelectionSummary {
         if (selector == null) {
             return lines;
         }
-        if (selector.kind() == Expr.Selector.Kind.CHEMICAL) {
-            if (!dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.installed()) {
+        // Every kind that is neither item nor fluid answers for itself:
+        // whether it can be used here, what it resolves to and what its
+        // resources are called.
+        ResourceKind kind = ResourceKind.of(selector);
+        if (kind != null && kind != ResourceKinds.ITEM && kind != ResourceKinds.FLUID) {
+            ResourceKind.Problem missing = kind.unavailable();
+            if (missing != null) {
                 // No full stop at the end: the editor's box shows a piece of
                 // information, not a sentence.
-                lines.add("Chemikalien brauchen Mekanism");
+                String message = missing.message();
+                lines.add(message.endsWith(".")
+                        ? message.substring(0, message.length() - 1) : message);
                 return lines;
             }
-            List<String> ids = dev.devpanda.factorynetwork.compat.mekanism.Chemicals
-                    .resolve(selector);
-            return summarise(lines, ids.stream()
-                    .map(dev.devpanda.factorynetwork.compat.mekanism.Chemicals::nameOf)
+            return summarise(lines, kind.resolve(selector).stream()
+                    .map(kind::nameOf)
                     .toList());
         }
         boolean fluids = selector.kind() == Expr.Selector.Kind.FLUID

@@ -99,18 +99,15 @@ public final class FilterCheck {
             }
             for (Expr.Selector selector : selectors) {
                 switch (selector.kind()) {
-                    // With Mekanism a chemical is a selector like any other.
-                    // Without, it stays an error, and the message points at the
-                    // mod list instead of at this mod.
+                    // With its mod present a chemical is a selector like any
+                    // other. Without, it stays an error, and the message points
+                    // at the mod list instead of at this mod.
                     case CHEMICAL -> {
-                        if (!dev.devpanda.factorynetwork.compat.mekanism.FnMekanism
-                                .installed()) {
+                        var missing = dev.devpanda.factorynetwork.runtime.ResourceKinds
+                                .CHEMICAL.unavailable();
+                        if (missing != null) {
                             problems.add(new Diagnostic(Diagnostic.Severity.ERROR,
-                                    selector.span(),
-                                    dev.devpanda.factorynetwork.compat.mekanism.FnMekanism
-                                            .reason(),
-                                    dev.devpanda.factorynetwork.compat.mekanism.FnMekanism
-                                            .hint()));
+                                    selector.span(), missing.message(), missing.hint()));
                         }
                     }
                     case POWER -> problems.add(new Diagnostic(Diagnostic.Severity.ERROR,

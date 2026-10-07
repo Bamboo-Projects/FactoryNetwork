@@ -272,7 +272,7 @@ public final class WorkerRuntime {
         var found = stores == null
                 ? new dev.devpanda.factorynetwork.network.NetworkStores() : stores;
         this.fluids = found.fluids();
-        this.chemicals = found.chemicals();
+        this.stores = found;
         NetworkStorage storage = found.items();
         long now = level.getGameTime();
         currentStorage = storage;
@@ -388,8 +388,9 @@ public final class WorkerRuntime {
             return;
         }
 
-        if (WorkerKind.of(worker, templates) == Expr.Selector.Kind.CHEMICAL) {
-            tickChemicalWorker(worker, state, from, to);
+        ResourceKind foreign = foreignKindOf(worker);
+        if (foreign != null) {
+            tickForeignWorker(foreign, worker, state, from, to);
             return;
         }
 
@@ -1440,43 +1441,66 @@ public final class WorkerRuntime {
      * <p>The rule itself lives in {@link WorkerKind}, because the check in
      * the editor needs the same one. Two versions of it drifted apart.
      */
-    // ---- Chemicals ---------------------------------------------------------
+    // ---- Kinds the core does not own ----------------------------------------
 
-    /** The network's chemical store; arrives with the tick. */
-    private dev.devpanda.factorynetwork.network.ResourceStore chemicals =
-            dev.devpanda.factorynetwork.network.ResourceStore.NONE;
+    /** All stocks of the network, by kind; arrives with the tick. */
+    private dev.devpanda.factorynetwork.network.NetworkStores stores =
+            new dev.devpanda.factorynetwork.network.NetworkStores();
 
     /**
-     * A worker that moves chemicals.
+     * The kind a worker moves, if it is neither items nor fluids.
+     *
+     * <p>Chemicals and whatever another mod has registered: all of them reach
+     * a machine through {@link ResourceKind#machine()} and live in the store
+     * their kind supplies. {@code null} for the two kinds this class handles
+     * itself, and for a worker whose filter says nothing about a kind.
+     */
+    private static ResourceKind foreignKindOf(Decl.Worker worker) {
+        Decl.Worker.Entry filter = worker.entry(Decl.Worker.Entry.Kind.FILTER);
+        if (filter == null) {
+            return null;
+        }
+        ResourceKind kind = ResourceKind.of(WorkerKind.selectorOf(filter.value()));
+        return kind == null || kind == ResourceKinds.ITEM || kind == ResourceKinds.FLUID
+                ? null : kind;
+    }
+
+    /**
+     * A worker that moves a kind the core does not own.
      *
      * <p>The same structure as for fluids, and for the same reasons: <b>a
-     * {@code filter} is mandatory</b>, because a container usually holds
-     * exactly one kind, and draining the wrong one is costlier than with
-     * items. <b>Only between device and storage</b>, in both directions —
-     * device to device goes via storage, and for that one writes two
-     * workers.
+     * filter is required</b>, because a container usually holds one sort and
+     * "everything" would be a guess. <b>Only between device and storage</b>,
+     * in both directions — device to device goes via storage, and for that
+     * one writes two workers.
      *
-     * <p>Without Mekanism it halts and says so. A worker that silently does
-     * nothing because a mod is missing is the bug one searches for longest.
+     * <p>If the mod behind the kind is missing, the worker halts and says so.
+     * A worker that silently does nothing because a mod is missing is the bug
+     * one searches for longest.
      */
-    private void tickChemicalWorker(Decl.Worker worker, WorkerState state,
-                                    Decl.Worker.Entry from, Decl.Worker.Entry to) {
-        if (!dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.installed()) {
+    private void tickForeignWorker(ResourceKind kind, Decl.Worker worker, WorkerState state,
+                                   Decl.Worker.Entry from, Decl.Worker.Entry to) {
+        ResourceKind.Problem missing = kind.unavailable();
+        if (missing != null) {
             state.status = Status.HALTED;
-            state.detail = dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.reason();
-            note(worker, dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.reason()
-                    + " " + dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.hint());
+            state.detail = missing.message();
+            note(worker, missing.message() + " " + missing.hint());
             return;
         }
-        List<String> filter = filterChemicals(worker, state);
-        if (state.status == Status.HALTED) {
+        var machine = kind.machine();
+        if (machine == dev.devpanda.factorynetwork.network.MachineAccess.NONE) {
+            state.status = Status.HALTED;
+            state.detail = kind.prefix() + " lässt sich an keiner Maschine bewegen";
             return;
         }
+        Decl.Worker.Entry filterEntry = worker.entry(Decl.Worker.Entry.Kind.FILTER);
+        List<?> filter = kind.resolve(filterEntry.value());
         if (filter.isEmpty()) {
+            // Empty would mean "everything" at the machine. A selection that
+            // matches nothing today is not a request to move whatever is there.
             state.status = Status.HALTED;
-            state.detail = "Ein Chemikalien-Worker braucht ein filter";
-            note(worker, "filter fehlt — ein Behälter hält meist genau eine Sorte, "
-                    + "und welche gemeint ist, muss dastehen.");
+            state.detail = kind.noMatch(null).message();
+            note(worker, "die Auswahl trifft zurzeit nichts aus " + kind.plural());
             return;
         }
         boolean fromStorage = isStorage(from.value());
@@ -1485,49 +1509,45 @@ public final class WorkerRuntime {
             state.status = Status.HALTED;
             state.detail = fromStorage
                     ? "Quelle und Ziel sind beide der Speicher"
-                    : "Chemikalien gehen zwischen Gerät und Speicher";
+                    : kind.plural() + " gehen zwischen Gerät und Speicher";
             return;
         }
+        var connector = connectorOf(fromStorage ? to.value() : from.value(), state, kind);
+        if (connector == null) {
+            return;
+        }
+        var facing = connector.facing();
+        var level = connector.level();
+        var pos = connector.pos().relative(facing);
+        var side = facing.getOpposite();
+        var store = stores.of(kind);
         long limit = batchOf(worker);
         int maintain = maintainOf(worker);
         if (maintain > 0) {
             // As everywhere: per kind, not in total.
             long lacking = 0;
-            for (String id : filter) {
-                long have = toStorage ? chemicals.count(id) : amountAt(to.value(), id, state);
+            for (Object key : filter) {
+                long have = toStorage
+                        ? store.count(key)
+                        : machine.count(level, pos, side, List.of(key));
                 lacking = Math.max(lacking, maintain - have);
             }
             if (lacking <= 0) {
                 state.status = Status.IDLE;
-                state.detail = "Vorrat steht (" + maintain + " mB je Sorte)";
+                state.detail = "Vorrat steht (" + amountText(maintain, kind) + " je Sorte)";
                 return;
             }
             limit = Math.min(limit, lacking);
         }
         long moved = fromStorage
-                ? fillDevice(to.value(), filter, limit, state)
-                : drainDevice(from.value(), filter, limit, state);
-        state.recordTransfer(moved, "mB");
+                ? machine.fill(store, level, pos, side, filter, limit)
+                : machine.drain(level, pos, side, filter, store, limit);
+        state.recordTransfer(moved, kind.unit().isEmpty() ? kind.plural() : kind.unit());
     }
 
-    /** The ids behind a chemical worker's filter. */
-    private List<String> filterChemicals(Decl.Worker worker, WorkerState state) {
-        Decl.Worker.Entry filter = worker.entry(Decl.Worker.Entry.Kind.FILTER);
-        if (filter == null) {
-            return List.of();
-        }
-        if (filter.value() instanceof Expr.Name name) {
-            return fromTemplate(worker, state, name,
-                    template -> dev.devpanda.factorynetwork.compat.mekanism.Chemicals
-                            .resolve(template.includes().isEmpty() ? null
-                                    : template.includes().get(0)));
-        }
-        List<String> resolved = dev.devpanda.factorynetwork.compat.mekanism.Chemicals
-                .resolve(filter.value());
-        if (resolved.isEmpty()) {
-            note(worker, "die Auswahl trifft zurzeit keine Chemikalie");
-        }
-        return resolved;
+    /** An amount with its kind's unit, as it appears in a status line. */
+    private static String amountText(long amount, ResourceKind kind) {
+        return kind.unit().isEmpty() ? Long.toString(amount) : amount + " " + kind.unit();
     }
 
     /**
@@ -1538,47 +1558,15 @@ public final class WorkerRuntime {
      * that exists twice, and one without a free channel. Three different
      * messages for three different searches.
      */
-    private dev.devpanda.factorynetwork.block.entity.ConnectorPart connectorOf(Expr target, WorkerState state) {
+    private dev.devpanda.factorynetwork.block.entity.ConnectorPart connectorOf(
+            Expr target, WorkerState state, ResourceKind kind) {
         if (!(target instanceof Expr.Name name) || lastGraph == null) {
             state.status = Status.HALTED;
-            state.detail = "Ein Chemikalien-Worker braucht ein Gerät";
+            state.detail = "Ein Worker für " + kind.plural() + " braucht ein Gerät";
             return null;
         }
         return resolveDevice(name.value(), lastGraph, state,
                 connector -> connector, "An diesem Connector hängt keine Maschine");
-    }
-
-    private long amountAt(Expr target, String id, WorkerState state) {
-        dev.devpanda.factorynetwork.block.entity.ConnectorPart connector = connectorOf(target, state);
-        if (connector == null) {
-            return 0;
-        }
-        var facing = connector.facing();
-        return dev.devpanda.factorynetwork.compat.mekanism.ChemicalStores.amountAt(
-                connector.level(), connector.pos().relative(facing),
-                facing.getOpposite(), List.of(id));
-    }
-
-    private long fillDevice(Expr target, List<String> filter, long limit, WorkerState state) {
-        dev.devpanda.factorynetwork.block.entity.ConnectorPart connector = connectorOf(target, state);
-        if (connector == null) {
-            return 0;
-        }
-        var facing = connector.facing();
-        return dev.devpanda.factorynetwork.compat.mekanism.ChemicalStores.fillFrom(
-                chemicals, connector.level(),
-                connector.pos().relative(facing), facing.getOpposite(), filter, limit);
-    }
-
-    private long drainDevice(Expr source, List<String> filter, long limit, WorkerState state) {
-        dev.devpanda.factorynetwork.block.entity.ConnectorPart connector = connectorOf(source, state);
-        if (connector == null) {
-            return 0;
-        }
-        var facing = connector.facing();
-        return dev.devpanda.factorynetwork.compat.mekanism.ChemicalStores.drainInto(
-                connector.level(), connector.pos().relative(facing),
-                facing.getOpposite(), filter, chemicals, limit);
     }
 
     private boolean isFluidWorker(Decl.Worker worker) {

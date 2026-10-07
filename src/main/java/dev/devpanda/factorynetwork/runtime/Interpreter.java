@@ -869,13 +869,12 @@ public final class Interpreter {
         ResourceKind kind = written == null ? ResourceKinds.ITEM : written;
         List<?> keys = kind.resolve(expr);
         if (keys.isEmpty()) {
-            // Without Mekanism a chemical selection matches nothing, and the
-            // message must say what the cause is — not pretend the pack is
-            // to blame.
-            throw kind == ResourceKinds.CHEMICAL
-                    && !dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.installed()
-                    ? new ScriptError("Dafür fehlt Mekanism.",
-                            dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.hint())
+            // If the mod behind the kind is missing, a selection of it
+            // matches nothing, and the message must say what the cause is —
+            // not pretend the pack is to blame.
+            ResourceKind.Problem missing = kind.unavailable();
+            throw missing != null
+                    ? new ScriptError(missing.message(), missing.hint())
                     : nothingSelected();
         }
         return new Value.Selection(kind, keys, amountIn(expr));

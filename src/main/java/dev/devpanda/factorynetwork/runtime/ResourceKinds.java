@@ -173,6 +173,37 @@ public final class ResourceKinds {
         public ResourceStore newStore() {
             return dev.devpanda.factorynetwork.compat.mekanism.ChemicalStores.create();
         }
+
+        @Override
+        public dev.devpanda.factorynetwork.network.MachineAccess machine() {
+            return dev.devpanda.factorynetwork.compat.mekanism.MekChemicalAccess.INSTANCE;
+        }
+
+        @Override
+        public Problem unavailable() {
+            return dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.installed()
+                    ? null
+                    : new Problem(
+                            dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.reason(),
+                            dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.hint());
+        }
+
+        @Override
+        public Problem noMatch(String written) {
+            Problem missing = unavailable();
+            if (missing != null) {
+                return missing;
+            }
+            return new Problem(written == null
+                    ? "Die Auswahl trifft keine Chemikalie."
+                    : "Die Auswahl " + written + " trifft keine Chemikalie.",
+                    "Gibt es sie in diesem Pack? Ohne Namensraum ist mekanism gemeint.");
+        }
+
+        @Override
+        public String unit() {
+            return "mB";
+        }
     };
 
     static {
