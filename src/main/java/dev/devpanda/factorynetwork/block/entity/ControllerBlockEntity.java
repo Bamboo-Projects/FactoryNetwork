@@ -2537,7 +2537,7 @@ public class ControllerBlockEntity extends BlockEntity {
     public FlowEngine flowEngine() {
         if (flows == null && level != null) {
             flows = new FlowEngine(program, new Interpreter(program,
-                    newHost()));
+                    newHost(), dev.devpanda.factorynetwork.FnConfig.interpreterLimits()));
         }
         if (flows != null && pendingFlows != null) {
             CompoundTag saved = pendingFlows;
@@ -2595,7 +2595,8 @@ public class ControllerBlockEntity extends BlockEntity {
             throw new ScriptError("Keine Welt.");
         }
         WorldHost host = newHost();
-        Interpreter interpreter = new Interpreter(program, host);
+        Interpreter interpreter = new Interpreter(program, host,
+                dev.devpanda.factorynetwork.FnConfig.interpreterLimits());
         FlowEngine engine = flowEngine();
         if (engine != null) {
             // A call from the terminal too can trigger something a flow is

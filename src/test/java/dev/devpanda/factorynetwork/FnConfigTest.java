@@ -26,6 +26,15 @@ class FnConfigTest {
     }
 
     @Test
+    @DisplayName("An interpreter outside the game runs under the same limits the configuration starts with")
+    void theInterpretersOwnDefaultsMatch() {
+        var limits = dev.devpanda.factorynetwork.runtime.Interpreter.Limits.DEFAULT;
+        assertEquals(FnConfig.DEFAULT_STEP_BUDGET, limits.steps());
+        assertEquals(FnConfig.DEFAULT_GLOBAL_LIST, limits.globalList());
+        assertEquals(limits, FnConfig.interpreterLimits());
+    }
+
+    @Test
     @DisplayName("The defaults are the numbers that used to be in the code")
     void thedefaultsAreTheNumbersThatUsedToBeInTheCode() {
         // A configuration must not change the game as a side effect: whoever

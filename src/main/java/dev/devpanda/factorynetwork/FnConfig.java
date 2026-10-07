@@ -147,6 +147,12 @@ public final class FnConfig {
         return SERVER_SPEC.isLoaded() ? CRAFTING_BUDGET.get() : DEFAULT_CRAFTING_BUDGET;
     }
 
+    /** The limits an interpreter in the game runs under. */
+    public static dev.devpanda.factorynetwork.runtime.Interpreter.Limits interpreterLimits() {
+        return new dev.devpanda.factorynetwork.runtime.Interpreter.Limits(
+                stepBudget(), globalListSize());
+    }
+
     /** How long a global list value may grow. */
     public static int globalListSize() {
         return SERVER_SPEC.isLoaded() ? GLOBAL_LIST.get() : DEFAULT_GLOBAL_LIST;

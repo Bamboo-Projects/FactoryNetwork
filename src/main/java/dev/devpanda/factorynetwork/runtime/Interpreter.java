@@ -32,11 +32,28 @@ public final class Interpreter {
      * should not shift in the middle of a loop when somebody reloads the
      * configuration.
      */
-    private final int maxSteps = dev.devpanda.factorynetwork.FnConfig.stepBudget();
+    private final int maxSteps;
 
     /** How long a global list value may become. */
-    private final int maxGlobalList =
-            dev.devpanda.factorynetwork.FnConfig.globalListSize();
+    private final int maxGlobalList;
+
+    /**
+     * The two limits an interpreter runs under.
+     *
+     * <p><b>Handed in, not fetched.</b> The numbers come from the server's
+     * configuration, and that belongs to the game. Whoever builds an
+     * interpreter in the game passes what the configuration says; everything
+     * else — a test, a checker without a world — runs under {@link #DEFAULT},
+     * which carries the same numbers the configuration starts with.
+     *
+     * @param steps      how many steps one immediate call may take
+     * @param globalList how long a global list value may become
+     */
+    public record Limits(int steps, int globalList) {
+
+        /** The values the configuration ships with; {@code FnConfigTest} keeps them equal. */
+        public static final Limits DEFAULT = new Limits(10_000, 256);
+    }
 
     private final Program program;
     private final Host host;
@@ -307,9 +324,29 @@ public final class Interpreter {
             templates;
 
     public Interpreter(Program program, Host host) {
+        this(program, host, Limits.DEFAULT);
+    }
+
+    public Interpreter(Program program, Host host, Limits limits) {
         this.program = program;
         this.host = host;
-        this.templates = FilterTemplates.of(program);
+        this.maxSteps = limits.steps();
+        this.maxGlobalList = limits.globalList();
+        this.templates = templatesOf(program);
+    }
+
+    /** The templates of a program, by name. */
+    private static Map<String, dev.devpanda.factorynetwork.lang.ast.Decl.FilterTemplate>
+            templatesOf(Program program) {
+        Map<String, dev.devpanda.factorynetwork.lang.ast.Decl.FilterTemplate> found =
+                new java.util.LinkedHashMap<>();
+        for (var declaration : program.declarations()) {
+            if (declaration
+                    instanceof dev.devpanda.factorynetwork.lang.ast.Decl.FilterTemplate template) {
+                found.put(template.name(), template);
+            }
+        }
+        return found;
     }
 
     // ---- Entry points -----------------------------------------------------
@@ -935,10 +972,28 @@ public final class Interpreter {
         if (template == null) {
             return null;
         }
-        return dev.devpanda.factorynetwork.lang.FilterKind.of(template)
+        ResourceKind kind = dev.devpanda.factorynetwork.lang.FilterKind.of(template)
                         == dev.devpanda.factorynetwork.lang.FilterKind.FLUID
-                ? Value.Selection.ofFluids(FilterTemplates.fluids(template), -1)
-                : Value.Selection.ofItems(FilterTemplates.items(template), -1);
+                ? ResourceKinds.FLUID : ResourceKinds.ITEM;
+        // First everything together, then the exclusions removed — not
+        // alternating line by line, so that the order of the lines does not
+        // matter. Resolved by the kind itself: the same place as for every
+        // written selection, including its cache.
+        java.util.Set<Object> found = new java.util.LinkedHashSet<>();
+        for (Expr entry : template.includes()) {
+            found.addAll(kind.resolve(entry));
+        }
+        for (Expr entry : template.excludes()) {
+            kind.resolve(entry).forEach(found::remove);
+        }
+        if (found.isEmpty()) {
+            // The message names the template: without it the player would
+            // look where they wrote the name, rather than in the template.
+            throw new ScriptError("Die Vorlage " + template.name() + " trifft nichts.",
+                    "Gibt es die Gegenstände in diesem Pack? Und nimmt eine except-Zeile "
+                            + "vielleicht alles wieder heraus?");
+        }
+        return new Value.Selection(kind, List.copyOf(found), -1);
     }
 
     private Value resolveName(String name) {

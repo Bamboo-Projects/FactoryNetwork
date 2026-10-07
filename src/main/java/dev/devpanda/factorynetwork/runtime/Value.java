@@ -109,7 +109,8 @@ public sealed interface Value {
             // The same list as in the lexer and the parser, and that is the
             // point: it once stood here for the fourth time, with its own
             // answer to an unknown word.
-            var written = ResourceKinds.kindOf(selector.substring(0, colon));
+            var written = dev.devpanda.factorynetwork.lang.SelectorWords
+                    .kindOf(selector.substring(0, colon));
             if (written == null) {
                 return Kind.UNKNOWN;
             }

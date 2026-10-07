@@ -1650,7 +1650,9 @@ public final class WorkerRuntime {
         // states.
         if (conditionHost != null && conditionProgram != null) {
             try {
-                return new Interpreter(conditionProgram, conditionHost).evaluateAsBoolean(condition);
+                return new Interpreter(conditionProgram, conditionHost,
+                        dev.devpanda.factorynetwork.FnConfig.interpreterLimits())
+                        .evaluateAsBoolean(condition);
             } catch (ScriptError error) {
                 // A broken condition halts the worker instead of silently
                 // letting it run. The other way round would be the more
