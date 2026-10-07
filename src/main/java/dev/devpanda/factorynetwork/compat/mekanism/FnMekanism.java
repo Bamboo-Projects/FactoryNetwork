@@ -43,14 +43,13 @@ public final class FnMekanism {
     public static String reason() {
         return installed()
                 ? "Chemikalien sind noch nicht angebunden."
-                : "Chemikalien brauchen Mekanism.";
+                : dev.devpanda.factorynetwork.lang.SelectorWords.CHEMICAL_NEEDS_ITS_MOD.message();
     }
 
     /** And what the player can do about it. */
     public static String hint() {
         return installed()
                 ? "Die Schreibweise steht, die Anbindung an Mekanism ist in Arbeit."
-                : "chemical: spricht die Chemikalien von Mekanism an, und die Mod ist "
-                        + "in diesem Pack nicht installiert.";
+                : dev.devpanda.factorynetwork.lang.SelectorWords.CHEMICAL_NEEDS_ITS_MOD.hint();
     }
 }

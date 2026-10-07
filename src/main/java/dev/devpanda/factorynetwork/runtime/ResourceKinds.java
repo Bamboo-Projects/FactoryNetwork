@@ -50,15 +50,6 @@ public final class ResourceKinds {
 
     private static boolean frozen;
 
-    /**
-     * The list for the lexer, built once.
-     *
-     * <p>It asks for it at <b>every</b> word in the source text. Assembling
-     * it anew there each time would be one allocation per token — and the
-     * list only changes on registration.
-     */
-    private static Set<String> selectorPrefixes;
-
     private ResourceKinds() {
     }
 
@@ -233,7 +224,14 @@ public final class ResourceKinds {
         claim(BY_TAG, kind.tag(), kind, "Der Name auf der Platte „" + kind.tag() + "“");
         claim(BY_TAG, kind.selectionTag(), kind,
                 "Der Name auf der Platte „" + kind.selectionTag() + "“");
-        selectorPrefixes = null;
+        // The language keeps its own list of words, so that lexer and parser
+        // need nothing from here. This is the one place that feeds it.
+        dev.devpanda.factorynetwork.lang.SelectorWords.add(prefix, () -> {
+            ResourceKind.Problem missing = kind.unavailable();
+            return missing == null ? null
+                    : new dev.devpanda.factorynetwork.lang.SelectorWords.Unavailable(
+                            missing.message(), missing.hint());
+        });
     }
 
     private static <K> void claim(Map<K, ResourceKind> where, K key, ResourceKind kind,
@@ -299,18 +297,11 @@ public final class ResourceKinds {
      * parser, in {@code Selectors} and in the value model. Four copies with
      * three different answers to an unknown word — the lexer did not glue,
      * the parser made a tag out of it, {@code Selectors} returned
-     * {@code null}. Now it lives here.
+     * {@code null}. Now it lives in one place — in the language, as
+     * {@code SelectorWords}, which this registry feeds.
      */
     public static Set<String> selectorPrefixes() {
-        Set<String> known = selectorPrefixes;
-        if (known == null) {
-            java.util.Set<String> all = new java.util.LinkedHashSet<>(BY_PREFIX.keySet());
-            all.add("tag");
-            all.add("fluidtag");
-            known = java.util.Set.copyOf(all);
-            selectorPrefixes = known;
-        }
-        return known;
+        return dev.devpanda.factorynetwork.lang.SelectorWords.all();
     }
 
     /**
@@ -320,14 +311,7 @@ public final class ResourceKinds {
      * reports that — it knows where in the program it stands.
      */
     public static Expr.Selector.Kind kindOf(String prefix) {
-        return switch (prefix) {
-            case "item" -> Expr.Selector.Kind.ITEM;
-            case "fluid" -> Expr.Selector.Kind.FLUID;
-            case "chemical" -> Expr.Selector.Kind.CHEMICAL;
-            case "fluidtag" -> Expr.Selector.Kind.FLUIDTAG;
-            case "tag" -> Expr.Selector.Kind.TAG;
-            default -> BY_PREFIX.containsKey(prefix) ? Expr.Selector.Kind.CUSTOM : null;
-        };
+        return dev.devpanda.factorynetwork.lang.SelectorWords.kindOf(prefix);
     }
 
     /**
@@ -337,23 +321,12 @@ public final class ResourceKinds {
      * name is the best information, the whole list the second best.
      */
     public static String suggest(String wanted) {
-        String best = null;
-        int bestDistance = Integer.MAX_VALUE;
-        for (String candidate : selectorPrefixes()) {
-            int distance = dev.devpanda.factorynetwork.util.NameDistance
-                    .between(wanted, candidate);
-            if (distance < bestDistance) {
-                bestDistance = distance;
-                best = candidate;
-            }
-        }
-        return dev.devpanda.factorynetwork.util.NameDistance.isCloseEnough(wanted, bestDistance)
-                ? best : null;
+        return dev.devpanda.factorynetwork.lang.SelectorWords.suggest(wanted);
     }
 
     /** The known prefixes, sorted — for a message. */
     public static String known() {
-        return String.join(", ", new java.util.TreeSet<>(selectorPrefixes()));
+        return dev.devpanda.factorynetwork.lang.SelectorWords.known();
     }
 
     /**

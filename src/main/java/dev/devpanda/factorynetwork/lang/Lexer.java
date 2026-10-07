@@ -33,7 +33,7 @@ public final class Lexer {
      * the same list.
      */
     private static Set<String> selectorKinds() {
-        return dev.devpanda.factorynetwork.runtime.ResourceKinds.selectorPrefixes();
+        return SelectorWords.all();
     }
     private static final Set<String> TIME_UNITS = Set.of("t", "s", "min", "h");
 

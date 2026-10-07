@@ -103,8 +103,7 @@ public final class FilterCheck {
                     // other. Without, it stays an error, and the message points
                     // at the mod list instead of at this mod.
                     case CHEMICAL -> {
-                        var missing = dev.devpanda.factorynetwork.runtime.ResourceKinds
-                                .CHEMICAL.unavailable();
+                        var missing = SelectorWords.unavailable("chemical");
                         if (missing != null) {
                             problems.add(new Diagnostic(Diagnostic.Severity.ERROR,
                                     selector.span(), missing.message(), missing.hint()));

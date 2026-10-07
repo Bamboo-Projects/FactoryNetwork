@@ -1286,12 +1286,12 @@ public final class Parser {
             span = span.to(peek().span());
             advance();
         }
-        String suggestion = dev.devpanda.factorynetwork.runtime.ResourceKinds
+        String suggestion = dev.devpanda.factorynetwork.lang.SelectorWords
                 .suggest(name.text());
         error(span, quote(name.text()) + " ist keine Ressourcenart.",
                 suggestion != null
                         ? "Meinst du " + suggestion + ":?"
-                        : "Hier gibt es " + dev.devpanda.factorynetwork.runtime.ResourceKinds
+                        : "Hier gibt es " + dev.devpanda.factorynetwork.lang.SelectorWords
                                 .known() + ". Eine weitere bringt eine Mod mit.");
         if (suggestion != null) {
             // Only the word before, not the whole underlined selector: what
@@ -1338,7 +1338,7 @@ public final class Parser {
         // unknown can therefore arrive here. Previously there was a default
         // branch here that turned every foreign word into a tag.
         String prefix = text.substring(0, colon);
-        Expr.Selector.Kind kind = dev.devpanda.factorynetwork.runtime.ResourceKinds
+        Expr.Selector.Kind kind = dev.devpanda.factorynetwork.lang.SelectorWords
                 .kindOf(prefix);
         String rest = text.substring(colon + 1);
 

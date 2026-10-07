@@ -75,8 +75,7 @@ public final class Selectors {
             return null;
         }
         String prefix = written.substring(0, colon);
-        Expr.Selector.Kind kind = dev.devpanda.factorynetwork.runtime.ResourceKinds
-                .kindOf(prefix);
+        Expr.Selector.Kind kind = SelectorWords.kindOf(prefix);
         if (kind == null) {
             return null;
         }
