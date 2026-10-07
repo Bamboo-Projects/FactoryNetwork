@@ -50,6 +50,7 @@
   "item.factorynetwork.cell.types": "%s von %s Arten",
   "item.factorynetwork.cell.amount": "%s von %s Gegenständen",
   "item.factorynetwork.cell.empty": "leer",
+  "item.factorynetwork.cell.unreadable": "%s Einträge nicht lesbar – sie bleiben erhalten",
   "message.factorynetwork.remote.no_network": "An keinem Netz angemeldet — Rechtsklick auf einen Sendemast",
   "message.factorynetwork.remote.not_loaded": "Der Sendemast ist gerade nicht geladen",
   "message.factorynetwork.remote.other_world": "In einer anderen Welt — dafür braucht der Mast eine Grenzenlos-Karte",

@@ -50,6 +50,7 @@
   "item.factorynetwork.cell.types": "%s of %s types",
   "item.factorynetwork.cell.amount": "%s of %s items",
   "item.factorynetwork.cell.empty": "empty",
+  "item.factorynetwork.cell.unreadable": "%s entries unreadable - they are kept",
   "message.factorynetwork.remote.no_network": "Not bound to a network - right-click a mast",
   "message.factorynetwork.remote.not_loaded": "The mast is not loaded right now",
   "message.factorynetwork.remote.other_world": "Another dimension - the mast needs an infinity card for that",

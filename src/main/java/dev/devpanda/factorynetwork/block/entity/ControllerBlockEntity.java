@@ -54,6 +54,18 @@ import java.util.Set;
  */
 public class ControllerBlockEntity extends BlockEntity {
 
+    private static final org.slf4j.Logger LOG =
+            org.slf4j.LoggerFactory.getLogger("FactoryNetwork/Controller");
+
+    /**
+     * The save as it was read, when a newer build wrote it; otherwise
+     * {@code null}.
+     *
+     * <p>While this is set the controller is a placeholder: it neither ticks
+     * nor accepts a program, and it writes this tag back verbatim.
+     */
+    private CompoundTag foreignSave;
+
     private static final String KEY_STORAGE = "Storage";
     private static final String KEY_FLOWS = "Flows";
     private static final String KEY_FLUIDS = "Fluids";
@@ -297,6 +309,15 @@ public class ControllerBlockEntity extends BlockEntity {
     }
 
     public boolean deploy(dev.devpanda.factorynetwork.lang.Project newProject) {
+        if (foreignSave != null) {
+            // Not even the draft is kept: nothing this build writes may end
+            // up in a save it cannot read.
+            this.diagnostics = new ArrayList<>(List.of(new Diagnostic(Diagnostic.Severity.ERROR,
+                    new dev.devpanda.factorynetwork.lang.Span(0, 0, 1, 1),
+                    "Dieser Controller wurde von einer neueren Version der Mod gespeichert.",
+                    "Aktualisiere Factory Network. Bis dahin bleibt er unverändert und läuft nicht.")));
+            return false;
+        }
         // With an eye on the network: even someone who writes through the
         // folder next to the world should learn that no display is called
         // "test".
@@ -646,7 +667,7 @@ public class ControllerBlockEntity extends BlockEntity {
     // ---- Tick -------------------------------------------------------------
 
     public void serverTick() {
-        if (level == null) {
+        if (level == null || foreignSave != null) {
             return;
         }
         if (level.getGameTime() - lastRebuild >= REBUILD_INTERVAL) {
@@ -2753,6 +2774,18 @@ public class ControllerBlockEntity extends BlockEntity {
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
+        if (SaveVersion.isNewer(SaveVersion.read(tag))) {
+            // Written by a newer build. Reading it with today's eyes would
+            // drop whatever that build added, and the next save would make
+            // the loss permanent. So nothing is read, nothing runs, and the
+            // save goes back out exactly as it came in.
+            foreignSave = tag.copy();
+            LOG.error("Controller at {} was saved by a newer Factory Network (data version {}, "
+                            + "this build writes {}). It stays untouched and does not run.",
+                    worldPosition, SaveVersion.read(tag), SaveVersion.CURRENT);
+            return;
+        }
+        foreignSave = null;
         owner = tag.hasUUID(KEY_OWNER) ? tag.getUUID(KEY_OWNER) : null;
         jobs.clear();
         nextJobId = Math.max(1, tag.getLong(KEY_NEXT_JOB));
@@ -2807,6 +2840,11 @@ public class ControllerBlockEntity extends BlockEntity {
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
+        if (foreignSave != null) {
+            tag.merge(foreignSave);
+            return;
+        }
+        SaveVersion.write(tag);
         if (owner != null) {
             tag.putUUID(KEY_OWNER, owner);
         }
