@@ -224,6 +224,9 @@ public final class ResourceKinds {
         claim(BY_TAG, kind.tag(), kind, "Der Name auf der Platte „" + kind.tag() + "“");
         claim(BY_TAG, kind.selectionTag(), kind,
                 "Der Name auf der Platte „" + kind.selectionTag() + "“");
+        // The interpreter looks kinds up without the game; this is where it
+        // learns of each one.
+        Kinds.add(kind);
         // The language keeps its own list of words, so that lexer and parser
         // need nothing from here. This is the one place that feeds it.
         dev.devpanda.factorynetwork.lang.SelectorWords.add(prefix, () -> {

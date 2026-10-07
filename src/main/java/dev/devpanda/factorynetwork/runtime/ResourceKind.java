@@ -4,8 +4,6 @@ import dev.devpanda.factorynetwork.lang.ast.Expr;
 import dev.devpanda.factorynetwork.network.ResourceStore;
 import net.minecraft.resources.ResourceLocation;
 
-import java.util.List;
-
 /**
  * What kind of resource a value refers to.
  *
@@ -28,80 +26,15 @@ import java.util.List;
  * irreversible about it, is in {@code entscheidungen.md}, "Fremde Mods dürfen
  * die Sprache erweitern" (third-party mods may extend the language).
  *
- * <p><b>The key is an {@code Object}.</b> A common supertype would only exist
- * if all kinds came from the same hand — an item is an {@code Item}, a
- * chemical is a {@link String}, because a signature with a Mekanism type would
- * force the class to resolve it at load time. Which form belongs to this kind
- * is stated by {@link #type()}, and the value checks it on construction.
- *
- * <p><b>A kind is a single thing.</b> It is registered once, and equality is
- * identity — {@code ==} rather than {@code equals}. The registry rejects two
- * entries with the same prefix instead of shadowing one of them.
+ * <p><b>Two halves.</b> What the language needs — the word, the names, how a
+ * selection resolves — is declared in {@link Kind}, and the interpreter sees
+ * nothing but that. This interface adds what needs the game: the identifier,
+ * the store in the network and the access to machines.
  */
-public interface ResourceKind {
+public interface ResourceKind extends Kind {
 
     /** The identifier of this kind, for example {@code arsnouveau:source}. */
     ResourceLocation id();
-
-    /**
-     * What stands before the colon — and how the entry is queried afterwards.
-     *
-     * <p>The same word in both places, and that is not thrift: whoever writes
-     * {@code chemical:mekanism/hydrogen} reads the entry with
-     * {@code it.chemical}. Two words for the same kind would be two things to
-     * remember.
-     */
-    String prefix();
-
-    /** How a selection of this kind is counted in the log. */
-    String plural();
-
-    /** What a resource of this kind is recognised by. */
-    Class<?> type();
-
-    /**
-     * What this kind is called on disk.
-     *
-     * <p>For the built-in three the name is <b>irregular</b>, and it stays
-     * that way: {@code item} versus {@code sel}, but {@code chem} versus
-     * {@code chemsel} — grown, not designed. A waiting flow sits in the world
-     * with these names; straightening them out would mean letting old worlds
-     * lose their flows. Pinned down in {@code ValueCodecFormatTest}.
-     *
-     * <p>A third-party kind chooses its own. It must stay the same across
-     * restarts and must not equal any other — {@link ResourceKinds} checks
-     * both.
-     */
-    String tag();
-
-    /** The same for a selection. */
-    String selectionTag();
-
-    /** The identifier of a resource as it appears on disk. */
-    String idOf(Object key);
-
-    /**
-     * The resource behind an identifier.
-     *
-     * <p>Whether this is checked against a registry is up to the kind. Items
-     * and fluids fail with a message when they no longer exist: a variable
-     * that calculations continue with must not secretly turn into something
-     * else. Chemicals do not — their registry belongs to Mekanism, and
-     * without the mod it does not exist.
-     */
-    Object fromId(String id);
-
-    /** How a single resource appears in the log. */
-    String nameOf(Object key);
-
-    /**
-     * What a selection expression of this kind resolves to.
-     *
-     * <p>The resolvers stay separate — they are not twins but different
-     * registries with different caches. What comes together is solely the
-     * question of which of them a given place needs.
-     */
-    List<?> resolve(Expr selector);
 
     /**
      * The store in which this kind lives in the network.
@@ -126,7 +59,7 @@ public interface ResourceKind {
      * machine knowing it — just as it may move without being storable.
      * {@code move} then says so and does not return a silent zero.
      *
-     * <p>The built-in three also return nothing here: their path currently
+     * <p>Items and fluids also return nothing here: their path currently
      * lives in {@code WorldHost} and only moves here with slice 3. See
      * {@code maschinenzugriff.md}.
      */
@@ -135,42 +68,14 @@ public interface ResourceKind {
     }
 
     /**
-     * Something a kind has to tell the player, with what they can do about it.
+     * The full kind behind what a value carries.
      *
-     * @param message what is wrong, as a sentence
-     * @param hint    what helps
+     * <p>A value knows only the language's half. Every kind that exists was
+     * registered as a full one, though — there is no other way in — so the
+     * way back is a matter of saying so.
      */
-    record Problem(String message, String hint) {
-    }
-
-    /**
-     * Why this kind cannot be used in this pack, or {@code null} if it can.
-     *
-     * <p><b>A kind is registered even when its mod is missing</b> — otherwise
-     * a program naming it would hear "no such resource kind" and the player
-     * would hunt for a typo. What the mod's absence does mean is said here,
-     * and the core passes it on wherever a selection of this kind turns up.
-     */
-    default Problem unavailable() {
-        return null;
-    }
-
-    /**
-     * What to say when a selection of this kind matches nothing.
-     *
-     * <p>In the kind's own words: only it knows whether a missing namespace
-     * means its own mod, and what a player most likely mistyped.
-     *
-     * @param written the selection as the program wrote it, or {@code null}
-     */
-    default Problem noMatch(String written) {
-        return new Problem("Die Auswahl trifft kein " + prefix() + ".",
-                "Gibt es das in diesem Pack?");
-    }
-
-    /** The unit amounts of this kind are counted in, as shown after a number; empty for pieces. */
-    default String unit() {
-        return "";
+    static ResourceKind full(Kind kind) {
+        return (ResourceKind) kind;
     }
 
     /**
@@ -181,18 +86,7 @@ public interface ResourceKind {
      * move the wrong thing for {@code power}.
      */
     static ResourceKind of(Expr.Selector.Kind written) {
-        if (written == null) {
-            return null;
-        }
-        return switch (written) {
-            case ITEM, TAG -> ResourceKinds.ITEM;
-            case FLUID, FLUIDTAG -> ResourceKinds.FLUID;
-            case CHEMICAL -> ResourceKinds.CHEMICAL;
-            // A registered third-party kind cannot be determined from the
-            // written form alone — which one it is stands in the prefix.
-            // Whoever needs it uses of(Expr.Selector) rather than this one.
-            case CUSTOM, POWER, ALL -> null;
-        };
+        return full(Kinds.of(written));
     }
 
     /**
@@ -202,25 +96,12 @@ public interface ResourceKind {
      * stands in the prefix and not in the enum.
      */
     static ResourceKind of(Expr.Selector selector) {
-        if (selector == null) {
-            return null;
-        }
-        return selector.kind() == Expr.Selector.Kind.CUSTOM
-                ? ResourceKinds.byPrefix(selector.prefix())
-                : of(selector.kind());
+        return full(Kinds.of(selector));
     }
 
     /** The same question for a selection that is still present as text. */
     static ResourceKind of(Value.Request.Kind written) {
-        if (written == null) {
-            return null;
-        }
-        return switch (written) {
-            case ITEM, TAG -> ResourceKinds.ITEM;
-            case FLUID, FLUIDTAG -> ResourceKinds.FLUID;
-            case CHEMICAL -> ResourceKinds.CHEMICAL;
-            case ALL, UNKNOWN -> null;
-        };
+        return full(Kinds.of(written));
     }
 
     /**
@@ -238,8 +119,7 @@ public interface ResourceKind {
 
     /** The same for a selection that is still present as text. */
     static ResourceKind orItems(Value.Request.Kind written) {
-        ResourceKind kind = of(written);
-        return kind == null ? ResourceKinds.ITEM : kind;
+        return full(Kinds.orItems(written));
     }
 
     /**
@@ -253,11 +133,6 @@ public interface ResourceKind {
      * selection means <i>everything</i> there.
      */
     static ResourceKind of(Value value) {
-        return switch (value) {
-            case Value.Resource resource -> resource.kind();
-            case Value.Selection selection -> selection.kind();
-            case Value.Request request -> of(request.kind());
-            case null, default -> null;
-        };
+        return full(Kinds.of(value));
     }
 }

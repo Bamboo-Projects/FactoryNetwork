@@ -1,7 +1,5 @@
 package dev.devpanda.factorynetwork.runtime;
 
-import net.minecraft.world.item.Item;
-
 import java.util.List;
 
 /**
@@ -28,15 +26,18 @@ public sealed interface Value {
      *
      * <p><b>One shape for three kinds.</b> Previously three records stood here
      * side by side, and with them three twin branches in every place that
-     * handles values. What differs per kind lives in {@link ResourceKind};
-     * what is the same lives here, once.
+     * handles values. What differs per kind lives in {@link Kind}; what is
+     * the same lives here, once.
      *
-     * <p>{@code key} carries the resource itself: an {@link Item}, a
-     * {@code Fluid} or — for a chemical — its identifier as text. The
-     * constructor checks that it matches the kind; whoever extracts it uses
-     * {@link #item()}, {@link #fluid()} or {@link #chemical()}.
+     * <p>{@code key} carries the resource itself: an item, a fluid or — for a
+     * chemical — its identifier as text. The constructor checks that it
+     * matches the kind.
+     *
+     * <p><b>This type does not name the game's classes.</b> Whoever extracts
+     * the key says what they expect — {@code Item item = value.item()} — and
+     * the kind has already vouched that it is one.
      */
-    record Resource(ResourceKind kind, Object key) implements Value {
+    record Resource(Kind kind, Object key) implements Value {
 
         public Resource {
             if (!kind.type().isInstance(key)) {
@@ -45,24 +46,28 @@ public sealed interface Value {
             }
         }
 
-        public static Resource ofItem(Item item) {
-            return new Resource(ResourceKinds.ITEM, item);
+        public static Resource ofItem(Object item) {
+            return new Resource(Kinds.item(), item);
         }
 
-        public static Resource ofFluid(net.minecraft.world.level.material.Fluid fluid) {
-            return new Resource(ResourceKinds.FLUID, fluid);
+        public static Resource ofFluid(Object fluid) {
+            return new Resource(Kinds.fluid(), fluid);
         }
 
         public static Resource ofChemical(String id) {
-            return new Resource(ResourceKinds.CHEMICAL, id);
+            return new Resource(Kinds.chemical(), id);
         }
 
-        public Item item() {
-            return (Item) key;
+        /** The key as the item it is. */
+        @SuppressWarnings("unchecked")
+        public <T> T item() {
+            return (T) key;
         }
 
-        public net.minecraft.world.level.material.Fluid fluid() {
-            return (net.minecraft.world.level.material.Fluid) key;
+        /** The key as the fluid it is. */
+        @SuppressWarnings("unchecked")
+        public <T> T fluid() {
+            return (T) key;
         }
 
         public String chemical() {
@@ -136,12 +141,12 @@ public sealed interface Value {
      * millibuckets. {@code amount} is {@code -1} when none was written.
      *
      * <p>The resources themselves live in {@code keys}, in the form that
-     * {@link ResourceKind#type()} names for this kind. Mixing is not possible:
+     * {@link Kind#type()} names for this kind. Mixing is not possible:
      * the constructor checks every entry. A selection over water and stone
      * would be something different at every usage site — the same rule that
      * {@code FilterKind} establishes for templates.
      */
-    record Selection(ResourceKind kind, List<?> keys, long amount) implements Value {
+    record Selection(Kind kind, List<?> keys, long amount) implements Value {
 
         public Selection {
             keys = List.copyOf(keys);
@@ -153,27 +158,28 @@ public sealed interface Value {
             }
         }
 
-        public static Selection ofItems(List<Item> items, long amount) {
-            return new Selection(ResourceKinds.ITEM, items, amount);
+        public static Selection ofItems(List<?> items, long amount) {
+            return new Selection(Kinds.item(), items, amount);
         }
 
-        public static Selection ofFluids(
-                List<net.minecraft.world.level.material.Fluid> fluids, long amount) {
-            return new Selection(ResourceKinds.FLUID, fluids, amount);
+        public static Selection ofFluids(List<?> fluids, long amount) {
+            return new Selection(Kinds.fluid(), fluids, amount);
         }
 
         public static Selection ofChemicals(List<String> ids, long amount) {
-            return new Selection(ResourceKinds.CHEMICAL, ids, amount);
+            return new Selection(Kinds.chemical(), ids, amount);
         }
 
+        /** The keys as the items they are. */
         @SuppressWarnings("unchecked")
-        public List<Item> items() {
-            return (List<Item>) keys;
+        public <T> List<T> items() {
+            return (List<T>) keys;
         }
 
+        /** The keys as the fluids they are. */
         @SuppressWarnings("unchecked")
-        public List<net.minecraft.world.level.material.Fluid> fluids() {
-            return (List<net.minecraft.world.level.material.Fluid>) keys;
+        public <T> List<T> fluids() {
+            return (List<T>) keys;
         }
 
         @SuppressWarnings("unchecked")

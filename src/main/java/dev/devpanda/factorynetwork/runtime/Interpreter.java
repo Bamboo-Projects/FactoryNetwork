@@ -499,7 +499,7 @@ public final class Interpreter {
             // Ask for the kind rather than guess: a fluid selector would
             // match nothing in the item resolution, and a loop over nothing
             // looks like one that had nothing to do.
-            ResourceKind kind = ResourceKind.orItems(request.kind());
+            Kind kind = Kinds.orItems(request.kind());
             return kind.resolve(iterable).stream()
                     .map(key -> (Value) new Value.Resource(kind, key)).toList();
         }
@@ -901,15 +901,14 @@ public final class Interpreter {
         // Via the expression and not via its written form: a third-party
         // kind is merely CUSTOM in the enum, and which one it is stands in
         // the prefix.
-        ResourceKind written = ResourceKind.of(
-                dev.devpanda.factorynetwork.lang.WorkerKind.selectorOf(expr));
-        ResourceKind kind = written == null ? ResourceKinds.ITEM : written;
+        Kind written = Kinds.ofExpression(expr);
+        Kind kind = written == null ? Kinds.item() : written;
         List<?> keys = kind.resolve(expr);
         if (keys.isEmpty()) {
             // If the mod behind the kind is missing, a selection of it
             // matches nothing, and the message must say what the cause is —
             // not pretend the pack is to blame.
-            ResourceKind.Problem missing = kind.unavailable();
+            Kind.Problem missing = kind.unavailable();
             throw missing != null
                     ? new ScriptError(missing.message(), missing.hint())
                     : nothingSelected();
@@ -972,9 +971,9 @@ public final class Interpreter {
         if (template == null) {
             return null;
         }
-        ResourceKind kind = dev.devpanda.factorynetwork.lang.FilterKind.of(template)
+        Kind kind = dev.devpanda.factorynetwork.lang.FilterKind.of(template)
                         == dev.devpanda.factorynetwork.lang.FilterKind.FLUID
-                ? ResourceKinds.FLUID : ResourceKinds.ITEM;
+                ? Kinds.fluid() : Kinds.item();
         // First everything together, then the exclusions removed — not
         // alternating line by line, so that the order of the lines does not
         // matter. Resolved by the kind itself: the same place as for every
@@ -1192,7 +1191,7 @@ public final class Interpreter {
                 : throwNoSingleKind(selection.kind(), selection.keys().size());
     }
 
-    private static Value throwNoSingleKind(ResourceKind kind, int kinds) {
+    private static Value throwNoSingleKind(Kind kind, int kinds) {
         throw new ScriptError("Diese Auswahl meint " + (kinds == 0 ? "keine" : kinds)
                 + " Art" + (kinds == 1 ? "" : "en") + ".",
                 "it." + kind.prefix() + " gibt es nur an einem Posten, der genau eine "
