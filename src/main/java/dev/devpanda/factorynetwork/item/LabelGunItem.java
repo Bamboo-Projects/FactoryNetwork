@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.item;
 
+import dev.devpanda.factorynetwork.platform.Chat;
 import dev.devpanda.factorynetwork.platform.Nbt;
 import dev.devpanda.factorynetwork.block.entity.ControllerBlockEntity;
 import dev.devpanda.factorynetwork.block.entity.DisplayBlockEntity;
@@ -130,16 +131,16 @@ public class LabelGunItem extends Item {
     public InteractionResultHolder<ItemStack> use(Level level, Player player,
                                                   InteractionHand hand) {
         ItemStack gun = player.getItemInHand(hand);
-        if (level.isClientSide) {
+        if (level.isClientSide()) {
             LabelGunScreenOpener.open(gun);
         }
-        return InteractionResultHolder.sidedSuccess(gun, level.isClientSide);
+        return InteractionResultHolder.sidedSuccess(gun, level.isClientSide());
     }
 
     @Override
     public InteractionResult useOn(UseOnContext context) {
         Level level = context.getLevel();
-        if (level.isClientSide) {
+        if (level.isClientSide()) {
             return InteractionResult.SUCCESS;
         }
         Player player = context.getPlayer();
@@ -338,7 +339,7 @@ public class LabelGunItem extends Item {
     }
 
     private static void say(Player player, String key, Object... arguments) {
-        player.displayClientMessage(Component.translatable(key, arguments), true);
+        Chat.tell(player, Component.translatable(key, arguments), true);
     }
 
     @Override

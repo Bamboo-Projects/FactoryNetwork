@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.block;
 
+import dev.devpanda.factorynetwork.platform.Chat;
 import dev.devpanda.factorynetwork.block.entity.MastBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.Containers;
@@ -66,17 +67,17 @@ public class MastBlock extends Block implements EntityBlock {
         if (RemoteDeviceItem.deviceOf(held) == null) {
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
-        if (level.isClientSide) {
+        if (level.isClientSide()) {
             return ItemInteractionResult.SUCCESS;
         }
         net.minecraft.core.GlobalPos where =
                 net.minecraft.core.GlobalPos.of(level.dimension(), pos);
         if (!RemoteDeviceItem.couple(held, where)) {
-            player.displayClientMessage(
+            Chat.tell(player, 
                     Component.translatable("message.factorynetwork.remote.unbound"), true);
             return ItemInteractionResult.CONSUME;
         }
-        player.displayClientMessage(
+        Chat.tell(player, 
                 Component.translatable("message.factorynetwork.remote.bound",
                         RemoteDeviceItem.describe(where)), true);
         level.playSound(null, pos, SoundEvents.AMETHYST_BLOCK_CHIME,
@@ -88,7 +89,7 @@ public class MastBlock extends Block implements EntityBlock {
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
                                                Player player, BlockHitResult hit) {
-        if (level.isClientSide) {
+        if (level.isClientSide()) {
             return InteractionResult.SUCCESS;
         }
         if (!(level.getBlockEntity(pos) instanceof MastBlockEntity mast)) {

@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.block;
 
+import dev.devpanda.factorynetwork.platform.Chat;
 import com.mojang.serialization.MapCodec;
 import dev.devpanda.factorynetwork.block.entity.DriveBlockEntity;
 import net.minecraft.core.BlockPos;
@@ -80,7 +81,7 @@ public class DriveBlock extends HorizontalDirectionalBlock implements EntityBloc
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
                                                Player player, BlockHitResult hit) {
-        if (level.isClientSide) {
+        if (level.isClientSide()) {
             return InteractionResult.SUCCESS;
         }
         if (!(level.getBlockEntity(pos)
@@ -110,20 +111,20 @@ public class DriveBlock extends HorizontalDirectionalBlock implements EntityBloc
         if (!dev.devpanda.factorynetwork.compat.ae2.Ae2Cells.isCell(held)) {
             return net.minecraft.world.ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
-        if (level.isClientSide) {
+        if (level.isClientSide()) {
             return net.minecraft.world.ItemInteractionResult.SUCCESS;
         }
         var controller = dev.devpanda.factorynetwork.network.ControllerRegistry
                 .owning(level, pos);
         if (controller.isEmpty()) {
-            player.displayClientMessage(net.minecraft.network.chat.Component
+            Chat.tell(player, net.minecraft.network.chat.Component
                     .translatable("message.factorynetwork.import.no_network"), true);
             return net.minecraft.world.ItemInteractionResult.CONSUME;
         }
         long moved = dev.devpanda.factorynetwork.compat.ae2.Ae2Cells.drainInto(
                 held, controller.get().storage());
         controller.get().setChanged();
-        player.displayClientMessage(net.minecraft.network.chat.Component.translatable(
+        Chat.tell(player, net.minecraft.network.chat.Component.translatable(
                 moved > 0 ? "message.factorynetwork.import.moved"
                           : "message.factorynetwork.import.nothing", moved), true);
         if (moved > 0) {

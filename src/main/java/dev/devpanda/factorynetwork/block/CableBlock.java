@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.block;
 
+import dev.devpanda.factorynetwork.platform.Chat;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.Direction;
 import net.minecraft.core.BlockPos;
@@ -408,7 +409,7 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
         // connector already sits there, and the cable follows.
         if (!carries(state)
                 && stack.getItem() instanceof dev.devpanda.factorynetwork.item.ColouredCableItem cable) {
-            if (!level.isClientSide) {
+            if (!level.isClientSide()) {
                 level.setBlock(pos, withConnections(state
                                 .setValue(CABLE, true)
                                 .setValue(COLOUR, cable.colour()),
@@ -421,7 +422,7 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
                         net.minecraft.sounds.SoundSource.BLOCKS, 0.9F, 1.0F);
                 dev.devpanda.factorynetwork.network.ControllerRegistry.refreshAround(level, pos);
             }
-            return net.minecraft.world.ItemInteractionResult.sidedSuccess(level.isClientSide);
+            return net.minecraft.world.ItemInteractionResult.sidedSuccess(level.isClientSide());
         }
         if (!stack.is(dev.devpanda.factorynetwork.registry.FnItems.CONNECTOR.get())
                 || !(level.getBlockEntity(pos) instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus)) {
@@ -430,13 +431,13 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
         }
         Direction side = hit.getDirection();
         if (!hasRoomForPart(state, level, pos, side)) {
-            if (!level.isClientSide) {
-                player.displayClientMessage(net.minecraft.network.chat.Component.translatable(
+            if (!level.isClientSide()) {
+                Chat.tell(player, net.minecraft.network.chat.Component.translatable(
                         "message.factorynetwork.connector.no_room"), true);
             }
-            return net.minecraft.world.ItemInteractionResult.sidedSuccess(level.isClientSide);
+            return net.minecraft.world.ItemInteractionResult.sidedSuccess(level.isClientSide());
         }
-        if (!level.isClientSide) {
+        if (!level.isClientSide()) {
             bus.addPart(side);
             if (!player.getAbilities().instabuild) {
                 stack.shrink(1);
@@ -447,7 +448,7 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
             level.setBlock(pos, withConnections(state, level, pos), UPDATE_ALL);
             dev.devpanda.factorynetwork.network.ControllerRegistry.refreshAround(level, pos);
         }
-        return net.minecraft.world.ItemInteractionResult.sidedSuccess(level.isClientSide);
+        return net.minecraft.world.ItemInteractionResult.sidedSuccess(level.isClientSide());
     }
 
     /**
@@ -524,12 +525,12 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
         // this path while sneaking too, as long as both hands are empty — the
         // distinction rests exactly on that.
         if (player.isSecondaryUseActive()) {
-            if (!level.isClientSide) {
+            if (!level.isClientSide()) {
                 removePart(level, pos, side, player);
             }
-            return net.minecraft.world.InteractionResult.sidedSuccess(level.isClientSide);
+            return net.minecraft.world.InteractionResult.sidedSuccess(level.isClientSide());
         }
-        if (level.isClientSide) {
+        if (level.isClientSide()) {
             return net.minecraft.world.InteractionResult.SUCCESS;
         }
         player.openMenu(new net.minecraft.world.SimpleMenuProvider(

@@ -1,0 +1,26 @@
+// Reference, not compiled: the same class as in platform/client/, written against
+// Minecraft 26.1.2 (NeoForge 26.1.2.114). Compiled there in a scratch copy on
+// 7 October 2026.
+
+package dev.devpanda.factorynetwork.platform.client;
+
+import net.minecraft.client.Minecraft;
+
+/** The 26.1 shape of the same promise. */
+public final class Keys {
+
+    private Keys() {
+    }
+
+    public static boolean shift() {
+        return Minecraft.getInstance().hasShiftDown();
+    }
+
+    public static boolean control() {
+        return Minecraft.getInstance().hasControlDown();
+    }
+
+    public static boolean alt() {
+        return Minecraft.getInstance().hasAltDown();
+    }
+}

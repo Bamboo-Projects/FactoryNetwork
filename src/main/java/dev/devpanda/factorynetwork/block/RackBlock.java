@@ -135,7 +135,7 @@ public class RackBlock extends HorizontalDirectionalBlock implements EntityBlock
     @Override
     public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state,
                                         Player player) {
-        if (!level.isClientSide && state.getValue(HALF) == DoubleBlockHalf.UPPER) {
+        if (!level.isClientSide() && state.getValue(HALF) == DoubleBlockHalf.UPPER) {
             BlockPos below = pos.below();
             BlockState lower = level.getBlockState(below);
             if (lower.is(this) && lower.getValue(HALF) == DoubleBlockHalf.LOWER) {
@@ -162,7 +162,7 @@ public class RackBlock extends HorizontalDirectionalBlock implements EntityBlock
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
                                                Player player, BlockHitResult hit) {
-        if (level.isClientSide) {
+        if (level.isClientSide()) {
             return InteractionResult.SUCCESS;
         }
         if (!(level.getBlockEntity(baseOf(state, pos)) instanceof ShelfBlockEntity shelf)) {

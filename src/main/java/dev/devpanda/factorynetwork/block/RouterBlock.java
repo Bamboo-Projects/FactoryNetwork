@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.block;
 
+import dev.devpanda.factorynetwork.platform.Chat;
 import com.mojang.serialization.MapCodec;
 import dev.devpanda.factorynetwork.block.entity.RouterBlockEntity;
 import dev.devpanda.factorynetwork.network.ControllerRegistry;
@@ -68,7 +69,7 @@ public class RouterBlock extends Block implements EntityBlock {
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
                                                Player player, BlockHitResult hit) {
-        if (level.isClientSide) {
+        if (level.isClientSide()) {
             return InteractionResult.SUCCESS;
         }
         if (!(level.getBlockEntity(pos) instanceof RouterBlockEntity router)) {
@@ -84,7 +85,7 @@ public class RouterBlock extends Block implements EntityBlock {
         int lane = router.cycle(side);
         level.playSound(null, pos, SoundEvents.LEVER_CLICK, SoundSource.BLOCKS,
                 0.3F, lane == RouterBlockEntity.OFF ? 0.5F : 0.6F + lane * 0.15F);
-        player.displayClientMessage(lane == RouterBlockEntity.OFF
+        Chat.tell(player, lane == RouterBlockEntity.OFF
                 ? net.minecraft.network.chat.Component.translatable(
                         "message.factorynetwork.router.off", sideName(side))
                 : net.minecraft.network.chat.Component.translatable(

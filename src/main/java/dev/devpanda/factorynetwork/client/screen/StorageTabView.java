@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.client.screen;
 
+import dev.devpanda.factorynetwork.platform.client.Keys;
 import dev.devpanda.factorynetwork.FactoryNetwork;
 import dev.devpanda.factorynetwork.client.ClientStorageView;
 import dev.devpanda.factorynetwork.client.StorageSort;
@@ -261,7 +262,7 @@ public class StorageTabView {
         // Familiar bindings: left a full stack, right a half one.
         int stack = entry.stack().getMaxStackSize();
         int wanted = button == 1 ? Math.max(1, stack / 2) : stack;
-        if (Screen.hasShiftDown()) {
+        if (Keys.shift()) {
             wanted = stack;
         }
         PacketDistributor.sendToServer(new StorageActionPacket(

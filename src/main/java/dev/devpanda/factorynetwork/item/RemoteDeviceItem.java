@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.item;
 
+import dev.devpanda.factorynetwork.platform.Chat;
 import dev.devpanda.factorynetwork.registry.FnComponents;
 import dev.devpanda.factorynetwork.terminal.RemoteAccess;
 import dev.devpanda.factorynetwork.upgrade.Loadout;
@@ -177,7 +178,7 @@ public class RemoteDeviceItem extends Item {
     public InteractionResultHolder<ItemStack> use(Level level, Player player,
                                                   InteractionHand hand) {
         ItemStack held = player.getItemInHand(hand);
-        if (level.isClientSide) {
+        if (level.isClientSide()) {
             return InteractionResultHolder.success(held);
         }
         GlobalPos mast = mastOf(held);
@@ -243,7 +244,7 @@ public class RemoteDeviceItem extends Item {
     /** A refusal with a reason. */
     private static InteractionResultHolder<ItemStack> refuse(Player player, ItemStack held,
                                                              String message) {
-        player.displayClientMessage(Component.translatable(message), true);
+        Chat.tell(player, Component.translatable(message), true);
         return InteractionResultHolder.fail(held);
     }
 

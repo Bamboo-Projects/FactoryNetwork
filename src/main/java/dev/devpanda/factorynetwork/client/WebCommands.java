@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.client;
 
+import dev.devpanda.factorynetwork.platform.Chat;
 import dev.devpanda.factorynetwork.FactoryNetwork;
 import net.minecraft.client.Minecraft;
 import net.minecraft.commands.Commands;
@@ -79,7 +80,7 @@ public final class WebCommands {
     private static void say(String message) {
         Minecraft client = Minecraft.getInstance();
         if (client.player != null) {
-            client.player.displayClientMessage(Component.literal(message), false);
+            Chat.tell(client.player, Component.literal(message), false);
         }
     }
 }

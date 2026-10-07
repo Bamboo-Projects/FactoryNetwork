@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.item;
 
+import dev.devpanda.factorynetwork.platform.Chat;
 import dev.devpanda.factorynetwork.platform.Nbt;
 import dev.devpanda.factorynetwork.analyser.AnalyserScan;
 import dev.devpanda.factorynetwork.block.entity.ControllerBlockEntity;
@@ -48,21 +49,21 @@ public class NetworkAnalyserItem extends Item {
     public InteractionResult useOn(UseOnContext context) {
         Level level = context.getLevel();
         BlockPos pos = context.getClickedPos();
-        if (level.isClientSide) {
+        if (level.isClientSide()) {
             return ControllerRegistry.owning(level, pos).isPresent()
                     ? InteractionResult.SUCCESS : InteractionResult.PASS;
         }
         Optional<ControllerBlockEntity> controller = ControllerRegistry.owning(level, pos);
         if (controller.isEmpty()) {
             if (context.getPlayer() != null) {
-                context.getPlayer().displayClientMessage(Component.translatable(
+                Chat.tell(context.getPlayer(), Component.translatable(
                         "message.factorynetwork.analyser.no_network"), true);
             }
             return InteractionResult.CONSUME;
         }
         remember(context.getItemInHand(), controller.get().getBlockPos());
         if (context.getPlayer() != null) {
-            context.getPlayer().displayClientMessage(deviceLine(level, pos), true);
+            Chat.tell(context.getPlayer(), deviceLine(level, pos), true);
         }
         return InteractionResult.CONSUME;
     }
@@ -109,7 +110,7 @@ public class NetworkAnalyserItem extends Item {
     @Override
     public void inventoryTick(ItemStack stack, Level level, Entity entity, int slot,
                               boolean selected) {
-        if (level.isClientSide || !selected || !(entity instanceof ServerPlayer player)) {
+        if (level.isClientSide() || !selected || !(entity instanceof ServerPlayer player)) {
             return;
         }
         if (level.getGameTime() % INTERVAL != 0) {

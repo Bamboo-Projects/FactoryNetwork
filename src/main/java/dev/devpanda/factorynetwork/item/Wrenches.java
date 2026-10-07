@@ -67,7 +67,7 @@ public final class Wrenches {
         if (side == null || bus.partAt(side) == null) {
             return false;
         }
-        if (level.isClientSide) {
+        if (level.isClientSide()) {
             return true;
         }
         bus.removePart(side);

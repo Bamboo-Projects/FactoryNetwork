@@ -171,7 +171,7 @@ public class DisplayBlock extends HorizontalDirectionalBlock implements EntityBl
     @Override
     public <T extends BlockEntity> @Nullable BlockEntityTicker<T> getTicker(
             Level level, BlockState state, BlockEntityType<T> type) {
-        if (level.isClientSide) {
+        if (level.isClientSide()) {
             return null;
         }
         return type == FnBlockEntities.DISPLAY.get()
@@ -190,7 +190,7 @@ public class DisplayBlock extends HorizontalDirectionalBlock implements EntityBl
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
                                                Player player, BlockHitResult hit) {
-        if (level.isClientSide) {
+        if (level.isClientSide()) {
             return InteractionResult.SUCCESS;
         }
         if (!(level.getBlockEntity(pos) instanceof DisplayBlockEntity)) {

@@ -138,7 +138,7 @@ public class PressBlockEntity extends BlockEntity
      * nothing.
      */
     public void serverTick() {
-        if (level == null || level.isClientSide) {
+        if (level == null || level.isClientSide()) {
             return;
         }
         Optional<PressRecipe> recipe = recipeFor();

@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.runtime;
 
+import dev.devpanda.factorynetwork.platform.Names;
 import dev.devpanda.factorynetwork.lang.ast.Expr;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.material.Fluid;
@@ -70,7 +71,7 @@ public final class SelectionSummary {
             }
         } else {
             for (Item item : ItemSelection.resolve(selector)) {
-                names.add(item.getDescription().getString());
+                names.add(Names.of(item));
             }
         }
         return summarise(lines, names);

@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.block;
 
+import dev.devpanda.factorynetwork.platform.Chat;
 import com.mojang.serialization.MapCodec;
 import dev.devpanda.factorynetwork.block.entity.ControllerBlockEntity;
 import dev.devpanda.factorynetwork.registry.FnBlockEntities;
@@ -49,7 +50,7 @@ public class ControllerBlock extends Block implements EntityBlock {
     @Override
     public <T extends BlockEntity> @Nullable BlockEntityTicker<T> getTicker(
             Level level, BlockState state, net.minecraft.world.level.block.entity.BlockEntityType<T> type) {
-        if (level.isClientSide) {
+        if (level.isClientSide()) {
             return null;
         }
         return type == FnBlockEntities.CONTROLLER.get()
@@ -77,12 +78,12 @@ public class ControllerBlock extends Block implements EntityBlock {
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
                                                Player player, BlockHitResult hit) {
-        if (level.isClientSide) {
+        if (level.isClientSide()) {
             return InteractionResult.SUCCESS;
         }
         if (level.getBlockEntity(pos) instanceof ControllerBlockEntity controller) {
             controller.rebuildNetwork();
-            player.displayClientMessage(Component.translatable(
+            Chat.tell(player, Component.translatable(
                     "message.factorynetwork.controller.status",
                     controller.graph().connectorCount(),
                     controller.graph().unnamedConnectors().size(),

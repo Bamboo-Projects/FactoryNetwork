@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.client.screen;
 
+import dev.devpanda.factorynetwork.platform.client.Keys;
 import dev.devpanda.factorynetwork.lang.Diagnostic;
 import dev.devpanda.factorynetwork.lang.Lexer;
 import dev.devpanda.factorynetwork.lang.Token;
@@ -691,7 +692,7 @@ public class CodeEditor {
      * copy — and not type a C because the check stood further down.
      */
     private boolean handleShortcut(int key) {
-        if (!net.minecraft.client.gui.screens.Screen.hasControlDown()) {
+        if (!Keys.control()) {
             return false;
         }
         switch (key) {
@@ -733,7 +734,7 @@ public class CodeEditor {
                 // Ctrl+Y would be swapped depending on the layout. Mapping both
                 // to the same thing is the resolution that does the expected
                 // thing on every layout.
-                if (net.minecraft.client.gui.screens.Screen.hasShiftDown()) {
+                if (Keys.shift()) {
                     redo();
                 } else {
                     undo();
@@ -824,7 +825,7 @@ public class CodeEditor {
      * stays — it is recomputed on every frame.
      */
     private void move(Runnable movement) {
-        if (net.minecraft.client.gui.screens.Screen.hasShiftDown()) {
+        if (Keys.shift()) {
             anchorIfNeeded();
         } else {
             clearSelection();
@@ -906,7 +907,7 @@ public class CodeEditor {
             }
             case 258 -> { // Tab: four spaces, never a tab character
                 remember(EditKind.STRUCTURAL);
-                boolean shift = net.minecraft.client.gui.screens.Screen.hasShiftDown();
+                boolean shift = Keys.shift();
                 if (shift || hasSelection()) {
                     indentLines(shift);
                 } else {
@@ -964,7 +965,7 @@ public class CodeEditor {
      * file you are reading.
      */
     private boolean readOnlyKey(int key, int scanCode, int modifiers) {
-        boolean control = net.minecraft.client.gui.screens.Screen.hasControlDown();
+        boolean control = Keys.control();
         if (control && (key == 67 || key == 65)) { // C and A
             if (key == 65) {
                 anchorLine = 0;
@@ -1089,7 +1090,7 @@ public class CodeEditor {
             return false;
         }
         int step = (int) Math.signum(delta) * 3;
-        if (net.minecraft.client.gui.screens.Screen.hasShiftDown()) {
+        if (Keys.shift()) {
             int max = Math.max(0, longestLine() - visibleColumns());
             scrollColumn = Mth.clamp(scrollColumn - step * 2, 0, max);
             return true;
@@ -1682,7 +1683,7 @@ public class CodeEditor {
     //
     // The editing steps from here on stand without a visibility modifier: the
     // test in the same package calls them directly. Over the keyboard they
-    // couldn't be checked — hasControlDown() asks the window, and in the test
+    // couldn't be checked — Keys.control() asks the window, and in the test
     // there is none.
 
     /**
@@ -1956,7 +1957,7 @@ public class CodeEditor {
             return true;
         }
 
-        if (net.minecraft.client.gui.screens.Screen.hasShiftDown()) {
+        if (Keys.shift()) {
             anchorIfNeeded();
         } else {
             clearSelection();
@@ -2217,13 +2218,13 @@ public class CodeEditor {
             }
             case 257, 335 -> { // Enter
                 if (!replacing) {
-                    step(net.minecraft.client.gui.screens.Screen.hasShiftDown() ? -1 : 1);
+                    step(Keys.shift() ? -1 : 1);
                     return true;
                 }
                 // With Alt all at once — Ctrl and Enter is already the accept
                 // in the terminal, and two meanings for one gesture are one too
                 // many.
-                if (net.minecraft.client.gui.screens.Screen.hasAltDown()) {
+                if (Keys.alt()) {
                     replaceAll();
                 } else {
                     replaceCurrent();

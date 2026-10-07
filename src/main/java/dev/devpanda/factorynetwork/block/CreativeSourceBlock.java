@@ -94,7 +94,7 @@ public class CreativeSourceBlock extends Block {
     protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState,
                            boolean moved) {
         super.onPlace(state, level, pos, oldState, moved);
-        if (!level.isClientSide) {
+        if (!level.isClientSide()) {
             level.scheduleTick(pos, this, 1);
         }
     }

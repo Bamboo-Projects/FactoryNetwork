@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.client.screen;
 
+import dev.devpanda.factorynetwork.platform.client.Keys;
 import dev.devpanda.factorynetwork.FactoryNetwork;
 import dev.devpanda.factorynetwork.client.FnFonts;
 import dev.devpanda.factorynetwork.client.ClientNetworkState;
@@ -442,11 +443,11 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
     public boolean keyPressed(int key, int scanCode, int modifiers) {
         if (tab == TerminalTab.CODE) {
             // Ctrl+Enter applies the program.
-            if ((key == 257 || key == 335) && hasControlDown()) {
+            if ((key == 257 || key == 335) && Keys.control()) {
                 deploy();
                 return true;
             }
-            if (key == 83 && hasControlDown()) {
+            if (key == 83 && Keys.control()) {
                 dev.devpanda.factorynetwork.client.ClientProjectState.flush();
                 return true;
             }

@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.runtime;
 
+import dev.devpanda.factorynetwork.platform.Names;
 import dev.devpanda.factorynetwork.lang.WorkerKind;
 import dev.devpanda.factorynetwork.lang.ast.Decl;
 import dev.devpanda.factorynetwork.lang.ast.Expr;
@@ -988,7 +989,7 @@ public final class WorkerRuntime {
             if (gap <= 0) {
                 continue;
             }
-            String name = item.getDescription().getString();
+            String name = Names.of(item);
             if (crafting.order(item, (int) gap)) {
                 ordered.add(gap + " " + name);
             } else {

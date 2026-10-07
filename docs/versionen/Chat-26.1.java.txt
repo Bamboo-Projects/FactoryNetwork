@@ -1,0 +1,23 @@
+// Reference, not compiled: the same class as in platform/, written against
+// Minecraft 26.1.2 (NeoForge 26.1.2.114). Compiled there in a scratch copy on
+// 7 October 2026.
+
+package dev.devpanda.factorynetwork.platform;
+
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.player.Player;
+
+/** The 26.1 shape of the same promise. */
+public final class Chat {
+
+    private Chat() {
+    }
+
+    public static void tell(Player player, Component message, boolean overlay) {
+        if (overlay) {
+            player.sendOverlayMessage(message);
+        } else {
+            player.sendSystemMessage(message);
+        }
+    }
+}

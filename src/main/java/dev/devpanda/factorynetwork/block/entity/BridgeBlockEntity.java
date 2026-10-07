@@ -69,7 +69,7 @@ public class BridgeBlockEntity extends BlockEntity implements Container {
      * you touch on every tick.
      */
     private void syncRegistration() {
-        if (level == null || level.isClientSide) {
+        if (level == null || level.isClientSide()) {
             return;
         }
         UUID now = pair();
@@ -95,7 +95,7 @@ public class BridgeBlockEntity extends BlockEntity implements Container {
      * gained a partner — nothing else touches it.
      */
     private void showLink() {
-        if (level == null || level.isClientSide) {
+        if (level == null || level.isClientSide()) {
             return;
         }
         BlockPos partner = partner();
@@ -127,7 +127,7 @@ public class BridgeBlockEntity extends BlockEntity implements Container {
 
     @Override
     public void setRemoved() {
-        if (level != null && !level.isClientSide && registered != null) {
+        if (level != null && !level.isClientSide() && registered != null) {
             // Remember the counterpart before unregistration makes it
             // unfindable: it is not touched when this one is broken, and would
             // otherwise never learn that it is alone — a light with nothing

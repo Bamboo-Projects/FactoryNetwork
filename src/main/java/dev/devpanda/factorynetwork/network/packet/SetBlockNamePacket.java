@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.network.packet;
 
+import dev.devpanda.factorynetwork.platform.Chat;
 import dev.devpanda.factorynetwork.FactoryNetwork;
 import dev.devpanda.factorynetwork.block.entity.DisplayBlockEntity;
 import dev.devpanda.factorynetwork.item.ConnectorNaming;
@@ -174,6 +175,6 @@ public record SetBlockNamePacket(BlockPos position, int side, String name)
     }
 
     private static void say(ServerPlayer player, String key, Object... arguments) {
-        player.displayClientMessage(Component.translatable(key, arguments), true);
+        Chat.tell(player, Component.translatable(key, arguments), true);
     }
 }

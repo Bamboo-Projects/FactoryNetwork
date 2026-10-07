@@ -58,7 +58,7 @@ public class ConnectorItem extends Item {
         if (!level.getBlockState(target).canBeReplaced()) {
             return InteractionResult.PASS;
         }
-        if (level.isClientSide) {
+        if (level.isClientSide()) {
             return InteractionResult.SUCCESS;
         }
         // A holder: the same block as a cable, only without a cable run in it.

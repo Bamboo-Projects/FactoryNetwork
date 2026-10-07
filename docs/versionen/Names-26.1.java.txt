@@ -1,0 +1,19 @@
+// Reference, not compiled: the same class as in platform/, written against
+// Minecraft 26.1.2 (NeoForge 26.1.2.114). Compiled there in a scratch copy on
+// 7 October 2026.
+
+package dev.devpanda.factorynetwork.platform;
+
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+
+/** The 26.1 shape of the same promise. */
+public final class Names {
+
+    private Names() {
+    }
+
+    public static String of(Item item) {
+        return item.getName(new ItemStack(item)).getString();
+    }
+}

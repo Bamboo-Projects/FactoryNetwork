@@ -74,7 +74,7 @@ public class BurnerBlock extends HorizontalDirectionalBlock implements EntityBlo
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state,
                                                                   BlockEntityType<T> type) {
-        if (level.isClientSide) {
+        if (level.isClientSide()) {
             return null;
         }
         return type != FnBlockEntities.BURNER.get() ? null
@@ -86,7 +86,7 @@ public class BurnerBlock extends HorizontalDirectionalBlock implements EntityBlo
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
                                                Player player, BlockHitResult hit) {
-        if (level.isClientSide) {
+        if (level.isClientSide()) {
             return InteractionResult.SUCCESS;
         }
         if (level.getBlockEntity(pos) instanceof BurnerBlockEntity burner) {

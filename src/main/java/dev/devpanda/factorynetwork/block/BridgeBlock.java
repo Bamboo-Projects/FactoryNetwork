@@ -85,7 +85,7 @@ public class BridgeBlock extends Block implements EntityBlock {
         if (!bridge.getItem(0).isEmpty()) {
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
-        if (level.isClientSide) {
+        if (level.isClientSide()) {
             return ItemInteractionResult.SUCCESS;
         }
         bridge.setItem(0, held.split(1));
@@ -102,7 +102,7 @@ public class BridgeBlock extends Block implements EntityBlock {
                 || bridge.getItem(0).isEmpty()) {
             return InteractionResult.PASS;
         }
-        if (level.isClientSide) {
+        if (level.isClientSide()) {
             return InteractionResult.SUCCESS;
         }
         ItemStack taken = bridge.removeItemNoUpdate(0);

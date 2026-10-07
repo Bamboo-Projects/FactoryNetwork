@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.client.screen;
 
+import dev.devpanda.factorynetwork.platform.client.Keys;
 import dev.devpanda.factorynetwork.client.ClientDeployState;
 import dev.devpanda.factorynetwork.client.ClientProjectState;
 import dev.devpanda.factorynetwork.client.FnFonts;
@@ -382,7 +383,7 @@ public class CodeTabView {
         // Ctrl+click on a name: jump to the declaration or mark the block in
         // the world. For a long time this existed only in the standalone
         // window — the same gesture that led nowhere here.
-        if (net.minecraft.client.gui.screens.Screen.hasControlDown()
+        if (Keys.control()
                 && jumpToName(mouseX, mouseY)) {
             return true;
         }

@@ -77,7 +77,7 @@ public final class ControllerRegistry {
      * needed for would go uncovered.
      */
     public static void refreshAround(Level level, BlockPos pos) {
-        if (level.isClientSide) {
+        if (level.isClientSide()) {
             return;
         }
         for (BlockPos candidate : Set.copyOf(in(level))) {

@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.block.entity;
 
+import dev.devpanda.factorynetwork.platform.Names;
 import dev.devpanda.factorynetwork.platform.Nbt;
 import dev.devpanda.factorynetwork.lang.BuiltinEvents;
 import dev.devpanda.factorynetwork.lang.Diagnostic;
@@ -577,14 +578,14 @@ public class ControllerBlockEntity extends BlockEntity {
     @Override
     public void onLoad() {
         super.onLoad();
-        if (level != null && !level.isClientSide) {
+        if (level != null && !level.isClientSide()) {
             ControllerRegistry.add(level, worldPosition);
         }
     }
 
     @Override
     public void setRemoved() {
-        if (level != null && !level.isClientSide) {
+        if (level != null && !level.isClientSide()) {
             ControllerRegistry.remove(level, worldPosition);
         }
         super.setRemoved();
@@ -966,7 +967,7 @@ public class ControllerBlockEntity extends BlockEntity {
             if (storage.count(entry.getKey()) < entry.getValue()) {
                 job.note(dev.devpanda.factorynetwork.crafting.CraftingJob.Status.WAITING,
                         "es fehlt: " + entry.getValue() + " "
-                                + entry.getKey().getDescription().getString());
+                                + Names.of(entry.getKey()));
                 return false;
             }
         }
@@ -1015,7 +1016,7 @@ public class ControllerBlockEntity extends BlockEntity {
             // but it should be shown, otherwise a job over a machine looks for
             // minutes as if nothing were happening.
             job.note(dev.devpanda.factorynetwork.crafting.CraftingJob.Status.RUNNING,
-                    "baut " + step.yield() + " " + step.result().getDescription().getString());
+                    "baut " + step.yield() + " " + Names.of(step.result()));
         }
         return true;
     }
@@ -1097,7 +1098,7 @@ public class ControllerBlockEntity extends BlockEntity {
         job.setRunning(new dev.devpanda.factorynetwork.crafting.CraftingJob.Running(
                 step.station(), free, step.result(), placed * step.perCraft(), 0));
         job.note(dev.devpanda.factorynetwork.crafting.CraftingJob.Status.RUNNING,
-                placed + " " + ingredient.getDescription().getString() + " in " + free);
+                placed + " " + Names.of(ingredient) + " in " + free);
         return true;
     }
 
@@ -1480,7 +1481,7 @@ public class ControllerBlockEntity extends BlockEntity {
             job.produced((int) done);
         } else {
             job.note(dev.devpanda.factorynetwork.crafting.CraftingJob.Status.RUNNING,
-                    done + " " + running.result().getDescription().getString() + " fertig");
+                    done + " " + Names.of(running.result()) + " fertig");
         }
         return true;
     }
@@ -2081,7 +2082,7 @@ public class ControllerBlockEntity extends BlockEntity {
         for (var job : jobs) {
             lines.add(new dev.devpanda.factorynetwork.network.packet
                     .CraftingStatePacket.Line(job.id(),
-                    job.target().getDescription().getString(), job.wanted(), job.done(),
+                    Names.of(job.target()), job.wanted(), job.done(),
                     job.status().name(), job.detail()));
         }
         return lines;

@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.client.screen;
 
+import dev.devpanda.factorynetwork.platform.client.Keys;
 import dev.devpanda.factorynetwork.client.ClientDeployState;
 import dev.devpanda.factorynetwork.client.ClientNetworkState;
 import dev.devpanda.factorynetwork.client.ClientProjectState;
@@ -451,7 +452,7 @@ public class CodeScreen extends Screen {
             return true;
         }
         // Ctrl and click jump to the definition — across the files.
-        if (button == 0 && hasControlDown() && goToDefinition(mouseX, mouseY)) {
+        if (button == 0 && Keys.control() && goToDefinition(mouseX, mouseY)) {
             return true;
         }
         // A click on the footer jumps to the first message — again across
@@ -496,7 +497,7 @@ public class CodeScreen extends Screen {
             return true;
         }
         // Ctrl+Enter deploys, no matter where the focus currently is.
-        if ((key == 257 || key == 335) && hasControlDown()) {
+        if ((key == 257 || key == 335) && Keys.control()) {
             deploy();
             return true;
         }
@@ -507,7 +508,7 @@ public class CodeScreen extends Screen {
         if (key == RequestEdit.KEY && RequestEdit.ask(open)) {
             return true;
         }
-        if (key == 83 && hasControlDown()) {
+        if (key == 83 && Keys.control()) {
             ClientProjectState.flush();
             return true;
         }

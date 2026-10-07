@@ -168,7 +168,7 @@ public abstract class ShelfBlockEntity extends BlockEntity
         parts.set(slot, stack);
         revision++;
         setChanged();
-        if (level != null && !level.isClientSide) {
+        if (level != null && !level.isClientSide()) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
         }
     }

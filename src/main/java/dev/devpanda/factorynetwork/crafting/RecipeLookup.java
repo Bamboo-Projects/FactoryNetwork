@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.crafting;
 
+import dev.devpanda.factorynetwork.platform.Names;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -161,7 +162,7 @@ public final class RecipeLookup implements CraftingPlanner.Recipes<Item> {
         }
         List<String> lines = new ArrayList<>();
         missing.forEach((item, amount) ->
-                lines.add(amount + " " + item.getDescription().getString()));
+                lines.add(amount + " " + Names.of(item)));
         return "es fehlt: " + String.join(", ", lines);
     }
 }

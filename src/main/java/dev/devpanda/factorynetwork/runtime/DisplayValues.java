@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.runtime;
 
+import dev.devpanda.factorynetwork.platform.Names;
 import dev.devpanda.factorynetwork.lang.ast.Decl;
 import dev.devpanda.factorynetwork.lang.ast.Expr;
 import dev.devpanda.factorynetwork.network.FactoryGraph;
@@ -162,7 +163,7 @@ public final class DisplayValues {
         }
         if (member.target() instanceof Expr.Builtin builtin
                 && builtin.kind() == Expr.Builtin.Kind.STORAGE) {
-            return named(storage.byItem(), item -> item.getDescription().getString());
+            return named(storage.byItem(), item -> Names.of(item));
         }
         if (!(member.target() instanceof Expr.Name device) || level == null) {
             return null;
@@ -173,7 +174,7 @@ public final class DisplayValues {
         }
         var amounts = dev.devpanda.factorynetwork.block.entity.DeviceAmounts.of(connector);
         List<Map.Entry<String, Long>> found =
-                named(amounts.items(), item -> item.getDescription().getString());
+                named(amounts.items(), item -> Names.of(item));
         // A machine can hold both. Counting them separately and showing them
         // together is exactly what one wants to know standing in front of it.
         found.addAll(named(amounts.fluids(), fluid -> fluid.getFluidType()
