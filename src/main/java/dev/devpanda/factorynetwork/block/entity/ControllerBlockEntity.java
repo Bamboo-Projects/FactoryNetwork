@@ -54,7 +54,6 @@ import java.util.Set;
  */
 public class ControllerBlockEntity extends BlockEntity {
 
-    private static final String KEY_SOURCE = "Source";
     private static final String KEY_STORAGE = "Storage";
     private static final String KEY_FLOWS = "Flows";
     private static final String KEY_FLUIDS = "Fluids";
@@ -182,24 +181,8 @@ public class ControllerBlockEntity extends BlockEntity {
     /** Negative instead of Long.MIN_VALUE: the difference would otherwise overflow. */
     private long lastRebuild = -REBUILD_INTERVAL;
 
-    /**
-     * The project as a folder next to the world — the bridge to VS Code.
-     *
-     * <p>Created only at the first tick: before that there is no server and
-     * therefore no world folder.
-     */
-    private dev.devpanda.factorynetwork.lang.ProgramFolder programFolder;
-    private long lastFileCheck = -dev.devpanda.factorynetwork.lang.ProgramFolder.CHECK_INTERVAL;
-
-    /**
-     * Whether something has changed since the last write that belongs outside:
-     * errors or device names.
-     *
-     * <p>A flag and not a write per tick. {@code ProgramStatus} does write only
-     * when the content differs — but building and comparing the file every
-     * time would be work for nothing, and that per controller and second.
-     */
-    private boolean statusStale = true;
+    /** Project save data and the lazily opened bridge to external editors. */
+    private final ControllerProjectPersistence projectPersistence = new ControllerProjectPersistence();
 
     /** Last seen redstone strength per connector, for the event. */
     private final Map<String, Integer> lastRedstone = new HashMap<>();
@@ -297,19 +280,34 @@ public class ControllerBlockEntity extends BlockEntity {
         return deploy(dev.devpanda.factorynetwork.lang.Project.of(newSource));
     }
 
+    /** Player deployments must respect other authors' draft locks, including deletions. */
+    public boolean deploy(dev.devpanda.factorynetwork.lang.Project newProject, java.util.UUID author) {
+        for (Map.Entry<String, String> lock : locksFor(author).entrySet()) {
+            if (!java.util.Objects.equals(draft.files().get(lock.getKey()),
+                    newProject.files().get(lock.getKey()))) {
+                this.diagnostics = new ArrayList<>(List.of(new Diagnostic(Diagnostic.Severity.ERROR,
+                        new dev.devpanda.factorynetwork.lang.Span(0, 0, 1, 1),
+                        lock.getKey() + " wird von " + lock.getValue() + " bearbeitet.",
+                        "Übernimm den aktuellen Entwurf oder warte, bis die Datei freigegeben ist.",
+                        lock.getKey())));
+                return rejectDeploy();
+            }
+        }
+        return deploy(newProject);
+    }
+
     public boolean deploy(dev.devpanda.factorynetwork.lang.Project newProject) {
         // With an eye on the network: even someone who writes through the
         // folder next to the world should learn that no display is called
         // "test".
         Parser.ParseResult result = newProject.parse(networkView());
-        this.project = newProject;
         this.diagnostics = new ArrayList<>(result.diagnostics());
         // What the compiler says belongs outside too.
-        statusStale = true;
-        // Adopted means: the draft and the running state are the same.
+        projectPersistence.markStatusStale();
+        // A rejected attempt remains editable and survives a restart. Only
+        // after all checks below may the running project change with it.
         this.draft = newProject;
-        writeProgramFile();
-        pushProjectToWatchers();
+        projectPersistence.writeDraft(draft);
         // Look first, then judge: whoever just placed a rack would otherwise
         // be told "no server", even though one stands right beside it.
         if (level != null && !hasServer()) {
@@ -324,12 +322,10 @@ public class ControllerBlockEntity extends BlockEntity {
                     "Kein Serverschrank im Netz.",
                     "Setze einen Serverschrank ans Kabel und bestücke einen Einschub "
                             + "mit Rechenwerk, Speicher und Datenträger."));
-            setChanged();
-            return false;
+            return rejectDeploy();
         }
-        setChanged();
         if (result.hasErrors()) {
-            return false;
+            return rejectDeploy();
         }
         // The limit stands here and not first at run time: whoever presses
         // Adopt should learn at the same moment that it does not fit — not a
@@ -342,7 +338,7 @@ public class ControllerBlockEntity extends BlockEntity {
                             + diskSpace() + " passen auf die Datenträger.",
                     "Bau größere Datenträger ein oder kürze das Programm. "
                             + "Kommentare und Leerzeilen zählen nicht mit."));
-            return false;
+            return rejectDeploy();
         }
         // Waiting flows go the same way as over a server restart: write down,
         // build a new machine, read back. If the shape of the program still
@@ -350,6 +346,7 @@ public class ControllerBlockEntity extends BlockEntity {
         // One way, one behaviour — instead of two that drift apart.
         CompoundTag carried = flows == null ? null : FlowCodec.write(flows);
         adoptGlobals(result.program());
+        this.project = newProject;
         this.program = result.program();
         runtime.reset();
         // Resolve groups at once and not first on the next tick: a flow that
@@ -359,7 +356,17 @@ public class ControllerBlockEntity extends BlockEntity {
         if (!FlowCodec.isEmpty(carried)) {
             this.pendingFlows = carried;
         }
+        setChanged();
+        pushProjectToWatchers();
         return true;
+    }
+
+    /** Persist the draft and deliver final diagnostics without replacing the running project. */
+    private boolean rejectDeploy() {
+        projectPersistence.markStatusStale();
+        setChanged();
+        pushProjectToWatchers();
+        return false;
     }
 
     // ---- Global values ------------------------------------------------------
@@ -568,7 +575,7 @@ public class ControllerBlockEntity extends BlockEntity {
         Set<String> before = networkKnown ? Set.copyOf(graph.connectorNames()) : null;
         // The device names change here, and they are in no file — an editor
         // beside us learns them only from us.
-        statusStale = true;
+        projectPersistence.markStatusStale();
         graph = FactoryGraph.build(level, worldPosition);
         // Counted here and not on every query: Bandwidth.at hits the
         // controller per slot per worker per tick, and the attachments change
@@ -1505,89 +1512,29 @@ public class ControllerBlockEntity extends BlockEntity {
     private static final String KEY_JOBS = "Jobs";
     private static final String KEY_NEXT_JOB = "NextJob";
 
-    /** Under this name stand the files of the project. */
-    private static final String KEY_FILES = "Files";
-
-    /** And under this the draft that has not yet been adopted. */
-    private static final String KEY_DRAFT = "Draft";
     private static final String KEY_OWNER = "Owner";
-
-    /**
-     * Reads the project from the save format.
-     *
-     * <p><b>Old worlds read along too:</b> there a single text stands under
-     * {@code Source}. It becomes the {@code main.mf} — a project of one file
-     * is exactly what a controller had before.
-     */
-    private static dev.devpanda.factorynetwork.lang.Project readProject(CompoundTag tag) {
-        if (tag.contains(KEY_FILES)) {
-            CompoundTag files = tag.getCompound(KEY_FILES);
-            Map<String, String> sources = new HashMap<>();
-            files.getAllKeys().forEach(name -> sources.put(name, files.getString(name)));
-            return new dev.devpanda.factorynetwork.lang.Project(sources);
-        }
-        return dev.devpanda.factorynetwork.lang.Project.of(tag.getString(KEY_SOURCE));
-    }
-
-    private void writeProject(CompoundTag tag) {
-        CompoundTag files = new CompoundTag();
-        project.files().forEach(files::putString);
-        tag.put(KEY_FILES, files);
-        // The draft only if it differs from the running one: otherwise every
-        // program would stand in the world twice.
-        if (!draft.files().equals(project.files())) {
-            CompoundTag entwurf = new CompoundTag();
-            draft.files().forEach(entwurf::putString);
-            tag.put(KEY_DRAFT, entwurf);
-        }
-        // The old key stays written: whoever opens the world with an older
-        // version of the mod at least finds their text again, instead of an
-        // empty terminal.
-        tag.putString(KEY_SOURCE, project.joined());
-    }
 
     // ---- The file next to the world ---------------------------------------
 
     /**
      * Checks whether someone has changed the program from outside.
      *
-     * <p>On the very first look, what decides is whether the file already
-     * exists: if there is none, it receives the running program. If there is
-     * one, it holds — then someone created it or edited it while the server
-     * was off, and both are intentional.
-     *
-     * <p><b>A controller that returns to the same spot finds its program
-     * again.</b> The file stays when the block is broken; whoever misclicked
-     * places the block back and has everything.
+     * <p>The persistence helper exports the current draft when the folder is
+     * first opened and polls later edits. The controller remains responsible
+     * for compiling, deploying and reporting the result to the player.
      */
     private void checkProgramFile() {
         if (!(level instanceof net.minecraft.server.level.ServerLevel server)) {
             return;
         }
-        if (level.getGameTime() - lastFileCheck
-                < dev.devpanda.factorynetwork.lang.ProgramFolder.CHECK_INTERVAL) {
-            return;
-        }
-        lastFileCheck = level.getGameTime();
-        writeStatus();
-        if (programFolder == null) {
-            programFolder = dev.devpanda.factorynetwork.lang.ProgramFolder.of(
-                    server, worldPosition);
-            if (programFolder == null) {
-                return;
-            }
-            // On the first look: if the folder is empty, it receives the
-            // running project. If something stands in it, that holds — then
-            // someone created it or edited it while the server was off, and
-            // both are intentional.
-            programFolder.write(project);
-            statusStale = true;
-        }
-        dev.devpanda.factorynetwork.lang.Project incoming = programFolder.poll(project);
+        dev.devpanda.factorynetwork.lang.Project incoming = projectPersistence.poll(
+                level.getGameTime(),
+                () -> dev.devpanda.factorynetwork.lang.ProgramFolder.of(server, worldPosition),
+                draft, this::writeStatus);
         if (incoming == null) {
             return;
         }
-        String name = programFolder.path().getFileName().toString();
+        String name = projectPersistence.path().getFileName().toString();
         if (deploy(incoming)) {
             note("Projekt aus " + name + " übernommen: "
                     + String.join(", ", incoming.names()));
@@ -1599,7 +1546,7 @@ public class ControllerBlockEntity extends BlockEntity {
         }
         // In both cases, and in the second all the more: whoever works in VS
         // Code sees nothing otherwise — their program silently does not run.
-        statusStale = true;
+        projectPersistence.markStatusStale();
     }
 
     /**
@@ -1610,18 +1557,12 @@ public class ControllerBlockEntity extends BlockEntity {
      * from the compiler, which runs anyway, instead of from a second version
      * of the same rules.
      *
-     * <p>Called when something changes: after an adoption, after a failed
-     * adoption, and after a rebuild of the network — the device names change
-     * there. Not per tick: {@code ProgramStatus} does write only on change,
-     * but building and comparing the file every time would be work for
-     * nothing.
+     * <p>The persistence helper requests this on the next scheduled check
+     * after deployment or a network rebuild changes diagnostics or names.
+     * Status data is therefore built only when stale, not on every tick.
      */
-    private void writeStatus() {
-        if (programFolder == null || !statusStale) {
-            return;
-        }
-        statusStale = false;
-        dev.devpanda.factorynetwork.lang.ProgramStatus.write(programFolder.path(),
+    private void writeStatus(java.nio.file.Path folder) {
+        dev.devpanda.factorynetwork.lang.ProgramStatus.write(folder,
                 diagnostics, List.copyOf(graph.connectorNames()), displayNames(),
                 // What counts as a resource kind in this pack, only the
                 // running game knows — since foreign mods may register their
@@ -1637,21 +1578,7 @@ public class ControllerBlockEntity extends BlockEntity {
      * has yet looked for it.
      */
     public java.nio.file.Path programFilePath() {
-        return programFolder == null ? null : programFolder.path();
-    }
-
-    /**
-     * Writes the program into the file.
-     *
-     * <p>After <b>every</b> adoption, even one with errors: folder and
-     * terminal must show the same text. If the files still held the last
-     * error-free version, the next look would fetch it back and overwrite what
-     * had just been typed.
-     */
-    private void writeProgramFile() {
-        if (programFolder != null) {
-            programFolder.write(project);
-        }
+        return projectPersistence.path();
     }
 
     // ---- Storage view -------------------------------------------------------
@@ -1675,8 +1602,8 @@ public class ControllerBlockEntity extends BlockEntity {
      */
     public void sendNetworkStateTo(ServerPlayer player) {
         rebuildNetwork();
-        java.util.List<String> workers = runtime().states().entrySet().stream()
-                .map(state -> state.getKey() + ": " + state.getValue().status)
+        java.util.List<String> workers = program().workers().stream()
+                .map(Decl.Worker::name)
                 .toList();
         net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,
                 new dev.devpanda.factorynetwork.network.packet.NetworkStatePacket(
@@ -2105,7 +2032,11 @@ public class ControllerBlockEntity extends BlockEntity {
                         memory(), programSize(), diskSpace()),
                 new FlowStatePacket.Supply(power.state().ordinal(), power.stored(),
                         power.capacity(), powerDraw(), power.supplied()),
-                globalLines()));
+                globalLines(),
+                FlowStatePacket.WorkerLine.snapshot(program(), runtime().states(),
+                        !hasServer() ? "WAITING_SERVER"
+                                : power().state() == dev.devpanda.factorynetwork.network.NetworkPower.State.BOOTING
+                                ? "WAITING_BOOT" : !power().isRunning() ? "WAITING_ENERGY" : "")));
     }
 
     /**
@@ -2834,16 +2765,9 @@ public class ControllerBlockEntity extends BlockEntity {
                 jobs.add(job);
             }
         }
-        project = readProject(tag);
-        // Without a draft of its own, the running state is the draft.
-        if (tag.contains(KEY_DRAFT)) {
-            CompoundTag entwurf = tag.getCompound(KEY_DRAFT);
-            Map<String, String> sources = new HashMap<>();
-            entwurf.getAllKeys().forEach(name -> sources.put(name, entwurf.getString(name)));
-            draft = new dev.devpanda.factorynetwork.lang.Project(sources);
-        } else {
-            draft = project;
-        }
+        var savedProject = ControllerProjectPersistence.read(tag);
+        project = savedProject.running();
+        draft = savedProject.draft();
         heldBack.clear();
         net.minecraft.nbt.ListTag heldTag = tag.getList(KEY_HELD_BACK,
                 net.minecraft.nbt.Tag.TAG_COMPOUND);
@@ -2890,7 +2814,7 @@ public class ControllerBlockEntity extends BlockEntity {
         jobs.forEach(job -> jobList.add(job.save()));
         tag.put(KEY_JOBS, jobList);
         tag.putLong(KEY_NEXT_JOB, nextJobId);
-        writeProject(tag);
+        ControllerProjectPersistence.write(tag, project, draft);
         CompoundTag storageTag = new CompoundTag();
         storage.save(storageTag, registries);
         tag.put(KEY_STORAGE, storageTag);
@@ -2926,7 +2850,7 @@ public class ControllerBlockEntity extends BlockEntity {
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         CompoundTag tag = super.getUpdateTag(registries);
-        writeProject(tag);
+        ControllerProjectPersistence.write(tag, project, draft);
         return tag;
     }
 }

@@ -3,7 +3,9 @@
   "textures": {
     "particle": "factorynetwork:block/terminal_side",
     "front": "factorynetwork:block/terminal_front",
-    "side": "factorynetwork:block/terminal_side"
+    "side": "factorynetwork:block/terminal_side",
+    "top": "factorynetwork:block/terminal_top",
+    "keyboard": "factorynetwork:block/terminal_keyboard"
   },
   "elements": [
     {
@@ -49,7 +51,7 @@
           "cullface": "west"
         },
         "up": {
-          "texture": "#side",
+          "texture": "#keyboard",
           "uv": [
             0,
             0,
@@ -290,7 +292,7 @@
           "cullface": "west"
         },
         "up": {
-          "texture": "#side",
+          "texture": "#top",
           "uv": [
             0,
             3,

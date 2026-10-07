@@ -106,6 +106,36 @@ public final class WorkerRuntime {
         public long lastRun;
         public long moved;
         public String detail = "";
+        /** A non-reversible handoff needs an explicit program restart. */
+        public boolean faultLatched;
+        public boolean hasRun;
+
+        /** A previous failure is an observation, not a permanent latch. */
+        void beginAttempt() {
+            hasRun = true;
+            status = Status.IDLE;
+            detail = "";
+        }
+
+        void conditionRejected() {
+            // An evaluation error is different from a successfully evaluated false.
+            if (status != Status.HALTED) {
+                status = Status.WAITING_CONDITION;
+                detail = "";
+            }
+        }
+
+        void recordTransfer(long amount, String unit) {
+            moved += amount;
+            if (status == Status.HALTED) return;
+            if (amount > 0) {
+                status = Status.RUNNING;
+                detail = amount + " " + unit;
+            } else if (status == Status.IDLE || status == Status.RUNNING) {
+                status = Status.IDLE;
+                detail = "";
+            }
+        }
 
         /**
          * How many ticks remain until the path is established.
@@ -135,6 +165,14 @@ public final class WorkerRuntime {
         WAITING_TARGET,
         /** Condition does not hold. */
         WAITING_CONDITION,
+        /** Source offered no matching resource for extraction. */
+        WAITING_SOURCE,
+        /** The measured path has exhausted this tick's byte budget. */
+        WAITING_BANDWIDTH,
+        /** The power reserve could not supply any energy. */
+        WAITING_ENERGY,
+        /** The measured path latency is still counting down. */
+        WAITING_PATH,
         /** A device is missing or something is broken. */
         HALTED
     }
@@ -252,8 +290,8 @@ public final class WorkerRuntime {
             // every latency tick — two ticks of delay would become forty.
             if (state.warmup > 0) {
                 state.warmup--;
-                state.status = Status.RUNNING;
-                state.detail = "Weg wird aufgebaut";
+                state.status = Status.WAITING_PATH;
+                state.detail = "";
                 continue;
             }
             int interval = intervalOf(worker);
@@ -316,8 +354,10 @@ public final class WorkerRuntime {
         }
     }
 
-    private void runWorker(Level level, Decl.Worker worker, WorkerState state,
+    void runWorker(Level level, Decl.Worker worker, WorkerState state,
                            FactoryGraph graph, NetworkStorage storage) {
+        if (state.faultLatched) return;
+        state.beginAttempt();
         Decl.Worker.Entry from = worker.entry(Decl.Worker.Entry.Kind.FROM);
         Decl.Worker.Entry to = worker.entry(Decl.Worker.Entry.Kind.TO);
         if (from == null || to == null) {
@@ -329,7 +369,7 @@ public final class WorkerRuntime {
         // If the condition does not hold, the worker sleeps — and the
         // terminal says why. This is the sibling of WAITING_TARGET.
         if (!conditionHolds(worker, state)) {
-            state.status = Status.WAITING_CONDITION;
+            state.conditionRejected();
             return;
         }
 
@@ -418,8 +458,8 @@ public final class WorkerRuntime {
             state.warmupPending = false;
             state.warmup = dev.devpanda.factorynetwork.network.Latency.of(level, path);
             if (state.warmup > 0) {
-                state.status = Status.RUNNING;
-                state.detail = "Weg wird aufgebaut";
+                state.status = Status.WAITING_PATH;
+                state.detail = "";
                 return;
             }
         }
@@ -427,8 +467,8 @@ public final class WorkerRuntime {
         if (free <= 0) {
             // The same kind of waiting as with a full target: it is not the
             // program's fault but the line in front of it.
-            state.status = Status.WAITING_TARGET;
-            state.detail = "Das Kabel ist in diesem Tick voll";
+            state.status = Status.WAITING_BANDWIDTH;
+            state.detail = "";
             return;
         }
         batch = Math.min(batch, free);
@@ -470,11 +510,7 @@ public final class WorkerRuntime {
             }
         }
 
-        state.moved += moved;
-        if (state.status != Status.HALTED && state.status != Status.WAITING_TARGET) {
-            state.status = moved > 0 ? Status.RUNNING : Status.IDLE;
-            state.detail = moved > 0 ? moved + " bewegt" : "nichts zu tun";
-        }
+        state.recordTransfer(moved, "Gegenstände bewegt");
     }
 
     // ---- The three paths --------------------------------------------------
@@ -526,6 +562,9 @@ public final class WorkerRuntime {
             }
             moved += taken.getCount() - rest;
         }
+        if (moved == 0 && state.status == Status.IDLE && batch > 0) {
+            state.status = Status.WAITING_SOURCE;
+        }
         return moved;
     }
 
@@ -546,10 +585,12 @@ public final class WorkerRuntime {
                 .findFirst()
                 .orElse(null);
         if (item == null) {
+            state.status = Status.WAITING_SOURCE;
             return 0;
         }
         long available = storage.count(item);
         if (available <= 0) {
+            state.status = Status.WAITING_SOURCE;
             return 0;
         }
         int wanted = (int) Math.min(batch, Math.min(available, item.maxStackSize()));
@@ -558,7 +599,7 @@ public final class WorkerRuntime {
         int accepted = wanted - rest.getCount();
         if (accepted <= 0) {
             state.status = Status.WAITING_TARGET;
-            state.detail = "Ziel ist voll";
+            state.detail = "Ziel nimmt die angebotenen Gegenstände nicht an";
             return 0;
         }
         // What storage actually yields, not what it shows. A storage bus
@@ -579,6 +620,7 @@ public final class WorkerRuntime {
                     ? "Der Speicher gibt nicht her, was er zeigt — "
                             + stuck + " blieben im Ziel"
                     : "Der Speicher gibt nicht her, was er zeigt";
+            state.faultLatched = stuck > 0;
         }
         return taken;
     }
@@ -627,7 +669,7 @@ public final class WorkerRuntime {
         Handoffs.Handoff done = Handoffs.items(in, out, filter, batch);
         if (done.targetFull()) {
             state.status = Status.WAITING_TARGET;
-            state.detail = "Ziel ist voll";
+            state.detail = "Ziel nimmt die angebotenen Gegenstände nicht an";
         }
         if (done.stranded() > 0) {
             // The source gave up less than promised, and the target will not
@@ -636,6 +678,10 @@ public final class WorkerRuntime {
             state.status = Status.HALTED;
             state.detail = "Die Quelle gibt weniger her als sie zeigt — "
                     + done.stranded() + " blieben im Ziel";
+            state.faultLatched = true;
+        }
+        if (done.moved() == 0 && state.status == Status.IDLE && batch > 0) {
+            state.status = Status.WAITING_SOURCE;
         }
         return done.moved();
     }
@@ -1075,11 +1121,7 @@ public final class WorkerRuntime {
         int moved = fromNetwork
                 ? supply(to.value(), graph, state, batch)
                 : drawIn(from.value(), graph, state, batch);
-        state.moved += moved;
-        if (state.status != Status.HALTED && state.status != Status.WAITING_TARGET) {
-            state.status = moved > 0 ? Status.RUNNING : Status.IDLE;
-            state.detail = moved > 0 ? moved + " FE" : "nichts zu tun";
-        }
+        state.recordTransfer(moved, "FE");
     }
 
     /** From the network into a machine. */
@@ -1093,13 +1135,13 @@ public final class WorkerRuntime {
         int room = machine.receiveEnergy(batch, true);
         if (room <= 0) {
             state.status = Status.WAITING_TARGET;
-            state.detail = "Die Maschine ist voll";
+            state.detail = "Die Maschine nimmt keine Energie an";
             return 0;
         }
         int taken = power.take(room);
         if (taken <= 0) {
-            state.status = Status.WAITING_TARGET;
-            state.detail = "Kein Strom übrig";
+            state.status = Status.WAITING_ENERGY;
+            state.detail = "";
             return 0;
         }
         int accepted = machine.receiveEnergy(taken, false);
@@ -1128,8 +1170,8 @@ public final class WorkerRuntime {
         }
         int taken = machine.extractEnergy(room, false);
         if (taken <= 0) {
-            state.status = Status.WAITING_TARGET;
-            state.detail = "Die Quelle gibt nichts";
+            state.status = Status.WAITING_SOURCE;
+            state.detail = "Die Quelle gibt keine Energie ab";
             return 0;
         }
         power.fill(taken);
@@ -1240,11 +1282,7 @@ public final class WorkerRuntime {
             }
         }
 
-        state.moved += moved;
-        if (state.status != Status.HALTED && state.status != Status.WAITING_TARGET) {
-            state.status = moved > 0 ? Status.RUNNING : Status.IDLE;
-            state.detail = moved > 0 ? moved + " mB bewegt" : "nichts zu tun";
-        }
+        state.recordTransfer(moved, "mB bewegt");
     }
 
     private long tankToStorage(Expr source, FactoryGraph graph, NetworkFluids fluids,
@@ -1277,6 +1315,9 @@ public final class WorkerRuntime {
             }
             fluids.insert(taken.getFluid(), taken.getAmount());
             moved += taken.getAmount();
+        }
+        if (moved == 0 && state.status == Status.IDLE && batch > 0) {
+            state.status = Status.WAITING_SOURCE;
         }
         return moved;
     }
@@ -1311,6 +1352,9 @@ public final class WorkerRuntime {
             fluids.extract(fluid, accepted);
             moved += accepted;
         }
+        if (moved == 0 && state.status == Status.IDLE && batch > 0) {
+            state.status = Status.WAITING_SOURCE;
+        }
         return moved;
     }
 
@@ -1341,8 +1385,12 @@ public final class WorkerRuntime {
                 state.status = Status.HALTED;
                 state.detail = "Die Quelle gibt weniger her als sie zeigt — "
                         + done.stranded() + " mB blieben im Ziel";
+                state.faultLatched = true;
             }
             moved += done.moved();
+        }
+        if (moved == 0 && state.status == Status.IDLE && batch > 0) {
+            state.status = Status.WAITING_SOURCE;
         }
         return moved;
     }
@@ -1459,12 +1507,7 @@ public final class WorkerRuntime {
         long moved = fromStorage
                 ? fillDevice(to.value(), filter, limit, state)
                 : drainDevice(from.value(), filter, limit, state);
-        if (state.status == Status.HALTED) {
-            return;
-        }
-        state.moved += moved;
-        state.status = moved > 0 ? Status.RUNNING : Status.IDLE;
-        state.detail = moved > 0 ? moved + " mB" : "nichts zu holen";
+        state.recordTransfer(moved, "mB");
     }
 
     /** The ids behind a chemical worker's filter. */
@@ -1508,7 +1551,6 @@ public final class WorkerRuntime {
     private long amountAt(Expr target, String id, WorkerState state) {
         dev.devpanda.factorynetwork.block.entity.ConnectorPart connector = connectorOf(target, state);
         if (connector == null) {
-            state.status = Status.RUNNING;
             return 0;
         }
         var facing = connector.facing();

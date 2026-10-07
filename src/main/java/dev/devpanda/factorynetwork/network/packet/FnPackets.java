@@ -9,7 +9,7 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 @EventBusSubscriber(modid = FactoryNetwork.MOD_ID)
 public final class FnPackets {
 
-    private static final String VERSION = "1";
+    private static final String VERSION = "3";
 
     @SubscribeEvent
     public static void register(RegisterPayloadHandlersEvent event) {
@@ -22,6 +22,8 @@ public final class FnPackets {
                 ProjectStatePacket::handle);
         registrar.playToServer(SaveDraftPacket.TYPE, SaveDraftPacket.STREAM_CODEC,
                 SaveDraftPacket::handle);
+        registrar.playToClient(DraftSavedPacket.TYPE, DraftSavedPacket.STREAM_CODEC,
+                DraftSavedPacket::handle);
         registrar.playToClient(NetworkStatePacket.TYPE, NetworkStatePacket.STREAM_CODEC,
                 NetworkStatePacket::handle);
         registrar.playToClient(TrafficPacket.TYPE, TrafficPacket.STREAM_CODEC,

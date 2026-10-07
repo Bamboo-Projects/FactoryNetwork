@@ -221,7 +221,7 @@ public class NetworkTabView {
      * on.
      */
     private int working(GuiGraphics graphics, int cx, int line, int cw) {
-        List<String> workers = ClientNetworkState.workers();
+        List<FlowStatePacket.WorkerLine> workers = ClientFlowState.workers();
         line = columnHead(graphics, cx, line, cw,
                 "screen.factorynetwork.terminal.network.workers", workers.size());
 
@@ -234,28 +234,32 @@ public class NetworkTabView {
             for (TrafficPacket.Consumer one : ClientTraffic.top()) {
                 verbrauch.put(one.name(), one.bytes());
             }
-            for (String worker : workers) {
-                if (line > y + height - LINE) {
-                    break;
-                }
-                int colour = worker.contains("HALTED") ? TerminalScreen.BAD
-                        : worker.contains("WAITING") ? TerminalScreen.WARN
-                        : worker.contains("RUNNING") ? TerminalScreen.GOOD
+            for (FlowStatePacket.WorkerLine worker : workers) {
+                int colour = worker.status().equals("HALTED") ? TerminalScreen.BAD
+                        : worker.status().startsWith("WAITING") ? TerminalScreen.WARN
+                        : worker.status().equals("RUNNING") ? TerminalScreen.GOOD
                         : TerminalScreen.TEXT_DIM;
-                // The name comes before the colon; after it comes the state,
-                // which the colour already shows.
-                String name = worker.contains(":")
-                        ? worker.substring(0, worker.indexOf(':')) : worker;
+                String name = worker.name();
                 String menge = verbrauch.containsKey(name)
                         ? Bandwidth.total(verbrauch.get(name)) : "";
                 int platz = cw - 6 - font.width(menge);
-                graphics.drawString(font, font.plainSubstrByWidth(worker, platz),
+                graphics.drawString(font, font.plainSubstrByWidth(name, Math.max(10, platz)),
                         cx, line, colour, false);
                 if (!menge.isEmpty()) {
                     graphics.drawString(font, menge, cx + cw - font.width(menge), line,
                             TerminalScreen.TEXT_DIM, false);
                 }
                 line += LINE;
+                String reason = Component.translatable(worker.translationKey()).getString();
+                if (!worker.detail().isBlank()) reason += ": " + worker.detail();
+                // Do not truncate the very reason the player opened this tab.
+                // The surrounding scissor handles visibility; counting every
+                // wrapped line lets scrolling reach workers below the viewport.
+                for (var wrapped : font.split(Component.literal(reason), Math.max(10, cw - 4))) {
+                    graphics.drawString(font, wrapped, cx + 4, line, colour, false);
+                    line += LINE;
+                }
+                line += 3;
             }
         }
 

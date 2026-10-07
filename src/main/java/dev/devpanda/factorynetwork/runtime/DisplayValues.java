@@ -443,6 +443,10 @@ public final class DisplayValues {
             case IDLE -> "wartet";
             case WAITING_TARGET -> "Ziel voll";
             case WAITING_CONDITION -> "schläft";
+            case WAITING_SOURCE -> "Quelle liefert nichts";
+            case WAITING_BANDWIDTH -> "Kabel ausgelastet";
+            case WAITING_ENERGY -> "Energie fehlt";
+            case WAITING_PATH -> "Weg wird aufgebaut";
             case HALTED -> "steht";
         };
     }

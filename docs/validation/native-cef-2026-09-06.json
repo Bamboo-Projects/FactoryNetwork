@@ -1,0 +1,70 @@
+{
+  "checkedAt": "2026-09-06T17:54:17.164Z",
+  "factorynetwork": "0.1.2",
+  "bamboocef": "0.1.1",
+  "transport": "Actual native CEF/Monaco page, Java bridge, logged-in development Minecraft client, dedicated NeoForge server",
+  "automation": "CEF DevTools drives real editor controls; acceptance companion opens the real TerminalMenu and EditorApp",
+  "manualHardwareInputTested": false,
+  "bamboocefOnServer": false,
+  "verified": [
+    "save acknowledgement",
+    "compile diagnostics",
+    "valid deployment",
+    "invalid draft autosave",
+    "UI blocks invalid deployment",
+    "separate running project and draft survive full server restart",
+    "reconnected native client displays exact saved draft"
+  ],
+  "beforeRestart": {
+    "project": {
+      "main.mf": "// acceptance: native CEF roundtrip\nworker transfer {\n    from source\n    to target\n}\n"
+    },
+    "draft": {
+      "main.mf": "// acceptance: native CEF draft survives restart\nworker unfinished {\n    from source\n"
+    },
+    "online": true,
+    "source": 0,
+    "target": 128,
+    "workers": {
+      "transfer": {
+        "status": "WAITING_SOURCE",
+        "lastRun": 17247,
+        "moved": 0,
+        "detail": "",
+        "faultLatched": false,
+        "hasRun": true,
+        "warmup": 0,
+        "warmupPending": false
+      }
+    },
+    "bamboocefLoaded": false
+  },
+  "afterRestart": {
+    "project": {
+      "main.mf": "// acceptance: native CEF roundtrip\nworker transfer {\n    from source\n    to target\n}\n"
+    },
+    "draft": {
+      "main.mf": "// acceptance: native CEF draft survives restart\nworker unfinished {\n    from source\n"
+    },
+    "online": true,
+    "source": 0,
+    "target": 128,
+    "workers": {
+      "transfer": {
+        "status": "WAITING_SOURCE",
+        "lastRun": 19435,
+        "moved": 0,
+        "detail": "",
+        "faultLatched": false,
+        "hasRun": true,
+        "warmup": 0,
+        "warmupPending": false
+      }
+    },
+    "bamboocefLoaded": false
+  },
+  "reopenedDraft": {
+    "main.mf": "// acceptance: native CEF draft survives restart\nworker unfinished {\n    from source\n"
+  },
+  "screenshot": "../previews/editor-native.png"
+}

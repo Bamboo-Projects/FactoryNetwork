@@ -67,7 +67,8 @@ def build(size):
 
 def main():
     target = os.path.join(
-        r"D:\Projekte\FactoryNetwork\src\main\resources\data\factorynetwork\structure",
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "src", "gametest", "resources", "data", "factorynetwork", "structure",
         "empty.nbt")
     os.makedirs(os.path.dirname(target), exist_ok=True)
     with gzip.open(target, "wb") as handle:

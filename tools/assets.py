@@ -3,7 +3,8 @@
 import json
 import os
 
-ROOT = r"D:\Projekte\FactoryNetwork\src\main\resources"
+ROOT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                    "src", "main", "resources")
 MOD = "factorynetwork"
 
 
@@ -866,7 +867,8 @@ def terminal_boxes():
     return [
         # Die Konsole: der unterste Teil der Front, und der einzige, der bis
         # an die Blockkante vorsteht.
-        ([0, 0, 0], [16, high, back], {"north": "front", "*": "side"}),
+        ([0, 0, 0], [16, high, back],
+         {"north": "front", "up": "keyboard", "*": "side"}),
 
         # Der Rahmen um den Bildschirm — oben und an beiden Seiten.
         ([0, 16 - bezel, frame], [16, 16, back], {"north": "front", "*": "side"}),
@@ -885,7 +887,7 @@ def terminal_boxes():
         # die Konsole an beiden Seiten über, und über dem Bildschirm klaffte
         # ein Schlitz. Ein Gerät, das an der Wand steht, hat hinten keine
         # Fuge — die Form kommt von vorn, aus Konsole und Rahmen.
-        ([0, 0, screen + 1], [16, 16, 16], {"*": "side"}),
+        ([0, 0, screen + 1], [16, 16, 16], {"up": "top", "*": "side"}),
     ]
 
 
@@ -897,6 +899,8 @@ def terminal_model():
             "particle": texture("terminal_side"),
             "front": texture("terminal_front"),
             "side": texture("terminal_side"),
+            "top": texture("terminal_top"),
+            "keyboard": texture("terminal_keyboard"),
         },
         "elements": machine_elements(terminal_boxes()),
     })

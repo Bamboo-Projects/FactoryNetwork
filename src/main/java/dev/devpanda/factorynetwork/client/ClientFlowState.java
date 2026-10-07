@@ -15,6 +15,7 @@ public final class ClientFlowState {
 
     private static List<FlowStatePacket.Line> flows = List.of();
     private static List<String> globals = List.of();
+    private static List<FlowStatePacket.WorkerLine> workers = List.of();
     private static FlowStatePacket.Compute compute =
             new FlowStatePacket.Compute(0, 0, 0, 0, 0, 0);
     private static FlowStatePacket.Supply supply =
@@ -53,6 +54,7 @@ public final class ClientFlowState {
         supply = packet.supply();
         flows = List.copyOf(packet.flows());
         globals = List.copyOf(packet.globals());
+        workers = List.copyOf(packet.workers());
     }
 
     /** The program's global values, as "name = value". */
@@ -64,7 +66,15 @@ public final class ClientFlowState {
         return flows;
     }
 
+    public static List<FlowStatePacket.WorkerLine> workers() {
+        return workers;
+    }
+
     public static void clear() {
         flows = List.of();
+        workers = List.of();
+        globals = List.of();
+        compute = new FlowStatePacket.Compute(0, 0, 0, 0, 0, 0);
+        supply = new FlowStatePacket.Supply(0, 0, 0, 0, 0);
     }
 }

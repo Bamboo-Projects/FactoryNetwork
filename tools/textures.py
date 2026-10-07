@@ -533,10 +533,10 @@ def machine_top():
 
 
 def terminal_front():
-    """Bildschirm in einem Rahmen, darunter eine Tastenleiste.
+    """Code-Konsole: Syntaxzeilen, Zeilenrand und eine schmale Bedienblende.
 
-    Der Bildschirm ist die dunkelste Fläche der ganzen Mod — davor wirkt die
-    Schrift hell, und das Gerät liest sich sofort als Anzeige.
+    Die Anzeige ist Gerätegrafik, kein vorgetäuschter Live-Netzwerkstatus.
+    Die eigentliche Tastatur liegt auf der oberen Fläche der Konsole.
     """
     img = surface(seed=61)
     d = ImageDraw.Draw(img)
@@ -546,21 +546,65 @@ def terminal_front():
     d.rectangle([6, 6, 57, 44], fill=blend(BODY_MID, EDGE, 0.35) + (255,))
     recess(img, (6, 6, 57, 44), tiefe=2)
 
-    # Bildschirm: fast schwarz, mit Zeilen
+    # Bildschirm: eingerückte Syntaxgruppen statt vier gleichartiger Balken.
     d.rectangle([9, 9, 54, 41], fill=(12, 18, 14, 255))
     ao(img, (9, 9, 54, 41), depth=3, strength=0.55)
-    for i, y in enumerate(range(14, 38, 6)):
-        laenge = (34, 26, 30, 20)[i % 4]
-        d.rectangle([13, y, 13 + laenge, y + 2],
-                    fill=blend(ACCENT, (12, 18, 14), 0.45 if i else 0.15) + (255,))
-    glow(img, [9, 9, 54, 41], radius=5, strength=60)
+    d.line([(17, 12), (17, 38)], fill=(35, 53, 41, 255))
+    syntax = (
+        (13, ((20, 28, ACCENT), (31, 42, SHINE))),
+        (18, ((23, 29, CRYSTAL), (32, 48, ACCENT))),
+        (23, ((26, 36, SHINE), (39, 47, BRASS))),
+        (28, ((23, 29, CRYSTAL), (32, 43, ACCENT))),
+        (33, ((20, 27, ACCENT),)),
+    )
+    for row, groups in syntax:
+        d.line([(12, row), (14, row)], fill=(67, 95, 74, 255))
+        for left, right, colour in groups:
+            d.rectangle([left, row, right, row + 1], fill=colour + (255,))
+    d.rectangle([20, 37, 23, 38], fill=ACCENT_HI + (255,))
+    d.line([(10, 10), (53, 10)], fill=(47, 69, 53, 255))
+    glow(img, [10, 11, 53, 39], radius=3, strength=22)
 
-    # Tastenleiste
+    # Wartungsblende mit Lüftung und einer einzelnen Taste.
     d = ImageDraw.Draw(img)
-    for x in range(9, 52, 11):
-        d.rectangle([x, 48, x + 8, 55], fill=blend(BODY_TOP, LIGHT, 0.25) + (255,))
-        raised(img, (x, 48, x + 8, 55), hoehe=1)
-    scratches(img, seed=62)
+    for y in (49, 53, 57):
+        d.line([(10, y), (34, y)], fill=EDGE + (255,), width=2)
+        d.line([(10, y + 1), (34, y + 1)], fill=LIGHT + (255,))
+    d.rectangle([43, 49, 52, 56], fill=BODY_TOP + (255,))
+    raised(img, (43, 49, 52, 56), hoehe=1)
+    d.line([(46, 52), (49, 52)], fill=SHINE + (255,))
+    for x, y in ((4, 4), (59, 4), (4, 59), (59, 59)):
+        rivet(img, x, y, r=1)
+    return img
+
+
+def terminal_keyboard():
+    """Die ersten zwölf Pixel bilden die drei Blockpixel tiefe Ablage ab."""
+    img = surface(seed=63)
+    d = ImageDraw.Draw(img)
+    d.rectangle([5, 1, 58, 10], fill=EDGE + (255,))
+    for y in (2, 6):
+        for x in range(8, 47, 5):
+            d.rectangle([x, y, x + 3, y + 2], fill=LIGHT + (255,))
+            d.line([(x, y + 2), (x + 3, y + 2)], fill=BODY_BOT + (255,))
+    d.rectangle([48, 2, 55, 8], fill=ACCENT_DIM + (255,))
+    d.line([(49, 3), (54, 3)], fill=ACCENT + (255,))
+    d.line([(3, 11), (60, 11)], fill=SHINE + (255,))
+    return img
+
+
+def terminal_top():
+    """Abnehmbare Deckplatte; die Seitenstreben laufen nicht über das Dach."""
+    img = surface(seed=64)
+    d = ImageDraw.Draw(img)
+    bevel(d)
+    d.rectangle([9, 16, 54, 55], fill=blend(BODY_BOT, EDGE, 0.2) + (255,))
+    recess(img, (9, 16, 54, 55), tiefe=2)
+    for y in range(23, 48, 5):
+        d.line([(16, y), (47, y)], fill=EDGE + (255,), width=2)
+        d.line([(16, y + 2), (47, y + 2)], fill=LIGHT + (255,))
+    for x, y in ((5, 16), (58, 16), (5, 58), (58, 58)):
+        rivet(img, x, y, r=1)
     return img
 
 
@@ -1125,7 +1169,7 @@ def fabricator_side():
 
 
 def drive_front():
-    """Zehn Schächte in zwei Reihen, jeder mit Lämpchen.
+    """Zehn leere Schächte in zwei Spalten.
 
     Die Schächte sind versenkt, die Stege dazwischen erhaben — so liest man
     auf einen Blick, wo eine Zelle hineingehört.
@@ -1145,9 +1189,10 @@ def drive_front():
             d.rectangle([x, y, x + 19, y + 5],
                         fill=blend(EDGE, BODY_BOT, 0.5) + (255,))
             ao(img, (x, y, x + 19, y + 5), depth=2, strength=0.45)
-            # Betriebslämpchen, glimmt
+            # Die Grundtextur ist leer. Belegte Schächte und ihr Licht zeichnet
+            # DriveRenderer; auch jenseits seiner Reichweite keine Phantomzellen.
             d.rectangle([x + 16, y + 1, x + 18, y + 3],
-                        fill=blend(ACCENT, EDGE, 0.2) + (255,))
+                        fill=blend(BODY_MID, EDGE, 0.5) + (255,))
     for x, y in ((4, 5), (59, 5), (4, 58), (59, 58)):
         rivet(img, x, y, r=2)
     scratches(img, seed=33)
@@ -1537,18 +1582,19 @@ DRIVE_BAY_TONE = {
     "k64": (176, 148, 168),
     "fluid": (114, 160, 182),
     "energy": (180, 144, 96),
+    "chemical": (154, 174, 96),
 }
 
 
 def drive_bays():
-    """Ein Streifen: leerer Schacht, die vier Zellgrößen, Fluid- und Energiezelle.
+    """Ein Streifen: leer, vier Zellgrößen, Fluid, Energie und Chemikalien.
 
     <b>Die Kachel zeigt die Zelle, nicht ihren Füllstand.</b> Der Inhalt lebt
     im Laufwerk und steht erst beim Sichern im Gegenstand — was der Client
     kennt, wäre der Stand von vorhin. Lieber gar keine Anzeige als eine, die
     hinterherhinkt; wie voll es ist, sagen Jade und das Fenster.
     """
-    sorten = ["leer", "k1", "k4", "k16", "k64", "fluid", "energy"]
+    sorten = ["leer", "k1", "k4", "k16", "k64", "fluid", "energy", "chemical"]
     streifen = Image.new("RGBA", (BAY_W * len(sorten), BAY_H), (0, 0, 0, 0))
     for i, sorte in enumerate(sorten):
         kachel = Image.new("RGBA", (BAY_W, BAY_H), (0, 0, 0, 0))
@@ -1573,6 +1619,8 @@ def drive_bays():
                 licht = (96, 190, 236)
             elif sorte == "energy":
                 licht = (244, 176, 72)
+            elif sorte == "chemical":
+                licht = (190, 220, 96)
             glow(kachel, [BAY_W - 9, 3, BAY_W - 4, BAY_H - 4], color=licht,
                  radius=3, strength=120)
             d = ImageDraw.Draw(kachel)
@@ -2097,6 +2145,8 @@ def main():
     save(machine_top(), "block", "machine_top")
     save(terminal_front(), "block", "terminal_front")
     save(terminal_side(), "block", "terminal_side")
+    save(terminal_top(), "block", "terminal_top")
+    save(terminal_keyboard(), "block", "terminal_keyboard")
     for joined in range(16):
         save(display_front(joined), "block", "display_front_%d" % joined)
     save(display_side(), "block", "display_side")

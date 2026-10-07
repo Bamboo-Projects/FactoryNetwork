@@ -53,6 +53,11 @@ public final class Handoffs {
             }
             int wanted = (int) Math.min(limit - moved, stack.getCount());
             ItemStack simulated = in.extractItem(slot, wanted, true);
+            // A source that refuses extraction says nothing about the target.
+            // Other slots may still provide a matching, extractable stack.
+            if (simulated.isEmpty()) {
+                continue;
+            }
             ItemStack rest = insertInto(out, simulated);
             int accepted = simulated.getCount() - rest.getCount();
             if (accepted <= 0) {

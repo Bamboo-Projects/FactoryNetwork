@@ -32,7 +32,7 @@ import java.util.Map;
  * and a list of positions and insertions is the kind of code where a bug only
  * shows once the text is already broken.
  */
-public record SaveDraftPacket(BlockPos controller, Map<String, String> files)
+public record SaveDraftPacket(BlockPos controller, Map<String, String> files, long sequence)
         implements CustomPacketPayload {
 
     /** The server accepts no more than this per file. */
@@ -44,13 +44,18 @@ public record SaveDraftPacket(BlockPos controller, Map<String, String> files)
     public static final StreamCodec<RegistryFriendlyByteBuf, SaveDraftPacket> STREAM_CODEC =
             StreamCodec.composite(
                     BlockPos.STREAM_CODEC, SaveDraftPacket::controller,
-                    ByteBufCodecs.map(HashMap::new, ByteBufCodecs.stringUtf8(64),
+                    ByteBufCodecs.map(HashMap::new, ByteBufCodecs.stringUtf8(Project.MAX_NAME),
                             ByteBufCodecs.stringUtf8(MAX_LENGTH)),
                     SaveDraftPacket::files,
+                    ByteBufCodecs.VAR_LONG, SaveDraftPacket::sequence,
                     SaveDraftPacket::new);
 
     public static SaveDraftPacket of(BlockPos controller, Project project) {
-        return new SaveDraftPacket(controller, project.files());
+        return of(controller, project, 0);
+    }
+
+    public static SaveDraftPacket of(BlockPos controller, Project project, long sequence) {
+        return new SaveDraftPacket(controller, project.files(), sequence);
     }
 
     @Override
@@ -71,21 +76,34 @@ public record SaveDraftPacket(BlockPos controller, Map<String, String> files)
                     || !menu.allows(dev.devpanda.factorynetwork.terminal.TerminalTab.CODE)) {
                 return;
             }
-            if (!menu.charge(player, dev.devpanda.factorynetwork.network.Power.REMOTE_ACTION)) {
-                return;
-            }
             if (menu.controller(player).orElse(null)
                     instanceof ControllerBlockEntity controller) {
                 // The same protection as for applying: an overwritten draft
                 // is lost work, even if it never ran.
                 if (!DeployProgramPacket.mayEdit(player, controller)) {
+                    reply(packet, player, controller, false, "Keine Berechtigung zum Speichern. Der Text bleibt lokal erhalten.");
                     player.sendSystemMessage(net.minecraft.network.chat.Component.translatable(
                             "message.factorynetwork.protection.denied"));
                     return;
                 }
+                if (!menu.charge(player, dev.devpanda.factorynetwork.network.Power.REMOTE_ACTION)) {
+                    reply(packet, player, controller, false, "Nicht genug Energie zum Speichern. Der Text bleibt lokal erhalten.");
+                    return;
+                }
                 controller.acceptDraft(new Project(packet.files()),
                         player.getUUID(), player.getGameProfile().getName());
+                boolean accepted = controller.draft().files().equals(packet.files());
+                reply(packet, player, controller, accepted,
+                        accepted ? "" : "Ein Teil des Entwurfs ist durch eine Dateisperre geschützt. Bitte die Änderungen abgleichen.");
             }
         });
+    }
+
+    private static void reply(SaveDraftPacket request, ServerPlayer player,
+                              ControllerBlockEntity controller, boolean accepted, String message) {
+        net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,
+                new DraftSavedPacket(request.sequence(), accepted, message,
+                        ProjectStatePacket.of(controller.getBlockPos(), controller.project(),
+                                controller.draft(), controller.locksFor(player.getUUID()))));
     }
 }

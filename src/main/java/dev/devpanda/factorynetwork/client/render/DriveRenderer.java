@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import dev.devpanda.factorynetwork.FactoryNetwork;
 import dev.devpanda.factorynetwork.block.entity.DriveBlockEntity;
 import dev.devpanda.factorynetwork.storage.CellTier;
+import dev.devpanda.factorynetwork.storage.ChemicalCellItem;
 import dev.devpanda.factorynetwork.storage.EnergyCellItem;
 import dev.devpanda.factorynetwork.storage.FluidCellItem;
 import dev.devpanda.factorynetwork.storage.StorageCellItem;
@@ -37,8 +38,8 @@ public class DriveRenderer implements BlockEntityRenderer<DriveBlockEntity> {
     private static final ResourceLocation BAYS = ResourceLocation.fromNamespaceAndPath(
             FactoryNetwork.MOD_ID, "textures/misc/drive_bays.png");
 
-    /** Empty, then the four sizes, then the fluid cell. */
-    private static final float TILES = 7.0F;
+    /** Empty, four item sizes, fluid, energy, then chemical. See textures.py. */
+    private static final float TILES = 8.0F;
 
     /** Beyond that a bay of five block pixels cannot be read. */
     private static final double MAX_DISTANCE = 24.0;
@@ -97,6 +98,9 @@ public class DriveRenderer implements BlockEntityRenderer<DriveBlockEntity> {
 
     /** Which tile of the strip belongs to this cell. */
     private static int kindOf(ItemStack stack) {
+        if (stack.getItem() instanceof ChemicalCellItem) {
+            return 7;
+        }
         if (stack.getItem() instanceof FluidCellItem) {
             return 5;
         }

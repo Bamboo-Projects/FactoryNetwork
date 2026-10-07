@@ -400,5 +400,17 @@
   "gui.factorynetwork.jei.press.time": "%s s",
   "item.factorynetwork.acceleration_card": "Beschleunigungskarte",
   "item.factorynetwork.batch_card": "Stapelkarte",
-  "gui.factorynetwork.jei.press.count": "Menge: %s"
+  "gui.factorynetwork.jei.press.count": "Menge: %s",
+  "screen.factorynetwork.terminal.worker.running": "Läuft",
+  "screen.factorynetwork.terminal.worker.idle": "Kein Transfer im letzten Durchlauf",
+  "screen.factorynetwork.terminal.worker.waiting_target": "Ziel nimmt nichts an",
+  "screen.factorynetwork.terminal.worker.waiting_condition": "when-Bedingung ist nicht erfüllt",
+  "screen.factorynetwork.terminal.worker.waiting_source": "Quelle liefert nichts Passendes zur Entnahme",
+  "screen.factorynetwork.terminal.worker.waiting_bandwidth": "Kabelbandbreite in diesem Tick ausgeschöpft",
+  "screen.factorynetwork.terminal.worker.waiting_energy": "Netzwerk liefert keine Energie",
+  "screen.factorynetwork.terminal.worker.waiting_path": "Verbindungsweg wird aufgebaut",
+  "screen.factorynetwork.terminal.worker.halted": "Angehalten",
+  "screen.factorynetwork.terminal.worker.not_run": "Noch nicht ausgeführt",
+  "screen.factorynetwork.terminal.worker.waiting_server": "Kein Server im Netzwerk",
+  "screen.factorynetwork.terminal.worker.waiting_boot": "Netzwerk fährt hoch"
 }

@@ -14,6 +14,30 @@ def ownRuntimeDir = file('../BambooCEFMC/tools/runtime/build/out/windows-x86_64'
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
+// Integration tests are a separate development mod. NeoForge discovers
+// @GameTestHolder classes in every dev client, even with GameTests disabled;
+// keeping them out of main lets the minimal acceptance client omit test mods.
+// Neither gametest nor acceptance output belongs in the released jar.
+sourceSets {
+    gametest {
+        compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
+        runtimeClasspath += sourceSets.main.output + sourceSets.main.runtimeClasspath
+    }
+    acceptanceClient {
+        runtimeClasspath += sourceSets.main.output
+    }
+    acceptance {
+        compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
+        runtimeClasspath += sourceSets.main.output + sourceSets.main.runtimeClasspath
+    }
+}
+configurations.acceptanceClientImplementation.extendsFrom(configurations.implementation)
+tasks.register('acceptanceJar', Jar) {
+    dependsOn 'acceptanceClasses'
+    archiveBaseName = 'factorynetwork-acceptance'
+    from sourceSets.acceptance.output
+}
+
 neoForge {
     version = neo_version
 
@@ -22,9 +46,38 @@ neoForge {
         mappingsVersion = parchment_mappings_version
     }
 
+    mods {
+        "${mod_id}" {
+            sourceSet sourceSets.main
+        }
+        factorynetwork_tests {
+            sourceSet sourceSets.gametest
+        }
+    }
+    def mainMod = mods.getByName(mod_id)
+    def testMod = mods.getByName('factorynetwork_tests')
+
     runs {
+        acceptanceClient {
+            client()
+            sourceSet = sourceSets.acceptanceClient
+            loadedMods = [mainMod]
+            systemProperty 'neoforge.enableGameTest', 'false'
+            gameDirectory = layout.buildDirectory.dir('acceptance-client')
+            systemProperty 'bamboocef.runtime.dir', ownRuntimeDir.absolutePath
+            systemProperty 'bamboocef.devtools', 'true'
+            programArgument '--username'
+            programArgument 'FNAcceptance'
+            programArgument '--quickPlayMultiplayer'
+            programArgument '127.0.0.1:25576'
+            programArgument '--width'
+            programArgument '1280'
+            programArgument '--height'
+            programArgument '720'
+        }
         client {
             client()
+            loadedMods = [mainMod, testMod]
             systemProperty 'neoforge.enabledGameTestNamespaces', mod_id
             // Where the native runtime lies. BambooCEF's RuntimeInstall reads
             // exactly this property name and skips its own download when it
@@ -130,19 +183,15 @@ neoForge {
         }
         server {
             server()
+            loadedMods = [mainMod]
             programArgument '--nogui'
             systemProperty 'neoforge.enabledGameTestNamespaces', mod_id
         }
         // Führt die GameTests aus und beendet sich danach mit dem Ergebnis
         gameTestServer {
             type = 'gameTestServer'
+            loadedMods = [mainMod, testMod]
             systemProperty 'neoforge.enabledGameTestNamespaces', mod_id
-        }
-    }
-
-    mods {
-        "${mod_id}" {
-            sourceSet sourceSets.main
         }
     }
 
@@ -150,6 +199,8 @@ neoForge {
     // Ohne das fehlt dem Testquellsatz die Client-Seite, und ein Test für
     // den Editor ließe sich gar nicht erst übersetzen.
     addModdingDependenciesTo sourceSets.test
+    addModdingDependenciesTo sourceSets.gametest
+    addModdingDependenciesTo sourceSets.acceptanceClient
 }
 
 repositories {
@@ -295,6 +346,23 @@ tasks.register('editorCheck', Exec) {
     }
 }
 
+// Revisions, file operations and limits of the bundled web editor need no browser.
+tasks.register('webEditorCheck', Exec) {
+    description = 'Prueft die Zustandssynchronisierung des BambooCEF-Editors.'
+    group = 'verification'
+    workingDir = projectDir
+    commandLine 'node', '--test', 'tools/tests/editor-state.test.cjs'
+    onlyIf {
+        try {
+            def probe = new ProcessBuilder('node', '--version').start()
+            probe.waitFor() == 0
+        } catch (Exception ignored) {
+            logger.lifecycle('node fehlt — der Prueflauf des Web-Editors wird uebersprungen.')
+            false
+        }
+    }
+}
+
 tasks.named('test') {
     // GrammarKeywordTest liest die Grammatik der Erweiterung, und die liegt
     // ausserhalb der Quellordner. Ohne diese Zeile merkt Gradle eine Aenderung
@@ -302,7 +370,7 @@ tasks.named('test') {
     // der Waechter schlaeft. Genau so ist er am 27.08. beim ersten Versuch
     // durchgerutscht — die Gegenprobe bestand, weil nichts lief.
     inputs.dir('editor/vscode').withPropertyName('editorSources')
-    finalizedBy 'editorCheck'
+    finalizedBy 'editorCheck', 'webEditorCheck'
 }
 
 tasks.withType(JavaCompile).configureEach {

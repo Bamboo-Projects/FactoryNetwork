@@ -33,7 +33,7 @@ public record DeployProgramPacket(BlockPos terminal, Map<String, String> files)
     public static final StreamCodec<RegistryFriendlyByteBuf, DeployProgramPacket> STREAM_CODEC =
             StreamCodec.composite(
                     BlockPos.STREAM_CODEC, DeployProgramPacket::terminal,
-                    ByteBufCodecs.map(java.util.HashMap::new, ByteBufCodecs.stringUtf8(64),
+                    ByteBufCodecs.map(java.util.HashMap::new, ByteBufCodecs.stringUtf8(dev.devpanda.factorynetwork.lang.Project.MAX_NAME),
                             ByteBufCodecs.stringUtf8(MAX_LENGTH)),
                     DeployProgramPacket::files,
                     DeployProgramPacket::new);
@@ -84,9 +84,6 @@ public record DeployProgramPacket(BlockPos terminal, Map<String, String> files)
                     || !menu.allows(dev.devpanda.factorynetwork.terminal.TerminalTab.CODE)) {
                 return;
             }
-            if (!menu.charge(player, dev.devpanda.factorynetwork.network.Power.REMOTE_ACTION)) {
-                return;
-            }
             menu.controller(player).ifPresentOrElse(controller -> {
                 // Permission first, then the compiler: whoever is not allowed
                 // should learn that, and not their typos first.
@@ -96,8 +93,14 @@ public record DeployProgramPacket(BlockPos terminal, Map<String, String> files)
                                     "message.factorynetwork.protection.denied").getString()));
                     return;
                 }
+                if (!menu.charge(player, dev.devpanda.factorynetwork.network.Power.REMOTE_ACTION)) {
+                    net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,
+                            new DeployResultPacket(false,
+                                    "Die Batterie enthält nicht genug Energie zum Übernehmen."));
+                    return;
+                }
                 boolean accepted = controller.deploy(
-                        new dev.devpanda.factorynetwork.lang.Project(packet.files()));
+                        new dev.devpanda.factorynetwork.lang.Project(packet.files()), player.getUUID());
                 // The outcome belongs in the editor and not only in the chat:
                 // two of the reasons — no server rack, program too large —
                 // the client does not know at all, because it cannot compile

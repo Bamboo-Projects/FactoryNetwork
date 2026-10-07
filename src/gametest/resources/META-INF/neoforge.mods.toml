@@ -1,0 +1,16 @@
+modLoader="javafml"
+loaderVersion="[4,)"
+license="MIT"
+
+[[mods]]
+modId="factorynetwork_tests"
+version="1.0.0"
+displayName="FactoryNetwork GameTests (development only)"
+description="Integration tests for FactoryNetwork and its optional mod integrations."
+
+[[dependencies.factorynetwork_tests]]
+modId="factorynetwork"
+type="required"
+versionRange="[0.1.2,)"
+ordering="AFTER"
+side="BOTH"

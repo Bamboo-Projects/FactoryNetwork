@@ -1,4 +1,10 @@
-# monaco-editor 0.56.0
+# monaco-editor 0.56.0 / factorynetwork-ide 2026-09-06
+index.html
+demo.html
+app.js
+editor-state.js
+ide.css
+worker-source.js
 vs/abap-D-t0cyap.js
 vs/apex-CcIm7xu6.js
 vs/azcli-BA0tQDCg.js

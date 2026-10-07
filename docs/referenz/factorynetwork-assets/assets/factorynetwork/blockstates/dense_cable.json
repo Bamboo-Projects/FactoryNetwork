@@ -1,0 +1,71 @@
+{
+  "multipart": [
+    {
+      "apply": {
+        "model": "factorynetwork:block/dense_cable_core"
+      },
+      "when": {
+        "cable": "true"
+      }
+    },
+    {
+      "when": {
+        "north": "true",
+        "cable": "true"
+      },
+      "apply": {
+        "model": "factorynetwork:block/dense_cable_arm"
+      }
+    },
+    {
+      "when": {
+        "south": "true",
+        "cable": "true"
+      },
+      "apply": {
+        "model": "factorynetwork:block/dense_cable_arm",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "east": "true",
+        "cable": "true"
+      },
+      "apply": {
+        "model": "factorynetwork:block/dense_cable_arm",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "west": "true",
+        "cable": "true"
+      },
+      "apply": {
+        "model": "factorynetwork:block/dense_cable_arm",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "up": "true",
+        "cable": "true"
+      },
+      "apply": {
+        "model": "factorynetwork:block/dense_cable_arm",
+        "x": 270
+      }
+    },
+    {
+      "when": {
+        "down": "true",
+        "cable": "true"
+      },
+      "apply": {
+        "model": "factorynetwork:block/dense_cable_arm",
+        "x": 90
+      }
+    }
+  ]
+}

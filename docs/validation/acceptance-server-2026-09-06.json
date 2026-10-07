@@ -1,0 +1,80 @@
+{
+  "checkedAt": "2026-09-06T17:54:17.289Z",
+  "server": "NeoForge 21.1.248 / Minecraft 1.21.1",
+  "factorynetwork": "0.1.2",
+  "bamboocefOnServer": false,
+  "onlinePlayersDuringResume": 0,
+  "transport": "real server packet handlers with an automated FakePlayer; no logged-in second client",
+  "beforeRestart": {
+    "project": {
+      "main.mf": "worker transfer {\n    from source\n    to target\n}\n"
+    },
+    "draft": {
+      "main.mf": "// acceptance: keep this draft after restart\nworker unfinished {\n    from source\n"
+    },
+    "online": true,
+    "source": 0,
+    "target": 64,
+    "workers": {
+      "transfer": {
+        "status": "WAITING_SOURCE",
+        "lastRun": 8803,
+        "moved": 0,
+        "detail": "",
+        "faultLatched": false,
+        "hasRun": true,
+        "warmup": 0,
+        "warmupPending": false
+      }
+    },
+    "bamboocefLoaded": false
+  },
+  "afterRestart": {
+    "project": {
+      "main.mf": "worker transfer {\n    from source\n    to target\n}\n"
+    },
+    "draft": {
+      "main.mf": "// acceptance: keep this draft after restart\nworker unfinished {\n    from source\n"
+    },
+    "online": true,
+    "source": 0,
+    "target": 64,
+    "workers": {
+      "transfer": {
+        "status": "WAITING_SOURCE",
+        "lastRun": 9344,
+        "moved": 0,
+        "detail": "",
+        "faultLatched": false,
+        "hasRun": true,
+        "warmup": 0,
+        "warmupPending": false
+      }
+    },
+    "bamboocefLoaded": false
+  },
+  "afterRefill": {
+    "project": {
+      "main.mf": "worker transfer {\n    from source\n    to target\n}\n"
+    },
+    "draft": {
+      "main.mf": "// acceptance: keep this draft after restart\nworker unfinished {\n    from source\n"
+    },
+    "online": true,
+    "source": 0,
+    "target": 128,
+    "workers": {
+      "transfer": {
+        "status": "WAITING_SOURCE",
+        "lastRun": 9844,
+        "moved": 64,
+        "detail": "",
+        "faultLatched": false,
+        "hasRun": true,
+        "warmup": 0,
+        "warmupPending": false
+      }
+    },
+    "bamboocefLoaded": false
+  }
+}

@@ -33,7 +33,7 @@ side = "BOTH"
 # running FactoryNetwork must not be asked for it.
 modId = "bamboocef"
 type = "required"
-versionRange = "[0.1.0,)"
+versionRange = "[0.1.1,)"
 ordering = "AFTER"
 side = "CLIENT"
 

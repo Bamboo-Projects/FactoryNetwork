@@ -23,8 +23,54 @@ import java.util.List;
  * the list has shifted between showing and clicking.
  */
 public record FlowStatePacket(List<Line> flows, Compute compute, Supply supply,
-                              List<String> globals)
+                              List<String> globals, List<WorkerLine> workers)
         implements CustomPacketPayload {
+
+    /** Existing callers without a worker snapshot remain source-compatible. */
+    public FlowStatePacket(List<Line> flows, Compute compute, Supply supply, List<String> globals) {
+        this(flows, compute, supply, globals, List.of());
+    }
+
+    /** The observed reason belongs to the worker, never inside its name. */
+    public record WorkerLine(String name, String status, String detail, long moved) {
+        public WorkerLine {
+            name = bounded(name, 128);
+            status = bounded(status, 32);
+            detail = bounded(detail, 512);
+        }
+
+        public static final StreamCodec<RegistryFriendlyByteBuf, WorkerLine> STREAM_CODEC =
+                StreamCodec.composite(
+                        ByteBufCodecs.stringUtf8(128), WorkerLine::name,
+                        ByteBufCodecs.stringUtf8(32), WorkerLine::status,
+                        ByteBufCodecs.stringUtf8(512), WorkerLine::detail,
+                        ByteBufCodecs.VAR_LONG, WorkerLine::moved,
+                        WorkerLine::new);
+
+        /** Pause is supplied only by the controller that measured its availability. */
+        public static List<WorkerLine> snapshot(dev.devpanda.factorynetwork.lang.ast.Program program,
+                java.util.Map<String, dev.devpanda.factorynetwork.runtime.WorkerRuntime.WorkerState> states,
+                String pauseStatus) {
+            return program.workers().stream().limit(512).map(worker -> {
+                var state = states.get(worker.name());
+                if (pauseStatus != null && !pauseStatus.isBlank()) {
+                    return new WorkerLine(worker.name(), pauseStatus, "", state == null ? 0 : state.moved);
+                }
+                return state == null || !state.hasRun
+                        ? new WorkerLine(worker.name(), "NOT_RUN", "", 0)
+                        : new WorkerLine(worker.name(), state.status.name(), state.detail, state.moved);
+            }).toList();
+        }
+
+        public String translationKey() {
+            return "screen.factorynetwork.terminal.worker." + status.toLowerCase(java.util.Locale.ROOT);
+        }
+
+        private static String bounded(String text, int limit) {
+            if (text == null) return "";
+            return text.length() <= limit ? text : text.substring(0, limit - 1) + "…";
+        }
+    }
 
     /**
      * What the servers can carry, and how much of it is occupied.
@@ -95,6 +141,7 @@ public record FlowStatePacket(List<Line> flows, Compute compute, Supply supply,
                     Supply.STREAM_CODEC, FlowStatePacket::supply,
                     ByteBufCodecs.stringUtf8(256).apply(ByteBufCodecs.list(128)),
                     FlowStatePacket::globals,
+                    WorkerLine.STREAM_CODEC.apply(ByteBufCodecs.list(512)), FlowStatePacket::workers,
                     FlowStatePacket::new);
 
     @Override

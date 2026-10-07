@@ -31,6 +31,7 @@ public final class FnClient {
     @SubscribeEvent
     public static void tickDraft(net.neoforged.neoforge.client.event.ClientTickEvent.Post event) {
         ClientProjectState.tick();
+        EditorApp.tick();
         WorldPointer.tick();
         OverlayProof.tick();
         WorldSurfaceDemo.tick();
@@ -62,6 +63,7 @@ public final class FnClient {
     @SubscribeEvent
     public static void forgetDraft(
             net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingOut event) {
+        EditorApp.clear();
         ClientProjectState.clear();
     }
 

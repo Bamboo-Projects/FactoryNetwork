@@ -137,9 +137,13 @@ CORNERS = {
 
 
 def project(point, scale, origin):
-    """Isometrie von vorn rechts oben: x nach rechts, z nach hinten."""
+    """Isometrie aus Nordosten; die Nordtextur bleibt lesbar.
+
+    Von Norden betrachtet liegt Osten links. Das umgekehrte Vorzeichen
+    spiegelte bisher sämtliche Frontgrafiken im Vorschaubild.
+    """
     x, y, z = point
-    return (origin[0] + (x - (16 - z)) * 0.866 * scale,
+    return (origin[0] + ((16 - z) - x) * 0.866 * scale,
             origin[1] + ((x + (16 - z)) * 0.5 - y) * scale)
 
 

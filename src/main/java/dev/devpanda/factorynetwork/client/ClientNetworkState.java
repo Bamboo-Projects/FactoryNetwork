@@ -29,8 +29,12 @@ public final class ClientNetworkState {
     private static List<String> plants = new ArrayList<>();
     private static List<String> fluids = new ArrayList<>();
     private static Map<String, DeviceProfile> profiles = Map.of();
+    private static long revision;
+
+    public static long revision() { return revision; }
 
     public static void accept(NetworkStatePacket packet) {
+        revision++;
         connectors = new ArrayList<>(packet.connectors());
         displays = new ArrayList<>(packet.displays());
         workers = new ArrayList<>(packet.workers());
@@ -64,6 +68,7 @@ public final class ClientNetworkState {
      * suggestion list and the check see the same thing.
      */
     public static void updateProfile(String connector, DeviceProfile profile) {
+        revision++;
         Map<String, DeviceProfile> next = new HashMap<>(profiles);
         next.put(connector, profile);
         profiles = next;

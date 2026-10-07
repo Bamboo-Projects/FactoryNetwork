@@ -46,13 +46,13 @@ public record ProjectStatePacket(BlockPos controller, Map<String, String> files,
     public static final StreamCodec<RegistryFriendlyByteBuf, ProjectStatePacket> STREAM_CODEC =
             StreamCodec.composite(
                     BlockPos.STREAM_CODEC, ProjectStatePacket::controller,
-                    ByteBufCodecs.map(HashMap::new, ByteBufCodecs.stringUtf8(64),
+                    ByteBufCodecs.map(HashMap::new, ByteBufCodecs.stringUtf8(Project.MAX_NAME),
                             ByteBufCodecs.stringUtf8(MAX_FILE)),
                     ProjectStatePacket::files,
-                    ByteBufCodecs.map(HashMap::new, ByteBufCodecs.stringUtf8(64),
+                    ByteBufCodecs.map(HashMap::new, ByteBufCodecs.stringUtf8(Project.MAX_NAME),
                             ByteBufCodecs.stringUtf8(MAX_FILE)),
                     ProjectStatePacket::draft,
-                    ByteBufCodecs.map(HashMap::new, ByteBufCodecs.stringUtf8(64),
+                    ByteBufCodecs.map(HashMap::new, ByteBufCodecs.stringUtf8(Project.MAX_NAME),
                             ByteBufCodecs.stringUtf8(64)),
                     ProjectStatePacket::locks,
                     ProjectStatePacket::new);

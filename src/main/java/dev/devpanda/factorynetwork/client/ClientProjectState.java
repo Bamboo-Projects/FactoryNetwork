@@ -50,6 +50,9 @@ public final class ClientProjectState {
 
     /** How many ticks have passed since the last change. */
     private static int quiet;
+    private static long saveSequence;
+    private static boolean awaitingSave;
+    private static String saveError = "";
 
     private ClientProjectState() {
     }
@@ -67,12 +70,17 @@ public final class ClientProjectState {
      * player's file, can read it and not change it.
      */
     public static void accept(ProjectStatePacket packet) {
+        boolean changedController = !java.util.Objects.equals(controller, packet.controller());
         controller = packet.controller();
         locks = java.util.Map.copyOf(packet.locks());
         deployed = packet.project();
-        if (!isDirty()) {
+        if (changedController || (!isDirty() && !awaitingSave)) {
             draft = packet.draftProject();
             sent = draft;
+        }
+        if (changedController) {
+            awaitingSave = false;
+            saveError = "";
         }
     }
 
@@ -92,11 +100,16 @@ public final class ClientProjectState {
         }
         draft = project;
         quiet = 0;
+        saveError = "";
     }
 
     /** Who holds this file, or {@code null}. */
     public static String heldBy(String file) {
         return locks.get(file);
+    }
+
+    public static java.util.Map<String, String> locks() {
+        return locks;
     }
 
     /** Does something other than in the controller stand in the editor? */
@@ -106,7 +119,27 @@ public final class ClientProjectState {
 
     /** Is there something here that the server does not have yet? */
     public static boolean isDirty() {
-        return !draft.files().equals(sent.files());
+        return !draft.files().equals(sent.files()) || !saveError.isEmpty();
+    }
+
+    public static boolean awaitingSave() { return awaitingSave; }
+    public static String saveError() { return saveError; }
+
+    /** Late broadcasts cannot acknowledge a save; only its numbered reply can. */
+    public static void acknowledge(dev.devpanda.factorynetwork.network.packet.DraftSavedPacket packet) {
+        if (!awaitingSave || packet.sequence() != saveSequence
+                || !java.util.Objects.equals(controller, packet.state().controller())) return;
+        awaitingSave = false;
+        locks = java.util.Map.copyOf(packet.state().locks());
+        deployed = packet.state().project();
+        if (!packet.accepted()) {
+            saveError = packet.message();
+            return; // Keep rejected text available for copying or retrying.
+        }
+        boolean newerTyping = !draft.files().equals(sent.files());
+        sent = packet.state().draftProject();
+        if (!newerTyping) draft = sent;
+        saveError = "";
     }
 
     /**
@@ -117,7 +150,7 @@ public final class ClientProjectState {
      * typed the last character.
      */
     public static void tick() {
-        if (!isDirty() || controller == null) {
+        if (!isDirty() || controller == null || !saveError.isEmpty()) {
             return;
         }
         if (++quiet < QUIET_TICKS) {
@@ -131,9 +164,16 @@ public final class ClientProjectState {
         if (!isDirty() || controller == null) {
             return;
         }
-        PacketDistributor.sendToServer(SaveDraftPacket.of(controller, draft));
+        PacketDistributor.sendToServer(prepareSave());
+    }
+
+    /** Package-visible to exercise in-flight save ordering without a live connection. */
+    static SaveDraftPacket prepareSave() {
         sent = draft;
         quiet = 0;
+        awaitingSave = true;
+        saveError = "";
+        return SaveDraftPacket.of(controller, draft, ++saveSequence);
     }
 
     /**
@@ -149,5 +189,7 @@ public final class ClientProjectState {
         controller = null;
         locks = java.util.Map.of();
         quiet = 0;
+        awaitingSave = false;
+        saveError = "";
     }
 }

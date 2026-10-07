@@ -16,23 +16,17 @@ import java.util.Map;
 /**
  * Executes functions and event blocks.
  *
- * <p>A tree-walking interpreter, not bytecode. For the scale in question —
- * a few hundred statements per trigger — that is fast enough, and it is the
- * foundation the continuations will later build on: where a call returns
- * here, a state will later be saved.
- *
- * <p><b>What is still missing here:</b> waiting flows do not survive a server
- * restart. {@code await} and {@code sleep} halt the flow and give up instead
- * of saving their state. That is the mod's biggest open promise and
- * deliberately not half-built — persistence that only holds in simple cases
- * is worse than none at all, because nobody can rely on it.
+ * <p>Evaluates expressions and immediate statements by walking their syntax
+ * trees. Waiting and resumable control flow belongs to
+ * {@link dev.devpanda.factorynetwork.runtime.flow.FlowEngine}; that engine
+ * retains explicit frames for persistence and shares statement evaluation here.
  */
 public final class Interpreter {
 
     /**
      * How many statements a flow may execute before it is aborted. Not a
-     * tick budget with continuation, but a hard limit — as long as there are
-     * no continuations, a flow cannot be paused and resumed later.
+     * tick budget with continuation, but a hard limit for an immediate
+     * interpreter call. FlowEngine separately budgets resumable flow steps.
      *
      * <p><b>Read once per interpreter</b>, not at every step: the limit
      * should not shift in the middle of a loop when somebody reloads the

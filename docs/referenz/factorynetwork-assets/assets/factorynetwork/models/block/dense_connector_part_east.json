@@ -1,0 +1,75 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "particle": "factorynetwork:block/connector_side",
+    "front": "factorynetwork:block/connector_front",
+    "back": "factorynetwork:block/connector_back",
+    "side": "factorynetwork:block/connector_side",
+    "status": "factorynetwork:block/status_light"
+  },
+  "elements": [
+    {
+      "from": [
+        13,
+        2,
+        2
+      ],
+      "to": [
+        16.05,
+        14,
+        14
+      ],
+      "faces": {
+        "north": {
+          "texture": "#side"
+        },
+        "south": {
+          "texture": "#side"
+        },
+        "east": {
+          "texture": "#front",
+          "cullface": "east"
+        },
+        "west": {
+          "texture": "#back"
+        },
+        "up": {
+          "texture": "#side"
+        },
+        "down": {
+          "texture": "#side"
+        }
+      }
+    },
+    {
+      "from": [
+        13.5,
+        1,
+        1
+      ],
+      "to": [
+        15.5,
+        15,
+        15
+      ],
+      "faces": {
+        "north": {
+          "texture": "#status",
+          "tintindex": 0
+        },
+        "south": {
+          "texture": "#status",
+          "tintindex": 0
+        },
+        "up": {
+          "texture": "#status",
+          "tintindex": 0
+        },
+        "down": {
+          "texture": "#status",
+          "tintindex": 0
+        }
+      }
+    }
+  ]
+}

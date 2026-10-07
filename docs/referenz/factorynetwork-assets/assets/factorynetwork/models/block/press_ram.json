@@ -1,0 +1,78 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "particle": "factorynetwork:block/machine_top",
+    "front": "factorynetwork:block/press_front",
+    "side": "factorynetwork:block/machine_top"
+  },
+  "elements": [
+    {
+      "from": [
+        4,
+        9,
+        2
+      ],
+      "to": [
+        12,
+        13,
+        12
+      ],
+      "faces": {
+        "north": {
+          "texture": "#front",
+          "uv": [
+            4,
+            3,
+            12,
+            7
+          ]
+        },
+        "south": {
+          "texture": "#side",
+          "uv": [
+            4,
+            3,
+            12,
+            7
+          ]
+        },
+        "east": {
+          "texture": "#side",
+          "uv": [
+            4,
+            3,
+            14,
+            7
+          ]
+        },
+        "west": {
+          "texture": "#side",
+          "uv": [
+            2,
+            3,
+            12,
+            7
+          ]
+        },
+        "up": {
+          "texture": "#side",
+          "uv": [
+            4,
+            2,
+            12,
+            12
+          ]
+        },
+        "down": {
+          "texture": "#side",
+          "uv": [
+            4,
+            4,
+            12,
+            14
+          ]
+        }
+      }
+    }
+  ]
+}

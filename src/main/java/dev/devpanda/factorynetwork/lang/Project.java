@@ -64,7 +64,7 @@ public record Project(Map<String, String> files) {
      * the package over the wire, and the path in the file system would grow with
      * every level — and that path has a limit of its own on Windows.
      */
-    private static final int MAX_NAME = 96;
+    public static final int MAX_NAME = 96;
 
     public Project {
         Map<String, String> sorted = new TreeMap<>();

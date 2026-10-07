@@ -400,5 +400,17 @@
   "gui.factorynetwork.jei.press.time": "%s s",
   "item.factorynetwork.acceleration_card": "Acceleration Card",
   "item.factorynetwork.batch_card": "Batch Card",
-  "gui.factorynetwork.jei.press.count": "Amount: %s"
+  "gui.factorynetwork.jei.press.count": "Amount: %s",
+  "screen.factorynetwork.terminal.worker.running": "Running",
+  "screen.factorynetwork.terminal.worker.idle": "No transfer in the last pass",
+  "screen.factorynetwork.terminal.worker.waiting_target": "Target accepts nothing",
+  "screen.factorynetwork.terminal.worker.waiting_condition": "when condition is not met",
+  "screen.factorynetwork.terminal.worker.waiting_source": "Source offers no matching resource for extraction",
+  "screen.factorynetwork.terminal.worker.waiting_bandwidth": "Cable bandwidth exhausted for this tick",
+  "screen.factorynetwork.terminal.worker.waiting_energy": "Network is not supplying power",
+  "screen.factorynetwork.terminal.worker.waiting_path": "Establishing the connection path",
+  "screen.factorynetwork.terminal.worker.halted": "Halted",
+  "screen.factorynetwork.terminal.worker.not_run": "Not run yet",
+  "screen.factorynetwork.terminal.worker.waiting_server": "No server in the network",
+  "screen.factorynetwork.terminal.worker.waiting_boot": "Network is starting up"
 }

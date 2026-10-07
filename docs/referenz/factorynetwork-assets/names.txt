@@ -1,0 +1,106 @@
+BLOCKS (18)
+  bridge                       Quantum Bridge
+  burner                       Burner
+  cable                        Cable
+  controller                   Controller
+  controller_extension         Controller Extension
+  creative_source              Creative Power Source
+  crystal_ore                  Crystal Ore
+  deepslate_crystal_ore        Deepslate Crystal Ore
+  dense_cable                  Dense Cable
+  display                      Display
+  drive                        Drive
+  fabricator                   Fabricator
+  gateway                      Gateway
+  mast                         Transmitter Mast
+  press                        Press
+  router                       Router
+  server_rack                  Server Rack
+  terminal                     Terminal
+
+ITEMS (85)
+  acceleration_card            Acceleration Card
+  batch_card                   Batch Card
+  black_cable                  Black Cable
+  black_dense_cable            Black Dense Cable
+  blue_cable                   Blue Cable
+  blue_dense_cable             Blue Dense Cable
+  brown_cable                  Brown Cable
+  brown_dense_cable            Brown Dense Cable
+  cable                        Cable
+  cell_k1                      1k Storage Cell
+  cell_k16                     16k Storage Cell
+  cell_k4                      4k Storage Cell
+  cell_k64                     64k Storage Cell
+  chemical_cell_1024k          Chemical Cell 1024k
+  chemical_cell_256k           Chemical Cell 256k
+  chemical_cell_4096k          Chemical Cell 4096k
+  chemical_cell_64k            Chemical Cell 64k
+  connector                    Connector
+  core_logic                   Logic Core
+  core_memory                  Memory Core
+  core_network                 Network Core
+  cpu_128                      Processor 128
+  cpu_2                        Processor 2
+  cpu_32                       Processor 32
+  cpu_8                        Processor 8
+  crystal                      Crystal
+  cyan_cable                   Cyan Cable
+  cyan_dense_cable             Cyan Dense Cable
+  dense_cable                  Dense Cable
+  disk_1024                    Disk 1024
+  disk_256                     Disk 256
+  disk_4096                    Disk 4096
+  disk_64                      Disk 64
+  energy_cell_1024k            Energy Cell 1024k
+  energy_cell_256k             Energy Cell 256k
+  energy_cell_4096k            Energy Cell 4096k
+  energy_cell_64k              Energy Cell 64k
+  entanglement                 Entanglement
+  fluid_cell_1024              Fluid Cell, 1024 Buckets
+  fluid_cell_256               Fluid Cell, 256 Buckets
+  fluid_cell_4096              Fluid Cell, 4096 Buckets
+  fluid_cell_64                Fluid Cell, 64 Buckets
+  gray_cable                   Gray Cable
+  gray_dense_cable             Gray Dense Cable
+  green_cable                  Green Cable
+  green_dense_cable            Green Dense Cable
+  infinity_card                Infinity Card
+  label_gun                    Label Gun
+  laptop                       Laptop
+  light_blue_cable             Light Blue Cable
+  light_blue_dense_cable       Light Blue Dense Cable
+  light_gray_cable             Light Gray Cable
+  light_gray_dense_cable       Light Gray Dense Cable
+  lime_cable                   Lime Cable
+  lime_dense_cable             Lime Dense Cable
+  magenta_cable                Magenta Cable
+  magenta_dense_cable          Magenta Dense Cable
+  network_analyser             Network Analyser
+  orange_cable                 Orange Cable
+  orange_dense_cable           Orange Dense Cable
+  pink_cable                   Pink Cable
+  pink_dense_cable             Pink Dense Cable
+  plate                        Plate
+  purple_cable                 Purple Cable
+  purple_dense_cable           Purple Dense Cable
+  ram_128                      Memory 128
+  ram_32                       Memory 32
+  ram_512                      Memory 512
+  ram_8                        Memory 8
+  range_card                   Range Card
+  raw_crystal                  Raw Crystal
+  red_cable                    Red Cable
+  red_dense_cable              Red Dense Cable
+  server_chassis               Server Chassis
+  stamp_logic                  Stamp: Logic
+  stamp_memory                 Stamp: Memory
+  stamp_network                Stamp: Network
+  stamp_plate                  Stamp: Plate
+  white_cable                  White Cable
+  white_dense_cable            White Dense Cable
+  wireless_module              Wireless Module
+  wireless_terminal            Wireless Terminal
+  wrench                       Wrench
+  yellow_cable                 Yellow Cable
+  yellow_dense_cable           Yellow Dense Cable

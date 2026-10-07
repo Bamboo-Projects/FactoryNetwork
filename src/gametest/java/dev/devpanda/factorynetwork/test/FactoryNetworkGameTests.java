@@ -6417,6 +6417,91 @@ public final class FactoryNetworkGameTests {
                 "und die Grenze nennen: " + entity.diagnostics());
         // The old program keeps running — a rejected one replaces nothing.
         helper.assertValueEqual(entity.programSize(), vorher, "das kleine steht noch");
+        assertRejectedDeployPersists(helper, controller, entity, klein, gross);
+        helper.succeed();
+    }
+
+    /** A rejected deployment must not quietly become the program on the next world load. */
+    private static void assertRejectedDeployPersists(GameTestHelper helper, BlockPos position,
+                                                    ControllerBlockEntity entity,
+                                                    String running, String rejected) {
+        helper.assertValueEqual(entity.project().source("main.mf"), running,
+                "der laufende Quellstand bleibt erhalten");
+        helper.assertValueEqual(entity.draft().source("main.mf"), rejected,
+                "der abgelehnte Versuch bleibt als Entwurf erhalten");
+        var registries = helper.getLevel().registryAccess();
+        var saved = entity.saveWithoutMetadata(registries);
+        var restored = new ControllerBlockEntity(helper.absolutePos(position),
+                FnBlocks.CONTROLLER.get().defaultBlockState());
+        restored.loadWithComponents(saved, registries);
+        helper.assertValueEqual(restored.project().source("main.mf"), running,
+                "auch nach dem Laden steht der bisher laufende Quellstand");
+        helper.assertValueEqual(restored.draft().source("main.mf"), rejected,
+                "auch der abgelehnte Entwurf übersteht das Laden");
+        helper.assertValueEqual(restored.program().functions().getFirst().name(),
+                entity.program().functions().getFirst().name(),
+                "nach dem Laden läuft weiterhin die bisherige Funktion");
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 100)
+    public static void failedDeployKeepsRunningProjectAndDraftSeparate(GameTestHelper helper) {
+        BlockPos position = new BlockPos(1, 2, 1);
+        helper.setBlock(position, FnBlocks.CONTROLLER.get());
+        rackWithServer(helper, position.west());
+        ControllerBlockEntity entity = controllerAt(helper, position);
+        entity.rebuildNetwork();
+        String running = "fn laeuft() { }";
+        helper.assertTrue(entity.deploy(running), "das erste Programm muss laufen");
+
+        String broken = "fn halb() { let a =";
+        helper.assertFalse(entity.deploy(broken), "Compilerfehler müssen abgelehnt werden");
+        helper.assertTrue(entity.diagnostics().stream().anyMatch(d -> d.isError()),
+                "die Compilerfehler müssen angezeigt werden");
+        assertRejectedDeployPersists(helper, position, entity, running, broken);
+
+        helper.setBlock(position.west().above(), Blocks.AIR);
+        helper.setBlock(position.west(), Blocks.AIR);
+        entity.rebuildNetwork();
+        helper.assertFalse(entity.hasServer(), "der Serverschrank wurde entfernt");
+        String noServer = "fn wartet() { }";
+        helper.assertFalse(entity.deploy(noServer), "ohne Server keine Übernahme");
+        helper.assertTrue(entity.diagnostics().stream().anyMatch(d -> d.message().contains("Serverschrank")),
+                "die fehlende Hardware muss angezeigt werden");
+        assertRejectedDeployPersists(helper, position, entity, running, noServer);
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 100)
+    public static void deployCannotOverwriteAnotherAuthorsLockedDraft(GameTestHelper helper) {
+        BlockPos position = new BlockPos(1, 2, 1);
+        helper.setBlock(position, FnBlocks.CONTROLLER.get());
+        rackWithServer(helper, position.west());
+        ControllerBlockEntity entity = controllerAt(helper, position);
+        entity.rebuildNetwork();
+        var first = java.util.UUID.randomUUID();
+        var second = java.util.UUID.randomUUID();
+        var initial = new dev.devpanda.factorynetwork.lang.Project(java.util.Map.of(
+                "main.mf", "fn laeuft() { }", "other.mf", "fn zweite() { }"));
+        helper.assertTrue(entity.deploy(initial), "das erste Programm muss laufen");
+        var locked = initial.with("main.mf", "fn bearbeitet() { }");
+        entity.acceptDraft(locked, first, "Erster Autor");
+
+        for (var rejected : List.of(initial, locked.without("main.mf"),
+                locked.without("main.mf").with("renamed.mf", locked.source("main.mf")),
+                locked.with("main.mf", ""))) {
+            helper.assertFalse(entity.deploy(rejected, second),
+                    "fremde gesperrte Datei darf weder ersetzt noch umbenannt noch gelöscht werden");
+            helper.assertValueEqual(entity.project(), initial, "das laufende Projekt bleibt erhalten");
+            helper.assertValueEqual(entity.draft(), locked, "auch der fremde Entwurf bleibt erhalten");
+            helper.assertTrue(entity.diagnostics().stream().anyMatch(d -> d.message().contains("Erster Autor")),
+                    "die Ablehnung nennt den Autor");
+        }
+
+        var compatible = locked.with("other.mf", "fn andere() { }");
+        helper.assertTrue(entity.deploy(compatible, second),
+                "eine unverändert mitgesendete gesperrte Datei blockiert andere Dateien nicht");
+        helper.assertTrue(entity.deploy(compatible.with("main.mf", "fn fertig() { }"), first),
+                "der Inhaber darf seine eigene gesperrte Datei übernehmen");
         helper.succeed();
     }
 

@@ -370,7 +370,9 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
      * numbers.
      */
     void openBigEditor() {
-        minecraft.setScreen(new CodeScreen(this, menu.position()));
+        if (!dev.devpanda.factorynetwork.client.EditorApp.open(minecraft, this, menu)) {
+            minecraft.setScreen(new WebEditorLoadingScreen(this, menu));
+        }
     }
 
     // ---- Input ------------------------------------------------------------

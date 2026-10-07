@@ -47,16 +47,20 @@ Anzeigen und Strom — im Einzelspieler wie auf einem eigenen Server.**
 | Gruppen | als Verteilziel eines Workers, mit Strategie |
 | Anlagen | `multiblock` als Vorlage, mehrfach in der Welt erkannt |
 | Anzeigen | `display` an der Wand und im Terminal, mit Balken, Lämpchen und Knöpfen |
-| Netzwerk | Controller, Kabel, Connector, Terminal, Laufwerke mit Zellen, Kanäle, Strom |
+| Netzwerk | Controller, Kabel mit Bandbreitenlimit, Connector, Terminal, Laufwerke mit Zellen, Strom |
 | Speicher | schlüsselbasiert, nicht slotbasiert — der Grund steht in der Referenzmessung |
-| Editor | im Spiel, mit Syntaxfarben, Fehleranzeige, Vervollständigung und Geräteerkennung |
+| Editor | BambooCEF/Monaco am Terminal: Projektdateien, Tabs, Compilerdiagnosen, Speichern und Übernehmen; klassischer Editor als Rückfall |
 | Dazu | ein Projektordner neben der Welt und eine Erweiterung für VS Code |
-| Prüfung | über 260 Einheitstests und über 160 GameTests in einer echten Welt — alle grün |
+| Prüfung | 611 Einheitstests und 369 GameTests erfolgreich; Web-Editor zusätzlich mit Node und Chromium geprüft |
 
-Was noch offen ist, steht in [docs/offene-punkte.md](docs/offene-punkte.md).
-Das Größte darin: Strom wird geleitet und gespeichert, aber noch nicht von
-einem Worker verteilt, und `output()` und `send()` sind beschrieben, aber
-nicht entschieden.
+Der aktuelle Stand **0.1.2** mit Worker-Wartegründen, getrennter Testmod und
+dediziertem Serverprüfstand steht in [docs/stabilisierung-0.1.2.md](docs/stabilisierung-0.1.2.md).
+Die ursprüngliche BambooCEF-Integration und die Gerätegestaltung sind in
+[docs/editor-integration.md](docs/editor-integration.md) dokumentiert.
+
+[docs/offene-punkte.md](docs/offene-punkte.md) enthält offene Fragen und die
+Entwicklungsgeschichte. Ältere Einträge darin sind keine aktuelle Funktionsliste;
+für die jüngste Abnahme gilt der oben verlinkte Prüfstand.
 
 ## Dokumente
 
