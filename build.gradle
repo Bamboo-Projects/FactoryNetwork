@@ -18,18 +18,38 @@ java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 // @GameTestHolder classes in every dev client, even with GameTests disabled;
 // keeping them out of main lets the minimal acceptance client omit test mods.
 // Neither gametest nor acceptance output belongs in the released jar.
+//
+// The core is a source set of its own, and the one thing that sets it apart
+// is what it is compiled against: nothing but the JDK. The language, the
+// interpreter and the flows live there. A reach for the game from one of
+// them is then not a matter of discipline but a compile error — and what
+// compiles without Minecraft compiles the same on every version of it.
+// It ships inside the same jar and belongs to the same mod; see `jar` and
+// `mods` below.
 sourceSets {
+    core
+    main {
+        compileClasspath += sourceSets.core.output
+        runtimeClasspath += sourceSets.core.output
+    }
+    test {
+        compileClasspath += sourceSets.core.output
+        runtimeClasspath += sourceSets.core.output
+    }
     gametest {
-        compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
-        runtimeClasspath += sourceSets.main.output + sourceSets.main.runtimeClasspath
+        compileClasspath += sourceSets.core.output + sourceSets.main.output + sourceSets.main.compileClasspath
+        runtimeClasspath += sourceSets.core.output + sourceSets.main.output + sourceSets.main.runtimeClasspath
     }
     acceptanceClient {
-        runtimeClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.core.output + sourceSets.main.output
     }
     acceptance {
-        compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
-        runtimeClasspath += sourceSets.main.output + sourceSets.main.runtimeClasspath
+        compileClasspath += sourceSets.core.output + sourceSets.main.output + sourceSets.main.compileClasspath
+        runtimeClasspath += sourceSets.core.output + sourceSets.main.output + sourceSets.main.runtimeClasspath
     }
+}
+jar {
+    from sourceSets.core.output
 }
 configurations.acceptanceClientImplementation.extendsFrom(configurations.implementation)
 tasks.register('acceptanceJar', Jar) {
@@ -49,6 +69,7 @@ neoForge {
     mods {
         "${mod_id}" {
             sourceSet sourceSets.main
+            sourceSet sourceSets.core
         }
         factorynetwork_tests {
             sourceSet sourceSets.gametest
