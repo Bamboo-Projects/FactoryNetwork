@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.storage;
 
+import dev.devpanda.factorynetwork.platform.Nbt;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -61,7 +62,7 @@ public record CellFormat<T>(String nbtKey, String amountKey, Entry<T> entry) {
 
                 @Override
                 public ItemKey read(CompoundTag tag, HolderLookup.Provider registries) {
-                    ResourceLocation id = ResourceLocation.tryParse(tag.getString("Item"));
+                    ResourceLocation id = ResourceLocation.tryParse(Nbt.getString(tag, "Item"));
                     // If the mod has left the pack, the entry cannot be read
                     // right now. The cell keeps it; see Loaded.
                     if (id == null || !BuiltInRegistries.ITEM.containsKey(id)) {
@@ -114,7 +115,7 @@ public record CellFormat<T>(String nbtKey, String amountKey, Entry<T> entry) {
 
             @Override
             public T read(CompoundTag tag, HolderLookup.Provider registries) {
-                ResourceLocation id = ResourceLocation.tryParse(tag.getString(idKey));
+                ResourceLocation id = ResourceLocation.tryParse(Nbt.getString(tag, idKey));
                 return id == null || !registry.containsKey(id) ? null : registry.get(id);
             }
 
@@ -181,7 +182,7 @@ public record CellFormat<T>(String nbtKey, String amountKey, Entry<T> entry) {
 
     private ListTag entriesOf(ItemStack cell) {
         CustomData data = cell.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA);
-        return data == null ? new ListTag() : data.copyTag().getList(nbtKey, Tag.TAG_COMPOUND);
+        return data == null ? new ListTag() : Nbt.getList(data.copyTag(), nbtKey, Tag.TAG_COMPOUND);
     }
 
     /**
@@ -203,10 +204,10 @@ public record CellFormat<T>(String nbtKey, String amountKey, Entry<T> entry) {
         if (data == null) {
             return new Summary(0, 0);
         }
-        ListTag entries = data.copyTag().getList(nbtKey, Tag.TAG_COMPOUND);
+        ListTag entries = Nbt.getList(data.copyTag(), nbtKey, Tag.TAG_COMPOUND);
         long amount = 0;
         for (int i = 0; i < entries.size(); i++) {
-            amount += entries.getCompound(i).getLong(amountKey);
+            amount += Nbt.getLong(Nbt.compoundAt(entries, i), amountKey);
         }
         return new Summary(entries.size(), amount);
     }

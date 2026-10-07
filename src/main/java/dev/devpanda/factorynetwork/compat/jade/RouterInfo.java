@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.compat.jade;
 
+import dev.devpanda.factorynetwork.platform.Nbt;
 import dev.devpanda.factorynetwork.block.CableBlock;
 import dev.devpanda.factorynetwork.block.entity.RouterBlockEntity;
 import dev.devpanda.factorynetwork.network.ControllerRegistry;
@@ -91,9 +92,9 @@ public enum RouterInfo implements IBlockComponentProvider, IServerDataProvider<B
 
     @Override
     public void appendTooltip(ITooltip tooltip, BlockAccessor accessor, IPluginConfig config) {
-        ListTag lines = accessor.getServerData().getList(KEY_LANES, Tag.TAG_STRING);
+        ListTag lines = Nbt.getList(accessor.getServerData(), KEY_LANES, Tag.TAG_STRING);
         for (int i = 0; i < lines.size(); i++) {
-            String[] parts = lines.getString(i).split(SEPARATOR, -1);
+            String[] parts = Nbt.stringAt(lines, i).split(SEPARATOR, -1);
             if (parts.length < 3) {
                 continue;
             }

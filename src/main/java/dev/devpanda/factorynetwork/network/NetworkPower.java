@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.network;
 
+import dev.devpanda.factorynetwork.platform.Nbt;
 import dev.devpanda.factorynetwork.block.entity.DriveBlockEntity;
 import dev.devpanda.factorynetwork.storage.EnergyCellView;
 import net.minecraft.core.HolderLookup;
@@ -439,11 +440,11 @@ public final class NetworkPower {
         bootTicks = 0;
         if (tag.contains(KEY_STATE)) {
             for (State candidate : State.values()) {
-                if (candidate.name().equals(tag.getString(KEY_STATE))) {
+                if (candidate.name().equals(Nbt.getString(tag, KEY_STATE))) {
                     state = candidate;
                 }
             }
-            bootTicks = tag.getInt(KEY_BOOT);
+            bootTicks = Nbt.getInt(tag, KEY_BOOT);
         }
     }
 }

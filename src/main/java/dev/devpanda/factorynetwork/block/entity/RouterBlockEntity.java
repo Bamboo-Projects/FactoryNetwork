@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.block.entity;
 
+import dev.devpanda.factorynetwork.platform.Nbt;
 import dev.devpanda.factorynetwork.registry.FnBlockEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -245,7 +246,7 @@ public class RouterBlockEntity extends BlockEntity {
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-        byte[] stored = tag.getByteArray(KEY_LANES);
+        byte[] stored = Nbt.getByteArray(tag, KEY_LANES);
         for (int i = 0; i < lanes.length; i++) {
             // Shorter arrays from older saves should not crash; what is
             // missing stays at the default.

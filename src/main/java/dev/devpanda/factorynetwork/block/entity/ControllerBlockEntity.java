@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.block.entity;
 
+import dev.devpanda.factorynetwork.platform.Nbt;
 import dev.devpanda.factorynetwork.lang.BuiltinEvents;
 import dev.devpanda.factorynetwork.lang.Diagnostic;
 import dev.devpanda.factorynetwork.lang.ast.Decl;
@@ -2787,14 +2788,14 @@ public class ControllerBlockEntity extends BlockEntity {
             return;
         }
         foreignSave = null;
-        owner = tag.hasUUID(KEY_OWNER) ? tag.getUUID(KEY_OWNER) : null;
+        owner = Nbt.hasUUID(tag, KEY_OWNER) ? Nbt.getUUID(tag, KEY_OWNER) : null;
         jobs.clear();
-        nextJobId = Math.max(1, tag.getLong(KEY_NEXT_JOB));
-        net.minecraft.nbt.ListTag jobList = tag.getList(KEY_JOBS,
+        nextJobId = Math.max(1, Nbt.getLong(tag, KEY_NEXT_JOB));
+        net.minecraft.nbt.ListTag jobList = Nbt.getList(tag, KEY_JOBS,
                 net.minecraft.nbt.Tag.TAG_COMPOUND);
         for (int i = 0; i < jobList.size(); i++) {
             var job = dev.devpanda.factorynetwork.crafting.CraftingJob
-                    .load(jobList.getCompound(i));
+                    .load(Nbt.compoundAt(jobList, i));
             if (job != null) {
                 jobs.add(job);
             }
@@ -2803,30 +2804,30 @@ public class ControllerBlockEntity extends BlockEntity {
         project = savedProject.running();
         draft = savedProject.draft();
         heldBack.clear();
-        net.minecraft.nbt.ListTag heldTag = tag.getList(KEY_HELD_BACK,
+        net.minecraft.nbt.ListTag heldTag = Nbt.getList(tag, KEY_HELD_BACK,
                 net.minecraft.nbt.Tag.TAG_COMPOUND);
         for (int i = 0; i < heldTag.size(); i++) {
-            ItemStack.parse(registries, heldTag.getCompound(i)).ifPresent(heldBack::add);
+            ItemStack.parse(registries, Nbt.compoundAt(heldTag, i)).ifPresent(heldBack::add);
         }
-        storage.load(tag.getCompound(KEY_STORAGE), registries);
-        fluidStorage.load(tag.getCompound(KEY_FLUIDS), registries);
-        power.load(tag.getCompound(KEY_POWER), registries);
+        storage.load(Nbt.getCompound(tag, KEY_STORAGE), registries);
+        fluidStorage.load(Nbt.getCompound(tag, KEY_FLUIDS), registries);
+        power.load(Nbt.getCompound(tag, KEY_POWER), registries);
         globals.clear();
-        CompoundTag globalsTag = tag.getCompound(KEY_GLOBALS);
-        for (String name : globalsTag.getAllKeys()) {
+        CompoundTag globalsTag = Nbt.getCompound(tag, KEY_GLOBALS);
+        for (String name : Nbt.keys(globalsTag)) {
             globals.put(name, dev.devpanda.factorynetwork.runtime.flow.ValueCodec
-                    .read(globalsTag.getCompound(name)));
+                    .read(Nbt.getCompound(globalsTag, name)));
         }
         log.clear();
         net.minecraft.nbt.ListTag logTag =
-                tag.getList(KEY_LOG, net.minecraft.nbt.Tag.TAG_COMPOUND);
+                Nbt.getList(tag, KEY_LOG, net.minecraft.nbt.Tag.TAG_COMPOUND);
         for (int i = 0; i < logTag.size(); i++) {
             log.add(dev.devpanda.factorynetwork.runtime.LogEntry
-                    .read(logTag.getCompound(i)));
+                    .read(Nbt.compoundAt(logTag, i)));
         }
         // The flows wait for the first tick: they need an interpreter, which
         // needs a world, and that is not yet reliably available here.
-        pendingFlows = tag.contains(KEY_FLOWS) ? tag.getCompound(KEY_FLOWS) : null;
+        pendingFlows = tag.contains(KEY_FLOWS) ? Nbt.getCompound(tag, KEY_FLOWS) : null;
         // After loading it is recompiled: the tree itself is not saved,
         // because the language can change while the source text stays valid.
         if (!source().isBlank()) {
@@ -2847,7 +2848,7 @@ public class ControllerBlockEntity extends BlockEntity {
         }
         SaveVersion.write(tag);
         if (owner != null) {
-            tag.putUUID(KEY_OWNER, owner);
+            Nbt.putUUID(tag, KEY_OWNER, owner);
         }
         net.minecraft.nbt.ListTag jobList = new net.minecraft.nbt.ListTag();
         jobs.forEach(job -> jobList.add(job.save()));

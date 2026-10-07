@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.block.entity;
 
+import dev.devpanda.factorynetwork.platform.Nbt;
 import dev.devpanda.factorynetwork.lang.ast.Decl;
 import dev.devpanda.factorynetwork.network.ControllerRegistry;
 import dev.devpanda.factorynetwork.registry.FnBlockEntities;
@@ -267,14 +268,14 @@ public class DisplayBlockEntity extends BlockEntity {
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-        displayName = tag.getString(KEY_NAME);
+        displayName = Nbt.getString(tag, KEY_NAME);
         // Default when unspecified: a world from yesterday does not have the
         // key, and a panel with a scale of zero would be invisible.
-        textScale = tag.contains(KEY_SCALE) ? clampScale(tag.getInt(KEY_SCALE)) : 1;
-        ListTag list = tag.getList(KEY_LINES, Tag.TAG_STRING);
+        textScale = tag.contains(KEY_SCALE) ? clampScale(Nbt.getInt(tag, KEY_SCALE)) : 1;
+        ListTag list = Nbt.getList(tag, KEY_LINES, Tag.TAG_STRING);
         List<String> loaded = new ArrayList<>(list.size());
         for (int i = 0; i < list.size(); i++) {
-            loaded.add(list.getString(i));
+            loaded.add(Nbt.stringAt(list, i));
         }
         lines = List.copyOf(loaded);
     }

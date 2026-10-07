@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.runtime.flow;
 
+import dev.devpanda.factorynetwork.platform.Nbt;
 import dev.devpanda.factorynetwork.runtime.ScriptError;
 import dev.devpanda.factorynetwork.runtime.Value;
 import net.minecraft.nbt.CompoundTag;
@@ -105,28 +106,28 @@ public final class ValueCodec {
     }
 
     public static Value read(CompoundTag tag) {
-        String type = tag.getString(KEY_TYPE);
+        String type = Nbt.getString(tag, KEY_TYPE);
         // Resources first: their names belong to the kind, and which kind
         // belongs to a name is known to the registry. Without this detour
         // every new kind would mean one more line in this codec.
         var kind = dev.devpanda.factorynetwork.runtime.ResourceKinds.byTag(type);
         if (kind != null) {
             return kind.tag().equals(type)
-                    ? new Value.Resource(kind, kind.fromId(tag.getString(KEY_VALUE)))
+                    ? new Value.Resource(kind, kind.fromId(Nbt.getString(tag, KEY_VALUE)))
                     : readSelection(kind, tag);
         }
         return switch (type) {
-            case "int" -> new Value.Int(tag.getLong(KEY_VALUE));
-            case "dec" -> new Value.Decimal(tag.getDouble(KEY_VALUE));
-            case "bool" -> new Value.Bool(tag.getBoolean(KEY_VALUE));
-            case "text" -> new Value.Text(tag.getString(KEY_VALUE));
-            case "dur" -> new Value.Duration(tag.getLong(KEY_VALUE));
-            case "req" -> new Value.Request(tag.getString(KEY_VALUE), tag.getLong(KEY_AMOUNT));
-            case "dev" -> new Value.Device(tag.getString(KEY_VALUE));
-            case "grp" -> new Value.Group(tag.getString(KEY_VALUE));
-            case "slots" -> new Value.DeviceSlots(tag.getString(KEY_VALUE),
-                    java.util.Arrays.stream(tag.getIntArray(KEY_ITEMS)).boxed().toList());
-            case "builtin" -> new Value.Builtin(tag.getString(KEY_VALUE));
+            case "int" -> new Value.Int(Nbt.getLong(tag, KEY_VALUE));
+            case "dec" -> new Value.Decimal(Nbt.getDouble(tag, KEY_VALUE));
+            case "bool" -> new Value.Bool(Nbt.getBoolean(tag, KEY_VALUE));
+            case "text" -> new Value.Text(Nbt.getString(tag, KEY_VALUE));
+            case "dur" -> new Value.Duration(Nbt.getLong(tag, KEY_VALUE));
+            case "req" -> new Value.Request(Nbt.getString(tag, KEY_VALUE), Nbt.getLong(tag, KEY_AMOUNT));
+            case "dev" -> new Value.Device(Nbt.getString(tag, KEY_VALUE));
+            case "grp" -> new Value.Group(Nbt.getString(tag, KEY_VALUE));
+            case "slots" -> new Value.DeviceSlots(Nbt.getString(tag, KEY_VALUE),
+                    java.util.Arrays.stream(Nbt.getIntArray(tag, KEY_ITEMS)).boxed().toList());
+            case "builtin" -> new Value.Builtin(Nbt.getString(tag, KEY_VALUE));
             case "list" -> readList(tag);
             case "nothing" -> Value.Nothing.get();
             // A kind nobody knows any more. Since the registry became open,
@@ -148,19 +149,19 @@ public final class ValueCodec {
      */
     private static Value readSelection(
             dev.devpanda.factorynetwork.runtime.ResourceKind kind, CompoundTag tag) {
-        ListTag entries = tag.getList(KEY_ITEMS, Tag.TAG_STRING);
+        ListTag entries = Nbt.getList(tag, KEY_ITEMS, Tag.TAG_STRING);
         List<Object> resolved = new ArrayList<>(entries.size());
         for (int i = 0; i < entries.size(); i++) {
-            resolved.add(kind.fromId(entries.getString(i)));
+            resolved.add(kind.fromId(Nbt.stringAt(entries, i)));
         }
-        return new Value.Selection(kind, List.copyOf(resolved), tag.getLong(KEY_AMOUNT));
+        return new Value.Selection(kind, List.copyOf(resolved), Nbt.getLong(tag, KEY_AMOUNT));
     }
 
     private static Value readList(CompoundTag tag) {
-        ListTag entries = tag.getList(KEY_ITEMS, Tag.TAG_COMPOUND);
+        ListTag entries = Nbt.getList(tag, KEY_ITEMS, Tag.TAG_COMPOUND);
         List<Value> values = new ArrayList<>(entries.size());
         for (int i = 0; i < entries.size(); i++) {
-            values.add(read(entries.getCompound(i)));
+            values.add(read(Nbt.compoundAt(entries, i)));
         }
         return new Value.ValueList(List.copyOf(values));
     }

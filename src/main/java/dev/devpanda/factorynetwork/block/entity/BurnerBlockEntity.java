@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.block.entity;
 
+import dev.devpanda.factorynetwork.platform.Nbt;
 import dev.devpanda.factorynetwork.network.InternalBuffer;
 import dev.devpanda.factorynetwork.registry.FnBlockEntities;
 import net.minecraft.core.BlockPos;
@@ -262,8 +263,8 @@ public class BurnerBlockEntity extends BlockEntity implements Container, MenuPro
         super.loadAdditional(tag, registries);
         items.clear();
         ContainerHelper.loadAllItems(tag, items, registries);
-        burnTicks = tag.getInt(KEY_BURN);
-        burnTotal = Math.max(1, tag.getInt(KEY_BURN_TOTAL));
+        burnTicks = Nbt.getInt(tag, KEY_BURN);
+        burnTotal = Math.max(1, Nbt.getInt(tag, KEY_BURN_TOTAL));
         if (tag.contains(KEY_ENERGY)) {
             energy.deserializeNBT(registries, tag.get(KEY_ENERGY));
         }

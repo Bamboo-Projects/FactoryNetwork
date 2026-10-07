@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.runtime.flow;
 
+import dev.devpanda.factorynetwork.platform.Nbt;
 import dev.devpanda.factorynetwork.lang.ast.Block;
 import dev.devpanda.factorynetwork.runtime.ScriptError;
 import dev.devpanda.factorynetwork.runtime.Value;
@@ -149,7 +150,7 @@ public final class FlowCodec {
 
     /** Does this tag contain not a single flow? */
     public static boolean isEmpty(CompoundTag tag) {
-        return tag == null || tag.getList(KEY_FLOWS, Tag.TAG_COMPOUND).isEmpty();
+        return tag == null || Nbt.getList(tag, KEY_FLOWS, Tag.TAG_COMPOUND).isEmpty();
     }
 
     // ---- Reading ----------------------------------------------------------
@@ -162,11 +163,11 @@ public final class FlowCodec {
      * player should be able to see where the flow stood before deciding.
      */
     public static void read(CompoundTag tag, FlowEngine engine) {
-        engine.setNextId(Math.max(1, tag.getLong(KEY_NEXT_ID)));
+        engine.setNextId(Math.max(1, Nbt.getLong(tag, KEY_NEXT_ID)));
         int currentHash = engine.blocks().structureHash();
-        ListTag list = tag.getList(KEY_FLOWS, Tag.TAG_COMPOUND);
+        ListTag list = Nbt.getList(tag, KEY_FLOWS, Tag.TAG_COMPOUND);
         for (int i = 0; i < list.size(); i++) {
-            Flow flow = read(list.getCompound(i), engine.blocks(), currentHash);
+            Flow flow = read(Nbt.compoundAt(list, i), engine.blocks(), currentHash);
             if (flow != null) {
                 engine.adopt(flow);
             }
@@ -174,14 +175,14 @@ public final class FlowCodec {
     }
 
     private static Flow read(CompoundTag tag, BlockIndex blocks, int currentHash) {
-        Flow flow = new Flow(tag.getLong(KEY_ID), tag.getString(KEY_ENTRY));
-        int savedHash = tag.getInt(KEY_HASH);
+        Flow flow = new Flow(Nbt.getLong(tag, KEY_ID), Nbt.getString(tag, KEY_ENTRY));
+        int savedHash = Nbt.getInt(tag, KEY_HASH);
         flow.setStructureHash(savedHash);
 
         try {
-            ListTag stack = tag.getList(KEY_STACK, Tag.TAG_COMPOUND);
+            ListTag stack = Nbt.getList(tag, KEY_STACK, Tag.TAG_COMPOUND);
             for (int i = 0; i < stack.size(); i++) {
-                flow.push(readFrame(stack.getCompound(i), blocks));
+                flow.push(readFrame(Nbt.compoundAt(stack, i), blocks));
             }
         } catch (ScriptError error) {
             // A value could not be read back. The flow is done for, but it
@@ -194,12 +195,12 @@ public final class FlowCodec {
             return null;
         }
 
-        Flow.Status status = statusOf(tag.getString(KEY_STATUS));
-        String event = tag.getString(KEY_EVENT);
-        String resultName = tag.getString(KEY_RESULT_NAME);
-        flow.restore(status, tag.getString(KEY_DETAIL), ValueCodec.read(tag.getCompound(KEY_RESULT)),
-                tag.getLong(KEY_WAKE_AT), event.isEmpty() ? null : event,
-                tag.getLong(KEY_DEADLINE), resultName.isEmpty() ? null : resultName);
+        Flow.Status status = statusOf(Nbt.getString(tag, KEY_STATUS));
+        String event = Nbt.getString(tag, KEY_EVENT);
+        String resultName = Nbt.getString(tag, KEY_RESULT_NAME);
+        flow.restore(status, Nbt.getString(tag, KEY_DETAIL), ValueCodec.read(Nbt.getCompound(tag, KEY_RESULT)),
+                Nbt.getLong(tag, KEY_WAKE_AT), event.isEmpty() ? null : event,
+                Nbt.getLong(tag, KEY_DEADLINE), resultName.isEmpty() ? null : resultName);
 
         if (savedHash != currentHash) {
             flow.markStale();
@@ -208,37 +209,37 @@ public final class FlowCodec {
     }
 
     private static Frame readFrame(CompoundTag tag, BlockIndex blocks) {
-        int id = tag.getInt(KEY_BLOCK);
+        int id = Nbt.getInt(tag, KEY_BLOCK);
         Block block = blocks.block(id);
         if (block == null) {
             throw new ScriptError("Der Ablauf stand in einem Block, den es nicht mehr gibt.",
                     "Das Programm hat sich stärker geändert, als sich nachvollziehen lässt.");
         }
-        Frame frame = new Frame(block, tag.getBoolean(KEY_LOOP));
+        Frame frame = new Frame(block, Nbt.getBoolean(tag, KEY_LOOP));
         // The counter may point past the end — then the first thing the flow
         // does is leave the frame. It must not point any further.
-        frame.setIndex(Math.max(0, Math.min(tag.getInt(KEY_INDEX), block.statements().size())));
-        frame.setExitOnLeave(tag.getBoolean(KEY_EXIT));
-        ListTag locals = tag.getList(KEY_LOCALS, Tag.TAG_COMPOUND);
+        frame.setIndex(Math.max(0, Math.min(Nbt.getInt(tag, KEY_INDEX), block.statements().size())));
+        frame.setExitOnLeave(Nbt.getBoolean(tag, KEY_EXIT));
+        ListTag locals = Nbt.getList(tag, KEY_LOCALS, Tag.TAG_COMPOUND);
         for (int i = 0; i < locals.size(); i++) {
-            CompoundTag entry = locals.getCompound(i);
-            frame.locals().put(entry.getString(KEY_NAME),
-                    ValueCodec.read(entry.getCompound(KEY_VALUE)));
+            CompoundTag entry = Nbt.compoundAt(locals, i);
+            frame.locals().put(Nbt.getString(entry, KEY_NAME),
+                    ValueCodec.read(Nbt.getCompound(entry, KEY_VALUE)));
         }
-        if (tag.getBoolean(KEY_CALL)) {
-            frame.beginCall(tag.contains(KEY_RESULT_INTO) ? tag.getString(KEY_RESULT_INTO) : null,
-                    tag.getString(KEY_PREFIX));
+        if (Nbt.getBoolean(tag, KEY_CALL)) {
+            frame.beginCall(tag.contains(KEY_RESULT_INTO) ? Nbt.getString(tag, KEY_RESULT_INTO) : null,
+                    Nbt.getString(tag, KEY_PREFIX));
         } else if (tag.contains(KEY_PREFIX)) {
-            frame.setDevicePrefix(tag.getString(KEY_PREFIX));
+            frame.setDevicePrefix(Nbt.getString(tag, KEY_PREFIX));
         }
         if (tag.contains(KEY_ITER_VAR)) {
-            ListTag values = tag.getList(KEY_ITER_VALUES, Tag.TAG_COMPOUND);
+            ListTag values = Nbt.getList(tag, KEY_ITER_VALUES, Tag.TAG_COMPOUND);
             List<Value> entries = new ArrayList<>(values.size());
             for (int i = 0; i < values.size(); i++) {
-                entries.add(ValueCodec.read(values.getCompound(i)));
+                entries.add(ValueCodec.read(Nbt.compoundAt(values, i)));
             }
-            frame.restoreIteration(tag.getString(KEY_ITER_VAR), entries,
-                    tag.getInt(KEY_ITER_INDEX));
+            frame.restoreIteration(Nbt.getString(tag, KEY_ITER_VAR), entries,
+                    Nbt.getInt(tag, KEY_ITER_INDEX));
         }
         return frame;
     }

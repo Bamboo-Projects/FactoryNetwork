@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.item;
 
+import dev.devpanda.factorynetwork.platform.Nbt;
 import dev.devpanda.factorynetwork.analyser.AnalyserScan;
 import dev.devpanda.factorynetwork.block.entity.ControllerBlockEntity;
 import dev.devpanda.factorynetwork.network.ControllerRegistry;
@@ -132,7 +133,7 @@ public class NetworkAnalyserItem extends Item {
         if (data == null || !data.contains(KEY_POS)) {
             return null;
         }
-        long packed = data.copyTag().getLong(KEY_POS);
+        long packed = Nbt.getLong(data.copyTag(), KEY_POS);
         return BlockPos.of(packed);
     }
 

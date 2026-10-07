@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.compat.jade;
 
+import dev.devpanda.factorynetwork.platform.Nbt;
 import dev.devpanda.factorynetwork.block.CableBlock;
 import dev.devpanda.factorynetwork.block.CableColour;
 import dev.devpanda.factorynetwork.network.ControllerRegistry;
@@ -57,12 +58,12 @@ public enum CableInfo implements IBlockComponentProvider, IServerDataProvider<Bl
 
     @Override
     public void appendTooltip(ITooltip tooltip, BlockAccessor accessor, IPluginConfig config) {
-        ListTag lines = accessor.getServerData().getList(KEY_STRANDS, Tag.TAG_STRING);
+        ListTag lines = Nbt.getList(accessor.getServerData(), KEY_STRANDS, Tag.TAG_STRING);
         if (lines.isEmpty()) {
             return;
         }
         for (int i = 0; i < lines.size(); i++) {
-            String[] parts = lines.getString(i).split(" ", 2);
+            String[] parts = Nbt.stringAt(lines, i).split(" ", 2);
             Component name = Component.translatable(
                     "jade.factorynetwork.colour." + parts[0]);
             String load = parts.length > 1 ? parts[1] : "";

@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.storage;
 
+import dev.devpanda.factorynetwork.platform.Nbt;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -23,7 +24,7 @@ class CellEntriesTest {
 
         @Override
         public String read(CompoundTag tag, HolderLookup.Provider registries) {
-            String id = tag.getString("Item");
+            String id = Nbt.getString(tag, "Item");
             return KNOWN.contains(id) ? id : null;
         }
 
@@ -66,7 +67,7 @@ class CellEntriesTest {
     void unreadableIsKeptVerbatim() {
         ListTag before = stored();
         CellFormat.Loaded<String> loaded = load(before);
-        assertEquals(List.of(before.getCompound(1)), loaded.unreadable());
+        assertEquals(List.of(Nbt.compoundAt(before, 1)), loaded.unreadable());
         assertEquals(12, CellEntries.amountOf(loaded.unreadable(), "Count"));
     }
 
@@ -84,8 +85,8 @@ class CellEntriesTest {
         assertEquals(Map.of("stone", 10L), again.contents());
         assertEquals(1, again.unreadable().size());
         CompoundTag kept = again.unreadable().get(0);
-        assertEquals("othermod:gear", kept.getString("Item"));
-        assertEquals(12, kept.getLong("Count"));
+        assertEquals("othermod:gear", Nbt.getString(kept, "Item"));
+        assertEquals(12, Nbt.getLong(kept, "Count"));
         assertTrue(kept.contains("components"), "the extra data must come through untouched");
     }
 

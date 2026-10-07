@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.compat.jade;
 
+import dev.devpanda.factorynetwork.platform.Nbt;
 import dev.devpanda.factorynetwork.block.entity.PressBlockEntity;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
@@ -48,15 +49,15 @@ public enum PressInfo implements IBlockComponentProvider, IServerDataProvider<Bl
         if (!data.contains(KEY_ENERGY)) {
             return;
         }
-        int energie = data.getInt(KEY_ENERGY);
-        int fassung = Math.max(1, data.getInt(KEY_CAPACITY));
+        int energie = Nbt.getInt(data, KEY_ENERGY);
+        int fassung = Math.max(1, Nbt.getInt(data, KEY_CAPACITY));
         tooltip.add(Component.translatable("jade.factorynetwork.press.energy",
                         String.format(java.util.Locale.GERMANY, "%,d", energie),
                         energie * 100 / fassung)
                 .withStyle(energie > 0 ? ChatFormatting.GRAY : ChatFormatting.RED));
 
-        int fortschritt = data.getInt(KEY_PROGRESS);
-        int noetig = data.getInt(KEY_REQUIRED);
+        int fortschritt = Nbt.getInt(data, KEY_PROGRESS);
+        int noetig = Nbt.getInt(data, KEY_REQUIRED);
         if (fortschritt > 0 && noetig > 0) {
             tooltip.add(Component.translatable("jade.factorynetwork.press.progress",
                     fortschritt * 100 / noetig).withStyle(ChatFormatting.GREEN));
@@ -64,8 +65,8 @@ public enum PressInfo implements IBlockComponentProvider, IServerDataProvider<Bl
         }
 
         // If it is stalled, say why — in the order in which you would fix it.
-        String grund = !data.getBoolean(KEY_HAS_STAMP) ? "no_stamp"
-                : !data.getBoolean(KEY_HAS_MATERIAL) ? "no_material"
+        String grund = !Nbt.getBoolean(data, KEY_HAS_STAMP) ? "no_stamp"
+                : !Nbt.getBoolean(data, KEY_HAS_MATERIAL) ? "no_material"
                 : energie <= 0 ? "no_power"
                 : "no_recipe";
         tooltip.add(Component.translatable("jade.factorynetwork.press." + grund)

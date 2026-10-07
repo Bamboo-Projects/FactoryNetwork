@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.test;
 
+import dev.devpanda.factorynetwork.platform.Nbt;
 import dev.devpanda.factorynetwork.FactoryNetwork;
 import dev.devpanda.factorynetwork.block.entity.ControllerBlockEntity;
 import dev.devpanda.factorynetwork.block.entity.DeviceScan;
@@ -686,7 +687,7 @@ public final class FactoryNetworkGameTests {
         net.minecraft.world.item.component.CustomData.update(
                 net.minecraft.core.component.DataComponents.CUSTOM_DATA, cell, tag -> {
                     net.minecraft.nbt.ListTag entries =
-                            tag.getList("Cell", net.minecraft.nbt.Tag.TAG_COMPOUND);
+                            Nbt.getList(tag, "Cell", net.minecraft.nbt.Tag.TAG_COMPOUND);
                     net.minecraft.nbt.CompoundTag ghost = new net.minecraft.nbt.CompoundTag();
                     ghost.putString("Item", "verschwundene_mod:zauberstab");
                     ghost.putLong("Count", 99);
@@ -13645,7 +13646,7 @@ public final class FactoryNetworkGameTests {
 
     /** Is this name on one of the connectors in the packet? */
     private static boolean labelledIn(net.minecraft.nbt.CompoundTag tag, String label) {
-        var parts = tag.getList("Parts", net.minecraft.nbt.Tag.TAG_COMPOUND);
+        var parts = Nbt.getList(tag, "Parts", net.minecraft.nbt.Tag.TAG_COMPOUND);
         for (int i = 0; i < parts.size(); i++) {
             if (label.equals(parts.getCompound(i).getString("Label"))) {
                 return true;

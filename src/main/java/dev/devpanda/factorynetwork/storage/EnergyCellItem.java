@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.storage;
 
+import dev.devpanda.factorynetwork.platform.Nbt;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
@@ -54,7 +55,7 @@ public class EnergyCellItem extends Item {
         }
         CompoundTag tag = data.copyTag();
         EnergyCellTier tier = tierOf(stack);
-        int charge = tag.getInt(KEY_CHARGE);
+        int charge = Nbt.getInt(tag, KEY_CHARGE);
         // A cell that has been downgraded from a larger tier — or comes from
         // a world where the numbers were different —, gives out no more than
         // fits into it.

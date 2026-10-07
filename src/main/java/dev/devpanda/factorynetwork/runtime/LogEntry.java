@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.runtime;
 
+import dev.devpanda.factorynetwork.platform.Nbt;
 import net.minecraft.nbt.CompoundTag;
 
 /**
@@ -37,8 +38,8 @@ public record LogEntry(LogLevel level, long time, String source, String text) {
     }
 
     public static LogEntry read(CompoundTag tag) {
-        LogLevel level = LogLevel.of(tag.getString(KEY_LEVEL));
+        LogLevel level = LogLevel.of(Nbt.getString(tag, KEY_LEVEL));
         return new LogEntry(level == null ? LogLevel.INFO : level,
-                tag.getLong(KEY_TIME), tag.getString(KEY_SOURCE), tag.getString(KEY_TEXT));
+                Nbt.getLong(tag, KEY_TIME), Nbt.getString(tag, KEY_SOURCE), Nbt.getString(tag, KEY_TEXT));
     }
 }

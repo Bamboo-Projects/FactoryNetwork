@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.block.entity;
 
+import dev.devpanda.factorynetwork.platform.Nbt;
 import dev.devpanda.factorynetwork.registry.FnBlockEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -50,7 +51,7 @@ public class GatewayBlockEntity extends BlockEntity {
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-        instance = tag.getString(KEY_NAME);
+        instance = Nbt.getString(tag, KEY_NAME);
     }
 
     @Override

@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.storage;
 
+import dev.devpanda.factorynetwork.platform.Nbt;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -29,8 +30,8 @@ final class CellEntries {
         Map<T, Long> contents = new LinkedHashMap<>();
         List<CompoundTag> unreadable = new ArrayList<>();
         for (int i = 0; i < entries.size(); i++) {
-            CompoundTag one = entries.getCompound(i);
-            long count = one.getLong(amountKey);
+            CompoundTag one = Nbt.compoundAt(entries, i);
+            long count = Nbt.getLong(one, amountKey);
             if (count <= 0) {
                 continue;
             }
@@ -68,7 +69,7 @@ final class CellEntries {
     static long amountOf(List<CompoundTag> entries, String amountKey) {
         long amount = 0;
         for (CompoundTag one : entries) {
-            amount += one.getLong(amountKey);
+            amount += Nbt.getLong(one, amountKey);
         }
         return amount;
     }

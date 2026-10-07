@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.block.entity;
 
+import dev.devpanda.factorynetwork.platform.Nbt;
 import dev.devpanda.factorynetwork.lang.ProgramFolder;
 import dev.devpanda.factorynetwork.lang.Project;
 import net.minecraft.nbt.CompoundTag;
@@ -31,14 +32,14 @@ final class ControllerProjectPersistence {
 
     static Saved read(CompoundTag tag) {
         Project running = tag.contains(FILES)
-                ? readFiles(tag.getCompound(FILES)) : Project.of(tag.getString(SOURCE));
-        Project draft = tag.contains(DRAFT) ? readFiles(tag.getCompound(DRAFT)) : running;
+                ? readFiles(Nbt.getCompound(tag, FILES)) : Project.of(Nbt.getString(tag, SOURCE));
+        Project draft = tag.contains(DRAFT) ? readFiles(Nbt.getCompound(tag, DRAFT)) : running;
         return new Saved(running, draft);
     }
 
     private static Project readFiles(CompoundTag files) {
         Map<String, String> sources = new HashMap<>();
-        files.getAllKeys().forEach(name -> sources.put(name, files.getString(name)));
+        Nbt.keys(files).forEach(name -> sources.put(name, Nbt.getString(files, name)));
         return new Project(sources);
     }
 

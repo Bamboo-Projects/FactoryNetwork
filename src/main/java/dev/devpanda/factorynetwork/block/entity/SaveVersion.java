@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.block.entity;
 
+import dev.devpanda.factorynetwork.platform.Nbt;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 
@@ -30,7 +31,7 @@ public final class SaveVersion {
 
     /** The version a save was written with; 0 for saves older than the number. */
     public static int read(CompoundTag tag) {
-        return tag.contains(KEY, Tag.TAG_INT) ? tag.getInt(KEY) : 0;
+        return Nbt.has(tag, KEY, Tag.TAG_INT) ? Nbt.getInt(tag, KEY) : 0;
     }
 
     /** Stamps a save with the layout this build writes. */

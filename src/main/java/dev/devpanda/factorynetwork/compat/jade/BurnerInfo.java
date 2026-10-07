@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.compat.jade;
 
+import dev.devpanda.factorynetwork.platform.Nbt;
 import dev.devpanda.factorynetwork.block.entity.BurnerBlockEntity;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
@@ -40,14 +41,14 @@ public enum BurnerInfo implements IBlockComponentProvider, IServerDataProvider<B
         if (!data.contains(KEY_STORED)) {
             return;
         }
-        boolean burning = data.getBoolean(KEY_BURNING);
+        boolean burning = Nbt.getBoolean(data, KEY_BURNING);
         tooltip.add(Component.translatable(burning
                         ? "jade.factorynetwork.burner.burning"
                         : "jade.factorynetwork.burner.idle",
                 BurnerBlockEntity.PER_TICK)
                 .withStyle(burning ? ChatFormatting.GRAY : ChatFormatting.YELLOW));
 
-        int stored = data.getInt(KEY_STORED);
+        int stored = Nbt.getInt(data, KEY_STORED);
         tooltip.add(Component.translatable("jade.factorynetwork.burner.stored",
                         grouped(stored), grouped(BurnerBlockEntity.CAPACITY))
                 .withStyle(ChatFormatting.GRAY));

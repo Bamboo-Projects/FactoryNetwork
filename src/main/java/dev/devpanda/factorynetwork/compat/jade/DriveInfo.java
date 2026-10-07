@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.compat.jade;
 
+import dev.devpanda.factorynetwork.platform.Nbt;
 import dev.devpanda.factorynetwork.block.entity.DriveBlockEntity;
 import dev.devpanda.factorynetwork.storage.CellInventory;
 import net.minecraft.ChatFormatting;
@@ -78,7 +79,7 @@ public enum DriveInfo implements IBlockComponentProvider, IServerDataProvider<Bl
         if (!data.contains(KEY_CELLS)) {
             return;
         }
-        int cells = data.getInt(KEY_CELLS);
+        int cells = Nbt.getInt(data, KEY_CELLS);
         if (cells == 0) {
             tooltip.add(Component.translatable("jade.factorynetwork.drive.empty")
                     .withStyle(ChatFormatting.YELLOW));
@@ -86,19 +87,19 @@ public enum DriveInfo implements IBlockComponentProvider, IServerDataProvider<Bl
         }
         tooltip.add(Component.translatable("jade.factorynetwork.drive.cells",
                 cells, DriveBlockEntity.SLOTS).withStyle(ChatFormatting.GRAY));
-        if (data.getInt(KEY_ITEM_CELLS) > 0) {
+        if (Nbt.getInt(data, KEY_ITEM_CELLS) > 0) {
             tooltip.add(Component.translatable("jade.factorynetwork.drive.contents",
-                            grouped(data.getLong(KEY_AMOUNT)), data.getInt(KEY_TYPES))
+                            grouped(Nbt.getLong(data, KEY_AMOUNT)), Nbt.getInt(data, KEY_TYPES))
                     .withStyle(ChatFormatting.GRAY));
         }
-        if (data.getInt(KEY_FLUID_CELLS) > 0) {
+        if (Nbt.getInt(data, KEY_FLUID_CELLS) > 0) {
             tooltip.add(Component.translatable("jade.factorynetwork.drive.fluids",
-                            grouped(data.getLong(KEY_FLUID_AMOUNT)),
-                            data.getInt(KEY_FLUID_TYPES))
+                            grouped(Nbt.getLong(data, KEY_FLUID_AMOUNT)),
+                            Nbt.getInt(data, KEY_FLUID_TYPES))
                     .withStyle(ChatFormatting.GRAY));
         }
 
-        if (data.getInt(KEY_TYPE_ROOM) == 0) {
+        if (Nbt.getInt(data, KEY_TYPE_ROOM) == 0) {
             tooltip.add(Component.translatable("jade.factorynetwork.drive.no_types")
                     .withStyle(ChatFormatting.YELLOW));
         }

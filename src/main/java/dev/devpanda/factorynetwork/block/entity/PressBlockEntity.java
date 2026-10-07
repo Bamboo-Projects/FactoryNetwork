@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.block.entity;
 
+import dev.devpanda.factorynetwork.platform.Nbt;
 import dev.devpanda.factorynetwork.press.FnRecipes;
 import dev.devpanda.factorynetwork.press.PressInput;
 import dev.devpanda.factorynetwork.press.PressRecipe;
@@ -479,8 +480,8 @@ public class PressBlockEntity extends BlockEntity
         if (tag.contains("Energy")) {
             energy.deserializeNBT(registries, tag.get("Energy"));
         }
-        progress = tag.getInt("Progress");
-        required = tag.getInt("Required");
+        progress = Nbt.getInt(tag, "Progress");
+        required = Nbt.getInt(tag, "Required");
     }
 
     @Override

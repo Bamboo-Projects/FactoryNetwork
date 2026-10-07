@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.compat.jade;
 
+import dev.devpanda.factorynetwork.platform.Nbt;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -47,8 +48,8 @@ public enum ConnectorInfo implements IBlockComponentProvider, IServerDataProvide
         if (!data.contains(KEY_STATE)) {
             return;
         }
-        String label = data.getString(KEY_LABEL);
-        int state = data.getInt(KEY_STATE);
+        String label = Nbt.getString(data, KEY_LABEL);
+        int state = Nbt.getInt(data, KEY_STATE);
 
         switch (dev.devpanda.factorynetwork.network.DeviceState.byId(state)) {
             case ONLINE -> tooltip.add(Component.translatable(

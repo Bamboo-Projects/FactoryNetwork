@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.compat.jade;
 
+import dev.devpanda.factorynetwork.platform.Nbt;
 import dev.devpanda.factorynetwork.block.entity.ControllerBlockEntity;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
@@ -65,7 +66,7 @@ public enum ControllerInfo implements IBlockComponentProvider, IServerDataProvid
         // Power first: a network that is stalled because its reserve is empty
         // looks like one with a bug in the program.
         var zustand = dev.devpanda.factorynetwork.network.NetworkPower.State
-                .values()[data.getInt(KEY_POWER_STATE)];
+                .values()[Nbt.getInt(data, KEY_POWER_STATE)];
         String schluessel = switch (zustand) {
             case RUNNING -> "jade.factorynetwork.controller.power";
             case BOOTING -> "jade.factorynetwork.controller.power_booting";
@@ -76,36 +77,36 @@ public enum ControllerInfo implements IBlockComponentProvider, IServerDataProvid
             case BOOTING -> net.minecraft.ChatFormatting.YELLOW;
             case OFF -> net.minecraft.ChatFormatting.RED;
         };
-        tooltip.add(Component.translatable(schluessel, data.getInt(KEY_POWER_DRAW),
+        tooltip.add(Component.translatable(schluessel, Nbt.getInt(data, KEY_POWER_DRAW),
                         String.format(java.util.Locale.GERMANY, "%,d",
-                                data.getInt(KEY_POWER_STORED)))
+                                Nbt.getInt(data, KEY_POWER_STORED)))
                 .withStyle(farbe));
-        if (data.getInt(KEY_THREADS) == 0) {
+        if (Nbt.getInt(data, KEY_THREADS) == 0) {
             tooltip.add(Component.translatable("jade.factorynetwork.controller.no_server")
                     .withStyle(net.minecraft.ChatFormatting.RED));
         }
         tooltip.add(Component.translatable("jade.factorynetwork.controller.network",
-                data.getInt(KEY_DEVICES), data.getInt(KEY_CABLES))
+                Nbt.getInt(data, KEY_DEVICES), Nbt.getInt(data, KEY_CABLES))
                 .withStyle(ChatFormatting.GRAY));
         // And below it, how many of them the code can address. The two numbers
         // diverge widely: racks, drives, routers and displays are devices, but
         // not connectors.
         tooltip.add(Component.translatable("jade.factorynetwork.controller.connectors",
-                data.getInt(KEY_CONNECTORS))
+                Nbt.getInt(data, KEY_CONNECTORS))
                 .withStyle(ChatFormatting.DARK_GRAY));
 
-        int unnamed = data.getInt(KEY_UNNAMED);
+        int unnamed = Nbt.getInt(data, KEY_UNNAMED);
         if (unnamed > 0) {
             tooltip.add(Component.translatable("jade.factorynetwork.controller.unnamed", unnamed)
                     .withStyle(ChatFormatting.DARK_GRAY));
         }
-        int starved = data.getInt(KEY_STARVED);
+        int starved = Nbt.getInt(data, KEY_STARVED);
         if (starved > 0) {
             tooltip.add(Component.translatable("jade.factorynetwork.controller.starved", starved)
                     .withStyle(ChatFormatting.RED));
         }
-        int workers = data.getInt(KEY_WORKERS);
-        int halted = data.getInt(KEY_HALTED);
+        int workers = Nbt.getInt(data, KEY_WORKERS);
+        int halted = Nbt.getInt(data, KEY_HALTED);
         if (workers > 0) {
             tooltip.add(Component.translatable("jade.factorynetwork.controller.workers", workers)
                     .withStyle(halted > 0 ? ChatFormatting.YELLOW : ChatFormatting.GREEN));

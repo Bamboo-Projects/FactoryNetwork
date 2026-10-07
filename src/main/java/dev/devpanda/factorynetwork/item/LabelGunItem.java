@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.item;
 
+import dev.devpanda.factorynetwork.platform.Nbt;
 import dev.devpanda.factorynetwork.block.entity.ControllerBlockEntity;
 import dev.devpanda.factorynetwork.block.entity.DisplayBlockEntity;
 import dev.devpanda.factorynetwork.network.FactoryGraph;
@@ -61,7 +62,7 @@ public class LabelGunItem extends Item {
     /** The name that will be assigned on the next click. */
     public static String activeLabel(ItemStack gun) {
         CustomData data = gun.get(DataComponents.CUSTOM_DATA);
-        return data == null ? "" : data.copyTag().getString(KEY_ACTIVE);
+        return data == null ? "" : Nbt.getString(data.copyTag(), KEY_ACTIVE);
     }
 
     public static void setActiveLabel(ItemStack gun, String label) {
@@ -102,9 +103,9 @@ public class LabelGunItem extends Item {
 
     private static List<String> readRecent(CompoundTag tag) {
         List<String> recent = new ArrayList<>();
-        net.minecraft.nbt.ListTag list = tag.getList(KEY_RECENT, net.minecraft.nbt.Tag.TAG_STRING);
+        net.minecraft.nbt.ListTag list = Nbt.getList(tag, KEY_RECENT, net.minecraft.nbt.Tag.TAG_STRING);
         for (int i = 0; i < list.size(); i++) {
-            recent.add(list.getString(i));
+            recent.add(Nbt.stringAt(list, i));
         }
         return recent;
     }
@@ -308,7 +309,7 @@ public class LabelGunItem extends Item {
         if (!tag.contains(KEY_CONTROLLER)) {
             return Optional.empty();
         }
-        BlockPos position = BlockPos.of(tag.getLong(KEY_CONTROLLER));
+        BlockPos position = BlockPos.of(Nbt.getLong(tag, KEY_CONTROLLER));
         if (!level.isLoaded(position)) {
             return Optional.empty();
         }

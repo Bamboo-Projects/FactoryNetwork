@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.compat.jade;
 
+import dev.devpanda.factorynetwork.platform.Nbt;
 import dev.devpanda.factorynetwork.block.entity.RackBlockEntity;
 import dev.devpanda.factorynetwork.network.ServerBay;
 import net.minecraft.ChatFormatting;
@@ -59,8 +60,8 @@ public enum RackInfo implements IBlockComponentProvider, IServerDataProvider<Blo
         if (!data.contains(KEY_RUNNING)) {
             return;
         }
-        int running = data.getInt(KEY_RUNNING);
-        int incomplete = data.getInt(KEY_INCOMPLETE);
+        int running = Nbt.getInt(data, KEY_RUNNING);
+        int incomplete = Nbt.getInt(data, KEY_INCOMPLETE);
         if (running == 0 && incomplete == 0) {
             tooltip.add(Component.translatable("jade.factorynetwork.rack.empty")
                     .withStyle(ChatFormatting.YELLOW));
@@ -74,7 +75,7 @@ public enum RackInfo implements IBlockComponentProvider, IServerDataProvider<Blo
         }
         if (running > 0) {
             tooltip.add(Component.translatable("jade.factorynetwork.rack.capacity",
-                            data.getInt(KEY_CPU), data.getInt(KEY_RAM), data.getInt(KEY_DISK))
+                            Nbt.getInt(data, KEY_CPU), Nbt.getInt(data, KEY_RAM), Nbt.getInt(data, KEY_DISK))
                     .withStyle(ChatFormatting.GRAY));
         }
     }

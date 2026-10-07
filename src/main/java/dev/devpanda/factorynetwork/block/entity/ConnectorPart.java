@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.block.entity;
 
+import dev.devpanda.factorynetwork.platform.Nbt;
 import net.minecraft.core.BlockPos;
 import dev.devpanda.factorynetwork.network.DeviceState;
 import net.minecraft.core.Direction;
@@ -259,9 +260,9 @@ public final class ConnectorPart {
     }
 
     public void load(CompoundTag tag) {
-        label = tag.getString(KEY_LABEL);
-        channelCost = Math.max(1, tag.getInt(KEY_COST));
-        emittedRedstone = tag.getInt(KEY_REDSTONE);
-        state = DeviceState.byId(tag.getByte(KEY_STATE));
+        label = Nbt.getString(tag, KEY_LABEL);
+        channelCost = Math.max(1, Nbt.getInt(tag, KEY_COST));
+        emittedRedstone = Nbt.getInt(tag, KEY_REDSTONE);
+        state = DeviceState.byId(Nbt.getByte(tag, KEY_STATE));
     }
 }

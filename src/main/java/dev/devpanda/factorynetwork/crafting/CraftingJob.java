@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.crafting;
 
+import dev.devpanda.factorynetwork.platform.Nbt;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
@@ -76,13 +77,13 @@ public final class CraftingJob {
         }
 
         static Running load(CompoundTag tag) {
-            ResourceLocation id = ResourceLocation.tryParse(tag.getString("Result"));
+            ResourceLocation id = ResourceLocation.tryParse(Nbt.getString(tag, "Result"));
             if (id == null || !BuiltInRegistries.ITEM.containsKey(id)) {
                 return null;
             }
-            return new Running(tag.getString("Station"), tag.getString("Device"),
-                    BuiltInRegistries.ITEM.get(id), tag.getLong("Expected"),
-                    tag.getLong("Done"));
+            return new Running(Nbt.getString(tag, "Station"), Nbt.getString(tag, "Device"),
+                    BuiltInRegistries.ITEM.get(id), Nbt.getLong(tag, "Expected"),
+                    Nbt.getLong(tag, "Done"));
         }
     }
 
@@ -187,19 +188,19 @@ public final class CraftingJob {
      * helps no one in cleaning up.
      */
     public static CraftingJob load(CompoundTag tag) {
-        ResourceLocation id = ResourceLocation.tryParse(tag.getString(KEY_TARGET));
+        ResourceLocation id = ResourceLocation.tryParse(Nbt.getString(tag, KEY_TARGET));
         if (id == null || !BuiltInRegistries.ITEM.containsKey(id)) {
             return null;
         }
-        CraftingJob job = new CraftingJob(tag.getLong(KEY_ID),
-                BuiltInRegistries.ITEM.get(id), tag.getInt(KEY_WANTED));
-        job.done = tag.getInt(KEY_DONE);
-        job.detail = tag.getString(KEY_DETAIL);
+        CraftingJob job = new CraftingJob(Nbt.getLong(tag, KEY_ID),
+                BuiltInRegistries.ITEM.get(id), Nbt.getInt(tag, KEY_WANTED));
+        job.done = Nbt.getInt(tag, KEY_DONE);
+        job.detail = Nbt.getString(tag, KEY_DETAIL);
         if (tag.contains(KEY_RUNNING)) {
-            job.running = Running.load(tag.getCompound(KEY_RUNNING));
+            job.running = Running.load(Nbt.getCompound(tag, KEY_RUNNING));
         }
         for (Status candidate : Status.values()) {
-            if (candidate.name().equals(tag.getString(KEY_STATUS))) {
+            if (candidate.name().equals(Nbt.getString(tag, KEY_STATUS))) {
                 job.status = candidate;
             }
         }

@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.block.entity;
 
+import dev.devpanda.factorynetwork.platform.Nbt;
 import dev.devpanda.factorynetwork.registry.FnBlockEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -145,10 +146,10 @@ public class CableBusBlockEntity extends BlockEntity {
         super.loadAdditional(tag, registries);
         parts.clear();
         net.minecraft.nbt.ListTag saved =
-                tag.getList(KEY_PARTS, net.minecraft.nbt.Tag.TAG_COMPOUND);
+                Nbt.getList(tag, KEY_PARTS, net.minecraft.nbt.Tag.TAG_COMPOUND);
         for (int i = 0; i < saved.size(); i++) {
-            CompoundTag entry = saved.getCompound(i);
-            Direction side = Direction.from3DDataValue(entry.getInt(KEY_SIDE));
+            CompoundTag entry = Nbt.compoundAt(saved, i);
+            Direction side = Direction.from3DDataValue(Nbt.getInt(entry, KEY_SIDE));
             ConnectorPart part = new ConnectorPart(new SideHost(side));
             part.load(entry);
             parts.put(side, part);

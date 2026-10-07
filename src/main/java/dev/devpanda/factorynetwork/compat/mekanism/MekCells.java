@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.compat.mekanism;
 
+import dev.devpanda.factorynetwork.platform.Nbt;
 import dev.devpanda.factorynetwork.storage.CellFormat;
 import dev.devpanda.factorynetwork.storage.CellInventory;
 import dev.devpanda.factorynetwork.storage.CellView;
@@ -38,7 +39,7 @@ final class MekCells {
                 @Override
                 public Chemical read(net.minecraft.nbt.CompoundTag tag,
                                      net.minecraft.core.HolderLookup.Provider registries) {
-                    ResourceLocation id = ResourceLocation.tryParse(tag.getString("Chemical"));
+                    ResourceLocation id = ResourceLocation.tryParse(Nbt.getString(tag, "Chemical"));
                     return id == null
                             || !mekanism.api.MekanismAPI.CHEMICAL_REGISTRY.containsKey(id)
                             ? null : mekanism.api.MekanismAPI.CHEMICAL_REGISTRY.get(id);
