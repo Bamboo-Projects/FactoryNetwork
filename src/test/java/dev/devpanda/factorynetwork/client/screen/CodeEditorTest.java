@@ -449,4 +449,47 @@ class CodeEditorTest {
         editor.undo();
         assertEquals("etwas ganz anderes", editor.text(), "nothing to take back");
     }
+
+    private static dev.devpanda.factorynetwork.lang.Diagnostic meldung(int line, int column,
+            int length, String text) {
+        return new dev.devpanda.factorynetwork.lang.Diagnostic(
+                dev.devpanda.factorynetwork.lang.Diagnostic.Severity.ERROR,
+                new dev.devpanda.factorynetwork.lang.Span(0, length, line, column), text, null);
+    }
+
+    @Test
+    void zweiMeldungenAufEinerZeileBleibenZwei() {
+        CodeEditor editor = editor("move foo to bar");
+        var erste = meldung(1, 6, 3, "foo gibt es nicht");
+        var zweite = meldung(1, 13, 3, "bar gibt es nicht");
+        var alle = java.util.List.of(erste, zweite);
+        assertEquals(alle, editor.diagnosticsIn(alle, 1));
+        assertEquals(erste, editor.diagnosticIn(alle, 1), "the first stays the first");
+    }
+
+    @Test
+    void derZeigerEntscheidetWelcheGemeintIst() {
+        CodeEditor editor = editor("move foo to bar");
+        var erste = meldung(1, 6, 3, "foo gibt es nicht");
+        var zweite = meldung(1, 13, 3, "bar gibt es nicht");
+        var alle = java.util.List.of(erste, zweite);
+        assertEquals(erste, editor.diagnosticCovering(alle, 1, 6), "on foo");
+        assertEquals(zweite, editor.diagnosticCovering(alle, 1, 13), "on bar");
+        assertEquals(erste, editor.diagnosticCovering(alle, 1, 0), "next to both: the first");
+        assertEquals(null, editor.diagnosticCovering(alle, 2, 0), "a line without a message");
+    }
+
+    @Test
+    void eineMeldungOhneBreiteZeigtAufEineSpalte() {
+        CodeEditor editor = editor("let b =");
+        // Something is missing at the end of the line: the place has no width.
+        var fehlt = meldung(1, 8, 0, "hier fehlt ein Wert");
+        int[] spalten = editor.columnsOf(fehlt, 7);
+        assertEquals(7, spalten[0]);
+        assertEquals(8, spalten[1], "one column wide, so that it can be seen");
+        // And one that claims more than the line holds stops at its end.
+        int[] zuLang = editor.columnsOf(meldung(1, 5, 40, "zu lang"), 7);
+        assertEquals(4, zuLang[0]);
+        assertEquals(7, zuLang[1]);
+    }
 }

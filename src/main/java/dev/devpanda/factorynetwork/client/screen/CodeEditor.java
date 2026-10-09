@@ -391,6 +391,7 @@ public class CodeEditor {
             }
 
             drawHighlighted(graphics, lines.get(lineIndex), textX, lineY);
+            drawUnderlines(graphics, diagnostics, lineIndex, textX, lineY);
         }
         drawCursor(graphics, textX);
         graphics.disableScissor();
@@ -571,18 +572,80 @@ public class CodeEditor {
                 .orElse(null);
     }
 
+    /** All diagnostics for a line, in the order the compiler reported them. */
+    public List<Diagnostic> diagnosticsIn(List<Diagnostic> diagnostics, int line) {
+        return diagnostics.stream()
+                .filter(diagnostic -> diagnostic.span().line() == line)
+                .toList();
+    }
+
+    /**
+     * The columns a diagnostic covers on its line: first and one past the last.
+     *
+     * <p>At least one column wide, and never beyond the end of the line plus
+     * one: a message about something missing points at the place where it
+     * should be, and that place has no width of its own.
+     */
+    int[] columnsOf(Diagnostic diagnostic, int lineLength) {
+        int from = Mth.clamp(diagnostic.span().column() - 1, 0, lineLength);
+        int to = Mth.clamp(from + Math.max(1, diagnostic.span().length()), from + 1,
+                Math.max(from + 1, lineLength));
+        return new int[] {from, to};
+    }
+
+    /**
+     * The diagnostic that covers this column of a line; failing that, the
+     * line's first; or {@code null}.
+     *
+     * <p>With two messages on one line the pointer decides which one is
+     * meant. Next to both, the first is as good a guess as before.
+     */
+    public Diagnostic diagnosticCovering(List<Diagnostic> diagnostics, int line, int column) {
+        List<Diagnostic> here = diagnosticsIn(diagnostics, line);
+        int length = line >= 1 && line <= lines.size() ? lines.get(line - 1).length() : 0;
+        for (Diagnostic diagnostic : here) {
+            int[] columns = columnsOf(diagnostic, length);
+            if (column >= columns[0] && column < columns[1]) {
+                return diagnostic;
+            }
+        }
+        return here.isEmpty() ? null : here.get(0);
+    }
+
+    /**
+     * A line under exactly what each diagnostic means.
+     *
+     * <p>In addition to the stripe, not instead of it: the stripe says "this
+     * line", and it can be seen from across the screen. The line under the
+     * text says "this word" — and it is what makes a second message on the
+     * same line visible at all. A straight line and not a squiggle, for the
+     * reason given at the stripe: there is no room for one at this height.
+     */
+    private void drawUnderlines(GuiGraphics graphics, List<Diagnostic> diagnostics,
+                                int lineIndex, int textX, int lineY) {
+        int length = lines.get(lineIndex).length();
+        for (Diagnostic diagnostic : diagnosticsIn(diagnostics, lineIndex + 1)) {
+            int[] columns = columnsOf(diagnostic, length);
+            graphics.fill(columnX(textX, columns[0]), lineY + LINE_HEIGHT - 3,
+                    columnX(textX, columns[1]), lineY + LINE_HEIGHT - 2,
+                    diagnostic.isError() ? 0xFFE88388 : 0xFFE8AC3E);
+        }
+    }
+
     /**
      * What sits under the pointer — for the explanation on hover.
      *
      * <p>The whole line counts, not just the marker: a marker is two pixels
-     * wide, and no one hits two pixels.
+     * wide, and no one hits two pixels. On a line with several messages the
+     * one under the pointer is taken.
      */
     public Diagnostic diagnosticAt(List<Diagnostic> diagnostics, double mouseX,
                                    double mouseY) {
         if (!inside(mouseX, mouseY)) {
             return null;
         }
-        return diagnosticIn(diagnostics, lineAt(mouseY) + 1);
+        int lineIndex = lineAt(mouseY);
+        return diagnosticCovering(diagnostics, lineIndex + 1, columnAt(lineIndex, mouseX));
     }
 
     /**
