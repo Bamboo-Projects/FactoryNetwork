@@ -244,7 +244,7 @@ public class CodeTabView {
             return;
         }
         open = name;
-        editor.setText(project.source(name));
+        editor.openFile(name, project.source(name));
         recheck();
     }
 

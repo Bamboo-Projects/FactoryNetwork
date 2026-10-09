@@ -198,6 +198,62 @@ public class CodeEditor {
     }
 
     /**
+     * What the editor keeps of a file while it shows another one.
+     *
+     * @param text what the file held when it was left — the key to whether
+     *             the rest still applies
+     */
+    private record Parked(String text, List<Snapshot> undo, List<Snapshot> redo,
+                          int cursorLine, int cursorColumn, int scrollLine, int scrollColumn) {
+    }
+
+    /** This many files are remembered; beyond that the one left longest ago goes. */
+    private static final int MAX_PARKED = 16;
+
+    /** By file name, oldest first. */
+    private final java.util.LinkedHashMap<String, Parked> parked = new java.util.LinkedHashMap<>();
+
+    /** The file on screen, or {@code null} if the text was set without a name. */
+    private String openName;
+
+    /**
+     * Shows a file and brings back what was left behind in it.
+     *
+     * <p><b>Switching files is not a reason to forget.</b> A look into a
+     * second file used to cost the history of the first: the steps were
+     * gone, and so was the place one had been at. Each file now keeps its
+     * steps, its cursor and its scroll position while another one is shown.
+     *
+     * <p><b>Only if the text is still the one that was left.</b> If it came
+     * back different — another player saved, the server reset a draft — the
+     * remembered steps lead to a text that no longer exists, and undoing
+     * them would write that old text over the new one. Then the file starts
+     * fresh, exactly as {@link #setText} does.
+     */
+    public void openFile(String name, String text) {
+        if (openName != null) {
+            parked.remove(openName);
+            parked.put(openName, new Parked(text(), List.copyOf(undoStack),
+                    List.copyOf(redoStack), cursorLine, cursorColumn, scrollLine, scrollColumn));
+            while (parked.size() > MAX_PARKED) {
+                parked.remove(parked.keySet().iterator().next());
+            }
+        }
+        openName = name;
+        Parked back = parked.remove(name);
+        setText(text);
+        if (back == null || !back.text().equals(text())) {
+            return;
+        }
+        undoStack.addAll(back.undo());
+        redoStack.addAll(back.redo());
+        cursorLine = Mth.clamp(back.cursorLine(), 0, lines.size() - 1);
+        cursorColumn = Math.min(back.cursorColumn(), lines.get(cursorLine).length());
+        scrollLine = back.scrollLine();
+        scrollColumn = back.scrollColumn();
+    }
+
+    /**
      * How wide a character is, in pixels with a fraction.
      *
      * <p><b>Here is all the caution around the custom font.</b>

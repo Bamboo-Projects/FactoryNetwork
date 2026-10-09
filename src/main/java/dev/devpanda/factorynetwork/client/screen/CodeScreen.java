@@ -173,7 +173,7 @@ public class CodeScreen extends Screen {
         }
         open = name;
         panel.setOpen(name);
-        editor.setText(project.source(name));
+        editor.openFile(name, project.source(name));
         recheck();
     }
 

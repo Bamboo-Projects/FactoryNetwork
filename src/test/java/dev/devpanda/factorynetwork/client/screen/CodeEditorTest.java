@@ -381,4 +381,72 @@ class CodeEditorTest {
                 "und am Zeilenanfang wieder ganz nach links");
     }
 
+    @Test
+    void undoUeberlebtDenDateiwechsel() {
+        // Switching to another file and back used to throw the history away:
+        // one look into a second file, and the last ten minutes could no
+        // longer be taken back.
+        CodeEditor editor = editor("");
+        editor.openFile("eins.mf", "alpha");
+        editor.setCursor(0, 5);
+        type(editor, " beta");
+        assertEquals("alpha beta", editor.text());
+
+        editor.openFile("zwei.mf", "gamma");
+        assertEquals("gamma", editor.text());
+        editor.openFile("eins.mf", "alpha beta");
+
+        editor.undo();
+        assertEquals("alpha", editor.text(), "the step from before the switch is still there");
+        editor.redo();
+        assertEquals("alpha beta", editor.text());
+    }
+
+    @Test
+    void jedeDateiHatIhreEigeneGeschichte() {
+        CodeEditor editor = editor("");
+        editor.openFile("eins.mf", "a");
+        editor.setCursor(0, 1);
+        type(editor, "1");
+        editor.openFile("zwei.mf", "b");
+        editor.setCursor(0, 1);
+        type(editor, "2");
+
+        editor.undo();
+        assertEquals("b", editor.text(), "undo in the second file touches the second file");
+        editor.undo();
+        assertEquals("b", editor.text(), "and does not reach into the first one");
+
+        editor.openFile("eins.mf", "a1");
+        editor.undo();
+        assertEquals("a", editor.text());
+    }
+
+    @Test
+    void cursorUndBildlaufKommenMitZurueck() {
+        CodeEditor editor = editor("");
+        String text = String.join("\n", "eins", "zwei", "drei");
+        editor.openFile("eins.mf", text);
+        editor.setCursor(2, 3);
+        editor.openFile("zwei.mf", "x");
+        editor.openFile("eins.mf", text);
+        assertEquals(2, editor.cursorLine());
+        assertEquals(3, editor.cursorColumn());
+    }
+
+    @Test
+    void fremdGeaenderterTextBeginntNeu() {
+        // The text came back different — another player saved, or the server
+        // rejected a draft. Steps that led to the old text would lead nowhere
+        // from the new one.
+        CodeEditor editor = editor("");
+        editor.openFile("eins.mf", "alpha");
+        editor.setCursor(0, 5);
+        type(editor, " beta");
+        editor.openFile("zwei.mf", "x");
+        editor.openFile("eins.mf", "etwas ganz anderes");
+
+        editor.undo();
+        assertEquals("etwas ganz anderes", editor.text(), "nothing to take back");
+    }
 }
