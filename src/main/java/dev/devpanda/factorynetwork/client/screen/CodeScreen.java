@@ -95,6 +95,7 @@ public class CodeScreen extends Screen {
             {"Strg+Klick", "help.goto"},
             {"F2", "help.rename"},
             {"F4", "help.request"},
+            {"F8", "help.problems"},
             {"Rechtsklick", "help.menu"},
             {"F1", "help.close"},
     };
@@ -104,6 +105,19 @@ public class CodeScreen extends Screen {
 
     /** Whether the shortcut list is open. */
     private boolean showingHelp;
+
+    /**
+     * Whether the list of all messages is open.
+     *
+     * <p>The footer has room for one message, and for a long time that was
+     * all there was: whoever had five errors in three files saw the first,
+     * fixed it, and learned of the next. The list shows them together and
+     * takes a click as "take me there".
+     */
+    private boolean showingProblems;
+
+    /** This many messages are listed; the rest is counted. */
+    private static final int PROBLEM_ROWS = 14;
 
     /**
      * The feedback for the last marker, or {@code null}.
@@ -200,6 +214,12 @@ public class CodeScreen extends Screen {
         Diagnostic first = problems.get(0);
         String where = first.file().equals(open) ? "" : first.file() + " ";
         status = where + first.span().line() + ": " + first.message();
+        if (problems.size() > 1) {
+            // The first one is spelled out, the others are at least counted:
+            // a footer that shows one message reads as "there is one".
+            status = Component.translatable("screen.factorynetwork.code.problems.more",
+                    problems.size() - 1).getString() + "  " + status;
+        }
         statusColour = first.isError() ? TerminalScreen.BAD : TerminalScreen.WARN;
     }
 
@@ -289,6 +309,8 @@ public class CodeScreen extends Screen {
         drawFooter(graphics, mouseX, mouseY);
         if (showingHelp) {
             drawHelp(graphics);
+        } else if (showingProblems) {
+            drawProblems(graphics, mouseX, mouseY);
         }
 
         for (Renderable renderable : this.renderables) {
@@ -424,8 +446,73 @@ public class CodeScreen extends Screen {
         }
     }
 
+    /** Where the list of messages sits: left, top, width, rows shown. */
+    private int[] problemsBox() {
+        int rows = Math.min(problems.size(), PROBLEM_ROWS);
+        int more = problems.size() > rows ? 1 : 0;
+        int boxWidth = Math.min(width - 2 * MARGIN - 40, 460);
+        int boxHeight = (rows + more) * 12 + 28;
+        return new int[] {(width - boxWidth) / 2, (height - boxHeight) / 2, boxWidth, rows};
+    }
+
+    /** The row of the list under the pointer, or -1. */
+    private int problemRowAt(double mouseX, double mouseY) {
+        int[] box = problemsBox();
+        if (mouseX < box[0] || mouseX >= box[0] + box[2]) {
+            return -1;
+        }
+        int row = (int) Math.floor((mouseY - box[1] - 26) / 12.0);
+        return row >= 0 && row < box[3] ? row : -1;
+    }
+
+    /**
+     * All messages of the project, one per row.
+     *
+     * <p>File and line first, in the accent colour: that is what one looks
+     * for when deciding where to start. The row under the pointer is backed,
+     * so that it is plain which one a click will take.
+     */
+    private void drawProblems(GuiGraphics graphics, int mouseX, int mouseY) {
+        int[] box = problemsBox();
+        int left = box[0];
+        int top = box[1];
+        int boxWidth = box[2];
+        int rows = box[3];
+        int boxHeight = (rows + (problems.size() > rows ? 1 : 0)) * 12 + 28;
+
+        graphics.fill(left, top, left + boxWidth, top + boxHeight, 0xF60E1214);
+        outline(graphics, left, top, left + boxWidth, top + boxHeight, EDGE);
+        graphics.drawString(font, FnFonts.bold(Component.translatable(
+                        "screen.factorynetwork.code.problems.title", problems.size())),
+                left + 14, top + 8, TerminalScreen.TEXT, false);
+        graphics.fill(left + 14, top + 20, left + boxWidth - 14, top + 21, EDGE);
+
+        int hovered = problemRowAt(mouseX, mouseY);
+        for (int i = 0; i < rows; i++) {
+            Diagnostic problem = problems.get(i);
+            int rowY = top + 26 + i * 12;
+            if (i == hovered) {
+                graphics.fill(left + 8, rowY - 2, left + boxWidth - 8, rowY + 10, 0x30FFFFFF);
+            }
+            String where = (problem.file().isEmpty() ? open : problem.file())
+                    + ":" + problem.span().line();
+            Component place = FnFonts.mono(where);
+            graphics.drawString(font, place, left + 14, rowY, TerminalScreen.ACCENT, false);
+            int textX = left + 22 + font.width(place);
+            graphics.drawString(font,
+                    font.plainSubstrByWidth(problem.message(), left + boxWidth - 14 - textX),
+                    textX, rowY, problem.isError() ? TerminalScreen.BAD : TerminalScreen.WARN,
+                    false);
+        }
+        if (problems.size() > rows) {
+            graphics.drawString(font, Component.translatable(
+                            "screen.factorynetwork.code.problems.more", problems.size() - rows),
+                    left + 14, top + 26 + rows * 12, TerminalScreen.TEXT_FAINT, false);
+        }
+    }
+
     private void renderTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
-        if (panel.hasMenu() || showingHelp) {
+        if (panel.hasMenu() || showingHelp || showingProblems) {
             return;
         }
         if (overButton(mouseX, mouseY)) {
@@ -444,6 +531,17 @@ public class CodeScreen extends Screen {
             showingHelp = false;
             return true;
         }
+        if (showingProblems) {
+            // A click on a row goes there; a click anywhere else only closes.
+            int row = problemRowAt(mouseX, mouseY);
+            showingProblems = false;
+            if (row >= 0 && row < problems.size()) {
+                Diagnostic chosen = problems.get(row);
+                openFile(chosen.file().isEmpty() ? open : chosen.file());
+                editor.jumpTo(chosen);
+            }
+            return true;
+        }
         if (panel.mouseClicked(mouseX, mouseY, button)) {
             return true;
         }
@@ -455,8 +553,12 @@ public class CodeScreen extends Screen {
         if (button == 0 && Keys.control() && goToDefinition(mouseX, mouseY)) {
             return true;
         }
-        // A click on the footer jumps to the first message — again across
-        // the files.
+        // A click on the footer jumps to the message if there is one, and
+        // opens the list if there are several — again across the files.
+        if (problems.size() > 1 && mouseY >= height - MARGIN - FOOTER && mouseX < buttonX()) {
+            showingProblems = true;
+            return true;
+        }
         if (!problems.isEmpty() && mouseY >= height - MARGIN - FOOTER && mouseX < buttonX()) {
             Diagnostic first = problems.get(0);
             openFile(first.file().isEmpty() ? open : first.file());
@@ -494,6 +596,16 @@ public class CodeScreen extends Screen {
             // While it is open, nothing reaches the text. Otherwise you would
             // go on typing behind the card without seeing it.
             showingHelp = false;
+            return true;
+        }
+        // F8 opens and closes the list of all messages. Without messages
+        // there is nothing to open.
+        if (key == 297) {
+            showingProblems = !showingProblems && !problems.isEmpty();
+            return true;
+        }
+        if (showingProblems) {
+            showingProblems = false;
             return true;
         }
         // Ctrl+Enter deploys, no matter where the focus currently is.
