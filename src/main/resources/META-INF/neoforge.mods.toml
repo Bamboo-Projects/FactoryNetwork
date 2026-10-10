@@ -28,11 +28,12 @@ ordering = "NONE"
 side = "BOTH"
 
 [[dependencies.${mod_id}]]
-# BambooCEF is the CEF web runtime behind the editor, the overlays and the
-# world surfaces. Client only: the library has no server side, and a server
+# BambooCEF is the CEF web runtime behind the web editor, the overlays and the
+# world surfaces. Optional: without it the built-in editor is used and the web
+# side stays off. Client only: the library has no server side, and a server
 # running FactoryNetwork must not be asked for it.
 modId = "bamboocef"
-type = "required"
+type = "optional"
 versionRange = "[0.1.1,)"
 ordering = "AFTER"
 side = "CLIENT"

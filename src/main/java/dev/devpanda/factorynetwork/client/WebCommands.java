@@ -1,13 +1,9 @@
 package dev.devpanda.factorynetwork.client;
 
 import dev.devpanda.factorynetwork.platform.Chat;
-import dev.devpanda.factorynetwork.FactoryNetwork;
 import net.minecraft.client.Minecraft;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RegisterClientCommandsEvent;
 
 /**
@@ -23,13 +19,12 @@ import net.neoforged.neoforge.client.event.RegisterClientCommandsEvent;
  * is the most honest means: it does not pretend to be a finished control
  * scheme already.
  */
-@EventBusSubscriber(modid = FactoryNetwork.MOD_ID, value = Dist.CLIENT)
 public final class WebCommands {
 
     private WebCommands() {
     }
 
-    @SubscribeEvent
+    /** Called through {@link WebBridge}, and only where BambooCEF is installed. */
     public static void register(RegisterClientCommandsEvent event) {
         event.getDispatcher().register(Commands.literal("fnweb")
                 .then(Commands.literal("ide")

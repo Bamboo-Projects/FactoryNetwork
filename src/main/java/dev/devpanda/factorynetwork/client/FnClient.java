@@ -7,7 +7,6 @@ import dev.devpanda.factorynetwork.registry.FnMenus;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
 import net.neoforged.api.distmarker.Dist;
-import dev.devpanda.bamboocef.web.api.FnWeb;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
@@ -31,11 +30,11 @@ public final class FnClient {
     @SubscribeEvent
     public static void tickDraft(net.neoforged.neoforge.client.event.ClientTickEvent.Post event) {
         ClientProjectState.tick();
-        EditorApp.tick();
-        WorldPointer.tick();
-        OverlayProof.tick();
-        WorldSurfaceDemo.tick();
-        IdeLauncher.tick();
+        // The web side only where BambooCEF is installed: without it, its
+        // classes cannot even be loaded.
+        if (WebSupport.installed()) {
+            WebBridge.tick();
+        }
     }
 
     /**
@@ -48,7 +47,7 @@ public final class FnClient {
     @SubscribeEvent
     public static void clickWorldSurface(
             net.neoforged.neoforge.client.event.InputEvent.InteractionKeyMappingTriggered event) {
-        if (event.isUseItem() && WorldPointer.click()) {
+        if (event.isUseItem() && WebSupport.installed() && WebBridge.click()) {
             event.setSwingHand(false);
             event.setCanceled(true);
         }
@@ -63,7 +62,9 @@ public final class FnClient {
     @SubscribeEvent
     public static void forgetDraft(
             net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingOut event) {
-        EditorApp.clear();
+        if (WebSupport.installed()) {
+            WebBridge.clear();
+        }
         ClientProjectState.clear();
     }
 
@@ -124,16 +125,33 @@ public final class FnClient {
 
     @SubscribeEvent
     public static void setup(FMLClientSetupEvent event) {
-        // The editor is central to this mod, so the web runtime is asked for
-        // right away: BambooCEF then starts Chromium at the title screen and
-        // the first editor open skips the cold start.
-        FnWeb.prepare();
+        // Where the web runtime is installed it is asked for right away:
+        // BambooCEF then starts Chromium at the title screen and the first
+        // open of the web editor skips the cold start.
+        if (WebSupport.installed()) {
+            WebBridge.prepare();
+        }
         // The cable is narrower than a block and therefore needs a render type
         // that tolerates transparent edges.
         event.enqueueWork(() -> {
             ItemBlockRenderTypes.setRenderLayer(FnBlocks.CABLE.get(), RenderType.cutout());
             ItemBlockRenderTypes.setRenderLayer(FnBlocks.DISPLAY.get(), RenderType.cutout());
         });
+    }
+
+    /**
+     * The {@code /fnweb} commands exist only where the web runtime does.
+     *
+     * <p>Registered from here and not by the command class itself: a class
+     * that subscribes on its own is loaded in every game, and this one names
+     * BambooCEF.
+     */
+    @SubscribeEvent
+    public static void registerWebCommands(
+            net.neoforged.neoforge.client.event.RegisterClientCommandsEvent event) {
+        if (WebSupport.installed()) {
+            WebBridge.registerCommands(event);
+        }
     }
 
     private FnClient() {

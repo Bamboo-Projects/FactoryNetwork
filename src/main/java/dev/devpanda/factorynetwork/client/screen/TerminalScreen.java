@@ -371,9 +371,27 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
      * numbers.
      */
     void openBigEditor() {
-        if (!dev.devpanda.factorynetwork.client.EditorApp.open(minecraft, this, menu)) {
-            minecraft.setScreen(new WebEditorLoadingScreen(this, menu));
+        // The built-in editor is the one every player has. The web editor is
+        // taken where BambooCEF is installed and its runtime is up; where it
+        // is still on its way, the waiting screen says so. In every other
+        // case the built-in one opens at once — nobody should have to click
+        // past a message about something they never installed.
+        if (dev.devpanda.factorynetwork.client.WebSupport.installed()) {
+            switch (dev.devpanda.factorynetwork.client.WebBridge
+                    .openEditor(minecraft, this, menu)) {
+                case OPENED -> {
+                    return;
+                }
+                case PREPARING -> {
+                    minecraft.setScreen(dev.devpanda.factorynetwork.client.WebBridge
+                            .waitingScreen(this, menu));
+                    return;
+                }
+                case UNAVAILABLE -> {
+                }
+            }
         }
+        minecraft.setScreen(new CodeScreen(this, menu.position()));
     }
 
     // ---- Input ------------------------------------------------------------
