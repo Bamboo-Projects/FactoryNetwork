@@ -795,11 +795,62 @@ public class CodeEditor {
         }
         int trackTop = y + 10;
         int trackHeight = visible * LINE_HEIGHT;
-        int thumbHeight = Math.max(8, trackHeight * visible / lines.size());
+        int thumbHeight = thumbHeight(visible);
         int maxScroll = lines.size() - visible;
         int offset = maxScroll == 0 ? 0 : (trackHeight - thumbHeight) * scrollLine / maxScroll;
         graphics.fill(x + width - 3, trackTop + offset, x + width - 1,
                 trackTop + offset + thumbHeight, 0xFF000000 | EditorColours.COMMENT);
+    }
+
+    private int thumbHeight(int visible) {
+        return Math.max(8, visible * LINE_HEIGHT * visible / lines.size());
+    }
+
+    /**
+     * How wide the strip at the right edge is that takes a click for the bar.
+     *
+     * <p>Wider than the bar itself: that one is two pixels, and nobody hits
+     * two pixels. The strip costs the text nothing — it lies where a line
+     * would have to be far longer than the view to reach.
+     */
+    private static final int SCROLL_GRAB = 6;
+
+    /** Whether the bar is being dragged since the last click. */
+    private boolean draggingScroll;
+
+    /** How far the text can be scrolled down at most. */
+    int maxScrollLine() {
+        return Math.max(0, lines.size() - visibleLines());
+    }
+
+    int scrollLine() {
+        return scrollLine;
+    }
+
+    private boolean overScrollBar(double mouseX, double mouseY) {
+        return lines.size() > visibleLines()
+                && mouseX >= x + width - SCROLL_GRAB && mouseX < x + width
+                && mouseY >= y && mouseY < y + height;
+    }
+
+    /**
+     * Scrolls to where the pointer is on the bar.
+     *
+     * <p>The middle of the thumb goes under the pointer. A click on the track
+     * therefore jumps there, and dragging afterwards follows without the
+     * thumb slipping out from under the hand.
+     */
+    private void scrollToPointer(double mouseY) {
+        int visible = visibleLines();
+        int trackHeight = visible * LINE_HEIGHT;
+        int thumb = thumbHeight(visible);
+        int free = trackHeight - thumb;
+        if (free <= 0) {
+            scrollLine = 0;
+            return;
+        }
+        double share = (mouseY - (y + 10) - thumb / 2.0) / free;
+        scrollLine = Mth.clamp((int) Math.round(share * maxScrollLine()), 0, maxScrollLine());
     }
 
     // ---- Input ----------------------------------------------------------
@@ -1730,7 +1781,31 @@ public class CodeEditor {
         changeListener.accept(text());
     }
 
+    /**
+     * Where the list of suggestions was last drawn: left, top, width.
+     *
+     * <p>Remembered from drawing instead of computed a second time: where the
+     * list ends up depends on the font, on the edge of the editor and on
+     * whether it had to flip upward. Two computations of that would be two
+     * answers on the day one of them is changed.
+     */
+    private int[] suggestionBox;
+
+    /** The row of the suggestion list under the pointer, or -1. */
+    private int overSuggestion(double mouseX, double mouseY) {
+        if (suggestions.isEmpty() || suggestionBox == null) {
+            return -1;
+        }
+        if (mouseX < suggestionBox[0] || mouseX >= suggestionBox[0] + suggestionBox[2]) {
+            return -1;
+        }
+        int row = (int) Math.floor((mouseY - suggestionBox[1] - 1) / LINE_HEIGHT);
+        return row >= 0 && row < suggestions.size() ? row : -1;
+    }
+
     private void drawSuggestions(GuiGraphics graphics, int textX) {
+        // Forgotten first: a list that is not drawn this frame cannot be clicked.
+        suggestionBox = null;
         if (suggestions.isEmpty()) {
             return;
         }
@@ -1762,6 +1837,7 @@ public class CodeEditor {
             listY = y + 10 + row * LINE_HEIGHT - listHeight;
         }
         listX = Math.min(listX, x + width - listWidth - 2);
+        suggestionBox = new int[] {listX, listY, listWidth};
 
         graphics.fill(listX, listY, listX + listWidth, listY + listHeight, 0xF0202429);
         graphics.fill(listX, listY, listX + listWidth, listY + 1, 0xFF3C4147);
@@ -2058,10 +2134,26 @@ public class CodeEditor {
      * double-click takes the word.
      */
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        draggingScroll = false;
+        // The list of suggestions first: it lies on top of the text, and a
+        // click on one of its rows means that row.
+        if (button == 0 && overSuggestion(mouseX, mouseY) >= 0) {
+            selectedSuggestion = overSuggestion(mouseX, mouseY);
+            applySuggestion();
+            return true;
+        }
         if (!inside(mouseX, mouseY)) {
             return false;
         }
         clearSuggestions();
+        if (button == 0 && overScrollBar(mouseX, mouseY)) {
+            // Not a click into the text: the cursor stays where it is, and a
+            // drag that follows moves the view and selects nothing.
+            draggingScroll = true;
+            lastClickLine = -1;
+            scrollToPointer(mouseY);
+            return true;
+        }
         int lineIndex = lineAt(mouseY);
         int column = columnAt(lineIndex, mouseX);
 
@@ -2094,6 +2186,10 @@ public class CodeEditor {
      * could only be reached with the keyboard.
      */
     public boolean mouseDragged(double mouseX, double mouseY, int button) {
+        if (button == 0 && draggingScroll) {
+            scrollToPointer(mouseY);
+            return true;
+        }
         if (button != 0 || lastClickLine < 0) {
             return false;
         }

@@ -492,4 +492,54 @@ class CodeEditorTest {
         assertEquals(4, zuLang[0]);
         assertEquals(7, zuLang[1]);
     }
+
+    private static CodeEditor langerText() {
+        StringBuilder text = new StringBuilder();
+        for (int i = 1; i <= 100; i++) {
+            text.append("zeile ").append(i).append(i < 100 ? "\n" : "");
+        }
+        // 120 pixels high: ten lines fit, ninety lie outside.
+        return editor(text.toString());
+    }
+
+    @Test
+    void einKlickAufDenBalkenSchiebtDenText() {
+        CodeEditor editor = langerText();
+        // The bar sits at the right edge; the editor is 200 wide.
+        assertTrue(editor.mouseClicked(198, 119, 0), "the bar takes the click");
+        assertEquals(editor.maxScrollLine(), editor.scrollLine(), "at the bottom: the end");
+        assertTrue(editor.mouseClicked(198, 11, 0));
+        assertEquals(0, editor.scrollLine(), "at the top: the beginning");
+    }
+
+    @Test
+    void ziehenAmBalkenFolgtDemZeiger() {
+        CodeEditor editor = langerText();
+        editor.mouseClicked(198, 11, 0);
+        editor.mouseDragged(198, 65, 0);
+        int mitte = editor.scrollLine();
+        assertTrue(mitte > 30 && mitte < 60, "about the middle, was " + mitte);
+        editor.mouseDragged(198, 400, 0);
+        assertEquals(editor.maxScrollLine(), editor.scrollLine(), "past the end stays at the end");
+    }
+
+    @Test
+    void derBalkenVerschiebtDenCursorNicht() {
+        CodeEditor editor = langerText();
+        editor.setCursor(3, 2);
+        editor.mouseClicked(198, 119, 0);
+        editor.mouseDragged(198, 60, 0);
+        assertEquals(3, editor.cursorLine(), "scrolling is not a click into the text");
+        assertEquals(2, editor.cursorColumn());
+    }
+
+    @Test
+    void einKurzerTextHatKeinenBalken() {
+        // Whether the click then lands in the text cannot be checked here:
+        // that path asks the game for the Shift key.
+        CodeEditor editor = editor("eins" + (char) 10 + "zwei");
+        assertEquals(0, editor.maxScrollLine(), "nothing to scroll");
+        editor.mouseDragged(198, 100, 0);
+        assertEquals(0, editor.scrollLine());
+    }
 }
