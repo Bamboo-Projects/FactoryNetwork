@@ -193,6 +193,12 @@ neoForge {
                 programArgument '--quickPlaySingleplayer'
                 programArgument(project.hasProperty('world') ? world : 'New World')
             }
+            // Straight into a world, for any run:
+            //   ./gradlew runClient -Pplay="New World"
+            if (project.hasProperty('play')) {
+                programArgument '--quickPlaySingleplayer'
+                programArgument play.toString()
+            }
             if (project.hasProperty('benchmark')) {
                 systemProperty 'bamboocef.benchmark', 'true'
                 // Direkt in eine Welt: Im Hauptmenü deckelt Minecraft die
@@ -250,7 +256,16 @@ dependencies {
     // BambooCEF carries the CEF web runtime as a separate mod. The version is
     // omitted on purpose: the composite build in settings.gradle substitutes
     // this module with the sibling project, so its own version always wins.
-    implementation 'dev.devpanda.bamboocef:bamboocef'
+    //
+    // Optional for the mod since 10 October. To try a client without it:
+    //   ./gradlew runClient -Pnoweb
+    // The library is then only compiled against and missing at run time,
+    // exactly as in a pack that leaves it out.
+    if (project.hasProperty('noweb')) {
+        compileOnly 'dev.devpanda.bamboocef:bamboocef'
+    } else {
+        implementation 'dev.devpanda.bamboocef:bamboocef'
+    }
 
     // Jade nur zum Übersetzen und zum Ausprobieren — die Mod läuft ohne.
     // Die Anbindung ist so geschrieben, dass sie ohne Jade gar nicht erst
