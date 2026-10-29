@@ -7,15 +7,9 @@
     "PPP"
   ],
   "key": {
-    "P": {
-      "item": "factorynetwork:plate"
-    },
-    "W": {
-      "item": "minecraft:crafting_table"
-    },
-    "N": {
-      "item": "factorynetwork:core_network"
-    }
+    "P": "factorynetwork:plate",
+    "W": "minecraft:crafting_table",
+    "N": "factorynetwork:core_network"
   },
   "result": {
     "id": "factorynetwork:fabricator",

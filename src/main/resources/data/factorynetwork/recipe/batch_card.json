@@ -7,15 +7,9 @@
     "PPP"
   ],
   "key": {
-    "C": {
-      "item": "minecraft:chest"
-    },
-    "M": {
-      "item": "factorynetwork:core_memory"
-    },
-    "P": {
-      "item": "factorynetwork:plate"
-    }
+    "C": "minecraft:chest",
+    "M": "factorynetwork:core_memory",
+    "P": "factorynetwork:plate"
   },
   "result": {
     "id": "factorynetwork:batch_card",

@@ -7,18 +7,10 @@
     "III"
   ],
   "key": {
-    "D": {
-      "item": "minecraft:diamond"
-    },
-    "M": {
-      "item": "factorynetwork:raw_crystal"
-    },
-    "K": {
-      "item": "minecraft:copper_ingot"
-    },
-    "I": {
-      "item": "minecraft:iron_ingot"
-    }
+    "D": "minecraft:diamond",
+    "M": "factorynetwork:raw_crystal",
+    "K": "minecraft:copper_ingot",
+    "I": "minecraft:iron_ingot"
   },
   "result": {
     "id": "factorynetwork:stamp_network",

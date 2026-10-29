@@ -1,19 +1,17 @@
 {
   "type": "factorynetwork:press",
-  "stamp": {
-    "item": "factorynetwork:stamp_memory"
-  },
+  "stamp": "factorynetwork:stamp_memory",
   "materials": [
     {
-      "item": "factorynetwork:plate",
+      "ingredient": "factorynetwork:plate",
       "count": 1
     },
     {
-      "item": "minecraft:redstone",
+      "ingredient": "minecraft:redstone",
       "count": 2
     },
     {
-      "item": "minecraft:quartz",
+      "ingredient": "minecraft:quartz",
       "count": 2
     }
   ],

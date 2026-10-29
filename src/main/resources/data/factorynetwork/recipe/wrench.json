@@ -7,15 +7,9 @@
     " C "
   ],
   "key": {
-    "I": {
-      "item": "minecraft:iron_ingot"
-    },
-    "P": {
-      "item": "factorynetwork:plate"
-    },
-    "C": {
-      "item": "minecraft:copper_ingot"
-    }
+    "I": "minecraft:iron_ingot",
+    "P": "factorynetwork:plate",
+    "C": "minecraft:copper_ingot"
   },
   "result": {
     "id": "factorynetwork:wrench",

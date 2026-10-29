@@ -1,19 +1,17 @@
 {
   "type": "factorynetwork:press",
-  "stamp": {
-    "item": "factorynetwork:stamp_logic"
-  },
+  "stamp": "factorynetwork:stamp_logic",
   "materials": [
     {
-      "item": "factorynetwork:plate",
+      "ingredient": "factorynetwork:plate",
       "count": 1
     },
     {
-      "item": "minecraft:redstone",
+      "ingredient": "minecraft:redstone",
       "count": 4
     },
     {
-      "item": "minecraft:copper_ingot",
+      "ingredient": "minecraft:copper_ingot",
       "count": 1
     }
   ],

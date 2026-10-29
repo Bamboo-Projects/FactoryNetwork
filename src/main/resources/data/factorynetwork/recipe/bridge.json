@@ -7,15 +7,9 @@
     "PPP"
   ],
   "key": {
-    "P": {
-      "item": "factorynetwork:plate"
-    },
-    "C": {
-      "item": "factorynetwork:crystal"
-    },
-    "N": {
-      "item": "factorynetwork:core_network"
-    }
+    "P": "factorynetwork:plate",
+    "C": "factorynetwork:crystal",
+    "N": "factorynetwork:core_network"
   },
   "result": {
     "id": "factorynetwork:bridge",

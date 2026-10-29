@@ -53,14 +53,10 @@ public class FactoryNetworkJeiPlugin implements IModPlugin {
 
     @Override
     public void registerRecipes(IRecipeRegistration registration) {
-        // From the world and not from a separate list: a data pack may add or
+        // What the server sent and not a separate list: a data pack may add or
         // remove recipes, and JEI should show what actually applies.
-        var level = Minecraft.getInstance().level;
-        if (level == null) {
-            return;
-        }
         List<RecipeHolder<PressRecipe>> recipes =
-                level.getRecipeManager().getAllRecipesFor(FnRecipes.PRESS.get());
+                dev.devpanda.factorynetwork.client.ClientPressRecipes.all();
         registration.addRecipes(PressCategory.TYPE, recipes);
     }
 

@@ -7,12 +7,8 @@
     " T "
   ],
   "key": {
-    "T": {
-      "item": "factorynetwork:ram_128"
-    },
-    "X": {
-      "item": "minecraft:netherite_ingot"
-    }
+    "T": "factorynetwork:ram_128",
+    "X": "minecraft:netherite_ingot"
   },
   "result": {
     "id": "factorynetwork:ram_512",

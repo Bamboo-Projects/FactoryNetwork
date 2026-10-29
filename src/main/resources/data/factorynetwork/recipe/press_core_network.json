@@ -1,19 +1,17 @@
 {
   "type": "factorynetwork:press",
-  "stamp": {
-    "item": "factorynetwork:stamp_network"
-  },
+  "stamp": "factorynetwork:stamp_network",
   "materials": [
     {
-      "item": "factorynetwork:plate",
+      "ingredient": "factorynetwork:plate",
       "count": 1
     },
     {
-      "item": "factorynetwork:crystal",
+      "ingredient": "factorynetwork:crystal",
       "count": 1
     },
     {
-      "item": "minecraft:copper_ingot",
+      "ingredient": "minecraft:copper_ingot",
       "count": 2
     }
   ],

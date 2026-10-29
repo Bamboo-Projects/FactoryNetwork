@@ -3,12 +3,8 @@
   "category": "misc",
   "group": "factorynetwork_cable",
   "ingredients": [
-    {
-      "tag": "c:cables"
-    },
-    {
-      "item": "minecraft:light_blue_dye"
-    }
+    "#c:cables",
+    "minecraft:light_blue_dye"
   ],
   "result": {
     "id": "factorynetwork:light_blue_cable",

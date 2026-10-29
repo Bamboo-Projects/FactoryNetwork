@@ -7,15 +7,9 @@
     "PPP"
   ],
   "key": {
-    "P": {
-      "item": "factorynetwork:plate"
-    },
-    "L": {
-      "item": "factorynetwork:core_logic"
-    },
-    "I": {
-      "item": "minecraft:iron_block"
-    }
+    "P": "factorynetwork:plate",
+    "L": "factorynetwork:core_logic",
+    "I": "minecraft:iron_block"
   },
   "result": {
     "id": "factorynetwork:server_rack",

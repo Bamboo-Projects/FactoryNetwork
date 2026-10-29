@@ -7,15 +7,9 @@
     "PPP"
   ],
   "key": {
-    "P": {
-      "item": "factorynetwork:plate"
-    },
-    "M": {
-      "item": "factorynetwork:core_memory"
-    },
-    "C": {
-      "item": "minecraft:chest"
-    }
+    "P": "factorynetwork:plate",
+    "M": "factorynetwork:core_memory",
+    "C": "minecraft:chest"
   },
   "result": {
     "id": "factorynetwork:drive",

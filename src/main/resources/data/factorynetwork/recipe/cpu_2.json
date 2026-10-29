@@ -7,15 +7,9 @@
     "PCP"
   ],
   "key": {
-    "P": {
-      "item": "factorynetwork:plate"
-    },
-    "C": {
-      "item": "factorynetwork:crystal"
-    },
-    "L": {
-      "item": "factorynetwork:core_logic"
-    }
+    "P": "factorynetwork:plate",
+    "C": "factorynetwork:crystal",
+    "L": "factorynetwork:core_logic"
   },
   "result": {
     "id": "factorynetwork:cpu_2",

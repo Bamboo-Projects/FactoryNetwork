@@ -7,15 +7,9 @@
     "PLP"
   ],
   "key": {
-    "P": {
-      "item": "factorynetwork:plate"
-    },
-    "L": {
-      "item": "factorynetwork:core_logic"
-    },
-    "R": {
-      "item": "minecraft:redstone_block"
-    }
+    "P": "factorynetwork:plate",
+    "L": "factorynetwork:core_logic",
+    "R": "minecraft:redstone_block"
   },
   "result": {
     "id": "factorynetwork:controller",

@@ -7,15 +7,9 @@
     "CPC"
   ],
   "key": {
-    "P": {
-      "item": "factorynetwork:plate"
-    },
-    "C": {
-      "item": "factorynetwork:crystal"
-    },
-    "M": {
-      "item": "factorynetwork:core_memory"
-    }
+    "P": "factorynetwork:plate",
+    "C": "factorynetwork:crystal",
+    "M": "factorynetwork:core_memory"
   },
   "result": {
     "id": "factorynetwork:ram_8",

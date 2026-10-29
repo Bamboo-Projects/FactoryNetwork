@@ -1,11 +1,9 @@
 {
   "type": "factorynetwork:press",
-  "stamp": {
-    "item": "factorynetwork:stamp_plate"
-  },
+  "stamp": "factorynetwork:stamp_plate",
   "materials": [
     {
-      "item": "factorynetwork:raw_crystal",
+      "ingredient": "factorynetwork:raw_crystal",
       "count": 1
     }
   ],

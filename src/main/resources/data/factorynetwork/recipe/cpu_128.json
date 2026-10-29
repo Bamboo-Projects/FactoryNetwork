@@ -7,12 +7,8 @@
     " T "
   ],
   "key": {
-    "T": {
-      "item": "factorynetwork:cpu_32"
-    },
-    "X": {
-      "item": "minecraft:netherite_ingot"
-    }
+    "T": "factorynetwork:cpu_32",
+    "X": "minecraft:netherite_ingot"
   },
   "result": {
     "id": "factorynetwork:cpu_128",

@@ -32,18 +32,31 @@ public final class FnRecipes {
      * two pairs must not know each other.
      */
     public static final DeferredHolder<RecipeSerializer<?>,
-            net.minecraft.world.item.crafting.SimpleCraftingRecipeSerializer<
-                    dev.devpanda.factorynetwork.crafting.EntanglementRecipe>>
+            RecipeSerializer<dev.devpanda.factorynetwork.crafting.EntanglementRecipe>>
             ENTANGLEMENT = SERIALIZERS.register("entanglement",
-                    () -> new net.minecraft.world.item.crafting.SimpleCraftingRecipeSerializer<>(
-                            dev.devpanda.factorynetwork.crafting.EntanglementRecipe::new));
+                    () -> dev.devpanda.factorynetwork.crafting.EntanglementRecipe.SERIALIZER);
 
-    public static final DeferredHolder<RecipeSerializer<?>, PressRecipe.Serializer>
-            PRESS_SERIALIZER = SERIALIZERS.register("press", PressRecipe.Serializer::new);
+    public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<PressRecipe>>
+            PRESS_SERIALIZER = SERIALIZERS.register("press", PressRecipe.Serializer::create);
+
+    private static final DeferredRegister<net.minecraft.world.item.crafting.RecipeBookCategory>
+            BOOK = DeferredRegister.create(
+                    net.minecraft.core.registries.Registries.RECIPE_BOOK_CATEGORY, FactoryNetwork.MOD_ID);
+
+    /**
+     * The press's page in the recipe book.
+     *
+     * <p>Since 1.21.2 every recipe names one. The press puts nothing in the
+     * book, but the field has to point somewhere.
+     */
+    public static final DeferredHolder<net.minecraft.world.item.crafting.RecipeBookCategory,
+            net.minecraft.world.item.crafting.RecipeBookCategory>
+            PRESS_BOOK = BOOK.register("press", net.minecraft.world.item.crafting.RecipeBookCategory::new);
 
     public static void register(IEventBus bus) {
         TYPES.register(bus);
         SERIALIZERS.register(bus);
+        BOOK.register(bus);
     }
 
     private FnRecipes() {

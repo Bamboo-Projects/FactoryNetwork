@@ -66,38 +66,59 @@ public record PressRecipe(Ingredient stamp,
     }
 
     @Override
-    public ItemStack assemble(PressInput input, HolderLookup.Provider registries) {
+    public ItemStack assemble(PressInput input) {
         return result.copy();
     }
 
-    @Override
-    public boolean canCraftInDimensions(int width, int height) {
-        return true;
-    }
-
-    @Override
-    public ItemStack getResultItem(HolderLookup.Provider registries) {
+    /** What comes out; for the recipe lookups and JEI. */
+    public ItemStack resultItem() {
         return result;
     }
 
     @Override
-    public RecipeSerializer<?> getSerializer() {
+    public boolean showNotification() {
+        return false;
+    }
+
+    @Override
+    public String group() {
+        return "";
+    }
+
+    /** Not in the recipe book: the press shows its recipes through JEI. */
+    @Override
+    public net.minecraft.world.item.crafting.PlacementInfo placementInfo() {
+        return net.minecraft.world.item.crafting.PlacementInfo.NOT_PLACEABLE;
+    }
+
+    @Override
+    public net.minecraft.world.item.crafting.RecipeBookCategory recipeBookCategory() {
+        return FnRecipes.PRESS_BOOK.get();
+    }
+
+    @Override
+    public RecipeSerializer<PressRecipe> getSerializer() {
         return FnRecipes.PRESS_SERIALIZER.get();
     }
 
     @Override
-    public RecipeType<?> getType() {
+    public RecipeType<PressRecipe> getType() {
         return FnRecipes.PRESS.get();
     }
 
-    /** The serializer — once for the file, once for the wire. */
-    public static class Serializer implements RecipeSerializer<PressRecipe> {
+    /**
+     * The serializer — once for the file, once for the wire.
+     *
+     * <p>Since 26.1 a serializer is a record of the two; this class only
+     * holds them.
+     */
+    public static final class Serializer {
 
-        private static final MapCodec<PressRecipe> CODEC = RecordCodecBuilder.mapCodec(
+        static final MapCodec<PressRecipe> CODEC = RecordCodecBuilder.mapCodec(
                 instance -> instance.group(
-                        Ingredient.CODEC_NONEMPTY.fieldOf("stamp")
+                        Ingredient.CODEC.fieldOf("stamp")
                                 .forGetter(PressRecipe::stamp),
-                        net.neoforged.neoforge.common.crafting.SizedIngredient.FLAT_CODEC
+                        net.neoforged.neoforge.common.crafting.SizedIngredient.NESTED_CODEC
                                 .listOf(1, MOST_MATERIALS).fieldOf("materials")
                                 .forGetter(PressRecipe::materials),
                         ItemStack.CODEC.fieldOf("result").forGetter(PressRecipe::result),
@@ -107,7 +128,7 @@ public record PressRecipe(Ingredient stamp,
                                 .forGetter(PressRecipe::ticks)
                 ).apply(instance, PressRecipe::new));
 
-        private static final StreamCodec<RegistryFriendlyByteBuf, PressRecipe> STREAM_CODEC =
+        static final StreamCodec<RegistryFriendlyByteBuf, PressRecipe> STREAM_CODEC =
                 StreamCodec.composite(
                         Ingredient.CONTENTS_STREAM_CODEC, PressRecipe::stamp,
                         net.neoforged.neoforge.common.crafting.SizedIngredient.STREAM_CODEC
@@ -117,14 +138,11 @@ public record PressRecipe(Ingredient stamp,
                         ByteBufCodecs.VAR_INT, PressRecipe::ticks,
                         PressRecipe::new);
 
-        @Override
-        public MapCodec<PressRecipe> codec() {
-            return CODEC;
+        static RecipeSerializer<PressRecipe> create() {
+            return new RecipeSerializer<>(CODEC, STREAM_CODEC);
         }
 
-        @Override
-        public StreamCodec<RegistryFriendlyByteBuf, PressRecipe> streamCodec() {
-            return STREAM_CODEC;
+        private Serializer() {
         }
     }
 }

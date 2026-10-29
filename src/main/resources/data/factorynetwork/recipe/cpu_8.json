@@ -7,12 +7,8 @@
     " T "
   ],
   "key": {
-    "T": {
-      "item": "factorynetwork:cpu_2"
-    },
-    "X": {
-      "item": "factorynetwork:core_logic"
-    }
+    "T": "factorynetwork:cpu_2",
+    "X": "factorynetwork:core_logic"
   },
   "result": {
     "id": "factorynetwork:cpu_8",

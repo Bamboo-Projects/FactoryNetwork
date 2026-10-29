@@ -27,8 +27,14 @@ import net.minecraft.world.level.Level;
  */
 public class EntanglementRecipe extends CustomRecipe {
 
-    public EntanglementRecipe(CraftingBookCategory category) {
-        super(category);
+    /** The recipe has no settings of its own, so there is exactly one. */
+    public static final EntanglementRecipe INSTANCE = new EntanglementRecipe();
+
+    public static final RecipeSerializer<EntanglementRecipe> SERIALIZER = new RecipeSerializer<>(
+            com.mojang.serialization.MapCodec.unit(INSTANCE),
+            net.minecraft.network.codec.StreamCodec.unit(INSTANCE));
+
+    private EntanglementRecipe() {
     }
 
     /**
@@ -68,17 +74,12 @@ public class EntanglementRecipe extends CustomRecipe {
      * half whose partner lies elsewhere.
      */
     @Override
-    public ItemStack assemble(CraftingInput input, HolderLookup.Provider registries) {
+    public ItemStack assemble(CraftingInput input) {
         return EntanglementItem.newPair();
     }
 
     @Override
-    public boolean canCraftInDimensions(int width, int height) {
-        return width * height >= 3;
-    }
-
-    @Override
-    public RecipeSerializer<?> getSerializer() {
+    public RecipeSerializer<EntanglementRecipe> getSerializer() {
         return dev.devpanda.factorynetwork.press.FnRecipes.ENTANGLEMENT.get();
     }
 }

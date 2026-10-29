@@ -7,12 +7,8 @@
     "PPP"
   ],
   "key": {
-    "P": {
-      "item": "factorynetwork:plate"
-    },
-    "I": {
-      "item": "minecraft:iron_ingot"
-    }
+    "P": "factorynetwork:plate",
+    "I": "minecraft:iron_ingot"
   },
   "result": {
     "id": "factorynetwork:server_chassis",

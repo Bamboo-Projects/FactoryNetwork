@@ -7,12 +7,8 @@
     " T "
   ],
   "key": {
-    "T": {
-      "item": "factorynetwork:ram_32"
-    },
-    "X": {
-      "item": "minecraft:diamond"
-    }
+    "T": "factorynetwork:ram_32",
+    "X": "minecraft:diamond"
   },
   "result": {
     "id": "factorynetwork:ram_128",

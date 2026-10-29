@@ -7,12 +7,8 @@
     " P "
   ],
   "key": {
-    "P": {
-      "item": "factorynetwork:plate"
-    },
-    "R": {
-      "item": "factorynetwork:range_card"
-    }
+    "P": "factorynetwork:plate",
+    "R": "factorynetwork:range_card"
   },
   "result": {
     "id": "factorynetwork:wireless_module",

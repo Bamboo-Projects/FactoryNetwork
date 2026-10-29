@@ -23,6 +23,17 @@ public final class FnEvents {
      * packs, tags change — then the cache must go, otherwise the factory keeps
      * working with a stock from before.
      */
+    /**
+     * The press recipes go to the client too.
+     *
+     * <p>Since 1.21.2 the server keeps recipes to itself unless asked; JEI
+     * needs these to show the press. See {@code ClientPressRecipes}.
+     */
+    @SubscribeEvent
+    public static void sendPressRecipes(net.neoforged.neoforge.event.OnDatapackSyncEvent event) {
+        event.sendRecipes(dev.devpanda.factorynetwork.press.FnRecipes.PRESS.get());
+    }
+
     @SubscribeEvent
     public static void onTagsUpdated(TagsUpdatedEvent event) {
         ItemSelection.invalidate();

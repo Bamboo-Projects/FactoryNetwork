@@ -177,7 +177,12 @@ public class PressBlockEntity extends BlockEntity
         if (level == null || item(SLOT_STAMP).isEmpty()) {
             return Optional.empty();
         }
-        return level.getRecipeManager()
+        // Recipes live on the server only since 1.21.2; the client never
+        // presses, it only shows.
+        if (!(level instanceof net.minecraft.server.level.ServerLevel server)) {
+            return Optional.empty();
+        }
+        return server.recipeAccess()
                 .getRecipeFor(FnRecipes.PRESS.get(), input(), level)
                 .map(holder -> holder.value());
     }
@@ -226,7 +231,7 @@ public class PressBlockEntity extends BlockEntity
                 return false;
             }
         }
-        ItemStack result = recipe.getResultItem(level.registryAccess());
+        ItemStack result = recipe.resultItem();
         ItemStack current = item(SLOT_RESULT);
         int made = result.getCount() * batch;
         if (current.isEmpty()) {
@@ -244,7 +249,7 @@ public class PressBlockEntity extends BlockEntity
             progress = 0;
             return;
         }
-        ItemStack result = recipe.getResultItem(level.registryAccess()).copy();
+        ItemStack result = recipe.resultItem().copy();
         result.setCount(result.getCount() * batch);
         ItemStack current = item(SLOT_RESULT);
         if (current.isEmpty()) {

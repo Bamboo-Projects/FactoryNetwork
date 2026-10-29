@@ -7,12 +7,8 @@
     "PPP"
   ],
   "key": {
-    "P": {
-      "item": "factorynetwork:plate"
-    },
-    "N": {
-      "item": "factorynetwork:core_network"
-    }
+    "P": "factorynetwork:plate",
+    "N": "factorynetwork:core_network"
   },
   "result": {
     "id": "factorynetwork:connector",

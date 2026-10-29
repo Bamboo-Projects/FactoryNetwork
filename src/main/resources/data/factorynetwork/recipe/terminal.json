@@ -7,15 +7,9 @@
     "PPP"
   ],
   "key": {
-    "P": {
-      "item": "factorynetwork:plate"
-    },
-    "G": {
-      "item": "minecraft:glass_pane"
-    },
-    "L": {
-      "item": "factorynetwork:core_logic"
-    }
+    "P": "factorynetwork:plate",
+    "G": "minecraft:glass_pane",
+    "L": "factorynetwork:core_logic"
   },
   "result": {
     "id": "factorynetwork:terminal",

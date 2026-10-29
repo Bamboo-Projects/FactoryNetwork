@@ -7,15 +7,9 @@
     " P "
   ],
   "key": {
-    "C": {
-      "item": "factorynetwork:crystal"
-    },
-    "L": {
-      "item": "factorynetwork:core_logic"
-    },
-    "P": {
-      "item": "factorynetwork:plate"
-    }
+    "C": "factorynetwork:crystal",
+    "L": "factorynetwork:core_logic",
+    "P": "factorynetwork:plate"
   },
   "result": {
     "id": "factorynetwork:network_analyser",

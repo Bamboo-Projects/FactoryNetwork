@@ -1,11 +1,9 @@
 {
   "type": "factorynetwork:press",
-  "stamp": {
-    "item": "factorynetwork:stamp_plate"
-  },
+  "stamp": "factorynetwork:stamp_plate",
   "materials": [
     {
-      "item": "minecraft:iron_ingot",
+      "ingredient": "minecraft:iron_ingot",
       "count": 1
     }
   ],

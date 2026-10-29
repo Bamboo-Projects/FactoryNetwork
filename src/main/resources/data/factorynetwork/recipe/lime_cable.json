@@ -3,12 +3,8 @@
   "category": "misc",
   "group": "factorynetwork_cable",
   "ingredients": [
-    {
-      "tag": "c:cables"
-    },
-    {
-      "item": "minecraft:lime_dye"
-    }
+    "#c:cables",
+    "minecraft:lime_dye"
   ],
   "result": {
     "id": "factorynetwork:lime_cable",

@@ -7,12 +7,8 @@
     " T "
   ],
   "key": {
-    "T": {
-      "item": "factorynetwork:ram_8"
-    },
-    "X": {
-      "item": "factorynetwork:core_memory"
-    }
+    "T": "factorynetwork:ram_8",
+    "X": "factorynetwork:core_memory"
   },
   "result": {
     "id": "factorynetwork:ram_32",

@@ -7,15 +7,9 @@
     "IRI"
   ],
   "key": {
-    "I": {
-      "item": "minecraft:iron_ingot"
-    },
-    "F": {
-      "item": "minecraft:furnace"
-    },
-    "R": {
-      "item": "minecraft:redstone_block"
-    }
+    "I": "minecraft:iron_ingot",
+    "F": "minecraft:furnace",
+    "R": "minecraft:redstone_block"
   },
   "result": {
     "id": "factorynetwork:burner",

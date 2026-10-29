@@ -7,12 +7,8 @@
     "PPP"
   ],
   "key": {
-    "P": {
-      "item": "factorynetwork:plate"
-    },
-    "C": {
-      "item": "factorynetwork:crystal"
-    }
+    "P": "factorynetwork:plate",
+    "C": "factorynetwork:crystal"
   },
   "result": {
     "id": "factorynetwork:controller_extension",

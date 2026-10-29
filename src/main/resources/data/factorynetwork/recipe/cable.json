@@ -7,12 +7,8 @@
     "III"
   ],
   "key": {
-    "I": {
-      "item": "minecraft:iron_nugget"
-    },
-    "N": {
-      "item": "factorynetwork:core_network"
-    }
+    "I": "minecraft:iron_nugget",
+    "N": "factorynetwork:core_network"
   },
   "result": {
     "id": "factorynetwork:cable",

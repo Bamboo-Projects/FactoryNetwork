@@ -9,7 +9,8 @@ import mezz.jei.api.gui.drawable.IDrawable;
 import mezz.jei.api.helpers.IGuiHelper;
 import mezz.jei.api.recipe.IFocusGroup;
 import mezz.jei.api.recipe.RecipeIngredientRole;
-import mezz.jei.api.recipe.RecipeType;
+import mezz.jei.api.recipe.types.IRecipeHolderType;
+import mezz.jei.api.recipe.types.IRecipeType;
 import mezz.jei.api.recipe.category.IRecipeCategory;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
@@ -38,20 +39,17 @@ import java.util.Locale;
  */
 public class PressCategory implements IRecipeCategory<RecipeHolder<PressRecipe>> {
 
-    public static final RecipeType<RecipeHolder<PressRecipe>> TYPE = RecipeType.create(
-            FactoryNetwork.MOD_ID, "press",
-            (Class<RecipeHolder<PressRecipe>>) (Class<?>) RecipeHolder.class);
+    public static final IRecipeHolderType<PressRecipe> TYPE = IRecipeHolderType.create(
+            Identifier.fromNamespaceAndPath(FactoryNetwork.MOD_ID, "press"));
 
     /** The dimensions of the area a recipe sits on. */
     private static final int WIDTH = 130;
     private static final int HEIGHT = 44;
 
-    private final IDrawable background;
     private final IDrawable icon;
     private final IDrawable arrow;
 
     public PressCategory(IGuiHelper helper) {
-        this.background = helper.createBlankDrawable(WIDTH, HEIGHT);
         this.icon = helper.createDrawableItemStack(
                 new ItemStack(FnBlocks.PRESS.get()));
         // Vanilla's arrow from the furnace screen: it shows the same thing,
@@ -64,7 +62,7 @@ public class PressCategory implements IRecipeCategory<RecipeHolder<PressRecipe>>
     }
 
     @Override
-    public RecipeType<RecipeHolder<PressRecipe>> getRecipeType() {
+    public IRecipeType<RecipeHolder<PressRecipe>> getRecipeType() {
         return TYPE;
     }
 
@@ -74,8 +72,13 @@ public class PressCategory implements IRecipeCategory<RecipeHolder<PressRecipe>>
     }
 
     @Override
-    public IDrawable getBackground() {
-        return background;
+    public int getWidth() {
+        return WIDTH;
+    }
+
+    @Override
+    public int getHeight() {
+        return HEIGHT;
     }
 
     @Override
@@ -87,7 +90,8 @@ public class PressCategory implements IRecipeCategory<RecipeHolder<PressRecipe>>
     public void setRecipe(IRecipeLayoutBuilder builder, RecipeHolder<PressRecipe> holder,
                           IFocusGroup focuses) {
         PressRecipe recipe = holder.value();
-        builder.addSlot(RecipeIngredientRole.CATALYST, 1, 5)
+        // The stamp is not used up; since JEI 26 that role is the station's.
+        builder.addSlot(RecipeIngredientRole.CRAFTING_STATION, 1, 5)
                 .addIngredients(recipe.stamp());
         // The ingredients side by side, in the recipe's order. That the press
         // accepts them in any slots need not be shown here — whoever sees

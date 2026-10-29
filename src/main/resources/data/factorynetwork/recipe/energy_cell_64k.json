@@ -7,15 +7,9 @@
     "PPP"
   ],
   "key": {
-    "P": {
-      "item": "factorynetwork:plate"
-    },
-    "C": {
-      "item": "factorynetwork:crystal"
-    },
-    "R": {
-      "item": "minecraft:redstone_block"
-    }
+    "P": "factorynetwork:plate",
+    "C": "factorynetwork:crystal",
+    "R": "minecraft:redstone_block"
   },
   "result": {
     "id": "factorynetwork:energy_cell_64k",

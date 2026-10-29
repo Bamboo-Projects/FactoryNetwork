@@ -52,9 +52,8 @@ public final class RecipeLookup implements CraftingPlanner.Recipes<Item> {
     public static RecipeLookup of(Level level) {
         HolderLookup.Provider registries = level.registryAccess();
         Map<Item, List<CraftingPlanner.Recipe<Item>>> byResult = new HashMap<>();
-        for (RecipeHolder<CraftingRecipe> holder
-                : level.getRecipeManager().getAllRecipesFor(RecipeType.CRAFTING)) {
-            ItemStack result = holder.value().getResultItem(registries);
+        for (RecipeHolder<CraftingRecipe> holder : dev.devpanda.factorynetwork.platform.Recipes.all(level, RecipeType.CRAFTING)) {
+            ItemStack result = dev.devpanda.factorynetwork.platform.Recipes.result(holder.value(), level);
             List<CraftingPlanner.Need<Item>> needs = needsOf(holder.value());
             if (result.isEmpty() || needs == null || needs.isEmpty()) {
                 continue;
@@ -64,8 +63,8 @@ public final class RecipeLookup implements CraftingPlanner.Recipes<Item> {
                             result.getCount(), needs));
         }
         for (RecipeHolder<net.minecraft.world.item.crafting.StonecutterRecipe> holder
-                : level.getRecipeManager().getAllRecipesFor(RecipeType.STONECUTTING)) {
-            ItemStack result = holder.value().getResultItem(registries);
+                : dev.devpanda.factorynetwork.platform.Recipes.all(level, RecipeType.STONECUTTING)) {
+            ItemStack result = dev.devpanda.factorynetwork.platform.Recipes.result(holder.value(), level);
             List<CraftingPlanner.Need<Item>> needs = needsOf(holder.value());
             if (result.isEmpty() || needs == null || needs.isEmpty()) {
                 continue;
@@ -127,14 +126,14 @@ public final class RecipeLookup implements CraftingPlanner.Recipes<Item> {
         // Identical choices belong together: eight planks are one need for
         // eight and not eight needs for one.
         Map<List<Item>, Integer> merged = new LinkedHashMap<>();
-        for (Ingredient ingredient : recipe.getIngredients()) {
+        for (Ingredient ingredient : dev.devpanda.factorynetwork.platform.Recipes.ingredients(recipe)) {
             if (ingredient.isEmpty()) {
                 continue;
             }
             List<Item> options = new ArrayList<>();
-            for (ItemStack candidate : ingredient.getItems()) {
-                if (!candidate.isEmpty() && !options.contains(candidate.getItem())) {
-                    options.add(candidate.getItem());
+            for (Item candidate : dev.devpanda.factorynetwork.platform.Recipes.items(ingredient)) {
+                if (!options.contains(candidate)) {
+                    options.add(candidate);
                 }
             }
             if (options.isEmpty()) {

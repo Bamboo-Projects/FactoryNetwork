@@ -146,9 +146,8 @@ public final class MachineRecipes implements CraftingPlanner.Recipes<Item> {
             RecipeType<? extends AbstractCookingRecipe> type, String station,
             Map<Item, List<CraftingPlanner.Recipe<Item>>> byResult) {
         HolderLookup.Provider registries = level.registryAccess();
-        for (RecipeHolder<? extends AbstractCookingRecipe> holder
-                : level.getRecipeManager().getAllRecipesFor(type)) {
-            ItemStack result = holder.value().getResultItem(registries);
+        for (RecipeHolder<? extends AbstractCookingRecipe> holder : dev.devpanda.factorynetwork.platform.Recipes.all(level, type)) {
+            ItemStack result = dev.devpanda.factorynetwork.platform.Recipes.result(holder.value(), level);
             List<CraftingPlanner.Need<Item>> needs = needsOf(holder.value());
             if (result.isEmpty() || needs == null) {
                 continue;
@@ -169,9 +168,8 @@ public final class MachineRecipes implements CraftingPlanner.Recipes<Item> {
             Map<Item, List<CraftingPlanner.Recipe<Item>>> byResult) {
         HolderLookup.Provider registries = level.registryAccess();
         for (RecipeHolder<dev.devpanda.factorynetwork.press.PressRecipe> holder
-                : level.getRecipeManager().getAllRecipesFor(
-                        dev.devpanda.factorynetwork.press.FnRecipes.PRESS.get())) {
-            ItemStack result = holder.value().getResultItem(registries);
+                : dev.devpanda.factorynetwork.platform.Recipes.all(level, dev.devpanda.factorynetwork.press.FnRecipes.PRESS.get())) {
+            ItemStack result = holder.value().resultItem();
             if (result.isEmpty()) {
                 continue;
             }
@@ -208,7 +206,7 @@ public final class MachineRecipes implements CraftingPlanner.Recipes<Item> {
      * @return {@code null} if the shape is not right
      */
     private static List<CraftingPlanner.Need<Item>> needsOf(Recipe<?> recipe) {
-        List<Ingredient> ingredients = recipe.getIngredients().stream()
+        List<Ingredient> ingredients = dev.devpanda.factorynetwork.platform.Recipes.ingredients(recipe).stream()
                 .filter(ingredient -> !ingredient.isEmpty())
                 .toList();
         if (ingredients.size() != 1) {
@@ -221,9 +219,9 @@ public final class MachineRecipes implements CraftingPlanner.Recipes<Item> {
 
     private static List<Item> optionsOf(Ingredient ingredient) {
         List<Item> options = new ArrayList<>();
-        for (ItemStack candidate : ingredient.getItems()) {
-            if (!candidate.isEmpty() && !options.contains(candidate.getItem())) {
-                options.add(candidate.getItem());
+        for (Item candidate : dev.devpanda.factorynetwork.platform.Recipes.items(ingredient)) {
+            if (!options.contains(candidate)) {
+                options.add(candidate);
             }
         }
         return options;

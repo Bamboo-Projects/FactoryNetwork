@@ -7,15 +7,9 @@
     "S "
   ],
   "key": {
-    "I": {
-      "item": "minecraft:iron_ingot"
-    },
-    "N": {
-      "item": "minecraft:gold_nugget"
-    },
-    "S": {
-      "item": "minecraft:stick"
-    }
+    "I": "minecraft:iron_ingot",
+    "N": "minecraft:gold_nugget",
+    "S": "minecraft:stick"
   },
   "result": {
     "id": "factorynetwork:label_gun",

@@ -7,18 +7,10 @@
     "PWP"
   ],
   "key": {
-    "G": {
-      "item": "minecraft:glass_pane"
-    },
-    "P": {
-      "item": "factorynetwork:plate"
-    },
-    "L": {
-      "item": "factorynetwork:core_logic"
-    },
-    "W": {
-      "item": "factorynetwork:wireless_terminal"
-    }
+    "G": "minecraft:glass_pane",
+    "P": "factorynetwork:plate",
+    "L": "factorynetwork:core_logic",
+    "W": "factorynetwork:wireless_terminal"
   },
   "result": {
     "id": "factorynetwork:laptop",

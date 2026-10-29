@@ -7,15 +7,9 @@
     "PPP"
   ],
   "key": {
-    "C": {
-      "item": "minecraft:copper_ingot"
-    },
-    "K": {
-      "item": "factorynetwork:crystal"
-    },
-    "P": {
-      "item": "factorynetwork:plate"
-    }
+    "C": "minecraft:copper_ingot",
+    "K": "factorynetwork:crystal",
+    "P": "factorynetwork:plate"
   },
   "result": {
     "id": "factorynetwork:range_card",

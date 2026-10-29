@@ -7,12 +7,8 @@
     " T "
   ],
   "key": {
-    "T": {
-      "item": "factorynetwork:cpu_8"
-    },
-    "X": {
-      "item": "minecraft:diamond"
-    }
+    "T": "factorynetwork:cpu_8",
+    "X": "minecraft:diamond"
   },
   "result": {
     "id": "factorynetwork:cpu_32",

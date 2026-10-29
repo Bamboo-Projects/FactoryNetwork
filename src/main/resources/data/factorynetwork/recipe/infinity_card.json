@@ -7,15 +7,9 @@
     "RKR"
   ],
   "key": {
-    "R": {
-      "item": "factorynetwork:range_card"
-    },
-    "K": {
-      "item": "factorynetwork:crystal"
-    },
-    "N": {
-      "item": "factorynetwork:core_network"
-    }
+    "R": "factorynetwork:range_card",
+    "K": "factorynetwork:crystal",
+    "N": "factorynetwork:core_network"
   },
   "result": {
     "id": "factorynetwork:infinity_card",

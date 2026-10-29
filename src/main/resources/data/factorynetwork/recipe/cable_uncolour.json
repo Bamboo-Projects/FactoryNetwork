@@ -3,12 +3,8 @@
   "category": "misc",
   "group": "factorynetwork_cable",
   "ingredients": [
-    {
-      "tag": "c:cables"
-    },
-    {
-      "item": "minecraft:water_bucket"
-    }
+    "#c:cables",
+    "minecraft:water_bucket"
   ],
   "result": {
     "id": "factorynetwork:cable",

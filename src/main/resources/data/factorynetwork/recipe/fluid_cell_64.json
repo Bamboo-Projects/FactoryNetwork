@@ -7,15 +7,9 @@
     "PPP"
   ],
   "key": {
-    "P": {
-      "item": "factorynetwork:plate"
-    },
-    "C": {
-      "item": "factorynetwork:crystal"
-    },
-    "B": {
-      "item": "minecraft:bucket"
-    }
+    "P": "factorynetwork:plate",
+    "C": "factorynetwork:crystal",
+    "B": "minecraft:bucket"
   },
   "result": {
     "id": "factorynetwork:fluid_cell_64",

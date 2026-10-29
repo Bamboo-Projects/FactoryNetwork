@@ -7,12 +7,8 @@
     " C "
   ],
   "key": {
-    "C": {
-      "item": "factorynetwork:chemical_cell_1024k"
-    },
-    "I": {
-      "item": "minecraft:iron_ingot"
-    }
+    "C": "factorynetwork:chemical_cell_1024k",
+    "I": "minecraft:iron_ingot"
   },
   "result": {
     "id": "factorynetwork:chemical_cell_4096k",
