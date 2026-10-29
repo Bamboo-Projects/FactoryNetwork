@@ -80,7 +80,8 @@ class NbtBoundaryTest {
     void anyNumber() {
         CompoundTag tag = new CompoundTag();
         tag.putLong("n", 5L);
-        assertTrue(Nbt.has(tag, "n", Tag.TAG_ANY_NUMERIC));
+        // 99, "any number": the constant Tag.TAG_ANY_NUMERIC is gone since 1.21.5.
+        assertTrue(Nbt.has(tag, "n", 99));
         assertFalse(Nbt.has(tag, "n", Tag.TAG_INT));
     }
 

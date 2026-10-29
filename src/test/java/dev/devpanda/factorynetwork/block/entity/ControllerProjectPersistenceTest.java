@@ -24,7 +24,7 @@ class ControllerProjectPersistenceTest {
         var tag = new CompoundTag();
         tag.putString("Source", "// ä 日本語\nfn alt() {}\n");
         var saved = ControllerProjectPersistence.read(tag);
-        assertEquals(tag.getString("Source"), saved.running().source(Project.MAIN));
+        assertEquals(dev.devpanda.factorynetwork.platform.Nbt.getString(tag, "Source"), saved.running().source(Project.MAIN));
         assertEquals(saved.running(), saved.draft());
     }
 
@@ -35,7 +35,7 @@ class ControllerProjectPersistenceTest {
         var draft = running.with("main.mf", "fn halb() { let a =");
         var tag = new CompoundTag();
         ControllerProjectPersistence.write(tag, running, draft);
-        assertEquals(running.joined(), tag.getString("Source"));
+        assertEquals(running.joined(), dev.devpanda.factorynetwork.platform.Nbt.getString(tag, "Source"));
         assertEquals(new ControllerProjectPersistence.Saved(running, draft),
                 ControllerProjectPersistence.read(tag));
     }

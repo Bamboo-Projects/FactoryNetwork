@@ -269,6 +269,13 @@ neoForge {
 }
 
 repositories {
+    // The CEF bindings BambooCEF runs on. On 26.1 the library hands them to
+    // its consumers as a runtime dependency (there is no separate run
+    // classpath any more), so they have to be resolvable here too.
+    maven {
+        url = 'https://bamboocef.bamboo-srv.de/maven'
+        content { includeGroup 'org.cef' }
+    }
     mavenCentral()
     // Jade wird über Modrinth bezogen; ein eigenes Maven hat es nicht.
     exclusiveContent {
@@ -280,7 +287,11 @@ repositories {
     // die halbe Mod in den Klassenpfad.
     maven {
         url = 'https://maven.blamejared.com/'
-        content { includeGroup 'mezz.jei' }
+        content {
+            includeGroup 'mezz.jei'
+            // JEI 26 brings its config library from the same place.
+            includeGroup 'net.mezzdev.config'
+        }
     }
     // Mekanism hat ein eigenes Maven. Der :api-Klassifikator trägt nur die
     // Schnittstellen — mehr braucht das Übersetzen nicht.
