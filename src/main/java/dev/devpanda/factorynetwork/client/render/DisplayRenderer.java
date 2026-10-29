@@ -4,8 +4,11 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import dev.devpanda.factorynetwork.block.DisplayWall;
 import dev.devpanda.factorynetwork.block.entity.DisplayBlockEntity;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
+import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
+import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
@@ -36,7 +39,7 @@ import java.util.List;
  * <p>Beyond a certain distance nothing is drawn any more: twenty displays on
  * a wall, each with ten lines, are two hundred blocks of text per frame.
  */
-public class DisplayRenderer implements BlockEntityRenderer<DisplayBlockEntity> {
+public class DisplayRenderer implements BlockEntityRenderer<DisplayBlockEntity, DisplayRenderer.State> {
 
     /** Beyond that the text cannot be read anyway. */
     private static final double MAX_DISTANCE = 16.0;
@@ -53,20 +56,44 @@ public class DisplayRenderer implements BlockEntityRenderer<DisplayBlockEntity> 
     private final Font font;
 
     public DisplayRenderer(BlockEntityRendererProvider.Context context) {
-        this.font = context.getFont();
+        this.font = context.font();
+    }
+
+    /** What one frame needs from the display; see DriveRenderer.State. */
+    public static final class State extends BlockEntityRenderState {
+        List<String> lines = List.of();
+        Direction facing = Direction.NORTH;
+        DisplayWall wall;
+        int textScale = 1;
     }
 
     @Override
-    public void render(DisplayBlockEntity display, float partialTick, PoseStack poses,
-                       MultiBufferSource buffers, int light, int overlay) {
-        List<String> lines = display.lines();
-        if (lines.isEmpty()) {
+    public State createRenderState() {
+        return new State();
+    }
+
+    @Override
+    public void extractRenderState(DisplayBlockEntity display, State state, float partialTick,
+                                   Vec3 camera, ModelFeatureRenderer.CrumblingOverlay breakProgress) {
+        BlockEntityRenderer.super.extractRenderState(display, state, partialTick, camera, breakProgress);
+        state.lines = display.lines();
+        state.facing = display.getBlockState().getValue(HorizontalDirectionalBlock.FACING);
+        state.wall = display.wall();
+        state.textScale = display.textScale();
+    }
+
+    @Override
+    public void submit(State state, PoseStack poses, SubmitNodeCollector collector,
+                       CameraRenderState camera) {
+        List<String> lines = state.lines;
+        if (lines.isEmpty() || state.wall == null) {
             return;
         }
 
-        Direction facing = display.getBlockState().getValue(HorizontalDirectionalBlock.FACING);
-        DisplayWall wall = display.wall();
-        int textScale = display.textScale();
+        Direction facing = state.facing;
+        DisplayWall wall = state.wall;
+        int textScale = state.textScale;
+        int light = state.lightCoords;
         poses.pushPose();
 
         // To the centre of the front face, then rotate to the facing direction.
@@ -93,12 +120,13 @@ public class DisplayRenderer implements BlockEntityRenderer<DisplayBlockEntity> 
         int totalHeight = shown * LINE_HEIGHT;
         int top = -totalHeight / 2;
 
-        Matrix4f matrix = poses.last().pose();
         for (int i = 0; i < shown; i++) {
             String line = lines.get(i);
             int width = font.width(line);
-            font.drawInBatch(line, -width / 2.0F, top + i * LINE_HEIGHT, 0xFFFFFF, false,
-                    matrix, buffers, Font.DisplayMode.NORMAL, 0, light);
+            // Opaque white: since 1.21.6 a text colour without alpha is invisible.
+            collector.submitText(poses, -width / 2.0F, top + i * LINE_HEIGHT,
+                    net.minecraft.network.chat.Component.literal(line).getVisualOrderText(), false,
+                    Font.DisplayMode.NORMAL, light, 0xFFFFFFFF, 0, 0);
         }
         poses.popPose();
     }

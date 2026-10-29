@@ -523,7 +523,7 @@ public class CodeScreen extends Screen {
                     "screen.factorynetwork.terminal.deploy.hint"), mouseX, mouseY);
             return;
         }
-        EditorTooltip.extractRenderState(graphics, font, editor, project, openProblems, mouseX, mouseY);
+        EditorTooltip.render(graphics, font, editor, project, openProblems, mouseX, mouseY);
     }
 
     // ---- Input ---------------------------------------------------------

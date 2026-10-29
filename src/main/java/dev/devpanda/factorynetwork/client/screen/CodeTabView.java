@@ -322,7 +322,7 @@ public class CodeTabView {
                     "screen.factorynetwork.terminal.newfile"), mouseX, mouseY);
             return;
         }
-        EditorTooltip.extractRenderState(graphics, font, editor, project, openProblems, mouseX, mouseY);
+        EditorTooltip.render(graphics, font, editor, project, openProblems, mouseX, mouseY);
     }
 
     /**

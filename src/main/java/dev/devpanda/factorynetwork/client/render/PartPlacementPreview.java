@@ -6,7 +6,6 @@ import dev.devpanda.factorynetwork.block.CableShapes;
 import dev.devpanda.factorynetwork.registry.FnItems;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.entity.player.Player;
@@ -17,7 +16,7 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.RenderHighlightEvent;
+import net.neoforged.neoforge.client.event.ExtractBlockOutlineRenderStateEvent;
 
 /**
  * Shows before placement where the connector would go.
@@ -43,14 +42,14 @@ public final class PartPlacementPreview {
     private static final float[] TAKEN = {1.0F, 0.35F, 0.35F, 0.9F};
 
     @SubscribeEvent
-    public static void preview(RenderHighlightEvent.Block event) {
+    public static void preview(ExtractBlockOutlineRenderStateEvent event) {
         Minecraft minecraft = Minecraft.getInstance();
         Player player = minecraft.player;
         Level level = minecraft.level;
         if (player == null || level == null || !holdsConnector(player)) {
             return;
         }
-        BlockHitResult hit = event.getTarget();
+        BlockHitResult hit = event.getHitResult();
         BlockPos pos = hit.getBlockPos();
         BlockState state = level.getBlockState(pos);
         if (!(state.getBlock() instanceof CableBlock)) {
@@ -59,12 +58,19 @@ public final class PartPlacementPreview {
         Direction side = hit.getDirection();
         float[] colour = CableBlock.hasRoomForPart(state, level, pos, side) ? FREE : TAKEN;
 
-        Vec3 camera = event.getCamera().getPosition();
-        LevelRenderer.renderVoxelShape(event.getPoseStack(),
-                event.getMultiBufferSource().getBuffer(RenderType.lines()),
-                CableShapes.part(CableBlock.sizeOf(state), side),
-                pos.getX() - camera.x, pos.getY() - camera.y, pos.getZ() - camera.z,
-                colour[0], colour[1], colour[2], colour[3], false);
+        var shape = CableShapes.part(CableBlock.sizeOf(state), side);
+        int argb = net.minecraft.util.ARGB.colorFromFloat(colour[3], colour[0], colour[1], colour[2]);
+        float width = minecraft.getWindow().getAppropriateLineWidth();
+        // Since 26.1 the outline is drawn later from a render state; a custom
+        // renderer is the way to add to it. Vanilla's outline stays as well.
+        event.addCustomRenderer((outline, buffers, poses, translucent, levelState) -> {
+            Vec3 camera = levelState.cameraRenderState.pos;
+            net.minecraft.client.renderer.ShapeRenderer.renderShape(poses,
+                    buffers.getBuffer(net.minecraft.client.renderer.rendertype.RenderTypes.lines()),
+                    shape, pos.getX() - camera.x, pos.getY() - camera.y, pos.getZ() - camera.z,
+                    argb, width);
+            return false;
+        });
     }
 
     /**

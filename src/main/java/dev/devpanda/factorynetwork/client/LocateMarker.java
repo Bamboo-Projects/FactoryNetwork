@@ -1,16 +1,9 @@
 package dev.devpanda.factorynetwork.client;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.BufferUploader;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
 import dev.devpanda.factorynetwork.FactoryNetwork;
-import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.AABB;
@@ -84,8 +77,8 @@ public final class LocateMarker {
     }
 
     @SubscribeEvent
-    public static void onRenderLevel(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES || target == null) {
+    public static void onRenderLevel(RenderLevelStageEvent.AfterTranslucentParticles event) {
+        if (target == null) {
             return;
         }
         Minecraft minecraft = Minecraft.getInstance();
@@ -103,8 +96,8 @@ public final class LocateMarker {
             return;
         }
 
-        Camera camera = event.getCamera();
-        Vec3 eye = camera.getPosition();
+        var camera = event.getLevelRenderState().cameraRenderState;
+        Vec3 eye = camera.pos;
         PoseStack poses = event.getPoseStack();
         MultiBufferSource.BufferSource buffers = minecraft.renderBuffers().bufferSource();
 
@@ -117,24 +110,10 @@ public final class LocateMarker {
         // analyser, which shows the network through walls for the same reason.
         poses.pushPose();
         poses.translate(-eye.x, -eye.y, -eye.z);
-        Matrix4f box = poses.last().pose();
-
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-        RenderSystem.disableDepthTest();
-        RenderSystem.disableCull();
-        RenderSystem.lineWidth(3.0F);
-
-        var buffer = Tesselator.getInstance().begin(VertexFormat.Mode.DEBUG_LINES,
-                DefaultVertexFormat.POSITION_COLOR);
-        outline(buffer, box, target);
-        BufferUploader.drawWithShader(buffer.buildOrThrow());
-
-        RenderSystem.lineWidth(1.0F);
-        RenderSystem.enableCull();
-        RenderSystem.enableDepthTest();
-        RenderSystem.disableBlend();
+        // Through walls: since 1.21.5 that is a pipeline without a depth test,
+        // see FnRenderTypes, and no longer a switch around the drawing.
+        outline(buffers.getBuffer(dev.devpanda.factorynetwork.client.render.FnRenderTypes.LINES_SEE_THROUGH),
+                poses.last(), target);
         poses.popPose();
 
         // And the name above it, so you can read it from afar.
@@ -144,7 +123,7 @@ public final class LocateMarker {
                 target.getX() + 0.5 - eye.x,
                 target.getY() + 1.4 - eye.y,
                 target.getZ() + 0.5 - eye.z);
-        poses.mulPose(camera.rotation());
+        poses.mulPose(camera.orientation);
         poses.scale(-0.025F, -0.025F, 0.025F);
         Matrix4f matrix = poses.last().pose();
         font.drawInBatch(label, -font.width(label) / 2.0F, 0, COLOUR, false, matrix, buffers,
@@ -159,8 +138,8 @@ public final class LocateMarker {
      * <p>A hair larger than the block, otherwise the line lies in its surface
      * and flickers.
      */
-    private static void outline(com.mojang.blaze3d.vertex.BufferBuilder buffer,
-                                Matrix4f matrix, BlockPos pos) {
+    private static void outline(com.mojang.blaze3d.vertex.VertexConsumer buffer,
+                                com.mojang.blaze3d.vertex.PoseStack.Pose matrix, BlockPos pos) {
         AABB box = new AABB(pos).inflate(0.02);
         float x0 = (float) box.minX;
         float y0 = (float) box.minY;
@@ -186,9 +165,16 @@ public final class LocateMarker {
         line(buffer, matrix, x0, y0, z1, x0, y1, z1);
     }
 
-    private static void line(com.mojang.blaze3d.vertex.BufferBuilder buffer, Matrix4f matrix,
+    private static void line(com.mojang.blaze3d.vertex.VertexConsumer buffer,
+                             com.mojang.blaze3d.vertex.PoseStack.Pose matrix,
                              float x0, float y0, float z0, float x1, float y1, float z1) {
-        buffer.addVertex(matrix, x0, y0, z0).setColor(0.47F, 0.86F, 0.55F, 1.0F);
-        buffer.addVertex(matrix, x1, y1, z1).setColor(0.47F, 0.86F, 0.55F, 1.0F);
+        // Lines carry their direction and width per vertex since 1.21.5.
+        float dx = x1 - x0;
+        float dy = y1 - y0;
+        float dz = z1 - z0;
+        buffer.addVertex(matrix, x0, y0, z0).setColor(0.47F, 0.86F, 0.55F, 1.0F)
+                .setNormal(matrix, dx, dy, dz).setLineWidth(3.0F);
+        buffer.addVertex(matrix, x1, y1, z1).setColor(0.47F, 0.86F, 0.55F, 1.0F)
+                .setNormal(matrix, dx, dy, dz).setLineWidth(3.0F);
     }
 }

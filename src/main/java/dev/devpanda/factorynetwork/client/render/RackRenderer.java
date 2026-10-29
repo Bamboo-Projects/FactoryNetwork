@@ -4,10 +4,13 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import dev.devpanda.factorynetwork.FactoryNetwork;
 import dev.devpanda.factorynetwork.block.entity.RackBlockEntity;
 import net.minecraft.client.renderer.LevelRenderer;
-import net.minecraft.client.renderer.LightTexture;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
+import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
+import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.Identifier;
@@ -27,7 +30,7 @@ import org.joml.Matrix4f;
  * <p>Drawn across two blocks: the rack is two tall, the BlockEntity sits at
  * the bottom, and the upper six bays lie in the neighbouring block.
  */
-public class RackRenderer implements BlockEntityRenderer<RackBlockEntity> {
+public class RackRenderer implements BlockEntityRenderer<RackBlockEntity, RackRenderer.State> {
 
     private static final Identifier BLADES = Identifier.fromNamespaceAndPath(
             FactoryNetwork.MOD_ID, "textures/misc/rack_blades.png");
@@ -55,26 +58,51 @@ public class RackRenderer implements BlockEntityRenderer<RackBlockEntity> {
     public RackRenderer(BlockEntityRendererProvider.Context context) {
     }
 
+    /** What one frame needs from the rack; see DriveRenderer.State. */
+    public static final class State extends BlockEntityRenderState {
+        Direction facing = Direction.NORTH;
+        int dark;
+        final int[] kinds = new int[RackBlockEntity.BAYS];
+    }
+
     @Override
-    public void render(RackBlockEntity rack, float partialTick, PoseStack poses,
-                       MultiBufferSource buffers, int light, int overlay) {
-        Direction facing = rack.getBlockState().getValue(HorizontalDirectionalBlock.FACING);
-        var buffer = buffers.getBuffer(RenderType.entityCutoutNoCull(BLADES));
-        int dark = LevelRenderer.getLightColor(rack.getLevel(),
-                rack.getBlockPos().relative(facing));
+    public State createRenderState() {
+        return new State();
+    }
+
+    @Override
+    public void extractRenderState(RackBlockEntity rack, State state, float partialTick,
+                                   Vec3 camera, ModelFeatureRenderer.CrumblingOverlay breakProgress) {
+        BlockEntityRenderer.super.extractRenderState(rack, state, partialTick, camera, breakProgress);
+        state.facing = rack.getBlockState().getValue(HorizontalDirectionalBlock.FACING);
+        state.dark = rack.getLevel() == null ? LightCoordsUtil.FULL_BRIGHT
+                : LevelRenderer.getLightCoords(rack.getLevel(),
+                        rack.getBlockPos().relative(state.facing));
+        for (int bay = 0; bay < state.kinds.length; bay++) {
+            state.kinds[bay] = kindOf(rack, bay);
+        }
+    }
+
+    @Override
+    public void submit(State state, PoseStack poses, SubmitNodeCollector collector,
+                       CameraRenderState camera) {
+        Direction facing = state.facing;
+        int dark = state.dark;
 
         poses.pushPose();
         poses.translate(0.5F, 0.5F, 0.5F);
-        Matrix4f matrix = poses.last().pose();
+        collector.submitCustomGeometry(poses, RenderTypes.entityCutout(BLADES), (pose, buffer) -> {
+        Matrix4f matrix = pose.pose();
         for (int bay = 0; bay < RackBlockEntity.BAYS; bay++) {
-            int kind = kindOf(rack, bay);
+            int kind = state.kinds[bay];
             float top = BAY_TOP + bay * BAY_STEP;
             FaceOverlay.tile(buffer, matrix, facing,
                     BAY_X0 / PIXEL, top / PIXEL - 1.0F,
                     BAY_X1 / PIXEL, (top + BAY_HEIGHT) / PIXEL - 1.0F,
                     kind / TILES, (kind + 1) / TILES,
-                    kind == 0 ? dark : LightTexture.FULL_BRIGHT, DEPTH);
+                    kind == 0 ? dark : LightCoordsUtil.FULL_BRIGHT, DEPTH);
         }
+        });
         poses.popPose();
     }
 

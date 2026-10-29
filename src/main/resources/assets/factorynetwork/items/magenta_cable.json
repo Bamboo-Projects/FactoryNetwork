@@ -1,0 +1,12 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "factorynetwork:item/magenta_cable",
+    "tints": [
+      {
+        "type": "minecraft:constant",
+        "value": -6078566
+      }
+    ]
+  }
+}

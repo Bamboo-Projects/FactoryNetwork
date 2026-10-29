@@ -39,30 +39,26 @@ public final class CableColours {
      * a list — the next cable kind can no longer be forgotten.
      */
     @SubscribeEvent
-    public static void registerBlockColours(RegisterColorHandlersEvent.Block event) {
-        event.register((state, level, pos, tintIndex) -> {
-            if (tintIndex < 0 || level == null || pos == null) {
-                return NEUTRAL;
+    public static void registerBlockColours(RegisterColorHandlersEvent.BlockTintSources event) {
+        // Since 26.1 a block names one tint source per tint index; the cable
+        // models use index 0 for the ring and nothing else.
+        event.register(java.util.List.of(new net.minecraft.client.color.block.BlockTintSource() {
+            @Override
+            public int color(net.minecraft.world.level.block.state.BlockState state) {
+                return 0xFF000000 | tint(CableBlock.colourOf(state));
             }
-            return tint(CableBlock.colourOf(state));
-        }, FnBlocks.CABLE.get(), FnBlocks.DENSE_CABLE.get());
+
+            @Override
+            public java.util.Set<net.minecraft.world.level.block.state.properties.Property<?>>
+                    relevantProperties() {
+                return java.util.Set.of(CableBlock.COLOUR);
+            }
+        }), FnBlocks.CABLE.get(), FnBlocks.DENSE_CABLE.get());
     }
 
-    @SubscribeEvent
-    public static void registerItemColours(RegisterColorHandlersEvent.Item event) {
-        // In the hand there is no BlockEntity — the colour stands in the item.
-        // Both kinds here too: a dense cable in the backpack looked like any
-        // other.
-        List.of(FnItems.CABLES, FnItems.DENSE_CABLES).forEach(cables ->
-                cables.values().forEach(holder ->
-                        event.register((stack, tintIndex) -> {
-                            if (tintIndex != 0) {
-                                return NEUTRAL;
-                            }
-                            return stack.getItem() instanceof ColouredCableItem cable
-                                    ? tint(cable.colour()) : NEUTRAL;
-                        }, holder.get())));
-    }
+    // In the hand there is no BlockEntity and, since 1.21.4, no code either:
+    // each coloured cable item names its tint in assets/factorynetwork/items,
+    // computed the same way as tint() below.
 
     /**
      * The multiplier for a colour.

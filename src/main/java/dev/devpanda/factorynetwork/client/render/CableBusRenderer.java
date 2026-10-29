@@ -4,14 +4,16 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import dev.devpanda.factorynetwork.block.CableBlock;
 import dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.block.BlockRenderDispatcher;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
+import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
+import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
+import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.core.Direction;
-import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.client.model.data.ModelData;
 
 /**
  * Draws the connectors that sit on the faces of a cable.
@@ -29,36 +31,51 @@ import net.neoforged.neoforge.client.model.data.ModelData;
  * open item; a switch to a baked model would remain possible at any time,
  * because nothing is stored here.
  */
-public class CableBusRenderer implements BlockEntityRenderer<CableBusBlockEntity> {
+public class CableBusRenderer implements BlockEntityRenderer<CableBusBlockEntity, CableBusRenderer.State> {
 
-    private final BlockRenderDispatcher blocks;
+    /** Per occupied face the part's model and its colour; see DriveRenderer.State. */
+    public static final class State extends BlockEntityRenderState {
+        final java.util.List<net.minecraft.client.renderer.block.dispatch.BlockStateModelPart> models =
+                new java.util.ArrayList<>();
+        final java.util.List<Integer> colours = new java.util.ArrayList<>();
+    }
 
     public CableBusRenderer(BlockEntityRendererProvider.Context context) {
-        this.blocks = context.getBlockRenderDispatcher();
     }
 
     @Override
-    public void render(CableBusBlockEntity bus, float partialTick, PoseStack poses,
-                       MultiBufferSource buffers, int light, int overlay) {
+    public State createRenderState() {
+        return new State();
+    }
+
+    @Override
+    public void extractRenderState(CableBusBlockEntity bus, State state, float partialTick,
+                                   Vec3 camera, ModelFeatureRenderer.CrumblingOverlay breakProgress) {
+        BlockEntityRenderer.super.extractRenderState(bus, state, partialTick, camera, breakProgress);
+        state.models.clear();
+        state.colours.clear();
         if (!bus.hasParts()) {
             return;
         }
-        BlockState cable = bus.getBlockState();
-        int size = CableBlock.sizeOf(cable);
+        int size = CableBlock.sizeOf(bus.getBlockState());
         var models = Minecraft.getInstance().getModelManager();
-        // The same render type as the cable: the edges of the texture are
-        // transparent.
-        var buffer = buffers.getBuffer(RenderType.cutout());
         for (var entry : bus.parts().entrySet()) {
-            // The colour affects only the indicator-light ring: renderModel
-            // tints only faces with a tintindex, and in the part model only
-            // the ring has one.
-            var state = entry.getValue().state();
-            blocks.getModelRenderer().renderModel(poses.last(), buffer, cable,
-                    models.getModel(ConnectorPartModels.of(size, entry.getKey())),
-                    DeviceStateColours.red(state), DeviceStateColours.green(state),
-                    DeviceStateColours.blue(state),
-                    light, overlay, ModelData.EMPTY, RenderType.cutout());
+            state.models.add(models.getStandaloneModel(ConnectorPartModels.of(size, entry.getKey())));
+            // The colour affects only the indicator-light ring: only faces with
+            // a tintindex are tinted, and in the part model only the ring has one.
+            state.colours.add(DeviceStateColours.opaque(entry.getValue().state()));
+        }
+    }
+
+    @Override
+    public void submit(State state, PoseStack poses, SubmitNodeCollector collector,
+                       CameraRenderState camera) {
+        for (int i = 0; i < state.models.size(); i++) {
+            // The same kind of drawing as the cable: the edges of the texture
+            // are transparent.
+            collector.submitBlockModel(poses, RenderTypes.cutoutMovingBlock(),
+                    java.util.List.of(state.models.get(i)), new int[] {state.colours.get(i)},
+                    state.lightCoords, OverlayTexture.NO_OVERLAY, 0);
         }
     }
 }

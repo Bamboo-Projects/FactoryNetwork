@@ -211,7 +211,7 @@ public final class TypingBenchmark extends IdeScreen {
             // Tastenweg und hält die Zeilen kurz.
             sendKeyCombination(GLFW.GLFW_KEY_ENTER, 0);
         } else {
-            charTyped(TIPPTEXT.charAt(at), 0);
+            charTyped(new net.minecraft.client.input.CharacterEvent(TIPPTEXT.charAt(at)));
         }
     }
 
@@ -265,8 +265,9 @@ public final class TypingBenchmark extends IdeScreen {
         double x = width * acrossFraction;
         double y = height * downFraction;
         mouseMoved(x, y);
-        mouseClicked(x, y, 0);
-        mouseReleased(x, y, 0);
+        var press = new net.minecraft.client.input.MouseButtonEvent(x, y, new net.minecraft.client.input.MouseButtonInfo(0, 0));
+        mouseClicked(press, false);
+        mouseReleased(press);
     }
 
     private void report() {
@@ -335,7 +336,7 @@ public final class TypingBenchmark extends IdeScreen {
             }
             name.append(".png");
             net.minecraft.client.Screenshot.grab(minecraft.gameDirectory, name.toString(),
-                    minecraft.getMainRenderTarget(), message -> { });
+                    minecraft.getMainRenderTarget(), 1, message -> { });
         } catch (Throwable broken) {
             LOG.warn("Bild ließ sich nicht ablegen", broken);
         }

@@ -32,8 +32,10 @@ public final class FnFonts {
     public static final Identifier MONO_BOLD =
             Identifier.fromNamespaceAndPath(FactoryNetwork.MOD_ID, "mono_bold");
 
-    private static final Style MONO_STYLE = Style.EMPTY.withFont(MONO);
-    private static final Style BOLD_STYLE = Style.EMPTY.withFont(MONO_BOLD);
+    private static final Style MONO_STYLE = Style.EMPTY.withFont(
+            new net.minecraft.network.chat.FontDescription.Resource(MONO));
+    private static final Style BOLD_STYLE = Style.EMPTY.withFont(
+            new net.minecraft.network.chat.FontDescription.Resource(MONO_BOLD));
 
     private FnFonts() {
     }
@@ -48,10 +50,10 @@ public final class FnFonts {
 
     /** Applies the font to a finished text, e.g. from the language file. */
     public static MutableComponent mono(Component text) {
-        return text.copy().setStyle(text.getStyle().withFont(MONO));
+        return text.copy().setStyle(text.getStyle().withFont(MONO_STYLE.getFont()));
     }
 
     public static MutableComponent bold(Component text) {
-        return text.copy().setStyle(text.getStyle().withFont(MONO_BOLD));
+        return text.copy().setStyle(text.getStyle().withFont(BOLD_STYLE.getFont()));
     }
 }

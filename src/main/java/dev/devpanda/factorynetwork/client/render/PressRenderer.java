@@ -5,15 +5,20 @@ import dev.devpanda.factorynetwork.FactoryNetwork;
 import dev.devpanda.factorynetwork.block.MachineLayouts;
 import dev.devpanda.factorynetwork.block.entity.PressBlockEntity;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.block.dispatch.BlockStateModelPart;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
+import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
+import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
+import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.client.model.standalone.StandaloneModelKey;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
-import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
-import net.neoforged.neoforge.client.model.data.ModelData;
 
 /**
  * Draws the press's ram — the one part that moves.
@@ -32,11 +37,23 @@ import net.neoforged.neoforge.client.model.data.ModelData;
  * movement itself. One stroke per second, evenly — how far along the press
  * currently is, the GUI tells you anyway, not the ram.
  */
-public class PressRenderer implements BlockEntityRenderer<PressBlockEntity> {
+public class PressRenderer implements BlockEntityRenderer<PressBlockEntity, PressRenderer.State> {
 
     /** The model of the ram, which FnClient registers separately. */
-    public static final ModelResourceLocation RAM = ModelResourceLocation.standalone(
-            Identifier.fromNamespaceAndPath(FactoryNetwork.MOD_ID, "block/press_ram"));
+    /** Where the ram's model lies; registered in {@code FnClient}. */
+    public static final Identifier RAM_MODEL =
+            Identifier.fromNamespaceAndPath(FactoryNetwork.MOD_ID, "block/press_ram");
+
+    /** The ram as a standalone model, see {@code ConnectorPartModels}. */
+    public static final StandaloneModelKey<BlockStateModelPart> RAM =
+            new StandaloneModelKey<>(RAM_MODEL::toString);
+
+    /** Where the ram stands this frame; see DriveRenderer.State. */
+    public static final class State extends BlockEntityRenderState {
+        Direction facing = Direction.NORTH;
+        float drop;
+        boolean placed;
+    }
 
     /** One stroke per second. */
     private static final float TICKS_PER_STROKE = 20.0F;
@@ -47,27 +64,35 @@ public class PressRenderer implements BlockEntityRenderer<PressBlockEntity> {
     }
 
     @Override
-    public void render(PressBlockEntity press, float partialTick, PoseStack poses,
-                       MultiBufferSource buffers, int light, int overlay) {
-        if (press.getLevel() == null) {
-            return;
-        }
+    public State createRenderState() {
+        return new State();
+    }
 
-        poses.pushPose();
+    @Override
+    public void extractRenderState(PressBlockEntity press, State state, float partialTick,
+                                   Vec3 camera, ModelFeatureRenderer.CrumblingOverlay breakProgress) {
+        BlockEntityRenderer.super.extractRenderState(press, state, partialTick, camera, breakProgress);
+        state.placed = press.getLevel() != null;
         // The press faces in four directions; its model is rotated by the
         // block state, the ram has to turn along itself.
-        Direction facing = press.getBlockState()
-                .getValue(HorizontalDirectionalBlock.FACING);
+        state.facing = press.getBlockState().getValue(HorizontalDirectionalBlock.FACING);
+        state.drop = drop(press, partialTick);
+    }
+
+    @Override
+    public void submit(State state, PoseStack poses, SubmitNodeCollector collector,
+                       CameraRenderState camera) {
+        if (!state.placed) {
+            return;
+        }
+        poses.pushPose();
         poses.translate(0.5F, 0.5F, 0.5F);
         poses.mulPose(com.mojang.math.Axis.YP.rotationDegrees(
-                -facing.toYRot() + 180.0F));
-        poses.translate(-0.5F, -0.5F + drop(press, partialTick), -0.5F);
-
-        client.getBlockRenderer().getModelRenderer().renderModel(
-                poses.last(), buffers.getBuffer(RenderType.cutout()),
-                press.getBlockState(), client.getModelManager().getModel(RAM),
-                1.0F, 1.0F, 1.0F, light, overlay, ModelData.EMPTY,
-                RenderType.cutout());
+                -state.facing.toYRot() + 180.0F));
+        poses.translate(-0.5F, -0.5F + state.drop, -0.5F);
+        collector.submitBlockModel(poses, RenderTypes.cutoutMovingBlock(),
+                java.util.List.of(client.getModelManager().getStandaloneModel(RAM)), new int[0],
+                state.lightCoords, OverlayTexture.NO_OVERLAY, 0);
         poses.popPose();
     }
 

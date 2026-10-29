@@ -4,7 +4,6 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import dev.devpanda.factorynetwork.FactoryNetwork;
 import dev.devpanda.factorynetwork.item.LabelGunItem;
 import dev.devpanda.factorynetwork.registry.FnItems;
-import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -57,10 +56,7 @@ public final class ConnectorNameOverlay {
     private static final int BACKGROUND = 0x66000000;
 
     @SubscribeEvent
-    public static void onRenderLevel(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES) {
-            return;
-        }
+    public static void onRenderLevel(RenderLevelStageEvent.AfterTranslucentParticles event) {
         Minecraft minecraft = Minecraft.getInstance();
         Player player = minecraft.player;
         Level level = minecraft.level;
@@ -99,8 +95,8 @@ public final class ConnectorNameOverlay {
             }
         }
 
-        Camera camera = event.getCamera();
-        Vec3 cameraPosition = camera.getPosition();
+        var camera = event.getLevelRenderState().cameraRenderState;
+        Vec3 cameraPosition = camera.pos;
         PoseStack poses = event.getPoseStack();
         MultiBufferSource.BufferSource buffers =
                 minecraft.renderBuffers().bufferSource();
@@ -130,7 +126,7 @@ public final class ConnectorNameOverlay {
                         pos.getX() + 0.5 - cameraPosition.x,
                         pos.getY() + 1.1 + i * LINE_HEIGHT - cameraPosition.y,
                         pos.getZ() + 0.5 - cameraPosition.z);
-                poses.mulPose(camera.rotation());
+                poses.mulPose(camera.orientation);
                 poses.scale(-0.025F, -0.025F, 0.025F);
 
                 Matrix4f matrix = poses.last().pose();

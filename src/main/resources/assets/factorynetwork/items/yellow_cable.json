@@ -1,0 +1,12 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "factorynetwork:item/yellow_cable",
+    "tints": [
+      {
+        "type": "minecraft:constant",
+        "value": -3100366
+      }
+    ]
+  }
+}

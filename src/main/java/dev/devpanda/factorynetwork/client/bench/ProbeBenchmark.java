@@ -241,17 +241,18 @@ public final class ProbeBenchmark extends IdeScreen {
                     ? GLFW.GLFW_KEY_A + (Character.toUpperCase(zeichen) - 'A')
                     : GLFW.GLFW_KEY_PERIOD;
         int scanCode = GLFW.glfwGetKeyScancode(taste);
-        keyPressed(taste, scanCode, 0);
-        charTyped(zeichen, 0);
-        keyReleased(taste, scanCode, 0);
+        keyPressed(new net.minecraft.client.input.KeyEvent(taste, scanCode, 0));
+        charTyped(new net.minecraft.client.input.CharacterEvent(zeichen));
+        keyReleased(new net.minecraft.client.input.KeyEvent(taste, scanCode, 0));
     }
 
     private void click(double across, double down) {
         double x = width * across;
         double y = height * down;
         mouseMoved(x, y);
-        mouseClicked(x, y, 0);
-        mouseReleased(x, y, 0);
+        var press = new net.minecraft.client.input.MouseButtonEvent(x, y, new net.minecraft.client.input.MouseButtonInfo(0, 0));
+        mouseClicked(press, false);
+        mouseReleased(press);
     }
 
     private void report() {

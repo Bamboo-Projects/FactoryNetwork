@@ -1118,7 +1118,7 @@ public class CodeEditor {
                 return true;
             }
             default -> {
-                if (Minecraft.getInstance().options.keyDrop.matches(key, scanCode)) {
+                if (Minecraft.getInstance().options.keyDrop.matches(new net.minecraft.client.input.KeyEvent(key, scanCode, 0))) {
                     return false;
                 }
                 return false;

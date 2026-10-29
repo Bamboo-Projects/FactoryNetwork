@@ -1,0 +1,12 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "factorynetwork:item/black_cable",
+    "tints": [
+      {
+        "type": "minecraft:constant",
+        "value": -15263973
+      }
+    ]
+  }
+}

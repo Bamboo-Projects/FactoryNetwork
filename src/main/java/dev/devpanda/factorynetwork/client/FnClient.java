@@ -4,8 +4,6 @@ import dev.devpanda.factorynetwork.FactoryNetwork;
 import dev.devpanda.factorynetwork.client.screen.TerminalScreen;
 import dev.devpanda.factorynetwork.registry.FnBlocks;
 import dev.devpanda.factorynetwork.registry.FnMenus;
-import net.minecraft.client.renderer.ItemBlockRenderTypes;
-import net.minecraft.client.renderer.RenderType;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -116,11 +114,13 @@ public final class FnClient {
      */
     @SubscribeEvent
     public static void registerPartModels(
-            net.neoforged.neoforge.client.event.ModelEvent.RegisterAdditional event) {
-        dev.devpanda.factorynetwork.client.render.ConnectorPartModels.all(event::register);
+            net.neoforged.neoforge.client.event.ModelEvent.RegisterStandalone event) {
+        dev.devpanda.factorynetwork.client.render.ConnectorPartModels.register(event);
         // The press's ram also belongs to no block state: where it currently
         // stands hangs on the progress in the BlockEntity.
-        event.register(dev.devpanda.factorynetwork.client.render.PressRenderer.RAM);
+        event.register(dev.devpanda.factorynetwork.client.render.PressRenderer.RAM,
+                net.neoforged.neoforge.client.model.standalone.SimpleUnbakedStandaloneModel
+                        .simpleModelWrapper(dev.devpanda.factorynetwork.client.render.PressRenderer.RAM_MODEL));
     }
 
     @SubscribeEvent
@@ -131,12 +131,8 @@ public final class FnClient {
         if (WebSupport.installed()) {
             WebBridge.prepare();
         }
-        // The cable is narrower than a block and therefore needs a render type
-        // that tolerates transparent edges.
-        event.enqueueWork(() -> {
-            ItemBlockRenderTypes.setRenderLayer(FnBlocks.CABLE.get(), RenderType.cutout());
-            ItemBlockRenderTypes.setRenderLayer(FnBlocks.DISPLAY.get(), RenderType.cutout());
-        });
+        // The cable used to need a render type for its transparent edges here.
+        // Since 1.21.5 Minecraft reads that from the texture itself.
     }
 
     /**

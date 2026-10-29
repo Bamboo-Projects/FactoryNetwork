@@ -5,10 +5,13 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import dev.devpanda.factorynetwork.FactoryNetwork;
 import dev.devpanda.factorynetwork.block.entity.RouterBlockEntity;
 import net.minecraft.client.renderer.LevelRenderer;
-import net.minecraft.client.renderer.LightTexture;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
+import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
+import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.Direction;
@@ -29,7 +32,7 @@ import org.joml.Matrix4f;
  * exactly when the face is connected — that is, always when you want to read
  * it.
  */
-public class RouterRenderer implements BlockEntityRenderer<RouterBlockEntity> {
+public class RouterRenderer implements BlockEntityRenderer<RouterBlockEntity, RouterRenderer.State> {
 
     /** A strip of five tiles: off, then lane one to four. */
     private static final Identifier LANES = Identifier.fromNamespaceAndPath(
@@ -47,30 +50,54 @@ public class RouterRenderer implements BlockEntityRenderer<RouterBlockEntity> {
     public RouterRenderer(BlockEntityRendererProvider.Context context) {
     }
 
+    /** What one frame needs from the router: per side the lane, colour and light. */
+    public static final class State extends BlockEntityRenderState {
+        final int[] tile = new int[6];
+        final int[] colour = new int[6];
+        final int[] light = new int[6];
+    }
+
     @Override
-    public void render(RouterBlockEntity router, float partialTick, PoseStack poses,
-                       MultiBufferSource buffers, int light, int overlay) {
-        VertexConsumer buffer = buffers.getBuffer(RenderType.entityCutoutNoCull(LANES));
-        poses.pushPose();
-        poses.translate(0.5F, 0.5F, 0.5F);
-        Matrix4f matrix = poses.last().pose();
+    public State createRenderState() {
+        return new State();
+    }
+
+    @Override
+    public void extractRenderState(RouterBlockEntity router, State state, float partialTick,
+                                   Vec3 camera, ModelFeatureRenderer.CrumblingOverlay breakProgress) {
+        BlockEntityRenderer.super.extractRenderState(router, state, partialTick, camera, breakProgress);
         for (Direction side : Direction.values()) {
+            int i = side.ordinal();
             int lane = router.lane(side);
             // An open face glows, a disconnected one does not. The lighting
             // for it comes from the neighbouring position: inside the block
             // itself it is dark, since that is where the block stands.
-            int faceLight = lane == RouterBlockEntity.OFF
-                    ? LevelRenderer.getLightColor(router.getLevel(),
-                            router.getBlockPos().relative(side))
-                    : LightTexture.FULL_BRIGHT;
+            state.tile[i] = lane == RouterBlockEntity.OFF ? 0 : 1;
+            state.light[i] = lane != RouterBlockEntity.OFF || router.getLevel() == null
+                    ? LightCoordsUtil.FULL_BRIGHT
+                    : LevelRenderer.getLightCoords(router.getLevel(),
+                            router.getBlockPos().relative(side));
             // <b>Two tiles, coloured.</b> Ever since the router carries
             // colours instead of four lanes, there would be eighteen states —
             // a strip with eighteen tiles would be a texture no one could
             // redraw any more. The ring is grey and gets its colour at draw
             // time, just like the cable.
-            quad(buffer, matrix, side, lane == RouterBlockEntity.OFF ? 0 : 1,
-                    colourOf(side, router), faceLight);
+            state.colour[i] = colourOf(side, router);
         }
+    }
+
+    @Override
+    public void submit(State state, PoseStack poses, SubmitNodeCollector collector,
+                       CameraRenderState camera) {
+        poses.pushPose();
+        poses.translate(0.5F, 0.5F, 0.5F);
+        collector.submitCustomGeometry(poses, RenderTypes.entityCutout(LANES), (pose, buffer) -> {
+            Matrix4f matrix = pose.pose();
+            for (Direction side : Direction.values()) {
+                int i = side.ordinal();
+                quad(buffer, matrix, side, state.tile[i], state.colour[i], state.light[i]);
+            }
+        });
         poses.popPose();
     }
 

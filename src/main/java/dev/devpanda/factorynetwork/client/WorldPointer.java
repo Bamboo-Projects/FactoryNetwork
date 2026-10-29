@@ -44,8 +44,8 @@ public final class WorldPointer {
             clearHover();
             return;
         }
-        Vec3 eye = client.gameRenderer.getMainCamera().getPosition();
-        Vector3f look = client.gameRenderer.getMainCamera().getLookVector();
+        Vec3 eye = client.gameRenderer.getMainCamera().position();
+        Vector3f look = new Vector3f(client.gameRenderer.getMainCamera().forwardVector());
 
         WorldSurfaces.Pick pick = WorldSurfaces.pick(eye.x, eye.y, eye.z,
                 look.x(), look.y(), look.z(), REACH);

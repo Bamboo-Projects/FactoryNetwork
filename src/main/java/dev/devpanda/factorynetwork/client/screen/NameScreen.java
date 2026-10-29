@@ -244,9 +244,9 @@ public class NameScreen extends AbstractContainerScreen<NameMenu> {
         // second letter. Vanilla solves it the same way in the anvil: ask the
         // field first, then canConsumeInput, and only when both say no does the
         // key pass on.
-        if (input.keyPressed(key, scanCode, modifiers) || input.canConsumeInput()
+        if (input.keyPressed(event) || input.canConsumeInput()
                 || (instance != null
-                        && (instance.keyPressed(key, scanCode, modifiers)
+                        && (instance.keyPressed(event)
                                 || instance.canConsumeInput()))) {
             return true;
         }

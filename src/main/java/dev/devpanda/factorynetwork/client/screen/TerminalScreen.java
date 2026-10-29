@@ -448,7 +448,6 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         return handled || super.mouseScrolled(mouseX, mouseY, deltaX, deltaY);
     }
 
-    @Override
     /**
      * Keys for the terminal.
      *
@@ -462,7 +461,11 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
      * with an inventory closes on "e", and then you are standing in the middle
      * of the word "iron ore" back in the world.
      */
-    public boolean keyPressed(int key, int scanCode, int modifiers) {
+    @Override
+    public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
+        int key = event.key();
+        int scanCode = event.scancode();
+        int modifiers = event.modifiers();
         if (tab == TerminalTab.CODE) {
             // Ctrl+Enter applies the program.
             if ((key == 257 || key == 335) && Keys.control()) {
@@ -491,7 +494,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
             onClose();
             return true;
         }
-        return super.keyPressed(key, scanCode, modifiers);
+        return super.keyPressed(event);
     }
 
     /**

@@ -9,10 +9,13 @@ import dev.devpanda.factorynetwork.storage.EnergyCellItem;
 import dev.devpanda.factorynetwork.storage.FluidCellItem;
 import dev.devpanda.factorynetwork.storage.StorageCellItem;
 import net.minecraft.client.renderer.LevelRenderer;
-import net.minecraft.client.renderer.LightTexture;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
+import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
+import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.Identifier;
@@ -33,7 +36,7 @@ import org.joml.Matrix4f;
  * would be the state from before. Better no display at all than one that
  * lags behind; how full it is, Jade and the window tell you.
  */
-public class DriveRenderer implements BlockEntityRenderer<DriveBlockEntity> {
+public class DriveRenderer implements BlockEntityRenderer<DriveBlockEntity, DriveRenderer.State> {
 
     private static final Identifier BAYS = Identifier.fromNamespaceAndPath(
             FactoryNetwork.MOD_ID, "textures/misc/drive_bays.png");
@@ -69,30 +72,60 @@ public class DriveRenderer implements BlockEntityRenderer<DriveBlockEntity> {
     public DriveRenderer(BlockEntityRendererProvider.Context context) {
     }
 
+    /**
+     * What one frame needs from the drive.
+     *
+     * <p>Since 26.1 drawing happens in two steps: first everything is read
+     * from the block entity, then drawn from this copy alone.
+     */
+    public static final class State extends BlockEntityRenderState {
+        Direction facing = Direction.NORTH;
+        int dark;
+        final int[] kinds = new int[ROWS * COLUMNS];
+    }
+
     @Override
-    public void render(DriveBlockEntity drive, float partialTick, PoseStack poses,
-                       MultiBufferSource buffers, int light, int overlay) {
-        Direction facing = drive.getBlockState().getValue(HorizontalDirectionalBlock.FACING);
-        var buffer = buffers.getBuffer(RenderType.entityCutoutNoCull(BAYS));
-        int dark = LevelRenderer.getLightColor(drive.getLevel(),
-                drive.getBlockPos().relative(facing));
+    public State createRenderState() {
+        return new State();
+    }
+
+    @Override
+    public void extractRenderState(DriveBlockEntity drive, State state, float partialTick,
+                                   Vec3 camera, ModelFeatureRenderer.CrumblingOverlay breakProgress) {
+        BlockEntityRenderer.super.extractRenderState(drive, state, partialTick, camera, breakProgress);
+        state.facing = drive.getBlockState().getValue(HorizontalDirectionalBlock.FACING);
+        state.dark = drive.getLevel() == null ? LightCoordsUtil.FULL_BRIGHT
+                : LevelRenderer.getLightCoords(drive.getLevel(),
+                        drive.getBlockPos().relative(state.facing));
+        for (int slot = 0; slot < state.kinds.length; slot++) {
+            state.kinds[slot] = kindOf(drive.cell(slot));
+        }
+    }
+
+    @Override
+    public void submit(State state, PoseStack poses, SubmitNodeCollector collector,
+                       CameraRenderState camera) {
+        Direction facing = state.facing;
+        int dark = state.dark;
 
         poses.pushPose();
         poses.translate(0.5F, 0.5F, 0.5F);
-        Matrix4f matrix = poses.last().pose();
+        collector.submitCustomGeometry(poses, RenderTypes.entityCutout(BAYS), (pose, buffer) -> {
+        Matrix4f matrix = pose.pose();
         for (int row = 0; row < ROWS; row++) {
             for (int column = 0; column < COLUMNS; column++) {
                 int slot = row * COLUMNS + column;
-                int kind = kindOf(drive.cell(slot));
+                int kind = state.kinds[slot];
                 int x = BAY_X + column * COLUMN_STEP;
                 int y = BAY_Y + row * ROW_STEP;
                 FaceOverlay.tile(buffer, matrix, facing,
                         x / TEXTURE, y / TEXTURE,
                         (x + BAY_W) / TEXTURE, (y + BAY_H) / TEXTURE,
                         kind / TILES, (kind + 1) / TILES,
-                        kind == 0 ? dark : LightTexture.FULL_BRIGHT, DEPTH);
+                        kind == 0 ? dark : LightCoordsUtil.FULL_BRIGHT, DEPTH);
             }
         }
+        });
         poses.popPose();
     }
 

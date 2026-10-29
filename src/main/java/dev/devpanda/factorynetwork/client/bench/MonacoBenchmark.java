@@ -347,15 +347,16 @@ public final class MonacoBenchmark extends IdeScreen {
     }
 
     private void type(char character) {
-        charTyped(character, 0);
+        charTyped(new net.minecraft.client.input.CharacterEvent(character));
     }
 
     private void click(double acrossFraction, double downFraction) {
         double x = width * acrossFraction;
         double y = height * downFraction;
         mouseMoved(x, y);
-        mouseClicked(x, y, 0);
-        mouseReleased(x, y, 0);
+        var press = new net.minecraft.client.input.MouseButtonEvent(x, y, new net.minecraft.client.input.MouseButtonInfo(0, 0));
+        mouseClicked(press, false);
+        mouseReleased(press);
     }
 
     private void report() {
@@ -406,7 +407,7 @@ public final class MonacoBenchmark extends IdeScreen {
             }
             name.append(".png");
             net.minecraft.client.Screenshot.grab(minecraft.gameDirectory, name.toString(),
-                    minecraft.getMainRenderTarget(), message -> { });
+                    minecraft.getMainRenderTarget(), 1, message -> { });
         } catch (Throwable broken) {
             LOG.warn("Bild ließ sich nicht ablegen", broken);
         }
