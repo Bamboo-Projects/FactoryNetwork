@@ -1,6 +1,6 @@
 plugins {
     id 'java'
-    id 'net.neoforged.moddev' version '2.0.144'
+    id 'net.neoforged.moddev' version '2.0.148'
 }
 
 version = mod_version
@@ -12,7 +12,7 @@ group = mod_group_id
 // missing, the client downloads the runtime like a player's game does.
 def ownRuntimeDir = file('../BambooCEFMC/tools/runtime/build/out/windows-x86_64').canonicalFile
 
-java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+java.toolchain.languageVersion = JavaLanguageVersion.of(25)
 
 // Integration tests are a separate development mod. NeoForge discovers
 // @GameTestHolder classes in every dev client, even with GameTests disabled;
@@ -91,10 +91,6 @@ tasks.register('acceptanceJar', Jar) {
 neoForge {
     version = neo_version
 
-    parchment {
-        minecraftVersion = parchment_minecraft_version
-        mappingsVersion = parchment_mappings_version
-    }
 
     mods {
         "${mod_id}" {
@@ -363,9 +359,9 @@ dependencies {
     // Das Plugin wird von JEI selbst gefunden, und wer es nicht hat, lädt die
     // Klassen nie. Deshalb compileOnly auf die API und runtimeOnly auf die
     // ganze Mod — dieselbe Trennung wie bei Mekanism.
-    compileOnly "mezz.jei:jei-1.21.1-common-api:${jei_version}"
-    compileOnly "mezz.jei:jei-1.21.1-neoforge-api:${jei_version}"
-    runtimeOnly "mezz.jei:jei-1.21.1-neoforge:${jei_version}"
+    compileOnly "mezz.jei:jei-26.1.2-common-api:${jei_version}"
+    compileOnly "mezz.jei:jei-26.1.2-neoforge-api:${jei_version}"
+    runtimeOnly "mezz.jei:jei-26.1.2-neoforge:${jei_version}"
 
     testImplementation platform('org.junit:junit-bom:5.11.4')
     testImplementation 'org.junit.jupiter:junit-jupiter'
@@ -459,7 +455,7 @@ tasks.named('test') {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
-    options.release = 21
+    options.release = 25
 }
 
 processResources {
