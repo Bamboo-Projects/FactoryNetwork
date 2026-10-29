@@ -259,24 +259,37 @@ public class BurnerBlockEntity extends BlockEntity implements Container, MenuPro
     // ---- Saving -----------------------------------------------------------
 
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
+    protected void loadAdditional(net.minecraft.world.level.storage.ValueInput input) {
+        super.loadAdditional(input);
+        loadFrom(dev.devpanda.factorynetwork.platform.Nbt.whole(input),
+                dev.devpanda.factorynetwork.platform.Nbt.registries(input));
+    }
+
+    /** What used to be the tag-based loading; the keys are unchanged. */
+    private void loadFrom(CompoundTag tag, HolderLookup.Provider registries) {
         items.clear();
-        ContainerHelper.loadAllItems(tag, items, registries);
+        dev.devpanda.factorynetwork.platform.Nbt.loadAllItems(tag, items, registries);
         burnTicks = Nbt.getInt(tag, KEY_BURN);
         burnTotal = Math.max(1, Nbt.getInt(tag, KEY_BURN_TOTAL));
         if (tag.contains(KEY_ENERGY)) {
-            energy.deserializeNBT(registries, tag.get(KEY_ENERGY));
+            energy.fromTag(tag.get(KEY_ENERGY));
         }
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
-        ContainerHelper.saveAllItems(tag, items, registries);
+    protected void saveAdditional(net.minecraft.world.level.storage.ValueOutput output) {
+        super.saveAdditional(output);
+        CompoundTag tag = new CompoundTag();
+        saveTo(tag, dev.devpanda.factorynetwork.platform.Nbt.registries(level));
+        output.store(tag);
+    }
+
+    /** What used to be the tag-based saving; the keys are unchanged. */
+    private void saveTo(CompoundTag tag, HolderLookup.Provider registries) {
+        dev.devpanda.factorynetwork.platform.Nbt.saveAllItems(tag, items, registries);
         tag.putInt(KEY_BURN, burnTicks);
         tag.putInt(KEY_BURN_TOTAL, burnTotal);
-        tag.put(KEY_ENERGY, energy.serializeNBT(registries));
+        tag.put(KEY_ENERGY, energy.toTag());
     }
 
     @Override

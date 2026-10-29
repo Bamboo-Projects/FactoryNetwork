@@ -16,7 +16,7 @@ import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
  * nobody can put anything into. <b>That is exactly what happened with the
  * press</b> — it needed FE and could get none.
  */
-@EventBusSubscriber(modid = FactoryNetwork.MOD_ID, bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = FactoryNetwork.MOD_ID)
 public final class FnCapabilities {
 
     @SubscribeEvent

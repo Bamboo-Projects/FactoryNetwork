@@ -3,7 +3,7 @@ package dev.devpanda.factorynetwork.block;
 import dev.devpanda.factorynetwork.block.entity.BridgeBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.Containers;
-import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -73,25 +73,25 @@ public class BridgeBlock extends Block implements EntityBlock {
      * thing, and you are already holding it in your hand.
      */
     @Override
-    protected ItemInteractionResult useItemOn(ItemStack held, BlockState state, Level level,
+    protected net.minecraft.world.InteractionResult useItemOn(ItemStack held, BlockState state, Level level,
                                               BlockPos pos, Player player, InteractionHand hand,
                                               BlockHitResult hit) {
         if (dev.devpanda.factorynetwork.item.EntanglementItem.idOf(held) == null) {
-            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+            return net.minecraft.world.InteractionResult.TRY_WITH_EMPTY_HAND;
         }
         if (!(level.getBlockEntity(pos) instanceof BridgeBlockEntity bridge)) {
-            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+            return net.minecraft.world.InteractionResult.TRY_WITH_EMPTY_HAND;
         }
         if (!bridge.getItem(0).isEmpty()) {
-            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+            return net.minecraft.world.InteractionResult.TRY_WITH_EMPTY_HAND;
         }
         if (level.isClientSide()) {
-            return ItemInteractionResult.SUCCESS;
+            return net.minecraft.world.InteractionResult.SUCCESS;
         }
         bridge.setItem(0, held.split(1));
         level.playSound(null, pos, net.minecraft.sounds.SoundEvents.AMETHYST_BLOCK_CHIME,
                 net.minecraft.sounds.SoundSource.BLOCKS, 0.7F, 1.6F);
-        return ItemInteractionResult.CONSUME;
+        return net.minecraft.world.InteractionResult.CONSUME;
     }
 
     /** And with an empty hand it comes back out again. */

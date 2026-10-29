@@ -244,8 +244,14 @@ public class RouterBlockEntity extends BlockEntity {
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
+    protected void loadAdditional(net.minecraft.world.level.storage.ValueInput input) {
+        super.loadAdditional(input);
+        loadFrom(dev.devpanda.factorynetwork.platform.Nbt.whole(input),
+                dev.devpanda.factorynetwork.platform.Nbt.registries(input));
+    }
+
+    /** What used to be the tag-based loading; the keys are unchanged. */
+    private void loadFrom(CompoundTag tag, HolderLookup.Provider registries) {
         byte[] stored = Nbt.getByteArray(tag, KEY_LANES);
         for (int i = 0; i < lanes.length; i++) {
             // Shorter arrays from older saves should not crash; what is
@@ -257,8 +263,15 @@ public class RouterBlockEntity extends BlockEntity {
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
+    protected void saveAdditional(net.minecraft.world.level.storage.ValueOutput output) {
+        super.saveAdditional(output);
+        CompoundTag tag = new CompoundTag();
+        saveTo(tag, dev.devpanda.factorynetwork.platform.Nbt.registries(level));
+        output.store(tag);
+    }
+
+    /** What used to be the tag-based saving; the keys are unchanged. */
+    private void saveTo(CompoundTag tag, HolderLookup.Provider registries) {
         tag.putByteArray(KEY_LANES, lanes.clone());
     }
 

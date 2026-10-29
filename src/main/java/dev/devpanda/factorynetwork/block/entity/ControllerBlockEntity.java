@@ -2775,8 +2775,14 @@ public class ControllerBlockEntity extends BlockEntity {
     // ---- Saving -------------------------------------------------------------
 
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
+    protected void loadAdditional(net.minecraft.world.level.storage.ValueInput input) {
+        super.loadAdditional(input);
+        loadFrom(dev.devpanda.factorynetwork.platform.Nbt.whole(input),
+                dev.devpanda.factorynetwork.platform.Nbt.registries(input));
+    }
+
+    /** What used to be the tag-based loading; the keys are unchanged. */
+    private void loadFrom(CompoundTag tag, HolderLookup.Provider registries) {
         if (SaveVersion.isNewer(SaveVersion.read(tag))) {
             // Written by a newer build. Reading it with today's eyes would
             // drop whatever that build added, and the next save would make
@@ -2808,7 +2814,7 @@ public class ControllerBlockEntity extends BlockEntity {
         net.minecraft.nbt.ListTag heldTag = Nbt.getList(tag, KEY_HELD_BACK,
                 net.minecraft.nbt.Tag.TAG_COMPOUND);
         for (int i = 0; i < heldTag.size(); i++) {
-            ItemStack.parse(registries, Nbt.compoundAt(heldTag, i)).ifPresent(heldBack::add);
+            dev.devpanda.factorynetwork.platform.Nbt.parseStack(registries, Nbt.compoundAt(heldTag, i)).ifPresent(heldBack::add);
         }
         storage.load(Nbt.getCompound(tag, KEY_STORAGE), registries);
         fluidStorage.load(Nbt.getCompound(tag, KEY_FLUIDS), registries);
@@ -2841,8 +2847,15 @@ public class ControllerBlockEntity extends BlockEntity {
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
+    protected void saveAdditional(net.minecraft.world.level.storage.ValueOutput output) {
+        super.saveAdditional(output);
+        CompoundTag tag = new CompoundTag();
+        saveTo(tag, dev.devpanda.factorynetwork.platform.Nbt.registries(level));
+        output.store(tag);
+    }
+
+    /** What used to be the tag-based saving; the keys are unchanged. */
+    private void saveTo(CompoundTag tag, HolderLookup.Provider registries) {
         if (foreignSave != null) {
             tag.merge(foreignSave);
             return;
@@ -2876,7 +2889,7 @@ public class ControllerBlockEntity extends BlockEntity {
             // Without this the loss would come back through the back door: a
             // chunk that unloads would take the held-back items with it.
             net.minecraft.nbt.ListTag heldTag = new net.minecraft.nbt.ListTag();
-            heldBack.forEach(stack -> heldTag.add(stack.save(registries)));
+            heldBack.forEach(stack -> heldTag.add(dev.devpanda.factorynetwork.platform.Nbt.saveStack(stack, registries)));
             tag.put(KEY_HELD_BACK, heldTag);
         }
         if (flows != null) {

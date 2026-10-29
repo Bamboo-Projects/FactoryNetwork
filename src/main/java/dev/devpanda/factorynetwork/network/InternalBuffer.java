@@ -45,4 +45,16 @@ public class InternalBuffer extends EnergyStorage {
     public void drain() {
         energy = 0;
     }
+
+    /** The charge as a tag, the shape {@code serializeNBT} wrote until 1.21.1. */
+    public net.minecraft.nbt.Tag toTag() {
+        return net.minecraft.nbt.IntTag.valueOf(energy);
+    }
+
+    /** The other way; anything but a number leaves the charge as it is. */
+    public void fromTag(net.minecraft.nbt.Tag tag) {
+        if (tag instanceof net.minecraft.nbt.IntTag number) {
+            energy = number.intValue();
+        }
+    }
 }

@@ -83,11 +83,11 @@ public class UpgradeSlots {
     }
 
     public void save(CompoundTag tag, HolderLookup.Provider registries) {
-        ContainerHelper.saveAllItems(tag, contents, registries);
+        dev.devpanda.factorynetwork.platform.Nbt.saveAllItems(tag, contents, registries);
     }
 
     public void load(CompoundTag tag, HolderLookup.Provider registries) {
         contents.clear();
-        ContainerHelper.loadAllItems(tag, contents, registries);
+        dev.devpanda.factorynetwork.platform.Nbt.loadAllItems(tag, contents, registries);
     }
 }

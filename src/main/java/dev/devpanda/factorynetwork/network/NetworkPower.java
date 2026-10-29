@@ -424,14 +424,14 @@ public final class NetworkPower {
     }
 
     public void save(CompoundTag tag, HolderLookup.Provider registries) {
-        tag.put(KEY_ENERGY, buffer.serializeNBT(registries));
+        tag.put(KEY_ENERGY, buffer.toTag());
         tag.putString(KEY_STATE, state.name());
         tag.putInt(KEY_BOOT, bootTicks);
     }
 
     public void load(CompoundTag tag, HolderLookup.Provider registries) {
         if (tag.contains(KEY_ENERGY)) {
-            buffer.deserializeNBT(registries, tag.get(KEY_ENERGY));
+            buffer.fromTag(tag.get(KEY_ENERGY));
         }
         // The state comes back with it. An unloaded chunk is not a power
         // outage — whoever leaves an installation and returns should see it

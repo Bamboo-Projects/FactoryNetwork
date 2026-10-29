@@ -28,7 +28,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.ItemStack;
 
 public class MastBlock extends Block implements EntityBlock {
@@ -61,28 +61,28 @@ public class MastBlock extends Block implements EntityBlock {
      * there would be no way back except throwing the device away.
      */
     @Override
-    protected ItemInteractionResult useItemOn(ItemStack held, BlockState state, Level level,
+    protected net.minecraft.world.InteractionResult useItemOn(ItemStack held, BlockState state, Level level,
                                              BlockPos pos, Player player, InteractionHand hand,
                                              BlockHitResult hit) {
         if (RemoteDeviceItem.deviceOf(held) == null) {
-            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+            return net.minecraft.world.InteractionResult.TRY_WITH_EMPTY_HAND;
         }
         if (level.isClientSide()) {
-            return ItemInteractionResult.SUCCESS;
+            return net.minecraft.world.InteractionResult.SUCCESS;
         }
         net.minecraft.core.GlobalPos where =
                 net.minecraft.core.GlobalPos.of(level.dimension(), pos);
         if (!RemoteDeviceItem.couple(held, where)) {
             Chat.tell(player, 
                     Component.translatable("message.factorynetwork.remote.unbound"), true);
-            return ItemInteractionResult.CONSUME;
+            return net.minecraft.world.InteractionResult.CONSUME;
         }
         Chat.tell(player, 
                 Component.translatable("message.factorynetwork.remote.bound",
                         RemoteDeviceItem.describe(where)), true);
         level.playSound(null, pos, SoundEvents.AMETHYST_BLOCK_CHIME,
                 SoundSource.BLOCKS, 0.6F, 1.4F);
-        return ItemInteractionResult.CONSUME;
+        return net.minecraft.world.InteractionResult.CONSUME;
     }
 
     /** Right-clicking without a device opens the four slots. */

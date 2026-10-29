@@ -219,20 +219,20 @@ public class DriveBlockEntity extends ShelfBlockEntity {
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+    protected void loadAdditional(net.minecraft.world.level.storage.ValueInput input) {
         openItems.clear();
         openFluids.clear();
         openEnergy.clear();
-        super.loadAdditional(tag, registries);
+        super.loadAdditional(input);
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+    protected void saveAdditional(net.minecraft.world.level.storage.ValueOutput output) {
         // The crux: what is held in memory must go into the items before
         // saving. Without this line the contents after a restart would be the
         // ones from before.
         flushCells();
-        super.saveAdditional(tag, registries);
+        super.saveAdditional(output);
     }
 
     @Override

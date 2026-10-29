@@ -94,4 +94,94 @@ public final class Nbt {
     public static int intAt(ListTag list, int index) {
         return list.getIntOr(index, 0);
     }
+
+    // ---- Block entities: ValueInput and ValueOutput (since 1.21.8) ---------
+
+    /**
+     * Everything a block entity was saved with, as one tag.
+     *
+     * <p>Factory Network writes its block entities as tag trees; since 1.21.8
+     * the game hands over a {@code ValueInput} instead. This is the way back to
+     * the tree, with the same keys at the top level as before, so a world from
+     * 1.21.1 still loads.
+     */
+    public static CompoundTag whole(net.minecraft.world.level.storage.ValueInput input) {
+        @SuppressWarnings("deprecation")
+        var all = input.read(com.mojang.serialization.MapCodec.assumeMapUnsafe(CompoundTag.CODEC));
+        return all.orElseGet(CompoundTag::new);
+    }
+
+    /** The registries a {@code ValueInput} was opened with. */
+    @SuppressWarnings("deprecation")
+    public static net.minecraft.core.HolderLookup.Provider registries(
+            net.minecraft.world.level.storage.ValueInput input) {
+        return input.lookup();
+    }
+
+    /**
+     * The registries for writing.
+     *
+     * <p>A {@code ValueOutput} does not hand them out; the block entity's level
+     * does. Without a level (rare: a block entity saved before it was placed)
+     * the running server's, and failing that, none.
+     */
+    public static net.minecraft.core.HolderLookup.Provider registries(
+            net.minecraft.world.level.Level level) {
+        if (level != null) {
+            return level.registryAccess();
+        }
+        var server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
+        return server != null ? server.registryAccess() : net.minecraft.core.RegistryAccess.EMPTY;
+    }
+
+    // ---- Item stacks as tags ---------------------------------------------
+
+    /** An item stack as a tag, the way {@code ItemStack.save} wrote it. */
+    public static Tag saveStack(net.minecraft.world.item.ItemStack stack,
+                                net.minecraft.core.HolderLookup.Provider registries) {
+        return net.minecraft.world.item.ItemStack.CODEC
+                .encodeStart(registries.createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE), stack)
+                .getOrThrow();
+    }
+
+    /** The other way; empty if the tag is no stack any more. */
+    public static java.util.Optional<net.minecraft.world.item.ItemStack> parseStack(
+            net.minecraft.core.HolderLookup.Provider registries, Tag tag) {
+        return net.minecraft.world.item.ItemStack.CODEC
+                .parse(registries.createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE), tag)
+                .result();
+    }
+
+    /**
+     * A container's slots, in the shape of {@code ContainerHelper.saveAllItems}
+     * until 1.21.1: a list {@code Items} with a byte {@code Slot} in each stack.
+     */
+    public static void saveAllItems(CompoundTag tag,
+                                    net.minecraft.core.NonNullList<net.minecraft.world.item.ItemStack> items,
+                                    net.minecraft.core.HolderLookup.Provider registries) {
+        ListTag list = new ListTag();
+        for (int slot = 0; slot < items.size(); slot++) {
+            var stack = items.get(slot);
+            if (!stack.isEmpty()) {
+                CompoundTag entry = (CompoundTag) saveStack(stack, registries);
+                entry.putByte("Slot", (byte) slot);
+                list.add(entry);
+            }
+        }
+        tag.put("Items", list);
+    }
+
+    /** The other way; slots without an entry stay as they are. */
+    public static void loadAllItems(CompoundTag tag,
+                                    net.minecraft.core.NonNullList<net.minecraft.world.item.ItemStack> items,
+                                    net.minecraft.core.HolderLookup.Provider registries) {
+        ListTag list = tag.getListOrEmpty("Items");
+        for (int i = 0; i < list.size(); i++) {
+            CompoundTag entry = list.getCompoundOrEmpty(i);
+            int slot = entry.getByteOr("Slot", (byte) 0) & 255;
+            if (slot < items.size()) {
+                items.set(slot, parseStack(registries, entry).orElse(net.minecraft.world.item.ItemStack.EMPTY));
+            }
+        }
+    }
 }

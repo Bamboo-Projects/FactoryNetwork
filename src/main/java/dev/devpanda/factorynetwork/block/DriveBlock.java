@@ -105,21 +105,21 @@ public class DriveBlock extends HorizontalDirectionalBlock implements EntityBloc
      * cell: a migration that loses something along the way is no migration.
      */
     @Override
-    protected net.minecraft.world.ItemInteractionResult useItemOn(
+    protected net.minecraft.world.InteractionResult useItemOn(
             ItemStack held, BlockState state, Level level, BlockPos pos, Player player,
             net.minecraft.world.InteractionHand hand, BlockHitResult hit) {
         if (!dev.devpanda.factorynetwork.compat.ae2.Ae2Cells.isCell(held)) {
-            return net.minecraft.world.ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+            return net.minecraft.world.InteractionResult.TRY_WITH_EMPTY_HAND;
         }
         if (level.isClientSide()) {
-            return net.minecraft.world.ItemInteractionResult.SUCCESS;
+            return net.minecraft.world.InteractionResult.SUCCESS;
         }
         var controller = dev.devpanda.factorynetwork.network.ControllerRegistry
                 .owning(level, pos);
         if (controller.isEmpty()) {
             Chat.tell(player, net.minecraft.network.chat.Component
                     .translatable("message.factorynetwork.import.no_network"), true);
-            return net.minecraft.world.ItemInteractionResult.CONSUME;
+            return net.minecraft.world.InteractionResult.CONSUME;
         }
         long moved = dev.devpanda.factorynetwork.compat.ae2.Ae2Cells.drainInto(
                 held, controller.get().storage());
@@ -131,7 +131,7 @@ public class DriveBlock extends HorizontalDirectionalBlock implements EntityBloc
             level.playSound(null, pos, net.minecraft.sounds.SoundEvents.BEACON_POWER_SELECT,
                     net.minecraft.sounds.SoundSource.BLOCKS, 0.6F, 1.4F);
         }
-        return net.minecraft.world.ItemInteractionResult.CONSUME;
+        return net.minecraft.world.InteractionResult.CONSUME;
     }
 
     /**

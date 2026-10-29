@@ -78,7 +78,7 @@ public class PressBlock extends HorizontalDirectionalBlock implements EntityBloc
                 && player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
             serverPlayer.openMenu(press, buffer -> buffer.writeBlockPos(pos));
         }
-        return net.minecraft.world.InteractionResult.sidedSuccess(level.isClientSide());
+        return net.minecraft.world.InteractionResult.SUCCESS;
     }
 
     /**

@@ -401,7 +401,7 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
      * today it is a click with no effect.
      */
     @Override
-    protected net.minecraft.world.ItemInteractionResult useItemOn(
+    protected net.minecraft.world.InteractionResult useItemOn(
             ItemStack stack, BlockState state, Level level, BlockPos pos, Player player,
             net.minecraft.world.InteractionHand hand, BlockHitResult hit) {
         // A cable onto a holder puts the cable inside, instead of placing a
@@ -422,12 +422,11 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
                         net.minecraft.sounds.SoundSource.BLOCKS, 0.9F, 1.0F);
                 dev.devpanda.factorynetwork.network.ControllerRegistry.refreshAround(level, pos);
             }
-            return net.minecraft.world.ItemInteractionResult.sidedSuccess(level.isClientSide());
+            return net.minecraft.world.InteractionResult.SUCCESS;
         }
         if (!stack.is(dev.devpanda.factorynetwork.registry.FnItems.CONNECTOR.get())
                 || !(level.getBlockEntity(pos) instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus)) {
-            return net.minecraft.world.ItemInteractionResult
-                    .PASS_TO_DEFAULT_BLOCK_INTERACTION;
+            return net.minecraft.world.InteractionResult.TRY_WITH_EMPTY_HAND;
         }
         Direction side = hit.getDirection();
         if (!hasRoomForPart(state, level, pos, side)) {
@@ -435,7 +434,7 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
                 Chat.tell(player, net.minecraft.network.chat.Component.translatable(
                         "message.factorynetwork.connector.no_room"), true);
             }
-            return net.minecraft.world.ItemInteractionResult.sidedSuccess(level.isClientSide());
+            return net.minecraft.world.InteractionResult.SUCCESS;
         }
         if (!level.isClientSide()) {
             bus.addPart(side);
@@ -448,7 +447,7 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
             level.setBlock(pos, withConnections(state, level, pos), UPDATE_ALL);
             dev.devpanda.factorynetwork.network.ControllerRegistry.refreshAround(level, pos);
         }
-        return net.minecraft.world.ItemInteractionResult.sidedSuccess(level.isClientSide());
+        return net.minecraft.world.InteractionResult.SUCCESS;
     }
 
     /**
@@ -528,7 +527,7 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
             if (!level.isClientSide()) {
                 removePart(level, pos, side, player);
             }
-            return net.minecraft.world.InteractionResult.sidedSuccess(level.isClientSide());
+            return net.minecraft.world.InteractionResult.SUCCESS;
         }
         if (level.isClientSide()) {
             return net.minecraft.world.InteractionResult.SUCCESS;

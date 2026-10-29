@@ -468,27 +468,40 @@ public class PressBlockEntity extends BlockEntity
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
+    protected void loadAdditional(net.minecraft.world.level.storage.ValueInput input) {
+        super.loadAdditional(input);
+        loadFrom(dev.devpanda.factorynetwork.platform.Nbt.whole(input),
+                dev.devpanda.factorynetwork.platform.Nbt.registries(input));
+    }
+
+    /** What used to be the tag-based loading; the keys are unchanged. */
+    private void loadFrom(CompoundTag tag, HolderLookup.Provider registries) {
         items.clear();
-        ContainerHelper.loadAllItems(tag, items, registries);
+        dev.devpanda.factorynetwork.platform.Nbt.loadAllItems(tag, items, registries);
         // Only if it is present: the update packet to the client does not
         // carry the energy — it lives in the menu's ContainerData, and the
         // display does not need it in the block state. NeoForge, however,
         // answers a missing tag with an exception, and that costs the player
         // the connection the moment someone places a press.
         if (tag.contains("Energy")) {
-            energy.deserializeNBT(registries, tag.get("Energy"));
+            energy.fromTag(tag.get("Energy"));
         }
         progress = Nbt.getInt(tag, "Progress");
         required = Nbt.getInt(tag, "Required");
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
-        ContainerHelper.saveAllItems(tag, items, registries);
-        tag.put("Energy", energy.serializeNBT(registries));
+    protected void saveAdditional(net.minecraft.world.level.storage.ValueOutput output) {
+        super.saveAdditional(output);
+        CompoundTag tag = new CompoundTag();
+        saveTo(tag, dev.devpanda.factorynetwork.platform.Nbt.registries(level));
+        output.store(tag);
+    }
+
+    /** What used to be the tag-based saving; the keys are unchanged. */
+    private void saveTo(CompoundTag tag, HolderLookup.Provider registries) {
+        dev.devpanda.factorynetwork.platform.Nbt.saveAllItems(tag, items, registries);
+        tag.put("Energy", energy.toTag());
         tag.putInt("Progress", progress);
         tag.putInt("Required", required);
     }
@@ -496,7 +509,7 @@ public class PressBlockEntity extends BlockEntity
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         CompoundTag tag = super.getUpdateTag(registries);
-        ContainerHelper.saveAllItems(tag, items, registries);
+        dev.devpanda.factorynetwork.platform.Nbt.saveAllItems(tag, items, registries);
         tag.putInt("Progress", progress);
         tag.putInt("Required", required);
         return tag;

@@ -13,7 +13,6 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
@@ -175,11 +174,11 @@ public class RemoteDeviceItem extends Item {
      * guessing which of the four cases applies.
      */
     @Override
-    public InteractionResultHolder<ItemStack> use(Level level, Player player,
+    public InteractionResult use(Level level, Player player,
                                                   InteractionHand hand) {
         ItemStack held = player.getItemInHand(hand);
         if (level.isClientSide()) {
-            return InteractionResultHolder.success(held);
+            return InteractionResult.SUCCESS;
         }
         GlobalPos mast = mastOf(held);
         if (mast == null) {
@@ -238,14 +237,14 @@ public class RemoteDeviceItem extends Item {
                     dev.devpanda.factorynetwork.client.menu.TerminalMenu
                             .writeRemote(buffer, mast, device, slot));
         }
-        return InteractionResultHolder.consume(held);
+        return InteractionResult.CONSUME;
     }
 
     /** A refusal with a reason. */
-    private static InteractionResultHolder<ItemStack> refuse(Player player, ItemStack held,
+    private static InteractionResult refuse(Player player, ItemStack held,
                                                              String message) {
         Chat.tell(player, Component.translatable(message), true);
-        return InteractionResultHolder.fail(held);
+        return InteractionResult.FAIL;
     }
 
     @Override
