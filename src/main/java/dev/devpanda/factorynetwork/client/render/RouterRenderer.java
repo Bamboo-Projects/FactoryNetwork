@@ -12,7 +12,7 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.Direction;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 
@@ -32,7 +32,7 @@ import org.joml.Matrix4f;
 public class RouterRenderer implements BlockEntityRenderer<RouterBlockEntity> {
 
     /** A strip of five tiles: off, then lane one to four. */
-    private static final ResourceLocation LANES = ResourceLocation.fromNamespaceAndPath(
+    private static final Identifier LANES = Identifier.fromNamespaceAndPath(
             FactoryNetwork.MOD_ID, "textures/misc/router_lanes.png");
     /** Two tiles: disconnected and open. The colour comes at draw time. */
     private static final float TILES = 2;

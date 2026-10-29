@@ -1,10 +1,11 @@
 package dev.devpanda.factorynetwork.client.screen;
 
+import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import dev.devpanda.factorynetwork.client.FnFonts;
 import dev.devpanda.factorynetwork.item.ConnectorNaming;
 import dev.devpanda.factorynetwork.item.LabelGunItem;
 import dev.devpanda.factorynetwork.network.packet.SetLabelPacket;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
@@ -12,7 +13,6 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.List;
 
@@ -150,13 +150,12 @@ public class LabelGunScreen extends Screen {
         if (!name.isEmpty() && !ConnectorNaming.isValidDeviceName(name)) {
             return;
         }
-        PacketDistributor.sendToServer(new SetLabelPacket(name));
+        ClientPacketDistributor.sendToServer(new SetLabelPacket(name));
         onClose();
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics, mouseX, mouseY, partialTick);
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
 
         int left = (width - WIDTH) / 2;
         graphics.fill(left - PAD - 1, panelTop - 1, left + WIDTH + PAD + 1, panelBottom + 1,
@@ -166,30 +165,30 @@ public class LabelGunScreen extends Screen {
         // Lift the text above the panel: Minecraft collects labels in a buffer
         // of their own and draws them together — without this head start they
         // land behind every fill that comes afterwards.
-        graphics.pose().pushPose();
-        graphics.pose().translate(0, 0, 100);
-        graphics.drawString(font, FnFonts.mono(title), left, panelTop + PAD,
+        graphics.pose().pushMatrix();
+        // Since 26.1 later strokes lie above earlier ones; no depth step needed.
+        graphics.text(font, FnFonts.mono(title), left, panelTop + PAD,
                 TerminalScreen.TEXT, false);
         int line = panelTop + PAD + TITLE;
         for (FormattedCharSequence row : explain) {
-            graphics.drawString(font, row, left, line, TerminalScreen.TEXT_DIM, false);
+            graphics.text(font, row, left, line, TerminalScreen.TEXT_DIM, false);
             line += LINE;
         }
-        graphics.drawString(font, note, left, line + GAP + FIELD + 3, noteColour, false);
+        graphics.text(font, note, left, line + GAP + FIELD + 3, noteColour, false);
         if (recentRows() > 0) {
-            graphics.drawString(font,
+            graphics.text(font,
                     Component.translatable("screen.factorynetwork.label_gun.recent"),
                     left, line + GAP + FIELD + 3 + LINE + GAP + BUTTON + GAP,
                     TerminalScreen.TEXT_FAINT, false);
         }
-        graphics.pose().popPose();
+        graphics.pose().popMatrix();
 
         // Only the widgets, not super.render: that would call renderBackground
         // again and with it the blur — over everything already drawn up here.
         // The reason this window looked smeared. The blur belongs at the
         // start, and that is where it is.
         for (Renderable renderable : this.renderables) {
-            renderable.render(graphics, mouseX, mouseY, partialTick);
+            renderable.extractRenderState(graphics, mouseX, mouseY, partialTick);
         }
     }
 

@@ -7,7 +7,7 @@ import dev.devpanda.factorynetwork.client.FnFonts;
 import dev.devpanda.factorynetwork.lang.Diagnostic;
 import dev.devpanda.factorynetwork.lang.Project;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 
 import java.util.ArrayList;
@@ -192,7 +192,7 @@ public class CodeTabView {
      * <p>Drawn, not typed: the characters meant for this are not in the font,
      * and a little box made of four strokes costs four lines.
      */
-    private void drawExpandIcon(GuiGraphics graphics, boolean hovered) {
+    private void drawExpandIcon(GuiGraphicsExtractor graphics, boolean hovered) {
         int left = expandX();
         int top = y + 2;
         int colour = 0xFF000000 | (hovered ? TerminalScreen.TEXT : TerminalScreen.TEXT_FAINT);
@@ -204,7 +204,7 @@ public class CodeTabView {
         graphics.fill(left + 5, top + 2, left + 6, top + 5, colour);
     }
 
-    private void drawFiles(GuiGraphics graphics, int mouseX, int mouseY) {
+    private void drawFiles(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         for (String name : project.names()) {
             int at = fileX(name);
             boolean active = name.equals(open);
@@ -212,14 +212,14 @@ public class CodeTabView {
                     .anyMatch(problem -> problem.isError() && problem.file().equals(name));
             int colour = broken ? TerminalScreen.BAD
                     : active ? TerminalScreen.TEXT : TerminalScreen.TEXT_DIM;
-            graphics.drawString(font, FnFonts.mono(name), at, y + 1, colour, false);
+            graphics.text(font, FnFonts.mono(name), at, y + 1, colour, false);
             if (active) {
                 graphics.fill(at, y + FILE_ROW - 2, at + fileWidth(name), y + FILE_ROW - 1,
                         0xFF000000 | TerminalScreen.ACCENT);
             }
         }
         boolean hovered = overPlus(mouseX, mouseY);
-        graphics.drawString(font, FnFonts.mono("+"), plusX(), y + 1,
+        graphics.text(font, FnFonts.mono("+"), plusX(), y + 1,
                 hovered ? TerminalScreen.TEXT : TerminalScreen.TEXT_FAINT, false);
         drawExpandIcon(graphics, overExpand(mouseX, mouseY));
     }
@@ -272,9 +272,9 @@ public class CodeTabView {
         return y + height - FOOTER + 1;
     }
 
-    public void render(GuiGraphics graphics, int mouseX, int mouseY) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         drawFiles(graphics, mouseX, mouseY);
-        editor.render(graphics, openProblems);
+        editor.extractRenderState(graphics, openProblems);
 
         int footerY = y + height - FOOTER + 3;
         String shown = ClientDeployState.hasMessage() ? ClientDeployState.message() : status;
@@ -287,7 +287,7 @@ public class CodeTabView {
             shown = located.getString();
             colour = TerminalScreen.ACCENT;
         }
-        graphics.drawString(font,
+        graphics.text(font,
                 font.plainSubstrByWidth(shown, buttonX() - x - 8), x + 3, footerY,
                 colour, false);
 
@@ -296,7 +296,7 @@ public class CodeTabView {
                 buttonY() + BUTTON_HEIGHT,
                 hovered ? TerminalScreen.BUTTON_HOVER : TerminalScreen.BUTTON);
         Component label = Component.translatable("screen.factorynetwork.terminal.deploy");
-        graphics.drawString(font, label,
+        graphics.text(font, label,
                 buttonX() + (BUTTON_WIDTH - font.width(label)) / 2, buttonY() + 2,
                 TerminalScreen.TEXT, false);
     }
@@ -306,23 +306,23 @@ public class CodeTabView {
                 && mouseY >= buttonY() && mouseY < buttonY() + BUTTON_HEIGHT;
     }
 
-    public void renderTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
+    public void renderTooltip(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         if (overButton(mouseX, mouseY)) {
-            graphics.renderTooltip(font, Component.translatable(
+            graphics.setTooltipForNextFrame(Component.translatable(
                     "screen.factorynetwork.terminal.deploy.hint"), mouseX, mouseY);
             return;
         }
         if (overExpand(mouseX, mouseY)) {
-            graphics.renderTooltip(font, Component.translatable(
+            graphics.setTooltipForNextFrame(Component.translatable(
                     "screen.factorynetwork.terminal.expand"), mouseX, mouseY);
             return;
         }
         if (overPlus(mouseX, mouseY)) {
-            graphics.renderTooltip(font, Component.translatable(
+            graphics.setTooltipForNextFrame(Component.translatable(
                     "screen.factorynetwork.terminal.newfile"), mouseX, mouseY);
             return;
         }
-        EditorTooltip.render(graphics, font, editor, project, openProblems, mouseX, mouseY);
+        EditorTooltip.extractRenderState(graphics, font, editor, project, openProblems, mouseX, mouseY);
     }
 
     /**

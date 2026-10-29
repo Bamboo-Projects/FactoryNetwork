@@ -1,10 +1,10 @@
 package dev.devpanda.factorynetwork.client;
 
+import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import dev.devpanda.factorynetwork.lang.Project;
 import dev.devpanda.factorynetwork.network.packet.ProjectStatePacket;
 import dev.devpanda.factorynetwork.network.packet.SaveDraftPacket;
 import net.minecraft.core.BlockPos;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
  * The project on the client — what runs, and what is currently being edited.
@@ -164,7 +164,7 @@ public final class ClientProjectState {
         if (!isDirty() || controller == null) {
             return;
         }
-        PacketDistributor.sendToServer(prepareSave());
+        ClientPacketDistributor.sendToServer(prepareSave());
     }
 
     /** Package-visible to exercise in-flight save ordering without a live connection. */

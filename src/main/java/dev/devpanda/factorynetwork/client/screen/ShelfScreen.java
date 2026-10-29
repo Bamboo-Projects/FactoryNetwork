@@ -6,10 +6,10 @@ import dev.devpanda.factorynetwork.client.FnFonts;
 import dev.devpanda.factorynetwork.client.menu.ShelfMenu;
 import dev.devpanda.factorynetwork.item.ServerPart;
 import dev.devpanda.factorynetwork.network.ServerBay;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Inventory;
 
 import java.util.ArrayList;
@@ -29,11 +29,11 @@ import java.util.List;
  */
 public class ShelfScreen extends AbstractContainerScreen<ShelfMenu> {
 
-    private static final ResourceLocation DRIVE = ResourceLocation.fromNamespaceAndPath(
+    private static final Identifier DRIVE = Identifier.fromNamespaceAndPath(
             FactoryNetwork.MOD_ID, "textures/gui/drive.png");
-    private static final ResourceLocation RACK = ResourceLocation.fromNamespaceAndPath(
+    private static final Identifier RACK = Identifier.fromNamespaceAndPath(
             FactoryNetwork.MOD_ID, "textures/gui/rack.png");
-    private static final ResourceLocation MAST = ResourceLocation.fromNamespaceAndPath(
+    private static final Identifier MAST = Identifier.fromNamespaceAndPath(
             FactoryNetwork.MOD_ID, "textures/gui/mast.png");
 
     /** The image sits on a 512 sheet, like all of the mod's interfaces. */
@@ -93,7 +93,7 @@ public class ShelfScreen extends AbstractContainerScreen<ShelfMenu> {
     }
 
     /** The background image for this layout. */
-    private ResourceLocation background() {
+    private Identifier background() {
         if (menu.layout() == ShelfMenu.RACK) {
             return RACK;
         }
@@ -101,7 +101,8 @@ public class ShelfScreen extends AbstractContainerScreen<ShelfMenu> {
     }
 
     @Override
-    protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
+    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        super.extractBackground(graphics, mouseX, mouseY, partialTick);
         graphics.blit(background(),
                 leftPos, topPos, 0, 0, imageWidth, imageHeight, SHEET, SHEET);
         if (!isRack()) {
@@ -129,13 +130,13 @@ public class ShelfScreen extends AbstractContainerScreen<ShelfMenu> {
      * they would have to close the window and look at the block.
      */
     @Override
-    protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
-        super.renderLabels(graphics, mouseX, mouseY);
+    protected void extractLabels(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
+        super.extractLabels(graphics, mouseX, mouseY);
         if (!isRack()) {
             return;
         }
         Component summary = FnFonts.mono(summary());
-        graphics.drawString(font, summary,
+        graphics.text(font, summary,
                 imageWidth - 8 - font.width(summary), titleLabelY, Widgets.CASE_TEXT, false);
     }
 
@@ -148,9 +149,8 @@ public class ShelfScreen extends AbstractContainerScreen<ShelfMenu> {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics, mouseX, mouseY, partialTick);
-        super.render(graphics, mouseX, mouseY, partialTick);
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        super.extractRenderState(graphics, mouseX, mouseY, partialTick);
         renderTooltip(graphics, mouseX, mouseY);
         if (isRack() && hoveredSlot == null) {
             bayTooltip(graphics, mouseX, mouseY);
@@ -163,7 +163,7 @@ public class ShelfScreen extends AbstractContainerScreen<ShelfMenu> {
      * <p>Only when a slot is not already under the cursor anyway: two
      * explanations on top of each other are none.
      */
-    private void bayTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
+    private void bayTooltip(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         for (int bay = 0; bay < RackBlockEntity.BAYS; bay++) {
             int x = leftPos + lampX(bay);
             int y = topPos + lampY(bay);
@@ -178,7 +178,7 @@ public class ShelfScreen extends AbstractContainerScreen<ShelfMenu> {
             lines.add(Component.translatable("screen.factorynetwork.rack.bay", bay + 1));
             if (!hasChassis(bay)) {
                 lines.add(Component.translatable("screen.factorynetwork.rack.no_chassis"));
-                graphics.renderComponentTooltip(font, lines, mouseX, mouseY);
+                graphics.setTooltipForNextFrame(font, lines, java.util.Optional.empty(), mouseX, mouseY);
                 return;
             }
             if (contents.complete()) {
@@ -189,7 +189,7 @@ public class ShelfScreen extends AbstractContainerScreen<ShelfMenu> {
                         Component.translatable("screen.factorynetwork.rack.part."
                                 + contents.missing().prefix())));
             }
-            graphics.renderComponentTooltip(font, lines, mouseX, mouseY);
+            graphics.setTooltipForNextFrame(font, lines, java.util.Optional.empty(), mouseX, mouseY);
             return;
         }
     }

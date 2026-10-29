@@ -3,7 +3,7 @@ package dev.devpanda.factorynetwork.compat.jade;
 import dev.devpanda.factorynetwork.FactoryNetwork;
 import dev.devpanda.factorynetwork.block.CableBlock;
 import dev.devpanda.factorynetwork.block.entity.ControllerBlockEntity;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import snownee.jade.api.IWailaClientRegistration;
 import snownee.jade.api.IWailaCommonRegistration;
 import snownee.jade.api.IWailaPlugin;
@@ -24,21 +24,21 @@ import snownee.jade.api.WailaPlugin;
 @WailaPlugin
 public class FactoryNetworkJadePlugin implements IWailaPlugin {
 
-    public static final ResourceLocation PRESS = ResourceLocation.fromNamespaceAndPath(
+    public static final Identifier PRESS = Identifier.fromNamespaceAndPath(
             FactoryNetwork.MOD_ID, "press");
-    public static final ResourceLocation DRIVE = ResourceLocation.fromNamespaceAndPath(
+    public static final Identifier DRIVE = Identifier.fromNamespaceAndPath(
             FactoryNetwork.MOD_ID, "drive");
-    public static final ResourceLocation CABLE = ResourceLocation.fromNamespaceAndPath(
+    public static final Identifier CABLE = Identifier.fromNamespaceAndPath(
             FactoryNetwork.MOD_ID, "cable");
-    public static final ResourceLocation ROUTER = ResourceLocation.fromNamespaceAndPath(
+    public static final Identifier ROUTER = Identifier.fromNamespaceAndPath(
             FactoryNetwork.MOD_ID, "router");
-    public static final ResourceLocation RACK = ResourceLocation.fromNamespaceAndPath(
+    public static final Identifier RACK = Identifier.fromNamespaceAndPath(
             FactoryNetwork.MOD_ID, "server_rack");
-    public static final ResourceLocation BURNER = ResourceLocation.fromNamespaceAndPath(
+    public static final Identifier BURNER = Identifier.fromNamespaceAndPath(
             FactoryNetwork.MOD_ID, "burner");
-    public static final ResourceLocation CONNECTOR = ResourceLocation.fromNamespaceAndPath(
+    public static final Identifier CONNECTOR = Identifier.fromNamespaceAndPath(
             FactoryNetwork.MOD_ID, "connector");
-    public static final ResourceLocation CONTROLLER = ResourceLocation.fromNamespaceAndPath(
+    public static final Identifier CONTROLLER = Identifier.fromNamespaceAndPath(
             FactoryNetwork.MOD_ID, "controller");
 
     @Override

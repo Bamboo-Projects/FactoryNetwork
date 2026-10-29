@@ -1,6 +1,6 @@
 package dev.devpanda.factorynetwork.item;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.player.Player;
@@ -28,7 +28,7 @@ public final class Wrenches {
 
     /** The convention's tag that everyone listens to. */
     public static final TagKey<Item> WRENCH = ItemTags.create(
-            ResourceLocation.fromNamespaceAndPath("c", "tools/wrench"));
+            Identifier.fromNamespaceAndPath("c", "tools/wrench"));
 
     /** Is this a wrench? */
     public static boolean is(ItemStack stack) {

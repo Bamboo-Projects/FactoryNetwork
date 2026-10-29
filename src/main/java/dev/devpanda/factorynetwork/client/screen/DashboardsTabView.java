@@ -1,12 +1,12 @@
 package dev.devpanda.factorynetwork.client.screen;
 
+import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import dev.devpanda.factorynetwork.client.ClientDisplayState;
 import dev.devpanda.factorynetwork.network.packet.DisplayActionPacket;
 import dev.devpanda.factorynetwork.network.packet.DisplayStatePacket;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,11 +49,11 @@ public class DashboardsTabView {
         this.height = height;
     }
 
-    public void render(GuiGraphics graphics, int mouseX, int mouseY) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         hits.clear();
         List<DisplayStatePacket.Panel> panels = ClientDisplayState.panels();
         if (panels.isEmpty()) {
-            graphics.drawString(font, Component.translatable(
+            graphics.text(font, Component.translatable(
                             "screen.factorynetwork.terminal.dashboards.none"),
                     x + 3, y + 3, 0x8B8B8B, false);
             return;
@@ -64,7 +64,7 @@ public class DashboardsTabView {
             if (line > y + height - LINE) {
                 break;
             }
-            graphics.drawString(font, "§8" + panel.name(), x + 3, line,
+            graphics.text(font, "§8" + panel.name(), x + 3, line,
                     TerminalScreen.TEXT_DIM, false);
             line += LINE + 1;
             for (int i = 0; i < panel.lines().size() && line <= y + height - LINE; i++) {
@@ -82,9 +82,9 @@ public class DashboardsTabView {
                     // The line is what gets hit, the entry is what gets sent.
                     hits.add(new Hit(x + 6, line - 1, x + 9 + textWidth, panel.name(),
                             button.entry()));
-                    graphics.drawString(font, content, x + 8, line, TerminalScreen.TEXT, false);
+                    graphics.text(font, content, x + 8, line, TerminalScreen.TEXT, false);
                 } else {
-                    graphics.drawString(font, font.plainSubstrByWidth(content, width - 12),
+                    graphics.text(font, font.plainSubstrByWidth(content, width - 12),
                             x + 6, line, TerminalScreen.TEXT, false);
                 }
                 line += LINE;
@@ -96,7 +96,7 @@ public class DashboardsTabView {
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         for (Hit hit : hits) {
             if (hit.covers(mouseX, mouseY)) {
-                PacketDistributor.sendToServer(
+                ClientPacketDistributor.sendToServer(
                         new DisplayActionPacket(hit.display(), hit.entry()));
                 return true;
             }

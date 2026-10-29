@@ -6,7 +6,7 @@ import dev.devpanda.factorynetwork.storage.CellInventory;
 import dev.devpanda.factorynetwork.storage.CellView;
 import dev.devpanda.factorynetwork.storage.ChemicalCellItem;
 import mekanism.api.chemical.Chemical;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.LinkedHashMap;
@@ -39,7 +39,7 @@ final class MekCells {
                 @Override
                 public Chemical read(net.minecraft.nbt.CompoundTag tag,
                                      net.minecraft.core.HolderLookup.Provider registries) {
-                    ResourceLocation id = ResourceLocation.tryParse(Nbt.getString(tag, "Chemical"));
+                    Identifier id = Identifier.tryParse(Nbt.getString(tag, "Chemical"));
                     return id == null
                             || !mekanism.api.MekanismAPI.CHEMICAL_REGISTRY.containsKey(id)
                             ? null : mekanism.api.MekanismAPI.CHEMICAL_REGISTRY.get(id);
@@ -70,7 +70,7 @@ final class MekCells {
                                   net.minecraft.core.HolderLookup.Provider registries) {
         Map<String, Long> found = new LinkedHashMap<>();
         CHEMICALS.read(cell, registries).forEach((chemical, amount) -> {
-            ResourceLocation id = mekanism.api.MekanismAPI.CHEMICAL_REGISTRY.getKey(chemical);
+            Identifier id = mekanism.api.MekanismAPI.CHEMICAL_REGISTRY.getKey(chemical);
             if (id != null && amount > 0) {
                 found.put(id.toString(), amount);
             }
@@ -80,7 +80,7 @@ final class MekCells {
 
     /** The chemical for an identifier, or {@code null}. */
     static Chemical chemical(String id) {
-        ResourceLocation key = ResourceLocation.tryParse(id);
+        Identifier key = Identifier.tryParse(id);
         if (key == null || !mekanism.api.MekanismAPI.CHEMICAL_REGISTRY.containsKey(key)) {
             return null;
         }
@@ -89,7 +89,7 @@ final class MekCells {
 
     /** And back. */
     static String idOf(Chemical chemical) {
-        ResourceLocation id = mekanism.api.MekanismAPI.CHEMICAL_REGISTRY.getKey(chemical);
+        Identifier id = mekanism.api.MekanismAPI.CHEMICAL_REGISTRY.getKey(chemical);
         return id == null ? "" : id.toString();
     }
 }

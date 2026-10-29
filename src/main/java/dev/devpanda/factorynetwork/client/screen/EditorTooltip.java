@@ -12,7 +12,7 @@ import dev.devpanda.factorynetwork.network.packet.DeviceProfileCodec;
 import dev.devpanda.factorynetwork.network.packet.DeviceSnapshotPacket;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -50,7 +50,7 @@ public final class EditorTooltip {
      * <p>The checks for buttons and open menus stay with the respective
      * window — they differ, and they know their own areas.
      */
-    public static void render(GuiGraphics graphics, Font font, CodeEditor editor,
+    public static void render(GuiGraphicsExtractor graphics, Font font, CodeEditor editor,
                               Project project, List<Diagnostic> problems,
                               int mouseX, int mouseY) {
         if (describeName(graphics, font, editor, project, mouseX, mouseY)) {
@@ -64,9 +64,9 @@ public final class EditorTooltip {
 
         var signature = editor.signatureAt(mouseX, mouseY);
         if (signature != null) {
-            graphics.renderComponentTooltip(font, List.of(
+            graphics.setTooltipForNextFrame(font, List.of(
                     FnFonts.mono(signature.shape()),
-                    Component.literal("§7" + signature.help())), mouseX, mouseY);
+                    Component.literal("§7" + signature.help())), java.util.Optional.empty(), mouseX, mouseY);
             return;
         }
 
@@ -79,7 +79,7 @@ public final class EditorTooltip {
         if (problem.hint() != null) {
             lines.add(Component.literal("§7" + problem.hint()));
         }
-        graphics.renderComponentTooltip(font, lines, mouseX, mouseY);
+        graphics.setTooltipForNextFrame(font, lines, java.util.Optional.empty(), mouseX, mouseY);
     }
 
     /**
@@ -95,7 +95,7 @@ public final class EditorTooltip {
      *
      * @return whether anything was drawn
      */
-    private static boolean describeSelector(GuiGraphics graphics, Font font,
+    private static boolean describeSelector(GuiGraphicsExtractor graphics, Font font,
                                             CodeEditor editor, int mouseX, int mouseY) {
         var selector = dev.devpanda.factorynetwork.lang.Selectors.parse(
                 editor.selectorAt(mouseX, mouseY));
@@ -116,7 +116,7 @@ public final class EditorTooltip {
         for (int i = 1; i < summary.size(); i++) {
             lines.add(Component.literal("§7" + summary.get(i)));
         }
-        graphics.renderComponentTooltip(font, lines, mouseX, mouseY);
+        graphics.setTooltipForNextFrame(font, lines, java.util.Optional.empty(), mouseX, mouseY);
         return true;
     }
 
@@ -128,7 +128,7 @@ public final class EditorTooltip {
      *
      * @return whether anything was drawn
      */
-    private static boolean describeName(GuiGraphics graphics, Font font, CodeEditor editor,
+    private static boolean describeName(GuiGraphicsExtractor graphics, Font font, CodeEditor editor,
                                         Project project, int mouseX, int mouseY) {
         String word = editor.wordAt(mouseX, mouseY);
         if (word.isEmpty()) {
@@ -166,7 +166,7 @@ public final class EditorTooltip {
         if (declared.isPresent()) {
             addDeclaration(lines, project, word, declared.get());
         }
-        graphics.renderComponentTooltip(font, lines, mouseX, mouseY);
+        graphics.setTooltipForNextFrame(font, lines, java.util.Optional.empty(), mouseX, mouseY);
         return true;
     }
 

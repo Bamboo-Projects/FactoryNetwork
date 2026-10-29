@@ -1,8 +1,8 @@
 package dev.devpanda.factorynetwork.client.screen;
 
+import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import dev.devpanda.factorynetwork.client.ClientProjectState;
 import dev.devpanda.factorynetwork.network.packet.RequestEditPacket;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
  * "Request editing" — for both windows.
@@ -35,7 +35,7 @@ public final class RequestEdit {
             // pretend it did something.
             return false;
         }
-        PacketDistributor.sendToServer(new RequestEditPacket(file));
+        ClientPacketDistributor.sendToServer(new RequestEditPacket(file));
         return true;
     }
 }

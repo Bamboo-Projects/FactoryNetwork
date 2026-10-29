@@ -41,8 +41,8 @@ class ForeignResourceKindTest {
     private static final ResourceKind SOURCE = new ResourceKind() {
 
         @Override
-        public net.minecraft.resources.ResourceLocation id() {
-            return net.minecraft.resources.ResourceLocation
+        public net.minecraft.resources.Identifier id() {
+            return net.minecraft.resources.Identifier
                     .fromNamespaceAndPath("factorynetwork_test", "source");
         }
 
@@ -208,8 +208,8 @@ class ForeignResourceKindTest {
         return new ResourceKind() {
 
             @Override
-            public net.minecraft.resources.ResourceLocation id() {
-                return net.minecraft.resources.ResourceLocation
+            public net.minecraft.resources.Identifier id() {
+                return net.minecraft.resources.Identifier
                         .fromNamespaceAndPath("factorynetwork_test", prefix);
             }
 

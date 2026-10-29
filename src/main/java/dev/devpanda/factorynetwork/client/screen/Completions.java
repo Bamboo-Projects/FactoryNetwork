@@ -5,7 +5,7 @@ import dev.devpanda.factorynetwork.lang.DeviceProfile;
 import dev.devpanda.factorynetwork.lang.Side;
 import dev.devpanda.factorynetwork.lang.Signatures;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -679,7 +679,7 @@ public final class Completions {
         }
         String needle = search.toLowerCase(Locale.ROOT);
         int found = 0;
-        for (ResourceLocation id : BuiltInRegistries.ITEM.keySet()) {
+        for (Identifier id : BuiltInRegistries.ITEM.keySet()) {
             if (found >= MAX) {
                 break;
             }

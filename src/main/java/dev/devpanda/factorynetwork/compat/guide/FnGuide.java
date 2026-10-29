@@ -2,7 +2,7 @@ package dev.devpanda.factorynetwork.compat.guide;
 
 import dev.devpanda.factorynetwork.FactoryNetwork;
 import guideme.Guide;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 /**
  * The in-game manual.
@@ -36,10 +36,10 @@ public final class FnGuide {
 
     /** Creates the manual. Called from the mod constructor. */
     public static void register() {
-        Guide.builder(ResourceLocation.fromNamespaceAndPath(FactoryNetwork.MOD_ID, "guide"))
+        Guide.builder(Identifier.fromNamespaceAndPath(FactoryNetwork.MOD_ID, "guide"))
                 .folder(FOLDER)
                 .defaultNamespace(FactoryNetwork.MOD_ID)
-                .startPage(ResourceLocation.fromNamespaceAndPath(
+                .startPage(Identifier.fromNamespaceAndPath(
                         FactoryNetwork.MOD_ID, "index.md"))
                 .build();
     }

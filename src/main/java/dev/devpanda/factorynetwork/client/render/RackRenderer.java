@@ -10,7 +10,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.core.Direction;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -29,7 +29,7 @@ import org.joml.Matrix4f;
  */
 public class RackRenderer implements BlockEntityRenderer<RackBlockEntity> {
 
-    private static final ResourceLocation BLADES = ResourceLocation.fromNamespaceAndPath(
+    private static final Identifier BLADES = Identifier.fromNamespaceAndPath(
             FactoryNetwork.MOD_ID, "textures/misc/rack_blades.png");
 
     /** Empty, started, running. */

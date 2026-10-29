@@ -1,14 +1,14 @@
 package dev.devpanda.factorynetwork.client.screen;
 
+import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import dev.devpanda.factorynetwork.client.ClientLogState;
 import dev.devpanda.factorynetwork.network.packet.ClearLogPacket;
 import dev.devpanda.factorynetwork.network.packet.LogStatePacket;
 import dev.devpanda.factorynetwork.runtime.LogLevel;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -85,7 +85,7 @@ public class LogTabView {
         this.height = height;
     }
 
-    public void render(GuiGraphics graphics, int mouseX, int mouseY) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         filters.clear();
         actions.clear();
         rows.clear();
@@ -94,7 +94,7 @@ public class LogTabView {
 
         List<LogStatePacket.Line> visible = ClientLogState.visible();
         if (visible.isEmpty()) {
-            graphics.drawString(font, Component.translatable(
+            graphics.text(font, Component.translatable(
                             "screen.factorynetwork.terminal.log.empty"),
                     x + 3, line + 4, TerminalScreen.TEXT_FAINT, false);
             return;
@@ -111,7 +111,7 @@ public class LogTabView {
                 lastDay = day;
                 // Only on a change: a date above every line would be noise.
                 if (i > first || scroll > 0) {
-                    graphics.drawString(font, day, x + 3, line, TerminalScreen.TEXT_FAINT, false);
+                    graphics.text(font, day, x + 3, line, TerminalScreen.TEXT_FAINT, false);
                     line += LINE;
                 }
             }
@@ -122,17 +122,17 @@ public class LogTabView {
     }
 
     /** The feedback at the bottom, for a few seconds. */
-    private void renderNote(GuiGraphics graphics) {
+    private void renderNote(GuiGraphicsExtractor graphics) {
         if (note.isEmpty() || System.currentTimeMillis() > noteUntil) {
             return;
         }
-        graphics.drawString(font, note, x + 3, y + height - LINE,
+        graphics.text(font, note, x + 3, y + height - LINE,
                 TerminalScreen.ACCENT, false);
     }
 
-    private int renderEntry(GuiGraphics graphics, int line, LogStatePacket.Line entry) {
+    private int renderEntry(GuiGraphicsExtractor graphics, int line, LogStatePacket.Line entry) {
         LogLevel level = LogLevel.of(entry.level());
-        graphics.drawString(font, format(entry.time(), CLOCK), x + 3, line,
+        graphics.text(font, format(entry.time(), CLOCK), x + 3, line,
                 TerminalScreen.TEXT_FAINT, false);
 
         int textX = x + 3 + TIME_WIDTH;
@@ -140,11 +140,11 @@ public class LogTabView {
         // search for, not the one you read.
         if (!entry.source().isBlank()) {
             String source = "[" + entry.source() + "] ";
-            graphics.drawString(font, source, textX, line, TerminalScreen.TEXT_DIM, false);
+            graphics.text(font, source, textX, line, TerminalScreen.TEXT_DIM, false);
             textX += font.width(source);
         }
         int room = x + width - 3 - textX;
-        graphics.drawString(font, font.plainSubstrByWidth(entry.text(), Math.max(20, room)),
+        graphics.text(font, font.plainSubstrByWidth(entry.text(), Math.max(20, room)),
                 textX, line, colourOf(level), false);
         return line + LINE;
     }
@@ -169,7 +169,7 @@ public class LogTabView {
      * with two states each would be sixteen views, fifteen of which nobody
      * means.
      */
-    private int renderFilters(GuiGraphics graphics, int line, int mouseX, int mouseY) {
+    private int renderFilters(GuiGraphicsExtractor graphics, int line, int mouseX, int mouseY) {
         int left = x + 3;
         for (LogLevel level : LogLevel.values()) {
             boolean active = ClientLogState.minimum() == level;
@@ -183,7 +183,7 @@ public class LogTabView {
             if (count > 0) {
                 label = label + " " + count;
             }
-            graphics.drawString(font, font.plainSubstrByWidth(label, FILTER - 4),
+            graphics.text(font, font.plainSubstrByWidth(label, FILTER - 4),
                     left + 2, line, active ? TerminalScreen.ACCENT : TerminalScreen.TEXT_DIM,
                     false);
             filters.add(new Filter(left, line - 1, level));
@@ -200,7 +200,7 @@ public class LogTabView {
     }
 
     /** A button on the right; returns where the next one may end. */
-    private int renderAction(GuiGraphics graphics, int right, int line,
+    private int renderAction(GuiGraphicsExtractor graphics, int right, int line,
                              String key, int mouseX, int mouseY) {
         String label = Component.translatable(
                 "screen.factorynetwork.terminal.log." + key).getString();
@@ -210,7 +210,7 @@ public class LogTabView {
                 && mouseY >= line - 1 && mouseY < line + 9;
         graphics.fill(left, line - 1, right, line + 9,
                 hovered ? TerminalScreen.BUTTON_HOVER : TerminalScreen.BUTTON);
-        graphics.drawString(font, label, left + 3, line, TerminalScreen.TEXT_DIM, false);
+        graphics.text(font, label, left + 3, line, TerminalScreen.TEXT_DIM, false);
         actions.add(new Action(left, line - 1, right, key));
         return left;
     }
@@ -228,7 +228,7 @@ public class LogTabView {
                 continue;
             }
             if ("clear".equals(action.key())) {
-                PacketDistributor.sendToServer(new ClearLogPacket());
+                ClientPacketDistributor.sendToServer(new ClearLogPacket());
                 scroll = 0;
                 say("screen.factorynetwork.terminal.log.cleared");
             } else {

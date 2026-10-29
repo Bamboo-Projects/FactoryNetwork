@@ -2,10 +2,10 @@ package dev.devpanda.factorynetwork.client.screen;
 
 import dev.devpanda.factorynetwork.FactoryNetwork;
 import dev.devpanda.factorynetwork.client.menu.PressMenu;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Inventory;
 
 import java.util.List;
@@ -20,7 +20,7 @@ import java.util.List;
  */
 public class PressScreen extends AbstractContainerScreen<PressMenu> {
 
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
+    private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath(
             FactoryNetwork.MOD_ID, "textures/gui/press.png");
 
     /** Where the filled variants sit in the atlas. */
@@ -40,7 +40,8 @@ public class PressScreen extends AbstractContainerScreen<PressMenu> {
     }
 
     @Override
-    protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
+    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        super.extractBackground(graphics, mouseX, mouseY, partialTick);
         graphics.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight, 512, 512);
 
         // Progress: the arrow grows from left to right.
@@ -60,9 +61,8 @@ public class PressScreen extends AbstractContainerScreen<PressMenu> {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics, mouseX, mouseY, partialTick);
-        super.render(graphics, mouseX, mouseY, partialTick);
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        super.extractRenderState(graphics, mouseX, mouseY, partialTick);
         renderEnergyTooltip(graphics, mouseX, mouseY);
         renderTooltip(graphics, mouseX, mouseY);
     }
@@ -74,13 +74,13 @@ public class PressScreen extends AbstractContainerScreen<PressMenu> {
      * for that you need the number, and you do not want it on screen all the
      * time.
      */
-    private void renderEnergyTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
+    private void renderEnergyTooltip(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         int x = leftPos + 8;
         int y = topPos + 17;
         if (mouseX < x || mouseX >= x + 8 || mouseY < y || mouseY >= y + BAR) {
             return;
         }
-        graphics.renderComponentTooltip(font, List.of(
+        graphics.setTooltipForNextFrame(font, List.of(
                 Component.translatable("gui.factorynetwork.press.energy",
                         String.format(java.util.Locale.GERMANY, "%,d", menu.energy()),
                         String.format(java.util.Locale.GERMANY, "%,d", menu.capacity())),
@@ -90,6 +90,6 @@ public class PressScreen extends AbstractContainerScreen<PressMenu> {
                         .withStyle(menu.energy() > 0
                                 ? net.minecraft.ChatFormatting.GRAY
                                 : net.minecraft.ChatFormatting.RED)),
-                mouseX, mouseY);
+                java.util.Optional.empty(), mouseX, mouseY);
     }
 }

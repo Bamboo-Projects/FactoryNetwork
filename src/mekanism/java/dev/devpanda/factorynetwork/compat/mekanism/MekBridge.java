@@ -6,7 +6,7 @@ import mekanism.api.chemical.IChemicalHandler;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
@@ -26,17 +26,17 @@ import java.util.Map;
 public final class MekBridge implements ChemicalBridge {
 
     @Override
-    public boolean has(ResourceLocation id) {
+    public boolean has(Identifier id) {
         return MekRegistry.has(id);
     }
 
     @Override
-    public List<ResourceLocation> keys() {
+    public List<Identifier> keys() {
         return MekRegistry.keys();
     }
 
     @Override
-    public String name(ResourceLocation id) {
+    public String name(Identifier id) {
         return MekRegistry.name(id);
     }
 

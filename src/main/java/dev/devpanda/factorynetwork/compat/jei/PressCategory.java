@@ -11,9 +11,9 @@ import mezz.jei.api.recipe.IFocusGroup;
 import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.RecipeType;
 import mezz.jei.api.recipe.category.IRecipeCategory;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeHolder;
 
@@ -57,7 +57,7 @@ public class PressCategory implements IRecipeCategory<RecipeHolder<PressRecipe>>
         // Vanilla's arrow from the furnace screen: it shows the same thing,
         // and a custom one would be a second arrow for the same meaning.
         this.arrow = helper.drawableBuilder(
-                        ResourceLocation.withDefaultNamespace(
+                        Identifier.withDefaultNamespace(
                                 "textures/gui/container/furnace.png"),
                         79, 35, 24, 17)
                 .setTextureSize(256, 256).build();
@@ -110,21 +110,21 @@ public class PressCategory implements IRecipeCategory<RecipeHolder<PressRecipe>>
 
     @Override
     public void draw(RecipeHolder<PressRecipe> holder, mezz.jei.api.gui.ingredient.IRecipeSlotsView slots,
-                     GuiGraphics graphics, double mouseX, double mouseY) {
+                     GuiGraphicsExtractor graphics, double mouseX, double mouseY) {
         PressRecipe recipe = holder.value();
         arrow.draw(graphics, 74, 16);
 
         var font = net.minecraft.client.Minecraft.getInstance().font;
         // The stamp stays put — the most important piece of information on
         // this area.
-        graphics.drawString(font,
+        graphics.text(font,
                 Component.translatable("gui.factorynetwork.jei.press.stamp"),
                 22, 9, 0x404040, false);
-        graphics.drawString(font,
+        graphics.text(font,
                 Component.translatable("gui.factorynetwork.jei.press.energy",
                         String.format(Locale.GERMANY, "%,d", recipe.energy())),
                 22, 31, 0x808080, false);
-        graphics.drawString(font,
+        graphics.text(font,
                 Component.translatable("gui.factorynetwork.jei.press.time",
                         String.format(Locale.GERMANY, "%.1f", recipe.ticks() / 20.0F)),
                 22, 41, 0x808080, false);

@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.client;
 
+import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -13,7 +14,6 @@ import dev.devpanda.factorynetwork.terminal.TerminalTab;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 /** One web editor, bound to the same open menu that authorizes the native editor. */
 final class EditorSession {
@@ -82,7 +82,7 @@ final class EditorSession {
                     ClientProjectState.flush();
                     ClientDeployState.clear();
                     deployPending = true;
-                    PacketDistributor.sendToServer(DeployProgramPacket.of(terminal, ClientProjectState.draft()));
+                    ClientPacketDistributor.sendToServer(DeployProgramPacket.of(terminal, ClientProjectState.draft()));
                     publish(true);
                 }
                 case "close" -> close(true);

@@ -2,7 +2,7 @@ package dev.devpanda.factorynetwork.runtime;
 
 import dev.devpanda.factorynetwork.lang.ast.Expr;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
@@ -100,7 +100,7 @@ public final class ItemSelection {
 
     private static List<Item> single(Expr.Selector selector) {
         String namespace = selector.hasNamespace() ? selector.namespace() : "minecraft";
-        ResourceLocation id = ResourceLocation.tryBuild(
+        Identifier id = Identifier.tryBuild(
                 namespace.toLowerCase(Locale.ROOT), selector.path());
         if (id == null || !BuiltInRegistries.ITEM.containsKey(id)) {
             return List.of();
@@ -122,7 +122,7 @@ public final class ItemSelection {
                 ? selector.namespace().toLowerCase(Locale.ROOT) : null;
 
         List<Item> found = new ArrayList<>();
-        for (ResourceLocation id : BuiltInRegistries.ITEM.keySet()) {
+        for (Identifier id : BuiltInRegistries.ITEM.keySet()) {
             if (namespace != null && !id.getNamespace().equals(namespace)) {
                 continue;
             }
@@ -149,7 +149,7 @@ public final class ItemSelection {
 
     private static List<Item> fromTag(Expr.Selector selector) {
         String namespace = selector.hasNamespace() ? selector.namespace() : "minecraft";
-        ResourceLocation id = ResourceLocation.tryBuild(
+        Identifier id = Identifier.tryBuild(
                 namespace.toLowerCase(Locale.ROOT), selector.path());
         if (id == null) {
             return List.of();

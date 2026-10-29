@@ -10,7 +10,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
@@ -28,7 +28,7 @@ public record DeployProgramPacket(BlockPos terminal, Map<String, String> files)
     private static final int MAX_LENGTH = 64 * 1024;
 
     public static final Type<DeployProgramPacket> TYPE = new Type<>(
-            ResourceLocation.fromNamespaceAndPath(FactoryNetwork.MOD_ID, "deploy_program"));
+            Identifier.fromNamespaceAndPath(FactoryNetwork.MOD_ID, "deploy_program"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, DeployProgramPacket> STREAM_CODEC =
             StreamCodec.composite(

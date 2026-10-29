@@ -9,7 +9,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.energy.IEnergyStorage;
 import net.neoforged.neoforge.fluids.FluidStack;
@@ -92,7 +92,7 @@ public record DeviceSnapshotPacket(String connector, DeviceProfileCodec.Flat pro
     }
 
     public static final Type<DeviceSnapshotPacket> TYPE = new Type<>(
-            ResourceLocation.fromNamespaceAndPath(FactoryNetwork.MOD_ID, "device_snapshot"));
+            Identifier.fromNamespaceAndPath(FactoryNetwork.MOD_ID, "device_snapshot"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, DeviceSnapshotPacket>
             STREAM_CODEC = StreamCodec.composite(
@@ -212,7 +212,7 @@ public record DeviceSnapshotPacket(String connector, DeviceProfileCodec.Flat pro
         List<String> lines = new ArrayList<>();
         List<net.minecraft.world.level.material.Fluid> candidates = new ArrayList<>();
         for (String name : dev.devpanda.factorynetwork.lang.ItemCandidates.fluidsOf(draft)) {
-            ResourceLocation id = ResourceLocation.tryParse(
+            Identifier id = Identifier.tryParse(
                     name.contains(":") ? name : name.replace('/', ':'));
             if (id == null) {
                 continue;
@@ -261,7 +261,7 @@ public record DeviceSnapshotPacket(String connector, DeviceProfileCodec.Flat pro
         }
         List<ItemStack> candidates = new ArrayList<>();
         for (String name : dev.devpanda.factorynetwork.lang.ItemCandidates.of(draft)) {
-            ResourceLocation id = ResourceLocation.tryParse(
+            Identifier id = Identifier.tryParse(
                     name.contains(":") ? name : name.replace('/', ':'));
             // "mekanism/steel_dust" means mekanism:steel_dust — in the program
             // it is a slash, in the registry a colon.

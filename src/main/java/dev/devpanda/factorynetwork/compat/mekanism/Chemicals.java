@@ -1,7 +1,7 @@
 package dev.devpanda.factorynetwork.compat.mekanism;
 
 import dev.devpanda.factorynetwork.lang.ast.Expr;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -77,7 +77,7 @@ public final class Chemicals {
     private static List<String> single(Expr.Selector selector) {
         String namespace = selector.hasNamespace()
                 ? selector.namespace().toLowerCase(Locale.ROOT) : DEFAULT_NAMESPACE;
-        ResourceLocation id = ResourceLocation.tryBuild(namespace, selector.path());
+        Identifier id = Identifier.tryBuild(namespace, selector.path());
         if (id == null) {
             return List.of();
         }
@@ -94,7 +94,7 @@ public final class Chemicals {
         if (bridge == null) {
             return List.of();
         }
-        for (ResourceLocation id : bridge.keys()) {
+        for (Identifier id : bridge.keys()) {
             if (namespace != null && !id.getNamespace().equals(namespace)) {
                 continue;
             }
@@ -129,7 +129,7 @@ public final class Chemicals {
         if (bridge == null) {
             return id;
         }
-        ResourceLocation key = ResourceLocation.tryParse(id);
+        Identifier key = Identifier.tryParse(id);
         if (key == null || !bridge.has(key)) {
             return id;
         }
@@ -142,7 +142,7 @@ public final class Chemicals {
         if (bridge == null) {
             return false;
         }
-        ResourceLocation key = ResourceLocation.tryParse(id);
+        Identifier key = Identifier.tryParse(id);
         return key != null && bridge.has(key);
     }
 }

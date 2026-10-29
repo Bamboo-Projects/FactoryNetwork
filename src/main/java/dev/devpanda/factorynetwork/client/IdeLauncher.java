@@ -103,7 +103,7 @@ public final class IdeLauncher {
         if (client.screen != null || client.level == null) {
             return;
         }
-        long window = client.getWindow().getWindow();
+        long window = client.getWindow().handle();
         boolean down = org.lwjgl.glfw.GLFW.glfwGetKey(window,
                 org.lwjgl.glfw.GLFW.GLFW_KEY_F6) == org.lwjgl.glfw.GLFW.GLFW_PRESS;
         // Only the edge counts: held down, the interface would otherwise be

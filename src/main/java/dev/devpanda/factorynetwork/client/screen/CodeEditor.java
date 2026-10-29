@@ -7,7 +7,7 @@ import dev.devpanda.factorynetwork.lang.Token;
 import dev.devpanda.factorynetwork.lang.TokenType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.util.Mth;
 
 import java.util.ArrayDeque;
@@ -328,7 +328,7 @@ public class CodeEditor {
      * every change to the clip flushes the draw buffer, and forty flushes per
      * frame are forty too many.
      */
-    public void render(GuiGraphics graphics, List<Diagnostic> diagnostics) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, List<Diagnostic> diagnostics) {
         int visible = visibleLines();
         int textX = x + GUTTER_WIDTH + TEXT_LEFT;
         int[] partner = matchingBracket();
@@ -342,7 +342,7 @@ public class CodeEditor {
             // Line number, muted — it should be there but not distract. The
             // current one brighter: it's the reference point when you look up.
             String number = String.valueOf(lineIndex + 1);
-            graphics.drawString(font, mono(number),
+            graphics.text(font, mono(number),
                     x + GUTTER_WIDTH - widthOf(number) - 2, lineY,
                     lineIndex == cursorLine
                             ? EditorColours.LINE_NUMBER_ACTIVE : EditorColours.COMMENT,
@@ -421,7 +421,7 @@ public class CodeEditor {
      * two boxes on top of each other hide the code you are writing. At the very
      * top it slides down, otherwise it would stand outside.
      */
-    private void drawSignature(GuiGraphics graphics, int textX) {
+    private void drawSignature(GuiGraphicsExtractor graphics, int textX) {
         if (searching) {
             return;
         }
@@ -478,7 +478,7 @@ public class CodeEditor {
             // The active slot bright and underlined, the rest muted. The
             // keyword itself is never active — you always stand behind it.
             boolean current = i == active;
-            graphics.drawString(font, mono(part), at, boxY + 2,
+            graphics.text(font, mono(part), at, boxY + 2,
                     current ? EditorColours.SELECTOR
                             : i == 0 ? EditorColours.KEYWORD : EditorColours.COMMENT,
                     false);
@@ -489,13 +489,13 @@ public class CodeEditor {
             at += widthOf(part + " ");
         }
         if (roomy) {
-            graphics.drawString(font, mono(plainSubstrByWidth(help, boxWidth - 8)),
+            graphics.text(font, mono(plainSubstrByWidth(help, boxWidth - 8)),
                     boxX + 4, boxY + LINE_HEIGHT + 2, EditorColours.COMMENT, false);
         }
     }
 
     /** Colours a line by token kind. */
-    private void drawHighlighted(GuiGraphics graphics, String line, int startX, int lineY) {
+    private void drawHighlighted(GuiGraphicsExtractor graphics, String line, int startX, int lineY) {
         if (line.isEmpty()) {
             return;
         }
@@ -513,7 +513,7 @@ public class CodeEditor {
                 }
                 int start = token.span().start();
                 if (start > consumed && start <= code.length()) {
-                    graphics.drawString(font, mono(code.substring(consumed, start)),
+                    graphics.text(font, mono(code.substring(consumed, start)),
                             columnX(startX, consumed), lineY, EditorColours.TEXT, false);
                     consumed = start;
                 }
@@ -521,20 +521,20 @@ public class CodeEditor {
                 if (end <= consumed) {
                     continue;
                 }
-                graphics.drawString(font, mono(code.substring(consumed, end)),
+                graphics.text(font, mono(code.substring(consumed, end)),
                         columnX(startX, consumed), lineY, colorFor(token), false);
                 consumed = end;
             }
             if (consumed < code.length()) {
-                graphics.drawString(font, mono(code.substring(consumed)),
+                graphics.text(font, mono(code.substring(consumed)),
                         columnX(startX, consumed), lineY, EditorColours.TEXT, false);
             }
         } else {
-            graphics.drawString(font, mono(code), startX, lineY, EditorColours.TEXT, false);
+            graphics.text(font, mono(code), startX, lineY, EditorColours.TEXT, false);
         }
 
         if (comment >= 0) {
-            graphics.drawString(font, mono(line.substring(comment)),
+            graphics.text(font, mono(line.substring(comment)),
                     columnX(startX, comment), lineY, EditorColours.COMMENT, false);
         }
     }
@@ -621,7 +621,7 @@ public class CodeEditor {
      * same line visible at all. A straight line and not a squiggle, for the
      * reason given at the stripe: there is no room for one at this height.
      */
-    private void drawUnderlines(GuiGraphics graphics, List<Diagnostic> diagnostics,
+    private void drawUnderlines(GuiGraphicsExtractor graphics, List<Diagnostic> diagnostics,
                                 int lineIndex, int textX, int lineY) {
         int length = lines.get(lineIndex).length();
         for (Diagnostic diagnostic : diagnosticsIn(diagnostics, lineIndex + 1)) {
@@ -741,7 +741,7 @@ public class CodeEditor {
         setCursor(diagnostic.span().line() - 1, Math.max(0, diagnostic.span().column() - 1));
     }
 
-    private void drawCursor(GuiGraphics graphics, int textX) {
+    private void drawCursor(GuiGraphicsExtractor graphics, int textX) {
         long now = System.currentTimeMillis();
         if (now - lastBlink > 500) {
             cursorVisible = !cursorVisible;
@@ -772,7 +772,7 @@ public class CodeEditor {
      * <p>Only then: a bar that is always there and always full says nothing
      * and costs a line.
      */
-    private void drawColumnHint(GuiGraphics graphics, int visible) {
+    private void drawColumnHint(GuiGraphicsExtractor graphics, int visible) {
         int longest = longestLine();
         int columns = visibleColumns();
         if (longest <= columns) {
@@ -789,7 +789,7 @@ public class CodeEditor {
                 0xFF000000 | EditorColours.COMMENT);
     }
 
-    private void drawScrollHint(GuiGraphics graphics, int visible) {
+    private void drawScrollHint(GuiGraphicsExtractor graphics, int visible) {
         if (lines.size() <= visible) {
             return;
         }
@@ -1286,7 +1286,7 @@ public class CodeEditor {
      * otherwise every blank line tears all the strokes open, and then they no
      * longer answer the question they are there for.
      */
-    private void drawIndentGuides(GuiGraphics graphics, int lineIndex, int textX, int lineY) {
+    private void drawIndentGuides(GuiGraphicsExtractor graphics, int lineIndex, int textX, int lineY) {
         int indent = guideIndentAt(lineIndex);
         for (int column = INDENT; column < indent; column += INDENT) {
             int guideX = columnX(textX, column);
@@ -1442,7 +1442,7 @@ public class CodeEditor {
     }
 
     /** Highlights both brackets of a pair. */
-    private void drawBracket(GuiGraphics graphics, int lineIndex, int textX, int lineY,
+    private void drawBracket(GuiGraphicsExtractor graphics, int lineIndex, int textX, int lineY,
                              int[] partner) {
         if (partner == null) {
             return;
@@ -1459,7 +1459,7 @@ public class CodeEditor {
         }
     }
 
-    private void drawSelection(GuiGraphics graphics, int lineIndex, int textX, int lineY) {
+    private void drawSelection(GuiGraphicsExtractor graphics, int lineIndex, int textX, int lineY) {
         if (!hasSelection()) {
             return;
         }
@@ -1803,7 +1803,7 @@ public class CodeEditor {
         return row >= 0 && row < suggestions.size() ? row : -1;
     }
 
-    private void drawSuggestions(GuiGraphics graphics, int textX) {
+    private void drawSuggestions(GuiGraphicsExtractor graphics, int textX) {
         // Forgotten first: a list that is not drawn this frame cannot be clicked.
         suggestionBox = null;
         if (suggestions.isEmpty()) {
@@ -1851,7 +1851,7 @@ public class CodeEditor {
                 graphics.fill(listX + 1, entryY - 1, listX + listWidth - 1,
                         entryY + LINE_HEIGHT - 1, 0xFF31363C);
             }
-            graphics.drawString(font, mono(plainSubstrByWidth(entry.text(), listWidth - 8)),
+            graphics.text(font, mono(plainSubstrByWidth(entry.text(), listWidth - 8)),
                     listX + 4, entryY, colorForKind(entry.kind()), false);
             if (entry.detail().isEmpty()) {
                 continue;
@@ -1861,7 +1861,7 @@ public class CodeEditor {
             int detailWidth = widthOf(entry.detail());
             int detailX = listX + listWidth - 4 - detailWidth;
             if (detailX > listX + 4 + widthOf(entry.text()) + 6) {
-                graphics.drawString(font, mono(entry.detail()), detailX, entryY,
+                graphics.text(font, mono(entry.detail()), detailX, entryY,
                         EditorColours.COMMENT, false);
             }
         }
@@ -2338,7 +2338,7 @@ public class CodeEditor {
     }
 
     /** Lays a muted stripe under every match in this line. */
-    private void drawMatches(GuiGraphics graphics, int lineIndex, int textX, int lineY) {
+    private void drawMatches(GuiGraphicsExtractor graphics, int lineIndex, int textX, int lineY) {
         if (!searching || searchTerm.isEmpty()) {
             return;
         }
@@ -2366,7 +2366,7 @@ public class CodeEditor {
      * right and turns red when there are none — an empty result is information
      * and not an error, but you should see it.
      */
-    private void drawSearchBar(GuiGraphics graphics) {
+    private void drawSearchBar(GuiGraphicsExtractor graphics) {
         if (!searching) {
             return;
         }
@@ -2382,7 +2382,7 @@ public class CodeEditor {
                 count == 0 && !searchTerm.isEmpty());
 
         if (replacing) {
-            graphics.drawString(font, mono("→"), at + 2, y, EditorColours.COMMENT, false);
+            graphics.text(font, mono("→"), at + 2, y, EditorColours.COMMENT, false);
             at += widthOf("→ ") + 4;
             String to = replaceTerm.isEmpty()
                     ? net.minecraft.network.chat.Component
@@ -2392,16 +2392,16 @@ public class CodeEditor {
         }
 
         String tally = matchNumber() + "/" + count;
-        graphics.drawString(font, mono(tally), x + width - widthOf(tally) - 4, y,
+        graphics.text(font, mono(tally), x + width - widthOf(tally) - 4, y,
                 count == 0 && !searchTerm.isEmpty() ? EditorColours.ERROR
                         : EditorColours.COMMENT, false);
     }
 
     /** A field of the search bar; the active one gets an underline. */
-    private int drawField(GuiGraphics graphics, int at, String text, boolean active,
+    private int drawField(GuiGraphicsExtractor graphics, int at, String text, boolean active,
                           boolean bad) {
         String shown = plainSubstrByWidth(text, width / 3);
-        graphics.drawString(font, mono(shown), at, y,
+        graphics.text(font, mono(shown), at, y,
                 bad ? EditorColours.ERROR : active ? EditorColours.TEXT : EditorColours.MUTED,
                 false);
         int shownWidth = Math.max(widthOf(shown), 12);

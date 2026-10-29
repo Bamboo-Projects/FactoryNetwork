@@ -2,7 +2,7 @@ package dev.devpanda.factorynetwork.client.bench;
 
 import dev.devpanda.bamboocef.web.measure.DurationSamples;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -123,14 +123,14 @@ public final class TypingBenchmark extends IdeScreen {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         long now = System.nanoTime();
         if (lastFrameNanos != 0) {
             frameTimes.record(now - lastFrameNanos);
         }
         lastFrameNanos = now;
 
-        super.render(graphics, mouseX, mouseY, partialTick);
+        super.extractRenderState(graphics, mouseX, mouseY, partialTick);
         advance();
     }
 

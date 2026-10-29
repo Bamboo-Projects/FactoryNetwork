@@ -12,7 +12,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
@@ -34,7 +34,7 @@ public record SetBlockNamePacket(BlockPos position, int side, String name)
     private static final double REACH = 8.0;
 
     public static final Type<SetBlockNamePacket> TYPE = new Type<>(
-            ResourceLocation.fromNamespaceAndPath(FactoryNetwork.MOD_ID, "set_block_name"));
+            Identifier.fromNamespaceAndPath(FactoryNetwork.MOD_ID, "set_block_name"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, SetBlockNamePacket> STREAM_CODEC =
             StreamCodec.composite(

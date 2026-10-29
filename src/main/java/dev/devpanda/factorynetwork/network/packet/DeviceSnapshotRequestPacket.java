@@ -6,7 +6,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
@@ -21,7 +21,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 public record DeviceSnapshotRequestPacket(String connector) implements CustomPacketPayload {
 
     public static final Type<DeviceSnapshotRequestPacket> TYPE = new Type<>(
-            ResourceLocation.fromNamespaceAndPath(FactoryNetwork.MOD_ID,
+            Identifier.fromNamespaceAndPath(FactoryNetwork.MOD_ID,
                     "device_snapshot_request"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, DeviceSnapshotRequestPacket>

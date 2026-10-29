@@ -5,7 +5,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import java.util.List;
 
@@ -45,7 +45,7 @@ public record TrafficPacket(List<Integer> perSecond, List<Consumer> top, long to
     public static final int TOP = 8;
 
     public static final Type<TrafficPacket> TYPE = new Type<>(
-            ResourceLocation.fromNamespaceAndPath(FactoryNetwork.MOD_ID, "traffic"));
+            Identifier.fromNamespaceAndPath(FactoryNetwork.MOD_ID, "traffic"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, TrafficPacket> STREAM_CODEC =
             StreamCodec.composite(

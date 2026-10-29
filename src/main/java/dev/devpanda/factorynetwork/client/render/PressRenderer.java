@@ -11,7 +11,7 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.core.Direction;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.neoforged.neoforge.client.model.data.ModelData;
 
@@ -36,7 +36,7 @@ public class PressRenderer implements BlockEntityRenderer<PressBlockEntity> {
 
     /** The model of the ram, which FnClient registers separately. */
     public static final ModelResourceLocation RAM = ModelResourceLocation.standalone(
-            ResourceLocation.fromNamespaceAndPath(FactoryNetwork.MOD_ID, "block/press_ram"));
+            Identifier.fromNamespaceAndPath(FactoryNetwork.MOD_ID, "block/press_ram"));
 
     /** One stroke per second. */
     private static final float TICKS_PER_STROKE = 20.0F;

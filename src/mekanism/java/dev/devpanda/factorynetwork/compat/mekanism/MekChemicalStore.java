@@ -5,7 +5,7 @@ import dev.devpanda.factorynetwork.network.ResourceStore;
 import dev.devpanda.factorynetwork.storage.CellInventory;
 import dev.devpanda.factorynetwork.storage.CellView;
 import mekanism.api.chemical.Chemical;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;

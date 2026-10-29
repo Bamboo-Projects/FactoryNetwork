@@ -7,7 +7,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.material.Fluid;
@@ -62,7 +62,7 @@ public record CellFormat<T>(String nbtKey, String amountKey, Entry<T> entry) {
 
                 @Override
                 public ItemKey read(CompoundTag tag, HolderLookup.Provider registries) {
-                    ResourceLocation id = ResourceLocation.tryParse(Nbt.getString(tag, "Item"));
+                    Identifier id = Identifier.tryParse(Nbt.getString(tag, "Item"));
                     // If the mod has left the pack, the entry cannot be read
                     // right now. The cell keeps it; see Loaded.
                     if (id == null || !BuiltInRegistries.ITEM.containsKey(id)) {
@@ -115,7 +115,7 @@ public record CellFormat<T>(String nbtKey, String amountKey, Entry<T> entry) {
 
             @Override
             public T read(CompoundTag tag, HolderLookup.Provider registries) {
-                ResourceLocation id = ResourceLocation.tryParse(Nbt.getString(tag, idKey));
+                Identifier id = Identifier.tryParse(Nbt.getString(tag, idKey));
                 return id == null || !registry.containsKey(id) ? null : registry.get(id);
             }
 

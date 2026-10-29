@@ -6,7 +6,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import java.util.List;
@@ -53,7 +53,7 @@ public record NetworkStatePacket(List<NamedPlace> connectors, List<NamedPlace> d
         implements CustomPacketPayload {
 
     public static final Type<NetworkStatePacket> TYPE = new Type<>(
-            ResourceLocation.fromNamespaceAndPath(FactoryNetwork.MOD_ID, "network_state"));
+            Identifier.fromNamespaceAndPath(FactoryNetwork.MOD_ID, "network_state"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, NetworkStatePacket> STREAM_CODEC =
             StreamCodec.composite(

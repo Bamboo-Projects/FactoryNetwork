@@ -1,6 +1,6 @@
 package dev.devpanda.factorynetwork.compat.mekanism;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,17 +26,17 @@ final class MekRegistry {
     }
 
     /** Whether a chemical with this identifier exists. */
-    static boolean has(ResourceLocation id) {
+    static boolean has(Identifier id) {
         return mekanism.api.MekanismAPI.CHEMICAL_REGISTRY.containsKey(id);
     }
 
     /** All identifiers, as text. */
-    static List<ResourceLocation> keys() {
+    static List<Identifier> keys() {
         return new ArrayList<>(mekanism.api.MekanismAPI.CHEMICAL_REGISTRY.keySet());
     }
 
     /** The plain-text name of a chemical. */
-    static String name(ResourceLocation id) {
+    static String name(Identifier id) {
         return mekanism.api.MekanismAPI.CHEMICAL_REGISTRY.get(id).getTextComponent().getString();
     }
 }

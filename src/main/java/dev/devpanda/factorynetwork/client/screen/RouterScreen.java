@@ -4,11 +4,11 @@ import dev.devpanda.factorynetwork.FactoryNetwork;
 import dev.devpanda.factorynetwork.block.entity.RouterBlockEntity;
 import dev.devpanda.factorynetwork.client.menu.RouterMenu;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Inventory;
 
 import java.util.List;
@@ -22,7 +22,7 @@ import java.util.List;
  */
 public class RouterScreen extends AbstractContainerScreen<RouterMenu> {
 
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
+    private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath(
             FactoryNetwork.MOD_ID, "textures/gui/router.png");
 
     /** Disconnected: the same dark grey as on the block. */
@@ -89,12 +89,13 @@ public class RouterScreen extends AbstractContainerScreen<RouterMenu> {
     }
 
     @Override
-    protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
+    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        super.extractBackground(graphics, mouseX, mouseY, partialTick);
         graphics.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight, 512, 512);
 
         for (Direction side : Direction.values()) {
             int y = topPos + ROW_TOP + side.ordinal() * ROW_HEIGHT;
-            graphics.drawString(font, Component.translatable(
+            graphics.text(font, Component.translatable(
                             "side.factorynetwork." + side.getSerializedName()),
                     leftPos + 9, y + 4, Widgets.CASE_TEXT, false);
 
@@ -107,14 +108,14 @@ public class RouterScreen extends AbstractContainerScreen<RouterMenu> {
             // The name beside it: with seventeen colours a colour swatch alone
             // can no longer be told apart — light blue and cyan are two pixels
             // apart.
-            graphics.drawString(font, labelOf(aktiv),
+            graphics.text(font, labelOf(aktiv),
                     x + BUTTON_SIZE + 6, y + 4, Widgets.CASE_TEXT, false);
         }
 
         // Below the sides, what the router costs: one tick. Without this line
         // the delay would be an effect with no visible cause — and someone who
         // cleanly separates their network would not know what they pay for.
-        graphics.drawString(font, Component.translatable(
+        graphics.text(font, Component.translatable(
                         "screen.factorynetwork.router.latency",
                         dev.devpanda.factorynetwork.network.Latency.PER_HOP),
                 leftPos + 9, topPos + ROW_TOP + Direction.values().length * ROW_HEIGHT + 4,
@@ -122,22 +123,21 @@ public class RouterScreen extends AbstractContainerScreen<RouterMenu> {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics, mouseX, mouseY, partialTick);
-        super.render(graphics, mouseX, mouseY, partialTick);
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        super.extractRenderState(graphics, mouseX, mouseY, partialTick);
         renderTooltip(graphics, mouseX, mouseY);
 
         // Above the buttons stands what the lane carries — the number you
         // would otherwise have to read off each side one at a time.
         int lane = laneAt(mouseX, mouseY);
         if (lane > 0) {
-            graphics.renderTooltip(font, List.of(
+            graphics.setTooltipForNextFrame(font, List.of(
                             labelOf(lane),
                             Component.translatable("screen.factorynetwork.router.load",
                                     menu.formatLoad(lane))),
                     java.util.Optional.empty(), mouseX, mouseY);
         } else if (lane == 0) {
-            graphics.renderTooltip(font,
+            graphics.setTooltipForNextFrame(
                     Component.translatable("screen.factorynetwork.router.off"), mouseX, mouseY);
         }
     }

@@ -4,7 +4,7 @@ import dev.devpanda.factorynetwork.FactoryNetwork;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 /**
  * The terminal's font.
@@ -25,12 +25,12 @@ import net.minecraft.resources.ResourceLocation;
 public final class FnFonts {
 
     /** The font for code and numbers. */
-    public static final ResourceLocation MONO =
-            ResourceLocation.fromNamespaceAndPath(FactoryNetwork.MOD_ID, "mono");
+    public static final Identifier MONO =
+            Identifier.fromNamespaceAndPath(FactoryNetwork.MOD_ID, "mono");
 
     /** The same, bold — for headings and the active tab. */
-    public static final ResourceLocation MONO_BOLD =
-            ResourceLocation.fromNamespaceAndPath(FactoryNetwork.MOD_ID, "mono_bold");
+    public static final Identifier MONO_BOLD =
+            Identifier.fromNamespaceAndPath(FactoryNetwork.MOD_ID, "mono_bold");
 
     private static final Style MONO_STYLE = Style.EMPTY.withFont(MONO);
     private static final Style BOLD_STYLE = Style.EMPTY.withFont(MONO_BOLD);

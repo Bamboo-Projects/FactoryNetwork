@@ -74,7 +74,7 @@ public class PressBlockEntity extends BlockEntity
     public static final net.minecraft.tags.TagKey<net.minecraft.world.item.Item> STAMPS =
             net.minecraft.tags.TagKey.create(
                     net.minecraft.core.registries.Registries.ITEM,
-                    net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(
+                    net.minecraft.resources.Identifier.fromNamespaceAndPath(
                             dev.devpanda.factorynetwork.FactoryNetwork.MOD_ID, "stamps"));
 
     private final NonNullList<ItemStack> items = NonNullList.withSize(SLOTS, ItemStack.EMPTY);

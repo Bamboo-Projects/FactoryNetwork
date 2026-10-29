@@ -8,7 +8,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -34,7 +34,7 @@ public record StorageActionPacket(Kind kind, dev.devpanda.factorynetwork.storage
     }
 
     public static final Type<StorageActionPacket> TYPE = new Type<>(
-            ResourceLocation.fromNamespaceAndPath(FactoryNetwork.MOD_ID, "storage_action"));
+            Identifier.fromNamespaceAndPath(FactoryNetwork.MOD_ID, "storage_action"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, StorageActionPacket> STREAM_CODEC =
             StreamCodec.composite(

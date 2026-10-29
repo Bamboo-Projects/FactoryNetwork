@@ -8,7 +8,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import java.util.HashMap;
@@ -41,7 +41,7 @@ public record ProjectStatePacket(BlockPos controller, Map<String, String> files,
     private static final int MAX_FILE = 64 * 1024;
 
     public static final Type<ProjectStatePacket> TYPE = new Type<>(
-            ResourceLocation.fromNamespaceAndPath(FactoryNetwork.MOD_ID, "project_state"));
+            Identifier.fromNamespaceAndPath(FactoryNetwork.MOD_ID, "project_state"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, ProjectStatePacket> STREAM_CODEC =
             StreamCodec.composite(

@@ -6,7 +6,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Item;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
@@ -52,7 +52,7 @@ public record StorageSnapshotPacket(List<Entry> entries, List<FluidEntry> fluids
     }
 
     public static final Type<StorageSnapshotPacket> TYPE = new Type<>(
-            ResourceLocation.fromNamespaceAndPath(FactoryNetwork.MOD_ID, "storage_snapshot"));
+            Identifier.fromNamespaceAndPath(FactoryNetwork.MOD_ID, "storage_snapshot"));
 
     private static final StreamCodec<RegistryFriendlyByteBuf, Entry> ENTRY_CODEC =
             StreamCodec.composite(

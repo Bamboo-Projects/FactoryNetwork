@@ -1,18 +1,18 @@
 package dev.devpanda.factorynetwork.client.screen;
 
+import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import dev.devpanda.factorynetwork.platform.client.Keys;
 import dev.devpanda.factorynetwork.FactoryNetwork;
 import dev.devpanda.factorynetwork.client.ClientStorageView;
 import dev.devpanda.factorynetwork.client.StorageSort;
 import dev.devpanda.factorynetwork.network.packet.StorageActionPacket;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.List;
 
@@ -26,9 +26,9 @@ import java.util.List;
  */
 public class StorageTabView {
 
-    private static final ResourceLocation GRID = ResourceLocation.fromNamespaceAndPath(
+    private static final Identifier GRID = Identifier.fromNamespaceAndPath(
             FactoryNetwork.MOD_ID, "textures/gui/storage_grid.png");
-    private static final ResourceLocation WIDGETS = ResourceLocation.fromNamespaceAndPath(
+    private static final Identifier WIDGETS = Identifier.fromNamespaceAndPath(
             FactoryNetwork.MOD_ID, "textures/gui/widgets.png");
 
     private static final int SLOT = 18;
@@ -76,7 +76,7 @@ public class StorageTabView {
         return Math.max(0, rows - ROWS);
     }
 
-    public void render(GuiGraphics graphics, int mouseX, int mouseY) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         drawSearch(graphics);
         drawSortButtons(graphics, mouseX, mouseY);
 
@@ -94,7 +94,7 @@ public class StorageTabView {
             int cellX = gridX() + (index % COLUMNS) * SLOT + 1;
             int cellY = gridY() + (index / COLUMNS) * SLOT + 1;
 
-            graphics.renderItem(row.stack(), cellX, cellY);
+            graphics.item(row.stack(), cellX, cellY);
             // The amount is shown as text beside it, not as a stack count: a
             // network stock goes well beyond sixty-four.
             String amount = ClientStorageView.shortAmount(row.amount());
@@ -103,11 +103,11 @@ public class StorageTabView {
                 // millibuckets stand.
                 amount = amount + row.unit();
             }
-            graphics.pose().pushPose();
-            graphics.pose().translate(0, 0, 200);
-            graphics.drawString(font, amount,
+            graphics.pose().pushMatrix();
+            // Since 26.1 later strokes lie above earlier ones; no depth step needed.
+            graphics.text(font, amount,
                     cellX + 17 - font.width(amount), cellY + 9, 0xFFFFFF, true);
-            graphics.pose().popPose();
+            graphics.pose().popMatrix();
         }
 
         drawScrollbar(graphics);
@@ -118,7 +118,7 @@ public class StorageTabView {
         return x + width - 4 - (StorageSort.values().length - index) * 14;
     }
 
-    private void drawSortButtons(GuiGraphics graphics, int mouseX, int mouseY) {
+    private void drawSortButtons(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         for (StorageSort candidate : StorageSort.values()) {
             int bx = sortButtonX(candidate.ordinal());
             int by = y + 2;
@@ -126,40 +126,40 @@ public class StorageTabView {
             graphics.blit(WIDGETS, bx, by, 64, active ? 16 : 0, 12, 12, 512, 512);
 
             // A letter on the button, the direction beneath it.
-            graphics.pose().pushPose();
-            graphics.pose().translate(0, 0, 100);
+            graphics.pose().pushMatrix();
+            // Since 26.1 later strokes lie above earlier ones; no depth step needed.
             // Light on dark metal: the pressed button was previously labelled
             // almost black, because it used to be a light button.
-            graphics.drawString(font, candidate.badge(), bx + 3, by + 2,
+            graphics.text(font, candidate.badge(), bx + 3, by + 2,
                     active ? TerminalScreen.TEXT : TerminalScreen.TEXT_DIM, false);
             if (active) {
-                graphics.drawString(font, ClientStorageView.isDescending() ? "▾" : "▴",
+                graphics.text(font, ClientStorageView.isDescending() ? "▾" : "▴",
                         bx + 8, by + 2, TerminalScreen.ACCENT, false);
             }
-            graphics.pose().popPose();
+            graphics.pose().popMatrix();
         }
     }
 
-    private void drawSearch(GuiGraphics graphics) {
+    private void drawSearch(GuiGraphicsExtractor graphics) {
         int fieldWidth = sortButtonX(0) - x - 6;
         Widgets.stretched(graphics, x + 2, y + 2, fieldWidth, 12, 0, 32, 96, 2);
         String shown = search.isEmpty()
                 ? Component.translatable("screen.factorynetwork.terminal.search").getString()
                 : search.toString();
         int colour = search.isEmpty() ? 0x6E7A70 : 0xA3D9A5;
-        graphics.pose().pushPose();
-        graphics.pose().translate(0, 0, 100);
-        graphics.drawString(font, font.plainSubstrByWidth(shown, fieldWidth - 8),
+        graphics.pose().pushMatrix();
+        // Since 26.1 later strokes lie above earlier ones; no depth step needed.
+        graphics.text(font, font.plainSubstrByWidth(shown, fieldWidth - 8),
                 x + 5, y + 4, colour, false);
         if (searchFocused && (System.currentTimeMillis() / 500) % 2 == 0) {
             int cursorX = x + 5 + font.width(
                     font.plainSubstrByWidth(search.toString(), fieldWidth - 8));
             graphics.fill(cursorX, y + 3, cursorX + 1, y + 12, 0xFFA3D9A5);
         }
-        graphics.pose().popPose();
+        graphics.pose().popMatrix();
     }
 
-    private void drawScrollbar(GuiGraphics graphics) {
+    private void drawScrollbar(GuiGraphicsExtractor graphics) {
         int trackX = gridX() + COLUMNS * SLOT + 2;
         int trackY = gridY();
         int trackH = ROWS * SLOT;
@@ -245,7 +245,7 @@ public class StorageTabView {
         if (!carried.isEmpty()) {
             // A full cursor deposits — right-click only one, as in the inventory.
             int amount = button == 1 ? 1 : carried.getCount();
-            PacketDistributor.sendToServer(new StorageActionPacket(
+            ClientPacketDistributor.sendToServer(new StorageActionPacket(
                     StorageActionPacket.Kind.INSERT, dev.devpanda.factorynetwork.storage.ItemKey.of(carried), amount));
             return true;
         }
@@ -265,7 +265,7 @@ public class StorageTabView {
         if (Keys.shift()) {
             wanted = stack;
         }
-        PacketDistributor.sendToServer(new StorageActionPacket(
+        ClientPacketDistributor.sendToServer(new StorageActionPacket(
                 StorageActionPacket.Kind.EXTRACT, dev.devpanda.factorynetwork.storage.ItemKey.of(entry.stack()), wanted));
         return true;
     }
@@ -278,7 +278,7 @@ public class StorageTabView {
      * number, and the difference between three buckets and three thousand
      * millibuckets deserves to be said.
      */
-    public void renderTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
+    public void renderTooltip(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         ClientStorageView.Row row = rowAt(mouseX, mouseY);
         if (row == null) {
             return;
@@ -289,7 +289,7 @@ public class StorageTabView {
         lines.add(net.minecraft.network.chat.Component.literal(
                         row.isFluid() ? amount + " mB" : amount + " Stück")
                 .withStyle(net.minecraft.ChatFormatting.GRAY));
-        graphics.renderComponentTooltip(font, lines, mouseX, mouseY);
+        graphics.setTooltipForNextFrame(font, lines, java.util.Optional.empty(), mouseX, mouseY);
     }
 
     /** The entry under the cursor, or {@code null}. */

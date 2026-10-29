@@ -4,7 +4,7 @@ import dev.devpanda.factorynetwork.client.FnFonts;
 import dev.devpanda.factorynetwork.lang.Diagnostic;
 import dev.devpanda.factorynetwork.lang.Project;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 
 import java.util.List;
@@ -122,7 +122,7 @@ public class ProjectPanel {
         return index >= 0 && index < project.names().size() ? index : -1;
     }
 
-    public void render(GuiGraphics graphics, int mouseX, int mouseY) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         // A recess of its own next to the editor, so the column reads as an
         // area and not as text that happens to sit on the left. The value is
         // markedly darker than the pane and not just a little: on a surface
@@ -136,10 +136,10 @@ public class ProjectPanel {
         graphics.fill(x - 3, y - 2, x + width, y + HEADER - 2, HEADER_BAND);
         graphics.fill(x - 3, y + HEADER - 3, x + width, y + HEADER - 2, 0xFF232B27);
 
-        graphics.drawString(font, FnFonts.bold(
+        graphics.text(font, FnFonts.bold(
                         Component.translatable("screen.factorynetwork.project.title")),
                 x, y + 2, TerminalScreen.TEXT_DIM, false);
-        graphics.drawString(font, FnFonts.mono("+"), plusX(), y + 2,
+        graphics.text(font, FnFonts.mono("+"), plusX(), y + 2,
                 overPlus(mouseX, mouseY) ? TerminalScreen.ACCENT : TerminalScreen.TEXT_DIM,
                 false);
 
@@ -173,7 +173,7 @@ public class ProjectPanel {
             // not an error, it is someone else.
             int colour = holder != null ? TerminalScreen.TEXT_FAINT
                     : active ? TerminalScreen.TEXT : TerminalScreen.TEXT_DIM;
-            graphics.drawString(font, FnFonts.mono(clipName(name, width - 12)),
+            graphics.text(font, FnFonts.mono(clipName(name, width - 12)),
                     x + 2, rowTop + 1, colour, false);
             if (holder != null) {
                 graphics.fill(x + width - 8, rowTop + 3, x + width - 4, rowTop + 8,
@@ -185,7 +185,7 @@ public class ProjectPanel {
         }
 
         if (menu != null) {
-            menu.render(graphics, mouseX, mouseY);
+            menu.extractRenderState(graphics, mouseX, mouseY);
         }
     }
 
@@ -196,10 +196,10 @@ public class ProjectPanel {
      * that stays open exactly as long as it takes to type a name, a blink is
      * only motion.
      */
-    private void drawRenameField(GuiGraphics graphics, int rowTop) {
+    private void drawRenameField(GuiGraphicsExtractor graphics, int rowTop) {
         boolean valid = isAcceptable(typed);
         graphics.fill(x - 1, rowTop - 1, x + width - 2, rowTop + ROW - 1, 0xFF0E1113);
-        graphics.drawString(font, FnFonts.mono(clip(typed, width - 14)), x + 2, rowTop + 1,
+        graphics.text(font, FnFonts.mono(clip(typed, width - 14)), x + 2, rowTop + 1,
                 valid ? TerminalScreen.TEXT : TerminalScreen.BAD, false);
         int caret = x + 2 + font.width(FnFonts.mono(clip(typed, width - 14)));
         graphics.fill(caret, rowTop, caret + 1, rowTop + ROW - 2,

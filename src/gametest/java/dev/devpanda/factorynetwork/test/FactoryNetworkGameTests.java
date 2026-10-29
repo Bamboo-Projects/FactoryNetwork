@@ -11181,7 +11181,7 @@ public final class FactoryNetworkGameTests {
                 mekanism.api.functions.ConstantPredicates.alwaysTrue(), null);
         tank.setStack(new mekanism.api.chemical.ChemicalStack(
                 mekanism.api.MekanismAPI.CHEMICAL_REGISTRY.get(
-                        net.minecraft.resources.ResourceLocation.parse("mekanism:hydrogen")),
+                        net.minecraft.resources.Identifier.parse("mekanism:hydrogen")),
                 20_000));
         var handler = new mekanism.api.chemical.IChemicalHandler() {
             @Override

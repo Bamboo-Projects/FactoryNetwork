@@ -4,7 +4,7 @@ import dev.devpanda.factorynetwork.FactoryNetwork;
 import dev.devpanda.factorynetwork.lang.ast.Expr;
 import dev.devpanda.factorynetwork.network.ResourceStore;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.material.Fluid;
 
@@ -45,7 +45,7 @@ public final class ResourceKinds {
 
     /** Registration order — it decides nothing, but reads better. */
     private static final Map<String, ResourceKind> BY_PREFIX = new LinkedHashMap<>();
-    private static final Map<ResourceLocation, ResourceKind> BY_ID = new LinkedHashMap<>();
+    private static final Map<Identifier, ResourceKind> BY_ID = new LinkedHashMap<>();
     private static final Map<String, ResourceKind> BY_TAG = new LinkedHashMap<>();
 
     private static boolean frozen;
@@ -64,7 +64,7 @@ public final class ResourceKinds {
 
         @Override
         public Object fromId(String id) {
-            ResourceLocation key = ResourceLocation.tryParse(id);
+            Identifier key = Identifier.tryParse(id);
             if (key == null || !BuiltInRegistries.ITEM.containsKey(key)) {
                 throw new ScriptError("Den Gegenstand " + id + " gibt es nicht mehr.",
                         "Der Ablauf hielt ihn in einer Variablen fest. Wurde eine Mod "
@@ -100,7 +100,7 @@ public final class ResourceKinds {
 
         @Override
         public Object fromId(String id) {
-            ResourceLocation key = ResourceLocation.tryParse(id);
+            Identifier key = Identifier.tryParse(id);
             if (key == null || !BuiltInRegistries.FLUID.containsKey(key)) {
                 throw new ScriptError("Die Flüssigkeit " + id + " gibt es nicht mehr.",
                         "Der Ablauf hielt sie in einer Variablen fest. Wurde eine Mod "
@@ -265,7 +265,7 @@ public final class ResourceKinds {
     }
 
     /** The kind for an identifier, or {@code null}. */
-    public static ResourceKind byId(ResourceLocation id) {
+    public static ResourceKind byId(Identifier id) {
         return BY_ID.get(id);
     }
 
@@ -341,7 +341,7 @@ public final class ResourceKinds {
      */
     private abstract static class Builtin implements ResourceKind {
 
-        private final ResourceLocation id;
+        private final Identifier id;
         private final String prefix;
         private final String plural;
         private final Class<?> type;
@@ -349,7 +349,7 @@ public final class ResourceKinds {
         private final String selectionTag;
 
         Builtin(String prefix, String plural, Class<?> type, String tag, String selectionTag) {
-            this.id = ResourceLocation.fromNamespaceAndPath(FactoryNetwork.MOD_ID, prefix);
+            this.id = Identifier.fromNamespaceAndPath(FactoryNetwork.MOD_ID, prefix);
             this.prefix = prefix;
             this.plural = plural;
             this.type = type;
@@ -358,7 +358,7 @@ public final class ResourceKinds {
         }
 
         @Override
-        public ResourceLocation id() {
+        public Identifier id() {
             return id;
         }
 

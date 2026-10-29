@@ -6,7 +6,7 @@ import mekanism.api.chemical.ChemicalStack;
 import mekanism.api.chemical.IChemicalHandler;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.capabilities.BlockCapability;
 
@@ -29,7 +29,7 @@ final class MekTanks {
 
     private static final BlockCapability<IChemicalHandler, Direction> CHEMICAL =
             BlockCapability.createSided(
-                    ResourceLocation.fromNamespaceAndPath("mekanism", "chemical_handler"),
+                    Identifier.fromNamespaceAndPath("mekanism", "chemical_handler"),
                     IChemicalHandler.class);
 
     private MekTanks() {

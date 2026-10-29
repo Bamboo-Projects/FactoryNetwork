@@ -4,7 +4,7 @@ import dev.devpanda.factorynetwork.FactoryNetwork;
 import dev.devpanda.factorynetwork.block.CableLayout;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.core.Direction;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import java.util.EnumMap;
 import java.util.Map;
@@ -35,7 +35,7 @@ public final class ConnectorPartModels {
         Map<Direction, ModelResourceLocation> found = new EnumMap<>(Direction.class);
         for (Direction side : Direction.values()) {
             found.put(side, ModelResourceLocation.standalone(
-                    ResourceLocation.fromNamespaceAndPath(FactoryNetwork.MOD_ID,
+                    Identifier.fromNamespaceAndPath(FactoryNetwork.MOD_ID,
                             "block/" + prefix + "connector_part_" + side.getName())));
         }
         return found;

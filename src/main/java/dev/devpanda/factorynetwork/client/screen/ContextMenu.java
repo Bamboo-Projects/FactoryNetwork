@@ -2,7 +2,7 @@ package dev.devpanda.factorynetwork.client.screen;
 
 import dev.devpanda.factorynetwork.client.FnFonts;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 
 import java.util.List;
@@ -62,7 +62,7 @@ public class ContextMenu {
         return index >= 0 && index < entries.size() ? index : -1;
     }
 
-    public void render(GuiGraphics graphics, int mouseX, int mouseY) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         int bottom = y + height();
         graphics.fill(x, y, x + width, bottom, 0xF00E1113);
         graphics.fill(x, y, x + width, y + 1, 0xFF3C4147);
@@ -77,7 +77,7 @@ public class ContextMenu {
             if (i == hovered && entry.enabled()) {
                 graphics.fill(x + 1, rowTop, x + width - 1, rowTop + ROW, 0xFF232B27);
             }
-            graphics.drawString(font, label(entry), x + PAD, rowTop + 2,
+            graphics.text(font, label(entry), x + PAD, rowTop + 2,
                     entry.enabled() ? TerminalScreen.TEXT : TerminalScreen.TEXT_FAINT, false);
         }
     }

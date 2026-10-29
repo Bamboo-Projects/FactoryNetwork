@@ -2,7 +2,7 @@ package dev.devpanda.factorynetwork.runtime;
 
 import dev.devpanda.factorynetwork.lang.ast.Expr;
 import dev.devpanda.factorynetwork.network.ResourceStore;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 /**
  * What kind of resource a value refers to.
@@ -34,7 +34,7 @@ import net.minecraft.resources.ResourceLocation;
 public interface ResourceKind extends Kind {
 
     /** The identifier of this kind, for example {@code arsnouveau:source}. */
-    ResourceLocation id();
+    Identifier id();
 
     /**
      * The store in which this kind lives in the network.

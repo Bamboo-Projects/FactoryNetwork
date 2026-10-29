@@ -5,7 +5,7 @@ import dev.devpanda.factorynetwork.storage.CellView;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
@@ -31,11 +31,11 @@ public interface ChemicalBridge {
 
     // ---- Registry -------------------------------------------------------------
 
-    boolean has(ResourceLocation id);
+    boolean has(Identifier id);
 
-    List<ResourceLocation> keys();
+    List<Identifier> keys();
 
-    String name(ResourceLocation id);
+    String name(Identifier id);
 
     // ---- Storage ---------------------------------------------------------------
 

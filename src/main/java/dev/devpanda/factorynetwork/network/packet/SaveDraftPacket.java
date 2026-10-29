@@ -8,7 +8,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
@@ -39,7 +39,7 @@ public record SaveDraftPacket(BlockPos controller, Map<String, String> files, lo
     private static final int MAX_LENGTH = 64 * 1024;
 
     public static final Type<SaveDraftPacket> TYPE = new Type<>(
-            ResourceLocation.fromNamespaceAndPath(FactoryNetwork.MOD_ID, "save_draft"));
+            Identifier.fromNamespaceAndPath(FactoryNetwork.MOD_ID, "save_draft"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, SaveDraftPacket> STREAM_CODEC =
             StreamCodec.composite(

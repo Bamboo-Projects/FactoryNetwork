@@ -1,14 +1,14 @@
 package dev.devpanda.factorynetwork.client.screen;
 
+import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import dev.devpanda.factorynetwork.client.ClientFlowState;
 import dev.devpanda.factorynetwork.client.ClientNetworkState;
 import dev.devpanda.factorynetwork.network.packet.FlowActionPacket;
 import dev.devpanda.factorynetwork.network.packet.FlowStatePacket;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 
-import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -79,7 +79,7 @@ public class NetworkTabView {
         return true;
     }
 
-    public void render(GuiGraphics graphics, int mouseX, int mouseY) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         // Clip, otherwise the scrolled content draws over the tab bar and the
         // status line below it.
         graphics.enableScissor(x, y, x + width, y + height);
@@ -105,7 +105,7 @@ public class NetworkTabView {
     /** How tall the curve itself is. */
     private static final int SPARK_HEIGHT = 24;
 
-    private void renderContent(GuiGraphics graphics, int mouseX, int mouseY) {
+    private void renderContent(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         int top = y + 3 - scroll * LINE;
 
         // <b>The head carries what always holds.</b> Power and throughput sit
@@ -139,7 +139,7 @@ public class NetworkTabView {
      * enough to see a spike — and whoever wants the numbers reads them beside
      * it.
      */
-    private int head(GuiGraphics graphics, int line) {
+    private int head(GuiGraphicsExtractor graphics, int line) {
         int right = x + width - 3;
 
         // Power on the left: whoever sees that nothing is running asks about that first.
@@ -154,7 +154,7 @@ public class NetworkTabView {
         int powerColour = supply.capacity() > 0
                 && supply.stored() * 10 < supply.capacity()
                         ? TerminalScreen.BAD : TerminalScreen.TEXT;
-        graphics.drawString(font, power, x + 3, line + 3, powerColour, false);
+        graphics.text(font, power, x + 3, line + 3, powerColour, false);
 
         // The numbers on the right in the header: now and in total.
         List<Integer> verlauf = ClientTraffic.perSecond();
@@ -166,10 +166,10 @@ public class NetworkTabView {
         String rate = capacity > 0
                 ? Bandwidth.usage(jetzt / Bandwidth.TICKS_PER_SECOND, capacity)
                 : Bandwidth.perSecond(jetzt / Bandwidth.TICKS_PER_SECOND);
-        graphics.drawString(font, rate, right - font.width(rate), line + 3,
+        graphics.text(font, rate, right - font.width(rate), line + 3,
                 TerminalScreen.TEXT, false);
         String gesamt = Bandwidth.total(ClientTraffic.total());
-        graphics.drawString(font, gesamt,
+        graphics.text(font, gesamt,
                 right - 8 - font.width(rate) - font.width(gesamt), line + 3,
                 TerminalScreen.TEXT_DIM, false);
 
@@ -204,7 +204,7 @@ public class NetworkTabView {
         // The peak at the left edge of the curve: the scale, without which a
         // bar has no height.
         String spitze = Bandwidth.perSecond(peak / Bandwidth.TICKS_PER_SECOND);
-        graphics.drawString(font, spitze, sparkLeft + 2, sparkTop + 1,
+        graphics.text(font, spitze, sparkLeft + 2, sparkTop + 1,
                 TerminalScreen.TEXT_FAINT, false);
 
         // A line below it separates the head from the content.
@@ -220,7 +220,7 @@ public class NetworkTabView {
      * answer the same question — is it running, and if not, what is it stuck
      * on.
      */
-    private int working(GuiGraphics graphics, int cx, int line, int cw) {
+    private int working(GuiGraphicsExtractor graphics, int cx, int line, int cw) {
         List<FlowStatePacket.WorkerLine> workers = ClientFlowState.workers();
         line = columnHead(graphics, cx, line, cw,
                 "screen.factorynetwork.terminal.network.workers", workers.size());
@@ -243,10 +243,10 @@ public class NetworkTabView {
                 String menge = verbrauch.containsKey(name)
                         ? Bandwidth.total(verbrauch.get(name)) : "";
                 int platz = cw - 6 - font.width(menge);
-                graphics.drawString(font, font.plainSubstrByWidth(name, Math.max(10, platz)),
+                graphics.text(font, font.plainSubstrByWidth(name, Math.max(10, platz)),
                         cx, line, colour, false);
                 if (!menge.isEmpty()) {
-                    graphics.drawString(font, menge, cx + cw - font.width(menge), line,
+                    graphics.text(font, menge, cx + cw - font.width(menge), line,
                             TerminalScreen.TEXT_DIM, false);
                 }
                 line += LINE;
@@ -256,7 +256,7 @@ public class NetworkTabView {
                 // The surrounding scissor handles visibility; counting every
                 // wrapped line lets scrolling reach workers below the viewport.
                 for (var wrapped : font.split(Component.literal(reason), Math.max(10, cw - 4))) {
-                    graphics.drawString(font, wrapped, cx + 4, line, colour, false);
+                    graphics.text(font, wrapped, cx + 4, line, colour, false);
                     line += LINE;
                 }
                 line += 3;
@@ -280,7 +280,7 @@ public class NetworkTabView {
                 if (line > y + height - LINE) {
                     break;
                 }
-                graphics.drawString(font, font.plainSubstrByWidth(wert, cw),
+                graphics.text(font, font.plainSubstrByWidth(wert, cw),
                         cx, line, TerminalScreen.TEXT_DIM, false);
                 line += LINE;
             }
@@ -295,7 +295,7 @@ public class NetworkTabView {
      * exist. A heading with "none" beneath it costs two lines and says
      * nothing.
      */
-    private int present(GuiGraphics graphics, int cx, int line, int cw) {
+    private int present(GuiGraphicsExtractor graphics, int cx, int line, int cw) {
         List<String> connectors = ClientNetworkState.connectors();
         line = columnHead(graphics, cx, line, cw,
                 "screen.factorynetwork.terminal.network.connectors", connectors.size());
@@ -330,7 +330,7 @@ public class NetworkTabView {
                 // look for when a plant does nothing.
                 int colour = plant.contains("?") || plant.contains("!")
                         ? TerminalScreen.WARN : TerminalScreen.TEXT;
-                graphics.drawString(font, font.plainSubstrByWidth(plant, cw),
+                graphics.text(font, font.plainSubstrByWidth(plant, cw),
                         cx, line, colour, false);
                 line += LINE;
             }
@@ -348,12 +348,12 @@ public class NetworkTabView {
      * <p>"WORKER 3" says at a glance what three lines of list would say — and
      * you see it without reading the list.
      */
-    private int columnHead(GuiGraphics graphics, int cx, int line, int cw,
+    private int columnHead(GuiGraphicsExtractor graphics, int cx, int line, int cw,
                            String key, int count) {
-        graphics.drawString(font, Component.translatable(key), cx, line,
+        graphics.text(font, Component.translatable(key), cx, line,
                 TerminalScreen.TEXT_DIM, false);
         String zahl = String.valueOf(count);
-        graphics.drawString(font, zahl, cx + cw - font.width(zahl), line,
+        graphics.text(font, zahl, cx + cw - font.width(zahl), line,
                 TerminalScreen.TEXT_DIM, false);
         // A fine line below it sums up the column.
         graphics.fill(cx, line + LINE, cx + cw, line + LINE + 1, 0x22FFFFFF);
@@ -361,7 +361,7 @@ public class NetworkTabView {
     }
 
     /** A list of names, single-column — the column is already a column. */
-    private int names(GuiGraphics graphics, int cx, int line, int cw, List<String> items) {
+    private int names(GuiGraphicsExtractor graphics, int cx, int line, int cw, List<String> items) {
         if (items.isEmpty()) {
             return dim(graphics, cx, line, "—");
         }
@@ -369,7 +369,7 @@ public class NetworkTabView {
             if (line > y + height - LINE) {
                 break;
             }
-            graphics.drawString(font, font.plainSubstrByWidth(item, cw),
+            graphics.text(font, font.plainSubstrByWidth(item, cw),
                     cx, line, TerminalScreen.TEXT, false);
             line += LINE;
         }
@@ -377,15 +377,15 @@ public class NetworkTabView {
     }
 
     /** A line in a column, cut to its width. */
-    private int columnLine(GuiGraphics graphics, int cx, int line, int cw,
+    private int columnLine(GuiGraphicsExtractor graphics, int cx, int line, int cw,
                            String content, int colour) {
-        graphics.drawString(font, font.plainSubstrByWidth(content, cw),
+        graphics.text(font, font.plainSubstrByWidth(content, cw),
                 cx, line, colour, false);
         return line + LINE;
     }
 
-    private int dim(GuiGraphics graphics, int cx, int line, String content) {
-        graphics.drawString(font, content, cx, line, 0x8B8B8B, false);
+    private int dim(GuiGraphicsExtractor graphics, int cx, int line, String content) {
+        graphics.text(font, content, cx, line, 0x8B8B8B, false);
         return line + LINE;
     }
 
@@ -396,7 +396,7 @@ public class NetworkTabView {
      * rack" — the reason nothing runs at all — stood in the same type as a
      * list of plant names.
      */
-    private int warnings(GuiGraphics graphics, int line) {
+    private int warnings(GuiGraphicsExtractor graphics, int line) {
         List<Component> found = new ArrayList<>();
         if (ClientFlowState.threads() == 0) {
             found.add(Component.translatable(
@@ -413,7 +413,7 @@ public class NetworkTabView {
         graphics.fill(x + 3, line, x + width - 3, line + 1, 0x33FFFFFF);
         line += 4;
         for (Component one : found) {
-            graphics.drawString(font, one, x + 3, line,
+            graphics.text(font, one, x + 3, line,
                     ClientFlowState.threads() == 0 ? TerminalScreen.BAD
                             : TerminalScreen.WARN, false);
             line += LINE;
@@ -421,7 +421,7 @@ public class NetworkTabView {
         return line;
     }
 
-    private int globals(GuiGraphics graphics, int line) {
+    private int globals(GuiGraphicsExtractor graphics, int line) {
         List<String> werte = dev.devpanda.factorynetwork.client.ClientFlowState.globals();
         if (werte.isEmpty()) {
             return line;
@@ -454,7 +454,7 @@ public class NetworkTabView {
      * limit you exceed while writing without noticing: whoever adds a
      * function does not count the instructions along the way.
      */
-    private int capacity(GuiGraphics graphics, int cx, int line, int cw) {
+    private int capacity(GuiGraphicsExtractor graphics, int cx, int line, int cw) {
         var rechen = dev.devpanda.factorynetwork.client.ClientFlowState.compute();
         if (rechen.threads() == 0) {
             return line;
@@ -477,7 +477,7 @@ public class NetworkTabView {
      * network that has stalled because the reserve is empty looks like one
      * with a bug in the program. That is why it stands right at the top here.
      */
-    private int supply(GuiGraphics graphics, int line) {
+    private int supply(GuiGraphicsExtractor graphics, int line) {
         var strom = dev.devpanda.factorynetwork.client.ClientFlowState.supply();
         var zustand = dev.devpanda.factorynetwork.network.NetworkPower.State
                 .values()[Math.min(strom.state(),
@@ -515,7 +515,7 @@ public class NetworkTabView {
      * it. That is the choice the language promises, and it has to sit where
      * the player sees the state — not in a command they must first look up.
      */
-    private int flows(GuiGraphics graphics, int cx, int line, int cw) {
+    private int flows(GuiGraphicsExtractor graphics, int cx, int line, int cw) {
         buttons.clear();
         List<FlowStatePacket.Line> flows = ClientFlowState.flows();
         if (flows.isEmpty()) {
@@ -533,7 +533,7 @@ public class NetworkTabView {
                     : TerminalScreen.TEXT_DIM;
             String label = flow.entry() + " — " + describe(flow);
             int room = stale ? cw - 2 * BUTTON - 6 : cw;
-            graphics.drawString(font, font.plainSubstrByWidth(label, room), cx, line,
+            graphics.text(font, font.plainSubstrByWidth(label, room), cx, line,
                     colour, false);
             if (stale) {
                 int right = cx + cw;
@@ -551,12 +551,12 @@ public class NetworkTabView {
                 : flow.detail();
     }
 
-    private void button(GuiGraphics graphics, int left, int top, String key, long id,
+    private void button(GuiGraphicsExtractor graphics, int left, int top, String key, long id,
             boolean keep) {
         String label = Component.translatable(
                 "screen.factorynetwork.terminal.network.flow." + key).getString();
         graphics.fill(left, top - 1, left + BUTTON, top + 9, TerminalScreen.BUTTON);
-        graphics.drawString(font, font.plainSubstrByWidth(label, BUTTON - 4),
+        graphics.text(font, font.plainSubstrByWidth(label, BUTTON - 4),
                 left + 2, top, TerminalScreen.TEXT, false);
         buttons.add(new Button(left, top - 1, id, keep));
     }
@@ -573,7 +573,7 @@ public class NetworkTabView {
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         for (Button candidate : buttons) {
             if (candidate.hit(mouseX, mouseY)) {
-                PacketDistributor.sendToServer(
+                ClientPacketDistributor.sendToServer(
                         new FlowActionPacket(candidate.id(), candidate.keep()));
                 return true;
             }
@@ -581,14 +581,14 @@ public class NetworkTabView {
         return false;
     }
 
-    private int section(GuiGraphics graphics, int line, String key) {
-        graphics.drawString(font, Component.translatable(key), x + 3, line,
+    private int section(GuiGraphicsExtractor graphics, int line, String key) {
+        graphics.text(font, Component.translatable(key), x + 3, line,
                 TerminalScreen.TEXT_DIM, false);
         return line + LINE + 1;
     }
 
-    private int text(GuiGraphics graphics, int line, String content, int colour) {
-        graphics.drawString(font, content, x + 3, line, colour, false);
+    private int text(GuiGraphicsExtractor graphics, int line, String content, int colour) {
+        graphics.text(font, content, x + 3, line, colour, false);
         return line + LINE;
     }
 }

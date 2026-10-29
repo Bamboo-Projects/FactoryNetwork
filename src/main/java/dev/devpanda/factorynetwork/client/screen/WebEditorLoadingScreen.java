@@ -3,7 +3,7 @@ package dev.devpanda.factorynetwork.client.screen;
 import dev.devpanda.bamboocef.web.api.FnWeb;
 import dev.devpanda.factorynetwork.client.EditorApp;
 import dev.devpanda.factorynetwork.client.menu.TerminalMenu;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -52,9 +52,8 @@ public final class WebEditorLoadingScreen extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics, mouseX, mouseY, partialTick);
-        graphics.drawCenteredString(font, title, width / 2, height / 2 - 48, 0x78DC8C);
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        graphics.centeredText(font, title, width / 2, height / 2 - 48, 0x78DC8C);
         var status = FnWeb.status();
         String text = switch (status.state()) {
             case NOT_STARTED -> "Der Editor wird vorbereitet …";
@@ -63,9 +62,9 @@ public final class WebEditorLoadingScreen extends Screen {
             case UNSUPPORTED -> "Der Web-Editor ist auf diesem Betriebssystem noch nicht verfügbar.";
             default -> "BambooCEF konnte den Editor nicht starten. Der klassische Editor bleibt verfügbar.";
         };
-        graphics.drawWordWrap(font, Component.literal(text), Math.max(16, width / 2 - 210),
+        graphics.textWithWordWrap(font, Component.literal(text), Math.max(16, width / 2 - 210),
                 height / 2 - 20, Math.min(420, width - 32), 0xD3DBD5);
-        super.render(graphics, mouseX, mouseY, partialTick);
+        super.extractRenderState(graphics, mouseX, mouseY, partialTick);
     }
 
     @Override

@@ -1,17 +1,17 @@
 package dev.devpanda.factorynetwork.client.screen;
 
+import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import dev.devpanda.factorynetwork.block.entity.DisplayBlockEntity;
 import dev.devpanda.factorynetwork.client.FnFonts;
 import dev.devpanda.factorynetwork.client.menu.NameMenu;
 import dev.devpanda.factorynetwork.item.ConnectorNaming;
 import dev.devpanda.factorynetwork.network.packet.SetBlockNamePacket;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
  * The window where a block gets its name.
@@ -205,7 +205,7 @@ public class NameScreen extends AbstractContainerScreen<NameMenu> {
         if (!name.isEmpty() && !ConnectorNaming.isValidDeviceName(name)) {
             return;
         }
-        PacketDistributor.sendToServer(new SetBlockNamePacket(menu.position(),
+        ClientPacketDistributor.sendToServer(new SetBlockNamePacket(menu.position(),
                 menu.side() == null
                         ? SetBlockNamePacket.NO_SIDE : menu.side().get3DDataValue(),
                 name));
@@ -240,7 +240,8 @@ public class NameScreen extends AbstractContainerScreen<NameMenu> {
     }
 
     @Override
-    protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
+    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        super.extractBackground(graphics, mouseX, mouseY, partialTick);
         graphics.fill(leftPos - 1, topPos - 1, leftPos + imageWidth + 1,
                 topPos + imageHeight + 1, 0xFF080A09);
         graphics.fill(leftPos, topPos, leftPos + imageWidth, topPos + imageHeight,
@@ -256,26 +257,25 @@ public class NameScreen extends AbstractContainerScreen<NameMenu> {
     }
 
     @Override
-    protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
+    protected void extractLabels(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         int second = PAD;
         if (instance != null) {
-            graphics.drawString(font, FnFonts.mono(Component.translatable(
+            graphics.text(font, FnFonts.mono(Component.translatable(
                             "screen.factorynetwork.name.instance")),
                     PAD, PAD, TerminalScreen.TEXT_DIM, false);
             second = PAD + LINE + 4 + FIELD + 4;
         }
-        graphics.drawString(font, FnFonts.mono(Component.translatable(
+        graphics.text(font, FnFonts.mono(Component.translatable(
                         isGateway() ? "screen.factorynetwork.name.title.gateway"
                                 : isDisplay() ? "screen.factorynetwork.name.title.display"
                                         : "screen.factorynetwork.name.title.connector")),
                 PAD, second, TerminalScreen.TEXT, false);
-        graphics.drawString(font, note, PAD, second + LINE + 4 + FIELD + 3,
+        graphics.text(font, note, PAD, second + LINE + 4 + FIELD + 3,
                 noteColour, false);
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics, mouseX, mouseY, partialTick);
-        super.render(graphics, mouseX, mouseY, partialTick);
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        super.extractRenderState(graphics, mouseX, mouseY, partialTick);
     }
 }

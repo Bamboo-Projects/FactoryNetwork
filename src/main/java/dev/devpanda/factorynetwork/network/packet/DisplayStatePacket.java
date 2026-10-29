@@ -6,7 +6,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import java.util.List;
@@ -56,7 +56,7 @@ public record DisplayStatePacket(List<Panel> panels) implements CustomPacketPayl
     }
 
     public static final Type<DisplayStatePacket> TYPE = new Type<>(
-            ResourceLocation.fromNamespaceAndPath(FactoryNetwork.MOD_ID, "display_state"));
+            Identifier.fromNamespaceAndPath(FactoryNetwork.MOD_ID, "display_state"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, DisplayStatePacket> STREAM_CODEC =
             StreamCodec.composite(

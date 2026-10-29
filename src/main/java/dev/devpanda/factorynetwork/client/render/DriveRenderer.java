@@ -15,7 +15,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.core.Direction;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.phys.Vec3;
@@ -35,7 +35,7 @@ import org.joml.Matrix4f;
  */
 public class DriveRenderer implements BlockEntityRenderer<DriveBlockEntity> {
 
-    private static final ResourceLocation BAYS = ResourceLocation.fromNamespaceAndPath(
+    private static final Identifier BAYS = Identifier.fromNamespaceAndPath(
             FactoryNetwork.MOD_ID, "textures/misc/drive_bays.png");
 
     /** Empty, four item sizes, fluid, energy, then chemical. See textures.py. */

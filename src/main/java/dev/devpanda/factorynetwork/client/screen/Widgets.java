@@ -1,8 +1,8 @@
 package dev.devpanda.factorynetwork.client.screen;
 
 import dev.devpanda.factorynetwork.FactoryNetwork;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.resources.Identifier;
 
 /**
  * Small UI parts at an arbitrary width.
@@ -25,7 +25,7 @@ import net.minecraft.resources.ResourceLocation;
  */
 public final class Widgets {
 
-    public static final ResourceLocation ATLAS = ResourceLocation.fromNamespaceAndPath(
+    public static final Identifier ATLAS = Identifier.fromNamespaceAndPath(
             FactoryNetwork.MOD_ID, "textures/gui/widgets.png");
 
     /** The sheet the small parts sit on. */
@@ -59,7 +59,7 @@ public final class Widgets {
      * @param source how wide the template is
      * @param cap    how wide the two caps are
      */
-    public static void stretched(GuiGraphics graphics, int x, int y, int width, int height,
+    public static void stretched(GuiGraphicsExtractor graphics, int x, int y, int width, int height,
                                  int u, int v, int source, int cap) {
         if (width <= 2 * cap) {
             graphics.blit(ATLAS, x, y, u, v, width, height, SHEET, SHEET);

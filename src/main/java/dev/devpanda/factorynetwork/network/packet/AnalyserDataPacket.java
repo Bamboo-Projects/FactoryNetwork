@@ -8,7 +8,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import java.util.List;
@@ -30,7 +30,7 @@ public record AnalyserDataPacket(List<AnalyserData.Node> nodes, List<AnalyserDat
     public static final int MAX_LINKS = 8192;
 
     public static final Type<AnalyserDataPacket> TYPE = new Type<>(
-            ResourceLocation.fromNamespaceAndPath(FactoryNetwork.MOD_ID, "analyser_data"));
+            Identifier.fromNamespaceAndPath(FactoryNetwork.MOD_ID, "analyser_data"));
 
     private static final StreamCodec<RegistryFriendlyByteBuf, AnalyserData.Node> NODE =
             StreamCodec.composite(

@@ -5,7 +5,7 @@ import dev.devpanda.factorynetwork.network.MachineAccess;
 import dev.devpanda.factorynetwork.network.ResourceStore;
 import dev.devpanda.factorynetwork.runtime.ResourceKind;
 import dev.devpanda.factorynetwork.runtime.ResourceKinds;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import java.util.List;
 
@@ -38,8 +38,8 @@ public final class ArsSource implements ResourceKind {
     /** The one variety of Source, as its key. */
     public static final String KEY = "source";
 
-    private static final ResourceLocation ID =
-            ResourceLocation.fromNamespaceAndPath(FnArs.MOD_ID, "source");
+    private static final Identifier ID =
+            Identifier.fromNamespaceAndPath(FnArs.MOD_ID, "source");
 
     private ArsSource() {
     }
@@ -58,7 +58,7 @@ public final class ArsSource implements ResourceKind {
     }
 
     @Override
-    public ResourceLocation id() {
+    public Identifier id() {
         return ID;
     }
 

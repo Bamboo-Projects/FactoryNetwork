@@ -1,12 +1,12 @@
 package dev.devpanda.factorynetwork.client.screen;
 
+import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import dev.devpanda.factorynetwork.client.ClientCraftingState;
 import dev.devpanda.factorynetwork.network.packet.CraftingActionPacket;
 import dev.devpanda.factorynetwork.network.packet.CraftingStatePacket;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,14 +52,14 @@ public class CraftingTabView {
         this.height = height;
     }
 
-    public void render(GuiGraphics graphics, int mouseX, int mouseY) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         hits.clear();
         List<CraftingStatePacket.Line> jobs = ClientCraftingState.jobs();
         if (jobs.isEmpty()) {
-            graphics.drawString(font, Component.translatable(
+            graphics.text(font, Component.translatable(
                             "screen.factorynetwork.terminal.crafting.none"),
                     x + 3, y + 3, TerminalScreen.TEXT_DIM, false);
-            graphics.drawString(font, Component.translatable(
+            graphics.text(font, Component.translatable(
                             "screen.factorynetwork.terminal.crafting.how"),
                     x + 3, y + 3 + LINE + 2, TerminalScreen.TEXT_FAINT, false);
             return;
@@ -78,12 +78,12 @@ public class CraftingTabView {
                     && mouseY >= line - 1 && mouseY < line + LINE - 1;
             graphics.fill(right - CANCEL, line - 1, right, line + 9,
                     hovered ? TerminalScreen.BUTTON_HOVER : TerminalScreen.BUTTON);
-            graphics.drawString(font, "×", right - CANCEL + 4, line,
+            graphics.text(font, "×", right - CANCEL + 4, line,
                     TerminalScreen.TEXT, false);
             hits.add(new Hit(right - CANCEL, line - 1, right, job.id()));
 
             String head = job.done() + "/" + job.wanted() + " " + job.target();
-            graphics.drawString(font, font.plainSubstrByWidth(head, width - CANCEL - 12),
+            graphics.text(font, font.plainSubstrByWidth(head, width - CANCEL - 12),
                     x + 3, line, TerminalScreen.TEXT, false);
             line += LINE;
 
@@ -91,7 +91,7 @@ public class CraftingTabView {
             // and yet is not the job.
             String detail = job.detail().isEmpty() ? statusOf(job) : job.detail();
             if (line <= y + height - LINE) {
-                graphics.drawString(font,
+                graphics.text(font,
                         font.plainSubstrByWidth("§7" + detail, width - 16),
                         x + 9, line, TerminalScreen.TEXT_DIM, false);
                 line += LINE;
@@ -110,7 +110,7 @@ public class CraftingTabView {
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         for (Hit hit : hits) {
             if (hit.covers(mouseX, mouseY)) {
-                PacketDistributor.sendToServer(new CraftingActionPacket(hit.id()));
+                ClientPacketDistributor.sendToServer(new CraftingActionPacket(hit.id()));
                 return true;
             }
         }

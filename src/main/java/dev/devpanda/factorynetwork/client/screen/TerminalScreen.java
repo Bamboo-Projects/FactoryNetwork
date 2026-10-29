@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.client.screen;
 
+import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import dev.devpanda.factorynetwork.platform.client.Keys;
 import dev.devpanda.factorynetwork.FactoryNetwork;
 import dev.devpanda.factorynetwork.client.FnFonts;
@@ -9,12 +10,11 @@ import dev.devpanda.factorynetwork.client.menu.TerminalMenu;
 import dev.devpanda.factorynetwork.network.packet.DeployProgramPacket;
 import dev.devpanda.factorynetwork.network.packet.StorageTabPacket;
 import dev.devpanda.factorynetwork.terminal.TerminalTab;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Inventory;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
  * The terminal.
@@ -34,9 +34,9 @@ import net.neoforged.neoforge.network.PacketDistributor;
  */
 public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
 
-    private static final ResourceLocation BACKGROUND = ResourceLocation.fromNamespaceAndPath(
+    private static final Identifier BACKGROUND = Identifier.fromNamespaceAndPath(
             FactoryNetwork.MOD_ID, "textures/gui/terminal.png");
-    private static final ResourceLocation WIDGETS = ResourceLocation.fromNamespaceAndPath(
+    private static final Identifier WIDGETS = Identifier.fromNamespaceAndPath(
             FactoryNetwork.MOD_ID, "textures/gui/widgets.png");
 
     // The measurements live in TerminalLayout, because the menu needs them
@@ -120,7 +120,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
 
     /** The server learns only whether storage is open — nothing else. */
     private void announceTab() {
-        PacketDistributor.sendToServer(new StorageTabPacket(tab == TerminalTab.STORAGE));
+        ClientPacketDistributor.sendToServer(new StorageTabPacket(tab == TerminalTab.STORAGE));
     }
 
     /**
@@ -152,9 +152,8 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
     // ---- Drawing ----------------------------------------------------------
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics, mouseX, mouseY, partialTick);
-        super.render(graphics, mouseX, mouseY, partialTick);
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        super.extractRenderState(graphics, mouseX, mouseY, partialTick);
         renderTabTooltips(graphics, mouseX, mouseY);
         renderStatusTooltip(graphics, mouseX, mouseY);
         if (tab == TerminalTab.CODE) {
@@ -167,16 +166,17 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
     }
 
     @Override
-    protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
+    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        super.extractBackground(graphics, mouseX, mouseY, partialTick);
         graphics.blit(BACKGROUND, leftPos, topPos, 0, 0, WIDTH, HEIGHT, 512, 512);
         drawTabs(graphics, mouseX, mouseY);
         switch (tab) {
-            case STORAGE -> storageView.render(graphics, mouseX, mouseY);
-            case NETWORK -> networkView.render(graphics, mouseX, mouseY);
-            case DASHBOARDS -> dashboardsView.render(graphics, mouseX, mouseY);
-            case CRAFTING -> craftingView.render(graphics, mouseX, mouseY);
-            case LOG -> logView.render(graphics, mouseX, mouseY);
-            case CODE -> codeView.render(graphics, mouseX, mouseY);
+            case STORAGE -> storageView.extractRenderState(graphics, mouseX, mouseY);
+            case NETWORK -> networkView.extractRenderState(graphics, mouseX, mouseY);
+            case DASHBOARDS -> dashboardsView.extractRenderState(graphics, mouseX, mouseY);
+            case CRAFTING -> craftingView.extractRenderState(graphics, mouseX, mouseY);
+            case LOG -> logView.extractRenderState(graphics, mouseX, mouseY);
+            case CODE -> codeView.extractRenderState(graphics, mouseX, mouseY);
             default -> { }
         }
         // Last, so it lies over everything a tab draws at the bottom.
@@ -237,13 +237,13 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
      * <p>Index cards are the creative inventory. A device has labels, and
      * which one applies is told by a line beneath it — as in every editor.
      */
-    private void drawTabs(GuiGraphics graphics, int mouseX, int mouseY) {
+    private void drawTabs(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         for (TerminalTab candidate : tabs()) {
             int x = leftPos + tabX(candidate);
             int y = topPos + tabY();
             boolean active = candidate == tab;
             int colour = active ? TEXT : candidate.isReady() ? TEXT_DIM : TEXT_FAINT;
-            graphics.drawString(font, FnFonts.mono(candidate.title()), x, y, colour, false);
+            graphics.text(font, FnFonts.mono(candidate.title()), x, y, colour, false);
             if (active) {
                 graphics.fill(x, y + 11, x + tabWidth(candidate), y + 12, 0xFF000000 | ACCENT);
             }
@@ -269,7 +269,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
      * <p>Both texts are measured and checked against each other. In the draft
      * I had measured only the right one, and they slid into each other.
      */
-    private void drawStatus(GuiGraphics graphics) {
+    private void drawStatus(GuiGraphicsExtractor graphics) {
         int y = topPos + SCREEN_BOTTOM - STATUS_ROW + 1;
         int right = leftPos + SCREEN_X1 - 4;
         int left = leftPos + WORK_X + 1;
@@ -291,7 +291,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
                 compute.occupied(), compute.threads(),
                 compute.program(), compute.disk()).getString());
         int netzBreite = font.width(netz);
-        graphics.drawString(font, netz, right - netzBreite, y + 2, TEXT_DIM, false);
+        graphics.text(font, netz, right - netzBreite, y + 2, TEXT_DIM, false);
         graphics.fill(right - netzBreite - 8, y + 4, right - netzBreite - 4, y + 8,
                 0xFF000000 | lamp);
 
@@ -305,7 +305,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         }
         Component gekuerzt = FnFonts.mono(
                 font.plainSubstrByWidth(eigenes.getString(), platz));
-        graphics.drawString(font, gekuerzt, left, y + 2,
+        graphics.text(font, gekuerzt, left, y + 2,
                 tab == TerminalTab.STORAGE && storageView.isFull() ? 0xD08A3C : TEXT_FAINT,
                 false);
     }
@@ -320,7 +320,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
     }
 
     /** On hover over the status line, it shows what the numbers mean. */
-    private void renderStatusTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
+    private void renderStatusTooltip(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         int y = topPos + SCREEN_BOTTOM - STATUS_ROW + 1;
         if (mouseY < y || mouseY >= y + STATUS_ROW
                 || mouseX < leftPos + SCREEN_X0 || mouseX >= leftPos + SCREEN_X1) {
@@ -331,22 +331,22 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         if (tab == TerminalTab.STORAGE && !storageView.isFull()) {
             lines.add(storageView.roomHint());
         }
-        graphics.renderComponentTooltip(font, lines, mouseX, mouseY);
+        graphics.setTooltipForNextFrame(font, lines, java.util.Optional.empty(), mouseX, mouseY);
     }
 
-    private void renderTabTooltips(GuiGraphics graphics, int mouseX, int mouseY) {
+    private void renderTabTooltips(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         for (TerminalTab candidate : tabs()) {
             if (!candidate.isReady() && overTab(candidate, mouseX, mouseY)) {
-                graphics.renderTooltip(font, candidate.notReadyHint(), mouseX, mouseY);
+                graphics.setTooltipForNextFrame(candidate.notReadyHint(), mouseX, mouseY);
             }
         }
     }
 
     @Override
-    protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
+    protected void extractLabels(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         // The window title is in the tab bar; only the inventory is labelled,
         // as in every vanilla window.
-        graphics.drawString(font, playerInventoryTitle, (WIDTH - 9 * 18) / 2,
+        graphics.text(font, playerInventoryTitle, (WIDTH - 9 * 18) / 2,
                 inventoryLabelY, Widgets.CASE_TEXT, false);
     }
 
@@ -358,7 +358,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
      * work. What became of it now sits in the editor's footer.
      */
     void deploy() {
-        PacketDistributor.sendToServer(
+        ClientPacketDistributor.sendToServer(
                 DeployProgramPacket.of(menu.position(), codeView.project()));
     }
 
@@ -506,7 +506,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         // Save first: after this the window is gone, and with it the occasion
         // to look once more.
         dev.devpanda.factorynetwork.client.ClientProjectState.flush();
-        PacketDistributor.sendToServer(new StorageTabPacket(false));
+        ClientPacketDistributor.sendToServer(new StorageTabPacket(false));
         ClientStorageView.clear();
         // What was in the devices applied to this visit. On the next opening
         // it is asked anew.

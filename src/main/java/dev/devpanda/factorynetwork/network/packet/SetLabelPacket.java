@@ -7,7 +7,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
@@ -24,7 +24,7 @@ public record SetLabelPacket(String label) implements CustomPacketPayload {
     private static final int MAX_LENGTH = 64;
 
     public static final Type<SetLabelPacket> TYPE = new Type<>(
-            ResourceLocation.fromNamespaceAndPath(FactoryNetwork.MOD_ID, "set_label"));
+            Identifier.fromNamespaceAndPath(FactoryNetwork.MOD_ID, "set_label"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, SetLabelPacket> STREAM_CODEC =
             StreamCodec.composite(ByteBufCodecs.stringUtf8(MAX_LENGTH), SetLabelPacket::label,

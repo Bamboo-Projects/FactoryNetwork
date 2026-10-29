@@ -2,7 +2,7 @@ package dev.devpanda.factorynetwork.runtime;
 
 import dev.devpanda.factorynetwork.lang.ast.Expr;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.material.Fluid;
@@ -79,7 +79,7 @@ public final class FluidSelection {
 
     private static List<Fluid> single(Expr.Selector selector) {
         String namespace = selector.hasNamespace() ? selector.namespace() : "minecraft";
-        ResourceLocation id = ResourceLocation.tryBuild(
+        Identifier id = Identifier.tryBuild(
                 namespace.toLowerCase(Locale.ROOT), selector.path());
         if (id == null || !BuiltInRegistries.FLUID.containsKey(id)) {
             return List.of();
@@ -94,7 +94,7 @@ public final class FluidSelection {
                 ? selector.namespace().toLowerCase(Locale.ROOT) : null;
 
         List<Fluid> found = new ArrayList<>();
-        for (ResourceLocation id : BuiltInRegistries.FLUID.keySet()) {
+        for (Identifier id : BuiltInRegistries.FLUID.keySet()) {
             if (namespace != null && !id.getNamespace().equals(namespace)) {
                 continue;
             }
@@ -111,7 +111,7 @@ public final class FluidSelection {
 
     private static List<Fluid> fromTag(Expr.Selector selector) {
         String namespace = selector.hasNamespace() ? selector.namespace() : "minecraft";
-        ResourceLocation id = ResourceLocation.tryBuild(
+        Identifier id = Identifier.tryBuild(
                 namespace.toLowerCase(Locale.ROOT), selector.path());
         if (id == null) {
             return List.of();

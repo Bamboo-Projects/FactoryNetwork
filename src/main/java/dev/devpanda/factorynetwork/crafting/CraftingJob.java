@@ -3,7 +3,7 @@ package dev.devpanda.factorynetwork.crafting;
 import dev.devpanda.factorynetwork.platform.Nbt;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Item;
 
 /**
@@ -77,7 +77,7 @@ public final class CraftingJob {
         }
 
         static Running load(CompoundTag tag) {
-            ResourceLocation id = ResourceLocation.tryParse(Nbt.getString(tag, "Result"));
+            Identifier id = Identifier.tryParse(Nbt.getString(tag, "Result"));
             if (id == null || !BuiltInRegistries.ITEM.containsKey(id)) {
                 return null;
             }
@@ -188,7 +188,7 @@ public final class CraftingJob {
      * helps no one in cleaning up.
      */
     public static CraftingJob load(CompoundTag tag) {
-        ResourceLocation id = ResourceLocation.tryParse(Nbt.getString(tag, KEY_TARGET));
+        Identifier id = Identifier.tryParse(Nbt.getString(tag, KEY_TARGET));
         if (id == null || !BuiltInRegistries.ITEM.containsKey(id)) {
             return null;
         }

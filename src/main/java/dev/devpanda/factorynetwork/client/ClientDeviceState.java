@@ -1,8 +1,8 @@
 package dev.devpanda.factorynetwork.client;
 
+import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import dev.devpanda.factorynetwork.network.packet.DeviceSnapshotPacket;
 import dev.devpanda.factorynetwork.network.packet.DeviceSnapshotRequestPacket;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -46,7 +46,7 @@ public final class ClientDeviceState {
         }
         if (since > 0 && now - since >= DELAY) {
             since = 0;
-            PacketDistributor.sendToServer(new DeviceSnapshotRequestPacket(connector));
+            ClientPacketDistributor.sendToServer(new DeviceSnapshotRequestPacket(connector));
         }
     }
 

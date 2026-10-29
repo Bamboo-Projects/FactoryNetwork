@@ -2,10 +2,10 @@ package dev.devpanda.factorynetwork.client.screen;
 
 import dev.devpanda.factorynetwork.FactoryNetwork;
 import dev.devpanda.factorynetwork.client.menu.BurnerMenu;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Inventory;
 
 import java.util.List;
@@ -20,7 +20,7 @@ import java.util.List;
  */
 public class BurnerScreen extends AbstractContainerScreen<BurnerMenu> {
 
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
+    private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath(
             FactoryNetwork.MOD_ID, "textures/gui/burner.png");
 
     /** Where the filled variants sit in the sheet. */
@@ -47,7 +47,8 @@ public class BurnerScreen extends AbstractContainerScreen<BurnerMenu> {
     }
 
     @Override
-    protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
+    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        super.extractBackground(graphics, mouseX, mouseY, partialTick);
         graphics.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight, 512, 512);
 
         // The flame burns down from the top, like in a furnace.
@@ -66,15 +67,14 @@ public class BurnerScreen extends AbstractContainerScreen<BurnerMenu> {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics, mouseX, mouseY, partialTick);
-        super.render(graphics, mouseX, mouseY, partialTick);
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        super.extractRenderState(graphics, mouseX, mouseY, partialTick);
         renderTooltip(graphics, mouseX, mouseY);
 
         // The number sits by the bar: "full" alone does not say if it lasts.
         if (mouseX >= leftPos + BAR_X && mouseX < leftPos + BAR_X + BAR_W
                 && mouseY >= topPos + BAR_Y && mouseY < topPos + BAR_Y + BAR_H) {
-            graphics.renderTooltip(font, List.of(
+            graphics.setTooltipForNextFrame(font, List.of(
                     Component.translatable("screen.factorynetwork.burner.energy",
                             String.format(java.util.Locale.GERMANY, "%,d", menu.stored()),
                             String.format(java.util.Locale.GERMANY, "%,d", menu.capacity())),

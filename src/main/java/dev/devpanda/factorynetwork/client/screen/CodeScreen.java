@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.client.screen;
 
+import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import dev.devpanda.factorynetwork.platform.client.Keys;
 import dev.devpanda.factorynetwork.client.ClientDeployState;
 import dev.devpanda.factorynetwork.client.ClientNetworkState;
@@ -7,12 +8,11 @@ import dev.devpanda.factorynetwork.client.ClientProjectState;
 import dev.devpanda.factorynetwork.client.FnFonts;
 import dev.devpanda.factorynetwork.lang.Diagnostic;
 import dev.devpanda.factorynetwork.lang.Project;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -252,7 +252,7 @@ public class CodeScreen extends Screen {
     }
 
     private void deploy() {
-        PacketDistributor.sendToServer(
+        ClientPacketDistributor.sendToServer(
                 dev.devpanda.factorynetwork.network.packet.DeployProgramPacket
                         .of(controller, project));
     }
@@ -295,7 +295,7 @@ public class CodeScreen extends Screen {
      * in case any are ever added here.
      */
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         graphics.fill(0, 0, width, height, CASE);
         graphics.fill(MARGIN - 4, MARGIN - 4, width - MARGIN + 4, height - MARGIN + 4, GLASS);
         // The bright edge around the pane: without it the content floats in
@@ -304,8 +304,8 @@ public class CodeScreen extends Screen {
                 0xFF2E3833);
 
         drawHeader(graphics);
-        panel.render(graphics, mouseX, mouseY);
-        editor.render(graphics, openProblems);
+        panel.extractRenderState(graphics, mouseX, mouseY);
+        editor.extractRenderState(graphics, openProblems);
         drawFooter(graphics, mouseX, mouseY);
         if (showingHelp) {
             drawHelp(graphics);
@@ -314,7 +314,7 @@ public class CodeScreen extends Screen {
         }
 
         for (Renderable renderable : this.renderables) {
-            renderable.render(graphics, mouseX, mouseY, partialTick);
+            renderable.extractRenderState(graphics, mouseX, mouseY, partialTick);
         }
         renderTooltip(graphics, mouseX, mouseY);
     }
@@ -325,19 +325,19 @@ public class CodeScreen extends Screen {
      * <p>The hint about Escape is there because this window has no inventory
      * and so doesn't look like something you could close like any other.
      */
-    private void drawHeader(GuiGraphics graphics) {
-        graphics.drawString(font, FnFonts.bold(title), MARGIN, MARGIN, TerminalScreen.TEXT,
+    private void drawHeader(GuiGraphicsExtractor graphics) {
+        graphics.text(font, FnFonts.bold(title), MARGIN, MARGIN, TerminalScreen.TEXT,
                 false);
         Component hint = FnFonts.mono(Component.translatable(showingHelp
                 ? "screen.factorynetwork.code.back"
                 : "screen.factorynetwork.code.help"));
-        graphics.drawString(font, hint, width - MARGIN - font.width(hint), MARGIN,
+        graphics.text(font, hint, width - MARGIN - font.width(hint), MARGIN,
                 TerminalScreen.TEXT_FAINT, false);
         graphics.fill(MARGIN, MARGIN + 12, width - MARGIN, MARGIN + 13, EDGE);
     }
 
     /** A frame made of four lines. */
-    static void outline(GuiGraphics graphics, int left, int top, int right, int bottom,
+    static void outline(GuiGraphicsExtractor graphics, int left, int top, int right, int bottom,
                         int colour) {
         graphics.fill(left, top, right, top + 1, colour);
         graphics.fill(left, bottom - 1, right, bottom, colour);
@@ -345,7 +345,7 @@ public class CodeScreen extends Screen {
         graphics.fill(right - 1, top, right, bottom, colour);
     }
 
-    private void drawFooter(GuiGraphics graphics, int mouseX, int mouseY) {
+    private void drawFooter(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         int footerY = height - MARGIN - FOOTER + 6;
         graphics.fill(MARGIN, height - MARGIN - FOOTER, width - MARGIN,
                 height - MARGIN - FOOTER + 1, EDGE);
@@ -357,7 +357,7 @@ public class CodeScreen extends Screen {
             shown = located.getString();
             colour = TerminalScreen.ACCENT;
         }
-        graphics.drawString(font,
+        graphics.text(font,
                 FnFonts.mono(font.plainSubstrByWidth(shown, buttonX() - MARGIN - 90)),
                 MARGIN, footerY, colour, false);
 
@@ -366,7 +366,7 @@ public class CodeScreen extends Screen {
                 "screen.factorynetwork.terminal.cursor",
                 editor.cursorLine() + 1, editor.cursorColumn() + 1));
         int positionX = buttonX() - font.width(position) - 10;
-        graphics.drawString(font, position, positionX, footerY,
+        graphics.text(font, position, positionX, footerY,
                 TerminalScreen.TEXT_FAINT, false);
 
         // And before it, what state the text is in. Three cases, one place:
@@ -381,7 +381,7 @@ public class CodeScreen extends Screen {
             // any other information about its state is irrelevant.
             Component label = FnFonts.mono(Component.translatable(
                     "screen.factorynetwork.code.held_by", holder));
-            graphics.drawString(font, label, positionX - font.width(label) - 12, footerY,
+            graphics.text(font, label, positionX - font.width(label) - 12, footerY,
                     TerminalScreen.WARN, false);
             return;
         }
@@ -393,7 +393,7 @@ public class CodeScreen extends Screen {
         }
         if (state != null) {
             Component label = FnFonts.mono(Component.translatable(state));
-            graphics.drawString(font, label, positionX - font.width(label) - 12, footerY,
+            graphics.text(font, label, positionX - font.width(label) - 12, footerY,
                     stateColour, false);
         }
 
@@ -403,7 +403,7 @@ public class CodeScreen extends Screen {
                 hovered ? TerminalScreen.BUTTON_HOVER : TerminalScreen.BUTTON);
         Component label = FnFonts.mono(
                 Component.translatable("screen.factorynetwork.terminal.deploy"));
-        graphics.drawString(font, label, buttonX() + (BUTTON_WIDTH - font.width(label)) / 2,
+        graphics.text(font, label, buttonX() + (BUTTON_WIDTH - font.width(label)) / 2,
                 buttonY() + 3, TerminalScreen.TEXT, false);
     }
 
@@ -415,7 +415,7 @@ public class CodeScreen extends Screen {
      * because whoever opens it is looking something up and not writing right
      * now.
      */
-    private void drawHelp(GuiGraphics graphics) {
+    private void drawHelp(GuiGraphicsExtractor graphics) {
         int rows = HELP.length;
         int keyWidth = 0;
         int textWidth = 0;
@@ -431,16 +431,16 @@ public class CodeScreen extends Screen {
 
         graphics.fill(left, top, left + boxWidth, top + boxHeight, 0xF60E1214);
         outline(graphics, left, top, left + boxWidth, top + boxHeight, EDGE);
-        graphics.drawString(font, FnFonts.bold(
+        graphics.text(font, FnFonts.bold(
                         Component.translatable("screen.factorynetwork.code.help.title")),
                 left + 14, top + 8, TerminalScreen.TEXT, false);
         graphics.fill(left + 14, top + 20, left + boxWidth - 14, top + 21, EDGE);
 
         for (int i = 0; i < rows; i++) {
             int rowY = top + 26 + i * 12;
-            graphics.drawString(font, FnFonts.mono(HELP[i][0]), left + 14, rowY,
+            graphics.text(font, FnFonts.mono(HELP[i][0]), left + 14, rowY,
                     TerminalScreen.ACCENT, false);
-            graphics.drawString(font, Component.translatable(
+            graphics.text(font, Component.translatable(
                             "screen.factorynetwork.code." + HELP[i][1]),
                     left + 26 + keyWidth, rowY, TerminalScreen.TEXT_DIM, false);
         }
@@ -472,7 +472,7 @@ public class CodeScreen extends Screen {
      * for when deciding where to start. The row under the pointer is backed,
      * so that it is plain which one a click will take.
      */
-    private void drawProblems(GuiGraphics graphics, int mouseX, int mouseY) {
+    private void drawProblems(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         int[] box = problemsBox();
         int left = box[0];
         int top = box[1];
@@ -482,7 +482,7 @@ public class CodeScreen extends Screen {
 
         graphics.fill(left, top, left + boxWidth, top + boxHeight, 0xF60E1214);
         outline(graphics, left, top, left + boxWidth, top + boxHeight, EDGE);
-        graphics.drawString(font, FnFonts.bold(Component.translatable(
+        graphics.text(font, FnFonts.bold(Component.translatable(
                         "screen.factorynetwork.code.problems.title", problems.size())),
                 left + 14, top + 8, TerminalScreen.TEXT, false);
         graphics.fill(left + 14, top + 20, left + boxWidth - 14, top + 21, EDGE);
@@ -497,30 +497,30 @@ public class CodeScreen extends Screen {
             String where = (problem.file().isEmpty() ? open : problem.file())
                     + ":" + problem.span().line();
             Component place = FnFonts.mono(where);
-            graphics.drawString(font, place, left + 14, rowY, TerminalScreen.ACCENT, false);
+            graphics.text(font, place, left + 14, rowY, TerminalScreen.ACCENT, false);
             int textX = left + 22 + font.width(place);
-            graphics.drawString(font,
+            graphics.text(font,
                     font.plainSubstrByWidth(problem.message(), left + boxWidth - 14 - textX),
                     textX, rowY, problem.isError() ? TerminalScreen.BAD : TerminalScreen.WARN,
                     false);
         }
         if (problems.size() > rows) {
-            graphics.drawString(font, Component.translatable(
+            graphics.text(font, Component.translatable(
                             "screen.factorynetwork.code.problems.more", problems.size() - rows),
                     left + 14, top + 26 + rows * 12, TerminalScreen.TEXT_FAINT, false);
         }
     }
 
-    private void renderTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
+    private void renderTooltip(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         if (panel.hasMenu() || showingHelp || showingProblems) {
             return;
         }
         if (overButton(mouseX, mouseY)) {
-            graphics.renderTooltip(font, Component.translatable(
+            graphics.setTooltipForNextFrame(Component.translatable(
                     "screen.factorynetwork.terminal.deploy.hint"), mouseX, mouseY);
             return;
         }
-        EditorTooltip.render(graphics, font, editor, project, openProblems, mouseX, mouseY);
+        EditorTooltip.extractRenderState(graphics, font, editor, project, openProblems, mouseX, mouseY);
     }
 
     // ---- Input ---------------------------------------------------------
