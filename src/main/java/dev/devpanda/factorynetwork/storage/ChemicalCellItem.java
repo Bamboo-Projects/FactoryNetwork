@@ -50,8 +50,12 @@ public class ChemicalCellItem extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> lines,
-                                TooltipFlag flag) {
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context,
+                                net.minecraft.world.item.component.TooltipDisplay display,
+                                java.util.function.Consumer<net.minecraft.network.chat.Component> adder,
+                                net.minecraft.world.item.TooltipFlag flag) {
+        java.util.List<net.minecraft.network.chat.Component> lines =
+                dev.devpanda.factorynetwork.platform.Tooltips.lines(adder);
         if (!dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.installed()) {
             lines.add(Component.translatable("item.factorynetwork.chemical_cell.needs_mekanism")
                     .withStyle(ChatFormatting.DARK_GRAY));

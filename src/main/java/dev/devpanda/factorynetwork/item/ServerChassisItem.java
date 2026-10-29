@@ -28,8 +28,12 @@ public class ServerChassisItem extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> lines,
-                                TooltipFlag flag) {
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context,
+                                net.minecraft.world.item.component.TooltipDisplay display,
+                                java.util.function.Consumer<net.minecraft.network.chat.Component> adder,
+                                net.minecraft.world.item.TooltipFlag flag) {
+        java.util.List<net.minecraft.network.chat.Component> lines =
+                dev.devpanda.factorynetwork.platform.Tooltips.lines(adder);
         NonNullList<ItemStack> parts = ServerChassis.read(stack);
         ServerBay bay = ServerBay.of(parts.get(ServerPart.CPU.ordinal()),
                 parts.get(ServerPart.RAM.ordinal()),

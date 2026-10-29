@@ -82,7 +82,7 @@ public final class CraftingJob {
                 return null;
             }
             return new Running(Nbt.getString(tag, "Station"), Nbt.getString(tag, "Device"),
-                    BuiltInRegistries.ITEM.get(id), Nbt.getLong(tag, "Expected"),
+                    BuiltInRegistries.ITEM.getValue(id), Nbt.getLong(tag, "Expected"),
                     Nbt.getLong(tag, "Done"));
         }
     }
@@ -193,7 +193,7 @@ public final class CraftingJob {
             return null;
         }
         CraftingJob job = new CraftingJob(Nbt.getLong(tag, KEY_ID),
-                BuiltInRegistries.ITEM.get(id), Nbt.getInt(tag, KEY_WANTED));
+                BuiltInRegistries.ITEM.getValue(id), Nbt.getInt(tag, KEY_WANTED));
         job.done = Nbt.getInt(tag, KEY_DONE);
         job.detail = Nbt.getString(tag, KEY_DETAIL);
         if (tag.contains(KEY_RUNNING)) {

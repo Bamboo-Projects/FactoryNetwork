@@ -70,7 +70,7 @@ public final class ResourceKinds {
                         "Der Ablauf hielt ihn in einer Variablen fest. Wurde eine Mod "
                                 + "aus dem Pack genommen?");
             }
-            return BuiltInRegistries.ITEM.get(key);
+            return BuiltInRegistries.ITEM.getValue(key);
         }
 
         @Override
@@ -106,7 +106,7 @@ public final class ResourceKinds {
                         "Der Ablauf hielt sie in einer Variablen fest. Wurde eine Mod "
                                 + "aus dem Pack genommen?");
             }
-            return BuiltInRegistries.FLUID.get(key);
+            return BuiltInRegistries.FLUID.getValue(key);
         }
 
         @Override

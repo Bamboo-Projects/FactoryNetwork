@@ -77,7 +77,7 @@ public class RackBlock extends HorizontalDirectionalBlock implements EntityBlock
     @Override
     public @Nullable BlockState getStateForPlacement(BlockPlaceContext context) {
         BlockPos pos = context.getClickedPos();
-        if (pos.getY() >= context.getLevel().getMaxBuildHeight() - 1
+        if (pos.getY() >= context.getLevel().getMaxY()
                 || !context.getLevel().getBlockState(pos.above()).canBeReplaced(context)) {
             return null;
         }
@@ -111,8 +111,10 @@ public class RackBlock extends HorizontalDirectionalBlock implements EntityBlock
      * nothing.
      */
     @Override
-    protected BlockState updateShape(BlockState state, Direction direction, BlockState neighbour,
-                                     LevelAccessor level, BlockPos pos, BlockPos neighbourPos) {
+    protected BlockState updateShape(BlockState state, net.minecraft.world.level.LevelReader level,
+                                     net.minecraft.world.level.ScheduledTickAccess ticks, BlockPos pos,
+                                     Direction direction, BlockPos neighbourPos, BlockState neighbour,
+                                     net.minecraft.util.RandomSource random) {
         DoubleBlockHalf half = state.getValue(HALF);
         boolean towardsOtherHalf = direction.getAxis() == Direction.Axis.Y
                 && (half == DoubleBlockHalf.LOWER) == (direction == Direction.UP);
@@ -121,7 +123,7 @@ public class RackBlock extends HorizontalDirectionalBlock implements EntityBlock
                     ? state
                     : Blocks.AIR.defaultBlockState();
         }
-        return super.updateShape(state, direction, neighbour, level, pos, neighbourPos);
+        return super.updateShape(state, level, ticks, pos, direction, neighbourPos, neighbour, random);
     }
 
     /**
@@ -175,20 +177,4 @@ public class RackBlock extends HorizontalDirectionalBlock implements EntityBlock
     }
 
     /** When broken, the servers fall out. The loot table does not see them. */
-    @Override
-    protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState,
-                            boolean moved) {
-        if (!state.is(newState.getBlock())
-                && level.getBlockEntity(pos) instanceof RackBlockEntity rack) {
-            // Pack up first: what falls out should be finished servers and
-            // not forty-eight individual parts that you have to sort again.
-            rack.packAll();
-            for (ItemStack stack : rack.contents()) {
-                if (!stack.isEmpty()) {
-                    popResource(level, pos, stack);
-                }
-            }
-        }
-        super.onRemove(state, level, pos, newState, moved);
-    }
 }

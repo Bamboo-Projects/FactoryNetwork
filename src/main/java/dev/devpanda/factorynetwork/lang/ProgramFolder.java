@@ -66,7 +66,7 @@ public final class ProgramFolder {
         try {
             Path root = level.getServer().getWorldPath(LevelResource.ROOT).resolve(ROOT);
             String name = "controller_%s_%d_%d_%d".formatted(
-                    level.dimension().location().getPath(),
+                    level.dimension().identifier().getPath(),
                     pos.getX(), pos.getY(), pos.getZ());
             Path folder = root.resolve(name);
             Files.createDirectories(folder);

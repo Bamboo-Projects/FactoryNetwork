@@ -84,7 +84,7 @@ public final class FluidSelection {
         if (id == null || !BuiltInRegistries.FLUID.containsKey(id)) {
             return List.of();
         }
-        Fluid fluid = BuiltInRegistries.FLUID.get(id);
+        Fluid fluid = BuiltInRegistries.FLUID.getValue(id);
         return isSource(fluid) ? List.of(fluid) : List.of();
     }
 
@@ -101,7 +101,7 @@ public final class FluidSelection {
             if (!pattern.matcher(id.getPath()).matches()) {
                 continue;
             }
-            Fluid fluid = BuiltInRegistries.FLUID.get(id);
+            Fluid fluid = BuiltInRegistries.FLUID.getValue(id);
             if (isSource(fluid)) {
                 found.add(fluid);
             }

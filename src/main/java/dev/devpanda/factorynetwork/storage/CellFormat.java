@@ -69,13 +69,13 @@ public record CellFormat<T>(String nbtKey, String amountKey, Entry<T> entry) {
                         return null;
                     }
                     if (!tag.contains("components")) {
-                        return ItemKey.bare(BuiltInRegistries.ITEM.get(id));
+                        return ItemKey.bare(BuiltInRegistries.ITEM.getValue(id));
                     }
                     return net.minecraft.core.component.DataComponentPatch.CODEC
                             .parse(registries.createSerializationContext(
                                     net.minecraft.nbt.NbtOps.INSTANCE), tag.get("components"))
                             .result()
-                            .map(patch -> ItemKey.of(BuiltInRegistries.ITEM.get(id), patch))
+                            .map(patch -> ItemKey.of(BuiltInRegistries.ITEM.getValue(id), patch))
                             // If the extra data cannot be read — a mod is
                             // gone, a format has changed —, the entry counts
                             // as unreadable and stays in the cell as it is.

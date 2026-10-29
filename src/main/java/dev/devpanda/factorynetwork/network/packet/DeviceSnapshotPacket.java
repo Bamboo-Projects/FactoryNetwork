@@ -217,7 +217,7 @@ public record DeviceSnapshotPacket(String connector, DeviceProfileCodec.Flat pro
             if (id == null) {
                 continue;
             }
-            var fluid = net.minecraft.core.registries.BuiltInRegistries.FLUID.get(id);
+            var fluid = net.minecraft.core.registries.BuiltInRegistries.FLUID.getValue(id);
             if (fluid != net.minecraft.world.level.material.Fluids.EMPTY) {
                 candidates.add(fluid);
             }
@@ -269,7 +269,7 @@ public record DeviceSnapshotPacket(String connector, DeviceProfileCodec.Flat pro
                 continue;
             }
             net.minecraft.world.item.Item item =
-                    net.minecraft.core.registries.BuiltInRegistries.ITEM.get(id);
+                    net.minecraft.core.registries.BuiltInRegistries.ITEM.getValue(id);
             if (item != net.minecraft.world.item.Items.AIR) {
                 candidates.add(new ItemStack(item));
             }

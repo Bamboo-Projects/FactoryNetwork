@@ -277,4 +277,28 @@ public class RackBlockEntity extends ShelfBlockEntity {
     public int threads() {
         return capacity().cpu();
     }
+
+    /**
+     * Drops what the block holds when it is broken.
+     *
+     * <p>Until 1.21.1 this stood in the block's {@code onRemove}; since 1.21.5
+     * the block entity does it, right before it is removed.
+     */
+    @Override
+    public void preRemoveSideEffects(net.minecraft.core.BlockPos pos,
+                                     net.minecraft.world.level.block.state.BlockState state) {
+        // Not super: a shelf is a container, and the default would drop the
+        // contents a second time, in its own way.
+        if (level == null) {
+            return;
+        }
+        // Pack up first: what falls out should be finished servers and
+        // not forty-eight individual parts that you have to sort again.
+        packAll();
+        for (net.minecraft.world.item.ItemStack stack : contents()) {
+            if (!stack.isEmpty()) {
+                net.minecraft.world.level.block.Block.popResource(level, pos, stack);
+            }
+        }
+    }
 }

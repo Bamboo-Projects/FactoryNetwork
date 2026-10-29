@@ -13,6 +13,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
@@ -121,7 +122,7 @@ public class RemoteDeviceItem extends Item {
         if (mast.dimension().equals(Level.OVERWORLD)) {
             return place;
         }
-        return place + " (" + mast.dimension().location().getPath() + ")";
+        return place + " (" + mast.dimension().identifier().getPath() + ")";
     }
 
     /** Takes back the binding. */
@@ -184,8 +185,8 @@ public class RemoteDeviceItem extends Item {
         if (mast == null) {
             return refuse(player, held, "message.factorynetwork.remote.no_network");
         }
-        Level home = level.dimension().equals(mast.dimension()) || player.getServer() == null
-                ? level : player.getServer().getLevel(mast.dimension());
+        Level home = level.dimension().equals(mast.dimension()) || player.level().getServer() == null
+                ? level : player.level().getServer().getLevel(mast.dimension());
         if (home == null || !home.isLoaded(mast.pos())) {
             // Not the same as dismantled, and therefore a separate message:
             // whoever reads "The transmitter mast is gone" builds a new one —
@@ -248,8 +249,12 @@ public class RemoteDeviceItem extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, TooltipContext context,
-                                List<Component> lines, TooltipFlag flag) {
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context,
+                                net.minecraft.world.item.component.TooltipDisplay display,
+                                java.util.function.Consumer<net.minecraft.network.chat.Component> adder,
+                                net.minecraft.world.item.TooltipFlag flag) {
+        java.util.List<net.minecraft.network.chat.Component> lines =
+                dev.devpanda.factorynetwork.platform.Tooltips.lines(adder);
         // Two devices look the same in the inventory. What sets them apart
         // is the network they hang on — that deserves to be visible.
         String network = networkOf(stack);

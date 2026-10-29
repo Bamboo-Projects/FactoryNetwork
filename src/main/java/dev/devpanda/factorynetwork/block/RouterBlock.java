@@ -108,12 +108,13 @@ public class RouterBlock extends Block implements EntityBlock {
      * no longer exists.
      */
     @Override
-    protected void onRemove(BlockState state, Level level, BlockPos pos,
-                            BlockState newState, boolean moved) {
-        super.onRemove(state, level, pos, newState, moved);
-        if (!state.is(newState.getBlock())) {
-            ControllerRegistry.refreshAround(level, pos);
-        }
+    protected void affectNeighborsAfterRemoval(BlockState state,
+                                               net.minecraft.server.level.ServerLevel level,
+                                               BlockPos pos, boolean moved) {
+        super.affectNeighborsAfterRemoval(state, level, pos, moved);
+        // Called only when another block took the place, as the old check
+        // !state.is(newState.getBlock()) used to ask.
+        ControllerRegistry.refreshAround(level, pos);
     }
 
     @Override

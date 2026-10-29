@@ -108,9 +108,12 @@ public class NetworkAnalyserItem extends Item {
     }
 
     @Override
-    public void inventoryTick(ItemStack stack, Level level, Entity entity, int slot,
-                              boolean selected) {
-        if (level.isClientSide() || !selected || !(entity instanceof ServerPlayer player)) {
+    public void inventoryTick(ItemStack stack, net.minecraft.server.level.ServerLevel level,
+                              Entity entity, net.minecraft.world.entity.EquipmentSlot slot) {
+        // Since 1.21.5 only the server ticks items, and "selected" is the
+        // main hand.
+        boolean selected = slot == net.minecraft.world.entity.EquipmentSlot.MAINHAND;
+        if (!selected || !(entity instanceof ServerPlayer player)) {
             return;
         }
         if (level.getGameTime() % INTERVAL != 0) {

@@ -33,8 +33,12 @@ public class StorageCellItem extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> lines,
-                                TooltipFlag flag) {
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context,
+                                net.minecraft.world.item.component.TooltipDisplay display,
+                                java.util.function.Consumer<net.minecraft.network.chat.Component> adder,
+                                net.minecraft.world.item.TooltipFlag flag) {
+        java.util.List<net.minecraft.network.chat.Component> lines =
+                dev.devpanda.factorynetwork.platform.Tooltips.lines(adder);
         CellFormat.Loaded<ItemKey> loaded = CellFormat.ITEMS.load(stack, context.registries());
         Map<ItemKey, Long> contents = loaded.contents();
         int unreadable = loaded.unreadable().size();

@@ -91,7 +91,7 @@ public record SaveDraftPacket(BlockPos controller, Map<String, String> files, lo
                     return;
                 }
                 controller.acceptDraft(new Project(packet.files()),
-                        player.getUUID(), player.getGameProfile().getName());
+                        player.getUUID(), player.getGameProfile().name());
                 boolean accepted = controller.draft().files().equals(packet.files());
                 reply(packet, player, controller, accepted,
                         accepted ? "" : "Ein Teil des Entwurfs ist durch eine Dateisperre geschützt. Bitte die Änderungen abgleichen.");

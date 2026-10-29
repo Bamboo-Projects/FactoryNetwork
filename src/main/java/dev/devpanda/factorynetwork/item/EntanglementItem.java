@@ -75,9 +75,12 @@ public class EntanglementItem extends Item {
      * are enough to tell two pairs apart.
      */
     @Override
-    public void appendHoverText(ItemStack stack, TooltipContext context,
-                                java.util.List<net.minecraft.network.chat.Component> lines,
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context,
+                                net.minecraft.world.item.component.TooltipDisplay display,
+                                java.util.function.Consumer<net.minecraft.network.chat.Component> adder,
                                 net.minecraft.world.item.TooltipFlag flag) {
+        java.util.List<net.minecraft.network.chat.Component> lines =
+                dev.devpanda.factorynetwork.platform.Tooltips.lines(adder);
         UUID id = idOf(stack);
         if (id == null) {
             // The half from the creative tab has no number. Without this

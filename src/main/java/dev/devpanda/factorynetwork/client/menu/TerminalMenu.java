@@ -219,7 +219,7 @@ public class TerminalMenu extends AbstractContainerMenu {
         if (home == null || player.level().dimension().equals(home)) {
             return player.level();
         }
-        return player.getServer() == null ? null : player.getServer().getLevel(home);
+        return player.level().getServer() == null ? null : player.level().getServer().getLevel(home);
     }
 
     /** What this window was opened with, or {@code null} at the block. */

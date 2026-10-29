@@ -129,9 +129,10 @@ public class DisplayBlock extends HorizontalDirectionalBlock implements EntityBl
      * case distinction that can be wrong.
      */
     @Override
-    protected BlockState updateShape(BlockState state, Direction direction, BlockState neighbour,
-                                     net.minecraft.world.level.LevelAccessor level, BlockPos pos,
-                                     BlockPos neighbourPos) {
+    protected BlockState updateShape(BlockState state, net.minecraft.world.level.LevelReader level,
+                                     net.minecraft.world.level.ScheduledTickAccess ticks, BlockPos pos,
+                                     Direction direction, BlockPos neighbourPos, BlockState neighbour,
+                                     net.minecraft.util.RandomSource random) {
         return withJoins(state, level, pos);
     }
 

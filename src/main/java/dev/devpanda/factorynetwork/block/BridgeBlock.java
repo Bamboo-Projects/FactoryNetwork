@@ -118,13 +118,4 @@ public class BridgeBlock extends Block implements EntityBlock {
      * <p>The loot table does not see it — and a lost half makes the other one
      * worthless, since a pair only comes into being when crafted.
      */
-    @Override
-    protected void onRemove(BlockState state, Level level, BlockPos pos,
-                            BlockState newState, boolean moved) {
-        if (!state.is(newState.getBlock())
-                && level.getBlockEntity(pos) instanceof BridgeBlockEntity bridge) {
-            Containers.dropContents(level, pos, bridge);
-        }
-        super.onRemove(state, level, pos, newState, moved);
-    }
 }

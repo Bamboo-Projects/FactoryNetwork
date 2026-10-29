@@ -162,15 +162,15 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
     }
 
     @Override
-    public ItemStack getCloneItemStack(net.minecraft.world.level.LevelReader level,
-                                       BlockPos pos, BlockState state) {
+    protected ItemStack getCloneItemStack(net.minecraft.world.level.LevelReader level,
+                                       BlockPos pos, BlockState state, boolean includeData) {
         if (!carries(state)) {
             // A holder is not a cable. The middle-click should give what
             // actually sits there.
             return new ItemStack(dev.devpanda.factorynetwork.registry.FnItems.CONNECTOR.get());
         }
         var entry = items().get(colourOf(state));
-        return entry == null ? super.getCloneItemStack(level, pos, state)
+        return entry == null ? super.getCloneItemStack(level, pos, state, includeData)
                 : new ItemStack(entry.get());
     }
 
@@ -200,8 +200,10 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
     }
 
     @Override
-    protected BlockState updateShape(BlockState state, Direction direction, BlockState neighbour,
-                                     LevelAccessor level, BlockPos pos, BlockPos neighbourPos) {
+    protected BlockState updateShape(BlockState state, net.minecraft.world.level.LevelReader level,
+                                     net.minecraft.world.level.ScheduledTickAccess ticks, BlockPos pos,
+                                     Direction direction, BlockPos neighbourPos, BlockState neighbour,
+                                     net.minecraft.util.RandomSource random) {
         BooleanProperty property = CONNECTIONS.get(direction);
         if (!carries(state)) {
             // A holder gets no arms here either.
@@ -490,18 +492,6 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
      * its state with every neighbour that appears or disappears — without this
      * check the parts would drop out while the conduit was being <i>built</i>.
      */
-    @Override
-    protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState,
-                            boolean movedByPiston) {
-        if (!state.is(newState.getBlock())) {
-            int found = partsOf(level, pos).size();
-            for (int i = 0; i < found; i++) {
-                popResource(level, pos,
-                        new ItemStack(dev.devpanda.factorynetwork.registry.FnItems.CONNECTOR.get()));
-            }
-        }
-        super.onRemove(state, level, pos, newState, movedByPiston);
-    }
 
     /**
      * Opens the naming screen for the connector on the face that was hit.

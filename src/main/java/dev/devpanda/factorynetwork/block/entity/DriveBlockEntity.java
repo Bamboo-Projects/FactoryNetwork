@@ -240,4 +240,25 @@ public class DriveBlockEntity extends ShelfBlockEntity {
         flushCells();
         super.setRemoved();
     }
+
+    /**
+     * Drops what the block holds when it is broken.
+     *
+     * <p>Until 1.21.1 this stood in the block's {@code onRemove}; since 1.21.5
+     * the block entity does it, right before it is removed.
+     */
+    @Override
+    public void preRemoveSideEffects(net.minecraft.core.BlockPos pos,
+                                     net.minecraft.world.level.block.state.BlockState state) {
+        // Not super: a shelf is a container, and the default would drop the
+        // contents a second time, in its own way.
+        if (level == null) {
+            return;
+        }
+        for (net.minecraft.world.item.ItemStack cell : cells()) {
+            if (!cell.isEmpty()) {
+                net.minecraft.world.level.block.Block.popResource(level, pos, cell);
+            }
+        }
+    }
 }

@@ -108,13 +108,4 @@ public class MastBlock extends Block implements EntityBlock {
      * otherwise lose four cards, and one of them can be the most expensive in
      * the game.
      */
-    @Override
-    protected void onRemove(BlockState state, Level level, BlockPos pos,
-                            BlockState newState, boolean moved) {
-        if (!state.is(newState.getBlock())
-                && level.getBlockEntity(pos) instanceof MastBlockEntity mast) {
-            Containers.dropContents(level, pos, mast);
-        }
-        super.onRemove(state, level, pos, newState, moved);
-    }
 }

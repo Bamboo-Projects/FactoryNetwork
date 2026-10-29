@@ -93,10 +93,10 @@ public final class RemoteAccess {
     public static MastBlockEntity mastAt(Player player, GlobalPos mast) {
         Level level = player.level();
         if (!level.dimension().equals(mast.dimension())) {
-            if (player.getServer() == null) {
+            if (player.level().getServer() == null) {
                 return null;
             }
-            level = player.getServer().getLevel(mast.dimension());
+            level = player.level().getServer().getLevel(mast.dimension());
         }
         if (level == null || !level.isLoaded(mast.pos())) {
             return null;

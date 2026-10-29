@@ -97,15 +97,6 @@ public class BurnerBlock extends HorizontalDirectionalBlock implements EntityBlo
     }
 
     /** When broken, the fuel drops out. */
-    @Override
-    protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState,
-                            boolean moved) {
-        if (!state.is(newState.getBlock())
-                && level.getBlockEntity(pos) instanceof BurnerBlockEntity burner) {
-            net.minecraft.world.Containers.dropContents(level, pos, burner);
-        }
-        super.onRemove(state, level, pos, newState, moved);
-    }
 
     @Override
     protected net.minecraft.world.phys.shapes.VoxelShape getShape(

@@ -87,19 +87,6 @@ public class PressBlock extends HorizontalDirectionalBlock implements EntityBloc
      * <p>A die is expensive — losing it to an accidental break would be the
      * kind of grief you cannot make good again.
      */
-    @Override
-    protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState,
-                            boolean moved) {
-        if (!state.is(newState.getBlock())
-                && level.getBlockEntity(pos) instanceof PressBlockEntity press) {
-            for (net.minecraft.world.item.ItemStack stack : press.items()) {
-                if (!stack.isEmpty()) {
-                    popResource(level, pos, stack);
-                }
-            }
-        }
-        super.onRemove(state, level, pos, newState, moved);
-    }
 
     @Override
     protected net.minecraft.world.phys.shapes.VoxelShape getShape(

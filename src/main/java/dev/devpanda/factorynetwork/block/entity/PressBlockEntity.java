@@ -520,4 +520,24 @@ public class PressBlockEntity extends BlockEntity
             net.minecraft.network.protocol.game.ClientGamePacketListener> getUpdatePacket() {
         return net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket.create(this);
     }
+
+    /**
+     * Drops what the block holds when it is broken.
+     *
+     * <p>Until 1.21.1 this stood in the block's {@code onRemove}; since 1.21.5
+     * the block entity does it, right before it is removed.
+     */
+    @Override
+    public void preRemoveSideEffects(net.minecraft.core.BlockPos pos,
+                                     net.minecraft.world.level.block.state.BlockState state) {
+        super.preRemoveSideEffects(pos, state);
+        if (level == null) {
+            return;
+        }
+        for (net.minecraft.world.item.ItemStack stack : items()) {
+            if (!stack.isEmpty()) {
+                net.minecraft.world.level.block.Block.popResource(level, pos, stack);
+            }
+        }
+    }
 }

@@ -200,4 +200,24 @@ public class CableBusBlockEntity extends BlockEntity {
     public @Nullable Packet<ClientGamePacketListener> getUpdatePacket() {
         return ClientboundBlockEntityDataPacket.create(this);
     }
+
+    /**
+     * Drops what the block holds when it is broken.
+     *
+     * <p>Until 1.21.1 this stood in the block's {@code onRemove}; since 1.21.5
+     * the block entity does it, right before it is removed.
+     */
+    @Override
+    public void preRemoveSideEffects(net.minecraft.core.BlockPos pos,
+                                     net.minecraft.world.level.block.state.BlockState state) {
+        super.preRemoveSideEffects(pos, state);
+        if (level == null) {
+            return;
+        }
+        for (int i = 0; i < parts().size(); i++) {
+            net.minecraft.world.level.block.Block.popResource(level, pos,
+                    new net.minecraft.world.item.ItemStack(
+                            dev.devpanda.factorynetwork.registry.FnItems.CONNECTOR.get()));
+        }
+    }
 }

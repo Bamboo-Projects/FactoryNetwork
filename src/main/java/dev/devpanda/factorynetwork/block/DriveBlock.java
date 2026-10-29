@@ -141,19 +141,6 @@ public class DriveBlock extends HorizontalDirectionalBlock implements EntityBloc
      * the contents sit in the cells, and those sit here. The loot table cannot
      * do it: it sees the block state, not the BlockEntity.
      */
-    @Override
-    protected void onRemove(BlockState state, net.minecraft.world.level.Level level, BlockPos pos,
-                            BlockState newState, boolean moved) {
-        if (!state.is(newState.getBlock())
-                && level.getBlockEntity(pos) instanceof DriveBlockEntity drive) {
-            for (net.minecraft.world.item.ItemStack cell : drive.cells()) {
-                if (!cell.isEmpty()) {
-                    popResource(level, pos, cell);
-                }
-            }
-        }
-        super.onRemove(state, level, pos, newState, moved);
-    }
 
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos,

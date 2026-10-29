@@ -105,7 +105,7 @@ public final class ItemSelection {
         if (id == null || !BuiltInRegistries.ITEM.containsKey(id)) {
             return List.of();
         }
-        return List.of(BuiltInRegistries.ITEM.get(id));
+        return List.of(BuiltInRegistries.ITEM.getValue(id));
     }
 
     /**
@@ -127,7 +127,7 @@ public final class ItemSelection {
                 continue;
             }
             if (pattern.matcher(id.getPath()).matches()) {
-                found.add(BuiltInRegistries.ITEM.get(id));
+                found.add(BuiltInRegistries.ITEM.getValue(id));
             }
         }
         return List.copyOf(found);
