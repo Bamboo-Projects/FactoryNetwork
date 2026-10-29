@@ -118,7 +118,7 @@ public final class FluidSelection {
         }
         TagKey<Fluid> tag = FluidTags.create(id);
         List<Fluid> found = new ArrayList<>();
-        BuiltInRegistries.FLUID.getTag(tag).ifPresent(holders ->
+        BuiltInRegistries.FLUID.get(tag).ifPresent(holders ->
                 holders.forEach(holder -> {
                     if (isSource(holder.value())) {
                         found.add(holder.value());

@@ -26,18 +26,15 @@ public class ColouredCableItem extends BlockItem {
         return colour;
     }
 
-    /**
+    /*
      * Each of the seventeen items has a different name.
      *
      * <p>A {@link BlockItem} otherwise takes its name from the block, and all
      * seventeen point at the same one — in the creative tab it said "Cable"
-     * seventeen times. Here the item's name counts, not the block's.
+     * seventeen times. Here the item's name counts, not the block's: since
+     * 1.21.2 that is a property set at registration
+     * ({@code useItemDescriptionPrefix}, see {@code FnItems}).
      */
-    @Override
-    public String getDescriptionId() {
-        return getOrCreateDescriptionId();
-    }
-
     /**
      * Ask the block first, then place beside it.
      *
@@ -69,7 +66,7 @@ public class ColouredCableItem extends BlockItem {
                 var result = state.useItemOn(context.getItemInHand(), level, player,
                         context.getHand(), hit);
                 if (result.consumesAction()) {
-                    return result.result();
+                    return result;
                 }
             }
         }

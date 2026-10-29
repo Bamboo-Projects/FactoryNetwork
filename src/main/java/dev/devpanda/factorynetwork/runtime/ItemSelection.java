@@ -156,7 +156,7 @@ public final class ItemSelection {
         }
         TagKey<Item> tag = ItemTags.create(id);
         List<Item> found = new ArrayList<>();
-        BuiltInRegistries.ITEM.getTag(tag).ifPresent(holders ->
+        BuiltInRegistries.ITEM.get(tag).ifPresent(holders ->
                 holders.forEach(holder -> found.add(holder.value())));
         return List.copyOf(found);
     }

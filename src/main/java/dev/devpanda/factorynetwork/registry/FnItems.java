@@ -79,8 +79,10 @@ public final class FnItems {
         for (CableColour colour : CableColour.values()) {
             String name = colour == CableColour.NONE
                     ? sort : colour.getSerializedName() + "_" + sort;
-            cables.put(colour, ITEMS.register(name,
-                    () -> new ColouredCableItem(block.get(), colour, new Item.Properties())));
+            cables.put(colour, ITEMS.registerItem(name,
+                    props -> new ColouredCableItem(block.get(), colour,
+                            // Each colour its own name, see ColouredCableItem.
+                            props.useItemDescriptionPrefix())));
         }
         return Map.copyOf(cables);
     }
@@ -94,8 +96,8 @@ public final class FnItems {
      * a part in the cable's BlockEntity. Until 26.08. there was a separate
      * block for this that could do the same and needed one more slot.
      */
-    public static final DeferredItem<Item> CONNECTOR = ITEMS.register("connector",
-            () -> new dev.devpanda.factorynetwork.item.ConnectorItem(new Item.Properties()));
+    public static final DeferredItem<Item> CONNECTOR = ITEMS.registerItem("connector",
+            props -> new dev.devpanda.factorynetwork.item.ConnectorItem(props));
     public static final DeferredItem<BlockItem> TERMINAL = ITEMS.registerSimpleBlockItem(FnBlocks.TERMINAL);
     public static final DeferredItem<BlockItem> DISPLAY = ITEMS.registerSimpleBlockItem(FnBlocks.DISPLAY);
 
@@ -105,16 +107,16 @@ public final class FnItems {
      * <p>They stack, because two identical cards do the same thing — and
      * because identical cards add up, one rarely has just one.
      */
-    public static final DeferredItem<Item> WIRELESS_MODULE = ITEMS.register(
+    public static final DeferredItem<Item> WIRELESS_MODULE = ITEMS.registerItem(
             dev.devpanda.factorynetwork.upgrade.Ability.WIRELESS.id(),
-            () -> new dev.devpanda.factorynetwork.item.UpgradeItem(
-                    new Item.Properties(),
+            props -> new dev.devpanda.factorynetwork.item.UpgradeItem(
+                    props,
                     dev.devpanda.factorynetwork.upgrade.Ability.WIRELESS));
 
-    public static final DeferredItem<Item> RANGE_CARD = ITEMS.register(
+    public static final DeferredItem<Item> RANGE_CARD = ITEMS.registerItem(
             dev.devpanda.factorynetwork.upgrade.Card.RANGE.id(),
-            () -> new dev.devpanda.factorynetwork.item.UpgradeItem(
-                    new Item.Properties(),
+            props -> new dev.devpanda.factorynetwork.item.UpgradeItem(
+                    props,
                     dev.devpanda.factorynetwork.upgrade.Card.RANGE));
 
     /**
@@ -124,22 +126,22 @@ public final class FnItems {
      * differently: their step is zero, because they add nothing. What they do
      * is in {@link dev.devpanda.factorynetwork.upgrade.Tuning}.
      */
-    public static final DeferredItem<Item> ACCELERATION_CARD = ITEMS.register(
+    public static final DeferredItem<Item> ACCELERATION_CARD = ITEMS.registerItem(
             dev.devpanda.factorynetwork.upgrade.Card.ACCELERATION.id(),
-            () -> new dev.devpanda.factorynetwork.item.UpgradeItem(
-                    new Item.Properties(),
+            props -> new dev.devpanda.factorynetwork.item.UpgradeItem(
+                    props,
                     dev.devpanda.factorynetwork.upgrade.Card.ACCELERATION));
 
-    public static final DeferredItem<Item> BATCH_CARD = ITEMS.register(
+    public static final DeferredItem<Item> BATCH_CARD = ITEMS.registerItem(
             dev.devpanda.factorynetwork.upgrade.Card.BATCH.id(),
-            () -> new dev.devpanda.factorynetwork.item.UpgradeItem(
-                    new Item.Properties(),
+            props -> new dev.devpanda.factorynetwork.item.UpgradeItem(
+                    props,
                     dev.devpanda.factorynetwork.upgrade.Card.BATCH));
 
-    public static final DeferredItem<Item> INFINITY_CARD = ITEMS.register(
+    public static final DeferredItem<Item> INFINITY_CARD = ITEMS.registerItem(
             dev.devpanda.factorynetwork.upgrade.Card.INFINITY.id(),
-            () -> new dev.devpanda.factorynetwork.item.UpgradeItem(
-                    new Item.Properties(),
+            props -> new dev.devpanda.factorynetwork.item.UpgradeItem(
+                    props,
                     dev.devpanda.factorynetwork.upgrade.Card.INFINITY));
 
     /**
@@ -150,12 +152,12 @@ public final class FnItems {
      * does not need this one. It is for everyone who plays without a foreign
      * mod.
      */
-    public static final DeferredItem<Item> WRENCH = ITEMS.register("wrench",
-            () -> new Item(new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<Item> WRENCH = ITEMS.registerItem("wrench",
+            props -> new Item(props.stacksTo(1)));
 
     /** Assigns a connector its name. */
-    public static final DeferredItem<Item> LABEL_GUN = ITEMS.register("label_gun",
-            () -> new LabelGunItem(new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<Item> LABEL_GUN = ITEMS.registerItem("label_gun",
+            props -> new LabelGunItem(props.stacksTo(1)));
 
     /**
      * The stamps of the press.
@@ -165,25 +167,25 @@ public final class FnItems {
      * exactly this separation makes a chain interesting rather than merely
      * long.
      */
-    public static final DeferredItem<Item> STAMP_PLATE = ITEMS.register("stamp_plate",
-            () -> new Item(new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<Item> STAMP_PLATE = ITEMS.registerItem("stamp_plate",
+            props -> new Item(props.stacksTo(1)));
 
-    public static final DeferredItem<Item> STAMP_LOGIC = ITEMS.register("stamp_logic",
-            () -> new Item(new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<Item> STAMP_LOGIC = ITEMS.registerItem("stamp_logic",
+            props -> new Item(props.stacksTo(1)));
 
-    public static final DeferredItem<Item> STAMP_MEMORY = ITEMS.register("stamp_memory",
-            () -> new Item(new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<Item> STAMP_MEMORY = ITEMS.registerItem("stamp_memory",
+            props -> new Item(props.stacksTo(1)));
 
-    public static final DeferredItem<Item> STAMP_NETWORK = ITEMS.register("stamp_network",
-            () -> new Item(new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<Item> STAMP_NETWORK = ITEMS.registerItem("stamp_network",
+            props -> new Item(props.stacksTo(1)));
 
     /** The semi-finished good: pressed metal. */
-    public static final DeferredItem<Item> PLATE = ITEMS.register("plate",
-            () -> new Item(new Item.Properties()));
+    public static final DeferredItem<Item> PLATE = ITEMS.registerItem("plate",
+            props -> new Item(props));
 
     /** The cut crystal — pressed from the raw one. */
-    public static final DeferredItem<Item> CRYSTAL = ITEMS.register("crystal",
-            () -> new Item(new Item.Properties()));
+    public static final DeferredItem<Item> CRYSTAL = ITEMS.registerItem("crystal",
+            props -> new Item(props));
 
     /**
      * The three cores.
@@ -192,14 +194,14 @@ public final class FnItems {
      * needs different cores than whoever expands the network. Without this
      * separation the chain would just be a longer path to the same goal.
      */
-    public static final DeferredItem<Item> CORE_LOGIC = ITEMS.register("core_logic",
-            () -> new Item(new Item.Properties()));
+    public static final DeferredItem<Item> CORE_LOGIC = ITEMS.registerItem("core_logic",
+            props -> new Item(props));
 
-    public static final DeferredItem<Item> CORE_MEMORY = ITEMS.register("core_memory",
-            () -> new Item(new Item.Properties()));
+    public static final DeferredItem<Item> CORE_MEMORY = ITEMS.registerItem("core_memory",
+            props -> new Item(props));
 
-    public static final DeferredItem<Item> CORE_NETWORK = ITEMS.register("core_network",
-            () -> new Item(new Item.Properties()));
+    public static final DeferredItem<Item> CORE_NETWORK = ITEMS.registerItem("core_network",
+            props -> new Item(props));
 
     /** The press itself. */
     public static final DeferredItem<net.minecraft.world.item.BlockItem> PRESS =
@@ -218,8 +220,8 @@ public final class FnItems {
      * <p>Useless on its own — only the press makes something of it. It is the
      * first stage of the chain and the reason to go digging at all.
      */
-    public static final DeferredItem<Item> RAW_CRYSTAL = ITEMS.register("raw_crystal",
-            () -> new Item(new Item.Properties()));
+    public static final DeferredItem<Item> RAW_CRYSTAL = ITEMS.registerItem("raw_crystal",
+            props -> new Item(props));
 
     /** The storage room: a block that takes cells. */
     public static final DeferredItem<net.minecraft.world.item.BlockItem> DRIVE =
@@ -237,8 +239,8 @@ public final class FnItems {
     private static Map<CellTier, DeferredItem<Item>> registerCells() {
         Map<CellTier, DeferredItem<Item>> cells = new LinkedHashMap<>();
         for (CellTier tier : CellTier.values()) {
-            cells.put(tier, ITEMS.register("cell_" + tier.getSerializedName(),
-                    () -> new StorageCellItem(tier, new Item.Properties())));
+            cells.put(tier, ITEMS.registerItem("cell_" + tier.getSerializedName(),
+                    props -> new StorageCellItem(tier, props)));
         }
         return Map.copyOf(cells);
     }
@@ -257,9 +259,9 @@ public final class FnItems {
         Map<dev.devpanda.factorynetwork.storage.FluidCellTier, DeferredItem<Item>> cells =
                 new LinkedHashMap<>();
         for (var tier : dev.devpanda.factorynetwork.storage.FluidCellTier.values()) {
-            cells.put(tier, ITEMS.register("fluid_cell_" + tier.getSerializedName(),
-                    () -> new dev.devpanda.factorynetwork.storage.FluidCellItem(
-                            tier, new Item.Properties())));
+            cells.put(tier, ITEMS.registerItem("fluid_cell_" + tier.getSerializedName(),
+                    props -> new dev.devpanda.factorynetwork.storage.FluidCellItem(
+                            tier, props)));
         }
         return Map.copyOf(cells);
     }
@@ -281,9 +283,9 @@ public final class FnItems {
         Map<dev.devpanda.factorynetwork.storage.ChemicalCellTier, DeferredItem<Item>> cells =
                 new LinkedHashMap<>();
         for (var tier : dev.devpanda.factorynetwork.storage.ChemicalCellTier.values()) {
-            cells.put(tier, ITEMS.register("chemical_cell_" + tier.getSerializedName(),
-                    () -> new dev.devpanda.factorynetwork.storage.ChemicalCellItem(
-                            tier, new Item.Properties())));
+            cells.put(tier, ITEMS.registerItem("chemical_cell_" + tier.getSerializedName(),
+                    props -> new dev.devpanda.factorynetwork.storage.ChemicalCellItem(
+                            tier, props)));
         }
         return Map.copyOf(cells);
     }
@@ -303,9 +305,9 @@ public final class FnItems {
         Map<dev.devpanda.factorynetwork.storage.EnergyCellTier, DeferredItem<Item>> cells =
                 new LinkedHashMap<>();
         for (var tier : dev.devpanda.factorynetwork.storage.EnergyCellTier.values()) {
-            cells.put(tier, ITEMS.register("energy_cell_" + tier.getSerializedName(),
-                    () -> new dev.devpanda.factorynetwork.storage.EnergyCellItem(
-                            tier, new Item.Properties())));
+            cells.put(tier, ITEMS.registerItem("energy_cell_" + tier.getSerializedName(),
+                    props -> new dev.devpanda.factorynetwork.storage.EnergyCellItem(
+                            tier, props)));
         }
         return Map.copyOf(cells);
     }
@@ -320,8 +322,8 @@ public final class FnItems {
      * <p>On its own it can do nothing, and that is the point. It makes three
      * components into a server that one can pull out and plug in elsewhere.
      */
-    public static final DeferredItem<Item> SERVER_CHASSIS = ITEMS.register("server_chassis",
-            () -> new dev.devpanda.factorynetwork.item.ServerChassisItem(new Item.Properties()));
+    public static final DeferredItem<Item> SERVER_CHASSIS = ITEMS.registerItem("server_chassis",
+            props -> new dev.devpanda.factorynetwork.item.ServerChassisItem(props));
 
     /**
      * The server components, by kind and tier.
@@ -340,9 +342,9 @@ public final class FnItems {
         for (var part : dev.devpanda.factorynetwork.item.ServerPart.values()) {
             List<DeferredItem<Item>> tiers = new java.util.ArrayList<>();
             for (int value : part.tiers()) {
-                tiers.add(ITEMS.register(part.prefix() + "_" + value,
-                        () -> new dev.devpanda.factorynetwork.item.ServerPartItem(
-                                part, value, new Item.Properties())));
+                tiers.add(ITEMS.registerItem(part.prefix() + "_" + value,
+                        props -> new dev.devpanda.factorynetwork.item.ServerPartItem(
+                                part, value, props)));
             }
             all.put(part, List.copyOf(tiers));
         }
@@ -365,28 +367,28 @@ public final class FnItems {
      * two should differ in that too.
      */
     public static final DeferredItem<Item> WIRELESS_TERMINAL =
-            ITEMS.register("wireless_terminal",
-                    () -> new dev.devpanda.factorynetwork.item.RemoteDeviceItem(
-                            new Item.Properties(),
+            ITEMS.registerItem("wireless_terminal",
+                    props -> new dev.devpanda.factorynetwork.item.RemoteDeviceItem(
+                            props,
                             dev.devpanda.factorynetwork.upgrade.RemoteDevice.TERMINAL,
                             200_000));
 
     /** The laptop: the same plus the code. */
     public static final DeferredItem<Item> LAPTOP =
-            ITEMS.register("laptop",
-                    () -> new dev.devpanda.factorynetwork.item.RemoteDeviceItem(
-                            new Item.Properties(),
+            ITEMS.registerItem("laptop",
+                    props -> new dev.devpanda.factorynetwork.item.RemoteDeviceItem(
+                            props,
                             dev.devpanda.factorynetwork.upgrade.RemoteDevice.LAPTOP,
                             600_000));
 
     /** One half of an entanglement — it belongs in a quantum bridge. */
     public static final DeferredItem<Item> ENTANGLEMENT =
-            ITEMS.register("entanglement",
-                    () -> new dev.devpanda.factorynetwork.item.EntanglementItem(
-                            new Item.Properties()));
+            ITEMS.registerItem("entanglement",
+                    props -> new dev.devpanda.factorynetwork.item.EntanglementItem(
+                            props));
 
-    public static final DeferredItem<Item> ANALYSER = ITEMS.register("network_analyser",
-            () -> new NetworkAnalyserItem(new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<Item> ANALYSER = ITEMS.registerItem("network_analyser",
+            props -> new NetworkAnalyserItem(props.stacksTo(1)));
 
     private FnItems() {
     }

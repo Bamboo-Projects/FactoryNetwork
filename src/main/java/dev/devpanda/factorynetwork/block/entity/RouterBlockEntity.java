@@ -278,7 +278,7 @@ public class RouterBlockEntity extends BlockEntity {
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         CompoundTag tag = super.getUpdateTag(registries);
-        saveAdditional(tag, registries);
+        saveTo(tag, registries);
         return tag;
     }
 

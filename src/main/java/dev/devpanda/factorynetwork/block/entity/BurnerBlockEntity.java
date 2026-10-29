@@ -120,14 +120,15 @@ public class BurnerBlockEntity extends BlockEntity implements Container, MenuPro
         if (fuel.isEmpty()) {
             return;
         }
-        int burn = fuel.getBurnTime(null);
+        int burn = fuel.getBurnTime(null, level.fuelValues());
         if (burn <= 0) {
             return;
         }
         burnTicks = burn;
         burnTotal = burn;
         // A lava bucket leaves its bucket behind, just as in a furnace.
-        ItemStack rest = fuel.getCraftingRemainingItem();
+        var remainder = fuel.getItem().getCraftingRemainder(fuel);
+        ItemStack rest = remainder == null ? ItemStack.EMPTY : remainder.create();
         fuel.shrink(1);
         if (fuel.isEmpty() && !rest.isEmpty()) {
             items.set(SLOT_FUEL, rest);
@@ -225,7 +226,7 @@ public class BurnerBlockEntity extends BlockEntity implements Container, MenuPro
 
     @Override
     public boolean canPlaceItem(int slot, ItemStack stack) {
-        return stack.getBurnTime(null) > 0;
+        return level != null && stack.getBurnTime(null, level.fuelValues()) > 0;
     }
 
     @Override

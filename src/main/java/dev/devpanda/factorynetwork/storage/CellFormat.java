@@ -116,7 +116,7 @@ public record CellFormat<T>(String nbtKey, String amountKey, Entry<T> entry) {
             @Override
             public T read(CompoundTag tag, HolderLookup.Provider registries) {
                 Identifier id = Identifier.tryParse(Nbt.getString(tag, idKey));
-                return id == null || !registry.containsKey(id) ? null : registry.get(id);
+                return id == null || !registry.containsKey(id) ? null : registry.getValue(id);
             }
 
             @Override

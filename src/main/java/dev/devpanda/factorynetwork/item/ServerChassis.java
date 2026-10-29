@@ -60,7 +60,7 @@ public final class ServerChassis {
     /** Is there anything in it at all? */
     public static boolean isEmpty(ItemStack chassis) {
         ItemContainerContents contents = chassis.get(DataComponents.CONTAINER);
-        return contents == null || contents.nonEmptyStream().findAny().isEmpty();
+        return contents == null || !contents.nonEmptyItems().iterator().hasNext();
     }
 
     /** Is this a chassis? */

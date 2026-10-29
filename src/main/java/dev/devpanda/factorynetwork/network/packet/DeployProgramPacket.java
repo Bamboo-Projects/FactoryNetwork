@@ -61,7 +61,7 @@ public record DeployProgramPacket(BlockPos terminal, Map<String, String> files)
                                    controller) {
         return dev.devpanda.factorynetwork.FnProtection.mayEdit(
                 dev.devpanda.factorynetwork.FnConfig.protection(),
-                controller.owner(), player.getUUID(), player.hasPermissions(2));
+                controller.owner(), player.getUUID(), player.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER));
     }
 
     public static void handle(DeployProgramPacket packet, IPayloadContext context) {
