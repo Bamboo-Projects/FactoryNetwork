@@ -11143,14 +11143,14 @@ public final class FactoryNetworkGameTests {
             }
         };
 
-        long gegeben = dev.devpanda.factorynetwork.compat.mekanism.ChemicalStores
+        long gegeben = dev.devpanda.factorynetwork.compat.mekanism.MekBridge
                 .fillIntoHandler(entity.chemicals(), handler,
                         List.of("mekanism:hydrogen"), 1000);
         helper.assertValueEqual(gegeben, 1000L, "Tausend gehen in den Behälter");
         helper.assertValueEqual(entity.chemicals().count("mekanism:hydrogen"), 2000L,
                 "und fehlen im Netz");
 
-        long geholt = dev.devpanda.factorynetwork.compat.mekanism.ChemicalStores
+        long geholt = dev.devpanda.factorynetwork.compat.mekanism.MekBridge
                 .drainIntoHandler(handler, List.of("mekanism:hydrogen"),
                         entity.chemicals(), 1000);
         helper.assertValueEqual(geholt, 1000L, "und wieder heraus");
@@ -11223,7 +11223,7 @@ public final class FactoryNetworkGameTests {
             }
         };
 
-        long geholt = dev.devpanda.factorynetwork.compat.mekanism.ChemicalStores
+        long geholt = dev.devpanda.factorynetwork.compat.mekanism.MekBridge
                 .drainIntoHandler(handler, List.of("mekanism:hydrogen"),
                         entity.chemicals(), 20_000);
 

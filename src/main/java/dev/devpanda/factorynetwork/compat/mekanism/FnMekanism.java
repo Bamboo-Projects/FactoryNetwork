@@ -39,6 +39,28 @@ public final class FnMekanism {
         }
     }
 
+    private static ChemicalBridge bridge;
+    private static boolean looked;
+
+    /**
+     * The Mekanism side, or {@code null}.
+     *
+     * <p>Null without the mod, and null where this build carries no Mekanism
+     * side at all (26.1.2: Mekanism does not exist there). Looked up once;
+     * the mod list does not change while the game runs.
+     */
+    public static ChemicalBridge bridge() {
+        if (!looked) {
+            looked = true;
+            if (installed()) {
+                bridge = java.util.ServiceLoader
+                        .load(ChemicalBridge.class, FnMekanism.class.getClassLoader())
+                        .findFirst().orElse(null);
+            }
+        }
+        return bridge;
+    }
+
     /** Why a chemical selection doesn't work right now. */
     public static String reason() {
         return installed()

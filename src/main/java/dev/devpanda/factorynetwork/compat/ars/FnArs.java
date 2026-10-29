@@ -18,6 +18,27 @@ public final class FnArs {
     private FnArs() {
     }
 
+    private static SourceBridge bridge;
+    private static boolean looked;
+
+    /**
+     * The Ars Nouveau side, or {@code null}.
+     *
+     * <p>Null without the mod, and null where this build carries no Ars side
+     * at all; see {@code ChemicalBridge} for why that can happen.
+     */
+    public static SourceBridge bridge() {
+        if (!looked) {
+            looked = true;
+            if (installed()) {
+                bridge = java.util.ServiceLoader
+                        .load(SourceBridge.class, FnArs.class.getClassLoader())
+                        .findFirst().orElse(null);
+            }
+        }
+        return bridge;
+    }
+
     /** Is Ars Nouveau present in this pack? */
     public static boolean installed() {
         try {

@@ -34,12 +34,12 @@ public final class SourceBuffer implements ResourceStore {
 
     @Override
     public long count(Object key) {
-        return SourceAccess.KEY.equals(key) ? held : 0;
+        return ArsSource.KEY.equals(key) ? held : 0;
     }
 
     @Override
     public long room(Object key, long wanted) {
-        if (!SourceAccess.KEY.equals(key) || wanted <= 0) {
+        if (!ArsSource.KEY.equals(key) || wanted <= 0) {
             return 0;
         }
         return Math.min(wanted, CAPACITY - held);
@@ -47,7 +47,7 @@ public final class SourceBuffer implements ResourceStore {
 
     @Override
     public long insert(Object key, long amount) {
-        if (!SourceAccess.KEY.equals(key) || amount <= 0) {
+        if (!ArsSource.KEY.equals(key) || amount <= 0) {
             return amount;
         }
         long fits = Math.min(amount, CAPACITY - held);
@@ -61,7 +61,7 @@ public final class SourceBuffer implements ResourceStore {
 
     @Override
     public long extract(Object key, long amount) {
-        if (!SourceAccess.KEY.equals(key) || amount <= 0) {
+        if (!ArsSource.KEY.equals(key) || amount <= 0) {
             return 0;
         }
         long taken = Math.min(amount, held);
@@ -75,7 +75,7 @@ public final class SourceBuffer implements ResourceStore {
 
     @Override
     public Map<?, Long> contents() {
-        return held > 0 ? Map.of(SourceAccess.KEY, held) : Map.of();
+        return held > 0 ? Map.of(ArsSource.KEY, held) : Map.of();
     }
 
     /**

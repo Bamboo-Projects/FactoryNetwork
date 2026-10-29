@@ -35,6 +35,9 @@ public final class ArsSource implements ResourceKind {
 
     public static final ArsSource INSTANCE = new ArsSource();
 
+    /** The one variety of Source, as its key. */
+    public static final String KEY = "source";
+
     private static final ResourceLocation ID =
             ResourceLocation.fromNamespaceAndPath(FnArs.MOD_ID, "source");
 
@@ -91,7 +94,7 @@ public final class ArsSource implements ResourceKind {
 
     @Override
     public Object fromId(String id) {
-        return SourceAccess.KEY;
+        return KEY;
     }
 
     @Override
@@ -109,8 +112,8 @@ public final class ArsSource implements ResourceKind {
     @Override
     public List<?> resolve(Expr selector) {
         return switch (selector) {
-            case Expr.Selector one -> SourceAccess.KEY.equals(one.path())
-                    ? List.of(SourceAccess.KEY) : List.of();
+            case Expr.Selector one -> KEY.equals(one.path())
+                    ? List.of(KEY) : List.of();
             case Expr.Amount amount -> resolve(amount.selection());
             case Expr.Except except -> resolve(except.base());
             case null, default -> List.of();
@@ -124,6 +127,38 @@ public final class ArsSource implements ResourceKind {
 
     @Override
     public MachineAccess machine() {
-        return SourceAccess.INSTANCE;
+        SourceBridge bridge = FnArs.bridge();
+        return bridge != null ? bridge : WITHOUT_ARS;
     }
+
+    /**
+     * Machines are reachable in principle, there is just no Source in them.
+     *
+     * <p>Deliberately not {@link MachineAccess#NONE}: that one means "this kind
+     * reaches no machine" and earns its own message. Without Ars Nouveau the
+     * kind's {@code unavailable()} says what is missing, and every machine
+     * answers zero.
+     */
+    private static final MachineAccess WITHOUT_ARS = new MachineAccess() {
+
+        @Override
+        public long count(net.minecraft.world.level.Level level, net.minecraft.core.BlockPos pos,
+                          net.minecraft.core.Direction side, java.util.Collection<?> keys) {
+            return 0;
+        }
+
+        @Override
+        public long fill(ResourceStore from, net.minecraft.world.level.Level level,
+                         net.minecraft.core.BlockPos pos, net.minecraft.core.Direction side,
+                         java.util.Collection<?> keys, long limit) {
+            return 0;
+        }
+
+        @Override
+        public long drain(net.minecraft.world.level.Level level, net.minecraft.core.BlockPos pos,
+                          net.minecraft.core.Direction side, java.util.Collection<?> keys,
+                          ResourceStore into, long limit) {
+            return 0;
+        }
+    };
 }

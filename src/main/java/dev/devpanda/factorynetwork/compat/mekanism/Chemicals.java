@@ -32,7 +32,7 @@ import java.util.regex.Pattern;
  * <p><b>No Mekanism type in a signature of this class.</b> Java resolves the
  * classes of a signature at load time; if one stood here, this class could no
  * longer be loaded without Mekanism. Everything that references Mekanism lives
- * in {@link MekRegistry} and is entered only when the mod is present.
+ * behind {@link ChemicalBridge} and is entered only when the mod is present.
  */
 public final class Chemicals {
 
@@ -81,7 +81,8 @@ public final class Chemicals {
         if (id == null) {
             return List.of();
         }
-        return MekRegistry.has(id) ? List.of(id.toString()) : List.of();
+        ChemicalBridge bridge = FnMekanism.bridge();
+        return bridge != null && bridge.has(id) ? List.of(id.toString()) : List.of();
     }
 
     private static List<String> byPattern(Expr.Selector selector) {
@@ -89,7 +90,11 @@ public final class Chemicals {
         String namespace = selector.hasNamespace()
                 ? selector.namespace().toLowerCase(Locale.ROOT) : null;
         List<String> found = new ArrayList<>();
-        for (ResourceLocation id : MekRegistry.keys()) {
+        ChemicalBridge bridge = FnMekanism.bridge();
+        if (bridge == null) {
+            return List.of();
+        }
+        for (ResourceLocation id : bridge.keys()) {
             if (namespace != null && !id.getNamespace().equals(namespace)) {
                 continue;
             }
@@ -120,22 +125,24 @@ public final class Chemicals {
 
     /** The plain-text name of a chemical, or its identifier. */
     public static String nameOf(String id) {
-        if (!FnMekanism.installed()) {
+        ChemicalBridge bridge = FnMekanism.bridge();
+        if (bridge == null) {
             return id;
         }
         ResourceLocation key = ResourceLocation.tryParse(id);
-        if (key == null || !MekRegistry.has(key)) {
+        if (key == null || !bridge.has(key)) {
             return id;
         }
-        return MekRegistry.name(key);
+        return bridge.name(key);
     }
 
     /** Whether this chemical exists. */
     public static boolean known(String id) {
-        if (!FnMekanism.installed()) {
+        ChemicalBridge bridge = FnMekanism.bridge();
+        if (bridge == null) {
             return false;
         }
         ResourceLocation key = ResourceLocation.tryParse(id);
-        return key != null && MekRegistry.has(key);
+        return key != null && bridge.has(key);
     }
 }

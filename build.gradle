@@ -26,6 +26,14 @@ java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 // compiles without Minecraft compiles the same on every version of it.
 // It ships inside the same jar and belongs to the same mod; see `jar` and
 // `mods` below.
+// Mekanism and Ars Nouveau do not exist on every Minecraft version this mod
+// ships for. What touches their API therefore lives in a source set of its
+// own, compiled only where gradle.properties names the mod's version. The
+// gates in src/main find the implementation through ServiceLoader and, where
+// the source set is missing, behave as in a pack without the mod.
+def withMekanism = project.hasProperty('mekanism_version')
+def withArs = project.hasProperty('ars_nouveau_version')
+
 sourceSets {
     core
     main {
@@ -36,9 +44,25 @@ sourceSets {
         compileClasspath += sourceSets.core.output
         runtimeClasspath += sourceSets.core.output
     }
+    if (withMekanism) {
+        mekanism {
+            compileClasspath += sourceSets.core.output + sourceSets.main.output
+            runtimeClasspath += sourceSets.core.output + sourceSets.main.output
+        }
+    }
+    if (withArs) {
+        ars {
+            compileClasspath += sourceSets.core.output + sourceSets.main.output
+            runtimeClasspath += sourceSets.core.output + sourceSets.main.output
+        }
+    }
     gametest {
         compileClasspath += sourceSets.core.output + sourceSets.main.output + sourceSets.main.compileClasspath
         runtimeClasspath += sourceSets.core.output + sourceSets.main.output + sourceSets.main.runtimeClasspath
+        if (withMekanism) {
+            compileClasspath += sourceSets.mekanism.output
+            runtimeClasspath += sourceSets.mekanism.output
+        }
     }
     acceptanceClient {
         runtimeClasspath += sourceSets.core.output + sourceSets.main.output
@@ -50,6 +74,12 @@ sourceSets {
 }
 jar {
     from sourceSets.core.output
+    if (withMekanism) {
+        from sourceSets.mekanism.output
+    }
+    if (withArs) {
+        from sourceSets.ars.output
+    }
 }
 configurations.acceptanceClientImplementation.extendsFrom(configurations.implementation)
 tasks.register('acceptanceJar', Jar) {
@@ -70,6 +100,12 @@ neoForge {
         "${mod_id}" {
             sourceSet sourceSets.main
             sourceSet sourceSets.core
+            if (withMekanism) {
+                sourceSet sourceSets.mekanism
+            }
+            if (withArs) {
+                sourceSet sourceSets.ars
+            }
         }
         factorynetwork_tests {
             sourceSet sourceSets.gametest
@@ -226,6 +262,12 @@ neoForge {
     // Ohne das fehlt dem Testquellsatz die Client-Seite, und ein Test für
     // den Editor ließe sich gar nicht erst übersetzen.
     addModdingDependenciesTo sourceSets.test
+    if (withMekanism) {
+        addModdingDependenciesTo sourceSets.mekanism
+    }
+    if (withArs) {
+        addModdingDependenciesTo sourceSets.ars
+    }
     addModdingDependenciesTo sourceSets.gametest
     addModdingDependenciesTo sourceSets.acceptanceClient
 }
@@ -282,8 +324,12 @@ dependencies {
     // Mekanism trägt die Chemikalien. Ohne die Mod läuft alles wie bisher:
     // Was sie anfasst, liegt unter compat/mekanism und wird nur betreten,
     // wenn ModList sie meldet.
-    compileOnly "mekanism:Mekanism:${mekanism_version}:api"
-    runtimeOnly "mekanism:Mekanism:${mekanism_version}"
+    if (withMekanism) {
+        mekanismCompileOnly "mekanism:Mekanism:${mekanism_version}:api"
+        // The game tests drive a tank from the API jar directly.
+        gametestCompileOnly "mekanism:Mekanism:${mekanism_version}:api"
+        runtimeOnly "mekanism:Mekanism:${mekanism_version}"
+    }
 
     // Drei Mods nur fuer den Prüfstand, ohne compileOnly: An ihnen haengen
     // Risiken, die kein Test abdeckt.
@@ -305,11 +351,13 @@ dependencies {
     // nur das echte Jar beantwortet.
     compileOnly "maven.modrinth:ae2:${ae2_version}"
     runtimeOnly "maven.modrinth:ae2:${ae2_version}"
-    compileOnly "maven.modrinth:ars-nouveau:${ars_nouveau_version}"
-    runtimeOnly "maven.modrinth:ars-nouveau:${ars_nouveau_version}"
-    // Ars Nouveau verlangt beide und bringt sie nicht mit.
-    runtimeOnly "maven.modrinth:geckolib:${geckolib_version}"
-    runtimeOnly "maven.modrinth:curios:${curios_version}"
+    if (withArs) {
+        arsCompileOnly "maven.modrinth:ars-nouveau:${ars_nouveau_version}"
+        runtimeOnly "maven.modrinth:ars-nouveau:${ars_nouveau_version}"
+        // Ars Nouveau verlangt beide und bringt sie nicht mit.
+        runtimeOnly "maven.modrinth:geckolib:${geckolib_version}"
+        runtimeOnly "maven.modrinth:curios:${curios_version}"
+    }
 
     // JEI zeigt die Rezepte der Presse. Ohne die Mod fehlt nur die Anzeige:
     // Das Plugin wird von JEI selbst gefunden, und wer es nicht hat, lädt die

@@ -21,14 +21,13 @@ import java.util.Collection;
  * whatever the network storage won't take must never leave the machine in the
  * first place. Source cannot be dropped on the ground.
  */
-public final class SourceAccess implements MachineAccess {
+public final class SourceAccess implements SourceBridge {
 
     /** The single key of this kind — there is only one variety of Source. */
-    static final String KEY = "source";
+    private static final String KEY = ArsSource.KEY;
 
-    public static final SourceAccess INSTANCE = new SourceAccess();
-
-    private SourceAccess() {
+    /** Public and without arguments: {@code ServiceLoader} creates it. */
+    public SourceAccess() {
     }
 
     @Override
