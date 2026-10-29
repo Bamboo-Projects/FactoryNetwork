@@ -10,6 +10,8 @@ import dev.devpanda.factorynetwork.client.menu.TerminalMenu;
 import dev.devpanda.factorynetwork.network.packet.DeployProgramPacket;
 import dev.devpanda.factorynetwork.network.packet.StorageTabPacket;
 import dev.devpanda.factorynetwork.terminal.TerminalTab;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
@@ -96,9 +98,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
     private CodeTabView codeView;
 
     public TerminalScreen(TerminalMenu menu, Inventory inventory, Component title) {
-        super(menu, inventory, title);
-        this.imageWidth = WIDTH;
-        this.imageHeight = HEIGHT;
+        super(menu, inventory, title, WIDTH, HEIGHT);
         this.inventoryLabelY = HEIGHT - 82 - 11;
     }
 
@@ -162,7 +162,6 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         if (tab == TerminalTab.STORAGE) {
             storageView.renderTooltip(graphics, mouseX, mouseY);
         }
-        renderTooltip(graphics, mouseX, mouseY);
     }
 
     @Override
@@ -397,7 +396,10 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
     // ---- Input ------------------------------------------------------------
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         // Tab bar first
         for (TerminalTab candidate : tabs()) {
             if (overTab(candidate, mouseX, mouseY)) {
@@ -414,7 +416,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
             case LOG -> logView.mouseClicked(mouseX, mouseY, button);
             default -> false;
         };
-        return handled || super.mouseClicked(mouseX, mouseY, button);
+        return handled || super.mouseClicked(event, doubleClick);
     }
 
     /**
@@ -424,12 +426,14 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
      * Minecraft, so that sliders and buttons keep working.
      */
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button,
-                                double dragX, double dragY) {
+    public boolean mouseDragged(MouseButtonEvent event, double dragX, double dragY) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         if (tab == TerminalTab.CODE && codeView.mouseDragged(mouseX, mouseY, button)) {
             return true;
         }
-        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+        return super.mouseDragged(event, dragX, dragY);
     }
 
     @Override
@@ -490,15 +494,28 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         return super.keyPressed(key, scanCode, modifiers);
     }
 
+    /**
+     * Since 26.1 a whole code point arrives, without modifier flags. A
+     * character beyond the basic plane goes on as its two halves, the way
+     * Minecraft used to hand it over; the flags are queried.
+     */
     @Override
-    public boolean charTyped(char character, int modifiers) {
+    public boolean charTyped(CharacterEvent event) {
+        boolean taken = false;
+        for (char unit : Character.toChars(event.codepoint())) {
+            taken |= typed(unit, dev.devpanda.factorynetwork.platform.client.Keys.held());
+        }
+        return taken;
+    }
+
+    private boolean typed(char character, int modifiers) {
         if (tab == TerminalTab.CODE) {
             return codeView.charTyped(character, modifiers);
         }
         if (tab == TerminalTab.STORAGE) {
             return storageView.charTyped(character, modifiers);
         }
-        return super.charTyped(character, modifiers);
+        return super.charTyped(new CharacterEvent(character));
     }
 
     @Override

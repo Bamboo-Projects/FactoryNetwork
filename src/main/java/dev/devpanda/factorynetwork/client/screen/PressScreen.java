@@ -33,9 +33,7 @@ public class PressScreen extends AbstractContainerScreen<PressMenu> {
     private static final int BAR = 66;
 
     public PressScreen(PressMenu menu, Inventory inventory, Component title) {
-        super(menu, inventory, title);
-        this.imageWidth = 176;
-        this.imageHeight = 186;
+        super(menu, inventory, title, 176, 186);
         this.inventoryLabelY = this.imageHeight - 94;
     }
 
@@ -64,7 +62,6 @@ public class PressScreen extends AbstractContainerScreen<PressMenu> {
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         super.extractRenderState(graphics, mouseX, mouseY, partialTick);
         renderEnergyTooltip(graphics, mouseX, mouseY);
-        renderTooltip(graphics, mouseX, mouseY);
     }
 
     /**

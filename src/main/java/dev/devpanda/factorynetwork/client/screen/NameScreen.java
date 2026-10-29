@@ -6,6 +6,7 @@ import dev.devpanda.factorynetwork.client.FnFonts;
 import dev.devpanda.factorynetwork.client.menu.NameMenu;
 import dev.devpanda.factorynetwork.item.ConnectorNaming;
 import dev.devpanda.factorynetwork.network.packet.SetBlockNamePacket;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
@@ -51,15 +52,25 @@ public class NameScreen extends AbstractContainerScreen<NameMenu> {
     private int noteColour = TerminalScreen.TEXT_DIM;
 
     public NameScreen(NameMenu menu, Inventory inventory, Component title) {
-        super(menu, inventory, title);
-        this.imageWidth = 192;
-        // Border, title, plant, title, field, hint line, buttons, border.
-        this.imageHeight = PAD + LINE + 4 + FIELD + 4
+        super(menu, inventory, title, 192, heightFor(menu));
+    }
+
+    /**
+     * Border, title, plant, title, field, hint line, buttons, border.
+     *
+     * <p>Static since 26.1: the size goes to the constructor of the container
+     * screen, before this screen exists.
+     */
+    private static int heightFor(NameMenu menu) {
+        int height = PAD + LINE + 4 + FIELD + 4
                 + LINE + 4 + FIELD + 3 + LINE + 4 + BUTTON + PAD;
         // At a gateway the upper field and its label are missing.
-        if (isGateway()) {
-            this.imageHeight -= LINE + 4 + FIELD + 4;
+        var level = net.minecraft.client.Minecraft.getInstance().level;
+        if (level != null && level.getBlockEntity(menu.position())
+                instanceof dev.devpanda.factorynetwork.block.entity.GatewayBlockEntity) {
+            height -= LINE + 4 + FIELD + 4;
         }
+        return height;
     }
 
     /** The part before the slash, or empty. */
@@ -213,7 +224,10 @@ public class NameScreen extends AbstractContainerScreen<NameMenu> {
     }
 
     @Override
-    public boolean keyPressed(int key, int scanCode, int modifiers) {
+    public boolean keyPressed(KeyEvent event) {
+        int key = event.key();
+        int scanCode = event.scancode();
+        int modifiers = event.modifiers();
         // The Enter key applies — otherwise you have to go back with the mouse.
         if (key == 257 || key == 335) {
             confirm();
@@ -236,7 +250,7 @@ public class NameScreen extends AbstractContainerScreen<NameMenu> {
                                 || instance.canConsumeInput()))) {
             return true;
         }
-        return super.keyPressed(key, scanCode, modifiers);
+        return super.keyPressed(event);
     }
 
     @Override

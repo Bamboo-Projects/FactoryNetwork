@@ -40,9 +40,7 @@ public class BurnerScreen extends AbstractContainerScreen<BurnerMenu> {
     private static final int BAR_H = 54;
 
     public BurnerScreen(BurnerMenu menu, Inventory inventory, Component title) {
-        super(menu, inventory, title);
-        this.imageWidth = 176;
-        this.imageHeight = 166;
+        super(menu, inventory, title, 176, 166);
         this.inventoryLabelY = this.imageHeight - 94;
     }
 
@@ -69,7 +67,6 @@ public class BurnerScreen extends AbstractContainerScreen<BurnerMenu> {
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         super.extractRenderState(graphics, mouseX, mouseY, partialTick);
-        renderTooltip(graphics, mouseX, mouseY);
 
         // The number sits by the bar: "full" alone does not say if it lasts.
         if (mouseX >= leftPos + BAR_X && mouseX < leftPos + BAR_X + BAR_W

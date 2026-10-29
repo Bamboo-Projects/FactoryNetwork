@@ -8,6 +8,9 @@ import dev.devpanda.factorynetwork.client.ClientProjectState;
 import dev.devpanda.factorynetwork.client.FnFonts;
 import dev.devpanda.factorynetwork.lang.Diagnostic;
 import dev.devpanda.factorynetwork.lang.Project;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.screens.Screen;
@@ -526,7 +529,10 @@ public class CodeScreen extends Screen {
     // ---- Input ---------------------------------------------------------
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         if (showingHelp) {
             showingHelp = false;
             return true;
@@ -568,14 +574,16 @@ public class CodeScreen extends Screen {
         if (editor.mouseClicked(mouseX, mouseY, button)) {
             return true;
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(event, doubleClick);
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX,
-                                double dragY) {
+    public boolean mouseDragged(MouseButtonEvent event, double dragX, double dragY) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         return editor.mouseDragged(mouseX, mouseY, button)
-                || super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+                || super.mouseDragged(event, dragX, dragY);
     }
 
     @Override
@@ -585,7 +593,10 @@ public class CodeScreen extends Screen {
     }
 
     @Override
-    public boolean keyPressed(int key, int scanCode, int modifiers) {
+    public boolean keyPressed(KeyEvent event) {
+        int key = event.key();
+        int scanCode = event.scancode();
+        int modifiers = event.modifiers();
         // F1 before anything else: the list must be closable even while an
         // input is open below.
         if (key == 290) {
@@ -645,8 +656,21 @@ public class CodeScreen extends Screen {
         return true;
     }
 
+    /**
+     * Since 26.1 a whole code point arrives, without modifier flags. A
+     * character beyond the basic plane goes on as its two halves, the way
+     * Minecraft used to hand it over; the flags are queried.
+     */
     @Override
-    public boolean charTyped(char character, int modifiers) {
+    public boolean charTyped(CharacterEvent event) {
+        boolean taken = false;
+        for (char unit : Character.toChars(event.codepoint())) {
+            taken |= typed(unit, dev.devpanda.factorynetwork.platform.client.Keys.held());
+        }
+        return taken;
+    }
+
+    private boolean typed(char character, int modifiers) {
         if (panel.isEditing()) {
             return panel.charTyped(character, modifiers);
         }

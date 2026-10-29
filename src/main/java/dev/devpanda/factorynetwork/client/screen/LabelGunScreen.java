@@ -5,6 +5,7 @@ import dev.devpanda.factorynetwork.client.FnFonts;
 import dev.devpanda.factorynetwork.item.ConnectorNaming;
 import dev.devpanda.factorynetwork.item.LabelGunItem;
 import dev.devpanda.factorynetwork.network.packet.SetLabelPacket;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.Button;
@@ -193,13 +194,16 @@ public class LabelGunScreen extends Screen {
     }
 
     @Override
-    public boolean keyPressed(int key, int scanCode, int modifiers) {
+    public boolean keyPressed(KeyEvent event) {
+        int key = event.key();
+        int scanCode = event.scancode();
+        int modifiers = event.modifiers();
         // Enter confirms, as in every text field in the game.
         if (key == 257 || key == 335) {
             confirm();
             return true;
         }
-        return super.keyPressed(key, scanCode, modifiers);
+        return super.keyPressed(event);
     }
 
     @Override

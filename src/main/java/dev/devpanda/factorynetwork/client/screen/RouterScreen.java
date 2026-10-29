@@ -3,6 +3,7 @@ package dev.devpanda.factorynetwork.client.screen;
 import dev.devpanda.factorynetwork.FactoryNetwork;
 import dev.devpanda.factorynetwork.block.entity.RouterBlockEntity;
 import dev.devpanda.factorynetwork.client.menu.RouterMenu;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -80,9 +81,7 @@ public class RouterScreen extends AbstractContainerScreen<RouterMenu> {
     }
 
     public RouterScreen(RouterMenu menu, Inventory inventory, Component title) {
-        super(menu, inventory, title);
-        this.imageWidth = 176;
-        this.imageHeight = 162;
+        super(menu, inventory, title, 176, 162);
         // A router takes nothing in; the "Inventory" label would be a heading
         // with no content.
         this.inventoryLabelY = -1000;
@@ -125,7 +124,6 @@ public class RouterScreen extends AbstractContainerScreen<RouterMenu> {
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         super.extractRenderState(graphics, mouseX, mouseY, partialTick);
-        renderTooltip(graphics, mouseX, mouseY);
 
         // Above the buttons stands what the lane carries — the number you
         // would otherwise have to read off each side one at a time.
@@ -164,7 +162,10 @@ public class RouterScreen extends AbstractContainerScreen<RouterMenu> {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         Direction side = sideAt(mouseX, mouseY);
         if (side != null) {
             // A click steps onward instead of hitting one of eighteen buttons
@@ -181,6 +182,6 @@ public class RouterScreen extends AbstractContainerScreen<RouterMenu> {
                             net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK, 1.0F));
             return true;
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(event, doubleClick);
     }
 }

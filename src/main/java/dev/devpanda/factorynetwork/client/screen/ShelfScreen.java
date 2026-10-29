@@ -46,9 +46,7 @@ public class ShelfScreen extends AbstractContainerScreen<ShelfMenu> {
     private static final int LAMP = 5;
 
     public ShelfScreen(ShelfMenu menu, Inventory inventory, Component title) {
-        super(menu, inventory, title);
-        this.imageWidth = menu.layout().width();
-        this.imageHeight = menu.layout().height();
+        super(menu, inventory, title, menu.layout().width(), menu.layout().height());
         this.inventoryLabelY = menu.layout().inventoryY() - 11;
         // The inventory label sits above its own left edge and not above the
         // window's — otherwise it dangles in empty space on the wide cabinet
@@ -151,7 +149,6 @@ public class ShelfScreen extends AbstractContainerScreen<ShelfMenu> {
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         super.extractRenderState(graphics, mouseX, mouseY, partialTick);
-        renderTooltip(graphics, mouseX, mouseY);
         if (isRack() && hoveredSlot == null) {
             bayTooltip(graphics, mouseX, mouseY);
         }
