@@ -190,11 +190,13 @@ public final class ConnectorPart {
      * there the machine keeps its own rules.
      */
     public @Nullable IItemHandler machineInventoryAll() {
-        return capability(Capabilities.ItemHandler.BLOCK, null);
+        BlockPos target = machinePos();
+        return target == null ? null : dev.devpanda.factorynetwork.platform.Caps.items(host.level(), target, null);
     }
 
     public @Nullable IItemHandler machineInventory() {
-        return capability(Capabilities.ItemHandler.BLOCK, facing().getOpposite());
+        BlockPos target = machinePos();
+        return target == null ? null : dev.devpanda.factorynetwork.platform.Caps.items(host.level(), target, facing().getOpposite());
     }
 
     /**
@@ -205,7 +207,8 @@ public final class ConnectorPart {
      * in the program, not by the connector.
      */
     public @Nullable net.neoforged.neoforge.fluids.capability.IFluidHandler machineTank() {
-        return capability(Capabilities.FluidHandler.BLOCK, facing().getOpposite());
+        BlockPos target = machinePos();
+        return target == null ? null : dev.devpanda.factorynetwork.platform.Caps.fluids(host.level(), target, facing().getOpposite());
     }
 
     /**
@@ -214,7 +217,8 @@ public final class ConnectorPart {
      * <p>Read for showing in the editor and for {@code energy()}.
      */
     public @Nullable net.neoforged.neoforge.energy.IEnergyStorage machineEnergy() {
-        return capability(Capabilities.EnergyStorage.BLOCK, facing().getOpposite());
+        BlockPos target = machinePos();
+        return target == null ? null : dev.devpanda.factorynetwork.platform.Caps.energy(host.level(), target, facing().getOpposite());
     }
 
     /**
@@ -238,13 +242,6 @@ public final class ConnectorPart {
         }
         BlockPos target = host.pos().relative(facing());
         return level.isLoaded(target) ? target : null;
-    }
-
-    private <T> @Nullable T capability(
-            net.neoforged.neoforge.capabilities.BlockCapability<T, @Nullable Direction> which,
-            @Nullable Direction side) {
-        BlockPos target = machinePos();
-        return target == null ? null : host.level().getCapability(which, target, side);
     }
 
     // ---- Saving -------------------------------------------------------------

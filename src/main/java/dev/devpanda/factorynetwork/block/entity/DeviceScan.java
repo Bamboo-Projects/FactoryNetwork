@@ -75,9 +75,9 @@ public final class DeviceScan {
      * machine is plain.
      */
     private static DeviceProfile.Access probe(Level level, BlockPos pos, Direction from) {
-        IItemHandler items = level.getCapability(Capabilities.ItemHandler.BLOCK, pos, from);
-        IFluidHandler fluids = level.getCapability(Capabilities.FluidHandler.BLOCK, pos, from);
-        IEnergyStorage energy = level.getCapability(Capabilities.EnergyStorage.BLOCK, pos, from);
+        IItemHandler items = dev.devpanda.factorynetwork.platform.Caps.items(level, pos, from);
+        IFluidHandler fluids = dev.devpanda.factorynetwork.platform.Caps.fluids(level, pos, from);
+        IEnergyStorage energy = dev.devpanda.factorynetwork.platform.Caps.energy(level, pos, from);
 
         int slots = items == null ? 0 : items.getSlots();
         int tanks = fluids == null ? 0 : fluids.getTanks();

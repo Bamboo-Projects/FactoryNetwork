@@ -103,8 +103,7 @@ public class CreativeSourceBlock extends Block {
     protected void tick(BlockState state, net.minecraft.server.level.ServerLevel level,
                         BlockPos pos, net.minecraft.util.RandomSource random) {
         for (Direction side : Direction.values()) {
-            IEnergyStorage sink = level.getCapability(Capabilities.EnergyStorage.BLOCK,
-                    pos.relative(side), side.getOpposite());
+            IEnergyStorage sink = dev.devpanda.factorynetwork.platform.Caps.energy(level, pos.relative(side), side.getOpposite());
             if (sink != null && sink.canReceive()) {
                 sink.receiveEnergy(PER_TICK, false);
             }

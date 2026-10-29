@@ -149,8 +149,7 @@ public class BurnerBlockEntity extends BlockEntity implements Container, MenuPro
             if (energy.getEnergyStored() <= 0) {
                 return;
             }
-            IEnergyStorage sink = level.getCapability(Capabilities.EnergyStorage.BLOCK,
-                    pos.relative(side), side.getOpposite());
+            IEnergyStorage sink = dev.devpanda.factorynetwork.platform.Caps.energy(level, pos.relative(side), side.getOpposite());
             if (sink == null || !sink.canReceive()) {
                 continue;
             }

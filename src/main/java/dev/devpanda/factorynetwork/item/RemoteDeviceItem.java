@@ -162,7 +162,7 @@ public class RemoteDeviceItem extends Item {
 
     /** The charge level, or 0 without a battery. */
     public static int energyOf(ItemStack stack) {
-        IEnergyStorage battery = stack.getCapability(Capabilities.EnergyStorage.ITEM);
+        IEnergyStorage battery = dev.devpanda.factorynetwork.platform.Caps.energy(stack);
         return battery == null ? 0 : battery.getEnergyStored();
     }
 
@@ -215,7 +215,7 @@ public class RemoteDeviceItem extends Item {
         // Ask first, then take: a half-charged device should keep its
         // remainder if it cannot open the window anyway.
         int opening = dev.devpanda.factorynetwork.network.Power.REMOTE_OPEN;
-        var battery = held.getCapability(Capabilities.EnergyStorage.ITEM);
+        var battery = dev.devpanda.factorynetwork.platform.Caps.energy(held);
         if (battery == null || battery.extractEnergy(opening, true) < opening) {
             return refuse(player, held, "message.factorynetwork.remote.empty");
         }
@@ -265,7 +265,7 @@ public class RemoteDeviceItem extends Item {
             lines.add(Component.translatable("item.factorynetwork.remote.bound", network)
                     .withStyle(ChatFormatting.AQUA));
         }
-        IEnergyStorage battery = stack.getCapability(Capabilities.EnergyStorage.ITEM);
+        IEnergyStorage battery = dev.devpanda.factorynetwork.platform.Caps.energy(stack);
         if (battery != null) {
             lines.add(Component.translatable("item.factorynetwork.remote.charge",
                             battery.getEnergyStored(), battery.getMaxEnergyStored())
@@ -275,13 +275,13 @@ public class RemoteDeviceItem extends Item {
 
     @Override
     public boolean isBarVisible(ItemStack stack) {
-        IEnergyStorage battery = stack.getCapability(Capabilities.EnergyStorage.ITEM);
+        IEnergyStorage battery = dev.devpanda.factorynetwork.platform.Caps.energy(stack);
         return battery != null && battery.getEnergyStored() < battery.getMaxEnergyStored();
     }
 
     @Override
     public int getBarWidth(ItemStack stack) {
-        IEnergyStorage battery = stack.getCapability(Capabilities.EnergyStorage.ITEM);
+        IEnergyStorage battery = dev.devpanda.factorynetwork.platform.Caps.energy(stack);
         if (battery == null || battery.getMaxEnergyStored() == 0) {
             return 0;
         }

@@ -318,9 +318,8 @@ public class TerminalMenu extends AbstractContainerMenu {
         if (device == null) {
             return true;
         }
-        var battery = player.getInventory().getItem(deviceSlot)
-                .getCapability(net.neoforged.neoforge.capabilities.Capabilities
-                        .EnergyStorage.ITEM);
+        var battery = dev.devpanda.factorynetwork.platform.Caps.energy(
+                player.getInventory().getItem(deviceSlot));
         if (battery == null || battery.extractEnergy(amount, true) < amount) {
             return false;
         }
