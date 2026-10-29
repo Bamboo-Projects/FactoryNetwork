@@ -109,7 +109,7 @@ public class PressCategory implements IRecipeCategory<RecipeHolder<PressRecipe>>
                     });
         }
         builder.addSlot(RecipeIngredientRole.OUTPUT, 109, 16)
-                .addItemStack(recipe.result());
+                .addItemStack(recipe.resultItem());
     }
 
     @Override

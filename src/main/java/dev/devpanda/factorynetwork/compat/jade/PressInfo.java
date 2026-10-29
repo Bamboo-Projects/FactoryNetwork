@@ -8,7 +8,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import snownee.jade.api.BlockAccessor;
 import snownee.jade.api.IBlockComponentProvider;
-import snownee.jade.api.IServerDataProvider;
 import snownee.jade.api.ITooltip;
 import snownee.jade.api.config.IPluginConfig;
 
@@ -19,7 +18,7 @@ import snownee.jade.api.config.IPluginConfig;
  * and one without material look the same, and the difference decides where you
  * have to look.
  */
-public enum PressInfo implements IBlockComponentProvider, IServerDataProvider<BlockAccessor> {
+public enum PressInfo implements IBlockComponentProvider {
 
     INSTANCE;
 
@@ -30,7 +29,7 @@ public enum PressInfo implements IBlockComponentProvider, IServerDataProvider<Bl
     private static final String KEY_HAS_STAMP = "FnStamp";
     private static final String KEY_HAS_MATERIAL = "FnMaterial";
 
-    @Override
+    /** The server side; registered through {@code FactoryNetworkJadePlugin.ServerData}. */
     public void appendServerData(CompoundTag data, BlockAccessor accessor) {
         if (!(accessor.getBlockEntity() instanceof PressBlockEntity press)) {
             return;

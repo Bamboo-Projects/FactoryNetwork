@@ -14,7 +14,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import snownee.jade.api.BlockAccessor;
 import snownee.jade.api.IBlockComponentProvider;
-import snownee.jade.api.IServerDataProvider;
 import snownee.jade.api.ITooltip;
 import snownee.jade.api.config.IPluginConfig;
 
@@ -25,7 +24,7 @@ import snownee.jade.api.config.IPluginConfig;
  * information Jade is here for — how many of the eight wires are still free at
  * this spot is otherwise invisible on the cable.
  */
-public enum CableInfo implements IBlockComponentProvider, IServerDataProvider<BlockAccessor> {
+public enum CableInfo implements IBlockComponentProvider {
 
     INSTANCE;
 
@@ -35,7 +34,7 @@ public enum CableInfo implements IBlockComponentProvider, IServerDataProvider<Bl
      * The server fetches the numbers: the graph lives at the controller, and
      * the client doesn't know it.
      */
-    @Override
+    /** The server side; registered through {@code FactoryNetworkJadePlugin.ServerData}. */
     public void appendServerData(CompoundTag data, BlockAccessor accessor) {
         var level = accessor.getLevel();
         var pos = accessor.getPosition();

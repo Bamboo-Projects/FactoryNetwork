@@ -45,20 +45,20 @@ public class FactoryNetworkJadePlugin implements IWailaPlugin {
     public void register(IWailaCommonRegistration registration) {
         // The cable has no block entity. If the connector's stood here, the
         // server part never ran, and the tooltip stayed empty.
-        registration.registerBlockDataProvider(CableInfo.INSTANCE, CableBlock.class);
-        registration.registerBlockDataProvider(RouterInfo.INSTANCE,
+        registration.registerBlockDataProvider(new ServerData(CableInfo.INSTANCE.getUid(), CableInfo.INSTANCE::appendServerData), CableBlock.class);
+        registration.registerBlockDataProvider(new ServerData(RouterInfo.INSTANCE.getUid(), RouterInfo.INSTANCE::appendServerData),
                 dev.devpanda.factorynetwork.block.entity.RouterBlockEntity.class);
-        registration.registerBlockDataProvider(ControllerInfo.INSTANCE,
+        registration.registerBlockDataProvider(new ServerData(ControllerInfo.INSTANCE.getUid(), ControllerInfo.INSTANCE::appendServerData),
                 ControllerBlockEntity.class);
-        registration.registerBlockDataProvider(PressInfo.INSTANCE,
+        registration.registerBlockDataProvider(new ServerData(PressInfo.INSTANCE.getUid(), PressInfo.INSTANCE::appendServerData),
                 dev.devpanda.factorynetwork.block.entity.PressBlockEntity.class);
-        registration.registerBlockDataProvider(DriveInfo.INSTANCE,
+        registration.registerBlockDataProvider(new ServerData(DriveInfo.INSTANCE.getUid(), DriveInfo.INSTANCE::appendServerData),
                 dev.devpanda.factorynetwork.block.entity.DriveBlockEntity.class);
         // On the block, not on the block entity: the rack is two high, and at
         // eye level you see the upper half — which has none.
-        registration.registerBlockDataProvider(RackInfo.INSTANCE,
+        registration.registerBlockDataProvider(new ServerData(RackInfo.INSTANCE.getUid(), RackInfo.INSTANCE::appendServerData),
                 dev.devpanda.factorynetwork.block.RackBlock.class);
-        registration.registerBlockDataProvider(BurnerInfo.INSTANCE,
+        registration.registerBlockDataProvider(new ServerData(BurnerInfo.INSTANCE.getUid(), BurnerInfo.INSTANCE::appendServerData),
                 dev.devpanda.factorynetwork.block.entity.BurnerBlockEntity.class);
         // <b>These two lines were missing ever since ConnectorInfo existed.</b>
         // The class was registered only as a client component; its server part
@@ -69,7 +69,7 @@ public class FactoryNetworkJadePlugin implements IWailaPlugin {
         // The same trap as with the cable a handful of lines above. Anyone
         // adding a provider here must register <b>both</b> sides: register for
         // the data, registerClient for the lines.
-        registration.registerBlockDataProvider(ConnectorInfo.INSTANCE, CableBlock.class);
+        registration.registerBlockDataProvider(new ServerData(ConnectorInfo.INSTANCE.getUid(), ConnectorInfo.INSTANCE::appendServerData), CableBlock.class);
     }
 
     @Override
@@ -88,5 +88,29 @@ public class FactoryNetworkJadePlugin implements IWailaPlugin {
         registration.registerBlockComponent(ConnectorInfo.INSTANCE, CableBlock.class);
         registration.registerBlockComponent(ControllerInfo.INSTANCE,
                 dev.devpanda.factorynetwork.block.ControllerBlock.class);
+    }
+
+    /**
+     * The server half of a provider.
+     *
+     * <p>Since Minecraft 1.21.6 Jade wants the data provider and the tooltip
+     * provider as separate objects. The info classes keep both halves side by
+     * side; this wraps the server half.
+     */
+    private record ServerData(net.minecraft.resources.Identifier uid,
+                              java.util.function.BiConsumer<net.minecraft.nbt.CompoundTag,
+                                      snownee.jade.api.BlockAccessor> append)
+            implements snownee.jade.api.IServerDataProvider<snownee.jade.api.BlockAccessor> {
+
+        @Override
+        public void appendServerData(net.minecraft.nbt.CompoundTag data,
+                                     snownee.jade.api.BlockAccessor accessor) {
+            append.accept(data, accessor);
+        }
+
+        @Override
+        public net.minecraft.resources.Identifier getUid() {
+            return uid;
+        }
     }
 }

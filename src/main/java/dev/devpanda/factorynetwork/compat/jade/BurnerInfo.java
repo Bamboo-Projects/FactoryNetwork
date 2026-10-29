@@ -8,7 +8,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import snownee.jade.api.BlockAccessor;
 import snownee.jade.api.IBlockComponentProvider;
-import snownee.jade.api.IServerDataProvider;
 import snownee.jade.api.ITooltip;
 import snownee.jade.api.config.IPluginConfig;
 
@@ -19,14 +18,14 @@ import snownee.jade.api.config.IPluginConfig;
  * is drawing from it.</b> A chamber that is burning while its supply is topped
  * out is burning coal for nothing — and there is otherwise no way to tell.
  */
-public enum BurnerInfo implements IBlockComponentProvider, IServerDataProvider<BlockAccessor> {
+public enum BurnerInfo implements IBlockComponentProvider {
 
     INSTANCE;
 
     private static final String KEY_BURNING = "FnBurning";
     private static final String KEY_STORED = "FnBurnerStored";
 
-    @Override
+    /** The server side; registered through {@code FactoryNetworkJadePlugin.ServerData}. */
     public void appendServerData(CompoundTag data, BlockAccessor accessor) {
         if (!(accessor.getBlockEntity() instanceof BurnerBlockEntity burner)) {
             return;

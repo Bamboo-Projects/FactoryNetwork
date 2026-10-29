@@ -26,7 +26,7 @@ import net.minecraft.world.level.Level;
 public record PressRecipe(Ingredient stamp,
                           java.util.List<net.neoforged.neoforge.common.crafting.SizedIngredient>
                                   materials,
-                          ItemStack result, int energy, int ticks)
+                          net.minecraft.world.item.ItemStackTemplate result, int energy, int ticks)
         implements Recipe<PressInput> {
 
     /**
@@ -67,12 +67,14 @@ public record PressRecipe(Ingredient stamp,
 
     @Override
     public ItemStack assemble(PressInput input) {
-        return result.copy();
+        return result.create();
     }
 
     /** What comes out; for the recipe lookups and JEI. */
     public ItemStack resultItem() {
-        return result;
+        // A template since 26.1: recipes load before items have their
+        // components, so a recipe may no longer hold a finished stack.
+        return result.create();
     }
 
     @Override
@@ -121,7 +123,7 @@ public record PressRecipe(Ingredient stamp,
                         net.neoforged.neoforge.common.crafting.SizedIngredient.NESTED_CODEC
                                 .listOf(1, MOST_MATERIALS).fieldOf("materials")
                                 .forGetter(PressRecipe::materials),
-                        ItemStack.CODEC.fieldOf("result").forGetter(PressRecipe::result),
+                        net.minecraft.world.item.ItemStackTemplate.CODEC.fieldOf("result").forGetter(PressRecipe::result),
                         com.mojang.serialization.Codec.INT.optionalFieldOf("energy", 2_000)
                                 .forGetter(PressRecipe::energy),
                         com.mojang.serialization.Codec.INT.optionalFieldOf("ticks", 100)
@@ -133,7 +135,7 @@ public record PressRecipe(Ingredient stamp,
                         Ingredient.CONTENTS_STREAM_CODEC, PressRecipe::stamp,
                         net.neoforged.neoforge.common.crafting.SizedIngredient.STREAM_CODEC
                                 .apply(ByteBufCodecs.list()), PressRecipe::materials,
-                        ItemStack.STREAM_CODEC, PressRecipe::result,
+                        net.minecraft.world.item.ItemStackTemplate.STREAM_CODEC, PressRecipe::result,
                         ByteBufCodecs.VAR_INT, PressRecipe::energy,
                         ByteBufCodecs.VAR_INT, PressRecipe::ticks,
                         PressRecipe::new);

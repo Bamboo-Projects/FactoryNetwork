@@ -9,7 +9,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import snownee.jade.api.BlockAccessor;
 import snownee.jade.api.IBlockComponentProvider;
-import snownee.jade.api.IServerDataProvider;
 import snownee.jade.api.ITooltip;
 import snownee.jade.api.config.IPluginConfig;
 
@@ -24,7 +23,7 @@ import snownee.jade.api.config.IPluginConfig;
  * <p>Items and fluids each get a line, but only if they are present. A drive
  * with three item cells shouldn't report "0 mB".
  */
-public enum DriveInfo implements IBlockComponentProvider, IServerDataProvider<BlockAccessor> {
+public enum DriveInfo implements IBlockComponentProvider {
 
     INSTANCE;
 
@@ -37,7 +36,7 @@ public enum DriveInfo implements IBlockComponentProvider, IServerDataProvider<Bl
     private static final String KEY_FLUID_TYPES = "FnFluidTypes";
     private static final String KEY_FLUID_AMOUNT = "FnFluidAmount";
 
-    @Override
+    /** The server side; registered through {@code FactoryNetworkJadePlugin.ServerData}. */
     public void appendServerData(CompoundTag data, BlockAccessor accessor) {
         if (!(accessor.getBlockEntity() instanceof DriveBlockEntity drive)) {
             return;

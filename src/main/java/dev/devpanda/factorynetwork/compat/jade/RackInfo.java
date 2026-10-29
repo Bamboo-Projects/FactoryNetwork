@@ -9,7 +9,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import snownee.jade.api.BlockAccessor;
 import snownee.jade.api.IBlockComponentProvider;
-import snownee.jade.api.IServerDataProvider;
 import snownee.jade.api.ITooltip;
 import snownee.jade.api.config.IPluginConfig;
 
@@ -22,7 +21,7 @@ import snownee.jade.api.config.IPluginConfig;
  * full one from the outside — and that is exactly the mistake you search for a
  * long time without a hint.
  */
-public enum RackInfo implements IBlockComponentProvider, IServerDataProvider<BlockAccessor> {
+public enum RackInfo implements IBlockComponentProvider {
 
     INSTANCE;
 
@@ -39,7 +38,7 @@ public enum RackInfo implements IBlockComponentProvider, IServerDataProvider<Blo
      * there. Without this detour the tooltip would stay empty precisely when
      * you look straight ahead.
      */
-    @Override
+    /** The server side; registered through {@code FactoryNetworkJadePlugin.ServerData}. */
     public void appendServerData(CompoundTag data, BlockAccessor accessor) {
         var base = dev.devpanda.factorynetwork.block.RackBlock.baseOf(
                 accessor.getBlockState(), accessor.getPosition());

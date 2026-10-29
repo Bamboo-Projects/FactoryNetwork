@@ -8,7 +8,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import snownee.jade.api.BlockAccessor;
 import snownee.jade.api.IBlockComponentProvider;
-import snownee.jade.api.IServerDataProvider;
 import snownee.jade.api.ITooltip;
 import snownee.jade.api.config.IPluginConfig;
 
@@ -17,7 +16,7 @@ import snownee.jade.api.config.IPluginConfig;
  * glance — devices, cables, how many were left without a channel, and how many
  * workers are currently halted.
  */
-public enum ControllerInfo implements IBlockComponentProvider, IServerDataProvider<BlockAccessor> {
+public enum ControllerInfo implements IBlockComponentProvider {
 
     INSTANCE;
 
@@ -33,7 +32,7 @@ public enum ControllerInfo implements IBlockComponentProvider, IServerDataProvid
     private static final String KEY_THREADS = "FnThreads";
     private static final String KEY_HALTED = "FnHalted";
 
-    @Override
+    /** The server side; registered through {@code FactoryNetworkJadePlugin.ServerData}. */
     public void appendServerData(CompoundTag data, BlockAccessor accessor) {
         if (!(accessor.getBlockEntity() instanceof ControllerBlockEntity controller)) {
             return;

@@ -15,7 +15,6 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
 import snownee.jade.api.BlockAccessor;
 import snownee.jade.api.IBlockComponentProvider;
-import snownee.jade.api.IServerDataProvider;
 import snownee.jade.api.ITooltip;
 import snownee.jade.api.config.IPluginConfig;
 
@@ -30,7 +29,7 @@ import java.util.List;
  * answers it. Six lines with one side each would be the same information, only
  * you'd have to sort them yourself.
  */
-public enum RouterInfo implements IBlockComponentProvider, IServerDataProvider<BlockAccessor> {
+public enum RouterInfo implements IBlockComponentProvider {
 
     INSTANCE;
 
@@ -44,7 +43,7 @@ public enum RouterInfo implements IBlockComponentProvider, IServerDataProvider<B
      */
     private static final String SEPARATOR = ";";
 
-    @Override
+    /** The server side; registered through {@code FactoryNetworkJadePlugin.ServerData}. */
     public void appendServerData(CompoundTag data, BlockAccessor accessor) {
         if (!(accessor.getBlockEntity() instanceof RouterBlockEntity router)) {
             return;

@@ -7,7 +7,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import snownee.jade.api.BlockAccessor;
 import snownee.jade.api.IBlockComponentProvider;
-import snownee.jade.api.IServerDataProvider;
 import snownee.jade.api.ITooltip;
 import snownee.jade.api.config.IPluginConfig;
 
@@ -18,7 +17,7 @@ import snownee.jade.api.config.IPluginConfig;
  * named and reachable, unnamed, duplicated, or without a free channel. Anyone
  * who mistakes the last one for a typo will search a long time.
  */
-public enum ConnectorInfo implements IBlockComponentProvider, IServerDataProvider<BlockAccessor> {
+public enum ConnectorInfo implements IBlockComponentProvider {
 
     INSTANCE;
 
@@ -26,7 +25,7 @@ public enum ConnectorInfo implements IBlockComponentProvider, IServerDataProvide
     private static final String KEY_STATE = "FnState";
     private static final String KEY_COST = "FnCost";
 
-    @Override
+    /** The server side; registered through {@code FactoryNetworkJadePlugin.ServerData}. */
     public void appendServerData(CompoundTag data, BlockAccessor accessor) {
         var connector = partAt(accessor);
         if (connector == null) {
