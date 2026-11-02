@@ -44,6 +44,7 @@ public final class AcceptanceClient {
 
     public AcceptanceClient() {
         NeoForge.EVENT_BUS.addListener(this::tick);
+        ControlBridge.start();
     }
 
     private void tick(ClientTickEvent.Post event) {

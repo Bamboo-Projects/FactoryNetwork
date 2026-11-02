@@ -97,6 +97,25 @@ public final class AcceptanceMod {
                     ctx.getSource().sendSuccess(() -> Component.literal("FN_ACCEPTANCE_SETUP_OK"), false);
                     return 1;
                 }))
+                // /fnacceptance deploy x y z: the controller there takes the
+                // program from deploy.fn in the server's folder.
+                .then(Commands.literal("deploy").then(Commands.argument("pos",
+                        net.minecraft.commands.arguments.coordinates.BlockPosArgument.blockPos()).executes(ctx -> {
+                    BlockPos at = net.minecraft.commands.arguments.coordinates.BlockPosArgument.getLoadedBlockPos(ctx, "pos");
+                    if (!(ctx.getSource().getLevel().getBlockEntity(at) instanceof ControllerBlockEntity controller)) {
+                        ctx.getSource().sendFailure(Component.literal("FN_DEPLOY no controller at " + at));
+                        return 0;
+                    }
+                    try {
+                        String code = java.nio.file.Files.readString(java.nio.file.Path.of("deploy.fn"));
+                        boolean ok = controller.deploy(Project.of(code));
+                        ctx.getSource().sendSuccess(() -> Component.literal("FN_DEPLOY " + (ok ? "ok" : "failed: " + controller.diagnostics())), false);
+                        return ok ? 1 : 0;
+                    } catch (java.io.IOException e) {
+                        ctx.getSource().sendFailure(Component.literal("FN_DEPLOY " + e));
+                        return 0;
+                    }
+                })))
                 .then(Commands.literal("snapshot").executes(ctx -> {
                     ctx.getSource().sendSuccess(() -> Component.literal(snapshot(ctx.getSource().getLevel())), false);
                     return 1;
