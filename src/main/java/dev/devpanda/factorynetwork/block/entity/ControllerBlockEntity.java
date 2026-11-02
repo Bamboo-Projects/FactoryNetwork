@@ -2055,6 +2055,8 @@ public class ControllerBlockEntity extends BlockEntity {
             // same state.
             if (storageInSync.isEmpty()) {
                 lastStorageSent = contents;
+                // What was noted so far is in this full send already.
+                storage.drainChanges();
                 storageInSync.add(player.getUUID());
             } else if (contents.equals(lastStorageSent)) {
                 storageInSync.add(player.getUUID());
@@ -2073,35 +2075,67 @@ public class ControllerBlockEntity extends BlockEntity {
      * changed and everyone is in sync.
      */
     private void pushStorageNow() {
-        var contents = storage.contents();
         List<StorageSnapshotPacket.Entry> delta = new ArrayList<>();
-        var previous = lastStorageSent;
-        contents.forEach((key, amount) -> {
-            if (!amount.equals(previous.get(key))) {
-                delta.add(new StorageSnapshotPacket.Entry(key, amount));
+        var noted = storage.drainChanges();
+        boolean anyoneBehind = false;
+        for (ServerPlayer player : storageWatchers) {
+            anyoneBehind |= !storageInSync.contains(player.getUUID());
+        }
+        Map<dev.devpanda.factorynetwork.storage.ItemKey, Long> contents;
+        if (noted != null && !anyoneBehind) {
+            // The usual case: the store named what changed. Only those sorts
+            // are looked at; the cost no longer grows with the store.
+            var sent = lastStorageSent instanceof java.util.HashMap<?, ?>
+                    ? lastStorageSent : new java.util.HashMap<>(lastStorageSent);
+            for (var key : noted) {
+                long amount = storage.amountOf(key);
+                Long before = sent.get(key);
+                if (amount <= 0) {
+                    if (before != null) {
+                        sent.remove(key);
+                        delta.add(new StorageSnapshotPacket.Entry(key, 0));
+                    }
+                } else if (before == null || before != amount) {
+                    sent.put(key, amount);
+                    delta.add(new StorageSnapshotPacket.Entry(key, amount));
+                }
             }
-        });
-        previous.forEach((key, amount) -> {
-            if (!contents.containsKey(key)) {
-                delta.add(new StorageSnapshotPacket.Entry(key, 0));
-            }
-        });
-        // contents() is a fresh copy already; it can be kept as it is.
-        lastStorageSent = contents;
+            lastStorageSent = sent;
+            contents = null;
+        } else {
+            // In full: after a cell was pulled or a chest on a bus changed,
+            // or when someone still needs the whole stock.
+            contents = storage.contents();
+            var previous = lastStorageSent;
+            var full = contents;
+            full.forEach((key, amount) -> {
+                if (!amount.equals(previous.get(key))) {
+                    delta.add(new StorageSnapshotPacket.Entry(key, amount));
+                }
+            });
+            previous.forEach((key, amount) -> {
+                if (!full.containsKey(key)) {
+                    delta.add(new StorageSnapshotPacket.Entry(key, 0));
+                }
+            });
+            // contents() is a fresh copy already; it can be kept as it is.
+            lastStorageSent = new java.util.HashMap<>(contents);
+        }
+        int total = storage.distinctTypes();
         List<StorageSnapshotPacket.Entry> full = null;
         for (ServerPlayer player : storageWatchers) {
             if (storageInSync.contains(player.getUUID())) {
                 if (!delta.isEmpty()) {
-                    sendStorage(player, delta, false, contents.size());
+                    sendStorage(player, delta, false, total);
                 }
             } else {
                 if (full == null) {
-                    full = new ArrayList<>(contents.size());
-                    for (var entry : contents.entrySet()) {
+                    full = new ArrayList<>(lastStorageSent.size());
+                    for (var entry : lastStorageSent.entrySet()) {
                         full.add(new StorageSnapshotPacket.Entry(entry.getKey(), entry.getValue()));
                     }
                 }
-                sendStorage(player, full, true, contents.size());
+                sendStorage(player, full, true, total);
                 storageInSync.add(player.getUUID());
             }
         }
