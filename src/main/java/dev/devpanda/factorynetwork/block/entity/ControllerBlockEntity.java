@@ -250,12 +250,15 @@ public class ControllerBlockEntity extends BlockEntity {
      */
     private final Set<ServerPlayer> storageWatchers = new HashSet<>();
     /**
-     * What each watcher was last sent, so that later sends carry only the
-     * difference. A full stock of 4,096 entries cost 2.8 ms per player and
-     * send (docs/messung-last-2026-11-02.md).
+     * The stock as last sent to the watchers in {@link #storageInSync}.
+     *
+     * <p>Shared by all of them: the difference is computed once per send
+     * and goes out to every one. A full stock of 4,096 entries per player
+     * and send cost 2.8 ms (docs/messung-last-2026-11-02.md).
      */
-    private final Map<java.util.UUID, Map<dev.devpanda.factorynetwork.storage.ItemKey, Long>> sentStorage =
-            new java.util.HashMap<>();
+    private Map<dev.devpanda.factorynetwork.storage.ItemKey, Long> lastStorageSent = Map.of();
+    /** Watchers who hold {@link #lastStorageSent}; everyone else gets the full stock first. */
+    private final Set<java.util.UUID> storageInSync = new HashSet<>();
 
     /**
      * Who has the terminal open at all, on whichever tab.
@@ -1996,7 +1999,7 @@ public class ControllerBlockEntity extends BlockEntity {
                 .forEach(this::pushProjectTo);
         terminalWatchers.remove(player);
         storageWatchers.remove(player);
-        sentStorage.remove(player.getUUID());
+        storageInSync.remove(player.getUUID());
     }
 
     public void watchStorage(ServerPlayer player) {
@@ -2006,7 +2009,7 @@ public class ControllerBlockEntity extends BlockEntity {
 
     public void unwatchStorage(ServerPlayer player) {
         storageWatchers.remove(player);
-        sentStorage.remove(player.getUUID());
+        storageInSync.remove(player.getUUID());
     }
 
     /** Notes that something changed — the send is bundled. */
@@ -2027,63 +2030,101 @@ public class ControllerBlockEntity extends BlockEntity {
         storageWatchers.removeIf(player -> {
             boolean gone = player.isRemoved() || !(player.containerMenu instanceof TerminalMenu);
             if (gone) {
-                sentStorage.remove(player.getUUID());
+                storageInSync.remove(player.getUUID());
             }
             return gone;
         });
-        storageWatchers.forEach(player -> pushStorageTo(player, false));
+        pushStorageNow();
     }
 
     /**
      * Sends the stock to a player.
      *
-     * <p>With {@code replace}, or the first time, the whole stock, split
-     * into packets of {@link StorageSnapshotPacket#MAX_ENTRIES}: the first
-     * replaces what the client has, the others add to it. Otherwise only what
-     * changed since the last send to this player, with amount 0 for what is
-     * gone; nothing at all if nothing changed.
+     * <p>With {@code replace}, or to a player not yet in sync, the whole
+     * stock. Otherwise this is a regular send to all watchers: a stock that
+     * changed changed for everyone at the terminal.
      */
     public void pushStorageTo(ServerPlayer player, boolean replace) {
-        var contents = storage.contents();
-        List<StorageSnapshotPacket.FluidEntry> fluidEntries = fluidStorage.contents().entrySet()
-                .stream()
-                .map(entry -> new StorageSnapshotPacket.FluidEntry(entry.getKey(),
-                        entry.getValue()))
-                .toList();
-        int total = contents.size();
-        int free = storage.freeTypes();
-        int freeFluid = fluidStorage.freeTypes();
-        Map<dev.devpanda.factorynetwork.storage.ItemKey, Long> sent = sentStorage.get(player.getUUID());
-
-        List<StorageSnapshotPacket.Entry> entries = new ArrayList<>();
-        boolean full = replace || sent == null;
-        if (full) {
+        if (replace || !storageInSync.contains(player.getUUID())) {
+            var contents = storage.contents();
+            List<StorageSnapshotPacket.Entry> entries = new ArrayList<>(contents.size());
             contents.forEach((key, amount) -> entries.add(new StorageSnapshotPacket.Entry(key, amount)));
-        } else {
-            contents.forEach((key, amount) -> {
-                if (!amount.equals(sent.get(key))) {
-                    entries.add(new StorageSnapshotPacket.Entry(key, amount));
+            sendStorage(player, entries, true, contents.size());
+            // In sync if no one else is, or if this is also what the others
+            // hold; otherwise the next regular send brings them all onto the
+            // same state.
+            if (storageInSync.isEmpty()) {
+                lastStorageSent = contents;
+                storageInSync.add(player.getUUID());
+            } else if (contents.equals(lastStorageSent)) {
+                storageInSync.add(player.getUUID());
+            } else {
+                storageInSync.remove(player.getUUID());
+                storageDirty = true;
+            }
+            return;
+        }
+        pushStorageNow();
+    }
+
+    /**
+     * One send to all watchers: the difference to the last send for those in
+     * sync, the whole stock for the others. Nothing at all when nothing
+     * changed and everyone is in sync.
+     */
+    private void pushStorageNow() {
+        var contents = storage.contents();
+        List<StorageSnapshotPacket.Entry> delta = new ArrayList<>();
+        var previous = lastStorageSent;
+        contents.forEach((key, amount) -> {
+            if (!amount.equals(previous.get(key))) {
+                delta.add(new StorageSnapshotPacket.Entry(key, amount));
+            }
+        });
+        previous.forEach((key, amount) -> {
+            if (!contents.containsKey(key)) {
+                delta.add(new StorageSnapshotPacket.Entry(key, 0));
+            }
+        });
+        // contents() is a fresh copy already; it can be kept as it is.
+        lastStorageSent = contents;
+        List<StorageSnapshotPacket.Entry> full = null;
+        for (ServerPlayer player : storageWatchers) {
+            if (storageInSync.contains(player.getUUID())) {
+                if (!delta.isEmpty()) {
+                    sendStorage(player, delta, false, contents.size());
                 }
-            });
-            sent.forEach((key, amount) -> {
-                if (!contents.containsKey(key)) {
-                    entries.add(new StorageSnapshotPacket.Entry(key, 0));
+            } else {
+                if (full == null) {
+                    full = new ArrayList<>(contents.size());
+                    for (var entry : contents.entrySet()) {
+                        full.add(new StorageSnapshotPacket.Entry(entry.getKey(), entry.getValue()));
+                    }
                 }
-            });
-            if (entries.isEmpty()) {
-                // Fluids and free type slots ride along when there is a reason
-                // to send; on their own they change rarely enough.
-                return;
+                sendStorage(player, full, true, contents.size());
+                storageInSync.add(player.getUUID());
             }
         }
-        sentStorage.put(player.getUUID(), new java.util.HashMap<>(contents));
+    }
 
+    /**
+     * Sends entries in packets of {@link StorageSnapshotPacket#MAX_ENTRIES};
+     * with {@code replace} the first one replaces what the client holds.
+     */
+    private void sendStorage(ServerPlayer player, List<StorageSnapshotPacket.Entry> entries,
+                             boolean replace, int total) {
+        List<StorageSnapshotPacket.FluidEntry> fluidEntries = fluidStorage.contents().entrySet()
+                .stream()
+                .map(entry -> new StorageSnapshotPacket.FluidEntry(entry.getKey(), entry.getValue()))
+                .toList();
+        int free = storage.freeTypes();
+        int freeFluid = fluidStorage.freeTypes();
         int step = StorageSnapshotPacket.MAX_ENTRIES;
         for (int from = 0; from < Math.max(1, entries.size()); from += step) {
             List<StorageSnapshotPacket.Entry> part =
                     entries.subList(from, Math.min(entries.size(), from + step));
             PacketDistributor.sendToPlayer(player,
-                    new StorageSnapshotPacket(List.copyOf(part), fluidEntries, full && from == 0,
+                    new StorageSnapshotPacket(List.copyOf(part), fluidEntries, replace && from == 0,
                             total, free, freeFluid));
         }
     }

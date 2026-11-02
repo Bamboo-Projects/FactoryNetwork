@@ -292,6 +292,23 @@ final class Bench {
             controller.pushStorageTo(player, false);
         }
         results.put("deltaPushMs", round((System.nanoTime() - start) / 1e6 / 20));
+        // Split up: the store change alone, and the stock list after it.
+        start = System.nanoTime();
+        for (int i = 0; i < 20; i++) {
+            controller.storage().insert(changed, 1);
+        }
+        results.put("changeOnlyMs", round((System.nanoTime() - start) / 1e6 / 20));
+        start = System.nanoTime();
+        for (int i = 0; i < 20; i++) {
+            controller.storage().insert(changed, 1);
+            controller.storage().contents();
+        }
+        results.put("changeAndContentsMs", round((System.nanoTime() - start) / 1e6 / 20));
+        start = System.nanoTime();
+        for (int i = 0; i < 20; i++) {
+            controller.storage().freeTypes();
+        }
+        results.put("freeTypesMs", round((System.nanoTime() - start) / 1e6 / 20));
         // Keep the network changing while the terminal is open: that is when
         // the server resends the stock.
         // Report if the menu closes on its own while the terminal phase runs.
