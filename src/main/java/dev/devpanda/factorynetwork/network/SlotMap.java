@@ -1,5 +1,7 @@
 package dev.devpanda.factorynetwork.network;
 
+import dev.devpanda.factorynetwork.block.entity.ConnectorPart;
+import dev.devpanda.factorynetwork.block.entity.Connectors;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.Container;
@@ -87,6 +89,24 @@ public final class SlotMap {
             entries.add(new Entry(menuSlot, entry.number(), entry.sides(), entry.estimated()));
         }
         return entries;
+    }
+
+    /**
+     * The label of a connector attached to the block, or an empty string.
+     *
+     * <p>Attached means a part on a neighbouring cable bus that faces the
+     * block. A named one wins over an unnamed one, because only a name can
+     * stand in code; among several named ones the first in direction order,
+     * so the same machine always yields the same line.
+     */
+    public static String connectorLabel(Level level, BlockPos pos) {
+        for (Direction direction : Direction.values()) {
+            ConnectorPart part = Connectors.at(level, pos.relative(direction), direction.getOpposite());
+            if (part != null && !part.label().isBlank()) {
+                return part.label();
+            }
+        }
+        return "";
     }
 
     /** The two cases in which the GUI itself says where the slot comes from. */

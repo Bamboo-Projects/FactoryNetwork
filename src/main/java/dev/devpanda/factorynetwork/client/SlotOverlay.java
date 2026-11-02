@@ -1,10 +1,14 @@
 package dev.devpanda.factorynetwork.client;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import dev.devpanda.factorynetwork.FactoryNetwork;
+import dev.devpanda.factorynetwork.item.ConnectorNaming;
+import dev.devpanda.factorynetwork.network.SlotLine;
 import dev.devpanda.factorynetwork.network.SlotMap;
 import dev.devpanda.factorynetwork.network.packet.SlotMapPacket;
 import dev.devpanda.factorynetwork.network.packet.SlotMapRequestPacket;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -13,9 +17,11 @@ import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.neoforged.api.distmarker.Dist;
@@ -24,6 +30,9 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.client.event.ScreenEvent;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
+import net.neoforged.neoforge.client.settings.KeyConflictContext;
+import net.neoforged.neoforge.client.settings.KeyModifier;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -40,6 +49,9 @@ import java.util.Optional;
  * key, an item) get no button; that is better than numbers for the wrong
  * block.
  *
+ * <p>Like Super Factory Manager's inspector, Ctrl+I toggles the numbers too,
+ * and Ctrl+click on a numbered slot copies a {@code move} line for it.
+ *
  * <p>All drawing for this lives here, so the port to the older GUI code is
  * this one file.
  */
@@ -49,13 +61,31 @@ public final class SlotOverlay {
     /** How many ticks after the click a GUI still counts as opened by it. */
     private static final long CLICK_WINDOW = 20;
     private static final int BUTTON_SIZE = 14;
+    /** How long the note about a copied line stays above the GUI. */
+    private static final long NOTE_MILLIS = 2500;
+
+    /**
+     * Ctrl+I, as in Super Factory Manager. GUI context only: in the world the
+     * key stays free for whatever else wants it.
+     */
+    static final KeyMapping TOGGLE_KEY = new KeyMapping("key.factorynetwork.toggle_slot_numbers",
+            KeyConflictContext.GUI, KeyModifier.CONTROL, InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_I,
+            RemoteKey.CATEGORY);
 
     private static BlockPos clickedPos;
     private static long clickedAt = Long.MIN_VALUE;
 
     private static int boundContainer = -1;
+    private static BlockPos boundPos;
     private static final Map<Integer, SlotMap.Entry> entries = new HashMap<>();
+    /** The label of a connector at the bound block; empty if none is named. */
+    private static String connector = "";
     private static Button button;
+
+    private static final List<Component> note = new ArrayList<>();
+    private static long noteUntil;
+    /** The copying click's release, which the GUI must not see either. */
+    private static boolean swallowRelease;
 
     private SlotOverlay() {
     }
@@ -90,12 +120,15 @@ public final class SlotOverlay {
         int containerId = screen.getMenu().containerId;
         if (containerId != boundContainer) {
             entries.clear();
+            connector = "";
+            note.clear();
             boundContainer = -1;
             if (clickedPos == null || minecraft.level == null
                     || minecraft.level.getGameTime() - clickedAt > CLICK_WINDOW) {
                 return;
             }
             boundContainer = containerId;
+            boundPos = clickedPos;
             ClientPacketDistributor.sendToServer(new SlotMapRequestPacket(containerId, clickedPos));
             clickedPos = null;
         }
@@ -117,9 +150,102 @@ public final class SlotOverlay {
         for (SlotMap.Entry entry : packet.entries()) {
             entries.put(entry.menuSlot(), entry);
         }
+        connector = packet.connector();
         if (button != null) {
             button.visible = !entries.isEmpty();
         }
+    }
+
+    /** Ctrl+I flips the numbers; cancelled so the GUI does not see the I. */
+    @SubscribeEvent
+    public static void toggleByKey(ScreenEvent.KeyPressed.Pre event) {
+        if (bound(event.getScreen()) != null
+                && TOGGLE_KEY.isActiveAndMatches(InputConstants.getKey(event.getKeyEvent()))) {
+            FnClientConfig.setShowSlotNumbers(!FnClientConfig.showSlotNumbers());
+            event.setCanceled(true);
+        }
+    }
+
+    /**
+     * Ctrl+click on a numbered slot copies a line instead of moving the item.
+     *
+     * <p>Only while the numbers show: with them hidden, a Ctrl+click is the
+     * GUI's business. A slot without a number lets the click through, since
+     * no line could name it.
+     */
+    @SubscribeEvent
+    public static void copyLine(ScreenEvent.MouseButtonPressed.Pre event) {
+        AbstractContainerScreen<?> screen = bound(event.getScreen());
+        if (screen == null || event.getButton() != GLFW.GLFW_MOUSE_BUTTON_LEFT
+                || !event.getMouseButtonEvent().hasControlDown() || !FnClientConfig.showSlotNumbers()) {
+            return;
+        }
+        Slot hovered = screen.getHoveredSlot();
+        SlotMap.Entry entry = hovered == null ? null : entries.get(screen.getMenu().slots.indexOf(hovered));
+        if (entry == null || entry.number() < 0) {
+            return;
+        }
+        ItemStack stack = hovered.getItem();
+        String itemId = stack.isEmpty() ? null : BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
+        String device = SlotLine.deviceName(deviceLabel());
+        String line = SlotLine.of(device, itemId, entry.number());
+        Minecraft minecraft = Minecraft.getInstance();
+        minecraft.keyboardHandler.setClipboard(line);
+
+        // The action bar and the chat sit behind an open GUI, so the note is
+        // drawn above the GUI as well; the chat keeps the hint for later.
+        note.clear();
+        Component copied = Component.translatable("screen.factorynetwork.slots.copied", line);
+        note.add(copied);
+        if (minecraft.player != null) {
+            minecraft.player.sendOverlayMessage(copied);
+        }
+        if (connector.isBlank()) {
+            Component hint = Component.translatable("screen.factorynetwork.slots.unnamed", device);
+            note.add(hint);
+            if (minecraft.player != null) {
+                minecraft.player.sendSystemMessage(hint);
+            }
+        }
+        noteUntil = System.currentTimeMillis() + NOTE_MILLIS;
+        swallowRelease = true;
+        event.setCanceled(true);
+    }
+
+    /**
+     * A release without its press could still end a drag or pick up items
+     * by double click in some GUIs; the copying click leaves no trace.
+     */
+    @SubscribeEvent
+    public static void dropRelease(ScreenEvent.MouseButtonReleased.Pre event) {
+        if (swallowRelease && event.getButton() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+            swallowRelease = false;
+            event.setCanceled(true);
+        }
+    }
+
+    /**
+     * The connector's label, or the block's name as a stand-in.
+     *
+     * <p>The stand-in is what the label gun would propose, without its
+     * number: it reads like the machine, and the hint says to replace it.
+     */
+    private static String deviceLabel() {
+        if (!connector.isBlank()) {
+            return connector;
+        }
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null || boundPos == null) {
+            return "device";
+        }
+        return ConnectorNaming.baseName(minecraft.level.getBlockState(boundPos));
+    }
+
+    /** The screen, if the numbers belong to it and there are any. */
+    private static AbstractContainerScreen<?> bound(net.minecraft.client.gui.screens.Screen screen) {
+        return screen instanceof AbstractContainerScreen<?> container
+                && container.getMenu().containerId == boundContainer && !entries.isEmpty()
+                ? container : null;
     }
 
     /**
@@ -160,6 +286,13 @@ public final class SlotOverlay {
             int colour = entry.estimated() ? 0xFFFFC060 : 0xFFFFFF60;
             graphics.text(font, text, x + (17 - font.width(text)) / 2, y + 4, colour, true);
         }
+        if (!note.isEmpty() && System.currentTimeMillis() < noteUntil) {
+            int y = screen.getTopPos() - BUTTON_SIZE - 1 - 10 * note.size();
+            for (Component line : note) {
+                graphics.text(font, line.getString(), screen.getLeftPos(), y, 0xFFFFFF60, true);
+                y += 10;
+            }
+        }
         Slot hovered = screen.getHoveredSlot();
         SlotMap.Entry entry = hovered == null ? null : entries.get(slots.indexOf(hovered));
         if (entry != null) {
@@ -194,6 +327,10 @@ public final class SlotOverlay {
         }
         if (entry.estimated()) {
             lines.add(Component.translatable("screen.factorynetwork.slots.estimated")
+                    .withStyle(ChatFormatting.DARK_GRAY));
+        }
+        if (entry.number() >= 0) {
+            lines.add(Component.translatable("screen.factorynetwork.slots.copy_hint")
                     .withStyle(ChatFormatting.DARK_GRAY));
         }
         return lines;

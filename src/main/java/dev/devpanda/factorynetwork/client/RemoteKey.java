@@ -22,7 +22,8 @@ import org.lwjgl.glfw.GLFW;
 @EventBusSubscriber(modid = FactoryNetwork.MOD_ID, value = Dist.CLIENT)
 public final class RemoteKey {
 
-    private static final KeyMapping.Category CATEGORY = new KeyMapping.Category(
+    /** Shared with the other keys of this mod, so they stand under one heading. */
+    static final KeyMapping.Category CATEGORY = new KeyMapping.Category(
             Identifier.fromNamespaceAndPath(FactoryNetwork.MOD_ID, "keys"));
 
     private static final KeyMapping OPEN = new KeyMapping("key.factorynetwork.open_remote",
@@ -35,6 +36,7 @@ public final class RemoteKey {
     public static void register(RegisterKeyMappingsEvent event) {
         event.registerCategory(CATEGORY);
         event.register(OPEN);
+        event.register(SlotOverlay.TOGGLE_KEY);
     }
 
     @SubscribeEvent

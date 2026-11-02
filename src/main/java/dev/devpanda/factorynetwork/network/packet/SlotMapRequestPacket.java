@@ -43,9 +43,16 @@ public record SlotMapRequestPacket(int containerId, BlockPos pos) implements Cus
             if (!(context.player() instanceof ServerPlayer player)) {
                 return;
             }
-            PacketDistributor.sendToPlayer(player,
-                    new SlotMapPacket(packet.containerId(), answerFor(player, packet)));
+            PacketDistributor.sendToPlayer(player, packetFor(player, packet));
         });
+    }
+
+    /** The whole answer: the map, and the connector label only if there is a map. */
+    public static SlotMapPacket packetFor(net.minecraft.world.entity.player.Player player,
+                                          SlotMapRequestPacket packet) {
+        List<SlotMap.Entry> entries = answerFor(player, packet);
+        String connector = entries.isEmpty() ? "" : SlotMap.connectorLabel(player.level(), packet.pos());
+        return new SlotMapPacket(packet.containerId(), entries, connector);
     }
 
     /** The map for this player, or nothing if the question does not fit. */
