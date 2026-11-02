@@ -68,11 +68,11 @@ public class FactoryNetworkJeiPlugin implements IModPlugin {
 
     @Override
     public void onRuntimeAvailable(mezz.jei.api.runtime.IJeiRuntime runtime) {
-        JeiSearch.attach(runtime);
+        dev.devpanda.factorynetwork.client.ExternalSearch.install(new JeiSearch(runtime));
     }
 
     @Override
     public void onRuntimeUnavailable() {
-        JeiSearch.attach(null);
+        dev.devpanda.factorynetwork.client.ExternalSearch.install(null);
     }
 }
