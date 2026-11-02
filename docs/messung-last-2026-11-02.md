@@ -128,7 +128,9 @@ ist der langsamste Controller der mit den 64 Workern. In einem Lauf gab es
 einmalig 24 ms in einem einzelnen Worker-Tick; im nächsten Lauf nicht wieder.
 Nicht weiter untersucht.
 
-Unverändert und als nächster Hebel offen: Einlagern kostet 12 bis 15 µs pro
-Vorgang, und `markChanged` ruft bei jedem Einlagern `setChanged` auf allen
-Laufwerken des Netzes auf.
+Nachgezogen: Ein- und Auslagern markieren nur noch die Laufwerke, die sich
+geändert haben, statt aller Laufwerke des Netzes. Eine neue Sorte einlagern
+kostet bei acht Laufwerken 7 statt 16 µs. Einlagern einer bestehenden Sorte
+bleibt bei rund 13 µs; der Rest ist die Suche über alle Zellen nach der, die
+die Sorte schon hält. Ein Verweis Sorte → Zelle wäre der nächste Hebel.
 
