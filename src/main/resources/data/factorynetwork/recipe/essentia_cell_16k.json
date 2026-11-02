@@ -7,9 +7,8 @@
     " C "
   ],
   "key": {
-    "C": "factorynetwork:chemical_cell_64k",
-    "I": "minecraft:iron_ingot",
-    "B": "thaumaturge:amber"
+    "C": "factorynetwork:essentia_cell_4k",
+    "I": "thaumaturge:amber"
   },
   "result": {
     "id": "factorynetwork:essentia_cell_16k",
