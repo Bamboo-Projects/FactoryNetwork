@@ -125,7 +125,7 @@ public final class ControllerRegistry {
         for (BlockPos candidate : Set.copyOf(in(level))) {
             if (level.isLoaded(candidate)
                     && level.getBlockEntity(candidate) instanceof ControllerBlockEntity controller
-                    && controller.graph().nearChunk(chunk.x(), chunk.z())) {
+                    && controller.graph().nearChunk(chunk.x, chunk.z)) {
                 controller.markNetworkDirty();
             }
         }

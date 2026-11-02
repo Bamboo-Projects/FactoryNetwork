@@ -108,22 +108,28 @@ public class MastBlock extends Block implements EntityBlock {
      * otherwise lose four cards, and one of them can be the most expensive in
      * the game.
      */
-
-    /** Joining or leaving a network: its controller rebuilds on one of the next ticks. */
     @Override
-    protected void onPlace(BlockState state, net.minecraft.world.level.Level level, BlockPos pos,
-                           BlockState oldState, boolean moved) {
+    protected void onRemove(BlockState state, Level level, BlockPos pos,
+                            BlockState newState, boolean moved) {
+        // Leaving a network: its controller rebuilds on one of the next ticks.
+        if (!state.is(newState.getBlock())) {
+            dev.devpanda.factorynetwork.network.ControllerRegistry.markChanged(level, pos);
+        }
+        if (!state.is(newState.getBlock())
+                && level.getBlockEntity(pos) instanceof MastBlockEntity mast) {
+            Containers.dropContents(level, pos, mast);
+        }
+        super.onRemove(state, level, pos, newState, moved);
+    }
+
+    /** Joining a network: its controller rebuilds on one of the next ticks. */
+    @Override
+    protected void onPlace(net.minecraft.world.level.block.state.BlockState state,
+                           net.minecraft.world.level.Level level, net.minecraft.core.BlockPos pos,
+                           net.minecraft.world.level.block.state.BlockState oldState, boolean moved) {
         super.onPlace(state, level, pos, oldState, moved);
         if (!oldState.is(this)) {
             dev.devpanda.factorynetwork.network.ControllerRegistry.markChanged(level, pos);
         }
-    }
-
-    @Override
-    protected void affectNeighborsAfterRemoval(BlockState state,
-                                               net.minecraft.server.level.ServerLevel level,
-                                               BlockPos pos, boolean moved) {
-        super.affectNeighborsAfterRemoval(state, level, pos, moved);
-        dev.devpanda.factorynetwork.network.ControllerRegistry.markChanged(level, pos);
     }
 }

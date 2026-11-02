@@ -41,21 +41,25 @@ public class ControllerExtensionBlock extends Block {
         return SHAPE;
     }
 
-    /** Joining or leaving a network: its controller rebuilds on one of the next ticks. */
+    /** Leaving a network: its controller rebuilds on one of the next ticks. */
     @Override
-    protected void onPlace(BlockState state, net.minecraft.world.level.Level level, net.minecraft.core.BlockPos pos,
-                           BlockState oldState, boolean moved) {
+    protected void onRemove(net.minecraft.world.level.block.state.BlockState state,
+                            net.minecraft.world.level.Level level, net.minecraft.core.BlockPos pos,
+                            net.minecraft.world.level.block.state.BlockState newState, boolean moved) {
+        if (!state.is(newState.getBlock())) {
+            dev.devpanda.factorynetwork.network.ControllerRegistry.markChanged(level, pos);
+        }
+        super.onRemove(state, level, pos, newState, moved);
+    }
+
+    /** Joining a network: its controller rebuilds on one of the next ticks. */
+    @Override
+    protected void onPlace(net.minecraft.world.level.block.state.BlockState state,
+                           net.minecraft.world.level.Level level, net.minecraft.core.BlockPos pos,
+                           net.minecraft.world.level.block.state.BlockState oldState, boolean moved) {
         super.onPlace(state, level, pos, oldState, moved);
         if (!oldState.is(this)) {
             dev.devpanda.factorynetwork.network.ControllerRegistry.markChanged(level, pos);
         }
-    }
-
-    @Override
-    protected void affectNeighborsAfterRemoval(BlockState state,
-                                               net.minecraft.server.level.ServerLevel level,
-                                               net.minecraft.core.BlockPos pos, boolean moved) {
-        super.affectNeighborsAfterRemoval(state, level, pos, moved);
-        dev.devpanda.factorynetwork.network.ControllerRegistry.markChanged(level, pos);
     }
 }

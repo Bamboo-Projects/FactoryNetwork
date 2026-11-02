@@ -112,10 +112,12 @@ public class DisplayBlock extends HorizontalDirectionalBlock implements EntityBl
     protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState,
                            boolean moved) {
         super.onPlace(state, level, pos, oldState, moved);
+        if (!oldState.is(state.getBlock())) {
+            dev.devpanda.factorynetwork.network.ControllerRegistry.markChanged(level, pos);
+        }
         if (state.is(oldState.getBlock())) {
             return;
         }
-        dev.devpanda.factorynetwork.network.ControllerRegistry.markChanged(level, pos);
         BlockState joined = withJoins(state, level, pos);
         if (joined != state) {
             level.setBlock(pos, joined, Block.UPDATE_CLIENTS);
@@ -208,11 +210,14 @@ public class DisplayBlock extends HorizontalDirectionalBlock implements EntityBl
         return InteractionResult.CONSUME;
     }
 
+    /** Leaving a network: its controller rebuilds on one of the next ticks. */
     @Override
-    protected void affectNeighborsAfterRemoval(BlockState state,
-                                               net.minecraft.server.level.ServerLevel level,
-                                               BlockPos pos, boolean moved) {
-        super.affectNeighborsAfterRemoval(state, level, pos, moved);
-        dev.devpanda.factorynetwork.network.ControllerRegistry.markChanged(level, pos);
+    protected void onRemove(net.minecraft.world.level.block.state.BlockState state,
+                            net.minecraft.world.level.Level level, net.minecraft.core.BlockPos pos,
+                            net.minecraft.world.level.block.state.BlockState newState, boolean moved) {
+        if (!state.is(newState.getBlock())) {
+            dev.devpanda.factorynetwork.network.ControllerRegistry.markChanged(level, pos);
+        }
+        super.onRemove(state, level, pos, newState, moved);
     }
 }
