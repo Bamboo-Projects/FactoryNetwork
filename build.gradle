@@ -130,7 +130,9 @@ neoForge {
         }
         client {
             client()
-            loadedMods = [mainMod, testMod]
+            // Without the test mod on 26.1.2: its game tests are written for
+            // the test system up to 1.21.4 and are not ported yet.
+            loadedMods = [mainMod]
             systemProperty 'neoforge.enabledGameTestNamespaces', mod_id
             // Where the native runtime lies. BambooCEF's RuntimeInstall reads
             // exactly this property name and skips its own download when it
@@ -481,5 +483,49 @@ processResources {
     inputs.properties(expandProps)
     filesMatching(['META-INF/neoforge.mods.toml']) {
         expand expandProps
+    }
+}
+
+// Hot swap into a running dev client, for UI work without restarts:
+//   ./gradlew runClient -Pdebug     (once)
+//   ./gradlew hotswap               (after every change)
+//
+// The client loads build/classes, so that directory must not be rebuilt
+// while it runs: a full recompile deletes classes the game has not loaded
+// yet. The hotswap compile writes to build/hotswap instead, and the tool
+// redefines what changed in the client and then copies it over the live
+// files. Only changed method bodies can be swapped; new methods or fields
+// are reported and need a restart. Changed textures and models follow with
+// F3+T, since processResources runs as well.
+def hotswapSets = ['core', 'main']
+hotswapSets.each { setName ->
+    def set = sourceSets.getByName(setName)
+    tasks.register("hotswapCompile${setName.capitalize()}", JavaCompile) {
+        source = set.java
+        // Against the hotswap output of core, not sourceSets.core.output:
+        // that would recompile build/classes/java/core under the client.
+        classpath = configurations.getByName(set.compileClasspathConfigurationName)
+        if (setName != 'core') {
+            classpath += files(layout.buildDirectory.dir('hotswap/core')).builtBy('hotswapCompileCore')
+        }
+        destinationDirectory = layout.buildDirectory.dir("hotswap/${setName}")
+        javaCompiler = javaToolchains.compilerFor { languageVersion = JavaLanguageVersion.of(25) }
+        options.encoding = 'UTF-8'
+        options.release = 25
+    }
+}
+tasks.register('hotswap', Exec) {
+    group = 'development'
+    description = 'Loads changed classes into a client started with -Pdebug.'
+    dependsOn hotswapSets.collect { "hotswapCompile${it.capitalize()}" }, 'processResources'
+    def launcher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(25) }
+    def pairs = hotswapSets.collect { setName ->
+        def live = sourceSets.getByName(setName).java.destinationDirectory.get().asFile
+        def fresh = layout.buildDirectory.dir("hotswap/${setName}").get().asFile
+        "${live}=${fresh}".toString()
+    }
+    doFirst {
+        executable launcher.get().executablePath.asFile.absolutePath
+        args(['tools/hotswap/Hotswap.java', '5005'] + pairs)
     }
 }
