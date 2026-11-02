@@ -283,13 +283,18 @@ public class DisplayRenderer implements BlockEntityRenderer<DisplayBlockEntity, 
         // To the centre of the front face, then rotate to the facing direction.
         poses.translate(0.5, 0.5, 0.5);
         poses.mulPose(com.mojang.math.Axis.YP.rotationDegrees(-facing.toYRot()));
-        poses.translate(0, 0, -0.47);
-        poses.scale(-SCALE * textScale, -SCALE * textScale, SCALE);
+        // The panel is a plate two pixels thick at the back of the block; its
+        // front face lies 0.375 in front of the centre. Text and icons sit a
+        // little in front of it: inside the plate, as before, nothing showed.
+        poses.translate(0, 0, -0.36);
+        // Like a sign: y flipped, z toward the viewer. Text is one-sided;
+        // with x flipped as well it faced into the plate and was culled.
+        poses.scale(SCALE * textScale, -SCALE * textScale, SCALE);
 
         // From the panel's own position to the centre of the wall. The scale
         // is already set, so this is computed in text units here — and the
-        // x-axis is mirrored, hence the minus.
-        float toCentreX = -((wall.columns() - 1) / 2.0F - wall.anchorColumn());
+        // x-axis runs as the viewer sees it.
+        float toCentreX = (wall.columns() - 1) / 2.0F - wall.anchorColumn();
         float toCentreY = -((wall.rows() - 1) / 2.0F - wall.anchorRow());
         // The scale is now baked into the matrix, so a block is fewer text
         // units wide. Without the division the shift would scale with the
@@ -361,7 +366,7 @@ public class DisplayRenderer implements BlockEntityRenderer<DisplayBlockEntity, 
             // Bottom right, like the terminal; in front of the icon so it lies
             // on top of it and not inside it.
             poses.translate(cellX + CELL - 1, cellY + CELL - 1,
-                    -(CELL_ICON * ITEM_DEPTH + 0.5F));
+                    CELL_ICON * ITEM_DEPTH + 0.5F);
             poses.scale(AMOUNT_SCALE, AMOUNT_SCALE, 1.0F);
             collector.submitText(poses, -font.width(amount), -LINE_HEIGHT + 1,
                     net.minecraft.network.chat.Component.literal(amount).getVisualOrderText(),
@@ -373,10 +378,10 @@ public class DisplayRenderer implements BlockEntityRenderer<DisplayBlockEntity, 
     /**
      * An item model centred on a point, {@code size} text units tall.
      *
-     * <p>In text space x runs right, y runs down and z away from the viewer;
-     * a model has y up and its front toward +z. Flipping y and z turns the
-     * one into the other — and, unlike flipping y alone, it is a rotation and
-     * not a mirror, so the faces keep their winding and are not culled.
+     * <p>In text space x runs right, y runs down and z toward the viewer;
+     * a model has y up and its front toward +z. Flipping y again makes the
+     * model stand upright, and the two flips cancel, so the faces keep their
+     * winding and are not culled.
      */
     private void drawItem(ItemStackRenderState model, float x, float y, float size,
                           PoseStack poses, SubmitNodeCollector collector, int light) {
@@ -384,8 +389,8 @@ public class DisplayRenderer implements BlockEntityRenderer<DisplayBlockEntity, 
             return;
         }
         poses.pushPose();
-        poses.translate(x, y, -size * ITEM_DEPTH / 2.0F);
-        poses.scale(size, -size, -size * ITEM_DEPTH);
+        poses.translate(x, y, 0.0F);
+        poses.scale(size, -size, size * ITEM_DEPTH);
         model.submit(poses, collector, light, OverlayTexture.NO_OVERLAY, 0);
         poses.popPose();
     }
