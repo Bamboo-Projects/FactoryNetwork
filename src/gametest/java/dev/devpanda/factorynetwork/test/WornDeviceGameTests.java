@@ -3,7 +3,10 @@ package dev.devpanda.factorynetwork.test;
 import dev.devpanda.factorynetwork.registry.FnItems;
 import dev.devpanda.factorynetwork.terminal.RemoteAccess;
 import dev.devpanda.factorynetwork.terminal.WornDevices;
+import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.neoforged.neoforge.gametest.GameTestHolder;
+import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
@@ -15,6 +18,8 @@ import net.minecraft.world.item.ItemStack;
  * data half asks Curios whether players get a slot that takes the devices,
  * and the logic half checks the addressing through a stand-in source.
  */
+@GameTestHolder(dev.devpanda.factorynetwork.FactoryNetwork.MOD_ID)
+@PrefixGameTestTemplate(false)
 public final class WornDeviceGameTests {
 
     private WornDeviceGameTests() {

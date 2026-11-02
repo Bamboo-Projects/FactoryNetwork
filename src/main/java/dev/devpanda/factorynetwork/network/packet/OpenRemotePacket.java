@@ -8,7 +8,7 @@ import io.netty.buffer.ByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /**
@@ -19,7 +19,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 public record OpenRemotePacket() implements CustomPacketPayload {
 
     public static final Type<OpenRemotePacket> TYPE = new Type<>(
-            Identifier.fromNamespaceAndPath(FactoryNetwork.MOD_ID, "open_remote"));
+            ResourceLocation.fromNamespaceAndPath(FactoryNetwork.MOD_ID, "open_remote"));
 
     public static final StreamCodec<ByteBuf, OpenRemotePacket> STREAM_CODEC =
             StreamCodec.unit(new OpenRemotePacket());

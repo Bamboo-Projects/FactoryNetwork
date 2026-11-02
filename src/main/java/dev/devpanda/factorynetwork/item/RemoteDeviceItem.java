@@ -188,10 +188,10 @@ public class RemoteDeviceItem extends Item {
      * Opens the terminal through a device, wherever the player carries it:
      * in hand, in the inventory or in a worn slot (the key binding).
      */
-    public static InteractionResult open(Level level, Player player, ItemStack held) {
+    public static InteractionResultHolder<ItemStack> open(Level level, Player player, ItemStack held) {
         RemoteDevice device = deviceOf(held);
         if (device == null) {
-            return InteractionResult.PASS;
+            return InteractionResultHolder.pass(held);
         }
         GlobalPos mast = mastOf(held);
         if (mast == null) {

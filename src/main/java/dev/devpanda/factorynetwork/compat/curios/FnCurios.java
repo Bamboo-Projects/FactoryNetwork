@@ -23,16 +23,16 @@ public final class FnCurios {
             @Override
             @SuppressWarnings("removal")
             public int count(Player player) {
-                var inventory = CuriosApi.getCuriosInventoryOrNull(player);
-                return inventory == null ? 0 : inventory.getEquippedCurios().getSlots();
+                return CuriosApi.getCuriosInventory(player)
+                        .map(inventory -> inventory.getEquippedCurios().getSlots()).orElse(0);
             }
 
             @Override
             @SuppressWarnings("removal")
             public ItemStack get(Player player, int index) {
-                var inventory = CuriosApi.getCuriosInventoryOrNull(player);
-                return inventory == null ? ItemStack.EMPTY
-                        : inventory.getEquippedCurios().getStackInSlot(index);
+                return CuriosApi.getCuriosInventory(player)
+                        .map(inventory -> inventory.getEquippedCurios().getStackInSlot(index))
+                        .orElse(ItemStack.EMPTY);
             }
         });
     }
