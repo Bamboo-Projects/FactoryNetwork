@@ -181,6 +181,13 @@ public final class ConnectorPart {
 
     // ---- The machine behind it --------------------------------------------
 
+    /** The storage link the connector points at, or {@code null}. */
+    private @Nullable StorageLinkBlockEntity storageLink() {
+        BlockPos target = machinePos();
+        return target != null && host.level().getBlockEntity(target) instanceof StorageLinkBlockEntity link
+                ? link : null;
+    }
+
     /**
      * The <b>whole</b> inventory of the machine, regardless of sides.
      *
@@ -190,10 +197,21 @@ public final class ConnectorPart {
      * there the machine keeps its own rules.
      */
     public @Nullable IItemHandler machineInventoryAll() {
+        StorageLinkBlockEntity link = storageLink();
+        if (link != null) {
+            return link.itemView();
+        }
         return capability(Capabilities.ItemHandler.BLOCK, null);
     }
 
     public @Nullable IItemHandler machineInventory() {
+        // A storage link is asked directly, not through the capability:
+        // its view goes by sort, and other mods should not reach a foreign
+        // network through our block.
+        StorageLinkBlockEntity link = storageLink();
+        if (link != null) {
+            return link.itemView();
+        }
         return capability(Capabilities.ItemHandler.BLOCK, facing().getOpposite());
     }
 
@@ -205,6 +223,10 @@ public final class ConnectorPart {
      * in the program, not by the connector.
      */
     public @Nullable net.neoforged.neoforge.fluids.capability.IFluidHandler machineTank() {
+        StorageLinkBlockEntity link = storageLink();
+        if (link != null) {
+            return link.fluidView();
+        }
         return capability(Capabilities.FluidHandler.BLOCK, facing().getOpposite());
     }
 

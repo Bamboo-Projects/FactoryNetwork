@@ -165,6 +165,11 @@ public final class FnBlocks {
     public static final DeferredBlock<Block> RACK = BLOCKS.register("server_rack",
             () -> new RackBlock(machineProperties()));
 
+    /** A foreign storage system — AE2, Refined Storage — as one device. */
+    public static final DeferredBlock<Block> STORAGE_LINK = BLOCKS.registerBlock("storage_link",
+            props -> new dev.devpanda.factorynetwork.block.StorageLinkBlock(props),
+            FnBlocks::machineProperties);
+
     /** Takes storage cells — the network's storage room. */
     public static final DeferredBlock<Block> DRIVE = BLOCKS.register("drive",
             // noOcclusion, because the housing stands on feet and the fascia

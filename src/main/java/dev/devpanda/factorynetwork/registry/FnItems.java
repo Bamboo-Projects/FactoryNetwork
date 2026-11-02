@@ -40,6 +40,9 @@ public final class FnItems {
     public static final DeferredItem<BlockItem> MAST =
             ITEMS.registerSimpleBlockItem(FnBlocks.MAST);
 
+    public static final DeferredItem<BlockItem> STORAGE_LINK =
+            ITEMS.registerSimpleBlockItem(FnBlocks.STORAGE_LINK);
+
     public static final DeferredItem<BlockItem> GATEWAY =
             ITEMS.registerSimpleBlockItem(FnBlocks.GATEWAY);
     /**

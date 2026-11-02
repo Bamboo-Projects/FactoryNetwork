@@ -40,7 +40,15 @@ public final class NotifyingHandlers {
         return handler == null || onFilled == null ? handler : new Fluids(handler, onFilled);
     }
 
-    private record Items(IItemHandler inner, Runnable onFilled) implements IItemHandler {
+    private record Items(IItemHandler inner, Runnable onFilled) implements IItemHandler,
+            dev.devpanda.factorynetwork.network.link.KeyedItems {
+
+        /** Narrowing passes through; the narrowed view reports the same way. */
+        @Override
+        public IItemHandler view(java.util.List<net.minecraft.world.item.Item> items) {
+            IItemHandler narrowed = dev.devpanda.factorynetwork.network.link.KeyedItems.narrow(inner, items);
+            return narrowed == inner ? this : new Items(narrowed, onFilled);
+        }
 
         @Override
         public int getSlots() {
@@ -77,7 +85,14 @@ public final class NotifyingHandlers {
         }
     }
 
-    private record Fluids(IFluidHandler inner, Runnable onFilled) implements IFluidHandler {
+    private record Fluids(IFluidHandler inner, Runnable onFilled) implements IFluidHandler,
+            dev.devpanda.factorynetwork.network.link.KeyedFluids {
+
+        @Override
+        public IFluidHandler view(java.util.List<net.minecraft.world.level.material.Fluid> fluids) {
+            IFluidHandler narrowed = dev.devpanda.factorynetwork.network.link.KeyedFluids.narrow(inner, fluids);
+            return narrowed == inner ? this : new Fluids(narrowed, onFilled);
+        }
 
         @Override
         public int getTanks() {

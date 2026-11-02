@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "side": "factorynetwork:block/bridge_side",
+    "top": "factorynetwork:block/machine_top",
+    "bottom": "factorynetwork:block/machine_top"
+  }
+}

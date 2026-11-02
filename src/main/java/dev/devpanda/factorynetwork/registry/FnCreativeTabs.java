@@ -21,6 +21,7 @@ public final class FnCreativeTabs {
                         output.accept(FnItems.CONTROLLER.get());
                         output.accept(FnItems.CONTROLLER_EXTENSION.get());
                         output.accept(FnItems.GATEWAY.get());
+                        output.accept(FnItems.STORAGE_LINK.get());
                         output.accept(FnItems.FABRICATOR.get());
                         // All cable colours, default colour first, and the
                         // router behind it — it picks up colours from them.
