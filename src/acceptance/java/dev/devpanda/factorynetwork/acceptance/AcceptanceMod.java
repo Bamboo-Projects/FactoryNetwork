@@ -41,6 +41,9 @@ public final class AcceptanceMod {
     public AcceptanceMod() {
         NeoForge.EVENT_BUS.addListener(AcceptanceMod::commands);
         NeoForge.EVENT_BUS.addListener(AcceptanceMod::power);
+        if (Boolean.getBoolean("fn.acceptance.slots")) {
+            NeoForge.EVENT_BUS.addListener(AcceptanceMod::furnaceForSlots);
+        }
         NeoForge.EVENT_BUS.addListener(Bench::preTick);
         NeoForge.EVENT_BUS.addListener(Bench::postTick);
     }
@@ -190,5 +193,17 @@ public final class AcceptanceMod {
         int count = 0;
         for (int slot = 0; slot < chest.getContainerSize(); slot++) count += chest.getItem(slot).getCount();
         return count;
+    }
+
+    /** For the slot-number check: a filled furnace two blocks east of whoever joins. */
+    private static void furnaceForSlots(net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent event) {
+        var player = event.getEntity();
+        BlockPos furnace = player.blockPosition().east(2);
+        var level = player.level();
+        level.setBlockAndUpdate(furnace, net.minecraft.world.level.block.Blocks.FURNACE.defaultBlockState());
+        if (level.getBlockEntity(furnace) instanceof net.minecraft.world.Container container) {
+            container.setItem(0, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.IRON_ORE, 5));
+            container.setItem(1, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.COAL, 3));
+        }
     }
 }
