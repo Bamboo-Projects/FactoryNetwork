@@ -44,6 +44,8 @@ public final class Handoffs {
     public static Handoff items(IItemHandler in, IItemHandler out,
                                 java.util.List<net.minecraft.world.item.Item> filter,
                                 long limit) {
+        // A storage link narrows itself to the filter; a chest stays as it is.
+        in = dev.devpanda.factorynetwork.network.link.KeyedItems.narrow(in, filter);
         long moved = 0;
         long stranded = 0;
         for (int slot = 0; slot < in.getSlots() && moved < limit; slot++) {
@@ -138,6 +140,7 @@ public final class Handoffs {
      * @return how much could no longer be fetched out
      */
     public static long pullBack(IItemHandler handler, ItemKey item, long amount) {
+        handler = dev.devpanda.factorynetwork.network.link.KeyedItems.narrow(handler, java.util.List.of(item.item()));
         long left = amount;
         for (int slot = 0; slot < handler.getSlots() && left > 0; slot++) {
             // The whole item, not just the id — otherwise the enchanted

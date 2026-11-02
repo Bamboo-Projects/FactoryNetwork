@@ -547,6 +547,7 @@ public final class WorldHost implements Interpreter.Host {
     }
 
     private long drainIntoNetwork(IFluidHandler source, List<Fluid> fluids, long limit) {
+        source = dev.devpanda.factorynetwork.network.link.KeyedFluids.narrow(source, fluids);
         long moved = 0;
         for (int tank = 0; tank < source.getTanks() && moved < limit; tank++) {
             FluidStack inside = source.getFluidInTank(tank);
@@ -573,6 +574,7 @@ public final class WorldHost implements Interpreter.Host {
 
     private long transferFluid(IFluidHandler source, IFluidHandler target,
                                List<Fluid> fluids, long limit) {
+        source = dev.devpanda.factorynetwork.network.link.KeyedFluids.narrow(source, fluids);
         long moved = 0;
         for (int tank = 0; tank < source.getTanks() && moved < limit; tank++) {
             FluidStack inside = source.getFluidInTank(tank);
@@ -638,6 +640,7 @@ public final class WorldHost implements Interpreter.Host {
             throw new ScriptError("Bei move fehlt die Quelle.",
                     "Zum Beispiel: move item:iron_ore from chest to storage");
         }
+        source = dev.devpanda.factorynetwork.network.link.KeyedItems.narrow(source, items);
         long moved = 0;
         for (int slot = 0; slot < source.getSlots() && moved < limit; slot++) {
             ItemStack stack = source.getStackInSlot(slot);
@@ -777,6 +780,7 @@ public final class WorldHost implements Interpreter.Host {
         if (handler == null) {
             return 0;
         }
+        handler = dev.devpanda.factorynetwork.network.link.KeyedItems.narrow(handler, items);
         long found = 0;
         for (int slot = 0; slot < handler.getSlots(); slot++) {
             ItemStack stack = handler.getStackInSlot(slot);
@@ -792,6 +796,7 @@ public final class WorldHost implements Interpreter.Host {
         if (tank == null) {
             return 0;
         }
+        tank = dev.devpanda.factorynetwork.network.link.KeyedFluids.narrow(tank, fluids);
         long found = 0;
         for (int index = 0; index < tank.getTanks(); index++) {
             FluidStack stack = tank.getFluidInTank(index);

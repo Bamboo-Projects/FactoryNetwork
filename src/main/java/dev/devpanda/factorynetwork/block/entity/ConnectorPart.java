@@ -191,11 +191,20 @@ public final class ConnectorPart {
      */
     public @Nullable IItemHandler machineInventoryAll() {
         BlockPos target = machinePos();
+        if (target != null && host.level().getBlockEntity(target) instanceof StorageLinkBlockEntity link) {
+            return link.itemView();
+        }
         return target == null ? null : dev.devpanda.factorynetwork.platform.Caps.items(host.level(), target, null);
     }
 
     public @Nullable IItemHandler machineInventory() {
         BlockPos target = machinePos();
+        // A storage link is asked directly, not through the capability:
+        // its view goes by sort, and other mods should not reach a foreign
+        // network through our block.
+        if (target != null && host.level().getBlockEntity(target) instanceof StorageLinkBlockEntity link) {
+            return link.itemView();
+        }
         return target == null ? null : dev.devpanda.factorynetwork.platform.Caps.items(host.level(), target, facing().getOpposite());
     }
 
@@ -208,6 +217,9 @@ public final class ConnectorPart {
      */
     public @Nullable net.neoforged.neoforge.fluids.capability.IFluidHandler machineTank() {
         BlockPos target = machinePos();
+        if (target != null && host.level().getBlockEntity(target) instanceof StorageLinkBlockEntity link) {
+            return link.fluidView();
+        }
         return target == null ? null : dev.devpanda.factorynetwork.platform.Caps.fluids(host.level(), target, facing().getOpposite());
     }
 

@@ -523,6 +523,7 @@ public final class WorkerRuntime {
         if (handler == null) {
             return 0;
         }
+        handler = dev.devpanda.factorynetwork.network.link.KeyedItems.narrow(handler, filter);
         long moved = 0;
         for (int slot = 0; slot < handler.getSlots() && moved < batch; slot++) {
             ItemStack stack = handler.getStackInSlot(slot);
@@ -1293,6 +1294,7 @@ public final class WorkerRuntime {
         if (tank == null) {
             return 0;
         }
+        tank = dev.devpanda.factorynetwork.network.link.KeyedFluids.narrow(tank, filter);
         long moved = 0;
         for (int slot = 0; slot < tank.getTanks() && moved < batch; slot++) {
             FluidStack inside = tank.getFluidInTank(slot);
@@ -1367,6 +1369,7 @@ public final class WorkerRuntime {
         if (in == null || out == null) {
             return 0;
         }
+        in = dev.devpanda.factorynetwork.network.link.KeyedFluids.narrow(in, filter);
         long moved = 0;
         for (int slot = 0; slot < in.getTanks() && moved < batch; slot++) {
             FluidStack inside = in.getFluidInTank(slot);
@@ -1411,6 +1414,7 @@ public final class WorkerRuntime {
         if (tank == null) {
             return present;
         }
+        tank = dev.devpanda.factorynetwork.network.link.KeyedFluids.narrow(tank, filter);
         for (int slot = 0; slot < tank.getTanks(); slot++) {
             FluidStack inside = tank.getFluidInTank(slot);
             if (!inside.isEmpty()) {
@@ -1614,6 +1618,7 @@ public final class WorkerRuntime {
         if (handler == null) {
             return present;
         }
+        handler = dev.devpanda.factorynetwork.network.link.KeyedItems.narrow(handler, filter);
         for (int slot = 0; slot < handler.getSlots(); slot++) {
             ItemStack stack = handler.getStackInSlot(slot);
             if (stack.isEmpty() || !filter.contains(stack.getItem())) {

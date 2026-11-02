@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "PCP",
+    "CNC",
+    "PCP"
+  ],
+  "key": {
+    "P": "factorynetwork:plate",
+    "C": "factorynetwork:cable",
+    "N": "factorynetwork:core_network"
+  },
+  "result": {
+    "id": "factorynetwork:storage_link",
+    "count": 1
+  }
+}
