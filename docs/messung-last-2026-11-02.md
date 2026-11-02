@@ -91,3 +91,44 @@ legt 64 Stück ins Inventar. Auf beiden Linien geprüft.
    nur die geänderten Einträge.
 3. Mit 2 fällt auch die Grenze von 4.096 Sorten: den vollen Bestand in
    mehreren Paketen schicken.
+
+## Nach den Änderungen (gleicher Tag)
+
+Umgesetzt:
+
+1. Das Netz wird nur noch neu aufgebaut, wenn sich etwas ändert: Netzblöcke
+   melden Setzen und Abbauen, Chunks melden Laden und Entladen, gebündelt
+   höchstens alle 5 Ticks. Als Sicherheitsnetz bleibt ein Neuaufbau alle
+   6.000 Ticks (5 Minuten).
+2. Das Terminal bekommt beim Öffnen den ganzen Bestand, danach nur die
+   geänderten Einträge. Der Unterschied wird pro Sendung einmal berechnet
+   und geht an alle Spieler mit offenem Terminal.
+3. Der Bestand wird in mehreren Paketen geschickt; die Grenze von 4.096
+   Sorten ist weg. Der Client sieht 5.002 von 5.002.
+4. Dazu gefunden: Jeder Controller hat einmal pro Sekunde seinen
+   Programmordner im Servertick von der Platte gelesen. Das läuft jetzt in
+   einem eigenen Thread.
+
+Gemessen auf 26.1.2, gleiche Szenarien. Die Fenster sind kumulativ: Im
+Worker- und Kabelfenster stehen alle drei Netze.
+
+| Szenario | vorher FN Ø | p95 | max | nachher FN Ø | p95 | max |
+|---|--:|--:|--:|--:|--:|--:|
+| Lager im Leerlauf | 0,14 ms | 0,67 | 1,6 | 0,10 ms | 0,17 | 0,26 |
+| Terminal offen, Bestand ändert sich | 0,34 ms | 2,1 | 3,3 | 0,21 ms | 1,2 | 1,3 |
+| + 64 Worker | 0,46 ms | 3,2 | 6,8 | 0,33 ms | 2,3 | 4,0 |
+| + 4.000 Kabel | 0,51 ms | 3,1 | 7,9 | 0,28 ms | 2,3 | 2,7 |
+
+| Operation | vorher | nachher |
+|---|--:|--:|
+| Sendung bei offenem Terminal (5.000 Sorten, eine geändert) | 2,8 ms pro Spieler | 1,1 ms für alle zusammen |
+
+Was jetzt noch Spitzen macht, ist Arbeit der Worker selbst: Im Kabelfenster
+ist der langsamste Controller der mit den 64 Workern. In einem Lauf gab es
+einmalig 24 ms in einem einzelnen Worker-Tick; im nächsten Lauf nicht wieder.
+Nicht weiter untersucht.
+
+Unverändert und als nächster Hebel offen: Einlagern kostet 12 bis 15 µs pro
+Vorgang, und `markChanged` ruft bei jedem Einlagern `setChanged` auf allen
+Laufwerken des Netzes auf.
+
