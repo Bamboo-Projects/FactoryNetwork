@@ -32,15 +32,37 @@ Reiter *Anzeigen* des Terminals. Der Knopf wirkt an beiden Stellen.
 |---|---|
 | `title "…"` | Eine Überschrift |
 | `row "…" wert` | Beschriftung und Wert nebeneinander |
+| `row item:… wert` | Symbol, Name des Gegenstands und Wert |
 | `text wert` | Nur der Wert, ohne Beschriftung |
 | `progress "…" anteil` | Ein Balken aus zehn Blöcken, daneben der Anteil in Prozent |
 | `indicator "…" bedingung` | Ein Lämpchen, hell oder dunkel |
-| `list "…" bestand` | Eine Aufzählung: Überschrift und je Posten eine Zeile |
+| `list "…" bestand` | Eine Aufzählung: Überschrift und je Posten eine Zeile, mit Symbol |
+| `items bestand` | Ein Raster aus Symbolen mit Mengen, wie im Terminal |
 | `button "…" funktion` | Ein Knopf, der eine Funktion startet |
 | `scale zahl` | Wie groß die Schrift ist; 1 ist normal |
 
 Ein Knopf darf etwas anstoßen, das wartet: Die Funktion dahinter wird ein
 Ablauf wie jeder andere und übersteht auch einen Serverneustart.
+
+## Gegenstände zeigen
+
+```
+display lager {
+    title "Lager"
+    row item:iron_ingot storage.count(item:iron_ingot)
+    row item:coal "Kohle" storage.count(item:coal)
+    items storage.items()
+}
+```
+
+Steht in einer `row` ein `item:` statt der Beschriftung, zeigt die Zeile das
+Symbol und den Namen des Gegenstands. Ein Text dahinter ersetzt den Namen.
+Gemeint ist genau eine Art — `item:*_ingot` oder ein Tag gehen dort nicht.
+
+`items` zeichnet den Bestand als Raster, wie im Speicher-Reiter: Symbol und
+Menge, das meiste zuerst. Das Raster nimmt den ganzen Platz, den die Zeilen
+übrig lassen — eine größere Wand zeigt mehr davon, `scale 2` macht die
+Symbole größer. Was nicht hinpasst, zählt die letzte Zelle.
 
 ## Große Schrift
 
