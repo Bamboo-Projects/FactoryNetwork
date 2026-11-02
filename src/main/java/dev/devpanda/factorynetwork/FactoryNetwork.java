@@ -37,6 +37,7 @@ public final class FactoryNetwork {
             dev.devpanda.factorynetwork.compat.ars.ArsSource.register();
             dev.devpanda.factorynetwork.runtime.ResourceKinds.freeze();
         });
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(DevCommands::register);
         FnBlocks.BLOCKS.register(modBus);
         FnItems.ITEMS.register(modBus);
         dev.devpanda.factorynetwork.registry.FnComponents.COMPONENTS.register(modBus);
