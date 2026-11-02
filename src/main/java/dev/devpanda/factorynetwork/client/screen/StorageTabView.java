@@ -175,15 +175,14 @@ public class StorageTabView {
         }
 
         // The search mode, left of the sort buttons. The letter says whether
-        // the field takes the keyboard on opening, a J whether JEI follows.
+        // the field takes the keyboard on opening, green whether JEI follows.
+        // A second letter does not fit: at twelve pixels it ran into the first.
         SearchMode mode = FnClientConfig.searchMode();
         int mx = sortButtonX(-1);
         int my = y + 2;
         graphics.blit(WIDGETS, mx, my, 64, 0, 12, 12, 512, 512);
-        graphics.drawString(font, mode.autoFocus() ? "F" : "S", mx + 3, my + 2, TerminalScreen.TEXT, false);
-        if (mode.jeiSync()) {
-            graphics.drawString(font, "J", mx + 8, my + 2, TerminalScreen.ACCENT, false);
-        }
+        graphics.drawString(font, mode.autoFocus() ? "F" : "S", mx + 3, my + 2,
+                mode.jeiSync() ? TerminalScreen.ACCENT : TerminalScreen.TEXT, false);
     }
 
     private void drawSearch(GuiGraphicsExtractor graphics) {
