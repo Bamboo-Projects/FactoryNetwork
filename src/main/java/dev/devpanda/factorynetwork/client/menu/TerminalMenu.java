@@ -318,7 +318,7 @@ public class TerminalMenu extends AbstractContainerMenu {
         if (device == null) {
             return true;
         }
-        var battery = player.getInventory().getItem(deviceSlot)
+        var battery = dev.devpanda.factorynetwork.terminal.RemoteAccess.deviceAt(player, deviceSlot)
                 .getCapability(net.neoforged.neoforge.capabilities.Capabilities
                         .EnergyStorage.ITEM);
         if (battery == null || battery.extractEnergy(amount, true) < amount) {
@@ -362,7 +362,7 @@ public class TerminalMenu extends AbstractContainerMenu {
             return RemoteAccess.allowed(player, deviceSlot,
                             net.minecraft.core.GlobalPos.of(home, position))
                     && dev.devpanda.factorynetwork.item.RemoteDeviceItem.energyOf(
-                            player.getInventory().getItem(deviceSlot)) > 0;
+                            dev.devpanda.factorynetwork.terminal.RemoteAccess.deviceAt(player, deviceSlot)) > 0;
         }
         return stillValid(access, player, FnBlocks.TERMINAL.get());
     }

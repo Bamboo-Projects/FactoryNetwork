@@ -49,10 +49,7 @@ public final class RemoteAccess {
      * @param expected the mast this window hangs off
      */
     public static boolean allowed(Player player, int slot, GlobalPos expected) {
-        if (slot < 0 || slot >= player.getInventory().getContainerSize()) {
-            return false;
-        }
-        ItemStack device = player.getInventory().getItem(slot);
+        ItemStack device = deviceAt(player, slot);
         RemoteDevice kind = RemoteDeviceItem.deviceOf(device);
         if (kind == null) {
             return false;
@@ -118,7 +115,44 @@ public final class RemoteAccess {
                 return slot;
             }
         }
-        return -1;
+        for (int index = 0; index < WornDevices.count(player); index++) {
+            if (WornDevices.get(player, index) == device) {
+                return -(index + 1);
+            }
+        }
+        return NO_SLOT;
+    }
+
+    /** No slot holds the device. Below every worn slot number. */
+    public static final int NO_SLOT = Integer.MIN_VALUE;
+
+    /**
+     * The stack in a device slot: an inventory slot for zero and up, a worn
+     * slot ({@link WornDevices}) below zero.
+     */
+    public static ItemStack deviceAt(Player player, int slot) {
+        if (slot >= 0) {
+            return slot < player.getInventory().getContainerSize()
+                    ? player.getInventory().getItem(slot) : ItemStack.EMPTY;
+        }
+        return slot == NO_SLOT ? ItemStack.EMPTY : WornDevices.get(player, -slot - 1);
+    }
+
+    /** The first wireless device the player carries, worn ones first, or {@code null}. */
+    public static ItemStack firstDevice(Player player) {
+        for (int index = 0; index < WornDevices.count(player); index++) {
+            ItemStack worn = WornDevices.get(player, index);
+            if (dev.devpanda.factorynetwork.item.RemoteDeviceItem.deviceOf(worn) != null) {
+                return worn;
+            }
+        }
+        for (int slot = 0; slot < player.getInventory().getContainerSize(); slot++) {
+            ItemStack held = player.getInventory().getItem(slot);
+            if (dev.devpanda.factorynetwork.item.RemoteDeviceItem.deviceOf(held) != null) {
+                return held;
+            }
+        }
+        return null;
     }
 
     private RemoteAccess() {

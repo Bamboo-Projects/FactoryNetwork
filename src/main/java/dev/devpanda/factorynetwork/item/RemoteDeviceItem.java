@@ -181,6 +181,18 @@ public class RemoteDeviceItem extends Item {
         if (level.isClientSide()) {
             return InteractionResultHolder.success(held);
         }
+        return open(level, player, held);
+    }
+
+    /**
+     * Opens the terminal through a device, wherever the player carries it:
+     * in hand, in the inventory or in a worn slot (the key binding).
+     */
+    public static InteractionResult open(Level level, Player player, ItemStack held) {
+        RemoteDevice device = deviceOf(held);
+        if (device == null) {
+            return InteractionResult.PASS;
+        }
         GlobalPos mast = mastOf(held);
         if (mast == null) {
             return refuse(player, held, "message.factorynetwork.remote.no_network");
@@ -204,7 +216,7 @@ public class RemoteDeviceItem extends Item {
             return refuse(player, held, "message.factorynetwork.remote.no_controller");
         }
         int slot = RemoteAccess.slotOf(player, held);
-        if (slot < 0 || !RemoteAccess.allowed(player, slot, mast)) {
+        if (slot == RemoteAccess.NO_SLOT || !RemoteAccess.allowed(player, slot, mast)) {
             // Two reasons, one message would be too few: whoever stands in
             // another dimension does not walk closer — they need a card.
             return refuse(player, held,
@@ -234,7 +246,7 @@ public class RemoteDeviceItem extends Item {
                     (id, inventory, owner) -> new dev.devpanda.factorynetwork.client.menu
                             .TerminalMenu(id, inventory, mast.pos(), mast.dimension(),
                                     device, slot),
-                    Component.translatable(getDescriptionId())), buffer ->
+                    Component.translatable(held.getItem().getDescriptionId())), buffer ->
                     dev.devpanda.factorynetwork.client.menu.TerminalMenu
                             .writeRemote(buffer, mast, device, slot));
         }
