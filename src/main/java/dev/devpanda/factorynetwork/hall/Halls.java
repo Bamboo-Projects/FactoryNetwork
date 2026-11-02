@@ -98,8 +98,18 @@ public final class Halls extends SavedData {
         return server.overworld().getDataStorage().computeIfAbsent(TYPE);
     }
 
-    /** A new hall of this size; its room is built by whoever asks. */
-    public int create(HallTier tier) {
+    /**
+     * A new hall of this size; its room is built by whoever asks.
+     *
+     * <p>A number whose room already stands is skipped: after a crash the
+     * list may be older than the hall dimension, and handing out that number
+     * again would give two doors the same hall.
+     */
+    public int create(HallTier tier, @Nullable ServerLevel hall) {
+        while (hall != null && hall.getBlockState(origin(next))
+                .is(dev.devpanda.factorynetwork.registry.FnBlocks.HALL_WALL.get())) {
+            next++;
+        }
         int id = next++;
         halls.put(id, new Entry(tier.ordinal(), Optional.empty()));
         setDirty();

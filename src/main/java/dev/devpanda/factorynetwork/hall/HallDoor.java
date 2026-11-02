@@ -39,7 +39,7 @@ public final class HallDoor {
         GlobalPos at = GlobalPos.of(here.dimension(), door.getBlockPos());
         int id = door.hall();
         if (id == HallBlockEntity.NONE || halls.get(id) == null) {
-            id = halls.create(tier);
+            id = halls.create(tier, player.level().getServer().getLevel(Halls.DIMENSION));
             door.setHall(id);
         } else if (otherDoorStands(player, halls.get(id), at, id)) {
             // A copied block, from creative pick-block: two doors to one hall

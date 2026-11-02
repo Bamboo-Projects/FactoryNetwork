@@ -123,7 +123,7 @@ public class BlueprintItem extends Item {
         }
 
         Halls halls = Halls.of(level.getServer());
-        int id = halls.create(door.tier());
+        int id = halls.create(door.tier(), level.getServer().getLevel(Halls.DIMENSION));
         door.setHall(id);
         halls.setDoor(id, GlobalPos.of(level.dimension(), door.getBlockPos()));
         HallLoading.hold(door, true);
