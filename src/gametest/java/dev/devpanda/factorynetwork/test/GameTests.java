@@ -38,6 +38,7 @@ final class GameTests {
             "StorageLinkGameTests",
             "WornDeviceGameTests",
             "EssentiaGameTests",
+            "SlotMapGameTests",
             // Compiled only with Mekanism; missing otherwise.
             "MekanismGameTests");
 

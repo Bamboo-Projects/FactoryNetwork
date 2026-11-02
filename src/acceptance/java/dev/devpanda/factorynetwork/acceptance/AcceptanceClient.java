@@ -29,6 +29,9 @@ import org.slf4j.Logger;
 public final class AcceptanceClient {
     private static final Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
     private static final boolean EDITOR = Boolean.getBoolean("fn.acceptance.editor");
+    /** Opens a furnace with the slot numbers on, takes a picture, quits. */
+    private static final boolean SLOTS = Boolean.getBoolean("fn.acceptance.slots");
+    private int slotTicks;
 
     private TerminalMenu opened;
     private int ticks;
@@ -45,6 +48,10 @@ public final class AcceptanceClient {
         if (client.player == null) {
             opened = null;
             ticks = 0;
+            return;
+        }
+        if (SLOTS) {
+            slots(client);
             return;
         }
         if (client.screen != lastScreen) {
@@ -84,6 +91,27 @@ public final class AcceptanceClient {
         if (EDITOR && ticks == 120) {
             Screenshot.grab(client.gameDirectory, "acceptance-native-editor.png", client.getMainRenderTarget(), 1,
                     message -> LOGGER.info("Acceptance screenshot: {}", message.getString()));
+        }
+    }
+
+    private void slots(Minecraft client) {
+        slotTicks++;
+        net.minecraft.core.BlockPos furnace = client.player.blockPosition().east(2);
+        if (slotTicks == 80) {
+            dev.devpanda.factorynetwork.client.FnClientConfig.setShowSlotNumbers(true);
+            dev.devpanda.factorynetwork.client.SlotOverlay.remember(furnace);
+            var hit = new net.minecraft.world.phys.BlockHitResult(furnace.getCenter(),
+                    net.minecraft.core.Direction.UP, furnace, false);
+            client.gameMode.useItemOn(client.player, net.minecraft.world.InteractionHand.MAIN_HAND, hit);
+        }
+        if (slotTicks == 120) {
+            LOGGER.info("FN_ACCEPTANCE_SLOTS screen={}", client.screen == null ? "none"
+                    : client.screen.getClass().getSimpleName());
+            Screenshot.grab(client.gameDirectory, "acceptance-slots.png", client.getMainRenderTarget(), 1,
+                    message -> LOGGER.info("Acceptance screenshot: {}", message.getString()));
+        }
+        if (slotTicks == 160) {
+            client.stop();
         }
     }
 
