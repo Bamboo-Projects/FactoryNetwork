@@ -13092,10 +13092,11 @@ public final class FactoryNetworkGameTests {
     @GameTest(template = EMPTY, timeoutTicks = 100)
     public static void theresourceKindsAreClosedInArunningGame(GameTestHelper helper) {
         var kinds = dev.devpanda.factorynetwork.runtime.ResourceKinds.all();
-        // Three built-in ones and Source from compat/ars. The fourth is not
-        // here as decoration: it is the proof that a foreign kind is really
-        // in a running game — registered on load, like every other.
-        helper.assertValueEqual(kinds.size(), 4, "drei eingebaute und Source");
+        // Three built-in ones, Source from compat/ars and Essentia from
+        // compat/thaumaturge. The foreign two are not here as decoration:
+        // they prove that foreign kinds are really in a running game —
+        // registered on load, like every other.
+        helper.assertValueEqual(kinds.size(), 5, "drei eingebaute, Source und Essenz");
         helper.assertTrue(dev.devpanda.factorynetwork.runtime.ResourceKinds
                         .byPrefix("source") != null,
                 "Source muss angemeldet sein, auch ohne Ars Nouveau: sonst hieße "

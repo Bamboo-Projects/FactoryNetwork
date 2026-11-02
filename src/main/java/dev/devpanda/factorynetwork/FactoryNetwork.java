@@ -35,6 +35,7 @@ public final class FactoryNetwork {
             // Nouveau would mean "no such resource kind" instead of "this mod
             // is missing".
             dev.devpanda.factorynetwork.compat.ars.ArsSource.register();
+            dev.devpanda.factorynetwork.compat.thaumaturge.Essentia.register();
             dev.devpanda.factorynetwork.runtime.ResourceKinds.freeze();
         });
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(DevCommands::register);

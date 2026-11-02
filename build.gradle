@@ -33,6 +33,8 @@ java.toolchain.languageVersion = JavaLanguageVersion.of(25)
 // the source set is missing, behave as in a pack without the mod.
 def withMekanism = project.hasProperty('mekanism_version')
 def withArs = project.hasProperty('ars_nouveau_version')
+// Thaumaturge exists only for 26.1.2, and only on CurseForge.
+def withThaumaturge = project.hasProperty('thaumaturge_file')
 
 sourceSets {
     core
@@ -50,6 +52,12 @@ sourceSets {
             runtimeClasspath += sourceSets.core.output + sourceSets.main.output
         }
     }
+    if (withThaumaturge) {
+        thaumaturge {
+            compileClasspath += sourceSets.core.output + sourceSets.main.output
+            runtimeClasspath += sourceSets.core.output + sourceSets.main.output
+        }
+    }
     if (withArs) {
         ars {
             compileClasspath += sourceSets.core.output + sourceSets.main.output
@@ -62,6 +70,9 @@ sourceSets {
         // The Mekanism tests only where Mekanism is published.
         if (!withMekanism) {
             java.exclude '**/MekanismGameTests.java'
+        }
+        if (!withThaumaturge) {
+            java.exclude '**/EssentiaGameTests.java'
         }
         if (withMekanism) {
             compileClasspath += sourceSets.mekanism.output
@@ -84,6 +95,9 @@ jar {
     if (withArs) {
         from sourceSets.ars.output
     }
+    if (withThaumaturge) {
+        from sourceSets.thaumaturge.output
+    }
 }
 configurations.acceptanceClientImplementation.extendsFrom(configurations.implementation)
 tasks.register('acceptanceJar', Jar) {
@@ -105,6 +119,9 @@ neoForge {
             }
             if (withArs) {
                 sourceSet sourceSets.ars
+            }
+            if (withThaumaturge) {
+                sourceSet sourceSets.thaumaturge
             }
         }
         factorynetwork_tests {
@@ -294,6 +311,9 @@ neoForge {
     if (withMekanism) {
         addModdingDependenciesTo sourceSets.mekanism
     }
+    if (withThaumaturge) {
+        addModdingDependenciesTo sourceSets.thaumaturge
+    }
     if (withArs) {
         addModdingDependenciesTo sourceSets.ars
     }
@@ -325,6 +345,11 @@ repositories {
             // JEI 26 brings its config library from the same place.
             includeGroup 'net.mezzdev.config'
         }
+    }
+    // CurseForge files, for mods published only there (Thaumaturge).
+    exclusiveContent {
+        forRepository { maven { url = 'https://cursemaven.com' } }
+        filter { includeGroup 'curse.maven' }
     }
     // Mekanism hat ein eigenes Maven. Der :api-Klassifikator trägt nur die
     // Schnittstellen — mehr braucht das Übersetzen nicht.
@@ -395,6 +420,14 @@ dependencies {
     // ships inside the mod jar.
     compileOnly "maven.modrinth:refined-storage:${refined_storage_version}"
     runtimeOnly "maven.modrinth:refined-storage:${refined_storage_version}"
+    // Thaumaturge: essentia as a resource kind. Needs Lithostitched and
+    // Curios at runtime.
+    if (withThaumaturge) {
+        thaumaturgeCompileOnly "curse.maven:thaumaturge-${thaumaturge_file}"
+        gametestCompileOnly "curse.maven:thaumaturge-${thaumaturge_file}"
+        runtimeOnly "curse.maven:thaumaturge-${thaumaturge_file}"
+        runtimeOnly "maven.modrinth:lithostitched:${lithostitched_version}"
+    }
     // Curios: the wireless devices can be worn in a curio slot.
     compileOnly "maven.modrinth:curios:${curios_version}"
     if (!withArs) {
