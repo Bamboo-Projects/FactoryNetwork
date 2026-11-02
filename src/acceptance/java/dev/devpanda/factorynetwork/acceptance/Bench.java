@@ -102,7 +102,7 @@ final class Bench {
             forceArea(level, CABLES, cables + 4, 2);
             for (ServerPlayer player : server.getPlayerList().getPlayers()) {
                 player.teleportTo(level, STORAGE.getX() + 0.5, STORAGE.getY(), STORAGE.getZ() + 2.5,
-                        java.util.Set.of(), 180, 0, true);
+                        180, 0);
             }
             wait = WINDOW;
         });
@@ -394,10 +394,10 @@ final class Bench {
     }
 
     private static void forceArea(ServerLevel level, BlockPos origin, int lengthX, int widthZ) {
-        ChunkPos from = ChunkPos.containing(origin.offset(-2, 0, -widthZ));
-        ChunkPos to = ChunkPos.containing(origin.offset(lengthX, 0, widthZ));
-        for (int x = from.x(); x <= to.x(); x++) {
-            for (int z = from.z(); z <= to.z(); z++) {
+        ChunkPos from = new ChunkPos(origin.offset(-2, 0, -widthZ));
+        ChunkPos to = new ChunkPos(origin.offset(lengthX, 0, widthZ));
+        for (int x = from.x; x <= to.x; x++) {
+            for (int z = from.z; z <= to.z; z++) {
                 level.setChunkForced(x, z, true);
             }
         }

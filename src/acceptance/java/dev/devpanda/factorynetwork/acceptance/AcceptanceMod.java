@@ -48,7 +48,7 @@ public final class AcceptanceMod {
     private static void commands(RegisterCommandsEvent event) {
         // /fnbench run [types] [workers] [cables]
         event.getDispatcher().register(Commands.literal("fnbench")
-                .requires(Commands.hasPermission(Commands.LEVEL_OWNERS))
+                .requires(source -> source.hasPermission(4))
                 .then(Commands.literal("run")
                         .executes(ctx -> bench(ctx.getSource(), 5_000, 64, 4_000))
                         .then(Commands.argument("types", com.mojang.brigadier.arguments.IntegerArgumentType.integer(1))
@@ -59,7 +59,7 @@ public final class AcceptanceMod {
                                                         com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(ctx, "workers"),
                                                         com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(ctx, "cables"))))))));
         event.getDispatcher().register(Commands.literal("fnacceptance")
-                .requires(Commands.hasPermission(Commands.LEVEL_OWNERS))
+                .requires(source -> source.hasPermission(4))
                 .then(Commands.literal("setup").executes(ctx -> {
                     setup(ctx.getSource().getLevel());
                     ctx.getSource().sendSuccess(() -> Component.literal("FN_ACCEPTANCE_SETUP_OK"), false);
@@ -106,7 +106,7 @@ public final class AcceptanceMod {
                         .executes(ctx -> {
                             var player = EntityArgument.getPlayer(ctx, "player");
                             var level = ctx.getSource().getLevel();
-                            player.teleportTo(level, 8.5, 64, 12.5, java.util.Set.of(), 180, 10, true);
+                            player.teleportTo(level, 8.5, 64, 12.5, 180, 10);
                             var terminal = (TerminalBlockEntity) level.getBlockEntity(TERMINAL);
                             terminal.sendStateTo(player);
                             player.openMenu(terminal, buffer -> TerminalMenu.writeBlock(buffer, TERMINAL));
@@ -158,8 +158,7 @@ public final class AcceptanceMod {
         for (int tick = 0; tick <= Power.BOOT_TICKS; tick++) controller.power().tick();
         if (!controller.deploy(Project.of("worker transfer {\n    from source\n    to target\n}\n")))
             throw new IllegalStateException("Fixture did not compile: " + controller.diagnostics());
-        level.setRespawnData(new net.minecraft.world.level.storage.LevelData.RespawnData(
-                net.minecraft.core.GlobalPos.of(level.dimension(), new BlockPos(8, 64, 12)), 180, 0));
+        level.setDefaultSpawnPos(new BlockPos(8, 64, 12), 180);
     }
 
     private static void connector(ServerLevel level, BlockPos pos, Direction facing, String name) {

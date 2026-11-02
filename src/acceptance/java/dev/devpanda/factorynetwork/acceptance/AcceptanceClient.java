@@ -12,7 +12,7 @@ import net.minecraft.world.item.ItemStack;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
-import net.neoforged.neoforge.client.network.ClientPacketDistributor;
+import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.common.NeoForge;
 import org.slf4j.Logger;
 
@@ -64,7 +64,7 @@ public final class AcceptanceClient {
                     countBefore = count(client);
                     LOGGER.info("FN_ACCEPTANCE_CLIENT_ROWS rows={} knownTypes={}",
                             ClientStorageView.rows().size(), ClientStorageView.knownTypes());
-                    ClientPacketDistributor.sendToServer(new StorageActionPacket(
+                    PacketDistributor.sendToServer(new StorageActionPacket(
                             StorageActionPacket.Kind.EXTRACT_TO_INVENTORY, ItemKey.of(requested),
                             requested.getMaxStackSize()));
                 }
@@ -82,14 +82,14 @@ public final class AcceptanceClient {
                     requested.getHoverName().getString(), countBefore, count(client));
         }
         if (EDITOR && ticks == 120) {
-            Screenshot.grab(client.gameDirectory, "acceptance-native-editor.png", client.getMainRenderTarget(), 1,
+            Screenshot.grab(client.gameDirectory, "acceptance-native-editor.png", client.getMainRenderTarget(),
                     message -> LOGGER.info("Acceptance screenshot: {}", message.getString()));
         }
     }
 
     private int count(Minecraft client) {
         int total = 0;
-        for (ItemStack stack : client.player.getInventory().getNonEquipmentItems()) {
+        for (ItemStack stack : client.player.getInventory().items) {
             if (ItemStack.isSameItemSameComponents(stack, requested)) {
                 total += stack.getCount();
             }

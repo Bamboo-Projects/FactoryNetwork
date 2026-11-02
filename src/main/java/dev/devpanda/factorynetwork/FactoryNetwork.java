@@ -52,7 +52,7 @@ public final class FactoryNetwork {
         // And only on a client: since GuideME 26 building a guide loads client
         // classes, and a dedicated server crashed while constructing the mod.
         if (net.neoforged.fml.ModList.get().isLoaded("guideme")
-                && net.neoforged.fml.loading.FMLEnvironment.getDist().isClient()) {
+                && net.neoforged.fml.loading.FMLEnvironment.dist.isClient()) {
             dev.devpanda.factorynetwork.compat.guide.FnGuide.register();
         }
     }
