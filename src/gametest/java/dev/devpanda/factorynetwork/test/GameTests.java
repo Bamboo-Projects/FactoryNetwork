@@ -36,6 +36,7 @@ final class GameTests {
             "HandoffGameTests",
             "EditorMultiplayerGameTests",
             "StorageLinkGameTests",
+            "WornDeviceGameTests",
             // Compiled only with Mekanism; missing otherwise.
             "MekanismGameTests");
 

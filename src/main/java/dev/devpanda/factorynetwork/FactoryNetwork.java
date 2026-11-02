@@ -50,6 +50,9 @@ public final class FactoryNetwork {
         if (dev.devpanda.factorynetwork.compat.ae2.FnAe2.installed()) {
             dev.devpanda.factorynetwork.compat.ae2.Ae2Link.register(modBus);
         }
+        if (net.neoforged.fml.ModList.get().isLoaded("curios")) {
+            dev.devpanda.factorynetwork.compat.curios.FnCurios.register();
+        }
         if (net.neoforged.fml.ModList.get().isLoaded("refinedstorage")) {
             dev.devpanda.factorynetwork.compat.refinedstorage.RsLink.register(modBus);
         }

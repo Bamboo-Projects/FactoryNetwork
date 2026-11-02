@@ -319,7 +319,7 @@ public class TerminalMenu extends AbstractContainerMenu {
             return true;
         }
         var battery = dev.devpanda.factorynetwork.platform.Caps.energy(
-                player.getInventory().getItem(deviceSlot));
+                dev.devpanda.factorynetwork.terminal.RemoteAccess.deviceAt(player, deviceSlot));
         if (battery == null || battery.extractEnergy(amount, true) < amount) {
             return false;
         }
@@ -361,7 +361,7 @@ public class TerminalMenu extends AbstractContainerMenu {
             return RemoteAccess.allowed(player, deviceSlot,
                             net.minecraft.core.GlobalPos.of(home, position))
                     && dev.devpanda.factorynetwork.item.RemoteDeviceItem.energyOf(
-                            player.getInventory().getItem(deviceSlot)) > 0;
+                            dev.devpanda.factorynetwork.terminal.RemoteAccess.deviceAt(player, deviceSlot)) > 0;
         }
         return stillValid(access, player, FnBlocks.TERMINAL.get());
     }

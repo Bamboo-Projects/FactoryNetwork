@@ -395,6 +395,11 @@ dependencies {
     // ships inside the mod jar.
     compileOnly "maven.modrinth:refined-storage:${refined_storage_version}"
     runtimeOnly "maven.modrinth:refined-storage:${refined_storage_version}"
+    // Curios: the wireless devices can be worn in a curio slot.
+    compileOnly "maven.modrinth:curios:${curios_version}"
+    if (!withArs) {
+        runtimeOnly "maven.modrinth:curios:${curios_version}"
+    }
     if (withArs) {
         arsCompileOnly "maven.modrinth:ars-nouveau:${ars_nouveau_version}"
         runtimeOnly "maven.modrinth:ars-nouveau:${ars_nouveau_version}"
