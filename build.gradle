@@ -243,6 +243,12 @@ neoForge {
                 programArgument '--quickPlaySingleplayer'
                 programArgument play.toString()
             }
+            // Straight onto a server, e.g. the dev server of runServer:
+            //   ./gradlew runClient -Pjoin=127.0.0.1:25576
+            if (project.hasProperty('join')) {
+                programArgument '--quickPlayMultiplayer'
+                programArgument join.toString()
+            }
             if (project.hasProperty('benchmark')) {
                 systemProperty 'bamboocef.benchmark', 'true'
                 // Direkt in eine Welt: Im Hauptmenü deckelt Minecraft die
@@ -255,6 +261,9 @@ neoForge {
         server {
             server()
             loadedMods = [mainMod]
+            // Its own directory: the client's run/ holds worlds and options a
+            // dedicated server must neither read nor overwrite.
+            gameDirectory = layout.buildDirectory.dir('server')
             programArgument '--nogui'
             systemProperty 'neoforge.enabledGameTestNamespaces', mod_id
         }
@@ -526,5 +535,24 @@ tasks.register('hotswap', Exec) {
     doFirst {
         executable launcher.get().executablePath.asFile.absolutePath
         args(['tools/hotswap/Hotswap.java', '5005'] + pairs)
+    }
+}
+
+// A dev server needs an accepted EULA and, for dev clients without an
+// account, offline mode. Written once; later edits by hand stay.
+tasks.named('runServer') {
+    doFirst {
+        def dir = layout.buildDirectory.dir('server').get().asFile
+        dir.mkdirs()
+        def eula = new File(dir, 'eula.txt')
+        if (!eula.exists()) {
+            eula.text = 'eula=true' + System.lineSeparator()
+        }
+        def properties = new File(dir, 'server.properties')
+        if (!properties.exists()) {
+            properties.text = ['online-mode=false', 'server-port=25576',
+                               'level-type=minecraft:flat', 'spawn-protection=0',
+                               'gamemode=creative', ''].join(System.lineSeparator())
+        }
     }
 }
