@@ -36,6 +36,8 @@ public class FactoryNetworkJadePlugin implements IWailaPlugin {
             FactoryNetwork.MOD_ID, "server_rack");
     public static final ResourceLocation BURNER = ResourceLocation.fromNamespaceAndPath(
             FactoryNetwork.MOD_ID, "burner");
+    public static final ResourceLocation STORAGE_LINK = ResourceLocation.fromNamespaceAndPath(
+            FactoryNetwork.MOD_ID, "storage_link");
     public static final ResourceLocation CONNECTOR = ResourceLocation.fromNamespaceAndPath(
             FactoryNetwork.MOD_ID, "connector");
     public static final ResourceLocation CONTROLLER = ResourceLocation.fromNamespaceAndPath(
@@ -60,6 +62,8 @@ public class FactoryNetworkJadePlugin implements IWailaPlugin {
                 dev.devpanda.factorynetwork.block.RackBlock.class);
         registration.registerBlockDataProvider(BurnerInfo.INSTANCE,
                 dev.devpanda.factorynetwork.block.entity.BurnerBlockEntity.class);
+        registration.registerBlockDataProvider(StorageLinkInfo.INSTANCE,
+                dev.devpanda.factorynetwork.block.entity.StorageLinkBlockEntity.class);
         // <b>These two lines were missing ever since ConnectorInfo existed.</b>
         // The class was registered only as a client component; its server part
         // never ran, KEY_STATE never made it into the bag, and the tooltip
@@ -85,6 +89,8 @@ public class FactoryNetworkJadePlugin implements IWailaPlugin {
                 dev.devpanda.factorynetwork.block.RackBlock.class);
         registration.registerBlockComponent(BurnerInfo.INSTANCE,
                 dev.devpanda.factorynetwork.block.BurnerBlock.class);
+        registration.registerBlockComponent(StorageLinkInfo.INSTANCE,
+                dev.devpanda.factorynetwork.block.StorageLinkBlock.class);
         registration.registerBlockComponent(ConnectorInfo.INSTANCE, CableBlock.class);
         registration.registerBlockComponent(ControllerInfo.INSTANCE,
                 dev.devpanda.factorynetwork.block.ControllerBlock.class);
