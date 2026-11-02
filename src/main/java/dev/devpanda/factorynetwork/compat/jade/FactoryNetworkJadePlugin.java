@@ -36,6 +36,8 @@ public class FactoryNetworkJadePlugin implements IWailaPlugin {
             FactoryNetwork.MOD_ID, "server_rack");
     public static final Identifier BURNER = Identifier.fromNamespaceAndPath(
             FactoryNetwork.MOD_ID, "burner");
+    public static final Identifier STORAGE_LINK = Identifier.fromNamespaceAndPath(
+            FactoryNetwork.MOD_ID, "storage_link");
     public static final Identifier CONNECTOR = Identifier.fromNamespaceAndPath(
             FactoryNetwork.MOD_ID, "connector");
     public static final Identifier CONTROLLER = Identifier.fromNamespaceAndPath(
@@ -60,6 +62,8 @@ public class FactoryNetworkJadePlugin implements IWailaPlugin {
                 dev.devpanda.factorynetwork.block.RackBlock.class);
         registration.registerBlockDataProvider(new ServerData(BurnerInfo.INSTANCE.getUid(), BurnerInfo.INSTANCE::appendServerData),
                 dev.devpanda.factorynetwork.block.entity.BurnerBlockEntity.class);
+        registration.registerBlockDataProvider(new ServerData(StorageLinkInfo.INSTANCE.getUid(), StorageLinkInfo.INSTANCE::appendServerData),
+                dev.devpanda.factorynetwork.block.entity.StorageLinkBlockEntity.class);
         // <b>These two lines were missing ever since ConnectorInfo existed.</b>
         // The class was registered only as a client component; its server part
         // never ran, KEY_STATE never made it into the bag, and the tooltip
@@ -85,6 +89,8 @@ public class FactoryNetworkJadePlugin implements IWailaPlugin {
                 dev.devpanda.factorynetwork.block.RackBlock.class);
         registration.registerBlockComponent(BurnerInfo.INSTANCE,
                 dev.devpanda.factorynetwork.block.BurnerBlock.class);
+        registration.registerBlockComponent(StorageLinkInfo.INSTANCE,
+                dev.devpanda.factorynetwork.block.StorageLinkBlock.class);
         registration.registerBlockComponent(ConnectorInfo.INSTANCE, CableBlock.class);
         registration.registerBlockComponent(ControllerInfo.INSTANCE,
                 dev.devpanda.factorynetwork.block.ControllerBlock.class);

@@ -357,6 +357,8 @@
   "screen.factorynetwork.burner.energy": "%s von %s FE",
   "screen.factorynetwork.burner.rate": "%s FE/t, solange sie brennt",
   "config.jade.plugin_factorynetwork.burner": "Brennkammer: Vorrat und Flamme",
+  "config.jade.plugin_factorynetwork.storage_link": "Lager-Anschluss: angeschlossenes System",
+  "jade.factorynetwork.storage_link.offline": "Nicht erreichbar: kein Kanal oder keine Energie",
   "jade.factorynetwork.burner.burning": "Brennt — %s FE/t",
   "jade.factorynetwork.burner.idle": "Kein Brennstoff",
   "jade.factorynetwork.burner.full": "Vorrat voll — niemand nimmt ab",

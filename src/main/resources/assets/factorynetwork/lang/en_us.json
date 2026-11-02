@@ -357,6 +357,8 @@
   "screen.factorynetwork.burner.energy": "%s of %s FE",
   "screen.factorynetwork.burner.rate": "%s FE/t while burning",
   "config.jade.plugin_factorynetwork.burner": "Burner: charge and flame",
+  "config.jade.plugin_factorynetwork.storage_link": "Storage link: attached system",
+  "jade.factorynetwork.storage_link.offline": "Not reachable: no channel or no energy",
   "jade.factorynetwork.burner.burning": "Burning — %s FE/t",
   "jade.factorynetwork.burner.idle": "No fuel",
   "jade.factorynetwork.burner.full": "Charge full — nothing is taking it",
