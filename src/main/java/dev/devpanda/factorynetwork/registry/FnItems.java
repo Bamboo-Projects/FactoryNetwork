@@ -48,6 +48,10 @@ public final class FnItems {
         return java.util.Collections.unmodifiableMap(halls);
     }
 
+    /** Records a hall and builds it again. */
+    public static final DeferredItem<Item> HALL_BLUEPRINT = ITEMS.registerItem("hall_blueprint",
+            dev.devpanda.factorynetwork.hall.BlueprintItem::new);
+
     public static final DeferredItem<BlockItem> BRIDGE =
             ITEMS.registerSimpleBlockItem(FnBlocks.BRIDGE);
 

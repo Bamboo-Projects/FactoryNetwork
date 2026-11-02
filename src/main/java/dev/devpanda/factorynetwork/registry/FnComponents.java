@@ -97,6 +97,14 @@ public final class FnComponents {
                     .networkSynchronized(ByteBufCodecs.VAR_INT)
                     .build());
 
+    /** What a hall blueprint holds; see {@link dev.devpanda.factorynetwork.hall.Blueprint}. */
+    public static final DeferredHolder<DataComponentType<?>,
+            DataComponentType<dev.devpanda.factorynetwork.hall.Blueprint>> BLUEPRINT =
+            COMPONENTS.register("blueprint", () -> DataComponentType.<dev.devpanda.factorynetwork.hall.Blueprint>builder()
+                    .persistent(dev.devpanda.factorynetwork.hall.Blueprint.CODEC)
+                    .networkSynchronized(dev.devpanda.factorynetwork.hall.Blueprint.STREAM_CODEC)
+                    .build());
+
     private FnComponents() {
     }
 }

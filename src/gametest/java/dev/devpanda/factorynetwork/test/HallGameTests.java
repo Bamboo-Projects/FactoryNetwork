@@ -67,4 +67,47 @@ public final class HallGameTests {
                 "Halle mit der Spitzhacke");
         helper.succeed();
     }
+
+    /**
+     * A blueprint copies blocks and the settings of the blocks it knows, and
+     * asks for the connector parts on top of the cable.
+     *
+     * <p>Read and built in the test world at the places halls 1 and 2 would
+     * have: the geometry is the same, only the dimension is not.
+     */
+    @GameTest(template = FactoryNetworkGameTests.EMPTY, timeoutTicks = 60)
+    public static void aBlueprintCopiesBlocksAndSettings(GameTestHelper helper) {
+        var level = helper.getLevel();
+        BlockPos from = dev.devpanda.factorynetwork.hall.Halls.origin(1);
+        BlockPos to = dev.devpanda.factorynetwork.hall.Halls.origin(2);
+        BlockPos cable = from.offset(2, 1, 2);
+        level.setBlockAndUpdate(cable, FnBlocks.CABLE.get().defaultBlockState());
+        var bus = (dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity) level.getBlockEntity(cable);
+        bus.addPart(net.minecraft.core.Direction.NORTH).setLabel("ofen_1");
+        level.setBlockAndUpdate(from.offset(4, 1, 2), net.minecraft.world.level.block.Blocks.FURNACE.defaultBlockState());
+
+        var blueprint = dev.devpanda.factorynetwork.hall.Blueprint.capture(level, 1, HallTier.SMALL);
+        helper.assertTrue(blueprint != null, "der Bauplan muss entstehen");
+        helper.assertValueEqual(blueprint.blocks().size(), 2, "Blöcke im Bauplan");
+        var materials = blueprint.materials();
+        helper.assertValueEqual(materials.get(dev.devpanda.factorynetwork.registry.FnItems.CONNECTOR.get()), 1,
+                "der Connector wird mitgezählt");
+        helper.assertValueEqual(materials.get(Items.FURNACE), 1, "der Ofen wird gezählt");
+
+        blueprint.build(level, 2);
+        var copy = (dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity)
+                level.getBlockEntity(to.offset(2, 1, 2));
+        helper.assertTrue(copy != null && copy.partAt(net.minecraft.core.Direction.NORTH) != null,
+                "der Connector muss nachgebaut sein");
+        helper.assertValueEqual(copy.partAt(net.minecraft.core.Direction.NORTH).label(), "ofen_1",
+                "der Name muss mitkommen");
+        helper.assertTrue(level.getBlockState(to.offset(4, 1, 2)).is(net.minecraft.world.level.block.Blocks.FURNACE),
+                "der Ofen muss stehen");
+
+        level.setBlockAndUpdate(cable, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState());
+        level.setBlockAndUpdate(from.offset(4, 1, 2), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState());
+        level.setBlockAndUpdate(to.offset(2, 1, 2), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState());
+        level.setBlockAndUpdate(to.offset(4, 1, 2), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState());
+        helper.succeed();
+    }
 }
