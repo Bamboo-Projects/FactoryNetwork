@@ -57,6 +57,7 @@ public final class FactoryNetwork {
         if (net.neoforged.fml.ModList.get().isLoaded("refinedstorage")) {
             dev.devpanda.factorynetwork.compat.refinedstorage.RsLink.register(modBus);
         }
+        dev.devpanda.factorynetwork.hall.HallLink.register();
         FnBlocks.BLOCKS.register(modBus);
         FnItems.ITEMS.register(modBus);
         dev.devpanda.factorynetwork.registry.FnComponents.COMPONENTS.register(modBus);

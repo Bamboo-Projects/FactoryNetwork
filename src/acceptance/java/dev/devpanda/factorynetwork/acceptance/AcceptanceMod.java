@@ -79,6 +79,10 @@ public final class AcceptanceMod {
                     ctx.getSource().sendSuccess(() -> Component.literal(hallRoundTrip(ctx.getSource().getLevel())), false);
                     return 1;
                 })
+                .then(Commands.literal("couple").executes(ctx -> {
+                    ctx.getSource().sendSuccess(() -> Component.literal(hallCouple(ctx.getSource().getLevel())), false);
+                    return 1;
+                }))
                 .then(Commands.literal("loaded").executes(ctx -> {
                     var hall = ctx.getSource().getServer().getLevel(dev.devpanda.factorynetwork.hall.Halls.DIMENSION);
                     BlockPos low = dev.devpanda.factorynetwork.hall.Halls.origin(1);
@@ -263,5 +267,44 @@ public final class AcceptanceMod {
         Object dropped = drops.isEmpty() ? null : drops.getFirst().get(dev.devpanda.factorynetwork.registry.FnComponents.HALL.get());
         return "FN_HALL id=" + id + " inside=" + inside + " inRoom=" + inRoom + " wall=" + wall
                 + " after=" + after + " door=" + door + " dropNumber=" + dropped;
+    }
+
+    /** A storage link at the door of hall 1 fills the store of the network inside. */
+    private static String hallCouple(net.minecraft.server.level.ServerLevel level) {
+        var reg = dev.devpanda.factorynetwork.registry.FnBlocks.class;
+        var hall = level.getServer().getLevel(dev.devpanda.factorynetwork.hall.Halls.DIMENSION);
+        int id = ((dev.devpanda.factorynetwork.hall.HallBlockEntity) level.getBlockEntity(new BlockPos(20, 64, 20))).hall();
+        BlockPos low = dev.devpanda.factorynetwork.hall.Halls.origin(id);
+        BlockPos controllerPos = low.offset(2, 1, 2);
+        BlockPos drivePos = low.offset(3, 1, 2);
+        hall.getChunk(controllerPos);
+        hall.setBlockAndUpdate(controllerPos, dev.devpanda.factorynetwork.registry.FnBlocks.CONTROLLER.get().defaultBlockState());
+        hall.setBlockAndUpdate(drivePos, dev.devpanda.factorynetwork.registry.FnBlocks.DRIVE.get().defaultBlockState());
+        var drive = (dev.devpanda.factorynetwork.block.entity.DriveBlockEntity) hall.getBlockEntity(drivePos);
+        if (drive.getItem(0).isEmpty()) {
+            drive.setItem(0, new net.minecraft.world.item.ItemStack(dev.devpanda.factorynetwork.registry.FnItems.CELLS
+                    .get(dev.devpanda.factorynetwork.storage.CellTier.K1).get()));
+        }
+        var controller = (dev.devpanda.factorynetwork.block.entity.ControllerBlockEntity) hall.getBlockEntity(controllerPos);
+        controller.rebuildNetwork();
+
+        BlockPos linkPos = new BlockPos(21, 64, 20);
+        level.setBlockAndUpdate(linkPos, dev.devpanda.factorynetwork.registry.FnBlocks.STORAGE_LINK.get().defaultBlockState());
+        var link = (dev.devpanda.factorynetwork.block.entity.StorageLinkBlockEntity) level.getBlockEntity(linkPos);
+        link.neighbourChanged();
+        link.serverTick();
+        var adapter = link.adapter();
+        if (adapter == null || adapter.items() == null) {
+            return "FN_HALL_COUPLE adapter=" + (adapter == null ? "none" : adapter.systemName()) + " items=none controllers="
+                    + dev.devpanda.factorynetwork.network.ControllerRegistry.in(hall) + " at=" + controllerPos
+                    + " be=" + hall.getBlockEntity(controllerPos);
+        }
+        var iron = dev.devpanda.factorynetwork.storage.ItemKey.bare(net.minecraft.world.item.Items.IRON_INGOT);
+        long before = controller.storage().count(iron);
+        long in = adapter.items().insert(iron, 64, false);
+        long out = adapter.items().extract(iron, 10, false);
+        long after = controller.storage().count(iron);
+        return "FN_HALL_COUPLE hall=" + id + " adapter=" + adapter.systemName() + " before=" + before + " in=" + in
+                + " out=" + out + " after=" + after;
     }
 }

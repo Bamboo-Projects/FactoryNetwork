@@ -1,6 +1,6 @@
 # Die Fabrikhalle — Entwurf
 
-Stand: 2026-11-02. Status: **Schritt 1 gebaut** (Dimension, Hallenblock in drei Größen, Hallennummer, Rein und Raus, Abbauen und Setzen).
+Stand: 2026-11-02. Status: **Schritte 1 bis 3 gebaut** (Dimension, Hallenblock in drei Größen, Hallennummer, Rein und Raus, Abbauen und Setzen, Laden über Ladescheine, Lager-Kopplung für Items). Offen: Bauplan, Flüssigkeiten durch die Kopplung.
 
 Gewünscht am 02.11.: eine Fabrik in einer eigenen Dimension, wie bei Compact
 Machines, als Ergänzung zu den Multiblöcken in der Welt. Dazu:
