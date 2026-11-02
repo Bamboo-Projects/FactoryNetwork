@@ -100,6 +100,7 @@ final class Bench {
             forceArea(level, STORAGE, (types + perDrive - 1) / perDrive + 4, 4);
             forceArea(level, WORKERS, workers * 2 + 4, 6);
             forceArea(level, CABLES, cables + 4, 2);
+            forceArea(level, ME_LINK, 12, 3);
             for (ServerPlayer player : server.getPlayerList().getPlayers()) {
                 player.teleportTo(level, STORAGE.getX() + 0.5, STORAGE.getY(), STORAGE.getZ() + 2.5,
                         java.util.Set.of(), 180, 0, true);
@@ -126,6 +127,14 @@ final class Bench {
         STEPS.add(server -> countMoved(level, workers, results, "movedAfter"));
 
         // A long cable network, rebuilt from scratch.
+        // An ME network behind a storage link, if AE2 is there.
+        if (net.neoforged.fml.ModList.get().isLoaded("ae2")) {
+            STEPS.add(server -> meBuild(level));
+            STEPS.add(server -> wait = WINDOW);
+            STEPS.add(server -> meMeasure(100, results));
+            STEPS.add(server -> meMeasure(4_000, results));
+        }
+
         STEPS.add(server -> cables(level, cables, results));
         settle();
         measure("cablesIdle", results);
@@ -212,6 +221,11 @@ final class Bench {
     private static final BlockPos STORAGE = new BlockPos(100, -60, 0);
     private static final BlockPos WORKERS = new BlockPos(100, -60, 40);
     private static final BlockPos CABLES = new BlockPos(100, -60, 80);
+    private static final BlockPos ME_LINK = new BlockPos(100, -60, 120);
+    /** Seven drives: an ad-hoc ME network has eight channels, the link takes one. */
+    private static final int ME_DRIVES = 7;
+    private static dev.devpanda.factorynetwork.block.entity.StorageLinkBlockEntity meLink;
+    private static int meFilled;
 
     private static void storage(ServerLevel level, int types, Map<String, Object> results) {
         int perDrive = DriveBlockEntity.SLOTS * CellTier.K64.types();
@@ -374,6 +388,68 @@ final class Bench {
             }
         }
         results.put(key, moved);
+    }
+
+    private static void meBuild(ServerLevel level) {
+        var registry = net.minecraft.core.registries.BuiltInRegistries.BLOCK;
+        java.util.function.Function<String, net.minecraft.world.level.block.Block> ae2 =
+                path -> registry.getValue(net.minecraft.resources.Identifier.fromNamespaceAndPath("ae2", path));
+        level.setBlockAndUpdate(ME_LINK, FnBlocks.STORAGE_LINK.get().defaultBlockState());
+        level.setBlockAndUpdate(ME_LINK.north(), ae2.apply("creative_energy_cell").defaultBlockState());
+        ItemStack cell = new ItemStack(net.minecraft.core.registries.BuiltInRegistries.ITEM.getValue(
+                net.minecraft.resources.Identifier.fromNamespaceAndPath("ae2", "item_storage_cell_256k")));
+        for (int i = 1; i <= ME_DRIVES; i++) {
+            BlockPos pos = ME_LINK.east(i);
+            level.setBlockAndUpdate(pos, ae2.apply("drive").defaultBlockState());
+            var handler = dev.devpanda.factorynetwork.platform.Caps.items(level, pos, null);
+            for (int slot = 0; slot < 10 && handler != null; slot++) {
+                handler.insertItem(slot, cell.copy(), false);
+            }
+        }
+        meLink = (dev.devpanda.factorynetwork.block.entity.StorageLinkBlockEntity) level.getBlockEntity(ME_LINK);
+        meFilled = 0;
+    }
+
+    /** Fills the ME network up to {@code types} sorts, then times access by sort. */
+    private static void meMeasure(int types, Map<String, Object> results) {
+        var adapter = meLink == null ? null : meLink.adapter();
+        if (adapter == null || adapter.items() == null) {
+            results.put("me" + types, "link not attached");
+            return;
+        }
+        var stock = adapter.items();
+        for (int i = meFilled; i < types; i++) {
+            ItemStack stack = new ItemStack(Items.PAPER);
+            stack.set(DataComponents.CUSTOM_NAME, Component.literal("me " + i));
+            stock.insert(ItemKey.of(stack), 100, false);
+        }
+        meFilled = Math.max(meFilled, types);
+        long[] sorts = {0};
+        stock.find(List.of(), (key, amount) -> sorts[0]++);
+        Map<String, Object> me = new LinkedHashMap<>();
+        me.put("sortsInMe", sorts[0]);
+        // One worker step as the runtime does it: narrow the view to the
+        // filter, take a stack, put it back.
+        var view = meLink.itemView();
+        int rounds = 2_000;
+        long start = System.nanoTime();
+        for (int i = 0; i < rounds; i++) {
+            var narrowed = dev.devpanda.factorynetwork.network.link.KeyedItems.narrow(view, List.of(Items.PAPER));
+            ItemStack taken = narrowed.extractItem(0, 1, false);
+            narrowed.insertItem(0, taken, false);
+        }
+        me.put("narrowFindAllPaperUs", round((System.nanoTime() - start) / 1e3 / rounds));
+        var bare = ItemKey.bare(Items.IRON_INGOT);
+        stock.insert(bare, 10_000, false);
+        start = System.nanoTime();
+        for (int i = 0; i < rounds; i++) {
+            var narrowed = dev.devpanda.factorynetwork.network.link.KeyedItems.narrow(view, List.of(Items.IRON_INGOT));
+            ItemStack taken = narrowed.extractItem(0, 64, false);
+            narrowed.insertItem(0, taken, false);
+        }
+        me.put("narrowOneSortUs", round((System.nanoTime() - start) / 1e3 / rounds));
+        results.put("me" + types, me);
+        LOGGER.info("FN_BENCH_STEP me{} {}", types, JSON.toJson(me));
     }
 
     private static void cables(ServerLevel level, int count, Map<String, Object> results) {

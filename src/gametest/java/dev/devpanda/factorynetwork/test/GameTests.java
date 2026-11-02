@@ -35,6 +35,7 @@ final class GameTests {
             "FactoryNetworkGameTests",
             "HandoffGameTests",
             "EditorMultiplayerGameTests",
+            "StorageLinkGameTests",
             // Compiled only with Mekanism; missing otherwise.
             "MekanismGameTests");
 

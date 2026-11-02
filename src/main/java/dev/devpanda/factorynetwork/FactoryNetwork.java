@@ -46,6 +46,10 @@ public final class FactoryNetwork {
                         dev.devpanda.factorynetwork.network.ControllerRegistry.onChunkChange(event));
         container.registerConfig(net.neoforged.fml.config.ModConfig.Type.CLIENT,
                 dev.devpanda.factorynetwork.client.FnClientConfig.SPEC);
+        // The storage link's adapters, each only where its mod runs.
+        if (dev.devpanda.factorynetwork.compat.ae2.FnAe2.installed()) {
+            dev.devpanda.factorynetwork.compat.ae2.Ae2Link.register(modBus);
+        }
         FnBlocks.BLOCKS.register(modBus);
         FnItems.ITEMS.register(modBus);
         dev.devpanda.factorynetwork.registry.FnComponents.COMPONENTS.register(modBus);
