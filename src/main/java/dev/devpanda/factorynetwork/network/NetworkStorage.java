@@ -47,6 +47,25 @@ public final class NetworkStorage implements ResourceStore {
      */
     private final Map<ItemKey, Long> index = new LinkedHashMap<>();
     private boolean indexValid;
+
+    /** A cell and the drive it sits in. */
+    private record Holder(CellInventory<ItemKey> cell, DriveBlockEntity drive) {
+    }
+
+    /**
+     * Which cells hold a sort, built and kept together with {@link #index}.
+     *
+     * <p>Without it every insert and extract searched all cells: 320 cells at
+     * 20,000 sorts, 33 µs an insert (docs/messung-last-2026-11-02.md). With it
+     * the cost no longer grows with the size of the store.
+     */
+    private final Map<ItemKey, List<Holder>> holders = new java.util.HashMap<>();
+
+    /**
+     * The sorts that changed since {@link #drainChanges}, or {@code null} when
+     * more changed than can be named (a cell pulled, a bus refreshed).
+     */
+    private java.util.Set<ItemKey> changed = null;
     /** The state of the drives when the index was built. */
     private long[] seenRevisions = new long[0];
     /** Called on every change — the controller then sends in a batch. */
@@ -142,9 +161,17 @@ public final class NetworkStorage implements ResourceStore {
 
     private void rebuildIndex() {
         index.clear();
-        for (CellInventory<ItemKey> cell : cells()) {
-            cell.contentsView().forEach((item, count) -> index.merge(item, count, Long::sum));
+        holders.clear();
+        List<CellInventory<ItemKey>> all = cells();
+        for (int i = 0; i < all.size(); i++) {
+            Holder holder = new Holder(all.get(i), cellOwners.get(i));
+            all.get(i).contentsView().forEach((item, count) -> {
+                index.merge(item, count, Long::sum);
+                holders.computeIfAbsent(item, key -> new ArrayList<>(1)).add(holder);
+            });
         }
+        // Everything may have changed; the next send compares in full.
+        changed = null;
         // And whatever lies in the foreign inventories. Nothing is read here —
         // refreshBuses does that per tick; here stands only what stood there last.
         for (StorageBus bus : buses) {
@@ -293,24 +320,35 @@ public final class NetworkStorage implements ResourceStore {
             }
             left = bus.insert(item, left);
         }
-        List<CellInventory<ItemKey>> cells = cells();
         java.util.Set<DriveBlockEntity> touched = new java.util.HashSet<>(2);
         boolean touchedBus = left < count;
-        for (int i = 0; i < cells.size() && left > 0; i++) {
-            CellInventory<ItemKey> cell = cells.get(i);
-            if (cell.count(item) > 0) {
+        // First the cells that already hold this sort, found in the directory.
+        List<Holder> holding = holders.get(item);
+        if (holding != null) {
+            for (int i = 0; i < holding.size() && left > 0; i++) {
+                long stored = holding.get(i).cell().insert(item, left);
+                if (stored > 0) {
+                    left -= stored;
+                    touched.add(holding.get(i).drive());
+                }
+            }
+        }
+        // Then any cell with room. Only here is a search over all cells left:
+        // when the sort is new or its cells are full.
+        if (left > 0) {
+            List<CellInventory<ItemKey>> cells = cells();
+            for (int i = 0; i < cells.size() && left > 0; i++) {
+                CellInventory<ItemKey> cell = cells.get(i);
+                boolean had = cell.count(item) > 0;
                 long stored = cell.insert(item, left);
                 if (stored > 0) {
                     left -= stored;
                     touched.add(cellOwners.get(i));
+                    if (!had) {
+                        holders.computeIfAbsent(item, key -> new ArrayList<>(1))
+                                .add(new Holder(cell, cellOwners.get(i)));
+                    }
                 }
-            }
-        }
-        for (int i = 0; i < cells.size() && left > 0; i++) {
-            long stored = cells.get(i).insert(item, left);
-            if (stored > 0) {
-                left -= stored;
-                touched.add(cellOwners.get(i));
             }
         }
         long afterCells = left;
@@ -325,6 +363,7 @@ public final class NetworkStorage implements ResourceStore {
         }
         if (left < count) {
             stock.merge(item, count - left, Long::sum);
+            noteChanged(item);
             if (touchedBus || left < afterCells) {
                 // A bus took part: what it holds is not one drive's matter.
                 markChanged();
@@ -346,13 +385,22 @@ public final class NetworkStorage implements ResourceStore {
         }
         Map<ItemKey, Long> stock = index();
         long taken = 0;
-        List<CellInventory<ItemKey>> cells = cells();
         java.util.Set<DriveBlockEntity> touched = new java.util.HashSet<>(2);
-        for (int i = 0; i < cells.size() && taken < count; i++) {
-            long got = cells.get(i).extract(item, count - taken);
-            if (got > 0) {
-                taken += got;
-                touched.add(cellOwners.get(i));
+        List<Holder> holding = holders.get(item);
+        if (holding != null) {
+            for (var it = holding.iterator(); it.hasNext() && taken < count; ) {
+                Holder holder = it.next();
+                long got = holder.cell().extract(item, count - taken);
+                if (got > 0) {
+                    taken += got;
+                    touched.add(holder.drive());
+                }
+                if (holder.cell().count(item) <= 0) {
+                    it.remove();
+                }
+            }
+            if (holding.isEmpty()) {
+                holders.remove(item);
             }
         }
         long fromCells = taken;
@@ -373,6 +421,7 @@ public final class NetworkStorage implements ResourceStore {
             } else {
                 stock.remove(item);
             }
+            noteChanged(item);
             if (taken > fromCells) {
                 markChanged();
             } else {
@@ -482,6 +531,8 @@ public final class NetworkStorage implements ResourceStore {
             cell.clear();
         }
         stock.clear();
+        holders.clear();
+        changed = null;
         markChanged();
     }
 
@@ -496,6 +547,28 @@ public final class NetworkStorage implements ResourceStore {
     private void markChanged() {
         drives.forEach(DriveBlockEntity::setChanged);
         onChange.run();
+    }
+
+    private void noteChanged(ItemKey item) {
+        if (changed != null) {
+            changed.add(item);
+        }
+    }
+
+    /**
+     * The sorts changed since the last call, or {@code null} when the caller
+     * has to compare in full. Starts a new round of noting.
+     */
+    public java.util.Set<ItemKey> drainChanges() {
+        index();
+        java.util.Set<ItemKey> result = changed;
+        changed = new java.util.HashSet<>();
+        return result;
+    }
+
+    /** The amount of one sort, from the index. */
+    public long amountOf(ItemKey item) {
+        return index().getOrDefault(item, 0L);
     }
 
     private void markChanged(java.util.Collection<DriveBlockEntity> touched) {
