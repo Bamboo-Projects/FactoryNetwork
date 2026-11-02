@@ -320,11 +320,14 @@ public class StorageTabView {
         // Familiar bindings: left a full stack, right a half one.
         int stack = entry.stack().getMaxStackSize();
         int wanted = button == 1 ? Math.max(1, stack / 2) : stack;
+        // Shift: a full stack straight into the inventory, as in any container.
+        StorageActionPacket.Kind kind = StorageActionPacket.Kind.EXTRACT;
         if (Keys.shift()) {
             wanted = stack;
+            kind = StorageActionPacket.Kind.EXTRACT_TO_INVENTORY;
         }
         ClientPacketDistributor.sendToServer(new StorageActionPacket(
-                StorageActionPacket.Kind.EXTRACT, dev.devpanda.factorynetwork.storage.ItemKey.of(entry.stack()), wanted));
+                kind, dev.devpanda.factorynetwork.storage.ItemKey.of(entry.stack()), wanted));
         return true;
     }
 

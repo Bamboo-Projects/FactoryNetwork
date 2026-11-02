@@ -30,7 +30,9 @@ public record StorageActionPacket(Kind kind, dev.devpanda.factorynetwork.storage
         /** From the network onto the cursor. */
         EXTRACT,
         /** From the cursor into the network. */
-        INSERT
+        INSERT,
+        /** From the network straight into the player's inventory (shift-click). */
+        EXTRACT_TO_INVENTORY
     }
 
     public static final Type<StorageActionPacket> TYPE = new Type<>(
@@ -92,6 +94,20 @@ public record StorageActionPacket(Kind kind, dev.devpanda.factorynetwork.storage
                     // Cursor is occupied: withdraw nothing, put everything back.
                     controller.storage().insert(packet.key(), taken);
                     return;
+                }
+                controller.setChanged();
+            }
+            case EXTRACT_TO_INVENTORY -> {
+                int wanted = Math.min(packet.amount(), packet.key().maxStackSize());
+                long taken = controller.storage().extract(packet.key(), wanted);
+                if (taken <= 0) {
+                    return;
+                }
+                ItemStack stack = packet.key().toStack((int) taken);
+                // add() takes what fits and leaves the rest in the stack.
+                player.getInventory().add(stack);
+                if (!stack.isEmpty()) {
+                    controller.storage().insert(packet.key(), stack.getCount());
                 }
                 controller.setChanged();
             }
