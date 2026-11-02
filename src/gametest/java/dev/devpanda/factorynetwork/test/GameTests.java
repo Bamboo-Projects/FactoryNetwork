@@ -39,6 +39,7 @@ final class GameTests {
             "WornDeviceGameTests",
             "EssentiaGameTests",
             "SlotMapGameTests",
+            "HallGameTests",
             // Compiled only with Mekanism; missing otherwise.
             "MekanismGameTests");
 

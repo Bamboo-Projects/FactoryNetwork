@@ -207,6 +207,33 @@ public final class FnBlocks {
             // is narrower at the sides.
             props -> new TerminalBlock(props.noOcclusion()), FnBlocks::machineProperties);
 
+    /** The factory halls, one block per size. */
+    public static final java.util.Map<dev.devpanda.factorynetwork.hall.HallTier,
+            DeferredBlock<dev.devpanda.factorynetwork.hall.HallBlock>> HALLS = registerHalls();
+
+    private static java.util.Map<dev.devpanda.factorynetwork.hall.HallTier,
+            DeferredBlock<dev.devpanda.factorynetwork.hall.HallBlock>> registerHalls() {
+        java.util.Map<dev.devpanda.factorynetwork.hall.HallTier,
+                DeferredBlock<dev.devpanda.factorynetwork.hall.HallBlock>> halls =
+                new java.util.EnumMap<>(dev.devpanda.factorynetwork.hall.HallTier.class);
+        for (var tier : dev.devpanda.factorynetwork.hall.HallTier.values()) {
+            halls.put(tier, BLOCKS.registerBlock(tier.id(),
+                    props -> new dev.devpanda.factorynetwork.hall.HallBlock(tier, props),
+                    FnBlocks::machineProperties));
+        }
+        return java.util.Collections.unmodifiableMap(halls);
+    }
+
+    /** The wall of a hall: unbreakable, and the way out. */
+    public static final DeferredBlock<Block> HALL_WALL = BLOCKS.registerBlock("hall_wall",
+            dev.devpanda.factorynetwork.hall.HallWallBlock::new,
+            () -> BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_GRAY)
+                    .strength(-1.0F, 3_600_000.0F)
+                    .noLootTable()
+                    .sound(SoundType.METAL)
+                    .lightLevel(state -> 15));
+
     private static BlockBehaviour.Properties machineProperties() {
         return BlockBehaviour.Properties.of()
                 .mapColor(MapColor.METAL)

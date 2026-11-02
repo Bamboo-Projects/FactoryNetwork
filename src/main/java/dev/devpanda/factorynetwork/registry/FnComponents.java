@@ -85,6 +85,18 @@ public final class FnComponents {
                             .networkSynchronized(net.minecraft.core.UUIDUtil.STREAM_CODEC)
                             .build());
 
+    /**
+     * The number of the factory hall a hall block opens.
+     *
+     * <p>Only the number: size and door live in the world's hall list. An
+     * item that carried the whole hall would be a copy machine.
+     */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> HALL =
+            COMPONENTS.register("hall", () -> DataComponentType.<Integer>builder()
+                    .persistent(Codec.INT)
+                    .networkSynchronized(ByteBufCodecs.VAR_INT)
+                    .build());
+
     private FnComponents() {
     }
 }

@@ -1,6 +1,6 @@
 # Die Fabrikhalle — Entwurf
 
-Stand: 2026-11-02. Status: **Entwurf, nichts gebaut.**
+Stand: 2026-11-02. Status: **Schritt 1 gebaut** (Dimension, Hallenblock in drei Größen, Hallennummer, Rein und Raus, Abbauen und Setzen).
 
 Gewünscht am 02.11.: eine Fabrik in einer eigenen Dimension, wie bei Compact
 Machines, als Ergänzung zu den Multiblöcken in der Welt. Dazu:
@@ -67,10 +67,24 @@ steht still, und ein Spieler merkt es erst an fehlenden Gegenständen.
 
 ### 2.4 Netz durch die Wand
 
-Unser Netz endet heute an Dimensionsgrenzen; die Quantum-Bridge hebt das für
-zwei Bridges auf (`plan-quantum-bridge.md`). Der Hallenblock wird genau so
-eine Bridge, nur mit festem Gegenstück: der Innenwand an derselben Stelle.
-Damit gibt es keinen neuen Netzmechanismus, sondern eine Bridge ohne Karte.
+**Korrektur gegenüber dem ersten Entwurf:** Die Quantum-Bridge hebt die
+Dimensionsgrenze nicht auf. `BridgeRegistry` führt Brücken je `Level`, und
+das Netz (`FactoryGraph`, `DevicePos`) kennt nur Positionen ohne Dimension.
+Ein Netz, das durch die Wand reicht, wäre ein Umbau des ganzen Graphen.
+
+Zwei Wege ohne diesen Umbau:
+
+- **Lager-Kopplung (Vorgabe):** Jede Halle ist ein eigenes Netz mit eigenem
+  Controller. Der Hallenblock wirkt wie ein Lager-Anschluss in beide
+  Richtungen: Das Netz draußen sieht das Lager der Halle, die Halle das Lager
+  draußen. Baut auf den Adaptern des Lager-Anschlusses auf.
+- **Durchreiche:** Kein Controller in der Halle; jede Seite des Hallenblocks
+  reicht Items, Flüssigkeiten und Energie an den Block neben dem passenden
+  Wandstück innen weiter, wie bei Compact Machines.
+
+Die Vorgabe folgt aus 2.5: Die Kopier-Tabelle setzt Controller, Connector
+und Router in der Halle voraus. Grenze: `slots(n)` an einer Maschine in der
+Halle geht von draußen nicht; die Durchreiche kann später dazukommen.
 
 ### 2.5 Der Bauplan (Klonen)
 
@@ -122,11 +136,27 @@ Zusammen etwa 1,5 bis 2 Wochen.
 
 ---
 
-## 4. Entscheidungen, die vorher fallen müssen
+## 4. Entscheidungen
 
-1. **Stufen und Größen:** 16 / 32 / 48 Blöcke, oder anders?
-2. **Wer darf hinein:** nur der Besitzer, oder jeder (wie eine Tür)?
-3. **Klonen kostet:** nur die Blöcke, oder zusätzlich Energie oder ein
-   Bauplan-Item, das verbraucht wird?
-4. **Verwaiste Hallen:** behalten, wie vorgeschlagen, oder mit dem Block
-   löschen?
+Am 02.11. mit Vorgaben festgelegt, solange der User nichts anderes sagt:
+
+1. **Stufen und Größen:** 16, 32 und 48 Blöcke Kantenlänge (`HallTier`).
+2. **Wer darf hinein:** jeder, wie bei einer Tür; ein Schutz-Mod regelt den
+   Block selbst.
+3. **Klonen kostet:** nur die Blöcke.
+4. **Verwaiste Hallen:** bleiben erhalten; ein Admin-Befehl listet sie.
+5. **Netz durch die Wand:** Lager-Kopplung (siehe 2.4).
+
+## 5. Was Schritt 1 festlegt
+
+- Die Hallennummer entsteht beim **ersten Betreten**, nicht beim Setzen:
+  Setzen und Abbauen eines nie betretenen Blocks verbraucht keine Halle.
+- **Eine Halle, eine Tür.** Ein zweiter Block mit derselben Nummer
+  (kopiert im Kreativmodus) öffnet nichts, solange der erste steht.
+- **Keine Halle in einer Halle.** Ein Ladeschein, der sich selbst geladen
+  hält, entlädt nie.
+- **Raus ohne Tür:** Steht der Block nirgends, führt die Wand zum
+  Spawnpunkt, mit Meldung.
+- Jedes Wandstück ist ein Ausgang (Rechtsklick).
+- Die Spieltest-Welt lädt keine Dimensionen aus Datenpaketen; Rein und Raus
+  prüft `/fnhall` im Abnahme-Server.

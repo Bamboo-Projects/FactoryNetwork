@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "PCP",
+    "CEC",
+    "PCP"
+  ],
+  "key": {
+    "P": "factorynetwork:plate",
+    "C": "factorynetwork:crystal",
+    "E": "minecraft:ender_pearl"
+  },
+  "result": {
+    "id": "factorynetwork:hall_16",
+    "count": 1
+  }
+}

@@ -77,6 +77,13 @@ public final class FnBlockEntities {
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<TerminalBlockEntity>> TERMINAL =
             BLOCK_ENTITIES.register("terminal", () -> new BlockEntityType<>(TerminalBlockEntity::new, FnBlocks.TERMINAL.get()));
 
+    public static final DeferredHolder<BlockEntityType<?>,
+            BlockEntityType<dev.devpanda.factorynetwork.hall.HallBlockEntity>> HALL =
+            BLOCK_ENTITIES.register("hall", () -> new BlockEntityType<>(
+                    dev.devpanda.factorynetwork.hall.HallBlockEntity::new,
+                    FnBlocks.HALLS.values().stream().map(net.neoforged.neoforge.registries.DeferredBlock::get)
+                            .toArray(net.minecraft.world.level.block.Block[]::new)));
+
     private FnBlockEntities() {
     }
 }

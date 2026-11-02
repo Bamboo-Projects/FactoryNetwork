@@ -41,6 +41,9 @@ public final class AcceptanceMod {
     public AcceptanceMod() {
         NeoForge.EVENT_BUS.addListener(AcceptanceMod::commands);
         NeoForge.EVENT_BUS.addListener(AcceptanceMod::power);
+        if (Boolean.getBoolean("fn.acceptance.hall")) {
+            NeoForge.EVENT_BUS.addListener(AcceptanceMod::hallForHall);
+        }
         if (Boolean.getBoolean("fn.acceptance.slots")) {
             NeoForge.EVENT_BUS.addListener(AcceptanceMod::furnaceForSlots);
         }
@@ -69,6 +72,13 @@ public final class AcceptanceMod {
                                                         com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(ctx, "types"),
                                                         com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(ctx, "workers"),
                                                         com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(ctx, "cables"))))))));
+        // /fnhall: a stand-in player walks into a hall and out again.
+        event.getDispatcher().register(Commands.literal("fnhall")
+                .requires(Commands.hasPermission(Commands.LEVEL_OWNERS))
+                .executes(ctx -> {
+                    ctx.getSource().sendSuccess(() -> Component.literal(hallRoundTrip(ctx.getSource().getLevel())), false);
+                    return 1;
+                }));
         event.getDispatcher().register(Commands.literal("fnacceptance")
                 .requires(Commands.hasPermission(Commands.LEVEL_OWNERS))
                 .then(Commands.literal("setup").executes(ctx -> {
@@ -214,5 +224,37 @@ public final class AcceptanceMod {
             container.setItem(0, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.IRON_ORE, 5));
             container.setItem(1, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.COAL, 3));
         }
+    }
+
+    /** For the hall check: a small hall two blocks east of whoever joins. */
+    private static void hallForHall(net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent event) {
+        var player = event.getEntity();
+        player.level().setBlockAndUpdate(player.blockPosition().east(2),
+                dev.devpanda.factorynetwork.registry.FnBlocks.HALLS
+                        .get(dev.devpanda.factorynetwork.hall.HallTier.SMALL).get().defaultBlockState());
+    }
+
+    private static String hallRoundTrip(net.minecraft.server.level.ServerLevel level) {
+        BlockPos door = new BlockPos(20, 64, 20);
+        level.getChunk(door);
+        level.setBlockAndUpdate(door.below(), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState());
+        level.setBlockAndUpdate(door, dev.devpanda.factorynetwork.registry.FnBlocks.HALLS
+                .get(dev.devpanda.factorynetwork.hall.HallTier.SMALL).get().defaultBlockState());
+        var block = (dev.devpanda.factorynetwork.hall.HallBlockEntity) level.getBlockEntity(door);
+        var player = net.neoforged.neoforge.common.util.FakePlayerFactory.getMinecraft(level);
+        player.setPos(door.getCenter().add(0, 1, 0));
+        dev.devpanda.factorynetwork.hall.HallDoor.enter(player, block);
+        int id = block.hall();
+        String inside = player.level().dimension().identifier() + " " + player.blockPosition();
+        var hall = (net.minecraft.server.level.ServerLevel) player.level();
+        String wall = hall.getBlockState(dev.devpanda.factorynetwork.hall.Halls.origin(id)).getBlock().toString();
+        boolean inRoom = dev.devpanda.factorynetwork.hall.Halls.inside(id,
+                dev.devpanda.factorynetwork.hall.HallTier.SMALL, player.blockPosition());
+        dev.devpanda.factorynetwork.hall.HallDoor.leave(player, player.blockPosition().below());
+        String after = player.level().dimension().identifier() + " " + player.blockPosition();
+        var drops = net.minecraft.world.level.block.Block.getDrops(level.getBlockState(door), level, door, block);
+        Object dropped = drops.isEmpty() ? null : drops.getFirst().get(dev.devpanda.factorynetwork.registry.FnComponents.HALL.get());
+        return "FN_HALL id=" + id + " inside=" + inside + " inRoom=" + inRoom + " wall=" + wall
+                + " after=" + after + " door=" + door + " dropNumber=" + dropped;
     }
 }

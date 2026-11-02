@@ -33,6 +33,21 @@ public final class FnItems {
             ITEMS.registerSimpleBlockItem(FnBlocks.CONTROLLER_EXTENSION);
 
     /** One end of a line without cable in between. */
+    /** The factory halls; see {@link dev.devpanda.factorynetwork.hall.HallItem}. */
+    public static final java.util.Map<dev.devpanda.factorynetwork.hall.HallTier,
+            DeferredItem<Item>> HALLS = registerHalls();
+
+    private static java.util.Map<dev.devpanda.factorynetwork.hall.HallTier,
+            DeferredItem<Item>> registerHalls() {
+        java.util.Map<dev.devpanda.factorynetwork.hall.HallTier, DeferredItem<Item>> halls =
+                new java.util.EnumMap<>(dev.devpanda.factorynetwork.hall.HallTier.class);
+        for (var tier : dev.devpanda.factorynetwork.hall.HallTier.values()) {
+            halls.put(tier, ITEMS.registerItem(tier.id(), props -> new dev.devpanda.factorynetwork.hall.HallItem(
+                    FnBlocks.HALLS.get(tier).get(), props.useBlockDescriptionPrefix())));
+        }
+        return java.util.Collections.unmodifiableMap(halls);
+    }
+
     public static final DeferredItem<BlockItem> BRIDGE =
             ITEMS.registerSimpleBlockItem(FnBlocks.BRIDGE);
 

@@ -31,6 +31,9 @@ public final class AcceptanceClient {
     private static final boolean EDITOR = Boolean.getBoolean("fn.acceptance.editor");
     /** Opens a furnace with the slot numbers on, takes a picture, quits. */
     private static final boolean SLOTS = Boolean.getBoolean("fn.acceptance.slots");
+    /** Goes into a hall, takes a picture, comes out again, quits. */
+    private static final boolean HALL = Boolean.getBoolean("fn.acceptance.hall");
+    private net.minecraft.core.BlockPos hallDoor;
     private int slotTicks;
 
     private TerminalMenu opened;
@@ -48,6 +51,10 @@ public final class AcceptanceClient {
         if (client.player == null) {
             opened = null;
             ticks = 0;
+            return;
+        }
+        if (HALL) {
+            hall(client);
             return;
         }
         if (SLOTS) {
@@ -113,6 +120,39 @@ public final class AcceptanceClient {
         if (slotTicks == 160) {
             client.stop();
         }
+    }
+
+    private void hall(Minecraft client) {
+        slotTicks++;
+        if (slotTicks == 60) {
+            hallDoor = client.player.blockPosition().east(2);
+            LOGGER.info("FN_ACCEPTANCE_HALL before={} block={}", client.level.dimension().identifier(),
+                    client.level.getBlockState(hallDoor).getBlock());
+            click(client, hallDoor, net.minecraft.core.Direction.WEST);
+        }
+        if (slotTicks == 140) {
+            LOGGER.info("FN_ACCEPTANCE_HALL inside={} at={}", client.level.dimension().identifier(),
+                    client.player.blockPosition());
+            client.player.setXRot(10);
+            Screenshot.grab(client.gameDirectory, "acceptance-hall.png", client.getMainRenderTarget(), 1,
+                    message -> LOGGER.info("Acceptance screenshot: {}", message.getString()));
+        }
+        if (slotTicks == 160) {
+            // The floor below the player is a wall block: the way out.
+            var floor = client.player.blockPosition().below();
+            LOGGER.info("FN_ACCEPTANCE_HALL floor={}", client.level.getBlockState(floor).getBlock());
+            click(client, floor, net.minecraft.core.Direction.UP);
+        }
+        if (slotTicks == 240) {
+            LOGGER.info("FN_ACCEPTANCE_HALL after={} at={} door={}", client.level.dimension().identifier(),
+                    client.player.blockPosition(), hallDoor);
+            client.stop();
+        }
+    }
+
+    private static void click(Minecraft client, net.minecraft.core.BlockPos pos, net.minecraft.core.Direction face) {
+        var hit = new net.minecraft.world.phys.BlockHitResult(pos.getCenter(), face, pos, false);
+        client.gameMode.useItemOn(client.player, net.minecraft.world.InteractionHand.MAIN_HAND, hit);
     }
 
     private int count(Minecraft client) {
