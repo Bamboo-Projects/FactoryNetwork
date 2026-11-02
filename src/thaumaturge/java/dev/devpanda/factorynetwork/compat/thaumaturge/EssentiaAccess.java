@@ -70,6 +70,23 @@ public final class EssentiaAccess implements EssentiaBridge {
         return aspects.get(ResourceKey.create(IAspect.REGISTRY_KEY, key)).orElse(null);
     }
 
+    // ---- Aura ----------------------------------------------------------------
+
+    @Override
+    public double vis(Level level, BlockPos pos) {
+        return com.leclowndu93150.thaumaturge.api.aura.AuraHelper.getVis(level, pos);
+    }
+
+    @Override
+    public double flux(Level level, BlockPos pos) {
+        return com.leclowndu93150.thaumaturge.api.aura.AuraHelper.getFlux(level, pos);
+    }
+
+    @Override
+    public double auraBase(Level level, BlockPos pos) {
+        return com.leclowndu93150.thaumaturge.api.aura.AuraHelper.getAuraBase(level, pos);
+    }
+
     // ---- Machines ------------------------------------------------------------
 
     /**

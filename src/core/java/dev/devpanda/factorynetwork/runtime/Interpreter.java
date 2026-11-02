@@ -147,6 +147,17 @@ public final class Interpreter {
         }
 
         /**
+         * A value another mod measures at a device's place, such as the vis
+         * of Thaumaturge's aura there.
+         *
+         * <p>The names come from the mods; the language knows only the
+         * member. A name nobody registered is an error with the known names.
+         */
+        default double measureAt(String device, String what) {
+            throw new ScriptError("Ohne Welt lässt sich nichts messen.");
+        }
+
+        /**
          * Touches the machine behind a device — a right-click.
          *
          * <p>For the machines that do nothing on their own: an altar waiting
@@ -1309,10 +1320,19 @@ public final class Interpreter {
                 // operation as a player's right-click, with everything that
                 // entails.
                 case "click" -> new Value.Bool(host.clickAt(device.name()));
+                // A value from another mod at the device's place: what can be
+                // measured there is the mods' business, not the language's.
+                case "measure" -> {
+                    if (arguments.isEmpty() || !(arguments.get(0) instanceof Value.Text what)) {
+                        throw new ScriptError("measure braucht einen Namen in Anführungszeichen.",
+                                "Zum Beispiel: " + device.name() + ".measure(\"vis\")");
+                    }
+                    yield new Value.Decimal(host.measureAt(device.name(), what.value()));
+                }
                 default -> throw new ScriptError(
                         "Ein Gerät kann kein " + name + ".",
-                        "Bekannt sind redstone, count, insert, items, slots, energy "
-                                + "und click.");
+                        "Bekannt sind redstone, count, insert, items, slots, energy, "
+                                + "measure und click.");
             };
         }
         throw new ScriptError("Auf " + target.describe() + " gibt es kein " + name + ".");

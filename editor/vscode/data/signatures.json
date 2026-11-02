@@ -550,6 +550,11 @@
       "help": "Wie viel Strom in der Maschine steht, in FE. Ohne Speicher null."
     },
     {
+      "name": "measure",
+      "shape": "measure(name) decimal",
+      "help": "Ein Wert, den eine andere Mod an der Stelle des Geräts misst, zum Beispiel measure(\"vis\") mit Thaumaturge."
+    },
+    {
       "name": "click",
       "shape": "click() bool",
       "help": "Fasst die Maschine an, wie ein Rechtsklick. Gibt zurück, ob er angekommen ist. Ein Fenster geht dabei nicht auf."

@@ -338,6 +338,9 @@ public final class Signatures {
                             + "Auch als Quelle oder Ziel eines move."),
             new Member("energy", "energy() int",
                     "Wie viel Strom in der Maschine steht, in FE. Ohne Speicher null."),
+            new Member("measure", "measure(name) decimal",
+                    "Ein Wert, den eine andere Mod an der Stelle des Geräts misst, "
+                            + "zum Beispiel measure(\"vis\") mit Thaumaturge."),
             new Member("click", "click() bool",
                     "Fasst die Maschine an, wie ein Rechtsklick. Gibt zurück, ob er "
                             + "angekommen ist. Ein Fenster geht dabei nicht auf."));

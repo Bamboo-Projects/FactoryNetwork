@@ -19,4 +19,13 @@ public interface EssentiaBridge extends MachineAccess {
 
     /** The display name of an aspect, or its identifier. */
     String name(String id);
+
+    /** Vis in the aura at this place. */
+    double vis(net.minecraft.world.level.Level level, net.minecraft.core.BlockPos pos);
+
+    /** Flux in the aura at this place. */
+    double flux(net.minecraft.world.level.Level level, net.minecraft.core.BlockPos pos);
+
+    /** The aura's base: how much vis the chunk holds when at rest. */
+    double auraBase(net.minecraft.world.level.Level level, net.minecraft.core.BlockPos pos);
 }

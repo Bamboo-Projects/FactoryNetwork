@@ -35,6 +35,13 @@ public final class Essentia implements ResourceKind {
     /** Registers the kind at load time, with or without the mod; see {@code ArsSource.register}. */
     public static void register() {
         ResourceKinds.register(INSTANCE);
+        // The aura as measured values: kessel.measure("vis") and so on.
+        EssentiaBridge bridge = FnThaumaturge.bridge();
+        if (bridge != null) {
+            dev.devpanda.factorynetwork.runtime.DeviceMeasures.register("vis", bridge::vis);
+            dev.devpanda.factorynetwork.runtime.DeviceMeasures.register("flux", bridge::flux);
+            dev.devpanda.factorynetwork.runtime.DeviceMeasures.register("aura", bridge::auraBase);
+        }
     }
 
     @Override

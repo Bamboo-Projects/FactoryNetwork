@@ -92,4 +92,30 @@ public final class EssentiaGameTests {
                 })
                 .thenSucceed();
     }
+
+    /** The aura at a device's place, as a measured value. */
+    @GameTest(template = "empty", timeoutTicks = 100)
+    public static void theAuraIsMeasuredAtTheDevice(GameTestHelper helper) {
+        if (!net.neoforged.fml.ModList.get().isLoaded("thaumaturge")) {
+            helper.succeed();
+            return;
+        }
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        helper.assertTrue(entity.deploy("""
+                fn vis() {
+                    return quarry_output.measure("vis")
+                }
+                fn basis() {
+                    return quarry_output.measure("aura")
+                }"""), "Das Programm wurde nicht übernommen: " + entity.diagnostics());
+        var vis = entity.callFunction("vis", java.util.List.of());
+        var base = entity.callFunction("basis", java.util.List.of());
+        helper.assertTrue(vis instanceof dev.devpanda.factorynetwork.runtime.Value.Decimal found
+                        && found.value() >= 0, "Vis kam nicht als Zahl: " + vis);
+        helper.assertTrue(base instanceof dev.devpanda.factorynetwork.runtime.Value.Decimal found
+                        && found.value() > 0, "Die Aura-Basis ist nicht positiv: " + base);
+        helper.succeed();
+    }
 }

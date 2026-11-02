@@ -774,6 +774,22 @@ public final class WorldHost implements Interpreter.Host {
         return storage == null ? 0 : storage.getEnergyStored();
     }
 
+    @Override
+    public double measureAt(String device, String what) {
+        DeviceMeasures.Measure measure = DeviceMeasures.get(what);
+        if (measure == null) {
+            throw new ScriptError("Niemand misst " + what + ".",
+                    DeviceMeasures.names().isEmpty()
+                            ? "In diesem Pack bietet keine Mod Messwerte an."
+                            : "Bekannt sind: " + String.join(", ", DeviceMeasures.names()) + ".");
+        }
+        dev.devpanda.factorynetwork.block.entity.ConnectorPart connector = connectorFor(device);
+        if (connector == null) {
+            return 0;
+        }
+        return measure.at(level, connector.pos().relative(connector.facing()));
+    }
+
     /** Without a selection everything counts. */
     private static long countItems(dev.devpanda.factorynetwork.block.entity.ConnectorPart connector, List<Item> items) {
         IItemHandler handler = connector.machineInventory();

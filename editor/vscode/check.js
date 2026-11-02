@@ -375,7 +375,7 @@ contains('Oberste Ebene bietet display', ['di'], 'display', true);
 check('Nach dem Punkt die Gerätemitglieder',
     complete(['fn test() {', '    if crusher_1.']),
     ['online', 'name', 'redstone', 'count', 'insert', 'items', 'slots', 'energy',
-     'click']);
+     'measure', 'click']);
 contains('Nach dem Punkt kein from', ['fn test() {', '    if crusher_1.'], 'from', false);
 contains('Ohne Punkt keine Mitglieder', ['fn test() {', '    '], 'online', false);
 contains('Eine Zahl mit Punkt ist kein Zugriff',
