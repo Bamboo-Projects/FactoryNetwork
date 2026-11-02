@@ -180,6 +180,12 @@ neoForge {
             // belegt und der nächste Start dann gar nicht erst hochkommt —
             // das ist ein schlechter Tausch für eine Möglichkeit, die man
             // selten braucht.
+            // Marks the JVM for tools/hidden-window.ps1, which keeps its
+            // windows hidden: automated tests on a machine someone uses.
+            //   ./gradlew runClient -Phidden
+            if (project.hasProperty('hidden')) {
+                systemProperty 'fn.hidden', 'true'
+            }
             if (project.hasProperty('debug')) {
                 jvmArgument '-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005'
             }
