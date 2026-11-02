@@ -900,6 +900,41 @@ public final class FactoryGraph {
         return displays;
     }
 
+    /** The chunks the network occupies, computed on first use. */
+    private java.util.Set<Long> chunks;
+
+    /**
+     * Does the network lie in this chunk or touch it from a neighbour?
+     *
+     * <p>The neighbours count: a network that ends at a chunk border may run
+     * on into the chunk that just loaded.
+     */
+    public boolean nearChunk(int chunkX, int chunkZ) {
+        if (chunks == null) {
+            java.util.Set<Long> found = new java.util.HashSet<>();
+            java.util.List<java.util.Collection<BlockPos>> all = java.util.List.of(cables, drives,
+                    racks, routers, displays, masts, bridges, fabricators, extensions);
+            for (java.util.Collection<BlockPos> positions : all) {
+                for (BlockPos pos : positions) {
+                    found.add(chunkKey(pos.getX() >> 4, pos.getZ() >> 4));
+                }
+            }
+            chunks = found;
+        }
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                if (chunks.contains(chunkKey(chunkX + dx, chunkZ + dz))) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static long chunkKey(int x, int z) {
+        return ((long) x << 32) | (z & 0xFFFFFFFFL);
+    }
+
     /** Does this spot belong to this network — as cable, device or display? */
     public boolean contains(BlockPos pos) {
         return cables.contains(pos)

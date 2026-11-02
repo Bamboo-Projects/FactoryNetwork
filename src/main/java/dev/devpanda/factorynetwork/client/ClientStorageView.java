@@ -88,9 +88,9 @@ public final class ClientStorageView {
                 amounts.put(entry.key(), entry.amount());
             }
         }
-        if (packet.replace()) {
-            fluidAmounts.clear();
-        }
+        // Fluids always come complete: there are few of them, and the server
+        // sends items as differences only.
+        fluidAmounts.clear();
         for (StorageSnapshotPacket.FluidEntry entry : packet.fluids()) {
             if (entry.amount() <= 0) {
                 fluidAmounts.remove(entry.fluid());

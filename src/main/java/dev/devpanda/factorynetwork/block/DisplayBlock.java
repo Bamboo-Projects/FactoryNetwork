@@ -115,6 +115,7 @@ public class DisplayBlock extends HorizontalDirectionalBlock implements EntityBl
         if (state.is(oldState.getBlock())) {
             return;
         }
+        dev.devpanda.factorynetwork.network.ControllerRegistry.markChanged(level, pos);
         BlockState joined = withJoins(state, level, pos);
         if (joined != state) {
             level.setBlock(pos, joined, Block.UPDATE_CLIENTS);
@@ -206,5 +207,13 @@ public class DisplayBlock extends HorizontalDirectionalBlock implements EntityBl
                     buffer.writeByte(dev.devpanda.factorynetwork.network.packet.SetBlockNamePacket.NO_SIDE);
                 });
         return InteractionResult.CONSUME;
+    }
+
+    @Override
+    protected void affectNeighborsAfterRemoval(BlockState state,
+                                               net.minecraft.server.level.ServerLevel level,
+                                               BlockPos pos, boolean moved) {
+        super.affectNeighborsAfterRemoval(state, level, pos, moved);
+        dev.devpanda.factorynetwork.network.ControllerRegistry.markChanged(level, pos);
     }
 }
