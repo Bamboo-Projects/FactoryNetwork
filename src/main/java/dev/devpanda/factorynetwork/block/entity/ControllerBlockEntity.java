@@ -84,7 +84,22 @@ public class ControllerBlockEntity extends BlockEntity {
      * enough that no one notices them.
      */
     private static final int LOG_LIMIT = 200;
-    private static final int REBUILD_INTERVAL = 100;
+    /**
+     * The network is rebuilt when something in it changed (see
+     * {@link #markNetworkDirty}), and otherwise only this rarely, as a net
+     * for changes nobody reported.
+     *
+     * <p>It used to be every 100 ticks for every network. The rebuild costs
+     * linearly with the network size: 14 ms at 4,000 cables, every five
+     * seconds (docs/messung-last-2026-11-02.md).
+     */
+    private static final int REBUILD_INTERVAL = 6_000;
+    /**
+     * At most one rebuild per this many ticks while someone keeps building:
+     * a cable per tick into a large network would otherwise rebuild it on
+     * every tick.
+     */
+    private static final int REBUILD_GAP = 5;
 
     /**
      * The program as a project of several files.
@@ -192,6 +207,8 @@ public class ControllerBlockEntity extends BlockEntity {
      * the first time, nothing has come in.
      */
     private boolean networkKnown;
+    /** Something in the network changed; rebuild on one of the next ticks. */
+    private boolean networkDirty;
     /** Negative instead of Long.MIN_VALUE: the difference would otherwise overflow. */
     private long lastRebuild = -REBUILD_INTERVAL;
 
@@ -232,6 +249,13 @@ public class ControllerBlockEntity extends BlockEntity {
      * inventory is the most expensive thing that goes over the wire.
      */
     private final Set<ServerPlayer> storageWatchers = new HashSet<>();
+    /**
+     * What each watcher was last sent, so that later sends carry only the
+     * difference. A full stock of 4,096 entries cost 2.8 ms per player and
+     * send (docs/messung-last-2026-11-02.md).
+     */
+    private final Map<java.util.UUID, Map<dev.devpanda.factorynetwork.storage.ItemKey, Long>> sentStorage =
+            new java.util.HashMap<>();
 
     /**
      * Who has the terminal open at all, on whichever tab.
@@ -591,6 +615,14 @@ public class ControllerBlockEntity extends BlockEntity {
         super.setRemoved();
     }
 
+    /**
+     * Notes that the network changed. The rebuild follows on one of the next
+     * ticks, bundled: placing ten cables in one tick rebuilds once.
+     */
+    public void markNetworkDirty() {
+        networkDirty = true;
+    }
+
     public void rebuildNetwork() {
         if (level == null) {
             return;
@@ -608,6 +640,7 @@ public class ControllerBlockEntity extends BlockEntity {
         runtime.remeasureLatency();
         lastRebuild = level.getGameTime();
         networkKnown = true;
+        networkDirty = false;
         stampDeviceStates();
         // Storage is the sum of the drives in the network. Without this step
         // the controller stores nothing — which is also true: without a drive
@@ -672,7 +705,8 @@ public class ControllerBlockEntity extends BlockEntity {
         if (level == null || foreignSave != null) {
             return;
         }
-        if (level.getGameTime() - lastRebuild >= REBUILD_INTERVAL) {
+        long sinceRebuild = level.getGameTime() - lastRebuild;
+        if (sinceRebuild >= REBUILD_INTERVAL || (networkDirty && sinceRebuild >= REBUILD_GAP)) {
             rebuildNetwork();
         }
         // A chest on the storage bus changes without telling anyone. Looking
@@ -1962,6 +1996,7 @@ public class ControllerBlockEntity extends BlockEntity {
                 .forEach(this::pushProjectTo);
         terminalWatchers.remove(player);
         storageWatchers.remove(player);
+        sentStorage.remove(player.getUUID());
     }
 
     public void watchStorage(ServerPlayer player) {
@@ -1971,6 +2006,7 @@ public class ControllerBlockEntity extends BlockEntity {
 
     public void unwatchStorage(ServerPlayer player) {
         storageWatchers.remove(player);
+        sentStorage.remove(player.getUUID());
     }
 
     /** Notes that something changed — the send is bundled. */
@@ -1988,30 +2024,68 @@ public class ControllerBlockEntity extends BlockEntity {
         lastStoragePush = level.getGameTime();
         storageDirty = false;
         // Take along logged-off players, so the set does not leak.
-        storageWatchers.removeIf(player -> player.isRemoved()
-                || !(player.containerMenu instanceof TerminalMenu));
-        storageWatchers.forEach(player -> pushStorageTo(player, true));
+        storageWatchers.removeIf(player -> {
+            boolean gone = player.isRemoved() || !(player.containerMenu instanceof TerminalMenu);
+            if (gone) {
+                sentStorage.remove(player.getUUID());
+            }
+            return gone;
+        });
+        storageWatchers.forEach(player -> pushStorageTo(player, false));
     }
 
-    /** Sends the inventory to a player. */
+    /**
+     * Sends the stock to a player.
+     *
+     * <p>With {@code replace}, or the first time, the whole stock, split
+     * into packets of {@link StorageSnapshotPacket#MAX_ENTRIES}: the first
+     * replaces what the client has, the others add to it. Otherwise only what
+     * changed since the last send to this player, with amount 0 for what is
+     * gone; nothing at all if nothing changed.
+     */
     public void pushStorageTo(ServerPlayer player, boolean replace) {
-        // The items themselves and not their identifiers: otherwise an
-        // enchanted book and an empty one would stand in the same line.
         var contents = storage.contents();
-        List<StorageSnapshotPacket.Entry> entries = contents.entrySet().stream()
-                .sorted(Map.Entry.<dev.devpanda.factorynetwork.storage.ItemKey, Long>
-                        comparingByValue().reversed())
-                .limit(StorageSnapshotPacket.MAX_ENTRIES)
-                .map(entry -> new StorageSnapshotPacket.Entry(entry.getKey(), entry.getValue()))
-                .toList();
         List<StorageSnapshotPacket.FluidEntry> fluidEntries = fluidStorage.contents().entrySet()
                 .stream()
                 .map(entry -> new StorageSnapshotPacket.FluidEntry(entry.getKey(),
                         entry.getValue()))
                 .toList();
-        PacketDistributor.sendToPlayer(player,
-                new StorageSnapshotPacket(entries, fluidEntries, replace, contents.size(),
-                        storage.freeTypes(), fluidStorage.freeTypes()));
+        int total = contents.size();
+        int free = storage.freeTypes();
+        int freeFluid = fluidStorage.freeTypes();
+        Map<dev.devpanda.factorynetwork.storage.ItemKey, Long> sent = sentStorage.get(player.getUUID());
+
+        List<StorageSnapshotPacket.Entry> entries = new ArrayList<>();
+        boolean full = replace || sent == null;
+        if (full) {
+            contents.forEach((key, amount) -> entries.add(new StorageSnapshotPacket.Entry(key, amount)));
+        } else {
+            contents.forEach((key, amount) -> {
+                if (!amount.equals(sent.get(key))) {
+                    entries.add(new StorageSnapshotPacket.Entry(key, amount));
+                }
+            });
+            sent.forEach((key, amount) -> {
+                if (!contents.containsKey(key)) {
+                    entries.add(new StorageSnapshotPacket.Entry(key, 0));
+                }
+            });
+            if (entries.isEmpty()) {
+                // Fluids and free type slots ride along when there is a reason
+                // to send; on their own they change rarely enough.
+                return;
+            }
+        }
+        sentStorage.put(player.getUUID(), new java.util.HashMap<>(contents));
+
+        int step = StorageSnapshotPacket.MAX_ENTRIES;
+        for (int from = 0; from < Math.max(1, entries.size()); from += step) {
+            List<StorageSnapshotPacket.Entry> part =
+                    entries.subList(from, Math.min(entries.size(), from + step));
+            PacketDistributor.sendToPlayer(player,
+                    new StorageSnapshotPacket(List.copyOf(part), fluidEntries, full && from == 0,
+                            total, free, freeFluid));
+        }
     }
 
     // ---- Flows in the terminal --------------------------------------------

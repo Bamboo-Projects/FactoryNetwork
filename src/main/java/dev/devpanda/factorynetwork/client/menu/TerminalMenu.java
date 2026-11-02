@@ -268,7 +268,7 @@ public class TerminalMenu extends AbstractContainerMenu {
         // cells; without this line the remainder would vanish.
         long left = controller.get().storage().insert(stack);
         slot.set(left <= 0 ? ItemStack.EMPTY : stack.copyWithCount((int) left));
-        controller.get().pushStorageTo(serverPlayer, true);
+        controller.get().pushStorageTo(serverPlayer, false);
         return ItemStack.EMPTY;
     }
 

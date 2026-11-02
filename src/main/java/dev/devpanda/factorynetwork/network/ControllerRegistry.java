@@ -91,6 +91,46 @@ public final class ControllerRegistry {
         }
     }
 
+    /**
+     * Marks the networks that touch this spot for a rebuild on one of their
+     * next ticks.
+     *
+     * <p>For blocks that join or leave a network: they are placed by players,
+     * machines and other mods alike, and only the block itself hears about all
+     * of them. Bundled, unlike {@link #refreshAround}: a rebuild costs in
+     * proportion to the network.
+     */
+    public static void markChanged(Level level, BlockPos pos) {
+        if (level.isClientSide()) {
+            return;
+        }
+        for (BlockPos candidate : Set.copyOf(in(level))) {
+            if (level.isLoaded(candidate)
+                    && level.getBlockEntity(candidate) instanceof ControllerBlockEntity controller
+                    && touches(controller.graph(), pos)) {
+                controller.markNetworkDirty();
+            }
+        }
+    }
+
+    /**
+     * A chunk came or went. A network running into it, or ending at its
+     * border, looks different now.
+     */
+    public static void onChunkChange(net.neoforged.neoforge.event.level.ChunkEvent event) {
+        if (!(event.getLevel() instanceof Level level) || level.isClientSide()) {
+            return;
+        }
+        net.minecraft.world.level.ChunkPos chunk = event.getChunk().getPos();
+        for (BlockPos candidate : Set.copyOf(in(level))) {
+            if (level.isLoaded(candidate)
+                    && level.getBlockEntity(candidate) instanceof ControllerBlockEntity controller
+                    && controller.graph().nearChunk(chunk.x(), chunk.z())) {
+                controller.markNetworkDirty();
+            }
+        }
+    }
+
     private static boolean touches(FactoryGraph graph, BlockPos pos) {
         if (graph.contains(pos)) {
             return true;

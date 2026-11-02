@@ -108,13 +108,22 @@ public class MastBlock extends Block implements EntityBlock {
      * otherwise lose four cards, and one of them can be the most expensive in
      * the game.
      */
+
+    /** Joining or leaving a network: its controller rebuilds on one of the next ticks. */
     @Override
-    protected void onRemove(BlockState state, Level level, BlockPos pos,
-                            BlockState newState, boolean moved) {
-        if (!state.is(newState.getBlock())
-                && level.getBlockEntity(pos) instanceof MastBlockEntity mast) {
-            Containers.dropContents(level, pos, mast);
+    protected void onPlace(BlockState state, net.minecraft.world.level.Level level, BlockPos pos,
+                           BlockState oldState, boolean moved) {
+        super.onPlace(state, level, pos, oldState, moved);
+        if (!oldState.is(this)) {
+            dev.devpanda.factorynetwork.network.ControllerRegistry.markChanged(level, pos);
         }
-        super.onRemove(state, level, pos, newState, moved);
+    }
+
+    @Override
+    protected void affectNeighborsAfterRemoval(BlockState state,
+                                               net.minecraft.server.level.ServerLevel level,
+                                               BlockPos pos, boolean moved) {
+        super.affectNeighborsAfterRemoval(state, level, pos, moved);
+        dev.devpanda.factorynetwork.network.ControllerRegistry.markChanged(level, pos);
     }
 }

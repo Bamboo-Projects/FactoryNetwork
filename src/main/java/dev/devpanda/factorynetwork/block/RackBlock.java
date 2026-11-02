@@ -175,20 +175,22 @@ public class RackBlock extends HorizontalDirectionalBlock implements EntityBlock
     }
 
     /** When broken, the servers fall out. The loot table does not see them. */
+
+    /** Joining or leaving a network: its controller rebuilds on one of the next ticks. */
     @Override
-    protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState,
-                            boolean moved) {
-        if (!state.is(newState.getBlock())
-                && level.getBlockEntity(pos) instanceof RackBlockEntity rack) {
-            // Pack up first: what falls out should be finished servers and
-            // not forty-eight individual parts that you have to sort again.
-            rack.packAll();
-            for (ItemStack stack : rack.contents()) {
-                if (!stack.isEmpty()) {
-                    popResource(level, pos, stack);
-                }
-            }
+    protected void onPlace(BlockState state, net.minecraft.world.level.Level level, BlockPos pos,
+                           BlockState oldState, boolean moved) {
+        super.onPlace(state, level, pos, oldState, moved);
+        if (!oldState.is(this)) {
+            dev.devpanda.factorynetwork.network.ControllerRegistry.markChanged(level, pos);
         }
-        super.onRemove(state, level, pos, newState, moved);
+    }
+
+    @Override
+    protected void affectNeighborsAfterRemoval(BlockState state,
+                                               net.minecraft.server.level.ServerLevel level,
+                                               BlockPos pos, boolean moved) {
+        super.affectNeighborsAfterRemoval(state, level, pos, moved);
+        dev.devpanda.factorynetwork.network.ControllerRegistry.markChanged(level, pos);
     }
 }

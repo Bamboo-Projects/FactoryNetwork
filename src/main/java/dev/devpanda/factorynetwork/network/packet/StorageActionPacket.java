@@ -125,6 +125,6 @@ public record StorageActionPacket(Kind kind, dev.devpanda.factorynetwork.storage
                 controller.setChanged();
             }
         }
-        controller.pushStorageTo(player, true);
+        controller.pushStorageTo(player, false);
     }
 }
