@@ -4817,21 +4817,24 @@ public final class FactoryNetworkGameTests {
                     maintain 16
                 }"""), "Das Programm wurde nicht übernommen");
 
-        for (int i = 0; i < 60; i++) {
-            entity.serverTick();
-        }
-
-        var hinweise = entity.log().stream()
-                .filter(eintrag -> eintrag.text().contains("maintain ohne filter"))
-                .toList();
-        helper.assertValueEqual(hinweise.size(), 1,
-                "Ein Worker läuft zwanzigmal je Sekunde — der Hinweis gehört einmal ins "
-                        + "Protokoll: " + entity.log());
-        helper.assertValueEqual(hinweise.get(0).source(), "nachschub",
-                "Der Worker steht als Herkunft daneben, nicht im Text");
-        helper.assertValueEqual(hinweise.get(0).level().key(), "warn",
-                "Er läuft weiter, er tut nur nichts");
-        helper.succeed();
+        // Over real ticks, not sixty calls within one: a worker runs on the
+        // game clock, and within a single tick it ran once or not at all,
+        // depending on where the clock stood. The test failed now and then.
+        helper.startSequence()
+                .thenIdle(60)
+                .thenExecute(() -> {
+                    var hinweise = entity.log().stream()
+                            .filter(eintrag -> eintrag.text().contains("maintain ohne filter"))
+                            .toList();
+                    helper.assertValueEqual(hinweise.size(), 1,
+                            "Ein Worker läuft zwanzigmal je Sekunde — der Hinweis gehört einmal ins "
+                                    + "Protokoll: " + entity.log());
+                    helper.assertValueEqual(hinweise.get(0).source(), "nachschub",
+                            "Der Worker steht als Herkunft daneben, nicht im Text");
+                    helper.assertValueEqual(hinweise.get(0).level().key(), "warn",
+                            "Er läuft weiter, er tut nur nichts");
+                })
+                .thenSucceed();
     }
 
     @GameTest(template = EMPTY, timeoutTicks = 400)
