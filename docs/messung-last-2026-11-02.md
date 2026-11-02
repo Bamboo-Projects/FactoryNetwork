@@ -146,7 +146,7 @@ Terminal-Sync über Änderungen, aber noch ohne Verzeichnis und ohne gemerkte
 | Auslagern | 23 µs | 2,8 µs | 2,3 µs |
 | Sendung bei offenem Terminal | 6,3 ms | 0,17 ms | 0,23 ms |
 | Terminal offen, FN p95 / max pro Tick | 5,0 / 7,6 ms | 0,44 / 1,2 ms | 0,58 / 1,5 ms |
-| Client sieht | 8.192 beim ersten Blick, Rest folgt | 20.002 | 50.002 |
+| Client sieht | 8.192 beim ersten Blick, Rest nicht geprüft | 20.002 | 50.002 |
 
 Was mit der Größe weiter wächst: das erste Senden beim Öffnen des Terminals
 (8 ms bei 20.000, 20 ms bei 50.000 Sorten, einmal pro Öffnen) und das
