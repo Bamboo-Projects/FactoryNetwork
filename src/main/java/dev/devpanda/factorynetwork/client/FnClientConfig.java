@@ -31,7 +31,7 @@ public final class FnClientConfig {
         builder.push("blockGuis");
         SHOW_SLOT_NUMBERS = builder
                 .comment("Ob fremde Block-GUIs die Fachnummern für slots(n) zeigen.",
-                        "Wird über den Knopf # über der GUI umgeschaltet.")
+                        "Wird über den Knopf # über der GUI oder mit Strg+I umgeschaltet.")
                 .define("showSlotNumbers", false);
         builder.pop();
         SPEC = builder.build();

@@ -11,8 +11,16 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import java.util.List;
 
-/** The answer to {@link SlotMapRequestPacket}: the slots of the open GUI. */
-public record SlotMapPacket(int containerId, List<SlotMap.Entry> entries) implements CustomPacketPayload {
+/**
+ * The answer to {@link SlotMapRequestPacket}: the slots of the open GUI and
+ * the label of a connector at the block, empty when none is named.
+ *
+ * <p>The label rides along because only the server sees the cable buses
+ * around the block; the client needs it to copy a line that names the
+ * machine the way the code does.
+ */
+public record SlotMapPacket(int containerId, List<SlotMap.Entry> entries, String connector)
+        implements CustomPacketPayload {
 
     public static final Type<SlotMapPacket> TYPE = new Type<>(
             Identifier.fromNamespaceAndPath(FactoryNetwork.MOD_ID, "slot_map"));
@@ -27,6 +35,7 @@ public record SlotMapPacket(int containerId, List<SlotMap.Entry> entries) implem
     public static final StreamCodec<ByteBuf, SlotMapPacket> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.VAR_INT, SlotMapPacket::containerId,
             ENTRY.apply(ByteBufCodecs.list(512)), SlotMapPacket::entries,
+            ByteBufCodecs.STRING_UTF8, SlotMapPacket::connector,
             SlotMapPacket::new);
 
     @Override

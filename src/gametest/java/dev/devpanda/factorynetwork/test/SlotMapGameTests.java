@@ -1,6 +1,11 @@
 package dev.devpanda.factorynetwork.test;
 
+import dev.devpanda.factorynetwork.registry.FnBlocks;
+import dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity;
+import dev.devpanda.factorynetwork.network.SlotLine;
 import dev.devpanda.factorynetwork.network.SlotMap;
+import dev.devpanda.factorynetwork.network.packet.SlotMapPacket;
+import dev.devpanda.factorynetwork.network.packet.SlotMapRequestPacket;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -84,6 +89,83 @@ public final class SlotMapGameTests {
                 new dev.devpanda.factorynetwork.network.packet.SlotMapRequestPacket(8, pos));
         helper.assertValueEqual(right.size(), 3, "Antwort für das offene Menü");
         helper.assertTrue(wrong.isEmpty(), "keine Antwort für ein anderes Menü");
+        helper.succeed();
+    }
+
+    /**
+     * A connector part on a cable next to the machine, facing it.
+     *
+     * @param side where the cable sits, seen from the machine
+     */
+    private static void connectorAt(GameTestHelper helper, BlockPos machine, Direction side, String label) {
+        BlockPos cable = machine.relative(side);
+        helper.setBlock(cable, FnBlocks.CABLE.get());
+        if (FactoryNetworkGameTests.blockEntity(helper, cable) instanceof CableBusBlockEntity bus) {
+            bus.addPart(side.getOpposite()).setLabel(label);
+        } else {
+            helper.fail("Am Kabel hängt keine BlockEntity für Teile", cable);
+        }
+    }
+
+    /** The answer a player standing on the machine gets for its open menu. */
+    private static SlotMapPacket answer(GameTestHelper helper, BlockPos machine) {
+        BlockPos pos = helper.absolutePos(machine);
+        var player = helper.makeMockPlayer(GameType.SURVIVAL);
+        player.setPos(pos.getCenter().add(0, 1, 0));
+        var provider = (MenuProvider) helper.getLevel().getBlockEntity(pos);
+        player.containerMenu = provider.createMenu(3, player.getInventory(), player);
+        return SlotMapRequestPacket.packetFor(player, new SlotMapRequestPacket(3, pos));
+    }
+
+    /**
+     * The label of the connector at the machine reaches the client, and the
+     * line built from it names the machine the way the code does.
+     */
+    @GameTest(template = FactoryNetworkGameTests.EMPTY, timeoutTicks = 40)
+    public static void theConnectorLabelRidesAlong(GameTestHelper helper) {
+        BlockPos furnace = new BlockPos(1, 2, 1);
+        helper.setBlock(furnace, Blocks.FURNACE);
+        connectorAt(helper, furnace, Direction.EAST, "ofen_1");
+
+        SlotMapPacket packet = answer(helper, furnace);
+        helper.assertValueEqual(packet.entries().size(), 3, "Fächer des Ofens");
+        helper.assertValueEqual(packet.connector(), "ofen_1", "Name des Connectors");
+        helper.assertValueEqual(
+                SlotLine.of(SlotLine.deviceName(packet.connector()), "minecraft:coal", 1),
+                "move 64 item:coal from ofen_1.slots(1) to storage", "kopierte Zeile");
+        helper.succeed();
+    }
+
+    /** No connector, or only an unnamed one: the client gets an empty name. */
+    @GameTest(template = FactoryNetworkGameTests.EMPTY, timeoutTicks = 40)
+    public static void withoutANamedConnectorTheLabelIsEmpty(GameTestHelper helper) {
+        BlockPos furnace = new BlockPos(1, 2, 1);
+        helper.setBlock(furnace, Blocks.FURNACE);
+        helper.assertValueEqual(answer(helper, furnace).connector(), "", "ohne Connector");
+
+        connectorAt(helper, furnace, Direction.WEST, "");
+        helper.assertValueEqual(answer(helper, furnace).connector(), "", "mit unbenanntem Connector");
+        helper.succeed();
+    }
+
+    /**
+     * A named connector wins over an unnamed one, and a connector on the
+     * cable that faces away does not count.
+     */
+    @GameTest(template = FactoryNetworkGameTests.EMPTY, timeoutTicks = 40)
+    public static void onlyAConnectorFacingTheMachineCounts(GameTestHelper helper) {
+        BlockPos furnace = new BlockPos(1, 2, 1);
+        helper.setBlock(furnace, Blocks.FURNACE);
+        connectorAt(helper, furnace, Direction.DOWN, "");
+        BlockPos cable = furnace.relative(Direction.NORTH);
+        helper.setBlock(cable, FnBlocks.CABLE.get());
+        if (FactoryNetworkGameTests.blockEntity(helper, cable) instanceof CableBusBlockEntity bus) {
+            bus.addPart(Direction.NORTH).setLabel("abgewandt");
+        }
+        helper.assertValueEqual(answer(helper, furnace).connector(), "", "abgewandter Connector");
+
+        connectorAt(helper, furnace, Direction.SOUTH, "ofen_süd");
+        helper.assertValueEqual(answer(helper, furnace).connector(), "ofen_süd", "benannter Connector");
         helper.succeed();
     }
 }

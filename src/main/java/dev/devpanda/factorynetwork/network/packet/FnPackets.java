@@ -9,7 +9,7 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 @EventBusSubscriber(modid = FactoryNetwork.MOD_ID)
 public final class FnPackets {
 
-    private static final String VERSION = "5";
+    private static final String VERSION = "6";
 
     @SubscribeEvent
     public static void register(RegisterPayloadHandlersEvent event) {
