@@ -325,6 +325,10 @@ public final class DisplayValues {
         if (count != null) {
             return shorten(count);
         }
+        Double measured = deviceMeasure(expr);
+        if (measured != null) {
+            return round(measured);
+        }
         String worker = workerState(expr);
         if (worker != null) {
             return worker;
@@ -493,6 +497,30 @@ public final class DisplayValues {
         return FluidSelection.resolve(wanted).stream()
                 .mapToLong(fluid -> amounts.fluids().getOrDefault(fluid, 0L))
                 .sum();
+    }
+
+    /**
+     * {@code kessel.measure("vis")} — a value another mod measures at the
+     * machine. One look into the world per panel per second, like
+     * {@code count}; without a world, or for a name nobody measures, it stays
+     * {@code null} and the panel says {@code ?}.
+     */
+    private Double deviceMeasure(Expr expr) {
+        if (!(expr instanceof Expr.Call call)
+                || !(call.callee() instanceof Expr.Member member)
+                || !"measure".equals(member.name())
+                || !(member.target() instanceof Expr.Name device)
+                || call.arguments().size() != 1
+                || !(call.arguments().get(0).value() instanceof Expr.StringLit what)
+                || level == null) {
+            return null;
+        }
+        DeviceMeasures.Measure measure = DeviceMeasures.get(what.value());
+        var connector = connectorNamed(device.value());
+        if (measure == null || connector == null) {
+            return null;
+        }
+        return measure.at(level, connector.pos().relative(connector.facing()));
     }
 
     private Long storageCount(Expr expr) {
