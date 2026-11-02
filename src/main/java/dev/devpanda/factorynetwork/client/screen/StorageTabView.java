@@ -80,8 +80,14 @@ public class StorageTabView {
         drawSearch(graphics);
         drawSortButtons(graphics, mouseX, mouseY);
 
-        // Grid background, as large as needed
-        graphics.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, GRID, gridX(), gridY(), 0, 0, COLUMNS * SLOT, ROWS * SLOT, 512, 512);
+        // Grid background, one tile per cell. The texture holds eight rows and
+        // the grid has nine; drawn as one piece, the last row stayed empty.
+        for (int row = 0; row < ROWS; row++) {
+            for (int column = 0; column < COLUMNS; column++) {
+                graphics.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, GRID,
+                        gridX() + column * SLOT, gridY() + row * SLOT, 0, 0, SLOT, SLOT, 512, 512);
+            }
+        }
 
         List<ClientStorageView.Row> rows = ClientStorageView.rows();
         int first = scrollRow * COLUMNS;
@@ -164,18 +170,19 @@ public class StorageTabView {
         int trackY = gridY();
         int trackH = ROWS * SLOT;
 
-        // The track over the full height. The tile is fifteen pixels tall;
-        // drawn once, it stuck in the top corner and looked like a forgotten
-        // fragment.
-        for (int y = 0; y < trackH; y += 15) {
-            int height = Math.min(15, trackH - y);
-            graphics.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, WIDGETS, trackX, trackY + y, 108, 32, 12, height, 512, 512);
-        }
+        // One recessed groove over the full height, not a column of tiles: a
+        // track drawn from fifteen-pixel pieces looked like a row of slots.
+        graphics.fill(trackX, trackY, trackX + 12, trackY + trackH, 0xFF2A332E);
+        graphics.fill(trackX + 1, trackY + 1, trackX + 11, trackY + trackH - 1, 0xFF0B0F0D);
         if (maxScroll() == 0) {
             return;
         }
-        int thumbY = trackY + (trackH - 15) * scrollRow / maxScroll();
-        graphics.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, WIDGETS, trackX, thumbY, 96, 32, 12, 15, 512, 512);
+        int thumbH = 15;
+        int thumbY = trackY + 1 + (trackH - 2 - thumbH) * scrollRow / maxScroll();
+        graphics.fill(trackX + 2, thumbY, trackX + 10, thumbY + thumbH, 0xFF39443D);
+        graphics.fill(trackX + 2, thumbY, trackX + 10, thumbY + 1, 0xFF5D6862);
+        graphics.fill(trackX + 4, thumbY + 6, trackX + 8, thumbY + 7, 0xFF5D6862);
+        graphics.fill(trackX + 4, thumbY + 8, trackX + 8, thumbY + 9, 0xFF5D6862);
     }
 
     /**
