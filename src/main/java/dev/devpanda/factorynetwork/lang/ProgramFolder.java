@@ -51,6 +51,8 @@ public final class ProgramFolder {
      * on the next check, which writes again.
      */
     private Map<String, String> written = Map.of();
+    /** Counts our own writes, so a read that overlapped one can be told apart. */
+    private volatile int writes;
 
     private ProgramFolder(Path folder) {
         this.folder = folder;
@@ -123,6 +125,7 @@ public final class ProgramFolder {
      * back on the next check.
      */
     public void write(Project project) {
+        writes++;
         try {
             for (Map.Entry<String, String> file : project.files().entrySet()) {
                 Path path = folder.resolve(file.getKey());
@@ -161,7 +164,19 @@ public final class ProgramFolder {
      * @return the new project, or {@code null} if there is nothing to do
      */
     public Project poll(Project current) {
-        Map<String, String> found = read();
+        return accept(read(), current);
+    }
+
+    /** How many times this folder was written by us; see {@link #accept}. */
+    public int writes() {
+        return writes;
+    }
+
+    /**
+     * The comparison half of {@link #poll}, for files read elsewhere — on a
+     * background thread, so that the disk is never touched in the server tick.
+     */
+    public Project accept(Map<String, String> found, Project current) {
         if (found == null || found.isEmpty()) {
             return null;
         }
