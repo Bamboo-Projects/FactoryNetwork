@@ -9,13 +9,16 @@ import dev.devpanda.factorynetwork.storage.ItemKey;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.gametest.framework.GameTest;
+import net.minecraft.gametest.framework.GameTestAssertException;
+import net.neoforged.neoforge.gametest.GameTestHolder;
+import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.level.material.Fluids;
 
-import static dev.devpanda.factorynetwork.test.FactoryNetworkGameTests.blockEntity;
 import static dev.devpanda.factorynetwork.test.FactoryNetworkGameTests.buildSetup;
 import static dev.devpanda.factorynetwork.test.FactoryNetworkGameTests.controllerAt;
 
@@ -25,6 +28,8 @@ import static dev.devpanda.factorynetwork.test.FactoryNetworkGameTests.controlle
  * <p>AE2 is looked up by name: the tests compile without it, and where it is
  * not installed they pass without checking anything.
  */
+@GameTestHolder(dev.devpanda.factorynetwork.FactoryNetwork.MOD_ID)
+@PrefixGameTestTemplate(false)
 public final class StorageLinkGameTests {
 
     private static final String EMPTY = "empty";
@@ -77,7 +82,7 @@ public final class StorageLinkGameTests {
 
         // The cells go into the drive through its own inventory.
         if (cells.length > 0) {
-            var drive = dev.devpanda.factorynetwork.platform.Caps.items(helper.getLevel(),
+            var drive = helper.getLevel().getCapability(net.neoforged.neoforge.capabilities.Capabilities.ItemHandler.BLOCK,
                     helper.absolutePos(link.north()), null);
             helper.assertTrue(drive != null, "Das Laufwerk hat kein Inventar");
             helper.assertTrue(drive.insertItem(0, cells[0], false).isEmpty(),
@@ -88,7 +93,7 @@ public final class StorageLinkGameTests {
 
         // Our drive gets a fluid cell next to its item cell, so that fluid
         // can arrive in our storage.
-        if (blockEntity(helper, controller.above()) instanceof DriveBlockEntity ours) {
+        if (helper.getBlockEntity(controller.above()) instanceof DriveBlockEntity ours) {
             ours.setCell(1, new ItemStack(FnItems.FLUID_CELLS
                     .get(dev.devpanda.factorynetwork.storage.FluidCellTier.B256).get()));
         }
@@ -96,16 +101,16 @@ public final class StorageLinkGameTests {
         helper.startSequence()
                 // AE2 boots its network over a few ticks.
                 .thenWaitUntil(() -> {
-                    if (!(blockEntity(helper, link) instanceof StorageLinkBlockEntity found)
+                    if (!(helper.getBlockEntity(link) instanceof StorageLinkBlockEntity found)
                             || found.adapter() == null || found.adapter().items() == null
                             // Disks and cells reach the network a few ticks
                             // after they went into the drive.
                             || found.adapter().items().insert(ItemKey.bare(Items.IRON_INGOT), 1, true) <= 0) {
-                        throw helper.assertionException("Der Lager-Anschluss hängt noch an keinem Netz von " + systemName);
+                        throw new GameTestAssertException("Der Lager-Anschluss hängt noch an keinem Netz von " + systemName);
                     }
                 })
                 .thenExecute(() -> {
-                    var adapter = ((StorageLinkBlockEntity) blockEntity(helper, link)).adapter();
+                    var adapter = ((StorageLinkBlockEntity) helper.getBlockEntity(link)).adapter();
                     helper.assertValueEqual(adapter.systemName(), systemName, "System");
                     long put = adapter.items().insert(ItemKey.bare(Items.IRON_INGOT), 500, false);
                     helper.assertValueEqual(put, 500L, "Eisen ins fremde Lager");
@@ -127,10 +132,10 @@ public final class StorageLinkGameTests {
                 })
                 .thenIdle(100)
                 .thenExecute(() -> {
-                    var adapter = ((StorageLinkBlockEntity) blockEntity(helper, link)).adapter();
+                    var adapter = ((StorageLinkBlockEntity) helper.getBlockEntity(link)).adapter();
                     int inDepot = 0;
                     int gold = 0;
-                    if (blockEntity(helper, depot) instanceof ChestBlockEntity chest) {
+                    if (helper.getBlockEntity(depot) instanceof ChestBlockEntity chest) {
                         for (int slot = 0; slot < chest.getContainerSize(); slot++) {
                             ItemStack stack = chest.getItem(slot);
                             if (stack.is(Items.IRON_INGOT)) {
@@ -152,10 +157,10 @@ public final class StorageLinkGameTests {
     }
 
     private static net.minecraft.world.level.block.Block block(String mod, String path) {
-        return BuiltInRegistries.BLOCK.getValue(Identifier.fromNamespaceAndPath(mod, path));
+        return BuiltInRegistries.BLOCK.get(ResourceLocation.fromNamespaceAndPath(mod, path));
     }
 
     private static ItemStack item(String mod, String path) {
-        return new ItemStack(BuiltInRegistries.ITEM.getValue(Identifier.fromNamespaceAndPath(mod, path)));
+        return new ItemStack(BuiltInRegistries.ITEM.get(ResourceLocation.fromNamespaceAndPath(mod, path)));
     }
 }

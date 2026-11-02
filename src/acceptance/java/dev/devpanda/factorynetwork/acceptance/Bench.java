@@ -393,15 +393,15 @@ final class Bench {
     private static void meBuild(ServerLevel level) {
         var registry = net.minecraft.core.registries.BuiltInRegistries.BLOCK;
         java.util.function.Function<String, net.minecraft.world.level.block.Block> ae2 =
-                path -> registry.getValue(net.minecraft.resources.Identifier.fromNamespaceAndPath("ae2", path));
+                path -> registry.get(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("ae2", path));
         level.setBlockAndUpdate(ME_LINK, FnBlocks.STORAGE_LINK.get().defaultBlockState());
         level.setBlockAndUpdate(ME_LINK.north(), ae2.apply("creative_energy_cell").defaultBlockState());
-        ItemStack cell = new ItemStack(net.minecraft.core.registries.BuiltInRegistries.ITEM.getValue(
-                net.minecraft.resources.Identifier.fromNamespaceAndPath("ae2", "item_storage_cell_256k")));
+        ItemStack cell = new ItemStack(net.minecraft.core.registries.BuiltInRegistries.ITEM.get(
+                net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("ae2", "item_storage_cell_256k")));
         for (int i = 1; i <= ME_DRIVES; i++) {
             BlockPos pos = ME_LINK.east(i);
             level.setBlockAndUpdate(pos, ae2.apply("drive").defaultBlockState());
-            var handler = dev.devpanda.factorynetwork.platform.Caps.items(level, pos, null);
+            var handler = level.getCapability(net.neoforged.neoforge.capabilities.Capabilities.ItemHandler.BLOCK, pos, null);
             for (int slot = 0; slot < 10 && handler != null; slot++) {
                 handler.insertItem(slot, cell.copy(), false);
             }

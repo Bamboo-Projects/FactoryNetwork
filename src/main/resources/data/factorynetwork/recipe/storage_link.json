@@ -7,9 +7,15 @@
     "PCP"
   ],
   "key": {
-    "P": "factorynetwork:plate",
-    "C": "factorynetwork:cable",
-    "N": "factorynetwork:core_network"
+    "P": {
+      "item": "factorynetwork:plate"
+    },
+    "C": {
+      "item": "factorynetwork:cable"
+    },
+    "N": {
+      "item": "factorynetwork:core_network"
+    }
   },
   "result": {
     "id": "factorynetwork:storage_link",

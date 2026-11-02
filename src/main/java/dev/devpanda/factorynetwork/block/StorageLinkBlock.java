@@ -44,9 +44,8 @@ public class StorageLinkBlock extends Block implements EntityBlock {
 
     @Override
     protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighbor,
-                                   net.minecraft.world.level.redstone.@Nullable Orientation orientation,
-                                   boolean moved) {
-        super.neighborChanged(state, level, pos, neighbor, orientation, moved);
+                                   BlockPos from, boolean moved) {
+        super.neighborChanged(state, level, pos, neighbor, from, moved);
         if (level.getBlockEntity(pos) instanceof StorageLinkBlockEntity link) {
             link.neighbourChanged();
         }
@@ -79,10 +78,11 @@ public class StorageLinkBlock extends Block implements EntityBlock {
     }
 
     @Override
-    protected void affectNeighborsAfterRemoval(BlockState state,
-                                               net.minecraft.server.level.ServerLevel level,
-                                               BlockPos pos, boolean moved) {
-        super.affectNeighborsAfterRemoval(state, level, pos, moved);
-        dev.devpanda.factorynetwork.network.ControllerRegistry.markChanged(level, pos);
+    protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState,
+                            boolean moved) {
+        if (!state.is(newState.getBlock())) {
+            dev.devpanda.factorynetwork.network.ControllerRegistry.markChanged(level, pos);
+        }
+        super.onRemove(state, level, pos, newState, moved);
     }
 }

@@ -48,7 +48,7 @@ public final class FactoryNetworkGameTests {
     private static final String EMPTY = "empty";
 
     /** Builds the setup and returns the position of the controller. */
-    private static BlockPos buildSetup(GameTestHelper helper) {
+    static BlockPos buildSetup(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 1, 1);
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
         rackWithServer(helper, controller.west());
@@ -166,7 +166,7 @@ public final class FactoryNetworkGameTests {
         return found;
     }
 
-    private static ControllerBlockEntity controllerAt(GameTestHelper helper, BlockPos pos) {
+    static ControllerBlockEntity controllerAt(GameTestHelper helper, BlockPos pos) {
         if (helper.getBlockEntity(pos) instanceof ControllerBlockEntity controller) {
             powerUp(controller);
             return controller;

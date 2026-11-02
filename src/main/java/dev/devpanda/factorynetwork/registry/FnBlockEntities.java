@@ -41,9 +41,10 @@ public final class FnBlockEntities {
 
     public static final DeferredHolder<BlockEntityType<?>,
             BlockEntityType<dev.devpanda.factorynetwork.block.entity.StorageLinkBlockEntity>>
-            STORAGE_LINK = BLOCK_ENTITIES.register("storage_link", () -> new BlockEntityType<>(
-                    dev.devpanda.factorynetwork.block.entity.StorageLinkBlockEntity::new,
-                    dev.devpanda.factorynetwork.registry.FnBlocks.STORAGE_LINK.get()));
+            STORAGE_LINK = BLOCK_ENTITIES.register("storage_link", () -> BlockEntityType.Builder
+                    .of(dev.devpanda.factorynetwork.block.entity.StorageLinkBlockEntity::new,
+                            dev.devpanda.factorynetwork.registry.FnBlocks.STORAGE_LINK.get())
+                    .build(null));
 
     public static final DeferredHolder<BlockEntityType<?>,
             BlockEntityType<dev.devpanda.factorynetwork.block.entity.GatewayBlockEntity>>
