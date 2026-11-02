@@ -47,19 +47,19 @@ public class BurnerScreen extends AbstractContainerScreen<BurnerMenu> {
     @Override
     public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         super.extractBackground(graphics, mouseX, mouseY, partialTick);
-        graphics.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight, 512, 512);
+        graphics.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight, 512, 512);
 
         // The flame burns down from the top, like in a furnace.
         int flamme = Math.round(menu.burnFraction() * FLAME_H);
         if (flamme > 0) {
-            graphics.blit(TEXTURE, leftPos + FLAME_X, topPos + FLAME_Y + (FLAME_H - flamme),
+            graphics.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, TEXTURE, leftPos + FLAME_X, topPos + FLAME_Y + (FLAME_H - flamme),
                     FLAME_U, FLAME_V + (FLAME_H - flamme), FLAME_W, flamme, 512, 512);
         }
 
         // The reserve grows from the bottom up, like a tank.
         int hoehe = Math.round(menu.energyFraction() * BAR_H);
         if (hoehe > 0) {
-            graphics.blit(TEXTURE, leftPos + BAR_X, topPos + BAR_Y + (BAR_H - hoehe),
+            graphics.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, TEXTURE, leftPos + BAR_X, topPos + BAR_Y + (BAR_H - hoehe),
                     ENERGY_U, ENERGY_V + (BAR_H - hoehe), BAR_W, hoehe, 512, 512);
         }
     }

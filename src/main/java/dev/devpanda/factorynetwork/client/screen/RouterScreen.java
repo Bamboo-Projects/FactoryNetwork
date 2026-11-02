@@ -90,7 +90,7 @@ public class RouterScreen extends AbstractContainerScreen<RouterMenu> {
     @Override
     public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         super.extractBackground(graphics, mouseX, mouseY, partialTick);
-        graphics.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight, 512, 512);
+        graphics.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight, 512, 512);
 
         for (Direction side : Direction.values()) {
             int y = topPos + ROW_TOP + side.ordinal() * ROW_HEIGHT;

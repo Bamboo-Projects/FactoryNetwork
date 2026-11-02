@@ -101,7 +101,7 @@ public class ShelfScreen extends AbstractContainerScreen<ShelfMenu> {
     @Override
     public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         super.extractBackground(graphics, mouseX, mouseY, partialTick);
-        graphics.blit(background(),
+        graphics.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, background(),
                 leftPos, topPos, 0, 0, imageWidth, imageHeight, SHEET, SHEET);
         if (!isRack()) {
             return;

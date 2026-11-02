@@ -77,6 +77,15 @@ public record PressRecipe(Ingredient stamp,
         return result.create();
     }
 
+    /**
+     * Special: the recipe book does not know the press. Otherwise Minecraft
+     * warns at every load that the recipe cannot be placed.
+     */
+    @Override
+    public boolean isSpecial() {
+        return true;
+    }
+
     @Override
     public boolean showNotification() {
         return false;

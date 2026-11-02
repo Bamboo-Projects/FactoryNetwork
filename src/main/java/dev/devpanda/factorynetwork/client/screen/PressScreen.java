@@ -40,20 +40,20 @@ public class PressScreen extends AbstractContainerScreen<PressMenu> {
     @Override
     public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         super.extractBackground(graphics, mouseX, mouseY, partialTick);
-        graphics.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight, 512, 512);
+        graphics.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight, 512, 512);
 
         // Progress: the arrow grows from left to right.
         int required = menu.required();
         if (required > 0 && menu.progress() > 0) {
             int breite = Math.min(30, menu.progress() * 30 / required);
-            graphics.blit(TEXTURE, leftPos + 85, topPos + 40, ARROW_U, ARROW_V,
+            graphics.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, TEXTURE, leftPos + 85, topPos + 40, ARROW_U, ARROW_V,
                     breite, 14, 512, 512);
         }
 
         // Power: the bar grows from the bottom up, like a tank.
         int hoehe = (int) Math.min(BAR, (long) menu.energy() * BAR / menu.capacity());
         if (hoehe > 0) {
-            graphics.blit(TEXTURE, leftPos + 8, topPos + 17 + (BAR - hoehe),
+            graphics.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, TEXTURE, leftPos + 8, topPos + 17 + (BAR - hoehe),
                     ENERGY_U, ENERGY_V + (BAR - hoehe), 8, hoehe, 512, 512);
         }
     }

@@ -62,11 +62,11 @@ public final class Widgets {
     public static void stretched(GuiGraphicsExtractor graphics, int x, int y, int width, int height,
                                  int u, int v, int source, int cap) {
         if (width <= 2 * cap) {
-            graphics.blit(ATLAS, x, y, u, v, width, height, SHEET, SHEET);
+            graphics.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, ATLAS, x, y, u, v, width, height, SHEET, SHEET);
             return;
         }
-        graphics.blit(ATLAS, x, y, u, v, cap, height, SHEET, SHEET);
-        graphics.blit(ATLAS, x + width - cap, y, u + source - cap, v, cap, height,
+        graphics.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, ATLAS, x, y, u, v, cap, height, SHEET, SHEET);
+        graphics.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, ATLAS, x + width - cap, y, u + source - cap, v, cap, height,
                 SHEET, SHEET);
 
         int middle = source - 2 * cap;
@@ -74,7 +74,7 @@ public final class Widgets {
         int drawn = 0;
         while (drawn < remaining) {
             int piece = Math.min(middle, remaining - drawn);
-            graphics.blit(ATLAS, x + cap + drawn, y, u + cap, v, piece, height, SHEET, SHEET);
+            graphics.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, ATLAS, x + cap + drawn, y, u + cap, v, piece, height, SHEET, SHEET);
             drawn += piece;
         }
     }

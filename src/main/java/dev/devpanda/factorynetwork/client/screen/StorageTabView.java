@@ -81,7 +81,7 @@ public class StorageTabView {
         drawSortButtons(graphics, mouseX, mouseY);
 
         // Grid background, as large as needed
-        graphics.blit(GRID, gridX(), gridY(), 0, 0, COLUMNS * SLOT, ROWS * SLOT, 512, 512);
+        graphics.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, GRID, gridX(), gridY(), 0, 0, COLUMNS * SLOT, ROWS * SLOT, 512, 512);
 
         List<ClientStorageView.Row> rows = ClientStorageView.rows();
         int first = scrollRow * COLUMNS;
@@ -123,7 +123,7 @@ public class StorageTabView {
             int bx = sortButtonX(candidate.ordinal());
             int by = y + 2;
             boolean active = ClientStorageView.sort() == candidate;
-            graphics.blit(WIDGETS, bx, by, 64, active ? 16 : 0, 12, 12, 512, 512);
+            graphics.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, WIDGETS, bx, by, 64, active ? 16 : 0, 12, 12, 512, 512);
 
             // A letter on the button, the direction beneath it.
             graphics.pose().pushMatrix();
@@ -169,13 +169,13 @@ public class StorageTabView {
         // fragment.
         for (int y = 0; y < trackH; y += 15) {
             int height = Math.min(15, trackH - y);
-            graphics.blit(WIDGETS, trackX, trackY + y, 108, 32, 12, height, 512, 512);
+            graphics.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, WIDGETS, trackX, trackY + y, 108, 32, 12, height, 512, 512);
         }
         if (maxScroll() == 0) {
             return;
         }
         int thumbY = trackY + (trackH - 15) * scrollRow / maxScroll();
-        graphics.blit(WIDGETS, trackX, thumbY, 96, 32, 12, 15, 512, 512);
+        graphics.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, WIDGETS, trackX, thumbY, 96, 32, 12, 15, 512, 512);
     }
 
     /**
