@@ -41,7 +41,7 @@ function IsMarked([string]$commandLine) {
     if ($commandLine -match '-Dfn\.hidden=true') {
         return $true
     }
-    foreach ($m in [regex]::Matches($commandLine, '@("?)([^"\s]+RunVmArgs\.txt)')) {
+    foreach ($m in [regex]::Matches($commandLine, '@("?)([^"\s]+RunVmArgs\.txt)')) {
         $file = $m.Groups[2].Value -replace '\\\\', '\'
         if ((Test-Path $file) -and (Select-String -Path $file -Pattern 'fn\.hidden=true' -Quiet)) {
             return $true

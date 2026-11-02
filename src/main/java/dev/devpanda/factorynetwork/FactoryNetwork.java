@@ -49,7 +49,10 @@ public final class FactoryNetwork {
         dev.devpanda.factorynetwork.press.FnRecipes.register(modBus);
         // The manual only if GuideME is present — otherwise the mod starts
         // without a manual instead of not at all. The same stance as with Jade.
-        if (net.neoforged.fml.ModList.get().isLoaded("guideme")) {
+        // And only on a client: since GuideME 26 building a guide loads client
+        // classes, and a dedicated server crashed while constructing the mod.
+        if (net.neoforged.fml.ModList.get().isLoaded("guideme")
+                && net.neoforged.fml.loading.FMLEnvironment.getDist().isClient()) {
             dev.devpanda.factorynetwork.compat.guide.FnGuide.register();
         }
     }
