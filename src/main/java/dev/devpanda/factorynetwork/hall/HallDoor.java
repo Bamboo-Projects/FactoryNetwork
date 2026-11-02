@@ -48,6 +48,8 @@ public final class HallDoor {
             return;
         }
         halls.setDoor(id, at);
+        // A new hall, or a door that moved: from now on this block holds it.
+        HallLoading.hold(door, true);
 
         ServerLevel hall = player.level().getServer().getLevel(Halls.DIMENSION);
         if (hall == null) {

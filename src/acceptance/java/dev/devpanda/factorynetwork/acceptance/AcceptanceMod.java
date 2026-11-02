@@ -78,7 +78,14 @@ public final class AcceptanceMod {
                 .executes(ctx -> {
                     ctx.getSource().sendSuccess(() -> Component.literal(hallRoundTrip(ctx.getSource().getLevel())), false);
                     return 1;
-                }));
+                })
+                .then(Commands.literal("loaded").executes(ctx -> {
+                    var hall = ctx.getSource().getServer().getLevel(dev.devpanda.factorynetwork.hall.Halls.DIMENSION);
+                    BlockPos low = dev.devpanda.factorynetwork.hall.Halls.origin(1);
+                    ctx.getSource().sendSuccess(() -> Component.literal("FN_HALL_LOADED " + hall.isLoaded(low)
+                            + " ticking=" + hall.shouldTickBlocksAt(low)), false);
+                    return 1;
+                })));
         event.getDispatcher().register(Commands.literal("fnacceptance")
                 .requires(Commands.hasPermission(Commands.LEVEL_OWNERS))
                 .then(Commands.literal("setup").executes(ctx -> {

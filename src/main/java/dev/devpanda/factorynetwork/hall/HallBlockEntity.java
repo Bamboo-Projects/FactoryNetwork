@@ -42,6 +42,18 @@ public class HallBlockEntity extends BlockEntity {
     }
 
     @Override
+    public void onLoad() {
+        super.onLoad();
+        HallLoading.hold(this, true);
+    }
+
+    @Override
+    public void setRemoved() {
+        HallLoading.hold(this, false);
+        super.setRemoved();
+    }
+
+    @Override
     protected void loadAdditional(ValueInput input) {
         super.loadAdditional(input);
         hall = input.getIntOr("Hall", NONE);
