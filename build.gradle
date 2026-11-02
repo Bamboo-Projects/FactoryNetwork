@@ -391,6 +391,10 @@ dependencies {
     // nur das echte Jar beantwortet.
     compileOnly "maven.modrinth:ae2:${ae2_version}"
     runtimeOnly "maven.modrinth:ae2:${ae2_version}"
+    // Refined Storage: the second system behind the storage link. Its API
+    // ships inside the mod jar.
+    compileOnly "maven.modrinth:refined-storage:${refined_storage_version}"
+    runtimeOnly "maven.modrinth:refined-storage:${refined_storage_version}"
     if (withArs) {
         arsCompileOnly "maven.modrinth:ars-nouveau:${ars_nouveau_version}"
         runtimeOnly "maven.modrinth:ars-nouveau:${ars_nouveau_version}"
