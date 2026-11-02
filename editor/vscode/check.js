@@ -338,6 +338,7 @@ function contains(name, lines, word, shouldHave, file) {
 // Dieselben Faelle wie in CompletionsTest und SignaturesTest.
 contains('Anzeige bietet title', ['display halle {', '    '], 'title', true);
 contains('Anzeige bietet scale', ['display halle {', '    '], 'scale', true);
+contains('Anzeige bietet items', ['display halle {', '    '], 'items', true);
 contains('Oberste Ebene bietet recipe', [''], 'recipe', true);
 contains('Oberste Ebene bietet store', [''], 'store', true);
 contains('Speicher bietet priority', ['store kiste_1 {', '    '], 'priority', true);

@@ -3723,7 +3723,17 @@ public final class FactoryNetworkGameTests {
         var anzeigen = new dev.devpanda.factorynetwork.network.packet.DisplayStatePacket(
                 java.util.List.of(new dev.devpanda.factorynetwork.network.packet
                         .DisplayStatePacket.Panel("leitstand",
-                        java.util.List.of("§fZeile", "§8[Knopf]"),
+                        java.util.List.of(
+                                dev.devpanda.factorynetwork.block.entity.DisplayLine.text("§fZeile"),
+                                dev.devpanda.factorynetwork.block.entity.DisplayLine.text("§8[Knopf]"),
+                                new dev.devpanda.factorynetwork.block.entity.DisplayLine(
+                                        "§7Eisen §f3", Items.IRON_INGOT, java.util.List.of()),
+                                new dev.devpanda.factorynetwork.block.entity.DisplayLine(
+                                        "§72 Arten", null, java.util.List.of(
+                                        new dev.devpanda.factorynetwork.block.entity
+                                                .DisplayLine.Cell(Items.COAL, 1_500_000L),
+                                        new dev.devpanda.factorynetwork.block.entity
+                                                .DisplayLine.Cell(Items.STONE, 7L)))),
                         java.util.List.of(new dev.devpanda.factorynetwork.network.packet
                                 .DisplayStatePacket.Button(1, 1)))));
         var anzeigenZurueck = roundTrip(helper,
@@ -3733,6 +3743,13 @@ public final class FactoryNetworkGameTests {
                 "Welche Zeile ein Knopf ist");
         helper.assertValueEqual(anzeigenZurueck.panels().get(0).buttons().get(0).entry(), 1,
                 "Und welchen Eintrag sie meint");
+        // The item identities travel along: an icon that is lost on the way
+        // leaves an empty gap on a server and nowhere else.
+        var gezeigt = anzeigenZurueck.panels().get(0).shown();
+        helper.assertValueEqual(gezeigt.get(2).icon(), Items.IRON_INGOT, "Das Symbol der Zeile");
+        helper.assertTrue(gezeigt.get(0).icon() == null, "Eine Textzeile ohne Symbol");
+        helper.assertValueEqual(gezeigt.get(3).grid(), anzeigen.panels().get(0).shown().get(3).grid(),
+                "Das Raster mit Art und Menge");
 
         // Crafting takes the same path over the wire. In single-player a
         // broken codec goes unnoticed, on a server it shows immediately.
@@ -3856,6 +3873,98 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(flow.status().name(), "DONE",
                 "Der Ablauf sagt: " + flow.detail());
         helper.assertValueEqual(resultOf(flow), 1L, "Wasser ist eine Sorte");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void aDisplayCarriesItemIcons(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        entity.storage().insert(Items.IRON_INGOT, 320);
+        entity.storage().insert(Items.COAL, 1500);
+        entity.storage().insert(Items.STONE, 7);
+
+        helper.assertTrue(entity.deploy("""
+                display lager {
+                    title "Lager"
+                    row item:iron_ingot storage.count(item:iron_ingot)
+                    row item:coal "Kohle" storage.count(item:coal)
+                    row item:gibt_es_nicht storage.count(item:iron_ingot)
+                    list "Bestand" storage.items()
+                    items storage.items()
+                    text "darunter"
+                }"""), "Das Programm wurde nicht übernommen");
+
+        var shown = entity.displayPanels().get(0).shown();
+        // title, three rows, the list heading with three entries, the grid,
+        // the text after it.
+        helper.assertValueEqual(shown.size(), 10, "Zehn Zeilen: " + shown);
+
+        // A: the icon, the item's own name, the value.
+        var iron = shown.get(1);
+        helper.assertValueEqual(iron.icon(), Items.IRON_INGOT, "Das Symbol der Eisenzeile");
+        helper.assertTrue(iron.text().contains(
+                        dev.devpanda.factorynetwork.platform.Names.of(Items.IRON_INGOT))
+                        && iron.text().contains("320"),
+                "Name und Bestand stehen da: " + iron.text());
+        var coal = shown.get(2);
+        helper.assertValueEqual(coal.icon(), Items.COAL, "Das Symbol der Kohlezeile");
+        helper.assertTrue(coal.text().contains("Kohle") && coal.text().contains("1,5k"),
+                "Die eigene Beschriftung ersetzt den Namen: " + coal.text());
+        // An item the game does not know keeps its line and names itself.
+        var unknown = shown.get(3);
+        helper.assertTrue(unknown.icon() == null, "Ohne Art kein Symbol");
+        helper.assertTrue(unknown.text().contains("item:gibt_es_nicht"),
+                "Der Tippfehler steht da: " + unknown.text());
+
+        // B: the list heading has no icon, its entries do — most first.
+        helper.assertTrue(shown.get(4).icon() == null, "Die Überschrift der Liste");
+        helper.assertValueEqual(shown.get(5).icon(), Items.COAL, "Kohle zuerst");
+        helper.assertValueEqual(shown.get(6).icon(), Items.IRON_INGOT, "Dann Eisen");
+        helper.assertValueEqual(shown.get(7).icon(), Items.STONE, "Dann Stein");
+
+        // C: one line holding the grid, most first, with the amounts.
+        var grid = shown.get(8);
+        helper.assertValueEqual(grid.grid(), java.util.List.of(
+                        new dev.devpanda.factorynetwork.block.entity.DisplayLine.Cell(
+                                Items.COAL, 1500L),
+                        new dev.devpanda.factorynetwork.block.entity.DisplayLine.Cell(
+                                Items.IRON_INGOT, 320L),
+                        new dev.devpanda.factorynetwork.block.entity.DisplayLine.Cell(
+                                Items.STONE, 7L)),
+                "Das Raster");
+        helper.assertTrue(grid.text().contains("3 Arten"),
+                "Ohne Raster sagt die Zeile, wie viele es sind: " + grid.text());
+        helper.assertTrue(shown.get(9).text().contains("darunter"),
+                "Was nach dem Raster steht, bleibt: " + shown.get(9).text());
+
+        // What the wall saves is what it shows: icons and cells survive.
+        for (var line : shown) {
+            helper.assertValueEqual(dev.devpanda.factorynetwork.block.entity.DisplayLine
+                    .load(line.save()), line, "Gespeichert und gelesen");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void anItemsGridOverSomethingElseSaysWhy(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+
+        helper.assertTrue(entity.deploy("""
+                display lager {
+                    items storage.items()
+                    items 42
+                }"""), "Das Programm wurde nicht übernommen");
+
+        var shown = entity.displayPanels().get(0).shown();
+        helper.assertValueEqual(shown.size(), 2, "Zwei Zeilen: " + shown);
+        helper.assertTrue(!shown.get(0).isGrid() && shown.get(0).text().contains("leer"),
+                "Ein leeres Lager sagt es: " + shown.get(0).text());
+        helper.assertTrue(!shown.get(1).isGrid() && shown.get(1).text().contains("42"),
+                "Keine Liste: die Zeile zeigt den Wert wie text: " + shown.get(1).text());
         helper.succeed();
     }
 

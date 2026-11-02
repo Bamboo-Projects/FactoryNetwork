@@ -1,5 +1,6 @@
 package dev.devpanda.factorynetwork.runtime;
 
+import dev.devpanda.factorynetwork.block.entity.DisplayLine;
 import dev.devpanda.factorynetwork.platform.Names;
 import dev.devpanda.factorynetwork.lang.ast.Decl;
 import dev.devpanda.factorynetwork.lang.ast.Expr;
@@ -33,13 +34,37 @@ import java.util.Map;
  */
 public final class DisplayValues {
 
-    /** A fully evaluated entry, as it is shown. */
+    /**
+     * A fully evaluated entry, as it is shown.
+     *
+     * @param icon the item drawn in front of the line, or {@code null}
+     * @param grid the cells of an {@code items} grid, empty otherwise
+     */
     public record Line(Decl.Display.Entry.Kind kind, String label, String value, double fraction,
-                       boolean flag) {
+                       boolean flag, Item icon, List<DisplayLine.Cell> grid) {
+
+        public Line(Decl.Display.Entry.Kind kind, String label, String value, double fraction,
+                    boolean flag) {
+            this(kind, label, value, fraction, flag, null, List.of());
+        }
 
         public static Line text(Decl.Display.Entry.Kind kind, String label, String value) {
             return new Line(kind, label, value, 0, false);
         }
+
+        static Line withIcon(Decl.Display.Entry.Kind kind, String label, String value,
+                             Item icon) {
+            return new Line(kind, label, value, 0, false, icon, List.of());
+        }
+    }
+
+    /**
+     * One entry of a stock listing.
+     *
+     * @param item the item behind it, or {@code null} for a fluid — a fluid
+     *             has no item whose icon could stand there
+     */
+    private record Stock(String name, long amount, Item item) {
     }
 
     private final FactoryGraph graph;
@@ -108,6 +133,8 @@ public final class DisplayValues {
             // the difference from row.
             if (entry.kind() == Decl.Display.Entry.Kind.LIST) {
                 lines.addAll(listing(entry));
+            } else if (entry.kind() == Decl.Display.Entry.Kind.ITEMS) {
+                lines.add(grid(entry));
             } else {
                 lines.add(evaluate(entry));
             }
@@ -125,26 +152,59 @@ public final class DisplayValues {
      */
     private List<Line> listing(Decl.Display.Entry entry) {
         List<Line> lines = new ArrayList<>();
-        List<Map.Entry<String, Long>> posten = entries(entry.value());
+        List<Stock> posten = entries(entry.value());
         if (posten == null) {
             // Not a stock level but something else — then a single line as
             // before, including the message describe() knows for it.
             lines.add(Line.text(entry.kind(), entry.label(), describe(entry.value())));
             return lines;
         }
-        posten.sort(java.util.Comparator.comparingLong(
-                (Map.Entry<String, Long> item) -> item.getValue()).reversed());
+        posten.sort(BY_AMOUNT);
         lines.add(Line.text(entry.kind(), entry.label(),
                 posten.isEmpty() ? "leer" : posten.size() + " Arten"));
         for (int i = 0; i < Math.min(posten.size(), LIST_LIMIT); i++) {
-            lines.add(Line.text(Decl.Display.Entry.Kind.ROW,
-                    posten.get(i).getKey(), shorten(posten.get(i).getValue())));
+            // The icon comes along wherever there is an item behind the
+            // entry. A fluid line stays as it was: no item, no icon.
+            Stock stock = posten.get(i);
+            lines.add(Line.withIcon(Decl.Display.Entry.Kind.ROW,
+                    stock.name(), shorten(stock.amount()), stock.item()));
         }
         if (posten.size() > LIST_LIMIT) {
             lines.add(Line.text(Decl.Display.Entry.Kind.TEXT, null,
                     "… und " + (posten.size() - LIST_LIMIT) + " weitere"));
         }
         return lines;
+    }
+
+    /** Most first: whoever looks at a wall looks for what there is too much of. */
+    private static final java.util.Comparator<Stock> BY_AMOUNT =
+            java.util.Comparator.comparingLong(Stock::amount).reversed();
+
+    /**
+     * An {@code items} grid: one cell per item, most first.
+     *
+     * <p><b>Items only.</b> A fluid has no item icon, and a cell without an
+     * icon is a number nobody can place. A machine's fluids stay in
+     * {@code list}, where they have a name.
+     *
+     * <p>How many cells fit only the client knows, from the size of the wall
+     * and the scale. The server sends up to {@link DisplayLine#GRID_LIMIT};
+     * what the wall cannot hold the client counts in its last cell.
+     */
+    private Line grid(Decl.Display.Entry entry) {
+        List<Stock> found = entries(entry.value());
+        if (found == null) {
+            // Not a stock listing: the same message any other line gets.
+            return Line.text(entry.kind(), null, describe(entry.value()));
+        }
+        found.removeIf(stock -> stock.item() == null);
+        found.sort(BY_AMOUNT);
+        List<DisplayLine.Cell> cells = new ArrayList<>();
+        for (int i = 0; i < Math.min(found.size(), DisplayLine.GRID_LIMIT); i++) {
+            cells.add(new DisplayLine.Cell(found.get(i).item(), found.get(i).amount()));
+        }
+        String summary = found.isEmpty() ? "leer" : found.size() + " Arten";
+        return new Line(entry.kind(), null, summary, 0, false, null, cells);
     }
 
     /**
@@ -154,7 +214,7 @@ public final class DisplayValues {
      * <p>Only these two. A display does not compute — it reads, and the
      * boundary is the same as everywhere else in this class.
      */
-    private List<Map.Entry<String, Long>> entries(Expr expr) {
+    private List<Stock> entries(Expr expr) {
         if (!(expr instanceof Expr.Call call)
                 || !(call.callee() instanceof Expr.Member member)
                 || !"items".equals(member.name())
@@ -163,7 +223,7 @@ public final class DisplayValues {
         }
         if (member.target() instanceof Expr.Builtin builtin
                 && builtin.kind() == Expr.Builtin.Kind.STORAGE) {
-            return named(storage.byItem(), item -> Names.of(item));
+            return named(storage.byItem(), item -> Names.of(item), item -> item);
         }
         if (!(member.target() instanceof Expr.Name device) || level == null) {
             return null;
@@ -173,21 +233,21 @@ public final class DisplayValues {
             return null;
         }
         var amounts = dev.devpanda.factorynetwork.block.entity.DeviceAmounts.of(connector);
-        List<Map.Entry<String, Long>> found =
-                named(amounts.items(), item -> Names.of(item));
+        List<Stock> found = named(amounts.items(), item -> Names.of(item), item -> item);
         // A machine can hold both. Counting them separately and showing them
         // together is exactly what one wants to know standing in front of it.
         found.addAll(named(amounts.fluids(), fluid -> fluid.getFluidType()
-                .getDescription().getString()));
+                .getDescription().getString(), fluid -> null));
         return found;
     }
 
-    private static <T> List<Map.Entry<String, Long>> named(
-            Map<T, Long> contents, java.util.function.Function<T, String> naming) {
-        List<Map.Entry<String, Long>> found = new ArrayList<>(contents.size());
+    private static <T> List<Stock> named(
+            Map<T, Long> contents, java.util.function.Function<T, String> naming,
+            java.util.function.Function<T, Item> icon) {
+        List<Stock> found = new ArrayList<>(contents.size());
         contents.forEach((key, amount) -> {
             if (amount > 0) {
-                found.add(Map.entry(naming.apply(key), amount));
+                found.add(new Stock(naming.apply(key), amount, icon.apply(key)));
             }
         });
         return found;
@@ -197,18 +257,44 @@ public final class DisplayValues {
         return switch (entry.kind()) {
             case TITLE -> Line.text(entry.kind(), entry.label(), "");
             case TEXT -> Line.text(entry.kind(), null, describe(entry.value()));
-            case ROW -> Line.text(entry.kind(), entry.label(), describe(entry.value()));
+            case ROW -> entry.icon() == null
+                    ? Line.text(entry.kind(), entry.label(), describe(entry.value()))
+                    : itemRow(entry);
             case PROGRESS -> new Line(entry.kind(), entry.label(),
                     progressText(entry.value()), fraction(entry.value()), false);
             case INDICATOR -> new Line(entry.kind(), entry.label(), "",
                     0, truth(entry.value()));
             case LIST -> Line.text(entry.kind(), entry.label(), describe(entry.value()));
             case BUTTON -> Line.text(entry.kind(), entry.label(), "");
+            case ITEMS -> grid(entry);
             // Never reached: evaluate(Decl.Display) skips it. The case is
             // there anyway so that the compiler complains again at the next
             // new building block.
             case SCALE -> Line.text(entry.kind(), null, "");
         };
+    }
+
+    /**
+     * {@code row item:iron_ingot …} — the item's icon, its name, the value.
+     *
+     * <p>An item the game does not know keeps its line, without an icon and
+     * with the selector as its label: an empty line would hide the typo, a
+     * line with the written name shows it.
+     */
+    private Line itemRow(Decl.Display.Entry entry) {
+        List<Item> items = ItemSelection.resolve(entry.icon());
+        String value = describe(entry.value());
+        if (items.isEmpty()) {
+            String written = entry.icon() instanceof Expr.Selector selector
+                    ? selector.prefix() + ":" + (selector.hasNamespace()
+                            ? selector.namespace() + ":" : "") + selector.path()
+                    : "?";
+            return Line.text(entry.kind(),
+                    entry.label() != null ? entry.label() : written + " (unbekannt)", value);
+        }
+        Item item = items.get(0);
+        return Line.withIcon(entry.kind(),
+                entry.label() != null ? entry.label() : Names.of(item), value, item);
     }
 
     /**

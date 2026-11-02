@@ -34,6 +34,9 @@
       "include": "#display"
     },
     {
+      "include": "#display-grid"
+    },
+    {
       "include": "#recipe-key"
     },
     {
@@ -100,6 +103,15 @@
       "comment": "Die Zeilenarten einer Anzeige",
       "name": "entity.name.tag.display.manifold",
       "match": "\\b(title|row|text|progress|indicator|list|button|scale)\\b"
+    },
+    "display-grid": {
+      "comment": "items ist nur am Zeilenanfang einer Anzeige ein Baustein und sonst ein Name; storage.items() und eine Variable items bleiben ungefärbt",
+      "match": "^\\s*(items)(?=\\s+[^=\\s])",
+      "captures": {
+        "1": {
+          "name": "entity.name.tag.display.manifold"
+        }
+      }
     },
     "source": {
       "comment": "Woher ein Wert kommt — storage.count, network.energy",

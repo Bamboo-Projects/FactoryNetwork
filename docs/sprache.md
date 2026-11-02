@@ -1211,13 +1211,60 @@ display factory_status {
 ```
 title <text>              Überschrift
 row <text> <wert>         Beschriftung und Wert nebeneinander
+row <item> <wert>         Symbol, Name des Gegenstands und Wert
+row <item> <text> <wert>  Symbol, eigene Beschriftung und Wert
 text <wert>               freier Text
 progress <text> <0..1>    Fortschrittsbalken
 indicator <text> <bool>   Lämpchen
 list <text> <liste>       Aufzählung, etwa Bestände oder Aufträge
+items <liste>             Raster aus Symbolen mit Mengen, wie im Terminal
 button <text> <funktion>  löst eine Funktion aus
 scale <zahl>              wie groß die Schrift ist; 1 ist normal
 ```
+
+### Gegenstände auf der Wand
+
+```
+display lager {
+    title "Lager"
+
+    row item:iron_ingot storage.count(item:iron_ingot)
+    row item:coal "Kohle" storage.count(item:coal)
+
+    list "Bestand" storage.items()
+    items storage.items()
+}
+```
+
+**`row` mit einem `item:`** zeigt das Symbol, den Namen des Gegenstands und
+den Wert. Das `item:` steht dort, wo sonst die Beschriftung steht, denn es
+sagt dasselbe: worum es in der Zeile geht. Ist der Name aus dem Spiel zu lang
+für die Wand, steht dahinter eine eigene Beschriftung. Ein Text ganz allein
+nach dem `item:` ist der Wert, keine Beschriftung — `row item:coal "voll"`
+zeigt das Kohle-Symbol, den Namen und das Wort „voll“.
+
+Erlaubt ist genau **eine Art**. `item:*_ingot` oder `tag:c/ingots` meinen
+mehrere, und welches Symbol man auch zeigte, es sähe aus wie die Antwort.
+Eine Flüssigkeit hat kein Symbol, das sich zeichnen ließe. Beides meldet
+schon der Editor. Ein `item:`, das es im Spiel nicht gibt, behält seine Zeile
+— ohne Symbol, mit dem geschriebenen Namen —, damit der Tippfehler auf der
+Wand steht und nicht eine leere Zeile.
+
+**`list`** über `storage.items()` oder `geraet.items()` setzt vor jeden
+Posten sein Symbol. Flüssigkeiten in einer Maschine bleiben ohne Symbol.
+
+**`items`** ist ein Raster wie im Speicher-Reiter des Terminals: Symbol, unten
+rechts die Menge, das meiste zuerst. Es ist der einzige Baustein, der mit der
+Wand wächst — die Textzeilen behalten ihre Höhe, und das Raster nimmt den
+ganzen übrigen Platz, so breit, wie die Wand ist. Zwei Raster teilen sich den
+Platz. Was nach dem Raster steht, steht darunter. Mit `scale 2` werden die
+Symbole doppelt so groß, und es passen ein Viertel so viele hin. Passt nicht
+alles, sagt die letzte Zelle, wie viele fehlen. Das Raster zeigt nur
+Gegenstände; Flüssigkeiten haben kein Symbol und gehören in `list`.
+
+`items` ist nur am Anfang einer Display-Zeile ein Baustein. Überall sonst
+bleibt es ein gewöhnlicher Name — `storage.items()`, eine Variable `items`
+und ein Connector `items` gehen weiter.
 
 ### Die Größe der Schrift
 

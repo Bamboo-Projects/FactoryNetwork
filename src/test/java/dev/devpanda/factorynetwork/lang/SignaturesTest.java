@@ -74,7 +74,7 @@ class SignaturesTest {
     @DisplayName("The shape reads like in the grammar")
     void shapeReadsLikeTheGrammar() {
         Signatures.Signature row = Signatures.find("display", "row");
-        assertEquals("row string expr", row.shape());
+        assertEquals("row string|item expr", row.shape());
 
         Signatures.Signature rate = Signatures.find("worker", "rate");
         assertEquals("rate int per duration", rate.shape());

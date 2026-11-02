@@ -131,8 +131,12 @@ public final class Signatures {
     /** The entries in a display. */
     public static final List<Signature> DISPLAY = List.of(
             of("title", "Die Überschrift der Wand.", Slot.of(Kind.STRING)),
-            of("row", "Eine Zeile mit Beschriftung und Wert.",
-                    Slot.of(Kind.STRING), Slot.of(Kind.EXPR)),
+            // The label may also be an item: row item:iron_ingot … draws its
+            // icon and takes its name. One shape and not two, because it is
+            // one building block — the completion offers row once.
+            of("row", "Eine Zeile mit Beschriftung und Wert. Statt der Beschriftung "
+                            + "geht ein item: — dann mit Symbol und Namen.",
+                    Slot.named(Kind.STRING, "string|item"), Slot.of(Kind.EXPR)),
             of("text", "Eine Zeile ohne Beschriftung.", Slot.of(Kind.EXPR)),
             of("progress", "Ein Balken von null bis eins.",
                     Slot.of(Kind.STRING), Slot.of(Kind.EXPR)),
@@ -140,6 +144,8 @@ public final class Signatures {
                     Slot.of(Kind.STRING), Slot.of(Kind.EXPR)),
             of("list", "Eine Aufzählung aus einem Ausdruck.",
                     Slot.of(Kind.STRING), Slot.of(Kind.EXPR)),
+            of("items", "Ein Raster aus Symbolen mit Mengen, wie im Terminal.",
+                    Slot.of(Kind.EXPR)),
             of("button", "Ein Knopf, der eine Funktion aufruft.",
                     Slot.of(Kind.STRING), Slot.of(Kind.FUNCTION)),
             of("scale", "Wie groß die Schrift ist; 1 ist normal.",

@@ -152,12 +152,19 @@ displayDecl = 'display' NAME '{' NL { displayEntry NL } '}'
 
 displayEntry = 'title'     STRING
              | 'row'       STRING expr
+             | 'row'       ITEM_SELECTOR [ STRING ] expr
              | 'text'      expr
              | 'progress'  STRING expr
              | 'indicator' STRING expr
              | 'list'      STRING expr
+             | 'items'     expr
              | 'button'    STRING NAME
+             | 'scale'     INT
 ```
+
+`ITEM_SELECTOR` ist ein `item:` ohne Muster — genau eine Art. `items` ist
+kein Schlüsselwort, sondern nur am Anfang eines `displayEntry` ein Baustein;
+sonst bleibt es ein Name.
 
 Ein `displayEntry` enthält Ausdrücke, aber keine Anweisungen — kein `if`,
 keine Schleife, kein `await`.
