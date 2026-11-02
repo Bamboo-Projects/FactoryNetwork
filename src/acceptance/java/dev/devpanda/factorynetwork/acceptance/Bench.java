@@ -1,0 +1,409 @@
+package dev.devpanda.factorynetwork.acceptance;
+
+import com.google.gson.Gson;
+import dev.devpanda.factorynetwork.block.RackBlock;
+import dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity;
+import dev.devpanda.factorynetwork.block.entity.ControllerBlockEntity;
+import dev.devpanda.factorynetwork.block.entity.DriveBlockEntity;
+import dev.devpanda.factorynetwork.block.entity.RackBlockEntity;
+import dev.devpanda.factorynetwork.client.menu.TerminalMenu;
+import dev.devpanda.factorynetwork.item.ServerPart;
+import dev.devpanda.factorynetwork.item.ServerPartItem;
+import dev.devpanda.factorynetwork.lang.Project;
+import dev.devpanda.factorynetwork.network.Power;
+import dev.devpanda.factorynetwork.registry.FnBlocks;
+import dev.devpanda.factorynetwork.registry.FnItems;
+import dev.devpanda.factorynetwork.storage.CellTier;
+import dev.devpanda.factorynetwork.storage.ItemKey;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.ChestBlockEntity;
+import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import org.slf4j.Logger;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+
+/**
+ * Load measurements on a dedicated server: {@code /fnbench run}.
+ *
+ * <p>Each scenario builds a network far from spawn, measures what one
+ * operation costs in isolation, and then lets the server tick for a while
+ * with the network standing there. Tick times are taken around the whole
+ * server tick and compared against a baseline taken before anything was
+ * built, so the difference is what Factory Network costs.
+ *
+ * <p>Every result goes to the log as one line starting with
+ * {@code FN_BENCH }, followed by JSON.
+ */
+final class Bench {
+
+    private static final Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
+    private static final Gson JSON = new Gson();
+
+    /** Ticks per tick-time window. Two hundred ticks are ten seconds. */
+    private static final int WINDOW = 200;
+    /** Ticks to let a freshly built network settle before measuring. */
+    private static final int SETTLE = 40;
+
+    private static final List<ControllerBlockEntity> CONTROLLERS = new ArrayList<>();
+    private static final List<Step> STEPS = new ArrayList<>();
+    /** Runs every tick, measured or not: load that has to be there all along. */
+    private static final List<Runnable> BACKGROUND = new ArrayList<>();
+    private static long tickStart;
+    private static double[] window;
+    private static double[] fnWindow;
+    private static int windowFill;
+    private static long fnBefore;
+    private static int wait;
+
+    private Bench() {
+    }
+
+    /** One stage of the run; returns once its work for this tick is done. */
+    private interface Step {
+        void run(MinecraftServer server);
+    }
+
+    static boolean running() {
+        return !STEPS.isEmpty();
+    }
+
+    static void start(ServerLevel level, int types, int workers, int cables) {
+        STEPS.clear();
+        CONTROLLERS.clear();
+        BACKGROUND.clear();
+        Map<String, Object> results = new LinkedHashMap<>();
+        results.put("types", types);
+        results.put("workers", workers);
+        results.put("cables", cables);
+
+        // Load every chunk the run will touch before anything is measured,
+        // and put the player next to the terminal-to-be: chunk loading in a
+        // measured window would be counted as ours.
+        STEPS.add(server -> {
+            int perDrive = DriveBlockEntity.SLOTS * CellTier.K64.types();
+            forceArea(level, STORAGE, (types + perDrive - 1) / perDrive + 4, 4);
+            forceArea(level, WORKERS, workers * 2 + 4, 6);
+            forceArea(level, CABLES, cables + 4, 2);
+            for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+                player.teleportTo(level, STORAGE.getX() + 0.5, STORAGE.getY(), STORAGE.getZ() + 2.5,
+                        java.util.Set.of(), 180, 0, true);
+            }
+            wait = WINDOW;
+        });
+        // Baseline: the server as it is, nothing of ours built yet.
+        measure("baseline", results);
+
+        // Storage: many cells, many types.
+        STEPS.add(server -> storage(level, types, results));
+        settle();
+        measure("storageIdle", results);
+        STEPS.add(server -> terminal(level, results));
+        settle();
+        measure("storageWithTerminalOpen", results);
+        STEPS.add(server -> closeTerminal(level));
+
+        // Workers moving items from chest to chest.
+        STEPS.add(server -> workers(level, workers, results));
+        settle();
+        STEPS.add(server -> countMoved(level, workers, results, "movedBefore"));
+        measure("workersTicking", results);
+        STEPS.add(server -> countMoved(level, workers, results, "movedAfter"));
+
+        // A long cable network, rebuilt from scratch.
+        STEPS.add(server -> cables(level, cables, results));
+        settle();
+        measure("cablesIdle", results);
+
+        STEPS.add(server -> {
+            LOGGER.info("FN_BENCH {}", JSON.toJson(results));
+            server.getPlayerList().broadcastSystemMessage(
+                    Component.literal("FN_BENCH_DONE"), false);
+        });
+    }
+
+    // ---- Tick loop ----------------------------------------------------------
+
+    static void preTick(ServerTickEvent.Pre event) {
+        tickStart = System.nanoTime();
+        fnBefore = dev.devpanda.factorynetwork.network.TickCost.nanos();
+    }
+
+    static void postTick(ServerTickEvent.Post event) {
+        double millis = (System.nanoTime() - tickStart) / 1_000_000.0;
+        for (ControllerBlockEntity controller : CONTROLLERS) {
+            if (!controller.isRemoved()) {
+                controller.power().fill(Power.CAPACITY);
+            }
+        }
+        BACKGROUND.forEach(Runnable::run);
+        if (window != null && windowFill < window.length) {
+            fnWindow[windowFill] = (dev.devpanda.factorynetwork.network.TickCost.nanos() - fnBefore) / 1_000_000.0;
+            window[windowFill++] = millis;
+            return;
+        }
+        if (wait > 0) {
+            wait--;
+            return;
+        }
+        if (!STEPS.isEmpty()) {
+            STEPS.removeFirst().run(event.getServer());
+        }
+    }
+
+    private static void settle() {
+        STEPS.add(server -> wait = SETTLE);
+    }
+
+    private static void measure(String name, Map<String, Object> results) {
+        STEPS.add(server -> {
+            window = new double[WINDOW];
+            fnWindow = new double[WINDOW];
+            windowFill = 0;
+            dev.devpanda.factorynetwork.network.TickCost.reset();
+        });
+        STEPS.add(server -> {
+            double[] sorted = window.clone();
+            Arrays.sort(sorted);
+            double sum = 0;
+            for (double value : sorted) {
+                sum += value;
+            }
+            Map<String, Object> stats = new LinkedHashMap<>();
+            stats.put("avgMs", round(sum / sorted.length));
+            stats.put("p95Ms", round(sorted[(int) (sorted.length * 0.95)]));
+            stats.put("maxMs", round(sorted[sorted.length - 1]));
+            // The controllers' own share, measured around their ticks.
+            double[] fn = fnWindow.clone();
+            Arrays.sort(fn);
+            double fnSum = 0;
+            for (double value : fn) {
+                fnSum += value;
+            }
+            stats.put("fnAvgMs", round(fnSum / fn.length));
+            stats.put("fnP95Ms", round(fn[(int) (fn.length * 0.95)]));
+            stats.put("fnMaxMs", round(fn[fn.length - 1]));
+            stats.put("slowestControllerMs", round(dev.devpanda.factorynetwork.network.TickCost.slowest() / 1e6));
+            stats.put("slowestControllerAt", String.valueOf(dev.devpanda.factorynetwork.network.TickCost.slowestAt()));
+            results.put(name, stats);
+            window = null;
+            LOGGER.info("FN_BENCH_STEP {} {}", name, JSON.toJson(stats));
+        });
+    }
+
+    // ---- Scenarios ----------------------------------------------------------
+
+    // On top of a superflat world, whose grass lies at -61.
+    private static final BlockPos STORAGE = new BlockPos(100, -60, 0);
+    private static final BlockPos WORKERS = new BlockPos(100, -60, 40);
+    private static final BlockPos CABLES = new BlockPos(100, -60, 80);
+
+    private static void storage(ServerLevel level, int types, Map<String, Object> results) {
+        int perDrive = DriveBlockEntity.SLOTS * CellTier.K64.types();
+        int drives = (types + perDrive - 1) / perDrive;
+        ControllerBlockEntity controller = core(level, STORAGE);
+        ItemStack cell = new ItemStack(FnItems.CELLS.get(CellTier.K64).get());
+        for (int i = 1; i <= drives; i++) {
+            BlockPos cable = STORAGE.east(i);
+            level.setBlockAndUpdate(cable, FnBlocks.CABLE.get().defaultBlockState());
+            BlockPos drivePos = cable.above();
+            level.setBlockAndUpdate(drivePos, FnBlocks.DRIVE.get().defaultBlockState());
+            DriveBlockEntity drive = (DriveBlockEntity) level.getBlockEntity(drivePos);
+            for (int slot = 0; slot < DriveBlockEntity.SLOTS; slot++) {
+                drive.setCell(slot, cell.copy());
+            }
+        }
+        controller.rebuildNetwork();
+
+        List<ItemKey> keys = new ArrayList<>(types);
+        for (int i = 0; i < types; i++) {
+            ItemStack stack = new ItemStack(Items.PAPER);
+            stack.set(DataComponents.CUSTOM_NAME, Component.literal("bench " + i));
+            keys.add(ItemKey.of(stack));
+        }
+        long start = System.nanoTime();
+        long left = 0;
+        for (ItemKey key : keys) {
+            left += controller.storage().insert(key, 1_000);
+        }
+        results.put("fillMs", round((System.nanoTime() - start) / 1e6));
+        results.put("fillRejected", left);
+        results.put("storedTypes", controller.storage().contents().size());
+
+        Random random = new Random(1);
+        int rounds = 10_000;
+        start = System.nanoTime();
+        for (int i = 0; i < rounds; i++) {
+            controller.storage().insert(keys.get(random.nextInt(types)), 1);
+        }
+        results.put("insertUs", round((System.nanoTime() - start) / 1e3 / rounds));
+        start = System.nanoTime();
+        for (int i = 0; i < rounds; i++) {
+            controller.storage().extract(keys.get(random.nextInt(types)), 1);
+        }
+        results.put("extractUs", round((System.nanoTime() - start) / 1e3 / rounds));
+        start = System.nanoTime();
+        for (int i = 0; i < 20; i++) {
+            controller.storage().contents();
+        }
+        results.put("contentsMs", round((System.nanoTime() - start) / 1e6 / 20));
+        controller.setChanged();
+    }
+
+    private static void terminal(ServerLevel level, Map<String, Object> results) {
+        ControllerBlockEntity controller = (ControllerBlockEntity) level.getBlockEntity(STORAGE);
+        List<ServerPlayer> players = level.getServer().getPlayerList().getPlayers();
+        if (players.isEmpty()) {
+            results.put("terminal", "no player online, skipped");
+            return;
+        }
+        ServerPlayer player = players.getFirst();
+        BlockPos terminal = STORAGE.south();
+        level.setBlockAndUpdate(terminal, FnBlocks.TERMINAL.get().defaultBlockState());
+        controller.rebuildNetwork();
+        player.openMenu((net.minecraft.world.MenuProvider) level.getBlockEntity(terminal),
+                buffer -> TerminalMenu.writeBlock(buffer, terminal));
+        controller.watchStorage(player);
+        long start = System.nanoTime();
+        for (int i = 0; i < 20; i++) {
+            controller.pushStorageTo(player, true);
+        }
+        results.put("snapshotPushMs", round((System.nanoTime() - start) / 1e6 / 20));
+        // Keep the network changing while the terminal is open: that is when
+        // the server resends the stock.
+        // Report if the menu closes on its own while the terminal phase runs.
+        boolean[] reported = {false};
+        BACKGROUND.add(() -> {
+            if (!reported[0] && !(player.containerMenu instanceof TerminalMenu)) {
+                reported[0] = true;
+                LOGGER.info("FN_BENCH_TERMINAL_CLOSED pos={} distance={} menu={}", player.blockPosition(),
+                        Math.sqrt(player.distanceToSqr(terminal.getCenter())),
+                        player.containerMenu.getClass().getSimpleName());
+            }
+        });
+        ItemKey churn = ItemKey.bare(Items.COBBLESTONE);
+        BACKGROUND.add(() -> {
+            controller.storage().insert(churn, 1);
+            controller.markStorageDirty();
+        });
+    }
+
+    private static void closeTerminal(ServerLevel level) {
+        BACKGROUND.clear();
+        for (ServerPlayer player : level.getServer().getPlayerList().getPlayers()) {
+            player.closeContainer();
+        }
+    }
+
+    private static void workers(ServerLevel level, int count, Map<String, Object> results) {
+        ControllerBlockEntity controller = core(level, WORKERS);
+        StringBuilder program = new StringBuilder();
+        for (int i = 0; i < count; i++) {
+            BlockPos cable = WORKERS.east(1 + i * 2);
+            level.setBlockAndUpdate(cable, FnBlocks.CABLE.get().defaultBlockState());
+            level.setBlockAndUpdate(cable.east(), FnBlocks.CABLE.get().defaultBlockState());
+            BlockPos source = cable.north();
+            BlockPos target = cable.south();
+            level.setBlockAndUpdate(source, Blocks.CHEST.defaultBlockState());
+            level.setBlockAndUpdate(target, Blocks.CHEST.defaultBlockState());
+            ChestBlockEntity chest = (ChestBlockEntity) level.getBlockEntity(source);
+            for (int slot = 0; slot < chest.getContainerSize(); slot++) {
+                chest.setItem(slot, new ItemStack(Items.COBBLESTONE, 64));
+            }
+            CableBusBlockEntity bus = (CableBusBlockEntity) level.getBlockEntity(cable);
+            bus.addPart(Direction.NORTH).setLabel("s" + i);
+            bus.addPart(Direction.SOUTH).setLabel("t" + i);
+            program.append("worker w").append(i).append(" {\n    from s").append(i)
+                    .append("\n    to t").append(i).append("\n}\n");
+        }
+        controller.rebuildNetwork();
+        boolean deployed = controller.deploy(Project.of(program.toString()));
+        results.put("workersDeployed", deployed);
+        if (!deployed) {
+            results.put("workersDiagnostics", String.valueOf(controller.diagnostics()));
+        }
+    }
+
+    private static void countMoved(ServerLevel level, int count, Map<String, Object> results, String key) {
+        long moved = 0;
+        for (int i = 0; i < count; i++) {
+            ChestBlockEntity chest = (ChestBlockEntity) level.getBlockEntity(
+                    WORKERS.east(1 + i * 2).south());
+            for (int slot = 0; slot < chest.getContainerSize(); slot++) {
+                moved += chest.getItem(slot).getCount();
+            }
+        }
+        results.put(key, moved);
+    }
+
+    private static void cables(ServerLevel level, int count, Map<String, Object> results) {
+        ControllerBlockEntity controller = core(level, CABLES);
+        for (int i = 1; i <= count; i++) {
+            level.setBlock(CABLES.east(i), FnBlocks.CABLE.get().defaultBlockState(), 2);
+        }
+        long start = System.nanoTime();
+        int rounds = 10;
+        for (int i = 0; i < rounds; i++) {
+            controller.rebuildNetwork();
+        }
+        results.put("rebuildMs", round((System.nanoTime() - start) / 1e6 / rounds));
+        results.put("cableEdges", controller.graph().edges().size());
+    }
+
+    // ---- Building blocks ----------------------------------------------------
+
+    /** Controller with a fully equipped rack, powered and booted. */
+    private static ControllerBlockEntity core(ServerLevel level, BlockPos pos) {
+        level.setBlockAndUpdate(pos, FnBlocks.CONTROLLER.get().defaultBlockState());
+        BlockPos rackPos = pos.west();
+        level.setBlock(rackPos, FnBlocks.RACK.get().defaultBlockState(), 2);
+        level.setBlockAndUpdate(rackPos.above(), FnBlocks.RACK.get().defaultBlockState()
+                .setValue(RackBlock.HALF, DoubleBlockHalf.UPPER));
+        RackBlockEntity rack = (RackBlockEntity) level.getBlockEntity(rackPos);
+        for (int bay = 0; bay < RackBlockEntity.BAYS; bay++) {
+            rack.setItem(RackBlockEntity.chassisSlot(bay), new ItemStack(FnItems.SERVER_CHASSIS.get()));
+            for (ServerPart kind : ServerPart.values()) {
+                var tiers = FnItems.SERVER_PARTS.get(kind);
+                rack.setItem(RackBlockEntity.slotOf(bay, kind), new ItemStack(tiers.getLast().get()));
+            }
+        }
+        ControllerBlockEntity controller = (ControllerBlockEntity) level.getBlockEntity(pos);
+        controller.rebuildNetwork();
+        controller.power().fill(Power.CAPACITY);
+        controller.power().setDraw(controller.powerDraw());
+        for (int tick = 0; tick <= Power.BOOT_TICKS; tick++) {
+            controller.power().tick();
+        }
+        CONTROLLERS.add(controller);
+        return controller;
+    }
+
+    private static void forceArea(ServerLevel level, BlockPos origin, int lengthX, int widthZ) {
+        ChunkPos from = ChunkPos.containing(origin.offset(-2, 0, -widthZ));
+        ChunkPos to = ChunkPos.containing(origin.offset(lengthX, 0, widthZ));
+        for (int x = from.x(); x <= to.x(); x++) {
+            for (int z = from.z(); z <= to.z(); z++) {
+                level.setChunkForced(x, z, true);
+            }
+        }
+    }
+
+    private static double round(double value) {
+        return Math.round(value * 1000) / 1000.0;
+    }
+}

@@ -54,7 +54,11 @@ public class ControllerBlock extends Block implements EntityBlock {
             return null;
         }
         return type == FnBlockEntities.CONTROLLER.get()
-                ? (l, p, s, entity) -> ((ControllerBlockEntity) entity).serverTick()
+                ? (l, p, s, entity) -> {
+                    long start = System.nanoTime();
+                    ((ControllerBlockEntity) entity).serverTick();
+                    dev.devpanda.factorynetwork.network.TickCost.add(System.nanoTime() - start, p);
+                }
                 : null;
     }
 

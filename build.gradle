@@ -106,9 +106,16 @@ neoForge {
         factorynetwork_tests {
             sourceSet sourceSets.gametest
         }
+        factorynetwork_acceptance {
+            sourceSet sourceSets.acceptance
+        }
     }
     def mainMod = mods.getByName(mod_id)
     def testMod = mods.getByName('factorynetwork_tests')
+    // The test companion (acceptance checks and /fnbench) on demand:
+    //   ./gradlew runServer -Pacceptance   and   runClient -Pacceptance
+    def companion = project.hasProperty('acceptance')
+            ? [mods.getByName('factorynetwork_acceptance')] : []
 
     runs {
         acceptanceClient {
@@ -132,7 +139,7 @@ neoForge {
             client()
             // Without the test mod on 26.1.2: its game tests are written for
             // the test system up to 1.21.4 and are not ported yet.
-            loadedMods = [mainMod]
+            loadedMods = [mainMod] + companion
             systemProperty 'neoforge.enabledGameTestNamespaces', mod_id
             // Where the native runtime lies. BambooCEF's RuntimeInstall reads
             // exactly this property name and skips its own download when it
@@ -256,7 +263,7 @@ neoForge {
         }
         server {
             server()
-            loadedMods = [mainMod]
+            loadedMods = [mainMod] + companion
             // Its own directory: the client's run/ holds worlds and options a
             // dedicated server must neither read nor overwrite.
             gameDirectory = layout.buildDirectory.dir('server')
@@ -557,8 +564,14 @@ tasks.named('runServer') {
         }
         def properties = new File(dir, 'server.properties')
         if (!properties.exists()) {
-            properties.text = ['online-mode=false', 'server-port=25576',
+            // RCON on loopback only, so tests can drive the console.
+            properties.text = ['online-mode=false', 'server-port=25576', 'server-ip=127.0.0.1',
+                               'enable-rcon=true', 'rcon.port=25577', 'rcon.password=fn-dev',
                                'level-type=minecraft:flat', 'spawn-protection=0',
+                               'generator-settings={"layers":[{"block":"minecraft:bedrock","height":1},'
+                                       + '{"block":"minecraft:dirt","height":2},'
+                                       + '{"block":"minecraft:grass_block","height":1}],"biome":"minecraft:plains"}',
+                               'difficulty=peaceful', 'view-distance=6', 'simulation-distance=6',
                                'gamemode=creative', ''].join(System.lineSeparator())
         }
     }
