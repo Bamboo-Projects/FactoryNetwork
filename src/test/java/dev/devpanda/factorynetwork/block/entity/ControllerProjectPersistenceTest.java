@@ -53,7 +53,7 @@ class ControllerProjectPersistenceTest {
 
     @Test
     void firstPollExportsDraftAndStatusWaitsUntilNextCheck() throws IOException {
-        var persistence = new ControllerProjectPersistence();
+        var persistence = new ControllerProjectPersistence(Runnable::run);
         var draft = Project.of("fn halb() { let a =");
         var statusWrites = new ArrayList<Path>();
         assertNull(persistence.path());
@@ -82,7 +82,7 @@ class ControllerProjectPersistenceTest {
 
     @Test
     void externalEditIsReturnedOnceAndExportDoesNotEcho() throws IOException {
-        var persistence = new ControllerProjectPersistence();
+        var persistence = new ControllerProjectPersistence(Runnable::run);
         var draft = Project.of("fn alt() {}");
         persistence.poll(0, () -> ProgramFolder.at(folder), draft, path -> {});
         String external = "fn extern() {}";
@@ -102,8 +102,23 @@ class ControllerProjectPersistenceTest {
     }
 
     @Test
+    void readOverlappingOurOwnWriteIsDiscarded() throws IOException {
+        var queued = new ArrayList<Runnable>();
+        var persistence = new ControllerProjectPersistence(queued::add);
+        var draft = Project.of("fn alt() {}");
+        persistence.poll(0, () -> ProgramFolder.at(folder), draft, path -> {});
+        // The background read has not run yet; an external edit lands, and
+        // then we write ourselves before the read finishes.
+        Files.writeString(folder.resolve("main.mf"), "fn extern() {}");
+        queued.removeFirst().run();
+        persistence.writeDraft(Project.of("fn eigen() {}"));
+        assertNull(persistence.poll(1, () -> fail("folder already open"), draft, path -> {}),
+                "a read that overlapped our write must not count as an external edit");
+    }
+
+    @Test
     void unavailableFolderIsRetriedAtTheNormalInterval() {
-        var persistence = new ControllerProjectPersistence();
+        var persistence = new ControllerProjectPersistence(Runnable::run);
         var attempts = new AtomicInteger();
         var draft = Project.of("fn alt() {}");
         assertNull(persistence.poll(0, () -> { attempts.incrementAndGet(); return null; },

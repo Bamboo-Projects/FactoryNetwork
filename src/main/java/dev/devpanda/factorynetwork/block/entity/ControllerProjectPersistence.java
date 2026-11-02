@@ -29,6 +29,32 @@ final class ControllerProjectPersistence {
     // Negative rather than MIN_VALUE so subtraction cannot overflow on first use.
     private long lastCheck = -ProgramFolder.CHECK_INTERVAL;
     private boolean statusStale = true;
+    /** A read of the folder running in the background, and our write count when it started. */
+    private java.util.concurrent.CompletableFuture<Map<String, String>> pendingRead;
+    private int writesAtRead;
+
+    /**
+     * Reads the program folders off the server thread. Each controller used
+     * to walk and read its folder there once a second; with many networks,
+     * or a slow disk, that is disk access in the middle of the tick.
+     */
+    private static final java.util.concurrent.ExecutorService FILE_READS =
+            java.util.concurrent.Executors.newSingleThreadExecutor(runnable -> {
+                Thread thread = new Thread(runnable, "FactoryNetwork program files");
+                thread.setDaemon(true);
+                return thread;
+            });
+
+    private final java.util.concurrent.Executor reads;
+
+    ControllerProjectPersistence() {
+        this(FILE_READS);
+    }
+
+    /** With an executor of one's own; tests pass one that runs at once. */
+    ControllerProjectPersistence(java.util.concurrent.Executor reads) {
+        this.reads = reads;
+    }
 
     static Saved read(CompoundTag tag) {
         Project running = tag.contains(FILES)
@@ -83,8 +109,10 @@ final class ControllerProjectPersistence {
      */
     Project poll(long gameTime, Supplier<ProgramFolder> openFolder, Project draft,
                  Consumer<Path> writeStatus) {
+        // The result of the last background read, once it is there.
+        Project incoming = takeRead(draft);
         if (gameTime - lastCheck < ProgramFolder.CHECK_INTERVAL) {
-            return null;
+            return incoming;
         }
         lastCheck = gameTime;
         if (folder != null && statusStale) {
@@ -94,11 +122,33 @@ final class ControllerProjectPersistence {
         if (folder == null) {
             folder = openFolder.get();
             if (folder == null) {
-                return null;
+                return incoming;
             }
             folder.write(draft);
             statusStale = true;
         }
-        return folder.poll(draft);
+        if (pendingRead == null) {
+            ProgramFolder reading = folder;
+            writesAtRead = reading.writes();
+            pendingRead = java.util.concurrent.CompletableFuture.supplyAsync(reading::read, reads);
+            // An executor that ran at once has the answer already.
+            if (incoming == null) {
+                incoming = takeRead(draft);
+            }
+        }
+        return incoming;
+    }
+
+    private Project takeRead(Project draft) {
+        if (pendingRead == null || !pendingRead.isDone()) {
+            return null;
+        }
+        Map<String, String> found = pendingRead.getNow(null);
+        pendingRead = null;
+        // We wrote in the meantime: what was read may be half ours.
+        if (folder == null || folder.writes() != writesAtRead) {
+            return null;
+        }
+        return folder.accept(found, draft);
     }
 }
