@@ -240,8 +240,10 @@ public class StorageTabView {
         }
         searchFocused = false;
 
-        int column = (int) ((mouseX - gridX()) / SLOT);
-        int row = (int) ((mouseY - gridY()) / SLOT);
+        // Floor, not a cast: a cast rounds -0.5 to row 0, and so the strip
+        // above the grid, where the sort buttons sit, counted as the first row.
+        int column = (int) Math.floor((mouseX - gridX()) / SLOT);
+        int row = (int) Math.floor((mouseY - gridY()) / SLOT);
         if (column < 0 || column >= COLUMNS || row < 0 || row >= ROWS) {
             return false;
         }
@@ -286,23 +288,55 @@ public class StorageTabView {
      * millibuckets deserves to be said.
      */
     public void renderTooltip(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
+        // The sort buttons say what they do, not what lies beneath them.
+        for (StorageSort candidate : StorageSort.values()) {
+            int bx = sortButtonX(candidate.ordinal());
+            if (mouseX >= bx && mouseX < bx + 12 && mouseY >= y + 2 && mouseY < y + 14) {
+                graphics.setTooltipForNextFrame(font, List.of(candidate.title(),
+                                Component.translatable("screen.factorynetwork.terminal.sort.hint")
+                                        .withStyle(net.minecraft.ChatFormatting.GRAY)),
+                        java.util.Optional.empty(), mouseX, mouseY);
+                return;
+            }
+        }
         ClientStorageView.Row row = rowAt(mouseX, mouseY);
         if (row == null) {
             return;
         }
-        List<net.minecraft.network.chat.Component> lines = new java.util.ArrayList<>();
-        lines.add(row.stack().getHoverName());
         String amount = String.format(java.util.Locale.GERMANY, "%,d", row.amount());
-        lines.add(net.minecraft.network.chat.Component.literal(
-                        row.isFluid() ? amount + " mB" : amount + " Stück")
-                .withStyle(net.minecraft.ChatFormatting.GRAY));
+        net.minecraft.network.chat.Component stored = Component.translatable(
+                        "screen.factorynetwork.terminal.stored", row.isFluid() ? amount + " mB" : amount)
+                .withStyle(net.minecraft.ChatFormatting.GRAY);
+        List<net.minecraft.network.chat.Component> lines = new java.util.ArrayList<>();
+        if (row.isFluid()) {
+            lines.add(row.stack().getHoverName());
+        } else {
+            // The item's own tooltip, as in any inventory: enchantments,
+            // stored energy, the guide hint. The stock goes right below the name.
+            lines.addAll(Screen.getTooltipFromItem(net.minecraft.client.Minecraft.getInstance(), row.stack()));
+        }
+        lines.add(Math.min(1, lines.size()), stored);
+        // Which mod it comes from, unless another mod (JEI, say) already added it.
+        String namespace = row.stack().getItem().builtInRegistryHolder().key().identifier().getNamespace();
+        var container = net.neoforged.fml.ModList.get().getModContainerById(namespace);
+        String modName = container.isPresent() ? container.get().getModInfo().getDisplayName() : namespace;
+        boolean named = false;
+        for (net.minecraft.network.chat.Component line : lines) {
+            named |= line.getString().equals(modName);
+        }
+        if (!named) {
+            lines.add(Component.literal(modName).withStyle(
+                    net.minecraft.ChatFormatting.BLUE, net.minecraft.ChatFormatting.ITALIC));
+        }
         graphics.setTooltipForNextFrame(font, lines, java.util.Optional.empty(), mouseX, mouseY);
     }
 
     /** The entry under the cursor, or {@code null}. */
     private ClientStorageView.Row rowAt(double mouseX, double mouseY) {
-        int column = (int) ((mouseX - gridX()) / SLOT);
-        int row = (int) ((mouseY - gridY()) / SLOT);
+        // Floor, not a cast: a cast rounds -0.5 to row 0, and so the strip
+        // above the grid, where the sort buttons sit, counted as the first row.
+        int column = (int) Math.floor((mouseX - gridX()) / SLOT);
+        int row = (int) Math.floor((mouseY - gridY()) / SLOT);
         if (column < 0 || column >= COLUMNS || row < 0 || row >= ROWS) {
             return null;
         }

@@ -237,6 +237,8 @@
   "screen.factorynetwork.terminal.sort.amount": "Nach Menge",
   "screen.factorynetwork.terminal.sort.name": "Nach Name",
   "screen.factorynetwork.terminal.sort.mod": "Nach Mod",
+  "screen.factorynetwork.terminal.sort.hint": "Erneut klicken kehrt die Reihenfolge um",
+  "screen.factorynetwork.terminal.stored": "Im Netz: %s",
   "block.factorynetwork.display": "Display",
   "message.factorynetwork.display.named": "Display zeigt jetzt %s",
   "message.factorynetwork.display.unnamed": "Dieses Display hat noch keinen Namen.",
