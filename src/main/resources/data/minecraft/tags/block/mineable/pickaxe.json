@@ -1,0 +1,25 @@
+{
+  "values": [
+    "factorynetwork:controller",
+    "factorynetwork:controller_extension",
+    "factorynetwork:fabricator",
+    "factorynetwork:cable",
+    "factorynetwork:dense_cable",
+    "factorynetwork:terminal",
+    "factorynetwork:display",
+    "factorynetwork:drive",
+    "factorynetwork:press",
+    "factorynetwork:router",
+    "factorynetwork:server_rack",
+    "factorynetwork:burner",
+    "factorynetwork:crystal_ore",
+    "factorynetwork:deepslate_crystal_ore",
+    "factorynetwork:storage_link",
+    "factorynetwork:bridge",
+    "factorynetwork:mast",
+    "factorynetwork:gateway",
+    "factorynetwork:hall_16",
+    "factorynetwork:hall_32",
+    "factorynetwork:hall_48"
+  ]
+}
