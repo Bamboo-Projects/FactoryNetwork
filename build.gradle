@@ -59,6 +59,10 @@ sourceSets {
     gametest {
         compileClasspath += sourceSets.core.output + sourceSets.main.output + sourceSets.main.compileClasspath
         runtimeClasspath += sourceSets.core.output + sourceSets.main.output + sourceSets.main.runtimeClasspath
+        // The Mekanism tests only where Mekanism is published.
+        if (!withMekanism) {
+            java.exclude '**/MekanismGameTests.java'
+        }
         if (withMekanism) {
             compileClasspath += sourceSets.mekanism.output
             runtimeClasspath += sourceSets.mekanism.output
@@ -580,4 +584,9 @@ tasks.named('runServer') {
                                'gamemode=creative', ''].join(System.lineSeparator())
         }
     }
+}
+
+// The game tests are many; show all of their compile errors, not the first 100.
+tasks.named('compileGametestJava') {
+    options.compilerArgs += ['-Xmaxerrs', '5000']
 }

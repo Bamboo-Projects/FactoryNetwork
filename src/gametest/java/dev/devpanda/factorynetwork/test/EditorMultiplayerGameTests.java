@@ -1,5 +1,7 @@
 package dev.devpanda.factorynetwork.test;
 
+import static dev.devpanda.factorynetwork.test.FactoryNetworkGameTests.blockEntity;
+
 import com.mojang.authlib.GameProfile;
 import dev.devpanda.factorynetwork.FactoryNetwork;
 import dev.devpanda.factorynetwork.FnConfig;
@@ -16,15 +18,12 @@ import dev.devpanda.factorynetwork.network.packet.SaveDraftPacket;
 import dev.devpanda.factorynetwork.registry.FnBlocks;
 import dev.devpanda.factorynetwork.registry.FnItems;
 import net.minecraft.core.BlockPos;
-import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.neoforged.neoforge.common.ModConfigSpec;
 import net.neoforged.neoforge.common.util.FakePlayer;
-import net.neoforged.neoforge.gametest.GameTestHolder;
-import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 import net.neoforged.neoforge.network.handling.ServerPayloadContext;
 
 import java.util.Map;
@@ -38,8 +37,6 @@ import java.util.UUID;
  * permission and lock behaviour, not delivery to Chromium or client latency.
  * The codec and client state tests cover their respective boundaries separately.
  */
-@GameTestHolder(FactoryNetwork.MOD_ID)
-@PrefixGameTestTemplate(false)
 public final class EditorMultiplayerGameTests {
 
     @GameTest(template = "empty", timeoutTicks = 100)
@@ -92,7 +89,7 @@ public final class EditorMultiplayerGameTests {
         withProtection(helper, FnProtection.Mode.OWNER, () -> {
             try (Session session = setup(helper)) {
                 session.controller().setOwner(session.first().getUUID());
-                helper.assertFalse(session.second().hasPermissions(2),
+                helper.assertFalse(session.second().permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER),
                         "the unauthorized test identity must not be an operator");
                 Project running = Project.of("fn owned() { }");
                 deploy(session.first(), session.terminal(), running);
@@ -144,7 +141,8 @@ public final class EditorMultiplayerGameTests {
                 var saved = session.controller().saveWithoutMetadata(registries);
                 var restored = new ControllerBlockEntity(session.controller().getBlockPos(),
                         FnBlocks.CONTROLLER.get().defaultBlockState());
-                restored.loadWithComponents(saved, registries);
+                restored.loadWithComponents(net.minecraft.world.level.storage.TagValueInput.create(
+                net.minecraft.util.ProblemReporter.DISCARDING, registries, saved));
                 helper.assertValueEqual(restored.project(), running, "running project after NBT reload");
                 helper.assertValueEqual(restored.draft(), unfinished, "unfinished draft after NBT reload");
             }
@@ -161,13 +159,13 @@ public final class EditorMultiplayerGameTests {
         helper.setBlock(rackPos.above(), FnBlocks.RACK.get().defaultBlockState()
                 .setValue(RackBlock.HALF, DoubleBlockHalf.UPPER));
         helper.setBlock(terminalPos, FnBlocks.TERMINAL.get());
-        var rack = (RackBlockEntity) helper.getBlockEntity(rackPos);
+        var rack = (RackBlockEntity) blockEntity(helper, rackPos);
         rack.setItem(RackBlockEntity.chassisSlot(0), new ItemStack(FnItems.SERVER_CHASSIS.get()));
         for (ServerPart part : ServerPart.values()) {
             rack.setItem(RackBlockEntity.slotOf(0, part),
                     new ItemStack(FnItems.SERVER_PARTS.get(part).getFirst().get()));
         }
-        var controller = (ControllerBlockEntity) helper.getBlockEntity(position);
+        var controller = (ControllerBlockEntity) blockEntity(helper, position);
         controller.rebuildNetwork();
         controller.power().fill(Power.CAPACITY);
         controller.power().setDraw(controller.powerDraw());

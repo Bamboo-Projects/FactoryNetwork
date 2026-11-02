@@ -19,18 +19,15 @@ import dev.devpanda.factorynetwork.runtime.WorkerRuntime;
 import dev.devpanda.factorynetwork.runtime.Value;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
-import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.items.IItemHandler;
 
 import java.util.List;
-import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
 /**
  * Checks in a real world what unit tests cannot: that blocks find each
@@ -41,14 +38,23 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
  * chest in front of it. The same arrangement that the concept uses as its
  * example.
  */
-@GameTestHolder(FactoryNetwork.MOD_ID)
-@PrefixGameTestTemplate(false)
 public final class FactoryNetworkGameTests {
 
-    private static final String EMPTY = "empty";
+    /**
+     * The block entity at a test-relative position, of whatever kind.
+     *
+     * <p>Since 1.21.5 the helper's own method wants the expected class and
+     * throws on a mismatch; the tests ask with instanceof instead.
+     */
+    static net.minecraft.world.level.block.entity.BlockEntity blockEntity(GameTestHelper helper,
+                                                                          BlockPos pos) {
+        return helper.getLevel().getBlockEntity(helper.absolutePos(pos));
+    }
+
+    static final String EMPTY = "empty";
 
     /** Builds the setup and returns the position of the controller. */
-    private static BlockPos buildSetup(GameTestHelper helper) {
+    static BlockPos buildSetup(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 1, 1);
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
         rackWithServer(helper, controller.west());
@@ -77,7 +83,7 @@ public final class FactoryNetworkGameTests {
     }
 
     /** The same setup without a drive — for the checks on the storage itself. */
-    private static BlockPos bareSetup(GameTestHelper helper) {
+    static BlockPos bareSetup(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 1, 1);
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
         rackWithServer(helper, controller.west());
@@ -106,12 +112,12 @@ public final class FactoryNetworkGameTests {
      * a cable and <b>conducts onwards</b>. Wherever a test run relied on a
      * connector being a dead end, that is now stated explicitly.
      */
-    private static void connector(GameTestHelper helper, BlockPos pos, Direction facing) {
+    static void connector(GameTestHelper helper, BlockPos pos, Direction facing) {
         connector(helper, pos, facing, CableColour.NONE);
     }
 
     /** The same on a coloured strand — the colour separates, as everywhere. */
-    private static void connector(GameTestHelper helper, BlockPos pos, Direction facing,
+    static void connector(GameTestHelper helper, BlockPos pos, Direction facing,
                                   CableColour colour) {
         partOn(helper, pos, facing, FnBlocks.CABLE.get().defaultBlockState()
                 .setValue(CableBlock.COLOUR, colour));
@@ -123,14 +129,14 @@ public final class FactoryNetworkGameTests {
      * <p>Needed where the strand carries sixty-four channels: a thin cable at
      * this spot would be the weakest link and cap the whole run at sixteen.
      */
-    private static void denseConnector(GameTestHelper helper, BlockPos pos, Direction facing) {
+    static void denseConnector(GameTestHelper helper, BlockPos pos, Direction facing) {
         partOn(helper, pos, facing, FnBlocks.DENSE_CABLE.get().defaultBlockState());
     }
 
-    private static void partOn(GameTestHelper helper, BlockPos pos, Direction facing,
+    static void partOn(GameTestHelper helper, BlockPos pos, Direction facing,
                                net.minecraft.world.level.block.state.BlockState cable) {
         helper.setBlock(pos, cable);
-        if (helper.getBlockEntity(pos)
+        if (blockEntity(helper, pos)
                 instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus) {
             bus.addPart(facing);
         } else {
@@ -139,13 +145,13 @@ public final class FactoryNetworkGameTests {
     }
 
     /** The connector at this spot — exactly one sits there. */
-    private static dev.devpanda.factorynetwork.block.entity.ConnectorPart partAt(
+    static dev.devpanda.factorynetwork.block.entity.ConnectorPart partAt(
             GameTestHelper helper, BlockPos pos) {
         return dev.devpanda.factorynetwork.block.entity.Connectors.at(
                 helper.getLevel(), helper.absolutePos(pos));
     }
 
-    private static void name(GameTestHelper helper, BlockPos pos, String label) {
+    static void name(GameTestHelper helper, BlockPos pos, String label) {
         var connector = partAt(helper, pos);
         if (connector != null) {
             connector.setLabel(label);
@@ -155,8 +161,8 @@ public final class FactoryNetworkGameTests {
     }
 
     /** How much lies in the chest at this spot, across all slots. */
-    private static int countIn(GameTestHelper helper, BlockPos pos) {
-        if (!(helper.getBlockEntity(pos) instanceof ChestBlockEntity container)) {
+    static int countIn(GameTestHelper helper, BlockPos pos) {
+        if (!(blockEntity(helper, pos) instanceof ChestBlockEntity container)) {
             return 0;
         }
         int found = 0;
@@ -166,8 +172,8 @@ public final class FactoryNetworkGameTests {
         return found;
     }
 
-    private static ControllerBlockEntity controllerAt(GameTestHelper helper, BlockPos pos) {
-        if (helper.getBlockEntity(pos) instanceof ControllerBlockEntity controller) {
+    static ControllerBlockEntity controllerAt(GameTestHelper helper, BlockPos pos) {
+        if (blockEntity(helper, pos) instanceof ControllerBlockEntity controller) {
             powerUp(controller);
             return controller;
         }
@@ -183,7 +189,7 @@ public final class FactoryNetworkGameTests {
      * actually wants to test. The real path is taken: fill first, then wait
      * out the boot-up time.
      */
-    private static void powerUp(ControllerBlockEntity controller) {
+    static void powerUp(ControllerBlockEntity controller) {
         var power = controller.power();
         if (power.isRunning()) {
             return;
@@ -230,7 +236,7 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
 
         BlockPos chest = controller.east().north().north();
-        if (helper.getBlockEntity(chest) instanceof ChestBlockEntity container) {
+        if (blockEntity(helper, chest) instanceof ChestBlockEntity container) {
             container.setItem(0, new ItemStack(Items.IRON_ORE, 32));
         } else {
             helper.fail("Keine Kiste an der Quelle", chest);
@@ -261,7 +267,7 @@ public final class FactoryNetworkGameTests {
 
         BlockPos source = controller.east().north().north();
         BlockPos target = controller.east().south().south();
-        if (helper.getBlockEntity(source) instanceof ChestBlockEntity container) {
+        if (blockEntity(helper, source) instanceof ChestBlockEntity container) {
             container.setItem(0, new ItemStack(Items.COBBLESTONE, 64));
         }
 
@@ -275,7 +281,7 @@ public final class FactoryNetworkGameTests {
         entity.rebuildNetwork();
 
         helper.runAfterDelay(20, () -> {
-            if (helper.getBlockEntity(target) instanceof ChestBlockEntity container) {
+            if (blockEntity(helper, target) instanceof ChestBlockEntity container) {
                 helper.assertTrue(!container.getItem(0).isEmpty(),
                         "In der Zielkiste liegt nichts");
                 helper.succeed();
@@ -323,7 +329,7 @@ public final class FactoryNetworkGameTests {
 
         BlockPos source = controller.east().north().north();
         BlockPos target = controller.east().south().south();
-        if (helper.getBlockEntity(source) instanceof ChestBlockEntity container) {
+        if (blockEntity(helper, source) instanceof ChestBlockEntity container) {
             container.setItem(0, new ItemStack(Items.IRON_ORE, 64));
         }
 
@@ -334,7 +340,7 @@ public final class FactoryNetworkGameTests {
         entity.rebuildNetwork();
         entity.callFunction("schiebe", List.of());
 
-        if (helper.getBlockEntity(target) instanceof ChestBlockEntity container) {
+        if (blockEntity(helper, target) instanceof ChestBlockEntity container) {
             int moved = container.getItem(0).getCount();
             helper.assertValueEqual(moved, 16,
                     "Die vorangestellte Menge muss beachtet werden");
@@ -394,7 +400,7 @@ public final class FactoryNetworkGameTests {
 
         BlockPos source = controller.east().north().north();
         BlockPos target = controller.east().south().south();
-        if (helper.getBlockEntity(source) instanceof ChestBlockEntity container) {
+        if (blockEntity(helper, source) instanceof ChestBlockEntity container) {
             container.setItem(0, new ItemStack(Items.COAL, 64));
         }
 
@@ -409,7 +415,7 @@ public final class FactoryNetworkGameTests {
         entity.rebuildNetwork();
 
         helper.runAfterDelay(30, () -> {
-            if (helper.getBlockEntity(target) instanceof ChestBlockEntity container) {
+            if (blockEntity(helper, target) instanceof ChestBlockEntity container) {
                 int present = container.getItem(0).getCount();
                 helper.assertValueEqual(present, 8,
                         "maintain muss bei der zugesagten Menge aufhören");
@@ -426,7 +432,7 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
 
         BlockPos source = controller.east().north().north();
-        if (helper.getBlockEntity(source) instanceof ChestBlockEntity container) {
+        if (blockEntity(helper, source) instanceof ChestBlockEntity container) {
             container.setItem(0, new ItemStack(Items.IRON_ORE, 64));
         }
 
@@ -454,7 +460,7 @@ public final class FactoryNetworkGameTests {
 
         // Two different logs — the same tag.
         BlockPos source = controller.east().north().north();
-        if (helper.getBlockEntity(source) instanceof ChestBlockEntity container) {
+        if (blockEntity(helper, source) instanceof ChestBlockEntity container) {
             container.setItem(0, new ItemStack(Items.OAK_LOG, 8));
             container.setItem(1, new ItemStack(Items.BIRCH_LOG, 8));
             container.setItem(2, new ItemStack(Items.IRON_ORE, 8));
@@ -486,7 +492,7 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
 
         BlockPos source = controller.east().north().north();
-        if (helper.getBlockEntity(source) instanceof ChestBlockEntity container) {
+        if (blockEntity(helper, source) instanceof ChestBlockEntity container) {
             container.setItem(0, new ItemStack(Items.IRON_ORE, 8));
             container.setItem(1, new ItemStack(Items.DEEPSLATE_IRON_ORE, 8));
             container.setItem(2, new ItemStack(Items.IRON_INGOT, 8));
@@ -524,7 +530,7 @@ public final class FactoryNetworkGameTests {
         // "per kind" eight of each — that is what tells the two readings apart.
         BlockPos source = controller.east().north().north();
         BlockPos target = controller.east().south().south();
-        if (helper.getBlockEntity(source) instanceof ChestBlockEntity container) {
+        if (blockEntity(helper, source) instanceof ChestBlockEntity container) {
             container.setItem(0, new ItemStack(Items.COAL, 64));
             container.setItem(1, new ItemStack(Items.CHARCOAL, 64));
         }
@@ -540,7 +546,7 @@ public final class FactoryNetworkGameTests {
         entity.rebuildNetwork();
 
         helper.runAfterDelay(40, () -> {
-            if (!(helper.getBlockEntity(target) instanceof ChestBlockEntity container)) {
+            if (!(blockEntity(helper, target) instanceof ChestBlockEntity container)) {
                 helper.fail("Keine Kiste am Ziel", target);
                 return;
             }
@@ -566,7 +572,7 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
 
         BlockPos source = controller.east().north().north();
-        if (helper.getBlockEntity(source) instanceof ChestBlockEntity container) {
+        if (blockEntity(helper, source) instanceof ChestBlockEntity container) {
             container.setItem(0, new ItemStack(Items.OAK_LOG, 16));
             container.setItem(1, new ItemStack(Items.IRON_ORE, 16));
         }
@@ -681,7 +687,7 @@ public final class FactoryNetworkGameTests {
         // the stock when read. The stock now lives in the cell, so that is
         // where it is checked.
         var drive = (dev.devpanda.factorynetwork.block.entity.DriveBlockEntity)
-                helper.getBlockEntity(controller.above());
+                blockEntity(helper, controller.above());
         drive.flushCells();
         ItemStack cell = drive.cell(0);
         net.minecraft.world.item.component.CustomData.update(
@@ -791,7 +797,7 @@ public final class FactoryNetworkGameTests {
     }
 
     /** Lays a row of cables and hangs a connector on each end. */
-    private static void line(GameTestHelper helper, BlockPos from, int length) {
+    static void line(GameTestHelper helper, BlockPos from, int length) {
         for (int i = 0; i < length; i++) {
             helper.setBlock(from.east(i), FnBlocks.CABLE.get());
         }
@@ -800,7 +806,7 @@ public final class FactoryNetworkGameTests {
 
 
     /** Builds controller, cable row and three named chests. */
-    private static ControllerBlockEntity threeChests(GameTestHelper helper, BlockPos controller) {
+    static ControllerBlockEntity threeChests(GameTestHelper helper, BlockPos controller) {
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
         rackWithServer(helper, controller.west());
         for (int i = 0; i < 4; i++) {
@@ -872,7 +878,7 @@ public final class FactoryNetworkGameTests {
             int filled = 0;
             for (int i = 0; i < 3; i++) {
                 BlockPos chest = controller.east(i + 2).above(2);
-                if (helper.getBlockEntity(chest) instanceof ChestBlockEntity container
+                if (blockEntity(helper, chest) instanceof ChestBlockEntity container
                         && !container.getItem(0).isEmpty()) {
                     filled++;
                 }
@@ -894,7 +900,7 @@ public final class FactoryNetworkGameTests {
 
         BlockPos display = controller.east().east();
         helper.setBlock(display, FnBlocks.DISPLAY.get());
-        if (helper.getBlockEntity(display) instanceof DisplayBlockEntity entity) {
+        if (blockEntity(helper, display) instanceof DisplayBlockEntity entity) {
             entity.setDisplayName("lager");
         } else {
             helper.fail("Am Display hängt keine BlockEntity", display);
@@ -915,7 +921,7 @@ public final class FactoryNetworkGameTests {
         controllerEntity.rebuildNetwork();
 
         helper.runAfterDelay(25, () -> {
-            if (!(helper.getBlockEntity(display) instanceof DisplayBlockEntity shown)) {
+            if (!(blockEntity(helper, display) instanceof DisplayBlockEntity shown)) {
                 helper.fail("Display verschwunden", display);
                 return;
             }
@@ -945,7 +951,7 @@ public final class FactoryNetworkGameTests {
 
         BlockPos display = controller.east().east();
         helper.setBlock(display, FnBlocks.DISPLAY.get());
-        if (helper.getBlockEntity(display) instanceof DisplayBlockEntity entity) {
+        if (blockEntity(helper, display) instanceof DisplayBlockEntity entity) {
             entity.setDisplayName("halle");
         } else {
             helper.fail("Am Display hängt keine BlockEntity", display);
@@ -962,7 +968,7 @@ public final class FactoryNetworkGameTests {
         controllerEntity.rebuildNetwork();
 
         helper.runAfterDelay(25, () -> {
-            if (!(helper.getBlockEntity(display) instanceof DisplayBlockEntity shown)) {
+            if (!(blockEntity(helper, display) instanceof DisplayBlockEntity shown)) {
                 helper.fail("Display verschwunden", display);
                 return;
             }
@@ -985,7 +991,7 @@ public final class FactoryNetworkGameTests {
 
         BlockPos display = controller.east().east();
         helper.setBlock(display, FnBlocks.DISPLAY.get());
-        if (helper.getBlockEntity(display) instanceof DisplayBlockEntity entity) {
+        if (blockEntity(helper, display) instanceof DisplayBlockEntity entity) {
             entity.setDisplayName("halle");
         }
 
@@ -1002,7 +1008,7 @@ public final class FactoryNetworkGameTests {
         controllerEntity.rebuildNetwork();
 
         helper.runAfterDelay(25, () -> {
-            if (helper.getBlockEntity(display) instanceof DisplayBlockEntity shown) {
+            if (blockEntity(helper, display) instanceof DisplayBlockEntity shown) {
                 helper.assertValueEqual(shown.textScale(), 1, "null wird eins");
                 helper.succeed();
             }
@@ -1018,13 +1024,13 @@ public final class FactoryNetworkGameTests {
 
         BlockPos display = controller.east().east();
         helper.setBlock(display, FnBlocks.DISPLAY.get());
-        if (helper.getBlockEntity(display) instanceof DisplayBlockEntity entity) {
+        if (blockEntity(helper, display) instanceof DisplayBlockEntity entity) {
             entity.setDisplayName("gibt_es_nicht");
         }
         controllerAt(helper, controller).rebuildNetwork();
 
         helper.runAfterDelay(25, () -> {
-            if (helper.getBlockEntity(display) instanceof DisplayBlockEntity entity) {
+            if (blockEntity(helper, display) instanceof DisplayBlockEntity entity) {
                 // An empty surface would leave open whether the network is up
                 // or the name is wrong. The display says so itself.
                 helper.assertTrue(entity.lines().stream()
@@ -1313,7 +1319,7 @@ public final class FactoryNetworkGameTests {
         BlockPos controller = buildSetup(helper);
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
-        if (helper.getBlockEntity(controller.east().north().north())
+        if (blockEntity(helper, controller.east().north().north())
                 instanceof ChestBlockEntity chest) {
             chest.setItem(0, new ItemStack(Items.COBBLESTONE, 64));
         } else {
@@ -1507,7 +1513,7 @@ public final class FactoryNetworkGameTests {
         BlockPos controller = buildSetup(helper);
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
-        if (helper.getBlockEntity(controller.east().north().north())
+        if (blockEntity(helper, controller.east().north().north())
                 instanceof ChestBlockEntity chest) {
             chest.setItem(0, new ItemStack(Items.IRON_ORE, 12));
         } else {
@@ -1549,7 +1555,7 @@ public final class FactoryNetworkGameTests {
 
         helper.startSequence()
                 .thenExecute(() -> {
-                    if (helper.getBlockEntity(controller.east().north().north())
+                    if (blockEntity(helper, controller.east().north().north())
                             instanceof ChestBlockEntity chest) {
                         chest.setItem(0, new ItemStack(Items.COBBLESTONE, 5));
                     } else {
@@ -1587,7 +1593,7 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(rest, 0L, "alles muss untergekommen sein");
         helper.assertValueEqual(entity.storage().count(Items.IRON_ORE), 7L,
                 "und im Bestand stehen");
-        if (helper.getBlockEntity(controller.east().north().north())
+        if (blockEntity(helper, controller.east().north().north())
                 instanceof ChestBlockEntity chest) {
             helper.assertValueEqual(chest.getItem(0).getCount(), 7,
                     "und wirklich in der Kiste liegen");
@@ -1603,7 +1609,7 @@ public final class FactoryNetworkGameTests {
         BlockPos controller = bareSetup(helper);
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
-        if (helper.getBlockEntity(controller.east().north().north())
+        if (blockEntity(helper, controller.east().north().north())
                 instanceof ChestBlockEntity chest) {
             chest.setItem(0, new ItemStack(Items.IRON_ORE, 9));
         } else {
@@ -1657,7 +1663,7 @@ public final class FactoryNetworkGameTests {
         BlockPos controller = bareSetup(helper);
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
-        if (helper.getBlockEntity(controller.east().north().north())
+        if (blockEntity(helper, controller.east().north().north())
                 instanceof ChestBlockEntity chest) {
             chest.setItem(0, new ItemStack(Items.COBBLESTONE, 8));
         } else {
@@ -1688,16 +1694,16 @@ public final class FactoryNetworkGameTests {
      * every test needs that wants to know whether a spot reads the result of
      * {@code extract} or merely hopes.
      */
-    private static void furnaceStore(GameTestHelper helper, BlockPos controller) {
+    static void furnaceStore(GameTestHelper helper, BlockPos controller) {
         furnaceStoreAt(helper, controller.east().above());
     }
 
     /** The same furnace, but at a chosen spot on the cable. */
-    private static void furnaceStoreAt(GameTestHelper helper, BlockPos below) {
+    static void furnaceStoreAt(GameTestHelper helper, BlockPos below) {
         connector(helper, below, Direction.UP);
         helper.setBlock(below.above(), Blocks.FURNACE);
         name(helper, below, "ofen");
-        if (helper.getBlockEntity(below.above())
+        if (blockEntity(helper, below.above())
                 instanceof net.minecraft.world.level.block.entity.FurnaceBlockEntity furnace) {
             furnace.setItem(1, new ItemStack(Items.COAL, 64));
         } else {
@@ -1706,9 +1712,9 @@ public final class FactoryNetworkGameTests {
     }
 
     /** All coal in the test world: what is in the furnace and what is in the target. */
-    private static long coalInWorld(GameTestHelper helper, BlockPos controller) {
+    static long coalInWorld(GameTestHelper helper, BlockPos controller) {
         long found = 0;
-        if (helper.getBlockEntity(controller.east().above().above())
+        if (blockEntity(helper, controller.east().above().above())
                 instanceof net.minecraft.world.level.block.entity.FurnaceBlockEntity furnace) {
             for (int slot = 0; slot < furnace.getContainerSize(); slot++) {
                 if (furnace.getItem(slot).is(Items.COAL)) {
@@ -1716,7 +1722,7 @@ public final class FactoryNetworkGameTests {
                 }
             }
         }
-        if (helper.getBlockEntity(controller.east().south().south())
+        if (blockEntity(helper, controller.east().south().south())
                 instanceof ChestBlockEntity depot) {
             for (int slot = 0; slot < depot.getContainerSize(); slot++) {
                 if (depot.getItem(slot).is(Items.COAL)) {
@@ -1918,7 +1924,7 @@ public final class FactoryNetworkGameTests {
         }
     }
 
-    private static long countIn(IItemHandler handler) {
+    static long countIn(IItemHandler handler) {
         long found = 0;
         for (int slot = 0; slot < handler.getSlots(); slot++) {
             found += handler.getStackInSlot(slot).getCount();
@@ -2069,7 +2075,7 @@ public final class FactoryNetworkGameTests {
         }
     }
 
-    private static long millibucketsIn(
+    static long millibucketsIn(
             net.neoforged.neoforge.fluids.capability.IFluidHandler handler) {
         long found = 0;
         for (int tank = 0; tank < handler.getTanks(); tank++) {
@@ -2162,7 +2168,7 @@ public final class FactoryNetworkGameTests {
                 .thenIdle(120)
                 .thenExecute(() -> {
                     long imOfen = 0;
-                    if (helper.getBlockEntity(controller.east().east().above())
+                    if (blockEntity(helper, controller.east().east().above())
                             instanceof net.minecraft.world.level.block.entity
                                     .FurnaceBlockEntity furnace) {
                         for (int slot = 0; slot < furnace.getContainerSize(); slot++) {
@@ -2317,7 +2323,8 @@ public final class FactoryNetworkGameTests {
             }
             try {
                 // Exactly the client's path: read its own update packet.
-                entity.handleUpdateTag(entity.getUpdateTag(registries), registries);
+                entity.handleUpdateTag(net.minecraft.world.level.storage.TagValueInput.create(
+                        net.minecraft.util.ProblemReporter.DISCARDING, registries, entity.getUpdateTag(registries)));
                 checked++;
             } catch (RuntimeException broken) {
                 helper.fail(name + " überlebt sein eigenes Update-Paket nicht: "
@@ -2363,7 +2370,7 @@ public final class FactoryNetworkGameTests {
         entity.rebuildNetwork();
 
         helper.runAfterDelay(40, () -> {
-            if (!(helper.getBlockEntity(maschine)
+            if (!(blockEntity(helper, maschine)
                     instanceof dev.devpanda.factorynetwork.block.entity.PressBlockEntity presse)) {
                 helper.fail("Da steht keine Presse", maschine);
                 return;
@@ -2383,10 +2390,10 @@ public final class FactoryNetworkGameTests {
     }
 
     /** The press at this spot, with power and a stamp. */
-    private static dev.devpanda.factorynetwork.block.entity.PressBlockEntity press(
+    static dev.devpanda.factorynetwork.block.entity.PressBlockEntity press(
             GameTestHelper helper, BlockPos at, net.minecraft.world.item.Item stamp) {
         helper.setBlock(at, FnBlocks.PRESS.get());
-        if (!(helper.getBlockEntity(at)
+        if (!(blockEntity(helper, at)
                 instanceof dev.devpanda.factorynetwork.block.entity.PressBlockEntity presse)) {
             helper.fail("Da steht keine Presse", at);
             throw new IllegalStateException();
@@ -2406,7 +2413,7 @@ public final class FactoryNetworkGameTests {
     }
 
     /** What lies in the output slot. */
-    private static ItemStack pressResult(
+    static ItemStack pressResult(
             dev.devpanda.factorynetwork.block.entity.PressBlockEntity presse) {
         return presse.item(
                 dev.devpanda.factorynetwork.block.entity.PressBlockEntity.SLOT_RESULT);
@@ -2547,7 +2554,7 @@ public final class FactoryNetworkGameTests {
     }
 
     /** A program with await in if in while — the template for the flow tests. */
-    private static final String COUNTING_PROGRAM = """
+    static final String COUNTING_PROGRAM = """
             event Takt(nummer: Int)
 
             fn zaehlt() {
@@ -2563,17 +2570,17 @@ public final class FactoryNetworkGameTests {
                 return summe
             }""";
 
-    private static void tick(GameTestHelper helper, ControllerBlockEntity entity, int nummer) {
+    static void tick(GameTestHelper helper, ControllerBlockEntity entity, int nummer) {
         entity.fireEvent("Takt", java.util.List.of(
                 new dev.devpanda.factorynetwork.runtime.Value.Int(nummer)));
     }
 
-    private static dev.devpanda.factorynetwork.runtime.flow.Flow flowOf(
+    static dev.devpanda.factorynetwork.runtime.flow.Flow flowOf(
             ControllerBlockEntity entity, long id) {
         return entity.flowEngine().flows().get(id);
     }
 
-    private static long resultOf(dev.devpanda.factorynetwork.runtime.flow.Flow flow) {
+    static long resultOf(dev.devpanda.factorynetwork.runtime.flow.Flow flow) {
         return ((dev.devpanda.factorynetwork.runtime.Value.Int) flow.result()).value();
     }
 
@@ -3020,7 +3027,7 @@ public final class FactoryNetworkGameTests {
      * <p>The test need not know how long the list is — only that it ends. The
      * limit catches a loop that does not use itself up.
      */
-    private static long runToEnd(GameTestHelper helper, ControllerBlockEntity entity,
+    static long runToEnd(GameTestHelper helper, ControllerBlockEntity entity,
                                  dev.devpanda.factorynetwork.runtime.flow.Flow flow) {
         for (int takt = 0; takt < 60 && !flow.status().name().equals("DONE"); takt++) {
             tick(helper, entity, 1);
@@ -3195,7 +3202,7 @@ public final class FactoryNetworkGameTests {
      * <p>The names carry the plant name in front: this way and no other is
      * how a built plant comes about.
      */
-    private static ControllerBlockEntity twoPlants(GameTestHelper helper, BlockPos controller) {
+    static ControllerBlockEntity twoPlants(GameTestHelper helper, BlockPos controller) {
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
         rackWithServer(helper, controller.west());
         for (int i = 0; i < 5; i++) {
@@ -3216,10 +3223,10 @@ public final class FactoryNetworkGameTests {
     }
 
     /** The chest above the connector at this spot. */
-    private static net.minecraft.world.level.block.entity.ChestBlockEntity plantChest(
+    static net.minecraft.world.level.block.entity.ChestBlockEntity plantChest(
             GameTestHelper helper, BlockPos controller, int index) {
         BlockPos chest = controller.east(index + 2).above(2);
-        if (helper.getBlockEntity(chest)
+        if (blockEntity(helper, chest)
                 instanceof net.minecraft.world.level.block.entity.ChestBlockEntity container) {
             return container;
         }
@@ -3227,7 +3234,7 @@ public final class FactoryNetworkGameTests {
         throw new IllegalStateException();
     }
 
-    private static final String PLANT_PROGRAM = """
+    static final String PLANT_PROGRAM = """
             multiblock Werk {
                 devices {
                     eingang
@@ -3392,7 +3399,7 @@ public final class FactoryNetworkGameTests {
         entity.rebuildNetwork();
 
         BlockPos quelle = controller.east().north().north();
-        if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity container) {
+        if (blockEntity(helper, quelle) instanceof ChestBlockEntity container) {
             container.setItem(0, new ItemStack(Items.COBBLESTONE, 64));
         }
 
@@ -3404,7 +3411,7 @@ public final class FactoryNetworkGameTests {
 
         // A selection that matches nothing must not mean "no filter".
         helper.assertValueEqual(
-                ((ChestBlockEntity) helper.getBlockEntity(quelle)).getItem(0).getCount(), 64,
+                ((ChestBlockEntity) blockEntity(helper, quelle)).getItem(0).getCount(), 64,
                 "Steine haben mit Wasser nichts zu tun");
         helper.succeed();
     }
@@ -3416,7 +3423,7 @@ public final class FactoryNetworkGameTests {
      * test piece without a block of its own. A cauldron holds 1000
      * millibuckets — exactly one bucket.
      */
-    private static ControllerBlockEntity twoCauldrons(GameTestHelper helper, BlockPos controller) {
+    static ControllerBlockEntity twoCauldrons(GameTestHelper helper, BlockPos controller) {
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
         rackWithServer(helper, controller.west());
         for (int i = 0; i < 4; i++) {
@@ -3437,13 +3444,13 @@ public final class FactoryNetworkGameTests {
     }
 
     /** Fills a cauldron with water. */
-    private static void fillCauldron(GameTestHelper helper, BlockPos controller, int index) {
+    static void fillCauldron(GameTestHelper helper, BlockPos controller, int index) {
         helper.setBlock(controller.east(index + 2).above(2),
                 Blocks.WATER_CAULDRON.defaultBlockState()
                         .setValue(net.minecraft.world.level.block.LayeredCauldronBlock.LEVEL, 3));
     }
 
-    private static boolean hasWater(GameTestHelper helper, BlockPos controller, int index) {
+    static boolean hasWater(GameTestHelper helper, BlockPos controller, int index) {
         return helper.getBlockState(controller.east(index + 2).above(2))
                 .is(Blocks.WATER_CAULDRON);
     }
@@ -3519,7 +3526,7 @@ public final class FactoryNetworkGameTests {
         // contents after a restart.
         BlockPos drivePos = controller.above();
         var drive = (dev.devpanda.factorynetwork.block.entity.DriveBlockEntity)
-                helper.getBlockEntity(drivePos);
+                blockEntity(helper, drivePos);
         var registries = helper.getLevel().registryAccess();
         var geladen = (dev.devpanda.factorynetwork.block.entity.DriveBlockEntity)
                 net.minecraft.world.level.block.entity.BlockEntity.loadStatic(
@@ -3617,7 +3624,7 @@ public final class FactoryNetworkGameTests {
      * and only breaks when somebody opens the terminal. This check catches
      * that without a player having to be present for it.
      */
-    private static <T> T roundTrip(GameTestHelper helper,
+    static <T> T roundTrip(GameTestHelper helper,
             net.minecraft.network.codec.StreamCodec<
                     net.minecraft.network.RegistryFriendlyByteBuf, T> codec, T packet) {
         var buffer = new net.minecraft.network.RegistryFriendlyByteBuf(
@@ -3943,7 +3950,7 @@ public final class FactoryNetworkGameTests {
         helper.startSequence()
                 .thenIdle(15)
                 .thenExecute(() -> {
-                    if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity container) {
+                    if (blockEntity(helper, quelle) instanceof ChestBlockEntity container) {
                         container.setItem(0, new ItemStack(Items.COBBLESTONE, 5));
                     }
                 })
@@ -4177,7 +4184,7 @@ public final class FactoryNetworkGameTests {
         entity.rebuildNetwork();
 
         BlockPos quelle = controller.east().north().north();
-        if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity container) {
+        if (blockEntity(helper, quelle) instanceof ChestBlockEntity container) {
             container.setItem(0, new ItemStack(Items.IRON_ORE, 8));
             container.setItem(1, new ItemStack(Items.GOLD_ORE, 5));
         }
@@ -4222,7 +4229,7 @@ public final class FactoryNetworkGameTests {
         entity.rebuildNetwork();
 
         BlockPos quelle = controller.east().north().north();
-        if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity container) {
+        if (blockEntity(helper, quelle) instanceof ChestBlockEntity container) {
             container.setItem(0, new ItemStack(Items.IRON_ORE, 8));
             container.setItem(1, new ItemStack(Items.GOLD_ORE, 8));
         }
@@ -4254,7 +4261,7 @@ public final class FactoryNetworkGameTests {
         entity.rebuildNetwork();
 
         BlockPos quelle = controller.east().north().north();
-        if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity container) {
+        if (blockEntity(helper, quelle) instanceof ChestBlockEntity container) {
             container.setItem(0, new ItemStack(Items.IRON_ORE, 8));
             container.setItem(1, new ItemStack(Items.COPPER_ORE, 8));
         }
@@ -4292,7 +4299,7 @@ public final class FactoryNetworkGameTests {
         entity.rebuildNetwork();
 
         BlockPos quelle = controller.east().north().north();
-        if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity container) {
+        if (blockEntity(helper, quelle) instanceof ChestBlockEntity container) {
             container.setItem(0, new ItemStack(Items.IRON_ORE, 8));
             container.setItem(1, new ItemStack(Items.GOLD_ORE, 8));
         }
@@ -4322,7 +4329,7 @@ public final class FactoryNetworkGameTests {
         entity.rebuildNetwork();
 
         BlockPos quelle = controller.east().north().north();
-        if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity container) {
+        if (blockEntity(helper, quelle) instanceof ChestBlockEntity container) {
             container.setItem(0, new ItemStack(Items.IRON_ORE, 8));
             container.setItem(1, new ItemStack(Items.GOLD_ORE, 8));
         }
@@ -4393,7 +4400,7 @@ public final class FactoryNetworkGameTests {
         entity.rebuildNetwork();
 
         BlockPos quelle = controller.east().north().north();
-        if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity container) {
+        if (blockEntity(helper, quelle) instanceof ChestBlockEntity container) {
             container.setItem(0, new ItemStack(Items.IRON_ORE, 8));
             container.setItem(1, new ItemStack(Items.GOLD_ORE, 8));
             container.setItem(2, new ItemStack(Items.COPPER_ORE, 8));
@@ -4524,7 +4531,7 @@ public final class FactoryNetworkGameTests {
         helper.startSequence()
                 .thenIdle(15)
                 .thenExecute(() -> {
-                    if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity container) {
+                    if (blockEntity(helper, quelle) instanceof ChestBlockEntity container) {
                         container.setItem(0, new ItemStack(Items.COBBLESTONE, 5));
                     }
                 })
@@ -4550,7 +4557,7 @@ public final class FactoryNetworkGameTests {
         // Something already lies in the target: exactly the case on which the
         // simple version failed, the one that compares against empty.
         BlockPos ziel = controller.east().south().south();
-        if (helper.getBlockEntity(ziel) instanceof ChestBlockEntity container) {
+        if (blockEntity(helper, ziel) instanceof ChestBlockEntity container) {
             container.setItem(0, new ItemStack(Items.COBBLESTONE, 5));
         }
 
@@ -4629,7 +4636,7 @@ public final class FactoryNetworkGameTests {
         entity.rebuildNetwork();
 
         BlockPos quelle = controller.east().north().north();
-        if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity container) {
+        if (blockEntity(helper, quelle) instanceof ChestBlockEntity container) {
             container.setItem(0, new ItemStack(Items.COBBLESTONE, 5));
         }
 
@@ -4643,7 +4650,7 @@ public final class FactoryNetworkGameTests {
         helper.startSequence()
                 .thenIdle(15)
                 .thenExecute(() -> {
-                    if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity container) {
+                    if (blockEntity(helper, quelle) instanceof ChestBlockEntity container) {
                         container.setItem(0, ItemStack.EMPTY);
                     }
                 })
@@ -4675,13 +4682,13 @@ public final class FactoryNetworkGameTests {
         helper.startSequence()
                 .thenIdle(15)
                 .thenExecute(() -> {
-                    if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity container) {
+                    if (blockEntity(helper, quelle) instanceof ChestBlockEntity container) {
                         container.setItem(0, new ItemStack(Items.COBBLESTONE, 1));
                     }
                 })
                 .thenIdle(15)
                 .thenExecute(() -> {
-                    if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity container) {
+                    if (blockEntity(helper, quelle) instanceof ChestBlockEntity container) {
                         container.setItem(1, new ItemStack(Items.COBBLESTONE, 1));
                     }
                 })
@@ -4826,7 +4833,8 @@ public final class FactoryNetworkGameTests {
                 .toList();
         helper.assertValueEqual(hinweise.size(), 1,
                 "Ein Worker läuft zwanzigmal je Sekunde — der Hinweis gehört einmal ins "
-                        + "Protokoll: " + entity.log());
+                        + "Protokoll: " + entity.log() + ", Worker: " + entity.runtime().states()
+                        + ", online: " + entity.isOnline());
         helper.assertValueEqual(hinweise.get(0).source(), "nachschub",
                 "Der Worker steht als Herkunft daneben, nicht im Text");
         helper.assertValueEqual(hinweise.get(0).level().key(), "warn",
@@ -4907,7 +4915,7 @@ public final class FactoryNetworkGameTests {
         helper.startSequence()
                 .thenIdle(15)
                 .thenExecute(() -> {
-                    if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity container) {
+                    if (blockEntity(helper, quelle) instanceof ChestBlockEntity container) {
                         container.setItem(0, new ItemStack(Items.COBBLESTONE, 5));
                     }
                 })
@@ -4929,7 +4937,7 @@ public final class FactoryNetworkGameTests {
                 }"""), "Das Programm wurde nicht übernommen");
 
         BlockPos quelle = controller.east().north().north();
-        if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity container) {
+        if (blockEntity(helper, quelle) instanceof ChestBlockEntity container) {
             container.setItem(0, new ItemStack(Items.COBBLESTONE, 5));
         }
 
@@ -4948,7 +4956,7 @@ public final class FactoryNetworkGameTests {
      * <p>For the case no single check covers: a template that moves fluid and
      * waits while doing so.
      */
-    private static ControllerBlockEntity plantWithTanks(GameTestHelper helper,
+    static ControllerBlockEntity plantWithTanks(GameTestHelper helper,
             BlockPos controller) {
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
         rackWithServer(helper, controller.west());
@@ -5023,7 +5031,7 @@ public final class FactoryNetworkGameTests {
     }
 
     /** Three cauldrons: one full, two empty ones as a group. */
-    private static ControllerBlockEntity threeCauldrons(GameTestHelper helper,
+    static ControllerBlockEntity threeCauldrons(GameTestHelper helper,
             BlockPos controller) {
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
         rackWithServer(helper, controller.west());
@@ -5100,7 +5108,7 @@ public final class FactoryNetworkGameTests {
     }
 
     /** Reloads the controller as a server restart would. */
-    private static ControllerBlockEntity reload(GameTestHelper helper, BlockPos controller,
+    static ControllerBlockEntity reload(GameTestHelper helper, BlockPos controller,
             ControllerBlockEntity entity) {
         var registries = helper.getLevel().registryAccess();
         var block = net.minecraft.world.level.block.entity.BlockEntity.loadStatic(
@@ -5222,9 +5230,9 @@ public final class FactoryNetworkGameTests {
      * fail at what it checks, and not because three flows wanted to run at
      * the same time. Whoever checks the limit itself builds a smaller rack.
      */
-    private static final int TEST_CPU = 32;
-    private static final int TEST_RAM = 128;
-    private static final int TEST_DISK = 4096;
+    static final int TEST_CPU = 32;
+    static final int TEST_RAM = 128;
+    static final int TEST_DISK = 4096;
 
     /**
      * Places a server rack — both halves, as when placing by hand.
@@ -5234,7 +5242,7 @@ public final class FactoryNetworkGameTests {
      * at the next neighbour change from above — and the check would fail at
      * something entirely different from what it checks.
      */
-    private static void placeRack(GameTestHelper helper, BlockPos at) {
+    static void placeRack(GameTestHelper helper, BlockPos at) {
         helper.setBlock(at, FnBlocks.RACK.get().defaultBlockState());
         helper.setBlock(at.above(), FnBlocks.RACK.get().defaultBlockState()
                 .setValue(dev.devpanda.factorynetwork.block.RackBlock.HALF,
@@ -5243,7 +5251,7 @@ public final class FactoryNetworkGameTests {
     }
 
     /** The item for a part kind and tier. */
-    private static ItemStack serverPart(dev.devpanda.factorynetwork.item.ServerPart kind,
+    static ItemStack serverPart(dev.devpanda.factorynetwork.item.ServerPart kind,
                                         int value) {
         for (var item : dev.devpanda.factorynetwork.registry.FnItems.SERVER_PARTS.get(kind)) {
             if (item.get() instanceof dev.devpanda.factorynetwork.item.ServerPartItem part
@@ -5255,7 +5263,7 @@ public final class FactoryNetworkGameTests {
     }
 
     /** An empty server chassis. */
-    private static ItemStack chassis() {
+    static ItemStack chassis() {
         return new ItemStack(
                 dev.devpanda.factorynetwork.registry.FnItems.SERVER_CHASSIS.get());
     }
@@ -5266,9 +5274,9 @@ public final class FactoryNetworkGameTests {
      * <p>The chassis first: without one the bay accepts no parts, and that is
      * the rule that makes the item a server in the first place.
      */
-    private static void fillBay(GameTestHelper helper, BlockPos at, int bay,
+    static void fillBay(GameTestHelper helper, BlockPos at, int bay,
                                 int cpu, int ram, int disk) {
-        if (!(helper.getBlockEntity(at)
+        if (!(blockEntity(helper, at)
                 instanceof dev.devpanda.factorynetwork.block.entity.RackBlockEntity rack)) {
             helper.fail("Am Serverschrank hängt keine BlockEntity", at);
             return;
@@ -5287,7 +5295,7 @@ public final class FactoryNetworkGameTests {
     }
 
     /** A server rack with one generously equipped bay. */
-    private static void rackWithServer(GameTestHelper helper, BlockPos at) {
+    static void rackWithServer(GameTestHelper helper, BlockPos at) {
         placeRack(helper, at);
         fillBay(helper, at, 0, TEST_CPU, TEST_RAM, TEST_DISK);
     }
@@ -5296,9 +5304,9 @@ public final class FactoryNetworkGameTests {
      * Pushes the first part from the player's inventory into the shelf —
      * like a shift-click in the window.
      */
-    private static void intoShelf(GameTestHelper helper, BlockPos at,
+    static void intoShelf(GameTestHelper helper, BlockPos at,
                                   net.minecraft.world.entity.player.Player player) {
-        if (!(helper.getBlockEntity(at)
+        if (!(blockEntity(helper, at)
                 instanceof dev.devpanda.factorynetwork.block.entity.ShelfBlockEntity shelf)) {
             helper.fail("Hier steht kein Regal", at);
             return;
@@ -5320,9 +5328,9 @@ public final class FactoryNetworkGameTests {
      * <p>Since there is a window, that is the path. The empty hand on the
      * block opens it instead of pulling something out.
      */
-    private static void takeFromShelf(GameTestHelper helper, BlockPos at, int slot,
+    static void takeFromShelf(GameTestHelper helper, BlockPos at, int slot,
                                       net.minecraft.world.entity.player.Player player) {
-        if (!(helper.getBlockEntity(at)
+        if (!(blockEntity(helper, at)
                 instanceof dev.devpanda.factorynetwork.block.entity.ShelfBlockEntity shelf)) {
             helper.fail("Hier steht kein Regal", at);
             return;
@@ -5333,10 +5341,10 @@ public final class FactoryNetworkGameTests {
     }
 
     /** Places a drive on the cable and inserts a fluid cell. */
-    private static void driveWithFluidCell(GameTestHelper helper, BlockPos at,
+    static void driveWithFluidCell(GameTestHelper helper, BlockPos at,
             dev.devpanda.factorynetwork.storage.FluidCellTier tier) {
         helper.setBlock(at, FnBlocks.DRIVE.get());
-        if (helper.getBlockEntity(at)
+        if (blockEntity(helper, at)
                 instanceof dev.devpanda.factorynetwork.block.entity.DriveBlockEntity drive) {
             drive.setCell(0, new ItemStack(dev.devpanda.factorynetwork.registry.FnItems
                     .FLUID_CELLS.get(tier).get()));
@@ -5346,10 +5354,10 @@ public final class FactoryNetworkGameTests {
     }
 
     /** Places a drive on the cable and inserts a cell. */
-    private static void driveWithCell(GameTestHelper helper, BlockPos at,
+    static void driveWithCell(GameTestHelper helper, BlockPos at,
             dev.devpanda.factorynetwork.storage.CellTier tier) {
         helper.setBlock(at, FnBlocks.DRIVE.get());
-        if (helper.getBlockEntity(at)
+        if (blockEntity(helper, at)
                 instanceof dev.devpanda.factorynetwork.block.entity.DriveBlockEntity drive) {
             drive.setCell(0, new ItemStack(
                     dev.devpanda.factorynetwork.registry.FnItems.CELLS.get(tier).get()));
@@ -5429,7 +5437,7 @@ public final class FactoryNetworkGameTests {
         // The stock sits in the item, not in the drive. That is the reason a
         // cell is worth something.
         var drive = (dev.devpanda.factorynetwork.block.entity.DriveBlockEntity)
-                helper.getBlockEntity(drivePos);
+                blockEntity(helper, drivePos);
         // The stock lives in the drive and only goes into the item when
         // saving. Whoever reads it before that sees the earlier state.
         drive.flushCells();
@@ -5489,7 +5497,7 @@ public final class FactoryNetworkGameTests {
         BlockPos at = new BlockPos(1, 1, 1);
         helper.setBlock(at, FnBlocks.PRESS.get());
         var press = (dev.devpanda.factorynetwork.block.entity.PressBlockEntity)
-                helper.getBlockEntity(at);
+                blockEntity(helper, at);
         helper.assertTrue(press != null, "An der Presse hängt keine BlockEntity");
 
         press.setItem(dev.devpanda.factorynetwork.block.entity.PressBlockEntity.SLOT_STAMP,
@@ -5536,7 +5544,7 @@ public final class FactoryNetworkGameTests {
         BlockPos at = new BlockPos(1, 1, 1);
         helper.setBlock(at, FnBlocks.PRESS.get());
         var press = (dev.devpanda.factorynetwork.block.entity.PressBlockEntity)
-                helper.getBlockEntity(at);
+                blockEntity(helper, at);
 
         press.setItem(dev.devpanda.factorynetwork.block.entity.PressBlockEntity.SLOT_STAMP,
                 new ItemStack(dev.devpanda.factorynetwork.registry.FnItems.STAMP_PLATE.get()));
@@ -5573,7 +5581,7 @@ public final class FactoryNetworkGameTests {
 
         // A chest on the network from which a worker is to store.
         BlockPos quelle = controller.east().north().north();
-        if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity container) {
+        if (blockEntity(helper, quelle) instanceof ChestBlockEntity container) {
             container.setItem(0, new ItemStack(Items.IRON_INGOT, 64));
         }
         helper.assertTrue(entity.deploy("""
@@ -5590,7 +5598,7 @@ public final class FactoryNetworkGameTests {
         // The storage is full — the ingots must still be there, in the chest
         // or on the ground, but not vanished.
         long inKiste = 0;
-        if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity container) {
+        if (blockEntity(helper, quelle) instanceof ChestBlockEntity container) {
             for (int slot = 0; slot < container.getContainerSize(); slot++) {
                 ItemStack stack = container.getItem(slot);
                 if (stack.getItem() == Items.IRON_INGOT) {
@@ -5616,7 +5624,7 @@ public final class FactoryNetworkGameTests {
         // The stock lives in the drive's memory. Only when saving does it go
         // into the item — without that it would be gone after a restart.
         var drive = (dev.devpanda.factorynetwork.block.entity.DriveBlockEntity)
-                helper.getBlockEntity(drivePos);
+                blockEntity(helper, drivePos);
         var registries = helper.getLevel().registryAccess();
         var tag = drive.saveWithFullMetadata(registries);
 
@@ -5640,21 +5648,20 @@ public final class FactoryNetworkGameTests {
      * test is then not north in the world — which is why it is computed from
      * two absolute positions instead of written down.
      */
-    private static net.minecraft.core.Direction towards(GameTestHelper helper,
+    static net.minecraft.core.Direction towards(GameTestHelper helper,
                                                         BlockPos from, BlockPos to) {
         BlockPos a = helper.absolutePos(from);
         BlockPos b = helper.absolutePos(to);
-        net.minecraft.core.Direction direction = net.minecraft.core.Direction.fromDelta(
-                b.getX() - a.getX(), b.getY() - a.getY(), b.getZ() - a.getZ());
+        net.minecraft.core.Direction direction = net.minecraft.core.Direction.getNearest(b.getX() - a.getX(), b.getY() - a.getY(), b.getZ() - a.getZ(), null);
         if (direction == null) {
             helper.fail("Die beiden Stellen liegen nicht nebeneinander", from);
         }
         return direction;
     }
 
-    private static void lane(GameTestHelper helper, BlockPos router, BlockPos neighbour,
+    static void lane(GameTestHelper helper, BlockPos router, BlockPos neighbour,
                              int lane) {
-        if (helper.getBlockEntity(router)
+        if (blockEntity(helper, router)
                 instanceof dev.devpanda.factorynetwork.block.entity.RouterBlockEntity entity) {
             entity.setLane(towards(helper, router, neighbour), lane);
         } else {
@@ -5725,7 +5732,7 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(entity.storage().distinctTypes(), 1, "Arten im Netz");
 
         var drive = (dev.devpanda.factorynetwork.block.entity.DriveBlockEntity)
-                helper.getBlockEntity(drivePos);
+                blockEntity(helper, drivePos);
         // The same instance, no copy: when taking out, the drive writes the
         // stock back into exactly this item, and the same one travels into the
         // player's hand in the game.
@@ -5772,7 +5779,7 @@ public final class FactoryNetworkGameTests {
         long eisen = 0;
         long gold = 0;
         var drive = (dev.devpanda.factorynetwork.block.entity.DriveBlockEntity)
-                helper.getBlockEntity(drivePos);
+                blockEntity(helper, drivePos);
         for (var cell : drive.inventories()) {
             eisen += cell.count(dev.devpanda.factorynetwork.storage.ItemKey
                     .bare(Items.IRON_INGOT));
@@ -5806,7 +5813,7 @@ public final class FactoryNetworkGameTests {
                 .CELLS.get(dev.devpanda.factorynetwork.storage.CellTier.K1).get()));
 
         var drive = (dev.devpanda.factorynetwork.block.entity.DriveBlockEntity)
-                helper.getBlockEntity(drivePos);
+                blockEntity(helper, drivePos);
         // Shift-click from the player's inventory into the shelf and back.
         intoShelf(helper, drivePos, player);
         helper.assertValueEqual(drive.usedSlots(), 1, "Zellen im Laufwerk");
@@ -5840,7 +5847,7 @@ public final class FactoryNetworkGameTests {
                 serverPart(dev.devpanda.factorynetwork.item.ServerPart.DISK, 256));
 
         var rack = (dev.devpanda.factorynetwork.block.entity.RackBlockEntity)
-                helper.getBlockEntity(rackPos);
+                blockEntity(helper, rackPos);
         // Every part finds its slot by itself — the shift-click need not know
         // where a disk belongs. The chassis first, because without one the
         // parts may not go in at all.
@@ -5868,7 +5875,7 @@ public final class FactoryNetworkGameTests {
         BlockPos drivePos = new BlockPos(1, 2, 1);
         helper.setBlock(drivePos, FnBlocks.DRIVE.get());
         var drive = (dev.devpanda.factorynetwork.block.entity.DriveBlockEntity)
-                helper.getBlockEntity(drivePos);
+                blockEntity(helper, drivePos);
         for (int slot = 0; slot < dev.devpanda.factorynetwork.block.entity
                 .DriveBlockEntity.SLOTS; slot++) {
             drive.setCell(slot, new ItemStack(dev.devpanda.factorynetwork.registry.FnItems.CELLS
@@ -5909,7 +5916,7 @@ public final class FactoryNetworkGameTests {
         takeFromShelf(helper, drivePos, 0, player);
 
         ItemStack pulled = ItemStack.EMPTY;
-        for (ItemStack stack : player.getInventory().items) {
+        for (ItemStack stack : player.getInventory().getNonEquipmentItems()) {
             if (stack.getItem() instanceof dev.devpanda.factorynetwork.storage.StorageCellItem) {
                 pulled = stack;
                 break;
@@ -6006,7 +6013,7 @@ public final class FactoryNetworkGameTests {
         takeFromShelf(helper, drivePos, 0, player);
 
         ItemStack pulled = ItemStack.EMPTY;
-        for (ItemStack stack : player.getInventory().items) {
+        for (ItemStack stack : player.getInventory().getNonEquipmentItems()) {
             if (stack.getItem() instanceof dev.devpanda.factorynetwork.storage.FluidCellItem) {
                 pulled = stack;
                 break;
@@ -6096,7 +6103,7 @@ public final class FactoryNetworkGameTests {
         placeRack(helper, rackPos);
         fillBay(helper, rackPos, 0, 32, 128, 4096);
         var rack = (dev.devpanda.factorynetwork.block.entity.RackBlockEntity)
-                helper.getBlockEntity(rackPos);
+                blockEntity(helper, rackPos);
         helper.assertValueEqual(rack.threads(), 32, "der Einschub läuft");
 
         var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
@@ -6107,7 +6114,7 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(rack.threads(), 0, "und er trägt nichts mehr");
 
         ItemStack gezogen = ItemStack.EMPTY;
-        for (ItemStack stack : player.getInventory().items) {
+        for (ItemStack stack : player.getInventory().getNonEquipmentItems()) {
             if (dev.devpanda.factorynetwork.item.ServerChassis.is(stack)) {
                 gezogen = stack;
                 break;
@@ -6148,11 +6155,11 @@ public final class FactoryNetworkGameTests {
         placeRack(helper, rackPos);
         fillBay(helper, rackPos, 0, 32, 128, 4096);
         var rack = (dev.devpanda.factorynetwork.block.entity.RackBlockEntity)
-                helper.getBlockEntity(rackPos);
+                blockEntity(helper, rackPos);
 
         var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
-        for (int slot = 0; slot < player.getInventory().items.size(); slot++) {
-            player.getInventory().items.set(slot, new ItemStack(Items.DIRT, 64));
+        for (int slot = 0; slot < player.getInventory().getNonEquipmentItems().size(); slot++) {
+            player.getInventory().getNonEquipmentItems().set(slot, new ItemStack(Items.DIRT, 64));
         }
 
         takeFromShelf(helper, rackPos, dev.devpanda.factorynetwork.block.entity
@@ -6183,7 +6190,7 @@ public final class FactoryNetworkGameTests {
                 serverPart(dev.devpanda.factorynetwork.item.ServerPart.CPU, 8));
 
         var rack = (dev.devpanda.factorynetwork.block.entity.RackBlockEntity)
-                helper.getBlockEntity(rackPos);
+                blockEntity(helper, rackPos);
         var menu = dev.devpanda.factorynetwork.client.menu.ShelfMenu
                 .of(1, player.getInventory(), rack, rack.layout());
         for (int index = rack.getContainerSize(); index < menu.slots.size(); index++) {
@@ -6211,7 +6218,7 @@ public final class FactoryNetworkGameTests {
         BlockPos rackPos = new BlockPos(1, 2, 1);
         placeRack(helper, rackPos);
         var rack = (dev.devpanda.factorynetwork.block.entity.RackBlockEntity)
-                helper.getBlockEntity(rackPos);
+                blockEntity(helper, rackPos);
 
         rack.setItem(dev.devpanda.factorynetwork.block.entity.RackBlockEntity
                 .chassisSlot(0), chassis());
@@ -6242,7 +6249,7 @@ public final class FactoryNetworkGameTests {
         BlockPos rackPos = new BlockPos(1, 2, 1);
         placeRack(helper, rackPos);
         var rack = (dev.devpanda.factorynetwork.block.entity.RackBlockEntity)
-                helper.getBlockEntity(rackPos);
+                blockEntity(helper, rackPos);
 
         int diskSlot = dev.devpanda.factorynetwork.block.entity.RackBlockEntity
                 .slotOf(0, dev.devpanda.factorynetwork.item.ServerPart.DISK);
@@ -6317,7 +6324,7 @@ public final class FactoryNetworkGameTests {
     }
 
     /** Controller, cable, a named chest with ore and a drive. */
-    private static BlockPos threeChestsSetup(GameTestHelper helper) {
+    static BlockPos threeChestsSetup(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 2, 1);
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
         rackWithServer(helper, controller.west());
@@ -6326,7 +6333,7 @@ public final class FactoryNetworkGameTests {
         connector(helper, connector, Direction.NORTH);
         helper.setBlock(connector.north(), Blocks.CHEST);
         name(helper, connector, "quelle");
-        if (helper.getBlockEntity(connector.north())
+        if (blockEntity(helper, connector.north())
                 instanceof net.minecraft.world.level.block.entity.ChestBlockEntity chest) {
             chest.setItem(0, new ItemStack(Items.IRON_ORE, 16));
         }
@@ -6341,7 +6348,7 @@ public final class FactoryNetworkGameTests {
      * <p>Memory and disk generous: whoever checks the compute limit should not
      * fail at the memory limit.
      */
-    private static void smallRack(GameTestHelper helper, BlockPos at, int cpu) {
+    static void smallRack(GameTestHelper helper, BlockPos at, int cpu) {
         placeRack(helper, at);
         fillBay(helper, at, 0, cpu, TEST_RAM, TEST_DISK);
     }
@@ -6423,7 +6430,7 @@ public final class FactoryNetworkGameTests {
     }
 
     /** A rejected deployment must not quietly become the program on the next world load. */
-    private static void assertRejectedDeployPersists(GameTestHelper helper, BlockPos position,
+    static void assertRejectedDeployPersists(GameTestHelper helper, BlockPos position,
                                                     ControllerBlockEntity entity,
                                                     String running, String rejected) {
         helper.assertValueEqual(entity.project().source("main.mf"), running,
@@ -6434,7 +6441,8 @@ public final class FactoryNetworkGameTests {
         var saved = entity.saveWithoutMetadata(registries);
         var restored = new ControllerBlockEntity(helper.absolutePos(position),
                 FnBlocks.CONTROLLER.get().defaultBlockState());
-        restored.loadWithComponents(saved, registries);
+        restored.loadWithComponents(net.minecraft.world.level.storage.TagValueInput.create(
+                net.minecraft.util.ProblemReporter.DISCARDING, registries, saved));
         helper.assertValueEqual(restored.project().source("main.mf"), running,
                 "auch nach dem Laden steht der bisher laufende Quellstand");
         helper.assertValueEqual(restored.draft().source("main.mf"), rejected,
@@ -6532,7 +6540,7 @@ public final class FactoryNetworkGameTests {
 
         // The large disk out: a server with 64 remains.
         var rack = (dev.devpanda.factorynetwork.block.entity.RackBlockEntity)
-                helper.getBlockEntity(rackPos);
+                blockEntity(helper, rackPos);
         rack.setItem(dev.devpanda.factorynetwork.block.entity.RackBlockEntity
                 .slotOf(0, dev.devpanda.factorynetwork.item.ServerPart.DISK), ItemStack.EMPTY);
         entity.rebuildNetwork();
@@ -6769,7 +6777,7 @@ public final class FactoryNetworkGameTests {
         BlockPos routerPos = new BlockPos(1, 2, 1);
         helper.setBlock(routerPos, FnBlocks.ROUTER.get());
         var router = (dev.devpanda.factorynetwork.block.entity.RouterBlockEntity)
-                helper.getBlockEntity(routerPos);
+                blockEntity(helper, routerPos);
         net.minecraft.core.Direction oben = towards(helper, routerPos, routerPos.above());
         net.minecraft.core.Direction unten = towards(helper, routerPos, routerPos.below());
         router.setLane(oben, 3);
@@ -6805,7 +6813,7 @@ public final class FactoryNetworkGameTests {
         smallRack(helper, rackPos, 2);
         fillBay(helper, rackPos, 1, 8, 8, 64);
         var rack = (dev.devpanda.factorynetwork.block.entity.RackBlockEntity)
-                helper.getBlockEntity(rackPos);
+                blockEntity(helper, rackPos);
         helper.assertValueEqual(rack.threads(), 10, "ein kleiner und ein mittlerer Einschub");
 
         var registries = helper.getLevel().registryAccess();
@@ -6891,8 +6899,7 @@ public final class FactoryNetworkGameTests {
                 "das Fenster bleibt mit leerem Akku offen");
 
         // Charged: it works, and the level drops by exactly that amount.
-        var battery = device.getCapability(
-                net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM);
+        var battery = dev.devpanda.factorynetwork.platform.Caps.energy(device);
         battery.receiveEnergy(10_000, false);
         int before = dev.devpanda.factorynetwork.item.RemoteDeviceItem.energyOf(device);
         helper.assertTrue(before > 0, "der Akku hat die Ladung nicht angenommen");
@@ -6916,8 +6923,7 @@ public final class FactoryNetworkGameTests {
                 dev.devpanda.factorynetwork.registry.FnItems.WIRELESS_TERMINAL.get());
         dev.devpanda.factorynetwork.item.RemoteDeviceItem.couple(drained, where);
         int tooLittle = dev.devpanda.factorynetwork.network.Power.REMOTE_ACTION - 20;
-        drained.getCapability(net.neoforged.neoforge.capabilities.Capabilities
-                .EnergyStorage.ITEM).receiveEnergy(tooLittle, false);
+        dev.devpanda.factorynetwork.platform.Caps.energy(drained).receiveEnergy(tooLittle, false);
         player.getInventory().setItem(1, drained);
 
         var thin = new dev.devpanda.factorynetwork.client.menu.TerminalMenu(
@@ -7018,7 +7024,7 @@ public final class FactoryNetworkGameTests {
     }
 
     /** A diamond pickaxe with a name. */
-    private static ItemStack named(String name) {
+    static ItemStack named(String name) {
         ItemStack stack = new ItemStack(net.minecraft.world.item.Items.DIAMOND_PICKAXE);
         stack.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME,
                 net.minecraft.network.chat.Component.literal(name));
@@ -7026,7 +7032,7 @@ public final class FactoryNetworkGameTests {
     }
 
     /** Its key. */
-    private static dev.devpanda.factorynetwork.storage.ItemKey key(String name) {
+    static dev.devpanda.factorynetwork.storage.ItemKey key(String name) {
         return dev.devpanda.factorynetwork.storage.ItemKey.of(named(name));
     }
 
@@ -7050,7 +7056,7 @@ public final class FactoryNetworkGameTests {
         ItemStack named = new ItemStack(Items.DIAMOND_PICKAXE);
         named.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME,
                 net.minecraft.network.chat.Component.literal("Lieblingshacke"));
-        if (helper.getBlockEntity(source) instanceof ChestBlockEntity container) {
+        if (blockEntity(helper, source) instanceof ChestBlockEntity container) {
             container.setItem(0, named);
             container.setItem(1, new ItemStack(Items.COBBLESTONE, 64));
         }
@@ -7065,7 +7071,7 @@ public final class FactoryNetworkGameTests {
 
         var key = dev.devpanda.factorynetwork.storage.ItemKey.of(named);
         helper.runAfterDelay(30, () -> {
-            if (!(helper.getBlockEntity(source) instanceof ChestBlockEntity container)) {
+            if (!(blockEntity(helper, source) instanceof ChestBlockEntity container)) {
                 helper.fail("keine Kiste mehr da", source);
                 return;
             }
@@ -7096,13 +7102,12 @@ public final class FactoryNetworkGameTests {
      */
     @GameTest(template = EMPTY, timeoutTicks = 100)
     public static void twoCraftsAtOnceDoNotCross(GameTestHelper helper) {
-        var recipe = new dev.devpanda.factorynetwork.crafting.EntanglementRecipe(
-                net.minecraft.world.item.crafting.CraftingBookCategory.MISC);
+        var recipe = dev.devpanda.factorynetwork.crafting.EntanglementRecipe.INSTANCE;
         var registries = helper.getLevel().registryAccess();
 
         // Two crafts interleaved, as at two crafting tables.
-        ItemStack ersterBau = recipe.assemble(entanglementInput(), registries);
-        ItemStack zweiterBau = recipe.assemble(entanglementInput(), registries);
+        ItemStack ersterBau = recipe.assemble(entanglementInput());
+        ItemStack zweiterBau = recipe.assemble(entanglementInput());
 
         helper.assertTrue(
                 !dev.devpanda.factorynetwork.item.EntanglementItem.matched(
@@ -7120,7 +7125,7 @@ public final class FactoryNetworkGameTests {
     }
 
     /** Two network cores and a crystal, as they lie in the crafting table. */
-    private static net.minecraft.world.item.crafting.CraftingInput entanglementInput() {
+    static net.minecraft.world.item.crafting.CraftingInput entanglementInput() {
         return net.minecraft.world.item.crafting.CraftingInput.of(3, 1,
                 java.util.List.of(
                         new ItemStack(dev.devpanda.factorynetwork.registry.FnItems
@@ -7153,7 +7158,7 @@ public final class FactoryNetworkGameTests {
         // The router on it.
         BlockPos router = trunk.east();
         helper.setBlock(router, FnBlocks.ROUTER.get());
-        if (!(helper.getBlockEntity(router)
+        if (!(blockEntity(helper, router)
                 instanceof dev.devpanda.factorynetwork.block.entity.RouterBlockEntity box)) {
             helper.fail("kein Router", router);
             return;
@@ -7182,13 +7187,13 @@ public final class FactoryNetworkGameTests {
         // A red cable to the north, a blue one to the south.
         BlockPos rot = router.north();
         placeCable(helper, rot, dev.devpanda.factorynetwork.block.CableColour.RED);
-        if (helper.getBlockEntity(rot)
+        if (blockEntity(helper, rot)
                 instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus) {
             bus.addPart(Direction.NORTH).setLabel("am_roten");
         }
         BlockPos blau = router.south();
         placeCable(helper, blau, dev.devpanda.factorynetwork.block.CableColour.BLUE);
-        if (helper.getBlockEntity(blau)
+        if (blockEntity(helper, blau)
                 instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus) {
             bus.addPart(Direction.SOUTH).setLabel("am_blauen");
         }
@@ -7211,7 +7216,7 @@ public final class FactoryNetworkGameTests {
         placeCable(helper, falsch, dev.devpanda.factorynetwork.block.CableColour.BLUE);
         BlockPos amFalschen = router.east();
         helper.setBlock(amFalschen, FnBlocks.CABLE.get());
-        if (helper.getBlockEntity(amFalschen)
+        if (blockEntity(helper, amFalschen)
                 instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus) {
             bus.addPart(Direction.EAST).setLabel("hinter_rot");
         }
@@ -7381,7 +7386,7 @@ public final class FactoryNetworkGameTests {
         for (int schritt = 1; schritt <= 10; schritt++) {
             BlockPos cable = controller.east(schritt);
             placeCable(helper, cable, dev.devpanda.factorynetwork.block.CableColour.NONE);
-            if (helper.getBlockEntity(cable)
+            if (blockEntity(helper, cable)
                     instanceof dev.devpanda.factorynetwork.block.entity
                             .CableBusBlockEntity bus) {
                 for (Direction side : java.util.List.of(Direction.NORTH, Direction.SOUTH)) {
@@ -7438,7 +7443,7 @@ public final class FactoryNetworkGameTests {
 
         // A device behind the bottleneck: its path is as good as the weakest
         // piece on it.
-        if (helper.getBlockEntity(dann)
+        if (blockEntity(helper, dann)
                 instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus) {
             bus.addPart(Direction.NORTH).setLabel("dahinter");
         }
@@ -7585,7 +7590,7 @@ public final class FactoryNetworkGameTests {
     }
 
     /** Does this bridge show a standing link? */
-    private static boolean linked(GameTestHelper helper, BlockPos where) {
+    static boolean linked(GameTestHelper helper, BlockPos where) {
         var state = helper.getLevel().getBlockState(where);
         return state.getBlock() instanceof dev.devpanda.factorynetwork.block.BridgeBlock
                 && state.getValue(dev.devpanda.factorynetwork.block.BridgeBlock.LINKED);
@@ -7630,11 +7635,11 @@ public final class FactoryNetworkGameTests {
 
         // Now the two halves go in.
         ItemStack paar = dev.devpanda.factorynetwork.item.EntanglementItem.newPair();
-        if (helper.getBlockEntity(brueckeHier)
+        if (blockEntity(helper, brueckeHier)
                 instanceof dev.devpanda.factorynetwork.block.entity.BridgeBlockEntity eine) {
             eine.setItem(0, paar.split(1));
         }
-        if (helper.getBlockEntity(brueckeDort)
+        if (blockEntity(helper, brueckeDort)
                 instanceof dev.devpanda.factorynetwork.block.entity.BridgeBlockEntity zwei) {
             zwei.setItem(0, paar);
         }
@@ -7720,7 +7725,7 @@ public final class FactoryNetworkGameTests {
     }
 
     /** Places a bridge and puts a half into it. */
-    private static void placeBridge(GameTestHelper helper, BlockPos where, ItemStack half) {
+    static void placeBridge(GameTestHelper helper, BlockPos where, ItemStack half) {
         helper.getLevel().setBlockAndUpdate(where,
                 FnBlocks.BRIDGE.get().defaultBlockState());
         if (helper.getLevel().getBlockEntity(where)
@@ -7738,14 +7743,12 @@ public final class FactoryNetworkGameTests {
      */
     @GameTest(template = EMPTY, timeoutTicks = 100)
     public static void oneCraftMakesOnePair(GameTestHelper helper) {
-        var recipe = new dev.devpanda.factorynetwork.crafting.EntanglementRecipe(
-                net.minecraft.world.item.crafting.CraftingBookCategory.MISC);
+        var recipe = dev.devpanda.factorynetwork.crafting.EntanglementRecipe.INSTANCE;
 
         helper.assertTrue(recipe.matches(entanglementInput(), helper.getLevel()),
                 "zwei Netzkerne und ein Kristall ergeben keine Verschränkung");
 
-        ItemStack paar = recipe.assemble(entanglementInput(),
-                helper.getLevel().registryAccess());
+        ItemStack paar = recipe.assemble(entanglementInput());
         helper.assertTrue(paar.getCount() == 2,
                 "der Bau liefert " + paar.getCount() + " statt zwei Hälften");
         ItemStack eine = paar.copy();
@@ -7852,7 +7855,7 @@ public final class FactoryNetworkGameTests {
 
         BlockPos target = controller.east().south().south();
         helper.runAfterDelay(30, () -> {
-            if (!(helper.getBlockEntity(target) instanceof ChestBlockEntity container)) {
+            if (!(blockEntity(helper, target) instanceof ChestBlockEntity container)) {
                 helper.fail("keine Zielkiste", target);
                 return;
             }
@@ -7917,12 +7920,12 @@ public final class FactoryNetworkGameTests {
         dev.devpanda.factorynetwork.storage.CellContents.write(cell, inhalt,
                 helper.getLevel().registryAccess());
         var geschrieben = cell.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA)
-                .copyTag().getList("Cell", net.minecraft.nbt.Tag.TAG_COMPOUND);
+                .copyTag().getListOrEmpty("Cell");
         helper.assertValueEqual(geschrieben.size(), 2, "beim Schreiben ging ein Posten verloren");
         for (int i = 0; i < geschrieben.size(); i++) {
-            helper.assertTrue(!geschrieben.getCompound(i).contains("components"),
+            helper.assertTrue(!Nbt.compoundAt(geschrieben, i).contains("components"),
                     "ein nackter Gegenstand bekam ein components-Feld");
-            helper.assertTrue(geschrieben.getCompound(i).contains("Count"),
+            helper.assertTrue(Nbt.compoundAt(geschrieben, i).contains("Count"),
                     "die Menge steht nicht mehr unter Count");
         }
         helper.succeed();
@@ -8007,7 +8010,7 @@ public final class FactoryNetworkGameTests {
         entity.storage().insert(named);
 
         var drive = (dev.devpanda.factorynetwork.block.entity.DriveBlockEntity)
-                helper.getBlockEntity(drivePos);
+                blockEntity(helper, drivePos);
         drive.flushCells();
 
         // Read back from the item — that is the path via disk.
@@ -8591,7 +8594,7 @@ public final class FactoryNetworkGameTests {
         // beforehand.
         BlockPos source = controller.east().north().north();
         helper.setBlock(source, Blocks.FURNACE);
-        if (!(helper.getBlockEntity(source)
+        if (!(blockEntity(helper, source)
                 instanceof net.minecraft.world.level.block.entity.FurnaceBlockEntity furnace)) {
             helper.fail("kein Ofen an der Quelle", source);
             return;
@@ -8611,7 +8614,7 @@ public final class FactoryNetworkGameTests {
             // assertion: where the store is full, the goods stay put.
             helper.assertItemEntityNotPresent(Items.DIAMOND);
 
-            if (!(helper.getBlockEntity(source)
+            if (!(blockEntity(helper, source)
                     instanceof net.minecraft.world.level.block.entity.FurnaceBlockEntity found)) {
                 helper.fail("kein Ofen mehr da", source);
                 return;
@@ -8968,8 +8971,7 @@ public final class FactoryNetworkGameTests {
                 dev.devpanda.factorynetwork.registry.FnItems.WIRELESS_TERMINAL,
                 dev.devpanda.factorynetwork.registry.FnItems.LAPTOP)) {
             ItemStack device = new ItemStack(held.get());
-            var battery = device.getCapability(
-                    net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM);
+            var battery = dev.devpanda.factorynetwork.platform.Caps.energy(device);
             helper.assertTrue(battery != null,
                     held.getId() + " hat keinen Akku, an dem eine Fremdmod andocken kann");
             helper.assertTrue(battery.getMaxEnergyStored() > 0,
@@ -8980,8 +8982,7 @@ public final class FactoryNetworkGameTests {
             int taken = battery.receiveEnergy(5_000, false);
             helper.assertTrue(taken > 0, held.getId() + ": nichts angenommen");
             helper.assertTrue(
-                    device.getCapability(net.neoforged.neoforge.capabilities.Capabilities
-                            .EnergyStorage.ITEM).getEnergyStored() == taken,
+                    dev.devpanda.factorynetwork.platform.Caps.energy(device).getEnergyStored() == taken,
                     held.getId() + ": der Ladestand hat den Stapel nicht erreicht");
         }
         helper.succeed();
@@ -9036,7 +9037,7 @@ public final class FactoryNetworkGameTests {
     public static void aWrenchTakesOnlyThePart(GameTestHelper helper) {
         BlockPos pos = new BlockPos(1, 2, 1);
         placeCable(helper, pos, dev.devpanda.factorynetwork.block.CableColour.NONE);
-        if (!(helper.getBlockEntity(pos)
+        if (!(blockEntity(helper, pos)
                 instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus)) {
             helper.fail("kein Kabelbus");
             return;
@@ -9114,7 +9115,7 @@ public final class FactoryNetworkGameTests {
     public static void breakingAMastReturnsItsCards(GameTestHelper helper) {
         BlockPos pos = new BlockPos(1, 2, 1);
         helper.setBlock(pos, FnBlocks.MAST.get());
-        if (!(helper.getBlockEntity(pos)
+        if (!(blockEntity(helper, pos)
                 instanceof dev.devpanda.factorynetwork.block.entity.MastBlockEntity mast)) {
             helper.fail("keine BlockEntity am Sendemast");
             return;
@@ -9260,7 +9261,7 @@ public final class FactoryNetworkGameTests {
     // ---- Coloured cables --------------------------------------------------
 
     /** Places a cable as the item would — colour included. */
-    private static void placeCable(GameTestHelper helper, BlockPos at,
+    static void placeCable(GameTestHelper helper, BlockPos at,
             dev.devpanda.factorynetwork.block.CableColour colour) {
         helper.setBlock(at, dev.devpanda.factorynetwork.block.CableBlock.withConnections(
                 FnBlocks.CABLE.get().defaultBlockState()
@@ -9268,7 +9269,7 @@ public final class FactoryNetworkGameTests {
                 helper.getLevel(), helper.absolutePos(at)));
     }
 
-    private static boolean connected(GameTestHelper helper, BlockPos from, BlockPos to) {
+    static boolean connected(GameTestHelper helper, BlockPos from, BlockPos to) {
         net.minecraft.core.Direction side = towards(helper, from, to);
         return helper.getBlockState(from).getValue(
                 dev.devpanda.factorynetwork.block.CableBlock.connection(side));
@@ -9345,9 +9346,9 @@ public final class FactoryNetworkGameTests {
         java.util.Set<String> namen = new java.util.HashSet<>();
         for (var colour : dev.devpanda.factorynetwork.block.CableColour.values()) {
             namen.add(new ItemStack(dev.devpanda.factorynetwork.registry.FnItems.CABLES
-                    .get(colour).get()).getDescriptionId());
+                    .get(colour).get()).getItem().getDescriptionId());
             namen.add(new ItemStack(dev.devpanda.factorynetwork.registry.FnItems.DENSE_CABLES
-                    .get(colour).get()).getDescriptionId());
+                    .get(colour).get()).getItem().getDescriptionId());
         }
         helper.assertValueEqual(namen.size(), 34, "vierunddreißig verschiedene Namen");
         helper.succeed();
@@ -9379,11 +9380,11 @@ public final class FactoryNetworkGameTests {
 
         java.util.List<String> fehlend = new java.util.ArrayList<>();
         for (var eintrag : net.minecraft.core.registries.BuiltInRegistries.ITEM.entrySet()) {
-            if (!eintrag.getKey().location().getNamespace()
+            if (!eintrag.getKey().identifier().getNamespace()
                     .equals(dev.devpanda.factorynetwork.FactoryNetwork.MOD_ID)) {
                 continue;
             }
-            String path = eintrag.getKey().location().getPath();
+            String path = eintrag.getKey().identifier().getPath();
             if (path.endsWith("dense_cable")) {
                 continue;
             }
@@ -9406,12 +9407,12 @@ public final class FactoryNetworkGameTests {
         java.util.Map<String, String> nachSchluessel = new java.util.HashMap<>();
         java.util.List<String> doppelt = new java.util.ArrayList<>();
         for (var eintrag : net.minecraft.core.registries.BuiltInRegistries.ITEM.entrySet()) {
-            if (!eintrag.getKey().location().getNamespace()
+            if (!eintrag.getKey().identifier().getNamespace()
                     .equals(dev.devpanda.factorynetwork.FactoryNetwork.MOD_ID)) {
                 continue;
             }
-            String pfad = eintrag.getKey().location().getPath();
-            String schluessel = new ItemStack(eintrag.getValue()).getDescriptionId();
+            String pfad = eintrag.getKey().identifier().getPath();
+            String schluessel = new ItemStack(eintrag.getValue()).getItem().getDescriptionId();
             String vorher = nachSchluessel.put(schluessel, pfad);
             if (vorher != null) {
                 doppelt.add(vorher + " und " + pfad + " teilen " + schluessel);
@@ -9461,7 +9462,7 @@ public final class FactoryNetworkGameTests {
 
         // Only one gets a name — the wall is still called that.
         var irgendeine = (dev.devpanda.factorynetwork.block.entity.DisplayBlockEntity)
-                helper.getBlockEntity(tafeln.get(4));
+                blockEntity(helper, tafeln.get(4));
         irgendeine.setDisplayName("wand");
 
         var wand = irgendeine.wall();
@@ -9477,7 +9478,7 @@ public final class FactoryNetworkGameTests {
         int schreibende = 0;
         for (BlockPos at : tafeln) {
             var tafel = (dev.devpanda.factorynetwork.block.entity.DisplayBlockEntity)
-                    helper.getBlockEntity(at);
+                    blockEntity(helper, at);
             tafel.serverTick();
             if (!tafel.lines().isEmpty()) {
                 schreibende++;
@@ -9531,7 +9532,7 @@ public final class FactoryNetworkGameTests {
 
         // Named, but without a program piece: with name and hint.
         var panel = (dev.devpanda.factorynetwork.block.entity.DisplayBlockEntity)
-                helper.getBlockEntity(tafel);
+                blockEntity(helper, tafel);
         panel.setDisplayName("wand");
         helper.assertTrue(entity.displayPanels().stream()
                         .anyMatch(entry -> entry.name().equals("wand")),
@@ -9588,7 +9589,7 @@ public final class FactoryNetworkGameTests {
     // ---- Power -------------------------------------------------------------
 
     /** Short for the network's power values. */
-    private static dev.devpanda.factorynetwork.network.NetworkPower powerOf(
+    static dev.devpanda.factorynetwork.network.NetworkPower powerOf(
             ControllerBlockEntity entity) {
         return entity.power();
     }
@@ -9782,7 +9783,7 @@ public final class FactoryNetworkGameTests {
         BlockPos burnerPos = controller.east();
         helper.setBlock(burnerPos, FnBlocks.BURNER.get());
         var burner = (dev.devpanda.factorynetwork.block.entity.BurnerBlockEntity)
-                helper.getBlockEntity(burnerPos);
+                blockEntity(helper, burnerPos);
         burner.setItem(dev.devpanda.factorynetwork.block.entity.BurnerBlockEntity.SLOT_FUEL,
                 new ItemStack(Items.COAL, 4));
 
@@ -9812,7 +9813,7 @@ public final class FactoryNetworkGameTests {
         BlockPos burnerPos = new BlockPos(1, 2, 1);
         helper.setBlock(burnerPos, FnBlocks.BURNER.get());
         var burner = (dev.devpanda.factorynetwork.block.entity.BurnerBlockEntity)
-                helper.getBlockEntity(burnerPos);
+                blockEntity(helper, burnerPos);
         burner.setItem(dev.devpanda.factorynetwork.block.entity.BurnerBlockEntity.SLOT_FUEL,
                 new ItemStack(Items.COAL, 4));
         burner.energy().charge(
@@ -9870,7 +9871,8 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity wieder = new ControllerBlockEntity(
                 helper.absolutePos(controller),
                 FnBlocks.CONTROLLER.get().defaultBlockState());
-        wieder.loadWithComponents(tag, helper.getLevel().registryAccess());
+        wieder.loadWithComponents(net.minecraft.world.level.storage.TagValueInput.create(
+                net.minecraft.util.ProblemReporter.DISCARDING, helper.getLevel().registryAccess(), tag));
 
         helper.assertValueEqual(wieder.draft().source("main.mf"), "fn halb() { let a =",
                 "und übersteht das Speichern");
@@ -9906,7 +9908,7 @@ public final class FactoryNetworkGameTests {
         entity.rebuildNetwork();
 
         var panel = (dev.devpanda.factorynetwork.block.entity.DisplayBlockEntity)
-                helper.getBlockEntity(tafel);
+                blockEntity(helper, tafel);
         panel.setDisplayName("test");
         helper.assertTrue(entity.deploy("""
                 display test {
@@ -9947,7 +9949,7 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
         entity.rebuildNetwork();
         var panel = (dev.devpanda.factorynetwork.block.entity.DisplayBlockEntity)
-                helper.getBlockEntity(tafel);
+                blockEntity(helper, tafel);
 
         helper.runAfterDelay(25, () -> {
             helper.assertTrue(panel.lines().stream()
@@ -10195,7 +10197,7 @@ public final class FactoryNetworkGameTests {
         entity.rebuildNetwork();
 
         BlockPos quelle = controller.east().north().north();
-        if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity container) {
+        if (blockEntity(helper, quelle) instanceof ChestBlockEntity container) {
             container.setItem(3, new ItemStack(Items.GOLD_ORE, 5));
         }
 
@@ -10235,7 +10237,7 @@ public final class FactoryNetworkGameTests {
         helper.startSequence()
                 .thenIdle(10)
                 .thenExecute(() -> {
-                    if (!(helper.getBlockEntity(ziel) instanceof ChestBlockEntity container)) {
+                    if (!(blockEntity(helper, ziel) instanceof ChestBlockEntity container)) {
                         helper.fail("Am Ziel hängt keine Kiste", ziel);
                         return;
                     }
@@ -10262,7 +10264,7 @@ public final class FactoryNetworkGameTests {
         entity.rebuildNetwork();
 
         BlockPos quelle = controller.east().north().north();
-        if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity container) {
+        if (blockEntity(helper, quelle) instanceof ChestBlockEntity container) {
             // Slot 0 is the "input", slot 3 the "output".
             container.setItem(0, new ItemStack(Items.IRON_ORE, 8));
             container.setItem(3, new ItemStack(Items.GOLD_ORE, 5));
@@ -10298,7 +10300,7 @@ public final class FactoryNetworkGameTests {
         entity.rebuildNetwork();
 
         BlockPos quelle = controller.east().north().north();
-        if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity container) {
+        if (blockEntity(helper, quelle) instanceof ChestBlockEntity container) {
             container.setItem(0, new ItemStack(Items.IRON_ORE, 7));
             container.setItem(3, new ItemStack(Items.GOLD_ORE, 5));
         }
@@ -10342,7 +10344,7 @@ public final class FactoryNetworkGameTests {
         entity.rebuildNetwork();
 
         BlockPos quelle = controller.east().north().north();
-        if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity container) {
+        if (blockEntity(helper, quelle) instanceof ChestBlockEntity container) {
             container.setItem(0, new ItemStack(Items.IRON_ORE, 7));
         }
 
@@ -10396,7 +10398,7 @@ public final class FactoryNetworkGameTests {
         helper.startSequence()
                 .thenIdle(30)
                 .thenExecute(() -> {
-                    if (!(helper.getBlockEntity(maschine)
+                    if (!(blockEntity(helper, maschine)
                             instanceof dev.devpanda.factorynetwork.block.entity.PressBlockEntity
                                     presse)) {
                         helper.fail("Da steht keine Presse", maschine);
@@ -10486,9 +10488,9 @@ public final class FactoryNetworkGameTests {
                 .thenIdle(40)
                 .thenExecute(() -> {
                     var bevorzugt = (dev.devpanda.factorynetwork.block.entity.PressBlockEntity)
-                            helper.getBlockEntity(erste);
+                            blockEntity(helper, erste);
                     var nachrangig = (dev.devpanda.factorynetwork.block.entity.PressBlockEntity)
-                            helper.getBlockEntity(zweite);
+                            blockEntity(helper, zweite);
                     helper.assertTrue(bevorzugt.energy().getEnergyStored()
                                     > nachrangig.energy().getEnergyStored(),
                             "Der Worker mit Vorrang bekommt mehr: "
@@ -10549,7 +10551,7 @@ public final class FactoryNetworkGameTests {
 
         BlockPos display = controller.east().east();
         helper.setBlock(display, FnBlocks.DISPLAY.get());
-        if (helper.getBlockEntity(display) instanceof DisplayBlockEntity tafel) {
+        if (blockEntity(helper, display) instanceof DisplayBlockEntity tafel) {
             tafel.setDisplayName("lager");
         } else {
             helper.fail("Am Display hängt keine BlockEntity", display);
@@ -10567,7 +10569,7 @@ public final class FactoryNetworkGameTests {
         entity.rebuildNetwork();
 
         helper.runAfterDelay(25, () -> {
-            if (!(helper.getBlockEntity(display) instanceof DisplayBlockEntity shown)) {
+            if (!(blockEntity(helper, display) instanceof DisplayBlockEntity shown)) {
                 helper.fail("Display verschwunden", display);
                 return;
             }
@@ -10594,7 +10596,7 @@ public final class FactoryNetworkGameTests {
 
         BlockPos display = controller.east().east();
         helper.setBlock(display, FnBlocks.DISPLAY.get());
-        if (helper.getBlockEntity(display) instanceof DisplayBlockEntity tafel) {
+        if (blockEntity(helper, display) instanceof DisplayBlockEntity tafel) {
             tafel.setDisplayName("lager");
         } else {
             helper.fail("Am Display hängt keine BlockEntity", display);
@@ -10610,7 +10612,7 @@ public final class FactoryNetworkGameTests {
         entity.rebuildNetwork();
 
         helper.runAfterDelay(25, () -> {
-            if (!(helper.getBlockEntity(display) instanceof DisplayBlockEntity shown)) {
+            if (!(blockEntity(helper, display) instanceof DisplayBlockEntity shown)) {
                 helper.fail("Display verschwunden", display);
                 return;
             }
@@ -10685,7 +10687,7 @@ public final class FactoryNetworkGameTests {
         BlockPos maschine = controller.east().north().north();
         helper.setBlock(maschine, FnBlocks.PRESS.get());
         entity.rebuildNetwork();
-        if (helper.getBlockEntity(maschine)
+        if (blockEntity(helper, maschine)
                 instanceof dev.devpanda.factorynetwork.block.entity.PressBlockEntity presse) {
             presse.energy().charge(4_200);
         } else {
@@ -10741,7 +10743,7 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
         BlockPos quelle = controller.east().north().north();
         BlockPos ziel = controller.east().south().south();
-        if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity kiste) {
+        if (blockEntity(helper, quelle) instanceof ChestBlockEntity kiste) {
             kiste.setItem(0, new ItemStack(Items.IRON_INGOT, 30));
             kiste.setItem(1, new ItemStack(Items.GOLD_INGOT, 12));
         }
@@ -10787,7 +10789,7 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
         BlockPos quelle = controller.east().north().north();
         BlockPos ziel = controller.east().south().south();
-        if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity kiste) {
+        if (blockEntity(helper, quelle) instanceof ChestBlockEntity kiste) {
             kiste.setItem(0, new ItemStack(Items.IRON_INGOT, 30));
         }
         entity.rebuildNetwork();
@@ -10818,7 +10820,7 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
         BlockPos quelle = controller.east().north().north();
         BlockPos ziel = controller.east().south().south();
-        if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity kiste) {
+        if (blockEntity(helper, quelle) instanceof ChestBlockEntity kiste) {
             kiste.setItem(0, new ItemStack(Items.IRON_INGOT, 30));
             kiste.setItem(1, new ItemStack(Items.GOLD_INGOT, 12));
         }
@@ -10843,7 +10845,7 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
         BlockPos quelle = controller.east().north().north();
         BlockPos ziel = controller.east().south().south();
-        if (helper.getBlockEntity(quelle) instanceof ChestBlockEntity kiste) {
+        if (blockEntity(helper, quelle) instanceof ChestBlockEntity kiste) {
             kiste.setItem(0, new ItemStack(Items.IRON_INGOT, 30));
             kiste.setItem(1, new ItemStack(Items.GOLD_INGOT, 12));
         }
@@ -10969,383 +10971,17 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
-    /**
-     * With Mekanism a chemical selection goes through.
-     *
-     * <p>The test was once called "without Mekanism the message says that
-     * Mekanism is missing", and it has changed its truth twice: first when
-     * the dependency came into the test run, then when the integration was
-     * in place. Now it checks what applies from here on — with Mekanism,
-     * {@code chemical:} is a selection like any other.
-     *
-     * <p>The case without Mekanism is a unit test in
-     * {@code FilterCheckTest}, where no mod list is loaded.
-     */
-    @GameTest(template = EMPTY, timeoutTicks = 200)
-    public static void withMekanismChemicalsGoThrough(GameTestHelper helper) {
-        BlockPos controller = buildSetup(helper);
-        ControllerBlockEntity entity = controllerAt(helper, controller);
-        entity.rebuildNetwork();
-
-        helper.assertTrue(
-                dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.installed(),
-                "Der Prüflauf soll Mekanism kennen");
-        helper.assertTrue(entity.deploy("""
-                fn holen() {
-                    move chemical:mekanism/hydrogen from depot to storage
-                }"""), "Das Programm wurde nicht übernommen");
-
-        // A chest hangs on depot and no tank — nothing comes, but nothing
-        // throws either. A device without chemicals is not an error message
-        // but an empty device.
-        // A chest hangs on depot, so nothing comes — but nothing throws
-        // either, and that is the difference from before.
-        entity.callFunction("holen", List.of());
-
-        // And a template now accepts chemical: instead of rejecting it.
-        helper.assertTrue(entity.deploy("""
-                filter gase {
-                    chemical:mekanism/hydrogen
-                }"""), "Mit Mekanism gehört chemical: in eine Vorlage");
-        helper.succeed();
-    }
-
-    /**
-     * A chemical is a value and not just a selection.
-     *
-     * <p>What counts here is the <b>resolution against the registry</b>: it
-     * belongs to Mekanism, and without the mod it does not exist — which is
-     * why this case is in the test run and not in the unit test. What comes
-     * after, reading the kind off an entry, is there.
-     */
-    @GameTest(template = EMPTY, timeoutTicks = 200)
-    public static void achemicalIsAvalueOfItsOwn(GameTestHelper helper) {
-        BlockPos controller = buildSetup(helper);
-        ControllerBlockEntity entity = controllerAt(helper, controller);
-        entity.rebuildNetwork();
-
-        helper.assertTrue(
-                dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.installed(),
-                "Der Prüflauf soll Mekanism kennen");
-        helper.assertTrue(entity.deploy("""
-                fn zeigen() {
-                    for gas in chemical:mekanism/hydrogen {
-                        log(gas)
-                    }
-                }"""), "Das Programm wurde nicht übernommen");
-
-        entity.callFunction("zeigen", List.of());
-
-        helper.assertTrue(entity.log().stream().anyMatch(zeile ->
-                        zeile.text().toLowerCase().contains("hydrogen")
-                                || zeile.text().toLowerCase().contains("wasserstoff")),
-                "Eine Chemikalie muss als Wert im Protokoll stehen: " + entity.log());
-        helper.succeed();
-    }
-
-    /**
-     * And an exclusion over it yields a chemical, not a number.
-     *
-     * <p>{@code except} is the path on which a chemical selection is
-     * resolved before moving. If exactly one kind remains, it is there with
-     * {@code .chemical} — the same rule as with {@code it.item} and
-     * {@code it.fluid}.
-     */
-    @GameTest(template = EMPTY, timeoutTicks = 200)
-    public static void achemicalExceptKeepsTheKind(GameTestHelper helper) {
-        BlockPos controller = buildSetup(helper);
-        ControllerBlockEntity entity = controllerAt(helper, controller);
-        entity.rebuildNetwork();
-
-        helper.assertTrue(entity.deploy("""
-                fn zeigen() {
-                    let rest = chemical:mekanism/hydrogen except chemical:mekanism/oxygen
-                    return rest.chemical
-                }"""), "Das Programm wurde nicht übernommen");
-
-        var flow = entity.startFlow("zeigen", java.util.List.of());
-
-        helper.assertValueEqual(flow.status().name(), "DONE",
-                "Der Ablauf muss durchlaufen: " + flow.detail());
-        helper.assertTrue(flow.result()
-                        instanceof dev.devpanda.factorynetwork.runtime.Value.Resource resource
-                        && resource.kind()
-                                == dev.devpanda.factorynetwork.runtime.ResourceKinds.CHEMICAL,
-                "und eine Chemikalie liefern: " + flow.result().describe());
-        helper.succeed();
-    }
-
-    /**
-     * Chemicals go from the network into a tank and back again.
-     *
-     * <p><b>The tank is not one in the world but one from Mekanism's
-     * API.</b> That is no evasion but the consequence of a measurement: a
-     * chemical tank that a test run places via {@code setBlock} hands out a
-     * capability on <b>no</b> side and accepts nothing undivided either — it
-     * lacks the side configuration a player brings along when placing.
-     * Measured with all six sides.
-     *
-     * <p>What is specific here and therefore checked is the back and forth
-     * with the network storage: probe first, then extract, and put back what
-     * the tank does not take after all. How the tank is found is the same
-     * path as with fluids.
-     */
-    @GameTest(template = EMPTY, timeoutTicks = 300)
-    public static void chemicalsGoIntoAtankAndBack(GameTestHelper helper) {
-        BlockPos controller = bareSetup(helper);
-        ControllerBlockEntity entity = controllerAt(helper, controller);
-        driveWithChemicalCell(helper, controller.above(),
-                dev.devpanda.factorynetwork.storage.ChemicalCellTier.K256);
-        entity.rebuildNetwork();
-        entity.chemicals().insert("mekanism:hydrogen", 3000);
-
-        var tank = mekanism.api.chemical.BasicChemicalTank.create(
-                10_000, mekanism.api.functions.ConstantPredicates.alwaysTrueBi(),
-                mekanism.api.functions.ConstantPredicates.alwaysTrueBi(),
-                mekanism.api.functions.ConstantPredicates.alwaysTrue(), null);
-        var handler = new mekanism.api.chemical.IChemicalHandler() {
-            @Override
-            public int getChemicalTanks() {
-                return 1;
-            }
-
-            @Override
-            public mekanism.api.chemical.ChemicalStack getChemicalInTank(int slot) {
-                return tank.getStack();
-            }
-
-            @Override
-            public void setChemicalInTank(int slot,
-                    mekanism.api.chemical.ChemicalStack stack) {
-                tank.setStack(stack);
-            }
-
-            @Override
-            public long getChemicalTankCapacity(int slot) {
-                return tank.getCapacity();
-            }
-
-            @Override
-            public boolean isValid(int slot, mekanism.api.chemical.ChemicalStack stack) {
-                return true;
-            }
-
-            @Override
-            public mekanism.api.chemical.ChemicalStack insertChemical(int slot,
-                    mekanism.api.chemical.ChemicalStack stack, mekanism.api.Action action) {
-                return tank.insert(stack, action, mekanism.api.AutomationType.EXTERNAL);
-            }
-
-            @Override
-            public mekanism.api.chemical.ChemicalStack extractChemical(int slot, long amount,
-                    mekanism.api.Action action) {
-                return tank.extract(amount, action, mekanism.api.AutomationType.EXTERNAL);
-            }
-        };
-
-        long gegeben = dev.devpanda.factorynetwork.compat.mekanism.MekBridge
-                .fillIntoHandler(entity.chemicals(), handler,
-                        List.of("mekanism:hydrogen"), 1000);
-        helper.assertValueEqual(gegeben, 1000L, "Tausend gehen in den Behälter");
-        helper.assertValueEqual(entity.chemicals().count("mekanism:hydrogen"), 2000L,
-                "und fehlen im Netz");
-
-        long geholt = dev.devpanda.factorynetwork.compat.mekanism.MekBridge
-                .drainIntoHandler(handler, List.of("mekanism:hydrogen"),
-                        entity.chemicals(), 1000);
-        helper.assertValueEqual(geholt, 1000L, "und wieder heraus");
-        helper.assertValueEqual(entity.chemicals().count("mekanism:hydrogen"), 3000L,
-                "ohne dass unterwegs etwas verschwindet");
-        helper.succeed();
-    }
-
-    /**
-     * What the storage cannot hold stays in the tank.
-     *
-     * <p>The promise that already applies to fluids: a gas that is outside
-     * and fits nowhere would be gone.
-     */
-    @GameTest(template = EMPTY, timeoutTicks = 300)
-    public static void whatThestoreCannotHoldStaysInThetank(GameTestHelper helper) {
-        BlockPos controller = bareSetup(helper);
-        ControllerBlockEntity entity = controllerAt(helper, controller);
-        // The smallest cell: 64,000 mB.
-        driveWithChemicalCell(helper, controller.above(),
-                dev.devpanda.factorynetwork.storage.ChemicalCellTier.K64);
-        entity.rebuildNetwork();
-        entity.chemicals().insert("mekanism:hydrogen", 60_000);
-
-        var tank = mekanism.api.chemical.BasicChemicalTank.create(
-                100_000, mekanism.api.functions.ConstantPredicates.alwaysTrueBi(),
-                mekanism.api.functions.ConstantPredicates.alwaysTrueBi(),
-                mekanism.api.functions.ConstantPredicates.alwaysTrue(), null);
-        tank.setStack(new mekanism.api.chemical.ChemicalStack(
-                mekanism.api.MekanismAPI.CHEMICAL_REGISTRY.get(
-                        net.minecraft.resources.Identifier.parse("mekanism:hydrogen")),
-                20_000));
-        var handler = new mekanism.api.chemical.IChemicalHandler() {
-            @Override
-            public int getChemicalTanks() {
-                return 1;
-            }
-
-            @Override
-            public mekanism.api.chemical.ChemicalStack getChemicalInTank(int slot) {
-                return tank.getStack();
-            }
-
-            @Override
-            public void setChemicalInTank(int slot,
-                    mekanism.api.chemical.ChemicalStack stack) {
-                tank.setStack(stack);
-            }
-
-            @Override
-            public long getChemicalTankCapacity(int slot) {
-                return tank.getCapacity();
-            }
-
-            @Override
-            public boolean isValid(int slot, mekanism.api.chemical.ChemicalStack stack) {
-                return true;
-            }
-
-            @Override
-            public mekanism.api.chemical.ChemicalStack insertChemical(int slot,
-                    mekanism.api.chemical.ChemicalStack stack, mekanism.api.Action action) {
-                return tank.insert(stack, action, mekanism.api.AutomationType.EXTERNAL);
-            }
-
-            @Override
-            public mekanism.api.chemical.ChemicalStack extractChemical(int slot, long amount,
-                    mekanism.api.Action action) {
-                return tank.extract(amount, action, mekanism.api.AutomationType.EXTERNAL);
-            }
-        };
-
-        long geholt = dev.devpanda.factorynetwork.compat.mekanism.MekBridge
-                .drainIntoHandler(handler, List.of("mekanism:hydrogen"),
-                        entity.chemicals(), 20_000);
-
-        helper.assertValueEqual(geholt, 4000L, "nur, was noch hineinpasst");
-        helper.assertValueEqual(entity.chemicals().count("mekanism:hydrogen"), 64_000L,
-                "die Zelle ist voll");
-        helper.assertValueEqual(tank.getStored(), 16_000L,
-                "und der Rest liegt weiter im Behälter");
-        helper.succeed();
-    }
-
-    /**
-     * A chemical worker needs a filter.
-     *
-     * <p>The same rule as with fluids and for the same reason: a tank
-     * usually holds exactly one kind, and pulling the wrong one is more
-     * expensive than with items.
-     */
-    @GameTest(template = EMPTY, timeoutTicks = 300)
-    public static void achemicalWorkerNeedsAfilter(GameTestHelper helper) {
-        BlockPos controller = buildSetup(helper);
-        ControllerBlockEntity entity = controllerAt(helper, controller);
-        entity.rebuildNetwork();
-
-        // Without filter the worker is not a chemical worker at all — it
-        // falls into the item branch. So with filter, but without a target in
-        // the network: that too must give a message and no silent standstill.
-        helper.assertTrue(entity.deploy("""
-                worker gase {
-                    from gibtsnicht
-                    to storage
-                    filter chemical:mekanism/hydrogen
-                }"""), "Das Programm wurde nicht übernommen");
-        entity.rebuildNetwork();
-
-        helper.startSequence()
-                .thenIdle(40)
-                .thenExecute(() -> {
-                    var state = entity.runtime().states().get("gase");
-                    helper.assertValueEqual(state.status.name(), "HALTED",
-                            "der Worker muss anhalten");
-                    helper.assertTrue(state.detail.contains("gibtsnicht"),
-                            "und sagen, welches Gerät fehlt: " + state.detail);
-                })
-                .thenSucceed();
-    }
-
-    /**
-     * And it only goes between device and storage.
-     *
-     * <p>From device to device it runs via the storage; for that you write
-     * two workers. A third path for the same operation would be a third
-     * place where an amount can get lost on the way.
-     */
-    @GameTest(template = EMPTY, timeoutTicks = 300)
-    public static void achemicalWorkerGoesBetweenDeviceAndStorage(GameTestHelper helper) {
-        BlockPos controller = buildSetup(helper);
-        ControllerBlockEntity entity = controllerAt(helper, controller);
-        entity.rebuildNetwork();
-
-        helper.assertTrue(entity.deploy("""
-                worker gase {
-                    from quarry_output
-                    to depot
-                    filter chemical:mekanism/hydrogen
-                }"""), "Das Programm wurde nicht übernommen");
-        entity.rebuildNetwork();
-
-        helper.startSequence()
-                .thenIdle(40)
-                .thenExecute(() -> {
-                    var state = entity.runtime().states().get("gase");
-                    helper.assertValueEqual(state.status.name(), "HALTED",
-                            "der Worker muss anhalten");
-                    helper.assertTrue(state.detail.contains("Speicher"),
-                            "und auf den Speicher zeigen: " + state.detail);
-                })
-                .thenSucceed();
-    }
-
     /** Places a drive on the cable and inserts a chemical cell. */
-    private static void driveWithChemicalCell(GameTestHelper helper, BlockPos at,
+    static void driveWithChemicalCell(GameTestHelper helper, BlockPos at,
             dev.devpanda.factorynetwork.storage.ChemicalCellTier tier) {
         helper.setBlock(at, FnBlocks.DRIVE.get());
-        if (helper.getBlockEntity(at)
+        if (blockEntity(helper, at)
                 instanceof dev.devpanda.factorynetwork.block.entity.DriveBlockEntity drive) {
             drive.setCell(0, new ItemStack(dev.devpanda.factorynetwork.registry.FnItems
                     .CHEMICAL_CELLS.get(tier).get()));
         } else {
             helper.fail("Am Laufwerk hängt keine BlockEntity", at);
         }
-    }
-
-    /**
-     * A chemical cell holds chemicals.
-     *
-     * <p>The same two limits as everywhere — so many kinds, so much amount —
-     * and the same arithmetic behind it: it has been open over the type
-     * since the fluids, and chemicals changed nothing about that.
-     */
-    @GameTest(template = EMPTY, timeoutTicks = 300)
-    public static void achemicalCellHoldsChemicals(GameTestHelper helper) {
-        BlockPos controller = bareSetup(helper);
-        driveWithChemicalCell(helper, controller.above(),
-                dev.devpanda.factorynetwork.storage.ChemicalCellTier.K64);
-        ControllerBlockEntity entity = controllerAt(helper, controller);
-        entity.rebuildNetwork();
-
-        helper.assertValueEqual(entity.chemicals().insert("mekanism:hydrogen", 1000), 0L,
-                "das passt hinein");
-        helper.assertValueEqual(entity.chemicals().count("mekanism:hydrogen"), 1000L,
-                "und steht danach im Netz");
-
-        // The smallest cell holds 64,000 mB; what goes beyond stays outside.
-        helper.assertValueEqual(entity.chemicals().insert("mekanism:oxygen", 64_000), 1000L,
-                "was über die Menge geht, bleibt draußen");
-
-        helper.assertValueEqual(entity.chemicals().extract("mekanism:hydrogen", 400), 400L,
-                "und es kommt wieder heraus");
-        helper.assertValueEqual(entity.chemicals().count("mekanism:hydrogen"), 600L,
-                "der Rest bleibt liegen");
-        helper.succeed();
     }
 
     /** Without a drive the network stores no chemicals. */
@@ -11358,80 +10994,6 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(entity.chemicals().insert("mekanism:hydrogen", 500), 500L,
                 "ohne Laufwerk passt nichts hinein");
         helper.assertValueEqual(entity.chemicals().count("mekanism:hydrogen"), 0L, "Bestand");
-        helper.succeed();
-    }
-
-    /**
-     * The contents ride along in the cell.
-     *
-     * <p>The reason a cell is worth something — and the same as with the
-     * other two kinds.
-     */
-    @GameTest(template = EMPTY, timeoutTicks = 300)
-    public static void thestoredChemicalsRideAlongInThecell(GameTestHelper helper) {
-        BlockPos controller = bareSetup(helper);
-        BlockPos drivePos = controller.above();
-        driveWithChemicalCell(helper, drivePos,
-                dev.devpanda.factorynetwork.storage.ChemicalCellTier.K256);
-        ControllerBlockEntity entity = controllerAt(helper, controller);
-        entity.rebuildNetwork();
-        entity.chemicals().insert("mekanism:hydrogen", 2500);
-
-        var drive = (dev.devpanda.factorynetwork.block.entity.DriveBlockEntity)
-                helper.getBlockEntity(drivePos);
-        drive.flushCells();
-        var inhalt = dev.devpanda.factorynetwork.compat.mekanism.ChemicalStores
-                .read(drive.cell(0), helper.getLevel().registryAccess());
-        helper.assertValueEqual(inhalt.getOrDefault("mekanism:hydrogen", 0L), 2500L,
-                "Die Zelle trägt ihren Inhalt selbst");
-
-        drive.setCell(0, ItemStack.EMPTY);
-        entity.rebuildNetwork();
-        helper.assertValueEqual(entity.chemicals().count("mekanism:hydrogen"), 0L,
-                "Ohne die Zelle ist der Bestand weg");
-        helper.succeed();
-    }
-
-    /**
-     * A chemical selection resolves.
-     *
-     * <p>Mekanism is in the test run, so there is hydrogen. Without Mekanism
-     * the list is empty and the message says so — that case is a unit test.
-     */
-    @GameTest(template = EMPTY, timeoutTicks = 200)
-    public static void achemicalSelectionResolves(GameTestHelper helper) {
-        var found = dev.devpanda.factorynetwork.compat.mekanism.Chemicals.resolve(
-                dev.devpanda.factorynetwork.lang.Selectors.parse(
-                        "chemical:mekanism/hydrogen"));
-
-        helper.assertValueEqual(found.size(), 1, "genau eine Chemikalie");
-        helper.assertValueEqual(found.get(0), "mekanism:hydrogen", "und zwar Wasserstoff");
-        helper.succeed();
-    }
-
-    /** A pattern hits several, and a name that does not exist hits none. */
-    @GameTest(template = EMPTY, timeoutTicks = 200)
-    public static void achemicalPatternHitsSeveral(GameTestHelper helper) {
-        var alle = dev.devpanda.factorynetwork.compat.mekanism.Chemicals.resolve(
-                dev.devpanda.factorynetwork.lang.Selectors.parse("chemical:mekanism/*"));
-        helper.assertTrue(alle.size() > 5,
-                "Mekanism bringt mehr als fünf Chemikalien mit, gefunden: " + alle.size());
-
-        var keine = dev.devpanda.factorynetwork.compat.mekanism.Chemicals.resolve(
-                dev.devpanda.factorynetwork.lang.Selectors.parse("chemical:mekanism/gibtsnicht"));
-        helper.assertValueEqual(keine.size(), 0, "einen erfundenen Namen gibt es nicht");
-        helper.succeed();
-    }
-
-    /** And the editor shows what it resolves to. */
-    @GameTest(template = EMPTY, timeoutTicks = 200)
-    public static void theeditorShowsWhatAchemicalResolvesTo(GameTestHelper helper) {
-        var summary = dev.devpanda.factorynetwork.runtime.SelectionSummary.of(
-                dev.devpanda.factorynetwork.lang.Selectors.parse(
-                        "chemical:mekanism/hydrogen"));
-
-        helper.assertValueEqual(summary.get(0), "trifft 1 Art", "die Zahl");
-        helper.assertTrue(summary.size() > 1, "und der Name: " + summary);
         helper.succeed();
     }
 
@@ -11552,8 +11114,9 @@ public final class FactoryNetworkGameTests {
         helper.setBlock(controller.east().above(), FnBlocks.FABRICATOR.get());
         entity.rebuildNetwork();
 
-        // Cobblestone has no recipe — it comes from the world.
-        helper.assertTrue(entity.requestCraft(Items.COBBLESTONE, 1) == null,
+        // Bedrock has no recipe. Cobblestone was the example until 26.1; since
+        // then the stonecutter makes it from stone.
+        helper.assertTrue(entity.requestCraft(Items.BEDROCK, 1) == null,
                 "ohne Rezept darf kein Auftrag entstehen");
         helper.assertTrue(entity.craftingJobs().isEmpty(), "und keiner in der Liste stehen");
         helper.succeed();
@@ -11659,7 +11222,7 @@ public final class FactoryNetworkGameTests {
 
         helper.assertTrue(entity.deploy("""
                 fn bestellen() {
-                    return craft(1 item:cobblestone)
+                    return craft(1 item:bedrock)
                 }"""), "Das Programm wurde nicht übernommen");
         entity.rebuildNetwork();
 
@@ -11720,11 +11283,11 @@ public final class FactoryNetworkGameTests {
      * and fetches the result, but it does not heat. Whoever wants it to heat
      * writes a worker.
      */
-    private static void furnaceWithFuel(GameTestHelper helper, BlockPos connector,
+    static void furnaceWithFuel(GameTestHelper helper, BlockPos connector,
                                         net.minecraft.world.level.block.Block kind) {
         BlockPos machine = connector.north();
         helper.setBlock(machine, kind);
-        if (helper.getBlockEntity(machine)
+        if (blockEntity(helper, machine)
                 instanceof net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity oven) {
             oven.setItem(1, new ItemStack(Items.COAL, 8));
         } else {
@@ -11843,7 +11406,7 @@ public final class FactoryNetworkGameTests {
 
                     // Now the "machine" delivers: what it hands out, the
                     // network collects by itself.
-                    if (helper.getBlockEntity(controller.east().north().north())
+                    if (blockEntity(helper, controller.east().north().north())
                             instanceof ChestBlockEntity chest) {
                         chest.setItem(1, new ItemStack(Items.IRON_NUGGET, 2));
                     } else {
@@ -12242,7 +11805,7 @@ public final class FactoryNetworkGameTests {
                 worker nachschub {
                     from crafting
                     to storage
-                    filter item:cobblestone
+                    filter item:bedrock
                     maintain 64
                 }"""), "Das Programm wurde nicht übernommen");
         entity.rebuildNetwork();
@@ -12490,7 +12053,7 @@ public final class FactoryNetworkGameTests {
      * row to the east. The chest is called {@code quarry_output} as
      * everywhere else, so that the same programs fit it.
      */
-    private static BlockPos twoRoutersSetup(GameTestHelper helper) {
+    static BlockPos twoRoutersSetup(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 1, 1);
         helper.setBlock(controller, FnBlocks.CONTROLLER.get());
         rackWithServer(helper, controller.west());
@@ -12562,7 +12125,7 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
 
         BlockPos source = controller.east(6);
-        if (helper.getBlockEntity(source) instanceof ChestBlockEntity chest) {
+        if (blockEntity(helper, source) instanceof ChestBlockEntity chest) {
             for (int slot = 0; slot < chest.getContainerSize(); slot++) {
                 chest.setItem(slot, new ItemStack(Items.COBBLESTONE, 64));
             }
@@ -12615,11 +12178,11 @@ public final class FactoryNetworkGameTests {
         name(helper, far, "jenseits");
 
         ItemStack pair = dev.devpanda.factorynetwork.item.EntanglementItem.newPair();
-        if (helper.getBlockEntity(bridgeNear)
+        if (blockEntity(helper, bridgeNear)
                 instanceof dev.devpanda.factorynetwork.block.entity.BridgeBlockEntity one) {
             one.setItem(0, pair.split(1));
         }
-        if (helper.getBlockEntity(bridgeFar)
+        if (blockEntity(helper, bridgeFar)
                 instanceof dev.devpanda.factorynetwork.block.entity.BridgeBlockEntity two) {
             two.setItem(0, pair);
         }
@@ -12717,11 +12280,11 @@ public final class FactoryNetworkGameTests {
     // ---- Energy cells ------------------------------------------------------
 
     /** The drive in the standard setup, with an energy cell in the second slot. */
-    private static dev.devpanda.factorynetwork.storage.EnergyCellView energyCell(
+    static dev.devpanda.factorynetwork.storage.EnergyCellView energyCell(
             GameTestHelper helper, BlockPos controller,
             dev.devpanda.factorynetwork.storage.EnergyCellTier tier) {
         BlockPos at = controller.above();
-        if (!(helper.getBlockEntity(at)
+        if (!(blockEntity(helper, at)
                 instanceof dev.devpanda.factorynetwork.block.entity.DriveBlockEntity drive)) {
             helper.fail("Über dem Controller steht kein Laufwerk", at);
             return null;
@@ -12852,7 +12415,7 @@ public final class FactoryNetworkGameTests {
         zelle.fill(12_345);
 
         var drive = (dev.devpanda.factorynetwork.block.entity.DriveBlockEntity)
-                helper.getBlockEntity(controller.above());
+                blockEntity(helper, controller.above());
         // The item itself, no copy: the write-back only happens on removal,
         // and an earlier copy would not have received it. In the game exactly
         // this item travels into the hand.
@@ -12893,7 +12456,7 @@ public final class FactoryNetworkGameTests {
         zelle.fill(1_000);
 
         var chunk = helper.getLevel().getChunkAt(helper.absolutePos(controller.above()));
-        chunk.setUnsaved(false);
+        chunk.tryMarkSaved();
         // The buffer is empty, so the cell pays — and nothing else runs
         // between these two lines.
         entity.power().take(50);
@@ -12986,7 +12549,7 @@ public final class FactoryNetworkGameTests {
                 "Und der Speicher ist sie los");
 
         BlockPos ziel = controller.east().south().south();
-        if (helper.getBlockEntity(ziel) instanceof ChestBlockEntity kiste) {
+        if (blockEntity(helper, ziel) instanceof ChestBlockEntity kiste) {
             int gefunden = 0;
             for (int slot = 0; slot < kiste.getContainerSize(); slot++) {
                 if (kiste.getItem(slot).getItem() == Items.IRON_INGOT) {
@@ -13034,7 +12597,8 @@ public final class FactoryNetworkGameTests {
         var saved = entity.saveWithFullMetadata(registries);
         ControllerBlockEntity reborn = new ControllerBlockEntity(
                 controller, entity.getBlockState());
-        reborn.loadWithComponents(saved, registries);
+        reborn.loadWithComponents(net.minecraft.world.level.storage.TagValueInput.create(
+                net.minecraft.util.ProblemReporter.DISCARDING, registries, saved));
 
         helper.assertTrue(reborn.globals().containsKey("modus"),
                 "der Wert ist beim Speichern verlorengegangen");
@@ -13284,7 +12848,7 @@ public final class FactoryNetworkGameTests {
         ControllerBlockEntity entity = controllerAt(helper, controller);
 
         BlockPos source = controller.east().north().north();
-        if (helper.getBlockEntity(source) instanceof ChestBlockEntity container) {
+        if (blockEntity(helper, source) instanceof ChestBlockEntity container) {
             container.setItem(0, new ItemStack(Items.IRON_ORE, 32));
         } else {
             helper.fail("Keine Kiste an der Quelle", source);
@@ -13378,7 +12942,7 @@ public final class FactoryNetworkGameTests {
 
         BlockPos drive = controller.above();
         helper.setBlock(drive, FnBlocks.DRIVE.get());
-        if (helper.getBlockEntity(drive)
+        if (blockEntity(helper, drive)
                 instanceof dev.devpanda.factorynetwork.block.entity.DriveBlockEntity bay) {
             bay.setCell(0, new ItemStack(dev.devpanda.factorynetwork.registry.FnItems.CELLS
                     .get(dev.devpanda.factorynetwork.storage.CellTier.K64).get()));
@@ -13399,9 +12963,12 @@ public final class FactoryNetworkGameTests {
         keepsTheContract(helper, entity.store(
                 dev.devpanda.factorynetwork.runtime.ResourceKinds.FLUID),
                 net.minecraft.world.level.material.Fluids.WATER, 1000, "Flüssigkeiten");
-        keepsTheContract(helper, entity.store(
-                dev.devpanda.factorynetwork.runtime.ResourceKinds.CHEMICAL),
-                "mekanism:hydrogen", 500, "Chemikalien");
+        // Chemicals only where Mekanism runs; its own tests are in MekanismGameTests.
+        if (dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.installed()) {
+            keepsTheContract(helper, entity.store(
+                    dev.devpanda.factorynetwork.runtime.ResourceKinds.CHEMICAL),
+                    "mekanism:hydrogen", 500, "Chemikalien");
+        }
         helper.succeed();
     }
 
@@ -13412,7 +12979,7 @@ public final class FactoryNetworkGameTests {
      * exists only because some things cannot be put back: {@code room} is
      * asked <b>before</b> a tank is drained.
      */
-    private static void keepsTheContract(GameTestHelper helper,
+    static void keepsTheContract(GameTestHelper helper,
             dev.devpanda.factorynetwork.network.ResourceStore store,
             Object key, long amount, String what) {
         helper.assertTrue(store.hasDrives(), what + ": ein Laufwerk hängt am Netz");
@@ -13430,62 +12997,9 @@ public final class FactoryNetworkGameTests {
                 what + ": danach liegt nichts mehr da");
     }
 
-    /**
-     * A chemical selection that hits nothing reports itself.
-     *
-     * <p><b>The third drift of the same kind.</b> Cut 1 found it in the value
-     * model, the search in cut 2 found none in the stores — it sat in the
-     * resolvers: with items and fluids "hits nothing" is an error with a
-     * message, with chemicals an empty list came back.
-     *
-     * <p>And empty means <b>everything</b> further down: {@code MekTanks.matches}
-     * lets every kind through when none is given, and
-     * {@code fillIntoHandler} then takes the whole network stock. A typo in
-     * {@code chemical:…} thus filled some gas or other into the machine —
-     * the same class of bug as a {@code move} with an empty filter that
-     * clears out the chest.
-     *
-     * <p>The <b>message</b> is checked and not the gas: a Mekanism tank
-     * placed via {@code setBlock} hands out a capability on no side, and the
-     * error has to fall before any tank is asked anyway.
-     */
-    @GameTest(template = EMPTY, timeoutTicks = 300)
-    public static void achemicalSelectionThatHitsNothingSaysSo(GameTestHelper helper) {
-        BlockPos controller = bareSetup(helper);
-        ControllerBlockEntity entity = controllerAt(helper, controller);
-        driveWithChemicalCell(helper, controller.above(),
-                dev.devpanda.factorynetwork.storage.ChemicalCellTier.K256);
-        entity.rebuildNetwork();
-        entity.chemicals().insert("mekanism:hydrogen", 3000);
-
-        helper.assertTrue(
-                dev.devpanda.factorynetwork.compat.mekanism.FnMekanism.installed(),
-                "Der Prüflauf soll Mekanism kennen");
-        helper.assertTrue(entity.deploy("""
-                fn versuchen() {
-                    move 100 chemical:mekanism/gibtesnicht from storage to depot
-                }"""), "Das Programm wurde nicht übernommen");
-
-        boolean gemeldet = false;
-        try {
-            entity.callFunction("versuchen", java.util.List.of());
-        } catch (ScriptError error) {
-            gemeldet = true;
-            helper.assertTrue(error.getMessage().contains("trifft"),
-                    "Die Meldung soll sagen, dass die Auswahl nichts trifft: "
-                            + error.getMessage());
-        }
-        helper.assertTrue(gemeldet,
-                "Eine Chemikalienauswahl, die nichts trifft, darf nicht still 0 liefern — "
-                        + "leer heißt weiter unten alles");
-        helper.assertValueEqual(entity.chemicals().count("mekanism:hydrogen"), 3000L,
-                "und der Wasserstoff muss unangetastet im Netz liegen");
-        helper.succeed();
-    }
-
     /** How much of one kind lies in the chest at this spot. */
-    private static int countIn(GameTestHelper helper, BlockPos pos, Item wanted) {
-        if (!(helper.getBlockEntity(pos) instanceof ChestBlockEntity container)) {
+    static int countIn(GameTestHelper helper, BlockPos pos, Item wanted) {
+        if (!(blockEntity(helper, pos) instanceof ChestBlockEntity container)) {
             return 0;
         }
         int found = 0;
@@ -13519,12 +13033,12 @@ public final class FactoryNetworkGameTests {
         BlockPos zweite = controller.east().south().south();
         entity.rebuildNetwork();
 
-        if (helper.getBlockEntity(erste) instanceof ChestBlockEntity chest) {
+        if (blockEntity(helper, erste) instanceof ChestBlockEntity chest) {
             chest.setItem(0, new ItemStack(Items.IRON_ORE, 12));
         } else {
             helper.fail("Keine Kiste an quarry_output", erste);
         }
-        if (helper.getBlockEntity(zweite) instanceof ChestBlockEntity chest) {
+        if (blockEntity(helper, zweite) instanceof ChestBlockEntity chest) {
             chest.setItem(0, new ItemStack(Items.COBBLESTONE, 7));
         } else {
             helper.fail("Keine Kiste an depot", zweite);
@@ -13632,7 +13146,7 @@ public final class FactoryNetworkGameTests {
 
         // The packet comes from the cable block: it carries the connectors,
         // so it sends them too.
-        var packet = helper.getBlockEntity(connector).getUpdatePacket();
+        var packet = blockEntity(helper, connector).getUpdatePacket();
         helper.assertTrue(packet != null,
                 "Ohne Paket erfährt der Client nie, wie das Gerät heißt");
         helper.assertTrue(packet
@@ -13645,10 +13159,10 @@ public final class FactoryNetworkGameTests {
     }
 
     /** Is this name on one of the connectors in the packet? */
-    private static boolean labelledIn(net.minecraft.nbt.CompoundTag tag, String label) {
+    static boolean labelledIn(net.minecraft.nbt.CompoundTag tag, String label) {
         var parts = Nbt.getList(tag, "Parts", net.minecraft.nbt.Tag.TAG_COMPOUND);
         for (int i = 0; i < parts.size(); i++) {
-            if (label.equals(parts.getCompound(i).getString("Label"))) {
+            if (label.equals(Nbt.getString(Nbt.compoundAt(parts, i), "Label"))) {
                 return true;
             }
         }
@@ -13691,7 +13205,7 @@ public final class FactoryNetworkGameTests {
         helper.setBlock(connector.north(), Blocks.CHEST);
         name(helper, connector, "eingang");
 
-        if (helper.getBlockEntity(gateway)
+        if (blockEntity(helper, gateway)
                 instanceof dev.devpanda.factorynetwork.block.entity.GatewayBlockEntity entity) {
             entity.setInstance("werk_1");
         } else {
@@ -13732,7 +13246,7 @@ public final class FactoryNetworkGameTests {
         helper.setBlock(connector.north(), Blocks.CHEST);
         name(helper, connector, "werk_2/ausgang");
 
-        if (helper.getBlockEntity(gateway)
+        if (blockEntity(helper, gateway)
                 instanceof dev.devpanda.factorynetwork.block.entity.GatewayBlockEntity entity) {
             entity.setInstance("werk_1");
         }
@@ -13772,7 +13286,7 @@ public final class FactoryNetworkGameTests {
         // the cable — no block of its own in between.
         helper.setBlock(cable.north(), Blocks.CHEST);
 
-        if (helper.getBlockEntity(cable)
+        if (blockEntity(helper, cable)
                 instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus) {
             bus.addPart(Direction.NORTH).setLabel("kiste_1");
         } else {
@@ -13810,7 +13324,7 @@ public final class FactoryNetworkGameTests {
         helper.setBlock(cable.north(), Blocks.CHEST);
         helper.setBlock(cable.south(), Blocks.CHEST);
 
-        if (!(helper.getBlockEntity(cable)
+        if (!(blockEntity(helper, cable)
                 instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus)) {
             helper.fail("Am Kabel hängt keine BlockEntity für Teile", cable);
             return;
@@ -13855,13 +13369,13 @@ public final class FactoryNetworkGameTests {
         helper.setBlock(cable, FnBlocks.CABLE.get());
         BlockPos chest = cable.north();
         helper.setBlock(chest, Blocks.CHEST);
-        if (helper.getBlockEntity(chest) instanceof ChestBlockEntity container) {
+        if (blockEntity(helper, chest) instanceof ChestBlockEntity container) {
             container.setItem(0, new ItemStack(Items.IRON_ORE, 12));
         } else {
             helper.fail("Keine Kiste", chest);
             return;
         }
-        if (helper.getBlockEntity(cable)
+        if (blockEntity(helper, cable)
                 instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus) {
             bus.addPart(Direction.NORTH).setLabel("kiste_1");
         } else {
@@ -13910,7 +13424,7 @@ public final class FactoryNetworkGameTests {
         fillChest(helper, cable.north(), Items.IRON_ORE, 12);
         fillChest(helper, cable.south(), Items.COAL, 7);
 
-        if (!(helper.getBlockEntity(cable)
+        if (!(blockEntity(helper, cable)
                 instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus)) {
             helper.fail("Am Kabel hängt keine BlockEntity für Teile", cable);
             return;
@@ -13960,7 +13474,7 @@ public final class FactoryNetworkGameTests {
         BlockPos cable = new BlockPos(2, 1, 1);
         helper.setBlock(cable, FnBlocks.CABLE.get());
 
-        if (!(helper.getBlockEntity(cable)
+        if (!(blockEntity(helper, cable)
                 instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus)) {
             helper.fail("Am Kabel hängt keine BlockEntity für Teile", cable);
             return;
@@ -13984,10 +13498,10 @@ public final class FactoryNetworkGameTests {
     }
 
     /** A chest with contents, because three tests needed the same six lines. */
-    private static void fillChest(GameTestHelper helper, BlockPos at,
+    static void fillChest(GameTestHelper helper, BlockPos at,
                                   net.minecraft.world.item.Item what, int amount) {
         helper.setBlock(at, Blocks.CHEST);
-        if (helper.getBlockEntity(at) instanceof ChestBlockEntity container) {
+        if (blockEntity(helper, at) instanceof ChestBlockEntity container) {
             container.setItem(0, new ItemStack(what, amount));
         } else {
             helper.fail("Keine Kiste", at);
@@ -14021,14 +13535,14 @@ public final class FactoryNetworkGameTests {
         helper.setBlock(beyond, FnBlocks.CABLE.get());
         helper.setBlock(beyond.north(), Blocks.CHEST);
 
-        if (!(helper.getBlockEntity(beyond)
+        if (!(blockEntity(helper, beyond)
                 instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus)) {
             helper.fail("Am Kabel hängt keine BlockEntity für Teile", beyond);
             return;
         }
         bus.addPart(Direction.NORTH).setLabel("eingang");
 
-        if (helper.getBlockEntity(gateway)
+        if (blockEntity(helper, gateway)
                 instanceof dev.devpanda.factorynetwork.block.entity.GatewayBlockEntity entity) {
             entity.setInstance("werk_1");
         } else {
@@ -14048,9 +13562,9 @@ public final class FactoryNetworkGameTests {
     // ---- Placing and removing connectors on a cable face --------------------
 
     /** The cable block with its BlockEntity, or the test fails. */
-    private static dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity busAt(
+    static dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity busAt(
             GameTestHelper helper, BlockPos cable) {
-        if (helper.getBlockEntity(cable)
+        if (blockEntity(helper, cable)
                 instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus) {
             return bus;
         }
@@ -14059,7 +13573,7 @@ public final class FactoryNetworkGameTests {
     }
 
     /** A hit in the middle of a face of the block. */
-    private static net.minecraft.world.phys.BlockHitResult hitOn(
+    static net.minecraft.world.phys.BlockHitResult hitOn(
             GameTestHelper helper, BlockPos block, Direction face) {
         BlockPos here = helper.absolutePos(block);
         return new net.minecraft.world.phys.BlockHitResult(

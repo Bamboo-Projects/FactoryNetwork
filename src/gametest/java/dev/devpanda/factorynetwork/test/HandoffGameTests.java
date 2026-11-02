@@ -2,19 +2,14 @@ package dev.devpanda.factorynetwork.test;
 
 import dev.devpanda.factorynetwork.FactoryNetwork;
 import dev.devpanda.factorynetwork.runtime.Handoffs;
-import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.neoforged.neoforge.gametest.GameTestHolder;
-import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 import net.neoforged.neoforge.items.ItemStackHandler;
 
 import java.util.List;
 
 /** Real item registries require a loader-backed game test, not a JUnit bootstrap. */
-@GameTestHolder(FactoryNetwork.MOD_ID)
-@PrefixGameTestTemplate(false)
 public final class HandoffGameTests {
     private HandoffGameTests() {}
 
