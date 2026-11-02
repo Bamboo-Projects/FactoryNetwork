@@ -261,7 +261,11 @@ public final class SlotOverlay {
     }
 
     @SubscribeEvent
-    public static void draw(ScreenEvent.Render.Post event) {
+    /*
+     * Drawn inside the screen's own frame, after the slots and before the
+     * tooltip: from Render.Post the numbers lay on top of the tooltip.
+     */
+    public static void draw(ScreenEvent.Render.Foreground event) {
         if (!(event.getScreen() instanceof AbstractContainerScreen<?> screen)
                 || screen.getMenu().containerId != boundContainer || entries.isEmpty()
                 || !FnClientConfig.showSlotNumbers()) {
@@ -287,17 +291,43 @@ public final class SlotOverlay {
             graphics.text(font, text, x + (17 - font.width(text)) / 2, y + 4, colour, true);
         }
         if (!note.isEmpty() && System.currentTimeMillis() < noteUntil) {
-            int y = screen.getTopPos() - BUTTON_SIZE - 1 - 10 * note.size();
+            // Wrapped to the GUI's width: a long line ran off the screen and
+            // under the item list beside the GUI.
+            List<net.minecraft.util.FormattedCharSequence> wrapped = new ArrayList<>();
             for (Component line : note) {
-                graphics.text(font, line.getString(), screen.getLeftPos(), y, 0xFFFFFF60, true);
+                wrapped.addAll(font.split(line, screen.getImageWidth()));
+            }
+            int left = screen.getLeftPos();
+            int y = Math.max(2, screen.getTopPos() - BUTTON_SIZE - 2 - 10 * wrapped.size());
+            graphics.fill(left - 2, y - 2, left + screen.getImageWidth() + 2, y + 10 * wrapped.size(), 0xC0000000);
+            for (net.minecraft.util.FormattedCharSequence line : wrapped) {
+                graphics.text(font, line, left, y, 0xFFFFFF60, true);
                 y += 10;
             }
         }
+    }
+
+    /**
+     * The slot's tooltip, set before the screen sets the item's own.
+     *
+     * <p>Here and not in {@code Render.Post}: by then the frame's tooltip is
+     * already drawn, and one set afterwards is lost. The screen does not
+     * replace a tooltip that is already set.
+     */
+    @SubscribeEvent
+    public static void slotTooltip(ScreenEvent.Render.Foreground event) {
+        if (!(event.getScreen() instanceof AbstractContainerScreen<?> screen)
+                || screen.getMenu().containerId != boundContainer || entries.isEmpty()
+                || !FnClientConfig.showSlotNumbers()) {
+            return;
+        }
         Slot hovered = screen.getHoveredSlot();
-        SlotMap.Entry entry = hovered == null ? null : entries.get(slots.indexOf(hovered));
+        SlotMap.Entry entry = hovered == null ? null : entries.get(screen.getMenu().slots.indexOf(hovered));
         if (entry != null) {
-            graphics.setTooltipForNextFrame(font, tooltip(entry), Optional.empty(),
-                    event.getMouseX(), event.getMouseY());
+            event.getGuiGraphics().setTooltipForNextFrame(Minecraft.getInstance().font,
+                    tooltip(entry).stream().map(Component::getVisualOrderText).toList(),
+                    net.minecraft.client.gui.screens.inventory.tooltip.DefaultTooltipPositioner.INSTANCE,
+                    event.getMouseX(), event.getMouseY(), true);
         }
     }
 
