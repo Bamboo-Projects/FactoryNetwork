@@ -272,6 +272,11 @@ neoForge {
             // dedicated server must neither read nor overwrite.
             gameDirectory = layout.buildDirectory.dir('server')
             programArgument '--nogui'
+            // A flight recording of the whole run, for finding hot spots:
+            //   ./gradlew runServer -Pjfr   (writes build/server/fn.jfr)
+            if (project.hasProperty('jfr')) {
+                jvmArgument '-XX:StartFlightRecording=filename=fn.jfr,settings=profile,dumponexit=true'
+            }
             systemProperty 'neoforge.enabledGameTestNamespaces', mod_id
         }
         // Führt die GameTests aus und beendet sich danach mit dem Ergebnis
